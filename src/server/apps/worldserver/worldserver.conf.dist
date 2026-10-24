@@ -2498,12 +2498,13 @@ MaxGroupXPDistance = 74
 #                     1 - (Rate.XP.Quest.DF) - Dungeon Finder/LFG quests only.
 #                     1 - (Rate.XP.Explore)
 #                     1 - (Rate.XP.Pet)
+#        Project Titan: 5x on every XP source.
 
-Rate.XP.Kill      = 1
-Rate.XP.Quest     = 1
-Rate.XP.Quest.DF  = 1
-Rate.XP.Explore   = 1
-Rate.XP.Pet       = 1
+Rate.XP.Kill      = 5
+Rate.XP.Quest     = 5
+Rate.XP.Quest.DF  = 5
+Rate.XP.Explore   = 5
+Rate.XP.Pet       = 5
 
 #
 #    Rate.XP.BattlegroundKill...
@@ -2511,19 +2512,19 @@ Rate.XP.Pet       = 1
 #                     Only works if Battleground.GiveXPForKills = 1
 #        Default:     1
 
-Rate.XP.BattlegroundKillAV   = 1
-Rate.XP.BattlegroundKillWSG  = 1
-Rate.XP.BattlegroundKillAB   = 1
-Rate.XP.BattlegroundKillEOTS = 1
-Rate.XP.BattlegroundKillSOTA = 1
-Rate.XP.BattlegroundKillIC   = 1
+Rate.XP.BattlegroundKillAV   = 5
+Rate.XP.BattlegroundKillWSG  = 5
+Rate.XP.BattlegroundKillAB   = 5
+Rate.XP.BattlegroundKillEOTS = 5
+Rate.XP.BattlegroundKillSOTA = 5
+Rate.XP.BattlegroundKillIC   = 5
 
 #
 #    Rate.XP.BattlegroundBonus
 #        Description: Experience rate multiplier for battleground objectives (flag captures, base assaults, etc.).
 #        Default:     1
 
-Rate.XP.BattlegroundBonus = 1
+Rate.XP.BattlegroundBonus = 5
 
 #
 #    Rate.Pet.LevelXP
