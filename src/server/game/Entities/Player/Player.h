@@ -1216,7 +1216,7 @@ public:
     void RemoveRestState();
     uint32 GetXPRestBonus(uint32 xp);
     [[nodiscard]] float GetRestBonus() const { return _restBonus; }
-    void SetRestBonus(float restBonusNew);
+    void SetRestBonus(float restBonusNew, bool allowAboveCap = false);
 
     [[nodiscard]] bool HasRestFlag(RestFlag restFlag) const { return (_restFlagMask & restFlag) != 0; }
     void SetRestFlag(RestFlag restFlag, uint32 triggerId = 0);
