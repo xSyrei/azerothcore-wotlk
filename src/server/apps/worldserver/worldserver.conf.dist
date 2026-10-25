@@ -2021,8 +2021,10 @@ CharacterCreating.Disabled.RaceMask = 0
 #                     128  - (Disabled, Mage)
 #                     256  - (Disabled, Warlock)
 #                     1024 - (Disabled, Druid)
+#        Project Emberforge: 1533 - every class except Paladin (2), the hidden base of the classless
+#                       "Hero". GM accounts can still create any class for testing.
 
-CharacterCreating.Disabled.ClassMask = 0
+CharacterCreating.Disabled.ClassMask = 1533
 
 #
 #    CharactersPerAccount
@@ -2498,7 +2500,7 @@ MaxGroupXPDistance = 74
 #                     1 - (Rate.XP.Quest.DF) - Dungeon Finder/LFG quests only.
 #                     1 - (Rate.XP.Explore)
 #                     1 - (Rate.XP.Pet)
-#        Project Titan: 5x on every XP source.
+#        Project Emberforge: 5x on every XP source.
 
 Rate.XP.Kill      = 5
 Rate.XP.Quest     = 5
