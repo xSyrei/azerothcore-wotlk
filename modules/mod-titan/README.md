@@ -1,6 +1,19 @@
 # mod-titan
 
-Project Titan custom content for AzerothCore.
+Project Emberforge custom content for AzerothCore.
+
+## Classless Hero
+Every character is created as the **Hero**: the hidden base class (Paladin, ID 2) renamed on the
+client. `data/sql/db-world/hero_class.sql` opens it to all 10 races with each race's usual start
+zone and a basic starter kit, and `CharacterCreating.Disabled.ClassMask = 1533` in
+`worldserver.conf` blocks every other class (GM accounts can still create any class for testing).
+The matching client patch is built with `client-patch/` (see its README).
+
+Heroes use **every class resource**: mana, rage, energy, runic power and runes, with combo points
+on any target. `src/hero_resources.cpp` turns these on through AzerothCore's classless hooks
+(`OnPlayerHasActivePowerType`, and `OnPlayerIsClass` for ability mechanics only). Starting zone,
+quests, trainers, stats and equipment still follow the real base class. The
+`Emberforge_Resources` addon (in `client-patch/AddOns/`) shows the extra bars in game.
 
 ## Items
 

@@ -15,10 +15,12 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+void AddSC_hero_resources();
 void AddSC_item_titan_soul_of_rested_experience();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
 void Addmod_titanScripts()
 {
+    AddSC_hero_resources();
     AddSC_item_titan_soul_of_rested_experience();
 }
