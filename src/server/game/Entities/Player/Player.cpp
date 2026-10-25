@@ -10380,7 +10380,7 @@ void Player::LeaveAllArenaTeams(ObjectGuid guid)
     } while (result->NextRow());
 }
 
-void Player::SetRestBonus(float restBonusNew)
+void Player::SetRestBonus(float restBonusNew, bool allowAboveCap /*= false*/)
 {
     // Prevent resting on max level
     if (GetLevel() >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
@@ -10395,7 +10395,11 @@ void Player::SetRestBonus(float restBonusNew)
     // Calculate rest bonus max using the multiplier
     float restBonusMax = (float)GetUInt32Value(PLAYER_NEXT_LEVEL_XP) * restBonusMultiplier / 2;
 
-    if (restBonusNew > restBonusMax)
+    // Rest bonus granted above the cap (e.g. by an item) is kept: natural resting
+    // can't raise it further, but must not trim it back down to the cap either.
+    restBonusMax = std::max(restBonusMax, _restBonus);
+
+    if (restBonusNew > restBonusMax && !allowAboveCap)
         _restBonus = restBonusMax;
     else
         _restBonus = restBonusNew;
