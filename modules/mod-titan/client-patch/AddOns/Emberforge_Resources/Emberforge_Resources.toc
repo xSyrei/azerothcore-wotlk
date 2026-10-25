@@ -1,0 +1,5 @@
+## Interface: 30300
+## Title: Emberforge Resources
+## Notes: Rage, energy, runic power and rune bars for the classless Hero.
+## Author: Project Emberforge
+Emberforge_Resources.lua

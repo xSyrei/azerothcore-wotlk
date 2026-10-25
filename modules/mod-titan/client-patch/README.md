@@ -25,6 +25,16 @@ character creation screen. All other class buttons show as unavailable.
 4. **Install:** copy `patch-E.MPQ` into the client's `Data\` folder and delete the client's
    `Cache\` folder. For players, the launcher will ship this file automatically.
 
+## Resource bars addon
+
+Heroes use every class resource (mana, rage, energy, runic power and runes), but the player
+frame only shows mana. `AddOns/Emberforge_Resources` adds bars for rage, energy and runic power
+under the player frame and turns on the rune bar. A bar appears once you know an ability that
+uses that resource, or currently have some of it.
+
+Install: copy the `Emberforge_Resources` folder into the client's `Interface\AddOns\` folder.
+The launcher will ship it automatically for players.
+
 ## Notes
 - The base class is Paladin (ID 2). To change it, update `HERO_CLASS` in the script, `@HERO` in
   `hero_class.sql` and the class mask in `worldserver.conf` together.

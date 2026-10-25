@@ -9,6 +9,12 @@ zone and a basic starter kit, and `CharacterCreating.Disabled.ClassMask = 1533` 
 `worldserver.conf` blocks every other class (GM accounts can still create any class for testing).
 The matching client patch is built with `client-patch/` (see its README).
 
+Heroes use **every class resource**: mana, rage, energy, runic power and runes, with combo points
+on any target. `src/hero_resources.cpp` turns these on through AzerothCore's classless hooks
+(`OnPlayerHasActivePowerType`, and `OnPlayerIsClass` for ability mechanics only). Starting zone,
+quests, trainers, stats and equipment still follow the real base class. The
+`Emberforge_Resources` addon (in `client-patch/AddOns/`) shows the extra bars in game.
+
 ## Items
 
 | Entry | Item | Effect |
