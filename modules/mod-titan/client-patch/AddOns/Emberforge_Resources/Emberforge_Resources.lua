@@ -14,6 +14,12 @@ local BARS = {
 }
 local BAR_WIDTH, BAR_HEIGHT, BAR_GAP = 119, 10, 2
 
+-- Heroes show in ember orange instead of Paladin pink wherever the UI colors by class (unit
+-- frames, raid frames, chat names, who list). Edit the table in place: Blizzard code keeps
+-- references to it.
+local heroColor = RAID_CLASS_COLORS[HERO_CLASS]
+heroColor.r, heroColor.g, heroColor.b = 1.0, 0.49, 0.12
+
 local _, playerClass = UnitClass("player")
 if playerClass ~= HERO_CLASS then
     return

@@ -12,8 +12,13 @@ The matching client patch is built with `client-patch/` (see its README).
 Heroes use **every class resource**: mana, rage, energy, runic power and runes, with combo points
 on any target. `src/hero_resources.cpp` turns these on through AzerothCore's classless hooks
 (`OnPlayerHasActivePowerType`, and `OnPlayerIsClass` for ability mechanics only). Starting zone,
-quests, trainers, stats and equipment still follow the real base class. The
-`Emberforge_Resources` addon (in `client-patch/AddOns/`) shows the extra bars in game.
+stats and equipment still follow the real base class. The `Emberforge_Resources` addon (in
+`client-patch/AddOns/`) shows the extra bars in game and colors Heroes ember orange.
+
+Nothing else comes from the base class (`data/sql/db-world/hero_cleanup.sql`, `src/hero_class.cpp`):
+- no starting class spells (the Paladin skill lines are removed) and no Paladin action buttons;
+- Paladin trainers no longer train, and Paladin-only class quests are disabled;
+- no talent points: Wildcard grants talents.
 
 ## Items
 
@@ -26,8 +31,8 @@ Get one in game with `.additem 910001`.
 The item SQL in `data/sql/db-world/` is applied automatically by the database updater.
 
 ### Client patch
-New item entries also need a row in the client's `Item.dbc` (shipped in a client patch through
-the launcher), otherwise players see a red "?" icon. The item borrows spell 3361 only so the
+New item entries also need a row in the client's `Item.dbc`, otherwise players see a red "?"
+icon: add them to `client-patch/patch_items.py` and rebuild `patch-E.MPQ`. The item borrows spell 3361 only so the
 3.3.5 client lets it be used; the script intercepts the use and the spell is never cast.
 A dedicated spell in the client patch gives it a proper "Use:" tooltip line.
 
