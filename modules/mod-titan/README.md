@@ -25,14 +25,16 @@ Nothing else comes from the base class (`data/sql/db-world/hero_cleanup.sql`, `s
 | Entry | Item | Effect |
 |---|---|---|
 | 910001 | Titan Soul of Rested Experience | Grants 4 levels of rested experience (kill XP doubled across the next 4 levels' worth of XP). Can exceed the normal `Rate.Rest.MaxBonus` cap. Does nothing at max level. |
+| 910002 | Veridus | Epic one-handed sword with a custom model (display 90001) converted from a Legion artifact export. Placeholder stats for testing. |
 
-Get one in game with `.additem 910001`.
+Get one in game with `.additem 910001` (or `910002`).
 
 The item SQL in `data/sql/db-world/` is applied automatically by the database updater.
 
 ### Client patch
 New item entries also need a row in the client's `Item.dbc`, otherwise players see a red "?"
-icon: add them to `client-patch/patch_items.py` and rebuild `patch-E.MPQ`. The item borrows spell 3361 only so the
+icon: add them to `client-patch/patch_items.py` and rebuild `patch-E.MPQ` (see
+`client-patch/README.md`, which also covers custom models). The item borrows spell 3361 only so the
 3.3.5 client lets it be used; the script intercepts the use and the spell is never cast.
 A dedicated spell in the client patch gives it a proper "Use:" tooltip line.
 
