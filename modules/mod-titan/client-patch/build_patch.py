@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Build dist/patch-E.MPQ: everything Emberforge changes on the game client.
+"""Build dist/patch-enUS-4.MPQ: everything Emberforge changes on the game client.
+
+It is a language patch (installed as Data\\enUS\\patch-enUS-4.MPQ): the client reads its DBC
+tables from the language archives, which outrank patches placed directly in Data\\.
 
 - DBFilesClient: ChrClasses / CharBaseInfo (Hero class, patch_hero_class.py),
   Item / ItemDisplayInfo (custom items, patch_items.py)
@@ -50,7 +53,7 @@ def main():
             with Image.open(png) as image:
                 entries.append((f'Interface\\Icons\\{png.stem}.blp', blp.encode(image)))
 
-        out = HERE / 'dist' / 'patch-E.MPQ'
+        out = HERE / 'dist' / 'patch-enUS-4.MPQ'
         out.parent.mkdir(exist_ok=True)
         out.write_bytes(make_mpq.build(entries))
         print(f'Wrote {out}:')

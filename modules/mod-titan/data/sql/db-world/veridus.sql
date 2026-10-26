@@ -1,4 +1,4 @@
--- Veridus: one-handed sword with a custom model (display 90001, shipped in client-patch/dist/patch-E.MPQ).
+-- Veridus: one-handed sword with a custom model (display 90001, shipped in client-patch/dist/patch-enUS-4.MPQ).
 -- Placeholder stats for testing; tune before it drops anywhere.
 SET @ENTRY := 910002;
 
