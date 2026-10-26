@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Convert an image (PNG, ...) to a BLP2 texture the WoW 3.3.5a client can load.
 
-Writes a palettized BLP2 (256 colors, dithered) with a full mipmap chain and 8-bit alpha when
-the image has any transparency. Width and height must be powers of two.
+Writes a palettized BLP2 (256 colors, dithered) with a full mipmap chain and an 8-bit alpha
+channel. Width and height must be powers of two. Alpha is always written: the 3.3.5a client failed
+to load palettized BLPs without it (showing its green missing-texture box instead).
 
 Usage: python3 blp.py <image> <out.blp>
 """
@@ -23,7 +24,7 @@ def encode(image):
     if not (_is_pow2(width) and _is_pow2(height)):
         raise ValueError(f'texture must be a power of two in both directions, got {width}x{height}')
 
-    has_alpha = image.getchannel('A').getextrema()[0] < 255
+    has_alpha = True
     palette_image = image.convert('RGB').quantize(256, method=Image.Quantize.MEDIANCUT)
     palette = palette_image.getpalette()[:256 * 3]
     palette += [0] * (256 * 3 - len(palette))

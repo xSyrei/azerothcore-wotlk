@@ -94,6 +94,63 @@ def divider(width=256, height=16):
     return np.dstack([rgb, a])
 
 
+PANEL_FILL = (0.045, 0.032, 0.026, 0.9)
+PANEL_LINE = (0.86, 0.64, 0.32)
+
+
+def rounded_piece(size, sdf):
+    """Panel 9-slice piece from a signed distance function (negative inside the panel)."""
+    n = size * SS
+    y, x = (np.mgrid[0:n, 0:n] + 0.5) / SS
+    d = sdf(x, y)
+    fill = np.clip(-d * 1.5, 0, 1)
+    line = np.clip(1 - np.abs(d + 0.6) / 0.7, 0, 1)
+    rgb = np.empty((n, n, 3))
+    for i in range(3):
+        rgb[..., i] = PANEL_FILL[i] * (1 - line) + PANEL_LINE[i] * line
+    alpha = np.maximum(fill * PANEL_FILL[3], line)
+    return np.dstack([rgb, alpha])
+
+
+def panel_corner(size=32, radius=10):
+    """Top-left corner of a rounded panel; other corners are this one flipped."""
+    c = 1 + radius
+
+    def sdf(x, y):
+        qx, qy = np.maximum(c - x, 0), np.maximum(c - y, 0)
+        return np.where((x < c) & (y < c), np.hypot(qx, qy) - radius, np.maximum(1 - x, 1 - y))
+    return rounded_piece(size, sdf)
+
+
+def panel_edge(size=32, vertical=False):
+    """Top edge (or left edge) of a rounded panel, stretched along its length."""
+    return rounded_piece(size, (lambda x, y: 1 - x) if vertical else (lambda x, y: 1 - y))
+
+
+def chevron(size=32, glow_only=False):
+    """Round dark button with a gold left-pointing chevron (the right one is flipped)."""
+    n = size * SS
+    y, x = (np.mgrid[0:n, 0:n] + 0.5) / n * 2 - 1
+    r = np.hypot(x, y)
+    if glow_only:
+        g = np.exp(-((r - 0.75) / 0.25) ** 2) * 0.8
+        return np.dstack([g, g * 0.6, g * 0.25, np.ones_like(r)])
+    disc = np.clip((0.86 - r) / 0.04, 0, 1)
+    ring = np.clip(1 - np.abs(r - 0.83) / 0.06, 0, 1)
+    # chevron: two strokes meeting at the left
+    def seg(px, py, ax, ay, bx, by):
+        vx, vy = bx - ax, by - ay
+        t = np.clip(((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy), 0, 1)
+        return np.hypot(px - (ax + t * vx), py - (ay + t * vy))
+    d = np.minimum(seg(x, y, -0.22, 0.0, 0.18, -0.38), seg(x, y, -0.22, 0.0, 0.18, 0.38))
+    chev = np.clip(1 - (d - 0.07) / 0.05, 0, 1)
+    gold = np.array(PANEL_LINE)
+    rgb = np.zeros((n, n, 3)) + np.array([0.09, 0.06, 0.05])
+    rgb = rgb * (1 - ring[..., None]) + gold * ring[..., None]
+    rgb = rgb * (1 - chev[..., None]) + np.array([1.0, 0.85, 0.5]) * chev[..., None]
+    return np.dstack([rgb, np.maximum(disc, ring)])
+
+
 def main():
     ART.mkdir(exist_ok=True)
     save(ring(), 'RaceRing')
@@ -102,6 +159,11 @@ def main():
     save(hero_emblem(), 'HeroEmblem')
     save(vignette(), 'Vignette')
     save(divider(), 'Divider')
+    save(panel_corner(), 'PanelCorner')
+    save(panel_edge(), 'PanelEdge')
+    save(panel_edge(vertical=True), 'PanelEdgeV')
+    save(chevron(), 'Chevron')
+    save(chevron(glow_only=True), 'ChevronHighlight')
     print('Wrote', ', '.join(sorted(p.name for p in ART.glob('*.png'))))
 
 

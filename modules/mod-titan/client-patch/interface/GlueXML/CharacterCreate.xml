@@ -12,19 +12,73 @@
 		</Scripts>
 	</Frame>
 
-	<!-- Dark panel with an ember border (colors set in CharacterCreate_OnLoad). -->
+	<!-- Rounded dark panel with a thin gold edge (Dragonflight style): a 9-slice of PanelCorner /
+	     PanelEdge / PanelEdgeV around a flat fill. CharacterCreate_SetPanelColor tints the edge. -->
 	<Frame name="CharacterCreatePanelTemplate" virtual="true">
-		<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Glues\Common\Glue-Tooltip-Border" tile="true">
-			<BackgroundInsets>
-				<AbsInset left="5" right="5" top="5" bottom="5"/>
-			</BackgroundInsets>
-			<TileSize>
-				<AbsValue val="16"/>
-			</TileSize>
-			<EdgeSize>
-				<AbsValue val="16"/>
-			</EdgeSize>
-		</Backdrop>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentFill">
+					<Anchors>
+						<Anchor point="TOPLEFT" x="16" y="-16"/>
+						<Anchor point="BOTTOMRIGHT" x="-16" y="16"/>
+					</Anchors>
+					<Color r="0.045" g="0.032" b="0.026" a="0.9"/>
+				</Texture>
+				<Texture name="$parentTopLeft" file="Interface\Glues\Emberforge\PanelCorner">
+					<Size x="16" y="16"/>
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentTopRight" file="Interface\Glues\Emberforge\PanelCorner">
+					<Size x="16" y="16"/>
+					<Anchors>
+						<Anchor point="TOPRIGHT"/>
+					</Anchors>
+					<TexCoords left="1" right="0" top="0" bottom="1"/>
+				</Texture>
+				<Texture name="$parentBottomLeft" file="Interface\Glues\Emberforge\PanelCorner">
+					<Size x="16" y="16"/>
+					<Anchors>
+						<Anchor point="BOTTOMLEFT"/>
+					</Anchors>
+					<TexCoords left="0" right="1" top="1" bottom="0"/>
+				</Texture>
+				<Texture name="$parentBottomRight" file="Interface\Glues\Emberforge\PanelCorner">
+					<Size x="16" y="16"/>
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT"/>
+					</Anchors>
+					<TexCoords left="1" right="0" top="1" bottom="0"/>
+				</Texture>
+				<Texture name="$parentTop" file="Interface\Glues\Emberforge\PanelEdge">
+					<Anchors>
+						<Anchor point="TOPLEFT" x="16" y="0"/>
+						<Anchor point="BOTTOMRIGHT" relativePoint="TOPRIGHT" x="-16" y="-16"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentBottom" file="Interface\Glues\Emberforge\PanelEdge">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" x="16" y="16"/>
+						<Anchor point="BOTTOMRIGHT" x="-16" y="0"/>
+					</Anchors>
+					<TexCoords left="0" right="1" top="1" bottom="0"/>
+				</Texture>
+				<Texture name="$parentLeft" file="Interface\Glues\Emberforge\PanelEdgeV">
+					<Anchors>
+						<Anchor point="TOPLEFT" x="0" y="-16"/>
+						<Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMLEFT" x="16" y="16"/>
+					</Anchors>
+				</Texture>
+				<Texture name="$parentRight" file="Interface\Glues\Emberforge\PanelEdgeV">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="-16" y="-16"/>
+						<Anchor point="BOTTOMRIGHT" x="0" y="16"/>
+					</Anchors>
+					<TexCoords left="1" right="0" top="0" bottom="1"/>
+				</Texture>
+			</Layer>
+		</Layers>
 	</Frame>
 
 	<!-- Round race portrait with an ember ring; the name sits beside it (placed in Lua). -->
@@ -125,19 +179,10 @@
 		</CheckedTexture>
 	</CheckButton>
 
-	<!-- One appearance option: < label > on a dark bar. -->
-	<Frame name="CharacterCustomizationFrameTemplate" virtual="true">
-		<Size x="270" y="36"/>
+	<!-- One appearance option: a rounded bar with round chevron buttons at both ends. -->
+	<Frame name="CharacterCustomizationFrameTemplate" inherits="CharacterCreatePanelTemplate" virtual="true">
+		<Size x="290" y="34"/>
 		<Layers>
-			<Layer level="BACKGROUND">
-				<Texture file="Interface\Tooltips\UI-Tooltip-Background">
-					<Anchors>
-						<Anchor point="TOPLEFT" x="14" y="-4"/>
-						<Anchor point="BOTTOMRIGHT" x="-14" y="4"/>
-					</Anchors>
-					<Color r="0.0" g="0.0" b="0.0" a="0.6"/>
-				</Texture>
-			</Layer>
 			<Layer level="ARTWORK">
 				<FontString name="$parentText" inherits="GlueFontHighlight">
 					<Anchors>
@@ -148,32 +193,46 @@
 		</Layers>
 		<Frames>
 			<Button name="$parentLeftButton">
-				<Size x="32" y="32"/>
+				<Size x="26" y="26"/>
 				<Anchors>
-					<Anchor point="LEFT"/>
+					<Anchor point="LEFT" x="4" y="0"/>
 				</Anchors>
 				<Scripts>
 					<OnClick>
 						CharacterCustomization_Left(self:GetParent():GetID());
 					</OnClick>
 				</Scripts>
-				<NormalTexture file="Interface\Glues\Common\Glue-LeftArrow-Button-Up"/>
-				<PushedTexture file="Interface\Glues\Common\Glue-LeftArrow-Button-Down"/>
-				<HighlightTexture file="Interface\Glues\Common\Glue-LeftArrow-Button-Highlight" alphaMode="ADD"/>
+				<NormalTexture file="Interface\Glues\Emberforge\Chevron"></NormalTexture>
+				<PushedTexture file="Interface\Glues\Emberforge\Chevron">
+					<Size x="23" y="23"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</PushedTexture>
+				<HighlightTexture file="Interface\Glues\Emberforge\ChevronHighlight" alphaMode="ADD"/>
 			</Button>
 			<Button name="$parentRightButton">
-				<Size x="32" y="32"/>
+				<Size x="26" y="26"/>
 				<Anchors>
-					<Anchor point="RIGHT"/>
+					<Anchor point="RIGHT" x="-4" y="0"/>
 				</Anchors>
 				<Scripts>
 					<OnClick>
 						CharacterCustomization_Right(self:GetParent():GetID());
 					</OnClick>
 				</Scripts>
-				<NormalTexture file="Interface\Glues\Common\Glue-RightArrow-Button-Up"/>
-				<PushedTexture file="Interface\Glues\Common\Glue-RightArrow-Button-Down"/>
-				<HighlightTexture file="Interface\Glues\Common\Glue-RightArrow-Button-Highlight" alphaMode="ADD"/>
+				<NormalTexture file="Interface\Glues\Emberforge\Chevron">
+					<TexCoords left="1" right="0" top="0" bottom="1"/>
+				</NormalTexture>
+				<PushedTexture file="Interface\Glues\Emberforge\Chevron">
+					<Size x="23" y="23"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+					<TexCoords left="1" right="0" top="0" bottom="1"/>
+				
+				</PushedTexture>
+				<HighlightTexture file="Interface\Glues\Emberforge\ChevronHighlight" alphaMode="ADD"/>
 			</Button>
 		</Frames>
 	</Frame>
@@ -547,39 +606,48 @@
 							</Frame>
 
 							<Frame name="CharacterCreateCustomizePanel" inherits="CharacterCreatePanelTemplate">
-								<Size x="310" y="318"/>
+								<Size x="330" y="372"/>
 								<Anchors>
 									<Anchor point="TOPRIGHT" x="-30" y="-96"/>
 								</Anchors>
 								<Layers>
 									<Layer level="ARTWORK">
-										<FontString name="CharacterCreateCustomizeHeader" inherits="GlueFontNormalLarge">
+										<FontString name="CharacterCreateBodyHeader" inherits="GlueFontNormal" justifyH="LEFT" text="EMBERFORGE_SECTION_BODY">
 											<Anchors>
-												<Anchor point="TOP" x="0" y="-16"/>
+												<Anchor point="TOPLEFT" x="24" y="-20"/>
 											</Anchors>
 										</FontString>
-										<Texture file="Interface\Glues\Emberforge\Divider">
-											<Size x="240" y="14"/>
+										<FontString name="CharacterCreateFaceHeader" inherits="GlueFontNormal" justifyH="LEFT" text="EMBERFORGE_SECTION_FACE">
 											<Anchors>
-												<Anchor point="TOP" relativeTo="CharacterCreateCustomizeHeader" relativePoint="BOTTOM" x="0" y="-4"/>
+												<Anchor point="TOPLEFT" relativeTo="CharacterCustomizationButtonFrame1" relativePoint="BOTTOMLEFT" x="4" y="-16"/>
 											</Anchors>
-										</Texture>
+										</FontString>
+										<FontString name="CharacterCreateHairHeader" inherits="GlueFontNormal" justifyH="LEFT" text="EMBERFORGE_SECTION_HAIR">
+											<Anchors>
+												<Anchor point="TOPLEFT" relativeTo="CharacterCustomizationButtonFrame5" relativePoint="BOTTOMLEFT" x="4" y="-16"/>
+											</Anchors>
+										</FontString>
 									</Layer>
 								</Layers>
 								<Frames>
 									<Frame name="CharacterCustomizationButtonFrame1" inherits="CharacterCustomizationFrameTemplate" id="1">
 										<Anchors>
-											<Anchor point="TOP" x="0" y="-54"/>
+											<Anchor point="TOP" x="0" y="-42"/>
 										</Anchors>
 									</Frame>
 									<Frame name="CharacterCustomizationButtonFrame2" inherits="CharacterCustomizationFrameTemplate" id="2">
 										<Anchors>
-											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame1" relativePoint="BOTTOM" x="0" y="-6"/>
+											<Anchor point="TOPLEFT" relativeTo="CharacterCreateFaceHeader" relativePoint="BOTTOMLEFT" x="-4" y="-8"/>
+										</Anchors>
+									</Frame>
+									<Frame name="CharacterCustomizationButtonFrame5" inherits="CharacterCustomizationFrameTemplate" id="5">
+										<Anchors>
+											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame2" relativePoint="BOTTOM" x="0" y="-6"/>
 										</Anchors>
 									</Frame>
 									<Frame name="CharacterCustomizationButtonFrame3" inherits="CharacterCustomizationFrameTemplate" id="3">
 										<Anchors>
-											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame2" relativePoint="BOTTOM" x="0" y="-6"/>
+											<Anchor point="TOPLEFT" relativeTo="CharacterCreateHairHeader" relativePoint="BOTTOMLEFT" x="-4" y="-8"/>
 										</Anchors>
 									</Frame>
 									<Frame name="CharacterCustomizationButtonFrame4" inherits="CharacterCustomizationFrameTemplate" id="4">
@@ -587,15 +655,10 @@
 											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame3" relativePoint="BOTTOM" x="0" y="-6"/>
 										</Anchors>
 									</Frame>
-									<Frame name="CharacterCustomizationButtonFrame5" inherits="CharacterCustomizationFrameTemplate" id="5">
-										<Anchors>
-											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame4" relativePoint="BOTTOM" x="0" y="-6"/>
-										</Anchors>
-									</Frame>
 									<Button name="CharCreateRandomizeButton" inherits="GlueButtonSmallTemplate" text="RANDOMIZE">
-										<Size x="160" y="30"/>
+										<Size x="170" y="30"/>
 										<Anchors>
-											<Anchor point="BOTTOM" x="0" y="16"/>
+											<Anchor point="BOTTOM" x="14" y="18"/>
 										</Anchors>
 										<Scripts>
 											<OnClick>
@@ -603,29 +666,41 @@
 											</OnClick>
 										</Scripts>
 									</Button>
+									<Button name="CharCreateRandomizeDice">
+										<Size x="32" y="32"/>
+										<Anchors>
+											<Anchor point="RIGHT" relativeTo="CharCreateRandomizeButton" relativePoint="LEFT" x="-6" y="0"/>
+										</Anchors>
+										<Scripts>
+											<OnClick>
+												CharacterCreate_Randomize();
+											</OnClick>
+										</Scripts>
+										<NormalTexture file="Interface\Buttons\UI-GroupLoot-Dice-Up"/>
+										<PushedTexture file="Interface\Buttons\UI-GroupLoot-Dice-Down"/>
+										<HighlightTexture file="Interface\Buttons\UI-GroupLoot-Dice-Highlight" alphaMode="ADD"/>
+									</Button>
 								</Frames>
-								<Scripts>
-									<OnLoad>
-										CharacterCreateCustomizeHeader:SetText(CHARACTER_CUSTOMIZATION1_HEADER or "Appearance");
-									</OnLoad>
-								</Scripts>
 							</Frame>
 
 							<EditBox name="CharacterCreateNameEdit" letters="12" inherits="CharacterCreatePanelTemplate">
-								<Size x="250" y="40"/>
+								<Size x="270" y="42"/>
 								<Anchors>
-									<Anchor point="BOTTOM" x="0" y="74"/>
+									<Anchor point="BOTTOM" x="0" y="70"/>
 								</Anchors>
 								<Layers>
-									<Layer level="BACKGROUND">
-										<FontString inherits="GlueFontNormalLarge" text="NAME">
+									<Layer level="ARTWORK">
+										<FontString name="CharacterCreateNamePlaceholder" inherits="GlueFontDisable">
 											<Anchors>
-												<Anchor point="BOTTOM" relativePoint="TOP" x="0" y="4"/>
+												<Anchor point="CENTER"/>
 											</Anchors>
 										</FontString>
 									</Layer>
 								</Layers>
 								<Scripts>
+									<OnTextChanged>
+										CharacterCreate_UpdateNamePlaceholder();
+									</OnTextChanged>
 									<OnEscapePressed>
 										CharacterCreate_Previous();
 									</OnEscapePressed>
@@ -635,20 +710,30 @@
 								</Scripts>
 								<FontString inherits="GlueEditBoxFont" justifyH="CENTER"/>
 								<TextInsets>
-									<AbsInset left="14" right="14"/>
+									<AbsInset left="16" right="16"/>
 								</TextInsets>
 							</EditBox>
-							<Button name="CharacterCreateRandomName" inherits="GlueButtonSmallTemplate" text="RANDOMIZE" hidden="true">
-								<Size x="120" y="30"/>
+							<Button name="CharacterCreateRandomName" hidden="true">
+								<Size x="34" y="34"/>
 								<Anchors>
-									<Anchor point="TOP" relativeTo="CharacterCreateNameEdit" relativePoint="BOTTOM" x="0" y="-2"/>
+									<Anchor point="LEFT" relativeTo="CharacterCreateNameEdit" relativePoint="RIGHT" x="8" y="0"/>
 								</Anchors>
 								<Scripts>
 									<OnClick>
 										CharacterCreateNameEdit:SetText(GetRandomName());
 										PlaySound("gsCharacterCreationLook");
 									</OnClick>
+									<OnEnter>
+										GlueTooltip_SetOwner(self, CharacterCreateTooltip, -3, -5);
+										GlueTooltip_SetText(EMBERFORGE_RANDOM_NAME, CharacterCreateTooltip);
+									</OnEnter>
+									<OnLeave>
+										CharacterCreateTooltip:Hide();
+									</OnLeave>
 								</Scripts>
+								<NormalTexture file="Interface\Buttons\UI-GroupLoot-Dice-Up"/>
+								<PushedTexture file="Interface\Buttons\UI-GroupLoot-Dice-Down"/>
+								<HighlightTexture file="Interface\Buttons\UI-GroupLoot-Dice-Highlight" alphaMode="ADD"/>
 							</Button>
 
 							<Button name="CharCreateCustomizeBackButton" inherits="GlueButtonSmallTemplate" text="BACK">
@@ -679,67 +764,6 @@
 						</Frames>
 					</Frame>
 
-					<!-- Turn the character (dragging the scene works too). -->
-					<Button name="CharacterCreateRotateLeft">
-						<Size x="50" y="50"/>
-						<Anchors>
-							<Anchor point="BOTTOM" x="-150" y="150"/>
-						</Anchors>
-						<HitRectInsets>
-							<AbsInset left="13" right="13" top="10" bottom="13"/>
-						</HitRectInsets>
-						<Scripts>
-							<OnLoad>
-								self:RegisterForClicks("LeftButtonDown", "LeftButtonUp");
-							</OnLoad>
-							<OnClick>
-								PlaySound("igInventoryRotateCharacter");
-							</OnClick>
-							<OnUpdate>
-								CharacterCreateRotateLeft_OnUpdate(self);
-							</OnUpdate>
-						</Scripts>
-						<NormalTexture file="Interface\Glues\CharacterCreate\UI-RotationRight-Big-Up">
-							<TexCoords left="1.0" right="0" top="0" bottom="1.0"/>
-						</NormalTexture>
-						<PushedTexture file="Interface\Glues\CharacterCreate\UI-RotationRight-Big-Down">
-							<TexCoords left="1.0" right="0" top="0" bottom="1.0"/>
-						</PushedTexture>
-						<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD">
-							<Size x="30" y="30"/>
-							<Anchors>
-								<Anchor point="CENTER" x="0" y="0"/>
-							</Anchors>
-						</HighlightTexture>
-					</Button>
-					<Button name="CharacterCreateRotateRight">
-						<Size x="50" y="50"/>
-						<Anchors>
-							<Anchor point="BOTTOM" x="150" y="150"/>
-						</Anchors>
-						<HitRectInsets>
-							<AbsInset left="13" right="13" top="10" bottom="13"/>
-						</HitRectInsets>
-						<Scripts>
-							<OnLoad>
-								self:RegisterForClicks("LeftButtonDown", "LeftButtonUp");
-							</OnLoad>
-							<OnClick>
-								PlaySound("igInventoryRotateCharacter");
-							</OnClick>
-							<OnUpdate>
-								CharacterCreateRotateRight_OnUpdate(self);
-							</OnUpdate>
-						</Scripts>
-						<NormalTexture file="Interface\Glues\CharacterCreate\UI-RotationRight-Big-Up"/>
-						<PushedTexture file="Interface\Glues\CharacterCreate\UI-RotationRight-Big-Down"/>
-						<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD">
-							<Size x="30" y="30"/>
-							<Anchors>
-								<Anchor point="CENTER" x="0" y="0"/>
-							</Anchors>
-						</HighlightTexture>
-					</Button>
 				</Frames>
 				<Scripts>
 					<OnMouseDown>
