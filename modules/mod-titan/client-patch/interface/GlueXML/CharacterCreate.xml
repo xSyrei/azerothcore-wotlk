@@ -291,11 +291,6 @@
 									</Anchors>
 									<Color r="1.0" g="0.35" b="0.25"/>
 								</FontString>
-								<FontString name="CharacterCreateGender" inherits="GlueFontHighlightSmall">
-									<Anchors>
-										<Anchor point="TOP" x="0" y="-128"/>
-									</Anchors>
-								</FontString>
 							</Layer>
 						</Layers>
 						<Frames>
@@ -309,59 +304,6 @@
 							<CheckButton name="CharacterCreateRaceButton8" inherits="CharacterCreateRaceButtonTemplate" id="8"/>
 							<CheckButton name="CharacterCreateRaceButton9" inherits="CharacterCreateRaceButtonTemplate" id="9"/>
 							<CheckButton name="CharacterCreateRaceButton10" inherits="CharacterCreateRaceButtonTemplate" id="10"/>
-
-							<CheckButton name="CharacterCreateGenderButtonMale" inherits="CharacterCreateGenderButtonTemplate">
-								<Anchors>
-									<Anchor point="TOP" x="-26" y="-80"/>
-								</Anchors>
-								<Scripts>
-									<OnLoad>
-										_G[self:GetName().."NormalTexture"]:SetTexCoord(0, 0.5, 0, 1.0);
-										_G[self:GetName().."PushedTexture"]:SetTexCoord(0, 0.5, 0, 1.0);
-									</OnLoad>
-									<OnClick>
-										PlaySound("gsCharacterCreationClass");
-										if ( GetSelectedSex() ~= SEX_MALE ) then
-											SetCharacterGender(SEX_MALE);
-										else
-											self:SetChecked(1);
-										end
-									</OnClick>
-									<OnEnter>
-										GlueTooltip_SetOwner(self, CharacterCreateTooltip, -3, -5);
-										GlueTooltip_SetText(MALE, CharacterCreateTooltip);
-									</OnEnter>
-									<OnLeave>
-										CharacterCreateTooltip:Hide();
-									</OnLeave>
-								</Scripts>
-							</CheckButton>
-							<CheckButton name="CharacterCreateGenderButtonFemale" inherits="CharacterCreateGenderButtonTemplate">
-								<Anchors>
-									<Anchor point="TOP" x="26" y="-80"/>
-								</Anchors>
-								<Scripts>
-									<OnLoad>
-										_G[self:GetName().."NormalTexture"]:SetTexCoord(0.5, 1.0, 0, 1.0);
-										_G[self:GetName().."PushedTexture"]:SetTexCoord(0.5, 1.0, 0, 1.0);
-									</OnLoad>
-									<OnClick>
-										PlaySound("gsCharacterCreationClass");
-										if ( GetSelectedSex() ~= SEX_FEMALE ) then
-											SetCharacterGender(SEX_FEMALE);
-										else
-											self:SetChecked(1);
-										end
-									</OnClick>
-									<OnEnter>
-										GlueTooltip_SetOwner(self, CharacterCreateTooltip, -3, -5);
-										GlueTooltip_SetText(FEMALE, CharacterCreateTooltip);
-									</OnEnter>
-									<OnLeave>
-										CharacterCreateTooltip:Hide();
-									</OnLeave>
-								</Scripts>
-							</CheckButton>
 
 							<!-- Selected race: portrait, name, faction and lore. -->
 							<Frame name="CharacterCreateRaceInfo" inherits="CharacterCreatePanelTemplate">
@@ -606,53 +548,116 @@
 							</Frame>
 
 							<Frame name="CharacterCreateCustomizePanel" inherits="CharacterCreatePanelTemplate">
-								<Size x="330" y="372"/>
+								<Size x="330" y="446"/>
 								<Anchors>
 									<Anchor point="TOPRIGHT" x="-30" y="-96"/>
 								</Anchors>
 								<Layers>
 									<Layer level="ARTWORK">
-										<FontString name="CharacterCreateBodyHeader" inherits="GlueFontNormal" justifyH="LEFT" text="EMBERFORGE_SECTION_BODY">
+										<FontString name="CharacterCreateBodyTypeHeader" inherits="GlueFontNormal" justifyH="LEFT" text="EMBERFORGE_SECTION_BODY_TYPE">
 											<Anchors>
 												<Anchor point="TOPLEFT" x="24" y="-20"/>
 											</Anchors>
 										</FontString>
+										<FontString name="CharacterCreateGender" inherits="GlueFontHighlightSmall" justifyH="RIGHT">
+											<Anchors>
+												<Anchor point="TOPRIGHT" x="-24" y="-22"/>
+											</Anchors>
+										</FontString>
+										<FontString name="CharacterCreateBodyHeader" inherits="GlueFontNormal" justifyH="LEFT" text="EMBERFORGE_SECTION_BODY">
+											<Anchors>
+												<Anchor point="TOPLEFT" x="24" y="-96"/>
+											</Anchors>
+										</FontString>
 										<FontString name="CharacterCreateFaceHeader" inherits="GlueFontNormal" justifyH="LEFT" text="EMBERFORGE_SECTION_FACE">
 											<Anchors>
-												<Anchor point="TOPLEFT" relativeTo="CharacterCustomizationButtonFrame1" relativePoint="BOTTOMLEFT" x="4" y="-16"/>
+												<Anchor point="TOPLEFT" x="24" y="-168"/>
 											</Anchors>
 										</FontString>
 										<FontString name="CharacterCreateHairHeader" inherits="GlueFontNormal" justifyH="LEFT" text="EMBERFORGE_SECTION_HAIR">
 											<Anchors>
-												<Anchor point="TOPLEFT" relativeTo="CharacterCustomizationButtonFrame5" relativePoint="BOTTOMLEFT" x="4" y="-16"/>
+												<Anchor point="TOPLEFT" x="24" y="-280"/>
 											</Anchors>
 										</FontString>
 									</Layer>
 								</Layers>
 								<Frames>
+											<CheckButton name="CharacterCreateGenderButtonMale" inherits="CharacterCreateGenderButtonTemplate">
+												<Anchors>
+													<Anchor point="TOP" x="-26" y="-44"/>
+												</Anchors>
+												<Scripts>
+													<OnLoad>
+														_G[self:GetName().."NormalTexture"]:SetTexCoord(0, 0.5, 0, 1.0);
+														_G[self:GetName().."PushedTexture"]:SetTexCoord(0, 0.5, 0, 1.0);
+													</OnLoad>
+													<OnClick>
+														PlaySound("gsCharacterCreationClass");
+														if ( GetSelectedSex() ~= SEX_MALE ) then
+															SetCharacterGender(SEX_MALE);
+														else
+															self:SetChecked(1);
+														end
+													</OnClick>
+													<OnEnter>
+														GlueTooltip_SetOwner(self, CharacterCreateTooltip, -3, -5);
+														GlueTooltip_SetText(MALE, CharacterCreateTooltip);
+													</OnEnter>
+													<OnLeave>
+														CharacterCreateTooltip:Hide();
+													</OnLeave>
+												</Scripts>
+											</CheckButton>
+											<CheckButton name="CharacterCreateGenderButtonFemale" inherits="CharacterCreateGenderButtonTemplate">
+												<Anchors>
+													<Anchor point="TOP" x="26" y="-44"/>
+												</Anchors>
+												<Scripts>
+													<OnLoad>
+														_G[self:GetName().."NormalTexture"]:SetTexCoord(0.5, 1.0, 0, 1.0);
+														_G[self:GetName().."PushedTexture"]:SetTexCoord(0.5, 1.0, 0, 1.0);
+													</OnLoad>
+													<OnClick>
+														PlaySound("gsCharacterCreationClass");
+														if ( GetSelectedSex() ~= SEX_FEMALE ) then
+															SetCharacterGender(SEX_FEMALE);
+														else
+															self:SetChecked(1);
+														end
+													</OnClick>
+													<OnEnter>
+														GlueTooltip_SetOwner(self, CharacterCreateTooltip, -3, -5);
+														GlueTooltip_SetText(FEMALE, CharacterCreateTooltip);
+													</OnEnter>
+													<OnLeave>
+														CharacterCreateTooltip:Hide();
+													</OnLeave>
+												</Scripts>
+											</CheckButton>
+
 									<Frame name="CharacterCustomizationButtonFrame1" inherits="CharacterCustomizationFrameTemplate" id="1">
 										<Anchors>
-											<Anchor point="TOP" x="0" y="-42"/>
+											<Anchor point="TOP" x="0" y="-118"/>
 										</Anchors>
 									</Frame>
 									<Frame name="CharacterCustomizationButtonFrame2" inherits="CharacterCustomizationFrameTemplate" id="2">
 										<Anchors>
-											<Anchor point="TOPLEFT" relativeTo="CharacterCreateFaceHeader" relativePoint="BOTTOMLEFT" x="-4" y="-8"/>
+											<Anchor point="TOP" x="0" y="-190"/>
 										</Anchors>
 									</Frame>
 									<Frame name="CharacterCustomizationButtonFrame5" inherits="CharacterCustomizationFrameTemplate" id="5">
 										<Anchors>
-											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame2" relativePoint="BOTTOM" x="0" y="-6"/>
+											<Anchor point="TOP" x="0" y="-230"/>
 										</Anchors>
 									</Frame>
 									<Frame name="CharacterCustomizationButtonFrame3" inherits="CharacterCustomizationFrameTemplate" id="3">
 										<Anchors>
-											<Anchor point="TOPLEFT" relativeTo="CharacterCreateHairHeader" relativePoint="BOTTOMLEFT" x="-4" y="-8"/>
+											<Anchor point="TOP" x="0" y="-302"/>
 										</Anchors>
 									</Frame>
 									<Frame name="CharacterCustomizationButtonFrame4" inherits="CharacterCustomizationFrameTemplate" id="4">
 										<Anchors>
-											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame3" relativePoint="BOTTOM" x="0" y="-6"/>
+											<Anchor point="TOP" x="0" y="-342"/>
 										</Anchors>
 									</Frame>
 									<Button name="CharCreateRandomizeButton" inherits="GlueButtonSmallTemplate" text="RANDOMIZE">
