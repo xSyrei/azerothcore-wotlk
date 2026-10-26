@@ -1,0 +1,778 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+	<!-- Project Emberforge character creation (see CharacterCreate.lua). -->
+	<Script file="CharacterCreate.lua"/>
+	<Frame name="CharacterCreateTooltip" frameStrata="TOOLTIP" hidden="true" parent="GlueParent" inherits="GlueTooltipTemplate">
+		<Scripts>
+			<OnLoad>
+				GlueTooltip_SetFont(self, CharacterCreateTooltipFont);
+				self:SetBackdropBorderColor(1.0, 0.55, 0.2);
+				self:SetBackdropColor(0.06, 0.04, 0.03);
+			</OnLoad>
+		</Scripts>
+	</Frame>
+
+	<!-- Dark panel with an ember border (colors set in CharacterCreate_OnLoad). -->
+	<Frame name="CharacterCreatePanelTemplate" virtual="true">
+		<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Glues\Common\Glue-Tooltip-Border" tile="true">
+			<BackgroundInsets>
+				<AbsInset left="5" right="5" top="5" bottom="5"/>
+			</BackgroundInsets>
+			<TileSize>
+				<AbsValue val="16"/>
+			</TileSize>
+			<EdgeSize>
+				<AbsValue val="16"/>
+			</EdgeSize>
+		</Backdrop>
+	</Frame>
+
+	<!-- Round race portrait with an ember ring; the name sits beside it (placed in Lua). -->
+	<CheckButton name="CharacterCreateRaceButtonTemplate" virtual="true" motionScriptsWhileDisabled="true">
+		<Size x="56" y="56"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentShadow" file="Interface\Glues\CharacterCreate\UI-CharacterCreate-IconShadow">
+					<Size x="84" y="84"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+					<Color r="1.0" g="1.0" b="1.0" a="0.9"/>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture name="$parentRing" file="Interface\Glues\Emberforge\RaceRing">
+					<Size x="70" y="70"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+				<FontString name="$parentText" inherits="GlueFontNormalLarge">
+					<Size x="190" y="0"/>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnClick>
+				if ( self.enable ) then
+					CharacterRace_OnClick(self, self:GetID());
+					CharacterCreateTooltip:Hide();
+				end
+			</OnClick>
+			<OnEnter>
+				GlueTooltip_SetOwner(self, CharacterCreateTooltip, -3, -5);
+				GlueTooltip_SetText(self.tooltip, CharacterCreateTooltip);
+			</OnEnter>
+			<OnLeave>
+				CharacterCreateTooltip:Hide();
+			</OnLeave>
+		</Scripts>
+		<NormalTexture name="$parentNormalTexture" file="Interface\Glues\CharacterCreate\UI-CharacterCreate-RacesRound"/>
+		<PushedTexture name="$parentPushedTexture" file="Interface\Glues\CharacterCreate\UI-CharacterCreate-RacesRound">
+			<Size x="52" y="52"/>
+			<Anchors>
+				<Anchor point="CENTER" x="0" y="0"/>
+			</Anchors>
+		</PushedTexture>
+		<HighlightTexture file="Interface\Glues\Emberforge\RaceRingHover" alphaMode="ADD">
+			<Size x="84" y="84"/>
+			<Anchors>
+				<Anchor point="CENTER"/>
+			</Anchors>
+		</HighlightTexture>
+		<CheckedTexture file="Interface\Glues\Emberforge\RaceRingSelected" alphaMode="ADD">
+			<Size x="88" y="88"/>
+			<Anchors>
+				<Anchor point="CENTER"/>
+			</Anchors>
+		</CheckedTexture>
+	</CheckButton>
+
+	<!-- Gender toggle, same icons as Blizzard's screen. -->
+	<CheckButton name="CharacterCreateGenderButtonTemplate" virtual="true">
+		<Size x="40" y="40"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture file="Interface\Glues\CharacterCreate\UI-CharacterCreate-IconShadow">
+					<Size x="60" y="60"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture file="Interface\Glues\CharacterCreate\UI-CharacterCreate-Highlights">
+					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+					<TexCoords left="0" right="0.5" top="0.5" bottom="1.0"/>
+				</Texture>
+			</Layer>
+		</Layers>
+		<NormalTexture name="$parentNormalTexture" file="Interface\Glues\CharacterCreate\UI-CharacterCreate-Gender"/>
+		<PushedTexture name="$parentPushedTexture" file="Interface\Glues\CharacterCreate\UI-CharacterCreate-Gender">
+			<Size x="36" y="36"/>
+			<Anchors>
+				<Anchor point="CENTER"/>
+			</Anchors>
+		</PushedTexture>
+		<HighlightTexture file="Interface\Glues\CharacterCreate\UI-CharacterCreate-Highlights" alphaMode="ADD">
+			<TexCoords left="0" right="0.5" top="0" bottom="0.5"/>
+		</HighlightTexture>
+		<CheckedTexture file="Interface\Glues\CharacterCreate\UI-CharacterCreate-Highlights" alphaMode="ADD">
+			<TexCoords left="0.5" right="1" top="0" bottom="0.5"/>
+		</CheckedTexture>
+	</CheckButton>
+
+	<!-- One appearance option: < label > on a dark bar. -->
+	<Frame name="CharacterCustomizationFrameTemplate" virtual="true">
+		<Size x="270" y="36"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture file="Interface\Tooltips\UI-Tooltip-Background">
+					<Anchors>
+						<Anchor point="TOPLEFT" x="14" y="-4"/>
+						<Anchor point="BOTTOMRIGHT" x="-14" y="4"/>
+					</Anchors>
+					<Color r="0.0" g="0.0" b="0.0" a="0.6"/>
+				</Texture>
+			</Layer>
+			<Layer level="ARTWORK">
+				<FontString name="$parentText" inherits="GlueFontHighlight">
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button name="$parentLeftButton">
+				<Size x="32" y="32"/>
+				<Anchors>
+					<Anchor point="LEFT"/>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CharacterCustomization_Left(self:GetParent():GetID());
+					</OnClick>
+				</Scripts>
+				<NormalTexture file="Interface\Glues\Common\Glue-LeftArrow-Button-Up"/>
+				<PushedTexture file="Interface\Glues\Common\Glue-LeftArrow-Button-Down"/>
+				<HighlightTexture file="Interface\Glues\Common\Glue-LeftArrow-Button-Highlight" alphaMode="ADD"/>
+			</Button>
+			<Button name="$parentRightButton">
+				<Size x="32" y="32"/>
+				<Anchors>
+					<Anchor point="RIGHT"/>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						CharacterCustomization_Right(self:GetParent():GetID());
+					</OnClick>
+				</Scripts>
+				<NormalTexture file="Interface\Glues\Common\Glue-RightArrow-Button-Up"/>
+				<PushedTexture file="Interface\Glues\Common\Glue-RightArrow-Button-Down"/>
+				<HighlightTexture file="Interface\Glues\Common\Glue-RightArrow-Button-Highlight" alphaMode="ADD"/>
+			</Button>
+		</Frames>
+	</Frame>
+
+	<ModelFFX name="CharacterCreate" toplevel="true" parent="GlueParent" setAllPoints="true" enableKeyboard="true" hidden="true">
+		<Frames>
+			<Frame name="CharacterCreateFrame" setAllPoints="true" enableMouse="true">
+				<Layers>
+					<Layer level="BACKGROUND">
+						<!-- Dark fades at the top and bottom keep text readable over the 3D scene. -->
+						<Texture name="CharacterCreateVignetteBottom" file="Interface\Glues\Emberforge\Vignette">
+							<Size x="0" y="300"/>
+							<Anchors>
+								<Anchor point="BOTTOMLEFT"/>
+								<Anchor point="BOTTOMRIGHT"/>
+							</Anchors>
+						</Texture>
+						<Texture name="CharacterCreateVignetteTop" file="Interface\Glues\Emberforge\Vignette">
+							<Size x="0" y="170"/>
+							<Anchors>
+								<Anchor point="TOPLEFT"/>
+								<Anchor point="TOPRIGHT"/>
+							</Anchors>
+							<TexCoords left="0" right="1" top="1" bottom="0"/>
+						</Texture>
+					</Layer>
+					<Layer level="ARTWORK">
+						<FontString name="CharacterCreateTitle" inherits="FactionName_Shadow_Huge">
+							<Anchors>
+								<Anchor point="TOP" x="0" y="-22"/>
+							</Anchors>
+							<Color r="1.0" g="0.82" b="0.0"/>
+						</FontString>
+						<Texture name="CharacterCreateTitleDivider" file="Interface\Glues\Emberforge\Divider">
+							<Size x="360" y="18"/>
+							<Anchors>
+								<Anchor point="TOP" relativeTo="CharacterCreateTitle" relativePoint="BOTTOM" x="0" y="-4"/>
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+				<Frames>
+					<!-- Step 1: race, gender, Hero -->
+					<Frame name="CharacterCreateRaceStep" setAllPoints="true">
+						<Layers>
+							<Layer level="ARTWORK">
+								<FontString name="CharacterCreateAllianceHeader" inherits="GlueFontNormalLarge" text="ALLIANCE">
+									<Anchors>
+										<Anchor point="TOPLEFT" x="58" y="-110"/>
+									</Anchors>
+									<Color r="0.45" g="0.6" b="1.0"/>
+								</FontString>
+								<FontString name="CharacterCreateHordeHeader" inherits="GlueFontNormalLarge" text="HORDE">
+									<Anchors>
+										<Anchor point="TOPRIGHT" x="-58" y="-110"/>
+									</Anchors>
+									<Color r="1.0" g="0.35" b="0.25"/>
+								</FontString>
+								<FontString name="CharacterCreateGender" inherits="GlueFontHighlightSmall">
+									<Anchors>
+										<Anchor point="TOP" x="0" y="-128"/>
+									</Anchors>
+								</FontString>
+							</Layer>
+						</Layers>
+						<Frames>
+							<CheckButton name="CharacterCreateRaceButton1" inherits="CharacterCreateRaceButtonTemplate" id="1"/>
+							<CheckButton name="CharacterCreateRaceButton2" inherits="CharacterCreateRaceButtonTemplate" id="2"/>
+							<CheckButton name="CharacterCreateRaceButton3" inherits="CharacterCreateRaceButtonTemplate" id="3"/>
+							<CheckButton name="CharacterCreateRaceButton4" inherits="CharacterCreateRaceButtonTemplate" id="4"/>
+							<CheckButton name="CharacterCreateRaceButton5" inherits="CharacterCreateRaceButtonTemplate" id="5"/>
+							<CheckButton name="CharacterCreateRaceButton6" inherits="CharacterCreateRaceButtonTemplate" id="6"/>
+							<CheckButton name="CharacterCreateRaceButton7" inherits="CharacterCreateRaceButtonTemplate" id="7"/>
+							<CheckButton name="CharacterCreateRaceButton8" inherits="CharacterCreateRaceButtonTemplate" id="8"/>
+							<CheckButton name="CharacterCreateRaceButton9" inherits="CharacterCreateRaceButtonTemplate" id="9"/>
+							<CheckButton name="CharacterCreateRaceButton10" inherits="CharacterCreateRaceButtonTemplate" id="10"/>
+
+							<CheckButton name="CharacterCreateGenderButtonMale" inherits="CharacterCreateGenderButtonTemplate">
+								<Anchors>
+									<Anchor point="TOP" x="-26" y="-80"/>
+								</Anchors>
+								<Scripts>
+									<OnLoad>
+										_G[self:GetName().."NormalTexture"]:SetTexCoord(0, 0.5, 0, 1.0);
+										_G[self:GetName().."PushedTexture"]:SetTexCoord(0, 0.5, 0, 1.0);
+									</OnLoad>
+									<OnClick>
+										PlaySound("gsCharacterCreationClass");
+										if ( GetSelectedSex() ~= SEX_MALE ) then
+											SetCharacterGender(SEX_MALE);
+										else
+											self:SetChecked(1);
+										end
+									</OnClick>
+									<OnEnter>
+										GlueTooltip_SetOwner(self, CharacterCreateTooltip, -3, -5);
+										GlueTooltip_SetText(MALE, CharacterCreateTooltip);
+									</OnEnter>
+									<OnLeave>
+										CharacterCreateTooltip:Hide();
+									</OnLeave>
+								</Scripts>
+							</CheckButton>
+							<CheckButton name="CharacterCreateGenderButtonFemale" inherits="CharacterCreateGenderButtonTemplate">
+								<Anchors>
+									<Anchor point="TOP" x="26" y="-80"/>
+								</Anchors>
+								<Scripts>
+									<OnLoad>
+										_G[self:GetName().."NormalTexture"]:SetTexCoord(0.5, 1.0, 0, 1.0);
+										_G[self:GetName().."PushedTexture"]:SetTexCoord(0.5, 1.0, 0, 1.0);
+									</OnLoad>
+									<OnClick>
+										PlaySound("gsCharacterCreationClass");
+										if ( GetSelectedSex() ~= SEX_FEMALE ) then
+											SetCharacterGender(SEX_FEMALE);
+										else
+											self:SetChecked(1);
+										end
+									</OnClick>
+									<OnEnter>
+										GlueTooltip_SetOwner(self, CharacterCreateTooltip, -3, -5);
+										GlueTooltip_SetText(FEMALE, CharacterCreateTooltip);
+									</OnEnter>
+									<OnLeave>
+										CharacterCreateTooltip:Hide();
+									</OnLeave>
+								</Scripts>
+							</CheckButton>
+
+							<!-- Selected race: portrait, name, faction and lore. -->
+							<Frame name="CharacterCreateRaceInfo" inherits="CharacterCreatePanelTemplate">
+								<Size x="330" y="190"/>
+								<Anchors>
+									<Anchor point="BOTTOMLEFT" x="30" y="66"/>
+								</Anchors>
+								<Layers>
+									<Layer level="ARTWORK">
+										<Texture name="CharacterCreateRaceIcon" file="Interface\Glues\CharacterCreate\UI-CharacterCreate-RacesRound">
+											<Size x="40" y="40"/>
+											<Anchors>
+												<Anchor point="TOPLEFT" x="12" y="-12"/>
+											</Anchors>
+										</Texture>
+									</Layer>
+									<Layer level="OVERLAY">
+										<Texture file="Interface\Glues\Emberforge\RaceRing">
+											<Size x="50" y="50"/>
+											<Anchors>
+												<Anchor point="CENTER" relativeTo="CharacterCreateRaceIcon"/>
+											</Anchors>
+										</Texture>
+										<FontString name="CharacterCreateRaceLabel" inherits="GlueFontNormalLarge" justifyH="LEFT">
+											<Anchors>
+												<Anchor point="TOPLEFT" relativeTo="CharacterCreateRaceIcon" relativePoint="TOPRIGHT" x="12" y="-2"/>
+											</Anchors>
+										</FontString>
+										<FontString name="CharacterCreateRaceFaction" inherits="GlueFontNormalSmall" justifyH="LEFT">
+											<Anchors>
+												<Anchor point="TOPLEFT" relativeTo="CharacterCreateRaceLabel" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+											</Anchors>
+										</FontString>
+									</Layer>
+								</Layers>
+								<Frames>
+									<ScrollFrame name="CharacterCreateRaceScrollFrame" inherits="GlueScrollFrameTemplate">
+										<Size x="280" y="114"/>
+										<Anchors>
+											<Anchor point="TOPLEFT" x="14" y="-62"/>
+										</Anchors>
+										<Scripts>
+											<OnLoad>
+												CharacterCreateRaceScrollFrameScrollBar:ClearAllPoints();
+												CharacterCreateRaceScrollFrameScrollBar:SetPoint("TOPLEFT", CharacterCreateRaceScrollFrame, "TOPRIGHT", 6, -12);
+												CharacterCreateRaceScrollFrameScrollBar:SetPoint("BOTTOMLEFT", CharacterCreateRaceScrollFrame, "BOTTOMRIGHT", 6, 12);
+												GlueScrollFrame_OnScrollRangeChanged(self, yrange);
+											</OnLoad>
+											<OnScrollRangeChanged>
+												GlueScrollFrame_OnScrollRangeChanged(self, yrange);
+											</OnScrollRangeChanged>
+										</Scripts>
+										<ScrollChild>
+											<Frame name="CharacterCreateRaceScrollChild">
+												<Size x="280" y="10"/>
+												<Layers>
+													<Layer level="BACKGROUND">
+														<FontString name="CharacterCreateRaceAbilityText" inherits="GlueFontNormalSmall" justifyH="LEFT">
+															<Size x="280" y="0"/>
+															<Anchors>
+																<Anchor point="TOPLEFT" x="0" y="0"/>
+															</Anchors>
+														</FontString>
+														<FontString name="CharacterCreateRaceText" inherits="GlueFontCharacterCreate" justifyH="LEFT">
+															<Size x="280" y="0"/>
+															<Anchors>
+																<Anchor point="TOPLEFT" relativeTo="CharacterCreateRaceAbilityText" relativePoint="BOTTOMLEFT" x="0" y="-2"/>
+															</Anchors>
+														</FontString>
+													</Layer>
+												</Layers>
+											</Frame>
+										</ScrollChild>
+									</ScrollFrame>
+								</Frames>
+							</Frame>
+
+							<!-- The Hero: what Wildcard means. -->
+							<Frame name="CharacterCreateClassInfo" inherits="CharacterCreatePanelTemplate">
+								<Size x="330" y="190"/>
+								<Anchors>
+									<Anchor point="BOTTOMRIGHT" x="-30" y="66"/>
+								</Anchors>
+								<Layers>
+									<Layer level="OVERLAY">
+										<Texture name="CharacterCreateClassIcon" file="Interface\Glues\Emberforge\HeroEmblem">
+											<Size x="50" y="50"/>
+											<Anchors>
+												<Anchor point="TOPLEFT" x="7" y="-7"/>
+											</Anchors>
+										</Texture>
+										<FontString name="CharacterCreateClassLabel" inherits="GlueFontNormalLarge" justifyH="LEFT">
+											<Anchors>
+												<Anchor point="TOPLEFT" relativeTo="CharacterCreateClassIcon" relativePoint="TOPRIGHT" x="10" y="-7"/>
+											</Anchors>
+										</FontString>
+										<FontString name="CharacterCreateClassSubtitle" inherits="GlueFontNormalSmall" justifyH="LEFT">
+											<Anchors>
+												<Anchor point="TOPLEFT" relativeTo="CharacterCreateClassLabel" relativePoint="BOTTOMLEFT" x="0" y="-4"/>
+											</Anchors>
+											<Color r="1.0" g="0.55" b="0.2"/>
+										</FontString>
+									</Layer>
+								</Layers>
+								<Frames>
+									<ScrollFrame name="CharacterCreateClassScrollFrame" inherits="GlueScrollFrameTemplate">
+										<Size x="280" y="114"/>
+										<Anchors>
+											<Anchor point="TOPLEFT" x="14" y="-62"/>
+										</Anchors>
+										<Scripts>
+											<OnLoad>
+												CharacterCreateClassScrollFrameScrollBar:ClearAllPoints();
+												CharacterCreateClassScrollFrameScrollBar:SetPoint("TOPLEFT", CharacterCreateClassScrollFrame, "TOPRIGHT", 6, -12);
+												CharacterCreateClassScrollFrameScrollBar:SetPoint("BOTTOMLEFT", CharacterCreateClassScrollFrame, "BOTTOMRIGHT", 6, 12);
+												GlueScrollFrame_OnScrollRangeChanged(self, yrange);
+												CharacterCreateClassSubtitle:SetText(EMBERFORGE_HERO_SUBTITLE);
+											</OnLoad>
+											<OnScrollRangeChanged>
+												GlueScrollFrame_OnScrollRangeChanged(self, yrange);
+											</OnScrollRangeChanged>
+										</Scripts>
+										<ScrollChild>
+											<Frame name="CharacterCreateClassScrollChild">
+												<Size x="280" y="10"/>
+												<Layers>
+													<Layer level="BACKGROUND">
+														<FontString name="CharacterCreateClassRolesText" inherits="GlueFontNormalSmall" justifyH="LEFT">
+															<Size x="280" y="0"/>
+															<Anchors>
+																<Anchor point="TOPLEFT" x="0" y="0"/>
+															</Anchors>
+														</FontString>
+														<FontString name="CharacterCreateClassText" inherits="GlueFontCharacterCreate" justifyH="LEFT">
+															<Size x="280" y="0"/>
+															<Anchors>
+																<Anchor point="TOPLEFT" relativeTo="CharacterCreateClassRolesText" relativePoint="BOTTOMLEFT" x="0" y="-2"/>
+															</Anchors>
+														</FontString>
+													</Layer>
+												</Layers>
+											</Frame>
+										</ScrollChild>
+									</ScrollFrame>
+								</Frames>
+							</Frame>
+
+							<!-- The one class every character gets. -->
+							<Frame name="CharacterCreateHeroCard" inherits="CharacterCreatePanelTemplate">
+								<Size x="250" y="72"/>
+								<Anchors>
+									<Anchor point="BOTTOM" x="0" y="66"/>
+								</Anchors>
+								<Layers>
+									<Layer level="OVERLAY">
+										<Texture name="CharacterCreateHeroCardEmblem" file="Interface\Glues\Emberforge\HeroEmblem">
+											<Size x="58" y="58"/>
+											<Anchors>
+												<Anchor point="LEFT" x="8" y="0"/>
+											</Anchors>
+										</Texture>
+										<FontString name="CharacterCreateHeroCardName" inherits="FactionName_Shadow_Huge" justifyH="LEFT">
+											<Anchors>
+												<Anchor point="TOPLEFT" relativeTo="CharacterCreateHeroCardEmblem" relativePoint="TOPRIGHT" x="12" y="-6"/>
+											</Anchors>
+											<Color r="1.0" g="0.82" b="0.0"/>
+										</FontString>
+										<FontString name="CharacterCreateHeroCardSubtitle" inherits="GlueFontNormalSmall" justifyH="LEFT">
+											<Anchors>
+												<Anchor point="BOTTOMLEFT" relativeTo="CharacterCreateHeroCardEmblem" relativePoint="BOTTOMRIGHT" x="12" y="8"/>
+											</Anchors>
+											<Color r="1.0" g="0.55" b="0.2"/>
+										</FontString>
+									</Layer>
+								</Layers>
+								<Scripts>
+									<OnLoad>
+										CharacterCreateHeroCardSubtitle:SetText(EMBERFORGE_HERO_SUBTITLE);
+									</OnLoad>
+								</Scripts>
+							</Frame>
+
+							<Button name="CharCreateBackButton" inherits="GlueButtonSmallTemplate" text="BACK">
+								<Size x="130" y="30"/>
+								<Anchors>
+									<Anchor point="BOTTOMLEFT" x="30" y="24"/>
+								</Anchors>
+								<Scripts>
+									<OnClick>
+										CharacterCreate_Back();
+									</OnClick>
+								</Scripts>
+							</Button>
+							<Button name="CharCreateNextButton" inherits="GlueButtonTemplate">
+								<Size x="170" y="36"/>
+								<Anchors>
+									<Anchor point="BOTTOMRIGHT" x="-30" y="20"/>
+								</Anchors>
+								<Scripts>
+									<OnLoad>
+										self:SetText(EMBERFORGE_NEXT);
+									</OnLoad>
+									<OnClick>
+										CharacterCreate_Next();
+									</OnClick>
+								</Scripts>
+							</Button>
+						</Frames>
+					</Frame>
+
+					<!-- Step 2: appearance and name -->
+					<Frame name="CharacterCreateCustomizeStep" setAllPoints="true" hidden="true">
+						<Frames>
+							<Frame name="CharacterCreateSummary" inherits="CharacterCreatePanelTemplate">
+								<Size x="260" y="64"/>
+								<Anchors>
+									<Anchor point="TOPLEFT" x="30" y="-96"/>
+								</Anchors>
+								<Layers>
+									<Layer level="ARTWORK">
+										<Texture name="CharacterCreateSummaryIcon" file="Interface\Glues\CharacterCreate\UI-CharacterCreate-RacesRound">
+											<Size x="40" y="40"/>
+											<Anchors>
+												<Anchor point="LEFT" x="12" y="0"/>
+											</Anchors>
+										</Texture>
+									</Layer>
+									<Layer level="OVERLAY">
+										<Texture file="Interface\Glues\Emberforge\RaceRing">
+											<Size x="50" y="50"/>
+											<Anchors>
+												<Anchor point="CENTER" relativeTo="CharacterCreateSummaryIcon"/>
+											</Anchors>
+										</Texture>
+										<FontString name="CharacterCreateSummaryText" inherits="GlueFontNormalLarge" justifyH="LEFT">
+											<Anchors>
+												<Anchor point="LEFT" relativeTo="CharacterCreateSummaryIcon" relativePoint="RIGHT" x="14" y="0"/>
+											</Anchors>
+										</FontString>
+									</Layer>
+								</Layers>
+							</Frame>
+
+							<Frame name="CharacterCreateCustomizePanel" inherits="CharacterCreatePanelTemplate">
+								<Size x="310" y="318"/>
+								<Anchors>
+									<Anchor point="TOPRIGHT" x="-30" y="-96"/>
+								</Anchors>
+								<Layers>
+									<Layer level="ARTWORK">
+										<FontString name="CharacterCreateCustomizeHeader" inherits="GlueFontNormalLarge">
+											<Anchors>
+												<Anchor point="TOP" x="0" y="-16"/>
+											</Anchors>
+										</FontString>
+										<Texture file="Interface\Glues\Emberforge\Divider">
+											<Size x="240" y="14"/>
+											<Anchors>
+												<Anchor point="TOP" relativeTo="CharacterCreateCustomizeHeader" relativePoint="BOTTOM" x="0" y="-4"/>
+											</Anchors>
+										</Texture>
+									</Layer>
+								</Layers>
+								<Frames>
+									<Frame name="CharacterCustomizationButtonFrame1" inherits="CharacterCustomizationFrameTemplate" id="1">
+										<Anchors>
+											<Anchor point="TOP" x="0" y="-54"/>
+										</Anchors>
+									</Frame>
+									<Frame name="CharacterCustomizationButtonFrame2" inherits="CharacterCustomizationFrameTemplate" id="2">
+										<Anchors>
+											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame1" relativePoint="BOTTOM" x="0" y="-6"/>
+										</Anchors>
+									</Frame>
+									<Frame name="CharacterCustomizationButtonFrame3" inherits="CharacterCustomizationFrameTemplate" id="3">
+										<Anchors>
+											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame2" relativePoint="BOTTOM" x="0" y="-6"/>
+										</Anchors>
+									</Frame>
+									<Frame name="CharacterCustomizationButtonFrame4" inherits="CharacterCustomizationFrameTemplate" id="4">
+										<Anchors>
+											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame3" relativePoint="BOTTOM" x="0" y="-6"/>
+										</Anchors>
+									</Frame>
+									<Frame name="CharacterCustomizationButtonFrame5" inherits="CharacterCustomizationFrameTemplate" id="5">
+										<Anchors>
+											<Anchor point="TOP" relativeTo="CharacterCustomizationButtonFrame4" relativePoint="BOTTOM" x="0" y="-6"/>
+										</Anchors>
+									</Frame>
+									<Button name="CharCreateRandomizeButton" inherits="GlueButtonSmallTemplate" text="RANDOMIZE">
+										<Size x="160" y="30"/>
+										<Anchors>
+											<Anchor point="BOTTOM" x="0" y="16"/>
+										</Anchors>
+										<Scripts>
+											<OnClick>
+												CharacterCreate_Randomize();
+											</OnClick>
+										</Scripts>
+									</Button>
+								</Frames>
+								<Scripts>
+									<OnLoad>
+										CharacterCreateCustomizeHeader:SetText(CHARACTER_CUSTOMIZATION1_HEADER or "Appearance");
+									</OnLoad>
+								</Scripts>
+							</Frame>
+
+							<EditBox name="CharacterCreateNameEdit" letters="12" inherits="CharacterCreatePanelTemplate">
+								<Size x="250" y="40"/>
+								<Anchors>
+									<Anchor point="BOTTOM" x="0" y="74"/>
+								</Anchors>
+								<Layers>
+									<Layer level="BACKGROUND">
+										<FontString inherits="GlueFontNormalLarge" text="NAME">
+											<Anchors>
+												<Anchor point="BOTTOM" relativePoint="TOP" x="0" y="4"/>
+											</Anchors>
+										</FontString>
+									</Layer>
+								</Layers>
+								<Scripts>
+									<OnEscapePressed>
+										CharacterCreate_Previous();
+									</OnEscapePressed>
+									<OnEnterPressed>
+										CharacterCreate_Okay();
+									</OnEnterPressed>
+								</Scripts>
+								<FontString inherits="GlueEditBoxFont" justifyH="CENTER"/>
+								<TextInsets>
+									<AbsInset left="14" right="14"/>
+								</TextInsets>
+							</EditBox>
+							<Button name="CharacterCreateRandomName" inherits="GlueButtonSmallTemplate" text="RANDOMIZE" hidden="true">
+								<Size x="120" y="30"/>
+								<Anchors>
+									<Anchor point="TOP" relativeTo="CharacterCreateNameEdit" relativePoint="BOTTOM" x="0" y="-2"/>
+								</Anchors>
+								<Scripts>
+									<OnClick>
+										CharacterCreateNameEdit:SetText(GetRandomName());
+										PlaySound("gsCharacterCreationLook");
+									</OnClick>
+								</Scripts>
+							</Button>
+
+							<Button name="CharCreateCustomizeBackButton" inherits="GlueButtonSmallTemplate" text="BACK">
+								<Size x="130" y="30"/>
+								<Anchors>
+									<Anchor point="BOTTOMLEFT" x="30" y="24"/>
+								</Anchors>
+								<Scripts>
+									<OnClick>
+										CharacterCreate_Previous();
+									</OnClick>
+								</Scripts>
+							</Button>
+							<Button name="CharCreateOkayButton" inherits="GlueButtonTemplate">
+								<Size x="170" y="36"/>
+								<Anchors>
+									<Anchor point="BOTTOMRIGHT" x="-30" y="20"/>
+								</Anchors>
+								<Scripts>
+									<OnLoad>
+										self:SetText(EMBERFORGE_CREATE);
+									</OnLoad>
+									<OnClick>
+										CharacterCreate_Okay();
+									</OnClick>
+								</Scripts>
+							</Button>
+						</Frames>
+					</Frame>
+
+					<!-- Turn the character (dragging the scene works too). -->
+					<Button name="CharacterCreateRotateLeft">
+						<Size x="50" y="50"/>
+						<Anchors>
+							<Anchor point="BOTTOM" x="-150" y="150"/>
+						</Anchors>
+						<HitRectInsets>
+							<AbsInset left="13" right="13" top="10" bottom="13"/>
+						</HitRectInsets>
+						<Scripts>
+							<OnLoad>
+								self:RegisterForClicks("LeftButtonDown", "LeftButtonUp");
+							</OnLoad>
+							<OnClick>
+								PlaySound("igInventoryRotateCharacter");
+							</OnClick>
+							<OnUpdate>
+								CharacterCreateRotateLeft_OnUpdate(self);
+							</OnUpdate>
+						</Scripts>
+						<NormalTexture file="Interface\Glues\CharacterCreate\UI-RotationRight-Big-Up">
+							<TexCoords left="1.0" right="0" top="0" bottom="1.0"/>
+						</NormalTexture>
+						<PushedTexture file="Interface\Glues\CharacterCreate\UI-RotationRight-Big-Down">
+							<TexCoords left="1.0" right="0" top="0" bottom="1.0"/>
+						</PushedTexture>
+						<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD">
+							<Size x="30" y="30"/>
+							<Anchors>
+								<Anchor point="CENTER" x="0" y="0"/>
+							</Anchors>
+						</HighlightTexture>
+					</Button>
+					<Button name="CharacterCreateRotateRight">
+						<Size x="50" y="50"/>
+						<Anchors>
+							<Anchor point="BOTTOM" x="150" y="150"/>
+						</Anchors>
+						<HitRectInsets>
+							<AbsInset left="13" right="13" top="10" bottom="13"/>
+						</HitRectInsets>
+						<Scripts>
+							<OnLoad>
+								self:RegisterForClicks("LeftButtonDown", "LeftButtonUp");
+							</OnLoad>
+							<OnClick>
+								PlaySound("igInventoryRotateCharacter");
+							</OnClick>
+							<OnUpdate>
+								CharacterCreateRotateRight_OnUpdate(self);
+							</OnUpdate>
+						</Scripts>
+						<NormalTexture file="Interface\Glues\CharacterCreate\UI-RotationRight-Big-Up"/>
+						<PushedTexture file="Interface\Glues\CharacterCreate\UI-RotationRight-Big-Down"/>
+						<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD">
+							<Size x="30" y="30"/>
+							<Anchors>
+								<Anchor point="CENTER" x="0" y="0"/>
+							</Anchors>
+						</HighlightTexture>
+					</Button>
+				</Frames>
+				<Scripts>
+					<OnMouseDown>
+						CharacterCreateFrame_OnMouseDown(button);
+					</OnMouseDown>
+					<OnMouseUp>
+						CharacterCreateFrame_OnMouseUp(button);
+					</OnMouseUp>
+					<OnUpdate>
+						CharacterCreateFrame_OnUpdate();
+					</OnUpdate>
+				</Scripts>
+			</Frame>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				CharacterCreate_OnLoad(self);
+			</OnLoad>
+			<OnShow>
+				CharacterCreate_OnShow();
+			</OnShow>
+			<OnHide>
+				CharacterCreate_OnHide();
+			</OnHide>
+			<OnChar>
+				CharacterCreate_OnChar();
+			</OnChar>
+			<OnKeyDown>
+				CharacterCreate_OnKeyDown(key);
+			</OnKeyDown>
+			<OnUpdateModel>
+				CharacterCreate_UpdateModel(self);
+			</OnUpdateModel>
+		</Scripts>
+	</ModelFFX>
+</Ui>

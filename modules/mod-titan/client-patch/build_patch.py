@@ -8,6 +8,8 @@ tables from the language archives, which outrank patches placed directly in Data
   Item / ItemDisplayInfo (custom items, patch_items.py)
 - custom models converted from wow.export exports (models/, see MODELS below)
 - inventory icons (icons/*.png)
+- the login screen: interface/GlueXML/* (Hero text, retail-style character creation) and its art
+  (interface/art/*.png, made by interface/make_art.py)
 
 Usage: python3 build_patch.py <dir with the original 3.3.5a DBCs>
 (e.g. `docker cp ac-worldserver:/azerothcore/env/dist/data/dbc ./dbc`)
@@ -21,6 +23,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / 'models'))
+
+from PIL import Image  # noqa: E402
 
 import blp  # noqa: E402
 import make_mpq  # noqa: E402
@@ -48,10 +52,15 @@ def main():
             for suffix in ('.m2', '00.skin', '.blp'):
                 entries.append((f'{folder}\\{name}{suffix}', (tmp / name / f'{name}{suffix}').read_bytes()))
 
-        for png in sorted((HERE / 'icons').glob('*.png')):
-            from PIL import Image
+        for png in sorted((HERE / 'icons').glob('INV_*.png')):
             with Image.open(png) as image:
                 entries.append((f'Interface\\Icons\\{png.stem}.blp', blp.encode(image)))
+
+        for source in sorted((HERE / 'interface' / 'GlueXML').iterdir()):
+            entries.append((f'Interface\\GlueXML\\{source.name}', source.read_bytes()))
+        for png in sorted((HERE / 'interface' / 'art').glob('*.png')):
+            with Image.open(png) as image:
+                entries.append((f'Interface\\Glues\\Emberforge\\{png.stem}.blp', blp.encode(image)))
 
         out = HERE / 'dist' / 'patch-enUS-4.MPQ'
         out.parent.mkdir(exist_ok=True)
