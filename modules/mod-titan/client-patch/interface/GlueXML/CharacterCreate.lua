@@ -24,7 +24,12 @@ EMBERFORGE_CUSTOMIZE_TITLE = "Customize";
 EMBERFORGE_NEXT = "Next";
 EMBERFORGE_CREATE = "Create Hero";
 EMBERFORGE_HERO_SUBTITLE = "Classless  -  Wildcard";
-EMBERFORGE_EMBER = {1.0, 0.55, 0.2};
+EMBERFORGE_SECTION_BODY = "Body";
+EMBERFORGE_SECTION_FACE = "Face";
+EMBERFORGE_SECTION_HAIR = "Hair";
+EMBERFORGE_NAME_PLACEHOLDER = "Enter a name";
+EMBERFORGE_RANDOM_NAME = "Random name";
+PANEL_PIECES = { "TopLeft", "TopRight", "BottomLeft", "BottomRight", "Top", "Bottom", "Left", "Right" };
 
 RACE_ROW_SPACING = 74;
 RACE_COLUMN_TOP = -150;
@@ -113,11 +118,22 @@ function CharacterCreate_OnLoad(self)
 		_G["CharacterCustomizationButtonFrame"..i.."Text"]:SetText(_G["CHAR_CUSTOMIZATION"..i.."_DESC"]);
 	end
 
-	local ember = EMBERFORGE_EMBER;
-	for _, name in pairs({"CharacterCreateRaceInfo", "CharacterCreateClassInfo", "CharacterCreateHeroCard",
-			"CharacterCreateCustomizePanel", "CharacterCreateSummary", "CharacterCreateNameEdit"}) do
-		_G[name]:SetBackdropBorderColor(ember[1], ember[2], ember[3]);
-		_G[name]:SetBackdropColor(0.06, 0.04, 0.03, 0.85);
+	CharacterCreateNamePlaceholder:SetText(EMBERFORGE_NAME_PLACEHOLDER);
+end
+
+-- Tint a CharacterCreatePanelTemplate's edge (the race panel takes its faction's color).
+function CharacterCreate_SetPanelColor(frame, r, g, b)
+	local name = frame:GetName();
+	for _, piece in pairs(PANEL_PIECES) do
+		_G[name..piece]:SetVertexColor(r, g, b);
+	end
+end
+
+function CharacterCreate_UpdateNamePlaceholder()
+	if ( CharacterCreateNameEdit:GetText() == "" ) then
+		CharacterCreateNamePlaceholder:Show();
+	else
+		CharacterCreateNamePlaceholder:Hide();
 	end
 end
 
@@ -330,8 +346,7 @@ function SetCharacterRace(id)
 
 	-- The race panel takes the faction's colors.
 	local color = FACTION_BACKDROP_COLOR_TABLE[faction] or FACTION_BACKDROP_COLOR_TABLE["Alliance"];
-	CharacterCreateRaceInfo:SetBackdropBorderColor(color[1], color[2], color[3]);
-	CharacterCreateRaceInfo:SetBackdropColor(color[4], color[5], color[6], 0.9);
+	CharacterCreate_SetPanelColor(CharacterCreateRaceInfo, color[1], color[2], color[3]);
 	CharacterCreateRaceFaction:SetText(_G[strupper(faction or "")] or "");
 	CharacterCreateRaceFaction:SetTextColor(color[1], color[2], color[3]);
 
@@ -437,18 +452,6 @@ end
 function CharacterCreate_Randomize()
 	PlaySound("gsCharacterCreationLook");
 	RandomizeCharCustomization();
-end
-
-function CharacterCreateRotateRight_OnUpdate(self)
-	if ( self:GetButtonState() == "PUSHED" ) then
-		SetCharacterCreateFacing(GetCharacterCreateFacing() + CHARACTER_FACING_INCREMENT);
-	end
-end
-
-function CharacterCreateRotateLeft_OnUpdate(self)
-	if ( self:GetButtonState() == "PUSHED" ) then
-		SetCharacterCreateFacing(GetCharacterCreateFacing() - CHARACTER_FACING_INCREMENT);
-	end
 end
 
 function CharacterCreate_UpdateHairCustomization()

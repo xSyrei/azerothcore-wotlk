@@ -40,9 +40,9 @@ once it is part of the distributed client (see the launcher's `docs/CLIENT_DISTR
   as OBJ (it writes the `.obj`, `.mtl`, `.json` and PNG textures), put the folder in `models/`,
   add it to `MODELS` in `build_patch.py` and a display row to `DISPLAYS` in `patch_items.py`.
   `models/wowexport_to_m2.py` rebuilds it as a 3.3.5a M2: mesh, materials (opaque, alpha,
-  additive, unlit, two-sided) and its glow / flash animations, on one static bone. Not carried
-  over: bone animation, particles and ribbons (wow.export does not export them) and extra texture
-  layers such as reflections.
+  additive, unlit, two-sided) on one static bone. Not carried over: layers with animated color
+  (flashes and pulses showed as solid planes in game), bone animation, particles and ribbons
+  (wow.export does not export them) and extra texture layers such as reflections.
 - **Preview:** `python3 models/render_m2.py <model.m2> <texture dir> preview.png` renders a model
   from the converted files. That is how the icons in `icons/` were made.
 - **Icons:** 64x64 PNGs in `icons/`, named like the `DISPLAYS` icon (`INV_Sword_1H_Veridus.png`).

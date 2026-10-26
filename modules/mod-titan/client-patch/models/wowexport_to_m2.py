@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Convert a model exported by wow.export (OBJ + JSON + PNG) to a WoW 3.3.5a M2 (version 264).
 
-Rebuilds the mesh, its submeshes and materials (opaque / alpha / additive, unlit, two-sided)
-and the color-alpha animations of the original model (pulsing glows), on a single static bone
-with one looping Stand animation. Only the first texture of each texture unit is used; extra
-layers such as environment reflections, bone animation, particles and ribbons are not carried
-over (wow.export does not export the last two).
+Rebuilds the mesh, its submeshes and materials (opaque / alpha / additive, unlit, two-sided) on
+a single static bone with one Stand animation. Only the first texture of each texture unit is
+used. Not carried over: layers with animated color (flashes, pulses; the 3.3.5a client drew them
+as solid planes), extra texture layers such as reflections, bone animation, particles and
+ribbons (wow.export does not export the last two).
 
 Writes <out dir>/<name>.m2, <name>00.skin and <name>.blp (the main texture).
 
@@ -111,14 +111,27 @@ def convert(export_dir, base, name, out_dir, texture_dir):
         sections.append((first, last - first + 1, index_start, len(faces) * 3))
 
     # Texture units from the export (skinSectionIndex says which submesh each one draws)
+    # Texture units whose color pulses or flashes are left out: the 3.3.5a client drew them at full
+    # strength all the time (big flat planes) instead of animating them.
+    def animated(unit):
+        if unit['colorIndex'] >= len(meta['colors']):
+            return False
+        alpha = meta['colors'][unit['colorIndex']]['alpha']
+        values = alpha['values'][0] if alpha['values'] else []
+        return any(int(v) != 0x7FFF for v in values)
+
     batches = []
+    dropped = 0
     for unit in meta['skin']['textureUnits']:
+        if animated(unit):
+            dropped += 1
+            continue
         material = meta['materials'][unit['materialIndex']]
         batches.append((material['blendingMode'] != 0, unit))
     batches.sort(key=lambda b: b[0])                # opaque first, then blended layers
 
     # One looping Stand animation, as long as the longest color animation
-    colors = meta['colors']
+    colors = []                                     # only animated layers used colors
     duration = max([max(c['alpha']['timestamps'][0] or [0]) for c in colors if c['alpha']['timestamps']] + [1000])
 
     lo = [min(p[i] for p in positions) for i in range(3)]
@@ -204,7 +217,7 @@ def convert(export_dir, base, name, out_dir, texture_dir):
     (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
 
     print(f'Wrote {name}.m2 ({len(positions)} vertices, {len(sections)} submeshes, {len(batches)} texture units, '
-          f'{len(colors)} glow animations, {duration} ms), {name}00.skin and {name}.blp to {out_dir}')
+          f'{dropped} animated layers left out), {name}00.skin and {name}.blp to {out_dir}')
 
 
 def main():
