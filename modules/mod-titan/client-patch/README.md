@@ -4,7 +4,7 @@ The server only lets players create the Hero (see `data/sql/db-world/hero_class.
 `CharacterCreating.Disabled.ClassMask` in `worldserver.conf`). This patch makes the game client
 match: the class is called **Hero**, and it is the only class available for every race on the
 character creation screen. All other class buttons show as unavailable. It also adds Emberforge's
-custom items to `Item.dbc`, so they show their real icon instead of a red "?".
+custom items (`Item.dbc`, `ItemDisplayInfo.dbc`) with their models and icons.
 
 ## The patch
 
@@ -19,19 +19,30 @@ once it is part of the distributed client (see the launcher's `docs/CLIENT_DISTR
    docker cp ac-worldserver:/azerothcore/env/dist/data/dbc ./dbc
    ```
    They are also in the `data.zip` of the matching
-   [wowgaming/client-data](https://github.com/wowgaming/client-data/releases) release.
-2. **Patch them** (`ChrClasses.dbc`, `CharBaseInfo.dbc` and `Item.dbc`):
+   [wowgaming/client-data](https://github.com/wowgaming/client-data/releases) release. Use the
+   DBCs of the same language as the client (enUS).
+2. **Build** (Python 3 with Pillow and numpy):
    ```bash
-   python3 patch_hero_class.py ./dbc ./out
-   python3 patch_items.py ./dbc ./out
+   python3 build_patch.py ./dbc
    ```
-   New custom items go in the `ITEMS` list of `patch_items.py`.
-3. **Pack them into an MPQ** (no MPQ editor needed):
-   ```bash
-   python3 make_mpq.py dist/patch-E.MPQ "DBFilesClient\ChrClasses.dbc=out/ChrClasses.dbc" "DBFilesClient\CharBaseInfo.dbc=out/CharBaseInfo.dbc" "DBFilesClient\Item.dbc=out/Item.dbc"
-   ```
-   `make_mpq.py` writes a plain (uncompressed) MPQ with a `(listfile)`, so it also opens in
-   Ladik's MPQ Editor.
+   This patches the DBCs (`patch_hero_class.py`, `patch_items.py`), converts the custom models,
+   turns `icons/*.png` into BLP icons and packs everything into `dist/patch-E.MPQ` with
+   `make_mpq.py` (a plain MPQ with a `(listfile)`, so it also opens in Ladik's MPQ Editor).
+
+## Custom items and models
+
+- **Items:** add the item's `item_template` SQL under `data/sql/db-world/`, and its row to `ITEMS`
+  in `patch_items.py` (otherwise the client shows a red "?").
+- **Models:** export the model from modern WoW with [wow.export](https://www.kruithne.net/wow.export/)
+  as OBJ (it writes the `.obj`, `.mtl`, `.json` and PNG textures), put the folder in `models/`,
+  add it to `MODELS` in `build_patch.py` and a display row to `DISPLAYS` in `patch_items.py`.
+  `models/wowexport_to_m2.py` rebuilds it as a 3.3.5a M2: mesh, materials (opaque, alpha,
+  additive, unlit, two-sided) and its glow / flash animations, on one static bone. Not carried
+  over: bone animation, particles and ribbons (wow.export does not export them) and extra texture
+  layers such as reflections.
+- **Preview:** `python3 models/render_m2.py <model.m2> <texture dir> preview.png` renders a model
+  from the converted files. That is how the icons in `icons/` were made.
+- **Icons:** 64x64 PNGs in `icons/`, named like the `DISPLAYS` icon (`INV_Sword_1H_Veridus.png`).
 
 ## Resource bars addon
 
