@@ -1,6 +1,12 @@
 # Auto detect text files and perform LF normalization
 * text eol=lf
 
+# WoW client data is binary: never touch line endings
+*.MPQ    binary
+*.mpq    binary
+*.dbc    binary
+*.blp    binary
+
 # Whitespace rules
 # strict (no trailing, no tabs)
 *.cpp    whitespace=trailing-space,space-before-tab,tab-in-indent,cr-at-eol
