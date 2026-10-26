@@ -8,8 +8,11 @@ custom items (`Item.dbc`, `ItemDisplayInfo.dbc`) with their models and icons.
 
 ## The patch
 
-A ready-made build is in `dist/patch-E.MPQ`. **Install:** copy it into the client's `Data\`
-folder and delete the client's `Cache\` folder. The launcher ships it to players automatically
+A ready-made build is in `dist/patch-enUS-4.MPQ`. **Install:** copy it into the client's
+`Data\enUS\` folder and delete the client's `Cache\` folder. It must be a language patch: the
+client reads its tables (`DBFilesClient`) from the language archives, which take priority over
+patches placed directly in `Data\`, so a `Data\patch-X.MPQ` would be ignored for class and item
+data. The launcher ships it to players automatically
 once it is part of the distributed client (see the launcher's `docs/CLIENT_DISTRIBUTION.md`).
 
 ### Rebuilding it
@@ -26,7 +29,7 @@ once it is part of the distributed client (see the launcher's `docs/CLIENT_DISTR
    python3 build_patch.py ./dbc
    ```
    This patches the DBCs (`patch_hero_class.py`, `patch_items.py`), converts the custom models,
-   turns `icons/*.png` into BLP icons and packs everything into `dist/patch-E.MPQ` with
+   turns `icons/*.png` into BLP icons and packs everything into `dist/patch-enUS-4.MPQ` with
    `make_mpq.py` (a plain MPQ with a `(listfile)`, so it also opens in Ladik's MPQ Editor).
 
 ## Custom items and models

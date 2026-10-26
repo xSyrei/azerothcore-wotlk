@@ -33,7 +33,7 @@ The item SQL in `data/sql/db-world/` is applied automatically by the database up
 
 ### Client patch
 New item entries also need a row in the client's `Item.dbc`, otherwise players see a red "?"
-icon: add them to `client-patch/patch_items.py` and rebuild `patch-E.MPQ` (see
+icon: add them to `client-patch/patch_items.py` and rebuild `patch-enUS-4.MPQ` (see
 `client-patch/README.md`, which also covers custom models). The item borrows spell 3361 only so the
 3.3.5 client lets it be used; the script intercepts the use and the spell is never cast.
 A dedicated spell in the client patch gives it a proper "Use:" tooltip line.

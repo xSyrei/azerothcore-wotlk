@@ -6,7 +6,7 @@ Files are stored uncompressed and unencrypted, which every MPQ reader supports, 
 
 Usage: python3 make_mpq.py <out.MPQ> <archive path>=<file> [<archive path>=<file> ...]
 Example:
-  python3 make_mpq.py patch-E.MPQ "DBFilesClient\\ChrClasses.dbc=out/ChrClasses.dbc" \\
+  python3 make_mpq.py patch-enUS-4.MPQ "DBFilesClient\\ChrClasses.dbc=out/ChrClasses.dbc" \\
       "DBFilesClient\\CharBaseInfo.dbc=out/CharBaseInfo.dbc"
 """
 
