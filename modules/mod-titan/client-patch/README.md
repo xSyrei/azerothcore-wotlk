@@ -28,7 +28,7 @@ once it is part of the distributed client (see the launcher's `docs/CLIENT_DISTR
    ```bash
    python3 build_patch.py ./dbc
    ```
-   This patches the DBCs (`patch_hero_class.py`, `patch_items.py`), converts the custom models,
+   This patches the DBCs (ChrClasses, CharBaseInfo and CharStartOutfit with `patch_hero_class.py`; Item and ItemDisplayInfo with `patch_items.py`), converts the custom models,
    turns `icons/*.png` into BLP icons and packs everything into `dist/patch-enUS-4.MPQ` with
    `make_mpq.py` (a plain MPQ with a `(listfile)`, so it also opens in Ladik's MPQ Editor).
 
