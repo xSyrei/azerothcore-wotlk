@@ -76,7 +76,8 @@ def read_obj(path):
             x, y, z = map(float, parts[1:4])
             normals.append((x, -z, y))
         elif parts[0] == 'vt':
-            uvs.append(tuple(map(float, parts[1:3])))
+            u, v = map(float, parts[1:3])
+            uvs.append((u, 1.0 - v))                 # OBJ V points up, M2 V points down
         elif parts[0] == 'g':
             groups.append([])
         elif parts[0] == 'f':

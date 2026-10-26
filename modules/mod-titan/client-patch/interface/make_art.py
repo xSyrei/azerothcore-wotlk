@@ -46,7 +46,7 @@ def ring(size=128):
 def glow(size=128, strength=1.0, color=(1.0, 0.45, 0.08)):
     """Additive ember glow around the ring (black = nothing added)."""
     r, _ = radial(size)
-    g = np.exp(-((r - 0.88) / 0.10) ** 2) * strength
+    g = np.exp(-((r - 0.86) / 0.07) ** 2) * strength
     rgb = np.stack([g * color[0], g * color[1], g * color[2]], -1)
     return np.dstack([rgb, np.ones_like(r)])
 

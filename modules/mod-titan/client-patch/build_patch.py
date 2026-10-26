@@ -34,7 +34,7 @@ import wowexport_to_m2  # noqa: E402
 MODELS = [
     ('models/veridus/source', 'sword_1h_artifactskywall_d_06', 'Sword_1H_Veridus', 'Item\\ObjectComponents\\Weapon'),
 ]
-DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc']
+DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc']
 
 
 def main():

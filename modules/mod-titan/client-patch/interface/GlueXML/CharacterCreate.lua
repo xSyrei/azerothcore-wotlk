@@ -421,13 +421,16 @@ function SetCharacterGender(sex)
 	SetSelectedSex(sex);
 	if ( sex == SEX_MALE ) then
 		CharacterCreateGender:SetText(MALE);
-		CharacterCreateGenderButtonMale:SetChecked(1);
-		CharacterCreateGenderButtonFemale:SetChecked(nil);
 	else
 		CharacterCreateGender:SetText(FEMALE);
-		CharacterCreateGenderButtonMale:SetChecked(nil);
-		CharacterCreateGenderButtonFemale:SetChecked(1);
 	end
+	-- Two toggles show the same choice: in the Hero card (step 1) and under Body Type (step 2).
+	local male = (sex == SEX_MALE) and 1 or nil;
+	local female = (sex ~= SEX_MALE) and 1 or nil;
+	CharacterCreateGenderButtonMale:SetChecked(male);
+	CharacterCreateGenderButtonFemale:SetChecked(female);
+	CharacterCreateHeroGenderMale:SetChecked(male);
+	CharacterCreateHeroGenderFemale:SetChecked(female);
 
 	-- Race portraits follow the gender.
 	CharacterCreateEnumerateRaces(GetAvailableRaces());

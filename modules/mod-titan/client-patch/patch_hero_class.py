@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Build the client DBC files for the classless "Hero" (WoW 3.3.5a, build 12340).
 
-Reads the original ChrClasses.dbc and CharBaseInfo.dbc and writes patched copies:
+Reads the original ChrClasses.dbc, CharBaseInfo.dbc and CharStartOutfit.dbc and writes patched
+copies:
   - ChrClasses.dbc: the hidden base class (Paladin) is renamed "Hero".
   - CharBaseInfo.dbc: Hero is the only class every race can pick on the
     character creation screen; all other classes show as unavailable.
+  - CharStartOutfit.dbc: races that could never be Paladins get the Paladin starting outfit, so
+    they are not shown naked on the creation screen (matches data/sql/db-world/hero_outfit.sql).
 
 Usage: python3 patch_hero_class.py <dir with original DBCs> <output dir>
 """
@@ -79,6 +82,33 @@ def patch_char_base_info(dbc):
     dbc.records = [bytearray([race, HERO_CLASS]) for race in PLAYABLE_RACES]
 
 
+# CharStartOutfit.dbc (3.3.5a): ID, then race / class / sex / outfit as four bytes, then 24 item
+# IDs, 24 display IDs and 24 inventory types.
+OUTFIT_RECORD = struct.Struct('<I4B72i')
+OUTFIT_FIELDS = 77
+OUTFIT_TEMPLATE_RACE = 1   # Human: copy its Paladin outfit to the races that had none
+
+
+def patch_char_start_outfit(dbc):
+    require_layout(dbc, "CharStartOutfit.dbc", OUTFIT_FIELDS, OUTFIT_RECORD.size)
+    rows = [list(OUTFIT_RECORD.unpack(bytes(r))) for r in dbc.records]
+    have = {(r[1], r[3]) for r in rows if r[2] == HERO_CLASS}
+    templates = {r[3]: r for r in rows if r[1] == OUTFIT_TEMPLATE_RACE and r[2] == HERO_CLASS}
+    next_id = max(r[0] for r in rows) + 1
+    added = 0
+    for race in PLAYABLE_RACES:
+        for sex in (0, 1):
+            if (race, sex) in have:
+                continue
+            row = list(templates[sex])
+            row[0], row[1] = next_id, race
+            next_id += 1
+            rows.append(row)
+            added += 1
+    dbc.records = [bytearray(OUTFIT_RECORD.pack(*r)) for r in rows]
+    return added
+
+
 def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)
@@ -93,7 +123,12 @@ def main():
     patch_char_base_info(base_info)
     base_info.save(out / "CharBaseInfo.dbc")
 
+    outfits = Dbc(source / "CharStartOutfit.dbc")
+    added = patch_char_start_outfit(outfits)
+    outfits.save(out / "CharStartOutfit.dbc")
+
     print(f"Wrote {out / 'ChrClasses.dbc'} (class {HERO_CLASS} renamed to {HERO_NAME})")
+    print(f"Wrote {out / 'CharStartOutfit.dbc'} ({added} {HERO_NAME} outfits added)")
     print(f"Wrote {out / 'CharBaseInfo.dbc'} ({HERO_NAME} only, {len(PLAYABLE_RACES)} races)")
 
 

@@ -85,15 +85,6 @@
 	<CheckButton name="CharacterCreateRaceButtonTemplate" virtual="true" motionScriptsWhileDisabled="true">
 		<Size x="56" y="56"/>
 		<Layers>
-			<Layer level="BACKGROUND">
-				<Texture name="$parentShadow" file="Interface\Glues\CharacterCreate\UI-CharacterCreate-IconShadow">
-					<Size x="84" y="84"/>
-					<Anchors>
-						<Anchor point="CENTER"/>
-					</Anchors>
-					<Color r="1.0" g="1.0" b="1.0" a="0.9"/>
-				</Texture>
-			</Layer>
 			<Layer level="OVERLAY">
 				<Texture name="$parentRing" file="Interface\Glues\Emberforge\RaceRing">
 					<Size x="70" y="70"/>
@@ -129,13 +120,13 @@
 			</Anchors>
 		</PushedTexture>
 		<HighlightTexture file="Interface\Glues\Emberforge\RaceRingHover" alphaMode="ADD">
-			<Size x="84" y="84"/>
+			<Size x="76" y="76"/>
 			<Anchors>
 				<Anchor point="CENTER"/>
 			</Anchors>
 		</HighlightTexture>
 		<CheckedTexture file="Interface\Glues\Emberforge\RaceRingSelected" alphaMode="ADD">
-			<Size x="88" y="88"/>
+			<Size x="78" y="78"/>
 			<Anchors>
 				<Anchor point="CENTER"/>
 			</Anchors>
@@ -453,7 +444,7 @@
 
 							<!-- The one class every character gets. -->
 							<Frame name="CharacterCreateHeroCard" inherits="CharacterCreatePanelTemplate">
-								<Size x="250" y="72"/>
+								<Size x="330" y="72"/>
 								<Anchors>
 									<Anchor point="BOTTOM" x="0" y="66"/>
 								</Anchors>
@@ -479,6 +470,62 @@
 										</FontString>
 									</Layer>
 								</Layers>
+								<Frames>
+									<CheckButton name="CharacterCreateHeroGenderMale" inherits="CharacterCreateGenderButtonTemplate">
+										<Size x="34" y="34"/>
+										<Anchors>
+											<Anchor point="RIGHT" x="-58" y="0"/>
+										</Anchors>
+										<Scripts>
+											<OnLoad>
+												_G[self:GetName().."NormalTexture"]:SetTexCoord(0, 0.5, 0, 1.0);
+												_G[self:GetName().."PushedTexture"]:SetTexCoord(0, 0.5, 0, 1.0);
+											</OnLoad>
+											<OnClick>
+												PlaySound("gsCharacterCreationClass");
+												if ( GetSelectedSex() ~= SEX_MALE ) then
+													SetCharacterGender(SEX_MALE);
+												else
+													self:SetChecked(1);
+												end
+											</OnClick>
+											<OnEnter>
+												GlueTooltip_SetOwner(self, CharacterCreateTooltip, -3, -5);
+												GlueTooltip_SetText(MALE, CharacterCreateTooltip);
+											</OnEnter>
+											<OnLeave>
+												CharacterCreateTooltip:Hide();
+											</OnLeave>
+										</Scripts>
+									</CheckButton>
+									<CheckButton name="CharacterCreateHeroGenderFemale" inherits="CharacterCreateGenderButtonTemplate">
+										<Size x="34" y="34"/>
+										<Anchors>
+											<Anchor point="RIGHT" x="-16" y="0"/>
+										</Anchors>
+										<Scripts>
+											<OnLoad>
+												_G[self:GetName().."NormalTexture"]:SetTexCoord(0.5, 1.0, 0, 1.0);
+												_G[self:GetName().."PushedTexture"]:SetTexCoord(0.5, 1.0, 0, 1.0);
+											</OnLoad>
+											<OnClick>
+												PlaySound("gsCharacterCreationClass");
+												if ( GetSelectedSex() ~= SEX_FEMALE ) then
+													SetCharacterGender(SEX_FEMALE);
+												else
+													self:SetChecked(1);
+												end
+											</OnClick>
+											<OnEnter>
+												GlueTooltip_SetOwner(self, CharacterCreateTooltip, -3, -5);
+												GlueTooltip_SetText(FEMALE, CharacterCreateTooltip);
+											</OnEnter>
+											<OnLeave>
+												CharacterCreateTooltip:Hide();
+											</OnLeave>
+										</Scripts>
+									</CheckButton>
+								</Frames>
 								<Scripts>
 									<OnLoad>
 										CharacterCreateHeroCardSubtitle:SetText(EMBERFORGE_HERO_SUBTITLE);
