@@ -937,6 +937,23 @@ learnable:SetScript("OnClick", function(self)
     Refresh()
 end)
 
+-- Instant rolls: the Wildcard roll opens straight on the prize. Kept per character.
+do
+    local instant = CreateFrame("CheckButton", "EmberforgeClasslessInstant", frame)
+    instant:SetWidth(18)
+    instant:SetHeight(18)
+    instant:SetPoint("BOTTOMRIGHT", -112, 22)
+    Box(instant, { 0, 0, 0, 0.7 }, CELL_EDGE, true)
+    instant:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check")
+    instant:SetHighlightTexture(ART .. "RingHover", "ADD")
+    local text = instant:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    text:SetPoint("LEFT", instant, "RIGHT", 8, 0)
+    text:SetText("Instant rolls")
+    instant:SetScript("OnClick", function(self)
+        EmberforgeClasslessDB.instantRolls = self:GetChecked() and true or false
+    end)
+end
+
 local status = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 status:SetPoint("BOTTOM", 0, 26)
 status:SetTextColor(unpack(SUBTEXT))
@@ -1199,6 +1216,7 @@ frame:SetScript("OnShow", function(self)
         data.loading = true
         Send("LIST")
     end
+    EmberforgeClasslessInstant:SetChecked(EmberforgeClasslessDB and EmberforgeClasslessDB.instantRolls)
     Refresh()
 end)
 
@@ -1222,12 +1240,17 @@ local function CreateRoll()
     local SLOT_STEP, SLOT_COUNT, WINNER_SLOT, START_SLOT = 52, 48, 42, 5
     local ICON_SIZE, REEL_WIDTH, BAR_HEIGHT = 44, 9 * 52, 62
     -- Timeline (seconds): the die pops in, shakes and shatters; the track opens; the reel spins.
-    local POP, SHATTER, OPEN, OPENED, LANDED = 0.25, 1.05, 1.1, 1.65, 6.4
-    -- After landing: the shards gather and the track closes (REBUILD to FORMED); the die fades out
-    -- by GONE.
-    local REBUILD, FORMED, GONE = 1.4, 1.95, 2.9
-    -- Then the title and the prize's name fade out by DONE, and the next roll (if any) starts.
-    local DONE = 3.6
+    -- From the start: the die pops in by POP, bursts at SHATTER; the track opens from OPEN to OPENED;
+    -- the reel lands at LANDED. From the landing: the shards gather and the track closes (REBUILD to
+    -- FORMED), the die fades out by GONE, then the title and the name by DONE and the next roll (if
+    -- any) starts. Instant rolls (a setting in the window) open already on the prize, all quicker.
+    local TIMELINES = {
+        full = { POP = 0.25, SHATTER = 1.05, OPEN = 1.1, OPENED = 1.65, LANDED = 6.4,
+            REBUILD = 1.4, FORMED = 1.95, GONE = 2.9, DONE = 3.6 },
+        instant = { POP = 0.1, SHATTER = 0.3, OPEN = 0.3, OPENED = 0.5, LANDED = 0.5,
+            REBUILD = 0.9, FORMED = 1.2, GONE = 1.65, DONE = 2.05 },
+    }
+    local T = TIMELINES.full
     -- The reel drifts this far past the prize and eases back onto it.
     local OVERSHOOT = 12
 
@@ -1554,7 +1577,7 @@ local function CreateRoll()
         end
     end
 
-    local Finish
+    local Finish, AnimateDie
 
     local function Embers(elapsed, width)
         for _, ember in ipairs(embers) do
@@ -1590,18 +1613,18 @@ local function CreateRoll()
     -- After the prize is shown the shards fly back together, the die re-forms with a flash and
     -- the cracks heal, then it swells a little and fades away.
     local function RebuildDie(self, t)
-        if t < REBUILD or self.rebuilt == "gone" then
+        if t < T.REBUILD or self.rebuilt == "gone" then
             return
         end
-        if t < FORMED then
-            local gather = ((t - REBUILD) / (FORMED - REBUILD)) ^ 2
+        if t < T.FORMED then
+            local gather = ((t - T.REBUILD) / (T.FORMED - T.REBUILD)) ^ 2
             for _, piece in ipairs(shards) do
                 local distance = 170 * (1 - gather)
                 piece:ClearAllPoints()
                 piece:SetPoint("CENTER", math.cos(piece.angle) * distance, -math.sin(piece.angle) * distance)
                 Rotate(piece, (piece.spin or 3) * (1 - gather) * 0.8)
                 Square(piece, 76)
-                piece:SetAlpha(Clamp((t - REBUILD) / 0.2))
+                piece:SetAlpha(Clamp((t - T.REBUILD) / 0.2))
                 piece:Show()
             end
             return
@@ -1620,8 +1643,8 @@ local function CreateRoll()
             Rotate(dieCracks, 0)
             Play("igMainMenuClose")
         end
-        local since = t - FORMED
-        local fade = Clamp((since - 0.35) / (GONE - FORMED - 0.35))
+        local since = t - T.FORMED
+        local fade = Clamp((since - 0.35) / (T.GONE - T.FORMED - 0.35))
         Square(die, 76 * (1 + 0.18 * fade))
         Square(dieCracks, 76 * (1 + 0.18 * fade))
         Square(dieGlow, 76 * (1.8 + 0.6 * fade))
@@ -1630,7 +1653,7 @@ local function CreateRoll()
         dieGlow:SetAlpha(0.8 * (1 - fade))
         Square(flash, 70 + since * 320)
         flash:SetAlpha(Clamp(1 - since / 0.3))
-        if t >= GONE then
+        if t >= T.GONE then
             self.rebuilt = "gone"
             HideDie()
         end
@@ -1639,11 +1662,16 @@ local function CreateRoll()
     local function Celebrate(self, elapsed)
         self.time = self.time + elapsed
         local t = self.time
-        Embers(elapsed, t < REBUILD and REEL_WIDTH or 0)
+        -- An instant roll lands while the shards are still flying.
+        self.clock = self.clock + elapsed
+        if self.shattered and self.clock < T.SHATTER + 0.7 and t < T.REBUILD then
+            AnimateDie(self, self.clock)
+        end
+        Embers(elapsed, t < T.REBUILD and REEL_WIDTH or 0)
         Pulse(self, elapsed)
         RebuildDie(self, t)
         -- The track closes into the middle as the die re-forms, the prize last to go.
-        local closing = Clamp((t - REBUILD) / (FORMED - REBUILD))
+        local closing = Clamp((t - T.REBUILD) / (T.FORMED - T.REBUILD))
         local width = OpenTrack(1 - closing ^ 2)
         ScrollTo(self.target, width)
         if closing >= 1 then
@@ -1659,7 +1687,7 @@ local function CreateRoll()
         burst:SetAlpha(Clamp(t * 4) * (0.75 + 0.25 * math.sin(t * 3)) * (1 - closing))
         selectorGlow:SetAlpha(0.7 + 0.3 * math.sin(t * 4))
         -- Once the die is gone the title and the name fade too; then the next roll.
-        local out = Clamp((t - GONE) / (DONE - GONE))
+        local out = Clamp((t - T.GONE) / (T.DONE - T.GONE))
         heading:SetAlpha(1 - out)
         result:SetAlpha(Clamp(t * 3) * (1 - out))
         if out > 0 and GameTooltip:IsOwned(reveal) then
@@ -1689,7 +1717,13 @@ local function CreateRoll()
     local function Land(self)
         local current = reveals[1]
         self.spinning = false
-        HideDie()
+        if self.shattered and self.clock < T.SHATTER + 0.7 then
+            die:Hide()
+            dieCracks:Hide()
+            dieGlow:Hide()
+        else
+            HideDie()
+        end
         local width = OpenTrack(1)
         heading:SetAlpha(1)
         ScrollTo(self.target, width)
@@ -1731,10 +1765,10 @@ local function CreateRoll()
     end
 
     -- The die: drops in with a bounce, shakes harder as the cracks glow, then bursts.
-    local function AnimateDie(self, t, elapsed)
-        if t < SHATTER then
-            local shake = Clamp((t - POP) / (SHATTER - POP)) ^ 2
-            local size = 76 * BackOut(Clamp(t / POP))
+    AnimateDie = function(self, t)
+        if t < T.SHATTER then
+            local shake = Clamp((t - T.POP) / (T.SHATTER - T.POP)) ^ 2
+            local size = 76 * BackOut(Clamp(t / T.POP))
             Square(die, size)
             Square(dieCracks, size)
             Square(dieGlow, size * (1.6 + shake))
@@ -1762,7 +1796,7 @@ local function CreateRoll()
             flash:Show()
             Play("igMainMenuOpen")
         end
-        local since = t - SHATTER
+        local since = t - T.SHATTER
         for _, piece in ipairs(shards) do
             local distance = piece.speed * since
             piece:ClearAllPoints()
@@ -1778,14 +1812,15 @@ local function CreateRoll()
     local function Spin(self, elapsed)
         self.time = self.time + elapsed
         local t = self.time
-        if t >= LANDED then
+        self.clock = t
+        if t >= T.LANDED then
             Land(self)
             return
         end
-        if t < OPENED + 0.7 then
-            AnimateDie(self, t, elapsed)
+        if t < T.OPENED + 0.7 then
+            AnimateDie(self, t)
         end
-        local opening = Clamp((t - OPEN) / (OPENED - OPEN))
+        local opening = Clamp((t - T.OPEN) / (T.OPENED - T.OPEN))
         local width = OpenTrack(opening > 0 and BackOut(opening) or 0)
         if opening == 0 then
             bar:SetAlpha(0)
@@ -1793,7 +1828,8 @@ local function CreateRoll()
         heading:SetAlpha(opening)
         -- The reel: fast start, long slow finish (quintic ease-out) that drifts just past the prize,
         -- then eases back onto it.
-        local spin = Clamp((t - OPENED) / (LANDED - OPENED))
+        local span = T.LANDED - T.OPENED
+        local spin = span > 0 and Clamp((t - T.OPENED) / span) or 1
         local run = Clamp(spin / 0.9)
         local center = self.start + (self.target + OVERSHOOT - self.start) * (1 - (1 - run) ^ 5)
         if spin > 0.9 then
@@ -1871,10 +1907,20 @@ local function CreateRoll()
 
         skip:Show()
 
-        -- Land somewhere inside the prize's slot, not always dead center.
+        local instant = EmberforgeClasslessDB and EmberforgeClasslessDB.instantRolls
+        T = instant and TIMELINES.instant or TIMELINES.full
+        if instant then
+            skip:Hide()
+        end
+
+        -- Land somewhere inside the prize's slot, not always dead center. Instant rolls start there.
         reveal.start = StartCenter()
         reveal.target = (WINNER_SLOT - 0.5) * SLOT_STEP + (math.random() - 0.5) * (SLOT_STEP - 20)
-        reveal.time, reveal.passing, reveal.spinning, reveal.shattered, reveal.rebuilt = 0, nil, true, false, nil
+        if instant then
+            reveal.start = reveal.target
+        end
+        reveal.time, reveal.clock, reveal.passing = 0, 0, nil
+        reveal.spinning, reveal.shattered, reveal.rebuilt = true, false, nil
         OpenTrack(0)
         bar:SetAlpha(0)
         reveal:SetScript("OnUpdate", Spin)
@@ -1884,7 +1930,7 @@ local function CreateRoll()
 
     skip:SetScript("OnClick", function()
         if reveal.spinning then
-            reveal.time = LANDED
+            reveal.time = T.LANDED
         end
     end)
 
@@ -1978,4 +2024,14 @@ end)
 
 SLASH_EMBERFORGECLASSLESS1 = "/classless"
 SLASH_EMBERFORGECLASSLESS2 = "/cl"
-SlashCmdList["EMBERFORGECLASSLESS"] = EmberforgeClassless_Toggle
+-- "/cl instant" switches instant Wildcard rolls on or off.
+SlashCmdList["EMBERFORGECLASSLESS"] = function(message)
+    if message and message:lower():match("^%s*instant") then
+        EmberforgeClasslessDB.instantRolls = not EmberforgeClasslessDB.instantRolls
+        EmberforgeClasslessInstant:SetChecked(EmberforgeClasslessDB.instantRolls)
+        DEFAULT_CHAT_FRAME:AddMessage(EMBER .. "Classless:|r instant Wildcard rolls "
+            .. (EmberforgeClasslessDB.instantRolls and "on" or "off") .. ".")
+    else
+        EmberforgeClassless_Toggle()
+    end
+end

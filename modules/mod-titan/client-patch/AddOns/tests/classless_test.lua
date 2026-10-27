@@ -341,6 +341,26 @@ check(card.revealName.text == "Improved Fireball" and card.revealNote.text == "M
 reveal.scripts.OnUpdate(reveal, 4)
 check(not reveal.shown, "and once it fades the roll is gone")
 
+-- Instant rolls: "/cl instant" or the window's check box; the roll opens on the prize.
+local chat = {}
+DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) chat[#chat + 1] = text end }
+SlashCmdList.EMBERFORGECLASSLESS("instant")
+check(EmberforgeClasslessDB.instantRolls and chat[#chat]:find("instant Wildcard rolls on", 1, true) ~= nil,
+    "/cl instant turns instant rolls on")
+server("G,116,116")
+check(reveal.shown and reveal.spinning and not card.skip.shown, "an instant roll needs no Skip")
+reveal.scripts.OnUpdate(reveal, 0.3)
+check(reveal.spinning, "the die still bursts first")
+reveal.scripts.OnUpdate(reveal, 0.25)
+check(not reveal.spinning and card.revealName.text == "Frostbolt", "and the prize is out in half a second")
+for _ = 1, 30 do
+    if reveal.scripts.OnUpdate then reveal.scripts.OnUpdate(reveal, 0.1) end
+end
+check(not reveal.shown, "the whole instant roll is over in under four seconds")
+EmberforgeClasslessInstant.checked = false
+EmberforgeClasslessInstant.scripts.OnClick(EmberforgeClasslessInstant)
+check(EmberforgeClasslessDB.instantRolls == false, "the window's check box turns them off again")
+
 -- Lock at level 9.
 playerLevel = 9
 server("S,0,1,9")

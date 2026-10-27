@@ -57,7 +57,8 @@ greyed, prerequisite arrows drawn), an Abilities view of everything you own, you
 specs on the right, a search across all classes, and the picks after a Tome of Selection. Each random
 ability and talent rank from a level-up (level 10 on) is rolled on screen: a die shatters, the track
 opens between two gryphons and the icons spin down onto the prize, then the die re-forms and it
-all fades away. Catching up at login grants without rolling. It is the `Emberforge_Classless` addon
+all fades away; with **Instant rolls** (a check box in the window, or `/cl instant`) the track opens
+straight on the prize. Catching up at login grants without rolling. It is the `Emberforge_Classless` addon
 (`client-patch/AddOns/`); the server side is `src/classless.cpp`,
 talking to it in addon whispers (prefix `EFCL`, protocol in both files).
 
