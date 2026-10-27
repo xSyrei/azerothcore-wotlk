@@ -46,6 +46,7 @@ function Widget:GetText() return self.text end
 function Widget:SetTexture(texture) self.texture = texture end
 function Widget:SetTexCoord(...) self.coords = { ... } end
 function Widget:SetVertexColor(...) self.vertex = { ... } end
+function Widget:SetAlpha(alpha) self.alpha = alpha end
 function Widget:SetTextColor(r, g, b) self.color = { r, g, b } end
 function Widget:SetDesaturated(desaturated) self.desaturated = desaturated end
 function Widget:Enable() self.enabled = true end
@@ -327,6 +328,7 @@ reveal.scripts.OnUpdate(reveal, 0.6)
 check(finale.die.shown and not finale.shards[1].shown, "and re-form the die")
 reveal.scripts.OnUpdate(reveal, 1)
 check(not finale.die.shown and card.keep.enabled, "which fades away, leaving the answer")
+check(upvalues(reveal.scripts.OnUpdate).bar.alpha == 0, "the track has closed by then")
 server("G,116,116,0")
 card.reroll.scripts.OnClick(card.reroll)
 check(lastSent() == "REROLL,133", "Reroll sends REROLL with the first rank")

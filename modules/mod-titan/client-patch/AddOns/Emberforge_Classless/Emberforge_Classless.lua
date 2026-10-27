@@ -1214,15 +1214,17 @@ end
 -- cracks spread through it and bursts; out of the flash the track opens between two gryphons, and
 -- the icons race through the gold selector until they slow onto the prize. Then a light burst,
 -- sparks, the prize's name and Keep / Reroll (abilities) or Okay; the shards then fly back together
--- into the die, which fades away. Several rolls from one level-up play one after another; Skip
--- lands at once.
+-- into the die as the track closes around it, and the die fades away. Several rolls from one
+-- level-up play one after another; Skip lands at once.
+--
 -- In a function of its own: the main chunk would pass Lua's limit of 200 locals.
 local function CreateRoll()
     local SLOT_STEP, SLOT_COUNT, WINNER_SLOT, START_SLOT = 52, 48, 42, 5
     local ICON_SIZE, REEL_WIDTH, BAR_HEIGHT = 44, 9 * 52, 62
     -- Timeline (seconds): the die pops in, shakes and shatters; the track opens; the reel spins.
     local POP, SHATTER, OPEN, OPENED, LANDED = 0.25, 1.05, 1.1, 1.65, 6.4
-    -- After landing: the shards gather (REBUILD to FORMED) and the die fades out by GONE.
+    -- After landing: the shards gather and the track closes (REBUILD to FORMED); the die fades out
+    -- by GONE.
     local REBUILD, FORMED, GONE = 1.4, 1.95, 2.9
     -- The reel drifts this far past the prize and eases back onto it.
     local OVERSHOOT = 12
@@ -1646,9 +1648,16 @@ local function CreateRoll()
     local function Celebrate(self, elapsed)
         self.time = self.time + elapsed
         local t = self.time
-        Embers(elapsed, REEL_WIDTH)
+        Embers(elapsed, t < REBUILD and REEL_WIDTH or 0)
         Pulse(self, elapsed)
         RebuildDie(self, t)
+        -- The track closes into the middle as the die re-forms, the prize last to go.
+        local closing = Clamp((t - REBUILD) / (FORMED - REBUILD))
+        local width = OpenTrack(1 - closing ^ 2)
+        ScrollTo(self.target, width)
+        if closing >= 1 then
+            bar:SetAlpha(0)
+        end
         -- A jolt as it lands, and the shockwave.
         bar:ClearAllPoints()
         bar:SetPoint("CENTER", reveal, "TOP", 0, TRACK_Y + 5 * (1 - Clamp(t / 0.35)) * math.sin(t * 45))
@@ -1656,7 +1665,7 @@ local function CreateRoll()
         Square(shockwave, 60 + 260 * (1 - (1 - wave) ^ 2))
         shockwave:SetAlpha(1 - wave)
         Rotate(burst, t * 0.35)
-        burst:SetAlpha(Clamp(t * 4) * (0.75 + 0.25 * math.sin(t * 3)))
+        burst:SetAlpha(Clamp(t * 4) * (0.75 + 0.25 * math.sin(t * 3)) * (1 - closing))
         selectorGlow:SetAlpha(0.7 + 0.3 * math.sin(t * 4))
         result:SetAlpha(Clamp(t * 3))
         for _, spark in ipairs(sparks) do
@@ -1718,7 +1727,7 @@ local function CreateRoll()
         Play("igQuestListComplete")
         Play("LOOTWINDOWCOINSOUND")
         GameTooltip:SetOwner(reveal, "ANCHOR_NONE")
-        GameTooltip:SetPoint("LEFT", bar, "RIGHT", 70, 0)
+        GameTooltip:SetPoint("LEFT", reveal, "TOP", REEL_WIDTH / 2 + 80, TRACK_Y)
         GameTooltip:SetHyperlink("spell:" .. current.spell)
         GameTooltip:Show()
         self.time = 0
