@@ -109,16 +109,16 @@ The launcher will ship it automatically for players.
 
 ## Classless window addon
 
-`AddOns/Emberforge_Classless` is the Classless window (N, the minimap button or `/classless`):
-every class's abilities and talent trees by spec, your build, search, the Tome of Selection's picks
-and the Wildcard roll (a reel that lands on each level-up ability or talent). N is bound once per character if it is free; rebind it
-under Key Bindings > Emberforge. It is styled like the character creation screen; its art
-(`Emberforge_Classless/Art/*.tga`, loaded straight from the addon folder) comes from
-`interface/make_classless_art.py`; the Wildcard die is the ember cube cut from the project's die art
-(`icons/wildcard-die.png`), which the script also splits into shards and cracks. Its data comes from the
-server (`src/classless.cpp`). Check changes offline with
-`cd AddOns/tests && lua5.1 classless_test.lua`, which plays a session against a mocked WoW API.
-Install: copy the folder into `Interface\AddOns\` (the launcher ships `Emberforge_*` addons).
+`AddOns/Emberforge_Classless` is the Classless window (N, the minimap button or `/classless`): every
+class's abilities and talent trees by spec, your build, search, the Tome of Selection's picks and
+the Wildcard roll (a reel that lands on each level-up ability or talent). N is bound once per
+character if it is free; rebind it under Key Bindings > Emberforge. It is styled like the character
+creation screen; its art (`Emberforge_Classless/Art/*.tga`, loaded straight from the addon folder)
+comes from `interface/make_classless_art.py`; the Wildcard die is the ember cube cut from the
+project's die art (`icons/wildcard-die.png`), which the script also splits into shards and cracks.
+Its data comes from the server (`src/classless.cpp`). Check changes offline with `cd AddOns/tests &&
+lua5.1 classless_test.lua`, which plays a session against a mocked WoW API. Install: copy the folder
+into `Interface\AddOns\` (the launcher ships `Emberforge_*` addons).
 
 ## Notes
 - The base class is Paladin (ID 2). To change it, update `HERO_CLASS` in the script, `@HERO` in
