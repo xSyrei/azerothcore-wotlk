@@ -8,7 +8,7 @@ Usage: python3 make_classless_art.py
 """
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from make_art import HERE, SS, divider, radial
 
@@ -175,6 +175,90 @@ def spark(size=32):
     return np.dstack([g, g * 0.7, g * 0.35, np.ones_like(g)])
 
 
+# The Wildcard die: a twenty-sided die seen face on (hexagon outline, a triangle face in the middle),
+# obsidian faces with gold edges. It cracks along SHARD_LINES and bursts into SHARDS pieces.
+DIE_SIZE = 128
+SHARDS = 6
+
+
+def die_points(n):
+    """Hexagon corners and the middle face's corners, in pixels of an n-pixel die."""
+    c = n / 2
+    hexagon = [(c + 0.9 * c * np.cos(np.radians(-90 + 60 * k)), c + 0.9 * c * np.sin(np.radians(-90 + 60 * k)))
+               for k in range(6)]
+    inner = [(c + 0.5 * c * np.cos(np.radians(-90 + 120 * k)), c + 0.5 * c * np.sin(np.radians(-90 + 120 * k)))
+             for k in range(3)]
+    return hexagon, inner
+
+
+def die(size=DIE_SIZE):
+    n = size * SS
+    img = Image.new('RGBA', (n, n))
+    draw = ImageDraw.Draw(img)
+    v, t = die_points(n)
+    faces = [((v[5], v[0], t[0]), 0.62), ((v[0], v[1], t[0]), 0.78), ((v[1], t[1], t[0]), 0.9),
+             ((v[1], v[2], t[1]), 0.66), ((v[2], v[3], t[1]), 0.5), ((v[3], t[2], t[1]), 0.58),
+             ((v[3], v[4], t[2]), 0.42), ((v[4], v[5], t[2]), 0.55), ((v[5], t[0], t[2]), 0.72),
+             ((t[0], t[1], t[2]), 1.0)]
+    for points, light in faces:
+        draw.polygon(points, fill=(int(70 * light), int(38 * light), int(26 * light), 255))
+    gold = (242, 186, 96, 255)
+    width = max(2, n // 64)
+    for a, b in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0]), (t[0], v[5]), (t[0], v[0]), (t[0], v[1]),
+                 (t[1], v[1]), (t[1], v[2]), (t[1], v[3]), (t[2], v[3]), (t[2], v[4]), (t[2], v[5])]:
+        draw.line([a, b], fill=(214, 150, 70, 255), width=width)
+    draw.line(v + [v[0]], fill=gold, width=width * 2, joint='curve')
+    font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf', n // 6)
+    cx, cy = n / 2, n / 2 + n * 0.03
+    draw.text((cx, cy), '20', font=font, fill=(255, 214, 140, 255), anchor='mm')
+    rgba = np.asarray(img).astype(np.float64) / 255
+    # Ember light inside the middle face.
+    r, _ = radial(size)
+    rgba[..., 0] += np.exp(-(r / 0.35) ** 2) * 0.25 * rgba[..., 3]
+    rgba[..., 1] += np.exp(-(r / 0.35) ** 2) * 0.08 * rgba[..., 3]
+    return rgba
+
+
+def shard_lines(n, seed=11):
+    """Jagged crack lines from the center out, one per shard boundary (in pixels)."""
+    rng = np.random.default_rng(seed)
+    lines = []
+    for k in range(SHARDS):
+        base = np.radians(-75 + 360 / SHARDS * k)
+        points = [(n / 2, n / 2)]
+        for radius in (0.18, 0.36, 0.55, 0.75, 1.0, 1.3):
+            angle = base + rng.uniform(-0.16, 0.16) * (radius < 1)
+            points.append((n / 2 + radius * n / 2 * np.cos(angle), n / 2 + radius * n / 2 * np.sin(angle)))
+        lines.append(points)
+    return lines
+
+
+def shard(index, size=DIE_SIZE):
+    """One piece of the die: the die inside the wedge between two crack lines."""
+    n = size * SS
+    lines = shard_lines(n)
+    mask = Image.new('L', (n, n))
+    wedge = lines[index] + lines[(index + 1) % SHARDS][::-1]
+    ImageDraw.Draw(mask).polygon(wedge, fill=255)
+    out = die(size)
+    out[..., 3] *= np.asarray(mask).astype(np.float64) / 255
+    return out
+
+
+def cracks(size=DIE_SIZE):
+    """Glowing ember cracks along the shard lines (additive), drawn over the die as it shakes."""
+    n = size * SS
+    img = Image.new('L', (n, n))
+    draw = ImageDraw.Draw(img)
+    for points in shard_lines(n):
+        draw.line([p for p in points if np.hypot(p[0] - n / 2, p[1] - n / 2) < 0.92 * n / 2], fill=255,
+                  width=max(2, n // 90), joint='curve')
+    core = np.asarray(img).astype(np.float64) / 255
+    halo = np.asarray(img.filter(ImageFilter.GaussianBlur(n / 40))).astype(np.float64) / 255
+    g = np.clip(core + halo * 2.2, 0, 1)
+    return np.dstack([g, g * (0.55 + 0.4 * core), g * (0.15 + 0.6 * core), np.ones_like(g)])
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     # Panel 9-slices: large (16 px corners, for panels) and small (8 px, for cells, tabs, rows).
@@ -190,6 +274,10 @@ def main():
     save(emblem(), 'HeroEmblem')
     save(rays(), 'Rays')
     save(spark(), 'Spark')
+    save(die(), 'Die')
+    save(cracks(), 'DieCracks')
+    for index in range(SHARDS):
+        save(shard(index), f'DieShard{index + 1}')
     save(divider(), 'Divider')
     save(icon_frame(), 'IconFrame')
     save(icon_glow(), 'IconGlow')

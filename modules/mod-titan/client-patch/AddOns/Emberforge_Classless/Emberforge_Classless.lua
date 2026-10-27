@@ -1210,380 +1210,543 @@ function EmberforgeClassless_Toggle()
     end
 end
 
--- Wildcard spin: each level-up ability or talent is "unboxed" on a reel of icons that races past a
--- gold marker, slows down and lands on the prize; then a light burst, sparks, and Keep / Reroll
--- (abilities) or Okay. Several rolls from one level-up play one after another.
+-- Wildcard roll: each level-up ability or talent is rolled on screen. A die drops in, shakes as ember
+-- cracks spread through it and bursts; out of the flash the track opens between two gryphons, and
+-- the icons race through the gold selector until they slow onto the prize. Then a light burst,
+-- sparks, the prize's name and Keep / Reroll (abilities) or Okay. Several rolls from one level-up
+-- play one after another; Skip lands at once.
+-- Its own block: the main chunk would pass Lua's 200 locals.
+do
+    local SLOT_STEP, SLOT_COUNT, WINNER_SLOT, START_SLOT = 52, 48, 42, 5
+    local ICON_SIZE, REEL_WIDTH, BAR_HEIGHT = 44, 9 * 52, 62
+    -- Timeline (seconds): the die pops in, shakes and shatters; the track opens; the reel spins.
+    local POP, SHATTER, OPEN, OPENED, LANDED = 0.25, 1.05, 1.1, 1.65, 6.4
 
-local SLOT_STEP, SLOT_COUNT, WINNER_SLOT = 84, 44, 38
-local REEL_WIDTH, REEL_HEIGHT = 540, 96
-local SPIN_TIME = 5.2
+    local reveal = CreateFrame("Frame", "EmberforgeClasslessReveal", UIParent)
+    reveal:SetWidth(700)
+    reveal:SetHeight(250)
+    reveal:SetPoint("TOP", 0, -140)
+    reveal:SetFrameStrata("DIALOG")
+    reveal:SetToplevel(true)
+    reveal:Hide()
 
-local reveal = CreateFrame("Frame", "EmberforgeClasslessReveal", UIParent)
-reveal:SetWidth(600)
-reveal:SetHeight(292)
-reveal:SetPoint("TOP", 0, -110)
-reveal:SetFrameStrata("DIALOG")
-reveal:SetToplevel(true)
-reveal:EnableMouse(true)
-reveal:SetMovable(true)
-reveal:RegisterForDrag("LeftButton")
-reveal:SetScript("OnDragStart", reveal.StartMoving)
-reveal:SetScript("OnDragStop", reveal.StopMovingOrSizing)
-Box(reveal, WINDOW_FILL, WINDOW_EDGE)
-reveal:Hide()
+    local heading = CreateFrame("Frame", nil, reveal)
+    heading:SetAllPoints()
+    local revealTitle = heading:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
+    revealTitle:SetFont("Fonts\\MORPHEUS.TTF", 24, "OUTLINE")
+    revealTitle:SetShadowOffset(2, -2)
+    revealTitle:SetTextColor(unpack(GOLD))
+    revealTitle:SetPoint("TOP", 0, -2)
+    local revealKind = heading:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    revealKind:SetShadowOffset(1, -1)
+    revealKind:SetTextColor(unpack(SUBTEXT))
+    revealKind:SetPoint("TOP", 0, -32)
 
-local revealGlow = reveal:CreateTexture(nil, "BORDER")
-revealGlow:SetTexture(ART .. "HeaderGlow")
-revealGlow:SetBlendMode("ADD")
-revealGlow:SetWidth(460)
-revealGlow:SetHeight(100)
-revealGlow:SetPoint("TOP", 0, -1)
-local revealTitle = reveal:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
-revealTitle:SetFont("Fonts\\MORPHEUS.TTF", 20)
-revealTitle:SetShadowOffset(1, -1)
-revealTitle:SetTextColor(unpack(GOLD))
-revealTitle:SetPoint("TOP", 0, -14)
-local revealDivider = reveal:CreateTexture(nil, "ARTWORK")
-revealDivider:SetTexture(ART .. "Divider")
-revealDivider:SetWidth(320)
-revealDivider:SetHeight(14)
-revealDivider:SetPoint("TOP", 0, -36)
-local revealKind = reveal:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-revealKind:SetTextColor(unpack(SUBTEXT))
-revealKind:SetPoint("TOP", 0, -52)
-
--- The reel: a clipped strip of slots (a scroll frame clips its child), on a dark panel.
-local reelPanel = CreateFrame("Frame", nil, reveal)
-reelPanel:SetWidth(REEL_WIDTH + 16)
-reelPanel:SetHeight(REEL_HEIGHT + 16)
-reelPanel:SetPoint("TOP", 0, -72)
-Box(reelPanel, PANEL_FILL, PANEL_EDGE)
-local reel = CreateFrame("ScrollFrame", nil, reelPanel)
-reel:SetWidth(REEL_WIDTH)
-reel:SetHeight(REEL_HEIGHT)
-reel:SetPoint("CENTER")
-local strip = CreateFrame("Frame", nil, reel)
-strip:SetWidth(SLOT_COUNT * SLOT_STEP)
-strip:SetHeight(REEL_HEIGHT)
-reel:SetScrollChild(strip)
-
-local slots = {}
-for index = 1, SLOT_COUNT do
-    local slot = CreateFrame("Frame", nil, strip)
-    slot:SetWidth(SLOT_STEP - 8)
-    slot:SetHeight(REEL_HEIGHT - 10)
-    slot:SetPoint("LEFT", (index - 1) * SLOT_STEP + 4, 0)
-    Box(slot, CELL_FILL, CELL_EDGE, true)
-    slot.icon = FramedIcon(slot, 54)
-    slot.icon:SetPoint("TOP", 0, -9)
-    -- The class color under each icon, like a loot rarity stripe.
-    slot.stripe = slot:CreateTexture(nil, "ARTWORK")
-    slot.stripe:SetWidth(SLOT_STEP - 22)
-    slot.stripe:SetHeight(4)
-    slot.stripe:SetPoint("BOTTOM", 0, 8)
-    slots[index] = slot
-end
-
--- Above the reel: dark fades at both ends, the burst and sparks, and the gold marker.
-local overlay = CreateFrame("Frame", nil, reelPanel)
-overlay:SetAllPoints(reel)
-overlay:SetFrameLevel((reel:GetFrameLevel() or 0) + 5)
-for _, side in ipairs({ "LEFT", "RIGHT" }) do
-    local fade = overlay:CreateTexture(nil, "BACKGROUND")
-    fade:SetTexture(1, 1, 1, 1)
-    fade:SetWidth(110)
-    fade:SetHeight(REEL_HEIGHT)
-    fade:SetPoint(side)
-    local dark, clear = { 0.02, 0.014, 0.011, 1 }, { 0.02, 0.014, 0.011, 0 }
-    local from, to = side == "LEFT" and dark or clear, side == "LEFT" and clear or dark
-    fade:SetGradientAlpha("HORIZONTAL", from[1], from[2], from[3], from[4], to[1], to[2], to[3], to[4])
-end
-local burst = overlay:CreateTexture(nil, "BORDER")
-burst:SetTexture(ART .. "Rays")
-burst:SetBlendMode("ADD")
-burst:SetWidth(230)
-burst:SetHeight(230)
-burst:SetPoint("CENTER")
-burst:Hide()
-local marker = overlay:CreateTexture(nil, "OVERLAY")
-marker:SetTexture(1, 0.78, 0.35, 0.9)
-marker:SetWidth(2)
-marker:SetHeight(REEL_HEIGHT + 10)
-marker:SetPoint("CENTER")
-local markerTop = overlay:CreateTexture(nil, "OVERLAY")
-markerTop:SetTexture(ART .. "ArrowDown")
-markerTop:SetVertexColor(1, 0.78, 0.35)
-markerTop:SetWidth(18)
-markerTop:SetHeight(18)
-markerTop:SetPoint("BOTTOM", overlay, "TOP", 0, -2)
-local markerBottom = overlay:CreateTexture(nil, "OVERLAY")
-markerBottom:SetTexture(ART .. "ArrowDown")
-markerBottom:SetTexCoord(0, 1, 1, 0)
-markerBottom:SetVertexColor(1, 0.78, 0.35)
-markerBottom:SetWidth(18)
-markerBottom:SetHeight(18)
-markerBottom:SetPoint("TOP", overlay, "BOTTOM", 0, 2)
-local sparks = {}
-for index = 1, 18 do
-    local spark = overlay:CreateTexture(nil, "ARTWORK")
-    spark:SetTexture(ART .. "Spark")
-    spark:SetBlendMode("ADD")
-    spark:Hide()
-    sparks[index] = spark
-end
-
-local revealName = reveal:CreateFontString(nil, "ARTWORK", "GameFontHighlightLarge")
-revealName:SetPoint("TOP", reelPanel, "BOTTOM", 0, -14)
-local revealNote = reveal:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-revealNote:SetTextColor(unpack(SUBTEXT))
-revealNote:SetPoint("TOP", revealName, "BOTTOM", 0, -5)
-
-local keep = CreateFrame("Button", nil, reveal, "UIPanelButtonTemplate")
-keep:SetWidth(120)
-keep:SetHeight(24)
-local reroll = CreateFrame("Button", nil, reveal, "UIPanelButtonTemplate")
-reroll:SetWidth(120)
-reroll:SetHeight(24)
-reroll:SetPoint("BOTTOMLEFT", reveal, "BOTTOM", 8, 18)
-reroll:SetText("Reroll")
-local skip = CreateFrame("Button", nil, reveal)
-skip:SetWidth(60)
-skip:SetHeight(18)
-skip:SetPoint("BOTTOMRIGHT", -18, 20)
-skip.label = skip:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-skip.label:SetPoint("RIGHT")
-skip.label:SetText("Skip")
-skip:SetFontString(skip.label)
-
-local function ClassColor(class)
-    local color = RAID_CLASS_COLORS and RAID_CLASS_COLORS[CLASS_TOKENS[class] or ""]
-    if color then
-        return color.r, color.g, color.b
-    end
-    return 0.86, 0.64, 0.32
-end
-
-local function TalentClass(talentId)
-    local talent = data.talentById[talentId]
-    for class, tabs in pairs(data.trees) do
-        for order, tab in pairs(tabs) do
-            if talent and tab == talent.tab then
-                return class, order, talent
-            end
-        end
-    end
-end
-
--- What a reel slot shows: a random ability or talent, or the prize.
-local function RandomEntry(isTalent)
-    local pool = {}
-    if isTalent then
-        for id in pairs(data.talentById) do
-            pool[#pool + 1] = id
-        end
-        if #pool > 0 then
-            local id = pool[math.random(#pool)]
-            return data.talentById[id].ranks[1], (TalentClass(id))
-        end
-    else
-        for id in pairs(data.abilities) do
-            pool[#pool + 1] = id
-        end
-        if #pool > 0 then
-            local ability = data.abilities[pool[math.random(#pool)]]
-            return ability.id, ability.class
-        end
-    end
-end
-
-local function FillSlot(slot, spell, class, lit)
-    slot.icon:SetTexture(SpellIcon(spell))
-    LightIcon(slot.icon, lit)
-    slot.icon:SetDesaturated(false)
-    slot.icon:SetVertexColor(1, 1, 1)
-    slot.stripe:SetTexture(ClassColor(class))
-    BoxColor(slot, CELL_FILL, lit and KNOWN_EDGE or CELL_EDGE)
-end
-
--- Spins a texture about its center (3.3.5 has no SetRotation: rotate the texture coordinates).
-local function Rotate(texture, angle)
-    local c, s = math.cos(angle), math.sin(angle)
-    local function At(x, y)
-        return 0.5 + (x - 0.5) * c - (y - 0.5) * s, 0.5 + (x - 0.5) * s + (y - 0.5) * c
-    end
-    local ulx, uly = At(0, 0)
-    local llx, lly = At(0, 1)
-    local urx, ury = At(1, 0)
-    local lrx, lry = At(1, 1)
-    texture:SetTexCoord(ulx, uly, llx, lly, urx, ury, lrx, lry)
-end
-
-local function Play(sound)
-    if PlaySound then
-        PlaySound(sound)
-    end
-end
-
--- Spin, land, then celebrate: the OnUpdate script runs the whole show.
-local function Celebrate(self, elapsed)
-    self.time = self.time + elapsed
-    local t = self.time
-    Rotate(burst, t * 0.35)
-    burst:SetAlpha(math.min(1, t * 4) * (0.75 + 0.25 * math.sin(t * 3)))
-    for _, spark in ipairs(sparks) do
-        if spark.life then
-            spark.life = spark.life - elapsed
-            if spark.life <= 0 then
-                spark.life = nil
-                spark:Hide()
-            else
-                spark.vy = spark.vy - 160 * elapsed
-                spark.x, spark.y = spark.x + spark.vx * elapsed, spark.y + spark.vy * elapsed
-                spark:ClearAllPoints()
-                spark:SetPoint("CENTER", overlay, "CENTER", spark.x, spark.y)
-                spark:SetAlpha(math.min(1, spark.life * 2))
-            end
-        end
-    end
-end
-
-local function Land(self)
-    local current = reveals[1]
-    self.spinning = false
-    reel:SetHorizontalScroll(self.distance)
-    FillSlot(slots[WINNER_SLOT], current.spell, current.class, true)
-    revealName:SetText(SpellName(current.spell))
-    local note = (CLASS_NAMES[current.class] or "")
-    if current.tree then
-        note = note .. "  -  " .. current.tree
-    end
-    if current.talent then
-        note = note .. "  -  Rank " .. current.rank .. "/" .. current.maxRank
-    end
-    revealNote:SetText(note)
-    keep:Enable()
-    if current.canReroll then
-        reroll:Enable()
-    end
-    skip:Hide()
-    burst:Show()
-    for _, spark in ipairs(sparks) do
-        local angle, speed = math.random() * math.pi * 2, 60 + math.random() * 110
-        spark.x, spark.y = 0, 0
-        spark.vx, spark.vy = math.cos(angle) * speed, math.sin(angle) * speed + 60
-        spark.life = 0.7 + math.random() * 0.6
-        local size = 8 + math.random() * 10
-        spark:SetWidth(size)
-        spark:SetHeight(size)
-        spark:Show()
-    end
-    Play("igQuestListComplete")
-    GameTooltip:SetOwner(reveal, "ANCHOR_NONE")
-    GameTooltip:SetPoint("TOPLEFT", reveal, "TOPRIGHT", 4, 0)
-    GameTooltip:SetHyperlink("spell:" .. current.spell)
-    GameTooltip:Show()
-    self.time = 0
-    self:SetScript("OnUpdate", Celebrate)
-end
-
-local function Spin(self, elapsed)
-    self.time = self.time + elapsed
-    local t = math.min(1, self.time / SPIN_TIME)
-    -- Fast start, long slow finish (quintic ease-out).
-    local position = self.distance * (1 - (1 - t) ^ 5)
-    reel:SetHorizontalScroll(position)
-    local passing = math.floor((position + REEL_WIDTH / 2) / SLOT_STEP)
-    if passing ~= self.passing then
-        self.passing = passing
-        Play("UChatScrollButton")
-    end
-    if t >= 1 then
-        Land(self)
-    end
-end
-
-function ShowNextReveal()
-    local current = reveals[1]
-    if not current then
-        reveal:Hide()
-        return
-    end
-    if reveal:IsShown() and reveal.current == current then
-        return
-    end
-    reveal.current = current
-
-    if current.talent then
-        local class, order, talent = TalentClass(current.talent)
-        current.class = class
-        current.tree = class and TREES[class] and TREES[class][order][1]
-        current.maxRank = talent and #talent.ranks or current.rank
-    else
-        local ability = data.abilities[current.firstRank]
-        current.class = ability and ability.class
-        current.tree = ability and AbilityTree(ability) ~= GENERAL and TREES[ability.class][AbilityTree(ability)][1]
-    end
-    revealTitle:SetText("Wildcard Roll")
-    revealKind:SetText("Level " .. UnitLevel("player") .. "  -  " .. (current.talent and "New Talent" or "New Ability"))
-    for index, slot in ipairs(slots) do
-        if index == WINNER_SLOT then
-            FillSlot(slot, current.spell, current.class, false)
+    -- The track: a dark bar with a gryphon at each end, opened from the middle.
+    local TRACK_Y = -92
+    local bar = CreateFrame("Frame", nil, reveal)
+    bar:SetHeight(BAR_HEIGHT)
+    bar:SetWidth(REEL_WIDTH + 18)
+    bar:SetPoint("CENTER", reveal, "TOP", 0, TRACK_Y)
+    Box(bar, { 0.02, 0.014, 0.011, 0.92 }, PANEL_EDGE, true)
+    local caps = {}
+    for index, side in ipairs({ "LEFT", "RIGHT" }) do
+        local cap = bar:CreateTexture(nil, "OVERLAY")
+        cap:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-EndCap-Human")
+        cap:SetWidth(100)
+        cap:SetHeight(100)
+        if index == 2 then
+            cap:SetTexCoord(1, 0, 0, 1)
+            cap:SetPoint("BOTTOMLEFT", bar, "BOTTOMRIGHT", -36, -22)
         else
-            local spell, class = RandomEntry(current.talent)
-            FillSlot(slot, spell or current.spell, class or current.class, false)
+            cap:SetPoint("BOTTOMRIGHT", bar, "BOTTOMLEFT", 36, -22)
+        end
+        caps[index] = cap
+    end
+
+    -- The reel: a strip of icons in a scroll frame (it clips its child) as wide as the opened track.
+    local reel = CreateFrame("ScrollFrame", nil, bar)
+    reel:SetWidth(REEL_WIDTH)
+    reel:SetHeight(BAR_HEIGHT - 6)
+    reel:SetPoint("CENTER")
+    local strip = CreateFrame("Frame", nil, reel)
+    strip:SetWidth(SLOT_COUNT * SLOT_STEP)
+    strip:SetHeight(BAR_HEIGHT - 6)
+    reel:SetScrollChild(strip)
+
+    local slots = {}
+    for index = 1, SLOT_COUNT do
+        local slot = CreateFrame("Frame", nil, strip)
+        slot:SetWidth(SLOT_STEP)
+        slot:SetHeight(BAR_HEIGHT - 6)
+        slot:SetPoint("LEFT", (index - 1) * SLOT_STEP, 0)
+        slot.icon = FramedIcon(slot, ICON_SIZE)
+        slot.icon:SetPoint("CENTER", 0, 2)
+        -- The class color under each icon, like a loot rarity stripe.
+        slot.stripe = slot:CreateTexture(nil, "ARTWORK")
+        slot.stripe:SetWidth(ICON_SIZE - 6)
+        slot.stripe:SetHeight(3)
+        slot.stripe:SetPoint("TOP", slot.icon, "BOTTOM", 0, -2)
+        slots[index] = slot
+    end
+
+    -- Over the reel: dark fades at both ends, the gold selector, the burst and sparks.
+    local overlay = CreateFrame("Frame", nil, bar)
+    overlay:SetAllPoints(reel)
+    overlay:SetFrameLevel((reel:GetFrameLevel() or 0) + 5)
+    local fades = {}
+    for index, side in ipairs({ "LEFT", "RIGHT" }) do
+        local fade = overlay:CreateTexture(nil, "BACKGROUND")
+        fade:SetTexture(1, 1, 1, 1)
+        fade:SetWidth(90)
+        fade:SetPoint("TOP" .. side)
+        fade:SetPoint("BOTTOM" .. side)
+        local dark, clear = { 0.02, 0.014, 0.011, 1 }, { 0.02, 0.014, 0.011, 0 }
+        local from, to = side == "LEFT" and dark or clear, side == "LEFT" and clear or dark
+        fade:SetGradientAlpha("HORIZONTAL", from[1], from[2], from[3], from[4], to[1], to[2], to[3], to[4])
+        fades[index] = fade
+    end
+    local burst = overlay:CreateTexture(nil, "BORDER")
+    burst:SetTexture(ART .. "Rays")
+    burst:SetBlendMode("ADD")
+    burst:SetWidth(240)
+    burst:SetHeight(240)
+    burst:SetPoint("CENTER", 0, 2)
+    burst:Hide()
+    local selectorGlow = overlay:CreateTexture(nil, "ARTWORK")
+    selectorGlow:SetTexture(ART .. "IconGlow")
+    selectorGlow:SetBlendMode("ADD")
+    selectorGlow:SetWidth(ICON_SIZE * 2)
+    selectorGlow:SetHeight(ICON_SIZE * 2)
+    selectorGlow:SetPoint("CENTER", 0, 2)
+    local selector = overlay:CreateTexture(nil, "OVERLAY")
+    selector:SetTexture(ART .. "IconFrame")
+    selector:SetVertexColor(1, 0.8, 0.35)
+    selector:SetWidth(ICON_SIZE * 1.3)
+    selector:SetHeight(ICON_SIZE * 1.3)
+    selector:SetPoint("CENTER", 0, 2)
+    local sparks = {}
+    for index = 1, 20 do
+        local spark = overlay:CreateTexture(nil, "OVERLAY")
+        spark:SetTexture(ART .. "Spark")
+        spark:SetBlendMode("ADD")
+        spark:Hide()
+        sparks[index] = spark
+    end
+
+    -- The die, its cracks, its shards and the flash, centered where the track opens.
+    local dieFrame = CreateFrame("Frame", nil, reveal)
+    dieFrame:SetWidth(1)
+    dieFrame:SetHeight(1)
+    dieFrame:SetPoint("CENTER", reveal, "TOP", 0, TRACK_Y)
+    dieFrame:SetFrameLevel((overlay:GetFrameLevel() or 0) + 5)
+    local dieGlow = dieFrame:CreateTexture(nil, "BACKGROUND")
+    dieGlow:SetTexture(ART .. "Spark")
+    dieGlow:SetBlendMode("ADD")
+    dieGlow:SetPoint("CENTER")
+    local die = dieFrame:CreateTexture(nil, "ARTWORK")
+    die:SetTexture(ART .. "Die")
+    local dieCracks = dieFrame:CreateTexture(nil, "OVERLAY")
+    dieCracks:SetTexture(ART .. "DieCracks")
+    dieCracks:SetBlendMode("ADD")
+    local shards = {}
+    for index = 1, 6 do
+        local piece = dieFrame:CreateTexture(nil, "ARTWORK")
+        piece:SetTexture(ART .. "DieShard" .. index)
+        piece:SetWidth(76)
+        piece:SetHeight(76)
+        -- Each piece flies out from the middle of its wedge.
+        piece.angle = math.rad(-45 + 60 * (index - 1))
+        shards[index] = piece
+    end
+    local flash = dieFrame:CreateTexture(nil, "OVERLAY")
+    flash:SetTexture(ART .. "Spark")
+    flash:SetBlendMode("ADD")
+    flash:SetPoint("CENTER")
+
+    -- The prize's name and the answer buttons.
+    local result = CreateFrame("Frame", nil, reveal)
+    result:SetAllPoints()
+    local revealName = result:CreateFontString(nil, "ARTWORK", "GameFontHighlightLarge")
+    revealName:SetFont("Fonts\\FRIZQT__.TTF", 18, "OUTLINE")
+    revealName:SetPoint("TOP", bar, "BOTTOM", 0, -16)
+    local revealNote = result:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    revealNote:SetShadowOffset(1, -1)
+    revealNote:SetTextColor(unpack(SUBTEXT))
+    revealNote:SetPoint("TOP", revealName, "BOTTOM", 0, -5)
+
+    local function RevealButton(label)
+        local button = CreateFrame("Button", nil, result)
+        button:SetWidth(112)
+        button:SetHeight(28)
+        Box(button, CELL_FILL, TAB_ON_EDGE, true)
+        button.label = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        button.label:SetPoint("CENTER", 0, 0)
+        button:SetFontString(button.label)
+        button:SetText(label)
+        local hover = button:CreateTexture(nil, "HIGHLIGHT")
+        hover:SetTexture(1, 0.6, 0.2, 0.18)
+        hover:SetPoint("TOPLEFT", 2, -2)
+        hover:SetPoint("BOTTOMRIGHT", -2, 2)
+        return button
+    end
+    local keep = RevealButton("Keep")
+    local reroll = RevealButton("Reroll")
+    reroll:SetPoint("BOTTOMLEFT", reveal, "BOTTOM", 8, 6)
+    local skip = CreateFrame("Button", nil, reveal)
+    skip:SetWidth(50)
+    skip:SetHeight(18)
+    skip:SetPoint("LEFT", bar, "RIGHT", 70, 0)
+    skip.label = skip:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    skip.label:SetPoint("LEFT")
+    skip:SetFontString(skip.label)
+    skip:SetText("Skip")
+
+    local function ClassColor(class)
+        local color = RAID_CLASS_COLORS and RAID_CLASS_COLORS[CLASS_TOKENS[class] or ""]
+        if color then
+            return color.r, color.g, color.b
+        end
+        return 0.86, 0.64, 0.32
+    end
+
+    local function TalentClass(talentId)
+        local talent = data.talentById[talentId]
+        for class, tabs in pairs(data.trees) do
+            for order, tab in pairs(tabs) do
+                if talent and tab == talent.tab then
+                    return class, order, talent
+                end
+            end
         end
     end
-    revealName:SetText("")
-    revealNote:SetText("Rolling...")
-    burst:Hide()
-    for _, spark in ipairs(sparks) do
-        spark.life = nil
-        spark:Hide()
+
+    -- What a reel slot shows: a random ability or talent, or the prize.
+    local function RandomEntry(isTalent)
+        local pool = {}
+        if isTalent then
+            for id in pairs(data.talentById) do
+                pool[#pool + 1] = id
+            end
+            if #pool > 0 then
+                local id = pool[math.random(#pool)]
+                return data.talentById[id].ranks[1], (TalentClass(id))
+            end
+        else
+            for id in pairs(data.abilities) do
+                pool[#pool + 1] = id
+            end
+            if #pool > 0 then
+                local ability = data.abilities[pool[math.random(#pool)]]
+                return ability.id, ability.class
+            end
+        end
     end
 
-    keep:SetText(current.canReroll and "Keep" or OKAY)
-    keep:Disable()
-    reroll:Disable()
-    keep:ClearAllPoints()
-    if current.canReroll then
-        reroll:Show()
-        keep:SetPoint("BOTTOMRIGHT", reveal, "BOTTOM", -8, 18)
-    else
+    local function FillSlot(slot, spell, class, lit)
+        slot.icon:SetTexture(SpellIcon(spell))
+        LightIcon(slot.icon, lit)
+        slot.icon:SetDesaturated(false)
+        slot.icon:SetVertexColor(1, 1, 1)
+        slot.stripe:SetTexture(ClassColor(class))
+    end
+
+    -- Spins a texture about its center (3.3.5 has no SetRotation: rotate the texture coordinates).
+    local function Rotate(texture, angle)
+        local c, s = math.cos(angle), math.sin(angle)
+        local function At(x, y)
+            return 0.5 + (x - 0.5) * c - (y - 0.5) * s, 0.5 + (x - 0.5) * s + (y - 0.5) * c
+        end
+        local ulx, uly = At(0, 0)
+        local llx, lly = At(0, 1)
+        local urx, ury = At(1, 0)
+        local lrx, lry = At(1, 1)
+        texture:SetTexCoord(ulx, uly, llx, lly, urx, ury, lrx, lry)
+    end
+
+    local function Play(sound)
+        if PlaySound then
+            PlaySound(sound)
+        end
+    end
+
+    local function Clamp(x)
+        return math.max(0, math.min(1, x))
+    end
+
+    local function BackOut(x)
+        local c1 = 1.4
+        return 1 + (c1 + 1) * (x - 1) ^ 3 + c1 * (x - 1) ^ 2
+    end
+
+    local function Square(texture, size)
+        texture:SetWidth(math.max(1, size))
+        texture:SetHeight(math.max(1, size))
+    end
+
+    -- Opens the track to a fraction of its width (the gryphons ride its ends).
+    local function OpenTrack(fraction)
+        local width = math.max(1, REEL_WIDTH * fraction)
+        bar:SetWidth(width + 18)
+        reel:SetWidth(width)
+        bar:SetAlpha(Clamp(fraction * 3))
+        for _, fade in ipairs(fades) do
+            fade:SetWidth(math.min(90, width / 3))
+        end
+        return width
+    end
+
+    -- Scrolls so the strip point center sits under the selector.
+    local function ScrollTo(center, width)
+        reel:SetHorizontalScroll(center - width / 2)
+    end
+
+    local function StartCenter()
+        return (START_SLOT - 0.5) * SLOT_STEP
+    end
+
+    local function HideDie()
+        for _, texture in ipairs({ die, dieCracks, dieGlow, flash }) do
+            texture:Hide()
+        end
+        for _, piece in ipairs(shards) do
+            piece:Hide()
+        end
+    end
+
+    local function Celebrate(self, elapsed)
+        self.time = self.time + elapsed
+        local t = self.time
+        Rotate(burst, t * 0.35)
+        burst:SetAlpha(Clamp(t * 4) * (0.75 + 0.25 * math.sin(t * 3)))
+        selectorGlow:SetAlpha(0.7 + 0.3 * math.sin(t * 4))
+        result:SetAlpha(Clamp(t * 3))
+        for _, spark in ipairs(sparks) do
+            if spark.life then
+                spark.life = spark.life - elapsed
+                if spark.life <= 0 then
+                    spark.life = nil
+                    spark:Hide()
+                else
+                    spark.vy = spark.vy - 160 * elapsed
+                    spark.x, spark.y = spark.x + spark.vx * elapsed, spark.y + spark.vy * elapsed
+                    spark:ClearAllPoints()
+                    spark:SetPoint("CENTER", overlay, "CENTER", spark.x, spark.y)
+                    spark:SetAlpha(Clamp(spark.life * 2))
+                end
+            end
+        end
+    end
+
+    local function Land(self)
+        local current = reveals[1]
+        self.spinning = false
+        HideDie()
+        local width = OpenTrack(1)
+        heading:SetAlpha(1)
+        ScrollTo(self.target, width)
+        FillSlot(slots[WINNER_SLOT], current.spell, current.class, true)
+        revealName:SetText(SpellName(current.spell))
+        local note = (CLASS_NAMES[current.class] or "")
+        if current.tree then
+            note = note .. "  -  " .. current.tree
+        end
+        if current.talent then
+            note = note .. "  -  Rank " .. current.rank .. "/" .. current.maxRank
+        end
+        revealNote:SetText(note)
+        keep:Show()
+        keep:Enable()
+        if current.canReroll then
+            reroll:Show()
+            reroll:Enable()
+        end
+        skip:Hide()
+        burst:Show()
+        for _, spark in ipairs(sparks) do
+            local angle, speed = math.random() * math.pi * 2, 60 + math.random() * 120
+            spark.x, spark.y = 0, 0
+            spark.vx, spark.vy = math.cos(angle) * speed, math.sin(angle) * speed + 60
+            spark.life = 0.7 + math.random() * 0.6
+            Square(spark, 8 + math.random() * 10)
+            spark:Show()
+        end
+        Play("igQuestListComplete")
+        Play("LOOTWINDOWCOINSOUND")
+        GameTooltip:SetOwner(reveal, "ANCHOR_NONE")
+        GameTooltip:SetPoint("LEFT", bar, "RIGHT", 70, 0)
+        GameTooltip:SetHyperlink("spell:" .. current.spell)
+        GameTooltip:Show()
+        self.time = 0
+        result:SetAlpha(0)
+        self:SetScript("OnUpdate", Celebrate)
+    end
+
+    -- The die: drops in with a bounce, shakes harder as the cracks glow, then bursts.
+    local function AnimateDie(self, t, elapsed)
+        if t < SHATTER then
+            local shake = Clamp((t - POP) / (SHATTER - POP)) ^ 2
+            local size = 76 * BackOut(Clamp(t / POP))
+            Square(die, size)
+            Square(dieCracks, size)
+            Square(dieGlow, size * (1.6 + shake))
+            dieGlow:SetAlpha(0.3 + 0.7 * shake)
+            dieCracks:SetAlpha(shake)
+            local x, y = math.sin(t * 55) * 4 * shake, math.cos(t * 47) * 2.5 * shake
+            die:ClearAllPoints()
+            die:SetPoint("CENTER", x, y)
+            dieCracks:ClearAllPoints()
+            dieCracks:SetPoint("CENTER", x, y)
+            Rotate(die, math.sin(t * 38) * 0.14 * shake)
+            Rotate(dieCracks, math.sin(t * 38) * 0.14 * shake)
+            return
+        end
+        if not self.shattered then
+            self.shattered = true
+            die:Hide()
+            dieCracks:Hide()
+            dieGlow:Hide()
+            for _, piece in ipairs(shards) do
+                piece.spin = (math.random() - 0.5) * 8
+                piece.speed = 150 + math.random() * 90
+                piece:Show()
+            end
+            flash:Show()
+            Play("igMainMenuOpen")
+        end
+        local since = t - SHATTER
+        for _, piece in ipairs(shards) do
+            local distance = piece.speed * since
+            piece:ClearAllPoints()
+            local x, y = math.cos(piece.angle) * distance, -math.sin(piece.angle) * distance - 90 * since ^ 2
+            piece:SetPoint("CENTER", x, y)
+            Rotate(piece, piece.spin * since)
+            piece:SetAlpha(Clamp(1 - since / 0.6))
+        end
+        Square(flash, 90 + since * 600)
+        flash:SetAlpha(Clamp(1 - since / 0.35))
+    end
+
+    local function Spin(self, elapsed)
+        self.time = self.time + elapsed
+        local t = self.time
+        if t >= LANDED then
+            Land(self)
+            return
+        end
+        if t < OPENED + 0.7 then
+            AnimateDie(self, t, elapsed)
+        end
+        local opening = Clamp((t - OPEN) / (OPENED - OPEN))
+        local width = OpenTrack(opening > 0 and BackOut(opening) or 0)
+        if opening == 0 then
+            bar:SetAlpha(0)
+        end
+        heading:SetAlpha(opening)
+        -- The reel: fast start, long slow finish (quintic ease-out).
+        local spin = Clamp((t - OPENED) / (LANDED - OPENED))
+        local center = self.start + (self.target - self.start) * (1 - (1 - spin) ^ 5)
+        ScrollTo(center, width)
+        local passing = math.floor(center / SLOT_STEP)
+        if spin > 0 and passing ~= self.passing then
+            self.passing = passing
+            Play("UChatScrollButton")
+        end
+    end
+
+    function ShowNextReveal()
+        local current = reveals[1]
+        if not current then
+            reveal:Hide()
+            return
+        end
+        if reveal:IsShown() and reveal.current == current then
+            return
+        end
+        reveal.current = current
+
+        if current.talent then
+            local class, order, talent = TalentClass(current.talent)
+            current.class = class
+            current.tree = class and TREES[class] and TREES[class][order][1]
+            current.maxRank = talent and #talent.ranks or current.rank
+        else
+            local ability = data.abilities[current.firstRank]
+            current.class = ability and ability.class
+            current.tree = ability and AbilityTree(ability) ~= GENERAL and TREES[ability.class][AbilityTree(ability)][1]
+        end
+        revealTitle:SetText("Wildcard Roll")
+        revealKind:SetText("Level " .. UnitLevel("player") .. "  -  "
+            .. (current.talent and "New Talent" or "New Ability"))
+        for index, slot in ipairs(slots) do
+            if index == WINNER_SLOT then
+                FillSlot(slot, current.spell, current.class, false)
+            else
+                local spell, class = RandomEntry(current.talent)
+                FillSlot(slot, spell or current.spell, class or current.class, false)
+            end
+        end
+        revealName:SetText("")
+        revealNote:SetText("")
+        result:SetAlpha(1)
+        heading:SetAlpha(0)
+        burst:Hide()
+        selectorGlow:SetAlpha(0.6)
+        for _, spark in ipairs(sparks) do
+            spark.life = nil
+            spark:Hide()
+        end
+        HideDie()
+        for _, texture in ipairs({ die, dieCracks, dieGlow }) do
+            Square(texture, 1)
+            texture:Show()
+        end
+        flash:Hide()
+
+        keep:SetText(current.canReroll and "Keep" or OKAY)
+        keep:Hide()
+        keep:Disable()
         reroll:Hide()
-        keep:SetPoint("BOTTOM", 0, 18)
-    end
-    skip:Show()
+        reroll:Disable()
+        keep:ClearAllPoints()
+        if current.canReroll then
+            keep:SetPoint("BOTTOMRIGHT", reveal, "BOTTOM", -8, 6)
+        else
+            keep:SetPoint("BOTTOM", 0, 6)
+        end
+        skip:Show()
 
-    -- Land somewhere inside the prize's slot, not always dead center.
-    local jitter = (math.random() - 0.5) * (SLOT_STEP - 30)
-    reveal.distance = (WINNER_SLOT - 0.5) * SLOT_STEP - REEL_WIDTH / 2 + jitter
-    reveal.time, reveal.passing, reveal.spinning = 0, nil, true
-    reel:SetHorizontalScroll(0)
-    reveal:SetScript("OnUpdate", Spin)
-    reveal:Show()
-    Play("igMainMenuOpen")
+        -- Land somewhere inside the prize's slot, not always dead center.
+        reveal.start = StartCenter()
+        reveal.target = (WINNER_SLOT - 0.5) * SLOT_STEP + (math.random() - 0.5) * (SLOT_STEP - 20)
+        reveal.time, reveal.passing, reveal.spinning, reveal.shattered = 0, nil, true, false
+        OpenTrack(0)
+        bar:SetAlpha(0)
+        reveal:SetScript("OnUpdate", Spin)
+        reveal:Show()
+    end
+
+    skip:SetScript("OnClick", function()
+        if reveal.spinning then
+            reveal.time = LANDED
+        end
+    end)
+
+    local function Answer(message)
+        local current = tremove(reveals, 1)
+        if GameTooltip:IsOwned(reveal) then
+            GameTooltip:Hide()
+        end
+        if message and current and current.canReroll then
+            Send(message .. "," .. current.firstRank)
+        end
+        reveal:SetScript("OnUpdate", nil)
+        reveal.current = nil
+        ShowNextReveal()
+    end
+    keep:SetScript("OnClick", function() Answer("KEEP") end)
+    reroll:SetScript("OnClick", function() Answer("REROLL") end)
 end
-
-skip:SetScript("OnClick", function()
-    if reveal.spinning then
-        reveal.time = SPIN_TIME
-    end
-end)
-
-local function Answer(message)
-    local current = tremove(reveals, 1)
-    if GameTooltip:IsOwned(reveal) then
-        GameTooltip:Hide()
-    end
-    if message and current and current.canReroll then
-        Send(message .. "," .. current.firstRank)
-    end
-    reveal:SetScript("OnUpdate", nil)
-    reveal.current = nil
-    ShowNextReveal()
-end
-keep:SetScript("OnClick", function() Answer("KEEP") end)
-reroll:SetScript("OnClick", function() Answer("REROLL") end)
 
 -- Minimap button: drag it around the minimap; the position is kept per character.
 
