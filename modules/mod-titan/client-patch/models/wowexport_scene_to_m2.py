@@ -144,7 +144,7 @@ def placements(csv_path, model_file):
                    float(r['ScaleFactor']))
 
 
-def sky_dome(center, radius, texture, rings=16, segments=32, repeat=(4, 2)):
+def sky_dome(center, radius, texture, rings=16, segments=32, repeat=(4, 2), max_size=1024):
     """Inside-facing UV sphere for the star field."""
     verts, uvs = [], []
     for i in range(rings + 1):
@@ -160,7 +160,7 @@ def sky_dome(center, radius, texture, rings=16, segments=32, repeat=(4, 2)):
             tris += [(a, a + 1, b), (a + 1, b + 1, b)]
     v = np.array(verts)
     return Part(v * radius + np.array(center), -v, np.array(uvs), np.array(tris), texture, 0, UNLIT | TWO_SIDED | 0x2,
-                max_size=1024)
+                max_size=max_size)
 
 
 def screen_point(camera, sx, sy, distance, aspect=16 / 9):

@@ -59,21 +59,27 @@ PARTICLES = [
 
 # Sky layers from Argus's Legion skybox textures (models/pantheon/sky), as camera-facing cards in
 # front of the star dome, farthest first: (texture, screen position (-1..1 across, -1..1 up, for
-# 16:9), distance, half width and height in yards, blend: 2 alpha, 4 additive).
+# 16:9), distance, half width and height in yards (a negative width mirrors the sprite), blend: 2 alpha,
+# 4 additive). Textures are in models/pantheon/sky, or interface/login for our own.
 SKY = [
     ('Nebula_Galaxy', (-0.62, 0.62), 985.0, (330.0, 330.0), 2),
+    ('Nebula_Cloud3', (0.95, 0.75), 983.0, (-300.0, 150.0), 2),
     ('Nebula_Cloud1', (0.78, 0.30), 980.0, (300.0, 150.0), 2),
+    ('Nebula_Cloud1', (-0.98, 0.15), 978.0, (-260.0, 130.0), 2),
     ('Nebula_Cloud3', (-0.85, -0.35), 975.0, (330.0, 165.0), 2),
     ('Nebula_Cloud4', (0.88, -0.55), 970.0, (260.0, 130.0), 2),
+    ('Nebula_Cloud4', (-0.55, -0.88), 968.0, (-280.0, 140.0), 2),
     ('Nebula_Cloud2', (0.30, 0.95), 965.0, (280.0, 140.0), 2),
+    ('VioletGlow', (0.80, 0.05), 962.0, (300.0, 300.0), 4),
     ('Nebula_Burst', (0.0, 0.18), 960.0, (300.0, 300.0), 4),
     ('Nebula_Wisp1', (-0.20, 0.55), 955.0, (520.0, 130.0), 4),
     ('Nebula_Wisp2', (0.10, -0.70), 950.0, (600.0, 150.0), 4),
+    ('Nebula_Wisp1', (0.55, -0.20), 948.0, (-420.0, 110.0), 4),
 ]
 SKY_LIMIT = 950.0                       # yards; the star dome is at 1000
 # Planet: where it sits on screen, its distance and radius. Nearer than every sky card, so it hides
 # them by depth whatever order the client draws them in.
-PLANET = ((0.32, 0.84), 600.0, 22.7)
+PLANET = ((0.32, 0.84), 600.0, 31.0)
 
 
 def reflection_mask(texture):
@@ -119,7 +125,7 @@ def scene_parts(camera=CAMERA):
     parts.append(scene.camera_cards(glows, camera, ART / 'GemGlow.png'))
 
     # Centered on the camera and inside the client's maximum draw distance (farclip 1277).
-    parts.append(scene.sky_dome(camera[0], 1000, ART / 'StarField.png', repeat=(8, 4)))
+    parts.append(scene.sky_dome(camera[0], 1000, ART / 'StarField.png', repeat=(4, 2), max_size=2048))
     r, u, _ = scene.camera_basis(camera)
     for texture, (sx, sy), distance, (rx, ry), blend in SKY:
         # A flat card's far corners must stay inside the dome, or the dome hides them. Bring the card
@@ -128,8 +134,11 @@ def scene_parts(camera=CAMERA):
         corners = [center + a * rx * r + b * ry * u for a in (-1, 1) for b in (-1, 1)]
         k = min(1.0, SKY_LIMIT / max(np.linalg.norm(c - np.asarray(camera[0])) for c in corners))
         center = scene.screen_point(camera, sx, sy, distance * k)
-        parts.append(scene.camera_cards([(center, (rx * k, ry * k))], camera, SRC / 'sky' / f'{texture}.png',
-                                        blend=blend, pull=0, depth_write=False))
+        path = SRC / 'sky' / f'{texture}.png'
+        if not path.exists():
+            path = ART / f'{texture}.png'
+        parts.append(scene.camera_cards([(center, (rx * k, ry * k))], camera, path, blend=blend, pull=0,
+                                        depth_write=False))
     (sx, sy), distance, radius = PLANET
     center = scene.screen_point(camera, sx, sy, distance)
     parts.append(scene.camera_cards([(center, radius)], camera, ART / 'Planet.png', blend=2, pull=0))

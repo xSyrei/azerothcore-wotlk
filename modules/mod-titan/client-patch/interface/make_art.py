@@ -151,13 +151,14 @@ def chevron(size=32, glow_only=False):
     return np.dstack([rgb, np.maximum(disc, ring)])
 
 
-def star_field(width=1024, height=512, seed=7):
-    """Night sky for the login scene's dome: violet-blue nebula clouds and stars. Tiles both ways."""
+def star_field(width=2048, height=1024, seed=7):
+    """Night sky for the login scene's dome, after Argus's skybox: a deep blue-violet nebula with
+    brighter cores and dark dust lanes, many fine dim stars and a few bright ones. Tiles both ways."""
     rng = np.random.default_rng(seed)
     y, x = np.mgrid[0:height, 0:width] / np.array([height, width])[:, None, None]
 
-    def noise(scale, octaves):
-        out = np.zeros((height, width))
+    def noise(scale, octaves, gain=0.5):
+        out, total = np.zeros((height, width)), 0.0
         for o in range(octaves):
             f = scale * 2 ** o
             rows, cols = int(f), int(f * 2)
@@ -168,26 +169,40 @@ def star_field(width=1024, height=512, seed=7):
             fy, fx = fy * fy * (3 - 2 * fy), fx * fx * (3 - 2 * fx)
             iy1, ix1 = (iy + 1) % rows, (ix + 1) % cols
             v = (g[iy, ix] * (1 - fx) + g[iy, ix1] * fx) * (1 - fy) + (g[iy1, ix] * (1 - fx) + g[iy1, ix1] * fx) * fy
-            out += v / 2 ** o
-        return out / (2 - 2 ** (1 - octaves))
+            out += v * gain ** o
+            total += gain ** o
+        return out / total
 
-    cloud = np.clip((noise(3, 5) - 0.45) * 2.2, 0, 1) ** 1.5
-    # Break the clouds up with the Argus skybox's cloud noise (tiled; the dome repeats the texture).
+    clouds = np.clip((noise(2, 7) * 0.75 + noise(4, 5) * 0.45 - 0.48) * 2.2, 0, 1) ** 1.3
+    hue = np.clip((noise(2, 3) - 0.35) * 2.5, 0, 1)
+    # Dark dust lanes from the Argus skybox's cloud noise (tiled to keep the sky seamless).
     with Image.open(HERE.parent / 'models' / 'pantheon' / 'sky' / 'Nebula_Noise.png') as tile:
-        tile = np.asarray(tile.convert('L').resize((width // 2, height // 2)), np.float64) / 255
-    cloud = cloud * (0.35 + 1.3 * np.tile(tile, (2, 2)))
-    tint = noise(2, 3)
-    rgb = np.zeros((height, width, 3))
-    rgb += np.array([0.02, 0.02, 0.06])
-    rgb += cloud[..., None] * (np.array([0.22, 0.08, 0.32]) * tint[..., None] + np.array([0.05, 0.12, 0.30]) * (1 - tint[..., None]))
-    for count, size, bright in ((2600, 0.6, 0.55), (420, 1.0, 0.85), (60, 1.6, 1.0)):
-        sy, sx = rng.random(count) * height, rng.random(count) * width
-        for cy, cx in zip(sy, sx):
-            y0, y1, x0, x1 = int(cy - 3), int(cy + 4), int(cx - 3), int(cx + 4)
-            yy, xx = np.mgrid[y0:y1, x0:x1]
-            g = np.exp(-(((yy - cy) ** 2 + (xx - cx) ** 2) / (2 * size ** 2))) * bright * rng.uniform(0.6, 1.0)
-            col = np.array([0.85, 0.9, 1.0]) if rng.random() < 0.8 else np.array([1.0, 0.85, 0.7])
-            rgb[yy % height, xx % width] += g[..., None] * col
+        tile = np.asarray(tile.convert('L').resize((width // 4, height // 2)), np.float64) / 255
+    dust = np.clip((0.52 - np.tile(tile, (2, 4))) * 3.0, 0, 1) * np.clip(noise(3, 3) * 1.6 - 0.3, 0, 1)
+
+    blue, violet, magenta = np.array([0.10, 0.17, 0.48]), np.array([0.30, 0.11, 0.46]), np.array([0.45, 0.10, 0.34])
+    color = blue * (1 - hue[..., None]) + violet * hue[..., None]
+    color += magenta * np.clip((hue - 0.75) * 3, 0, 1)[..., None] * 0.6
+    rgb = np.array([0.012, 0.016, 0.05]) + clouds[..., None] * color * (1 - 0.75 * dust[..., None])
+    core = np.clip((clouds - 0.72) * 3.5, 0, 1) * (1 - dust)
+    rgb += core[..., None] * np.array([0.18, 0.32, 0.55]) * 0.6
+
+    def star(cy, cx, sigma, bright, col, halo=0.0):
+        reach = int(np.ceil(sigma * 3 + (12 if halo else 0)))
+        yy, xx = np.mgrid[int(cy) - reach:int(cy) + reach + 1, int(cx) - reach:int(cx) + reach + 1]
+        d2 = (yy - cy) ** 2 + (xx - cx) ** 2
+        g = np.exp(-d2 / (2 * sigma ** 2)) * bright
+        if halo:
+            g = g + np.exp(-d2 / (2 * (sigma * 5) ** 2)) * halo
+        rgb[yy % height, xx % width] += g[..., None] * col
+
+    dim = 1 - 0.65 * dust
+    for count, sigma, (lo, hi), halo in ((4200, 0.55, (0.15, 0.45), 0.0), (380, 0.8, (0.45, 0.8), 0.0),
+                                         (28, 1.1, (0.9, 1.0), 0.12)):
+        for cy, cx in zip(rng.random(count) * height, rng.random(count) * width):
+            col = (np.array([0.80, 0.88, 1.0]) if rng.random() < 0.85
+                   else np.array([1.0, 0.85, 0.7]) if rng.random() < 0.6 else np.array([0.75, 0.7, 1.0]))
+            star(cy, cx, sigma, rng.uniform(lo, hi) * dim[int(cy), int(cx)], col, halo)
     return np.dstack([np.clip(rgb, 0, 1), np.ones((height, width))])
 
 
@@ -205,20 +220,35 @@ def gem_glow(size=128):
 
 
 def planet(size=256):
-    """Distant rust-colored planet for the sky, lit from the upper right with a faint cyan rim."""
-    r, _ = radial(size)
+    """Distant rust-colored planet for the sky: a crescent lit from the lower left (where the nebula's
+    bright burst is), its night side faint, with a thin glowing atmosphere around the lit limb."""
     n = size * SS
     y, x = (np.mgrid[0:n, 0:n] + 0.5) / (n / 2) - 1
-    inside = r < 0.94
-    z = np.sqrt(np.clip(0.94 ** 2 - x * x - y * y, 0, None)) / 0.94
-    light = np.clip((x * 0.55 - y * 0.45 + z * 0.7) / 0.94, 0, 1)
+    R = 0.78
+    r = np.hypot(x, y)
+    z = np.sqrt(np.clip(R * R - x * x - y * y, 0, None)) / R
+    light_dir = np.array([-0.65, 0.45, 0.62])
+    light_dir /= np.linalg.norm(light_dir)
+    lambert = np.clip((x / R) * light_dir[0] + (y / R) * light_dir[1] + z * light_dir[2], 0, 1)
     rng = np.random.default_rng(3)
-    bands = 0.85 + 0.15 * np.sin(y * 9 + np.sin(x * 4) * 0.8 + rng.random() * 6)
-    rgb = np.array([0.40, 0.24, 0.18]) * (light * bands)[..., None] * 0.8 + 0.02
-    rim = np.clip((r - 0.82) / 0.12, 0, 1) * inside
-    rgb += rim[..., None] * np.array([0.10, 0.25, 0.35])
-    alpha = np.clip((0.94 - r) / 0.01, 0, 1) * 0.8         # a little of the nebula shows through
+    phase = rng.random() * 6
+    bands = 0.82 + 0.18 * np.sin(y * 11 + np.sin(x * 5 + phase) * 1.2)
+    surface = np.array([0.55, 0.30, 0.20]) * bands[..., None]
+    rgb = surface * (lambert ** 0.8)[..., None] + np.array([0.025, 0.02, 0.04])
+    inside = np.clip((R - r) / 0.006, 0, 1)
+    limb = np.clip(1 - np.abs(r - R) / 0.07, 0, 1) ** 2
+    lit_side = np.clip((x * light_dir[0] + y * light_dir[1]) / (r + 1e-6) * 0.8 + 0.5, 0, 1)
+    glow = limb * lit_side
+    rgb = rgb * inside[..., None] + glow[..., None] * np.array([0.35, 0.55, 0.95])
+    alpha = np.clip(inside * 0.92 + glow * 0.8, 0, 1)
     return np.dstack([np.clip(rgb, 0, 1), alpha])
+
+
+def violet_glow(size=256):
+    """Soft violet light for the sky (additive), balancing the blue burst."""
+    r, _ = radial(size)
+    g = np.exp(-(r / 0.45) ** 2) * np.clip(1 - r, 0, 1) ** 1.5
+    return np.dstack([g[..., None] * np.array([0.42, 0.16, 0.62]), np.ones_like(r)])
 
 
 def mote(size=64):
@@ -252,6 +282,7 @@ def main():
     save_login(gem_glow(), 'GemGlow')
     save_login(planet(), 'Planet')
     save_login(mote(), 'Mote')
+    save_login(violet_glow(), 'VioletGlow')
     print('Wrote', ', '.join(sorted(p.name for p in ART.glob('*.png'))))
 
 
