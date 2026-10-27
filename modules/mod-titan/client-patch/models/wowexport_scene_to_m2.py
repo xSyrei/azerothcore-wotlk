@@ -205,13 +205,20 @@ def split(part, mask_fn):
 
 
 def tinted(image, tint):
-    """Darken / color a texture to stand in for the lighting the scene does not get, keeping
-    glowing details (bright, saturated blue-white pixels) at full brightness."""
+    """Color a texture (its base color under the scene's lights), keeping glowing details (bright,
+    saturated blue-white pixels) as they are.
+
+    tint is (r, g, b) or (r, g, b, sheen r, g, b): with a sheen, the texture's alpha (the reflection
+    mask of Legion's environment-metal shaders) adds that color, standing in for the reflections
+    that make raised edges and gem studs catch the light.
+    """
     a = np.asarray(image.convert('RGBA')).astype(np.float32) / 255
     rgb, alpha = a[..., :3], a[..., 3:]
     lum = rgb.max(-1, keepdims=True)
     glow = np.clip((rgb[..., 2:3] - rgb[..., 0:1] - 0.15) * 4, 0, 1) * np.clip((lum - 0.55) * 4, 0, 1)
-    out = rgb * np.array(tint) * (1 - glow) + rgb * glow
+    out = rgb * np.array(tint[:3]) * (1 - glow) + rgb * glow
+    if len(tint) == 6:
+        out = out + alpha ** 1.5 * np.array(tint[3:])
     return Image.fromarray((np.dstack([np.clip(out, 0, 1), alpha]) * 255).astype(np.uint8), 'RGBA')
 
 

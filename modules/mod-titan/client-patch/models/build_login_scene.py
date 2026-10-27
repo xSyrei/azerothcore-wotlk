@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+from PIL import Image
 
 import wowexport_scene_to_m2 as scene
 
@@ -31,12 +32,14 @@ ROOM_TINT = (0.42, 0.58, 0.62)
 FLOOR_TINT = (0.95, 0.80, 0.50)
 THRONE_TINT = (0.85, 0.66, 0.46)
 WATER_TINT = (0.25, 0.70, 1.00)
+# Reflection sheen for the room's environment-metal textures (masked by their alpha).
+SHEEN = (0.30, 0.42, 0.40)
 ART = HERE.parent / 'interface' / 'login'
 
 # Gem glows: Blizzard's icecrown_blueglow_01 spots (placement scale -> glow radius in yards) and the
 # Ulduar power orbs set into the arch (not the one on the spire tip, which is out of view here and
 # would glow in empty sky).
-GLOW_MODELS = {'icecrown_blueglow_01': 3.6, 'ul_power_orb02': 9.0}
+GLOW_MODELS = {'icecrown_blueglow_01': 6.0, 'ul_power_orb02': 13.0}
 # Lights: a warm key light high above the front of the platform (also carrying the cool ambient that
 # fills the shadows), and a cyan glow inside the throne ring from the gems and runes.
 LIGHTS = [
@@ -46,6 +49,12 @@ LIGHTS = [
 
 # Planet: where it sits on screen (-1..1 across, -1..1 up, for 16:9), its distance and radius.
 PLANET = ((0.32, 0.84), 900.0, 34.0)
+
+
+def reflection_mask(texture):
+    """Whether a texture's alpha is a reflection mask (mostly low) rather than plain opaque."""
+    with Image.open(texture) as image:
+        return image.mode == 'RGBA' and np.asarray(image.getchannel('A')).mean() < 200
 
 
 def on_floor(centers, normals):
@@ -61,7 +70,8 @@ def scene_parts(camera=CAMERA):
             parts.append(p)
             continue
         floor, rest = scene.split(p, on_floor)
-        for q, tint in ((floor, FLOOR_TINT), (rest, ROOM_TINT)):
+        sheen = SHEEN if reflection_mask(p.texture) else ()
+        for q, tint in ((floor, FLOOR_TINT + sheen), (rest, ROOM_TINT + sheen)):
             if q is not None:
                 q.tint, q.flags = tint, q.flags & ~scene.UNLIT
                 parts.append(q)

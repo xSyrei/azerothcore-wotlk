@@ -188,12 +188,13 @@ def star_field(width=1024, height=512, seed=7):
 
 
 def gem_glow(size=128):
-    """Additive halo for the scene's glowing gems: a white-hot core fading through cyan to nothing."""
+    """Additive glow for the scene's gems: a bright disc (the lit gem, white-hot at the center) inside
+    a cyan halo fading to nothing at the edge."""
     r, _ = radial(size)
     fade = np.clip(1 - r, 0, 1) ** 1.5
-    core = np.exp(-(r / 0.12) ** 2)
-    inner = np.exp(-(r / 0.28) ** 2) * 0.8
-    halo = np.exp(-(r / 0.55) ** 2) * 0.55 * fade
+    core = np.clip((0.30 - r) / 0.10, 0, 1) * (0.75 + 0.25 * np.exp(-(r / 0.12) ** 2))
+    inner = np.exp(-(r / 0.38) ** 2) * 0.8
+    halo = np.exp(-(r / 0.62) ** 2) * 0.55 * fade
     rgb = (core[..., None] * np.array([1.0, 1.0, 1.0]) + inner[..., None] * np.array([0.45, 0.85, 1.0])
            + halo[..., None] * np.array([0.10, 0.50, 1.0]))
     return np.dstack([np.clip(rgb, 0, 1), np.ones_like(r)])
