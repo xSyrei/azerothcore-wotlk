@@ -8,7 +8,7 @@ Usage: python3 make_classless_art.py
 """
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFilter
 
 from make_art import HERE, SS, divider, radial
 
@@ -175,60 +175,32 @@ def spark(size=32):
     return np.dstack([g, g * 0.7, g * 0.35, np.ones_like(g)])
 
 
-# The Wildcard die: a twenty-sided die seen face on (hexagon outline, a triangle face in the middle),
-# obsidian faces with gold edges. It cracks along SHARD_LINES and bursts into SHARDS pieces.
-DIE_SIZE = 128
+# The Wildcard die: the ember cube from icons/wildcard-die.png (cut out of the project's die art, its
+# fire and spiked ring left behind). It cracks along jagged lines from its front corner (ORIGIN) and
+# bursts into SHARDS pieces.
+DIE_SIZE = 256
 SHARDS = 6
-
-
-def die_points(n):
-    """Hexagon corners and the middle face's corners, in pixels of an n-pixel die."""
-    c = n / 2
-    hexagon = [(c + 0.9 * c * np.cos(np.radians(-90 + 60 * k)), c + 0.9 * c * np.sin(np.radians(-90 + 60 * k)))
-               for k in range(6)]
-    inner = [(c + 0.5 * c * np.cos(np.radians(-90 + 120 * k)), c + 0.5 * c * np.sin(np.radians(-90 + 120 * k)))
-             for k in range(3)]
-    return hexagon, inner
+ORIGIN = (0.376, 0.47)
 
 
 def die(size=DIE_SIZE):
     n = size * SS
-    img = Image.new('RGBA', (n, n))
-    draw = ImageDraw.Draw(img)
-    v, t = die_points(n)
-    faces = [((v[5], v[0], t[0]), 0.62), ((v[0], v[1], t[0]), 0.78), ((v[1], t[1], t[0]), 0.9),
-             ((v[1], v[2], t[1]), 0.66), ((v[2], v[3], t[1]), 0.5), ((v[3], t[2], t[1]), 0.58),
-             ((v[3], v[4], t[2]), 0.42), ((v[4], v[5], t[2]), 0.55), ((v[5], t[0], t[2]), 0.72),
-             ((t[0], t[1], t[2]), 1.0)]
-    for points, light in faces:
-        draw.polygon(points, fill=(int(70 * light), int(38 * light), int(26 * light), 255))
-    gold = (242, 186, 96, 255)
-    width = max(2, n // 64)
-    for a, b in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0]), (t[0], v[5]), (t[0], v[0]), (t[0], v[1]),
-                 (t[1], v[1]), (t[1], v[2]), (t[1], v[3]), (t[2], v[3]), (t[2], v[4]), (t[2], v[5])]:
-        draw.line([a, b], fill=(214, 150, 70, 255), width=width)
-    draw.line(v + [v[0]], fill=gold, width=width * 2, joint='curve')
-    font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf', n // 6)
-    cx, cy = n / 2, n / 2 + n * 0.03
-    draw.text((cx, cy), '20', font=font, fill=(255, 214, 140, 255), anchor='mm')
-    rgba = np.asarray(img).astype(np.float64) / 255
-    # Ember light inside the middle face.
-    r, _ = radial(size)
-    rgba[..., 0] += np.exp(-(r / 0.35) ** 2) * 0.25 * rgba[..., 3]
-    rgba[..., 1] += np.exp(-(r / 0.35) ** 2) * 0.08 * rgba[..., 3]
-    return rgba
+    with Image.open(HERE.parent / 'icons' / 'wildcard-die.png') as art:
+        art = art.convert('RGBA').resize((n, n), Image.Resampling.LANCZOS)
+    return np.asarray(art).astype(np.float64) / 255
 
 
 def shard_lines(n, seed=11):
-    """Jagged crack lines from the center out, one per shard boundary (in pixels)."""
+    """Jagged crack lines from the front corner out past the edge, one per shard boundary (pixels)."""
     rng = np.random.default_rng(seed)
+    ox, oy = ORIGIN[0] * n, ORIGIN[1] * n
     lines = []
     for k in range(SHARDS):
         base = np.radians(-75 + 360 / SHARDS * k)
-        points = [(n / 2, n / 2)]
-        for radius in (0.18, 0.36, 0.55, 0.75, 1.0, 1.3):
-            angle = base + rng.uniform(-0.16, 0.16) * (radius < 1)
-            points.append((n / 2 + radius * n / 2 * np.cos(angle), n / 2 + radius * n / 2 * np.sin(angle)))
+        points = [(ox, oy)]
+        for radius in (0.12, 0.25, 0.4, 0.55, 0.75, 1.4):
+            angle = base + rng.uniform(-0.18, 0.18) * (radius < 1)
+            points.append((ox + radius * n * np.cos(angle), oy + radius * n * np.sin(angle)))
         lines.append(points)
     return lines
 
@@ -246,16 +218,17 @@ def shard(index, size=DIE_SIZE):
 
 
 def cracks(size=DIE_SIZE):
-    """Glowing ember cracks along the shard lines (additive), drawn over the die as it shakes."""
+    """Glowing ember cracks along the shard lines (additive), only on the die, drawn as it shakes."""
     n = size * SS
     img = Image.new('L', (n, n))
     draw = ImageDraw.Draw(img)
     for points in shard_lines(n):
-        draw.line([p for p in points if np.hypot(p[0] - n / 2, p[1] - n / 2) < 0.92 * n / 2], fill=255,
-                  width=max(2, n // 90), joint='curve')
-    core = np.asarray(img).astype(np.float64) / 255
-    halo = np.asarray(img.filter(ImageFilter.GaussianBlur(n / 40))).astype(np.float64) / 255
-    g = np.clip(core + halo * 2.2, 0, 1)
+        draw.line(points, fill=255, width=max(2, n // 110), joint='curve')
+    inside = Image.fromarray((die(size)[..., 3] * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(9))
+    inside = np.asarray(inside).astype(np.float64) / 255
+    core = np.asarray(img).astype(np.float64) / 255 * inside
+    halo = np.asarray(Image.fromarray((core * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(n / 60)))
+    g = np.clip(core + halo.astype(np.float64) / 255 * 2.4, 0, 1)
     return np.dstack([g, g * (0.55 + 0.4 * core), g * (0.15 + 0.6 * core), np.ones_like(g)])
 
 

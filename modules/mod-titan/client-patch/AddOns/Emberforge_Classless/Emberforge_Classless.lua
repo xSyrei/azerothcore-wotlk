@@ -1239,6 +1239,7 @@ end
 local function CreateRoll()
     local SLOT_STEP, SLOT_COUNT, WINNER_SLOT, START_SLOT = 52, 48, 42, 5
     local ICON_SIZE, REEL_WIDTH, BAR_HEIGHT = 44, 9 * 52, 62
+    local DIE_SIZE = 96
     -- Timeline (seconds): the die pops in, shakes and shatters; the track opens; the reel spins.
     -- From the start: the die pops in by POP, bursts at SHATTER; the track opens from OPEN to OPENED;
     -- the reel lands at LANDED. From the landing: the shards gather and the track closes (REBUILD to
@@ -1434,8 +1435,8 @@ local function CreateRoll()
     for index = 1, 6 do
         local piece = dieFrame:CreateTexture(nil, "ARTWORK")
         piece:SetTexture(ART .. "DieShard" .. index)
-        piece:SetWidth(76)
-        piece:SetHeight(76)
+        piece:SetWidth(DIE_SIZE)
+        piece:SetHeight(DIE_SIZE)
         -- Each piece flies out from the middle of its wedge.
         piece.angle = math.rad(-45 + 60 * (index - 1))
         shards[index] = piece
@@ -1623,7 +1624,7 @@ local function CreateRoll()
                 piece:ClearAllPoints()
                 piece:SetPoint("CENTER", math.cos(piece.angle) * distance, -math.sin(piece.angle) * distance)
                 Rotate(piece, (piece.spin or 3) * (1 - gather) * 0.8)
-                Square(piece, 76)
+                Square(piece, DIE_SIZE)
                 piece:SetAlpha(Clamp((t - T.REBUILD) / 0.2))
                 piece:Show()
             end
@@ -1645,9 +1646,9 @@ local function CreateRoll()
         end
         local since = t - T.FORMED
         local fade = Clamp((since - 0.35) / (T.GONE - T.FORMED - 0.35))
-        Square(die, 76 * (1 + 0.18 * fade))
-        Square(dieCracks, 76 * (1 + 0.18 * fade))
-        Square(dieGlow, 76 * (1.8 + 0.6 * fade))
+        Square(die, DIE_SIZE * (1 + 0.06 * fade))
+        Square(dieCracks, DIE_SIZE * (1 + 0.06 * fade))
+        Square(dieGlow, DIE_SIZE * (1.8 + 0.6 * fade))
         die:SetAlpha(1 - fade)
         dieCracks:SetAlpha(Clamp(1 - since / 0.4) * (1 - fade))
         dieGlow:SetAlpha(0.8 * (1 - fade))
@@ -1768,7 +1769,7 @@ local function CreateRoll()
     AnimateDie = function(self, t)
         if t < T.SHATTER then
             local shake = Clamp((t - T.POP) / (T.SHATTER - T.POP)) ^ 2
-            local size = 76 * BackOut(Clamp(t / T.POP))
+            local size = DIE_SIZE * BackOut(Clamp(t / T.POP))
             Square(die, size)
             Square(dieCracks, size)
             Square(dieGlow, size * (1.6 + shake))
