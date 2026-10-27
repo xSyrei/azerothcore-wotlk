@@ -69,9 +69,9 @@ extracted from a client with the launcher's `tools/extract-mpq.js`):
 `_ModelPlacementInformation.csv`), a star dome (`interface/login/StarField.png`) and camera 0,
 which the login screen looks through. `models/wowexport_scene_to_m2.py` does the conversion:
 static and unlit, textures capped at 512px, waterfalls keep their scrolling texture transforms.
-It keeps only the triangles camera 0 can see (about half the room), because the 3.3.5a client
-addresses a model's triangles with 16-bit offsets and garbles anything past them. Moving the camera
-re-runs that cut automatically; the build stops with an error if the visible scene is still too big.
+The 3.3.5a client draws at most 65535 triangle indices per model and nothing beyond its 1277-yard
+draw distance, so the build keeps only what camera 0 can see, drops the smallest slivers until the
+scene fits, and centers the star dome on the camera. Moving the camera re-runs all of that.
 
 - Move the camera: edit `CAMERA` (position, target, field of view) and preview it with
   `python3 models/build_login_scene.py out` then

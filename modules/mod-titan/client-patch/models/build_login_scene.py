@@ -41,7 +41,9 @@ def scene_parts():
                     p.tint = THRONE_TINT
         for position, rotation, scale in scene.placements(PLACEMENTS, doodad):
             parts += scene.placed(model, position, rotation, scale)
-    parts.append(scene.sky_dome((0, 0, 0), 1800, HERE.parent / 'interface' / 'login' / 'StarField.png'))
+    # Centered on the camera and inside the client's maximum draw distance (farclip 1277).
+    stars = HERE.parent / 'interface' / 'login' / 'StarField.png'
+    parts.append(scene.sky_dome(CAMERA[0], 1000, stars, repeat=(8, 4)))
     return parts
 
 

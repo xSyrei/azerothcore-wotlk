@@ -207,13 +207,14 @@ def _covered_pixels(px, py, pz, width, height):
     return (slice(y0, y1 + 1), slice(x0, x1 + 1)), inside, depth
 
 
-def cull_hidden(parts, camera, width=2400, aspects=(4 / 3, 21 / 9), margin=1.1, near=1.0):
+def cull_hidden(parts, camera, width=2400, aspects=(4 / 3, 21 / 9), margin=1.1, near=1.0, budget=None):
     """Drop the triangles a fixed camera never sees: off screen, or behind opaque geometry.
 
     The test frame covers every listed screen shape (the M2 camera FOV is diagonal, so a wider
     screen sees further sideways and less up and down) plus a margin. Alpha-tested and blended
-    parts never hide anything. Triangles crossing the near plane are kept. Returns new parts with
-    unused vertices removed; parts left without triangles are dropped.
+    parts never hide anything. Triangles crossing the near plane are kept. With a budget (a
+    triangle count), the triangles covering the fewest visible pixels are dropped until the rest
+    fit. Returns new parts with unused vertices removed; parts without triangles are dropped.
     """
     t = math.tan(camera[2] / 2)
     tan_h = max(a * t / math.sqrt(1 + a * a) for a in aspects) * margin
@@ -243,24 +244,36 @@ def cull_hidden(parts, camera, width=2400, aspects=(4 / 3, 21 / 9), margin=1.1, 
                 closer = inside & (depth < zb)
                 zb[closer] = depth[closer]
 
-    out = []
+    coverage = []                                   # visible pixels per triangle (0 = never seen)
     for p, (sx, sy, z) in zip(parts, projected):
-        keep = np.zeros(len(p.triangles), bool)
+        seen = np.zeros(len(p.triangles))
         for i, tri in enumerate(p.triangles):
             pz = z[tri]
             if (pz < near).all():
                 continue
             if (pz < near).any():
-                keep[i] = True
+                seen[i] = np.inf
                 continue
             hit = _covered_pixels(sx[tri], sy[tri], pz, width, height)
             if hit:
                 region, inside, depth = hit
-                keep[i] = (inside & (depth <= zbuf[region] * 1.002 + 0.5)).any()
+                seen[i] = (inside & (depth <= zbuf[region] * 1.002 + 0.5)).sum()
             else:                                   # smaller than a pixel: test where it lands
                 cx, cy = int(sx[tri].mean()), int(sy[tri].mean())
-                if 0 <= cx < width and 0 <= cy < height:
-                    keep[i] = pz.mean() <= zbuf[cy, cx] * 1.002 + 0.5
+                if 0 <= cx < width and 0 <= cy < height and pz.mean() <= zbuf[cy, cx] * 1.002 + 0.5:
+                    px, py = sx[tri], sy[tri]
+                    area = (px[1] - px[0]) * (py[2] - py[0]) - (px[2] - px[0]) * (py[1] - py[0])
+                    seen[i] = max(abs(area) / 2, 1e-6)
+        coverage.append(seen)
+
+    threshold = 0.0
+    visible = np.concatenate(coverage)
+    visible = visible[visible > 0]
+    if budget is not None and len(visible) > budget:
+        threshold = np.sort(visible)[len(visible) - budget - 1]
+    out = []
+    for p, seen in zip(parts, coverage):
+        keep = seen > threshold
         if keep.any():
             used, triangles = np.unique(p.triangles[keep], return_inverse=True)
             out.append(Part(p.positions[used], p.normals[used], p.uvs[used], triangles.reshape(-1, 3),
@@ -294,10 +307,11 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512):
     """Write <name>.m2, <name>00.skin and one BLP per texture into out_dir.
 
     The scene is first trimmed to what the camera sees and merged per material: the 3.3.5a client
-    reads a section's index start as 16 bits (it ignores the Level field later clients use for
-    larger models), so every section has to start below 65536.
+    reads triangle indices with 16-bit offsets (it ignores the Level field later clients use for
+    larger models; past index 65535 sections drew stray triangles or nothing), so the whole scene
+    has to fit in 65535 indices.
     """
-    parts = merge_by_material(cull_hidden(parts, camera))
+    parts = merge_by_material(cull_hidden(parts, camera, budget=0xFFFF // 3))
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -327,19 +341,16 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512):
     # Opaque parts first, then blended ones (drawn in this order).
     parts = sorted(parts, key=lambda p: p.blend != 0)
 
-    # Index data smallest section first, so that only the last sections run past index 65535.
-    # Batches keep the draw order above.
     vbase, vstart_of = 0, {}
     for p in parts:
         vstart_of[id(p)] = vbase
         vbase += len(p.positions)
     indices, istart_of = [], {}
-    for p in sorted(parts, key=lambda p: len(p.triangles)):
-        if len(indices) > 0xFFFF:
-            raise ValueError(f'{sum(len(q.triangles) for q in parts) * 3} indices: too many for 16-bit '
-                             'section starts; simplify the scene or narrow the camera')
+    for p in parts:
         istart_of[id(p)] = len(indices)
         indices.extend((p.triangles + vstart_of[id(p)]).reshape(-1).tolist())
+    if len(indices) > 0xFFFF:
+        raise ValueError(f'{len(indices)} triangle indices: a 3.3.5a skin draws at most 65535')
     sections = [(vstart_of[id(p)], len(p.positions), istart_of[id(p)], len(p.triangles) * 3, p) for p in parts]
     if vbase > 0xFFFF:
         raise ValueError(f'{vbase} vertices: a 3.3.5a skin holds at most 65535')
@@ -457,4 +468,4 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512):
     skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
     (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
     return {'vertices': vbase, 'triangles': len(indices) // 3, 'parts': len(parts), 'textures': len(texture_names),
-            'last section start': max(s[2] for s in sections)}
+            'indices': len(indices)}
