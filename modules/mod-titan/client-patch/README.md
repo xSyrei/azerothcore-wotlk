@@ -77,10 +77,11 @@ scene fits, and centers the star dome on the camera. Moving the camera re-runs a
   `python3 models/build_login_scene.py out` then
   `python3 models/render_scene.py out/UI_Emberforge.m2 out view.png`. A trial camera can be passed
   instead: `build_login_scene.py out 280,0,5 -89,0,60 1.4`.
-- Sky: the star dome (`interface/login/StarField.png`, 2048x1024 from `make_art.py`: nebula with dust
-  lanes and stars) with layers of Argus's Legion skybox textures (some mirrored) and a violet glow in
-  front of it (`models/pantheon/sky/`, edges feathered so they blend into
-  the dome), placed by screen position in `SKY`, plus a planet (`PLANET`).
+- Sky: the star dome (`interface/login/StarField.png` from `make_art.py`: nebula with dust lanes and
+  stars) with layers of Argus's Legion skybox textures (`models/pantheon/sky/`, some mirrored, edges
+  feathered so they blend into the dome) and a violet glow in front of it, placed by screen
+  position in `SKY`, plus a planet (`PLANET`). Keep scene textures at 1024 or less: with a 2048x1024
+  dome texture the client dropped the whole scene (black login screen).
 - Glows and colors: `GLOW_MODELS` (gem glows at Blizzard's glow doodad spots) and the `*_TINT` /
   `SHEEN` colors in `build_login_scene.py`.
 - Lighting (`LIT`, `LIGHTS`): one directional M2 light, set up like the light in Blizzard's own login

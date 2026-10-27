@@ -151,9 +151,10 @@ def chevron(size=32, glow_only=False):
     return np.dstack([rgb, np.maximum(disc, ring)])
 
 
-def star_field(width=2048, height=1024, seed=7):
+def star_field(width=1024, height=512, seed=7):
     """Night sky for the login scene's dome, after Argus's skybox: a deep blue-violet nebula with
-    brighter cores and dark dust lanes, many fine dim stars and a few bright ones. Tiles both ways."""
+    brighter cores and dark dust lanes, many fine dim stars and a few bright ones. Tiles both ways.
+    1024x512 at most: with a 2048x1024 dome texture the login screen showed no scene at all."""
     rng = np.random.default_rng(seed)
     y, x = np.mgrid[0:height, 0:width] / np.array([height, width])[:, None, None]
 
@@ -197,8 +198,8 @@ def star_field(width=2048, height=1024, seed=7):
         rgb[yy % height, xx % width] += g[..., None] * col
 
     dim = 1 - 0.65 * dust
-    for count, sigma, (lo, hi), halo in ((4200, 0.55, (0.15, 0.45), 0.0), (380, 0.8, (0.45, 0.8), 0.0),
-                                         (28, 1.1, (0.9, 1.0), 0.12)):
+    for count, sigma, (lo, hi), halo in ((1500, 0.55, (0.15, 0.45), 0.0), (140, 0.8, (0.45, 0.8), 0.0),
+                                         (12, 1.1, (0.9, 1.0), 0.12)):
         for cy, cx in zip(rng.random(count) * height, rng.random(count) * width):
             col = (np.array([0.80, 0.88, 1.0]) if rng.random() < 0.85
                    else np.array([1.0, 0.85, 0.7]) if rng.random() < 0.6 else np.array([0.75, 0.7, 1.0]))
