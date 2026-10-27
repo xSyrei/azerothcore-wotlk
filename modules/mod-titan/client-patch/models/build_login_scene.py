@@ -5,7 +5,6 @@ Usage: python3 build_login_scene.py <out dir>
 Writes UI_Emberforge.m2, UI_Emberforge00.skin and the scene's BLP textures.
 """
 
-import math
 import sys
 from pathlib import Path
 
@@ -21,9 +20,9 @@ DOODADS = ['7du_argusraid_pantheonthrone01', '7az_waterfall05']   # light rays e
 NAME = 'UI_Emberforge'
 CLIENT_DIR = 'Interface\\Glues\\Models\\UI_Emberforge'
 
-# Camera: low, just outside the platform's front edge by the left waterfall pillar, looking up
+# Camera: low, out past the platform's front edge on the left waterfall pillar's side, looking up
 # across the floor at the arch and the throne ring (framed after a wow.export view of the room).
-CAMERA = ((205.0, -50.0, -25.0), (-60.0, 45.0, 65.0), 1.4)
+CAMERA = ((248.0, -108.0, 0.0), (-74.0, 7.0, 65.0), 1.4)
 
 # Without world lighting the raw textures read as flat bright gold. Tints stand in for the raid's
 # lighting (see the Legion reference): the structure goes dark teal-bronze, while the floor ring and
@@ -77,7 +76,7 @@ def scene_parts(camera=CAMERA):
     parts.append(scene.sky_dome(camera[0], 1000, ART / 'StarField.png', repeat=(8, 4)))
     (sx, sy), distance, radius = PLANET
     r, u, f = scene.camera_basis(camera)
-    t = math.tan(camera[2] / 2) / math.sqrt(1 + (16 / 9) ** 2)
+    t = scene.vertical_tan(camera[2], 16 / 9)
     direction = f + r * sx * t * 16 / 9 + u * sy * t
     center = np.asarray(camera[0]) + direction / np.linalg.norm(direction) * distance
     parts.append(scene.camera_cards([(center, radius)], camera, ART / 'Planet.png', blend=2, pull=0))

@@ -17,6 +17,7 @@ import numpy as np
 from PIL import Image
 
 from render_m2 import arr, read_blp
+from wowexport_scene_to_m2 import vertical_tan
 
 
 def load(m2_path, texture_dir):
@@ -68,7 +69,7 @@ def render(m2_path, texture_dir, width=960, height=540):
     r /= np.linalg.norm(r)
     u = np.cross(r, f)
     aspect = width / height
-    th = math.tan(fov / 2) / math.sqrt(1 + aspect * aspect)  # M2 camera FOV is diagonal
+    th = vertical_tan(fov, aspect)                       # M2 camera FOV is diagonal
 
     d = verts['pos'].astype(np.float64) - cam_pos
     x, y, z = d @ r, d @ u, d @ f

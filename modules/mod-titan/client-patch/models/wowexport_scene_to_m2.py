@@ -219,6 +219,12 @@ def look_at_track_key(value):
     return struct.pack('<3f3f3f', *value, 0, 0, 0, 0, 0, 0)        # M2SplineKey<C3Vector>
 
 
+def vertical_tan(fov, aspect):
+    """tan(half vertical FOV) for an M2 camera on a screen of this aspect. The 3.3.5a client splits the
+    camera's diagonal FOV angle by the screen diagonal (measured against in-game screenshots)."""
+    return math.tan(fov / (2 * math.sqrt(1 + aspect * aspect)))
+
+
 def camera_basis(camera):
     """Right, up and forward unit vectors of a (position, target, fov) camera (Z is up)."""
     cam_pos, target, _ = camera
@@ -258,9 +264,8 @@ def cull_hidden(parts, camera, width=2400, aspects=(4 / 3, 21 / 9), margin=1.1, 
     triangle count), the triangles covering the fewest visible pixels are dropped until the rest
     fit. Returns new parts with unused vertices removed; parts without triangles are dropped.
     """
-    t = math.tan(camera[2] / 2)
-    tan_h = max(a * t / math.sqrt(1 + a * a) for a in aspects) * margin
-    tan_v = max(t / math.sqrt(1 + a * a) for a in aspects) * margin
+    tan_h = max(a * vertical_tan(camera[2], a) for a in aspects) * margin
+    tan_v = max(vertical_tan(camera[2], a) for a in aspects) * margin
     height = round(width * tan_v / tan_h)
     r, u, f = camera_basis(camera)
     projected = []
