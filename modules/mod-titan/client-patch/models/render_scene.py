@@ -20,6 +20,20 @@ from render_m2 import arr, read_blp
 from wowexport_scene_to_m2 import vertical_tan
 
 
+def vertex_lighting(verts, lights):
+    """Per-vertex light for lit materials: summed ambient plus each point light's diffuse on the
+    vertex normal, at full strength until attenuation start and fading out linearly by its end."""
+    light = np.zeros((len(verts), 3))
+    pos, nrm = verts['pos'].astype(np.float64), verts['n'].astype(np.float64)
+    for position, ambient, diffuse, start, end in lights:
+        d = position - pos
+        dist = np.linalg.norm(d, axis=1)
+        lambert = np.clip((d * nrm).sum(1) / np.maximum(dist, 1e-6), 0, None)
+        fade = np.clip((end - dist) / max(end - start, 1e-6), 0, 1)
+        light += ambient + diffuse * (lambert * fade)[:, None]
+    return light if lights else None
+
+
 def load(m2_path, texture_dir):
     m2 = Path(m2_path).read_bytes()
     skin = Path(m2_path).with_name(Path(m2_path).stem + '00.skin').read_bytes()
@@ -49,6 +63,22 @@ def load(m2_path, texture_dir):
     cam_pos = first_key(o + 16, o + 36)
     cam_target = first_key(o + 48, o + 68)
 
+    # Point lights: first key of each track.
+    def key(track_off, fmt):
+        _, _, _, _, vn, vo = struct.unpack_from('<HHIIII', m2, track_off)
+        _, inner_o = struct.unpack_from('<II', m2, vo)
+        return struct.unpack_from('<' + fmt, m2, inner_o)
+    lights = []
+    n, o = arr(m2, 0x108)
+    for i in range(n):
+        base = o + i * 156
+        position = np.array(struct.unpack_from('<3f', m2, base + 4))
+        t = base + 16
+        ambient = np.array(key(t, '3f')) * key(t + 20, 'f')[0]
+        diffuse = np.array(key(t + 40, '3f')) * key(t + 60, 'f')[0]
+        lights.append((position, ambient, diffuse, key(t + 80, 'f')[0], key(t + 100, 'f')[0]))
+    lighting = vertex_lighting(verts, lights)
+
     n, o = arr(skin, 0x04)
     lookup = np.frombuffer(skin, '<u2', n, o)
     n, o = arr(skin, 0x0C)
@@ -57,11 +87,13 @@ def load(m2_path, texture_dir):
     sections = [struct.unpack_from('<10H', skin, o + i * 48) for i in range(n)]
     n, o = arr(skin, 0x24)
     batches = [struct.unpack_from('<Bb11H', skin, o + i * 24) for i in range(n)]
-    return verts, textures, materials, texture_lookup, lookup, indices, sections, batches, (cam_pos, cam_target, fov, near)
+    return (verts, textures, materials, texture_lookup, lookup, indices, sections, batches,
+            (cam_pos, cam_target, fov, near), lighting)
 
 
 def render(m2_path, texture_dir, width=960, height=540):
-    verts, textures, materials, tex_lookup, lookup, indices, sections, batches, camera = load(m2_path, texture_dir)
+    (verts, textures, materials, tex_lookup, lookup, indices, sections, batches, camera,
+     lighting) = load(m2_path, texture_dir)
     cam_pos, cam_target, fov, near = camera
     f = cam_target - cam_pos
     f /= np.linalg.norm(f)
@@ -111,6 +143,11 @@ def render(m2_path, texture_dir, width=960, height=540):
             tu = (w0 * uv[ids[0], 0] / z[ids[0]] + w1 * uv[ids[1], 0] / z[ids[1]] + w2 * uv[ids[2], 0] / z[ids[2]]) * depth
             tv = (w0 * uv[ids[0], 1] / z[ids[0]] + w1 * uv[ids[1], 1] / z[ids[1]] + w2 * uv[ids[2], 1] / z[ids[2]]) * depth
             texel = tex[(np.mod(tv, 1) * (th_ - 1)).astype(int), (np.mod(tu, 1) * (tw - 1)).astype(int)]
+            if lighting is not None and not mflags & 1:   # lit material
+                lv = lighting[ids]
+                lit = ((w0 / z[ids[0]])[..., None] * lv[0] + (w1 / z[ids[1]])[..., None] * lv[1]
+                       + (w2 / z[ids[2]])[..., None] * lv[2]) * depth[..., None]
+                texel = np.concatenate([np.clip(texel[..., :3] * lit, 0, 1), texel[..., 3:]], -1)
             region = (slice(y0, y1 + 1), slice(x0, x1 + 1))
             zb = zbuf[region]
             if blend == 0 or blend == 1:

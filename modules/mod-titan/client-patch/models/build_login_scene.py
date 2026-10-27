@@ -24,12 +24,12 @@ CLIENT_DIR = 'Interface\\Glues\\Models\\UI_Emberforge'
 # at the main throne, with the arch and both waterfall pillars framing it.
 CAMERA = ((280.0, 0.0, 5.0), (-89.0, 0.0, 60.0), 1.4)
 
-# Without world lighting the raw textures read as flat bright gold. Tints stand in for the raid's
-# lighting (see the Legion reference): the structure goes dark teal-bronze, while the floor ring and
-# the thrones keep warm gold. Glowing details stay bright (see scene.tinted).
-ROOM_TINT = (0.21, 0.34, 0.42)
-FLOOR_TINT = (0.78, 0.62, 0.38)
-THRONE_TINT = (0.58, 0.45, 0.32)
+# The room and thrones are lit by the scene's own lights (below); tints set their base color after the
+# Legion raid: teal-bronze structure, warm gold floor ring and thrones. Glowing details stay bright
+# (see scene.tinted) and unlit.
+ROOM_TINT = (0.42, 0.58, 0.62)
+FLOOR_TINT = (0.95, 0.80, 0.50)
+THRONE_TINT = (0.85, 0.66, 0.46)
 WATER_TINT = (0.25, 0.70, 1.00)
 ART = HERE.parent / 'interface' / 'login'
 
@@ -37,6 +37,13 @@ ART = HERE.parent / 'interface' / 'login'
 # Ulduar power orbs set into the arch (not the one on the spire tip, which is out of view here and
 # would glow in empty sky).
 GLOW_MODELS = {'icecrown_blueglow_01': 3.6, 'ul_power_orb02': 9.0}
+# Lights: a warm key light high above the front of the platform (also carrying the cool ambient that
+# fills the shadows), and a cyan glow inside the throne ring from the gems and runes.
+LIGHTS = [
+    scene.point_light((150.0, 0.0, 350.0), ((0.22, 0.32, 0.44), 1.0), ((1.00, 0.86, 0.62), 1.0), (0.0, 900.0)),
+    scene.point_light((-20.0, 0.0, 40.0), ((0.0, 0.0, 0.0), 0.0), ((0.35, 0.75, 1.00), 0.9), (40.0, 220.0)),
+]
+
 # Planet: where it sits on screen (-1..1 across, -1..1 up, for 16:9), its distance and radius.
 PLANET = ((0.32, 0.84), 900.0, 34.0)
 
@@ -56,13 +63,13 @@ def scene_parts(camera=CAMERA):
         floor, rest = scene.split(p, on_floor)
         for q, tint in ((floor, FLOOR_TINT), (rest, ROOM_TINT)):
             if q is not None:
-                q.tint = tint
+                q.tint, q.flags = tint, q.flags & ~scene.UNLIT
                 parts.append(q)
     for doodad in DOODADS:
         model = scene.m2_parts(SRC / 'doodads', doodad)
         for p in model:
             if 'throne' in doodad and p.blend == 0 and not p.flags & 0x2:
-                p.tint = THRONE_TINT
+                p.tint, p.flags = THRONE_TINT, p.flags & ~scene.UNLIT
             elif 'waterfall' in doodad:
                 p.tint, p.blend = WATER_TINT, 4             # glowing blue, added onto what is behind
         for position, rotation, scale in scene.placements(PLACEMENTS, doodad):
@@ -83,13 +90,18 @@ def scene_parts(camera=CAMERA):
     return parts
 
 
+def build(out_dir, camera=CAMERA):
+    """Write the scene (M2, skin, BLPs) into out_dir; returns build stats."""
+    return scene.build(scene_parts(camera), out_dir, NAME, CLIENT_DIR, camera, lights=LIGHTS)
+
+
 def main():
     out = Path(sys.argv[1] if len(sys.argv) > 1 else 'out')
     camera = CAMERA
     if len(sys.argv) > 2:                     # preview another camera: x,y,z tx,ty,tz fov
         a, b, fov = sys.argv[2:5]
         camera = (tuple(map(float, a.split(','))), tuple(map(float, b.split(','))), float(fov))
-    stats = scene.build(scene_parts(camera), out, NAME, CLIENT_DIR, camera)
+    stats = build(out, camera)
     print(f'Wrote {NAME}.m2 to {out}:', stats)
 
 

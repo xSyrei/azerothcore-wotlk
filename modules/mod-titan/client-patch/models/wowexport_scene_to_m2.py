@@ -215,6 +215,26 @@ def tinted(image, tint):
     return Image.fromarray((np.dstack([np.clip(out, 0, 1), alpha]) * 255).astype(np.uint8), 'RGBA')
 
 
+def point_light(position, ambient, diffuse, attenuation):
+    """A static M2 point light: position, ambient (rgb, intensity), diffuse (rgb, intensity) and
+    attenuation (full strength up to start, fading out by end, in yards)."""
+    return {'position': position, 'ambient': ambient, 'diffuse': diffuse, 'attenuation': attenuation}
+
+
+def light_record(blob, light):
+    """M2Light (WotLK, 156 bytes): type 1 (point) on bone 0, every value a one-key track."""
+    def one(fmt, value):
+        return track(blob, 0, [([0], [value])], fmt)
+    (ar, ag, ab), ai = light['ambient']
+    (dr, dg, db), di = light['diffuse']
+    start, end = light['attenuation']
+    record = struct.pack('<Hh3f', 1, 0, *light['position'])
+    record += one('3f', (ar, ag, ab)) + one('f', ai) + one('3f', (dr, dg, db)) + one('f', di)
+    record += one('f', start) + one('f', end) + one('B', 1)
+    assert len(record) == 156
+    return record
+
+
 def look_at_track_key(value):
     return struct.pack('<3f3f3f', *value, 0, 0, 0, 0, 0, 0)        # M2SplineKey<C3Vector>
 
@@ -350,7 +370,7 @@ def merge_by_material(parts, max_indices=0xFFFF):
     return out
 
 
-def build(parts, out_dir, name, client_dir, camera, max_texture=512):
+def build(parts, out_dir, name, client_dir, camera, max_texture=512, lights=()):
     """Write <name>.m2, <name>00.skin and one BLP per texture into out_dir.
 
     The scene is first trimmed to what the camera sees and merged per material: the 3.3.5a client
@@ -472,6 +492,7 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512):
                        *blob.array('II', [blob.add(struct.pack('<3f', 0, 0, 0), 1)]))
     assert len(cam) == 100
     cameras_ref = blob.add(cam, 1)
+    lights_ref = blob.add(b''.join(light_record(blob, light) for light in lights), len(lights))
     camera_lookup = blob.array('H', [0])
 
     header = struct.pack('<4sI', b'MD20', 264)
@@ -489,7 +510,7 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512):
     header += struct.pack('<6ff6ff', *lo, *hi, radius, *lo, *hi, radius)
     header += struct.pack('<2I', 0, 0) * 3
     header += struct.pack('<2I', 0, 0) * 2                                          # attachments
-    header += struct.pack('<2I', 0, 0) * 2                                          # events, lights
+    header += struct.pack('<2I', 0, 0) + struct.pack('<2I', *lights_ref)            # events, lights
     header += struct.pack('<2I', *cameras_ref) + struct.pack('<2I', *camera_lookup)
     header += struct.pack('<2I', 0, 0) * 2                                          # ribbons, particles
     assert len(header) == 0x130

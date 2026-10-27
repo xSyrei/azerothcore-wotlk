@@ -59,8 +59,7 @@ def main():
                 entries.append((f'Interface\\Icons\\{png.stem}.blp', blp.encode(image)))
 
         scene_dir = tmp / 'login_scene'
-        build_login_scene.scene.build(build_login_scene.scene_parts(), scene_dir, build_login_scene.NAME,
-                                      build_login_scene.CLIENT_DIR, build_login_scene.CAMERA)
+        build_login_scene.build(scene_dir)
         for f in sorted(scene_dir.iterdir()):
             entries.append((f'{build_login_scene.CLIENT_DIR}\\{f.name}', f.read_bytes()))
 
