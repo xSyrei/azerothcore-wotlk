@@ -18,9 +18,9 @@ DOODADS = ['7du_argusraid_pantheonthrone01', '7az_waterfall05']   # light rays e
 NAME = 'UI_Emberforge'
 CLIENT_DIR = 'Interface\\Glues\\Models\\UI_Emberforge'
 
-# Camera: outside the throne ring on the waterfall side, looking across the platform at the main
-# throne, a little above floor level (like the Legion raid's entrance view).
-CAMERA = ((430.0, 0.0, 140.0), (-60.0, 0.0, 30.0), 1.1)
+# Camera: low, just outside the platform's front edge by the left waterfall pillar, looking up
+# across the floor at the arch and the throne ring (framed after a wow.export view of the room).
+CAMERA = ((205.0, -50.0, -25.0), (-60.0, 45.0, 65.0), 1.4)
 
 # Without world lighting the raw textures read as flat bright gold; this darker, teal-leaning
 # tint brings the metal close to the lit raid. Glowing details are kept bright (see scene.tinted).

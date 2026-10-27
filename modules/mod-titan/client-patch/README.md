@@ -76,7 +76,7 @@ scene fits, and centers the star dome on the camera. Moving the camera re-runs a
 - Move the camera: edit `CAMERA` (position, target, field of view) and preview it with
   `python3 models/build_login_scene.py out` then
   `python3 models/render_scene.py out/UI_Emberforge.m2 out view.png`. A trial camera can be passed
-  instead: `build_login_scene.py out 430,0,140 -60,0,30 1.1`.
+  instead: `build_login_scene.py out 205,-50,-25 -60,45,65 1.4`.
 - Not included yet: light rays and other particle effects (wow.export does not export them).
 
 Check changes offline with `sh interface/tests/run.sh` (anchor order plus a full creation run
