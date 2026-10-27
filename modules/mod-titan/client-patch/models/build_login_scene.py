@@ -20,9 +20,9 @@ DOODADS = ['7du_argusraid_pantheonthrone01', '7az_waterfall05']   # light rays e
 NAME = 'UI_Emberforge'
 CLIENT_DIR = 'Interface\\Glues\\Models\\UI_Emberforge'
 
-# Camera: low, out past the platform's front edge on the left waterfall pillar's side, looking up
-# across the floor at the arch and the throne ring (framed after a wow.export view of the room).
-CAMERA = ((248.0, -108.0, 0.0), (-74.0, 7.0, 65.0), 1.4)
+# Camera: low, out past the platform's front edge on its center line, looking up across the floor
+# at the main throne, with the arch and both waterfall pillars framing it.
+CAMERA = ((280.0, 0.0, 5.0), (-89.0, 0.0, 60.0), 1.4)
 
 # Without world lighting the raw textures read as flat bright gold. Tints stand in for the raid's
 # lighting (see the Legion reference): the structure goes dark teal-bronze, while the floor ring and
@@ -38,7 +38,7 @@ ART = HERE.parent / 'interface' / 'login'
 # would glow in empty sky).
 GLOW_MODELS = {'icecrown_blueglow_01': 3.6, 'ul_power_orb02': 9.0}
 # Planet: where it sits on screen (-1..1 across, -1..1 up, for 16:9), its distance and radius.
-PLANET = ((0.22, 0.80), 900.0, 34.0)
+PLANET = ((0.32, 0.84), 900.0, 34.0)
 
 
 def on_floor(centers, normals):
