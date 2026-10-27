@@ -1,0 +1,6 @@
+newmtl mat_7az_rapid01
+illum 1
+map_Kd 7az_rapid01.png
+newmtl mat_7az_rapidsimplemask01
+illum 1
+map_Kd 7az_rapidsimplemask01.png

@@ -151,6 +151,42 @@ def chevron(size=32, glow_only=False):
     return np.dstack([rgb, np.maximum(disc, ring)])
 
 
+def star_field(width=1024, height=512, seed=7):
+    """Night sky for the login scene's dome: violet-blue nebula clouds and stars. Tiles both ways."""
+    rng = np.random.default_rng(seed)
+    y, x = np.mgrid[0:height, 0:width] / np.array([height, width])[:, None, None]
+
+    def noise(scale, octaves):
+        out = np.zeros((height, width))
+        for o in range(octaves):
+            f = scale * 2 ** o
+            rows, cols = int(f), int(f * 2)
+            g = rng.random((rows, cols))
+            gy, gx = y * rows, x * cols
+            iy, ix = gy.astype(int) % rows, gx.astype(int) % cols
+            fy, fx = gy - np.floor(gy), gx - np.floor(gx)
+            fy, fx = fy * fy * (3 - 2 * fy), fx * fx * (3 - 2 * fx)
+            iy1, ix1 = (iy + 1) % rows, (ix + 1) % cols
+            v = (g[iy, ix] * (1 - fx) + g[iy, ix1] * fx) * (1 - fy) + (g[iy1, ix] * (1 - fx) + g[iy1, ix1] * fx) * fy
+            out += v / 2 ** o
+        return out / (2 - 2 ** (1 - octaves))
+
+    cloud = np.clip((noise(3, 5) - 0.45) * 2.2, 0, 1) ** 1.5
+    tint = noise(2, 3)
+    rgb = np.zeros((height, width, 3))
+    rgb += np.array([0.02, 0.02, 0.06])
+    rgb += cloud[..., None] * (np.array([0.22, 0.08, 0.32]) * tint[..., None] + np.array([0.05, 0.12, 0.30]) * (1 - tint[..., None]))
+    for count, size, bright in ((2600, 0.6, 0.55), (420, 1.0, 0.85), (60, 1.6, 1.0)):
+        sy, sx = rng.random(count) * height, rng.random(count) * width
+        for cy, cx in zip(sy, sx):
+            y0, y1, x0, x1 = int(cy - 3), int(cy + 4), int(cx - 3), int(cx + 4)
+            yy, xx = np.mgrid[y0:y1, x0:x1]
+            g = np.exp(-(((yy - cy) ** 2 + (xx - cx) ** 2) / (2 * size ** 2))) * bright * rng.uniform(0.6, 1.0)
+            col = np.array([0.85, 0.9, 1.0]) if rng.random() < 0.8 else np.array([1.0, 0.85, 0.7])
+            rgb[yy % height, xx % width] += g[..., None] * col
+    return np.dstack([np.clip(rgb, 0, 1), np.ones((height, width))])
+
+
 def main():
     ART.mkdir(exist_ok=True)
     save(ring(), 'RaceRing')
@@ -164,6 +200,8 @@ def main():
     save(panel_edge(vertical=True), 'PanelEdgeV')
     save(chevron(), 'Chevron')
     save(chevron(glow_only=True), 'ChevronHighlight')
+    img = Image.fromarray((star_field() * 255).astype(np.uint8), 'RGBA')
+    img.save(HERE / 'login' / 'StarField.png')
     print('Wrote', ', '.join(sorted(p.name for p in ART.glob('*.png'))))
 
 

@@ -1,0 +1,181 @@
+{
+	"fileType": "m2",
+	"fileDataID": 1400012,
+	"fileName": "world/expansion06/doodads/aszuna/7az_waterfall05.m2",
+	"internalName": "7AZ_waterfall05",
+	"textures": [
+		{
+			"fileNameInternal": "world/expansion06/doodads/aszuna/7az_rapid01.blp",
+			"fileNameExternal": "7az_rapid01.png",
+			"mtlName": "mat_7az_rapid01",
+			"flags": 3,
+			"fileDataID": 1387442
+		},
+		{
+			"fileNameInternal": "world/expansion06/doodads/aszuna/7az_rapidsimplemask01.blp",
+			"fileNameExternal": "7az_rapidsimplemask01.png",
+			"mtlName": "mat_7az_rapidsimplemask01",
+			"flags": 3,
+			"fileDataID": 1387443
+		}
+	],
+	"textureTypes": [
+		0,
+		0
+	],
+	"materials": [
+		{
+			"flags": 340,
+			"blendingMode": 2
+		}
+	],
+	"textureCombos": [
+		0,
+		1
+	],
+	"colors": [],
+	"textureWeights": [
+		{
+			"globalSeq": 65535,
+			"interpolation": 0,
+			"timestamps": [
+				[
+					0
+				]
+			],
+			"values": [
+				[
+					32767
+				]
+			],
+			"timestampOffsets": null,
+			"valueOffsets": null
+		}
+	],
+	"transparencyLookup": [
+		0
+	],
+	"textureTransforms": [
+		{
+			"translation": {
+				"globalSeq": 0,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						833
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							-1,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		}
+	],
+	"textureTransformsLookup": [
+		0,
+		65535
+	],
+	"boundingBox": {
+		"min": [
+			-6.153420448303223,
+			-14.20982551574707,
+			-40.20315170288086
+		],
+		"max": [
+			4.115741729736328,
+			8.396538734436035,
+			25.10533332824707
+		]
+	},
+	"boundingSphereRadius": 34.84309768676758,
+	"collisionBox": {
+		"min": [
+			0,
+			0,
+			0
+		],
+		"max": [
+			0,
+			0,
+			0
+		]
+	},
+	"collisionSphereRadius": 0,
+	"skin": {
+		"subMeshes": [
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 0,
+				"vertexCount": 33,
+				"triangleStart": 0,
+				"triangleCount": 129,
+				"boneCount": 1,
+				"boneStart": 0,
+				"boneInfluences": 0,
+				"centerBoneIndex": 0,
+				"centerPosition": [
+					-1.0132927894592285,
+					-3.6908884048461914,
+					8.241389274597168
+				],
+				"sortCenterPosition": [
+					-1.0188393592834473,
+					-2.9066433906555176,
+					-7.5489091873168945
+				],
+				"sortRadius": 34.84309768676758
+			}
+		],
+		"textureUnits": [
+			{
+				"flags": 128,
+				"priority": 0,
+				"shaderID": 16404,
+				"skinSectionIndex": 0,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 0,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 0,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			}
+		],
+		"fileName": "world/expansion06/doodads/aszuna/7az_waterfall0500.skin",
+		"fileDataID": 1400797
+	}
+}

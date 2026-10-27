@@ -7,6 +7,7 @@ tables from the language archives, which outrank patches placed directly in Data
 - DBFilesClient: ChrClasses / CharBaseInfo (Hero class, patch_hero_class.py),
   Item / ItemDisplayInfo (custom items, patch_items.py)
 - custom models converted from wow.export exports (models/, see MODELS below)
+- the login screen scene, the Seat of the Pantheon (models/build_login_scene.py)
 - inventory icons (icons/*.png)
 - the login screen: interface/GlueXML/* (Hero text, retail-style character creation) and its art
   (interface/art/*.png, made by interface/make_art.py)
@@ -27,6 +28,7 @@ sys.path.insert(0, str(HERE / 'models'))
 from PIL import Image  # noqa: E402
 
 import blp  # noqa: E402
+import build_login_scene  # noqa: E402
 import make_mpq  # noqa: E402
 import wowexport_to_m2  # noqa: E402
 
@@ -55,6 +57,12 @@ def main():
         for png in sorted((HERE / 'icons').glob('INV_*.png')):
             with Image.open(png) as image:
                 entries.append((f'Interface\\Icons\\{png.stem}.blp', blp.encode(image)))
+
+        scene_dir = tmp / 'login_scene'
+        build_login_scene.scene.build(build_login_scene.scene_parts(), scene_dir, build_login_scene.NAME,
+                                      build_login_scene.CLIENT_DIR, build_login_scene.CAMERA)
+        for f in sorted(scene_dir.iterdir()):
+            entries.append((f'{build_login_scene.CLIENT_DIR}\\{f.name}', f.read_bytes()))
 
         for source in sorted((HERE / 'interface' / 'GlueXML').iterdir()):
             entries.append((f'Interface\\GlueXML\\{source.name}', source.read_bytes()))
