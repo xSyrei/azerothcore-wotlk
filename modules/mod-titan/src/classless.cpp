@@ -25,15 +25,12 @@
 #include "WorldSession.h"
 #include <map>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 
 // Server side of the Classless window (client addon: client-patch/AddOns/Emberforge_Classless).
 //
 // Both sides talk in addon whispers the player sends to and receives from themself, prefix EFCL:
 //   client -> server   LIST                      send the ability list
 //                      PICK,<first rank id>      spend a Selection pick on that ability
-//                      KEEP,<first rank id> / REROLL,<first rank id>   answer a roll reveal
 //   server -> client   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<id>;...
 //                      U,<class>,<tree order>,<tab id>
 //                      N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
@@ -41,7 +38,7 @@
 //                      K0 / K,<id>,...           known abilities (clear, then first rank ids)
 //                      R0 / R,<talent id>:<rank>,...   owned talent ranks (clear, then talents)
 //                      S,<picks left>,<locked>,<lock level>
-//                      G,<spell id>,<first rank id>,<can reroll>   ability spin (Keep / Reroll)
+//                      G,<spell id>,<first rank id>   ability spin
 //                      H,<talent id>,<spell id>,<rank>   talent spin
 //                      O                         open the window
 namespace
@@ -77,9 +74,6 @@ namespace
         if (payload.size() > head.size())
             SendAddon(player, payload);
     }
-
-    // Rolled abilities still offering a reroll, per player (lost at logout: the roll is then kept).
-    std::unordered_map<ObjectGuid, std::unordered_set<uint32>> pendingRerolls;
 
     // Every playable class's talent trees: tabs (class, order, id), then talents.
     void SendTalentTrees(Player* player)
@@ -136,23 +130,6 @@ namespace
 
         SendAddon(player, "R0");
         SendBatched(player, "R,", owned, ',');
-    }
-
-    void Reroll(Player* player, uint32 firstRank)
-    {
-        auto itr = pendingRerolls.find(player->GetGUID());
-        Wildcard::Ability const* ability = Wildcard::FindAbility(firstRank);
-        if (itr == pendingRerolls.end() || !itr->second.erase(firstRank) || !ability
-            || Wildcard::KnownRank(player, *ability) < 0)
-            return;
-
-        Wildcard::Unlearn(player, *ability);
-        if (Wildcard::Ability const* rolled = Wildcard::GrantRandom(player, "rerolled into", firstRank))
-            Classless::Reveal(player, *rolled, false);
-        else
-            Wildcard::Learn(player, *ability, "nothing else to roll, kept");
-
-        Classless::SendKnown(player);
     }
 
     void SendList(Player* player)
@@ -232,17 +209,14 @@ namespace Classless
         SendAddon(player, "O");
     }
 
-    void Reveal(Player* player, Wildcard::Ability const& ability, bool canReroll)
+    void Reveal(Player* player, Wildcard::Ability const& ability)
     {
-        uint32 firstRank = ability.Ranks.front().SpellId;
         int32 known = Wildcard::KnownRank(player, ability);
         if (known < 0)
             return;
 
-        if (canReroll)
-            pendingRerolls[player->GetGUID()].insert(firstRank);
-        SendAddon(player, Acore::StringFormat("G,{},{},{}", ability.Ranks[known].SpellId, firstRank,
-            canReroll ? 1 : 0));
+        SendAddon(player, Acore::StringFormat("G,{},{}", ability.Ranks[known].SpellId,
+            ability.Ranks.front().SpellId));
     }
 
     void RevealTalent(Player* player, uint32 talentId, uint32 spellId, uint8 rank)
@@ -255,14 +229,8 @@ class titan_classless : public PlayerScript
 {
 public:
     titan_classless() : PlayerScript("titan_classless", {
-        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT,
-        PLAYERHOOK_ON_LOGOUT
+        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT
     }) { }
-
-    void OnPlayerLogout(Player* player) override
-    {
-        pendingRerolls.erase(player->GetGUID());
-    }
 
     // Requests from the addon: whispers to oneself in the addon language with our prefix. They are
     // handled here and never delivered.
@@ -280,17 +248,6 @@ public:
         {
             if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(5)))
                 Pick(player, *spellId);
-        }
-        else if (request.starts_with("REROLL,"))
-        {
-            if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(7)))
-                Reroll(player, *spellId);
-        }
-        else if (request.starts_with("KEEP,"))
-        {
-            if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(5)))
-                if (auto itr = pendingRerolls.find(player->GetGUID()); itr != pendingRerolls.end())
-                    itr->second.erase(*spellId);
         }
 
         return false;

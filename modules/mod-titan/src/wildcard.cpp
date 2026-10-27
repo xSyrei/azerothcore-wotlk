@@ -328,7 +328,7 @@ namespace
             uint32 owed = KIT_SIZE + (level >= FIRST_TALENT_LEVEL ? level - FIRST_TALENT_LEVEL + 1 : 0);
             uint32 granted = player->GetPlayerSetting(SETTING_SOURCE, SETTING_ABILITIES_GRANTED).value;
             uint32 const before = granted;
-            // Kit abilities come without a spin (the tomes handle them); later ones get Keep / Reroll.
+            // Kit abilities come without a roll (the tomes handle them).
             while (granted < owed)
             {
                 bool kit = granted < KIT_SIZE;
@@ -338,7 +338,7 @@ namespace
 
                 ++granted;
                 if (!kit && levelUp)
-                    Classless::Reveal(player, *ability, true);
+                    Classless::Reveal(player, *ability);
             }
 
             if (granted != before)
@@ -562,11 +562,11 @@ namespace Wildcard
                     player->learnSpell(companion->Ranks[best].SpellId);
     }
 
-    Ability const* GrantRandom(Player* player, char const* what, uint32 excludeFirstRank)
+    Ability const* GrantRandom(Player* player, char const* what)
     {
         std::vector<Ability const*> candidates;
         for (Ability const& ability : Abilities())
-            if (CanLearn(player, ability) && ability.Ranks.front().SpellId != excludeFirstRank)
+            if (CanLearn(player, ability))
                 candidates.push_back(&ability);
 
         if (candidates.empty())

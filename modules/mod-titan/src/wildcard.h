@@ -59,8 +59,8 @@ namespace Wildcard
     // Offered, not known, allowed for the player's race and available at the player's level.
     bool CanLearn(Player const* player, Ability const& ability);
     void Learn(Player* player, Ability const& ability, char const* what);
-    // Learns a random learnable ability (not excludeFirstRank); the ability, or nullptr if none is left.
-    Ability const* GrantRandom(Player* player, char const* what, uint32 excludeFirstRank = 0);
+    // Learns a random learnable ability; the ability, or nullptr if none is left.
+    Ability const* GrantRandom(Player* player, char const* what);
     // Unlearns every rank of an ability, and its companion spells.
     void Unlearn(Player* player, Ability const& ability);
     // Unlearns every offered ability (the kit and later Wildcard abilities; talents stay).
@@ -76,8 +76,8 @@ namespace Classless
     void SendState(Player* player);
     void SendKnown(Player* player);
     void Open(Player* player);
-    // Shows the roll reveal card for a granted ability; with canReroll it offers Keep / Reroll.
-    void Reveal(Player* player, Wildcard::Ability const& ability, bool canReroll);
+    // Plays the Wildcard roll for a granted ability.
+    void Reveal(Player* player, Wildcard::Ability const& ability);
     // Shows the spin for a talent rank (rank counts from 1).
     void RevealTalent(Player* player, uint32 talentId, uint32 spellId, uint8 rank);
 }

@@ -7,12 +7,12 @@
 --
 -- The server (mod-titan, src/classless.cpp) sends the data as addon whispers to the player, prefix
 -- EFCL, and the window answers the same way:
---   to server     LIST, PICK,<spell id>, KEEP,<spell id>, REROLL,<spell id>
+--   to server     LIST, PICK,<spell id>
 --   from server   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<spell id>;...
 --                 U,<class>,<tree order>,<tab id>
 --                 N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
 --                 K0 / K,<spell id>,...   R0 / R,<talent id>:<rank>,...   S,<picks left>,<locked>,<lock level>
---                 G,<spell id>,<first rank id>,<can reroll>   H,<talent id>,<spell id>,<rank>   O
+--                 G,<spell id>,<first rank id>   H,<talent id>,<spell id>,<rank>   O
 
 local PREFIX = "EFCL"
 local ART = "Interface\\AddOns\\Emberforge_Classless\\Art\\"
@@ -85,7 +85,7 @@ local data = {
 -- spec: the spec tab (1-3, or GENERAL); tree: the talent tree shown (follows the last spec tab).
 local view = { class = nil, spec = 1, tree = 1, search = "", learnable = false, list = SPELLS,
     gridOffset = 0, listOffset = 0 }
-local reveals = {}      -- queued roll reveals: { spell, firstRank, canReroll }
+local reveals = {}      -- queued Wildcard rolls: { spell, firstRank } or { talent, spell, rank }
 local frame, Refresh, ShowNextReveal
 
 local function Send(message)
@@ -277,8 +277,8 @@ local function OnServerMessage(message)
         data.picks, data.locked, data.lockLevel = tonumber(picks) or 0, locked == "1", tonumber(lockLevel) or 9
         Refresh()
     elseif kind == "G" then
-        local _, spell, firstRank, canReroll = strsplit(",", message)
-        tinsert(reveals, { spell = tonumber(spell), firstRank = tonumber(firstRank), canReroll = canReroll == "1" })
+        local _, spell, firstRank = strsplit(",", message)
+        tinsert(reveals, { spell = tonumber(spell), firstRank = tonumber(firstRank) })
         ShowNextReveal()
     elseif kind == "H" then
         local _, talent, spell, rank = strsplit(",", message)
@@ -1213,9 +1213,9 @@ end
 -- Wildcard roll: each level-up ability or talent is rolled on screen. A die drops in, shakes as ember
 -- cracks spread through it and bursts; out of the flash the track opens between two gryphons, and
 -- the icons race through the gold selector until they slow onto the prize. Then a light burst,
--- sparks, the prize's name and Keep / Reroll (abilities) or Okay; the shards then fly back together
--- into the die as the track closes around it, and the die fades away. Several rolls from one
--- level-up play one after another; Skip lands at once.
+-- sparks and the prize's name; the shards then fly back together into the die as the track closes
+-- around it, the die fades away and the rest follows. Several rolls from one level-up play one after
+-- another; Skip lands at once.
 --
 -- In a function of its own: the main chunk would pass Lua's limit of 200 locals.
 local function CreateRoll()
@@ -1226,6 +1226,8 @@ local function CreateRoll()
     -- After landing: the shards gather and the track closes (REBUILD to FORMED); the die fades out
     -- by GONE.
     local REBUILD, FORMED, GONE = 1.4, 1.95, 2.9
+    -- Then the title and the prize's name fade out by DONE, and the next roll (if any) starts.
+    local DONE = 3.6
     -- The reel drifts this far past the prize and eases back onto it.
     local OVERSHOOT = 12
 
@@ -1284,17 +1286,21 @@ local function CreateRoll()
     bar:SetWidth(REEL_WIDTH + 18)
     bar:SetPoint("CENTER", reveal, "TOP", 0, TRACK_Y)
     Box(bar, { 0.02, 0.014, 0.011, 0.92 }, PANEL_EDGE, true)
+    -- The gryphons sit above the reel and its end fades (their frame is raised below, once the
+    -- reel's frames exist), hiding where the icons fade out.
+    local capFrame = CreateFrame("Frame", nil, bar)
+    capFrame:SetAllPoints()
     local caps = {}
     for index, side in ipairs({ "LEFT", "RIGHT" }) do
-        local cap = bar:CreateTexture(nil, "OVERLAY")
+        local cap = capFrame:CreateTexture(nil, "OVERLAY")
         cap:SetTexture("Interface\\MainMenuBar\\UI-MainMenuBar-EndCap-Human")
         cap:SetWidth(100)
         cap:SetHeight(100)
         if index == 2 then
             cap:SetTexCoord(1, 0, 0, 1)
-            cap:SetPoint("BOTTOMLEFT", bar, "BOTTOMRIGHT", -36, -22)
+            cap:SetPoint("BOTTOMLEFT", bar, "BOTTOMRIGHT", -42, -22)
         else
-            cap:SetPoint("BOTTOMRIGHT", bar, "BOTTOMLEFT", 36, -22)
+            cap:SetPoint("BOTTOMRIGHT", bar, "BOTTOMLEFT", 42, -22)
         end
         caps[index] = cap
     end
@@ -1361,6 +1367,7 @@ local function CreateRoll()
     selector:SetWidth(ICON_SIZE * 1.3)
     selector:SetHeight(ICON_SIZE * 1.3)
     selector:SetPoint("CENTER", 0, 2)
+    capFrame:SetFrameLevel((overlay:GetFrameLevel() or 0) + 2)
     local sparks = {}
     for index = 1, 20 do
         local spark = overlay:CreateTexture(nil, "OVERLAY")
@@ -1426,24 +1433,6 @@ local function CreateRoll()
     revealNote:SetTextColor(unpack(SUBTEXT))
     revealNote:SetPoint("TOP", revealName, "BOTTOM", 0, -5)
 
-    local function RevealButton(label)
-        local button = CreateFrame("Button", nil, result)
-        button:SetWidth(112)
-        button:SetHeight(28)
-        Box(button, CELL_FILL, TAB_ON_EDGE, true)
-        button.label = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-        button.label:SetPoint("CENTER", 0, 0)
-        button:SetFontString(button.label)
-        button:SetText(label)
-        local hover = button:CreateTexture(nil, "HIGHLIGHT")
-        hover:SetTexture(1, 0.6, 0.2, 0.18)
-        hover:SetPoint("TOPLEFT", 2, -2)
-        hover:SetPoint("BOTTOMRIGHT", -2, 2)
-        return button
-    end
-    local keep = RevealButton("Keep")
-    local reroll = RevealButton("Reroll")
-    reroll:SetPoint("BOTTOMLEFT", reveal, "BOTTOM", 8, 6)
     local skip = CreateFrame("Button", nil, reveal)
     skip:SetWidth(50)
     skip:SetHeight(18)
@@ -1565,6 +1554,8 @@ local function CreateRoll()
         end
     end
 
+    local Finish
+
     local function Embers(elapsed, width)
         for _, ember in ipairs(embers) do
             if ember.life then
@@ -1667,7 +1658,17 @@ local function CreateRoll()
         Rotate(burst, t * 0.35)
         burst:SetAlpha(Clamp(t * 4) * (0.75 + 0.25 * math.sin(t * 3)) * (1 - closing))
         selectorGlow:SetAlpha(0.7 + 0.3 * math.sin(t * 4))
-        result:SetAlpha(Clamp(t * 3))
+        -- Once the die is gone the title and the name fade too; then the next roll.
+        local out = Clamp((t - GONE) / (DONE - GONE))
+        heading:SetAlpha(1 - out)
+        result:SetAlpha(Clamp(t * 3) * (1 - out))
+        if out > 0 and GameTooltip:IsOwned(reveal) then
+            GameTooltip:Hide()
+        end
+        if out >= 1 then
+            Finish()
+            return
+        end
         for _, spark in ipairs(sparks) do
             if spark.life then
                 spark.life = spark.life - elapsed
@@ -1708,12 +1709,6 @@ local function CreateRoll()
             note = note .. "  -  Rank " .. current.rank .. "/" .. current.maxRank
         end
         revealNote:SetText(note)
-        keep:Show()
-        keep:Enable()
-        if current.canReroll then
-            reroll:Show()
-            reroll:Enable()
-        end
         skip:Hide()
         burst:Show()
         for _, spark in ipairs(sparks) do
@@ -1874,17 +1869,6 @@ local function CreateRoll()
         end
         flash:Hide()
 
-        keep:SetText(current.canReroll and "Keep" or OKAY)
-        keep:Hide()
-        keep:Disable()
-        reroll:Hide()
-        reroll:Disable()
-        keep:ClearAllPoints()
-        if current.canReroll then
-            keep:SetPoint("BOTTOMRIGHT", reveal, "BOTTOM", -8, 6)
-        else
-            keep:SetPoint("BOTTOM", 0, 6)
-        end
         skip:Show()
 
         -- Land somewhere inside the prize's slot, not always dead center.
@@ -1904,20 +1888,15 @@ local function CreateRoll()
         end
     end)
 
-    local function Answer(message)
-        local current = tremove(reveals, 1)
+    Finish = function()
+        tremove(reveals, 1)
         if GameTooltip:IsOwned(reveal) then
             GameTooltip:Hide()
-        end
-        if message and current and current.canReroll then
-            Send(message .. "," .. current.firstRank)
         end
         reveal:SetScript("OnUpdate", nil)
         reveal.current = nil
         ShowNextReveal()
     end
-    keep:SetScript("OnClick", function() Answer("KEEP") end)
-    reroll:SetScript("OnClick", function() Answer("REROLL") end)
 end
 CreateRoll()
 
