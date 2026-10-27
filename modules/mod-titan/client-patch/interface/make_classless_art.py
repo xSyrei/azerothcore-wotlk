@@ -175,12 +175,11 @@ def spark(size=32):
     return np.dstack([g, g * 0.7, g * 0.35, np.ones_like(g)])
 
 
-# The Wildcard die: the ember cube from icons/wildcard-die.png (cut out of the project's die art, its
-# fire and spiked ring left behind). It cracks along jagged lines from its front corner (ORIGIN) and
-# bursts into SHARDS pieces.
+# The Wildcard die: the project's ember cube (icons/wildcard-die.png, keyed out of its background). It
+# cracks along jagged lines from its center gem (ORIGIN) and bursts into SHARDS pieces.
 DIE_SIZE = 256
 SHARDS = 6
-ORIGIN = (0.376, 0.47)
+ORIGIN = (0.5, 0.49)
 
 
 def die(size=DIE_SIZE):

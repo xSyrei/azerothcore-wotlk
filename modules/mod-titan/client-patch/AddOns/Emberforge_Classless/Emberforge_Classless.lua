@@ -1239,7 +1239,7 @@ end
 local function CreateRoll()
     local SLOT_STEP, SLOT_COUNT, WINNER_SLOT, START_SLOT = 52, 48, 42, 5
     local ICON_SIZE, REEL_WIDTH, BAR_HEIGHT = 44, 9 * 52, 62
-    local DIE_SIZE = 96
+    local DIE_SIZE = 84
     -- Timeline (seconds): the die pops in, shakes and shatters; the track opens; the reel spins.
     -- From the start: the die pops in by POP, bursts at SHATTER; the track opens from OPEN to OPENED;
     -- the reel lands at LANDED. From the landing: the shards gather and the track closes (REBUILD to
