@@ -25,7 +25,14 @@ def encode(image):
         raise ValueError(f'texture must be a power of two in both directions, got {width}x{height}')
 
     has_alpha = True
-    palette_image = image.convert('RGB').quantize(256, method=Image.Quantize.MEDIANCUT)
+    # Palette from the pixels that show: fully transparent ones (often white or gray fringes in
+    # effect textures) would otherwise take colors away from smooth gradients and band them.
+    visible = [rgb for rgb, a in zip(image.convert('RGB').getdata(), image.getchannel('A').getdata()) if a > 4]
+    source = image.convert('RGB')
+    if visible:
+        source = Image.new('RGB', (len(visible), 1))
+        source.putdata(visible)
+    palette_image = source.quantize(256, method=Image.Quantize.MEDIANCUT)
     palette = palette_image.getpalette()[:256 * 3]
     palette += [0] * (256 * 3 - len(palette))
 

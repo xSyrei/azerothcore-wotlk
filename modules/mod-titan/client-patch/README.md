@@ -77,7 +77,12 @@ scene fits, and centers the star dome on the camera. Moving the camera re-runs a
   `python3 models/build_login_scene.py out` then
   `python3 models/render_scene.py out/UI_Emberforge.m2 out view.png`. A trial camera can be passed
   instead: `build_login_scene.py out 280,0,5 -89,0,60 1.4`.
-- Not included yet: light rays and other particle effects (wow.export does not export them).
+- Sky: the star dome (`interface/login/StarField.png`, from `make_art.py`) with layers of Argus's
+  Legion skybox textures in front of it (`models/pantheon/sky/`, edges feathered so they blend into
+  the dome), placed by screen position in `SKY`, plus a planet (`PLANET`).
+- Glows, lights and colors: `GLOW_MODELS` (gem glows at Blizzard's glow doodad spots), `LIGHTS` (two
+  M2 point lights) and the `*_TINT` / `SHEEN` base colors in `build_login_scene.py`.
+- Not included yet: light rays and particle effects (wow.export does not export particles).
 
 Check changes offline with `sh interface/tests/run.sh` (anchor order plus a full creation run
 against a mocked login API) before testing in game.

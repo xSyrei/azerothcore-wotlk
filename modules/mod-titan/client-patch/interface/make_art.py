@@ -172,6 +172,10 @@ def star_field(width=1024, height=512, seed=7):
         return out / (2 - 2 ** (1 - octaves))
 
     cloud = np.clip((noise(3, 5) - 0.45) * 2.2, 0, 1) ** 1.5
+    # Break the clouds up with the Argus skybox's cloud noise (tiled; the dome repeats the texture).
+    with Image.open(HERE.parent / 'models' / 'pantheon' / 'sky' / 'Nebula_Noise.png') as tile:
+        tile = np.asarray(tile.convert('L').resize((width // 2, height // 2)), np.float64) / 255
+    cloud = cloud * (0.35 + 1.3 * np.tile(tile, (2, 2)))
     tint = noise(2, 3)
     rgb = np.zeros((height, width, 3))
     rgb += np.array([0.02, 0.02, 0.06])

@@ -162,27 +162,41 @@ def sky_dome(center, radius, texture, rings=16, segments=32, repeat=(4, 2)):
                 max_size=1024)
 
 
-def camera_cards(centers_radii, camera, texture, blend=4, pull=0.8):
-    """Square sprites facing the (fixed) camera, e.g. glows: one quad per (center, radius).
+def screen_point(camera, sx, sy, distance, aspect=16 / 9):
+    """The point at a distance from the camera that shows at screen position (sx, sy), each -1..1
+    (left to right, bottom to top) on a screen of this aspect."""
+    r, u, f = camera_basis(camera)
+    t = vertical_tan(camera[2], aspect)
+    direction = f + r * sx * t * aspect + u * sy * t
+    return np.asarray(camera[0], np.float64) + direction / np.linalg.norm(direction) * distance
+
+
+def camera_cards(centers_radii, camera, texture, blend=4, pull=0.8, depth_write=None):
+    """Sprites facing the (fixed) camera, e.g. glows: one quad per (center, radius), where the
+    radius is a number (square) or (half width, half height).
 
     Each card is pulled toward the camera by pull * radius so it is not cut in half by the surface
-    it glows on. Additive cards ignore depth writes so overlapping glows add up.
+    it glows on. Additive cards ignore depth writes so overlapping glows add up; depth_write
+    overrides that.
     """
     r, u, _ = camera_basis(camera)
     eye = np.asarray(camera[0], np.float64)
     positions, uvs, triangles = [], [], []
     for center, radius in centers_radii:
+        rx, ry = radius if isinstance(radius, tuple) else (radius, radius)
         center = np.asarray(center, np.float64)
         to_eye = eye - center
-        c = center + to_eye / np.linalg.norm(to_eye) * radius * pull
+        c = center + to_eye / np.linalg.norm(to_eye) * max(rx, ry) * pull
         base = len(positions)
         for du, dv in ((0, 0), (1, 0), (1, 1), (0, 1)):
-            positions.append(c + (du * 2 - 1) * radius * r - (dv * 2 - 1) * radius * u)
+            positions.append(c + (du * 2 - 1) * rx * r - (dv * 2 - 1) * ry * u)
             uvs.append((du, dv))
         triangles += [(base, base + 1, base + 2), (base, base + 2, base + 3)]
     positions = np.array(positions)
     normals = np.tile(-camera_basis(camera)[2], (len(positions), 1))
-    flags = UNLIT | TWO_SIDED | 0x2 | (NO_DEPTH_WRITE if blend >= 3 else 0)
+    if depth_write is None:
+        depth_write = blend < 3
+    flags = UNLIT | TWO_SIDED | 0x2 | (0 if depth_write else NO_DEPTH_WRITE)
     return Part(positions, normals, np.array(uvs, np.float64), np.array(triangles), texture, blend, flags)
 
 
