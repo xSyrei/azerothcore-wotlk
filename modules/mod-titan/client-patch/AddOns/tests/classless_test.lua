@@ -203,7 +203,14 @@ local function shownTabs(tabs)
     end
     return table.concat(names, ",")
 end
-check(#classRow.classButtons == 11 and yourButton.label.text == "Abilities", "class row has Abilities + 10 classes")
+check(#classRow.classButtons == 13 and yourButton.label.text == "Abilities", "class row has Abilities + 12 classes")
+local demonHunterButton, monkButton
+for _, button in ipairs(classRow.classButtons) do
+    if button.id == 12 then demonHunterButton = button end
+    if button.id == 10 then monkButton = button end
+end
+check(demonHunterButton and demonHunterButton.label.text == "Demon Hunter" and monkButton.label.text == "Monk",
+    "Demon Hunter and Monk join the class row")
 check(stat.status.text:find("choose 4 more abilities", 1, true) ~= nil, "status shows 4 picks left")
 
 -- Mage opens on its first tree (Arcane, no abilities here); tabs are the three trees.
@@ -268,6 +275,15 @@ EmberforgeClasslessLearnable.scripts.OnClick(EmberforgeClasslessLearnable)
 check(shownCells(grid.cells) == "", "learnable now hides known Fireball")
 EmberforgeClasslessLearnable.checked = false
 EmberforgeClasslessLearnable.scripts.OnClick(EmberforgeClasslessLearnable)
+
+-- Demon Hunter and Monk: their own specs, no talent tree in the client yet.
+demonHunterButton:Click()
+check(shownTabs(specs.specButtons) == "Havoc,Vengeance", "Demon Hunter specs: Havoc, Vengeance")
+check(tree.treeNote.shown and tree.backgrounds[1].texture == nil, "no talent tree yet, said so")
+monkButton:Click()
+check(shownTabs(specs.specButtons) == "Brewmaster,Mistweaver,Windwalker",
+    "Monk specs: Brewmaster, Mistweaver, Windwalker")
+check(grid.empty.text == "No abilities here.", "Monk has no abilities yet")
 
 -- Abilities outside the three trees get a General tab (Wrath's skill line has no tree here).
 druidButton:Click()

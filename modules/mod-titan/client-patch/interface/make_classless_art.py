@@ -231,6 +231,25 @@ def cracks(size=DIE_SIZE):
     return np.dstack([g, g * (0.55 + 0.4 * core), g * (0.15 + 0.6 * core), np.ones_like(g)])
 
 
+# Class portraits the client lacks (it has no Demon Hunter or Monk): the art inside its own rim,
+# made round for the window's gold ring. Source, center and outer rim radius in source pixels.
+CLASS_PORTRAITS = {
+    'ClassDemonHunter': ('class-demonhunter.jpg', 125, 125, 116 * 0.82),
+    'ClassMonk': ('class-monk.png', 127.5, 128, 109.5 * 0.88),
+}
+
+
+def class_portrait(source, cx, cy, radius, size=128):
+    with Image.open(HERE.parent / 'icons' / source) as art:
+        art = art.convert('RGBA').crop((round(cx - radius), round(cy - radius), round(cx + radius),
+                                        round(cy + radius))).resize((size, size), Image.Resampling.LANCZOS)
+    n = size * SS
+    mask = Image.new('L', (n, n))
+    ImageDraw.Draw(mask).ellipse((SS, SS, n - SS - 1, n - SS - 1), fill=255)
+    art.putalpha(mask.resize((size, size), Image.Resampling.LANCZOS))
+    return art
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     # Panel 9-slices: large (16 px corners, for panels) and small (8 px, for cells, tabs, rows).
@@ -259,6 +278,8 @@ def main():
     save(magnifier(), 'Search')
     save(header_glow(), 'HeaderGlow')
     save(shade(), 'Shade')
+    for name, (source, cx, cy, radius) in CLASS_PORTRAITS.items():
+        class_portrait(source, cx, cy, radius).save(OUT / f'{name}.tga')
     print('Wrote', ', '.join(sorted(p.name for p in OUT.glob('*.tga'))))
 
 

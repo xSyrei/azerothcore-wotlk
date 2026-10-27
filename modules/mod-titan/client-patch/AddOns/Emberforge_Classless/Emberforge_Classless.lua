@@ -16,9 +16,9 @@
 
 local PREFIX = "EFCL"
 local ART = "Interface\\AddOns\\Emberforge_Classless\\Art\\"
-local WIDTH, HEIGHT = 1160, 720
+local WIDTH, HEIGHT = 1220, 720
 local PANEL_TOP, PANEL_HEIGHT = -182, 478
-local GRID_X, GRID_WIDTH, TREE_X, TREE_WIDTH, LIST_X, LIST_WIDTH = 20, 600, 628, 300, 936, 204
+local GRID_X, GRID_WIDTH, TREE_X, TREE_WIDTH, LIST_X, LIST_WIDTH = 20, 600, 628, 300, 936, 264
 local CELL_WIDTH, CELL_HEIGHT, CELL_STEP_X, CELL_STEP_Y, COLUMNS, ROWS = 182, 48, 188, 56, 3, 8
 local LIST_ROW_HEIGHT, LIST_ROWS = 42, 10
 local TALENT_ROWS, TALENT_COLUMNS, TALENT_SIZE = 11, 4, 32
@@ -29,12 +29,16 @@ local GENERAL = 4                   -- the spec tab for abilities outside the cl
 local SPELLS, TALENTS, SPECS = 1, 2, 3
 
 -- Server class ids, alphabetical like the class row in game. Names are spelled out because the
--- client's own class list calls the Paladin "Hero" on Emberforge.
+-- client's own class list calls the Paladin "Hero" on Emberforge. The client knows nothing of the
+-- Demon Hunter and Monk (their retail ids, 12 and 10): they bring their own portrait and color.
 local CLASSES = {
     { id = 6, token = "DEATHKNIGHT", name = "Death Knight" },
+    { id = 12, token = "DEMONHUNTER", name = "Demon Hunter", portrait = "ClassDemonHunter",
+        color = { 0.64, 0.19, 0.79 } },
     { id = 11, token = "DRUID", name = "Druid" },
     { id = 3, token = "HUNTER", name = "Hunter" },
     { id = 8, token = "MAGE", name = "Mage" },
+    { id = 10, token = "MONK", name = "Monk", portrait = "ClassMonk", color = { 0, 1, 0.6 } },
     { id = 2, token = "PALADIN", name = "Paladin" },
     { id = 5, token = "PRIEST", name = "Priest" },
     { id = 4, token = "ROGUE", name = "Rogue" },
@@ -42,10 +46,25 @@ local CLASSES = {
     { id = 9, token = "WARLOCK", name = "Warlock" },
     { id = 1, token = "WARRIOR", name = "Warrior" },
 }
-local CLASS_NAMES, CLASS_TOKENS = {}, {}
+local CLASS_NAMES, CLASS_TOKENS, CLASS_INFO = {}, {}, {}
 for _, class in ipairs(CLASSES) do
     CLASS_NAMES[class.id] = class.name
     CLASS_TOKENS[class.id] = class.token
+    CLASS_INFO[class.id] = class
+end
+
+-- Puts a class's round portrait on a texture: the client's class circles, or the class's own art.
+local function SetClassPortrait(texture, class, inset)
+    local info = CLASS_INFO[class]
+    inset = inset or 0
+    if info and info.portrait then
+        texture:SetTexture("Interface\\AddOns\\Emberforge_Classless\\Art\\" .. info.portrait)
+        texture:SetTexCoord(0, 1, 0, 1)
+    else
+        local coords = CLASS_ICON_TCOORDS[CLASS_TOKENS[class] or ""] or { 0, 1, 0, 1 }
+        texture:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
+        texture:SetTexCoord(coords[1] + inset, coords[2] - inset, coords[3] + inset, coords[4] - inset)
+    end
 end
 
 -- Each class's talent trees in the client's order: name and Interface\TalentFrame background.
@@ -64,6 +83,9 @@ local TREES = {
         { "Destruction", "WarlockDestruction" } },
     [11] = { { "Balance", "DruidBalance" }, { "Feral Combat", "DruidFeralCombat" },
              { "Restoration", "DruidRestoration" } },
+    -- Not in the client: no talent trees (or backgrounds) for these until they get their own.
+    [10] = { { "Brewmaster" }, { "Mistweaver" }, { "Windwalker" } },
+    [12] = { { "Havoc" }, { "Vengeance" } },
 }
 -- Skill lines whose name differs from their talent tree.
 local SKILL_TO_TREE = { ["Elemental Combat"] = "Elemental", ["Shadow Magic"] = "Shadow" }
@@ -502,20 +524,19 @@ local function ResetScrolls()
     view.gridOffset = 0
 end
 
--- Class row: Abilities (your build, the Hero emblem), then the ten classes, as ringed portraits.
+-- Class row: Abilities (your build, the Hero emblem), then the classes, as ringed portraits.
 local classButtons = {}
-local function ClassButton(index, id, coords, label)
+local function ClassButton(index, id, label)
     local button = CreateFrame("Button", nil, frame)
     button:SetWidth(58)
     button:SetHeight(58)
-    button:SetPoint("TOP", frame, "TOPLEFT", WIDTH / 2 + (index - 6) * 96, -58)
+    button:SetPoint("TOP", frame, "TOPLEFT", WIDTH / 2 + (index - (#CLASSES + 2) / 2) * 92, -58)
     button.id = id
     local portrait = button:CreateTexture(nil, "ARTWORK")
-    if coords then
+    if id ~= YOUR_ABILITIES then
         portrait:SetAllPoints()
-        portrait:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
         -- Inside each circle's own rim, so the thin gold ring frames it.
-        portrait:SetTexCoord(coords[1] + 0.015, coords[2] - 0.015, coords[3] + 0.015, coords[4] - 0.015)
+        SetClassPortrait(portrait, id, 0.015)
         local ring = button:CreateTexture(nil, "OVERLAY")
         ring:SetTexture(ART .. "Ring")
         ring:SetWidth(64)
@@ -552,9 +573,9 @@ local function ClassButton(index, id, coords, label)
     classButtons[#classButtons + 1] = button
 end
 
-ClassButton(1, YOUR_ABILITIES, nil, "Abilities")
+ClassButton(1, YOUR_ABILITIES, "Abilities")
 for index, class in ipairs(CLASSES) do
-    ClassButton(index + 1, class.id, CLASS_ICON_TCOORDS[class.token], class.name)
+    ClassButton(index + 1, class.id, class.name)
 end
 
 -- Tabs: small rounded boxes; the selected one glows ember.
@@ -604,7 +625,7 @@ end
 -- Right panel tabs: your spells, your talents, the specs you have points in.
 local listTabs = {}
 for index, label in ipairs({ "Spells", "Talents", "Specs" }) do
-    local tab = Tab(LIST_X + (index - 1) * 69, 66, function(self)
+    local tab = Tab(LIST_X + (index - 1) * (LIST_WIDTH + 3) / 3, LIST_WIDTH / 3 - 3, function(self)
         view.list = self.list
         view.listOffset = 0
         Refresh()
@@ -706,6 +727,10 @@ backgrounds[1]:SetPoint("TOPLEFT")
 backgrounds[2]:SetPoint("TOPLEFT", backgrounds[1], "TOPRIGHT")
 backgrounds[3]:SetPoint("TOPLEFT", backgrounds[1], "BOTTOMLEFT")
 backgrounds[4]:SetPoint("TOPLEFT", backgrounds[1], "BOTTOMRIGHT")
+-- For classes the client has no talent trees for (yet).
+local treeNote = art:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+treeNote:SetPoint("CENTER", 0, 20)
+treeNote:SetText("No talent tree yet")
 local shade = art:CreateTexture(nil, "BORDER")
 shade:SetTexture(ART .. "Shade")
 shade:SetAllPoints()
@@ -987,7 +1012,8 @@ end
 local function RefreshSpecs()
     local trees = TREES[view.class]
     for index, button in ipairs(specButtons) do
-        if not trees or view.search ~= "" or (index == GENERAL and not HasGeneral(view.class)) then
+        if not trees or view.search ~= "" or (index == GENERAL and not HasGeneral(view.class))
+            or (index ~= GENERAL and not trees[index]) then
             button:Hide()
         else
             button:SetText(index == GENERAL and "General" or trees[index][1])
@@ -1069,6 +1095,7 @@ local function RefreshTree()
         pool.used = 0
     end
 
+    treeNote:Hide()
     if view.class == YOUR_ABILITIES or view.search ~= "" then
         for _, texture in ipairs(backgrounds) do
             texture:SetTexture(nil)
@@ -1100,7 +1127,8 @@ local function RefreshTree()
     local tab = data.trees[view.class] and data.trees[view.class][view.tree]
     local info = trees and trees[view.tree]
     for _, texture in ipairs(backgrounds) do
-        texture:SetTexture(info and ("Interface\\TalentFrame\\" .. info[2] .. "-" .. texture.part) or nil)
+        texture:SetTexture(info and info[2] and ("Interface\\TalentFrame\\" .. info[2] .. "-" .. texture.part)
+            or nil)
     end
     local byId = {}
     for _, talent in ipairs(tab and data.talents[tab] or {}) do
@@ -1126,6 +1154,9 @@ local function RefreshTree()
         if byId[talent.requires] then
             DrawArrow(byId[talent.requires], talent)
         end
+    end
+    if info and not info[2] then
+        treeNote:Show()
     end
     local points = TreePoints(tab)
     treeTitle:SetText(info and (info[1] .. "  |cffffffff" .. points .. (points == 1 and " point" or " points") .. "|r")
@@ -1155,8 +1186,7 @@ local function RefreshList()
                     .. #entry.ranks .. "|r")
             elseif view.list == SPECS then
                 row.spec = entry
-                row.icon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
-                row.icon:SetTexCoord(unpack(CLASS_ICON_TCOORDS[CLASS_TOKENS[entry.class]]))
+                SetClassPortrait(row.icon, entry.class)
                 row.name:SetText(TREES[entry.class][entry.order][1] .. "  |cffffffff" .. entry.points .. "|r\n"
                     .. "|cffdca352" .. CLASS_NAMES[entry.class] .. "|r")
             else
@@ -1467,6 +1497,10 @@ local function CreateRoll()
     skip:SetText("Skip")
 
     local function ClassColor(class)
+        local info = CLASS_INFO[class]
+        if info and info.color then
+            return unpack(info.color)
+        end
         local color = RAID_CLASS_COLORS and RAID_CLASS_COLORS[CLASS_TOKENS[class] or ""]
         if color then
             return color.r, color.g, color.b
