@@ -5,10 +5,11 @@ It is a language patch (installed as Data\\enUS\\patch-enUS-4.MPQ): the client r
 tables from the language archives, which outrank patches placed directly in Data\\.
 
 - DBFilesClient: ChrClasses / CharBaseInfo (Hero class, patch_hero_class.py),
-  Item / ItemDisplayInfo (custom items, patch_items.py)
+  Item / ItemDisplayInfo (custom items, patch_items.py), Spell / SpellIcon (Emberforge's own spells,
+  the Demon Hunter's, patch_spells.py)
 - custom models converted from wow.export exports (models/, see MODELS below)
 - the login screen scene, the Seat of the Pantheon (models/build_login_scene.py)
-- inventory icons (icons/*.png)
+- inventory icons (icons/*.png) and spell icons (icons/spells/*.png)
 - the login screen: interface/GlueXML/* (Hero text, retail-style character creation) and its art
   (interface/art/*.png, made by interface/make_art.py)
 
@@ -36,7 +37,8 @@ import wowexport_to_m2  # noqa: E402
 MODELS = [
     ('models/veridus/source', 'sword_1h_artifactskywall_d_06', 'Sword_1H_Veridus', 'Item\\ObjectComponents\\Weapon'),
 ]
-DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc']
+DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
+        'Spell.dbc', 'SpellIcon.dbc']
 
 
 def main():
@@ -45,7 +47,7 @@ def main():
     dbc_dir = Path(sys.argv[1]).resolve()
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        for script in ('patch_hero_class.py', 'patch_items.py'):
+        for script in ('patch_hero_class.py', 'patch_items.py', 'patch_spells.py'):
             subprocess.run([sys.executable, str(HERE / script), str(dbc_dir), str(tmp / 'dbc')], check=True)
         entries = [(f'DBFilesClient\\{name}', (tmp / 'dbc' / name).read_bytes()) for name in DBCS]
 
@@ -54,7 +56,7 @@ def main():
             for suffix in ('.m2', '00.skin', '.blp'):
                 entries.append((f'{folder}\\{name}{suffix}', (tmp / name / f'{name}{suffix}').read_bytes()))
 
-        for png in sorted((HERE / 'icons').glob('INV_*.png')):
+        for png in sorted((HERE / 'icons').glob('INV_*.png')) + sorted((HERE / 'icons' / 'spells').glob('*.png')):
             with Image.open(png) as image:
                 entries.append((f'Interface\\Icons\\{png.stem}.blp', blp.encode(image)))
 

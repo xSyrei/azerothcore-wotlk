@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Pack files into an MPQ archive the WoW 3.3.5a client can load (format version 1).
 
-Files are stored uncompressed and unencrypted, which every MPQ reader supports, and a
-(listfile) is added so tools like Ladik's MPQ Editor can browse the archive.
+Files are stored unencrypted, compressed with zlib in 4 KB sectors (as Blizzard's own patches are)
+when that makes them smaller, and a (listfile) is added so tools like Ladik's MPQ Editor can browse
+the archive.
 
 Usage: python3 make_mpq.py <out.MPQ> <archive path>=<file> [<archive path>=<file> ...]
 Example:
@@ -12,11 +13,14 @@ Example:
 
 import struct
 import sys
+import zlib
 from pathlib import Path
 
 MASK = 0xFFFFFFFF
 SECTOR_SIZE_SHIFT = 3                 # sector size 512 << 3 = 4096, the usual value
-FILE_EXISTS = 0x80000000
+SECTOR_SIZE = 512 << SECTOR_SIZE_SHIFT
+FILE_EXISTS, FILE_COMPRESS = 0x80000000, 0x00000200
+COMPRESSION_ZLIB = 0x02
 HASH_TABLE_OFFSET, HASH_NAME_A, HASH_NAME_B, HASH_FILE_KEY = 0, 1, 2, 3
 
 
@@ -56,6 +60,21 @@ def encrypt(data, key):
     return bytes(out)
 
 
+def compress(data):
+    """A file stored in compressed sectors: the sector offset table, then each sector, zlib-compressed
+    (after a compression type byte) when that is smaller, else as is. None if nothing is saved."""
+    sectors = []
+    for start in range(0, len(data), SECTOR_SIZE):
+        sector = data[start:start + SECTOR_SIZE]
+        packed = bytes([COMPRESSION_ZLIB]) + zlib.compress(sector, 9)
+        sectors.append(packed if len(packed) < len(sector) else sector)
+    offsets = [(len(sectors) + 1) * 4]
+    for sector in sectors:
+        offsets.append(offsets[-1] + len(sector))
+    stored = struct.pack(f'<{len(offsets)}I', *offsets) + b''.join(sectors)
+    return stored if len(stored) < len(data) else None
+
+
 def build(entries):
     """entries: list of (archive path with backslashes, bytes). Returns the archive bytes."""
     names = [name for name, _ in entries]
@@ -68,8 +87,13 @@ def build(entries):
     body = bytearray()
     blocks = []
     for _, data in entries:
-        blocks.append((32 + len(body), len(data), len(data), FILE_EXISTS))
-        body += data
+        stored = compress(data) if data else None
+        if stored is None:
+            blocks.append((32 + len(body), len(data), len(data), FILE_EXISTS))
+            body += data
+        else:
+            blocks.append((32 + len(body), len(stored), len(data), FILE_EXISTS | FILE_COMPRESS))
+            body += stored
 
     empty = (MASK, MASK, 0xFFFF, 0xFFFF, MASK)
     hashes = [empty] * hash_size

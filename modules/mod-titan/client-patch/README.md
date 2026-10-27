@@ -28,9 +28,12 @@ once it is part of the distributed client (see the launcher's `docs/CLIENT_DISTR
    ```bash
    python3 build_patch.py ./dbc
    ```
-   This patches the DBCs (ChrClasses, CharBaseInfo and CharStartOutfit with `patch_hero_class.py`; Item and ItemDisplayInfo with `patch_items.py`), converts the custom models,
-   turns `icons/*.png` into BLP icons and packs everything into `dist/patch-enUS-4.MPQ` with
-   `make_mpq.py` (a plain MPQ with a `(listfile)`, so it also opens in Ladik's MPQ Editor).
+   This patches the DBCs (ChrClasses, CharBaseInfo and CharStartOutfit with `patch_hero_class.py`;
+   Item and ItemDisplayInfo with `patch_items.py`; Spell and SpellIcon with `patch_spells.py`),
+   converts the custom models, turns `icons/*.png` and `icons/spells/*.png` into BLP icons and packs
+   everything into `dist/patch-enUS-4.MPQ` with `make_mpq.py` (zlib-compressed sectors, as Blizzard's
+   patches; Spell.dbc alone is 48 MB uncompressed, and a `(listfile)` so it opens in Ladik's MPQ
+   Editor).
 
 ## Custom items and models
 
@@ -46,6 +49,22 @@ once it is part of the distributed client (see the launcher's `docs/CLIENT_DISTR
 - **Preview:** `python3 models/render_m2.py <model.m2> <texture dir> preview.png` renders a model
   from the converted files. That is how the icons in `icons/` were made.
 - **Icons:** 64x64 PNGs in `icons/`, named like the `DISPLAYS` icon (`INV_Sword_1H_Veridus.png`).
+
+## Custom spells (Demon Hunter)
+
+`patch_spells.py` defines Emberforge's own spells, each a copy of a Blizzard spell (attributes,
+visuals, targeting) with some columns changed: the Demon Hunter's, ids 90100 and up. It writes them
+to the client's Spell.dbc and SpellIcon.dbc (new icons from `icons/spells/`, by their Blizzard
+names; icons the client already has are found in SpellIcon.dbc) and, with `--sql`, the same rows
+for the server's `spell_dbc` table:
+
+```bash
+python3 patch_spells.py ./dbc /tmp/out --sql ../data/sql/db-world/titan_demon_hunter_spells.sql
+```
+
+After changing a spell, regenerate that SQL **and** rebuild the patch: client and server must agree.
+Fury is Runic Power (every Hero has it). The Wildcard pool and the Classless window get the spells
+from `CUSTOM_ABILITIES` in `src/wildcard.cpp` (spec tabs Havoc and Vengeance).
 
 ## Login screen (GlueXML)
 

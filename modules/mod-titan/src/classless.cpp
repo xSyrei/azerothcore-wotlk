@@ -156,6 +156,8 @@ namespace
                 char const* name = skill->name[locale] ? skill->name[locale] : "";
                 SendAddon(player, Acore::StringFormat("T,{},{},{}", classId, skillLine, name));
             }
+            else if (char const* name = Wildcard::CustomSkillLineName(skillLine))
+                SendAddon(player, Acore::StringFormat("T,{},{},{}", classId, skillLine, name));
 
         SendBatched(player, "A,", abilities, ';');
         SendTalentTrees(player);

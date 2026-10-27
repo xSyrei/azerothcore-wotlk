@@ -67,6 +67,24 @@ hand, and the server log says so at the first Hero login when they are missing):
 - `ValidateSkillLearnedBySpells = 0`, or other classes' spells are deleted at every login;
 - `EnablePlayerSettings = 1`, where each Hero's count of granted abilities is kept.
 
+## Demon Hunter
+
+The Demon Hunter is one of Wildcard's classes, with spells of Emberforge's own (the game has no
+Demon Hunter): spell ids 90100 and up in `data/sql/db-world/titan_demon_hunter_spells.sql`, the same
+spells in the client patch (`client-patch/patch_spells.py`, see its README). They join the Wildcard
+pool (`CUSTOM_ABILITIES` in `src/wildcard.cpp`) and the Classless window's Havoc and Vengeance tabs.
+Fury is Runic Power.
+
+| Spell | Ability | Level | Notes |
+|---|---|---|---|
+| 90100 | Demon's Bite | 1 | Weapon strike; generates 20-30 Runic Power |
+| 90101 | Chaos Strike | 1 | 200% weapon damage as Chaos; costs 40 |
+| 90103 | Fel Rush | 1 | Rushes 15 yards forward, Chaos damage around (90104); 10 sec cooldown |
+| 90102 | Blade Dance | 10 | 150% weapon damage to enemies within 8 yards, dodges all attacks for 1 sec; costs 35 |
+| 90105 | Eye Beam | 20 | 2 sec channel, Chaos damage in a 20-yard cone every 0.2 sec (90106); costs 30 |
+
+Learn one in game with `.learn 90100` (needs the client patch for its name and icon).
+
 ## Items
 
 | Entry | Item | Effect |

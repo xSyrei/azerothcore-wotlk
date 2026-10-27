@@ -33,6 +33,11 @@ namespace Wildcard
     constexpr uint8 FIRST_TALENT_LEVEL = 10;        // first per-level ability and talent
     constexpr uint32 TOME_OF_RANDOMIZATION = 910003;
     constexpr uint32 TOME_OF_SELECTION = 910004;
+    // Classes the game lacks, with abilities of Emberforge's own (retail class ids). Their spec tabs
+    // are skill lines of our own too, past the game's.
+    constexpr uint8 CLASS_DEMON_HUNTER = 12;
+    constexpr uint32 SKILL_HAVOC = 2000;
+    constexpr uint32 SKILL_VENGEANCE = 2001;
 
     struct Rank
     {
@@ -53,6 +58,8 @@ namespace Wildcard
 
     bool IsHero(Player const* player);
     std::vector<Ability> const& Abilities();
+    // Name of one of our own skill lines (SKILL_HAVOC...), or nullptr.
+    char const* CustomSkillLineName(uint32 skillLine);
     Ability const* FindAbility(uint32 firstRankSpellId);
 
     int32 KnownRank(Player const* player, Ability const& ability);

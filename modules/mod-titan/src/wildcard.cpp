@@ -122,6 +122,27 @@ namespace
     // Every player always knows Pick Lock, with Lockpicking at its maximum for their level.
     constexpr uint32 SPELL_PICK_LOCK = 1804;
 
+    // Emberforge's own abilities (no trainer teaches them): the spells are in spell_dbc
+    // (data/sql/db-world/titan_demon_hunter_spells.sql) and the client patch (patch_spells.py).
+    struct CustomAbility
+    {
+        uint32 SpellId;
+        uint8 ClassId;
+        uint32 SkillLine;
+        uint8 Level;
+    };
+    constexpr CustomAbility CUSTOM_ABILITIES[] = {
+        { 90100, CLASS_DEMON_HUNTER, SKILL_HAVOC, 1 },      // Demon's Bite
+        { 90101, CLASS_DEMON_HUNTER, SKILL_HAVOC, 1 },      // Chaos Strike
+        { 90103, CLASS_DEMON_HUNTER, SKILL_HAVOC, 1 },      // Fel Rush
+        { 90102, CLASS_DEMON_HUNTER, SKILL_HAVOC, 10 },     // Blade Dance
+        { 90105, CLASS_DEMON_HUNTER, SKILL_HAVOC, 20 },     // Eye Beam
+    };
+    constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
+        { SKILL_HAVOC, "Havoc" },
+        { SKILL_VENGEANCE, "Vengeance" },
+    };
+
     // The spells a trainer entry teaches: itself, or what it learns when it is a wrapper.
     std::vector<uint32> TaughtSpells(uint32 trainerSpellId)
     {
@@ -509,6 +530,23 @@ namespace Wildcard
                 if (hasName(ability, TAME_BEAST))
                     ability.Companions = companions;
 
+            for (CustomAbility const& custom : CUSTOM_ABILITIES)
+            {
+                if (!sSpellMgr->GetSpellInfo(custom.SpellId))
+                {
+                    LOG_ERROR("module", "mod-titan: Wildcard ability spell {} is missing (is "
+                        "titan_demon_hunter_spells.sql applied?)", custom.SpellId);
+                    continue;
+                }
+
+                Ability ability { };
+                ability.Ranks.push_back({ custom.SpellId, custom.Level });
+                ability.ClassId = custom.ClassId;
+                ability.SkillLine = custom.SkillLine;
+                ability.Offered = true;
+                result.push_back(std::move(ability));
+            }
+
             for (char const* name : BANNED_ABILITIES)
                 if (!found.count(name))
                     LOG_WARN("module", "mod-titan: Wildcard banned ability \"{}\" matches no class spell", name);
@@ -523,6 +561,15 @@ namespace Wildcard
         }();
 
         return abilities;
+    }
+
+    char const* CustomSkillLineName(uint32 skillLine)
+    {
+        for (auto const& [id, name] : CUSTOM_SKILL_LINES)
+            if (id == skillLine)
+                return name;
+
+        return nullptr;
     }
 
     Ability const* FindAbility(uint32 firstRankSpellId)

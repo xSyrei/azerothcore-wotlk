@@ -89,7 +89,7 @@ function UnitLevel() return playerLevel end
 local SPELLS = {
     [133] = "Fireball", [116] = "Frostbolt", [78] = "Heroic Strike", [772] = "Rend", [5176] = "Wrath",
     [11069] = "Improved Fireball", [12338] = "Improved Fireball", [11078] = "Improved Fire Blast",
-    [16462] = "Deflection", [11071] = "Frostbite",
+    [16462] = "Deflection", [11071] = "Frostbite", [90101] = "Chaos Strike",
 }
 function GetSpellInfo(id) return SPELLS[id], "", "Interface\\Icons\\Spell_" .. id end
 function GetSpellLink(id) return "[" .. (SPELLS[id] or "?") .. "]" end
@@ -170,7 +170,8 @@ server("T,8,6,Fire")
 server("T,8,8,Arcane")
 server("T,8,16,Frost")
 server("T,1,26,Arms")
-server("A,8.6.1.133;8.16.4.116;1.26.1.78;1.26.4.772;11.574.1.5176")
+server("T,12,2000,Havoc")
+server("A,8.6.1.133;8.16.4.116;1.26.1.78;1.26.4.772;11.574.1.5176;12.2000.1.90101")
 server("U,8,0,81")
 server("U,8,1,41")
 server("U,8,2,61")
@@ -279,6 +280,8 @@ EmberforgeClasslessLearnable.scripts.OnClick(EmberforgeClasslessLearnable)
 -- Demon Hunter and Monk: their own specs, no talent tree in the client yet.
 demonHunterButton:Click()
 check(shownTabs(specs.specButtons) == "Havoc,Vengeance", "Demon Hunter specs: Havoc, Vengeance")
+specs.specButtons[1]:Click()
+check(shownCells(grid.cells) == "Chaos Strike", "Havoc lists the Demon Hunter's own Chaos Strike")
 check(tree.treeNote.shown and tree.backgrounds[1].texture == nil, "no talent tree yet, said so")
 monkButton:Click()
 check(shownTabs(specs.specButtons) == "Brewmaster,Mistweaver,Windwalker",
@@ -296,7 +299,7 @@ check(shownCells(grid.cells) == "Wrath"
 -- Search covers every class.
 EmberforgeClasslessSearch.text = "r"
 EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
-check(shownCells(grid.cells) == "Fireball,Heroic Strike,Wrath,Frostbolt,Rend",
+check(shownCells(grid.cells) == "Chaos Strike,Fireball,Heroic Strike,Wrath,Frostbolt,Rend",
     "search 'r' finds abilities of every class")
 check(shownTabs(specs.specButtons) == "", "spec tabs hide while searching")
 EmberforgeClasslessSearch.text = ""
