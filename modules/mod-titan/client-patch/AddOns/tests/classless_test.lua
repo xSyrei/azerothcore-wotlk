@@ -42,6 +42,7 @@ function Widget:SetText(text) self.text = text end
 function Widget:GetText() return self.text end
 function Widget:SetTexture(texture) self.texture = texture end
 function Widget:SetTexCoord(...) self.coords = { ... } end
+function Widget:SetVertexColor(...) self.vertex = { ... } end
 function Widget:SetTextColor(r, g, b) self.color = { r, g, b } end
 function Widget:SetDesaturated(desaturated) self.desaturated = desaturated end
 function Widget:Enable() self.enabled = true end
@@ -208,7 +209,7 @@ specs.specButtons[2]:Click()
 check(shownCells(grid.cells) == "Fireball", "Fire spec lists only Fire abilities")
 check(grid.cells[1].icon.desaturated and grid.cells[1].sub.text == "Click to choose",
     "unknown Fireball is greyed and pickable at level 1")
-check(tree.treeTitle.text == "Fire (1)", "tree title shows Fire and points owned")
+check(tree.treeTitle.text == "Fire  |cffffffff1 point|r", "tree title shows Fire and points owned")
 check(tree.backgrounds[1].texture == "Interface\\TalentFrame\\MageFire-TopLeft", "tree uses the Mage Fire background")
 local improvedFireball = tree.talentButtons[0 * 4 + 1 + 1]
 local improvedFireBlast = tree.talentButtons[0 * 4 + 2 + 1]
@@ -231,9 +232,10 @@ check(tree.talentButtons[1 * 4 + 0 + 1].shown, "Frostbite sits on row 2 of the F
 local arrow = tree.arrowheads[1]
 check(tree.branches.used == 1 and tree.arrowheads.used == 1 and arrow.shown,
     "Deflection -> Frostbite draws one line and one arrowhead")
-check(arrow.coords and arrow.coords[3] == 0.5 and tree.branches[1].texture == 0.6, "the arrow is grey while unmet")
+check(arrow.texture:find("ArrowDown", 1, true) and arrow.vertex[1] == 0.5 and tree.branches[1].texture == 0.5,
+    "the down arrow is grey while unmet")
 server("R,38:1")
-check(tree.arrowheads[1].coords[3] == 0 and tree.branches[1].texture == 1, "and gold once Deflection is owned")
+check(tree.arrowheads[1].vertex[1] == 1 and tree.branches[1].texture == 1, "and gold once Deflection is owned")
 server("R0")
 server("R,34:1")
 
@@ -284,13 +286,14 @@ check(list.listRows[1].talent and list.listRows[1].name.text:find("Improved Fire
 specs.listTabs[3]:Click()
 check(list.listRows[1].spec and list.listRows[1].name.text:find("Fire", 1, true) == 1, "Specs tab lists Fire")
 list.listRows[1]:Click()
-check(tree.treeTitle.text == "Fire (1)" and shownCells(grid.cells) == "Fireball", "clicking a spec opens it")
+check(tree.treeTitle.text == "Fire  |cffffffff1 point|r" and shownCells(grid.cells) == "Fireball",
+    "clicking a spec opens it")
 specs.listTabs[1]:Click()
 
 -- Abilities (your build): known abilities in the grid, owned talents in the tree panel.
 yourButton:Click()
 check(shownCells(grid.cells) == "Fireball" and grid.cells[1].sub.text == "Mage", "Abilities lists known abilities")
-check(tree.treeTitle.text == "Your Talents (1)" and tree.talentRows[1].shown
+check(tree.treeTitle.text == "Your Talents  |cffffffff1|r" and tree.talentRows[1].shown
     and tree.talentRows[1].name.text == "Improved Fireball  1/2", "Abilities lists owned talents with ranks")
 
 -- Roll reveal: shuffle, then the spell with Keep / Reroll.
