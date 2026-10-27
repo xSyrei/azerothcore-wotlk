@@ -41,6 +41,7 @@ function Widget:IsShown() return self.shown end
 function Widget:SetText(text) self.text = text end
 function Widget:GetText() return self.text end
 function Widget:SetTexture(texture) self.texture = texture end
+function Widget:SetTexCoord(...) self.coords = { ... } end
 function Widget:SetTextColor(r, g, b) self.color = { r, g, b } end
 function Widget:SetDesaturated(desaturated) self.desaturated = desaturated end
 function Widget:Enable() self.enabled = true end
@@ -165,7 +166,7 @@ server("A,8.6.1.133;8.16.4.116;1.26.1.78;1.26.4.772;11.574.1.5176")
 server("U,8,0,81")
 server("U,8,1,41")
 server("U,8,2,61")
-server("N,41.34.0.1.11069+12338;41.36.0.2.11078;61.38.0.0.16462;61.39.1.0.11071")
+server("N,41.34.0.1.11069+12338.0.0;41.36.0.2.11078.0.0;61.38.0.0.16462.0.0;61.39.1.0.11071.38.1")
 server("E")
 server("K0")
 server("R0")
@@ -181,51 +182,66 @@ local tree = upvalues(up.RefreshTree)
 local list = upvalues(up.RefreshList)
 local stat = upvalues(up.RefreshStatus)
 
-local mageButton, yourButton
+local mageButton, yourButton, druidButton
 for _, button in ipairs(classRow.classButtons) do
     if button.id == 8 then mageButton = button end
+    if button.id == 11 then druidButton = button end
     if button.id == 0 then yourButton = button end
 end
-check(#classRow.classButtons == 11, "class row has Your Build + 10 classes")
+local function shownTabs(tabs)
+    local names = {}
+    for _, button in ipairs(tabs) do
+        if button.shown then names[#names + 1] = button.text end
+    end
+    return table.concat(names, ",")
+end
+check(#classRow.classButtons == 11 and yourButton.label.text == "Abilities", "class row has Abilities + 10 classes")
 check(stat.status.text:find("choose 4 more abilities", 1, true) ~= nil, "status shows 4 picks left")
 
--- Mage, All: every Mage ability; tree shows the first tree (Arcane, empty here).
+-- Mage opens on its first tree (Arcane, no abilities here); tabs are the three trees.
 mageButton:Click()
-check(shownCells(grid.cells) == "Fireball,Frostbolt", "Mage (All) lists Fireball then Frostbolt by level")
-local specNames = {}
-for _, button in ipairs(specs.specButtons) do
-    if button.shown then specNames[#specNames + 1] = button.text end
-end
-check(table.concat(specNames, ",") == "All,Arcane,Fire,Frost", "spec buttons: All, Arcane, Fire, Frost")
+check(shownTabs(specs.specButtons) == "Arcane,Fire,Frost", "Mage spec tabs: Arcane, Fire, Frost (no General)")
+check(shownCells(grid.cells) == "", "Arcane lists no abilities here")
 
--- Fire spec: Fire abilities only, and the Fire talent tree with its background and owned rank.
-specs.specButtons[3]:Click()
+-- Fire: Fire abilities only, and the Fire talent tree with its background and owned rank.
+specs.specButtons[2]:Click()
 check(shownCells(grid.cells) == "Fireball", "Fire spec lists only Fire abilities")
-check(tree.treeTitle.text == "Fire Talents (1)", "tree title shows Fire and points owned")
+check(grid.cells[1].icon.desaturated and grid.cells[1].sub.text == "Click to choose",
+    "unknown Fireball is greyed and pickable at level 1")
+check(tree.treeTitle.text == "Fire (1)", "tree title shows Fire and points owned")
 check(tree.backgrounds[1].texture == "Interface\\TalentFrame\\MageFire-TopLeft", "tree uses the Mage Fire background")
 local improvedFireball = tree.talentButtons[0 * 4 + 1 + 1]
 local improvedFireBlast = tree.talentButtons[0 * 4 + 2 + 1]
-check(improvedFireball.shown and improvedFireball.rank.text == "1/2" and not improvedFireball.icon.desaturated,
-    "Improved Fireball sits at row 1 col 2, owned 1/2, in color")
-check(improvedFireBlast.shown and improvedFireBlast.rank.text == "0/1" and improvedFireBlast.icon.desaturated,
+check(improvedFireball.shown and improvedFireball.rank.text == 1 and not improvedFireball.icon.desaturated,
+    "Improved Fireball sits at row 1 col 2, rank 1, in color")
+check(improvedFireBlast.shown and improvedFireBlast.rank.text == 0 and improvedFireBlast.icon.desaturated,
     "Improved Fire Blast is unowned and greyed")
 local otherShown = 0
 for index, button in ipairs(tree.talentButtons) do
     if button.shown and button ~= improvedFireball and button ~= improvedFireBlast then otherShown = otherShown + 1 end
 end
 check(otherShown == 0, "only Fire talents are on the Fire tree")
+check(tree.branches.used == 0 and tree.arrowheads.used == 0, "no arrows on a tree without prerequisites")
 
--- Frost spec: Frostbolt, and the Frost tree in its rows.
-specs.specButtons[4]:Click()
+-- Frost: Frostbolt, and Frostbite under Deflection with an unlit arrow (Deflection not owned).
+specs.specButtons[3]:Click()
 check(shownCells(grid.cells) == "Frostbolt", "Frost spec lists Frostbolt (Frost skill line)")
+check(grid.cells[1].sub.text == "Level 4" and grid.cells[1].sub.color[2] < 0.5, "Frostbolt shows a red Level 4")
 check(tree.talentButtons[1 * 4 + 0 + 1].shown, "Frostbite sits on row 2 of the Frost tree")
+local arrow = tree.arrowheads[1]
+check(tree.branches.used == 1 and tree.arrowheads.used == 1 and arrow.shown,
+    "Deflection -> Frostbite draws one line and one arrowhead")
+check(arrow.coords and arrow.coords[3] == 0.5 and tree.branches[1].texture == 0.6, "the arrow is grey while unmet")
+server("R,38:1")
+check(tree.arrowheads[1].coords[3] == 0 and tree.branches[1].texture == 1, "and gold once Deflection is owned")
+server("R0")
+server("R,34:1")
 
--- Picking: Fireball is pickable at level 1, Frostbolt (level 4) is not.
-specs.specButtons[1]:Click()
-check(grid.cells[1].sub.text:find("click to choose", 1, true) ~= nil, "Fireball (level 1) is pickable at level 1")
+-- Picking: Frostbolt (level 4) is not pickable at level 1, Fireball is.
 popup = nil
-grid.cells[2]:Click()
+grid.cells[1]:Click()
 check(popup == nil, "clicking an ability above your level does nothing")
+specs.specButtons[2]:Click()
 grid.cells[1]:Click()
 check(popup and popup.which == "EMBERFORGE_CLASSLESS_PICK" and popup.data == 133, "clicking Fireball asks to confirm")
 StaticPopupDialogs.EMBERFORGE_CLASSLESS_PICK.OnAccept(nil, popup.data)
@@ -233,29 +249,49 @@ check(lastSent() == "PICK,133", "accepting sends PICK,133")
 server("K0")
 server("K,133")
 server("S,3,0,9")
-check(grid.cells[1].sub.text == "Known", "Fireball now shows as known")
-check(list.listTitle.text == "Your Abilities (1)", "your abilities list counts 1")
+check(grid.cells[1].sub.text == "Known" and not grid.cells[1].icon.desaturated, "Fireball now shows as known")
+check(list.listRows[1].shown and list.listRows[1].name.text == "Fireball" and not list.listRows[2].shown,
+    "the Spells tab lists Fireball")
 
 -- Learnable now: hides known and too-high abilities.
 EmberforgeClasslessLearnable.checked = true
 EmberforgeClasslessLearnable.scripts.OnClick(EmberforgeClasslessLearnable)
-check(shownCells(grid.cells) == "", "learnable now hides known Fireball and level 4 Frostbolt")
+check(shownCells(grid.cells) == "", "learnable now hides known Fireball")
 EmberforgeClasslessLearnable.checked = false
 EmberforgeClasslessLearnable.scripts.OnClick(EmberforgeClasslessLearnable)
+
+-- Abilities outside the three trees get a General tab (Wrath's skill line has no tree here).
+druidButton:Click()
+check(shownTabs(specs.specButtons) == "Balance,Feral Combat,Restoration,General", "Druid gets a General tab")
+specs.specButtons[4]:Click()
+check(shownCells(grid.cells) == "Wrath"
+    and tree.backgrounds[1].texture == "Interface\\TalentFrame\\DruidBalance-TopLeft",
+    "General lists Wrath and keeps the last tree shown")
 
 -- Search covers every class.
 EmberforgeClasslessSearch.text = "r"
 EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
 check(shownCells(grid.cells) == "Fireball,Heroic Strike,Wrath,Frostbolt,Rend",
     "search 'r' finds abilities of every class")
+check(shownTabs(specs.specButtons) == "", "spec tabs hide while searching")
 EmberforgeClasslessSearch.text = ""
 EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
 
--- Your Build: known abilities in the grid, owned talents in the tree panel.
+-- Right panel tabs: talents with ranks, then specs with points; a spec opens its tree.
+specs.listTabs[2]:Click()
+check(list.listRows[1].talent and list.listRows[1].name.text:find("Improved Fireball", 1, true) == 1,
+    "Talents tab lists Improved Fireball")
+specs.listTabs[3]:Click()
+check(list.listRows[1].spec and list.listRows[1].name.text:find("Fire", 1, true) == 1, "Specs tab lists Fire")
+list.listRows[1]:Click()
+check(tree.treeTitle.text == "Fire (1)" and shownCells(grid.cells) == "Fireball", "clicking a spec opens it")
+specs.listTabs[1]:Click()
+
+-- Abilities (your build): known abilities in the grid, owned talents in the tree panel.
 yourButton:Click()
-check(shownCells(grid.cells) == "Fireball" and grid.cells[1].sub.text == "Mage", "Your Build lists known abilities")
+check(shownCells(grid.cells) == "Fireball" and grid.cells[1].sub.text == "Mage", "Abilities lists known abilities")
 check(tree.treeTitle.text == "Your Talents (1)" and tree.talentRows[1].shown
-    and tree.talentRows[1].name.text == "Improved Fireball  1/2", "Your Build lists owned talents with ranks")
+    and tree.talentRows[1].name.text == "Improved Fireball  1/2", "Abilities lists owned talents with ranks")
 
 -- Roll reveal: shuffle, then the spell with Keep / Reroll.
 local reveal = EmberforgeClasslessReveal
@@ -287,9 +323,10 @@ playerLevel = 9
 server("S,0,1,9")
 check(stat.status.text == "", "no tome hints once the kit is locked")
 mageButton:Click()
+specs.specButtons[3]:Click()
 popup = nil
-grid.cells[2]:Click()
-check(popup == nil, "no picking once locked")
+grid.cells[1]:Click()
+check(grid.cells[1].ability and popup == nil, "no picking once locked (Frostbolt at level 9)")
 
 -- The server can open the window (the Tome of Selection does); N and the minimap toggle it.
 frame:Hide()

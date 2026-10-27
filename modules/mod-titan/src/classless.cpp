@@ -35,7 +35,8 @@
 //                      PICK,<first rank id>      spend a Selection pick on that ability
 //                      KEEP,<first rank id> / REROLL,<first rank id>   answer a roll reveal
 //   server -> client   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<id>;...
-//                      U,<class>,<tree order>,<tab id> / N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>...;... / E
+//                      U,<class>,<tree order>,<tab id>
+//                      N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
 //                                                the list (begin, spec tabs, abilities, talent trees, end)
 //                      K0 / K,<id>,...           known abilities (clear, then first rank ids)
 //                      R0 / R,<talent id>:<rank>,...   owned talent ranks (clear, then talents)
@@ -111,8 +112,9 @@ namespace
                 if (rankSpell)
                     ranks += (ranks.empty() ? "" : "+") + std::to_string(rankSpell);
 
-            talents.push_back(Acore::StringFormat("{}.{}.{}.{}.{}", talent->TalentTab, talent->TalentID, talent->Row,
-                talent->Col, ranks));
+            // Prerequisite talent and the rank it needs (DependsOnRank counts from 0), for the tree's arrows.
+            talents.push_back(Acore::StringFormat("{}.{}.{}.{}.{}.{}.{}", talent->TalentTab, talent->TalentID,
+                talent->Row, talent->Col, ranks, talent->DependsOn, talent->DependsOn ? talent->DependsOnRank + 1 : 0));
         }
 
         SendBatched(player, "N,", talents, ';');

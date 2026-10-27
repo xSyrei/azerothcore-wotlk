@@ -2,22 +2,30 @@
 -- and talents, choosing the starting kit after a Titan Tome of Selection, and Wildcard roll reveals.
 -- Open with N, the minimap button, /classless or /cl.
 --
+-- Layout: the class row on top; spec tabs over the ability grid (left), the spec's talent tree with
+-- its prerequisite arrows (middle), and your spells, talents and specs with a search box (right).
+--
 -- The server (mod-titan, src/classless.cpp) sends the data as addon whispers to the player, prefix
 -- EFCL, and the window answers the same way:
 --   to server     LIST, PICK,<spell id>, KEEP,<spell id>, REROLL,<spell id>
 --   from server   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<spell id>;...
---                 U,<class>,<tree order>,<tab id> / N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>...;... / E
+--                 U,<class>,<tree order>,<tab id>
+--                 N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
 --                 K0 / K,<spell id>,...   R0 / R,<talent id>:<rank>,...   S,<picks left>,<locked>,<lock level>
 --                 G,<spell id>,<first rank id>,<can reroll>   O
 
 local PREFIX = "EFCL"
-local WIDTH, HEIGHT = 960, 620
-local CELL_WIDTH, CELL_HEIGHT, COLUMNS, ROWS = 200, 44, 2, 9
-local LIST_ROW_HEIGHT, LIST_ROWS = 26, 15
-local TALENT_ROWS, TALENT_COLUMNS, TALENT_SIZE, TALENT_STEP_X, TALENT_STEP_Y = 11, 4, 30, 46, 40
-local TREE_WIDTH, TREE_HEIGHT = 212, 452
+local WIDTH, HEIGHT = 1160, 720
+local PANEL_TOP, PANEL_HEIGHT = -150, 554
+local GRID_X, GRID_WIDTH, TREE_X, TREE_WIDTH, LIST_X, LIST_WIDTH = 16, 596, 620, 316, 944, 200
+local CELL_WIDTH, CELL_HEIGHT, CELL_STEP_X, CELL_STEP_Y, COLUMNS, ROWS = 182, 46, 188, 54, 3, 9
+local LIST_ROW_HEIGHT, LIST_ROWS = 44, 11
+local TALENT_ROWS, TALENT_COLUMNS, TALENT_SIZE = 11, 4, 34
+local TALENT_X, TALENT_Y, TALENT_STEP_X, TALENT_STEP_Y = 42, 10, 66, 48
 local EMBER = "|cffff8a1e"
 local YOUR_ABILITIES = 0
+local GENERAL = 4                   -- the spec tab for abilities outside the class's three trees
+local SPELLS, TALENTS, SPECS = 1, 2, 3
 
 -- Server class ids, alphabetical like the class row in game. Names are spelled out because the
 -- client's own class list calls the Paladin "Hero" on Emberforge.
@@ -33,9 +41,10 @@ local CLASSES = {
     { id = 9, token = "WARLOCK", name = "Warlock" },
     { id = 1, token = "WARRIOR", name = "Warrior" },
 }
-local CLASS_NAMES = {}
+local CLASS_NAMES, CLASS_TOKENS = {}, {}
 for _, class in ipairs(CLASSES) do
     CLASS_NAMES[class.id] = class.name
+    CLASS_TOKENS[class.id] = class.token
 end
 
 -- Each class's talent trees in the client's order: name and Interface\TalentFrame background.
@@ -58,11 +67,17 @@ local TREES = {
 -- Skill lines whose name differs from their talent tree.
 local SKILL_TO_TREE = { ["Elemental Combat"] = "Elemental", ["Shadow Magic"] = "Shadow" }
 
+-- Colors: gold names and borders on near-black panels, like the talent frame.
+local GOLD = { 1, 0.82, 0 }
+local BORDER = { 0.42, 0.36, 0.26 }
+local PANEL = { 0.05, 0.045, 0.04, 0.94 }
+local CELL = { 0.09, 0.08, 0.07, 0.95 }
+
 local data = {
     abilities = {},     -- spell id -> { id, class, skill, level }
     skillNames = {},    -- skill line -> name
     trees = {},         -- class -> order (1-3) -> tab id
-    talents = {},       -- tab id -> { { id, row, col, ranks = { spell ids } }, ... }
+    talents = {},       -- tab id -> { { id, row, col, ranks = { spell ids }, requires, requiresRank }, ... }
     talentRanks = {},   -- talent id -> owned rank
     known = {},         -- spell id -> true
     picks = 0,
@@ -71,7 +86,8 @@ local data = {
     loaded = false,
     loading = false,
 }
-local view = { class = nil, spec = nil, tree = 1, search = "", learnable = false }
+-- spec: the spec tab (1-3, or GENERAL); tree: the talent tree shown (follows the last spec tab).
+local view = { class = nil, spec = 1, tree = 1, search = "", learnable = false, list = SPELLS }
 local reveals = {}      -- queued roll reveals: { spell, firstRank, canReroll }
 local frame, Refresh, ShowNextReveal
 
@@ -96,10 +112,25 @@ local function CanPick(ability)
     return Picking() and not data.known[ability.id] and ability.level <= UnitLevel("player")
 end
 
--- The talent tree an ability's skill line belongs to, by name ("Fire", "Feral Combat", ...).
-local function TreeName(ability)
+-- The talent tree an ability's skill line belongs to (1-3), or GENERAL when it is none of them.
+local function AbilityTree(ability)
     local name = data.skillNames[ability.skill]
-    return name and (SKILL_TO_TREE[name] or name)
+    name = name and (SKILL_TO_TREE[name] or name)
+    for index, info in ipairs(TREES[ability.class] or {}) do
+        if info[1] == name then
+            return index
+        end
+    end
+    return GENERAL
+end
+
+local function HasGeneral(class)
+    for _, ability in pairs(data.abilities) do
+        if ability.class == class and AbilityTree(ability) == GENERAL then
+            return true
+        end
+    end
+    return false
 end
 
 local function ByLevelThenName(a, b)
@@ -109,10 +140,13 @@ local function ByLevelThenName(a, b)
     return SpellName(a.id) < SpellName(b.id)
 end
 
+local function ByName(a, b)
+    return SpellName(a.id or a.ranks[1]) < SpellName(b.id or b.ranks[1])
+end
+
 -- What the ability grid shows for the current view, search and filter.
 local function GridAbilities()
     local list, search, level = {}, view.search:lower(), UnitLevel("player")
-    local treeName = view.spec and TREES[view.class] and TREES[view.class][view.spec][1]
     for id, ability in pairs(data.abilities) do
         local show
         if search ~= "" then
@@ -120,7 +154,7 @@ local function GridAbilities()
         elseif view.class == YOUR_ABILITIES then
             show = data.known[id]
         else
-            show = ability.class == view.class and (not treeName or TreeName(ability) == treeName)
+            show = ability.class == view.class and AbilityTree(ability) == view.spec
         end
         if show and view.learnable then
             show = not data.known[id] and ability.level <= level
@@ -140,7 +174,7 @@ local function KnownAbilities()
             list[#list + 1] = data.abilities[id]
         end
     end
-    table.sort(list, function(a, b) return SpellName(a.id) < SpellName(b.id) end)
+    table.sort(list, ByName)
     return list
 end
 
@@ -153,7 +187,35 @@ local function OwnedTalents()
             end
         end
     end
-    table.sort(list, function(a, b) return SpellName(a.ranks[1]) < SpellName(b.ranks[1]) end)
+    table.sort(list, ByName)
+    return list
+end
+
+local function TreePoints(tab)
+    local points = 0
+    for _, talent in ipairs(data.talents[tab] or {}) do
+        points = points + (data.talentRanks[talent.id] or 0)
+    end
+    return points
+end
+
+-- Trees you have talent points in: { class, order, points }, most points first.
+local function OwnedSpecs()
+    local list = {}
+    for _, class in ipairs(CLASSES) do
+        for order, tab in pairs(data.trees[class.id] or {}) do
+            local points = TreePoints(tab)
+            if points > 0 then
+                list[#list + 1] = { class = class.id, order = order, points = points }
+            end
+        end
+    end
+    table.sort(list, function(a, b)
+        if a.points ~= b.points then
+            return a.points > b.points
+        end
+        return TREES[a.class][a.order][1] < TREES[b.class][b.order][1]
+    end)
     return list
 end
 
@@ -182,8 +244,9 @@ local function OnServerMessage(message)
         data.trees[class][tonumber(order) + 1] = tonumber(tab)
     elseif kind == "N" then
         for entry in message:sub(3):gmatch("[^;]+") do
-            local tab, id, row, col, ranks = strsplit(".", entry)
-            local talent = { id = tonumber(id), row = tonumber(row), col = tonumber(col), ranks = {} }
+            local tab, id, row, col, ranks, requires, requiresRank = strsplit(".", entry)
+            local talent = { id = tonumber(id), row = tonumber(row), col = tonumber(col), ranks = {},
+                requires = tonumber(requires) or 0, requiresRank = tonumber(requiresRank) or 0 }
             for rank in ranks:gmatch("%d+") do
                 talent.ranks[#talent.ranks + 1] = tonumber(rank)
             end
@@ -224,14 +287,24 @@ end
 
 -- Window --------------------------------------------------------------------------------------------
 
-local function Backdrop(target)
+local function Box(target, color, edgeSize)
     target:SetBackdrop({
         bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile = true, tileSize = 32, edgeSize = 32,
-        insets = { left = 11, right = 12, top = 12, bottom = 11 },
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = edgeSize or 14,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 },
     })
-    target:SetBackdropColor(0.03, 0.03, 0.05, 0.96)
+    target:SetBackdropColor(unpack(color))
+    target:SetBackdropBorderColor(unpack(BORDER))
+end
+
+local function Panel(x, width)
+    local panel = CreateFrame("Frame", nil, frame)
+    panel:SetWidth(width)
+    panel:SetHeight(PANEL_HEIGHT)
+    panel:SetPoint("TOPLEFT", x, PANEL_TOP)
+    Box(panel, PANEL, 16)
+    return panel
 end
 
 frame = CreateFrame("Frame", "EmberforgeClassless", UIParent)
@@ -242,104 +315,152 @@ frame:SetFrameStrata("HIGH")
 frame:SetToplevel(true)
 frame:EnableMouse(true)
 frame:SetMovable(true)
+frame:SetClampedToScreen(true)
 frame:RegisterForDrag("LeftButton")
 frame:SetScript("OnDragStart", frame.StartMoving)
 frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-Backdrop(frame)
+frame:SetBackdrop({
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true, tileSize = 32, edgeSize = 32,
+    insets = { left = 11, right = 12, top = 12, bottom = 11 },
+})
+frame:SetBackdropColor(0.11, 0.1, 0.09, 0.97)
 frame:Hide()
 tinsert(UISpecialFrames, "EmberforgeClassless")     -- Escape closes it
 
-local title = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-title:SetPoint("TOP", 0, -16)
-title:SetText(EMBER .. "Classless|r")
+-- Title bar across the top.
+local titleBar = CreateFrame("Frame", nil, frame)
+titleBar:SetHeight(26)
+titleBar:SetPoint("TOPLEFT", 10, -9)
+titleBar:SetPoint("TOPRIGHT", -10, -9)
+Box(titleBar, { 0.16, 0.15, 0.14, 1 }, 12)
+local title = titleBar:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+title:SetPoint("CENTER", 0, 0)
+title:SetText("Classless")
 
 local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-close:SetPoint("TOPRIGHT", -6, -6)
-
-local status = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-status:SetPoint("BOTTOM", 60, 22)
+close:SetPoint("TOPRIGHT", -2, -3)
 
 local function ResetScrolls()
     FauxScrollFrame_SetOffset(EmberforgeClasslessGridScroll, 0)
 end
 
--- Class row: your abilities, then the ten classes.
+-- Class row: Abilities (your build), then the ten classes, as round portraits.
 local classButtons = {}
 local function ClassButton(index, id, icon, coords, label)
     local button = CreateFrame("Button", nil, frame)
-    button:SetWidth(42)
-    button:SetHeight(42)
-    button:SetPoint("TOPLEFT", 78 + (index - 1) * 76, -44)
+    button:SetWidth(52)
+    button:SetHeight(52)
+    button:SetPoint("TOP", frame, "TOPLEFT", WIDTH / 2 + (index - 6) * 98, -44)
     button.id = id
     local texture = button:CreateTexture(nil, "ARTWORK")
     texture:SetAllPoints()
-    texture:SetTexture(icon)
     if coords then
+        texture:SetTexture(icon)
         texture:SetTexCoord(unpack(coords))
+    elseif SetPortraitToTexture then
+        SetPortraitToTexture(texture, icon)
+    else
+        texture:SetTexture(icon)
     end
     button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
+    local ring = button:CreateTexture(nil, "OVERLAY")
+    ring:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    ring:SetWidth(88)
+    ring:SetHeight(88)
+    ring:SetPoint("TOPLEFT", -2, 1)
+    button.ring = ring
     local glow = button:CreateTexture(nil, "OVERLAY")
     glow:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
     glow:SetBlendMode("ADD")
-    glow:SetVertexColor(1, 0.55, 0.12)
-    glow:SetWidth(76)
-    glow:SetHeight(76)
+    glow:SetVertexColor(1, 0.85, 0.1)
+    glow:SetWidth(96)
+    glow:SetHeight(96)
     glow:SetPoint("CENTER")
     button.glow = glow
-    local text = button:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    text:SetPoint("TOP", button, "BOTTOM", 0, -3)
+    local text = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    text:SetPoint("TOP", button, "BOTTOM", 0, -4)
     text:SetText(label)
     button.label = text
     button:SetScript("OnClick", function(self)
-        view.class, view.spec, view.tree = self.id, nil, 1
+        view.class, view.spec, view.tree = self.id, 1, 1
         ResetScrolls()
         Refresh()
     end)
     classButtons[#classButtons + 1] = button
 end
 
-ClassButton(1, YOUR_ABILITIES, "Interface\\Icons\\INV_Misc_Book_11", nil, "Your Build")
+ClassButton(1, YOUR_ABILITIES, "Interface\\Icons\\INV_Misc_Book_11", nil, "Abilities")
 for index, class in ipairs(CLASSES) do
     ClassButton(index + 1, class.id, "Interface\\TargetingFrame\\UI-Classes-Circles",
                 CLASS_ICON_TCOORDS[class.token], class.name)
 end
 
--- Spec buttons: All, then the class's three trees (abilities and talent tree follow the spec).
+-- Tabs: dark boxes with a gold border; the selected one lit.
+local function Tab(x, width, onClick)
+    local tab = CreateFrame("Button", nil, frame)
+    tab:SetWidth(width)
+    tab:SetHeight(26)
+    tab:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", x, PANEL_TOP + 2)
+    Box(tab, CELL, 12)
+    tab.label = tab:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    tab.label:SetPoint("CENTER", 0, 0)
+    tab:SetFontString(tab.label)
+    tab:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+    tab:SetScript("OnClick", onClick)
+    return tab
+end
+
+local function SelectTab(tab, selected)
+    if selected then
+        tab:SetBackdropColor(0.3, 0.24, 0.1, 1)
+        tab:SetBackdropBorderColor(1, 0.82, 0)
+        tab.label:SetTextColor(1, 0.92, 0.6)
+    else
+        tab:SetBackdropColor(unpack(CELL))
+        tab:SetBackdropBorderColor(unpack(BORDER))
+        tab.label:SetTextColor(unpack(GOLD))
+    end
+end
+
+-- Spec tabs over the ability grid: the class's three trees, then General when it has abilities
+-- outside them. The talent tree follows the last tree picked.
 local specButtons = {}
 for index = 1, 4 do
-    local button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    button:SetWidth(100)
-    button:SetHeight(22)
-    button:SetPoint("TOPLEFT", 24 + (index - 1) * 104, -114)
-    button.spec = index - 1                         -- 0: All
-    button:SetScript("OnClick", function(self)
-        view.spec = self.spec > 0 and self.spec or nil
-        if view.spec then
-            view.tree = view.spec
+    local button = Tab(GRID_X + 6 + (index - 1) * 128, 124, function(self)
+        view.spec = self.spec
+        if self.spec ~= GENERAL then
+            view.tree = self.spec
         end
         ResetScrolls()
         Refresh()
     end)
+    button.spec = index
     specButtons[index] = button
 end
 
--- Search every class's abilities.
-local search = CreateFrame("EditBox", "EmberforgeClasslessSearch", frame, "InputBoxTemplate")
-search:SetWidth(196)
-search:SetHeight(20)
-search:SetPoint("TOPLEFT", 704, -114)
-search:SetAutoFocus(false)
-search:SetScript("OnTextChanged", function(self)
-    view.search = self:GetText() or ""
-    ResetScrolls()
-    Refresh()
-end)
-search:SetScript("OnEscapePressed", search.ClearFocus)
-local searchHint = frame:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-searchHint:SetPoint("BOTTOMLEFT", search, "TOPLEFT", -4, 2)
-searchHint:SetText("Search all abilities")
+-- Right panel tabs: your spells, your talents, the specs you have points in.
+local listTabs = {}
+for index, label in ipairs({ "Spells", "Talents", "Specs" }) do
+    local tab = Tab(LIST_X + (index - 1) * 67, 64, function(self)
+        view.list = self.list
+        FauxScrollFrame_SetOffset(EmberforgeClasslessListScroll, 0)
+        Refresh()
+    end)
+    tab.list = index
+    tab:SetText(label)
+    listTabs[index] = tab
+end
 
--- Ability grid.
+-- Tome status between the tabs.
+local status = frame:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+status:SetPoint("BOTTOM", frame, "TOPLEFT", (GRID_X + 6 + 4 * 128 + LIST_X) / 2, PANEL_TOP + 6)
+status:SetWidth(LIST_X - GRID_X - 6 - 4 * 128 - 8)
+
+-- Ability grid ------------------------------------------------------------------------------------
+
+local grid = Panel(GRID_X, GRID_WIDTH)
 local cells = {}
 local function OnCellEnter(self)
     if not self.ability then
@@ -366,49 +487,58 @@ local function OnCellClick(self)
     end
 end
 
+-- An icon in a thin dark frame, like the talent and spellbook buttons.
+local function Icon(parent, size)
+    local holder = parent:CreateTexture(nil, "BORDER")
+    holder:SetTexture(0, 0, 0, 1)
+    holder:SetWidth(size + 2)
+    holder:SetHeight(size + 2)
+    local icon = parent:CreateTexture(nil, "ARTWORK")
+    icon:SetWidth(size)
+    icon:SetHeight(size)
+    icon:SetPoint("CENTER", holder, "CENTER", 0, 0)
+    icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    return icon, holder
+end
+
 for index = 1, COLUMNS * ROWS do
-    local cell = CreateFrame("Button", nil, frame)
+    local cell = CreateFrame("Button", nil, grid)
     cell:SetWidth(CELL_WIDTH)
-    cell:SetHeight(CELL_HEIGHT - 4)
+    cell:SetHeight(CELL_HEIGHT)
     local column, row = (index - 1) % COLUMNS, math.floor((index - 1) / COLUMNS)
-    cell:SetPoint("TOPLEFT", 24 + column * (CELL_WIDTH + 4), -148 - row * CELL_HEIGHT)
+    cell:SetPoint("TOPLEFT", 10 + column * CELL_STEP_X, -24 - row * CELL_STEP_Y)
+    Box(cell, CELL, 12)
     cell:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
-    cell.icon = cell:CreateTexture(nil, "ARTWORK")
-    cell.icon:SetWidth(36)
-    cell.icon:SetHeight(36)
-    cell.icon:SetPoint("LEFT", 2, 0)
-    cell.name = cell:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    cell.name:SetPoint("TOPLEFT", cell.icon, "TOPRIGHT", 6, -2)
-    cell.name:SetWidth(CELL_WIDTH - 66)
+    local holder
+    cell.icon, holder = Icon(cell, 32)
+    holder:SetPoint("LEFT", 7, 0)
+    cell.name = cell:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    cell.name:SetPoint("TOPLEFT", holder, "TOPRIGHT", 7, -3)
+    cell.name:SetWidth(CELL_WIDTH - 54)
     cell.name:SetJustifyH("LEFT")
-    cell.sub = cell:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    cell.sub:SetPoint("BOTTOMLEFT", cell.icon, "BOTTOMRIGHT", 6, 2)
-    cell.check = cell:CreateTexture(nil, "OVERLAY")
-    cell.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
-    cell.check:SetWidth(22)
-    cell.check:SetHeight(22)
-    cell.check:SetPoint("RIGHT", -4, 0)
+    cell.sub = cell:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    cell.sub:SetPoint("BOTTOMLEFT", holder, "BOTTOMRIGHT", 7, 3)
     cell:SetScript("OnEnter", OnCellEnter)
     cell:SetScript("OnLeave", function() GameTooltip:Hide() end)
     cell:SetScript("OnClick", OnCellClick)
     cells[index] = cell
 end
 
-local gridScroll = CreateFrame("ScrollFrame", "EmberforgeClasslessGridScroll", frame, "FauxScrollFrameTemplate")
-gridScroll:SetPoint("TOPLEFT", 24, -148)
-gridScroll:SetWidth(COLUMNS * (CELL_WIDTH + 4))
-gridScroll:SetHeight(ROWS * CELL_HEIGHT)
+local gridScroll = CreateFrame("ScrollFrame", "EmberforgeClasslessGridScroll", grid, "FauxScrollFrameTemplate")
+gridScroll:SetPoint("TOPLEFT", 10, -24)
+gridScroll:SetPoint("TOPRIGHT", -30, -24)
+gridScroll:SetHeight(ROWS * CELL_STEP_Y)
 gridScroll:SetScript("OnVerticalScroll", function(self, offset)
-    FauxScrollFrame_OnVerticalScroll(self, offset, CELL_HEIGHT, Refresh)
+    FauxScrollFrame_OnVerticalScroll(self, offset, CELL_STEP_Y, Refresh)
 end)
 
-local empty = frame:CreateFontString(nil, "ARTWORK", "GameFontDisable")
-empty:SetPoint("TOPLEFT", 30, -160)
+local empty = grid:CreateFontString(nil, "ARTWORK", "GameFontDisable")
+empty:SetPoint("TOPLEFT", 18, -36)
 
-local learnable = CreateFrame("CheckButton", "EmberforgeClasslessLearnable", frame, "UICheckButtonTemplate")
-learnable:SetWidth(24)
-learnable:SetHeight(24)
-learnable:SetPoint("BOTTOMLEFT", 22, 16)
+local learnable = CreateFrame("CheckButton", "EmberforgeClasslessLearnable", grid, "UICheckButtonTemplate")
+learnable:SetWidth(22)
+learnable:SetHeight(22)
+learnable:SetPoint("BOTTOMLEFT", 8, 6)
 EmberforgeClasslessLearnableText:SetText("Learnable now only")
 learnable:SetScript("OnClick", function(self)
     view.learnable = self:GetChecked() and true or false
@@ -416,26 +546,28 @@ learnable:SetScript("OnClick", function(self)
     Refresh()
 end)
 
--- Talent tree panel: the selected spec's tree on its Blizzard background, or your talents.
-local tree = CreateFrame("Frame", nil, frame)
-tree:SetWidth(TREE_WIDTH)
-tree:SetHeight(TREE_HEIGHT)
-tree:SetPoint("TOPLEFT", 452, -148)
+-- Talent tree -------------------------------------------------------------------------------------
+
+local tree = Panel(TREE_X, TREE_WIDTH)
+local INNER_WIDTH, INNER_HEIGHT = TREE_WIDTH - 8, PANEL_HEIGHT - 8
 local backgrounds = {}
 for index, part in ipairs({ { "TopLeft", 0.8, 2 / 3 }, { "TopRight", 0.2, 2 / 3 }, { "BottomLeft", 0.8, 1 / 3 },
     { "BottomRight", 0.2, 1 / 3 } }) do
     local texture = tree:CreateTexture(nil, "BACKGROUND")
-    texture:SetWidth(TREE_WIDTH * part[2])
-    texture:SetHeight(TREE_HEIGHT * part[3])
+    texture:SetWidth(INNER_WIDTH * part[2])
+    texture:SetHeight(INNER_HEIGHT * part[3])
     texture.part = part[1]
     backgrounds[index] = texture
 end
-backgrounds[1]:SetPoint("TOPLEFT")
+backgrounds[1]:SetPoint("TOPLEFT", 4, -4)
 backgrounds[2]:SetPoint("TOPLEFT", backgrounds[1], "TOPRIGHT")
 backgrounds[3]:SetPoint("TOPLEFT", backgrounds[1], "BOTTOMLEFT")
 backgrounds[4]:SetPoint("TOPLEFT", backgrounds[1], "BOTTOMRIGHT")
-local treeTitle = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-treeTitle:SetPoint("BOTTOM", tree, "TOP", 0, 4)
+local treeTitle = tree:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+treeTitle:SetPoint("BOTTOM", 0, 8)
+
+local function TalentLeft(col) return TALENT_X + col * TALENT_STEP_X end
+local function TalentTop(row) return -(TALENT_Y + row * TALENT_STEP_Y) end
 
 local talentButtons = {}
 local function OnTalentEnter(self)
@@ -458,17 +590,23 @@ for row = 1, TALENT_ROWS do
         local button = CreateFrame("Button", nil, tree)
         button:SetWidth(TALENT_SIZE)
         button:SetHeight(TALENT_SIZE)
-        button:SetPoint("TOPLEFT", 18 + (column - 1) * TALENT_STEP_X, -12 - (row - 1) * TALENT_STEP_Y)
-        button.icon = button:CreateTexture(nil, "ARTWORK")
-        button.icon:SetAllPoints()
+        button:SetPoint("TOPLEFT", TalentLeft(column - 1), TalentTop(row - 1))
+        local holder
+        button.icon, holder = Icon(button, TALENT_SIZE - 2)
+        holder:SetPoint("CENTER", 0, 0)
         button.border = button:CreateTexture(nil, "OVERLAY")
         button.border:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
         button.border:SetBlendMode("ADD")
-        button.border:SetWidth(TALENT_SIZE * 1.9)
-        button.border:SetHeight(TALENT_SIZE * 1.9)
+        button.border:SetWidth(TALENT_SIZE * 1.8)
+        button.border:SetHeight(TALENT_SIZE * 1.8)
         button.border:SetPoint("CENTER")
-        button.rank = button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        button.rank:SetPoint("BOTTOMRIGHT", 6, -4)
+        local rankBox = button:CreateTexture(nil, "OVERLAY")
+        rankBox:SetTexture(0, 0, 0, 0.85)
+        rankBox:SetWidth(13)
+        rankBox:SetHeight(12)
+        rankBox:SetPoint("BOTTOMRIGHT", 5, -4)
+        button.rank = button:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+        button.rank:SetPoint("CENTER", rankBox, "CENTER", 0, 0)
         button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
         button:SetScript("OnEnter", OnTalentEnter)
         button:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -481,58 +619,164 @@ for row = 1, TALENT_ROWS do
     end
 end
 
--- Your talents (Your Build view), listed in the tree panel.
+-- Prerequisite arrows: lines between the talents, an arrowhead at the talent that needs the other.
+-- Lit gold once the prerequisite's rank is owned. Arrowheads come from the talent frame's own art.
+local ARROWS = "Interface\\TalentFrame\\UI-TalentArrows"
+local ARROW_COORDS = {      -- [lit] = left, right, top, bottom
+    down = { [true] = { 0, 0.5, 0, 0.5 }, [false] = { 0, 0.5, 0.5, 1 } },
+    right = { [true] = { 0.5, 1, 0, 0.5 }, [false] = { 0.5, 1, 0.5, 1 } },
+    left = { [true] = { 1, 0.5, 0, 0.5 }, [false] = { 1, 0.5, 0.5, 1 } },
+}
+local branches, arrowheads = { used = 0 }, { used = 0 }
+
+local function Pooled(pool, layer)
+    pool.used = pool.used + 1
+    local texture = pool[pool.used]
+    if not texture then
+        texture = tree:CreateTexture(nil, layer)
+        pool[pool.used] = texture
+    end
+    texture:ClearAllPoints()
+    texture:Show()
+    return texture
+end
+
+local function Branch(x1, y1, x2, y2, lit)
+    local line = Pooled(branches, "BORDER")
+    if lit then
+        line:SetTexture(1, 0.82, 0, 0.9)
+    else
+        line:SetTexture(0.6, 0.6, 0.6, 0.85)
+    end
+    if x1 == x2 then
+        line:SetWidth(4)
+        line:SetHeight(math.abs(y1 - y2))
+        line:SetPoint("TOPLEFT", x1 - 2, math.max(y1, y2))
+    else
+        line:SetWidth(math.abs(x1 - x2))
+        line:SetHeight(4)
+        line:SetPoint("TOPLEFT", math.min(x1, x2), y1 + 2)
+    end
+end
+
+local function Arrowhead(direction, x, y, lit)
+    local arrow = Pooled(arrowheads, "ARTWORK")
+    arrow:SetTexture(ARROWS)
+    arrow:SetTexCoord(unpack(ARROW_COORDS[direction][lit]))
+    arrow:SetWidth(22)
+    arrow:SetHeight(22)
+    arrow:SetPoint("CENTER", tree, "TOPLEFT", x, y)
+end
+
+local function DrawArrow(from, to)
+    local lit = (data.talentRanks[from.id] or 0) >= to.requiresRank
+    local half = TALENT_SIZE / 2
+    local fromX, fromY = TalentLeft(from.col) + half, TalentTop(from.row) - half
+    local toX, toY = TalentLeft(to.col) + half, TalentTop(to.row) - half
+    if from.row == to.row then
+        local side = to.col > from.col and 1 or -1
+        Branch(fromX + side * half, fromY, toX - side * (half + 6), toY, lit)
+        Arrowhead(side > 0 and "right" or "left", toX - side * (half + 6), toY, lit)
+    else
+        if from.col ~= to.col then
+            local side = to.col > from.col and 1 or -1
+            Branch(fromX + side * half, fromY, toX + 2 * side, fromY, lit)
+            Branch(toX, fromY, toX, toY + half + 6, lit)
+        else
+            Branch(fromX, fromY - half, toX, toY + half + 6, lit)
+        end
+        Arrowhead("down", toX, toY + half + 6, lit)
+    end
+end
+
+-- Your talents (Abilities view), listed in the tree panel.
 local talentRows = {}
-for index = 1, 15 do
+for index = 1, 17 do
     local row = CreateFrame("Button", nil, tree)
-    row:SetWidth(TREE_WIDTH - 8)
-    row:SetHeight(26)
-    row:SetPoint("TOPLEFT", 4, -4 - (index - 1) * 29)
-    row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetWidth(22)
-    row.icon:SetHeight(22)
-    row.icon:SetPoint("LEFT", 2, 0)
-    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
-    row.name:SetWidth(TREE_WIDTH - 44)
+    row:SetWidth(TREE_WIDTH - 20)
+    row:SetHeight(28)
+    row:SetPoint("TOPLEFT", 10, -10 - (index - 1) * 30)
+    local holder
+    row.icon, holder = Icon(row, 24)
+    holder:SetPoint("LEFT", 2, 0)
+    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    row.name:SetPoint("LEFT", holder, "RIGHT", 8, 0)
+    row.name:SetWidth(TREE_WIDTH - 60)
     row.name:SetJustifyH("LEFT")
     row:SetScript("OnEnter", OnTalentEnter)
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     talentRows[index] = row
 end
 
--- Your abilities.
-local listTitle = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-listTitle:SetPoint("TOPLEFT", 690, -148)
+-- Right panel: search, then your spells, talents or specs -------------------------------------------
+
+local list = Panel(LIST_X, LIST_WIDTH)
+local search = CreateFrame("EditBox", "EmberforgeClasslessSearch", list, "InputBoxTemplate")
+search:SetWidth(LIST_WIDTH - 30)
+search:SetHeight(20)
+search:SetPoint("TOPLEFT", 16, -10)
+search:SetAutoFocus(false)
+search:SetScript("OnTextChanged", function(self)
+    view.search = self:GetText() or ""
+    ResetScrolls()
+    Refresh()
+end)
+search:SetScript("OnEscapePressed", search.ClearFocus)
+local searchHint = search:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+searchHint:SetPoint("LEFT", 2, 0)
+searchHint:SetText("Search")
+
+local function OnListEnter(self)
+    if self.talent then
+        OnTalentEnter(self)
+    else
+        OnCellEnter(self)
+    end
+end
+
+local function OnListClick(self)
+    if self.spec then
+        view.class, view.spec, view.tree = self.spec.class, self.spec.order, self.spec.order
+        ResetScrolls()
+        Refresh()
+    else
+        OnCellClick(self)
+    end
+end
 
 local listRows = {}
 for index = 1, LIST_ROWS do
-    local row = CreateFrame("Button", nil, frame)
-    row:SetWidth(230)
-    row:SetHeight(LIST_ROW_HEIGHT - 2)
-    row:SetPoint("TOPLEFT", 686, -168 - (index - 1) * LIST_ROW_HEIGHT)
+    local row = CreateFrame("Button", nil, list)
+    row:SetWidth(LIST_WIDTH - 34)
+    row:SetHeight(LIST_ROW_HEIGHT - 4)
+    row:SetPoint("TOPLEFT", 8, -38 - (index - 1) * LIST_ROW_HEIGHT)
+    Box(row, CELL, 12)
     row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
-    row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetWidth(22)
-    row.icon:SetHeight(22)
-    row.icon:SetPoint("LEFT", 2, 0)
-    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.name:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
-    row.name:SetWidth(196)
+    local holder
+    row.icon, holder = Icon(row, 28)
+    holder:SetPoint("LEFT", 6, 0)
+    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    row.name:SetPoint("LEFT", holder, "RIGHT", 8, 0)
+    row.name:SetWidth(LIST_WIDTH - 82)
     row.name:SetJustifyH("LEFT")
-    row:SetScript("OnEnter", OnCellEnter)
+    row:SetScript("OnEnter", OnListEnter)
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    row:SetScript("OnClick", OnCellClick)
+    row:SetScript("OnClick", OnListClick)
     listRows[index] = row
 end
 
-local listScroll = CreateFrame("ScrollFrame", "EmberforgeClasslessListScroll", frame, "FauxScrollFrameTemplate")
-listScroll:SetPoint("TOPLEFT", 686, -168)
-listScroll:SetWidth(230)
+local listScroll = CreateFrame("ScrollFrame", "EmberforgeClasslessListScroll", list, "FauxScrollFrameTemplate")
+listScroll:SetPoint("TOPLEFT", 8, -38)
+listScroll:SetPoint("TOPRIGHT", -30, -38)
 listScroll:SetHeight(LIST_ROWS * LIST_ROW_HEIGHT)
 listScroll:SetScript("OnVerticalScroll", function(self, offset)
     FauxScrollFrame_OnVerticalScroll(self, offset, LIST_ROW_HEIGHT, Refresh)
 end)
+
+local listEmpty = list:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+listEmpty:SetPoint("TOPLEFT", 14, -46)
+listEmpty:SetWidth(LIST_WIDTH - 28)
+listEmpty:SetJustifyH("LEFT")
 
 StaticPopupDialogs["EMBERFORGE_CLASSLESS_PICK"] = {
     text = "Choose %s for your starting abilities?",
@@ -552,10 +796,10 @@ local function RefreshClassRow()
     for _, button in ipairs(classButtons) do
         if button.id == view.class and view.search == "" then
             button.glow:Show()
-            button.label:SetTextColor(1, 0.55, 0.12)
+            button.label:SetTextColor(1, 0.92, 0.6)
         else
             button.glow:Hide()
-            button.label:SetTextColor(0.85, 0.85, 0.85)
+            button.label:SetTextColor(unpack(GOLD))
         end
     end
 end
@@ -563,57 +807,53 @@ end
 local function RefreshSpecs()
     local trees = TREES[view.class]
     for index, button in ipairs(specButtons) do
-        if view.class == YOUR_ABILITIES or not trees or view.search ~= "" then
+        if not trees or view.search ~= "" or (index == GENERAL and not HasGeneral(view.class)) then
             button:Hide()
         else
-            button:SetText(index > 1 and trees[index - 1][1] or ALL)
-            if button.spec == (view.spec or 0) then
-                button:LockHighlight()
-            else
-                button:UnlockHighlight()
-            end
+            button:SetText(index == GENERAL and "General" or trees[index][1])
+            SelectTab(button, button.spec == view.spec)
             button:Show()
         end
+    end
+    for _, tab in ipairs(listTabs) do
+        SelectTab(tab, tab.list == view.list)
     end
 end
 
 local function RefreshGrid()
-    local list = GridAbilities()
-    FauxScrollFrame_Update(EmberforgeClasslessGridScroll, math.ceil(#list / COLUMNS), ROWS, CELL_HEIGHT)
+    local abilities = GridAbilities()
+    FauxScrollFrame_Update(EmberforgeClasslessGridScroll, math.ceil(#abilities / COLUMNS), ROWS, CELL_STEP_Y)
     local offset = FauxScrollFrame_GetOffset(EmberforgeClasslessGridScroll) * COLUMNS
     local level = UnitLevel("player")
     for index, cell in ipairs(cells) do
-        local ability = list[offset + index]
+        local ability = abilities[offset + index]
         cell.ability = ability
         if ability then
-            cell.icon:SetTexture(SpellIcon(ability.id))
-            cell.name:SetText(SpellName(ability.id))
             local known = data.known[ability.id]
+            cell.icon:SetTexture(SpellIcon(ability.id))
+            cell.icon:SetDesaturated(not known)
+            cell.name:SetText(SpellName(ability.id))
             if view.class == YOUR_ABILITIES and view.search == "" then
                 cell.sub:SetText(CLASS_NAMES[ability.class] or "")
-                cell.sub:SetTextColor(0.7, 0.7, 0.7)
+                cell.sub:SetTextColor(0.75, 0.75, 0.75)
             elseif known then
                 cell.sub:SetText("Known")
                 cell.sub:SetTextColor(0.3, 1, 0.3)
-            elseif ability.level > level then
-                cell.sub:SetText("Level " .. ability.level)
-                cell.sub:SetTextColor(1, 0.25, 0.25)
             elseif CanPick(ability) then
-                cell.sub:SetText("Level " .. ability.level .. " - click to choose")
+                cell.sub:SetText("Click to choose")
                 cell.sub:SetTextColor(1, 0.55, 0.12)
             else
                 cell.sub:SetText("Level " .. ability.level)
-                cell.sub:SetTextColor(1, 0.82, 0)
+                if ability.level > level then
+                    cell.sub:SetTextColor(1, 0.2, 0.2)
+                else
+                    cell.sub:SetTextColor(1, 1, 1)
+                end
             end
             if known then
-                cell.check:Show()
+                cell:SetBackdropBorderColor(1, 0.82, 0)
             else
-                cell.check:Hide()
-            end
-            if ability.level > level and not known then
-                cell.icon:SetVertexColor(0.45, 0.45, 0.45)
-            else
-                cell.icon:SetVertexColor(1, 1, 1)
+                cell:SetBackdropBorderColor(unpack(BORDER))
             end
             cell:Show()
         else
@@ -623,7 +863,7 @@ local function RefreshGrid()
 
     if not data.loaded then
         empty:SetText("Loading abilities...")
-    elseif #list == 0 then
+    elseif #abilities == 0 then
         empty:SetText(view.search ~= "" and "No ability matches your search."
             or view.class == YOUR_ABILITIES and "You know no abilities yet." or "No abilities here.")
     else
@@ -640,10 +880,16 @@ local function RefreshTree()
         row.talent = nil
         row:Hide()
     end
+    for _, pool in ipairs({ branches, arrowheads }) do
+        for index = 1, pool.used do
+            pool[index]:Hide()
+        end
+        pool.used = 0
+    end
 
     if view.class == YOUR_ABILITIES or view.search ~= "" then
         for _, texture in ipairs(backgrounds) do
-            texture:SetTexture(0.05, 0.05, 0.07, 0.9)
+            texture:SetTexture(0.04, 0.04, 0.05, 0.9)
         end
         local owned = OwnedTalents()
         local points = 0
@@ -673,45 +919,78 @@ local function RefreshTree()
     for _, texture in ipairs(backgrounds) do
         texture:SetTexture(info and ("Interface\\TalentFrame\\" .. info[2] .. "-" .. texture.part) or nil)
     end
-    local points = 0
+    local byId = {}
     for _, talent in ipairs(tab and data.talents[tab] or {}) do
+        byId[talent.id] = talent
         local rank = data.talentRanks[talent.id] or 0
-        points = points + rank
         local button = talentButtons[talent.row * TALENT_COLUMNS + talent.col + 1]
         if button then
             button.talent = talent
             button.icon:SetTexture(SpellIcon(talent.ranks[math.max(rank, 1)]))
             button.icon:SetDesaturated(rank == 0)
-            button.rank:SetText(rank .. "/" .. #talent.ranks)
+            button.rank:SetText(rank)
             if rank > 0 then
                 button.border:SetVertexColor(rank == #talent.ranks and 1 or 0.3, 0.85, 0.2)
                 button.border:Show()
                 button.rank:SetTextColor(0.3, 1, 0.3)
             else
                 button.border:Hide()
-                button.rank:SetTextColor(0.6, 0.6, 0.6)
+                button.rank:SetTextColor(1, 1, 1)
             end
             button:Show()
         end
     end
-    treeTitle:SetText(info and (info[1] .. " Talents (" .. points .. ")") or "")
+    for _, talent in pairs(byId) do
+        if byId[talent.requires] then
+            DrawArrow(byId[talent.requires], talent)
+        end
+    end
+    treeTitle:SetText(info and (info[1] .. " (" .. TreePoints(tab) .. ")") or "")
 end
 
 local function RefreshList()
-    local list = KnownAbilities()
-    listTitle:SetText("Your Abilities (" .. #list .. ")")
-    FauxScrollFrame_Update(EmberforgeClasslessListScroll, #list, LIST_ROWS, LIST_ROW_HEIGHT)
+    local entries, emptyText
+    if view.list == TALENTS then
+        entries, emptyText = OwnedTalents(), "No talents yet. Wildcard rolls them from level 10."
+    elseif view.list == SPECS then
+        entries, emptyText = OwnedSpecs(), "No talent points spent yet."
+    else
+        entries, emptyText = KnownAbilities(), "You know no abilities yet."
+    end
+    FauxScrollFrame_Update(EmberforgeClasslessListScroll, #entries, LIST_ROWS, LIST_ROW_HEIGHT)
     local offset = FauxScrollFrame_GetOffset(EmberforgeClasslessListScroll)
+    listEmpty:SetText(#entries == 0 and data.loaded and emptyText or "")
     for index, row in ipairs(listRows) do
-        local ability = list[offset + index]
-        row.ability = ability
-        if ability then
-            row.icon:SetTexture(SpellIcon(ability.id))
-            row.name:SetText(SpellName(ability.id))
+        local entry = entries[offset + index]
+        row.ability, row.talent, row.spec = nil, nil, nil
+        if entry then
+            if view.list == TALENTS then
+                row.talent = entry
+                row.icon:SetTexture(SpellIcon(entry.ranks[1]))
+                row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+                row.name:SetText(SpellName(entry.ranks[1]) .. "  |cffffffff" .. data.talentRanks[entry.id] .. "/"
+                    .. #entry.ranks .. "|r")
+            elseif view.list == SPECS then
+                row.spec = entry
+                row.icon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
+                row.icon:SetTexCoord(unpack(CLASS_ICON_TCOORDS[CLASS_TOKENS[entry.class]]))
+                row.name:SetText(TREES[entry.class][entry.order][1] .. "  |cffffffff" .. entry.points .. "|r\n"
+                    .. "|cffaaaaaa" .. CLASS_NAMES[entry.class] .. "|r")
+            else
+                row.ability = entry
+                row.icon:SetTexture(SpellIcon(entry.id))
+                row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+                row.name:SetText(SpellName(entry.id))
+            end
             row:Show()
         else
             row:Hide()
         end
+    end
+    if view.search == "" then
+        searchHint:Show()
+    else
+        searchHint:Hide()
     end
 end
 
@@ -721,9 +1000,8 @@ local function RefreshStatus()
             .. (data.picks == 1 and "ability" or "abilities")
             .. " (your abilities lock at level " .. data.lockLevel .. ")")
     elseif not data.locked then
-        status:SetText("|cffaaaaaaReroll with the Titan Tome of Randomization, or choose with the Titan Tome of "
-            .. "Selection, until level "
-            .. data.lockLevel .. ".|r")
+        status:SetText("|cffaaaaaaReroll with the Tome of Randomization or choose with the Tome of Selection "
+            .. "until level " .. data.lockLevel .. ".|r")
     else
         status:SetText("")
     end
@@ -744,7 +1022,12 @@ function Refresh()
     RefreshStatus()
 end
 
-frame:SetScript("OnShow", function()
+frame:SetScript("OnShow", function(self)
+    -- Fit small screens (4:3 has about 1024 units across).
+    local width, height = UIParent:GetWidth(), UIParent:GetHeight()
+    if width and height then
+        self:SetScale(math.min(1, (width - 20) / WIDTH, (height - 20) / HEIGHT))
+    end
     if not data.loaded and not data.loading then
         data.loading = true
         Send("LIST")
@@ -768,7 +1051,13 @@ reveal:SetHeight(150)
 reveal:SetPoint("TOP", 0, -150)
 reveal:SetFrameStrata("DIALOG")
 reveal:EnableMouse(true)
-Backdrop(reveal)
+reveal:SetBackdrop({
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true, tileSize = 32, edgeSize = 32,
+    insets = { left = 11, right = 12, top = 12, bottom = 11 },
+})
+reveal:SetBackdropColor(0.11, 0.1, 0.09, 0.97)
 reveal:Hide()
 
 local revealTitle = reveal:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -777,7 +1066,7 @@ local revealIcon = reveal:CreateTexture(nil, "ARTWORK")
 revealIcon:SetWidth(56)
 revealIcon:SetHeight(56)
 revealIcon:SetPoint("TOPLEFT", 22, -42)
-local revealName = reveal:CreateFontString(nil, "ARTWORK", "GameFontHighlightLarge")
+local revealName = reveal:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
 revealName:SetPoint("TOPLEFT", revealIcon, "TOPRIGHT", 12, -6)
 revealName:SetWidth(200)
 revealName:SetJustifyH("LEFT")
