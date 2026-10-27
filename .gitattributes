@@ -7,6 +7,7 @@
 *.dbc    binary
 *.blp    binary
 *.png    binary
+*.tga    binary
 *.jpg    binary
 *.m2     binary
 *.skin   binary
