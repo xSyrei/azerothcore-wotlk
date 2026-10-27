@@ -1213,20 +1213,53 @@ end
 -- Wildcard roll: each level-up ability or talent is rolled on screen. A die drops in, shakes as ember
 -- cracks spread through it and bursts; out of the flash the track opens between two gryphons, and
 -- the icons race through the gold selector until they slow onto the prize. Then a light burst,
--- sparks, the prize's name and Keep / Reroll (abilities) or Okay. Several rolls from one level-up
--- play one after another; Skip lands at once.
--- Its own block: the main chunk would pass Lua's 200 locals.
-do
+-- sparks, the prize's name and Keep / Reroll (abilities) or Okay; the shards then fly back together
+-- into the die, which fades away. Several rolls from one level-up play one after another; Skip
+-- lands at once.
+-- In a function of its own: the main chunk would pass Lua's limit of 200 locals.
+local function CreateRoll()
     local SLOT_STEP, SLOT_COUNT, WINNER_SLOT, START_SLOT = 52, 48, 42, 5
     local ICON_SIZE, REEL_WIDTH, BAR_HEIGHT = 44, 9 * 52, 62
     -- Timeline (seconds): the die pops in, shakes and shatters; the track opens; the reel spins.
     local POP, SHATTER, OPEN, OPENED, LANDED = 0.25, 1.05, 1.1, 1.65, 6.4
+    -- After landing: the shards gather (REBUILD to FORMED) and the die fades out by GONE.
+    local REBUILD, FORMED, GONE = 1.4, 1.95, 2.9
+    -- The reel drifts this far past the prize and eases back onto it.
+    local OVERSHOOT = 12
+
+    -- The screen dims behind the roll.
+    local backdrop = CreateFrame("Frame", nil, UIParent)
+    backdrop:SetAllPoints(UIParent)
+    backdrop:SetFrameStrata("DIALOG")
+    backdrop:SetFrameLevel(1)
+    local dim = backdrop:CreateTexture(nil, "BACKGROUND")
+    dim:SetTexture(0, 0, 0, 0.3)
+    dim:SetAllPoints()
+    local vignette = backdrop:CreateTexture(nil, "BORDER")
+    vignette:SetTexture(ART .. "Shade")
+    vignette:SetAllPoints()
+    backdrop:SetAlpha(0)
+    backdrop:Hide()
+    backdrop:SetScript("OnUpdate", function(self, elapsed)
+        local alpha = (self:GetAlpha() or 0) + (self.target - (self:GetAlpha() or 0)) * math.min(1, elapsed * 6)
+        self:SetAlpha(alpha)
+        if self.target == 0 and alpha < 0.02 then
+            self:Hide()
+        end
+    end)
+    local function Dim(on)
+        backdrop.target = on and 1 or 0
+        if on then
+            backdrop:Show()
+        end
+    end
 
     local reveal = CreateFrame("Frame", "EmberforgeClasslessReveal", UIParent)
     reveal:SetWidth(700)
     reveal:SetHeight(250)
     reveal:SetPoint("TOP", 0, -140)
     reveal:SetFrameStrata("DIALOG")
+    reveal:SetFrameLevel(20)
     reveal:SetToplevel(true)
     reveal:Hide()
 
@@ -1306,7 +1339,8 @@ do
         fade:SetGradientAlpha("HORIZONTAL", from[1], from[2], from[3], from[4], to[1], to[2], to[3], to[4])
         fades[index] = fade
     end
-    local burst = overlay:CreateTexture(nil, "BORDER")
+    -- On the bar itself, so the light shines from behind the icons.
+    local burst = bar:CreateTexture(nil, "ARTWORK")
     burst:SetTexture(ART .. "Rays")
     burst:SetBlendMode("ADD")
     burst:SetWidth(240)
@@ -1333,6 +1367,21 @@ do
         spark:Hide()
         sparks[index] = spark
     end
+    -- Embers drifting up off the track while it spins.
+    local embers = {}
+    for index = 1, 16 do
+        local ember = overlay:CreateTexture(nil, "OVERLAY")
+        ember:SetTexture(ART .. "Spark")
+        ember:SetBlendMode("ADD")
+        ember:Hide()
+        embers[index] = ember
+    end
+    -- The landing shockwave, in the prize's class color.
+    local shockwave = overlay:CreateTexture(nil, "OVERLAY")
+    shockwave:SetTexture(ART .. "RingSelected")
+    shockwave:SetBlendMode("ADD")
+    shockwave:SetPoint("CENTER", 0, 2)
+    shockwave:Hide()
 
     -- The die, its cracks, its shards and the flash, centered where the track opens.
     local dieFrame = CreateFrame("Frame", nil, reveal)
@@ -1514,9 +1563,98 @@ do
         end
     end
 
+    local function Embers(elapsed, width)
+        for _, ember in ipairs(embers) do
+            if ember.life then
+                ember.life = ember.life - elapsed
+                ember.y = ember.y + ember.vy * elapsed
+                ember.x = ember.x + math.sin(ember.life * 3 + ember.phase) * 8 * elapsed
+                ember:ClearAllPoints()
+                ember:SetPoint("CENTER", overlay, "CENTER", ember.x, ember.y)
+                ember:SetAlpha(Clamp(ember.life / ember.span * 2) * Clamp((ember.span - ember.life) * 4) * 0.8)
+                if ember.life <= 0 then
+                    ember.life = nil
+                    ember:Hide()
+                end
+            elseif width > 40 and math.random() < elapsed * 6 then
+                ember.span = 1.2 + math.random() * 0.9
+                ember.life, ember.phase = ember.span, math.random() * 6
+                ember.x, ember.y = (math.random() - 0.5) * width, -BAR_HEIGHT / 2 + 4
+                ember.vy = 22 + math.random() * 30
+                Square(ember, 4 + math.random() * 5)
+                ember:Show()
+            end
+        end
+    end
+
+    -- The selector jumps a little on every icon that passes under it.
+    local function Pulse(self, elapsed)
+        self.pulse = math.max(0, (self.pulse or 0) - elapsed * 6)
+        Square(selector, ICON_SIZE * 1.3 * (1 + 0.1 * self.pulse))
+        selectorGlow:SetAlpha(0.55 + 0.45 * self.pulse)
+    end
+
+    -- After the prize is shown the shards fly back together, the die re-forms with a flash and
+    -- the cracks heal, then it swells a little and fades away.
+    local function RebuildDie(self, t)
+        if t < REBUILD or self.rebuilt == "gone" then
+            return
+        end
+        if t < FORMED then
+            local gather = ((t - REBUILD) / (FORMED - REBUILD)) ^ 2
+            for _, piece in ipairs(shards) do
+                local distance = 170 * (1 - gather)
+                piece:ClearAllPoints()
+                piece:SetPoint("CENTER", math.cos(piece.angle) * distance, -math.sin(piece.angle) * distance)
+                Rotate(piece, (piece.spin or 3) * (1 - gather) * 0.8)
+                Square(piece, 76)
+                piece:SetAlpha(Clamp((t - REBUILD) / 0.2))
+                piece:Show()
+            end
+            return
+        end
+        if not self.rebuilt then
+            self.rebuilt = "formed"
+            for _, piece in ipairs(shards) do
+                piece:Hide()
+            end
+            for _, texture in ipairs({ die, dieCracks, dieGlow, flash }) do
+                texture:ClearAllPoints()
+                texture:SetPoint("CENTER")
+                texture:Show()
+            end
+            Rotate(die, 0)
+            Rotate(dieCracks, 0)
+            Play("igMainMenuClose")
+        end
+        local since = t - FORMED
+        local fade = Clamp((since - 0.35) / (GONE - FORMED - 0.35))
+        Square(die, 76 * (1 + 0.18 * fade))
+        Square(dieCracks, 76 * (1 + 0.18 * fade))
+        Square(dieGlow, 76 * (1.8 + 0.6 * fade))
+        die:SetAlpha(1 - fade)
+        dieCracks:SetAlpha(Clamp(1 - since / 0.4) * (1 - fade))
+        dieGlow:SetAlpha(0.8 * (1 - fade))
+        Square(flash, 70 + since * 320)
+        flash:SetAlpha(Clamp(1 - since / 0.3))
+        if t >= GONE then
+            self.rebuilt = "gone"
+            HideDie()
+        end
+    end
+
     local function Celebrate(self, elapsed)
         self.time = self.time + elapsed
         local t = self.time
+        Embers(elapsed, REEL_WIDTH)
+        Pulse(self, elapsed)
+        RebuildDie(self, t)
+        -- A jolt as it lands, and the shockwave.
+        bar:ClearAllPoints()
+        bar:SetPoint("CENTER", reveal, "TOP", 0, TRACK_Y + 5 * (1 - Clamp(t / 0.35)) * math.sin(t * 45))
+        local wave = Clamp(t / 0.6)
+        Square(shockwave, 60 + 260 * (1 - (1 - wave) ^ 2))
+        shockwave:SetAlpha(1 - wave)
         Rotate(burst, t * 0.35)
         burst:SetAlpha(Clamp(t * 4) * (0.75 + 0.25 * math.sin(t * 3)))
         selectorGlow:SetAlpha(0.7 + 0.3 * math.sin(t * 4))
@@ -1546,7 +1684,13 @@ do
         heading:SetAlpha(1)
         ScrollTo(self.target, width)
         FillSlot(slots[WINNER_SLOT], current.spell, current.class, true)
+        local r, g, b = ClassColor(current.class)
         revealName:SetText(SpellName(current.spell))
+        revealName:SetTextColor(r, g, b)
+        burst:SetVertexColor((r + 1) / 2, (g + 0.82) / 2, (b + 0.4) / 2)
+        shockwave:SetVertexColor(r, g, b)
+        shockwave:Show()
+        self.pulse = 1
         local note = (CLASS_NAMES[current.class] or "")
         if current.tree then
             note = note .. "  -  " .. current.tree
@@ -1643,21 +1787,31 @@ do
             bar:SetAlpha(0)
         end
         heading:SetAlpha(opening)
-        -- The reel: fast start, long slow finish (quintic ease-out).
+        -- The reel: fast start, long slow finish (quintic ease-out) that drifts just past the prize,
+        -- then eases back onto it.
         local spin = Clamp((t - OPENED) / (LANDED - OPENED))
-        local center = self.start + (self.target - self.start) * (1 - (1 - spin) ^ 5)
+        local run = Clamp(spin / 0.9)
+        local center = self.start + (self.target + OVERSHOOT - self.start) * (1 - (1 - run) ^ 5)
+        if spin > 0.9 then
+            local back = (spin - 0.9) / 0.1
+            center = self.target + OVERSHOOT * (1 - back * back * (3 - 2 * back))
+        end
         ScrollTo(center, width)
         local passing = math.floor(center / SLOT_STEP)
         if spin > 0 and passing ~= self.passing then
             self.passing = passing
+            self.pulse = 1
             Play("UChatScrollButton")
         end
+        Pulse(self, elapsed)
+        Embers(elapsed, opening > 0 and width or 0)
     end
 
     function ShowNextReveal()
         local current = reveals[1]
         if not current then
             reveal:Hide()
+            Dim(false)
             return
         end
         if reveal:IsShown() and reveal.current == current then
@@ -1691,7 +1845,14 @@ do
         result:SetAlpha(1)
         heading:SetAlpha(0)
         burst:Hide()
+        shockwave:Hide()
         selectorGlow:SetAlpha(0.6)
+        for _, ember in ipairs(embers) do
+            ember.life = nil
+            ember:Hide()
+        end
+        bar:ClearAllPoints()
+        bar:SetPoint("CENTER", reveal, "TOP", 0, TRACK_Y)
         for _, spark in ipairs(sparks) do
             spark.life = nil
             spark:Hide()
@@ -1699,6 +1860,7 @@ do
         HideDie()
         for _, texture in ipairs({ die, dieCracks, dieGlow }) do
             Square(texture, 1)
+            texture:SetAlpha(1)
             texture:Show()
         end
         flash:Hide()
@@ -1719,11 +1881,12 @@ do
         -- Land somewhere inside the prize's slot, not always dead center.
         reveal.start = StartCenter()
         reveal.target = (WINNER_SLOT - 0.5) * SLOT_STEP + (math.random() - 0.5) * (SLOT_STEP - 20)
-        reveal.time, reveal.passing, reveal.spinning, reveal.shattered = 0, nil, true, false
+        reveal.time, reveal.passing, reveal.spinning, reveal.shattered, reveal.rebuilt = 0, nil, true, false, nil
         OpenTrack(0)
         bar:SetAlpha(0)
         reveal:SetScript("OnUpdate", Spin)
         reveal:Show()
+        Dim(true)
     end
 
     skip:SetScript("OnClick", function()
@@ -1747,6 +1910,7 @@ do
     keep:SetScript("OnClick", function() Answer("KEEP") end)
     reroll:SetScript("OnClick", function() Answer("REROLL") end)
 end
+CreateRoll()
 
 -- Minimap button: drag it around the minimap; the position is kept per character.
 

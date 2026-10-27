@@ -56,7 +56,8 @@ spec with the level each needs, each spec's talent tree beside them (your ranks 
 greyed, prerequisite arrows drawn), an Abilities view of everything you own, your spells, talents and
 specs on the right, a search across all classes, and the picks after a Tome of Selection. Each random
 ability and talent rank from a level-up (level 10 on) is rolled on screen: a die shatters, the track
-opens between two gryphons and the icons spin down onto the prize; abilities then
+opens between two gryphons and the icons spin down onto the prize, then the die re-forms and fades;
+abilities then
 offer **Keep** or one **Reroll** (a different random ability). Catching up at login grants without
 spinning. It is the `Emberforge_Classless` addon
 (`client-patch/AddOns/`); the server side is `src/classless.cpp`,

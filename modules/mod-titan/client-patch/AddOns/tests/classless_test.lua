@@ -16,7 +16,10 @@ Widget.__index = function(self, key)
     if method then
         return method
     end
-    return function() end
+    -- Unknown methods (capitalized, like WoW's) do nothing; unknown fields are nil.
+    if type(key) == "string" and key:match("^[A-Z]") then
+        return function() end
+    end
 end
 local function NewWidget(name)
     local widget = setmetatable({ shown = true, scripts = {}, text = "" }, Widget)
@@ -317,6 +320,13 @@ check(not reveal.spinning and card.revealName.text == "Fireball" and card.reveal
     "then lands on Fireball (Mage, Fire) with Keep and Reroll")
 check(card.burst.shown, "the light burst plays")
 check(GameTooltip.link == "spell:133" and GameTooltip:IsOwned(reveal), "the spell's tooltip sits beside the card")
+local finale = upvalues(upvalues(reveal.scripts.OnUpdate).RebuildDie)
+reveal.scripts.OnUpdate(reveal, 1.5)
+check(finale.shards[1].shown and not finale.die.shown, "after the reveal the shards gather")
+reveal.scripts.OnUpdate(reveal, 0.6)
+check(finale.die.shown and not finale.shards[1].shown, "and re-form the die")
+reveal.scripts.OnUpdate(reveal, 1)
+check(not finale.die.shown and card.keep.enabled, "which fades away, leaving the answer")
 server("G,116,116,0")
 card.reroll.scripts.OnClick(card.reroll)
 check(lastSent() == "REROLL,133", "Reroll sends REROLL with the first rank")
