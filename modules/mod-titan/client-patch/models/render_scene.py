@@ -25,7 +25,10 @@ def vertex_lighting(verts, lights):
     vertex normal, at full strength until attenuation start and fading out linearly by its end."""
     light = np.zeros((len(verts), 3))
     pos, nrm = verts['pos'].astype(np.float64), verts['n'].astype(np.float64)
-    for position, ambient, diffuse, start, end in lights:
+    for kind, position, ambient, diffuse, start, end in lights:
+        if kind == 0:                                  # directional, assumed shining down from above
+            light += ambient + diffuse * np.clip(nrm[:, 2], 0, None)[:, None]
+            continue
         d = position - pos
         dist = np.linalg.norm(d, axis=1)
         lambert = np.clip((d * nrm).sum(1) / np.maximum(dist, 1e-6), 0, None)
@@ -72,12 +75,27 @@ def load(m2_path, texture_dir):
     n, o = arr(m2, 0x108)
     for i in range(n):
         base = o + i * 156
+        kind = struct.unpack_from('<H', m2, base)[0]
         position = np.array(struct.unpack_from('<3f', m2, base + 4))
         t = base + 16
         ambient = np.array(key(t, '3f')) * key(t + 20, 'f')[0]
         diffuse = np.array(key(t + 40, '3f')) * key(t + 60, 'f')[0]
-        lights.append((position, ambient, diffuse, key(t + 80, 'f')[0], key(t + 100, 'f')[0]))
+        lights.append((kind, position, ambient, diffuse, key(t + 80, 'f')[0], key(t + 100, 'f')[0]))
     lighting = vertex_lighting(verts, lights)
+
+    # Particle emitters (WotLK layout): enough to preview where the particles go and how they look.
+    def middle(off, fmt, size):
+        _, _, vn, vo = struct.unpack_from('<IIII', m2, off)
+        return struct.unpack_from('<' + fmt, m2, vo + size * (vn // 2)) if vn else None
+    emitters = []
+    n, o = arr(m2, 0x128)
+    for i in range(n):
+        b = o + i * 476
+        emitters.append({'position': np.array(struct.unpack_from('<3f', m2, b + 8)),
+                         'speed': key(b + 0x34, 'f')[0], 'life': key(b + 0x98, 'f')[0],
+                         'rate': key(b + 0xB0, 'f')[0], 'area': (key(b + 0xC8, 'f')[0], key(b + 0xDC, 'f')[0]),
+                         'color': np.array(middle(b + 0x104, '3f', 12)) / 255,
+                         'alpha': middle(b + 0x114, 'h', 2)[0] / 32767, 'size': middle(b + 0x124, '2f', 8)[0]})
 
     n, o = arr(skin, 0x04)
     lookup = np.frombuffer(skin, '<u2', n, o)
@@ -88,12 +106,12 @@ def load(m2_path, texture_dir):
     n, o = arr(skin, 0x24)
     batches = [struct.unpack_from('<Bb11H', skin, o + i * 24) for i in range(n)]
     return (verts, textures, materials, texture_lookup, lookup, indices, sections, batches,
-            (cam_pos, cam_target, fov, near), lighting)
+            (cam_pos, cam_target, fov, near), lighting, emitters)
 
 
 def render(m2_path, texture_dir, width=960, height=540):
     (verts, textures, materials, tex_lookup, lookup, indices, sections, batches, camera,
-     lighting) = load(m2_path, texture_dir)
+     lighting, emitters) = load(m2_path, texture_dir)
     cam_pos, cam_target, fov, near = camera
     f = cam_target - cam_pos
     f /= np.linalg.norm(f)
@@ -164,6 +182,28 @@ def render(m2_path, texture_dir, width=960, height=540):
                     image[region][vis] = (image[region] * (1 - a) + src)[vis]
                 else:
                     image[region][vis] = np.clip(image[region] + src, 0, 1)[vis]
+    # Particles: a snapshot of each emitter's particles at random ages along their (straight up) paths,
+    # drawn as soft additive dots behind the scene's depth.
+    rng = np.random.default_rng(1)
+    for e in emitters:
+        count = int(min(e['rate'] * e['life'], 2000))
+        p = e['position'] + np.c_[(rng.random(count) - 0.5) * e['area'][0], (rng.random(count) - 0.5) * e['area'][1],
+                                  rng.random(count) * e['speed'] * e['life']]
+        d = p - cam_pos
+        x, y, zz = d @ r, d @ u, d @ f
+        sx_, sy_ = width / 2 + x / (zz * th * aspect) * width / 2, height / 2 - y / (zz * th) * height / 2
+        for px, py, pz in zip(sx_, sy_, zz):
+            if pz < near:
+                continue
+            radius = e['size'] / (pz * th) * height / 2
+            x0, x1 = int(max(0, px - radius - 1)), int(min(width - 1, px + radius + 1))
+            y0, y1 = int(max(0, py - radius - 1)), int(min(height - 1, py + radius + 1))
+            if x0 > x1 or y0 > y1:
+                continue
+            gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+            g = np.exp(-((gx - px) ** 2 + (gy - py) ** 2) / (2 * max(radius / 2, 0.5) ** 2)) * e['alpha']
+            g *= pz < zbuf[y0:y1 + 1, x0:x1 + 1]
+            image[y0:y1 + 1, x0:x1 + 1] += g[..., None] * e['color']
     return Image.fromarray((np.clip(image, 0, 1) * 255).astype(np.uint8), 'RGB')
 
 

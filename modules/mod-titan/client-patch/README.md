@@ -81,9 +81,12 @@ scene fits, and centers the star dome on the camera. Moving the camera re-runs a
   Legion skybox textures in front of it (`models/pantheon/sky/`, edges feathered so they blend into
   the dome), placed by screen position in `SKY`, plus a planet (`PLANET`).
 - Glows and colors: `GLOW_MODELS` (gem glows at Blizzard's glow doodad spots) and the `*_TINT` /
-  `SHEEN` colors in `build_login_scene.py`. The scene is unlit: with `LIT = True` the room and thrones
-  use lit materials under `LIGHTS` (two M2 point lights), but the client drew them black that way.
-- Not included yet: light rays and particle effects (wow.export does not export particles).
+  `SHEEN` colors in `build_login_scene.py`.
+- Lighting (`LIT`, `LIGHTS`): one directional M2 light, set up like the light in Blizzard's own login
+  model (`UI_MainMenu_Northrend.m2`); the login screen drew lit materials black under point lights.
+- Particles (`PARTICLES`): emitters written field for field like a known-good one from that model
+  (its floating glow motes), so only placement, look and rates differ.
+- Not included yet: light rays (wow.export does not export particles; the rays need their models).
 
 Check changes offline with `sh interface/tests/run.sh` (anchor order plus a full creation run
 against a mocked login API) before testing in game.

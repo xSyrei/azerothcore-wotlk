@@ -25,9 +25,9 @@ CLIENT_DIR = 'Interface\\Glues\\Models\\UI_Emberforge'
 # at the main throne, with the arch and both waterfall pillars framing it.
 CAMERA = ((280.0, 0.0, 5.0), (-89.0, 0.0, 60.0), 1.4)
 
-# Whether the room and thrones use lit materials under LIGHTS. Off: the 3.3.5a login screen drew them
-# black with these M2 lights (it does light Blizzard's own glue models; to compare against one).
-LIT = False
+# Whether the room and thrones use lit materials under LIGHTS. The login screen applies only a
+# directional light, the way Blizzard's own login model is lit (with point lights it drew them black).
+LIT = True
 
 # Base colors after the Legion raid: teal-bronze structure, warm gold floor ring and thrones. Lit, the
 # lights add the shading; unlit, the tints stand in for it. Glowing details stay bright (see
@@ -45,11 +45,16 @@ ART = HERE.parent / 'interface' / 'login'
 # Ulduar power orbs set into the arch (not the one on the spire tip, which is out of view here and
 # would glow in empty sky).
 GLOW_MODELS = {'icecrown_blueglow_01': 6.0, 'ul_power_orb02': 13.0}
-# Lights: a warm key light high above the front of the platform (also carrying the cool ambient that
-# fills the shadows), and a cyan glow inside the throne ring from the gems and runes.
-LIGHTS = [
-    scene.point_light((150.0, 0.0, 350.0), ((0.22, 0.32, 0.44), 1.0), ((1.00, 0.86, 0.62), 1.0), (0.0, 900.0)),
-    scene.point_light((-20.0, 0.0, 40.0), ((0.0, 0.0, 0.0), 0.0), ((0.35, 0.75, 1.00), 0.9), (40.0, 220.0)),
+# Light: one directional light like Blizzard's. Its ambient alone gives about the unlit look (so the
+# scene reads right even if the diffuse shows differently in game); the warm diffuse lights surfaces
+# facing up.
+LIGHTS = [scene.directional_light(((0.50, 0.60, 0.70), 1.0), ((1.00, 0.84, 0.60), 0.55))]
+
+# Particles: cyan motes drifting up from the whole platform (stand-in for Blizzard's gl_bluepollen).
+PARTICLES = [
+    scene.mote_emitter((0.0, 0.0, -10.0), (240.0, 240.0), HERE.parent / 'interface' / 'login' / 'Mote.png',
+                       color=((140, 220, 255), (120, 200, 255), (90, 160, 255)), alpha=(0.0, 0.85, 0.0),
+                       size=(1.6, 0.6), rate=40.0, life=9.0, speed=9.0),
 ]
 
 # Sky layers from Argus's Legion skybox textures (models/pantheon/sky), as camera-facing cards in
@@ -133,7 +138,8 @@ def scene_parts(camera=CAMERA):
 
 def build(out_dir, camera=CAMERA):
     """Write the scene (M2, skin, BLPs) into out_dir; returns build stats."""
-    return scene.build(scene_parts(camera), out_dir, NAME, CLIENT_DIR, camera, lights=LIGHTS if LIT else ())
+    return scene.build(scene_parts(camera), out_dir, NAME, CLIENT_DIR, camera, lights=LIGHTS if LIT else (),
+                       particles=PARTICLES)
 
 
 def main():

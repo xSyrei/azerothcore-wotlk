@@ -2,12 +2,13 @@
 """Build a static WoW 3.3.5a M2 scene (login screen backdrop) from wow.export OBJ exports.
 
 The scene is one WMO (the room) plus M2 doodads placed with the WMO's doodad placement CSV, a star
-sky dome around everything, and a camera. Everything is self-lit (unlit materials) because login
-scenes get no world lighting. Kept per material: the first texture, the blend mode, two-sided and
-no-depth-write flags, and scrolling texture animations (waterfalls). Not kept: particles, ribbons,
-bone animation, extra texture layers (reflections, shimmer masks).
+sky dome around everything, camera-facing cards (glows, sky layers), a camera, and optionally a
+scene light and particle emitters laid out like Blizzard's own login model. Materials are unlit
+unless a part clears UNLIT. Kept per material: the first texture, the blend mode, two-sided and
+no-depth-write flags, and scrolling texture animations (waterfalls). Not kept from the exports:
+particles, ribbons, bone animation, extra texture layers (reflections, shimmer masks).
 
-The scene is described in Python (see build_patch.py, LOGIN_SCENE) and written by build().
+The scene is described in build_login_scene.py and written by build().
 """
 
 import csv
@@ -236,23 +237,72 @@ def tinted(image, tint):
     return Image.fromarray((np.dstack([np.clip(out, 0, 1), alpha]) * 255).astype(np.uint8), 'RGBA')
 
 
-def point_light(position, ambient, diffuse, attenuation):
-    """A static M2 point light: position, ambient (rgb, intensity), diffuse (rgb, intensity) and
-    attenuation (full strength up to start, fading out by end, in yards)."""
-    return {'position': position, 'ambient': ambient, 'diffuse': diffuse, 'attenuation': attenuation}
+def directional_light(ambient, diffuse):
+    """The scene light, set up like Blizzard's own login screen light (UI_MainMenu_Northrend): a
+    directional light on bone 0 carrying the ambient (rgb, intensity), plus a diffuse (rgb,
+    intensity) shining down from above. The 3.3.5a login screen applied no point lights."""
+    return {'type': 0, 'position': (0.0, 0.0, 0.0), 'ambient': ambient, 'diffuse': diffuse,
+            'attenuation': (277.7778, 277.7778)}
 
 
 def light_record(blob, light):
-    """M2Light (WotLK, 156 bytes): type 1 (point) on bone 0, every value a one-key track."""
+    """M2Light (WotLK, 156 bytes), every value a one-key track; visibility left empty (always on)
+    like Blizzard's."""
     def one(fmt, value):
         return track(blob, 0, [([0], [value])], fmt)
     (ar, ag, ab), ai = light['ambient']
     (dr, dg, db), di = light['diffuse']
     start, end = light['attenuation']
-    record = struct.pack('<Hh3f', 1, 0, *light['position'])
+    record = struct.pack('<Hh3f', light['type'], 0, *light['position'])
     record += one('3f', (ar, ag, ab)) + one('f', ai) + one('3f', (dr, dg, db)) + one('f', di)
-    record += one('f', start) + one('f', end) + one('B', 1)
+    record += one('f', start) + one('f', end) + empty_track()
     assert len(record) == 156
+    return record
+
+
+def mote_emitter(position, area, texture, color, alpha, size, rate, life, speed, spread=0.3):
+    """Particles drifting up from a horizontal area: area (length, width) in yards around position,
+    color (r, g, b 0..255) and alpha (0..1) at birth, middle and death, size (start, end) in yards,
+    rate per second, life in seconds (with up to a third more or less), speed in yards per second
+    (cone of +-spread radians around straight up)."""
+    return {'position': position, 'area': area, 'texture': texture, 'color': color, 'alpha': alpha,
+            'size': size, 'rate': rate, 'life': life, 'speed': speed, 'spread': spread}
+
+
+def particle_record(blob, p, texture_index):
+    """M2Particle (WotLK, 476 bytes) copied field for field from a known-good emitter, Blizzard's
+    floating glow motes in UI_MainMenu_Northrend (emitter 25): additive, plane emitter, no texture
+    cells. Only placement, look and rates are ours."""
+    def one(value):
+        return track(blob, 0, [([0], [value])], 'f')
+
+    def fblock(fmt, stamps, values):
+        t = blob.array('h', stamps)
+        v = blob.array(fmt, values)
+        return struct.pack('<2I2I', *t, *v)
+    empty_string = blob.add(b'\0', 1)
+    stamps = [0, 16384, 32767]
+    life = p['life']
+    record = struct.pack('<iI3fHH', -1, 0x20238, *p['position'], 0, texture_index)
+    record += struct.pack('<2I2I', *empty_string, *empty_string)          # geometry / recursion model
+    record += struct.pack('<BBHBBHHH', 4, 1, 0, 0, 0, 0, 1, 1)               # additive, plane, 1x1 cells
+    record += one(p['speed']) + one(0.5) + one(p['spread']) + one(math.tau) + one(0.0) + one(life)
+    record += struct.pack('<f', life / 3) + one(p['rate']) + struct.pack('<f', 0.0)
+    record += one(p['area'][0]) + one(p['area'][1]) + one(0.0)
+    record += fblock('3f', stamps, [tuple(map(float, c)) for c in p['color']])
+    record += fblock('h', stamps, [int(a * 32767) for a in p['alpha']])
+    s0, s1 = p['size']
+    record += fblock('2f', stamps, [(s0, s0), ((s0 + s1) / 2, (s0 + s1) / 2), (s1, s1)])
+    record += struct.pack('<2f', 0.3, 0.0)                                  # scale variation
+    record += struct.pack('<4I', 0, 0, 0, 0) * 2                            # head / tail cell tracks
+    record += struct.pack('<5f', 0.1, 10.0, 1.0, 1.0, 1.1)                  # tail length, twinkle
+    record += struct.pack('<6f', 1.0, 0.25, 0.0, 0.0, 0.0349, 0.0)          # burst, drag, spin
+    record += struct.pack('<6f', 0, 0, 0, 0, 0, 0)                          # tumble
+    record += struct.pack('<4f', 0.0, 0.0, 0.0, 0.0)                        # wind, wind time
+    record += struct.pack('<4f', 2.5, 0.7, 7.0, 0.9)                        # follow speeds / scales
+    record += struct.pack('<2I', 0, 0)                                      # spline points
+    record += empty_track()                                                 # enabled in: always
+    assert len(record) == 476, len(record)
     return record
 
 
@@ -391,7 +441,7 @@ def merge_by_material(parts, max_indices=0xFFFF):
     return out
 
 
-def build(parts, out_dir, name, client_dir, camera, max_texture=512, lights=()):
+def build(parts, out_dir, name, client_dir, camera, max_texture=512, lights=(), particles=()):
     """Write <name>.m2, <name>00.skin and one BLP per texture into out_dir.
 
     The scene is first trimmed to what the camera sees and merged per material: the 3.3.5a client
@@ -410,6 +460,11 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512, lights=()):
         key = (str(p.texture), p.tint)
         if key not in specs:
             specs[key] = p
+            texture_files.append(key)
+    for emitter in particles:
+        key = (str(emitter['texture']), None)
+        if key not in specs:
+            specs[key] = Part(None, None, None, None, emitter['texture'], 4, 0)
             texture_files.append(key)
     texture_names = []
     for key in texture_files:
@@ -514,6 +569,8 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512, lights=()):
     assert len(cam) == 100
     cameras_ref = blob.add(cam, 1)
     lights_ref = blob.add(b''.join(light_record(blob, light) for light in lights), len(lights))
+    particles_ref = blob.add(b''.join(particle_record(blob, e, texture_files.index((str(e['texture']), None)))
+                                      for e in particles), len(particles))
     camera_lookup = blob.array('H', [0])
 
     header = struct.pack('<4sI', b'MD20', 264)
@@ -533,7 +590,7 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512, lights=()):
     header += struct.pack('<2I', 0, 0) * 2                                          # attachments
     header += struct.pack('<2I', 0, 0) + struct.pack('<2I', *lights_ref)            # events, lights
     header += struct.pack('<2I', *cameras_ref) + struct.pack('<2I', *camera_lookup)
-    header += struct.pack('<2I', 0, 0) * 2                                          # ribbons, particles
+    header += struct.pack('<2I', 0, 0) + struct.pack('<2I', *particles_ref)         # ribbons, particles
     assert len(header) == 0x130
     blob.data[:0x130] = header
     (out_dir / f'{name}.m2').write_bytes(bytes(blob.data))

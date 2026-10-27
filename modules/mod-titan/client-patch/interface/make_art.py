@@ -221,6 +221,13 @@ def planet(size=256):
     return np.dstack([np.clip(rgb, 0, 1), alpha])
 
 
+def mote(size=64):
+    """Soft round particle for the scene's floating motes (additive: white center, fading out)."""
+    r, _ = radial(size)
+    g = np.exp(-(r / 0.35) ** 2) * np.clip(1 - r, 0, 1)
+    return np.dstack([np.stack([g, g, g], -1), np.ones_like(r)])
+
+
 def save_login(rgba, name):
     img = Image.fromarray((np.clip(rgba, 0, 1) * 255).astype(np.uint8), 'RGBA')
     img = img.resize((img.width // SS, img.height // SS), Image.Resampling.LANCZOS)
@@ -244,6 +251,7 @@ def main():
     img.save(HERE / 'login' / 'StarField.png')
     save_login(gem_glow(), 'GemGlow')
     save_login(planet(), 'Planet')
+    save_login(mote(), 'Mote')
     print('Wrote', ', '.join(sorted(p.name for p in ART.glob('*.png'))))
 
 
