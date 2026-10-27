@@ -1,0 +1,5 @@
+## Interface: 30300
+## Title: Emberforge Classless
+## Notes: The Classless window: every class's abilities by spec, your abilities, and picking your starting kit with the Titan Tome of Selection. Open with /classless.
+## Author: Project Emberforge
+Emberforge_Classless.lua

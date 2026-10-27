@@ -107,6 +107,14 @@ pink to ember orange wherever the UI colors names by class.
 Install: copy the `Emberforge_Resources` folder into the client's `Interface\AddOns\` folder.
 The launcher will ship it automatically for players.
 
+## Classless window addon
+
+`AddOns/Emberforge_Classless` is the Classless window (`/classless`): every class's abilities by
+spec, your abilities with search, and the Tome of Selection's picks. Its data comes from the
+server (`src/classless.cpp`). Check changes offline with
+`cd AddOns/tests && lua5.1 classless_test.lua`, which plays a session against a mocked WoW API.
+Install: copy the folder into `Interface\AddOns\` (the launcher ships `Emberforge_*` addons).
+
 ## Notes
 - The base class is Paladin (ID 2). To change it, update `HERO_CLASS` in the script, `@HERO` in
   `hero_class.sql` and the class mask in `worldserver.conf` together.

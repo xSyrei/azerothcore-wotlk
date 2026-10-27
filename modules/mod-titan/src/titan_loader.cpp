@@ -18,6 +18,8 @@
 void AddSC_hero_resources();
 void AddSC_item_titan_soul_of_rested_experience();
 void AddSC_wildcard();
+void AddSC_classless();
+void AddSC_item_titan_tomes();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
 void Addmod_titanScripts()
@@ -25,4 +27,6 @@ void Addmod_titanScripts()
     AddSC_hero_resources();
     AddSC_item_titan_soul_of_rested_experience();
     AddSC_wildcard();
+    AddSC_classless();
+    AddSC_item_titan_tomes();
 }

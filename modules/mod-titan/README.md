@@ -23,13 +23,24 @@ Nothing else comes from the base class (`data/sql/db-world/hero_cleanup.sql`):
 
 ## Wildcard
 How a Hero progresses (`src/wildcard.cpp`), fully random for now:
-- **Abilities**: one random ability per level from level 1, drawn from every class trainer's list
-  (all 10 classes; passives, talent abilities and hunter pet handling are left out). Owned
-  abilities upgrade to the best rank for the Hero's level by themselves, no trainer needed.
-- **Talents**: from level 10, one random talent rank per level from any class's talent trees
-  (tier and prerequisite rules do not apply). Heroes have no talent points to spend in the UI.
+- **Starting kit (levels 1-8)**: every Hero starts with 4 random abilities and two tomes in its
+  bags (`data/sql/db-world/titan_tomes.sql`, `src/item_titan_tomes.cpp`), both usable any number of
+  times until level 9:
+  - **Titan Tome of Randomization** (910003) rerolls the 4 abilities;
+  - **Titan Tome of Selection** (910004) clears them and opens the Classless window with 4 picks.
+  At **level 9 the kit locks**: picks never spent are rolled at random and both tomes vanish.
+- **From level 10**: one random ability and one random talent rank per level. Abilities come from
+  every class trainer's list (all 10 classes; passives, talent abilities and hunter pet handling
+  are left out); talents from any class's talent trees (tier and prerequisite rules do not apply).
+  Heroes have no talent points to spend in the UI.
+- Owned abilities upgrade to the best rank for the Hero's level by themselves, no trainer needed.
 - Grants are caught up at login and on every level change, so multi-level jumps and characters
   made before Wildcard get everything they are owed. Each grant is announced in chat.
+
+**Classless window** (`/classless` or `/cl`): every class's abilities by spec with the level each
+needs, the Hero's own abilities with a search box, and the picks after a Tome of Selection. It is
+the `Emberforge_Classless` addon (`client-patch/AddOns/`); the server side is `src/classless.cpp`,
+talking to it in addon whispers (prefix `EFCL`, protocol in both files).
 
 It needs two settings in `worldserver.conf` (set in the `.dist`; an existing config needs them by
 hand, and the server log says so at the first Hero login when they are missing):
