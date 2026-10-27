@@ -25,15 +25,20 @@ CLIENT_DIR = 'Interface\\Glues\\Models\\UI_Emberforge'
 # at the main throne, with the arch and both waterfall pillars framing it.
 CAMERA = ((280.0, 0.0, 5.0), (-89.0, 0.0, 60.0), 1.4)
 
-# The room and thrones are lit by the scene's own lights (below); tints set their base color after the
-# Legion raid: teal-bronze structure, warm gold floor ring and thrones. Glowing details stay bright
-# (see scene.tinted) and unlit.
-ROOM_TINT = (0.42, 0.58, 0.62)
-FLOOR_TINT = (0.95, 0.80, 0.50)
-THRONE_TINT = (0.85, 0.66, 0.46)
+# Whether the room and thrones use lit materials under LIGHTS. Off: the 3.3.5a login screen drew them
+# black with these M2 lights (it does light Blizzard's own glue models; to compare against one).
+LIT = False
+
+# Base colors after the Legion raid: teal-bronze structure, warm gold floor ring and thrones. Lit, the
+# lights add the shading; unlit, the tints stand in for it. Glowing details stay bright (see
+# scene.tinted).
+if LIT:
+    ROOM_TINT, FLOOR_TINT, THRONE_TINT = (0.42, 0.58, 0.62), (0.95, 0.80, 0.50), (0.85, 0.66, 0.46)
+else:
+    ROOM_TINT, FLOOR_TINT, THRONE_TINT = (0.21, 0.34, 0.42), (0.78, 0.62, 0.38), (0.58, 0.45, 0.32)
 WATER_TINT = (0.25, 0.70, 1.00)
 # Reflection sheen for the room's environment-metal textures (masked by their alpha).
-SHEEN = (0.30, 0.42, 0.40)
+SHEEN = (0.30, 0.42, 0.40) if LIT else (0.14, 0.20, 0.20)
 ART = HERE.parent / 'interface' / 'login'
 
 # Gem glows: Blizzard's icecrown_blueglow_01 spots (placement scale -> glow radius in yards) and the
@@ -61,8 +66,9 @@ SKY = [
     ('Nebula_Wisp2', (0.10, -0.70), 950.0, (600.0, 150.0), 4),
 ]
 SKY_LIMIT = 950.0                       # yards; the star dome is at 1000
-# Planet: where it sits on screen, its distance and radius.
-PLANET = ((0.32, 0.84), 900.0, 34.0)
+# Planet: where it sits on screen, its distance and radius. Nearer than every sky card, so it hides
+# them by depth whatever order the client draws them in.
+PLANET = ((0.32, 0.84), 600.0, 22.7)
 
 
 def reflection_mask(texture):
@@ -87,13 +93,17 @@ def scene_parts(camera=CAMERA):
         sheen = SHEEN if reflection_mask(p.texture) else ()
         for q, tint in ((floor, FLOOR_TINT + sheen), (rest, ROOM_TINT + sheen)):
             if q is not None:
-                q.tint, q.flags = tint, q.flags & ~scene.UNLIT
+                q.tint = tint
+                if LIT:
+                    q.flags &= ~scene.UNLIT
                 parts.append(q)
     for doodad in DOODADS:
         model = scene.m2_parts(SRC / 'doodads', doodad)
         for p in model:
             if 'throne' in doodad and p.blend == 0 and not p.flags & 0x2:
-                p.tint, p.flags = THRONE_TINT, p.flags & ~scene.UNLIT
+                p.tint = THRONE_TINT
+                if LIT:
+                    p.flags &= ~scene.UNLIT
             elif 'waterfall' in doodad:
                 p.tint, p.blend = WATER_TINT, 4             # glowing blue, added onto what is behind
         for position, rotation, scale in scene.placements(PLACEMENTS, doodad):
@@ -123,7 +133,7 @@ def scene_parts(camera=CAMERA):
 
 def build(out_dir, camera=CAMERA):
     """Write the scene (M2, skin, BLPs) into out_dir; returns build stats."""
-    return scene.build(scene_parts(camera), out_dir, NAME, CLIENT_DIR, camera, lights=LIGHTS)
+    return scene.build(scene_parts(camera), out_dir, NAME, CLIENT_DIR, camera, lights=LIGHTS if LIT else ())
 
 
 def main():

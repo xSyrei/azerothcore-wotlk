@@ -80,8 +80,9 @@ scene fits, and centers the star dome on the camera. Moving the camera re-runs a
 - Sky: the star dome (`interface/login/StarField.png`, from `make_art.py`) with layers of Argus's
   Legion skybox textures in front of it (`models/pantheon/sky/`, edges feathered so they blend into
   the dome), placed by screen position in `SKY`, plus a planet (`PLANET`).
-- Glows, lights and colors: `GLOW_MODELS` (gem glows at Blizzard's glow doodad spots), `LIGHTS` (two
-  M2 point lights) and the `*_TINT` / `SHEEN` base colors in `build_login_scene.py`.
+- Glows and colors: `GLOW_MODELS` (gem glows at Blizzard's glow doodad spots) and the `*_TINT` /
+  `SHEEN` colors in `build_login_scene.py`. The scene is unlit: with `LIT = True` the room and thrones
+  use lit materials under `LIGHTS` (two M2 point lights), but the client drew them black that way.
 - Not included yet: light rays and particle effects (wow.export does not export particles).
 
 Check changes offline with `sh interface/tests/run.sh` (anchor order plus a full creation run
