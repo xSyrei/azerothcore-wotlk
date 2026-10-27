@@ -177,8 +177,127 @@ def look_at_track_key(value):
     return struct.pack('<3f3f3f', *value, 0, 0, 0, 0, 0, 0)        # M2SplineKey<C3Vector>
 
 
+def camera_basis(camera):
+    """Right, up and forward unit vectors of a (position, target, fov) camera (Z is up)."""
+    cam_pos, target, _ = camera
+    f = np.subtract(target, cam_pos, dtype=np.float64)
+    f /= np.linalg.norm(f)
+    r = np.cross(f, (0, 0, 1))
+    r /= np.linalg.norm(r)
+    return r, np.cross(r, f), f
+
+
+def _covered_pixels(px, py, pz, width, height):
+    """Pixel centers inside a projected triangle: (region slices, inside mask, view depth) or None."""
+    area = (px[1] - px[0]) * (py[2] - py[0]) - (px[2] - px[0]) * (py[1] - py[0])
+    if abs(area) < 1e-9:
+        return None
+    x0, x1 = max(0, math.ceil(px.min() - 0.5)), min(width - 1, math.floor(px.max() - 0.5))
+    y0, y1 = max(0, math.ceil(py.min() - 0.5)), min(height - 1, math.floor(py.max() - 0.5))
+    if x0 > x1 or y0 > y1:
+        return None
+    gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+    w0 = ((px[1] - gx) * (py[2] - gy) - (px[2] - gx) * (py[1] - gy)) / area
+    w1 = ((px[2] - gx) * (py[0] - gy) - (px[0] - gx) * (py[2] - gy)) / area
+    w2 = 1 - w0 - w1
+    inside = (w0 >= 0) & (w1 >= 0) & (w2 >= 0)
+    if not inside.any():
+        return None
+    depth = 1 / (w0 / pz[0] + w1 / pz[1] + w2 / pz[2])
+    return (slice(y0, y1 + 1), slice(x0, x1 + 1)), inside, depth
+
+
+def cull_hidden(parts, camera, width=2400, aspects=(4 / 3, 21 / 9), margin=1.1, near=1.0):
+    """Drop the triangles a fixed camera never sees: off screen, or behind opaque geometry.
+
+    The test frame covers every listed screen shape (the M2 camera FOV is diagonal, so a wider
+    screen sees further sideways and less up and down) plus a margin. Alpha-tested and blended
+    parts never hide anything. Triangles crossing the near plane are kept. Returns new parts with
+    unused vertices removed; parts left without triangles are dropped.
+    """
+    t = math.tan(camera[2] / 2)
+    tan_h = max(a * t / math.sqrt(1 + a * a) for a in aspects) * margin
+    tan_v = max(t / math.sqrt(1 + a * a) for a in aspects) * margin
+    height = round(width * tan_v / tan_h)
+    r, u, f = camera_basis(camera)
+    projected = []
+    for p in parts:
+        d = p.positions - np.asarray(camera[0], np.float64)
+        z = d @ f
+        with np.errstate(divide='ignore', invalid='ignore'):
+            sx = width / 2 * (1 + (d @ r) / (z * tan_h))
+            sy = height / 2 * (1 - (d @ u) / (z * tan_v))
+        projected.append((sx, sy, z))
+
+    zbuf = np.full((height, width), np.inf)
+    for p, (sx, sy, z) in zip(parts, projected):
+        if p.blend != 0:
+            continue
+        for tri in p.triangles:
+            if (z[tri] < near).any():
+                continue
+            hit = _covered_pixels(sx[tri], sy[tri], z[tri], width, height)
+            if hit:
+                region, inside, depth = hit
+                zb = zbuf[region]
+                closer = inside & (depth < zb)
+                zb[closer] = depth[closer]
+
+    out = []
+    for p, (sx, sy, z) in zip(parts, projected):
+        keep = np.zeros(len(p.triangles), bool)
+        for i, tri in enumerate(p.triangles):
+            pz = z[tri]
+            if (pz < near).all():
+                continue
+            if (pz < near).any():
+                keep[i] = True
+                continue
+            hit = _covered_pixels(sx[tri], sy[tri], pz, width, height)
+            if hit:
+                region, inside, depth = hit
+                keep[i] = (inside & (depth <= zbuf[region] * 1.002 + 0.5)).any()
+            else:                                   # smaller than a pixel: test where it lands
+                cx, cy = int(sx[tri].mean()), int(sy[tri].mean())
+                if 0 <= cx < width and 0 <= cy < height:
+                    keep[i] = pz.mean() <= zbuf[cy, cx] * 1.002 + 0.5
+        if keep.any():
+            used, triangles = np.unique(p.triangles[keep], return_inverse=True)
+            out.append(Part(p.positions[used], p.normals[used], p.uvs[used], triangles.reshape(-1, 3),
+                            p.texture, p.blend, p.flags, p.scroll, p.tint, p.max_size))
+    return out
+
+
+def merge_by_material(parts, max_indices=0xFFFF):
+    """Join parts that draw identically into as few parts as possible (each under max_indices)."""
+    groups = {}
+    for p in parts:
+        key = (str(p.texture), p.tint, p.blend, p.flags, id(p.scroll) if p.scroll else 0, p.max_size)
+        groups.setdefault(key, []).append(p)
+    out = []
+    for group in groups.values():
+        offsets = np.cumsum([0] + [len(p.positions) for p in group[:-1]])
+        positions = np.concatenate([p.positions for p in group])
+        normals = np.concatenate([p.normals for p in group])
+        uvs = np.concatenate([p.uvs for p in group])
+        triangles = np.concatenate([p.triangles + o for p, o in zip(group, offsets)])
+        first = group[0]
+        step = max_indices // 3
+        for start in range(0, len(triangles), step):
+            used, chunk = np.unique(triangles[start:start + step], return_inverse=True)
+            out.append(Part(positions[used], normals[used], uvs[used], chunk.reshape(-1, 3), first.texture,
+                            first.blend, first.flags, first.scroll, first.tint, first.max_size))
+    return out
+
+
 def build(parts, out_dir, name, client_dir, camera, max_texture=512):
-    """Write <name>.m2, <name>00.skin and one BLP per texture into out_dir."""
+    """Write <name>.m2, <name>00.skin and one BLP per texture into out_dir.
+
+    The scene is first trimmed to what the camera sees and merged per material: the 3.3.5a client
+    reads a section's index start as 16 bits (it ignores the Level field later clients use for
+    larger models), so every section has to start below 65536.
+    """
+    parts = merge_by_material(cull_hidden(parts, camera))
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -208,15 +327,20 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512):
     # Opaque parts first, then blended ones (drawn in this order).
     parts = sorted(parts, key=lambda p: p.blend != 0)
 
-    vertices, sections, indices = [], [], []
-    vbase = 0
+    # Index data smallest section first, so that only the last sections run past index 65535.
+    # Batches keep the draw order above.
+    vbase, vstart_of = 0, {}
     for p in parts:
-        n = len(p.positions)
-        istart = len(indices)
-        indices.extend((p.triangles + vbase).reshape(-1).tolist())
-        sections.append((vbase, n, istart, len(p.triangles) * 3, p))
-        vertices.append(p)
-        vbase += n
+        vstart_of[id(p)] = vbase
+        vbase += len(p.positions)
+    indices, istart_of = [], {}
+    for p in sorted(parts, key=lambda p: len(p.triangles)):
+        if len(indices) > 0xFFFF:
+            raise ValueError(f'{sum(len(q.triangles) for q in parts) * 3} indices: too many for 16-bit '
+                             'section starts; simplify the scene or narrow the camera')
+        istart_of[id(p)] = len(indices)
+        indices.extend((p.triangles + vstart_of[id(p)]).reshape(-1).tolist())
+    sections = [(vstart_of[id(p)], len(p.positions), istart_of[id(p)], len(p.triangles) * 3, p) for p in parts]
     if vbase > 0xFFFF:
         raise ValueError(f'{vbase} vertices: a 3.3.5a skin holds at most 65535')
 
@@ -314,7 +438,7 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512):
     blob.data[:0x130] = header
     (out_dir / f'{name}.m2').write_bytes(bytes(blob.data))
 
-    # Skin: identity vertex lookup; index starts above 65535 go in the section's Level field.
+    # Skin: identity vertex lookup, triangles as built above.
     skin = Blob(48)
     lookup = skin.array('H', list(range(vbase)))
     tris = skin.add(np.array(indices, '<u2').tobytes(), len(indices))
@@ -323,8 +447,7 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512):
     for i, (vstart, vcount, istart, icount, p) in enumerate(sections):
         center = p.positions.mean(0)
         r = float(np.linalg.norm(p.positions - center, axis=1).max())
-        level, istart_low = istart >> 16, istart & 0xFFFF
-        section_data += struct.pack('<10H3f3ff', 0, level, vstart, vcount, istart_low, icount, 1, 0, 1, 0,
+        section_data += struct.pack('<10H3f3ff', 0, 0, vstart, vcount, istart, icount, 1, 0, 1, 0,
                                     *center, *center, r)
         transform = 1 + transform_of[id(p.scroll)] if p.scroll else 0
         batch_data += struct.pack('<Bb11H', 16, 0, 0, i, i, NONE16, materials.index((p.flags, p.blend)), 0, 1,
@@ -334,4 +457,4 @@ def build(parts, out_dir, name, client_dir, camera, max_texture=512):
     skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
     (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
     return {'vertices': vbase, 'triangles': len(indices) // 3, 'parts': len(parts), 'textures': len(texture_names),
-            'levels': max(s[2] >> 16 for s in sections)}
+            'last section start': max(s[2] for s in sections)}
