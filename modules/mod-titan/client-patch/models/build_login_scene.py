@@ -51,11 +51,14 @@ GLOW_MODELS = {'icecrown_blueglow_01': 6.0, 'ul_power_orb02': 13.0}
 LIGHTS = [scene.directional_light(((0.50, 0.60, 0.70), 1.0), ((1.00, 0.84, 0.60), 0.55))]
 
 # Particles: cyan motes drifting up from the whole platform (stand-in for Blizzard's gl_bluepollen).
-PARTICLES = [
+# Off for now: with this emitter in the model the login screen showed no scene at all (being narrowed
+# down).
+MOTES = [
     scene.mote_emitter((0.0, 0.0, -10.0), (240.0, 240.0), HERE.parent / 'interface' / 'login' / 'Mote.png',
                        color=((140, 220, 255), (120, 200, 255), (90, 160, 255)), alpha=(0.0, 0.85, 0.0),
                        size=(1.6, 0.6), rate=40.0, life=9.0, speed=9.0),
 ]
+PARTICLES = []
 
 # Sky layers from Argus's Legion skybox textures (models/pantheon/sky), as camera-facing cards in
 # front of the star dome, farthest first: (texture, screen position (-1..1 across, -1..1 up, for
