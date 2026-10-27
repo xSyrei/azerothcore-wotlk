@@ -55,13 +55,12 @@ namespace
     constexpr uint32 SETTING_ABILITIES_GRANTED = 0;
     constexpr uint32 SETTING_PICKS_LEFT = 1;
 
-    // Removed from the game for Heroes, matched by spell name (every rank and faction version): never
-    // granted or listed, and unlearned at login from anyone who has them (with a random replacement).
-    // A name matching nothing is logged at startup.
-    constexpr std::array<char const*, 38> BANNED_ABILITIES = {
-        // Hunter pet handling: a Hero has no hunter pet to tame, call or heal.
-        "Tame Beast", "Call Pet", "Dismiss Pet", "Revive Pet", "Feed Pet", "Mend Pet", "Eyes of the Beast",
-        "Call Stabled Pet",
+    // Ability lists match spell names (English): every rank and faction version of a name counts. A
+    // name that matches nothing is logged at startup.
+
+    // Removed from the game for Heroes: never granted or listed, and unlearned at login from anyone
+    // who has them (with a random replacement). Everything in the Runeforging skill line goes too.
+    constexpr char const* BANNED_ABILITIES[] = {
         // Class mounts.
         "Summon Charger", "Charger", "Summon Warhorse", "Warhorse", "Summon Felsteed", "Felsteed",
         "Summon Dreadsteed", "Dreadsteed",
@@ -69,10 +68,56 @@ namespace
         "Track Beasts", "Track Humanoids", "Track Undead", "Track Hidden", "Track Elementals", "Track Demons",
         "Track Dragonkin", "Track Giants", "Sense Undead", "Sense Demons", "Eagle Eye", "Beast Lore",
         "Mind Vision", "Far Sight", "Eye of Kilrogg", "Sentry Totem",
+        // Runeforging and its runes (also banned by skill line).
+        "Runeforging", "Rune of Cinderglacier", "Rune of Razorice", "Rune of Spellbreaking",
+        "Rune of Spellshattering", "Rune of Lichbane", "Rune of Swordbreaking", "Rune of Swordshattering",
+        "Rune of the Fallen Crusader", "Rune of the Nerubian Carapace", "Rune of the Stoneskin Gargoyle",
         // Others.
-        "Runeforging", "Ritual of Refreshment", "Divine Intervention", "Lesser Heal", "Disarm Trap",
-        "Create Firestone",
+        "Ritual of Refreshment", "Divine Intervention", "Lesser Heal", "Disarm Trap", "Create Firestone",
     };
+
+    // Available from level 1 (their first rank; later ranks keep their trainer levels). This includes
+    // passives and talent abilities, which are otherwise never offered.
+    constexpr char const* LEVEL_ONE_ABILITIES[] = {
+        // Death Knight
+        "Blood Strike", "Blood Presence", "Blood Boil", "Dark Command", "Icy Touch", "Frost Presence",
+        "Runic Focus", "Death and Decay", "Plague Strike", "Death Coil", "Unholy Presence", "Death Strike",
+        // Druid
+        "Entangling Roots", "Thorns", "Wrath", "Moonfire", "Nature's Grasp", "Teleport: Moonglade",
+        "Demoralizing Roar", "Cat Form", "Swipe (Bear)", "Rip", "Claw", "Prowl", "Bear Form", "Growl", "Maul",
+        "Feral Charge", "Swipe (Cat)", "Rejuvenation", "Mark of the Wild", "Healing Touch",
+        // Hunter
+        "Auto Shot", "Hunter's Mark", "Serpent Sting", "Arcane Shot", "Concussive Shot", "Steady Shot",
+        "Mongoose Bite", "Raptor Strike", "Tame Beast", "Aspect of the Monkey", "Aspect of the Hawk",
+        // Mage
+        "Frostbolt", "Frost Nova", "Frost Armor", "Fireball", "Fire Blast", "Polymorph", "Conjure Food",
+        "Arcane Intellect", "Arcane Missiles", "Conjure Water", "Mage Armor",
+        // Paladin
+        "Devotion Aura", "Divine Protection", "Hammer of Justice", "Hand of Protection", "Righteous Fury",
+        "Shield of Righteousness", "Blessing of Might", "Judgement of Light", "Crusader Strike", "Lay on Hands",
+        "Holy Light", "Purify", "Seal of Wisdom", "Seal of Righteousness", "Consecration",
+        // Priest
+        "Renew", "Smite", "Resurrection", "Greater Heal", "Power Word: Shield", "Power Word: Fortitude", "Fade",
+        "Shadow Word: Pain", "Mind Blast",
+        // Rogue
+        "Backstab", "Sinister Strike", "Gouge", "Sprint", "Evasion", "Pick Pocket", "Stealth", "Sap", "Mutilate",
+        "Eviscerate", "Slice and Dice",
+        // Shaman
+        "Lightning Bolt", "Earthbind Totem", "Searing Totem", "Stoneclaw Totem", "Earth Shock", "Flame Shock",
+        "Lightning Shield", "Rockbiter Weapon", "Flametongue Weapon", "Stoneskin Totem", "Strength of Earth Totem",
+        "Stormstrike", "Healing Wave",
+        // Warlock
+        "Corruption", "Curse of Weakness", "Drain Soul", "Life Tap", "Fear", "Immolate", "Shadow Bolt",
+        "Demon Skin", "Summon Imp", "Summon Voidwalker", "Create Healthstone",
+        // Warrior
+        "Heroic Strike", "Charge", "Rend", "Hamstring", "Battle Stance", "Thunder Clap", "Battle Shout",
+        "Victory Rush", "Defensive Stance", "Taunt", "Shield Block", "Bloodrage", "Sunder Armor",
+    };
+
+    // Learned together with Tame Beast (and removed with it), so a tamed pet can be called back,
+    // dismissed, revived and fed. They are not offered on their own.
+    constexpr char const* TAME_BEAST = "Tame Beast";
+    constexpr char const* TAME_BEAST_COMPANIONS[] = { "Call Pet", "Dismiss Pet", "Revive Pet", "Feed Pet" };
 
     // Every player always knows Pick Lock, with Lockpicking at its maximum for their level.
     constexpr uint32 SPELL_PICK_LOCK = 1804;
@@ -93,6 +138,13 @@ namespace
                 taught.push_back(effect.TriggerSpell);
 
         return taught;
+    }
+
+    std::string_view SpellName(uint32 spellId)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        char const* name = spellInfo ? spellInfo->SpellName[LOCALE_enUS] : nullptr;
+        return name ? name : "";
     }
 
     // The class skill line (spec) a spell belongs to, 0 if none.
@@ -301,8 +353,9 @@ namespace Wildcard
         return player->getClass() == HERO_CLASS;
     }
 
-    // Every class trainer spell, grouped into rank chains with the level each rank needs. Built on
-    // first use, after the world database is loaded.
+    // Every class trainer spell, grouped into rank chains with the level each rank needs, plus the
+    // level 1 abilities no trainer teaches (talent and starting spells). Built on first use, after the
+    // world database is loaded.
     std::vector<Ability> const& Abilities()
     {
         static std::vector<Ability> const abilities = []
@@ -325,16 +378,15 @@ namespace Wildcard
                         }
             }
 
-            std::unordered_set<uint32> firstRanks;
-            for (auto const& [spellId, level] : trainerLevel)
-                firstRanks.insert(sSpellMgr->GetFirstSpellInChain(spellId));
-
-            std::unordered_set<std::string_view> bannedFound;
-
             std::vector<Ability> result;
-            for (uint32 firstRank : firstRanks)
+            std::unordered_set<uint32> chains;
+            auto addChain = [&](uint32 firstRank, uint8 classId)
             {
+                if (!chains.insert(firstRank).second)
+                    return;
+
                 Ability ability { };
+                ability.ClassId = classId;
                 for (uint32 rank = firstRank; rank; rank = sSpellMgr->GetNextSpellInChain(rank))
                 {
                     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(rank);
@@ -352,33 +404,105 @@ namespace Wildcard
                             ability.ClassId = classItr->second;
                 }
 
-                if (ability.Ranks.empty())
+                if (!ability.Ranks.empty())
+                {
+                    ability.SkillLine = ClassSkillLine(firstRank);
+                    result.push_back(std::move(ability));
+                }
+            };
+
+            for (auto const& [spellId, level] : trainerLevel)
+                addChain(sSpellMgr->GetFirstSpellInChain(spellId), 0);
+
+            std::unordered_map<uint32, uint8> skillClass;      // class skill line -> class
+            for (Ability const& ability : result)
+                if (ability.SkillLine && ability.ClassId)
+                    skillClass.emplace(ability.SkillLine, ability.ClassId);
+
+            auto hasName = [](Ability const& ability, std::string_view name)
+            {
+                return std::any_of(ability.Ranks.begin(), ability.Ranks.end(),
+                    [name](Rank const& rank) { return SpellName(rank.SpellId) == name; });
+            };
+
+            // Level 1 abilities no trainer teaches: found in the class skill lines (talents, starting spells).
+            // What a found spell teaches counts as that ability (Feral Charge: its Bear and Cat versions).
+            std::unordered_set<std::string_view> found;
+            std::unordered_set<uint32> foundLevelOne;
+            for (char const* name : LEVEL_ONE_ABILITIES)
+            {
+                if (std::any_of(result.begin(), result.end(), [&](Ability const& a) { return hasName(a, name); }))
                     continue;
 
-                SpellInfo const* firstInfo = sSpellMgr->GetSpellInfo(firstRank);
-                ability.SkillLine = ClassSkillLine(firstRank);
-                ability.Banned = std::any_of(ability.Ranks.begin(), ability.Ranks.end(), [&](Rank const& rank)
+                for (uint32 i = 0; i < sSkillLineAbilityStore.GetNumRows(); ++i)
                 {
-                    char const* name = sSpellMgr->AssertSpellInfo(rank.SpellId)->SpellName[LOCALE_enUS];
-                    auto banned = std::find_if(BANNED_ABILITIES.begin(), BANNED_ABILITIES.end(),
-                        [name](char const* bannedName) { return name && std::string_view(name) == bannedName; });
-                    if (banned == BANNED_ABILITIES.end())
-                        return false;
-                    bannedFound.insert(*banned);
-                    return true;
-                });
-                ability.Offered = !GetTalentSpellCost(firstRank) && !firstInfo->IsPassive() && !ability.Banned
-                    && firstRank != SPELL_PICK_LOCK;
-                result.push_back(std::move(ability));
+                    SkillLineAbilityEntry const* entry = sSkillLineAbilityStore.LookupEntry(i);
+                    if (!entry || SpellName(entry->Spell) != name)
+                        continue;
+
+                    SkillLineEntry const* skill = sSkillLineStore.LookupEntry(entry->SkillLine);
+                    if (!skill || skill->categoryId != SKILL_CATEGORY_CLASS)
+                        continue;
+
+                    auto classItr = skillClass.find(skill->id);
+                    for (uint32 spellId : TaughtSpells(entry->Spell))
+                    {
+                        uint32 firstRank = sSpellMgr->GetFirstSpellInChain(spellId);
+                        addChain(firstRank, classItr != skillClass.end() ? classItr->second : 0);
+                        foundLevelOne.insert(firstRank);
+                        found.insert(name);
+                    }
+                }
             }
 
-            for (char const* name : BANNED_ABILITIES)
-                if (!bannedFound.count(name))
-                    LOG_WARN("module", "mod-titan: Wildcard banned ability \"{}\" matches no class trainer spell",
-                        name);
+            auto matches = [&](Ability const& ability, auto const& names)
+            {
+                bool matched = false;
+                for (std::string_view name : names)
+                    if (hasName(ability, name))
+                    {
+                        found.insert(name);
+                        matched = true;
+                    }
+                return matched;
+            };
 
-            LOG_INFO("module", "mod-titan: Wildcard pool has {} abilities ({} rank chains from class trainers, "
-                "{} banned)",
+            std::vector<uint32> companions;
+            for (Ability& ability : result)
+            {
+                uint32 firstRank = ability.Ranks.front().SpellId;
+                bool runeforging = std::any_of(ability.Ranks.begin(), ability.Ranks.end(), [](Rank const& rank)
+                {
+                    SkillLineAbilityMapBounds bounds = sSpellMgr->GetSkillLineAbilityMapBounds(rank.SpellId);
+                    return std::any_of(bounds.first, bounds.second,
+                        [](auto const& pair) { return pair.second->SkillLine == SKILL_RUNEFORGING; });
+                });
+                ability.Banned = matches(ability, BANNED_ABILITIES) || runeforging;
+                bool levelOne = matches(ability, LEVEL_ONE_ABILITIES) || foundLevelOne.count(firstRank);
+                ability.Companion = matches(ability, TAME_BEAST_COMPANIONS);
+                if (ability.Companion)
+                    companions.push_back(firstRank);
+
+                if (levelOne)
+                    ability.Ranks.front().Level = 1;
+
+                SpellInfo const* firstInfo = sSpellMgr->AssertSpellInfo(firstRank);
+                ability.Offered = !ability.Banned && !ability.Companion && firstRank != SPELL_PICK_LOCK
+                    && (levelOne || (!GetTalentSpellCost(firstRank) && !firstInfo->IsPassive()));
+            }
+
+            for (Ability& ability : result)
+                if (hasName(ability, TAME_BEAST))
+                    ability.Companions = companions;
+
+            for (char const* name : BANNED_ABILITIES)
+                if (!found.count(name))
+                    LOG_WARN("module", "mod-titan: Wildcard banned ability \"{}\" matches no class spell", name);
+            for (char const* name : LEVEL_ONE_ABILITIES)
+                if (!found.count(name))
+                    LOG_WARN("module", "mod-titan: Wildcard level 1 ability \"{}\" matches no class spell", name);
+
+            LOG_INFO("module", "mod-titan: Wildcard pool has {} abilities ({} rank chains, {} banned)",
                 std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Offered; }), result.size(),
                 std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Banned; }));
             return result;
@@ -417,6 +541,11 @@ namespace Wildcard
         uint32 spellId = ability.Ranks[BestRank(player, ability)].SpellId;
         player->learnSpell(spellId);
         Announce(player, spellId, what);
+
+        for (uint32 companionId : ability.Companions)
+            if (Ability const* companion = FindAbility(companionId))
+                if (int32 best = BestRank(player, *companion); best >= 0 && KnownRank(player, *companion) < 0)
+                    player->learnSpell(companion->Ranks[best].SpellId);
     }
 
     bool GrantRandom(Player* player, char const* what)
@@ -438,14 +567,15 @@ namespace Wildcard
         uint32 cleared = 0;
         for (Ability const& ability : Abilities())
         {
-            if (!ability.Offered || KnownRank(player, ability) < 0)
+            if (!(ability.Offered || ability.Companion) || KnownRank(player, ability) < 0)
                 continue;
 
             for (Rank const& rank : ability.Ranks)
                 if (player->HasSpell(rank.SpellId))
                     player->removeSpell(rank.SpellId, SPEC_MASK_ALL, false);
 
-            ++cleared;
+            if (ability.Offered)
+                ++cleared;
         }
 
         return cleared;

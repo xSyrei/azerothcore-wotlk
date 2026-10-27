@@ -47,6 +47,8 @@ namespace Wildcard
         uint32 SkillLine;           // its class skill line (spec tab), 0 if none
         bool Offered;               // grantable / pickable; talent chains are only upgraded
         bool Banned;                // removed from the game for Heroes (see wildcard.cpp)
+        bool Companion;             // only learned along with another ability (Tame Beast's pet spells)
+        std::vector<uint32> Companions; // first ranks learned along with this one
     };
 
     bool IsHero(Player const* player);

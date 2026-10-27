@@ -34,11 +34,17 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   are left out); talents from any class's talent trees (tier and prerequisite rules do not apply).
   Heroes have no talent points to spend in the UI.
 - Owned abilities upgrade to the best rank for the Hero's level by themselves, no trainer needed.
-- **Removed abilities**: `BANNED_ABILITIES` in `src/wildcard.cpp` lists abilities taken out of the
-  game for Heroes by name (class mounts, tracking and scouting, Runeforging, Ritual of Refreshment,
-  Divine Intervention, Lesser Heal, Disarm Trap, Create Firestone, hunter pet handling, ...). They
-  are never granted or listed, and a Hero who has one loses it at login and gets a random
-  replacement. A name that matches nothing is logged at startup.
+- **Ability lists** (`src/wildcard.cpp`, by spell name, every rank and faction version; a name that
+  matches nothing is logged at startup):
+  - `BANNED_ABILITIES`: taken out of the game for Heroes (class mounts, tracking and scouting,
+    Runeforging and every rune, Ritual of Refreshment, Divine Intervention, Lesser Heal, Disarm Trap,
+    Create Firestone). Never granted or listed; a Hero who has one loses it at login and gets a
+    random replacement. Everything in the Runeforging skill line is banned too.
+  - `LEVEL_ONE_ABILITIES`: available from level 1 (first rank; later ranks keep their trainer
+    levels), including talent and starting abilities such as Mutilate, Stormstrike, Crusader Strike
+    and Feral Charge. Everything else unlocks at its trainer level.
+  - Tame Beast also teaches Call Pet, Dismiss Pet, Revive Pet and Feed Pet, and Heroes count as
+    Hunters for pets (taming, resummoning, stables; `src/hero_resources.cpp`).
 - **Pick Lock for everyone**: every player always knows Pick Lock, with Lockpicking at its maximum
   for their level (5 per level). The core drops the Rogue-only Lockpicking skill at each login for
   other classes ("invalid for the race/class" in the log), so it is set again every login.

@@ -24,8 +24,8 @@
 // bar stays mana; this script makes the core also run rage (gain from combat, decay out of
 // combat), energy (regen), runic power and runes for Heroes, and treats a Hero as every class for
 // ability mechanics (runes, combo points, reactive abilities like Overpower and Revenge, form
-// power swaps). Class contexts that are not about abilities (starting zone, quests, trainers,
-// stats, equipment) keep the Hero's real class.
+// power swaps), and as a Hunter for pets (taming, resummoning, stables). Class contexts that are not
+// about abilities (starting zone, quests, trainers, stats, equipment) keep the Hero's real class.
 class hero_resources : public PlayerScript
 {
 public:
@@ -41,9 +41,16 @@ public:
         return player->getClass() == HERO_CLASS;
     }
 
-    Optional<bool> OnPlayerIsClass(Player const* player, Classes /*playerClass*/, ClassContext context) override
+    Optional<bool> OnPlayerIsClass(Player const* player, Classes playerClass, ClassContext context) override
     {
-        if (IsHero(player) && (context == CLASS_CONTEXT_ABILITY || context == CLASS_CONTEXT_ABILITY_REACTIVE))
+        if (!IsHero(player))
+            return {};
+
+        if (context == CLASS_CONTEXT_ABILITY || context == CLASS_CONTEXT_ABILITY_REACTIVE)
+            return true;
+
+        // Hunter pets: Heroes can tame (Wildcard's Tame Beast) and keep, revive and stable their pets.
+        if (context == CLASS_CONTEXT_PET && playerClass == CLASS_HUNTER)
             return true;
 
         return {};
