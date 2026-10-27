@@ -322,10 +322,9 @@ check(card.burst.shown and not card.skip.shown, "the light burst plays")
 check(GameTooltip.link == "spell:133" and GameTooltip:IsOwned(reveal), "the spell's tooltip sits beside the track")
 local finale = upvalues(upvalues(reveal.scripts.OnUpdate).RebuildDie)
 reveal.scripts.OnUpdate(reveal, 1.5)
-check(finale.die.shown and finale.die.texture:match("DieFrame1[3-8]$"),
-    "after the reveal the burst plays backwards")
+check(finale.shards[1].shown and not finale.die.shown, "after the reveal the shards gather")
 reveal.scripts.OnUpdate(reveal, 0.6)
-check(finale.die.shown and finale.die.texture:match("DieFrame0[1-9]$"), "into the cube, its cracks healing")
+check(finale.die.shown and not finale.shards[1].shown, "and re-form the die")
 reveal.scripts.OnUpdate(reveal, 1)
 check(not finale.die.shown and upvalues(reveal.scripts.OnUpdate).bar.alpha == 0,
     "which fades away with the track closed")

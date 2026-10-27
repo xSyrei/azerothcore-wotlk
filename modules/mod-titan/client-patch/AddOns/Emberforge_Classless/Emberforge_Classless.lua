@@ -1228,29 +1228,27 @@ function EmberforgeClassless_Toggle()
     end
 end
 
--- Wildcard roll: each level-up ability or talent is rolled on screen. The ember cube drops in, shakes
--- as cracks spread through it and bursts; out of the flash the track opens between two gryphons, and
+-- Wildcard roll: each level-up ability or talent is rolled on screen. A die drops in, shakes as ember
+-- cracks spread through it and bursts; out of the flash the track opens between two gryphons, and
 -- the icons race through the gold selector until they slow onto the prize. Then a light burst,
--- sparks and the prize's name; the burst then plays backwards into the cube as the track closes
--- around it, the cube fades away and the rest follows. Several rolls from one level-up play one after
+-- sparks and the prize's name; the shards then fly back together into the die as the track closes
+-- around it, the die fades away and the rest follows. Several rolls from one level-up play one after
 -- another; Skip lands at once.
 --
 -- In a function of its own: the main chunk would pass Lua's limit of 200 locals.
 local function CreateRoll()
     local SLOT_STEP, SLOT_COUNT, WINNER_SLOT, START_SLOT = 52, 48, 42, 5
     local ICON_SIZE, REEL_WIDTH, BAR_HEIGHT = 44, 9 * 52, 62
-    -- The die is a flipbook of the ember cube sprite sheet (Art\DieFrame01-18): it cracks over frames
-    -- 1-12 and bursts and swirls away over 13-18. Frames are 1:2, the cube centered 40% down.
-    local DIE_FRAMES, DIE_CRACKED, DIE_WIDTH = 18, 12, 100
-    -- Timeline (seconds). From the start: the die pops in by POP, cracks until SHATTER and bursts over
-    -- BURST; the track opens from OPEN to OPENED; the reel lands at LANDED. From the landing: the burst
-    -- plays backwards and the track closes (REBUILD to FORMED), the cracks heal and the die fades out
-    -- by GONE, then the title and the name by DONE and the next roll (if any) starts. Instant rolls (a
-    -- setting in the window) open already on the prize, all quicker.
+    local DIE_SIZE = 84
+    -- Timeline (seconds): the die pops in, shakes and shatters; the track opens; the reel spins.
+    -- From the start: the die pops in by POP, bursts at SHATTER; the track opens from OPEN to OPENED;
+    -- the reel lands at LANDED. From the landing: the shards gather and the track closes (REBUILD to
+    -- FORMED), the die fades out by GONE, then the title and the name by DONE and the next roll (if
+    -- any) starts. Instant rolls (a setting in the window) open already on the prize, all quicker.
     local TIMELINES = {
-        full = { POP = 0.25, SHATTER = 1.05, BURST = 0.5, OPEN = 1.1, OPENED = 1.65, LANDED = 6.4,
+        full = { POP = 0.25, SHATTER = 1.05, OPEN = 1.1, OPENED = 1.65, LANDED = 6.4,
             REBUILD = 1.4, FORMED = 1.95, GONE = 2.9, DONE = 3.6 },
-        instant = { POP = 0.1, SHATTER = 0.3, BURST = 0.3, OPEN = 0.3, OPENED = 0.5, LANDED = 0.5,
+        instant = { POP = 0.1, SHATTER = 0.3, OPEN = 0.3, OPENED = 0.5, LANDED = 0.5,
             REBUILD = 0.9, FORMED = 1.2, GONE = 1.65, DONE = 2.05 },
     }
     local T = TIMELINES.full
@@ -1418,7 +1416,7 @@ local function CreateRoll()
     shockwave:SetPoint("CENTER", 0, 2)
     shockwave:Hide()
 
-    -- The die, its glow and the flash, centered where the track opens.
+    -- The die, its cracks, its shards and the flash, centered where the track opens.
     local dieFrame = CreateFrame("Frame", nil, reveal)
     dieFrame:SetWidth(1)
     dieFrame:SetHeight(1)
@@ -1429,6 +1427,20 @@ local function CreateRoll()
     dieGlow:SetBlendMode("ADD")
     dieGlow:SetPoint("CENTER")
     local die = dieFrame:CreateTexture(nil, "ARTWORK")
+    die:SetTexture(ART .. "Die")
+    local dieCracks = dieFrame:CreateTexture(nil, "OVERLAY")
+    dieCracks:SetTexture(ART .. "DieCracks")
+    dieCracks:SetBlendMode("ADD")
+    local shards = {}
+    for index = 1, 6 do
+        local piece = dieFrame:CreateTexture(nil, "ARTWORK")
+        piece:SetTexture(ART .. "DieShard" .. index)
+        piece:SetWidth(DIE_SIZE)
+        piece:SetHeight(DIE_SIZE)
+        -- Each piece flies out from the middle of its wedge.
+        piece.angle = math.rad(-45 + 60 * (index - 1))
+        shards[index] = piece
+    end
     local flash = dieFrame:CreateTexture(nil, "OVERLAY")
     flash:SetTexture(ART .. "Spark")
     flash:SetBlendMode("ADD")
@@ -1558,19 +1570,12 @@ local function CreateRoll()
     end
 
     local function HideDie()
-        die:Hide()
-        dieGlow:Hide()
-        flash:Hide()
-    end
-
-    -- Shows a frame of the die, the cube on the track's center (offset by x, y while it shakes).
-    local function ShowDie(index, scale, x, y)
-        die:SetTexture(string.format("%sDieFrame%02d", ART, index))
-        die:SetWidth(DIE_WIDTH * scale)
-        die:SetHeight(DIE_WIDTH * 2 * scale)
-        die:ClearAllPoints()
-        die:SetPoint("CENTER", x or 0, (y or 0) - DIE_WIDTH * 2 * scale * 0.1)
-        die:Show()
+        for _, texture in ipairs({ die, dieCracks, dieGlow, flash }) do
+            texture:Hide()
+        end
+        for _, piece in ipairs(shards) do
+            piece:Hide()
+        end
     end
 
     local Finish, AnimateDie
@@ -1606,30 +1611,46 @@ local function CreateRoll()
         selectorGlow:SetAlpha(0.55 + 0.45 * self.pulse)
     end
 
-    -- After the prize is shown the burst plays backwards into the cube, the cube re-forms with a flash
-    -- and its cracks heal, then it swells a little and fades away.
+    -- After the prize is shown the shards fly back together, the die re-forms with a flash and
+    -- the cracks heal, then it swells a little and fades away.
     local function RebuildDie(self, t)
         if t < T.REBUILD or self.rebuilt == "gone" then
             return
         end
         if t < T.FORMED then
-            local gather = (t - T.REBUILD) / (T.FORMED - T.REBUILD)
-            ShowDie(DIE_FRAMES - math.floor(gather * (DIE_FRAMES - DIE_CRACKED)), 1.15 - 0.15 * gather)
-            die:SetAlpha(Clamp(gather * 4))
+            local gather = ((t - T.REBUILD) / (T.FORMED - T.REBUILD)) ^ 2
+            for _, piece in ipairs(shards) do
+                local distance = 170 * (1 - gather)
+                piece:ClearAllPoints()
+                piece:SetPoint("CENTER", math.cos(piece.angle) * distance, -math.sin(piece.angle) * distance)
+                Rotate(piece, (piece.spin or 3) * (1 - gather) * 0.8)
+                Square(piece, DIE_SIZE)
+                piece:SetAlpha(Clamp((t - T.REBUILD) / 0.2))
+                piece:Show()
+            end
             return
         end
         if not self.rebuilt then
             self.rebuilt = "formed"
-            dieGlow:Show()
-            flash:Show()
+            for _, piece in ipairs(shards) do
+                piece:Hide()
+            end
+            for _, texture in ipairs({ die, dieCracks, dieGlow, flash }) do
+                texture:ClearAllPoints()
+                texture:SetPoint("CENTER")
+                texture:Show()
+            end
+            Rotate(die, 0)
+            Rotate(dieCracks, 0)
             Play("igMainMenuClose")
         end
-        local since, span = t - T.FORMED, T.GONE - T.FORMED
-        local heal = Clamp(since / (span * 0.45))
-        local fade = Clamp((since - span * 0.45) / (span * 0.55))
-        ShowDie(DIE_CRACKED - math.floor(heal * (DIE_CRACKED - 1)), 1 + 0.06 * fade)
+        local since = t - T.FORMED
+        local fade = Clamp((since - 0.35) / (T.GONE - T.FORMED - 0.35))
+        Square(die, DIE_SIZE * (1 + 0.06 * fade))
+        Square(dieCracks, DIE_SIZE * (1 + 0.06 * fade))
+        Square(dieGlow, DIE_SIZE * (1.8 + 0.6 * fade))
         die:SetAlpha(1 - fade)
-        Square(dieGlow, DIE_WIDTH * (1.6 + 0.6 * fade))
+        dieCracks:SetAlpha(Clamp(1 - since / 0.4) * (1 - fade))
         dieGlow:SetAlpha(0.8 * (1 - fade))
         Square(flash, 70 + since * 320)
         flash:SetAlpha(Clamp(1 - since / 0.3))
@@ -1642,7 +1663,7 @@ local function CreateRoll()
     local function Celebrate(self, elapsed)
         self.time = self.time + elapsed
         local t = self.time
-        -- An instant roll lands while the die is still bursting.
+        -- An instant roll lands while the shards are still flying.
         self.clock = self.clock + elapsed
         if self.shattered and self.clock < T.SHATTER + 0.7 and t < T.REBUILD then
             AnimateDie(self, self.clock)
@@ -1698,6 +1719,8 @@ local function CreateRoll()
         local current = reveals[1]
         self.spinning = false
         if self.shattered and self.clock < T.SHATTER + 0.7 then
+            die:Hide()
+            dieCracks:Hide()
             dieGlow:Hide()
         else
             HideDie()
@@ -1742,31 +1765,46 @@ local function CreateRoll()
         self:SetScript("OnUpdate", Celebrate)
     end
 
-    -- The die: drops in with a bounce, cracks and shakes harder as it glows, then bursts.
+    -- The die: drops in with a bounce, shakes harder as the cracks glow, then bursts.
     AnimateDie = function(self, t)
         if t < T.SHATTER then
-            local crack = Clamp((t - T.POP) / (T.SHATTER - T.POP))
-            local shake = crack ^ 2
-            ShowDie(1 + math.floor(crack * (DIE_CRACKED - 1) + 0.5), BackOut(Clamp(t / T.POP)),
-                math.sin(t * 55) * 4 * shake, math.cos(t * 47) * 2.5 * shake)
-            die:SetAlpha(1)
-            Square(dieGlow, DIE_WIDTH * (1.4 + crack))
+            local shake = Clamp((t - T.POP) / (T.SHATTER - T.POP)) ^ 2
+            local size = DIE_SIZE * BackOut(Clamp(t / T.POP))
+            Square(die, size)
+            Square(dieCracks, size)
+            Square(dieGlow, size * (1.6 + shake))
             dieGlow:SetAlpha(0.3 + 0.7 * shake)
+            dieCracks:SetAlpha(shake)
+            local x, y = math.sin(t * 55) * 4 * shake, math.cos(t * 47) * 2.5 * shake
+            die:ClearAllPoints()
+            die:SetPoint("CENTER", x, y)
+            dieCracks:ClearAllPoints()
+            dieCracks:SetPoint("CENTER", x, y)
+            Rotate(die, math.sin(t * 38) * 0.14 * shake)
+            Rotate(dieCracks, math.sin(t * 38) * 0.14 * shake)
             return
         end
         if not self.shattered then
             self.shattered = true
+            die:Hide()
+            dieCracks:Hide()
             dieGlow:Hide()
+            for _, piece in ipairs(shards) do
+                piece.spin = (math.random() - 0.5) * 8
+                piece.speed = 150 + math.random() * 90
+                piece:Show()
+            end
             flash:Show()
             Play("igMainMenuOpen")
         end
         local since = t - T.SHATTER
-        local burst = since / T.BURST
-        if burst < 1 then
-            ShowDie(DIE_CRACKED + 1 + math.floor(burst * (DIE_FRAMES - DIE_CRACKED)), 1 + 0.15 * burst)
-            die:SetAlpha(1 - Clamp((burst - 0.6) / 0.4))
-        else
-            die:Hide()
+        for _, piece in ipairs(shards) do
+            local distance = piece.speed * since
+            piece:ClearAllPoints()
+            local x, y = math.cos(piece.angle) * distance, -math.sin(piece.angle) * distance - 90 * since ^ 2
+            piece:SetPoint("CENTER", x, y)
+            Rotate(piece, piece.spin * since)
+            piece:SetAlpha(Clamp(1 - since / 0.6))
         end
         Square(flash, 90 + since * 600)
         flash:SetAlpha(Clamp(1 - since / 0.35))
@@ -1861,11 +1899,12 @@ local function CreateRoll()
             spark:Hide()
         end
         HideDie()
-        ShowDie(1, 0.01)
-        die:SetAlpha(1)
-        Square(dieGlow, 1)
-        dieGlow:SetAlpha(1)
-        dieGlow:Show()
+        for _, texture in ipairs({ die, dieCracks, dieGlow }) do
+            Square(texture, 1)
+            texture:SetAlpha(1)
+            texture:Show()
+        end
+        flash:Hide()
 
         skip:Show()
 

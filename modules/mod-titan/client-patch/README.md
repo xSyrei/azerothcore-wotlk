@@ -114,12 +114,11 @@ class's abilities and talent trees by spec, your build, search, the Tome of Sele
 the Wildcard roll (a reel that lands on each level-up ability or talent). N is bound once per
 character if it is free; rebind it under Key Bindings > Emberforge. It is styled like the character
 creation screen; its art (`Emberforge_Classless/Art/*.tga`, loaded straight from the addon folder)
-comes from `interface/make_classless_art.py`; the Wildcard die is the project's ember cube sprite
-sheet (`icons/wildcard-die-sheet.png`, 18 frames of it cracking and bursting), which the script cuts
-into frames and keys out of its background. Its data comes from the server (`src/classless.cpp`).
-Check changes offline with `cd AddOns/tests && lua5.1 classless_test.lua`, which plays a session
-against a mocked WoW API. Install: copy the folder into `Interface\AddOns\` (the launcher ships
-`Emberforge_*` addons).
+comes from `interface/make_classless_art.py`; the Wildcard die is the project's ember cube
+(`icons/wildcard-die.png`), which the script also splits into shards and cracks. Its data comes from
+the server (`src/classless.cpp`). Check changes offline with `cd AddOns/tests && lua5.1
+classless_test.lua`, which plays a session against a mocked WoW API. Install: copy the folder into
+`Interface\AddOns\` (the launcher ships `Emberforge_*` addons).
 
 ## Notes
 - The base class is Paladin (ID 2). To change it, update `HERO_CLASS` in the script, `@HERO` in

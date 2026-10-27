@@ -175,74 +175,60 @@ def spark(size=32):
     return np.dstack([g, g * 0.7, g * 0.35, np.ones_like(g)])
 
 
-# The Wildcard die: the project's 18-frame sprite sheet of the ember cube cracking, bursting and
-# swirling away (icons/wildcard-die-sheet.png, 6 frames a row, its checkerboard background drawn in).
-# Each frame is cut around the cube's center (the frames drift a little), keyed out of the background
-# and saved as DieFrameNN, the cube's center at DIE_CENTER of the frame.
-DIE_SHEET_ROWS = [(0, 290, 151), (290, 575, 433), (575, 1024, 715)]   # band top, bottom, cube center y
-DIE_SHEET_X = [[138, 389, 643, 894, 1151, 1408], [143, 397, 650, 904, 1155, 1408],
-               [132, 388, 644, 900, 1156, 1412]]                      # cube center x per frame
-DIE_FRAME = (256, 512)       # cut size in sheet pixels, saved at half size
-DIE_CENTER = 205             # cube center's height in the cut, from the top
+# The Wildcard die: the project's ember cube (icons/wildcard-die.png, keyed out of its background). It
+# cracks along jagged lines from its center gem (ORIGIN) and bursts into SHARDS pieces.
+DIE_SIZE = 256
+SHARDS = 6
+ORIGIN = (0.5, 0.49)
 
 
-def flood_from_border(mask, box):
-    """Pixels of mask (bool) connected to box's border through mask."""
-    x0, y0, x1, y1 = box
-    img = Image.fromarray(mask.astype(np.uint8) * 255, 'L').copy()
-    for x in range(x0, x1):
-        for y in (y0, y1 - 1):
-            if img.getpixel((x, y)) == 255:
-                ImageDraw.floodfill(img, (x, y), 128)
-    for y in range(y0, y1):
-        for x in (x0, x1 - 1):
-            if img.getpixel((x, y)) == 255:
-                ImageDraw.floodfill(img, (x, y), 128)
-    return np.array(img) == 128
+def die(size=DIE_SIZE):
+    n = size * SS
+    with Image.open(HERE.parent / 'icons' / 'wildcard-die.png') as art:
+        art = art.convert('RGBA').resize((n, n), Image.Resampling.LANCZOS)
+    return np.asarray(art).astype(np.float64) / 255
 
 
-def die_frames():
-    with Image.open(HERE.parent / 'icons' / 'wildcard-die-sheet.png') as sheet:
-        rgb = np.asarray(sheet.convert('RGB')).astype(np.float64)
-    height, width = rgb.shape[:2]
-    bright = rgb.max(-1)
-    frames, outline, first = [], None, None
-    for row, (top, bottom, cy) in enumerate(DIE_SHEET_ROWS):
-        for col in range(6):
-            cx = DIE_SHEET_X[row][col]
-            box = (col * 256, top, (col + 1) * 256, bottom)
-            cell = np.zeros((height, width), bool)
-            cell[top:bottom, col * 256:(col + 1) * 256] = True
-            # Background and the dim glow over it: dark pixels reached from the cell's border.
-            reach = flood_from_border((bright < 100) & cell, box)
-            # Solid shapes stay opaque: lit pixels with rim gaps bridged and holes filled (wider while
-            # the cube is whole, and never outside the whole cube's outline).
-            size = 21 if len(frames) < 9 else 7
-            core = Image.fromarray(((bright >= 90) & cell).astype(np.uint8) * 255, 'L')
-            closed = np.array(core.filter(ImageFilter.MaxFilter(size)).filter(ImageFilter.MinFilter(size))) > 0
-            solid = ~flood_from_border(~closed & cell, box) & cell
-            if outline is None:
-                outline = np.array(Image.fromarray(solid.astype(np.uint8) * 255, 'L')
-                                   .filter(ImageFilter.MaxFilter(5))) > 0
-                first = (cx, cy)
-            elif len(frames) < 12:
-                solid &= np.roll(np.roll(outline, cy - first[1], 0), cx - first[0], 1)
-            reach &= ~solid
-            alpha = np.where(reach, np.clip((bright - 42) / 58, 0, 1), 1.0)
-            alpha[~cell] = 0
-            # Glow over the background: take the checkerboard (about 25) back out of its color.
-            color = rgb.copy()
-            soft = reach & (alpha > 0.01)
-            color[soft] = np.clip((rgb[soft] - 25 * (1 - alpha[soft, None])) / alpha[soft, None], 0, 255)
-            out = np.zeros((DIE_FRAME[1], DIE_FRAME[0], 4))
-            ys = np.arange(DIE_FRAME[1]) + cy - DIE_CENTER
-            xs = np.arange(DIE_FRAME[0]) + cx - DIE_FRAME[0] // 2
-            oky, okx = (ys >= 0) & (ys < height), (xs >= 0) & (xs < width)
-            sub = np.ix_(ys[oky], xs[okx])
-            out[np.ix_(oky, okx)] = np.dstack([color[sub], alpha[sub] * 255])
-            img = Image.fromarray(out.astype(np.uint8), 'RGBA')
-            frames.append(img.resize((DIE_FRAME[0] // 2, DIE_FRAME[1] // 2), Image.Resampling.LANCZOS))
-    return frames
+def shard_lines(n, seed=11):
+    """Jagged crack lines from the front corner out past the edge, one per shard boundary (pixels)."""
+    rng = np.random.default_rng(seed)
+    ox, oy = ORIGIN[0] * n, ORIGIN[1] * n
+    lines = []
+    for k in range(SHARDS):
+        base = np.radians(-75 + 360 / SHARDS * k)
+        points = [(ox, oy)]
+        for radius in (0.12, 0.25, 0.4, 0.55, 0.75, 1.4):
+            angle = base + rng.uniform(-0.18, 0.18) * (radius < 1)
+            points.append((ox + radius * n * np.cos(angle), oy + radius * n * np.sin(angle)))
+        lines.append(points)
+    return lines
+
+
+def shard(index, size=DIE_SIZE):
+    """One piece of the die: the die inside the wedge between two crack lines."""
+    n = size * SS
+    lines = shard_lines(n)
+    mask = Image.new('L', (n, n))
+    wedge = lines[index] + lines[(index + 1) % SHARDS][::-1]
+    ImageDraw.Draw(mask).polygon(wedge, fill=255)
+    out = die(size)
+    out[..., 3] *= np.asarray(mask).astype(np.float64) / 255
+    return out
+
+
+def cracks(size=DIE_SIZE):
+    """Glowing ember cracks along the shard lines (additive), only on the die, drawn as it shakes."""
+    n = size * SS
+    img = Image.new('L', (n, n))
+    draw = ImageDraw.Draw(img)
+    for points in shard_lines(n):
+        draw.line(points, fill=255, width=max(2, n // 110), joint='curve')
+    inside = Image.fromarray((die(size)[..., 3] * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(9))
+    inside = np.asarray(inside).astype(np.float64) / 255
+    core = np.asarray(img).astype(np.float64) / 255 * inside
+    halo = np.asarray(Image.fromarray((core * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(n / 60)))
+    g = np.clip(core + halo.astype(np.float64) / 255 * 2.4, 0, 1)
+    return np.dstack([g, g * (0.55 + 0.4 * core), g * (0.15 + 0.6 * core), np.ones_like(g)])
 
 
 def main():
@@ -260,8 +246,10 @@ def main():
     save(emblem(), 'HeroEmblem')
     save(rays(), 'Rays')
     save(spark(), 'Spark')
-    for index, frame in enumerate(die_frames()):
-        frame.save(OUT / f'DieFrame{index + 1:02d}.tga')
+    save(die(), 'Die')
+    save(cracks(), 'DieCracks')
+    for index in range(SHARDS):
+        save(shard(index), f'DieShard{index + 1}')
     save(divider(), 'Divider')
     save(icon_frame(), 'IconFrame')
     save(icon_glow(), 'IconGlow')
