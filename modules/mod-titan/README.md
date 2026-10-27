@@ -55,7 +55,9 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
 spec with the level each needs, each spec's talent tree beside them (your ranks lit, the rest
 greyed, prerequisite arrows drawn), an Abilities view of everything you own, your spells, talents and
 specs on the right, a search across all classes, and the picks after a Tome of Selection. Each random
-ability from level 10 plays a roll reveal with **Keep** or one **Reroll** (a different random ability). It is the `Emberforge_Classless` addon
+ability and talent rank from a level-up (level 10 on) is "unboxed" on a spinning reel; abilities then
+offer **Keep** or one **Reroll** (a different random ability). Catching up at login grants without
+spinning. It is the `Emberforge_Classless` addon
 (`client-patch/AddOns/`); the server side is `src/classless.cpp`,
 talking to it in addon whispers (prefix `EFCL`, protocol in both files).
 

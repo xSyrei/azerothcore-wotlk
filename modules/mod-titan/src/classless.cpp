@@ -41,7 +41,8 @@
 //                      K0 / K,<id>,...           known abilities (clear, then first rank ids)
 //                      R0 / R,<talent id>:<rank>,...   owned talent ranks (clear, then talents)
 //                      S,<picks left>,<locked>,<lock level>
-//                      G,<spell id>,<first rank id>,<can reroll>   roll reveal card
+//                      G,<spell id>,<first rank id>,<can reroll>   ability spin (Keep / Reroll)
+//                      H,<talent id>,<spell id>,<rank>   talent spin
 //                      O                         open the window
 namespace
 {
@@ -242,6 +243,11 @@ namespace Classless
             pendingRerolls[player->GetGUID()].insert(firstRank);
         SendAddon(player, Acore::StringFormat("G,{},{},{}", ability.Ranks[known].SpellId, firstRank,
             canReroll ? 1 : 0));
+    }
+
+    void RevealTalent(Player* player, uint32 talentId, uint32 spellId, uint8 rank)
+    {
+        SendAddon(player, Acore::StringFormat("H,{},{},{}", talentId, spellId, rank));
     }
 }
 

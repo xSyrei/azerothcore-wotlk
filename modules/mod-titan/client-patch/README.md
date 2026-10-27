@@ -111,7 +111,8 @@ The launcher will ship it automatically for players.
 
 `AddOns/Emberforge_Classless` is the Classless window (N, the minimap button or `/classless`):
 every class's abilities and talent trees by spec, your build, search, the Tome of Selection's picks
-and the Keep/Reroll reveal for level-up rolls. N is bound once per character if it is free; rebind it
+and the Wildcard spin (a reel that lands on each level-up ability or talent, Keep/Reroll for
+abilities). N is bound once per character if it is free; rebind it
 under Key Bindings > Emberforge. It is styled like the character creation screen; its art
 (`Emberforge_Classless/Art/*.tga`, loaded straight from the addon folder) comes from
 `interface/make_classless_art.py`. Its data comes from the

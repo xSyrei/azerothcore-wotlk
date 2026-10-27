@@ -10,7 +10,7 @@ Usage: python3 make_classless_art.py
 import numpy as np
 from PIL import Image
 
-from make_art import HERE, SS, divider, glow, hero_emblem, radial, ring
+from make_art import HERE, SS, divider, radial
 
 OUT = HERE.parent / 'AddOns' / 'Emberforge_Classless' / 'Art'
 
@@ -119,6 +119,62 @@ def shade(size=128):
     return np.dstack([np.full_like(a, 0.02), np.full_like(a, 0.015), np.full_like(a, 0.01), a])
 
 
+def thin_ring(size=128, inner=0.90, outer=0.965):
+    """Slim gold portrait ring (the creation screen's ring, a third as thick)."""
+    r, v = radial(size)
+    band = np.clip(np.minimum((r - inner) / 0.012, (outer - r) / 0.012), 0, 1)
+    t = np.clip((r - inner) / (outer - inner), 0, 1)
+    bevel = 0.7 + 0.3 * np.cos((t - 0.4) * np.pi)
+    shade = 1.0 - 0.4 * v
+    gold = np.stack([np.ones_like(r), 0.74 + 0.1 * (1 - v), 0.34 + 0.1 * (1 - v)], -1)
+    return np.dstack([gold * (bevel * shade)[..., None], band])
+
+
+def ring_glow(size=128, strength=1.0, color=(1.0, 0.45, 0.08)):
+    """Additive ember glow hugging the thin ring (peaks at 0.8 of the texture's radius)."""
+    r, _ = radial(size)
+    g = np.exp(-((r - 0.8) / 0.09) ** 2) * strength * np.clip((1 - r) / 0.1, 0, 1)
+    return np.dstack([g * color[0], g * color[1], g * color[2], np.ones_like(r)])
+
+
+def emblem(size=128):
+    """The Emberforge W on a dark disc inside the thin ring."""
+    r, _ = radial(size)
+    n = size * SS
+    warm = np.exp(-(r / 0.55) ** 2) * 0.35
+    disc = np.dstack([0.07 + warm, 0.045 + warm * 0.35, np.full_like(r, 0.03), np.clip((0.93 - r) / 0.01, 0, 1)])
+    logo = Image.open(HERE.parent / 'icons' / 'emberforge-w.png').convert('RGBA')
+    logo.thumbnail((int(n * 0.6), int(n * 0.6)), Image.Resampling.LANCZOS)
+    canvas = Image.new('RGBA', (n, n))
+    canvas.paste(logo, ((n - logo.width) // 2, (n - logo.height) // 2 + n // 40), logo)
+    lw = np.asarray(canvas).astype(np.float64) / 255
+    rgb = disc[..., :3] * (1 - lw[..., 3:]) + lw[..., :3] * lw[..., 3:]
+    out = np.dstack([rgb, np.maximum(disc[..., 3], lw[..., 3])])
+    rg = thin_ring(size)
+    out[..., :3] = out[..., :3] * (1 - rg[..., 3:]) + rg[..., :3] * rg[..., 3:]
+    out[..., 3] = np.maximum(out[..., 3], rg[..., 3])
+    return out
+
+
+def rays(size=256, count=14):
+    """Light burst for the jackpot (additive): soft rays from the center, gone before the edge so the
+    texture can spin."""
+    n = size * SS
+    y, x = (np.mgrid[0:n, 0:n] + 0.5) / n * 2 - 1
+    r, a = np.hypot(x, y), np.arctan2(y, x)
+    beams = np.abs(np.cos(a * count / 2)) ** 10
+    fade = np.clip(1 - r / 0.95, 0, 1) ** 1.6
+    g = (beams * 0.75 + 0.25) * fade + np.exp(-(r / 0.22) ** 2) * 0.6
+    return np.dstack([g, g * 0.62, g * 0.25, np.ones_like(g)])
+
+
+def spark(size=32):
+    """Soft ember spark (additive)."""
+    r, _ = radial(size)
+    g = np.exp(-(r / 0.3) ** 2) * np.clip(1 - r, 0, 1)
+    return np.dstack([g, g * 0.7, g * 0.35, np.ones_like(g)])
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     # Panel 9-slices: large (16 px corners, for panels) and small (8 px, for cells, tabs, rows).
@@ -128,10 +184,12 @@ def main():
         save(line(corner_sdf(size, radius), width), f'LineCorner{suffix}')
         save(line(edge_sdf(size, False), width), f'LineEdge{suffix}')
         save(line(edge_sdf(size, True), width), f'LineEdgeV{suffix}')
-    save(ring(), 'Ring')
-    save(glow(strength=1.0), 'RingSelected')
-    save(glow(strength=0.45, color=(1.0, 0.75, 0.4)), 'RingHover')
-    save(hero_emblem(), 'HeroEmblem')
+    save(thin_ring(), 'Ring')
+    save(ring_glow(), 'RingSelected')
+    save(ring_glow(strength=0.45, color=(1.0, 0.75, 0.4)), 'RingHover')
+    save(emblem(), 'HeroEmblem')
+    save(rays(), 'Rays')
+    save(spark(), 'Spark')
     save(divider(), 'Divider')
     save(icon_frame(), 'IconFrame')
     save(icon_glow(), 'IconGlow')

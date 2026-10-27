@@ -218,8 +218,8 @@ namespace
     }
 
     // Learns the next rank of a random talent from any class tree, the way Player::LearnTalent does
-    // once its checks pass.
-    bool GrantTalent(Player* player)
+    // once its checks pass; with reveal the player's Classless window spins for it.
+    bool GrantTalent(Player* player, bool reveal)
     {
         std::vector<std::pair<TalentEntry const*, uint8>> candidates;
         for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
@@ -267,6 +267,8 @@ namespace
 
         player->addTalent(spellId, player->GetActiveSpecMask(), currentRank);
         Announce(player, spellId, currentRank ? "talent rank up" : "new talent");
+        if (reveal)
+            Classless::RevealTalent(player, talentInfo->TalentID, spellId, currentRank + 1);
         return true;
     }
 
@@ -296,7 +298,9 @@ namespace
         return removed;
     }
 
-    void CatchUp(Player* player, bool grantAbilities)
+    // Grants what the player's level is owed. Level-ups (levelUp) play a spin in the Classless window
+    // for each ability and talent; catching up at login does not.
+    void CatchUp(Player* player, bool grantAbilities, bool levelUp)
     {
         uint8 level = player->GetLevel();
 
@@ -324,7 +328,7 @@ namespace
             uint32 owed = KIT_SIZE + (level >= FIRST_TALENT_LEVEL ? level - FIRST_TALENT_LEVEL + 1 : 0);
             uint32 granted = player->GetPlayerSetting(SETTING_SOURCE, SETTING_ABILITIES_GRANTED).value;
             uint32 const before = granted;
-            // Kit abilities come without a reveal (the tomes handle them); later ones get Keep / Reroll.
+            // Kit abilities come without a spin (the tomes handle them); later ones get Keep / Reroll.
             while (granted < owed)
             {
                 bool kit = granted < KIT_SIZE;
@@ -333,7 +337,7 @@ namespace
                     break;
 
                 ++granted;
-                if (!kit)
+                if (!kit && levelUp)
                     Classless::Reveal(player, *ability, true);
             }
 
@@ -345,7 +349,7 @@ namespace
 
         uint32 owedTalents = level >= FIRST_TALENT_LEVEL ? level - FIRST_TALENT_LEVEL + 1 : 0;
         bool talentsChanged = false;
-        for (uint32 spent = SpentTalentPoints(player); spent < owedTalents && GrantTalent(player); ++spent)
+        for (uint32 spent = SpentTalentPoints(player); spent < owedTalents && GrantTalent(player, levelUp); ++spent)
             talentsChanged = true;
 
         if (talentsChanged)
@@ -664,14 +668,14 @@ public:
                     "other classes' spells are deleted at login until then");
         }
 
-        CatchUp(player, settingsSaved);
+        CatchUp(player, settingsSaved, false);
     }
 
     void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
     {
         EnsurePickLock(player);
         if (IsHero(player))
-            CatchUp(player, true);
+            CatchUp(player, true, true);
     }
 
     // A Hero's talents all come from Wildcard: as many points as are spent, none left to spend,

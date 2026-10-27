@@ -78,6 +78,8 @@ namespace Classless
     void Open(Player* player);
     // Shows the roll reveal card for a granted ability; with canReroll it offers Keep / Reroll.
     void Reveal(Player* player, Wildcard::Ability const& ability, bool canReroll);
+    // Shows the spin for a talent rank (rank counts from 1).
+    void RevealTalent(Player* player, uint32 talentId, uint32 spellId, uint8 rank);
 }
 
 #endif

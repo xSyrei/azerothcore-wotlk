@@ -65,6 +65,9 @@ end
 local sent, popup, bindings = {}, nil, {}
 local playerLevel = 1
 UISpecialFrames, StaticPopupDialogs, SlashCmdList = {}, {}, {}
+RAID_CLASS_COLORS = { MAGE = { r = 0.41, g = 0.8, b = 0.94 } }
+local sounds = {}
+function PlaySound(name) sounds[#sounds + 1] = name end
 ALL, ACCEPT, CANCEL, OKAY = "All", "Accept", "Cancel", "Okay"
 CLASS_ICON_TCOORDS = setmetatable({}, { __index = function() return { 0, 0.25, 0, 0.25 } end })
 GameTooltip = NewWidget("GameTooltip")
@@ -296,30 +299,50 @@ check(shownCells(grid.cells) == "Fireball" and grid.cells[1].sub.text == "Mage",
 check(tree.treeTitle.text == "Your Talents  |cffffffff1|r" and tree.talentRows[1].shown
     and tree.talentRows[1].name.text == "Improved Fireball  1/2", "Abilities lists owned talents with ranks")
 
--- Roll reveal: shuffle, then the spell with Keep / Reroll.
+-- Wildcard spin: the reel races, lands on the prize, then Keep / Reroll.
 local reveal = EmberforgeClasslessReveal
 server("G,133,133,1")
-check(reveal.shown, "a roll shows the reveal card")
-local card = upvalues(reveal.scripts.OnUpdate)
-check(card.revealName.text == "Rolling...", "the card shuffles first")
+check(reveal.shown and reveal.spinning, "a level-up ability starts the spin")
+local spin = upvalues(reveal.scripts.OnUpdate)
+local card = upvalues(spin.Land)
+check(card.revealName.text == "" and not card.keep.enabled and not card.reroll.enabled,
+    "nothing is shown or answerable while it spins")
+local winner = upvalues(spin.Land).slots[upvalues(spin.Land).WINNER_SLOT]
+check(winner.icon.texture == "Interface\\Icons\\Spell_133", "the prize waits in the winning slot")
 reveal.scripts.OnUpdate(reveal, 1)
-check(card.revealName.text == "Fireball" and card.keep.enabled and card.reroll.enabled and card.reroll.shown,
-    "then shows the rolled ability with Keep and Reroll")
+check(reveal.spinning and card.revealName.text == "", "one second in it is still spinning")
+reveal.scripts.OnUpdate(reveal, 10)
+check(not reveal.spinning and card.revealName.text == "Fireball" and card.revealNote.text == "Mage  -  Fire"
+    and card.keep.enabled and card.reroll.enabled and card.reroll.shown,
+    "then lands on Fireball (Mage, Fire) with Keep and Reroll")
+check(card.burst.shown, "the light burst plays")
 check(GameTooltip.link == "spell:133" and GameTooltip:IsOwned(reveal), "the spell's tooltip sits beside the card")
 server("G,116,116,0")
 card.reroll.scripts.OnClick(card.reroll)
 check(lastSent() == "REROLL,133", "Reroll sends REROLL with the first rank")
-check(reveal.shown and card.revealName.text == "Rolling...", "the next queued roll shows next")
-reveal.scripts.OnUpdate(reveal, 1)
+check(reveal.shown and reveal.spinning, "the next queued roll spins next")
+local skip = upvalues(upvalues(reveal.scripts.OnUpdate).Land).skip
+check(skip.shown, "a spin can be skipped")
+skip.scripts.OnClick(skip)
+reveal.scripts.OnUpdate(reveal, 0.01)
 check(card.revealName.text == "Frostbolt" and not card.reroll.shown and card.keep.text == "Okay",
-    "a roll without a reroll offers only Okay")
+    "Skip lands at once; a roll without a reroll offers only Okay")
 local before = #sent
 card.keep.scripts.OnClick(card.keep)
 check(#sent == before and not reveal.shown, "Okay closes the card without asking the server")
 server("G,772,772,1")
-reveal.scripts.OnUpdate(reveal, 1)
+reveal.scripts.OnUpdate(reveal, 10)
 card.keep.scripts.OnClick(card.keep)
 check(lastSent() == "KEEP,772", "Keep sends KEEP")
+
+-- Talent spin: rank of the talent's tree, Okay only.
+server("H,34,12338,2")
+reveal.scripts.OnUpdate(reveal, 10)
+check(card.revealName.text == "Improved Fireball" and card.revealNote.text == "Mage  -  Fire  -  Rank 2/2"
+    and card.keep.text == "Okay" and not card.reroll.shown, "a talent spin lands on the rank won, Okay only")
+before = #sent
+card.keep.scripts.OnClick(card.keep)
+check(#sent == before and not reveal.shown, "Okay closes the talent spin")
 
 -- Lock at level 9.
 playerLevel = 9
