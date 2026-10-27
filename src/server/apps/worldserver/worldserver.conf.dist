@@ -1871,7 +1871,9 @@ PersistentCharacterCleanFlags = 0
 #        Note:        Disabling this and then having your character learn spells which require DBC edits can result in the character not being saved in the database
 #                     Disable AT YOUR OWN RISK
 
-ValidateSkillLearnedBySpells = 1
+#        Project Titan: 0, Wildcard Heroes learn every class's spells.
+
+ValidateSkillLearnedBySpells = 0
 
 #
 ###################################################################################################
@@ -2120,7 +2122,9 @@ PlayerStart.String = ""
 #        Default:     0 - Disabled
 #                     1 - Enabled
 
-EnablePlayerSettings = 0
+#        Project Titan: 1, Wildcard keeps its per-character grant count in the character settings.
+
+EnablePlayerSettings = 1
 
 #
 #    MaxPlayerLevel

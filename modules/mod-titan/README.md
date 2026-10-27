@@ -16,10 +16,25 @@ on any target. `src/hero_resources.cpp` turns these on through AzerothCore's cla
 stats and equipment still follow the real base class. The `Emberforge_Resources` addon (in
 `client-patch/AddOns/`) shows the extra bars in game and colors Heroes ember orange.
 
-Nothing else comes from the base class (`data/sql/db-world/hero_cleanup.sql`, `src/hero_class.cpp`):
+Nothing else comes from the base class (`data/sql/db-world/hero_cleanup.sql`):
 - no starting class spells (the Paladin skill lines are removed) and no Paladin action buttons;
 - Paladin trainers no longer train, and Paladin-only class quests are disabled;
-- no talent points: Wildcard grants talents.
+- no talent points to spend: Wildcard grants talents (below).
+
+## Wildcard
+How a Hero progresses (`src/wildcard.cpp`), fully random for now:
+- **Abilities**: one random ability per level from level 1, drawn from every class trainer's list
+  (all 10 classes; passives, talent abilities and hunter pet handling are left out). Owned
+  abilities upgrade to the best rank for the Hero's level by themselves, no trainer needed.
+- **Talents**: from level 10, one random talent rank per level from any class's talent trees
+  (tier and prerequisite rules do not apply). Heroes have no talent points to spend in the UI.
+- Grants are caught up at login and on every level change, so multi-level jumps and characters
+  made before Wildcard get everything they are owed. Each grant is announced in chat.
+
+It needs two settings in `worldserver.conf` (set in the `.dist`; an existing config needs them by
+hand, and the server log says so at the first Hero login when they are missing):
+- `ValidateSkillLearnedBySpells = 0`, or other classes' spells are deleted at every login;
+- `EnablePlayerSettings = 1`, where each Hero's count of granted abilities is kept.
 
 ## Items
 
