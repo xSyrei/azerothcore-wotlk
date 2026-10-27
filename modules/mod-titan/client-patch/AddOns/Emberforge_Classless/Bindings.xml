@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="EMBERFORGE_CLASSLESS_TOGGLE" header="EMBERFORGE">
+        EmberforgeClassless_Toggle()
+    </Binding>
+</Bindings>

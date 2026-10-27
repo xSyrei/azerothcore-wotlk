@@ -109,8 +109,10 @@ The launcher will ship it automatically for players.
 
 ## Classless window addon
 
-`AddOns/Emberforge_Classless` is the Classless window (`/classless`): every class's abilities by
-spec, your abilities with search, and the Tome of Selection's picks. Its data comes from the
+`AddOns/Emberforge_Classless` is the Classless window (N, the minimap button or `/classless`):
+every class's abilities and talent trees by spec, your build, search, the Tome of Selection's picks
+and the Keep/Reroll reveal for level-up rolls. N is bound once per character if it is free; rebind it
+under Key Bindings > Emberforge. Its data comes from the
 server (`src/classless.cpp`). Check changes offline with
 `cd AddOns/tests && lua5.1 classless_test.lua`, which plays a session against a mocked WoW API.
 Install: copy the folder into `Interface\AddOns\` (the launcher ships `Emberforge_*` addons).

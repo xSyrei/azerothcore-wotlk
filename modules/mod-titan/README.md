@@ -51,9 +51,12 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
 - Grants are caught up at login and on every level change, so multi-level jumps and characters
   made before Wildcard get everything they are owed. Each grant is announced in chat.
 
-**Classless window** (`/classless` or `/cl`): every class's abilities by spec with the level each
-needs, the Hero's own abilities with a search box, and the picks after a Tome of Selection. It is
-the `Emberforge_Classless` addon (`client-patch/AddOns/`); the server side is `src/classless.cpp`,
+**Classless window** (**N**, the minimap button, `/classless` or `/cl`): every class's abilities by
+spec with the level each needs, each spec's talent tree beside them (your ranks lit, the rest
+greyed), a "Your Build" view of everything you own, a search across all classes, and the picks after
+a Tome of Selection. Each random ability from level 10 plays a roll reveal with **Keep** or one
+**Reroll** (a different random ability). It is the `Emberforge_Classless` addon
+(`client-patch/AddOns/`); the server side is `src/classless.cpp`,
 talking to it in addon whispers (prefix `EFCL`, protocol in both files).
 
 It needs two settings in `worldserver.conf` (set in the `.dist`; an existing config needs them by

@@ -324,8 +324,18 @@ namespace
             uint32 owed = KIT_SIZE + (level >= FIRST_TALENT_LEVEL ? level - FIRST_TALENT_LEVEL + 1 : 0);
             uint32 granted = player->GetPlayerSetting(SETTING_SOURCE, SETTING_ABILITIES_GRANTED).value;
             uint32 const before = granted;
-            while (granted < owed && GrantRandom(player, granted < KIT_SIZE ? "kit ability" : "new ability"))
+            // Kit abilities come without a reveal (the tomes handle them); later ones get Keep / Reroll.
+            while (granted < owed)
+            {
+                bool kit = granted < KIT_SIZE;
+                Ability const* ability = GrantRandom(player, kit ? "kit ability" : "new ability");
+                if (!ability)
+                    break;
+
                 ++granted;
+                if (!kit)
+                    Classless::Reveal(player, *ability, true);
+            }
 
             if (granted != before)
                 player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_ABILITIES_GRANTED, granted);
@@ -548,18 +558,32 @@ namespace Wildcard
                     player->learnSpell(companion->Ranks[best].SpellId);
     }
 
-    bool GrantRandom(Player* player, char const* what)
+    Ability const* GrantRandom(Player* player, char const* what, uint32 excludeFirstRank)
     {
         std::vector<Ability const*> candidates;
         for (Ability const& ability : Abilities())
-            if (CanLearn(player, ability))
+            if (CanLearn(player, ability) && ability.Ranks.front().SpellId != excludeFirstRank)
                 candidates.push_back(&ability);
 
         if (candidates.empty())
-            return false;
+            return nullptr;
 
-        Learn(player, *candidates[urand(0, uint32(candidates.size() - 1))], what);
-        return true;
+        Ability const* ability = candidates[urand(0, uint32(candidates.size() - 1))];
+        Learn(player, *ability, what);
+        return ability;
+    }
+
+    void Unlearn(Player* player, Ability const& ability)
+    {
+        for (Rank const& rank : ability.Ranks)
+            if (player->HasSpell(rank.SpellId))
+                player->removeSpell(rank.SpellId, SPEC_MASK_ALL, false);
+
+        for (uint32 companionId : ability.Companions)
+            if (Ability const* companion = FindAbility(companionId))
+                for (Rank const& rank : companion->Ranks)
+                    if (player->HasSpell(rank.SpellId))
+                        player->removeSpell(rank.SpellId, SPEC_MASK_ALL, false);
     }
 
     uint32 ClearAbilities(Player* player)
@@ -570,10 +594,7 @@ namespace Wildcard
             if (!(ability.Offered || ability.Companion) || KnownRank(player, ability) < 0)
                 continue;
 
-            for (Rank const& rank : ability.Ranks)
-                if (player->HasSpell(rank.SpellId))
-                    player->removeSpell(rank.SpellId, SPEC_MASK_ALL, false);
-
+            Unlearn(player, ability);
             if (ability.Offered)
                 ++cleared;
         }

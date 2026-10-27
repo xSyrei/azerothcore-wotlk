@@ -42,21 +42,46 @@ function Widget:SetText(text) self.text = text end
 function Widget:GetText() return self.text end
 function Widget:SetTexture(texture) self.texture = texture end
 function Widget:SetTextColor(r, g, b) self.color = { r, g, b } end
+function Widget:SetDesaturated(desaturated) self.desaturated = desaturated end
+function Widget:Enable() self.enabled = true end
+function Widget:Disable() self.enabled = false end
+function Widget:GetChecked() return self.checked end
+function Widget:IsOwned(owner) return self.owner == owner end
+function Widget:SetOwner(owner) self.owner = owner end
+function Widget:SetHyperlink(link) self.link = link end
 function Widget:Click() self.scripts.OnClick(self, "LeftButton") end
 
 UIParent = NewWidget("UIParent")
-function CreateFrame(_, name) return NewWidget(name) end
+function CreateFrame(_, name, _, template)
+    local widget = NewWidget(name)
+    if name and template == "UICheckButtonTemplate" then
+        NewWidget(name .. "Text")
+    end
+    return widget
+end
 
-local sent, popup = {}, nil
+local sent, popup, bindings = {}, nil, {}
 local playerLevel = 1
 UISpecialFrames, StaticPopupDialogs, SlashCmdList = {}, {}, {}
-ALL, ACCEPT, CANCEL = "All", "Accept", "Cancel"
+ALL, ACCEPT, CANCEL, OKAY = "All", "Accept", "Cancel", "Okay"
 CLASS_ICON_TCOORDS = setmetatable({}, { __index = function() return { 0, 0.25, 0, 0.25 } end })
 GameTooltip = NewWidget("GameTooltip")
+Minimap = NewWidget("Minimap")
+function Minimap:GetCenter() return 100, 100 end
+function Minimap:GetEffectiveScale() return 1 end
+function GetCursorPosition() return 100, 180 end
+function GetBindingKey(action) for key, bound in pairs(bindings) do if bound == action then return key end end end
+function SetBinding(key, action) bindings[key] = action end
+function SaveBindings() end
+function GetCurrentBindingSet() return 1 end
 function SendAddonMessage(prefix, message, channel, target) sent[#sent + 1] = { prefix, message, channel, target } end
 function UnitName() return "Tester" end
 function UnitLevel() return playerLevel end
-local SPELLS = { [133] = "Fireball", [116] = "Frostbolt", [78] = "Heroic Strike", [772] = "Rend", [5176] = "Wrath" }
+local SPELLS = {
+    [133] = "Fireball", [116] = "Frostbolt", [78] = "Heroic Strike", [772] = "Rend", [5176] = "Wrath",
+    [11069] = "Improved Fireball", [12338] = "Improved Fireball", [11078] = "Improved Fire Blast",
+    [16462] = "Deflection", [11071] = "Frostbite",
+}
 function GetSpellInfo(id) return SPELLS[id], "", "Interface\\Icons\\Spell_" .. id end
 function GetSpellLink(id) return "[" .. (SPELLS[id] or "?") .. "]" end
 function IsModifiedClick() return false end
@@ -68,7 +93,7 @@ function FauxScrollFrame_GetOffset(frame) return offsets[frame] or 0 end
 function FauxScrollFrame_Update() end
 function FauxScrollFrame_OnVerticalScroll(_, _, _, update) update() end
 function wipe(t) for k in pairs(t) do t[k] = nil end return t end
-tinsert = table.insert
+tinsert, tremove = table.insert, table.remove
 function strsplit(sep, text, limit)
     local parts, start = {}, 1
     while true do
@@ -89,28 +114,9 @@ end
 
 dofile(ADDON)
 local frame = EmberforgeClassless
-local function server(message) frame.scripts.OnEvent(frame, "CHAT_MSG_ADDON", "EFCL", message, "WHISPER", "Tester") end
+local function event(name, ...) frame.scripts.OnEvent(frame, name, ...) end
+local function server(message) event("CHAT_MSG_ADDON", "EFCL", message, "WHISPER", "Tester") end
 local function lastSent() return sent[#sent] and sent[#sent][2] end
-
--- The addon starts hidden and asks for the list the first time it opens.
-check(not frame:IsShown(), "window starts hidden")
-SlashCmdList.EMBERFORGECLASSLESS("")
-check(frame:IsShown(), "/classless opens the window")
-check(lastSent() == "LIST" and sent[1][1] == "EFCL" and sent[1][3] == "WHISPER" and sent[1][4] == "Tester",
-    "opening asks the server for the list (addon whisper to self)")
-
--- The server answers: tabs, abilities, known spells and Selection state (4 picks).
-server("B")
-server("T,8,6,Fire")
-server("T,8,8,Arcane")
-server("T,8,16,Frost")
-server("T,1,26,Arms")
-server("A,8.6.1.133;8.6.4.116;1.26.1.78;1.26.4.772;11.574.1.5176")
-server("E")
-server("K0")
-server("S,4,0,9")
-check(frame:IsShown(), "window still open after the list")
-
 
 -- The addon keeps its widgets local; reach them through the upvalues of its functions.
 local function upvalues(fn)
@@ -125,11 +131,53 @@ local function upvalues(fn)
     end
     return values
 end
+local function shownCells(cells)
+    local names = {}
+    for _, cell in ipairs(cells) do
+        if cell.shown and cell.ability then names[#names + 1] = cell.name.text end
+    end
+    return table.concat(names, ",")
+end
+
+-- First login: N is bound to the window and the minimap button is placed.
+event("PLAYER_LOGIN")
+check(bindings.N == "EMBERFORGE_CLASSLESS_TOGGLE", "first login binds N to the Classless window")
+check(EmberforgeClasslessDB and EmberforgeClasslessDB.boundKey, "the binding is remembered per character")
+bindings.N = "TOGGLETALENTS"
+EmberforgeClasslessDB.boundKey = true
+event("PLAYER_LOGIN")
+check(bindings.N == "TOGGLETALENTS", "a player's own N binding is not taken back later")
+
+-- The window starts hidden and asks for the list the first time it opens.
+check(not frame:IsShown(), "window starts hidden")
+SlashCmdList.EMBERFORGECLASSLESS("")
+check(frame:IsShown(), "/classless opens the window")
+check(lastSent() == "LIST" and sent[1][1] == "EFCL" and sent[1][3] == "WHISPER" and sent[1][4] == "Tester",
+    "opening asks the server for the list (addon whisper to self)")
+
+-- The server answers: spec skill lines, abilities, talent trees, known spells, talents and state.
+server("B")
+server("T,8,6,Fire")
+server("T,8,8,Arcane")
+server("T,8,16,Frost")
+server("T,1,26,Arms")
+server("A,8.6.1.133;8.16.4.116;1.26.1.78;1.26.4.772;11.574.1.5176")
+server("U,8,0,81")
+server("U,8,1,41")
+server("U,8,2,61")
+server("N,41.34.0.1.11069+12338;41.36.0.2.11078;61.38.0.0.16462;61.39.1.0.11071")
+server("E")
+server("K0")
+server("R0")
+server("R,34:1")
+server("S,4,0,9")
+
 local refresh = upvalues(frame.scripts.OnShow).Refresh
 local up = upvalues(refresh)
 local grid = upvalues(up.RefreshGrid)
 local classRow = upvalues(up.RefreshClassRow)
-local tabs = upvalues(up.RefreshTabs)
+local specs = upvalues(up.RefreshSpecs)
+local tree = upvalues(up.RefreshTree)
 local list = upvalues(up.RefreshList)
 local stat = upvalues(up.RefreshStatus)
 
@@ -138,25 +186,43 @@ for _, button in ipairs(classRow.classButtons) do
     if button.id == 8 then mageButton = button end
     if button.id == 0 then yourButton = button end
 end
-check(#classRow.classButtons == 11, "class row has Abilities + 10 classes")
+check(#classRow.classButtons == 11, "class row has Your Build + 10 classes")
 check(stat.status.text:find("choose 4 more abilities", 1, true) ~= nil, "status shows 4 picks left")
 
+-- Mage, All: every Mage ability; tree shows the first tree (Arcane, empty here).
 mageButton:Click()
-local shown = {}
-for _, cell in ipairs(grid.cells) do
-    if cell.shown and cell.ability then shown[#shown + 1] = cell.name.text end
+check(shownCells(grid.cells) == "Fireball,Frostbolt", "Mage (All) lists Fireball then Frostbolt by level")
+local specNames = {}
+for _, button in ipairs(specs.specButtons) do
+    if button.shown then specNames[#specNames + 1] = button.text end
 end
-check(#shown == 2 and shown[1] == "Fireball" and shown[2] == "Frostbolt", "Mage grid lists Fireball then Frostbolt (by level)")
+check(table.concat(specNames, ",") == "All,Arcane,Fire,Frost", "spec buttons: All, Arcane, Fire, Frost")
+
+-- Fire spec: Fire abilities only, and the Fire talent tree with its background and owned rank.
+specs.specButtons[3]:Click()
+check(shownCells(grid.cells) == "Fireball", "Fire spec lists only Fire abilities")
+check(tree.treeTitle.text == "Fire Talents (1)", "tree title shows Fire and points owned")
+check(tree.backgrounds[1].texture == "Interface\\TalentFrame\\MageFire-TopLeft", "tree uses the Mage Fire background")
+local improvedFireball = tree.talentButtons[0 * 4 + 1 + 1]
+local improvedFireBlast = tree.talentButtons[0 * 4 + 2 + 1]
+check(improvedFireball.shown and improvedFireball.rank.text == "1/2" and not improvedFireball.icon.desaturated,
+    "Improved Fireball sits at row 1 col 2, owned 1/2, in color")
+check(improvedFireBlast.shown and improvedFireBlast.rank.text == "0/1" and improvedFireBlast.icon.desaturated,
+    "Improved Fire Blast is unowned and greyed")
+local otherShown = 0
+for index, button in ipairs(tree.talentButtons) do
+    if button.shown and button ~= improvedFireball and button ~= improvedFireBlast then otherShown = otherShown + 1 end
+end
+check(otherShown == 0, "only Fire talents are on the Fire tree")
+
+-- Frost spec: Frostbolt, and the Frost tree in its rows.
+specs.specButtons[4]:Click()
+check(shownCells(grid.cells) == "Frostbolt", "Frost spec lists Frostbolt (Frost skill line)")
+check(tree.talentButtons[1 * 4 + 0 + 1].shown, "Frostbite sits on row 2 of the Frost tree")
+
+-- Picking: Fireball is pickable at level 1, Frostbolt (level 4) is not.
+specs.specButtons[1]:Click()
 check(grid.cells[1].sub.text:find("click to choose", 1, true) ~= nil, "Fireball (level 1) is pickable at level 1")
-check(grid.cells[2].sub.text == "Level 4", "Frostbolt (level 4) shows its level, not pickable yet")
-
-local tabNames = {}
-for _, tab in ipairs(tabs.tabButtons) do
-    if tab.shown then tabNames[#tabNames + 1] = tab.text end
-end
-check(table.concat(tabNames, ",") == "All,Arcane,Fire,Frost", "Mage tabs: All, then specs by name")
-
--- Click Frostbolt: nothing (too high). Click Fireball: confirm popup, accept sends PICK.
 popup = nil
 grid.cells[2]:Click()
 check(popup == nil, "clicking an ability above your level does nothing")
@@ -164,35 +230,59 @@ grid.cells[1]:Click()
 check(popup and popup.which == "EMBERFORGE_CLASSLESS_PICK" and popup.data == 133, "clicking Fireball asks to confirm")
 StaticPopupDialogs.EMBERFORGE_CLASSLESS_PICK.OnAccept(nil, popup.data)
 check(lastSent() == "PICK,133", "accepting sends PICK,133")
-
--- Server confirms: Fireball known, 3 picks left.
 server("K0")
 server("K,133")
 server("S,3,0,9")
 check(grid.cells[1].sub.text == "Known", "Fireball now shows as known")
 check(list.listTitle.text == "Your Abilities (1)", "your abilities list counts 1")
-check(stat.status.text:find("choose 3 more abilities", 1, true) ~= nil, "status shows 3 picks left")
 
--- Search filters your abilities.
-EmberforgeClasslessSearch.text = "frost"
-EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
-local rows = 0
-for _, row in ipairs(list.listRows) do
-    if row.shown and row.ability then rows = rows + 1 end
-end
-check(rows == 0, "search 'frost' hides Fireball from your abilities")
-EmberforgeClasslessSearch.text = "fire"
-EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
-rows = 0
-for _, row in ipairs(list.listRows) do
-    if row.shown and row.ability then rows = rows + 1 end
-end
-check(rows == 1, "search 'fire' shows Fireball")
+-- Learnable now: hides known and too-high abilities.
+EmberforgeClasslessLearnable.checked = true
+EmberforgeClasslessLearnable.scripts.OnClick(EmberforgeClasslessLearnable)
+check(shownCells(grid.cells) == "", "learnable now hides known Fireball and level 4 Frostbolt")
+EmberforgeClasslessLearnable.checked = false
+EmberforgeClasslessLearnable.scripts.OnClick(EmberforgeClasslessLearnable)
 
--- Your Abilities view, and the lock at level 9.
+-- Search covers every class.
+EmberforgeClasslessSearch.text = "r"
+EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
+check(shownCells(grid.cells) == "Fireball,Heroic Strike,Wrath,Frostbolt,Rend",
+    "search 'r' finds abilities of every class")
+EmberforgeClasslessSearch.text = ""
+EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
+
+-- Your Build: known abilities in the grid, owned talents in the tree panel.
 yourButton:Click()
-check(grid.cells[1].shown and grid.cells[1].name.text == "Fireball" and grid.cells[1].sub.text == "Mage",
-    "Abilities view shows what you know, with its class")
+check(shownCells(grid.cells) == "Fireball" and grid.cells[1].sub.text == "Mage", "Your Build lists known abilities")
+check(tree.treeTitle.text == "Your Talents (1)" and tree.talentRows[1].shown
+    and tree.talentRows[1].name.text == "Improved Fireball  1/2", "Your Build lists owned talents with ranks")
+
+-- Roll reveal: shuffle, then the spell with Keep / Reroll.
+local reveal = EmberforgeClasslessReveal
+server("G,133,133,1")
+check(reveal.shown, "a roll shows the reveal card")
+local card = upvalues(reveal.scripts.OnUpdate)
+check(card.revealName.text == "Rolling...", "the card shuffles first")
+reveal.scripts.OnUpdate(reveal, 1)
+check(card.revealName.text == "Fireball" and card.keep.enabled and card.reroll.enabled and card.reroll.shown,
+    "then shows the rolled ability with Keep and Reroll")
+check(GameTooltip.link == "spell:133" and GameTooltip:IsOwned(reveal), "the spell's tooltip sits beside the card")
+server("G,116,116,0")
+card.reroll.scripts.OnClick(card.reroll)
+check(lastSent() == "REROLL,133", "Reroll sends REROLL with the first rank")
+check(reveal.shown and card.revealName.text == "Rolling...", "the next queued roll shows next")
+reveal.scripts.OnUpdate(reveal, 1)
+check(card.revealName.text == "Frostbolt" and not card.reroll.shown and card.keep.text == "Okay",
+    "a roll without a reroll offers only Okay")
+local before = #sent
+card.keep.scripts.OnClick(card.keep)
+check(#sent == before and not reveal.shown, "Okay closes the card without asking the server")
+server("G,772,772,1")
+reveal.scripts.OnUpdate(reveal, 1)
+card.keep.scripts.OnClick(card.keep)
+check(lastSent() == "KEEP,772", "Keep sends KEEP")
+
+-- Lock at level 9.
 playerLevel = 9
 server("S,0,1,9")
 check(stat.status.text == "", "no tome hints once the kit is locked")
@@ -201,14 +291,18 @@ popup = nil
 grid.cells[2]:Click()
 check(popup == nil, "no picking once locked")
 
--- The server can open the window (the Tome of Selection does).
+-- The server can open the window (the Tome of Selection does); N and the minimap toggle it.
 frame:Hide()
 server("O")
 check(frame:IsShown(), "server message O opens the window")
+EmberforgeClassless_Toggle()
+check(not frame:IsShown(), "the N binding's toggle closes it")
+EmberforgeClasslessMinimapButton.scripts.OnClick(EmberforgeClasslessMinimapButton)
+check(frame:IsShown(), "the minimap button opens it")
 
 -- Other addons' messages are ignored.
-local before = #sent
-frame.scripts.OnEvent(frame, "CHAT_MSG_ADDON", "OTHER", "O", "WHISPER", "Someone")
+before = #sent
+event("CHAT_MSG_ADDON", "OTHER", "O", "WHISPER", "Someone")
 check(#sent == before, "messages with another prefix are ignored")
 
 print(failures == 0 and "\nAll checks passed" or ("\n" .. failures .. " check(s) failed"))

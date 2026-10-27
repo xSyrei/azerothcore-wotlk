@@ -25,16 +25,22 @@
 #include "WorldSession.h"
 #include <map>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 // Server side of the Classless window (client addon: client-patch/AddOns/Emberforge_Classless).
 //
 // Both sides talk in addon whispers the player sends to and receives from themself, prefix EFCL:
 //   client -> server   LIST                      send the ability list
 //                      PICK,<first rank id>      spend a Selection pick on that ability
-//   server -> client   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<id>;... / E
-//                                                the ability list (begin, spec tabs, abilities, end)
+//                      KEEP,<first rank id> / REROLL,<first rank id>   answer a roll reveal
+//   server -> client   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<id>;...
+//                      U,<class>,<tree order>,<tab id> / N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>...;... / E
+//                                                the list (begin, spec tabs, abilities, talent trees, end)
 //                      K0 / K,<id>,...           known abilities (clear, then first rank ids)
+//                      R0 / R,<talent id>:<rank>,...   owned talent ranks (clear, then talents)
 //                      S,<picks left>,<locked>,<lock level>
+//                      G,<spell id>,<first rank id>,<can reroll>   roll reveal card
 //                      O                         open the window
 namespace
 {
@@ -70,6 +76,82 @@ namespace
             SendAddon(player, payload);
     }
 
+    // Rolled abilities still offering a reroll, per player (lost at logout: the roll is then kept).
+    std::unordered_map<ObjectGuid, std::unordered_set<uint32>> pendingRerolls;
+
+    // Every playable class's talent trees: tabs (class, order, id), then talents.
+    void SendTalentTrees(Player* player)
+    {
+        std::vector<std::string> talents;
+        for (uint32 i = 0; i < sTalentTabStore.GetNumRows(); ++i)
+        {
+            TalentTabEntry const* tab = sTalentTabStore.LookupEntry(i);
+            if (!tab || tab->petTalentMask || !(tab->ClassMask & CLASSMASK_ALL_PLAYABLE))
+                continue;
+
+            uint8 classId = 0;
+            for (uint8 c = CLASS_WARRIOR; c < MAX_CLASSES; ++c)
+                if (tab->ClassMask & (1 << (c - 1)))
+                    classId = c;
+            SendAddon(player, Acore::StringFormat("U,{},{},{}", classId, tab->tabpage, tab->TalentTabID));
+        }
+
+        for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
+        {
+            TalentEntry const* talent = sTalentStore.LookupEntry(i);
+            if (!talent)
+                continue;
+
+            TalentTabEntry const* tab = sTalentTabStore.LookupEntry(talent->TalentTab);
+            if (!tab || tab->petTalentMask || !(tab->ClassMask & CLASSMASK_ALL_PLAYABLE))
+                continue;
+
+            std::string ranks;
+            for (uint32 rankSpell : talent->RankID)
+                if (rankSpell)
+                    ranks += (ranks.empty() ? "" : "+") + std::to_string(rankSpell);
+
+            talents.push_back(Acore::StringFormat("{}.{}.{}.{}.{}", talent->TalentTab, talent->TalentID, talent->Row,
+                talent->Col, ranks));
+        }
+
+        SendBatched(player, "N,", talents, ';');
+    }
+
+    void SendTalentRanks(Player* player)
+    {
+        std::vector<std::string> owned;
+        for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
+            if (TalentEntry const* talent = sTalentStore.LookupEntry(i))
+                for (uint8 rank = MAX_TALENT_RANK; rank > 0; --rank)
+                    if (uint32 rankSpell = talent->RankID[rank - 1];
+                        rankSpell && player->HasTalent(rankSpell, player->GetActiveSpec()))
+                    {
+                        owned.push_back(Acore::StringFormat("{}:{}", talent->TalentID, rank));
+                        break;
+                    }
+
+        SendAddon(player, "R0");
+        SendBatched(player, "R,", owned, ',');
+    }
+
+    void Reroll(Player* player, uint32 firstRank)
+    {
+        auto itr = pendingRerolls.find(player->GetGUID());
+        Wildcard::Ability const* ability = Wildcard::FindAbility(firstRank);
+        if (itr == pendingRerolls.end() || !itr->second.erase(firstRank) || !ability
+            || Wildcard::KnownRank(player, *ability) < 0)
+            return;
+
+        Wildcard::Unlearn(player, *ability);
+        if (Wildcard::Ability const* rolled = Wildcard::GrantRandom(player, "rerolled into", firstRank))
+            Classless::Reveal(player, *rolled, false);
+        else
+            Wildcard::Learn(player, *ability, "nothing else to roll, kept");
+
+        Classless::SendKnown(player);
+    }
+
     void SendList(Player* player)
     {
         LocaleConstant locale = player->GetSession()->GetSessionDbcLocale();
@@ -96,6 +178,7 @@ namespace
             }
 
         SendBatched(player, "A,", abilities, ';');
+        SendTalentTrees(player);
         SendAddon(player, "E");
         Classless::SendKnown(player);
         Classless::SendState(player);
@@ -138,11 +221,25 @@ namespace Classless
 
         SendAddon(player, "K0");
         SendBatched(player, "K,", known, ',');
+        SendTalentRanks(player);
     }
 
     void Open(Player* player)
     {
         SendAddon(player, "O");
+    }
+
+    void Reveal(Player* player, Wildcard::Ability const& ability, bool canReroll)
+    {
+        uint32 firstRank = ability.Ranks.front().SpellId;
+        int32 known = Wildcard::KnownRank(player, ability);
+        if (known < 0)
+            return;
+
+        if (canReroll)
+            pendingRerolls[player->GetGUID()].insert(firstRank);
+        SendAddon(player, Acore::StringFormat("G,{},{},{}", ability.Ranks[known].SpellId, firstRank,
+            canReroll ? 1 : 0));
     }
 }
 
@@ -150,8 +247,14 @@ class titan_classless : public PlayerScript
 {
 public:
     titan_classless() : PlayerScript("titan_classless", {
-        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT
+        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT,
+        PLAYERHOOK_ON_LOGOUT
     }) { }
+
+    void OnPlayerLogout(Player* player) override
+    {
+        pendingRerolls.erase(player->GetGUID());
+    }
 
     // Requests from the addon: whispers to oneself in the addon language with our prefix. They are
     // handled here and never delivered.
@@ -169,6 +272,17 @@ public:
         {
             if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(5)))
                 Pick(player, *spellId);
+        }
+        else if (request.starts_with("REROLL,"))
+        {
+            if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(7)))
+                Reroll(player, *spellId);
+        }
+        else if (request.starts_with("KEEP,"))
+        {
+            if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(5)))
+                if (auto itr = pendingRerolls.find(player->GetGUID()); itr != pendingRerolls.end())
+                    itr->second.erase(*spellId);
         }
 
         return false;
