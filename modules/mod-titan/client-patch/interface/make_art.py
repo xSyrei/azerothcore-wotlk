@@ -187,6 +187,41 @@ def star_field(width=1024, height=512, seed=7):
     return np.dstack([np.clip(rgb, 0, 1), np.ones((height, width))])
 
 
+def gem_glow(size=128):
+    """Additive halo for the scene's glowing gems: a white-hot core fading through cyan to nothing."""
+    r, _ = radial(size)
+    fade = np.clip(1 - r, 0, 1) ** 1.5
+    core = np.exp(-(r / 0.12) ** 2)
+    inner = np.exp(-(r / 0.28) ** 2) * 0.8
+    halo = np.exp(-(r / 0.55) ** 2) * 0.55 * fade
+    rgb = (core[..., None] * np.array([1.0, 1.0, 1.0]) + inner[..., None] * np.array([0.45, 0.85, 1.0])
+           + halo[..., None] * np.array([0.10, 0.50, 1.0]))
+    return np.dstack([np.clip(rgb, 0, 1), np.ones_like(r)])
+
+
+def planet(size=256):
+    """Distant rust-colored planet for the sky, lit from the upper right with a faint cyan rim."""
+    r, _ = radial(size)
+    n = size * SS
+    y, x = (np.mgrid[0:n, 0:n] + 0.5) / (n / 2) - 1
+    inside = r < 0.94
+    z = np.sqrt(np.clip(0.94 ** 2 - x * x - y * y, 0, None)) / 0.94
+    light = np.clip((x * 0.55 - y * 0.45 + z * 0.7) / 0.94, 0, 1)
+    rng = np.random.default_rng(3)
+    bands = 0.85 + 0.15 * np.sin(y * 9 + np.sin(x * 4) * 0.8 + rng.random() * 6)
+    rgb = np.array([0.40, 0.24, 0.18]) * (light * bands)[..., None] * 0.8 + 0.02
+    rim = np.clip((r - 0.82) / 0.12, 0, 1) * inside
+    rgb += rim[..., None] * np.array([0.10, 0.25, 0.35])
+    alpha = np.clip((0.94 - r) / 0.01, 0, 1) * 0.8         # a little of the nebula shows through
+    return np.dstack([np.clip(rgb, 0, 1), alpha])
+
+
+def save_login(rgba, name):
+    img = Image.fromarray((np.clip(rgba, 0, 1) * 255).astype(np.uint8), 'RGBA')
+    img = img.resize((img.width // SS, img.height // SS), Image.Resampling.LANCZOS)
+    img.save(HERE / 'login' / f'{name}.png')
+
+
 def main():
     ART.mkdir(exist_ok=True)
     save(ring(), 'RaceRing')
@@ -202,6 +237,8 @@ def main():
     save(chevron(glow_only=True), 'ChevronHighlight')
     img = Image.fromarray((star_field() * 255).astype(np.uint8), 'RGBA')
     img.save(HERE / 'login' / 'StarField.png')
+    save_login(gem_glow(), 'GemGlow')
+    save_login(planet(), 'Planet')
     print('Wrote', ', '.join(sorted(p.name for p in ART.glob('*.png'))))
 
 

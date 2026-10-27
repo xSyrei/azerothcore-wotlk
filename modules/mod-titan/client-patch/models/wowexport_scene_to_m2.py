@@ -162,6 +162,48 @@ def sky_dome(center, radius, texture, rings=16, segments=32, repeat=(4, 2)):
                 max_size=1024)
 
 
+def camera_cards(centers_radii, camera, texture, blend=4, pull=0.8):
+    """Square sprites facing the (fixed) camera, e.g. glows: one quad per (center, radius).
+
+    Each card is pulled toward the camera by pull * radius so it is not cut in half by the surface
+    it glows on. Additive cards ignore depth writes so overlapping glows add up.
+    """
+    r, u, _ = camera_basis(camera)
+    eye = np.asarray(camera[0], np.float64)
+    positions, uvs, triangles = [], [], []
+    for center, radius in centers_radii:
+        center = np.asarray(center, np.float64)
+        to_eye = eye - center
+        c = center + to_eye / np.linalg.norm(to_eye) * radius * pull
+        base = len(positions)
+        for du, dv in ((0, 0), (1, 0), (1, 1), (0, 1)):
+            positions.append(c + (du * 2 - 1) * radius * r - (dv * 2 - 1) * radius * u)
+            uvs.append((du, dv))
+        triangles += [(base, base + 1, base + 2), (base, base + 2, base + 3)]
+    positions = np.array(positions)
+    normals = np.tile(-camera_basis(camera)[2], (len(positions), 1))
+    flags = UNLIT | TWO_SIDED | 0x2 | (NO_DEPTH_WRITE if blend >= 3 else 0)
+    return Part(positions, normals, np.array(uvs, np.float64), np.array(triangles), texture, blend, flags)
+
+
+def split(part, mask_fn):
+    """Split a part in two by a test on its triangles: mask_fn(centers, unit face normals) -> bool array.
+    Returns (matching part, rest); either may be None."""
+    corners = part.positions[part.triangles]
+    normals = np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])
+    normals /= np.maximum(np.linalg.norm(normals, axis=1, keepdims=True), 1e-12)
+    mask = mask_fn(corners.mean(1), normals)
+    out = []
+    for m in (mask, ~mask):
+        if not m.any():
+            out.append(None)
+            continue
+        used, triangles = np.unique(part.triangles[m], return_inverse=True)
+        out.append(Part(part.positions[used], part.normals[used], part.uvs[used], triangles.reshape(-1, 3),
+                        part.texture, part.blend, part.flags, part.scroll, part.tint, part.max_size))
+    return out
+
+
 def tinted(image, tint):
     """Darken / color a texture to stand in for the lighting the scene does not get, keeping
     glowing details (bright, saturated blue-white pixels) at full brightness."""
