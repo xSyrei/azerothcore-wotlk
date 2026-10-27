@@ -44,7 +44,8 @@ namespace
     void SendAddon(Player* player, std::string const& payload)
     {
         WorldPacket data;
-        ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, LANG_ADDON, player, player, std::string(PREFIX) + '\t' + payload);
+        std::string const message = std::string(PREFIX) + '\t' + payload;
+        ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, LANG_ADDON, player, player, message);
         player->SendDirectMessage(&data);
     }
 
@@ -89,7 +90,10 @@ namespace
         SendAddon(player, "B");
         for (auto const& [skillLine, classId] : tabs)
             if (SkillLineEntry const* skill = sSkillLineStore.LookupEntry(skillLine))
-                SendAddon(player, Acore::StringFormat("T,{},{},{}", classId, skillLine, skill->name[locale] ? skill->name[locale] : ""));
+            {
+                char const* name = skill->name[locale] ? skill->name[locale] : "";
+                SendAddon(player, Acore::StringFormat("T,{},{},{}", classId, skillLine, name));
+            }
 
         SendBatched(player, "A,", abilities, ';');
         SendAddon(player, "E");
@@ -121,8 +125,8 @@ namespace Classless
 {
     void SendState(Player* player)
     {
-        SendAddon(player, Acore::StringFormat("S,{},{},{}", Wildcard::GetPicks(player), Wildcard::IsKitLocked(player) ? 1 : 0,
-            Wildcard::LOCK_LEVEL));
+        SendAddon(player, Acore::StringFormat("S,{},{},{}", Wildcard::GetPicks(player),
+            Wildcard::IsKitLocked(player) ? 1 : 0, Wildcard::LOCK_LEVEL));
     }
 
     void SendKnown(Player* player)
@@ -151,7 +155,8 @@ public:
 
     // Requests from the addon: whispers to oneself in the addon language with our prefix. They are
     // handled here and never delivered.
-    bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg, Player* receiver) override
+    bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg,
+        Player* receiver) override
     {
         std::string const prefix = std::string(PREFIX) + '\t';
         if (language != LANG_ADDON || receiver != player || msg.compare(0, prefix.size(), prefix) != 0)

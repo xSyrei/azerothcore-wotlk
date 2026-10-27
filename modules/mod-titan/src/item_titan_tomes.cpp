@@ -41,8 +41,8 @@ namespace
 
         if (Wildcard::IsKitLocked(player))
         {
-            ChatHandler(player->GetSession()).PSendSysMessage("Your abilities locked at level {}. The tome crumbles to dust.",
-                Wildcard::LOCK_LEVEL);
+            ChatHandler(player->GetSession()).PSendSysMessage(
+                "Your abilities locked at level {}. The tome crumbles to dust.", Wildcard::LOCK_LEVEL);
             uint32 count = 1;
             player->DestroyItemCount(item, count, true);
             return false;
@@ -68,7 +68,8 @@ public:
             Wildcard::GrantRandom(player, "kit ability");
 
         ChatHandler(player->GetSession()).PSendSysMessage(
-            "|cffff8000Wildcard:|r your abilities are rerolled. You can reroll again until level {}.", Wildcard::LOCK_LEVEL);
+            "|cffff8000Wildcard:|r your abilities are rerolled. You can reroll again until level {}.",
+            Wildcard::LOCK_LEVEL);
         Classless::SendKnown(player);
         Classless::SendState(player);
         return true;
@@ -89,7 +90,8 @@ public:
         Wildcard::SetPicks(player, Wildcard::KIT_SIZE);
 
         ChatHandler(player->GetSession()).PSendSysMessage(
-            "|cffff8000Wildcard:|r a clean slate. Choose {} abilities in the Classless window (/classless) before level {}.",
+            "|cffff8000Wildcard:|r a clean slate. Choose {} abilities in the Classless window (/classless) "
+            "before level {}.",
             Wildcard::KIT_SIZE, Wildcard::LOCK_LEVEL);
         Classless::SendKnown(player);
         Classless::SendState(player);

@@ -46,6 +46,7 @@ namespace Wildcard
         uint8 ClassId;              // a class whose trainer teaches it
         uint32 SkillLine;           // its class skill line (spec tab), 0 if none
         bool Offered;               // grantable / pickable; talent chains are only upgraded
+        bool Banned;                // removed from the game for Heroes (see wildcard.cpp)
     };
 
     bool IsHero(Player const* player);

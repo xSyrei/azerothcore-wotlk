@@ -34,6 +34,14 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   are left out); talents from any class's talent trees (tier and prerequisite rules do not apply).
   Heroes have no talent points to spend in the UI.
 - Owned abilities upgrade to the best rank for the Hero's level by themselves, no trainer needed.
+- **Removed abilities**: `BANNED_ABILITIES` in `src/wildcard.cpp` lists abilities taken out of the
+  game for Heroes by name (class mounts, tracking and scouting, Runeforging, Ritual of Refreshment,
+  Divine Intervention, Lesser Heal, Disarm Trap, Create Firestone, hunter pet handling, ...). They
+  are never granted or listed, and a Hero who has one loses it at login and gets a random
+  replacement. A name that matches nothing is logged at startup.
+- **Pick Lock for everyone**: every player always knows Pick Lock, with Lockpicking at its maximum
+  for their level (5 per level). The core drops the Rogue-only Lockpicking skill at each login for
+  other classes ("invalid for the race/class" in the log), so it is set again every login.
 - Grants are caught up at login and on every level change, so multi-level jumps and characters
   made before Wildcard get everything they are owed. Each grant is announced in chat.
 

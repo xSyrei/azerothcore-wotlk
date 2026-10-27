@@ -28,6 +28,7 @@
 #include "World.h"
 #include <algorithm>
 #include <array>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -54,8 +55,27 @@ namespace
     constexpr uint32 SETTING_ABILITIES_GRANTED = 0;
     constexpr uint32 SETTING_PICKS_LEFT = 1;
 
-    // Never offered: hunter pet handling (a Hero has no hunter pet to tame, call or heal).
-    constexpr std::array<uint32, 8> EXCLUDED_SPELLS = { 1515, 883, 2641, 982, 6991, 136, 1002, 62757 };
+    // Removed from the game for Heroes, matched by spell name (every rank and faction version): never
+    // granted or listed, and unlearned at login from anyone who has them (with a random replacement).
+    // A name matching nothing is logged at startup.
+    constexpr std::array<char const*, 38> BANNED_ABILITIES = {
+        // Hunter pet handling: a Hero has no hunter pet to tame, call or heal.
+        "Tame Beast", "Call Pet", "Dismiss Pet", "Revive Pet", "Feed Pet", "Mend Pet", "Eyes of the Beast",
+        "Call Stabled Pet",
+        // Class mounts.
+        "Summon Charger", "Charger", "Summon Warhorse", "Warhorse", "Summon Felsteed", "Felsteed",
+        "Summon Dreadsteed", "Dreadsteed",
+        // Tracking and scouting.
+        "Track Beasts", "Track Humanoids", "Track Undead", "Track Hidden", "Track Elementals", "Track Demons",
+        "Track Dragonkin", "Track Giants", "Sense Undead", "Sense Demons", "Eagle Eye", "Beast Lore",
+        "Mind Vision", "Far Sight", "Eye of Kilrogg", "Sentry Totem",
+        // Others.
+        "Runeforging", "Ritual of Refreshment", "Divine Intervention", "Lesser Heal", "Disarm Trap",
+        "Create Firestone",
+    };
+
+    // Every player always knows Pick Lock, with Lockpicking at its maximum for their level.
+    constexpr uint32 SPELL_PICK_LOCK = 1804;
 
     // The spells a trainer entry teaches: itself, or what it learns when it is a wrapper.
     std::vector<uint32> TaughtSpells(uint32 trainerSpellId)
@@ -179,7 +199,8 @@ namespace
             return false;
 
         bool learned = false;
-        if (talentInfo->addToSpellBook && !spellInfo->HasAttribute(SPELL_ATTR0_PASSIVE) && !spellInfo->HasEffect(SPELL_EFFECT_LEARN_SPELL))
+        if (talentInfo->addToSpellBook && !spellInfo->HasAttribute(SPELL_ATTR0_PASSIVE)
+            && !spellInfo->HasEffect(SPELL_EFFECT_LEARN_SPELL))
         {
             player->learnSpell(spellId);
             learned = true;
@@ -204,9 +225,36 @@ namespace
                 player->DestroyItemCount(entry, count, true);
     }
 
+    // Unlearns banned abilities; returns how many the player had.
+    uint32 RemoveBanned(Player* player)
+    {
+        uint32 removed = 0;
+        for (Ability const& ability : Abilities())
+        {
+            if (!ability.Banned || KnownRank(player, ability) < 0)
+                continue;
+
+            for (Rank const& rank : ability.Ranks)
+                if (player->HasSpell(rank.SpellId))
+                    player->removeSpell(rank.SpellId, SPEC_MASK_ALL, false);
+
+            ++removed;
+        }
+
+        return removed;
+    }
+
     void CatchUp(Player* player, bool grantAbilities)
     {
         uint8 level = player->GetLevel();
+
+        // Banned abilities go, and are owed again (rolled anew below).
+        if (uint32 removed = RemoveBanned(player))
+        {
+            uint32 granted = player->GetPlayerSetting(SETTING_SOURCE, SETTING_ABILITIES_GRANTED).value;
+            player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_ABILITIES_GRANTED,
+                granted > removed ? granted - removed : 0);
+        }
 
         // The kit locks: picks never spent are rolled at random, and the tomes are gone.
         if (IsKitLocked(player))
@@ -281,6 +329,8 @@ namespace Wildcard
             for (auto const& [spellId, level] : trainerLevel)
                 firstRanks.insert(sSpellMgr->GetFirstSpellInChain(spellId));
 
+            std::unordered_set<std::string_view> bannedFound;
+
             std::vector<Ability> result;
             for (uint32 firstRank : firstRanks)
             {
@@ -293,7 +343,8 @@ namespace Wildcard
 
                     // Ranks no trainer teaches (a class's starting rank 1) use the spell's own level.
                     auto itr = trainerLevel.find(rank);
-                    uint8 level = itr != trainerLevel.end() ? itr->second : uint8(std::max<uint32>(1, spellInfo->SpellLevel));
+                    uint8 level = itr != trainerLevel.end() ? itr->second
+                        : uint8(std::max<uint32>(1, spellInfo->SpellLevel));
                     ability.Ranks.push_back({ rank, level });
 
                     if (!ability.ClassId)
@@ -306,13 +357,30 @@ namespace Wildcard
 
                 SpellInfo const* firstInfo = sSpellMgr->GetSpellInfo(firstRank);
                 ability.SkillLine = ClassSkillLine(firstRank);
-                ability.Offered = !GetTalentSpellCost(firstRank) && !firstInfo->IsPassive()
-                    && std::find(EXCLUDED_SPELLS.begin(), EXCLUDED_SPELLS.end(), firstRank) == EXCLUDED_SPELLS.end();
+                ability.Banned = std::any_of(ability.Ranks.begin(), ability.Ranks.end(), [&](Rank const& rank)
+                {
+                    char const* name = sSpellMgr->AssertSpellInfo(rank.SpellId)->SpellName[LOCALE_enUS];
+                    auto banned = std::find_if(BANNED_ABILITIES.begin(), BANNED_ABILITIES.end(),
+                        [name](char const* bannedName) { return name && std::string_view(name) == bannedName; });
+                    if (banned == BANNED_ABILITIES.end())
+                        return false;
+                    bannedFound.insert(*banned);
+                    return true;
+                });
+                ability.Offered = !GetTalentSpellCost(firstRank) && !firstInfo->IsPassive() && !ability.Banned
+                    && firstRank != SPELL_PICK_LOCK;
                 result.push_back(std::move(ability));
             }
 
-            LOG_INFO("module", "mod-titan: Wildcard pool has {} abilities ({} rank chains from class trainers)",
-                std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Offered; }), result.size());
+            for (char const* name : BANNED_ABILITIES)
+                if (!bannedFound.count(name))
+                    LOG_WARN("module", "mod-titan: Wildcard banned ability \"{}\" matches no class trainer spell",
+                        name);
+
+            LOG_INFO("module", "mod-titan: Wildcard pool has {} abilities ({} rank chains from class trainers, "
+                "{} banned)",
+                std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Offered; }), result.size(),
+                std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Banned; }));
             return result;
         }();
 
@@ -399,6 +467,22 @@ namespace Wildcard
     }
 }
 
+namespace
+{
+    // Pick Lock for everyone. Lockpicking is a Rogue skill: the core drops it at every login for any
+    // other class (it is invalid for the race/class), so it is set again each time, at its maximum.
+    void EnsurePickLock(Player* player)
+    {
+        if (!player->HasSpell(SPELL_PICK_LOCK))
+            player->learnSpell(SPELL_PICK_LOCK);
+
+        uint16 maxValue = uint16(player->GetLevel()) * 5;
+        if (player->GetPureSkillValue(SKILL_LOCKPICKING) != maxValue
+            || player->GetPureMaxSkillValue(SKILL_LOCKPICKING) != maxValue)
+            player->SetSkill(SKILL_LOCKPICKING, 0, maxValue, maxValue);
+    }
+}
+
 class titan_wildcard : public PlayerScript
 {
 public:
@@ -411,6 +495,7 @@ public:
 
     void OnPlayerLogin(Player* player) override
     {
+        EnsurePickLock(player);
         if (!IsHero(player))
             return;
 
@@ -421,9 +506,11 @@ public:
         {
             warned = true;
             if (!settingsSaved)
-                LOG_ERROR("module", "mod-titan: Wildcard needs EnablePlayerSettings = 1 in worldserver.conf; abilities are only granted on level up until then");
+                LOG_ERROR("module", "mod-titan: Wildcard needs EnablePlayerSettings = 1 in worldserver.conf; "
+                    "abilities are only granted on level up until then");
             if (sWorld->getBoolConfig(CONFIG_VALIDATE_SKILL_LEARNED_BY_SPELLS))
-                LOG_ERROR("module", "mod-titan: Wildcard needs ValidateSkillLearnedBySpells = 0 in worldserver.conf; other classes' spells are deleted at login until then");
+                LOG_ERROR("module", "mod-titan: Wildcard needs ValidateSkillLearnedBySpells = 0 in worldserver.conf; "
+                    "other classes' spells are deleted at login until then");
         }
 
         CatchUp(player, settingsSaved);
@@ -431,6 +518,7 @@ public:
 
     void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
     {
+        EnsurePickLock(player);
         if (IsHero(player))
             CatchUp(player, true);
     }
