@@ -63,7 +63,7 @@ KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 9, 10
 HANDS, WEAPONS = (KIT_LEFT_HAND, KIT_RIGHT_HAND), (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
 KIT_ANIM = 2
 NO_ANIM = 0xFFFFFFFF
-BLANK_KIT = 3049    # Sinister Strike's impact: only a chest effect (set 0 to drop it) and the hit sound
+BLANK_KIT = 3049    # Sinister Strike's impact: a chest effect and its hit sound (set them to 0 / None)
 EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
 # SoundEntries.dbc (30 columns): id, type, name, 10 files, 10 weights, folder, volume, flags, min
 # distance, distance cutoff, EAX, advanced id.
@@ -136,22 +136,22 @@ FEL_HELLFIRE_BASE = 3312        # Spells\\Fel_Hellfire_Impact_Caster_Base: fel f
 # Visuals: the Blizzard visual copied, the new visual's id, and per kit (precast, cast or impact)
 # the new kit's id and what goes in its slots, a copy of the copied visual's kit (or of BLANK_KIT
 # if it has none). A slot's effect is a Blizzard effect id (0: none) or one of EFFECTS; "anim" sets the kit's
-# animation (NO_ANIM: none), "sound" its sound (one of SOUNDS). "clear" drops kits.
+# animation (NO_ANIM: none), "sound" its sound (one of SOUNDS, or None: silent). "clear" drops kits.
 VISUALS = {
     'DemonsBite': {'copy': 253, 'id': 16700, 'kits': {
         'cast': (15600, {WEAPONS: 'DemonsBite', 'sound': 'DemonsBite'}),
-        'impact': (15604, {KIT_CHEST: MANGLE_IMPACT_DEMON})}},
+        'impact': (15604, {KIT_CHEST: MANGLE_IMPACT_DEMON, 'sound': None})}},
     'ChaosStrike': {'copy': 253, 'id': 16701, 'kits': {
         'cast': (15601, {WEAPONS: 'ChaosStrike', HANDS: FEL_PRECAST_HAND, 'sound': 'ChaosStrike'}),
-        'impact': (15605, {KIT_CHEST: FEL_FIRE_IMPACT})}},
+        'impact': (15605, {KIT_CHEST: FEL_FIRE_IMPACT, 'sound': None})}},
     # Blade Dance is a Whirlwind; it only targets the Demon Hunter (the dodge), so no impact: its
     # strikes (90107, 90108) bring their own.
     'BladeDance': {'copy': 223, 'id': 16703, 'clear': ('impact',), 'kits': {
         'cast': (15603, {WEAPONS: 'BladeDance', KIT_BASE: FEL_HELLFIRE_BASE, 'sound': 'BladeDance'})}},
     'BladeDanceStrike': {'copy': 253, 'id': 16704, 'clear': ('cast',), 'kits': {
-        'impact': (15606, {KIT_CHEST: FEL_FLAMESHOCK_IMPACT})}},
+        'impact': (15606, {KIT_CHEST: FEL_FLAMESHOCK_IMPACT, 'sound': None})}},
     'BladeDanceFinalStrike': {'copy': 253, 'id': 16705, 'clear': ('cast',), 'kits': {
-        'impact': (15607, {KIT_CHEST: FEL_FIRE_IMPACT})}},
+        'impact': (15607, {KIT_CHEST: FEL_FIRE_IMPACT, 'sound': None})}},
     # Fel Rush was a Blink: fel hands instead of shadow ones, the trail behind the body, and no cast
     # animation (the dash runs). The warlock teleport flame stays where the dash starts.
     'FelRush': {'copy': 10694, 'id': 16702, 'clear': ('precast',), 'kits': {
@@ -165,7 +165,7 @@ VISUALS = {
         'state': (15611, {KIT_HEAD: 'EyeBeam', 'sound': 'EyeBeamChannel'}),
         'statedone': (15610, {KIT_CHEST: 0, 'sound': 'EyeBeamEnd'})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
-        'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT})}},
+        'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
 }
 
 # Spells: id, the Blizzard spell copied, name, tooltip text, aura text, icon, then column changes.
@@ -383,7 +383,7 @@ def build_visuals(source, out):
                     kit[KIT_ANIM] = effect
                     continue
                 if where == 'sound':
-                    kit[KIT_SOUND] = SOUNDS[effect]['id']
+                    kit[KIT_SOUND] = SOUNDS[effect]['id'] if effect else 0
                     continue
                 for slot in where if isinstance(where, tuple) else (where,):
                     kit[slot] = EFFECTS[effect]['effect'] if isinstance(effect, str) else effect
