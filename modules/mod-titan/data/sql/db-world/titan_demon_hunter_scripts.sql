@@ -16,3 +16,8 @@ DELETE FROM `spell_bonus_data` WHERE `entry` IN (90107, 90108);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90107, 0, 0, 0.2475, 0, 'Blade Dance - strike'),
 (90108, 0, 0, 0.742, 0, 'Blade Dance - final strike');
+
+-- Fel Rush: its damage (90104) only hits the enemies in the dash's path.
+DELETE FROM `spell_script_names` WHERE `spell_id` = 90104 AND `ScriptName` = 'spell_titan_dh_fel_rush_damage';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90104, 'spell_titan_dh_fel_rush_damage');

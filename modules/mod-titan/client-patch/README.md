@@ -66,14 +66,18 @@ After changing a spell, regenerate that SQL **and** rebuild the patch: client an
 Fury is the client's Runic Power, renamed (every Hero has it). The Wildcard pool and the
 Classless window get the spells from `CUSTOM_ABILITIES` in `src/wildcard.cpp` (spec tabs Havoc and Vengeance).
 
-### Trails
+### Trails and visuals
 
-Demon's Bite, Chaos Strike and Blade Dance leave a trail behind the blade, Fel Rush one behind the body
-(`TRAILS` in `patch_spells.py`). Each trail is its own effect model, `Spells\\Emberforge\\<model>.m2`,
-built by `models/spell_effects.py` from `spells/<model>.png`: no mesh, only a ribbon emitter that
-follows the weapon (or the chest), laid out like Blizzard's own `Spells\\RibbonTrail.m2`. The spell
-gets a copy of a Blizzard visual whose cast kit puts that model on both weapons or the chest (new
-rows in SpellVisual, SpellVisualKit and SpellVisualEffectName).
+Demon's Bite, Chaos Strike and Blade Dance leave a trail behind the blade, Fel Rush one behind the
+body (`TRAILS` in `patch_spells.py`). Each trail is its own effect model,
+`Spells\\Emberforge\\<model>.m2`, built by `models/spell_effects.py` from `spells/<model>.png`: no
+mesh, only a ribbon emitter that follows the weapon (or the chest), laid out like Blizzard's own
+`Spells\\RibbonTrail.m2`.
+
+Each spell's look is one of `VISUALS`: a copy of a Blizzard visual whose kits (precast, cast,
+impact) carry our trails and Blizzard's own fel effect models (fel flames on the hands, fel fire
+hits on targets, a demon's bite), as new rows in SpellVisual, SpellVisualKit and
+SpellVisualEffectName.
 
 Trail textures run from the weapon (left edge) to the end of the trail (right edge), blade tip at
 the top; the build turns them the way the client lays them. `weapon_trail()` sets how much of the

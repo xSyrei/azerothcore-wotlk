@@ -57,6 +57,30 @@ class spell_titan_dh_dual_weapons : public SpellScript
     }
 };
 
+// Fel Rush damage (90104): cast as the Demon Hunter sets off, it hits only the enemies in the lane
+// the dash crosses (15 yards ahead, about 2 yards each side), not everything around.
+class spell_titan_dh_fel_rush_damage : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_fel_rush_damage);
+
+    static constexpr float LANE_HALF_WIDTH = 2.0f;
+
+    void KeepPath(std::list<WorldObject*>& targets)
+    {
+        Unit* caster = GetCaster();
+        targets.remove_if([caster](WorldObject* target)
+        {
+            return !caster->HasInLine(target, target->GetObjectSize(), LANE_HALF_WIDTH);
+        });
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_dh_fel_rush_damage::KeepPath, EFFECT_0,
+            TARGET_UNIT_SRC_AREA_ENEMY);
+    }
+};
+
 // Blade Dance (90102): strikes everything within 8 yards four times during the spin, three times
 // for 24.75% of attack power and a last time for 74.2% (spell_bonus_data), a quarter second apart.
 class spell_titan_dh_blade_dance : public SpellScript
@@ -93,4 +117,5 @@ void AddSC_demon_hunter()
 {
     RegisterSpellScript(spell_titan_dh_dual_weapons);
     RegisterSpellScript(spell_titan_dh_blade_dance);
+    RegisterSpellScript(spell_titan_dh_fel_rush_damage);
 }

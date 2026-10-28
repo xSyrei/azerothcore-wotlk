@@ -92,7 +92,7 @@ built or spent Runic Power build and spend Fury, the same pool as the Demon Hunt
 |---|---|---|---|
 | 90100 | Demon's Bite | 1 | Weapon strike; generates 20-30 Fury |
 | 90101 | Chaos Strike | 1 | 200% weapon damage as Chaos; costs 40 |
-| 90103 | Fel Rush | 1 | Rushes 15 yards forward, Chaos damage around (90104); 10 sec cooldown |
+| 90103 | Fel Rush | 1 | Dashes 15 yards forward along the ground (a charge), Chaos damage to enemies in the path (90104); 10 sec cooldown |
 | 90102 | Blade Dance | 10 | Four strikes within 8 yards over 0.75 sec: three for 24.75% of attack power, the last for 74.2% (90107, 90108); dodges all attacks for 1 sec; costs 35 |
 | 90105 | Eye Beam | 20 | 2 sec channel, Chaos damage in a 20-yard cone every 0.2 sec (90106); costs 30 |
 

@@ -11,9 +11,9 @@ Resources: Emberforge has no Runic Power: its power type (6) is Fury, which ever
 (src/hero_resources.cpp). Every client spell text that says Runic Power says Fury instead (the
 Emberforge_Resources addon renames it in the UI).
 
-Visuals: a spell with a "trail" gets a copy of a Blizzard visual whose cast kit also puts a weapon
-trail on both weapons. The trail models are built by models/spell_effects.py from
-spells/<model>.png (build_patch.py puts them in the client patch under Spells\\Emberforge).
+Visuals: a spell with a "visual" gets one of VISUALS, a copy of a Blizzard visual whose kits carry
+our trails and Blizzard's own effect models. The trail models are built by models/spell_effects.py
+from spells/<model>.png (build_patch.py puts them in the client patch under Spells\\Emberforge).
 
 Usage: python3 patch_spells.py <dir with original DBCs> <output dir> [--sql <out.sql>]
 """
@@ -56,9 +56,12 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 # SpellVisual.dbc (32 columns), SpellVisualKit.dbc (38), SpellVisualEffectName.dbc (7: id, name,
 # file, area size, scale, min scale, max scale).
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
-VISUAL_CAST_KIT = 2
-KIT_CHEST, KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 4, 9, 10
-WEAPONS = (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
+VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3}     # SpellVisual columns
+KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 4, 5, 6, 7, 9, 10
+HANDS, WEAPONS = (KIT_LEFT_HAND, KIT_RIGHT_HAND), (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
+KIT_ANIM = 2
+NO_ANIM = 0xFFFFFFFF
+BLANK_KIT = 3049    # Sinister Strike's impact: only a chest effect and the hit sound
 EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
 
 # Values used below.
@@ -71,6 +74,7 @@ ITEM_CLASS_WEAPON = 2
 SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON = 0x400
 EFFECT_SCHOOL_DAMAGE, EFFECT_APPLY_AURA, EFFECT_ENERGIZE = 2, 6, 30
 EFFECT_WEAPON_PERCENT_DAMAGE, EFFECT_TRIGGER_SPELL, EFFECT_NORMALIZED_WEAPON_DMG = 31, 64, 121
+EFFECT_CHARGE_DEST = 149
 AURA_PERIODIC_TRIGGER_SPELL, AURA_MOD_DODGE_PERCENT = 23, 49
 TARGET_UNIT_CASTER, TARGET_SRC_CASTER, TARGET_UNIT_SRC_AREA_ENEMY, TARGET_UNIT_CONE_ENEMY = 1, 22, 15, 104
 DURATION_1S, DURATION_2S = 36, 39
@@ -81,22 +85,52 @@ RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
 ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'Ability_DemonHunter_FelRush',
          'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01']
 
-# Weapon trails: the trail model (spells/<model>.png), the Blizzard visual copied (its cast kit
-# gets the trail), the ids of the new visual, kit and effect name, and the kit slots the trail goes
-# in. "shape" picks the model: "weapon" (models/spell_effects.weapon_trail, on both weapons) or
-# "body" (body_trail, on the chest); "options" go to that function. "blizzard" puts one of
-# Blizzard's effects (SpellVisualEffectName id) in the slots instead of ours.
+# Trails: the trail model (spells/<model>.png) and its SpellVisualEffectName id. "shape" picks the
+# model: "weapon" (models/spell_effects.weapon_trail, for both weapons) or "body" (body_trail, for
+# the chest); "options" go to that function.
 TRAILS = {
-    'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'copy': 253, 'visual': 16700, 'kit': 15600, 'effect': 7100,
-                   'slots': WEAPONS},
-    'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'copy': 253, 'visual': 16701, 'kit': 15601, 'effect': 7101,
-                    'slots': WEAPONS},
-    # Blade Dance is a Whirlwind: the gray smoke trail, tinted fel green, on both weapons as they spin.
-    'BladeDance': {'model': 'DH_BladeDance_Trail', 'copy': 223, 'visual': 16703, 'kit': 15603, 'effect': 7103,
-                   'slots': WEAPONS, 'options': {'duration': 900, 'lifetime': 0.3, 'color': (0.55, 1.0, 0.3)}},
-    # Fel Rush is a Blink (a teleport): the chest trail stretches from where you were to where you land.
-    'FelRush': {'model': 'DH_FelRush_Trail', 'copy': 10694, 'visual': 16702, 'kit': 15602, 'effect': 7102,
-                'slots': (KIT_CHEST,), 'shape': 'body', 'options': {'lifetime': 0.5}},
+    'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'effect': 7100},
+    'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'effect': 7101},
+    # Blade Dance: the gray smoke trail, tinted fel green, for the whole spin.
+    'BladeDance': {'model': 'DH_BladeDance_Trail', 'effect': 7103,
+                   'options': {'duration': 900, 'lifetime': 0.3, 'color': (0.55, 1.0, 0.3)}},
+    # Fel Rush: behind the body for the length of the dash.
+    'FelRush': {'model': 'DH_FelRush_Trail', 'effect': 7102, 'shape': 'body', 'options': {'lifetime': 0.5}},
+}
+
+# Blizzard effect models (SpellVisualEffectName ids) used below.
+MANGLE_IMPACT_DEMON = 4697      # Spells\\Mangle_Impact_Demon: a demon's bite
+FEL_PRECAST_HAND = 3169         # Spells\\Fel_Fire_Precast_Hand: fel flames on the hands
+FEL_FIRE_IMPACT = 3221          # Spells\\Fel_Fire_ImpactDD_High_Chest: a big fel fire hit
+FEL_FLAMESHOCK_IMPACT = 3111    # Spells\\Fel_FlameShock_Impact_Chest: a small fel fire hit
+FEL_FIREBLAST_IMPACT = 3227     # Spells\\Fel_FireBlast_Impact_Chest
+FEL_HELLFIRE_BASE = 3312        # Spells\\Fel_Hellfire_Impact_Caster_Base: fel flames at the feet
+
+# Visuals: the Blizzard visual copied, the new visual's id, and per kit (precast, cast or impact)
+# the new kit's id and what goes in its slots, a copy of the copied visual's kit (or of BLANK_KIT
+# if it has none). A slot's effect is a Blizzard effect id or one of TRAILS; "anim" sets the kit's
+# animation (NO_ANIM: none). "clear" drops kits.
+VISUALS = {
+    'DemonsBite': {'copy': 253, 'id': 16700, 'kits': {
+        'cast': (15600, {WEAPONS: 'DemonsBite'}),
+        'impact': (15604, {KIT_CHEST: MANGLE_IMPACT_DEMON})}},
+    'ChaosStrike': {'copy': 253, 'id': 16701, 'kits': {
+        'cast': (15601, {WEAPONS: 'ChaosStrike', HANDS: FEL_PRECAST_HAND}),
+        'impact': (15605, {KIT_CHEST: FEL_FIRE_IMPACT})}},
+    # Blade Dance is a Whirlwind; it only targets the Demon Hunter (the dodge), so no impact: its
+    # strikes (90107, 90108) bring their own.
+    'BladeDance': {'copy': 223, 'id': 16703, 'clear': ('impact',), 'kits': {
+        'cast': (15603, {WEAPONS: 'BladeDance', KIT_BASE: FEL_HELLFIRE_BASE})}},
+    'BladeDanceStrike': {'copy': 253, 'id': 16704, 'clear': ('cast',), 'kits': {
+        'impact': (15606, {KIT_CHEST: FEL_FLAMESHOCK_IMPACT})}},
+    'BladeDanceFinalStrike': {'copy': 253, 'id': 16705, 'clear': ('cast',), 'kits': {
+        'impact': (15607, {KIT_CHEST: FEL_FIRE_IMPACT})}},
+    # Fel Rush was a Blink: fel hands instead of shadow ones, the trail behind the body, and no cast
+    # animation (the dash runs). The warlock teleport flame stays where the dash starts.
+    'FelRush': {'copy': 10694, 'id': 16702, 'clear': ('precast',), 'kits': {
+        'cast': (15602, {KIT_CHEST: 'FelRush', HANDS: FEL_PRECAST_HAND, 'anim': NO_ANIM})}},
+    'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
+        'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT})}},
 }
 
 # Spells: id, the Blizzard spell copied, name, tooltip text, aura text, icon, then column changes.
@@ -106,7 +140,7 @@ TRAILS = {
 SPELLS = [
     {
         'id': 90100, 'copy': 1752, 'name': "Demon's Bite", 'icon': 'INV_Weapon_Glave_01',
-        'trail': 'DemonsBite', 'two_weapons': True,
+        'visual': 'DemonsBite', 'two_weapons': True,
         'description': 'Quickly attack for your weapon damage plus $s1 Physical damage. '
                        'Generates 20 to 30 Fury.',
         'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
@@ -119,7 +153,7 @@ SPELLS = [
     },
     {
         'id': 90101, 'copy': 1752, 'name': 'Chaos Strike', 'icon': 'Ability_DemonHunter_ChaosStrike',
-        'trail': 'ChaosStrike', 'two_weapons': True,
+        'visual': 'ChaosStrike', 'two_weapons': True,
         'description': 'Slice your target for $s1% weapon damage as Chaos.',
         'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 400,
                 'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'SchoolMask': CHAOS},
@@ -130,7 +164,7 @@ SPELLS = [
         # The strikes are 90107 (three) and 90108 (the last), cast on a timer by the server's
         # spell_titan_dh_blade_dance; their attack power share is in spell_bonus_data.
         'id': 90102, 'copy': 1680, 'name': 'Blade Dance', 'icon': 'Ability_DemonHunter_BladeDance',
-        'two_weapons': True, 'trail': 'BladeDance',
+        'two_weapons': True, 'visual': 'BladeDance',
         'description': 'Strike all enemies within 8 yards three times for 24.75% of your attack power as '
                        'Physical damage, then once more for 74.2%, and dodge every attack for $d.',
         'tooltip': 'Dodging all attacks.',
@@ -145,23 +179,26 @@ SPELLS = [
     },
     {
         'id': 90103, 'copy': 1953, 'name': 'Fel Rush', 'icon': 'Ability_DemonHunter_FelRush',
-        'two_weapons': True, 'trail': 'FelRush',
+        'two_weapons': True, 'visual': 'FelRush',
         'description': 'Rush forward $a1 yards in a burst of fel energy, dealing $90104s1 Chaos damage to '
-                       'enemies around you.',
+                       'enemies in your path.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'ManaCostPercentage': 0,
                 'SchoolMask': CHAOS, 'BaseLevel': 1, 'SpellLevel': 1},
         'clear': [2, 3],
+        # Blink's leap is now a charge: the Demon Hunter dashes along the ground to the point Blink
+        # would land on; 90104 hits the enemies in the way (spell_titan_dh_fel_rush_damage).
         'effects': {
-            1: {'RadiusIndex': RADIUS_15},
+            1: {'Effect': EFFECT_CHARGE_DEST, 'RadiusIndex': RADIUS_15},
             2: {'Effect': EFFECT_TRIGGER_SPELL, 'TargetA': TARGET_UNIT_CASTER, 'TriggerSpell': 90104},
         },
     },
     {
         'id': 90104, 'copy': 5857, 'name': 'Fel Rush', 'icon': 'Ability_DemonHunter_FelRush',
         'description': '',
-        'set': {'SchoolMask': CHAOS, 'SpellVisual': 8451, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
+        'visual': 'FelRushHit',
+        'set': {'SchoolMask': CHAOS, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
         'effects': {1: {'BasePoints': 9, 'DieSides': 1, 'RealPointsPerLevel': 2.5, 'TargetA': TARGET_SRC_CASTER,
-                        'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8,
+                        'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_15,
                         'BonusMultiplier': 0.0}},
     },
     {
@@ -186,8 +223,9 @@ SPELLS = [
     {
         # Blade Dance: the three quick strikes. 1 damage plus attack power (spell_bonus_data).
         'id': 90107, 'copy': 5857, 'name': 'Blade Dance', 'icon': 'Ability_DemonHunter_BladeDance',
+        'visual': 'BladeDanceStrike',
         'description': '',
-        'set': {'SchoolMask': PHYSICAL, 'DmgClass': DMG_CLASS_MELEE, 'SpellVisual': 0, 'MaxAffectedTargets': 0,
+        'set': {'SchoolMask': PHYSICAL, 'DmgClass': DMG_CLASS_MELEE, 'MaxAffectedTargets': 0,
                 'BaseLevel': 10, 'SpellLevel': 10, 'MaxLevel': 80},
         'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_SRC_CASTER,
                         'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
@@ -195,8 +233,9 @@ SPELLS = [
     {
         # Blade Dance: the final strike. 1 damage plus attack power (spell_bonus_data).
         'id': 90108, 'copy': 5857, 'name': 'Blade Dance', 'icon': 'Ability_DemonHunter_BladeDance',
+        'visual': 'BladeDanceFinalStrike',
         'description': '',
-        'set': {'SchoolMask': PHYSICAL, 'DmgClass': DMG_CLASS_MELEE, 'SpellVisual': 0, 'MaxAffectedTargets': 0,
+        'set': {'SchoolMask': PHYSICAL, 'DmgClass': DMG_CLASS_MELEE, 'MaxAffectedTargets': 0,
                 'BaseLevel': 10, 'SpellLevel': 10, 'MaxLevel': 80},
         'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_SRC_CASTER,
                         'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
@@ -263,7 +302,7 @@ def icon_ids(icons):
 
 
 def build_visuals(source, out):
-    """The trails' effect names, kits and visuals: copies of Blizzard's with the trail added."""
+    """The trails' effect names, and VISUALS' kits and visuals."""
     visuals = Dbc(source / 'SpellVisual.dbc', VISUAL_FIELDS)
     kits = Dbc(source / 'SpellVisualKit.dbc', KIT_FIELDS)
     names = Dbc(source / 'SpellVisualEffectName.dbc', EFFECT_NAME_FIELDS)
@@ -271,15 +310,23 @@ def build_visuals(source, out):
         model = f'{EFFECTS_DIR}\\{trail["model"]}.mdx'
         names.rows[trail['effect']] = (trail['effect'], names.add_string(f'Emberforge {key} Trail'),
                                        names.add_string(model), raw(0.0), raw(1.0), raw(0.01), raw(100.0))
-        visual = list(visuals.rows[trail['copy']])
-        kit = list(kits.rows[visual[VISUAL_CAST_KIT]])
-        kit[0] = trail['kit']
-        for slot in trail['slots']:
-            kit[slot] = trail.get('blizzard', trail['effect'])
-        kits.rows[trail['kit']] = tuple(kit)
-        visual[0] = trail['visual']
-        visual[VISUAL_CAST_KIT] = trail['kit']
-        visuals.rows[trail['visual']] = tuple(visual)
+    for spec in VISUALS.values():
+        visual = list(visuals.rows[spec['copy']])
+        visual[0] = spec['id']
+        for kind in spec.get('clear', ()):
+            visual[VISUAL_KITS[kind]] = 0
+        for kind, (kit_id, slots) in spec['kits'].items():
+            kit = list(kits.rows[visual[VISUAL_KITS[kind]] or BLANK_KIT])
+            kit[0] = kit_id
+            for where, effect in slots.items():
+                if where == 'anim':
+                    kit[KIT_ANIM] = effect
+                    continue
+                for slot in where if isinstance(where, tuple) else (where,):
+                    kit[slot] = TRAILS[effect]['effect'] if isinstance(effect, str) else effect
+            kits.rows[kit_id] = tuple(kit)
+            visual[VISUAL_KITS[kind]] = kit_id
+        visuals.rows[spec['id']] = tuple(visual)
     visuals.save(out / 'SpellVisual.dbc')
     kits.save(out / 'SpellVisualKit.dbc')
     names.save(out / 'SpellVisualEffectName.dbc')
@@ -309,8 +356,8 @@ def build_spells(spells, icon_id):
             row[FIELDS['EquippedItemSubClassMask']] = ONE_HANDED_WEAPONS
             row[FIELDS['EquippedItemInventoryTypeMask']] = 0
             row[FIELDS['AttributesEx3']] |= SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON
-        if 'trail' in spell:
-            row[FIELDS['SpellVisual']] = TRAILS[spell['trail']]['visual']
+        if 'visual' in spell:
+            row[FIELDS['SpellVisual']] = VISUALS[spell['visual']]['id']
         # No stance or form needed (or forbidden): Blade Dance's Whirlwind wanted Berserker Stance.
         for column in range(FIELDS['Stances'], FIELDS['StancesNot'] + 2):
             row[column] = 0
