@@ -83,7 +83,9 @@ SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON = 0x400
 EFFECT_SCHOOL_DAMAGE, EFFECT_APPLY_AURA, EFFECT_ENERGIZE = 2, 6, 30
 EFFECT_WEAPON_PERCENT_DAMAGE, EFFECT_TRIGGER_SPELL, EFFECT_NORMALIZED_WEAPON_DMG = 31, 64, 121
 EFFECT_CHARGE_DEST = 149
-AURA_PERIODIC_TRIGGER_SPELL, AURA_MOD_DODGE_PERCENT = 23, 49
+AURA_PERIODIC_TRIGGER_SPELL, AURA_MOD_DECREASE_SPEED, AURA_MOD_DODGE_PERCENT = 23, 33, 49
+INTERRUPT_MOVEMENT = 0x1        # InterruptFlags: casting is stopped by moving
+CHANNEL_INTERRUPT_MOVE = 0x8    # ChannelInterruptFlags: the channel is broken by moving
 TARGET_UNIT_CASTER, TARGET_SRC_CASTER, TARGET_UNIT_SRC_AREA_ENEMY, TARGET_UNIT_CONE_ENEMY = 1, 22, 15, 104
 DURATION_1S, DURATION_2S = 36, 39
 RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
@@ -169,7 +171,8 @@ VISUALS = {
 # Spells: id, the Blizzard spell copied, name, tooltip text, aura text, icon, then column changes.
 # "two_weapons": needs a one-handed weapon in each hand (the main hand checked here, the off hand by
 # the server's spell_titan_dh_dual_weapons, src/demon_hunter.cpp).
-# Effects not listed keep the copied spell's; "clear" empties effects (numbers 1-3).
+# Effects not listed keep the copied spell's; "clear" empties effects (numbers 1-3); "unset" clears
+# bits of the copied spell's flag columns.
 SPELLS = [
     {
         'id': 90100, 'copy': 1752, 'name': "Demon's Bite", 'icon': 'INV_Weapon_Glave_01',
@@ -238,13 +241,18 @@ SPELLS = [
         'id': 90105, 'copy': 1949, 'name': 'Eye Beam', 'icon': 'Ability_DemonHunter_EyeBeam',
         'two_weapons': True, 'visual': 'EyeBeam',
         'description': 'Blast all enemies in a line in front of you with fel energy for $d, dealing $90106s1 '
-                       'Chaos damage every $t1 sec.',
-        'tooltip': 'Channeling Eye Beam.',
+                       'Chaos damage every $t1 sec. You can move while channeling, at 5% speed.',
+        'tooltip': 'Channeling Eye Beam. Movement speed slowed by 95%.',
+        # Hellfire's channel, but cast and kept while moving (turning was already allowed), with the
+        # Demon Hunter slowed by 95% (effect 2) for as long as it lasts.
         'set': {'PowerType': FURY, 'ManaCost': 300, 'ManaCostPercentage': 0, 'RecoveryTime': 30000,
                 'DurationIndex': DURATION_2S, 'BaseLevel': 20, 'SpellLevel': 20, 'MaxLevel': 0,
                 'SchoolMask': CHAOS},
+        'unset': {'InterruptFlags': INTERRUPT_MOVEMENT, 'ChannelInterruptFlags': CHANNEL_INTERRUPT_MOVE},
         'clear': [2, 3],
-        'effects': {1: {'Amplitude': 200, 'TriggerSpell': 90106}},
+        'effects': {1: {'Amplitude': 200, 'TriggerSpell': 90106},
+                    2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DECREASE_SPEED, 'BasePoints': -96,
+                        'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         'id': 90106, 'copy': 5857, 'name': 'Eye Beam', 'icon': 'Ability_DemonHunter_EyeBeam',
@@ -398,6 +406,8 @@ def build_spells(spells, icon_id):
                 row[CLASS_MASK + (n - 1) * 3 + word] = 0
         for name, value in spell.get('set', {}).items():
             row[FIELDS[name]] = raw(value)
+        for name, bits in spell.get('unset', {}).items():
+            row[FIELDS[name]] &= ~bits
         for n, changes in spell.get('effects', {}).items():
             for name, value in changes.items():
                 first, is_float = EFFECT_FIELDS[name]
