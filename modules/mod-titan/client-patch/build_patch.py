@@ -61,7 +61,8 @@ def main():
 
         for trail in patch_spells.TRAILS.values():
             files = spell_effects.weapon_trail(HERE / 'spells' / f'{trail["model"]}.png', tmp / 'effects',
-                                               trail['model'], patch_spells.EFFECTS_DIR)
+                                               trail['model'], patch_spells.EFFECTS_DIR,
+                                               **trail.get('options', {}))
             for f in files:
                 entries.append((f'{patch_spells.EFFECTS_DIR}\\{f}', (tmp / 'effects' / f).read_bytes()))
 

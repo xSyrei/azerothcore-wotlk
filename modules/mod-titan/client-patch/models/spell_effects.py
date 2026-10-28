@@ -37,19 +37,21 @@ def comp_quat(value):
 
 
 def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, lifetime=0.25,
-                 edges_per_second=60.0):
+                 edges_per_second=60.0, sequence_length=None):
     """Write <name>.m2, <name>00.skin and <name>.blp into out_dir.
 
     length: yards of blade the trail covers, from the grip. duration: milliseconds the trail is
-    drawn after the kit starts (the swing); it then fades out over lifetime seconds. The one
-    animation runs a while longer so the fade can finish before the kit removes the model.
+    drawn after the kit starts (the swing), None to draw it as long as the model lives; it then
+    fades out over lifetime seconds. The one animation (sequence_length milliseconds) runs a while
+    longer so the fade can finish before the kit removes the model.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     with Image.open(texture) as image:
         (out_dir / f'{name}.blp').write_bytes(blp.encode(image.convert('RGBA')))
     texture_name = f'{client_dir}\\{name}.blp'
-    sequence_length = duration + int(lifetime * 1000) + 900
+    if sequence_length is None:
+        sequence_length = (duration or 0) + int(lifetime * 1000) + 900
     lo, hi = (-length, -length, -length), (length, length, length)
     radius = length * math.sqrt(3)
 
@@ -90,7 +92,8 @@ def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, l
     ribbon += struct.pack('<3f', edges_per_second, lifetime, 0.0)           # edges/s, edge life, gravity
     ribbon += struct.pack('<HH', 1, 1)                                      # texture rows, columns
     ribbon += one('h', 0)                                                   # texture slot
-    ribbon += track(blob, 0, [([0, duration], [1, 0])], 'B')               # drawn during the swing
+    shown = ([0, duration], [1, 0]) if duration else ([0], [1])
+    ribbon += track(blob, 0, [shown], 'B')                                  # drawn during the swing
     ribbon += struct.pack('<hBB', 0, 0, 0)          # priority plane, color 0, texture transform lookup 0
     assert len(ribbon) == 176, len(ribbon)
     ribbons_ref = blob.add(ribbon, 1)
