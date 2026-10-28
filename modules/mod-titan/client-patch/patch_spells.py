@@ -57,7 +57,8 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 # file, area size, scale, min scale, max scale).
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
 VISUAL_CAST_KIT = 2
-KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 9, 10
+KIT_CHEST, KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 4, 9, 10
+WEAPONS = (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
 EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
 
 # Values used below.
@@ -79,10 +80,18 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
          'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01']
 
 # Weapon trails: the trail model (spells/<model>.png), the Blizzard visual copied (its cast kit
-# gets the trail), and the ids of the new visual, kit and effect name.
+# gets the trail), the ids of the new visual, kit and effect name, and the kit slots the trail goes
+# in (both weapons). "blizzard" puts one of Blizzard's effects (SpellVisualEffectName id) there
+# instead of ours.
+#
+# TEST BUILD: the weapon trails froze the client on Demon's Bite. To find out whether our model or
+# weapon attachment is at fault, Demon's Bite puts Blizzard's own ribbon trail (Spells\RibbonTrail)
+# on the weapons, and Chaos Strike puts our trail on the chest.
 TRAILS = {
-    'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'copy': 253, 'visual': 16700, 'kit': 15600, 'effect': 7100},
-    'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'copy': 253, 'visual': 16701, 'kit': 15601, 'effect': 7101},
+    'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'copy': 253, 'visual': 16700, 'kit': 15600, 'effect': 7100,
+                   'slots': WEAPONS, 'blizzard': 545},
+    'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'copy': 253, 'visual': 16701, 'kit': 15601, 'effect': 7101,
+                    'slots': (KIT_CHEST,)},
 }
 
 # Spells: id, the Blizzard spell copied, name, tooltip text, aura text, icon, then column changes.
@@ -242,7 +251,8 @@ def build_visuals(source, out):
         visual = list(visuals.rows[trail['copy']])
         kit = list(kits.rows[visual[VISUAL_CAST_KIT]])
         kit[0] = trail['kit']
-        kit[KIT_LEFT_WEAPON] = kit[KIT_RIGHT_WEAPON] = trail['effect']
+        for slot in trail['slots']:
+            kit[slot] = trail.get('blizzard', trail['effect'])
         kits.rows[trail['kit']] = tuple(kit)
         visual[0] = trail['visual']
         visual[VISUAL_CAST_KIT] = trail['kit']

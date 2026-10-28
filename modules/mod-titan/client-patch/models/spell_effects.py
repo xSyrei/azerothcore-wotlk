@@ -70,6 +70,8 @@ def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, l
     ref = blob.add(texture_name.encode() + b'\0', len(texture_name) + 1)
     textures_ref = blob.add(struct.pack('<II2I', 0, 0, *ref), 1)       # clamped: the trail ends at the edges
     weights = blob.add(track(blob, 0, [([0], [0])], 'h'), 1)               # the triangle: never seen
+    # Color 0, which the ribbon's color index points at: white, opaque.
+    colors_ref = blob.add(track(blob, 0, [([0], [(1.0, 1.0, 1.0)])], '3f') + track(blob, 0, [([0], [0x7FFF])], 'h'), 1)
     materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ALPHA)])
     bone_lookup = blob.array('H', [0])
     texture_lookup = blob.array('H', [0])
@@ -89,7 +91,7 @@ def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, l
     ribbon += struct.pack('<HH', 1, 1)                                      # texture rows, columns
     ribbon += one('h', 0)                                                   # texture slot
     ribbon += track(blob, 0, [([0, duration], [1, 0])], 'B')               # drawn during the swing
-    ribbon += struct.pack('<hH', 0, 0)                                      # priority plane
+    ribbon += struct.pack('<hBB', 0, 0, 0)          # priority plane, color 0, texture transform lookup 0
     assert len(ribbon) == 176, len(ribbon)
     ribbons_ref = blob.add(ribbon, 1)
 
@@ -102,7 +104,7 @@ def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, l
                         for pos in ((0.0, 0.0, 0.0), (0.001, 0.0, 0.0), (0.0, 0.001, 0.0)))
     vertices_ref = blob.add(vertices, 3)
     header += struct.pack('<2I', *vertices_ref) + struct.pack('<I', 1)
-    header += struct.pack('<2I', 0, 0) + struct.pack('<2I', *textures_ref)          # colors, textures
+    header += struct.pack('<2I', *colors_ref) + struct.pack('<2I', *textures_ref)
     header += struct.pack('<2I', *weights) + struct.pack('<2I', 0, 0)               # no texture transforms
     header += struct.pack('<2I', *replaceable_lookup) + struct.pack('<2I', *materials_ref)
     header += struct.pack('<2I', *bone_lookup) + struct.pack('<2I', *texture_lookup)
