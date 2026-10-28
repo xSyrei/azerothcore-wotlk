@@ -74,7 +74,7 @@ effect model, `Spells\\Emberforge\\<model>.m2`, built by `models/spell_effects.p
 Blizzard's own `Spells\\RibbonTrail.m2`. A trail (from `spells/<model>.png`) has no mesh, only a
 ribbon emitter that follows the weapon or the chest. The beam is three additive layers of crossed
 planes 20 yards long: a flare at the eyes, the fel swirl scrolling outward with soft edges, and a
-bright core.
+bright core, on the head attachment (where the mage's Dragon's Breath sits).
 
 Each spell's look is one of `VISUALS`: a copy of a Blizzard visual whose kits (precast, cast,
 impact) carry our trails and Blizzard's own fel effect models (fel flames on the hands, fel fire
@@ -85,7 +85,9 @@ Their sounds are `SOUNDS`: `sounds/*.wav`, converted from retail's `.ogg` (the 3
 `.wav` and `.mp3`) with `ffmpeg -i x.ogg -af volume=<gain>dB -map_metadata -1 -fflags +bitexact
 -acodec pcm_s16le x.wav`, the gain bringing the peak to -1 dB (retail's files peak above full scale
 and would clip, crackling). They are binary in `.gitattributes`: git's line-ending conversion
-would cut bytes out of them, which plays as static. Packed under
+would cut bytes out of them, which plays as static. Eye Beam's channel sounds (`*_1shot_*`, 4 to 5
+sec in retail, which cuts them off when the beam stops) are cut to its 2 sec channel with
+`-t 2.0 -af volume=<gain>dB,afade=t=out:st=1.7:d=0.3`. Packed under
 `Sound\\Spells\\Emberforge`, as new SoundEntries rows. An entry holds up to 10 files and the game
 plays one at random each time; a kit's sound plays when the kit does (cast, channel start, end).
 

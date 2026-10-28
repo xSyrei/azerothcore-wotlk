@@ -58,7 +58,8 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 # file, area size, scale, min scale, max scale).
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
 VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5}     # SpellVisual columns
-KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_BREATH, KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 4, 5, 6, 7, 8, 9, 10
+KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_BREATH = 3, 4, 5, 6, 7, 8
+KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 9, 10
 HANDS, WEAPONS = (KIT_LEFT_HAND, KIT_RIGHT_HAND), (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
 KIT_ANIM = 2
 NO_ANIM = 0xFFFFFFFF
@@ -94,7 +95,7 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
-# (body_trail, for the chest), from spells/<model>.png, or "beam" (beam, for the breath slot) from
+# (body_trail, for the chest), from spells/<model>.png, or "beam" (beam, for the head slot) from
 # the three spells/<texture>.png in "textures". "options" go to that builder.
 EFFECTS = {
     'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'effect': 7100},
@@ -154,11 +155,12 @@ VISUALS = {
     'FelRush': {'copy': 10694, 'id': 16702, 'clear': ('precast',), 'kits': {
         'cast': (15602, {KIT_CHEST: 'FelRush', HANDS: FEL_PRECAST_HAND, 'anim': NO_ANIM, 'sound': 'FelRush'})}},
     # Eye Beam is a Fel Breath; its channel is an aura on the Demon Hunter, kept for the channel
-    # ("state"): the beam from the face (instead of the breath's flames) and the channel sound
-    # (longer than the channel, over the cast sound). Its end ("statedone") plays the end sound.
+    # ("state"): the beam from the face, on the head (characters have no breath attachment; the
+    # mage's Dragon's Breath does the same), instead of the breath's flames, and the channel sound
+    # (cut to the 2 sec channel), over the cast sound. Its end ("statedone") plays the end sound.
     'EyeBeam': {'copy': 8536, 'id': 16707, 'kits': {
         'cast': (15609, {KIT_BREATH: 0, 'sound': 'EyeBeamCast'}),
-        'state': (15611, {KIT_BREATH: 'EyeBeam', 'sound': 'EyeBeamChannel'}),
+        'state': (15611, {KIT_HEAD: 'EyeBeam', 'sound': 'EyeBeamChannel'}),
         'statedone': (15610, {KIT_CHEST: 0, 'sound': 'EyeBeamEnd'})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT})}},
