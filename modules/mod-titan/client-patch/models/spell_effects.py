@@ -12,8 +12,9 @@ quarter turn about Y to lay that span along the blade.
 The model also carries one tiny triangle drawn fully transparent: models without any mesh are not
 something the client's own effect models do, so this one has the usual vertex buffer and skin.
 
-Trail textures: U runs along the trail, from the weapon (left edge, newest) to its end (right
-edge, oldest); V across it, from the blade tip (top) to the grip (bottom).
+Trail textures are drawn running from the weapon (left edge, newest) to the end of the trail
+(right edge, oldest), blade tip at the top. The client lays a ribbon's texture the other way round
+(U across the blade from the tip, V along the trail; seen in game), so they are transposed.
 """
 
 import math
@@ -36,7 +37,7 @@ def comp_quat(value):
     return round(value * 32767) - 32768 if value >= 0 else round(value * 32767) + 32767
 
 
-def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, lifetime=0.25,
+def weapon_trail(texture, out_dir, name, client_dir, length=1.1, duration=600, lifetime=0.25,
                  edges_per_second=60.0, sequence_length=30000):
     """Write <name>.m2, <name>00.skin and <name>.blp into out_dir.
 
@@ -51,7 +52,8 @@ def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, l
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     with Image.open(texture) as image:
-        (out_dir / f'{name}.blp').write_bytes(blp.encode(image.convert('RGBA')))
+        trail = image.convert('RGBA').transpose(Image.Transpose.TRANSPOSE)
+        (out_dir / f'{name}.blp').write_bytes(blp.encode(trail))
     texture_name = f'{client_dir}\\{name}.blp'
     lo, hi = (-length, -length, -length), (length, length, length)
     radius = length * math.sqrt(3)
