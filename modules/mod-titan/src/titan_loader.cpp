@@ -22,6 +22,7 @@ void AddSC_classless();
 void AddSC_item_titan_tomes();
 void AddSC_demon_hunter();
 void AddSC_hero_equipment();
+void AddSC_max_skills();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
 void Addmod_titanScripts()
@@ -33,4 +34,5 @@ void Addmod_titanScripts()
     AddSC_item_titan_tomes();
     AddSC_demon_hunter();
     AddSC_hero_equipment();
+    AddSC_max_skills();
 }

@@ -24,6 +24,9 @@ the weapon and armor skills at every login and level (the core drops the ones a 
 have); `Emberforge_Resources` shows the ammo slot, which the character sheet hides for a Paladin.
 Fishing poles still need the Fishing profession.
 
+Every character (Hero or not) keeps its weapon skills, Defense and Unarmed at the cap for its
+level: `src/max_skills.cpp` fills them at login and after every level up.
+
 Nothing else comes from the base class (`data/sql/db-world/hero_cleanup.sql`):
 - no starting class spells (the Paladin skill lines are removed) and no Paladin action buttons;
 - Paladin trainers no longer train, and Paladin-only class quests are disabled;

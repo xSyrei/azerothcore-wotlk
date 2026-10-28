@@ -68,7 +68,7 @@ Classless window get the spells from `CUSTOM_ABILITIES` in `src/wildcard.cpp` (s
 
 ### Trails
 
-Demon's Bite and Chaos Strike leave a trail behind the blade, Fel Rush one behind the body
+Demon's Bite, Chaos Strike and Blade Dance leave a trail behind the blade, Fel Rush one behind the body
 (`TRAILS` in `patch_spells.py`). Each trail is its own effect model, `Spells\\Emberforge\\<model>.m2`,
 built by `models/spell_effects.py` from `spells/<model>.png`: no mesh, only a ribbon emitter that
 follows the weapon (or the chest), laid out like Blizzard's own `Spells\\RibbonTrail.m2`. The spell

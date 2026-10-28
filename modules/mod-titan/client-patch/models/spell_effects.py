@@ -59,12 +59,13 @@ def body_trail(texture, out_dir, name, client_dir, height=0.8, **options):
 
 
 def ribbon_trail(texture, out_dir, name, client_dir, above, below, turn, duration=600, lifetime=0.25,
-                 edges_per_second=50.0):
+                 edges_per_second=50.0, color=(1.0, 1.0, 1.0)):
     """Write <name>.m2, <name>00.skin and <name>.blp into out_dir.
 
     above, below: yards the ribbon spans along its bone's Z axis, turned by the quaternion turn.
     duration: milliseconds of each of the two animations; the kit removes the model when they are
-    done. lifetime: seconds each stretch of trail lasts before it fades.
+    done. lifetime: seconds each stretch of trail lasts before it fades. color: red, green, blue
+    (0 to 1) the texture is tinted with, for gray textures.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -104,7 +105,7 @@ def ribbon_trail(texture, out_dir, name, client_dir, above, below, turn, duratio
 
     ribbon = struct.pack('<iI3f', -1, 0, 0.0, 0.0, 0.0)
     ribbon += struct.pack('<2I', *blob.array('H', [0])) + struct.pack('<2I', *blob.array('H', [0]))
-    ribbon += one('3f', (1.0, 1.0, 1.0)) + one('h', 0x7FFF)                # color, alpha
+    ribbon += one('3f', tuple(map(float, color))) + one('h', 0x7FFF)       # color, alpha
     ribbon += one('f', above) + one('f', below)
     ribbon += struct.pack('<3f', edges_per_second, lifetime, 0.0)           # edges/s, edge life, gravity
     ribbon += struct.pack('<HH', 1, 1)                                      # texture rows, columns

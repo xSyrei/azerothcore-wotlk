@@ -89,6 +89,9 @@ TRAILS = {
                    'slots': WEAPONS},
     'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'copy': 253, 'visual': 16701, 'kit': 15601, 'effect': 7101,
                     'slots': WEAPONS},
+    # Blade Dance is a Whirlwind: the gray smoke trail, tinted fel green, on both weapons as they spin.
+    'BladeDance': {'model': 'DH_BladeDance_Trail', 'copy': 223, 'visual': 16703, 'kit': 15603, 'effect': 7103,
+                   'slots': WEAPONS, 'options': {'duration': 900, 'lifetime': 0.3, 'color': (0.55, 1.0, 0.3)}},
     # Fel Rush is a Blink (a teleport): the chest trail stretches from where you were to where you land.
     'FelRush': {'model': 'DH_FelRush_Trail', 'copy': 10694, 'visual': 16702, 'kit': 15602, 'effect': 7102,
                 'slots': (KIT_CHEST,), 'shape': 'body', 'options': {'lifetime': 0.5}},
@@ -123,7 +126,7 @@ SPELLS = [
     },
     {
         'id': 90102, 'copy': 1680, 'name': 'Blade Dance', 'icon': 'Ability_DemonHunter_BladeDance',
-        'two_weapons': True,
+        'two_weapons': True, 'trail': 'BladeDance',
         'description': 'Strike all enemies within $a1 yards for $s1% weapon damage, and dodge every attack '
                        'for $d.',
         'tooltip': 'Dodging all attacks.',
