@@ -66,19 +66,23 @@ After changing a spell, regenerate that SQL **and** rebuild the patch: client an
 Fury is the client's Runic Power, renamed (every Hero has it). The Wildcard pool and the
 Classless window get the spells from `CUSTOM_ABILITIES` in `src/wildcard.cpp` (spec tabs Havoc and Vengeance).
 
-### Weapon trails
+### Trails
 
-Demon's Bite and Chaos Strike leave a trail behind the blade (`TRAILS` in `patch_spells.py`). Each
-trail is its own effect model, `Spells\Emberforge\<model>.m2`, built by `models/spell_effects.py`
-from `spells/<model>.png`: no mesh, only a ribbon emitter that follows the weapon. The spell gets a
-copy of a Blizzard visual (Sinister Strike's) whose cast kit puts that model on both weapons
-(new rows in SpellVisual, SpellVisualKit and SpellVisualEffectName).
+Demon's Bite and Chaos Strike leave a trail behind the blade, Fel Rush one behind the body
+(`TRAILS` in `patch_spells.py`). Each trail is its own effect model, `Spells\\Emberforge\\<model>.m2`,
+built by `models/spell_effects.py` from `spells/<model>.png`: no mesh, only a ribbon emitter that
+follows the weapon (or the chest), laid out like Blizzard's own `Spells\\RibbonTrail.m2`. The spell
+gets a copy of a Blizzard visual whose cast kit puts that model on both weapons or the chest (new
+rows in SpellVisual, SpellVisualKit and SpellVisualEffectName).
 
 Trail textures run from the weapon (left edge) to the end of the trail (right edge), blade tip at
-the top. `weapon_trail()` sets how much of the blade the trail covers (`length`, yards from the
-grip), how long it is drawn (`duration`) and how fast it fades (`lifetime`).
+the top; the build turns them the way the client lays them. `weapon_trail()` sets how much of the
+blade the trail covers (`length`, yards from the grip), `body_trail()` how far it reaches above and
+below the chest (`height`); both how long the model lives (`duration`) and how fast a stretch of
+trail fades (`lifetime`).
 
-`spells/DH_EyeBeam_*.png` are Eye Beam's textures, not used yet.
+`spells/DH_EyeBeam_*.png` (Eye Beam) and the other `spells/DH_FelRush_*.png` (layers of retail's Fel
+Rush dash) are not used yet.
 
 ## Login screen (GlueXML)
 

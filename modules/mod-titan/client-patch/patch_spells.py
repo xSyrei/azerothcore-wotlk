@@ -81,13 +81,17 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
 
 # Weapon trails: the trail model (spells/<model>.png), the Blizzard visual copied (its cast kit
 # gets the trail), the ids of the new visual, kit and effect name, and the kit slots the trail goes
-# in (both weapons). "blizzard" puts one of Blizzard's effects (SpellVisualEffectName id) there
-# instead of ours; "options" go to models/spell_effects.weapon_trail().
+# in. "shape" picks the model: "weapon" (models/spell_effects.weapon_trail, on both weapons) or
+# "body" (body_trail, on the chest); "options" go to that function. "blizzard" puts one of
+# Blizzard's effects (SpellVisualEffectName id) in the slots instead of ours.
 TRAILS = {
     'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'copy': 253, 'visual': 16700, 'kit': 15600, 'effect': 7100,
                    'slots': WEAPONS},
     'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'copy': 253, 'visual': 16701, 'kit': 15601, 'effect': 7101,
                     'slots': WEAPONS},
+    # Fel Rush is a Blink (a teleport): the chest trail stretches from where you were to where you land.
+    'FelRush': {'model': 'DH_FelRush_Trail', 'copy': 10694, 'visual': 16702, 'kit': 15602, 'effect': 7102,
+                'slots': (KIT_CHEST,), 'shape': 'body', 'options': {'lifetime': 0.5}},
 }
 
 # Spells: id, the Blizzard spell copied, name, tooltip text, aura text, icon, then column changes.
@@ -136,11 +140,11 @@ SPELLS = [
     },
     {
         'id': 90103, 'copy': 1953, 'name': 'Fel Rush', 'icon': 'Ability_DemonHunter_FelRush',
-        'two_weapons': True,
+        'two_weapons': True, 'trail': 'FelRush',
         'description': 'Rush forward $a1 yards in a burst of fel energy, dealing $90104s1 Chaos damage to '
                        'enemies around you.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'ManaCostPercentage': 0,
-                'SchoolMask': CHAOS, 'SpellVisual': 10694, 'BaseLevel': 1, 'SpellLevel': 1},
+                'SchoolMask': CHAOS, 'BaseLevel': 1, 'SpellLevel': 1},
         'clear': [2, 3],
         'effects': {
             1: {'RadiusIndex': RADIUS_15},

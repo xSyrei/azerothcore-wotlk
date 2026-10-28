@@ -60,9 +60,9 @@ def main():
                 entries.append((f'{folder}\\{name}{suffix}', (tmp / name / f'{name}{suffix}').read_bytes()))
 
         for trail in patch_spells.TRAILS.values():
-            files = spell_effects.weapon_trail(HERE / 'spells' / f'{trail["model"]}.png', tmp / 'effects',
-                                               trail['model'], patch_spells.EFFECTS_DIR,
-                                               **trail.get('options', {}))
+            make = spell_effects.body_trail if trail.get('shape') == 'body' else spell_effects.weapon_trail
+            files = make(HERE / 'spells' / f'{trail["model"]}.png', tmp / 'effects', trail['model'],
+                         patch_spells.EFFECTS_DIR, **trail.get('options', {}))
             for f in files:
                 entries.append((f'{patch_spells.EFFECTS_DIR}\\{f}', (tmp / 'effects' / f).read_bytes()))
 
