@@ -5,8 +5,9 @@ It is a language patch (installed as Data\\enUS\\patch-enUS-4.MPQ): the client r
 tables from the language archives, which outrank patches placed directly in Data\\.
 
 - DBFilesClient: ChrClasses / CharBaseInfo (Hero class, patch_hero_class.py),
-  Item / ItemDisplayInfo (custom items, patch_items.py), Spell / SpellIcon (Emberforge's own spells,
-  the Demon Hunter's, patch_spells.py)
+  Item / ItemDisplayInfo (custom items, patch_items.py), Spell / SpellIcon / SpellVisual /
+  SpellVisualKit / SpellVisualEffectName (Emberforge's own spells, the Demon Hunter's, patch_spells.py)
+- spell effect models (Spells\\Emberforge: weapon trails, models/spell_effects.py, from spells/*.png)
 - custom models converted from wow.export exports (models/, see MODELS below)
 - the login screen scene, the Seat of the Pantheon (models/build_login_scene.py)
 - inventory icons (icons/*.png) and spell icons (icons/spells/*.png)
@@ -31,6 +32,8 @@ from PIL import Image  # noqa: E402
 import blp  # noqa: E402
 import build_login_scene  # noqa: E402
 import make_mpq  # noqa: E402
+import patch_spells  # noqa: E402
+import spell_effects  # noqa: E402
 import wowexport_to_m2  # noqa: E402
 
 # (wow.export folder, exported model name, Emberforge model name, client folder)
@@ -38,7 +41,7 @@ MODELS = [
     ('models/veridus/source', 'sword_1h_artifactskywall_d_06', 'Sword_1H_Veridus', 'Item\\ObjectComponents\\Weapon'),
 ]
 DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
-        'Spell.dbc', 'SpellIcon.dbc']
+        'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc']
 
 
 def main():
@@ -55,6 +58,12 @@ def main():
             wowexport_to_m2.convert(HERE / source, base, name, tmp / name, folder)
             for suffix in ('.m2', '00.skin', '.blp'):
                 entries.append((f'{folder}\\{name}{suffix}', (tmp / name / f'{name}{suffix}').read_bytes()))
+
+        for trail in patch_spells.TRAILS.values():
+            files = spell_effects.weapon_trail(HERE / 'spells' / f'{trail["model"]}.png', tmp / 'effects',
+                                               trail['model'], patch_spells.EFFECTS_DIR)
+            for f in files:
+                entries.append((f'{patch_spells.EFFECTS_DIR}\\{f}', (tmp / 'effects' / f).read_bytes()))
 
         for png in sorted((HERE / 'icons').glob('INV_*.png')) + sorted((HERE / 'icons' / 'spells').glob('*.png')):
             with Image.open(png) as image:

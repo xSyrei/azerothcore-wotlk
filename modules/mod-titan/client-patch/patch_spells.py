@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Add Emberforge's own spells (the Demon Hunter's) to Spell.dbc and SpellIcon.dbc (WoW 3.3.5a).
+"""Add Emberforge's own spells (the Demon Hunter's) to Spell.dbc and SpellIcon.dbc (WoW 3.3.5a),
+and their own visuals to SpellVisual.dbc, SpellVisualKit.dbc and SpellVisualEffectName.dbc.
 
 Each spell is a copy of a Blizzard spell (its attributes, visuals, targeting) with some fields
 changed, so it behaves and looks like a real ability. The same rows go to the client (the patched
@@ -9,6 +10,10 @@ data/sql/db-world/): both must agree on every spell.
 Resources: Emberforge has no Runic Power: its power type (6) is Fury, which every Hero has
 (src/hero_resources.cpp). Every client spell text that says Runic Power says Fury instead (the
 Emberforge_Resources addon renames it in the UI).
+
+Visuals: a spell with a "trail" gets a copy of a Blizzard visual whose cast kit also puts a weapon
+trail on both weapons. The trail models are built by models/spell_effects.py from
+spells/<model>.png (build_patch.py puts them in the client patch under Spells\\Emberforge).
 
 Usage: python3 patch_spells.py <dir with original DBCs> <output dir> [--sql <out.sql>]
 """
@@ -47,6 +52,13 @@ NAME, RANK, DESCRIPTION, TOOLTIP = 136, 153, 170, 187     # 16 locales each, the
 FLOAT_COLUMNS = {47} | {first + n for first, flt in EFFECT_FIELDS.values() if flt for n in range(3)}
 STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n in range(16)}
 
+# SpellVisual.dbc (32 columns), SpellVisualKit.dbc (38), SpellVisualEffectName.dbc (7: id, name,
+# file, area size, scale, min scale, max scale).
+VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
+VISUAL_CAST_KIT = 2
+KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 9, 10
+EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
+
 # Values used below.
 CHAOS = 0x7F                    # every school
 FURY = 6                        # the client's Runic Power, renamed
@@ -63,11 +75,18 @@ RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
 ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'Ability_DemonHunter_FelRush',
          'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01']
 
+# Weapon trails: the trail model (spells/<model>.png), the Blizzard visual copied (its cast kit
+# gets the trail), and the ids of the new visual, kit and effect name.
+TRAILS = {
+    'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'copy': 253, 'visual': 16700, 'kit': 15600, 'effect': 7100},
+    'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'copy': 253, 'visual': 16701, 'kit': 15601, 'effect': 7101},
+}
+
 # Spells: id, the Blizzard spell copied, name, tooltip text, aura text, icon, then column changes.
 # Effects not listed keep the copied spell's; "clear" empties effects (numbers 1-3).
 SPELLS = [
     {
-        'id': 90100, 'copy': 1752, 'name': "Demon's Bite", 'icon': 'INV_Weapon_Glave_01',
+        'id': 90100, 'copy': 1752, 'name': "Demon's Bite", 'icon': 'INV_Weapon_Glave_01', 'trail': 'DemonsBite',
         'description': 'Quickly attack for your weapon damage plus $s1 Physical damage. '
                        'Generates 20 to 30 Fury.',
         'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
@@ -81,10 +100,11 @@ SPELLS = [
     },
     {
         'id': 90101, 'copy': 1752, 'name': 'Chaos Strike', 'icon': 'Ability_DemonHunter_ChaosStrike',
+        'trail': 'ChaosStrike',
         'description': 'Slice your target for $s1% weapon damage as Chaos.',
         'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 400,
                 'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'SchoolMask': CHAOS,
-                'SpellVisual': 8512, 'EquippedItemSubClassMask': MELEE_WEAPONS},
+                'EquippedItemSubClassMask': MELEE_WEAPONS},
         'clear': [2],
         'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 199, 'DieSides': 1}},
     },
@@ -203,6 +223,28 @@ def icon_ids(icons):
     return result
 
 
+def build_visuals(source, out):
+    """The trails' effect names, kits and visuals: copies of Blizzard's with the trail added."""
+    visuals = Dbc(source / 'SpellVisual.dbc', VISUAL_FIELDS)
+    kits = Dbc(source / 'SpellVisualKit.dbc', KIT_FIELDS)
+    names = Dbc(source / 'SpellVisualEffectName.dbc', EFFECT_NAME_FIELDS)
+    for key, trail in TRAILS.items():
+        model = f'{EFFECTS_DIR}\\{trail["model"]}.mdx'
+        names.rows[trail['effect']] = (trail['effect'], names.add_string(f'Emberforge {key} Trail'),
+                                       names.add_string(model), raw(0.0), raw(1.0), raw(0.01), raw(100.0))
+        visual = list(visuals.rows[trail['copy']])
+        kit = list(kits.rows[visual[VISUAL_CAST_KIT]])
+        kit[0] = trail['kit']
+        kit[KIT_LEFT_WEAPON] = kit[KIT_RIGHT_WEAPON] = trail['effect']
+        kits.rows[trail['kit']] = tuple(kit)
+        visual[0] = trail['visual']
+        visual[VISUAL_CAST_KIT] = trail['kit']
+        visuals.rows[trail['visual']] = tuple(visual)
+    visuals.save(out / 'SpellVisual.dbc')
+    kits.save(out / 'SpellVisualKit.dbc')
+    names.save(out / 'SpellVisualEffectName.dbc')
+
+
 def build_spells(spells, icon_id):
     for spell in SPELLS:
         row = list(spells.rows[spell['copy']])
@@ -222,6 +264,8 @@ def build_spells(spells, icon_id):
         if 'SpellFamilyName' not in spell.get('set', {}):
             for name in ('SpellFamilyName', 'SpellFamilyFlags0', 'SpellFamilyFlags1', 'SpellFamilyFlags2'):
                 row[FIELDS[name]] = 0
+        if 'trail' in spell:
+            row[FIELDS['SpellVisual']] = TRAILS[spell['trail']]['visual']
         row[FIELDS['SpellIconID']] = icon_id[spell['icon']]
         row[FIELDS['ActiveIconID']] = 0
         for base, text in ((NAME, spell['name']), (RANK, ''), (DESCRIPTION, spell.get('description', '')),
@@ -296,6 +340,7 @@ def main():
     icon_id = icon_ids(icons)
     icons.save(out / 'SpellIcon.dbc')
 
+    build_visuals(source, out)
     spells = Dbc(source / 'Spell.dbc', SPELL_FIELDS)
     build_spells(spells, icon_id)
     renamed = rename_runic_power(spells)

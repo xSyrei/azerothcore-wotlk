@@ -29,8 +29,8 @@ once it is part of the distributed client (see the launcher's `docs/CLIENT_DISTR
    python3 build_patch.py ./dbc
    ```
    This patches the DBCs (ChrClasses, CharBaseInfo and CharStartOutfit with `patch_hero_class.py`;
-   Item and ItemDisplayInfo with `patch_items.py`; Spell and SpellIcon with `patch_spells.py`),
-   converts the custom models, turns `icons/*.png` and `icons/spells/*.png` into BLP icons and packs
+   Item and ItemDisplayInfo with `patch_items.py`; Spell, SpellIcon and the spell visual tables with
+   `patch_spells.py`), builds the spell effect models, converts the custom models, turns `icons/*.png` and `icons/spells/*.png` into BLP icons and packs
    everything into `dist/patch-enUS-4.MPQ` with `make_mpq.py` (zlib-compressed sectors, as Blizzard's
    patches; Spell.dbc alone is 48 MB uncompressed, and a `(listfile)` so it opens in Ladik's MPQ
    Editor).
@@ -65,6 +65,20 @@ python3 patch_spells.py ./dbc /tmp/out --sql ../data/sql/db-world/titan_demon_hu
 After changing a spell, regenerate that SQL **and** rebuild the patch: client and server must agree.
 Fury is the client's Runic Power, renamed (every Hero has it). The Wildcard pool and the
 Classless window get the spells from `CUSTOM_ABILITIES` in `src/wildcard.cpp` (spec tabs Havoc and Vengeance).
+
+### Weapon trails
+
+Demon's Bite and Chaos Strike leave a trail behind the blade (`TRAILS` in `patch_spells.py`). Each
+trail is its own effect model, `Spells\Emberforge\<model>.m2`, built by `models/spell_effects.py`
+from `spells/<model>.png`: no mesh, only a ribbon emitter that follows the weapon. The spell gets a
+copy of a Blizzard visual (Sinister Strike's) whose cast kit puts that model on both weapons
+(new rows in SpellVisual, SpellVisualKit and SpellVisualEffectName).
+
+Trail textures run from the weapon (left edge) to the end of the trail (right edge), blade tip at
+the top. `weapon_trail()` sets how much of the blade the trail covers (`length`, yards from the
+grip), how long it is drawn (`duration`) and how fast it fades (`lifetime`).
+
+`spells/DH_EyeBeam_*.png` are Eye Beam's textures, not used yet.
 
 ## Login screen (GlueXML)
 
