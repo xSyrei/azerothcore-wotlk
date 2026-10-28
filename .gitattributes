@@ -1,7 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text eol=lf
 
-# Binary data (WoW client files, images): never touch line endings
+# Binary data (WoW client files, images, sounds): never touch line endings
 *.MPQ    binary
 *.mpq    binary
 *.dbc    binary
@@ -11,6 +11,9 @@
 *.jpg    binary
 *.m2     binary
 *.skin   binary
+*.wav    binary
+*.ogg    binary
+*.mp3    binary
 
 # Whitespace rules
 # strict (no trailing, no tabs)
