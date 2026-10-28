@@ -37,6 +37,13 @@ if playerClass ~= HERO_CLASS then
     return
 end
 
+-- Heroes use ranged weapons and ammo too, but the character sheet hides the ammo slot for classes
+-- with a relic slot (the Paladin behind the Hero). Keep it shown.
+if CharacterAmmoSlot then
+    hooksecurefunc(CharacterAmmoSlot, "Hide", CharacterAmmoSlot.Show)
+    CharacterAmmoSlot:Show()
+end
+
 local known = {} -- power types used by abilities in the spellbook
 
 local container = CreateFrame("Frame", "EmberforgeResourcesFrame", PlayerFrame)

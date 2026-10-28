@@ -12,9 +12,17 @@ The matching client patch is built with `client-patch/` (see its README).
 
 Heroes use **every class resource**: mana, rage, energy, Fury and runes, with combo points
 on any target. `src/hero_resources.cpp` turns these on through AzerothCore's classless hooks
-(`OnPlayerHasActivePowerType`, and `OnPlayerIsClass` for ability mechanics only). Starting zone,
-stats and equipment still follow the real base class. The `Emberforge_Resources` addon (in
+(`OnPlayerHasActivePowerType`, and `OnPlayerIsClass` for ability mechanics only). Starting zone
+and stats still follow the real base class. The `Emberforge_Resources` addon (in
 `client-patch/AddOns/`) shows the extra bars in game and colors Heroes ember orange.
+
+Heroes **equip anything**: every weapon type (one- and two-handed, daggers, fist weapons, staves,
+polearms, bows, guns, crossbows, thrown, wands), every armor type (cloth, leather, mail, plate,
+shields, and librams, idols, totems and sigils in the relic slot), a weapon in each hand (Dual
+Wield) and a ranged weapon with ammo. `src/hero_equipment.cpp` teaches the proficiencies and sets
+the weapon and armor skills at every login and level (the core drops the ones a Paladin cannot
+have); `Emberforge_Resources` shows the ammo slot, which the character sheet hides for a Paladin.
+Fishing poles still need the Fishing profession.
 
 Nothing else comes from the base class (`data/sql/db-world/hero_cleanup.sql`):
 - no starting class spells (the Paladin skill lines are removed) and no Paladin action buttons;
@@ -88,7 +96,7 @@ built or spent Runic Power build and spend Fury, the same pool as the Demon Hunt
 Every ability above needs a one-handed weapon in each hand (two one-handed weapons, or a main-hand
 and an off-hand weapon; not a shield or held-in-off-hand item). The main hand is checked by the
 spells themselves, the off hand by `spell_titan_dh_dual_weapons` (`src/demon_hunter.cpp`, bound in
-`titan_demon_hunter_scripts.sql`). Learning one also teaches Dual Wield, which Heroes lack otherwise.
+`titan_demon_hunter_scripts.sql`). Every Hero can dual wield (see Equipment).
 
 Learn one in game with `.learn 90100` (needs the client patch for its name and icon).
 

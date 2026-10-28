@@ -21,6 +21,7 @@ void AddSC_wildcard();
 void AddSC_classless();
 void AddSC_item_titan_tomes();
 void AddSC_demon_hunter();
+void AddSC_hero_equipment();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
 void Addmod_titanScripts()
@@ -31,4 +32,5 @@ void Addmod_titanScripts()
     AddSC_classless();
     AddSC_item_titan_tomes();
     AddSC_demon_hunter();
+    AddSC_hero_equipment();
 }

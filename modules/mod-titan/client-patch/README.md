@@ -134,8 +134,9 @@ check; the Grimfall build in use does (see the launcher's `docs/CLIENT_DISTRIBUT
 Heroes use every class resource (mana, rage, energy, Fury and runes), but the player
 frame only shows mana. `AddOns/Emberforge_Resources` adds bars for rage, energy and Fury
 under the player frame and turns on the rune bar. A bar appears once you know an ability that
-uses that resource, or currently have some of it. It also recolors the Hero class from Paladin
-pink to ember orange wherever the UI colors names by class.
+uses that resource, or currently have some of it. It also shows the ammo slot (the character
+sheet hides it for a Paladin, which has a relic slot) and recolors the Hero class from Paladin pink
+to ember orange wherever the UI colors names by class.
 
 Emberforge has no Runic Power: it is Fury. `patch_spells.py` renames it in every spell's name and
 text in `Spell.dbc`, and the addon renames it in every UI string (spell costs, combat text, errors)

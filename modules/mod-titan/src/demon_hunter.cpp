@@ -25,28 +25,8 @@
 //
 // The main hand is checked by the spells themselves (Spell.dbc: one-handed weapon classes, "requires
 // main hand weapon"; see client-patch/patch_spells.py). The off hand is checked here: the spell
-// attribute for it would also make the ability strike with the off-hand weapon.
-namespace
-{
-    constexpr uint32 SPELL_DUAL_WIELD = 674;
-
-    // Every Demon Hunter ability that needs both weapons (spell_script_names binds the check to them).
-    constexpr uint32 DUAL_WEAPON_SPELLS[] = {
-        90100,      // Demon's Bite
-        90101,      // Chaos Strike
-        90102,      // Blade Dance
-        90103,      // Fel Rush
-        90105,      // Eye Beam
-    };
-
-    bool IsDualWeaponSpell(uint32 spellId)
-    {
-        for (uint32 id : DUAL_WEAPON_SPELLS)
-            if (id == spellId)
-                return true;
-        return false;
-    }
-}
+// attribute for it would also make the ability strike with the off-hand weapon. Heroes all have
+// Dual Wield (hero_equipment.cpp).
 
 class spell_titan_dh_dual_weapons : public SpellScript
 {
@@ -71,44 +51,7 @@ class spell_titan_dh_dual_weapons : public SpellScript
     }
 };
 
-// Wielding two weapons needs Dual Wield, which a Hero does not have by default: learning a
-// Demon Hunter ability teaches it (and logging in teaches it to Heroes who learned one before).
-class titan_dh_dual_wield : public PlayerScript
-{
-public:
-    titan_dh_dual_wield() : PlayerScript("titan_dh_dual_wield", {
-        PLAYERHOOK_ON_LEARN_SPELL,
-        PLAYERHOOK_ON_LOGIN
-    }) { }
-
-    void OnPlayerLearnSpell(Player* player, uint32 spellId) override
-    {
-        if (IsDualWeaponSpell(spellId))
-            TeachDualWield(player);
-    }
-
-    void OnPlayerLogin(Player* player) override
-    {
-        for (uint32 spellId : DUAL_WEAPON_SPELLS)
-        {
-            if (player->HasSpell(spellId))
-            {
-                TeachDualWield(player);
-                return;
-            }
-        }
-    }
-
-private:
-    static void TeachDualWield(Player* player)
-    {
-        if (!player->HasSpell(SPELL_DUAL_WIELD))
-            player->learnSpell(SPELL_DUAL_WIELD);
-    }
-};
-
 void AddSC_demon_hunter()
 {
     RegisterSpellScript(spell_titan_dh_dual_weapons);
-    new titan_dh_dual_wield();
 }

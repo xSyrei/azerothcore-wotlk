@@ -50,6 +50,10 @@ public:
         if (context == CLASS_CONTEXT_ABILITY || context == CLASS_CONTEXT_ABILITY_REACTIVE)
             return true;
 
+        // Relics: Heroes can equip librams, idols, totems and sigils (see hero_equipment.cpp).
+        if (context == CLASS_CONTEXT_EQUIP_RELIC)
+            return true;
+
         // Hunter pets: Heroes can tame (Wildcard's Tame Beast) and keep, revive and stable their pets.
         if (context == CLASS_CONTEXT_PET && playerClass == CLASS_HUNTER)
             return true;
