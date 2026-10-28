@@ -45,3 +45,13 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 DELETE FROM `spell_jump_distance` WHERE `ID` = 90111;
 INSERT INTO `spell_jump_distance` (`ID`, `JumpDistance`) VALUES
 (90111, 10);
+
+-- Chaos Nova, Blur and Consume Magic: both weapons needed; Chaos Nova's share of attack power.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (90112, 90113, 90114) AND `ScriptName` = 'spell_titan_dh_dual_weapons';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90112, 'spell_titan_dh_dual_weapons'),
+(90113, 'spell_titan_dh_dual_weapons'),
+(90114, 'spell_titan_dh_dual_weapons');
+DELETE FROM `spell_bonus_data` WHERE `entry` = 90112;
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90112, 0, 0, 0.4, 0, 'Chaos Nova');

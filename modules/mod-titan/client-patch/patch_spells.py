@@ -87,25 +87,33 @@ AURA_PERIODIC_TRIGGER_SPELL, AURA_MOD_DECREASE_SPEED, AURA_MOD_DODGE_PERCENT = 2
 INTERRUPT_MOVEMENT = 0x1        # InterruptFlags: casting is stopped by moving
 CHANNEL_INTERRUPT_MOVE = 0x8    # ChannelInterruptFlags: the channel is broken by moving
 TARGET_UNIT_CASTER, TARGET_SRC_CASTER, TARGET_UNIT_SRC_AREA_ENEMY, TARGET_UNIT_CONE_ENEMY = 1, 22, 15, 104
+TARGET_UNIT_TARGET_ENEMY = 6
 DURATION_1S, DURATION_2S, DURATION_3S = 36, 39, 27
 RANGE_30 = 4
 GLOBAL_COOLDOWN = 133           # StartRecoveryCategory of spells on the global cooldown
 EFFECT_DISPEL_MECHANIC, EFFECT_LEAP_BACK = 108, 138
 MECHANIC_SNARE = 11
 SPELLFAMILY_HUNTER = 9
+BLEND_ADD = 4                   # M2 blend mode: additive
+DURATION_10S, RANGE_20 = 1, 3
+AURA_STUN, AURA_MOD_DAMAGE_PERCENT_TAKEN = 12, 87
+EFFECT_DISPEL, EFFECT_INTERRUPT_CAST = 38, 68
+DISPEL_MAGIC = 1
+ALL_SCHOOLS = 0x7F
 RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
 
 # Icons: Interface\Icons\<name>. Ours come from icons/spells/<name>.png (in the client patch); the
 # client already has the rest, found by name in SpellIcon.dbc.
 ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'Ability_DemonHunter_FelRush',
          'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01', 'Ability_DemonHunter_VengefulRetreat',
-         'Ability_DemonHunter_ThrowGlaive']
+         'Ability_DemonHunter_ThrowGlaive', 'Spell_Fire_FelFireNova', 'Spell_Shadow_ShadowWard',
+         'Ability_DemonHunter_ConsumeMagic']
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
 # (body_trail, for the chest), from spells/<model>.png, or "beam" (beam, for the head slot) or
 # "burst" (ground_burst, for the world slot) from the spells/<texture>.png in "textures" (beam:
-# flare, flow; burst: ring, flash, trail). "options" go to that builder.
+# flare, flow; burst: ring, flash, trail or None). "options" go to that builder.
 EFFECTS = {
     'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'effect': 7100},
     'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'effect': 7101},
@@ -119,6 +127,15 @@ EFFECTS = {
     'VengefulRetreatBurst': {'model': 'DH_VengefulRetreat_Burst', 'effect': 7105, 'shape': 'burst',
                              'textures': ('DH_VengefulRetreat_Shockwave', 'DH_VengefulRetreat_FlowerStar',
                                           'DH_BladeDance_Trail')},
+    # Chaos Nova: the void eruption swirl (retail's cfx_demonhunter_chaosnova_impact) on the ground,
+    # tinted fel green, fading as retail's, with a fel flare at its center.
+    'ChaosNovaBurst': {'model': 'DH_ChaosNova_Burst', 'effect': 7106, 'shape': 'burst',
+                       'textures': ('DH_ChaosNova_Eruption', 'DH_ChaosNova_Flare', None),
+                       'options': {'size': 16.0, 'ring_tint': (0.45, 1.0, 0.25),
+                                   'ring_blend': BLEND_ADD, 'flash_sheet': False, 'flash_tint': (0.6, 1.0, 0.4),
+                                   'ring': {'scale': ([0, 134, 850], [6.0, 16.0, 17.0]),
+                                            'fade': ([0, 34, 134, 367, 634, 834, 900],
+                                                     [0, 0, 18149, 18149, 4658, 0, 0])}}},
     # Eye Beam: from the face, as long as the channel and its 20-yard reach.
     'EyeBeam': {'model': 'DH_EyeBeam', 'effect': 7104, 'shape': 'beam',
                 'textures': ('DH_EyeBeam_Beam', 'DH_EyeBeam_Fel')},
@@ -144,6 +161,7 @@ SOUNDS = {
 }
 
 # Blizzard effect models (SpellVisualEffectName ids) used below.
+CONSUME_MAGIC_IMPACT = 3196     # Spells\\Consume_Magic_Impact: the Burning Crusade original, unused by any spell
 MANGLE_IMPACT_DEMON = 4697      # Spells\\Mangle_Impact_Demon: a demon's bite
 FEL_PRECAST_HAND = 3169         # Spells\\Fel_Fire_Precast_Hand: fel flames on the hands
 FEL_FIRE_IMPACT = 3221          # Spells\\Fel_Fire_ImpactDD_High_Chest: a big fel fire hit
@@ -193,6 +211,17 @@ VISUALS = {
     # ground where it starts.
     'VengefulRetreat': {'copy': 12305, 'id': 16709, 'kits': {
         'cast': (15614, {KIT_CHEST: 'FelRush', KIT_WORLD: 'VengefulRetreatBurst', 'sound': 'VengefulRetreat'})}},
+    # Chaos Nova is the Burning Crusade demons' (fel hands, the fel fire nova, fel fire on the
+    # stunned), with our fel eruption left on the ground.
+    'ChaosNova': {'copy': 8451, 'id': 16710, 'kits': {
+        'cast': (15615, {KIT_WORLD: 'ChaosNovaBurst'})}},
+    # Blur is Evasion with fel hands.
+    'Blur': {'copy': 72, 'id': 16711, 'kits': {
+        'cast': (15616, {HANDS: FEL_PRECAST_HAND})}},
+    # Consume Magic is Counterspell with fel hands, and the original Consume Magic impact.
+    'ConsumeMagic': {'copy': 239, 'id': 16712, 'kits': {
+        'cast': (15617, {HANDS: FEL_PRECAST_HAND}),
+        'impact': (15618, {KIT_CHEST: CONSUME_MAGIC_IMPACT})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
 }
@@ -358,6 +387,53 @@ SPELLS = [
         'clear': [2],
         'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'ChainTarget': 2,
                         'BonusMultiplier': 0.0, 'DamageMultiplier': 1.0}},
+    },
+    {
+        # The Burning Crusade demons' Chaos Nova: everything within 8 yards takes 1 damage plus attack
+        # power (spell_bonus_data) and is stunned for 2 sec.
+        'id': 90112, 'copy': 36225, 'name': 'Chaos Nova', 'icon': 'Spell_Fire_FelFireNova',
+        'two_weapons': True, 'visual': 'ChaosNova',
+        'description': 'Unleash an eruption of fel energy, dealing 40% of your attack power as Chaos damage '
+                       'and stunning all enemies within 8 yards for 2 sec.',
+        'tooltip': 'Stunned.',
+        'set': {'PowerType': FURY, 'ManaCost': 300, 'RecoveryTime': 60000, 'DurationIndex': DURATION_2S,
+                'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500, 'SchoolMask': CHAOS,
+                'DmgClass': DMG_CLASS_MELEE, 'MaxAffectedTargets': 0, 'BaseLevel': 24, 'SpellLevel': 24,
+                'MaxLevel': 80},
+        'clear': [3],
+        'effects': {
+            1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'RadiusIndex': RADIUS_8,
+                'BonusMultiplier': 0.0},
+            2: {'Aura': AURA_STUN, 'BasePoints': 0, 'DieSides': 0, 'RadiusIndex': RADIUS_8},
+        },
+    },
+    {
+        # Evasion's dodge, and 35% less damage taken instead of its ranged miss chance.
+        'id': 90113, 'copy': 26669, 'name': 'Blur', 'icon': 'Spell_Shadow_ShadowWard',
+        'two_weapons': True, 'visual': 'Blur',
+        'description': 'Increases your chance to dodge by 50% and reduces all damage taken by 35% for $d.',
+        'tooltip': 'Dodge chance increased by 50%. Damage taken reduced by 35%.',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 60000, 'DurationIndex': DURATION_10S,
+                'PowerType': 0, 'ManaCost': 0, 'BaseLevel': 18, 'SpellLevel': 18},
+        'effects': {2: {'Aura': AURA_MOD_DAMAGE_PERCENT_TAKEN, 'BasePoints': -36, 'DieSides': 1,
+                        'MiscValue': ALL_SCHOOLS}},
+    },
+    {
+        # Counterspell: interrupts and locks the school out for 3 sec; also removes one magic buff
+        # from the target and gives 20 Fury.
+        'id': 90114, 'copy': 2139, 'name': 'Consume Magic', 'icon': 'Ability_DemonHunter_ConsumeMagic',
+        'two_weapons': True, 'visual': 'ConsumeMagic',
+        'description': "Interrupt the target's spellcasting, preventing any spell in that school from being "
+                       'cast for $d, and consume 1 beneficial Magic effect from it. Generates 20 Fury.',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 15000, 'RangeIndex': RANGE_20,
+                'DurationIndex': DURATION_3S, 'ManaCostPercentage': 0, 'SchoolMask': CHAOS, 'BaseLevel': 12,
+                'SpellLevel': 12},
+        'effects': {
+            2: {'Effect': EFFECT_DISPEL, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
+                'MiscValue': DISPEL_MAGIC},
+            3: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER,
+                'MiscValue': FURY},
+        },
     },
 ]
 

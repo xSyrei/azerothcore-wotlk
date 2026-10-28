@@ -367,29 +367,44 @@ def _turn_z(angle):
     return (0.0, 0.0, math.sin(angle / 2), math.cos(angle / 2))
 
 
+VENGEFUL_RETREAT_RING = {   # ground_burst's ring timing, after cfx_demonhunter_vengefulretreat_impactbase
+    'scale': ([0, 450, 900], [0.35, 18.0, 18.0]),                       # yards across
+    'fade': ([0, 167, 233, 300, 500, 900], [0x7FFF, 0x7FFF, 7638, 1783, 0, 0]),
+}
+
+
 def ground_burst(ring_texture, flash_texture, trail_texture, out_dir, name, client_dir, size=18.0,
-                 ring_tint=(1.0, 0.835, 0.886), trail_tint=(1.0, 0.3, 0.45), duration=900):
+                 ring_tint=(1.0, 0.835, 0.886), trail_tint=(1.0, 0.3, 0.45), duration=900,
+                 ring=VENGEFUL_RETREAT_RING, ring_blend=BLEND_ALPHA, flash_sheet=True, flash_tint=None):
     """A burst left on the ground where it is placed (a kit's world slot), after Legion's Vengeful
     Retreat (cfx_demonhunter_vengefulretreat_impactbase and its spiral ribbon):
 
-    - a shockwave ring on the ground (ring_texture tinted ring_tint) growing from a third of a yard
-      to size yards across in 0.45 sec, fading like retail's (whole until 0.17 sec, gone by 0.5);
-    - a flash at its center (the first quarter of flash_texture, a 2x2 sheet) popping up and gone
-      by 0.3 sec;
-    - a ribbon (trail_texture, tinted trail_tint) spun around the center while rising, leaving a
-      corkscrew.
+    - a shockwave ring on the ground (ring_texture tinted ring_tint, blended with ring_blend)
+      growing and fading on ring's keys (milliseconds: yards across, transparency); by default
+      Vengeful Retreat's, from a third of a yard to size yards in 0.45 sec, whole until 0.17 sec,
+      gone by 0.5;
+    - a flash at its center (flash_texture, or its first quarter if flash_sheet: a 2x2 sheet; its
+      colors multiplied by flash_tint if given) popping up and gone by 0.3 sec;
+    - unless trail_texture is None, a ribbon (trail_texture, tinted trail_tint) spun around the
+      center while rising, leaving a corkscrew.
 
     Same layout as beam(): two animations of duration milliseconds, the bones' animation on them,
     the mesh's bounds. Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    with Image.open(trail_texture) as image:
-        trail = image.convert('RGBA').transpose(Image.Transpose.TRANSPOSE).transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-        trail.putalpha(trail.getchannel('A').point(lambda a: 0 if a < FAINT else a))
-    images = [(f'{name}_Ring', Image.open(ring_texture).convert('RGBA')),
-              (f'{name}_Flash', Image.open(flash_texture).convert('RGBA')),
-              (f'{name}_Trail', trail)]
+    flash = Image.open(flash_texture).convert('RGBA')
+    if flash_tint:
+        r, g, b, a = flash.split()
+        r, g, b = (band.point(lambda v, k=k: int(v * k)) for band, k in zip((r, g, b), flash_tint))
+        flash = Image.merge('RGBA', (r, g, b, a))
+    images = [(f'{name}_Ring', Image.open(ring_texture).convert('RGBA')), (f'{name}_Flash', flash)]
+    if trail_texture is not None:
+        with Image.open(trail_texture) as image:
+            trail = image.convert('RGBA').transpose(Image.Transpose.TRANSPOSE)
+            trail = trail.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            trail.putalpha(trail.getchannel('A').point(lambda a: 0 if a < FAINT else a))
+        images.append((f'{name}_Trail', trail))
     for blp_name, image in images:
         (out_dir / f'{blp_name}.blp').write_bytes(blp.encode(image))
     RING, FLASH, TRAIL = 0, 1, 2              # textures; also bones 0 (ring), 1 (flash), 2 (spiral)
@@ -397,7 +412,7 @@ def ground_burst(ring_texture, flash_texture, trail_texture, out_dir, name, clie
     # Geometry: two flat squares just above the ground, the ring (1 yard across, scaled by bone 0)
     # and the flash (3 yards, bone 1, showing the sheet's first quarter).
     vertices, triangles, sections = b'', [], []
-    for bone, half, uv_max in ((RING, 0.5, 1.0), (FLASH, 1.5, 0.5)):
+    for bone, half, uv_max in ((RING, 0.5, 1.0), (FLASH, 1.5, 0.5 if flash_sheet else 1.0)):
         first, start = len(vertices) // 48, len(triangles)
         for x, u in ((-half, 0.0), (half, uv_max)):
             for y, v in ((-half, uv_max), (half, 0.0)):
@@ -426,7 +441,8 @@ def ground_burst(ring_texture, flash_texture, trail_texture, out_dir, name, clie
         record += scaling or empty_track()
         return record + struct.pack('<3f', 0, 0, 0)
 
-    ring_scale = keyed(1, ([0, 450, duration], [(0.35, 0.35, 1.0), (size, size, 1.0), (size, size, 1.0)]), '3f')
+    stamps, across = ring['scale']
+    ring_scale = keyed(1, (stamps, [(yards, yards, 1.0) for yards in across]), '3f')
     flash_scale = keyed(1, ([0, 120, 300], [(0.3, 0.3, 1.0), (1.2, 1.2, 1.0), (1.5, 1.5, 1.0)]), '3f')
     # The spiral: a turn and a half in 0.6 sec (keys every quarter turn), rising 2.5 yards.
     steps = 7
@@ -435,6 +451,7 @@ def ground_burst(ring_texture, flash_texture, trail_texture, out_dir, name, clie
                  '4h')
     rise = keyed(1, ([0, 600], [(0.0, 0.0, 0.2), (0.0, 0.0, 2.7)]), '3f')
     bones = blob.add(bone(scaling=ring_scale) + bone(scaling=flash_scale) + bone(rotation=spin, translation=rise), 3)
+    # (bone 2 spins with nothing on it when there is no trail: cheaper than renumbering)
     key_bones = blob.array('h', [-1])
     vertices_ref = blob.add(vertices, vertex_count)
 
@@ -447,20 +464,23 @@ def ground_burst(ring_texture, flash_texture, trail_texture, out_dir, name, clie
         ref = blob.add(path.encode() + b'\0', len(path) + 1)
         textures += struct.pack('<II2I', 0, 0, *ref)
     textures_ref = blob.add(textures, len(images))
-    ring_fade = keyed(1, ([0, 167, 233, 300, 500, duration], [0x7FFF, 0x7FFF, 7638, 1783, 0, 0]), 'h')
+    ring_fade = keyed(1, ring['fade'], 'h')
     flash_fade = keyed(1, ([0, 120, 300, duration], [0x7FFF, 0x5000, 0, 0]), 'h')
     weights = blob.add(ring_fade + flash_fade, 2)
     replaceable_lookup = blob.array('h', [-1])
     # Materials: the ring alpha-blended (as retail's), the flash and the ribbon additive.
-    materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ALPHA),
+    materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, ring_blend),
                                       (UNLIT | UNFOGGED | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ADD)])
     bone_lookup = blob.array('H', [RING, FLASH])
     texture_lookup = blob.array('H', [RING, FLASH])
     texture_unit_lookup = blob.array('H', [0])
     transparency_lookup = blob.array('H', [0, 1])
     transform_lookup = blob.array('H', [0xFFFF])
-    ribbon = _ribbon_record(blob, 2, (1.1, 0.0, 0.0), 0.35, 0.35, 50.0, 0.45, trail_tint, TRAIL, 1)
-    ribbons_ref = blob.add(ribbon, 1)
+    if trail_texture is not None:
+        ribbon = _ribbon_record(blob, 2, (1.1, 0.0, 0.0), 0.35, 0.35, 50.0, 0.45, trail_tint, TRAIL, 1)
+        ribbons_ref = blob.add(ribbon, 1)
+    else:
+        ribbons_ref = (0, 0)
 
     header = struct.pack('<4sI', b'MD20', 264)
     header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)
