@@ -31,7 +31,7 @@ FIRST_ICON_ID = 4400            # SpellIcon.dbc ends at 4375
 # Spell.dbc columns (3.3.5a, as AzerothCore's SpellEntry / spell_dbc), by name. Effects are 1-3.
 FIELDS = {
     'Category': 1, 'Attributes': 4, 'AttributesEx': 5, 'AttributesEx2': 6, 'AttributesEx3': 7,
-    'AttributesEx4': 8, 'AttributesEx5': 9, 'AttributesEx6': 10, 'AttributesEx7': 11,
+    'AttributesEx4': 8, 'AttributesEx5': 9, 'AttributesEx6': 10, 'AttributesEx7': 11, 'Stances': 12, 'StancesNot': 14,
     'CastingTimeIndex': 28, 'RecoveryTime': 29, 'CategoryRecoveryTime': 30, 'InterruptFlags': 31,
     'AuraInterruptFlags': 32, 'ChannelInterruptFlags': 33, 'MaxLevel': 37, 'BaseLevel': 38,
     'SpellLevel': 39, 'DurationIndex': 40, 'PowerType': 41, 'ManaCost': 42, 'RangeIndex': 46,
@@ -291,6 +291,9 @@ def build_spells(spells, icon_id):
             row[FIELDS['AttributesEx3']] |= SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON
         if 'trail' in spell:
             row[FIELDS['SpellVisual']] = TRAILS[spell['trail']]['visual']
+        # No stance or form needed (or forbidden): Blade Dance's Whirlwind wanted Berserker Stance.
+        for column in range(FIELDS['Stances'], FIELDS['StancesNot'] + 2):
+            row[column] = 0
         row[FIELDS['SpellIconID']] = icon_id[spell['icon']]
         row[FIELDS['ActiveIconID']] = 0
         for base, text in ((NAME, spell['name']), (RANK, ''), (DESCRIPTION, spell.get('description', '')),
