@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Add Emberforge's own spells (the Demon Hunter's) to Spell.dbc and SpellIcon.dbc (WoW 3.3.5a),
-and their own visuals to SpellVisual.dbc, SpellVisualKit.dbc and SpellVisualEffectName.dbc.
+their own visuals to SpellVisual.dbc, SpellVisualKit.dbc and SpellVisualEffectName.dbc, and their own
+sounds to SoundEntries.dbc.
 
 Each spell is a copy of a Blizzard spell (its attributes, visuals, targeting) with some fields
 changed, so it behaves and looks like a real ability. The same rows go to the client (the patched
@@ -56,13 +57,19 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 # SpellVisual.dbc (32 columns), SpellVisualKit.dbc (38), SpellVisualEffectName.dbc (7: id, name,
 # file, area size, scale, min scale, max scale).
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
-VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3}     # SpellVisual columns
+VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5}     # SpellVisual columns
 KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 4, 5, 6, 7, 9, 10
 HANDS, WEAPONS = (KIT_LEFT_HAND, KIT_RIGHT_HAND), (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
 KIT_ANIM = 2
 NO_ANIM = 0xFFFFFFFF
-BLANK_KIT = 3049    # Sinister Strike's impact: only a chest effect and the hit sound
+BLANK_KIT = 3049    # Sinister Strike's impact: only a chest effect (set 0 to drop it) and the hit sound
 EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
+# SoundEntries.dbc (30 columns): id, type, name, 10 files, 10 weights, folder, volume, flags, min
+# distance, distance cutoff, EAX, advanced id.
+SOUND_FIELDS = 30
+SOUND_NAME, SOUND_FILES, SOUND_WEIGHTS, SOUND_FOLDER = 2, 3, 13, 23
+SOUNDS_DIR = 'Sound\\Spells\\Emberforge'     # client folder of our sounds (from sounds/*.wav)
+KIT_SOUND = 15
 
 # Values used below.
 CHAOS = 0x7F                    # every school
@@ -98,6 +105,19 @@ TRAILS = {
     'FelRush': {'model': 'DH_FelRush_Trail', 'effect': 7102, 'shape': 'body', 'options': {'lifetime': 0.5}},
 }
 
+# Sounds: SoundEntries ids, a Blizzard entry copied (volume, distances), and the files (sounds/,
+# without .wav); the game plays one of them at random each time.
+SOUNDS = {
+    'BladeDance': {'id': 18100, 'copy': 5674, 'files': [f'spell_dh_bladedance_cast_0{n}' for n in range(1, 5)]},
+    'ChaosStrike': {'id': 18101, 'copy': 3091, 'files': [f'spell_dh_chaos_strike_cast_0{n}' for n in range(1, 6)]},
+    'FelRush': {'id': 18102, 'copy': 5674, 'files': [f'spell_dh_felrush_cast_0{n}' for n in range(1, 4)]},
+    'DemonsBite': {'id': 18103, 'copy': 3091, 'files': [f'spell_dh_demonbite_cast_0{n}' for n in range(1, 6)]},
+    'EyeBeamCast': {'id': 18104, 'copy': 5674, 'files': [f'spell_dh_player_eyebeam_cast_0{n}' for n in range(1, 5)]},
+    'EyeBeamChannel': {'id': 18106, 'copy': 5674,
+                       'files': [f'spell_dh_player_eyebeam_1shot_0{n}' for n in range(1, 4)]},
+    'EyeBeamEnd': {'id': 18105, 'copy': 5674, 'files': [f'spell_dh_player_eyebeam_end_0{n}' for n in range(1, 5)]},
+}
+
 # Blizzard effect models (SpellVisualEffectName ids) used below.
 MANGLE_IMPACT_DEMON = 4697      # Spells\\Mangle_Impact_Demon: a demon's bite
 FEL_PRECAST_HAND = 3169         # Spells\\Fel_Fire_Precast_Hand: fel flames on the hands
@@ -109,18 +129,18 @@ FEL_HELLFIRE_BASE = 3312        # Spells\\Fel_Hellfire_Impact_Caster_Base: fel f
 # Visuals: the Blizzard visual copied, the new visual's id, and per kit (precast, cast or impact)
 # the new kit's id and what goes in its slots, a copy of the copied visual's kit (or of BLANK_KIT
 # if it has none). A slot's effect is a Blizzard effect id or one of TRAILS; "anim" sets the kit's
-# animation (NO_ANIM: none). "clear" drops kits.
+# animation (NO_ANIM: none), "sound" its sound (one of SOUNDS). "clear" drops kits.
 VISUALS = {
     'DemonsBite': {'copy': 253, 'id': 16700, 'kits': {
-        'cast': (15600, {WEAPONS: 'DemonsBite'}),
+        'cast': (15600, {WEAPONS: 'DemonsBite', 'sound': 'DemonsBite'}),
         'impact': (15604, {KIT_CHEST: MANGLE_IMPACT_DEMON})}},
     'ChaosStrike': {'copy': 253, 'id': 16701, 'kits': {
-        'cast': (15601, {WEAPONS: 'ChaosStrike', HANDS: FEL_PRECAST_HAND}),
+        'cast': (15601, {WEAPONS: 'ChaosStrike', HANDS: FEL_PRECAST_HAND, 'sound': 'ChaosStrike'}),
         'impact': (15605, {KIT_CHEST: FEL_FIRE_IMPACT})}},
     # Blade Dance is a Whirlwind; it only targets the Demon Hunter (the dodge), so no impact: its
     # strikes (90107, 90108) bring their own.
     'BladeDance': {'copy': 223, 'id': 16703, 'clear': ('impact',), 'kits': {
-        'cast': (15603, {WEAPONS: 'BladeDance', KIT_BASE: FEL_HELLFIRE_BASE})}},
+        'cast': (15603, {WEAPONS: 'BladeDance', KIT_BASE: FEL_HELLFIRE_BASE, 'sound': 'BladeDance'})}},
     'BladeDanceStrike': {'copy': 253, 'id': 16704, 'clear': ('cast',), 'kits': {
         'impact': (15606, {KIT_CHEST: FEL_FLAMESHOCK_IMPACT})}},
     'BladeDanceFinalStrike': {'copy': 253, 'id': 16705, 'clear': ('cast',), 'kits': {
@@ -128,7 +148,14 @@ VISUALS = {
     # Fel Rush was a Blink: fel hands instead of shadow ones, the trail behind the body, and no cast
     # animation (the dash runs). The warlock teleport flame stays where the dash starts.
     'FelRush': {'copy': 10694, 'id': 16702, 'clear': ('precast',), 'kits': {
-        'cast': (15602, {KIT_CHEST: 'FelRush', HANDS: FEL_PRECAST_HAND, 'anim': NO_ANIM})}},
+        'cast': (15602, {KIT_CHEST: 'FelRush', HANDS: FEL_PRECAST_HAND, 'anim': NO_ANIM, 'sound': 'FelRush'})}},
+    # Eye Beam is a Fel Breath; its channel is an aura on the Demon Hunter, whose start ("state")
+    # plays the channel sound (longer than the channel, over the cast sound) and end ("statedone")
+    # the end sound.
+    'EyeBeam': {'copy': 8536, 'id': 16707, 'kits': {
+        'cast': (15609, {'sound': 'EyeBeamCast'}),
+        'state': (15611, {'sound': 'EyeBeamChannel'}),
+        'statedone': (15610, {KIT_CHEST: 0, 'sound': 'EyeBeamEnd'})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT})}},
 }
@@ -203,13 +230,13 @@ SPELLS = [
     },
     {
         'id': 90105, 'copy': 1949, 'name': 'Eye Beam', 'icon': 'Ability_DemonHunter_EyeBeam',
-        'two_weapons': True,
+        'two_weapons': True, 'visual': 'EyeBeam',
         'description': 'Blast all enemies in front of you with fel energy for $d, dealing $90106s1 Chaos damage '
                        'every $t1 sec.',
         'tooltip': 'Channeling Eye Beam.',
         'set': {'PowerType': FURY, 'ManaCost': 300, 'ManaCostPercentage': 0, 'RecoveryTime': 30000,
                 'DurationIndex': DURATION_2S, 'BaseLevel': 20, 'SpellLevel': 20, 'MaxLevel': 0,
-                'SchoolMask': CHAOS, 'SpellVisual': 8536},
+                'SchoolMask': CHAOS},
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 200, 'TriggerSpell': 90106}},
     },
@@ -301,6 +328,24 @@ def icon_ids(icons):
     return result
 
 
+def build_sounds(source, out):
+    """SOUNDS' entries, copies of Blizzard's with our files."""
+    sounds = Dbc(source / 'SoundEntries.dbc', SOUND_FIELDS)
+    for key, spec in SOUNDS.items():
+        if len(spec['files']) > 10:
+            raise ValueError(f'{key}: a sound entry holds at most 10 files')
+        row = list(sounds.rows[spec['copy']])
+        row[0] = spec['id']
+        row[SOUND_NAME] = sounds.add_string(f'Emberforge {key}')
+        for n in range(10):
+            has = n < len(spec['files'])
+            row[SOUND_FILES + n] = sounds.add_string(f'{spec["files"][n]}.wav') if has else 0
+            row[SOUND_WEIGHTS + n] = 1 if has else 0
+        row[SOUND_FOLDER] = sounds.add_string(SOUNDS_DIR)
+        sounds.rows[spec['id']] = tuple(row)
+    sounds.save(out / 'SoundEntries.dbc')
+
+
 def build_visuals(source, out):
     """The trails' effect names, and VISUALS' kits and visuals."""
     visuals = Dbc(source / 'SpellVisual.dbc', VISUAL_FIELDS)
@@ -321,6 +366,9 @@ def build_visuals(source, out):
             for where, effect in slots.items():
                 if where == 'anim':
                     kit[KIT_ANIM] = effect
+                    continue
+                if where == 'sound':
+                    kit[KIT_SOUND] = SOUNDS[effect]['id']
                     continue
                 for slot in where if isinstance(where, tuple) else (where,):
                     kit[slot] = TRAILS[effect]['effect'] if isinstance(effect, str) else effect
@@ -435,6 +483,7 @@ def main():
     icon_id = icon_ids(icons)
     icons.save(out / 'SpellIcon.dbc')
 
+    build_sounds(source, out)
     build_visuals(source, out)
     spells = Dbc(source / 'Spell.dbc', SPELL_FIELDS)
     build_spells(spells, icon_id)

@@ -8,6 +8,7 @@ tables from the language archives, which outrank patches placed directly in Data
   Item / ItemDisplayInfo (custom items, patch_items.py), Spell / SpellIcon / SpellVisual /
   SpellVisualKit / SpellVisualEffectName (Emberforge's own spells, the Demon Hunter's, patch_spells.py)
 - spell effect models (Spells\\Emberforge: weapon trails, models/spell_effects.py, from spells/*.png)
+- spell sounds (Sound\\Spells\\Emberforge, from sounds/*.wav)
 - custom models converted from wow.export exports (models/, see MODELS below)
 - the login screen scene, the Seat of the Pantheon (models/build_login_scene.py)
 - inventory icons (icons/*.png) and spell icons (icons/spells/*.png)
@@ -41,7 +42,8 @@ MODELS = [
     ('models/veridus/source', 'sword_1h_artifactskywall_d_06', 'Sword_1H_Veridus', 'Item\\ObjectComponents\\Weapon'),
 ]
 DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
-        'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc']
+        'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc',
+        'SoundEntries.dbc']
 
 
 def main():
@@ -65,6 +67,11 @@ def main():
                          patch_spells.EFFECTS_DIR, **trail.get('options', {}))
             for f in files:
                 entries.append((f'{patch_spells.EFFECTS_DIR}\\{f}', (tmp / 'effects' / f).read_bytes()))
+
+        for spec in patch_spells.SOUNDS.values():
+            for name in spec['files']:
+                source = HERE / 'sounds' / f'{name}.wav'
+                entries.append((f'{patch_spells.SOUNDS_DIR}\\{name}.wav', source.read_bytes()))
 
         for png in sorted((HERE / 'icons').glob('INV_*.png')) + sorted((HERE / 'icons' / 'spells').glob('*.png')):
             with Image.open(png) as image:

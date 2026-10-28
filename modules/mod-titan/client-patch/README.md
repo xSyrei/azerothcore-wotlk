@@ -79,6 +79,11 @@ impact) carry our trails and Blizzard's own fel effect models (fel flames on the
 hits on targets, a demon's bite), as new rows in SpellVisual, SpellVisualKit and
 SpellVisualEffectName.
 
+Their sounds are `SOUNDS`: `sounds/*.wav` (converted from retail's `.ogg` with
+`ffmpeg -i x.ogg -acodec pcm_s16le x.wav`; the 3.3.5a client plays `.wav` and `.mp3`), packed under
+`Sound\\Spells\\Emberforge`, as new SoundEntries rows. An entry holds up to 10 files and the game
+plays one at random each time; a kit's sound plays when the kit does (cast, channel start, end).
+
 Trail textures run from the weapon (left edge) to the end of the trail (right edge), blade tip at
 the top; the build turns them the way the client lays them. `weapon_trail()` sets how much of the
 blade the trail covers (`length`, yards from the grip), `body_trail()` how far it reaches above and
