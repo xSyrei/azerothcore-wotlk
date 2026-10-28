@@ -96,7 +96,7 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
 # (body_trail, for the chest), from spells/<model>.png, or "beam" (beam, for the head slot) from
-# the three spells/<texture>.png in "textures". "options" go to that builder.
+# the spells/<texture>.png in "textures" (flare, flow). "options" go to that builder.
 EFFECTS = {
     'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'effect': 7100},
     'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'effect': 7101},
@@ -107,7 +107,7 @@ EFFECTS = {
     'FelRush': {'model': 'DH_FelRush_Trail', 'effect': 7102, 'shape': 'body', 'options': {'lifetime': 0.5}},
     # Eye Beam: from the face, as long as the channel and its 20-yard reach.
     'EyeBeam': {'model': 'DH_EyeBeam', 'effect': 7104, 'shape': 'beam',
-                'textures': ('DH_EyeBeam_Beam', 'DH_EyeBeam_Fel', 'DH_EyeBeam_Streak')},
+                'textures': ('DH_EyeBeam_Beam', 'DH_EyeBeam_Fel')},
 }
 
 # Sounds: SoundEntries ids, a Blizzard entry copied (volume, distances), and the files (sounds/,
@@ -237,8 +237,8 @@ SPELLS = [
     {
         'id': 90105, 'copy': 1949, 'name': 'Eye Beam', 'icon': 'Ability_DemonHunter_EyeBeam',
         'two_weapons': True, 'visual': 'EyeBeam',
-        'description': 'Blast all enemies in front of you with fel energy for $d, dealing $90106s1 Chaos damage '
-                       'every $t1 sec.',
+        'description': 'Blast all enemies in a line in front of you with fel energy for $d, dealing $90106s1 '
+                       'Chaos damage every $t1 sec.',
         'tooltip': 'Channeling Eye Beam.',
         'set': {'PowerType': FURY, 'ManaCost': 300, 'ManaCostPercentage': 0, 'RecoveryTime': 30000,
                 'DurationIndex': DURATION_2S, 'BaseLevel': 20, 'SpellLevel': 20, 'MaxLevel': 0,
@@ -250,8 +250,9 @@ SPELLS = [
         'id': 90106, 'copy': 5857, 'name': 'Eye Beam', 'icon': 'Ability_DemonHunter_EyeBeam',
         'description': '',
         'set': {'SchoolMask': CHAOS, 'SpellVisual': 0, 'BaseLevel': 20, 'SpellLevel': 20, 'MaxLevel': 80},
-        'effects': {1: {'BasePoints': 9, 'DieSides': 1, 'RealPointsPerLevel': 3.0, 'TargetA': TARGET_UNIT_CONE_ENEMY,
-                        'TargetB': 0, 'RadiusIndex': RADIUS_20, 'BonusMultiplier': 0.0}},
+        # Everything within 20 yards, cut to the beam's lane by spell_titan_dh_eye_beam_damage.
+        'effects': {1: {'BasePoints': 9, 'DieSides': 1, 'RealPointsPerLevel': 3.0, 'TargetA': TARGET_SRC_CASTER,
+                        'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_20, 'BonusMultiplier': 0.0}},
     },
     {
         # Blade Dance: the three quick strikes. 1 damage plus attack power (spell_bonus_data).

@@ -144,50 +144,56 @@ def ribbon_trail(texture, out_dir, name, client_dir, above, below, turn, duratio
     return [f'{name}.m2', f'{name}00.skin', f'{name}.blp']
 
 
-def _soft_strip(texture, size=(64, 64), tint=(0.85, 1.0, 0.7)):
-    """A strip as bright as the texture's brightest column all along, fading across like it: a beam
-    core that can be stretched to any length."""
+def _glow_strip(sigma, color, peak=1.0, size=(64, 64)):
+    """A strip glowing in color along its length, fading across it like a bell curve (sigma: its
+    width, as a share of the strip's half height), peak: its brightest alpha (0 to 1)."""
+    import numpy as np
+    height, width = size
+    y = (np.arange(height) + 0.5) / height * 2 - 1
+    alpha = np.exp(-(y / sigma) ** 2)
+    alpha = (alpha - alpha.min()) / (alpha.max() - alpha.min()) * peak
+    rgba = np.zeros((height, width, 4))
+    rgba[..., :3] = np.array(color) * 255
+    rgba[..., 3] = alpha[:, None] * 255
+    return Image.fromarray(rgba.astype('uint8'))
+
+
+def _streaky(texture, blur=48, gain=1.25, sigma=0.45):
+    """The texture smeared along its length (a wrap-around blur, so it still tiles): flowing
+    streaks instead of its strokes, brightened by gain and fading across like _glow_strip."""
+    import numpy as np
     with Image.open(texture) as image:
-        alpha = image.convert('RGBA').getchannel('A')
-    profile = [max(alpha.getpixel((x, y)) for x in range(alpha.width)) for y in range(alpha.height)]
-    strip = Image.new('RGBA', size)
-    for y in range(size[1]):
-        a = profile[min(alpha.height - 1, y * alpha.height // size[1])]
-        color = tuple(int(255 * c) for c in tint) + (a,)
-        for x in range(size[0]):
-            strip.putpixel((x, y), color)
-    return strip
+        rgb = np.asarray(image.convert('RGB')).astype(float)
+    kernel = np.fft.fft(np.pad(np.ones(blur) / blur, (0, rgb.shape[1] - blur)))
+    for _ in range(2):
+        rgb = np.real(np.fft.ifft(np.fft.fft(rgb, axis=1) * kernel[None, :, None], axis=1))
+    rgb = np.clip(rgb * gain, 0, 255)
+    y = (np.arange(rgb.shape[0]) + 0.5) / rgb.shape[0] * 2 - 1
+    alpha = np.exp(-(y / sigma) ** 2)
+    alpha = (alpha - alpha.min()) / (alpha.max() - alpha.min())
+    rgba = np.dstack([rgb, np.repeat((alpha * 255)[:, None], rgb.shape[1], 1)])
+    return Image.fromarray(rgba.astype('uint8'))
 
 
-def _soft_edges(texture):
-    """The texture with its alpha fading out towards the top and bottom (sides of a beam)."""
-    with Image.open(texture) as image:
-        image = image.convert('RGBA')
-    alpha = Image.new('L', image.size)
-    for y in range(image.height):
-        edge = 1.0 - abs(2.0 * (y + 0.5) / image.height - 1.0)        # 0 at the edges, 1 in the middle
-        alpha.paste(int(255 * min(1.0, edge * 1.6) ** 1.5), (0, y, image.width, y + 1))
-    image.putalpha(alpha)
-    return image
+def beam(flare_texture, flow_texture, out_dir, name, client_dir, length=20.0, width=0.9, flare_length=2.5,
+         tile=6.0, scroll_ms=900, duration=2000):
+    """A beam shot forward (+X) from the attachment it sits on (a kit's head slot: from the face).
 
-
-def beam(flare_texture, flow_texture, core_texture, out_dir, name, client_dir, length=20.0, width=0.9,
-         flare_length=2.5, tile=2.5, scroll_ms=600, duration=2000):
-    """A beam shot forward (+X) from the attachment it sits on (a kit's breath slot: from the face).
-
-    Three additive layers, each two crossed planes so the beam looks round from any side: a flare
-    at the eyes (flare_texture, flare_length yards long), the beam's body (flow_texture with soft
-    edges, one copy every tile yards, scrolling outward once every scroll_ms) and a bright core
-    (core_texture's brightest column, stretched). duration: milliseconds of each of the two
-    animations, the same layout as ribbon_trail() but with the mesh's bounds.
+    Four additive layers, each two crossed planes so the beam looks round from any side, like
+    Legion's Eye Beam: a wide faint green glow, the body (flow_texture smeared into streaks along
+    the beam, soft at the edges, one copy every tile yards, scrolling outward once every scroll_ms),
+    a bright yellow-white core, and a flare at the eyes (flare_texture, flare_length yards long).
+    duration: milliseconds of each of the two animations, the same layout as ribbon_trail() but
+    with the mesh's bounds.
 
     Writes <name>.m2, <name>00.skin and one BLP per layer into out_dir.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     layers = [   # BLP name, image, length, half width, U repeats, scrolls
-        (f'{name}_Body', _soft_edges(flow_texture), length, width, length / tile, True),
-        (f'{name}_Core', _soft_strip(core_texture), length, width * 0.3, 1.0, False),
+        (f'{name}_Glow', _glow_strip(0.5, (0.35, 0.9, 0.15), peak=0.45), length, width * 1.9, 1.0, False),
+        (f'{name}_Body', _streaky(flow_texture), length, width, length / tile, True),
+        (f'{name}_Core', _glow_strip(0.35, (1.0, 1.0, 0.55)), length, width * 0.4, 1.0, False),
         (f'{name}_Flare', Image.open(flare_texture).convert('RGBA'), flare_length, width * 0.9, 1.0, False),
     ]
     for blp_name, image, *_ in layers:
@@ -208,7 +214,8 @@ def beam(flare_texture, flow_texture, core_texture, out_dir, name, client_dir, l
         sections.append((first, 8, start, 12, reach, half))
     vertex_count = len(vertices) // 48
     reach = max(length, flare_length)
-    lo, hi = (0.0, -width, -width), (reach, width, width)
+    side = max(half for _, _, _, half, _, _ in layers)
+    lo, hi = (0.0, -side, -side), (reach, side, side)
 
     blob = Blob(0x130)
     name_ref = blob.add(name.encode() + b'\0', len(name) + 1)

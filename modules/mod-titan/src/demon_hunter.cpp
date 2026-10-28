@@ -57,26 +57,51 @@ class spell_titan_dh_dual_weapons : public SpellScript
     }
 };
 
+namespace
+{
+    // Keeps only the targets in a lane straight ahead of the caster, halfWidth yards to each side
+    // (the area's radius sets its length).
+    void KeepInLane(Unit* caster, std::list<WorldObject*>& targets, float halfWidth)
+    {
+        targets.remove_if([caster, halfWidth](WorldObject* target)
+        {
+            return !caster->HasInLine(target, target->GetObjectSize(), halfWidth);
+        });
+    }
+}
+
 // Fel Rush damage (90104): cast as the Demon Hunter sets off, it hits only the enemies in the lane
-// the dash crosses (15 yards ahead, about 2 yards each side), not everything around.
+// the dash crosses (15 yards ahead, 2 yards each side), not everything around.
 class spell_titan_dh_fel_rush_damage : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_fel_rush_damage);
 
-    static constexpr float LANE_HALF_WIDTH = 2.0f;
-
     void KeepPath(std::list<WorldObject*>& targets)
     {
-        Unit* caster = GetCaster();
-        targets.remove_if([caster](WorldObject* target)
-        {
-            return !caster->HasInLine(target, target->GetObjectSize(), LANE_HALF_WIDTH);
-        });
+        KeepInLane(GetCaster(), targets, 2.0f);
     }
 
     void Register() override
     {
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_dh_fel_rush_damage::KeepPath, EFFECT_0,
+            TARGET_UNIT_SRC_AREA_ENEMY);
+    }
+};
+
+// Eye Beam damage (90106, every tick of the channel): only the enemies along the beam (20 yards
+// ahead, 2.5 yards each side), not a wide cone.
+class spell_titan_dh_eye_beam_damage : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_eye_beam_damage);
+
+    void KeepBeam(std::list<WorldObject*>& targets)
+    {
+        KeepInLane(GetCaster(), targets, 2.5f);
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_dh_eye_beam_damage::KeepBeam, EFFECT_0,
             TARGET_UNIT_SRC_AREA_ENEMY);
     }
 };
@@ -118,4 +143,5 @@ void AddSC_demon_hunter()
     RegisterSpellScript(spell_titan_dh_dual_weapons);
     RegisterSpellScript(spell_titan_dh_blade_dance);
     RegisterSpellScript(spell_titan_dh_fel_rush_damage);
+    RegisterSpellScript(spell_titan_dh_eye_beam_damage);
 }

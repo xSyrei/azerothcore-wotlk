@@ -21,3 +21,8 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 DELETE FROM `spell_script_names` WHERE `spell_id` = 90104 AND `ScriptName` = 'spell_titan_dh_fel_rush_damage';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90104, 'spell_titan_dh_fel_rush_damage');
+
+-- Eye Beam: its damage (90106) only hits the enemies along the beam.
+DELETE FROM `spell_script_names` WHERE `spell_id` = 90106 AND `ScriptName` = 'spell_titan_dh_eye_beam_damage';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90106, 'spell_titan_dh_eye_beam_damage');
