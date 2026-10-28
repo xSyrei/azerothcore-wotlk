@@ -31,3 +31,17 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 DELETE FROM `spell_script_names` WHERE `spell_id` = 90103 AND `ScriptName` = 'spell_titan_dh_fel_rush';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90103, 'spell_titan_dh_fel_rush');
+
+-- Vengeful Retreat and Throw Glaive: both weapons needed; their hits' share of attack power; Throw
+-- Glaive's ricochet reaches 10 yards (a ranged spell's chain would reach 7.5).
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (90109, 90111) AND `ScriptName` = 'spell_titan_dh_dual_weapons';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90109, 'spell_titan_dh_dual_weapons'),
+(90111, 'spell_titan_dh_dual_weapons');
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90110, 90111);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90110, 0, 0, 0.4, 0, 'Vengeful Retreat'),
+(90111, 0, 0, 0.45, 0, 'Throw Glaive');
+DELETE FROM `spell_jump_distance` WHERE `ID` = 90111;
+INSERT INTO `spell_jump_distance` (`ID`, `JumpDistance`) VALUES
+(90111, 10);

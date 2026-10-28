@@ -87,13 +87,18 @@ AURA_PERIODIC_TRIGGER_SPELL, AURA_MOD_DECREASE_SPEED, AURA_MOD_DODGE_PERCENT = 2
 INTERRUPT_MOVEMENT = 0x1        # InterruptFlags: casting is stopped by moving
 CHANNEL_INTERRUPT_MOVE = 0x8    # ChannelInterruptFlags: the channel is broken by moving
 TARGET_UNIT_CASTER, TARGET_SRC_CASTER, TARGET_UNIT_SRC_AREA_ENEMY, TARGET_UNIT_CONE_ENEMY = 1, 22, 15, 104
-DURATION_1S, DURATION_2S = 36, 39
+DURATION_1S, DURATION_2S, DURATION_3S = 36, 39, 27
+RANGE_30 = 4
+GLOBAL_COOLDOWN = 133           # StartRecoveryCategory of spells on the global cooldown
+EFFECT_DISPEL_MECHANIC, EFFECT_LEAP_BACK = 108, 138
+MECHANIC_SNARE = 11
 RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
 
 # Icons: Interface\Icons\<name>. Ours come from icons/spells/<name>.png (in the client patch); the
 # client already has the rest, found by name in SpellIcon.dbc.
 ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'Ability_DemonHunter_FelRush',
-         'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01']
+         'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01', 'Ability_DemonHunter_VengefulRetreat',
+         'Ability_DemonHunter_ThrowGlaive']
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
@@ -281,6 +286,50 @@ SPELLS = [
                 'BaseLevel': 10, 'SpellLevel': 10, 'MaxLevel': 80},
         'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_SRC_CASTER,
                         'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
+    },
+    {
+        # Disengage's backward leap (farther), clearing snares; 90110 hits and slows the enemies left behind.
+        'id': 90109, 'copy': 781, 'name': 'Vengeful Retreat', 'icon': 'Ability_DemonHunter_VengefulRetreat',
+        'two_weapons': True,
+        'description': 'Remove all snares and vault away. Nearby enemies take 40% of your attack power as '
+                       'Physical damage and have their movement speed reduced by 70% for 3 sec.',
+        'set': {'RecoveryTime': 25000, 'ManaCostPercentage': 0, 'BaseLevel': 14, 'SpellLevel': 14},
+        'effects': {
+            1: {'BasePoints': 79, 'MiscValue': 220},       # leap back: up speed 8, back speed 22
+            2: {'Effect': EFFECT_TRIGGER_SPELL, 'BasePoints': 0, 'DieSides': 0, 'TargetA': TARGET_UNIT_CASTER,
+                'TriggerSpell': 90110},
+            3: {'Effect': EFFECT_DISPEL_MECHANIC, 'BasePoints': 0, 'DieSides': 0, 'TargetA': TARGET_UNIT_CASTER,
+                'MiscValue': MECHANIC_SNARE},
+        },
+    },
+    {
+        # Vengeful Retreat's hit: everything within 8 yards, 1 damage plus attack power (spell_bonus_data),
+        # slowed by 70% for 3 sec.
+        'id': 90110, 'copy': 5857, 'name': 'Vengeful Retreat', 'icon': 'Ability_DemonHunter_VengefulRetreat',
+        'visual': 'BladeDanceStrike', 'description': '', 'tooltip': 'Movement speed reduced by 70%.',
+        'set': {'SchoolMask': PHYSICAL, 'DmgClass': DMG_CLASS_MELEE, 'MaxAffectedTargets': 0,
+                'DurationIndex': DURATION_3S, 'BaseLevel': 14, 'SpellLevel': 14, 'MaxLevel': 80},
+        'clear': [2, 3],
+        'effects': {
+            1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_SRC_CASTER,
+                'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0},
+            2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DECREASE_SPEED, 'BasePoints': -71, 'DieSides': 1,
+                'TargetA': TARGET_SRC_CASTER, 'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8},
+        },
+    },
+    {
+        # The night elf "Glaive" throw (its visual flies a glaive), bouncing once (10 yards,
+        # spell_jump_distance); 1 damage plus attack power (spell_bonus_data).
+        'id': 90111, 'copy': 36500, 'name': 'Throw Glaive', 'icon': 'Ability_DemonHunter_ThrowGlaive',
+        'two_weapons': True,
+        'description': 'Throw a demonic glaive at the target for 45% of your attack power as Physical damage. '
+                       'The glaive ricochets to 1 additional enemy within 10 yards.',
+        'set': {'RecoveryTime': 9000, 'RangeIndex': RANGE_30, 'StartRecoveryCategory': GLOBAL_COOLDOWN,
+                'StartRecoveryTime': 1500, 'BaseLevel': 4, 'SpellLevel': 4, 'MaxLevel': 80,
+                'SchoolMask': PHYSICAL},
+        'clear': [2],
+        'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'ChainTarget': 2,
+                        'BonusMultiplier': 0.0, 'DamageMultiplier': 1.0}},
     },
 ]
 

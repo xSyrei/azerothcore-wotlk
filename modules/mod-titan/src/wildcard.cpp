@@ -135,7 +135,9 @@ namespace
         { 90100, CLASS_DEMON_HUNTER, SKILL_HAVOC, 1 },      // Demon's Bite
         { 90101, CLASS_DEMON_HUNTER, SKILL_HAVOC, 1 },      // Chaos Strike
         { 90103, CLASS_DEMON_HUNTER, SKILL_HAVOC, 1 },      // Fel Rush
+        { 90111, CLASS_DEMON_HUNTER, SKILL_HAVOC, 4 },      // Throw Glaive
         { 90102, CLASS_DEMON_HUNTER, SKILL_HAVOC, 10 },     // Blade Dance
+        { 90109, CLASS_DEMON_HUNTER, SKILL_HAVOC, 14 },     // Vengeful Retreat
         { 90105, CLASS_DEMON_HUNTER, SKILL_HAVOC, 20 },     // Eye Beam
     };
     constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
