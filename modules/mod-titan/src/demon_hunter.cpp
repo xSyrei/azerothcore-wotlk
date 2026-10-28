@@ -17,6 +17,7 @@
 
 #include "Player.h"
 #include "ScriptMgr.h"
+#include "SpellAuraEffects.h"
 #include "SpellScript.h"
 #include "SpellScriptLoader.h"
 
@@ -32,6 +33,13 @@ enum DemonHunterSpells
 {
     SPELL_BLADE_DANCE_STRIKE        = 90107,
     SPELL_BLADE_DANCE_FINAL_STRIKE  = 90108,
+    SPELL_DEMON_FORM                = 90115,
+};
+
+enum DemonHunterDisplays
+{
+    DISPLAY_DEMON_FORM_MALE         = 90201,    // client-patch/patch_creatures.py
+    DISPLAY_DEMON_FORM_FEMALE       = 90202,
 };
 
 class spell_titan_dh_dual_weapons : public SpellScript
@@ -169,6 +177,93 @@ class spell_titan_dh_blade_dance : public SpellScript
     }
 };
 
+// Demon Form (90115): the Demon Hunter's demon shape (Metamorphosis' model) for as long as the aura lasts,
+// the female or male one by the character's own gender.
+class spell_titan_dh_demon_form : public AuraScript
+{
+    PrepareAuraScript(spell_titan_dh_demon_form);
+
+    void Transform(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Unit* target = GetTarget();
+        Player* player = target->ToPlayer();
+        uint8 gender = player ? player->GetByteValue(PLAYER_BYTES_3, 0) : target->getGender();
+        target->SetDisplayId(gender == GENDER_FEMALE ? DISPLAY_DEMON_FORM_FEMALE : DISPLAY_DEMON_FORM_MALE,
+            target->GetObjectScale());
+    }
+
+    void Restore(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        GetTarget()->RestoreDisplayId();
+    }
+
+    void Register() override
+    {
+        AfterEffectApply += AuraEffectApplyFn(spell_titan_dh_demon_form::Transform, EFFECT_0, SPELL_AURA_DUMMY,
+            AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_titan_dh_demon_form::Restore, EFFECT_0, SPELL_AURA_DUMMY,
+            AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// Eye Beam (90105): the Demon Hunter takes demon form for the whole channel.
+class spell_titan_dh_eye_beam : public AuraScript
+{
+    PrepareAuraScript(spell_titan_dh_eye_beam);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_DEMON_FORM });
+    }
+
+    void Transform(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Unit* target = GetTarget();
+        target->CastSpell(target, SPELL_DEMON_FORM, true);
+        // Outlasts the channel: the channel's end takes it off (below), so the form never drops early.
+        if (Aura* form = target->GetAura(SPELL_DEMON_FORM))
+        {
+            form->SetMaxDuration(GetMaxDuration() + 1000);
+            form->SetDuration(GetMaxDuration() + 1000);
+        }
+    }
+
+    void Restore(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        GetTarget()->RemoveAurasDueToSpell(SPELL_DEMON_FORM);
+    }
+
+    void Register() override
+    {
+        AfterEffectApply += AuraEffectApplyFn(spell_titan_dh_eye_beam::Transform, EFFECT_0,
+            SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_titan_dh_eye_beam::Restore, EFFECT_0,
+            SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// Chaos Nova (90112): the Demon Hunter flashes into demon form for a moment (Demon Form's own 1 sec).
+class spell_titan_dh_chaos_nova : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_chaos_nova);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_DEMON_FORM });
+    }
+
+    void Transform()
+    {
+        Unit* caster = GetCaster();
+        caster->CastSpell(caster, SPELL_DEMON_FORM, true);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_dh_chaos_nova::Transform);
+    }
+};
+
 void AddSC_demon_hunter()
 {
     RegisterSpellScript(spell_titan_dh_dual_weapons);
@@ -176,4 +271,7 @@ void AddSC_demon_hunter()
     RegisterSpellScript(spell_titan_dh_fel_rush);
     RegisterSpellScript(spell_titan_dh_fel_rush_damage);
     RegisterSpellScript(spell_titan_dh_eye_beam_damage);
+    RegisterSpellScript(spell_titan_dh_demon_form);
+    RegisterSpellScript(spell_titan_dh_eye_beam);
+    RegisterSpellScript(spell_titan_dh_chaos_nova);
 }

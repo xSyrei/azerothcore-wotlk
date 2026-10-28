@@ -140,7 +140,9 @@ python3 patch_creatures.py ./dbc /tmp/out --sql ../data/sql/db-world/titan_demon
 | 90201 | `Creature\DemonHunterMeta\DHMetaMale.m2` |
 | 90202 | `Creature\DemonHunterMeta\DHMetaFemale.m2` |
 
-In game, `.morph 90201` or `.morph 90202` shows one on your character (`.demorph` to undo). Their size
+The Demon Form aura (spell 90115, hidden) puts the character in the one of its gender: Eye Beam wears it
+for its channel, Chaos Nova for a second (`src/demon_hunter.cpp`). In game, `.morph 90201` or
+`.morph 90202` shows one on your character (`.demorph` to undo). Their size
 is `CreatureModelScale` in `CREATURES`.
 
 **Preview:** `python3 models/render_creature.py <model.m2> <texture dir> out.png <anim id>[/variation]

@@ -97,6 +97,9 @@ SPELLFAMILY_HUNTER = 9
 BLEND_ADD = 4                   # M2 blend mode: additive
 DURATION_10S, RANGE_20 = 1, 3
 AURA_STUN, AURA_MOD_DAMAGE_PERCENT_TAKEN = 12, 87
+AURA_DUMMY = 4
+CAST_INSTANT = 1
+ATTR0_DO_NOT_DISPLAY, ATTR0_DO_NOT_LOG = 0x80, 0x100
 EFFECT_DISPEL, EFFECT_INTERRUPT_CAST = 38, 68
 DISPEL_MAGIC = 1
 ALL_SCHOOLS = 0x7F
@@ -107,7 +110,7 @@ RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
 ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'Ability_DemonHunter_FelRush',
          'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01', 'Ability_DemonHunter_VengefulRetreat',
          'Ability_DemonHunter_ThrowGlaive', 'Spell_Fire_FelFireNova', 'Spell_Shadow_ShadowWard',
-         'Ability_DemonHunter_ConsumeMagic']
+         'Ability_DemonHunter_ConsumeMagic', 'Spell_Shadow_DemonForm']
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
@@ -397,9 +400,9 @@ SPELLS = [
                        'and stunning all enemies within 8 yards for 2 sec.',
         'tooltip': 'Stunned.',
         'set': {'PowerType': FURY, 'ManaCost': 300, 'RecoveryTime': 60000, 'DurationIndex': DURATION_2S,
-                'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500, 'SchoolMask': CHAOS,
-                'DmgClass': DMG_CLASS_MELEE, 'MaxAffectedTargets': 0, 'BaseLevel': 24, 'SpellLevel': 24,
-                'MaxLevel': 80},
+                'CastingTimeIndex': CAST_INSTANT, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
+                'SchoolMask': CHAOS, 'DmgClass': DMG_CLASS_MELEE, 'MaxAffectedTargets': 0, 'BaseLevel': 24,
+                'SpellLevel': 24, 'MaxLevel': 80},
         'clear': [3],
         'effects': {
             1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'RadiusIndex': RADIUS_8,
@@ -417,6 +420,19 @@ SPELLS = [
                 'PowerType': 0, 'ManaCost': 0, 'BaseLevel': 18, 'SpellLevel': 18},
         'effects': {2: {'Aura': AURA_MOD_DAMAGE_PERCENT_TAKEN, 'BasePoints': -36, 'DieSides': 1,
                         'MiscValue': ALL_SCHOOLS}},
+    },
+    {
+        # Demon Form: the Demon Hunter's demon shape for as long as it lasts (male or female, by the
+        # character), hidden from the buff bar. Eye Beam holds it for its channel, Chaos Nova for a moment
+        # (spell_titan_dh_demon_form and the scripts of both).
+        'id': 90115, 'copy': 26669, 'name': 'Demon Form', 'icon': 'Spell_Shadow_DemonForm',
+        'description': '', 'tooltip': '',
+        'set': {'Attributes': ATTR0_DO_NOT_DISPLAY | ATTR0_DO_NOT_LOG, 'Category': 0, 'CategoryRecoveryTime': 0,
+                'RecoveryTime': 0, 'StartRecoveryCategory': 0, 'StartRecoveryTime': 0, 'PowerType': 0,
+                'ManaCost': 0, 'DurationIndex': DURATION_1S, 'SpellVisual': 0, 'BaseLevel': 1, 'SpellLevel': 1},
+        'clear': [2],
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 0,
+                        'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Counterspell: interrupts and locks the school out for 3 sec; also removes one magic buff

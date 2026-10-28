@@ -46,6 +46,7 @@ def patch(source, out):
     for display_id, model_id, model_file, template_model, template_display, scale, _, box in CREATURES:
         row = list(models.rows[template_model])
         row[0] = model_id
+        row[1] = 0                  # Flags: the warlock demon's (0x4, 0x10) hide the weapons; Illidan's model has none
         row[2] = models.add_string(model_file)              # ModelName
         row[17:23] = [as_bits(v) for v in box]              # GeoBoxMin / GeoBoxMax
         models.rows[model_id] = tuple(row)
