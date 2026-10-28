@@ -83,14 +83,11 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
 # gets the trail), the ids of the new visual, kit and effect name, and the kit slots the trail goes
 # in (both weapons). "blizzard" puts one of Blizzard's effects (SpellVisualEffectName id) there
 # instead of ours; "options" go to models/spell_effects.weapon_trail().
-# TEST BUILD: the client freezes when our trail model's animation ends and the kit removes it
-# (after 1.75 sec and after 30 sec). Both now end after 2 sec: Demon's Bite's model has no ribbon
-# (nothing to see), Chaos Strike's keeps it, to tell whether the ribbon or the rest is at fault.
 TRAILS = {
     'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'copy': 253, 'visual': 16700, 'kit': 15600, 'effect': 7100,
-                   'slots': WEAPONS, 'options': {'sequence_length': 2000, 'with_ribbon': False}},
+                   'slots': WEAPONS},
     'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'copy': 253, 'visual': 16701, 'kit': 15601, 'effect': 7101,
-                    'slots': WEAPONS, 'options': {'sequence_length': 2000}},
+                    'slots': WEAPONS},
 }
 
 # Spells: id, the Blizzard spell copied, name, tooltip text, aura text, icon, then column changes.
