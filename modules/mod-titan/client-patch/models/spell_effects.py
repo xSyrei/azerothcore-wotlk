@@ -37,21 +37,22 @@ def comp_quat(value):
 
 
 def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, lifetime=0.25,
-                 edges_per_second=60.0, sequence_length=None):
+                 edges_per_second=60.0, sequence_length=30000):
     """Write <name>.m2, <name>00.skin and <name>.blp into out_dir.
 
     length: yards of blade the trail covers, from the grip. duration: milliseconds the trail is
     drawn after the kit starts (the swing), None to draw it as long as the model lives; it then
-    fades out over lifetime seconds. The one animation (sequence_length milliseconds) runs a while
-    longer so the fade can finish before the kit removes the model.
+    fades out over lifetime seconds.
+
+    sequence_length: milliseconds of the one animation. It must outlast the model: the client froze
+    a moment after a ribbon model's animation started over (tested in game with a 1.75 sec
+    animation; 30 sec never froze, the kit removes the model well before).
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     with Image.open(texture) as image:
         (out_dir / f'{name}.blp').write_bytes(blp.encode(image.convert('RGBA')))
     texture_name = f'{client_dir}\\{name}.blp'
-    if sequence_length is None:
-        sequence_length = (duration or 0) + int(lifetime * 1000) + 900
     lo, hi = (-length, -length, -length), (length, length, length)
     radius = length * math.sqrt(3)
 
