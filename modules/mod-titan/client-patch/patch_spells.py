@@ -35,7 +35,8 @@ FIELDS = {
     'CastingTimeIndex': 28, 'RecoveryTime': 29, 'CategoryRecoveryTime': 30, 'InterruptFlags': 31,
     'AuraInterruptFlags': 32, 'ChannelInterruptFlags': 33, 'MaxLevel': 37, 'BaseLevel': 38,
     'SpellLevel': 39, 'DurationIndex': 40, 'PowerType': 41, 'ManaCost': 42, 'RangeIndex': 46,
-    'EquippedItemClass': 68, 'EquippedItemSubClassMask': 69, 'SpellVisual': 131, 'SpellIconID': 133,
+    'EquippedItemClass': 68, 'EquippedItemSubClassMask': 69,
+    'EquippedItemInventoryTypeMask': 70, 'SpellVisual': 131, 'SpellIconID': 133,
     'ActiveIconID': 134, 'ManaCostPercentage': 204, 'StartRecoveryCategory': 205, 'StartRecoveryTime': 206,
     'SpellFamilyName': 208, 'SpellFamilyFlags0': 209, 'SpellFamilyFlags1': 210, 'SpellFamilyFlags2': 211,
     'MaxAffectedTargets': 212, 'DmgClass': 213, 'SchoolMask': 225, 'RuneCostID': 226,
@@ -62,7 +63,9 @@ EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
 # Values used below.
 CHAOS = 0x7F                    # every school
 FURY = 6                        # the client's Runic Power, renamed
-MELEE_WEAPONS = 0xA9F3          # axes, maces, swords (1h and 2h), polearms, staves, fists, daggers
+ONE_HANDED_WEAPONS = 0xA091     # one-handed axes, maces and swords, fist weapons, daggers
+ITEM_CLASS_WEAPON = 2
+SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON = 0x400
 EFFECT_SCHOOL_DAMAGE, EFFECT_APPLY_AURA, EFFECT_ENERGIZE = 2, 6, 30
 EFFECT_WEAPON_PERCENT_DAMAGE, EFFECT_TRIGGER_SPELL, EFFECT_NORMALIZED_WEAPON_DMG = 31, 64, 121
 AURA_PERIODIC_TRIGGER_SPELL, AURA_MOD_DODGE_PERCENT = 23, 49
@@ -83,15 +86,17 @@ TRAILS = {
 }
 
 # Spells: id, the Blizzard spell copied, name, tooltip text, aura text, icon, then column changes.
+# "two_weapons": needs a one-handed weapon in each hand (the main hand checked here, the off hand by
+# the server's spell_titan_dh_dual_weapons, src/demon_hunter.cpp).
 # Effects not listed keep the copied spell's; "clear" empties effects (numbers 1-3).
 SPELLS = [
     {
-        'id': 90100, 'copy': 1752, 'name': "Demon's Bite", 'icon': 'INV_Weapon_Glave_01', 'trail': 'DemonsBite',
+        'id': 90100, 'copy': 1752, 'name': "Demon's Bite", 'icon': 'INV_Weapon_Glave_01',
+        'trail': 'DemonsBite', 'two_weapons': True,
         'description': 'Quickly attack for your weapon damage plus $s1 Physical damage. '
                        'Generates 20 to 30 Fury.',
         'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
-                'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80,
-                'EquippedItemSubClassMask': MELEE_WEAPONS},
+                'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
         'effects': {
             1: {'Effect': EFFECT_NORMALIZED_WEAPON_DMG, 'BasePoints': 4, 'DieSides': 1, 'RealPointsPerLevel': 1.0},
             2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 101, 'MiscValue': FURY,
@@ -100,22 +105,22 @@ SPELLS = [
     },
     {
         'id': 90101, 'copy': 1752, 'name': 'Chaos Strike', 'icon': 'Ability_DemonHunter_ChaosStrike',
-        'trail': 'ChaosStrike',
+        'trail': 'ChaosStrike', 'two_weapons': True,
         'description': 'Slice your target for $s1% weapon damage as Chaos.',
         'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 400,
-                'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'SchoolMask': CHAOS,
-                'EquippedItemSubClassMask': MELEE_WEAPONS},
+                'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'SchoolMask': CHAOS},
         'clear': [2],
         'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 199, 'DieSides': 1}},
     },
     {
         'id': 90102, 'copy': 1680, 'name': 'Blade Dance', 'icon': 'Ability_DemonHunter_BladeDance',
+        'two_weapons': True,
         'description': 'Strike all enemies within $a1 yards for $s1% weapon damage, and dodge every attack '
                        'for $d.',
         'tooltip': 'Dodging all attacks.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'PowerType': FURY,
                 'ManaCost': 350, 'MaxAffectedTargets': 0, 'DurationIndex': DURATION_1S, 'BaseLevel': 10,
-                'SpellLevel': 10, 'EquippedItemSubClassMask': MELEE_WEAPONS},
+                'SpellLevel': 10},
         'clear': [2],
         'effects': {
             1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 149, 'DieSides': 1,
@@ -126,6 +131,7 @@ SPELLS = [
     },
     {
         'id': 90103, 'copy': 1953, 'name': 'Fel Rush', 'icon': 'Ability_DemonHunter_FelRush',
+        'two_weapons': True,
         'description': 'Rush forward $a1 yards in a burst of fel energy, dealing $90104s1 Chaos damage to '
                        'enemies around you.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'ManaCostPercentage': 0,
@@ -146,6 +152,7 @@ SPELLS = [
     },
     {
         'id': 90105, 'copy': 1949, 'name': 'Eye Beam', 'icon': 'Ability_DemonHunter_EyeBeam',
+        'two_weapons': True,
         'description': 'Blast all enemies in front of you with fel energy for $d, dealing $90106s1 Chaos damage '
                        'every $t1 sec.',
         'tooltip': 'Channeling Eye Beam.',
@@ -264,6 +271,11 @@ def build_spells(spells, icon_id):
         if 'SpellFamilyName' not in spell.get('set', {}):
             for name in ('SpellFamilyName', 'SpellFamilyFlags0', 'SpellFamilyFlags1', 'SpellFamilyFlags2'):
                 row[FIELDS[name]] = 0
+        if spell.get('two_weapons'):
+            row[FIELDS['EquippedItemClass']] = ITEM_CLASS_WEAPON
+            row[FIELDS['EquippedItemSubClassMask']] = ONE_HANDED_WEAPONS
+            row[FIELDS['EquippedItemInventoryTypeMask']] = 0
+            row[FIELDS['AttributesEx3']] |= SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON
         if 'trail' in spell:
             row[FIELDS['SpellVisual']] = TRAILS[spell['trail']]['visual']
         row[FIELDS['SpellIconID']] = icon_id[spell['icon']]

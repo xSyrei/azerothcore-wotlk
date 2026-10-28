@@ -9,6 +9,9 @@ Weapon models point their blade along +X from the grip, the way a kit's weapon e
 A ribbon spans its bone's Z axis (heightAbove up, heightBelow down), so the bone is turned a
 quarter turn about Y to lay that span along the blade.
 
+The model also carries one tiny triangle drawn fully transparent: models without any mesh are not
+something the client's own effect models do, so this one has the usual vertex buffer and skin.
+
 Trail textures: U runs along the trail, from the weapon (left edge, newest) to its end (right
 edge, oldest); V across it, from the blade tip (top) to the grip (bottom).
 """
@@ -66,13 +69,14 @@ def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, l
 
     ref = blob.add(texture_name.encode() + b'\0', len(texture_name) + 1)
     textures_ref = blob.add(struct.pack('<II2I', 0, 0, *ref), 1)       # clamped: the trail ends at the edges
-    weights = blob.add(track(blob, 0, [([0], [0x7FFF])], 'h'), 1)
+    weights = blob.add(track(blob, 0, [([0], [0])], 'h'), 1)               # the triangle: never seen
     materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ALPHA)])
     bone_lookup = blob.array('H', [0])
     texture_lookup = blob.array('H', [0])
     texture_unit_lookup = blob.array('H', [0])
     transparency_lookup = blob.array('H', [0])
     replaceable_lookup = blob.array('h', [-1])
+    transform_lookup = blob.array('H', [NONE16])                           # no texture animation
 
     def one(fmt, value):
         return track(blob, 0, [([0], [value])], fmt)
@@ -94,13 +98,16 @@ def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, l
     header += struct.pack('<2I', 0, 0)                                              # global sequences
     header += struct.pack('<2I', *sequences) + struct.pack('<2I', *sequence_lookup)
     header += struct.pack('<2I', *bones) + struct.pack('<2I', 0, 0)
-    header += struct.pack('<2I', 0, 0) + struct.pack('<I', 1)                       # no vertices, 1 skin
+    vertices = b''.join(struct.pack('<3f4B4B3f2f2f', *pos, 255, 0, 0, 0, 0, 0, 0, 0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0)
+                        for pos in ((0.0, 0.0, 0.0), (0.001, 0.0, 0.0), (0.0, 0.001, 0.0)))
+    vertices_ref = blob.add(vertices, 3)
+    header += struct.pack('<2I', *vertices_ref) + struct.pack('<I', 1)
     header += struct.pack('<2I', 0, 0) + struct.pack('<2I', *textures_ref)          # colors, textures
     header += struct.pack('<2I', *weights) + struct.pack('<2I', 0, 0)               # no texture transforms
     header += struct.pack('<2I', *replaceable_lookup) + struct.pack('<2I', *materials_ref)
     header += struct.pack('<2I', *bone_lookup) + struct.pack('<2I', *texture_lookup)
     header += struct.pack('<2I', *texture_unit_lookup) + struct.pack('<2I', *transparency_lookup)
-    header += struct.pack('<2I', 0, 0)                                              # transform lookup
+    header += struct.pack('<2I', *transform_lookup)
     header += struct.pack('<6ff6ff', *lo, *hi, radius, *lo, *hi, radius)
     header += struct.pack('<2I', 0, 0) * 3                                          # collision
     header += struct.pack('<2I', 0, 0) * 2                                          # attachments
@@ -111,7 +118,13 @@ def weapon_trail(texture, out_dir, name, client_dir, length=1.5, duration=600, l
     blob.data[:0x130] = header
     (out_dir / f'{name}.m2').write_bytes(bytes(blob.data))
 
-    # Skin: nothing to draw (the ribbon draws itself).
-    skin = struct.pack('<4s2I2I2I2I2II', b'SKIN', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21)
-    (out_dir / f'{name}00.skin').write_bytes(skin)
+    # Skin: the transparent triangle (the ribbon draws itself).
+    skin = Blob(48)
+    lookup = skin.array('H', [0, 1, 2])
+    triangles = skin.array('H', [0, 1, 2])
+    props = skin.add(b'\0' * 12, 3)
+    sections = skin.add(struct.pack('<10H3f3ff', 0, 0, 0, 3, 0, 3, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0.001), 1)
+    batches = skin.add(struct.pack('<Bb11H', 16, 0, 0, 0, 0, NONE16, 0, 0, 1, 0, 0, 0, 0), 1)
+    skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *triangles, *props, *sections, *batches, 21)
+    (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
     return [f'{name}.m2', f'{name}00.skin', f'{name}.blp']

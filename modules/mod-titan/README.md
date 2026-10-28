@@ -85,6 +85,11 @@ built or spent Runic Power build and spend Fury, the same pool as the Demon Hunt
 | 90102 | Blade Dance | 10 | 150% weapon damage to enemies within 8 yards, dodges all attacks for 1 sec; costs 35 |
 | 90105 | Eye Beam | 20 | 2 sec channel, Chaos damage in a 20-yard cone every 0.2 sec (90106); costs 30 |
 
+Every ability above needs a one-handed weapon in each hand (two one-handed weapons, or a main-hand
+and an off-hand weapon; not a shield or held-in-off-hand item). The main hand is checked by the
+spells themselves, the off hand by `spell_titan_dh_dual_weapons` (`src/demon_hunter.cpp`, bound in
+`titan_demon_hunter_scripts.sql`). Learning one also teaches Dual Wield, which Heroes lack otherwise.
+
 Learn one in game with `.learn 90100` (needs the client patch for its name and icon).
 
 ## Items
