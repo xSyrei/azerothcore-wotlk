@@ -38,7 +38,7 @@ def comp_quat(value):
 
 
 def weapon_trail(texture, out_dir, name, client_dir, length=1.1, duration=600, lifetime=0.25,
-                 edges_per_second=60.0, sequence_length=30000):
+                 edges_per_second=60.0, sequence_length=30000, with_ribbon=True):
     """Write <name>.m2, <name>00.skin and <name>.blp into out_dir.
 
     length: yards of blade the trail covers, from the grip. duration: milliseconds the trail is
@@ -99,7 +99,7 @@ def weapon_trail(texture, out_dir, name, client_dir, length=1.1, duration=600, l
     ribbon += track(blob, 0, [shown], 'B')                                  # drawn during the swing
     ribbon += struct.pack('<hBB', 0, 0, 0)          # priority plane, color 0, texture transform lookup 0
     assert len(ribbon) == 176, len(ribbon)
-    ribbons_ref = blob.add(ribbon, 1)
+    ribbons_ref = blob.add(ribbon, 1) if with_ribbon else (0, 0)
 
     header = struct.pack('<4sI', b'MD20', 264)
     header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)
