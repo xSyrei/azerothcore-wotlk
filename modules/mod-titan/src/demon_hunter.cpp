@@ -76,7 +76,7 @@ class spell_titan_dh_fel_rush : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_fel_rush);
 
-    static constexpr float DASH_SPEED = 90.0f;      // yards per second (charges: 42)
+    static constexpr float DASH_SPEED = 180.0f;     // yards per second (charges: 42)
 
     void Dash(SpellEffIndex effIndex)
     {
