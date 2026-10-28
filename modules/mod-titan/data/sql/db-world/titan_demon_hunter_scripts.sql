@@ -26,3 +26,8 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 DELETE FROM `spell_script_names` WHERE `spell_id` = 90106 AND `ScriptName` = 'spell_titan_dh_eye_beam_damage';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90106, 'spell_titan_dh_eye_beam_damage');
+
+-- Fel Rush: its dash runs at its own, faster speed.
+DELETE FROM `spell_script_names` WHERE `spell_id` = 90103 AND `ScriptName` = 'spell_titan_dh_fel_rush';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90103, 'spell_titan_dh_fel_rush');

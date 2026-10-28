@@ -70,6 +70,37 @@ namespace
     }
 }
 
+// Fel Rush (90103): the core's charge to a point (Spell::EffectChargeDest), at Fel Rush's own
+// speed: a snap across the 15 yards instead of the charge speed's third of a second.
+class spell_titan_dh_fel_rush : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_fel_rush);
+
+    static constexpr float DASH_SPEED = 90.0f;      // yards per second (charges: 42)
+
+    void Dash(SpellEffIndex effIndex)
+    {
+        PreventHitDefaultEffect(effIndex);
+        Unit* caster = GetCaster();
+        WorldLocation const* dest = GetExplTargetDest();
+        if (!dest)
+            return;
+
+        Position pos = dest->GetPosition();
+        if (!caster->IsWithinLOS(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ()))
+            pos = caster->GetFirstCollisionPosition(caster->GetDistance(pos), caster->GetRelativeAngle(&pos));
+
+        caster->GetMotionMaster()->MoveCharge(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), DASH_SPEED);
+        if (Player* player = caster->ToPlayer())
+            sScriptMgr->AnticheatSetUnderACKmount(player);
+    }
+
+    void Register() override
+    {
+        OnEffectLaunch += SpellEffectFn(spell_titan_dh_fel_rush::Dash, EFFECT_0, SPELL_EFFECT_CHARGE_DEST);
+    }
+};
+
 // Fel Rush damage (90104): cast as the Demon Hunter sets off, it hits only the enemies in the lane
 // the dash crosses (15 yards ahead, 2 yards each side), not everything around.
 class spell_titan_dh_fel_rush_damage : public SpellScript
@@ -142,6 +173,7 @@ void AddSC_demon_hunter()
 {
     RegisterSpellScript(spell_titan_dh_dual_weapons);
     RegisterSpellScript(spell_titan_dh_blade_dance);
+    RegisterSpellScript(spell_titan_dh_fel_rush);
     RegisterSpellScript(spell_titan_dh_fel_rush_damage);
     RegisterSpellScript(spell_titan_dh_eye_beam_damage);
 }
