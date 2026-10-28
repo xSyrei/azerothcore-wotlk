@@ -63,8 +63,8 @@ python3 patch_spells.py ./dbc /tmp/out --sql ../data/sql/db-world/titan_demon_hu
 ```
 
 After changing a spell, regenerate that SQL **and** rebuild the patch: client and server must agree.
-Fury is Runic Power (every Hero has it). The Wildcard pool and the Classless window get the spells
-from `CUSTOM_ABILITIES` in `src/wildcard.cpp` (spec tabs Havoc and Vengeance).
+Fury is the client's Runic Power, renamed (every Hero has it). The Wildcard pool and the
+Classless window get the spells from `CUSTOM_ABILITIES` in `src/wildcard.cpp` (spec tabs Havoc and Vengeance).
 
 ## Login screen (GlueXML)
 
@@ -117,11 +117,15 @@ check; the Grimfall build in use does (see the launcher's `docs/CLIENT_DISTRIBUT
 
 ## Resource bars addon
 
-Heroes use every class resource (mana, rage, energy, runic power and runes), but the player
-frame only shows mana. `AddOns/Emberforge_Resources` adds bars for rage, energy and runic power
+Heroes use every class resource (mana, rage, energy, Fury and runes), but the player
+frame only shows mana. `AddOns/Emberforge_Resources` adds bars for rage, energy and Fury
 under the player frame and turns on the rune bar. A bar appears once you know an ability that
 uses that resource, or currently have some of it. It also recolors the Hero class from Paladin
 pink to ember orange wherever the UI colors names by class.
+
+Emberforge has no Runic Power: it is Fury. `patch_spells.py` renames it in every spell's name and
+text in `Spell.dbc`, and the addon renames it in every UI string (spell costs, combat text, errors)
+and colors its bars Fury purple.
 
 Install: copy the `Emberforge_Resources` folder into the client's `Interface\AddOns\` folder.
 The launcher will ship it automatically for players.

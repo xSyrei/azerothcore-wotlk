@@ -1,7 +1,7 @@
 -- AUTOMATICALLY GENERATED -- DO NOT EDIT!
 
 ABILITY_INFO_BLOODELF1 = "- Enchanting skill increased.";
-ABILITY_INFO_BLOODELF2 = "- May restore mana, energy, or runic power.";
+ABILITY_INFO_BLOODELF2 = "- May restore mana, energy, or Fury.";
 ABILITY_INFO_BLOODELF3 = "- May silence nearby opponents.";
 ABILITY_INFO_BLOODELF4 = "- Resistant to magical damage.";
 ABILITY_INFO_DRAENEI1 = "- Jewelcrafting skill increased.";
@@ -280,7 +280,7 @@ CLASS_INFO_MAGE5 = "- Uses mana as a resource.";
 CLASS_INFO_PALADIN0 = "- Role: Any. Wildcard decides.";
 CLASS_INFO_PALADIN1 = "- Pick 4 starting abilities from every class.";
 CLASS_INFO_PALADIN2 = "- From level 9, every level draws at random: a skill on even levels, a talent on odd levels.";
-CLASS_INFO_PALADIN3 = "- Uses every resource: mana, rage, energy, runic power and runes.";
+CLASS_INFO_PALADIN3 = "- Uses every resource: mana, rage, energy, Fury and runes.";
 CLASS_INFO_PALADIN4 = "- Reroll any ability or talent with an Eye of Unlearning.";
 CLASS_INFO_PRIEST0 = "- Role: Healer, Damage";
 CLASS_INFO_PRIEST1 = "- Light Armor (Cloth)";

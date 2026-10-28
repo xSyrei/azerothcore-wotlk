@@ -6,8 +6,9 @@ changed, so it behaves and looks like a real ability. The same rows go to the cl
 DBCs, in the client patch) and to the server (`spell_dbc` rows, written with --sql to
 data/sql/db-world/): both must agree on every spell.
 
-Resources: 3.3.5 has no Fury, so Demon Hunter abilities build and spend Runic Power, which every
-Hero has (src/hero_resources.cpp).
+Resources: Emberforge has no Runic Power: its power type (6) is Fury, which every Hero has
+(src/hero_resources.cpp). Every client spell text that says Runic Power says Fury instead (the
+Emberforge_Resources addon renames it in the UI).
 
 Usage: python3 patch_spells.py <dir with original DBCs> <output dir> [--sql <out.sql>]
 """
@@ -48,7 +49,7 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 
 # Values used below.
 CHAOS = 0x7F                    # every school
-RUNIC_POWER = 6
+FURY = 6                        # the client's Runic Power, renamed
 MELEE_WEAPONS = 0xA9F3          # axes, maces, swords (1h and 2h), polearms, staves, fists, daggers
 EFFECT_SCHOOL_DAMAGE, EFFECT_APPLY_AURA, EFFECT_ENERGIZE = 2, 6, 30
 EFFECT_WEAPON_PERCENT_DAMAGE, EFFECT_TRIGGER_SPELL, EFFECT_NORMALIZED_WEAPON_DMG = 31, 64, 121
@@ -68,20 +69,20 @@ SPELLS = [
     {
         'id': 90100, 'copy': 1752, 'name': "Demon's Bite", 'icon': 'INV_Weapon_Glave_01',
         'description': 'Quickly attack for your weapon damage plus $s1 Physical damage. '
-                       'Generates 20 to 30 Runic Power.',
-        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': RUNIC_POWER, 'ManaCost': 0,
+                       'Generates 20 to 30 Fury.',
+        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
                 'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80,
                 'EquippedItemSubClassMask': MELEE_WEAPONS},
         'effects': {
             1: {'Effect': EFFECT_NORMALIZED_WEAPON_DMG, 'BasePoints': 4, 'DieSides': 1, 'RealPointsPerLevel': 1.0},
-            2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 101, 'MiscValue': RUNIC_POWER,
+            2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 101, 'MiscValue': FURY,
                 'TargetA': TARGET_UNIT_CASTER, 'TargetB': 0},
         },
     },
     {
         'id': 90101, 'copy': 1752, 'name': 'Chaos Strike', 'icon': 'Ability_DemonHunter_ChaosStrike',
         'description': 'Slice your target for $s1% weapon damage as Chaos.',
-        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': RUNIC_POWER, 'ManaCost': 400,
+        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 400,
                 'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'SchoolMask': CHAOS,
                 'SpellVisual': 8512, 'EquippedItemSubClassMask': MELEE_WEAPONS},
         'clear': [2],
@@ -92,7 +93,7 @@ SPELLS = [
         'description': 'Strike all enemies within $a1 yards for $s1% weapon damage, and dodge every attack '
                        'for $d.',
         'tooltip': 'Dodging all attacks.',
-        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'PowerType': RUNIC_POWER,
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'PowerType': FURY,
                 'ManaCost': 350, 'MaxAffectedTargets': 0, 'DurationIndex': DURATION_1S, 'BaseLevel': 10,
                 'SpellLevel': 10, 'EquippedItemSubClassMask': MELEE_WEAPONS},
         'clear': [2],
@@ -128,7 +129,7 @@ SPELLS = [
         'description': 'Blast all enemies in front of you with fel energy for $d, dealing $90106s1 Chaos damage '
                        'every $t1 sec.',
         'tooltip': 'Channeling Eye Beam.',
-        'set': {'PowerType': RUNIC_POWER, 'ManaCost': 300, 'ManaCostPercentage': 0, 'RecoveryTime': 30000,
+        'set': {'PowerType': FURY, 'ManaCost': 300, 'ManaCostPercentage': 0, 'RecoveryTime': 30000,
                 'DurationIndex': DURATION_2S, 'BaseLevel': 20, 'SpellLevel': 20, 'MaxLevel': 0,
                 'SchoolMask': CHAOS, 'SpellVisual': 8536},
         'clear': [2, 3],
@@ -231,6 +232,20 @@ def build_spells(spells, icon_id):
         spells.rows[spell['id']] = tuple(row)
 
 
+def rename_runic_power(spells):
+    """Runic Power is Fury on Emberforge: rename it in every spell's name, rank, description and tooltip."""
+    pattern = re.compile(r'runic power', re.I)
+    renamed = 0
+    for key, row in spells.rows.items():
+        row = list(row)
+        for base in (NAME, RANK, DESCRIPTION, TOOLTIP):
+            if row[base] and pattern.search(spells.string(row[base])):
+                row[base] = spells.add_string(pattern.sub('Fury', spells.string(row[base])))
+                renamed += 1
+        spells.rows[key] = tuple(row)
+    return renamed
+
+
 def sql_columns():
     """spell_dbc's columns and their types, from the base schema."""
     schema = (HERE.parents[2] / 'data' / 'sql' / 'base' / 'db_world' / 'spell_dbc.sql').read_text()
@@ -283,8 +298,10 @@ def main():
 
     spells = Dbc(source / 'Spell.dbc', SPELL_FIELDS)
     build_spells(spells, icon_id)
+    renamed = rename_runic_power(spells)
     spells.save(out / 'Spell.dbc')
-    print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells) and {out / "SpellIcon.dbc"}')
+    print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power renamed in {renamed} texts) '
+          f'and {out / "SpellIcon.dbc"}')
     if sql:
         write_sql(spells, sql)
         print(f'Wrote {sql}')

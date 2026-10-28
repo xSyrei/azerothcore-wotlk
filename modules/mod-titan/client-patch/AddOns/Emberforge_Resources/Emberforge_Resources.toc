@@ -1,5 +1,5 @@
 ## Interface: 30300
 ## Title: Emberforge Resources
-## Notes: Rage, energy, runic power and rune bars for the classless Hero, and the Hero class color.
+## Notes: Resource bars for the classless Hero, the Hero class color, and Fury in place of Runic Power.
 ## Author: Project Emberforge
 Emberforge_Resources.lua

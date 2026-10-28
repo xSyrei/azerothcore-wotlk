@@ -22,10 +22,11 @@
 //
 // The Hero is the hidden base class (Paladin, see data/sql/db-world/hero_class.sql). Its display
 // bar stays mana; this script makes the core also run rage (gain from combat, decay out of
-// combat), energy (regen), runic power and runes for Heroes, and treats a Hero as every class for
-// ability mechanics (runes, combo points, reactive abilities like Overpower and Revenge, form
-// power swaps), and as a Hunter for pets (taming, resummoning, stables). Class contexts that are not
-// about abilities (starting zone, quests, trainers, stats, equipment) keep the Hero's real class.
+// combat), energy (regen), Fury (the client's Runic Power, renamed) and runes for Heroes, and
+// treats a Hero as every class for ability mechanics (runes, combo points, reactive abilities like
+// Overpower and Revenge, form power swaps), and as a Hunter for pets (taming, resummoning,
+// stables). Class contexts that are not about abilities (starting zone, quests, trainers, stats,
+// equipment) keep the Hero's real class.
 class hero_resources : public PlayerScript
 {
 public:
