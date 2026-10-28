@@ -7,7 +7,7 @@ tables from the language archives, which outrank patches placed directly in Data
 - DBFilesClient: ChrClasses / CharBaseInfo (Hero class, patch_hero_class.py),
   Item / ItemDisplayInfo (custom items, patch_items.py), Spell / SpellIcon / SpellVisual /
   SpellVisualKit / SpellVisualEffectName (Emberforge's own spells, the Demon Hunter's, patch_spells.py)
-- spell effect models (Spells\\Emberforge: weapon trails, models/spell_effects.py, from spells/*.png)
+- spell effect models (Spells\\Emberforge: trails and the Eye Beam beam, models/spell_effects.py, from spells/*.png)
 - spell sounds (Sound\\Spells\\Emberforge, from sounds/*.wav)
 - custom models converted from wow.export exports (models/, see MODELS below)
 - the login screen scene, the Seat of the Pantheon (models/build_login_scene.py)
@@ -61,10 +61,13 @@ def main():
             for suffix in ('.m2', '00.skin', '.blp'):
                 entries.append((f'{folder}\\{name}{suffix}', (tmp / name / f'{name}{suffix}').read_bytes()))
 
-        for trail in patch_spells.TRAILS.values():
-            make = spell_effects.body_trail if trail.get('shape') == 'body' else spell_effects.weapon_trail
-            files = make(HERE / 'spells' / f'{trail["model"]}.png', tmp / 'effects', trail['model'],
-                         patch_spells.EFFECTS_DIR, **trail.get('options', {}))
+        for spec in patch_spells.EFFECTS.values():
+            shape = spec.get('shape', 'weapon')
+            make = {'weapon': spell_effects.weapon_trail, 'body': spell_effects.body_trail,
+                    'beam': spell_effects.beam}[shape]
+            textures = spec.get('textures', (spec['model'],))
+            files = make(*(HERE / 'spells' / f'{t}.png' for t in textures), tmp / 'effects', spec['model'],
+                         patch_spells.EFFECTS_DIR, **spec.get('options', {}))
             for f in files:
                 entries.append((f'{patch_spells.EFFECTS_DIR}\\{f}', (tmp / 'effects' / f).read_bytes()))
 

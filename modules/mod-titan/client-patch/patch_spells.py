@@ -58,7 +58,7 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 # file, area size, scale, min scale, max scale).
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
 VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5}     # SpellVisual columns
-KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 4, 5, 6, 7, 9, 10
+KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_BREATH, KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 4, 5, 6, 7, 8, 9, 10
 HANDS, WEAPONS = (KIT_LEFT_HAND, KIT_RIGHT_HAND), (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
 KIT_ANIM = 2
 NO_ANIM = 0xFFFFFFFF
@@ -92,10 +92,11 @@ RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
 ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'Ability_DemonHunter_FelRush',
          'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01']
 
-# Trails: the trail model (spells/<model>.png) and its SpellVisualEffectName id. "shape" picks the
-# model: "weapon" (models/spell_effects.weapon_trail, for both weapons) or "body" (body_trail, for
-# the chest); "options" go to that function.
-TRAILS = {
+# Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
+# models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
+# (body_trail, for the chest), from spells/<model>.png, or "beam" (beam, for the breath slot) from
+# the three spells/<texture>.png in "textures". "options" go to that builder.
+EFFECTS = {
     'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'effect': 7100},
     'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'effect': 7101},
     # Blade Dance: the gray smoke trail, tinted fel green, for the whole spin.
@@ -103,6 +104,9 @@ TRAILS = {
                    'options': {'duration': 900, 'lifetime': 0.3, 'color': (0.55, 1.0, 0.3)}},
     # Fel Rush: behind the body for the length of the dash.
     'FelRush': {'model': 'DH_FelRush_Trail', 'effect': 7102, 'shape': 'body', 'options': {'lifetime': 0.5}},
+    # Eye Beam: from the face, as long as the channel and its 20-yard reach.
+    'EyeBeam': {'model': 'DH_EyeBeam', 'effect': 7104, 'shape': 'beam',
+                'textures': ('DH_EyeBeam_Beam', 'DH_EyeBeam_Fel', 'DH_EyeBeam_Streak')},
 }
 
 # Sounds: SoundEntries ids, a Blizzard entry copied (volume, distances), and the files (sounds/,
@@ -128,7 +132,7 @@ FEL_HELLFIRE_BASE = 3312        # Spells\\Fel_Hellfire_Impact_Caster_Base: fel f
 
 # Visuals: the Blizzard visual copied, the new visual's id, and per kit (precast, cast or impact)
 # the new kit's id and what goes in its slots, a copy of the copied visual's kit (or of BLANK_KIT
-# if it has none). A slot's effect is a Blizzard effect id or one of TRAILS; "anim" sets the kit's
+# if it has none). A slot's effect is a Blizzard effect id (0: none) or one of EFFECTS; "anim" sets the kit's
 # animation (NO_ANIM: none), "sound" its sound (one of SOUNDS). "clear" drops kits.
 VISUALS = {
     'DemonsBite': {'copy': 253, 'id': 16700, 'kits': {
@@ -149,12 +153,12 @@ VISUALS = {
     # animation (the dash runs). The warlock teleport flame stays where the dash starts.
     'FelRush': {'copy': 10694, 'id': 16702, 'clear': ('precast',), 'kits': {
         'cast': (15602, {KIT_CHEST: 'FelRush', HANDS: FEL_PRECAST_HAND, 'anim': NO_ANIM, 'sound': 'FelRush'})}},
-    # Eye Beam is a Fel Breath; its channel is an aura on the Demon Hunter, whose start ("state")
-    # plays the channel sound (longer than the channel, over the cast sound) and end ("statedone")
-    # the end sound.
+    # Eye Beam is a Fel Breath; its channel is an aura on the Demon Hunter, kept for the channel
+    # ("state"): the beam from the face (instead of the breath's flames) and the channel sound
+    # (longer than the channel, over the cast sound). Its end ("statedone") plays the end sound.
     'EyeBeam': {'copy': 8536, 'id': 16707, 'kits': {
-        'cast': (15609, {'sound': 'EyeBeamCast'}),
-        'state': (15611, {'sound': 'EyeBeamChannel'}),
+        'cast': (15609, {KIT_BREATH: 0, 'sound': 'EyeBeamCast'}),
+        'state': (15611, {KIT_BREATH: 'EyeBeam', 'sound': 'EyeBeamChannel'}),
         'statedone': (15610, {KIT_CHEST: 0, 'sound': 'EyeBeamEnd'})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT})}},
@@ -351,9 +355,9 @@ def build_visuals(source, out):
     visuals = Dbc(source / 'SpellVisual.dbc', VISUAL_FIELDS)
     kits = Dbc(source / 'SpellVisualKit.dbc', KIT_FIELDS)
     names = Dbc(source / 'SpellVisualEffectName.dbc', EFFECT_NAME_FIELDS)
-    for key, trail in TRAILS.items():
-        model = f'{EFFECTS_DIR}\\{trail["model"]}.mdx'
-        names.rows[trail['effect']] = (trail['effect'], names.add_string(f'Emberforge {key} Trail'),
+    for key, effect in EFFECTS.items():
+        model = f'{EFFECTS_DIR}\\{effect["model"]}.mdx'
+        names.rows[effect['effect']] = (effect['effect'], names.add_string(f'Emberforge {key}'),
                                        names.add_string(model), raw(0.0), raw(1.0), raw(0.01), raw(100.0))
     for spec in VISUALS.values():
         visual = list(visuals.rows[spec['copy']])
@@ -371,7 +375,7 @@ def build_visuals(source, out):
                     kit[KIT_SOUND] = SOUNDS[effect]['id']
                     continue
                 for slot in where if isinstance(where, tuple) else (where,):
-                    kit[slot] = TRAILS[effect]['effect'] if isinstance(effect, str) else effect
+                    kit[slot] = EFFECTS[effect]['effect'] if isinstance(effect, str) else effect
             kits.rows[kit_id] = tuple(kit)
             visual[VISUAL_KITS[kind]] = kit_id
         visuals.rows[spec['id']] = tuple(visual)

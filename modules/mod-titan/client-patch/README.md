@@ -69,10 +69,12 @@ Classless window get the spells from `CUSTOM_ABILITIES` in `src/wildcard.cpp` (s
 ### Trails and visuals
 
 Demon's Bite, Chaos Strike and Blade Dance leave a trail behind the blade, Fel Rush one behind the
-body (`TRAILS` in `patch_spells.py`). Each trail is its own effect model,
-`Spells\\Emberforge\\<model>.m2`, built by `models/spell_effects.py` from `spells/<model>.png`: no
-mesh, only a ribbon emitter that follows the weapon (or the chest), laid out like Blizzard's own
-`Spells\\RibbonTrail.m2`.
+body, and Eye Beam shoots a beam from the face (`EFFECTS` in `patch_spells.py`). Each is its own
+effect model, `Spells\\Emberforge\\<model>.m2`, built by `models/spell_effects.py`, laid out like
+Blizzard's own `Spells\\RibbonTrail.m2`. A trail (from `spells/<model>.png`) has no mesh, only a
+ribbon emitter that follows the weapon or the chest. The beam is three additive layers of crossed
+planes 20 yards long: a flare at the eyes, the fel swirl scrolling outward with soft edges, and a
+bright core.
 
 Each spell's look is one of `VISUALS`: a copy of a Blizzard visual whose kits (precast, cast,
 impact) carry our trails and Blizzard's own fel effect models (fel flames on the hands, fel fire
@@ -90,7 +92,7 @@ blade the trail covers (`length`, yards from the grip), `body_trail()` how far i
 below the chest (`height`); both how long the model lives (`duration`) and how fast a stretch of
 trail fades (`lifetime`).
 
-`spells/DH_EyeBeam_*.png` (Eye Beam) and the other `spells/DH_FelRush_*.png` (layers of retail's Fel
+The other `spells/DH_FelRush_*.png` (layers of retail's Fel
 Rush dash) are not used yet.
 
 ## Login screen (GlueXML)
