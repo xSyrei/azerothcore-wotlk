@@ -179,7 +179,7 @@ def beam(flare_texture, flow_texture, core_texture, out_dir, name, client_dir, l
     at the eyes (flare_texture, flare_length yards long), the beam's body (flow_texture with soft
     edges, one copy every tile yards, scrolling outward once every scroll_ms) and a bright core
     (core_texture's brightest column, stretched). duration: milliseconds of each of the two
-    animations, the same layout as ribbon_trail().
+    animations, the same layout as ribbon_trail() but with the mesh's bounds.
 
     Writes <name>.m2, <name>00.skin and one BLP per layer into out_dir.
     """
@@ -213,10 +213,12 @@ def beam(flare_texture, flow_texture, core_texture, out_dir, name, client_dir, l
     blob = Blob(0x130)
     name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
     globals_ref = blob.array('I', [scroll_ms])
-    empty_lo, empty_hi = (FLOAT_MAX,) * 3, (-FLOAT_MAX,) * 3
+    # Unlike a ribbon model's, the animations carry the mesh's real bounds (as Blizzard's mesh
+    # effects do, e.g. Mage_Dragons_Breath): with empty ones the client culls the mesh, unseen.
+    radius = math.dist(lo, hi) / 2
     sequences = blob.add(b''.join(
         struct.pack('<HHIfIhHIII6ffhH', anim, 0, duration, 0.0, SEQUENCE_IN_MODEL, 0x7FFF, 0, 0, 0, 0,
-                    *empty_lo, *empty_hi, 0.0, -1, index)
+                    *lo, *hi, radius, -1, index)
         for index, anim in enumerate((ANIM_STAND, ANIM_BIRTH))), 2)
     bone = struct.pack('<iIhHHH', -1, 0, -1, 0, 0, 0) + empty_track() * 3 + struct.pack('<3f', 0, 0, 0)
     bones = blob.add(bone, 1)
@@ -242,7 +244,6 @@ def beam(flare_texture, flow_texture, core_texture, out_dir, name, client_dir, l
     transparency_lookup = blob.array('H', [0])
     transform_lookup = blob.array('H', [0xFFFF, 0])
 
-    radius = math.dist(lo, hi) / 2
     header = struct.pack('<4sI', b'MD20', 264)
     header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)
     header += struct.pack('<2I', *globals_ref)
