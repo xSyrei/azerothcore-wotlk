@@ -17,7 +17,8 @@ quarter turn about Y to lay that span along the blade.
 
 Trail textures are drawn running from the weapon (left edge, newest) to the end of the trail
 (right edge, oldest), blade tip at the top. The client lays a ribbon's texture the other way round
-(U across the blade from the tip, V along the trail; seen in game), so they are transposed.
+(U across the blade from the grip, V along the trail; seen in game), so they are turned to match.
+Nearly transparent pixels are cleared: across a whole swing their faint color showed as a haze.
 """
 
 import math
@@ -34,6 +35,7 @@ BLEND_ALPHA = 2
 BONE_TRANSFORMED = 0x200
 ANIM_STAND, ANIM_BIRTH = 0, 158
 FLOAT_MAX = 3.4028234663852886e+38
+FAINT = 12          # alpha below this is cleared from trail textures
 
 
 def comp_quat(value):
@@ -53,7 +55,9 @@ def weapon_trail(texture, out_dir, name, client_dir, length=1.1, duration=600, l
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     with Image.open(texture) as image:
-        trail = image.convert('RGBA').transpose(Image.Transpose.TRANSPOSE)
+        trail = image.convert('RGBA').transpose(Image.Transpose.TRANSPOSE).transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        alpha = trail.getchannel('A').point(lambda a: 0 if a < FAINT else a)
+        trail.putalpha(alpha)
         (out_dir / f'{name}.blp').write_bytes(blp.encode(trail))
     texture_name = f'{client_dir}\\{name}.blp'
 
