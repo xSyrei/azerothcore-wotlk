@@ -59,7 +59,7 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
 VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5}     # SpellVisual columns
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_BREATH = 3, 4, 5, 6, 7, 8
-KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON = 9, 10
+KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON, KIT_WORLD = 9, 10, 14
 HANDS, WEAPONS = (KIT_LEFT_HAND, KIT_RIGHT_HAND), (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
 KIT_ANIM = 2
 NO_ANIM = 0xFFFFFFFF
@@ -102,8 +102,9 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
-# (body_trail, for the chest), from spells/<model>.png, or "beam" (beam, for the head slot) from
-# the spells/<texture>.png in "textures" (flare, flow). "options" go to that builder.
+# (body_trail, for the chest), from spells/<model>.png, or "beam" (beam, for the head slot) or
+# "burst" (ground_burst, for the world slot) from the spells/<texture>.png in "textures" (beam:
+# flare, flow; burst: ring, flash, trail). "options" go to that builder.
 EFFECTS = {
     'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'effect': 7100},
     'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'effect': 7101},
@@ -112,6 +113,11 @@ EFFECTS = {
                    'options': {'duration': 900, 'lifetime': 0.3, 'color': (0.55, 1.0, 0.3)}},
     # Fel Rush: behind the body for the length of the dash.
     'FelRush': {'model': 'DH_FelRush_Trail', 'effect': 7102, 'shape': 'body', 'options': {'lifetime': 0.5}},
+    # Vengeful Retreat: the burst left where the Demon Hunter leaps from. The trail is Blade Dance's
+    # gray smoke tinted red until retail's (weapontrail_deathknight_marrowrend) is here.
+    'VengefulRetreatBurst': {'model': 'DH_VengefulRetreat_Burst', 'effect': 7105, 'shape': 'burst',
+                             'textures': ('DH_VengefulRetreat_Shockwave', 'DH_VengefulRetreat_FlowerStar',
+                                          'DH_BladeDance_Trail')},
     # Eye Beam: from the face, as long as the channel and its 20-yard reach.
     'EyeBeam': {'model': 'DH_EyeBeam', 'effect': 7104, 'shape': 'beam',
                 'textures': ('DH_EyeBeam_Beam', 'DH_EyeBeam_Fel')},
@@ -181,9 +187,10 @@ VISUALS = {
         'cast': (15613, {'sound': 'ThrowGlaiveCast'}),
         'impact': (15612, {'sound': 'ThrowGlaiveImpact'})}},
     # Vengeful Retreat is Disengage (its leap animation is the precast kit); the cast kit, new,
-    # carries the sound and Fel Rush's smoke trail behind the body for the leap.
+    # carries the sound, Fel Rush's smoke trail behind the body for the leap, and the burst on the
+    # ground where it starts.
     'VengefulRetreat': {'copy': 12305, 'id': 16709, 'kits': {
-        'cast': (15614, {KIT_CHEST: 'FelRush', 'sound': 'VengefulRetreat'})}},
+        'cast': (15614, {KIT_CHEST: 'FelRush', KIT_WORLD: 'VengefulRetreatBurst', 'sound': 'VengefulRetreat'})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
 }

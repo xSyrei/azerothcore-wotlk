@@ -50,6 +50,26 @@ def comp_quat(value):
     return round(value * 32767) - 32768 if value >= 0 else round(value * 32767) + 32767
 
 
+def _ribbon_record(blob, bone, position, above, below, edges_per_second, lifetime, color, texture, material):
+    """M2Ribbon (WotLK, 176 bytes) as Blizzard's RibbonTrail writes it: every track one key in one
+    sequence, always visible. above / below: yards it spans along the bone's Z axis; color: red,
+    green, blue (0 to 1); texture, material: indices into the model's textures and materials."""
+    def one(fmt, value):
+        return track(blob, 0, [([0], [value])], fmt)
+
+    ribbon = struct.pack('<iI3f', -1, bone, *position)
+    ribbon += struct.pack('<2I', *blob.array('H', [texture])) + struct.pack('<2I', *blob.array('H', [material]))
+    ribbon += one('3f', tuple(map(float, color))) + one('h', 0x7FFF)       # color, alpha
+    ribbon += one('f', above) + one('f', below)
+    ribbon += struct.pack('<3f', edges_per_second, lifetime, 0.0)           # edges/s, edge life, gravity
+    ribbon += struct.pack('<HH', 1, 1)                                      # texture rows, columns
+    ribbon += one('h', 0)                                                   # texture slot
+    ribbon += one('B', 1)                                                   # visible
+    ribbon += struct.pack('<hBB', 0, 0, 0)
+    assert len(ribbon) == 176, len(ribbon)
+    return ribbon
+
+
 def weapon_trail(texture, out_dir, name, client_dir, length=1.1, **options):
     """A trail behind the blade. length: yards of blade it covers, from the grip."""
     return ribbon_trail(texture, out_dir, name, client_dir, length, 0.0, QUARTER_TURN_Y, **options)
@@ -102,19 +122,7 @@ def ribbon_trail(texture, out_dir, name, client_dir, above, below, turn, duratio
     replaceable_lookup = blob.array('h', [-1])
     materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ALPHA)])
 
-    def one(fmt, value):
-        return track(blob, 0, [([0], [value])], fmt)
-
-    ribbon = struct.pack('<iI3f', -1, 0, 0.0, 0.0, 0.0)
-    ribbon += struct.pack('<2I', *blob.array('H', [0])) + struct.pack('<2I', *blob.array('H', [0]))
-    ribbon += one('3f', tuple(map(float, color))) + one('h', 0x7FFF)       # color, alpha
-    ribbon += one('f', above) + one('f', below)
-    ribbon += struct.pack('<3f', edges_per_second, lifetime, 0.0)           # edges/s, edge life, gravity
-    ribbon += struct.pack('<HH', 1, 1)                                      # texture rows, columns
-    ribbon += one('h', 0)                                                   # texture slot
-    ribbon += one('B', 1)                                                   # visible
-    ribbon += struct.pack('<hBB', 0, 0, 0)
-    assert len(ribbon) == 176, len(ribbon)
+    ribbon = _ribbon_record(blob, 0, (0.0, 0.0, 0.0), above, below, edges_per_second, lifetime, color, 0, 0)
     ribbons_ref = blob.add(ribbon, 1)
 
     reach = max(above, below)
@@ -352,3 +360,143 @@ def beam(flare_texture, flow_texture, out_dir, name, client_dir, length=20.0, wi
     skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
     (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
     return [f'{name}.m2', f'{name}00.skin'] + [f'{blp_name}.blp' for blp_name, *_ in layers]
+
+
+def _turn_z(angle):
+    """A quaternion (x, y, z, w) turning angle radians about Z."""
+    return (0.0, 0.0, math.sin(angle / 2), math.cos(angle / 2))
+
+
+def ground_burst(ring_texture, flash_texture, trail_texture, out_dir, name, client_dir, size=18.0,
+                 ring_tint=(1.0, 0.835, 0.886), trail_tint=(1.0, 0.3, 0.45), duration=900):
+    """A burst left on the ground where it is placed (a kit's world slot), after Legion's Vengeful
+    Retreat (cfx_demonhunter_vengefulretreat_impactbase and its spiral ribbon):
+
+    - a shockwave ring on the ground (ring_texture tinted ring_tint) growing from a third of a yard
+      to size yards across in 0.45 sec, fading like retail's (whole until 0.17 sec, gone by 0.5);
+    - a flash at its center (the first quarter of flash_texture, a 2x2 sheet) popping up and gone
+      by 0.3 sec;
+    - a ribbon (trail_texture, tinted trail_tint) spun around the center while rising, leaving a
+      corkscrew.
+
+    Same layout as beam(): two animations of duration milliseconds, the bones' animation on them,
+    the mesh's bounds. Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with Image.open(trail_texture) as image:
+        trail = image.convert('RGBA').transpose(Image.Transpose.TRANSPOSE).transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        trail.putalpha(trail.getchannel('A').point(lambda a: 0 if a < FAINT else a))
+    images = [(f'{name}_Ring', Image.open(ring_texture).convert('RGBA')),
+              (f'{name}_Flash', Image.open(flash_texture).convert('RGBA')),
+              (f'{name}_Trail', trail)]
+    for blp_name, image in images:
+        (out_dir / f'{blp_name}.blp').write_bytes(blp.encode(image))
+    RING, FLASH, TRAIL = 0, 1, 2              # textures; also bones 0 (ring), 1 (flash), 2 (spiral)
+
+    # Geometry: two flat squares just above the ground, the ring (1 yard across, scaled by bone 0)
+    # and the flash (3 yards, bone 1, showing the sheet's first quarter).
+    vertices, triangles, sections = b'', [], []
+    for bone, half, uv_max in ((RING, 0.5, 1.0), (FLASH, 1.5, 0.5)):
+        first, start = len(vertices) // 48, len(triangles)
+        for x, u in ((-half, 0.0), (half, uv_max)):
+            for y, v in ((-half, uv_max), (half, 0.0)):
+                vertices += struct.pack('<3f4B4B3f2f2f', x, y, 0.15, 255, 0, 0, 0, bone, 0, 0, 0, 0.0, 0.0, 1.0,
+                                        u, v, 0.0, 0.0)
+        triangles += [first, first + 1, first + 2, first + 2, first + 1, first + 3]
+        sections.append((first, 4, start, 6, half, bone))
+    vertex_count = len(vertices) // 48
+    lo, hi = (-size / 2, -size / 2, 0.0), (size / 2, size / 2, 3.0)
+    radius = math.dist(lo, hi) / 2
+
+    blob = Blob(0x130)
+    name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
+    sequences = blob.add(b''.join(
+        struct.pack('<HHIfIhHIII6ffhH', anim, 0, duration, 0.0, SEQUENCE_IN_MODEL, 0x7FFF, 0, 0, 0, 0,
+                    *lo, *hi, radius, -1, index)
+        for index, anim in enumerate((ANIM_STAND, ANIM_BIRTH))), 2)
+
+    def keyed(interpolation, keys, fmt):
+        return track(blob, interpolation, [keys, keys], fmt)          # the same keys in both animations
+
+    def bone(scaling=None, rotation=None, translation=None):
+        record = struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
+        record += translation or empty_track()
+        record += rotation or empty_track()
+        record += scaling or empty_track()
+        return record + struct.pack('<3f', 0, 0, 0)
+
+    ring_scale = keyed(1, ([0, 450, duration], [(0.35, 0.35, 1.0), (size, size, 1.0), (size, size, 1.0)]), '3f')
+    flash_scale = keyed(1, ([0, 120, 300], [(0.3, 0.3, 1.0), (1.2, 1.2, 1.0), (1.5, 1.5, 1.0)]), '3f')
+    # The spiral: a turn and a half in 0.6 sec (keys every quarter turn), rising 2.5 yards.
+    steps = 7
+    spin = keyed(1, ([int(600 * i / (steps - 1)) for i in range(steps)],
+                     [tuple(comp_quat(c) for c in _turn_z(3 * math.pi * i / (steps - 1))) for i in range(steps)]),
+                 '4h')
+    rise = keyed(1, ([0, 600], [(0.0, 0.0, 0.2), (0.0, 0.0, 2.7)]), '3f')
+    bones = blob.add(bone(scaling=ring_scale) + bone(scaling=flash_scale) + bone(rotation=spin, translation=rise), 3)
+    key_bones = blob.array('h', [-1])
+    vertices_ref = blob.add(vertices, vertex_count)
+
+    # Color 0: the ring's tint.
+    tint = track(blob, 0, [([0], [tuple(map(float, ring_tint))])], '3f') + track(blob, 0, [([0], [0x7FFF])], 'h')
+    colors_ref = blob.add(tint, 1)
+    textures = b''
+    for blp_name, _ in images:
+        path = f'{client_dir}\\{blp_name}.blp'
+        ref = blob.add(path.encode() + b'\0', len(path) + 1)
+        textures += struct.pack('<II2I', 0, 0, *ref)
+    textures_ref = blob.add(textures, len(images))
+    ring_fade = keyed(1, ([0, 167, 233, 300, 500, duration], [0x7FFF, 0x7FFF, 7638, 1783, 0, 0]), 'h')
+    flash_fade = keyed(1, ([0, 120, 300, duration], [0x7FFF, 0x5000, 0, 0]), 'h')
+    weights = blob.add(ring_fade + flash_fade, 2)
+    replaceable_lookup = blob.array('h', [-1])
+    # Materials: the ring alpha-blended (as retail's), the flash and the ribbon additive.
+    materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ALPHA),
+                                      (UNLIT | UNFOGGED | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ADD)])
+    bone_lookup = blob.array('H', [RING, FLASH])
+    texture_lookup = blob.array('H', [RING, FLASH])
+    texture_unit_lookup = blob.array('H', [0])
+    transparency_lookup = blob.array('H', [0, 1])
+    transform_lookup = blob.array('H', [0xFFFF])
+    ribbon = _ribbon_record(blob, 2, (1.1, 0.0, 0.0), 0.35, 0.35, 50.0, 0.45, trail_tint, TRAIL, 1)
+    ribbons_ref = blob.add(ribbon, 1)
+
+    header = struct.pack('<4sI', b'MD20', 264)
+    header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)
+    header += struct.pack('<2I', 0, 0)                                              # global sequences
+    header += struct.pack('<2I', *sequences) + struct.pack('<2I', 0, 0)            # no sequence lookup
+    header += struct.pack('<2I', *bones) + struct.pack('<2I', *key_bones)
+    header += struct.pack('<2I', *vertices_ref) + struct.pack('<I', 1)
+    header += struct.pack('<2I', *colors_ref) + struct.pack('<2I', *textures_ref)
+    header += struct.pack('<2I', *weights) + struct.pack('<2I', 0, 0)               # no texture transforms
+    header += struct.pack('<2I', *replaceable_lookup) + struct.pack('<2I', *materials_ref)
+    header += struct.pack('<2I', *bone_lookup) + struct.pack('<2I', *texture_lookup)
+    header += struct.pack('<2I', *texture_unit_lookup) + struct.pack('<2I', *transparency_lookup)
+    header += struct.pack('<2I', *transform_lookup)
+    header += struct.pack('<7f', *lo, *hi, radius) + struct.pack('<7f', *[0.0] * 7)
+    header += struct.pack('<2I', 0, 0) * 3                                          # collision
+    header += struct.pack('<2I', 0, 0) * 2                                          # attachments
+    header += struct.pack('<2I', 0, 0) * 2                                          # events, lights
+    header += struct.pack('<2I', 0, 0) * 2                                          # cameras
+    header += struct.pack('<2I', *ribbons_ref) + struct.pack('<2I', 0, 0)          # ribbons, particles
+    assert len(header) == 0x130
+    blob.data[:0x130] = header
+    (out_dir / f'{name}.m2').write_bytes(bytes(blob.data))
+
+    # Skin: the ring (tinted by color 0, fading by weight 0) and the flash (weight 1).
+    skin = Blob(48)
+    lookup = skin.array('H', list(range(vertex_count)))
+    tris = skin.array('H', triangles)
+    props = skin.add(b'\0' * 4 * vertex_count, vertex_count)
+    section_data, batch_data = b'', b''
+    for i, (first, count, start, index_count, half, bone_index) in enumerate(sections):
+        section_data += struct.pack('<10H3f3ff', 0, 0, first, count, start, index_count, 1, bone_index, 1,
+                                    bone_index, 0.0, 0.0, 0.15, 0.0, 0.0, 0.15, half * 1.5)
+        color, material = (0, 0) if i == RING else (0xFFFF, 1)
+        batch_data += struct.pack('<Bb11H', 16, 0, 0, i, i, color, material, 0, 1, i, 0, i, 0)
+    sections_ref = skin.add(section_data, len(sections))
+    batches_ref = skin.add(batch_data, len(sections))
+    skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
+    (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
+    return [f'{name}.m2', f'{name}00.skin'] + [f'{blp_name}.blp' for blp_name, _ in images]

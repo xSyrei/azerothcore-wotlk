@@ -64,7 +64,7 @@ def main():
         for spec in patch_spells.EFFECTS.values():
             shape = spec.get('shape', 'weapon')
             make = {'weapon': spell_effects.weapon_trail, 'body': spell_effects.body_trail,
-                    'beam': spell_effects.beam}[shape]
+                    'beam': spell_effects.beam, 'burst': spell_effects.ground_burst}[shape]
             textures = spec.get('textures', (spec['model'],))
             files = make(*(HERE / 'spells' / f'{t}.png' for t in textures), tmp / 'effects', spec['model'],
                          patch_spells.EFFECTS_DIR, **spec.get('options', {}))
