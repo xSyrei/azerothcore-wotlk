@@ -125,6 +125,12 @@ SOUNDS = {
     'FelRush': {'id': 18102, 'copy': 5674, 'files': [f'spell_dh_felrush_cast_0{n}' for n in range(1, 4)]},
     'DemonsBite': {'id': 18103, 'copy': 3091, 'files': [f'spell_dh_demonbite_cast_0{n}' for n in range(1, 6)]},
     'EyeBeamCast': {'id': 18104, 'copy': 5674, 'files': [f'spell_dh_player_eyebeam_cast_0{n}' for n in range(1, 5)]},
+    'ThrowGlaiveImpact': {'id': 18107, 'copy': 5530,
+                          'files': [f'spell_dh_throwglaives_impact_0{n}' for n in range(1, 6)]},
+    'ThrowGlaiveCast': {'id': 18108, 'copy': 5530,
+                        'files': [f'spell_dh_throw_glaives_cast_0{n}' for n in range(1, 5)]},
+    'VengefulRetreat': {'id': 18109, 'copy': 5674,
+                        'files': [f'spell_dh_vengefullretreat_cast_0{n}' for n in range(1, 4)]},
     'EyeBeamChannel': {'id': 18106, 'copy': 5674,
                        'files': [f'spell_dh_player_eyebeam_1shot_0{n}' for n in range(1, 4)]},
     'EyeBeamEnd': {'id': 18105, 'copy': 5674, 'files': [f'spell_dh_player_eyebeam_end_0{n}' for n in range(1, 5)]},
@@ -169,6 +175,15 @@ VISUALS = {
         'cast': (15609, {KIT_BREATH: 0, 'sound': 'EyeBeamCast'}),
         'state': (15611, {KIT_HEAD: 'EyeBeam', 'sound': 'EyeBeamChannel'}),
         'statedone': (15610, {KIT_CHEST: 0, 'sound': 'EyeBeamEnd'})}},
+    # Throw Glaive is the night elf glaive throw: its sound on the throw, the impact sound on each
+    # enemy it hits.
+    'ThrowGlaive': {'copy': 8512, 'id': 16708, 'kits': {
+        'cast': (15613, {'sound': 'ThrowGlaiveCast'}),
+        'impact': (15612, {'sound': 'ThrowGlaiveImpact'})}},
+    # Vengeful Retreat is Disengage (its leap animation is the precast kit); the cast kit, new,
+    # carries the sound and Fel Rush's smoke trail behind the body for the leap.
+    'VengefulRetreat': {'copy': 12305, 'id': 16709, 'kits': {
+        'cast': (15614, {KIT_CHEST: 'FelRush', 'sound': 'VengefulRetreat'})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
 }
@@ -290,7 +305,7 @@ SPELLS = [
     {
         # Disengage's backward leap (farther), clearing snares; 90110 hits and slows the enemies left behind.
         'id': 90109, 'copy': 781, 'name': 'Vengeful Retreat', 'icon': 'Ability_DemonHunter_VengefulRetreat',
-        'two_weapons': True,
+        'two_weapons': True, 'visual': 'VengefulRetreat',
         'description': 'Remove all snares and vault away. Nearby enemies take 40% of your attack power as '
                        'Physical damage and have their movement speed reduced by 70% for 3 sec.',
         'set': {'RecoveryTime': 25000, 'ManaCostPercentage': 0, 'BaseLevel': 14, 'SpellLevel': 14},
@@ -321,7 +336,7 @@ SPELLS = [
         # The night elf "Glaive" throw (its visual flies a glaive), bouncing once (10 yards,
         # spell_jump_distance); 1 damage plus attack power (spell_bonus_data).
         'id': 90111, 'copy': 36500, 'name': 'Throw Glaive', 'icon': 'Ability_DemonHunter_ThrowGlaive',
-        'two_weapons': True,
+        'two_weapons': True, 'visual': 'ThrowGlaive',
         'description': 'Throw a demonic glaive at the target for 45% of your attack power as Physical damage. '
                        'The glaive ricochets to 1 additional enemy within 10 yards.',
         'set': {'RecoveryTime': 9000, 'RangeIndex': RANGE_30, 'StartRecoveryCategory': GLOBAL_COOLDOWN,
