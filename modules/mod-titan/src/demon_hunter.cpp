@@ -28,6 +28,12 @@
 // attribute for it would also make the ability strike with the off-hand weapon. Heroes all have
 // Dual Wield (hero_equipment.cpp).
 
+enum DemonHunterSpells
+{
+    SPELL_BLADE_DANCE_STRIKE        = 90107,
+    SPELL_BLADE_DANCE_FINAL_STRIKE  = 90108,
+};
+
 class spell_titan_dh_dual_weapons : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_dual_weapons);
@@ -51,7 +57,40 @@ class spell_titan_dh_dual_weapons : public SpellScript
     }
 };
 
+// Blade Dance (90102): strikes everything within 8 yards four times during the spin, three times
+// for 24.75% of attack power and a last time for 74.2% (spell_bonus_data), a quarter second apart.
+class spell_titan_dh_blade_dance : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_blade_dance);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_BLADE_DANCE_STRIKE, SPELL_BLADE_DANCE_FINAL_STRIKE });
+    }
+
+    void Strike()
+    {
+        Unit* caster = GetCaster();
+        caster->CastSpell(caster, SPELL_BLADE_DANCE_STRIKE, true);
+        for (auto [delay, spellId] : { std::pair{ 250ms, SPELL_BLADE_DANCE_STRIKE },
+            std::pair{ 500ms, SPELL_BLADE_DANCE_STRIKE }, std::pair{ 750ms, SPELL_BLADE_DANCE_FINAL_STRIKE } })
+        {
+            caster->m_Events.AddEventAtOffset([caster, spellId]()
+            {
+                if (caster->IsAlive())
+                    caster->CastSpell(caster, spellId, true);
+            }, delay);
+        }
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_dh_blade_dance::Strike);
+    }
+};
+
 void AddSC_demon_hunter()
 {
     RegisterSpellScript(spell_titan_dh_dual_weapons);
+    RegisterSpellScript(spell_titan_dh_blade_dance);
 }

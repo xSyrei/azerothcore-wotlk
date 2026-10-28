@@ -63,6 +63,8 @@ EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
 
 # Values used below.
 CHAOS = 0x7F                    # every school
+PHYSICAL = 0x1
+DMG_CLASS_MELEE = 2
 FURY = 6                        # the client's Runic Power, renamed
 ONE_HANDED_WEAPONS = 0xA091     # one-handed axes, maces and swords, fist weapons, daggers
 ITEM_CLASS_WEAPON = 2
@@ -125,19 +127,19 @@ SPELLS = [
         'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 199, 'DieSides': 1}},
     },
     {
+        # The strikes are 90107 (three) and 90108 (the last), cast on a timer by the server's
+        # spell_titan_dh_blade_dance; their attack power share is in spell_bonus_data.
         'id': 90102, 'copy': 1680, 'name': 'Blade Dance', 'icon': 'Ability_DemonHunter_BladeDance',
         'two_weapons': True, 'trail': 'BladeDance',
-        'description': 'Strike all enemies within $a1 yards for $s1% weapon damage, and dodge every attack '
-                       'for $d.',
+        'description': 'Strike all enemies within 8 yards three times for 24.75% of your attack power as '
+                       'Physical damage, then once more for 74.2%, and dodge every attack for $d.',
         'tooltip': 'Dodging all attacks.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'PowerType': FURY,
                 'ManaCost': 350, 'MaxAffectedTargets': 0, 'DurationIndex': DURATION_1S, 'BaseLevel': 10,
                 'SpellLevel': 10},
-        'clear': [2],
+        'clear': [1, 2],
         'effects': {
-            1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 149, 'DieSides': 1,
-                'RadiusIndex': RADIUS_8},
-            2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DODGE_PERCENT, 'BasePoints': 99, 'DieSides': 1,
+            1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DODGE_PERCENT, 'BasePoints': 99, 'DieSides': 1,
                 'TargetA': TARGET_UNIT_CASTER},
         },
     },
@@ -180,6 +182,24 @@ SPELLS = [
         'set': {'SchoolMask': CHAOS, 'SpellVisual': 0, 'BaseLevel': 20, 'SpellLevel': 20, 'MaxLevel': 80},
         'effects': {1: {'BasePoints': 9, 'DieSides': 1, 'RealPointsPerLevel': 3.0, 'TargetA': TARGET_UNIT_CONE_ENEMY,
                         'TargetB': 0, 'RadiusIndex': RADIUS_20, 'BonusMultiplier': 0.0}},
+    },
+    {
+        # Blade Dance: the three quick strikes. 1 damage plus attack power (spell_bonus_data).
+        'id': 90107, 'copy': 5857, 'name': 'Blade Dance', 'icon': 'Ability_DemonHunter_BladeDance',
+        'description': '',
+        'set': {'SchoolMask': PHYSICAL, 'DmgClass': DMG_CLASS_MELEE, 'SpellVisual': 0, 'MaxAffectedTargets': 0,
+                'BaseLevel': 10, 'SpellLevel': 10, 'MaxLevel': 80},
+        'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_SRC_CASTER,
+                        'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
+    },
+    {
+        # Blade Dance: the final strike. 1 damage plus attack power (spell_bonus_data).
+        'id': 90108, 'copy': 5857, 'name': 'Blade Dance', 'icon': 'Ability_DemonHunter_BladeDance',
+        'description': '',
+        'set': {'SchoolMask': PHYSICAL, 'DmgClass': DMG_CLASS_MELEE, 'SpellVisual': 0, 'MaxAffectedTargets': 0,
+                'BaseLevel': 10, 'SpellLevel': 10, 'MaxLevel': 80},
+        'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_SRC_CASTER,
+                        'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
     },
 ]
 
