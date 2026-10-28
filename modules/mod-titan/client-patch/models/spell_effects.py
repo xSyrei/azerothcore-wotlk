@@ -175,51 +175,85 @@ def _streaky(texture, blur=48, gain=1.25, sigma=0.45):
     return Image.fromarray(rgba.astype('uint8'))
 
 
+def _fade_tip(image, start=0.7):
+    """The image with its alpha fading to nothing along its last stretch (from start, a share of
+    its width): the far end of a beam."""
+    image = image.copy()
+    alpha = image.getchannel('A')
+    for x in range(int(image.width * start), image.width):
+        keep = 1.0 - (x - image.width * start) / (image.width * (1.0 - start))
+        alpha.paste(alpha.crop((x, 0, x + 1, image.height)).point(lambda a, k=keep: int(a * k)),
+                    (x, 0))
+    image.putalpha(alpha)
+    return image
+
+
 def beam(flare_texture, flow_texture, out_dir, name, client_dir, length=20.0, width=0.9, flare_length=2.5,
-         tile=6.0, scroll_ms=900, duration=2000):
+         duration=2000, burst_ms=150, settle_ms=320, fade_ms=300, taper=0.8):
     """A beam shot forward (+X) from the attachment it sits on (a kit's head slot: from the face).
 
-    Four additive layers, each two crossed planes so the beam looks round from any side, like
-    Legion's Eye Beam: a wide faint green glow, the body (flow_texture smeared into streaks along
-    the beam, soft at the edges, one copy every tile yards, scrolling outward once every scroll_ms),
-    a bright yellow-white core, and a flare at the eyes (flare_texture, flare_length yards long).
-    duration: milliseconds of each of the two animations, the same layout as ribbon_trail() but
-    with the mesh's bounds.
+    Additive layers after Legion's Eye Beam, each two crossed planes so the beam looks round from
+    any side: a wide faint green glow, two fel flows (flow_texture smeared into streaks along the
+    beam) scrolling outward fast at different speeds so they churn against each other, a bright
+    yellow-white core, and a flare at the eyes (flare_texture, flare_length yards long). It looks
+    unstable: the glow and core flicker, and the flows and core jitter in width.
 
+    The beam bursts out: it shoots from the eyes to full length in burst_ms, flaring wide, settles
+    by settle_ms, and over the last fade_ms of its duration (milliseconds: the channel) narrows to
+    nothing and fades out. Its far end tapers to a point from taper (a share of the length) on, the
+    glow and core fading there too.
+
+    Same layout as ribbon_trail() (two animations of duration milliseconds), with the mesh's
+    bounds and the bones' animation on them, as Blizzard's mesh effects (e.g. Mage_Dragons_Breath).
     Writes <name>.m2, <name>00.skin and one BLP per layer into out_dir.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    layers = [   # BLP name, image, length, half width, U repeats, scrolls
-        (f'{name}_Glow', _glow_strip(0.5, (0.35, 0.9, 0.15), peak=0.45), length, width * 1.9, 1.0, False),
-        (f'{name}_Body', _streaky(flow_texture), length, width, length / tile, True),
-        (f'{name}_Core', _glow_strip(0.35, (1.0, 1.0, 0.55)), length, width * 0.4, 1.0, False),
-        (f'{name}_Flare', Image.open(flare_texture).convert('RGBA'), flare_length, width * 0.9, 1.0, False),
+    flow = _streaky(flow_texture)
+    # Global sequences (milliseconds): the two flows' scrolls, the flicker and the width jitter.
+    SCROLL_A, SCROLL_B, FLICKER, JITTER = 0, 1, 2, 3
+    global_sequences = [330, 210, 230, 170]
+    layers = [   # BLP name, image, length, half width, U repeats, scrolling global sequence, flickers, jitters
+        (f'{name}_Glow', _fade_tip(_glow_strip(0.5, (0.35, 0.9, 0.15), peak=0.45)), length, width * 1.9, 1.0,
+         None, True, False),
+        (f'{name}_Body', flow, length, width, length / 6.0, SCROLL_A, False, True),
+        (f'{name}_Churn', flow.transpose(Image.Transpose.FLIP_TOP_BOTTOM), length, width * 0.8, length / 4.1,
+         SCROLL_B, False, True),
+        (f'{name}_Core', _fade_tip(_glow_strip(0.35, (1.0, 1.0, 0.55))), length, width * 0.4, 1.0, None, True,
+         True),
+        (f'{name}_Flare', Image.open(flare_texture).convert('RGBA'), flare_length, width * 0.9, 1.0, None, True,
+         False),
     ]
     for blp_name, image, *_ in layers:
         (out_dir / f'{blp_name}.blp').write_bytes(blp.encode(image))
 
-    # Geometry: per layer, a flat plane (across Y) and an upright one (across Z), x from 0 to length.
+    # Geometry: per layer, a flat plane (across Y) and an upright one (across Z), x from 0 to its
+    # length; the long layers narrow to a point over their last stretch. Jittering layers hang on
+    # bone 1, the rest on bone 0.
     vertices, triangles, sections = b'', [], []
-    for _, _, reach, half, repeats, _ in layers:
+    for _, _, reach, half, repeats, _, _, jitters in layers:
+        bone = 1 if jitters else 0
         start, first = len(triangles), len(vertices) // 48
+        stations = [(0.0, 1.0), (reach * taper, 1.0), (reach, 0.0)] if reach == length else [(0.0, 1.0), (reach, 1.0)]
         for across in ((0.0, 1.0, 0.0), (0.0, 0.0, 1.0)):
             base = len(vertices) // 48
-            for x, u in ((0.0, 0.0), (reach, repeats)):
+            for x, scale in stations:
                 for side, v in ((1.0, 0.0), (-1.0, 1.0)):
-                    pos = (x, across[1] * half * side, across[2] * half * side)
-                    vertices += struct.pack('<3f4B4B3f2f2f', *pos, 255, 0, 0, 0, 0, 0, 0, 0, 0.0, 0.0, 1.0,
-                                            u, v, 0.0, 0.0)
-            triangles += [base, base + 1, base + 2, base + 2, base + 1, base + 3]
-        sections.append((first, 8, start, 12, reach, half))
+                    pos = (x, across[1] * half * scale * side, across[2] * half * scale * side)
+                    vertices += struct.pack('<3f4B4B3f2f2f', *pos, 255, 0, 0, 0, bone, 0, 0, 0, 0.0, 0.0, 1.0,
+                                            x / reach * repeats, v, 0.0, 0.0)
+            for n in range(len(stations) - 1):
+                q = base + 2 * n
+                triangles += [q, q + 1, q + 2, q + 2, q + 1, q + 3]
+        sections.append((first, len(vertices) // 48 - first, start, len(triangles) - start, reach, half, bone))
     vertex_count = len(vertices) // 48
     reach = max(length, flare_length)
-    side = max(half for _, _, _, half, _, _ in layers)
+    side = max(layer[3] for layer in layers) * 2.2          # the burst flares it 2.2 times as wide
     lo, hi = (0.0, -side, -side), (reach, side, side)
 
     blob = Blob(0x130)
     name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
-    globals_ref = blob.array('I', [scroll_ms])
+    globals_ref = blob.array('I', global_sequences)
     # Unlike a ribbon model's, the animations carry the mesh's real bounds (as Blizzard's mesh
     # effects do, e.g. Mage_Dragons_Breath): with empty ones the client culls the mesh, unseen.
     radius = math.dist(lo, hi) / 2
@@ -227,29 +261,56 @@ def beam(flare_texture, flow_texture, out_dir, name, client_dir, length=20.0, wi
         struct.pack('<HHIfIhHIII6ffhH', anim, 0, duration, 0.0, SEQUENCE_IN_MODEL, 0x7FFF, 0, 0, 0, 0,
                     *lo, *hi, radius, -1, index)
         for index, anim in enumerate((ANIM_STAND, ANIM_BIRTH))), 2)
-    bone = struct.pack('<iIhHHH', -1, 0, -1, 0, 0, 0) + empty_track() * 3 + struct.pack('<3f', 0, 0, 0)
-    bones = blob.add(bone, 1)
+
+    def on_global(packed, index):
+        return packed[:2] + struct.pack('<h', index) + packed[4:]
+
+    # Bone 0: scaled from the eyes, the same keys in both animations. Length (X) from almost nothing
+    # to full in burst_ms, flaring to 2.2 and 1.6 times as wide (Y, Z), back to normal by
+    # settle_ms, then narrowing to nothing over the last fade_ms.
+    end_fade = duration - fade_ms
+    scale_keys = ([0, burst_ms, settle_ms, end_fade, duration],
+                  [(0.02, 2.2, 2.2), (1.0, 1.6, 1.6), (1.0, 1.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0)])
+    bone0 = struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
+    bone0 += empty_track() + empty_track() + track(blob, 1, [scale_keys, scale_keys], '3f')
+    bone0 += struct.pack('<3f', 0, 0, 0)
+    # Bone 1, under bone 0: its width jitters, on its own global sequence.
+    jitter = track(blob, 1, [([0, 40, 85, 125, 170], [(1.0, 1.0, 1.0), (1.0, 1.18, 0.86), (1.0, 0.88, 1.14),
+                                                      (1.0, 1.1, 0.95), (1.0, 1.0, 1.0)])], '3f')
+    bone1 = struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, 0, 0, 0, 0)
+    bone1 += empty_track() + empty_track() + on_global(jitter, JITTER) + struct.pack('<3f', 0, 0, 0)
+    bones = blob.add(bone0 + bone1, 2)
     key_bones = blob.array('h', [-1])
     vertices_ref = blob.add(vertices, vertex_count)
 
+    # Color 0 (the flickering layers): white, its alpha flickering on its own global sequence.
+    flicker = track(blob, 1, [([0, 35, 70, 115, 150, 190, 230],
+                               [0x7FFF, 0x5000, 0x7FFF, 0x6400, 0x7FFF, 0x4C00, 0x7FFF])], 'h')
+    white = on_global(track(blob, 0, [([0], [(1.0, 1.0, 1.0)])], '3f'), FLICKER)
+    colors_ref = blob.add(white + on_global(flicker, FLICKER), 1)
+
     textures = b''
-    for blp_name, _, _, _, _, scrolls in layers:
+    for blp_name, _, _, _, _, scroll, _, _ in layers:
         path = f'{client_dir}\\{blp_name}.blp'
         ref = blob.add(path.encode() + b'\0', len(path) + 1)
-        textures += struct.pack('<II2I', 0, WRAP_U if scrolls else 0, *ref)
+        textures += struct.pack('<II2I', 0, WRAP_U if scroll is not None else 0, *ref)
     textures_ref = blob.add(textures, len(layers))
-    weights = blob.add(track(blob, 0, [([0], [0x7FFF])], 'h'), 1)
-    # The body's texture slides outward along the beam, on global sequence 0.
-    slide = track(blob, 1, [([0, scroll_ms], [(0.0, 0.0, 0.0), (-1.0, 0.0, 0.0)])], '3f')
-    slide = slide[:2] + struct.pack('<h', 0) + slide[4:]
-    transforms_ref = blob.add(slide + empty_track() + empty_track(), 1)
+    fade_keys = ([0, end_fade, duration], [0x7FFF, 0x7FFF, 0])          # fading out with the narrowing
+    weights = blob.add(track(blob, 1, [fade_keys, fade_keys], 'h'), 1)
+    # The flows' textures slide outward along the beam, each on its own global sequence.
+    scrolling = [layer[5] for layer in layers if layer[5] is not None]
+    transforms = b''
+    for index in scrolling:
+        slide = track(blob, 1, [([0, global_sequences[index]], [(0.0, 0.0, 0.0), (-1.0, 0.0, 0.0)])], '3f')
+        transforms += on_global(slide, index) + empty_track() + empty_track()
+    transforms_ref = blob.add(transforms, len(scrolling))
     replaceable_lookup = blob.array('h', [-1])
     materials_ref = blob.array('HH', [(UNLIT | UNFOGGED | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ADD)])
-    bone_lookup = blob.array('H', [0])
+    bone_lookup = blob.array('H', [0, 1])
     texture_lookup = blob.array('H', list(range(len(layers))))
     texture_unit_lookup = blob.array('H', [0])
     transparency_lookup = blob.array('H', [0])
-    transform_lookup = blob.array('H', [0xFFFF, 0])
+    transform_lookup = blob.array('H', [0xFFFF] + list(range(len(scrolling))))
 
     header = struct.pack('<4sI', b'MD20', 264)
     header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)
@@ -257,7 +318,7 @@ def beam(flare_texture, flow_texture, out_dir, name, client_dir, length=20.0, wi
     header += struct.pack('<2I', *sequences) + struct.pack('<2I', 0, 0)            # no sequence lookup
     header += struct.pack('<2I', *bones) + struct.pack('<2I', *key_bones)
     header += struct.pack('<2I', *vertices_ref) + struct.pack('<I', 1)
-    header += struct.pack('<2I', 0, 0) + struct.pack('<2I', *textures_ref)          # colors, textures
+    header += struct.pack('<2I', *colors_ref) + struct.pack('<2I', *textures_ref)
     header += struct.pack('<2I', *weights) + struct.pack('<2I', *transforms_ref)
     header += struct.pack('<2I', *replaceable_lookup) + struct.pack('<2I', *materials_ref)
     header += struct.pack('<2I', *bone_lookup) + struct.pack('<2I', *texture_lookup)
@@ -273,17 +334,19 @@ def beam(flare_texture, flow_texture, out_dir, name, client_dir, length=20.0, wi
     blob.data[:0x130] = header
     (out_dir / f'{name}.m2').write_bytes(bytes(blob.data))
 
+    # Skin: per layer a section on its bone (through the bone lookup) and a batch.
     skin = Blob(48)
     lookup = skin.array('H', list(range(vertex_count)))
     tris = skin.array('H', triangles)
     props = skin.add(b'\0' * 4 * vertex_count, vertex_count)
     section_data, batch_data = b'', b''
-    for i, (first, count, start, index_count, reach_i, half) in enumerate(sections):
+    for i, (first, count, start, index_count, reach_i, half, bone) in enumerate(sections):
         center = (reach_i / 2, 0.0, 0.0)
-        section_data += struct.pack('<10H3f3ff', 0, 0, first, count, start, index_count, 1, 0, 1, 0,
+        section_data += struct.pack('<10H3f3ff', 0, 0, first, count, start, index_count, 1, bone, 1, bone,
                                     *center, *center, math.hypot(reach_i / 2, half))
-        batch_data += struct.pack('<Bb11H', 16, 0, 0, i, i, 0xFFFF, 0, 0, 1, i, 0, 0,
-                                  1 if layers[i][5] else 0)
+        scroll, flickers = layers[i][5], layers[i][6]
+        transform = 1 + scrolling.index(scroll) if scroll is not None else 0
+        batch_data += struct.pack('<Bb11H', 16, 0, 0, i, i, 0 if flickers else 0xFFFF, 0, 0, 1, i, 0, 0, transform)
     sections_ref = skin.add(section_data, len(sections))
     batches_ref = skin.add(batch_data, len(sections))
     skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)

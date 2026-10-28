@@ -72,11 +72,13 @@ Demon's Bite, Chaos Strike and Blade Dance leave a trail behind the blade, Fel R
 body, and Eye Beam shoots a beam from the face (`EFFECTS` in `patch_spells.py`). Each is its own
 effect model, `Spells\\Emberforge\\<model>.m2`, built by `models/spell_effects.py`, laid out like
 Blizzard's own `Spells\\RibbonTrail.m2`. A trail (from `spells/<model>.png`) has no mesh, only a
-ribbon emitter that follows the weapon or the chest. The beam is four additive layers of crossed
-planes 20 yards long, after Legion's Eye Beam: a faint green glow, the fel swirl smeared into
-streaks scrolling outward, a bright yellow-white core, and the orb texture as a flare at the eyes,
-on the head attachment (where the mage's Dragon's Breath sits), so it turns with the Demon Hunter.
-(`DH_EyeBeam_Streak.png` is not used.)
+ribbon emitter that follows the weapon or the chest. The beam is additive layers of crossed planes 20 yards long, after Legion's Eye Beam: a faint
+green glow, two fel flows (the fel swirl smeared into streaks) scrolling outward fast at different
+speeds, a bright yellow-white core, and the orb texture as a flare at the eyes, on the head
+attachment (where the mage's Dragon's Breath sits), so it turns with the Demon Hunter. It bursts
+out of the eyes to full length in 0.15 sec flaring wide, flickers and jitters in width while it
+lasts, tapers to a fading point at its far end, and narrows and fades out over the channel's last
+0.3 sec. (`DH_EyeBeam_Streak.png` is not used.)
 
 Each spell's look is one of `VISUALS`: a copy of a Blizzard visual whose kits (precast, cast,
 impact) carry our trails and Blizzard's own fel effect models (fel flames on the hands, fel fire
