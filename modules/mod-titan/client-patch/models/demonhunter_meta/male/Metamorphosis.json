@@ -1,0 +1,491 @@
+{
+	"fileType": "m2",
+	"fileDataID": 1250708,
+	"fileName": "creature/dhmaledps/dhmaledps.m2",
+	"internalName": "",
+	"textures": [
+		{
+			"fileNameInternal": "creature/dhmaledps/helm_plate_raidwarrior_d_01_ponytail.blp",
+			"fileNameExternal": "..\\creature\\dhmaledps\\helm_plate_raidwarrior_d_01_ponytail.png",
+			"mtlName": "mat_helm_plate_raidwarrior_d_01_ponytail",
+			"flags": 0,
+			"fileDataID": 1250743
+		},
+		{
+			"fileNameInternal": "creature/dhmaledps/dh_smoke_big_black.blp",
+			"fileNameExternal": "..\\creature\\dhmaledps\\dh_smoke_big_black.png",
+			"mtlName": "mat_dh_smoke_big_black",
+			"flags": 0,
+			"fileDataID": 1250744
+		},
+		{
+			"fileNameInternal": "creature/dhmaledps/demon_dpsbody.blp",
+			"fileNameExternal": "..\\creature\\dhmaledps\\demon_dpsbody.png",
+			"mtlName": "mat_demon_dpsbody",
+			"flags": 0,
+			"fileDataID": 1250745
+		},
+		{
+			"fileNameInternal": "creature/dhmaledps/armorreflect4.blp",
+			"fileNameExternal": "..\\creature\\dhmaledps\\armorreflect4.png",
+			"mtlName": "mat_armorreflect4",
+			"flags": 0,
+			"fileDataID": 1250746
+		},
+		{
+			"fileNameInternal": "creature/dhmaledps/demon_dps_male_tattoo_00.blp",
+			"fileNameExternal": "..\\creature\\dhmaledps\\demon_dps_male_tattoo_00.png",
+			"mtlName": "mat_demon_dps_male_tattoo_00",
+			"flags": 0,
+			"fileDataID": 1272948
+		},
+		{
+			"fileNameInternal": "creature/dhmaledps/demon_dpsarmor.blp",
+			"fileNameExternal": "..\\creature\\dhmaledps\\demon_dpsarmor.png",
+			"mtlName": "mat_demon_dpsarmor",
+			"flags": 3,
+			"fileDataID": 1250748
+		},
+		{
+			"fileNameInternal": "creature/dhmaledps/nightelf_male_dh_dps_hair_00.blp",
+			"fileNameExternal": "..\\creature\\dhmaledps\\nightelf_male_dh_dps_hair_00.png",
+			"mtlName": "mat_nightelf_male_dh_dps_hair_00",
+			"flags": 0,
+			"fileDataID": 1270153
+		},
+		{
+			"fileNameInternal": "creature/dhmaledps/demon_tattooscrollfx.blp",
+			"fileNameExternal": "..\\creature\\dhmaledps\\demon_tattooscrollfx.png",
+			"mtlName": "mat_demon_tattooscrollfx",
+			"flags": 3,
+			"fileDataID": 1281774
+		}
+	],
+	"textureTypes": [
+		0,
+		0,
+		0,
+		0,
+		11,
+		0,
+		12,
+		0
+	],
+	"materials": [
+		{
+			"flags": 0,
+			"blendingMode": 0
+		},
+		{
+			"flags": 16,
+			"blendingMode": 2
+		},
+		{
+			"flags": 17,
+			"blendingMode": 2
+		},
+		{
+			"flags": 0,
+			"blendingMode": 0
+		},
+		{
+			"flags": 16,
+			"blendingMode": 2
+		},
+		{
+			"flags": 0,
+			"blendingMode": 0
+		},
+		{
+			"flags": 0,
+			"blendingMode": 1
+		},
+		{
+			"flags": 0,
+			"blendingMode": 0
+		},
+		{
+			"flags": 17,
+			"blendingMode": 4
+		}
+	],
+	"textureCombos": [
+		2,
+		3,
+		4,
+		5,
+		3,
+		6,
+		7,
+		4
+	],
+	"animFileIDs": [
+		{
+			"animID": 61,
+			"subAnimID": 0,
+			"fileDataID": 1271554
+		},
+		{
+			"animID": 60,
+			"subAnimID": 0,
+			"fileDataID": 1274503
+		},
+		{
+			"animID": 129,
+			"subAnimID": 0,
+			"fileDataID": 1393032
+		},
+		{
+			"animID": 123,
+			"subAnimID": 0,
+			"fileDataID": 1393033
+		},
+		{
+			"animID": 128,
+			"subAnimID": 0,
+			"fileDataID": 1393034
+		}
+	],
+	"colors": [],
+	"textureWeights": [
+		{
+			"globalSeq": 65535,
+			"interpolation": 0,
+			"timestamps": [
+				[
+					0
+				]
+			],
+			"values": [
+				[
+					32767
+				]
+			],
+			"timestampOffsets": null,
+			"valueOffsets": null
+		}
+	],
+	"transparencyLookup": [
+		0
+	],
+	"textureTransforms": [
+		{
+			"translation": {
+				"globalSeq": 3,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						933
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							-1,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		}
+	],
+	"textureTransformsLookup": [
+		65535,
+		0,
+		65535,
+		65535
+	],
+	"boundingBox": {
+		"min": [
+			-10.976917266845703,
+			-12.043196678161621,
+			-1.8267697095870972
+		],
+		"max": [
+			11.687124252319336,
+			12.048213005065918,
+			12.48946475982666
+		]
+	},
+	"boundingSphereRadius": 18.3172664642334,
+	"collisionBox": {
+		"min": [
+			-0.3055555522441864,
+			-0.3055555522441864,
+			0
+		],
+		"max": [
+			0.3055555522441864,
+			0.3055555522441864,
+			2.031277894973755
+		]
+	},
+	"collisionSphereRadius": 1.1037440299987793,
+	"skin": {
+		"subMeshes": [
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 0,
+				"vertexCount": 3215,
+				"triangleStart": 0,
+				"triangleCount": 16056,
+				"boneCount": 127,
+				"boneStart": 0,
+				"boneInfluences": 4,
+				"centerBoneIndex": 34,
+				"centerPosition": [
+					-0.3215544819831848,
+					0.00015638141485396773,
+					2.835169792175293
+				],
+				"sortCenterPosition": [
+					-1.5388822555541992,
+					-4.172325134277344e-7,
+					3.34529709815979
+				],
+				"sortRadius": 4.054443359375
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 3215,
+				"vertexCount": 1921,
+				"triangleStart": 16056,
+				"triangleCount": 6426,
+				"boneCount": 127,
+				"boneStart": 0,
+				"boneInfluences": 3,
+				"centerBoneIndex": 4,
+				"centerPosition": [
+					0.05189458653330803,
+					-0.0013306884793564677,
+					1.6468054056167603
+				],
+				"sortCenterPosition": [
+					0.005220726132392883,
+					-1.7881393432617188e-7,
+					1.8117576837539673
+				],
+				"sortRadius": 1.673570990562439
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 5136,
+				"vertexCount": 1164,
+				"triangleStart": 22482,
+				"triangleCount": 3096,
+				"boneCount": 127,
+				"boneStart": 0,
+				"boneInfluences": 4,
+				"centerBoneIndex": 34,
+				"centerPosition": [
+					0.07905925810337067,
+					0.002517794957384467,
+					3.2693066596984863
+				],
+				"sortCenterPosition": [
+					0.015859708189964294,
+					2.9802322387695312e-8,
+					3.1515800952911377
+				],
+				"sortRadius": 0.6031936407089233
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 6300,
+				"vertexCount": 552,
+				"triangleStart": 25578,
+				"triangleCount": 1848,
+				"boneCount": 127,
+				"boneStart": 0,
+				"boneInfluences": 4,
+				"centerBoneIndex": 117,
+				"centerPosition": [
+					-1.9058340787887573,
+					1.4280280069556284e-8,
+					4.217772006988525
+				],
+				"sortCenterPosition": [
+					-1.9254472255706787,
+					2.2351741790771484e-8,
+					4.514887809753418
+				],
+				"sortRadius": 2.4610753059387207
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 6852,
+				"vertexCount": 244,
+				"triangleStart": 27426,
+				"triangleCount": 780,
+				"boneCount": 127,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 27,
+				"centerPosition": [
+					-0.14153064787387848,
+					-0.0021021286956965923,
+					0.8005136847496033
+				],
+				"sortCenterPosition": [
+					-0.18491044640541077,
+					-0.002061888575553894,
+					0.7891426086425781
+				],
+				"sortRadius": 0.46510210633277893
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 7096,
+				"vertexCount": 435,
+				"triangleStart": 28206,
+				"triangleCount": 1986,
+				"boneCount": 127,
+				"boneStart": 0,
+				"boneInfluences": 4,
+				"centerBoneIndex": 10,
+				"centerPosition": [
+					-0.1263422966003418,
+					1.3411044719191523e-8,
+					2.737149715423584
+				],
+				"sortCenterPosition": [
+					-0.1263422966003418,
+					1.3411044719191523e-8,
+					2.737149715423584
+				],
+				"sortRadius": 1.0429798364639282
+			}
+		],
+		"textureUnits": [
+			{
+				"flags": 128,
+				"priority": 0,
+				"shaderID": 32785,
+				"skinSectionIndex": 0,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 0,
+				"materialLayer": 0,
+				"textureCount": 3,
+				"textureComboIndex": 0,
+				"textureCoordComboIndex": 65535,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			},
+			{
+				"flags": 144,
+				"priority": 0,
+				"shaderID": 32768,
+				"skinSectionIndex": 1,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 3,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 3,
+				"textureCoordComboIndex": 65535,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 2
+			},
+			{
+				"flags": 16,
+				"priority": 0,
+				"shaderID": 0,
+				"skinSectionIndex": 2,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 5,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 5,
+				"textureCoordComboIndex": 65535,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			},
+			{
+				"flags": 16,
+				"priority": 0,
+				"shaderID": 16,
+				"skinSectionIndex": 3,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 6,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 0,
+				"textureCoordComboIndex": 65535,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			},
+			{
+				"flags": 16,
+				"priority": 0,
+				"shaderID": 0,
+				"skinSectionIndex": 4,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 7,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 3,
+				"textureCoordComboIndex": 65535,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			},
+			{
+				"flags": 128,
+				"priority": 0,
+				"shaderID": 16401,
+				"skinSectionIndex": 5,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 8,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 6,
+				"textureCoordComboIndex": 65535,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 1
+			}
+		],
+		"fileName": "creature/dhmaledps/dhmaledps00.skin",
+		"fileDataID": 1250752
+	}
+}

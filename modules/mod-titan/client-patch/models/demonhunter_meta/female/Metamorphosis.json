@@ -1,0 +1,453 @@
+{
+	"fileType": "m2",
+	"fileDataID": 1132139,
+	"fileName": "creature/dhfemaledps/dhfemaledps.m2",
+	"internalName": "",
+	"textures": [
+		{
+			"fileNameInternal": "creature/dhfemaledps/dh_eyeglow.blp",
+			"fileNameExternal": "..\\creature\\dhfemaledps\\dh_eyeglow.png",
+			"mtlName": "mat_dh_eyeglow",
+			"flags": 0,
+			"fileDataID": 1251538
+		},
+		{
+			"fileNameInternal": "creature/dhfemaledps/dh_smoke_big_black.blp",
+			"fileNameExternal": "..\\creature\\dhfemaledps\\dh_smoke_big_black.png",
+			"mtlName": "mat_dh_smoke_big_black",
+			"flags": 0,
+			"fileDataID": 1251539
+		},
+		{
+			"fileNameInternal": "creature/dhfemaledps/nightelf_female_dh_dps_hair_00.blp",
+			"fileNameExternal": "..\\creature\\dhfemaledps\\nightelf_female_dh_dps_hair_00.png",
+			"mtlName": "mat_nightelf_female_dh_dps_hair_00",
+			"flags": 0,
+			"fileDataID": 1273127
+		},
+		{
+			"fileNameInternal": "creature/dhfemaledps/armorreflect_hard.blp",
+			"fileNameExternal": "..\\creature\\dhfemaledps\\armorreflect_hard.png",
+			"mtlName": "mat_armorreflect_hard",
+			"flags": 0,
+			"fileDataID": 1251541
+		},
+		{
+			"fileNameInternal": "creature/dhfemaledps/nightelf_female_dh_dps.blp",
+			"fileNameExternal": "..\\creature\\dhfemaledps\\nightelf_female_dh_dps.png",
+			"mtlName": "mat_nightelf_female_dh_dps",
+			"flags": 0,
+			"fileDataID": 1132148
+		},
+		{
+			"fileNameInternal": "creature/dhfemaledps/dh_dps_female_tattoo_00.blp",
+			"fileNameExternal": "..\\creature\\dhfemaledps\\dh_dps_female_tattoo_00.png",
+			"mtlName": "mat_dh_dps_female_tattoo_00",
+			"flags": 0,
+			"fileDataID": 1273084
+		},
+		{
+			"fileNameInternal": "creature/dhfemaledps/nightelf_female_dh_dps_armor.blp",
+			"fileNameExternal": "..\\creature\\dhfemaledps\\nightelf_female_dh_dps_armor.png",
+			"mtlName": "mat_nightelf_female_dh_dps_armor",
+			"flags": 0,
+			"fileDataID": 1251543
+		},
+		{
+			"fileNameInternal": "creature/dhfemaledps/demon_tattooscrollfx.blp",
+			"fileNameExternal": "..\\creature\\dhfemaledps\\demon_tattooscrollfx.png",
+			"mtlName": "mat_demon_tattooscrollfx",
+			"flags": 3,
+			"fileDataID": 1305791
+		}
+	],
+	"textureTypes": [
+		0,
+		0,
+		11,
+		0,
+		0,
+		12,
+		0,
+		0
+	],
+	"materials": [
+		{
+			"flags": 4,
+			"blendingMode": 0
+		},
+		{
+			"flags": 16,
+			"blendingMode": 2
+		},
+		{
+			"flags": 4,
+			"blendingMode": 0
+		},
+		{
+			"flags": 20,
+			"blendingMode": 2
+		},
+		{
+			"flags": 17,
+			"blendingMode": 2
+		},
+		{
+			"flags": 0,
+			"blendingMode": 0
+		},
+		{
+			"flags": 16,
+			"blendingMode": 2
+		},
+		{
+			"flags": 0,
+			"blendingMode": 1
+		},
+		{
+			"flags": 17,
+			"blendingMode": 4
+		}
+	],
+	"textureCombos": [
+		2,
+		3,
+		4,
+		3,
+		5,
+		6,
+		3,
+		7,
+		5
+	],
+	"animFileIDs": [
+		{
+			"animID": 61,
+			"subAnimID": 0,
+			"fileDataID": 1271553
+		},
+		{
+			"animID": 60,
+			"subAnimID": 0,
+			"fileDataID": 1273196
+		},
+		{
+			"animID": 129,
+			"subAnimID": 0,
+			"fileDataID": 1393344
+		},
+		{
+			"animID": 123,
+			"subAnimID": 0,
+			"fileDataID": 1393345
+		},
+		{
+			"animID": 128,
+			"subAnimID": 0,
+			"fileDataID": 1393346
+		}
+	],
+	"colors": [],
+	"textureWeights": [
+		{
+			"globalSeq": 65535,
+			"interpolation": 0,
+			"timestamps": [
+				[
+					0
+				]
+			],
+			"values": [
+				[
+					32767
+				]
+			],
+			"timestampOffsets": null,
+			"valueOffsets": null
+		}
+	],
+	"transparencyLookup": [
+		0
+	],
+	"textureTransforms": [
+		{
+			"translation": {
+				"globalSeq": 2,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						1233
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							-1,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		}
+	],
+	"textureTransformsLookup": [
+		65535,
+		65535,
+		0,
+		65535
+	],
+	"boundingBox": {
+		"min": [
+			-11.567208290100098,
+			-12.578448295593262,
+			-2.1431844234466553
+		],
+		"max": [
+			12.280858993530273,
+			12.621415138244629,
+			12.377388954162598
+		]
+	},
+	"boundingSphereRadius": 18.174575805664062,
+	"collisionBox": {
+		"min": [
+			-0.3055555522441864,
+			-0.3055555522441864,
+			0
+		],
+		"max": [
+			0.3055555522441864,
+			0.3055555522441864,
+			2.031277894973755
+		]
+	},
+	"collisionSphereRadius": 1.1037440299987793,
+	"skin": {
+		"subMeshes": [
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 0,
+				"vertexCount": 257,
+				"triangleStart": 0,
+				"triangleCount": 1119,
+				"boneCount": 139,
+				"boneStart": 0,
+				"boneInfluences": 2,
+				"centerBoneIndex": 37,
+				"centerPosition": [
+					-0.10148589313030243,
+					0.0038820584304630756,
+					3.1647255420684814
+				],
+				"sortCenterPosition": [
+					-0.1117081269621849,
+					0,
+					3.0913472175598145
+				],
+				"sortRadius": 0.5110692381858826
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 257,
+				"vertexCount": 3567,
+				"triangleStart": 1119,
+				"triangleCount": 17100,
+				"boneCount": 139,
+				"boneStart": 0,
+				"boneInfluences": 4,
+				"centerBoneIndex": 37,
+				"centerPosition": [
+					-0.28432759642601013,
+					-0.000006976675649639219,
+					2.5148274898529053
+				],
+				"sortCenterPosition": [
+					-1.966273546218872,
+					-5.960464477539063e-8,
+					3.516458749771118
+				],
+				"sortRadius": 4.237523078918457
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 3824,
+				"vertexCount": 1035,
+				"triangleStart": 18219,
+				"triangleCount": 4332,
+				"boneCount": 139,
+				"boneStart": 0,
+				"boneInfluences": 2,
+				"centerBoneIndex": 3,
+				"centerPosition": [
+					0.07862887531518936,
+					0.00046668012510053813,
+					1.524640440940857
+				],
+				"sortCenterPosition": [
+					0.07862887531518936,
+					0.00046668012510053813,
+					1.524640440940857
+				],
+				"sortRadius": 1.5460940599441528
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 4859,
+				"vertexCount": 600,
+				"triangleStart": 22551,
+				"triangleCount": 1956,
+				"boneCount": 139,
+				"boneStart": 0,
+				"boneInfluences": 4,
+				"centerBoneIndex": 120,
+				"centerPosition": [
+					-1.955454707145691,
+					0.004189659841358662,
+					4.088348388671875
+				],
+				"sortCenterPosition": [
+					-2.1715002059936523,
+					5.066394805908203e-7,
+					4.5628252029418945
+				],
+				"sortRadius": 2.9878737926483154
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 5459,
+				"vertexCount": 486,
+				"triangleStart": 24507,
+				"triangleCount": 2118,
+				"boneCount": 139,
+				"boneStart": 0,
+				"boneInfluences": 4,
+				"centerBoneIndex": 16,
+				"centerPosition": [
+					-0.09255959093570709,
+					-7.665206247509104e-10,
+					2.631037712097168
+				],
+				"sortCenterPosition": [
+					-0.09255959093570709,
+					-7.665206247509104e-10,
+					2.631037712097168
+				],
+				"sortRadius": 1.0864369869232178
+			}
+		],
+		"textureUnits": [
+			{
+				"flags": 144,
+				"priority": 0,
+				"shaderID": 32768,
+				"skinSectionIndex": 0,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 0,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 0,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			},
+			{
+				"flags": 128,
+				"priority": 0,
+				"shaderID": 32785,
+				"skinSectionIndex": 1,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 2,
+				"materialLayer": 0,
+				"textureCount": 3,
+				"textureComboIndex": 2,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 1
+			},
+			{
+				"flags": 144,
+				"priority": 0,
+				"shaderID": 32768,
+				"skinSectionIndex": 2,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 5,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 5,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			},
+			{
+				"flags": 16,
+				"priority": 0,
+				"shaderID": 16,
+				"skinSectionIndex": 3,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 7,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 2,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			},
+			{
+				"flags": 128,
+				"priority": 0,
+				"shaderID": 16404,
+				"skinSectionIndex": 4,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 8,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 7,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 2
+			}
+		],
+		"fileName": "creature/dhfemaledps/dhfemaledps00.skin",
+		"fileDataID": 1132151
+	}
+}

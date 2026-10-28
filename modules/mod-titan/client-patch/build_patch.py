@@ -10,6 +10,8 @@ tables from the language archives, which outrank patches placed directly in Data
 - spell effect models (Spells\\Emberforge: trails and the Eye Beam beam, models/spell_effects.py, from spells/*.png)
 - spell sounds (Sound\\Spells\\Emberforge, from sounds/*.wav)
 - custom models converted from wow.export exports (models/, see MODELS below)
+- animated creature models from wow.export glTF exports (models/creature_gltf_to_m2.py, see CREATURES below),
+  with their CreatureModelData / CreatureDisplayInfo rows (patch_creatures.py)
 - the login screen scene, the Seat of the Pantheon (models/build_login_scene.py)
 - inventory icons (icons/*.png) and spell icons (icons/spells/*.png)
 - the login screen: interface/GlueXML/* (Hero text, retail-style character creation) and its art
@@ -32,6 +34,7 @@ from PIL import Image  # noqa: E402
 
 import blp  # noqa: E402
 import build_login_scene  # noqa: E402
+import creature_gltf_to_m2  # noqa: E402
 import make_mpq  # noqa: E402
 import patch_spells  # noqa: E402
 import spell_effects  # noqa: E402
@@ -41,9 +44,14 @@ import wowexport_to_m2  # noqa: E402
 MODELS = [
     ('models/veridus/source', 'sword_1h_artifactskywall_d_06', 'Sword_1H_Veridus', 'Item\\ObjectComponents\\Weapon'),
 ]
+# (wow.export glTF folder, Emberforge model name, client folder): the Demon Hunter's demon forms
+CREATURES = [
+    ('models/demonhunter_meta/male', 'DHMetaMale', 'Creature\\DemonHunterMeta'),
+    ('models/demonhunter_meta/female', 'DHMetaFemale', 'Creature\\DemonHunterMeta'),
+]
 DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
         'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc',
-        'SoundEntries.dbc']
+        'SoundEntries.dbc', 'CreatureModelData.dbc', 'CreatureDisplayInfo.dbc']
 
 
 def main():
@@ -52,7 +60,7 @@ def main():
     dbc_dir = Path(sys.argv[1]).resolve()
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        for script in ('patch_hero_class.py', 'patch_items.py', 'patch_spells.py'):
+        for script in ('patch_hero_class.py', 'patch_items.py', 'patch_spells.py', 'patch_creatures.py'):
             subprocess.run([sys.executable, str(HERE / script), str(dbc_dir), str(tmp / 'dbc')], check=True)
         entries = [(f'DBFilesClient\\{name}', (tmp / 'dbc' / name).read_bytes()) for name in DBCS]
 
@@ -60,6 +68,12 @@ def main():
             wowexport_to_m2.convert(HERE / source, base, name, tmp / name, folder)
             for suffix in ('.m2', '00.skin', '.blp'):
                 entries.append((f'{folder}\\{name}{suffix}', (tmp / name / f'{name}{suffix}').read_bytes()))
+
+        for source, name, folder in CREATURES:
+            files = creature_gltf_to_m2.convert(HERE / source, HERE / source / 'Metamorphosis.json', name,
+                                                tmp / name, folder)
+            for f in files:
+                entries.append((f'{folder}\\{f}', (tmp / name / f).read_bytes()))
 
         for spec in patch_spells.EFFECTS.values():
             shape = spec.get('shape', 'weapon')

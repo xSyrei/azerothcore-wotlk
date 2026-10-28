@@ -104,6 +104,48 @@ trail fades (`lifetime`).
 The other `spells/DH_FelRush_*.png` (layers of retail's Fel
 Rush dash) are not used yet.
 
+## Animated creature models (Demon Hunter demon forms)
+
+The Demon Hunter's Metamorphosis forms (retail `creature/dhmaledps` and `dhfemaledps`) are in
+`models/demonhunter_meta/male` and `female`: wow.export **glTF** exports (`Metamorphosis.gltf`, its
+`.bin` buffers, one per animation), the export's `Metamorphosis.json` and the textures in `textures/`.
+Only the animations the converter uses are kept (see `ANIMATIONS` in the converter).
+
+`models/creature_gltf_to_m2.py` rebuilds each as an animated 3.3.5a M2: the skinned mesh (split into
+submeshes of at most 53 bones), all bones with their keyframes (wow.export writes the M2 bone tracks
+unchanged, only with Y up, so nothing is resampled), the sequences, key bones and attachments (weapons
+in the hands, spell hands, breath, name plate, on the retail helper bones). Retail animation ids
+above 505 do not exist in 3.3.5a and get free slots instead:
+
+| 3.3.5a animation | From retail |
+|---|---|
+| AttackThrown (107) | GlvThrowMain (Throw Glaive) |
+| CustomSpell01 (213) | FelRushLoop |
+| CustomSpell02 to 04 (214 to 216), 3 variations each | DHBladeDance1 to 3 |
+| CustomSpell05, 06 (217, 218) | BackFlipStart, BackFlipLoop (Vengeful Retreat) |
+
+Missing ones are filled in from similar ones (the male export has no Attack1H, the female no
+AttackOff; Dead is Death's last frame, held). The tattoo glow is drawn additive on the second UV set.
+Not carried over: particles (eye glow, smoke), ribbons, events, cameras.
+
+`patch_creatures.py` adds their CreatureModelData and CreatureDisplayInfo rows (copies of the warlock's
+Metamorphosis demon: its sounds, blood, footprints) and, with `--sql`, the same rows for the server:
+
+```bash
+python3 patch_creatures.py ./dbc /tmp/out --sql ../data/sql/db-world/titan_demon_hunter_displays.sql
+```
+
+| Display | Model |
+|---|---|
+| 90201 | `Creature\DemonHunterMeta\DHMetaMale.m2` |
+| 90202 | `Creature\DemonHunterMeta\DHMetaFemale.m2` |
+
+In game, `.morph 90201` or `.morph 90202` shows one on your character (`.demorph` to undo). Their size
+is `CreatureModelScale` in `CREATURES`.
+
+**Preview:** `python3 models/render_creature.py <model.m2> <texture dir> out.png <anim id>[/variation]
+[frames] [angle] [size]` reads a converted model back and renders frames of one of its animations.
+
 ## Login screen (GlueXML)
 
 `interface/GlueXML/` replaces Blizzard's login-screen files of the same name (the originals can be
