@@ -73,8 +73,11 @@ def main():
 
         for spec in patch_spells.SOUNDS.values():
             for name in spec['files']:
-                source = HERE / 'sounds' / f'{name}.wav'
-                entries.append((f'{patch_spells.SOUNDS_DIR}\\{name}.wav', source.read_bytes()))
+                data = (HERE / 'sounds' / f'{name}.wav').read_bytes()
+                # A damaged file (bytes lost or added, e.g. to line-ending conversion) plays as static.
+                if data[:4] != b'RIFF' or int.from_bytes(data[4:8], 'little') + 8 != len(data):
+                    raise ValueError(f'sounds/{name}.wav: size does not match its RIFF header (damaged?)')
+                entries.append((f'{patch_spells.SOUNDS_DIR}\\{name}.wav', data))
 
         for png in sorted((HERE / 'icons').glob('INV_*.png')) + sorted((HERE / 'icons' / 'spells').glob('*.png')):
             with Image.open(png) as image:

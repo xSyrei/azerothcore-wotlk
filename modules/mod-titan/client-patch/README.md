@@ -81,8 +81,11 @@ impact) carry our trails and Blizzard's own fel effect models (fel flames on the
 hits on targets, a demon's bite), as new rows in SpellVisual, SpellVisualKit and
 SpellVisualEffectName.
 
-Their sounds are `SOUNDS`: `sounds/*.wav` (converted from retail's `.ogg` with
-`ffmpeg -i x.ogg -acodec pcm_s16le x.wav`; the 3.3.5a client plays `.wav` and `.mp3`), packed under
+Their sounds are `SOUNDS`: `sounds/*.wav`, converted from retail's `.ogg` (the 3.3.5a client plays
+`.wav` and `.mp3`) with `ffmpeg -i x.ogg -af volume=<gain>dB -map_metadata -1 -fflags +bitexact
+-acodec pcm_s16le x.wav`, the gain bringing the peak to -1 dB (retail's files peak above full scale
+and would clip, crackling). They are binary in `.gitattributes`: git's line-ending conversion
+would cut bytes out of them, which plays as static. Packed under
 `Sound\\Spells\\Emberforge`, as new SoundEntries rows. An entry holds up to 10 files and the game
 plays one at random each time; a kit's sound plays when the kit does (cast, channel start, end).
 
