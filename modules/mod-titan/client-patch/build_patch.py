@@ -56,6 +56,8 @@ CREATURES = [
 CHARACTERS = [
     ('models/characters/nightelf_male/retail', 'models/characters/nightelf_male/NightElfMale.m2',
      'Character\\NightElf\\Male\\NightElfMale.m2'),
+    ('models/characters/nightelf_female/retail', 'models/characters/nightelf_female/NightElfFemale.m2',
+     'Character\\NightElf\\Female\\NightElfFemale.m2'),
 ]
 DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
         'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc',

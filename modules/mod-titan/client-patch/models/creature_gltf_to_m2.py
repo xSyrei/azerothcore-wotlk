@@ -156,9 +156,10 @@ def scale_to_m2(s):
 
 
 class Export:
-    """The glTF as numpy arrays in M2 axes."""
+    """The glTF as numpy arrays in M2 axes. skeleton_only: bones and animations, no mesh (the glTF's mesh
+    buffer can then be left out)."""
 
-    def __init__(self, export_dir):
+    def __init__(self, export_dir, skeleton_only=False):
         self.dir = Path(export_dir)
         gltf_path = next(self.dir.glob('*.gltf'))
         self.gltf = json.loads(gltf_path.read_text())
@@ -175,25 +176,34 @@ class Export:
             prefix = parent.get(j)                          # bone_X_p
             above = parent.get(prefix) if prefix is not None else None
             self.parents.append(joint_index.get(above, -1))
-        ibm = self.accessor(g['skins'][0]['inverseBindMatrices']).reshape(-1, 4, 4)
-        self.pivots = to_m2(-ibm[:, 3, :3])                # glTF matrices are column major
+        # Pivots: a bone's pivot node (bone_X_p, or the bone's own node) holds its pivot relative to its parent's.
+        pivots = np.zeros((len(joints), 3))
+        for i, j in enumerate(joints):
+            prefix = parent.get(j)
+            node = nodes[prefix] if prefix is not None and nodes[prefix]['name'].endswith('_p') else nodes[j]
+            above = self.parents[i]
+            if above >= i:
+                raise ValueError('bones out of order: a parent after its child')
+            pivots[i] = (pivots[above] if above >= 0 else 0) + np.array(node.get('translation', [0.0, 0.0, 0.0]))
+        self.pivots = to_m2(pivots)
 
         # One vertex pool; each mesh draws a contiguous part of it.
         self.meshes = []
         attributes = None
-        for node in nodes:
+        for node in [] if skeleton_only else nodes:
             if 'mesh' not in node:
                 continue
             primitive = g['meshes'][node['mesh']]['primitives'][0]
             attributes = primitive['attributes']
             self.meshes.append((g['materials'][primitive['material']]['name'],
                                 self.accessor(primitive['indices']).ravel().astype(np.int64)))
-        self.positions = to_m2(self.accessor(attributes['POSITION']))
-        self.normals = to_m2(self.accessor(attributes['NORMAL']))
-        self.uv0 = self.accessor(attributes['TEXCOORD_0']).astype(np.float64)
-        self.uv1 = self.accessor(attributes['TEXCOORD_1']).astype(np.float64)
-        self.bone_ids = self.accessor(attributes['JOINTS_0']).astype(np.int64)
-        self.weights = self.accessor(attributes['WEIGHTS_0']).astype(np.int64)
+        if not skeleton_only:
+            self.positions = to_m2(self.accessor(attributes['POSITION']))
+            self.normals = to_m2(self.accessor(attributes['NORMAL']))
+            self.uv0 = self.accessor(attributes['TEXCOORD_0']).astype(np.float64)
+            self.uv1 = self.accessor(attributes['TEXCOORD_1']).astype(np.float64)
+            self.bone_ids = self.accessor(attributes['JOINTS_0']).astype(np.int64)
+            self.weights = self.accessor(attributes['WEIGHTS_0']).astype(np.int64)
 
         # Animations: {(id, variation): (duration ms, {(joint, path): (times ms, values)})}
         self.animations = {}

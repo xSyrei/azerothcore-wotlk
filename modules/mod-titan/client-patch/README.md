@@ -174,7 +174,15 @@ The animations go in slots no Blizzard model uses, the same in the demon forms, 
 | CustomSpell09 (221) | CombatAbilityGlvBig01 to 03 | Chaos Strike |
 | CustomSpell10 (222), Custom1 (154) | FelRushEnd, DHMeteorStrike | (not used yet) |
 
-Done: Night Elf male. A race not converted yet stands still for those abilities.
+Done: Night Elf male and female. A race not converted yet stands still for those abilities.
+
+The retail export is pruned to the skeleton and these animations (`models/prune_gltf.py --skeleton`; the bone
+pivots are read from the glTF's nodes, so its mesh `.bin` is not needed):
+
+```bash
+python3 models/prune_gltf.py <export>/nightelffemale_hd.gltf models/characters/nightelf_female/retail --skeleton \
+    0-0 1008 1010 1014 1018 1022 1024 1028 1038 1040 1042 1044 1056 1058 1060 1062
+```
 
 ## Login screen (GlueXML)
 

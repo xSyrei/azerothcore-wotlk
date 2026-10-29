@@ -319,7 +319,7 @@ def patch(model, export, sources):
 
 def build(retail_dir, model_path):
     """The model at `model_path` with ANIMATIONS added, retargeted from the retail glTF in `retail_dir`."""
-    export = Export(retail_dir)
+    export = Export(retail_dir, skeleton_only=True)
     model = Model(Path(model_path).read_bytes())
     match, sway, scale = match_bones(model, export)
     assert all(model.parents[b] < b for b in match if model.parents[b] >= 0)
