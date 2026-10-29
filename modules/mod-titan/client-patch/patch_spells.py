@@ -68,6 +68,21 @@ NO_ANIM = 0xFFFFFFFF
 # them (a race not converted yet) stands still instead.
 ANIM_BLADE_DANCE, ANIM_FEL_RUSH, ANIM_BACK_FLIP, ANIM_GLAIVE_THROW = 215, 216, 217, 219
 ANIM_GLAIVE_STRIKE, ANIM_GLAIVE_BIG_STRIKE = 220, 221
+# Their AnimationData rows (the client's) are made like the Blizzard animation each stands in for, which is also
+# the fallback a model without the new one plays: its weapon and body flags make it an upper-body action that
+# plays over running and over the idle and ready stances (a custom spell row has none: full body, low priority).
+# (slot, Blizzard animation copied)
+ANIMATION_ROWS = [
+    (ANIM_BLADE_DANCE, 126),            # Whirlwind
+    (ANIM_FEL_RUSH, 126),               # Whirlwind's flags; no fallback (Fel Rush had no animation)
+    (ANIM_BACK_FLIP, 37),               # JumpStart
+    (ANIM_BACK_FLIP + 1, 38),           # Jump
+    (ANIM_GLAIVE_THROW, 107),           # AttackThrown
+    (ANIM_GLAIVE_STRIKE, 17),           # Attack1H
+    (ANIM_GLAIVE_BIG_STRIKE, 57),       # Special1H
+]
+ANIMATION_FIELDS = 8
+ANIM_WEAPON_FLAGS, ANIM_FALLBACK = 2, 5     # weapon, body, flags, fallback: columns 2 to 5
 BLANK_KIT = 3049    # Sinister Strike's impact: a chest effect and its hit sound (set them to 0 / None)
 EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
 # SoundEntries.dbc (30 columns): id, type, name, 10 files, 10 weights, folder, volume, flags, min
@@ -596,6 +611,17 @@ def build_visuals(source, out):
     names.save(out / 'SpellVisualEffectName.dbc')
 
 
+def build_animations(source, out):
+    """AnimationData rows of the Demon Hunter's animation slots (ANIMATION_ROWS)."""
+    animations = Dbc(source / 'AnimationData.dbc', ANIMATION_FIELDS)
+    for slot, like in ANIMATION_ROWS:
+        row = list(animations.rows[slot])
+        row[ANIM_WEAPON_FLAGS:ANIM_FALLBACK] = animations.rows[like][ANIM_WEAPON_FLAGS:ANIM_FALLBACK]
+        row[ANIM_FALLBACK] = 0 if slot == ANIM_FEL_RUSH else like
+        animations.rows[slot] = tuple(row)
+    animations.save(out / 'AnimationData.dbc')
+
+
 def build_spells(spells, icon_id):
     for spell in SPELLS:
         row = list(spells.rows[spell['copy']])
@@ -703,6 +729,7 @@ def main():
 
     build_sounds(source, out)
     build_visuals(source, out)
+    build_animations(source, out)
     spells = Dbc(source / 'Spell.dbc', SPELL_FIELDS)
     build_spells(spells, icon_id)
     renamed = rename_runic_power(spells)

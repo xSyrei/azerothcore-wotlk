@@ -174,7 +174,12 @@ The animations go in slots no Blizzard model uses, the same in the demon forms, 
 | CustomSpell09 (221) | CombatAbilityGlvBig01 to 03 | Chaos Strike |
 | CustomSpell10 (222), Custom1 (154) | FelRushEnd, DHMeteorStrike | (not used yet) |
 
-Done: Night Elf male and female. A race not converted yet stands still for those abilities.
+Their rows in the client's AnimationData.dbc are patched (`ANIMATION_ROWS` in `patch_spells.py`) to copy the
+Blizzard animation each stands in for (Whirlwind, Attack1H, Special1H, AttackThrown, JumpStart, Jump): the same
+weapon and body flags make them upper-body actions that play over running and over the idle and ready stances,
+and that animation is the fallback a model without the new one plays.
+
+Done: Night Elf male and female. Other races play the fallback (Whirlwind for Blade Dance, and so on).
 
 The retail export is pruned to the skeleton and these animations (`models/prune_gltf.py --skeleton`; the bone
 pivots are read from the glTF's nodes, so its mesh `.bin` is not needed):

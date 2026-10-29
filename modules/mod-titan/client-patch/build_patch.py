@@ -61,7 +61,8 @@ CHARACTERS = [
 ]
 DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
         'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc',
-        'SoundEntries.dbc', 'CreatureModelData.dbc', 'CreatureDisplayInfo.dbc']
+        'SoundEntries.dbc', 'CreatureModelData.dbc', 'CreatureDisplayInfo.dbc',
+        'AnimationData.dbc']
 
 
 def main():
