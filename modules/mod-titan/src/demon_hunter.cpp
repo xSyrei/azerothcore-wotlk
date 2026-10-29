@@ -165,9 +165,10 @@ class spell_titan_dh_eye_beam_damage : public SpellScript
 
 // Blade Dance (90102): strikes everything within 8 yards four times during the spin, three times
 // for 24.75% of attack power and a last time for 74.2% (spell_bonus_data), a quarter second apart.
-// Auto-attack waits for the spin to end: a swing's animation would replace it. In demon form the Demon Hunter
-// shows the Blade Dance variant of the form for the dance: the client gives a moving character's legs to the
-// movement animation, and in that variant every movement animation is the dance.
+// Auto-attack waits for the spin to end: a swing's animation would replace it. For the dance the Demon Hunter
+// shows the Blade Dance variant of the demon form (in or out of it): the client gives a moving character's legs
+// to the movement animation, and in that variant every movement animation is the dance. Then the demon form
+// again if in it, or the character.
 class spell_titan_dh_blade_dance : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_blade_dance);
@@ -187,20 +188,17 @@ class spell_titan_dh_blade_dance : public SpellScript
             if (caster->getAttackTimer(attack) < SPIN_MS)
                 caster->setAttackTimer(attack, SPIN_MS);
         caster->CastSpell(caster, SPELL_BLADE_DANCE_STRIKE, true);
-        if (InDemonForm(caster))
+        uint32 dance = DemonFormDisplay(caster, true);
+        caster->SetDisplayId(dance, caster->GetObjectScale());
+        caster->m_Events.AddEventAtOffset([caster, dance]()
         {
-            uint32 dance = DemonFormDisplay(caster, true);
-            caster->SetDisplayId(dance, caster->GetObjectScale());
-            caster->m_Events.AddEventAtOffset([caster, dance]()
-            {
-                if (caster->GetDisplayId() != dance)
-                    return;                                 // the form ended, or something else changed the look
-                if (InDemonForm(caster))
-                    caster->SetDisplayId(DemonFormDisplay(caster, false), caster->GetObjectScale());
-                else
-                    caster->RestoreDisplayId();
-            }, std::chrono::milliseconds(DANCE_MS));
-        }
+            if (caster->GetDisplayId() != dance)
+                return;                                     // something else changed the look meanwhile
+            if (InDemonForm(caster))
+                caster->SetDisplayId(DemonFormDisplay(caster, false), caster->GetObjectScale());
+            else
+                caster->RestoreDisplayId();
+        }, std::chrono::milliseconds(DANCE_MS));
         for (auto [delay, spellId] : { std::pair{ 250ms, SPELL_BLADE_DANCE_STRIKE },
             std::pair{ 500ms, SPELL_BLADE_DANCE_STRIKE }, std::pair{ 750ms, SPELL_BLADE_DANCE_FINAL_STRIKE } })
         {
