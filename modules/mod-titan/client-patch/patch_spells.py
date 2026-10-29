@@ -72,13 +72,14 @@ ANIM_GLAIVE_STRIKE, ANIM_GLAIVE_BIG_STRIKE = 220, 221
 # the fallback a model without the new one plays: its weapon and body flags make it an action that plays over
 # the idle and ready stances (a custom spell row has none: full body, lowest priority). Body flags, as Blizzard
 # uses them: 0x20 plays on the upper body over running legs (attacks, specials), 0x8 lets a hit's flinch
-# (CombatWound) cut it short (attacks, casts), 0x100 an action. Tried for Blade Dance and dropped: a plain action
-# (0x100) still gave way to running and flinches; Knockdown's 0x180 overrode them only some of the time and
-# stopped the player in place (the client roots a knocked-down character).
+# (CombatWound) cut it short (attacks, casts), 0x100 an action; without 0x20 it plays on the whole body (stuns,
+# channels). Knockdown's 0x180 is not usable: it stops the player in place (the client roots a knocked-down
+# character). Blade Dance plays on the whole body: its dashes and turns come from the hips, which running would
+# keep (the sequences play once, 0x1 in the models, or the client treats them as loops that running replaces).
 # (slot, Blizzard animation copied, body flags or None to copy them too)
-BODY_UPPER = 0x120
+BODY_FULL, BODY_UPPER = 0x100, 0x120
 ANIMATION_ROWS = [
-    (ANIM_BLADE_DANCE, 126, None),              # Whirlwind: upper body over running legs
+    (ANIM_BLADE_DANCE, 126, BODY_FULL),         # Whirlwind's weapon flags, whole body
     (ANIM_FEL_RUSH, 126, None),                 # Whirlwind's flags; no fallback (Fel Rush had no animation)
     (ANIM_BACK_FLIP, 37, None),                 # JumpStart
     (ANIM_BACK_FLIP + 1, 38, None),             # Jump
