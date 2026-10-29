@@ -54,7 +54,8 @@ ANIMATIONS = [
     (222, [(1044, 0)]),                             # CustomSpell10 <- FelRushEnd
     (154, [(1062, 0)]),                             # Custom1 <- DHMeteorStrike
 ]
-LOOPS = {216, 218}                                  # the rest play once
+LOOPS = {215, 216, 218}                             # the rest play once. Blade Dance loops, as Whirlwind
+                                                    # does: the client plays it on the whole body while moving
 # Animations whose turning and travel go on the model's origin bone (0) instead of the hips, as Blizzard's
 # Whirlwind does: a moving character's hips and legs play the movement animation, the origin bone still plays
 # the action, so the whole character turns and dashes while running. Standing still it looks the same.
