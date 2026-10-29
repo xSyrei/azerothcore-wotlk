@@ -69,20 +69,24 @@ NO_ANIM = 0xFFFFFFFF
 ANIM_BLADE_DANCE, ANIM_FEL_RUSH, ANIM_BACK_FLIP, ANIM_GLAIVE_THROW = 215, 216, 217, 219
 ANIM_GLAIVE_STRIKE, ANIM_GLAIVE_BIG_STRIKE = 220, 221
 # Their AnimationData rows (the client's) are made like the Blizzard animation each stands in for, which is also
-# the fallback a model without the new one plays: its weapon and body flags make it an upper-body action that
-# plays over running and over the idle and ready stances (a custom spell row has none: full body, low priority).
-# (slot, Blizzard animation copied)
+# the fallback a model without the new one plays: its weapon and body flags make it an action that plays over
+# the idle and ready stances (a custom spell row has none: full body, lowest priority). Body flags, as Blizzard
+# uses them: 0x20 plays on the upper body over running legs (attacks, specials), 0x8 lets a hit's flinch
+# (CombatWound) cut it short (attacks, casts), 0x100 an action. Without 0x20 it is full body: running does not
+# take over (stuns, channels).
+# (slot, Blizzard animation copied, body flags or None to copy them too)
+BODY_FULL, BODY_UPPER = 0x100, 0x120
 ANIMATION_ROWS = [
-    (ANIM_BLADE_DANCE, 126),            # Whirlwind
-    (ANIM_FEL_RUSH, 126),               # Whirlwind's flags; no fallback (Fel Rush had no animation)
-    (ANIM_BACK_FLIP, 37),               # JumpStart
-    (ANIM_BACK_FLIP + 1, 38),           # Jump
-    (ANIM_GLAIVE_THROW, 107),           # AttackThrown
-    (ANIM_GLAIVE_STRIKE, 17),           # Attack1H
-    (ANIM_GLAIVE_BIG_STRIKE, 57),       # Special1H
+    (ANIM_BLADE_DANCE, 126, BODY_FULL),         # Whirlwind; whole body, running and hits do not cut it
+    (ANIM_FEL_RUSH, 126, None),                 # Whirlwind's flags; no fallback (Fel Rush had no animation)
+    (ANIM_BACK_FLIP, 37, None),                 # JumpStart
+    (ANIM_BACK_FLIP + 1, 38, None),             # Jump
+    (ANIM_GLAIVE_THROW, 107, BODY_UPPER),       # AttackThrown, not cut by hits
+    (ANIM_GLAIVE_STRIKE, 17, BODY_UPPER),       # Attack1H, not cut by hits
+    (ANIM_GLAIVE_BIG_STRIKE, 57, None),         # Special1H (not cut by hits already)
 ]
 ANIMATION_FIELDS = 8
-ANIM_WEAPON_FLAGS, ANIM_FALLBACK = 2, 5     # weapon, body, flags, fallback: columns 2 to 5
+ANIM_WEAPON_FLAGS, ANIM_BODY_FLAGS, ANIM_FALLBACK = 2, 3, 5   # weapon, body, flags, fallback: columns 2 to 5
 BLANK_KIT = 3049    # Sinister Strike's impact: a chest effect and its hit sound (set them to 0 / None)
 EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
 # SoundEntries.dbc (30 columns): id, type, name, 10 files, 10 weights, folder, volume, flags, min
@@ -614,9 +618,11 @@ def build_visuals(source, out):
 def build_animations(source, out):
     """AnimationData rows of the Demon Hunter's animation slots (ANIMATION_ROWS)."""
     animations = Dbc(source / 'AnimationData.dbc', ANIMATION_FIELDS)
-    for slot, like in ANIMATION_ROWS:
+    for slot, like, body in ANIMATION_ROWS:
         row = list(animations.rows[slot])
         row[ANIM_WEAPON_FLAGS:ANIM_FALLBACK] = animations.rows[like][ANIM_WEAPON_FLAGS:ANIM_FALLBACK]
+        if body is not None:
+            row[ANIM_BODY_FLAGS] = body
         row[ANIM_FALLBACK] = 0 if slot == ANIM_FEL_RUSH else like
         animations.rows[slot] = tuple(row)
     animations.save(out / 'AnimationData.dbc')
