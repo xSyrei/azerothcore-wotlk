@@ -34,6 +34,7 @@ enum DemonHunterSpells
     SPELL_BLADE_DANCE_STRIKE        = 90107,
     SPELL_BLADE_DANCE_FINAL_STRIKE  = 90108,
     SPELL_DEMON_FORM                = 90115,
+    SPELL_METAMORPHOSIS             = 90116,
 };
 
 enum DemonHunterDisplays
@@ -177,8 +178,9 @@ class spell_titan_dh_blade_dance : public SpellScript
     }
 };
 
-// Demon Form (90115): the Demon Hunter's demon shape (Metamorphosis' model) for as long as the aura lasts,
-// the female or male one by the character's own gender.
+// Demon Form (90115) and Metamorphosis (90116): the Demon Hunter's demon shape for as long as the aura lasts,
+// the female or male one by the character's own gender. Either keeps the shape while the other is still on
+// (an Eye Beam channeled in Metamorphosis ends without turning the Demon Hunter back).
 class spell_titan_dh_demon_form : public AuraScript
 {
     PrepareAuraScript(spell_titan_dh_demon_form);
@@ -194,7 +196,11 @@ class spell_titan_dh_demon_form : public AuraScript
 
     void Restore(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
-        GetTarget()->RestoreDisplayId();
+        Unit* target = GetTarget();
+        for (uint32 spellId : { SPELL_DEMON_FORM, SPELL_METAMORPHOSIS })
+            if (spellId != GetId() && target->HasAura(spellId))
+                return;
+        target->RestoreDisplayId();
     }
 
     void Register() override

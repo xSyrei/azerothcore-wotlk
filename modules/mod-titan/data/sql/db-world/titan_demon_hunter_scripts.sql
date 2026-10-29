@@ -57,10 +57,11 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90112, 0, 0, 0.4, 0, 'Chaos Nova');
 
 -- Demon Form (90115): the demon shape (spell_titan_dh_demon_form), worn by Eye Beam for its channel
--- and by Chaos Nova for a moment.
+-- and by Chaos Nova for a moment; Metamorphosis (90116) wears it for its 30 sec.
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_dh_demon_form', 'spell_titan_dh_eye_beam',
     'spell_titan_dh_chaos_nova');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90115, 'spell_titan_dh_demon_form'),
+(90116, 'spell_titan_dh_demon_form'),
 (90105, 'spell_titan_dh_eye_beam'),
 (90112, 'spell_titan_dh_chaos_nova');

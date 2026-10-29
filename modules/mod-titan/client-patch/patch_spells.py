@@ -97,7 +97,7 @@ SPELLFAMILY_HUNTER = 9
 BLEND_ADD = 4                   # M2 blend mode: additive
 DURATION_10S, RANGE_20 = 1, 3
 AURA_STUN, AURA_MOD_DAMAGE_PERCENT_TAKEN = 12, 87
-AURA_DUMMY = 4
+AURA_DUMMY, AURA_MOD_DAMAGE_PERCENT_DONE, AURA_MOD_MELEE_RANGED_HASTE = 4, 79, 192
 CAST_INSTANT = 1
 ATTR0_DO_NOT_DISPLAY, ATTR0_DO_NOT_LOG = 0x80, 0x100
 EFFECT_DISPEL, EFFECT_INTERRUPT_CAST = 38, 68
@@ -110,7 +110,8 @@ RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
 ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'Ability_DemonHunter_FelRush',
          'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01', 'Ability_DemonHunter_VengefulRetreat',
          'Ability_DemonHunter_ThrowGlaive', 'Spell_Fire_FelFireNova', 'Ability_DemonHunter_Blur',
-         'Ability_DemonHunter_ConsumeMagic', 'Spell_Shadow_DemonForm']
+         'Ability_DemonHunter_ConsumeMagic', 'Spell_Shadow_DemonForm',
+         'Ability_DemonHunter_Metamorphosis']
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
@@ -160,6 +161,8 @@ SOUNDS = {
                         'files': [f'spell_dh_vengefullretreat_cast_0{n}' for n in range(1, 4)]},
     'EyeBeamChannel': {'id': 18106, 'copy': 5674,
                        'files': [f'spell_dh_player_eyebeam_1shot_0{n}' for n in range(1, 4)]},
+    'Metamorphosis': {'id': 18110, 'copy': 5674,
+                      'files': [f'spell_dh_metamorph_jumpland_0{n}' for n in range(1, 5)]},
     'EyeBeamEnd': {'id': 18105, 'copy': 5674, 'files': [f'spell_dh_player_eyebeam_end_0{n}' for n in range(1, 5)]},
 }
 
@@ -225,6 +228,10 @@ VISUALS = {
     'ConsumeMagic': {'copy': 239, 'id': 16712, 'kits': {
         'cast': (15617, {HANDS: FEL_PRECAST_HAND}),
         'impact': (15618, {KIT_CHEST: CONSUME_MAGIC_IMPACT})}},
+    # Metamorphosis is the warlock's: its transformation burst (no shadow hands: it is instant), with
+    # the Demon Hunter's landing roar instead of its sound.
+    'Metamorphosis': {'copy': 12118, 'id': 16713, 'clear': ('precast',), 'kits': {
+        'impact': (15619, {'sound': 'Metamorphosis'})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
 }
@@ -433,6 +440,23 @@ SPELLS = [
         'clear': [2],
         'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 0,
                         'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # The warlock's Metamorphosis, without the shapeshift: the demon shape (effect 1, a dummy aura the
+        # server's spell_titan_dh_demon_form turns into the model), 25% haste (effect 2, instead of its
+        # armor) and its 20% damage (effect 3).
+        'id': 90116, 'copy': 47241, 'name': 'Metamorphosis', 'icon': 'Ability_DemonHunter_Metamorphosis',
+        'visual': 'Metamorphosis',
+        'description': 'Transform into a demon for $d, increasing your attack speed by $s2% and all damage '
+                       'you deal by $s3%.',
+        'tooltip': 'Demon form. Attack speed increased by $s2%. Damage dealt increased by $s3%.',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 180000, 'PowerType': 0, 'ManaCost': 0,
+                'ManaCostPercentage': 0, 'BaseLevel': 30, 'SpellLevel': 30, 'MaxLevel': 0},
+        'effects': {
+            1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 0, 'MiscValue': 0},
+            2: {'Aura': AURA_MOD_MELEE_RANGED_HASTE, 'BasePoints': 24, 'DieSides': 1, 'MiscValue': 0},
+            3: {'Aura': AURA_MOD_DAMAGE_PERCENT_DONE, 'BasePoints': 19, 'DieSides': 1},
+        },
     },
     {
         # Counterspell: interrupts and locks the school out for 3 sec; also removes one magic buff

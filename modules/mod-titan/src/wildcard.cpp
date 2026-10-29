@@ -142,6 +142,7 @@ namespace
         { 90113, CLASS_DEMON_HUNTER, SKILL_HAVOC, 18 },     // Blur
         { 90105, CLASS_DEMON_HUNTER, SKILL_HAVOC, 20 },     // Eye Beam
         { 90112, CLASS_DEMON_HUNTER, SKILL_HAVOC, 24 },     // Chaos Nova
+        { 90116, CLASS_DEMON_HUNTER, SKILL_HAVOC, 30 },     // Metamorphosis
     };
     constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
         { SKILL_HAVOC, "Havoc" },
