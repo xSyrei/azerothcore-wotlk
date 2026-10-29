@@ -55,6 +55,10 @@ ANIMATIONS = [
     (154, [(1062, 0)]),                             # Custom1 <- DHMeteorStrike
 ]
 LOOPS = {216, 218}                                  # the rest play once
+# Animations whose turning and travel go on the model's origin bone (0) instead of the hips, as Blizzard's
+# Whirlwind does: a moving character's hips and legs play the movement animation, the origin bone still plays
+# the action, so the whole character turns and dashes while running. Standing still it looks the same.
+ROOT_MOTION = {215}
 
 KEY_BONES = ['ArmL', 'ArmR', 'ShoulderL', 'ShoulderR', 'SpineLow', 'Waist', 'Head', 'Jaw',
              'IndexFingerR', 'MiddleFingerR', 'PinkyFingerR', 'RingFingerR', 'ThumbR',
@@ -194,8 +198,9 @@ def match_bones(model, export):
     return match, sway, scale
 
 
-def retarget(model, export, match, sway, scale, key):
-    """Per old bone: (times, rotations as quaternions or None, translations or None) for one animation."""
+def retarget(model, export, match, sway, scale, key, root_motion=False):
+    """Per old bone: (times, rotations as quaternions or None, translations or None) for one animation.
+    root_motion: the hips' heading and ground travel go on the origin bone (ROOT_MOTION)."""
     duration = export.animations[key][0]
     times = list(range(0, duration, SAMPLE_MS)) + [duration]
     order = sorted(match)                                  # parents come before their children
@@ -208,6 +213,25 @@ def retarget(model, export, match, sway, scale, key):
             parent = model.parents[b]
             parent_world = world[parent] if parent >= 0 else np.eye(4)
             r = match[b]
+            if b == 0 and root_motion:
+                hips = match[1]
+                hips_rotation = orthonormal(retail[hips][:3, :3])
+                heading = hips_rotation @ np.array([1.0, 0.0, 0.0])
+                yaw = np.arctan2(heading[1], heading[0])
+                rotation = np.array([[np.cos(yaw), -np.sin(yaw), 0], [np.sin(yaw), np.cos(yaw), 0], [0, 0, 1]])
+                position = (retail[hips] @ np.append(export.pivots[hips], 1))[:3] * scale
+                travel = position - rotation @ model.pivots[1]
+                translation = np.array([travel[0], travel[1], 0.0])
+                translations[b].append(translation)
+                local = np.eye(4)
+                local[:3, :3] = rotation
+                local[:3, 3] = translation
+                world[b] = local                            # the origin bone's pivot is the model's origin
+                q = matrix_quat(rotation)
+                if rotations[b] and np.dot(q, rotations[b][-1]) < 0:
+                    q = -q
+                rotations[b].append(q)
+                continue
             rotation = orthonormal(retail[r][:3, :3]) if r is not None else parent_world[:3, :3]
             local_rotation = parent_world[:3, :3].T @ rotation
             local = np.eye(4)
@@ -331,7 +355,7 @@ def build(retail_dir, model_path):
     for anim_id, keys in ANIMATIONS:
         keys = [export.concatenate(k) if isinstance(k[0], tuple) else k for k in keys
                 if (all(p in export.animations for p in k) if isinstance(k[0], tuple) else k in export.animations)]
-        found = [retarget(model, export, match, sway, scale, k) for k in keys]
+        found = [retarget(model, export, match, sway, scale, k, anim_id in ROOT_MOTION) for k in keys]
         if found:
             sources.append((anim_id, found))
     added = patch(model, export, sources)
