@@ -148,6 +148,7 @@ class spell_titan_dh_eye_beam_damage : public SpellScript
 
 // Blade Dance (90102): strikes everything within 8 yards four times during the spin, three times
 // for 24.75% of attack power and a last time for 74.2% (spell_bonus_data), a quarter second apart.
+// Auto-attack waits for the spin to end: a swing's animation would replace it.
 class spell_titan_dh_blade_dance : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_blade_dance);
@@ -157,9 +158,14 @@ class spell_titan_dh_blade_dance : public SpellScript
         return ValidateSpellInfo({ SPELL_BLADE_DANCE_STRIKE, SPELL_BLADE_DANCE_FINAL_STRIKE });
     }
 
+    static constexpr int32 SPIN_MS = 1000;
+
     void Strike()
     {
         Unit* caster = GetCaster();
+        for (WeaponAttackType attack : { BASE_ATTACK, OFF_ATTACK })
+            if (caster->getAttackTimer(attack) < SPIN_MS)
+                caster->setAttackTimer(attack, SPIN_MS);
         caster->CastSpell(caster, SPELL_BLADE_DANCE_STRIKE, true);
         for (auto [delay, spellId] : { std::pair{ 250ms, SPELL_BLADE_DANCE_STRIKE },
             std::pair{ 500ms, SPELL_BLADE_DANCE_STRIKE }, std::pair{ 750ms, SPELL_BLADE_DANCE_FINAL_STRIKE } })

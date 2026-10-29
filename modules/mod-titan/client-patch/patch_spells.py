@@ -122,6 +122,7 @@ SPELLFAMILY_HUNTER = 9
 BLEND_ADD = 4                   # M2 blend mode: additive
 DURATION_10S, RANGE_20 = 1, 3
 AURA_STUN, AURA_MOD_DAMAGE_PERCENT_TAKEN = 12, 87
+AURA_MOD_ATTACKER_MELEE_HIT_CHANCE, AURA_MOD_ATTACKER_RANGED_HIT_CHANCE = 184, 185
 AURA_DUMMY, AURA_MOD_DAMAGE_PERCENT_DONE, AURA_MOD_MELEE_RANGED_HASTE = 4, 79, 192
 CAST_INSTANT = 1
 ATTR0_DO_NOT_DISPLAY, ATTR0_DO_NOT_LOG = 0x80, 0x100
@@ -298,15 +299,19 @@ SPELLS = [
         'id': 90102, 'copy': 1680, 'name': 'Blade Dance', 'icon': 'Ability_DemonHunter_BladeDance',
         'two_weapons': True, 'visual': 'BladeDance',
         'description': 'Strike all enemies within 8 yards three times for 24.75% of your attack power as '
-                       'Physical damage, then once more for 74.2%, and dodge every attack for $d.',
-        'tooltip': 'Dodging all attacks.',
+                       'Physical damage, then once more for 74.2%, and evade every attack for $d.',
+        'tooltip': 'Evading all attacks.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'PowerType': FURY,
                 'ManaCost': 350, 'MaxAffectedTargets': 0, 'DurationIndex': DURATION_1S, 'BaseLevel': 10,
                 'SpellLevel': 10},
         'clear': [1, 2],
+        # Every attack misses (100% more chance to miss it) rather than being dodged: a dodge plays the Dodge
+        # animation, which cut the spin short every time an enemy swung.
         'effects': {
-            1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DODGE_PERCENT, 'BasePoints': 99, 'DieSides': 1,
-                'TargetA': TARGET_UNIT_CASTER},
+            1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_ATTACKER_MELEE_HIT_CHANCE, 'BasePoints': -101,
+                'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER},
+            2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_ATTACKER_RANGED_HIT_CHANCE, 'BasePoints': -101,
+                'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER},
         },
     },
     {
