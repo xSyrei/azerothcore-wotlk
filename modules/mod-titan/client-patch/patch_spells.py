@@ -75,13 +75,11 @@ ANIM_GLAIVE_STRIKE, ANIM_GLAIVE_BIG_STRIKE = 220, 221
 # (CombatWound) cut it short (attacks, casts), 0x100 an action. A moving character's legs always play the movement
 # animation: without 0x20 an action does not play at all while moving (tried for Blade Dance: a whole-body 0x100,
 # and Knockdown's 0x180, which also stops the player in place). Blade Dance's full body while moving is the demon
-# form's Blade Dance variant (models/creature_gltf_to_m2.py). The client also ties built-in behavior to a row's
-# BehaviorID: Whirlwind's (126) plays on the whole body even while moving (Divine Storm lifts a leg mid-run), so
-# Blade Dance takes it too.
+# form's Blade Dance variant (models/creature_gltf_to_m2.py).
 # (slot, Blizzard animation copied, body flags or None to copy them too)
 BODY_UPPER = 0x120
 ANIMATION_ROWS = [
-    (ANIM_BLADE_DANCE, 126, None),              # Whirlwind, its behavior too
+    (ANIM_BLADE_DANCE, 126, None),              # Whirlwind: upper body over running legs
     (ANIM_FEL_RUSH, 126, None),                 # Whirlwind's flags; no fallback (Fel Rush had no animation)
     (ANIM_BACK_FLIP, 37, None),                 # JumpStart
     (ANIM_BACK_FLIP + 1, 38, None),             # Jump
@@ -90,8 +88,7 @@ ANIMATION_ROWS = [
     (ANIM_GLAIVE_BIG_STRIKE, 57, None),         # Special1H (not cut by hits already)
 ]
 ANIMATION_FIELDS = 8
-ANIM_WEAPON_FLAGS, ANIM_BODY_FLAGS, ANIM_FALLBACK, ANIM_BEHAVIOR = 2, 3, 5, 6     # then flags, behavior tier
-SAME_BEHAVIOR = {ANIM_BLADE_DANCE}
+ANIM_WEAPON_FLAGS, ANIM_BODY_FLAGS, ANIM_FALLBACK = 2, 3, 5   # weapon, body, flags, fallback: columns 2 to 5
 BLANK_KIT = 3049    # Sinister Strike's impact: a chest effect and its hit sound (set them to 0 / None)
 EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
 # SoundEntries.dbc (30 columns): id, type, name, 10 files, 10 weights, folder, volume, flags, min
@@ -640,8 +637,6 @@ def build_animations(source, out):
         if body is not None:
             row[ANIM_BODY_FLAGS] = body
         row[ANIM_FALLBACK] = 0 if slot == ANIM_FEL_RUSH else like
-        if slot in SAME_BEHAVIOR:
-            row[ANIM_BEHAVIOR] = animations.rows[like][ANIM_BEHAVIOR]
         animations.rows[slot] = tuple(row)
     animations.save(out / 'AnimationData.dbc')
 
