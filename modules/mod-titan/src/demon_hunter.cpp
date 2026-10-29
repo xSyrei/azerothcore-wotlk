@@ -41,8 +41,6 @@ enum DemonHunterDisplays
 {
     DISPLAY_DEMON_FORM_MALE         = 90201,    // client-patch/patch_creatures.py
     DISPLAY_DEMON_FORM_FEMALE       = 90202,
-    DISPLAY_BLADE_DANCE_MALE        = 90203,    // the demon forms with Blade Dance as every stance and movement
-    DISPLAY_BLADE_DANCE_FEMALE      = 90204,
 };
 
 class spell_titan_dh_dual_weapons : public SpellScript
@@ -70,18 +68,11 @@ class spell_titan_dh_dual_weapons : public SpellScript
 
 namespace
 {
-    bool InDemonForm(Unit const* unit)
-    {
-        return unit->HasAura(SPELL_DEMON_FORM) || unit->HasAura(SPELL_METAMORPHOSIS);
-    }
-
     // The demon form display of the unit's own gender (a player's chosen one, not the form's).
-    uint32 DemonFormDisplay(Unit const* unit, bool bladeDance)
+    uint32 DemonFormDisplay(Unit const* unit)
     {
         Player const* player = unit->ToPlayer();
         bool female = (player ? player->GetByteValue(PLAYER_BYTES_3, 0) : unit->getGender()) == GENDER_FEMALE;
-        if (bladeDance)
-            return female ? DISPLAY_BLADE_DANCE_FEMALE : DISPLAY_BLADE_DANCE_MALE;
         return female ? DISPLAY_DEMON_FORM_FEMALE : DISPLAY_DEMON_FORM_MALE;
     }
 
@@ -165,10 +156,9 @@ class spell_titan_dh_eye_beam_damage : public SpellScript
 
 // Blade Dance (90102): strikes everything within 8 yards four times during the spin, three times
 // for 24.75% of attack power and a last time for 74.2% (spell_bonus_data), a quarter second apart.
-// Auto-attack waits for the spin to end: a swing's animation would replace it. For the dance the Demon Hunter
-// shows the Blade Dance variant of the demon form (in or out of it): the client gives a moving character's legs
-// to the movement animation, and in that variant every movement animation is the dance. Then the demon form
-// again if in it, or the character.
+// Auto-attack waits for the spin to end: a swing's animation would replace it. The Demon Hunter is anchored
+// (rooted) for the dance: the client gives a moving character's legs to the movement animation, so only a
+// standing one dances with the whole body.
 class spell_titan_dh_blade_dance : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_blade_dance);
@@ -188,16 +178,10 @@ class spell_titan_dh_blade_dance : public SpellScript
             if (caster->getAttackTimer(attack) < SPIN_MS)
                 caster->setAttackTimer(attack, SPIN_MS);
         caster->CastSpell(caster, SPELL_BLADE_DANCE_STRIKE, true);
-        uint32 dance = DemonFormDisplay(caster, true);
-        caster->SetDisplayId(dance, caster->GetObjectScale());
-        caster->m_Events.AddEventAtOffset([caster, dance]()
+        caster->SetControlled(true, UNIT_STATE_ROOT);
+        caster->m_Events.AddEventAtOffset([caster]()
         {
-            if (caster->GetDisplayId() != dance)
-                return;                                     // something else changed the look meanwhile
-            if (InDemonForm(caster))
-                caster->SetDisplayId(DemonFormDisplay(caster, false), caster->GetObjectScale());
-            else
-                caster->RestoreDisplayId();
+            caster->SetControlled(false, UNIT_STATE_ROOT);  // kept while a root aura or a vehicle holds it
         }, std::chrono::milliseconds(DANCE_MS));
         for (auto [delay, spellId] : { std::pair{ 250ms, SPELL_BLADE_DANCE_STRIKE },
             std::pair{ 500ms, SPELL_BLADE_DANCE_STRIKE }, std::pair{ 750ms, SPELL_BLADE_DANCE_FINAL_STRIKE } })
@@ -226,7 +210,7 @@ class spell_titan_dh_demon_form : public AuraScript
     void Transform(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         Unit* target = GetTarget();
-        target->SetDisplayId(DemonFormDisplay(target, false), target->GetObjectScale());
+        target->SetDisplayId(DemonFormDisplay(target), target->GetObjectScale());
     }
 
     void Restore(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
