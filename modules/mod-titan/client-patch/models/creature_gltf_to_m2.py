@@ -32,6 +32,11 @@ from wowexport_to_m2 import Blob
 M2_VERSION = 264
 NONE16 = 0xFFFF
 SEQUENCE_IN_MODEL = 0x20
+# Blizzard's sequence flags by animation, as on its character models: 0x1 plays once (without it the client
+# treats a sequence as a loop, and running replaces it), 0x2 also holds the last frame (Death).
+SEQUENCE_ONCE, SEQUENCE_HOLD = 0x1, 0x2
+PLAYED_ONCE = {2, 3, 8, 9, 10, 16, 17, 18, 19, 20, 21, 22, 23, 24, 30, 31, 32, 33, 37, 39, 53, 54, 55, 57, 87,
+               107, 117, 118, 187, 215, 217, 219, 220, 221}
 BONE_TRANSFORMED = 0x200
 BONES_PER_SECTION = 53
 LOOKUP_SIZE = 506                       # one entry per 3.3.5a AnimationData row
@@ -479,7 +484,10 @@ def convert(export_dir, json_path, name, out_dir, client_dir):
         seq_lo = points.min(axis=0) - MESH_MARGIN
         seq_hi = points.max(axis=0) + MESH_MARGIN
         seq_radius = float(np.linalg.norm(points, axis=1).max()) + MESH_MARGIN
-        sequence_data += struct.pack('<HHIfIhHIII3f3ffhH', anim_id, variation, duration, speed, SEQUENCE_IN_MODEL,
+        flags = SEQUENCE_IN_MODEL | (SEQUENCE_ONCE if anim_id in PLAYED_ONCE else 0)
+        if anim_id == 1:
+            flags |= SEQUENCE_ONCE | SEQUENCE_HOLD
+        sequence_data += struct.pack('<HHIfIhHIII3f3ffhH', anim_id, variation, duration, speed, flags,
                                      frequency, 0, 0, 0, 150, *seq_lo, *seq_hi, seq_radius,
                                      following[0] if following else -1, index)
     sequences_ref = blob.add(sequence_data, len(sequences))

@@ -32,6 +32,8 @@ from creature_gltf_to_m2 import Export, comp_quat, pose
 
 NONE16 = 0xFFFF
 SEQUENCE_IN_MODEL = 0x20
+SEQUENCE_ONCE = 0x1                     # plays once (Blizzard's flag on attacks, casts, jump start and end);
+                                        # without it the client treats a sequence as a loop, and running replaces it
 BONE_TRANSFORMED = 0x200
 SAMPLE_MS = 33                          # keyframe spacing of the retargeted animations
 MATCH_DISTANCE = 0.06                   # yards (after scaling): farther pivots are not the same joint
@@ -52,6 +54,7 @@ ANIMATIONS = [
     (222, [(1044, 0)]),                             # CustomSpell10 <- FelRushEnd
     (154, [(1062, 0)]),                             # Custom1 <- DHMeteorStrike
 ]
+LOOPS = {216, 218}                                  # the rest play once
 
 KEY_BONES = ['ArmL', 'ArmR', 'ShoulderL', 'ShoulderR', 'SpineLow', 'Waist', 'Head', 'Jaw',
              'IndexFingerR', 'MiddleFingerR', 'PinkyFingerR', 'RingFingerR', 'ThumbR',
@@ -245,7 +248,8 @@ def patch(model, export, sources):
             index = old_count + len(new_sequences)
             following = index + 1 if v + 1 < len(variations) else -1
             s = model.sequences[stand]
-            new_sequences.append(SEQUENCE.pack(anim_id, v, duration, 0.0, SEQUENCE_IN_MODEL,
+            flags = SEQUENCE_IN_MODEL | (0 if anim_id in LOOPS else SEQUENCE_ONCE)
+            new_sequences.append(SEQUENCE.pack(anim_id, v, duration, 0.0, flags,
                                                0x7FFF // len(variations), 0, 0, 0, 150, *s[10:17], following, index))
     struct.pack_into(f'<{len(lookup)}H', data, lookup_at, *lookup)
     flat = [v for _, variations in sources for v in variations]
