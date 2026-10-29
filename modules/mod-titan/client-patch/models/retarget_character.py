@@ -54,12 +54,20 @@ ANIMATIONS = [
     (222, [(1044, 0)]),                             # CustomSpell10 <- FelRushEnd
     (154, [(1062, 0)]),                             # Custom1 <- DHMeteorStrike
 ]
-LOOPS = {216, 218}                                  # the rest play once (a looping Blade Dance, as Whirlwind
-                                                    # is, still played on the upper body only while moving)
+# Blade Dance as the flying tier's stance and movement animations, which no character uses: the client gives a
+# moving character's legs to its movement animation, and the server puts the Demon Hunter in the flying animation
+# tier for the dance (an animation state only), so the legs dance too (spell_titan_dh_blade_dance).
+FLY_SLOTS = {229: 0.0, 233: 2.5, 234: 7.0, 240: 7.0, 241: 7.0, 242: 4.5, 254: 0.0, 255: 0.0}
+# FlyStand, FlyWalk, FlyRun, FlyShuffleLeft / Right, FlyWalkbackwards, FlyReadyUnarmed, FlyReady1H: move speed
+# (the client plays a movement animation faster or slower to match the speed moved; the dance keeps its pace)
+ANIMATIONS += [(slot, [((1056, 0), (1058, 0), (1060, 0))]) for slot in FLY_SLOTS]
+# The rest play once (a looping Blade Dance in its own slot, as Whirlwind is, still played on the upper body only
+# while moving; as the flying tier's movement animations it gets the legs)
+LOOPS = {216, 218} | set(FLY_SLOTS)
 # Animations whose turning and travel go on the model's origin bone (0) instead of the hips, as Blizzard's
 # Whirlwind does: a moving character's hips and legs play the movement animation, the origin bone still plays
 # the action, so the whole character turns and dashes while running. Standing still it looks the same.
-ROOT_MOTION = {215}
+ROOT_MOTION = {215} | set(FLY_SLOTS)
 
 KEY_BONES = ['ArmL', 'ArmR', 'ShoulderL', 'ShoulderR', 'SpineLow', 'Waist', 'Head', 'Jaw',
              'IndexFingerR', 'MiddleFingerR', 'PinkyFingerR', 'RingFingerR', 'ThumbR',
@@ -274,7 +282,7 @@ def patch(model, export, sources):
             following = index + 1 if v + 1 < len(variations) else -1
             s = model.sequences[stand]
             flags = SEQUENCE_IN_MODEL | (0 if anim_id in LOOPS else SEQUENCE_ONCE)
-            new_sequences.append(SEQUENCE.pack(anim_id, v, duration, 0.0, flags,
+            new_sequences.append(SEQUENCE.pack(anim_id, v, duration, FLY_SLOTS.get(anim_id, 0.0), flags,
                                                0x7FFF // len(variations), 0, 0, 0, 150, *s[10:17], following, index))
     struct.pack_into(f'<{len(lookup)}H', data, lookup_at, *lookup)
     flat = [v for _, variations in sources for v in variations]
