@@ -109,7 +109,7 @@ RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
 # client already has the rest, found by name in SpellIcon.dbc.
 ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'Ability_DemonHunter_FelRush',
          'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01', 'Ability_DemonHunter_VengefulRetreat',
-         'Ability_DemonHunter_ThrowGlaive', 'Spell_Fire_FelFireNova', 'Spell_Shadow_ShadowWard',
+         'Ability_DemonHunter_ThrowGlaive', 'Spell_Fire_FelFireNova', 'Ability_DemonHunter_Blur',
          'Ability_DemonHunter_ConsumeMagic', 'Spell_Shadow_DemonForm']
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
@@ -412,7 +412,7 @@ SPELLS = [
     },
     {
         # Evasion's dodge, and 35% less damage taken instead of its ranged miss chance.
-        'id': 90113, 'copy': 26669, 'name': 'Blur', 'icon': 'Spell_Shadow_ShadowWard',
+        'id': 90113, 'copy': 26669, 'name': 'Blur', 'icon': 'Ability_DemonHunter_Blur',
         'two_weapons': True, 'visual': 'Blur',
         'description': 'Increases your chance to dodge by 50% and reduces all damage taken by 35% for $d.',
         'tooltip': 'Dodge chance increased by 50%. Damage taken reduced by 35%.',
