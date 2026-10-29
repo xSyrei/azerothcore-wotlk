@@ -128,6 +128,12 @@ Missing ones are filled in from similar ones (the male export has no Attack1H, t
 AttackOff; Dead is Death's last frame, held). The tattoo glow is drawn additive on the second UV set.
 Not carried over: particles (eye glow, smoke), ribbons, events, cameras.
 
+**Blade Dance in demon form:** while a character moves, the client always gives its legs to the movement
+animation, so a spell animation plays on the upper body only. Each demon form therefore has a Blade Dance variant
+(`DHMetaMaleBladeDance`, `DHMetaFemaleBladeDance`, displays 90203 and 90204, the base form's textures) in which
+every stance and movement animation is the dance (`BLADE_DANCE_EVERYWHERE`, with move speeds that keep its pace
+at walking and running speed). The server shows it for the dance's 0.9 sec (`spell_titan_dh_blade_dance`).
+
 `patch_creatures.py` adds their CreatureModelData and CreatureDisplayInfo rows (copies of the warlock's
 Metamorphosis demon: its sounds, blood, footprints) and, with `--sql`, the same rows for the server:
 

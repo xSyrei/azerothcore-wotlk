@@ -41,6 +41,8 @@ enum DemonHunterDisplays
 {
     DISPLAY_DEMON_FORM_MALE         = 90201,    // client-patch/patch_creatures.py
     DISPLAY_DEMON_FORM_FEMALE       = 90202,
+    DISPLAY_BLADE_DANCE_MALE        = 90203,    // the demon forms with Blade Dance as every stance and movement
+    DISPLAY_BLADE_DANCE_FEMALE      = 90204,
 };
 
 class spell_titan_dh_dual_weapons : public SpellScript
@@ -68,6 +70,21 @@ class spell_titan_dh_dual_weapons : public SpellScript
 
 namespace
 {
+    bool InDemonForm(Unit const* unit)
+    {
+        return unit->HasAura(SPELL_DEMON_FORM) || unit->HasAura(SPELL_METAMORPHOSIS);
+    }
+
+    // The demon form display of the unit's own gender (a player's chosen one, not the form's).
+    uint32 DemonFormDisplay(Unit const* unit, bool bladeDance)
+    {
+        Player const* player = unit->ToPlayer();
+        bool female = (player ? player->GetByteValue(PLAYER_BYTES_3, 0) : unit->getGender()) == GENDER_FEMALE;
+        if (bladeDance)
+            return female ? DISPLAY_BLADE_DANCE_FEMALE : DISPLAY_BLADE_DANCE_MALE;
+        return female ? DISPLAY_DEMON_FORM_FEMALE : DISPLAY_DEMON_FORM_MALE;
+    }
+
     // Keeps only the targets in a lane straight ahead of the caster, halfWidth yards to each side
     // (the area's radius sets its length).
     void KeepInLane(Unit* caster, std::list<WorldObject*>& targets, float halfWidth)
@@ -148,7 +165,9 @@ class spell_titan_dh_eye_beam_damage : public SpellScript
 
 // Blade Dance (90102): strikes everything within 8 yards four times during the spin, three times
 // for 24.75% of attack power and a last time for 74.2% (spell_bonus_data), a quarter second apart.
-// Auto-attack waits for the spin to end: a swing's animation would replace it.
+// Auto-attack waits for the spin to end: a swing's animation would replace it. In demon form the Demon Hunter
+// shows the Blade Dance variant of the form for the dance: the client gives a moving character's legs to the
+// movement animation, and in that variant every movement animation is the dance.
 class spell_titan_dh_blade_dance : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_blade_dance);
@@ -159,6 +178,7 @@ class spell_titan_dh_blade_dance : public SpellScript
     }
 
     static constexpr int32 SPIN_MS = 1000;
+    static constexpr int32 DANCE_MS = 900;                  // the dance's three parts (DHBladeDance 1 to 3)
 
     void Strike()
     {
@@ -167,6 +187,20 @@ class spell_titan_dh_blade_dance : public SpellScript
             if (caster->getAttackTimer(attack) < SPIN_MS)
                 caster->setAttackTimer(attack, SPIN_MS);
         caster->CastSpell(caster, SPELL_BLADE_DANCE_STRIKE, true);
+        if (InDemonForm(caster))
+        {
+            uint32 dance = DemonFormDisplay(caster, true);
+            caster->SetDisplayId(dance, caster->GetObjectScale());
+            caster->m_Events.AddEventAtOffset([caster, dance]()
+            {
+                if (caster->GetDisplayId() != dance)
+                    return;                                 // the form ended, or something else changed the look
+                if (InDemonForm(caster))
+                    caster->SetDisplayId(DemonFormDisplay(caster, false), caster->GetObjectScale());
+                else
+                    caster->RestoreDisplayId();
+            }, std::chrono::milliseconds(DANCE_MS));
+        }
         for (auto [delay, spellId] : { std::pair{ 250ms, SPELL_BLADE_DANCE_STRIKE },
             std::pair{ 500ms, SPELL_BLADE_DANCE_STRIKE }, std::pair{ 750ms, SPELL_BLADE_DANCE_FINAL_STRIKE } })
         {
@@ -194,10 +228,7 @@ class spell_titan_dh_demon_form : public AuraScript
     void Transform(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         Unit* target = GetTarget();
-        Player* player = target->ToPlayer();
-        uint8 gender = player ? player->GetByteValue(PLAYER_BYTES_3, 0) : target->getGender();
-        target->SetDisplayId(gender == GENDER_FEMALE ? DISPLAY_DEMON_FORM_FEMALE : DISPLAY_DEMON_FORM_MALE,
-            target->GetObjectScale());
+        target->SetDisplayId(DemonFormDisplay(target, false), target->GetObjectScale());
     }
 
     void Restore(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)

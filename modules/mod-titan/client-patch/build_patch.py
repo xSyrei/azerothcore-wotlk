@@ -46,10 +46,17 @@ import wowexport_to_m2  # noqa: E402
 MODELS = [
     ('models/veridus/source', 'sword_1h_artifactskywall_d_06', 'Sword_1H_Veridus', 'Item\\ObjectComponents\\Weapon'),
 ]
-# (wow.export glTF folder, Emberforge model name, client folder): the Demon Hunter's demon forms
+# (wow.export glTF folder, Emberforge model name, client folder, options): the Demon Hunter's demon forms, and
+# their Blade Dance variants (the dance in every stance and movement animation; the base form's textures)
+BLADE_DANCE = {'replace': creature_gltf_to_m2.BLADE_DANCE_EVERYWHERE,
+               'move_speeds': creature_gltf_to_m2.BLADE_DANCE_SPEEDS}
 CREATURES = [
-    ('models/demonhunter_meta/male', 'DHMetaMale', 'Creature\\DemonHunterMeta'),
-    ('models/demonhunter_meta/female', 'DHMetaFemale', 'Creature\\DemonHunterMeta'),
+    ('models/demonhunter_meta/male', 'DHMetaMale', 'Creature\\DemonHunterMeta', {}),
+    ('models/demonhunter_meta/female', 'DHMetaFemale', 'Creature\\DemonHunterMeta', {}),
+    ('models/demonhunter_meta/male', 'DHMetaMaleBladeDance', 'Creature\\DemonHunterMeta',
+     dict(BLADE_DANCE, texture_name='DHMetaMale')),
+    ('models/demonhunter_meta/female', 'DHMetaFemaleBladeDance', 'Creature\\DemonHunterMeta',
+     dict(BLADE_DANCE, texture_name='DHMetaFemale')),
 ]
 # (retail glTF folder, Blizzard's 3.3.5a model, client path): character models given the Demon Hunter's
 # animations (models/retarget_character.py)
@@ -80,9 +87,9 @@ def main():
             for suffix in ('.m2', '00.skin', '.blp'):
                 entries.append((f'{folder}\\{name}{suffix}', (tmp / name / f'{name}{suffix}').read_bytes()))
 
-        for source, name, folder in CREATURES:
+        for source, name, folder, options in CREATURES:
             files = creature_gltf_to_m2.convert(HERE / source, HERE / source / 'Metamorphosis.json', name,
-                                                tmp / name, folder)
+                                                tmp / name, folder, **options)
             for f in files:
                 entries.append((f'{folder}\\{f}', (tmp / name / f).read_bytes()))
 

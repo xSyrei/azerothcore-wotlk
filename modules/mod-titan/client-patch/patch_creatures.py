@@ -26,8 +26,13 @@ CREATURES = [
      (-3.87, -1.33, -0.01, 0.79, 1.33, 6.7)),
     (90202, 3502, 'Creature\\DemonHunterMeta\\DHMetaFemale.mdx', 2927, 25277, 0.6, 1,
      (-4.43, -1.64, 0.0, 0.5, 1.64, 7.03)),
+    # Their Blade Dance variants, shown for the length of the dance (spell_titan_dh_blade_dance)
+    (90203, 3503, 'Creature\\DemonHunterMeta\\DHMetaMaleBladeDance.mdx', 2927, 25277, 0.6, 0,
+     (-3.87, -1.33, -0.01, 0.79, 1.33, 6.7)),
+    (90204, 3504, 'Creature\\DemonHunterMeta\\DHMetaFemaleBladeDance.mdx', 2927, 25277, 0.6, 1,
+     (-4.43, -1.64, 0.0, 0.5, 1.64, 7.03)),
 ]
-OTHER_GENDER = {90201: 90202, 90202: 90201}
+OTHER_GENDER = {90201: 90202, 90202: 90201, 90203: 90204, 90204: 90203}
 BOUNDING_RADIUS = 0.6
 COMBAT_REACH = 2.0
 

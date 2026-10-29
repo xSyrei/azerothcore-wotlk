@@ -135,6 +135,16 @@ ANIMATIONS = [
     (220, [(16, 0), (16, 1)]),          # CustomSpell08: Demon's Bite (the export has no glaive attacks)
     (221, [(17, 0), (87, 0)]),          # CustomSpell09: Chaos Strike
 ]
+# The Blade Dance variant of a demon form: every stance and movement animation is the dance (all three parts),
+# so it plays on the whole body even while running (the client gives the legs to the movement animation, and
+# here that is the dance). The server shows it for the length of the dance (spell_titan_dh_blade_dance).
+BLADE_DANCE_EVERYWHERE = {anim_id: [((1056, 0), (1058, 0), (1060, 0))]
+                          for anim_id in (0, 4, 5, 11, 12, 13, 25, 26, 143, 215)}
+# The client plays a movement animation faster or slower to match the speed moved (speed / its move speed, in
+# yards per second of the model as shown: CreatureModelScale 0.6). The dance keeps its own pace at the player's
+# speeds: walk 2.5, run 7, backwards 4.5.
+BLADE_DANCE_SPEEDS = {anim_id: speed / 0.6 for anim_id, speed in
+                      ((4, 2.5), (5, 7.0), (11, 7.0), (12, 7.0), (13, 4.5), (143, 7.0))}
 DEAD = (6, 1)                           # Dead: the last frame of Death, held
 # Fraction of a cycle a foot is planted, to turn foot travel into the speed a movement animation matches.
 # Strafing (ShuffleLeft / Right) moves sideways at walking speed.
@@ -327,7 +337,9 @@ def move_speed(export, key, planted):
     return float(max(travel) / (planted * duration / 1000))
 
 
-def convert(export_dir, json_path, name, out_dir, client_dir):
+def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None, replace=None, move_speeds=None):
+    """texture_name: use the textures of that already converted model instead of writing its own.
+    replace: {animation id: sources} replacing (or adding) entries of ANIMATIONS; move_speeds: their move speeds."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     export = Export(export_dir)
@@ -346,10 +358,11 @@ def convert(export_dir, json_path, name, out_dir, client_dir):
             texture, uv_set = texture_files[combo[1]], 1
         units.append((unit['skinSectionIndex'], texture, unit['materialIndex'], uv_set, unit['priority']))
     used_textures = sorted({u[1] for u in units}, key=lambda t: texture_files.index(t))
-    for texture in used_textures:
-        with Image.open(Path(export_dir) / 'textures' / f'{texture}.png') as image:
-            (out_dir / f'{name}_{texture}.blp').write_bytes(blp.encode(image))
-    texture_paths = [f'{client_dir}\\{name}_{t}.blp' for t in used_textures]
+    if texture_name is None:
+        for texture in used_textures:
+            with Image.open(Path(export_dir) / 'textures' / f'{texture}.png') as image:
+                (out_dir / f'{name}_{texture}.blp').write_bytes(blp.encode(image))
+    texture_paths = [f'{client_dir}\\{texture_name or name}_{t}.blp' for t in used_textures]
 
     # Vertices: the used part of the pool, in mesh order.
     used = np.unique(np.concatenate([idx for _, idx in export.meshes]))
@@ -404,7 +417,10 @@ def convert(export_dir, json_path, name, out_dir, client_dir):
 
     # Sequences
     sequences = []                                         # (id, source key or DEAD, variation)
-    for anim_id, sources in ANIMATIONS:
+    replace = replace or {}
+    animations = [(a, replace.get(a, sources)) for a, sources in ANIMATIONS]
+    animations += [(a, sources) for a, sources in replace.items() if a not in dict(ANIMATIONS)]
+    for anim_id, sources in animations:
         found = [export.concatenate(s) if isinstance(s[0], tuple) else s for s in sources
                  if (all(p in export.animations for p in s) if isinstance(s[0], tuple) else s in export.animations)]
         for variation, source in enumerate(found):
@@ -476,6 +492,8 @@ def convert(export_dir, json_path, name, out_dir, client_dir):
         key = (1, 0) if source == 'dead' else source
         duration = 1000 if source == 'dead' else export.animations[key][0]
         speed = speeds.get(anim_id, 0.0) if source == (anim_id, 0) or anim_id in SAME_SPEED else 0.0
+        if anim_id in replace:
+            speed = (move_speeds or {}).get(anim_id, 0.0)
         points = np.concatenate([np.einsum('bij,bj->bi', pose(export, key, t), homogeneous)[:, :3]
                                  for t in np.linspace(0, duration, 6)] + [positions])
         variations = [s for s in sequences if s[0] == anim_id]
@@ -576,7 +594,7 @@ def convert(export_dir, json_path, name, out_dir, client_dir):
                                  *batches_ref, BONES_PER_SECTION)
     (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
 
-    files = [f'{name}.m2', f'{name}00.skin'] + [f'{name}_{t}.blp' for t in used_textures]
+    files = [f'{name}.m2', f'{name}00.skin'] + ([] if texture_name else [f'{name}_{t}.blp' for t in used_textures])
     print(f'Wrote {name}: {len(positions)} vertices, {len(skin_indices) // 3} triangles in {len(section_records)} '
           f'submeshes, {bone_count} bones ({sum(animated)} animated), {len(sequences)} sequences, '
           f'{len(attachment_ids)} attachments, {len(used_textures)} textures, {len(blob.data):,} bytes')
