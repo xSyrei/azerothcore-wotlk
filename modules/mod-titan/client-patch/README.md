@@ -132,12 +132,9 @@ Not carried over: particles (eye glow, smoke), ribbons, events, cameras.
 animation, so a spell animation plays on the upper body only. Each demon form therefore has a Blade Dance variant
 (`DHMetaMaleBladeDance`, `DHMetaFemaleBladeDance`, displays 90203 and 90204, the base form's textures) in which
 every stance and movement animation is the dance (`BLADE_DANCE_EVERYWHERE`, with move speeds that keep its pace
-at walking and running speed). The server shows it for the dance's 0.9 sec in demon form
-(`spell_titan_dh_blade_dance`). Out of it, the character models' flying-tier stance and movement animations
-(FlyStand, FlyWalk, FlyRun, FlyWalkBackwards, FlyShuffleLeft / Right, FlyReady), which no character uses, are the
-dance, and the server puts the Demon Hunter in the flying animation tier for it (an animation state only). Nothing
-in the model or AnimationData gave an action animation the legs while moving: whole-body rows, play-once or looping
-sequences, Whirlwind's behavior or root bone.
+at walking and running speed). The server shows it for the dance's 0.9 sec (`spell_titan_dh_blade_dance`), in
+or out of demon form: it is the only way the dance plays on the whole body while moving (nothing in the model
+or AnimationData did it: whole-body rows, play-once or looping sequences, Whirlwind's behavior or root bone).
 
 `patch_creatures.py` adds their CreatureModelData and CreatureDisplayInfo rows (copies of the warlock's
 Metamorphosis demon: its sounds, blood, footprints) and, with `--sql`, the same rows for the server:
