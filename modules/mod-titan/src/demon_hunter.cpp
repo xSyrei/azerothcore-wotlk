@@ -171,6 +171,18 @@ class spell_titan_dh_blade_dance : public SpellScript
     static constexpr int32 SPIN_MS = 1000;
     static constexpr int32 DANCE_MS = 900;                  // the dance's three parts (DHBladeDance 1 to 3)
 
+    // Before the cast goes out: a client that gets the spell while still running plays it on the upper body
+    // only, and keeps that after stopping.
+    void Anchor()
+    {
+        Unit* caster = GetCaster();
+        caster->SetControlled(true, UNIT_STATE_ROOT);
+        caster->m_Events.AddEventAtOffset([caster]()
+        {
+            caster->SetControlled(false, UNIT_STATE_ROOT);  // kept while a root aura or a vehicle holds it
+        }, std::chrono::milliseconds(DANCE_MS));
+    }
+
     void Strike()
     {
         Unit* caster = GetCaster();
@@ -178,11 +190,6 @@ class spell_titan_dh_blade_dance : public SpellScript
             if (caster->getAttackTimer(attack) < SPIN_MS)
                 caster->setAttackTimer(attack, SPIN_MS);
         caster->CastSpell(caster, SPELL_BLADE_DANCE_STRIKE, true);
-        caster->SetControlled(true, UNIT_STATE_ROOT);
-        caster->m_Events.AddEventAtOffset([caster]()
-        {
-            caster->SetControlled(false, UNIT_STATE_ROOT);  // kept while a root aura or a vehicle holds it
-        }, std::chrono::milliseconds(DANCE_MS));
         for (auto [delay, spellId] : { std::pair{ 250ms, SPELL_BLADE_DANCE_STRIKE },
             std::pair{ 500ms, SPELL_BLADE_DANCE_STRIKE }, std::pair{ 750ms, SPELL_BLADE_DANCE_FINAL_STRIKE } })
         {
@@ -196,6 +203,7 @@ class spell_titan_dh_blade_dance : public SpellScript
 
     void Register() override
     {
+        BeforeCast += SpellCastFn(spell_titan_dh_blade_dance::Anchor);
         AfterCast += SpellCastFn(spell_titan_dh_blade_dance::Strike);
     }
 };
