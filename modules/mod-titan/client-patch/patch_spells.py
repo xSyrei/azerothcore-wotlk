@@ -57,12 +57,14 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 # SpellVisual.dbc (32 columns), SpellVisualKit.dbc (38), SpellVisualEffectName.dbc (7: id, name,
 # file, area size, scale, min scale, max scale).
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
-# SpellVisual columns; 'persistent' is the kit a persistent area (a dynamic object) shows for as long as it lasts.
-VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5, 'persistent': 25}
+# SpellVisual columns; 'persistent' is the kit a persistent area (a dynamic object) shows for as long as it lasts,
+# 'area' the one it shows (a sound) as it appears.
+VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5, 'area': 23, 'persistent': 25}
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_BREATH = 3, 4, 5, 6, 7, 8
 KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON, KIT_WORLD = 9, 10, 14
 HANDS, WEAPONS = (KIT_LEFT_HAND, KIT_RIGHT_HAND), (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
 KIT_ANIM = 2
+KIT_PROCS, KIT_PROC_PARAMS = range(17, 21), range(21, 37)   # character effects (tints, ground decals)
 NO_ANIM = 0xFFFFFFFF
 # The Demon Hunter's own animations, in slots no Blizzard model uses: the retail ones, added to the character
 # models (models/retarget_character.py) and the demon forms (models/creature_gltf_to_m2.py). A model without
@@ -186,23 +188,13 @@ EFFECTS = {
                      {'texture': 1, 'size': 16.0, 'height': 0.3, 'alpha': 0.75, 'turn': 24.0, 'round': True},
                      {'texture': 1, 'size': 12.0, 'height': 0.6, 'alpha': 0.6, 'turn': -16.0, 'round': True})}},
     # Immolation Aura: the cast's fel shockwave and flash (retail's cfx_demonhunter_immolationaura_castbase
-    # textures), and for as long as it lasts fel fire turning at the Demon Hunter's feet (its fire and lava
-    # textures, additive) instead of its particles.
+    # textures).
     'ImmolationAuraBurst': {'model': 'DH_ImmolationAura_Burst', 'effect': 7109, 'shape': 'burst',
                             'textures': ('DH_ImmolationAura_Shockwave', 'DH_ImmolationAura_Flash', None),
                             'options': {'size': 16.0, 'ring_tint': (1.0, 1.0, 1.0), 'ring_blend': BLEND_ADD,
                                         'flash_sheet': False,
                                         'ring': {'scale': ([0, 300, 600], [1.0, 16.0, 17.0]),
                                                  'fade': ([0, 200, 600, 900], [0x7FFF, 0x7FFF, 0, 0])}}},
-    'ImmolationAuraFlames': {'model': 'DH_ImmolationAura_Flames', 'effect': 7110, 'shape': 'zone',
-                             'textures': ('DH_ImmolationAura_Lava', 'DH_ImmolationAura_Fire',
-                                          'DH_ImmolationAura_Shockwave'),
-                             'options': {'layers': (
-                                 {'texture': 0, 'size': 5.0, 'height': 0.1, 'alpha': 0.7, 'turn': 9.0,
-                                  'round': True, 'blend': BLEND_ADD},
-                                 {'texture': 1, 'size': 4.0, 'height': 0.25, 'turn': -3.0, 'round': True,
-                                  'blend': BLEND_ADD},
-                                 {'texture': 2, 'size': 5.5, 'height': 0.35, 'turn': 4.0, 'blend': BLEND_ADD})}},
     # Eye Beam: from the face, as long as the channel and its 20-yard reach.
     'EyeBeam': {'model': 'DH_EyeBeam', 'effect': 7104, 'shape': 'beam',
                 'textures': ('DH_EyeBeam_Beam', 'DH_EyeBeam_Fel')},
@@ -237,11 +229,13 @@ FEL_FIRE_IMPACT = 3221          # Spells\\Fel_Fire_ImpactDD_High_Chest: a big fe
 FEL_FLAMESHOCK_IMPACT = 3111    # Spells\\Fel_FlameShock_Impact_Chest: a small fel fire hit
 FEL_FIREBLAST_IMPACT = 3227     # Spells\\Fel_FireBlast_Impact_Chest
 FEL_HELLFIRE_BASE = 3312        # Spells\\Fel_Hellfire_Impact_Caster_Base: fel flames at the feet
+FEL_IMMOLATE_STATE = 3231       # Spells\\Fel_Immolate_State_Base: fel flames rising around the body
 
 # Visuals: the Blizzard visual copied, the new visual's id, and per kit (precast, cast or impact)
 # the new kit's id and what goes in its slots, a copy of the copied visual's kit (or of BLANK_KIT
 # if it has none). A slot's effect is a Blizzard effect id (0: none) or one of EFFECTS; "anim" sets the kit's
-# animation (NO_ANIM: none), "sound" its sound (one of SOUNDS, or None: silent). "clear" drops kits.
+# animation (NO_ANIM: none), "sound" its sound (one of SOUNDS, or None: silent), "procs": False drops the copied kit's
+# character effects (its tints and ground decals). "clear" drops kits.
 VISUALS = {
     'DemonsBite': {'copy': 253, 'id': 16700, 'kits': {
         'cast': (15600, {WEAPONS: 'DemonsBite', 'anim': ANIM_GLAIVE_STRIKE, 'sound': 'DemonsBite'}),
@@ -308,14 +302,16 @@ VISUALS = {
     'Felblade': {'copy': 29, 'id': 16714, 'kits': {
         'cast': (15623, {KIT_CHEST: 'FelRush', WEAPONS: 'Felblade', HANDS: FEL_PRECAST_HAND}),
         'impact': (15624, {KIT_CHEST: FEL_FIRE_IMPACT, 'sound': None})}},
-    # Darkness is Death and Decay's (the shadow hands, its sound), its runes on the ground now the darkness.
-    'Darkness': {'copy': 9735, 'id': 16715, 'clear': ('precast',), 'kits': {
-        'persistent': (15625, {KIT_WORLD: 'Darkness'})}},
-    # Immolation Aura is the Metamorphosis warlock's: fel hands and the fel shockwave on the cast, the fel fire at
-    # the feet (instead of its embers) while it lasts. Each pulse's hit is a small fel fire one.
+    # Darkness is Death and Decay's shadow hands and its persistent area, the runes on the ground now the darkness;
+    # none of the rest of Death and Decay (its ground decal, the tint on those in it, its area sound).
+    'Darkness': {'copy': 9735, 'id': 16715, 'clear': ('precast', 'state', 'area'), 'kits': {
+        'persistent': (15625, {KIT_WORLD: 'Darkness', 'procs': False})}},
+    # Immolation Aura is the Metamorphosis warlock's: fel hands and the fel shockwave on the cast; while it lasts
+    # (instead of its embers) the Demon Hunter burns: fel flames rising around the body (the Burning Crusade
+    # demons' Fel Flames) and fel fire on the hands. Each pulse's hit is a small fel fire one.
     'ImmolationAura': {'copy': 12038, 'id': 16716, 'kits': {
         'cast': (15626, {HANDS: FEL_PRECAST_HAND, KIT_WORLD: 'ImmolationAuraBurst'}),
-        'state': (15627, {KIT_HEAD: 0, KIT_CHEST: 0, KIT_BASE: 'ImmolationAuraFlames'})}},
+        'state': (15627, {KIT_HEAD: 0, KIT_CHEST: 0, KIT_BASE: FEL_IMMOLATE_STATE, HANDS: FEL_PRECAST_HAND})}},
     'ImmolationAuraPulse': {'copy': 11111, 'id': 16717, 'kits': {
         'impact': (15628, {KIT_BASE: 0, KIT_CHEST: FEL_FLAMESHOCK_IMPACT})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
@@ -725,6 +721,10 @@ def build_visuals(source, out):
             for where, effect in slots.items():
                 if where == 'anim':
                     kit[KIT_ANIM] = effect
+                    continue
+                if where == 'procs':
+                    kit[KIT_PROCS.start:KIT_PROCS.stop] = [0xFFFFFFFF] * len(KIT_PROCS)
+                    kit[KIT_PROC_PARAMS.start:KIT_PROC_PARAMS.stop] = [0] * len(KIT_PROC_PARAMS)
                     continue
                 if where == 'sound':
                     kit[KIT_SOUND] = SOUNDS[effect]['id'] if effect else 0
