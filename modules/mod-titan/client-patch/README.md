@@ -148,6 +148,34 @@ is `CreatureModelScale` in `CREATURES`.
 **Preview:** `python3 models/render_creature.py <model.m2> <texture dir> out.png <anim id>[/variation]
 [frames] [angle] [size]` reads a converted model back and renders frames of one of its animations.
 
+## Demon Hunter animations on the character models
+
+Retail Demon Hunters have their own animations (Blade Dance's three dashes, Fel Rush, the backflip, the glaive
+throw and strikes). `models/retarget_character.py` adds them to Blizzard's 3.3.5a character models: it takes
+them from a retail character exported by wow.export as glTF (`models/characters/<race>_<gender>/retail`,
+pruned to the animations used) and patches the 3.3.5a model from the client (`<Race><Gender>.m2`, original),
+written to the patch at its own path (`CHARACTERS` in `build_patch.py`).
+
+M2 bones have no rest rotation and the retail skeletons keep the old joints in nearly the same places, so each
+old bone is matched to the retail bone at its place and takes its orientation; the hips also take its
+movement. Swaying bones (hair, cloth) keep swaying. The model is patched in place: the new sequences and their
+data go after the old, nothing old moves (the `.anim` files still match).
+
+The animations go in slots no Blizzard model uses, the same in the demon forms, and the spell visuals play them
+(`ANIM_*` in `patch_spells.py`):
+
+| Slot | Animation | Played by |
+|---|---|---|
+| CustomSpell03 (215) | DHBladeDance 1, 2 and 3 in a row (3 variations) | Blade Dance |
+| CustomSpell04 (216) | FelRushLoop | Fel Rush |
+| CustomSpell05, 06 (217, 218) | BackFlipStart, BackFlipLoop | Vengeful Retreat (start) |
+| CustomSpell07 (219) | GlvThrowMain, GlvThrownOff | Throw Glaive |
+| CustomSpell08 (220) | CombatAbilityGlv01, GlvOff01 | Demon's Bite |
+| CustomSpell09 (221) | CombatAbilityGlvBig01 to 03 | Chaos Strike |
+| CustomSpell10 (222), Custom1 (154) | FelRushEnd, DHMeteorStrike | (not used yet) |
+
+Done: Night Elf male. A race not converted yet stands still for those abilities.
+
 ## Login screen (GlueXML)
 
 `interface/GlueXML/` replaces Blizzard's login-screen files of the same name (the originals can be

@@ -67,7 +67,8 @@ ATTACHMENTS = {
 }
 
 # 3.3.5a sequences: (animation id, source animations as (retail id, variation), ...). Several sources make
-# variations. A source missing from the export is skipped; a sequence with none left is left out.
+# variations; a tuple of sources plays them one after the other. A source missing from the export is skipped;
+# a sequence with none left is left out.
 ANIMATIONS = [
     (0, [(0, 0)]),                      # Stand
     (1, [(1, 0)]),                      # Death
@@ -119,12 +120,15 @@ ANIMATIONS = [
     (125, [(125, 0)]),                  # ChannelCastOmni
     (143, [(143, 0)]),                  # Sprint
     (187, [(187, 0)]),                  # JumpLandRun
-    (213, [(1042, 0)]),                 # CustomSpell01 <- FelRushLoop
-    (214, [(1056, 0), (1056, 1), (1056, 2)]),  # CustomSpell02 <- DHBladeDance1
-    (215, [(1058, 0), (1058, 1), (1058, 2)]),  # CustomSpell03 <- DHBladeDance2
-    (216, [(1060, 0), (1060, 1), (1060, 2)]),  # CustomSpell04 <- DHBladeDance3
+    # The Demon Hunter's ability animations, in the slots the character models use too
+    # (retarget_character.py), so one spell visual plays them on both:
+    (215, [((1056, v), (1058, v), (1060, v)) for v in range(3)]),  # CustomSpell03 <- DHBladeDance 1, 2, 3
+    (216, [(1042, 0)]),                 # CustomSpell04 <- FelRushLoop
     (217, [(1038, 0)]),                 # CustomSpell05 <- BackFlipStart (Vengeful Retreat)
     (218, [(1040, 0)]),                 # CustomSpell06 <- BackFlipLoop
+    (219, [(1008, 0)]),                 # CustomSpell07 <- GlvThrowMain (Throw Glaive)
+    (220, [(16, 0), (16, 1)]),          # CustomSpell08: Demon's Bite (the export has no glaive attacks)
+    (221, [(17, 0), (87, 0)]),          # CustomSpell09: Chaos Strike
 ]
 DEAD = (6, 1)                           # Dead: the last frame of Death, held
 # Fraction of a cycle a foot is planted, to turn foot travel into the speed a movement animation matches.
@@ -207,6 +211,27 @@ class Export:
                     times, convert[path](self.accessor(sampler['output'])))
                 duration = max(duration, int(round(g['accessors'][sampler['input']]['max'][0] * 1000)))
             self.animations[key] = (max(duration, 1), channels)
+
+    def concatenate(self, parts):
+        """A new animation playing `parts` one after the other (1 ms apart). A bone a part does not animate
+        keeps its rest pose through that part."""
+        key = tuple(parts)
+        if key in self.animations:
+            return key
+        rest = {'translation': np.zeros(3), 'rotation': np.array([0.0, 0.0, 0.0, 1.0]), 'scale': np.ones(3)}
+        tracks = set().union(*(self.animations[part][1] for part in parts))
+        pieces = {track: ([], []) for track in tracks}
+        offset = 0
+        for part in parts:
+            duration, channels = self.animations[part]
+            for track in tracks:
+                times, values = channels.get(track, (np.array([0, duration]), np.array([rest[track[1]]] * 2)))
+                pieces[track][0].append(times + offset)
+                pieces[track][1].append(values)
+            offset += duration + 1
+        self.animations[key] = (offset - 1, {track: (np.concatenate(t), np.concatenate(v))
+                                             for track, (t, v) in pieces.items()})
+        return key
 
     def accessor(self, index):
         g = self.gltf
@@ -365,7 +390,8 @@ def convert(export_dir, json_path, name, out_dir, client_dir):
     # Sequences
     sequences = []                                         # (id, source key or DEAD, variation)
     for anim_id, sources in ANIMATIONS:
-        found = [s for s in sources if s in export.animations]
+        found = [export.concatenate(s) if isinstance(s[0], tuple) else s for s in sources
+                 if (all(p in export.animations for p in s) if isinstance(s[0], tuple) else s in export.animations)]
         for variation, source in enumerate(found):
             sequences.append((anim_id, source, variation))
     if (1, 0) in export.animations:

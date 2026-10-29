@@ -63,6 +63,11 @@ KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON, KIT_WORLD = 9, 10, 14
 HANDS, WEAPONS = (KIT_LEFT_HAND, KIT_RIGHT_HAND), (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
 KIT_ANIM = 2
 NO_ANIM = 0xFFFFFFFF
+# The Demon Hunter's own animations, in slots no Blizzard model uses: the retail ones, added to the character
+# models (models/retarget_character.py) and the demon forms (models/creature_gltf_to_m2.py). A model without
+# them (a race not converted yet) stands still instead.
+ANIM_BLADE_DANCE, ANIM_FEL_RUSH, ANIM_BACK_FLIP, ANIM_GLAIVE_THROW = 215, 216, 217, 219
+ANIM_GLAIVE_STRIKE, ANIM_GLAIVE_BIG_STRIKE = 220, 221
 BLANK_KIT = 3049    # Sinister Strike's impact: a chest effect and its hit sound (set them to 0 / None)
 EFFECTS_DIR = 'Spells\\Emberforge'     # client folder of our effect models
 # SoundEntries.dbc (30 columns): id, type, name, 10 files, 10 weights, folder, volume, flags, min
@@ -181,23 +186,25 @@ FEL_HELLFIRE_BASE = 3312        # Spells\\Fel_Hellfire_Impact_Caster_Base: fel f
 # animation (NO_ANIM: none), "sound" its sound (one of SOUNDS, or None: silent). "clear" drops kits.
 VISUALS = {
     'DemonsBite': {'copy': 253, 'id': 16700, 'kits': {
-        'cast': (15600, {WEAPONS: 'DemonsBite', 'sound': 'DemonsBite'}),
+        'cast': (15600, {WEAPONS: 'DemonsBite', 'anim': ANIM_GLAIVE_STRIKE, 'sound': 'DemonsBite'}),
         'impact': (15604, {KIT_CHEST: MANGLE_IMPACT_DEMON, 'sound': None})}},
     'ChaosStrike': {'copy': 253, 'id': 16701, 'kits': {
-        'cast': (15601, {WEAPONS: 'ChaosStrike', HANDS: FEL_PRECAST_HAND, 'sound': 'ChaosStrike'}),
+        'cast': (15601, {WEAPONS: 'ChaosStrike', HANDS: FEL_PRECAST_HAND, 'anim': ANIM_GLAIVE_BIG_STRIKE,
+                         'sound': 'ChaosStrike'}),
         'impact': (15605, {KIT_CHEST: FEL_FIRE_IMPACT, 'sound': None})}},
     # Blade Dance is a Whirlwind; it only targets the Demon Hunter (the dodge), so no impact: its
     # strikes (90107, 90108) bring their own.
     'BladeDance': {'copy': 223, 'id': 16703, 'clear': ('impact',), 'kits': {
-        'cast': (15603, {WEAPONS: 'BladeDance', KIT_BASE: FEL_HELLFIRE_BASE, 'sound': 'BladeDance'})}},
+        'cast': (15603, {WEAPONS: 'BladeDance', KIT_BASE: FEL_HELLFIRE_BASE, 'anim': ANIM_BLADE_DANCE,
+                         'sound': 'BladeDance'})}},
     'BladeDanceStrike': {'copy': 253, 'id': 16704, 'clear': ('cast',), 'kits': {
         'impact': (15606, {KIT_CHEST: FEL_FLAMESHOCK_IMPACT, 'sound': None})}},
     'BladeDanceFinalStrike': {'copy': 253, 'id': 16705, 'clear': ('cast',), 'kits': {
         'impact': (15607, {KIT_CHEST: FEL_FIRE_IMPACT, 'sound': None})}},
-    # Fel Rush was a Blink: fel hands instead of shadow ones, the trail behind the body, and no cast
-    # animation (the dash runs). The warlock teleport flame stays where the dash starts.
+    # Fel Rush was a Blink: fel hands instead of shadow ones, the trail behind the body, and the retail
+    # dash pose. The warlock teleport flame stays where the dash starts.
     'FelRush': {'copy': 10694, 'id': 16702, 'clear': ('precast',), 'kits': {
-        'cast': (15602, {KIT_CHEST: 'FelRush', HANDS: FEL_PRECAST_HAND, 'anim': NO_ANIM, 'sound': 'FelRush'})}},
+        'cast': (15602, {KIT_CHEST: 'FelRush', HANDS: FEL_PRECAST_HAND, 'anim': ANIM_FEL_RUSH, 'sound': 'FelRush'})}},
     # Eye Beam is a Fel Breath; its channel is an aura on the Demon Hunter, kept for the channel
     # ("state"): the beam from the face, on the head (characters have no breath attachment; the
     # mage's Dragon's Breath does the same), instead of the breath's flames, and the channel sound
@@ -210,13 +217,14 @@ VISUALS = {
     # but no missile model of its own, so the client throws (and spins) the caster's main-hand
     # weapon. Its sound on the throw, the impact sound (instead of Heroic Throw's) on each enemy.
     'ThrowGlaive': {'copy': 13222, 'id': 16708, 'kits': {
-        'cast': (15613, {'sound': 'ThrowGlaiveCast'}),
+        'cast': (15613, {'anim': ANIM_GLAIVE_THROW, 'sound': 'ThrowGlaiveCast'}),
         'impact': (15612, {'sound': 'ThrowGlaiveImpact'})}},
     # Vengeful Retreat is Disengage (its leap animation is the precast kit); the cast kit, new,
     # carries the sound, Fel Rush's smoke trail behind the body for the leap, and the burst on the
     # ground where it starts.
     'VengefulRetreat': {'copy': 12305, 'id': 16709, 'kits': {
-        'cast': (15614, {KIT_CHEST: 'FelRush', KIT_WORLD: 'VengefulRetreatBurst', 'sound': 'VengefulRetreat'})}},
+        'cast': (15614, {KIT_CHEST: 'FelRush', KIT_WORLD: 'VengefulRetreatBurst', 'anim': ANIM_BACK_FLIP,
+                         'sound': 'VengefulRetreat'})}},
     # Chaos Nova is the Burning Crusade demons' (fel hands, the fel fire nova, fel fire on the
     # stunned), with our fel eruption left on the ground.
     'ChaosNova': {'copy': 8451, 'id': 16710, 'kits': {

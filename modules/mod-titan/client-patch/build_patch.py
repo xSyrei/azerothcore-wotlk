@@ -10,6 +10,7 @@ tables from the language archives, which outrank patches placed directly in Data
 - spell effect models (Spells\\Emberforge: trails and the Eye Beam beam, models/spell_effects.py, from spells/*.png)
 - spell sounds (Sound\\Spells\\Emberforge, from sounds/*.wav)
 - custom models converted from wow.export exports (models/, see MODELS below)
+- character models with the Demon Hunter's animations added (models/retarget_character.py, see CHARACTERS below)
 - animated creature models from wow.export glTF exports (models/creature_gltf_to_m2.py, see CREATURES below),
   with their CreatureModelData / CreatureDisplayInfo rows (patch_creatures.py)
 - the login screen scene, the Seat of the Pantheon (models/build_login_scene.py)
@@ -36,6 +37,7 @@ import blp  # noqa: E402
 import build_login_scene  # noqa: E402
 import creature_gltf_to_m2  # noqa: E402
 import make_mpq  # noqa: E402
+import retarget_character  # noqa: E402
 import patch_spells  # noqa: E402
 import spell_effects  # noqa: E402
 import wowexport_to_m2  # noqa: E402
@@ -48,6 +50,12 @@ MODELS = [
 CREATURES = [
     ('models/demonhunter_meta/male', 'DHMetaMale', 'Creature\\DemonHunterMeta'),
     ('models/demonhunter_meta/female', 'DHMetaFemale', 'Creature\\DemonHunterMeta'),
+]
+# (retail glTF folder, Blizzard's 3.3.5a model, client path): character models given the Demon Hunter's
+# animations (models/retarget_character.py)
+CHARACTERS = [
+    ('models/characters/nightelf_male/retail', 'models/characters/nightelf_male/NightElfMale.m2',
+     'Character\\NightElf\\Male\\NightElfMale.m2'),
 ]
 DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
         'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc',
@@ -74,6 +82,9 @@ def main():
                                                 tmp / name, folder)
             for f in files:
                 entries.append((f'{folder}\\{f}', (tmp / name / f).read_bytes()))
+
+        for retail, model, path in CHARACTERS:
+            entries.append((path, retarget_character.build(HERE / retail, HERE / model)))
 
         for spec in patch_spells.EFFECTS.values():
             shape = spec.get('shape', 'weapon')
