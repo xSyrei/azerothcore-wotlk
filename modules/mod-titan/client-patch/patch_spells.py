@@ -219,9 +219,14 @@ VISUALS = {
     'BladeDance': {'copy': 223, 'id': 16703, 'clear': ('impact',), 'kits': {
         'cast': (15603, {WEAPONS: 'BladeDance', KIT_BASE: FEL_HELLFIRE_BASE, 'anim': ANIM_BLADE_DANCE,
                          'sound': 'BladeDance'})}},
+    # The strikes of Blade Dance (and Vengeful Retreat's and Fel Rush's hits) are melee spells cast on their own:
+    # without an animation of their own the client stabs with the weapon each time, over Blade Dance. Their cast
+    # kit says no animation (Sinister Strike's swing is gone with its kit; the blank kit's effect and sound too).
     'BladeDanceStrike': {'copy': 253, 'id': 16704, 'clear': ('cast',), 'kits': {
+        'cast': (15620, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
         'impact': (15606, {KIT_CHEST: FEL_FLAMESHOCK_IMPACT, 'sound': None})}},
     'BladeDanceFinalStrike': {'copy': 253, 'id': 16705, 'clear': ('cast',), 'kits': {
+        'cast': (15621, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
         'impact': (15607, {KIT_CHEST: FEL_FIRE_IMPACT, 'sound': None})}},
     # Fel Rush was a Blink: fel hands instead of shadow ones, the trail behind the body, and the retail
     # dash pose. The warlock teleport flame stays where the dash starts.
@@ -263,6 +268,7 @@ VISUALS = {
     'Metamorphosis': {'copy': 12118, 'id': 16713, 'clear': ('precast',), 'kits': {
         'impact': (15619, {'sound': 'Metamorphosis'})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
+        'cast': (15622, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
 }
 
