@@ -305,6 +305,25 @@ class spell_titan_dh_chaos_nova : public SpellScript
     }
 };
 
+// Darkness (90118): its persistent area shields the allies in it with no set amount (-1); each hit has
+// a 20% chance to be absorbed whole, and the shield takes nothing from the others.
+class spell_titan_dh_darkness : public AuraScript
+{
+    PrepareAuraScript(spell_titan_dh_darkness);
+
+    static constexpr uint32 AVOID_CHANCE = 20;
+
+    void Avoid(AuraEffect* /*aurEff*/, DamageInfo& dmgInfo, uint32& absorbAmount)
+    {
+        absorbAmount = roll_chance_i(AVOID_CHANCE) ? dmgInfo.GetDamage() : 0;
+    }
+
+    void Register() override
+    {
+        OnEffectAbsorb += AuraEffectAbsorbFn(spell_titan_dh_darkness::Avoid, EFFECT_0);
+    }
+};
+
 void AddSC_demon_hunter()
 {
     RegisterSpellScript(spell_titan_dh_dual_weapons);
@@ -315,4 +334,5 @@ void AddSC_demon_hunter()
     RegisterSpellScript(spell_titan_dh_demon_form);
     RegisterSpellScript(spell_titan_dh_eye_beam);
     RegisterSpellScript(spell_titan_dh_chaos_nova);
+    RegisterSpellScript(spell_titan_dh_darkness);
 }

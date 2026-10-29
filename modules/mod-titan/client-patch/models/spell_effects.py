@@ -27,7 +27,7 @@ import math
 import struct
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageChops
 
 import blp
 from wowexport_to_m2 import Blob, SEQUENCE_IN_MODEL, empty_track, track
@@ -520,3 +520,144 @@ def ground_burst(ring_texture, flash_texture, trail_texture, out_dir, name, clie
     skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
     (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
     return [f'{name}.m2', f'{name}00.skin'] + [f'{blp_name}.blp' for blp_name, _ in images]
+
+
+def _round_off(image, inner=0.55):
+    """The image faded out toward a circle's edge (from inner of its radius on): no square corners."""
+    width, height = image.size
+
+    def fade(x, y):
+        distance = math.hypot((x + 0.5) / width - 0.5, (y + 0.5) / height - 0.5) * 2
+        return round(255 * min(1.0, max(0.0, (1.0 - distance) / (1.0 - inner))))
+
+    mask = Image.new('L', image.size)
+    mask.putdata([fade(x, y) for y in range(height) for x in range(width)])
+    out = image.copy()
+    out.putalpha(ImageChops.multiply(image.getchannel('A'), mask))
+    return out
+
+
+def ground_zone(*args, layers=()):
+    """A zone lying on the ground for as long as the kit keeps it (a persistent area's world slot),
+    after Legion's Darkness (cfx_demonhunter_darkness_state): flat squares just above the ground,
+    one per layer, each a dict of
+
+    - texture: index into the textures given; size: yards across; height: yards above the ground;
+    - tint: red, green, blue (0 to 1) the texture is multiplied by; alpha: its opacity (0 to 1);
+    - turn: seconds per turn about the center (negative: the other way; 0: still);
+    - round: fade the texture out toward a circle's edge (for tiling textures, square to the edge);
+    - blend: BLEND_ALPHA (the default) or BLEND_ADD.
+
+    All unlit. Called as ground_zone(texture, ..., out_dir, name, client_dir,
+    layers=...); one looping Stand. Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
+    """
+    *textures, out_dir, name, client_dir = args
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    images = []
+    for index, layer in enumerate(layers):
+        with Image.open(textures[layer['texture']]) as image:
+            image = image.convert('RGBA')
+        if layer.get('round'):
+            image = _round_off(image)
+        blp_name = f'{name}_{index}'
+        (out_dir / f'{blp_name}.blp').write_bytes(blp.encode(image))
+        images.append(blp_name)
+
+    vertices, triangles, sections = b'', [], []
+    for bone, layer in enumerate(layers):
+        half, z = layer['size'] / 2, layer.get('height', 0.1)
+        first, start = len(vertices) // 48, len(triangles)
+        for x, u in ((-half, 0.0), (half, 1.0)):
+            for y, v in ((-half, 1.0), (half, 0.0)):
+                vertices += struct.pack('<3f4B4B3f2f2f', x, y, z, 255, 0, 0, 0, bone, 0, 0, 0, 0.0, 0.0, 1.0,
+                                        u, v, 0.0, 0.0)
+        triangles += [first, first + 1, first + 2, first + 2, first + 1, first + 3]
+        sections.append((first, start, half, z))
+    vertex_count = len(vertices) // 48
+    reach = max(layer['size'] for layer in layers) / 2
+    lo, hi = (-reach, -reach, 0.0), (reach, reach, 3.0)
+    radius = math.dist(lo, hi) / 2
+    duration = 1000
+
+    blob = Blob(0x130)
+    name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
+    turning = [layer for layer in layers if layer.get('turn')]
+    globals_ref = blob.array('I', [int(abs(layer['turn']) * 1000) for layer in turning])
+    sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, duration, 0.0, SEQUENCE_IN_MODEL, 0x7FFF,
+                                     0, 0, 0, 0, *lo, *hi, radius, -1, 0), 1)
+
+    bones = b''
+    for layer in layers:
+        rotation = empty_track()
+        if layer.get('turn'):
+            period = int(abs(layer['turn']) * 1000)
+            way = 1 if layer['turn'] > 0 else -1
+            rotation = track(blob, 1, [([period * i // 4 for i in range(5)],
+                                        [tuple(comp_quat(c) for c in _turn_z(way * math.pi * i / 2))
+                                         for i in range(5)])], '4h')
+            rotation = rotation[:2] + struct.pack('<h', turning.index(layer)) + rotation[4:]
+        bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
+        bones += empty_track() + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
+    bones_ref = blob.add(bones, len(layers))
+    key_bones = blob.array('h', [-1])
+    vertices_ref = blob.add(vertices, vertex_count)
+
+    colors = b''
+    for layer in layers:
+        colors += track(blob, 0, [([0], [tuple(map(float, layer.get('tint', (1.0, 1.0, 1.0))))])], '3f')
+        colors += track(blob, 0, [([0], [round(layer.get('alpha', 1.0) * 0x7FFF)])], 'h')
+    colors_ref = blob.add(colors, len(layers))
+    textures_blob = b''
+    for blp_name in images:
+        path = f'{client_dir}\\{blp_name}.blp'
+        ref = blob.add(path.encode() + b'\0', len(path) + 1)
+        textures_blob += struct.pack('<II2I', 0, 0, *ref)
+    textures_ref = blob.add(textures_blob, len(images))
+    weights = blob.add(track(blob, 0, [([0], [0x7FFF])], 'h'), 1)
+    replaceable_lookup = blob.array('h', [-1])
+    materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, layer.get('blend', BLEND_ALPHA))
+                                      for layer in layers])
+    bone_lookup = blob.array('H', list(range(len(layers))))
+    texture_lookup = blob.array('H', list(range(len(layers))))
+    texture_unit_lookup = blob.array('H', [0])
+    transparency_lookup = blob.array('H', [0])
+    transform_lookup = blob.array('H', [0xFFFF])
+
+    header = struct.pack('<4sI', b'MD20', 264)
+    header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)
+    header += struct.pack('<2I', *globals_ref)
+    header += struct.pack('<2I', *sequences) + struct.pack('<2I', 0, 0)            # no sequence lookup
+    header += struct.pack('<2I', *bones_ref) + struct.pack('<2I', *key_bones)
+    header += struct.pack('<2I', *vertices_ref) + struct.pack('<I', 1)
+    header += struct.pack('<2I', *colors_ref) + struct.pack('<2I', *textures_ref)
+    header += struct.pack('<2I', *weights) + struct.pack('<2I', 0, 0)               # no texture transforms
+    header += struct.pack('<2I', *replaceable_lookup) + struct.pack('<2I', *materials_ref)
+    header += struct.pack('<2I', *bone_lookup) + struct.pack('<2I', *texture_lookup)
+    header += struct.pack('<2I', *texture_unit_lookup) + struct.pack('<2I', *transparency_lookup)
+    header += struct.pack('<2I', *transform_lookup)
+    header += struct.pack('<7f', *lo, *hi, radius) + struct.pack('<7f', *[0.0] * 7)
+    header += struct.pack('<2I', 0, 0) * 3                                          # collision
+    header += struct.pack('<2I', 0, 0) * 2                                          # attachments
+    header += struct.pack('<2I', 0, 0) * 2                                          # events, lights
+    header += struct.pack('<2I', 0, 0) * 2                                          # cameras
+    header += struct.pack('<2I', 0, 0) * 2                                          # ribbons, particles
+    assert len(header) == 0x130
+    blob.data[:0x130] = header
+    (out_dir / f'{name}.m2').write_bytes(bytes(blob.data))
+
+    # Skin: one section and batch per layer, drawn bottom first.
+    skin = Blob(48)
+    lookup = skin.array('H', list(range(vertex_count)))
+    tris = skin.array('H', triangles)
+    props = skin.add(b'\0' * 4 * vertex_count, vertex_count)
+    section_data, batch_data = b'', b''
+    for i, (first, start, half, z) in enumerate(sections):
+        section_data += struct.pack('<10H3f3ff', 0, 0, first, 4, start, 6, 1, i, 1, i, 0.0, 0.0, z, 0.0, 0.0, z,
+                                    half * 1.5)
+        batch_data += struct.pack('<Bb11H', 16, i, 0, i, i, i, i, 0, 1, i, 0, 0, 0)
+    sections_ref = skin.add(section_data, len(sections))
+    batches_ref = skin.add(batch_data, len(sections))
+    skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
+    (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
+    return [f'{name}.m2', f'{name}00.skin'] + [f'{blp_name}.blp' for blp_name in images]

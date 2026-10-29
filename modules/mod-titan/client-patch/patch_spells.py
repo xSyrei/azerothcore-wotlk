@@ -57,7 +57,8 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 # SpellVisual.dbc (32 columns), SpellVisualKit.dbc (38), SpellVisualEffectName.dbc (7: id, name,
 # file, area size, scale, min scale, max scale).
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
-VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5}     # SpellVisual columns
+# SpellVisual columns; 'persistent' is the kit a persistent area (a dynamic object) shows for as long as it lasts.
+VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5, 'persistent': 25}
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_BREATH = 3, 4, 5, 6, 7, 8
 KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON, KIT_WORLD = 9, 10, 14
 HANDS, WEAPONS = (KIT_LEFT_HAND, KIT_RIGHT_HAND), (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
@@ -131,6 +132,11 @@ EFFECT_DISPEL, EFFECT_INTERRUPT_CAST = 38, 68
 DISPEL_MAGIC = 1
 ALL_SCHOOLS = 0x7F
 RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
+FIRE, SHADOW = 0x4, 0x20
+EFFECT_CHARGE, EFFECT_PERSISTENT_AREA_AURA = 96, 27
+AURA_SCHOOL_ABSORB = 69
+TARGET_DEST_CASTER, TARGET_UNIT_DEST_AREA_ENEMY, TARGET_UNIT_DEST_AREA_ALLY = 18, 16, 31
+RANGE_15, DURATION_6S, DURATION_8S = 11, 32, 31
 
 # Icons: Interface\Icons\<name>. Ours come from icons/spells/<name>.png (in the client patch); the
 # client already has the rest, found by name in SpellIcon.dbc.
@@ -138,13 +144,15 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
          'Ability_DemonHunter_EyeBeam', 'INV_Weapon_Glave_01', 'Ability_DemonHunter_VengefulRetreat',
          'Ability_DemonHunter_ThrowGlaive', 'Spell_Fire_FelFireNova', 'Ability_DemonHunter_Blur',
          'Ability_DemonHunter_ConsumeMagic', 'Spell_Shadow_DemonForm',
-         'Ability_DemonHunter_Metamorphosis']
+         'Ability_DemonHunter_Metamorphosis', 'Ability_DemonHunter_Felblade', 'Ability_DemonHunter_Darkness',
+         'Spell_Fire_Incinerate']
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
-# (body_trail, for the chest), from spells/<model>.png, or "beam" (beam, for the head slot) or
-# "burst" (ground_burst, for the world slot) from the spells/<texture>.png in "textures" (beam:
-# flare, flow; burst: ring, flash, trail or None). "options" go to that builder.
+# (body_trail, for the chest), from spells/<model>.png, or "beam" (beam, for the head slot),
+# "burst" (ground_burst, for the world slot) or "zone" (ground_zone, lasting on the ground) from the
+# spells/<texture>.png in "textures" (beam: flare, flow; burst: ring, flash, trail or None; zone: those
+# its layers name). "options" go to that builder.
 EFFECTS = {
     'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'effect': 7100},
     'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'effect': 7101},
@@ -167,6 +175,34 @@ EFFECTS = {
                                    'ring': {'scale': ([0, 134, 850], [6.0, 16.0, 17.0]),
                                             'fade': ([0, 34, 134, 367, 634, 834, 900],
                                                      [0, 0, 18149, 18149, 4658, 0, 0])}}},
+    # Felblade: a fel slash trail on both weapons (retail's texture).
+    'Felblade': {'model': 'DH_Felblade_Trail', 'effect': 7107},
+    # Darkness: retail's (cfx_demonhunter_darkness_state, its dark purple ground at 90%) under two slow,
+    # opposite turning layers of its shadow smoke (rounded off) instead of the smoke particles.
+    'Darkness': {'model': 'DH_Darkness', 'effect': 7108, 'shape': 'zone',
+                 'textures': ('DH_Darkness_Base', 'DH_Darkness_Smoke'),
+                 'options': {'layers': (
+                     {'texture': 0, 'size': 17.0, 'height': 0.1, 'tint': (0.055, 0.0, 0.078), 'alpha': 0.9},
+                     {'texture': 1, 'size': 16.0, 'height': 0.3, 'alpha': 0.75, 'turn': 24.0, 'round': True},
+                     {'texture': 1, 'size': 12.0, 'height': 0.6, 'alpha': 0.6, 'turn': -16.0, 'round': True})}},
+    # Immolation Aura: the cast's fel shockwave and flash (retail's cfx_demonhunter_immolationaura_castbase
+    # textures), and for as long as it lasts fel fire turning at the Demon Hunter's feet (its fire and lava
+    # textures, additive) instead of its particles.
+    'ImmolationAuraBurst': {'model': 'DH_ImmolationAura_Burst', 'effect': 7109, 'shape': 'burst',
+                            'textures': ('DH_ImmolationAura_Shockwave', 'DH_ImmolationAura_Flash', None),
+                            'options': {'size': 16.0, 'ring_tint': (1.0, 1.0, 1.0), 'ring_blend': BLEND_ADD,
+                                        'flash_sheet': False,
+                                        'ring': {'scale': ([0, 300, 600], [1.0, 16.0, 17.0]),
+                                                 'fade': ([0, 200, 600, 900], [0x7FFF, 0x7FFF, 0, 0])}}},
+    'ImmolationAuraFlames': {'model': 'DH_ImmolationAura_Flames', 'effect': 7110, 'shape': 'zone',
+                             'textures': ('DH_ImmolationAura_Lava', 'DH_ImmolationAura_Fire',
+                                          'DH_ImmolationAura_Shockwave'),
+                             'options': {'layers': (
+                                 {'texture': 0, 'size': 5.0, 'height': 0.1, 'alpha': 0.7, 'turn': 9.0,
+                                  'round': True, 'blend': BLEND_ADD},
+                                 {'texture': 1, 'size': 4.0, 'height': 0.25, 'turn': -3.0, 'round': True,
+                                  'blend': BLEND_ADD},
+                                 {'texture': 2, 'size': 5.5, 'height': 0.35, 'turn': 4.0, 'blend': BLEND_ADD})}},
     # Eye Beam: from the face, as long as the channel and its 20-yard reach.
     'EyeBeam': {'model': 'DH_EyeBeam', 'effect': 7104, 'shape': 'beam',
                 'textures': ('DH_EyeBeam_Beam', 'DH_EyeBeam_Fel')},
@@ -267,6 +303,21 @@ VISUALS = {
     # the Demon Hunter's landing roar instead of its sound.
     'Metamorphosis': {'copy': 12118, 'id': 16713, 'clear': ('precast',), 'kits': {
         'impact': (15619, {'sound': 'Metamorphosis'})}},
+    # Felblade is Intercept's charge (its sound, the dust where it lands), with Fel Rush's trail behind the body,
+    # the fel slash trail on the weapons and a big fel fire hit.
+    'Felblade': {'copy': 29, 'id': 16714, 'kits': {
+        'cast': (15623, {KIT_CHEST: 'FelRush', WEAPONS: 'Felblade', HANDS: FEL_PRECAST_HAND}),
+        'impact': (15624, {KIT_CHEST: FEL_FIRE_IMPACT, 'sound': None})}},
+    # Darkness is Death and Decay's (the shadow hands, its sound), its runes on the ground now the darkness.
+    'Darkness': {'copy': 9735, 'id': 16715, 'clear': ('precast',), 'kits': {
+        'persistent': (15625, {KIT_WORLD: 'Darkness'})}},
+    # Immolation Aura is the Metamorphosis warlock's: fel hands and the fel shockwave on the cast, the fel fire at
+    # the feet (instead of its embers) while it lasts. Each pulse's hit is a small fel fire one.
+    'ImmolationAura': {'copy': 12038, 'id': 16716, 'kits': {
+        'cast': (15626, {HANDS: FEL_PRECAST_HAND, KIT_WORLD: 'ImmolationAuraBurst'}),
+        'state': (15627, {KIT_HEAD: 0, KIT_CHEST: 0, KIT_BASE: 'ImmolationAuraFlames'})}},
+    'ImmolationAuraPulse': {'copy': 11111, 'id': 16717, 'kits': {
+        'impact': (15628, {KIT_BASE: 0, KIT_CHEST: FEL_FLAMESHOCK_IMPACT})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'cast': (15622, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
@@ -497,6 +548,66 @@ SPELLS = [
             2: {'Aura': AURA_MOD_MELEE_RANGED_HASTE, 'BasePoints': 24, 'DieSides': 1, 'MiscValue': 0},
             3: {'Aura': AURA_MOD_DAMAGE_PERCENT_DONE, 'BasePoints': 19, 'DieSides': 1},
         },
+    },
+    {
+        # Intercept's charge: the hit (effect 2) and the Fury (effect 3) land as the Demon Hunter arrives (a
+        # charge of no class family travels at charge speed, Spell::EffectCharge). 1 damage plus attack power
+        # (spell_bonus_data).
+        'id': 90117, 'copy': 20252, 'name': 'Felblade', 'icon': 'Ability_DemonHunter_Felblade',
+        'two_weapons': True, 'visual': 'Felblade',
+        'description': 'Charge to your target and deal 50% of your attack power as Fire damage. Generates 40 Fury.',
+        'set': {'RecoveryTime': 15000, 'RangeIndex': RANGE_15, 'PowerType': 0, 'ManaCost': 0,
+                'ManaCostPercentage': 0, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
+                'SchoolMask': FIRE, 'DmgClass': DMG_CLASS_MELEE, 'BaseLevel': 16, 'SpellLevel': 16, 'MaxLevel': 80},
+        'clear': [2, 3],
+        'effects': {
+            2: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
+                'BonusMultiplier': 0.0},
+            3: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 399, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER,
+                'MiscValue': FURY},
+        },
+    },
+    {
+        # Consecration's persistent area, on allies: a shield of no size (-1) that spell_titan_dh_darkness turns
+        # into a 20% chance to take nothing from each hit.
+        'id': 90118, 'copy': 26573, 'name': 'Darkness', 'icon': 'Ability_DemonHunter_Darkness',
+        'two_weapons': True, 'visual': 'Darkness',
+        'description': 'Summon darkness around you in an 8 yard radius for $d. Allies in it have a 20% chance to '
+                       'avoid all damage from an attack.',
+        'tooltip': '20% chance to avoid all damage from an attack.',
+        'set': {'RecoveryTime': 180000, 'DurationIndex': DURATION_8S, 'PowerType': 0, 'ManaCost': 0,
+                'ManaCostPercentage': 0, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
+                'SchoolMask': SHADOW, 'DmgClass': 0, 'BaseLevel': 26, 'SpellLevel': 26, 'MaxLevel': 0},
+        'effects': {1: {'Effect': EFFECT_PERSISTENT_AREA_AURA, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': -2,
+                        'DieSides': 1, 'TargetA': TARGET_DEST_CASTER, 'TargetB': TARGET_UNIT_DEST_AREA_ALLY,
+                        'RadiusIndex': RADIUS_8, 'Amplitude': 0, 'MiscValue': ALL_SCHOOLS}},
+    },
+    {
+        # The Metamorphosis warlock's: a pulse (90120) every second and one at once (effect 3, instead of its
+        # immunity), and 20 Fury (effect 2).
+        'id': 90119, 'copy': 50589, 'name': 'Immolation Aura', 'icon': 'Spell_Fire_Incinerate',
+        'two_weapons': True, 'visual': 'ImmolationAura',
+        'description': 'Engulf yourself in flames for $d, dealing 20% of your attack power as Fire damage to '
+                       'enemies within 8 yards at once and every sec. Generates 20 Fury.',
+        'tooltip': 'Burning nearby enemies every sec.',
+        'set': {'RecoveryTime': 15000, 'DurationIndex': DURATION_6S, 'PowerType': 0, 'ManaCost': 0,
+                'ManaCostPercentage': 0, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
+                'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 0},
+        'clear': [2, 3],
+        'effects': {
+            1: {'TriggerSpell': 90120},
+            2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER,
+                'MiscValue': FURY},
+            3: {'Effect': EFFECT_TRIGGER_SPELL, 'TargetA': TARGET_UNIT_CASTER, 'TriggerSpell': 90120},
+        },
+    },
+    {
+        # Immolation Aura's pulse: everything within 8 yards, 1 damage plus attack power (spell_bonus_data).
+        'id': 90120, 'copy': 50590, 'name': 'Immolation Aura', 'icon': 'Spell_Fire_Incinerate',
+        'visual': 'ImmolationAuraPulse', 'description': '',
+        'set': {'SchoolMask': FIRE, 'MaxAffectedTargets': 0, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
+        'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_DEST_CASTER,
+                        'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
     },
     {
         # Counterspell: interrupts and locks the school out for 3 sec; also removes one magic buff

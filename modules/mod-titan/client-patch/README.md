@@ -80,6 +80,16 @@ it turns with the Demon Hunter. It bursts out of the eyes to full length in 0.15
 flickers and jitters in width while it lasts, tapers to a fading point at its far end, and narrows
 and fades out over the channel's last 0.3 sec. (`DH_EyeBeam_Streak.png` is not used.)
 
+Darkness and Immolation Aura lie on the ground (`ground_zone()`): flat layers just above it, each
+a texture tinted, faded and slowly turning (on global sequences, so it never restarts), rounded off
+at the edges when the texture tiles. Darkness is retail's dark purple ground (from
+`cfx_demonhunter_darkness_state`) under two layers of its shadow smoke turning opposite ways, shown
+by the persistent area for its 8 sec (the visual's persistent-area kit, Death and Decay's world
+slot). Immolation Aura's fel fire, lava and shockwave turn at the Demon Hunter's feet for as long as
+it lasts (its state kit's base slot), after a fel shockwave on the cast (`ground_burst()`). Retail's
+particles (smoke, flames) are not in wow.export's exports: only their textures (`spells/DH_Darkness_*`,
+`spells/DH_ImmolationAura_*`).
+
 Each spell's look is one of `VISUALS`: a copy of a Blizzard visual whose kits (precast, cast,
 impact) carry our trails and Blizzard's own fel effect models (fel flames on the hands, fel fire
 hits on targets, a demon's bite), as new rows in SpellVisual, SpellVisualKit and

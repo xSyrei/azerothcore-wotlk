@@ -139,10 +139,13 @@ namespace
         { 90102, CLASS_DEMON_HUNTER, SKILL_HAVOC, 10 },     // Blade Dance
         { 90114, CLASS_DEMON_HUNTER, SKILL_HAVOC, 12 },     // Consume Magic
         { 90109, CLASS_DEMON_HUNTER, SKILL_HAVOC, 14 },     // Vengeful Retreat
+        { 90117, CLASS_DEMON_HUNTER, SKILL_HAVOC, 16 },     // Felblade
         { 90113, CLASS_DEMON_HUNTER, SKILL_HAVOC, 18 },     // Blur
         { 90105, CLASS_DEMON_HUNTER, SKILL_HAVOC, 20 },     // Eye Beam
         { 90112, CLASS_DEMON_HUNTER, SKILL_HAVOC, 24 },     // Chaos Nova
+        { 90118, CLASS_DEMON_HUNTER, SKILL_HAVOC, 26 },     // Darkness
         { 90116, CLASS_DEMON_HUNTER, SKILL_HAVOC, 30 },     // Metamorphosis
+        { 90119, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 1 },  // Immolation Aura
     };
     constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
         { SKILL_HAVOC, "Havoc" },
