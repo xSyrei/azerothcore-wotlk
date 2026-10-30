@@ -138,3 +138,23 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 DELETE FROM `spell_bonus_data` WHERE `entry` = 90128;
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90128, 0, 0, 0.5, 0, 'Fiery Brand');
+
+-- Spirit Bomb, Soul Barrier and Sigil of Chains: both weapons needed; their scripts (Soul Fragments eaten, Frailty's
+-- healing, the sigil's pull); the explosion's and the healing's amounts are the scripts' own.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (90132, 90135, 90138)
+    AND `ScriptName` = 'spell_titan_dh_dual_weapons';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90132, 'spell_titan_dh_dual_weapons'),
+(90135, 'spell_titan_dh_dual_weapons'),
+(90138, 'spell_titan_dh_dual_weapons');
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_dh_spirit_bomb', 'spell_titan_dh_frailty',
+    'spell_titan_dh_soul_barrier', 'spell_titan_dh_sigil_of_chains');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90135, 'spell_titan_dh_spirit_bomb'),
+(90137, 'spell_titan_dh_frailty'),
+(90138, 'spell_titan_dh_soul_barrier'),
+(90132, 'spell_titan_dh_sigil_of_chains');
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90136, 90139);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90136, 0, 0, 0, 0, 'Spirit Bomb - explosion'),
+(90139, 0, 0, 0, 0, 'Frailty - healing');

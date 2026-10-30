@@ -139,11 +139,9 @@ namespace
         { 90102, CLASS_DEMON_HUNTER, SKILL_HAVOC, 10 },     // Blade Dance
         { 90114, CLASS_DEMON_HUNTER, SKILL_HAVOC, 12 },     // Consume Magic
         { 90109, CLASS_DEMON_HUNTER, SKILL_HAVOC, 14 },     // Vengeful Retreat
-        { 90117, CLASS_DEMON_HUNTER, SKILL_HAVOC, 16 },     // Felblade
         { 90113, CLASS_DEMON_HUNTER, SKILL_HAVOC, 18 },     // Blur
         { 90105, CLASS_DEMON_HUNTER, SKILL_HAVOC, 20 },     // Eye Beam
         { 90112, CLASS_DEMON_HUNTER, SKILL_HAVOC, 24 },     // Chaos Nova
-        { 90118, CLASS_DEMON_HUNTER, SKILL_HAVOC, 26 },     // Darkness
         { 90116, CLASS_DEMON_HUNTER, SKILL_HAVOC, 30 },     // Metamorphosis
         { 90121, CLASS_DEMON_HUNTER, SKILL_HAVOC, 30 },     // Fel Barrage
         { 90119, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 1 },  // Immolation Aura
@@ -151,7 +149,12 @@ namespace
         { 90125, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 1 },  // Soul Cleave
         { 90129, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 6 },  // Torment
         { 90127, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 10 }, // Demon Spikes
+        { 90135, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 12 }, // Spirit Bomb
+        { 90117, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 16 }, // Felblade
+        { 90132, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 16 }, // Sigil of Chains
         { 90128, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 20 }, // Fiery Brand
+        { 90138, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 24 }, // Soul Barrier
+        { 90118, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 26 }, // Darkness
     };
     constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
         { SKILL_HAVOC, "Havoc" },

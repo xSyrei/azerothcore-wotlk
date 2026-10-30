@@ -100,8 +100,8 @@ built or spent Runic Power build and spend Fury, the same pool as the Demon Hunt
 | 90113 | Blur | 18 | 50% dodge and 35% less damage taken for 10 sec (Evasion); 60 sec cooldown, off the global cooldown |
 | 90105 | Eye Beam | 20 | 2 sec channel, Chaos damage every 0.2 sec to enemies along the beam (20 yards, 2.5 each side; 90106); can move at 5% speed while channeling; costs 30 |
 | 90112 | Chaos Nova | 24 | 40% of attack power as Chaos damage to enemies within 8 yards, stunned 2 sec; costs 30, 60 sec cooldown |
-| 90117 | Felblade | 16 | Charges a target up to 15 yards away; on arrival 50% of attack power as Fire damage and 40 Fury; 15 sec cooldown |
-| 90118 | Darkness | 26 | 8-yard zone for 8 sec: allies in it avoid all damage from a hit 20% of the time (`spell_titan_dh_darkness`); 3 min cooldown |
+| 90117 | Felblade | 16 (Vengeance) | Charges a target up to 15 yards away; on arrival 50% of attack power as Fire damage and 40 Fury; 15 sec cooldown |
+| 90118 | Darkness | 26 (Vengeance) | 8-yard zone for 8 sec: allies in it avoid all damage from a hit 20% of the time (`spell_titan_dh_darkness`); 3 min cooldown |
 | 90116 | Metamorphosis | 30 | Demon form for 30 sec: 25% attack speed, 20% damage; 3 min cooldown |
 | 90121 | Fel Barrage | 30 | Havoc's capstone: for 3 sec, every 0.25 sec (90122) enemies within 8 yards take 15% of attack power as Chaos damage while fel balls rain down on the ground around the Demon Hunter (90123, only a look, `spell_titan_dh_fel_barrage_pulse`); each pulse drains 5 Fury, ending it when Fury runs out (`spell_titan_dh_fel_barrage`); costs 10, 90 sec cooldown |
 | 90119 | Immolation Aura | 1 (Vengeance) | 20% of attack power as Fire damage to enemies within 8 yards at once and every sec for 6 sec (90120); 20 Fury; 15 sec cooldown |
@@ -110,6 +110,9 @@ built or spent Runic Power build and spend Fury, the same pool as the Demon Hunt
 | 90129 | Torment | 6 (Vengeance) | Taunt, 30 yards, 8 sec cooldown |
 | 90127 | Demon Spikes | 10 (Vengeance) | 20% parry and 30% more armor for 6 sec, off the global cooldown; costs 20, 15 sec cooldown |
 | 90128 | Fiery Brand | 20 (Vengeance) | 50% of attack power as Fire damage, and the target deals 40% less damage for 8 sec; 60 sec cooldown |
+| 90135 | Spirit Bomb | 12 (Vengeance) | Needs a Soul Fragment; eats them all for 30% of attack power each as Fire damage within 8 yards (90136) and Frailty for 8 sec (90137: damage you deal them heals you for 8%, `spell_titan_dh_frailty`); costs 40 |
+| 90132 | Sigil of Chains | 16 (Vengeance) | Ground-targeted sigil, 30 yards; after 1.5 sec pulls every enemy within 8 yards to its center (90133, the core's pull to a point) and slows them 70% for 6 sec (`spell_titan_dh_sigil_of_chains`); 60 sec cooldown |
+| 90138 | Soul Barrier | 24 (Vengeance) | Absorbs 20% of maximum health for 12 sec, 5% more per Soul Fragment eaten (all, `spell_titan_dh_soul_barrier`); 30 sec cooldown |
 
 Every ability above needs a one-handed weapon in each hand (two one-handed weapons, or a main-hand
 and an off-hand weapon; not a shield or held-in-off-hand item). The main hand is checked by the

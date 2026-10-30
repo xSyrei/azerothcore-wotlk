@@ -44,6 +44,9 @@ enum DemonHunterSpells
     SPELL_FEL_BARRAGE_BALL          = 90123,
     SPELL_SOUL_FRAGMENTS            = 90126,
     SPELL_SOUL_CLEAVE_HEAL          = 90131,
+    SPELL_SIGIL_OF_CHAINS_PULL      = 90133,
+    SPELL_SPIRIT_BOMB_BLAST         = 90136,
+    SPELL_FRAILTY_HEAL              = 90139,
     // What the talents cast (client-patch/patch_talents.py, HELPERS)
     SPELL_DEMONIC_APPETITE          = 90150,
     SPELL_PREPARED                  = 90151,
@@ -710,6 +713,23 @@ class spell_titan_dh_soul_rending : public AuraScript
     }
 };
 
+namespace
+{
+    // Eats all of the unit's Soul Fragments (at most max): how many there were.
+    uint8 EatSoulFragments(Unit* unit, uint8 max)
+    {
+        Aura* fragments = unit->GetAura(SPELL_SOUL_FRAGMENTS);
+        if (!fragments)
+            return 0;
+
+        uint8 eaten = std::min<uint8>(fragments->GetStackAmount(), max);
+        fragments->ModStackAmount(-int32(eaten));
+        return eaten;
+    }
+
+    constexpr uint8 MAX_SOUL_FRAGMENTS = 5;
+}
+
 // Soul Cleave (90125): eats up to 2 of the Demon Hunter's Soul Fragments (a stacking buff Shear adds to), each
 // healing for 5% more of their maximum health (90131).
 class spell_titan_dh_soul_cleave : public SpellScript
@@ -727,18 +747,137 @@ class spell_titan_dh_soul_cleave : public SpellScript
     void EatFragments()
     {
         Unit* caster = GetCaster();
-        Aura* fragments = caster->GetAura(SPELL_SOUL_FRAGMENTS);
-        if (!fragments)
-            return;
-
-        uint8 eaten = std::min<uint8>(fragments->GetStackAmount(), MAX_EATEN);
-        fragments->ModStackAmount(-int32(eaten));
-        CastWithValue(caster, SPELL_SOUL_CLEAVE_HEAL, eaten * HEAL_PCT_PER_FRAGMENT, caster);
+        CastWithValue(caster, SPELL_SOUL_CLEAVE_HEAL, EatSoulFragments(caster, MAX_EATEN) * HEAL_PCT_PER_FRAGMENT,
+            caster);
     }
 
     void Register() override
     {
         AfterCast += SpellCastFn(spell_titan_dh_soul_cleave::EatFragments);
+    }
+};
+
+// Spirit Bomb (90135): needs a Soul Fragment; eats them all and explodes (90136) for 30% of attack power each.
+class spell_titan_dh_spirit_bomb : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_spirit_bomb);
+
+    static constexpr int32 AP_PCT_PER_FRAGMENT = 30;
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SOUL_FRAGMENTS, SPELL_SPIRIT_BOMB_BLAST });
+    }
+
+    SpellCastResult NeedFragments()
+    {
+        return GetCaster()->HasAura(SPELL_SOUL_FRAGMENTS) ? SPELL_CAST_OK : SPELL_FAILED_CASTER_AURASTATE;
+    }
+
+    void Explode()
+    {
+        Unit* caster = GetCaster();
+        int32 fragments = EatSoulFragments(caster, MAX_SOUL_FRAGMENTS);
+        int32 damage = CalculatePct(int32(caster->GetTotalAttackPowerValue(BASE_ATTACK)),
+            AP_PCT_PER_FRAGMENT * fragments);
+        caster->CastCustomSpell(SPELL_SPIRIT_BOMB_BLAST, SPELLVALUE_BASE_POINT0, std::max(damage, 1), caster, true);
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_dh_spirit_bomb::NeedFragments);
+        AfterCast += SpellCastFn(spell_titan_dh_spirit_bomb::Explode);
+    }
+};
+
+// Frailty (90137, from Spirit Bomb): damage the Demon Hunter deals to the marked enemy heals them for (the aura's
+// amount)% of it (90139).
+class spell_titan_dh_frailty : public AuraScript
+{
+    PrepareAuraScript(spell_titan_dh_frailty);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_FRAILTY_HEAL });
+    }
+
+    bool CheckProc(ProcEventInfo& eventInfo)
+    {
+        DamageInfo* damage = eventInfo.GetDamageInfo();
+        Unit* caster = GetCaster();
+        return damage && damage->GetDamage() && caster && caster->IsAlive() && eventInfo.GetActor() == caster;
+    }
+
+    void Heal(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
+    {
+        PreventDefaultAction();
+        Unit* caster = GetCaster();
+        CastWithValue(caster, SPELL_FRAILTY_HEAL,
+            CalculatePct(int32(eventInfo.GetDamageInfo()->GetDamage()), aurEff->GetAmount()), caster);
+    }
+
+    void Register() override
+    {
+        DoCheckProc += AuraCheckProcFn(spell_titan_dh_frailty::CheckProc);
+        OnEffectProc += AuraEffectProcFn(spell_titan_dh_frailty::Heal, EFFECT_0, SPELL_AURA_DUMMY);
+    }
+};
+
+// Soul Barrier (90138): a shield of 20% of maximum health, 5% more for each Soul Fragment it eats (all of them).
+class spell_titan_dh_soul_barrier : public AuraScript
+{
+    PrepareAuraScript(spell_titan_dh_soul_barrier);
+
+    static constexpr int32 BASE_PCT = 20;
+    static constexpr int32 PCT_PER_FRAGMENT = 5;
+
+    void Size(AuraEffect const* /*aurEff*/, int32& amount, bool& canBeRecalculated)
+    {
+        canBeRecalculated = false;
+        Unit* owner = GetUnitOwner();
+        int32 fragments = EatSoulFragments(owner, MAX_SOUL_FRAGMENTS);
+        amount = int32(owner->CountPctFromMaxHealth(BASE_PCT + PCT_PER_FRAGMENT * fragments));
+    }
+
+    void Register() override
+    {
+        DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_titan_dh_soul_barrier::Size, EFFECT_0,
+            SPELL_AURA_SCHOOL_ABSORB);
+    }
+};
+
+// Sigil of Chains (90132): the sigil arms for ARM_TIME, then pulls every enemy within 8 yards of it to its center
+// (90133, cast at the sigil).
+class spell_titan_dh_sigil_of_chains : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_sigil_of_chains);
+
+    static constexpr Milliseconds ARM_TIME = 1500ms;
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SIGIL_OF_CHAINS_PULL });
+    }
+
+    void Arm()
+    {
+        WorldLocation const* dest = GetExplTargetDest();
+        if (!dest)
+            return;
+
+        Unit* caster = GetCaster();
+        Position sigil = dest->GetPosition();
+        caster->m_Events.AddEventAtOffset([caster, sigil]()
+        {
+            if (caster->IsAlive())
+                caster->CastSpell(sigil.GetPositionX(), sigil.GetPositionY(), sigil.GetPositionZ(),
+                    SPELL_SIGIL_OF_CHAINS_PULL, true);
+        }, ARM_TIME);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_dh_sigil_of_chains::Arm);
     }
 };
 
@@ -763,4 +902,8 @@ void AddSC_demon_hunter()
     RegisterSpellScript(spell_titan_dh_desperate_instincts);
     RegisterSpellScript(spell_titan_dh_soul_rending);
     RegisterSpellScript(spell_titan_dh_soul_cleave);
+    RegisterSpellScript(spell_titan_dh_spirit_bomb);
+    RegisterSpellScript(spell_titan_dh_frailty);
+    RegisterSpellScript(spell_titan_dh_soul_barrier);
+    RegisterSpellScript(spell_titan_dh_sigil_of_chains);
 }

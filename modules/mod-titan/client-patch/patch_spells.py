@@ -145,7 +145,8 @@ EFFECT_CHARGE, EFFECT_PERSISTENT_AREA_AURA, EFFECT_DUMMY = 96, 27, 3
 AURA_SCHOOL_ABSORB = 69
 TARGET_DEST_CASTER, TARGET_UNIT_DEST_AREA_ENEMY, TARGET_UNIT_DEST_AREA_ALLY, TARGET_DEST_DEST = 18, 16, 31, 87
 RANGE_15, DURATION_6S, DURATION_8S = 11, 32, 31
-DURATION_20S = 18
+DURATION_20S, DURATION_12S = 18, 29
+EFFECT_HEAL, EFFECT_PULL_TOWARDS_DEST = 10, 145
 EFFECT_HEAL_PCT = 136
 AURA_MOD_PARRY_PERCENT, AURA_MOD_RESISTANCE_PCT = 47, 101
 ARMOR = 1                       # resistance MiscValue: armor (normal school)
@@ -159,7 +160,8 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
          'Ability_DemonHunter_Metamorphosis', 'Ability_DemonHunter_Felblade', 'Ability_DemonHunter_Darkness',
          'Spell_Fire_Incinerate', 'INV_FelBarrage', 'Ability_DemonHunter_Shear', 'Ability_DemonHunter_SoulCleave',
          'Ability_DemonHunter_DemonSpikes', 'Ability_DemonHunter_FieryBrand', 'Ability_DemonHunter_Torment',
-         'Spell_Shadow_SoulGem']
+         'Spell_Shadow_SoulGem', 'Ability_DemonHunter_SpiritBomb', 'Ability_DemonHunter_SoulBarrier',
+         'Ability_DemonHunter_SigilOfChains']
 ICONS += [name for name in patch_talents.ICONS if name not in ICONS]
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
@@ -218,16 +220,26 @@ EFFECTS = {
     # Shear and Soul Cleave: retail's Shear swipe (gray, tinted fel green) on both weapons.
     'Shear': {'model': 'DH_Shear_Trail', 'effect': 7112, 'options': {'color': (0.55, 1.0, 0.3)}},
     # Demon Spikes: retail's spikes on the back and shoulders (cfx_demonhunter_demonspikes_statechest), for as
-    # long as it lasts.
+    # long as it lasts; a little smaller and pulled back off the body (made for retail's chest, they went through
+    # the 3.3.5 models').
     'DemonSpikes': {'model': 'DH_DemonSpikes', 'effect': 7113, 'shape': 'model', 'textures': (),
                     'options': {'export': 'DH_DemonSpikes', 'base': 'cfx_demonhunter_demonspikes_statechest',
-                                'max_texture': 512}},
+                                'max_texture': 512, 'scale': 0.8, 'offset': (-0.25, 0.0, 0.0)}},
     # Fiery Brand: retail's Illidari sigil flashing over the target's head for a second
     # (cfx_demonhunter_fierybrand_impactplayername), centered, a little smaller, seen from both sides.
     'FieryBrand': {'model': 'DH_FieryBrand', 'effect': 7114, 'shape': 'model', 'textures': (),
                    'options': {'export': 'DH_FieryBrand', 'base': 'cfx_demonhunter_fierybrand_impactplayername',
                                'scale': 0.6, 'center': True, 'offset': (0.0, 0.0, 0.9), 'duration': 1033,
                                'fade': 1033, 'two_sided': True}},
+    # Sigil of Chains: retail's sigil (cfx_demonhunter_sigilofchains_castworld's art) glowing gold on the ground
+    # while it arms: the sigil turning slowly, its ring at the 8-yard edge, its glyph turning the other way.
+    'SigilOfChains': {'model': 'DH_SigilOfChains', 'effect': 7115, 'shape': 'zone',
+                      'textures': ('DH_SigilOfChains_Sigil', 'DH_SigilOfChains_Ring', 'DH_SigilOfChains_Glyph'),
+                      'options': {'layers': (
+                          {'texture': 0, 'size': 16.0, 'height': 0.1, 'turn': 20.0, 'blend': BLEND_ADD},
+                          {'texture': 1, 'size': 16.5, 'height': 0.15, 'tint': (1.0, 0.85, 0.3), 'alpha': 0.8,
+                           'blend': BLEND_ADD},
+                          {'texture': 2, 'size': 6.0, 'height': 0.2, 'turn': -6.0, 'blend': BLEND_ADD})}},
     # Eye Beam: from the face, as long as the channel and its 20-yard reach.
     'EyeBeam': {'model': 'DH_EyeBeam', 'effect': 7104, 'shape': 'beam',
                 'textures': ('DH_EyeBeam_Beam', 'DH_EyeBeam_Fel')},
@@ -270,6 +282,9 @@ XPLOSION_FEL_IMPACT = 4714      # spells\\Xplosion_Fel_Impact: a fel explosion
 FEL_RAIN_OF_FIRE_IMPACT = 3215  # Spells\\Fel_RainOfFire_Impact_Base: fel fire bursting from the ground
 FEL_IMMOLATE_STATE = 3231       # Spells\\Fel_Immolate_State_Base: fel flames rising around the body
 SOULSHATTER_IMPACT = 3123       # spells\\soulshatter_impact: souls bursting from the body
+SHADOW_NOVA_8_YARDS = 5358      # spells\\shadow_nova_area, 8 yards: a purple shadow nova on the ground
+SHADOW_IMPACT_BASE = 150        # Spells\\Shadow_ImpactDD_Med_Base: a purple shadow hit at the feet
+SHADOW_SHIELD_STATE = 3120      # spells\\shadowshield_state_base: a shadow shield around the body
 
 # Visuals: the Blizzard visual copied, the new visual's id, and per kit (precast, cast or impact)
 # the new kit's id and what goes in its slots, a copy of the copied visual's kit (or of BLANK_KIT
@@ -386,7 +401,23 @@ VISUALS = {
     # Demon Spikes is Evasion's (its cast, without the magic hands), the spikes on the back while it lasts.
     'DemonSpikes': {'copy': 72, 'id': 16724, 'clear': ('precast', 'impact'), 'kits': {
         'cast': (15640, {HANDS: 0}),
-        'state': (15641, {KIT_CHEST: 'DemonSpikes', 'sound': None})}},
+        'state': (15641, {KIT_CHEST: 'DemonSpikes', 'sound': None, 'procs': False})}},  # not Evasion's fade
+    # Spirit Bomb is purple: the fragments burst from the Demon Hunter and a shadow nova spreads over the 8 yards;
+    # each enemy it hits takes a shadow hit at its feet.
+    'SpiritBomb': {'copy': 253, 'id': 16726, 'clear': ('impact',), 'kits': {
+        'cast': (15644, {KIT_CHEST: SOULSHATTER_IMPACT, KIT_BASE: SHADOW_NOVA_8_YARDS, 'anim': ANIM_GLAIVE_BIG_STRIKE,
+                         'sound': None})}},
+    'SpiritBombBlast': {'copy': 253, 'id': 16727, 'clear': ('cast',), 'kits': {
+        'cast': (15645, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
+        'impact': (15646, {KIT_BASE: SHADOW_IMPACT_BASE, KIT_CHEST: 0, 'sound': None})}},
+    # Soul Barrier: the fragments burst from the Demon Hunter, then a shadow shield around them while it lasts.
+    'SoulBarrier': {'copy': 12038, 'id': 16728, 'kits': {
+        'cast': (15647, {HANDS: 0, KIT_CHEST: SOULSHATTER_IMPACT}),
+        'state': (15648, {KIT_HEAD: 0, KIT_CHEST: 0, KIT_BASE: SHADOW_SHIELD_STATE})}},
+    # Sigil of Chains is Death and Decay's ground targeting and persistent area, the sigil on the ground (as
+    # Darkness: none of Death and Decay's own look).
+    'SigilOfChains': {'copy': 9735, 'id': 16729, 'clear': ('precast', 'state', 'area'), 'kits': {
+        'persistent': (15649, {KIT_WORLD: 'SigilOfChains', 'procs': False})}},
     # Fiery Brand is Fire Blast's (fire on the hands, a fire hit), with its own sound and the brand over the
     # target's head.
     'FieryBrand': {'copy': 143, 'id': 16725, 'kits': {
@@ -816,6 +847,93 @@ SPELLS = [
                 'SpellLevel': 1},
         'clear': [1, 2, 3],
         'effects': {1: {'Effect': EFFECT_HEAL_PCT, 'BasePoints': 4, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # Spends every Soul Fragment (at least 1): spell_titan_dh_spirit_bomb sets off 90136 for 30% of attack
+        # power per fragment.
+        'id': 90135, 'copy': 26669, 'name': 'Spirit Bomb', 'icon': 'Ability_DemonHunter_SpiritBomb',
+        'visual': 'SpiritBomb', 'two_weapons': True,
+        'description': 'Consume all your Soul Fragments to explode, dealing 30% of your attack power as Fire damage '
+                       'per fragment to enemies within 8 yards and inflicting Frailty for 8 sec: you heal for 8% '
+                       'of the damage you deal to them.',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'PowerType': FURY, 'ManaCost': 400,
+                'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500, 'DurationIndex': 0,
+                'BaseLevel': 12, 'SpellLevel': 12},
+        'clear': [1, 2, 3],
+        'effects': {1: {'Effect': EFFECT_DUMMY, 'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # Spirit Bomb's explosion: its damage set by the script; Frailty (90137) on every enemy hit.
+        'id': 90136, 'copy': 5857, 'name': 'Spirit Bomb', 'icon': 'Ability_DemonHunter_SpiritBomb',
+        'visual': 'SpiritBombBlast', 'description': '',
+        'set': {'SchoolMask': FIRE, 'MaxAffectedTargets': 0, 'BaseLevel': 12, 'SpellLevel': 12, 'MaxLevel': 80},
+        'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_SRC_CASTER,
+                        'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0},
+                    2: {'Effect': EFFECT_TRIGGER_SPELL, 'TargetA': TARGET_SRC_CASTER,
+                        'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'TriggerSpell': 90137}},
+    },
+    {
+        # A mark on the enemy: its damage taken from the Demon Hunter heals them (spell_titan_dh_frailty, 90139).
+        'id': 90137, 'copy': 5857, 'name': 'Frailty', 'icon': 'Ability_DemonHunter_SpiritBomb',
+        'description': '', 'tooltip': 'The Demon Hunter heals for 8% of the damage they deal to you.',
+        'set': {'SchoolMask': SHADOW, 'DurationIndex': DURATION_8S, 'RangeIndex': RANGE_30, 'ProcFlags': 0x100000,
+                'ProcChance': 100, 'BaseLevel': 12, 'SpellLevel': 12, 'SpellVisual': 0},
+        'clear': [1, 2, 3],
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 7, 'DieSides': 1,
+                        'TargetA': TARGET_UNIT_TARGET_ENEMY}},
+    },
+    {
+        # Frailty's healing: set by the script.
+        'id': 90139, 'copy': 26669, 'name': 'Frailty', 'icon': 'Ability_DemonHunter_SpiritBomb', 'description': '',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'StartRecoveryCategory': 0,
+                'StartRecoveryTime': 0, 'PowerType': 0, 'ManaCost': 0, 'DurationIndex': 0, 'SpellVisual': 0,
+                'BaseLevel': 1, 'SpellLevel': 1},
+        'clear': [1, 2, 3],
+        'effects': {1: {'Effect': EFFECT_HEAL, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # A shield of 20% of maximum health, 5% more per Soul Fragment it eats (all of them):
+        # spell_titan_dh_soul_barrier.
+        'id': 90138, 'copy': 26669, 'name': 'Soul Barrier', 'icon': 'Ability_DemonHunter_SoulBarrier',
+        'visual': 'SoulBarrier', 'two_weapons': True,
+        'description': 'Shield yourself for $d, absorbing damage equal to 20% of your maximum health. Consumes all '
+                       'your Soul Fragments, each adding 5% more.',
+        'tooltip': 'Absorbs damage.',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 30000, 'PowerType': 0, 'ManaCost': 0,
+                'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500, 'DurationIndex': DURATION_12S,
+                'BaseLevel': 24, 'SpellLevel': 24},
+        'clear': [1, 2, 3],
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': 0, 'DieSides': 1,
+                        'MiscValue': ALL_SCHOOLS, 'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # Death and Decay's ground-targeted persistent area: the sigil arms for 1.5 sec, slowing enemies in it,
+        # then spell_titan_dh_sigil_of_chains pulls every enemy within 8 yards to its center (90133).
+        'id': 90132, 'copy': 43265, 'name': 'Sigil of Chains', 'icon': 'Ability_DemonHunter_SigilOfChains',
+        'visual': 'SigilOfChains', 'two_weapons': True,
+        'description': 'Place a Sigil of Chains at the target location. After 1.5 sec, it pulls all enemies '
+                       'within 8 yards to its center and slows them by 70% for 6 sec.',
+        'tooltip': 'Movement speed reduced by 70%.',
+        'set': {'RecoveryTime': 60000, 'RangeIndex': RANGE_30, 'PowerType': 0, 'ManaCost': 0, 'RuneCostID': 0,
+                'DurationIndex': DURATION_2S, 'SchoolMask': SHADOW, 'BaseLevel': 16, 'SpellLevel': 16,
+                'MaxLevel': 0},
+        'clear': [2, 3],
+        'effects': {1: {'Aura': AURA_MOD_DECREASE_SPEED, 'BasePoints': -71, 'DieSides': 1, 'Amplitude': 0,
+                        'RadiusIndex': RADIUS_8}},
+    },
+    {
+        # The pull: every enemy within 8 yards of the sigil jumps to it (the core's pull to a point, Black Hole's,
+        # at 25 yards a second), slowed by 70% for 6 sec.
+        'id': 90133, 'copy': 5857, 'name': 'Sigil of Chains', 'icon': 'Ability_DemonHunter_SigilOfChains',
+        'description': '', 'tooltip': 'Movement speed reduced by 70%.',
+        'set': {'SchoolMask': SHADOW, 'MaxAffectedTargets': 0, 'RangeIndex': RANGE_30, 'DurationIndex': DURATION_6S,
+                'SpellVisual': 0, 'BaseLevel': 16, 'SpellLevel': 16},
+        'clear': [1, 2, 3],
+        'effects': {1: {'Effect': EFFECT_PULL_TOWARDS_DEST, 'MiscValue': 250, 'TargetA': TARGET_DEST_DEST,
+                        'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8},
+                    2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DECREASE_SPEED, 'BasePoints': -71,
+                        'DieSides': 1, 'TargetA': TARGET_DEST_DEST, 'TargetB': TARGET_UNIT_DEST_AREA_ENEMY,
+                        'RadiusIndex': RADIUS_8}},
     },
     {
         # Counterspell: interrupts and locks the school out for 3 sec; also removes one magic buff

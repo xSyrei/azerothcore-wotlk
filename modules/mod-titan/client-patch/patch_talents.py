@@ -71,6 +71,10 @@ FAMILY_FLAGS = {
     90127: 0x2000000,   # Demon Spikes
     90128: 0x4000000,   # Fiery Brand
     90129: 0x8000000,   # Torment
+    90132: 0x10000000,  # Sigil of Chains
+    90135: 0x20000000,  # Spirit Bomb
+    90136: 0x40000000,  # Spirit Bomb's explosion
+    90138: 0x80000000,  # Soul Barrier
 }
 DEMONS_BITE, CHAOS_STRIKE, BLADE_DANCE_STRIKES, FEL_RUSH_HIT = 0x1, 0x2, 0x8, 0x20
 EYE_BEAM_BEAM, THROW_GLAIVE, CHAOS_NOVA = 0x80, 0x100, 0x200
