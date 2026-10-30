@@ -147,6 +147,7 @@ TARGET_DEST_CASTER, TARGET_UNIT_DEST_AREA_ENEMY, TARGET_UNIT_DEST_AREA_ALLY, TAR
 RANGE_15, DURATION_6S, DURATION_8S = 11, 32, 31
 DURATION_20S, DURATION_12S = 18, 29
 EFFECT_HEAL, EFFECT_PULL_TOWARDS_DEST = 10, 145
+AURA_PERIODIC_DUMMY, RADIUS_12 = 226, 32
 EFFECT_HEAL_PCT = 136
 AURA_MOD_PARRY_PERCENT, AURA_MOD_RESISTANCE_PCT = 47, 101
 ARMOR = 1                       # resistance MiscValue: armor (normal school)
@@ -812,7 +813,7 @@ SPELLS = [
     },
     {
         # Fire Blast's: 1 damage plus attack power (spell_bonus_data), and the target deals 40% less damage for
-        # 8 sec.
+        # 8 sec. Effect 3 ticks every 2 sec for Burning Alive (talent) to spread it (spell_titan_dh_fiery_brand).
         'id': 90128, 'copy': 2136, 'name': 'Fiery Brand', 'icon': 'Ability_DemonHunter_FieryBrand',
         'visual': 'FieryBrand', 'two_weapons': True,
         'description': 'Brand an enemy with a demonic symbol, dealing 50% of your attack power as Fire damage. The '
@@ -828,6 +829,8 @@ SPELLS = [
                 'BonusMultiplier': 0.0},
             2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_DONE, 'BasePoints': -41, 'DieSides': 1,
                 'MiscValue': ALL_SCHOOLS, 'TargetA': TARGET_UNIT_TARGET_ENEMY},
+            3: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_PERIODIC_DUMMY, 'Amplitude': 2000,
+                'TargetA': TARGET_UNIT_TARGET_ENEMY},
         },
     },
     {
@@ -849,8 +852,8 @@ SPELLS = [
         'effects': {1: {'Effect': EFFECT_HEAL_PCT, 'BasePoints': 4, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
-        # Spends every Soul Fragment (at least 1): spell_titan_dh_spirit_bomb sets off 90136 for 30% of attack
-        # power per fragment.
+        # Vengeance's capstone. Spends every Soul Fragment (at least 1): spell_titan_dh_spirit_bomb sets off 90136
+        # for 30% of attack power per fragment.
         'id': 90135, 'copy': 26669, 'name': 'Spirit Bomb', 'icon': 'Ability_DemonHunter_SpiritBomb',
         'visual': 'SpiritBomb', 'two_weapons': True,
         'description': 'Consume all your Soul Fragments to explode, dealing 30% of your attack power as Fire damage '
@@ -858,7 +861,7 @@ SPELLS = [
                        'of the damage you deal to them.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'PowerType': FURY, 'ManaCost': 400,
                 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500, 'DurationIndex': 0,
-                'BaseLevel': 12, 'SpellLevel': 12},
+                'BaseLevel': 30, 'SpellLevel': 30},
         'clear': [1, 2, 3],
         'effects': {1: {'Effect': EFFECT_DUMMY, 'TargetA': TARGET_UNIT_CASTER}},
     },
@@ -866,7 +869,7 @@ SPELLS = [
         # Spirit Bomb's explosion: its damage set by the script; Frailty (90137) on every enemy hit.
         'id': 90136, 'copy': 5857, 'name': 'Spirit Bomb', 'icon': 'Ability_DemonHunter_SpiritBomb',
         'visual': 'SpiritBombBlast', 'description': '',
-        'set': {'SchoolMask': FIRE, 'MaxAffectedTargets': 0, 'BaseLevel': 12, 'SpellLevel': 12, 'MaxLevel': 80},
+        'set': {'SchoolMask': FIRE, 'MaxAffectedTargets': 0, 'BaseLevel': 30, 'SpellLevel': 30, 'MaxLevel': 80},
         'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_SRC_CASTER,
                         'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0},
                     2: {'Effect': EFFECT_TRIGGER_SPELL, 'TargetA': TARGET_SRC_CASTER,
@@ -877,7 +880,7 @@ SPELLS = [
         'id': 90137, 'copy': 5857, 'name': 'Frailty', 'icon': 'Ability_DemonHunter_SpiritBomb',
         'description': '', 'tooltip': 'The Demon Hunter heals for 8% of the damage they deal to you.',
         'set': {'SchoolMask': SHADOW, 'DurationIndex': DURATION_8S, 'RangeIndex': RANGE_30, 'ProcFlags': 0x100000,
-                'ProcChance': 100, 'BaseLevel': 12, 'SpellLevel': 12, 'SpellVisual': 0},
+                'ProcChance': 100, 'BaseLevel': 30, 'SpellLevel': 30, 'SpellVisual': 0},
         'clear': [1, 2, 3],
         'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 7, 'DieSides': 1,
                         'TargetA': TARGET_UNIT_TARGET_ENEMY}},
@@ -923,17 +926,18 @@ SPELLS = [
     },
     {
         # The pull: every enemy within 8 yards of the sigil jumps to it (the core's pull to a point, Black Hole's,
-        # at 25 yards a second), slowed by 70% for 6 sec.
+        # at 25 yards a second), slowed by 70% for 6 sec. The radius is 12 (Concentrated Sigils, talent), the
+        # script keeping the 8 without it.
         'id': 90133, 'copy': 5857, 'name': 'Sigil of Chains', 'icon': 'Ability_DemonHunter_SigilOfChains',
         'description': '', 'tooltip': 'Movement speed reduced by 70%.',
         'set': {'SchoolMask': SHADOW, 'MaxAffectedTargets': 0, 'RangeIndex': RANGE_30, 'DurationIndex': DURATION_6S,
                 'SpellVisual': 0, 'BaseLevel': 16, 'SpellLevel': 16},
         'clear': [1, 2, 3],
         'effects': {1: {'Effect': EFFECT_PULL_TOWARDS_DEST, 'MiscValue': 250, 'TargetA': TARGET_DEST_DEST,
-                        'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8},
+                        'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_12},
                     2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DECREASE_SPEED, 'BasePoints': -71,
                         'DieSides': 1, 'TargetA': TARGET_DEST_DEST, 'TargetB': TARGET_UNIT_DEST_AREA_ENEMY,
-                        'RadiusIndex': RADIUS_8}},
+                        'RadiusIndex': RADIUS_12}},
     },
     {
         # Counterspell: interrupts and locks the school out for 3 sec; also removes one magic buff

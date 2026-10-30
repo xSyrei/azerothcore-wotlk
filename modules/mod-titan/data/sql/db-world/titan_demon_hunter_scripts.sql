@@ -158,3 +158,20 @@ DELETE FROM `spell_bonus_data` WHERE `entry` IN (90136, 90139);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90136, 0, 0, 0, 0, 'Spirit Bomb - explosion'),
 (90139, 0, 0, 0, 0, 'Frailty - healing');
+
+-- Vengeance talents (client-patch/patch_talents.py): the abilities whose scripts apply them, and the talents' own
+-- (Last Resort); their helpers' amounts are the scripts' own.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_dh_shear', 'spell_titan_dh_demon_spikes',
+    'spell_titan_dh_immolation_aura_pulse', 'spell_titan_dh_fiery_brand', 'spell_titan_dh_last_resort',
+    'spell_titan_dh_sigil_of_chains_pull');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90124, 'spell_titan_dh_shear'),
+(90127, 'spell_titan_dh_demon_spikes'),
+(90120, 'spell_titan_dh_immolation_aura_pulse'),
+(90128, 'spell_titan_dh_fiery_brand'),
+(90285, 'spell_titan_dh_last_resort'),
+(90133, 'spell_titan_dh_sigil_of_chains_pull');
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90161, 90162);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90161, 0, 0, 0, 0, 'Infernal Armor'),
+(90162, 0, 0, 0, 0, 'Feast of Souls');

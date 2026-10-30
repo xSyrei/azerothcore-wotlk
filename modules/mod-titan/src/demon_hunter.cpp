@@ -43,6 +43,9 @@ enum DemonHunterSpells
     SPELL_BLUR                      = 90113,
     SPELL_FEL_BARRAGE_BALL          = 90123,
     SPELL_SOUL_FRAGMENTS            = 90126,
+    SPELL_DEMON_SPIKES              = 90127,
+    SPELL_FIERY_BRAND               = 90128,
+    SPELL_FRAILTY                   = 90137,
     SPELL_SOUL_CLEAVE_HEAL          = 90131,
     SPELL_SIGIL_OF_CHAINS_PULL      = 90133,
     SPELL_SPIRIT_BOMB_BLAST         = 90136,
@@ -58,6 +61,11 @@ enum DemonHunterSpells
     SPELL_SOUL_RENDING              = 90158,
     SPELL_UNBOUND_CHAOS             = 90159,
     SPELL_INERTIA                   = 90160,
+    SPELL_INFERNAL_ARMOR            = 90161,
+    SPELL_FEAST_OF_SOULS            = 90162,
+    SPELL_VOID_REAVER               = 90163,
+    SPELL_RAZOR_SPIKES              = 90164,
+    SPELL_PAINBRINGER               = 90165,
 };
 
 // The Havoc talents the scripts read, by rank (client-patch/patch_talents.py, HAVOC): each rank a passive aura
@@ -76,6 +84,23 @@ constexpr std::array<uint32, 2> TALENT_UNBOUND_CHAOS = { 90246, 90247 };        
 constexpr std::array<uint32, 1> TALENT_DEMONIC = { 90248 };                               // sec
 constexpr std::array<uint32, 1> TALENT_ETERNAL_REAPING = { 90251 };
 constexpr std::array<uint32, 1> TALENT_INERTIA = { 90252 };                               // % damage
+// The Vengeance talents the scripts read, as the Havoc ones.
+constexpr std::array<uint32, 1> TALENT_SHEAR_FURY = { 90255 };                            // Fury
+constexpr std::array<uint32, 2> TALENT_INFERNAL_ARMOR = { 90259, 90260 };                 // armor %, % of AP
+constexpr std::array<uint32, 3> TALENT_RAZOR_SPIKES = { 90261, 90262, 90263 };            // % damage
+constexpr std::array<uint32, 2> TALENT_PAINBRINGER = { 90264, 90265 };                    // % less damage taken
+constexpr std::array<uint32, 2> TALENT_QUICKENED_SIGILS = { 90266, 90267 };               // ms sooner
+constexpr std::array<uint32, 1> TALENT_CONCENTRATED_SIGILS = { 90268 };                   // yards
+constexpr std::array<uint32, 3> TALENT_CHARRED_FLESH = { 90271, 90272, 90273 };           // ms longer
+constexpr std::array<uint32, 2> TALENT_FALLOUT = { 90274, 90275 };                        // % chance
+constexpr std::array<uint32, 2> TALENT_COVER_OF_DARKNESS = { 90276, 90277 };              // % more avoidance
+constexpr std::array<uint32, 1> TALENT_BURNING_ALIVE = { 90278 };
+constexpr std::array<uint32, 2> TALENT_FEED_THE_DEMON = { 90279, 90280 };                 // ms per fragment
+constexpr std::array<uint32, 2> TALENT_FEAST_OF_SOULS = { 90281, 90282 };                 // % of maximum health
+constexpr std::array<uint32, 2> TALENT_FIERY_DEMISE = { 90283, 90284 };                   // % more Fire damage
+constexpr std::array<uint32, 2> TALENT_RUINOUS_BULWARK = { 90286, 90287 };                // % more absorbed
+constexpr std::array<uint32, 3> TALENT_VOID_REAVER = { 90288, 90289, 90290 };             // % less damage dealt
+constexpr std::array<uint32, 2> TALENT_VULNERABILITY = { 90291, 90292 };                  // % more damage taken
 constexpr int32 FURY_UNITS = 10;    // Fury is Runic Power, counted in tenths
 
 enum DemonHunterDisplays
@@ -407,16 +432,19 @@ class spell_titan_dh_chaos_nova : public SpellScript
 };
 
 // Darkness (90118): its persistent area shields the allies in it with no set amount (-1); each hit has
-// a 20% chance to be absorbed whole, and the shield takes nothing from the others.
+// a 20% chance to be absorbed whole (more with the caster's Cover of Darkness, talent), and the shield takes
+// nothing from the others.
 class spell_titan_dh_darkness : public AuraScript
 {
     PrepareAuraScript(spell_titan_dh_darkness);
 
-    static constexpr uint32 AVOID_CHANCE = 20;
+    static constexpr int32 AVOID_CHANCE = 20;
 
     void Avoid(AuraEffect* /*aurEff*/, DamageInfo& dmgInfo, uint32& absorbAmount)
     {
-        absorbAmount = roll_chance_i(AVOID_CHANCE) ? dmgInfo.GetDamage() : 0;
+        Unit* caster = GetCaster();
+        int32 chance = AVOID_CHANCE + (caster ? TalentValue(caster, TALENT_COVER_OF_DARKNESS) : 0);
+        absorbAmount = roll_chance_i(chance) ? dmgInfo.GetDamage() : 0;
     }
 
     void Register() override
@@ -562,20 +590,29 @@ class spell_titan_dh_vengeful_retreat : public SpellScript
     }
 };
 
-// Immolation Aura (90119) and Unbound Chaos (talent): the next Fel Rush is stronger.
+// Immolation Aura (90119) and its talents: Unbound Chaos (the next Fel Rush is stronger) and Infernal Armor (more
+// armor, and Fire damage to melee attackers, while it burns).
 class spell_titan_dh_immolation_aura : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_immolation_aura);
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo({ SPELL_UNBOUND_CHAOS });
+        return ValidateSpellInfo({ SPELL_UNBOUND_CHAOS, SPELL_INFERNAL_ARMOR });
     }
 
     void Empower()
     {
         Unit* caster = GetCaster();
         CastWithValue(caster, SPELL_UNBOUND_CHAOS, TalentValue(caster, TALENT_UNBOUND_CHAOS), caster);
+        if (int32 pct = TalentValue(caster, TALENT_INFERNAL_ARMOR))
+        {
+            CustomSpellValues values;
+            values.AddSpellMod(SPELLVALUE_BASE_POINT0, pct);
+            values.AddSpellMod(SPELLVALUE_BASE_POINT1,
+                std::max(1, CalculatePct(int32(caster->GetTotalAttackPowerValue(BASE_ATTACK)), pct)));
+            caster->CastCustomSpell(SPELL_INFERNAL_ARMOR, values, caster, TRIGGERED_FULL_MASK);
+        }
     }
 
     void Register() override
@@ -715,7 +752,8 @@ class spell_titan_dh_soul_rending : public AuraScript
 
 namespace
 {
-    // Eats all of the unit's Soul Fragments (at most max): how many there were.
+    // Eats the unit's Soul Fragments (at most max): how many there were. Feed the Demon (talent) shortens Demon
+    // Spikes' cooldown for each; Painbringer (talent) lowers the damage the unit takes for a while.
     uint8 EatSoulFragments(Unit* unit, uint8 max)
     {
         Aura* fragments = unit->GetAura(SPELL_SOUL_FRAGMENTS);
@@ -724,6 +762,10 @@ namespace
 
         uint8 eaten = std::min<uint8>(fragments->GetStackAmount(), max);
         fragments->ModStackAmount(-int32(eaten));
+        if (Player* player = unit->ToPlayer())
+            if (int32 ms = TalentValue(unit, TALENT_FEED_THE_DEMON))
+                player->ModifySpellCooldown(SPELL_DEMON_SPIKES, -ms * eaten);
+        CastWithValue(unit, SPELL_PAINBRINGER, TalentValue(unit, TALENT_PAINBRINGER), unit);
         return eaten;
     }
 
@@ -731,17 +773,20 @@ namespace
 }
 
 // Soul Cleave (90125): eats up to 2 of the Demon Hunter's Soul Fragments (a stacking buff Shear adds to), each
-// healing for 5% more of their maximum health (90131).
+// healing for 5% more of their maximum health (90131). Feast of Souls (talent): more healing over 6 sec (3 ticks);
+// Void Reaver (talent): the enemies struck deal less damage.
 class spell_titan_dh_soul_cleave : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_soul_cleave);
 
     static constexpr uint8 MAX_EATEN = 2;
     static constexpr int32 HEAL_PCT_PER_FRAGMENT = 5;
+    static constexpr int32 FEAST_TICKS = 3;
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo({ SPELL_SOUL_FRAGMENTS, SPELL_SOUL_CLEAVE_HEAL });
+        return ValidateSpellInfo({ SPELL_SOUL_FRAGMENTS, SPELL_SOUL_CLEAVE_HEAL, SPELL_FEAST_OF_SOULS,
+            SPELL_VOID_REAVER });
     }
 
     void EatFragments()
@@ -749,11 +794,23 @@ class spell_titan_dh_soul_cleave : public SpellScript
         Unit* caster = GetCaster();
         CastWithValue(caster, SPELL_SOUL_CLEAVE_HEAL, EatSoulFragments(caster, MAX_EATEN) * HEAL_PCT_PER_FRAGMENT,
             caster);
+        if (int32 pct = TalentValue(caster, TALENT_FEAST_OF_SOULS))
+            CastWithValue(caster, SPELL_FEAST_OF_SOULS, int32(caster->CountPctFromMaxHealth(pct)) / FEAST_TICKS,
+                caster);
+    }
+
+    void Reave()
+    {
+        Unit* caster = GetCaster();
+        if (Unit* target = GetHitUnit())
+            if (int32 pct = TalentValue(caster, TALENT_VOID_REAVER))
+                CastWithValue(caster, SPELL_VOID_REAVER, -pct, target);
     }
 
     void Register() override
     {
         AfterCast += SpellCastFn(spell_titan_dh_soul_cleave::EatFragments);
+        AfterHit += SpellHitFn(spell_titan_dh_soul_cleave::Reave);
     }
 };
 
@@ -837,6 +894,8 @@ class spell_titan_dh_soul_barrier : public AuraScript
         Unit* owner = GetUnitOwner();
         int32 fragments = EatSoulFragments(owner, MAX_SOUL_FRAGMENTS);
         amount = int32(owner->CountPctFromMaxHealth(BASE_PCT + PCT_PER_FRAGMENT * fragments));
+        if (Unit* caster = GetCaster())
+            AddPct(amount, TalentValue(caster, TALENT_RUINOUS_BULWARK));    // Ruinous Bulwark (talent)
     }
 
     void Register() override
@@ -846,8 +905,8 @@ class spell_titan_dh_soul_barrier : public AuraScript
     }
 };
 
-// Sigil of Chains (90132): the sigil arms for ARM_TIME, then pulls every enemy within 8 yards of it to its center
-// (90133, cast at the sigil).
+// Sigil of Chains (90132): the sigil arms for ARM_TIME (less with Quickened Sigils, talent), then pulls every
+// enemy within 8 yards of it to its center (90133, cast at the sigil).
 class spell_titan_dh_sigil_of_chains : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_sigil_of_chains);
@@ -867,17 +926,240 @@ class spell_titan_dh_sigil_of_chains : public SpellScript
 
         Unit* caster = GetCaster();
         Position sigil = dest->GetPosition();
+        Milliseconds armTime = ARM_TIME - Milliseconds(TalentValue(caster, TALENT_QUICKENED_SIGILS));
         caster->m_Events.AddEventAtOffset([caster, sigil]()
         {
             if (caster->IsAlive())
                 caster->CastSpell(sigil.GetPositionX(), sigil.GetPositionY(), sigil.GetPositionZ(),
                     SPELL_SIGIL_OF_CHAINS_PULL, true);
-        }, ARM_TIME);
+        }, armTime);
     }
 
     void Register() override
     {
         AfterCast += SpellCastFn(spell_titan_dh_sigil_of_chains::Arm);
+    }
+};
+
+// Sigil of Chains' pull (90133): reaches 12 yards; without Concentrated Sigils (talent), only the enemies within 8.
+class spell_titan_dh_sigil_of_chains_pull : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_sigil_of_chains_pull);
+
+    static constexpr float RADIUS = 8.0f;
+
+    void KeepInReach(std::list<WorldObject*>& targets)
+    {
+        WorldLocation const* sigil = GetExplTargetDest();
+        if (!sigil)
+            return;
+
+        float reach = TalentValue(GetCaster(), TALENT_CONCENTRATED_SIGILS) ? 0.0f : RADIUS;
+        if (reach)
+            targets.remove_if([sigil, reach](WorldObject* target) { return !target->IsWithinDist3d(sigil, reach); });
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_dh_sigil_of_chains_pull::KeepInReach,
+            EFFECT_0, TARGET_UNIT_DEST_AREA_ENEMY);
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_dh_sigil_of_chains_pull::KeepInReach,
+            EFFECT_1, TARGET_UNIT_DEST_AREA_ENEMY);
+    }
+};
+
+// Shear (90124) and Shear Fury (talent): more Fury.
+class spell_titan_dh_shear : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_shear);
+
+    void Empower()
+    {
+        Unit* caster = GetCaster();
+        if (int32 fury = TalentValue(caster, TALENT_SHEAR_FURY))
+            caster->ModifyPower(POWER_RUNIC_POWER, fury * FURY_UNITS);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_dh_shear::Empower);
+    }
+};
+
+// Demon Spikes (90127) and Razor Spikes (talent): more Physical damage for as long.
+class spell_titan_dh_demon_spikes : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_demon_spikes);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_RAZOR_SPIKES });
+    }
+
+    void Empower()
+    {
+        Unit* caster = GetCaster();
+        CastWithValue(caster, SPELL_RAZOR_SPIKES, TalentValue(caster, TALENT_RAZOR_SPIKES), caster);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_dh_demon_spikes::Empower);
+    }
+};
+
+// Immolation Aura's pulse (90120) and its talents, on each enemy it burns: Charred Flesh (the Demon Hunter's Fiery
+// Brand on it lasts longer) and Fallout (a chance, once a pulse, to shatter a Soul Fragment).
+class spell_titan_dh_immolation_aura_pulse : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_immolation_aura_pulse);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_FIERY_BRAND, SPELL_SOUL_FRAGMENTS });
+    }
+
+    void Burn(SpellEffIndex /*effIndex*/)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+        if (!target)
+            return;
+
+        if (int32 ms = TalentValue(caster, TALENT_CHARRED_FLESH))
+            if (Aura* brand = target->GetAura(SPELL_FIERY_BRAND, caster->GetGUID()))
+            {
+                brand->SetMaxDuration(std::max(brand->GetMaxDuration(), brand->GetDuration() + ms));
+                brand->SetDuration(brand->GetDuration() + ms);
+            }
+
+        if (!_shattered)
+            if (int32 chance = TalentValue(caster, TALENT_FALLOUT); chance && roll_chance_i(chance))
+            {
+                _shattered = true;
+                caster->CastSpell(caster, SPELL_SOUL_FRAGMENTS, true);
+            }
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_titan_dh_immolation_aura_pulse::Burn, EFFECT_0,
+            SPELL_EFFECT_SCHOOL_DAMAGE);
+    }
+
+private:
+    bool _shattered = false;
+};
+
+// Fiery Brand (90128) and Burning Alive (talent): every 2 sec (effect 3) the brand spreads to the nearest enemy
+// within 8 yards of the branded one that the Demon Hunter has not branded.
+class spell_titan_dh_fiery_brand : public AuraScript
+{
+    PrepareAuraScript(spell_titan_dh_fiery_brand);
+
+    static constexpr float SPREAD_RADIUS = 8.0f;
+
+    void Spread(AuraEffect const* /*aurEff*/)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetTarget();
+        if (!caster || !TalentValue(caster, TALENT_BURNING_ALIVE))
+            return;
+
+        std::list<Unit*> enemies;
+        Acore::AnyUnfriendlyUnitInObjectRangeCheck check(target, caster, SPREAD_RADIUS);
+        Acore::UnitListSearcher<Acore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(target, enemies, check);
+        Cell::VisitObjects(target, searcher, SPREAD_RADIUS);
+        enemies.remove_if([caster](Unit* enemy)
+        {
+            return enemy->HasAura(SPELL_FIERY_BRAND, caster->GetGUID()) || !caster->IsValidAttackTarget(enemy);
+        });
+        if (enemies.empty())
+            return;
+
+        enemies.sort(Acore::ObjectDistanceOrderPred(target));
+        caster->AddAura(SPELL_FIERY_BRAND, enemies.front());
+    }
+
+    void Register() override
+    {
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_dh_fiery_brand::Spread, EFFECT_2,
+            SPELL_AURA_PERIODIC_DUMMY);
+    }
+};
+
+// Last Resort (talent, 90285): a shield of no size (-1) that absorbs a killing blow, leaving the Demon Hunter at
+// 30% health, at most once every 3 min.
+class spell_titan_dh_last_resort : public AuraScript
+{
+    PrepareAuraScript(spell_titan_dh_last_resort);
+
+    static constexpr int32 HEALTH_PCT = 30;
+    static constexpr Seconds COOLDOWN = 180s;
+
+    void Absorb(AuraEffect* /*aurEff*/, DamageInfo& dmgInfo, uint32& absorbAmount)
+    {
+        absorbAmount = 0;
+        Unit* target = GetTarget();
+        if (dmgInfo.GetDamage() < target->GetHealth() || GameTime::GetGameTime() < _ready)
+            return;
+
+        _ready = GameTime::GetGameTime() + COOLDOWN;
+        uint32 left = std::min(target->CountPctFromMaxHealth(HEALTH_PCT), target->GetHealth());
+        absorbAmount = dmgInfo.GetDamage() - (target->GetHealth() - left);
+    }
+
+    void Register() override
+    {
+        OnEffectAbsorb += AuraEffectAbsorbFn(spell_titan_dh_last_resort::Absorb, EFFECT_0);
+    }
+
+private:
+    Seconds _ready = 0s;
+};
+
+// Fiery Demise and Vulnerability (talents): enemies the Demon Hunter branded take more of their Fire damage, and
+// enemies with their Frailty more of all their damage.
+class titan_dh_damage_taken : public UnitScript
+{
+public:
+    titan_dh_damage_taken() : UnitScript("titan_dh_damage_taken", true, {
+        UNITHOOK_MODIFY_MELEE_DAMAGE,
+        UNITHOOK_MODIFY_SPELL_DAMAGE_TAKEN,
+        UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK
+    }) { }
+
+    static int32 BonusPct(Unit* target, Unit* attacker, SpellInfo const* spellInfo)
+    {
+        if (!target || !attacker)
+            return 0;
+
+        int32 pct = 0;
+        if (spellInfo && (spellInfo->GetSchoolMask() & SPELL_SCHOOL_MASK_FIRE)
+            && target->HasAura(SPELL_FIERY_BRAND, attacker->GetGUID()))
+            pct += TalentValue(attacker, TALENT_FIERY_DEMISE);
+        if (target->HasAura(SPELL_FRAILTY, attacker->GetGUID()))
+            pct += TalentValue(attacker, TALENT_VULNERABILITY);
+        return pct;
+    }
+
+    void ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage) override
+    {
+        if (int32 pct = BonusPct(target, attacker, nullptr))
+            AddPct(damage, pct);
+    }
+
+    void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
+    {
+        if (int32 pct = BonusPct(target, attacker, spellInfo))
+            AddPct(damage, pct);
+    }
+
+    void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage, SpellInfo const* spellInfo)
+        override
+    {
+        if (int32 pct = BonusPct(target, attacker, spellInfo))
+            AddPct(damage, pct);
     }
 };
 
@@ -906,4 +1188,11 @@ void AddSC_demon_hunter()
     RegisterSpellScript(spell_titan_dh_frailty);
     RegisterSpellScript(spell_titan_dh_soul_barrier);
     RegisterSpellScript(spell_titan_dh_sigil_of_chains);
+    RegisterSpellScript(spell_titan_dh_sigil_of_chains_pull);
+    RegisterSpellScript(spell_titan_dh_shear);
+    RegisterSpellScript(spell_titan_dh_demon_spikes);
+    RegisterSpellScript(spell_titan_dh_immolation_aura_pulse);
+    RegisterSpellScript(spell_titan_dh_fiery_brand);
+    RegisterSpellScript(spell_titan_dh_last_resort);
+    new titan_dh_damage_taken();
 }

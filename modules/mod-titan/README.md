@@ -110,7 +110,7 @@ built or spent Runic Power build and spend Fury, the same pool as the Demon Hunt
 | 90129 | Torment | 6 (Vengeance) | Taunt, 30 yards, 8 sec cooldown |
 | 90127 | Demon Spikes | 10 (Vengeance) | 20% parry and 30% more armor for 6 sec, off the global cooldown; costs 20, 15 sec cooldown |
 | 90128 | Fiery Brand | 20 (Vengeance) | 50% of attack power as Fire damage, and the target deals 40% less damage for 8 sec; 60 sec cooldown |
-| 90135 | Spirit Bomb | 12 (Vengeance) | Needs a Soul Fragment; eats them all for 30% of attack power each as Fire damage within 8 yards (90136) and Frailty for 8 sec (90137: damage you deal them heals you for 8%, `spell_titan_dh_frailty`); costs 40 |
+| 90135 | Spirit Bomb | 30 (Vengeance) | Needs a Soul Fragment; eats them all for 30% of attack power each as Fire damage within 8 yards (90136) and Frailty for 8 sec (90137: damage you deal them heals you for 8%, `spell_titan_dh_frailty`); costs 40 |
 | 90132 | Sigil of Chains | 16 (Vengeance) | Ground-targeted sigil, 30 yards; after 1.5 sec pulls every enemy within 8 yards to its center (90133, the core's pull to a point) and slows them 70% for 6 sec (`spell_titan_dh_sigil_of_chains`); 60 sec cooldown |
 | 90138 | Soul Barrier | 24 (Vengeance) | Absorbs 20% of maximum health for 12 sec, 5% more per Soul Fragment eaten (all, `spell_titan_dh_soul_barrier`); 30 sec cooldown |
 
@@ -137,6 +137,16 @@ slow, Desperate Instincts, Momentum, Chaos Cleave, Fel Mastery's Fury, Cycle of 
 Soul Rending, Unbound Chaos, Demonic, Eternal Reaping, Inertia), with helper spells 90150-90160; Demon Blades is
 a proc the game runs. Some talents lead to a follow-up that takes part of their power (Blind Fury to Looks Can
 Kill, Chaos Cleave to Eternal Reaping, Unbound Chaos to Inertia); the tree's arrows show what needs what.
+
+### Vengeance talents
+
+TalentTab 413, talents 2325-2344, ranks 90253-90292, built the same way (`VENGEANCE` in `patch_talents.py`), one
+theme a column: strikes (Improved Shear, Shear Fury, Focused Cleave, Feast of Souls, Void Reaver), fire
+(Agonizing Flames, Infernal Armor, Charred Flesh, Burning Alive, Fiery Demise), souls and spikes (Razor Spikes,
+Painbringer, Fallout, Feed the Demon, Last Resort), sigils and shields (Quickened and Concentrated Sigils, Cover of
+Darkness, Ruinous Bulwark), and Vulnerability under Spirit Bomb, Vengeance's capstone (level 30). Fiery Demise and
+Vulnerability raise damage taken through a UnitScript (`titan_dh_damage_taken`); Last Resort is a shield of no
+size absorbing a killing blow; helpers 90161-90165.
 
 **Never delete a talent or a rank spell players have**: the server asserts on loading a character with a
 talent spell it does not know. Retire one by leaving its rows and taking it out of the tree another way.

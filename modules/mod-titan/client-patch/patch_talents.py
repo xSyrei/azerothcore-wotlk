@@ -78,6 +78,11 @@ FAMILY_FLAGS = {
 }
 DEMONS_BITE, CHAOS_STRIKE, BLADE_DANCE_STRIKES, FEL_RUSH_HIT = 0x1, 0x2, 0x8, 0x20
 EYE_BEAM_BEAM, THROW_GLAIVE, CHAOS_NOVA = 0x80, 0x100, 0x200
+IMMOLATION_PULSE, SHEAR, SOUL_CLEAVE, SIGIL_OF_CHAINS = 0x10000, 0x800000, 0x1000000, 0x10000000
+AURA_SCHOOL_ABSORB, AURA_PERIODIC_DUMMY, AURA_PERIODIC_HEAL, AURA_DAMAGE_SHIELD = 69, 226, 8, 15
+AURA_MOD_RESISTANCE_PCT, AURA_MOD_DAMAGE_PERCENT_TAKEN = 101, 87
+FIRE = 0x4
+DURATION_12S = 29
 # Direct Chaos damage, and every direct damage spell (strikes, hits, pulses).
 CHAOS_DAMAGE = CHAOS_STRIKE | FEL_RUSH_HIT | EYE_BEAM_BEAM | CHAOS_NOVA | 0x40000
 ALL_DAMAGE = (DEMONS_BITE | CHAOS_DAMAGE | BLADE_DANCE_STRIKES | THROW_GLAIVE | 0x2000 | 0x10000 | 0x80000
@@ -88,6 +93,7 @@ HAVOC_TAB, VENGEANCE_TAB = 412, 413
 TABS = [
     # id, name, order, icon (one of patch_spells.ICONS)
     (HAVOC_TAB, 'Havoc', 0, 'Ability_DemonHunter_ChaosStrike'),
+    (VENGEANCE_TAB, 'Vengeance', 1, 'Ability_DemonHunter_SoulCleave'),
 ]
 FIRST_TALENT_ID = 2300
 FIRST_RANK_SPELL = 90200
@@ -195,6 +201,73 @@ HAVOC = [
      lambda r: {1: dummy(10)}, {}),
 ]
 
+# The Vengeance tree, as HAVOC: one theme a column (strikes, fire, souls and spikes, sigils and shields).
+VENGEANCE = [
+    ('Improved Shear', 0, 0, 'Ability_DemonHunter_Shear', None, 2,
+     lambda r: f'Shear deals {15 * r}% more damage.',
+     lambda r: {1: mod(SPELLMOD_DAMAGE, SHEAR, 15 * r)}, {}),
+    ('Shear Fury', 1, 0, 'Ability_DemonHunter_Shear', 'Improved Shear', 1,
+     lambda r: 'Shear generates 10 more Fury.',
+     lambda r: {1: dummy(10)}, {}),
+    ('Agonizing Flames', 0, 1, 'Spell_Fire_Incinerate', None, 3,
+     lambda r: f'Immolation Aura deals {10 * r}% more damage.',
+     lambda r: {1: mod(SPELLMOD_DAMAGE, IMMOLATION_PULSE, 10 * r)}, {}),
+    ('Infernal Armor', 1, 1, 'Spell_Fire_FelImmolation', 'Agonizing Flames', 2,
+     lambda r: f'While Immolation Aura burns, your armor is increased by {10 * r}% and enemies striking you in melee '
+               f'take {10 * r}% of your attack power as Fire damage.',
+     lambda r: {1: dummy(10 * r)}, {}),
+    ('Razor Spikes', 0, 2, 'Ability_DemonHunter_DemonSpikes', None, 3,
+     lambda r: f'Demon Spikes also increases your Physical damage by {5 * r}%.',
+     lambda r: {1: dummy(5 * r)}, {}),
+    ('Painbringer', 1, 2, 'Ability_DemonHunter_Painbringer', 'Razor Spikes', 2,
+     lambda r: f'Consuming Soul Fragments reduces all damage you take by {3 * r}% for 6 sec.',
+     lambda r: {1: dummy(3 * r)}, {}),
+    ('Quickened Sigils', 0, 3, 'Ability_DemonHunter_QuickenedSigils', None, 2,
+     lambda r: f'Sigil of Chains arms {r * 0.5:g} sec faster and its cooldown is {10 * r} sec shorter.',
+     lambda r: {1: dummy(500 * r), 2: mod(SPELLMOD_COOLDOWN, SIGIL_OF_CHAINS, -10000 * r, flat=True)}, {}),
+    ('Concentrated Sigils', 1, 3, 'Ability_DemonHunter_SigilOfChains', 'Quickened Sigils', 1,
+     lambda r: 'Sigil of Chains pulls enemies from 12 yards away instead of 8.',
+     lambda r: {1: dummy(12)}, {}),
+    ('Focused Cleave', 3, 0, 'Ability_DemonHunter_SoulCleave', None, 2,
+     lambda r: f'Soul Cleave deals {10 * r}% more damage.',
+     lambda r: {1: mod(SPELLMOD_DAMAGE, SOUL_CLEAVE, 10 * r)}, {}),
+    ('Charred Flesh', 3, 1, 'Ability_DemonHunter_FieryBrand', None, 3,
+     lambda r: f'Immolation Aura\'s pulses extend Fiery Brand on the enemies they hit by {r * 0.25:g} sec.',
+     lambda r: {1: dummy(250 * r)}, {}),
+    ('Fallout', 3, 2, 'Spell_Shadow_SoulGem', None, 2,
+     lambda r: f'Each Immolation Aura pulse that hits an enemy has a {15 * r}% chance to shatter a Soul Fragment.',
+     lambda r: {1: dummy(15 * r)}, {}),
+    ('Cover of Darkness', 3, 3, 'Ability_DemonHunter_Darkness', None, 2,
+     lambda r: f'Darkness gives a {20 + 5 * r}% chance to avoid all damage from an attack.',
+     lambda r: {1: dummy(5 * r)}, {}),
+    ('Burning Alive', 4, 1, 'Spell_Fire_FelFlameRing', 'Charred Flesh', 1,
+     lambda r: 'Every 2 sec, Fiery Brand spreads to a nearby enemy that is not branded.',
+     lambda r: {1: dummy(1)}, {}),
+    ('Feed the Demon', 4, 2, 'Ability_DemonHunter_DemonSpikes', 'Fallout', 2,
+     lambda r: f'Each Soul Fragment you consume reduces the remaining cooldown of Demon Spikes by {r * 0.5:g} sec.',
+     lambda r: {1: dummy(500 * r)}, {}),
+    ('Feast of Souls', 6, 0, 'Spell_Shadow_SoulLeech_3', None, 2,
+     lambda r: f'Soul Cleave heals you for an additional {5 * r}% of your maximum health over 6 sec.',
+     lambda r: {1: dummy(5 * r)}, {}),
+    ('Fiery Demise', 6, 1, 'Spell_Fire_FelFire', None, 2,
+     lambda r: f'Enemies branded by your Fiery Brand take {15 * r}% more Fire damage from you.',
+     lambda r: {1: dummy(15 * r)}, {}),
+    ('Last Resort', 6, 2, 'Ability_DemonHunter_Blur', None, 1,
+     lambda r: 'Damage that would kill you instead leaves you at 30% health. Cannot happen more than once every '
+               '3 min.',
+     lambda r: {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': -2, 'DieSides': 1,
+                    'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}}, {}),
+    ('Ruinous Bulwark', 6, 3, 'Ability_DemonHunter_SoulBarrier', None, 2,
+     lambda r: f'Soul Barrier absorbs {15 * r}% more damage.',
+     lambda r: {1: dummy(15 * r)}, {}),
+    ('Void Reaver', 7, 0, 'Spell_Shadow_ShadowWordPain', 'Feast of Souls', 3,
+     lambda r: f'Enemies struck by Soul Cleave deal {2 * r}% less damage to you for 12 sec.',
+     lambda r: {1: dummy(2 * r)}, {}),
+    ('Vulnerability', 9, 1, 'Ability_DemonHunter_SpiritBomb', None, 2,
+     lambda r: f'Enemies afflicted by Frailty take {3 * r}% more damage from you.',
+     lambda r: {1: dummy(3 * r)}, {}),
+]
+
 # The scripts' helper spells: what the talents cast (heals, Fury, bleeds, buffs, hits).
 HELPERS = [
     {
@@ -273,6 +346,47 @@ HELPERS = [
                         'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
+        # Armor % (effect 1) and the Fire damage melee attackers take (effect 2): the script's values (Infernal
+        # Armor's rank, a share of attack power), for as long as Immolation Aura.
+        'id': 90161, 'copy': SELF_TEMPLATE, 'name': 'Infernal Armor', 'icon': 'Spell_Fire_FelImmolation',
+        'description': '', 'tooltip': 'Armor increased by $s1%. Melee attackers take $s2 Fire damage.',
+        'clear': [1, 2, 3], 'duration': DURATION_6S, 'set': {'SchoolMask': FIRE},
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_RESISTANCE_PCT, 'BasePoints': 9, 'DieSides': 1,
+                        'MiscValue': 1, 'TargetA': TARGET_UNIT_CASTER},
+                    2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DAMAGE_SHIELD, 'BasePoints': 0, 'DieSides': 1,
+                        'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # Healing per 2 sec: the script's value (a share of maximum health, 3 ticks).
+        'id': 90162, 'copy': SELF_TEMPLATE, 'name': 'Feast of Souls', 'icon': 'Spell_Shadow_SoulLeech_3',
+        'description': '', 'tooltip': 'Healing every 2 sec.', 'clear': [1, 2, 3], 'duration': DURATION_6S,
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_PERIODIC_HEAL, 'BasePoints': 0, 'DieSides': 1,
+                        'Amplitude': 2000, 'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # Damage dealt -%: the script's value (Void Reaver's rank).
+        'id': 90163, 'copy': HIT_TEMPLATE, 'name': 'Void Reaver', 'icon': 'Spell_Shadow_ShadowWordPain',
+        'description': '', 'tooltip': 'Damage dealt reduced by $s1%.', 'clear': [1, 2, 3], 'duration': DURATION_12S,
+        'set': {'SchoolMask': SHADOW},
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_DONE, 'BasePoints': -3,
+                        'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
+    },
+    {
+        # Physical damage %: the script's value (Razor Spikes' rank), for as long as Demon Spikes.
+        'id': 90164, 'copy': SELF_TEMPLATE, 'name': 'Razor Spikes', 'icon': 'Ability_DemonHunter_DemonSpikes',
+        'description': '', 'tooltip': 'Physical damage dealt increased by $s1%.', 'clear': [1, 2, 3],
+        'duration': DURATION_6S,
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_DONE, 'BasePoints': 4,
+                        'DieSides': 1, 'MiscValue': PHYSICAL, 'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # Damage taken -%: the script's value (Painbringer's rank).
+        'id': 90165, 'copy': SELF_TEMPLATE, 'name': 'Painbringer', 'icon': 'Ability_DemonHunter_Painbringer',
+        'description': '', 'tooltip': 'Damage taken reduced by $s1%.', 'clear': [1, 2, 3], 'duration': DURATION_6S,
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_TAKEN, 'BasePoints': -4,
+                        'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
         # Damage %: the script's value (Unbound Chaos's rank); the next Fel Rush uses it up.
         'id': 90159, 'copy': SELF_TEMPLATE, 'name': 'Unbound Chaos', 'icon': 'Ability_DemonHunter_UnboundChaos',
         'description': '', 'tooltip': 'Your next Fel Rush deals $s1% more damage.', 'clear': [1, 2, 3],
@@ -288,13 +402,18 @@ HELPER_SET = {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'Star
               'ProcFlags': 0, 'ProcChance': 101}
 
 
+# Every tree's talents in id order: Havoc's first (its ids came first), then Vengeance's.
+TREES = [(HAVOC_TAB, HAVOC), (VENGEANCE_TAB, VENGEANCE)]
+ALL_TALENTS = [(tab, talent) for tab, tree in TREES for talent in tree]
+
+
 def talents():
     """[(talent id, tab, row, column, rank spell ids, prerequisite talent id)] for TALENT rows."""
-    ids = {talent[0]: talent_id for talent_id, talent in enumerate(HAVOC, FIRST_TALENT_ID)}
+    ids = {(tab, talent[0]): talent_id for talent_id, (tab, talent) in enumerate(ALL_TALENTS, FIRST_TALENT_ID)}
     rows, spell_id = [], FIRST_RANK_SPELL
-    for talent_id, (_, row, column, _, requires, ranks, *_) in enumerate(HAVOC, FIRST_TALENT_ID):
-        rows.append((talent_id, HAVOC_TAB, row, column, list(range(spell_id, spell_id + ranks)),
-                     ids[requires] if requires else 0))
+    for talent_id, (tab, (_, row, column, _, requires, ranks, *_)) in enumerate(ALL_TALENTS, FIRST_TALENT_ID):
+        rows.append((talent_id, tab, row, column, list(range(spell_id, spell_id + ranks)),
+                     ids[(tab, requires)] if requires else 0))
         spell_id += ranks
     return rows
 
@@ -302,7 +421,7 @@ def talents():
 def spells():
     """The rank spells and helper spells, as patch_spells.py's SPELLS entries."""
     out, spell_id = [], FIRST_RANK_SPELL
-    for name, _, _, icon, _, ranks, description, effects, extra in HAVOC:
+    for _, (name, _, _, icon, _, ranks, description, effects, extra) in ALL_TALENTS:
         for rank in range(1, ranks + 1):
             out.append({
                 'id': spell_id, 'copy': TALENT_TEMPLATE, 'name': name, 'rank': f'Rank {rank}', 'icon': icon,
@@ -320,4 +439,4 @@ def spells():
 
 
 SPELLS = spells()
-ICONS = sorted({talent[3] for talent in HAVOC} | {tab[3] for tab in TABS} | {h['icon'] for h in HELPERS})
+ICONS = sorted({talent[3] for _, talent in ALL_TALENTS} | {tab[3] for tab in TABS} | {h['icon'] for h in HELPERS})
