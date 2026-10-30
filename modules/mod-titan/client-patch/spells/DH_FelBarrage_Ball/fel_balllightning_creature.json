@@ -1,0 +1,1187 @@
+{
+	"fileType": "m2",
+	"fileDataID": 1502965,
+	"fileName": "spells/fel_balllightning_creature.m2",
+	"internalName": "Fel_BallLightning_Creature",
+	"textures": [
+		{
+			"fileNameInternal": "spells/electric_liquid_fel2_a.blp",
+			"fileNameExternal": "electric_liquid_fel2_a.png",
+			"mtlName": "mat_electric_liquid_fel2_a",
+			"flags": 3,
+			"fileDataID": 1503016
+		},
+		{
+			"fileNameInternal": "spells/electric_liquid_greenyellow_a_slide.blp",
+			"fileNameExternal": "electric_liquid_greenyellow_a_slide.png",
+			"mtlName": "mat_electric_liquid_greenyellow_a_slide",
+			"flags": 3,
+			"fileDataID": 1503017
+		},
+		{
+			"fileNameInternal": "spells/lightning_fel_tiledgeo.blp",
+			"fileNameExternal": "lightning_fel_tiledgeo.png",
+			"mtlName": "mat_lightning_fel_tiledgeo",
+			"flags": 3,
+			"fileDataID": 1503018
+		},
+		{
+			"fileNameInternal": "spells/lightningundertile_fel.blp",
+			"fileNameExternal": "lightningundertile_fel.png",
+			"mtlName": "mat_lightningundertile_fel",
+			"flags": 3,
+			"fileDataID": 1503019
+		},
+		{
+			"fileNameInternal": "spells/t_vfx_border_circle.blp",
+			"fileNameExternal": "t_vfx_border_circle.png",
+			"mtlName": "mat_t_vfx_border_circle",
+			"flags": 0,
+			"fileDataID": 982919
+		},
+		{
+			"fileNameInternal": "spells/starfield03.blp",
+			"fileNameExternal": "starfield03.png",
+			"mtlName": "mat_starfield03",
+			"flags": 3,
+			"fileDataID": 655858
+		}
+	],
+	"textureTypes": [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	],
+	"materials": [
+		{
+			"flags": 23,
+			"blendingMode": 4
+		},
+		{
+			"flags": 23,
+			"blendingMode": 4
+		},
+		{
+			"flags": 23,
+			"blendingMode": 4
+		},
+		{
+			"flags": 23,
+			"blendingMode": 4
+		},
+		{
+			"flags": 23,
+			"blendingMode": 4
+		},
+		{
+			"flags": 19,
+			"blendingMode": 2
+		},
+		{
+			"flags": 19,
+			"blendingMode": 4
+		},
+		{
+			"flags": 23,
+			"blendingMode": 4
+		}
+	],
+	"textureCombos": [
+		0,
+		1,
+		2,
+		3,
+		4,
+		5,
+		5
+	],
+	"colors": [
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							1,
+							1
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						300
+					],
+					[],
+					[
+						0,
+						266
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							1,
+							1
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						300
+					],
+					[],
+					[
+						0,
+						266
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							1,
+							1
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						300
+					],
+					[],
+					[
+						0,
+						266
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							1,
+							1
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						300
+					],
+					[],
+					[
+						0,
+						266
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							1,
+							1
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						300
+					],
+					[],
+					[
+						0,
+						266
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							1,
+							1
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						300
+					],
+					[],
+					[
+						0,
+						266
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							1,
+							1
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						300
+					],
+					[],
+					[
+						0,
+						266
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0.40392160415649414,
+							1,
+							0.2666666805744171
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						300
+					],
+					[],
+					[
+						0,
+						266
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		}
+	],
+	"textureWeights": [
+		{
+			"globalSeq": 65535,
+			"interpolation": 0,
+			"timestamps": [
+				[
+					0
+				]
+			],
+			"values": [
+				[
+					32767
+				]
+			],
+			"timestampOffsets": null,
+			"valueOffsets": null
+		}
+	],
+	"transparencyLookup": [
+		0
+	],
+	"textureTransforms": [
+		{
+			"translation": {
+				"globalSeq": 1,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						10633
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							-1,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"translation": {
+				"globalSeq": 2,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						9867
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							0,
+							1,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"translation": {
+				"globalSeq": 3,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						7400
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							-1,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"translation": {
+				"globalSeq": 4,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						6867
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							0,
+							1,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"translation": {
+				"globalSeq": 6,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						76,
+						76,
+						152,
+						152,
+						227,
+						228,
+						303,
+						303
+					]
+				],
+				"values": [
+					[
+						[
+							0.5,
+							0,
+							0
+						],
+						[
+							0.5,
+							0,
+							0
+						],
+						[
+							0.25,
+							0,
+							0
+						],
+						[
+							0.25,
+							0,
+							0
+						],
+						[
+							0,
+							0,
+							0
+						],
+						[
+							0,
+							0,
+							0
+						],
+						[
+							-0.25,
+							0,
+							0
+						],
+						[
+							-0.25,
+							0,
+							0
+						],
+						[
+							0.5,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"translation": {
+				"globalSeq": 8,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						2000
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							-0.9999997615814209,
+							1.0000001192092896,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		}
+	],
+	"textureTransformsLookup": [
+		0,
+		1,
+		2,
+		3,
+		4,
+		5,
+		65535
+	],
+	"boundingBox": {
+		"min": [
+			-3.303239583969116,
+			-3.5471794605255127,
+			-3.415343761444092
+		],
+		"max": [
+			3.2248992919921875,
+			3.492426633834839,
+			3.5852432250976562
+		]
+	},
+	"boundingSphereRadius": 3.6166481971740723,
+	"collisionBox": {
+		"min": [
+			-0.3055555522441864,
+			-0.3055555522441864,
+			0
+		],
+		"max": [
+			0.3055555522441864,
+			0.3055555522441864,
+			2.031277894973755
+		]
+	},
+	"collisionSphereRadius": 1.1037440299987793,
+	"skin": {
+		"subMeshes": [
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 0,
+				"vertexCount": 300,
+				"triangleStart": 0,
+				"triangleCount": 1368,
+				"boneCount": 9,
+				"boneStart": 0,
+				"boneInfluences": 0,
+				"centerBoneIndex": 0,
+				"centerPosition": [
+					-0.01140204630792141,
+					0.0005921029369346797,
+					0.08008114993572235
+				],
+				"sortCenterPosition": [
+					-0.01140204630792141,
+					0.0005921029369346797,
+					0.08008114993572235
+				],
+				"sortRadius": 2.5639429092407227
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 300,
+				"vertexCount": 300,
+				"triangleStart": 1368,
+				"triangleCount": 1368,
+				"boneCount": 9,
+				"boneStart": 0,
+				"boneInfluences": 0,
+				"centerBoneIndex": 0,
+				"centerPosition": [
+					-0.011402065865695477,
+					0.0005920709809288383,
+					0.08751162886619568
+				],
+				"sortCenterPosition": [
+					-0.011402065865695477,
+					0.0005920709809288383,
+					0.08751162886619568
+				],
+				"sortRadius": 3.5895180702209473
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 600,
+				"vertexCount": 100,
+				"triangleStart": 2736,
+				"triangleCount": 342,
+				"boneCount": 9,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 2,
+				"centerPosition": [
+					-0.011401488445699215,
+					-0.03045841120183468,
+					0.1088114082813263
+				],
+				"sortCenterPosition": [
+					-0.011401515454053879,
+					-0.007767200469970703,
+					0.06325852870941162
+				],
+				"sortRadius": 3.161043167114258
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 700,
+				"vertexCount": 33,
+				"triangleStart": 3078,
+				"triangleCount": 120,
+				"boneCount": 9,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 3,
+				"centerPosition": [
+					-1.3067206144332886,
+					-0.007848710753023624,
+					0.06150486320257187
+				],
+				"sortCenterPosition": [
+					-1.3067206144332886,
+					-0.007848710753023624,
+					0.06150486320257187
+				],
+				"sortRadius": 3.6254498958587646
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 733,
+				"vertexCount": 33,
+				"triangleStart": 3198,
+				"triangleCount": 108,
+				"boneCount": 9,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 4,
+				"centerPosition": [
+					1.4730497598648071,
+					0.08896209299564362,
+					0.061504799872636795
+				],
+				"sortCenterPosition": [
+					1.647877812385559,
+					-0.007671236991882324,
+					0.06150487810373306
+				],
+				"sortRadius": 3.5742645263671875
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 766,
+				"vertexCount": 100,
+				"triangleStart": 3306,
+				"triangleCount": 486,
+				"boneCount": 9,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 5,
+				"centerPosition": [
+					-0.011396709829568863,
+					0.0005919599207118154,
+					0.06150452420115471
+				],
+				"sortCenterPosition": [
+					-0.011396707966923714,
+					0.0005919933319091797,
+					0.06150472164154053
+				],
+				"sortRadius": 2.9947242736816406
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 866,
+				"vertexCount": 100,
+				"triangleStart": 3792,
+				"triangleCount": 486,
+				"boneCount": 9,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 6,
+				"centerPosition": [
+					-0.011396704241633415,
+					0.0005922937416471541,
+					0.061504874378442764
+				],
+				"sortCenterPosition": [
+					-0.011396707966923714,
+					0.000592350959777832,
+					0.06150496006011963
+				],
+				"sortRadius": 2.9947245121002197
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 966,
+				"vertexCount": 120,
+				"triangleStart": 4278,
+				"triangleCount": 456,
+				"boneCount": 9,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 7,
+				"centerPosition": [
+					-0.011402074247598648,
+					0.06089292839169502,
+					0.08289378881454468
+				],
+				"sortCenterPosition": [
+					-0.011402051895856857,
+					-0.022511839866638184,
+					0.0808718204498291
+				],
+				"sortRadius": 2.946387767791748
+			}
+		],
+		"textureUnits": [
+			{
+				"flags": 128,
+				"priority": 10,
+				"shaderID": 16404,
+				"skinSectionIndex": 0,
+				"flags2": 0,
+				"colorIndex": 0,
+				"materialIndex": 0,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 0,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			},
+			{
+				"flags": 128,
+				"priority": 10,
+				"shaderID": 16404,
+				"skinSectionIndex": 1,
+				"flags2": 0,
+				"colorIndex": 1,
+				"materialIndex": 1,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 0,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 2
+			},
+			{
+				"flags": 0,
+				"priority": -1,
+				"shaderID": 16,
+				"skinSectionIndex": 2,
+				"flags2": 0,
+				"colorIndex": 2,
+				"materialIndex": 2,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 2,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 4
+			},
+			{
+				"flags": 0,
+				"priority": 1,
+				"shaderID": 16,
+				"skinSectionIndex": 3,
+				"flags2": 0,
+				"colorIndex": 3,
+				"materialIndex": 3,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 2,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 4
+			},
+			{
+				"flags": 0,
+				"priority": 2,
+				"shaderID": 16,
+				"skinSectionIndex": 4,
+				"flags2": 0,
+				"colorIndex": 4,
+				"materialIndex": 4,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 2,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 4
+			},
+			{
+				"flags": 128,
+				"priority": 2,
+				"shaderID": 16401,
+				"skinSectionIndex": 5,
+				"flags2": 0,
+				"colorIndex": 5,
+				"materialIndex": 5,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 3,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 5
+			},
+			{
+				"flags": 128,
+				"priority": 3,
+				"shaderID": 16401,
+				"skinSectionIndex": 6,
+				"flags2": 0,
+				"colorIndex": 6,
+				"materialIndex": 6,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 3,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 5
+			},
+			{
+				"flags": 128,
+				"priority": 10,
+				"shaderID": 16404,
+				"skinSectionIndex": 7,
+				"flags2": 0,
+				"colorIndex": 7,
+				"materialIndex": 7,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 5,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			}
+		],
+		"fileName": "spells/fel_balllightning_creature00.skin",
+		"fileDataID": 1503020
+	}
+}

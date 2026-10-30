@@ -103,7 +103,7 @@ built or spent Runic Power build and spend Fury, the same pool as the Demon Hunt
 | 90117 | Felblade | 16 | Charges a target up to 15 yards away; on arrival 50% of attack power as Fire damage and 40 Fury; 15 sec cooldown |
 | 90118 | Darkness | 26 | 8-yard zone for 8 sec: allies in it avoid all damage from a hit 20% of the time (`spell_titan_dh_darkness`); 3 min cooldown |
 | 90116 | Metamorphosis | 30 | Demon form for 30 sec: 25% attack speed, 20% damage; 3 min cooldown |
-| 90121 | Fel Barrage | 30 | Havoc's capstone: for 3 sec, 15% of attack power as Chaos damage to enemies within 8 yards every 0.25 sec (90122), each pulse draining 5 Fury, ending when Fury runs out (`spell_titan_dh_fel_barrage`); costs 10, 90 sec cooldown |
+| 90121 | Fel Barrage | 30 | Havoc's capstone: for 3 sec, every 0.25 sec (90122) a fel ball flies at each enemy within 8 yards and explodes for 15% of attack power as Chaos damage (90123, `spell_titan_dh_fel_barrage_pulse`); each pulse drains 5 Fury, ending it when Fury runs out (`spell_titan_dh_fel_barrage`); costs 10, 90 sec cooldown |
 | 90119 | Immolation Aura | 1 (Vengeance) | 20% of attack power as Fire damage to enemies within 8 yards at once and every sec for 6 sec (90120); 20 Fury; 15 sec cooldown |
 
 Every ability above needs a one-handed weapon in each hand (two one-handed weapons, or a main-hand

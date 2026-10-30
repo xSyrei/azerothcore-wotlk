@@ -35,6 +35,7 @@ enum DemonHunterSpells
     SPELL_BLADE_DANCE_FINAL_STRIKE  = 90108,
     SPELL_DEMON_FORM                = 90115,
     SPELL_METAMORPHOSIS             = 90116,
+    SPELL_FEL_BARRAGE_BALL          = 90123,
 };
 
 enum DemonHunterDisplays
@@ -351,6 +352,28 @@ class spell_titan_dh_fel_barrage : public AuraScript
     }
 };
 
+// Fel Barrage's pulse (90122): a fel ball (90123) at every enemy it finds, which deals the damage where it lands.
+class spell_titan_dh_fel_barrage_pulse : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_fel_barrage_pulse);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_FEL_BARRAGE_BALL });
+    }
+
+    void Throw(SpellEffIndex /*effIndex*/)
+    {
+        if (Unit* target = GetHitUnit())
+            GetCaster()->CastSpell(target, SPELL_FEL_BARRAGE_BALL, true);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_titan_dh_fel_barrage_pulse::Throw, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
 void AddSC_demon_hunter()
 {
     RegisterSpellScript(spell_titan_dh_dual_weapons);
@@ -363,4 +386,5 @@ void AddSC_demon_hunter()
     RegisterSpellScript(spell_titan_dh_chaos_nova);
     RegisterSpellScript(spell_titan_dh_darkness);
     RegisterSpellScript(spell_titan_dh_fel_barrage);
+    RegisterSpellScript(spell_titan_dh_fel_barrage_pulse);
 }

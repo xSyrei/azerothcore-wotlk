@@ -23,6 +23,7 @@ Trail textures are drawn running from the weapon (left edge, newest) to the end 
 Nearly transparent pixels are cleared: across a whole swing their faint color showed as a haze.
 """
 
+import json
 import math
 import struct
 from pathlib import Path
@@ -30,7 +31,7 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 import blp
-from wowexport_to_m2 import Blob, SEQUENCE_IN_MODEL, empty_track, track
+from wowexport_to_m2 import Blob, SEQUENCE_IN_MODEL, empty_track, read_obj, track
 
 UNLIT, TWO_SIDED, NO_DEPTH_WRITE = 0x1, 0x4, 0x10
 BLEND_ALPHA, BLEND_ADD = 2, 4
@@ -661,3 +662,156 @@ def ground_zone(*args, layers=()):
     skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
     (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
     return [f'{name}.m2', f'{name}00.skin'] + [f'{blp_name}.blp' for blp_name in images]
+
+
+def missile(trail_texture, out_dir, name, client_dir, export, base, size=1.2, trail_height=0.3, lifetime=0.4,
+            turn=1.0):
+    """A spell missile (SpellVisual's missile model) from a wow.export model (OBJ + JSON + PNGs, in
+    the export folder beside trail_texture), with a trail behind it:
+
+    - the model scaled to size yards across, turning about Z every turn seconds, each texture unit
+      with its first texture, its material, its tint and its scrolling (texture transforms, on global
+      sequences; their lengths are the last key's time, wow.export not exporting them);
+    - a ribbon (trail_texture, laid out as ribbon_trail's) spanning trail_height yards above and below
+      its center, each stretch fading after lifetime seconds.
+
+    Layers' fades in and out (per-sequence alpha) are left out: the missile is whole while it flies.
+    Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    source = Path(trail_texture).parent / export
+    info = json.loads((source / f'{base}.json').read_text())
+    positions, normals, uvs, groups = read_obj(source / f'{base}.obj')
+    lo = [min(p[i] for p in positions) for i in range(3)]
+    hi = [max(p[i] for p in positions) for i in range(3)]
+    factor = size / max(h - l for l, h in zip(lo, hi))
+    positions = [tuple(c * factor for c in p) for p in positions]
+
+    # Textures: the ones the texture units draw, then the trail.
+    units = info['skin']['textureUnits']
+    used = sorted({info['textureCombos'][unit['textureComboIndex']] for unit in units})
+    blp_names, texture_index = [], {}
+    for texture in used:
+        png = info['textures'][texture]['fileNameExternal']
+        blp_name = f'{name}_{len(blp_names)}'
+        with Image.open(source / png) as image:
+            (out_dir / f'{blp_name}.blp').write_bytes(blp.encode(image.convert('RGBA')))
+        texture_index[texture] = len(blp_names)
+        blp_names.append(blp_name)
+    with Image.open(trail_texture) as image:
+        trail = image.convert('RGBA').transpose(Image.Transpose.TRANSPOSE).transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        trail.putalpha(trail.getchannel('A').point(lambda a: 0 if a < FAINT else a))
+    trail_index = len(blp_names)
+    blp_names.append(f'{name}_Trail')
+    (out_dir / f'{blp_names[-1]}.blp').write_bytes(blp.encode(trail))
+
+    blob = Blob(0x130)
+    name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
+    transforms = info['textureTransforms']
+    lengths = [max(1, t['translation']['timestamps'][0][-1]) for t in transforms] + [int(turn * 1000)]
+    globals_ref = blob.array('I', lengths)
+    SPIN_SEQUENCE = len(transforms)
+
+    reach = size / 2 + trail_height
+    box_lo, box_hi = (-reach,) * 3, (reach,) * 3
+    radius = reach * math.sqrt(3)
+    sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, 1000, 0.0, SEQUENCE_IN_MODEL, 0x7FFF,
+                                     0, 0, 0, 0, *box_lo, *box_hi, radius, -1, 0), 1)
+
+    # Bones: 0 the model, turning; 1 the trail, still.
+    spin = track(blob, 1, [([lengths[SPIN_SEQUENCE] * i // 4 for i in range(5)],
+                            [tuple(comp_quat(c) for c in _turn_z(math.pi * i / 2)) for i in range(5)])], '4h')
+    spin = spin[:2] + struct.pack('<h', SPIN_SEQUENCE) + spin[4:]
+    bones = b''
+    for rotation in (spin, empty_track()):
+        bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
+        bones += empty_track() + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
+    bones_ref = blob.add(bones, 2)
+    key_bones = blob.array('h', [-1])
+
+    vertices = b''
+    for p, n, uv in zip(positions, normals, uvs):
+        vertices += struct.pack('<3f4B4B3f2f2f', *p, 255, 0, 0, 0, 0, 0, 0, 0, *n, *uv, 0.0, 0.0)
+    vertices_ref = blob.add(vertices, len(positions))
+
+    colors = b''
+    for color in info['colors']:
+        colors += track(blob, 0, [([0], [tuple(map(float, color['color']['values'][0][0]))])], '3f')
+        colors += track(blob, 0, [([0], [0x7FFF])], 'h')
+    colors_ref = blob.add(colors, len(info['colors']))
+    textures_blob = b''
+    for i, blp_name in enumerate(blp_names):
+        path = f'{client_dir}\\{blp_name}.blp'
+        ref = blob.add(path.encode() + b'\0', len(path) + 1)
+        textures_blob += struct.pack('<II2I', 0, 0 if i == trail_index else WRAP_U | 0x2, *ref)
+    textures_ref = blob.add(textures_blob, len(blp_names))
+    weights = blob.add(track(blob, 0, [([0], [0x7FFF])], 'h'), 1)
+    transform_records = b''
+    for index, transform in enumerate(transforms):
+        move = transform['translation']
+        translation = track(blob, move['interpolation'], [(move['timestamps'][0],
+                                                            [tuple(v) for v in move['values'][0]])], '3f')
+        transform_records += translation[:2] + struct.pack('<h', index) + translation[4:]
+        transform_records += empty_track() + empty_track()
+    transforms_ref = blob.add(transform_records, len(transforms))
+    replaceable_lookup = blob.array('h', [-1])
+    materials = [(m['flags'] & 0x1F, m['blendingMode']) for m in info['materials']]
+    trail_material = len(materials)
+    materials.append((UNLIT | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ALPHA))
+    materials_ref = blob.array('HH', materials)
+    bone_lookup = blob.array('H', [0])
+    texture_lookup = blob.array('H', [texture_index.get(t, 0) for t in info['textureCombos']])
+    texture_unit_lookup = blob.array('H', [0])
+    transparency_lookup = blob.array('H', [0])
+    transform_lookup = blob.array('H', info['textureTransformsLookup'])
+    ribbon = _ribbon_record(blob, 1, (0.0, 0.0, 0.0), trail_height, trail_height, 50.0, lifetime, (1.0, 1.0, 1.0),
+                            trail_index, trail_material)
+    ribbons_ref = blob.add(ribbon, 1)
+
+    header = struct.pack('<4sI', b'MD20', 264)
+    header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)
+    header += struct.pack('<2I', *globals_ref)
+    header += struct.pack('<2I', *sequences) + struct.pack('<2I', 0, 0)            # no sequence lookup
+    header += struct.pack('<2I', *bones_ref) + struct.pack('<2I', *key_bones)
+    header += struct.pack('<2I', *vertices_ref) + struct.pack('<I', 1)
+    header += struct.pack('<2I', *colors_ref) + struct.pack('<2I', *textures_ref)
+    header += struct.pack('<2I', *weights) + struct.pack('<2I', *transforms_ref)
+    header += struct.pack('<2I', *replaceable_lookup) + struct.pack('<2I', *materials_ref)
+    header += struct.pack('<2I', *bone_lookup) + struct.pack('<2I', *texture_lookup)
+    header += struct.pack('<2I', *texture_unit_lookup) + struct.pack('<2I', *transparency_lookup)
+    header += struct.pack('<2I', *transform_lookup)
+    header += struct.pack('<7f', *box_lo, *box_hi, radius) + struct.pack('<7f', *[0.0] * 7)
+    header += struct.pack('<2I', 0, 0) * 3                                          # collision
+    header += struct.pack('<2I', 0, 0) * 2                                          # attachments
+    header += struct.pack('<2I', 0, 0) * 2                                          # events, lights
+    header += struct.pack('<2I', 0, 0) * 2                                          # cameras
+    header += struct.pack('<2I', *ribbons_ref) + struct.pack('<2I', 0, 0)          # ribbons, particles
+    assert len(header) == 0x130
+    blob.data[:0x130] = header
+    (out_dir / f'{name}.m2').write_bytes(bytes(blob.data))
+
+    # Skin: the export's submeshes (one per OBJ group) and texture units.
+    skin = Blob(48)
+    lookup = skin.array('H', list(range(len(positions))))
+    triangles, section_data = [], b''
+    for submesh, faces in zip(info['skin']['subMeshes'], groups):
+        start = len(triangles)
+        for face in faces:
+            triangles += face
+        center = tuple(c * factor for c in submesh['centerPosition'])
+        section_data += struct.pack('<10H3f3ff', 0, 0, submesh['vertexStart'], submesh['vertexCount'], start,
+                                    len(triangles) - start, 1, 0, 1, 0, *center, *center,
+                                    submesh['sortRadius'] * factor)
+    tris = skin.array('H', triangles)
+    props = skin.add(b'\0' * 4 * len(positions), len(positions))
+    batch_data = b''
+    for unit in units:
+        batch_data += struct.pack('<Bb11H', 16, unit['priority'], 0, unit['skinSectionIndex'],
+                                  unit['skinSectionIndex'], unit['colorIndex'], unit['materialIndex'], 0, 1,
+                                  unit['textureComboIndex'], 0, 0, unit['textureTransformComboIndex'])
+    sections_ref = skin.add(section_data, len(groups))
+    batches_ref = skin.add(batch_data, len(units))
+    skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
+    (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
+    return [f'{name}.m2', f'{name}00.skin'] + [f'{blp_name}.blp' for blp_name in blp_names]

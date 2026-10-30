@@ -40,7 +40,7 @@ FIELDS = {
     'EquippedItemInventoryTypeMask': 70, 'SpellVisual': 131, 'SpellIconID': 133,
     'ActiveIconID': 134, 'ManaCostPercentage': 204, 'StartRecoveryCategory': 205, 'StartRecoveryTime': 206,
     'SpellFamilyName': 208, 'SpellFamilyFlags0': 209, 'SpellFamilyFlags1': 210, 'SpellFamilyFlags2': 211,
-    'MaxAffectedTargets': 212, 'DmgClass': 213, 'SchoolMask': 225, 'RuneCostID': 226,
+    'MaxAffectedTargets': 212, 'DmgClass': 213, 'Speed': 47, 'SchoolMask': 225, 'RuneCostID': 226,
 }
 EFFECT_FIELDS = {       # name: (first column, is float); effect n is first column + n - 1
     'Effect': (71, False), 'DieSides': (74, False), 'RealPointsPerLevel': (77, True), 'BasePoints': (80, False),
@@ -59,6 +59,7 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
 # SpellVisual columns; 'persistent' is the kit a persistent area (a dynamic object) shows for as long as it lasts,
 # 'area' the one it shows (a sound) as it appears.
+VISUAL_MISSILE_MODEL, VISUAL_MISSILE_SOUND = 8, 11
 VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5, 'area': 23, 'persistent': 25}
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_BREATH = 3, 4, 5, 6, 7, 8
 KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON, KIT_WORLD = 9, 10, 14
@@ -135,7 +136,7 @@ DISPEL_MAGIC = 1
 ALL_SCHOOLS = 0x7F
 RADIUS_8, RADIUS_15, RADIUS_20 = 14, 18, 9
 FIRE, SHADOW = 0x4, 0x20
-EFFECT_CHARGE, EFFECT_PERSISTENT_AREA_AURA = 96, 27
+EFFECT_CHARGE, EFFECT_PERSISTENT_AREA_AURA, EFFECT_DUMMY = 96, 27, 3
 AURA_SCHOOL_ABSORB = 69
 TARGET_DEST_CASTER, TARGET_UNIT_DEST_AREA_ENEMY, TARGET_UNIT_DEST_AREA_ALLY = 18, 16, 31
 RANGE_15, DURATION_6S, DURATION_8S = 11, 32, 31
@@ -154,7 +155,8 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
 # (body_trail, for the chest), from spells/<model>.png, or "beam" (beam, for the head slot),
 # "burst" (ground_burst, for the world slot) or "zone" (ground_zone, lasting on the ground) from the
 # spells/<texture>.png in "textures" (beam: flare, flow; burst: ring, flash, trail or None; zone: those
-# its layers name). "options" go to that builder.
+# its layers name) or "missile" (missile, a spell missile from a wow.export model in spells/<export>, with a trail
+# from the spells/<texture>.png in "textures"). "options" go to that builder.
 EFFECTS = {
     'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'effect': 7100},
     'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'effect': 7101},
@@ -195,6 +197,11 @@ EFFECTS = {
                                         'flash_sheet': False,
                                         'ring': {'scale': ([0, 300, 600], [1.0, 16.0, 17.0]),
                                                  'fade': ([0, 200, 600, 900], [0x7FFF, 0x7FFF, 0, 0])}}},
+    # Fel Barrage: retail's fel ball (fel_balllightning_creature) as each pulse's missile, with Fel Rush's trail.
+    'FelBarrageBall': {'model': 'DH_FelBarrage_Ball', 'effect': 7111, 'shape': 'missile',
+                       'textures': ('DH_FelRush_Trail',),
+                       'options': {'export': 'DH_FelBarrage_Ball', 'base': 'fel_balllightning_creature', 'size': 1.2,
+                                   'trail_height': 0.3, 'lifetime': 0.4}},
     # Eye Beam: from the face, as long as the channel and its 20-yard reach.
     'EyeBeam': {'model': 'DH_EyeBeam', 'effect': 7104, 'shape': 'beam',
                 'textures': ('DH_EyeBeam_Beam', 'DH_EyeBeam_Fel')},
@@ -218,6 +225,7 @@ SOUNDS = {
                        'files': [f'spell_dh_player_eyebeam_1shot_0{n}' for n in range(1, 4)]},
     'Metamorphosis': {'id': 18110, 'copy': 5674,
                       'files': [f'spell_dh_metamorph_jumpland_0{n}' for n in range(1, 5)]},
+    'FelBarrage': {'id': 18111, 'copy': 5674, 'files': [f'spell_dh_fel_barrage_comp_cast_0{n}' for n in (5, 6)]},
     'EyeBeamEnd': {'id': 18105, 'copy': 5674, 'files': [f'spell_dh_player_eyebeam_end_0{n}' for n in range(1, 5)]},
 }
 
@@ -229,13 +237,15 @@ FEL_FIRE_IMPACT = 3221          # Spells\\Fel_Fire_ImpactDD_High_Chest: a big fe
 FEL_FLAMESHOCK_IMPACT = 3111    # Spells\\Fel_FlameShock_Impact_Chest: a small fel fire hit
 FEL_FIREBLAST_IMPACT = 3227     # Spells\\Fel_FireBlast_Impact_Chest
 FEL_HELLFIRE_BASE = 3312        # Spells\\Fel_Hellfire_Impact_Caster_Base: fel flames at the feet
+XPLOSION_FEL_IMPACT = 4714      # spells\\Xplosion_Fel_Impact: a fel explosion
 FEL_IMMOLATE_STATE = 3231       # Spells\\Fel_Immolate_State_Base: fel flames rising around the body
 
 # Visuals: the Blizzard visual copied, the new visual's id, and per kit (precast, cast or impact)
 # the new kit's id and what goes in its slots, a copy of the copied visual's kit (or of BLANK_KIT
 # if it has none). A slot's effect is a Blizzard effect id (0: none) or one of EFFECTS; "anim" sets the kit's
 # animation (NO_ANIM: none), "sound" its sound (one of SOUNDS, or None: silent), "procs": False drops the copied kit's
-# character effects (its tints and ground decals). "clear" drops kits.
+# character effects (its tints and ground decals). "clear" drops kits; "set" sets visual columns (a missile model: one
+# of EFFECTS).
 VISUALS = {
     'DemonsBite': {'copy': 253, 'id': 16700, 'kits': {
         'cast': (15600, {WEAPONS: 'DemonsBite', 'anim': ANIM_GLAIVE_STRIKE, 'sound': 'DemonsBite'}),
@@ -314,14 +324,19 @@ VISUALS = {
         'state': (15627, {KIT_HEAD: 0, KIT_CHEST: 0, KIT_BASE: FEL_IMMOLATE_STATE, HANDS: FEL_PRECAST_HAND})}},
     'ImmolationAuraPulse': {'copy': 11111, 'id': 16717, 'kits': {
         'impact': (15628, {KIT_BASE: 0, KIT_CHEST: FEL_FLAMESHOCK_IMPACT})}},
-    # Fel Barrage: fel fire on the hands while it lasts; each pulse bursts fel flames at the feet (no
-    # animation: a triggered spell's own would stab with the weapon) and hits every enemy with fel fire.
+    # Fel Barrage: fel fire on the hands while it lasts, and one of its two sounds on the cast. Each pulse (no
+    # animation: a triggered spell's own would stab with the weapon) throws a fel ball at every enemy, which
+    # explodes on it: the Burning Crusade demons' Fel Fireball visual, with our ball as its missile (silent: a
+    # dozen pulses at once) and a fel explosion as its hit.
     'FelBarrage': {'copy': 12038, 'id': 16718, 'kits': {
-        'cast': (15629, {HANDS: FEL_PRECAST_HAND}),
+        'cast': (15629, {HANDS: FEL_PRECAST_HAND, 'sound': 'FelBarrage'}),
         'state': (15630, {KIT_HEAD: 0, KIT_CHEST: 0, KIT_BASE: 0, HANDS: FEL_PRECAST_HAND})}},
-    'FelBarragePulse': {'copy': 253, 'id': 16719, 'clear': ('cast',), 'kits': {
-        'cast': (15631, {KIT_CHEST: 0, KIT_BASE: FEL_HELLFIRE_BASE, 'anim': NO_ANIM, 'sound': None}),
-        'impact': (15632, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
+    'FelBarragePulse': {'copy': 253, 'id': 16719, 'clear': ('cast', 'impact'), 'kits': {
+        'cast': (15631, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None})}},
+    'FelBarrageBolt': {'copy': 10018, 'id': 16720, 'clear': ('precast', 'state'),
+                       'set': {VISUAL_MISSILE_MODEL: 'FelBarrageBall', VISUAL_MISSILE_SOUND: 0}, 'kits': {
+        'cast': (15632, {KIT_BREATH: 0, 'anim': NO_ANIM, 'sound': None}),
+        'impact': (15633, {KIT_CHEST: XPLOSION_FEL_IMPACT})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'cast': (15622, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
@@ -614,13 +629,14 @@ SPELLS = [
                         'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
     },
     {
-        # Havoc's capstone (Dragonflight's): Immolation Aura's pulsing on the Demon Hunter, a pulse (90122) every
-        # 0.25 sec for 3 sec, each draining 5 Fury; it ends when the Fury runs out (spell_titan_dh_fel_barrage).
+        # Havoc's capstone (Dragonflight's): Immolation Aura's pulsing on the Demon Hunter, a pulse (90122, a fel ball
+        # at every enemy in range) every 0.25 sec for 3 sec, each draining 5 Fury; it ends when the Fury runs out
+        # (spell_titan_dh_fel_barrage).
         'id': 90121, 'copy': 50589, 'name': 'Fel Barrage', 'icon': 'INV_FelBarrage',
         'two_weapons': True, 'visual': 'FelBarrage',
-        'description': 'Unleash a torrent of Fel energy over $d, dealing 15% of your attack power as Chaos damage '
-                       'to all enemies within 8 yards every 0.25 sec. Each burst drains 5 Fury; it ends when '
-                       'your Fury runs out.',
+        'description': 'Unleash a torrent of Fel energy over $d, hurling a fel ball at every enemy within 8 '
+                       'yards every 0.25 sec, each exploding for 15% of your attack power as Chaos damage. Each '
+                       'burst drains 5 Fury; it ends when your Fury runs out.',
         'tooltip': 'Unleashing Fel energy on nearby enemies.',
         'set': {'RecoveryTime': 90000, 'DurationIndex': DURATION_3S, 'PowerType': FURY, 'ManaCost': 100,
                 'ManaCostPercentage': 0, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
@@ -629,12 +645,25 @@ SPELLS = [
         'effects': {1: {'Amplitude': 250, 'TriggerSpell': 90122}},
     },
     {
-        # Fel Barrage's pulse: everything within 8 yards, 1 damage plus attack power (spell_bonus_data).
+        # Fel Barrage's pulse: finds every enemy within 8 yards; spell_titan_dh_fel_barrage_pulse throws a
+        # ball (90123) at each.
         'id': 90122, 'copy': 50590, 'name': 'Fel Barrage', 'icon': 'INV_FelBarrage',
         'visual': 'FelBarragePulse', 'description': '',
         'set': {'SchoolMask': CHAOS, 'MaxAffectedTargets': 0, 'BaseLevel': 30, 'SpellLevel': 30, 'MaxLevel': 80},
-        'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_DEST_CASTER,
-                        'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
+        'effects': {1: {'Effect': EFFECT_DUMMY, 'BasePoints': 0, 'DieSides': 0, 'RealPointsPerLevel': 0.0,
+                        'TargetA': TARGET_DEST_CASTER, 'TargetB': TARGET_UNIT_DEST_AREA_ENEMY,
+                        'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
+    },
+    {
+        # Fel Barrage's ball: flies to its enemy (28 yards a second) and explodes, 1 damage plus attack power
+        # (spell_bonus_data).
+        'id': 90123, 'copy': 50590, 'name': 'Fel Barrage', 'icon': 'INV_FelBarrage',
+        'visual': 'FelBarrageBolt', 'description': '',
+        'set': {'SchoolMask': CHAOS, 'Speed': 28.0, 'RangeIndex': RANGE_20, 'MaxAffectedTargets': 0,
+                'BaseLevel': 30, 'SpellLevel': 30, 'MaxLevel': 80},
+        'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
+                        'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0, 'RadiusIndex': 0,
+                        'BonusMultiplier': 0.0}},
     },
     {
         # Counterspell: interrupts and locks the school out for 3 sec; also removes one magic buff
@@ -746,6 +775,8 @@ def build_visuals(source, out):
         visual[0] = spec['id']
         for kind in spec.get('clear', ()):
             visual[VISUAL_KITS[kind]] = 0
+        for column, value in spec.get('set', {}).items():
+            visual[column] = EFFECTS[value]['effect'] if isinstance(value, str) else value
         for kind, (kit_id, slots) in spec['kits'].items():
             kit = list(kits.rows[visual[VISUAL_KITS[kind]] or BLANK_KIT])
             kit[0] = kit_id
