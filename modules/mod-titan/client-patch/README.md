@@ -94,8 +94,8 @@ shockwave (`ground_burst()`), then burns the Demon Hunter while it lasts with Bl
 Fel Barrage's fel ball is a spell missile (`missile()`): retail's `fel_balllightning_creature`
 (wow.export's OBJ, JSON and textures in `spells/DH_FelBarrage_Ball/`), scaled to 1.2 yards, turning,
 each layer with its own texture, tint and scrolling, and Fel Rush's trail as a ribbon behind it. It
-is the missile model of a copy of the Burning Crusade demons' Fel Fireball visual (`set` in
-`VISUALS`).
+is the missile of a copy of Frozen Orb's visual (`set` in `VISUALS`), dropped from 10 yards above the
+Demon Hunter onto spots on the ground around them, a fel fire burst where each lands.
 
 Each spell's look is one of `VISUALS`: a copy of a Blizzard visual whose kits (precast, cast,
 impact) carry our trails and Blizzard's own fel effect models (fel flames on the hands, fel fire

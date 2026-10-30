@@ -352,25 +352,34 @@ class spell_titan_dh_fel_barrage : public AuraScript
     }
 };
 
-// Fel Barrage's pulse (90122): a fel ball (90123) at every enemy it finds, which deals the damage where it lands.
+// Fel Barrage's pulse (90122): BALLS_PER_PULSE fel balls (90123, only a look) fall on random spots on the
+// ground within its 8 yards.
 class spell_titan_dh_fel_barrage_pulse : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_fel_barrage_pulse);
+
+    static constexpr uint32 BALLS_PER_PULSE = 2;
+    static constexpr float RADIUS = 8.0f;
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
         return ValidateSpellInfo({ SPELL_FEL_BARRAGE_BALL });
     }
 
-    void Throw(SpellEffIndex /*effIndex*/)
+    void Bombard()
     {
-        if (Unit* target = GetHitUnit())
-            GetCaster()->CastSpell(target, SPELL_FEL_BARRAGE_BALL, true);
+        Unit* caster = GetCaster();
+        for (uint32 i = 0; i < BALLS_PER_PULSE; ++i)
+        {
+            Position spot = caster->GetRandomPoint(*caster, RADIUS);
+            caster->CastSpell(spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(), SPELL_FEL_BARRAGE_BALL,
+                true);
+        }
     }
 
     void Register() override
     {
-        OnEffectHitTarget += SpellEffectFn(spell_titan_dh_fel_barrage_pulse::Throw, EFFECT_0, SPELL_EFFECT_DUMMY);
+        AfterCast += SpellCastFn(spell_titan_dh_fel_barrage_pulse::Bombard);
     }
 };
 
