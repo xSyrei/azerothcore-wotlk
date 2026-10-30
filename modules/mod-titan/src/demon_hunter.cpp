@@ -52,11 +52,12 @@ enum DemonHunterSpells
     SPELL_TRAIL_OF_RUIN             = 90157,
     SPELL_SOUL_RENDING              = 90158,
     SPELL_UNBOUND_CHAOS             = 90159,
+    SPELL_INERTIA                   = 90160,
 };
 
 // The Havoc talents the scripts read, by rank (client-patch/patch_talents.py, HAVOC): each rank a passive aura
 // whose amount is the talent's number.
-constexpr std::array<uint32, 3> TALENT_BLIND_FURY = { 90200, 90201, 90202 };              // Fury per hit: effect 2
+constexpr std::array<uint32, 3> TALENT_BLIND_FURY = { 90200, 90201, 90202 };              // Fury per hit
 constexpr std::array<uint32, 3> TALENT_DEMONIC_APPETITE = { 90205, 90206, 90207 };        // % chance
 constexpr std::array<uint32, 2> TALENT_PREPARED = { 90208, 90209 };                       // Fury per sec
 constexpr std::array<uint32, 3> TALENT_BLOODLET = { 90210, 90211, 90212 };                // % of the hit
@@ -68,6 +69,8 @@ constexpr std::array<uint32, 3> TALENT_CYCLE_OF_HATRED = { 90236, 90237, 90238 }
 constexpr std::array<uint32, 2> TALENT_TRAIL_OF_RUIN = { 90239, 90240 };                  // % of the strike
 constexpr std::array<uint32, 2> TALENT_UNBOUND_CHAOS = { 90246, 90247 };                  // % damage
 constexpr std::array<uint32, 1> TALENT_DEMONIC = { 90248 };                               // sec
+constexpr std::array<uint32, 1> TALENT_ETERNAL_REAPING = { 90251 };
+constexpr std::array<uint32, 1> TALENT_INERTIA = { 90252 };                               // % damage
 constexpr int32 FURY_UNITS = 10;    // Fury is Runic Power, counted in tenths
 
 enum DemonHunterDisplays
@@ -188,7 +191,8 @@ class spell_titan_dh_fel_rush : public SpellScript
 
 // Fel Rush damage (90104): cast as the Demon Hunter sets off, it hits only the enemies in the lane
 // the dash crosses (15 yards ahead, 2 yards each side), not everything around. Fel Mastery (talent): Fury
-// when it hits; Unbound Chaos (talent): the buff that made it stronger is used up.
+// when it hits; Unbound Chaos (talent): the buff that made it stronger is used up, and with Inertia (talent)
+// turns into a damage buff.
 class spell_titan_dh_fel_rush_damage : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_fel_rush_damage);
@@ -204,7 +208,12 @@ class spell_titan_dh_fel_rush_damage : public SpellScript
 
     void UseUpUnboundChaos()
     {
-        GetCaster()->RemoveAurasDueToSpell(SPELL_UNBOUND_CHAOS);
+        Unit* caster = GetCaster();
+        if (!caster->HasAura(SPELL_UNBOUND_CHAOS))
+            return;
+
+        caster->RemoveAurasDueToSpell(SPELL_UNBOUND_CHAOS);
+        CastWithValue(caster, SPELL_INERTIA, TalentValue(caster, TALENT_INERTIA), caster);
     }
 
     void Register() override
@@ -226,7 +235,7 @@ class spell_titan_dh_eye_beam_damage : public SpellScript
         Unit* caster = GetCaster();
         KeepInLane(caster, targets, 2.5f);
         if (!targets.empty())
-            if (int32 fury = TalentValue(caster, TALENT_BLIND_FURY, EFFECT_1))
+            if (int32 fury = TalentValue(caster, TALENT_BLIND_FURY))
                 caster->ModifyPower(POWER_RUNIC_POWER, fury * FURY_UNITS);
     }
 
@@ -470,12 +479,14 @@ class spell_titan_dh_fel_barrage_pulse : public SpellScript
 };
 
 // Chaos Strike (90101) and its talents: Demonic Appetite (a chance to heal and gain Fury), Chaos Cleave (a share
-// of the hit to every other enemy near the target) and Cycle of Hatred (Eye Beam's cooldown shortened).
+// of the hit to the 3 other enemies nearest the target; every one with Eternal Reaping) and Cycle of Hatred (Eye
+// Beam's cooldown shortened).
 class spell_titan_dh_chaos_strike : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_chaos_strike);
 
     static constexpr float CLEAVE_RADIUS = 8.0f;
+    static constexpr std::size_t CLEAVE_TARGETS = 3;
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
@@ -499,9 +510,17 @@ class spell_titan_dh_chaos_strike : public SpellScript
             Acore::AnyUnfriendlyUnitInObjectRangeCheck check(target, caster, CLEAVE_RADIUS);
             Acore::UnitListSearcher<Acore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(target, enemies, check);
             Cell::VisitObjects(target, searcher, CLEAVE_RADIUS);
+            enemies.remove_if([caster, target](Unit* enemy)
+            {
+                return enemy == target || !caster->IsValidAttackTarget(enemy);
+            });
+            if (!TalentValue(caster, TALENT_ETERNAL_REAPING) && enemies.size() > CLEAVE_TARGETS)
+            {
+                enemies.sort(Acore::ObjectDistanceOrderPred(target));
+                enemies.resize(CLEAVE_TARGETS);
+            }
             for (Unit* enemy : enemies)
-                if (enemy != target && caster->IsValidAttackTarget(enemy))
-                    CastWithValue(caster, SPELL_CHAOS_CLEAVE, damage, enemy);
+                CastWithValue(caster, SPELL_CHAOS_CLEAVE, damage, enemy);
         }
 
         if (Player* player = caster->ToPlayer())

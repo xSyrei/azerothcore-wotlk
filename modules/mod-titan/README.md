@@ -116,7 +116,7 @@ Learn one in game with `.learn 90100` (needs the client patch for its name and i
 ### Havoc talents
 
 The Demon Hunter's talent tree (`client-patch/patch_talents.py`): TalentTab 412 (ClassMask `1 << 11`, the
-Demon Hunter) with talents 2300-2321, ranks 90200-90248, in the client's Talent.dbc / TalentTab.dbc and the
+Demon Hunter) with talents 2300-2324, ranks 90200-90252, in the client's Talent.dbc / TalentTab.dbc and the
 server's `talent_dbc` / `talenttab_dbc` (written with the spells into `titan_demon_hunter_spells.sql`). Wildcard
 grants their ranks like any class's talents and the Classless window shows the tree. Talents only amplify:
 nothing in the tree is an ability to press.
@@ -126,7 +126,9 @@ The Demon Hunter's spells are spell family 14 (unused by the game), each with a 
 modifiers aimed at them (tooltips in game show the change). The rest are dummy auras holding a number,
 read by `src/demon_hunter.cpp` (Blind Fury, Demonic Appetite, Prepared, Bloodlet, Master of the Glaive's
 slow, Desperate Instincts, Momentum, Chaos Cleave, Fel Mastery's Fury, Cycle of Hatred, Trail of Ruin,
-Soul Rending, Unbound Chaos, Demonic), with helper spells 90150-90159; Demon Blades is a proc the game runs.
+Soul Rending, Unbound Chaos, Demonic, Eternal Reaping, Inertia), with helper spells 90150-90160; Demon Blades is
+a proc the game runs. Some talents lead to a follow-up that takes part of their power (Blind Fury to Looks Can
+Kill, Chaos Cleave to Eternal Reaping, Unbound Chaos to Inertia); the tree's arrows show what needs what.
 
 **Never delete a talent or a rank spell players have**: the server asserts on loading a character with a
 talent spell it does not know. Retire one by leaving its rows and taking it out of the tree another way.

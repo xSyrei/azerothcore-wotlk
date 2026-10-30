@@ -101,80 +101,89 @@ def dummy(value):
 # description and effects take the rank (1 up); set is extra Spell.dbc columns (procs).
 HAVOC = [
     ('Blind Fury', 0, 1, 'Ability_DemonHunter_EyeBeam', None, 3,
-     lambda r: f'Eye Beam deals {10 * r}% more damage and generates {r + 1} Fury every time it strikes.',
-     lambda r: {1: mod(SPELLMOD_DAMAGE, EYE_BEAM_BEAM, 10 * r), 2: dummy(r + 1)}, {}),
+     lambda r: f'Eye Beam generates {r + 1} Fury every time it strikes.',
+     lambda r: {1: dummy(r + 1)}, {}),
     ('Improved Chaos Strike', 0, 2, 'Ability_DemonHunter_ChaosStrike', None, 2,
      lambda r: f'Chaos Strike deals {10 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, CHAOS_STRIKE, 10 * r)}, {}),
-    ('Demonic Appetite', 1, 0, 'Spell_Shadow_SoulLeech_3', None, 3,
+    ('Demonic Appetite', 2, 2, 'Spell_Shadow_SoulLeech_3', None, 3,
      lambda r: f'Chaos Strike has a {10 * r}% chance to feed your hunger, healing you for 5% of your maximum '
                'health and generating 20 Fury.',
      lambda r: {1: dummy(10 * r)}, {}),
-    ('Prepared', 1, 1, 'Ability_DemonHunter_VengefulRetreat', None, 2,
+    ('Prepared', 1, 3, 'Ability_DemonHunter_VengefulRetreat', None, 2,
      lambda r: f'Vengeful Retreat generates {10 * r} Fury over 5 sec.',
      lambda r: {1: dummy(2 * r)}, {}),
-    ('Bloodlet', 1, 2, 'Ability_DemonHunter_Bloodlet', None, 3,
-     lambda r: f'Throw Glaive causes enemies to bleed for {(33, 66, 100)[r - 1]}% of the damage it dealt '
-               'over 6 sec.',
-     lambda r: {1: dummy((33, 66, 100)[r - 1])}, {}),
-    ('Serrated Glaive', 1, 3, 'Ability_DemonHunter_ThrowGlaive', None, 2,
+    ('Bloodlet', 2, 0, 'Ability_DemonHunter_Bloodlet', 'Serrated Glaive', 3,
+     lambda r: f'Throw Glaive causes enemies to bleed for {20 * r}% of the damage it dealt over 6 sec.',
+     lambda r: {1: dummy(20 * r)}, {}),
+    ('Serrated Glaive', 1, 0, 'Ability_DemonHunter_ThrowGlaive', None, 2,
      lambda r: f'Throw Glaive deals {15 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, THROW_GLAIVE, 15 * r)}, {}),
-    ('Dancing with Fate', 2, 0, 'Ability_DemonHunter_BladeDance', None, 2,
+    ('Dancing with Fate', 3, 2, 'Ability_DemonHunter_BladeDance', None, 2,
      lambda r: f'Blade Dance\'s strikes deal {10 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, BLADE_DANCE_STRIKES, 10 * r)}, {}),
-    ('Master of the Glaive', 2, 1, 'INV_Weapon_Glave_01', None, 1,
+    ('Master of the Glaive', 3, 0, 'INV_Weapon_Glave_01', None, 1,
      lambda r: 'Throw Glaive\'s cooldown is 3 sec shorter, and it slows its targets by 50% for 6 sec.',
      lambda r: {1: mod(SPELLMOD_COOLDOWN, THROW_GLAIVE, -3000, flat=True), 2: dummy(50)}, {}),
-    ('Desperate Instincts', 2, 3, 'Ability_DemonHunter_Blur', None, 2,
+    ('Desperate Instincts', 4, 1, 'Ability_DemonHunter_Blur', None, 2,
      lambda r: f'Taking damage that leaves you below 35% health makes you Blur. Cannot happen more than once '
                f'every {(120, 60)[r - 1]} sec.',
      lambda r: {1: dummy((120, 60)[r - 1])}, {'ProcFlags': PROC_FLAG_TAKEN_DAMAGE, 'ProcChance': 100}),
-    ('Critical Chaos', 3, 0, 'Ability_CriticalStrike', None, 2,
+    ('Critical Chaos', 1, 2, 'Ability_CriticalStrike', 'Improved Chaos Strike', 2,
      lambda r: f'Chaos Strike and Blade Dance\'s strikes have a {5 * r}% higher chance to be a critical strike.',
      lambda r: {1: mod(SPELLMOD_CRITICAL_CHANCE, CHAOS_STRIKE | BLADE_DANCE_STRIKES, 5 * r, flat=True)}, {}),
-    ('Unleashed Power', 3, 1, 'Spell_Fire_FelFireNova', 'Master of the Glaive', 3,
+    ('Unleashed Power', 4, 0, 'Spell_Fire_FelFireNova', 'Master of the Glaive', 3,
      lambda r: f'Chaos Nova costs {(33, 66, 100)[r - 1]}% less Fury and its cooldown is {10 * r} sec shorter.',
      lambda r: {1: mod(SPELLMOD_COST, CHAOS_NOVA, -(33, 66, 100)[r - 1]),
                 2: mod(SPELLMOD_COOLDOWN, CHAOS_NOVA, -10000 * r, flat=True)}, {}),
-    ('Momentum', 3, 2, 'Ability_Rogue_Sprint', None, 2,
+    ('Momentum', 2, 3, 'Ability_Rogue_Sprint', 'Prepared', 2,
      lambda r: f'Fel Rush and Vengeful Retreat increase all damage you deal by {5 * r}% for 6 sec.',
      lambda r: {1: dummy(5 * r)}, {}),
-    ('Chaos Cleave', 4, 0, 'Ability_Warrior_Cleave', None, 3,
-     lambda r: f'Chaos Strike also deals {10 * r}% of its damage as Chaos to every other enemy within 8 yards '
-               'of its target.',
+    ('Chaos Cleave', 5, 2, 'Ability_Warrior_Cleave', None, 3,
+     lambda r: f'Chaos Strike also deals {10 * r}% of its damage as Chaos to up to 3 other enemies within 8 '
+               'yards of its target.',
      lambda r: {1: dummy(10 * r)}, {}),
-    ('Demon Blades', 4, 1, 'Spell_Shadow_DemonicTactics', None, 1,
+    ('Demon Blades', 6, 1, 'Spell_Shadow_DemonicTactics', None, 1,
      lambda r: 'Your auto attacks deal an additional 20% of your attack power as Shadow damage and generate '
                '12 Fury.',
      lambda r: {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_PROC_TRIGGER_SPELL, 'TriggerSpell': 90156,
                     'TargetA': TARGET_UNIT_CASTER}},
      {'ProcFlags': PROC_FLAG_DONE_MELEE_AUTO_ATTACK, 'ProcChance': 100}),
-    ('Fel Mastery', 4, 2, 'Ability_DemonHunter_FelRush', None, 2,
+    ('Fel Mastery', 3, 3, 'Ability_DemonHunter_FelRush', None, 2,
      lambda r: f'Fel Rush deals {15 * r}% more damage and generates {10 * r} Fury when it hits.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, FEL_RUSH_HIT, 15 * r), 2: dummy(10 * r)}, {}),
-    ('Any Means Necessary', 4, 3, 'Ability_Warlock_ChaosBolt', None, 3,
+    ('Any Means Necessary', 7, 0, 'Ability_Warlock_ChaosBolt', None, 3,
      lambda r: f'Your Chaos damage abilities deal {4 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, CHAOS_DAMAGE, 4 * r)}, {}),
-    ('Cycle of Hatred', 5, 1, 'Ability_DemonHunter_CycleOfHatred', None, 3,
+    ('Cycle of Hatred', 7, 1, 'Ability_DemonHunter_CycleOfHatred', None, 3,
      lambda r: f'Chaos Strike reduces the remaining cooldown of Eye Beam by {r} sec.',
      lambda r: {1: dummy(r)}, {}),
-    ('Trail of Ruin', 5, 2, 'Spell_Fire_FelFlameRing', None, 2,
+    ('Trail of Ruin', 4, 2, 'Spell_Fire_FelFlameRing', 'Dancing with Fate', 2,
      lambda r: f'The last strike of Blade Dance burns its targets for {20 * r}% of its damage as Chaos over '
                '4 sec.',
      lambda r: {1: dummy(20 * r)}, {}),
-    ('Soul Rending', 6, 0, 'Spell_Shadow_LifeDrain', None, 3,
+    ('Soul Rending', 8, 0, 'Spell_Shadow_LifeDrain', None, 3,
      lambda r: f'You heal for {4 * r}% of the damage you deal, twice as much in Metamorphosis.',
      lambda r: {1: dummy(4 * r)}, {'ProcFlags': PROC_FLAGS_DONE_DAMAGE, 'ProcChance': 100}),
-    ('Know Your Enemy', 6, 1, 'Ability_Hunter_MasterMarksman', None, 2,
+    ('Know Your Enemy', 8, 2, 'Ability_Hunter_MasterMarksman', None, 2,
      lambda r: f'Your Demon Hunter abilities deal {10 * r}% more damage with critical strikes.',
      lambda r: {1: mod(SPELLMOD_CRIT_DAMAGE_BONUS, ALL_DAMAGE, 10 * r)}, {}),
-    ('Unbound Chaos', 6, 2, 'Ability_DemonHunter_UnboundChaos', None, 2,
-     lambda r: f'Immolation Aura makes your next Fel Rush within 20 sec deal {50 * r}% more damage.',
-     lambda r: {1: dummy(50 * r)}, {}),
-    ('Demonic', 7, 1, 'Spell_Shadow_DemonForm', None, 1,
+    ('Unbound Chaos', 5, 3, 'Ability_DemonHunter_UnboundChaos', None, 2,
+     lambda r: f'Immolation Aura makes your next Fel Rush within 20 sec deal {25 * r}% more damage.',
+     lambda r: {1: dummy(25 * r)}, {}),
+    ('Demonic', 9, 1, 'Spell_Shadow_DemonForm', 'Cycle of Hatred', 1,
      lambda r: 'Eye Beam transforms you into Metamorphosis for 8 sec after it ends, if you are not in it.',
      lambda r: {1: dummy(8)}, {}),
+    # Follow-ups: a talent's power split with the one it leads to.
+    ('Looks Can Kill', 1, 1, 'Spell_Shadow_Charm', 'Blind Fury', 2,
+     lambda r: f'Eye Beam deals {10 * r}% more damage.',
+     lambda r: {1: mod(SPELLMOD_DAMAGE, EYE_BEAM_BEAM, 10 * r)}, {}),
+    ('Eternal Reaping', 6, 2, 'Ability_Warrior_Bladestorm', 'Chaos Cleave', 1,
+     lambda r: 'Chaos Cleave strikes every other enemy within 8 yards of the target, not just 3.',
+     lambda r: {1: dummy(1)}, {}),
+    ('Inertia', 6, 3, 'Ability_Warrior_DecisiveStrike', 'Unbound Chaos', 1,
+     lambda r: 'A Fel Rush empowered by Unbound Chaos also increases all damage you deal by 10% for 5 sec.',
+     lambda r: {1: dummy(10)}, {}),
 ]
 
 # The scripts' helper spells: what the talents cast (heals, Fury, bleeds, buffs, hits).
@@ -247,6 +256,14 @@ HELPERS = [
         'effects': {1: {'Effect': EFFECT_HEAL, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
+        # Damage %: the script's value (Inertia's).
+        'id': 90160, 'copy': SELF_TEMPLATE, 'name': 'Inertia', 'icon': 'Ability_Warrior_DecisiveStrike',
+        'description': '', 'tooltip': 'All damage dealt increased by $s1%.', 'clear': [1, 2, 3],
+        'duration': DURATION_5S,
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_DONE, 'BasePoints': 9,
+                        'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
         # Damage %: the script's value (Unbound Chaos's rank); the next Fel Rush uses it up.
         'id': 90159, 'copy': SELF_TEMPLATE, 'name': 'Unbound Chaos', 'icon': 'Ability_DemonHunter_UnboundChaos',
         'description': '', 'tooltip': 'Your next Fel Rush deals $s1% more damage.', 'clear': [1, 2, 3],
@@ -264,9 +281,9 @@ HELPER_SET = {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'Star
 
 def talents():
     """[(talent id, tab, row, column, rank spell ids, prerequisite talent id)] for TALENT rows."""
-    rows, ids, spell_id = [], {}, FIRST_RANK_SPELL
-    for talent_id, (name, row, column, _, requires, ranks, *_) in enumerate(HAVOC, FIRST_TALENT_ID):
-        ids[name] = talent_id
+    ids = {talent[0]: talent_id for talent_id, talent in enumerate(HAVOC, FIRST_TALENT_ID)}
+    rows, spell_id = [], FIRST_RANK_SPELL
+    for talent_id, (_, row, column, _, requires, ranks, *_) in enumerate(HAVOC, FIRST_TALENT_ID):
         rows.append((talent_id, HAVOC_TAB, row, column, list(range(spell_id, spell_id + ranks)),
                      ids[requires] if requires else 0))
         spell_id += ranks
