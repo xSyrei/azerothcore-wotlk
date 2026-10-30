@@ -26,7 +26,7 @@ EFFECT_SCHOOL_DAMAGE, EFFECT_APPLY_AURA, EFFECT_HEAL, EFFECT_ENERGIZE, EFFECT_HE
 AURA_DUMMY, AURA_PERIODIC_DAMAGE, AURA_PROC_TRIGGER_SPELL = 4, 3, 42
 AURA_PERIODIC_ENERGIZE, AURA_MOD_DECREASE_SPEED, AURA_MOD_DAMAGE_PERCENT_DONE = 24, 33, 79
 AURA_ADD_FLAT_MODIFIER, AURA_ADD_PCT_MODIFIER = 107, 108
-SPELLMOD_DAMAGE, SPELLMOD_CRITICAL_CHANCE, SPELLMOD_COOLDOWN, SPELLMOD_COST = 0, 7, 11, 14
+SPELLMOD_DAMAGE, SPELLMOD_DURATION, SPELLMOD_CRITICAL_CHANCE, SPELLMOD_COOLDOWN, SPELLMOD_COST = 0, 1, 7, 11, 14
 SPELLMOD_CRIT_DAMAGE_BONUS = 15
 TARGET_UNIT_CASTER, TARGET_UNIT_TARGET_ENEMY = 1, 6
 PROC_FLAG_DONE_MELEE_AUTO_ATTACK, PROC_FLAG_TAKEN_DAMAGE = 0x4, 0x100000
@@ -78,11 +78,12 @@ FAMILY_FLAGS = {
 }
 DEMONS_BITE, CHAOS_STRIKE, BLADE_DANCE_STRIKES, FEL_RUSH_HIT = 0x1, 0x2, 0x8, 0x20
 EYE_BEAM_BEAM, THROW_GLAIVE, CHAOS_NOVA = 0x80, 0x100, 0x200
-IMMOLATION_PULSE, SHEAR, SOUL_CLEAVE, SIGIL_OF_CHAINS = 0x10000, 0x800000, 0x1000000, 0x10000000
+IMMOLATION_PULSE, SHEAR, SOUL_CLEAVE, DEMON_SPIKES = 0x10000, 0x800000, 0x1000000, 0x2000000
+SIGIL_OF_CHAINS = 0x10000000
 AURA_SCHOOL_ABSORB, AURA_PERIODIC_DUMMY, AURA_PERIODIC_HEAL, AURA_DAMAGE_SHIELD = 69, 226, 8, 15
 AURA_MOD_RESISTANCE_PCT, AURA_MOD_DAMAGE_PERCENT_TAKEN = 101, 87
 FIRE = 0x4
-DURATION_12S = 29
+DURATION_12S, DURATION_3MIN = 29, 25
 # Direct Chaos damage, and every direct damage spell (strikes, hits, pulses).
 CHAOS_DAMAGE = CHAOS_STRIKE | FEL_RUSH_HIT | EYE_BEAM_BEAM | CHAOS_NOVA | 0x40000
 ALL_DAMAGE = (DEMONS_BITE | CHAOS_DAMAGE | BLADE_DANCE_STRIKES | THROW_GLAIVE | 0x2000 | 0x10000 | 0x80000
@@ -206,7 +207,7 @@ VENGEANCE = [
     ('Improved Shear', 0, 0, 'Ability_DemonHunter_Shear', None, 2,
      lambda r: f'Shear deals {15 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, SHEAR, 15 * r)}, {}),
-    ('Shear Fury', 1, 0, 'Ability_DemonHunter_Shear', 'Improved Shear', 1,
+    ('Shear Fury', 1, 0, 'Ability_Warlock_DemonicEmpowerment', 'Improved Shear', 1,
      lambda r: 'Shear generates 10 more Fury.',
      lambda r: {1: dummy(10)}, {}),
     ('Agonizing Flames', 0, 1, 'Spell_Fire_Incinerate', None, 3,
@@ -216,56 +217,67 @@ VENGEANCE = [
      lambda r: f'While Immolation Aura burns, your armor is increased by {10 * r}% and enemies striking you in melee '
                f'take {10 * r}% of your attack power as Fire damage.',
      lambda r: {1: dummy(10 * r)}, {}),
-    ('Razor Spikes', 0, 2, 'Ability_DemonHunter_DemonSpikes', None, 3,
+    ('Razor Spikes', 1, 2, 'Ability_DemonHunter_DemonSpikes', None, 3,
      lambda r: f'Demon Spikes also increases your Physical damage by {5 * r}%.',
      lambda r: {1: dummy(5 * r)}, {}),
-    ('Painbringer', 1, 2, 'Ability_DemonHunter_Painbringer', 'Razor Spikes', 2,
-     lambda r: f'Consuming Soul Fragments reduces all damage you take by {3 * r}% for 6 sec.',
-     lambda r: {1: dummy(3 * r)}, {}),
+    ('Painbringer', 2, 2, 'Ability_DemonHunter_Painbringer', 'Razor Spikes', 2,
+     lambda r: f'Consuming Soul Fragments reduces all damage you take by {5 * r}% for 6 sec.',
+     lambda r: {1: dummy(5 * r)}, {}),
     ('Quickened Sigils', 0, 3, 'Ability_DemonHunter_QuickenedSigils', None, 2,
      lambda r: f'Sigil of Chains arms {r * 0.5:g} sec faster and its cooldown is {10 * r} sec shorter.',
      lambda r: {1: dummy(500 * r), 2: mod(SPELLMOD_COOLDOWN, SIGIL_OF_CHAINS, -10000 * r, flat=True)}, {}),
     ('Concentrated Sigils', 1, 3, 'Ability_DemonHunter_SigilOfChains', 'Quickened Sigils', 1,
      lambda r: 'Sigil of Chains pulls enemies from 12 yards away instead of 8.',
      lambda r: {1: dummy(12)}, {}),
-    ('Focused Cleave', 3, 0, 'Ability_DemonHunter_SoulCleave', None, 2,
+    ('Focused Cleave', 2, 0, 'Ability_DemonHunter_SoulCleave', None, 2,
      lambda r: f'Soul Cleave deals {10 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, SOUL_CLEAVE, 10 * r)}, {}),
     ('Charred Flesh', 3, 1, 'Ability_DemonHunter_FieryBrand', None, 3,
      lambda r: f'Immolation Aura\'s pulses extend Fiery Brand on the enemies they hit by {r * 0.25:g} sec.',
      lambda r: {1: dummy(250 * r)}, {}),
-    ('Fallout', 3, 2, 'Spell_Shadow_SoulGem', None, 2,
+    ('Fallout', 4, 2, 'Spell_Shadow_SoulGem', None, 2,
      lambda r: f'Each Immolation Aura pulse that hits an enemy has a {15 * r}% chance to shatter a Soul Fragment.',
      lambda r: {1: dummy(15 * r)}, {}),
-    ('Cover of Darkness', 3, 3, 'Ability_DemonHunter_Darkness', None, 2,
+    ('Cover of Darkness', 2, 3, 'Ability_DemonHunter_Darkness', None, 2,
      lambda r: f'Darkness gives a {20 + 5 * r}% chance to avoid all damage from an attack.',
      lambda r: {1: dummy(5 * r)}, {}),
     ('Burning Alive', 4, 1, 'Spell_Fire_FelFlameRing', 'Charred Flesh', 1,
      lambda r: 'Every 2 sec, Fiery Brand spreads to a nearby enemy that is not branded.',
      lambda r: {1: dummy(1)}, {}),
-    ('Feed the Demon', 4, 2, 'Ability_DemonHunter_DemonSpikes', 'Fallout', 2,
+    ('Feed the Demon', 5, 2, 'Spell_Shadow_SacrificialShield', 'Fallout', 2,
      lambda r: f'Each Soul Fragment you consume reduces the remaining cooldown of Demon Spikes by {r * 0.5:g} sec.',
      lambda r: {1: dummy(500 * r)}, {}),
-    ('Feast of Souls', 6, 0, 'Spell_Shadow_SoulLeech_3', None, 2,
-     lambda r: f'Soul Cleave heals you for an additional {5 * r}% of your maximum health over 6 sec.',
-     lambda r: {1: dummy(5 * r)}, {}),
-    ('Fiery Demise', 6, 1, 'Spell_Fire_FelFire', None, 2,
+    ('Feast of Souls', 3, 0, 'Spell_Shadow_SoulLeech_3', None, 2,
+     lambda r: f'Soul Cleave heals you for an additional {8 * r}% of your maximum health over 6 sec.',
+     lambda r: {1: dummy(8 * r)}, {}),
+    ('Fiery Demise', 5, 1, 'Spell_Fire_FelFire', None, 2,
      lambda r: f'Enemies branded by your Fiery Brand take {15 * r}% more Fire damage from you.',
      lambda r: {1: dummy(15 * r)}, {}),
-    ('Last Resort', 6, 2, 'Ability_DemonHunter_Blur', None, 1,
-     lambda r: 'Damage that would kill you instead leaves you at 30% health. Cannot happen more than once every '
+    ('Last Resort', 6, 2, 'INV_Misc_Bone_HumanSkull_01', 'Feed the Demon', 1,
+     lambda r: 'Damage that would kill you instead leaves you at 40% health. Cannot happen more than once every '
                '3 min.',
-     lambda r: {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': -2, 'DieSides': 1,
-                    'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}}, {}),
-    ('Ruinous Bulwark', 6, 3, 'Ability_DemonHunter_SoulBarrier', None, 2,
+     lambda r: {1: dummy(40)}, {}),
+    ('Ruinous Bulwark', 3, 3, 'Ability_DemonHunter_SoulBarrier', None, 2,
      lambda r: f'Soul Barrier absorbs {15 * r}% more damage.',
      lambda r: {1: dummy(15 * r)}, {}),
-    ('Void Reaver', 7, 0, 'Spell_Shadow_ShadowWordPain', 'Feast of Souls', 3,
-     lambda r: f'Enemies struck by Soul Cleave deal {2 * r}% less damage to you for 12 sec.',
-     lambda r: {1: dummy(2 * r)}, {}),
-    ('Vulnerability', 9, 1, 'Ability_DemonHunter_SpiritBomb', None, 2,
+    ('Void Reaver', 4, 0, 'Spell_Shadow_ShadowWordPain', 'Feast of Souls', 3,
+     lambda r: f'Enemies struck by Soul Cleave deal {3 * r}% less damage to you for 12 sec.',
+     lambda r: {1: dummy(3 * r)}, {}),
+    ('Vulnerability', 7, 1, 'Ability_DemonHunter_SpiritBomb', None, 2,
      lambda r: f'Enemies afflicted by Frailty take {3 * r}% more damage from you.',
      lambda r: {1: dummy(3 * r)}, {}),
+    # More to survive with.
+    ('Demonic Wards', 0, 2, 'Spell_Shadow_AntiMagicShell', None, 3,
+     lambda r: f'Reduces all damage you take by {(3, 6, 10)[r - 1]}%.',
+     lambda r: {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_TAKEN,
+                    'BasePoints': -(3, 6, 10)[r - 1] - 1, 'DieSides': 1, 'MiscValue': CHAOS,
+                    'TargetA': TARGET_UNIT_CASTER}}, {}),
+    ('Fel Flame Fortification', 2, 1, 'Spell_Fire_FireArmor', 'Infernal Armor', 2,
+     lambda r: f'While Immolation Aura burns, you take {5 * r}% less damage.',
+     lambda r: {1: dummy(5 * r)}, {}),
+    ('Calcified Spikes', 3, 2, 'Ability_Warrior_ShieldWall', 'Painbringer', 2,
+     lambda r: f'Demon Spikes lasts {2 * r} sec longer.',
+     lambda r: {1: mod(SPELLMOD_DURATION, DEMON_SPIKES, 2000 * r, flat=True)}, {}),
 ]
 
 # The scripts' helper spells: what the talents cast (heals, Fury, bleeds, buffs, hits).
@@ -385,6 +397,21 @@ HELPERS = [
         'description': '', 'tooltip': 'Damage taken reduced by $s1%.', 'clear': [1, 2, 3], 'duration': DURATION_6S,
         'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_TAKEN, 'BasePoints': -4,
                         'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # Damage taken -%: the script's value (Fel Flame Fortification's rank), for as long as Immolation Aura.
+        'id': 90166, 'copy': SELF_TEMPLATE, 'name': 'Fel Flame Fortification', 'icon': 'Spell_Fire_FireArmor',
+        'description': '', 'tooltip': 'Damage taken reduced by $s1%.', 'clear': [1, 2, 3], 'duration': DURATION_6S,
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_TAKEN, 'BasePoints': -6,
+                        'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # Last Resort's cooldown, shown on the Demon Hunter (the server's titan_dh_damage_taken checks it).
+        'id': 90167, 'copy': SELF_TEMPLATE, 'name': 'Uncontained Fel', 'icon': 'INV_Misc_Bone_HumanSkull_01',
+        'description': '', 'tooltip': 'Last Resort cannot save you again yet.', 'clear': [1, 2, 3],
+        'duration': DURATION_3MIN,
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 1,
+                        'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Damage %: the script's value (Unbound Chaos's rank); the next Fel Rush uses it up.

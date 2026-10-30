@@ -140,13 +140,14 @@ Kill, Chaos Cleave to Eternal Reaping, Unbound Chaos to Inertia); the tree's arr
 
 ### Vengeance talents
 
-TalentTab 413, talents 2325-2344, ranks 90253-90292, built the same way (`VENGEANCE` in `patch_talents.py`), one
-theme a column: strikes (Improved Shear, Shear Fury, Focused Cleave, Feast of Souls, Void Reaver), fire
-(Agonizing Flames, Infernal Armor, Charred Flesh, Burning Alive, Fiery Demise), souls and spikes (Razor Spikes,
-Painbringer, Fallout, Feed the Demon, Last Resort), sigils and shields (Quickened and Concentrated Sigils, Cover of
-Darkness, Ruinous Bulwark), and Vulnerability under Spirit Bomb, Vengeance's capstone (level 30). Fiery Demise and
-Vulnerability raise damage taken through a UnitScript (`titan_dh_damage_taken`); Last Resort is a shield of no
-size absorbing a killing blow; helpers 90161-90165.
+TalentTab 413, talents 2325-2347, ranks 90253-90299, built the same way (`VENGEANCE` in `patch_talents.py`), one
+theme a column, row after row: strikes (Improved Shear, Shear Fury, Focused Cleave, Feast of Souls, Void Reaver),
+fire (Agonizing Flames, Infernal Armor, Fel Flame Fortification, Charred Flesh, Burning Alive, Fiery Demise,
+Vulnerability under Spirit Bomb, Vengeance's capstone at level 30), souls and spikes (Demonic Wards, Razor Spikes,
+Painbringer, Calcified Spikes, Fallout, Feed the Demon, Last Resort), sigils and shields (Quickened and
+Concentrated Sigils, Cover of Darkness, Ruinous Bulwark). Fiery Demise, Vulnerability and Last Resort (a killing
+blow leaves 40% health, then Uncontained Fel for 3 min) are a UnitScript's (`titan_dh_damage_taken`); helpers
+90161-90167.
 
 **Never delete a talent or a rank spell players have**: the server asserts on loading a character with a
 talent spell it does not know. Retire one by leaving its rows and taking it out of the tree another way.

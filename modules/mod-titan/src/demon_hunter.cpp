@@ -66,6 +66,8 @@ enum DemonHunterSpells
     SPELL_VOID_REAVER               = 90163,
     SPELL_RAZOR_SPIKES              = 90164,
     SPELL_PAINBRINGER               = 90165,
+    SPELL_FEL_FLAME_FORTIFICATION   = 90166,
+    SPELL_UNCONTAINED_FEL           = 90167,
 };
 
 // The Havoc talents the scripts read, by rank (client-patch/patch_talents.py, HAVOC): each rank a passive aura
@@ -101,6 +103,8 @@ constexpr std::array<uint32, 2> TALENT_FIERY_DEMISE = { 90283, 90284 };         
 constexpr std::array<uint32, 2> TALENT_RUINOUS_BULWARK = { 90286, 90287 };                // % more absorbed
 constexpr std::array<uint32, 3> TALENT_VOID_REAVER = { 90288, 90289, 90290 };             // % less damage dealt
 constexpr std::array<uint32, 2> TALENT_VULNERABILITY = { 90291, 90292 };                  // % more damage taken
+constexpr std::array<uint32, 1> TALENT_LAST_RESORT = { 90285 };                           // % health left
+constexpr std::array<uint32, 2> TALENT_FEL_FLAME_FORTIFICATION = { 90296, 90297 };        // % less damage taken
 constexpr int32 FURY_UNITS = 10;    // Fury is Runic Power, counted in tenths
 
 enum DemonHunterDisplays
@@ -590,15 +594,15 @@ class spell_titan_dh_vengeful_retreat : public SpellScript
     }
 };
 
-// Immolation Aura (90119) and its talents: Unbound Chaos (the next Fel Rush is stronger) and Infernal Armor (more
-// armor, and Fire damage to melee attackers, while it burns).
+// Immolation Aura (90119) and its talents: Unbound Chaos (the next Fel Rush is stronger), Infernal Armor (more
+// armor, and Fire damage to melee attackers, while it burns) and Fel Flame Fortification (less damage taken).
 class spell_titan_dh_immolation_aura : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_immolation_aura);
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo({ SPELL_UNBOUND_CHAOS, SPELL_INFERNAL_ARMOR });
+        return ValidateSpellInfo({ SPELL_UNBOUND_CHAOS, SPELL_INFERNAL_ARMOR, SPELL_FEL_FLAME_FORTIFICATION });
     }
 
     void Empower()
@@ -613,6 +617,8 @@ class spell_titan_dh_immolation_aura : public SpellScript
                 std::max(1, CalculatePct(int32(caster->GetTotalAttackPowerValue(BASE_ATTACK)), pct)));
             caster->CastCustomSpell(SPELL_INFERNAL_ARMOR, values, caster, TRIGGERED_FULL_MASK);
         }
+        CastWithValue(caster, SPELL_FEL_FLAME_FORTIFICATION, TalentValue(caster, TALENT_FEL_FLAME_FORTIFICATION),
+            caster);
     }
 
     void Register() override
@@ -986,7 +992,8 @@ class spell_titan_dh_shear : public SpellScript
     }
 };
 
-// Demon Spikes (90127) and Razor Spikes (talent): more Physical damage for as long.
+// Demon Spikes (90127) and Razor Spikes (talent): more Physical damage for as long (Calcified Spikes, talent, makes
+// Demon Spikes longer).
 class spell_titan_dh_demon_spikes : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_demon_spikes);
@@ -1000,6 +1007,13 @@ class spell_titan_dh_demon_spikes : public SpellScript
     {
         Unit* caster = GetCaster();
         CastWithValue(caster, SPELL_RAZOR_SPIKES, TalentValue(caster, TALENT_RAZOR_SPIKES), caster);
+        Aura* spikes = caster->GetAura(SPELL_DEMON_SPIKES);
+        Aura* razor = caster->GetAura(SPELL_RAZOR_SPIKES);
+        if (spikes && razor)
+        {
+            razor->SetMaxDuration(spikes->GetDuration());
+            razor->SetDuration(spikes->GetDuration());
+        }
     }
 
     void Register() override
@@ -1088,46 +1102,32 @@ class spell_titan_dh_fiery_brand : public AuraScript
     }
 };
 
-// Last Resort (talent, 90285): a shield of no size (-1) that absorbs a killing blow, leaving the Demon Hunter at
-// 30% health, at most once every 3 min.
-class spell_titan_dh_last_resort : public AuraScript
-{
-    PrepareAuraScript(spell_titan_dh_last_resort);
-
-    static constexpr int32 HEALTH_PCT = 30;
-    static constexpr Seconds COOLDOWN = 180s;
-
-    void Absorb(AuraEffect* /*aurEff*/, DamageInfo& dmgInfo, uint32& absorbAmount)
-    {
-        absorbAmount = 0;
-        Unit* target = GetTarget();
-        if (dmgInfo.GetDamage() < target->GetHealth() || GameTime::GetGameTime() < _ready)
-            return;
-
-        _ready = GameTime::GetGameTime() + COOLDOWN;
-        uint32 left = std::min(target->CountPctFromMaxHealth(HEALTH_PCT), target->GetHealth());
-        absorbAmount = dmgInfo.GetDamage() - (target->GetHealth() - left);
-    }
-
-    void Register() override
-    {
-        OnEffectAbsorb += AuraEffectAbsorbFn(spell_titan_dh_last_resort::Absorb, EFFECT_0);
-    }
-
-private:
-    Seconds _ready = 0s;
-};
-
 // Fiery Demise and Vulnerability (talents): enemies the Demon Hunter branded take more of their Fire damage, and
-// enemies with their Frailty more of all their damage.
+// enemies with their Frailty more of all their damage. Last Resort (talent): a blow that would kill the Demon
+// Hunter leaves them at (the talent's number)% health instead, then not again while Uncontained Fel (3 min) lasts.
 class titan_dh_damage_taken : public UnitScript
 {
 public:
     titan_dh_damage_taken() : UnitScript("titan_dh_damage_taken", true, {
         UNITHOOK_MODIFY_MELEE_DAMAGE,
         UNITHOOK_MODIFY_SPELL_DAMAGE_TAKEN,
-        UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK
+        UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK,
+        UNITHOOK_ON_DAMAGE
     }) { }
+
+    void OnDamage(Unit* /*attacker*/, Unit* victim, uint32& damage) override
+    {
+        if (!victim || damage < victim->GetHealth() || victim->HasAura(SPELL_UNCONTAINED_FEL))
+            return;
+
+        int32 pct = TalentValue(victim, TALENT_LAST_RESORT);
+        if (!pct)
+            return;
+
+        uint32 left = victim->CountPctFromMaxHealth(pct);
+        damage = victim->GetHealth() > left ? victim->GetHealth() - left : 0;
+        victim->CastSpell(victim, SPELL_UNCONTAINED_FEL, true);
+    }
 
     static int32 BonusPct(Unit* target, Unit* attacker, SpellInfo const* spellInfo)
     {
@@ -1193,6 +1193,5 @@ void AddSC_demon_hunter()
     RegisterSpellScript(spell_titan_dh_demon_spikes);
     RegisterSpellScript(spell_titan_dh_immolation_aura_pulse);
     RegisterSpellScript(spell_titan_dh_fiery_brand);
-    RegisterSpellScript(spell_titan_dh_last_resort);
     new titan_dh_damage_taken();
 }
