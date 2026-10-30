@@ -277,12 +277,13 @@ check(shownCells(grid.cells) == "", "learnable now hides known Fireball")
 EmberforgeClasslessLearnable.checked = false
 EmberforgeClasslessLearnable.scripts.OnClick(EmberforgeClasslessLearnable)
 
--- Demon Hunter and Monk: their own specs, no talent tree in the client yet.
+-- Demon Hunter and Monk: their own specs. The Demon Hunter's trees are on the warlock's art (no "no tree" note).
 demonHunterButton:Click()
 check(shownTabs(specs.specButtons) == "Havoc,Vengeance", "Demon Hunter specs: Havoc, Vengeance")
 specs.specButtons[1]:Click()
 check(shownCells(grid.cells) == "Chaos Strike", "Havoc lists the Demon Hunter's own Chaos Strike")
-check(tree.treeNote.shown and tree.backgrounds[1].texture == nil, "no talent tree yet, said so")
+check(not tree.treeNote.shown and tree.backgrounds[1].texture == "Interface\\TalentFrame\\WarlockSummoning-TopLeft",
+    "Havoc on the Demonology art, no note")
 monkButton:Click()
 check(shownTabs(specs.specButtons) == "Brewmaster,Mistweaver,Windwalker",
     "Monk specs: Brewmaster, Mistweaver, Windwalker")
