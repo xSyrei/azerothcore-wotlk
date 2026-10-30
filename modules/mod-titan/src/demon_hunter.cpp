@@ -324,6 +324,33 @@ class spell_titan_dh_darkness : public AuraScript
     }
 };
 
+// Fel Barrage (90121): each pulse drains 5 Fury (Fury is Runic Power, in tenths); with less left the barrage
+// ends instead of pulsing.
+class spell_titan_dh_fel_barrage : public AuraScript
+{
+    PrepareAuraScript(spell_titan_dh_fel_barrage);
+
+    static constexpr int32 FURY_PER_PULSE = 50;
+
+    void Drain(AuraEffect const* /*aurEff*/)
+    {
+        Unit* target = GetTarget();
+        if (target->GetPower(POWER_RUNIC_POWER) < FURY_PER_PULSE)
+        {
+            PreventDefaultAction();
+            Remove();
+            return;
+        }
+        target->ModifyPower(POWER_RUNIC_POWER, -FURY_PER_PULSE);
+    }
+
+    void Register() override
+    {
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_dh_fel_barrage::Drain, EFFECT_0,
+            SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+    }
+};
+
 void AddSC_demon_hunter()
 {
     RegisterSpellScript(spell_titan_dh_dual_weapons);
@@ -335,4 +362,5 @@ void AddSC_demon_hunter()
     RegisterSpellScript(spell_titan_dh_eye_beam);
     RegisterSpellScript(spell_titan_dh_chaos_nova);
     RegisterSpellScript(spell_titan_dh_darkness);
+    RegisterSpellScript(spell_titan_dh_fel_barrage);
 }

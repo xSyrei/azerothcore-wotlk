@@ -147,7 +147,7 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
          'Ability_DemonHunter_ThrowGlaive', 'Spell_Fire_FelFireNova', 'Ability_DemonHunter_Blur',
          'Ability_DemonHunter_ConsumeMagic', 'Spell_Shadow_DemonForm',
          'Ability_DemonHunter_Metamorphosis', 'Ability_DemonHunter_Felblade', 'Ability_DemonHunter_Darkness',
-         'Spell_Fire_Incinerate']
+         'Spell_Fire_Incinerate', 'INV_FelBarrage']
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
@@ -314,6 +314,14 @@ VISUALS = {
         'state': (15627, {KIT_HEAD: 0, KIT_CHEST: 0, KIT_BASE: FEL_IMMOLATE_STATE, HANDS: FEL_PRECAST_HAND})}},
     'ImmolationAuraPulse': {'copy': 11111, 'id': 16717, 'kits': {
         'impact': (15628, {KIT_BASE: 0, KIT_CHEST: FEL_FLAMESHOCK_IMPACT})}},
+    # Fel Barrage: fel fire on the hands while it lasts; each pulse bursts fel flames at the feet (no
+    # animation: a triggered spell's own would stab with the weapon) and hits every enemy with fel fire.
+    'FelBarrage': {'copy': 12038, 'id': 16718, 'kits': {
+        'cast': (15629, {HANDS: FEL_PRECAST_HAND}),
+        'state': (15630, {KIT_HEAD: 0, KIT_CHEST: 0, KIT_BASE: 0, HANDS: FEL_PRECAST_HAND})}},
+    'FelBarragePulse': {'copy': 253, 'id': 16719, 'clear': ('cast',), 'kits': {
+        'cast': (15631, {KIT_CHEST: 0, KIT_BASE: FEL_HELLFIRE_BASE, 'anim': NO_ANIM, 'sound': None}),
+        'impact': (15632, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'cast': (15622, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
@@ -602,6 +610,29 @@ SPELLS = [
         'id': 90120, 'copy': 50590, 'name': 'Immolation Aura', 'icon': 'Spell_Fire_Incinerate',
         'visual': 'ImmolationAuraPulse', 'description': '',
         'set': {'SchoolMask': FIRE, 'MaxAffectedTargets': 0, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
+        'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_DEST_CASTER,
+                        'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
+    },
+    {
+        # Havoc's capstone (Dragonflight's): Immolation Aura's pulsing on the Demon Hunter, a pulse (90122) every
+        # 0.25 sec for 3 sec, each draining 5 Fury; it ends when the Fury runs out (spell_titan_dh_fel_barrage).
+        'id': 90121, 'copy': 50589, 'name': 'Fel Barrage', 'icon': 'INV_FelBarrage',
+        'two_weapons': True, 'visual': 'FelBarrage',
+        'description': 'Unleash a torrent of Fel energy over $d, dealing 15% of your attack power as Chaos damage '
+                       'to all enemies within 8 yards every 0.25 sec. Each burst drains 5 Fury; it ends when '
+                       'your Fury runs out.',
+        'tooltip': 'Unleashing Fel energy on nearby enemies.',
+        'set': {'RecoveryTime': 90000, 'DurationIndex': DURATION_3S, 'PowerType': FURY, 'ManaCost': 100,
+                'ManaCostPercentage': 0, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
+                'SchoolMask': CHAOS, 'BaseLevel': 30, 'SpellLevel': 30, 'MaxLevel': 0},
+        'clear': [2, 3],
+        'effects': {1: {'Amplitude': 250, 'TriggerSpell': 90122}},
+    },
+    {
+        # Fel Barrage's pulse: everything within 8 yards, 1 damage plus attack power (spell_bonus_data).
+        'id': 90122, 'copy': 50590, 'name': 'Fel Barrage', 'icon': 'INV_FelBarrage',
+        'visual': 'FelBarragePulse', 'description': '',
+        'set': {'SchoolMask': CHAOS, 'MaxAffectedTargets': 0, 'BaseLevel': 30, 'SpellLevel': 30, 'MaxLevel': 80},
         'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_DEST_CASTER,
                         'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
     },

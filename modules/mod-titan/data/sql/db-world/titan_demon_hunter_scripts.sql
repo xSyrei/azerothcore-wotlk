@@ -80,3 +80,13 @@ DELETE FROM `spell_bonus_data` WHERE `entry` IN (90117, 90120);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90117, 0, 0, 0.5, 0, 'Felblade'),
 (90120, 0, 0, 0.2, 0, 'Immolation Aura - pulse');
+
+-- Fel Barrage: both weapons needed; its Fury drain (spell_titan_dh_fel_barrage); its pulses' share of attack power.
+DELETE FROM `spell_script_names` WHERE `spell_id` = 90121 AND `ScriptName` IN ('spell_titan_dh_dual_weapons',
+    'spell_titan_dh_fel_barrage');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90121, 'spell_titan_dh_dual_weapons'),
+(90121, 'spell_titan_dh_fel_barrage');
+DELETE FROM `spell_bonus_data` WHERE `entry` = 90122;
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90122, 0, 0, 0.15, 0, 'Fel Barrage - pulse');
