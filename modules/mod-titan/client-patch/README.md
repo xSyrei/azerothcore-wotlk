@@ -279,6 +279,17 @@ and colors its bars Fury purple.
 Install: copy the `Emberforge_Resources` folder into the client's `Interface\AddOns\` folder.
 The launcher will ship it automatically for players.
 
+## Spellbook class tabs
+
+A Hero learns every class's abilities but none of their skill lines, so the client files them all under
+General. `interface/FrameXML/SpellBookFrame.lua` and `.xml` (the 3.3.5a originals, patched; packed as
+`Interface\FrameXML\`) make the tabs General and one per class the Hero has abilities of (up to 12 tabs: the
+frame's 8 and 4 more, closer together), each with its class icon. The spells of the client's tabs are filed by
+`EMBERFORGE_SPELL_CLASSES` (spell id -> class), which `interface/spell_classes.py` writes into
+`EmberforgeSpellClasses.lua` at build time from SkillLineAbility.dbc (every spell of each class's spec skill
+lines) and the Demon Hunter's spells. Being Blizzard's own interface code, the book still casts in combat.
+The order of spells within a tab is the client's.
+
 ## Classless window addon
 
 `AddOns/Emberforge_Classless` is the Classless window (N, the minimap button or `/classless`): every

@@ -17,6 +17,8 @@ tables from the language archives, which outrank patches placed directly in Data
 - inventory icons (icons/*.png) and spell icons (icons/spells/*.png)
 - the login screen: interface/GlueXML/* (Hero text, retail-style character creation) and its art
   (interface/art/*.png, made by interface/make_art.py)
+- the spellbook's class tabs: interface/FrameXML/SpellBookFrame.* (patched) and EmberforgeSpellClasses.lua
+  (interface/spell_classes.py)
 
 Usage: python3 build_patch.py <dir with the original 3.3.5a DBCs>
 (e.g. `docker cp ac-worldserver:/azerothcore/env/dist/data/dbc ./dbc`)
@@ -30,6 +32,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / 'models'))
+sys.path.insert(0, str(HERE / 'interface'))
 
 from PIL import Image  # noqa: E402
 
@@ -38,6 +41,7 @@ import build_login_scene  # noqa: E402
 import creature_gltf_to_m2  # noqa: E402
 import make_mpq  # noqa: E402
 import retarget_character  # noqa: E402
+import spell_classes  # noqa: E402
 import patch_spells  # noqa: E402
 import spell_effects  # noqa: E402
 import wowexport_to_m2  # noqa: E402
@@ -129,6 +133,11 @@ def main():
         for png in sorted((HERE / 'interface' / 'art').glob('*.png')):
             with Image.open(png) as image:
                 entries.append((f'Interface\\Glues\\Emberforge\\{png.stem}.blp', blp.encode(image)))
+        # The spellbook's class tabs: the patched SpellBookFrame and its spell -> class table.
+        for source in sorted((HERE / 'interface' / 'FrameXML').iterdir()):
+            entries.append((f'Interface\\FrameXML\\{source.name}', source.read_bytes()))
+        spell_classes_lua = spell_classes.build(dbc_dir, [spell['id'] for spell in patch_spells.SPELLS])
+        entries.append(('Interface\\FrameXML\\EmberforgeSpellClasses.lua', spell_classes_lua.encode()))
 
         out = HERE / 'dist' / 'patch-enUS-4.MPQ'
         out.parent.mkdir(exist_ok=True)
