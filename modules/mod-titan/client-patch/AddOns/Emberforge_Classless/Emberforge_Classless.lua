@@ -83,9 +83,10 @@ local TREES = {
         { "Destruction", "WarlockDestruction" } },
     [11] = { { "Balance", "DruidBalance" }, { "Feral Combat", "DruidFeralCombat" },
              { "Restoration", "DruidRestoration" } },
-    -- Not in the client: no talent trees (or backgrounds) for these until they get their own.
+    -- Not in the client: trees of our own (the Demon Hunter's on the warlock's demon and fel art); none yet
+    -- for the Monk.
     [10] = { { "Brewmaster" }, { "Mistweaver" }, { "Windwalker" } },
-    [12] = { { "Havoc" }, { "Vengeance" } },
+    [12] = { { "Havoc", "WarlockSummoning" }, { "Vengeance", "WarlockDestruction" } },
 }
 -- Skill lines whose name differs from their talent tree.
 local SKILL_TO_TREE = { ["Elemental Combat"] = "Elemental", ["Shadow Magic"] = "Shadow" }
@@ -1155,7 +1156,7 @@ local function RefreshTree()
             DrawArrow(byId[talent.requires], talent)
         end
     end
-    if info and not info[2] then
+    if info and not info[2] and not tab then
         treeNote:Show()
     end
     local points = TreePoints(tab)

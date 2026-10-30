@@ -96,27 +96,28 @@ def dummy(value):
             'TargetA': TARGET_UNIT_CASTER}
 
 
-# The Havoc tree: (name, row, column, icon, prerequisite talent or None, ranks, description, effects, set).
+# The Havoc tree: (name, row, column, icon, prerequisite talent or None, ranks, description, effects, set), four
+# columns as the game's trees. Their order is their ids (talent and rank spells): only ever add at the end.
 # description and effects take the rank (1 up); set is extra Spell.dbc columns (procs).
 HAVOC = [
-    ('Blind Fury', 0, 0, 'Ability_DemonHunter_EyeBeam', None, 3,
+    ('Blind Fury', 0, 1, 'Ability_DemonHunter_EyeBeam', None, 3,
      lambda r: f'Eye Beam deals {10 * r}% more damage and generates {r + 1} Fury every time it strikes.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, EYE_BEAM_BEAM, 10 * r), 2: dummy(r + 1)}, {}),
-    ('Improved Chaos Strike', 0, 1, 'Ability_DemonHunter_ChaosStrike', None, 2,
+    ('Improved Chaos Strike', 0, 2, 'Ability_DemonHunter_ChaosStrike', None, 2,
      lambda r: f'Chaos Strike deals {10 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, CHAOS_STRIKE, 10 * r)}, {}),
-    ('Demonic Appetite', 0, 2, 'Spell_Shadow_SoulLeech_3', None, 3,
+    ('Demonic Appetite', 1, 0, 'Spell_Shadow_SoulLeech_3', None, 3,
      lambda r: f'Chaos Strike has a {10 * r}% chance to feed your hunger, healing you for 5% of your maximum '
                'health and generating 20 Fury.',
      lambda r: {1: dummy(10 * r)}, {}),
-    ('Prepared', 1, 0, 'Ability_DemonHunter_VengefulRetreat', None, 2,
+    ('Prepared', 1, 1, 'Ability_DemonHunter_VengefulRetreat', None, 2,
      lambda r: f'Vengeful Retreat generates {10 * r} Fury over 5 sec.',
      lambda r: {1: dummy(2 * r)}, {}),
-    ('Bloodlet', 1, 1, 'Ability_DemonHunter_Bloodlet', None, 3,
+    ('Bloodlet', 1, 2, 'Ability_DemonHunter_Bloodlet', None, 3,
      lambda r: f'Throw Glaive causes enemies to bleed for {(33, 66, 100)[r - 1]}% of the damage it dealt '
                'over 6 sec.',
      lambda r: {1: dummy((33, 66, 100)[r - 1])}, {}),
-    ('Serrated Glaive', 1, 2, 'Ability_DemonHunter_ThrowGlaive', None, 2,
+    ('Serrated Glaive', 1, 3, 'Ability_DemonHunter_ThrowGlaive', None, 2,
      lambda r: f'Throw Glaive deals {15 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, THROW_GLAIVE, 15 * r)}, {}),
     ('Dancing with Fate', 2, 0, 'Ability_DemonHunter_BladeDance', None, 2,
@@ -125,7 +126,7 @@ HAVOC = [
     ('Master of the Glaive', 2, 1, 'INV_Weapon_Glave_01', None, 1,
      lambda r: 'Throw Glaive\'s cooldown is 3 sec shorter, and it slows its targets by 50% for 6 sec.',
      lambda r: {1: mod(SPELLMOD_COOLDOWN, THROW_GLAIVE, -3000, flat=True), 2: dummy(50)}, {}),
-    ('Desperate Instincts', 2, 2, 'Ability_DemonHunter_Blur', None, 2,
+    ('Desperate Instincts', 2, 3, 'Ability_DemonHunter_Blur', None, 2,
      lambda r: f'Taking damage that leaves you below 35% health makes you Blur. Cannot happen more than once '
                f'every {(120, 60)[r - 1]} sec.',
      lambda r: {1: dummy((120, 60)[r - 1])}, {'ProcFlags': PROC_FLAG_TAKEN_DAMAGE, 'ProcChance': 100}),
@@ -152,7 +153,7 @@ HAVOC = [
     ('Fel Mastery', 4, 2, 'Ability_DemonHunter_FelRush', None, 2,
      lambda r: f'Fel Rush deals {15 * r}% more damage and generates {10 * r} Fury when it hits.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, FEL_RUSH_HIT, 15 * r), 2: dummy(10 * r)}, {}),
-    ('Any Means Necessary', 5, 0, 'Ability_Warlock_ChaosBolt', None, 3,
+    ('Any Means Necessary', 4, 3, 'Ability_Warlock_ChaosBolt', None, 3,
      lambda r: f'Your Chaos damage abilities deal {4 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, CHAOS_DAMAGE, 4 * r)}, {}),
     ('Cycle of Hatred', 5, 1, 'Ability_DemonHunter_CycleOfHatred', None, 3,

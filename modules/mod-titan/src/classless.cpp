@@ -122,7 +122,8 @@ namespace
             if (TalentEntry const* talent = sTalentStore.LookupEntry(i))
                 for (uint8 rank = MAX_TALENT_RANK; rank > 0; --rank)
                     if (uint32 rankSpell = talent->RankID[rank - 1];
-                        rankSpell && player->HasTalent(rankSpell, player->GetActiveSpec()))
+                        rankSpell && (player->HasTalent(rankSpell, player->GetActiveSpec())
+                            || player->HasSpell(rankSpell)))
                     {
                         owned.push_back(Acore::StringFormat("{}:{}", talent->TalentID, rank));
                         break;
