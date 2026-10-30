@@ -42,8 +42,8 @@ FIELDS = {
     'EquippedItemInventoryTypeMask': 70, 'SpellVisual': 131, 'SpellIconID': 133,
     'ActiveIconID': 134, 'ManaCostPercentage': 204, 'StartRecoveryCategory': 205, 'StartRecoveryTime': 206,
     'SpellFamilyName': 208, 'SpellFamilyFlags0': 209, 'SpellFamilyFlags1': 210, 'SpellFamilyFlags2': 211,
-    'MaxAffectedTargets': 212, 'DmgClass': 213, 'Speed': 47, 'ProcFlags': 34, 'ProcChance': 35, 'SchoolMask': 225,
-    'RuneCostID': 226,
+    'MaxAffectedTargets': 212, 'DmgClass': 213, 'Speed': 47, 'ProcFlags': 34, 'ProcChance': 35, 'StackAmount': 49,
+    'SchoolMask': 225, 'RuneCostID': 226,
 }
 EFFECT_FIELDS = {       # name: (first column, is float); effect n is first column + n - 1
     'Effect': (71, False), 'DieSides': (74, False), 'RealPointsPerLevel': (77, True), 'BasePoints': (80, False),
@@ -145,6 +145,10 @@ EFFECT_CHARGE, EFFECT_PERSISTENT_AREA_AURA, EFFECT_DUMMY = 96, 27, 3
 AURA_SCHOOL_ABSORB = 69
 TARGET_DEST_CASTER, TARGET_UNIT_DEST_AREA_ENEMY, TARGET_UNIT_DEST_AREA_ALLY, TARGET_DEST_DEST = 18, 16, 31, 87
 RANGE_15, DURATION_6S, DURATION_8S = 11, 32, 31
+DURATION_20S = 18
+EFFECT_HEAL_PCT = 136
+AURA_MOD_PARRY_PERCENT, AURA_MOD_RESISTANCE_PCT = 47, 101
+ARMOR = 1                       # resistance MiscValue: armor (normal school)
 
 # Icons: Interface\Icons\<name>. Ours come from icons/spells/<name>.png (in the client patch); the
 # client already has the rest, found by name in SpellIcon.dbc.
@@ -153,7 +157,9 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
          'Ability_DemonHunter_ThrowGlaive', 'Spell_Fire_FelFireNova', 'Ability_DemonHunter_Blur',
          'Ability_DemonHunter_ConsumeMagic', 'Spell_Shadow_DemonForm',
          'Ability_DemonHunter_Metamorphosis', 'Ability_DemonHunter_Felblade', 'Ability_DemonHunter_Darkness',
-         'Spell_Fire_Incinerate', 'INV_FelBarrage']
+         'Spell_Fire_Incinerate', 'INV_FelBarrage', 'Ability_DemonHunter_Shear', 'Ability_DemonHunter_SoulCleave',
+         'Ability_DemonHunter_DemonSpikes', 'Ability_DemonHunter_FieryBrand', 'Ability_DemonHunter_Torment',
+         'Spell_Shadow_SoulGem']
 ICONS += [name for name in patch_talents.ICONS if name not in ICONS]
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
@@ -162,7 +168,8 @@ ICONS += [name for name in patch_talents.ICONS if name not in ICONS]
 # "burst" (ground_burst, for the world slot) or "zone" (ground_zone, lasting on the ground) from the
 # spells/<texture>.png in "textures" (beam: flare, flow; burst: ring, flash, trail or None; zone: those
 # its layers name) or "missile" (missile, a spell missile from a wow.export model in spells/<export>, with a trail
-# from the spells/<texture>.png in "textures"). "options" go to that builder.
+# from the spells/<texture>.png in "textures") or "model" (the same without a trail, for a kit's slot).
+# "options" go to that builder (an "export" folder is under spells/).
 EFFECTS = {
     'DemonsBite': {'model': 'DH_DemonsBite_Trail', 'effect': 7100},
     'ChaosStrike': {'model': 'DH_ChaosStrike_Trail', 'effect': 7101},
@@ -207,7 +214,20 @@ EFFECTS = {
     'FelBarrageBall': {'model': 'DH_FelBarrage_Ball', 'effect': 7111, 'shape': 'missile',
                        'textures': ('DH_FelRush_Trail',),
                        'options': {'export': 'DH_FelBarrage_Ball', 'base': 'fel_balllightning_creature', 'size': 1.2,
-                                   'trail_height': 0.3, 'lifetime': 0.4}},
+                                   'trail_height': 0.3, 'lifetime': 0.4, 'turn': 1.0}},
+    # Shear and Soul Cleave: retail's Shear swipe (gray, tinted fel green) on both weapons.
+    'Shear': {'model': 'DH_Shear_Trail', 'effect': 7112, 'options': {'color': (0.55, 1.0, 0.3)}},
+    # Demon Spikes: retail's spikes on the back and shoulders (cfx_demonhunter_demonspikes_statechest), for as
+    # long as it lasts.
+    'DemonSpikes': {'model': 'DH_DemonSpikes', 'effect': 7113, 'shape': 'model', 'textures': (),
+                    'options': {'export': 'DH_DemonSpikes', 'base': 'cfx_demonhunter_demonspikes_statechest',
+                                'max_texture': 512}},
+    # Fiery Brand: retail's Illidari sigil flashing over the target's head for a second
+    # (cfx_demonhunter_fierybrand_impactplayername), centered, a little smaller, seen from both sides.
+    'FieryBrand': {'model': 'DH_FieryBrand', 'effect': 7114, 'shape': 'model', 'textures': (),
+                   'options': {'export': 'DH_FieryBrand', 'base': 'cfx_demonhunter_fierybrand_impactplayername',
+                               'scale': 0.6, 'center': True, 'offset': (0.0, 0.0, 0.9), 'duration': 1033,
+                               'fade': 1033, 'two_sided': True}},
     # Eye Beam: from the face, as long as the channel and its 20-yard reach.
     'EyeBeam': {'model': 'DH_EyeBeam', 'effect': 7104, 'shape': 'beam',
                 'textures': ('DH_EyeBeam_Beam', 'DH_EyeBeam_Fel')},
@@ -232,6 +252,9 @@ SOUNDS = {
     'Metamorphosis': {'id': 18110, 'copy': 5674,
                       'files': [f'spell_dh_metamorph_jumpland_0{n}' for n in range(1, 5)]},
     'FelBarrage': {'id': 18111, 'copy': 5674, 'files': [f'spell_dh_fel_barrage_comp_cast_0{n}' for n in (5, 6)]},
+    'Shear': {'id': 18112, 'copy': 3091, 'files': [f'spell_dh_shear_cast_0{n}' for n in range(1, 8)]},
+    'SoulCleave': {'id': 18113, 'copy': 3091, 'files': [f'spell_dh_soul_cleave_cast_0{n}' for n in range(1, 7)]},
+    'FieryBrand': {'id': 18114, 'copy': 5674, 'files': [f'spell_dh_firebrand_cast_0{n}' for n in (5, 6)]},
     'EyeBeamEnd': {'id': 18105, 'copy': 5674, 'files': [f'spell_dh_player_eyebeam_end_0{n}' for n in range(1, 5)]},
 }
 
@@ -246,6 +269,7 @@ FEL_HELLFIRE_BASE = 3312        # Spells\\Fel_Hellfire_Impact_Caster_Base: fel f
 XPLOSION_FEL_IMPACT = 4714      # spells\\Xplosion_Fel_Impact: a fel explosion
 FEL_RAIN_OF_FIRE_IMPACT = 3215  # Spells\\Fel_RainOfFire_Impact_Base: fel fire bursting from the ground
 FEL_IMMOLATE_STATE = 3231       # Spells\\Fel_Immolate_State_Base: fel flames rising around the body
+SOULSHATTER_IMPACT = 3123       # spells\\soulshatter_impact: souls bursting from the body
 
 # Visuals: the Blizzard visual copied, the new visual's id, and per kit (precast, cast or impact)
 # the new kit's id and what goes in its slots, a copy of the copied visual's kit (or of BLANK_KIT
@@ -347,6 +371,27 @@ VISUALS = {
                                VISUAL_MISSILE_MOTION: 0, VISUAL_MISSILE_CAST_OFFSET + 2: 10.0}, 'kits': {
         'cast': (15632, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
         'impactarea': (15633, {KIT_WORLD: FEL_RAIN_OF_FIRE_IMPACT, 'sound': None})}},
+    # Shear and Soul Cleave are Sinister Strike's visual with the Shear swipe, the glaive strikes (Soul Cleave the
+    # big one) and their own sounds. Soul Cleave's healing from Soul Fragments bursts souls from the Demon Hunter.
+    'Shear': {'copy': 253, 'id': 16721, 'kits': {
+        'cast': (15634, {WEAPONS: 'Shear', 'anim': ANIM_GLAIVE_STRIKE, 'sound': 'Shear'}),
+        'impact': (15635, {KIT_CHEST: FEL_FLAMESHOCK_IMPACT, 'sound': None})}},
+    'SoulCleave': {'copy': 253, 'id': 16722, 'kits': {
+        'cast': (15636, {WEAPONS: 'Shear', HANDS: FEL_PRECAST_HAND, 'anim': ANIM_GLAIVE_BIG_STRIKE,
+                         'sound': 'SoulCleave'}),
+        'impact': (15637, {KIT_CHEST: FEL_FIRE_IMPACT, 'sound': None})}},
+    'SoulCleaveHeal': {'copy': 253, 'id': 16723, 'clear': ('cast',), 'kits': {
+        'cast': (15638, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
+        'impact': (15639, {KIT_CHEST: SOULSHATTER_IMPACT, 'sound': None})}},
+    # Demon Spikes is Evasion's (its cast, without the magic hands), the spikes on the back while it lasts.
+    'DemonSpikes': {'copy': 72, 'id': 16724, 'clear': ('precast', 'impact'), 'kits': {
+        'cast': (15640, {HANDS: 0}),
+        'state': (15641, {KIT_CHEST: 'DemonSpikes', 'sound': None})}},
+    # Fiery Brand is Fire Blast's (fire on the hands, a fire hit), with its own sound and the brand over the
+    # target's head.
+    'FieryBrand': {'copy': 143, 'id': 16725, 'kits': {
+        'cast': (15642, {'sound': 'FieryBrand'}),
+        'impact': (15643, {KIT_HEAD: 'FieryBrand'})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
         'cast': (15622, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
         'impact': (15608, {KIT_CHEST: FEL_FIREBLAST_IMPACT, 'sound': None})}},
@@ -672,6 +717,105 @@ SPELLS = [
                 'MaxLevel': 80},
         'effects': {1: {'Effect': EFFECT_DUMMY, 'BasePoints': 0, 'DieSides': 0, 'RealPointsPerLevel': 0.0,
                         'TargetA': TARGET_DEST_DEST, 'TargetB': 0, 'RadiusIndex': 0, 'BonusMultiplier': 0.0}},
+    },
+    {
+        # Vengeance's builder: Demon's Bite's strike, 10 Fury and a Soul Fragment (effect 3).
+        'id': 90124, 'copy': 1752, 'name': 'Shear', 'icon': 'Ability_DemonHunter_Shear',
+        'visual': 'Shear', 'two_weapons': True,
+        'description': 'Shear your target\'s flesh for your weapon damage plus $s1 Physical damage, shattering a '
+                       'Soul Fragment from it. Generates 10 Fury.',
+        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
+                'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
+        'effects': {
+            1: {'Effect': EFFECT_NORMALIZED_WEAPON_DMG, 'BasePoints': 4, 'DieSides': 1, 'RealPointsPerLevel': 1.0},
+            2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 99, 'DieSides': 1, 'MiscValue': FURY,
+                'TargetA': TARGET_UNIT_CASTER, 'TargetB': 0},
+            3: {'Effect': EFFECT_TRIGGER_SPELL, 'TargetA': TARGET_UNIT_CASTER, 'TriggerSpell': 90126},
+        },
+    },
+    {
+        # Up to 5 enemies in a cone in front, and 8% of maximum health; spell_titan_dh_soul_cleave eats up to 2
+        # Soul Fragments for 5% more each (90131).
+        'id': 90125, 'copy': 1752, 'name': 'Soul Cleave', 'icon': 'Ability_DemonHunter_SoulCleave',
+        'visual': 'SoulCleave', 'two_weapons': True,
+        'description': 'Viciously strike up to 5 enemies in front of you for $s1% weapon damage and heal yourself '
+                       'for $s2% of your maximum health. Consumes up to 2 Soul Fragments, each healing you for 5% '
+                       'more.',
+        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 300,
+                'StartRecoveryTime': 1500, 'MaxAffectedTargets': 5, 'BaseLevel': 1, 'SpellLevel': 1},
+        'clear': [2, 3],
+        'effects': {
+            1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 149, 'DieSides': 1,
+                'TargetA': TARGET_UNIT_CONE_ENEMY, 'RadiusIndex': RADIUS_8},
+            2: {'Effect': EFFECT_HEAL_PCT, 'BasePoints': 7, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER},
+        },
+    },
+    {
+        # A stacking buff (up to 5) that Shear adds to and Soul Cleave eats: no fragments on the ground.
+        'id': 90126, 'copy': 26669, 'name': 'Soul Fragments', 'icon': 'Spell_Shadow_SoulGem',
+        'description': '', 'tooltip': 'Soul Fragments shattered from your enemies, for Soul Cleave to consume.',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'StartRecoveryCategory': 0,
+                'StartRecoveryTime': 0, 'PowerType': 0, 'ManaCost': 0, 'DurationIndex': DURATION_20S,
+                'StackAmount': 5, 'SpellVisual': 0, 'BaseLevel': 1, 'SpellLevel': 1},
+        'clear': [1, 2, 3],
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 0,
+                        'TargetA': TARGET_UNIT_CASTER}},
+    },
+    {
+        # Evasion's self buff: 20% parry and 30% more armor for 6 sec, off the global cooldown.
+        'id': 90127, 'copy': 26669, 'name': 'Demon Spikes', 'icon': 'Ability_DemonHunter_DemonSpikes',
+        'visual': 'DemonSpikes', 'two_weapons': True,
+        'description': 'Surge with fel power, increasing your chance to parry by $s1% and your armor by $s2% for '
+                       '$d.',
+        'tooltip': 'Parry chance increased by $s1%. Armor increased by $s2%.',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 15000, 'StartRecoveryCategory': 0,
+                'StartRecoveryTime': 0, 'PowerType': FURY, 'ManaCost': 200, 'DurationIndex': DURATION_6S,
+                'BaseLevel': 10, 'SpellLevel': 10},
+        'clear': [1, 2, 3],
+        'effects': {
+            1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_PARRY_PERCENT, 'BasePoints': 19, 'DieSides': 1,
+                'TargetA': TARGET_UNIT_CASTER},
+            2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_RESISTANCE_PCT, 'BasePoints': 29, 'DieSides': 1,
+                'MiscValue': ARMOR, 'TargetA': TARGET_UNIT_CASTER},
+        },
+    },
+    {
+        # Fire Blast's: 1 damage plus attack power (spell_bonus_data), and the target deals 40% less damage for
+        # 8 sec.
+        'id': 90128, 'copy': 2136, 'name': 'Fiery Brand', 'icon': 'Ability_DemonHunter_FieryBrand',
+        'visual': 'FieryBrand', 'two_weapons': True,
+        'description': 'Brand an enemy with a demonic symbol, dealing 50% of your attack power as Fire damage. The '
+                       'branded enemy deals 40% less damage for $d.',
+        'tooltip': 'Branded: damage dealt reduced by 40%.',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 60000, 'RangeIndex': RANGE_30,
+                'PowerType': 0, 'ManaCost': 0, 'ManaCostPercentage': 0, 'DurationIndex': DURATION_8S,
+                'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500, 'SchoolMask': FIRE,
+                'BaseLevel': 20, 'SpellLevel': 20, 'MaxLevel': 80},
+        'clear': [1, 2, 3],
+        'effects': {
+            1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
+                'BonusMultiplier': 0.0},
+            2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_DONE, 'BasePoints': -41, 'DieSides': 1,
+                'MiscValue': ALL_SCHOOLS, 'TargetA': TARGET_UNIT_TARGET_ENEMY},
+        },
+    },
+    {
+        # Taunt, at 30 yards, every 8 sec, no Rage.
+        'id': 90129, 'copy': 355, 'name': 'Torment', 'icon': 'Ability_DemonHunter_Torment',
+        'two_weapons': True,
+        'description': 'Taunt the target to attack you.',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 8000, 'RangeIndex': RANGE_30,
+                'PowerType': 0, 'ManaCost': 0, 'BaseLevel': 6, 'SpellLevel': 6},
+    },
+    {
+        # Soul Cleave's healing from the Soul Fragments it eats: % of maximum health, set by the script.
+        'id': 90131, 'copy': 26669, 'name': 'Soul Cleave', 'icon': 'Ability_DemonHunter_SoulCleave',
+        'visual': 'SoulCleaveHeal', 'description': '',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'StartRecoveryCategory': 0,
+                'StartRecoveryTime': 0, 'PowerType': 0, 'ManaCost': 0, 'DurationIndex': 0, 'BaseLevel': 1,
+                'SpellLevel': 1},
+        'clear': [1, 2, 3],
+        'effects': {1: {'Effect': EFFECT_HEAL_PCT, 'BasePoints': 4, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Counterspell: interrupts and locks the school out for 3 sec; also removes one magic buff

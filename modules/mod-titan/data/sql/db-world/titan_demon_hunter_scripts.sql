@@ -121,3 +121,20 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90156, 0, 0, 0.2, 0, 'Demon Blades'),
 (90157, 0, 0, 0, 0, 'Trail of Ruin'),
 (90158, 0, 0, 0, 0, 'Soul Rending');
+
+-- Vengeance: Shear, Soul Cleave, Demon Spikes, Fiery Brand and Torment need both weapons; Soul Cleave eats Soul
+-- Fragments (spell_titan_dh_soul_cleave); Fiery Brand's share of attack power.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (90124, 90125, 90127, 90128, 90129)
+    AND `ScriptName` = 'spell_titan_dh_dual_weapons';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90124, 'spell_titan_dh_dual_weapons'),
+(90125, 'spell_titan_dh_dual_weapons'),
+(90127, 'spell_titan_dh_dual_weapons'),
+(90128, 'spell_titan_dh_dual_weapons'),
+(90129, 'spell_titan_dh_dual_weapons');
+DELETE FROM `spell_script_names` WHERE `spell_id` = 90125 AND `ScriptName` = 'spell_titan_dh_soul_cleave';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90125, 'spell_titan_dh_soul_cleave');
+DELETE FROM `spell_bonus_data` WHERE `entry` = 90128;
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90128, 0, 0, 0.5, 0, 'Fiery Brand');

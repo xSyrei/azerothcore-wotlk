@@ -1,0 +1,185 @@
+{
+	"fileType": "m2",
+	"fileDataID": 1355453,
+	"fileName": "spells/cfx_demonhunter_fierybrand_impactplayername.m2",
+	"internalName": "CFX_DemonHunter_FieryBrand_ImpactPlayername",
+	"textures": [
+		{
+			"fileNameInternal": "spells/illidari.blp",
+			"fileNameExternal": "illidari.png",
+			"mtlName": "mat_illidari",
+			"flags": 0,
+			"fileDataID": 1355459
+		}
+	],
+	"textureTypes": [
+		0
+	],
+	"materials": [
+		{
+			"flags": 16,
+			"blendingMode": 7
+		}
+	],
+	"textureCombos": [
+		0
+	],
+	"colors": [
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						1000,
+						1033,
+						1500
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							1,
+							1
+						],
+						[
+							1,
+							1,
+							1
+						],
+						[
+							0,
+							0,
+							0
+						],
+						[
+							0,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						32767
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		}
+	],
+	"textureWeights": [
+		{
+			"globalSeq": 65535,
+			"interpolation": 0,
+			"timestamps": [
+				[
+					0,
+					1033
+				]
+			],
+			"values": [
+				[
+					32767,
+					0
+				]
+			],
+			"timestampOffsets": null,
+			"valueOffsets": null
+		}
+	],
+	"transparencyLookup": [
+		0
+	],
+	"textureTransforms": [],
+	"textureTransformsLookup": [
+		65535
+	],
+	"boundingBox": {
+		"min": [
+			-0.05176536366343498,
+			-1.6888786554336548,
+			-0.1770801544189453
+		],
+		"max": [
+			0.12469470500946045,
+			0.4518115520477295,
+			1.2106513977050781
+		]
+	},
+	"boundingSphereRadius": 1.2664473056793213,
+	"collisionBox": {
+		"min": [
+			0,
+			0,
+			0
+		],
+		"max": [
+			0,
+			0,
+			0
+		]
+	},
+	"collisionSphereRadius": 0,
+	"skin": {
+		"subMeshes": [
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 0,
+				"vertexCount": 28,
+				"triangleStart": 0,
+				"triangleCount": 42,
+				"boneCount": 2,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 0,
+				"centerPosition": [
+					0.03163767233490944,
+					-1.2484767436981201,
+					0.40927425026893616
+				],
+				"sortCenterPosition": [
+					0.036464668810367584,
+					-0.8363512754440308,
+					0.42194288969039917
+				],
+				"sortRadius": 0.9553132057189941
+			}
+		],
+		"textureUnits": [
+			{
+				"flags": 0,
+				"priority": 0,
+				"shaderID": 16,
+				"skinSectionIndex": 0,
+				"flags2": 0,
+				"colorIndex": 0,
+				"materialIndex": 0,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 0,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			}
+		],
+		"fileName": "spells/cfx_demonhunter_fierybrand_impactplayername00.skin",
+		"fileDataID": 1355460
+	}
+}

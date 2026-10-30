@@ -42,6 +42,8 @@ enum DemonHunterSpells
     SPELL_METAMORPHOSIS             = 90116,
     SPELL_BLUR                      = 90113,
     SPELL_FEL_BARRAGE_BALL          = 90123,
+    SPELL_SOUL_FRAGMENTS            = 90126,
+    SPELL_SOUL_CLEAVE_HEAL          = 90131,
     // What the talents cast (client-patch/patch_talents.py, HELPERS)
     SPELL_DEMONIC_APPETITE          = 90150,
     SPELL_PREPARED                  = 90151,
@@ -708,6 +710,38 @@ class spell_titan_dh_soul_rending : public AuraScript
     }
 };
 
+// Soul Cleave (90125): eats up to 2 of the Demon Hunter's Soul Fragments (a stacking buff Shear adds to), each
+// healing for 5% more of their maximum health (90131).
+class spell_titan_dh_soul_cleave : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_soul_cleave);
+
+    static constexpr uint8 MAX_EATEN = 2;
+    static constexpr int32 HEAL_PCT_PER_FRAGMENT = 5;
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SOUL_FRAGMENTS, SPELL_SOUL_CLEAVE_HEAL });
+    }
+
+    void EatFragments()
+    {
+        Unit* caster = GetCaster();
+        Aura* fragments = caster->GetAura(SPELL_SOUL_FRAGMENTS);
+        if (!fragments)
+            return;
+
+        uint8 eaten = std::min<uint8>(fragments->GetStackAmount(), MAX_EATEN);
+        fragments->ModStackAmount(-int32(eaten));
+        CastWithValue(caster, SPELL_SOUL_CLEAVE_HEAL, eaten * HEAL_PCT_PER_FRAGMENT, caster);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_dh_soul_cleave::EatFragments);
+    }
+};
+
 void AddSC_demon_hunter()
 {
     RegisterSpellScript(spell_titan_dh_dual_weapons);
@@ -728,4 +762,5 @@ void AddSC_demon_hunter()
     RegisterSpellScript(spell_titan_dh_blade_dance_final_strike);
     RegisterSpellScript(spell_titan_dh_desperate_instincts);
     RegisterSpellScript(spell_titan_dh_soul_rending);
+    RegisterSpellScript(spell_titan_dh_soul_cleave);
 }

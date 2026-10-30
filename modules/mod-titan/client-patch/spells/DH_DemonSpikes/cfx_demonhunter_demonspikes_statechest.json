@@ -1,0 +1,154 @@
+{
+	"fileType": "m2",
+	"fileDataID": 1342610,
+	"fileName": "spells/cfx_demonhunter_demonspikes_statechest.m2",
+	"internalName": "CFX_DemonHunter_DemonSpikes_StateChest",
+	"textures": [
+		{
+			"fileNameInternal": "spells/demon_tankbody.blp",
+			"fileNameExternal": "demon_tankbody.png",
+			"mtlName": "mat_demon_tankbody",
+			"flags": 0,
+			"fileDataID": 1343687
+		},
+		{
+			"fileNameInternal": "spells/armorreflect4.blp",
+			"fileNameExternal": "armorreflect4.png",
+			"mtlName": "mat_armorreflect4",
+			"flags": 0,
+			"fileDataID": 1003158
+		},
+		{
+			"fileNameInternal": "spells/demon_tank_male_tattoo_00.blp",
+			"fileNameExternal": "demon_tank_male_tattoo_00.png",
+			"mtlName": "mat_demon_tank_male_tattoo_00",
+			"flags": 0,
+			"fileDataID": 1343688
+		}
+	],
+	"textureTypes": [
+		0,
+		0,
+		0
+	],
+	"materials": [
+		{
+			"flags": 0,
+			"blendingMode": 0
+		},
+		{
+			"flags": 16,
+			"blendingMode": 2
+		},
+		{
+			"flags": 17,
+			"blendingMode": 2
+		}
+	],
+	"textureCombos": [
+		0,
+		1,
+		2
+	],
+	"colors": [],
+	"textureWeights": [
+		{
+			"globalSeq": 65535,
+			"interpolation": 0,
+			"timestamps": [
+				[
+					0
+				]
+			],
+			"values": [
+				[
+					32767
+				]
+			],
+			"timestampOffsets": null,
+			"valueOffsets": null
+		}
+	],
+	"transparencyLookup": [
+		0
+	],
+	"textureTransforms": [],
+	"textureTransformsLookup": [
+		65535,
+		0,
+		65535
+	],
+	"boundingBox": {
+		"min": [
+			-0.9445732831954956,
+			-0.5611281991004944,
+			-0.28473642468452454
+		],
+		"max": [
+			0.12443161010742188,
+			0.54345703125,
+			0.8824759721755981
+		]
+	},
+	"boundingSphereRadius": 0.9650465250015259,
+	"collisionBox": {
+		"min": [
+			0,
+			0,
+			0
+		],
+		"max": [
+			0,
+			0,
+			0
+		]
+	},
+	"collisionSphereRadius": 0,
+	"skin": {
+		"subMeshes": [
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 0,
+				"vertexCount": 283,
+				"triangleStart": 0,
+				"triangleCount": 1464,
+				"boneCount": 1,
+				"boneStart": 0,
+				"boneInfluences": 0,
+				"centerBoneIndex": 0,
+				"centerPosition": [
+					-0.2619149386882782,
+					-0.008835817687213421,
+					0.2312254160642624
+				],
+				"sortCenterPosition": [
+					-0.41007083654403687,
+					-0.008835583925247192,
+					0.298869788646698
+				],
+				"sortRadius": 0.9650465250015259
+			}
+		],
+		"textureUnits": [
+			{
+				"flags": 128,
+				"priority": 0,
+				"shaderID": 32785,
+				"skinSectionIndex": 0,
+				"flags2": 0,
+				"colorIndex": 65535,
+				"materialIndex": 0,
+				"materialLayer": 0,
+				"textureCount": 3,
+				"textureComboIndex": 0,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			}
+		],
+		"fileName": "spells/cfx_demonhunter_demonspikes_statechest00.skin",
+		"fileDataID": 1342748
+	}
+}

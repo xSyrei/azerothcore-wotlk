@@ -664,29 +664,37 @@ def ground_zone(*args, layers=()):
     return [f'{name}.m2', f'{name}00.skin'] + [f'{blp_name}.blp' for blp_name in images]
 
 
-def missile(trail_texture, out_dir, name, client_dir, export, base, size=1.2, trail_height=0.3, lifetime=0.4,
-            turn=1.0):
-    """A spell missile (SpellVisual's missile model) from a wow.export model (OBJ + JSON + PNGs, in
-    the export folder beside trail_texture), with a trail behind it:
+def exported_model(*args, export, base, size=None, scale=1.0, center=False, offset=(0.0, 0.0, 0.0), turn=0.0,
+                   trail_height=0.3, lifetime=0.4, duration=1000, fade=None, two_sided=False, max_texture=None):
+    """A spell effect model from a wow.export model (OBJ + JSON + PNGs in the folder export): a spell
+    missile (SpellVisual's missile model) or a model a kit attaches (chest, head...).
 
-    - the model scaled to size yards across, turning about Z every turn seconds, each texture unit
-      with its first texture, its material, its tint and its scrolling (texture transforms, on global
-      sequences; their lengths are the last key's time, wow.export not exporting them);
-    - a ribbon (trail_texture, laid out as ribbon_trail's) spanning trail_height yards above and below
-      its center, each stretch fading after lifetime seconds.
+    Called as exported_model([trail texture,] out_dir, name, client_dir, export=..., base=...):
 
-    Layers' fades in and out (per-sequence alpha) are left out: the missile is whole while it flies.
-    Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
+    - the model scaled to size yards across (or by scale), its middle moved to the origin if center, then
+      moved by offset (yards: x forward, y left, z up), turning about Z every turn seconds (0: still); each
+      texture unit with its first texture (at most max_texture pixels a side), its material (retail's blend
+      mode 7 drawn additive; two_sided: both faces), its tint and its scrolling (texture transforms, on
+      global sequences; their lengths are the last key's time, wow.export not exporting them);
+    - with a trail texture, a ribbon (laid out as ribbon_trail's) spanning trail_height yards above and
+      below its center, each stretch fading after lifetime seconds.
+
+    One Stand animation of duration milliseconds (a kit removes a model once it has played); fade: the
+    milliseconds over which it fades out from the start (None: whole all along). Layers' own fades in
+    and out (per-sequence alpha) are left out. Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
     """
+    *textures, out_dir, name, client_dir = args
+    trail_texture = textures[0] if textures else None
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    source = Path(trail_texture).parent / export
+    source = Path(export)
     info = json.loads((source / f'{base}.json').read_text())
     positions, normals, uvs, groups = read_obj(source / f'{base}.obj')
     lo = [min(p[i] for p in positions) for i in range(3)]
     hi = [max(p[i] for p in positions) for i in range(3)]
-    factor = size / max(h - l for l, h in zip(lo, hi))
-    positions = [tuple(c * factor for c in p) for p in positions]
+    factor = size / max(h - l for l, h in zip(lo, hi)) if size else scale
+    middle = [(l + h) / 2 if center else 0.0 for l, h in zip(lo, hi)]
+    positions = [tuple((c - m) * factor + o for c, m, o in zip(p, middle, offset)) for p in positions]
 
     # Textures: the ones the texture units draw, then the trail.
     units = info['skin']['textureUnits']
@@ -696,33 +704,42 @@ def missile(trail_texture, out_dir, name, client_dir, export, base, size=1.2, tr
         png = info['textures'][texture]['fileNameExternal']
         blp_name = f'{name}_{len(blp_names)}'
         with Image.open(source / png) as image:
-            (out_dir / f'{blp_name}.blp').write_bytes(blp.encode(image.convert('RGBA')))
+            image = image.convert('RGBA')
+            if max_texture and max(image.size) > max_texture:
+                ratio = max_texture / max(image.size)
+                image = image.resize((int(image.width * ratio), int(image.height * ratio)), Image.LANCZOS)
+            (out_dir / f'{blp_name}.blp').write_bytes(blp.encode(image))
         texture_index[texture] = len(blp_names)
         blp_names.append(blp_name)
-    with Image.open(trail_texture) as image:
-        trail = image.convert('RGBA').transpose(Image.Transpose.TRANSPOSE).transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-        trail.putalpha(trail.getchannel('A').point(lambda a: 0 if a < FAINT else a))
-    trail_index = len(blp_names)
-    blp_names.append(f'{name}_Trail')
-    (out_dir / f'{blp_names[-1]}.blp').write_bytes(blp.encode(trail))
+    trail_index = None
+    if trail_texture:
+        with Image.open(trail_texture) as image:
+            trail = image.convert('RGBA').transpose(Image.Transpose.TRANSPOSE)
+            trail = trail.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            trail.putalpha(trail.getchannel('A').point(lambda a: 0 if a < FAINT else a))
+        trail_index = len(blp_names)
+        blp_names.append(f'{name}_Trail')
+        (out_dir / f'{blp_names[-1]}.blp').write_bytes(blp.encode(trail))
 
     blob = Blob(0x130)
     name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
     transforms = info['textureTransforms']
-    lengths = [max(1, t['translation']['timestamps'][0][-1]) for t in transforms] + [int(turn * 1000)]
+    lengths = [max(1, t['translation']['timestamps'][0][-1]) for t in transforms] + [int(abs(turn) * 1000) or 1]
     globals_ref = blob.array('I', lengths)
     SPIN_SEQUENCE = len(transforms)
 
-    reach = size / 2 + trail_height
+    reach = max(max(abs(c) for c in p) for p in positions) + (trail_height if trail_texture else 0.0)
     box_lo, box_hi = (-reach,) * 3, (reach,) * 3
     radius = reach * math.sqrt(3)
-    sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, 1000, 0.0, SEQUENCE_IN_MODEL, 0x7FFF,
-                                     0, 0, 0, 0, *box_lo, *box_hi, radius, -1, 0), 1)
+    sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, duration, 0.0, SEQUENCE_IN_MODEL,
+                                     0x7FFF, 0, 0, 0, 0, *box_lo, *box_hi, radius, -1, 0), 1)
 
-    # Bones: 0 the model, turning; 1 the trail, still.
-    spin = track(blob, 1, [([lengths[SPIN_SEQUENCE] * i // 4 for i in range(5)],
-                            [tuple(comp_quat(c) for c in _turn_z(math.pi * i / 2)) for i in range(5)])], '4h')
-    spin = spin[:2] + struct.pack('<h', SPIN_SEQUENCE) + spin[4:]
+    # Bones: 0 the model, turning (or still); 1 the trail, still.
+    spin = empty_track()
+    if turn:
+        spin = track(blob, 1, [([lengths[SPIN_SEQUENCE] * i // 4 for i in range(5)],
+                                [tuple(comp_quat(c) for c in _turn_z(math.pi * i / 2)) for i in range(5)])], '4h')
+        spin = spin[:2] + struct.pack('<h', SPIN_SEQUENCE) + spin[4:]
     bones = b''
     for rotation in (spin, empty_track()):
         bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
@@ -746,7 +763,7 @@ def missile(trail_texture, out_dir, name, client_dir, export, base, size=1.2, tr
         ref = blob.add(path.encode() + b'\0', len(path) + 1)
         textures_blob += struct.pack('<II2I', 0, 0 if i == trail_index else WRAP_U | 0x2, *ref)
     textures_ref = blob.add(textures_blob, len(blp_names))
-    weights = blob.add(track(blob, 0, [([0], [0x7FFF])], 'h'), 1)
+    weights = blob.add(track(blob, 1, [([0, fade], [0x7FFF, 0]) if fade else ([0], [0x7FFF])], 'h'), 1)
     transform_records = b''
     for index, transform in enumerate(transforms):
         move = transform['translation']
@@ -756,7 +773,8 @@ def missile(trail_texture, out_dir, name, client_dir, export, base, size=1.2, tr
         transform_records += empty_track() + empty_track()
     transforms_ref = blob.add(transform_records, len(transforms))
     replaceable_lookup = blob.array('h', [-1])
-    materials = [(m['flags'] & 0x1F, m['blendingMode']) for m in info['materials']]
+    materials = [((m['flags'] & 0x1F) | (TWO_SIDED if two_sided else 0),
+                  BLEND_ADD if m['blendingMode'] > 6 else m['blendingMode']) for m in info['materials']]
     trail_material = len(materials)
     materials.append((UNLIT | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ALPHA))
     materials_ref = blob.array('HH', materials)
@@ -765,9 +783,11 @@ def missile(trail_texture, out_dir, name, client_dir, export, base, size=1.2, tr
     texture_unit_lookup = blob.array('H', [0])
     transparency_lookup = blob.array('H', [0])
     transform_lookup = blob.array('H', info['textureTransformsLookup'])
-    ribbon = _ribbon_record(blob, 1, (0.0, 0.0, 0.0), trail_height, trail_height, 50.0, lifetime, (1.0, 1.0, 1.0),
-                            trail_index, trail_material)
-    ribbons_ref = blob.add(ribbon, 1)
+    ribbons_ref = (0, 0)
+    if trail_texture:
+        ribbon = _ribbon_record(blob, 1, (0.0, 0.0, 0.0), trail_height, trail_height, 50.0, lifetime,
+                                (1.0, 1.0, 1.0), trail_index, trail_material)
+        ribbons_ref = blob.add(ribbon, 1)
 
     header = struct.pack('<4sI', b'MD20', 264)
     header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)

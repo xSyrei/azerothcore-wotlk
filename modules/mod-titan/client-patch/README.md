@@ -91,7 +91,10 @@ shockwave (`ground_burst()`), then burns the Demon Hunter while it lasts with Bl
 (smoke, flames) are not in wow.export's exports: only their textures (`spells/DH_Darkness_*`,
 `spells/DH_ImmolationAura_*`).
 
-Fel Barrage's fel ball is a spell missile (`missile()`): retail's `fel_balllightning_creature`
+Demon Spikes' spikes (on the back) and Fiery Brand's sigil (over the target's head) are retail models a kit
+attaches (`exported_model()`, from `spells/DH_DemonSpikes/` and `spells/DH_FieryBrand/`).
+
+Fel Barrage's fel ball is a spell missile (`exported_model()` with a trail): retail's `fel_balllightning_creature`
 (wow.export's OBJ, JSON and textures in `spells/DH_FelBarrage_Ball/`), scaled to 1.2 yards, turning,
 each layer with its own texture, tint and scrolling, and Fel Rush's trail as a ribbon behind it. It
 is the missile of a copy of Frozen Orb's visual (`set` in `VISUALS`), dropped from 10 yards above the

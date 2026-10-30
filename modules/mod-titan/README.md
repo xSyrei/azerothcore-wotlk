@@ -105,6 +105,11 @@ built or spent Runic Power build and spend Fury, the same pool as the Demon Hunt
 | 90116 | Metamorphosis | 30 | Demon form for 30 sec: 25% attack speed, 20% damage; 3 min cooldown |
 | 90121 | Fel Barrage | 30 | Havoc's capstone: for 3 sec, every 0.25 sec (90122) enemies within 8 yards take 15% of attack power as Chaos damage while fel balls rain down on the ground around the Demon Hunter (90123, only a look, `spell_titan_dh_fel_barrage_pulse`); each pulse drains 5 Fury, ending it when Fury runs out (`spell_titan_dh_fel_barrage`); costs 10, 90 sec cooldown |
 | 90119 | Immolation Aura | 1 (Vengeance) | 20% of attack power as Fire damage to enemies within 8 yards at once and every sec for 6 sec (90120); 20 Fury; 15 sec cooldown |
+| 90124 | Shear | 1 (Vengeance) | Weapon strike; 10 Fury and a Soul Fragment (90126: a buff stacking to 5, 20 sec) |
+| 90125 | Soul Cleave | 1 (Vengeance) | 150% weapon damage to up to 5 enemies in front, heals 8% of maximum health; eats up to 2 Soul Fragments for 5% more each (90131, `spell_titan_dh_soul_cleave`); costs 30 |
+| 90129 | Torment | 6 (Vengeance) | Taunt, 30 yards, 8 sec cooldown |
+| 90127 | Demon Spikes | 10 (Vengeance) | 20% parry and 30% more armor for 6 sec, off the global cooldown; costs 20, 15 sec cooldown |
+| 90128 | Fiery Brand | 20 (Vengeance) | 50% of attack power as Fire damage, and the target deals 40% less damage for 8 sec; 60 sec cooldown |
 
 Every ability above needs a one-handed weapon in each hand (two one-handed weapons, or a main-hand
 and an off-hand weapon; not a shield or held-in-off-hand item). The main hand is checked by the

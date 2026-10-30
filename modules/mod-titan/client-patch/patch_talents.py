@@ -66,13 +66,18 @@ FAMILY_FLAGS = {
     90155: 0x100000,    # Chaos Cleave's hit
     90156: 0x200000,    # Demon Blades' hit
     90157: 0x400000,    # Trail of Ruin
+    90124: 0x800000,    # Shear
+    90125: 0x1000000,   # Soul Cleave
+    90127: 0x2000000,   # Demon Spikes
+    90128: 0x4000000,   # Fiery Brand
+    90129: 0x8000000,   # Torment
 }
 DEMONS_BITE, CHAOS_STRIKE, BLADE_DANCE_STRIKES, FEL_RUSH_HIT = 0x1, 0x2, 0x8, 0x20
 EYE_BEAM_BEAM, THROW_GLAIVE, CHAOS_NOVA = 0x80, 0x100, 0x200
 # Direct Chaos damage, and every direct damage spell (strikes, hits, pulses).
 CHAOS_DAMAGE = CHAOS_STRIKE | FEL_RUSH_HIT | EYE_BEAM_BEAM | CHAOS_NOVA | 0x40000
 ALL_DAMAGE = (DEMONS_BITE | CHAOS_DAMAGE | BLADE_DANCE_STRIKES | THROW_GLAIVE | 0x2000 | 0x10000 | 0x80000
-              | 0x100000 | 0x200000)
+              | 0x100000 | 0x200000 | 0x800000 | 0x1000000 | 0x4000000)
 
 TALENT_CLASS_MASK = 1 << 11     # the Demon Hunter, class 12
 HAVOC_TAB, VENGEANCE_TAB = 412, 413

@@ -147,6 +147,11 @@ namespace
         { 90116, CLASS_DEMON_HUNTER, SKILL_HAVOC, 30 },     // Metamorphosis
         { 90121, CLASS_DEMON_HUNTER, SKILL_HAVOC, 30 },     // Fel Barrage
         { 90119, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 1 },  // Immolation Aura
+        { 90124, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 1 },  // Shear
+        { 90125, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 1 },  // Soul Cleave
+        { 90129, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 6 },  // Torment
+        { 90127, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 10 }, // Demon Spikes
+        { 90128, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 20 }, // Fiery Brand
     };
     constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
         { SKILL_HAVOC, "Havoc" },

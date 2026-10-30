@@ -104,10 +104,13 @@ def main():
             shape = spec.get('shape', 'weapon')
             make = {'weapon': spell_effects.weapon_trail, 'body': spell_effects.body_trail,
                     'beam': spell_effects.beam, 'burst': spell_effects.ground_burst,
-                    'zone': spell_effects.ground_zone, 'missile': spell_effects.missile}[shape]
+                    'zone': spell_effects.ground_zone, 'missile': spell_effects.exported_model,
+                    'model': spell_effects.exported_model}[shape]
             textures = [HERE / 'spells' / f'{t}.png' if t else None for t in spec.get('textures', (spec['model'],))]
-            files = make(*textures, tmp / 'effects', spec['model'], patch_spells.EFFECTS_DIR,
-                         **spec.get('options', {}))
+            options = dict(spec.get('options', {}))
+            if 'export' in options:
+                options['export'] = HERE / 'spells' / options['export']
+            files = make(*textures, tmp / 'effects', spec['model'], patch_spells.EFFECTS_DIR, **options)
             for f in files:
                 entries.append((f'{patch_spells.EFFECTS_DIR}\\{f}', (tmp / 'effects' / f).read_bytes()))
 
