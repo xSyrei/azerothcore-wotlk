@@ -38,6 +38,10 @@ namespace Wildcard
     constexpr uint8 CLASS_DEMON_HUNTER = 12;
     constexpr uint32 SKILL_HAVOC = 2000;
     constexpr uint32 SKILL_VENGEANCE = 2001;
+    // Talent trees Heroes draw from: every playable class's, and the Demon Hunter's (TalentTab rows of our own,
+    // client-patch/patch_talents.py).
+    constexpr uint32 CLASSMASK_DEMON_HUNTER = 1 << (CLASS_DEMON_HUNTER - 1);
+    constexpr uint32 HERO_TALENT_CLASSMASK = CLASSMASK_ALL_PLAYABLE | CLASSMASK_DEMON_HUNTER;
 
     struct Rank
     {

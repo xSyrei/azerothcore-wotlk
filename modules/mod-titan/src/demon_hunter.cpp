@@ -15,6 +15,10 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "CellImpl.h"
+#include "GameTime.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "SpellAuraEffects.h"
@@ -31,12 +35,40 @@
 
 enum DemonHunterSpells
 {
+    SPELL_EYE_BEAM                  = 90105,
     SPELL_BLADE_DANCE_STRIKE        = 90107,
     SPELL_BLADE_DANCE_FINAL_STRIKE  = 90108,
     SPELL_DEMON_FORM                = 90115,
     SPELL_METAMORPHOSIS             = 90116,
+    SPELL_BLUR                      = 90113,
     SPELL_FEL_BARRAGE_BALL          = 90123,
+    // What the talents cast (client-patch/patch_talents.py, HELPERS)
+    SPELL_DEMONIC_APPETITE          = 90150,
+    SPELL_PREPARED                  = 90151,
+    SPELL_BLOODLET                  = 90152,
+    SPELL_MASTER_OF_THE_GLAIVE      = 90153,
+    SPELL_MOMENTUM                  = 90154,
+    SPELL_CHAOS_CLEAVE              = 90155,
+    SPELL_TRAIL_OF_RUIN             = 90157,
+    SPELL_SOUL_RENDING              = 90158,
+    SPELL_UNBOUND_CHAOS             = 90159,
 };
+
+// The Havoc talents the scripts read, by rank (client-patch/patch_talents.py, HAVOC): each rank a passive aura
+// whose amount is the talent's number.
+constexpr std::array<uint32, 3> TALENT_BLIND_FURY = { 90200, 90201, 90202 };              // Fury per hit: effect 2
+constexpr std::array<uint32, 3> TALENT_DEMONIC_APPETITE = { 90205, 90206, 90207 };        // % chance
+constexpr std::array<uint32, 2> TALENT_PREPARED = { 90208, 90209 };                       // Fury per sec
+constexpr std::array<uint32, 3> TALENT_BLOODLET = { 90210, 90211, 90212 };                // % of the hit
+constexpr std::array<uint32, 1> TALENT_MASTER_OF_THE_GLAIVE = { 90217 };                  // slow: effect 2
+constexpr std::array<uint32, 2> TALENT_MOMENTUM = { 90225, 90226 };                       // % damage
+constexpr std::array<uint32, 3> TALENT_CHAOS_CLEAVE = { 90227, 90228, 90229 };            // % of the strike
+constexpr std::array<uint32, 2> TALENT_FEL_MASTERY = { 90231, 90232 };                    // Fury: effect 2
+constexpr std::array<uint32, 3> TALENT_CYCLE_OF_HATRED = { 90236, 90237, 90238 };         // sec
+constexpr std::array<uint32, 2> TALENT_TRAIL_OF_RUIN = { 90239, 90240 };                  // % of the strike
+constexpr std::array<uint32, 2> TALENT_UNBOUND_CHAOS = { 90246, 90247 };                  // % damage
+constexpr std::array<uint32, 1> TALENT_DEMONIC = { 90248 };                               // sec
+constexpr int32 FURY_UNITS = 10;    // Fury is Runic Power, counted in tenths
 
 enum DemonHunterDisplays
 {
@@ -71,6 +103,24 @@ class spell_titan_dh_dual_weapons : public SpellScript
 
 namespace
 {
+    // A talent's number for the unit: the amount of its highest rank's aura (effect effIndex), 0 without it.
+    template <std::size_t N>
+    int32 TalentValue(Unit const* unit, std::array<uint32, N> const& ranks, uint8 effIndex = EFFECT_0)
+    {
+        int32 value = 0;
+        for (uint32 rank : ranks)
+            if (AuraEffect const* effect = unit->GetAuraEffect(rank, effIndex))
+                value = effect->GetAmount();
+        return value;
+    }
+
+    // Casts a talent's helper spell with its first effect's value set (damage, healing, Fury, a %).
+    void CastWithValue(Unit* caster, uint32 spellId, int32 value, Unit* target)
+    {
+        if (value > 0)
+            caster->CastCustomSpell(spellId, SPELLVALUE_BASE_POINT0, value, target, true);
+    }
+
     bool InDemonForm(Unit const* unit)
     {
         return unit->HasAura(SPELL_DEMON_FORM) || unit->HasAura(SPELL_METAMORPHOSIS);
@@ -122,39 +172,62 @@ class spell_titan_dh_fel_rush : public SpellScript
             sScriptMgr->AnticheatSetUnderACKmount(player);
     }
 
+    // Momentum (talent): a damage buff.
+    void Gather()
+    {
+        Unit* caster = GetCaster();
+        CastWithValue(caster, SPELL_MOMENTUM, TalentValue(caster, TALENT_MOMENTUM), caster);
+    }
+
     void Register() override
     {
         OnEffectLaunch += SpellEffectFn(spell_titan_dh_fel_rush::Dash, EFFECT_0, SPELL_EFFECT_CHARGE_DEST);
+        AfterCast += SpellCastFn(spell_titan_dh_fel_rush::Gather);
     }
 };
 
 // Fel Rush damage (90104): cast as the Demon Hunter sets off, it hits only the enemies in the lane
-// the dash crosses (15 yards ahead, 2 yards each side), not everything around.
+// the dash crosses (15 yards ahead, 2 yards each side), not everything around. Fel Mastery (talent): Fury
+// when it hits; Unbound Chaos (talent): the buff that made it stronger is used up.
 class spell_titan_dh_fel_rush_damage : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_fel_rush_damage);
 
     void KeepPath(std::list<WorldObject*>& targets)
     {
-        KeepInLane(GetCaster(), targets, 2.0f);
+        Unit* caster = GetCaster();
+        KeepInLane(caster, targets, 2.0f);
+        if (!targets.empty())
+            if (int32 fury = TalentValue(caster, TALENT_FEL_MASTERY, EFFECT_1))
+                caster->ModifyPower(POWER_RUNIC_POWER, fury * FURY_UNITS);
+    }
+
+    void UseUpUnboundChaos()
+    {
+        GetCaster()->RemoveAurasDueToSpell(SPELL_UNBOUND_CHAOS);
     }
 
     void Register() override
     {
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_dh_fel_rush_damage::KeepPath, EFFECT_0,
             TARGET_UNIT_SRC_AREA_ENEMY);
+        AfterCast += SpellCastFn(spell_titan_dh_fel_rush_damage::UseUpUnboundChaos);
     }
 };
 
 // Eye Beam damage (90106, every tick of the channel): only the enemies along the beam (20 yards
-// ahead, 2.5 yards each side), not a wide cone.
+// ahead, 2.5 yards each side), not a wide cone. Blind Fury (talent): Fury every time it strikes.
 class spell_titan_dh_eye_beam_damage : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_eye_beam_damage);
 
     void KeepBeam(std::list<WorldObject*>& targets)
     {
-        KeepInLane(GetCaster(), targets, 2.5f);
+        Unit* caster = GetCaster();
+        KeepInLane(caster, targets, 2.5f);
+        if (!targets.empty())
+            if (int32 fury = TalentValue(caster, TALENT_BLIND_FURY, EFFECT_1))
+                caster->ModifyPower(POWER_RUNIC_POWER, fury * FURY_UNITS);
     }
 
     void Register() override
@@ -270,9 +343,22 @@ class spell_titan_dh_eye_beam : public AuraScript
         }
     }
 
+    // Demonic (talent): Metamorphosis for a while when the channel ends, before the demon form drops (so the
+    // shape stays).
     void Restore(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
-        GetTarget()->RemoveAurasDueToSpell(SPELL_DEMON_FORM);
+        Unit* target = GetTarget();
+        if (int32 seconds = TalentValue(target, TALENT_DEMONIC); seconds && target->IsAlive()
+            && !target->HasAura(SPELL_METAMORPHOSIS))
+        {
+            target->CastSpell(target, SPELL_METAMORPHOSIS, true);
+            if (Aura* metamorphosis = target->GetAura(SPELL_METAMORPHOSIS))
+            {
+                metamorphosis->SetMaxDuration(seconds * IN_MILLISECONDS);
+                metamorphosis->SetDuration(seconds * IN_MILLISECONDS);
+            }
+        }
+        target->RemoveAurasDueToSpell(SPELL_DEMON_FORM);
     }
 
     void Register() override
@@ -383,6 +469,226 @@ class spell_titan_dh_fel_barrage_pulse : public SpellScript
     }
 };
 
+// Chaos Strike (90101) and its talents: Demonic Appetite (a chance to heal and gain Fury), Chaos Cleave (a share
+// of the hit to every other enemy near the target) and Cycle of Hatred (Eye Beam's cooldown shortened).
+class spell_titan_dh_chaos_strike : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_chaos_strike);
+
+    static constexpr float CLEAVE_RADIUS = 8.0f;
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_DEMONIC_APPETITE, SPELL_CHAOS_CLEAVE, SPELL_EYE_BEAM });
+    }
+
+    void Empower()
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+        if (!target)
+            return;
+
+        if (int32 chance = TalentValue(caster, TALENT_DEMONIC_APPETITE); chance && roll_chance_i(chance))
+            caster->CastSpell(caster, SPELL_DEMONIC_APPETITE, true);
+
+        if (int32 share = TalentValue(caster, TALENT_CHAOS_CLEAVE))
+        {
+            int32 damage = CalculatePct(GetHitDamage(), share);
+            std::list<Unit*> enemies;
+            Acore::AnyUnfriendlyUnitInObjectRangeCheck check(target, caster, CLEAVE_RADIUS);
+            Acore::UnitListSearcher<Acore::AnyUnfriendlyUnitInObjectRangeCheck> searcher(target, enemies, check);
+            Cell::VisitObjects(target, searcher, CLEAVE_RADIUS);
+            for (Unit* enemy : enemies)
+                if (enemy != target && caster->IsValidAttackTarget(enemy))
+                    CastWithValue(caster, SPELL_CHAOS_CLEAVE, damage, enemy);
+        }
+
+        if (Player* player = caster->ToPlayer())
+            if (int32 seconds = TalentValue(caster, TALENT_CYCLE_OF_HATRED))
+                player->ModifySpellCooldown(SPELL_EYE_BEAM, -seconds * IN_MILLISECONDS);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_dh_chaos_strike::Empower);
+    }
+};
+
+// Vengeful Retreat (90109) and its talents: Prepared (Fury over 5 sec) and Momentum (a damage buff).
+class spell_titan_dh_vengeful_retreat : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_vengeful_retreat);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_PREPARED, SPELL_MOMENTUM });
+    }
+
+    void Empower()
+    {
+        Unit* caster = GetCaster();
+        CastWithValue(caster, SPELL_PREPARED, TalentValue(caster, TALENT_PREPARED) * FURY_UNITS, caster);
+        CastWithValue(caster, SPELL_MOMENTUM, TalentValue(caster, TALENT_MOMENTUM), caster);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_dh_vengeful_retreat::Empower);
+    }
+};
+
+// Immolation Aura (90119) and Unbound Chaos (talent): the next Fel Rush is stronger.
+class spell_titan_dh_immolation_aura : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_immolation_aura);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_UNBOUND_CHAOS });
+    }
+
+    void Empower()
+    {
+        Unit* caster = GetCaster();
+        CastWithValue(caster, SPELL_UNBOUND_CHAOS, TalentValue(caster, TALENT_UNBOUND_CHAOS), caster);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_dh_immolation_aura::Empower);
+    }
+};
+
+// Throw Glaive (90111) and its talents, on each enemy it hits: Bloodlet (a share of the hit as a bleed over
+// 6 sec, 3 ticks) and Master of the Glaive (a slow).
+class spell_titan_dh_throw_glaive : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_throw_glaive);
+
+    static constexpr int32 BLEED_TICKS = 3;
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_BLOODLET, SPELL_MASTER_OF_THE_GLAIVE });
+    }
+
+    void Empower()
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+        if (!target)
+            return;
+
+        if (int32 share = TalentValue(caster, TALENT_BLOODLET))
+            CastWithValue(caster, SPELL_BLOODLET, CalculatePct(GetHitDamage(), share) / BLEED_TICKS, target);
+        if (TalentValue(caster, TALENT_MASTER_OF_THE_GLAIVE, EFFECT_1))
+            caster->CastSpell(target, SPELL_MASTER_OF_THE_GLAIVE, true);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_dh_throw_glaive::Empower);
+    }
+};
+
+// Blade Dance's last strike (90108) and Trail of Ruin (talent): a share of the hit burns over 4 sec (4 ticks).
+class spell_titan_dh_blade_dance_final_strike : public SpellScript
+{
+    PrepareSpellScript(spell_titan_dh_blade_dance_final_strike);
+
+    static constexpr int32 BURN_TICKS = 4;
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_TRAIL_OF_RUIN });
+    }
+
+    void Empower()
+    {
+        Unit* caster = GetCaster();
+        if (Unit* target = GetHitUnit())
+            if (int32 share = TalentValue(caster, TALENT_TRAIL_OF_RUIN))
+                CastWithValue(caster, SPELL_TRAIL_OF_RUIN, CalculatePct(GetHitDamage(), share) / BURN_TICKS, target);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_dh_blade_dance_final_strike::Empower);
+    }
+};
+
+// Desperate Instincts (talent, 90218-90219): a hit that leaves the Demon Hunter below 35% health makes them Blur,
+// at most once every (the talent's number) seconds.
+class spell_titan_dh_desperate_instincts : public AuraScript
+{
+    PrepareAuraScript(spell_titan_dh_desperate_instincts);
+
+    static constexpr int32 HEALTH_PCT = 35;
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_BLUR });
+    }
+
+    bool CheckProc(ProcEventInfo& eventInfo)
+    {
+        DamageInfo* damage = eventInfo.GetDamageInfo();
+        Unit* target = GetTarget();
+        return damage && damage->GetDamage() && target->IsAlive() && target->HealthBelowPct(HEALTH_PCT)
+            && GameTime::GetGameTime() >= _ready;
+    }
+
+    void Blur(AuraEffect const* aurEff, ProcEventInfo& /*eventInfo*/)
+    {
+        PreventDefaultAction();
+        _ready = GameTime::GetGameTime() + Seconds(aurEff->GetAmount());
+        GetTarget()->CastSpell(GetTarget(), SPELL_BLUR, true);
+    }
+
+    void Register() override
+    {
+        DoCheckProc += AuraCheckProcFn(spell_titan_dh_desperate_instincts::CheckProc);
+        OnEffectProc += AuraEffectProcFn(spell_titan_dh_desperate_instincts::Blur, EFFECT_0, SPELL_AURA_DUMMY);
+    }
+
+private:
+    Seconds _ready = 0s;
+};
+
+// Soul Rending (talent, 90241-90243): heals the Demon Hunter for (the talent's number)% of the damage they
+// deal, twice as much in Metamorphosis.
+class spell_titan_dh_soul_rending : public AuraScript
+{
+    PrepareAuraScript(spell_titan_dh_soul_rending);
+
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_SOUL_RENDING });
+    }
+
+    bool CheckProc(ProcEventInfo& eventInfo)
+    {
+        DamageInfo* damage = eventInfo.GetDamageInfo();
+        return damage && damage->GetDamage() && GetTarget()->IsAlive();
+    }
+
+    void Leech(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
+    {
+        PreventDefaultAction();
+        Unit* target = GetTarget();
+        int32 pct = aurEff->GetAmount() * (target->HasAura(SPELL_METAMORPHOSIS) ? 2 : 1);
+        CastWithValue(target, SPELL_SOUL_RENDING, CalculatePct(int32(eventInfo.GetDamageInfo()->GetDamage()), pct),
+            target);
+    }
+
+    void Register() override
+    {
+        DoCheckProc += AuraCheckProcFn(spell_titan_dh_soul_rending::CheckProc);
+        OnEffectProc += AuraEffectProcFn(spell_titan_dh_soul_rending::Leech, EFFECT_0, SPELL_AURA_DUMMY);
+    }
+};
+
 void AddSC_demon_hunter()
 {
     RegisterSpellScript(spell_titan_dh_dual_weapons);
@@ -396,4 +702,11 @@ void AddSC_demon_hunter()
     RegisterSpellScript(spell_titan_dh_darkness);
     RegisterSpellScript(spell_titan_dh_fel_barrage);
     RegisterSpellScript(spell_titan_dh_fel_barrage_pulse);
+    RegisterSpellScript(spell_titan_dh_chaos_strike);
+    RegisterSpellScript(spell_titan_dh_vengeful_retreat);
+    RegisterSpellScript(spell_titan_dh_immolation_aura);
+    RegisterSpellScript(spell_titan_dh_throw_glaive);
+    RegisterSpellScript(spell_titan_dh_blade_dance_final_strike);
+    RegisterSpellScript(spell_titan_dh_desperate_instincts);
+    RegisterSpellScript(spell_titan_dh_soul_rending);
 }

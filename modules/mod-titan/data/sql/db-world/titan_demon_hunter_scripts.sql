@@ -68,7 +68,8 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 
 -- Felblade, Darkness and Immolation Aura: both weapons needed; Felblade's and Immolation Aura's pulses'
 -- share of attack power; Darkness's chance to avoid a hit (spell_titan_dh_darkness).
-DELETE FROM `spell_script_names` WHERE `spell_id` IN (90117, 90118, 90119) AND `ScriptName` = 'spell_titan_dh_dual_weapons';
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (90117, 90118, 90119)
+    AND `ScriptName` = 'spell_titan_dh_dual_weapons';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90117, 'spell_titan_dh_dual_weapons'),
 (90118, 'spell_titan_dh_dual_weapons'),
@@ -94,3 +95,29 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 DELETE FROM `spell_script_names` WHERE `spell_id` = 90122 AND `ScriptName` = 'spell_titan_dh_fel_barrage_pulse';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90122, 'spell_titan_dh_fel_barrage_pulse');
+
+-- Havoc talents (client-patch/patch_talents.py): the abilities whose scripts apply them, and the talents' own
+-- procs (Desperate Instincts, Soul Rending).
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_dh_chaos_strike',
+    'spell_titan_dh_vengeful_retreat', 'spell_titan_dh_immolation_aura', 'spell_titan_dh_throw_glaive',
+    'spell_titan_dh_blade_dance_final_strike', 'spell_titan_dh_desperate_instincts', 'spell_titan_dh_soul_rending');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90101, 'spell_titan_dh_chaos_strike'),
+(90109, 'spell_titan_dh_vengeful_retreat'),
+(90119, 'spell_titan_dh_immolation_aura'),
+(90111, 'spell_titan_dh_throw_glaive'),
+(90108, 'spell_titan_dh_blade_dance_final_strike'),
+(90218, 'spell_titan_dh_desperate_instincts'),
+(90219, 'spell_titan_dh_desperate_instincts'),
+(90241, 'spell_titan_dh_soul_rending'),
+(90242, 'spell_titan_dh_soul_rending'),
+(90243, 'spell_titan_dh_soul_rending');
+-- Demon Blades' hit takes 20% of attack power; the helpers whose amount the scripts set (a share of a hit,
+-- healing) take nothing more.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90152, 90155, 90156, 90157, 90158);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90152, 0, 0, 0, 0, 'Bloodlet'),
+(90155, 0, 0, 0, 0, 'Chaos Cleave'),
+(90156, 0, 0, 0.2, 0, 'Demon Blades'),
+(90157, 0, 0, 0, 0, 'Trail of Ruin'),
+(90158, 0, 0, 0, 0, 'Soul Rending');

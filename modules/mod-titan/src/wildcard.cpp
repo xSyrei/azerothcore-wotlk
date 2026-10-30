@@ -260,7 +260,7 @@ namespace
                 continue;
 
             TalentTabEntry const* tabInfo = sTalentTabStore.LookupEntry(talentInfo->TalentTab);
-            if (!tabInfo || tabInfo->petTalentMask || !(tabInfo->ClassMask & CLASSMASK_ALL_PLAYABLE))
+            if (!tabInfo || tabInfo->petTalentMask || !(tabInfo->ClassMask & HERO_TALENT_CLASSMASK))
                 continue;
 
             uint8 currentRank = 0;

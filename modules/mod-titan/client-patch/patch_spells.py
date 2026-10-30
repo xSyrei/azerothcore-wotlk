@@ -24,6 +24,8 @@ import struct
 import sys
 from pathlib import Path
 
+import patch_talents
+
 HERE = Path(__file__).resolve().parent
 SPELL_FIELDS = 234
 ICON_FIELDS = 2
@@ -40,7 +42,8 @@ FIELDS = {
     'EquippedItemInventoryTypeMask': 70, 'SpellVisual': 131, 'SpellIconID': 133,
     'ActiveIconID': 134, 'ManaCostPercentage': 204, 'StartRecoveryCategory': 205, 'StartRecoveryTime': 206,
     'SpellFamilyName': 208, 'SpellFamilyFlags0': 209, 'SpellFamilyFlags1': 210, 'SpellFamilyFlags2': 211,
-    'MaxAffectedTargets': 212, 'DmgClass': 213, 'Speed': 47, 'SchoolMask': 225, 'RuneCostID': 226,
+    'MaxAffectedTargets': 212, 'DmgClass': 213, 'Speed': 47, 'ProcFlags': 34, 'ProcChance': 35, 'SchoolMask': 225,
+    'RuneCostID': 226,
 }
 EFFECT_FIELDS = {       # name: (first column, is float); effect n is first column + n - 1
     'Effect': (71, False), 'DieSides': (74, False), 'RealPointsPerLevel': (77, True), 'BasePoints': (80, False),
@@ -151,6 +154,7 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
          'Ability_DemonHunter_ConsumeMagic', 'Spell_Shadow_DemonForm',
          'Ability_DemonHunter_Metamorphosis', 'Ability_DemonHunter_Felblade', 'Ability_DemonHunter_Darkness',
          'Spell_Fire_Incinerate', 'INV_FelBarrage']
+ICONS += [name for name in patch_talents.ICONS if name not in ICONS]
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
@@ -575,15 +579,16 @@ SPELLS = [
         },
     },
     {
-        # Intercept's charge: the hit (effect 2) and the Fury (effect 3) land as the Demon Hunter arrives (a
-        # charge of no class family travels at charge speed, Spell::EffectCharge). 1 damage plus attack power
+        # Intercept's charge: the hit (effect 2) and the Fury (effect 3) land as the Demon Hunter arrives (the
+        # spell travels at charge speed, as the charge does, Spell::EffectCharge). 1 damage plus attack power
         # (spell_bonus_data).
         'id': 90117, 'copy': 20252, 'name': 'Felblade', 'icon': 'Ability_DemonHunter_Felblade',
         'two_weapons': True, 'visual': 'Felblade',
         'description': 'Charge to your target and deal 50% of your attack power as Fire damage. Generates 40 Fury.',
         'set': {'RecoveryTime': 15000, 'RangeIndex': RANGE_15, 'PowerType': 0, 'ManaCost': 0,
                 'ManaCostPercentage': 0, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
-                'SchoolMask': FIRE, 'DmgClass': DMG_CLASS_MELEE, 'BaseLevel': 16, 'SpellLevel': 16, 'MaxLevel': 80},
+                'SchoolMask': FIRE, 'DmgClass': DMG_CLASS_MELEE, 'Speed': 42.0, 'BaseLevel': 16, 'SpellLevel': 16,
+                'MaxLevel': 80},
         'clear': [2, 3],
         'effects': {
             2: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
@@ -686,6 +691,7 @@ SPELLS = [
         },
     },
 ]
+SPELLS += patch_talents.SPELLS      # the talents' ranks and helper spells
 
 
 class Dbc:
@@ -832,12 +838,17 @@ def build_spells(spells, icon_id):
             row[FIELDS[name]] &= ~bits
         for n, changes in spell.get('effects', {}).items():
             for name, value in changes.items():
+                if name == 'Mask':          # the spells a modifier affects: family flags (first word)
+                    row[CLASS_MASK + (n - 1) * 3:CLASS_MASK + n * 3] = [value, 0, 0]
+                    continue
                 first, is_float = EFFECT_FIELDS[name]
                 row[first + n - 1] = raw(float(value) if is_float else value)
-        # Our own spells: no class family (no class talent or glyph touches them), one rank.
+        # Our own spells: the Demon Hunter's family (no class talent or glyph touches them; our talents do, by
+        # their flag), one rank.
         if 'SpellFamilyName' not in spell.get('set', {}):
-            for name in ('SpellFamilyName', 'SpellFamilyFlags0', 'SpellFamilyFlags1', 'SpellFamilyFlags2'):
-                row[FIELDS[name]] = 0
+            row[FIELDS['SpellFamilyName']] = patch_talents.DH_FAMILY
+            row[FIELDS['SpellFamilyFlags0']] = patch_talents.FAMILY_FLAGS.get(spell['id'], 0)
+            row[FIELDS['SpellFamilyFlags1']] = row[FIELDS['SpellFamilyFlags2']] = 0
         if spell.get('two_weapons'):
             row[FIELDS['EquippedItemClass']] = ITEM_CLASS_WEAPON
             row[FIELDS['EquippedItemSubClassMask']] = ONE_HANDED_WEAPONS
@@ -850,12 +861,44 @@ def build_spells(spells, icon_id):
             row[column] = 0
         row[FIELDS['SpellIconID']] = icon_id[spell['icon']]
         row[FIELDS['ActiveIconID']] = 0
-        for base, text in ((NAME, spell['name']), (RANK, ''), (DESCRIPTION, spell.get('description', '')),
+        for base, text in ((NAME, spell['name']), (RANK, spell.get('rank', '')),
+                           (DESCRIPTION, spell.get('description', '')),
                            (TOOLTIP, spell.get('tooltip', ''))):
             row[base] = spells.add_string(text)     # enUS; no text in the other locales
             for locale in range(1, 16):
                 row[base + locale] = 0
         spells.rows[spell['id']] = tuple(row)
+
+
+TALENT_FIELDS, TALENT_TAB_FIELDS = 23, 24
+TALENT_TAB_TEMPLATE = 164       # Fury: its name flags and race mask
+TAB_NAME, TAB_ICON, TAB_CLASS_MASK, TAB_PET_MASK, TAB_ORDER, TAB_BACKGROUND = 1, 18, 20, 21, 22, 23
+TALENT_RANKS, TALENT_REQUIRES, TALENT_REQUIRES_RANK = 4, 13, 16
+
+
+def build_talents(source, out, icon_id):
+    """The Demon Hunter's talent trees (patch_talents.py) in Talent.dbc and TalentTab.dbc."""
+    tabs = Dbc(source / 'TalentTab.dbc', TALENT_TAB_FIELDS)
+    talents = Dbc(source / 'Talent.dbc', TALENT_FIELDS)
+    for tab_id, name, order, icon in patch_talents.TABS:
+        row = list(tabs.rows[TALENT_TAB_TEMPLATE])
+        row[0] = tab_id
+        row[TAB_NAME:TAB_NAME + 16] = [tabs.add_string(name)] + [0] * 15
+        row[TAB_ICON] = icon_id[icon]
+        row[TAB_CLASS_MASK] = patch_talents.TALENT_CLASS_MASK
+        row[TAB_PET_MASK] = 0
+        row[TAB_ORDER] = order
+        row[TAB_BACKGROUND] = tabs.add_string(f'DemonHunter{name}')     # no art yet: the Classless window has none
+        tabs.rows[tab_id] = tuple(row)
+    for talent_id, tab_id, tier, column, ranks, requires in patch_talents.talents():
+        row = [0] * TALENT_FIELDS
+        row[:4] = [talent_id, tab_id, tier, column]
+        row[TALENT_RANKS:TALENT_RANKS + len(ranks)] = ranks
+        row[TALENT_REQUIRES] = requires     # its first rank (TALENT_REQUIRES_RANK 0) is enough
+        talents.rows[talent_id] = tuple(row)
+    tabs.save(out / 'TalentTab.dbc')
+    talents.save(out / 'Talent.dbc')
+    return tabs, talents
 
 
 def rename_runic_power(spells):
@@ -879,7 +922,28 @@ def sql_columns():
     return re.findall(r'^\s+`(\w+)` (\w+)( unsigned)?', table[:table.index('PRIMARY KEY')], re.M)
 
 
-def write_sql(spells, path):
+def talent_sql(tabs, talents):
+    """`talenttab_dbc` and `talent_dbc` rows of the Demon Hunter's trees."""
+    tab_ids = [tab[0] for tab in patch_talents.TABS]
+    talent_ids = [talent[0] for talent in patch_talents.talents()]
+    lines = ['', '-- The Demon Hunter\'s talent trees (patch_talents.py). Never delete a talent players have.',
+             f'DELETE FROM `talenttab_dbc` WHERE `ID` IN ({", ".join(map(str, tab_ids))});',
+             'INSERT INTO `talenttab_dbc` VALUES']
+    values = []
+    for tab_id in tab_ids:
+        row = tabs.rows[tab_id]
+        names = ["'" + tabs.string(row[TAB_NAME]) + "'"] + ["''"] * 15
+        values.append('(' + ','.join([str(row[0])] + names + [str(v) for v in row[17:TAB_BACKGROUND]]
+                                     + ["'" + tabs.string(row[TAB_BACKGROUND]) + "'"]) + ')')
+    lines.append(',\n'.join(values) + ';')
+    lines += [f'DELETE FROM `talent_dbc` WHERE `ID` IN ({", ".join(map(str, talent_ids))});',
+              'INSERT INTO `talent_dbc` VALUES']
+    lines.append(',\n'.join('(' + ','.join(map(str, talents.rows[talent_id])) + ')' for talent_id in talent_ids)
+                 + ';')
+    return lines
+
+
+def write_sql(spells, path, talent_lines=()):
     columns = sql_columns()
     if len(columns) != SPELL_FIELDS:
         raise ValueError(f'spell_dbc has {len(columns)} columns, expected {SPELL_FIELDS}')
@@ -904,6 +968,7 @@ def write_sql(spells, path):
                 out.append(str(value - 0x100000000))
         values.append('(' + ','.join(out) + ')')
     lines.append(',\n'.join(values) + ';')
+    lines += talent_lines
     Path(path).write_text('\n'.join(lines) + '\n')
 
 
@@ -929,10 +994,11 @@ def main():
     build_spells(spells, icon_id)
     renamed = rename_runic_power(spells)
     spells.save(out / 'Spell.dbc')
+    tabs, talents = build_talents(source, out, icon_id)
     print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power renamed in {renamed} texts) '
           f'and {out / "SpellIcon.dbc"}')
     if sql:
-        write_sql(spells, sql)
+        write_sql(spells, sql, talent_sql(tabs, talents))
         print(f'Wrote {sql}')
 
 

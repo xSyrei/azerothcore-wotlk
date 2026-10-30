@@ -82,11 +82,11 @@ namespace
         for (uint32 i = 0; i < sTalentTabStore.GetNumRows(); ++i)
         {
             TalentTabEntry const* tab = sTalentTabStore.LookupEntry(i);
-            if (!tab || tab->petTalentMask || !(tab->ClassMask & CLASSMASK_ALL_PLAYABLE))
+            if (!tab || tab->petTalentMask || !(tab->ClassMask & Wildcard::HERO_TALENT_CLASSMASK))
                 continue;
 
             uint8 classId = 0;
-            for (uint8 c = CLASS_WARRIOR; c < MAX_CLASSES; ++c)
+            for (uint8 c = CLASS_WARRIOR; c <= Wildcard::CLASS_DEMON_HUNTER; ++c)
                 if (tab->ClassMask & (1 << (c - 1)))
                     classId = c;
             SendAddon(player, Acore::StringFormat("U,{},{},{}", classId, tab->tabpage, tab->TalentTabID));
@@ -99,7 +99,7 @@ namespace
                 continue;
 
             TalentTabEntry const* tab = sTalentTabStore.LookupEntry(talent->TalentTab);
-            if (!tab || tab->petTalentMask || !(tab->ClassMask & CLASSMASK_ALL_PLAYABLE))
+            if (!tab || tab->petTalentMask || !(tab->ClassMask & Wildcard::HERO_TALENT_CLASSMASK))
                 continue;
 
             std::string ranks;
