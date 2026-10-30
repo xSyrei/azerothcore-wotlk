@@ -282,6 +282,25 @@ and colors its bars Fury purple.
 Install: copy the `Emberforge_Resources` folder into the client's `Interface\AddOns\` folder.
 The launcher will ship it automatically for players.
 
+## HD textures (Elwynn Forest, Northshire, Stormwind)
+
+`hd/upres_zones.py` makes `patch-H.MPQ`, an optional patch with the terrain, nature and building textures of
+Elwynn Forest (Northshire included) and Stormwind City upscaled 2x. It runs on the PC with the client and a GPU,
+not here: it reads the client's Blizzard archives (`hd/mpq_read.py`, read only; give it the clean copy of the
+client), finds the zones' terrain tiles (by the area of their chunks, AreaTable.dbc), their ground textures (and
+specular maps), the trees, bushes and rocks placed on them and their buildings (and the doodads inside), keeps
+`World\` and `Tileset\` textures only, upscales them with Real-ESRGAN (x4plus, then Lanczos down to 2x; seamless
+for repeating ground and wall textures; 1-bit alpha kept crisp), compresses them with texconv (DXT1 / DXT5, every
+mip) into BLP2 and packs them. Both tools are downloaded into the work folder on the first run. The patch is
+big and per machine: it is not committed.
+
+```powershell
+py -m pip install pillow
+cd ~\azerothcore-wotlk\modules\mod-titan\client-patch\hd
+py upres_zones.py E:\Emberforge\client E:\Emberforge\hd-work
+Copy-Item E:\Emberforge\hd-work\patch-H.MPQ E:\Emberforge\test-install\Data\ -Force
+```
+
 ## Spellbook class tabs
 
 A Hero learns every class's abilities but none of their skill lines, so the client files them all under
