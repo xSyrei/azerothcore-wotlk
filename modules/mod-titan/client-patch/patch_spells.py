@@ -58,6 +58,7 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 # file, area size, scale, min scale, max scale).
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
 VISUAL_MISSILE_MODEL, VISUAL_MISSILE_SOUND, VISUAL_MISSILE_CAST_OFFSET = 8, 11, 26     # offset: x, y, z
+VISUAL_MISSILE_MOTION = 21      # SpellMissileMotion: a scripted flight path (0: straight)
 # SpellVisual columns; 'persistent' is the kit a persistent area (a dynamic object) shows for as long as it lasts,
 # 'area' the one it shows (a sound) as it appears, 'impactarea' the one a missile shows where it lands on the ground.
 VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5, 'area': 23, 'impactarea': 24,
@@ -329,15 +330,17 @@ VISUALS = {
     # Fel Barrage: fel fire on the hands while it lasts, and one of its two sounds on the cast. Each pulse (no
     # animation: a triggered spell's own would stab with the weapon) rains fel balls down on the ground around the
     # Demon Hunter: Frozen Orb's visual (a missile from above the caster to a spot on the ground, its hit shown
-    # there), with our ball dropping from 10 yards up (silent: a dozen at once) and a fel fire burst where it lands.
+    # there), with our ball dropping straight from 10 yards up (not the orb's drifting flight; silent: a dozen at
+    # once) and a fel fire burst where it lands (not the orb's frost).
     'FelBarrage': {'copy': 12038, 'id': 16718, 'kits': {
         'cast': (15629, {HANDS: FEL_PRECAST_HAND, 'sound': 'FelBarrage'}),
         'state': (15630, {KIT_HEAD: 0, KIT_CHEST: 0, KIT_BASE: 0, HANDS: FEL_PRECAST_HAND})}},
     'FelBarragePulse': {'copy': 253, 'id': 16719, 'clear': ('cast', 'impact'), 'kits': {
         'cast': (15631, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None})}},
-    'FelBarrageBolt': {'copy': 15082, 'id': 16720, 'clear': ('precast', 'cast', 'impact', 'state', 'statedone'),
+    'FelBarrageBolt': {'copy': 15082, 'id': 16720,
+                       'clear': ('precast', 'cast', 'impact', 'state', 'statedone', 'area'),
                        'set': {VISUAL_MISSILE_MODEL: 'FelBarrageBall', VISUAL_MISSILE_SOUND: 0,
-                               VISUAL_MISSILE_CAST_OFFSET + 2: 10.0}, 'kits': {
+                               VISUAL_MISSILE_MOTION: 0, VISUAL_MISSILE_CAST_OFFSET + 2: 10.0}, 'kits': {
         'cast': (15632, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
         'impactarea': (15633, {KIT_WORLD: FEL_RAIN_OF_FIRE_IMPACT, 'sound': None})}},
     'FelRushHit': {'copy': 253, 'id': 16706, 'clear': ('cast',), 'kits': {
