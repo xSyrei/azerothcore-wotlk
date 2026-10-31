@@ -193,38 +193,78 @@ class spell_titan_monk_jade_wind_heal : public SpellScript
     }
 };
 
-// Windwalker's combo point spenders (Tiger Palm awards them, on the Monk's current target, at most 5): each needs and
-// takes its own cost, not all of them as a finisher would.
-class spell_titan_monk_combo_points : public SpellScript
+// Windwalker's finishers (Blackout Kick, Rising Sun Kick, Fists of Fury, Spinning Crane Kick): usable from 1 combo
+// point (Tiger Palm awards them, on the Monk's current target, at most 5), they take them all and hit as hard as the
+// points spent: their spell values are the 5-point ones, scaled by points / 5.
+constexpr uint8 MAX_COMBO_POINTS = 5;
+
+class spell_titan_monk_finisher : public SpellScript
 {
-    PrepareSpellScript(spell_titan_monk_combo_points);
+    PrepareSpellScript(spell_titan_monk_finisher);
 
-    uint8 Cost()
+    uint8 _points = 0;
+
+    SpellCastResult CheckPoints()
     {
-        switch (GetSpellInfo()->Id)
-        {
-            case SPELL_BLACKOUT_KICK:           return 1;
-            case SPELL_RISING_SUN_KICK:         return 2;
-            case SPELL_SPINNING_CRANE_KICK:     return 2;
-            case SPELL_FISTS_OF_FURY:           return 3;
-            default:                            return 0;
-        }
+        return GetCaster()->GetComboPoints() ? SPELL_CAST_OK : SPELL_FAILED_NO_COMBO_POINTS;
     }
 
-    SpellCastResult CheckComboPoints()
+    void TakePoints()
     {
-        return GetCaster()->GetComboPoints() < Cost() ? SPELL_FAILED_NO_COMBO_POINTS : SPELL_CAST_OK;
+        _points = GetCaster()->GetComboPoints();
     }
 
-    void SpendComboPoints()
+    void Scale()
     {
-        GetCaster()->AddComboPoints(-int8(Cost()));
+        SetHitDamage(GetHitDamage() * _points / MAX_COMBO_POINTS);
+    }
+
+    void ClearPoints()
+    {
+        GetCaster()->ClearComboPoints();
     }
 
     void Register() override
     {
-        OnCheckCast += SpellCheckCastFn(spell_titan_monk_combo_points::CheckComboPoints);
-        AfterCast += SpellCastFn(spell_titan_monk_combo_points::SpendComboPoints);
+        OnCheckCast += SpellCheckCastFn(spell_titan_monk_finisher::CheckPoints);
+        BeforeCast += SpellCastFn(spell_titan_monk_finisher::TakePoints);
+        OnHit += SpellHitFn(spell_titan_monk_finisher::Scale);
+        AfterCast += SpellCastFn(spell_titan_monk_finisher::ClearPoints);
+    }
+};
+
+// Fists of Fury (90323) and Spinning Crane Kick (90325): their strikes (weapon damage %) as strong as the combo points
+// they were cast with (read when the channel starts, before the cast takes them).
+class spell_titan_monk_finisher_channel : public AuraScript
+{
+    PrepareAuraScript(spell_titan_monk_finisher_channel);
+
+    uint8 _points = MAX_COMBO_POINTS;
+
+    void TakePoints(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Unit* caster = GetCaster())
+            _points = std::max<uint8>(1, caster->GetComboPoints());
+    }
+
+    void Strike(AuraEffect const* aurEff)
+    {
+        PreventDefaultAction();
+        Unit* caster = GetCaster();
+        SpellInfo const* strike = sSpellMgr->GetSpellInfo(aurEff->GetSpellInfo()->Effects[aurEff->GetEffIndex()]
+            .TriggerSpell);
+        if (!caster || !strike)
+            return;
+        int32 weaponPct = strike->Effects[EFFECT_0].CalcValue(caster) * _points / MAX_COMBO_POINTS;
+        caster->CastCustomSpell(strike->Id, SPELLVALUE_BASE_POINT0, weaponPct, caster, true, nullptr, aurEff);
+    }
+
+    void Register() override
+    {
+        OnEffectApply += AuraEffectApplyFn(spell_titan_monk_finisher_channel::TakePoints, EFFECT_0,
+            SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_monk_finisher_channel::Strike, EFFECT_0,
+            SPELL_AURA_PERIODIC_TRIGGER_SPELL);
     }
 };
 
@@ -402,7 +442,8 @@ void AddSC_monk()
     RegisterSpellScript(spell_titan_monk_vivify);
     RegisterSpellScript(spell_titan_monk_renewing_mist);
     RegisterSpellScript(spell_titan_monk_jade_wind_heal);
-    RegisterSpellScript(spell_titan_monk_combo_points);
+    RegisterSpellScript(spell_titan_monk_finisher);
+    RegisterSpellScript(spell_titan_monk_finisher_channel);
     RegisterSpellScript(spell_titan_monk_blackout_kick);
     RegisterSpellScript(spell_titan_monk_whirling_dragon_punch);
     RegisterSpellScript(spell_titan_monk_life_cocoon);

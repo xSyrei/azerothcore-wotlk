@@ -59,8 +59,8 @@ AURA_PERIODIC_TRIGGER_SPELL = 23
 TARGET_SRC_CASTER, TARGET_UNIT_SRC_AREA_ALLY = 22, 30
 RANGE_SELF, RADIUS_10 = 1, 13
 
-# Windwalker: Energy and combo points (Tiger Palm builds them; each spender's cost taken by
-# spell_titan_monk_combo_points, src/monk.cpp).
+# Windwalker: Energy and combo points. Tiger Palm builds them; the finishers (spell_titan_monk_finisher, src/monk.cpp)
+# take them all, from 1 to 5, and hit as hard as the points spent: their values here are the 5-point ones.
 ENERGY, PHYSICAL, DMG_CLASS_MELEE = 3, 0x1, 2
 EFFECT_WEAPON_PERCENT_DAMAGE, EFFECT_ADD_COMBO_POINTS, EFFECT_NORMALIZED_WEAPON_DMG = 31, 80, 121
 AURA_MOD_HEALING_PCT = 118
@@ -574,8 +574,8 @@ SPELLS += [
 
 
 def windwalker(spell_id, level, **fields):
-    """A Windwalker strike: melee, physical, on Energy (combo point spenders cost none: their combo points are taken by
-    spell_titan_monk_combo_points), with or without a weapon (fists)."""
+    """A Windwalker strike: melee, physical, on Energy (the finishers cost none: they take combo points), with or
+    without a weapon (fists)."""
     return monk(spell_id, level, **{'SchoolMask': PHYSICAL, 'DmgClass': DMG_CLASS_MELEE, 'PowerType': ENERGY,
                                     'ManaCost': 0, 'ManaCostPercentage': 0, 'EquippedItemClass': -1,
                                     'EquippedItemSubClassMask': 0, 'EquippedItemInventoryTypeMask': 0, **fields})
@@ -602,53 +602,54 @@ SPELLS += [
                     2: {'Effect': EFFECT_ADD_COMBO_POINTS, 'BasePoints': 1, 'DieSides': 1}},
     },
     {
-        # Sinister Strike's hit as a 200% kick for 1 combo point; spell_titan_monk_blackout_kick cools the two big
-        # ones down.
+        # Sinister Strike's hit as a kick, a finisher (60% weapon damage a combo point); spell_titan_monk_blackout_kick
+        # cools the two big ones down.
         'id': 90321, 'copy': 1752, 'name': 'Blackout Kick', 'icon': 'Ability_Kick',
         'visual': 'BlackoutKick',
-        'description': 'Kick with a blast of energy, dealing $s1% weapon damage and reducing the cooldowns of '
-                       'Rising Sun Kick and Fists of Fury by 1 sec. Costs 1 combo point.',
+        'description': 'Finishing move that kicks with a blast of energy, dealing 60% weapon damage per combo point '
+                       '($s1% at 5) and reducing the cooldowns of Rising Sun Kick and Fists of Fury by 1 sec.',
         'set': windwalker(90321, 3, AttributesEx=0),
         'unset': {'AttributesEx3': 0x400},
         'clear': [2],
-        'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 199, 'DieSides': 1}},
+        'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 299, 'DieSides': 1}},
     },
     {
-        # Mortal Strike: a 350% kick, healing taken -25% for 10 sec; 2 combo points.
+        # Mortal Strike: a finishing kick (90% weapon damage a combo point), healing taken -25% for 10 sec.
         'id': 90322, 'copy': 12294, 'name': 'Rising Sun Kick', 'icon': 'Ability_Warrior_Revenge',
         'visual': 'RisingSunKick',
-        'description': 'Kick upwards, dealing $s2% weapon damage and inflicting Mortal Wounds, reducing healing the '
-                       'target receives by 25% for $d. Costs 2 combo points.',
+        'description': 'Finishing move that kicks upwards, dealing 90% weapon damage per combo point ($s2% at 5) '
+                       'and inflicting Mortal Wounds, reducing healing the target receives by 25% for $d.',
         'tooltip': 'Healing received reduced by 25%.',
         'set': windwalker(90322, 10, RecoveryTime=10000, DurationIndex=DURATION_10S, AttributesEx=0),
         'unset': {'AttributesEx3': 0x400},
         'effects': {1: {'BasePoints': -26, 'DieSides': 1},
-                    2: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 349, 'DieSides': 1}},
+                    2: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 449, 'DieSides': 1}},
     },
     {
-        # Hellfire's channel (standing still), striking (90324) in a cone every sec for 4 sec; 3 combo points.
+        # Hellfire's channel (standing still), a finisher: striking (90324, 20% weapon damage a combo point) in a cone
+        # every sec for 4 sec (spell_titan_monk_finisher_channel).
         'id': 90323, 'copy': 1949, 'name': 'Fists of Fury', 'icon': 'Ability_Hunter_SwiftStrike',
         'visual': 'FistsOfFury',
-        'description': 'Pummel all targets in front of you for $90324s1% weapon damage every sec for $d. Costs 3 combo '
-                       'points.',
+        'description': 'Finishing move that pummels all targets in front of you for 20% weapon damage per combo '
+                       'point ($90324s1% at 5) every sec for $d.',
         'tooltip': 'Pummeling all targets in front.',
         'set': windwalker(90323, 16, RecoveryTime=24000, DurationIndex=DURATION_4S),
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 1000, 'TriggerSpell': 90324}},
     },
-    strikes(90324, 16, 'Fists of Fury', 'Ability_Hunter_SwiftStrike', 80, TARGET_UNIT_CONE_ENEMY),
+    strikes(90324, 16, 'Fists of Fury', 'Ability_Hunter_SwiftStrike', 100, TARGET_UNIT_CONE_ENEMY),
     {
         # Bladestorm's spin (moving allowed), striking (90326) everything within 8 yards every 0.5 sec for 1.5 sec;
-        # none of Bladestorm's immunities; 2 combo points.
+        # none of Bladestorm's immunities; a finisher (10% weapon damage a combo point, each strike).
         'id': 90325, 'copy': 46924, 'name': 'Spinning Crane Kick', 'icon': 'Ability_Whirlwind',
-        'description': 'Spin while kicking in the air, dealing $90326s1% weapon damage to all enemies within 8 yards '
-                       'every 0.5 sec for $d. You can move. Costs 2 combo points.',
+        'description': 'Finishing move that spins while kicking in the air, dealing 10% weapon damage per combo point '
+                       '($90326s1% at 5) to all enemies within 8 yards every 0.5 sec for $d. You can move.',
         'tooltip': 'Spinning, kicking all enemies within 8 yards.',
         'set': windwalker(90325, 12, RecoveryTime=0, DurationIndex=DURATION_1_5S),
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 500, 'TriggerSpell': 90326}},
     },
-    strikes(90326, 12, 'Spinning Crane Kick', 'Ability_Whirlwind', 40, TARGET_SRC_CASTER,
+    strikes(90326, 12, 'Spinning Crane Kick', 'Ability_Whirlwind', 50, TARGET_SRC_CASTER,
             TARGET_UNIT_SRC_AREA_ENEMY),
     {
         # Bladestorm's spin, three strikes (90328) in a second; only while Rising Sun Kick and Fists of Fury are

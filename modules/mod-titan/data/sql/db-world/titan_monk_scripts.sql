@@ -1,18 +1,20 @@
 -- Monk spell scripts (src/monk.cpp) and the spells' share of spell power.
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_monk_vivify', 'spell_titan_monk_renewing_mist',
     'spell_titan_monk_renewing_mist_cast', 'spell_titan_monk_life_cocoon', 'spell_titan_monk_revival',
-    'spell_titan_monk_jade_wind_heal', 'spell_titan_monk_combo_points', 'spell_titan_monk_blackout_kick',
-    'spell_titan_monk_whirling_dragon_punch');
+    'spell_titan_monk_jade_wind_heal', 'spell_titan_monk_combo_points', 'spell_titan_monk_finisher',
+    'spell_titan_monk_finisher_channel', 'spell_titan_monk_blackout_kick', 'spell_titan_monk_whirling_dragon_punch');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90301, 'spell_titan_monk_vivify'),
 (90302, 'spell_titan_monk_renewing_mist'),
 (90306, 'spell_titan_monk_life_cocoon'),
 (90307, 'spell_titan_monk_revival'),
 (90314, 'spell_titan_monk_jade_wind_heal'),
-(90321, 'spell_titan_monk_combo_points'),
-(90322, 'spell_titan_monk_combo_points'),
-(90323, 'spell_titan_monk_combo_points'),
-(90325, 'spell_titan_monk_combo_points'),
+(90321, 'spell_titan_monk_finisher'),
+(90322, 'spell_titan_monk_finisher'),
+(90323, 'spell_titan_monk_finisher'),
+(90325, 'spell_titan_monk_finisher'),
+(90323, 'spell_titan_monk_finisher_channel'),
+(90325, 'spell_titan_monk_finisher_channel'),
 (90321, 'spell_titan_monk_blackout_kick'),
 (90327, 'spell_titan_monk_whirling_dragon_punch');
 
