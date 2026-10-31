@@ -133,13 +133,13 @@ MISTWEAVER = [
     ('Clouded Focus', 9, 1, 'Spell_Nature_Sleep', None, 3,
      lambda r: f'Increases the critical effect chance of Vivify and Enveloping Mist by {3 * r}%.',
      lambda r: {1: mod(SPELLMOD_CRITICAL_CHANCE, VIVIFY | VIVIFY_SPLASH | ENVELOPING_MIST, 3 * r, flat=True)}, {}),
-    ('Ancient Teachings', 9, 2, 'Monk_Ability_ChiJi', 'Jade Bond', 1,
+    ('Celestial Flock', 9, 2, 'Monk_Ability_ChiJi', 'Jade Bond', 1,
      lambda r: 'Chi-Ji\'s Crane\'s Gust heals 1 more injured ally every 2 sec.',
      lambda r: {1: dummy(1)}, {}),
     ('Refreshing Breeze', 10, 0, 'Spell_Nature_Cyclone', None, 1,
      lambda r: 'Increases the duration of Refreshing Jade Wind by 1.5 sec.',
      lambda r: {1: mod(SPELLMOD_DURATION, JADE_WIND, 1500, flat=True)}, {}),
-    ('Gift of the Celestials', 10, 2, 'Spell_Holy_Ashestoashes', 'Ancient Teachings', 1,
+    ('Gift of the Celestials', 10, 2, 'Spell_Holy_Ashestoashes', 'Celestial Flock', 1,
      lambda r: 'Chi-Ji stays 5 sec longer.',
      lambda r: {1: mod(SPELLMOD_DURATION, CHI_JI, 5000, flat=True)}, {}),
 ]
@@ -213,6 +213,49 @@ WINDWALKER = [
      lambda r: f'Increases the critical strike chance of Fists of Fury and Whirling Dragon Punch by {5 * r}%.',
      lambda r: {1: mod(SPELLMOD_CRITICAL_CHANCE, FISTS_OF_FURY_STRIKES | DRAGON_PUNCH_STRIKES, 5 * r, flat=True)},
      {}),
+]
+
+# Added later, in ids of their own (patch_talents.TREES): talents for everyone (WotLK's broad ones), and the
+# Windwalker's combo point refund. Free cells only, off every arrow's way.
+AURA_MOD_DAMAGE_PERCENT_DONE, AURA_MOD_CRIT_PERCENT, AURA_MOD_MANA_REGEN_INTERRUPT = 79, 52, 134
+AURA_MOD_HEALING_DONE_PERCENT, AURA_MOD_TOTAL_STAT_PERCENTAGE = 136, 137
+STAT_AGILITY, STAT_INTELLECT, PHYSICAL = 1, 3, 0x1
+ANY_WEAPON = {'EquippedItemClass': -1, 'EquippedItemSubClassMask': 0, 'EquippedItemInventoryTypeMask': 0}
+
+
+def aura(aura_type, value, misc=0):
+    """A passive aura on the caster: aura_type, value, misc value."""
+    return {'Effect': EFFECT_APPLY_AURA, 'Aura': aura_type, 'BasePoints': value - 1, 'DieSides': 1,
+            'MiscValue': misc, 'TargetA': TARGET_UNIT_CASTER}
+
+
+MISTWEAVER_MORE = [
+    ('Serenity', 0, 1, 'Spell_Holy_HolyGuidance', None, 3,
+     lambda r: f'Increases all healing you do by {r}%.',
+     lambda r: {1: aura(AURA_MOD_HEALING_DONE_PERCENT, r)}, {}),
+    ('Spirit of the Crane', 3, 1, 'Spell_Holy_MindVision', None, 3,
+     lambda r: f'Increases your Intellect by {3 * r}%.',
+     lambda r: {1: aura(AURA_MOD_TOTAL_STAT_PERCENTAGE, 3 * r, STAT_INTELLECT)}, {}),
+    ('Meditative Breathing', 5, 3, 'Spell_Nature_Sleep', None, 3,
+     lambda r: f'Allows {10 * r}% of your mana regeneration to continue while casting.',
+     lambda r: {1: aura(AURA_MOD_MANA_REGEN_INTERRUPT, 10 * r)}, {}),
+    ('Celerity', 9, 3, 'Spell_Nature_Invisibilty', None, 3,
+     lambda r: f'Increases your casting speed by {r}%.',
+     lambda r: {1: aura(AURA_MOD_CASTING_SPEED, r)}, {}),
+]
+WINDWALKER_MORE = [
+    ('Grace of the Tiger', 0, 0, 'Ability_Druid_Mangle2', None, 3,
+     lambda r: f'Increases your Agility by {3 * r}%.',
+     lambda r: {1: aura(AURA_MOD_TOTAL_STAT_PERCENTAGE, 3 * r, STAT_AGILITY)}, {}),
+    ('Ferocity of Xuen', 2, 1, 'Ability_Druid_Ravage', None, 3,
+     lambda r: f'Increases your physical damage by {2 * r}%.',
+     lambda r: {1: aura(AURA_MOD_DAMAGE_PERCENT_DONE, 2 * r, PHYSICAL)}, {}),
+    ('Tiger\'s Precision', 4, 3, 'Ability_Hunter_Pet_Cat', None, 3,
+     lambda r: f'Increases your critical strike chance with melee attacks by {r}%.',
+     lambda r: {1: aura(AURA_MOD_CRIT_PERCENT, r, -1)}, ANY_WEAPON),
+    ('Ancient Teachings', 10, 2, 'Spell_Holy_InnerFire', None, 3,
+     lambda r: f'Your combo point spenders have a {(15, 20, 25)[r - 1]}% chance to refund the combo points spent.',
+     lambda r: {1: dummy((15, 20, 25)[r - 1])}, {}),
 ]
 
 # The scripts' helper spells: what the talents cast. Monk spells (their family), no flag bit.

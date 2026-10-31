@@ -54,7 +54,8 @@ constexpr std::array<uint32, 3> TALENT_RISING_MIST = { 90413, 90414, 90415 };
 constexpr std::array<uint32, 3> TALENT_COCOONED_IN_LIGHT = { 90427, 90428, 90429 };
 constexpr std::array<uint32, 2> TALENT_SECRET_INFUSION = { 90432, 90433 };
 constexpr std::array<uint32, 3> TALENT_DANCING_MISTS = { 90436, 90437, 90438 };
-constexpr std::array<uint32, 1> TALENT_ANCIENT_TEACHINGS = { 90446 };
+constexpr std::array<uint32, 1> TALENT_CELESTIAL_FLOCK = { 90446 };
+constexpr std::array<uint32, 3> TALENT_ANCIENT_TEACHINGS = { 90579, 90580, 90581 };
 constexpr std::array<uint32, 3> TALENT_TEACHINGS_OF_THE_MONASTERY = { 90456, 90457, 90458 };
 constexpr std::array<uint32, 3> TALENT_COMBO_BREAKER = { 90471, 90472, 90473 };
 constexpr std::array<uint32, 2> TALENT_ENERGY_BURST = { 90481, 90482 };
@@ -322,7 +323,7 @@ class spell_titan_monk_jade_wind_heal : public SpellScript
 // Windwalker's finishers (Blackout Kick, Rising Sun Kick, Fists of Fury, Spinning Crane Kick): usable from 1 combo
 // point (Tiger Palm awards them, on the Monk's current target, at most 5), they take them all and hit as hard as the
 // points spent: their spell values are the 5-point ones, scaled by points / 5. With Energy Burst, spending 5 restores
-// Energy.
+// Energy; with Ancient Teachings, the points may come back.
 constexpr uint8 MAX_COMBO_POINTS = 5;
 
 class spell_titan_monk_finisher : public SpellScript
@@ -353,6 +354,9 @@ class spell_titan_monk_finisher : public SpellScript
         if (_points >= MAX_COMBO_POINTS)
             if (int32 energy = TalentValue(caster, TALENT_ENERGY_BURST))
                 caster->EnergizeBySpell(caster, GetSpellInfo()->Id, energy, POWER_ENERGY);
+        Unit* target = GetExplTargetUnit() && GetExplTargetUnit() != caster ? GetExplTargetUnit() : caster->GetVictim();
+        if (target && roll_chance_i(TalentValue(caster, TALENT_ANCIENT_TEACHINGS)))
+            caster->AddComboPoints(target, _points);
     }
 
     void Register() override
@@ -529,7 +533,7 @@ class spell_titan_monk_revival : public SpellScript
 };
 
 // Chi-Ji, the Red Crane (90311, summoned by Invoke Chi-Ji): follows the Monk, never fights, and every 2 sec heals the
-// two most injured allies around the Monk with Crane's Gust.
+// two most injured allies around the Monk with Crane's Gust (three with Celestial Flock).
 struct npc_titan_chi_ji : public ScriptedAI
 {
     npc_titan_chi_ji(Creature* creature) : ScriptedAI(creature) { }
@@ -547,7 +551,7 @@ struct npc_titan_chi_ji : public ScriptedAI
         scheduler.Schedule(GUST_INTERVAL, [this](TaskContext gust)
         {
             if (Unit* monk = me->GetOwner())
-                CranesGust(me, monk, GUST_TARGETS + TalentValue(monk, TALENT_ANCIENT_TEACHINGS));
+                CranesGust(me, monk, GUST_TARGETS + TalentValue(monk, TALENT_CELESTIAL_FLOCK));
             gust.Repeat();
         });
     }

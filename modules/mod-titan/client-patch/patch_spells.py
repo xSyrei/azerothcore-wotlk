@@ -129,6 +129,7 @@ INTERRUPT_MOVEMENT = 0x1        # InterruptFlags: casting is stopped by moving
 CHANNEL_INTERRUPT_MOVE = 0x8    # ChannelInterruptFlags: the channel is broken by moving
 TARGET_UNIT_CASTER, TARGET_SRC_CASTER, TARGET_UNIT_SRC_AREA_ENEMY, TARGET_UNIT_CONE_ENEMY = 1, 22, 15, 104
 TARGET_UNIT_TARGET_ENEMY = 6
+EFFECT_ADD_COMBO_POINTS = 80
 DURATION_1S, DURATION_2S, DURATION_3S = 36, 39, 27
 RANGE_30 = 4
 GLOBAL_COOLDOWN = 133           # StartRecoveryCategory of spells on the global cooldown
@@ -757,39 +758,40 @@ SPELLS = [
                         'TargetA': TARGET_DEST_DEST, 'TargetB': 0, 'RadiusIndex': 0, 'BonusMultiplier': 0.0}},
     },
     {
-        # Vengeance's builder: Demon's Bite's strike, 10 Fury and a Soul Fragment (effect 3).
+        # Vengeance's builder: Demon's Bite's strike, 10 Fury and 2 combo points (effect 3).
         'id': 90124, 'copy': 1752, 'name': 'Shear', 'icon': 'Ability_DemonHunter_Shear',
         'visual': 'Shear', 'two_weapons': True,
-        'description': 'Shear your target\'s flesh for your weapon damage plus $s1 Physical damage, shattering a '
-                       'Soul Fragment from it. Generates 10 Fury.',
+        'description': 'Shear your target\'s flesh for your weapon damage plus $s1 Physical damage. Awards 2 combo '
+                       'points and generates 10 Fury.',
         'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
                 'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
         'effects': {
             1: {'Effect': EFFECT_NORMALIZED_WEAPON_DMG, 'BasePoints': 4, 'DieSides': 1, 'RealPointsPerLevel': 1.0},
             2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 99, 'DieSides': 1, 'MiscValue': FURY,
                 'TargetA': TARGET_UNIT_CASTER, 'TargetB': 0},
-            3: {'Effect': EFFECT_TRIGGER_SPELL, 'TargetA': TARGET_UNIT_CASTER, 'TriggerSpell': 90126},
+            3: {'Effect': EFFECT_ADD_COMBO_POINTS, 'BasePoints': 1, 'DieSides': 1, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
+                'TriggerSpell': 0},
         },
     },
     {
-        # Up to 5 enemies in a cone in front, and 8% of maximum health; spell_titan_dh_soul_cleave eats up to 2
-        # Soul Fragments for 5% more each (90131).
+        # A finisher (spell_titan_dh_soul_cleave): up to 5 enemies in a cone in front, 60% weapon damage a combo point
+        # (the 5-point value here, scaled), and 8% of maximum health plus 3% a combo point (90131).
         'id': 90125, 'copy': 1752, 'name': 'Soul Cleave', 'icon': 'Ability_DemonHunter_SoulCleave',
         'visual': 'SoulCleave', 'two_weapons': True,
-        'description': 'Viciously strike up to 5 enemies in front of you for $s1% weapon damage and heal yourself '
-                       'for $s2% of your maximum health. Consumes up to 2 Soul Fragments, each healing you for 5% '
-                       'more.',
-        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 300,
+        'description': 'Finishing move that viciously strikes up to 5 enemies in front of you for 60% weapon damage '
+                       'per combo point ($s1% at 5) and heals you for $s2% of your maximum health, plus 3% per combo '
+                       'point.',
+        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
                 'StartRecoveryTime': 1500, 'MaxAffectedTargets': 5, 'BaseLevel': 1, 'SpellLevel': 1},
         'clear': [2, 3],
         'effects': {
-            1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 149, 'DieSides': 1,
+            1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 299, 'DieSides': 1,
                 'TargetA': TARGET_UNIT_CONE_ENEMY, 'RadiusIndex': RADIUS_8},
             2: {'Effect': EFFECT_HEAL_PCT, 'BasePoints': 7, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER},
         },
     },
     {
-        # A stacking buff (up to 5) that Shear adds to and Soul Cleave eats: no fragments on the ground.
+        # Retired: Vengeance's Soul Fragments are combo points now. Kept (a spell players may still have).
         'id': 90126, 'copy': 26669, 'name': 'Soul Fragments', 'icon': 'Spell_Shadow_SoulGem',
         'description': '', 'tooltip': 'Soul Fragments shattered from your enemies, for Soul Cleave to consume.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'StartRecoveryCategory': 0,
@@ -848,7 +850,7 @@ SPELLS = [
                 'PowerType': 0, 'ManaCost': 0, 'BaseLevel': 6, 'SpellLevel': 6},
     },
     {
-        # Soul Cleave's healing from the Soul Fragments it eats: % of maximum health, set by the script.
+        # Soul Cleave's healing from the combo points it spends: % of maximum health, set by the script.
         'id': 90131, 'copy': 26669, 'name': 'Soul Cleave', 'icon': 'Ability_DemonHunter_SoulCleave',
         'visual': 'SoulCleaveHeal', 'description': '',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'StartRecoveryCategory': 0,
@@ -858,14 +860,14 @@ SPELLS = [
         'effects': {1: {'Effect': EFFECT_HEAL_PCT, 'BasePoints': 4, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
-        # Vengeance's capstone. Spends every Soul Fragment (at least 1): spell_titan_dh_spirit_bomb sets off 90136
-        # for 30% of attack power per fragment.
+        # Vengeance's capstone, a finisher. Spends every combo point (at least 1): spell_titan_dh_spirit_bomb sets
+        # off 90136 for 30% of attack power per point.
         'id': 90135, 'copy': 26669, 'name': 'Spirit Bomb', 'icon': 'Ability_DemonHunter_SpiritBomb',
         'visual': 'SpiritBomb', 'two_weapons': True,
-        'description': 'Consume all your Soul Fragments to explode, dealing 30% of your attack power as Fire damage '
-                       'per fragment to enemies within 8 yards and inflicting Frailty for 8 sec: you heal for 8% '
-                       'of the damage you deal to them.',
-        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'PowerType': FURY, 'ManaCost': 400,
+        'description': 'Finishing move that explodes, dealing 30% of your attack power as Fire damage per combo '
+                       'point to enemies within 8 yards and inflicting Frailty for 8 sec: you heal for 8% of the '
+                       'damage you deal to them.',
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'PowerType': FURY, 'ManaCost': 0,
                 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500, 'DurationIndex': 0,
                 'BaseLevel': 30, 'SpellLevel': 30},
         'clear': [1, 2, 3],
@@ -901,12 +903,12 @@ SPELLS = [
         'effects': {1: {'Effect': EFFECT_HEAL, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
-        # A shield of 20% of maximum health, 5% more per Soul Fragment it eats (all of them):
+        # A shield of 20% of maximum health, 5% more per combo point it spends (all of them):
         # spell_titan_dh_soul_barrier.
         'id': 90138, 'copy': 26669, 'name': 'Soul Barrier', 'icon': 'Ability_DemonHunter_SoulBarrier',
         'visual': 'SoulBarrier', 'two_weapons': True,
-        'description': 'Shield yourself for $d, absorbing damage equal to 20% of your maximum health. Consumes all '
-                       'your Soul Fragments, each adding 5% more.',
+        'description': 'Shield yourself for $d, absorbing damage equal to 20% of your maximum health. Spends all '
+                       'your combo points, each adding 5% more.',
         'tooltip': 'Absorbs damage.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 30000, 'PowerType': 0, 'ManaCost': 0,
                 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500, 'DurationIndex': DURATION_12S,

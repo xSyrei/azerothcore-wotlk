@@ -42,7 +42,6 @@ enum DemonHunterSpells
     SPELL_METAMORPHOSIS             = 90116,
     SPELL_BLUR                      = 90113,
     SPELL_FEL_BARRAGE_BALL          = 90123,
-    SPELL_SOUL_FRAGMENTS            = 90126,
     SPELL_DEMON_SPIKES              = 90127,
     SPELL_FIERY_BRAND               = 90128,
     SPELL_FRAILTY                   = 90137,
@@ -97,7 +96,8 @@ constexpr std::array<uint32, 3> TALENT_CHARRED_FLESH = { 90271, 90272, 90273 }; 
 constexpr std::array<uint32, 2> TALENT_FALLOUT = { 90274, 90275 };                        // % chance
 constexpr std::array<uint32, 2> TALENT_COVER_OF_DARKNESS = { 90276, 90277 };              // % more avoidance
 constexpr std::array<uint32, 1> TALENT_BURNING_ALIVE = { 90278 };
-constexpr std::array<uint32, 2> TALENT_FEED_THE_DEMON = { 90279, 90280 };                 // ms per fragment
+constexpr std::array<uint32, 2> TALENT_FEED_THE_DEMON = { 90279, 90280 };                 // ms per combo point
+constexpr std::array<uint32, 3> TALENT_SHATTERED_SOULS = { 90529, 90530, 90531 };          // % chance
 constexpr std::array<uint32, 2> TALENT_FEAST_OF_SOULS = { 90281, 90282 };                 // % of maximum health
 constexpr std::array<uint32, 2> TALENT_FIERY_DEMISE = { 90283, 90284 };                   // % more Fire damage
 constexpr std::array<uint32, 2> TALENT_RUINOUS_BULWARK = { 90286, 90287 };                // % more absorbed
@@ -758,48 +758,70 @@ class spell_titan_dh_soul_rending : public AuraScript
 
 namespace
 {
-    // Eats the unit's Soul Fragments (at most max): how many there were. Feed the Demon (talent) shortens Demon
-    // Spikes' cooldown for each; Painbringer (talent) lowers the damage the unit takes for a while.
-    uint8 EatSoulFragments(Unit* unit, uint8 max)
+    constexpr uint8 MAX_COMBO_POINTS = 5;
+
+    // Vengeance's finishers (Soul Cleave, Spirit Bomb, Soul Barrier) spend all the unit's combo points (Shear awards
+    // them): how many there were. Feed the Demon (talent) shortens Demon Spikes' cooldown for each; Painbringer
+    // (talent) lowers the damage the unit takes for a while; Shattered Souls (talent) may give them back.
+    uint8 SpendComboPoints(Unit* unit)
     {
-        Aura* fragments = unit->GetAura(SPELL_SOUL_FRAGMENTS);
-        if (!fragments)
+        uint8 points = unit->GetComboPoints();
+        if (!points)
             return 0;
 
-        uint8 eaten = std::min<uint8>(fragments->GetStackAmount(), max);
-        fragments->ModStackAmount(-int32(eaten));
+        unit->ClearComboPoints();
         if (Player* player = unit->ToPlayer())
             if (int32 ms = TalentValue(unit, TALENT_FEED_THE_DEMON))
-                player->ModifySpellCooldown(SPELL_DEMON_SPIKES, -ms * eaten);
+                player->ModifySpellCooldown(SPELL_DEMON_SPIKES, -ms * points);
         CastWithValue(unit, SPELL_PAINBRINGER, TalentValue(unit, TALENT_PAINBRINGER), unit);
-        return eaten;
+        if (Unit* victim = unit->GetVictim())
+            if (roll_chance_i(TalentValue(unit, TALENT_SHATTERED_SOULS)))
+                unit->AddComboPoints(victim, points);
+        return points;
     }
 
-    constexpr uint8 MAX_SOUL_FRAGMENTS = 5;
+    SpellCastResult NeedComboPoints(Unit const* unit)
+    {
+        return unit->GetComboPoints() ? SPELL_CAST_OK : SPELL_FAILED_NO_COMBO_POINTS;
+    }
 }
 
-// Soul Cleave (90125): eats up to 2 of the Demon Hunter's Soul Fragments (a stacking buff Shear adds to), each
-// healing for 5% more of their maximum health (90131). Feast of Souls (talent): more healing over 6 sec (3 ticks);
-// Void Reaver (talent): the enemies struck deal less damage.
+// Soul Cleave (90125), a finisher: from 1 combo point, spends them all, hitting as hard as the points spent (its
+// weapon damage the 5-point value, scaled) and healing for 3% more of maximum health a point (90131). Feast of Souls
+// (talent): more healing over 6 sec (3 ticks); Void Reaver (talent): the enemies struck deal less damage.
 class spell_titan_dh_soul_cleave : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_soul_cleave);
 
-    static constexpr uint8 MAX_EATEN = 2;
-    static constexpr int32 HEAL_PCT_PER_FRAGMENT = 5;
+    static constexpr int32 HEAL_PCT_PER_POINT = 3;
     static constexpr int32 FEAST_TICKS = 3;
+
+    uint8 _points = 0;
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo({ SPELL_SOUL_FRAGMENTS, SPELL_SOUL_CLEAVE_HEAL, SPELL_FEAST_OF_SOULS,
-            SPELL_VOID_REAVER });
+        return ValidateSpellInfo({ SPELL_SOUL_CLEAVE_HEAL, SPELL_FEAST_OF_SOULS, SPELL_VOID_REAVER });
     }
 
-    void EatFragments()
+    SpellCastResult CheckPoints()
+    {
+        return NeedComboPoints(GetCaster());
+    }
+
+    void TakePoints()
+    {
+        _points = GetCaster()->GetComboPoints();
+    }
+
+    void Scale()
+    {
+        SetHitDamage(GetHitDamage() * _points / MAX_COMBO_POINTS);
+    }
+
+    void SpendPoints()
     {
         Unit* caster = GetCaster();
-        CastWithValue(caster, SPELL_SOUL_CLEAVE_HEAL, EatSoulFragments(caster, MAX_EATEN) * HEAL_PCT_PER_FRAGMENT,
-            caster);
+        CastWithValue(caster, SPELL_SOUL_CLEAVE_HEAL, SpendComboPoints(caster) * HEAL_PCT_PER_POINT, caster);
         if (int32 pct = TalentValue(caster, TALENT_FEAST_OF_SOULS))
             CastWithValue(caster, SPELL_FEAST_OF_SOULS, int32(caster->CountPctFromMaxHealth(pct)) / FEAST_TICKS,
                 caster);
@@ -815,40 +837,43 @@ class spell_titan_dh_soul_cleave : public SpellScript
 
     void Register() override
     {
-        AfterCast += SpellCastFn(spell_titan_dh_soul_cleave::EatFragments);
+        OnCheckCast += SpellCheckCastFn(spell_titan_dh_soul_cleave::CheckPoints);
+        BeforeCast += SpellCastFn(spell_titan_dh_soul_cleave::TakePoints);
+        OnHit += SpellHitFn(spell_titan_dh_soul_cleave::Scale);
+        AfterCast += SpellCastFn(spell_titan_dh_soul_cleave::SpendPoints);
         AfterHit += SpellHitFn(spell_titan_dh_soul_cleave::Reave);
     }
 };
 
-// Spirit Bomb (90135): needs a Soul Fragment; eats them all and explodes (90136) for 30% of attack power each.
+// Spirit Bomb (90135), a finisher: needs a combo point; spends them all and explodes (90136) for 30% of attack power
+// each.
 class spell_titan_dh_spirit_bomb : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_spirit_bomb);
 
-    static constexpr int32 AP_PCT_PER_FRAGMENT = 30;
+    static constexpr int32 AP_PCT_PER_POINT = 30;
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo({ SPELL_SOUL_FRAGMENTS, SPELL_SPIRIT_BOMB_BLAST });
+        return ValidateSpellInfo({ SPELL_SPIRIT_BOMB_BLAST });
     }
 
-    SpellCastResult NeedFragments()
+    SpellCastResult CheckPoints()
     {
-        return GetCaster()->HasAura(SPELL_SOUL_FRAGMENTS) ? SPELL_CAST_OK : SPELL_FAILED_CASTER_AURASTATE;
+        return NeedComboPoints(GetCaster());
     }
 
     void Explode()
     {
         Unit* caster = GetCaster();
-        int32 fragments = EatSoulFragments(caster, MAX_SOUL_FRAGMENTS);
-        int32 damage = CalculatePct(int32(caster->GetTotalAttackPowerValue(BASE_ATTACK)),
-            AP_PCT_PER_FRAGMENT * fragments);
+        int32 points = SpendComboPoints(caster);
+        int32 damage = CalculatePct(int32(caster->GetTotalAttackPowerValue(BASE_ATTACK)), AP_PCT_PER_POINT * points);
         caster->CastCustomSpell(SPELL_SPIRIT_BOMB_BLAST, SPELLVALUE_BASE_POINT0, std::max(damage, 1), caster, true);
     }
 
     void Register() override
     {
-        OnCheckCast += SpellCheckCastFn(spell_titan_dh_spirit_bomb::NeedFragments);
+        OnCheckCast += SpellCheckCastFn(spell_titan_dh_spirit_bomb::CheckPoints);
         AfterCast += SpellCastFn(spell_titan_dh_spirit_bomb::Explode);
     }
 };
@@ -886,20 +911,20 @@ class spell_titan_dh_frailty : public AuraScript
     }
 };
 
-// Soul Barrier (90138): a shield of 20% of maximum health, 5% more for each Soul Fragment it eats (all of them).
+// Soul Barrier (90138): a shield of 20% of maximum health, 5% more for each combo point it spends (all of them).
 class spell_titan_dh_soul_barrier : public AuraScript
 {
     PrepareAuraScript(spell_titan_dh_soul_barrier);
 
     static constexpr int32 BASE_PCT = 20;
-    static constexpr int32 PCT_PER_FRAGMENT = 5;
+    static constexpr int32 PCT_PER_POINT = 5;
 
     void Size(AuraEffect const* /*aurEff*/, int32& amount, bool& canBeRecalculated)
     {
         canBeRecalculated = false;
         Unit* owner = GetUnitOwner();
-        int32 fragments = EatSoulFragments(owner, MAX_SOUL_FRAGMENTS);
-        amount = int32(owner->CountPctFromMaxHealth(BASE_PCT + PCT_PER_FRAGMENT * fragments));
+        int32 points = SpendComboPoints(owner);
+        amount = int32(owner->CountPctFromMaxHealth(BASE_PCT + PCT_PER_POINT * points));
         if (Unit* caster = GetCaster())
             AddPct(amount, TalentValue(caster, TALENT_RUINOUS_BULWARK));    // Ruinous Bulwark (talent)
     }
@@ -1023,14 +1048,14 @@ class spell_titan_dh_demon_spikes : public SpellScript
 };
 
 // Immolation Aura's pulse (90120) and its talents, on each enemy it burns: Charred Flesh (the Demon Hunter's Fiery
-// Brand on it lasts longer) and Fallout (a chance, once a pulse, to shatter a Soul Fragment).
+// Brand on it lasts longer) and Fallout (a chance, once a pulse, to award a combo point).
 class spell_titan_dh_immolation_aura_pulse : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_immolation_aura_pulse);
 
     bool Validate(SpellInfo const* /*spellInfo*/) override
     {
-        return ValidateSpellInfo({ SPELL_FIERY_BRAND, SPELL_SOUL_FRAGMENTS });
+        return ValidateSpellInfo({ SPELL_FIERY_BRAND });
     }
 
     void Burn(SpellEffIndex /*effIndex*/)
@@ -1051,7 +1076,7 @@ class spell_titan_dh_immolation_aura_pulse : public SpellScript
             if (int32 chance = TalentValue(caster, TALENT_FALLOUT); chance && roll_chance_i(chance))
             {
                 _shattered = true;
-                caster->CastSpell(caster, SPELL_SOUL_FRAGMENTS, true);
+                caster->AddComboPoints(caster->GetVictim() ? caster->GetVictim() : target, 1);
             }
     }
 

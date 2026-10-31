@@ -105,14 +105,14 @@ built or spent Runic Power build and spend Fury, the same pool as the Demon Hunt
 | 90116 | Metamorphosis | 30 | Demon form for 30 sec: 25% attack speed, 20% damage; 3 min cooldown |
 | 90121 | Fel Barrage | 30 | Havoc's capstone: for 3 sec, every 0.25 sec (90122) enemies within 8 yards take 15% of attack power as Chaos damage while fel balls rain down on the ground around the Demon Hunter (90123, only a look, `spell_titan_dh_fel_barrage_pulse`); each pulse drains 5 Fury, ending it when Fury runs out (`spell_titan_dh_fel_barrage`); costs 10, 90 sec cooldown |
 | 90119 | Immolation Aura | 1 (Vengeance) | 20% of attack power as Fire damage to enemies within 8 yards at once and every sec for 6 sec (90120); 20 Fury; 15 sec cooldown |
-| 90124 | Shear | 1 (Vengeance) | Weapon strike; 10 Fury and a Soul Fragment (90126: a buff stacking to 5, 20 sec) |
-| 90125 | Soul Cleave | 1 (Vengeance) | 150% weapon damage to up to 5 enemies in front, heals 8% of maximum health; eats up to 2 Soul Fragments for 5% more each (90131, `spell_titan_dh_soul_cleave`); costs 30 |
+| 90124 | Shear | 1 (Vengeance) | Weapon strike; 10 Fury and 2 combo points (Vengeance's generator; Soul Fragments, 90126, are retired) |
+| 90125 | Soul Cleave | 1 (Vengeance) | Finisher: 60% weapon damage a combo point to up to 5 enemies in front, heals 8% of maximum health plus 3% a point (90131, `spell_titan_dh_soul_cleave`); no Fury |
 | 90129 | Torment | 6 (Vengeance) | Taunt, 30 yards, 8 sec cooldown |
 | 90127 | Demon Spikes | 10 (Vengeance) | 20% parry and 30% more armor for 6 sec, off the global cooldown; costs 20, 15 sec cooldown |
 | 90128 | Fiery Brand | 20 (Vengeance) | 50% of attack power as Fire damage, and the target deals 40% less damage for 8 sec; 60 sec cooldown |
-| 90135 | Spirit Bomb | 30 (Vengeance) | Needs a Soul Fragment; eats them all for 30% of attack power each as Fire damage within 8 yards (90136) and Frailty for 8 sec (90137: damage you deal them heals you for 8%, `spell_titan_dh_frailty`); costs 40 |
+| 90135 | Spirit Bomb | 30 (Vengeance) | Finisher: spends every combo point for 30% of attack power each as Fire damage within 8 yards (90136) and Frailty for 8 sec (90137: damage you deal them heals you for 8%, `spell_titan_dh_frailty`); no Fury |
 | 90132 | Sigil of Chains | 16 (Vengeance) | Ground-targeted sigil, 30 yards; after 1.5 sec pulls every enemy within 8 yards to its center (90133, the core's pull to a point) and slows them 70% for 6 sec (`spell_titan_dh_sigil_of_chains`); 60 sec cooldown |
-| 90138 | Soul Barrier | 24 (Vengeance) | Absorbs 20% of maximum health for 12 sec, 5% more per Soul Fragment eaten (all, `spell_titan_dh_soul_barrier`); 30 sec cooldown |
+| 90138 | Soul Barrier | 24 (Vengeance) | Absorbs 20% of maximum health for 12 sec, 5% more per combo point spent (all, `spell_titan_dh_soul_barrier`); 30 sec cooldown |
 
 Every ability above needs a one-handed weapon in each hand (two one-handed weapons, or a main-hand
 and an off-hand weapon; not a shield or held-in-off-hand item). The main hand is checked by the
@@ -200,11 +200,18 @@ Hunter's, they only amplify, spread over the 11 rows. Nine are scripted in `src/
 | Cocooned in Light | Mistweaver | Life Cocoon absorbs more (`spell_titan_monk_life_cocoon`) |
 | Secret Infusion | Mistweaver | Thunder Focus Tea grants haste (90360, `spell_titan_monk_thunder_focus_tea`) |
 | Dancing Mists | Mistweaver | Renewing Mist may settle on a second ally (`spell_titan_monk_renewing_mist_cast`) |
-| Ancient Teachings | Mistweaver | Chi-Ji's Crane's Gust heals one more ally (`npc_titan_chi_ji`) |
+| Celestial Flock | Mistweaver | Chi-Ji's Crane's Gust heals one more ally (`npc_titan_chi_ji`) |
 | Teachings of the Monastery | Windwalker | Blackout Kick may reset Rising Sun Kick (`spell_titan_monk_blackout_kick`) |
 | Combo Breaker | Windwalker | Tiger Palm may award 2 more combo points (`spell_titan_monk_tiger_palm`) |
 | Energy Burst | Windwalker | 5-point finishers restore Energy (`spell_titan_monk_finisher`) |
 | Thunderfist | Windwalker | Rising Sun Kick adds a Nature strike (90361, `spell_titan_monk_thunderfist`) |
+| Ancient Teachings | Windwalker | Finishers may refund the combo points spent (`spell_titan_monk_finisher`) |
+
+Each tree also has a few broad talents, WotLK's kind (Agility, Stamina or Intellect %, physical or all damage, healing
+done, melee crit, casting speed, armor, dodge, mana regeneration while casting). They and Vengeance's Shattered Souls
+(finishers may refund their combo points, `SpendComboPoints` in `src/demon_hunter.cpp`) came after the trees, so they
+have id runs of their own (talents 2350-2363 and 2450-2463, ranks 90500-90531 and 90550-90581: `patch_talents.TREES`):
+a talent's ids never change once players may have it.
 
 ## Items
 

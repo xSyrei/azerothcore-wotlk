@@ -93,6 +93,7 @@ ALL_DAMAGE = (DEMONS_BITE | CHAOS_DAMAGE | BLADE_DANCE_STRIKES | THROW_GLAIVE | 
 
 TALENT_CLASS_MASK = 1 << 11     # the Demon Hunter, class 12
 HAVOC_TAB, VENGEANCE_TAB = 412, 413
+SCHOOL_ALL = 0x7F
 TABS = [
     # id, name, order, icon (one of patch_spells.ICONS), class mask; the Monk's trees (patch_monk_talents.py) after
     (HAVOC_TAB, 'Havoc', 0, 'Ability_DemonHunter_ChaosStrike', TALENT_CLASS_MASK),
@@ -112,6 +113,19 @@ def dummy(value):
     """A number for the server's scripts (aura amount)."""
     return {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DUMMY, 'BasePoints': value - 1, 'DieSides': 1,
             'TargetA': TARGET_UNIT_CASTER}
+
+
+# WotLK's broad talents (stats, damage, healing, crit, haste): auras the game runs by itself.
+AURA_MOD_CRIT_PERCENT, AURA_MOD_DODGE_PERCENT, AURA_MOD_CASTING_SPEED = 52, 49, 65
+AURA_MOD_MANA_REGEN_INTERRUPT, AURA_MOD_HEALING_DONE_PERCENT, AURA_MOD_TOTAL_STAT_PERCENTAGE = 134, 136, 137
+STAT_AGILITY, STAT_STAMINA, STAT_INTELLECT = 1, 2, 3
+ANY_WEAPON = {'EquippedItemClass': -1, 'EquippedItemSubClassMask': 0, 'EquippedItemInventoryTypeMask': 0}
+
+
+def aura(aura_type, value, misc=0):
+    """A passive aura on the caster: aura_type, value, misc value."""
+    return {'Effect': EFFECT_APPLY_AURA, 'Aura': aura_type, 'BasePoints': value - 1, 'DieSides': 1,
+            'MiscValue': misc, 'TargetA': TARGET_UNIT_CASTER}
 
 
 # The Havoc tree: (name, row, column, icon, prerequisite talent or None, ranks, description, effects, set), four
@@ -224,7 +238,7 @@ VENGEANCE = [
      lambda r: f'Demon Spikes also increases your Physical damage by {5 * r}%.',
      lambda r: {1: dummy(5 * r)}, {}),
     ('Painbringer', 3, 2, 'Ability_DemonHunter_Painbringer', 'Razor Spikes', 2,
-     lambda r: f'Consuming Soul Fragments reduces all damage you take by {5 * r}% for 6 sec.',
+     lambda r: f'Spending combo points reduces all damage you take by {5 * r}% for 6 sec.',
      lambda r: {1: dummy(5 * r)}, {}),
     ('Quickened Sigils', 4, 3, 'Ability_DemonHunter_QuickenedSigils', None, 2,
      lambda r: f'Sigil of Chains arms {r * 0.5:g} sec faster and its cooldown is {10 * r} sec shorter.',
@@ -239,7 +253,7 @@ VENGEANCE = [
      lambda r: f'Immolation Aura\'s pulses extend Fiery Brand on the enemies they hit by {r * 0.25:g} sec.',
      lambda r: {1: dummy(250 * r)}, {}),
     ('Fallout', 7, 2, 'Spell_Shadow_SoulGem', None, 2,
-     lambda r: f'Each Immolation Aura pulse that hits an enemy has a {15 * r}% chance to shatter a Soul Fragment.',
+     lambda r: f'Each Immolation Aura pulse that hits an enemy has a {15 * r}% chance to award a combo point.',
      lambda r: {1: dummy(15 * r)}, {}),
     ('Cover of Darkness', 2, 3, 'Ability_DemonHunter_Darkness', 'Demonic Wards', 2,
      lambda r: f'Darkness gives a {20 + 5 * r}% chance to avoid all damage from an attack.',
@@ -248,7 +262,7 @@ VENGEANCE = [
      lambda r: 'Every 2 sec, Fiery Brand spreads to a nearby enemy that is not branded.',
      lambda r: {1: dummy(1)}, {}),
     ('Feed the Demon', 8, 2, 'Spell_Shadow_SacrificialShield', 'Fallout', 2,
-     lambda r: f'Each Soul Fragment you consume reduces the remaining cooldown of Demon Spikes by {r * 0.5:g} sec.',
+     lambda r: f'Each combo point you spend reduces the remaining cooldown of Demon Spikes by {r * 0.5:g} sec.',
      lambda r: {1: dummy(500 * r)}, {}),
     ('Feast of Souls', 3, 1, 'Spell_Shadow_SoulLeech_3', 'Focused Cleave', 2,
      lambda r: f'Soul Cleave heals you for an additional {8 * r}% of your maximum health over 6 sec.',
@@ -281,6 +295,34 @@ VENGEANCE = [
     ('Calcified Spikes', 5, 2, 'Ability_Warrior_ShieldWall', 'Painbringer', 2,
      lambda r: f'Demon Spikes lasts {2 * r} sec longer.',
      lambda r: {1: mod(SPELLMOD_DURATION, DEMON_SPIKES, 2000 * r, flat=True)}, {}),
+]
+
+# Added later, in ids of their own (after the Monk's): talents for everyone (WotLK's broad ones), and Vengeance's
+# combo point refund. Free cells only, off every arrow's way.
+HAVOC_MORE = [
+    ('Fel Agility', 0, 0, 'Ability_Rogue_QuickRecovery', None, 3,
+     lambda r: f'Increases your Agility by {3 * r}%.',
+     lambda r: {1: aura(AURA_MOD_TOTAL_STAT_PERCENTAGE, 3 * r, STAT_AGILITY)}, {}),
+    ('Relentless', 5, 1, 'Ability_CriticalStrike', None, 3,
+     lambda r: f'Increases your critical strike chance with melee attacks by {r}%.',
+     lambda r: {1: aura(AURA_MOD_CRIT_PERCENT, r, -1)}, ANY_WEAPON),
+    ('Demonic Might', 10, 1, 'Spell_Shadow_UnholyStrength', None, 3,
+     lambda r: f'Increases all damage you deal by {r}%.',
+     lambda r: {1: aura(AURA_MOD_DAMAGE_PERCENT_DONE, r, SCHOOL_ALL)}, {}),
+]
+VENGEANCE_MORE = [
+    ('Demonic Resilience', 0, 1, 'Spell_Shadow_DemonicFortitude', None, 3,
+     lambda r: f'Increases your Stamina by {3 * r}%.',
+     lambda r: {1: aura(AURA_MOD_TOTAL_STAT_PERCENTAGE, 3 * r, STAT_STAMINA)}, {}),
+    ('Thick Hide', 3, 0, 'INV_Chest_Plate_06', None, 3,
+     lambda r: f'Increases your armor by {4 * r}%.',
+     lambda r: {1: aura(AURA_MOD_RESISTANCE_PCT, 4 * r, 1)}, {}),
+    ('Unwavering', 3, 3, 'Ability_Rogue_Feint', None, 3,
+     lambda r: f'Increases your chance to dodge by {r}%.',
+     lambda r: {1: aura(AURA_MOD_DODGE_PERCENT, r)}, {}),
+    ('Shattered Souls', 10, 3, 'Spell_Shadow_SoulGem', None, 3,
+     lambda r: f'Your combo point spenders have a {(15, 20, 25)[r - 1]}% chance to refund the combo points spent.',
+     lambda r: {1: dummy((15, 20, 25)[r - 1])}, {}),
 ]
 
 # The scripts' helper spells: what the talents cast (heals, Fury, bleeds, buffs, hits).
@@ -444,6 +486,11 @@ TREES = [
     (patch_monk_talents.WINDWALKER_TAB, patch_monk_talents.WINDWALKER,
      patch_monk_talents.FIRST_TALENT_ID + len(patch_monk_talents.MISTWEAVER),
      patch_monk_talents.FIRST_RANK_SPELL + sum(t[5] for t in patch_monk_talents.MISTWEAVER), MONK_FAMILY),
+    # Talents added to the trees later, each tree's in ids of its own.
+    (HAVOC_TAB, HAVOC_MORE, 2350, 90500, None),
+    (VENGEANCE_TAB, VENGEANCE_MORE, 2360, 90520, None),
+    (patch_monk_talents.MISTWEAVER_TAB, patch_monk_talents.MISTWEAVER_MORE, 2450, 90550, MONK_FAMILY),
+    (patch_monk_talents.WINDWALKER_TAB, patch_monk_talents.WINDWALKER_MORE, 2460, 90570, MONK_FAMILY),
 ]
 ALL_TALENTS = [(tab, talent) for tab, tree, *_ in TREES for talent in tree]
 
