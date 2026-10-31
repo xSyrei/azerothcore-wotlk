@@ -28,6 +28,8 @@ FAMILY_FLAGS = {
     90308: 0x100,   # Thunder Focus Tea
     90309: 0x200,   # Detox
     90310: 0x400,   # Vivify's splash
+    90311: 0x800,   # Invoke Chi-Ji, the Red Crane
+    90312: 0x1000,  # Crane's Gust (Chi-Ji's heal)
 }
 VIVIFY, ENVELOPING_MIST = 0x2, 0x8
 
@@ -38,7 +40,10 @@ SPELLMOD_CASTING_TIME, SPELLMOD_COST = 10, 14
 TARGET_UNIT_CASTER, TARGET_UNIT_TARGET_ALLY, TARGET_UNIT_CASTER_AREA_RAID = 1, 21, 56
 CAST_INSTANT, CAST_1_5S, CAST_2S = 1, 16, 5
 DURATION_3S, DURATION_6S, DURATION_8S, DURATION_12S, DURATION_20S, DURATION_30S = 27, 32, 31, 29, 18, 9
-RANGE_40 = 5
+DURATION_25S = 63
+RANGE_40, RANGE_100 = 5, 6
+EFFECT_SUMMON, SUMMON_GUARDIAN = 28, 1161      # Feral Spirit's summon properties: a guardian at the caster's side
+NPC_CHI_JI = 90311
 GLOBAL_COOLDOWN = 133
 NATURE, ALL_SCHOOLS = 0x8, 0x7F
 
@@ -46,11 +51,14 @@ NATURE, ALL_SCHOOLS = 0x8, 0x7F
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_WORLD = 3, 4, 5, 6, 7, 14
 HANDS = (KIT_LEFT_HAND, KIT_RIGHT_HAND)
 ANIM_SPELL_CAST_OMNI = 54
+NO_ANIM = 0xFFFFFFFF
+VISUAL_MISSILE_MODEL, VISUAL_MISSILE_SOUND, VISUAL_MISSILE_MOTION = 8, 11, 21
 VISUAL_CHANNEL = 6              # SpellVisual column: the channel kit
 BLEND_ADD = 4
 JADE = (0.45, 1.0, 0.8)
 GREEN = (0.35, 1.0, 0.45)
 GOLD = (1.0, 0.82, 0.3)
+CRANE_RED, CRANE_GOLD = (1.0, 0.32, 0.18), (1.0, 0.68, 0.3)
 HEALING_BEAM_KIT = 9818         # the Healing Beam's channel kit (48775: channeling, a beam from hands to target)
 GREEN_BEAM = 269                # SpellChainEffects: Green Beam (33346), a smooth wavy beam, white (its texture's color)
 
@@ -64,6 +72,7 @@ CHAIN_EFFECTS = {
 GLOW, FLARE = 'MONK_Glow', 'MONK_Flare'
 PUFFS, WISPS, CLOUDS, ANIM = 'MONK_Mist_Puffs', 'MONK_Mist_Wisps', 'MONK_Mist_Clouds', 'MONK_Mist_Anim'
 MOTE = (0.85, 1.0, 0.9)
+CRANE_MOTE = (1.0, 0.85, 0.6)
 
 
 def ring(count, out, up, across, step=0.0):
@@ -176,6 +185,37 @@ EFFECTS = {
                          'rise': (2.5, 1.8), 'cards': ring(6, 1.6, 0.5, 1.6, 0.2)},
                         {'texture': 2, 'tint': MOTE, 'alpha': 1.0, 'turn': 2.0, 'pulse': 0.4, 'rise': (3.0, 1.8),
                          'cards': ring(10, 1.4, 0.2, 0.2, 0.12)})}},
+    # Chi-Ji, the Red Crane: arriving, a burst of red and gold mist and embers rising around the Monk (1.6 sec)...
+    'ChiJiArrival': {'model': 'MONK_ChiJiArrival', 'effect': 7126, 'shape': 'mist',
+                     'textures': (ANIM, WISPS, FLARE, GLOW),
+                     'options': {'duration': 1600, 'fade': (100, 600), 'layers': (
+                         {'texture': 3, 'tint': CRANE_RED, 'alpha': 0.4, 'pulse': 0, 'cards': ring(1, 0.0, 1.0, 2.6)},
+                         {'texture': 0, 'sheet': (4, 4), 'flip': 1.6, 'tint': CRANE_RED, 'alpha': 0.85, 'turn': 2.5,
+                          'pulse': 0, 'rise': (1.6, 1.6), 'cards': ring(5, 0.9, 0.3, 1.9, 0.2)},
+                         {'texture': 1, 'sheet': (2, 2), 'tint': CRANE_GOLD, 'alpha': 0.7, 'turn': -2.0,
+                          'pulse': 0, 'rise': (2.0, 1.6), 'cards': ring(5, 1.2, 0.5, 1.4, 0.2)},
+                         {'texture': 2, 'tint': CRANE_MOTE, 'alpha': 1.0, 'turn': 1.8, 'pulse': 0.35,
+                          'rise': (2.6, 1.6), 'cards': ring(9, 1.0, 0.2, 0.2, 0.12)})}},
+    # ... Crane's Gust flying from Chi-Ji to the healed: a ball of red mist trailing embers...
+    'CranesGustMissile': {'model': 'MONK_CranesGustMissile', 'effect': 7127, 'shape': 'mist',
+                          'textures': (GLOW, WISPS, FLARE),
+                          'options': {'layers': (
+                              {'texture': 0, 'tint': CRANE_GOLD, 'alpha': 0.7, 'pulse': 0.4,
+                               'cards': ring(1, 0.0, 0.0, 0.7)},
+                              {'texture': 1, 'sheet': (2, 2), 'tint': CRANE_RED, 'alpha': 0.8, 'turn': 0.6,
+                               'pulse': 0.5, 'cards': ring(3, 0.12, 0.0, 0.6)},
+                              {'texture': 2, 'tint': CRANE_MOTE, 'alpha': 1.0, 'turn': -0.8, 'pulse': 0.3,
+                               'cards': ring(4, 0.25, -0.1, 0.12, 0.06)})}},
+    # ... and its heal: the jade heal in Chi-Ji's red and gold.
+    'CraneHeal': {'model': 'MONK_CraneHeal', 'effect': 7128, 'shape': 'mist', 'textures': (GLOW, ANIM, WISPS, FLARE),
+                  'options': {'duration': 1200, 'fade': (100, 450), 'layers': (
+                      {'texture': 0, 'tint': CRANE_GOLD, 'alpha': 0.3, 'pulse': 0, 'cards': ring(1, 0.0, 1.0, 1.6)},
+                      {'texture': 1, 'sheet': (4, 4), 'flip': 1.2, 'tint': CRANE_RED, 'alpha': 0.75, 'turn': 3.0,
+                       'pulse': 0, 'rise': (0.9, 1.2), 'cards': ring(3, 0.45, 0.3, 1.3, 0.3)},
+                      {'texture': 2, 'sheet': (2, 2), 'tint': CRANE_GOLD, 'alpha': 0.55, 'turn': -2.0, 'pulse': 0,
+                       'rise': (1.1, 1.2), 'cards': ring(3, 0.6, 0.4, 1.0, 0.3)},
+                      {'texture': 3, 'tint': CRANE_MOTE, 'alpha': 1.0, 'turn': 2.0, 'pulse': 0.35, 'rise': (1.5, 1.2),
+                       'cards': ring(5, 0.7, 0.2, 0.18, 0.12)})}},
 }
 
 # Sounds (see patch_spells.SOUNDS): retail's Monk sounds (sounds/spell_mk_*); loops copy a Blizzard looping entry.
@@ -247,6 +287,17 @@ VISUALS = {
         'cast': (15674, {**CAST, 'sound': 'MonkHeal'}),
         'impact': (15675, {KIT_CHEST: 0, KIT_BASE: 'JadeHeal', 'sound': None})}},
     # Detox: Cleanse's timing, the jade from the hands and a jade heal on the cleansed.
+    # Invoke Chi-Ji: Feral Spirit's timing, the jade from the hands, Revival's sound and Chi-Ji's red mist arriving.
+    'InvokeChiJi': {'copy': 13077, 'id': 16741, 'clear': ('precast', 'impact', 'state', 'statedone'), 'kits': {
+        'cast': (15680, {**CAST, KIT_CHEST: 0, KIT_BASE: 'ChiJiArrival', 'anim': ANIM_SPELL_CAST_OMNI,
+                         'sound': 'Revival'})}},
+    # Crane's Gust: Frozen Orb's missile visual (from the caster's middle to the target, straight), its missile our
+    # ball of red mist; no cast animation on Chi-Ji; the crane's heal on the healed.
+    'CranesGust': {'copy': 15082, 'id': 16742, 'clear': ('precast', 'cast', 'impact', 'state', 'statedone', 'area'),
+                   'set': {VISUAL_MISSILE_MODEL: 'CranesGustMissile', VISUAL_MISSILE_SOUND: 0,
+                           VISUAL_MISSILE_MOTION: 0}, 'kits': {
+        'cast': (15681, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
+        'impact': (15682, {KIT_BASE: 'CraneHeal', KIT_CHEST: 0, 'sound': None})}},
     'Detox': {'copy': 337, 'id': 16740, 'kits': {
         'precast': (15676, PRECAST),
         'cast': (15677, CAST),
@@ -346,7 +397,7 @@ SPELLS = [
         'visual': 'Revival',
         'description': 'Heals all party and raid members within 40 yards for $s1 and clears them of a Magic, '
                        'Poison and Disease effect.',
-        'set': monk(90307, 30, RecoveryTime=180000, ManaCostPercentage=35, MaxAffectedTargets=0,
+        'set': monk(90307, 26, RecoveryTime=180000, ManaCostPercentage=35, MaxAffectedTargets=0,
                     StartRecoveryCategory=GLOBAL_COOLDOWN, StartRecoveryTime=1500),
         'clear': [2, 3],
         'effects': {1: {'TargetA': TARGET_UNIT_CASTER_AREA_RAID, 'TargetB': 0, **heal(100, 25.0)}},
@@ -382,6 +433,42 @@ SPELLS = [
         'clear': [2, 3],
         'effects': {1: {'Effect': EFFECT_HEAL, 'TargetA': TARGET_UNIT_TARGET_ALLY, 'BasePoints': 0, 'DieSides': 1,
                         'RealPointsPerLevel': 0.0}},
+    },
+]
+
+SPELLS += [
+    {
+        # Feral Spirit's summon, one guardian: Chi-Ji (npc_titan_chi_ji, src/monk.cpp) at the Monk's side for 25 sec,
+        # healing with Crane's Gust; meanwhile Enveloping Mist costs half and casts twice as fast. The capstone.
+        'id': 90311, 'copy': 51533, 'name': 'Invoke Chi-Ji, the Red Crane', 'icon': 'INV_Misc_PheonixPet_01',
+        'visual': 'InvokeChiJi',
+        'description': 'Summon an effigy of Chi-Ji, the Red Crane, for $d. Every 2 sec Chi-Ji heals the 2 most injured '
+                       'allies within 40 yards with Crane\'s Gust, and once more each time you cast Vivify or '
+                       'Renewing Mist. While Chi-Ji is with you, Enveloping Mist costs 50% less mana and casts 50% '
+                       'faster.',
+        'tooltip': 'Chi-Ji is at your side. Enveloping Mist costs 50% less mana and casts 50% faster.',
+        'set': monk(90311, 30, RecoveryTime=180000, ManaCostPercentage=5, ManaCost=0, DurationIndex=DURATION_25S,
+                    StartRecoveryCategory=GLOBAL_COOLDOWN, StartRecoveryTime=1500),
+        'effects': {
+            1: {'Effect': EFFECT_SUMMON, 'BasePoints': 0, 'DieSides': 1, 'MiscValue': NPC_CHI_JI,
+                'MiscValueB': SUMMON_GUARDIAN},
+            2: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_ADD_PCT_MODIFIER, 'BasePoints': -51, 'DieSides': 1,
+                'MiscValue': SPELLMOD_COST, 'Mask': ENVELOPING_MIST, 'TargetA': TARGET_UNIT_CASTER, 'TargetB': 0,
+                'RadiusIndex': 0},
+            3: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_ADD_PCT_MODIFIER, 'BasePoints': -51, 'DieSides': 1,
+                'MiscValue': SPELLMOD_CASTING_TIME, 'Mask': ENVELOPING_MIST, 'TargetA': TARGET_UNIT_CASTER,
+                'TargetB': 0, 'RadiusIndex': 0},
+        },
+    },
+    {
+        # Chi-Ji's heal, cast by Chi-Ji for the Monk (its healing power, crits): a ball of red mist flying to the
+        # healed.
+        'id': 90312, 'copy': 8936, 'name': "Crane's Gust", 'icon': 'INV_Misc_PheonixPet_01', 'visual': 'CranesGust',
+        'description': 'Heals the target for $s1.',
+        'set': monk(90312, 30, CastingTimeIndex=CAST_INSTANT, ManaCostPercentage=0, ManaCost=0, RangeIndex=RANGE_100,
+                    StartRecoveryCategory=0, StartRecoveryTime=0, Speed=20.0),
+        'clear': [2, 3],
+        'effects': {1: {'Effect': EFFECT_HEAL, 'TargetA': TARGET_UNIT_TARGET_ALLY, **heal(20, 6.0)}},
     },
 ]
 

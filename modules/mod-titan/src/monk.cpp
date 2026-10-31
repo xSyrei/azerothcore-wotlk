@@ -19,6 +19,7 @@
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "ScriptMgr.h"
+#include "ScriptedCreature.h"
 #include "SpellAuraEffects.h"
 #include "SpellScript.h"
 #include "SpellScriptLoader.h"
@@ -31,6 +32,13 @@ enum MonkSpells
     SPELL_RENEWING_MIST             = 90302,
     SPELL_ENVELOPING_MIST           = 90303,
     SPELL_VIVIFY_SPLASH             = 90310,
+    SPELL_INVOKE_CHI_JI             = 90311,
+    SPELL_CRANES_GUST               = 90312,
+};
+
+enum MonkCreatures
+{
+    NPC_CHI_JI                      = 90311,
 };
 
 namespace
@@ -43,6 +51,43 @@ namespace
         Acore::UnitListSearcher<Acore::AnyFriendlyUnitInObjectRangeCheck> searcher(center, friends, check);
         Cell::VisitObjects(center, searcher, range);
         return friends;
+    }
+
+    // Chi-Ji, the Red Crane (90311): heals with Crane's Gust (90312) the count most injured allies within 40 yards
+    // of the Monk, for its heal at the Monk's level; cast for the Monk (its original caster), the Monk's healing
+    // power (spell_bonus_data), crits and healing modifiers apply.
+    constexpr float CRANES_GUST_RANGE = 40.0f;
+
+    void CranesGust(Creature* crane, Unit* monk, uint32 count)
+    {
+        SpellInfo const* gust = sSpellMgr->GetSpellInfo(SPELL_CRANES_GUST);
+        if (!gust)
+            return;
+
+        std::vector<Unit*> injured;
+        for (Unit* ally : FriendsAround(monk, monk, CRANES_GUST_RANGE))
+            if (ally->IsAlive() && !ally->IsFullHealth() && ally->GetEntry() != NPC_CHI_JI)
+                injured.push_back(ally);
+        std::sort(injured.begin(), injured.end(),
+            [](Unit* a, Unit* b) { return a->GetHealthPct() < b->GetHealthPct(); });
+        if (injured.size() > count)
+            injured.resize(count);
+
+        int32 heal = gust->Effects[EFFECT_0].CalcValue(monk);
+        for (Unit* ally : injured)
+            crane->CastCustomSpell(SPELL_CRANES_GUST, SPELLVALUE_BASE_POINT0, heal, ally, true, nullptr, nullptr,
+                monk->GetGUID());
+    }
+
+    // The Monk's Chi-Ji, if out.
+    Creature* ChiJiOf(Unit* monk)
+    {
+        if (!monk->HasAura(SPELL_INVOKE_CHI_JI))
+            return nullptr;
+        for (Unit* controlled : monk->m_Controlled)
+            if (controlled->GetEntry() == NPC_CHI_JI && controlled->IsAlive())
+                return controlled->ToCreature();
+        return nullptr;
     }
 }
 
@@ -72,9 +117,17 @@ class spell_titan_monk_vivify : public SpellScript
                 caster->CastCustomSpell(SPELL_VIVIFY_SPLASH, SPELLVALUE_BASE_POINT0, amount, ally, true);
     }
 
+    // With Chi-Ji out, it sends a Crane's Gust as well.
+    void Gust()
+    {
+        if (Creature* crane = ChiJiOf(GetCaster()))
+            CranesGust(crane, GetCaster(), 1);
+    }
+
     void Register() override
     {
         AfterHit += SpellHitFn(spell_titan_monk_vivify::Splash);
+        AfterCast += SpellCastFn(spell_titan_monk_vivify::Gust);
     }
 };
 
@@ -113,6 +166,23 @@ class spell_titan_monk_renewing_mist : public AuraScript
     {
         OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_monk_renewing_mist::Jump, EFFECT_0,
             SPELL_AURA_PERIODIC_HEAL);
+    }
+};
+
+// Renewing Mist (90302) cast: with Chi-Ji out, it sends a Crane's Gust as well.
+class spell_titan_monk_renewing_mist_cast : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_renewing_mist_cast);
+
+    void Gust()
+    {
+        if (Creature* crane = ChiJiOf(GetCaster()))
+            CranesGust(crane, GetCaster(), 1);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_monk_renewing_mist_cast::Gust);
     }
 };
 
@@ -168,6 +238,36 @@ class spell_titan_monk_revival : public SpellScript
     }
 };
 
+// Chi-Ji, the Red Crane (90311, summoned by Invoke Chi-Ji): follows the Monk, never fights, and every 2 sec heals the
+// two most injured allies around the Monk with Crane's Gust.
+struct npc_titan_chi_ji : public ScriptedAI
+{
+    npc_titan_chi_ji(Creature* creature) : ScriptedAI(creature) { }
+
+    static constexpr Milliseconds GUST_INTERVAL = 2s;
+    static constexpr uint32 GUST_TARGETS = 2;
+
+    void IsSummonedBy(WorldObject* summoner) override
+    {
+        Unit* owner = summoner ? summoner->ToUnit() : nullptr;
+        if (!owner)
+            return;
+        me->SetReactState(REACT_PASSIVE);
+        me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, PET_FOLLOW_ANGLE);
+        scheduler.Schedule(GUST_INTERVAL, [this](TaskContext gust)
+        {
+            if (Unit* monk = me->GetOwner())
+                CranesGust(me, monk, GUST_TARGETS);
+            gust.Repeat();
+        });
+    }
+
+    void UpdateAI(uint32 diff) override
+    {
+        scheduler.Update(diff);
+    }
+};
+
 // Enveloping Mist (90303): the Monk's healing on its target is 30% stronger while it lasts.
 class titan_monk_healing : public UnitScript
 {
@@ -187,7 +287,9 @@ void AddSC_monk()
 {
     RegisterSpellScript(spell_titan_monk_vivify);
     RegisterSpellScript(spell_titan_monk_renewing_mist);
+    RegisterSpellScript(spell_titan_monk_renewing_mist_cast);
     RegisterSpellScript(spell_titan_monk_life_cocoon);
     RegisterSpellScript(spell_titan_monk_revival);
+    RegisterCreatureAI(npc_titan_chi_ji);
     new titan_monk_healing();
 }

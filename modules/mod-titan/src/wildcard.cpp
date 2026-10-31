@@ -163,7 +163,8 @@ namespace
         { 90308, CLASS_MONK, SKILL_MISTWEAVER, 14 },        // Thunder Focus Tea
         { 90306, CLASS_MONK, SKILL_MISTWEAVER, 18 },        // Life Cocoon
         { 90304, CLASS_MONK, SKILL_MISTWEAVER, 20 },        // Essence Font
-        { 90307, CLASS_MONK, SKILL_MISTWEAVER, 30 },        // Revival
+        { 90307, CLASS_MONK, SKILL_MISTWEAVER, 26 },        // Revival
+        { 90311, CLASS_MONK, SKILL_MISTWEAVER, 30 },        // Invoke Chi-Ji, the Red Crane (the capstone)
     };
     constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
         { SKILL_HAVOC, "Havoc" },
