@@ -61,6 +61,11 @@ STRING_COLUMNS = {base + n for base in (NAME, RANK, DESCRIPTION, TOOLTIP) for n 
 # SpellVisual.dbc (32 columns), SpellVisualKit.dbc (38), SpellVisualEffectName.dbc (7: id, name,
 # file, area size, scale, min scale, max scale).
 VISUAL_FIELDS, KIT_FIELDS, EFFECT_NAME_FIELDS = 32, 38, 7
+# SpellChainEffects.dbc (beams): 177-byte records, 39 four-byte fields, then bytes (the first four: the beam's color,
+# alpha, red, green, blue, multiplying its texture).
+CHAIN_RECORD, CHAIN_TEXTURE, CHAIN_COLOR = 177, 7, 156
+CHAIN_FIELDS = {'AvgSegLen': (1, True), 'Width': (2, True), 'NoiseScale': (3, True), 'TexCoordScale': (4, True),
+                'SegDuration': (5, False), 'SegDelay': (6, False)}
 VISUAL_MISSILE_MODEL, VISUAL_MISSILE_SOUND, VISUAL_MISSILE_CAST_OFFSET = 8, 11, 26     # offset: x, y, z
 VISUAL_MISSILE_MOTION = 21      # SpellMissileMotion: a scripted flight path (0: straight)
 # SpellVisual columns; 'persistent' is the kit a persistent area (a dynamic object) shows for as long as it lasts,
@@ -962,6 +967,7 @@ SPELLS += patch_talents.SPELLS      # the talents' ranks and helper spells
 SPELLS += patch_monk.SPELLS         # the Monk's
 EFFECTS.update(patch_monk.EFFECTS)
 VISUALS.update(patch_monk.VISUALS)
+CHAIN_EFFECTS = dict(patch_monk.CHAIN_EFFECTS)      # beams: id, the Blizzard beam copied, our texture, changes
 
 
 class Dbc:
@@ -1071,8 +1077,9 @@ def build_visuals(source, out):
                     kit[KIT_SOUND] = SOUNDS[effect]['id'] if effect else 0
                     continue
                 if where == 'beam':     # a beam to the channel's target: character effect 0, its chain effect
+                    chain = CHAIN_EFFECTS[effect]['id'] if isinstance(effect, str) else effect
                     kit[KIT_PROCS.start] = 0
-                    kit[KIT_PROC_PARAMS.start] = raw(float(effect))
+                    kit[KIT_PROC_PARAMS.start] = raw(float(chain))
                     continue
                 for slot in where if isinstance(where, tuple) else (where,):
                     kit[slot] = EFFECTS[effect]['effect'] if isinstance(effect, str) else effect
@@ -1082,6 +1089,33 @@ def build_visuals(source, out):
     visuals.save(out / 'SpellVisual.dbc')
     kits.save(out / 'SpellVisualKit.dbc')
     names.save(out / 'SpellVisualEffectName.dbc')
+
+
+def build_chain_effects(source, out):
+    """CHAIN_EFFECTS' beams, copies of Blizzard's with our texture and changes (the records kept as bytes: their
+    tail is not four-byte fields)."""
+    data = (source / 'SpellChainEffects.dbc').read_bytes()
+    magic, count, fields, record_size, string_size = struct.unpack_from('<4s4I', data)
+    if magic != b'WDBC' or record_size != CHAIN_RECORD:
+        raise ValueError(f'SpellChainEffects.dbc: unexpected layout ({record_size}-byte records). Is it 3.3.5a?')
+    rows = {}
+    for i in range(count):
+        record = data[20 + i * record_size:20 + (i + 1) * record_size]
+        rows[struct.unpack_from('<I', record)[0]] = record
+    start = 20 + count * record_size
+    strings = bytearray(data[start:start + string_size])
+    for spec in CHAIN_EFFECTS.values():
+        row = bytearray(rows[spec['copy']])
+        struct.pack_into('<I', row, 0, spec['id'])
+        struct.pack_into('<I', row, CHAIN_TEXTURE * 4, len(strings))
+        strings += f'{EFFECTS_DIR}\\{spec["texture"]}.blp'.encode() + b'\0'
+        for name, value in spec.get('set', {}).items():
+            index, is_float = CHAIN_FIELDS[name]
+            struct.pack_into('<f' if is_float else '<I', row, index * 4, value)
+        row[CHAIN_COLOR:CHAIN_COLOR + 4] = bytes(spec.get('color', (255, 255, 255, 255)))
+        rows[spec['id']] = bytes(row)
+    header = struct.pack('<4s4I', b'WDBC', len(rows), fields, record_size, len(strings))
+    (out / 'SpellChainEffects.dbc').write_bytes(header + b''.join(rows[key] for key in sorted(rows)) + strings)
 
 
 def build_animations(source, out):
@@ -1263,6 +1297,7 @@ def main():
 
     build_sounds(source, out)
     build_visuals(source, out)
+    build_chain_effects(source, out)
     build_animations(source, out)
     spells = Dbc(source / 'Spell.dbc', SPELL_FIELDS)
     build_spells(spells, icon_id)

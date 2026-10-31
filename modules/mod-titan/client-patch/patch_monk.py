@@ -51,8 +51,14 @@ BLEND_ADD = 4
 JADE = (0.45, 1.0, 0.8)
 GREEN = (0.35, 1.0, 0.45)
 GOLD = (1.0, 0.82, 0.3)
-HEALING_BEAM = 501              # SpellChainEffects: the Wrath healers' Healing Beam (48775), from hands to target
-HEALING_BEAM_KIT = 9818         # its channel kit (channeling, the beam)
+HEALING_BEAM_KIT = 9818         # the Healing Beam's channel kit (48775: channeling, a beam from hands to target)
+GREEN_BEAM = 269                # SpellChainEffects: Green Beam (33346), a smooth wavy beam, white (its texture's color)
+
+# Our beams (see patch_spells.CHAIN_EFFECTS): Soothing Mist's, the Green Beam a little wider, its texture retail's mist
+# (the snowfrost cloud, jade, fading to its edges; spells/MONK_SoothingMist_Beam.png).
+CHAIN_EFFECTS = {
+    'SoothingMist': {'id': 1200, 'copy': GREEN_BEAM, 'texture': 'MONK_SoothingMist_Beam', 'set': {'Width': 0.5}},
+}
 NATURE_CAST_HAND = 73           # Spells\\Nature_Cast_Hand: green light on the hands
 REJUVENATION_IMPACT = 70        # Spells\\Rejuvenation_Impact_Base: a green heal at the feet
 
@@ -96,11 +102,11 @@ EFFECTS = {
 
 # SpellVisual (and kit) ids, a Blizzard visual copied and kits changed (see patch_spells.VISUALS).
 VISUALS = {
-    # Soothing Mist is Tranquility's cast (its hands), channeled as the Healing Beam: a beam from the Monk's hands
-    # flowing into the target, the mist on them while it lasts. Not Tranquility's rain of light on the area.
+    # Soothing Mist is Tranquility's cast (its hands), channeled as the Healing Beam with our mist beam from the
+    # Monk's hands flowing into the target, the mist on them while it lasts. Not Tranquility's rain of light.
     'SoothingMist': {'copy': 1283, 'id': 16730, 'clear': ('impact',), 'set': {VISUAL_CHANNEL: HEALING_BEAM_KIT},
                      'kits': {
-        'channel': (15656, {HANDS: NATURE_CAST_HAND, 'beam': HEALING_BEAM}),
+        'channel': (15656, {HANDS: NATURE_CAST_HAND, 'beam': 'SoothingMist'}),
         'state': (15650, {KIT_CHEST: 0, KIT_BASE: 'SoothingMist', 'sound': None, 'procs': False})}},
     # Renewing Mist is Rejuvenation's cast and heal, the green mist on the target while it lasts.
     'RenewingMist': {'copy': 32, 'id': 16733, 'kits': {

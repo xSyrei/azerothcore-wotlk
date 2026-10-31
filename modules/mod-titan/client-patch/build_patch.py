@@ -73,7 +73,7 @@ CHARACTERS = [
 DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
         'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc',
         'SoundEntries.dbc', 'CreatureModelData.dbc', 'CreatureDisplayInfo.dbc',
-        'AnimationData.dbc', 'Talent.dbc', 'TalentTab.dbc']
+        'AnimationData.dbc', 'Talent.dbc', 'TalentTab.dbc', 'SpellChainEffects.dbc']
 
 
 def main():
@@ -113,6 +113,11 @@ def main():
             files = make(*textures, tmp / 'effects', spec['model'], patch_spells.EFFECTS_DIR, **options)
             for f in files:
                 entries.append((f'{patch_spells.EFFECTS_DIR}\\{f}', (tmp / 'effects' / f).read_bytes()))
+
+        for spec in patch_spells.CHAIN_EFFECTS.values():
+            with Image.open(HERE / 'spells' / f'{spec["texture"]}.png') as image:
+                data = blp.encode(image.convert('RGBA'))
+            entries.append((f'{patch_spells.EFFECTS_DIR}\\{spec["texture"]}.blp', data))
 
         for spec in patch_spells.SOUNDS.values():
             for name in spec['files']:
