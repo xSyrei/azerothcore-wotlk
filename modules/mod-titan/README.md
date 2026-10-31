@@ -186,6 +186,26 @@ Chi.
 | 90327 | Whirling Dragon Punch | 24 | Only while Rising Sun Kick and Fists of Fury cool down (`spell_titan_monk_whirling_dragon_punch`): 90% weapon damage to all enemies within 8 yards three times in a second (90328); 24 sec cooldown |
 | 90329 | Storm, Earth, and Fire | 30 | Windwalker's capstone: an Earth and a Fire spirit (creatures 90330, 90331, `npc_titan_monk_sef_spirit`, the Monk's look cloned onto them) fight at the Monk's side for 15 sec, each echoing every Windwalker strike the Monk lands for 35% of its damage (90330, 90331: Nature, Fire; `spell_titan_monk_sef_echo`); 90 sec cooldown |
 
+### Monk talents
+
+The Mistweaver and Windwalker trees (`client-patch/patch_monk_talents.py`, built with the Demon Hunter's by
+`patch_talents.py`): TalentTabs 415 and 416 (ClassMask `1 << 9`, the Monk; 414 left for Brewmaster), talents
+2400-2445, ranks 90400-90497, of the Monk's spell family so their spell modifiers aim at its spells. As the Demon
+Hunter's, they only amplify, spread over the 11 rows. Nine are scripted in `src/monk.cpp` (dummy auras read by
+`TalentValue`):
+
+| Talent | Tree | Script |
+|---|---|---|
+| Rising Mist | Mistweaver | Vivify extends your Renewing Mists (`spell_titan_monk_vivify`) |
+| Cocooned in Light | Mistweaver | Life Cocoon absorbs more (`spell_titan_monk_life_cocoon`) |
+| Secret Infusion | Mistweaver | Thunder Focus Tea grants haste (90360, `spell_titan_monk_thunder_focus_tea`) |
+| Dancing Mists | Mistweaver | Renewing Mist may settle on a second ally (`spell_titan_monk_renewing_mist_cast`) |
+| Ancient Teachings | Mistweaver | Chi-Ji's Crane's Gust heals one more ally (`npc_titan_chi_ji`) |
+| Teachings of the Monastery | Windwalker | Blackout Kick may reset Rising Sun Kick (`spell_titan_monk_blackout_kick`) |
+| Combo Breaker | Windwalker | Tiger Palm may award 2 more combo points (`spell_titan_monk_tiger_palm`) |
+| Energy Burst | Windwalker | 5-point finishers restore Energy (`spell_titan_monk_finisher`) |
+| Thunderfist | Windwalker | Rising Sun Kick adds a Nature strike (90361, `spell_titan_monk_thunderfist`) |
+
 ## Items
 
 | Entry | Item | Effect |

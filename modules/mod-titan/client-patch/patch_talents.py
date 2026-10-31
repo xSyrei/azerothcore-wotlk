@@ -19,6 +19,8 @@ Never delete a talent row or a rank spell once players have it: the server asser
 character with a talent spell it does not know.
 """
 
+import patch_monk_talents
+
 # Spell.dbc values used below (as in patch_spells.py).
 FURY = 6
 CHAOS, PHYSICAL, SHADOW = 0x7F, 0x1, 0x20
@@ -92,10 +94,10 @@ ALL_DAMAGE = (DEMONS_BITE | CHAOS_DAMAGE | BLADE_DANCE_STRIKES | THROW_GLAIVE | 
 TALENT_CLASS_MASK = 1 << 11     # the Demon Hunter, class 12
 HAVOC_TAB, VENGEANCE_TAB = 412, 413
 TABS = [
-    # id, name, order, icon (one of patch_spells.ICONS)
-    (HAVOC_TAB, 'Havoc', 0, 'Ability_DemonHunter_ChaosStrike'),
-    (VENGEANCE_TAB, 'Vengeance', 1, 'Ability_DemonHunter_SoulCleave'),
-]
+    # id, name, order, icon (one of patch_spells.ICONS), class mask; the Monk's trees (patch_monk_talents.py) after
+    (HAVOC_TAB, 'Havoc', 0, 'Ability_DemonHunter_ChaosStrike', TALENT_CLASS_MASK),
+    (VENGEANCE_TAB, 'Vengeance', 1, 'Ability_DemonHunter_SoulCleave', TALENT_CLASS_MASK),
+] + patch_monk_talents.TABS
 FIRST_TALENT_ID = 2300
 FIRST_RANK_SPELL = 90200
 
@@ -430,36 +432,56 @@ HELPER_SET = {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'Star
               'ProcFlags': 0, 'ProcChance': 101}
 
 
-# Every tree's talents in id order: Havoc's first (its ids came first), then Vengeance's.
-TREES = [(HAVOC_TAB, HAVOC), (VENGEANCE_TAB, VENGEANCE)]
-ALL_TALENTS = [(tab, talent) for tab, tree in TREES for talent in tree]
+# The trees in id order, each a run of talent ids and rank spells of its own: Havoc's first (its ids came first),
+# then Vengeance's, both of the Demon Hunter's family (build_spells' default: None); then the Monk's, of its family.
+MONK_FAMILY = patch_monk_talents.patch_monk.MONK_FAMILY
+TREES = [
+    # tab, talents, first talent id, first rank spell, spell family
+    (HAVOC_TAB, HAVOC, FIRST_TALENT_ID, FIRST_RANK_SPELL, None),
+    (VENGEANCE_TAB, VENGEANCE, FIRST_TALENT_ID + len(HAVOC), FIRST_RANK_SPELL + sum(t[5] for t in HAVOC), None),
+    (patch_monk_talents.MISTWEAVER_TAB, patch_monk_talents.MISTWEAVER, patch_monk_talents.FIRST_TALENT_ID,
+     patch_monk_talents.FIRST_RANK_SPELL, MONK_FAMILY),
+    (patch_monk_talents.WINDWALKER_TAB, patch_monk_talents.WINDWALKER,
+     patch_monk_talents.FIRST_TALENT_ID + len(patch_monk_talents.MISTWEAVER),
+     patch_monk_talents.FIRST_RANK_SPELL + sum(t[5] for t in patch_monk_talents.MISTWEAVER), MONK_FAMILY),
+]
+ALL_TALENTS = [(tab, talent) for tab, tree, *_ in TREES for talent in tree]
+
+
+def ranked(tree, first_rank):
+    """Each talent of a tree with its rank spell ids."""
+    spell_id = first_rank
+    for talent in tree:
+        yield talent, list(range(spell_id, spell_id + talent[5]))
+        spell_id += talent[5]
 
 
 def talents():
     """[(talent id, tab, row, column, rank spell ids, prerequisite talent id)] for TALENT rows."""
-    ids = {(tab, talent[0]): talent_id for talent_id, (tab, talent) in enumerate(ALL_TALENTS, FIRST_TALENT_ID)}
-    rows, spell_id = [], FIRST_RANK_SPELL
-    for talent_id, (tab, (_, row, column, _, requires, ranks, *_)) in enumerate(ALL_TALENTS, FIRST_TALENT_ID):
-        rows.append((talent_id, tab, row, column, list(range(spell_id, spell_id + ranks)),
-                     ids[(tab, requires)] if requires else 0))
-        spell_id += ranks
+    rows = []
+    for tab, tree, first_talent, first_rank, _ in TREES:
+        ids = {talent[0]: talent_id for talent_id, talent in enumerate(tree, first_talent)}
+        for talent_id, (talent, ranks) in enumerate(ranked(tree, first_rank), first_talent):
+            _, row, column, _, requires, *_ = talent
+            rows.append((talent_id, tab, row, column, ranks, ids[requires] if requires else 0))
     return rows
 
 
 def spells():
     """The rank spells and helper spells, as patch_spells.py's SPELLS entries."""
-    out, spell_id = [], FIRST_RANK_SPELL
-    for _, (name, _, _, icon, _, ranks, description, effects, extra) in ALL_TALENTS:
-        for rank in range(1, ranks + 1):
-            out.append({
-                'id': spell_id, 'copy': TALENT_TEMPLATE, 'name': name, 'rank': f'Rank {rank}', 'icon': icon,
-                'description': description(rank), 'clear': [1, 2, 3],
-                'set': {'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 0, 'ProcFlags': 0, 'ProcChance': 101,
-                        **extra},
-                'effects': effects(rank),
-            })
-            spell_id += 1
-    for helper in HELPERS:
+    out = []
+    for _, tree, _, first_rank, family in TREES:
+        own = {'SpellFamilyName': family, 'SpellFamilyFlags0': 0} if family else {}
+        for (name, _, _, icon, _, _, description, effects, extra), ranks in ranked(tree, first_rank):
+            for rank, spell_id in enumerate(ranks, 1):
+                out.append({
+                    'id': spell_id, 'copy': TALENT_TEMPLATE, 'name': name, 'rank': f'Rank {rank}', 'icon': icon,
+                    'description': description(rank), 'clear': [1, 2, 3],
+                    'set': {'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 0, 'ProcFlags': 0, 'ProcChance': 101,
+                            **own, **extra},
+                    'effects': effects(rank),
+                })
+    for helper in HELPERS + patch_monk_talents.HELPERS:
         spell = {key: value for key, value in helper.items() if key != 'duration'}
         spell['set'] = {**HELPER_SET, 'DurationIndex': helper['duration'], **helper.get('set', {})}
         out.append(spell)
@@ -467,4 +489,5 @@ def spells():
 
 
 SPELLS = spells()
-ICONS = sorted({talent[3] for _, talent in ALL_TALENTS} | {tab[3] for tab in TABS} | {h['icon'] for h in HELPERS})
+ICONS = sorted({talent[3] for _, talent in ALL_TALENTS} | {tab[3] for tab in TABS}
+               | {h['icon'] for h in HELPERS + patch_monk_talents.HELPERS})

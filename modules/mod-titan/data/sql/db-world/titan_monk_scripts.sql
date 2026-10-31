@@ -3,7 +3,8 @@ DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_monk_vivify
     'spell_titan_monk_renewing_mist_cast', 'spell_titan_monk_life_cocoon', 'spell_titan_monk_revival',
     'spell_titan_monk_jade_wind_heal', 'spell_titan_monk_combo_points', 'spell_titan_monk_finisher',
     'spell_titan_monk_finisher_channel', 'spell_titan_monk_blackout_kick', 'spell_titan_monk_whirling_dragon_punch',
-    'spell_titan_monk_sef_echo');
+    'spell_titan_monk_sef_echo', 'spell_titan_monk_thunder_focus_tea', 'spell_titan_monk_tiger_palm',
+    'spell_titan_monk_thunderfist');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90301, 'spell_titan_monk_vivify'),
 (90302, 'spell_titan_monk_renewing_mist'),
@@ -23,12 +24,16 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90322, 'spell_titan_monk_sef_echo'),
 (90324, 'spell_titan_monk_sef_echo'),
 (90326, 'spell_titan_monk_sef_echo'),
-(90328, 'spell_titan_monk_sef_echo');
+(90328, 'spell_titan_monk_sef_echo'),
+(90302, 'spell_titan_monk_renewing_mist_cast'),
+(90308, 'spell_titan_monk_thunder_focus_tea'),
+(90320, 'spell_titan_monk_tiger_palm'),
+(90322, 'spell_titan_monk_thunderfist');
 
 -- Mistweaver: healing grows with spell power (direct heals and each tick of the heals over time); Vivify's
 -- splash and Life Cocoon are the scripts' own amounts. Crane's Gust, cast by Chi-Ji for the Monk, grows with the
 -- Monk's.
-DELETE FROM `spell_bonus_data` WHERE `entry` BETWEEN 90300 AND 90331;
+DELETE FROM `spell_bonus_data` WHERE `entry` BETWEEN 90300 AND 90361;
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90300, 0, 0.12, 0, 0, 'Soothing Mist'),
 (90301, 0.8, 0, 0, 0, 'Vivify'),
@@ -41,7 +46,8 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90312, 0.3, 0, 0, 0, 'Invoke Chi-Ji - Crane''s Gust'),
 (90314, 0.07, 0, 0, 0, 'Refreshing Jade Wind - heal'),
 (90330, 0, 0, 0, 0, 'Storm, Earth, and Fire - Earth Spirit echo'),
-(90331, 0, 0, 0, 0, 'Storm, Earth, and Fire - Fire Spirit echo');
+(90331, 0, 0, 0, 0, 'Storm, Earth, and Fire - Fire Spirit echo'),
+(90361, 0, 0, 0, 0, 'Thunderfist');
 
 -- Chi-Ji, the Red Crane: Invoke Chi-Ji's guardian (npc_titan_chi_ji), following the Monk and healing; it never
 -- fights. Its own model (display 90205, titan_demon_hunter_displays.sql and the client patch).

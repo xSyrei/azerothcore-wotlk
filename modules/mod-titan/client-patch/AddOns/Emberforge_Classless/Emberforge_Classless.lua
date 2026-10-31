@@ -83,9 +83,10 @@ local TREES = {
         { "Destruction", "WarlockDestruction" } },
     [11] = { { "Balance", "DruidBalance" }, { "Feral Combat", "DruidFeralCombat" },
              { "Restoration", "DruidRestoration" } },
-    -- Not in the client: trees of our own (the Demon Hunter's on the warlock's demon and fel art); none yet
-    -- for the Monk.
-    [10] = { { "Brewmaster" }, { "Mistweaver" }, { "Windwalker" } },
+    -- Not in the client: trees of our own, on the client's art (the Demon Hunter's on the warlock's demon and fel
+    -- art, the Monk's Mistweaver on the druid's restoration, Windwalker on the shaman's enhancement); Brewmaster's
+    -- tree is still to come.
+    [10] = { { "Brewmaster" }, { "Mistweaver", "DruidRestoration" }, { "Windwalker", "ShamanEnhancement" } },
     [12] = { { "Havoc", "WarlockSummoning" }, { "Vengeance", "WarlockDestruction" } },
 }
 -- Skill lines whose name differs from their talent tree.

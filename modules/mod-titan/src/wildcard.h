@@ -42,10 +42,11 @@ namespace Wildcard
     constexpr uint32 SKILL_BREWMASTER = 2002;
     constexpr uint32 SKILL_MISTWEAVER = 2003;
     constexpr uint32 SKILL_WINDWALKER = 2004;
-    // Talent trees Heroes draw from: every playable class's, and the Demon Hunter's (TalentTab rows of our own,
-    // client-patch/patch_talents.py).
+    // Talent trees Heroes draw from: every playable class's, the Demon Hunter's and the Monk's (TalentTab rows of our
+    // own, client-patch/patch_talents.py and patch_monk_talents.py).
     constexpr uint32 CLASSMASK_DEMON_HUNTER = 1 << (CLASS_DEMON_HUNTER - 1);
-    constexpr uint32 HERO_TALENT_CLASSMASK = CLASSMASK_ALL_PLAYABLE | CLASSMASK_DEMON_HUNTER;
+    constexpr uint32 CLASSMASK_MONK = 1 << (CLASS_MONK - 1);
+    constexpr uint32 HERO_TALENT_CLASSMASK = CLASSMASK_ALL_PLAYABLE | CLASSMASK_DEMON_HUNTER | CLASSMASK_MONK;
 
     struct Rank
     {

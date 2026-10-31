@@ -1189,15 +1189,16 @@ def build_talents(source, out, icon_id):
     """The Demon Hunter's talent trees (patch_talents.py) in Talent.dbc and TalentTab.dbc."""
     tabs = Dbc(source / 'TalentTab.dbc', TALENT_TAB_FIELDS)
     talents = Dbc(source / 'Talent.dbc', TALENT_FIELDS)
-    for tab_id, name, order, icon in patch_talents.TABS:
+    for tab_id, name, order, icon, class_mask in patch_talents.TABS:
         row = list(tabs.rows[TALENT_TAB_TEMPLATE])
         row[0] = tab_id
         row[TAB_NAME:TAB_NAME + 16] = [tabs.add_string(name)] + [0] * 15
         row[TAB_ICON] = icon_id[icon]
-        row[TAB_CLASS_MASK] = patch_talents.TALENT_CLASS_MASK
+        row[TAB_CLASS_MASK] = class_mask
         row[TAB_PET_MASK] = 0
         row[TAB_ORDER] = order
-        row[TAB_BACKGROUND] = tabs.add_string(f'DemonHunter{name}')     # no art yet: the Classless window has none
+        owner = 'DemonHunter' if class_mask == patch_talents.TALENT_CLASS_MASK else 'Monk'
+        row[TAB_BACKGROUND] = tabs.add_string(f'{owner}{name}')     # no art: the Classless window brings its own
         tabs.rows[tab_id] = tuple(row)
     for talent_id, tab_id, tier, column, ranks, requires in patch_talents.talents():
         row = [0] * TALENT_FIELDS

@@ -45,7 +45,20 @@ enum MonkSpells
     SPELL_EARTH_SPIRIT_AURA         = 90332,
     SPELL_FIRE_SPIRIT_AURA          = 90333,
     SPELL_CLONE_ME                  = 45204,    // Mirror Image's: the summon looks like the caster
+    SPELL_SECRET_INFUSION           = 90360,
+    SPELL_THUNDERFIST               = 90361,
 };
+
+// The talents the scripts read (client-patch/patch_monk_talents.py): each rank's spell, the rank's number in it.
+constexpr std::array<uint32, 3> TALENT_RISING_MIST = { 90413, 90414, 90415 };
+constexpr std::array<uint32, 3> TALENT_COCOONED_IN_LIGHT = { 90427, 90428, 90429 };
+constexpr std::array<uint32, 2> TALENT_SECRET_INFUSION = { 90432, 90433 };
+constexpr std::array<uint32, 3> TALENT_DANCING_MISTS = { 90436, 90437, 90438 };
+constexpr std::array<uint32, 1> TALENT_ANCIENT_TEACHINGS = { 90446 };
+constexpr std::array<uint32, 3> TALENT_TEACHINGS_OF_THE_MONASTERY = { 90456, 90457, 90458 };
+constexpr std::array<uint32, 3> TALENT_COMBO_BREAKER = { 90471, 90472, 90473 };
+constexpr std::array<uint32, 2> TALENT_ENERGY_BURST = { 90481, 90482 };
+constexpr std::array<uint32, 3> TALENT_THUNDERFIST = { 90484, 90485, 90486 };
 
 enum MonkCreatures
 {
@@ -56,6 +69,17 @@ enum MonkCreatures
 
 namespace
 {
+    // A talent's number (its highest rank the unit has), 0 without it.
+    template <std::size_t N>
+    int32 TalentValue(Unit const* unit, std::array<uint32, N> const& ranks)
+    {
+        int32 value = 0;
+        for (uint32 rank : ranks)
+            if (AuraEffect const* effect = unit->GetAuraEffect(rank, EFFECT_0))
+                value = effect->GetAmount();
+        return value;
+    }
+
     // The friendly units within range of center (center included).
     std::list<Unit*> FriendsAround(WorldObject* center, Unit* caster, float range)
     {
@@ -105,7 +129,7 @@ namespace
 }
 
 // Vivify (90301): every ally within 40 yards wearing the Monk's Renewing Mist is healed for half as much
-// (90310).
+// (90310); with Rising Mist, that Renewing Mist lasts longer.
 class spell_titan_monk_vivify : public SpellScript
 {
     PrepareSpellScript(spell_titan_monk_vivify);
@@ -125,9 +149,14 @@ class spell_titan_monk_vivify : public SpellScript
         if (amount <= 0)
             return;
 
+        int32 extension = TalentValue(caster, TALENT_RISING_MIST) * IN_MILLISECONDS;
         for (Unit* ally : FriendsAround(caster, caster, RANGE))
-            if (ally->HasAura(SPELL_RENEWING_MIST, caster->GetGUID()))
+            if (Aura* mist = ally->GetAura(SPELL_RENEWING_MIST, caster->GetGUID()))
+            {
                 caster->CastCustomSpell(SPELL_VIVIFY_SPLASH, SPELLVALUE_BASE_POINT0, amount, ally, true);
+                if (extension)
+                    mist->SetDuration(std::min(mist->GetDuration() + extension, mist->GetMaxDuration()));
+            }
     }
 
 
@@ -175,6 +204,94 @@ class spell_titan_monk_renewing_mist : public AuraScript
     }
 };
 
+// Renewing Mist (90302) cast: with Dancing Mists, a chance to settle on one more injured ally within 20 yards of the
+// target (the most injured without it).
+class spell_titan_monk_renewing_mist_cast : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_renewing_mist_cast);
+
+    static constexpr float RANGE = 20.0f;
+
+    void Dance()
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+        if (!target || !roll_chance_i(TalentValue(caster, TALENT_DANCING_MISTS)))
+            return;
+        Unit* next = nullptr;
+        for (Unit* ally : FriendsAround(target, caster, RANGE))
+            if (ally != target && ally->IsAlive() && !ally->IsFullHealth()
+                && !ally->HasAura(SPELL_RENEWING_MIST, caster->GetGUID())
+                && (!next || ally->GetHealthPct() < next->GetHealthPct()))
+                next = ally;
+        if (next)
+            caster->AddAura(SPELL_RENEWING_MIST, next);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_monk_renewing_mist_cast::Dance);
+    }
+};
+
+// Thunder Focus Tea (90308): with Secret Infusion, haste for 10 sec (90360).
+class spell_titan_monk_thunder_focus_tea : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_thunder_focus_tea);
+
+    void Infuse()
+    {
+        Unit* caster = GetCaster();
+        if (int32 haste = TalentValue(caster, TALENT_SECRET_INFUSION))
+            caster->CastCustomSpell(caster, SPELL_SECRET_INFUSION, &haste, &haste, nullptr, true);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_monk_thunder_focus_tea::Infuse);
+    }
+};
+
+// Tiger Palm (90320): with Combo Breaker, a chance to award 2 more combo points.
+class spell_titan_monk_tiger_palm : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_tiger_palm);
+
+    static constexpr int8 BONUS_POINTS = 2;
+
+    void Break()
+    {
+        if (Unit* target = GetHitUnit())
+            if (roll_chance_i(TalentValue(GetCaster(), TALENT_COMBO_BREAKER)))
+                GetCaster()->AddComboPoints(target, BONUS_POINTS);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_monk_tiger_palm::Break);
+    }
+};
+
+// Rising Sun Kick (90322): with Thunderfist, a Nature strike (90361) for a share of its damage.
+class spell_titan_monk_thunderfist : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_thunderfist);
+
+    void Strike()
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+        int32 damage = CalculatePct(GetHitDamage(), TalentValue(caster, TALENT_THUNDERFIST));
+        if (target && damage > 0)
+            caster->CastCustomSpell(SPELL_THUNDERFIST, SPELLVALUE_BASE_POINT0, damage, target, true);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_monk_thunderfist::Strike);
+    }
+};
+
 // Refreshing Jade Wind's heal (90314): of the allies within 10 yards of the Monk, the 6 most injured.
 class spell_titan_monk_jade_wind_heal : public SpellScript
 {
@@ -204,7 +321,8 @@ class spell_titan_monk_jade_wind_heal : public SpellScript
 
 // Windwalker's finishers (Blackout Kick, Rising Sun Kick, Fists of Fury, Spinning Crane Kick): usable from 1 combo
 // point (Tiger Palm awards them, on the Monk's current target, at most 5), they take them all and hit as hard as the
-// points spent: their spell values are the 5-point ones, scaled by points / 5.
+// points spent: their spell values are the 5-point ones, scaled by points / 5. With Energy Burst, spending 5 restores
+// Energy.
 constexpr uint8 MAX_COMBO_POINTS = 5;
 
 class spell_titan_monk_finisher : public SpellScript
@@ -230,7 +348,11 @@ class spell_titan_monk_finisher : public SpellScript
 
     void ClearPoints()
     {
-        GetCaster()->ClearComboPoints();
+        Unit* caster = GetCaster();
+        caster->ClearComboPoints();
+        if (_points >= MAX_COMBO_POINTS)
+            if (int32 energy = TalentValue(caster, TALENT_ENERGY_BURST))
+                caster->EnergizeBySpell(caster, GetSpellInfo()->Id, energy, POWER_ENERGY);
     }
 
     void Register() override
@@ -277,7 +399,8 @@ class spell_titan_monk_finisher_channel : public AuraScript
     }
 };
 
-// Blackout Kick (90321): Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter.
+// Blackout Kick (90321): Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter; with Teachings of the
+// Monastery, a chance to reset Rising Sun Kick's.
 class spell_titan_monk_blackout_kick : public SpellScript
 {
     PrepareSpellScript(spell_titan_monk_blackout_kick);
@@ -286,9 +409,13 @@ class spell_titan_monk_blackout_kick : public SpellScript
 
     void CutCooldowns()
     {
-        if (Player* player = GetCaster()->ToPlayer())
-            for (uint32 spellId : { SPELL_RISING_SUN_KICK, SPELL_FISTS_OF_FURY })
-                player->ModifySpellCooldown(spellId, -COOLDOWN_CUT);
+        Player* player = GetCaster()->ToPlayer();
+        if (!player)
+            return;
+        for (uint32 spellId : { SPELL_RISING_SUN_KICK, SPELL_FISTS_OF_FURY })
+            player->ModifySpellCooldown(spellId, -COOLDOWN_CUT);
+        if (roll_chance_i(TalentValue(player, TALENT_TEACHINGS_OF_THE_MONASTERY)))
+            player->RemoveSpellCooldown(SPELL_RISING_SUN_KICK, true);
     }
 
     void Register() override
@@ -348,7 +475,7 @@ class spell_titan_monk_sef_echo : public SpellScript
     }
 };
 
-// Life Cocoon (90306): the shield absorbs as much as 30% of the Monk's maximum health.
+// Life Cocoon (90306): the shield absorbs as much as 30% of the Monk's maximum health (more with Cocooned in Light).
 class spell_titan_monk_life_cocoon : public AuraScript
 {
     PrepareAuraScript(spell_titan_monk_life_cocoon);
@@ -359,7 +486,8 @@ class spell_titan_monk_life_cocoon : public AuraScript
     {
         canBeRecalculated = false;
         if (Unit* caster = GetCaster())
-            amount = int32(caster->CountPctFromMaxHealth(HEALTH_PCT));
+            amount = int32(caster->CountPctFromMaxHealth(HEALTH_PCT + TalentValue(caster, TALENT_COCOONED_IN_LIGHT)
+                * HEALTH_PCT / 100));
     }
 
     void Register() override
@@ -419,7 +547,7 @@ struct npc_titan_chi_ji : public ScriptedAI
         scheduler.Schedule(GUST_INTERVAL, [this](TaskContext gust)
         {
             if (Unit* monk = me->GetOwner())
-                CranesGust(me, monk, GUST_TARGETS);
+                CranesGust(me, monk, GUST_TARGETS + TalentValue(monk, TALENT_ANCIENT_TEACHINGS));
             gust.Repeat();
         });
     }
@@ -522,6 +650,10 @@ void AddSC_monk()
     RegisterSpellScript(spell_titan_monk_vivify);
     RegisterSpellScript(spell_titan_monk_renewing_mist);
     RegisterSpellScript(spell_titan_monk_jade_wind_heal);
+    RegisterSpellScript(spell_titan_monk_renewing_mist_cast);
+    RegisterSpellScript(spell_titan_monk_thunder_focus_tea);
+    RegisterSpellScript(spell_titan_monk_tiger_palm);
+    RegisterSpellScript(spell_titan_monk_thunderfist);
     RegisterSpellScript(spell_titan_monk_finisher);
     RegisterSpellScript(spell_titan_monk_finisher_channel);
     RegisterSpellScript(spell_titan_monk_blackout_kick);
