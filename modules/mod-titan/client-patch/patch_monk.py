@@ -30,6 +30,8 @@ FAMILY_FLAGS = {
     90310: 0x400,   # Vivify's splash
     90311: 0x800,   # Invoke Chi-Ji, the Red Crane
     90312: 0x1000,  # Crane's Gust (Chi-Ji's heal)
+    90313: 0x2000,  # Refreshing Jade Wind
+    90314: 0x4000,  # Refreshing Jade Wind's heal
 }
 VIVIFY, ENVELOPING_MIST = 0x2, 0x8
 
@@ -44,6 +46,9 @@ DURATION_25S = 63
 RANGE_40, RANGE_100 = 5, 6
 EFFECT_SUMMON, SUMMON_GUARDIAN = 28, 1161      # Feral Spirit's summon properties: a guardian at the caster's side
 NPC_CHI_JI = 90311
+AURA_PERIODIC_TRIGGER_SPELL = 23
+TARGET_SRC_CASTER, TARGET_UNIT_SRC_AREA_ALLY = 22, 30
+RANGE_SELF, RADIUS_10 = 1, 13
 GLOBAL_COOLDOWN = 133
 NATURE, ALL_SCHOOLS = 0x8, 0x7F
 
@@ -216,6 +221,33 @@ EFFECTS = {
                        'rise': (1.1, 1.2), 'cards': ring(3, 0.6, 0.4, 1.0, 0.3)},
                       {'texture': 3, 'tint': CRANE_MOTE, 'alpha': 1.0, 'turn': 2.0, 'pulse': 0.35, 'rise': (1.5, 1.2),
                        'cards': ring(5, 0.7, 0.2, 0.18, 0.12)})}},
+    # Refreshing Jade Wind: retail's whirlwind around the Monk (monk_rushingjadewind_missile's meshes, spells/
+    # MONK_JadeWind): the tornado twice, turning and its wind flowing at two speeds, and the streak rings at the
+    # waist...
+    'JadeWind': {'model': 'MONK_JadeWind', 'effect': 7129, 'shape': 'spun',
+                 'textures': ('MONK_JadeWind/shaman_windwalk_wind1', 'MONK_JadeWind/streak_halfcircle_01'),
+                 'options': {'export': 'MONK_JadeWind/monk_rushingjadewind_missile.gltf', 'layers': (
+                     {'mesh': 1, 'texture': 0, 'tint': JADE, 'alpha': 1.0, 'turn': 1.0, 'scroll': (-0.6, 0.0)},
+                     {'mesh': 1, 'texture': 0, 'tint': MOTE, 'alpha': 0.7, 'turn': 1.7, 'scroll': (0.35, 0.25)},
+                     {'mesh': 0, 'texture': 1, 'tint': JADE, 'alpha': 0.9, 'turn': 0.5},
+                     {'mesh': 0, 'texture': 1, 'tint': MOTE, 'alpha': 0.5, 'turn': 0.8})}},
+    # ... and its particles as puffs (on the chest, about 1.1 yards up): jade smoke billowing up the funnel, white
+    # feathers whirling up it and wind swirls (spells/MONK_Feather.png, MONK_Swirl.png).
+    'JadeWindMist': {'model': 'MONK_JadeWindMist', 'effect': 7130, 'shape': 'mist',
+                     'textures': (ANIM, 'MONK_Feather', 'MONK_Swirl'),
+                     'options': {'layers': (
+                         {'texture': 0, 'sheet': (4, 4), 'flip': 1.2, 'tint': JADE, 'alpha': 0.7, 'turn': 1.1,
+                          'pulse': 0, 'rise': (2.4, 1.2), 'cards': ring(6, 1.5, -0.9, 1.4, 0.1)},
+                         {'texture': 1, 'tint': (0.85, 1.0, 0.92), 'alpha': 1.0, 'turn': 0.9, 'pulse': 1.5,
+                          'rise': (2.2, 1.5), 'cards': ring(8, 1.7, -0.8, 0.45, 0.25)},
+                         {'texture': 2, 'tint': JADE, 'alpha': 0.8, 'turn': 1.3, 'pulse': 0.9,
+                          'cards': ring(4, 1.3, -0.1, 1.3, 0.5)})}},
+    # Its heal: a small jade glint on each ally healed (six every 0.75 sec: kept light).
+    'JadeWindHeal': {'model': 'MONK_JadeWindHeal', 'effect': 7131, 'shape': 'mist', 'textures': (GLOW, FLARE),
+                     'options': {'duration': 600, 'fade': (50, 300), 'layers': (
+                         {'texture': 0, 'tint': JADE, 'alpha': 0.4, 'pulse': 0, 'cards': ring(1, 0.0, 1.0, 1.2)},
+                         {'texture': 1, 'tint': MOTE, 'alpha': 1.0, 'turn': 1.0, 'pulse': 0, 'rise': (0.8, 0.6),
+                          'cards': ring(3, 0.4, 0.6, 0.18, 0.3)})}},
 }
 
 # Sounds (see patch_spells.SOUNDS): retail's Monk sounds (sounds/spell_mk_*); loops copy a Blizzard looping entry.
@@ -228,6 +260,7 @@ SOUNDS = {
     'Revival': {'id': 18125, 'copy': 1433, 'files': [f'spell_mk_revival_0{n}' for n in range(1, 6)]},
     'RenewingMist': {'id': 18126, 'copy': 2561, 'files': ['spell_mk_renewingmist_cast']},
     'Vivify': {'id': 18127, 'copy': 2561, 'files': ['spell_mk_vivify_cast']},
+    'JadeWind': {'id': 18129, 'copy': 2561, 'files': [f'spell_mk_jadewind_cast_0{n}' for n in range(2, 6)]},
     'CranesGust': {'id': 18128, 'copy': 1482, 'files': [f'spell_mk_invoke_chi_ji_heal_0{n}' for n in range(1, 4)]},
 }
 
@@ -299,6 +332,14 @@ VISUALS = {
                            VISUAL_MISSILE_MOTION: 0}, 'kits': {
         'cast': (15681, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
         'impact': (15682, {KIT_BASE: 'CraneHeal', KIT_CHEST: 0, 'sound': 'CranesGust'})}},
+    # Refreshing Jade Wind: Rejuvenation's timing, the jade let go from the hands and one of its sounds; the
+    # whirlwind and its puffs around the Monk while it lasts; a jade glint on each ally healed.
+    'RefreshingJadeWind': {'copy': 32, 'id': 16743, 'clear': ('precast', 'impact'), 'kits': {
+        'cast': (15683, {**CAST, 'sound': 'JadeWind'}),
+        'state': (15684, {KIT_BASE: 'JadeWind', KIT_CHEST: 'JadeWindMist', 'sound': None,
+                          'procs': False})}},
+    'JadeWindHeal': {'copy': 58, 'id': 16744, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15685, {KIT_BASE: 'JadeWindHeal', 'sound': None})}},
     'Detox': {'copy': 337, 'id': 16740, 'kits': {
         'precast': (15676, PRECAST),
         'cast': (15677, CAST),
@@ -470,6 +511,31 @@ SPELLS += [
                     StartRecoveryCategory=0, StartRecoveryTime=0, Speed=20.0),
         'clear': [2, 3],
         'effects': {1: {'Effect': EFFECT_HEAL, 'TargetA': TARGET_UNIT_TARGET_ALLY, **heal(20, 6.0)}},
+    },
+]
+
+SPELLS += [
+    {
+        # Rejuvenation's aura on the Monk, triggering the heal (90314) every 0.75 sec for 6 sec.
+        'id': 90313, 'copy': 774, 'name': 'Refreshing Jade Wind', 'icon': 'Ability_Monk_RushingJadeWind',
+        'visual': 'RefreshingJadeWind',
+        'description': 'Summon a whirling tornado around you, healing up to 6 injured allies within 10 yards for '
+                       '$90314s1 every 0.75 sec for $d.',
+        'tooltip': 'Healing up to 6 injured allies within 10 yards every 0.75 sec.',
+        'set': monk(90313, 22, RecoveryTime=45000, ManaCostPercentage=10, RangeIndex=RANGE_SELF,
+                    DurationIndex=DURATION_6S),
+        'clear': [2, 3],
+        'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_PERIODIC_TRIGGER_SPELL, 'Amplitude': 750,
+                        'TriggerSpell': 90314, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER,
+                        'TargetB': 0}},
+    },
+    {
+        # The heal: the allies within 10 yards of the Monk, the 6 most injured (spell_titan_monk_jade_wind_heal).
+        'id': 90314, 'copy': 44203, 'name': 'Refreshing Jade Wind', 'icon': 'Ability_Monk_RushingJadeWind',
+        'visual': 'JadeWindHeal', 'description': '',
+        'set': monk(90314, 22, MaxAffectedTargets=0, RangeIndex=RANGE_SELF),
+        'effects': {1: {'TargetA': TARGET_SRC_CASTER, 'TargetB': TARGET_UNIT_SRC_AREA_ALLY, 'RadiusIndex': RADIUS_10,
+                        **heal(8, 1.6)}},
     },
 ]
 

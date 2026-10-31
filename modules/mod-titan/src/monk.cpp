@@ -186,6 +186,33 @@ class spell_titan_monk_renewing_mist_cast : public SpellScript
     }
 };
 
+// Refreshing Jade Wind's heal (90314): of the allies within 10 yards of the Monk, the 6 most injured.
+class spell_titan_monk_jade_wind_heal : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_jade_wind_heal);
+
+    static constexpr std::size_t TARGETS = 6;
+
+    void MostInjured(std::list<WorldObject*>& targets)
+    {
+        targets.remove_if([](WorldObject* target)
+        {
+            Unit* unit = target->ToUnit();
+            return !unit || unit->IsFullHealth();
+        });
+        targets.sort([](WorldObject* a, WorldObject* b)
+            { return a->ToUnit()->GetHealthPct() < b->ToUnit()->GetHealthPct(); });
+        if (targets.size() > TARGETS)
+            targets.resize(TARGETS);
+    }
+
+    void Register() override
+    {
+        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_monk_jade_wind_heal::MostInjured,
+            EFFECT_0, TARGET_UNIT_SRC_AREA_ALLY);
+    }
+};
+
 // Life Cocoon (90306): the shield absorbs as much as 30% of the Monk's maximum health.
 class spell_titan_monk_life_cocoon : public AuraScript
 {
@@ -288,6 +315,7 @@ void AddSC_monk()
     RegisterSpellScript(spell_titan_monk_vivify);
     RegisterSpellScript(spell_titan_monk_renewing_mist);
     RegisterSpellScript(spell_titan_monk_renewing_mist_cast);
+    RegisterSpellScript(spell_titan_monk_jade_wind_heal);
     RegisterSpellScript(spell_titan_monk_life_cocoon);
     RegisterSpellScript(spell_titan_monk_revival);
     RegisterCreatureAI(npc_titan_chi_ji);

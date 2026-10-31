@@ -848,6 +848,167 @@ def mist(*args, layers=(), duration=1000, fade=None):
     return [f'{name}.m2', f'{name}00.skin'] + [f'{name}_{number}.blp' for number in range(len(layers))]
 
 
+def _gltf_meshes(path):
+    """Each glTF mesh's first primitive, in M2 axes: (positions, uvs, triangles)."""
+    path = Path(path)
+    gltf = json.loads(path.read_text())
+    buffers = {}
+
+    def read(index):
+        accessor = gltf['accessors'][index]
+        view = gltf['bufferViews'][accessor['bufferView']]
+        uri = gltf['buffers'][view['buffer']]['uri']
+        if uri not in buffers:
+            buffers[uri] = (path.parent / uri).read_bytes()
+        width = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4}[accessor['type']]
+        kind = {5126: 'f', 5123: 'H', 5125: 'I'}[accessor['componentType']]
+        start = view.get('byteOffset', 0) + accessor.get('byteOffset', 0)
+        flat = struct.unpack_from(f'<{accessor["count"] * width}{kind}', buffers[uri], start)
+        return [flat[i:i + width] for i in range(0, len(flat), width)] if width > 1 else list(flat)
+
+    meshes = []
+    for mesh in gltf['meshes']:
+        primitive = mesh['primitives'][0]
+        indices = read(primitive['indices'])
+        used = sorted(set(indices))
+        local = {v: i for i, v in enumerate(used)}
+        positions = read(primitive['attributes']['POSITION'])
+        uvs = read(primitive['attributes']['TEXCOORD_0'])
+        meshes.append(([(positions[v][0], -positions[v][2], positions[v][1]) for v in used],
+                       [tuple(uvs[v]) for v in used], [local[v] for v in indices]))
+    return meshes
+
+
+def spun_model(*args, export, layers=(), scale=1.0):
+    """A lasting effect around a body (a kit's base slot) from a wow.export glTF's meshes (its bones and
+    animation left out: each layer turns on its own), each layer a dict of
+
+    - mesh: index of the glTF mesh; texture: index into the textures given;
+    - tint: red, green, blue (0 to 1) the texture is multiplied by; alpha: its opacity (0 to 1);
+    - turn: seconds per turn about the middle (negative: the other way; 0: still);
+    - scroll: (u, v) texture repeats a second the texture slides by (wind flowing; None: still);
+    - blend: BLEND_ADD (the default) or BLEND_ALPHA.
+
+    The model scaled by scale; all unlit, both faces drawn, textures repeating. Called as
+    spun_model(texture, ..., out_dir, name, client_dir, export=<.gltf>, layers=...); one looping Stand.
+    Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
+    """
+    *textures, out_dir, name, client_dir = args
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    meshes = _gltf_meshes(export)
+    for number, layer in enumerate(layers):
+        with Image.open(textures[layer['texture']]) as image:
+            (out_dir / f'{name}_{number}.blp').write_bytes(blp.encode(image.convert('RGBA')))
+
+    blob = Blob(0x130)
+    globals_ms, bones, vertices, triangles, sections = [], b'', b'', [], []
+
+    def global_sequence(ms):
+        globals_ms.append(max(1, int(ms)))
+        return len(globals_ms) - 1
+
+    for number, layer in enumerate(layers):
+        positions, uvs, faces = meshes[layer['mesh']]
+        rotation = empty_track()
+        turn = layer.get('turn', 0.0)
+        if turn:
+            turn_ms = int(abs(turn) * 1000)
+            way = 1 if turn > 0 else -1
+            rotation = track(blob, 1, [([turn_ms * i // 4 for i in range(5)],
+                                        [tuple(comp_quat(c) for c in _turn_z(way * math.pi * i / 2))
+                                         for i in range(5)])], '4h')
+            rotation = rotation[:2] + struct.pack('<h', global_sequence(turn_ms)) + rotation[4:]
+        bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
+        bones += empty_track() + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
+        first, start = len(vertices) // 48, len(triangles)
+        for (x, y, z), (u, v) in zip(positions, uvs):
+            vertices += struct.pack('<3f4B4B3f2f2f', x * scale, y * scale, z * scale, 255, 0, 0, 0, number, 0, 0,
+                                    0, 0.0, 0.0, 1.0, u, v, 0.0, 0.0)
+        triangles += [first + f for f in faces]
+        sections.append((first, len(positions), start, len(faces)))
+    vertex_count = len(vertices) // 48
+    every = [p for positions, _, _ in meshes for p in positions]
+    lo = tuple(min(p[i] for p in every) * scale for i in range(3))
+    hi = tuple(max(p[i] for p in every) * scale for i in range(3))
+    radius = math.dist(lo, hi) / 2
+
+    colors, transforms = b'', b''
+    for layer in layers:
+        colors += track(blob, 0, [([0], [tuple(map(float, layer.get('tint', (1.0, 1.0, 1.0))))])], '3f')
+        colors += track(blob, 0, [([0], [round(layer.get('alpha', 1.0) * 0x7FFF)])], 'h')
+        moving = empty_track()
+        if layer.get('scroll'):
+            su, sv = layer['scroll']
+            moving = track(blob, 1, [([0, 1000], [(0.0, 0.0, 0.0), (float(su), float(sv), 0.0)])], '3f')
+            moving = moving[:2] + struct.pack('<h', global_sequence(1000)) + moving[4:]
+        transforms += moving + empty_track() + empty_track()
+
+    name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
+    globals_ref = blob.array('I', globals_ms or [1])
+    sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, 1000, 0.0, SEQUENCE_IN_MODEL, 0x7FFF,
+                                     0, 0, 0, 0, *lo, *hi, radius, -1, 0), 1)
+    bones_ref = blob.add(bones, len(layers))
+    key_bones = blob.array('h', [-1])
+    vertices_ref = blob.add(vertices, vertex_count)
+    colors_ref = blob.add(colors, len(layers))
+    textures_blob = b''
+    for number in range(len(layers)):
+        path = f'{client_dir}\\{name}_{number}.blp'
+        ref = blob.add(path.encode() + b'\0', len(path) + 1)
+        textures_blob += struct.pack('<II2I', 0, WRAP_U | 0x2, *ref)
+    textures_ref = blob.add(textures_blob, len(layers))
+    weights = blob.add(track(blob, 0, [([0], [0x7FFF])], 'h'), 1)
+    transforms_ref = blob.add(transforms, len(layers))
+    replaceable_lookup = blob.array('h', [-1])
+    materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, layer.get('blend', BLEND_ADD))
+                                      for layer in layers])
+    bone_lookup = blob.array('H', list(range(len(layers))))
+    texture_lookup = blob.array('H', list(range(len(layers))))
+    texture_unit_lookup = blob.array('H', [0])
+    transparency_lookup = blob.array('H', [0])
+    transform_lookup = blob.array('H', list(range(len(layers))))
+
+    header = struct.pack('<4sI', b'MD20', 264)
+    header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)
+    header += struct.pack('<2I', *globals_ref)
+    header += struct.pack('<2I', *sequences) + struct.pack('<2I', 0, 0)            # no sequence lookup
+    header += struct.pack('<2I', *bones_ref) + struct.pack('<2I', *key_bones)
+    header += struct.pack('<2I', *vertices_ref) + struct.pack('<I', 1)
+    header += struct.pack('<2I', *colors_ref) + struct.pack('<2I', *textures_ref)
+    header += struct.pack('<2I', *weights) + struct.pack('<2I', *transforms_ref)
+    header += struct.pack('<2I', *replaceable_lookup) + struct.pack('<2I', *materials_ref)
+    header += struct.pack('<2I', *bone_lookup) + struct.pack('<2I', *texture_lookup)
+    header += struct.pack('<2I', *texture_unit_lookup) + struct.pack('<2I', *transparency_lookup)
+    header += struct.pack('<2I', *transform_lookup)
+    header += struct.pack('<7f', *lo, *hi, radius) + struct.pack('<7f', *[0.0] * 7)
+    header += struct.pack('<2I', 0, 0) * 3                                          # collision
+    header += struct.pack('<2I', 0, 0) * 2                                          # attachments
+    header += struct.pack('<2I', 0, 0) * 2                                          # events, lights
+    header += struct.pack('<2I', 0, 0) * 2                                          # cameras
+    header += struct.pack('<2I', 0, 0) * 2                                          # ribbons, particles
+    assert len(header) == 0x130
+    blob.data[:0x130] = header
+    (out_dir / f'{name}.m2').write_bytes(bytes(blob.data))
+
+    # Skin: one section and batch per layer, on its bone, drawn in order.
+    skin = Blob(48)
+    lookup = skin.array('H', list(range(vertex_count)))
+    tris = skin.array('H', triangles)
+    props = skin.add(b'\0' * 4 * vertex_count, vertex_count)
+    section_data, batch_data = b'', b''
+    for number, (first, count, start, index_count) in enumerate(sections):
+        section_data += struct.pack('<10H3f3ff', 0, 0, first, count, start, index_count, 1, number, 1, number,
+                                    0.0, 0.0, 1.0, 0.0, 0.0, 1.0, radius)
+        batch_data += struct.pack('<Bb11H', 16, number, 0, number, number, number, number, 0, 1, number, 0, 0,
+                                  number)
+    sections_ref = skin.add(section_data, len(sections))
+    batches_ref = skin.add(batch_data, len(sections))
+    skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
+    (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
+    return [f'{name}.m2', f'{name}00.skin'] + [f'{name}_{number}.blp' for number in range(len(layers))]
+
+
 def exported_model(*args, export, base, size=None, scale=1.0, center=False, offset=(0.0, 0.0, 0.0), turn=0.0,
                    trail_height=0.3, lifetime=0.4, duration=1000, fade=None, two_sided=False, max_texture=None,
                    sequence=None, billboard=()):
