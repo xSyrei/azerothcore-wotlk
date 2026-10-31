@@ -24,6 +24,7 @@ void AddSC_demon_hunter();
 void AddSC_monk();
 void AddSC_hero_equipment();
 void AddSC_max_skills();
+void AddSC_combo_points();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
 void Addmod_titanScripts()
@@ -37,4 +38,5 @@ void Addmod_titanScripts()
     AddSC_monk();
     AddSC_hero_equipment();
     AddSC_max_skills();
+    AddSC_combo_points();
 }

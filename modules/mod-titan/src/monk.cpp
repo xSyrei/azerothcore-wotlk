@@ -16,6 +16,7 @@
  */
 
 #include "CellImpl.h"
+#include "combo_points.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "ScriptMgr.h"
@@ -55,7 +56,6 @@ constexpr std::array<uint32, 3> TALENT_COCOONED_IN_LIGHT = { 90427, 90428, 90429
 constexpr std::array<uint32, 2> TALENT_SECRET_INFUSION = { 90432, 90433 };
 constexpr std::array<uint32, 3> TALENT_DANCING_MISTS = { 90436, 90437, 90438 };
 constexpr std::array<uint32, 1> TALENT_CELESTIAL_FLOCK = { 90446 };
-constexpr std::array<uint32, 3> TALENT_ANCIENT_TEACHINGS = { 90579, 90580, 90581 };
 constexpr std::array<uint32, 3> TALENT_TEACHINGS_OF_THE_MONASTERY = { 90456, 90457, 90458 };
 constexpr std::array<uint32, 3> TALENT_COMBO_BREAKER = { 90471, 90472, 90473 };
 constexpr std::array<uint32, 2> TALENT_ENERGY_BURST = { 90481, 90482 };
@@ -323,7 +323,7 @@ class spell_titan_monk_jade_wind_heal : public SpellScript
 // Windwalker's finishers (Blackout Kick, Rising Sun Kick, Fists of Fury, Spinning Crane Kick): usable from 1 combo
 // point (Tiger Palm awards them, on the Monk's current target, at most 5), they take them all and hit as hard as the
 // points spent: their spell values are the 5-point ones, scaled by points / 5. With Energy Burst, spending 5 restores
-// Energy; with Ancient Teachings, the points may come back.
+// Energy; with Ancient Teachings or Shattered Souls, the points may come back (combo_points.h).
 constexpr uint8 MAX_COMBO_POINTS = 5;
 
 class spell_titan_monk_finisher : public SpellScript
@@ -355,8 +355,7 @@ class spell_titan_monk_finisher : public SpellScript
             if (int32 energy = TalentValue(caster, TALENT_ENERGY_BURST))
                 caster->EnergizeBySpell(caster, GetSpellInfo()->Id, energy, POWER_ENERGY);
         Unit* target = GetExplTargetUnit() && GetExplTargetUnit() != caster ? GetExplTargetUnit() : caster->GetVictim();
-        if (target && roll_chance_i(TalentValue(caster, TALENT_ANCIENT_TEACHINGS)))
-            caster->AddComboPoints(target, _points);
+        ComboPoints::Refund(caster, target, _points);
     }
 
     void Register() override

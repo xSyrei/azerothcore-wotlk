@@ -16,6 +16,7 @@
  */
 
 #include "CellImpl.h"
+#include "combo_points.h"
 #include "GameTime.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
@@ -97,7 +98,6 @@ constexpr std::array<uint32, 2> TALENT_FALLOUT = { 90274, 90275 };              
 constexpr std::array<uint32, 2> TALENT_COVER_OF_DARKNESS = { 90276, 90277 };              // % more avoidance
 constexpr std::array<uint32, 1> TALENT_BURNING_ALIVE = { 90278 };
 constexpr std::array<uint32, 2> TALENT_FEED_THE_DEMON = { 90279, 90280 };                 // ms per combo point
-constexpr std::array<uint32, 3> TALENT_SHATTERED_SOULS = { 90529, 90530, 90531 };          // % chance
 constexpr std::array<uint32, 2> TALENT_FEAST_OF_SOULS = { 90281, 90282 };                 // % of maximum health
 constexpr std::array<uint32, 2> TALENT_FIERY_DEMISE = { 90283, 90284 };                   // % more Fire damage
 constexpr std::array<uint32, 2> TALENT_RUINOUS_BULWARK = { 90286, 90287 };                // % more absorbed
@@ -762,7 +762,8 @@ namespace
 
     // Vengeance's finishers (Soul Cleave, Spirit Bomb, Soul Barrier) spend all the unit's combo points (Shear awards
     // them): how many there were. Feed the Demon (talent) shortens Demon Spikes' cooldown for each; Painbringer
-    // (talent) lowers the damage the unit takes for a while; Shattered Souls (talent) may give them back.
+    // (talent) lowers the damage the unit takes for a while; Shattered Souls or Ancient Teachings (talents) may give
+    // them back (combo_points.h).
     uint8 SpendComboPoints(Unit* unit)
     {
         uint8 points = unit->GetComboPoints();
@@ -774,9 +775,7 @@ namespace
             if (int32 ms = TalentValue(unit, TALENT_FEED_THE_DEMON))
                 player->ModifySpellCooldown(SPELL_DEMON_SPIKES, -ms * points);
         CastWithValue(unit, SPELL_PAINBRINGER, TalentValue(unit, TALENT_PAINBRINGER), unit);
-        if (Unit* victim = unit->GetVictim())
-            if (roll_chance_i(TalentValue(unit, TALENT_SHATTERED_SOULS)))
-                unit->AddComboPoints(victim, points);
+        ComboPoints::Refund(unit, unit->GetVictim(), points);
         return points;
     }
 

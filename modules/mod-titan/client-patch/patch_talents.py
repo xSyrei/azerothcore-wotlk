@@ -321,7 +321,8 @@ VENGEANCE_MORE = [
      lambda r: f'Increases your chance to dodge by {r}%.',
      lambda r: {1: aura(AURA_MOD_DODGE_PERCENT, r)}, {}),
     ('Shattered Souls', 10, 3, 'Spell_Shadow_SoulGem', None, 3,
-     lambda r: f'Your combo point spenders have a {(15, 20, 25)[r - 1]}% chance to refund the combo points spent.',
+     lambda r: f'Your finishing moves, any class\'s, have a {(15, 20, 25)[r - 1]}% chance to refund the combo points '
+               'spent. Does not add up with Shattered Souls or Ancient Teachings: the better chance counts.',
      lambda r: {1: dummy((15, 20, 25)[r - 1])}, {}),
 ]
 

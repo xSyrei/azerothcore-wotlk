@@ -205,11 +205,12 @@ Hunter's, they only amplify, spread over the 11 rows. Nine are scripted in `src/
 | Combo Breaker | Windwalker | Tiger Palm may award 2 more combo points (`spell_titan_monk_tiger_palm`) |
 | Energy Burst | Windwalker | 5-point finishers restore Energy (`spell_titan_monk_finisher`) |
 | Thunderfist | Windwalker | Rising Sun Kick adds a Nature strike (90361, `spell_titan_monk_thunderfist`) |
-| Ancient Teachings | Windwalker | Finishers may refund the combo points spent (`spell_titan_monk_finisher`) |
+| Ancient Teachings | Windwalker | Any class's finishers may refund the combo points spent (`src/combo_points.cpp`) |
 
 Each tree also has a few broad talents, WotLK's kind (Agility, Stamina or Intellect %, physical or all damage, healing
 done, melee crit, casting speed, armor, dodge, mana regeneration while casting). They and Vengeance's Shattered Souls
-(finishers may refund their combo points, `SpendComboPoints` in `src/demon_hunter.cpp`) came after the trees, so they
+(the same refund as Ancient Teachings; the two do not add up, the better chance counts: `src/combo_points.cpp`, for
+every finisher, the game's own too) came after the trees, so they
 have id runs of their own (talents 2350-2363 and 2450-2463, ranks 90500-90531 and 90550-90581: `patch_talents.TREES`):
 a talent's ids never change once players may have it.
 
