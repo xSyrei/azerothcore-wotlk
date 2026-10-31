@@ -159,7 +159,8 @@ spec, Mistweaver first: spells 90300 and up (`client-patch/patch_monk.py`, a spe
 copies of Blizzard healing spells (their timing and animations) with retail's icons and sounds and jade effects
 of our own (no Druid or Priest look left), with what the copies cannot do in
 `src/monk.cpp` (bound in `titan_monk_scripts.sql`, with the spells' share of spell power).
-Mistweaver runs on mana; Windwalker and Brewmaster will run on Energy and Chi (a bar of its own on the Monk).
+Mistweaver runs on mana; Windwalker on Energy and combo points (Tiger Palm awards them, each spender takes its own
+cost: `spell_titan_monk_combo_points`). The Monk has no Chi.
 
 | Spell | Ability | Level | Notes |
 |---|---|---|---|
@@ -174,6 +175,12 @@ Mistweaver runs on mana; Windwalker and Brewmaster will run on Energy and Chi (a
 | 90313 | Refreshing Jade Wind | 22 | A whirlwind around the Monk for 6 sec: every 0.75 sec (90314) heals the 6 most injured allies within 10 yards (`spell_titan_monk_jade_wind_heal`); retail's whirlwind (`client-patch/spells/MONK_JadeWind`); 45 sec cooldown |
 | 90307 | Revival | 26 | Heals the raid within 40 yards and clears a Magic, Poison and Disease effect from each; 3 min cooldown |
 | 90311 | Invoke Chi-Ji, the Red Crane | 30 | Mistweaver's capstone: Chi-Ji (creature 90311, `npc_titan_chi_ji`) follows the Monk for 25 sec, healing the 2 most injured allies within 40 yards every 2 sec with Crane's Gust (90312), and 1 more on each healing spell the Monk casts (any class's, `titan_monk_chi_ji_casts`); Enveloping Mist costs 50% less and casts 50% faster meanwhile; 3 min cooldown. Chi-Ji is retail's crane (`client-patch/models/chiji`, display 90205) |
+| 90320 | Tiger Palm | 1 | Windwalker: weapon damage plus a little, awards 2 combo points; 50 Energy |
+| 90321 | Blackout Kick | 3 | 200% weapon damage, Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter (`spell_titan_monk_blackout_kick`); 1 combo point |
+| 90322 | Rising Sun Kick | 10 | 350% weapon damage and Mortal Wounds (healing taken -25%, 10 sec); 2 combo points, 10 sec cooldown |
+| 90325 | Spinning Crane Kick | 12 | 1.5 sec spin, moving allowed: 40% weapon damage to all enemies within 8 yards every 0.5 sec (90326); 2 combo points |
+| 90323 | Fists of Fury | 16 | 4 sec channel: 80% weapon damage to all enemies in a cone in front every sec (90324); 3 combo points, 24 sec cooldown |
+| 90327 | Whirling Dragon Punch | 24 | Only while Rising Sun Kick and Fists of Fury cool down (`spell_titan_monk_whirling_dragon_punch`): 90% weapon damage to all enemies within 8 yards three times in a second (90328); 24 sec cooldown |
 
 ## Items
 

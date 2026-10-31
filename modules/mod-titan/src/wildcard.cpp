@@ -166,6 +166,12 @@ namespace
         { 90313, CLASS_MONK, SKILL_MISTWEAVER, 22 },        // Refreshing Jade Wind
         { 90307, CLASS_MONK, SKILL_MISTWEAVER, 26 },        // Revival
         { 90311, CLASS_MONK, SKILL_MISTWEAVER, 30 },        // Invoke Chi-Ji, the Red Crane (the capstone)
+        { 90320, CLASS_MONK, SKILL_WINDWALKER, 1 },         // Tiger Palm
+        { 90321, CLASS_MONK, SKILL_WINDWALKER, 3 },         // Blackout Kick
+        { 90322, CLASS_MONK, SKILL_WINDWALKER, 10 },        // Rising Sun Kick
+        { 90325, CLASS_MONK, SKILL_WINDWALKER, 12 },        // Spinning Crane Kick
+        { 90323, CLASS_MONK, SKILL_WINDWALKER, 16 },        // Fists of Fury
+        { 90327, CLASS_MONK, SKILL_WINDWALKER, 24 },        // Whirling Dragon Punch
     };
     constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
         { SKILL_HAVOC, "Havoc" },

@@ -34,6 +34,10 @@ enum MonkSpells
     SPELL_VIVIFY_SPLASH             = 90310,
     SPELL_INVOKE_CHI_JI             = 90311,
     SPELL_CRANES_GUST               = 90312,
+    SPELL_BLACKOUT_KICK             = 90321,
+    SPELL_RISING_SUN_KICK           = 90322,
+    SPELL_FISTS_OF_FURY             = 90323,
+    SPELL_SPINNING_CRANE_KICK       = 90325,
 };
 
 enum MonkCreatures
@@ -189,6 +193,81 @@ class spell_titan_monk_jade_wind_heal : public SpellScript
     }
 };
 
+// Windwalker's combo point spenders (Tiger Palm awards them, on the Monk's current target, at most 5): each needs and
+// takes its own cost, not all of them as a finisher would.
+class spell_titan_monk_combo_points : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_combo_points);
+
+    uint8 Cost()
+    {
+        switch (GetSpellInfo()->Id)
+        {
+            case SPELL_BLACKOUT_KICK:           return 1;
+            case SPELL_RISING_SUN_KICK:         return 2;
+            case SPELL_SPINNING_CRANE_KICK:     return 2;
+            case SPELL_FISTS_OF_FURY:           return 3;
+            default:                            return 0;
+        }
+    }
+
+    SpellCastResult CheckComboPoints()
+    {
+        return GetCaster()->GetComboPoints() < Cost() ? SPELL_FAILED_NO_COMBO_POINTS : SPELL_CAST_OK;
+    }
+
+    void SpendComboPoints()
+    {
+        GetCaster()->AddComboPoints(-int8(Cost()));
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_monk_combo_points::CheckComboPoints);
+        AfterCast += SpellCastFn(spell_titan_monk_combo_points::SpendComboPoints);
+    }
+};
+
+// Blackout Kick (90321): Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter.
+class spell_titan_monk_blackout_kick : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_blackout_kick);
+
+    static constexpr int32 COOLDOWN_CUT = 1000;
+
+    void CutCooldowns()
+    {
+        if (Player* player = GetCaster()->ToPlayer())
+            for (uint32 spellId : { SPELL_RISING_SUN_KICK, SPELL_FISTS_OF_FURY })
+                player->ModifySpellCooldown(spellId, -COOLDOWN_CUT);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_monk_blackout_kick::CutCooldowns);
+    }
+};
+
+// Whirling Dragon Punch (90327): only while Rising Sun Kick and Fists of Fury are both cooling down.
+class spell_titan_monk_whirling_dragon_punch : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_whirling_dragon_punch);
+
+    SpellCastResult CheckCooldowns()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || !player->HasSpellCooldown(SPELL_RISING_SUN_KICK)
+            || !player->HasSpellCooldown(SPELL_FISTS_OF_FURY))
+            return SPELL_FAILED_NOT_READY;
+        return SPELL_CAST_OK;
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_monk_whirling_dragon_punch::CheckCooldowns);
+    }
+};
+
 // Life Cocoon (90306): the shield absorbs as much as 30% of the Monk's maximum health.
 class spell_titan_monk_life_cocoon : public AuraScript
 {
@@ -323,6 +402,9 @@ void AddSC_monk()
     RegisterSpellScript(spell_titan_monk_vivify);
     RegisterSpellScript(spell_titan_monk_renewing_mist);
     RegisterSpellScript(spell_titan_monk_jade_wind_heal);
+    RegisterSpellScript(spell_titan_monk_combo_points);
+    RegisterSpellScript(spell_titan_monk_blackout_kick);
+    RegisterSpellScript(spell_titan_monk_whirling_dragon_punch);
     RegisterSpellScript(spell_titan_monk_life_cocoon);
     RegisterSpellScript(spell_titan_monk_revival);
     RegisterCreatureAI(npc_titan_chi_ji);

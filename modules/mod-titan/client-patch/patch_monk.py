@@ -32,6 +32,15 @@ FAMILY_FLAGS = {
     90312: 0x1000,  # Crane's Gust (Chi-Ji's heal)
     90313: 0x2000,  # Refreshing Jade Wind
     90314: 0x4000,  # Refreshing Jade Wind's heal
+    90320: 0x8000,      # Tiger Palm
+    90321: 0x10000,     # Blackout Kick
+    90322: 0x20000,     # Rising Sun Kick
+    90323: 0x40000,     # Fists of Fury
+    90324: 0x80000,     # Fists of Fury's strikes
+    90325: 0x100000,    # Spinning Crane Kick
+    90326: 0x200000,    # Spinning Crane Kick's strikes
+    90327: 0x400000,    # Whirling Dragon Punch
+    90328: 0x800000,    # Whirling Dragon Punch's strikes
 }
 VIVIFY, ENVELOPING_MIST = 0x2, 0x8
 
@@ -49,6 +58,17 @@ NPC_CHI_JI = 90311
 AURA_PERIODIC_TRIGGER_SPELL = 23
 TARGET_SRC_CASTER, TARGET_UNIT_SRC_AREA_ALLY = 22, 30
 RANGE_SELF, RADIUS_10 = 1, 13
+
+# Windwalker: Energy and combo points (Tiger Palm builds them; each spender's cost taken by
+# spell_titan_monk_combo_points, src/monk.cpp).
+ENERGY, PHYSICAL, DMG_CLASS_MELEE = 3, 0x1, 2
+EFFECT_WEAPON_PERCENT_DAMAGE, EFFECT_ADD_COMBO_POINTS, EFFECT_NORMALIZED_WEAPON_DMG = 31, 80, 121
+AURA_MOD_HEALING_PCT = 118
+TARGET_UNIT_TARGET_ENEMY, TARGET_UNIT_SRC_AREA_ENEMY, TARGET_UNIT_CONE_ENEMY = 6, 15, 24
+RADIUS_8 = 14
+DURATION_1S, DURATION_1_5S, DURATION_4S, DURATION_10S = 36, 65, 35, 1
+ANIM_ATTACK_UNARMED, ANIM_KICK = 16, 95
+WHIRLWIND_VISUAL = 11756        # Whirlwind's (50622) hit visual
 GLOBAL_COOLDOWN = 133
 NATURE, ALL_SCHOOLS = 0x8, 0x7F
 
@@ -340,6 +360,19 @@ VISUALS = {
                           'procs': False})}},
     'JadeWindHeal': {'copy': 58, 'id': 16744, 'clear': ('precast', 'cast'), 'kits': {
         'impact': (15685, {KIT_BASE: 'JadeWindHeal', 'sound': None})}},
+    # Windwalker, for now Blizzard's looks with fitting animations: Tiger Palm a punch (Sinister Strike's hit), the
+    # kicks a kick, Fists of Fury Tranquility's channel punching on and on with the jade on the hands (not its rain
+    # of light); Spinning Crane Kick and Whirling Dragon Punch keep Bladestorm's spin (their own visual).
+    'TigerPalm': {'copy': 253, 'id': 16745, 'kits': {
+        'cast': (15686, {'anim': ANIM_ATTACK_UNARMED})}},
+    'BlackoutKick': {'copy': 253, 'id': 16746, 'kits': {
+        'cast': (15687, {'anim': ANIM_KICK})}},
+    'RisingSunKick': {'copy': 253, 'id': 16747, 'kits': {
+        'cast': (15688, {'anim': ANIM_KICK, HANDS: 'JadeCastHand'})}},
+    'FistsOfFury': {'copy': 1283, 'id': 16748, 'clear': ('precast', 'impact'), 'kits': {
+        'cast': (15689, {HANDS: 'JadePrecastHand', 'anim': ANIM_ATTACK_UNARMED, 'sound': None}),
+        'channel': (15690, {HANDS: 'JadePrecastHand', KIT_BASE: 0, KIT_WORLD: 0, 'anim': ANIM_ATTACK_UNARMED,
+                            'sound': None})}},
     'Detox': {'copy': 337, 'id': 16740, 'kits': {
         'precast': (15676, PRECAST),
         'cast': (15677, CAST),
@@ -425,7 +458,7 @@ SPELLS = [
         # for 12 sec.
         'id': 90306, 'copy': 17, 'name': 'Life Cocoon', 'icon': 'Ability_Monk_ChiCocoon',
         'visual': 'LifeCocoon',
-        'description': 'Encases the target in a cocoon of Chi energy for $d, absorbing damage equal to 30% of '
+        'description': 'Encases the target in a cocoon of jade mist for $d, absorbing damage equal to 30% of '
                        'your maximum health.',
         'tooltip': 'Absorbing damage.',
         'set': monk(90306, 18, RecoveryTime=120000, ManaCostPercentage=10, RangeIndex=RANGE_40,
@@ -536,6 +569,100 @@ SPELLS += [
         'effects': {1: {'TargetA': TARGET_SRC_CASTER, 'TargetB': TARGET_UNIT_SRC_AREA_ALLY, 'RadiusIndex': RADIUS_10,
                         **heal(8, 1.6)}},
     },
+]
+
+
+
+def windwalker(spell_id, level, **fields):
+    """A Windwalker strike: melee, physical, on Energy (combo point spenders cost none: their combo points are taken by
+    spell_titan_monk_combo_points), with or without a weapon (fists)."""
+    return monk(spell_id, level, **{'SchoolMask': PHYSICAL, 'DmgClass': DMG_CLASS_MELEE, 'PowerType': ENERGY,
+                                    'ManaCost': 0, 'ManaCostPercentage': 0, 'EquippedItemClass': -1,
+                                    'EquippedItemSubClassMask': 0, 'EquippedItemInventoryTypeMask': 0, **fields})
+
+
+def strikes(spell_id, level, name, icon, weapon_pct, target_a, target_b=0, radius=RADIUS_8):
+    """A channel's or spin's strikes (Whirlwind's hit): weapon_pct% weapon damage to every enemy in its area."""
+    return {'id': spell_id, 'copy': 50622, 'name': name, 'icon': icon, 'description': '',
+            'set': windwalker(spell_id, level, MaxAffectedTargets=0, SpellVisual=WHIRLWIND_VISUAL),
+            'clear': [2, 3],
+            'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': weapon_pct - 1, 'DieSides': 1,
+                            'TargetA': target_a, 'TargetB': target_b, 'RadiusIndex': radius}}}
+
+
+SPELLS += [
+    {
+        # Sinister Strike: a punch for weapon damage, 2 combo points.
+        'id': 90320, 'copy': 1752, 'name': 'Tiger Palm', 'icon': 'Ability_Warrior_PunishingBlow', 'visual': 'TigerPalm',
+        'description': 'Strike with the palm of an open hand for weapon damage plus $s1. Awards 2 combo points.',
+        'set': windwalker(90320, 1, ManaCost=50, AttributesEx=0),
+        'unset': {'AttributesEx3': 0x400},
+        'effects': {1: {'Effect': EFFECT_NORMALIZED_WEAPON_DMG, 'BasePoints': 4, 'DieSides': 1,
+                        'RealPointsPerLevel': 1.0},
+                    2: {'Effect': EFFECT_ADD_COMBO_POINTS, 'BasePoints': 1, 'DieSides': 1}},
+    },
+    {
+        # Sinister Strike's hit as a 200% kick for 1 combo point; spell_titan_monk_blackout_kick cools the two big
+        # ones down.
+        'id': 90321, 'copy': 1752, 'name': 'Blackout Kick', 'icon': 'Ability_Kick',
+        'visual': 'BlackoutKick',
+        'description': 'Kick with a blast of energy, dealing $s1% weapon damage and reducing the cooldowns of '
+                       'Rising Sun Kick and Fists of Fury by 1 sec. Costs 1 combo point.',
+        'set': windwalker(90321, 3, AttributesEx=0),
+        'unset': {'AttributesEx3': 0x400},
+        'clear': [2],
+        'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 199, 'DieSides': 1}},
+    },
+    {
+        # Mortal Strike: a 350% kick, healing taken -25% for 10 sec; 2 combo points.
+        'id': 90322, 'copy': 12294, 'name': 'Rising Sun Kick', 'icon': 'Ability_Warrior_Revenge',
+        'visual': 'RisingSunKick',
+        'description': 'Kick upwards, dealing $s2% weapon damage and inflicting Mortal Wounds, reducing healing the '
+                       'target receives by 25% for $d. Costs 2 combo points.',
+        'tooltip': 'Healing received reduced by 25%.',
+        'set': windwalker(90322, 10, RecoveryTime=10000, DurationIndex=DURATION_10S, AttributesEx=0),
+        'unset': {'AttributesEx3': 0x400},
+        'effects': {1: {'BasePoints': -26, 'DieSides': 1},
+                    2: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 349, 'DieSides': 1}},
+    },
+    {
+        # Hellfire's channel (standing still), striking (90324) in a cone every sec for 4 sec; 3 combo points.
+        'id': 90323, 'copy': 1949, 'name': 'Fists of Fury', 'icon': 'Ability_Hunter_SwiftStrike',
+        'visual': 'FistsOfFury',
+        'description': 'Pummel all targets in front of you for $90324s1% weapon damage every sec for $d. Costs 3 combo '
+                       'points.',
+        'tooltip': 'Pummeling all targets in front.',
+        'set': windwalker(90323, 16, RecoveryTime=24000, DurationIndex=DURATION_4S),
+        'clear': [2, 3],
+        'effects': {1: {'Amplitude': 1000, 'TriggerSpell': 90324}},
+    },
+    strikes(90324, 16, 'Fists of Fury', 'Ability_Hunter_SwiftStrike', 80, TARGET_UNIT_CONE_ENEMY),
+    {
+        # Bladestorm's spin (moving allowed), striking (90326) everything within 8 yards every 0.5 sec for 1.5 sec;
+        # none of Bladestorm's immunities; 2 combo points.
+        'id': 90325, 'copy': 46924, 'name': 'Spinning Crane Kick', 'icon': 'Ability_Whirlwind',
+        'description': 'Spin while kicking in the air, dealing $90326s1% weapon damage to all enemies within 8 yards '
+                       'every 0.5 sec for $d. You can move. Costs 2 combo points.',
+        'tooltip': 'Spinning, kicking all enemies within 8 yards.',
+        'set': windwalker(90325, 12, RecoveryTime=0, DurationIndex=DURATION_1_5S),
+        'clear': [2, 3],
+        'effects': {1: {'Amplitude': 500, 'TriggerSpell': 90326}},
+    },
+    strikes(90326, 12, 'Spinning Crane Kick', 'Ability_Whirlwind', 40, TARGET_SRC_CASTER,
+            TARGET_UNIT_SRC_AREA_ENEMY),
+    {
+        # Bladestorm's spin, three strikes (90328) in a second; only while Rising Sun Kick and Fists of Fury are
+        # cooling down (spell_titan_monk_whirling_dragon_punch).
+        'id': 90327, 'copy': 46924, 'name': 'Whirling Dragon Punch', 'icon': 'Ability_Warrior_Bladestorm',
+        'description': 'Erupt into a whirling punch, striking all enemies within 8 yards for $90328s1% weapon damage '
+                       'three times. Only usable while Rising Sun Kick and Fists of Fury are on cooldown.',
+        'tooltip': 'Whirling.',
+        'set': windwalker(90327, 24, RecoveryTime=24000, DurationIndex=DURATION_1S),
+        'clear': [2, 3],
+        'effects': {1: {'Amplitude': 333, 'TriggerSpell': 90328}},
+    },
+    strikes(90328, 24, 'Whirling Dragon Punch', 'Ability_Warrior_Bladestorm', 90, TARGET_SRC_CASTER,
+            TARGET_UNIT_SRC_AREA_ENEMY),
 ]
 
 ICONS = sorted({spell['icon'] for spell in SPELLS})
