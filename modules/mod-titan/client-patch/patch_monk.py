@@ -228,6 +228,7 @@ SOUNDS = {
     'Revival': {'id': 18125, 'copy': 1433, 'files': [f'spell_mk_revival_0{n}' for n in range(1, 6)]},
     'RenewingMist': {'id': 18126, 'copy': 2561, 'files': ['spell_mk_renewingmist_cast']},
     'Vivify': {'id': 18127, 'copy': 2561, 'files': ['spell_mk_vivify_cast']},
+    'CranesGust': {'id': 18128, 'copy': 1482, 'files': [f'spell_mk_invoke_chi_ji_heal_0{n}' for n in range(1, 4)]},
 }
 
 # The Monk's casting, on every visual: the jade on the hands and its loop while casting, let go on the cast.
@@ -292,12 +293,12 @@ VISUALS = {
         'cast': (15680, {**CAST, KIT_CHEST: 0, KIT_BASE: 'ChiJiArrival', 'anim': ANIM_SPELL_CAST_OMNI,
                          'sound': 'Revival'})}},
     # Crane's Gust: Frozen Orb's missile visual (from the caster's middle to the target, straight), its missile our
-    # ball of red mist; no cast animation on Chi-Ji; the crane's heal on the healed.
+    # ball of red mist; no cast animation on Chi-Ji; the crane's heal on the healed, with one of its three sounds.
     'CranesGust': {'copy': 15082, 'id': 16742, 'clear': ('precast', 'cast', 'impact', 'state', 'statedone', 'area'),
                    'set': {VISUAL_MISSILE_MODEL: 'CranesGustMissile', VISUAL_MISSILE_SOUND: 0,
                            VISUAL_MISSILE_MOTION: 0}, 'kits': {
         'cast': (15681, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None}),
-        'impact': (15682, {KIT_BASE: 'CraneHeal', KIT_CHEST: 0, 'sound': None})}},
+        'impact': (15682, {KIT_BASE: 'CraneHeal', KIT_CHEST: 0, 'sound': 'CranesGust'})}},
     'Detox': {'copy': 337, 'id': 16740, 'kits': {
         'precast': (15676, PRECAST),
         'cast': (15677, CAST),
