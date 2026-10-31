@@ -159,6 +159,8 @@ spec, Mistweaver first: spells 90300 and up (`client-patch/patch_monk.py`, a spe
 copies of Blizzard healing spells (their timing and animations) with retail's icons and sounds and jade effects
 of our own (no Druid or Priest look left), with what the copies cannot do in
 `src/monk.cpp` (bound in `titan_monk_scripts.sql`, with the spells' share of spell power).
+Windwalker's effects are retail's (`client-patch/spells/WW_*`, built by `spell_effects.retail_effect`: the glTF's
+meshes and bone animation, textures recolored), in each strike's color, with retail's sounds and icons.
 Mistweaver runs on mana; Windwalker on Energy and combo points: Tiger Palm awards them, the finishers take them all
 (from 1 to 5) and hit as hard as the points spent (`spell_titan_monk_finisher`, `_finisher_channel`). The Monk has no
 Chi.
@@ -182,6 +184,7 @@ Chi.
 | 90325 | Spinning Crane Kick | 12 | Finisher: 1.5 sec spin, moving allowed: 10% weapon damage a combo point to all enemies within 8 yards every 0.5 sec (90326) |
 | 90323 | Fists of Fury | 16 | Finisher: 4 sec channel: 20% weapon damage a combo point to all enemies in a cone in front every sec (90324); 24 sec cooldown |
 | 90327 | Whirling Dragon Punch | 24 | Only while Rising Sun Kick and Fists of Fury cool down (`spell_titan_monk_whirling_dragon_punch`): 90% weapon damage to all enemies within 8 yards three times in a second (90328); 24 sec cooldown |
+| 90329 | Storm, Earth, and Fire | 30 | Windwalker's capstone: an Earth and a Fire spirit (creatures 90330, 90331, `npc_titan_monk_sef_spirit`, the Monk's look cloned onto them) fight at the Monk's side for 15 sec, each echoing every Windwalker strike the Monk lands for 35% of its damage (90330, 90331: Nature, Fire; `spell_titan_monk_sef_echo`); 90 sec cooldown |
 
 ## Items
 

@@ -2,7 +2,8 @@
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_monk_vivify', 'spell_titan_monk_renewing_mist',
     'spell_titan_monk_renewing_mist_cast', 'spell_titan_monk_life_cocoon', 'spell_titan_monk_revival',
     'spell_titan_monk_jade_wind_heal', 'spell_titan_monk_combo_points', 'spell_titan_monk_finisher',
-    'spell_titan_monk_finisher_channel', 'spell_titan_monk_blackout_kick', 'spell_titan_monk_whirling_dragon_punch');
+    'spell_titan_monk_finisher_channel', 'spell_titan_monk_blackout_kick', 'spell_titan_monk_whirling_dragon_punch',
+    'spell_titan_monk_sef_echo');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90301, 'spell_titan_monk_vivify'),
 (90302, 'spell_titan_monk_renewing_mist'),
@@ -16,12 +17,18 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90323, 'spell_titan_monk_finisher_channel'),
 (90325, 'spell_titan_monk_finisher_channel'),
 (90321, 'spell_titan_monk_blackout_kick'),
-(90327, 'spell_titan_monk_whirling_dragon_punch');
+(90327, 'spell_titan_monk_whirling_dragon_punch'),
+(90320, 'spell_titan_monk_sef_echo'),
+(90321, 'spell_titan_monk_sef_echo'),
+(90322, 'spell_titan_monk_sef_echo'),
+(90324, 'spell_titan_monk_sef_echo'),
+(90326, 'spell_titan_monk_sef_echo'),
+(90328, 'spell_titan_monk_sef_echo');
 
 -- Mistweaver: healing grows with spell power (direct heals and each tick of the heals over time); Vivify's
 -- splash and Life Cocoon are the scripts' own amounts. Crane's Gust, cast by Chi-Ji for the Monk, grows with the
 -- Monk's.
-DELETE FROM `spell_bonus_data` WHERE `entry` BETWEEN 90300 AND 90314;
+DELETE FROM `spell_bonus_data` WHERE `entry` BETWEEN 90300 AND 90331;
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90300, 0, 0.12, 0, 0, 'Soothing Mist'),
 (90301, 0.8, 0, 0, 0, 'Vivify'),
@@ -32,11 +39,15 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90307, 0.6, 0, 0, 0, 'Revival'),
 (90310, 0, 0, 0, 0, 'Vivify - splash'),
 (90312, 0.3, 0, 0, 0, 'Invoke Chi-Ji - Crane''s Gust'),
-(90314, 0.07, 0, 0, 0, 'Refreshing Jade Wind - heal');
+(90314, 0.07, 0, 0, 0, 'Refreshing Jade Wind - heal'),
+(90330, 0, 0, 0, 0, 'Storm, Earth, and Fire - Earth Spirit echo'),
+(90331, 0, 0, 0, 0, 'Storm, Earth, and Fire - Fire Spirit echo');
 
 -- Chi-Ji, the Red Crane: Invoke Chi-Ji's guardian (npc_titan_chi_ji), following the Monk and healing; it never
 -- fights. Its own model (display 90205, titan_demon_hunter_displays.sql and the client patch).
-DELETE FROM `creature_template` WHERE `entry` = 90311;
+-- Storm, Earth, and Fire's Earth and Fire spirits (npc_titan_monk_sef_spirit): Mirror Image's (31216) base model and
+-- flags, the Monk's look cloned onto them when summoned; they fight what the Monk fights.
+DELETE FROM `creature_template` WHERE `entry` IN (90311, 90330, 90331);
 INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
     `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
     `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
@@ -46,9 +57,17 @@ INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entr
     `HoverHeight`, `HealthModifier`, `ManaModifier`, `ArmorModifier`, `ExperienceModifier`, `RacialLeader`,
     `movementId`, `RegenHealth`, `CreatureImmunitiesId`, `flags_extra`, `ScriptName`, `VerifiedBuild`) VALUES
 (90311, 0, 0, 0, 0, 0, 'Chi-Ji', 'The Red Crane', NULL, 0, 1, 80, 2, 35, 0, 1.2, 1.6, 1, 1, 20, 0, 0, 1, 2000, 2000,
-    1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 5, 1, 1, 0, 0, 0, 1, 0, 0, 'npc_titan_chi_ji', 0);
+    1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 5, 1, 1, 0, 0, 0, 1, 0, 0, 'npc_titan_chi_ji', 0),
+(90330, 0, 0, 0, 0, 0, 'Earth Spirit', '', NULL, 0, 1, 80, 2, 35, 0, 1, 1.14286, 1, 1, 20, 0, 0, 1, 2000, 2000,
+    1, 1, 1, 0, 2048, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 3, 1, 1, 0, 0, 0, 1, 0, 0,
+    'npc_titan_monk_sef_spirit', 0),
+(90331, 0, 0, 0, 0, 0, 'Fire Spirit', '', NULL, 0, 1, 80, 2, 35, 0, 1, 1.14286, 1, 1, 20, 0, 0, 1, 2000, 2000,
+    1, 1, 1, 0, 2048, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 3, 1, 1, 0, 0, 0, 1, 0, 0,
+    'npc_titan_monk_sef_spirit', 0);
 
-DELETE FROM `creature_template_model` WHERE `CreatureID` = 90311;
+DELETE FROM `creature_template_model` WHERE `CreatureID` IN (90311, 90330, 90331);
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES
-(90311, 0, 90205, 1, 1, 0);
+(90311, 0, 90205, 1, 1, 0),
+(90330, 0, 11686, 1, 1, 0),
+(90331, 0, 11686, 1, 1, 0);

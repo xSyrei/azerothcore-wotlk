@@ -172,6 +172,7 @@ namespace
         { 90325, CLASS_MONK, SKILL_WINDWALKER, 12 },        // Spinning Crane Kick
         { 90323, CLASS_MONK, SKILL_WINDWALKER, 16 },        // Fists of Fury
         { 90327, CLASS_MONK, SKILL_WINDWALKER, 24 },        // Whirling Dragon Punch
+        { 90329, CLASS_MONK, SKILL_WINDWALKER, 30 },        // Storm, Earth, and Fire (the capstone)
     };
     constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
         { SKILL_HAVOC, "Havoc" },

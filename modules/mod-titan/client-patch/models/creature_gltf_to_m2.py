@@ -545,7 +545,7 @@ def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None,
         attachment_data += struct.pack('<IHH3f', attachment_id, bone, 0, *position) + visible
         attachment_ids.append(attachment_id)
     attachments_ref = blob.add(attachment_data, len(attachment_ids))
-    attachment_lookup = [-1] * (max(attachment_ids) + 1)
+    attachment_lookup = [-1] * (max(attachment_ids, default=-1) + 1)
     for index, attachment_id in enumerate(attachment_ids):
         attachment_lookup[attachment_id] = index
     attachment_lookup_ref = blob.array('h', attachment_lookup)

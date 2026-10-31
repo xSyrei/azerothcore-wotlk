@@ -41,6 +41,11 @@ FAMILY_FLAGS = {
     90326: 0x200000,    # Spinning Crane Kick's strikes
     90327: 0x400000,    # Whirling Dragon Punch
     90328: 0x800000,    # Whirling Dragon Punch's strikes
+    90329: 0x1000000,   # Storm, Earth, and Fire
+    90330: 0x2000000,   # the Earth spirit's echo
+    90331: 0x4000000,   # the Fire spirit's echo
+    90332: 0x8000000,   # the Earth spirit's look
+    90333: 0x10000000,  # the Fire spirit's look
 }
 VIVIFY, ENVELOPING_MIST = 0x2, 0x8
 
@@ -68,7 +73,10 @@ TARGET_UNIT_TARGET_ENEMY, TARGET_UNIT_SRC_AREA_ENEMY, TARGET_UNIT_CONE_ENEMY = 6
 RADIUS_8 = 14
 DURATION_1S, DURATION_1_5S, DURATION_4S, DURATION_10S = 36, 65, 35, 1
 ANIM_ATTACK_UNARMED, ANIM_KICK = 16, 95
-WHIRLWIND_VISUAL = 11756        # Whirlwind's (50622) hit visual
+NPC_EARTH_SPIRIT, NPC_FIRE_SPIRIT = 90330, 90331
+DURATION_15S, RADIUS_FERAL_SPIRIT = 8, 7
+EFFECT_SCHOOL_DAMAGE, AURA_DUMMY, TARGET_DEST_CASTER_RANDOM = 2, 4, 47
+FIRE = 0x4
 GLOBAL_COOLDOWN = 133
 NATURE, ALL_SCHOOLS = 0x8, 0x7F
 
@@ -84,6 +92,8 @@ JADE = (0.45, 1.0, 0.8)
 GREEN = (0.35, 1.0, 0.45)
 GOLD = (1.0, 0.82, 0.3)
 CRANE_RED, CRANE_GOLD = (1.0, 0.32, 0.18), (1.0, 0.68, 0.3)
+LIGHT_BLUE, DARK_PURPLE, ORANGE = (0.45, 0.8, 1.0), (0.5, 0.15, 0.85), (1.0, 0.5, 0.12)
+EARTH, FIRE_RED = (0.65, 0.5, 0.25), (1.0, 0.35, 0.1)
 HEALING_BEAM_KIT = 9818         # the Healing Beam's channel kit (48775: channeling, a beam from hands to target)
 GREEN_BEAM = 269                # SpellChainEffects: Green Beam (33346), a smooth wavy beam, white (its texture's color)
 
@@ -268,6 +278,123 @@ EFFECTS = {
                          {'texture': 0, 'tint': JADE, 'alpha': 0.4, 'pulse': 0, 'cards': ring(1, 0.0, 1.0, 1.2)},
                          {'texture': 1, 'tint': MOTE, 'alpha': 1.0, 'turn': 1.0, 'pulse': 0, 'rise': (0.8, 0.6),
                           'cards': ring(3, 0.4, 0.6, 0.18, 0.3)})}},
+    # Windwalker. Retail's models (spells/WW_*: glTF exports, their bone animation kept, textures recolored by
+    # spell_effects.retail_effect) and puffs of retail's sprites around the struck.
+    'TigerPalmSwipe': {'model': 'MONK_TigerPalmSwipe', 'effect': 7132, 'shape': 'retail', 'textures': (),
+                       'options': {'export': 'WW_TigerPalm/monk_tigerpalm_base.gltf', 'tint': LIGHT_BLUE,
+                                   'brightness': 0.8}},
+    'TigerPalmHit': {'model': 'MONK_TigerPalmHit', 'effect': 7133, 'shape': 'mist',
+                     'textures': (GLOW, 'WW_RingBow', 'WW_SunKick1', FLARE),
+                     'options': {'duration': 600, 'fade': (0, 300), 'layers': (
+                         {'texture': 0, 'tint': LIGHT_BLUE, 'alpha': 0.5, 'pulse': 0, 'cards': ring(1, 0.0, 1.0, 1.4)},
+                         {'texture': 1, 'tint': LIGHT_BLUE, 'alpha': 0.9, 'turn': 0.5, 'pulse': 0,
+                          'cards': ring(2, 0.1, 1.0, 1.6)},
+                         {'texture': 2, 'tint': LIGHT_BLUE, 'alpha': 0.9, 'turn': -0.6, 'pulse': 0,
+                          'cards': ring(2, 0.2, 1.0, 1.3)},
+                         {'texture': 3, 'tint': MOTE, 'alpha': 1.0, 'turn': 1.0, 'pulse': 0, 'rise': (0.8, 0.6),
+                          'cards': ring(4, 0.4, 0.8, 0.15, 0.1)})}},
+    'BlackoutKickSwipe': {'model': 'MONK_BlackoutKickSwipe', 'effect': 7134, 'shape': 'retail', 'textures': (),
+                          'options': {'export': 'WW_TigerPalm/monk_tigerpalm_base.gltf', 'tint': DARK_PURPLE}},
+    'BlackoutKickHit': {'model': 'MONK_BlackoutKickHit', 'effect': 7135, 'shape': 'mist',
+                        'textures': ('WW_BlackoutRibbon', ANIM, GLOW, FLARE),
+                        'options': {'duration': 800, 'fade': (0, 400), 'layers': (
+                            {'texture': 2, 'tint': DARK_PURPLE, 'alpha': 0.6, 'pulse': 0,
+                             'cards': ring(1, 0.0, 1.0, 1.8)},
+                            {'texture': 0, 'tint': (1.0, 0.6, 1.0), 'alpha': 1.0, 'turn': 0.6, 'pulse': 0,
+                             'cards': ring(3, 0.3, 0.8, 1.8, 0.25)},
+                            {'texture': 1, 'sheet': (4, 4), 'flip': 0.8, 'tint': DARK_PURPLE, 'alpha': 0.9,
+                             'turn': -1.0, 'pulse': 0, 'rise': (0.6, 0.8), 'cards': ring(2, 0.3, 0.7, 1.5, 0.4)},
+                            {'texture': 3, 'tint': (0.8, 0.6, 1.0), 'alpha': 1.0, 'turn': 1.0, 'pulse': 0,
+                             'rise': (1.0, 0.8), 'cards': ring(5, 0.5, 0.6, 0.15, 0.12)})}},
+    'RisingSunBeam': {'model': 'MONK_RisingSunBeam', 'effect': 7136, 'shape': 'retail', 'textures': (),
+                      'options': {'export': 'WW_RisingSunKick/monk_risingsunkick_impact_base_orange.gltf',
+                                  'tint': ORANGE}},
+    # (on the chest, about 1.1 yards up)
+    'RisingSunHit': {'model': 'MONK_RisingSunHit', 'effect': 7137, 'shape': 'mist',
+                     'textures': ('WW_SunKick1', 'WW_SunKick2', GLOW, FLARE),
+                     'options': {'duration': 900, 'fade': (0, 450), 'layers': (
+                         {'texture': 2, 'tint': ORANGE, 'alpha': 0.6, 'pulse': 0, 'cards': ring(1, 0.0, 0.0, 2.0)},
+                         {'texture': 0, 'tint': ORANGE, 'alpha': 1.0, 'turn': 0.4, 'pulse': 0, 'rise': (1.2, 0.9),
+                          'cards': ring(2, 0.2, -0.6, 1.8, 0.4)},
+                         {'texture': 1, 'tint': ORANGE, 'alpha': 1.0, 'turn': -0.5, 'pulse': 0, 'rise': (1.5, 0.9),
+                          'cards': ring(2, 0.3, -0.4, 1.6, 0.4)},
+                         {'texture': 3, 'tint': (1.0, 0.8, 0.5), 'alpha': 1.0, 'turn': 1.0, 'pulse': 0,
+                          'rise': (1.8, 0.9), 'cards': ring(6, 0.5, -0.8, 0.16, 0.15)})}},
+    'FistsOfFuryCone': {'model': 'MONK_FistsOfFuryCone', 'effect': 7138, 'shape': 'retail', 'textures': (),
+                        'options': {'export': 'WW_FistsOfFury/cfx_monk_fistsoffury_statebase.gltf',
+                                    'tint': LIGHT_BLUE}},
+    'FistsOfFuryHit': {'model': 'MONK_FistsOfFuryHit', 'effect': 7139, 'shape': 'mist',
+                       'textures': ('WW_ArcWave', FLARE),
+                       'options': {'duration': 500, 'fade': (0, 250), 'layers': (
+                           {'texture': 0, 'tint': LIGHT_BLUE, 'alpha': 0.8, 'turn': 0.5, 'pulse': 0,
+                            'cards': ring(2, 0.2, 1.0, 1.2)},
+                           {'texture': 1, 'tint': MOTE, 'alpha': 1.0, 'turn': 1.0, 'pulse': 0, 'rise': (0.6, 0.5),
+                            'cards': ring(3, 0.4, 0.8, 0.14, 0.1)})}},
+    'CraneKickSpin': {'model': 'MONK_CraneKickSpin', 'effect': 7140, 'shape': 'retail', 'textures': (),
+                      'options': {'export': 'WW_SpinningCraneKick/monk_cranekick_state.gltf', 'tint': GREEN}},
+    'CraneKickHit': {'model': 'MONK_CraneKickHit', 'effect': 7141, 'shape': 'mist',
+                     'textures': ('WW_Feather', PUFFS, FLARE),
+                     'options': {'duration': 600, 'fade': (0, 300), 'layers': (
+                         {'texture': 1, 'sheet': (2, 2), 'tint': GREEN, 'alpha': 0.6, 'turn': 0.8, 'pulse': 0,
+                          'cards': ring(2, 0.3, 0.8, 1.2)},
+                         {'texture': 0, 'tint': (0.8, 1.0, 0.85), 'alpha': 1.0, 'turn': 0.6, 'pulse': 0,
+                          'rise': (0.8, 0.6), 'cards': ring(3, 0.5, 0.6, 0.4, 0.2)},
+                         {'texture': 2, 'tint': MOTE, 'alpha': 1.0, 'turn': 1.0, 'pulse': 0, 'rise': (0.8, 0.6),
+                          'cards': ring(3, 0.4, 0.8, 0.14, 0.1)})}},
+    'DragonPunchBurst': {'model': 'MONK_DragonPunchBurst', 'effect': 7142, 'shape': 'burst',
+                         'textures': ('WW_DragonCircle', 'WW_DragonFlash', None),
+                         'options': {'size': 16.0, 'ring_tint': GREEN, 'ring_blend': BLEND_ADD, 'flash_sheet': False,
+                                     'flash_tint': GREEN, 'duration': 1000,
+                                     'ring': {'scale': ([0, 400, 1000], [2.0, 16.0, 17.0]),
+                                              'fade': ([0, 300, 1000], [0x7FFF, 0x7FFF, 0])}}},
+    'DragonPunchSpin': {'model': 'MONK_DragonPunchSpin', 'effect': 7143, 'shape': 'mist',
+                        'textures': ('WW_DragonFlash', 'WW_DragonCircle', FLARE),
+                        'options': {'duration': 1000, 'fade': (50, 400), 'layers': (
+                            {'texture': 0, 'tint': GREEN, 'alpha': 1.0, 'turn': 0.35, 'pulse': 0, 'rise': (1.5, 1.0),
+                             'cards': ring(4, 0.9, 0.3, 1.6, 0.3)},
+                            {'texture': 1, 'tint': GREEN, 'alpha': 0.8, 'turn': -0.4, 'pulse': 0, 'rise': (1.0, 1.0),
+                             'cards': ring(3, 0.6, 0.6, 1.8, 0.4)},
+                            {'texture': 2, 'tint': MOTE, 'alpha': 1.0, 'turn': 0.8, 'pulse': 0.3, 'rise': (2.2, 1.0),
+                             'cards': ring(8, 1.0, 0.2, 0.18, 0.15)})}},
+    # Storm, Earth, and Fire: the Monk splitting, a burst of earthen dust and fire around the Monk...
+    'SEFSplit': {'model': 'MONK_SEFSplit', 'effect': 7144, 'shape': 'mist', 'textures': (ANIM, GLOW, FLARE),
+                 'options': {'duration': 1200, 'fade': (50, 500), 'layers': (
+                     {'texture': 0, 'sheet': (4, 4), 'flip': 1.2, 'tint': EARTH, 'alpha': 0.9, 'turn': 2.0, 'pulse': 0,
+                      'rise': (1.2, 1.2), 'cards': ring(3, 0.8, 0.3, 1.8, 0.3)},
+                     {'texture': 0, 'sheet': (4, 4), 'flip': 1.2, 'tint': FIRE_RED, 'alpha': 0.9, 'turn': -2.0,
+                      'pulse': 0, 'rise': (1.6, 1.2), 'cards': ring(3, 0.8, 0.5, 1.8, 0.3)},
+                     {'texture': 1, 'tint': (1.0, 0.7, 0.4), 'alpha': 0.5, 'pulse': 0, 'cards': ring(1, 0.0, 1.0, 2.4)},
+                     {'texture': 2, 'tint': (1.0, 0.8, 0.5), 'alpha': 1.0, 'turn': 1.5, 'pulse': 0.3,
+                      'rise': (2.0, 1.2), 'cards': ring(8, 1.0, 0.2, 0.18, 0.12)})}},
+    # ... the Earth spirit wrapped in drifting dust and motes, the Fire spirit in flames rising and embers...
+    'EarthSpirit': {'model': 'MONK_EarthSpirit', 'effect': 7145, 'shape': 'mist', 'textures': (PUFFS, ANIM, FLARE),
+                    'options': {'layers': (
+                        {'texture': 0, 'sheet': (2, 2), 'tint': EARTH, 'alpha': 0.5, 'turn': 4.0, 'pulse': 1.8,
+                         'cards': ring(3, 0.5, 0.4, 1.3, 0.5)},
+                        {'texture': 1, 'sheet': (4, 4), 'flip': 1.6, 'tint': EARTH, 'alpha': 0.6, 'turn': -3.0,
+                         'pulse': 0, 'rise': (1.2, 1.6), 'cards': ring(3, 0.4, 0.0, 1.0, 0.2)},
+                        {'texture': 2, 'tint': (0.9, 0.8, 0.5), 'alpha': 0.9, 'turn': 3.0, 'pulse': 0.7,
+                         'cards': ring(5, 0.6, 0.3, 0.14, 0.3)})}},
+    'FireSpirit': {'model': 'MONK_FireSpirit', 'effect': 7146, 'shape': 'mist', 'textures': (ANIM, GLOW, FLARE),
+                   'options': {'layers': (
+                       {'texture': 1, 'tint': FIRE_RED, 'alpha': 0.35, 'pulse': 1.0, 'cards': ring(1, 0.0, 1.0, 2.2)},
+                       {'texture': 0, 'sheet': (4, 4), 'flip': 0.9, 'tint': FIRE_RED, 'alpha': 0.8, 'turn': 2.5,
+                        'pulse': 0, 'rise': (1.8, 0.9), 'cards': ring(4, 0.4, 0.0, 1.0, 0.15)},
+                       {'texture': 2, 'tint': (1.0, 0.6, 0.2), 'alpha': 1.0, 'turn': -2.0, 'pulse': 0.5,
+                        'rise': (2.0, 1.0), 'cards': ring(6, 0.5, 0.2, 0.15, 0.2)})}},
+    # ... and their echoes: a puff of dust, a burst of fire on the struck.
+    'EarthStrikeHit': {'model': 'MONK_EarthStrikeHit', 'effect': 7147, 'shape': 'mist', 'textures': (ANIM, FLARE),
+                       'options': {'duration': 600, 'fade': (0, 300), 'layers': (
+                           {'texture': 0, 'sheet': (4, 4), 'flip': 0.6, 'tint': EARTH, 'alpha': 0.9, 'turn': 1.0,
+                            'pulse': 0, 'rise': (0.5, 0.6), 'cards': ring(2, 0.3, 0.6, 1.2, 0.3)},
+                           {'texture': 1, 'tint': (0.9, 0.8, 0.5), 'alpha': 1.0, 'turn': 1.0, 'pulse': 0,
+                            'rise': (0.6, 0.6), 'cards': ring(3, 0.4, 0.7, 0.14, 0.1)})}},
+    'FireStrikeHit': {'model': 'MONK_FireStrikeHit', 'effect': 7148, 'shape': 'mist', 'textures': (ANIM, FLARE),
+                      'options': {'duration': 600, 'fade': (0, 300), 'layers': (
+                          {'texture': 0, 'sheet': (4, 4), 'flip': 0.6, 'tint': FIRE_RED, 'alpha': 0.9, 'turn': -1.0,
+                           'pulse': 0, 'rise': (0.8, 0.6), 'cards': ring(2, 0.3, 0.6, 1.2, 0.3)},
+                          {'texture': 1, 'tint': (1.0, 0.6, 0.2), 'alpha': 1.0, 'turn': 1.0, 'pulse': 0,
+                           'rise': (0.8, 0.6), 'cards': ring(3, 0.4, 0.7, 0.14, 0.1)})}},
 }
 
 # Sounds (see patch_spells.SOUNDS): retail's Monk sounds (sounds/spell_mk_*); loops copy a Blizzard looping entry.
@@ -281,6 +408,12 @@ SOUNDS = {
     'RenewingMist': {'id': 18126, 'copy': 2561, 'files': ['spell_mk_renewingmist_cast']},
     'Vivify': {'id': 18127, 'copy': 2561, 'files': ['spell_mk_vivify_cast']},
     'JadeWind': {'id': 18129, 'copy': 2561, 'files': [f'spell_mk_jadewind_cast_0{n}' for n in range(2, 6)]},
+    'TigerPalm': {'id': 18130, 'copy': 3091, 'files': [f'spell_mk_tigerpalm_cast_0{n}' for n in range(5)]},
+    'BlackoutKick': {'id': 18131, 'copy': 3091, 'files': [f'spell_mk_blackoutkick_cast_0{n}' for n in (1, 2)]},
+    'RisingSunKick': {'id': 18132, 'copy': 3091, 'files': ['spell_mk_risingsun_cast']},
+    'FistsOfFury': {'id': 18133, 'copy': 3087, 'files': ['spell_mk_fistoffury_channel']},
+    'SpinningCraneKick': {'id': 18134, 'copy': 3087, 'files': ['spell_mk_spinningcranekick_state']},
+    'DragonPunch': {'id': 18135, 'copy': 3091, 'files': [f'spell_mk_spinningdragon_strike_0{n}' for n in range(1, 6)]},
     'CranesGust': {'id': 18128, 'copy': 1482, 'files': [f'spell_mk_invoke_chi_ji_heal_0{n}' for n in range(1, 4)]},
 }
 
@@ -360,19 +493,52 @@ VISUALS = {
                           'procs': False})}},
     'JadeWindHeal': {'copy': 58, 'id': 16744, 'clear': ('precast', 'cast'), 'kits': {
         'impact': (15685, {KIT_BASE: 'JadeWindHeal', 'sound': None})}},
-    # Windwalker, for now Blizzard's looks with fitting animations: Tiger Palm a punch (Sinister Strike's hit), the
-    # kicks a kick, Fists of Fury Tranquility's channel punching on and on with the jade on the hands (not its rain
-    # of light); Spinning Crane Kick and Whirling Dragon Punch keep Bladestorm's spin (their own visual).
+    # Windwalker: each strike its color (light blue Tiger Palm and Fists of Fury, dark purple Blackout Kick, orange
+    # Rising Sun Kick, green Spinning Crane Kick and Whirling Dragon Punch), retail's effects and sounds, the punch
+    # and kick animations; Sinister Strike's timing, Bladestorm's spin for the two spins.
     'TigerPalm': {'copy': 253, 'id': 16745, 'kits': {
-        'cast': (15686, {'anim': ANIM_ATTACK_UNARMED})}},
+        'cast': (15686, {KIT_BASE: 'TigerPalmSwipe', 'anim': ANIM_ATTACK_UNARMED, 'sound': 'TigerPalm'}),
+        'impact': (15691, {KIT_CHEST: 0, KIT_BASE: 'TigerPalmHit'})}},
     'BlackoutKick': {'copy': 253, 'id': 16746, 'kits': {
-        'cast': (15687, {'anim': ANIM_KICK})}},
+        'cast': (15687, {KIT_BASE: 'BlackoutKickSwipe', 'anim': ANIM_KICK, 'sound': 'BlackoutKick'}),
+        'impact': (15692, {KIT_CHEST: 0, KIT_BASE: 'BlackoutKickHit'})}},
     'RisingSunKick': {'copy': 253, 'id': 16747, 'kits': {
-        'cast': (15688, {'anim': ANIM_KICK, HANDS: 'JadeCastHand'})}},
+        'cast': (15688, {'anim': ANIM_KICK, 'sound': 'RisingSunKick'}),
+        'impact': (15693, {KIT_BASE: 'RisingSunBeam', KIT_CHEST: 'RisingSunHit'})}},
+    # Fists of Fury: Tranquility's channel punching on and on, retail's cone of light blue wisps before the Monk.
     'FistsOfFury': {'copy': 1283, 'id': 16748, 'clear': ('precast', 'impact'), 'kits': {
-        'cast': (15689, {HANDS: 'JadePrecastHand', 'anim': ANIM_ATTACK_UNARMED, 'sound': None}),
-        'channel': (15690, {HANDS: 'JadePrecastHand', KIT_BASE: 0, KIT_WORLD: 0, 'anim': ANIM_ATTACK_UNARMED,
-                            'sound': None})}},
+        'cast': (15689, {HANDS: 0, 'anim': ANIM_ATTACK_UNARMED, 'sound': None}),
+        'channel': (15690, {HANDS: 0, KIT_BASE: 'FistsOfFuryCone', KIT_WORLD: 0, 'anim': ANIM_ATTACK_UNARMED,
+                            'sound': 'FistsOfFury', 'procs': False})}},
+    'FistsOfFuryStrike': {'copy': 253, 'id': 16749, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15694, {KIT_CHEST: 0, KIT_BASE: 'FistsOfFuryHit', 'sound': None})}},
+    # Spinning Crane Kick: Bladestorm's spin, retail's green crane kick (its glow and spinning streaks) around the Monk.
+    'SpinningCraneKick': {'copy': 10704, 'id': 16750, 'kits': {
+        'state': (15695, {KIT_BASE: 'CraneKickSpin', 'sound': 'SpinningCraneKick'})}},
+    'CraneKickStrike': {'copy': 253, 'id': 16751, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15696, {KIT_CHEST: 0, KIT_BASE: 'CraneKickHit', 'sound': None})}},
+    # Whirling Dragon Punch: Bladestorm's spin, the dragon's green ring bursting over the ground and its green arcs
+    # whirling up around the Monk; each strike one of its sounds.
+    'WhirlingDragonPunch': {'copy': 10704, 'id': 16752, 'kits': {
+        'cast': (15697, {KIT_WORLD: 'DragonPunchBurst'}),
+        'state': (15698, {KIT_BASE: 'DragonPunchSpin', 'sound': None})}},
+    'DragonPunchStrike': {'copy': 253, 'id': 16753, 'clear': ('precast',), 'kits': {
+        'cast': (15699, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': 'DragonPunch', 'procs': False}),
+        'impact': (15700, {KIT_CHEST: 0, KIT_BASE: 'CraneKickHit', 'sound': None})}},
+    # Storm, Earth, and Fire: Feral Spirit's timing, the split's burst around the Monk; each spirit's element on it
+    # while it lasts; their echoes' bursts on the struck.
+    'StormEarthAndFire': {'copy': 13077, 'id': 16754, 'clear': ('precast', 'impact', 'state', 'statedone'), 'kits': {
+        'cast': (15701, {KIT_CHEST: 0, KIT_BASE: 'SEFSplit', 'anim': ANIM_SPELL_CAST_OMNI, 'sound': None})}},
+    'EarthSpirit': {'copy': 32, 'id': 16755, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15702, {KIT_CHEST: 0, KIT_BASE: 'EarthSpirit', 'sound': None, 'procs': False})}},
+    'FireSpirit': {'copy': 32, 'id': 16756, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15703, {KIT_CHEST: 0, KIT_BASE: 'FireSpirit', 'sound': None, 'procs': False})}},
+    'EarthStrike': {'copy': 253, 'id': 16757, 'clear': ('precast',), 'kits': {
+        'cast': (15704, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None, 'procs': False}),
+        'impact': (15705, {KIT_CHEST: 0, KIT_BASE: 'EarthStrikeHit', 'sound': None})}},
+    'FireStrike': {'copy': 253, 'id': 16758, 'clear': ('precast',), 'kits': {
+        'cast': (15706, {KIT_CHEST: 0, 'anim': NO_ANIM, 'sound': None, 'procs': False}),
+        'impact': (15707, {KIT_CHEST: 0, KIT_BASE: 'FireStrikeHit', 'sound': None})}},
     'Detox': {'copy': 337, 'id': 16740, 'kits': {
         'precast': (15676, PRECAST),
         'cast': (15677, CAST),
@@ -581,10 +747,11 @@ def windwalker(spell_id, level, **fields):
                                     'EquippedItemSubClassMask': 0, 'EquippedItemInventoryTypeMask': 0, **fields})
 
 
-def strikes(spell_id, level, name, icon, weapon_pct, target_a, target_b=0, radius=RADIUS_8):
-    """A channel's or spin's strikes (Whirlwind's hit): weapon_pct% weapon damage to every enemy in its area."""
-    return {'id': spell_id, 'copy': 50622, 'name': name, 'icon': icon, 'description': '',
-            'set': windwalker(spell_id, level, MaxAffectedTargets=0, SpellVisual=WHIRLWIND_VISUAL),
+def strikes(spell_id, level, name, icon, visual, weapon_pct, target_a, target_b=0, radius=RADIUS_8):
+    """A channel's or spin's strikes (Whirlwind's hit, with visual): weapon_pct% weapon damage to every enemy in its
+    area."""
+    return {'id': spell_id, 'copy': 50622, 'name': name, 'icon': icon, 'visual': visual, 'description': '',
+            'set': windwalker(spell_id, level, MaxAffectedTargets=0),
             'clear': [2, 3],
             'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': weapon_pct - 1, 'DieSides': 1,
                             'TargetA': target_a, 'TargetB': target_b, 'RadiusIndex': radius}}}
@@ -593,7 +760,7 @@ def strikes(spell_id, level, name, icon, weapon_pct, target_a, target_b=0, radiu
 SPELLS += [
     {
         # Sinister Strike: a punch for weapon damage, 2 combo points.
-        'id': 90320, 'copy': 1752, 'name': 'Tiger Palm', 'icon': 'Ability_Warrior_PunishingBlow', 'visual': 'TigerPalm',
+        'id': 90320, 'copy': 1752, 'name': 'Tiger Palm', 'icon': 'Ability_Monk_TigerPalm', 'visual': 'TigerPalm',
         'description': 'Strike with the palm of an open hand for weapon damage plus $s1. Awards 2 combo points.',
         'set': windwalker(90320, 1, ManaCost=50, AttributesEx=0),
         'unset': {'AttributesEx3': 0x400},
@@ -604,7 +771,7 @@ SPELLS += [
     {
         # Sinister Strike's hit as a kick, a finisher (60% weapon damage a combo point); spell_titan_monk_blackout_kick
         # cools the two big ones down.
-        'id': 90321, 'copy': 1752, 'name': 'Blackout Kick', 'icon': 'Ability_Kick',
+        'id': 90321, 'copy': 1752, 'name': 'Blackout Kick', 'icon': 'Ability_Monk_RoundhouseKick',
         'visual': 'BlackoutKick',
         'description': 'Finishing move that kicks with a blast of energy, dealing 60% weapon damage per combo point '
                        '($s1% at 5) and reducing the cooldowns of Rising Sun Kick and Fists of Fury by 1 sec.',
@@ -615,7 +782,7 @@ SPELLS += [
     },
     {
         # Mortal Strike: a finishing kick (90% weapon damage a combo point), healing taken -25% for 10 sec.
-        'id': 90322, 'copy': 12294, 'name': 'Rising Sun Kick', 'icon': 'Ability_Warrior_Revenge',
+        'id': 90322, 'copy': 12294, 'name': 'Rising Sun Kick', 'icon': 'Ability_Monk_RisingSunKick',
         'visual': 'RisingSunKick',
         'description': 'Finishing move that kicks upwards, dealing 90% weapon damage per combo point ($s2% at 5) '
                        'and inflicting Mortal Wounds, reducing healing the target receives by 25% for $d.',
@@ -628,7 +795,7 @@ SPELLS += [
     {
         # Hellfire's channel (standing still), a finisher: striking (90324, 20% weapon damage a combo point) in a cone
         # every sec for 4 sec (spell_titan_monk_finisher_channel).
-        'id': 90323, 'copy': 1949, 'name': 'Fists of Fury', 'icon': 'Ability_Hunter_SwiftStrike',
+        'id': 90323, 'copy': 1949, 'name': 'Fists of Fury', 'icon': 'Monk_Ability_FistOfFury',
         'visual': 'FistsOfFury',
         'description': 'Finishing move that pummels all targets in front of you for 20% weapon damage per combo '
                        'point ($90324s1% at 5) every sec for $d.',
@@ -637,11 +804,13 @@ SPELLS += [
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 1000, 'TriggerSpell': 90324}},
     },
-    strikes(90324, 16, 'Fists of Fury', 'Ability_Hunter_SwiftStrike', 100, TARGET_UNIT_CONE_ENEMY),
+    strikes(90324, 16, 'Fists of Fury', 'Monk_Ability_FistOfFury', 'FistsOfFuryStrike', 100,
+            TARGET_UNIT_CONE_ENEMY),
     {
         # Bladestorm's spin (moving allowed), striking (90326) everything within 8 yards every 0.5 sec for 1.5 sec;
         # none of Bladestorm's immunities; a finisher (10% weapon damage a combo point, each strike).
-        'id': 90325, 'copy': 46924, 'name': 'Spinning Crane Kick', 'icon': 'Ability_Whirlwind',
+        'id': 90325, 'copy': 46924, 'name': 'Spinning Crane Kick', 'icon': 'Ability_Monk_CraneKick_New',
+        'visual': 'SpinningCraneKick',
         'description': 'Finishing move that spins while kicking in the air, dealing 10% weapon damage per combo point '
                        '($90326s1% at 5) to all enemies within 8 yards every 0.5 sec for $d. You can move.',
         'tooltip': 'Spinning, kicking all enemies within 8 yards.',
@@ -649,12 +818,14 @@ SPELLS += [
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 500, 'TriggerSpell': 90326}},
     },
-    strikes(90326, 12, 'Spinning Crane Kick', 'Ability_Whirlwind', 50, TARGET_SRC_CASTER,
+    strikes(90326, 12, 'Spinning Crane Kick', 'Ability_Monk_CraneKick_New', 'CraneKickStrike', 50,
+            TARGET_SRC_CASTER,
             TARGET_UNIT_SRC_AREA_ENEMY),
     {
         # Bladestorm's spin, three strikes (90328) in a second; only while Rising Sun Kick and Fists of Fury are
         # cooling down (spell_titan_monk_whirling_dragon_punch).
-        'id': 90327, 'copy': 46924, 'name': 'Whirling Dragon Punch', 'icon': 'Ability_Warrior_Bladestorm',
+        'id': 90327, 'copy': 46924, 'name': 'Whirling Dragon Punch', 'icon': 'Ability_Monk_HurricaneStrike',
+        'visual': 'WhirlingDragonPunch',
         'description': 'Erupt into a whirling punch, striking all enemies within 8 yards for $90328s1% weapon damage '
                        'three times. Only usable while Rising Sun Kick and Fists of Fury are on cooldown.',
         'tooltip': 'Whirling.',
@@ -662,8 +833,58 @@ SPELLS += [
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 333, 'TriggerSpell': 90328}},
     },
-    strikes(90328, 24, 'Whirling Dragon Punch', 'Ability_Warrior_Bladestorm', 90, TARGET_SRC_CASTER,
+    strikes(90328, 24, 'Whirling Dragon Punch', 'Ability_Monk_HurricaneStrike', 'DragonPunchStrike', 90,
+            TARGET_SRC_CASTER,
             TARGET_UNIT_SRC_AREA_ENEMY),
+]
+
+
+
+def spirit_strike(spell_id, name, school, visual):
+    """A spirit's echo of the Monk's strike (Hellfire's hit on one enemy): the script's amount, nothing added."""
+    return {'id': spell_id, 'copy': 5857, 'name': name, 'icon': 'Spell_Nature_GiftoftheWild', 'visual': visual,
+            'description': '',
+            'set': monk(spell_id, 30, SchoolMask=school, RangeIndex=RANGE_100, MaxAffectedTargets=0),
+            'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
+                            'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0, 'RadiusIndex': 0}}}
+
+
+def spirit_look(spell_id, name, visual):
+    """A spirit's element around it for 15 sec (a dummy aura carrying the look)."""
+    return {'id': spell_id, 'copy': 774, 'name': name, 'icon': 'Spell_Nature_GiftoftheWild', 'visual': visual,
+            'description': '', 'tooltip': '',
+            'set': monk(spell_id, 30, RangeIndex=RANGE_SELF, DurationIndex=DURATION_15S, ManaCostPercentage=0,
+                        ManaCost=0),
+            'clear': [2, 3],
+            'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DUMMY, 'Amplitude': 0, 'BasePoints': 0,
+                            'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_UNIT_CASTER, 'TargetB': 0}}}
+
+
+SPELLS += [
+    {
+        # Feral Spirit's summon, two guardians: the Earth and Fire spirits (npc_titan_monk_sef_spirit) for 15 sec; the
+        # aura on the Monk marks it split (spell_titan_monk_sef_echo). The Windwalker's capstone.
+        'id': 90329, 'copy': 51533, 'name': 'Storm, Earth, and Fire', 'icon': 'Spell_Nature_GiftoftheWild',
+        'visual': 'StormEarthAndFire',
+        'description': 'Split into elemental spirits of Earth and Fire for $d. They fight at your side, and every '
+                       'Windwalker strike you land is echoed by each spirit on the same enemy for 35% of its damage.',
+        'tooltip': 'Split into elemental spirits.',
+        'set': windwalker(90329, 30, RecoveryTime=90000, DurationIndex=DURATION_15S, StartRecoveryTime=1500,
+                          StartRecoveryCategory=GLOBAL_COOLDOWN),
+        'effects': {
+            1: {'Effect': EFFECT_SUMMON, 'BasePoints': 0, 'DieSides': 1, 'MiscValue': NPC_EARTH_SPIRIT,
+                'MiscValueB': SUMMON_GUARDIAN},
+            2: {'Effect': EFFECT_SUMMON, 'BasePoints': 0, 'DieSides': 1, 'MiscValue': NPC_FIRE_SPIRIT,
+                'MiscValueB': SUMMON_GUARDIAN, 'TargetA': TARGET_DEST_CASTER_RANDOM, 'TargetB': TARGET_UNIT_CASTER,
+                'RadiusIndex': RADIUS_FERAL_SPIRIT},
+            3: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 1,
+                'TargetA': TARGET_UNIT_CASTER, 'TargetB': 0, 'RadiusIndex': 0},
+        },
+    },
+    spirit_strike(90330, 'Earth Spirit', NATURE, 'EarthStrike'),
+    spirit_strike(90331, 'Fire Spirit', FIRE, 'FireStrike'),
+    spirit_look(90332, 'Earth Spirit', 'EarthSpirit'),
+    spirit_look(90333, 'Fire Spirit', 'FireSpirit'),
 ]
 
 ICONS = sorted({spell['icon'] for spell in SPELLS})

@@ -1009,6 +1009,46 @@ def spun_model(*args, export, layers=(), scale=1.0):
     return [f'{name}.m2', f'{name}00.skin'] + [f'{name}_{number}.blp' for number in range(len(layers))]
 
 
+def recolor(image, tint, brightness=1.0):
+    """A white or gray VFX texture in one color: its brightest channel times tint (and brightness), alpha kept."""
+    rgba = image.convert('RGBA')
+    r, g, b, a = rgba.split()
+    lum = ImageChops.lighter(ImageChops.lighter(r, g), b)
+    bands = [lum.point(lambda v, k=k: min(255, int(v * k * brightness))) for k in tint]
+    return Image.merge('RGBA', (*bands, a))
+
+
+def retail_effect(out_dir, name, client_dir, export, tint, brightness=1.0, meshes=None):
+    """A retail spell effect from a wow.export glTF (export: the .gltf; its textures beside it), its meshes and their
+    bone animation (swings, spins, growing) carried over by creature_gltf_to_m2: every mesh drawn additive, unlit,
+    both faces, in its texture recolored to tint (recolor). meshes: the glTF meshes to draw (None: all). The export
+    has no wow.export meta data, so its texture units are made here (one per mesh, its material's texture); texture
+    scrolling and layer fades are not in a glTF and are left out. Writes <name>.m2, <name>00.skin and its BLPs."""
+    import tempfile
+    import creature_gltf_to_m2
+    export = Path(export)
+    gltf = json.loads(export.read_text())
+    materials = [gltf['materials'][mesh['primitives'][0]['material']]['name'] for mesh in gltf['meshes']]
+    drawn = range(len(materials)) if meshes is None else meshes
+    used = sorted({materials[i] for i in drawn}, key=materials.index)
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        (tmp / 'textures').mkdir()
+        for file in export.parent.glob(f'{export.stem}*'):
+            if file.suffix in ('.gltf', '.bin'):
+                (tmp / file.name).write_bytes(file.read_bytes())
+        for texture in used:
+            with Image.open(export.parent / f'{texture}.png') as image:
+                recolor(image, tint, brightness).save(tmp / 'textures' / f'{texture}.png')
+        meta = {'textures': [{'fileNameInternal': f'{texture}.blp'} for texture in used],
+                'textureCombos': list(range(len(used))),
+                'materials': [{'flags': UNLIT | TWO_SIDED | NO_DEPTH_WRITE, 'blendingMode': BLEND_ADD}],
+                'skin': {'textureUnits': [{'skinSectionIndex': i, 'textureComboIndex': used.index(materials[i]),
+                                           'textureCount': 1, 'materialIndex': 0, 'priority': 0} for i in drawn]},
+                'collisionBox': {'min': [0, 0, 0], 'max': [0, 0, 0]}, 'collisionSphereRadius': 0}
+        (tmp / 'meta.json').write_text(json.dumps(meta))
+        return creature_gltf_to_m2.convert(tmp, tmp / 'meta.json', name, out_dir, client_dir)
+
 def exported_model(*args, export, base, size=None, scale=1.0, center=False, offset=(0.0, 0.0, 0.0), turn=0.0,
                    trail_height=0.3, lifetime=0.4, duration=1000, fade=None, two_sided=False, max_texture=None,
                    sequence=None, billboard=()):

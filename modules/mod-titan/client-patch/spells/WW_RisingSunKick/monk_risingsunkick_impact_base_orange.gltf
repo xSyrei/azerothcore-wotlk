@@ -1,0 +1,804 @@
+{
+	"asset": {
+		"version": "2.0",
+		"generator": "wow.export v0.2.19 win-x64 [019ef0d1-f6af-7000-ab76-dc1a6df0f93c]"
+	},
+	"nodes": [
+		{
+			"name": "monk_risingsunkick_impact_base_orange",
+			"children": [
+				1,
+				14
+			]
+		},
+		{
+			"name": "monk_risingsunkick_impact_base_orange_skeleton",
+			"children": [
+				2,
+				4,
+				6,
+				8,
+				10,
+				12
+			]
+		},
+		{
+			"name": "bone_0_p",
+			"translation": [
+				1.4176337718963623,
+				2.143352746963501,
+				0
+			],
+			"children": [
+				3
+			]
+		},
+		{
+			"name": "bone_0"
+		},
+		{
+			"name": "bone_1_p",
+			"translation": [
+				0.4875732958316803,
+				2.1057045459747314,
+				-0.0031170316506177187
+			],
+			"children": [
+				5
+			]
+		},
+		{
+			"name": "bone_1"
+		},
+		{
+			"name": "bone_2_p",
+			"translation": [
+				0.4875732958316803,
+				2.1057045459747314,
+				-0.3397560715675354
+			],
+			"children": [
+				7
+			]
+		},
+		{
+			"name": "bone_2"
+		},
+		{
+			"name": "bone_3_p",
+			"translation": [
+				0.4875732958316803,
+				2.1057045459747314,
+				-0.0031170316506177187
+			],
+			"children": [
+				9
+			]
+		},
+		{
+			"name": "bone_3"
+		},
+		{
+			"name": "bone_4_p",
+			"translation": [
+				0.4875732958316803,
+				2.1057045459747314,
+				-0.0031170316506177187
+			],
+			"children": [
+				11
+			]
+		},
+		{
+			"name": "bone_4"
+		},
+		{
+			"name": "bone_5_p",
+			"translation": [
+				0.4875732958316803,
+				2.1057045459747314,
+				0.3314307630062103
+			],
+			"children": [
+				13
+			]
+		},
+		{
+			"name": "bone_5"
+		},
+		{
+			"name": "monk_risingsunkick_impact_base_orange_Geoset0",
+			"mesh": 0,
+			"skin": 0
+		}
+	],
+	"scenes": [
+		{
+			"name": "monk_risingsunkick_impact_base_orange_Scene",
+			"nodes": [
+				0
+			]
+		}
+	],
+	"buffers": [
+		{
+			"byteLength": 4032,
+			"uri": "monk_risingsunkick_impact_base_orange.bin"
+		},
+		{
+			"uri": "monk_risingsunkick_impact_base_orange_anim0-0.bin",
+			"byteLength": 200
+		}
+	],
+	"bufferViews": [
+		{
+			"buffer": 0,
+			"byteLength": 864,
+			"byteOffset": 0,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 864,
+			"byteOffset": 864,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 288,
+			"byteOffset": 1728,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 288,
+			"byteOffset": 2016,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 384,
+			"byteOffset": 2304
+		},
+		{
+			"buffer": 1,
+			"byteLength": 8,
+			"byteOffset": 0,
+			"name": "ROT_TIMESTAMPS_1_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 32,
+			"byteOffset": 8,
+			"name": "ROT_VALUES_1_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 8,
+			"byteOffset": 40,
+			"name": "ROT_TIMESTAMPS_2_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 32,
+			"byteOffset": 48,
+			"name": "ROT_VALUES_2_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 8,
+			"byteOffset": 80,
+			"name": "ROT_TIMESTAMPS_3_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 32,
+			"byteOffset": 88,
+			"name": "ROT_VALUES_3_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 8,
+			"byteOffset": 120,
+			"name": "ROT_TIMESTAMPS_4_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 32,
+			"byteOffset": 128,
+			"name": "ROT_VALUES_4_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 8,
+			"byteOffset": 160,
+			"name": "ROT_TIMESTAMPS_5_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 32,
+			"byteOffset": 168,
+			"name": "ROT_VALUES_5_0"
+		},
+		{
+			"buffer": 0,
+			"byteLength": 576,
+			"byteOffset": 2688,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 576,
+			"byteOffset": 3264,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 192,
+			"byteOffset": 3840,
+			"target": 34963
+		}
+	],
+	"accessors": [
+		{
+			"name": "POSITION",
+			"bufferView": 0,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 72,
+			"type": "VEC3",
+			"min": [
+				-0.018605338409543037,
+				0.744129478931427,
+				-0.779485821723938
+			],
+			"max": [
+				1.4176337718963623,
+				3.5425760746002197,
+				0.779485821723938
+			]
+		},
+		{
+			"name": "NORMAL",
+			"bufferView": 1,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 72,
+			"type": "VEC3",
+			"min": [
+				-1,
+				-0.9807853102684021,
+				-2.680938280263945e-7
+			],
+			"max": [
+				1,
+				0.9807853102684021,
+				2.680938280263945e-7
+			]
+		},
+		{
+			"name": "JOINTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 72,
+			"type": "VEC4",
+			"bufferView": 2,
+			"min": [
+				0,
+				0,
+				0,
+				0
+			],
+			"max": [
+				0,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "WEIGHTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 72,
+			"normalized": true,
+			"type": "VEC4",
+			"bufferView": 3,
+			"min": [
+				255,
+				0,
+				0,
+				0
+			],
+			"max": [
+				255,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "INV_BIND_MATRICES",
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 6,
+			"type": "MAT4",
+			"bufferView": 4,
+			"min": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				-1.4176337718963623,
+				-2.143352746963501,
+				-0.3314307630062103,
+				1
+			],
+			"max": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				-0.4875732958316803,
+				-2.1057045459747314,
+				0.3397560715675354,
+				1
+			]
+		},
+		{
+			"name": "ROT_TIMESTAMPS_1_0",
+			"bufferView": 5,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1.133
+			],
+			"count": 2
+		},
+		{
+			"name": "ROT_VALUES_1_0",
+			"bufferView": 6,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0.5,
+				-0.5,
+				-0.5,
+				0.5
+			],
+			"max": [
+				0.5,
+				-0.5,
+				-0.5,
+				0.5
+			],
+			"count": 2
+		},
+		{
+			"name": "ROT_TIMESTAMPS_2_0",
+			"bufferView": 7,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1.133
+			],
+			"count": 2
+		},
+		{
+			"name": "ROT_VALUES_2_0",
+			"bufferView": 8,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0.454498291015625,
+				-0.454498291015625,
+				-0.541656494140625,
+				0.541656494140625
+			],
+			"max": [
+				0.454498291015625,
+				-0.454498291015625,
+				-0.541656494140625,
+				0.541656494140625
+			],
+			"count": 2
+		},
+		{
+			"name": "ROT_TIMESTAMPS_3_0",
+			"bufferView": 9,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1.133
+			],
+			"count": 2
+		},
+		{
+			"name": "ROT_VALUES_3_0",
+			"bufferView": 10,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0.5,
+				-0.5,
+				-0.5,
+				0.5
+			],
+			"max": [
+				0.5,
+				-0.5,
+				-0.5,
+				0.5
+			],
+			"count": 2
+		},
+		{
+			"name": "ROT_TIMESTAMPS_4_0",
+			"bufferView": 11,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1.133
+			],
+			"count": 2
+		},
+		{
+			"name": "ROT_VALUES_4_0",
+			"bufferView": 12,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0.5,
+				-0.5,
+				-0.5,
+				0.5
+			],
+			"max": [
+				0.5,
+				-0.5,
+				-0.5,
+				0.5
+			],
+			"count": 2
+		},
+		{
+			"name": "ROT_TIMESTAMPS_5_0",
+			"bufferView": 13,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1.133
+			],
+			"count": 2
+		},
+		{
+			"name": "ROT_VALUES_5_0",
+			"bufferView": 14,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0.541656494140625,
+				-0.541656494140625,
+				-0.454498291015625,
+				0.45452880859375
+			],
+			"max": [
+				0.541656494140625,
+				-0.541656494140625,
+				-0.454498291015625,
+				0.45452880859375
+			],
+			"count": 2
+		},
+		{
+			"name": "TEXCOORD_0",
+			"bufferView": 15,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 72,
+			"type": "VEC2",
+			"min": [
+				0,
+				0
+			],
+			"max": [
+				1,
+				1
+			]
+		},
+		{
+			"name": "TEXCOORD_1",
+			"bufferView": 16,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 72,
+			"type": "VEC2",
+			"min": [
+				0,
+				0.13865941762924194
+			],
+			"max": [
+				1,
+				0.8237380385398865
+			]
+		},
+		{
+			"bufferView": 17,
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 192,
+			"type": "SCALAR"
+		}
+	],
+	"meshes": [
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 15,
+						"TEXCOORD_1": 16
+					},
+					"indices": 17,
+					"mode": 4,
+					"material": 4
+				}
+			]
+		}
+	],
+	"scene": 0,
+	"skins": [
+		{
+			"name": "monk_risingsunkick_impact_base_orange_Armature",
+			"joints": [
+				3,
+				5,
+				7,
+				9,
+				11,
+				13
+			],
+			"inverseBindMatrices": 4,
+			"skeleton": 0
+		}
+	],
+	"animations": [
+		{
+			"samplers": [
+				{
+					"input": 5,
+					"interpolation": "LINEAR",
+					"output": 6
+				},
+				{
+					"input": 7,
+					"interpolation": "LINEAR",
+					"output": 8
+				},
+				{
+					"input": 9,
+					"interpolation": "LINEAR",
+					"output": 10
+				},
+				{
+					"input": 11,
+					"interpolation": "LINEAR",
+					"output": 12
+				},
+				{
+					"input": 13,
+					"interpolation": "LINEAR",
+					"output": 14
+				}
+			],
+			"channels": [
+				{
+					"sampler": 0,
+					"target": {
+						"node": 5,
+						"path": "rotation"
+					}
+				},
+				{
+					"sampler": 1,
+					"target": {
+						"node": 7,
+						"path": "rotation"
+					}
+				},
+				{
+					"sampler": 2,
+					"target": {
+						"node": 9,
+						"path": "rotation"
+					}
+				},
+				{
+					"sampler": 3,
+					"target": {
+						"node": 11,
+						"path": "rotation"
+					}
+				},
+				{
+					"sampler": 4,
+					"target": {
+						"node": 13,
+						"path": "rotation"
+					}
+				}
+			],
+			"name": "Stand (ID 0 variation 0)"
+		}
+	],
+	"images": [
+		{
+			"uri": "monk_sunkick_1orange.png"
+		},
+		{
+			"uri": "monk_sunkick_2orange.png"
+		},
+		{
+			"uri": "shockwave_quarter1.png"
+		},
+		{
+			"uri": "..\\item\\objectcomponents\\weapon\\flare.png"
+		},
+		{
+			"uri": "beam1.png"
+		},
+		{
+			"uri": "gradiantbeam_02.png"
+		}
+	],
+	"textures": [
+		{
+			"source": 0
+		},
+		{
+			"source": 1
+		},
+		{
+			"source": 2
+		},
+		{
+			"source": 3
+		},
+		{
+			"source": 4
+		},
+		{
+			"source": 5
+		}
+	],
+	"materials": [
+		{
+			"name": "monk_sunkick_1orange",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 0
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "monk_sunkick_2orange",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 1
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "shockwave_quarter1",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 2
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "flare",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 3
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "beam1",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 4
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "gradiantbeam_02",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 5
+				},
+				"metallicFactor": 0
+			}
+		}
+	]
+}

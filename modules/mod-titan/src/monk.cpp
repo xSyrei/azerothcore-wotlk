@@ -23,6 +23,7 @@
 #include "SpellAuraEffects.h"
 #include "SpellScript.h"
 #include "SpellScriptLoader.h"
+#include "TemporarySummon.h"
 
 // The Monk (client-patch/patch_monk.py): what its spells, copies of Blizzard healing spells, cannot do by
 // themselves. Mistweaver first.
@@ -38,11 +39,19 @@ enum MonkSpells
     SPELL_RISING_SUN_KICK           = 90322,
     SPELL_FISTS_OF_FURY             = 90323,
     SPELL_SPINNING_CRANE_KICK       = 90325,
+    SPELL_STORM_EARTH_AND_FIRE      = 90329,
+    SPELL_EARTH_SPIRIT_STRIKE       = 90330,
+    SPELL_FIRE_SPIRIT_STRIKE        = 90331,
+    SPELL_EARTH_SPIRIT_AURA         = 90332,
+    SPELL_FIRE_SPIRIT_AURA          = 90333,
+    SPELL_CLONE_ME                  = 45204,    // Mirror Image's: the summon looks like the caster
 };
 
 enum MonkCreatures
 {
     NPC_CHI_JI                      = 90311,
+    NPC_EARTH_SPIRIT                = 90330,
+    NPC_FIRE_SPIRIT                 = 90331,
 };
 
 namespace
@@ -308,6 +317,37 @@ class spell_titan_monk_whirling_dragon_punch : public SpellScript
     }
 };
 
+// Storm, Earth, and Fire (90329): while the Monk's spirits are out, every Windwalker strike the Monk lands is echoed
+// by each spirit on the same enemy, for 35% of its damage (Earth: Nature, Fire: Fire).
+class spell_titan_monk_sef_echo : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_sef_echo);
+
+    static constexpr int32 ECHO_PCT = 35;
+
+    void Echo()
+    {
+        Unit* monk = GetCaster();
+        Unit* target = GetHitUnit();
+        int32 damage = CalculatePct(GetHitDamage(), ECHO_PCT);
+        if (!target || damage <= 0 || !monk->HasAura(SPELL_STORM_EARTH_AND_FIRE))
+            return;
+        for (Unit* controlled : monk->m_Controlled)
+        {
+            uint32 strike = controlled->GetEntry() == NPC_EARTH_SPIRIT ? SPELL_EARTH_SPIRIT_STRIKE
+                : controlled->GetEntry() == NPC_FIRE_SPIRIT ? SPELL_FIRE_SPIRIT_STRIKE : 0;
+            if (strike && controlled->IsAlive())
+                controlled->CastCustomSpell(strike, SPELLVALUE_BASE_POINT0, damage, target, true, nullptr, nullptr,
+                    monk->GetGUID());
+        }
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_monk_sef_echo::Echo);
+    }
+};
+
 // Life Cocoon (90306): the shield absorbs as much as 30% of the Monk's maximum health.
 class spell_titan_monk_life_cocoon : public AuraScript
 {
@@ -422,6 +462,46 @@ public:
     }
 };
 
+// Storm, Earth, and Fire's spirits (90330 Earth, 90331 Fire): the Monk's look (Mirror Image's Clone Me) wrapped in
+// their element (90332, 90333), one at each side; they fight whatever the Monk fights, and echo its strikes
+// (spell_titan_monk_sef_echo).
+struct npc_titan_monk_sef_spirit : public ScriptedAI
+{
+    npc_titan_monk_sef_spirit(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(WorldObject* summoner) override
+    {
+        Unit* owner = summoner ? summoner->ToUnit() : nullptr;
+        if (!owner)
+            return;
+        owner->CastSpell(me, SPELL_CLONE_ME, true);
+        bool earth = me->GetEntry() == NPC_EARTH_SPIRIT;
+        me->CastSpell(me, earth ? SPELL_EARTH_SPIRIT_AURA : SPELL_FIRE_SPIRIT_AURA, true);
+        float angle = earth ? float(M_PI) / 2 : float(M_PI) * 3 / 2;
+        if (Minion* minion = dynamic_cast<Minion*>(me))
+            minion->SetFollowAngle(angle);
+        me->SetReactState(REACT_PASSIVE);
+        me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, angle);
+    }
+
+    void UpdateAI(uint32 /*diff*/) override
+    {
+        Unit* owner = me->GetOwner();
+        if (!owner)
+            return;
+        Unit* target = owner->GetVictim();
+        if (target && target != me->GetVictim() && me->IsValidAttackTarget(target))
+            AttackStart(target);
+        else if (!target && me->GetVictim())
+        {
+            EnterEvadeMode();
+            me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, me->GetFollowAngle());
+        }
+        if (me->GetVictim())
+            DoMeleeAttackIfReady();
+    }
+};
+
 // Enveloping Mist (90303): the Monk's healing on its target is 30% stronger while it lasts.
 class titan_monk_healing : public UnitScript
 {
@@ -449,6 +529,8 @@ void AddSC_monk()
     RegisterSpellScript(spell_titan_monk_life_cocoon);
     RegisterSpellScript(spell_titan_monk_revival);
     RegisterCreatureAI(npc_titan_chi_ji);
+    RegisterCreatureAI(npc_titan_monk_sef_spirit);
+    RegisterSpellScript(spell_titan_monk_sef_echo);
     new titan_monk_chi_ji_casts();
     new titan_monk_healing();
 }
