@@ -21,6 +21,7 @@ void AddSC_wildcard();
 void AddSC_classless();
 void AddSC_item_titan_tomes();
 void AddSC_demon_hunter();
+void AddSC_monk();
 void AddSC_hero_equipment();
 void AddSC_max_skills();
 
@@ -33,6 +34,7 @@ void Addmod_titanScripts()
     AddSC_classless();
     AddSC_item_titan_tomes();
     AddSC_demon_hunter();
+    AddSC_monk();
     AddSC_hero_equipment();
     AddSC_max_skills();
 }

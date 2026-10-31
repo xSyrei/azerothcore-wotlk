@@ -24,6 +24,7 @@ import struct
 import sys
 from pathlib import Path
 
+import patch_monk
 import patch_talents
 
 HERE = Path(__file__).resolve().parent
@@ -42,7 +43,7 @@ FIELDS = {
     'EquippedItemInventoryTypeMask': 70, 'SpellVisual': 131, 'SpellIconID': 133,
     'ActiveIconID': 134, 'ManaCostPercentage': 204, 'StartRecoveryCategory': 205, 'StartRecoveryTime': 206,
     'SpellFamilyName': 208, 'SpellFamilyFlags0': 209, 'SpellFamilyFlags1': 210, 'SpellFamilyFlags2': 211,
-    'MaxAffectedTargets': 212, 'DmgClass': 213, 'Speed': 47, 'ProcFlags': 34, 'ProcChance': 35, 'StackAmount': 49,
+    'MaxAffectedTargets': 212, 'DmgClass': 213, 'Speed': 47, 'ProcFlags': 34, 'ProcChance': 35, 'ProcCharges': 36, 'StackAmount': 49,
     'SchoolMask': 225, 'RuneCostID': 226,
 }
 EFFECT_FIELDS = {       # name: (first column, is float); effect n is first column + n - 1
@@ -163,7 +164,7 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
          'Ability_DemonHunter_DemonSpikes', 'Ability_DemonHunter_FieryBrand', 'Ability_DemonHunter_Torment',
          'Spell_Shadow_SoulGem', 'Ability_DemonHunter_SpiritBomb', 'Ability_DemonHunter_SoulBarrier',
          'Ability_DemonHunter_SigilOfChains']
-ICONS += [name for name in patch_talents.ICONS if name not in ICONS]
+ICONS += [name for name in patch_talents.ICONS + patch_monk.ICONS if name not in ICONS]
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
@@ -958,6 +959,7 @@ SPELLS = [
     },
 ]
 SPELLS += patch_talents.SPELLS      # the talents' ranks and helper spells
+SPELLS += patch_monk.SPELLS         # the Monk's
 
 
 class Dbc:

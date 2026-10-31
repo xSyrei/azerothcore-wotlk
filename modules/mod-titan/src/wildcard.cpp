@@ -155,10 +155,22 @@ namespace
         { 90138, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 24 }, // Soul Barrier
         { 90118, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 26 }, // Darkness
         { 90135, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 30 }, // Spirit Bomb
+        { 90300, CLASS_MONK, SKILL_MISTWEAVER, 1 },         // Soothing Mist
+        { 90301, CLASS_MONK, SKILL_MISTWEAVER, 1 },         // Vivify
+        { 90302, CLASS_MONK, SKILL_MISTWEAVER, 4 },         // Renewing Mist
+        { 90309, CLASS_MONK, SKILL_MISTWEAVER, 8 },         // Detox
+        { 90303, CLASS_MONK, SKILL_MISTWEAVER, 10 },        // Enveloping Mist
+        { 90308, CLASS_MONK, SKILL_MISTWEAVER, 14 },        // Thunder Focus Tea
+        { 90306, CLASS_MONK, SKILL_MISTWEAVER, 18 },        // Life Cocoon
+        { 90304, CLASS_MONK, SKILL_MISTWEAVER, 20 },        // Essence Font
+        { 90307, CLASS_MONK, SKILL_MISTWEAVER, 30 },        // Revival
     };
     constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
         { SKILL_HAVOC, "Havoc" },
         { SKILL_VENGEANCE, "Vengeance" },
+        { SKILL_BREWMASTER, "Brewmaster" },
+        { SKILL_MISTWEAVER, "Mistweaver" },
+        { SKILL_WINDWALKER, "Windwalker" },
     };
 
     // The spells a trainer entry teaches: itself, or what it learns when it is a wrapper.

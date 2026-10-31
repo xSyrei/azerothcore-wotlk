@@ -152,6 +152,26 @@ blow leaves 40% health, then Uncontained Fel for 3 min) are a UnitScript's (`tit
 **Never delete a talent or a rank spell players have**: the server asserts on loading a character with a
 talent spell it does not know. Retire one by leaving its rows and taking it out of the tree another way.
 
+## Monk
+
+The Monk (class 10, spec tabs Brewmaster, Mistweaver and Windwalker: skill lines 2002-2004) is built spec by
+spec, Mistweaver first: spells 90300 and up (`client-patch/patch_monk.py`, a spell family of its own, 16),
+copies of Blizzard healing spells until the Monk's own visuals, icons and sounds are in, with what the copies
+cannot do in `src/monk.cpp` (bound in `titan_monk_scripts.sql`, with the spells' share of spell power).
+Mistweaver runs on mana; Windwalker and Brewmaster will run on Energy and Chi (a bar of its own on the Monk).
+
+| Spell | Ability | Level | Notes |
+|---|---|---|---|
+| 90300 | Soothing Mist | 1 | Channeled heal on an ally, every sec for 8 sec |
+| 90301 | Vivify | 1 | 1.5 sec heal; every ally with your Renewing Mist is healed for half as much (90310) |
+| 90302 | Renewing Mist | 4 | Heal over 20 sec; jumps to the most injured ally within 20 yards once its target is at full health; 9 sec cooldown |
+| 90309 | Detox | 8 | Removes a Magic, Poison and Disease effect; 8 sec cooldown |
+| 90303 | Enveloping Mist | 10 | 2 sec cast, heal over 6 sec; your healing on the target is 30% stronger meanwhile (`titan_monk_healing`) |
+| 90308 | Thunder Focus Tea | 14 | The next Vivify is free or the next Enveloping Mist instant; 30 sec cooldown |
+| 90306 | Life Cocoon | 18 | Shield of 30% of your maximum health for 12 sec; 2 min cooldown |
+| 90304 | Essence Font | 20 | 3 sec channel: heals up to 6 allies within 30 yards every sec (90305); 12 sec cooldown |
+| 90307 | Revival | 30 | Heals the raid within 40 yards and clears a Magic, Poison and Disease effect from each; 3 min cooldown |
+
 ## Items
 
 | Entry | Item | Effect |
