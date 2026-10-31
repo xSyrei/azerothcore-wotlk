@@ -11,8 +11,11 @@ in the game's Data folder.
 2. Textures: those tiles' ground textures; the textures of the doodads placed on them (trees, bushes,
    rocks: M2 models) and of their buildings (WMOs), and of the doodads inside the buildings (lamps,
    crates, furniture). Only World\\ and Tileset\\ textures: no creatures, characters, items or spells.
-3. Upscaling: each texture SCALE times (Real-ESRGAN's x4plus model at 4x, then brought down to SCALE
-   with Lanczos, which is sharper than a 2x model), at most MAX_SIZE pixels a side. Ground and building
+3. Upscaling: each texture SCALE times (a Real-ESRGAN model at 4x, then brought down to SCALE with
+   Lanczos, which is sharper than a 2x model), at most MAX_SIZE pixels a side. The model is the anime one by
+   default: the photo one (realesrgan-x4plus) made WoW's painted grass into gritty dark clumps. The result is
+   blended with the texture simply enlarged (Lanczos), STRENGTH of it the model's, to keep invented detail
+   down. Ground and building
    textures repeat across surfaces, so they are padded with their own opposite edges first (and the
    padding cut off after) to stay seamless; the rest are padded by repeating their edges. Alpha is scaled
    with Lanczos and kept 1-bit where it was (leaf and fence cut-outs stay crisp).
@@ -20,13 +23,16 @@ in the game's Data folder.
    alpha), with every mip level, written as BLP2 the client reads.
 
 Usage (Python 3.10+, Pillow: `py -m pip install pillow`):
-  py upres_zones.py <client folder> <work folder>
-  e.g. py upres_zones.py E:\\Emberforge\\client E:\\Emberforge\\hd-work
+  py upres_zones.py <client folder> <work folder> [--model <name>] [--strength <0 to 1>]
+  e.g. py upres_zones.py E:\\Emberforge\\client E:\\Emberforge\\hd-work --strength 0.4
+Models: realesrgan-x4plus-anime (default), realesrgan-x4plus; strength 0.5 by default (1: the model's alone,
+0: only enlarged).
 Real-ESRGAN (BSD 3-clause) and texconv (MIT) are downloaded into the work folder the first time.
 Re-running reuses what is done (delete the work folder to start over). The archive ends up as
 <work folder>\\patch-H.MPQ.
 """
 
+import argparse
 import io
 import struct
 import subprocess
@@ -46,6 +52,7 @@ from mpq_read import Archives  # noqa: E402
 ZONES = {12, 1519}          # Elwynn Forest (Northshire Valley is one of its subzones), Stormwind City
 MAP_ID, MAP_NAME = 0, 'Azeroth'
 SCALE, MODEL_SCALE, MAX_SIZE = 2, 4, 1024
+MODEL, STRENGTH = 'realesrgan-x4plus-anime', 0.5
 PAD = 8                     # pixels of padding around a texture before upscaling (at its original size)
 KEEP = ('TILESET\\', 'WORLD\\')
 REAL_ESRGAN = ('https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/'
@@ -225,12 +232,17 @@ def run(command):
 
 
 def main():
-    if len(sys.argv) != 3:
-        sys.exit(__doc__)
-    client, work = Path(sys.argv[1]), Path(sys.argv[2])
+    parser = argparse.ArgumentParser(usage=__doc__)
+    parser.add_argument('client')
+    parser.add_argument('work')
+    parser.add_argument('--model', default=MODEL)
+    parser.add_argument('--strength', type=float, default=STRENGTH)
+    args = parser.parse_args()
+    client, work = Path(args.client), Path(args.work)
     archives = Archives(client / 'Data')
     esrgan, texconv = tools(work)
-    source, padded, upscaled, final, dds_dir = (work / n for n in ('source', 'padded', 'upscaled', 'final', 'dds'))
+    source, padded, final, dds_dir = (work / n for n in ('source', 'padded', 'final', 'dds'))
+    upscaled = work / f'upscaled-{args.model}'     # each model's own results, reused on the next run
     for folder in (source, padded, upscaled, final, dds_dir):
         folder.mkdir(parents=True, exist_ok=True)
 
@@ -266,13 +278,15 @@ def main():
             old.unlink()
         for stem in todo:
             (batch / f'{stem}.png').write_bytes((padded / f'{stem}.png').read_bytes())
-        run([esrgan, '-i', batch, '-o', upscaled, '-n', 'realesrgan-x4plus', '-s', MODEL_SCALE, '-f', 'png'])
+        run([esrgan, '-i', batch, '-o', upscaled, '-n', args.model, '-s', MODEL_SCALE, '-f', 'png'])
 
     print('Compressing (texconv)...')
     groups = {'BC1_UNORM': [], 'BC1_UNORM:alpha': [], 'BC3_UNORM': []}
     for stem, (path, depth) in jobs.items():
         image = Image.open(source / f'{stem}.png')
-        rgb = unpad_and_scale(Image.open(upscaled / f'{stem}.png').convert('RGB'), image, SCALE)
+        model = unpad_and_scale(Image.open(upscaled / f'{stem}.png').convert('RGB'), image, SCALE)
+        enlarged = image.convert('RGB').resize(model.size, Image.LANCZOS)
+        rgb = Image.blend(enlarged, model, args.strength)
         alpha = image.getchannel('A').resize(rgb.size, Image.LANCZOS)
         if depth == 1:
             alpha = alpha.point(lambda a: 255 if a >= 128 else 0)
