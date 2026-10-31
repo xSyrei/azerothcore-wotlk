@@ -441,7 +441,7 @@ SPELLS += [
     {
         # Feral Spirit's summon, one guardian: Chi-Ji (npc_titan_chi_ji, src/monk.cpp) at the Monk's side for 25 sec,
         # healing with Crane's Gust; meanwhile Enveloping Mist costs half and casts twice as fast. The capstone.
-        'id': 90311, 'copy': 51533, 'name': 'Invoke Chi-Ji, the Red Crane', 'icon': 'INV_Misc_PheonixPet_01',
+        'id': 90311, 'copy': 51533, 'name': 'Invoke Chi-Ji, the Red Crane', 'icon': 'Monk_Ability_ChiJi',
         'visual': 'InvokeChiJi',
         'description': 'Summon an effigy of Chi-Ji, the Red Crane, for $d. Every 2 sec Chi-Ji heals the 2 most injured '
                        'allies within 40 yards with Crane\'s Gust, and once more each time you cast Vivify or '
@@ -464,7 +464,7 @@ SPELLS += [
     {
         # Chi-Ji's heal, cast by Chi-Ji for the Monk (its healing power, crits): a ball of red mist flying to the
         # healed.
-        'id': 90312, 'copy': 8936, 'name': "Crane's Gust", 'icon': 'INV_Misc_PheonixPet_01', 'visual': 'CranesGust',
+        'id': 90312, 'copy': 8936, 'name': "Crane's Gust", 'icon': 'Monk_Ability_ChiJi', 'visual': 'CranesGust',
         'description': 'Heals the target for $s1.',
         'set': monk(90312, 30, CastingTimeIndex=CAST_INSTANT, ManaCostPercentage=0, ManaCost=0, RangeIndex=RANGE_100,
                     StartRecoveryCategory=0, StartRecoveryTime=0, Speed=20.0),
