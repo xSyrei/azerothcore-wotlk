@@ -861,7 +861,7 @@ def _gltf_meshes(path):
         if uri not in buffers:
             buffers[uri] = (path.parent / uri).read_bytes()
         width = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4}[accessor['type']]
-        kind = {5126: 'f', 5123: 'H', 5125: 'I'}[accessor['componentType']]
+        kind = {5126: 'f', 5121: 'B', 5123: 'H', 5125: 'I'}[accessor['componentType']]
         start = view.get('byteOffset', 0) + accessor.get('byteOffset', 0)
         flat = struct.unpack_from(f'<{accessor["count"] * width}{kind}', buffers[uri], start)
         return [flat[i:i + width] for i in range(0, len(flat), width)] if width > 1 else list(flat)
@@ -879,7 +879,7 @@ def _gltf_meshes(path):
     return meshes
 
 
-def spun_model(*args, export, layers=(), scale=1.0):
+def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
     """A lasting effect around a body (a kit's base slot) from a wow.export glTF's meshes (its bones and
     animation left out: each layer turns on its own), each layer a dict of
 
@@ -887,10 +887,15 @@ def spun_model(*args, export, layers=(), scale=1.0):
     - tint: red, green, blue (0 to 1) the texture is multiplied by; alpha: its opacity (0 to 1);
     - turn: seconds per turn about the middle (negative: the other way; 0: still);
     - scroll: (u, v) texture repeats a second the texture slides by (wind flowing; None: still);
+    - flicker: (seconds, phase) the layer flashing on and fading out over and over, phase (0 to 1) of the way into
+      its beat (rapid bursts; None: steady);
+    - grow: (from, to) the layer's size (times scale) over duration (with fade: played once);
     - blend: BLEND_ADD (the default) or BLEND_ALPHA.
 
-    The model scaled by scale; all unlit, both faces drawn, textures repeating. Called as
-    spun_model(texture, ..., out_dir, name, client_dir, export=<.gltf>, layers=...); one looping Stand.
+    The model scaled by scale; all unlit, both faces drawn, textures repeating. fade: None (one looping Stand of
+    duration milliseconds, for a state kit) or (in, out) milliseconds, fading in at the start and out by the end of
+    duration (an impact kit's, played once). Called as spun_model(texture, ..., out_dir, name, client_dir,
+    export=<.gltf>, layers=...).
     Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
     """
     *textures, out_dir, name, client_dir = args
@@ -919,8 +924,12 @@ def spun_model(*args, export, layers=(), scale=1.0):
                                         [tuple(comp_quat(c) for c in _turn_z(way * math.pi * i / 2))
                                          for i in range(5)])], '4h')
             rotation = rotation[:2] + struct.pack('<h', global_sequence(turn_ms)) + rotation[4:]
+        growing = empty_track()
+        if layer.get('grow'):
+            small, big = layer['grow']
+            growing = track(blob, 1, [([0, duration], [(float(small),) * 3, (float(big),) * 3])], '3f')
         bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
-        bones += empty_track() + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
+        bones += empty_track() + rotation + growing + struct.pack('<3f', 0, 0, 0)
         first, start = len(vertices) // 48, len(triangles)
         for (x, y, z), (u, v) in zip(positions, uvs):
             vertices += struct.pack('<3f4B4B3f2f2f', x * scale, y * scale, z * scale, 255, 0, 0, 0, number, 0, 0,
@@ -936,7 +945,25 @@ def spun_model(*args, export, layers=(), scale=1.0):
     colors, transforms = b'', b''
     for layer in layers:
         colors += track(blob, 0, [([0], [tuple(map(float, layer.get('tint', (1.0, 1.0, 1.0))))])], '3f')
-        colors += track(blob, 0, [([0], [round(layer.get('alpha', 1.0) * 0x7FFF)])], 'h')
+        full = round(layer.get('alpha', 1.0) * 0x7FFF)
+        if layer.get('flicker'):
+            seconds, phase = layer['flicker']
+            beat = int(seconds * 1000)
+            shape = [(0.0, 0.0), (0.12, 1.0), (0.7, 0.15), (1.0, 0.0)]     # flash on, fade out
+
+            def level(t):
+                t = (t - phase) % 1.0
+                for (t0, v0), (t1, v1) in zip(shape, shape[1:]):
+                    if t <= t1:
+                        return v0 + (v1 - v0) * (t - t0) / (t1 - t0)
+                return 0.0
+
+            times = sorted({0.0, 1.0} | {(t + phase) % 1.0 for t, _ in shape})
+            flashing = track(blob, 1, [([round(t * beat) for t in times], [round(level(t) * full) for t in times])],
+                             'h')
+            colors += flashing[:2] + struct.pack('<h', global_sequence(beat)) + flashing[4:]
+        else:
+            colors += track(blob, 0, [([0], [full])], 'h')
         moving = empty_track()
         if layer.get('scroll'):
             su, sv = layer['scroll']
@@ -946,7 +973,7 @@ def spun_model(*args, export, layers=(), scale=1.0):
 
     name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
     globals_ref = blob.array('I', globals_ms or [1])
-    sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, 1000, 0.0, SEQUENCE_IN_MODEL, 0x7FFF,
+    sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, duration, 0.0, SEQUENCE_IN_MODEL, 0x7FFF,
                                      0, 0, 0, 0, *lo, *hi, radius, -1, 0), 1)
     bones_ref = blob.add(bones, len(layers))
     key_bones = blob.array('h', [-1])
@@ -958,7 +985,10 @@ def spun_model(*args, export, layers=(), scale=1.0):
         ref = blob.add(path.encode() + b'\0', len(path) + 1)
         textures_blob += struct.pack('<II2I', 0, WRAP_U | 0x2, *ref)
     textures_ref = blob.add(textures_blob, len(layers))
-    weights = blob.add(track(blob, 0, [([0], [0x7FFF])], 'h'), 1)
+    fading = ([0], [0x7FFF])
+    if fade:
+        fading = ([0, fade[0], duration - fade[1], duration], [0, 0x7FFF, 0x7FFF, 0])
+    weights = blob.add(track(blob, 1 if fade else 0, [fading], 'h'), 1)
     transforms_ref = blob.add(transforms, len(layers))
     replaceable_lookup = blob.array('h', [-1])
     materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, layer.get('blend', BLEND_ADD))

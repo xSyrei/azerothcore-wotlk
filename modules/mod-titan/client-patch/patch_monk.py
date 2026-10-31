@@ -306,9 +306,20 @@ EFFECTS = {
                              'turn': -1.0, 'pulse': 0, 'rise': (0.6, 0.8), 'cards': ring(2, 0.3, 0.7, 1.5, 0.4)},
                             {'texture': 3, 'tint': (0.8, 0.6, 1.0), 'alpha': 1.0, 'turn': 1.0, 'pulse': 0,
                              'rise': (1.0, 0.8), 'cards': ring(5, 0.5, 0.6, 0.15, 0.12)})}},
-    'RisingSunBeam': {'model': 'MONK_RisingSunBeam', 'effect': 7136, 'shape': 'retail', 'textures': (),
+    # Rising Sun Kick: retail's sun crescent (its mesh) growing up out of the struck, its light sweeping up it, gone
+    # in under half a second; an orange ring bursting over the ground; crescents and sparks rising.
+    'RisingSunBeam': {'model': 'MONK_RisingSunBeam', 'effect': 7136, 'shape': 'spun',
+                      'textures': ('WW_RisingSunKick/beam1',),
                       'options': {'export': 'WW_RisingSunKick/monk_risingsunkick_impact_base_orange.gltf',
-                                  'tint': ORANGE}},
+                                  'duration': 450, 'fade': (40, 280), 'layers': (
+                                      {'mesh': 0, 'texture': 0, 'tint': ORANGE, 'alpha': 1.0, 'scroll': (0.0, 2.5),
+                                       'grow': (0.3, 1.1)},)}},
+    'RisingSunBurst': {'model': 'MONK_RisingSunBurst', 'effect': 7149, 'shape': 'burst',
+                       'textures': ('WW_RingBow', GLOW, None),
+                       'options': {'size': 7.0, 'ring_tint': ORANGE, 'ring_blend': BLEND_ADD, 'flash_sheet': False,
+                                   'flash_tint': ORANGE, 'duration': 600,
+                                   'ring': {'scale': ([0, 250, 600], [1.0, 6.0, 7.0]),
+                                            'fade': ([0, 150, 600], [0x7FFF, 0x7FFF, 0])}}},
     # (on the chest, about 1.1 yards up)
     'RisingSunHit': {'model': 'MONK_RisingSunHit', 'effect': 7137, 'shape': 'mist',
                      'textures': ('WW_SunKick1', 'WW_SunKick2', GLOW, FLARE),
@@ -320,9 +331,15 @@ EFFECTS = {
                           'cards': ring(2, 0.3, -0.4, 1.6, 0.4)},
                          {'texture': 3, 'tint': (1.0, 0.8, 0.5), 'alpha': 1.0, 'turn': 1.0, 'pulse': 0,
                           'rise': (1.8, 0.9), 'cards': ring(6, 0.5, -0.8, 0.16, 0.15)})}},
-    'FistsOfFuryCone': {'model': 'MONK_FistsOfFuryCone', 'effect': 7138, 'shape': 'retail', 'textures': (),
-                        'options': {'export': 'WW_FistsOfFury/cfx_monk_fistsoffury_statebase.gltf',
-                                    'tint': LIGHT_BLUE}},
+    # Fists of Fury: retail's fan of wisps before the Monk (its mesh) twice, the wisps streaming outward and the two
+    # flashing on and off in turn, a burst every 0.15 sec.
+    'FistsOfFuryCone': {'model': 'MONK_FistsOfFuryCone', 'effect': 7138, 'shape': 'spun',
+                        'textures': ('WW_FistsOfFury/fistsoffury_arcanewisps',),
+                        'options': {'export': 'WW_FistsOfFury/cfx_monk_fistsoffury_statebase.gltf', 'layers': (
+                            {'mesh': 0, 'texture': 0, 'tint': LIGHT_BLUE, 'alpha': 1.0, 'scroll': (0.0, -3.0),
+                             'flicker': (0.3, 0.0)},
+                            {'mesh': 0, 'texture': 0, 'tint': (0.75, 0.95, 1.0), 'alpha': 1.0,
+                             'scroll': (0.0, -4.0), 'flicker': (0.3, 0.5)})}},
     'FistsOfFuryHit': {'model': 'MONK_FistsOfFuryHit', 'effect': 7139, 'shape': 'mist',
                        'textures': ('WW_ArcWave', FLARE),
                        'options': {'duration': 500, 'fade': (0, 250), 'layers': (
@@ -330,8 +347,26 @@ EFFECTS = {
                             'cards': ring(2, 0.2, 1.0, 1.2)},
                            {'texture': 1, 'tint': MOTE, 'alpha': 1.0, 'turn': 1.0, 'pulse': 0, 'rise': (0.6, 0.5),
                             'cards': ring(3, 0.4, 0.8, 0.14, 0.1)})}},
-    'CraneKickSpin': {'model': 'MONK_CraneKickSpin', 'effect': 7140, 'shape': 'retail', 'textures': (),
-                      'options': {'export': 'WW_SpinningCraneKick/monk_cranekick_state.gltf', 'tint': GREEN}},
+    # Spinning Crane Kick: retail's streak rings (its meshes, not its glow cards) whirling around the Monk's waist...
+    'CraneKickSpin': {'model': 'MONK_CraneKickSpin', 'effect': 7140, 'shape': 'spun',
+                      'textures': ('WW_SpinningCraneKick/streak_halfcircle_01',),
+                      'options': {'export': 'WW_SpinningCraneKick/monk_cranekick_state.gltf', 'scale': 0.6,
+                                  'layers': (
+                                      {'mesh': 2, 'texture': 0, 'tint': GREEN, 'alpha': 1.0, 'turn': 0.25},
+                                      {'mesh': 3, 'texture': 0, 'tint': (0.7, 1.0, 0.75), 'alpha': 0.9, 'turn': 0.3},
+                                      {'mesh': 2, 'texture': 0, 'tint': GREEN, 'alpha': 0.5, 'turn': 0.4,
+                                       'flicker': (0.4, 0.5)})}},
+    # ... and the wind of it (on the chest, about 1.1 yards up): feathers whirling, puffs and ring flashes.
+    'CraneKickWhirl': {'model': 'MONK_CraneKickWhirl', 'effect': 7150, 'shape': 'mist',
+                       'textures': ('WW_Feather', PUFFS, 'WW_RingBow', GLOW),
+                       'options': {'layers': (
+                           {'texture': 3, 'tint': GREEN, 'alpha': 0.35, 'pulse': 0.5, 'cards': ring(1, 0.0, 0.0, 2.0)},
+                           {'texture': 1, 'sheet': (2, 2), 'tint': GREEN, 'alpha': 0.45, 'turn': 0.6, 'pulse': 0.6,
+                            'cards': ring(4, 1.4, -0.6, 1.3, 0.3)},
+                           {'texture': 0, 'tint': (0.85, 1.0, 0.9), 'alpha': 1.0, 'turn': 0.45, 'pulse': 0.5,
+                            'cards': ring(8, 1.8, -0.8, 0.45, 0.2)},
+                           {'texture': 2, 'tint': GREEN, 'alpha': 0.8, 'turn': 0.3, 'pulse': 0.3,
+                            'cards': ring(2, 0.2, -0.3, 3.0, 0.4)})}},
     'CraneKickHit': {'model': 'MONK_CraneKickHit', 'effect': 7141, 'shape': 'mist',
                      'textures': ('WW_Feather', PUFFS, FLARE),
                      'options': {'duration': 600, 'fade': (0, 300), 'layers': (
@@ -504,7 +539,7 @@ VISUALS = {
         'impact': (15692, {KIT_CHEST: 0, KIT_BASE: 'BlackoutKickHit'})}},
     'RisingSunKick': {'copy': 253, 'id': 16747, 'kits': {
         'cast': (15688, {'anim': ANIM_KICK, 'sound': 'RisingSunKick'}),
-        'impact': (15693, {KIT_BASE: 'RisingSunBeam', KIT_CHEST: 'RisingSunHit'})}},
+        'impact': (15693, {KIT_BASE: 'RisingSunBeam', KIT_CHEST: 'RisingSunHit', KIT_WORLD: 'RisingSunBurst'})}},
     # Fists of Fury: Tranquility's channel punching on and on, retail's cone of light blue wisps before the Monk.
     'FistsOfFury': {'copy': 1283, 'id': 16748, 'clear': ('precast', 'impact'), 'kits': {
         'cast': (15689, {HANDS: 0, 'anim': ANIM_ATTACK_UNARMED, 'sound': None}),
@@ -514,7 +549,7 @@ VISUALS = {
         'impact': (15694, {KIT_CHEST: 0, KIT_BASE: 'FistsOfFuryHit', 'sound': None})}},
     # Spinning Crane Kick: Bladestorm's spin, retail's green crane kick (its glow and spinning streaks) around the Monk.
     'SpinningCraneKick': {'copy': 10704, 'id': 16750, 'kits': {
-        'state': (15695, {KIT_BASE: 'CraneKickSpin', 'sound': 'SpinningCraneKick'})}},
+        'state': (15695, {KIT_BASE: 'CraneKickSpin', KIT_CHEST: 'CraneKickWhirl', 'sound': 'SpinningCraneKick'})}},
     'CraneKickStrike': {'copy': 253, 'id': 16751, 'clear': ('precast', 'cast'), 'kits': {
         'impact': (15696, {KIT_CHEST: 0, KIT_BASE: 'CraneKickHit', 'sound': None})}},
     # Whirling Dragon Punch: Bladestorm's spin, the dragon's green ring bursting over the ground and its green arcs
