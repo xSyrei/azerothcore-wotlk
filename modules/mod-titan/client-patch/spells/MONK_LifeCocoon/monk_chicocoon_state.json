@@ -1,0 +1,2292 @@
+{
+	"fileType": "m2",
+	"fileDataID": 606566,
+	"fileName": "spells/monk_chicocoon_state.m2",
+	"internalName": "Monk_ChiCocoon_State",
+	"textures": [
+		{
+			"fileNameInternal": "spells/smokestrip_01.blp",
+			"fileNameExternal": "smokestrip_01.png",
+			"mtlName": "mat_smokestrip_01",
+			"flags": 3,
+			"fileDataID": 606562
+		},
+		{
+			"fileNameInternal": "spells/smokestripborder_01.blp",
+			"fileNameExternal": "smokestripborder_01.png",
+			"mtlName": "mat_smokestripborder_01",
+			"flags": 0,
+			"fileDataID": 606563
+		},
+		{
+			"fileNameInternal": "spells/glow_256.blp",
+			"fileNameExternal": "glow_256.png",
+			"mtlName": "mat_glow_256",
+			"flags": 3,
+			"fileDataID": 397894
+		},
+		{
+			"fileNameInternal": "spells/t_vfx_flare_long_a.blp",
+			"fileNameExternal": "t_vfx_flare_long_a.png",
+			"mtlName": "mat_t_vfx_flare_long_a",
+			"flags": 3,
+			"fileDataID": 606564
+		},
+		{
+			"fileNameInternal": "spells/monk2.blp",
+			"fileNameExternal": "monk2.png",
+			"mtlName": "mat_monk2",
+			"flags": 3,
+			"fileDataID": 606565
+		},
+		{
+			"fileNameInternal": "spells/clouds4.blp",
+			"fileNameExternal": "clouds4.png",
+			"mtlName": "mat_clouds4",
+			"flags": 0,
+			"fileDataID": 165804
+		},
+		{
+			"fileNameInternal": "spells/t_vfx_ring_ff_bright.blp",
+			"fileNameExternal": "t_vfx_ring_ff_bright.png",
+			"mtlName": "mat_t_vfx_ring_ff_bright",
+			"flags": 0,
+			"fileDataID": 241076
+		},
+		{
+			"fileNameInternal": "spells/t_vfx_hero_circle_a.blp",
+			"fileNameExternal": "t_vfx_hero_circle_a.png",
+			"mtlName": "mat_t_vfx_hero_circle_a",
+			"flags": 0,
+			"fileDataID": 464305
+		},
+		{
+			"fileNameInternal": "spells/t_lightning_circle_c.blp",
+			"fileNameExternal": "t_lightning_circle_c.png",
+			"mtlName": "mat_t_lightning_circle_c",
+			"flags": 3,
+			"fileDataID": 533199
+		},
+		{
+			"fileNameInternal": "spells/t_lightning_circle_b.blp",
+			"fileNameExternal": "t_lightning_circle_b.png",
+			"mtlName": "mat_t_lightning_circle_b",
+			"flags": 3,
+			"fileDataID": 463222
+		}
+	],
+	"textureTypes": [
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	],
+	"materials": [
+		{
+			"flags": 21,
+			"blendingMode": 4
+		},
+		{
+			"flags": 16,
+			"blendingMode": 4
+		},
+		{
+			"flags": 21,
+			"blendingMode": 4
+		},
+		{
+			"flags": 21,
+			"blendingMode": 4
+		},
+		{
+			"flags": 17,
+			"blendingMode": 2
+		},
+		{
+			"flags": 21,
+			"blendingMode": 4
+		},
+		{
+			"flags": 21,
+			"blendingMode": 4
+		},
+		{
+			"flags": 21,
+			"blendingMode": 4
+		},
+		{
+			"flags": 21,
+			"blendingMode": 4
+		},
+		{
+			"flags": 17,
+			"blendingMode": 4
+		},
+		{
+			"flags": 17,
+			"blendingMode": 4
+		}
+	],
+	"textureCombos": [
+		0,
+		1,
+		2,
+		3,
+		4,
+		5,
+		6,
+		8,
+		9
+	],
+	"colors": [
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0.7882353663444519,
+							0.7176470756530762,
+							0.5568627715110779
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						1700
+					],
+					[],
+					[
+						0,
+						1333
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0.7882353663444519,
+							0.7176470756530762,
+							0.5568627715110779
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						1700
+					],
+					[],
+					[
+						0,
+						1333
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0.5372549295425415,
+							0.40000003576278687
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						1700
+					],
+					[],
+					[
+						0,
+						1000,
+						1333
+					]
+				],
+				"values": [
+					[
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							0.6823529601097107,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						766,
+						1700
+					],
+					[
+						0,
+						1058,
+						1934
+					],
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						0,
+						32767,
+						0
+					],
+					[
+						0,
+						32767,
+						0
+					],
+					[
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							0.6823529601097107,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						766,
+						1700
+					],
+					[
+						0,
+						1058,
+						1934
+					],
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						0,
+						32767,
+						0
+					],
+					[
+						0,
+						32767,
+						0
+					],
+					[
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0.5490196347236633,
+							0.9960784912109375,
+							1
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						669,
+						1700
+					],
+					[],
+					[
+						0,
+						1000,
+						1333
+					]
+				],
+				"values": [
+					[
+						0,
+						0,
+						32767
+					],
+					[],
+					[
+						32767,
+						0,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							0.6823529601097107,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0
+					],
+					[
+						0,
+						1434,
+						1934
+					],
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						0
+					],
+					[
+						96,
+						32767,
+						96
+					],
+					[
+						96
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							1,
+							0.6823529601097107,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0
+					],
+					[
+						0,
+						834,
+						1934
+					],
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						0
+					],
+					[
+						0,
+						32767,
+						0
+					],
+					[
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							1,
+							0.7529412508010864
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						233,
+						300,
+						326,
+						731,
+						767,
+						833,
+						1202,
+						1233,
+						1300,
+						1567,
+						1633,
+						1654,
+						1700
+					],
+					[
+						0,
+						356,
+						422,
+						458,
+						878,
+						889,
+						956,
+						1304,
+						1356,
+						1371,
+						1730,
+						1756,
+						1822,
+						1934
+					],
+					[
+						0,
+						317,
+						384,
+						420,
+						840,
+						851,
+						917,
+						1333
+					]
+				],
+				"values": [
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							1,
+							0.7529412508010864
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						223,
+						233,
+						300,
+						846,
+						867,
+						898,
+						1456,
+						1471,
+						1538,
+						1700
+					],
+					[
+						0,
+						320,
+						356,
+						392,
+						656,
+						983,
+						989,
+						1056,
+						1486,
+						1522,
+						1558,
+						1934
+					],
+					[
+						0,
+						281,
+						317,
+						353,
+						617,
+						945,
+						951,
+						1017,
+						1333
+					]
+				],
+				"values": [
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						-78,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						-78,
+						0,
+						0,
+						32767,
+						0,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							1,
+							0.7529412508010864
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						167,
+						233,
+						300,
+						733,
+						800,
+						867,
+						1300,
+						1367,
+						1433,
+						1700
+					],
+					[
+						0,
+						289,
+						356,
+						422,
+						856,
+						922,
+						989,
+						1422,
+						1489,
+						1556,
+						1934
+					],
+					[
+						0,
+						251,
+						317,
+						384,
+						817,
+						884,
+						951,
+						1333
+					]
+				],
+				"values": [
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							1,
+							0.7529412508010864
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						100,
+						167,
+						182,
+						705,
+						733,
+						800,
+						1396,
+						1428,
+						1477,
+						1700
+					],
+					[
+						0,
+						268,
+						289,
+						356,
+						852,
+						891,
+						958,
+						1583,
+						1616,
+						1683,
+						1934
+					],
+					[
+						0,
+						230,
+						251,
+						317,
+						814,
+						853,
+						919,
+						1333
+					]
+				],
+				"values": [
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							1,
+							0.7529412508010864
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						22,
+						72,
+						131,
+						163,
+						227,
+						259,
+						309,
+						368,
+						400,
+						450,
+						498,
+						530,
+						580,
+						639,
+						671,
+						735,
+						767,
+						817,
+						876,
+						908,
+						958,
+						1011,
+						1043,
+						1093,
+						1153,
+						1185,
+						1249,
+						1280,
+						1330,
+						1390,
+						1422,
+						1472,
+						1513,
+						1545,
+						1595,
+						1617,
+						1649,
+						1699,
+						1700
+					],
+					[
+						0,
+						112,
+						144,
+						194,
+						253,
+						285,
+						349,
+						381,
+						431,
+						490,
+						522,
+						572,
+						620,
+						652,
+						702,
+						761,
+						793,
+						857,
+						889,
+						939,
+						998,
+						1030,
+						1080,
+						1134,
+						1166,
+						1216,
+						1275,
+						1307,
+						1371,
+						1403,
+						1453,
+						1512,
+						1544,
+						1594,
+						1635,
+						1667,
+						1717,
+						1739,
+						1771,
+						1821,
+						1934
+					],
+					[
+						0,
+						74,
+						106,
+						156,
+						215,
+						247,
+						311,
+						343,
+						393,
+						452,
+						484,
+						534,
+						582,
+						613,
+						663,
+						723,
+						755,
+						819,
+						851,
+						901,
+						960,
+						992,
+						1042,
+						1333
+					]
+				],
+				"values": [
+					[
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						32680,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						32680,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						32680,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						32680,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						32680,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						32680,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						32680,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						32680,
+						0,
+						0,
+						32767,
+						0,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"color": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [
+					[
+						0
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							1,
+							0.7529412508010864
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"alpha": {
+				"globalSeq": 65535,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						228,
+						294,
+						310,
+						802,
+						830,
+						897,
+						1396,
+						1428,
+						1477,
+						1700
+					],
+					[
+						0,
+						268,
+						289,
+						356,
+						668,
+						707,
+						774,
+						1154,
+						1193,
+						1260,
+						1583,
+						1616,
+						1683,
+						1934
+					],
+					[
+						0,
+						230,
+						251,
+						317,
+						630,
+						669,
+						736,
+						1333
+					]
+				],
+				"values": [
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					],
+					[
+						0,
+						0,
+						32767,
+						0,
+						0,
+						32767,
+						0,
+						0
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		}
+	],
+	"textureWeights": [
+		{
+			"globalSeq": 65535,
+			"interpolation": 0,
+			"timestamps": [
+				[
+					0
+				]
+			],
+			"values": [
+				[
+					32767
+				]
+			],
+			"timestampOffsets": null,
+			"valueOffsets": null
+		},
+		{
+			"globalSeq": 65535,
+			"interpolation": 0,
+			"timestamps": [
+				[
+					0
+				]
+			],
+			"values": [
+				[
+					13107
+				]
+			],
+			"timestampOffsets": null,
+			"valueOffsets": null
+		},
+		{
+			"globalSeq": 65535,
+			"interpolation": 0,
+			"timestamps": [
+				[
+					0
+				]
+			],
+			"values": [
+				[
+					16384
+				]
+			],
+			"timestampOffsets": null,
+			"valueOffsets": null
+		}
+	],
+	"transparencyLookup": [
+		0,
+		1,
+		2,
+		0
+	],
+	"textureTransforms": [
+		{
+			"translation": {
+				"globalSeq": 0,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						4000
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							0,
+							2.0003604888916016,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"translation": {
+				"globalSeq": 1,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						4700
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							0,
+							2.0003604888916016,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"translation": {
+				"globalSeq": 2,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						1500
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							1,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"translation": {
+				"globalSeq": 3,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						3367
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							1,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"translation": {
+				"globalSeq": 9,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						2533
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							1,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		},
+		{
+			"translation": {
+				"globalSeq": 11,
+				"interpolation": 1,
+				"timestamps": [
+					[
+						0,
+						2100
+					]
+				],
+				"values": [
+					[
+						[
+							0,
+							0,
+							0
+						],
+						[
+							1,
+							0,
+							0
+						]
+					]
+				],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"rotation": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			},
+			"scaling": {
+				"globalSeq": 65535,
+				"interpolation": 0,
+				"timestamps": [],
+				"values": [],
+				"timestampOffsets": null,
+				"valueOffsets": null
+			}
+		}
+	],
+	"textureTransformsLookup": [
+		0,
+		65535,
+		1,
+		65535,
+		2,
+		65535,
+		3,
+		65535,
+		65535,
+		4,
+		65535,
+		5,
+		65535
+	],
+	"boundingBox": {
+		"min": [
+			-2.2446656227111816,
+			-4.246547698974609,
+			-2.98453688621521
+		],
+		"max": [
+			3.203230857849121,
+			4.2448835372924805,
+			5.447404384613037
+		]
+	},
+	"boundingSphereRadius": 6.811590194702148,
+	"collisionBox": {
+		"min": [
+			0,
+			0,
+			0
+		],
+		"max": [
+			0,
+			0,
+			0
+		]
+	},
+	"collisionSphereRadius": 0,
+	"skin": {
+		"subMeshes": [
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 0,
+				"vertexCount": 84,
+				"triangleStart": 0,
+				"triangleCount": 216,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 0,
+				"centerBoneIndex": 5,
+				"centerPosition": [
+					-0.5164181590080261,
+					-0.08989506959915161,
+					0.6186288595199585
+				],
+				"sortCenterPosition": [
+					-0.534798264503479,
+					0.0324099063873291,
+					1.141984224319458
+				],
+				"sortRadius": 2.5341687202453613
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 84,
+				"vertexCount": 28,
+				"triangleStart": 216,
+				"triangleCount": 72,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 0,
+				"centerBoneIndex": 5,
+				"centerPosition": [
+					-0.5164181590080261,
+					0.43728095293045044,
+					2.7120511531829834
+				],
+				"sortCenterPosition": [
+					-0.534798264503479,
+					0.30545634031295776,
+					2.126720666885376
+				],
+				"sortRadius": 2.5063865184783936
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 112,
+				"vertexCount": 4,
+				"triangleStart": 288,
+				"triangleCount": 6,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 0,
+				"centerBoneIndex": 5,
+				"centerPosition": [
+					-0.5799850225448608,
+					-0.04760432243347168,
+					1.2004129886627197
+				],
+				"sortCenterPosition": [
+					-0.5799850225448608,
+					-0.04760432243347168,
+					1.2004131078720093
+				],
+				"sortRadius": 5.918412685394287
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 116,
+				"vertexCount": 42,
+				"triangleStart": 294,
+				"triangleCount": 120,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 6,
+				"centerPosition": [
+					0.14544083178043365,
+					-0.05009140446782112,
+					1.1450448036193848
+				],
+				"sortCenterPosition": [
+					0.14544087648391724,
+					0.04606425762176514,
+					1.1450440883636475
+				],
+				"sortRadius": 2.5840296745300293
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 158,
+				"vertexCount": 42,
+				"triangleStart": 414,
+				"triangleCount": 120,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 6,
+				"centerPosition": [
+					0.20896103978157043,
+					-0.015138713642954826,
+					1.1450448036193848
+				],
+				"sortCenterPosition": [
+					0.20896106958389282,
+					0.05536419153213501,
+					1.145044207572937
+				],
+				"sortRadius": 1.8950023651123047
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 200,
+				"vertexCount": 151,
+				"triangleStart": 534,
+				"triangleCount": 672,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 7,
+				"centerPosition": [
+					-0.06904413551092148,
+					0.014901571907103062,
+					1.2369085550308228
+				],
+				"sortCenterPosition": [
+					3.5762786865234375e-7,
+					-0.013697266578674316,
+					1.2369084358215332
+				],
+				"sortRadius": 2.2446672916412354
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 351,
+				"vertexCount": 42,
+				"triangleStart": 1206,
+				"triangleCount": 120,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 8,
+				"centerPosition": [
+					-0.032134149223566055,
+					-0.052219465374946594,
+					1.0820518732070923
+				],
+				"sortCenterPosition": [
+					-0.03213413059711456,
+					-0.05221933126449585,
+					1.160487174987793
+				],
+				"sortRadius": 1.673078179359436
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 393,
+				"vertexCount": 42,
+				"triangleStart": 1326,
+				"triangleCount": 120,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 9,
+				"centerPosition": [
+					-0.08960860967636108,
+					-0.010997122153639793,
+					1.1493011713027954
+				],
+				"sortCenterPosition": [
+					-1.7881393432617188e-7,
+					-0.010997235774993896,
+					1.1493009328842163
+				],
+				"sortRadius": 1.8899775743484497
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 435,
+				"vertexCount": 4,
+				"triangleStart": 1446,
+				"triangleCount": 6,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 10,
+				"centerPosition": [
+					1.0964633226394653,
+					0.03571510314941406,
+					1.2004268169403076
+				],
+				"sortCenterPosition": [
+					1.0964633226394653,
+					0.03571510314941406,
+					1.2004268169403076
+				],
+				"sortRadius": 3.132180690765381
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 439,
+				"vertexCount": 4,
+				"triangleStart": 1452,
+				"triangleCount": 6,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 11,
+				"centerPosition": [
+					1.0964633226394653,
+					0.033460021018981934,
+					1.2004269361495972
+				],
+				"sortCenterPosition": [
+					1.0964633226394653,
+					0.033460021018981934,
+					1.2004269361495972
+				],
+				"sortRadius": 3.132181167602539
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 443,
+				"vertexCount": 4,
+				"triangleStart": 1458,
+				"triangleCount": 6,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 12,
+				"centerPosition": [
+					1.0964633226394653,
+					0.033460021018981934,
+					1.2004269361495972
+				],
+				"sortCenterPosition": [
+					1.0964633226394653,
+					0.033460021018981934,
+					1.2004269361495972
+				],
+				"sortRadius": 3.132181167602539
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 447,
+				"vertexCount": 4,
+				"triangleStart": 1464,
+				"triangleCount": 6,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 13,
+				"centerPosition": [
+					1.0964633226394653,
+					0.033460021018981934,
+					1.2004268169403076
+				],
+				"sortCenterPosition": [
+					1.0964633226394653,
+					0.033460021018981934,
+					1.2004268169403076
+				],
+				"sortRadius": 3.1321804523468018
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 451,
+				"vertexCount": 8,
+				"triangleStart": 1470,
+				"triangleCount": 12,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 14,
+				"centerPosition": [
+					1.1263917684555054,
+					0.03355609253048897,
+					1.2002421617507935
+				],
+				"sortCenterPosition": [
+					1.1263917684555054,
+					0.03355609253048897,
+					1.2002421617507935
+				],
+				"sortRadius": 3.047243356704712
+			},
+			{
+				"enabled": true,
+				"submeshID": 0,
+				"level": 0,
+				"vertexStart": 459,
+				"vertexCount": 4,
+				"triangleStart": 1482,
+				"triangleCount": 6,
+				"boneCount": 11,
+				"boneStart": 0,
+				"boneInfluences": 1,
+				"centerBoneIndex": 15,
+				"centerPosition": [
+					1.0964633226394653,
+					0.03345996141433716,
+					1.2004268169403076
+				],
+				"sortCenterPosition": [
+					1.0964633226394653,
+					0.033460021018981934,
+					1.2004268169403076
+				],
+				"sortRadius": 3.132181167602539
+			}
+		],
+		"textureUnits": [
+			{
+				"flags": 128,
+				"priority": 20,
+				"shaderID": 16400,
+				"skinSectionIndex": 0,
+				"flags2": 0,
+				"colorIndex": 0,
+				"materialIndex": 2,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 0,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 0
+			},
+			{
+				"flags": 128,
+				"priority": 20,
+				"shaderID": 16400,
+				"skinSectionIndex": 1,
+				"flags2": 1,
+				"colorIndex": 1,
+				"materialIndex": 3,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 0,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 2
+			},
+			{
+				"flags": 24,
+				"priority": 0,
+				"shaderID": 16,
+				"skinSectionIndex": 2,
+				"flags2": 2,
+				"colorIndex": 2,
+				"materialIndex": 4,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 2,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 1,
+				"textureTransformComboIndex": 1
+			},
+			{
+				"flags": 128,
+				"priority": 25,
+				"shaderID": 16401,
+				"skinSectionIndex": 3,
+				"flags2": 3,
+				"colorIndex": 3,
+				"materialIndex": 5,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 3,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 4
+			},
+			{
+				"flags": 128,
+				"priority": 25,
+				"shaderID": 16401,
+				"skinSectionIndex": 4,
+				"flags2": 4,
+				"colorIndex": 4,
+				"materialIndex": 6,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 3,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 6
+			},
+			{
+				"flags": 208,
+				"priority": 13,
+				"shaderID": 32772,
+				"skinSectionIndex": 5,
+				"flags2": 5,
+				"colorIndex": 5,
+				"materialIndex": 0,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 5,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 2,
+				"textureTransformComboIndex": 7
+			},
+			{
+				"flags": 128,
+				"priority": 20,
+				"shaderID": 16401,
+				"skinSectionIndex": 6,
+				"flags2": 6,
+				"colorIndex": 6,
+				"materialIndex": 7,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 3,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 9
+			},
+			{
+				"flags": 128,
+				"priority": 20,
+				"shaderID": 16401,
+				"skinSectionIndex": 7,
+				"flags2": 7,
+				"colorIndex": 7,
+				"materialIndex": 8,
+				"materialLayer": 0,
+				"textureCount": 2,
+				"textureComboIndex": 3,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 11
+			},
+			{
+				"flags": 24,
+				"priority": 30,
+				"shaderID": 16,
+				"skinSectionIndex": 8,
+				"flags2": 8,
+				"colorIndex": 8,
+				"materialIndex": 9,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 7,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 1
+			},
+			{
+				"flags": 24,
+				"priority": 30,
+				"shaderID": 16,
+				"skinSectionIndex": 9,
+				"flags2": 9,
+				"colorIndex": 9,
+				"materialIndex": 9,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 7,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 1
+			},
+			{
+				"flags": 24,
+				"priority": 30,
+				"shaderID": 16,
+				"skinSectionIndex": 10,
+				"flags2": 10,
+				"colorIndex": 10,
+				"materialIndex": 9,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 7,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 1
+			},
+			{
+				"flags": 24,
+				"priority": 30,
+				"shaderID": 16,
+				"skinSectionIndex": 11,
+				"flags2": 11,
+				"colorIndex": 11,
+				"materialIndex": 9,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 7,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 1
+			},
+			{
+				"flags": 24,
+				"priority": 30,
+				"shaderID": 16,
+				"skinSectionIndex": 12,
+				"flags2": 12,
+				"colorIndex": 12,
+				"materialIndex": 10,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 8,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 1
+			},
+			{
+				"flags": 24,
+				"priority": 30,
+				"shaderID": 16,
+				"skinSectionIndex": 13,
+				"flags2": 13,
+				"colorIndex": 13,
+				"materialIndex": 9,
+				"materialLayer": 0,
+				"textureCount": 1,
+				"textureComboIndex": 7,
+				"textureCoordComboIndex": 0,
+				"textureWeightComboIndex": 0,
+				"textureTransformComboIndex": 1
+			}
+		],
+		"fileName": "spells/monk_chicocoon_state00.skin",
+		"fileDataID": 606567
+	}
+}

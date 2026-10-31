@@ -665,7 +665,8 @@ def ground_zone(*args, layers=()):
 
 
 def exported_model(*args, export, base, size=None, scale=1.0, center=False, offset=(0.0, 0.0, 0.0), turn=0.0,
-                   trail_height=0.3, lifetime=0.4, duration=1000, fade=None, two_sided=False, max_texture=None):
+                   trail_height=0.3, lifetime=0.4, duration=1000, fade=None, two_sided=False, max_texture=None,
+                   sequence=None):
     """A spell effect model from a wow.export model (OBJ + JSON + PNGs in the folder export): a spell
     missile (SpellVisual's missile model) or a model a kit attaches (chest, head...).
 
@@ -681,7 +682,9 @@ def exported_model(*args, export, base, size=None, scale=1.0, center=False, offs
 
     One Stand animation of duration milliseconds (a kit removes a model once it has played); fade: the
     milliseconds over which it fades out from the start (None: whole all along). Layers' own fades in
-    and out (per-sequence alpha) are left out. Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
+    and out (per-sequence alpha) are left out, unless sequence names the export's animation (its index)
+    whose layer alpha (flashes, pulses) and texture weights the Stand plays. Writes <name>.m2,
+    <name>00.skin and its BLPs into out_dir.
     """
     *textures, out_dir, name, client_dir = args
     trail_texture = textures[0] if textures else None
@@ -755,7 +758,11 @@ def exported_model(*args, export, base, size=None, scale=1.0, center=False, offs
     colors = b''
     for color in info['colors']:
         colors += track(blob, 0, [([0], [tuple(map(float, color['color']['values'][0][0]))])], '3f')
-        colors += track(blob, 0, [([0], [0x7FFF])], 'h')
+        alpha = color['alpha']
+        keys = ([0], [0x7FFF])
+        if sequence is not None and alpha['timestamps'][sequence]:
+            keys = (alpha['timestamps'][sequence], [max(0, v) for v in alpha['values'][sequence]])
+        colors += track(blob, alpha['interpolation'] if len(keys[0]) > 1 else 0, [keys], 'h')
     colors_ref = blob.add(colors, len(info['colors']))
     textures_blob = b''
     for i, blp_name in enumerate(blp_names):
@@ -763,7 +770,12 @@ def exported_model(*args, export, base, size=None, scale=1.0, center=False, offs
         ref = blob.add(path.encode() + b'\0', len(path) + 1)
         textures_blob += struct.pack('<II2I', 0, 0 if i == trail_index else WRAP_U | 0x2, *ref)
     textures_ref = blob.add(textures_blob, len(blp_names))
-    weights = blob.add(track(blob, 1, [([0, fade], [0x7FFF, 0]) if fade else ([0], [0x7FFF])], 'h'), 1)
+    levels = [0x7FFF]
+    if sequence is not None:
+        levels = [weight['values'][0][0] for weight in info['textureWeights']]
+    weights = b''.join(track(blob, 1, [([0, fade], [level, 0]) if fade else ([0], [level])], 'h')
+                       for level in levels)
+    weights = blob.add(weights, len(levels))
     transform_records = b''
     for index, transform in enumerate(transforms):
         move = transform['translation']
@@ -781,7 +793,7 @@ def exported_model(*args, export, base, size=None, scale=1.0, center=False, offs
     bone_lookup = blob.array('H', [0])
     texture_lookup = blob.array('H', [texture_index.get(t, 0) for t in info['textureCombos']])
     texture_unit_lookup = blob.array('H', [0])
-    transparency_lookup = blob.array('H', [0])
+    transparency_lookup = blob.array('H', info['transparencyLookup'] if sequence is not None else [0])
     transform_lookup = blob.array('H', info['textureTransformsLookup'])
     ribbons_ref = (0, 0)
     if trail_texture:
@@ -829,7 +841,9 @@ def exported_model(*args, export, base, size=None, scale=1.0, center=False, offs
     for unit in units:
         batch_data += struct.pack('<Bb11H', 16, unit['priority'], 0, unit['skinSectionIndex'],
                                   unit['skinSectionIndex'], unit['colorIndex'], unit['materialIndex'], 0, 1,
-                                  unit['textureComboIndex'], 0, 0, unit['textureTransformComboIndex'])
+                                  unit['textureComboIndex'], 0,
+                                  unit['textureWeightComboIndex'] if sequence is not None else 0,
+                                  unit['textureTransformComboIndex'])
     sections_ref = skin.add(section_data, len(groups))
     batches_ref = skin.add(batch_data, len(units))
     skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)

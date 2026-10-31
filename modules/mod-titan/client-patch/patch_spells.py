@@ -960,6 +960,8 @@ SPELLS = [
 ]
 SPELLS += patch_talents.SPELLS      # the talents' ranks and helper spells
 SPELLS += patch_monk.SPELLS         # the Monk's
+EFFECTS.update(patch_monk.EFFECTS)
+VISUALS.update(patch_monk.VISUALS)
 
 
 class Dbc:

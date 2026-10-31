@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """The Monk's spells: data for patch_spells.py, which builds and writes them with the Demon Hunter's.
 
-Mistweaver first (the Monk's healer, on mana): each spell a copy of a Blizzard healing spell whose look
-fits until the Monk's own visuals, icons and sounds are in (Tranquility's green channel, Regrowth,
-Rejuvenation, Lifebloom, Power Word: Shield, Divine Hymn, Nature's Swiftness, Cleanse). The server's
+Mistweaver first (the Monk's healer, on mana): each spell a copy of a Blizzard healing spell, with retail's
+icons. Soothing Mist, Life Cocoon and Revival have their own look (EFFECTS, VISUALS); the rest keep the
+copied spell's until theirs are in (Regrowth, Rejuvenation, Lifebloom, Nature's Swiftness, Cleanse). The server's
 scripts (src/monk.cpp) do what the copies cannot: Vivify's splash on Renewing Mist targets, Renewing Mist
 jumping off a healed target, Enveloping Mist's extra healing, Life Cocoon's size and Revival's cleanse.
 
@@ -41,6 +41,58 @@ RANGE_40 = 5
 GLOBAL_COOLDOWN = 133
 NATURE, ALL_SCHOOLS = 0x8, 0x7F
 
+# Visuals (as in patch_spells.py, which builds them with the Demon Hunter's).
+KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_WORLD = 3, 4, 5, 6, 7, 14
+HANDS = (KIT_LEFT_HAND, KIT_RIGHT_HAND)
+ANIM_SPELL_CAST_OMNI = 54
+BLEND_ADD = 4
+JADE = (0.45, 1.0, 0.8)
+NATURE_CAST_HAND = 73           # Spells\\Nature_Cast_Hand: green light on the hands
+REJUVENATION_IMPACT = 70        # Spells\\Rejuvenation_Impact_Base: a green heal at the feet
+
+# Our effect models (see patch_spells.EFFECTS), from retail's Monk effects (spells/MONK_*).
+EFFECTS = {
+    # Soothing Mist: retail's mist (its snowfrost cloud, rounded off) swirling jade around the target's feet and
+    # waist, for as long as the channel lasts.
+    'SoothingMist': {'model': 'MONK_SoothingMist', 'effect': 7116, 'shape': 'zone', 'textures': ('MONK_Mist',),
+                     'options': {'layers': (
+                         {'texture': 0, 'size': 3.0, 'height': 0.15, 'tint': JADE, 'alpha': 0.8, 'turn': 6.0,
+                          'blend': BLEND_ADD},
+                         {'texture': 0, 'size': 2.2, 'height': 0.9, 'tint': JADE, 'alpha': 0.5, 'turn': -4.0,
+                          'blend': BLEND_ADD})}},
+    # Life Cocoon: retail's cocoon (monk_chicocoon_state), its smoke strips scrolling, its flares pulsing and its
+    # lightning flickering as retail's Stand does.
+    'LifeCocoon': {'model': 'MONK_LifeCocoon', 'effect': 7117, 'shape': 'model', 'textures': (),
+                   'options': {'export': 'MONK_LifeCocoon', 'base': 'monk_chicocoon_state', 'sequence': 1,
+                               'duration': 1934, 'max_texture': 512}},
+    # Revival: retail's mist bursting out over the ground around the Monk, a jade flare at its center.
+    'RevivalBurst': {'model': 'MONK_Revival_Burst', 'effect': 7118, 'shape': 'burst',
+                     'textures': ('MONK_Mist', 'MONK_Flare', None),
+                     'options': {'size': 30.0, 'ring_tint': JADE, 'ring_blend': BLEND_ADD, 'flash_sheet': False,
+                                 'flash_tint': JADE, 'duration': 1200,
+                                 'ring': {'scale': ([0, 600, 1200], [2.0, 28.0, 30.0]),
+                                          'fade': ([0, 300, 1200], [0x7FFF, 0x7FFF, 0])}}},
+}
+
+# SpellVisual (and kit) ids, a Blizzard visual copied and kits changed (see patch_spells.VISUALS).
+VISUALS = {
+    # Soothing Mist is Tranquility's channel (its hands, its channeling), the mist on the target while it lasts;
+    # not Tranquility's rain of light on the area.
+    'SoothingMist': {'copy': 1283, 'id': 16730, 'clear': ('impact',), 'kits': {
+        'state': (15650, {KIT_CHEST: 0, KIT_BASE: 'SoothingMist', 'sound': None, 'procs': False})}},
+    # Life Cocoon is Power Word: Shield's (its sound) with green hands and the cocoon around the target.
+    'LifeCocoon': {'copy': 784, 'id': 16731, 'kits': {
+        'precast': (15651, {HANDS: NATURE_CAST_HAND}),
+        'cast': (15652, {HANDS: NATURE_CAST_HAND}),
+        'state': (15653, {KIT_BASE: 'LifeCocoon', 'procs': False})}},
+    # Revival is Divine Hymn's heal (its sound), cast with green hands and the mist bursting around the Monk; each
+    # ally healed gets a green heal at the feet. Not Divine Hymn's channel.
+    'Revival': {'copy': 13751, 'id': 16732, 'clear': ('state',), 'kits': {
+        'cast': (15654, {KIT_CHEST: 0, HANDS: NATURE_CAST_HAND, KIT_WORLD: 'RevivalBurst',
+                         'anim': ANIM_SPELL_CAST_OMNI, 'sound': None}),
+        'impact': (15655, {KIT_BASE: REJUVENATION_IMPACT})}},
+}
+
 
 def heal(base, per_level):
     """A heal (or heal over time tick): base + per_level a level (above 1), plus spell power."""
@@ -57,7 +109,8 @@ def monk(spell_id, level, **fields):
 SPELLS = [
     {
         # Tranquility's channel, on one ally: healing every sec for 8 sec.
-        'id': 90300, 'copy': 740, 'name': 'Soothing Mist', 'icon': 'Spell_Nature_Tranquility',
+        'id': 90300, 'copy': 740, 'name': 'Soothing Mist', 'icon': 'Ability_Monk_SoothingMists',
+        'visual': 'SoothingMist',
         'description': 'Heals the target for $o1 over $d. Channeled; moving ends it.',
         'tooltip': 'Healing every 1 sec.',
         'set': monk(90300, 1, RecoveryTime=0, ManaCostPercentage=4, RangeIndex=RANGE_40, DurationIndex=DURATION_8S),
@@ -68,7 +121,7 @@ SPELLS = [
     {
         # Regrowth's cast, a single heal; spell_titan_monk_vivify also heals every ally with the Monk's
         # Renewing Mist for half as much (90310).
-        'id': 90301, 'copy': 8936, 'name': 'Vivify', 'icon': 'Ability_Druid_Nourish',
+        'id': 90301, 'copy': 8936, 'name': 'Vivify', 'icon': 'Ability_Monk_Vivify',
         'description': 'Heals the target for $s1, and every ally with your Renewing Mist for half as much.',
         'set': monk(90301, 1, CastingTimeIndex=CAST_1_5S, ManaCostPercentage=15, RangeIndex=RANGE_40),
         'clear': [2, 3],
@@ -77,7 +130,7 @@ SPELLS = [
     {
         # Rejuvenation: healing every 2 sec for 20 sec; spell_titan_monk_renewing_mist moves it to an injured
         # ally once its target is at full health.
-        'id': 90302, 'copy': 774, 'name': 'Renewing Mist', 'icon': 'Spell_Nature_Rejuvenation',
+        'id': 90302, 'copy': 774, 'name': 'Renewing Mist', 'icon': 'Ability_Monk_RenewingMists',
         'description': 'Surrounds the target with healing mists, restoring $o1 health over $d. When the target '
                        'is at full health, the mist jumps to an injured ally within 20 yards.',
         'tooltip': 'Healing every 2 sec.',
@@ -88,7 +141,7 @@ SPELLS = [
     {
         # Lifebloom's heal over time, cast: every sec for 6 sec, and the Monk's own healing on the target is
         # 30% stronger meanwhile (titan_monk_healing).
-        'id': 90303, 'copy': 33763, 'name': 'Enveloping Mist', 'icon': 'Ability_Druid_Flourish',
+        'id': 90303, 'copy': 33763, 'name': 'Enveloping Mist', 'icon': 'Spell_Monk_EnvelopingMist',
         'description': 'Wraps the target in healing mists, restoring $o1 health over $d and increasing the '
                        'healing they receive from you by 30%.',
         'tooltip': 'Healing every 1 sec. Healing received from the Monk increased by 30%.',
@@ -99,7 +152,7 @@ SPELLS = [
     },
     {
         # Tranquility's channel for 3 sec: a burst of bolts (90305) every sec.
-        'id': 90304, 'copy': 740, 'name': 'Essence Font', 'icon': 'Spell_Nature_HealingWay',
+        'id': 90304, 'copy': 740, 'name': 'Essence Font', 'icon': 'Ability_Monk_EssenceFont',
         'description': 'Unleashes a rapid twirl of healing bolts at up to 6 allies within 30 yards every sec '
                        'for $d, each healing for $90305s1.',
         'set': monk(90304, 20, RecoveryTime=12000, ManaCostPercentage=25, DurationIndex=DURATION_3S),
@@ -108,7 +161,7 @@ SPELLS = [
     },
     {
         # Tranquility's healing pulse: up to 6 allies around the Monk.
-        'id': 90305, 'copy': 44203, 'name': 'Essence Font', 'icon': 'Spell_Nature_HealingWay', 'description': '',
+        'id': 90305, 'copy': 44203, 'name': 'Essence Font', 'icon': 'Ability_Monk_EssenceFont', 'description': '',
         'set': monk(90305, 20, MaxAffectedTargets=6),
         'effects': {1: heal(30, 6.0)},
     },
@@ -116,6 +169,7 @@ SPELLS = [
         # Power Word: Shield: a shield as big as 30% of the Monk's maximum health (spell_titan_monk_life_cocoon)
         # for 12 sec.
         'id': 90306, 'copy': 17, 'name': 'Life Cocoon', 'icon': 'Spell_Nature_ResistNature',
+        'visual': 'LifeCocoon',
         'description': 'Encases the target in a cocoon of Chi energy for $d, absorbing damage equal to 30% of '
                        'your maximum health.',
         'tooltip': 'Absorbing damage.',
@@ -126,7 +180,8 @@ SPELLS = [
     {
         # Divine Hymn's heal, on the whole raid around the Monk at once; spell_titan_monk_revival also clears
         # one Magic, Poison and Disease effect from each.
-        'id': 90307, 'copy': 64844, 'name': 'Revival', 'icon': 'Spell_Holy_DivineHymn',
+        'id': 90307, 'copy': 64844, 'name': 'Revival', 'icon': 'Spell_Monk_Revival',
+        'visual': 'Revival',
         'description': 'Heals all party and raid members within 40 yards for $s1 and clears them of a Magic, '
                        'Poison and Disease effect.',
         'set': monk(90307, 30, RecoveryTime=180000, ManaCostPercentage=35, MaxAffectedTargets=0,
@@ -136,7 +191,7 @@ SPELLS = [
     },
     {
         # Nature's Swiftness: the next Vivify is free and the next Enveloping Mist instant (one charge).
-        'id': 90308, 'copy': 17116, 'name': 'Thunder Focus Tea', 'icon': 'INV_Drink_04',
+        'id': 90308, 'copy': 17116, 'name': 'Thunder Focus Tea', 'icon': 'Ability_Monk_ThunderFocusTea',
         'description': 'Your next Vivify costs no mana, or your next Enveloping Mist is instant.',
         'tooltip': 'Next Vivify free, or next Enveloping Mist instant.',
         'set': monk(90308, 14, RecoveryTime=30000, DurationIndex=DURATION_30S, ProcCharges=1),
@@ -156,7 +211,7 @@ SPELLS = [
     },
     {
         # Vivify's splash: a heal of the script's amount (half of Vivify's).
-        'id': 90310, 'copy': 8936, 'name': 'Vivify', 'icon': 'Ability_Druid_Nourish', 'description': '',
+        'id': 90310, 'copy': 8936, 'name': 'Vivify', 'icon': 'Ability_Monk_Vivify', 'description': '',
         'set': monk(90310, 1, CastingTimeIndex=CAST_INSTANT, ManaCostPercentage=0, ManaCost=0, RangeIndex=RANGE_40,
                     StartRecoveryCategory=0, StartRecoveryTime=0),
         'clear': [2, 3],
