@@ -68,6 +68,15 @@ def encode(image):
 
 
 
+def resize_straight(image, size):
+    """An RGBA image resized with its color and alpha apart. Pillow resizes RGBA with the color weighted by
+    alpha, so where alpha is 0 the color comes out black: terrain textures' alpha is their specular, not
+    coverage, and their color showed black wherever the specular was 0."""
+    color = image.convert('RGB').resize(size, Image.Resampling.LANCZOS)
+    color.putalpha(image.getchannel('A').resize(size, Image.Resampling.LANCZOS))
+    return color
+
+
 def _dxt_level(image, fmt):
     """One mip level's DXT blocks (Pillow's encoder; levels under 4 pixels are encoded as one 4x4 block)."""
     if image.width < 4 or image.height < 4:
@@ -96,7 +105,7 @@ def encode_dxt(image):
         if w == 1 and h == 1:
             break
         w, h = max(1, w // 2), max(1, h // 2)
-        level = image.resize((w, h), Image.Resampling.LANCZOS)
+        level = resize_straight(image, (w, h))
 
     header_size = 4 + 4 + 4 + 8 + 16 * 4 * 2 + 256 * 4
     offsets, sizes, position = [], [], header_size

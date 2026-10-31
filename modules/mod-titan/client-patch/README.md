@@ -287,8 +287,8 @@ The launcher will ship it automatically for players.
 `textures/` holds HD retextures of the game's own textures, each PNG at the client path it replaces
 (`textures/Tileset/Elwynn/ElwynnGrassBase.png` is `Tileset\Elwynn\ElwynnGrassBase.blp`): for now Elwynn
 Forest's 46 ground textures at 1024x1024, with their specular maps (`_s`, specular in the alpha) and cut-out
-variants. `build_textures.py` brings them down to 512 (at 1024 the distant ground turned into dark, speckled noise
-in game) and turns them into DXT-compressed BLP2s with every mip level (`encode_dxt` in
+variants. `build_textures.py` turns them into DXT-compressed BLP2s with every mip level (color and alpha resized
+apart: Pillow's RGBA resize blackened the color wherever the specular alpha was 0) (`encode_dxt` in
 `models/blp.py`: DXT1 when opaque, DXT5 with the alpha) in an archive of their own, `dist/patch-enUS-5.MPQ`,
 installed beside patch-enUS-4.MPQ. Run it only when `textures/` changes: the main patch's rebuilds leave it
 alone.

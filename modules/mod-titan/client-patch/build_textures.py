@@ -7,10 +7,9 @@ levels (models/blp.py's encode_dxt: DXT1 when opaque, DXT5 with the alpha otherw
 alpha is their specular). They are an archive of their own, beside patch-enUS-4.MPQ, so that rebuilding
 the main patch does not carry them again: run this only when textures/ changes.
 
-Textures larger than MAX_SIZE are brought down to it first (Lanczos): the 3.3.5a ground was made for 256
-and 512 textures, and at 1024 distant ground showed dark, speckled noise in game.
+Textures larger than MAX_SIZE are brought down to it first (Lanczos, color and alpha apart: blp.resize_straight).
 
-Usage: python3 build_textures.py [max size, default 512]
+Usage: python3 build_textures.py [max size, default 1024]
 """
 
 import sys
@@ -26,7 +25,7 @@ import make_mpq  # noqa: E402
 
 SOURCE = HERE / 'textures'
 OUT = HERE / 'dist' / 'patch-enUS-5.MPQ'
-MAX_SIZE = 512
+MAX_SIZE = 1024
 
 
 def main():
@@ -37,7 +36,8 @@ def main():
         with Image.open(png) as image:
             if max(image.size) > max_size:
                 ratio = max_size / max(image.size)
-                image = image.resize((int(image.width * ratio), int(image.height * ratio)), Image.LANCZOS)
+                image = blp.resize_straight(image.convert('RGBA'), (int(image.width * ratio),
+                                                                  int(image.height * ratio)))
             entries.append((path, blp.encode_dxt(image)))
         print(f'  {path}')
     OUT.parent.mkdir(exist_ok=True)
