@@ -117,17 +117,10 @@ class spell_titan_monk_vivify : public SpellScript
                 caster->CastCustomSpell(SPELL_VIVIFY_SPLASH, SPELLVALUE_BASE_POINT0, amount, ally, true);
     }
 
-    // With Chi-Ji out, it sends a Crane's Gust as well.
-    void Gust()
-    {
-        if (Creature* crane = ChiJiOf(GetCaster()))
-            CranesGust(crane, GetCaster(), 1);
-    }
 
     void Register() override
     {
         AfterHit += SpellHitFn(spell_titan_monk_vivify::Splash);
-        AfterCast += SpellCastFn(spell_titan_monk_vivify::Gust);
     }
 };
 
@@ -166,23 +159,6 @@ class spell_titan_monk_renewing_mist : public AuraScript
     {
         OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_monk_renewing_mist::Jump, EFFECT_0,
             SPELL_AURA_PERIODIC_HEAL);
-    }
-};
-
-// Renewing Mist (90302) cast: with Chi-Ji out, it sends a Crane's Gust as well.
-class spell_titan_monk_renewing_mist_cast : public SpellScript
-{
-    PrepareSpellScript(spell_titan_monk_renewing_mist_cast);
-
-    void Gust()
-    {
-        if (Creature* crane = ChiJiOf(GetCaster()))
-            CranesGust(crane, GetCaster(), 1);
-    }
-
-    void Register() override
-    {
-        AfterCast += SpellCastFn(spell_titan_monk_renewing_mist_cast::Gust);
     }
 };
 
@@ -295,6 +271,38 @@ struct npc_titan_chi_ji : public ScriptedAI
     }
 };
 
+// Invoke Chi-Ji: with Chi-Ji out, every healing spell the Monk casts (any class's: a heal, a heal over time, or a
+// channel or aura pulsing heals) sends one more Crane's Gust. Triggered spells (procs, ticks) do not.
+class titan_monk_chi_ji_casts : public PlayerScript
+{
+public:
+    titan_monk_chi_ji_casts() : PlayerScript("titan_monk_chi_ji_casts", { PLAYERHOOK_ON_SPELL_CAST }) { }
+
+    static bool Heals(SpellInfo const* spellInfo, bool followTrigger = true)
+    {
+        for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+        {
+            if (effect.IsEffect(SPELL_EFFECT_HEAL) || effect.IsEffect(SPELL_EFFECT_HEAL_PCT)
+                || effect.IsEffect(SPELL_EFFECT_HEAL_MAX_HEALTH) || effect.IsAura(SPELL_AURA_PERIODIC_HEAL))
+                return true;
+            if (followTrigger && (effect.IsAura(SPELL_AURA_PERIODIC_TRIGGER_SPELL)
+                || effect.IsEffect(SPELL_EFFECT_TRIGGER_SPELL)))
+                if (SpellInfo const* triggered = sSpellMgr->GetSpellInfo(effect.TriggerSpell))
+                    if (Heals(triggered, false))
+                        return true;
+        }
+        return false;
+    }
+
+    void OnPlayerSpellCast(Player* player, Spell* spell, bool /*skipCheck*/) override
+    {
+        if (spell->IsTriggered() || !Heals(spell->GetSpellInfo()))
+            return;
+        if (Creature* crane = ChiJiOf(player))
+            CranesGust(crane, player, 1);
+    }
+};
+
 // Enveloping Mist (90303): the Monk's healing on its target is 30% stronger while it lasts.
 class titan_monk_healing : public UnitScript
 {
@@ -314,10 +322,10 @@ void AddSC_monk()
 {
     RegisterSpellScript(spell_titan_monk_vivify);
     RegisterSpellScript(spell_titan_monk_renewing_mist);
-    RegisterSpellScript(spell_titan_monk_renewing_mist_cast);
     RegisterSpellScript(spell_titan_monk_jade_wind_heal);
     RegisterSpellScript(spell_titan_monk_life_cocoon);
     RegisterSpellScript(spell_titan_monk_revival);
     RegisterCreatureAI(npc_titan_chi_ji);
+    new titan_monk_chi_ji_casts();
     new titan_monk_healing();
 }

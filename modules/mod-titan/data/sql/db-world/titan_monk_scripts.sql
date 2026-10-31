@@ -5,7 +5,6 @@ DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_monk_vivify
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90301, 'spell_titan_monk_vivify'),
 (90302, 'spell_titan_monk_renewing_mist'),
-(90302, 'spell_titan_monk_renewing_mist_cast'),
 (90306, 'spell_titan_monk_life_cocoon'),
 (90307, 'spell_titan_monk_revival'),
 (90314, 'spell_titan_monk_jade_wind_heal');

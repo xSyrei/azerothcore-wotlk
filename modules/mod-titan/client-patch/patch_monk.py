@@ -485,9 +485,8 @@ SPELLS += [
         'id': 90311, 'copy': 51533, 'name': 'Invoke Chi-Ji, the Red Crane', 'icon': 'Monk_Ability_ChiJi',
         'visual': 'InvokeChiJi',
         'description': 'Summon an effigy of Chi-Ji, the Red Crane, for $d. Every 2 sec Chi-Ji heals the 2 most injured '
-                       'allies within 40 yards with Crane\'s Gust, and once more each time you cast Vivify or '
-                       'Renewing Mist. While Chi-Ji is with you, Enveloping Mist costs 50% less mana and casts 50% '
-                       'faster.',
+                       'allies within 40 yards with Crane\'s Gust, and once more each time you cast a healing spell. '
+                       'While Chi-Ji is with you, Enveloping Mist costs 50% less mana and casts 50% faster.',
         'tooltip': 'Chi-Ji is at your side. Enveloping Mist costs 50% less mana and casts 50% faster.',
         'set': monk(90311, 30, RecoveryTime=180000, ManaCostPercentage=5, ManaCost=0, DurationIndex=DURATION_25S,
                     StartRecoveryCategory=GLOBAL_COOLDOWN, StartRecoveryTime=1500),
