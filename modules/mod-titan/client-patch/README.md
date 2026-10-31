@@ -289,7 +289,9 @@ Elwynn Forest (Northshire included) and Stormwind City upscaled 2x. It runs on t
 not here: it reads the client's Blizzard archives (`hd/mpq_read.py`, read only; give it the clean copy of the
 client), finds the zones' terrain tiles (by the area of their chunks, AreaTable.dbc), their ground textures (and
 specular maps), the trees, bushes and rocks placed on them and their buildings (and the doodads inside), keeps
-`World\` and `Tileset\` textures only, upscales them with Real-ESRGAN (x4plus, then Lanczos down to 2x; seamless
+`World\` and `Tileset\` textures only, upscales them with Real-ESRGAN (the anime
+model, for painted art: the photo one made the grass gritty; Lanczos down to 2x, blended half and half with the
+texture simply enlarged, `--strength`; seamless
 for repeating ground and wall textures; 1-bit alpha kept crisp), compresses them with texconv (DXT1 / DXT5, every
 mip) into BLP2 and packs them. Both tools are downloaded into the work folder on the first run. The patch is
 big and per machine: it is not committed.
