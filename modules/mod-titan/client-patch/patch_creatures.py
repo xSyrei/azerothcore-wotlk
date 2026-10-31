@@ -31,8 +31,11 @@ CREATURES = [
      (-3.87, -1.33, -0.01, 0.79, 1.33, 6.7)),
     (90204, 3504, 'Creature\\DemonHunterMeta\\DHMetaFemaleBladeDance.mdx', 2927, 25277, 0.6, 1,
      (-4.43, -1.64, 0.0, 0.5, 1.64, 7.03)),
+    # Chi-Ji, the Red Crane (Invoke Chi-Ji's guardian, creature 90311), copying the phoenix's sounds (model 2384,
+    # display 19682), at 80%.
+    (90205, 3505, 'Creature\\ChiJi\\ChiJi.mdx', 2384, 19682, 0.8, 2, (-1.34, -0.51, 0.0, 1.47, 0.51, 3.23)),
 ]
-OTHER_GENDER = {90201: 90202, 90202: 90201, 90203: 90204, 90204: 90203}
+OTHER_GENDER = {90201: 90202, 90202: 90201, 90203: 90204, 90204: 90203, 90205: 0}
 BOUNDING_RADIUS = 0.6
 COMBAT_REACH = 2.0
 
@@ -76,7 +79,7 @@ def write_sql(models, displays, path):
     display_floats = {4}
     model_ids = ', '.join(str(c[1]) for c in CREATURES)
     display_ids = ', '.join(str(c[0]) for c in CREATURES)
-    lines = ['-- Emberforge creature displays (the Demon Hunter\'s demon forms): written by',
+    lines = ['-- Emberforge creature displays (the Demon Hunter\'s demon forms, Chi-Ji): written by',
              '-- client-patch/patch_creatures.py --sql, which puts the same rows in the client patch.',
              f'DELETE FROM `creaturemodeldata_dbc` WHERE `ID` IN ({model_ids});',
              'INSERT INTO `creaturemodeldata_dbc` VALUES']

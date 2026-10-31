@@ -1,0 +1,12 @@
+{
+  "comment": "Written by hand (the export came without wow.export's meta data): the glTF's materials as texture units. Geosets 0 (body) and 1 (eyes) on cranegodwhite, alpha keyed, two-sided; geoset 2 (redlow, a flat red glow layer) left out.",
+  "textures": [{"fileNameInternal": "creature/crane/cranegodwhite.blp"}],
+  "textureCombos": [0],
+  "materials": [{"flags": 4, "blendingMode": 1}],
+  "skin": {"textureUnits": [
+    {"skinSectionIndex": 0, "textureComboIndex": 0, "textureCount": 1, "materialIndex": 0, "priority": 0},
+    {"skinSectionIndex": 1, "textureComboIndex": 0, "textureCount": 1, "materialIndex": 0, "priority": 0}
+  ]},
+  "collisionBox": {"min": [-1.34, -0.51, 0.0], "max": [1.47, 0.51, 3.23]},
+  "collisionSphereRadius": 1.8
+}

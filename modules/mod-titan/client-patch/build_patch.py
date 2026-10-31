@@ -61,6 +61,8 @@ CREATURES = [
      dict(BLADE_DANCE, texture_name='DHMetaMale')),
     ('models/demonhunter_meta/female', 'DHMetaFemaleBladeDance', 'Creature\\DemonHunterMeta',
      dict(BLADE_DANCE, texture_name='DHMetaFemale')),
+    # Chi-Ji, the Red Crane (Invoke Chi-Ji's guardian); its meta data written by hand (see the file)
+    ('models/chiji', 'ChiJi', 'Creature\\ChiJi', {'meta': 'monk_chiji_low.json'}),
 ]
 # (retail glTF folder, Blizzard's 3.3.5a model, client path): character models given the Demon Hunter's
 # animations (models/retarget_character.py)
@@ -92,8 +94,9 @@ def main():
                 entries.append((f'{folder}\\{name}{suffix}', (tmp / name / f'{name}{suffix}').read_bytes()))
 
         for source, name, folder, options in CREATURES:
-            files = creature_gltf_to_m2.convert(HERE / source, HERE / source / 'Metamorphosis.json', name,
-                                                tmp / name, folder, **options)
+            options = dict(options)
+            meta = HERE / source / options.pop('meta', 'Metamorphosis.json')
+            files = creature_gltf_to_m2.convert(HERE / source, meta, name, tmp / name, folder, **options)
             for f in files:
                 entries.append((f'{folder}\\{f}', (tmp / name / f).read_bytes()))
 

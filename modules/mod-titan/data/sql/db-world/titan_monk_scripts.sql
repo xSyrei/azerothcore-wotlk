@@ -24,7 +24,7 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90312, 0.3, 0, 0, 0, 'Invoke Chi-Ji - Crane''s Gust');
 
 -- Chi-Ji, the Red Crane: Invoke Chi-Ji's guardian (npc_titan_chi_ji), following the Monk and healing; it never
--- fights. Shown as the phoenix (display 19682, at 40%) until its own model is in the client patch.
+-- fights. Its own model (display 90205, titan_demon_hunter_displays.sql and the client patch).
 DELETE FROM `creature_template` WHERE `entry` = 90311;
 INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
     `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
@@ -40,4 +40,4 @@ INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entr
 DELETE FROM `creature_template_model` WHERE `CreatureID` = 90311;
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES
-(90311, 0, 19682, 0.4, 1, 0);
+(90311, 0, 90205, 1, 1, 0);
