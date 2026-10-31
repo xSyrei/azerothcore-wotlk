@@ -967,6 +967,7 @@ SPELLS += patch_talents.SPELLS      # the talents' ranks and helper spells
 SPELLS += patch_monk.SPELLS         # the Monk's
 EFFECTS.update(patch_monk.EFFECTS)
 VISUALS.update(patch_monk.VISUALS)
+SOUNDS.update(patch_monk.SOUNDS)
 CHAIN_EFFECTS = dict(patch_monk.CHAIN_EFFECTS)      # beams: id, the Blizzard beam copied, our texture, changes
 
 

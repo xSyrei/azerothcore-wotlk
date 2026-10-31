@@ -677,6 +677,8 @@ def mist(*args, layers=(), duration=1000, fade=None):
     - tint: red, green, blue (0 to 1) the texture is multiplied by; alpha: the puffs' opacity at most;
     - turn: seconds per turn about the middle (negative: the other way; 0: still); pulse: seconds per fade
       in and out, each puff a step behind the last (0: steady);
+    - rise: (yards, seconds): the layer climbing that high in that time, over and over (with fade: once, in
+      duration), best with puffs that fade out on their own (a flipbook, a pulse of the same length);
     - blend: BLEND_ADD (the default) or BLEND_ALPHA.
 
     fade: None (one looping Stand of duration milliseconds, for a state kit) or (in, out) milliseconds, fading
@@ -710,8 +712,15 @@ def mist(*args, layers=(), duration=1000, fade=None):
                                         [tuple(comp_quat(c) for c in _turn_z(way * math.pi * i / 2))
                                          for i in range(5)])], '4h')
             rotation = rotation[:2] + struct.pack('<h', global_sequence(turn_ms)) + rotation[4:]
+        climb = empty_track()
+        if layer.get('rise'):
+            yards, seconds = layer['rise']
+            span = duration if fade else int(seconds * 1000)
+            climb = track(blob, 1, [([0, span], [(0.0, 0.0, 0.0), (0.0, 0.0, float(yards))])], '3f')
+            if not fade:
+                climb = climb[:2] + struct.pack('<h', global_sequence(span)) + climb[4:]
         bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
-        bones += empty_track() + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
+        bones += climb + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
     for number, layer in enumerate(layers):
         for index, (out, up, across) in enumerate(layer['cards']):
             angle = 2 * math.pi * (index / len(layer['cards']) + number * 0.13)
@@ -731,7 +740,8 @@ def mist(*args, layers=(), duration=1000, fade=None):
         bones += empty_track() + empty_track() + empty_track() + struct.pack('<3f', cx, cy, cz)
     vertex_count = len(vertices) // 48
     reach = max(math.hypot(p[0], p[1]) + across / 2 for _, _, p, across in cards)
-    lo, hi = (-reach, -reach, 0.0), (reach, reach, max(p[2] + across / 2 for _, _, p, across in cards))
+    top = max(p[2] + across / 2 + (layers[n].get('rise') or (0, 0))[0] for n, _, p, across in cards)
+    lo, hi = (-reach, -reach, min(p[2] - across / 2 for _, _, p, across in cards)), (reach, reach, top)
     radius = math.dist(lo, hi) / 2
 
     # Colors: one per puff, its alpha fading in and out on its layer's beat. Texture transforms: one per puff,

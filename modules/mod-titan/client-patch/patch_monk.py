@@ -59,45 +59,98 @@ GREEN_BEAM = 269                # SpellChainEffects: Green Beam (33346), a smoot
 CHAIN_EFFECTS = {
     'SoothingMist': {'id': 1200, 'copy': GREEN_BEAM, 'texture': 'MONK_SoothingMist_Beam', 'set': {'Width': 0.5}},
 }
-NATURE_CAST_HAND = 73           # Spells\\Nature_Cast_Hand: green light on the hands
-REJUVENATION_IMPACT = 70        # Spells\\Rejuvenation_Impact_Base: a green heal at the feet
+# Our textures (spells/): white, tinted per spell. Puffs, Wisps and Clouds: four variants each (2x2), a puff each;
+# Anim: a 4x4 flipbook of a puff billowing out and fading; Glow: a soft round light; Flare: a small star (motes).
+GLOW, FLARE = 'MONK_Glow', 'MONK_Flare'
+PUFFS, WISPS, CLOUDS, ANIM = 'MONK_Mist_Puffs', 'MONK_Mist_Wisps', 'MONK_Mist_Clouds', 'MONK_Mist_Anim'
+MOTE = (0.85, 1.0, 0.9)
 
-# Our effect models (see patch_spells.EFFECTS), from retail's Monk effects (spells/MONK_*).
+
+def ring(count, out, up, across, step=0.0):
+    """count puffs out yards from the middle, up yards high (each step higher than the last), across yards wide."""
+    return tuple((out, up + i * step, across) for i in range(count))
+
+
+# Our effect models (see patch_spells.EFFECTS): no Blizzard druid or priest look on the Monk.
 EFFECTS = {
-    # The mists: puffs circling the target, facing the camera, in layers blended together (white textures, tinted;
-    # spells/MONK_Mist_*: Puffs, Wisps and Clouds four variants each, a puff each; Anim a 4x4 flipbook).
-    # Soothing Mist's, jade wisps over soft puffs where its beam flows in, for as long as the channel lasts.
+    # The jade on the Monk's hands while casting: a soft light, wisps circling it, smoke billowing up off it and
+    # motes of light rising.
+    'JadePrecastHand': {'model': 'MONK_JadePrecastHand', 'effect': 7122, 'shape': 'mist',
+                        'textures': (GLOW, WISPS, ANIM, FLARE),
+                        'options': {'layers': (
+                            {'texture': 0, 'tint': JADE, 'alpha': 0.45, 'pulse': 0.8, 'cards': ring(1, 0.0, 0.0, 0.5)},
+                            {'texture': 1, 'sheet': (2, 2), 'tint': JADE, 'alpha': 0.8, 'turn': 0.9, 'pulse': 0.9,
+                             'cards': ring(3, 0.1, 0.0, 0.45)},
+                            {'texture': 2, 'sheet': (4, 4), 'flip': 1.0, 'tint': JADE, 'alpha': 0.6, 'turn': -1.4,
+                             'pulse': 0, 'rise': (0.25, 1.0), 'cards': ring(2, 0.06, 0.05, 0.45)},
+                            {'texture': 3, 'tint': MOTE, 'alpha': 0.9, 'turn': 1.6, 'pulse': 0.5,
+                             'cards': ring(4, 0.2, -0.05, 0.12, 0.04)})}},
+    # The jade let go from the hands as the spell goes off: a flash, a puff of smoke and motes, gone in 0.7 sec.
+    'JadeCastHand': {'model': 'MONK_JadeCastHand', 'effect': 7123, 'shape': 'mist',
+                     'textures': (GLOW, ANIM, WISPS, FLARE),
+                     'options': {'duration': 700, 'fade': (0, 400), 'layers': (
+                         {'texture': 0, 'tint': JADE, 'alpha': 0.6, 'pulse': 0, 'cards': ring(1, 0.0, 0.0, 0.8)},
+                         {'texture': 1, 'sheet': (4, 4), 'flip': 0.7, 'tint': JADE, 'alpha': 0.8, 'pulse': 0,
+                          'rise': (0.4, 0.7), 'cards': ring(2, 0.08, 0.05, 0.8)},
+                         {'texture': 2, 'sheet': (2, 2), 'tint': JADE, 'alpha': 0.7, 'turn': 0.8, 'pulse': 0,
+                          'cards': ring(2, 0.15, 0.0, 0.6)},
+                         {'texture': 3, 'tint': MOTE, 'alpha': 1.0, 'turn': 1.2, 'pulse': 0, 'rise': (0.5, 0.7),
+                          'cards': ring(5, 0.25, 0.0, 0.14, 0.05)})}},
+    # A jade heal on the healed (Renewing Mist's, Essence Font's, Revival's, Detox's...): a light at the chest, smoke
+    # billowing up around the body with wisps, motes of light rising past the head, gone in 1.4 sec.
+    'JadeHeal': {'model': 'MONK_JadeHeal', 'effect': 7124, 'shape': 'mist', 'textures': (GLOW, ANIM, WISPS, FLARE),
+                 'options': {'duration': 1400, 'fade': (100, 500), 'layers': (
+                     {'texture': 0, 'tint': JADE, 'alpha': 0.3, 'pulse': 0, 'cards': ring(1, 0.0, 1.0, 1.6)},
+                     {'texture': 1, 'sheet': (4, 4), 'flip': 1.4, 'tint': JADE, 'alpha': 0.75, 'turn': 3.0,
+                      'pulse': 0, 'rise': (1.0, 1.4), 'cards': ring(4, 0.45, 0.3, 1.3, 0.25)},
+                     {'texture': 2, 'sheet': (2, 2), 'tint': JADE, 'alpha': 0.6, 'turn': -2.0, 'pulse': 0,
+                      'rise': (1.2, 1.4), 'cards': ring(3, 0.6, 0.4, 1.0, 0.3)},
+                     {'texture': 3, 'tint': MOTE, 'alpha': 1.0, 'turn': 2.0, 'pulse': 0.35, 'rise': (1.6, 1.4),
+                      'cards': ring(6, 0.7, 0.2, 0.18, 0.12)})}},
+    # The mists on the healed, for as long as the spell lasts: puffs circling the body, facing the camera, in layers
+    # (each puff its own variant, fading in and out a beat behind the last), a soft light and twinkling motes.
+    # Soothing Mist's, jade wisps over soft puffs where its beam flows in.
     'SoothingMist': {'model': 'MONK_SoothingMist', 'effect': 7116, 'shape': 'mist',
-                     'textures': ('MONK_Mist_Puffs', 'MONK_Mist_Wisps'),
+                     'textures': (PUFFS, WISPS, GLOW, FLARE),
                      'options': {'layers': (
+                         {'texture': 2, 'tint': JADE, 'alpha': 0.35, 'pulse': 1.2, 'cards': ring(1, 0.0, 1.1, 2.0)},
                          {'texture': 0, 'sheet': (2, 2), 'tint': JADE, 'alpha': 0.4, 'turn': 6.0,
-                          'cards': ((0.4, 0.8, 1.4), (0.4, 1.3, 1.3), (0.4, 1.0, 1.2))},
-                         {'texture': 1, 'sheet': (2, 2), 'tint': JADE, 'alpha': 0.6, 'turn': -4.0, 'pulse': 1.2,
-                          'cards': ((0.5, 0.9, 1.2), (0.5, 1.5, 1.1))})}},
-    # Renewing Mist's, green puffs and wisps around the body, for as long as it lasts.
+                          'cards': ring(3, 0.4, 0.8, 1.3, 0.25)},
+                         {'texture': 1, 'sheet': (2, 2), 'tint': JADE, 'alpha': 0.65, 'turn': -4.0, 'pulse': 1.2,
+                          'cards': ring(3, 0.5, 0.7, 1.1, 0.35)},
+                         {'texture': 3, 'tint': MOTE, 'alpha': 0.9, 'turn': 3.0, 'pulse': 0.6,
+                          'cards': ring(5, 0.6, 0.4, 0.15, 0.3)})}},
+    # Renewing Mist's, green puffs and wisps around the body with green motes.
     'RenewingMist': {'model': 'MONK_RenewingMist', 'effect': 7119, 'shape': 'mist',
-                     'textures': ('MONK_Mist_Puffs', 'MONK_Mist_Wisps'),
+                     'textures': (PUFFS, WISPS, FLARE),
                      'options': {'layers': (
                          {'texture': 0, 'sheet': (2, 2), 'tint': GREEN, 'alpha': 0.4, 'turn': 5.0, 'pulse': 2.0,
-                          'cards': ((0.6, 0.5, 1.3), (0.6, 1.0, 1.3), (0.6, 1.5, 1.2), (0.6, 2.0, 1.0))},
+                          'cards': ring(4, 0.6, 0.5, 1.3, 0.45)},
                          {'texture': 1, 'sheet': (2, 2), 'tint': GREEN, 'alpha': 0.55, 'turn': -7.0, 'pulse': 1.4,
-                          'cards': ((0.7, 0.7, 1.1), (0.7, 1.3, 1.1), (0.7, 1.8, 1.0))})}},
-    # Enveloping Mist's, thick gold clouds wrapping the body with gold wisps through them, for as long as it lasts.
+                          'cards': ring(3, 0.7, 0.7, 1.1, 0.55)},
+                         {'texture': 2, 'tint': (0.7, 1.0, 0.75), 'alpha': 0.9, 'turn': 3.5, 'pulse': 0.7,
+                          'cards': ring(6, 0.75, 0.3, 0.14, 0.3)})}},
+    # Enveloping Mist's, thick gold clouds wrapping the body with gold wisps through them, a warm light and motes.
     'EnvelopingMist': {'model': 'MONK_EnvelopingMist', 'effect': 7120, 'shape': 'mist',
-                       'textures': ('MONK_Mist_Clouds', 'MONK_Mist_Wisps'),
+                       'textures': (CLOUDS, WISPS, GLOW, FLARE),
                        'options': {'layers': (
+                           {'texture': 2, 'tint': GOLD, 'alpha': 0.3, 'pulse': 2.5, 'cards': ring(1, 0.0, 1.1, 2.4)},
                            {'texture': 0, 'sheet': (2, 2), 'tint': GOLD, 'alpha': 0.9, 'turn': -4.0, 'pulse': 2.4,
-                            'cards': ((0.5, 0.4, 1.7), (0.5, 0.9, 1.7), (0.5, 1.4, 1.6), (0.5, 1.9, 1.4))},
+                            'cards': ring(4, 0.5, 0.4, 1.7, 0.5)},
                            {'texture': 1, 'sheet': (2, 2), 'tint': GOLD, 'alpha': 0.6, 'turn': 5.0, 'pulse': 1.6,
-                            'cards': ((0.6, 0.7, 1.2), (0.6, 1.3, 1.2), (0.6, 1.8, 1.1))})}},
-    # Vivify's, a burst of green smoke on the healed (the flipbook, played once in a second) with wisps.
-    'VivifyMist': {'model': 'MONK_VivifyMist', 'effect': 7121, 'shape': 'mist',
-                   'textures': ('MONK_Mist_Anim', 'MONK_Mist_Wisps'),
-                   'options': {'duration': 1000, 'fade': (100, 250), 'layers': (
-                       {'texture': 0, 'sheet': (4, 4), 'flip': 1.0, 'tint': GREEN, 'alpha': 0.9, 'turn': 2.0,
-                        'pulse': 0, 'cards': ((0.4, 0.6, 1.8), (0.4, 1.2, 1.8), (0.4, 1.8, 1.6))},
+                            'cards': ring(3, 0.6, 0.7, 1.2, 0.55)},
+                           {'texture': 3, 'tint': (1.0, 0.95, 0.7), 'alpha': 0.9, 'turn': -3.0, 'pulse': 0.6,
+                            'cards': ring(6, 0.7, 0.3, 0.15, 0.3)})}},
+    # Vivify's, a burst of green smoke billowing up the healed (the flipbook, once) with wisps, a light and motes.
+    'VivifyMist': {'model': 'MONK_VivifyMist', 'effect': 7121, 'shape': 'mist', 'textures': (ANIM, WISPS, GLOW, FLARE),
+                   'options': {'duration': 1200, 'fade': (100, 400), 'layers': (
+                       {'texture': 2, 'tint': GREEN, 'alpha': 0.35, 'pulse': 0, 'cards': ring(1, 0.0, 1.0, 1.8)},
+                       {'texture': 0, 'sheet': (4, 4), 'flip': 1.2, 'tint': GREEN, 'alpha': 0.9, 'turn': 2.0,
+                        'pulse': 0, 'rise': (0.8, 1.2), 'cards': ring(3, 0.4, 0.5, 1.7, 0.5)},
                        {'texture': 1, 'sheet': (2, 2), 'tint': GREEN, 'alpha': 0.6, 'turn': -2.0, 'pulse': 0,
-                        'cards': ((0.6, 0.9, 1.3), (0.6, 1.5, 1.2))})}},
+                        'rise': (1.0, 1.2), 'cards': ring(3, 0.6, 0.6, 1.2, 0.4)},
+                       {'texture': 3, 'tint': MOTE, 'alpha': 1.0, 'turn': 1.5, 'pulse': 0.3, 'rise': (1.5, 1.2),
+                        'cards': ring(6, 0.7, 0.3, 0.16, 0.15)})}},
     # Life Cocoon: retail's cocoon (monk_chicocoon_state), 80% as big, its smoke strips scrolling, its flares
     # pulsing and its lightning flickering as retail's Stand does; its glow and lightning cards face the camera.
     'LifeCocoon': {'model': 'MONK_LifeCocoon', 'effect': 7117, 'shape': 'model', 'textures': (),
@@ -105,47 +158,100 @@ EFFECTS = {
                                'duration': 1934, 'max_texture': 512, 'scale': 0.8,
                                'billboard': (2, 8, 9, 10, 11, 12, 13)}},
     # Revival: a ring of mist (puffs and wisps, spells/MONK_Revival_Ring.png) bursting out over the ground around the
-    # Monk, a jade flare at its center.
+    # Monk, a jade flare at its center...
     'RevivalBurst': {'model': 'MONK_Revival_Burst', 'effect': 7118, 'shape': 'burst',
-                     'textures': ('MONK_Revival_Ring', 'MONK_Flare', None),
+                     'textures': ('MONK_Revival_Ring', FLARE, None),
                      'options': {'size': 30.0, 'ring_tint': JADE, 'ring_blend': BLEND_ADD, 'flash_sheet': False,
                                  'flash_tint': JADE, 'duration': 1200,
                                  'ring': {'scale': ([0, 600, 1200], [2.0, 28.0, 30.0]),
                                           'fade': ([0, 300, 1200], [0x7FFF, 0x7FFF, 0])}}},
+    # ... and a column of jade mist, wisps and motes rising up around the Monk (1.8 sec).
+    'RevivalMist': {'model': 'MONK_RevivalMist', 'effect': 7125, 'shape': 'mist',
+                    'textures': (ANIM, WISPS, FLARE, GLOW),
+                    'options': {'duration': 1800, 'fade': (100, 700), 'layers': (
+                        {'texture': 3, 'tint': JADE, 'alpha': 0.35, 'pulse': 0, 'cards': ring(1, 0.0, 1.2, 2.6)},
+                        {'texture': 0, 'sheet': (4, 4), 'flip': 1.8, 'tint': JADE, 'alpha': 0.85, 'turn': 3.0,
+                         'pulse': 0, 'rise': (2.0, 1.8), 'cards': ring(6, 1.2, 0.3, 2.2, 0.15)},
+                        {'texture': 1, 'sheet': (2, 2), 'tint': JADE, 'alpha': 0.7, 'turn': -2.5, 'pulse': 0,
+                         'rise': (2.5, 1.8), 'cards': ring(6, 1.6, 0.5, 1.6, 0.2)},
+                        {'texture': 2, 'tint': MOTE, 'alpha': 1.0, 'turn': 2.0, 'pulse': 0.4, 'rise': (3.0, 1.8),
+                         'cards': ring(10, 1.4, 0.2, 0.2, 0.12)})}},
 }
 
-# SpellVisual (and kit) ids, a Blizzard visual copied and kits changed (see patch_spells.VISUALS).
+# Sounds (see patch_spells.SOUNDS): retail's Monk sounds (sounds/spell_mk_*); loops copy a Blizzard looping entry.
+SOUNDS = {
+    'MonkPrecast': {'id': 18120, 'copy': 27, 'files': ['spell_mk_jade_precast_low_loop']},
+    'MonkPrecastHigh': {'id': 18121, 'copy': 27, 'files': ['spell_mk_jade_precast_high_loop']},
+    'MonkChannel': {'id': 18122, 'copy': 3087, 'files': ['spell_mk_jadecast_low_loop']},
+    'SoothingMistState': {'id': 18123, 'copy': 3087, 'files': ['spell_mk_jadebeam_player_state_loop']},
+    'MonkHeal': {'id': 18124, 'copy': 1482, 'files': ['spell_mk_jade_heal_low_base']},
+    'Revival': {'id': 18125, 'copy': 1433, 'files': [f'spell_mk_revival_0{n}' for n in range(1, 6)]},
+    'RenewingMist': {'id': 18126, 'copy': 2561, 'files': ['spell_mk_renewingmist_cast']},
+    'Vivify': {'id': 18127, 'copy': 2561, 'files': ['spell_mk_vivify_cast']},
+}
+
+# The Monk's casting, on every visual: the jade on the hands and its loop while casting, let go on the cast.
+PRECAST = {HANDS: 'JadePrecastHand', 'sound': 'MonkPrecast'}
+CAST = {HANDS: 'JadeCastHand', 'sound': None}
+
+# SpellVisual (and kit) ids, a Blizzard visual copied (its animations, timing) and every kit's look ours.
 VISUALS = {
-    # Soothing Mist is Tranquility's cast (its hands), channeled as the Healing Beam with our mist beam from the
-    # Monk's hands flowing into the target, the mist on them while it lasts. Not Tranquility's rain of light.
+    # Soothing Mist: channeled as the Healing Beam, our mist beam from the Monk's hands flowing into the target, the
+    # jade on the hands and the jade cast loop; the mist on the target with the beam's loop while it lasts.
     'SoothingMist': {'copy': 1283, 'id': 16730, 'clear': ('impact',), 'set': {VISUAL_CHANNEL: HEALING_BEAM_KIT},
                      'kits': {
-        'channel': (15656, {HANDS: NATURE_CAST_HAND, 'beam': 'SoothingMist'}),
-        'state': (15650, {KIT_CHEST: 0, KIT_BASE: 'SoothingMist', 'sound': None, 'procs': False})}},
-    # Renewing Mist is Rejuvenation's cast and heal, the green mist on the target while it lasts.
+        'precast': (15661, PRECAST),
+        'cast': (15662, {**CAST, 'sound': 'MonkChannel'}),
+        'channel': (15656, {HANDS: 'JadePrecastHand', 'beam': 'SoothingMist', 'sound': None}),
+        'state': (15650, {KIT_CHEST: 0, KIT_BASE: 'SoothingMist', 'sound': 'SoothingMistState', 'procs': False})}},
+    # Renewing Mist: its sound on the cast, a jade heal on the target, the green mist while it lasts.
     'RenewingMist': {'copy': 32, 'id': 16733, 'kits': {
+        'precast': (15663, PRECAST),
+        'cast': (15664, {**CAST, 'sound': 'RenewingMist'}),
+        'impact': (15665, {KIT_BASE: 'JadeHeal', 'sound': 'MonkHeal'}),
         'state': (15657, {KIT_CHEST: 0, KIT_BASE: 'RenewingMist', 'sound': None, 'procs': False})}},
-    # Enveloping Mist is Lifebloom's cast, the gold mist on the target while it lasts (not Lifebloom's flower).
+    # Enveloping Mist: the higher jade loop while casting, the gold mist on the target while it lasts.
     'EnvelopingMist': {'copy': 8145, 'id': 16734, 'kits': {
-        'state': (15658, {KIT_HEAD: 0, KIT_BASE: 'EnvelopingMist', 'procs': False})}},
-    # Vivify is Regrowth's cast, a burst of green mist on the healed; its splash the burst alone.
+        'precast': (15666, {**PRECAST, 'sound': 'MonkPrecastHigh'}),
+        'cast': (15667, {**CAST, 'sound': 'MonkHeal'}),
+        'state': (15658, {KIT_HEAD: 0, KIT_BASE: 'EnvelopingMist', 'sound': None, 'procs': False})}},
+    # Vivify: its sound on the cast, a burst of green mist on the healed; its splash the burst alone.
     'Vivify': {'copy': 58, 'id': 16735, 'kits': {
-        'impact': (15659, {KIT_BASE: 'VivifyMist'})}},
+        'precast': (15668, PRECAST),
+        'cast': (15669, {**CAST, 'sound': 'Vivify'}),
+        'impact': (15659, {KIT_BASE: 'VivifyMist', 'sound': 'MonkHeal'})}},
     'VivifySplash': {'copy': 58, 'id': 16736, 'clear': ('precast', 'cast'), 'kits': {
         'impact': (15660, {KIT_BASE: 'VivifyMist', 'sound': None})}},
-    # Life Cocoon is Power Word: Shield's (its sound) with green hands and the cocoon around the target.
+    # Life Cocoon: Power Word: Shield's sound on the cocoon around the target.
     'LifeCocoon': {'copy': 784, 'id': 16731, 'kits': {
-        'precast': (15651, {HANDS: NATURE_CAST_HAND}),
-        'cast': (15652, {HANDS: NATURE_CAST_HAND}),
+        'precast': (15651, PRECAST),
+        'cast': (15652, CAST),
         'state': (15653, {KIT_BASE: 'LifeCocoon', 'procs': False})}},
-    # Revival is Divine Hymn's heal (its sound), cast with green hands and the mist bursting around the Monk; each
-    # ally healed gets a green heal at the feet. Not Divine Hymn's channel.
+    # Revival: one of its sounds, the ring bursting out over the ground and the mist rising around the Monk; a jade
+    # heal on each ally healed.
     'Revival': {'copy': 13751, 'id': 16732, 'clear': ('state',), 'kits': {
-        'cast': (15654, {KIT_CHEST: 0, HANDS: NATURE_CAST_HAND, KIT_WORLD: 'RevivalBurst',
-                         'anim': ANIM_SPELL_CAST_OMNI, 'sound': None}),
-        'impact': (15655, {KIT_BASE: REJUVENATION_IMPACT})}},
+        'cast': (15654, {**CAST, KIT_CHEST: 0, KIT_WORLD: 'RevivalBurst', KIT_BASE: 'RevivalMist',
+                         'anim': ANIM_SPELL_CAST_OMNI, 'sound': 'Revival'}),
+        'impact': (15655, {KIT_BASE: 'JadeHeal', 'sound': None})}},
+    # Essence Font: Tranquility's channeling with the jade on the hands and the jade cast loop (not its rain of
+    # light); each bolt a jade heal on its ally (90305).
+    'EssenceFont': {'copy': 1283, 'id': 16737, 'clear': ('impact',), 'kits': {
+        'precast': (15670, PRECAST),
+        'cast': (15671, {HANDS: 'JadePrecastHand', 'sound': None}),
+        'channel': (15679, {HANDS: 'JadePrecastHand', KIT_BASE: 0, KIT_WORLD: 0, 'sound': 'MonkChannel'})}},
+    'EssenceFontBolt': {'copy': 58, 'id': 16738, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15672, {KIT_BASE: 'JadeHeal', 'sound': None})}},
+    # Thunder Focus Tea: Nature's Swiftness's timing, the jade let go from the hands and a jade heal on the Monk.
+    'ThunderFocusTea': {'copy': 4040, 'id': 16739, 'kits': {
+        'precast': (15673, PRECAST),
+        'cast': (15674, {**CAST, 'sound': 'MonkHeal'}),
+        'impact': (15675, {KIT_CHEST: 0, KIT_BASE: 'JadeHeal', 'sound': None})}},
+    # Detox: Cleanse's timing, the jade from the hands and a jade heal on the cleansed.
+    'Detox': {'copy': 337, 'id': 16740, 'kits': {
+        'precast': (15676, PRECAST),
+        'cast': (15677, CAST),
+        'impact': (15678, {KIT_BASE: 'JadeHeal', 'sound': 'MonkHeal'})}},
 }
-
 
 def heal(base, per_level):
     """A heal (or heal over time tick): base + per_level a level (above 1), plus spell power."""
@@ -207,7 +313,7 @@ SPELLS = [
     },
     {
         # Tranquility's channel for 3 sec: a burst of bolts (90305) every sec.
-        'id': 90304, 'copy': 740, 'name': 'Essence Font', 'icon': 'Ability_Monk_EssenceFont',
+        'id': 90304, 'copy': 740, 'name': 'Essence Font', 'icon': 'Ability_Monk_EssenceFont', 'visual': 'EssenceFont',
         'description': 'Unleashes a rapid twirl of healing bolts at up to 6 allies within 30 yards every sec '
                        'for $d, each healing for $90305s1.',
         'set': monk(90304, 20, RecoveryTime=12000, ManaCostPercentage=25, DurationIndex=DURATION_3S),
@@ -216,7 +322,8 @@ SPELLS = [
     },
     {
         # Tranquility's healing pulse: up to 6 allies around the Monk.
-        'id': 90305, 'copy': 44203, 'name': 'Essence Font', 'icon': 'Ability_Monk_EssenceFont', 'description': '',
+        'id': 90305, 'copy': 44203, 'name': 'Essence Font', 'icon': 'Ability_Monk_EssenceFont',
+        'visual': 'EssenceFontBolt', 'description': '',
         'set': monk(90305, 20, MaxAffectedTargets=6),
         'effects': {1: heal(30, 6.0)},
     },
@@ -247,6 +354,7 @@ SPELLS = [
     {
         # Nature's Swiftness: the next Vivify is free and the next Enveloping Mist instant (one charge).
         'id': 90308, 'copy': 17116, 'name': 'Thunder Focus Tea', 'icon': 'Ability_Monk_ThunderFocusTea',
+        'visual': 'ThunderFocusTea',
         'description': 'Your next Vivify costs no mana, or your next Enveloping Mist is instant.',
         'tooltip': 'Next Vivify free, or next Enveloping Mist instant.',
         'set': monk(90308, 14, RecoveryTime=30000, DurationIndex=DURATION_30S, ProcCharges=1),
@@ -261,6 +369,7 @@ SPELLS = [
     {
         # Cleanse: one Magic, one Poison and one Disease effect.
         'id': 90309, 'copy': 4987, 'name': 'Detox', 'icon': 'Spell_Nature_NullifyPoison_02',
+        'visual': 'Detox',
         'description': 'Removes 1 Magic, 1 Poison and 1 Disease effect from a friendly target.',
         'set': monk(90309, 8, RecoveryTime=8000, ManaCostPercentage=8, RangeIndex=RANGE_40),
     },
