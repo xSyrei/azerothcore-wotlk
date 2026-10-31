@@ -665,116 +665,137 @@ def ground_zone(*args, layers=()):
     return [f'{name}.m2', f'{name}00.skin'] + [f'{blp_name}.blp' for blp_name in images]
 
 
-def mist(texture, out_dir, name, client_dir, cards=((0.8, 0.5, 1.6), (0.8, 1.2, 1.4), (0.8, 1.9, 1.2)),
-         tint=(1.0, 1.0, 1.0), alpha=0.6, turn=4.0, pulse=1.6, duration=1000, fade=None, blend=BLEND_ADD,
-         sheet=None, flip=1.6):
-    """A mist around a body (a kit's base slot): soft puffs (texture, best rounded off) facing the camera,
-    circling it, each fading in and out on its own beat:
+def mist(*args, layers=(), duration=1000, fade=None):
+    """A mist around a body (a kit's base slot): soft puffs facing the camera, circling it, in layers blended
+    together, each a dict of
 
+    - texture: index into the textures given (white or gray, best with soft edges);
+    - sheet: (columns, rows) if the texture is cut into cells: a 2x2 set of variants (flip 0: each puff one
+      cell, still) or a flipbook (flip: seconds to play its cells, left to right and top to bottom, over and
+      over, each puff starting on another cell; with fade: once, in duration, all together);
     - cards: (yards out from the middle, yards up, yards across) of each puff, spread evenly around;
     - tint: red, green, blue (0 to 1) the texture is multiplied by; alpha: the puffs' opacity at most;
     - turn: seconds per turn about the middle (negative: the other way; 0: still); pulse: seconds per fade
-      in and out (0: steady);
-    - fade: None (one looping Stand of duration milliseconds, for a state kit) or (in, out) milliseconds,
-      fading in at the start and out by the end of duration (an impact kit's, played once);
-    - sheet: (columns, rows) if the texture is a flipbook: each puff plays its frames, left to right and top to
-      bottom, in flip seconds, over and over, each starting on another frame (with fade: once, in duration,
-      all together).
+      in and out, each puff a step behind the last (0: steady);
+    - blend: BLEND_ADD (the default) or BLEND_ALPHA.
 
-    All unlit. Writes <name>.m2, <name>00.skin and its BLP into out_dir.
+    fade: None (one looping Stand of duration milliseconds, for a state kit) or (in, out) milliseconds, fading
+    in at the start and out by the end of duration (an impact kit's, played once). All unlit. Called as
+    mist(texture, ..., out_dir, name, client_dir, layers=...). Writes <name>.m2, <name>00.skin and its BLPs
+    into out_dir.
     """
+    *textures, out_dir, name, client_dir = args
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    with Image.open(texture) as image:
-        (out_dir / f'{name}_0.blp').write_bytes(blp.encode(image.convert('RGBA')))
+    for index, layer in enumerate(layers):
+        with Image.open(textures[layer['texture']]) as image:
+            (out_dir / f'{name}_{index}.blp').write_bytes(blp.encode(image.convert('RGBA')))
 
-    # Each puff a card in the YZ plane (a billboard faces +X to the camera) around its bone's pivot.
-    columns, rows = sheet or (1, 1)
-    frames = columns * rows
-    vertices, triangles, pivots = b'', [], []
-    for index, (out, up, across) in enumerate(cards):
-        angle = 2 * math.pi * index / len(cards)
-        cx, cy, half = out * math.cos(angle), out * math.sin(angle), across / 2
-        first = len(vertices) // 48
+    # Each puff a card in the YZ plane (a billboard faces +X to the camera) around its bone's pivot; bones: one
+    # circling the middle per layer, then one per puff, a child of its layer's.
+    globals_ms, bones, cards = [], b'', []
+    blob = Blob(0x130)
+
+    def global_sequence(ms):
+        globals_ms.append(max(1, int(ms)))
+        return len(globals_ms) - 1
+
+    for number, layer in enumerate(layers):
+        rotation = empty_track()
+        turn = layer.get('turn', 0.0)
+        if turn:
+            turn_ms = int(abs(turn) * 1000)
+            way = 1 if turn > 0 else -1
+            rotation = track(blob, 1, [([turn_ms * i // 4 for i in range(5)],
+                                        [tuple(comp_quat(c) for c in _turn_z(way * math.pi * i / 2))
+                                         for i in range(5)])], '4h')
+            rotation = rotation[:2] + struct.pack('<h', global_sequence(turn_ms)) + rotation[4:]
+        bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
+        bones += empty_track() + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
+    for number, layer in enumerate(layers):
+        for index, (out, up, across) in enumerate(layer['cards']):
+            angle = 2 * math.pi * (index / len(layer['cards']) + number * 0.13)
+            cards.append((number, index, (out * math.cos(angle), out * math.sin(angle), up), across))
+    bone_count = len(layers) + len(cards)
+
+    vertices, triangles = b'', []
+    for card, (number, _, (cx, cy, cz), across) in enumerate(cards):
+        columns, rows = layers[number].get('sheet') or (1, 1)
+        half, first = across / 2, len(vertices) // 48
         for y, u in ((-half, 0.0), (half, 1.0 / columns)):
             for z, v in ((-half, 1.0 / rows), (half, 0.0)):
-                vertices += struct.pack('<3f4B4B3f2f2f', cx, cy + y, up + z, 255, 0, 0, 0, index + 1, 0, 0, 0,
-                                        1.0, 0.0, 0.0, u, v, 0.0, 0.0)
+                vertices += struct.pack('<3f4B4B3f2f2f', cx, cy + y, cz + z, 255, 0, 0, 0, len(layers) + card, 0,
+                                        0, 0, 1.0, 0.0, 0.0, u, v, 0.0, 0.0)
         triangles += [first, first + 1, first + 2, first + 2, first + 1, first + 3]
-        pivots.append((cx, cy, up))
+        bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | BONE_BILLBOARD, number, 0, 0, 0)
+        bones += empty_track() + empty_track() + empty_track() + struct.pack('<3f', cx, cy, cz)
     vertex_count = len(vertices) // 48
-    reach = max(out + across / 2 for out, _, across in cards)
-    lo, hi = (-reach, -reach, 0.0), (reach, reach, max(up + across / 2 for _, up, across in cards))
+    reach = max(math.hypot(p[0], p[1]) + across / 2 for _, _, p, across in cards)
+    lo, hi = (-reach, -reach, 0.0), (reach, reach, max(p[2] + across / 2 for _, _, p, across in cards))
     radius = math.dist(lo, hi) / 2
 
-    blob = Blob(0x130)
-    name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
-    turn_ms, pulse_ms, flip_ms = int(abs(turn) * 1000) or 1, int(pulse * 1000) or 1, int(flip * 1000) or 1
-    globals_ref = blob.array('I', [turn_ms, pulse_ms, flip_ms])
-    sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, duration, 0.0, SEQUENCE_IN_MODEL, 0x7FFF,
-                                     0, 0, 0, 0, *lo, *hi, radius, -1, 0), 1)
-
-    # Bones: 0 circling the middle (global sequence 0), then one per puff facing the camera.
-    rotation = empty_track()
-    if turn:
-        way = 1 if turn > 0 else -1
-        rotation = track(blob, 1, [([turn_ms * i // 4 for i in range(5)],
-                                    [tuple(comp_quat(c) for c in _turn_z(way * math.pi * i / 2)) for i in range(5)])],
-                         '4h')
-        rotation = rotation[:2] + struct.pack('<h', 0) + rotation[4:]
-    bones = struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
-    bones += empty_track() + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
-    for pivot in pivots:
-        bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | BONE_BILLBOARD, 0, 0, 0, 0)
-        bones += empty_track() + empty_track() + empty_track() + struct.pack('<3f', *pivot)
-    bones_ref = blob.add(bones, 1 + len(pivots))
-    key_bones = blob.array('h', [-1])
-    vertices_ref = blob.add(vertices, vertex_count)
-
-    # Colors: one per puff, its alpha fading in and out (global sequence 1), each a step behind the last.
-    colors = b''
-    full = round(alpha * 0x7FFF)
-    for index in range(len(cards)):
-        colors += track(blob, 0, [([0], [tuple(map(float, tint))])], '3f')
-        if pulse:
-            phase = index / len(cards)
+    # Colors: one per puff, its alpha fading in and out on its layer's beat. Texture transforms: one per puff,
+    # its cell of the sheet (still, or frame by frame: no blending between frames).
+    colors, transforms = b'', b''
+    for number, index, _, _ in cards:
+        layer = layers[number]
+        count = len(layer['cards'])
+        full = round(layer.get('alpha', 0.6) * 0x7FFF)
+        colors += track(blob, 0, [([0], [tuple(map(float, layer.get('tint', (1.0, 1.0, 1.0))))])], '3f')
+        pulse_ms = int(layer.get('pulse', 1.6) * 1000)
+        if pulse_ms:
             keys = [pulse_ms * i // 8 for i in range(9)]
-            values = [round(full * (0.6 + 0.4 * math.cos(2 * math.pi * (i / 8 + phase)))) for i in range(9)]
+            values = [round(full * (0.6 + 0.4 * math.cos(2 * math.pi * (i / 8 + index / count)))) for i in range(9)]
             fading = track(blob, 1, [(keys, values)], 'h')
-            colors += fading[:2] + struct.pack('<h', 1) + fading[4:]
+            colors += fading[:2] + struct.pack('<h', global_sequence(pulse_ms)) + fading[4:]
         else:
             colors += track(blob, 0, [([0], [full])], 'h')
+        columns, rows = layer.get('sheet') or (1, 1)
+        frames = columns * rows
+
+        def cell(frame):
+            return (frame % columns) / columns, (frame // columns) % rows / rows, 0.0
+
+        flip_ms = int(layer.get('flip', 0) * 1000)
+        if frames > 1 and flip_ms:
+            span = duration if fade else flip_ms
+            start = 0 if fade else index * frames // count
+            keys = [round(i * span / frames) for i in range(frames)] + [span]
+            values = [cell(start + i) for i in range(frames)]
+            moving = track(blob, 0, [(keys, values + values[-1:])], '3f')
+            if not fade:
+                moving = moving[:2] + struct.pack('<h', global_sequence(flip_ms)) + moving[4:]
+        else:
+            moving = track(blob, 0, [([0], [cell(index)])], '3f')
+        transforms += moving + empty_track() + empty_track()
+
+    name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
+    globals_ref = blob.array('I', globals_ms or [1])
+    sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, duration, 0.0, SEQUENCE_IN_MODEL, 0x7FFF,
+                                     0, 0, 0, 0, *lo, *hi, radius, -1, 0), 1)
+    bones_ref = blob.add(bones, bone_count)
+    key_bones = blob.array('h', [-1])
+    vertices_ref = blob.add(vertices, vertex_count)
     colors_ref = blob.add(colors, len(cards))
-    path = f'{client_dir}\\{name}_0.blp'
-    texture_ref = blob.add(path.encode() + b'\0', len(path) + 1)
-    textures_ref = blob.add(struct.pack('<II2I', 0, WRAP_U | 0x2 if sheet else 0, *texture_ref), 1)
+    textures_blob = b''
+    for number in range(len(layers)):
+        path = f'{client_dir}\\{name}_{number}.blp'
+        ref = blob.add(path.encode() + b'\0', len(path) + 1)
+        textures_blob += struct.pack('<II2I', 0, WRAP_U | 0x2, *ref)
+    textures_ref = blob.add(textures_blob, len(layers))
     fading = ([0], [0x7FFF])
     if fade:
         fading = ([0, fade[0], duration - fade[1], duration], [0, 0x7FFF, 0x7FFF, 0])
     weights = blob.add(track(blob, 1 if fade else 0, [fading], 'h'), 1)
-
-    # Flipbook: each puff's texture moved frame by frame (no blending between them; global sequence 2, or the
-    # Stand once with fade).
-    transforms = b''
-    if sheet:
-        step = (duration if fade else flip_ms) / frames
-        for index in range(len(cards)):
-            start = 0 if fade else index * frames // len(cards)
-            frame_of = [(start + i) % frames for i in range(frames)]
-            keys = [round(i * step) for i in range(frames)] + [duration if fade else flip_ms]
-            values = [((f % columns) / columns, (f // columns) / rows, 0.0) for f in frame_of]
-            moving = track(blob, 0, [(keys, values + values[-1:])], '3f')
-            if not fade:
-                moving = moving[:2] + struct.pack('<h', 2) + moving[4:]
-            transforms += moving + empty_track() + empty_track()
-    transforms_ref = blob.add(transforms, len(cards)) if sheet else (0, 0)
+    transforms_ref = blob.add(transforms, len(cards))
     replaceable_lookup = blob.array('h', [-1])
-    materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, blend)])
-    bone_lookup = blob.array('H', list(range(1 + len(pivots))))
-    texture_lookup = blob.array('H', [0])
+    materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, layer.get('blend', BLEND_ADD))
+                                      for layer in layers])
+    bone_lookup = blob.array('H', list(range(bone_count)))
+    texture_lookup = blob.array('H', list(range(len(layers))))
     texture_unit_lookup = blob.array('H', [0])
     transparency_lookup = blob.array('H', [0])
-    transform_lookup = blob.array('H', list(range(len(cards))) if sheet else [0xFFFF])
+    transform_lookup = blob.array('H', list(range(len(cards))))
 
     header = struct.pack('<4sI', b'MD20', 264)
     header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)
@@ -798,21 +819,24 @@ def mist(texture, out_dir, name, client_dir, cards=((0.8, 0.5, 1.6), (0.8, 1.2, 
     blob.data[:0x130] = header
     (out_dir / f'{name}.m2').write_bytes(bytes(blob.data))
 
-    # Skin: one section and batch per puff, each on its bone (and its flipbook transform).
+    # Skin: one section and batch per puff, on its bone, with its layer's texture and material and its own color
+    # and texture transform; layers drawn in order.
     skin = Blob(48)
     lookup = skin.array('H', list(range(vertex_count)))
     tris = skin.array('H', triangles)
     props = skin.add(b'\0' * 4 * vertex_count, vertex_count)
     section_data, batch_data = b'', b''
-    for i, ((out, up, across), pivot) in enumerate(zip(cards, pivots)):
-        section_data += struct.pack('<10H3f3ff', 0, 0, i * 4, 4, i * 6, 6, 1, i + 1, 1, i + 1, *pivot, *pivot,
+    for card, (number, _, pivot, across) in enumerate(cards):
+        bone = len(layers) + card
+        section_data += struct.pack('<10H3f3ff', 0, 0, card * 4, 4, card * 6, 6, 1, bone, 1, bone, *pivot, *pivot,
                                     across)
-        batch_data += struct.pack('<Bb11H', 16, 0, 0, i, i, i, 0, 0, 1, 0, 0, 0, i if sheet else 0)
+        batch_data += struct.pack('<Bb11H', 16, number, 0, card, card, card, number, 0, 1, number, 0, 0, card)
     sections_ref = skin.add(section_data, len(cards))
     batches_ref = skin.add(batch_data, len(cards))
     skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
     (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
-    return [f'{name}.m2', f'{name}00.skin', f'{name}_0.blp']
+    return [f'{name}.m2', f'{name}00.skin'] + [f'{name}_{number}.blp' for number in range(len(layers))]
+
 
 def exported_model(*args, export, base, size=None, scale=1.0, center=False, offset=(0.0, 0.0, 0.0), turn=0.0,
                    trail_height=0.3, lifetime=0.4, duration=1000, fade=None, two_sided=False, max_texture=None,

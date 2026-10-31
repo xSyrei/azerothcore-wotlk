@@ -54,8 +54,8 @@ GOLD = (1.0, 0.82, 0.3)
 HEALING_BEAM_KIT = 9818         # the Healing Beam's channel kit (48775: channeling, a beam from hands to target)
 GREEN_BEAM = 269                # SpellChainEffects: Green Beam (33346), a smooth wavy beam, white (its texture's color)
 
-# Our beams (see patch_spells.CHAIN_EFFECTS): Soothing Mist's, the Green Beam a little wider, its texture retail's mist
-# (the snowfrost cloud, jade, fading to its edges; spells/MONK_SoothingMist_Beam.png).
+# Our beams (see patch_spells.CHAIN_EFFECTS): Soothing Mist's, the Green Beam twice as wide, its texture jade puffs and
+# wisps along it (spells/MONK_SoothingMist_Beam.png, tiling end to end, fading to its edges).
 CHAIN_EFFECTS = {
     'SoothingMist': {'id': 1200, 'copy': GREEN_BEAM, 'texture': 'MONK_SoothingMist_Beam', 'set': {'Width': 0.5}},
 }
@@ -64,36 +64,50 @@ REJUVENATION_IMPACT = 70        # Spells\\Rejuvenation_Impact_Base: a green heal
 
 # Our effect models (see patch_spells.EFFECTS), from retail's Monk effects (spells/MONK_*).
 EFFECTS = {
-    # The mists: smoke flipbooks (4x4 frames, white, tinted) in puffs circling the target, facing the camera, each
-    # billowing out and fading on a beat of its own.
-    # Soothing Mist's, jade swirls, where its beam flows in, for as long as the channel lasts.
-    'SoothingMist': {'model': 'MONK_SoothingMist', 'effect': 7116, 'shape': 'mist', 'textures': ('MONK_Smoke_Swirl',),
-                     'options': {'tint': JADE, 'alpha': 0.6, 'turn': 5.0, 'pulse': 0, 'sheet': (4, 4), 'flip': 1.2,
-                                 'cards': ((0.5, 0.7, 1.4), (0.5, 1.2, 1.4), (0.5, 1.7, 1.2))}},
-    # Renewing Mist's, green puffs, for as long as it lasts.
-    'RenewingMist': {'model': 'MONK_RenewingMist', 'effect': 7119, 'shape': 'mist', 'textures': ('MONK_Smoke_Puff',),
-                     'options': {'tint': GREEN, 'alpha': 0.55, 'turn': 4.0, 'pulse': 0, 'sheet': (4, 4), 'flip': 1.6,
-                                 'cards': ((0.7, 0.5, 1.4), (0.7, 1.0, 1.3), (0.7, 1.5, 1.3), (0.7, 2.0, 1.1))}},
-    # Enveloping Mist's, thick gold puffs wrapping the body, for as long as it lasts.
+    # The mists: puffs circling the target, facing the camera, in layers blended together (white textures, tinted;
+    # spells/MONK_Mist_*: Puffs, Wisps and Clouds four variants each, a puff each; Anim a 4x4 flipbook).
+    # Soothing Mist's, jade wisps over soft puffs where its beam flows in, for as long as the channel lasts.
+    'SoothingMist': {'model': 'MONK_SoothingMist', 'effect': 7116, 'shape': 'mist',
+                     'textures': ('MONK_Mist_Puffs', 'MONK_Mist_Wisps'),
+                     'options': {'layers': (
+                         {'texture': 0, 'sheet': (2, 2), 'tint': JADE, 'alpha': 0.4, 'turn': 6.0,
+                          'cards': ((0.4, 0.8, 1.4), (0.4, 1.3, 1.3), (0.4, 1.0, 1.2))},
+                         {'texture': 1, 'sheet': (2, 2), 'tint': JADE, 'alpha': 0.6, 'turn': -4.0, 'pulse': 1.2,
+                          'cards': ((0.5, 0.9, 1.2), (0.5, 1.5, 1.1))})}},
+    # Renewing Mist's, green puffs and wisps around the body, for as long as it lasts.
+    'RenewingMist': {'model': 'MONK_RenewingMist', 'effect': 7119, 'shape': 'mist',
+                     'textures': ('MONK_Mist_Puffs', 'MONK_Mist_Wisps'),
+                     'options': {'layers': (
+                         {'texture': 0, 'sheet': (2, 2), 'tint': GREEN, 'alpha': 0.4, 'turn': 5.0, 'pulse': 2.0,
+                          'cards': ((0.6, 0.5, 1.3), (0.6, 1.0, 1.3), (0.6, 1.5, 1.2), (0.6, 2.0, 1.0))},
+                         {'texture': 1, 'sheet': (2, 2), 'tint': GREEN, 'alpha': 0.55, 'turn': -7.0, 'pulse': 1.4,
+                          'cards': ((0.7, 0.7, 1.1), (0.7, 1.3, 1.1), (0.7, 1.8, 1.0))})}},
+    # Enveloping Mist's, thick gold clouds wrapping the body with gold wisps through them, for as long as it lasts.
     'EnvelopingMist': {'model': 'MONK_EnvelopingMist', 'effect': 7120, 'shape': 'mist',
-                       'textures': ('MONK_Smoke_Thick',),
-                       'options': {'tint': GOLD, 'alpha': 0.65, 'turn': -3.0, 'pulse': 0, 'sheet': (4, 4),
-                                   'flip': 2.0, 'cards': ((0.6, 0.4, 1.6), (0.6, 0.8, 1.6), (0.6, 1.2, 1.6),
-                                                          (0.6, 1.6, 1.5), (0.6, 2.0, 1.3))}},
-    # Vivify's, soft green puffs bursting on the healed, billowing out once (one second).
-    'VivifyMist': {'model': 'MONK_VivifyMist', 'effect': 7121, 'shape': 'mist', 'textures': ('MONK_Smoke_Soft',),
-                   'options': {'tint': GREEN, 'alpha': 0.8, 'turn': 1.5, 'pulse': 0, 'duration': 1000,
-                               'fade': (100, 300), 'sheet': (4, 4),
-                               'cards': ((0.5, 0.6, 2.0), (0.5, 1.2, 2.0), (0.5, 1.8, 1.8))}},
+                       'textures': ('MONK_Mist_Clouds', 'MONK_Mist_Wisps'),
+                       'options': {'layers': (
+                           {'texture': 0, 'sheet': (2, 2), 'tint': GOLD, 'alpha': 0.9, 'turn': -4.0, 'pulse': 2.4,
+                            'cards': ((0.5, 0.4, 1.7), (0.5, 0.9, 1.7), (0.5, 1.4, 1.6), (0.5, 1.9, 1.4))},
+                           {'texture': 1, 'sheet': (2, 2), 'tint': GOLD, 'alpha': 0.6, 'turn': 5.0, 'pulse': 1.6,
+                            'cards': ((0.6, 0.7, 1.2), (0.6, 1.3, 1.2), (0.6, 1.8, 1.1))})}},
+    # Vivify's, a burst of green smoke on the healed (the flipbook, played once in a second) with wisps.
+    'VivifyMist': {'model': 'MONK_VivifyMist', 'effect': 7121, 'shape': 'mist',
+                   'textures': ('MONK_Mist_Anim', 'MONK_Mist_Wisps'),
+                   'options': {'duration': 1000, 'fade': (100, 250), 'layers': (
+                       {'texture': 0, 'sheet': (4, 4), 'flip': 1.0, 'tint': GREEN, 'alpha': 0.9, 'turn': 2.0,
+                        'pulse': 0, 'cards': ((0.4, 0.6, 1.8), (0.4, 1.2, 1.8), (0.4, 1.8, 1.6))},
+                       {'texture': 1, 'sheet': (2, 2), 'tint': GREEN, 'alpha': 0.6, 'turn': -2.0, 'pulse': 0,
+                        'cards': ((0.6, 0.9, 1.3), (0.6, 1.5, 1.2))})}},
     # Life Cocoon: retail's cocoon (monk_chicocoon_state), 80% as big, its smoke strips scrolling, its flares
     # pulsing and its lightning flickering as retail's Stand does; its glow and lightning cards face the camera.
     'LifeCocoon': {'model': 'MONK_LifeCocoon', 'effect': 7117, 'shape': 'model', 'textures': (),
                    'options': {'export': 'MONK_LifeCocoon', 'base': 'monk_chicocoon_state', 'sequence': 1,
                                'duration': 1934, 'max_texture': 512, 'scale': 0.8,
                                'billboard': (2, 8, 9, 10, 11, 12, 13)}},
-    # Revival: retail's mist bursting out over the ground around the Monk, a jade flare at its center.
+    # Revival: a ring of mist (puffs and wisps, spells/MONK_Revival_Ring.png) bursting out over the ground around the
+    # Monk, a jade flare at its center.
     'RevivalBurst': {'model': 'MONK_Revival_Burst', 'effect': 7118, 'shape': 'burst',
-                     'textures': ('MONK_Mist', 'MONK_Flare', None),
+                     'textures': ('MONK_Revival_Ring', 'MONK_Flare', None),
                      'options': {'size': 30.0, 'ring_tint': JADE, 'ring_blend': BLEND_ADD, 'flash_sheet': False,
                                  'flash_tint': JADE, 'duration': 1200,
                                  'ring': {'scale': ([0, 600, 1200], [2.0, 28.0, 30.0]),
