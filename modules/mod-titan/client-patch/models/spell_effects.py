@@ -38,6 +38,7 @@ BLEND_ALPHA, BLEND_ADD = 2, 4
 UNFOGGED = 0x2
 WRAP_U = 0x1
 BONE_TRANSFORMED = 0x200
+BONE_BILLBOARD = 0x8            # bone flag: turned to face the camera (spherical billboard)
 ANIM_STAND, ANIM_BIRTH = 0, 158
 FLOAT_MAX = 3.4028234663852886e+38
 QUARTER_TURN_Y = (0.0, math.sqrt(0.5), 0.0, math.sqrt(0.5))      # quaternion x, y, z, w
@@ -664,9 +665,136 @@ def ground_zone(*args, layers=()):
     return [f'{name}.m2', f'{name}00.skin'] + [f'{blp_name}.blp' for blp_name in images]
 
 
+def mist(texture, out_dir, name, client_dir, cards=((0.8, 0.5, 1.6), (0.8, 1.2, 1.4), (0.8, 1.9, 1.2)),
+         tint=(1.0, 1.0, 1.0), alpha=0.6, turn=4.0, pulse=1.6, duration=1000, fade=None, blend=BLEND_ADD):
+    """A mist around a body (a kit's base slot): soft puffs (texture, best rounded off) facing the camera,
+    circling it, each fading in and out on its own beat:
+
+    - cards: (yards out from the middle, yards up, yards across) of each puff, spread evenly around;
+    - tint: red, green, blue (0 to 1) the texture is multiplied by; alpha: the puffs' opacity at most;
+    - turn: seconds per turn about the middle (negative: the other way; 0: still); pulse: seconds per fade
+      in and out (0: steady);
+    - fade: None (one looping Stand of duration milliseconds, for a state kit) or (in, out) milliseconds,
+      fading in at the start and out by the end of duration (an impact kit's, played once).
+
+    All unlit. Writes <name>.m2, <name>00.skin and its BLP into out_dir.
+    """
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with Image.open(texture) as image:
+        (out_dir / f'{name}_0.blp').write_bytes(blp.encode(image.convert('RGBA')))
+
+    # Each puff a card in the YZ plane (a billboard faces +X to the camera) around its bone's pivot.
+    vertices, triangles, pivots = b'', [], []
+    for index, (out, up, across) in enumerate(cards):
+        angle = 2 * math.pi * index / len(cards)
+        cx, cy, half = out * math.cos(angle), out * math.sin(angle), across / 2
+        first = len(vertices) // 48
+        for y, u in ((-half, 0.0), (half, 1.0)):
+            for z, v in ((-half, 1.0), (half, 0.0)):
+                vertices += struct.pack('<3f4B4B3f2f2f', cx, cy + y, up + z, 255, 0, 0, 0, index + 1, 0, 0, 0,
+                                        1.0, 0.0, 0.0, u, v, 0.0, 0.0)
+        triangles += [first, first + 1, first + 2, first + 2, first + 1, first + 3]
+        pivots.append((cx, cy, up))
+    vertex_count = len(vertices) // 48
+    reach = max(out + across / 2 for out, _, across in cards)
+    lo, hi = (-reach, -reach, 0.0), (reach, reach, max(up + across / 2 for _, up, across in cards))
+    radius = math.dist(lo, hi) / 2
+
+    blob = Blob(0x130)
+    name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
+    turn_ms, pulse_ms = int(abs(turn) * 1000) or 1, int(pulse * 1000) or 1
+    globals_ref = blob.array('I', [turn_ms, pulse_ms])
+    sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, duration, 0.0, SEQUENCE_IN_MODEL, 0x7FFF,
+                                     0, 0, 0, 0, *lo, *hi, radius, -1, 0), 1)
+
+    # Bones: 0 circling the middle (global sequence 0), then one per puff facing the camera.
+    rotation = empty_track()
+    if turn:
+        way = 1 if turn > 0 else -1
+        rotation = track(blob, 1, [([turn_ms * i // 4 for i in range(5)],
+                                    [tuple(comp_quat(c) for c in _turn_z(way * math.pi * i / 2)) for i in range(5)])],
+                         '4h')
+        rotation = rotation[:2] + struct.pack('<h', 0) + rotation[4:]
+    bones = struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
+    bones += empty_track() + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
+    for pivot in pivots:
+        bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | BONE_BILLBOARD, 0, 0, 0, 0)
+        bones += empty_track() + empty_track() + empty_track() + struct.pack('<3f', *pivot)
+    bones_ref = blob.add(bones, 1 + len(pivots))
+    key_bones = blob.array('h', [-1])
+    vertices_ref = blob.add(vertices, vertex_count)
+
+    # Colors: one per puff, its alpha fading in and out (global sequence 1), each a step behind the last.
+    colors = b''
+    full = round(alpha * 0x7FFF)
+    for index in range(len(cards)):
+        colors += track(blob, 0, [([0], [tuple(map(float, tint))])], '3f')
+        if pulse:
+            phase = index / len(cards)
+            keys = [pulse_ms * i // 8 for i in range(9)]
+            values = [round(full * (0.6 + 0.4 * math.cos(2 * math.pi * (i / 8 + phase)))) for i in range(9)]
+            fading = track(blob, 1, [(keys, values)], 'h')
+            colors += fading[:2] + struct.pack('<h', 1) + fading[4:]
+        else:
+            colors += track(blob, 0, [([0], [full])], 'h')
+    colors_ref = blob.add(colors, len(cards))
+    path = f'{client_dir}\\{name}_0.blp'
+    texture_ref = blob.add(path.encode() + b'\0', len(path) + 1)
+    textures_ref = blob.add(struct.pack('<II2I', 0, 0, *texture_ref), 1)
+    fading = ([0], [0x7FFF])
+    if fade:
+        fading = ([0, fade[0], duration - fade[1], duration], [0, 0x7FFF, 0x7FFF, 0])
+    weights = blob.add(track(blob, 1 if fade else 0, [fading], 'h'), 1)
+    replaceable_lookup = blob.array('h', [-1])
+    materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, blend)])
+    bone_lookup = blob.array('H', list(range(1 + len(pivots))))
+    texture_lookup = blob.array('H', [0])
+    texture_unit_lookup = blob.array('H', [0])
+    transparency_lookup = blob.array('H', [0])
+    transform_lookup = blob.array('H', [0xFFFF])
+
+    header = struct.pack('<4sI', b'MD20', 264)
+    header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)
+    header += struct.pack('<2I', *globals_ref)
+    header += struct.pack('<2I', *sequences) + struct.pack('<2I', 0, 0)            # no sequence lookup
+    header += struct.pack('<2I', *bones_ref) + struct.pack('<2I', *key_bones)
+    header += struct.pack('<2I', *vertices_ref) + struct.pack('<I', 1)
+    header += struct.pack('<2I', *colors_ref) + struct.pack('<2I', *textures_ref)
+    header += struct.pack('<2I', *weights) + struct.pack('<2I', 0, 0)               # no texture transforms
+    header += struct.pack('<2I', *replaceable_lookup) + struct.pack('<2I', *materials_ref)
+    header += struct.pack('<2I', *bone_lookup) + struct.pack('<2I', *texture_lookup)
+    header += struct.pack('<2I', *texture_unit_lookup) + struct.pack('<2I', *transparency_lookup)
+    header += struct.pack('<2I', *transform_lookup)
+    header += struct.pack('<7f', *lo, *hi, radius) + struct.pack('<7f', *[0.0] * 7)
+    header += struct.pack('<2I', 0, 0) * 3                                          # collision
+    header += struct.pack('<2I', 0, 0) * 2                                          # attachments
+    header += struct.pack('<2I', 0, 0) * 2                                          # events, lights
+    header += struct.pack('<2I', 0, 0) * 2                                          # cameras
+    header += struct.pack('<2I', 0, 0) * 2                                          # ribbons, particles
+    assert len(header) == 0x130
+    blob.data[:0x130] = header
+    (out_dir / f'{name}.m2').write_bytes(bytes(blob.data))
+
+    # Skin: one section and batch per puff, each on its bone.
+    skin = Blob(48)
+    lookup = skin.array('H', list(range(vertex_count)))
+    tris = skin.array('H', triangles)
+    props = skin.add(b'\0' * 4 * vertex_count, vertex_count)
+    section_data, batch_data = b'', b''
+    for i, ((out, up, across), pivot) in enumerate(zip(cards, pivots)):
+        section_data += struct.pack('<10H3f3ff', 0, 0, i * 4, 4, i * 6, 6, 1, i + 1, 1, i + 1, *pivot, *pivot,
+                                    across)
+        batch_data += struct.pack('<Bb11H', 16, 0, 0, i, i, i, 0, 0, 1, 0, 0, 0, 0)
+    sections_ref = skin.add(section_data, len(cards))
+    batches_ref = skin.add(batch_data, len(cards))
+    skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
+    (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
+    return [f'{name}.m2', f'{name}00.skin', f'{name}_0.blp']
+
 def exported_model(*args, export, base, size=None, scale=1.0, center=False, offset=(0.0, 0.0, 0.0), turn=0.0,
                    trail_height=0.3, lifetime=0.4, duration=1000, fade=None, two_sided=False, max_texture=None,
-                   sequence=None):
+                   sequence=None, billboard=()):
     """A spell effect model from a wow.export model (OBJ + JSON + PNGs in the folder export): a spell
     missile (SpellVisual's missile model) or a model a kit attaches (chest, head...).
 
@@ -683,8 +811,9 @@ def exported_model(*args, export, base, size=None, scale=1.0, center=False, offs
     One Stand animation of duration milliseconds (a kit removes a model once it has played); fade: the
     milliseconds over which it fades out from the start (None: whole all along). Layers' own fades in
     and out (per-sequence alpha) are left out, unless sequence names the export's animation (its index)
-    whose layer alpha (flashes, pulses) and texture weights the Stand plays. Writes <name>.m2,
-    <name>00.skin and its BLPs into out_dir.
+    whose layer alpha (flashes, pulses) and texture weights the Stand plays. billboard: the texture units
+    (indices) whose flat cards (made facing +X, as retail's) always face the camera, each turning about its
+    own middle. Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
     """
     *textures, out_dir, name, client_dir = args
     trail_texture = textures[0] if textures else None
@@ -737,7 +866,16 @@ def exported_model(*args, export, base, size=None, scale=1.0, center=False, offs
     sequences = blob.add(struct.pack('<HHIfIhHIII6ffhH', ANIM_STAND, 0, duration, 0.0, SEQUENCE_IN_MODEL,
                                      0x7FFF, 0, 0, 0, 0, *box_lo, *box_hi, radius, -1, 0), 1)
 
-    # Bones: 0 the model, turning (or still); 1 the trail, still.
+    # Bones: 0 the model, turning (or still); 1 the trail, still; then one facing the camera per billboard card
+    # (its section), about the card's middle.
+    cards = sorted({units[i]['skinSectionIndex'] for i in billboard})
+    section_bone, vertex_bone, pivots = {}, [0] * len(positions), []
+    for card in cards:
+        submesh = info['skin']['subMeshes'][card]
+        first, count = submesh['vertexStart'], submesh['vertexCount']
+        section_bone[card] = 2 + len(pivots)
+        pivots.append(tuple(sum(p[i] for p in positions[first:first + count]) / count for i in range(3)))
+        vertex_bone[first:first + count] = [section_bone[card]] * count
     spin = empty_track()
     if turn:
         spin = track(blob, 1, [([lengths[SPIN_SEQUENCE] * i // 4 for i in range(5)],
@@ -747,12 +885,15 @@ def exported_model(*args, export, base, size=None, scale=1.0, center=False, offs
     for rotation in (spin, empty_track()):
         bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
         bones += empty_track() + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
-    bones_ref = blob.add(bones, 2)
+    for pivot in pivots:
+        bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | BONE_BILLBOARD, 0, 0, 0, 0)
+        bones += empty_track() + empty_track() + empty_track() + struct.pack('<3f', *pivot)
+    bones_ref = blob.add(bones, 2 + len(pivots))
     key_bones = blob.array('h', [-1])
 
     vertices = b''
-    for p, n, uv in zip(positions, normals, uvs):
-        vertices += struct.pack('<3f4B4B3f2f2f', *p, 255, 0, 0, 0, 0, 0, 0, 0, *n, *uv, 0.0, 0.0)
+    for p, n, uv, bone in zip(positions, normals, uvs, vertex_bone):
+        vertices += struct.pack('<3f4B4B3f2f2f', *p, 255, 0, 0, 0, bone, 0, 0, 0, *n, *uv, 0.0, 0.0)
     vertices_ref = blob.add(vertices, len(positions))
 
     colors = b''
@@ -790,7 +931,7 @@ def exported_model(*args, export, base, size=None, scale=1.0, center=False, offs
     trail_material = len(materials)
     materials.append((UNLIT | TWO_SIDED | NO_DEPTH_WRITE, BLEND_ALPHA))
     materials_ref = blob.array('HH', materials)
-    bone_lookup = blob.array('H', [0])
+    bone_lookup = blob.array('H', list(range(2 + len(pivots))))
     texture_lookup = blob.array('H', [texture_index.get(t, 0) for t in info['textureCombos']])
     texture_unit_lookup = blob.array('H', [0])
     transparency_lookup = blob.array('H', info['transparencyLookup'] if sequence is not None else [0])
@@ -827,13 +968,14 @@ def exported_model(*args, export, base, size=None, scale=1.0, center=False, offs
     skin = Blob(48)
     lookup = skin.array('H', list(range(len(positions))))
     triangles, section_data = [], b''
-    for submesh, faces in zip(info['skin']['subMeshes'], groups):
+    for index, (submesh, faces) in enumerate(zip(info['skin']['subMeshes'], groups)):
         start = len(triangles)
         for face in faces:
             triangles += face
         center = tuple(c * factor for c in submesh['centerPosition'])
+        bone = section_bone.get(index, 0)
         section_data += struct.pack('<10H3f3ff', 0, 0, submesh['vertexStart'], submesh['vertexCount'], start,
-                                    len(triangles) - start, 1, 0, 1, 0, *center, *center,
+                                    len(triangles) - start, 1, bone, 1, bone, *center, *center,
                                     submesh['sortRadius'] * factor)
     tris = skin.array('H', triangles)
     props = skin.add(b'\0' * 4 * len(positions), len(positions))

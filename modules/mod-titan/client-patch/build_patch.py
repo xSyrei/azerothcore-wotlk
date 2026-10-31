@@ -105,7 +105,7 @@ def main():
             make = {'weapon': spell_effects.weapon_trail, 'body': spell_effects.body_trail,
                     'beam': spell_effects.beam, 'burst': spell_effects.ground_burst,
                     'zone': spell_effects.ground_zone, 'missile': spell_effects.exported_model,
-                    'model': spell_effects.exported_model}[shape]
+                    'model': spell_effects.exported_model, 'mist': spell_effects.mist}[shape]
             textures = [HERE / 'spells' / f'{t}.png' if t else None for t in spec.get('textures', (spec['model'],))]
             options = dict(spec.get('options', {}))
             if 'export' in options:

@@ -65,8 +65,8 @@ VISUAL_MISSILE_MODEL, VISUAL_MISSILE_SOUND, VISUAL_MISSILE_CAST_OFFSET = 8, 11, 
 VISUAL_MISSILE_MOTION = 21      # SpellMissileMotion: a scripted flight path (0: straight)
 # SpellVisual columns; 'persistent' is the kit a persistent area (a dynamic object) shows for as long as it lasts,
 # 'area' the one it shows (a sound) as it appears, 'impactarea' the one a missile shows where it lands on the ground.
-VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5, 'area': 23, 'impactarea': 24,
-               'persistent': 25}
+VISUAL_KITS = {'precast': 1, 'cast': 2, 'impact': 3, 'state': 4, 'statedone': 5, 'channel': 6, 'area': 23,
+               'impactarea': 24, 'persistent': 25}
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_LEFT_HAND, KIT_RIGHT_HAND, KIT_BREATH = 3, 4, 5, 6, 7, 8
 KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON, KIT_WORLD = 9, 10, 14
 HANDS, WEAPONS = (KIT_LEFT_HAND, KIT_RIGHT_HAND), (KIT_LEFT_WEAPON, KIT_RIGHT_WEAPON)
@@ -1069,6 +1069,10 @@ def build_visuals(source, out):
                     continue
                 if where == 'sound':
                     kit[KIT_SOUND] = SOUNDS[effect]['id'] if effect else 0
+                    continue
+                if where == 'beam':     # a beam to the channel's target: character effect 0, its chain effect
+                    kit[KIT_PROCS.start] = 0
+                    kit[KIT_PROC_PARAMS.start] = raw(float(effect))
                     continue
                 for slot in where if isinstance(where, tuple) else (where,):
                     kit[slot] = EFFECTS[effect]['effect'] if isinstance(effect, str) else effect

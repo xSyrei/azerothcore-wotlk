@@ -156,8 +156,8 @@ talent spell it does not know. Retire one by leaving its rows and taking it out 
 
 The Monk (class 10, spec tabs Brewmaster, Mistweaver and Windwalker: skill lines 2002-2004) is built spec by
 spec, Mistweaver first: spells 90300 and up (`client-patch/patch_monk.py`, a spell family of its own, 16),
-copies of Blizzard healing spells with retail's icons (Soothing Mist, Life Cocoon and Revival also with
-retail's effects; the others keep the copied spell's look for now), with what the copies cannot do in
+copies of Blizzard healing spells with retail's icons and mist effects (Soothing Mist's beam is a stand-in
+Blizzard beam for now), with what the copies cannot do in
 `src/monk.cpp` (bound in `titan_monk_scripts.sql`, with the spells' share of spell power).
 Mistweaver runs on mana; Windwalker and Brewmaster will run on Energy and Chi (a bar of its own on the Monk).
 
