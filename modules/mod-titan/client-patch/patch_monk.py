@@ -58,22 +58,27 @@ REJUVENATION_IMPACT = 70        # Spells\\Rejuvenation_Impact_Base: a green heal
 
 # Our effect models (see patch_spells.EFFECTS), from retail's Monk effects (spells/MONK_*).
 EFFECTS = {
-    # The mists: puffs of retail's mist (its snowfrost cloud, rounded off) circling the target, facing the camera.
-    # Soothing Mist's, jade, where its beam flows in, for as long as the channel lasts.
-    'SoothingMist': {'model': 'MONK_SoothingMist', 'effect': 7116, 'shape': 'mist', 'textures': ('MONK_Mist',),
-                     'options': {'tint': JADE, 'alpha': 0.45, 'turn': 5.0,
-                                 'cards': ((0.6, 0.8, 1.4), (0.6, 1.4, 1.2))}},
-    # Renewing Mist's, green, for as long as it lasts.
-    'RenewingMist': {'model': 'MONK_RenewingMist', 'effect': 7119, 'shape': 'mist', 'textures': ('MONK_Mist',),
-                     'options': {'tint': GREEN, 'alpha': 0.5, 'turn': 4.0}},
-    # Enveloping Mist's, gold, thicker, for as long as it lasts.
-    'EnvelopingMist': {'model': 'MONK_EnvelopingMist', 'effect': 7120, 'shape': 'mist', 'textures': ('MONK_Mist',),
-                       'options': {'tint': GOLD, 'alpha': 0.6, 'turn': -3.0,
-                                   'cards': ((0.7, 0.4, 1.6), (0.7, 0.9, 1.6), (0.7, 1.4, 1.5), (0.7, 1.9, 1.3))}},
-    # Vivify's, green, a burst of mist on the healed (one second, fading in and out).
-    'VivifyMist': {'model': 'MONK_VivifyMist', 'effect': 7121, 'shape': 'mist', 'textures': ('MONK_Mist',),
-                   'options': {'tint': GREEN, 'alpha': 0.7, 'turn': 1.5, 'pulse': 0, 'duration': 1000,
-                               'fade': (150, 600), 'cards': ((0.5, 0.6, 1.8), (0.5, 1.2, 1.8), (0.5, 1.8, 1.6))}},
+    # The mists: smoke flipbooks (4x4 frames, white, tinted) in puffs circling the target, facing the camera, each
+    # billowing out and fading on a beat of its own.
+    # Soothing Mist's, jade swirls, where its beam flows in, for as long as the channel lasts.
+    'SoothingMist': {'model': 'MONK_SoothingMist', 'effect': 7116, 'shape': 'mist', 'textures': ('MONK_Smoke_Swirl',),
+                     'options': {'tint': JADE, 'alpha': 0.6, 'turn': 5.0, 'pulse': 0, 'sheet': (4, 4), 'flip': 1.2,
+                                 'cards': ((0.5, 0.7, 1.4), (0.5, 1.2, 1.4), (0.5, 1.7, 1.2))}},
+    # Renewing Mist's, green puffs, for as long as it lasts.
+    'RenewingMist': {'model': 'MONK_RenewingMist', 'effect': 7119, 'shape': 'mist', 'textures': ('MONK_Smoke_Puff',),
+                     'options': {'tint': GREEN, 'alpha': 0.55, 'turn': 4.0, 'pulse': 0, 'sheet': (4, 4), 'flip': 1.6,
+                                 'cards': ((0.7, 0.5, 1.4), (0.7, 1.0, 1.3), (0.7, 1.5, 1.3), (0.7, 2.0, 1.1))}},
+    # Enveloping Mist's, thick gold puffs wrapping the body, for as long as it lasts.
+    'EnvelopingMist': {'model': 'MONK_EnvelopingMist', 'effect': 7120, 'shape': 'mist',
+                       'textures': ('MONK_Smoke_Thick',),
+                       'options': {'tint': GOLD, 'alpha': 0.65, 'turn': -3.0, 'pulse': 0, 'sheet': (4, 4),
+                                   'flip': 2.0, 'cards': ((0.6, 0.4, 1.6), (0.6, 0.8, 1.6), (0.6, 1.2, 1.6),
+                                                          (0.6, 1.6, 1.5), (0.6, 2.0, 1.3))}},
+    # Vivify's, soft green puffs bursting on the healed, billowing out once (one second).
+    'VivifyMist': {'model': 'MONK_VivifyMist', 'effect': 7121, 'shape': 'mist', 'textures': ('MONK_Smoke_Soft',),
+                   'options': {'tint': GREEN, 'alpha': 0.8, 'turn': 1.5, 'pulse': 0, 'duration': 1000,
+                               'fade': (100, 300), 'sheet': (4, 4),
+                               'cards': ((0.5, 0.6, 2.0), (0.5, 1.2, 2.0), (0.5, 1.8, 1.8))}},
     # Life Cocoon: retail's cocoon (monk_chicocoon_state), 80% as big, its smoke strips scrolling, its flares
     # pulsing and its lightning flickering as retail's Stand does; its glow and lightning cards face the camera.
     'LifeCocoon': {'model': 'MONK_LifeCocoon', 'effect': 7117, 'shape': 'model', 'textures': (),
