@@ -679,6 +679,10 @@ def mist(*args, layers=(), duration=1000, fade=None):
       in and out, each puff a step behind the last (0: steady);
     - rise: (yards, seconds): the layer climbing that high in that time, over and over (with fade: once, in
       duration), best with puffs that fade out on their own (a flipbook, a pulse of the same length);
+    - spots: instead of cards, each puff where it is: (yards forward, yards left, yards up, yards across, degrees
+      turned in its own plane) (bursts in front of the body, at angles of their own);
+    - flash: seconds per burst: each puff flashing on and fading out over and over, each on a beat of its own
+      (instead of pulse); grow: (from, to) its size over the burst;
     - blend: BLEND_ADD (the default) or BLEND_ALPHA.
 
     fade: None (one looping Stand of duration milliseconds, for a state kit) or (in, out) milliseconds, fading
@@ -722,38 +726,71 @@ def mist(*args, layers=(), duration=1000, fade=None):
         bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
         bones += climb + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
     for number, layer in enumerate(layers):
+        if layer.get('spots'):
+            for index, (forward, left, up, across, roll) in enumerate(layer['spots']):
+                cards.append((number, index, (forward, left, up), across, roll))
+            continue
         for index, (out, up, across) in enumerate(layer['cards']):
             angle = 2 * math.pi * (index / len(layer['cards']) + number * 0.13)
-            cards.append((number, index, (out * math.cos(angle), out * math.sin(angle), up), across))
+            cards.append((number, index, (out * math.cos(angle), out * math.sin(angle), up), across, 0.0))
     bone_count = len(layers) + len(cards)
 
+    def phased(shape, phase, beat):
+        """Keys over a beat of beat milliseconds of a looping shape [(0 to 1, value)...], phase of the way in."""
+        def at(t):
+            t = (t - phase) % 1.0
+            for (t0, v0), (t1, v1) in zip(shape, shape[1:]):
+                if t <= t1:
+                    return v0 + (v1 - v0) * (t - t0) / (t1 - t0)
+            return shape[-1][1]
+        times = sorted({0.0, 1.0} | {(t + phase) % 1.0 for t, _ in shape})
+        return [round(t * beat) for t in times], [at(t) for t in times]
+
+    def burst_of(number, index):
+        """A puff's place in its layer's burst beat: spread like a golden-ratio scatter, no two in step."""
+        return (index * 0.618 + number * 0.29) % 1.0
+
     vertices, triangles = b'', []
-    for card, (number, _, (cx, cy, cz), across) in enumerate(cards):
-        columns, rows = layers[number].get('sheet') or (1, 1)
+    for card, (number, index, (cx, cy, cz), across, roll) in enumerate(cards):
+        layer = layers[number]
+        columns, rows = layer.get('sheet') or (1, 1)
         half, first = across / 2, len(vertices) // 48
+        cos_r, sin_r = math.cos(math.radians(roll)), math.sin(math.radians(roll))
         for y, u in ((-half, 0.0), (half, 1.0 / columns)):
             for z, v in ((-half, 1.0 / rows), (half, 0.0)):
-                vertices += struct.pack('<3f4B4B3f2f2f', cx, cy + y, cz + z, 255, 0, 0, 0, len(layers) + card, 0,
-                                        0, 0, 1.0, 0.0, 0.0, u, v, 0.0, 0.0)
+                vertices += struct.pack('<3f4B4B3f2f2f', cx, cy + y * cos_r - z * sin_r, cz + y * sin_r + z * cos_r,
+                                        255, 0, 0, 0, len(layers) + card, 0, 0, 0, 1.0, 0.0, 0.0, u, v, 0.0, 0.0)
         triangles += [first, first + 1, first + 2, first + 2, first + 1, first + 3]
+        growing = empty_track()
+        if layer.get('grow') and layer.get('flash'):
+            small, big = layer['grow']
+            beat = int(layer['flash'] * 1000)
+            keys, sizes = phased([(0.0, small), (0.45, big), (0.95, big), (1.0, small)], burst_of(number, index), beat)
+            growing = track(blob, 1, [(keys, [(float(size),) * 3 for size in sizes])], '3f')
+            growing = growing[:2] + struct.pack('<h', global_sequence(beat)) + growing[4:]
         bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | BONE_BILLBOARD, number, 0, 0, 0)
-        bones += empty_track() + empty_track() + empty_track() + struct.pack('<3f', cx, cy, cz)
+        bones += empty_track() + empty_track() + growing + struct.pack('<3f', cx, cy, cz)
     vertex_count = len(vertices) // 48
-    reach = max(math.hypot(p[0], p[1]) + across / 2 for _, _, p, across in cards)
-    top = max(p[2] + across / 2 + (layers[n].get('rise') or (0, 0))[0] for n, _, p, across in cards)
-    lo, hi = (-reach, -reach, min(p[2] - across / 2 for _, _, p, across in cards)), (reach, reach, top)
+    reach = max(math.hypot(p[0], p[1]) + across for _, _, p, across, _ in cards)
+    top = max(p[2] + across + (layers[n].get('rise') or (0, 0))[0] for n, _, p, across, _ in cards)
+    lo, hi = (-reach, -reach, min(p[2] - across for _, _, p, across, _ in cards)), (reach, reach, top)
     radius = math.dist(lo, hi) / 2
 
     # Colors: one per puff, its alpha fading in and out on its layer's beat. Texture transforms: one per puff,
     # its cell of the sheet (still, or frame by frame: no blending between frames).
     colors, transforms = b'', b''
-    for number, index, _, _ in cards:
+    for number, index, _, _, _ in cards:
         layer = layers[number]
-        count = len(layer['cards'])
+        count = len(layer.get('spots') or layer['cards'])
         full = round(layer.get('alpha', 0.6) * 0x7FFF)
         colors += track(blob, 0, [([0], [tuple(map(float, layer.get('tint', (1.0, 1.0, 1.0))))])], '3f')
         pulse_ms = int(layer.get('pulse', 1.6) * 1000)
-        if pulse_ms:
+        if layer.get('flash'):
+            beat = int(layer['flash'] * 1000)
+            keys, levels = phased([(0.0, 0.0), (0.08, 1.0), (0.45, 0.0), (1.0, 0.0)], burst_of(number, index), beat)
+            flashing = track(blob, 1, [(keys, [round(level * full) for level in levels])], 'h')
+            colors += flashing[:2] + struct.pack('<h', global_sequence(beat)) + flashing[4:]
+        elif pulse_ms:
             keys = [pulse_ms * i // 8 for i in range(9)]
             values = [round(full * (0.6 + 0.4 * math.cos(2 * math.pi * (i / 8 + index / count)))) for i in range(9)]
             fading = track(blob, 1, [(keys, values)], 'h')
@@ -836,7 +873,7 @@ def mist(*args, layers=(), duration=1000, fade=None):
     tris = skin.array('H', triangles)
     props = skin.add(b'\0' * 4 * vertex_count, vertex_count)
     section_data, batch_data = b'', b''
-    for card, (number, _, pivot, across) in enumerate(cards):
+    for card, (number, _, pivot, across, _) in enumerate(cards):
         bone = len(layers) + card
         section_data += struct.pack('<10H3f3ff', 0, 0, card * 4, 4, card * 6, 6, 1, bone, 1, bone, *pivot, *pivot,
                                     across)

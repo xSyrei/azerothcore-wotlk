@@ -15,6 +15,8 @@ Healing is a base amount growing with level plus a share of spell power (spell_b
 titan_monk_scripts.sql); costs are a share of base mana.
 """
 
+import random
+
 MONK_FAMILY = 16
 FAMILY_FLAGS = {
     90300: 0x1,     # Soothing Mist
@@ -108,6 +110,18 @@ GLOW, FLARE = 'MONK_Glow', 'MONK_Flare'
 PUFFS, WISPS, CLOUDS, ANIM = 'MONK_Mist_Puffs', 'MONK_Mist_Wisps', 'MONK_Mist_Clouds', 'MONK_Mist_Anim'
 MOTE = (0.85, 1.0, 0.9)
 CRANE_MOTE = (1.0, 0.85, 0.6)
+
+
+def scatter(count, seed, size, forward=(1.0, 3.6), side=1.6, height=(0.5, 1.8)):
+    """count spots (for a mist's spots) strewn over the space before the body: forward yards, side yards to either
+    side (wider farther out), height yards up, size yards across, each turned its own way; the same every build."""
+    rng = random.Random(seed)
+    spots = []
+    for _ in range(count):
+        out = rng.uniform(*forward)
+        spots.append((round(out, 2), round(rng.uniform(-side, side) * out / forward[1], 2),
+                      round(rng.uniform(*height), 2), round(rng.uniform(*size), 2), round(rng.uniform(0, 360))))
+    return tuple(spots)
 
 
 def ring(count, out, up, across, step=0.0):
@@ -331,15 +345,19 @@ EFFECTS = {
                           'cards': ring(2, 0.3, -0.4, 1.6, 0.4)},
                          {'texture': 3, 'tint': (1.0, 0.8, 0.5), 'alpha': 1.0, 'turn': 1.0, 'pulse': 0,
                           'rise': (1.8, 0.9), 'cards': ring(6, 0.5, -0.8, 0.16, 0.15)})}},
-    # Fists of Fury: retail's fan of wisps before the Monk (its mesh) twice, the wisps streaming outward and the two
-    # flashing on and off in turn, a burst every 0.15 sec.
-    'FistsOfFuryCone': {'model': 'MONK_FistsOfFuryCone', 'effect': 7138, 'shape': 'spun',
-                        'textures': ('WW_FistsOfFury/fistsoffury_arcanewisps',),
-                        'options': {'export': 'WW_FistsOfFury/cfx_monk_fistsoffury_statebase.gltf', 'layers': (
-                            {'mesh': 0, 'texture': 0, 'tint': LIGHT_BLUE, 'alpha': 1.0, 'scroll': (0.0, -3.0),
-                             'flicker': (0.3, 0.0)},
-                            {'mesh': 0, 'texture': 0, 'tint': (0.75, 0.95, 1.0), 'alpha': 1.0,
-                             'scroll': (0.0, -4.0), 'flicker': (0.3, 0.5)})}},
+    # Fists of Fury: punches landing all over the space before the Monk, every burst at a spot, angle and beat of its
+    # own: shockwave rings popping, gusts of wind (arcs) sweeping at every angle, streaks and puffs of mist.
+    'FistsOfFuryBursts': {'model': 'MONK_FistsOfFuryBursts', 'effect': 7138, 'shape': 'mist',
+                          'textures': ('WW_RingBow', 'WW_ArcWave', 'WW_GustArc', ANIM),
+                          'options': {'layers': (
+                              {'texture': 0, 'tint': LIGHT_BLUE, 'alpha': 1.0, 'flash': 0.32, 'grow': (0.3, 1.6),
+                               'spots': scatter(7, 1, size=(1.0, 1.6))},
+                              {'texture': 1, 'tint': (0.8, 0.95, 1.0), 'alpha': 0.9, 'flash': 0.28,
+                               'grow': (0.5, 1.3), 'spots': scatter(7, 2, size=(1.2, 2.0))},
+                              {'texture': 2, 'tint': LIGHT_BLUE, 'alpha': 1.0, 'flash': 0.24, 'grow': (0.6, 1.2),
+                               'spots': scatter(6, 3, size=(1.0, 1.8))},
+                              {'texture': 3, 'sheet': (4, 4), 'flip': 0.6, 'tint': LIGHT_BLUE, 'alpha': 0.5,
+                               'pulse': 0, 'spots': scatter(4, 4, size=(1.6, 2.2))})}},
     'FistsOfFuryHit': {'model': 'MONK_FistsOfFuryHit', 'effect': 7139, 'shape': 'mist',
                        'textures': ('WW_ArcWave', FLARE),
                        'options': {'duration': 500, 'fade': (0, 250), 'layers': (
@@ -540,10 +558,10 @@ VISUALS = {
     'RisingSunKick': {'copy': 253, 'id': 16747, 'kits': {
         'cast': (15688, {'anim': ANIM_KICK, 'sound': 'RisingSunKick'}),
         'impact': (15693, {KIT_BASE: 'RisingSunBeam', KIT_CHEST: 'RisingSunHit', KIT_WORLD: 'RisingSunBurst'})}},
-    # Fists of Fury: Tranquility's channel punching on and on, retail's cone of light blue wisps before the Monk.
+    # Fists of Fury: Tranquility's channel punching on and on, light blue bursts all over the space before the Monk.
     'FistsOfFury': {'copy': 1283, 'id': 16748, 'clear': ('precast', 'impact'), 'kits': {
         'cast': (15689, {HANDS: 0, 'anim': ANIM_ATTACK_UNARMED, 'sound': None}),
-        'channel': (15690, {HANDS: 0, KIT_BASE: 'FistsOfFuryCone', KIT_WORLD: 0, 'anim': ANIM_ATTACK_UNARMED,
+        'channel': (15690, {HANDS: 0, KIT_BASE: 'FistsOfFuryBursts', KIT_WORLD: 0, 'anim': ANIM_ATTACK_UNARMED,
                             'sound': 'FistsOfFury', 'procs': False})}},
     'FistsOfFuryStrike': {'copy': 253, 'id': 16749, 'clear': ('precast', 'cast'), 'kits': {
         'impact': (15694, {KIT_CHEST: 0, KIT_BASE: 'FistsOfFuryHit', 'sound': None})}},
