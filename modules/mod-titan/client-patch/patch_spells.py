@@ -1272,7 +1272,8 @@ def write_sql(spells, path, talent_lines=()):
         out = []
         for column, ((_, kind, unsigned), value) in enumerate(zip(columns, row)):
             if column in STRING_COLUMNS:
-                out.append("'" + spells.string(value).replace('\\', '\\\\').replace("'", "''") + "'"
+                out.append("'" + spells.string(value).replace('\\', '\\\\').replace("'", "''")
+                           .replace('\r', '\\r').replace('\n', '\\n') + "'"
                            if value else "''")
             elif kind == 'float':
                 out.append(repr(round(struct.unpack('<f', struct.pack('<I', value))[0], 6)))
