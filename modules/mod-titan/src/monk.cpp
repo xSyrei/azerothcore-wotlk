@@ -39,6 +39,7 @@ enum MonkSpells
     SPELL_BLACKOUT_KICK             = 90321,
     SPELL_RISING_SUN_KICK           = 90322,
     SPELL_FISTS_OF_FURY             = 90323,
+    SPELL_FISTS_OF_FURY_STRIKE      = 90324,
     SPELL_SPINNING_CRANE_KICK       = 90325,
     SPELL_STORM_EARTH_AND_FIRE      = 90329,
     SPELL_EARTH_SPIRIT_STRIKE       = 90330,
@@ -367,38 +368,43 @@ class spell_titan_monk_finisher : public SpellScript
     }
 };
 
-// Fists of Fury (90323) and Spinning Crane Kick (90325): their strikes (weapon damage %) as strong as the combo points
-// they were cast with (read when the channel starts, before the cast takes them).
+// Fists of Fury (90323) and Spinning Crane Kick (90325): the combo points they were cast with (read when the channel
+// starts, before the cast takes them), kept as the channel's amount for its strikes.
 class spell_titan_monk_finisher_channel : public AuraScript
 {
     PrepareAuraScript(spell_titan_monk_finisher_channel);
 
-    uint8 _points = MAX_COMBO_POINTS;
-
     void TakePoints(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         if (Unit* caster = GetCaster())
-            _points = std::max<uint8>(1, caster->GetComboPoints());
-    }
-
-    void Strike(AuraEffect const* aurEff)
-    {
-        PreventDefaultAction();
-        Unit* caster = GetCaster();
-        SpellInfo const* strike = sSpellMgr->GetSpellInfo(aurEff->GetSpellInfo()->Effects[aurEff->GetEffIndex()]
-            .TriggerSpell);
-        if (!caster || !strike)
-            return;
-        int32 weaponPct = strike->Effects[EFFECT_0].CalcValue(caster) * _points / MAX_COMBO_POINTS;
-        caster->CastCustomSpell(strike->Id, SPELLVALUE_BASE_POINT0, weaponPct, caster, true, nullptr, aurEff);
+            GetAura()->GetEffect(EFFECT_0)->SetAmount(std::max<uint8>(1, caster->GetComboPoints()));
     }
 
     void Register() override
     {
         OnEffectApply += AuraEffectApplyFn(spell_titan_monk_finisher_channel::TakePoints, EFFECT_0,
             SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
-        OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_monk_finisher_channel::Strike, EFFECT_0,
-            SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+    }
+};
+
+// Their strikes (90324, 90326): as strong as the points their channel was cast with (their spell values the
+// 5-point ones).
+class spell_titan_monk_finisher_strike : public SpellScript
+{
+    PrepareSpellScript(spell_titan_monk_finisher_strike);
+
+    void Scale()
+    {
+        uint32 channel = GetSpellInfo()->Id == SPELL_FISTS_OF_FURY_STRIKE ? SPELL_FISTS_OF_FURY
+            : SPELL_SPINNING_CRANE_KICK;
+        AuraEffect const* points = GetCaster()->GetAuraEffect(channel, EFFECT_0);
+        int32 spent = points ? std::clamp<int32>(points->GetAmount(), 1, MAX_COMBO_POINTS) : MAX_COMBO_POINTS;
+        SetHitDamage(GetHitDamage() * spent / MAX_COMBO_POINTS);
+    }
+
+    void Register() override
+    {
+        OnHit += SpellHitFn(spell_titan_monk_finisher_strike::Scale);
     }
 };
 
@@ -659,6 +665,7 @@ void AddSC_monk()
     RegisterSpellScript(spell_titan_monk_thunderfist);
     RegisterSpellScript(spell_titan_monk_finisher);
     RegisterSpellScript(spell_titan_monk_finisher_channel);
+    RegisterSpellScript(spell_titan_monk_finisher_strike);
     RegisterSpellScript(spell_titan_monk_blackout_kick);
     RegisterSpellScript(spell_titan_monk_whirling_dragon_punch);
     RegisterSpellScript(spell_titan_monk_life_cocoon);

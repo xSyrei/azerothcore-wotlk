@@ -106,7 +106,7 @@ built or spent Runic Power build and spend Fury, the same pool as the Demon Hunt
 | 90121 | Fel Barrage | 30 | Havoc's capstone: for 3 sec, every 0.25 sec (90122) enemies within 8 yards take 15% of attack power as Chaos damage while fel balls rain down on the ground around the Demon Hunter (90123, only a look, `spell_titan_dh_fel_barrage_pulse`); each pulse drains 5 Fury, ending it when Fury runs out (`spell_titan_dh_fel_barrage`); costs 10, 90 sec cooldown |
 | 90119 | Immolation Aura | 1 (Vengeance) | 20% of attack power as Fire damage to enemies within 8 yards at once and every sec for 6 sec (90120); 20 Fury; 15 sec cooldown |
 | 90124 | Shear | 1 (Vengeance) | Weapon strike; 10 Fury and 2 combo points (Vengeance's generator; Soul Fragments, 90126, are retired) |
-| 90125 | Soul Cleave | 1 (Vengeance) | Finisher: 60% weapon damage a combo point to up to 5 enemies in front, heals 8% of maximum health plus 3% a point (90131, `spell_titan_dh_soul_cleave`); no Fury |
+| 90125 | Soul Cleave | 1 (Vengeance) | Finisher: a base and 15% of attack power a combo point to up to 5 enemies in front, heals 8% of maximum health plus 3% a point (90131, `spell_titan_dh_soul_cleave`); no Fury |
 | 90129 | Torment | 6 (Vengeance) | Taunt, 30 yards, 8 sec cooldown |
 | 90127 | Demon Spikes | 10 (Vengeance) | 20% parry and 30% more armor for 6 sec, off the global cooldown; costs 20, 15 sec cooldown |
 | 90128 | Fiery Brand | 20 (Vengeance) | 50% of attack power as Fire damage, and the target deals 40% less damage for 8 sec; 60 sec cooldown |
@@ -179,10 +179,10 @@ Chi.
 | 90307 | Revival | 26 | Heals the raid within 40 yards and clears a Magic, Poison and Disease effect from each; 3 min cooldown |
 | 90311 | Invoke Chi-Ji, the Red Crane | 30 | Mistweaver's capstone: Chi-Ji (creature 90311, `npc_titan_chi_ji`) follows the Monk for 25 sec, healing the 2 most injured allies within 40 yards every 2 sec with Crane's Gust (90312), and 1 more on each healing spell the Monk casts (any class's, `titan_monk_chi_ji_casts`); Enveloping Mist costs 50% less and casts 50% faster meanwhile; 3 min cooldown. Chi-Ji is retail's crane (`client-patch/models/chiji`, display 90205) |
 | 90320 | Tiger Palm | 1 | Windwalker: weapon damage plus a little, awards 2 combo points; 50 Energy |
-| 90321 | Blackout Kick | 3 | Finisher: 60% weapon damage a combo point, Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter (`spell_titan_monk_blackout_kick`) |
-| 90322 | Rising Sun Kick | 10 | Finisher: 90% weapon damage a combo point and Mortal Wounds (healing taken -25%, 10 sec); 10 sec cooldown |
-| 90325 | Spinning Crane Kick | 12 | Finisher: 1.5 sec spin, moving allowed: 10% weapon damage a combo point to all enemies within 8 yards every 0.5 sec (90326) |
-| 90323 | Fists of Fury | 16 | Finisher: 4 sec channel: 20% weapon damage a combo point to all enemies in a cone in front every sec (90324); 24 sec cooldown |
+| 90321 | Blackout Kick | 3 | Finisher: a base and 17% of attack power a combo point (tooltip: each point's damage), Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter (`spell_titan_monk_blackout_kick`) |
+| 90322 | Rising Sun Kick | 10 | Finisher: a base and 28% of attack power a combo point, and Mortal Wounds (healing taken -25%, 10 sec); 10 sec cooldown |
+| 90325 | Spinning Crane Kick | 12 | Finisher: 1.5 sec spin, moving allowed: a base and 3% of attack power a combo point to all enemies within 8 yards every 0.5 sec (90326, `spell_titan_monk_finisher_strike`) |
+| 90323 | Fists of Fury | 16 | Finisher: 4 sec channel: a base and 6% of attack power a combo point to all enemies in a cone in front every sec (90324, `spell_titan_monk_finisher_strike`); 24 sec cooldown |
 | 90327 | Whirling Dragon Punch | 24 | Only while Rising Sun Kick and Fists of Fury cool down (`spell_titan_monk_whirling_dragon_punch`): 90% weapon damage to all enemies within 8 yards three times in a second (90328); 24 sec cooldown |
 | 90329 | Storm, Earth, and Fire | 30 | Windwalker's capstone: an Earth and a Fire spirit (creatures 90330, 90331, `npc_titan_monk_sef_spirit`, the Monk's look cloned onto them) fight at the Monk's side for 15 sec, each echoing every Windwalker strike the Monk lands for 35% of its damage (90330, 90331: Nature, Fire; `spell_titan_monk_sef_echo`); 90 sec cooldown |
 

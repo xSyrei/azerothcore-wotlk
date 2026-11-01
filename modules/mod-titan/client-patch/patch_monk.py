@@ -782,14 +782,32 @@ def windwalker(spell_id, level, **fields):
                                     'EquippedItemSubClassMask': 0, 'EquippedItemInventoryTypeMask': 0, **fields})
 
 
-def strikes(spell_id, level, name, icon, visual, weapon_pct, target_a, target_b=0, radius=RADIUS_8):
-    """A channel's or spin's strikes (Whirlwind's hit, with visual): weapon_pct% weapon damage to every enemy in its
-    area."""
+def strikes(spell_id, level, name, icon, visual, target_a, target_b=0, radius=RADIUS_8, weapon_pct=None,
+            damage=None):
+    """A channel's or spin's strikes (Whirlwind's hit, with visual) on every enemy in its area: weapon_pct% weapon
+    damage, or damage, the finishers' (base, per level): their 5-point Physical damage, attack power added
+    (spell_bonus_data)."""
+    if damage:
+        hit = {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': damage[0] - 1, 'DieSides': 1,
+               'RealPointsPerLevel': damage[1]}
+    else:
+        hit = {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': weapon_pct - 1, 'DieSides': 1}
     return {'id': spell_id, 'copy': 50622, 'name': name, 'icon': icon, 'visual': visual, 'description': '',
             'set': windwalker(spell_id, level, MaxAffectedTargets=0),
             'clear': [2, 3],
-            'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': weapon_pct - 1, 'DieSides': 1,
-                            'TargetA': target_a, 'TargetB': target_b, 'RadiusIndex': radius}}}
+            'effects': {1: {**hit, 'TargetA': target_a, 'TargetB': target_b, 'RadiusIndex': radius}}}
+
+
+def per_point(value, ap, what='damage', extra=None):
+    """A finisher's tooltip lines, as the game's own (Eviscerate): its amount at 1 to 5 combo points. value: the
+    5-point base ($m1, $90324m1...; None: none), ap: attack power a point, extra(points): text after."""
+    lines = []
+    for points in range(1, 6):
+        label = '1 point  ' if points == 1 else f'{points} points'
+        base = f'{value}/5*{points}+' if value else ''
+        amount = f'${{{base}$AP*{round(ap * points, 4):g}}}'
+        lines.append(f'   {label}: {amount} {what}' + (extra(points) if extra else ''))
+    return '\r\n'.join(lines)
 
 
 SPELLS += [
@@ -804,58 +822,60 @@ SPELLS += [
                     2: {'Effect': EFFECT_ADD_COMBO_POINTS, 'BasePoints': 1, 'DieSides': 1}},
     },
     {
-        # Sinister Strike's hit as a kick, a finisher (60% weapon damage a combo point); spell_titan_monk_blackout_kick
-        # cools the two big ones down.
+        # Sinister Strike's hit as a kick, a finisher (base and 17% of attack power a combo point: the 5-point values
+        # here, spell_bonus_data, scaled by spell_titan_monk_finisher); spell_titan_monk_blackout_kick cools the two
+        # big ones down.
         'id': 90321, 'copy': 1752, 'name': 'Blackout Kick', 'icon': 'Ability_Monk_RoundhouseKick',
         'visual': 'BlackoutKick',
-        'description': 'Finishing move that kicks with a blast of energy, dealing 60% weapon damage per combo point '
-                       '($s1% at 5) and reducing the cooldowns of Rising Sun Kick and Fists of Fury by 1 sec.',
+        'description': 'Finishing move that kicks with a blast of energy, reducing the cooldowns of Rising Sun Kick '
+                       'and Fists of Fury by 1 sec. Physical damage per combo point:\r\n'
+                       + per_point('$m1', 0.17),
         'set': windwalker(90321, 3, AttributesEx=0),
         'unset': {'AttributesEx3': 0x400},
         'clear': [2],
-        'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 299, 'DieSides': 1}},
+        'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 9, 'DieSides': 1, 'RealPointsPerLevel': 6.0}},
     },
     {
-        # Mortal Strike: a finishing kick (90% weapon damage a combo point), healing taken -25% for 10 sec.
+        # Mortal Strike: a finishing kick (base and 28% of attack power a combo point), healing taken -25% for 10 sec.
         'id': 90322, 'copy': 12294, 'name': 'Rising Sun Kick', 'icon': 'Ability_Monk_RisingSunKick',
         'visual': 'RisingSunKick',
-        'description': 'Finishing move that kicks upwards, dealing 90% weapon damage per combo point ($s2% at 5) '
-                       'and inflicting Mortal Wounds, reducing healing the target receives by 25% for $d.',
+        'description': 'Finishing move that kicks upwards, inflicting Mortal Wounds: healing the target receives is '
+                       'reduced by 25% for $d. Physical damage per combo point:\r\n' + per_point('$m2', 0.28),
         'tooltip': 'Healing received reduced by 25%.',
         'set': windwalker(90322, 10, RecoveryTime=10000, DurationIndex=DURATION_10S, AttributesEx=0),
         'unset': {'AttributesEx3': 0x400},
         'effects': {1: {'BasePoints': -26, 'DieSides': 1},
-                    2: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 449, 'DieSides': 1}},
+                    2: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 19, 'DieSides': 1, 'RealPointsPerLevel': 9.0}},
     },
     {
-        # Hellfire's channel (standing still), a finisher: striking (90324, 20% weapon damage a combo point) in a cone
-        # every sec for 4 sec (spell_titan_monk_finisher_channel).
+        # Hellfire's channel (standing still), a finisher: striking (90324, base and 6% of attack power a combo point)
+        # in a cone every sec for 4 sec (spell_titan_monk_finisher_channel, _finisher_strike).
         'id': 90323, 'copy': 1949, 'name': 'Fists of Fury', 'icon': 'Monk_Ability_FistOfFury',
         'visual': 'FistsOfFury',
-        'description': 'Finishing move that pummels all targets in front of you for 20% weapon damage per combo '
-                       'point ($90324s1% at 5) every sec for $d.',
+        'description': 'Finishing move that pummels all targets in front of you every sec for $d. Physical damage '
+                       'of each strike per combo point:\r\n' + per_point('$90324m1', 0.06),
         'tooltip': 'Pummeling all targets in front.',
         'set': windwalker(90323, 16, RecoveryTime=24000, DurationIndex=DURATION_4S),
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 1000, 'TriggerSpell': 90324}},
     },
-    strikes(90324, 16, 'Fists of Fury', 'Monk_Ability_FistOfFury', 'FistsOfFuryStrike', 100,
-            TARGET_UNIT_CONE_ENEMY),
+    strikes(90324, 16, 'Fists of Fury', 'Monk_Ability_FistOfFury', 'FistsOfFuryStrike', TARGET_UNIT_CONE_ENEMY,
+            damage=(4, 1.5)),
     {
         # Bladestorm's spin (moving allowed), striking (90326) everything within 8 yards every 0.5 sec for 1.5 sec;
-        # none of Bladestorm's immunities; a finisher (10% weapon damage a combo point, each strike).
+        # none of Bladestorm's immunities; a finisher (base and 3% of attack power a combo point, each strike).
         'id': 90325, 'copy': 46924, 'name': 'Spinning Crane Kick', 'icon': 'Ability_Monk_CraneKick_New',
         'visual': 'SpinningCraneKick',
-        'description': 'Finishing move that spins while kicking in the air, dealing 10% weapon damage per combo point '
-                       '($90326s1% at 5) to all enemies within 8 yards every 0.5 sec for $d. You can move.',
+        'description': 'Finishing move that spins while kicking in the air, striking all enemies within 8 yards '
+                       'every 0.5 sec for $d. You can move. Physical damage of each strike per combo point:\r\n'
+                       + per_point('$90326m1', 0.03),
         'tooltip': 'Spinning, kicking all enemies within 8 yards.',
         'set': windwalker(90325, 12, RecoveryTime=0, DurationIndex=DURATION_1_5S),
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 500, 'TriggerSpell': 90326}},
     },
-    strikes(90326, 12, 'Spinning Crane Kick', 'Ability_Monk_CraneKick_New', 'CraneKickStrike', 50,
-            TARGET_SRC_CASTER,
-            TARGET_UNIT_SRC_AREA_ENEMY),
+    strikes(90326, 12, 'Spinning Crane Kick', 'Ability_Monk_CraneKick_New', 'CraneKickStrike', TARGET_SRC_CASTER,
+            TARGET_UNIT_SRC_AREA_ENEMY, damage=(2, 0.8)),
     {
         # Bladestorm's spin, three strikes (90328) in a second; only while Rising Sun Kick and Fists of Fury are
         # cooling down (spell_titan_monk_whirling_dragon_punch).
@@ -868,9 +888,8 @@ SPELLS += [
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 333, 'TriggerSpell': 90328}},
     },
-    strikes(90328, 24, 'Whirling Dragon Punch', 'Ability_Monk_HurricaneStrike', 'DragonPunchStrike', 90,
-            TARGET_SRC_CASTER,
-            TARGET_UNIT_SRC_AREA_ENEMY),
+    strikes(90328, 24, 'Whirling Dragon Punch', 'Ability_Monk_HurricaneStrike', 'DragonPunchStrike',
+            TARGET_SRC_CASTER, TARGET_UNIT_SRC_AREA_ENEMY, weapon_pct=90),
 ]
 
 

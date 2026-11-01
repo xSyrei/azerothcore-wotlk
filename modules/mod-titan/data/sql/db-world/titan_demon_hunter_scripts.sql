@@ -17,6 +17,11 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90107, 0, 0, 0.2475, 0, 'Blade Dance - strike'),
 (90108, 0, 0, 0.742, 0, 'Blade Dance - final strike');
 
+-- Soul Cleave, a finisher: its share of attack power at 5 combo points (scaled with the rest by the points spent).
+DELETE FROM `spell_bonus_data` WHERE `entry` = 90125;
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90125, 0, 0, 0.75, 0, 'Soul Cleave (5 combo points)');
+
 -- Fel Rush: its damage (90104) only hits the enemies in the dash's path.
 DELETE FROM `spell_script_names` WHERE `spell_id` = 90104 AND `ScriptName` = 'spell_titan_dh_fel_rush_damage';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES

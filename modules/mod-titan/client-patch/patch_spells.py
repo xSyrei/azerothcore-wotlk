@@ -774,18 +774,20 @@ SPELLS = [
         },
     },
     {
-        # A finisher (spell_titan_dh_soul_cleave): up to 5 enemies in a cone in front, 60% weapon damage a combo point
-        # (the 5-point value here, scaled), and 8% of maximum health plus 3% a combo point (90131).
+        # A finisher (spell_titan_dh_soul_cleave): up to 5 enemies in a cone in front, a base and 15% of attack power a
+        # combo point (the 5-point values here and in spell_bonus_data, scaled), and 8% of maximum health plus 3% a
+        # combo point (90131).
         'id': 90125, 'copy': 1752, 'name': 'Soul Cleave', 'icon': 'Ability_DemonHunter_SoulCleave',
         'visual': 'SoulCleave', 'two_weapons': True,
-        'description': 'Finishing move that viciously strikes up to 5 enemies in front of you for 60% weapon damage '
-                       'per combo point ($s1% at 5) and heals you for $s2% of your maximum health, plus 3% per combo '
-                       'point.',
+        'description': 'Finishing move that viciously strikes up to 5 enemies in front of you and heals you. Physical '
+                       'damage and healing per combo point:\r\n'
+                       + patch_monk.per_point('$m1', 0.15, extra=lambda points: f', heals {8 + 3 * points}% of '
+                                              'maximum health'),
         'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
                 'StartRecoveryTime': 1500, 'MaxAffectedTargets': 5, 'BaseLevel': 1, 'SpellLevel': 1},
         'clear': [2, 3],
         'effects': {
-            1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 299, 'DieSides': 1,
+            1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 9, 'DieSides': 1, 'RealPointsPerLevel': 5.0,
                 'TargetA': TARGET_UNIT_CONE_ENEMY, 'RadiusIndex': RADIUS_8},
             2: {'Effect': EFFECT_HEAL_PCT, 'BasePoints': 7, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER},
         },
@@ -864,9 +866,9 @@ SPELLS = [
         # off 90136 for 30% of attack power per point.
         'id': 90135, 'copy': 26669, 'name': 'Spirit Bomb', 'icon': 'Ability_DemonHunter_SpiritBomb',
         'visual': 'SpiritBomb', 'two_weapons': True,
-        'description': 'Finishing move that explodes, dealing 30% of your attack power as Fire damage per combo '
-                       'point to enemies within 8 yards and inflicting Frailty for 8 sec: you heal for 8% of the '
-                       'damage you deal to them.',
+        'description': 'Finishing move that explodes, dealing Fire damage to enemies within 8 yards and inflicting '
+                       'Frailty for 8 sec: you heal for 8% of the damage you deal to them. Fire damage per combo '
+                       'point:\r\n' + patch_monk.per_point(None, 0.3),
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'PowerType': FURY, 'ManaCost': 0,
                 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500, 'DurationIndex': 0,
                 'BaseLevel': 30, 'SpellLevel': 30},
