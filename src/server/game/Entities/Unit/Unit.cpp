@@ -12878,7 +12878,13 @@ void Unit::AddComboPoints(Unit* target, int8 count)
         return;
     }
 
-    if (target && target != m_comboTarget)
+    if (target && target != m_comboTarget && IsPlayer())
+    {
+        // Emberforge: a player keeps their combo points on a new target, adding to them
+        RetargetComboPoints(target);
+        m_comboPoints = std::max<int8>(std::min<int8>(m_comboPoints + count, 5), 0);
+    }
+    else if (target && target != m_comboTarget)
     {
         if (m_comboTarget)
         {
@@ -12897,9 +12903,31 @@ void Unit::AddComboPoints(Unit* target, int8 count)
     SendComboPoints();
 }
 
+void Unit::RetargetComboPoints(Unit* target)
+{
+    if (target == m_comboTarget)
+    {
+        return;
+    }
+
+    if (m_comboTarget)
+    {
+        m_comboTarget->RemoveComboPointHolder(this);
+    }
+
+    m_comboTarget = target;
+    if (target)
+    {
+        target->AddComboPointHolder(this);
+    }
+
+    SendComboPoints();
+}
+
 void Unit::ClearComboPoints()
 {
-    if (!m_comboTarget)
+    // Emberforge: a player's combo points may be kept without a target (theirs died)
+    if (!m_comboTarget && !m_comboPoints)
     {
         return;
     }
@@ -12910,7 +12938,10 @@ void Unit::ClearComboPoints()
 
     m_comboPoints = 0;
     SendComboPoints();
-    m_comboTarget->RemoveComboPointHolder(this);
+    if (m_comboTarget)
+    {
+        m_comboTarget->RemoveComboPointHolder(this);
+    }
     m_comboTarget = nullptr;
 }
 
@@ -12956,7 +12987,16 @@ void Unit::ClearComboPointHolders()
 {
     while (!m_ComboPointHolders.empty())
     {
-        (*m_ComboPointHolders.begin())->ClearComboPoints(); // this also removes it from m_comboPointHolders
+        Unit* holder = *m_ComboPointHolders.begin();
+        // Emberforge: players keep their combo points for their next target; both remove it from the holders
+        if (holder->IsPlayer())
+        {
+            holder->RetargetComboPoints(nullptr);
+        }
+        else
+        {
+            holder->ClearComboPoints();
+        }
     }
 }
 

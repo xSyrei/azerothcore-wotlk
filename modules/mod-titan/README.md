@@ -235,3 +235,7 @@ A dedicated spell in the client patch gives it a proper "Use:" tooltip line.
 ## Core changes this module relies on
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
+- Universal combo points (`Unit::RetargetComboPoints`, `Unit::AddComboPoints`, `Unit::ClearComboPoints`,
+  `Unit::ClearComboPointHolders`, `Player::SetSelection`): a player's combo points are their own, not their
+  target's. Gaining points on a new target adds to them; changing target moves them onto it (shown there, its
+  finishers using them); the target dying keeps them for the next one. Pets and creatures are unchanged.

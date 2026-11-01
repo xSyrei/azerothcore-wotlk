@@ -11754,6 +11754,18 @@ void Player::SetSelection(ObjectGuid guid)
 {
     SetGuidValue(UNIT_FIELD_TARGET, guid);
 
+    // Emberforge: combo points are the player's own: they follow the new target (kept when targeting nothing)
+    if (GetComboPoints())
+    {
+        if (Unit* target = guid ? ObjectAccessor::GetUnit(*this, guid) : nullptr)
+        {
+            if (target != this && target->IsAlive())
+            {
+                RetargetComboPoints(target);
+            }
+        }
+    }
+
     if (NeedSendSpectatorData())
         ArenaSpectator::SendCommand_GUID(FindMap(), GetGUID(), "TRG", guid);
 }

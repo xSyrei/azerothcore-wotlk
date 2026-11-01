@@ -1028,6 +1028,9 @@ public:
     void AddComboPoints(Unit* target, int8 count);
     void AddComboPoints(int8 count) { AddComboPoints(nullptr, count); }
     void ClearComboPoints();
+    // Emberforge: a player's combo points are their own, not their target's: they follow the player's target
+    // (Player::SetSelection) and outlive it, kept for the next one.
+    void RetargetComboPoints(Unit* target);
 
     void AddComboPointHolder(Unit* unit) { m_ComboPointHolders.insert(unit); }
     void RemoveComboPointHolder(Unit* unit) { m_ComboPointHolders.erase(unit); }

@@ -47,12 +47,13 @@ int32 ComboPoints::RefundChance(Unit const* unit)
 
 void ComboPoints::Refund(Unit* unit, Unit* target, uint8 points)
 {
-    if (target && target->IsAlive() && points && roll_chance_i(RefundChance(unit)))
-        unit->AddComboPoints(target, points);
+    // A player's combo points are their own (Unit::RetargetComboPoints): back even when the target died.
+    if (points && roll_chance_i(RefundChance(unit)))
+        unit->AddComboPoints(target && target->IsAlive() ? target : nullptr, points);
 }
 
 // The game's own finishers (Eviscerate, Ferocious Bite, Slice and Dice...): it takes their combo points after the
-// cast, so the refund comes a moment later, on the same target.
+// cast, so the refund comes a moment later, on whatever the player targets then.
 class titan_combo_point_refund : public PlayerScript
 {
 public:
@@ -63,15 +64,12 @@ public:
         if (spell->IsTriggered() || !spell->GetSpellInfo()->NeedsComboPoints())
             return;
         uint8 points = player->GetComboPoints();
-        Unit* target = player->GetComboTarget();
-        if (!points || !target || !roll_chance_i(ComboPoints::RefundChance(player)))
+        if (!points || !roll_chance_i(ComboPoints::RefundChance(player)))
             return;
-        ObjectGuid targetGuid = target->GetGUID();
-        player->m_Events.AddEventAtOffset([player, targetGuid, points]()
+        player->m_Events.AddEventAtOffset([player, points]()
         {
-            if (Unit* again = ObjectAccessor::GetUnit(*player, targetGuid))
-                if (again->IsAlive())
-                    player->AddComboPoints(again, points);
+            Unit* target = player->GetSelectedUnit();
+            player->AddComboPoints(target && target->IsAlive() && target != player ? target : nullptr, points);
         }, 1ms);
     }
 };
