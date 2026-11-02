@@ -13,14 +13,16 @@ local SLOTS = { "Head", "Neck", "Shoulder", "Back", "Chest", "Shirt", "Tabard", 
     "Feet", "Finger0", "Finger1", "Trinket0", "Trinket1", "MainHand", "SecondaryHand", "Ranged", "Ammo" }
 
 local skin = CreateFrame("Frame", "EmberforgeCharacterSkin", PaperDollFrame)
-skin:SetFrameLevel(math.max(0, PaperDollFrame:GetFrameLevel() - 1))
 skin:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT", 12, -12)
-skin:SetBackdrop({
-    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-    tile = true, tileSize = 32, edgeSize = 24,
-    insets = { left = 6, right = 6, top = 6, bottom = 6 },
-})
+-- Frames here sit over the slots and the model: they draw edges only. What fills (the background, the model's
+-- inset) is drawn on the Character tab's own background layer, where its art was, under everything.
+skin:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16 })
+skin:SetBackdropBorderColor(EDGE[1], EDGE[2], EDGE[3], 1)
+local background = PaperDollFrame:CreateTexture(nil, "BACKGROUND")
+background:SetTexture(1, 1, 1, 1)
+background:SetGradientAlpha("VERTICAL", 0.04, 0.035, 0.03, 0.96, 0.1, 0.085, 0.07, 0.96)
+background:SetPoint("TOPLEFT", skin, "TOPLEFT", 4, -4)
+background:SetPoint("BOTTOMRIGHT", skin, "BOTTOMRIGHT", -4, 4)
 
 -- Its right edge: the stats column's when it shows, else the old frame's.
 local function Fit()
@@ -53,7 +55,6 @@ local name = title:CreateFontString(nil, "ARTWORK", "GameFontNormal")
 name:SetPoint("CENTER")
 name:SetTextColor(1, 1, 1)
 local level = skin:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-level:SetPoint("TOP", title, "BOTTOM", 0, -4)
 
 -- The portrait, drawn again over the new frame, in a gold ring.
 local portrait = skin:CreateTexture(nil, "ARTWORK")
@@ -64,16 +65,14 @@ ring:SetTexture(ART .. "Ring")
 ring:SetWidth(76)
 ring:SetHeight(76)
 
--- The model's inset.
+-- The model's inset: its edge a frame, its fill on the background layer.
 local inset = CreateFrame("Frame", nil, skin)
-inset:SetBackdrop({
-    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = true, tileSize = 16, edgeSize = 12,
-    insets = { left = 3, right = 3, top = 3, bottom = 3 },
-})
-inset:SetBackdropColor(0, 0, 0, 0.55)
+inset:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 12 })
 inset:SetBackdropBorderColor(0.4, 0.34, 0.27, 1)
+local insetFill = PaperDollFrame:CreateTexture(nil, "BORDER")
+insetFill:SetTexture(0, 0, 0, 0.6)
+insetFill:SetPoint("TOPLEFT", inset, "TOPLEFT", 3, -3)
+insetFill:SetPoint("BOTTOMRIGHT", inset, "BOTTOMRIGHT", -3, 3)
 
 -- A square frame behind each gear slot, edged in its item's quality color.
 local slotFrames = {}
@@ -83,13 +82,7 @@ for _, name in ipairs(SLOTS) do
         local frame = CreateFrame("Frame", nil, skin)
         frame:SetPoint("TOPLEFT", button, "TOPLEFT", -3, 3)
         frame:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 3, -3)
-        frame:SetBackdrop({
-            bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            tile = true, tileSize = 16, edgeSize = 10,
-            insets = { left = 2, right = 2, top = 2, bottom = 2 },
-        })
-        frame:SetBackdropColor(0, 0, 0, 0.8)
+        frame:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10 })
         frame.slot = button:GetID()
         slotFrames[#slotFrames + 1] = frame
     end
@@ -141,13 +134,10 @@ local function Move(region, ...)
 end
 
 SetTexts = function()
-    name:SetText(CharacterNameText and CharacterNameText:GetText() or UnitName("player"))
-    level:SetText(CharacterLevelText and CharacterLevelText:GetText() or "")
-    local r, g, b = 1, 0.82, 0
-    if CharacterLevelText then
-        r, g, b = CharacterLevelText:GetTextColor()
-    end
-    level:SetTextColor(r, g, b)
+    name:SetText(UnitPVPName("player") or UnitName("player"))
+    local format = PLAYER_LEVEL or "Level %s %s %s"
+    level:SetText(format:format(UnitLevel("player"), UnitRace("player") or "", UnitClass("player") or ""))
+    level:SetTextColor(1, 0.82, 0)
 end
 
 local function Restore()
@@ -191,6 +181,9 @@ local function Apply()
         inset:SetPoint("TOPLEFT", CharacterHeadSlot, "TOPRIGHT", 6, 4)
         inset:SetPoint("BOTTOMRIGHT", CharacterTrinket1Slot, "BOTTOMLEFT", -6, -4)
     end
+    -- The level line over the model, clear of the stats column.
+    level:ClearAllPoints()
+    level:SetPoint("BOTTOM", inset, "TOP", 0, 4)
     ColorSlots()
 end
 
