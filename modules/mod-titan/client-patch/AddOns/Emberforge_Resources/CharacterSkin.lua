@@ -7,6 +7,7 @@
 -- arrows in its bottom left corner, the weapons centered at its bottom, the character between them. Only the
 -- Character tab: Reputation, Skills and the rest keep their own look (what is moved here goes back when the tab
 -- closes). Hiding the stats column (StatPanel.lua) narrows the window back.
+local _, ns = ...
 local ART = "Interface\\AddOns\\Emberforge_Resources\\Art\\"
 local EDGE = { 0.55, 0.45, 0.35 }
 local SLOTS = { "Head", "Neck", "Shoulder", "Back", "Chest", "Shirt", "Tabard", "Wrist", "Hands", "Waist", "Legs",
@@ -140,6 +141,83 @@ SetTexts = function()
     level:SetTextColor(1, 0.82, 0)
 end
 
+-- The tabs under the window: joined to its bottom edge, rounded boxes like the window's (the selected one ember),
+-- their Blizzard art hidden; all of it back when the tab closes, for the other tabs' own frames.
+local TAB_ART = { "Left", "Middle", "Right", "LeftDisabled", "MiddleDisabled", "RightDisabled" }
+local TAB_HEIGHT = 24
+local tabHeights = {}
+
+local function Tabs()
+    local tabs = {}
+    for index = 1, CharacterFrame.numTabs or 5 do
+        local tab = _G["CharacterFrameTab" .. index]
+        if tab then
+            tabs[#tabs + 1] = tab
+        end
+    end
+    return tabs
+end
+
+local function SkinTabs()
+    local first = true
+    for _, tab in ipairs(Tabs()) do
+        if not tab.boxFill then
+            ns.Box(tab, ns.TAB_FILL, ns.TAB_EDGE)
+        end
+        local name = tab:GetName()
+        for _, part in ipairs(TAB_ART) do
+            local texture = _G[name .. part]
+            if texture then
+                texture:SetAlpha(0)
+            end
+        end
+        local highlight = tab:GetHighlightTexture()
+        if highlight then
+            highlight:SetAlpha(0)
+        end
+        ns.BoxShown(tab, true)
+        local selected = PanelTemplates_GetSelectedTab and PanelTemplates_GetSelectedTab(CharacterFrame) == tab:GetID()
+        if selected then
+            ns.BoxColor(tab, ns.TAB_ON_FILL, ns.TAB_ON_EDGE)
+        else
+            ns.BoxColor(tab, ns.TAB_FILL, ns.TAB_EDGE)
+        end
+        tabHeights[tab] = tabHeights[tab] or tab:GetHeight()
+        tab:SetHeight(TAB_HEIGHT)
+        local text = _G[name .. "Text"]
+        if text then
+            Move(text, "CENTER", tab, "CENTER", 0, 0)
+        end
+        -- The first tab joins the window's bottom edge; the others follow it, as Blizzard chains them.
+        if first and tab:IsShown() then
+            Move(tab, "TOPLEFT", skin, "BOTTOMLEFT", 10, 3)
+            first = false
+        end
+    end
+end
+
+local function RestoreTabs()
+    for _, tab in ipairs(Tabs()) do
+        local name = tab:GetName()
+        for _, part in ipairs(TAB_ART) do
+            local texture = _G[name .. part]
+            if texture then
+                texture:SetAlpha(1)
+            end
+        end
+        local highlight = tab:GetHighlightTexture()
+        if highlight then
+            highlight:SetAlpha(1)
+        end
+        if tab.boxFill then
+            ns.BoxShown(tab, false)
+        end
+        if tabHeights[tab] then
+            tab:SetHeight(tabHeights[tab])
+        end
+    end
+end
+
 local function Restore()
     for region, points in pairs(moved) do
         region:ClearAllPoints()
@@ -152,6 +230,7 @@ local function Restore()
         region:Show()
     end
     wipe(hiddenArt)
+    RestoreTabs()
     for _, region in ipairs({ CharacterNameText, CharacterLevelText, CharacterFramePortrait }) do
         if region then
             region:SetAlpha(1)
@@ -233,6 +312,7 @@ local function Apply()
         end
     end
     ColorSlots()
+    SkinTabs()
 end
 
 PaperDollFrame:HookScript("OnShow", Apply)

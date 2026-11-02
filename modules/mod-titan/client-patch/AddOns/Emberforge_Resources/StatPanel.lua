@@ -7,6 +7,8 @@
 -- column shows (the arrow at the bottom of the model), are kept per character. The 3.3.5 stat area under the model
 -- is hidden.
 
+local _, ns = ...
+
 local CATEGORIES = {
     { key = "PLAYERSTAT_BASE_STATS", text = "Attributes" },
     { key = "PLAYERSTAT_MELEE_COMBAT", text = PLAYERSTAT_MELEE_COMBAT or "Melee" },
@@ -17,8 +19,6 @@ local CATEGORIES = {
 local DEFAULTS = { "PLAYERSTAT_BASE_STATS", "PLAYERSTAT_MELEE_COMBAT" }
 local WIDTH, ROWS, ROW_HEIGHT, HEADER_HEIGHT = 206, 6, 20, 24
 local INNER = WIDTH - 20
-local GOLD = { 1, 0.82, 0 }
-local EDGE = { 0.86, 0.64, 0.32 }
 -- The slots that count for the average (shirt and tabard do not); a two-hander counts for the off hand too.
 local SLOTS = { 1, 2, 3, 15, 5, 9, 10, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 }
 
@@ -36,35 +36,28 @@ local shade = panel:CreateTexture(nil, "BACKGROUND")
 shade:SetTexture(0, 0, 0, 0.25)
 shade:SetAllPoints()
 
--- A title bar: a warm gradient between thin gold lines, its text centered; a filter's has an arrow.
+-- A title bar: a rounded box, ember fill under a gold edge (the Classless window's look), its text centered; a
+-- filter's has a small gold arrow and lights up under the mouse.
 local function Header(text, clickable)
     local header = CreateFrame(clickable and "Button" or "Frame", nil, panel)
     header:SetWidth(INNER)
     header:SetHeight(HEADER_HEIGHT)
-    local fill = header:CreateTexture(nil, "BACKGROUND")
-    fill:SetTexture(1, 1, 1, 1)
-    fill:SetGradientAlpha("VERTICAL", 0.08, 0.06, 0.05, 1, 0.24, 0.18, 0.12, 1)
-    fill:SetAllPoints()
-    for _, side in ipairs({ "TOP", "BOTTOM" }) do
-        local line = header:CreateTexture(nil, "BORDER")
-        line:SetTexture(EDGE[1], EDGE[2], EDGE[3], 0.7)
-        line:SetHeight(1)
-        line:SetPoint(side .. "LEFT")
-        line:SetPoint(side .. "RIGHT")
-    end
+    ns.Box(header, ns.BANNER_FILL, ns.BANNER_EDGE)
     header.text = header:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     header.text:SetPoint("CENTER")
-    header.text:SetTextColor(unpack(GOLD))
+    header.text:SetTextColor(unpack(ns.GOLD))
     header.text:SetText(text)
     if clickable then
         local arrow = header:CreateTexture(nil, "ARTWORK")
-        arrow:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
-        arrow:SetWidth(18)
-        arrow:SetHeight(18)
-        arrow:SetPoint("RIGHT", -3, 0)
+        arrow:SetTexture(ns.ARROW)
+        arrow:SetVertexColor(1, 0.82, 0.4)
+        arrow:SetWidth(12)
+        arrow:SetHeight(12)
+        arrow:SetPoint("RIGHT", -8, 0)
         local hover = header:CreateTexture(nil, "HIGHLIGHT")
         hover:SetTexture(1, 0.6, 0.2, 0.12)
-        hover:SetAllPoints()
+        hover:SetPoint("TOPLEFT", 2, -2)
+        hover:SetPoint("BOTTOMRIGHT", -2, 2)
     end
     return header
 end

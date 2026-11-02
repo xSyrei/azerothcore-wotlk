@@ -4,5 +4,6 @@
 ## Author: Project Emberforge
 ## SavedVariablesPerCharacter: EmberforgeResourcesDB
 Emberforge_Resources.lua
+Box.lua
 StatPanel.lua
 CharacterSkin.lua
