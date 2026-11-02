@@ -3,10 +3,10 @@
 -- The Character tab's own art (two halves of a frame, and the stats column beside it) gives way to one frame around
 -- both: a dark background under one border, a title bar across the top with the name in it and the close button at
 -- its right end, a dark inset behind the model, a gold ring around the portrait, and a square frame behind every
--- gear slot, edged in the item's quality color. Only the Character tab: Reputation, Skills and the rest keep their
--- own look (what is moved here goes back when the tab closes). Hiding the stats column (StatPanel.lua) narrows the
--- window back.
-
+-- gear slot, edged in the item's quality color. In the inset: the resistances in a row across its top, the rotation
+-- arrows in its bottom left corner, the weapons centered at its bottom, the character between them. Only the
+-- Character tab: Reputation, Skills and the rest keep their own look (what is moved here goes back when the tab
+-- closes). Hiding the stats column (StatPanel.lua) narrows the window back.
 local ART = "Interface\\AddOns\\Emberforge_Resources\\Art\\"
 local EDGE = { 0.55, 0.45, 0.35 }
 local SLOTS = { "Head", "Neck", "Shoulder", "Back", "Chest", "Shirt", "Tabard", "Wrist", "Hands", "Waist", "Legs",
@@ -159,20 +159,26 @@ local function Restore()
     end
 end
 
--- The resistance boxes inside the model: Resistances is a section of the stats column instead.
-local function HideResistances()
+-- The five resistance boxes in a row across the top of the model, the middle one centered.
+local function PlaceResistances()
+    local boxes = {}
     for school = 1, 5 do
-        local frame = _G["MagicResFrame" .. school]
-        if frame and frame:IsShown() then
-            frame:Hide()
-            hiddenArt[frame] = true
-        end
+        boxes[school] = _G["MagicResFrame" .. school]
+    end
+    if not boxes[3] then
+        return
+    end
+    Move(boxes[3], "TOP", inset, "TOP", 0, -6)
+    for school = 2, 1, -1 do
+        Move(boxes[school], "RIGHT", boxes[school + 1], "LEFT", -6, 0)
+    end
+    for school = 4, 5 do
+        Move(boxes[school], "LEFT", boxes[school - 1], "RIGHT", 6, 0)
     end
 end
 
 local function Apply()
     HideArt()
-    HideResistances()
     Fit()
     Move(CharacterFrameCloseButton, "TOPRIGHT", skin, "TOPRIGHT", -5, -5)
     CharacterFrameCloseButton:SetFrameLevel(skin:GetFrameLevel() + 10)
@@ -199,9 +205,9 @@ local function Apply()
         inset:SetPoint("TOPLEFT", CharacterHeadSlot, "TOPRIGHT", 6, 4)
         inset:SetPoint("BOTTOMRIGHT", CharacterTrinket1Slot, "BOTTOMLEFT", -6, -4)
     end
-    -- The level line right under the title bar, centered over the model.
+    -- The level line between the title bar and the model, centered over the model.
     level:ClearAllPoints()
-    level:SetPoint("TOP", title, "BOTTOM", 0, -3)
+    level:SetPoint("TOP", title, "BOTTOM", 0, -16)
     level:SetPoint("LEFT", inset, "LEFT", 0, 0)
     level:SetPoint("RIGHT", inset, "RIGHT", 0, 0)
     level:SetJustifyH("CENTER")
@@ -210,6 +216,20 @@ local function Apply()
         local step = CharacterSecondaryHandSlot:GetLeft() and CharacterMainHandSlot:GetLeft()
             and (CharacterSecondaryHandSlot:GetLeft() - CharacterMainHandSlot:GetLeft()) or 42
         Move(CharacterMainHandSlot, "BOTTOM", inset, "BOTTOM", -step, 8)
+    end
+    PlaceResistances()
+    -- The character between the resistances and the weapons, centered in the inset.
+    if CharacterModelFrame then
+        Move(CharacterModelFrame, "TOPLEFT", inset, "TOPLEFT", 6, -42)
+        CharacterModelFrame:SetPoint("BOTTOMRIGHT", inset, "BOTTOMRIGHT", -6, 54)
+    end
+    -- The rotation arrows in the inset's bottom left corner, clear of the model and the weapons.
+    if CharacterModelFrameRotateLeftButton and CharacterModelFrameRotateRightButton then
+        Move(CharacterModelFrameRotateLeftButton, "BOTTOMLEFT", inset, "BOTTOMLEFT", 8, 10)
+        Move(CharacterModelFrameRotateRightButton, "LEFT", CharacterModelFrameRotateLeftButton, "RIGHT", 4, 0)
+        for _, button in ipairs({ CharacterModelFrameRotateLeftButton, CharacterModelFrameRotateRightButton }) do
+            button:SetFrameLevel(CharacterModelFrame:GetFrameLevel() + 5)
+        end
     end
     ColorSlots()
 end

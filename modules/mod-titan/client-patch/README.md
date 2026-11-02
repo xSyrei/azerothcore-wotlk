@@ -281,15 +281,15 @@ Emberforge has no Runic Power: `patch_spells.py` turns every spell costing or gi
 in every UI string left (combat text, errors).
 
 It also shows every piece of gear's item level on its tooltip ("Item Level 63" in gold under the name, as from
-Cataclysm on), for every class, and the character window's stats as Cataclysm's character pane (`StatPanel.lua`):
-a column on its right, one scrolling list of sections (General: health, your powers and the average item level of
-what you wear; Attributes, Melee, Ranged, Spell, Defenses: Blizzard's own stat lines and tooltips), each folding with
-its - / + button (Resistances last: the resistance boxes in the model are hidden), a scrollbar, and an
-arrow at the bottom of the model to hide or show the column (both kept per character). The old stat area under
-the model is hidden. `CharacterSkin.lua` makes the Character tab one window around the model and
-that column: one border and background, a title bar across the top with the name and the close button at its right
-end, a dark inset behind the model, a gold ring around the portrait, and a frame behind each gear slot edged in its
-item's quality color (the other tabs keep their own look).
+Cataclysm on), for every class, and the character window's stats Cataclysm style (`StatPanel.lua`): a column on
+its right with the average item level of what you wear on top, then two sections whose titles are filters you click
+to choose Attributes, Melee, Ranged, Spell or Defenses (Blizzard's own stat lines and tooltips; kept per character),
+fixed in size so nothing scrolls, and an arrow at the bottom of the model to hide or show the column. The old stat
+area under the model is hidden. `CharacterSkin.lua` makes the Character tab one window around the model and that
+column: one border and background, a title bar across the top with the name and the close button at its right end,
+a dark inset behind the model (the resistances in a row across its top, the rotation arrows in its bottom left
+corner, the weapons centered at its bottom, the character between them), a gold ring around the portrait, and a
+frame behind each gear slot edged in its item's quality color (the other tabs keep their own look).
 
 Install: copy the `Emberforge_Resources` folder into the client's `Interface\AddOns\` folder.
 The launcher will ship it automatically for players.
