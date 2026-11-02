@@ -1,199 +1,222 @@
--- Emberforge Resources: the character window's stats, Cataclysm style, for every class.
+-- Emberforge Resources: the character window's stats as Cataclysm's character pane, for every class.
 --
--- A panel on the right of the character window (Character tab only): the average item level of what you wear on
--- top, then two stat sections. Click a section's title to pick what it shows: Base Stats, Melee, Ranged, Spell or
--- Defenses, the same five as the 3.3.5 dropdowns, filled by Blizzard's own stat code (UpdatePaperdollStats), tooltips
--- included. The choices are kept per character. The old stat area under the model is hidden.
+-- A column on the right of the character window (Character tab only), one scrolling list of sections: General
+-- (health, each power you use, the average item level of what you wear), Attributes, Melee, Ranged, Spell and
+-- Defenses. Each section folds with its - / + button; the five Blizzard ones are filled by Blizzard's own stat code
+-- (UpdatePaperdollStats), tooltips included. The arrow at the bottom of the model hides or shows the column. What is
+-- folded and whether the column shows are kept per character. The 3.3.5 stat area under the model is hidden.
 
-local CATEGORIES = {
-    { key = "PLAYERSTAT_BASE_STATS", text = PLAYERSTAT_BASE_STATS or "Base Stats" },
+local WIDTH, ROW_HEIGHT, HEADER_HEIGHT, ROWS = 206, 15, 20, 6
+local INNER = WIDTH - 44                -- the list's width, beside the scrollbar
+local GOLD = { 1, 0.82, 0 }
+local EDGE = { 0.86, 0.64, 0.32 }
+-- The slots that count for the average (shirt and tabard do not); a two-hander counts for the off hand too.
+local SLOTS = { 1, 2, 3, 15, 5, 9, 10, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 }
+-- Powers shown under General: a Hero has every one of these; anyone else, their own.
+local POWERS = { { 0, MANA or "Mana" }, { 1, RAGE or "Rage" }, { 3, ENERGY or "Energy" } }
+local SECTIONS = {
+    { key = "GENERAL", text = "General" },
+    { key = "PLAYERSTAT_BASE_STATS", text = "Attributes" },
     { key = "PLAYERSTAT_MELEE_COMBAT", text = PLAYERSTAT_MELEE_COMBAT or "Melee" },
     { key = "PLAYERSTAT_RANGED_COMBAT", text = PLAYERSTAT_RANGED_COMBAT or "Ranged" },
     { key = "PLAYERSTAT_SPELL_COMBAT", text = PLAYERSTAT_SPELL_COMBAT or "Spell" },
     { key = "PLAYERSTAT_DEFENSES", text = PLAYERSTAT_DEFENSES or "Defenses" },
 }
-local DEFAULTS = { "PLAYERSTAT_BASE_STATS", "PLAYERSTAT_MELEE_COMBAT" }
-local ROWS = 6
-local WIDTH, ROW_HEIGHT = 212, 18
--- The slots that count for the average (shirt and tabard do not); a two-hander counts for the off hand too.
-local SLOTS = { 1, 2, 3, 15, 5, 9, 10, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 }
 
-local GOLD = { 1, 0.82, 0 }
-local EDGE = { 0.86, 0.64, 0.32 }
-local TOP, SECTION_GAP, HEADER_HEIGHT = -16, 22, 24
+local function DB()
+    EmberforgeResourcesDB = EmberforgeResourcesDB or {}
+    EmberforgeResourcesDB.folded = EmberforgeResourcesDB.folded or {}
+    return EmberforgeResourcesDB
+end
 
+-- The column: flush against the window's right edge, its full height.
 local panel = CreateFrame("Frame", "EmberforgeStatPanel", PaperDollFrame)
 panel:SetWidth(WIDTH)
-panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -36, -13)
-panel:SetPoint("BOTTOMLEFT", CharacterFrame, "BOTTOMRIGHT", -36, 76)
+panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -37, -13)
+panel:SetPoint("BOTTOMLEFT", CharacterFrame, "BOTTOMRIGHT", -37, 77)
 panel:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
-    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-    tile = true, tileSize = 32, edgeSize = 24,
-    insets = { left = 6, right = 6, top = 6, bottom = 6 },
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true, tileSize = 32, edgeSize = 16,
+    insets = { left = 4, right = 4, top = 4, bottom = 4 },
 })
+panel:SetBackdropBorderColor(0.55, 0.45, 0.35, 1)
 
--- A title bar: a warm gradient under a thin gold edge, its text centered (Cataclysm's look).
-local function Header(parent, text, clickable)
-    local header = CreateFrame(clickable and "Button" or "Frame", nil, parent)
-    header:SetWidth(WIDTH - 22)
+local scroll = CreateFrame("ScrollFrame", "EmberforgeStatPanelScroll", panel, "UIPanelScrollFrameTemplate")
+scroll:SetPoint("TOPLEFT", 10, -10)
+scroll:SetPoint("BOTTOMRIGHT", -30, 10)
+local list = CreateFrame("Frame", nil, scroll)
+list:SetWidth(INNER)
+list:SetHeight(1)
+scroll:SetScrollChild(list)
+
+-- A row: a label on the left, its value on the right, a stripe behind every other one.
+local function NewRow(name)
+    local row = CreateFrame("Frame", name, list)
+    row:SetWidth(INNER)
+    row:SetHeight(ROW_HEIGHT)
+    row:EnableMouse(true)
+    local label = row:CreateFontString(name and name .. "Label", "ARTWORK", "GameFontNormalSmall")
+    label:SetPoint("LEFT", 6, 0)
+    local value = row:CreateFontString(name and name .. "StatText", "ARTWORK", "GameFontHighlightSmall")
+    value:SetPoint("RIGHT", -4, 0)
+    row.stripe = row:CreateTexture(nil, "BACKGROUND")
+    row.stripe:SetTexture(1, 1, 1, 0.06)
+    row.stripe:SetAllPoints()
+    row.label, row.value = label, value
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    return row
+end
+
+-- A section's title bar: dark, a thin gold line under it, the - / + button on its left.
+local function NewHeader(section)
+    local header = CreateFrame("Button", nil, list)
+    header:SetWidth(INNER)
     header:SetHeight(HEADER_HEIGHT)
-    header:SetBackdrop({
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 12,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 },
-    })
-    header:SetBackdropBorderColor(EDGE[1], EDGE[2], EDGE[3], 1)
     local fill = header:CreateTexture(nil, "BACKGROUND")
     fill:SetTexture(1, 1, 1, 1)
-    fill:SetGradientAlpha("VERTICAL", 0.1, 0.06, 0.03, 1, 0.33, 0.21, 0.08, 1)
-    fill:SetPoint("TOPLEFT", 3, -3)
-    fill:SetPoint("BOTTOMRIGHT", -3, 3)
-    header.text = header:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    header.text:SetPoint("CENTER")
-    header.text:SetTextColor(unpack(GOLD))
-    header.text:SetText(text)
-    if clickable then
-        local arrow = header:CreateTexture(nil, "ARTWORK")
-        arrow:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
-        arrow:SetWidth(18)
-        arrow:SetHeight(18)
-        arrow:SetPoint("RIGHT", -4, 0)
-        local hover = header:CreateTexture(nil, "HIGHLIGHT")
-        hover:SetTexture(1, 0.6, 0.2, 0.12)
-        hover:SetPoint("TOPLEFT", 3, -3)
-        hover:SetPoint("BOTTOMRIGHT", -3, 3)
-    end
+    fill:SetGradientAlpha("VERTICAL", 0.08, 0.06, 0.05, 1, 0.2, 0.16, 0.12, 1)
+    fill:SetAllPoints()
+    local line = header:CreateTexture(nil, "BORDER")
+    line:SetTexture(EDGE[1], EDGE[2], EDGE[3], 0.6)
+    line:SetHeight(1)
+    line:SetPoint("BOTTOMLEFT")
+    line:SetPoint("BOTTOMRIGHT")
+    header.toggle = header:CreateTexture(nil, "ARTWORK")
+    header.toggle:SetWidth(14)
+    header.toggle:SetHeight(14)
+    header.toggle:SetPoint("LEFT", 3, 0)
+    local text = header:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    text:SetPoint("LEFT", header.toggle, "RIGHT", 4, 0)
+    text:SetTextColor(unpack(GOLD))
+    text:SetText(section.text)
+    local hover = header:CreateTexture(nil, "HIGHLIGHT")
+    hover:SetTexture(1, 0.6, 0.2, 0.1)
+    hover:SetAllPoints()
     return header
 end
 
--- Item level: its title, then the number in a dark inset bar.
-local levelHeader = Header(panel, "Item Level")
-levelHeader:SetPoint("TOP", 0, TOP)
-local levelBar = CreateFrame("Frame", nil, panel)
-levelBar:SetWidth(WIDTH - 40)
-levelBar:SetHeight(34)
-levelBar:SetPoint("TOP", levelHeader, "BOTTOM", 0, -4)
-local levelFill = levelBar:CreateTexture(nil, "BACKGROUND")
-levelFill:SetTexture(1, 1, 1, 1)
-levelFill:SetGradientAlpha("HORIZONTAL", 0.05, 0.03, 0.02, 0.2, 0.05, 0.03, 0.02, 0.2)
-levelFill:SetAllPoints()
-local levelGlow = levelBar:CreateTexture(nil, "BORDER")
-levelGlow:SetTexture(0.35, 0.16, 0.45, 0.35)
-levelGlow:SetPoint("TOPLEFT", 30, -4)
-levelGlow:SetPoint("BOTTOMRIGHT", -30, 4)
-local itemLevel = levelBar:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
-itemLevel:SetPoint("CENTER", 0, 0)
-itemLevel:SetTextColor(0.75, 0.42, 1)
+local sections = {}
+local Refresh
+for index, info in ipairs(SECTIONS) do
+    local section = { key = info.key, rows = {}, header = NewHeader(info) }
+    local prefix = "EmberforgeStatPanel" .. index .. "Row"
+    -- Blizzard's sections: six rows named for UpdatePaperdollStats. General: its own, as many as it needs.
+    for row = 1, info.key == "GENERAL" and 5 or ROWS do
+        section.rows[row] = NewRow(prefix .. row)
+    end
+    section.header:SetScript("OnClick", function()
+        local folded = DB().folded
+        folded[info.key] = not folded[info.key] or nil
+        Refresh()
+    end)
+    sections[index] = section
+end
 
 local function AverageItemLevel()
     local total = 0
     for _, slot in ipairs(SLOTS) do
         local link = GetInventoryItemLink("player", slot)
-        local level, equipLoc
         if link then
-            level, equipLoc = select(4, GetItemInfo(link)), select(9, GetItemInfo(link))
-        end
-        if level then
-            total = total + level
-        end
-        -- Nothing in the off hand behind a two-hander: the two-hander counts twice.
-        if level and slot == 16 and equipLoc == "INVTYPE_2HWEAPON" and not GetInventoryItemLink("player", 17) then
-            total = total + level
+            local level, equipLoc = select(4, GetItemInfo(link)), select(9, GetItemInfo(link))
+            total = total + (level or 0)
+            -- Nothing in the off hand behind a two-hander: the two-hander counts twice.
+            if level and slot == 16 and equipLoc == "INVTYPE_2HWEAPON" and not GetInventoryItemLink("player", 17) then
+                total = total + level
+            end
         end
     end
     return math.floor(total / #SLOTS + 0.5)
 end
 
--- The two stat sections: a title to click, then six striped rows of Blizzard's stat frames.
-local menu = CreateFrame("Frame", "EmberforgeStatPanelMenu", UIParent, "UIDropDownMenuTemplate")
-local sections = {}
-
-local function CategoryText(key)
-    for _, category in ipairs(CATEGORIES) do
-        if category.key == key then
-            return category.text
+local function SetGeneral(rows)
+    local lines = { { HEALTH or "Health", UnitHealthMax("player") } }
+    local _, class = UnitClass("player")
+    for _, power in ipairs(POWERS) do
+        if class == "PALADIN" or UnitPowerType("player") == power[1] then
+            lines[#lines + 1] = { power[2], UnitPowerMax("player", power[1]) }
         end
     end
-    return key
-end
-
-local function StatRow(prefix, index, anchor)
-    local ok, row = pcall(CreateFrame, "Frame", prefix .. index, panel, "StatFrameTemplate")
-    if not ok then
-        row = CreateFrame("Frame", prefix .. index, panel)
-        local label = row:CreateFontString(prefix .. index .. "Label", "ARTWORK", "GameFontNormalSmall")
-        label:SetPoint("LEFT")
-        local stat = row:CreateFontString(prefix .. index .. "StatText", "ARTWORK", "GameFontHighlightSmall")
-        stat:SetPoint("RIGHT")
-        row:EnableMouse(true)
-    end
-    row:SetWidth(WIDTH - 40)
-    row:SetHeight(ROW_HEIGHT)
-    row:SetPoint("TOP", anchor, "BOTTOM", 0, index == 1 and -4 or 0)
-    -- Every other row a faint stripe, as Cataclysm's; a little wider than the text.
-    if index % 2 == 1 then
-        local stripe = row:CreateTexture(nil, "BACKGROUND")
-        stripe:SetTexture(1, 1, 1, 0.06)
-        stripe:SetPoint("TOPLEFT", -4, 0)
-        stripe:SetPoint("BOTTOMRIGHT", 4, 0)
-    end
-    return row
-end
-
-local function Choice(index)
-    local db = EmberforgeResourcesDB
-    return db and db.stats and db.stats[index] or DEFAULTS[index]
-end
-
-local function UpdateSection(index)
-    local section = sections[index]
-    local key = Choice(index)
-    section.header.text:SetText(CategoryText(key))
-    if UpdatePaperdollStats then
-        UpdatePaperdollStats(section.prefix, key)
+    lines[#lines + 1] = { "Item Level", "|cffbf6bff" .. AverageItemLevel() .. "|r" }
+    for index, row in ipairs(rows) do
+        local line = lines[index]
+        if line then
+            row.label:SetText(line[1] .. ":")
+            row.value:SetText(line[2])
+            row:Show()
+        else
+            row:Hide()
+        end
     end
 end
 
-local function UpdatePanel()
+-- Fills and stacks the sections: folded ones show their title only, rows a section hides are skipped.
+Refresh = function()
     if not panel:IsVisible() then
         return
     end
-    itemLevel:SetText(AverageItemLevel())
-    for index in ipairs(sections) do
-        UpdateSection(index)
-    end
-end
-
-local anchor = levelBar
-for index = 1, 2 do
-    local prefix = "EmberforgeStatPanel" .. (index == 1 and "Top" or "Bottom")
-    local header = Header(panel, "", true)
-    header:SetPoint("TOP", anchor, "BOTTOM", 0, -SECTION_GAP)
-    local section = { header = header, prefix = prefix }
-    anchor = header
-    for row = 1, ROWS do
-        anchor = StatRow(prefix, row, anchor)
-    end
-    header:SetScript("OnClick", function(self)
-        local items = {}
-        for _, category in ipairs(CATEGORIES) do
-            items[#items + 1] = {
-                text = category.text,
-                checked = Choice(index) == category.key,
-                func = function()
-                    EmberforgeResourcesDB = EmberforgeResourcesDB or {}
-                    EmberforgeResourcesDB.stats = EmberforgeResourcesDB.stats or {}
-                    EmberforgeResourcesDB.stats[index] = category.key
-                    UpdateSection(index)
-                end,
-            }
+    local folded = DB().folded
+    local y = 0
+    for index, section in ipairs(sections) do
+        local header = section.header
+        header:ClearAllPoints()
+        header:SetPoint("TOPLEFT", list, "TOPLEFT", 0, -y)
+        y = y + HEADER_HEIGHT + 2
+        local open = not folded[section.key]
+        header.toggle:SetTexture("Interface\\Buttons\\UI-" .. (open and "Minus" or "Plus") .. "Button-Up")
+        if open then
+            if section.key == "GENERAL" then
+                SetGeneral(section.rows)
+            elseif UpdatePaperdollStats then
+                UpdatePaperdollStats("EmberforgeStatPanel" .. index .. "Row", section.key)
+            end
         end
-        EasyMenu(items, menu, self, 0, 0, "MENU")
-    end)
-    sections[index] = section
+        local shown = 0
+        for _, row in ipairs(section.rows) do
+            if open and row:IsShown() then
+                row:ClearAllPoints()
+                row:SetPoint("TOPLEFT", list, "TOPLEFT", 0, -y)
+                row.stripe:SetAlpha(shown % 2 == 0 and 1 or 0)
+                y = y + ROW_HEIGHT
+                shown = shown + 1
+            else
+                row:Hide()
+            end
+        end
+        y = y + 6
+    end
+    list:SetHeight(math.max(1, y))
 end
 
--- The 3.3.5 stat area under the model (its dropdowns and two columns) gives way to the panel.
+-- The arrow at the bottom right of the model: hides or shows the column.
+local toggle = CreateFrame("Button", "EmberforgeStatPanelToggle", PaperDollFrame)
+toggle:SetWidth(26)
+toggle:SetHeight(26)
+toggle:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -42, 84)
+local function SetArrow()
+    local shown = not DB().hidden
+    local page = shown and "Next" or "Prev"
+    toggle:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-" .. page .. "Page-Up")
+    toggle:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-" .. page .. "Page-Down")
+    toggle:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+    if shown then
+        panel:Show()
+    else
+        panel:Hide()
+    end
+end
+toggle:SetScript("OnClick", function()
+    DB().hidden = not DB().hidden or nil
+    SetArrow()
+end)
+toggle:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:SetText(DB().hidden and "Show stats" or "Hide stats")
+    GameTooltip:Show()
+end)
+toggle:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+-- The 3.3.5 stat area under the model (its dropdowns and two columns) gives way to the column.
 local function HideOldStats()
     for _, name in ipairs({ "PlayerStatFrameLeftDropDown", "PlayerStatFrameRightDropDown", "PlayerStatLeftTop",
         "PlayerStatLeftMiddle", "PlayerStatLeftBottom", "PlayerStatRightTop", "PlayerStatRightMiddle",
@@ -215,19 +238,22 @@ end
 if PaperDollFrame_UpdateStats then
     hooksecurefunc("PaperDollFrame_UpdateStats", function()
         HideOldStats()
-        UpdatePanel()
+        Refresh()
     end)
 end
-panel:SetScript("OnShow", function()
+PaperDollFrame:HookScript("OnShow", function()
     HideOldStats()
-    UpdatePanel()
+    SetArrow()
 end)
-panel:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
-panel:RegisterEvent("UNIT_INVENTORY_CHANGED")
-panel:RegisterEvent("UNIT_STATS")
-panel:RegisterEvent("UNIT_AURA")
+panel:SetScript("OnShow", Refresh)
+for _, event in ipairs({ "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED", "UNIT_STATS", "UNIT_AURA",
+    "UNIT_MAXHEALTH", "UNIT_MAXPOWER", "PLAYER_LOGIN" }) do
+    panel:RegisterEvent(event)
+end
 panel:SetScript("OnEvent", function(_, event, unit)
-    if not unit or unit == "player" then
-        UpdatePanel()
+    if event == "PLAYER_LOGIN" then
+        SetArrow()
+    elseif not unit or unit == "player" then
+        Refresh()
     end
 end)
