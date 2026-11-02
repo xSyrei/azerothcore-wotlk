@@ -35,8 +35,8 @@
 // lowest item level piece (an empty slot counts as 0; the next one up when that slot has nothing for their level),
 // picked for their role (Wildcard::Role):
 //
-// - from the items for that slot whose required level is just under the Hero's (uncommon and rare first), that the
-//   Hero can use, with their random enchantment rolled;
+// - from the uncommon (green) items for that slot whose required level is just under the Hero's, with stats only (no
+//   "Equip:", "Use:" or "Chance on hit:", their random enchantment too), that the Hero can use;
 // - scored by the stats the role wants: Melee strength, agility, attack power and weapon damage; Caster intellect
 //   and spell power; Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor and
 //   avoidance; no role a bit of everything. Armor type does not matter; the scores decide (plate wins a tank's for
@@ -93,9 +93,14 @@ namespace
             std::unordered_map<uint8, std::vector<ItemTemplate const*>> items;
             for (auto const& [entry, proto] : *sObjectMgr->GetItemTemplateStore())
             {
+                // Uncommon, with a real required level and an item level that fits it (unused items have none:
+                // a required level 0 item level 187 helm), stats only: no "Equip:", "Use:" or "Chance on hit:".
                 if ((proto.Class != ITEM_CLASS_ARMOR && proto.Class != ITEM_CLASS_WEAPON)
-                    || proto.Quality < ITEM_QUALITY_NORMAL || proto.Quality > ITEM_QUALITY_RARE
-                    || !proto.ItemLevel || proto.RequiredSkill || proto.RequiredSpell || proto.RequiredHonorRank
+                    || proto.Quality != ITEM_QUALITY_UNCOMMON || !proto.RequiredLevel
+                    || proto.ItemLevel > proto.RequiredLevel * 5 / 2 + 10 || proto.ScalingStatDistribution
+                    || std::any_of(std::begin(proto.Spells), std::end(proto.Spells),
+                        [](_Spell const& spell) { return spell.SpellId != 0; })
+                    || proto.RequiredSkill || proto.RequiredSpell || proto.RequiredHonorRank
                     || proto.RequiredCityRank || proto.RequiredReputationFaction || proto.HolidayId
                     || proto.Bonding == BIND_QUEST_ITEM || IsPlaceholder(proto.Name1))
                     continue;
@@ -163,17 +168,24 @@ namespace
         }
     }
 
-    // The stats of a random enchantment (ItemRandomProperties, or ItemRandomSuffix when negative).
-    void AddRandomStats(uint32 itemId, int32 randomPropertyId, std::vector<std::pair<uint32, int32>>& stats)
+    // The stats of a random enchantment (ItemRandomProperties, or ItemRandomSuffix when negative); false when it
+    // has more than stats (an equip spell, a proc).
+    bool AddRandomStats(uint32 itemId, int32 randomPropertyId, std::vector<std::pair<uint32, int32>>& stats)
     {
+        bool statsOnly = true;
         auto addEnchant = [&](uint32 enchantId, float scale, bool scaled)
         {
             SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(enchantId);
             if (!enchant)
                 return;
             for (uint8 i = 0; i < MAX_SPELL_ITEM_ENCHANTMENT_EFFECTS; ++i)
+            {
                 if (enchant->type[i] == ITEM_ENCHANTMENT_TYPE_STAT)
                     stats.emplace_back(enchant->spellid[i], scaled ? int32(scale) : int32(enchant->amount[i]));
+                else if (enchant->type[i] != ITEM_ENCHANTMENT_TYPE_NONE
+                    && enchant->type[i] != ITEM_ENCHANTMENT_TYPE_RESISTANCE)
+                    statsOnly = false;
+            }
         };
 
         if (randomPropertyId > 0)
@@ -191,14 +203,17 @@ namespace
                     addEnchant(suffix->Enchantment[i], float(factor * suffix->AllocationPct[i]) / 10000.0f, true);
             }
         }
+        return statsOnly;
     }
 
-    float Score(Wildcard::Role role, ItemTemplate const* proto, int32 randomPropertyId)
+    // The item's worth to the role; nullopt when its random enchantment has more than stats.
+    std::optional<float> Score(Wildcard::Role role, ItemTemplate const* proto, int32 randomPropertyId)
     {
         std::vector<std::pair<uint32, int32>> stats;
         for (uint32 i = 0; i < proto->StatsCount && i < MAX_ITEM_PROTO_STATS; ++i)
             stats.emplace_back(proto->ItemStat[i].ItemStatType, proto->ItemStat[i].ItemStatValue);
-        AddRandomStats(proto->ItemId, randomPropertyId, stats);
+        if (!AddRandomStats(proto->ItemId, randomPropertyId, stats))
+            return std::nullopt;
 
         float score = 0.0f;
         for (auto const& [stat, value] : stats)
@@ -247,17 +262,14 @@ namespace
         float Score;
     };
 
-    // A piece for that slot at the Hero's level: required levels just under theirs (uncommon or rare), wider and
-    // any quality when there is none.
+    // A green for that slot at the Hero's level: required level up to 4 under theirs, wider when there is none.
     std::optional<Pick> PickGear(Player* player, GearSlot const& gear)
     {
         Wildcard::Role role = Wildcard::GetRole(player);
         uint8 level = player->GetLevel();
-        struct Tier { uint8 Window; uint32 MinQuality; };
-        for (Tier tier : { Tier { LEVEL_WINDOW, ITEM_QUALITY_UNCOMMON },
-            Tier { uint8(LEVEL_WINDOW * 2), ITEM_QUALITY_NORMAL }, Tier { level, ITEM_QUALITY_NORMAL } })
+        for (uint8 window : { LEVEL_WINDOW, uint8(LEVEL_WINDOW * 2), level })
         {
-            uint8 lowest = level > tier.Window ? level - tier.Window : 0;
+            uint8 lowest = level > window ? level - window : 0;
             std::vector<Pick> picks;
             for (uint8 type : gear.Types)
             {
@@ -268,10 +280,11 @@ namespace
                     continue;
                 for (ItemTemplate const* proto : itr->second)
                     if (proto->RequiredLevel <= level && proto->RequiredLevel >= lowest
-                        && proto->Quality >= tier.MinQuality && player->CanUseItem(proto) == EQUIP_ERR_OK)
+                        && player->CanUseItem(proto) == EQUIP_ERR_OK)
                     {
                         int32 random = Item::GenerateItemRandomPropertyId(proto->ItemId);
-                        picks.push_back({ proto, random, Score(role, proto, random) });
+                        if (std::optional<float> score = Score(role, proto, random))
+                            picks.push_back({ proto, random, *score });
                     }
             }
             if (picks.empty())
@@ -330,7 +343,8 @@ public:
             }
         if (!pick)
         {
-            handler.SendSysMessage("The cache's embers flicker: nothing in it fits you yet.");
+            handler.SendSysMessage("The cache's embers flicker: nothing in it fits you yet. Keep it: its gear starts "
+                "around level 5.");
             player->SendEquipError(EQUIP_ERR_CANT_DO_RIGHT_NOW, item, nullptr);
             return true;
         }

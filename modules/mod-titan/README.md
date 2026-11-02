@@ -253,8 +253,10 @@ A Hero gets a **Smoldering Adventurer's Cache** (910005, stacks to 200; `src/smo
 `data/sql/db-world/titan_smoldering_cache.sql`) for every level gained and every quest turned in (by mail when the
 bags are full). Opening one gives a piece of Blizzard gear for the Hero's level in the slot of their lowest item
 level piece (an empty slot counts as 0; the next slot up when that one has nothing for their level):
-- items for the slot whose required level is within 4 of the Hero's, uncommon or rare (wider, and common, when
-  there are none), that the Hero can use, with their random enchantment ("of the Bear") rolled;
+- uncommon (green) items only, with stats only (no "Equip:", "Use:" or "Chance on hit:" lines, their random
+  enchantment such as "of the Bear" included), whose required level is within 4 of the Hero's (wider when there
+  are none) and whose item level fits it (unused items with no required level are left out), that the Hero can
+  use. Greens start around level 5: a cache opened before that stays in the bags;
 - scored for the role: Melee strength, agility, attack power and weapon damage; Caster intellect and spell power
   (and wand damage); Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor,
   defense and avoidance; no role a bit of everything. Armor type is whatever scores best (a tank's plate wins on
