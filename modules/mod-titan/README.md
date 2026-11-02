@@ -94,6 +94,13 @@ straight on the prize. Catching up at login grants without rolling. It is the `E
 (`client-patch/AddOns/`); the server side is `src/classless.cpp`,
 talking to it in addon whispers (prefix `EFCL`, protocol in both files).
 
+**GM commands** (`src/titan_commands.cpp`, GM accounts):
+- `.spellids [on|off]`: shows the spell id on every spell tooltip (the Classless window's abilities and talent
+  ranks, the spellbook, action bars, buffs; the talent frame shows its talent id). Kept per character.
+- `.learnability <spell id or link>`: teaches the selected player (or yourself) that ability the way Wildcard
+  does (best rank for the level, with its companion spells), or that talent rank as a talent (plain `.learn`
+  cannot give a Hero talents). Requirements, role and level are not checked.
+
 It needs two settings in `worldserver.conf` (set in the `.dist`; an existing config needs them by
 hand, and the server log says so at the first Hero login when they are missing):
 - `ValidateSkillLearnedBySpells = 0`, or other classes' spells are deleted at every login;

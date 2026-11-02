@@ -44,9 +44,11 @@
 //                      G,<spell id>,<first rank id>   ability spin
 //                      H,<talent id>,<spell id>,<rank>   talent spin
 //                      O                         open the window
+//                      I,<0|1>                   spell ids on tooltips (GMs: .spellids)
 namespace
 {
     constexpr char const* PREFIX = "EFCL";
+    constexpr char const* SPELL_IDS_SETTING = "mod-titan-spell-ids";
     constexpr std::size_t MAX_PAYLOAD = 230;    // the client caps prefix + message at 254 characters
 
     void SendAddon(Player* player, std::string const& payload)
@@ -205,6 +207,19 @@ namespace Classless
     {
         SendAddon(player, Acore::StringFormat("S,{},{},{},{}", Wildcard::GetPicks(player),
             Wildcard::IsKitLocked(player) ? 1 : 0, Wildcard::LOCK_LEVEL, uint32(Wildcard::GetRole(player))));
+        SendAddon(player, ShowsSpellIds(player) ? "I,1" : "I,0");
+    }
+
+    bool ShowsSpellIds(Player* player)
+    {
+        return player->GetSession()->GetSecurity() >= SEC_GAMEMASTER
+            && player->GetPlayerSetting(SPELL_IDS_SETTING, 0).value;
+    }
+
+    void SetShowSpellIds(Player* player, bool show)
+    {
+        player->UpdatePlayerSetting(SPELL_IDS_SETTING, 0, show ? 1 : 0);
+        SendAddon(player, ShowsSpellIds(player) ? "I,1" : "I,0");
     }
 
     void SendKnown(Player* player)

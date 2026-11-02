@@ -26,6 +26,7 @@ void AddSC_hero_equipment();
 void AddSC_max_skills();
 void AddSC_combo_points();
 void AddSC_smoldering_cache();
+void AddSC_titan_commands();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
 void Addmod_titanScripts()
@@ -41,4 +42,5 @@ void Addmod_titanScripts()
     AddSC_max_skills();
     AddSC_combo_points();
     AddSC_smoldering_cache();
+    AddSC_titan_commands();
 }

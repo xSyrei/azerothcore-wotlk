@@ -569,6 +569,15 @@ namespace
             return false;
 
         auto [talentInfo, currentRank] = candidates[urand(0, uint32(candidates.size() - 1))];
+        return LearnTalentRank(player, talentInfo, currentRank, reveal);
+    }
+}
+
+namespace Wildcard
+{
+    bool LearnTalentRank(Player* player, TalentEntry const* talentInfo, uint8 rank, bool reveal)
+    {
+        uint8 currentRank = rank;
         uint32 spellId = talentInfo->RankID[currentRank];
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
         if (!spellInfo)
@@ -595,7 +604,10 @@ namespace
             Classless::RevealTalent(player, talentInfo->TalentID, spellId, currentRank + 1);
         return true;
     }
+}
 
+namespace
+{
     void DestroyTomes(Player* player)
     {
         for (uint32 entry : { TOME_OF_RANDOMIZATION, TOME_OF_SELECTION })

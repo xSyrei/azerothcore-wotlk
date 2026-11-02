@@ -14,6 +14,7 @@
 --                 N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
 --                 K0 / K,<spell id>,...   R0 / R,<talent id>:<rank>,...   S,<picks left>,<locked>,<lock level>,<role>
 --                 G,<spell id>,<first rank id>   H,<talent id>,<spell id>,<rank>   O
+--                 I,<0|1>   spell ids on tooltips (GMs, .spellids)
 
 local PREFIX = "EFCL"
 local ART = "Interface\\AddOns\\Emberforge_Classless\\Art\\"
@@ -342,6 +343,8 @@ local function OnServerMessage(message)
         local _, talent, spell, rank = strsplit(",", message)
         tinsert(reveals, { talent = tonumber(talent), spell = tonumber(spell), rank = tonumber(rank) })
         ShowNextReveal()
+    elseif kind == "I" then
+        data.spellIds = message == "I,1"
     elseif message == "O" then
         frame:Show()
     end
@@ -2139,6 +2142,43 @@ minimapButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 -- character, so a player who rebinds it keeps their choice.
 BINDING_HEADER_EMBERFORGE = "Project Emberforge"
 BINDING_NAME_EMBERFORGE_CLASSLESS_TOGGLE = "Classless window"
+
+-- Spell ids on tooltips, for GMs (.spellids, for .learnability): the Classless window's, the spellbook's, the
+-- action bars', the talent frame's (its talent id) and buffs'.
+do
+    local function AddId(tooltip, id, label)
+        if data.spellIds and id then
+            tooltip:AddLine((label or "Spell ID") .. ": " .. id, 0.55, 0.8, 1)
+            tooltip:Show()
+        end
+    end
+    hooksecurefunc(GameTooltip, "SetHyperlink", function(self, link)
+        if type(link) == "string" then
+            AddId(self, link:match("spell:(%d+)"))
+            AddId(self, link:match("talent:(%d+)"), "Talent ID")
+        end
+    end)
+    hooksecurefunc(GameTooltip, "SetSpell", function(self, slot, book)
+        local link = GetSpellLink(slot, book)
+        AddId(self, link and link:match("spell:(%d+)"))
+    end)
+    hooksecurefunc(GameTooltip, "SetAction", function(self, slot)
+        local kind, id, _, spellId = GetActionInfo(slot)
+        if kind == "spell" then
+            AddId(self, spellId or id)
+        end
+    end)
+    hooksecurefunc(GameTooltip, "SetTalent", function(self, tab, index, inspect, pet)
+        local link = GetTalentLink(tab, index, inspect, pet)
+        AddId(self, link and link:match("talent:(%d+)"), "Talent ID")
+    end)
+    for _, method in ipairs({ "SetUnitAura", "SetUnitBuff", "SetUnitDebuff" }) do
+        hooksecurefunc(GameTooltip, method, function(self, unit, index, filter)
+            local query = method == "SetUnitBuff" and UnitBuff or method == "SetUnitDebuff" and UnitDebuff or UnitAura
+            AddId(self, select(11, query(unit, index, filter)))
+        end)
+    end
+end
 
 local function OnLogin()
     EmberforgeClasslessDB = EmberforgeClasslessDB or {}

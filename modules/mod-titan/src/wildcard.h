@@ -22,6 +22,7 @@
 #include <vector>
 
 class Player;
+struct TalentEntry;
 
 // Wildcard: how the classless Hero progresses (see wildcard.cpp), and the Classless window that
 // shows it (classless.cpp, with the Emberforge_Classless client addon).
@@ -107,6 +108,10 @@ namespace Wildcard
     // Unlearns every offered ability (the kit and later Wildcard abilities; talents stay).
     uint32 ClearAbilities(Player* player);
 
+    // Learns rank (from 0) of a talent the way Player::LearnTalent does once its checks pass; with reveal the
+    // Classless window spins for it.
+    bool LearnTalentRank(Player* player, TalentEntry const* talentInfo, uint8 rank, bool reveal);
+
     uint32 GetPicks(Player* player);
     void SetPicks(Player* player, uint32 picks);
     bool IsKitLocked(Player const* player);
@@ -127,6 +132,9 @@ namespace Classless
     void Reveal(Player* player, Wildcard::Ability const& ability);
     // Shows the spin for a talent rank (rank counts from 1).
     void RevealTalent(Player* player, uint32 talentId, uint32 spellId, uint8 rank);
+    // GMs only: spell ids on the tooltips (.spellids), kept per character.
+    bool ShowsSpellIds(Player* player);
+    void SetShowSpellIds(Player* player, bool show);
 }
 
 #endif
