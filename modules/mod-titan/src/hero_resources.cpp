@@ -17,6 +17,7 @@
 
 #include "Player.h"
 #include "ScriptMgr.h"
+#include <array>
 
 // Classless Hero: every class resource at once.
 //
@@ -80,7 +81,40 @@ public:
     }
 };
 
+// Emberforged Hero (90600, client-patch/patch_player.py): every stat counts for a Hero. The buff and its two hidden
+// halves (90601, 90602) go on every Hero at login, and back after anything took them off (a resurrection).
+class hero_emberforged : public PlayerScript
+{
+public:
+    hero_emberforged() : PlayerScript("hero_emberforged", {
+        PLAYERHOOK_ON_LOGIN,
+        PLAYERHOOK_ON_PLAYER_RESURRECT
+    }) { }
+
+    static constexpr std::array<uint32, 3> SPELLS = { 90600, 90601, 90602 };
+
+    static void Forge(Player* player)
+    {
+        if (player->getClass() != hero_resources::HERO_CLASS)
+            return;
+        for (uint32 spellId : SPELLS)
+            if (!player->HasAura(spellId))
+                player->AddAura(spellId, player);
+    }
+
+    void OnPlayerLogin(Player* player) override
+    {
+        Forge(player);
+    }
+
+    void OnPlayerResurrect(Player* player, float /*restorePercent*/, bool& /*applySickness*/) override
+    {
+        Forge(player);
+    }
+};
+
 void AddSC_hero_resources()
 {
     new hero_resources();
+    new hero_emberforged();
 }

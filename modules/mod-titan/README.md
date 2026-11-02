@@ -232,6 +232,17 @@ icon: add them to `client-patch/patch_items.py` and rebuild `patch-enUS-4.MPQ` (
 3.3.5 client lets it be used; the script intercepts the use and the spell is never cast.
 A dedicated spell in the client patch gives it a proper "Use:" tooltip line.
 
+## Emberforged Hero
+
+Every Hero wears the Emberforged Hero buff (90600, with two hidden halves 90601 and 90602:
+`client-patch/patch_player.py`), put on at login and after a resurrection (`hero_emberforged` in
+`src/hero_resources.cpp`). It makes every stat count whatever the Hero rolled. On top of the Paladin base class's own
+Strength to 2 attack power and Agility to 1 ranged attack power:
+
+- Agility: 2 attack power, and 2 more ranged attack power (3 in all);
+- Intellect: 3 ranged attack power, 2 spell power (damage and healing);
+- Spirit: 0.25 spell power (damage and healing).
+
 ## Core changes this module relies on
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
