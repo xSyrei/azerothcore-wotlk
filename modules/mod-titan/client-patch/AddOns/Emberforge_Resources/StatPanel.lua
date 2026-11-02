@@ -34,41 +34,16 @@ end
 local panel = CreateFrame("Frame", "EmberforgeStatPanel", PaperDollFrame)
 panel:SetWidth(WIDTH)
 panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -40, -40)
-panel:SetPoint("BOTTOMLEFT", CharacterFrame, "BOTTOMRIGHT", -40, 84)
+panel:SetPoint("BOTTOMLEFT", CharacterFrame, "BOTTOMRIGHT", -40, 72)
 -- No box of its own: a faint shade, part of the window.
 local shade = panel:CreateTexture(nil, "BACKGROUND")
 shade:SetTexture(0, 0, 0, 0.25)
 shade:SetAllPoints()
 
 local scroll = CreateFrame("ScrollFrame", "EmberforgeStatPanelScroll", panel, "UIPanelScrollFrameTemplate")
-scroll:SetPoint("TOPLEFT", 4, -2)
-scroll:SetPoint("BOTTOMRIGHT", -14, 2)
--- A slim scrollbar: a thin track and a gold thumb, no arrow buttons; only while the list is longer than the column.
-local bar = _G["EmberforgeStatPanelScrollScrollBar"]
-if bar then
-    for _, suffix in ipairs({ "ScrollUpButton", "ScrollDownButton" }) do
-        local button = _G[bar:GetName() .. suffix]
-        if button then
-            button:SetAlpha(0)
-            button:EnableMouse(false)
-            button:SetWidth(1)
-            button:SetHeight(1)
-        end
-    end
-    bar:ClearAllPoints()
-    bar:SetPoint("TOPLEFT", scroll, "TOPRIGHT", 4, -2)
-    bar:SetPoint("BOTTOMLEFT", scroll, "BOTTOMRIGHT", 4, 2)
-    bar:SetWidth(6)
-    local track = bar:CreateTexture(nil, "BACKGROUND")
-    track:SetTexture(1, 1, 1, 0.06)
-    track:SetAllPoints()
-    local thumb = bar:GetThumbTexture()
-    if thumb then
-        thumb:SetTexture(0.86, 0.64, 0.32, 0.8)
-        thumb:SetWidth(6)
-        thumb:SetHeight(36)
-    end
-end
+-- Blizzard's own scrollbar, right of the list.
+scroll:SetPoint("TOPLEFT", 4, -4)
+scroll:SetPoint("BOTTOMRIGHT", -26, 4)
 local list = CreateFrame("Frame", nil, scroll)
 list:SetWidth(INNER)
 list:SetHeight(1)
@@ -225,21 +200,13 @@ Refresh = function()
         y = y + 6
     end
     list:SetHeight(math.max(1, y))
-    if bar then
-        if y > scroll:GetHeight() then
-            bar:Show()
-        else
-            bar:Hide()
-            scroll:SetVerticalScroll(0)
-        end
-    end
 end
 
 -- The arrow at the bottom right of the model: hides or shows the column.
 local toggle = CreateFrame("Button", "EmberforgeStatPanelToggle", PaperDollFrame)
 toggle:SetWidth(26)
 toggle:SetHeight(26)
-toggle:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -44, 86)
+toggle:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -44, 76)
 local function SetArrow()
     local shown = not DB().hidden
     local page = shown and "Next" or "Prev"

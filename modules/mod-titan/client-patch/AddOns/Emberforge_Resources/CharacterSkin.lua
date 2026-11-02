@@ -29,9 +29,9 @@ local function Fit()
     skin:ClearAllPoints()
     skin:SetPoint("TOPLEFT", CharacterFrame, "TOPLEFT", 12, -12)
     if EmberforgeStatPanel and EmberforgeStatPanel:IsShown() then
-        skin:SetPoint("BOTTOMRIGHT", EmberforgeStatPanel, "BOTTOMRIGHT", 8, -8)
+        skin:SetPoint("BOTTOMRIGHT", EmberforgeStatPanel, "BOTTOMRIGHT", 12, -8)
     else
-        skin:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -32, 76)
+        skin:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -32, 64)
     end
 end
 
@@ -152,9 +152,9 @@ local function Restore()
         region:Show()
     end
     wipe(hiddenArt)
-    for _, text in ipairs({ CharacterNameText, CharacterLevelText }) do
-        if text then
-            text:SetAlpha(1)
+    for _, region in ipairs({ CharacterNameText, CharacterLevelText, CharacterFramePortrait }) do
+        if region then
+            region:SetAlpha(1)
         end
     end
 end
@@ -174,13 +174,19 @@ local function Apply()
     HideArt()
     HideResistances()
     Fit()
-    Move(CharacterFrameCloseButton, "TOPRIGHT", skin, "TOPRIGHT", -2, -2)
+    Move(CharacterFrameCloseButton, "TOPRIGHT", skin, "TOPRIGHT", -5, -5)
     CharacterFrameCloseButton:SetFrameLevel(skin:GetFrameLevel() + 10)
     SetTexts()
     for _, text in ipairs({ CharacterNameText, CharacterLevelText }) do
         text:SetAlpha(0)
     end
+    -- Exactly over the window's own portrait, which hides while the tab shows.
     if CharacterFramePortrait then
+        CharacterFramePortrait:SetAlpha(0)
+        portrait:SetWidth(CharacterFramePortrait:GetWidth())
+        portrait:SetHeight(CharacterFramePortrait:GetHeight())
+        ring:SetWidth(CharacterFramePortrait:GetWidth() + 14)
+        ring:SetHeight(CharacterFramePortrait:GetHeight() + 14)
         portrait:ClearAllPoints()
         portrait:SetPoint("CENTER", CharacterFramePortrait, "CENTER", 0, 0)
         SetPortraitTexture(portrait, "player")

@@ -284,7 +284,7 @@ It also shows every piece of gear's item level on its tooltip ("Item Level 63" i
 Cataclysm on), for every class, and the character window's stats as Cataclysm's character pane (`StatPanel.lua`):
 a column on its right, one scrolling list of sections (General: health, your powers and the average item level of
 what you wear; Attributes, Melee, Ranged, Spell, Defenses: Blizzard's own stat lines and tooltips), each folding with
-its - / + button (Resistances last: the resistance boxes in the model are hidden), a slim scrollbar, and an
+its - / + button (Resistances last: the resistance boxes in the model are hidden), a scrollbar, and an
 arrow at the bottom of the model to hide or show the column (both kept per character). The old stat area under
 the model is hidden. `CharacterSkin.lua` makes the Character tab one window around the model and
 that column: one border and background, a title bar across the top with the name and the close button at its right
