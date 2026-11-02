@@ -280,6 +280,9 @@ Emberforge has no Runic Power: `patch_spells.py` turns every spell costing or gi
 `Spell.dbc` (costs, energize and drain effects, power auras, texts), and the addon renames it to Rage
 in every UI string left (combat text, errors).
 
+It also shows every piece of gear's item level on its tooltip ("Item Level 63" in gold under the name, as from
+Cataclysm on), for every class.
+
 Install: copy the `Emberforge_Resources` folder into the client's `Interface\AddOns\` folder.
 The launcher will ship it automatically for players.
 

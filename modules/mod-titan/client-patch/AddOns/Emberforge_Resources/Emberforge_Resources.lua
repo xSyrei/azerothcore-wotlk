@@ -27,6 +27,38 @@ for key, text in pairs(_G) do
     end
 end
 
+-- Item level on gear tooltips (for everyone), as from Cataclysm on: "Item Level 63" in gold under the item's name.
+-- 3.3.5 has no line to insert, so it goes at the top of the second line's text (its own line once shown).
+do
+    local ITEM_LEVEL_COLOR = "|cffffd100"
+    local function AddItemLevel(tooltip)
+        if tooltip.emberforgeItemLevel then
+            return
+        end
+        local _, link = tooltip:GetItem()
+        if not link then
+            return
+        end
+        local _, _, _, itemLevel, _, _, _, _, equipLoc = GetItemInfo(link)
+        local line = _G[tooltip:GetName() .. "TextLeft2"]
+        if not itemLevel or itemLevel <= 0 or not equipLoc or equipLoc == "" or not line then
+            return
+        end
+        tooltip.emberforgeItemLevel = true
+        local text = line:GetText()
+        line:SetText(ITEM_LEVEL_COLOR .. "Item Level " .. itemLevel .. "|r" .. (text and ("\n" .. text) or ""))
+        tooltip:Show()
+    end
+    for _, name in ipairs({ "GameTooltip", "ItemRefTooltip", "ShoppingTooltip1", "ShoppingTooltip2",
+        "ShoppingTooltip3" }) do
+        local tooltip = _G[name]
+        if tooltip then
+            tooltip:HookScript("OnTooltipSetItem", AddItemLevel)
+            tooltip:HookScript("OnTooltipCleared", function(self) self.emberforgeItemLevel = nil end)
+        end
+    end
+end
+
 local _, playerClass = UnitClass("player")
 if playerClass ~= HERO_CLASS then
     return
