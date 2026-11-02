@@ -197,7 +197,8 @@ class spell_titan_monk_renewing_mist : public AuraScript
 
         Unit* next = nullptr;
         for (Unit* ally : FriendsAround(target, caster, JUMP_RANGE))
-            if (!ally->IsFullHealth() && ally->IsAlive() && !ally->GetAuraOfRankedSpell(SPELL_RENEWING_MIST, caster->GetGUID())
+            if (!ally->IsFullHealth() && ally->IsAlive()
+                && !ally->GetAuraOfRankedSpell(SPELL_RENEWING_MIST, caster->GetGUID())
                 && (!next || ally->GetHealthPct() < next->GetHealthPct()))
                 next = ally;
         if (!next)

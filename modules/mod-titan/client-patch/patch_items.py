@@ -18,6 +18,7 @@ ITEMS = [
     (910002, 2, 7, -1, 1, 90001, 13, 1),   # Veridus (one-handed sword)
     (910003, 0, 8, -1, 1, 1103, 0, 0),     # Titan Tome of Randomization (book, like Blizzard's tomes)
     (910004, 0, 8, -1, 1, 1103, 0, 0),     # Titan Tome of Selection
+    (910005, 15, 0, -1, 1, 12644, 0, 0),   # Smoldering Adventurer's Cache (a box, INV_Box_02)
 ]
 
 # Custom displays: (id, model file, model texture, inventory icon, item group sound)

@@ -48,6 +48,15 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   talent trees (tier and prerequisite rules do not apply). Heroes have no talent points to spend in
   the UI. Characters that already had more than this keep them, and roll again once their level
   catches up.
+- **Rolls follow the role**: abilities are tagged by what they do (melee or ranged physical damage: Melee; magic
+  damage: Caster; heals and shields on others: Healer; taunts and threat: Tank; `ROLE_ABILITIES` by hand for forms,
+  stances and scripted spells), and a level-up or kit roll only gives one suiting the Hero's role: Melee takes
+  Melee, Caster takes Caster, Healer takes Healer and Caster, Tank takes Tank and Melee. Untagged abilities (buffs,
+  utility, crowd control) suit every role; with no role, or nothing left that suits, anything goes. Tome of
+  Selection picks are free.
+- **Talents for what you know**: a talent rank goes to a talent improving an ability the Hero knows (one its class
+  masks modify; a scripted talent: one of its class's abilities). When none is left: generic talents (stats,
+  damage, crit, healing, armor and avoidance) suiting the role, and talents teaching an ability that suits it.
 - **Roles**: Melee, Caster, Healer or Tank, picked in the Classless window under the classes (not in
   combat; kept per character). Each is a buff (90603-90606, `client-patch/patch_player.py`): Melee and
   Caster cause 50% less threat, Tank 200% more, Healer unchanged.
@@ -238,6 +247,21 @@ next one, so damage and healing follow the curve they always had; Wildcard learn
 itself. The rank spells are 91000-91106, chained in `spell_ranks` (written with the spells to
 `titan_demon_hunter_spells.sql`); their scripts are bound to every rank (negative ids). Abilities that
 hit for weapon damage, attack power or a script's amount, and the utility ones, keep one rank.
+
+## Smoldering Adventurer's Cache
+A Hero gets a **Smoldering Adventurer's Cache** (910005, stacks to 200; `src/smoldering_cache.cpp`,
+`data/sql/db-world/titan_smoldering_cache.sql`) for every level gained and every quest turned in (by mail when the
+bags are full). Opening one gives a piece of Blizzard gear for the Hero's level in the slot of their lowest item
+level piece (an empty slot counts as 0; the next slot up when that one has nothing for their level):
+- items for the slot whose required level is within 4 of the Hero's, uncommon or rare (wider, and common, when
+  there are none), that the Hero can use, with their random enchantment ("of the Bear") rolled;
+- scored for the role: Melee strength, agility, attack power and weapon damage; Caster intellect and spell power
+  (and wand damage); Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor,
+  defense and avoidance; no role a bit of everything. Armor type is whatever scores best (a tank's plate wins on
+  armor); one of the three best is given.
+
+**Empty slots fill themselves**: gear a Hero gets (loot, quest rewards, purchases, crafting, caches) is put on at
+once when its slot is empty and the Hero can wear it.
 
 ## Items
 

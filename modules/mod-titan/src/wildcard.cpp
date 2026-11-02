@@ -42,7 +42,14 @@
 //   at 9, a talent at 10, an ability at 11, and so on. Abilities come from every class trainer's list
 //   (all 10 classes); talents from any class's trees (tier and prerequisite rules do not apply). The
 //   talent UI cannot spend points on a Hero.
-// - The role (Melee, Caster, Healer, Tank: Classless window) puts on a buff changing the threat caused.
+// - The role (Melee, Caster, Healer, Tank: Classless window) puts on a buff changing the threat caused, and steers
+//   the rolls: abilities are tagged by what they do (melee or ranged physical damage, magic damage, heals, taunts and
+//   threat; ROLE_ABILITIES by name), and only those suiting the role are rolled; untagged ones (buffs, utility,
+//   crowd control) suit everyone. Tome of Selection picks are free.
+// - Talent ranks go to talents for abilities the Hero knows: a talent modifying spells (its class masks) needs a
+//   known ability it modifies; a scripted one (no masks, a dummy) a known ability of its class. When none is left,
+//   generic ones: stat, damage, crit, healing, defense talents suiting the role, and talents teaching an ability
+//   suiting it.
 // - Owned abilities upgrade to the best rank for the Hero's level by themselves.
 // - An ability cast only in a form or stance (Swipe (Cat): Cat Form, Overpower: Battle Stance), only
 //   in stealth (Ambush) or on a pet (Mend Pet: Tame Beast) is only rolled or picked once the Hero
@@ -157,6 +164,171 @@ namespace
             case CLASS_DEATH_KNIGHT: return UNDEAD_MINIONS;
             default: return { };
         }
+    }
+
+    constexpr uint8 TAG_MELEE = RoleMask(ROLE_MELEE), TAG_CASTER = RoleMask(ROLE_CASTER);
+    constexpr uint8 TAG_HEALER = RoleMask(ROLE_HEALER), TAG_TANK = RoleMask(ROLE_TANK);
+
+    // Roles tagged by hand where the spell data says too little (forms and stances, scripted spells). They replace
+    // what the data says.
+    struct RoleAbility
+    {
+        char const* Name;
+        uint8 Roles;
+    };
+    constexpr RoleAbility ROLE_ABILITIES[] = {
+        { "Defensive Stance", TAG_TANK }, { "Shield Block", TAG_TANK }, { "Shield Wall", TAG_TANK },
+        { "Last Stand", TAG_TANK }, { "Bear Form", TAG_TANK }, { "Dire Bear Form", TAG_TANK },
+        { "Frost Presence", TAG_TANK }, { "Righteous Fury", TAG_TANK }, { "Holy Shield", TAG_TANK },
+        { "Righteous Defense", TAG_TANK }, { "Demon Spikes", TAG_TANK }, { "Soul Barrier", TAG_TANK },
+        { "Holy Shock", TAG_HEALER | TAG_CASTER }, { "Penance", TAG_HEALER | TAG_CASTER },
+        { "Invoke Chi-Ji, the Red Crane", TAG_HEALER }, { "Thunder Focus Tea", TAG_HEALER },
+        { "Battle Stance", TAG_MELEE | TAG_TANK }, { "Berserker Stance", TAG_MELEE },
+        { "Cat Form", TAG_MELEE }, { "Moonkin Form", TAG_CASTER }, { "Tree of Life", TAG_HEALER },
+        { "Shadowform", TAG_CASTER },
+    };
+
+    // What a spell does, as role tags: its damage (melee or ranged physical: Melee; magic: Caster), heals and
+    // shields on others (Healer), taunts and threat (Tank); spells it triggers count too.
+    uint8 SpellRoles(SpellInfo const* spellInfo, uint8 depth = 0)
+    {
+        uint8 roles = 0;
+        bool physical = spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE
+            || spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED;
+        uint8 damage = physical ? TAG_MELEE : TAG_CASTER;
+        for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+        {
+            bool onOthers = effect.TargetA.GetTarget() != TARGET_UNIT_CASTER;
+            switch (effect.Effect)
+            {
+                case SPELL_EFFECT_SCHOOL_DAMAGE:
+                case SPELL_EFFECT_HEALTH_LEECH:
+                    roles |= damage;
+                    break;
+                case SPELL_EFFECT_WEAPON_DAMAGE:
+                case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
+                case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
+                case SPELL_EFFECT_WEAPON_PERCENT_DAMAGE:
+                    roles |= TAG_MELEE;
+                    break;
+                case SPELL_EFFECT_HEAL:
+                case SPELL_EFFECT_HEAL_PCT:
+                case SPELL_EFFECT_HEAL_MAX_HEALTH:
+                    if (onOthers)
+                        roles |= TAG_HEALER;
+                    break;
+                case SPELL_EFFECT_ATTACK_ME:
+                case SPELL_EFFECT_THREAT:
+                    roles |= TAG_TANK;
+                    break;
+                case SPELL_EFFECT_TRIGGER_SPELL:
+                    if (depth < 2)
+                        if (SpellInfo const* triggered = sSpellMgr->GetSpellInfo(effect.TriggerSpell))
+                            roles |= SpellRoles(triggered, depth + 1);
+                    break;
+                case SPELL_EFFECT_APPLY_AURA:
+                    switch (effect.ApplyAuraName)
+                    {
+                        case SPELL_AURA_PERIODIC_DAMAGE:
+                        case SPELL_AURA_PERIODIC_LEECH:
+                        case SPELL_AURA_PERIODIC_DAMAGE_PERCENT:
+                            roles |= damage;
+                            break;
+                        case SPELL_AURA_PERIODIC_HEAL:
+                        case SPELL_AURA_SCHOOL_ABSORB:
+                            if (onOthers)
+                                roles |= TAG_HEALER;
+                            break;
+                        case SPELL_AURA_MOD_TAUNT:
+                            roles |= TAG_TANK;
+                            break;
+                        case SPELL_AURA_MOD_THREAT:
+                            if (effect.BasePoints > 0)
+                                roles |= TAG_TANK;
+                            break;
+                        case SPELL_AURA_PERIODIC_TRIGGER_SPELL:
+                            if (depth < 2)
+                                if (SpellInfo const* triggered = sSpellMgr->GetSpellInfo(effect.TriggerSpell))
+                                    roles |= SpellRoles(triggered, depth + 1);
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        return roles;
+    }
+
+    // A generic talent's role tags, from the stats it raises (0: any role).
+    uint8 StatTalentRoles(SpellInfo const* spellInfo)
+    {
+        uint8 roles = 0;
+        for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+        {
+            if (!effect.IsEffect(SPELL_EFFECT_APPLY_AURA))
+                continue;
+            switch (effect.ApplyAuraName)
+            {
+                case SPELL_AURA_MOD_DAMAGE_DONE:
+                case SPELL_AURA_MOD_DAMAGE_PERCENT_DONE:
+                    if (effect.MiscValue & SPELL_SCHOOL_MASK_NORMAL)
+                        roles |= TAG_MELEE | TAG_TANK;
+                    if (effect.MiscValue & SPELL_SCHOOL_MASK_MAGIC)
+                        roles |= TAG_CASTER | TAG_HEALER;
+                    break;
+                case SPELL_AURA_MOD_HEALING_PCT:
+                case SPELL_AURA_MOD_HEALING_DONE:
+                case SPELL_AURA_MOD_HEALING_DONE_PERCENT:
+                case SPELL_AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT:
+                    roles |= TAG_HEALER;
+                    break;
+                case SPELL_AURA_MOD_SPELL_CRIT_CHANCE:
+                case SPELL_AURA_MOD_SPELL_CRIT_CHANCE_SCHOOL:
+                case SPELL_AURA_MOD_SPELL_HIT_CHANCE:
+                case SPELL_AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT:
+                case SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK:
+                    roles |= TAG_CASTER | TAG_HEALER;
+                    break;
+                case SPELL_AURA_MOD_WEAPON_CRIT_PERCENT:
+                case SPELL_AURA_MOD_HIT_CHANCE:
+                case SPELL_AURA_MOD_ATTACK_POWER_PCT:
+                case SPELL_AURA_MOD_RANGED_ATTACK_POWER_PCT:
+                case SPELL_AURA_MOD_MELEE_HASTE:
+                case SPELL_AURA_MOD_EXPERTISE:
+                case SPELL_AURA_MOD_ATTACK_POWER_OF_STAT_PERCENT:
+                case SPELL_AURA_MOD_RANGED_ATTACK_POWER_OF_STAT_PERCENT:
+                    roles |= TAG_MELEE | TAG_TANK;
+                    break;
+                case SPELL_AURA_MOD_RESISTANCE_PCT:
+                case SPELL_AURA_MOD_BASE_RESISTANCE_PCT:
+                case SPELL_AURA_MOD_DODGE_PERCENT:
+                case SPELL_AURA_MOD_PARRY_PERCENT:
+                case SPELL_AURA_MOD_BLOCK_PERCENT:
+                case SPELL_AURA_MOD_SHIELD_BLOCKVALUE_PCT:
+                case SPELL_AURA_MOD_INCREASE_HEALTH_PERCENT:
+                case SPELL_AURA_MOD_DAMAGE_PERCENT_TAKEN:
+                    roles |= TAG_TANK;
+                    break;
+                case SPELL_AURA_MOD_TOTAL_STAT_PERCENTAGE:
+                case SPELL_AURA_MOD_PERCENT_STAT:
+                    switch (effect.MiscValue)
+                    {
+                        case STAT_STRENGTH: roles |= TAG_MELEE | TAG_TANK; break;
+                        case STAT_AGILITY: roles |= TAG_MELEE; break;
+                        case STAT_STAMINA: roles |= TAG_TANK; break;
+                        case STAT_INTELLECT: roles |= TAG_CASTER | TAG_HEALER; break;
+                        case STAT_SPIRIT: roles |= TAG_HEALER; break;
+                        default: break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        return roles;
     }
 
     // Every player always knows Pick Lock, with Lockpicking at its maximum for their level.
@@ -321,7 +493,51 @@ namespace
     // once its checks pass; with reveal the player's Classless window spins for it.
     bool GrantTalent(Player* player, bool reveal)
     {
-        std::vector<std::pair<TalentEntry const*, uint8>> candidates;
+        // The spells of the abilities the Hero knows (their known ranks), and their classes.
+        std::vector<SpellInfo const*> knownSpells;
+        uint32 knownClasses = 0;
+        for (Ability const& ability : Abilities())
+            if (int32 rank = KnownRank(player, ability); rank >= 0)
+            {
+                knownSpells.push_back(sSpellMgr->AssertSpellInfo(ability.Ranks[rank].SpellId));
+                if (ability.ClassId)
+                    knownClasses |= 1 << (ability.ClassId - 1);
+            }
+
+        // Relevant: for a known ability. Generic: stats and the like suiting the role, or teaching an ability that
+        // does.
+        auto relevance = [&](TalentEntry const* talentInfo, TalentTabEntry const* tabInfo) -> int
+        {
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(talentInfo->RankID[0]);
+            if (!spellInfo)
+                return 0;
+
+            bool masked = false;
+            for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+            {
+                if (effect.IsEffect(SPELL_EFFECT_LEARN_SPELL))
+                {
+                    SpellInfo const* taught = sSpellMgr->GetSpellInfo(effect.TriggerSpell);
+                    return taught && SuitsRole(player, SpellRoles(taught)) ? 1 : 0;
+                }
+                if (!effect.SpellClassMask)
+                    continue;
+                masked = true;
+                for (SpellInfo const* known : knownSpells)
+                    if (known->IsAffected(spellInfo->SpellFamilyName, effect.SpellClassMask))
+                        return 2;
+            }
+            if (masked)
+                return 0;
+
+            if (uint8 roles = StatTalentRoles(spellInfo))
+                return SuitsRole(player, roles) ? 1 : 0;
+
+            // Scripted (a dummy): for its class's abilities.
+            return (tabInfo->ClassMask & knownClasses) ? 2 : 0;
+        };
+
+        std::vector<std::pair<TalentEntry const*, uint8>> candidates, generic;
         for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
         {
             TalentEntry const* talentInfo = sTalentStore.LookupEntry(i);
@@ -338,9 +554,17 @@ namespace
                     currentRank = rank + 1;
 
             if (currentRank < MAX_TALENT_RANK && talentInfo->RankID[currentRank])
-                candidates.emplace_back(talentInfo, currentRank);
+            {
+                int kind = relevance(talentInfo, tabInfo);
+                if (kind == 2)
+                    candidates.emplace_back(talentInfo, currentRank);
+                else if (kind == 1)
+                    generic.emplace_back(talentInfo, currentRank);
+            }
         }
 
+        if (candidates.empty())
+            candidates = std::move(generic);
         if (candidates.empty())
             return false;
 
@@ -658,7 +882,8 @@ namespace Wildcard
             {
                 std::vector<uint32> givers;
                 for (Ability const& ability : result)
-                    if (std::any_of(names.begin(), names.end(), [&](char const* name) { return hasName(ability, name); }))
+                    if (std::any_of(names.begin(), names.end(),
+                        [&](char const* name) { return hasName(ability, name); }))
                         givers.push_back(ability.Ranks.front().SpellId);
                 return givers;
             };
@@ -691,7 +916,8 @@ namespace Wildcard
                             return (spellInfo->Stances & (1 << (pair.first - 1)))
                                 && std::find(pair.second.begin(), pair.second.end(), giver) != pair.second.end();
                         });
-                        if (givesForm || (spellInfo->Stances ? (giverStances & spellInfo->Stances) != 0 : !giverStances))
+                        bool sameForm = spellInfo->Stances ? (giverStances & spellInfo->Stances) != 0 : !giverStances;
+                        if (givesForm || sameForm)
                             givers.push_back(giver);
                     }
                     ability.Requires.push_back(std::move(givers));
@@ -703,7 +929,8 @@ namespace Wildcard
                         pets = needs.Pets;
                 if (pets.empty())
                     for (SpellEffectInfo const& effect : spellInfo->GetEffects())
-                        if (effect.TargetA.GetTarget() == TARGET_UNIT_PET || effect.TargetB.GetTarget() == TARGET_UNIT_PET)
+                        if (effect.TargetA.GetTarget() == TARGET_UNIT_PET
+                            || effect.TargetB.GetTarget() == TARGET_UNIT_PET)
                             pets = ClassPets(ability.ClassId);
                 if (!pets.empty())
                     ability.Requires.push_back(byNames(pets));
@@ -711,6 +938,19 @@ namespace Wildcard
                 if (std::any_of(ability.Requires.begin(), ability.Requires.end(),
                     [](std::vector<uint32> const& givers) { return givers.empty(); }))
                     ++unreachable;
+            }
+
+            // Roles.
+            for (Ability& ability : result)
+            {
+                SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(ability.Ranks.front().SpellId);
+                ability.Roles = SpellRoles(spellInfo);
+                for (RoleAbility const& tagged : ROLE_ABILITIES)
+                    if (hasName(ability, tagged.Name))
+                        ability.Roles = tagged.Roles;
+                // The Demon Hunter's Vengeance is a tank's: its damage serves a tank too.
+                if (ability.SkillLine == SKILL_VENGEANCE && ability.Roles)
+                    ability.Roles |= TAG_TANK;
             }
 
             if (unreachable)
@@ -798,11 +1038,14 @@ namespace Wildcard
 
     Ability const* GrantRandom(Player* player, char const* what)
     {
-        std::vector<Ability const*> candidates;
+        // Those suiting the Hero's role; any when none does.
+        std::vector<Ability const*> candidates, others;
         for (Ability const& ability : Abilities())
             if (CanLearn(player, ability))
-                candidates.push_back(&ability);
+                (SuitsRole(player, ability.Roles) ? candidates : others).push_back(&ability);
 
+        if (candidates.empty())
+            candidates = std::move(others);
         if (candidates.empty())
             return nullptr;
 
@@ -853,6 +1096,18 @@ namespace Wildcard
     bool IsKitLocked(Player const* player)
     {
         return player->GetLevel() >= LOCK_LEVEL;
+    }
+
+    bool SuitsRole(Player* player, uint8 roles)
+    {
+        static constexpr std::array<uint8, MAX_ROLES> ACCEPTS = {
+            0xFF,                       // none: everything
+            TAG_MELEE,                  // Melee: melee and physical ranged
+            TAG_CASTER,                 // Caster: magic damage
+            TAG_HEALER | TAG_CASTER,    // Healer: heals, and magic damage to level with
+            TAG_TANK | TAG_MELEE,       // Tank: tanking and melee
+        };
+        return !roles || (roles & ACCEPTS[GetRole(player)]);
     }
 
     Role GetRole(Player* player)

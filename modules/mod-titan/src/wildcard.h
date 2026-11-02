@@ -61,6 +61,11 @@ namespace Wildcard
         MAX_ROLES
     };
 
+    constexpr uint8 RoleMask(Role role) { return uint8(1 << role); }
+    // An ability or talent tagged with roles (RoleMask bits, 0: neutral) suits the player's role: Melee takes melee
+    // and physical ranged, Caster magic damage, Healer heals and magic damage, Tank tanking and melee. No role: all.
+    bool SuitsRole(Player* player, uint8 roles);
+
     struct Rank
     {
         uint32 SpellId;
@@ -79,6 +84,7 @@ namespace Wildcard
         // What it needs first, as groups of first ranks: one ability of every group must be known (the
         // form or stance it is cast in, stealth, a pet). Empty: nothing.
         std::vector<std::vector<uint32>> Requires;
+        uint8 Roles = 0;            // RoleMask() bits of the roles it serves; 0: every role (buffs, utility)
     };
 
     bool IsHero(Player const* player);
