@@ -24,9 +24,19 @@ local SECTIONS = {
     { key = "RESISTANCES", text = RESISTANCE_LABEL or "Resistances" },
 }
 
+-- Folded at first: what shows then fits the column without scrolling (open them with their + button).
+local FOLDED_AT_FIRST = { "PLAYERSTAT_RANGED_COMBAT", "PLAYERSTAT_SPELL_COMBAT", "PLAYERSTAT_DEFENSES", "RESISTANCES" }
+
 local function DB()
     EmberforgeResourcesDB = EmberforgeResourcesDB or {}
-    EmberforgeResourcesDB.folded = EmberforgeResourcesDB.folded or {}
+    -- Once per character (characters from before the defaults get them too).
+    if not EmberforgeResourcesDB.foldDefaults then
+        EmberforgeResourcesDB.foldDefaults = true
+        EmberforgeResourcesDB.folded = EmberforgeResourcesDB.folded or {}
+        for _, key in ipairs(FOLDED_AT_FIRST) do
+            EmberforgeResourcesDB.folded[key] = true
+        end
+    end
     return EmberforgeResourcesDB
 end
 
@@ -44,16 +54,6 @@ local scroll = CreateFrame("ScrollFrame", "EmberforgeStatPanelScroll", panel, "U
 -- Blizzard's own scrollbar, right of the list.
 scroll:SetPoint("TOPLEFT", 4, -4)
 scroll:SetPoint("BOTTOMRIGHT", -26, 4)
--- A fade over the list's last few pixels: a row cut by the column's end reads as "more below".
-local fadeFrame = CreateFrame("Frame", nil, panel)
-fadeFrame:SetFrameLevel(scroll:GetFrameLevel() + 5)
-fadeFrame:SetPoint("BOTTOMLEFT", scroll, "BOTTOMLEFT")
-fadeFrame:SetPoint("BOTTOMRIGHT", scroll, "BOTTOMRIGHT")
-fadeFrame:SetHeight(22)
-local fade = fadeFrame:CreateTexture(nil, "OVERLAY")
-fade:SetTexture(1, 1, 1, 1)
-fade:SetGradientAlpha("VERTICAL", 0.05, 0.04, 0.035, 1, 0.05, 0.04, 0.035, 0)
-fade:SetAllPoints()
 local list = CreateFrame("Frame", nil, scroll)
 list:SetWidth(INNER)
 list:SetHeight(1)
