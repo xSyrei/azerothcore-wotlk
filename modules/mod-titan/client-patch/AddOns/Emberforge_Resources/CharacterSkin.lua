@@ -37,7 +37,7 @@ end
 
 -- The title bar, right of the portrait, across the whole window.
 local title = CreateFrame("Frame", nil, skin)
-title:SetHeight(24)
+title:SetHeight(20)
 title:SetPoint("TOPLEFT", 58, -6)
 title:SetPoint("TOPRIGHT", -30, -6)
 title:SetBackdrop({
@@ -191,8 +191,9 @@ local function Apply()
         CharacterFramePortrait:SetAlpha(0)
         portrait:SetWidth(CharacterFramePortrait:GetWidth())
         portrait:SetHeight(CharacterFramePortrait:GetHeight())
-        ring:SetWidth(CharacterFramePortrait:GetWidth() + 14)
-        ring:SetHeight(CharacterFramePortrait:GetHeight() + 14)
+        -- The ring art's gold band sits at 0.91 of its size: on the portrait's edge, no dark band between.
+        ring:SetWidth(CharacterFramePortrait:GetWidth() * 1.1)
+        ring:SetHeight(CharacterFramePortrait:GetHeight() * 1.1)
         portrait:ClearAllPoints()
         portrait:SetPoint("CENTER", CharacterFramePortrait, "CENTER", 0, 0)
         SetPortraitTexture(portrait, "player")
@@ -223,9 +224,9 @@ local function Apply()
         Move(CharacterModelFrame, "TOPLEFT", inset, "TOPLEFT", 6, -42)
         CharacterModelFrame:SetPoint("BOTTOMRIGHT", inset, "BOTTOMRIGHT", -6, 54)
     end
-    -- The rotation arrows in the inset's bottom left corner, clear of the model and the weapons.
+    -- The rotation arrows low in the inset's left, above the weapon row.
     if CharacterModelFrameRotateLeftButton and CharacterModelFrameRotateRightButton then
-        Move(CharacterModelFrameRotateLeftButton, "BOTTOMLEFT", inset, "BOTTOMLEFT", 8, 10)
+        Move(CharacterModelFrameRotateLeftButton, "BOTTOMLEFT", inset, "BOTTOMLEFT", 8, 54)
         Move(CharacterModelFrameRotateRightButton, "LEFT", CharacterModelFrameRotateLeftButton, "RIGHT", 4, 0)
         for _, button in ipairs({ CharacterModelFrameRotateLeftButton, CharacterModelFrameRotateRightButton }) do
             button:SetFrameLevel(CharacterModelFrame:GetFrameLevel() + 5)
