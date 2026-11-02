@@ -1,7 +1,7 @@
 -- Emberforge Resources: extra resource bars for the classless Hero.
 --
 -- Heroes use every class resource. The player frame only shows mana, so this adds bars for
--- rage, energy and Fury under it, and turns on the Death Knight rune bar. A bar only
+-- rage and energy under it, and turns on the Death Knight rune bar. A bar only
 -- appears once you know an ability that uses it, or currently have some of that resource.
 
 local HERO_CLASS = "PALADIN" -- class token of the hidden base class behind "Hero"
@@ -10,7 +10,6 @@ local POWER_RUNES = 5
 local BARS = {
     { power = 1, token = "RAGE" },
     { power = 3, token = "ENERGY" },
-    { power = 6, token = "RUNIC_POWER" },
 }
 local BAR_WIDTH, BAR_HEIGHT, BAR_GAP = 119, 10, 2
 
@@ -20,16 +19,12 @@ local BAR_WIDTH, BAR_HEIGHT, BAR_GAP = 119, 10, 2
 local heroColor = RAID_CLASS_COLORS[HERO_CLASS]
 heroColor.r, heroColor.g, heroColor.b = 1.0, 0.49, 0.12
 
--- Emberforge has no Runic Power: power type 6 is Fury. Rename it in every UI string (spell costs,
--- combat text, errors; spell descriptions come renamed in the patched Spell.dbc) and color its
--- bars Fury purple. The color tables are edited in place, like the class color above.
+-- Emberforge has no Runic Power: everything that cost or gave it uses Rage (the patched Spell.dbc,
+-- its descriptions included). Any UI string still naming it says Rage.
 for key, text in pairs(_G) do
     if type(text) == "string" and text:lower():find("runic power", 1, true) then
-        _G[key] = text:gsub("[Rr][Uu][Nn][Ii][Cc] [Pp][Oo][Ww][Ee][Rr]", "Fury")
+        _G[key] = text:gsub("[Rr][Uu][Nn][Ii][Cc] [Pp][Oo][Ww][Ee][Rr]", "Rage")
     end
-end
-for _, color in ipairs({ PowerBarColor["RUNIC_POWER"], PowerBarColor[6] }) do
-    color.r, color.g, color.b = 0.79, 0.26, 0.99
 end
 
 local _, playerClass = UnitClass("player")

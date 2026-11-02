@@ -8,9 +8,9 @@ changed, so it behaves and looks like a real ability. The same rows go to the cl
 DBCs, in the client patch) and to the server (`spell_dbc` rows, written with --sql to
 data/sql/db-world/): both must agree on every spell.
 
-Resources: Emberforge has no Runic Power: its power type (6) is Fury, which every Hero has
-(src/hero_resources.cpp). Every client spell text that says Runic Power says Fury instead (the
-Emberforge_Resources addon renames it in the UI).
+Resources: Emberforge has no Runic Power: every spell costing or giving it uses Rage instead, the
+Demon Hunter's included (convert_runic_power; the server: src/hero_resources.cpp), and every spell
+text that says Runic Power says Rage.
 
 Visuals: a spell with a "visual" gets one of VISUALS, a copy of a Blizzard visual whose kits carry
 our trails and Blizzard's own effect models. The trail models are built by models/spell_effects.py
@@ -116,10 +116,10 @@ SOUNDS_DIR = 'Sound\\Spells\\Emberforge'     # client folder of our sounds (from
 KIT_SOUND = 15
 
 # Values used below.
-CHAOS = 0x7F                    # every school
+SHADOW = 0x20                   # the Demon Hunter's school (Chaos, every school, before)
 PHYSICAL = 0x1
 DMG_CLASS_MELEE = 2
-FURY = 6                        # the client's Runic Power, renamed
+RAGE = 1                        # the Demon Hunter's power (Fury, the client's Runic Power, before)
 ONE_HANDED_WEAPONS = 0xA091     # one-handed axes, maces and swords, fist weapons, daggers
 ITEM_CLASS_WEAPON = 2
 SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON = 0x400
@@ -448,21 +448,21 @@ SPELLS = [
         'id': 90100, 'copy': 1752, 'name': "Demon's Bite", 'icon': 'INV_Weapon_Glave_01',
         'visual': 'DemonsBite', 'two_weapons': True,
         'description': 'Quickly attack for your weapon damage plus $s1 Physical damage. '
-                       'Generates 20 to 30 Fury.',
-        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
+                       'Generates 20 to 30 Rage.',
+        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': RAGE, 'ManaCost': 0,
                 'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
         'effects': {
             1: {'Effect': EFFECT_NORMALIZED_WEAPON_DMG, 'BasePoints': 4, 'DieSides': 1, 'RealPointsPerLevel': 1.0},
-            2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 101, 'MiscValue': FURY,
+            2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 101, 'MiscValue': RAGE,
                 'TargetA': TARGET_UNIT_CASTER, 'TargetB': 0},
         },
     },
     {
         'id': 90101, 'copy': 1752, 'name': 'Chaos Strike', 'icon': 'Ability_DemonHunter_ChaosStrike',
         'visual': 'ChaosStrike', 'two_weapons': True,
-        'description': 'Slice your target for $s1% weapon damage as Chaos.',
-        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 400,
-                'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'SchoolMask': CHAOS},
+        'description': 'Slice your target for $s1% weapon damage as Shadow.',
+        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': RAGE, 'ManaCost': 400,
+                'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'SchoolMask': SHADOW},
         'clear': [2],
         'effects': {1: {'Effect': EFFECT_WEAPON_PERCENT_DAMAGE, 'BasePoints': 199, 'DieSides': 1}},
     },
@@ -474,7 +474,7 @@ SPELLS = [
         'description': 'Strike all enemies within 8 yards three times for 24.75% of your attack power as '
                        'Physical damage, then once more for 74.2%, and evade every attack for $d.',
         'tooltip': 'Evading all attacks.',
-        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'PowerType': FURY,
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'PowerType': RAGE,
                 'ManaCost': 350, 'MaxAffectedTargets': 0, 'DurationIndex': DURATION_1S, 'BaseLevel': 10,
                 'SpellLevel': 10},
         'clear': [1, 2],
@@ -490,10 +490,10 @@ SPELLS = [
     {
         'id': 90103, 'copy': 1953, 'name': 'Fel Rush', 'icon': 'Ability_DemonHunter_FelRush',
         'two_weapons': True, 'visual': 'FelRush',
-        'description': 'Rush forward $a1 yards in a burst of fel energy, dealing $90104s1 Chaos damage to '
+        'description': 'Rush forward $a1 yards in a burst of fel energy, dealing $90104s1 Shadow damage to '
                        'enemies in your path.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'ManaCostPercentage': 0,
-                'SchoolMask': CHAOS, 'BaseLevel': 1, 'SpellLevel': 1},
+                'SchoolMask': SHADOW, 'BaseLevel': 1, 'SpellLevel': 1},
         'clear': [2, 3],
         # Blink's leap is now a charge: the Demon Hunter dashes along the ground to the point Blink
         # would land on; 90104 hits the enemies in the way (spell_titan_dh_fel_rush_damage).
@@ -506,7 +506,7 @@ SPELLS = [
         'id': 90104, 'copy': 5857, 'name': 'Fel Rush', 'icon': 'Ability_DemonHunter_FelRush',
         'description': '',
         'visual': 'FelRushHit',
-        'set': {'SchoolMask': CHAOS, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
+        'set': {'SchoolMask': SHADOW, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
         'effects': {1: {'BasePoints': 9, 'DieSides': 1, 'RealPointsPerLevel': 2.5, 'TargetA': TARGET_SRC_CASTER,
                         'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_15,
                         'BonusMultiplier': 0.0}},
@@ -515,13 +515,13 @@ SPELLS = [
         'id': 90105, 'copy': 1949, 'name': 'Eye Beam', 'icon': 'Ability_DemonHunter_EyeBeam',
         'two_weapons': True, 'visual': 'EyeBeam',
         'description': 'Blast all enemies in a line in front of you with fel energy for $d, dealing $90106s1 '
-                       'Chaos damage every $t1 sec. You can move while channeling, at 5% speed.',
+                       'Shadow damage every $t1 sec. You can move while channeling, at 5% speed.',
         'tooltip': 'Channeling Eye Beam. Movement speed slowed by 95%.',
         # Hellfire's channel, but cast and kept while moving (turning was already allowed), with the
         # Demon Hunter slowed by 95% (effect 2) for as long as it lasts.
-        'set': {'PowerType': FURY, 'ManaCost': 300, 'ManaCostPercentage': 0, 'RecoveryTime': 30000,
+        'set': {'PowerType': RAGE, 'ManaCost': 300, 'ManaCostPercentage': 0, 'RecoveryTime': 30000,
                 'DurationIndex': DURATION_2S, 'BaseLevel': 20, 'SpellLevel': 20, 'MaxLevel': 0,
-                'SchoolMask': CHAOS},
+                'SchoolMask': SHADOW},
         'unset': {'InterruptFlags': INTERRUPT_MOVEMENT, 'ChannelInterruptFlags': CHANNEL_INTERRUPT_MOVE},
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 200, 'TriggerSpell': 90106},
@@ -531,7 +531,7 @@ SPELLS = [
     {
         'id': 90106, 'copy': 5857, 'name': 'Eye Beam', 'icon': 'Ability_DemonHunter_EyeBeam',
         'description': '',
-        'set': {'SchoolMask': CHAOS, 'SpellVisual': 0, 'BaseLevel': 20, 'SpellLevel': 20, 'MaxLevel': 80},
+        'set': {'SchoolMask': SHADOW, 'SpellVisual': 0, 'BaseLevel': 20, 'SpellLevel': 20, 'MaxLevel': 80},
         # Everything within 20 yards, cut to the beam's lane by spell_titan_dh_eye_beam_damage.
         'effects': {1: {'BasePoints': 9, 'DieSides': 1, 'RealPointsPerLevel': 3.0, 'TargetA': TARGET_SRC_CASTER,
                         'TargetB': TARGET_UNIT_SRC_AREA_ENEMY, 'RadiusIndex': RADIUS_20, 'BonusMultiplier': 0.0}},
@@ -609,12 +609,12 @@ SPELLS = [
         # power (spell_bonus_data) and is stunned for 2 sec.
         'id': 90112, 'copy': 36225, 'name': 'Chaos Nova', 'icon': 'Spell_Fire_FelFireNova',
         'two_weapons': True, 'visual': 'ChaosNova',
-        'description': 'Unleash an eruption of fel energy, dealing 40% of your attack power as Chaos damage '
+        'description': 'Unleash an eruption of fel energy, dealing 40% of your attack power as Shadow damage '
                        'and stunning all enemies within 8 yards for 2 sec.',
         'tooltip': 'Stunned.',
-        'set': {'PowerType': FURY, 'ManaCost': 300, 'RecoveryTime': 60000, 'DurationIndex': DURATION_2S,
+        'set': {'PowerType': RAGE, 'ManaCost': 300, 'RecoveryTime': 60000, 'DurationIndex': DURATION_2S,
                 'CastingTimeIndex': CAST_INSTANT, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
-                'SchoolMask': CHAOS, 'DmgClass': DMG_CLASS_MELEE, 'MaxAffectedTargets': 0, 'BaseLevel': 24,
+                'SchoolMask': SHADOW, 'DmgClass': DMG_CLASS_MELEE, 'MaxAffectedTargets': 0, 'BaseLevel': 24,
                 'SpellLevel': 24, 'MaxLevel': 80},
         'clear': [3],
         'effects': {
@@ -670,7 +670,7 @@ SPELLS = [
         # (spell_bonus_data).
         'id': 90117, 'copy': 20252, 'name': 'Felblade', 'icon': 'Ability_DemonHunter_Felblade',
         'two_weapons': True, 'visual': 'Felblade',
-        'description': 'Charge to your target and deal 50% of your attack power as Fire damage. Generates 40 Fury.',
+        'description': 'Charge to your target and deal 50% of your attack power as Fire damage. Generates 40 Rage.',
         'set': {'RecoveryTime': 15000, 'RangeIndex': RANGE_15, 'PowerType': 0, 'ManaCost': 0,
                 'ManaCostPercentage': 0, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
                 'SchoolMask': FIRE, 'DmgClass': DMG_CLASS_MELEE, 'Speed': 42.0, 'BaseLevel': 16, 'SpellLevel': 16,
@@ -680,7 +680,7 @@ SPELLS = [
             2: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
                 'BonusMultiplier': 0.0},
             3: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 399, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER,
-                'MiscValue': FURY},
+                'MiscValue': RAGE},
         },
     },
     {
@@ -704,7 +704,7 @@ SPELLS = [
         'id': 90119, 'copy': 50589, 'name': 'Immolation Aura', 'icon': 'Spell_Fire_Incinerate',
         'two_weapons': True, 'visual': 'ImmolationAura',
         'description': 'Engulf yourself in flames for $d, dealing 20% of your attack power as Fire damage to '
-                       'enemies within 8 yards at once and every sec. Generates 20 Fury.',
+                       'enemies within 8 yards at once and every sec. Generates 20 Rage.',
         'tooltip': 'Burning nearby enemies every sec.',
         'set': {'RecoveryTime': 15000, 'DurationIndex': DURATION_6S, 'PowerType': 0, 'ManaCost': 0,
                 'ManaCostPercentage': 0, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
@@ -713,7 +713,7 @@ SPELLS = [
         'effects': {
             1: {'TriggerSpell': 90120},
             2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER,
-                'MiscValue': FURY},
+                'MiscValue': RAGE},
             3: {'Effect': EFFECT_TRIGGER_SPELL, 'TargetA': TARGET_UNIT_CASTER, 'TriggerSpell': 90120},
         },
     },
@@ -731,12 +731,12 @@ SPELLS = [
         'id': 90121, 'copy': 50589, 'name': 'Fel Barrage', 'icon': 'INV_FelBarrage',
         'two_weapons': True, 'visual': 'FelBarrage',
         'description': 'Unleash a torrent of Fel energy over $d, bombarding the ground around you: every 0.25 '
-                       'sec, all enemies within 8 yards take 15% of your attack power as Chaos damage. Each burst '
-                       'drains 5 Fury; it ends when your Fury runs out.',
+                       'sec, all enemies within 8 yards take 15% of your attack power as Shadow damage. Each burst '
+                       'drains 5 Rage; it ends when your Rage runs out.',
         'tooltip': 'Unleashing Fel energy on nearby enemies.',
-        'set': {'RecoveryTime': 90000, 'DurationIndex': DURATION_3S, 'PowerType': FURY, 'ManaCost': 100,
+        'set': {'RecoveryTime': 90000, 'DurationIndex': DURATION_3S, 'PowerType': RAGE, 'ManaCost': 100,
                 'ManaCostPercentage': 0, 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500,
-                'SchoolMask': CHAOS, 'BaseLevel': 30, 'SpellLevel': 30, 'MaxLevel': 0},
+                'SchoolMask': SHADOW, 'BaseLevel': 30, 'SpellLevel': 30, 'MaxLevel': 0},
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 250, 'TriggerSpell': 90122}},
     },
@@ -745,7 +745,7 @@ SPELLS = [
         # (90123) rain down around the Demon Hunter with it (spell_titan_dh_fel_barrage_pulse).
         'id': 90122, 'copy': 50590, 'name': 'Fel Barrage', 'icon': 'INV_FelBarrage',
         'visual': 'FelBarragePulse', 'description': '',
-        'set': {'SchoolMask': CHAOS, 'MaxAffectedTargets': 0, 'BaseLevel': 30, 'SpellLevel': 30, 'MaxLevel': 80},
+        'set': {'SchoolMask': SHADOW, 'MaxAffectedTargets': 0, 'BaseLevel': 30, 'SpellLevel': 30, 'MaxLevel': 80},
         'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_DEST_CASTER,
                         'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8, 'BonusMultiplier': 0.0}},
     },
@@ -764,12 +764,12 @@ SPELLS = [
         'id': 90124, 'copy': 1752, 'name': 'Shear', 'icon': 'Ability_DemonHunter_Shear',
         'visual': 'Shear', 'two_weapons': True,
         'description': 'Shear your target\'s flesh for your weapon damage plus $s1 Physical damage. Awards 2 combo '
-                       'points and generates 10 Fury.',
-        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
+                       'points and generates 10 Rage.',
+        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': RAGE, 'ManaCost': 0,
                 'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
         'effects': {
             1: {'Effect': EFFECT_NORMALIZED_WEAPON_DMG, 'BasePoints': 4, 'DieSides': 1, 'RealPointsPerLevel': 1.0},
-            2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 99, 'DieSides': 1, 'MiscValue': FURY,
+            2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 99, 'DieSides': 1, 'MiscValue': RAGE,
                 'TargetA': TARGET_UNIT_CASTER, 'TargetB': 0},
             3: {'Effect': EFFECT_ADD_COMBO_POINTS, 'BasePoints': 1, 'DieSides': 1, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
                 'TriggerSpell': 0},
@@ -785,7 +785,7 @@ SPELLS = [
                        'damage and healing per combo point:\r\n'
                        + patch_monk.per_point('$m1', 0.15, extra=lambda points: f', heals {8 + 3 * points}% of '
                                               'maximum health'),
-        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': FURY, 'ManaCost': 0,
+        'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': RAGE, 'ManaCost': 0,
                 'StartRecoveryTime': 1500, 'MaxAffectedTargets': 5, 'BaseLevel': 1, 'SpellLevel': 1},
         'clear': [2, 3],
         'effects': {
@@ -813,7 +813,7 @@ SPELLS = [
                        '$d.',
         'tooltip': 'Parry chance increased by $s1%. Armor increased by $s2%.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 15000, 'StartRecoveryCategory': 0,
-                'StartRecoveryTime': 0, 'PowerType': FURY, 'ManaCost': 200, 'DurationIndex': DURATION_6S,
+                'StartRecoveryTime': 0, 'PowerType': RAGE, 'ManaCost': 200, 'DurationIndex': DURATION_6S,
                 'BaseLevel': 10, 'SpellLevel': 10},
         'clear': [1, 2, 3],
         'effects': {
@@ -871,7 +871,7 @@ SPELLS = [
         'description': 'Finishing move that explodes, dealing Fire damage to enemies within 8 yards and inflicting '
                        'Frailty for 8 sec: you heal for 8% of the damage you deal to them. Fire damage per combo '
                        'point:\r\n' + patch_monk.per_point(None, 0.3),
-        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'PowerType': FURY, 'ManaCost': 0,
+        'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'PowerType': RAGE, 'ManaCost': 0,
                 'StartRecoveryCategory': GLOBAL_COOLDOWN, 'StartRecoveryTime': 1500, 'DurationIndex': 0,
                 'BaseLevel': 30, 'SpellLevel': 30},
         'clear': [1, 2, 3],
@@ -957,15 +957,15 @@ SPELLS = [
         'id': 90114, 'copy': 2139, 'name': 'Consume Magic', 'icon': 'Ability_DemonHunter_ConsumeMagic',
         'two_weapons': True, 'visual': 'ConsumeMagic',
         'description': "Interrupt the target's spellcasting, preventing any spell in that school from being "
-                       'cast for $d, and consume 1 beneficial Magic effect from it. Generates 20 Fury.',
+                       'cast for $d, and consume 1 beneficial Magic effect from it. Generates 20 Rage.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 15000, 'RangeIndex': RANGE_20,
-                'DurationIndex': DURATION_3S, 'ManaCostPercentage': 0, 'SchoolMask': CHAOS, 'BaseLevel': 12,
+                'DurationIndex': DURATION_3S, 'ManaCostPercentage': 0, 'SchoolMask': SHADOW, 'BaseLevel': 12,
                 'SpellLevel': 12},
         'effects': {
             2: {'Effect': EFFECT_DISPEL, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
                 'MiscValue': DISPEL_MAGIC},
             3: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER,
-                'MiscValue': FURY},
+                'MiscValue': RAGE},
         },
     },
 ]
@@ -1220,18 +1220,38 @@ def build_talents(source, out, icon_id):
     return tabs, talents
 
 
-def rename_runic_power(spells):
-    """Runic Power is Fury on Emberforge: rename it in every spell's name, rank, description and tooltip."""
+# Effects and auras whose MiscValue is a power type (energize, drain, burn; power regen, maximum power).
+POWER_EFFECTS = (8, 30, 62, 137)
+POWER_AURAS = (24, 35, 85, 110, 132)
+POWER_RUNIC_POWER, POWER_RAGE = 6, 1
+
+
+def convert_runic_power(spells):
+    """Emberforge has no Runic Power: every spell costing it costs Rage (the same tenths), every effect giving,
+    taking or raising it does so to Rage, and every name, rank, description and tooltip says Rage. The server does
+    the same to its own copy (hero_resources.cpp, titan_runic_power_to_rage)."""
     pattern = re.compile(r'runic power', re.I)
-    renamed = 0
+    effect, aura, misc = (EFFECT_FIELDS[name][0] for name in ('Effect', 'Aura', 'MiscValue'))
+    converted = 0
     for key, row in spells.rows.items():
         row = list(row)
+        changed = False
+        if row[FIELDS['PowerType']] == POWER_RUNIC_POWER:
+            row[FIELDS['PowerType']] = POWER_RAGE
+            changed = True
+        for n in range(3):
+            if row[misc + n] == POWER_RUNIC_POWER and (row[effect + n] in POWER_EFFECTS
+                                                      or (row[effect + n] == 6 and row[aura + n] in POWER_AURAS)):
+                row[misc + n] = POWER_RAGE
+                changed = True
         for base in (NAME, RANK, DESCRIPTION, TOOLTIP):
             if row[base] and pattern.search(spells.string(row[base])):
-                row[base] = spells.add_string(pattern.sub('Fury', spells.string(row[base])))
-                renamed += 1
-        spells.rows[key] = tuple(row)
-    return renamed
+                row[base] = spells.add_string(pattern.sub('Rage', spells.string(row[base])))
+                changed = True
+        if changed:
+            spells.rows[key] = tuple(row)
+            converted += 1
+    return converted
 
 
 def sql_columns():
@@ -1314,10 +1334,10 @@ def main():
     build_animations(source, out)
     spells = Dbc(source / 'Spell.dbc', SPELL_FIELDS)
     build_spells(spells, icon_id)
-    renamed = rename_runic_power(spells)
+    renamed = convert_runic_power(spells)
     spells.save(out / 'Spell.dbc')
     tabs, talents = build_talents(source, out, icon_id)
-    print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power renamed in {renamed} texts) '
+    print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power turned into Rage in {renamed} spells) '
           f'and {out / "SpellIcon.dbc"}')
     if sql:
         write_sql(spells, sql, talent_sql(tabs, talents))

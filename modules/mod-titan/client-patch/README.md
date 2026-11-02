@@ -63,7 +63,8 @@ python3 patch_spells.py ./dbc /tmp/out --sql ../data/sql/db-world/titan_demon_hu
 ```
 
 After changing a spell, regenerate that SQL **and** rebuild the patch: client and server must agree.
-Fury is the client's Runic Power, renamed (every Hero has it). The Wildcard pool and the
+The Demon Hunter's abilities cost and generate Rage (Fury, the client's Runic Power, before) and deal
+Shadow damage (Chaos, every school, before). The Wildcard pool and the
 Classless window get the spells from `CUSTOM_ABILITIES` in `src/wildcard.cpp` (spec tabs Havoc and Vengeance).
 
 ### Trails and visuals
@@ -268,16 +269,16 @@ check; the Grimfall build in use does (see the launcher's `docs/CLIENT_DISTRIBUT
 
 ## Resource bars addon
 
-Heroes use every class resource (mana, rage, energy, Fury and runes), but the player
-frame only shows mana. `AddOns/Emberforge_Resources` adds bars for rage, energy and Fury
+Heroes use every class resource (mana, rage, energy and runes), but the player
+frame only shows mana. `AddOns/Emberforge_Resources` adds bars for rage and energy
 under the player frame and turns on the rune bar. A bar appears once you know an ability that
 uses that resource, or currently have some of it. It also shows the ammo slot (the character
 sheet hides it for a Paladin, which has a relic slot) and recolors the Hero class from Paladin pink
 to ember orange wherever the UI colors names by class.
 
-Emberforge has no Runic Power: it is Fury. `patch_spells.py` renames it in every spell's name and
-text in `Spell.dbc`, and the addon renames it in every UI string (spell costs, combat text, errors)
-and colors its bars Fury purple.
+Emberforge has no Runic Power: `patch_spells.py` turns every spell costing or giving it into Rage in
+`Spell.dbc` (costs, energize and drain effects, power auras, texts), and the addon renames it to Rage
+in every UI string left (combat text, errors).
 
 Install: copy the `Emberforge_Resources` folder into the client's `Interface\AddOns\` folder.
 The launcher will ship it automatically for players.

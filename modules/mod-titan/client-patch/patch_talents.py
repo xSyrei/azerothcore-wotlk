@@ -22,8 +22,8 @@ character with a talent spell it does not know.
 import patch_monk_talents
 
 # Spell.dbc values used below (as in patch_spells.py).
-FURY = 6
-CHAOS, PHYSICAL, SHADOW = 0x7F, 0x1, 0x20
+RAGE = 1
+PHYSICAL, SHADOW = 0x1, 0x20
 EFFECT_SCHOOL_DAMAGE, EFFECT_APPLY_AURA, EFFECT_HEAL, EFFECT_ENERGIZE, EFFECT_HEAL_PCT = 2, 6, 10, 30, 136
 AURA_DUMMY, AURA_PERIODIC_DAMAGE, AURA_PROC_TRIGGER_SPELL = 4, 3, 42
 AURA_PERIODIC_ENERGIZE, AURA_MOD_DECREASE_SPEED, AURA_MOD_DAMAGE_PERCENT_DONE = 24, 33, 79
@@ -133,17 +133,17 @@ def aura(aura_type, value, misc=0):
 # description and effects take the rank (1 up); set is extra Spell.dbc columns (procs).
 HAVOC = [
     ('Blind Fury', 0, 1, 'Ability_DemonHunter_EyeBeam', None, 3,
-     lambda r: f'Eye Beam generates {r + 1} Fury every time it strikes.',
+     lambda r: f'Eye Beam generates {r + 1} Rage every time it strikes.',
      lambda r: {1: dummy(r + 1)}, {}),
     ('Improved Chaos Strike', 0, 2, 'Ability_DemonHunter_ChaosStrike', None, 2,
      lambda r: f'Chaos Strike deals {10 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, CHAOS_STRIKE, 10 * r)}, {}),
     ('Demonic Appetite', 2, 2, 'Spell_Shadow_SoulLeech_3', None, 3,
      lambda r: f'Chaos Strike has a {10 * r}% chance to feed your hunger, healing you for 5% of your maximum '
-               'health and generating 20 Fury.',
+               'health and generating 20 Rage.',
      lambda r: {1: dummy(10 * r)}, {}),
     ('Prepared', 1, 3, 'Ability_DemonHunter_VengefulRetreat', None, 2,
-     lambda r: f'Vengeful Retreat generates {10 * r} Fury over 5 sec.',
+     lambda r: f'Vengeful Retreat generates {10 * r} Rage over 5 sec.',
      lambda r: {1: dummy(2 * r)}, {}),
     ('Bloodlet', 2, 0, 'Ability_DemonHunter_Bloodlet', 'Serrated Glaive', 3,
      lambda r: f'Throw Glaive causes enemies to bleed for {20 * r}% of the damage it dealt over 6 sec.',
@@ -165,33 +165,33 @@ HAVOC = [
      lambda r: f'Chaos Strike and Blade Dance\'s strikes have a {5 * r}% higher chance to be a critical strike.',
      lambda r: {1: mod(SPELLMOD_CRITICAL_CHANCE, CHAOS_STRIKE | BLADE_DANCE_STRIKES, 5 * r, flat=True)}, {}),
     ('Unleashed Power', 4, 0, 'Spell_Fire_FelFireNova', 'Master of the Glaive', 3,
-     lambda r: f'Chaos Nova costs {(33, 66, 100)[r - 1]}% less Fury and its cooldown is {10 * r} sec shorter.',
+     lambda r: f'Chaos Nova costs {(33, 66, 100)[r - 1]}% less Rage and its cooldown is {10 * r} sec shorter.',
      lambda r: {1: mod(SPELLMOD_COST, CHAOS_NOVA, -(33, 66, 100)[r - 1]),
                 2: mod(SPELLMOD_COOLDOWN, CHAOS_NOVA, -10000 * r, flat=True)}, {}),
     ('Momentum', 2, 3, 'Ability_Rogue_Sprint', 'Prepared', 2,
      lambda r: f'Fel Rush and Vengeful Retreat increase all damage you deal by {5 * r}% for 6 sec.',
      lambda r: {1: dummy(5 * r)}, {}),
     ('Chaos Cleave', 5, 2, 'Ability_Warrior_Cleave', None, 3,
-     lambda r: f'Chaos Strike also deals {10 * r}% of its damage as Chaos to up to 3 other enemies within 8 '
+     lambda r: f'Chaos Strike also deals {10 * r}% of its damage as Shadow to up to 3 other enemies within 8 '
                'yards of its target.',
      lambda r: {1: dummy(10 * r)}, {}),
     ('Demon Blades', 6, 1, 'Spell_Shadow_DemonicTactics', None, 1,
      lambda r: 'Your auto attacks deal an additional 20% of your attack power as Shadow damage and generate '
-               '12 Fury.',
+               '12 Rage.',
      lambda r: {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_PROC_TRIGGER_SPELL, 'TriggerSpell': 90156,
                     'TargetA': TARGET_UNIT_CASTER}},
      {'ProcFlags': PROC_FLAG_DONE_MELEE_AUTO_ATTACK, 'ProcChance': 100}),
     ('Fel Mastery', 3, 3, 'Ability_DemonHunter_FelRush', None, 2,
-     lambda r: f'Fel Rush deals {15 * r}% more damage and generates {10 * r} Fury when it hits.',
+     lambda r: f'Fel Rush deals {15 * r}% more damage and generates {10 * r} Rage when it hits.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, FEL_RUSH_HIT, 15 * r), 2: dummy(10 * r)}, {}),
     ('Any Means Necessary', 7, 0, 'Ability_Warlock_ChaosBolt', None, 3,
-     lambda r: f'Your Chaos damage abilities deal {4 * r}% more damage.',
+     lambda r: f'Your Shadow damage abilities deal {4 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, CHAOS_DAMAGE, 4 * r)}, {}),
     ('Cycle of Hatred', 7, 1, 'Ability_DemonHunter_CycleOfHatred', None, 3,
      lambda r: f'Chaos Strike reduces the remaining cooldown of Eye Beam by {r} sec.',
      lambda r: {1: dummy(r)}, {}),
     ('Trail of Ruin', 4, 2, 'Spell_Fire_FelFlameRing', 'Dancing with Fate', 2,
-     lambda r: f'The last strike of Blade Dance burns its targets for {20 * r}% of its damage as Chaos over '
+     lambda r: f'The last strike of Blade Dance burns its targets for {20 * r}% of its damage as Shadow over '
                '4 sec.',
      lambda r: {1: dummy(20 * r)}, {}),
     ('Soul Rending', 8, 0, 'Spell_Shadow_LifeDrain', None, 3,
@@ -225,7 +225,7 @@ VENGEANCE = [
      lambda r: f'Shear deals {15 * r}% more damage.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, SHEAR, 15 * r)}, {}),
     ('Shear Fury', 2, 0, 'Ability_Warlock_DemonicEmpowerment', 'Improved Shear', 1,
-     lambda r: 'Shear generates 10 more Fury.',
+     lambda r: 'Shear generates 10 more Rage.',
      lambda r: {1: dummy(10)}, {}),
     ('Agonizing Flames', 4, 0, 'Spell_Fire_Incinerate', None, 3,
      lambda r: f'Immolation Aura deals {10 * r}% more damage.',
@@ -287,7 +287,7 @@ VENGEANCE = [
     ('Demonic Wards', 0, 3, 'Spell_Shadow_AntiMagicShell', None, 3,
      lambda r: f'Reduces all damage you take by {(3, 6, 10)[r - 1]}%.',
      lambda r: {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_TAKEN,
-                    'BasePoints': -(3, 6, 10)[r - 1] - 1, 'DieSides': 1, 'MiscValue': CHAOS,
+                    'BasePoints': -(3, 6, 10)[r - 1] - 1, 'DieSides': 1, 'MiscValue': SHADOW,
                     'TargetA': TARGET_UNIT_CASTER}}, {}),
     ('Fel Flame Fortification', 8, 0, 'Spell_Fire_FireArmor', 'Infernal Armor', 2,
      lambda r: f'While Immolation Aura burns, you take {5 * r}% less damage.',
@@ -332,15 +332,15 @@ HELPERS = [
         'id': 90150, 'copy': SELF_TEMPLATE, 'name': 'Demonic Appetite', 'icon': 'Spell_Shadow_SoulLeech_3',
         'description': '', 'clear': [1, 2, 3], 'duration': 0,
         'effects': {1: {'Effect': EFFECT_HEAL_PCT, 'BasePoints': 4, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER},
-                    2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 1, 'MiscValue': FURY,
+                    2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 199, 'DieSides': 1, 'MiscValue': RAGE,
                         'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Fury per second: the script's value (Prepared's rank).
         'id': 90151, 'copy': SELF_TEMPLATE, 'name': 'Prepared', 'icon': 'Ability_DemonHunter_VengefulRetreat',
-        'description': '', 'tooltip': 'Generating Fury.', 'clear': [1, 2, 3], 'duration': DURATION_5S,
+        'description': '', 'tooltip': 'Generating Rage.', 'clear': [1, 2, 3], 'duration': DURATION_5S,
         'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_PERIODIC_ENERGIZE, 'BasePoints': 19,
-                        'DieSides': 1, 'Amplitude': 1000, 'MiscValue': FURY, 'TargetA': TARGET_UNIT_CASTER}},
+                        'DieSides': 1, 'Amplitude': 1000, 'MiscValue': RAGE, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Damage per 2 sec: the script's value (a share of Throw Glaive's hit).
@@ -363,12 +363,12 @@ HELPERS = [
         'description': '', 'tooltip': 'All damage dealt increased by $s1%.', 'clear': [1, 2, 3],
         'duration': DURATION_6S,
         'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_DONE, 'BasePoints': 4,
-                        'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}},
+                        'DieSides': 1, 'MiscValue': SHADOW, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Damage: the script's value (a share of Chaos Strike's).
         'id': 90155, 'copy': HIT_TEMPLATE, 'name': 'Chaos Cleave', 'icon': 'Ability_Warrior_Cleave',
-        'description': '', 'clear': [1, 2, 3], 'duration': 0, 'set': {'SchoolMask': CHAOS},
+        'description': '', 'clear': [1, 2, 3], 'duration': 0, 'set': {'SchoolMask': SHADOW},
         'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1,
                         'TargetA': TARGET_UNIT_TARGET_ENEMY}},
     },
@@ -378,14 +378,14 @@ HELPERS = [
         'description': '', 'clear': [1, 2, 3], 'duration': 0, 'set': {'SchoolMask': SHADOW},
         'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1,
                         'TargetA': TARGET_UNIT_TARGET_ENEMY},
-                    2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 119, 'DieSides': 1, 'MiscValue': FURY,
+                    2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 119, 'DieSides': 1, 'MiscValue': RAGE,
                         'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Damage per sec: the script's value (a share of the last Blade Dance strike).
         'id': 90157, 'copy': HIT_TEMPLATE, 'name': 'Trail of Ruin', 'icon': 'Spell_Fire_FelFlameRing',
         'description': '', 'tooltip': 'Burning.', 'clear': [1, 2, 3], 'duration': DURATION_4S,
-        'set': {'SchoolMask': CHAOS},
+        'set': {'SchoolMask': SHADOW},
         'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_PERIODIC_DAMAGE, 'BasePoints': 0, 'DieSides': 1,
                         'Amplitude': 1000, 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
     },
@@ -401,7 +401,7 @@ HELPERS = [
         'description': '', 'tooltip': 'All damage dealt increased by $s1%.', 'clear': [1, 2, 3],
         'duration': DURATION_5S,
         'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_DONE, 'BasePoints': 9,
-                        'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}},
+                        'DieSides': 1, 'MiscValue': SHADOW, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Armor % (effect 1) and the Fire damage melee attackers take (effect 2): the script's values (Infernal
@@ -427,7 +427,7 @@ HELPERS = [
         'description': '', 'tooltip': 'Damage dealt reduced by $s1%.', 'clear': [1, 2, 3], 'duration': DURATION_12S,
         'set': {'SchoolMask': SHADOW},
         'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_DONE, 'BasePoints': -3,
-                        'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
+                        'DieSides': 1, 'MiscValue': SHADOW, 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
     },
     {
         # Physical damage %: the script's value (Razor Spikes' rank), for as long as Demon Spikes.
@@ -442,14 +442,14 @@ HELPERS = [
         'id': 90165, 'copy': SELF_TEMPLATE, 'name': 'Painbringer', 'icon': 'Ability_DemonHunter_Painbringer',
         'description': '', 'tooltip': 'Damage taken reduced by $s1%.', 'clear': [1, 2, 3], 'duration': DURATION_6S,
         'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_TAKEN, 'BasePoints': -4,
-                        'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}},
+                        'DieSides': 1, 'MiscValue': SHADOW, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Damage taken -%: the script's value (Fel Flame Fortification's rank), for as long as Immolation Aura.
         'id': 90166, 'copy': SELF_TEMPLATE, 'name': 'Fel Flame Fortification', 'icon': 'Spell_Fire_FireArmor',
         'description': '', 'tooltip': 'Damage taken reduced by $s1%.', 'clear': [1, 2, 3], 'duration': DURATION_6S,
         'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_TAKEN, 'BasePoints': -6,
-                        'DieSides': 1, 'MiscValue': CHAOS, 'TargetA': TARGET_UNIT_CASTER}},
+                        'DieSides': 1, 'MiscValue': SHADOW, 'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Last Resort's cooldown, shown on the Demon Hunter (the server's titan_dh_damage_taken checks it).

@@ -5714,10 +5714,10 @@ void Spell::TakeRunePower(bool didHit)
         }
     }
 
-    // you can gain some runic power when use runes
+    // you can gain some runic power when use runes (Emberforge, mod-titan: Runic Power is Rage)
     if (didHit)
         if (int32 rp = int32(runeCostData->runePowerGain * sWorld->getRate(RATE_POWER_RUNICPOWER_INCOME)))
-            player->ModifyPower(POWER_RUNIC_POWER, int32(rp));
+            player->ModifyPower(POWER_RAGE, int32(rp));
 }
 
 void Spell::TakeReagents()

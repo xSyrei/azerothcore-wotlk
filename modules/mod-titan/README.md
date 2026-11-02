@@ -10,7 +10,7 @@ preview shows) plus a Recruit's Tunic for the chest, and `CharacterCreating.Disa
 `worldserver.conf` blocks every other class (GM accounts can still create any class for testing).
 The matching client patch is built with `client-patch/` (see its README).
 
-Heroes use **every class resource**: mana, rage, energy, Fury and runes, with combo points
+Heroes use **every class resource**: mana, rage, energy and runes, with combo points
 on any target. `src/hero_resources.cpp` turns these on through AzerothCore's classless hooks
 (`OnPlayerHasActivePowerType`, and `OnPlayerIsClass` for ability mechanics only). Starting zone
 and stats still follow the real base class. The `Emberforge_Resources` addon (in
@@ -96,33 +96,35 @@ The Demon Hunter is one of Wildcard's classes, with spells of Emberforge's own (
 Demon Hunter): spell ids 90100 and up in `data/sql/db-world/titan_demon_hunter_spells.sql`, the same
 spells in the client patch (`client-patch/patch_spells.py`, see its README). They join the Wildcard
 pool (`CUSTOM_ABILITIES` in `src/wildcard.cpp`) and the Classless window's Havoc and Vengeance tabs.
-Emberforge has no Runic Power: the client's power type 6 is renamed Fury everywhere (spell texts
-in the client patch, UI strings and bar color in `Emberforge_Resources`). Death Knight abilities that
-built or spent Runic Power build and spend Fury, the same pool as the Demon Hunter's.
+Emberforge has no Runic Power: every spell that cost or gave it costs or gives Rage (the same tenths), on the
+client (`convert_runic_power` in `client-patch/patch_spells.py`) and the server (`titan_runic_power_to_rage` in
+`src/hero_resources.cpp`), and every text that named it says Rage. Death Knight abilities and the Demon Hunter's
+(Fury before) build and spend Rage, the Warrior's pool. The Demon Hunter's damage is Shadow (Chaos, every school,
+before): it grows with Shadow spell power and Shadow damage bonuses.
 
 | Spell | Ability | Level | Notes |
 |---|---|---|---|
-| 90100 | Demon's Bite | 1 | Weapon strike; generates 20-30 Fury |
-| 90101 | Chaos Strike | 1 | 200% weapon damage as Chaos; costs 40 |
-| 90103 | Fel Rush | 1 | Dashes 15 yards forward along the ground in about 0.08 sec (180 yards/sec, `spell_titan_dh_fel_rush`), Chaos damage to enemies in the path (90104); 10 sec cooldown |
+| 90100 | Demon's Bite | 1 | Weapon strike; generates 20-30 Rage |
+| 90101 | Chaos Strike | 1 | 200% weapon damage as Shadow; costs 40 |
+| 90103 | Fel Rush | 1 | Dashes 15 yards forward along the ground in about 0.08 sec (180 yards/sec, `spell_titan_dh_fel_rush`), Shadow damage to enemies in the path (90104); 10 sec cooldown |
 | 90111 | Throw Glaive | 4 | 30-yard throw of the main-hand weapon (Heroic Throw's visual) for 45% of attack power, ricochets to 1 more enemy within 10 yards; 9 sec cooldown |
 | 90102 | Blade Dance | 10 | Four strikes within 8 yards over 0.75 sec: three for 24.75% of attack power, the last for 74.2% (90107, 90108); dodges all attacks for 1 sec; costs 35 |
-| 90114 | Consume Magic | 12 | 20-yard interrupt (3 sec school lockout, Counterspell) that also removes 1 magic buff and generates 20 Fury; 15 sec cooldown |
+| 90114 | Consume Magic | 12 | 20-yard interrupt (3 sec school lockout, Counterspell) that also removes 1 magic buff and generates 20 Rage; 15 sec cooldown |
 | 90109 | Vengeful Retreat | 14 | Clears snares and leaps back (Disengage; a hunter-family spell, as the core only leaps hunter spells backward); enemies within 8 yards take 40% of attack power and are slowed by 70% for 3 sec (90110); 25 sec cooldown |
 | 90113 | Blur | 18 | 50% dodge and 35% less damage taken for 10 sec (Evasion); 60 sec cooldown, off the global cooldown |
-| 90105 | Eye Beam | 20 | 2 sec channel, Chaos damage every 0.2 sec to enemies along the beam (20 yards, 2.5 each side; 90106); can move at 5% speed while channeling; costs 30 |
-| 90112 | Chaos Nova | 24 | 40% of attack power as Chaos damage to enemies within 8 yards, stunned 2 sec; costs 30, 60 sec cooldown |
-| 90117 | Felblade | 16 (Vengeance) | Charges a target up to 15 yards away; on arrival 50% of attack power as Fire damage and 40 Fury; 15 sec cooldown |
+| 90105 | Eye Beam | 20 | 2 sec channel, Shadow damage every 0.2 sec to enemies along the beam (20 yards, 2.5 each side; 90106); can move at 5% speed while channeling; costs 30 |
+| 90112 | Chaos Nova | 24 | 40% of attack power as Shadow damage to enemies within 8 yards, stunned 2 sec; costs 30, 60 sec cooldown |
+| 90117 | Felblade | 16 (Vengeance) | Charges a target up to 15 yards away; on arrival 50% of attack power as Fire damage and 40 Rage; 15 sec cooldown |
 | 90118 | Darkness | 26 (Vengeance) | 8-yard zone for 8 sec: allies in it avoid all damage from a hit 20% of the time (`spell_titan_dh_darkness`); 3 min cooldown |
 | 90116 | Metamorphosis | 30 | Demon form for 30 sec: 25% attack speed, 20% damage; 3 min cooldown |
-| 90121 | Fel Barrage | 30 | Havoc's capstone: for 3 sec, every 0.25 sec (90122) enemies within 8 yards take 15% of attack power as Chaos damage while fel balls rain down on the ground around the Demon Hunter (90123, only a look, `spell_titan_dh_fel_barrage_pulse`); each pulse drains 5 Fury, ending it when Fury runs out (`spell_titan_dh_fel_barrage`); costs 10, 90 sec cooldown |
-| 90119 | Immolation Aura | 1 (Vengeance) | 20% of attack power as Fire damage to enemies within 8 yards at once and every sec for 6 sec (90120); 20 Fury; 15 sec cooldown |
-| 90124 | Shear | 1 (Vengeance) | Weapon strike; 10 Fury and 2 combo points (Vengeance's generator; Soul Fragments, 90126, are retired) |
-| 90125 | Soul Cleave | 1 (Vengeance) | Finisher: a base and 15% of attack power a combo point to up to 5 enemies in front, heals 8% of maximum health plus 3% a point (90131, `spell_titan_dh_soul_cleave`); no Fury |
+| 90121 | Fel Barrage | 30 | Havoc's capstone: for 3 sec, every 0.25 sec (90122) enemies within 8 yards take 15% of attack power as Shadow damage while fel balls rain down on the ground around the Demon Hunter (90123, only a look, `spell_titan_dh_fel_barrage_pulse`); each pulse drains 5 Rage, ending it when Rage runs out (`spell_titan_dh_fel_barrage`); costs 10, 90 sec cooldown |
+| 90119 | Immolation Aura | 1 (Vengeance) | 20% of attack power as Fire damage to enemies within 8 yards at once and every sec for 6 sec (90120); 20 Rage; 15 sec cooldown |
+| 90124 | Shear | 1 (Vengeance) | Weapon strike; 10 Rage and 2 combo points (Vengeance's generator; Soul Fragments, 90126, are retired) |
+| 90125 | Soul Cleave | 1 (Vengeance) | Finisher: a base and 15% of attack power a combo point to up to 5 enemies in front, heals 8% of maximum health plus 3% a point (90131, `spell_titan_dh_soul_cleave`); no Rage |
 | 90129 | Torment | 6 (Vengeance) | Taunt, 30 yards, 8 sec cooldown |
 | 90127 | Demon Spikes | 10 (Vengeance) | 20% parry and 30% more armor for 6 sec, off the global cooldown; costs 20, 15 sec cooldown |
 | 90128 | Fiery Brand | 20 (Vengeance) | 50% of attack power as Fire damage, and the target deals 40% less damage for 8 sec; 60 sec cooldown |
-| 90135 | Spirit Bomb | 30 (Vengeance) | Finisher: spends every combo point for 30% of attack power each as Fire damage within 8 yards (90136) and Frailty for 8 sec (90137: damage you deal them heals you for 8%, `spell_titan_dh_frailty`); no Fury |
+| 90135 | Spirit Bomb | 30 (Vengeance) | Finisher: spends every combo point for 30% of attack power each as Fire damage within 8 yards (90136) and Frailty for 8 sec (90137: damage you deal them heals you for 8%, `spell_titan_dh_frailty`); no Rage |
 | 90132 | Sigil of Chains | 16 (Vengeance) | Ground-targeted sigil, 30 yards; after 1.5 sec pulls every enemy within 8 yards to its center (90133, the core's pull to a point) and slows them 70% for 6 sec (`spell_titan_dh_sigil_of_chains`); 60 sec cooldown |
 | 90138 | Soul Barrier | 24 (Vengeance) | Absorbs 20% of maximum health for 12 sec, 5% more per combo point spent (all, `spell_titan_dh_soul_barrier`); 30 sec cooldown |
 
@@ -269,6 +271,7 @@ Strength to 2 attack power and Agility to 1 ranged attack power:
 ## Core changes this module relies on
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
+- `Spell::TakeRunePower`: runes give Rage instead of Runic Power (Emberforge has none; see Demon Hunter).
 - Universal combo points (`Unit::RetargetComboPoints`, `Unit::AddComboPoints`, `Unit::ClearComboPoints`,
   `Unit::ClearComboPointHolders`, `Player::SetSelection`): a player's combo points are their own, not their
   target's. Gaining points on a new target adds to them; changing target moves them onto it (shown there, its

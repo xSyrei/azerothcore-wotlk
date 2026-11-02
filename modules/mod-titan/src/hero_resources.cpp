@@ -17,13 +17,14 @@
 
 #include "Player.h"
 #include "ScriptMgr.h"
+#include "SpellInfo.h"
 #include <array>
 
 // Classless Hero: every class resource at once.
 //
 // The Hero is the hidden base class (Paladin, see data/sql/db-world/hero_class.sql). Its display
 // bar stays mana; this script makes the core also run rage (gain from combat, decay out of
-// combat), energy (regen), Fury (the client's Runic Power, renamed) and runes for Heroes, and
+// combat), energy (regen) and runes for Heroes, and
 // treats a Hero as every class for ability mechanics (runes, combo points, reactive abilities like
 // Overpower and Revenge, form power swaps), and as a Hunter for pets (taming, resummoning,
 // stables). Class contexts that are not about abilities (starting zone, quests, trainers, stats,
@@ -72,7 +73,6 @@ public:
             case POWER_MANA:
             case POWER_RAGE:
             case POWER_ENERGY:
-            case POWER_RUNIC_POWER:
             case POWER_RUNE:
                 return true;
             default:
@@ -113,8 +113,55 @@ public:
     }
 };
 
+// Emberforge has no Runic Power: every spell costing it costs Rage (the same tenths), and every effect giving, taking
+// or raising it does so to Rage, as the client patch does (client-patch/patch_spells.py, convert_runic_power). Runes
+// give Rage instead too (a core change in Spell::TakeRunePower).
+class titan_runic_power_to_rage : public GlobalScript
+{
+public:
+    titan_runic_power_to_rage() : GlobalScript("titan_runic_power_to_rage", {
+        GLOBALHOOK_ON_LOAD_SPELL_CUSTOM_ATTR
+    }) { }
+
+    static bool IsPowerEffect(SpellEffectInfo const& effect)
+    {
+        switch (effect.Effect)
+        {
+            case SPELL_EFFECT_POWER_DRAIN:
+            case SPELL_EFFECT_ENERGIZE:
+            case SPELL_EFFECT_POWER_BURN:
+            case SPELL_EFFECT_ENERGIZE_PCT:
+                return true;
+            case SPELL_EFFECT_APPLY_AURA:
+                switch (effect.ApplyAuraName)
+                {
+                    case SPELL_AURA_PERIODIC_ENERGIZE:
+                    case SPELL_AURA_MOD_INCREASE_ENERGY:
+                    case SPELL_AURA_MOD_POWER_REGEN:
+                    case SPELL_AURA_MOD_POWER_REGEN_PERCENT:
+                    case SPELL_AURA_MOD_INCREASE_ENERGY_PERCENT:
+                        return true;
+                    default:
+                        return false;
+                }
+            default:
+                return false;
+        }
+    }
+
+    void OnLoadSpellCustomAttr(SpellInfo* spellInfo) override
+    {
+        if (spellInfo->PowerType == POWER_RUNIC_POWER)
+            spellInfo->PowerType = POWER_RAGE;
+        for (SpellEffectInfo& effect : spellInfo->_GetEffects())
+            if (effect.MiscValue == POWER_RUNIC_POWER && IsPowerEffect(effect))
+                effect.MiscValue = POWER_RAGE;
+    }
+};
+
 void AddSC_hero_resources()
 {
     new hero_resources();
     new hero_emberforged();
+    new titan_runic_power_to_rage();
 }

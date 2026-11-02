@@ -105,7 +105,7 @@ constexpr std::array<uint32, 3> TALENT_VOID_REAVER = { 90288, 90289, 90290 };   
 constexpr std::array<uint32, 2> TALENT_VULNERABILITY = { 90291, 90292 };                  // % more damage taken
 constexpr std::array<uint32, 1> TALENT_LAST_RESORT = { 90285 };                           // % health left
 constexpr std::array<uint32, 2> TALENT_FEL_FLAME_FORTIFICATION = { 90296, 90297 };        // % less damage taken
-constexpr int32 FURY_UNITS = 10;    // Fury is Runic Power, counted in tenths
+constexpr int32 FURY_UNITS = 10;    // Rage (Fury before) is counted in tenths
 
 enum DemonHunterDisplays
 {
@@ -237,7 +237,7 @@ class spell_titan_dh_fel_rush_damage : public SpellScript
         KeepInLane(caster, targets, 2.0f);
         if (!targets.empty())
             if (int32 fury = TalentValue(caster, TALENT_FEL_MASTERY, EFFECT_1))
-                caster->ModifyPower(POWER_RUNIC_POWER, fury * FURY_UNITS);
+                caster->ModifyPower(POWER_RAGE, fury * FURY_UNITS);
     }
 
     void UseUpUnboundChaos()
@@ -270,7 +270,7 @@ class spell_titan_dh_eye_beam_damage : public SpellScript
         KeepInLane(caster, targets, 2.5f);
         if (!targets.empty())
             if (int32 fury = TalentValue(caster, TALENT_BLIND_FURY))
-                caster->ModifyPower(POWER_RUNIC_POWER, fury * FURY_UNITS);
+                caster->ModifyPower(POWER_RAGE, fury * FURY_UNITS);
     }
 
     void Register() override
@@ -468,13 +468,13 @@ class spell_titan_dh_fel_barrage : public AuraScript
     void Drain(AuraEffect const* /*aurEff*/)
     {
         Unit* target = GetTarget();
-        if (target->GetPower(POWER_RUNIC_POWER) < FURY_PER_PULSE)
+        if (target->GetPower(POWER_RAGE) < FURY_PER_PULSE)
         {
             PreventDefaultAction();
             Remove();
             return;
         }
-        target->ModifyPower(POWER_RUNIC_POWER, -FURY_PER_PULSE);
+        target->ModifyPower(POWER_RAGE, -FURY_PER_PULSE);
     }
 
     void Register() override
@@ -1007,7 +1007,7 @@ class spell_titan_dh_shear : public SpellScript
     {
         Unit* caster = GetCaster();
         if (int32 fury = TalentValue(caster, TALENT_SHEAR_FURY))
-            caster->ModifyPower(POWER_RUNIC_POWER, fury * FURY_UNITS);
+            caster->ModifyPower(POWER_RAGE, fury * FURY_UNITS);
     }
 
     void Register() override
