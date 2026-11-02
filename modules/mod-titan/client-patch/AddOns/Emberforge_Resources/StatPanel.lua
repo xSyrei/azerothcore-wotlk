@@ -29,22 +29,23 @@ local function DB()
     return EmberforgeResourcesDB
 end
 
--- The column: flush against the window's right edge, its full height.
+-- The column: right of the model, inside the one window CharacterSkin.lua draws around both (under its title bar).
 local panel = CreateFrame("Frame", "EmberforgeStatPanel", PaperDollFrame)
 panel:SetWidth(WIDTH)
-panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -37, -13)
-panel:SetPoint("BOTTOMLEFT", CharacterFrame, "BOTTOMRIGHT", -37, 77)
+panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -40, -40)
+panel:SetPoint("BOTTOMLEFT", CharacterFrame, "BOTTOMRIGHT", -40, 84)
 panel:SetBackdrop({
-    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = true, tileSize = 32, edgeSize = 16,
-    insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    tile = true, tileSize = 16, edgeSize = 12,
+    insets = { left = 3, right = 3, top = 3, bottom = 3 },
 })
-panel:SetBackdropBorderColor(0.55, 0.45, 0.35, 1)
+panel:SetBackdropColor(0, 0, 0, 0.45)
+panel:SetBackdropBorderColor(0.45, 0.38, 0.3, 1)
 
 local scroll = CreateFrame("ScrollFrame", "EmberforgeStatPanelScroll", panel, "UIPanelScrollFrameTemplate")
-scroll:SetPoint("TOPLEFT", 10, -10)
-scroll:SetPoint("BOTTOMRIGHT", -30, 10)
+scroll:SetPoint("TOPLEFT", 8, -8)
+scroll:SetPoint("BOTTOMRIGHT", -28, 8)
 local list = CreateFrame("Frame", nil, scroll)
 list:SetWidth(INNER)
 list:SetHeight(1)
@@ -192,7 +193,7 @@ end
 local toggle = CreateFrame("Button", "EmberforgeStatPanelToggle", PaperDollFrame)
 toggle:SetWidth(26)
 toggle:SetHeight(26)
-toggle:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -42, 84)
+toggle:SetPoint("BOTTOMRIGHT", CharacterFrame, "BOTTOMRIGHT", -44, 86)
 local function SetArrow()
     local shown = not DB().hidden
     local page = shown and "Next" or "Prev"

@@ -285,7 +285,10 @@ Cataclysm on), for every class, and the character window's stats as Cataclysm's 
 a column on its right, one scrolling list of sections (General: health, your powers and the average item level of
 what you wear; Attributes, Melee, Ranged, Spell, Defenses: Blizzard's own stat lines and tooltips), each folding with
 its - / + button, and an arrow at the bottom of the model to hide or show the column (both kept per character). The
-old stat area under the model is hidden.
+old stat area under the model is hidden. `CharacterSkin.lua` makes the Character tab one window around the model and
+that column: one border and background, a title bar across the top with the name and the close button at its right
+end, a dark inset behind the model, a gold ring around the portrait, and a frame behind each gear slot edged in its
+item's quality color (the other tabs keep their own look).
 
 Install: copy the `Emberforge_Resources` folder into the client's `Interface\AddOns\` folder.
 The launcher will ship it automatically for players.

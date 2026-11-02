@@ -5,3 +5,4 @@
 ## SavedVariablesPerCharacter: EmberforgeResourcesDB
 Emberforge_Resources.lua
 StatPanel.lua
+CharacterSkin.lua
