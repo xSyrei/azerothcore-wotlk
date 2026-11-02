@@ -63,6 +63,24 @@ namespace
         { 52665, 0, false },        // Sigil
     };
 
+    // A Hero's first login puts one of each weapon kind in the bags (the Battleworn Hammer from the
+    // starting outfit is already in hand), so a new Hero can try any style from level 1.
+    struct KitItem
+    {
+        uint32 ItemId;
+        uint32 Count;
+    };
+
+    constexpr KitItem STARTER_BAG_KIT[] = {
+        { 23346, 1 },       // Battleworn Claymore (two-handed sword)
+        { 25, 1 },          // Worn Shortsword
+        { 36, 1 },          // Worn Mace
+        { 35, 1 },          // Bent Staff
+        { 2362, 1 },        // Worn Wooden Shield
+        { 2504, 1 },        // Worn Shortbow
+        { 2512, 200 },      // Rough Arrow
+    };
+
     bool IsHero(Player const* player)
     {
         return player->getClass() == CLASS_PALADIN;
@@ -88,6 +106,17 @@ namespace
                 player->SetSkill(proficiency.SkillId, 0, value, value);
         }
     }
+
+    // Bags only: the outfit decides what is worn.
+    void GiveStarterBagKit(Player* player)
+    {
+        for (KitItem const& kit : STARTER_BAG_KIT)
+        {
+            ItemPosCountVec dest;
+            if (player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, kit.ItemId, kit.Count) == EQUIP_ERR_OK)
+                player->StoreNewItem(dest, kit.ItemId, true);
+        }
+    }
 }
 
 class hero_equipment : public PlayerScript
@@ -95,6 +124,7 @@ class hero_equipment : public PlayerScript
 public:
     hero_equipment() : PlayerScript("hero_equipment", {
         PLAYERHOOK_ON_LOGIN,
+        PLAYERHOOK_ON_FIRST_LOGIN,
         PLAYERHOOK_ON_LEVEL_CHANGED
     }) { }
 
@@ -102,6 +132,12 @@ public:
     {
         if (IsHero(player))
             EnsureProficiencies(player);
+    }
+
+    void OnPlayerFirstLogin(Player* player) override
+    {
+        if (IsHero(player))
+            GiveStarterBagKit(player);
     }
 
     void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override

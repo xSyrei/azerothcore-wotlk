@@ -35,3 +35,10 @@ INSERT INTO `playercreateinfo_item` (`race`, `class`, `itemid`, `amount`, `Note`
 (8, @HERO, 43, 1, 'Hero starter kit: Squire''s Boots'),
 (8, @HERO, 2361, 1, 'Hero starter kit: Battleworn Hammer'),
 (8, @HERO, 6948, 1, 'Hero starter kit: Hearthstone');
+
+-- Every Hero (race 0: all races) also wears a starter chest; the Squire's Shirt, Pants and Boots
+-- cover the shirt, legs and feet. The bag kit (one of each weapon kind, a bow and arrows) is given
+-- at first login by src/hero_equipment.cpp, so it always lands in the bags.
+DELETE FROM `playercreateinfo_item` WHERE `class` = @HERO AND `race` = 0 AND `itemid` = 20904;
+INSERT INTO `playercreateinfo_item` (`race`, `class`, `itemid`, `amount`, `Note`) VALUES
+(0, @HERO, 20904, 1, 'Hero starter kit: Recruit''s Tunic');

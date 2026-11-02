@@ -6,7 +6,7 @@ Project Emberforge custom content for AzerothCore.
 Every character is created as the **Hero**: the hidden base class (Paladin, ID 2) renamed on the
 client. `data/sql/db-world/hero_class.sql` opens it to all 10 races with each race's usual start
 zone, `hero_outfit.sql` gives every Hero the Paladin starting outfit (the one the client's creation
-preview shows), and `CharacterCreating.Disabled.ClassMask = 1533` in
+preview shows) plus a Recruit's Tunic for the chest, and `CharacterCreating.Disabled.ClassMask = 1533` in
 `worldserver.conf` blocks every other class (GM accounts can still create any class for testing).
 The matching client patch is built with `client-patch/` (see its README).
 
@@ -22,7 +22,9 @@ shields, and librams, idols, totems and sigils in the relic slot), a weapon in e
 Wield) and a ranged weapon with ammo. `src/hero_equipment.cpp` teaches the proficiencies and sets
 the weapon and armor skills at every login and level (the core drops the ones a Paladin cannot
 have); `Emberforge_Resources` shows the ammo slot, which the character sheet hides for a Paladin.
-Fishing poles still need the Fishing profession.
+Fishing poles still need the Fishing profession. At first login a Hero also finds one of each weapon kind
+in the bags: a Battleworn Claymore, a Worn Shortsword, a Worn Mace, a Bent Staff, a Worn Wooden Shield,
+a Worn Shortbow and 200 Rough Arrows.
 
 Every character (Hero or not) keeps its weapon skills, Defense and Unarmed at the cap for its
 level: `src/max_skills.cpp` fills them at login and after every level up.
