@@ -2,13 +2,14 @@
 -- and talents, choosing the starting kit after a Titan Tome of Selection, and Wildcard roll reveals.
 -- Open with N, the minimap button, /classless or /cl.
 --
--- Layout: the class row on top, the role row under it; spec tabs over the ability grid (left), the spec's talent tree with
--- its prerequisite arrows (middle), and your spells, talents and specs with a search box (right).
+-- Layout: the class row on top, the role row under it; spec tabs over the ability grid (left), the spec's talent
+-- tree with its prerequisite arrows (middle), and your spells, talents and specs with a search box (right).
 --
 -- The server (mod-titan, src/classless.cpp) sends the data as addon whispers to the player, prefix
 -- EFCL, and the window answers the same way:
 --   to server     LIST, PICK,<spell id>, ROLE,<role> (1 Melee, 2 Caster, 3 Healer, 4 Tank)
---   from server   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<spell id>;...
+--   from server   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<spell id>[.<needs>];...
+--                   (needs: groups by '+', each one of its spell ids by '/': a form, stealth or pet first)
 --                 U,<class>,<tree order>,<tab id>
 --                 N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
 --                 K0 / K,<spell id>,...   R0 / R,<talent id>:<rank>,...   S,<picks left>,<locked>,<lock level>,<role>
@@ -130,8 +131,27 @@ local function Picking()
     return data.picks > 0 and not data.locked
 end
 
+-- A known ability (first rank) or spell: abilities in the list, talents and the rest by the client.
+local function Knows(id)
+    return data.known[id] or IsSpellKnown(id)
+end
+
+-- The first group of an ability's needs with nothing known, or nil when all are met.
+local function MissingNeed(ability)
+    for _, givers in ipairs(ability.requires or {}) do
+        local met = false
+        for _, giver in ipairs(givers) do
+            met = met or Knows(giver)
+        end
+        if not met then
+            return givers
+        end
+    end
+end
+
 local function CanPick(ability)
     return Picking() and not data.known[ability.id] and ability.level <= UnitLevel("player")
+        and not MissingNeed(ability)
 end
 
 -- The talent tree an ability's skill line belongs to (1-3), or GENERAL when it is none of them.
@@ -179,7 +199,7 @@ local function GridAbilities()
             show = ability.class == view.class and AbilityTree(ability) == view.spec
         end
         if show and view.learnable then
-            show = not data.known[id] and ability.level <= level
+            show = not data.known[id] and ability.level <= level and not MissingNeed(ability)
         end
         if show then
             list[#list + 1] = ability
@@ -256,9 +276,21 @@ local function OnServerMessage(message)
         data.skillNames[tonumber(skill)] = name
     elseif kind == "A" then
         for entry in message:sub(3):gmatch("[^;]+") do
-            local class, skill, level, id = strsplit(".", entry)
+            local class, skill, level, id, needs = strsplit(".", entry)
             id = tonumber(id)
-            data.abilities[id] = { id = id, class = tonumber(class), skill = tonumber(skill), level = tonumber(level) }
+            local requires
+            if needs then
+                requires = {}
+                for group in needs:gmatch("[^+]+") do
+                    local givers = {}
+                    for giver in group:gmatch("%d+") do
+                        givers[#givers + 1] = tonumber(giver)
+                    end
+                    requires[#requires + 1] = givers
+                end
+            end
+            data.abilities[id] = { id = id, class = tonumber(class), skill = tonumber(skill), level = tonumber(level),
+                requires = requires }
         end
     elseif kind == "U" then
         local _, class, order, tab = strsplit(",", message)
@@ -713,6 +745,19 @@ local function OnCellEnter(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:SetHyperlink("spell:" .. self.ability.id)
     GameTooltip:AddLine((CLASS_NAMES[self.ability.class] or "") .. " - level " .. self.ability.level, 0.7, 0.7, 0.7)
+    for _, givers in ipairs(self.ability.requires or {}) do
+        local names, met = {}, false
+        for _, giver in ipairs(givers) do
+            names[#names + 1] = SpellName(giver)
+            met = met or Knows(giver)
+        end
+        local text = #names > 0 and ("Requires " .. table.concat(names, " or ")) or "Requires a form no ability gives"
+        if met then
+            GameTooltip:AddLine(text, 0.7, 0.7, 0.7, true)
+        else
+            GameTooltip:AddLine(text, 1, 0.3, 0.3, true)
+        end
+    end
     if CanPick(self.ability) then
         GameTooltip:AddLine("Click to choose this ability.", 0.3, 1, 0.3)
     end

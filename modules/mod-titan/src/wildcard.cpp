@@ -28,6 +28,7 @@
 #include "World.h"
 #include <algorithm>
 #include <array>
+#include <span>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
@@ -43,6 +44,9 @@
 //   talent UI cannot spend points on a Hero.
 // - The role (Melee, Caster, Healer, Tank: Classless window) puts on a buff changing the threat caused.
 // - Owned abilities upgrade to the best rank for the Hero's level by themselves.
+// - An ability cast only in a form or stance (Swipe (Cat): Cat Form, Overpower: Battle Stance), only
+//   in stealth (Ambush) or on a pet (Mend Pet: Tame Beast) is only rolled or picked once the Hero
+//   knows an ability giving that form, stealth or pet.
 //
 // Grants are caught up at login and on every level change, so a multi-level jump or a character
 // that predates Wildcard gets everything it is owed. The number of abilities granted and the picks
@@ -124,6 +128,36 @@ namespace
     // dismissed, revived and fed. They are not offered on their own.
     constexpr char const* TAME_BEAST = "Tame Beast";
     constexpr char const* TAME_BEAST_COMPANIONS[] = { "Call Pet", "Dismiss Pet", "Revive Pet", "Feed Pet" };
+
+    // Abilities that need a pet without targeting it (those that do are found by their targets): the
+    // abilities giving that pet.
+    constexpr char const* HUNTER_PETS[] = { "Tame Beast" };
+    constexpr char const* DEMONS[] = { "Summon Imp", "Summon Voidwalker", "Summon Succubus", "Summon Felhunter",
+        "Summon Felguard" };
+    constexpr char const* UNDEAD_MINIONS[] = { "Raise Dead" };
+    struct NeedsPet
+    {
+        char const* Name;
+        std::span<char const* const> Pets;
+    };
+    constexpr NeedsPet PET_ABILITIES[] = {
+        { "Kill Command", HUNTER_PETS }, { "Bestial Wrath", HUNTER_PETS }, { "Intimidation", HUNTER_PETS },
+        { "Master's Call", HUNTER_PETS }, { "Eyes of the Beast", HUNTER_PETS }, { "Mend Pet", HUNTER_PETS },
+        { "Health Funnel", DEMONS }, { "Demonic Empowerment", DEMONS }, { "Soul Link", DEMONS },
+        { "Death Pact", UNDEAD_MINIONS }, { "Ghoul Frenzy", UNDEAD_MINIONS },
+    };
+
+    // A pet targeted by a class's ability: that class's pets.
+    std::span<char const* const> ClassPets(uint8 classId)
+    {
+        switch (classId)
+        {
+            case CLASS_HUNTER: return HUNTER_PETS;
+            case CLASS_WARLOCK: return DEMONS;
+            case CLASS_DEATH_KNIGHT: return UNDEAD_MINIONS;
+            default: return { };
+        }
+    }
 
     // Every player always knows Pick Lock, with Lockpicking at its maximum for their level.
     constexpr uint32 SPELL_PICK_LOCK = 1804;
@@ -594,6 +628,91 @@ namespace Wildcard
                 result.push_back(std::move(ability));
             }
 
+            // Requirements. Forms and stances: the abilities whose spells give each form (any rank).
+            // Stealth: those that stealth. Pets: by name or class.
+            std::unordered_map<uint32, std::vector<uint32>> formGivers;
+            std::vector<uint32> stealthGivers;
+            for (Ability const& ability : result)
+            {
+                uint32 firstRank = ability.Ranks.front().SpellId;
+                for (Rank const& rank : ability.Ranks)
+                    for (SpellEffectInfo const& effect : sSpellMgr->AssertSpellInfo(rank.SpellId)->GetEffects())
+                    {
+                        if (effect.ApplyAuraName == SPELL_AURA_MOD_SHAPESHIFT && effect.MiscValue > 0)
+                        {
+                            std::vector<uint32>& givers = formGivers[effect.MiscValue];
+                            if (std::find(givers.begin(), givers.end(), firstRank) == givers.end())
+                                givers.push_back(firstRank);
+                        }
+                        else if (effect.ApplyAuraName == SPELL_AURA_MOD_STEALTH
+                            && std::find(stealthGivers.begin(), stealthGivers.end(), firstRank) == stealthGivers.end())
+                            stealthGivers.push_back(firstRank);
+                    }
+            }
+
+            auto byNames = [&](std::span<char const* const> names)
+            {
+                std::vector<uint32> givers;
+                for (Ability const& ability : result)
+                    if (std::any_of(names.begin(), names.end(), [&](char const* name) { return hasName(ability, name); }))
+                        givers.push_back(ability.Ranks.front().SpellId);
+                return givers;
+            };
+
+            uint32 unreachable = 0;
+            for (Ability& ability : result)
+            {
+                if (!ability.Offered)
+                    continue;
+
+                SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(ability.Ranks.front().SpellId);
+                if (spellInfo->Stances && !spellInfo->HasAttribute(SPELL_ATTR2_ALLOW_WHILE_NOT_SHAPESHIFTED))
+                {
+                    std::vector<uint32> givers;
+                    for (auto const& [form, formAbilities] : formGivers)
+                        if (spellInfo->Stances & (1 << (form - 1)))
+                            givers.insert(givers.end(), formAbilities.begin(), formAbilities.end());
+                    ability.Requires.push_back(std::move(givers));
+                }
+
+                // Stealth that works with its form: Prowl (in Cat Form) for Pounce, Stealth for Ambush.
+                if (spellInfo->HasAttribute(SPELL_ATTR0_ONLY_STEALTHED))
+                {
+                    std::vector<uint32> givers;
+                    for (uint32 giver : stealthGivers)
+                    {
+                        uint32 giverStances = sSpellMgr->AssertSpellInfo(giver)->Stances;
+                        bool givesForm = std::any_of(formGivers.begin(), formGivers.end(), [&](auto const& pair)
+                        {
+                            return (spellInfo->Stances & (1 << (pair.first - 1)))
+                                && std::find(pair.second.begin(), pair.second.end(), giver) != pair.second.end();
+                        });
+                        if (givesForm || (spellInfo->Stances ? (giverStances & spellInfo->Stances) != 0 : !giverStances))
+                            givers.push_back(giver);
+                    }
+                    ability.Requires.push_back(std::move(givers));
+                }
+
+                std::span<char const* const> pets;
+                for (NeedsPet const& needs : PET_ABILITIES)
+                    if (hasName(ability, needs.Name))
+                        pets = needs.Pets;
+                if (pets.empty())
+                    for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+                        if (effect.TargetA.GetTarget() == TARGET_UNIT_PET || effect.TargetB.GetTarget() == TARGET_UNIT_PET)
+                            pets = ClassPets(ability.ClassId);
+                if (!pets.empty())
+                    ability.Requires.push_back(byNames(pets));
+
+                if (std::any_of(ability.Requires.begin(), ability.Requires.end(),
+                    [](std::vector<uint32> const& givers) { return givers.empty(); }))
+                    ++unreachable;
+            }
+
+            if (unreachable)
+                LOG_INFO("module", "mod-titan: Wildcard: {} abilities need a form, stealth or pet no ability gives; "
+                    "they are never rolled", unreachable);
+
             for (char const* name : BANNED_ABILITIES)
                 if (!found.count(name))
                     LOG_WARN("module", "mod-titan: Wildcard banned ability \"{}\" matches no class spell", name);
@@ -621,11 +740,16 @@ namespace Wildcard
 
     Ability const* FindAbility(uint32 firstRankSpellId)
     {
-        for (Ability const& ability : Abilities())
-            if (ability.Ranks.front().SpellId == firstRankSpellId)
-                return &ability;
+        static std::unordered_map<uint32, Ability const*> const byFirstRank = []
+        {
+            std::unordered_map<uint32, Ability const*> map;
+            for (Ability const& ability : Abilities())
+                map.emplace(ability.Ranks.front().SpellId, &ability);
+            return map;
+        }();
 
-        return nullptr;
+        auto itr = byFirstRank.find(firstRankSpellId);
+        return itr != byFirstRank.end() ? itr->second : nullptr;
     }
 
     // Index of the highest rank the player knows, or -1.
@@ -638,10 +762,22 @@ namespace Wildcard
         return -1;
     }
 
+    bool MeetsRequirements(Player const* player, Ability const& ability)
+    {
+        return std::all_of(ability.Requires.begin(), ability.Requires.end(), [player](std::vector<uint32> const& givers)
+        {
+            return std::any_of(givers.begin(), givers.end(), [player](uint32 firstRank)
+            {
+                Ability const* giver = FindAbility(firstRank);
+                return giver ? KnownRank(player, *giver) >= 0 : player->HasSpell(firstRank);
+            });
+        });
+    }
+
     bool CanLearn(Player const* player, Ability const& ability)
     {
         return ability.Offered && BestRank(player, ability) >= 0 && KnownRank(player, ability) < 0
-            && FitsRace(player, ability.Ranks.front().SpellId);
+            && FitsRace(player, ability.Ranks.front().SpellId) && MeetsRequirements(player, ability);
     }
 
     void Learn(Player* player, Ability const& ability, char const* what)

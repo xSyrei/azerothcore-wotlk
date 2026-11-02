@@ -32,7 +32,9 @@
 //   client -> server   LIST                      send the ability list
 //                      PICK,<first rank id>      spend a Selection pick on that ability
 //                      ROLE,<role>               play that role (Wildcard::Role; not in combat)
-//   server -> client   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<id>;...
+//   server -> client   B / T,<class>,<skill line>,<name>
+//                      A,<class>.<skill line>.<level>.<id>[.<needs>];...   needs: groups by '+', each one of
+//                                                its abilities by '/' (first ranks: a form, stealth, a pet)
 //                      U,<class>,<tree order>,<tab id>
 //                      N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
 //                                                the list (begin, spec tabs, abilities, talent trees, end)
@@ -147,8 +149,15 @@ namespace
             if (ability.SkillLine)
                 tabs.emplace(ability.SkillLine, ability.ClassId);
 
-            abilities.push_back(Acore::StringFormat("{}.{}.{}.{}", ability.ClassId, ability.SkillLine,
-                ability.Ranks.front().Level, ability.Ranks.front().SpellId));
+            std::string entry = Acore::StringFormat("{}.{}.{}.{}", ability.ClassId, ability.SkillLine,
+                ability.Ranks.front().Level, ability.Ranks.front().SpellId);
+            for (std::size_t group = 0; group < ability.Requires.size(); ++group)
+            {
+                entry += group ? '+' : '.';
+                for (std::size_t i = 0; i < ability.Requires[group].size(); ++i)
+                    entry += (i ? "/" : "") + std::to_string(ability.Requires[group][i]);
+            }
+            abilities.push_back(std::move(entry));
         }
 
         SendAddon(player, "B");
@@ -175,6 +184,8 @@ namespace
         uint32 picks = Wildcard::GetPicks(player);
         if (!Wildcard::IsHero(player) || Wildcard::IsKitLocked(player) || !picks)
             handler.SendSysMessage("You have no ability picks. Use the Titan Tome of Selection first.");
+        else if (ability && !Wildcard::MeetsRequirements(player, *ability))
+            handler.SendSysMessage("You need its form, stance, stealth or pet ability first.");
         else if (!ability || !Wildcard::CanLearn(player, *ability))
             handler.SendSysMessage("You cannot learn that ability yet.");
         else

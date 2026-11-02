@@ -76,6 +76,9 @@ namespace Wildcard
         bool Banned;                // removed from the game for Heroes (see wildcard.cpp)
         bool Companion;             // only learned along with another ability (Tame Beast's pet spells)
         std::vector<uint32> Companions; // first ranks learned along with this one
+        // What it needs first, as groups of first ranks: one ability of every group must be known (the
+        // form or stance it is cast in, stealth, a pet). Empty: nothing.
+        std::vector<std::vector<uint32>> Requires;
     };
 
     bool IsHero(Player const* player);
@@ -85,7 +88,10 @@ namespace Wildcard
     Ability const* FindAbility(uint32 firstRankSpellId);
 
     int32 KnownRank(Player const* player, Ability const& ability);
-    // Offered, not known, allowed for the player's race and available at the player's level.
+    // Every group of ability.Requires has a known ability.
+    bool MeetsRequirements(Player const* player, Ability const& ability);
+    // Offered, not known, allowed for the player's race, available at the player's level and its
+    // requirements met.
     bool CanLearn(Player const* player, Ability const& ability);
     void Learn(Player* player, Ability const& ability, char const* what);
     // Learns a random learnable ability; the ability, or nullptr if none is left.

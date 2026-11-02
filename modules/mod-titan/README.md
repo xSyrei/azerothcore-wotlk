@@ -52,6 +52,11 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   combat; kept per character). Each is a buff (90603-90606, `client-patch/patch_player.py`): Melee and
   Caster cause 50% less threat, Tank 200% more, Healer unchanged.
 - Owned abilities upgrade to the best rank for the Hero's level by themselves, no trainer needed.
+- **Requirements**: an ability cast only in a form or stance (Swipe (Cat): Cat Form; Overpower: Battle
+  Stance), only in stealth (Ambush: Stealth; Pounce: Prowl) or on a pet (Mend Pet, Kill Command: Tame
+  Beast; Health Funnel: a demon; Death Pact: Raise Dead) is rolled or picked only once the Hero knows an
+  ability giving it. Forms, stances and stealth are read from the spells; pets from their targets and
+  `PET_ABILITIES`. The Classless window shows them on the ability ("Requires Cat Form", red until met).
 - **Ability lists** (`src/wildcard.cpp`, by spell name, every rank and faction version; a name that
   matches nothing is logged at startup):
   - `BANNED_ABILITIES`: taken out of the game for Heroes (class mounts, tracking and scouting,
