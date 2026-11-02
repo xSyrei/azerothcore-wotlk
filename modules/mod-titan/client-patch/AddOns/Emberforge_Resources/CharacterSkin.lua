@@ -159,8 +159,20 @@ local function Restore()
     end
 end
 
+-- The resistance boxes inside the model: Resistances is a section of the stats column instead.
+local function HideResistances()
+    for school = 1, 5 do
+        local frame = _G["MagicResFrame" .. school]
+        if frame and frame:IsShown() then
+            frame:Hide()
+            hiddenArt[frame] = true
+        end
+    end
+end
+
 local function Apply()
     HideArt()
+    HideResistances()
     Fit()
     Move(CharacterFrameCloseButton, "TOPRIGHT", skin, "TOPRIGHT", -2, -2)
     CharacterFrameCloseButton:SetFrameLevel(skin:GetFrameLevel() + 10)
