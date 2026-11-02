@@ -33,7 +33,7 @@ end
 -- The column: right of the model, inside the one window CharacterSkin.lua draws around both (under its title bar).
 local panel = CreateFrame("Frame", "EmberforgeStatPanel", PaperDollFrame)
 panel:SetWidth(WIDTH)
-panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -40, -40)
+panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -40, -52)
 panel:SetPoint("BOTTOMLEFT", CharacterFrame, "BOTTOMRIGHT", -40, 72)
 -- No box of its own: a faint shade, part of the window.
 local shade = panel:CreateTexture(nil, "BACKGROUND")
@@ -44,6 +44,16 @@ local scroll = CreateFrame("ScrollFrame", "EmberforgeStatPanelScroll", panel, "U
 -- Blizzard's own scrollbar, right of the list.
 scroll:SetPoint("TOPLEFT", 4, -4)
 scroll:SetPoint("BOTTOMRIGHT", -26, 4)
+-- A fade over the list's last few pixels: a row cut by the column's end reads as "more below".
+local fadeFrame = CreateFrame("Frame", nil, panel)
+fadeFrame:SetFrameLevel(scroll:GetFrameLevel() + 5)
+fadeFrame:SetPoint("BOTTOMLEFT", scroll, "BOTTOMLEFT")
+fadeFrame:SetPoint("BOTTOMRIGHT", scroll, "BOTTOMRIGHT")
+fadeFrame:SetHeight(22)
+local fade = fadeFrame:CreateTexture(nil, "OVERLAY")
+fade:SetTexture(1, 1, 1, 1)
+fade:SetGradientAlpha("VERTICAL", 0.05, 0.04, 0.035, 1, 0.05, 0.04, 0.035, 0)
+fade:SetAllPoints()
 local list = CreateFrame("Frame", nil, scroll)
 list:SetWidth(INNER)
 list:SetHeight(1)

@@ -199,9 +199,15 @@ local function Apply()
         inset:SetPoint("TOPLEFT", CharacterHeadSlot, "TOPRIGHT", 6, 4)
         inset:SetPoint("BOTTOMRIGHT", CharacterTrinket1Slot, "BOTTOMLEFT", -6, -4)
     end
-    -- The level line over the model, clear of the stats column.
+    -- The level line centered under the name, as Cataclysm's.
     level:ClearAllPoints()
-    level:SetPoint("BOTTOM", inset, "TOP", 0, 4)
+    level:SetPoint("TOP", title, "BOTTOM", 0, -3)
+    -- The weapons centered under the model: the off hand in the middle, the main hand left of it.
+    if CharacterMainHandSlot and CharacterSecondaryHandSlot then
+        local step = CharacterSecondaryHandSlot:GetLeft() and CharacterMainHandSlot:GetLeft()
+            and (CharacterSecondaryHandSlot:GetLeft() - CharacterMainHandSlot:GetLeft()) or 42
+        Move(CharacterMainHandSlot, "TOP", inset, "BOTTOM", -step, -6)
+    end
     ColorSlots()
 end
 
