@@ -620,8 +620,12 @@ namespace Wildcard
                     continue;
                 }
 
+                // Later ranks (spell_ranks, client-patch/patch_ranks.py) at their spells' levels.
                 Ability ability { };
                 ability.Ranks.push_back({ custom.SpellId, custom.Level });
+                for (uint32 rank = sSpellMgr->GetNextSpellInChain(custom.SpellId); rank;
+                    rank = sSpellMgr->GetNextSpellInChain(rank))
+                    ability.Ranks.push_back({ rank, uint8(sSpellMgr->AssertSpellInfo(rank)->SpellLevel) });
                 ability.ClassId = custom.ClassId;
                 ability.SkillLine = custom.SkillLine;
                 ability.Offered = true;

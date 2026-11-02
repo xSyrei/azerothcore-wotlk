@@ -1,8 +1,9 @@
 -- Demon Hunter spell scripts (src/demon_hunter.cpp). Every ability needs a one-handed weapon in
--- each hand: the off hand is checked by spell_titan_dh_dual_weapons.
-DELETE FROM `spell_script_names` WHERE `spell_id` IN (90100, 90101, 90102, 90103, 90105);
+-- each hand: the off hand is checked by spell_titan_dh_dual_weapons. A negative id binds every rank
+-- (client-patch/patch_ranks.py); the DELETEs clear the single-rank rows from before too.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (90100, -90100, 90101, 90102, 90103, 90105);
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(90100, 'spell_titan_dh_dual_weapons'),
+(-90100, 'spell_titan_dh_dual_weapons'),
 (90101, 'spell_titan_dh_dual_weapons'),
 (90102, 'spell_titan_dh_dual_weapons'),
 (90103, 'spell_titan_dh_dual_weapons'),
@@ -129,17 +130,17 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 
 -- Vengeance: Shear, Soul Cleave, Demon Spikes, Fiery Brand and Torment need both weapons; Soul Cleave eats Soul
 -- Fragments (spell_titan_dh_soul_cleave); Fiery Brand's share of attack power.
-DELETE FROM `spell_script_names` WHERE `spell_id` IN (90124, 90125, 90127, 90128, 90129)
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (90124, -90124, 90125, -90125, 90127, 90128, 90129)
     AND `ScriptName` = 'spell_titan_dh_dual_weapons';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(90124, 'spell_titan_dh_dual_weapons'),
-(90125, 'spell_titan_dh_dual_weapons'),
+(-90124, 'spell_titan_dh_dual_weapons'),
+(-90125, 'spell_titan_dh_dual_weapons'),
 (90127, 'spell_titan_dh_dual_weapons'),
 (90128, 'spell_titan_dh_dual_weapons'),
 (90129, 'spell_titan_dh_dual_weapons');
-DELETE FROM `spell_script_names` WHERE `spell_id` = 90125 AND `ScriptName` = 'spell_titan_dh_soul_cleave';
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (90125, -90125) AND `ScriptName` = 'spell_titan_dh_soul_cleave';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(90125, 'spell_titan_dh_soul_cleave');
+(-90125, 'spell_titan_dh_soul_cleave');
 DELETE FROM `spell_bonus_data` WHERE `entry` = 90128;
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90128, 0, 0, 0.5, 0, 'Fiery Brand');
@@ -171,7 +172,7 @@ DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_dh_shear', 
     'spell_titan_dh_sigil_of_chains_pull');
 -- (Last Resort is now the damage hook's, titan_dh_damage_taken: no spell script.)
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(90124, 'spell_titan_dh_shear'),
+(-90124, 'spell_titan_dh_shear'),
 (90127, 'spell_titan_dh_demon_spikes'),
 (90120, 'spell_titan_dh_immolation_aura_pulse'),
 (90128, 'spell_titan_dh_fiery_brand'),

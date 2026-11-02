@@ -26,6 +26,7 @@ from pathlib import Path
 
 import patch_monk
 import patch_player
+import patch_ranks
 import patch_talents
 
 HERE = Path(__file__).resolve().parent
@@ -971,6 +972,8 @@ SPELLS = [
 SPELLS += patch_talents.SPELLS      # the talents' ranks and helper spells
 SPELLS += patch_monk.SPELLS         # the Monk's
 SPELLS += patch_player.SPELLS       # every Hero's (Emberforged Hero)
+RANK_SPELLS, RANK_CHAINS = patch_ranks.ranks(SPELLS)
+SPELLS += RANK_SPELLS               # the Demon Hunter's and Monk's later ranks
 EFFECTS.update(patch_monk.EFFECTS)
 VISUALS.update(patch_monk.VISUALS)
 SOUNDS.update(patch_monk.SOUNDS)
@@ -1286,6 +1289,7 @@ def write_sql(spells, path, talent_lines=()):
         values.append('(' + ','.join(out) + ')')
     lines.append(',\n'.join(values) + ';')
     lines += talent_lines
+    lines += patch_ranks.sql(RANK_CHAINS)
     Path(path).write_text('\n'.join(lines) + '\n')
 
 

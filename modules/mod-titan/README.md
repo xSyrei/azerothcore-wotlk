@@ -226,6 +226,17 @@ every finisher, the game's own too) came after the trees, so they
 have id runs of their own (talents 2350-2363 and 2450-2463, ranks 90500-90531 and 90550-90581: `patch_talents.TREES`):
 a talent's ids never change once players may have it.
 
+### Ability ranks
+The Demon Hunter's and Monk's abilities whose own numbers grow with level have a rank every 10 levels
+from the level they are learned at, like the game's class spells (`client-patch/patch_ranks.py`):
+Demon's Bite, Shear, Soul Cleave, Soothing Mist, Vivify, Renewing Mist, Enveloping Mist, Revival, Tiger
+Palm, Blackout Kick and Rising Sun Kick (Tiger Palm: ranks at 1, 11, 21 ... 71; Revival: 26 ... 76).
+Each rank starts with the value the ability had at its level and grows the same per level up to the
+next one, so damage and healing follow the curve they always had; Wildcard learns the best rank by
+itself. The rank spells are 91000-91106, chained in `spell_ranks` (written with the spells to
+`titan_demon_hunter_spells.sql`); their scripts are bound to every rank (negative ids). Abilities that
+hit for weapon damage, attack power or a script's amount, and the utility ones, keep one rank.
+
 ## Items
 
 | Entry | Item | Effect |

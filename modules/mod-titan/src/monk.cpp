@@ -23,6 +23,7 @@
 #include "ScriptedCreature.h"
 #include "SpellAuraEffects.h"
 #include "SpellScript.h"
+#include "SpellMgr.h"
 #include "SpellScriptLoader.h"
 #include "TemporarySummon.h"
 
@@ -71,6 +72,17 @@ enum MonkCreatures
 
 namespace
 {
+    // The highest rank of a ranked ability (client-patch/patch_ranks.py) the unit knows, else its first rank.
+    uint32 KnownRankOf(Unit const* unit, uint32 firstRank)
+    {
+        uint32 known = firstRank;
+        if (Player const* player = unit->ToPlayer())
+            for (uint32 rank = firstRank; rank; rank = sSpellMgr->GetNextSpellInChain(rank))
+                if (player->HasSpell(rank))
+                    known = rank;
+        return known;
+    }
+
     // A talent's number (its highest rank the unit has), 0 without it.
     template <std::size_t N>
     int32 TalentValue(Unit const* unit, std::array<uint32, N> const& ranks)
@@ -153,7 +165,7 @@ class spell_titan_monk_vivify : public SpellScript
 
         int32 extension = TalentValue(caster, TALENT_RISING_MIST) * IN_MILLISECONDS;
         for (Unit* ally : FriendsAround(caster, caster, RANGE))
-            if (Aura* mist = ally->GetAura(SPELL_RENEWING_MIST, caster->GetGUID()))
+            if (Aura* mist = ally->GetAuraOfRankedSpell(SPELL_RENEWING_MIST, caster->GetGUID()))
             {
                 caster->CastCustomSpell(SPELL_VIVIFY_SPLASH, SPELLVALUE_BASE_POINT0, amount, ally, true);
                 if (extension)
@@ -185,14 +197,14 @@ class spell_titan_monk_renewing_mist : public AuraScript
 
         Unit* next = nullptr;
         for (Unit* ally : FriendsAround(target, caster, JUMP_RANGE))
-            if (!ally->IsFullHealth() && ally->IsAlive() && !ally->HasAura(SPELL_RENEWING_MIST, caster->GetGUID())
+            if (!ally->IsFullHealth() && ally->IsAlive() && !ally->GetAuraOfRankedSpell(SPELL_RENEWING_MIST, caster->GetGUID())
                 && (!next || ally->GetHealthPct() < next->GetHealthPct()))
                 next = ally;
         if (!next)
             return;
 
         int32 left = GetDuration();
-        if (Aura* mist = caster->AddAura(SPELL_RENEWING_MIST, next))
+        if (Aura* mist = caster->AddAura(GetId(), next))
         {
             mist->SetDuration(left);
             Remove();
@@ -223,11 +235,11 @@ class spell_titan_monk_renewing_mist_cast : public SpellScript
         Unit* next = nullptr;
         for (Unit* ally : FriendsAround(target, caster, RANGE))
             if (ally != target && ally->IsAlive() && !ally->IsFullHealth()
-                && !ally->HasAura(SPELL_RENEWING_MIST, caster->GetGUID())
+                && !ally->GetAuraOfRankedSpell(SPELL_RENEWING_MIST, caster->GetGUID())
                 && (!next || ally->GetHealthPct() < next->GetHealthPct()))
                 next = ally;
         if (next)
-            caster->AddAura(SPELL_RENEWING_MIST, next);
+            caster->AddAura(GetSpellInfo()->Id, next);
     }
 
     void Register() override
@@ -421,10 +433,11 @@ class spell_titan_monk_blackout_kick : public SpellScript
         Player* player = GetCaster()->ToPlayer();
         if (!player)
             return;
-        for (uint32 spellId : { SPELL_RISING_SUN_KICK, SPELL_FISTS_OF_FURY })
+        uint32 risingSunKick = KnownRankOf(player, SPELL_RISING_SUN_KICK);
+        for (uint32 spellId : { risingSunKick, uint32(SPELL_FISTS_OF_FURY) })
             player->ModifySpellCooldown(spellId, -COOLDOWN_CUT);
         if (roll_chance_i(TalentValue(player, TALENT_TEACHINGS_OF_THE_MONASTERY)))
-            player->RemoveSpellCooldown(SPELL_RISING_SUN_KICK, true);
+            player->RemoveSpellCooldown(risingSunKick, true);
     }
 
     void Register() override
@@ -441,7 +454,7 @@ class spell_titan_monk_whirling_dragon_punch : public SpellScript
     SpellCastResult CheckCooldowns()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (!player || !player->HasSpellCooldown(SPELL_RISING_SUN_KICK)
+        if (!player || !player->HasSpellCooldown(KnownRankOf(player, SPELL_RISING_SUN_KICK))
             || !player->HasSpellCooldown(SPELL_FISTS_OF_FURY))
             return SPELL_FAILED_NOT_READY;
         return SPELL_CAST_OK;
@@ -649,7 +662,7 @@ public:
 
     void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* /*spellInfo*/) override
     {
-        if (target && healer && target->HasAura(SPELL_ENVELOPING_MIST, healer->GetGUID()))
+        if (target && healer && target->GetAuraOfRankedSpell(SPELL_ENVELOPING_MIST, healer->GetGUID()))
             AddPct(heal, ENVELOPING_MIST_PCT);
     }
 };
