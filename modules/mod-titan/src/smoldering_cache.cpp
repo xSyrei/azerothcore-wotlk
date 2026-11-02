@@ -48,6 +48,7 @@ namespace
     constexpr uint32 ITEM_SMOLDERING_CACHE = 910005;
     constexpr uint8 LEVEL_WINDOW = 4;           // required levels from the Hero's level - 4 to it
     constexpr uint8 TOP_PICKS = 3;
+    constexpr uint32 CLASSIC_MAX_LEVEL = 60;
 
     struct GearSlot
     {
@@ -98,6 +99,9 @@ namespace
                 if ((proto.Class != ITEM_CLASS_ARMOR && proto.Class != ITEM_CLASS_WEAPON)
                     || proto.Quality != ITEM_QUALITY_UNCOMMON || !proto.RequiredLevel
                     || proto.ItemLevel > proto.RequiredLevel * 5 / 2 + 10 || proto.ScalingStatDistribution
+                    // Until the level and power squish (.agents/plans/phase-0): up to 60, Classic's item levels
+                    // only, not the Burning Crusade's stronger greens that ask levels 57-60.
+                    || (proto.RequiredLevel <= CLASSIC_MAX_LEVEL && proto.ItemLevel > proto.RequiredLevel + 10)
                     || std::any_of(std::begin(proto.Spells), std::end(proto.Spells),
                         [](_Spell const& spell) { return spell.SpellId != 0; })
                     || proto.RequiredSkill || proto.RequiredSpell || proto.RequiredHonorRank
