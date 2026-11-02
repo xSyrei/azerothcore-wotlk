@@ -63,7 +63,22 @@ function SpellBook_BuildTabs()
 	end
 end
 
--- The four tabs the frame lacks, and all of them closer together so that twelve fit down its side.
+-- The tabs the frame lacks. At most VISIBLE_TABS fit down the frame's side: past that the column scrolls (the
+-- arrows above and below it, or the mouse wheel), the first tab shown being tabScroll + 1.
+local VISIBLE_TABS = 8;
+local TAB_GAP = 6;
+local tabScroll = 0;
+
+local function SpellBook_ScrollTabs(delta)
+	local most = max(0, #spellTabs - VISIBLE_TABS);
+	tabScroll = max(0, min(most, tabScroll - delta));
+	SpellBookFrame_Update();
+end
+
+local function SpellBook_OnTabWheel(_, delta)
+	SpellBook_ScrollTabs(delta);
+end
+
 local function SpellBook_AddTabs()
 	for i = 9, MAX_SKILLLINE_TABS do
 		local tab = CreateFrame("CheckButton", "SpellBookSkillLineTab"..i, SpellBookFrame,
@@ -77,10 +92,55 @@ local function SpellBook_AddTabs()
 		flash:SetPoint("CENTER", tab);
 		flash:Hide();
 	end
-	for i = 2, MAX_SKILLLINE_TABS do
+	for i = 1, MAX_SKILLLINE_TABS do
+		local tab = _G["SpellBookSkillLineTab"..i];
+		tab:EnableMouseWheel(true);
+		tab:SetScript("OnMouseWheel", SpellBook_OnTabWheel);
+	end
+	for _, way in ipairs({ { "Up", 1 }, { "Down", -1 } }) do
+		local button = CreateFrame("Button", "SpellBookTabScroll"..way[1], SpellBookFrame);
+		button:SetWidth(24);
+		button:SetHeight(24);
+		button:SetNormalTexture("Interface\\Buttons\\UI-ScrollBar-Scroll"..way[1].."Button-Up");
+		button:SetPushedTexture("Interface\\Buttons\\UI-ScrollBar-Scroll"..way[1].."Button-Down");
+		button:SetDisabledTexture("Interface\\Buttons\\UI-ScrollBar-Scroll"..way[1].."Button-Disabled");
+		button:SetHighlightTexture("Interface\\Buttons\\UI-ScrollBar-Scroll"..way[1].."Button-Highlight", "ADD");
+		button:SetScript("OnClick", function() SpellBook_ScrollTabs(way[2]); end);
+		button:EnableMouseWheel(true);
+		button:SetScript("OnMouseWheel", SpellBook_OnTabWheel);
+		button:Hide();
+	end
+end
+
+-- Places the shown tabs down the side, from where the first one stands, and the scroll arrows around them.
+local function SpellBook_LayoutTabs()
+	tabScroll = max(0, min(tabScroll, #spellTabs - VISIBLE_TABS));
+	local previous;
+	for i = 1, MAX_SKILLLINE_TABS do
 		local tab = _G["SpellBookSkillLineTab"..i];
 		tab:ClearAllPoints();
-		tab:SetPoint("TOPLEFT", _G["SpellBookSkillLineTab"..(i - 1)], "BOTTOMLEFT", 0, -6);
+		if ( i > tabScroll and i <= tabScroll + VISIBLE_TABS ) then
+			if ( previous ) then
+				tab:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -TAB_GAP);
+			else
+				tab:SetPoint("TOPLEFT", SpellBookFrame, "TOPRIGHT", -32, -65);
+			end
+			previous = tab;
+		end
+	end
+	local up, down = SpellBookTabScrollUp, SpellBookTabScrollDown;
+	if ( #spellTabs > VISIBLE_TABS and SpellBookFrame.bookType == BOOKTYPE_SPELL ) then
+		up:ClearAllPoints();
+		up:SetPoint("BOTTOM", _G["SpellBookSkillLineTab"..(tabScroll + 1)], "TOP", 0, 2);
+		down:ClearAllPoints();
+		down:SetPoint("TOP", previous, "BOTTOM", 0, -2);
+		if ( tabScroll > 0 ) then up:Enable(); else up:Disable(); end
+		if ( tabScroll < #spellTabs - VISIBLE_TABS ) then down:Enable(); else down:Disable(); end
+		up:Show();
+		down:Show();
+	else
+		up:Hide();
+		down:Hide();
 	end
 end
 
@@ -181,9 +241,11 @@ function SpellBookFrame_Update(showing)
 	local numSkillLineTabs = #spellTabs;
 	local name, texture, offset, numSpells;
 	local skillLineTab;
+	SpellBook_LayoutTabs();
 	for i=1, MAX_SKILLLINE_TABS do
 		skillLineTab = _G["SpellBookSkillLineTab"..i];
-		if ( i <= numSkillLineTabs and SpellBookFrame.bookType == BOOKTYPE_SPELL ) then
+		if ( i <= numSkillLineTabs and SpellBookFrame.bookType == BOOKTYPE_SPELL
+			and i > tabScroll and i <= tabScroll + VISIBLE_TABS ) then
 			name, texture = spellTabs[i].name, spellTabs[i].texture;
 			skillLineTab:SetNormalTexture(texture);
 			skillLineTab:GetNormalTexture():SetTexCoord(unpack(spellTabs[i].coords or FULL_TEXTURE));
@@ -237,6 +299,8 @@ function SpellBookFrame_HideSpells ()
 	for i = 1, MAX_SKILLLINE_TABS do
 		_G["SpellBookSkillLineTab" .. i]:Hide();
 	end
+	SpellBookTabScrollUp:Hide();
+	SpellBookTabScrollDown:Hide();
 	
 	SpellBookPrevPageButton:Hide();
 	SpellBookNextPageButton:Hide();

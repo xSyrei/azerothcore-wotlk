@@ -148,7 +148,13 @@ def main():
         # The spellbook's class tabs: the patched SpellBookFrame and its spell -> class table.
         for source in sorted((HERE / 'interface' / 'FrameXML').iterdir()):
             entries.append((f'Interface\\FrameXML\\{source.name}', source.read_bytes()))
-        spell_classes_lua = spell_classes.build(dbc_dir, [spell['id'] for spell in patch_spells.SPELLS])
+        monk = {spell['id'] for spell in patch_spells.patch_monk.SPELLS} | {
+            spell['id'] for spell in patch_spells.patch_talents.patch_monk_talents.HELPERS} | {
+            spell_id for _, tree, _, first_rank, family in patch_spells.patch_talents.TREES
+            if family == patch_spells.patch_monk.MONK_FAMILY
+            for _, ranks in patch_spells.patch_talents.ranked(tree, first_rank) for spell_id in ranks}
+        own = {spell['id']: 'MONK' if spell['id'] in monk else 'DEMONHUNTER' for spell in patch_spells.SPELLS}
+        spell_classes_lua = spell_classes.build(dbc_dir, own)
         entries.append(('Interface\\FrameXML\\EmberforgeSpellClasses.lua', spell_classes_lua.encode()))
 
         out = HERE / 'dist' / 'patch-enUS-4.MPQ'
