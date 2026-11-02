@@ -281,7 +281,10 @@ Emberforge has no Runic Power: `patch_spells.py` turns every spell costing or gi
 in every UI string left (combat text, errors).
 
 It also shows every piece of gear's item level on its tooltip ("Item Level 63" in gold under the name, as from
-Cataclysm on), for every class.
+Cataclysm on), for every class, and the character window's stats Cataclysm style (`StatPanel.lua`): a panel on
+its right with the average item level of what you wear, then two sections whose titles you click to pick Base
+Stats, Melee, Ranged, Spell or Defenses (Blizzard's own stat lines and tooltips; kept per character). The old stat
+area under the model is hidden.
 
 Install: copy the `Emberforge_Resources` folder into the client's `Interface\AddOns\` folder.
 The launcher will ship it automatically for players.

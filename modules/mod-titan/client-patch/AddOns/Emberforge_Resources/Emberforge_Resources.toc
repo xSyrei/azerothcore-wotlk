@@ -1,5 +1,7 @@
 ## Interface: 30300
 ## Title: Emberforge Resources
-## Notes: Resource bars, ammo slot and class color for the classless Hero; Rage in place of Runic Power; item levels on tooltips.
+## Notes: Resource bars, ammo slot and class color for the classless Hero; Rage in place of Runic Power; item levels on tooltips; a Cataclysm-style stat panel.
 ## Author: Project Emberforge
+## SavedVariablesPerCharacter: EmberforgeResourcesDB
 Emberforge_Resources.lua
+StatPanel.lua
