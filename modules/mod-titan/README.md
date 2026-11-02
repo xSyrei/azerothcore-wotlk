@@ -23,7 +23,7 @@ Wield) and a ranged weapon with ammo. `src/hero_equipment.cpp` teaches the profi
 the weapon and armor skills at every login and level (the core drops the ones a Paladin cannot
 have); `Emberforge_Resources` shows the ammo slot, which the character sheet hides for a Paladin.
 Fishing poles still need the Fishing profession. At first login a Hero also finds one of each weapon kind
-in the bags: a Battleworn Claymore, a Worn Shortsword, a Worn Mace, a Bent Staff, a Worn Wooden Shield,
+in the bags: a Battleworn Claymore, a Shortsword and a Worn Dagger (both one-hand, to dual wield), a Bent Staff, a Worn Wooden Shield,
 a Worn Shortbow and 200 Rough Arrows.
 
 Every character (Hero or not) keeps its weapon skills, Defense and Unarmed at the cap for its
@@ -181,7 +181,7 @@ Chi.
 | 90307 | Revival | 26 | Heals the raid within 40 yards and clears a Magic, Poison and Disease effect from each; 3 min cooldown |
 | 90311 | Invoke Chi-Ji, the Red Crane | 30 | Mistweaver's capstone: Chi-Ji (creature 90311, `npc_titan_chi_ji`) follows the Monk for 25 sec, healing the 2 most injured allies within 40 yards every 2 sec with Crane's Gust (90312), and 1 more on each healing spell the Monk casts (any class's, `titan_monk_chi_ji_casts`); Enveloping Mist costs 50% less and casts 50% faster meanwhile; 3 min cooldown. Chi-Ji is retail's crane (`client-patch/models/chiji`, display 90205) |
 | 90320 | Tiger Palm | 1 | Windwalker: weapon damage plus a little, awards 2 combo points; 50 Energy |
-| 90321 | Blackout Kick | 3 | Finisher: a base and 17% of attack power a combo point (tooltip: each point's damage), Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter (`spell_titan_monk_blackout_kick`) |
+| 90321 | Blackout Kick | 3 | No cost, 1.5 sec cooldown: a base and 40% of attack power, Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter (`spell_titan_monk_blackout_kick`) |
 | 90322 | Rising Sun Kick | 10 | Finisher: a base and 28% of attack power a combo point, and Mortal Wounds (healing taken -25%, 10 sec); 10 sec cooldown |
 | 90325 | Spinning Crane Kick | 12 | Finisher: 1.5 sec spin, moving allowed: a base and 3% of attack power a combo point to all enemies within 8 yards every 0.5 sec (90326, `spell_titan_monk_finisher_strike`) |
 | 90323 | Fists of Fury | 16 | Finisher: 4 sec channel: a base and 6% of attack power a combo point to all enemies in a cone in front every sec (90324, `spell_titan_monk_finisher_strike`); 24 sec cooldown |

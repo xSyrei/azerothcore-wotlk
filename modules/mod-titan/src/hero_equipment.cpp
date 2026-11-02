@@ -73,8 +73,8 @@ namespace
 
     constexpr KitItem STARTER_BAG_KIT[] = {
         { 23346, 1 },       // Battleworn Claymore (two-handed sword)
-        { 25, 1 },          // Worn Shortsword
-        { 36, 1 },          // Worn Mace
+        { 2131, 1 },        // Shortsword (one-hand: either hand, for Dual Wield)
+        { 2092, 1 },        // Worn Dagger (one-hand)
         { 35, 1 },          // Bent Staff
         { 2362, 1 },        // Worn Wooden Shield
         { 2504, 1 },        // Worn Shortbow

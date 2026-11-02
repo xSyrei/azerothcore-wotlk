@@ -840,18 +840,16 @@ SPELLS += [
                     2: {'Effect': EFFECT_ADD_COMBO_POINTS, 'BasePoints': 1, 'DieSides': 1}},
     },
     {
-        # Sinister Strike's hit as a kick, a finisher (base and 17% of attack power a combo point: the 5-point values
-        # here, spell_bonus_data, scaled by spell_titan_monk_finisher); spell_titan_monk_blackout_kick cools the two
-        # big ones down.
+        # Sinister Strike's hit as a kick on a 1.5 sec cooldown, no cost (base and 40% of attack power,
+        # spell_bonus_data); spell_titan_monk_blackout_kick cools the two big finishers down.
         'id': 90321, 'copy': 1752, 'name': 'Blackout Kick', 'icon': 'Ability_Monk_RoundhouseKick',
         'visual': 'BlackoutKick',
-        'description': 'Finishing move that kicks with a blast of energy, reducing the cooldowns of Rising Sun Kick '
-                       'and Fists of Fury by 1 sec. Physical damage per combo point:\r\n'
-                       + per_point('$m1', 0.17),
-        'set': windwalker(90321, 3, AttributesEx=0),
+        'description': 'Kick with a blast of energy, dealing ${$m1+$AP*0.4} Physical damage and reducing the '
+                       'cooldowns of Rising Sun Kick and Fists of Fury by 1 sec.',
+        'set': windwalker(90321, 3, RecoveryTime=1500, AttributesEx=0),
         'unset': {'AttributesEx3': 0x400},
         'clear': [2],
-        'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 9, 'DieSides': 1, 'RealPointsPerLevel': 6.0}},
+        'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 4, 'DieSides': 1, 'RealPointsPerLevel': 3.0}},
     },
     {
         # Mortal Strike: a finishing kick (base and 28% of attack power a combo point), healing taken -25% for 10 sec.

@@ -321,7 +321,7 @@ class spell_titan_monk_jade_wind_heal : public SpellScript
     }
 };
 
-// Windwalker's finishers (Blackout Kick, Rising Sun Kick, Fists of Fury, Spinning Crane Kick): usable from 1 combo
+// Windwalker's finishers (Rising Sun Kick, Fists of Fury, Spinning Crane Kick): usable from 1 combo
 // point (Tiger Palm awards them, on the Monk's current target, at most 5), they take them all and hit as hard as the
 // points spent: their spell values are the 5-point ones, scaled by points / 5. With Energy Burst, spending 5 restores
 // Energy; with Ancient Teachings or Shattered Souls, the points may come back (combo_points.h).
@@ -408,7 +408,7 @@ class spell_titan_monk_finisher_strike : public SpellScript
     }
 };
 
-// Blackout Kick (90321): Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter; with Teachings of the
+// Blackout Kick (90321, not a finisher: a 1.5 sec cooldown): Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter; with Teachings of the
 // Monastery, a chance to reset Rising Sun Kick's.
 class spell_titan_monk_blackout_kick : public SpellScript
 {
