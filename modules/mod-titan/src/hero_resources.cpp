@@ -18,7 +18,9 @@
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "SpellInfo.h"
+#include "WorldPacket.h"
 #include <array>
+#include <unordered_map>
 
 // Classless Hero: every class resource at once.
 //
@@ -113,6 +115,74 @@ public:
     }
 };
 
+// Runes for Heroes. The server recharges them (Player::RegenerateAll treats a Hero as a Death Knight), but the
+// client only counts a spent rune's cooldown down for a real Death Knight: for a Hero it stays spent on the rune bar
+// and the client refuses rune spells. So while a Hero has a rune cooling down, the server sends the runes' state
+// every half second (SMSG_RESYNC_RUNES: each rune's type and how much of its cooldown has passed, 0-255), and the
+// moment one is ready, SMSG_ADD_RUNE_POWER for it.
+class hero_runes : public PlayerScript
+{
+public:
+    hero_runes() : PlayerScript("hero_runes", {
+        PLAYERHOOK_ON_UPDATE,
+        PLAYERHOOK_ON_LOGOUT
+    }) { }
+
+    static constexpr uint32 RESYNC_INTERVAL = 500;
+
+    struct State
+    {
+        uint32 Timer = 0;
+        uint8 Cooling = 0;      // runes cooling down at the last update, a bit each
+    };
+
+    void OnPlayerUpdate(Player* player, uint32 diff) override
+    {
+        if (!hero_resources::IsHero(player) || !player->IsInWorld())
+            return;
+
+        State& state = _states[player->GetGUID().GetCounter()];
+        uint8 cooling = 0;
+        for (uint8 i = 0; i < MAX_RUNES; ++i)
+            if (player->GetRuneCooldown(i))
+                cooling |= 1 << i;
+
+        for (uint8 i = 0; i < MAX_RUNES; ++i)
+            if ((state.Cooling & ~cooling) & (1 << i))
+                player->AddRunePower(i);
+        state.Cooling = cooling;
+
+        if (!cooling)
+        {
+            state.Timer = 0;
+            return;
+        }
+        state.Timer += diff;
+        if (state.Timer < RESYNC_INTERVAL)
+            return;
+        state.Timer = 0;
+
+        WorldPacket data(SMSG_RESYNC_RUNES, 4 + MAX_RUNES * 2);
+        data << uint32(MAX_RUNES);
+        for (uint8 i = 0; i < MAX_RUNES; ++i)
+        {
+            uint32 cooldown = player->GetRuneCooldown(i);
+            uint32 base = std::max<uint32>(1, player->GetRuneBaseCooldown(i, true));
+            data << uint8(player->GetCurrentRune(i));
+            data << uint8(cooldown >= base ? 0 : 255 * (base - cooldown) / base);
+        }
+        player->SendDirectMessage(&data);
+    }
+
+    void OnPlayerLogout(Player* player) override
+    {
+        _states.erase(player->GetGUID().GetCounter());
+    }
+
+private:
+    std::unordered_map<ObjectGuid::LowType, State> _states;
+};
+
 // Emberforge has no Runic Power: every spell costing it costs Rage (the same tenths), and every effect giving, taking
 // or raising it does so to Rage, as the client patch does (client-patch/patch_spells.py, convert_runic_power). Runes
 // give Rage instead too (a core change in Spell::TakeRunePower).
@@ -164,4 +234,5 @@ void AddSC_hero_resources()
     new hero_resources();
     new hero_emberforged();
     new titan_runic_power_to_rage();
+    new hero_runes();
 }

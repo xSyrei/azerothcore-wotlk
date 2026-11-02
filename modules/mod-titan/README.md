@@ -22,7 +22,9 @@ shields, and librams, idols, totems and sigils in the relic slot), a weapon in e
 Wield) and a ranged weapon with ammo. `src/hero_equipment.cpp` teaches the proficiencies and sets
 the weapon and armor skills at every login and level (the core drops the ones a Paladin cannot
 have); `Emberforge_Resources` shows the ammo slot, which the character sheet hides for a Paladin.
-Fishing poles still need the Fishing profession. At first login a Hero also finds one of each weapon kind
+Fishing poles still need the Fishing profession. Runes recharge on the server, but the client only shows a
+real Death Knight's recharging, so `hero_runes` (`src/hero_resources.cpp`) sends a Hero's rune state while any is
+cooling down (every half second) and each rune as it comes back. At first login a Hero also finds one of each weapon kind
 in the bags: a Battleworn Claymore, a Shortsword and a Worn Dagger (both one-hand, to dual wield), a Bent Staff, a Worn Wooden Shield,
 a Worn Shortbow and 200 Rough Arrows.
 

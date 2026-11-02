@@ -515,10 +515,15 @@ namespace
             bool masked = false;
             for (SpellEffectInfo const& effect : spellInfo->GetEffects())
             {
+                // Teaching an ability: never when it is a Wildcard ability (Mutilate, Stormstrike...): those come
+                // as abilities, not talents.
                 if (effect.IsEffect(SPELL_EFFECT_LEARN_SPELL))
                 {
                     SpellInfo const* taught = sSpellMgr->GetSpellInfo(effect.TriggerSpell);
-                    return taught && SuitsRole(player, SpellRoles(taught)) ? 1 : 0;
+                    Ability const* ability = taught ? FindAbility(taught->GetFirstRankSpell()->Id) : nullptr;
+                    if (!taught || (ability && ability->Offered))
+                        return 0;
+                    return SuitsRole(player, SpellRoles(taught)) ? 1 : 0;
                 }
                 if (!effect.SpellClassMask)
                     continue;
