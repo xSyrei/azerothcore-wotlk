@@ -14,16 +14,18 @@ local CATEGORIES = {
 }
 local DEFAULTS = { "PLAYERSTAT_BASE_STATS", "PLAYERSTAT_MELEE_COMBAT" }
 local ROWS = 6
-local WIDTH, ROW_HEIGHT = 196, 15
+local WIDTH, ROW_HEIGHT = 212, 18
 -- The slots that count for the average (shirt and tabard do not); a two-hander counts for the off hand too.
 local SLOTS = { 1, 2, 3, 15, 5, 9, 10, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 }
 
 local GOLD = { 1, 0.82, 0 }
+local EDGE = { 0.86, 0.64, 0.32 }
+local TOP, SECTION_GAP, HEADER_HEIGHT = -16, 22, 24
 
 local panel = CreateFrame("Frame", "EmberforgeStatPanel", PaperDollFrame)
 panel:SetWidth(WIDTH)
-panel:SetHeight(392)
-panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -34, -14)
+panel:SetPoint("TOPLEFT", CharacterFrame, "TOPRIGHT", -36, -13)
+panel:SetPoint("BOTTOMLEFT", CharacterFrame, "BOTTOMRIGHT", -36, 76)
 panel:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
     edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
@@ -31,32 +33,57 @@ panel:SetBackdrop({
     insets = { left = 6, right = 6, top = 6, bottom = 6 },
 })
 
--- A title bar: dark, gold-edged, its text centered.
-local function Header(y, text)
-    local header = CreateFrame("Button", nil, panel)
-    header:SetWidth(WIDTH - 24)
-    header:SetHeight(22)
-    header:SetPoint("TOP", 0, y)
+-- A title bar: a warm gradient under a thin gold edge, its text centered (Cataclysm's look).
+local function Header(parent, text, clickable)
+    local header = CreateFrame(clickable and "Button" or "Frame", nil, parent)
+    header:SetWidth(WIDTH - 22)
+    header:SetHeight(HEADER_HEIGHT)
     header:SetBackdrop({
-        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 12,
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 12,
         insets = { left = 3, right = 3, top = 3, bottom = 3 },
     })
-    header:SetBackdropColor(0.12, 0.09, 0.06, 1)
-    header:SetBackdropBorderColor(0.86, 0.64, 0.32, 1)
+    header:SetBackdropBorderColor(EDGE[1], EDGE[2], EDGE[3], 1)
+    local fill = header:CreateTexture(nil, "BACKGROUND")
+    fill:SetTexture(1, 1, 1, 1)
+    fill:SetGradientAlpha("VERTICAL", 0.1, 0.06, 0.03, 1, 0.33, 0.21, 0.08, 1)
+    fill:SetPoint("TOPLEFT", 3, -3)
+    fill:SetPoint("BOTTOMRIGHT", -3, 3)
     header.text = header:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     header.text:SetPoint("CENTER")
     header.text:SetTextColor(unpack(GOLD))
     header.text:SetText(text)
+    if clickable then
+        local arrow = header:CreateTexture(nil, "ARTWORK")
+        arrow:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
+        arrow:SetWidth(18)
+        arrow:SetHeight(18)
+        arrow:SetPoint("RIGHT", -4, 0)
+        local hover = header:CreateTexture(nil, "HIGHLIGHT")
+        hover:SetTexture(1, 0.6, 0.2, 0.12)
+        hover:SetPoint("TOPLEFT", 3, -3)
+        hover:SetPoint("BOTTOMRIGHT", -3, 3)
+    end
     return header
 end
 
--- Item level.
-Header(-14, "Item Level")
-local itemLevel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
-itemLevel:SetPoint("TOP", 0, -44)
-itemLevel:SetTextColor(0.64, 0.21, 0.93)
+-- Item level: its title, then the number in a dark inset bar.
+local levelHeader = Header(panel, "Item Level")
+levelHeader:SetPoint("TOP", 0, TOP)
+local levelBar = CreateFrame("Frame", nil, panel)
+levelBar:SetWidth(WIDTH - 40)
+levelBar:SetHeight(34)
+levelBar:SetPoint("TOP", levelHeader, "BOTTOM", 0, -4)
+local levelFill = levelBar:CreateTexture(nil, "BACKGROUND")
+levelFill:SetTexture(1, 1, 1, 1)
+levelFill:SetGradientAlpha("HORIZONTAL", 0.05, 0.03, 0.02, 0.2, 0.05, 0.03, 0.02, 0.2)
+levelFill:SetAllPoints()
+local levelGlow = levelBar:CreateTexture(nil, "BORDER")
+levelGlow:SetTexture(0.35, 0.16, 0.45, 0.35)
+levelGlow:SetPoint("TOPLEFT", 30, -4)
+levelGlow:SetPoint("BOTTOMRIGHT", -30, 4)
+local itemLevel = levelBar:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
+itemLevel:SetPoint("CENTER", 0, 0)
+itemLevel:SetTextColor(0.75, 0.42, 1)
 
 local function AverageItemLevel()
     local total = 0
@@ -77,7 +104,7 @@ local function AverageItemLevel()
     return math.floor(total / #SLOTS + 0.5)
 end
 
--- The two stat sections: a title to click, then six rows of Blizzard's stat frames.
+-- The two stat sections: a title to click, then six striped rows of Blizzard's stat frames.
 local menu = CreateFrame("Frame", "EmberforgeStatPanelMenu", UIParent, "UIDropDownMenuTemplate")
 local sections = {}
 
@@ -94,15 +121,22 @@ local function StatRow(prefix, index, anchor)
     local ok, row = pcall(CreateFrame, "Frame", prefix .. index, panel, "StatFrameTemplate")
     if not ok then
         row = CreateFrame("Frame", prefix .. index, panel)
-        row:SetHeight(13)
         local label = row:CreateFontString(prefix .. index .. "Label", "ARTWORK", "GameFontNormalSmall")
         label:SetPoint("LEFT")
         local stat = row:CreateFontString(prefix .. index .. "StatText", "ARTWORK", "GameFontHighlightSmall")
         stat:SetPoint("RIGHT")
         row:EnableMouse(true)
     end
-    row:SetWidth(WIDTH - 36)
-    row:SetPoint("TOP", anchor, "BOTTOM", 0, index == 1 and -6 or -2)
+    row:SetWidth(WIDTH - 40)
+    row:SetHeight(ROW_HEIGHT)
+    row:SetPoint("TOP", anchor, "BOTTOM", 0, index == 1 and -4 or 0)
+    -- Every other row a faint stripe, as Cataclysm's; a little wider than the text.
+    if index % 2 == 1 then
+        local stripe = row:CreateTexture(nil, "BACKGROUND")
+        stripe:SetTexture(1, 1, 1, 0.06)
+        stripe:SetPoint("TOPLEFT", -4, 0)
+        stripe:SetPoint("BOTTOMRIGHT", 4, 0)
+    end
     return row
 end
 
@@ -114,7 +148,7 @@ end
 local function UpdateSection(index)
     local section = sections[index]
     local key = Choice(index)
-    section.header.text:SetText(CategoryText(key) .. "  |cff999999v|r")
+    section.header.text:SetText(CategoryText(key))
     if UpdatePaperdollStats then
         UpdatePaperdollStats(section.prefix, key)
     end
@@ -130,11 +164,13 @@ local function UpdatePanel()
     end
 end
 
-for index, y in ipairs({ -76, -226 }) do
+local anchor = levelBar
+for index = 1, 2 do
     local prefix = "EmberforgeStatPanel" .. (index == 1 and "Top" or "Bottom")
-    local header = Header(y, "")
+    local header = Header(panel, "", true)
+    header:SetPoint("TOP", anchor, "BOTTOM", 0, -SECTION_GAP)
     local section = { header = header, prefix = prefix }
-    local anchor = header
+    anchor = header
     for row = 1, ROWS do
         anchor = StatRow(prefix, row, anchor)
     end
@@ -154,7 +190,6 @@ for index, y in ipairs({ -76, -226 }) do
         end
         EasyMenu(items, menu, self, 0, 0, "MENU")
     end)
-    header:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
     sections[index] = section
 end
 
