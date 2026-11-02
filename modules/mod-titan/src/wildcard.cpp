@@ -37,9 +37,11 @@
 // - Starting kit (levels 1-8): KIT_SIZE random abilities. The Tome of Randomization rerolls them and
 //   the Tome of Selection clears them for KIT_SIZE picks in the Classless window (item_titan_tomes.cpp).
 //   At LOCK_LEVEL the kit locks: unspent picks are filled at random and both tomes vanish.
-// - From FIRST_TALENT_LEVEL: one random ability and one random talent rank per level. Abilities
-//   come from every class trainer's list (all 10 classes); talents from any class's trees (tier and
-//   prerequisite rules do not apply). The talent UI cannot spend points on a Hero.
+// - From FIRST_ROLL_LEVEL the level-up rolls alternate: a random talent rank at 8, a random ability
+//   at 9, a talent at 10, an ability at 11, and so on. Abilities come from every class trainer's list
+//   (all 10 classes); talents from any class's trees (tier and prerequisite rules do not apply). The
+//   talent UI cannot spend points on a Hero.
+// - The role (Melee, Caster, Healer, Tank: Classless window) puts on a buff changing the threat caused.
 // - Owned abilities upgrade to the best rank for the Hero's level by themselves.
 //
 // Grants are caught up at login and on every level change, so a multi-level jump or a character
@@ -54,6 +56,10 @@ namespace
     constexpr char const* SETTING_SOURCE = "mod-titan-wildcard";
     constexpr uint32 SETTING_ABILITIES_GRANTED = 0;
     constexpr uint32 SETTING_PICKS_LEFT = 1;
+    constexpr uint32 SETTING_ROLE = 2;
+
+    // The roles' buffs, by Role (ROLE_NONE has none).
+    constexpr std::array<uint32, MAX_ROLES> ROLE_SPELLS = { 0, 90603, 90604, 90605, 90606 };
 
     // Ability lists match spell names (English): every rank and faction version of a name counts. A
     // name that matches nothing is logged at startup.
@@ -385,7 +391,8 @@ namespace
 
         if (grantAbilities)
         {
-            uint32 owed = KIT_SIZE + (level >= FIRST_TALENT_LEVEL ? level - FIRST_TALENT_LEVEL + 1 : 0);
+            // Odd levels from FIRST_ROLL_LEVEL + 1 (9, 11, ...).
+            uint32 owed = KIT_SIZE + (level > FIRST_ROLL_LEVEL ? (level - FIRST_ROLL_LEVEL + 1) / 2 : 0);
             uint32 granted = player->GetPlayerSetting(SETTING_SOURCE, SETTING_ABILITIES_GRANTED).value;
             uint32 const before = granted;
             // Kit abilities come without a roll (the tomes handle them).
@@ -407,7 +414,8 @@ namespace
 
         UpgradeRanks(player);
 
-        uint32 owedTalents = level >= FIRST_TALENT_LEVEL ? level - FIRST_TALENT_LEVEL + 1 : 0;
+        // Even levels from FIRST_ROLL_LEVEL (8, 10, ...).
+        uint32 owedTalents = level >= FIRST_ROLL_LEVEL ? (level - FIRST_ROLL_LEVEL) / 2 + 1 : 0;
         bool talentsChanged = false;
         for (uint32 spent = SpentTalentPoints(player); spent < owedTalents && GrantTalent(player, levelUp); ++spent)
             talentsChanged = true;
@@ -706,6 +714,34 @@ namespace Wildcard
     {
         return player->GetLevel() >= LOCK_LEVEL;
     }
+
+    Role GetRole(Player* player)
+    {
+        uint32 role = player->GetPlayerSetting(SETTING_SOURCE, SETTING_ROLE).value;
+        return role < MAX_ROLES ? Role(role) : ROLE_NONE;
+    }
+
+    bool SetRole(Player* player, Role role)
+    {
+        if (role >= MAX_ROLES || player->IsInCombat())
+            return false;
+
+        player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_ROLE, role);
+        ApplyRole(player);
+        return true;
+    }
+
+    void ApplyRole(Player* player)
+    {
+        Role role = GetRole(player);
+        for (uint8 i = ROLE_MELEE; i < MAX_ROLES; ++i)
+        {
+            if (i != role)
+                player->RemoveAurasDueToSpell(ROLE_SPELLS[i]);
+            else if (!player->HasAura(ROLE_SPELLS[i]))
+                player->AddAura(ROLE_SPELLS[i], player);
+        }
+    }
 }
 
 namespace
@@ -730,6 +766,7 @@ public:
     titan_wildcard() : PlayerScript("titan_wildcard", {
         PLAYERHOOK_ON_LOGIN,
         PLAYERHOOK_ON_LEVEL_CHANGED,
+        PLAYERHOOK_ON_PLAYER_RESURRECT,
         PLAYERHOOK_ON_CALCULATE_TALENTS_POINTS,
         PLAYERHOOK_CAN_LEARN_TALENT
     }) { }
@@ -755,6 +792,13 @@ public:
         }
 
         CatchUp(player, settingsSaved, false);
+        ApplyRole(player);
+    }
+
+    void OnPlayerResurrect(Player* player, float /*restorePercent*/, bool& /*applySickness*/) override
+    {
+        if (IsHero(player))
+            ApplyRole(player);
     }
 
     void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override

@@ -31,13 +31,14 @@
 // Both sides talk in addon whispers the player sends to and receives from themself, prefix EFCL:
 //   client -> server   LIST                      send the ability list
 //                      PICK,<first rank id>      spend a Selection pick on that ability
+//                      ROLE,<role>               play that role (Wildcard::Role; not in combat)
 //   server -> client   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<id>;...
 //                      U,<class>,<tree order>,<tab id>
 //                      N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
 //                                                the list (begin, spec tabs, abilities, talent trees, end)
 //                      K0 / K,<id>,...           known abilities (clear, then first rank ids)
 //                      R0 / R,<talent id>:<rank>,...   owned talent ranks (clear, then talents)
-//                      S,<picks left>,<locked>,<lock level>
+//                      S,<picks left>,<locked>,<lock level>,<role>
 //                      G,<spell id>,<first rank id>   ability spin
 //                      H,<talent id>,<spell id>,<rank>   talent spin
 //                      O                         open the window
@@ -191,8 +192,8 @@ namespace Classless
 {
     void SendState(Player* player)
     {
-        SendAddon(player, Acore::StringFormat("S,{},{},{}", Wildcard::GetPicks(player),
-            Wildcard::IsKitLocked(player) ? 1 : 0, Wildcard::LOCK_LEVEL));
+        SendAddon(player, Acore::StringFormat("S,{},{},{},{}", Wildcard::GetPicks(player),
+            Wildcard::IsKitLocked(player) ? 1 : 0, Wildcard::LOCK_LEVEL, uint32(Wildcard::GetRole(player))));
     }
 
     void SendKnown(Player* player)
@@ -251,6 +252,16 @@ public:
         {
             if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(5)))
                 Pick(player, *spellId);
+        }
+        else if (request.starts_with("ROLE,"))
+        {
+            Optional<uint32> role = Acore::StringTo<uint32>(request.substr(5));
+            if (Wildcard::IsHero(player) && role && *role < Wildcard::MAX_ROLES)
+            {
+                if (!Wildcard::SetRole(player, Wildcard::Role(*role)))
+                    ChatHandler(player->GetSession()).SendSysMessage("You can't change your role in combat.");
+                Classless::SendState(player);
+            }
         }
 
         return false;

@@ -30,7 +30,8 @@ namespace Wildcard
     constexpr uint8 HERO_CLASS = CLASS_PALADIN;
     constexpr uint8 KIT_SIZE = 4;                   // abilities in the starting kit
     constexpr uint8 LOCK_LEVEL = 9;                 // the kit locks here and the tomes vanish
-    constexpr uint8 FIRST_TALENT_LEVEL = 10;        // first per-level ability and talent
+    constexpr uint8 FIRST_ROLL_LEVEL = 8;           // level-up rolls alternate from here: a talent rank on even
+                                                    // levels (8, 10...), an ability on odd ones (9, 11...)
     constexpr uint32 TOME_OF_RANDOMIZATION = 910003;
     constexpr uint32 TOME_OF_SELECTION = 910004;
     // Classes the game lacks, with abilities of Emberforge's own (retail class ids). Their spec tabs
@@ -47,6 +48,18 @@ namespace Wildcard
     constexpr uint32 CLASSMASK_DEMON_HUNTER = 1 << (CLASS_DEMON_HUNTER - 1);
     constexpr uint32 CLASSMASK_MONK = 1 << (CLASS_MONK - 1);
     constexpr uint32 HERO_TALENT_CLASSMASK = CLASSMASK_ALL_PLAYABLE | CLASSMASK_DEMON_HUNTER | CLASSMASK_MONK;
+
+    // The role a Hero plays, chosen in the Classless window: a buff that changes the threat they cause
+    // (client-patch/patch_player.py). Kept in the character's settings.
+    enum Role : uint8
+    {
+        ROLE_NONE,
+        ROLE_MELEE,     // threat -50%
+        ROLE_CASTER,    // threat -50%
+        ROLE_HEALER,    // threat unchanged
+        ROLE_TANK,      // threat +200%
+        MAX_ROLES
+    };
 
     struct Rank
     {
@@ -85,6 +98,12 @@ namespace Wildcard
     uint32 GetPicks(Player* player);
     void SetPicks(Player* player, uint32 picks);
     bool IsKitLocked(Player const* player);
+
+    Role GetRole(Player* player);
+    // Sets the role and its buff; false (and nothing changed) in combat.
+    bool SetRole(Player* player, Role role);
+    // Puts the role's buff on, and takes the others off (login, resurrection).
+    void ApplyRole(Player* player);
 }
 
 namespace Classless

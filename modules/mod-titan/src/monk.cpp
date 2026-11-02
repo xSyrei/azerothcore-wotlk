@@ -408,8 +408,8 @@ class spell_titan_monk_finisher_strike : public SpellScript
     }
 };
 
-// Blackout Kick (90321, not a finisher: a 1.5 sec cooldown): Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter; with Teachings of the
-// Monastery, a chance to reset Rising Sun Kick's.
+// Blackout Kick (90321, not a finisher: a 4 sec cooldown): Rising Sun Kick's and Fists of Fury's cooldowns 1 sec
+// shorter; with Teachings of the Monastery, a chance to reset Rising Sun Kick's.
 class spell_titan_monk_blackout_kick : public SpellScript
 {
     PrepareSpellScript(spell_titan_monk_blackout_kick);

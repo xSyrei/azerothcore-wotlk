@@ -2,22 +2,22 @@
 -- and talents, choosing the starting kit after a Titan Tome of Selection, and Wildcard roll reveals.
 -- Open with N, the minimap button, /classless or /cl.
 --
--- Layout: the class row on top; spec tabs over the ability grid (left), the spec's talent tree with
+-- Layout: the class row on top, the role row under it; spec tabs over the ability grid (left), the spec's talent tree with
 -- its prerequisite arrows (middle), and your spells, talents and specs with a search box (right).
 --
 -- The server (mod-titan, src/classless.cpp) sends the data as addon whispers to the player, prefix
 -- EFCL, and the window answers the same way:
---   to server     LIST, PICK,<spell id>
+--   to server     LIST, PICK,<spell id>, ROLE,<role> (1 Melee, 2 Caster, 3 Healer, 4 Tank)
 --   from server   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<spell id>;...
 --                 U,<class>,<tree order>,<tab id>
 --                 N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
---                 K0 / K,<spell id>,...   R0 / R,<talent id>:<rank>,...   S,<picks left>,<locked>,<lock level>
+--                 K0 / K,<spell id>,...   R0 / R,<talent id>:<rank>,...   S,<picks left>,<locked>,<lock level>,<role>
 --                 G,<spell id>,<first rank id>   H,<talent id>,<spell id>,<rank>   O
 
 local PREFIX = "EFCL"
 local ART = "Interface\\AddOns\\Emberforge_Classless\\Art\\"
-local WIDTH, HEIGHT = 1220, 720
-local PANEL_TOP, PANEL_HEIGHT = -182, 478
+local WIDTH, HEIGHT = 1220, 756
+local PANEL_TOP, PANEL_HEIGHT = -218, 478
 local GRID_X, GRID_WIDTH, TREE_X, TREE_WIDTH, LIST_X, LIST_WIDTH = 20, 600, 628, 300, 936, 264
 local CELL_WIDTH, CELL_HEIGHT, CELL_STEP_X, CELL_STEP_Y, COLUMNS, ROWS = 182, 48, 188, 56, 3, 8
 local LIST_ROW_HEIGHT, LIST_ROWS = 42, 10
@@ -103,6 +103,7 @@ local data = {
     picks = 0,
     locked = false,
     lockLevel = 9,
+    role = 0,           -- Wildcard::Role: 0 none yet
     loaded = false,
     loading = false,
 }
@@ -297,8 +298,9 @@ local function OnServerMessage(message)
         end
         Refresh()
     elseif kind == "S" then
-        local _, picks, locked, lockLevel = strsplit(",", message)
+        local _, picks, locked, lockLevel, role = strsplit(",", message)
         data.picks, data.locked, data.lockLevel = tonumber(picks) or 0, locked == "1", tonumber(lockLevel) or 9
+        data.role = tonumber(role) or 0
         Refresh()
     elseif kind == "G" then
         local _, spell, firstRank = strsplit(",", message)
@@ -578,6 +580,69 @@ end
 ClassButton(1, YOUR_ABILITIES, "Abilities")
 for index, class in ipairs(CLASSES) do
     ClassButton(index + 1, class.id, class.name)
+end
+
+-- Role row, under the classes: the role the Hero plays (server: Wildcard::Role), its threat change.
+local roleRow = {}
+do
+    local ROLES = {
+        { id = 1, name = "Melee", icon = "Ability_DualWield", text = "Threat caused reduced by 50%." },
+        { id = 2, name = "Caster", icon = "Spell_Fire_FlameBolt", text = "Threat caused reduced by 50%." },
+        { id = 3, name = "Healer", icon = "Spell_Holy_FlashHeal", text = "Threat caused unchanged." },
+        { id = 4, name = "Tank", icon = "Ability_Warrior_DefensiveStance", text = "Threat caused increased by 200%." },
+    }
+    local WIDTH_EACH, GAP = 132, 10
+    local left = WIDTH / 2 - (#ROLES * WIDTH_EACH + (#ROLES - 1) * GAP) / 2
+    local caption = frame:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    caption:SetPoint("RIGHT", frame, "TOPLEFT", left - 12, -162)
+    caption:SetTextColor(unpack(GOLD))
+    caption:SetText("Role")
+    local buttons = {}
+    for index, role in ipairs(ROLES) do
+        local button = CreateFrame("Button", nil, frame)
+        button:SetWidth(WIDTH_EACH)
+        button:SetHeight(28)
+        button:SetPoint("TOPLEFT", frame, "TOPLEFT", left + (index - 1) * (WIDTH_EACH + GAP), -148)
+        Box(button, CELL_FILL, CELL_EDGE, true)
+        local icon = button:CreateTexture(nil, "ARTWORK")
+        icon:SetTexture("Interface\\Icons\\" .. role.icon)
+        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        icon:SetWidth(20)
+        icon:SetHeight(20)
+        icon:SetPoint("LEFT", 6, 0)
+        button.label = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        button.label:SetPoint("LEFT", icon, "RIGHT", 8, 0)
+        button.label:SetText(role.name)
+        local hover = button:CreateTexture(nil, "HIGHLIGHT")
+        hover:SetTexture(1, 0.6, 0.2, 0.1)
+        hover:SetPoint("TOPLEFT", 2, -2)
+        hover:SetPoint("BOTTOMRIGHT", -2, 2)
+        button:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+            GameTooltip:SetText(role.name)
+            GameTooltip:AddLine(role.text, 1, 1, 1, true)
+            GameTooltip:AddLine("Can't be changed in combat.", unpack(SUBTEXT))
+            GameTooltip:Show()
+        end)
+        button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        button:SetScript("OnClick", function()
+            if data.role ~= role.id then
+                Send("ROLE," .. role.id)
+            end
+        end)
+        buttons[role.id] = button
+    end
+    function roleRow.Refresh()
+        for id, button in pairs(buttons) do
+            if id == data.role then
+                BoxColor(button, TAB_ON_FILL, TAB_ON_EDGE)
+                button.label:SetTextColor(1, 1, 1)
+            else
+                BoxColor(button, CELL_FILL, CELL_EDGE)
+                button.label:SetTextColor(unpack(GOLD))
+            end
+        end
+    end
 end
 
 -- Tabs: small rounded boxes; the selected one glows ember.
@@ -1218,6 +1283,8 @@ local function RefreshStatus()
     elseif not data.locked then
         status:SetText("Reroll with the Tome of Randomization or choose with the Tome of Selection until level "
             .. data.lockLevel)
+    elseif data.role == 0 then
+        status:SetText(EMBER .. "Choose your role|r under the classes: Melee, Caster, Healer or Tank")
     else
         status:SetText("")
     end
@@ -1231,6 +1298,7 @@ function Refresh()
         view.class = next(data.known) and not Picking() and YOUR_ABILITIES or CLASSES[1].id
     end
     RefreshClassRow()
+    roleRow.Refresh()
     RefreshSpecs()
     RefreshGrid()
     RefreshTree()

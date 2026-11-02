@@ -42,10 +42,15 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   - **Titan Tome of Randomization** (910003) rerolls the 4 abilities;
   - **Titan Tome of Selection** (910004) clears them and opens the Classless window with 4 picks.
   At **level 9 the kit locks**: picks never spent are rolled at random and both tomes vanish.
-- **From level 10**: one random ability and one random talent rank per level. Abilities come from
-  every class trainer's list (all 10 classes; passives, talent abilities and hunter pet handling
-  are left out); talents from any class's talent trees (tier and prerequisite rules do not apply).
-  Heroes have no talent points to spend in the UI.
+- **From level 8 the level-up rolls alternate**: a random talent rank at 8, a random ability at 9, a
+  talent at 10, an ability at 11, and so on. Abilities come from every class trainer's list (all 10
+  classes; passives, talent abilities and hunter pet handling are left out); talents from any class's
+  talent trees (tier and prerequisite rules do not apply). Heroes have no talent points to spend in
+  the UI. Characters that already had more than this keep them, and roll again once their level
+  catches up.
+- **Roles**: Melee, Caster, Healer or Tank, picked in the Classless window under the classes (not in
+  combat; kept per character). Each is a buff (90603-90606, `client-patch/patch_player.py`): Melee and
+  Caster cause 50% less threat, Tank 200% more, Healer unchanged.
 - Owned abilities upgrade to the best rank for the Hero's level by themselves, no trainer needed.
 - **Ability lists** (`src/wildcard.cpp`, by spell name, every rank and faction version; a name that
   matches nothing is logged at startup):
@@ -68,7 +73,7 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
 spec with the level each needs, each spec's talent tree beside them (your ranks lit, the rest
 greyed, prerequisite arrows drawn), an Abilities view of everything you own, your spells, talents and
 specs on the right, a search across all classes, and the picks after a Tome of Selection. Each random
-ability and talent rank from a level-up (level 10 on) is rolled on screen: a die shatters, the track
+ability and talent rank from a level-up (level 8 on) is rolled on screen: a die shatters, the track
 opens between two gryphons and the icons spin down onto the prize, then the die re-forms and it
 all fades away; with **Instant rolls** (a check box in the window, or `/cl instant`) the track opens
 straight on the prize. Catching up at login grants without rolling. It is the `Emberforge_Classless` addon
@@ -181,7 +186,7 @@ Chi.
 | 90307 | Revival | 26 | Heals the raid within 40 yards and clears a Magic, Poison and Disease effect from each; 3 min cooldown |
 | 90311 | Invoke Chi-Ji, the Red Crane | 30 | Mistweaver's capstone: Chi-Ji (creature 90311, `npc_titan_chi_ji`) follows the Monk for 25 sec, healing the 2 most injured allies within 40 yards every 2 sec with Crane's Gust (90312), and 1 more on each healing spell the Monk casts (any class's, `titan_monk_chi_ji_casts`); Enveloping Mist costs 50% less and casts 50% faster meanwhile; 3 min cooldown. Chi-Ji is retail's crane (`client-patch/models/chiji`, display 90205) |
 | 90320 | Tiger Palm | 1 | Windwalker: weapon damage plus a little, awards 2 combo points; 50 Energy |
-| 90321 | Blackout Kick | 3 | No cost, 1.5 sec cooldown: a base and 40% of attack power, Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter (`spell_titan_monk_blackout_kick`) |
+| 90321 | Blackout Kick | 3 | No cost, 4 sec cooldown: a base and 40% of attack power, Rising Sun Kick's and Fists of Fury's cooldowns 1 sec shorter (`spell_titan_monk_blackout_kick`) |
 | 90322 | Rising Sun Kick | 10 | Finisher: a base and 28% of attack power a combo point, and Mortal Wounds (healing taken -25%, 10 sec); 10 sec cooldown |
 | 90325 | Spinning Crane Kick | 12 | Finisher: 1.5 sec spin, moving allowed: a base and 3% of attack power a combo point to all enemies within 8 yards every 0.5 sec (90326, `spell_titan_monk_finisher_strike`) |
 | 90323 | Fists of Fury | 16 | Finisher: 4 sec channel: a base and 6% of attack power a combo point to all enemies in a cone in front every sec (90324, `spell_titan_monk_finisher_strike`); 24 sec cooldown |
