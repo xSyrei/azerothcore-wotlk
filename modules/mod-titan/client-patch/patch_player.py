@@ -23,7 +23,7 @@ SELF_TEMPLATE = 26669           # Evasion: an aura on the caster (the buff you s
 PASSIVE_TEMPLATE = 12320        # Cruelty (Rank 1): a passive, hidden aura
 SPELL_ATTR0_NO_AURA_CANCEL = 0x80000000
 SPELL_ATTR3_ALLOW_AURA_WHILE_DEAD = 0x100000
-ICON = 'INV_Emberforge_Emberspark'
+ICON = 'Spell_Fire_Fire'           # the client's own fire icon
 
 
 def aura(aura_type, pct, misc, misc_b=0):
