@@ -34,7 +34,7 @@ On Linux with MinGW (`g++-mingw-w64-x86-64-posix`): build StormLib as a static l
 file, then
 
 ```sh
-x86_64-w64-mingw32-g++-posix -std=c++17 -O2 -DSTORMLIB_NO_AUTO_LINK -I<StormLib>/src EmberforgeExtract.cpp \
+x86_64-w64-mingw32-g++-posix -std=c++17 -O2 -DSTORMLIB_NO_AUTO_LINK -I<StormLib>/src -I<StormLib>/src/zlib EmberforgeExtract.cpp \
     <build>/libStormLib.a -o EmberforgeExtract.exe -static -lwininet
 ```
 
