@@ -1120,12 +1120,13 @@ local function RefreshBook()
     local colors = TINTS[instance.expansion]
     local art = InstanceArt(instance.map)
     if art and art.lore then
-        -- Its Journal picture (its framed part), else the dungeon finder's background.
+        -- Its Journal picture, inside its painted frame (zoomed past the frame's burnt edge), else the dungeon
+        -- finder's background.
         ui.plate.fill:SetTexture(JOURNAL_ART .. art.lore)
         if art.lfg then
             ui.plate.fill:SetTexCoord(0.12, 0.88, 0, 1)
         else
-            ui.plate.fill:SetTexCoord(6 / 512, 394 / 512, 4 / 512, 329 / 512)
+            ui.plate.fill:SetTexCoord(38 / 512, 360 / 512, 46 / 512, 286 / 512)
         end
         ui.plate.fill:SetVertexColor(1, 1, 1)
     else
