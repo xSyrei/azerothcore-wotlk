@@ -2,9 +2,11 @@
 // without anyone opening them by hand. Built for Windows against StormLib (github.com/ladislav-zezula/StormLib), which
 // reads the archives and applies the client's update archives on top, as the game does.
 //
-//     EmberforgeExtract.exe "C:\...\Data" [patterns.txt]
+//     EmberforgeExtract.exe "C:\...\Data" [patterns.txt] [locale]
 //
-// Each base archive (Data\*.MPQ, Data\<locale>\*.MPQ) is opened with every update archive of its folder
+// Only one language's files are read (enUS unless named): a client with several (deDE, frFR...) would otherwise mix
+// them. Each base archive (Data\*.MPQ, Data\<locale>\*.MPQ, and the locale's own archives anywhere in Data:
+// locale-enUS.MPQ, speech-enUS.MPQ...) is opened with every update archive of its folder
 // (wow-update-*.MPQ, oldest first) applied as a patch. Every file matching a pattern (wildcards * and ?, one pattern a
 // line; built-in ones without a file) is written under EmberforgeExtract\ next to where it is run, at its own path,
 // the newest version winning. A manifest of what was written goes with it.
@@ -50,6 +52,23 @@ static int UpdateNumber(fs::path const& path)
     return dash == std::string::npos ? 0 : std::atoi(name.c_str() + dash + 1);
 }
 
+static std::string g_locale = "enus";
+
+// Another language's archive (locale-deDE.MPQ, speech-frFR.MPQ, wow-update-deDE-...): skipped.
+static bool OtherLocale(fs::path const& path)
+{
+    static char const* const LOCALES[] = { "enus", "engb", "dede", "frfr", "eses", "esmx", "ruru", "kokr", "zhcn",
+        "zhtw", "ptbr", "itit", "ptpt", "encn" };
+    std::string name = Lower(path.filename().string());
+    for (char const* locale : LOCALES)
+    {
+        std::string code = Lower(locale);
+        if (code != g_locale && name.find(code) != std::string::npos)
+            return true;
+    }
+    return false;
+}
+
 static std::vector<fs::path> Archives(fs::path const& folder, bool updates)
 {
     std::vector<fs::path> result;
@@ -57,7 +76,7 @@ static std::vector<fs::path> Archives(fs::path const& folder, bool updates)
         return result;
     for (auto const& entry : fs::directory_iterator(folder))
         if (entry.is_regular_file() && Lower(entry.path().extension().string()) == ".mpq"
-            && IsUpdate(entry.path()) == updates)
+            && IsUpdate(entry.path()) == updates && !OtherLocale(entry.path()))
             result.push_back(entry.path());
     if (updates)
         std::sort(result.begin(), result.end(),
@@ -90,12 +109,14 @@ int main(int argc, char** argv)
 {
     if (argc < 2)
     {
-        std::printf("Usage: EmberforgeExtract.exe \"C:\\...\\Data\" [patterns.txt]\n");
+        std::printf("Usage: EmberforgeExtract.exe \"C:\\...\\Data\" [patterns.txt] [locale]\n");
         return 1;
     }
     fs::path data = argv[1];
     std::vector<std::string> patterns;
-    if (argc > 2)
+    if (argc > 3)
+        g_locale = Lower(argv[3]);
+    if (argc > 2 && std::string(argv[2]) != "-")
     {
         std::ifstream list(argv[2]);
         for (std::string line; std::getline(list, line);)
@@ -108,11 +129,14 @@ int main(int argc, char** argv)
     else
         patterns.assign(std::begin(DEFAULT_PATTERNS), std::end(DEFAULT_PATTERNS));
 
-    // The folders holding archives: Data itself and its locale folders (enUS...), each with its own updates.
-    std::vector<fs::path> folders = { data };
+    // The folders holding archives: the locale's folder first (its files win), then Data itself; the other
+    // languages' folders are left out.
+    std::vector<fs::path> folders;
     for (auto const& entry : fs::directory_iterator(data))
-        if (entry.is_directory() && !Archives(entry.path(), false).empty())
+        if (entry.is_directory() && Lower(entry.path().filename().string()) == g_locale)
             folders.push_back(entry.path());
+    folders.push_back(data);
+    std::printf("Language: %s\n", g_locale.c_str());
 
     fs::path outRoot = fs::current_path() / "EmberforgeExtract";
     std::map<std::string, std::string> written;    // lowercase path -> archive it came from

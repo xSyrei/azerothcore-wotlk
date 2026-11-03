@@ -16,8 +16,11 @@ In PowerShell, from a folder with room to spare (it writes `EmberforgeExtract\` 
 With no list it takes the built-in patterns: the Dungeon Journal's art (`Interface\EncounterJournal\*`), the
 character pane's (`Interface\PaperDollInfoFrame\*`), the dungeon finder's (`Interface\LFGFrame\*`), the loading
 screens (`Interface\Glues\LoadingScreens\*`) and the client's data tables (`DBFilesClient\*`). A second argument
-names a text file of patterns instead, one a line (`*` and `?` wildcards, `#` comments). `manifest.txt` lists
-what was written and from which archive.
+names a text file of patterns instead, one a line (`*` and `?` wildcards, `#` comments; `-` keeps the built-in
+ones). `manifest.txt` lists what was written and from which archive.
+
+Only English (`enUS`) text is read: a client with several languages installed (`deDE`, `frFR`...) would
+otherwise mix them. A third argument picks another language, e.g. `- enGB`.
 
 ## Building it
 
