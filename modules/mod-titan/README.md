@@ -305,17 +305,17 @@ Strength to 2 attack power and Agility to 1 ranged attack power:
 
 ## Level and power squish
 The game ends on Classic's numbers: the new level 60 is today's level 60 in power (`MaxPlayerLevel = 60`). Classic
-squishes into 1-40, the Burning Crusade and Wrath both into 40-60, side by side
+stays as it is, 1-60; the Burning Crusade and Wrath both squish into 40-60, beside Classic's own 40-60
 (`data/sql/db-world/zz_titan_squish.sql`, written by `tools/squish/squish.py`, which says how):
 
 | Old levels | New levels | Content |
 |---|---|---|
-| 1-60 | 1-40 | Classic (new = old x 2/3) |
+| 1-60 | 1-60 | Classic (unchanged) |
 | 58-70 | 40-60 | Burning Crusade |
 | 68-80 | 40-60 | Wrath |
 
-- **Items** (weapons and armor): the required level by that map, the item level onto Classic's curve there (a level
-  60 green is item level 65 whatever its expansion), stats and block by the stat budget ratio, armor and weapon
+- **Items** (weapons and armor): Classic's unchanged; the others' required level by that map, their item level onto
+  Classic's curve there (a level 60 green is item level 65 whatever its expansion), stats and block by the stat budget ratio, armor and weapon
   damage by the item level ratio; random "of the ..." stats follow the item level.
 - **Creatures**: their level by the map (the level decides the band, their expansion only where bands overlap), and
   Classic's stats rows at the new level: a Northrend mob at 55 is as strong as a Classic level 55 mob.

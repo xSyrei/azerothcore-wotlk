@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 """The level and power squish (option B, .agents/plans/phase-0): writes data/sql/db-world/zz_titan_squish.sql.
 
-The game ends on Classic's numbers: the new level 60 is today's level 60 in power. Classic is squished into 1-40,
-the Burning Crusade and Wrath both into 40-60, side by side:
+The game ends on Classic's numbers: the new level 60 is today's level 60 in power. Classic stays as it is, 1-60;
+the Burning Crusade and Wrath are squished into 40-60, beside Classic's own 40-60 and each other:
 
-    Classic        1-60  -> 1-40     new = old x 2/3
+    Classic         1-60  -> 1-60    unchanged
     Burning Crusade 58-70 -> 40-60   new = 40 + (old - 58) x 20/12
-    Wrath          68-80 -> 40-60    new = 40 + (old - 68) x 20/12
+    Wrath           68-80 -> 40-60   new = 40 + (old - 68) x 20/12
 
-- Items (weapons and armor, uncommon to epic and their poor and common kin): the required level by that map; the
-  item level onto Classic's curve at the new required level (what a Classic item of its quality has there, read
-  from the Classic items themselves), its height above its own expansion's curve shrunk with the band; stats and
-  block by the stat budget ratio (RandPropPoints.dbc), armor and weapon damage by the item level ratio. Random
-  "of the ..." stats follow the item level by themselves. Heirlooms, items with no required level, and legendaries
-  are left alone.
+- Items (weapons and armor, uncommon to epic and their poor and common kin): Classic's as they are; the
+  others' required level by that map, their item level onto Classic's curve at the new required level (what a
+  Classic item of its quality has there, read from the Classic items themselves), its height above its own
+  expansion's curve shrunk with the band; stats and block by the stat budget ratio (RandPropPoints.dbc), armor and
+  weapon damage by the item level ratio. Random "of the ..." stats follow the item level by themselves.
+  Heirlooms, items with no required level, and legendaries are left alone.
 - Creatures: their level by the map (the level decides the band; creature_template.exp only where bands overlap,
-  58-63 and 68-70: many Outland and Northrend creatures are marked 0), and exp 0, so their health, damage and armor
-  come from Classic's stats rows at the new level.
+  58-63 and 68-70: many Outland and Northrend creatures are marked 0; Classic's unchanged), and exp 0, so their
+  health, damage and armor come from Classic's stats rows at the new level.
 - Quests: their level, minimum and maximum level by the map (where bands overlap, by their zone's expansion:
   AreaTable.dbc, Outland and its dungeons, Northrend and its dungeons; the Blood Elf and Draenei zones are
   Classic's).
@@ -36,7 +36,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-VERSION = 1
+VERSION = 2
 ROOT = Path(__file__).resolve().parents[4]
 ITEMS = ROOT / 'data/sql/base/db_world/item_template.sql'
 OUT = ROOT / 'modules/mod-titan/data/sql/db-world/zz_titan_squish.sql'
@@ -143,7 +143,7 @@ def level_sql(level, exp):
     lvl = f'CAST({level} AS SIGNED)'
     tbc = f'ROUND(40 + ({lvl} - 58) * 20 / 12)'
     wrath = f'ROUND(40 + ({lvl} - 68) * 20 / 12)'
-    classic = f'GREATEST(1, ROUND({lvl} * 2 / 3))'
+    classic = lvl
     return (f"(CASE WHEN {lvl} > 83 THEN {lvl} WHEN {lvl} >= 71 THEN {wrath} "
             f"WHEN {lvl} >= 68 THEN IF({exp} = 2, {wrath}, {tbc}) WHEN {lvl} >= 64 THEN {tbc} "
             f"WHEN {lvl} >= 61 THEN IF({exp} = 0, {classic}, {tbc}) "
@@ -237,6 +237,9 @@ def main():
         '    SET w.`level_factor` = w.`new_ilvl` / GREATEST(1, w.`old_ilvl`),',
         '        w.`stat_factor` = LEAST(1, IF(po.`points` > 0 AND pn.`points` > 0, pn.`points` / po.`points`, '
         'w.`new_ilvl` / GREATEST(1, w.`old_ilvl`)));',
+        '-- Classic\'s items keep (or get back) their own values.',
+        'UPDATE `titan_squish_item_work` SET `new_req` = `old_req`, `new_ilvl` = `old_ilvl`, `level_factor` = 1, '
+        '`stat_factor` = 1 WHERE `expansion` = 0;',
         'UPDATE `item_template` t',
         '    JOIN `titan_squish_item_work` w ON w.`entry` = t.`entry`',
         '    JOIN `titan_squish_item_original` o ON o.`entry` = t.`entry`',
