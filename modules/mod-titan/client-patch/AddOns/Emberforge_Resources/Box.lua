@@ -1,5 +1,5 @@
 -- Emberforge Resources: rounded, gold-edged boxes (the Classless window's look), shared by the character window's
--- pieces (CharacterSkin.lua, StatPanel.lua) through the addon's table.
+-- pieces (StatPanel.lua) through the addon's table.
 --
 -- Box(target, fill, edge): small rounded corners (8 px) and edges from Art\, the fill tinted by fill, the edge by
 -- edge; the pieces sit on target's BACKGROUND and BORDER layers, so its own text stays on top. BoxColor recolors,
@@ -85,6 +85,4 @@ end
 -- The window's colors.
 ns.GOLD = { 1, 0.82, 0 }
 ns.BANNER_FILL, ns.BANNER_EDGE = { 0.13, 0.075, 0.035, 0.97 }, { 0.86, 0.64, 0.32, 1 }
-ns.TAB_FILL, ns.TAB_EDGE = { 0.075, 0.055, 0.043, 0.97 }, { 0.5, 0.39, 0.22, 1 }
-ns.TAB_ON_FILL, ns.TAB_ON_EDGE = { 0.3, 0.13, 0.03, 0.97 }, { 1, 0.72, 0.32, 1 }
 ns.ARROW = ART .. "ArrowDown"
