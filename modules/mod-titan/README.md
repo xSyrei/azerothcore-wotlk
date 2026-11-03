@@ -303,6 +303,13 @@ Strength to 2 attack power and Agility to 1 ranged attack power:
 - Intellect: 3 ranged attack power, 2 spell power (damage and healing);
 - Spirit: 0.25 spell power (damage and healing).
 
+## Dungeon Journal
+`/journal` or `/dj` (the `Emberforge_Journal` addon, `client-patch/AddOns/`; server side `src/journal.cpp`, addon
+whispers with prefix `EFDJ`): every dungeon and raid of the game's dungeon list, Classic, the Burning Crusade and
+Wrath, tabbed by expansion and type. Each shows its creature levels as the world database has them (after the level
+squish), its difficulties with their sizes, queue levels and dungeon IDs, its map ID, and its bosses
+(`DungeonEncounter.dbc`). Holiday events are marked.
+
 ## Level and power squish
 The game ends on Classic's numbers: the new level 60 is today's level 60 in power (`MaxPlayerLevel = 60`). Classic
 stays as it is, 1-60; the Burning Crusade and Wrath both squish into 40-60, beside Classic's own 40-60

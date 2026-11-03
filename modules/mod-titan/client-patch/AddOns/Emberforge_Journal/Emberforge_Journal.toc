@@ -1,0 +1,5 @@
+## Interface: 30300
+## Title: Emberforge Journal
+## Notes: The Dungeon Journal: every dungeon and raid with its levels, sizes and bosses (/journal).
+## Author: Project Emberforge
+Emberforge_Journal.lua
