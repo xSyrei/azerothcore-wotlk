@@ -209,9 +209,9 @@ local CELL_FILL, CELL_EDGE = { 0.075, 0.055, 0.043, 0.96 }, { 0.38, 0.29, 0.16, 
 local ON_FILL, ON_EDGE = { 0.3, 0.13, 0.03, 0.96 }, { 1, 0.72, 0.32, 1 }
 
 -- A creature's model in a frame (PlayerModel:SetCreature); portrait: the face camera.
--- A humanoid's skin (its baked texture) loads after its model: drawn at once, it is white. So the creature is
--- set again a moment later, a few times (and its face camera with it).
-local RELOADS = { 0.1, 0.5, 1.5 }
+-- A humanoid's skin (its baked texture) loads after its model: drawn at once, it is white. So the model is
+-- refreshed a moment later, a few times: cleared, its creature set again (and its face camera with it).
+local RELOADS = { 0.2, 0.6, 1.2, 2.5 }
 local pending = {}
 local function SetModel(model, creature, portrait)
     pcall(model.SetCreature, model, creature)
@@ -225,6 +225,7 @@ reloader:SetScript("OnUpdate", function(_, elapsed)
         state.time = state.time + elapsed
         if state.time >= RELOADS[state.step] then
             if model:IsVisible() then
+                model:ClearModel()
                 SetModel(model, state.creature, state.portrait)
             end
             state.step = state.step + 1
