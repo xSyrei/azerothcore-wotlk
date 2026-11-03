@@ -2132,8 +2132,9 @@ EnablePlayerSettings = 1
 #        Important:   Levels beyond 100 are not recommended at all.
 #        Range:       1-255
 #        Default:     80
+#                     60 - (Project Emberforge: the level squish, mod-titan zz_titan_squish.sql)
 
-MaxPlayerLevel = 80
+MaxPlayerLevel = 60
 
 #
 #    MinDualSpecLevel
