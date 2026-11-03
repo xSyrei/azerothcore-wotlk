@@ -48,6 +48,9 @@
 //                        ~<queue min>~<queue max>~<seasonal>~<name>;...      instances (type 1 dungeon, 2 raid)
 //                      F,<map>~<difficulty>~<boss>~<creature entry>;...   bosses, in the game's order (the entry, for
 //                                                          its model: the creature of that name spawned there, 0)
+//                      W,<lfg id>~<first boss>~<last boss>;...   a wing's bosses (Scarlet Monastery's Cathedral...):
+//                                                          their indexes from 1 in its map's list; from the
+//                                                          encounters that end a dungeon (instance_encounters)
 //                      Z                                   end
 //                      I,<boss>~<entry>~<level>~<rank>~<health>~<creature type>;...   (boss: its index from 1)
 //                      A,<boss>~<spell>;...                its abilities: the spells of its C++ script's file
@@ -341,10 +344,34 @@ namespace
                 return std::tie(a->mapId, a->difficulty, a->encounterIndex)
                     < std::tie(b->mapId, b->difficulty, b->encounterIndex);
             });
-        std::vector<std::string> bosses;
+        // The encounters that end a dungeon of the finder (its last boss): a map's wings, in its order.
+        std::unordered_map<uint32, uint32> lastOf;      // encounter -> the dungeon it ends
+        for (auto const& listed : maps)
+            if (DungeonEncounterList const* list = sObjectMgr->GetDungeonEncounterList(listed.first.first,
+                Difficulty(listed.first.second)))
+                for (DungeonEncounter const* encounter : *list)
+                    if (encounter->lastEncounterDungeon)
+                        lastOf[encounter->dbcEntry->id] = encounter->lastEncounterDungeon;
+
+        std::vector<std::string> bosses, wings;
         std::unordered_set<uint32> known;
+        std::pair<uint32, uint32> current = { UINT32_MAX, UINT32_MAX };
+        uint32 index = 0, wingStart = 1;
         for (DungeonEncounterEntry const* encounter : encounters)
         {
+            if (std::make_pair(encounter->mapId, encounter->difficulty) != current)
+            {
+                current = { encounter->mapId, encounter->difficulty };
+                index = 0;
+                wingStart = 1;
+            }
+            ++index;
+            auto last = lastOf.find(encounter->id);
+            if (last != lastOf.end())
+            {
+                wings.push_back(Acore::StringFormat("{}~{}~{}", last->second, wingStart, index));
+                wingStart = index + 1;
+            }
             char const* name = encounter->encounterName[LOCALE_enUS] ? encounter->encounterName[LOCALE_enUS] : "";
             uint32 entry = BossEntry(encounter->mapId, name);
             bosses.push_back(Acore::StringFormat("{}~{}~{}~{}", encounter->mapId, encounter->difficulty, Clean(name),
@@ -361,6 +388,7 @@ namespace
         SendAddon(player, "B");
         SendBatched(player, "D,", instances);
         SendBatched(player, "F,", bosses);
+        SendBatched(player, "W,", wings);
         SendAddon(player, "Z");
     }
 }

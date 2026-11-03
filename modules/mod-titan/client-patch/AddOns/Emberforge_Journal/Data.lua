@@ -368,7 +368,11 @@ EmberforgeJournalLore = {
         "Agamaggan's resting place. Recently, scouts have reported seeing undead " ..
         "milling about the region, engendering fears that the dreaded Scourge may be " ..
         "moving to conquer Kalimdor.",
-    [189] ="PH",
+    [189] =
+        "The Crusade's fanatical leaders direct their followers from the Scarlet " ..
+        "Cathedral, at the heart of the monastery grounds. This heavily guarded " ..
+        "location functions as the order's headquarters, and some of the most zealous " ..
+        "and intolerant crusaders roam the halls of this once-hallowed place.",
     [209] =
         "Zul'Farrak was once the shining jewel of Tanaris, ferociously protected by " ..
         "the cunning Sandfury tribe. Despite the trolls' tenacity, this isolated " ..
@@ -398,6 +402,13 @@ EmberforgeJournalLore = {
         "Since the world was young, the bronze dragonflight has safeguarded the " ..
         "winding labyrinth, monitoring the shifting timeways to ensure that the " ..
         "delicate balance of time is upheld.",
+    [289] =
+        "Individuals seeking to master the powers of undeath know well of " ..
+        "Scholomance, the infamous school of necromancy located in the dark and " ..
+        "foreboding crypts beneath Caer Darrow. In recent years, several of the " ..
+        "instructors have changed, but the institution remains under the control of " ..
+        "Darkmaster Gandling, a particularly sadistic and insidious practitioner of " ..
+        "necromantic magic.",
     [329] =
         "Stratholme was once the jewel of northern Lordaeron, but today it is " ..
         "remembered for its harrowing fall to ruin. It was here that Prince Arthas " ..

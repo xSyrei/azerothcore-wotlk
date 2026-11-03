@@ -21,12 +21,14 @@ Widget.__index = function(self, key)
     end
 end
 local function NewWidget(name)
-    local widget = setmetatable({ shown = true, scripts = {}, text = "", width = 300, height = 20 }, Widget)
+    local widget = setmetatable({ shown = true, scripts = {}, text = "", width = 300, height = 20, name = name },
+        Widget)
     if name then
         _G[name] = widget
     end
     return widget
 end
+function Widget:GetName() return self.name end
 function Widget:CreateTexture() return NewWidget() end
 function Widget:CreateFontString() return NewWidget() end
 function Widget:SetScript(event, handler) self.scripts[event] = handler end
@@ -153,6 +155,26 @@ for _, row in ipairs(abilities) do
     end
 end
 check(flagged, "abilities show their flags")
+
+-- A wing: Scarlet Monastery's Cathedral lists its own three bosses, not the whole monastery's.
+server("B")
+server("D,164~189~1~0~0~5~30~40~35~45~0~Scarlet Monastery - Cathedral")
+server("F,189~0~Interrogator Vishas~3983;189~0~Bloodmage Thalnos~4543;189~0~Houndmaster Loksey~3974;"
+    .. "189~0~Arcanist Doan~6487;189~0~Herod~3975;189~0~High Inquisitor Fairbanks~4542;"
+    .. "189~0~Scarlet Commander Mograine~3976;189~0~High Inquisitor Whitemane~3977")
+server("W,163~1~2;164~6~8")
+server("Z")
+view.page, view.instance, view.boss, view.difficulty, view.tab = "home", nil, nil, 1, "bosses"
+refresh()
+ui.tiles[1]:Click()
+local names = {}
+for _, row in ipairs(ui.bossList.rows) do
+    if row.shown then
+        names[#names + 1] = row.name.text
+    end
+end
+check(#names == 3 and names[1] == "High Inquisitor Fairbanks", "a wing lists its own bosses only")
+check(EmberforgeJournalLore[189] and EmberforgeJournalLore[189] ~= "PH", "the old Scarlet Monastery has a story")
 
 print(failures == 0 and "all passed" or (failures .. " failed"))
 os.exit(failures == 0 and 0 or 1)

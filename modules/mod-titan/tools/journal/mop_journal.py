@@ -47,6 +47,8 @@ CATACLYSM_MAPS = {643, 644, 645, 657, 669, 670, 671, 720, 725, 754, 755, 757, 85
 REBUILT = {33, 36}
 # Old maps whose Journal entry moved to a rebuilt map: (old map, the Journal's art name).
 OLD_ART = {289: 'SCHOLOMANCE', 309: 'ZULGURUB'}
+# Old maps whose story is their rebuilt version's (the old one's is a placeholder, or missing): old map -> map.
+OLD_STORY = {189: 1004, 289: 1007}
 # Raids the Journal does not have: the dungeon finder's background (Interface\LFGFrame\UI-LFG-BACKGROUND-<name>).
 LFG_ART = {
     409: 'MOLTENCORE', 469: 'BLACKWINGLAIR', 509: 'AQRUINS', 531: 'AQTEMPLE', 533: 'NAXXRAMAS', 532: 'KARAZHAN',
@@ -276,6 +278,7 @@ def main():
     instances = Dbc(dbc / 'JournalInstance.dbc')
     maps = {}           # Journal instance -> map, for the ones written
     art_by_map, lore_by_map = {}, {}
+    stories = {row[1]: resolve(instances.text(row[7]), spells) for row in instances.rows}
     for row in instances.rows:
         instance, map_id = row[0], row[1]
         # Cataclysm's new maps and Mists of Pandaria's (its rebuilt Scholomance and Scarlet Monastery among them)
@@ -283,9 +286,13 @@ def main():
             continue
         button, lore = files.get(row[3], ''), files.get(row[5], '')
         art_by_map[map_id] = {'button': art(button), 'lore': art(lore)}
-        if map_id not in REBUILT:
-            lore_by_map[map_id] = resolve(instances.text(row[7]), spells)
+        story = resolve(instances.text(row[7]), spells)
+        if map_id not in REBUILT and len(story) > 20:       # not a placeholder ("PH")
+            lore_by_map[map_id] = story
             maps[instance] = map_id
+    for map_id, source in OLD_STORY.items():
+        if map_id not in lore_by_map and len(stories.get(source, '')) > 20:
+            lore_by_map[map_id] = stories[source]
     for map_id, name in OLD_ART.items():
         art_by_map[map_id] = {'button': art(f'UI-EJ-DUNGEONBUTTON-{name}.blp'),
                               'lore': art(f'UI-EJ-LOREBG-{name}.blp')}
