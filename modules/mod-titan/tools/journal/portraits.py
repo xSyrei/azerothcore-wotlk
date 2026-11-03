@@ -55,6 +55,9 @@ STAND_INS = {
     'Reliquary of Souls': 23418,        # the Essence of Suffering
     'Opera Event': 17521,               # the Big Bad Wolf
 }
+# Bosses whose translucent layers reaching past their solid ones are their body, not effects: Viscidus's slime
+# (around his solid bones).
+KEEP_EFFECTS = {'Viscidus'}
 
 
 class Files:
@@ -372,12 +375,41 @@ def draw(parts, view, angle):
     return np.clip(image, 0, 1)
 
 
+def strip_effects(part, angle):
+    """Leaves out the part's effects: translucent or glowing layers reaching well beyond its solid body (opaque and
+    alpha-tested layers), as Kil'jaeden's walls of fire. Those within it are its body (Viscidus's slime); a model
+    with next to no solid layers (Algalon, made of light) keeps them all."""
+    solid = np.zeros(len(part.pos), bool)
+    for section, _, _, blend, _, _ in part.draws:
+        if blend <= 1:
+            solid[part.model.rows(section)] = True
+    if solid.sum() < 0.1 * len(part.pos):
+        return
+    sx, sy, _, _ = project(part.pos, angle)
+    width, height = np.ptp(sx[solid]), np.ptp(sy[solid])
+    kept = []
+    for draw_ in part.draws:
+        section, blend = draw_[0], draw_[3]
+        rows = part.model.rows(section)
+        if blend >= 2 and len(rows) and (np.ptp(sx[rows]) > width * 1.3 or np.ptp(sy[rows]) > height * 1.3):
+            continue
+        kept.append(draw_)
+    part.draws = kept
+
+
 def frame(parts, model, angle):
     """The view, 2:1: the head (the vertices its bone and the bones under it move) and the shoulders, the picture
     2.3 times the head's height, the head's top a little under the picture's."""
     body = parts[0]
     sx, sy, _, _ = project(body.pos, angle)
-    every = np.concatenate([p.pos for p in parts])
+    # What is drawn (strip_effects has left the effects out).
+    solid = []
+    for part in parts:
+        keep = np.zeros(len(part.pos), bool)
+        for section, *_ in part.draws:
+            keep[part.model.rows(section)] = True
+        solid.append(part.pos[keep] if keep.any() else part.pos)
+    every = np.concatenate(solid)
     ex, ey, _, _ = project(every, angle)
     height = np.ptp(ey)
     head = model.key_bones[KEY_HEAD] if KEY_HEAD < len(model.key_bones) else -1
@@ -395,8 +427,8 @@ def frame(parts, model, angle):
         hx, pz = float(px[0]), float(pz[0])
         top = float(sy[mask].max())
         width = max(float(np.ptp(sx[mask])), 1e-3)
-        for part in parts[1:]:
-            ox, oy, _, _ = project(part.pos, angle)
+        for part in solid[1:]:
+            ox, oy, _, _ = project(part, angle)
             near = np.abs(ox - hx) < width
             if near.any():
                 top = max(top, float(oy[near].max()))
@@ -612,8 +644,11 @@ class Client:
         return [Part(model, textures, transform=where)]
 
 
-def render(client, display_id):
+def render(client, display_id, keep_effects=False):
     parts, model = client.creature(display_id)
+    for part in parts:
+        if not keep_effects:
+            strip_effects(part, ANGLE)
     view = frame(parts, model, ANGLE)
     return finish(draw(parts, view, ANGLE))
 
@@ -635,7 +670,7 @@ def main():
             failed.append(f'{name} (no model)')
             continue
         try:
-            picture = render(client, display)
+            picture = render(client, display, name in KEEP_EFFECTS)
         except (FileNotFoundError, KeyError, ValueError, IndexError, struct.error) as error:
             failed.append(f'{name} ({type(error).__name__}: {error})')
             continue
