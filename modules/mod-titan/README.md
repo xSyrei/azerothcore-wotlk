@@ -306,11 +306,14 @@ Strength to 2 attack power and Agility to 1 ranged attack power:
 ## Dungeon Journal
 `/journal` or `/dj` (the `Emberforge_Journal` addon, `client-patch/AddOns/`; server side `src/journal.cpp`, addon
 whispers with prefix `EFDJ`), laid out as Cataclysm's: a home page per expansion (its name the title, Dungeons and
-Raids tabs, a search box, a grid of tiles), then an open book per instance (left: its type, creature levels as the
-world database has them after the level squish, map, and each difficulty with its size, queue levels and dungeon
-ID; right: difficulty buttons and its bosses, `DungeonEncounter.dbc`, each with its creature's model as portrait),
-and a boss page (the list on the left, the boss's model on the right). Breadcrumbs go back. Its art is 3.3.5's own
-(the Achievement window's parchment, the creatures' models); Cataclysm's thumbnails and portraits can replace it.
+Raids tabs, a search box, a grid of tiles), then an open book per instance (left: its plate and details, creature
+levels as the world database has them after the level squish, map, each difficulty with its size, queue levels and
+dungeon ID; right, by the tabs on the book's edge: its bosses, each with its creature's model as portrait, or all
+its loot), and a page per boss (left: its model, level, classification and health; right: its abilities or its
+loot). Abilities are the spells of the boss's C++ script file (`titan_journal_abilities`, written by
+`tools/journal/abilities.py`) and its SmartAI casts, shown with the client's own descriptions; loot is its creature
+and reference loot, uncommon gear and up. The server sends every boss's creature query response with the list, so
+the client can draw the models. Each instance's art (its loading screen) goes in `Art.lua`.
 
 ## Level and power squish
 The game ends on Classic's numbers: the new level 60 is today's level 60 in power (`MaxPlayerLevel = 60`). Classic
