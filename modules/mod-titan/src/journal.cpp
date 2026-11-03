@@ -27,6 +27,7 @@
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include <algorithm>
+#include <cctype>
 #include <map>
 #include <string_view>
 #include <tuple>
@@ -128,14 +129,20 @@ namespace
         return levels;
     }
 
-    // A boss's creature: the one of its name spawned on its map, else any of its name (0: none).
+    // A boss's creature: the one of its name (any case) spawned on its map, else any of its name (0: none).
     uint32 BossEntry(uint32 mapId, std::string const& name)
     {
-        static std::unordered_map<std::string, std::vector<uint32>> const byName = []
+        // By name in lowercase: the encounters' names and the creatures' differ in case (Rhahk'zor, Rhahk'Zor).
+        auto lower = [](std::string text)
+        {
+            std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) { return std::tolower(c); });
+            return text;
+        };
+        static std::unordered_map<std::string, std::vector<uint32>> const byName = [&lower]
         {
             std::unordered_map<std::string, std::vector<uint32>> result;
             for (auto const& [entry, creature] : *sObjectMgr->GetCreatureTemplates())
-                result[creature.Name].push_back(entry);
+                result[lower(creature.Name)].push_back(entry);
             return result;
         }();
         static std::unordered_set<uint64> const spawned = []
@@ -146,7 +153,7 @@ namespace
             return result;
         }();
 
-        auto itr = byName.find(name);
+        auto itr = byName.find(lower(name));
         if (itr == byName.end())
             return 0;
         for (uint32 entry : itr->second)

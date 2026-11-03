@@ -209,13 +209,38 @@ local CELL_FILL, CELL_EDGE = { 0.075, 0.055, 0.043, 0.96 }, { 0.38, 0.29, 0.16, 
 local ON_FILL, ON_EDGE = { 0.3, 0.13, 0.03, 0.96 }, { 1, 0.72, 0.32, 1 }
 
 -- A creature's model in a frame (PlayerModel:SetCreature); portrait: the face camera.
+-- A humanoid's skin (its baked texture) loads after its model: drawn at once, it is white. So the creature is
+-- set again a moment later, a few times (and its face camera with it).
+local RELOADS = { 0.1, 0.5, 1.5 }
+local pending = {}
+local function SetModel(model, creature, portrait)
+    pcall(model.SetCreature, model, creature)
+    if portrait and model.SetCamera then
+        pcall(model.SetCamera, model, 0)
+    end
+end
+local reloader = CreateFrame("Frame")
+reloader:SetScript("OnUpdate", function(_, elapsed)
+    for model, state in pairs(pending) do
+        state.time = state.time + elapsed
+        if state.time >= RELOADS[state.step] then
+            if model:IsVisible() then
+                SetModel(model, state.creature, state.portrait)
+            end
+            state.step = state.step + 1
+            if not RELOADS[state.step] then
+                pending[model] = nil
+            end
+        end
+    end
+end)
+
 local function ShowCreature(model, creature, portrait)
     model:ClearModel()
+    pending[model] = nil
     if creature and creature > 0 and model.SetCreature then
-        pcall(model.SetCreature, model, creature)
-        if portrait and model.SetCamera then
-            pcall(model.SetCamera, model, 0)
-        end
+        SetModel(model, creature, portrait)
+        pending[model] = { creature = creature, portrait = portrait, time = 0, step = 1 }
     end
 end
 
@@ -817,8 +842,7 @@ do
 end
 
 -- The bosses' models, one a visible row with no Journal portrait: on the right page, over the list, placed by
--- hand at their row (the list's scroll taken off) and hidden when their row is scrolled out of sight. The camera
--- is set to the face once the model has loaded (OnUpdate).
+-- hand at their row (the list's scroll taken off) and hidden when their row is scrolled out of sight.
 local function BossModel(index)
     ui.bossModels = ui.bossModels or {}
     local model = ui.bossModels[index]
@@ -834,14 +858,6 @@ local function BossModel(index)
     ring:SetWidth(BOSS_HEIGHT + 2)
     ring:SetHeight(BOSS_HEIGHT + 2)
     ring:SetPoint("CENTER")
-    model:SetScript("OnUpdate", function(self)
-        if self.framing and self.framing > 0 then
-            self.framing = self.framing - 1
-            if self.SetCamera then
-                pcall(self.SetCamera, self, 0)
-            end
-        end
-    end)
     ui.bossModels[index] = model
     return model
 end
@@ -866,7 +882,6 @@ local function PlaceBossModels()
                     model:Show()
                     model.creature = row.creature
                     ShowCreature(model, row.creature, true)
-                    model.framing = 10
                 end
             end
         end
