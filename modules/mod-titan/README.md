@@ -327,6 +327,14 @@ run any number of times. After an update puts original values back (a core updat
 60 are simply out of reach; Death Knight abilities learned above 60 too), creature spells with fixed damage, items
 with no required level, and dungeon level ranges (with the dungeon scaling).
 
+## Dungeon scaling (mod-autobalance)
+`modules/mod-autobalance` is AzerothCore's AutoBalance module, vendored unchanged except its config: it scales
+instance creatures by player count and by level. Emberforge sets `AutoBalance.LevelScaling.SkipHigherLevels` and
+`SkipLowerLevels` to 0 (in `conf/AutoBalance.conf.dist`), so every dungeon scales to the group, up or down; its
+"dynamic" method keeps trash a little under and bosses a little over the group's highest level. Its commands:
+`.ab mapstat`, `.ab creaturestat` (on a target). Still to come on top of it: every dungeon queueable from 10 to 60,
+Heroic for every dungeon at 60 (Classic's included), and Heroic loot.
+
 ## Core changes this module relies on
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.

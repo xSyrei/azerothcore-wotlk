@@ -754,8 +754,10 @@ AutoBalance.LevelScaling.Method="dynamic"
 #        To disable this feature entirely and scale all lower-level instances, set this to 0.
 #
 #        Default: 5
-AutoBalance.LevelScaling.SkipHigherLevels = 3
-AutoBalance.LevelScaling.SkipLowerLevels = 5
+#        Project Emberforge: 0 and 0, every dungeon scales to the group, up or down (every dungeon is
+#        queueable from 10 to 60 after the level squish, mod-titan).
+AutoBalance.LevelScaling.SkipHigherLevels = 0
+AutoBalance.LevelScaling.SkipLowerLevels = 0
 
 #
 #     AutoBalance.LevelScaling.DynamicLevel.Ceiling.*
