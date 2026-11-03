@@ -6,7 +6,7 @@
 -- - An instance: an open book. Left page: its picture, its story and details (type, expansion, creature levels as
 --   the server has them after the level squish, map, each difficulty with its size, queue levels and dungeon ID).
 --   Right page: its difficulty buttons and, by the tabs on the book's edge, its Bosses (each with its Journal
---   portrait, else its default one) or its Loot (every boss's).
+--   portrait, else its model's face, else the Journal's default portrait) or its Loot (every boss's).
 -- - A boss: left page its model (drag to turn it), level, classification, health and story; right page its
 --   Abilities (the Journal's: headings, each ability's icon, its flags (tank, healer, heroic, interruptible...) and
 --   text; else the spells its script casts, with the client's own descriptions) or its Loot.
@@ -816,6 +816,71 @@ do
     end
 end
 
+-- The bosses' models, one a visible row with no Journal portrait: on the right page, over the list, placed by
+-- hand at their row (the list's scroll taken off) and hidden when their row is scrolled out of sight. The camera
+-- is set to the face once the model has loaded (OnUpdate).
+local function BossModel(index)
+    ui.bossModels = ui.bossModels or {}
+    local model = ui.bossModels[index]
+    if model then
+        return model
+    end
+    model = CreateFrame("PlayerModel", nil, ui.right)
+    model:SetWidth(BOSS_HEIGHT - 6)
+    model:SetHeight(BOSS_HEIGHT - 6)
+    model:SetFrameLevel(ui.bossList.child:GetFrameLevel() + 10)
+    local ring = model:CreateTexture(nil, "OVERLAY")
+    ring:SetTexture(ART .. "Ring")
+    ring:SetWidth(BOSS_HEIGHT + 2)
+    ring:SetHeight(BOSS_HEIGHT + 2)
+    ring:SetPoint("CENTER")
+    model:SetScript("OnUpdate", function(self)
+        if self.framing and self.framing > 0 then
+            self.framing = self.framing - 1
+            if self.SetCamera then
+                pcall(self.SetCamera, self, 0)
+            end
+        end
+    end)
+    ui.bossModels[index] = model
+    return model
+end
+
+local function PlaceBossModels()
+    local list = ui.bossList
+    local models = ui.bossModels or {}
+    for _, model in pairs(models) do
+        model.wanted = false
+    end
+    if list.scroll:IsShown() then
+        local offset = list.scroll:GetVerticalScroll() or 0
+        local height = list.scroll:GetHeight() or 0
+        for index, row in ipairs(list.rows) do
+            local top = (index - 1) * (BOSS_HEIGHT + 4) - offset
+            if row:IsShown() and row.creature and top >= -1 and top + BOSS_HEIGHT <= height + 1 then
+                local model = BossModel(index)
+                model:ClearAllPoints()
+                model:SetPoint("TOPLEFT", list.scroll, "TOPLEFT", 3, -(top + 3))
+                model.wanted = true
+                if not model:IsShown() or model.creature ~= row.creature then
+                    model:Show()
+                    model.creature = row.creature
+                    ShowCreature(model, row.creature, true)
+                    model.framing = 10
+                end
+            end
+        end
+    end
+    for _, model in pairs(models) do
+        if not model.wanted then
+            model:Hide()
+            model.creature = nil
+        end
+    end
+end
+
+ui.bossList.scroll:HookScript("OnVerticalScroll", PlaceBossModels)
+
 -- Rows.
 local function BossRow(index)
     local list = ui.bossList
@@ -826,7 +891,13 @@ local function BossRow(index)
     row = CreateFrame("Button", nil, list.child)
     row:SetHeight(BOSS_HEIGHT)
     Box(row, CELL_FILL, CELL_EDGE)
-    -- The Journal's portrait (its default one when it has none: models in a scrolling list draw out of place).
+    -- Its portrait: the Journal's, else its model's face (BossModels: drawn over the list, as models in a
+    -- scrolling list draw out of place), else the Journal's default one. Under the model, a dark round.
+    row.back = row:CreateTexture(nil, "BORDER")
+    row.back:SetTexture(0, 0, 0, 0.9)
+    row.back:SetPoint("LEFT", 3, 0)
+    row.back:SetWidth(BOSS_HEIGHT - 6)
+    row.back:SetHeight(BOSS_HEIGHT - 6)
     row.art = row:CreateTexture(nil, "ARTWORK")
     row.art:SetWidth(BOSS_HEIGHT * 2)
     row.art:SetHeight(BOSS_HEIGHT)
@@ -1194,9 +1265,23 @@ local function RefreshBook()
             local row = BossRow(index)
             row.index = index
             row.name:SetText(boss.name)
-            row.art:SetTexture(Portrait(instance.map, boss.name) or (JOURNAL_ART .. "UI-EJ-BOSS-Default"))
+            local portrait = Portrait(instance.map, boss.name)
+            row.creature = not portrait and boss.creature > 0 and boss.creature or nil
+            row.art:SetTexture(portrait or (JOURNAL_ART .. "UI-EJ-BOSS-Default"))
+            if row.creature then
+                row.art:Hide()
+                row.back:Show()
+            else
+                row.art:Show()
+                row.back:Hide()
+            end
         end
         Stack(ui.bossList, #bosses)
+        for index, row in ipairs(ui.bossList.rows) do
+            row.name:ClearAllPoints()
+            row.name:SetPoint("LEFT", row, "LEFT", row.creature and (BOSS_HEIGHT + 10) or (BOSS_HEIGHT * 2 + 6), 0)
+            row.name:SetPoint("RIGHT", -10, 0)
+        end
         if #bosses == 0 then
             ui.empty:SetText("No bosses listed")
         end
@@ -1224,6 +1309,7 @@ local function RefreshBook()
             ui.empty:SetText("No abilities listed")
         end
     end
+    PlaceBossModels()
 end
 
 local function RefreshCrumbs()
@@ -1252,6 +1338,11 @@ function Refresh()
     if view.page == "home" then
         ui.home:Show()
         ui.book:Hide()
+        -- The models are set again when the book shows (a hidden model can lose its own).
+        for _, model in pairs(ui.bossModels or {}) do
+            model:Hide()
+            model.creature = nil
+        end
         RefreshHome()
     else
         ui.home:Hide()

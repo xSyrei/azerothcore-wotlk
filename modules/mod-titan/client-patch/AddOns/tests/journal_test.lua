@@ -29,6 +29,7 @@ local function NewWidget(name)
     return widget
 end
 function Widget:GetName() return self.name end
+function Widget:GetFrameLevel() return 1 end
 function Widget:CreateTexture() return NewWidget() end
 function Widget:CreateFontString() return NewWidget() end
 function Widget:SetScript(event, handler) self.scripts[event] = handler end
@@ -129,19 +130,25 @@ frame:Show()
 check(sent[#sent] and sent[#sent][2] == "LIST", "opening the Journal asks the server for the list")
 server("B")
 server("D,1~43~1~0~0~5~15~25~15~25~0~Wailing Caverns")
-server("F,43~0~Lady Anacondra~3671;43~0~Mutanus the Devourer~3654;43~0~Unknown Boss~0")
+server("F,43~0~Deviate Faerie Dragon~5912;43~0~Mutanus the Devourer~3654;43~0~Unknown Boss~0")
 server("Z")
 local tile = ui.tiles[1]
 check(tile and tile.shown and tile.name.text == "Wailing Caverns", "its tile is on the home page")
 check(tile.fill.texture:find("UI%-EJ%-DUNGEONBUTTON%-WailingCaverns"), "the tile shows the Journal's button art")
 
 -- The instance: its picture and story, its bosses with the Journal's portraits (a model when there is none).
+ui.bossList.scroll.height = 400     -- room for the rows (the mock's frames are 20 high)
 tile:Click()
 check(ui.plate.fill.texture:find("UI%-EJ%-LOREBG%-WailingCaverns"), "the instance page shows its Journal picture")
 check(ui.about.shown and EmberforgeJournalLore[43] ~= nil, "the instance has its Journal story")
 local rows = ui.bossList.rows
 check(rows[2].art.shown and rows[2].art.texture:find("UI%-EJ%-BOSS%-Mutanus"), "a boss row shows its portrait")
-check(rows[3].art.texture:find("UI%-EJ%-BOSS%-Default"), "a boss without a portrait gets the default one")
+check(not rows[1].art.shown and rows[1].creature == 5912, "a boss with no portrait shows its model")
+check(rows[3].art.shown and rows[3].art.texture:find("UI%-EJ%-BOSS%-Default"),
+    "a boss with neither gets the default portrait")
+local models = ui.bossModels or {}
+check(models[1] and models[1].shown and models[1].creature == 5912 and not (models[2] and models[2].shown),
+    "the model is drawn for its row only")
 
 -- A boss: the Journal's abilities, with icons and flags.
 rows[2]:Click()
