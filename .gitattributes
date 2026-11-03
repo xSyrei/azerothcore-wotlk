@@ -8,6 +8,7 @@
 *.blp    binary
 *.png    binary
 *.tga    binary
+*.exe    binary
 *.jpg    binary
 *.m2     binary
 *.skin   binary
