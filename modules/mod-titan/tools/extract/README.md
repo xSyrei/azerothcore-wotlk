@@ -13,11 +13,17 @@ In PowerShell, from a folder with room to spare (it writes `EmberforgeExtract\` 
 & "$HOME\azerothcore-wotlk\modules\mod-titan\tools\extract\EmberforgeExtract.exe" "C:\Firestorm\Mists of Pandaria\Data"
 ```
 
-With no list it takes the built-in patterns: the Dungeon Journal's art (`Interface\EncounterJournal\*`), the
-character pane's (`Interface\PaperDollInfoFrame\*`), the dungeon finder's (`Interface\LFGFrame\*`), the loading
-screens (`Interface\Glues\LoadingScreens\*`) and the client's data tables (`DBFilesClient\*`). A second argument
-names a text file of patterns instead, one a line (`*` and `?` wildcards, `#` comments; `-` keeps the built-in
-ones). `manifest.txt` lists what was written and from which archive.
+With no list it takes the built-in patterns, in this order: the Dungeon Journal's tables (`DBFilesClient\Journal*`,
+DungeonEncounter, Map, MapDifficulty, LfgDungeons, AreaTable) and art (`Interface\EncounterJournal\*`), the dungeon
+finder's art (`Interface\LFGFrame\*`), the character pane's (`Interface\PaperDollInfoFrame\*`), the rest of the
+client's data tables (`DBFilesClient\*`) and the loading screens (`Interface\Glues\LoadingScreens\*`). A second
+argument names a text file of patterns instead, one a line (`*` and `?` wildcards, `#` comments; `-` keeps the
+built-in ones).
+
+Besides the `EmberforgeExtract\` folder, it packs the same files into zips small enough to upload,
+`EmberforgeExtract-part1.zip`, `-part2.zip`..., filled in the patterns' order, so part 1 holds what is needed first.
+Parts are at most 24 MB; a fourth argument sets another size in MB (`- enUS 50`). `manifest.txt` lists each file, the
+part holding it and the archive it came from.
 
 Only English (`enUS`) text is read: a client with several languages installed (`deDE`, `frFR`...) would
 otherwise mix them. A third argument picks another language, e.g. `- enGB`.
