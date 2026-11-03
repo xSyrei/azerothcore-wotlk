@@ -12,6 +12,7 @@
 !/modules/*.h
 !/modules/*.cmake
 !/modules/mod-titan/
+!/modules/mod-autobalance/
 /build*/
 /var/*
 !/var/build/.gitkeep
