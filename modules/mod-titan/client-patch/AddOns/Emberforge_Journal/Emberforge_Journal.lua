@@ -2,18 +2,23 @@
 --
 -- - Home: the expansion's name as the title (click it to choose Classic, the Burning Crusade or Wrath), Dungeons and
 --   Raids tabs, a search box, and a grid of tiles, one per dungeon or raid, with its creature levels.
--- - An instance: an open book. Left page: the instance (type, expansion, creature levels as the server has them after
---   the level squish, map, each difficulty with its size, queue levels and dungeon ID). Right page: its difficulty
---   buttons and its bosses, each with its portrait (the creature's own model).
--- - A boss: the boss list moves to the left page, the boss's model fills the right one (drag to turn it).
--- The breadcrumbs (Home, the instance, the boss) go back. The art is 3.3.5's own (the Achievement window's parchment,
--- the creatures' models): Cataclysm's thumbnails and portraits are not in this client.
+-- - An instance: an open book. Left page: its plate (its art where Art.lua has it) and details (type, expansion,
+--   creature levels as the server has them after the level squish, map, each difficulty with its size, queue levels
+--   and dungeon ID). Right page: its difficulty buttons and, by the tabs on the book's edge, its Bosses (each with
+--   its portrait, the creature's own model) or its Loot (every boss's).
+-- - A boss: left page its model (drag to turn it), level, classification and health; right page its Abilities (the
+--   spells its script casts, with the client's own descriptions) or its Loot.
+-- The breadcrumbs (Home, the instance, the boss) go back. The lists scroll. The art is 3.3.5's own: the Achievement
+-- window's parchment, the creatures' models, and the instances' loading screens (EmberforgeJournalArt, by map).
 --
 -- The server (mod-titan, src/journal.cpp) sends the data as addon whispers to the player, prefix EFDJ:
 --   to server     LIST
 --   from server   B   D,<lfg id>~<map>~<type>~<expansion>~<difficulty>~<players>~<creature min>~<creature max>
 --                       ~<queue min>~<queue max>~<seasonal>~<name>;...
 --                     F,<map>~<difficulty>~<boss>~<creature entry>;...   Z
+--   to server     BOSS,<map>,<difficulty>
+--   from server   I,<boss>~<entry>~<level>~<rank>~<health>~<type>;...   A,<boss>~<spell>;...
+--                 L,<boss>~<item>~<quality>~<slot>~<class>~<subclass>~<name>;...   Y,<map>~<difficulty>
 
 local PREFIX = "EFDJ"
 local ART = "Interface\\AddOns\\Emberforge_Resources\\Art\\"
@@ -33,8 +38,9 @@ local TINTS = {
 }
 local TYPES = { [1] = "Dungeon", [2] = "Raid" }
 
-local data = { instances = {}, order = {}, bosses = {}, loaded = false, loading = false }
-local view = { page = "home", expansion = 0, type = 1, instance = nil, difficulty = 1, boss = nil, search = "" }
+local data = { instances = {}, order = {}, bosses = {}, details = {}, loaded = false, loading = false }
+local view = { page = "home", expansion = 0, type = 1, instance = nil, difficulty = 1, boss = nil, search = "",
+    tab = "bosses" }
 local frame, Refresh
 
 local function Send(message)
@@ -71,6 +77,35 @@ local function OnServerMessage(message)
             data.bosses[key] = data.bosses[key] or {}
             tinsert(data.bosses[key], { name = boss, creature = tonumber(creature) or 0 })
         end
+    elseif kind == "I" or kind == "A" or kind == "L" then
+        -- One instance's details, for the difficulty asked last (its Y names it).
+        data.incoming = data.incoming or { info = {}, abilities = {}, loot = {} }
+        for entry in message:sub(3):gmatch("[^;]+") do
+            if kind == "I" then
+                local boss, creature, level, rank, health, creatureType = strsplit("~", entry)
+                data.incoming.info[tonumber(boss)] = { entry = tonumber(creature), level = tonumber(level),
+                    rank = tonumber(rank), health = tonumber(health), type = tonumber(creatureType) }
+            elseif kind == "A" then
+                local boss, spell = strsplit("~", entry)
+                boss = tonumber(boss)
+                data.incoming.abilities[boss] = data.incoming.abilities[boss] or {}
+                tinsert(data.incoming.abilities[boss], tonumber(spell))
+            else
+                local boss, item, quality, slot, class, subclass, name = strsplit("~", entry, 7)
+                tinsert(data.incoming.loot, { boss = tonumber(boss), id = tonumber(item), quality = tonumber(quality),
+                    slot = tonumber(slot), class = tonumber(class), subclass = tonumber(subclass), name = name })
+            end
+        end
+    elseif kind == "Y" then
+        local map, difficulty = strsplit("~", message:sub(3))
+        local details = data.details[map .. ":" .. difficulty]
+        local incoming = data.incoming or { info = {}, abilities = {}, loot = {} }
+        data.incoming = nil
+        if details then
+            details.info, details.abilities, details.loot, details.ready = incoming.info, incoming.abilities,
+                incoming.loot, true
+        end
+        Refresh()
     elseif message == "Z" then
         table.sort(data.order, function(a, b)
             if a.low ~= b.low then
@@ -372,7 +407,8 @@ local function Tile(index)
     hover:SetPoint("TOPLEFT", 3, -3)
     hover:SetPoint("BOTTOMRIGHT", -3, 3)
     tile:SetScript("OnClick", function(self)
-        view.page, view.instance, view.boss, view.difficulty = "instance", self.instance.key, nil, 1
+        view.page, view.instance, view.boss, view.difficulty, view.tab = "instance", self.instance.key, nil, 1,
+            "bosses"
         Refresh()
     end)
     ui.tiles[index] = tile
@@ -407,8 +443,18 @@ local function RefreshHome()
     for index, instance in ipairs(shown) do
         local tile = Tile(index)
         local colors = TINTS[instance.expansion]
-        tile.fill:SetGradientAlpha("VERTICAL", colors[2][1], colors[2][2], colors[2][3], 1,
-            colors[1][1], colors[1][2], colors[1][3], 1)
+        local art = EmberforgeJournalArt and EmberforgeJournalArt[instance.map]
+        if art then
+            -- The instance's own art (its loading screen), its middle band.
+            tile.fill:SetTexture(art)
+            tile.fill:SetTexCoord(0, 1, 0.3, 0.6)
+            tile.fill:SetVertexColor(0.85, 0.85, 0.85)
+        else
+            tile.fill:SetTexture(1, 1, 1, 1)
+            tile.fill:SetTexCoord(0, 1, 0, 1)
+            tile.fill:SetGradientAlpha("VERTICAL", colors[2][1], colors[2][2], colors[2][3], 1,
+                colors[1][1], colors[1][2], colors[1][3], 1)
+        end
         tile.name:SetText(instance.name)
         tile.levels:SetText((instance.seasonal and "Holiday event, " or "") .. "Level "
             .. Levels(instance.low, instance.high))
@@ -422,10 +468,82 @@ local function RefreshHome()
 end
 
 -- The book -------------------------------------------------------------------------------------------------------
+-- Two pages: the instance page (left: its plate and details; right: Bosses or Loot) and the boss page (left: its
+-- model and details; right: Abilities or Loot). Tabs on the book's right edge switch the right page.
+local SLOT_NAMES = {
+    [1] = "Head", [2] = "Neck", [3] = "Shoulder", [4] = "Shirt", [5] = "Chest", [6] = "Waist", [7] = "Legs",
+    [8] = "Feet", [9] = "Wrist", [10] = "Hands", [11] = "Finger", [12] = "Trinket", [13] = "One-Hand",
+    [14] = "Off Hand", [15] = "Ranged", [16] = "Back", [17] = "Two-Hand", [18] = "Bag", [19] = "Tabard",
+    [20] = "Chest", [21] = "Main Hand", [22] = "Off Hand", [23] = "Held In Off-hand", [25] = "Thrown",
+    [26] = "Ranged", [28] = "Relic",
+}
+local WEAPON_TYPES = { [0] = "Axe", [1] = "Axe", [2] = "Bow", [3] = "Gun", [4] = "Mace", [5] = "Mace",
+    [6] = "Polearm", [7] = "Sword", [8] = "Sword", [10] = "Staff", [13] = "Fist Weapon", [15] = "Dagger",
+    [16] = "Thrown", [18] = "Crossbow", [19] = "Wand", [20] = "Fishing Pole" }
+local ARMOR_TYPES = { [1] = "Cloth", [2] = "Leather", [3] = "Mail", [4] = "Plate", [6] = "Shield", [7] = "Libram",
+    [8] = "Idol", [9] = "Totem", [10] = "Sigil" }
+local RANKS = { [0] = "Normal", [1] = "Elite", [2] = "Rare Elite", [3] = "Boss", [4] = "Rare" }
+local CREATURE_TYPES = { [1] = "Beast", [2] = "Dragonkin", [3] = "Demon", [4] = "Elemental", [5] = "Giant",
+    [6] = "Undead", [7] = "Humanoid", [8] = "Critter", [9] = "Mechanical", [10] = "Not specified", [11] = "Totem",
+    [12] = "Non-combat Pet", [13] = "Gas Cloud" }
+
+-- A scrolling list on a page: rows are frames stacked in its child, the scrollbar on its right.
+local lists = 0
+local function List(page, top)
+    lists = lists + 1
+    local scroll = CreateFrame("ScrollFrame", "EmberforgeJournalList" .. lists, page, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 12, top)
+    scroll:SetPoint("BOTTOMRIGHT", -30, 14)
+    local child = CreateFrame("Frame", nil, scroll)
+    child:SetWidth(10)
+    child:SetHeight(10)
+    scroll:SetScrollChild(child)
+    scroll:SetScript("OnSizeChanged", function(self, width) child:SetWidth(width) end)
+    return { scroll = scroll, child = child, rows = {} }
+end
+
+local function ListShown(list, shown)
+    if shown then
+        list.scroll:Show()
+    else
+        list.scroll:Hide()
+    end
+end
+
+-- Stacks a list's rows (those shown) and sets its height.
+local function Stack(list, count)
+    local y = 0
+    for index, row in ipairs(list.rows) do
+        if index <= count then
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", list.child, "TOPLEFT", 0, -y)
+            row:SetPoint("RIGHT", list.child, "RIGHT", 0, 0)
+            row:Show()
+            y = y + row:GetHeight() + 4
+        else
+            row:Hide()
+        end
+    end
+    list.child:SetHeight(math.max(1, y))
+    list.scroll:UpdateScrollChildRect()
+end
+
+-- A spell's description, read from a hidden tooltip (the client resolves its numbers).
+local scan = CreateFrame("GameTooltip", "EmberforgeJournalScan", UIParent, "GameTooltipTemplate")
+local function SpellDescription(spell)
+    scan:SetOwner(WorldFrame, "ANCHOR_NONE")
+    scan:ClearLines()
+    scan:SetHyperlink("spell:" .. spell)
+    local lines = scan:NumLines()
+    local text = lines > 1 and _G["EmberforgeJournalScanTextLeft" .. lines]:GetText()
+    scan:Hide()
+    return text
+end
+
 do
     local book = CreateFrame("Frame", nil, frame)
     book:SetPoint("TOPLEFT", 16, -64)
-    book:SetPoint("BOTTOMRIGHT", -16, 16)
+    book:SetPoint("BOTTOMRIGHT", -44, 16)
     Box(book, { 0.16, 0.09, 0.04, 1 }, { 0.55, 0.38, 0.18, 1 })
     ui.book = book
     local pages = {}
@@ -435,51 +553,48 @@ do
         page:SetPoint("BOTTOM", 0, 8)
         page:SetPoint(side, side == "LEFT" and 8 or -8, 0)
         page:SetPoint(side == "LEFT" and "RIGHT" or "LEFT", book, "CENTER", side == "LEFT" and -3 or 3, 0)
-        page.paper = page:CreateTexture(nil, "BACKGROUND")
-        page.paper:SetTexture(PARCHMENT)
-        page.paper:SetAllPoints()
-        page.paper:SetVertexColor(1, 0.94, 0.82)
-        -- The spine's shade, deepest at the fold.
+        local paper = page:CreateTexture(nil, "BACKGROUND")
+        paper:SetTexture(PARCHMENT)
+        paper:SetAllPoints()
+        paper:SetVertexColor(1, 0.94, 0.82)
         local shade = page:CreateTexture(nil, "BORDER")
         shade:SetTexture(1, 1, 1, 1)
         shade:SetWidth(36)
         shade:SetPoint("TOP")
         shade:SetPoint("BOTTOM")
+        shade:SetPoint(side == "LEFT" and "RIGHT" or "LEFT")
         if side == "LEFT" then
-            shade:SetPoint("RIGHT")
             shade:SetGradientAlpha("HORIZONTAL", 0, 0, 0, 0, 0, 0, 0, 0.45)
         else
-            shade:SetPoint("LEFT")
             shade:SetGradientAlpha("HORIZONTAL", 0, 0, 0, 0.45, 0, 0, 0, 0)
         end
         pages[index] = page
     end
     ui.left, ui.right = pages[1], pages[2]
 
-    -- Left page, the instance: a framed title plate, then what it is.
+    -- Left page, the instance: its plate (its art when there is any, else its expansion's colors), then its details.
     local plate = CreateFrame("Frame", nil, ui.left)
-    plate:SetHeight(150)
-    plate:SetPoint("TOPLEFT", 16, -16)
-    plate:SetPoint("TOPRIGHT", -16, -16)
+    plate:SetHeight(170)
+    plate:SetPoint("TOPLEFT", 14, -14)
+    plate:SetPoint("TOPRIGHT", -14, -14)
     plate:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16,
         insets = { left = 4, right = 4, top = 4, bottom = 4 } })
     plate:SetBackdropBorderColor(0.8, 0.62, 0.3, 1)
     plate.fill = plate:CreateTexture(nil, "BACKGROUND")
-    plate.fill:SetTexture(1, 1, 1, 1)
     plate.fill:SetPoint("TOPLEFT", 4, -4)
     plate.fill:SetPoint("BOTTOMRIGHT", -4, 4)
     plate.name = plate:CreateFontString(nil, "ARTWORK")
     plate.name:SetFont("Fonts\\MORPHEUS.TTF", 24)
     plate.name:SetShadowOffset(2, -2)
     plate.name:SetTextColor(1, 0.86, 0.45)
-    plate.name:SetPoint("LEFT", 12, 8)
-    plate.name:SetPoint("RIGHT", -12, 8)
+    plate.name:SetPoint("TOPLEFT", 12, -12)
+    plate.name:SetPoint("TOPRIGHT", -12, -12)
     plate.sub = plate:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    plate.sub:SetPoint("TOP", plate.name, "BOTTOM", 0, -8)
+    plate.sub:SetPoint("BOTTOM", 0, 12)
     ui.plate = plate
     local about = ui.left:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    about:SetPoint("TOPLEFT", plate, "BOTTOMLEFT", 6, -14)
-    about:SetPoint("RIGHT", ui.left, "RIGHT", -24, 0)
+    about:SetPoint("TOPLEFT", plate, "BOTTOMLEFT", 6, -12)
+    about:SetPoint("RIGHT", ui.left, "RIGHT", -20, 0)
     about:SetJustifyH("LEFT")
     about:SetJustifyV("TOP")
     about:SetSpacing(4)
@@ -487,36 +602,15 @@ do
     about:SetShadowOffset(0, 0)
     ui.about = about
 
-    -- Right page header: the instance's name and its difficulty buttons.
-    local header = ui.right:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    header:SetPoint("TOPLEFT", 18, -16)
-    header:SetTextColor(unpack(INK))
-    header:SetShadowOffset(0, 0)
-    ui.header = header
-    ui.difficultyButtons = {}
-    for index = 1, 4 do
-        local button = CreateFrame("Button", nil, ui.right)
-        button:SetWidth(34)
-        button:SetHeight(22)
-        button:SetPoint("TOPRIGHT", -16 - (index - 1) * 38, -14)
-        Box(button, CELL_FILL, CELL_EDGE)
-        button.text = button:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-        button.text:SetPoint("CENTER")
-        button:SetScript("OnClick", function(self)
-            view.difficulty, view.boss = self.index, nil
-            Refresh()
-        end)
-        ui.difficultyButtons[index] = button
-    end
-
-    -- The boss model (the boss page's right page): drag to turn it.
-    local model = CreateFrame("PlayerModel", nil, ui.right)
-    model:SetPoint("TOPLEFT", 12, -12)
-    model:SetPoint("BOTTOMRIGHT", -12, 44)
+    -- Left page, the boss: its model (drag to turn it), its name, then its details.
+    local model = CreateFrame("PlayerModel", nil, ui.left)
+    model:SetPoint("TOPLEFT", 14, -14)
+    model:SetPoint("TOPRIGHT", -14, -14)
+    model:SetHeight(250)
     model:EnableMouse(true)
     model:SetScript("OnMouseDown", function(self, button)
         if button == "LeftButton" then
-            self.turning, self.lastX, self.facing = true, GetCursorPosition(), self.facing or 0
+            self.turning, self.lastX = true, GetCursorPosition()
         end
     end)
     model:SetScript("OnMouseUp", function(self) self.turning = false end)
@@ -528,58 +622,214 @@ do
             self:SetFacing(self.facing)
         end
     end)
-    local bossName = ui.right:CreateFontString(nil, "ARTWORK")
+    local backdrop = ui.left:CreateTexture(nil, "BORDER")
+    backdrop:SetTexture(1, 1, 1, 1)
+    backdrop:SetAllPoints(model)
+    backdrop:SetGradientAlpha("VERTICAL", 0.12, 0.07, 0.03, 0.55, 0.35, 0.22, 0.1, 0.25)
+    local bossName = model:CreateFontString(nil, "OVERLAY")
     bossName:SetFont("Fonts\\MORPHEUS.TTF", 22)
     bossName:SetShadowOffset(2, -2)
     bossName:SetTextColor(1, 0.86, 0.45)
-    bossName:SetPoint("BOTTOM", 0, 16)
-    ui.model, ui.bossName = model, bossName
+    bossName:SetPoint("BOTTOM", 0, 8)
+    local bossInfo = ui.left:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    bossInfo:SetPoint("TOPLEFT", model, "BOTTOMLEFT", 6, -12)
+    bossInfo:SetPoint("RIGHT", ui.left, "RIGHT", -20, 0)
+    bossInfo:SetJustifyH("LEFT")
+    bossInfo:SetJustifyV("TOP")
+    bossInfo:SetSpacing(4)
+    bossInfo:SetTextColor(unpack(INK))
+    bossInfo:SetShadowOffset(0, 0)
+    ui.model, ui.modelBack, ui.bossName, ui.bossInfo = model, backdrop, bossName, bossInfo
+
+    -- Right page: its title and the difficulty buttons, then a list.
+    local header = ui.right:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    header:SetPoint("TOPLEFT", 16, -16)
+    header:SetPoint("RIGHT", ui.right, "RIGHT", -170, 0)
+    header:SetJustifyH("LEFT")
+    header:SetTextColor(unpack(INK))
+    header:SetShadowOffset(0, 0)
+    ui.header = header
+    ui.difficultyButtons = {}
+    for index = 1, 4 do
+        local button = CreateFrame("Button", nil, ui.right)
+        button:SetWidth(36)
+        button:SetHeight(22)
+        button:SetPoint("TOPRIGHT", -16 - (index - 1) * 40, -14)
+        Box(button, CELL_FILL, CELL_EDGE)
+        button.text = button:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+        button.text:SetPoint("CENTER")
+        button:SetScript("OnClick", function(self)
+            view.difficulty = self.index
+            Refresh()
+        end)
+        ui.difficultyButtons[index] = button
+    end
+    ui.bossList = List(ui.right, -46)
+    ui.lootList = List(ui.right, -46)
+    ui.abilityList = List(ui.right, -46)
+    ui.empty = ui.right:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    ui.empty:SetPoint("TOP", 0, -80)
+    ui.empty:SetTextColor(unpack(INK))
+    ui.empty:SetShadowOffset(0, 0)
+
+    -- The tabs on the book's right edge: Bosses (Abilities on a boss's page) and Loot.
+    ui.sideTabs = {}
+    for index, info in ipairs({ { "bosses", "Interface\\Icons\\INV_Misc_Bone_HumanSkull_01" },
+        { "loot", "Interface\\Icons\\INV_Box_02" } }) do
+        local tab = CreateFrame("Button", nil, book)
+        tab:SetWidth(40)
+        tab:SetHeight(44)
+        tab:SetPoint("TOPLEFT", book, "TOPRIGHT", -2, -20 - (index - 1) * 50)
+        Box(tab, CELL_FILL, CELL_EDGE)
+        local icon = tab:CreateTexture(nil, "ARTWORK")
+        icon:SetTexture(info[2])
+        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        icon:SetWidth(28)
+        icon:SetHeight(28)
+        icon:SetPoint("CENTER", 1, 0)
+        tab.icon = icon
+        tab.key = info[1]
+        tab:SetScript("OnClick", function(self)
+            view.tab = self.key
+            Refresh()
+        end)
+        tab:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(self.key == "loot" and "Loot" or (view.page == "boss" and "Abilities" or "Bosses"))
+            GameTooltip:Show()
+        end)
+        tab:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        ui.sideTabs[index] = tab
+    end
 end
 
--- A boss's button: a brown bar, its portrait in a ring on the left, its name.
-local function BossButton(index)
-    ui.bossButtons = ui.bossButtons or {}
-    local button = ui.bossButtons[index]
-    if button then
-        return button
+-- Rows.
+local function BossRow(index)
+    local list = ui.bossList
+    local row = list.rows[index]
+    if row then
+        return row
     end
-    button = CreateFrame("Button", nil, ui.book)
-    button:SetHeight(BOSS_HEIGHT)
-    button.bar = button:CreateTexture(nil, "BACKGROUND")
-    button.bar:SetTexture(BAR)
-    button.bar:SetTexCoord(0, 1, 0, 0.75)
-    button.bar:SetPoint("TOPLEFT", 22, -4)
-    button.bar:SetPoint("BOTTOMRIGHT", 0, 4)
-    button.selected = button:CreateTexture(nil, "BORDER")
-    button.selected:SetTexture(1, 0.7, 0.3, 0.25)
-    button.selected:SetAllPoints(button.bar)
-    local portrait = CreateFrame("PlayerModel", nil, button)
-    portrait:SetWidth(BOSS_HEIGHT - 6)
-    portrait:SetHeight(BOSS_HEIGHT - 6)
-    portrait:SetPoint("LEFT", 3, 0)
-    button.portrait = portrait
-    local back = button:CreateTexture(nil, "BACKGROUND")
-    back:SetTexture(0, 0, 0, 0.85)
-    back:SetAllPoints(portrait)
+    row = CreateFrame("Button", nil, list.child)
+    row:SetHeight(BOSS_HEIGHT)
+    row.bar = row:CreateTexture(nil, "BACKGROUND")
+    row.bar:SetTexture(BAR)
+    row.bar:SetTexCoord(0, 1, 0, 0.75)
+    row.bar:SetPoint("TOPLEFT", 22, -4)
+    row.bar:SetPoint("BOTTOMRIGHT", 0, 4)
+    local back = row:CreateTexture(nil, "BORDER")
+    back:SetTexture(0, 0, 0, 0.9)
+    back:SetPoint("LEFT", 3, 0)
+    back:SetWidth(BOSS_HEIGHT - 6)
+    back:SetHeight(BOSS_HEIGHT - 6)
+    local portrait = CreateFrame("PlayerModel", nil, row)
+    portrait:SetAllPoints(back)
+    row.portrait = portrait
     local ring = portrait:CreateTexture(nil, "OVERLAY")
     ring:SetTexture(ART .. "Ring")
-    ring:SetWidth(BOSS_HEIGHT + 4)
-    ring:SetHeight(BOSS_HEIGHT + 4)
+    ring:SetWidth(BOSS_HEIGHT + 2)
+    ring:SetHeight(BOSS_HEIGHT + 2)
     ring:SetPoint("CENTER")
-    button.name = button:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    button.name:SetPoint("LEFT", portrait, "RIGHT", 16, 0)
-    button.name:SetPoint("RIGHT", -10, 0)
-    button.name:SetJustifyH("LEFT")
-    button.name:SetTextColor(1, 0.95, 0.85)
-    local hover = button:CreateTexture(nil, "HIGHLIGHT")
+    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    row.name:SetPoint("LEFT", portrait, "RIGHT", 14, 0)
+    row.name:SetPoint("RIGHT", -10, 0)
+    row.name:SetJustifyH("LEFT")
+    row.name:SetTextColor(1, 0.95, 0.85)
+    local hover = row:CreateTexture(nil, "HIGHLIGHT")
     hover:SetTexture(1, 0.8, 0.4, 0.15)
-    hover:SetAllPoints(button.bar)
-    button:SetScript("OnClick", function(self)
-        view.page, view.boss = "boss", self.index
+    hover:SetAllPoints(row.bar)
+    row:SetScript("OnClick", function(self)
+        view.page, view.boss, view.tab = "boss", self.index, "bosses"
         Refresh()
     end)
-    ui.bossButtons[index] = button
-    return button
+    list.rows[index] = row
+    return row
+end
+
+local function LootRow(index)
+    local list = ui.lootList
+    local row = list.rows[index]
+    if row then
+        return row
+    end
+    row = CreateFrame("Button", nil, list.child)
+    row:SetHeight(40)
+    local bar = row:CreateTexture(nil, "BACKGROUND")
+    bar:SetTexture(BAR)
+    bar:SetTexCoord(0, 1, 0, 0.75)
+    bar:SetPoint("TOPLEFT", 40, -1)
+    bar:SetPoint("BOTTOMRIGHT", 0, 1)
+    bar:SetVertexColor(0.85, 0.8, 0.7)
+    row.icon = row:CreateTexture(nil, "ARTWORK")
+    row.icon:SetWidth(36)
+    row.icon:SetHeight(36)
+    row.icon:SetPoint("LEFT", 2, 0)
+    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -2)
+    row.name:SetPoint("RIGHT", -8, 0)
+    row.name:SetJustifyH("LEFT")
+    row.slot = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    row.slot:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 8, 2)
+    row.kind = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    row.kind:SetPoint("BOTTOMRIGHT", -8, 3)
+    local hover = row:CreateTexture(nil, "HIGHLIGHT")
+    hover:SetTexture(1, 0.8, 0.4, 0.15)
+    hover:SetAllPoints(bar)
+    row:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetHyperlink("item:" .. self.item)
+        GameTooltip:Show()
+    end)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row:SetScript("OnClick", function(self)
+        if IsModifiedClick("CHATLINK") then
+            local _, link = GetItemInfo(self.item)
+            if link then
+                ChatEdit_InsertLink(link)
+            end
+        elseif IsModifiedClick("DRESSUP") then
+            DressUpItemLink("item:" .. self.item)
+        end
+    end)
+    list.rows[index] = row
+    return row
+end
+
+local function AbilityRow(index)
+    local list = ui.abilityList
+    local row = list.rows[index]
+    if row then
+        return row
+    end
+    row = CreateFrame("Button", nil, list.child)
+    local bar = row:CreateTexture(nil, "BACKGROUND")
+    bar:SetTexture(BAR)
+    bar:SetTexCoord(0, 1, 0, 0.75)
+    bar:SetPoint("TOPLEFT")
+    bar:SetPoint("RIGHT")
+    bar:SetHeight(28)
+    row.icon = row:CreateTexture(nil, "ARTWORK")
+    row.icon:SetWidth(22)
+    row.icon:SetHeight(22)
+    row.icon:SetPoint("TOPLEFT", 4, -3)
+    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    row.name:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
+    row.name:SetTextColor(1, 0.95, 0.85)
+    row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    row.text:SetPoint("TOPLEFT", 10, -34)
+    row.text:SetPoint("RIGHT", -6, 0)
+    row.text:SetJustifyH("LEFT")
+    row.text:SetJustifyV("TOP")
+    row.text:SetTextColor(unpack(INK))
+    row.text:SetShadowOffset(0, 0)
+    row:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetHyperlink("spell:" .. self.spell)
+        GameTooltip:Show()
+    end)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    list.rows[index] = row
+    return row
 end
 
 local function DifficultyLabel(instance, difficulty)
@@ -597,8 +847,12 @@ local function DifficultyName(instance, difficulty)
         .. (difficulty.players > 0 and (", " .. difficulty.players .. " players") or "")
 end
 
+local function Chosen(instance)
+    return instance.difficulties[view.difficulty] or instance.difficulties[1]
+end
+
 local function Bosses(instance)
-    local chosen = instance.difficulties[view.difficulty] or instance.difficulties[1]
+    local chosen = Chosen(instance)
     local bosses = chosen and data.bosses[instance.map .. ":" .. chosen.difficulty]
     if not bosses then
         for _, difficulty in ipairs(instance.difficulties) do
@@ -608,15 +862,87 @@ local function Bosses(instance)
     return bosses or {}
 end
 
+-- The chosen difficulty's details (bosses' info, abilities, loot), asked for once.
+local function Details(instance)
+    local chosen = Chosen(instance)
+    if not chosen then
+        return nil
+    end
+    local key = instance.map .. ":" .. chosen.difficulty
+    local details = data.details[key]
+    if not details then
+        details = { info = {}, abilities = {}, loot = {}, ready = false }
+        data.details[key] = details
+        Send("BOSS," .. instance.map .. "," .. chosen.difficulty)
+    end
+    return details
+end
+
+local function FillLoot(items)
+    for index, item in ipairs(items) do
+        local row = LootRow(index)
+        row.item = item.id
+        row.icon:SetTexture(GetItemIcon(item.id) or "Interface\\Icons\\INV_Misc_QuestionMark")
+        local color = ITEM_QUALITY_COLORS[item.quality]
+        row.name:SetText((color and color.hex or "") .. item.name .. "|r")
+        row.slot:SetText(SLOT_NAMES[item.slot] or "")
+        local kind = ""
+        if item.class == 2 then
+            kind = WEAPON_TYPES[item.subclass] or ""
+        elseif item.class == 4 then
+            kind = ARMOR_TYPES[item.subclass] or ""
+        elseif item.class == 15 then
+            kind = "Miscellaneous"
+        elseif item.class == 9 then
+            kind = "Recipe"
+        end
+        row.kind:SetText(kind)
+    end
+    Stack(ui.lootList, #items)
+    return #items
+end
+
+local function FillAbilities(spells)
+    local shown, seen = 0, {}
+    for _, spell in ipairs(spells) do
+        local name, _, icon = GetSpellInfo(spell)
+        local text = name and not seen[name] and SpellDescription(spell)
+        if text and text ~= "" then
+            seen[name] = true
+            shown = shown + 1
+            local row = AbilityRow(shown)
+            row.spell = spell
+            row.icon:SetTexture(icon)
+            row.name:SetText(name)
+            row.text:SetText(text)
+            row:SetHeight(40 + row.text:GetStringHeight())
+        end
+    end
+    Stack(ui.abilityList, shown)
+    return shown
+end
+
 local function RefreshBook()
     local instance = data.instances[view.instance]
     if not instance then
         view.page = "home"
         return
     end
+    local details = Details(instance)
+    local bosses = Bosses(instance)
+    local bossPage = view.page == "boss" and bosses[view.boss]
     local colors = TINTS[instance.expansion]
-    ui.plate.fill:SetGradientAlpha("VERTICAL", colors[2][1], colors[2][2], colors[2][3], 1,
-        colors[1][1], colors[1][2], colors[1][3], 1)
+    local art = EmberforgeJournalArt and EmberforgeJournalArt[instance.map]
+    if art then
+        ui.plate.fill:SetTexture(art)
+        ui.plate.fill:SetTexCoord(0, 1, 0.15, 0.75)
+        ui.plate.fill:SetVertexColor(1, 1, 1)
+    else
+        ui.plate.fill:SetTexture(1, 1, 1, 1)
+        ui.plate.fill:SetTexCoord(0, 1, 0, 1)
+        ui.plate.fill:SetGradientAlpha("VERTICAL", colors[2][1], colors[2][2], colors[2][3], 1,
+            colors[1][1], colors[1][2], colors[1][3], 1)
+    end
     ui.plate.name:SetText(instance.name)
     ui.plate.sub:SetText(TYPES[instance.type] .. ", " .. EXPANSIONS[instance.expansion])
     local lines = {
@@ -629,7 +955,31 @@ local function RefreshBook()
             .. Levels(difficulty.qmin, difficulty.qmax) .. ", dungeon ID " .. difficulty.id
     end
     ui.about:SetText(table.concat(lines, "\n"))
-    ui.header:SetText(instance.name)
+
+    -- Left page: the instance, or the boss.
+    for _, part in ipairs({ ui.plate, ui.about }) do
+        if bossPage then part:Hide() else part:Show() end
+    end
+    for _, part in ipairs({ ui.model, ui.modelBack, ui.bossInfo }) do
+        if bossPage then part:Show() else part:Hide() end
+    end
+    local info = bossPage and details and details.info[view.boss]
+    if bossPage then
+        ShowCreature(ui.model, info and info.entry or bossPage.creature, false)
+        ui.model.facing = 0
+        ui.bossName:SetText(bossPage.name)
+        if info then
+            local health = info.health > 0 and (" " .. (info.health >= 1000000 and
+                string.format("%.1fM", info.health / 1000000) or info.health)) or " -"
+            ui.bossInfo:SetText("Level " .. info.level .. " " .. (RANKS[info.rank] or "") .. ", "
+                .. (CREATURE_TYPES[info.type] or "") .. "\nHealth:" .. health)
+        else
+            ui.bossInfo:SetText("")
+        end
+    end
+
+    -- Right page: its title, the difficulty buttons, and the tab's list.
+    ui.header:SetText(bossPage and bossPage.name or instance.name)
     for index, button in ipairs(ui.difficultyButtons) do
         local difficulty = instance.difficulties[index]
         if difficulty and #instance.difficulties > 1 then
@@ -642,53 +992,45 @@ local function RefreshBook()
             button:Hide()
         end
     end
+    for _, tab in ipairs(ui.sideTabs) do
+        local on = tab.key == view.tab
+        BoxColor(tab, on and ON_FILL or CELL_FILL, on and ON_EDGE or CELL_EDGE)
+        tab.icon:SetVertexColor(on and 1 or 0.6, on and 1 or 0.6, on and 1 or 0.6)
+    end
+    ListShown(ui.bossList, view.tab == "bosses" and not bossPage)
+    ListShown(ui.abilityList, view.tab == "bosses" and bossPage)
+    ListShown(ui.lootList, view.tab == "loot")
+    ui.empty:SetText("")
 
-    -- The boss list: on the right page for the instance, on the left beside a chosen boss.
-    local bossPage = view.page == "boss"
-    local page = bossPage and ui.left or ui.right
-    local bosses = Bosses(instance)
-    for _, part in ipairs({ ui.plate, ui.about }) do
-        if bossPage then
-            part:Hide()
-        else
-            part:Show()
+    if view.tab == "bosses" and not bossPage then
+        for index, boss in ipairs(bosses) do
+            local row = BossRow(index)
+            row.index = index
+            row.name:SetText(boss.name)
+            ShowCreature(row.portrait, boss.creature, true)
         end
-    end
-    for index, boss in ipairs(bosses) do
-        local button = BossButton(index)
-        button:SetParent(page)
-        button:ClearAllPoints()
-        button:SetPoint("TOPLEFT", page, "TOPLEFT", 14,
-            -(bossPage and 16 or 48) - (index - 1) * (BOSS_HEIGHT + BOSS_GAP))
-        button:SetPoint("RIGHT", page, "RIGHT", -16, 0)
-        button.index = index
-        button.name:SetText(boss.name)
-        ShowCreature(button.portrait, boss.creature, true)
-        if bossPage and index == view.boss then
-            button.selected:Show()
-        else
-            button.selected:Hide()
+        Stack(ui.bossList, #bosses)
+        if #bosses == 0 then
+            ui.empty:SetText("No bosses listed")
         end
-        button:Show()
-    end
-    for index = #bosses + 1, #(ui.bossButtons or {}) do
-        ui.bossButtons[index]:Hide()
-    end
-
-    local boss = bossPage and bosses[view.boss]
-    if boss then
-        ui.header:Hide()
-        for _, button in ipairs(ui.difficultyButtons) do
-            button:Hide()
+    elseif not (details and details.ready) then
+        ui.empty:SetText("Loading...")
+        Stack(ui.lootList, 0)
+        Stack(ui.abilityList, 0)
+    elseif view.tab == "loot" then
+        local items = {}
+        for _, item in ipairs(details.loot) do
+            if not bossPage or item.boss == view.boss then
+                items[#items + 1] = item
+            end
         end
-        ui.model:Show()
-        ShowCreature(ui.model, boss.creature, false)
-        ui.model.facing = 0
-        ui.bossName:SetText(boss.name)
+        if FillLoot(items) == 0 then
+            ui.empty:SetText("No loot listed")
+        end
     else
-        ui.header:Show()
-        ui.model:Hide()
-        ui.bossName:SetText("")
+        if FillAbilities(details.abilities[view.boss] or {}) == 0 then
+            ui.empty:SetText("No abilities listed")
+        end
     end
 end
 
@@ -718,11 +1060,6 @@ function Refresh()
     if view.page == "home" then
         ui.home:Show()
         ui.book:Hide()
-        if ui.bossButtons then
-            for _, button in ipairs(ui.bossButtons) do
-                button:Hide()
-            end
-        end
         RefreshHome()
     else
         ui.home:Hide()
