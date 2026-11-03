@@ -43,6 +43,18 @@ WIDTH, HEIGHT, SCALE = 128, 64, 4           # the picture, and how much larger i
 ANGLE = 22.0                                # degrees: seen from a little to its left
 KEY_HEAD, KEY_SHOULDER_L, KEY_SHOULDER_R = 6, 2, 3
 ATTACH_SHOULDER_R, ATTACH_SHOULDER_L, ATTACH_HELM = 5, 6, 11
+# Encounters that are not one creature (or credited by a spell): the creature that stands for them.
+STAND_INS = {
+    'The Four Horsemen': 30549,         # Baron Rivendare
+    'Icecrown Gunship Battle': 36948,   # Muradin Bronzebeard
+    'Escaped from Arthas': 36954,       # the Lich King
+    'Faction Champions': 11699,         # Varian Wrynn
+    'Northrend Beasts': 34796,          # Gormok the Impaler
+    "Val'kyr Twins": 34497,             # Fjola Lightbane
+    'The Iron Council': 32867,          # Steelbreaker
+    'Reliquary of Souls': 23418,        # the Essence of Suffering
+    'Opera Event': 17521,               # the Big Bad Wolf
+}
 
 
 class Files:
@@ -425,7 +437,9 @@ def sql_rows(name):
 
 
 def bosses():
-    """(map, name, creature entry or None, display) of every encounter, in the game's order."""
+    """(map, name, creature entry or None, display) of every encounter, in the game's order: its creature is its
+    stand-in (STAND_INS), else its credit creature, else the creature of its name (spawned on its map, if any).
+    Bosses the game summons have no spawn: their map is -1 (head shots go by name)."""
     encounters = re.findall(r"^\((\d+),(\d+),(\d+),\d+,'((?:[^'\\]|\\.)*)'\)",
                             (SQL / 'instance_encounters.sql').read_text(encoding='utf8'), re.M)
     names = {}
@@ -446,14 +460,16 @@ def bosses():
     result, seen = [], set()
     for _, credit_type, credit, name in encounters:
         name = name.replace("\\'", "'")
-        candidates = names.get(name.lower(), [])
-        map_id = spawn_map.get(int(credit)) if credit_type == '0' else None
-        entry = next((e for e in candidates if map_id is None or (map_id, e) in spawned), None)
-        if map_id is None and entry:
-            map_id = spawn_map.get(entry)
-        if entry is None and credit_type == '0' and int(credit) in models and map_id is not None:
-            entry = int(credit)
-        if map_id is None or (map_id, key(name)) in seen:
+        credit = int(credit)
+        if name in STAND_INS:
+            entry = STAND_INS[name]
+        elif credit_type == '0' and credit in models:
+            entry = credit
+        else:
+            candidates = names.get(name.lower(), [])
+            entry = next((e for e in candidates if e in spawn_map), candidates[0] if candidates else None)
+        map_id = spawn_map.get(entry, spawn_map.get(credit, -1) if credit_type == '0' else -1)
+        if (map_id, key(name)) in seen:
             continue
         seen.add((map_id, key(name)))
         result.append((map_id, name, entry, models.get(entry)))

@@ -66,6 +66,7 @@ ALIASES = {
     574: {'Skarvold & Dalronn': 'Skarvald & Dalronn'},
     576: {'Ormrok the Tree-Shaper': 'Ormorok the Tree-Shaper', 'Frozen Commander': 'Commander Stoutbeard'},
     595: {'Salram the Fleshcrafter': 'Salramm the Fleshcrafter'},
+    599: {'Tribunal of Ages': 'Tribunal of the Ages'},
     658: {'Overlord Tyrannus': 'Scourgelord Tyrannus'},
 }
 

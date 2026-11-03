@@ -50,6 +50,9 @@ local TINTS = {
 }
 local TYPES = { [1] = "Dungeon", [2] = "Raid" }
 
+-- The game's encounter names (DungeonEncounter.dbc) shown as the boss is known.
+local NAMES = { ["Overlord Tyrannus"] = "Scourgelord Tyrannus" }
+
 local data = { instances = {}, order = {}, bosses = {}, wings = {}, details = {}, loaded = false, loading = false }
 local view = { page = "home", expansion = 0, type = 1, instance = nil, difficulty = 1, boss = nil, search = "",
     tab = "bosses" }
@@ -86,6 +89,7 @@ local function OnServerMessage(message)
     elseif kind == "F" then
         for entry in message:sub(3):gmatch("[^;]+") do
             local map, difficulty, boss, creature = strsplit("~", entry, 4)
+            boss = NAMES[boss] or boss
             local key = map .. ":" .. difficulty
             data.bosses[key] = data.bosses[key] or {}
             local list = data.bosses[key]
