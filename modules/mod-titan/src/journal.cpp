@@ -29,6 +29,7 @@
 #include <tuple>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 // Server side of the Dungeon Journal (client addon: client-patch/AddOns/Emberforge_Journal): every dungeon and raid
@@ -41,7 +42,8 @@
 //   server -> client   B                                   begin
 //                      D,<lfg id>~<map>~<type>~<expansion>~<difficulty>~<players>~<creature min>~<creature max>
 //                        ~<queue min>~<queue max>~<seasonal>~<name>;...      instances (type 1 dungeon, 2 raid)
-//                      F,<map>~<difficulty>~<boss>;...     bosses, in the game's order
+//                      F,<map>~<difficulty>~<boss>~<creature entry>;...   bosses, in the game's order (the entry, for
+//                                                          its model: the creature of that name spawned there, 0)
 //                      Z                                   end
 namespace
 {
@@ -111,6 +113,33 @@ namespace
         return levels;
     }
 
+    // A boss's creature: the one of its name spawned on its map, else any of its name (0: none).
+    uint32 BossEntry(uint32 mapId, std::string const& name)
+    {
+        static std::unordered_map<std::string, std::vector<uint32>> const byName = []
+        {
+            std::unordered_map<std::string, std::vector<uint32>> result;
+            for (auto const& [entry, creature] : *sObjectMgr->GetCreatureTemplates())
+                result[creature.Name].push_back(entry);
+            return result;
+        }();
+        static std::unordered_set<uint64> const spawned = []
+        {
+            std::unordered_set<uint64> result;
+            for (auto const& [spawnId, data] : sObjectMgr->GetAllCreatureData())
+                result.insert((uint64(data.mapid) << 32) | data.id);
+            return result;
+        }();
+
+        auto itr = byName.find(name);
+        if (itr == byName.end())
+            return 0;
+        for (uint32 entry : itr->second)
+            if (spawned.count((uint64(mapId) << 32) | entry))
+                return entry;
+        return itr->second.front();
+    }
+
     void SendJournal(Player* player)
     {
         std::vector<std::string> instances;
@@ -146,8 +175,11 @@ namespace
             });
         std::vector<std::string> bosses;
         for (DungeonEncounterEntry const* encounter : encounters)
-            bosses.push_back(Acore::StringFormat("{}~{}~{}", encounter->mapId, encounter->difficulty,
-                Clean(encounter->encounterName[LOCALE_enUS])));
+        {
+            char const* name = encounter->encounterName[LOCALE_enUS] ? encounter->encounterName[LOCALE_enUS] : "";
+            bosses.push_back(Acore::StringFormat("{}~{}~{}~{}", encounter->mapId, encounter->difficulty, Clean(name),
+                BossEntry(encounter->mapId, name)));
+        }
 
         SendAddon(player, "B");
         SendBatched(player, "D,", instances);

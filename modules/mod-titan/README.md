@@ -305,10 +305,12 @@ Strength to 2 attack power and Agility to 1 ranged attack power:
 
 ## Dungeon Journal
 `/journal` or `/dj` (the `Emberforge_Journal` addon, `client-patch/AddOns/`; server side `src/journal.cpp`, addon
-whispers with prefix `EFDJ`): every dungeon and raid of the game's dungeon list, Classic, the Burning Crusade and
-Wrath, tabbed by expansion and type. Each shows its creature levels as the world database has them (after the level
-squish), its difficulties with their sizes, queue levels and dungeon IDs, its map ID, and its bosses
-(`DungeonEncounter.dbc`). Holiday events are marked.
+whispers with prefix `EFDJ`), laid out as Cataclysm's: a home page per expansion (its name the title, Dungeons and
+Raids tabs, a search box, a grid of tiles), then an open book per instance (left: its type, creature levels as the
+world database has them after the level squish, map, and each difficulty with its size, queue levels and dungeon
+ID; right: difficulty buttons and its bosses, `DungeonEncounter.dbc`, each with its creature's model as portrait),
+and a boss page (the list on the left, the boss's model on the right). Breadcrumbs go back. Its art is 3.3.5's own
+(the Achievement window's parchment, the creatures' models); Cataclysm's thumbnails and portraits can replace it.
 
 ## Level and power squish
 The game ends on Classic's numbers: the new level 60 is today's level 60 in power (`MaxPlayerLevel = 60`). Classic
