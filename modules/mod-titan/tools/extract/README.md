@@ -25,6 +25,15 @@ Besides the `EmberforgeExtract\` folder, it packs the same files into zips small
 Parts are at most 24 MB; a fourth argument sets another size in MB (`- enUS 50`). `manifest.txt` lists each file, the
 part holding it and the archive it came from.
 
+The archives are read in the client's own order, the newest copy of a file winning: the language folder's patches
+(`patch-enUS-3.MPQ` above `patch-enUS-2.MPQ` above `patch-enUS.MPQ`), then the main folder's (`patch-3.MPQ`... above
+`patch.MPQ`, letters above numbers), then the rest (`lichking` above `expansion` above `common`); Mists of Pandaria's
+update archives are applied as patches.
+
+`patterns/` holds the lists for the 3.3.5a client's files the Dungeon Journal's head shots need
+(`tools/journal/portraits.py`), in rounds (`portraits-1.txt`, `-2`, `-3`), each made from what the one before
+brought.
+
 Only English (`enUS`) text is read: a client with several languages installed (`deDE`, `frFR`...) would
 otherwise mix them. A third argument picks another language, e.g. `- enGB`.
 

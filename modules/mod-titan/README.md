@@ -321,7 +321,10 @@ dungeon's tile art, picture and story, each boss's portrait and story, and its a
 (headings, icons, flags such as tank, heroic or interruptible, their numbers from the spell tables, 3.3.5a's where the
 spell is there). The addon matches the server's boss names to the Journal's; a boss it has no entry for keeps its
 model and the spells of its script. Raids that Journal does not have (Classic's, the Burning Crusade's, Wrath's) get
-the dungeon finder's art; Deadmines and Shadowfang Keep, rebuilt by Cataclysm, keep only their art.
+the dungeon finder's art; Deadmines and Shadowfang Keep, rebuilt by Cataclysm, keep only their art. The bosses the
+Journal has no portrait for get head shots in its style (`Art/EF-BOSS-*`, `Headshots.lua`), rendered by
+`tools/journal/portraits.py` from the 3.3.5a client's own models: a creature's model, or a humanoid's character model
+with its baked skin, hair, beard, helmet and shoulders, posed at the start of its Stand animation.
 
 ## Level and power squish
 The game ends on Classic's numbers: the new level 60 is today's level 60 in power (`MaxPlayerLevel = 60`). Classic

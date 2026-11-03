@@ -1,0 +1,32 @@
+# Dungeon Journal head shots, round 3, from the 3.3.5a client (EmberforgeExtract.exe <Data> <this file>):
+# the display tables again (round 1 read an old patch's: the extractor's archive order, since fixed), the
+# model folders of the bosses rounds 1 and 2 missed (Icecrown Citadel's, the Ruby Sanctum's...), found through
+# the Mists of Pandaria client's tables, and Deathbringer Saurfang's baked skin.
+DBFilesClient\CreatureDisplayInfo.dbc
+DBFilesClient\CreatureDisplayInfoExtra.dbc
+DBFilesClient\CreatureModelData.dbc
+DBFilesClient\CharSections.dbc
+DBFilesClient\CharHairGeosets.dbc
+DBFilesClient\CharacterFacialHairStyles.dbc
+DBFilesClient\ChrRaces.dbc
+DBFilesClient\ItemDisplayInfo.dbc
+DBFilesClient\HelmetGeosetVisData.dbc
+CREATURE\ARAKKOA\*
+CREATURE\ARTHASLICHKING\*
+CREATURE\BEHOLDER\*
+CREATURE\BLOODQUEEN\*
+CREATURE\BONEGUARD\*
+CREATURE\DRAGON\*
+CREATURE\DRAGONSPAWN\*
+CREATURE\DRAKE\*
+CREATURE\EREDARFEMALE\*
+CREATURE\HALFBODYOFKATHUNE\*
+CREATURE\ICECROWNFLESHBEAST\*
+CREATURE\MADSCIENTIST\*
+CREATURE\MINISTEROFDEATH\*
+CREATURE\NETHERDRAKONIDBOSS\*
+CREATURE\NORTHRENDICEGIANT\*
+CREATURE\TWIGHLIGHTDRAGON\*
+CREATURE\TWINEMPEROR\*
+CREATURE\VAMPYRBLOODPRINCE\*
+Textures\BakedNpcTextures\CreatureDisplayExtra-20507*

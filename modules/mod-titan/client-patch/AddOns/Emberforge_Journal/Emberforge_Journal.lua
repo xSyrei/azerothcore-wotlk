@@ -6,7 +6,7 @@
 -- - An instance: an open book. Left page: its picture, its story and details (type, expansion, creature levels as
 --   the server has them after the level squish, map, each difficulty with its size, queue levels and dungeon ID).
 --   Right page: its difficulty buttons and, by the tabs on the book's edge, its Bosses (each with its Journal
---   portrait, else its model's face, else the Journal's default portrait) or its Loot (every boss's).
+--   portrait, else our head shot of it, else its model's face, else the Journal's default portrait) or its Loot.
 -- - A boss: left page its model (drag to turn it), level, classification, health and story; right page its
 --   Abilities (the Journal's: headings, each ability's icon, its flags (tank, healer, heroic, interruptible...) and
 --   text; else the spells its script casts, with the client's own descriptions) or its Loot.
@@ -269,9 +269,11 @@ local function JournalBoss(map, name)
     end
 end
 
+-- A boss's portrait: the Journal's own, else our head shot of it (Headshots.lua, by tools/journal/portraits.py).
 local function Portrait(map, name)
     local boss = JournalBoss(map, name)
     local file = boss and boss.p or (EmberforgeJournalPortraits and EmberforgeJournalPortraits[Key(name)])
+        or (EmberforgeJournalHeadshots and EmberforgeJournalHeadshots[Key(name)])
     return file and (JOURNAL_ART .. file)
 end
 

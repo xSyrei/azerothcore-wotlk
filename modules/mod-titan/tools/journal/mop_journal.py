@@ -351,9 +351,10 @@ def main():
 
     art('UI-EJ-BOSS-Default.blp')       # the portrait of a boss the Journal has none for
     out = ADDON / 'Art'
-    if out.exists():
-        shutil.rmtree(out)
-    out.mkdir(parents=True)
+    out.mkdir(parents=True, exist_ok=True)
+    for old in out.iterdir():           # the Journal's art (portraits.py's head shots, EF-*, stay)
+        if not old.name.startswith('EF-'):
+            old.unlink()
     for name in sorted(used):
         shutil.copyfile(art_files[name], out / (art_files[name].stem + '.blp'))     # .blp: binary to git
     (out / 'UI-EJ-Icons.blp').write_bytes(blp.encode(read_bgra(art_files['ui-ej-icons.blp'])))
