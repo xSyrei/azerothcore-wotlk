@@ -6,7 +6,7 @@
 -- - An instance: an open book. Left page: its picture, its story and details (type, expansion, creature levels as
 --   the server has them after the level squish, map, each difficulty with its size, queue levels and dungeon ID).
 --   Right page: its difficulty buttons and, by the tabs on the book's edge, its Bosses (each with its Journal
---   portrait, else the creature's own model) or its Loot (every boss's).
+--   portrait, else its default one) or its Loot (every boss's).
 -- - A boss: left page its model (drag to turn it), level, classification, health and story; right page its
 --   Abilities (the Journal's: headings, each ability's icon, its flags (tank, healer, heroic, interruptible...) and
 --   text; else the spells its script casts, with the client's own descriptions) or its Loot.
@@ -826,27 +826,13 @@ local function BossRow(index)
     row = CreateFrame("Button", nil, list.child)
     row:SetHeight(BOSS_HEIGHT)
     Box(row, CELL_FILL, CELL_EDGE)
-    local back = row:CreateTexture(nil, "BORDER")
-    back:SetTexture(0, 0, 0, 0.9)
-    back:SetPoint("LEFT", 3, 0)
-    back:SetWidth(BOSS_HEIGHT - 6)
-    back:SetHeight(BOSS_HEIGHT - 6)
-    row.back = back
-    local portrait = CreateFrame("PlayerModel", nil, row)
-    portrait:SetAllPoints(back)
-    row.portrait = portrait
-    local ring = portrait:CreateTexture(nil, "OVERLAY")
-    ring:SetTexture(ART .. "Ring")
-    ring:SetWidth(BOSS_HEIGHT + 2)
-    ring:SetHeight(BOSS_HEIGHT + 2)
-    ring:SetPoint("CENTER")
-    -- The Journal's portrait, when it has one (in place of the model).
+    -- The Journal's portrait (its default one when it has none: models in a scrolling list draw out of place).
     row.art = row:CreateTexture(nil, "ARTWORK")
     row.art:SetWidth(BOSS_HEIGHT * 2)
     row.art:SetHeight(BOSS_HEIGHT)
     row.art:SetPoint("BOTTOMLEFT", 4, 1)
     row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    row.name:SetPoint("LEFT", row, "LEFT", BOSS_HEIGHT + 14, 0)
+    row.name:SetPoint("LEFT", row, "LEFT", BOSS_HEIGHT * 2 + 6, 0)
     row.name:SetPoint("RIGHT", -10, 0)
     row.name:SetJustifyH("LEFT")
     row.name:SetTextColor(1, 0.95, 0.85)
@@ -1208,22 +1194,7 @@ local function RefreshBook()
             local row = BossRow(index)
             row.index = index
             row.name:SetText(boss.name)
-            local portrait = Portrait(instance.map, boss.name)
-            row.name:ClearAllPoints()
-            row.name:SetPoint("LEFT", row, "LEFT", portrait and (BOSS_HEIGHT * 2 + 6) or (BOSS_HEIGHT + 14), 0)
-            row.name:SetPoint("RIGHT", -10, 0)
-            if portrait then
-                row.art:SetTexture(portrait)
-                row.art:Show()
-                row.portrait:Hide()
-                row.back:Hide()
-                row.portrait:ClearModel()
-            else
-                row.art:Hide()
-                row.portrait:Show()
-                row.back:Show()
-                ShowCreature(row.portrait, boss.creature, true)
-            end
+            row.art:SetTexture(Portrait(instance.map, boss.name) or (JOURNAL_ART .. "UI-EJ-BOSS-Default"))
         end
         Stack(ui.bossList, #bosses)
         if #bosses == 0 then

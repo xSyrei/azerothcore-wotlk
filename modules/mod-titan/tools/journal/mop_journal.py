@@ -349,6 +349,7 @@ def main():
         if name.startswith('ui-ej-boss-') and name not in mop_portraits and name != 'ui-ej-boss-default.blp':
             portraits[key(path.stem[len('UI-EJ-BOSS-'):])] = art(path.name)
 
+    art('UI-EJ-BOSS-Default.blp')       # the portrait of a boss the Journal has none for
     out = ADDON / 'Art'
     if out.exists():
         shutil.rmtree(out)

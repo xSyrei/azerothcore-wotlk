@@ -141,7 +141,7 @@ check(ui.plate.fill.texture:find("UI%-EJ%-LOREBG%-WailingCaverns"), "the instanc
 check(ui.about.shown and EmberforgeJournalLore[43] ~= nil, "the instance has its Journal story")
 local rows = ui.bossList.rows
 check(rows[2].art.shown and rows[2].art.texture:find("UI%-EJ%-BOSS%-Mutanus"), "a boss row shows its portrait")
-check(not rows[3].art.shown and rows[3].portrait.shown, "a boss without a portrait keeps its model")
+check(rows[3].art.texture:find("UI%-EJ%-BOSS%-Default"), "a boss without a portrait gets the default one")
 
 -- A boss: the Journal's abilities, with icons and flags.
 rows[2]:Click()
