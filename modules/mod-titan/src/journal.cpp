@@ -37,9 +37,9 @@
 #include <vector>
 
 // Server side of the Dungeon Journal (client addon: client-patch/AddOns/Emberforge_Journal): every dungeon and raid
-// of the game's dungeon list (LFGDungeons.dbc, its dungeons and raids, each difficulty an entry), with the levels of
-// the creatures spawned in it as the world database has them (after the level squish), its size, and its bosses
-// (DungeonEncounter.dbc).
+// of the game's dungeon list (LFGDungeons.dbc, its dungeons and raids, each difficulty an entry; the holidays' left
+// out), with the levels of the creatures spawned in it as the world database has them (after the level squish), its
+// size, and its bosses (DungeonEncounter.dbc).
 //
 // Addon whispers to and from the player themself, prefix EFDJ:
 //   client -> server   LIST
@@ -326,6 +326,9 @@ namespace
         {
             LFGDungeonEntry const* dungeon = sLFGDungeonStore.LookupEntry(i);
             if (!dungeon || (dungeon->TypeID != LFG_TYPE_DUNGEON && dungeon->TypeID != LFG_TYPE_RAID))
+                continue;
+            // Holiday dungeons (the Headless Horseman, Coren Direbrew, the Frost Lord Ahune...) are left out.
+            if (dungeon->Flags & LFG_FLAG_SEASONAL)
                 continue;
 
             MapDifficulty const* difficulty = GetMapDifficultyData(dungeon->MapID, Difficulty(dungeon->Difficulty));

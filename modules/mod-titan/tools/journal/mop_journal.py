@@ -351,6 +351,11 @@ def main():
             portraits[key(path.stem[len('UI-EJ-BOSS-'):])] = art(path.name)
 
     art('UI-EJ-BOSS-Default.blp')       # the portrait of a boss the Journal has none for
+    # The Journal's frame art: its book, its buttons and bars (one sheet), the paper behind a boss's model, and each
+    # expansion's home background.
+    for name in ('UI-EJ-JournalBG', 'UI-ENCOUNTERJOURNALTEXTURES', 'UI-EJ-BOSSMODELPAPERFRAME', 'UI-EJ-Classic',
+                 'UI-EJ-BurningCrusade', 'UI-EJ-WrathoftheLichKing'):
+        art(name + '.blp')
     out = ADDON / 'Art'
     out.mkdir(parents=True, exist_ok=True)
     for old in out.iterdir():           # the Journal's art (portraits.py's head shots, EF-*, stay)

@@ -12,8 +12,9 @@
 --   text; else the spells its script casts, with the client's own descriptions) or its Loot.
 -- A wing of a map (Scarlet Monastery's Cathedral...) lists its own bosses (the server's W). The breadcrumbs (Home,
 -- the instance, the boss) go back. The lists scroll, their bars showing only when they do. The window has the
--- character window's look (Emberforge_Resources' CharacterSkin.lua): dark, bronze-edged, a title bar, dark pages,
--- rows in gold-edged boxes. The art and texts are the Mists of Pandaria client's Journal (Data.lua and Art/,
+-- character window's look (Emberforge_Resources' CharacterSkin.lua) outside: dark, bronze-edged, a title bar; inside,
+-- the Journal's own art: its open book, its boss buttons and tile frames (UI-ENCOUNTERJOURNALTEXTURES), its
+-- section bars, the paper behind a boss's model, and each expansion's home background. The art and texts are the Mists of Pandaria client's Journal (Data.lua and Art/,
 -- written by tools/journal/mop_journal.py); the models are the creatures' own.
 --
 -- The server (mod-titan, src/journal.cpp) sends the data as addon whispers to the player, prefix EFDJ:
@@ -29,18 +30,46 @@ local PREFIX = "EFDJ"
 local ART = "Interface\\AddOns\\Emberforge_Resources\\Art\\"
 local JOURNAL_ART = "Interface\\AddOns\\Emberforge_Journal\\Art\\"
 local FLAG_ICONS = JOURNAL_ART .. "UI-EJ-Icons"
+-- The Journal's own frame art: its sheet of buttons and bars (512 x 1024), its book, each expansion's home.
+local SHEET = JOURNAL_ART .. "UI-ENCOUNTERJOURNALTEXTURES"
+local EXPANSION_ART = { [0] = "UI-EJ-Classic", [1] = "UI-EJ-BurningCrusade", [2] = "UI-EJ-WrathoftheLichKing" }
+
+-- A piece of the sheet (its pixels x0..x1, y0..y1).
+local function Piece(parent, layer, x0, y0, x1, y1)
+    local texture = parent:CreateTexture(nil, layer)
+    texture:SetTexture(SHEET)
+    texture:SetTexCoord(x0 / 512, x1 / 512, y0 / 1024, y1 / 1024)
+    return texture
+end
+
+-- A bar of the sheet at a height: its ends (x0..left, right..x1) kept to scale, its middle stretched. Returns its
+-- three pieces.
+local function Bar(parent, layer, height, x0, y0, x1, y1, left, right)
+    local scale = height / (y1 - y0)
+    local head, middle, tail = Piece(parent, layer, x0, y0, left, y1), Piece(parent, layer, left, y0, right, y1),
+        Piece(parent, layer, right, y0, x1, y1)
+    head:SetWidth((left - x0) * scale)
+    head:SetPoint("TOPLEFT")
+    head:SetPoint("BOTTOMLEFT")
+    tail:SetWidth((x1 - right) * scale)
+    tail:SetPoint("TOPRIGHT")
+    tail:SetPoint("BOTTOMRIGHT")
+    middle:SetPoint("TOPLEFT", head, "TOPRIGHT")
+    middle:SetPoint("BOTTOMRIGHT", tail, "BOTTOMLEFT")
+    return { head, middle, tail }
+end
 local FLAG_NAMES = { "Tank alert", "Damage dealer alert", "Healer alert", "Heroic difficulty", "Deadly",
     "Important", "Interruptible", "Magic effect", "Curse effect", "Poison effect", "Disease effect", "Enrage" }
 local BORDER = "Interface\\Tooltips\\UI-Tooltip-Border"
 local WIDTH, HEIGHT = 820, 520
 local COLUMNS, TILE_WIDTH, TILE_HEIGHT, TILE_GAP = 4, 176, 90, 12
-local BOSS_HEIGHT, BOSS_GAP = 50, 8
+local BOSS_HEIGHT, BOSS_GAP = 54, 8
 local GOLD = { 1, 0.82, 0 }
 -- The character window's look (Emberforge_Resources' CharacterSkin.lua): a dark window under a bronze edge, a
 -- title bar, dark insets.
 local EDGE = { 0.55, 0.45, 0.35 }
-local INSET_EDGE = { 0.4, 0.34, 0.27 }
-local INK = { 0.88, 0.82, 0.7 }     -- body text, on the dark pages
+local INK = { 0.24, 0.13, 0.05 }    -- body text, on the Journal's parchment
+local TITLE = { 0.32, 0.16, 0.03 }  -- titles on the parchment
 local EXPANSIONS = { [0] = "Classic", [1] = "Burning Crusade", [2] = "Wrath of the Lich King" }
 -- Each expansion's tile tint (top, bottom) and its home page's glow.
 local TINTS = {
@@ -407,9 +436,9 @@ do
     local home = CreateFrame("Frame", nil, frame)
     home:SetPoint("TOPLEFT", 14, -64)
     home:SetPoint("BOTTOMRIGHT", -14, 14)
-    -- A glow in the expansion's color behind it all, as Cataclysm's fire.
+    -- The expansion's own Journal background behind it all.
     home.glow = home:CreateTexture(nil, "BACKGROUND")
-    home.glow:SetTexture(1, 1, 1, 1)
+    home.glow:SetTexCoord(0, 496 / 512, 0, 1)
     home.glow:SetAllPoints()
     ui.home = home
 
@@ -480,9 +509,9 @@ local function Tile(index)
     tile:SetHeight(TILE_HEIGHT)
     local column, row = (index - 1) % COLUMNS, math.floor((index - 1) / COLUMNS)
     tile:SetPoint("TOPLEFT", column * (TILE_WIDTH + TILE_GAP), -row * (TILE_HEIGHT + TILE_GAP))
-    tile:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 14,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 } })
-    tile:SetBackdropBorderColor(0.75, 0.6, 0.4, 1)
+    -- The Journal's tile frame over its art, and its glow under the mouse.
+    local edge = Piece(tile, "OVERLAY", 0, 340, 175, 435)
+    edge:SetAllPoints()
     tile.fill = tile:CreateTexture(nil, "BACKGROUND")
     tile.fill:SetTexture(1, 1, 1, 1)
     tile.fill:SetPoint("TOPLEFT", 3, -3)
@@ -507,10 +536,9 @@ local function Tile(index)
     tile.name:SetJustifyV("MIDDLE")
     tile.levels = tile:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     tile.levels:SetPoint("BOTTOM", 0, 10)
-    local hover = tile:CreateTexture(nil, "HIGHLIGHT")
-    hover:SetTexture(1, 0.75, 0.35, 0.16)
-    hover:SetPoint("TOPLEFT", 3, -3)
-    hover:SetPoint("BOTTOMRIGHT", -3, 3)
+    local hover = Piece(tile, "HIGHLIGHT", 180, 344, 348, 434)
+    hover:SetBlendMode("ADD")
+    hover:SetAllPoints()
     tile:SetScript("OnClick", function(self)
         view.page, view.instance, view.boss, view.difficulty, view.tab = "instance", self.instance.key, nil, 1,
             "bosses"
@@ -530,9 +558,7 @@ end
 local function RefreshHome()
     ui.title.text:SetText(EXPANSIONS[view.expansion])
     ui.title:SetWidth(ui.title.text:GetStringWidth() + 30)
-    local tint = TINTS[view.expansion]
-    ui.home.glow:SetGradientAlpha("VERTICAL", tint[3][1] * 0.25, tint[3][2] * 0.25, tint[3][3] * 0.25, 0.9,
-        tint[3][1], tint[3][2], tint[3][3], 0.45)
+    ui.home.glow:SetTexture(JOURNAL_ART .. EXPANSION_ART[view.expansion])
     for _, tab in ipairs(ui.typeTabs) do
         local on = tab.kind == view.type
         BoxColor(tab, on and ON_FILL or CELL_FILL, on and ON_EDGE or CELL_EDGE)
@@ -710,22 +736,20 @@ do
     local book = CreateFrame("Frame", nil, frame)
     book:SetPoint("TOPLEFT", 16, -64)
     book:SetPoint("BOTTOMRIGHT", -44, 16)
-    Box(book, { 0.05, 0.04, 0.035, 0.9 }, { EDGE[1], EDGE[2], EDGE[3], 1 })
+    -- The Journal's open book.
+    local pages_art = book:CreateTexture(nil, "BACKGROUND")
+    pages_art:SetTexture(JOURNAL_ART .. "UI-EJ-JournalBG")
+    pages_art:SetTexCoord(0, 786 / 1024, 0, 425 / 512)
+    pages_art:SetAllPoints()
     ui.book = book
     local pages = {}
     for index, side in ipairs({ "LEFT", "RIGHT" }) do
         local page = CreateFrame("Frame", nil, book)
-        page:SetPoint("TOP", 0, -8)
-        page:SetPoint("BOTTOM", 0, 8)
-        page:SetPoint(side, side == "LEFT" and 8 or -8, 0)
-        page:SetPoint(side == "LEFT" and "RIGHT" or "LEFT", book, "CENTER", side == "LEFT" and -3 or 3, 0)
-        -- A dark inset, as the character window's model.
-        page:SetBackdrop({ edgeFile = BORDER, edgeSize = 12 })
-        page:SetBackdropBorderColor(INSET_EDGE[1], INSET_EDGE[2], INSET_EDGE[3], 1)
-        local fill = page:CreateTexture(nil, "BACKGROUND")
-        fill:SetTexture(0, 0, 0, 0.6)
-        fill:SetPoint("TOPLEFT", 3, -3)
-        fill:SetPoint("BOTTOMRIGHT", -3, 3)
+        -- Inside the parchment's worn edges, clear of the spine.
+        page:SetPoint("TOP", 0, -12)
+        page:SetPoint("BOTTOM", 0, 14)
+        page:SetPoint(side, side == "LEFT" and 18 or -18, 0)
+        page:SetPoint(side == "LEFT" and "RIGHT" or "LEFT", book, "CENTER", side == "LEFT" and -16 or 16, 0)
         pages[index] = page
     end
     ui.left, ui.right = pages[1], pages[2]
@@ -736,7 +760,7 @@ do
     plate:SetPoint("TOPLEFT", 14, -14)
     plate:SetPoint("TOPRIGHT", -14, -14)
     plate:SetBackdrop({ edgeFile = BORDER, edgeSize = 16, insets = { left = 4, right = 4, top = 4, bottom = 4 } })
-    plate:SetBackdropBorderColor(EDGE[1], EDGE[2], EDGE[3], 1)
+    plate:SetBackdropBorderColor(0.35, 0.22, 0.1, 1)
     plate.fill = plate:CreateTexture(nil, "BACKGROUND")
     plate.fill:SetPoint("TOPLEFT", 4, -4)
     plate.fill:SetPoint("BOTTOMRIGHT", -4, 4)
@@ -774,10 +798,12 @@ do
             self:SetFacing(self.facing)
         end
     end)
+    -- The Journal's paper frame around it.
     local backdrop = ui.left:CreateTexture(nil, "BORDER")
-    backdrop:SetTexture(1, 1, 1, 1)
-    backdrop:SetAllPoints(model)
-    backdrop:SetGradientAlpha("VERTICAL", 0.12, 0.07, 0.03, 0.55, 0.35, 0.22, 0.1, 0.25)
+    backdrop:SetTexture(JOURNAL_ART .. "UI-EJ-BOSSMODELPAPERFRAME")
+    backdrop:SetTexCoord(0, 396 / 512, 0, 426 / 512)
+    backdrop:SetPoint("TOPLEFT", model, "TOPLEFT", -4, 4)
+    backdrop:SetPoint("BOTTOMRIGHT", model, "BOTTOMRIGHT", 4, -4)
     local bossName = model:CreateFontString(nil, "OVERLAY")
     bossName:SetFont("Fonts\\MORPHEUS.TTF", 22)
     bossName:SetShadowOffset(2, -2)
@@ -787,11 +813,12 @@ do
     ui.model, ui.modelBack, ui.bossName, ui.bossInfo = model, backdrop, bossName, bossInfo
 
     -- Right page: its title and the difficulty buttons, then a list.
-    local header = ui.right:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    header:SetPoint("TOPLEFT", 16, -16)
+    local header = ui.right:CreateFontString(nil, "ARTWORK")
+    header:SetFont("Fonts\\MORPHEUS.TTF", 20)
+    header:SetPoint("TOPLEFT", 10, -14)
     header:SetPoint("RIGHT", ui.right, "RIGHT", -170, 0)
     header:SetJustifyH("LEFT")
-    header:SetTextColor(unpack(GOLD))
+    header:SetTextColor(unpack(TITLE))
     header:SetShadowOffset(0, 0)
     ui.header = header
     ui.difficultyButtons = {}
@@ -857,14 +884,10 @@ local function BossModel(index)
         return model
     end
     model = CreateFrame("PlayerModel", nil, ui.right)
-    model:SetWidth(BOSS_HEIGHT - 6)
-    model:SetHeight(BOSS_HEIGHT - 6)
+    -- In the boss button's round socket.
+    model:SetWidth(BOSS_HEIGHT - 10)
+    model:SetHeight(BOSS_HEIGHT - 10)
     model:SetFrameLevel(ui.bossList.child:GetFrameLevel() + 10)
-    local ring = model:CreateTexture(nil, "OVERLAY")
-    ring:SetTexture(ART .. "Ring")
-    ring:SetWidth(BOSS_HEIGHT + 2)
-    ring:SetHeight(BOSS_HEIGHT + 2)
-    ring:SetPoint("CENTER")
     ui.bossModels[index] = model
     return model
 end
@@ -883,7 +906,7 @@ local function PlaceBossModels()
             if row:IsShown() and row.creature and top >= -1 and top + BOSS_HEIGHT <= height + 1 then
                 local model = BossModel(index)
                 model:ClearAllPoints()
-                model:SetPoint("TOPLEFT", list.scroll, "TOPLEFT", 3, -(top + 3))
+                model:SetPoint("TOPLEFT", list.scroll, "TOPLEFT", 10, -(top + 5))
                 model.wanted = true
                 if not model:IsShown() or model.creature ~= row.creature then
                     model:Show()
@@ -912,27 +935,22 @@ local function BossRow(index)
     end
     row = CreateFrame("Button", nil, list.child)
     row:SetHeight(BOSS_HEIGHT)
-    Box(row, CELL_FILL, CELL_EDGE)
-    -- Its portrait: the Journal's, else its model's face (BossModels: drawn over the list, as models in a
-    -- scrolling list draw out of place), else the Journal's default one. Under the model, a dark round.
-    row.back = row:CreateTexture(nil, "BORDER")
-    row.back:SetTexture(0, 0, 0, 0.9)
-    row.back:SetPoint("LEFT", 3, 0)
-    row.back:SetWidth(BOSS_HEIGHT - 6)
-    row.back:SetHeight(BOSS_HEIGHT - 6)
+    -- The Journal's boss button: a leather bar with a round socket at its left.
+    Bar(row, "BACKGROUND", BOSS_HEIGHT, 2, 107, 327, 161, 66, 300)
+    -- Its portrait: the Journal's (standing over the socket), else its model's face in the socket (BossModels:
+    -- drawn over the list, as models in a scrolling list draw out of place), else the Journal's default one.
     row.art = row:CreateTexture(nil, "ARTWORK")
     row.art:SetWidth(BOSS_HEIGHT * 2)
     row.art:SetHeight(BOSS_HEIGHT)
-    row.art:SetPoint("BOTTOMLEFT", 4, 1)
+    row.art:SetPoint("BOTTOMLEFT", 0, 0)
     row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     row.name:SetPoint("LEFT", row, "LEFT", BOSS_HEIGHT * 2 + 6, 0)
     row.name:SetPoint("RIGHT", -10, 0)
     row.name:SetJustifyH("LEFT")
-    row.name:SetTextColor(1, 0.95, 0.85)
-    local hover = row:CreateTexture(nil, "HIGHLIGHT")
-    hover:SetTexture(1, 0.8, 0.4, 0.15)
-    hover:SetPoint("TOPLEFT", 2, -2)
-    hover:SetPoint("BOTTOMRIGHT", -2, 2)
+    row.name:SetTextColor(1, 0.88, 0.62)
+    local hover = Piece(row, "HIGHLIGHT", 5, 166, 323, 213)
+    hover:SetBlendMode("ADD")
+    hover:SetAllPoints()
     row:SetScript("OnClick", function(self)
         view.page, view.boss, view.tab = "boss", self.index, "bosses"
         Refresh()
@@ -949,7 +967,7 @@ local function LootRow(index)
     end
     row = CreateFrame("Button", nil, list.child)
     row:SetHeight(42)
-    Box(row, CELL_FILL, CELL_EDGE)
+    Bar(row, "BACKGROUND", 42, 0, 749, 388, 801, 40, 348)     -- a band of the Journal's parchment
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetWidth(34)
     row.icon:SetHeight(34)
@@ -958,11 +976,15 @@ local function LootRow(index)
     row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -3)
     row.name:SetPoint("RIGHT", -8, 0)
     row.name:SetJustifyH("LEFT")
+    row.name:SetShadowOffset(0, 0)
     row.slot = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     row.slot:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 8, 3)
+    row.slot:SetTextColor(unpack(INK))
+    row.slot:SetShadowOffset(0, 0)
     row.kind = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     row.kind:SetPoint("BOTTOMRIGHT", -10, 6)
-    row.kind:SetTextColor(0.75, 0.7, 0.6)
+    row.kind:SetTextColor(unpack(INK))
+    row.kind:SetShadowOffset(0, 0)
     local hover = row:CreateTexture(nil, "HIGHLIGHT")
     hover:SetTexture(1, 0.8, 0.4, 0.15)
     hover:SetPoint("TOPLEFT", 2, -2)
@@ -997,11 +1019,12 @@ local function AbilityRow(index)
     -- Its title bar (a box holding its icon, name and flags), indented by its depth; its text under it.
     row.bar = CreateFrame("Frame", nil, row)
     row.bar:SetHeight(28)
-    Box(row.bar, CELL_FILL, CELL_EDGE)
+    -- The Journal's section bar: a framed square (the icon's) and a dark band fading out.
+    row.bar.pieces = Bar(row.bar, "BACKGROUND", 28, 0, 536, 330, 582, 46, 250)
     row.icon = row.bar:CreateTexture(nil, "ARTWORK")
     row.icon:SetWidth(22)
     row.icon:SetHeight(22)
-    row.icon:SetPoint("LEFT", 4, 0)
+    row.icon:SetPoint("LEFT", 3, 0)
     row.name = row.bar:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     row.name:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
     row.name:SetTextColor(1, 0.95, 0.85)
@@ -1154,7 +1177,9 @@ local function SetAbility(row, depth, icon, name, flags, text)
     row.text:SetText(text or "")
     -- A heading (no text): its bar gold-edged.
     local heading = not text or text == ""
-    BoxColor(row.bar, CELL_FILL, heading and ON_EDGE or CELL_EDGE)
+    for _, piece in ipairs(row.bar.pieces) do
+        piece:SetVertexColor(heading and 1 or 0.85, heading and 0.85 or 0.8, heading and 0.6 or 0.75)
+    end
     row:SetHeight(heading and 30 or (40 + row.text:GetStringHeight()))
 end
 
@@ -1292,16 +1317,14 @@ local function RefreshBook()
             row.art:SetTexture(portrait or (JOURNAL_ART .. "UI-EJ-BOSS-Default"))
             if row.creature then
                 row.art:Hide()
-                row.back:Show()
             else
                 row.art:Show()
-                row.back:Hide()
             end
         end
         Stack(ui.bossList, #bosses)
         for index, row in ipairs(ui.bossList.rows) do
             row.name:ClearAllPoints()
-            row.name:SetPoint("LEFT", row, "LEFT", row.creature and (BOSS_HEIGHT + 10) or (BOSS_HEIGHT * 2 + 6), 0)
+            row.name:SetPoint("LEFT", row, "LEFT", row.creature and (BOSS_HEIGHT + 18) or (BOSS_HEIGHT * 2 + 6), 0)
             row.name:SetPoint("RIGHT", -10, 0)
         end
         if #bosses == 0 then
