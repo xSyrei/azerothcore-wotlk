@@ -14,8 +14,9 @@
 -- the instance, the boss) go back. The lists scroll, their bars showing only when they do. The window has the
 -- character window's look (Emberforge_Resources' CharacterSkin.lua) outside: dark, bronze-edged, a title bar; inside,
 -- the Journal's own art: its open book, its boss buttons and tile frames (UI-ENCOUNTERJOURNALTEXTURES), its
--- section bars, the paper behind a boss's model, and each expansion's home background. The art and texts are the Mists of Pandaria client's Journal (Data.lua and Art/,
--- written by tools/journal/mop_journal.py); the models are the creatures' own.
+-- section bars, the paper behind a boss's model, and each expansion's home background. The art and texts are the
+-- Mists of Pandaria client's Journal (Data.lua and Art/, written by tools/journal/mop_journal.py); the models are the
+-- creatures' own.
 --
 -- The server (mod-titan, src/journal.cpp) sends the data as addon whispers to the player, prefix EFDJ:
 --   to server     LIST
