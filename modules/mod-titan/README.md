@@ -313,7 +313,15 @@ its loot), and a page per boss (left: its model, level, classification and healt
 loot). Abilities are the spells of the boss's C++ script file (`titan_journal_abilities`, written by
 `tools/journal/abilities.py`) and its SmartAI casts, shown with the client's own descriptions; loot is its creature
 and reference loot, uncommon gear and up. The server sends every boss's creature query response with the list, so
-the client can draw the models. Each instance's art (its loading screen) goes in `Art.lua`.
+the client can draw the models.
+
+The art and texts are the Mists of Pandaria client's own Journal (`Emberforge_Journal/Data.lua` and `Art/`, written by
+`tools/journal/mop_journal.py` from what `tools/extract/EmberforgeExtract.exe` takes out of that client): each
+dungeon's tile art, picture and story, each boss's portrait and story, and its abilities as the Journal has them
+(headings, icons, flags such as tank, heroic or interruptible, their numbers from the spell tables, 3.3.5a's where the
+spell is there). The addon matches the server's boss names to the Journal's; a boss it has no entry for keeps its
+model and the spells of its script. Raids that Journal does not have (Classic's, the Burning Crusade's, Wrath's) get
+the dungeon finder's art; Deadmines and Shadowfang Keep, rebuilt by Cataclysm, keep only their art.
 
 ## Level and power squish
 The game ends on Classic's numbers: the new level 60 is today's level 60 in power (`MaxPlayerLevel = 60`). Classic

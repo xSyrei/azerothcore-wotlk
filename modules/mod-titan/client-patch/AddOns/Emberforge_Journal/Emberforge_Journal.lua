@@ -1,15 +1,18 @@
 -- Emberforge Journal: the Dungeon Journal, laid out as Cataclysm's. Open with /journal or /dj.
 --
 -- - Home: the expansion's name as the title (click it to choose Classic, the Burning Crusade or Wrath), Dungeons and
---   Raids tabs, a search box, and a grid of tiles, one per dungeon or raid, with its creature levels.
--- - An instance: an open book. Left page: its plate (its art where Art.lua has it) and details (type, expansion,
---   creature levels as the server has them after the level squish, map, each difficulty with its size, queue levels
---   and dungeon ID). Right page: its difficulty buttons and, by the tabs on the book's edge, its Bosses (each with
---   its portrait, the creature's own model) or its Loot (every boss's).
--- - A boss: left page its model (drag to turn it), level, classification and health; right page its Abilities (the
---   spells its script casts, with the client's own descriptions) or its Loot.
--- The breadcrumbs (Home, the instance, the boss) go back. The lists scroll. The art is 3.3.5's own: the Achievement
--- window's parchment, the creatures' models, and the instances' loading screens (EmberforgeJournalArt, by map).
+--   Raids tabs, a search box, and a grid of tiles, one per dungeon or raid (its Journal button art), with its
+--   creature levels.
+-- - An instance: an open book. Left page: its picture, its story and details (type, expansion, creature levels as
+--   the server has them after the level squish, map, each difficulty with its size, queue levels and dungeon ID).
+--   Right page: its difficulty buttons and, by the tabs on the book's edge, its Bosses (each with its Journal
+--   portrait, else the creature's own model) or its Loot (every boss's).
+-- - A boss: left page its model (drag to turn it), level, classification, health and story; right page its
+--   Abilities (the Journal's: headings, each ability's icon, its flags (tank, healer, heroic, interruptible...) and
+--   text; else the spells its script casts, with the client's own descriptions) or its Loot.
+-- The breadcrumbs (Home, the instance, the boss) go back. The lists scroll. The art and texts are the Mists of
+-- Pandaria client's Journal (Data.lua and Art/, written by tools/journal/mop_journal.py); the rest is 3.3.5's own
+-- (the Achievement window's parchment, the creatures' models).
 --
 -- The server (mod-titan, src/journal.cpp) sends the data as addon whispers to the player, prefix EFDJ:
 --   to server     LIST
@@ -22,6 +25,10 @@
 
 local PREFIX = "EFDJ"
 local ART = "Interface\\AddOns\\Emberforge_Resources\\Art\\"
+local JOURNAL_ART = "Interface\\AddOns\\Emberforge_Journal\\Art\\"
+local FLAG_ICONS = JOURNAL_ART .. "UI-EJ-Icons"
+local FLAG_NAMES = { "Tank alert", "Damage dealer alert", "Healer alert", "Heroic difficulty", "Deadly",
+    "Important", "Interruptible", "Magic effect", "Curse effect", "Poison effect", "Disease effect", "Enrage" }
 local PARCHMENT = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal"
 local BAR = "Interface\\AchievementFrame\\UI-Achievement-Category-Background"
 local WIDTH, HEIGHT = 820, 520
@@ -196,6 +203,40 @@ local function ShowCreature(model, creature, portrait)
             pcall(model.SetCamera, model, 0)
         end
     end
+end
+
+-- The Journal's data (Data.lua) by the server's names: a boss's key is its name, lowercase, letters and digits only;
+-- a name that is not a key matches one that holds it (or that it holds).
+local function Key(name)
+    return ((name or ""):lower():gsub("[^%w]", ""))
+end
+
+local function JournalBoss(map, name)
+    local list = EmberforgeJournalBosses and EmberforgeJournalBosses[map]
+    if not list then
+        return nil
+    end
+    local key = Key(name)
+    if list[key] then
+        return list[key]
+    end
+    if #key >= 5 then
+        for other, boss in pairs(list) do
+            if #other >= 5 and (other:find(key, 1, true) or key:find(other, 1, true)) then
+                return boss
+            end
+        end
+    end
+end
+
+local function Portrait(map, name)
+    local boss = JournalBoss(map, name)
+    local file = boss and boss.p or (EmberforgeJournalPortraits and EmberforgeJournalPortraits[Key(name)])
+    return file and (JOURNAL_ART .. file)
+end
+
+local function InstanceArt(map)
+    return EmberforgeJournalArt and EmberforgeJournalArt[map]
 end
 
 -- The window -----------------------------------------------------------------------------------------------------
@@ -389,9 +430,14 @@ local function Tile(index)
     tile.fill:SetPoint("BOTTOMRIGHT", -3, 3)
     tile.shine = tile:CreateTexture(nil, "BORDER")
     tile.shine:SetTexture(1, 1, 1, 1)
-    tile.shine:SetGradientAlpha("VERTICAL", 1, 1, 1, 0, 1, 1, 1, 0.12)
     tile.shine:SetPoint("TOPLEFT", 3, -3)
     tile.shine:SetPoint("BOTTOMRIGHT", tile, "RIGHT", -3, 0)
+    -- Under the levels, a shade (on art).
+    tile.dim = tile:CreateTexture(nil, "BORDER")
+    tile.dim:SetTexture(1, 1, 1, 1)
+    tile.dim:SetGradientAlpha("VERTICAL", 0, 0, 0, 0.7, 0, 0, 0, 0)
+    tile.dim:SetPoint("TOPLEFT", tile, "LEFT", 3, -10)
+    tile.dim:SetPoint("BOTTOMRIGHT", -3, 3)
     tile.name = tile:CreateFontString(nil, "ARTWORK")
     tile.name:SetFont("Fonts\\MORPHEUS.TTF", 15)
     tile.name:SetShadowOffset(1, -1)
@@ -443,17 +489,25 @@ local function RefreshHome()
     for index, instance in ipairs(shown) do
         local tile = Tile(index)
         local colors = TINTS[instance.expansion]
-        local art = EmberforgeJournalArt and EmberforgeJournalArt[instance.map]
-        if art then
-            -- The instance's own art (its loading screen), its middle band.
-            tile.fill:SetTexture(art)
-            tile.fill:SetTexCoord(0, 1, 0.3, 0.6)
-            tile.fill:SetVertexColor(0.85, 0.85, 0.85)
+        local art = InstanceArt(instance.map)
+        if art and art.button then
+            -- Its Journal button (the picture in its top left), else the dungeon finder's background.
+            tile.fill:SetTexture(JOURNAL_ART .. art.button)
+            if art.lfg then
+                tile.fill:SetTexCoord(0, 1, 0.1, 0.9)
+            else
+                tile.fill:SetTexCoord(4 / 256, 170 / 256, 4 / 128, 92 / 128)
+            end
+            tile.fill:SetVertexColor(1, 1, 1)
+            tile.shine:SetGradientAlpha("VERTICAL", 0, 0, 0, 0, 0, 0, 0, 0.65)
+            tile.dim:Show()
         else
             tile.fill:SetTexture(1, 1, 1, 1)
             tile.fill:SetTexCoord(0, 1, 0, 1)
             tile.fill:SetGradientAlpha("VERTICAL", colors[2][1], colors[2][2], colors[2][3], 1,
                 colors[1][1], colors[1][2], colors[1][3], 1)
+            tile.shine:SetGradientAlpha("VERTICAL", 1, 1, 1, 0, 1, 1, 1, 0.12)
+            tile.dim:Hide()
         end
         tile.name:SetText(instance.name)
         tile.levels:SetText((instance.seasonal and "Holiday event, " or "") .. "Level "
@@ -500,6 +554,41 @@ local function List(page, top)
     scroll:SetScrollChild(child)
     scroll:SetScript("OnSizeChanged", function(self, width) child:SetWidth(width) end)
     return { scroll = scroll, child = child, rows = {} }
+end
+
+-- A scrolling text on a page, under `anchor`: its SetBody sets the text.
+local function TextScroll(page, anchor, gap)
+    lists = lists + 1
+    local scroll = CreateFrame("ScrollFrame", "EmberforgeJournalText" .. lists, page, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 4, gap)
+    scroll:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -30, 14)
+    local child = CreateFrame("Frame", nil, scroll)
+    child:SetWidth(10)
+    child:SetHeight(10)
+    scroll:SetScrollChild(child)
+    local text = child:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    text:SetPoint("TOPLEFT")
+    text:SetJustifyH("LEFT")
+    text:SetJustifyV("TOP")
+    text:SetSpacing(3)
+    text:SetTextColor(unpack(INK))
+    text:SetShadowOffset(0, 0)
+    local function Fit()
+        local width = scroll:GetWidth()
+        if width and width > 0 then
+            child:SetWidth(width)
+            text:SetWidth(width - 4)
+        end
+        child:SetHeight(math.max(1, text:GetStringHeight() + 6))
+        scroll:UpdateScrollChildRect()
+    end
+    scroll:SetScript("OnSizeChanged", Fit)
+    scroll.SetBody = function(self, body)
+        text:SetText(body)
+        Fit()
+        self:SetVerticalScroll(0)
+    end
+    return scroll
 end
 
 local function ListShown(list, shown)
@@ -574,7 +663,7 @@ do
 
     -- Left page, the instance: its plate (its art when there is any, else its expansion's colors), then its details.
     local plate = CreateFrame("Frame", nil, ui.left)
-    plate:SetHeight(170)
+    plate:SetHeight(230)
     plate:SetPoint("TOPLEFT", 14, -14)
     plate:SetPoint("TOPRIGHT", -14, -14)
     plate:SetBackdrop({ edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 16,
@@ -592,21 +681,13 @@ do
     plate.sub = plate:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     plate.sub:SetPoint("BOTTOM", 0, 12)
     ui.plate = plate
-    local about = ui.left:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    about:SetPoint("TOPLEFT", plate, "BOTTOMLEFT", 6, -12)
-    about:SetPoint("RIGHT", ui.left, "RIGHT", -20, 0)
-    about:SetJustifyH("LEFT")
-    about:SetJustifyV("TOP")
-    about:SetSpacing(4)
-    about:SetTextColor(unpack(INK))
-    about:SetShadowOffset(0, 0)
-    ui.about = about
+    ui.about = TextScroll(ui.left, plate, -8)
 
     -- Left page, the boss: its model (drag to turn it), its name, then its details.
     local model = CreateFrame("PlayerModel", nil, ui.left)
     model:SetPoint("TOPLEFT", 14, -14)
     model:SetPoint("TOPRIGHT", -14, -14)
-    model:SetHeight(250)
+    model:SetHeight(220)
     model:EnableMouse(true)
     model:SetScript("OnMouseDown", function(self, button)
         if button == "LeftButton" then
@@ -631,14 +712,7 @@ do
     bossName:SetShadowOffset(2, -2)
     bossName:SetTextColor(1, 0.86, 0.45)
     bossName:SetPoint("BOTTOM", 0, 8)
-    local bossInfo = ui.left:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    bossInfo:SetPoint("TOPLEFT", model, "BOTTOMLEFT", 6, -12)
-    bossInfo:SetPoint("RIGHT", ui.left, "RIGHT", -20, 0)
-    bossInfo:SetJustifyH("LEFT")
-    bossInfo:SetJustifyV("TOP")
-    bossInfo:SetSpacing(4)
-    bossInfo:SetTextColor(unpack(INK))
-    bossInfo:SetShadowOffset(0, 0)
+    local bossInfo = TextScroll(ui.left, model, -8)
     ui.model, ui.modelBack, ui.bossName, ui.bossInfo = model, backdrop, bossName, bossInfo
 
     -- Right page: its title and the difficulty buttons, then a list.
@@ -722,6 +796,7 @@ local function BossRow(index)
     back:SetPoint("LEFT", 3, 0)
     back:SetWidth(BOSS_HEIGHT - 6)
     back:SetHeight(BOSS_HEIGHT - 6)
+    row.back = back
     local portrait = CreateFrame("PlayerModel", nil, row)
     portrait:SetAllPoints(back)
     row.portrait = portrait
@@ -730,8 +805,13 @@ local function BossRow(index)
     ring:SetWidth(BOSS_HEIGHT + 2)
     ring:SetHeight(BOSS_HEIGHT + 2)
     ring:SetPoint("CENTER")
+    -- The Journal's portrait, when it has one (in place of the model).
+    row.art = row:CreateTexture(nil, "ARTWORK")
+    row.art:SetWidth(BOSS_HEIGHT * 2)
+    row.art:SetHeight(BOSS_HEIGHT)
+    row.art:SetPoint("BOTTOMLEFT", 0, 0)
     row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    row.name:SetPoint("LEFT", portrait, "RIGHT", 14, 0)
+    row.name:SetPoint("LEFT", row, "LEFT", BOSS_HEIGHT + 14, 0)
     row.name:SetPoint("RIGHT", -10, 0)
     row.name:SetJustifyH("LEFT")
     row.name:SetTextColor(1, 0.95, 0.85)
@@ -802,30 +882,48 @@ local function AbilityRow(index)
         return row
     end
     row = CreateFrame("Button", nil, list.child)
-    local bar = row:CreateTexture(nil, "BACKGROUND")
-    bar:SetTexture(BAR)
-    bar:SetTexCoord(0, 1, 0, 0.75)
-    bar:SetPoint("TOPLEFT")
-    bar:SetPoint("RIGHT")
-    bar:SetHeight(28)
+    row.bar = row:CreateTexture(nil, "BACKGROUND")
+    row.bar:SetTexture(BAR)
+    row.bar:SetTexCoord(0, 1, 0, 0.75)
+    row.bar:SetPoint("RIGHT")
+    row.bar:SetHeight(28)
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetWidth(22)
     row.icon:SetHeight(22)
-    row.icon:SetPoint("TOPLEFT", 4, -3)
     row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     row.name:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
     row.name:SetTextColor(1, 0.95, 0.85)
+    -- The ability's flags (the Journal's icons), after its name.
+    row.flags = {}
+    for index = 1, 4 do
+        local flag = CreateFrame("Frame", nil, row)
+        flag:SetWidth(18)
+        flag:SetHeight(18)
+        flag:SetPoint("LEFT", index == 1 and row.name or row.flags[index - 1], "RIGHT", index == 1 and 6 or 1, 0)
+        flag.icon = flag:CreateTexture(nil, "ARTWORK")
+        flag.icon:SetAllPoints()
+        flag.icon:SetTexture(FLAG_ICONS)
+        flag:EnableMouse(true)
+        flag:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(self.label)
+            GameTooltip:Show()
+        end)
+        flag:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        row.flags[index] = flag
+    end
     row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.text:SetPoint("TOPLEFT", 10, -34)
     row.text:SetPoint("RIGHT", -6, 0)
     row.text:SetJustifyH("LEFT")
     row.text:SetJustifyV("TOP")
     row.text:SetTextColor(unpack(INK))
     row.text:SetShadowOffset(0, 0)
     row:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetHyperlink("spell:" .. self.spell)
-        GameTooltip:Show()
+        if self.spell then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetHyperlink("spell:" .. self.spell)
+            GameTooltip:Show()
+        end
     end)
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     list.rows[index] = row
@@ -902,6 +1000,40 @@ local function FillLoot(items)
     return #items
 end
 
+-- An ability row: indented by its depth, its icon (none: its name moves in), its flags, its text (none: a heading).
+local function SetAbility(row, depth, icon, name, flags, text)
+    local indent = depth * 16
+    row.bar:ClearAllPoints()
+    row.bar:SetPoint("TOPLEFT", indent, 0)
+    row.bar:SetPoint("RIGHT")
+    row.icon:ClearAllPoints()
+    row.icon:SetPoint("TOPLEFT", indent + 4, -3)
+    row.icon:SetTexture(icon)
+    row.icon:SetWidth(icon and 22 or 1)
+    row.icon:SetAlpha(icon and 1 or 0)
+    row.name:SetText(name)
+    local shown = 0
+    for bit = 0, #FLAG_NAMES - 1 do
+        local mask = 2 ^ bit
+        if flags and flags % (mask * 2) >= mask and shown < #row.flags then
+            shown = shown + 1
+            local flag = row.flags[shown]
+            local column, line = bit % 8, math.floor(bit / 8)
+            flag.icon:SetTexCoord(column / 8, (column + 1) / 8, line / 2, (line + 1) / 2)
+            flag.label = FLAG_NAMES[bit + 1]
+            flag:Show()
+        end
+    end
+    for index = shown + 1, #row.flags do
+        row.flags[index]:Hide()
+    end
+    row.text:ClearAllPoints()
+    row.text:SetPoint("TOPLEFT", indent + 10, -34)
+    row.text:SetPoint("RIGHT", -6, 0)
+    row.text:SetText(text or "")
+    row:SetHeight((text and text ~= "") and (40 + row.text:GetStringHeight()) or 30)
+end
+
 local function FillAbilities(spells)
     local shown, seen = 0, {}
     for _, spell in ipairs(spells) do
@@ -912,14 +1044,23 @@ local function FillAbilities(spells)
             shown = shown + 1
             local row = AbilityRow(shown)
             row.spell = spell
-            row.icon:SetTexture(icon)
-            row.name:SetText(name)
-            row.text:SetText(text)
-            row:SetHeight(40 + row.text:GetStringHeight())
+            SetAbility(row, 0, icon, name, 0, text)
         end
     end
     Stack(ui.abilityList, shown)
     return shown
+end
+
+-- The Journal's abilities of a boss: its sections, in order, each at its depth.
+local function FillJournal(sections)
+    for index, section in ipairs(sections) do
+        local row = AbilityRow(index)
+        row.spell = nil
+        SetAbility(row, section.l or 0, section.i and ("Interface\\Icons\\" .. section.i), section.t, section.f,
+            section.b)
+    end
+    Stack(ui.abilityList, #sections)
+    return #sections
 end
 
 local function RefreshBook()
@@ -932,10 +1073,15 @@ local function RefreshBook()
     local bosses = Bosses(instance)
     local bossPage = view.page == "boss" and bosses[view.boss]
     local colors = TINTS[instance.expansion]
-    local art = EmberforgeJournalArt and EmberforgeJournalArt[instance.map]
-    if art then
-        ui.plate.fill:SetTexture(art)
-        ui.plate.fill:SetTexCoord(0, 1, 0.15, 0.75)
+    local art = InstanceArt(instance.map)
+    if art and art.lore then
+        -- Its Journal picture (its framed part), else the dungeon finder's background.
+        ui.plate.fill:SetTexture(JOURNAL_ART .. art.lore)
+        if art.lfg then
+            ui.plate.fill:SetTexCoord(0.12, 0.88, 0, 1)
+        else
+            ui.plate.fill:SetTexCoord(6 / 512, 394 / 512, 4 / 512, 329 / 512)
+        end
         ui.plate.fill:SetVertexColor(1, 1, 1)
     else
         ui.plate.fill:SetTexture(1, 1, 1, 1)
@@ -945,16 +1091,23 @@ local function RefreshBook()
     end
     ui.plate.name:SetText(instance.name)
     ui.plate.sub:SetText(TYPES[instance.type] .. ", " .. EXPANSIONS[instance.expansion])
-    local lines = {
+    local lore = EmberforgeJournalLore and EmberforgeJournalLore[instance.map]
+    local lines = {}
+    if lore then
+        lines[1] = lore .. "\n"
+    end
+    for _, line in ipairs({
         "Creature levels: " .. Levels(instance.low, instance.high),
         "Map ID: " .. instance.map .. (instance.seasonal and "   (holiday event)" or ""),
         "",
-    }
+    }) do
+        lines[#lines + 1] = line
+    end
     for _, difficulty in ipairs(instance.difficulties) do
         lines[#lines + 1] = DifficultyName(instance, difficulty) .. ": queue levels "
             .. Levels(difficulty.qmin, difficulty.qmax) .. ", dungeon ID " .. difficulty.id
     end
-    ui.about:SetText(table.concat(lines, "\n"))
+    ui.about:SetBody(table.concat(lines, "\n"))
 
     -- Left page: the instance, or the boss.
     for _, part in ipairs({ ui.plate, ui.about }) do
@@ -964,6 +1117,7 @@ local function RefreshBook()
         if bossPage then part:Show() else part:Hide() end
     end
     local info = bossPage and details and details.info[view.boss]
+    local journal = bossPage and JournalBoss(instance.map, bossPage.name)
     if bossPage then
         ShowCreature(ui.model, info and info.entry or bossPage.creature, false)
         ui.model.facing = 0
@@ -971,10 +1125,11 @@ local function RefreshBook()
         if info then
             local health = info.health > 0 and (" " .. (info.health >= 1000000 and
                 string.format("%.1fM", info.health / 1000000) or info.health)) or " -"
-            ui.bossInfo:SetText("Level " .. info.level .. " " .. (RANKS[info.rank] or "") .. ", "
-                .. (CREATURE_TYPES[info.type] or "") .. "\nHealth:" .. health)
+            ui.bossInfo:SetBody("Level " .. info.level .. " " .. (RANKS[info.rank] or "") .. ", "
+                .. (CREATURE_TYPES[info.type] or "") .. "\nHealth:" .. health
+                .. (journal and journal.d and ("\n\n" .. journal.d) or ""))
         else
-            ui.bossInfo:SetText("")
+            ui.bossInfo:SetBody(journal and journal.d or "")
         end
     end
 
@@ -1007,12 +1162,29 @@ local function RefreshBook()
             local row = BossRow(index)
             row.index = index
             row.name:SetText(boss.name)
-            ShowCreature(row.portrait, boss.creature, true)
+            local portrait = Portrait(instance.map, boss.name)
+            row.name:ClearAllPoints()
+            row.name:SetPoint("LEFT", row, "LEFT", portrait and (BOSS_HEIGHT * 2 + 6) or (BOSS_HEIGHT + 14), 0)
+            row.name:SetPoint("RIGHT", -10, 0)
+            if portrait then
+                row.art:SetTexture(portrait)
+                row.art:Show()
+                row.portrait:Hide()
+                row.back:Hide()
+                row.portrait:ClearModel()
+            else
+                row.art:Hide()
+                row.portrait:Show()
+                row.back:Show()
+                ShowCreature(row.portrait, boss.creature, true)
+            end
         end
         Stack(ui.bossList, #bosses)
         if #bosses == 0 then
             ui.empty:SetText("No bosses listed")
         end
+    elseif view.tab == "bosses" and journal and #journal.s > 0 then
+        FillJournal(journal.s)
     elseif not (details and details.ready) then
         ui.empty:SetText("Loading...")
         Stack(ui.lootList, 0)
