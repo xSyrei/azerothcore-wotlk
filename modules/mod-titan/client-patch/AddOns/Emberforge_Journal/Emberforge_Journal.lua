@@ -12,7 +12,7 @@
 --   portrait, else our head shot, else the model's face, else the default portrait). Its right page: its framed
 --   picture with its name and story, or (by the tabs on the book's edge) its loot. The difficulty button at the top
 --   right of the book.
--- - A boss: the left page its portrait, level, classification, health and story; the right page, by the tabs, its
+-- - A boss (its button lit on the left page; clicked again, back to the instance): the right page, by the tabs, its
 --   abilities (the Journal's: headings, icons, flags (tank, healer, heroic, interruptible...) and texts; else the
 --   spells its script casts), or its loot.
 -- A wing of a map (Scarlet Monastery's Cathedral...) lists its own bosses (the server's W). The lists scroll, their
@@ -333,10 +333,7 @@ local WEAPON_TYPES = { [0] = "Axe", [1] = "Axe", [2] = "Bow", [3] = "Gun", [4] =
     [16] = "Thrown", [18] = "Crossbow", [19] = "Wand", [20] = "Fishing Pole" }
 local ARMOR_TYPES = { [1] = "Cloth", [2] = "Leather", [3] = "Mail", [4] = "Plate", [6] = "Shield", [7] = "Libram",
     [8] = "Idol", [9] = "Totem", [10] = "Sigil" }
-local RANKS = { [0] = "Normal", [1] = "Elite", [2] = "Rare Elite", [3] = "Boss", [4] = "Rare" }
-local CREATURE_TYPES = { [1] = "Beast", [2] = "Dragonkin", [3] = "Demon", [4] = "Elemental", [5] = "Giant",
-    [6] = "Undead", [7] = "Humanoid", [8] = "Critter", [9] = "Mechanical", [10] = "Not specified", [11] = "Totem",
-    [12] = "Non-combat Pet", [13] = "Gas Cloud" }
+
 local scan = CreateFrame("GameTooltip", "EmberforgeJournalScan", UIParent, "GameTooltipTemplate")
 local function SpellDescription(spell)
     scan:SetOwner(WorldFrame, "ANCHOR_NONE")
@@ -346,12 +343,6 @@ local function SpellDescription(spell)
     local text = lines > 1 and _G["EmberforgeJournalScanTextLeft" .. lines]:GetText()
     scan:Hide()
     return text
-end
-local function DifficultyLabel(instance, difficulty)
-    if instance.type == 2 then
-        return difficulty.players > 0 and tostring(difficulty.players) or "R"
-    end
-    return difficulty.difficulty == 1 and "H" or "N"
 end
 
 local function DifficultyName(instance, difficulty)
@@ -852,23 +843,6 @@ do
         scroll:SetPoint("BOTTOMLEFT", 25, 1)
     end, BOSS_GAP, 14)
 
-    -- The boss on the left page: its portrait (the Journal's, standing on the page), its details and story.
-    local bossArt = book:CreateTexture(nil, "ARTWORK")
-    bossArt:SetWidth(128)
-    bossArt:SetHeight(64)
-    bossArt:SetPoint("TOPLEFT", 30, -48)
-    local bossInfo = TextScroll(book, function(scroll)
-        scroll:SetWidth(330)
-        scroll:SetHeight(300)
-        scroll:SetPoint("TOPLEFT", 30, -118)
-    end, DARK)
-    local bossLine = book:CreateFontString(nil, "ARTWORK", "GameFontBlack")
-    bossLine:SetPoint("TOPLEFT", bossArt, "TOPRIGHT", 8, -18)
-    bossLine:SetWidth(190)
-    bossLine:SetJustifyH("LEFT")
-    bossLine:SetTextColor(unpack(DARK))
-    ui.bossArt, ui.bossInfo, ui.bossLine = bossArt, bossInfo, bossLine
-
     -- Right page, the instance: its framed picture (the Journal's own size and place), its name, its story.
     local plate = CreateFrame("Frame", nil, book)
     plate:SetWidth(390)
@@ -1069,7 +1043,12 @@ local function BossRow(index)
     row:SetScript("OnEnter", function(self) self.name:SetTextColor(unpack(BOSS_TEXT_HOVER)) end)
     row:SetScript("OnLeave", function(self) self.name:SetTextColor(unpack(BOSS_TEXT)) end)
     row:SetScript("OnClick", function(self)
-        view.page, view.boss, view.tab = "boss", self.index, "bosses"
+        if view.page == "boss" and view.boss == self.index then
+            view.page, view.boss = "instance", nil        -- the chosen one again: back to the instance
+        else
+            view.page, view.boss = "boss", self.index
+        end
+        view.tab = "bosses"
         Refresh()
     end)
     list.rows[index] = row
@@ -1309,7 +1288,6 @@ local function RefreshBook()
     local bosses = Bosses(instance)
     local bossPage = view.page == "boss" and bosses[view.boss]
     local journal = bossPage and JournalBoss(instance.map, bossPage.name)
-    local info = bossPage and details and details.info[bossPage.index]
 
     -- The titles on the pages' shadows.
     ui.instanceTitle:SetText(instance.name)
@@ -1331,35 +1309,22 @@ local function RefreshBook()
         Shown(tab.iconOff, not on)
     end
 
-    -- The left page: the bosses, or the boss.
-    ListShown(ui.bossList, not bossPage)
-    for _, part in ipairs({ ui.bossArt, ui.bossInfo, ui.bossLine }) do
-        Shown(part, bossPage)
-    end
-    if not bossPage then
-        for index, boss in ipairs(bosses) do
-            local row = BossRow(index)
-            row.index = index
-            row.name:SetText(boss.name)
-            local portrait = Portrait(instance.map, boss.name)
-            row.creature = not portrait and boss.creature > 0 and boss.creature or nil
-            row.art:SetTexture(portrait or (JOURNAL_ART .. "UI-EJ-BOSS-Default"))
-            Shown(row.art, not row.creature)
-        end
-        Stack(ui.bossList, #bosses)
-    else
-        ui.bossArt:SetTexture(Portrait(instance.map, bossPage.name) or (JOURNAL_ART .. "UI-EJ-BOSS-Default"))
-        if info then
-            local health = info.health > 0 and (info.health >= 1000000 and
-                string.format("%.1fM", info.health / 1000000) or tostring(info.health)) or "-"
-            local kind = info.type ~= 10 and CREATURE_TYPES[info.type]       -- not "Not specified"
-            ui.bossLine:SetText("Level " .. info.level .. " " .. (RANKS[info.rank] or "")
-                .. (kind and (" " .. kind) or "") .. "\nHealth: " .. health)
+    -- The left page: the bosses, the chosen one lit (the right page is its).
+    for index, boss in ipairs(bosses) do
+        local row = BossRow(index)
+        row.index = index
+        row.name:SetText(boss.name)
+        local portrait = Portrait(instance.map, boss.name)
+        row.creature = not portrait and boss.creature > 0 and boss.creature or nil
+        row.art:SetTexture(portrait or (JOURNAL_ART .. "UI-EJ-BOSS-Default"))
+        Shown(row.art, not row.creature)
+        if bossPage and index == view.boss then
+            row:LockHighlight()
         else
-            ui.bossLine:SetText("")
+            row:UnlockHighlight()
         end
-        ui.bossInfo:SetBody(journal and journal.d or "")
     end
+    Stack(ui.bossList, #bosses)
 
     -- The right page: the instance's picture and story; else the tab's list.
     local overview = view.tab == "bosses" and not bossPage
