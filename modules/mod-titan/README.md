@@ -53,6 +53,11 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   130 talents are learned as abilities, rolled with the ability rolls from their tier's level (row 1: 10, row 11:
   60), never by a talent roll. They stay on their talent tree in the Classless window, lit when known. Ones rolled
   as talents before are kept, and their points no longer count, so another talent is owed.
+- **Every ability by level 59**: one first learned past level 60 in the game (the Burning Crusade's and Wrath's:
+  Obliterate at 61, Kill Shot at 71, Mirror Image at 80) comes at 40 plus its level past 60 (41-59), one at 60 at
+  59 (60's roll is a capstone). Later ranks keep their levels. A talent's other spells come with its ability
+  (Metamorphosis: Shadow Cleave), and faction pairs are one ability, the Hero's faction's (Bloodlust for the Horde,
+  Heroism for the Alliance; Teleport: Shattrath).
 - **Capstones at level 60** (`CAPSTONE_ABILITIES`, `CUSTOM_CAPSTONES`: Bladestorm, Divine Storm, Fel Barrage,
   Storm, Earth, and Fire...): rolled only by level 60's roll, which is a capstone suiting the role instead of a
   talent rank. No other roll or pick gives one.

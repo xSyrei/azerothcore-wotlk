@@ -169,7 +169,8 @@ namespace
         std::vector<std::string> abilities;
         for (Wildcard::Ability const& ability : Wildcard::Abilities())
         {
-            if (!ability.Offered)
+            // One of a faction's pair (Bloodlust or Heroism): the player's.
+            if (!ability.Offered || !Wildcard::FitsPlayer(player, ability))
                 continue;
 
             if (ability.SkillLine)

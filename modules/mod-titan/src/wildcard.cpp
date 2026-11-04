@@ -491,18 +491,35 @@ namespace
         return 0;
     }
 
-    // Spells limited to some races (faction versions such as Heroism / Bloodlust) by their skill line.
+    // Spells limited to some races (faction versions such as Heroism / Bloodlust) by their skill line: a Hero takes
+    // their faction's (Bloodlust is the Orc's, Tauren's and Troll's, Heroism the Draenei's: an Undead or Human Hero
+    // has their faction's too).
     bool FitsRace(Player const* player, uint32 spellId)
     {
         SkillLineAbilityMapBounds bounds = sSpellMgr->GetSkillLineAbilityMapBounds(spellId);
         if (bounds.first == bounds.second)
             return true;
 
+        uint32 factionMask = 0;
+        for (uint8 race = RACE_HUMAN; race <= RACE_DRAENEI; ++race)
+            if (sChrRacesStore.LookupEntry(race) && Player::TeamIdForRace(race) == player->GetTeamId(true))
+                factionMask |= 1 << (race - 1);
+
         for (auto itr = bounds.first; itr != bounds.second; ++itr)
-            if (!itr->second->RaceMask || (itr->second->RaceMask & player->getRaceMask()))
+            if (!itr->second->RaceMask || (itr->second->RaceMask & factionMask))
                 return true;
 
         return false;
+    }
+
+    // An ability first learned past level 60 (the Burning Crusade's and Wrath's: Obliterate at 61, Mirror Image at
+    // 80), or at 60 (whose roll is a capstone), comes earlier: 61-80 to 41-59 (40 + its level past 60), 60 to 59.
+    // Its later ranks keep their levels (past 60: never learned, the game ending on Classic's power).
+    uint8 Reachable(uint8 level)
+    {
+        if (level > CAPSTONE_LEVEL)
+            level = uint8(40 + (level - CAPSTONE_LEVEL));
+        return std::min<uint8>(level, CAPSTONE_LEVEL - 1);
     }
 
     // Index of the best rank available at the player's level, or -1.
@@ -903,6 +920,10 @@ namespace Wildcard
 
             // The talents' abilities: their chains (what the talent's rank 1 teaches, or itself), at their tier's level.
             std::unordered_map<uint32, std::pair<uint32, uint8>> talentAbilities;  // first rank -> talent, level
+            // What else a talent teaches, learned along with its ability (Metamorphosis: Shadow Cleave and its
+            // hidden aura; Tree of Life: its passive).
+            std::unordered_map<uint32, std::vector<uint32>> talentCompanions;     // ability -> companions
+            std::unordered_set<uint32> talentExtras;
             for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
             {
                 TalentEntry const* talent = sTalentStore.LookupEntry(i);
@@ -925,12 +946,26 @@ namespace Wildcard
                     if (tab->ClassMask & (1 << (c - 1)))
                         classId = c;
                 uint8 level = uint8(std::min<uint32>(CAPSTONE_LEVEL, 10 + 5 * talent->Row));
-                for (uint32 spellId : TaughtSpells(talent->RankID[0]))
+                // Its abilities: what it teaches by its own name, shown and cast (Mangle (Cat), Mangle (Bear)); the
+                // rest come along.
+                std::vector<uint32> taught = TaughtSpells(talent->RankID[0]), mains, extras;
+                for (uint32 spellId : taught)
                 {
+                    SpellInfo const* taughtInfo = sSpellMgr->AssertSpellInfo(spellId);
+                    bool main = taught.size() == 1 || (!taughtInfo->IsPassive()
+                        && !taughtInfo->HasAttribute(SPELL_ATTR0_DO_NOT_DISPLAY) && SpellName(spellId).starts_with(name)
+                        && std::none_of(mains.begin(), mains.end(),
+                            [&](uint32 other) { return SpellName(other) == SpellName(spellId); }));
                     uint32 firstRank = sSpellMgr->GetFirstSpellInChain(spellId);
                     addChain(firstRank, classId);
-                    talentAbilities[firstRank] = { talent->TalentID, level };
+                    (main ? mains : extras).push_back(firstRank);
                 }
+                for (uint32 firstRank : mains)
+                {
+                    talentAbilities[firstRank] = { talent->TalentID, level };
+                    talentCompanions[firstRank] = extras;
+                }
+                talentExtras.insert(extras.begin(), extras.end());
             }
 
             auto matches = [&](Ability const& ability, auto const& names)
@@ -960,6 +995,8 @@ namespace Wildcard
                 ability.Companion = matches(ability, TAME_BEAST_COMPANIONS);
                 if (ability.Companion)
                     companions.push_back(firstRank);
+                if (talentExtras.count(firstRank) && !talentAbilities.count(firstRank))
+                    ability.Companion = true;
 
                 if (auto talentItr = talentAbilities.find(firstRank); talentItr != talentAbilities.end())
                 {
@@ -973,6 +1010,8 @@ namespace Wildcard
                 ability.Capstone = ability.TalentId && matches(ability, CAPSTONE_ABILITIES);
                 if (ability.Capstone)
                     ability.Ranks.front().Level = CAPSTONE_LEVEL;
+                else
+                    ability.Ranks.front().Level = Reachable(ability.Ranks.front().Level);
 
                 SpellInfo const* firstInfo = sSpellMgr->AssertSpellInfo(firstRank);
                 ability.Offered = !ability.Banned && !ability.Companion && firstRank != SPELL_PICK_LOCK
@@ -980,8 +1019,12 @@ namespace Wildcard
             }
 
             for (Ability& ability : result)
+            {
                 if (hasName(ability, TAME_BEAST))
                     ability.Companions = companions;
+                if (auto itr = talentCompanions.find(ability.Ranks.front().SpellId); itr != talentCompanions.end())
+                    ability.Companions = itr->second;
+            }
 
             for (CustomAbility const& custom : CUSTOM_ABILITIES)
             {
@@ -1184,6 +1227,11 @@ namespace Wildcard
         return ability.Offered && BestRank(player, ability) >= 0 && KnownRank(player, ability) < 0
             && (!ability.Capstone || player->GetLevel() >= CAPSTONE_LEVEL)
             && FitsRace(player, ability.Ranks.front().SpellId) && MeetsRequirements(player, ability);
+    }
+
+    bool FitsPlayer(Player const* player, Ability const& ability)
+    {
+        return FitsRace(player, ability.Ranks.front().SpellId);
     }
 
     Ability const* TalentAbility(uint32 talentId)

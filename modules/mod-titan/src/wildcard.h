@@ -107,6 +107,8 @@ namespace Wildcard
     void Learn(Player* player, Ability const& ability, char const* what);
     // Learns a random learnable ability (not a capstone); the ability, or nullptr if none is left.
     Ability const* GrantRandom(Player* player, char const* what);
+    // Its faction's version for the player's race (Bloodlust or Heroism, Teleport: Shattrath's two): one each.
+    bool FitsPlayer(Player const* player, Ability const& ability);
     // The talent's ability, when it is learned as one (TalentId), or nullptr.
     Ability const* TalentAbility(uint32 talentId);
     // Unlearns every rank of an ability, and its companion spells.
