@@ -18,6 +18,7 @@
 #include "Chat.h"
 #include "DatabaseEnv.h"
 #include "DBCStores.h"
+#include "DisableMgr.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "ScriptMgr.h"
@@ -329,6 +330,10 @@ namespace
                 continue;
             // Holiday dungeons (the Headless Horseman, Coren Direbrew, the Frost Lord Ahune...) are left out.
             if (dungeon->Flags & LFG_FLAG_SEASONAL)
+                continue;
+            // Closed instances (`disables`, a map: data/sql/db-world/titan_retired_dungeons.sql) are left out.
+            if (sDisableMgr->IsDisabledFor(DISABLE_TYPE_MAP, dungeon->MapID, nullptr,
+                uint8(dungeon->Difficulty)))
                 continue;
 
             MapDifficulty const* difficulty = GetMapDifficultyData(dungeon->MapID, Difficulty(dungeon->Difficulty));
