@@ -2103,9 +2103,9 @@ local function CreateRoll()
             skip:Hide()
         end
 
-        -- Land somewhere inside the prize's slot, not always dead center. Instant rolls start there.
+        -- Land on the prize. Instant rolls start there.
         reveal.start = StartCenter()
-        reveal.target = (WINNER_SLOT - 0.5) * SLOT_STEP + (math.random() - 0.5) * (SLOT_STEP - 20)
+        reveal.target = (WINNER_SLOT - 0.5) * SLOT_STEP     -- the prize's center, right under the selector
         if instant then
             reveal.start = reveal.target
         end
