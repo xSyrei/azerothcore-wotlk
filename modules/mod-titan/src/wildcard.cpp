@@ -50,6 +50,9 @@
 //   known ability it modifies; a scripted one (no masks, a dummy) a known ability of its class. When none is left,
 //   generic ones: stat, damage, crit, healing, defense talents suiting the role, and talents teaching an ability
 //   suiting it.
+// - Talents' abilities (TALENT_ABILITIES) are abilities: rolled with them from their tier's level, never as talents.
+//   Capstones (CAPSTONE_ABILITIES, CUSTOM_CAPSTONES) are rolled at CAPSTONE_LEVEL only: its roll is a capstone,
+//   not a talent rank.
 // - Owned abilities upgrade to the best rank for the Hero's level by themselves.
 // - An ability cast only in a form or stance (Swipe (Cat): Cat Form, Overpower: Battle Stance), only
 //   in stealth (Ambush) or on a pet (Mend Pet: Tame Beast) is only rolled or picked once the Hero
@@ -68,6 +71,7 @@ namespace
     constexpr uint32 SETTING_ABILITIES_GRANTED = 0;
     constexpr uint32 SETTING_PICKS_LEFT = 1;
     constexpr uint32 SETTING_ROLE = 2;
+    constexpr uint32 SETTING_CAPSTONE_GRANTED = 3;
 
     // The roles' buffs, by Role (ROLE_NONE has none).
     constexpr std::array<uint32, MAX_ROLES> ROLE_SPELLS = { 0, 90603, 90604, 90605, 90606 };
@@ -129,6 +133,62 @@ namespace
         // Warrior
         "Heroic Strike", "Charge", "Rend", "Hamstring", "Battle Stance", "Thunder Clap", "Battle Shout",
         "Victory Rush", "Defensive Stance", "Taunt", "Shield Block", "Bloodrage", "Sunder Armor",
+    };
+
+    // Talents learned as abilities (by name; their talent's rank 1 spell, or what it teaches: Mangle's Cat and Bear
+    // versions), never as talents: rolled with the abilities from their tier's level (row 1: 10, ... row 11: 60) and
+    // lit on their talent tree in the Classless window when known.
+    constexpr char const* TALENT_ABILITIES[] = {
+        // Death Knight
+        "Mark of Blood", "Rune Tap", "Hysteria", "Heart Strike", "Dancing Rune Weapon", "Lichborne", "Deathchill",
+        "Hungering Cold", "Unbreakable Armor", "Frost Strike", "Howling Blast", "Corpse Explosion", "Ghoul Frenzy",
+        "Anti-Magic Zone", "Bone Shield", "Scourge Strike", "Summon Gargoyle",
+        // Druid
+        "Insect Swarm", "Moonkin Form", "Typhoon", "Force of Nature", "Starfall", "Survival Instincts", "Feral Charge",
+        "Mangle", "Berserk", "Nature's Swiftness", "Swiftmend", "Tree of Life", "Wild Growth",
+        // Hunter
+        "Intimidation", "Bestial Wrath", "Beast Mastery", "Aimed Shot", "Readiness", "Trueshot Aura", "Silencing Shot",
+        "Chimera Shot", "Scatter Shot", "Counterattack", "Wyvern Sting", "Black Arrow", "Explosive Shot",
+        // Mage
+        "Focus Magic", "Presence of Mind", "Arcane Power", "Slow", "Arcane Barrage", "Pyroblast", "Blast Wave",
+        "Combustion", "Dragon's Breath", "Living Bomb", "Icy Veins", "Cold Snap", "Ice Barrier",
+        "Summon Water Elemental", "Deep Freeze",
+        // Paladin
+        "Aura Mastery", "Divine Favor", "Holy Shock", "Divine Illumination", "Beacon of Light", "Divine Sacrifice",
+        "Blessing of Sanctuary", "Holy Shield", "Avenger's Shield", "Hammer of the Righteous", "Seal of Command",
+        "Repentance", "Divine Storm",
+        // Priest
+        "Inner Focus", "Power Infusion", "Pain Suppression", "Penance", "Desperate Prayer", "Lightwell",
+        "Circle of Healing", "Guardian Spirit", "Mind Flay", "Silence", "Shadowform", "Psychic Horror",
+        "Vampiric Touch", "Dispersion",
+        // Rogue
+        "Cold Blood", "Hunger For Blood", "Riposte", "Blade Flurry", "Adrenaline Rush", "Killing Spree",
+        "Ghostly Strike", "Preparation", "Hemorrhage", "Premeditation", "Shadowstep", "Shadow Dance",
+        // Shaman
+        "Elemental Mastery", "Totem of Wrath", "Thunderstorm", "Feral Spirit", "Riptide",
+        // Warlock
+        "Curse of Exhaustion", "Dark Pact", "Unstable Affliction", "Haunt", "Soul Link", "Fel Domination",
+        "Demonic Empowerment", "Summon Felguard", "Metamorphosis", "Shadowburn", "Conflagrate", "Shadowfury",
+        "Chaos Bolt",
+        // Warrior
+        "Sweeping Strikes", "Mortal Strike", "Bladestorm", "Piercing Howl", "Death Wish", "Bloodthirst", "Heroic Fury",
+        "Titan's Grip", "Last Stand", "Concussion Blow", "Vigilance", "Devastate", "Shockwave",
+    };
+
+    // Capstones: rolled at CAPSTONE_LEVEL only, and that level's roll is one of them (not a talent rank). By name
+    // (the class abilities; Metamorphosis is the warlock's), and our own classes' by spell id.
+    constexpr char const* CAPSTONE_ABILITIES[] = {
+        "Dancing Rune Weapon", "Howling Blast", "Summon Gargoyle", "Starfall", "Berserk", "Wild Growth",
+        "Beast Mastery", "Explosive Shot", "Chimera Shot", "Arcane Barrage", "Living Bomb", "Deep Freeze",
+        "Beacon of Light", "Hammer of the Righteous", "Divine Storm", "Penance", "Guardian Spirit", "Dispersion",
+        "Hunger For Blood", "Killing Spree", "Shadow Dance", "Thunderstorm", "Feral Spirit", "Riptide", "Haunt",
+        "Metamorphosis", "Chaos Bolt", "Bladestorm", "Titan's Grip", "Shockwave",
+    };
+    constexpr uint32 CUSTOM_CAPSTONES[] = {
+        90121,      // Fel Barrage (Demon Hunter, Havoc)
+        90135,      // Spirit Bomb (Demon Hunter, Vengeance)
+        90311,      // Invoke Chi-Ji, the Red Crane (Monk, Mistweaver)
+        90329,      // Storm, Earth, and Fire (Monk, Windwalker)
     };
 
     // Learned together with Tame Beast (and removed with it), so a tamed pet can be called back,
@@ -484,7 +544,8 @@ namespace
         for (auto const& [spellId, talent] : player->GetTalentMap())
             if (talent->State != PLAYERSPELL_REMOVED && talent->IsInSpec(player->GetActiveSpec()))
                 if (TalentSpellPos const* talentPos = GetTalentSpellPos(spellId))
-                    spent += talentPos->rank + 1;
+                    if (!TalentAbility(talentPos->talent_id))   // one rolled before it was an ability
+                        spent += talentPos->rank + 1;
 
         return spent;
     }
@@ -509,7 +570,7 @@ namespace
         auto relevance = [&](TalentEntry const* talentInfo, TalentTabEntry const* tabInfo) -> int
         {
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(talentInfo->RankID[0]);
-            if (!spellInfo)
+            if (!spellInfo || TalentAbility(talentInfo->TalentID))
                 return 0;
 
             bool masked = false;
@@ -639,6 +700,24 @@ namespace
         return removed;
     }
 
+    // Learns a random capstone the player can learn, one suiting their role when there is; nullptr if none.
+    Ability const* GrantCapstone(Player* player)
+    {
+        std::vector<Ability const*> candidates, others;
+        for (Ability const& ability : Abilities())
+            if (ability.Capstone && CanLearn(player, ability))
+                (SuitsRole(player, ability.Roles) ? candidates : others).push_back(&ability);
+
+        if (candidates.empty())
+            candidates = std::move(others);
+        if (candidates.empty())
+            return nullptr;
+
+        Ability const* ability = candidates[urand(0, uint32(candidates.size() - 1))];
+        Learn(player, *ability, "capstone ability");
+        return ability;
+    }
+
     // Grants what the player's level is owed. Level-ups (levelUp) play a spin in the Classless window
     // for each ability and talent; catching up at login does not.
     void CatchUp(Player* player, bool grantAbilities, bool levelUp)
@@ -685,12 +764,22 @@ namespace
 
             if (granted != before)
                 player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_ABILITIES_GRANTED, granted);
+
+            // CAPSTONE_LEVEL's roll: a capstone.
+            if (level >= CAPSTONE_LEVEL && !player->GetPlayerSetting(SETTING_SOURCE, SETTING_CAPSTONE_GRANTED).value)
+                if (Ability const* capstone = GrantCapstone(player))
+                {
+                    player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_CAPSTONE_GRANTED, 1);
+                    if (levelUp)
+                        Classless::Reveal(player, *capstone);
+                }
         }
 
         UpgradeRanks(player);
 
-        // Even levels from FIRST_ROLL_LEVEL (8, 10, ...).
-        uint32 owedTalents = level >= FIRST_ROLL_LEVEL ? (level - FIRST_ROLL_LEVEL) / 2 + 1 : 0;
+        // Even levels from FIRST_ROLL_LEVEL (8, 10, ...), but CAPSTONE_LEVEL's (a capstone, above).
+        uint32 lastTalentLevel = std::min<uint32>(level, CAPSTONE_LEVEL - 1);
+        uint32 owedTalents = level >= FIRST_ROLL_LEVEL ? (lastTalentLevel - FIRST_ROLL_LEVEL) / 2 + 1 : 0;
         bool talentsChanged = false;
         for (uint32 spent = SpentTalentPoints(player); spent < owedTalents && GrantTalent(player, levelUp); ++spent)
             talentsChanged = true;
@@ -812,6 +901,38 @@ namespace Wildcard
                 }
             }
 
+            // The talents' abilities: their chains (what the talent's rank 1 teaches, or itself), at their tier's level.
+            std::unordered_map<uint32, std::pair<uint32, uint8>> talentAbilities;  // first rank -> talent, level
+            for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
+            {
+                TalentEntry const* talent = sTalentStore.LookupEntry(i);
+                if (!talent || !talent->RankID[0])
+                    continue;
+
+                TalentTabEntry const* tab = sTalentTabStore.LookupEntry(talent->TalentTab);
+                if (!tab || tab->petTalentMask || !(tab->ClassMask & HERO_TALENT_CLASSMASK))
+                    continue;
+
+                std::string_view name = SpellName(talent->RankID[0]);
+                auto listed = std::find_if(std::begin(TALENT_ABILITIES), std::end(TALENT_ABILITIES),
+                    [name](char const* listedName) { return name == listedName; });
+                if (listed == std::end(TALENT_ABILITIES))
+                    continue;
+
+                found.insert(*listed);
+                uint8 classId = 0;
+                for (uint8 c = CLASS_WARRIOR; c <= CLASS_DEMON_HUNTER; ++c)
+                    if (tab->ClassMask & (1 << (c - 1)))
+                        classId = c;
+                uint8 level = uint8(std::min<uint32>(CAPSTONE_LEVEL, 10 + 5 * talent->Row));
+                for (uint32 spellId : TaughtSpells(talent->RankID[0]))
+                {
+                    uint32 firstRank = sSpellMgr->GetFirstSpellInChain(spellId);
+                    addChain(firstRank, classId);
+                    talentAbilities[firstRank] = { talent->TalentID, level };
+                }
+            }
+
             auto matches = [&](Ability const& ability, auto const& names)
             {
                 bool matched = false;
@@ -840,12 +961,22 @@ namespace Wildcard
                 if (ability.Companion)
                     companions.push_back(firstRank);
 
+                if (auto talentItr = talentAbilities.find(firstRank); talentItr != talentAbilities.end())
+                {
+                    ability.TalentId = talentItr->second.first;
+                    ability.Ranks.front().Level = talentItr->second.second;
+                }
+
                 if (levelOne)
                     ability.Ranks.front().Level = 1;
 
+                ability.Capstone = ability.TalentId && matches(ability, CAPSTONE_ABILITIES);
+                if (ability.Capstone)
+                    ability.Ranks.front().Level = CAPSTONE_LEVEL;
+
                 SpellInfo const* firstInfo = sSpellMgr->AssertSpellInfo(firstRank);
                 ability.Offered = !ability.Banned && !ability.Companion && firstRank != SPELL_PICK_LOCK
-                    && (levelOne || (!GetTalentSpellCost(firstRank) && !firstInfo->IsPassive()));
+                    && (levelOne || ability.TalentId || (!GetTalentSpellCost(firstRank) && !firstInfo->IsPassive()));
             }
 
             for (Ability& ability : result)
@@ -870,6 +1001,10 @@ namespace Wildcard
                 ability.ClassId = custom.ClassId;
                 ability.SkillLine = custom.SkillLine;
                 ability.Offered = true;
+                ability.Capstone = std::find(std::begin(CUSTOM_CAPSTONES), std::end(CUSTOM_CAPSTONES), custom.SpellId)
+                    != std::end(CUSTOM_CAPSTONES);
+                if (ability.Capstone)
+                    ability.Ranks.front().Level = CAPSTONE_LEVEL;
                 result.push_back(std::move(ability));
             }
 
@@ -977,13 +1112,22 @@ namespace Wildcard
             for (char const* name : BANNED_ABILITIES)
                 if (!found.count(name))
                     LOG_WARN("module", "mod-titan: Wildcard banned ability \"{}\" matches no class spell", name);
+            for (char const* name : TALENT_ABILITIES)
+                if (!found.count(name))
+                    LOG_WARN("module", "mod-titan: Wildcard talent ability \"{}\" matches no talent", name);
+            for (char const* name : CAPSTONE_ABILITIES)
+                if (!found.count(name))
+                    LOG_WARN("module", "mod-titan: Wildcard capstone \"{}\" matches no talent ability", name);
             for (char const* name : LEVEL_ONE_ABILITIES)
                 if (!found.count(name))
                     LOG_WARN("module", "mod-titan: Wildcard level 1 ability \"{}\" matches no class spell", name);
 
-            LOG_INFO("module", "mod-titan: Wildcard pool has {} abilities ({} rank chains, {} banned)",
+            LOG_INFO("module", "mod-titan: Wildcard pool has {} abilities ({} rank chains, {} banned, {} from talents, {} "
+                "capstones)",
                 std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Offered; }), result.size(),
-                std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Banned; }));
+                std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Banned; }),
+                std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.TalentId != 0; }),
+                std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Capstone; }));
             return result;
         }();
 
@@ -1038,7 +1182,23 @@ namespace Wildcard
     bool CanLearn(Player const* player, Ability const& ability)
     {
         return ability.Offered && BestRank(player, ability) >= 0 && KnownRank(player, ability) < 0
+            && (!ability.Capstone || player->GetLevel() >= CAPSTONE_LEVEL)
             && FitsRace(player, ability.Ranks.front().SpellId) && MeetsRequirements(player, ability);
+    }
+
+    Ability const* TalentAbility(uint32 talentId)
+    {
+        static std::unordered_map<uint32, Ability const*> const byTalent = []
+        {
+            std::unordered_map<uint32, Ability const*> map;
+            for (Ability const& ability : Abilities())
+                if (ability.TalentId && ability.Offered)
+                    map.emplace(ability.TalentId, &ability);
+            return map;
+        }();
+
+        auto itr = byTalent.find(talentId);
+        return itr != byTalent.end() ? itr->second : nullptr;
     }
 
     void Learn(Player* player, Ability const& ability, char const* what)
@@ -1058,7 +1218,7 @@ namespace Wildcard
         // Those suiting the Hero's role; any when none does.
         std::vector<Ability const*> candidates, others;
         for (Ability const& ability : Abilities())
-            if (CanLearn(player, ability))
+            if (!ability.Capstone && CanLearn(player, ability))
                 (SuitsRole(player, ability.Roles) ? candidates : others).push_back(&ability);
 
         if (candidates.empty())

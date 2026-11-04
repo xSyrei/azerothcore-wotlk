@@ -12,7 +12,8 @@
 --   from server   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<spell id>[.<needs>];...
 --                   (needs: groups by '+', each one of its spell ids by '/': a form, stealth or pet first)
 --                 U,<class>,<tree order>,<tab id>
---                 N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
+--                 N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;...
+--                 Q,<ability>.<talent>.<capstone>;... (talents learned as abilities, capstones: level 60 only) / E
 --                 K0 / K,<spell id>,...   R0 / R,<talent id>:<rank>,...   S,<picks left>,<locked>,<lock level>,<role>
 --                 G,<spell id>,<first rank id>   H,<talent id>,<spell id>,<rank>   O
 --                 I,<0|1>   spell ids on tooltips (GMs, .spellids)
@@ -103,6 +104,8 @@ local data = {
     talentById = {},    -- talent id -> its entry in talents
     talentRanks = {},   -- talent id -> owned rank
     known = {},         -- spell id -> true
+    talentAbilities = {},   -- talent id -> the ability (first rank id) it is learned as
+    capstones = {},     -- ability (first rank id) -> true: rolled at level 60 only
     picks = 0,
     locked = false,
     lockLevel = 9,
@@ -273,6 +276,8 @@ local function OnServerMessage(message)
         wipe(data.trees)
         wipe(data.talents)
         wipe(data.talentById)
+        wipe(data.talentAbilities)
+        wipe(data.capstones)
     elseif kind == "T" then
         local _, _, skill, name = strsplit(",", message, 4)
         data.skillNames[tonumber(skill)] = name
@@ -312,6 +317,15 @@ local function OnServerMessage(message)
             data.talents[tab] = data.talents[tab] or {}
             tinsert(data.talents[tab], talent)
             data.talentById[talent.id] = talent
+        end
+    elseif kind == "Q" then
+        for entry in message:sub(3):gmatch("[^;]+") do
+            local ability, talent, capstone = strsplit(".", entry)
+            ability, talent = tonumber(ability), tonumber(talent)
+            if talent and talent > 0 then
+                data.talentAbilities[talent] = ability
+            end
+            data.capstones[ability] = capstone == "1" or nil
         end
     elseif message == "E" then
         data.loaded, data.loading = true, false
@@ -750,6 +764,9 @@ local function OnCellEnter(self)
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:SetHyperlink("spell:" .. self.ability.id)
     GameTooltip:AddLine((CLASS_NAMES[self.ability.class] or "") .. " - level " .. self.ability.level, 0.7, 0.7, 0.7)
+    if data.capstones[self.ability.id] then
+        GameTooltip:AddLine("Capstone: rolled at level 60 only.", 1, 0.5, 0.1)
+    end
     for _, givers in ipairs(self.ability.requires or {}) do
         local names, met = {}, false
         for _, giver in ipairs(givers) do
@@ -864,9 +881,22 @@ local function OnTalentEnter(self)
     local rank = data.talentRanks[talent.id] or 0
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
     GameTooltip:SetHyperlink("spell:" .. talent.ranks[math.max(math.min(rank, #talent.ranks), 1)])
-    GameTooltip:AddLine("Rank " .. rank .. "/" .. #talent.ranks, 1, 0.82, 0)
-    if rank < #talent.ranks then
-        GameTooltip:AddLine("Wildcard grants talents at random from level 10.", 0.6, 0.6, 0.6)
+    local ability = data.talentAbilities[talent.id]
+    if ability then
+        -- Learned as an ability: rolled with the abilities (a capstone at level 60 only), never as a talent.
+        local entry = data.abilities[ability]
+        GameTooltip:AddLine(rank > 0 and "Known" or "Not known", 1, 0.82, 0)
+        if data.capstones[ability] then
+            GameTooltip:AddLine("Capstone: learned as an ability, rolled at level 60 only.", 1, 0.5, 0.1, true)
+        else
+            GameTooltip:AddLine("Learned as an ability: Wildcard ability rolls from level "
+                .. (entry and entry.level or 10) .. ", not talent rolls.", 0.6, 0.6, 0.6, true)
+        end
+    else
+        GameTooltip:AddLine("Rank " .. rank .. "/" .. #talent.ranks, 1, 0.82, 0)
+        if rank < #talent.ranks then
+            GameTooltip:AddLine("Wildcard grants talents at random from level 10.", 0.6, 0.6, 0.6)
+        end
     end
     GameTooltip:Show()
 end

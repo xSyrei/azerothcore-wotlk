@@ -33,6 +33,8 @@ namespace Wildcard
     constexpr uint8 LOCK_LEVEL = 9;                 // the kit locks here and the tomes vanish
     constexpr uint8 FIRST_ROLL_LEVEL = 8;           // level-up rolls alternate from here: a talent rank on even
                                                     // levels (8, 10...), an ability on odd ones (9, 11...)
+    constexpr uint8 CAPSTONE_LEVEL = 60;            // its roll is a capstone ability instead of a talent rank, and
+                                                    // capstones are rolled there only
     constexpr uint32 TOME_OF_RANDOMIZATION = 910003;
     constexpr uint32 TOME_OF_SELECTION = 910004;
     // Classes the game lacks, with abilities of Emberforge's own (retail class ids). Their spec tabs
@@ -86,6 +88,8 @@ namespace Wildcard
         // form or stance it is cast in, stealth, a pet). Empty: nothing.
         std::vector<std::vector<uint32>> Requires;
         uint8 Roles = 0;            // RoleMask() bits of the roles it serves; 0: every role (buffs, utility)
+        uint32 TalentId = 0;        // a talent's ability (Mortal Strike...): learned as an ability, never as a talent
+        bool Capstone = false;      // rolled at CAPSTONE_LEVEL only (Bladestorm, Divine Storm...)
     };
 
     bool IsHero(Player const* player);
@@ -101,8 +105,10 @@ namespace Wildcard
     // requirements met.
     bool CanLearn(Player const* player, Ability const& ability);
     void Learn(Player* player, Ability const& ability, char const* what);
-    // Learns a random learnable ability; the ability, or nullptr if none is left.
+    // Learns a random learnable ability (not a capstone); the ability, or nullptr if none is left.
     Ability const* GrantRandom(Player* player, char const* what);
+    // The talent's ability, when it is learned as one (TalentId), or nullptr.
+    Ability const* TalentAbility(uint32 talentId);
     // Unlearns every rank of an ability, and its companion spells.
     void Unlearn(Player* player, Ability const& ability);
     // Unlearns every offered ability (the kit and later Wildcard abilities; talents stay).

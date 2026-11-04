@@ -41,7 +41,9 @@
 //                      A,<class>.<skill line>.<level>.<id>[.<needs>];...   needs: groups by '+', each one of
 //                                                its abilities by '/' (first ranks: a form, stealth, a pet)
 //                      U,<class>,<tree order>,<tab id>
-//                      N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;... / E
+//                      N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;...
+//                      Q,<first rank id>.<talent id>.<capstone>;...   abilities from talents (talent id 0: none)
+//                                                and capstones (1: rolled at the capstone level only) / E
 //                                                the list (begin, spec tabs, abilities, talent trees, end)
 //                      K0 / K,<id>,...           known abilities (clear, then first rank ids)
 //                      R0 / R,<talent id>:<rank>,...   owned talent ranks (clear, then talents)
@@ -123,6 +125,13 @@ namespace
         }
 
         SendBatched(player, "N,", talents, ';');
+
+        std::vector<std::string> special;
+        for (Wildcard::Ability const& ability : Wildcard::Abilities())
+            if (ability.Offered && (ability.TalentId || ability.Capstone))
+                special.push_back(Acore::StringFormat("{}.{}.{}", ability.Ranks.front().SpellId, ability.TalentId,
+                    ability.Capstone ? 1 : 0));
+        SendBatched(player, "Q,", special, ';');
     }
 
     void SendTalentRanks(Player* player)
@@ -130,6 +139,15 @@ namespace
         std::vector<std::string> owned;
         for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
             if (TalentEntry const* talent = sTalentStore.LookupEntry(i))
+            {
+                // A talent learned as an ability: lit while the ability is known (any rank, or what it teaches).
+                if (Wildcard::Ability const* ability = Wildcard::TalentAbility(talent->TalentID);
+                    ability && Wildcard::KnownRank(player, *ability) >= 0)
+                {
+                    owned.push_back(Acore::StringFormat("{}:1", talent->TalentID));
+                    continue;
+                }
+
                 for (uint8 rank = MAX_TALENT_RANK; rank > 0; --rank)
                     if (uint32 rankSpell = talent->RankID[rank - 1];
                         rankSpell && (player->HasTalent(rankSpell, player->GetActiveSpec())
@@ -138,6 +156,7 @@ namespace
                         owned.push_back(Acore::StringFormat("{}:{}", talent->TalentID, rank));
                         break;
                     }
+            }
 
         SendAddon(player, "R0");
         SendBatched(player, "R,", owned, ',');

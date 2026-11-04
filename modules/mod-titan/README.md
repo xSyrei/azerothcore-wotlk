@@ -46,10 +46,16 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   At **level 9 the kit locks**: picks never spent are rolled at random and both tomes vanish.
 - **From level 8 the level-up rolls alternate**: a random talent rank at 8, a random ability at 9, a
   talent at 10, an ability at 11, and so on. Abilities come from every class trainer's list (all 10
-  classes; passives, talent abilities and hunter pet handling are left out); talents from any class's
-  talent trees (tier and prerequisite rules do not apply). Heroes have no talent points to spend in
-  the UI. Characters that already had more than this keep them, and roll again once their level
-  catches up.
+  classes; passives and hunter pet handling are left out); talents from any class's talent trees (tier and
+  prerequisite rules do not apply). Heroes have no talent points to spend in the UI. Characters that already had
+  more than this keep them, and roll again once their level catches up.
+- **Talent abilities are abilities** (`TALENT_ABILITIES`: Mortal Strike, Shadowform, Mangle, Titan's Grip...): about
+  130 talents are learned as abilities, rolled with the ability rolls from their tier's level (row 1: 10, row 11:
+  60), never by a talent roll. They stay on their talent tree in the Classless window, lit when known. Ones rolled
+  as talents before are kept, and their points no longer count, so another talent is owed.
+- **Capstones at level 60** (`CAPSTONE_ABILITIES`, `CUSTOM_CAPSTONES`: Bladestorm, Divine Storm, Fel Barrage,
+  Storm, Earth, and Fire...): rolled only by level 60's roll, which is a capstone suiting the role instead of a
+  talent rank. No other roll or pick gives one.
 - **Rolls follow the role**: abilities are tagged by what they do (melee or ranged physical damage: Melee; magic
   damage: Ranged; heals and shields on others: Healer; taunts and threat: Tank; `ROLE_ABILITIES` by hand for forms,
   stances and scripted spells), and a level-up or kit roll only gives one suiting the Hero's role: Melee takes
