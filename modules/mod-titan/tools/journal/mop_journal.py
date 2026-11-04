@@ -354,7 +354,7 @@ def main():
     # The Journal's frame art: its book, its buttons and bars (one sheet), the paper behind a boss's model, and each
     # expansion's home background.
     for name in ('UI-EJ-JournalBG', 'UI-ENCOUNTERJOURNALTEXTURES', 'UI-EJ-BOSSMODELPAPERFRAME', 'UI-EJ-Classic',
-                 'UI-EJ-BurningCrusade', 'UI-EJ-WrathoftheLichKing'):
+                 'UI-EJ-BurningCrusade', 'UI-EJ-WrathoftheLichKing', 'UI-EJ-PortraitIcon'):
         art(name + '.blp')
     out = ADDON / 'Art'
     out.mkdir(parents=True, exist_ok=True)

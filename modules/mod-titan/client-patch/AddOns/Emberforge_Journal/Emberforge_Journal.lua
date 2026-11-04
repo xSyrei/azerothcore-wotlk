@@ -1,10 +1,8 @@
 -- Emberforge Journal: the Dungeon Journal, laid out as Cataclysm's. Open with /journal or /dj.
 --
 -- - Home: the expansion's name as the title (click it to choose Classic, the Burning Crusade or Wrath), Dungeons and
---   Raids tabs, a search box, and a grid of tiles, one per dungeon or raid (its Journal button art), with its
---   creature levels.
--- - An instance: an open book. Left page: its picture, its story and details (type, expansion, creature levels as
---   the server has them after the level squish, map, each difficulty with its size, queue levels and dungeon ID).
+--   Raids tabs, a search box, and a grid of tiles, one per dungeon or raid (its Journal button art).
+-- - An instance: an open book. Left page: its picture, its story and its difficulties with their sizes.
 --   Right page: its difficulty buttons and, by the tabs on the book's edge, its Bosses (each with its Journal
 --   portrait, else our head shot of it, else its model's face, else the Journal's default portrait) or its Loot.
 -- - A boss: left page its model (drag to turn it), level, classification, health and story; right page its
@@ -243,9 +241,9 @@ local CELL_FILL, CELL_EDGE = { 0.075, 0.055, 0.043, 0.96 }, { 0.38, 0.29, 0.16, 
 local ON_FILL, ON_EDGE = { 0.3, 0.13, 0.03, 0.96 }, { 1, 0.72, 0.32, 1 }
 
 -- A creature's model in a frame (PlayerModel:SetCreature); portrait: the face camera.
--- A humanoid's skin (its baked texture) loads after its model: drawn at once, it is white. So the model is
--- refreshed a moment later, a few times: cleared, its creature set again (and its face camera with it).
-local RELOADS = { 0.2, 0.6, 1.2, 2.5 }
+-- A humanoid's skin (its baked texture) can load after its model: drawn at once, it is white. So the model is set
+-- once more a moment later (setting it again restarts its animation: only once).
+local RELOADS = { 0.5 }
 local pending = {}
 local function SetModel(model, creature, portrait)
     pcall(model.SetCreature, model, creature)
@@ -259,7 +257,6 @@ reloader:SetScript("OnUpdate", function(_, elapsed)
         state.time = state.time + elapsed
         if state.time >= RELOADS[state.step] then
             if model:IsVisible() then
-                model:ClearModel()
                 SetModel(model, state.creature, state.portrait)
             end
             state.step = state.step + 1
@@ -270,7 +267,12 @@ reloader:SetScript("OnUpdate", function(_, elapsed)
     end
 end)
 
+-- Set only when it changes: setting a model again restarts it.
 local function ShowCreature(model, creature, portrait)
+    if model.shown == creature then
+        return
+    end
+    model.shown = creature
     model:ClearModel()
     pending[model] = nil
     if creature and creature > 0 and model.SetCreature then
@@ -359,12 +361,12 @@ do
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", 2, 1)
 
-    -- The portrait: a skull in a gold ring, top left.
+    -- The portrait: the Journal's own (its book and skull), round, filling the gold ring, top left.
     local portrait = frame:CreateTexture(nil, "OVERLAY")
-    portrait:SetWidth(60)
-    portrait:SetHeight(60)
-    portrait:SetPoint("TOPLEFT", -8, 10)
-    SetPortraitToTexture(portrait, "Interface\\Icons\\INV_Misc_Bone_HumanSkull_01")
+    portrait:SetWidth(66)
+    portrait:SetHeight(66)
+    portrait:SetPoint("TOPLEFT", -11, 13)
+    SetPortraitToTexture(portrait, JOURNAL_ART .. "UI-EJ-PortraitIcon")
     local ring = frame:CreateTexture(nil, "OVERLAY")
     ring:SetTexture(ART .. "Ring")
     ring:SetWidth(76)
@@ -524,19 +526,16 @@ local function Tile(index)
     -- Under the levels, a shade (on art).
     tile.dim = tile:CreateTexture(nil, "BORDER")
     tile.dim:SetTexture(1, 1, 1, 1)
-    tile.dim:SetGradientAlpha("VERTICAL", 0, 0, 0, 0.7, 0, 0, 0, 0)
-    tile.dim:SetPoint("TOPLEFT", tile, "LEFT", 3, -10)
+    tile.dim:SetGradientAlpha("VERTICAL", 0, 0, 0, 0.5, 0, 0, 0, 0)
+    tile.dim:SetPoint("TOPLEFT", tile, "LEFT", 3, 0)
     tile.dim:SetPoint("BOTTOMRIGHT", -3, 3)
     tile.name = tile:CreateFontString(nil, "ARTWORK")
     tile.name:SetFont("Fonts\\MORPHEUS.TTF", 15)
     tile.name:SetShadowOffset(1, -1)
     tile.name:SetTextColor(1, 0.86, 0.45)
-    tile.name:SetPoint("TOPLEFT", 8, -10)
-    tile.name:SetPoint("TOPRIGHT", -8, -10)
-    tile.name:SetHeight(44)
+    tile.name:SetPoint("TOPLEFT", 8, -6)
+    tile.name:SetPoint("BOTTOMRIGHT", -8, 6)
     tile.name:SetJustifyV("MIDDLE")
-    tile.levels = tile:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    tile.levels:SetPoint("BOTTOM", 0, 10)
     local hover = Piece(tile, "HIGHLIGHT", 180, 344, 348, 434)
     hover:SetBlendMode("ADD")
     hover:SetAllPoints()
@@ -547,13 +546,6 @@ local function Tile(index)
     end)
     ui.tiles[index] = tile
     return tile
-end
-
-local function Levels(low, high)
-    if not low or low == 0 then
-        return "-"
-    end
-    return low == high and tostring(low) or (low .. "-" .. high)
 end
 
 local function RefreshHome()
@@ -585,7 +577,7 @@ local function RefreshHome()
                 tile.fill:SetTexCoord(4 / 256, 170 / 256, 4 / 128, 92 / 128)
             end
             tile.fill:SetVertexColor(1, 1, 1)
-            tile.shine:SetGradientAlpha("VERTICAL", 0, 0, 0, 0, 0, 0, 0, 0.65)
+            tile.shine:SetGradientAlpha("VERTICAL", 0, 0, 0, 0, 0, 0, 0, 0.5)
             tile.dim:Show()
         else
             tile.fill:SetTexture(1, 1, 1, 1)
@@ -596,8 +588,6 @@ local function RefreshHome()
             tile.dim:Hide()
         end
         tile.name:SetText(instance.name)
-        tile.levels:SetText((instance.seasonal and "Holiday event, " or "") .. "Level "
-            .. Levels(instance.low, instance.high))
         tile.instance = instance
         tile:Show()
     end
@@ -849,18 +839,25 @@ do
     ui.sideTabs = {}
     for index, info in ipairs({ { "bosses", "Interface\\Icons\\INV_Misc_Bone_HumanSkull_01" },
         { "loot", "Interface\\Icons\\INV_Box_02" } }) do
+        -- The Journal's tab squares: dark red, gold-edged black when chosen, a glow under the mouse.
         local tab = CreateFrame("Button", nil, book)
-        tab:SetWidth(40)
-        tab:SetHeight(44)
-        tab:SetPoint("TOPLEFT", book, "TOPRIGHT", -2, -20 - (index - 1) * 50)
-        Box(tab, CELL_FILL, CELL_EDGE)
+        tab:SetWidth(42)
+        tab:SetHeight(42)
+        tab:SetPoint("TOPLEFT", book, "TOPRIGHT", 0, -24 - (index - 1) * 48)
+        tab.off = Piece(tab, "BACKGROUND", 462, 52, 486, 76)
+        tab.off:SetAllPoints()
+        tab.on = Piece(tab, "BACKGROUND", 460, 22, 488, 50)
+        tab.on:SetAllPoints()
         local icon = tab:CreateTexture(nil, "ARTWORK")
         icon:SetTexture(info[2])
         icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        icon:SetWidth(28)
-        icon:SetHeight(28)
-        icon:SetPoint("CENTER", 1, 0)
+        icon:SetWidth(30)
+        icon:SetHeight(30)
+        icon:SetPoint("CENTER")
         tab.icon = icon
+        local glow = Piece(tab, "HIGHLIGHT", 376, 73, 394, 91)
+        glow:SetBlendMode("ADD")
+        glow:SetAllPoints()
         tab.key = info[1]
         tab:SetScript("OnClick", function(self)
             view.tab = self.key
@@ -920,7 +917,7 @@ local function PlaceBossModels()
     for _, model in pairs(models) do
         if not model.wanted then
             model:Hide()
-            model.creature = nil
+            model.creature, model.shown = nil, nil
         end
     end
 end
@@ -968,7 +965,7 @@ local function LootRow(index)
     end
     row = CreateFrame("Button", nil, list.child)
     row:SetHeight(42)
-    Bar(row, "BACKGROUND", 42, 0, 749, 388, 801, 40, 348)     -- a band of the Journal's parchment
+    Bar(row, "BACKGROUND", 42, 66, 107, 327, 161, 80, 300)    -- the boss buttons' leather, without the socket
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetWidth(34)
     row.icon:SetHeight(34)
@@ -977,15 +974,12 @@ local function LootRow(index)
     row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -3)
     row.name:SetPoint("RIGHT", -8, 0)
     row.name:SetJustifyH("LEFT")
-    row.name:SetShadowOffset(0, 0)
     row.slot = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     row.slot:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 8, 3)
-    row.slot:SetTextColor(unpack(INK))
-    row.slot:SetShadowOffset(0, 0)
+    row.slot:SetTextColor(0.92, 0.86, 0.74)
     row.kind = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.kind:SetPoint("BOTTOMRIGHT", -10, 6)
-    row.kind:SetTextColor(unpack(INK))
-    row.kind:SetShadowOffset(0, 0)
+    row.kind:SetPoint("BOTTOMRIGHT", -12, 6)
+    row.kind:SetTextColor(0.92, 0.86, 0.74)
     local hover = row:CreateTexture(nil, "HIGHLIGHT")
     hover:SetTexture(1, 0.8, 0.4, 0.15)
     hover:SetPoint("TOPLEFT", 2, -2)
@@ -1247,16 +1241,8 @@ local function RefreshBook()
     if lore then
         lines[1] = lore .. "\n"
     end
-    for _, line in ipairs({
-        "Creature levels: " .. Levels(instance.low, instance.high),
-        "Map ID: " .. instance.map .. (instance.seasonal and "   (holiday event)" or ""),
-        "",
-    }) do
-        lines[#lines + 1] = line
-    end
     for _, difficulty in ipairs(instance.difficulties) do
-        lines[#lines + 1] = DifficultyName(instance, difficulty) .. ": queue levels "
-            .. Levels(difficulty.qmin, difficulty.qmax) .. ", dungeon ID " .. difficulty.id
+        lines[#lines + 1] = DifficultyName(instance, difficulty)
     end
     ui.about:SetBody(table.concat(lines, "\n"))
 
@@ -1267,17 +1253,24 @@ local function RefreshBook()
     for _, part in ipairs({ ui.model, ui.modelBack, ui.bossInfo }) do
         if bossPage then part:Show() else part:Hide() end
     end
+    if not bossPage then
+        ui.model.shown = nil        -- set again when it shows (a hidden model can lose its own)
+    end
     local info = bossPage and details and details.info[bossPage.index]
     local journal = bossPage and JournalBoss(instance.map, bossPage.name)
     if bossPage then
-        ShowCreature(ui.model, info and info.entry or bossPage.creature, false)
-        ui.model.facing = 0
+        local creature = info and info.entry or bossPage.creature
+        if ui.model.shown ~= creature then
+            ui.model.facing = 0
+        end
+        ShowCreature(ui.model, creature, false)
         ui.bossName:SetText(bossPage.name)
         if info then
             local health = info.health > 0 and (" " .. (info.health >= 1000000 and
                 string.format("%.1fM", info.health / 1000000) or info.health)) or " -"
-            ui.bossInfo:SetBody("Level " .. info.level .. " " .. (RANKS[info.rank] or "") .. ", "
-                .. (CREATURE_TYPES[info.type] or "") .. "\nHealth:" .. health
+            local kind = info.type ~= 10 and CREATURE_TYPES[info.type]       -- not "Not specified"
+            ui.bossInfo:SetBody("Level " .. info.level .. " " .. (RANKS[info.rank] or "")
+                .. (kind and (", " .. kind) or "") .. "\nHealth:" .. health
                 .. (journal and journal.d and ("\n\n" .. journal.d) or ""))
         else
             ui.bossInfo:SetBody(journal and journal.d or "")
@@ -1300,8 +1293,14 @@ local function RefreshBook()
     end
     for _, tab in ipairs(ui.sideTabs) do
         local on = tab.key == view.tab
-        BoxColor(tab, on and ON_FILL or CELL_FILL, on and ON_EDGE or CELL_EDGE)
-        tab.icon:SetVertexColor(on and 1 or 0.6, on and 1 or 0.6, on and 1 or 0.6)
+        if on then
+            tab.on:Show()
+            tab.off:Hide()
+        else
+            tab.on:Hide()
+            tab.off:Show()
+        end
+        tab.icon:SetVertexColor(on and 1 or 0.65, on and 1 or 0.65, on and 1 or 0.65)
     end
     ListShown(ui.bossList, view.tab == "bosses" and not bossPage)
     ListShown(ui.abilityList, view.tab == "bosses" and bossPage)
@@ -1387,7 +1386,7 @@ function Refresh()
         -- The models are set again when the book shows (a hidden model can lose its own).
         for _, model in pairs(ui.bossModels or {}) do
             model:Hide()
-            model.creature = nil
+            model.creature, model.shown = nil, nil
         end
         RefreshHome()
     else
