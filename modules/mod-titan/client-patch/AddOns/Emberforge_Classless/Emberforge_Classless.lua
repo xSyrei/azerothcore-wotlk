@@ -13,7 +13,8 @@
 --                   (needs: groups by '+', each one of its spell ids by '/': a form, stealth or pet first)
 --                 U,<class>,<tree order>,<tab id>
 --                 N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;...
---                 Q,<ability>.<talent>.<capstone>;... (talents learned as abilities, capstones: level 60 only) / E
+--                 Q,<ability>.<talent>.<capstone roles>;... (talents learned as abilities; capstones: level 60, the
+--                 roles' RoleMask bits) / E
 --                 K0 / K,<spell id>,...   R0 / R,<talent id>:<rank>,...   S,<picks left>,<locked>,<lock level>,<role>
 --                 G,<spell id>,<first rank id>,<level>   H,<talent id>,<spell id>,<rank>,<level>   O
 --                 I,<0|1>   spell ids on tooltips (GMs, .spellids)
@@ -105,7 +106,7 @@ local data = {
     talentRanks = {},   -- talent id -> owned rank
     known = {},         -- spell id -> true
     talentAbilities = {},   -- talent id -> the ability (first rank id) it is learned as
-    capstones = {},     -- ability (first rank id) -> true: rolled at level 60 only
+    capstones = {},     -- ability (first rank id) -> roles (Wildcard::RoleMask bits): rolled at level 60 only, for them
     picks = 0,
     locked = false,
     lockLevel = 9,
@@ -116,6 +117,22 @@ local data = {
 -- spec: the spec tab (1-3, or GENERAL); tree: the talent tree shown (follows the last spec tab).
 local view = { class = nil, spec = 1, tree = 1, search = "", learnable = false, list = SPELLS,
     gridOffset = 0, listOffset = 0 }
+-- A capstone's roles (Wildcard::RoleMask bits: 2 Melee, 4 Ranged, 8 Healer, 16 Tank).
+local ROLE_NAMES = { "Melee", "Ranged", "Healer", "Tank" }
+local function HasRole(roles, role)
+    local bit = 2 ^ role
+    return roles % (bit * 2) >= bit
+end
+local function CapstoneRoles(id)
+    local names = {}
+    for role, name in ipairs(ROLE_NAMES) do
+        if HasRole(data.capstones[id] or 0, role) then
+            names[#names + 1] = name
+        end
+    end
+    return table.concat(names, " and ")
+end
+
 local reveals = {}      -- queued Wildcard rolls: { spell, firstRank } or { talent, spell, rank }
 local frame, Refresh, ShowNextReveal
 
@@ -325,7 +342,8 @@ local function OnServerMessage(message)
             if talent and talent > 0 then
                 data.talentAbilities[talent] = ability
             end
-            data.capstones[ability] = capstone == "1" or nil
+            local roles = tonumber(capstone) or 0
+            data.capstones[ability] = roles > 0 and roles or nil
         end
     elseif message == "E" then
         data.loaded, data.loading = true, false
@@ -766,7 +784,8 @@ local function OnCellEnter(self)
     GameTooltip:SetHyperlink("spell:" .. self.ability.id)
     GameTooltip:AddLine((CLASS_NAMES[self.ability.class] or "") .. " - level " .. self.ability.level, 0.7, 0.7, 0.7)
     if data.capstones[self.ability.id] then
-        GameTooltip:AddLine("Capstone: rolled at level 60 only.", 1, 0.5, 0.1)
+        GameTooltip:AddLine("Capstone: rolled at level 60 only, for " .. CapstoneRoles(self.ability.id) .. ".",
+            1, 0.5, 0.1, true)
     end
     for _, givers in ipairs(self.ability.requires or {}) do
         local names, met = {}, false
@@ -888,7 +907,8 @@ local function OnTalentEnter(self)
         local entry = data.abilities[ability]
         GameTooltip:AddLine(rank > 0 and "Known" or "Not known", 1, 0.82, 0)
         if data.capstones[ability] then
-            GameTooltip:AddLine("Capstone: learned as an ability, rolled at level 60 only.", 1, 0.5, 0.1, true)
+            GameTooltip:AddLine("Capstone: learned as an ability, rolled at level 60 only, for "
+                .. CapstoneRoles(ability) .. ".", 1, 0.5, 0.1, true)
         else
             GameTooltip:AddLine("Learned as an ability: Wildcard ability rolls from level "
                 .. (entry and entry.level or 10) .. ", not talent rolls.", 0.6, 0.6, 0.6, true)
@@ -1668,12 +1688,12 @@ local function CreateRoll()
         end
     end
 
-    -- What a reel slot shows: a random ability or talent (a capstone's roll: capstones only), or the prize.
+    -- What a reel slot shows: a random ability or talent (a capstone's roll: the role's capstones only), or the prize.
     local function RandomEntry(isTalent, capstone)
         local pool = {}
         if capstone then
-            for id in pairs(data.capstones) do
-                if data.abilities[id] then
+            for id, roles in pairs(data.capstones) do
+                if data.abilities[id] and (data.role == 0 or HasRole(roles, data.role)) then
                     pool[#pool + 1] = id
                 end
             end

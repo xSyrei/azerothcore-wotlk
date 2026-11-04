@@ -59,8 +59,10 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   (Metamorphosis: Shadow Cleave), and faction pairs are one ability, the Hero's faction's (Bloodlust for the Horde,
   Heroism for the Alliance; Teleport: Shattrath).
 - **Capstones at level 60** (`CAPSTONE_ABILITIES`, `CUSTOM_CAPSTONES`: Bladestorm, Divine Storm, Fel Barrage,
-  Storm, Earth, and Fire...): rolled only by level 60's roll, which is a capstone suiting the role instead of a
-  talent rank. No other roll or pick gives one.
+  Storm, Earth, and Fire...): rolled only by level 60's roll, which is a capstone of the Hero's role instead of a
+  talent rank (Tank: Dancing Rune Weapon, Howling Blast, Hammer of the Righteous, Shockwave, Summon Gargoyle, Spirit
+  Bomb; Healer: Wild Growth, Invoke Chi-Ji, Beacon of Light, Penance, Guardian Spirit, Riptide; Ranged and Melee:
+  the rest, Howling Blast and Summon Gargoyle Melee's too). No other roll or pick gives one.
 - **Rolls follow the role**: abilities are tagged by what they do (melee or ranged physical damage: Melee; magic
   damage: Ranged; heals and shields on others: Healer; taunts and threat: Tank; `ROLE_ABILITIES` by hand for forms,
   stances and scripted spells), and a level-up or kit roll only gives one suiting the Hero's role: Melee takes

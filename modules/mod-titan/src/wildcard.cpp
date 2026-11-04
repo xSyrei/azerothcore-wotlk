@@ -51,8 +51,8 @@
 //   generic ones: stat, damage, crit, healing, defense talents suiting the role, and talents teaching an ability
 //   suiting it.
 // - Talents' abilities (TALENT_ABILITIES) are abilities: rolled with them from their tier's level, never as talents.
-//   Capstones (CAPSTONE_ABILITIES, CUSTOM_CAPSTONES) are rolled at CAPSTONE_LEVEL only: its roll is a capstone,
-//   not a talent rank.
+//   Capstones (CAPSTONE_ABILITIES, CUSTOM_CAPSTONES) are rolled at CAPSTONE_LEVEL only: its roll is a capstone of
+//   the Hero's role, not a talent rank.
 // - Owned abilities upgrade to the best rank for the Hero's level by themselves.
 // - An ability cast only in a form or stance (Swipe (Cat): Cat Form, Overpower: Battle Stance), only
 //   in stealth (Ambush) or on a pet (Mend Pet: Tame Beast) is only rolled or picked once the Hero
@@ -175,20 +175,42 @@ namespace
         "Titan's Grip", "Last Stand", "Concussion Blow", "Vigilance", "Devastate", "Shockwave",
     };
 
-    // Capstones: rolled at CAPSTONE_LEVEL only, and that level's roll is one of them (not a talent rank). By name
-    // (the class abilities; Metamorphosis is the warlock's), and our own classes' by spell id.
-    constexpr char const* CAPSTONE_ABILITIES[] = {
-        "Dancing Rune Weapon", "Howling Blast", "Summon Gargoyle", "Starfall", "Berserk", "Wild Growth",
-        "Beast Mastery", "Explosive Shot", "Chimera Shot", "Arcane Barrage", "Living Bomb", "Deep Freeze",
-        "Beacon of Light", "Hammer of the Righteous", "Divine Storm", "Penance", "Guardian Spirit", "Dispersion",
-        "Hunger For Blood", "Killing Spree", "Shadow Dance", "Thunderstorm", "Feral Spirit", "Riptide", "Haunt",
-        "Metamorphosis", "Chaos Bolt", "Bladestorm", "Titan's Grip", "Shockwave",
+    // Capstones: rolled at CAPSTONE_LEVEL only, and that level's roll is one of them (not a talent rank), one of the
+    // Hero's role's. By name (the class abilities; Metamorphosis is the warlock's), and our own classes' by spell id.
+    constexpr uint8 CAP_TANK = RoleMask(ROLE_TANK), CAP_HEALER = RoleMask(ROLE_HEALER);
+    constexpr uint8 CAP_RANGED = RoleMask(ROLE_RANGED), CAP_MELEE = RoleMask(ROLE_MELEE);
+    struct CapstoneName
+    {
+        char const* Name;
+        uint8 Roles;
     };
-    constexpr uint32 CUSTOM_CAPSTONES[] = {
-        90121,      // Fel Barrage (Demon Hunter, Havoc)
-        90135,      // Spirit Bomb (Demon Hunter, Vengeance)
-        90311,      // Invoke Chi-Ji, the Red Crane (Monk, Mistweaver)
-        90329,      // Storm, Earth, and Fire (Monk, Windwalker)
+    constexpr CapstoneName CAPSTONE_ABILITIES[] = {
+        // Tank (Howling Blast and Summon Gargoyle: Melee too)
+        { "Dancing Rune Weapon", CAP_TANK }, { "Howling Blast", CAP_TANK | CAP_MELEE },
+        { "Hammer of the Righteous", CAP_TANK }, { "Shockwave", CAP_TANK }, { "Summon Gargoyle", CAP_TANK | CAP_MELEE },
+        // Healer
+        { "Wild Growth", CAP_HEALER }, { "Beacon of Light", CAP_HEALER }, { "Penance", CAP_HEALER },
+        { "Guardian Spirit", CAP_HEALER }, { "Riptide", CAP_HEALER },
+        // Ranged
+        { "Starfall", CAP_RANGED }, { "Beast Mastery", CAP_RANGED }, { "Chimera Shot", CAP_RANGED },
+        { "Explosive Shot", CAP_RANGED }, { "Arcane Barrage", CAP_RANGED }, { "Living Bomb", CAP_RANGED },
+        { "Deep Freeze", CAP_RANGED }, { "Dispersion", CAP_RANGED }, { "Thunderstorm", CAP_RANGED },
+        { "Chaos Bolt", CAP_RANGED }, { "Metamorphosis", CAP_RANGED }, { "Haunt", CAP_RANGED },
+        // Melee
+        { "Berserk", CAP_MELEE }, { "Divine Storm", CAP_MELEE }, { "Hunger For Blood", CAP_MELEE },
+        { "Killing Spree", CAP_MELEE }, { "Shadow Dance", CAP_MELEE }, { "Feral Spirit", CAP_MELEE },
+        { "Bladestorm", CAP_MELEE }, { "Titan's Grip", CAP_MELEE },
+    };
+    struct CustomCapstone
+    {
+        uint32 SpellId;
+        uint8 Roles;
+    };
+    constexpr CustomCapstone CUSTOM_CAPSTONES[] = {
+        { 90135, CAP_TANK },        // Spirit Bomb (Demon Hunter, Vengeance)
+        { 90311, CAP_HEALER },      // Invoke Chi-Ji, the Red Crane (Monk, Mistweaver)
+        { 90121, CAP_MELEE },       // Fel Barrage (Demon Hunter, Havoc)
+        { 90329, CAP_MELEE },       // Storm, Earth, and Fire (Monk, Windwalker)
     };
 
     // Learned together with Tame Beast (and removed with it), so a tamed pet can be called back,
@@ -718,13 +740,16 @@ namespace
         return removed;
     }
 
-    // Learns a random capstone the player can learn, one suiting their role when there is; nullptr if none.
+    // Learns a random capstone of the player's role (no role: any) they can learn; another role's only when none of
+    // theirs can be (a form or pet it needs); nullptr if none.
     Ability const* GrantCapstone(Player* player)
     {
+        Role role = GetRole(player);
         std::vector<Ability const*> candidates, others;
         for (Ability const& ability : Abilities())
             if (ability.Capstone && CanLearn(player, ability))
-                (SuitsRole(player, ability.Roles) ? candidates : others).push_back(&ability);
+                (role == ROLE_NONE || (ability.CapstoneRoles & RoleMask(role)) ? candidates : others)
+                    .push_back(&ability);
 
         if (candidates.empty())
             candidates = std::move(others);
@@ -923,7 +948,8 @@ namespace Wildcard
                 }
             }
 
-            // The talents' abilities: their chains (what the talent's rank 1 teaches, or itself), at their tier's level.
+            // The talents' abilities: their chains (what the talent's rank 1 teaches, or itself), at their tier's
+            // level.
             std::unordered_map<uint32, std::pair<uint32, uint8>> talentAbilities;  // first rank -> talent, level
             // What else a talent teaches, learned along with its ability (Metamorphosis: Shadow Cleave and its
             // hidden aura; Tree of Life: its passive).
@@ -1012,7 +1038,14 @@ namespace Wildcard
                 if (levelOne)
                     ability.Ranks.front().Level = 1;
 
-                ability.Capstone = ability.TalentId && matches(ability, CAPSTONE_ABILITIES);
+                if (ability.TalentId)
+                    for (CapstoneName const& capstone : CAPSTONE_ABILITIES)
+                        if (hasName(ability, capstone.Name))
+                        {
+                            found.insert(capstone.Name);
+                            ability.Capstone = true;
+                            ability.CapstoneRoles = capstone.Roles;
+                        }
                 if (ability.Capstone)
                     ability.Ranks.front().Level = CAPSTONE_LEVEL;
                 else
@@ -1049,8 +1082,12 @@ namespace Wildcard
                 ability.ClassId = custom.ClassId;
                 ability.SkillLine = custom.SkillLine;
                 ability.Offered = true;
-                ability.Capstone = std::find(std::begin(CUSTOM_CAPSTONES), std::end(CUSTOM_CAPSTONES), custom.SpellId)
-                    != std::end(CUSTOM_CAPSTONES);
+                for (CustomCapstone const& capstone : CUSTOM_CAPSTONES)
+                    if (capstone.SpellId == custom.SpellId)
+                    {
+                        ability.Capstone = true;
+                        ability.CapstoneRoles = capstone.Roles;
+                    }
                 if (ability.Capstone)
                     ability.Ranks.front().Level = CAPSTONE_LEVEL;
                 result.push_back(std::move(ability));
@@ -1163,15 +1200,16 @@ namespace Wildcard
             for (char const* name : TALENT_ABILITIES)
                 if (!found.count(name))
                     LOG_WARN("module", "mod-titan: Wildcard talent ability \"{}\" matches no talent", name);
-            for (char const* name : CAPSTONE_ABILITIES)
-                if (!found.count(name))
-                    LOG_WARN("module", "mod-titan: Wildcard capstone \"{}\" matches no talent ability", name);
+            for (CapstoneName const& capstone : CAPSTONE_ABILITIES)
+                if (!found.count(capstone.Name))
+                    LOG_WARN("module", "mod-titan: Wildcard capstone \"{}\" matches no talent ability",
+                        capstone.Name);
             for (char const* name : LEVEL_ONE_ABILITIES)
                 if (!found.count(name))
                     LOG_WARN("module", "mod-titan: Wildcard level 1 ability \"{}\" matches no class spell", name);
 
-            LOG_INFO("module", "mod-titan: Wildcard pool has {} abilities ({} rank chains, {} banned, {} from talents, {} "
-                "capstones)",
+            LOG_INFO("module", "mod-titan: Wildcard pool has {} abilities ({} rank chains, {} banned, {} from talents, "
+                "{} capstones)",
                 std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Offered; }), result.size(),
                 std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.Banned; }),
                 std::count_if(result.begin(), result.end(), [](Ability const& a) { return a.TalentId != 0; }),

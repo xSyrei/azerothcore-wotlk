@@ -42,8 +42,9 @@
 //                                                its abilities by '/' (first ranks: a form, stealth, a pet)
 //                      U,<class>,<tree order>,<tab id>
 //                      N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;...
-//                      Q,<first rank id>.<talent id>.<capstone>;...   abilities from talents (talent id 0: none)
-//                                                and capstones (1: rolled at the capstone level only) / E
+//                      Q,<first rank id>.<talent id>.<capstone roles>;...   abilities from talents (talent id 0:
+//                                                none) and capstones (the RoleMask() bits of the roles they come
+//                                                to, at the capstone level only; 0: not one) / E
 //                                                the list (begin, spec tabs, abilities, talent trees, end)
 //                      K0 / K,<id>,...           known abilities (clear, then first rank ids)
 //                      R0 / R,<talent id>:<rank>,...   owned talent ranks (clear, then talents)
@@ -130,7 +131,7 @@ namespace
         for (Wildcard::Ability const& ability : Wildcard::Abilities())
             if (ability.Offered && (ability.TalentId || ability.Capstone))
                 special.push_back(Acore::StringFormat("{}.{}.{}", ability.Ranks.front().SpellId, ability.TalentId,
-                    ability.Capstone ? 1 : 0));
+                    ability.Capstone ? ability.CapstoneRoles : 0));
         SendBatched(player, "Q,", special, ';');
     }
 

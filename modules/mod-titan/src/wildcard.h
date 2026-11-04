@@ -90,6 +90,7 @@ namespace Wildcard
         uint8 Roles = 0;            // RoleMask() bits of the roles it serves; 0: every role (buffs, utility)
         uint32 TalentId = 0;        // a talent's ability (Mortal Strike...): learned as an ability, never as a talent
         bool Capstone = false;      // rolled at CAPSTONE_LEVEL only (Bladestorm, Divine Storm...)
+        uint8 CapstoneRoles = 0;    // RoleMask() bits of the roles whose capstone roll can give it
     };
 
     bool IsHero(Player const* player);
