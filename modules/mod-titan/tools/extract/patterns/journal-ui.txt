@@ -1,0 +1,25 @@
+# The Dungeon Journal's own interface, from the Mists of Pandaria client (EmberforgeExtract.exe <Data> <this file>):
+# the Journal addon's layout and code (where each texture goes, its texture coordinates, sizes and fonts), the
+# templates it is built from, and the standard window frame art it sits in (border, portrait ring, title bar,
+# insets, tabs), for tools/journal and the Emberforge_Journal addon to rebuild it as Blizzard laid it out.
+Interface\AddOns\Blizzard_EncounterJournal\*
+Interface\FrameXML\UIPanelTemplates.xml
+Interface\FrameXML\UIPanelTemplates.lua
+Interface\FrameXML\SecureUIPanelTemplates.xml
+Interface\FrameXML\UIParent.xml
+Interface\FrameXML\Fonts.xml
+Interface\FrameXML\FontStyles.xml
+Interface\FrameXML\SharedFonts.xml
+Interface\SharedXML\*
+Interface\FrameGeneral\*
+Interface\Common\*
+Interface\Buttons\UI-Panel-*
+Interface\Buttons\UI-Silver-Button-*
+Interface\Buttons\UI-Frame-*
+Interface\Buttons\UI-SquareButton-*
+Interface\Buttons\Arrow-*
+Interface\Buttons\SquareButtonTextures*
+Interface\PaperDollInfoFrame\UI-Character-ActiveTab*
+Interface\PaperDollInfoFrame\UI-Character-InActiveTab*
+Interface\HelpFrame\HelpFrameTab*
+Interface\Tooltips\UI-Tooltip-*
