@@ -32,6 +32,8 @@ local PREFIX = "EFDJ"
 local JOURNAL_ART = "Interface\\AddOns\\Emberforge_Journal\\Art\\"
 local FLAG_ICONS = JOURNAL_ART .. "UI-EJ-Icons"
 local LOADING_SCREENS = "Interface\\Glues\\LoadingScreens\\"
+-- A loading screen's picture: between its bands (the top one's logo reaching down to 0.27 of it), on a 4:3 screen.
+local SCREEN_TOP, SCREEN_BOTTOM = 0.28, 0.86
 local FLAG_NAMES = { "Tank alert", "Damage dealer alert", "Healer alert", "Heroic difficulty", "Deadly",
     "Important", "Interruptible", "Magic effect", "Curse effect", "Poison effect", "Disease effect", "Enrage" }
 local EXPANSIONS = { [0] = "Classic", [1] = "Burning Crusade", [2] = "Wrath of the Lich King" }
@@ -797,9 +799,8 @@ local function RefreshHome()
             tile.fill:SetTexture(JOURNAL_ART .. art.button)
             tile.fill:SetTexCoord(0, 0.68359375, 0, 0.7421875)
         else
-            -- A loading screen (4:3) cut to the button's shape.
             tile.fill:SetTexture(LoadingScreen(instance, art))
-            tile.fill:SetTexCoord(0, 1, 0.13, 0.87)
+            tile.fill:SetTexCoord(0.1, 0.9, SCREEN_TOP, SCREEN_BOTTOM)     -- cut to the button's shape
         end
         tile.name:SetText(instance.name)
         tile.instance = instance
@@ -1371,6 +1372,7 @@ local function RefreshBook()
         Shown(ui.plate.screen, not own)
         if not own then
             ui.plate.screen:SetTexture(LoadingScreen(instance, art))
+            ui.plate.screen:SetTexCoord(0.21, 0.79, SCREEN_TOP, SCREEN_BOTTOM)    -- cut to the frame's shape
         end
         ui.plate.name:SetText(instance.name)
         local lore = EmberforgeJournalLore and EmberforgeJournalLore[instance.map]
