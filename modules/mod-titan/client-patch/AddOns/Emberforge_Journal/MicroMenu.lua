@@ -1,0 +1,151 @@
+-- Emberforge Journal: its place in the game's interface.
+--
+-- - The micro menu: the Dungeon Journal's button takes the Player vs. Player button's place (the game's blank micro
+--   button, the character button's, with the Journal's own icon on it). Player vs. Player is opened from the
+--   dungeon finder's tabs (or its key, H).
+-- - The dungeon finder and Player vs. Player windows are one: both carry the same two tabs on their right edge
+--   (as the spellbook's), Dungeons and Player vs. Player, each opening the other in its place.
+-- - Its key: Shift-J, set once if nothing else uses it (Key Bindings: Emberforge).
+
+BINDING_HEADER_EMBERFORGE = "Project Emberforge"
+BINDING_NAME_EMBERFORGE_JOURNAL_TOGGLE = "Dungeon Journal"
+local JOURNAL_ICON = "Interface\\AddOns\\Emberforge_Journal\\Art\\UI-EJ-PortraitIcon"
+
+function EmberforgeJournal_Toggle()
+    if EmberforgeJournal:IsShown() then
+        EmberforgeJournal:Hide()
+    else
+        EmberforgeJournal:Show()
+    end
+end
+
+-- The micro button ------------------------------------------------------------------------------------------------
+local button = CreateFrame("Button", "EmberforgeJournalMicroButton", PVPMicroButton:GetParent(),
+    "MainMenuBarMicroButton")
+button:SetNormalTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Up")
+button:SetPushedTexture("Interface\\Buttons\\UI-MicroButtonCharacter-Down")
+button:SetHighlightTexture("Interface\\Buttons\\UI-MicroButton-Hilight")
+-- The icon where the character button has its portrait (and moving with it when pressed).
+local icon = button:CreateTexture(nil, "OVERLAY")
+icon:SetWidth(18)
+icon:SetHeight(25)
+icon:SetTexture(JOURNAL_ICON)
+icon:SetTexCoord(0.2, 0.8, 0.0666, 0.9)
+local function Pressed(pressed)
+    icon:ClearAllPoints()
+    icon:SetPoint("TOP", button, "TOP", pressed and 1 or 0, pressed and -29 or -28)
+    icon:SetAlpha(pressed and 0.5 or 1)
+end
+Pressed(false)
+button:SetScript("OnMouseDown", function() Pressed(true) end)
+button:SetScript("OnMouseUp", function() Pressed(EmberforgeJournal:IsShown()) end)
+button:SetScript("OnClick", EmberforgeJournal_Toggle)
+button:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:SetText(MicroButtonTooltipText and MicroButtonTooltipText("Dungeon Journal",
+        "EMBERFORGE_JOURNAL_TOGGLE") or "Dungeon Journal", 1, 1, 1)
+    GameTooltip:AddLine("Every dungeon and raid: their bosses, abilities and loot.", nil, nil, nil, true)
+    GameTooltip:Show()
+end)
+button:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+-- In the Player vs. Player button's place (the buttons after it are anchored to it, so they stay put).
+local function PlaceButton()
+    button:ClearAllPoints()
+    button:SetAllPoints(PVPMicroButton)
+    PVPMicroButton:Hide()
+    button:Show()
+    if EmberforgeJournal:IsShown() then
+        button:SetButtonState("PUSHED", 1)
+    else
+        button:SetButtonState("NORMAL")
+    end
+    Pressed(EmberforgeJournal:IsShown())
+end
+hooksecurefunc("UpdateMicroButtons", PlaceButton)
+EmberforgeJournal:HookScript("OnShow", PlaceButton)
+EmberforgeJournal:HookScript("OnHide", PlaceButton)
+-- With the micro buttons (the vehicle bar moves them to its own bar).
+if MICRO_BUTTONS then
+    tinsert(MICRO_BUTTONS, "EmberforgeJournalMicroButton")
+end
+if MoveMicroButtons then
+    hooksecurefunc("MoveMicroButtons", function()
+        button:SetParent(PVPMicroButton:GetParent())
+        PlaceButton()
+    end)
+end
+PlaceButton()
+
+-- One window for the dungeon finder and Player vs. Player ---------------------------------------------------------
+local faction = UnitFactionGroup("player") == "Horde" and "INV_BannerPVP_01" or "INV_BannerPVP_02"
+local WINDOWS = {
+    { frame = "LFDParentFrame", name = "Dungeons", icon = "Interface\\Icons\\INV_Misc_GroupNeedMore" },
+    { frame = "PVPParentFrame", name = "Player vs. Player", icon = "Interface\\Icons\\" .. faction },
+}
+local tabs = {}
+local function Window(index)
+    return _G[WINDOWS[index].frame]
+end
+
+-- The tabs onto the window shown, the shown one checked.
+local function PlaceTabs(shown)
+    for index, tab in ipairs(tabs) do
+        tab:SetParent(shown)
+        tab:ClearAllPoints()
+        if index == 1 then
+            tab:SetPoint("TOPLEFT", shown, "TOPRIGHT", -32, -65)
+        else
+            tab:SetPoint("TOPLEFT", tabs[index - 1], "BOTTOMLEFT", 0, -17)
+        end
+        tab:SetChecked(Window(index) == shown)
+        tab:Show()
+    end
+end
+
+for index, window in ipairs(WINDOWS) do
+    local tab = CreateFrame("CheckButton", "EmberforgeFinderTab" .. index, UIParent, "SpellBookSkillLineTabTemplate")
+    tab:SetNormalTexture(window.icon)
+    tab.tooltip = window.name
+    tab:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(self.tooltip)
+        GameTooltip:Show()
+    end)
+    tab:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    tab:SetScript("OnClick", function(self)
+        local target = Window(index)
+        for other = 1, #WINDOWS do
+            local frame = Window(other)
+            if frame and frame ~= target and frame:IsShown() then
+                HideUIPanel(frame)
+            end
+        end
+        if target and not target:IsShown() then
+            ShowUIPanel(target)
+        end
+        self:SetChecked(true)
+    end)
+    tab:Hide()
+    tabs[index] = tab
+end
+
+for index = 1, #WINDOWS do
+    local frame = Window(index)
+    if frame then
+        frame:HookScript("OnShow", function(self) PlaceTabs(self) end)
+    end
+end
+
+-- The key --------------------------------------------------------------------------------------------------------
+local keys = CreateFrame("Frame")
+keys:RegisterEvent("PLAYER_LOGIN")
+keys:SetScript("OnEvent", function()
+    EmberforgeJournalDB = EmberforgeJournalDB or {}
+    local free = (GetBindingAction("SHIFT-J") or "") == ""
+    if not EmberforgeJournalDB.boundKey and not GetBindingKey("EMBERFORGE_JOURNAL_TOGGLE") and free then
+        SetBinding("SHIFT-J", "EMBERFORGE_JOURNAL_TOGGLE")
+        SaveBindings(GetCurrentBindingSet())
+    end
+    EmberforgeJournalDB.boundKey = true
+end)

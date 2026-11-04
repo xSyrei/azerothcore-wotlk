@@ -20,9 +20,13 @@
 #include "DBCStores.h"
 #include "Player.h"
 #include "ScriptMgr.h"
+#include "SpellAuraDefines.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 #include "StringConvert.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include <algorithm>
 #include <map>
 #include <string>
 
@@ -32,6 +36,7 @@
 //   client -> server   LIST                      send the ability list
 //                      PICK,<first rank id>      spend a Selection pick on that ability
 //                      ROLE,<role>               play that role (Wildcard::Role; not in combat)
+//                      CANCEL,<spell id>         leave that stance, presence or form (the game will not)
 //   server -> client   B / T,<class>,<skill line>,<name>
 //                      A,<class>.<skill line>.<level>.<id>[.<needs>];...   needs: groups by '+', each one of
 //                                                its abilities by '/' (first ranks: a form, stealth, a pet)
@@ -199,6 +204,26 @@ namespace
         Classless::SendKnown(player);
         Classless::SendState(player);
     }
+
+    // The Death Knight's presences: auras the game never lets go (SPELL_ATTR0_NO_AURA_CANCEL), every rank.
+    constexpr uint32 PRESENCES[] = { 48263, 48265, 48266 };
+
+    // Leaves a stance, presence or form the player is in. The game keeps a warrior in a stance (their forms are
+    // not toggleable: SpellShapeshiftForm.dbc) and a death knight in a presence; a Hero need not stay in either:
+    // the Classless addon asks for it when the buff is right-clicked or the stance bar's lit button clicked.
+    void CancelForm(Player* player, uint32 spellId)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (!Wildcard::IsHero(player) || !spellInfo || !spellInfo->IsPositive() || spellInfo->IsPassive())
+            return;
+
+        uint32 firstRank = spellInfo->GetFirstRankSpell()->Id;
+        bool presence = std::find(std::begin(PRESENCES), std::end(PRESENCES), firstRank) != std::end(PRESENCES);
+        if (!presence && !spellInfo->HasAura(SPELL_AURA_MOD_SHAPESHIFT))
+            return;
+
+        player->RemoveOwnedAura(spellId, ObjectGuid::Empty, 0, AURA_REMOVE_BY_CANCEL);
+    }
 }
 
 namespace Classless
@@ -278,6 +303,11 @@ public:
         {
             if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(5)))
                 Pick(player, *spellId);
+        }
+        else if (request.starts_with("CANCEL,"))
+        {
+            if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(7)))
+                CancelForm(player, *spellId);
         }
         else if (request.starts_with("ROLE,"))
         {

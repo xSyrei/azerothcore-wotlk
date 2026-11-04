@@ -12,12 +12,15 @@ The buff you see (90600) and two hidden ones (90601, 90602: an aura holds at mos
 all three on every Hero at login (hero_resources.cpp).
 
 Roles (90603-90606), chosen in the Classless window (wildcard.cpp): a buff each, changing the threat the Hero causes
-(all schools): Melee and Caster -50%, Tank +200%, Healer unchanged.
+(all schools): Melee and Ranged -50%, Tank +200%, Healer unchanged. Tank also takes 5% less damage (all schools) and
+has 5% more armor.
 """
 
 EFFECT_APPLY_AURA = 6
 AURA_DUMMY, AURA_MOD_THREAT = 4, 10
+AURA_MOD_DAMAGE_PERCENT_TAKEN, AURA_MOD_RESISTANCE_PCT = 87, 101
 ALL_SCHOOLS = 0x7F
+SCHOOL_MASK_NORMAL = 0x1        # resistance of the physical school: armor
 AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT, AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT = 174, 175
 AURA_MOD_RANGED_ATTACK_POWER_OF_STAT_PERCENT, AURA_MOD_ATTACK_POWER_OF_STAT_PERCENT = 212, 268
 STAT_AGILITY, STAT_INTELLECT, STAT_SPIRIT = 1, 3, 4
@@ -76,27 +79,32 @@ SPELLS = [
 ]
 
 
-def role(spell_id, name, icon, threat, text):
-    """A role's buff: threat% more threat from all schools (0: a dummy, nothing changed)."""
+def role(spell_id, name, icon, threat, text, extra=()):
+    """A role's buff: threat% more threat from all schools (0: a dummy, nothing changed), then the extra effects."""
     effect = aura(AURA_MOD_THREAT, threat, ALL_SCHOOLS) if threat else aura(AURA_DUMMY, 1, 0)
     return {'id': spell_id, 'copy': SELF_TEMPLATE, 'name': f'Role: {name}', 'icon': icon,
             'description': f'{text} Chosen in the Classless window.', 'tooltip': text,
             'set': {**OWN, 'Attributes': SPELL_ATTR0_NO_AURA_CANCEL, 'AttributesEx': 0,
                     'AttributesEx3': SPELL_ATTR3_ALLOW_AURA_WHILE_DEAD},
             'clear': [1, 2, 3],
-            'effects': {1: effect}}
+            'effects': {1: effect, **{index + 2: extra_effect for index, extra_effect in enumerate(extra)}}}
 
 
 # (id, name, icon, threat %): the order of Wildcard::Role (wildcard.h), from 1.
 ROLES = [
     (90603, 'Melee', 'Ability_DualWield', -50),
-    (90604, 'Caster', 'Spell_Fire_FlameBolt', -50),
+    (90604, 'Ranged', 'Spell_Fire_FlameBolt', -50),
     (90605, 'Healer', 'Spell_Holy_FlashHeal', 0),
     (90606, 'Tank', 'Ability_Warrior_DefensiveStance', 200),
 ]
+# The Tank's more: 5% less damage taken, 5% more armor.
+TANK_EXTRA = (aura(AURA_MOD_DAMAGE_PERCENT_TAKEN, -5, ALL_SCHOOLS),
+              aura(AURA_MOD_RESISTANCE_PCT, 5, SCHOOL_MASK_NORMAL))
 SPELLS += [role(spell_id, name, icon, threat,
-                f'Threat caused {"reduced" if threat < 0 else "increased"} by {abs(threat)}%.' if threat
-                else 'Threat caused unchanged.')
+                (f'Threat caused {"reduced" if threat < 0 else "increased"} by {abs(threat)}%.' if threat
+                 else 'Threat caused unchanged.')
+                + (' Damage taken reduced by 5%, armor increased by 5%.' if name == 'Tank' else ''),
+                TANK_EXTRA if name == 'Tank' else ())
            for spell_id, name, icon, threat in ROLES]
 
 ICONS = [ICON] + [icon for _, _, icon, _ in ROLES]

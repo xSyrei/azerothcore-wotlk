@@ -56,7 +56,7 @@ namespace Wildcard
     {
         ROLE_NONE,
         ROLE_MELEE,     // threat -50%
-        ROLE_CASTER,    // threat -50%
+        ROLE_RANGED,    // threat -50%
         ROLE_HEALER,    // threat unchanged
         ROLE_TANK,      // threat +200%
         MAX_ROLES
@@ -64,7 +64,7 @@ namespace Wildcard
 
     constexpr uint8 RoleMask(Role role) { return uint8(1 << role); }
     // An ability or talent tagged with roles (RoleMask bits, 0: neutral) suits the player's role: Melee takes melee
-    // and physical ranged, Caster magic damage, Healer heals and magic damage, Tank tanking and melee. No role: all.
+    // and physical ranged, Ranged magic damage, Healer heals and magic damage, Tank tanking and melee. No role: all.
     bool SuitsRole(Player* player, uint8 roles);
 
     struct Rank

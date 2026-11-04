@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name="EMBERFORGE_JOURNAL_TOGGLE" header="EMBERFORGE">
+        EmberforgeJournal_Toggle()
+    </Binding>
+</Bindings>

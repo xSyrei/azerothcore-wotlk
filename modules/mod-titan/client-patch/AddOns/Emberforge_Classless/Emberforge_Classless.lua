@@ -1,13 +1,14 @@
 -- Emberforge Classless: every class's abilities and talent trees by spec, the Hero's own abilities
 -- and talents, choosing the starting kit after a Titan Tome of Selection, and Wildcard roll reveals.
--- Open with N, the minimap button, /classless or /cl.
+-- Open with N (the game's Talents key and button too), the minimap button, /classless or /cl.
 --
 -- Layout: the class row on top, the role row under it; spec tabs over the ability grid (left), the spec's talent
 -- tree with its prerequisite arrows (middle), and your spells, talents and specs with a search box (right).
 --
 -- The server (mod-titan, src/classless.cpp) sends the data as addon whispers to the player, prefix
 -- EFCL, and the window answers the same way:
---   to server     LIST, PICK,<spell id>, ROLE,<role> (1 Melee, 2 Caster, 3 Healer, 4 Tank)
+--   to server     LIST, PICK,<spell id>, ROLE,<role> (1 Melee, 2 Ranged, 3 Healer, 4 Tank), CANCEL,<spell id> (leave a
+--                 stance, presence or form)
 --   from server   B / T,<class>,<skill line>,<name> / A,<class>.<skill line>.<level>.<spell id>[.<needs>];...
 --                   (needs: groups by '+', each one of its spell ids by '/': a form, stealth or pet first)
 --                 U,<class>,<tree order>,<tab id>
@@ -622,9 +623,10 @@ local roleRow = {}
 do
     local ROLES = {
         { id = 1, name = "Melee", icon = "Ability_DualWield", text = "Threat caused reduced by 50%." },
-        { id = 2, name = "Caster", icon = "Spell_Fire_FlameBolt", text = "Threat caused reduced by 50%." },
+        { id = 2, name = "Ranged", icon = "Spell_Fire_FlameBolt", text = "Threat caused reduced by 50%." },
         { id = 3, name = "Healer", icon = "Spell_Holy_FlashHeal", text = "Threat caused unchanged." },
-        { id = 4, name = "Tank", icon = "Ability_Warrior_DefensiveStance", text = "Threat caused increased by 200%." },
+        { id = 4, name = "Tank", icon = "Ability_Warrior_DefensiveStance",
+            text = "Threat caused increased by 200%. Damage taken reduced by 5%, armor increased by 5%." },
     }
     local WIDTH_EACH, GAP = 132, 10
     local left = WIDTH / 2 - (#ROLES * WIDTH_EACH + (#ROLES - 1) * GAP) / 2
@@ -1332,7 +1334,7 @@ local function RefreshStatus()
         status:SetText("Reroll with the Tome of Randomization or choose with the Tome of Selection until level "
             .. data.lockLevel)
     elseif data.role == 0 then
-        status:SetText(EMBER .. "Choose your role|r under the classes: Melee, Caster, Healer or Tank")
+        status:SetText(EMBER .. "Choose your role|r under the classes: Melee, Ranged, Healer or Tank")
     else
         status:SetText("")
     end
@@ -2192,6 +2194,86 @@ local function OnLogin()
     if not data.loaded and not data.loading then
         data.loading = true
         Send("LIST")
+    end
+end
+
+-- The game's Talents button (and its key) opens this window: a Hero's talents are rolled, not spent in the game's own
+-- talent frame. The button shows from level 1 (the game hides it below 10) and stays pressed while the window is open.
+ToggleTalentFrame = EmberforgeClassless_Toggle
+local function TalentButton()
+    if not TalentMicroButton then
+        return
+    end
+    if not TalentMicroButton:IsShown() then
+        TalentMicroButton:Show()
+        AchievementMicroButton:ClearAllPoints()
+        AchievementMicroButton:SetPoint("BOTTOMLEFT", TalentMicroButton, "BOTTOMRIGHT", -3, 0)
+    end
+    TalentMicroButton:Enable()
+    if frame:IsShown() then
+        TalentMicroButton:SetButtonState("PUSHED", 1)
+    else
+        TalentMicroButton:SetButtonState("NORMAL")
+    end
+end
+for _, name in ipairs({ "UpdateMicroButtons", "UpdateTalentButton" }) do
+    if _G[name] then
+        hooksecurefunc(name, TalentButton)
+    end
+end
+frame:HookScript("OnShow", TalentButton)
+frame:HookScript("OnHide", TalentButton)
+TalentButton()
+
+-- Leaving a stance, presence or form: the game keeps a warrior in a stance and a death knight in a presence (their
+-- buffs cannot be right-clicked off, their lit stance bar button does nothing). For a Hero the server lets them go
+-- (CANCEL), asked when the buff is right-clicked or the stance bar's lit button is clicked again.
+local PRESENCES = { ["Blood Presence"] = true, ["Frost Presence"] = true, ["Unholy Presence"] = true }
+
+-- The player's buff of that name: its spell id.
+local function BuffSpell(name)
+    for index = 1, 40 do
+        local buff, _, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", index)
+        if not buff then
+            return nil
+        end
+        if buff == name then
+            return spellId
+        end
+    end
+end
+
+-- A stance bar form's name, when it is the one the player is in.
+local function ActiveForm(name)
+    for index = 1, GetNumShapeshiftForms() do
+        local _, formName, active = GetShapeshiftFormInfo(index)
+        if active and formName == name then
+            return true
+        end
+    end
+    return PRESENCES[name]
+end
+
+hooksecurefunc("BuffButton_OnClick", function(self)
+    local unit = self.unit or PlayerFrame.unit or "player"
+    if not UnitIsUnit(unit, "player") then
+        return
+    end
+    local name, _, _, _, _, _, _, _, _, _, spellId = UnitAura(unit, self:GetID(), self.filter or "HELPFUL")
+    if name and spellId and ActiveForm(name) then
+        Send("CANCEL," .. spellId)
+    end
+end)
+for index = 1, NUM_SHAPESHIFT_SLOTS or 10 do
+    local stance = _G["ShapeshiftButton" .. index]
+    if stance then
+        stance:HookScript("OnClick", function(self)
+            local _, name, active = GetShapeshiftFormInfo(self:GetID())
+            local spellId = active and BuffSpell(name)
+            if spellId then
+                Send("CANCEL," .. spellId)
+            end
+        end)
     end
 end
 

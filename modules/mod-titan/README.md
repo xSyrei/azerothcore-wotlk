@@ -51,17 +51,18 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   the UI. Characters that already had more than this keep them, and roll again once their level
   catches up.
 - **Rolls follow the role**: abilities are tagged by what they do (melee or ranged physical damage: Melee; magic
-  damage: Caster; heals and shields on others: Healer; taunts and threat: Tank; `ROLE_ABILITIES` by hand for forms,
+  damage: Ranged; heals and shields on others: Healer; taunts and threat: Tank; `ROLE_ABILITIES` by hand for forms,
   stances and scripted spells), and a level-up or kit roll only gives one suiting the Hero's role: Melee takes
-  Melee, Caster takes Caster, Healer takes Healer and Caster, Tank takes Tank and Melee. Untagged abilities (buffs,
+  Melee, Ranged takes Ranged, Healer takes Healer and Ranged, Tank takes Tank and Melee. Untagged abilities (buffs,
   utility, crowd control) suit every role; with no role, or nothing left that suits, anything goes. Tome of
   Selection picks are free.
 - **Talents for what you know**: a talent rank goes to a talent improving an ability the Hero knows (one its class
   masks modify; a scripted talent: one of its class's abilities). When none is left: generic talents (stats,
   damage, crit, healing, armor and avoidance) suiting the role, and talents teaching an ability that suits it.
-- **Roles**: Melee, Caster, Healer or Tank, picked in the Classless window under the classes (not in
+- **Roles**: Melee, Ranged, Healer or Tank, picked in the Classless window under the classes (not in
   combat; kept per character). Each is a buff (90603-90606, `client-patch/patch_player.py`): Melee and
-  Caster cause 50% less threat, Tank 200% more, Healer unchanged.
+  Ranged cause 50% less threat, Tank 200% more (and takes 5% less damage, with 5% more armor), Healer
+  unchanged.
 - Owned abilities upgrade to the best rank for the Hero's level by themselves, no trainer needed.
 - **Requirements**: an ability cast only in a form or stance (Swipe (Cat): Cat Form; Overpower: Battle
   Stance), only in stealth (Ambush: Stealth; Pounce: Prowl) or on a pet (Mend Pet, Kill Command: Tame
@@ -266,7 +267,7 @@ level piece (an empty slot counts as 0; the next slot up when that one has nothi
   enchantment such as "of the Bear" included), whose required level is within 4 of the Hero's (wider when there
   are none) and whose item level fits it (unused items with no required level are left out), that the Hero can
   use. Greens start around level 5: a cache opened before that stays in the bags;
-- scored for the role: Melee strength, agility, attack power and weapon damage; Caster intellect and spell power
+- scored for the role: Melee strength, agility, attack power and weapon damage; Ranged intellect and spell power
   (and wand damage); Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor,
   defense and avoidance; no role a bit of everything. Armor type is whatever scores best (a tank's plate wins on
   armor); one of the three best is given.

@@ -1,7 +1,9 @@
 ## Interface: 30300
 ## Title: Emberforge Journal
-## Notes: The Dungeon Journal: every dungeon and raid with its levels, sizes and bosses (/journal).
+## Notes: The Dungeon Journal: every dungeon and raid, its bosses, abilities and loot (Shift-J, its micro button, /journal).
 ## Author: Project Emberforge
+## SavedVariablesPerCharacter: EmberforgeJournalDB
 Data.lua
 Headshots.lua
 Emberforge_Journal.lua
+MicroMenu.lua

@@ -37,7 +37,7 @@
 //
 // - from the uncommon (green) items for that slot whose required level is just under the Hero's, with stats only (no
 //   "Equip:", "Use:" or "Chance on hit:", their random enchantment too), that the Hero can use;
-// - scored by the stats the role wants: Melee strength, agility, attack power and weapon damage; Caster intellect
+// - scored by the stats the role wants: Melee strength, agility, attack power and weapon damage; Ranged intellect
 //   and spell power; Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor and
 //   avoidance; no role a bit of everything. Armor type does not matter; the scores decide (plate wins a tank's for
 //   its armor). One of the three best is given.
@@ -138,7 +138,7 @@ namespace
                     case ITEM_MOD_STAMINA: return 0.3f;
                     default: return rating ? 0.7f : 0.0f;
                 }
-            case ROLE_CASTER:
+            case ROLE_RANGED:
                 switch (stat)
                 {
                     case ITEM_MOD_INTELLECT: case ITEM_MOD_SPELL_POWER: case ITEM_MOD_SPELL_DAMAGE_DONE: return 1.0f;

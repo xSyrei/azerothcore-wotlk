@@ -102,6 +102,43 @@ function FauxScrollFrame_GetOffset(frame) return offsets[frame] or 0 end
 function FauxScrollFrame_Update() end
 function FauxScrollFrame_OnVerticalScroll(_, _, _, update) update() end
 function wipe(t) for k in pairs(t) do t[k] = nil end return t end
+-- Hooks on the game's own functions and frames (the Talents and stance bar buttons, buffs).
+hooks = {}
+function hooksecurefunc(target, name, hook)
+    if type(target) == "string" then
+        target, name, hook = _G, target, name
+    end
+    hooks[name] = hook
+end
+-- Hooked scripts are kept apart (the test reaches the addon through its own OnShow).
+function Widget:HookScript(event, handler)
+    self.hooked = self.hooked or {}
+    self.hooked[event] = handler
+end
+function Widget:SetButtonState(state) self.buttonState = state end
+function Widget:SetPoint() end
+function Widget:ClearAllPoints() end
+function Widget:GetID() return self.id or 1 end
+TalentMicroButton = NewWidget("TalentMicroButton")
+AchievementMicroButton = NewWidget("AchievementMicroButton")
+for index = 1, 10 do
+    NewWidget("ShapeshiftButton" .. index).id = index
+end
+auras = {}              -- the player's buffs: { name, spell id }
+forms = {}              -- the stance bar: { name, active }
+function UnitBuff(_, index)
+    local aura = auras[index]
+    if aura then
+        return aura[1], nil, nil, nil, nil, nil, nil, nil, nil, nil, aura[2]
+    end
+end
+UnitAura = UnitBuff
+function UnitIsUnit(a, b) return a == b end
+function GetNumShapeshiftForms() return #forms end
+function GetShapeshiftFormInfo(index)
+    local form = forms[index]
+    return nil, form and form[1], form and form[2]
+end
 tinsert, tremove = table.insert, table.remove
 function strsplit(sep, text, limit)
     local parts, start = {}, 1
@@ -383,8 +420,8 @@ check(EmberforgeClasslessDB.instantRolls == false, "the window's check box turns
 
 -- Lock at level 9.
 playerLevel = 9
-server("S,0,1,9")
-check(stat.status.text == "", "no tome hints once the kit is locked")
+server("S,0,1,9,1")
+check(stat.status.text == "", "no tome hints once the kit is locked (and a role chosen)")
 mageButton:Click()
 specs.specButtons[3]:Click()
 popup = nil
@@ -399,6 +436,30 @@ EmberforgeClassless_Toggle()
 check(not frame:IsShown(), "the N binding's toggle closes it")
 EmberforgeClasslessMinimapButton.scripts.OnClick(EmberforgeClasslessMinimapButton)
 check(frame:IsShown(), "the minimap button opens it")
+
+-- The game's Talents button and key open the window.
+frame:Hide()
+ToggleTalentFrame()
+check(frame:IsShown(), "the Talents key opens the Classless window")
+frame.hooked.OnShow()
+check(TalentMicroButton.buttonState == "PUSHED" and TalentMicroButton.shown, "the Talents button shows it open")
+
+-- Leaving a stance: right-clicking its buff, or clicking its lit stance bar button, asks the server.
+auras = { { "Battle Stance", 2457 }, { "Arcane Intellect", 1459 } }
+forms = { { "Battle Stance", true }, { "Defensive Stance", false } }
+before = #sent
+local buff = NewWidget()
+buff.unit, buff.id = "player", 2
+hooks.BuffButton_OnClick(buff)
+check(#sent == before, "an ordinary buff is left to the game")
+buff.id = 1
+hooks.BuffButton_OnClick(buff)
+check(lastSent() == "CANCEL,2457", "right-clicking the stance's buff asks to leave it")
+before = #sent
+ShapeshiftButton2.hooked.OnClick(ShapeshiftButton2)
+check(#sent == before, "clicking another stance is the game's (it switches)")
+ShapeshiftButton1.hooked.OnClick(ShapeshiftButton1)
+check(lastSent() == "CANCEL,2457", "clicking the lit stance button asks to leave it")
 
 -- Other addons' messages are ignored.
 before = #sent

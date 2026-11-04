@@ -42,7 +42,7 @@
 //   at 9, a talent at 10, an ability at 11, and so on. Abilities come from every class trainer's list
 //   (all 10 classes); talents from any class's trees (tier and prerequisite rules do not apply). The
 //   talent UI cannot spend points on a Hero.
-// - The role (Melee, Caster, Healer, Tank: Classless window) puts on a buff changing the threat caused, and steers
+// - The role (Melee, Ranged, Healer, Tank: Classless window) puts on a buff changing the threat caused, and steers
 //   the rolls: abilities are tagged by what they do (melee or ranged physical damage, magic damage, heals, taunts and
 //   threat; ROLE_ABILITIES by name), and only those suiting the role are rolled; untagged ones (buffs, utility,
 //   crowd control) suit everyone. Tome of Selection picks are free.
@@ -166,7 +166,7 @@ namespace
         }
     }
 
-    constexpr uint8 TAG_MELEE = RoleMask(ROLE_MELEE), TAG_CASTER = RoleMask(ROLE_CASTER);
+    constexpr uint8 TAG_MELEE = RoleMask(ROLE_MELEE), TAG_RANGED = RoleMask(ROLE_RANGED);
     constexpr uint8 TAG_HEALER = RoleMask(ROLE_HEALER), TAG_TANK = RoleMask(ROLE_TANK);
 
     // Roles tagged by hand where the spell data says too little (forms and stances, scripted spells). They replace
@@ -181,21 +181,21 @@ namespace
         { "Last Stand", TAG_TANK }, { "Bear Form", TAG_TANK }, { "Dire Bear Form", TAG_TANK },
         { "Frost Presence", TAG_TANK }, { "Righteous Fury", TAG_TANK }, { "Holy Shield", TAG_TANK },
         { "Righteous Defense", TAG_TANK }, { "Demon Spikes", TAG_TANK }, { "Soul Barrier", TAG_TANK },
-        { "Holy Shock", TAG_HEALER | TAG_CASTER }, { "Penance", TAG_HEALER | TAG_CASTER },
+        { "Holy Shock", TAG_HEALER | TAG_RANGED }, { "Penance", TAG_HEALER | TAG_RANGED },
         { "Invoke Chi-Ji, the Red Crane", TAG_HEALER }, { "Thunder Focus Tea", TAG_HEALER },
         { "Battle Stance", TAG_MELEE | TAG_TANK }, { "Berserker Stance", TAG_MELEE },
-        { "Cat Form", TAG_MELEE }, { "Moonkin Form", TAG_CASTER }, { "Tree of Life", TAG_HEALER },
-        { "Shadowform", TAG_CASTER },
+        { "Cat Form", TAG_MELEE }, { "Moonkin Form", TAG_RANGED }, { "Tree of Life", TAG_HEALER },
+        { "Shadowform", TAG_RANGED },
     };
 
-    // What a spell does, as role tags: its damage (melee or ranged physical: Melee; magic: Caster), heals and
+    // What a spell does, as role tags: its damage (melee or ranged physical: Melee; magic: Ranged), heals and
     // shields on others (Healer), taunts and threat (Tank); spells it triggers count too.
     uint8 SpellRoles(SpellInfo const* spellInfo, uint8 depth = 0)
     {
         uint8 roles = 0;
         bool physical = spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE
             || spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED;
-        uint8 damage = physical ? TAG_MELEE : TAG_CASTER;
+        uint8 damage = physical ? TAG_MELEE : TAG_RANGED;
         for (SpellEffectInfo const& effect : spellInfo->GetEffects())
         {
             bool onOthers = effect.TargetA.GetTarget() != TARGET_UNIT_CASTER;
@@ -277,7 +277,7 @@ namespace
                     if (effect.MiscValue & SPELL_SCHOOL_MASK_NORMAL)
                         roles |= TAG_MELEE | TAG_TANK;
                     if (effect.MiscValue & SPELL_SCHOOL_MASK_MAGIC)
-                        roles |= TAG_CASTER | TAG_HEALER;
+                        roles |= TAG_RANGED | TAG_HEALER;
                     break;
                 case SPELL_AURA_MOD_HEALING_PCT:
                 case SPELL_AURA_MOD_HEALING_DONE:
@@ -290,7 +290,7 @@ namespace
                 case SPELL_AURA_MOD_SPELL_HIT_CHANCE:
                 case SPELL_AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT:
                 case SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK:
-                    roles |= TAG_CASTER | TAG_HEALER;
+                    roles |= TAG_RANGED | TAG_HEALER;
                     break;
                 case SPELL_AURA_MOD_WEAPON_CRIT_PERCENT:
                 case SPELL_AURA_MOD_HIT_CHANCE:
@@ -319,7 +319,7 @@ namespace
                         case STAT_STRENGTH: roles |= TAG_MELEE | TAG_TANK; break;
                         case STAT_AGILITY: roles |= TAG_MELEE; break;
                         case STAT_STAMINA: roles |= TAG_TANK; break;
-                        case STAT_INTELLECT: roles |= TAG_CASTER | TAG_HEALER; break;
+                        case STAT_INTELLECT: roles |= TAG_RANGED | TAG_HEALER; break;
                         case STAT_SPIRIT: roles |= TAG_HEALER; break;
                         default: break;
                     }
@@ -1120,8 +1120,8 @@ namespace Wildcard
         static constexpr std::array<uint8, MAX_ROLES> ACCEPTS = {
             0xFF,                       // none: everything
             TAG_MELEE,                  // Melee: melee and physical ranged
-            TAG_CASTER,                 // Caster: magic damage
-            TAG_HEALER | TAG_CASTER,    // Healer: heals, and magic damage to level with
+            TAG_RANGED,                 // Ranged: magic damage
+            TAG_HEALER | TAG_RANGED,    // Healer: heals, and magic damage to level with
             TAG_TANK | TAG_MELEE,       // Tank: tanking and melee
         };
         return !roles || (roles & ACCEPTS[GetRole(player)]);
