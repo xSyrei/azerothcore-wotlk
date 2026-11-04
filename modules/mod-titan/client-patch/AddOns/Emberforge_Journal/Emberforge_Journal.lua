@@ -1,20 +1,22 @@
--- Emberforge Journal: the Dungeon Journal, laid out as Cataclysm's. Open with /journal or /dj.
+-- Emberforge Journal: the Dungeon Journal, laid out as Blizzard's own (the Mists of Pandaria client's
+-- Blizzard_EncounterJournal: its frames, sizes, anchors, fonts' colors and texture coordinates, its art). Open with
+-- /journal or /dj.
 --
--- - Home: the expansion's name as the title (click it to choose Classic, the Burning Crusade or Wrath), Dungeons and
---   Raids tabs, a search box, and a grid of tiles, one per dungeon or raid (its Journal button art).
--- - An instance: an open book. Left page: its picture, its story and its difficulties with their sizes.
---   Right page: its difficulty buttons and, by the tabs on the book's edge, its Bosses (each with its Journal
---   portrait, else our head shot of it, else its model's face, else the Journal's default portrait) or its Loot.
--- - A boss: left page its model (drag to turn it), level, classification, health and story; right page its
---   Abilities (the Journal's: headings, each ability's icon, its flags (tank, healer, heroic, interruptible...) and
---   text; else the spells its script casts, with the client's own descriptions) or its Loot.
--- A wing of a map (Scarlet Monastery's Cathedral...) lists its own bosses (the server's W). The breadcrumbs (Home,
--- the instance, the boss) go back. The lists scroll, their bars showing only when they do. The window has the
--- character window's look (Emberforge_Resources' CharacterSkin.lua) outside: dark, bronze-edged, a title bar; inside,
--- the Journal's own art: its open book, its boss buttons and tile frames (UI-ENCOUNTERJOURNALTEXTURES), its
--- section bars, the paper behind a boss's model, and each expansion's home background. The art and texts are the
--- Mists of Pandaria client's Journal (Data.lua and Art/, written by tools/journal/mop_journal.py); the models are the
--- creatures' own.
+-- - The window: the standard portrait frame (Interface\FrameGeneral: rock background, metal border, title bar, the
+--   Journal's own portrait in the ring), a row of breadcrumbs (Home, the instance, the boss) and a search box, and
+--   the content in a marble inset.
+-- - Home: the expansion's background and name (click it to choose Classic, the Burning Crusade or Wrath), the
+--   Dungeons and Raids tabs, and a grid of the instances' buttons (4 a row), each its Journal art and name.
+-- - An instance: the open book. Its left page: its title on the page's shadow, its bosses' buttons (the Journal's
+--   portrait, else our head shot, else the model's face, else the default portrait). Its right page: its framed
+--   picture with its name and story, or (by the tabs on the book's edge) its loot. The difficulty button at the top
+--   right of the book.
+-- - A boss: the left page its portrait, level, classification, health and story; the right page, by the tabs, its
+--   abilities (the Journal's: headings, icons, flags (tank, healer, heroic, interruptible...) and texts; else the
+--   spells its script casts), its loot, or its model (drag to turn it).
+-- A wing of a map (Scarlet Monastery's Cathedral...) lists its own bosses (the server's W). The lists scroll, their
+-- bars showing only when they do. Data.lua and Art/ come from tools/journal/mop_journal.py (the Journal's texts,
+-- art and frame), Headshots.lua and Art/EF-BOSS-* from tools/journal/portraits.py.
 --
 -- The server (mod-titan, src/journal.cpp) sends the data as addon whispers to the player, prefix EFDJ:
 --   to server     LIST
@@ -26,60 +28,123 @@
 --                 L,<boss>~<item>~<quality>~<slot>~<class>~<subclass>~<name>;...   Y,<map>~<difficulty>
 
 local PREFIX = "EFDJ"
-local ART = "Interface\\AddOns\\Emberforge_Resources\\Art\\"
 local JOURNAL_ART = "Interface\\AddOns\\Emberforge_Journal\\Art\\"
 local FLAG_ICONS = JOURNAL_ART .. "UI-EJ-Icons"
--- The Journal's own frame art: its sheet of buttons and bars (512 x 1024), its book, each expansion's home.
-local SHEET = JOURNAL_ART .. "UI-ENCOUNTERJOURNALTEXTURES"
-local EXPANSION_ART = { [0] = "UI-EJ-Classic", [1] = "UI-EJ-BurningCrusade", [2] = "UI-EJ-WrathoftheLichKing" }
-
--- A piece of the sheet (its pixels x0..x1, y0..y1).
-local function Piece(parent, layer, x0, y0, x1, y1)
-    local texture = parent:CreateTexture(nil, layer)
-    texture:SetTexture(SHEET)
-    texture:SetTexCoord(x0 / 512, x1 / 512, y0 / 1024, y1 / 1024)
-    return texture
-end
-
--- A bar of the sheet at a height: its ends (x0..left, right..x1) kept to scale, its middle stretched. Returns its
--- three pieces.
-local function Bar(parent, layer, height, x0, y0, x1, y1, left, right)
-    local scale = height / (y1 - y0)
-    local head, middle, tail = Piece(parent, layer, x0, y0, left, y1), Piece(parent, layer, left, y0, right, y1),
-        Piece(parent, layer, right, y0, x1, y1)
-    head:SetWidth((left - x0) * scale)
-    head:SetPoint("TOPLEFT")
-    head:SetPoint("BOTTOMLEFT")
-    tail:SetWidth((x1 - right) * scale)
-    tail:SetPoint("TOPRIGHT")
-    tail:SetPoint("BOTTOMRIGHT")
-    middle:SetPoint("TOPLEFT", head, "TOPRIGHT")
-    middle:SetPoint("BOTTOMRIGHT", tail, "BOTTOMLEFT")
-    return { head, middle, tail }
-end
 local FLAG_NAMES = { "Tank alert", "Damage dealer alert", "Healer alert", "Heroic difficulty", "Deadly",
     "Important", "Interruptible", "Magic effect", "Curse effect", "Poison effect", "Disease effect", "Enrage" }
-local BORDER = "Interface\\Tooltips\\UI-Tooltip-Border"
-local WIDTH, HEIGHT = 820, 520
-local COLUMNS, TILE_WIDTH, TILE_HEIGHT, TILE_GAP = 4, 176, 90, 12
-local BOSS_HEIGHT, BOSS_GAP = 54, 8
-local GOLD = { 1, 0.82, 0 }
--- The character window's look (Emberforge_Resources' CharacterSkin.lua): a dark window under a bronze edge, a
--- title bar, dark insets.
-local EDGE = { 0.55, 0.45, 0.35 }
-local INK = { 0.24, 0.13, 0.05 }    -- body text, on the Journal's parchment
-local TITLE = { 0.32, 0.16, 0.03 }  -- titles on the parchment
 local EXPANSIONS = { [0] = "Classic", [1] = "Burning Crusade", [2] = "Wrath of the Lich King" }
--- Each expansion's tile tint (top, bottom) and its home page's glow.
-local TINTS = {
-    [0] = { { 0.42, 0.26, 0.12 }, { 0.12, 0.07, 0.03 }, { 0.45, 0.12, 0.04 } },
-    [1] = { { 0.22, 0.4, 0.14 }, { 0.05, 0.1, 0.03 }, { 0.16, 0.32, 0.06 } },
-    [2] = { { 0.2, 0.34, 0.5 }, { 0.04, 0.07, 0.12 }, { 0.1, 0.22, 0.4 } },
-}
+local EXPANSION_ART = { [0] = "UI-EJ-Classic", [1] = "UI-EJ-BurningCrusade", [2] = "UI-EJ-WrathoftheLichKing" }
 local TYPES = { [1] = "Dungeon", [2] = "Raid" }
+local WIDTH, HEIGHT = 800, 496                  -- EncounterJournal
+local BOSS_HEIGHT, BOSS_GAP = 55, 15            -- EncounterBossButtonTemplate, and their spacing
+local COLUMNS, TILE_WIDTH, TILE_HEIGHT, TILE_GAP = 4, 174, 96, 15
+local FONT_MORPHEUS = "Fonts\\MORPHEUS.TTF"
+-- Blizzard's colors for the book: the page titles (on the pages' header shadows), the ink, the boss buttons' text.
+local HEADER_TEXT = { 0.902, 0.788, 0.671 }
+local INK = { 0.13, 0.07, 0.01 }
+local DARK = { 0.25, 0.1484375, 0.02 }
+local BOSS_TEXT, BOSS_TEXT_HOVER = { 0.827, 0.659, 0.463 }, { 0.973, 0.902, 0.581 }
+local TIER_TEXT = { 0.961, 0.824, 0.412 }
+local BUTTON_TEXT = { 0.973, 0.902, 0.581 }
 
 -- The game's encounter names (DungeonEncounter.dbc) shown as the boss is known.
 local NAMES = { ["Overlord Tyrannus"] = "Scourgelord Tyrannus" }
+
+-- Blizzard's texture pieces: { file, left, right, top, bottom, file width, file height } (the coordinates as
+-- Blizzard_EncounterJournal.xml and SharedUIPanelTemplates.xml give them).
+local SHEET, TILE = "UI-ENCOUNTERJOURNALTEXTURES", "UI-EncounterJournalTextures_Tile"
+local A = {
+    BossUp = { SHEET, 0.00195313, 0.63671875, 0.21386719, 0.26757813 },
+    BossDown = { SHEET, 0.00195313, 0.63671875, 0.10253906, 0.15625000 },
+    BossHighlight = { SHEET, 0.00195313, 0.63671875, 0.15820313, 0.21191406 },
+    DungeonUp = { SHEET, 0.00195313, 0.34179688, 0.42871094, 0.52246094 },
+    DungeonDown = { SHEET, 0.00195313, 0.34179688, 0.33300781, 0.42675781 },
+    DungeonHighlight = { SHEET, 0.34570313, 0.68554688, 0.33300781, 0.42675781 },
+    DungeonNameBg = { SHEET, 0.34570313, 0.84570313, 0.42871094, 0.49121094 },
+    TabUnselected = { SHEET, 0.25585938, 0.37890625, 0.90332031, 0.95898438 },
+    TabSelected = { SHEET, 0.12890625, 0.25195313, 0.90332031, 0.95898438 },
+    TabHighlight = { SHEET, 0.00195313, 0.12500000, 0.90332031, 0.95898438 },
+    BossIconOn = { SHEET, 0.90234375, 0.99609375, 0.26953125, 0.31152344 },
+    BossIconOff = { SHEET, 0.85546875, 0.94921875, 0.52441406, 0.56640625 },
+    LootIconOn = { SHEET, 0.63281250, 0.72656250, 0.61816406, 0.66015625 },
+    LootIconOff = { SHEET, 0.73046875, 0.82421875, 0.61816406, 0.66015625 },
+    ModelIconOn = { SHEET, 0.8046875, 0.900390625, 0.662109375, 0.705078125 },
+    ModelIconOff = { SHEET, 0.90234375, 1, 0.662109375, 0.705078125 },
+    LeftPageHeader = { SHEET, 0, 0.755859375, 0.9599609375, 1 },
+    RightPageHeader = { SHEET, 0.755859375, 0, 0.9599609375, 1 },
+    LootFrame = { SHEET, 0.00195313, 0.62890625, 0.61816406, 0.66210938 },
+    FilterUp = { SHEET, 0.90039063, 0.95117188, 0.04980469, 0.07519531 },
+    FilterDown = { SHEET, 0.63476563, 0.68554688, 0.06738281, 0.09277344 },
+    FilterHighlight = { SHEET, 0.72656250, 0.77734375, 0.06738281, 0.09277344 },
+    GridTabLeft = { SHEET, 0.81835938, 0.84179688, 0.02246094, 0.05761719 },
+    GridTabRight = { SHEET, 0.84570313, 0.86914063, 0.05957031, 0.09472656 },
+    GridTabLeftOn = { SHEET, 0.84570313, 0.86914063, 0.02246094, 0.05761719 },
+    GridTabRightOn = { SHEET, 0.87304688, 0.89648438, 0.05957031, 0.09472656 },
+    GridTabLeftHi = { SHEET, 0.81835938, 0.84179688, 0.05957031, 0.09472656 },
+    GridTabRightHi = { SHEET, 0.87304688, 0.89648438, 0.02246094, 0.05761719 },
+    PaperLeft = { SHEET, 0.81445313, 0.93945313, 0.39453125, 0.42285156 },
+    PaperRight = { SHEET, 0.34570313, 0.47070313, 0.49316406, 0.52148438 },
+    AbilityTextBG = { SHEET, 0.00195313, 0.50195313, 0.02246094, 0.10058594 },
+    AbilityIconBorder = { SHEET, 0.00195313, 0.04101563, 0.00097656, 0.02050781 },
+    GridTabMid = { TILE, 0, 1, 0.67382813, 0.74414063 },
+    GridTabMidOn = { TILE, 0, 1, 0.59960938, 0.66992188 },
+    GridTabMidHi = { TILE, 0, 1, 0.52539063, 0.59570313 },
+    PaperMid = { TILE, 0, 1, 0.22265625, 0.27929688 },
+    FilterMid = { TILE, 0, 1, 0.00195313, 0.05273438 },
+    FilterMidDown = { TILE, 0, 1, 0.05664063, 0.10742188 },
+    -- The standard window frame (Interface\FrameGeneral).
+    Portrait = { "UI-Frame", 0.00781250, 0.61718750, 0.00781250, 0.61718750 },
+    TopCornerRight = { "UI-Frame", 0.63281250, 0.89062500, 0.00781250, 0.26562500 },
+    BotCornerLeft = { "UI-Frame", 0.00781250, 0.11718750, 0.63281250, 0.74218750 },
+    BotCornerRight = { "UI-Frame", 0.13281250, 0.21875000, 0.89843750, 0.98437500 },
+    InnerTopLeft = { "UI-Frame", 0.63281250, 0.67968750, 0.54687500, 0.59375000 },
+    InnerTopRight = { "UI-Frame", 0.90625000, 0.95312500, 0.21875000, 0.26562500 },
+    InnerBotLeft = { "UI-Frame", 0.69531250, 0.74218750, 0.54687500, 0.59375000 },
+    InnerBotRight = { "UI-Frame", 0.75781250, 0.80468750, 0.54687500, 0.59375000 },
+    TitleTile = { "_UI-Frame", 0, 1, 0.43750000, 0.65625000 },
+    TitleTileBg = { "_UI-Frame", 0, 1, 0.28906250, 0.42187500 },
+    TopTileStreaks = { "_UI-Frame", 0, 1, 0.67187500, 0.96093750 },
+    Bot = { "_UI-Frame", 0, 1, 0.20312500, 0.27343750 },
+    InnerTop = { "_UI-Frame", 0, 1, 0.08593750, 0.10937500 },
+    InnerBot = { "_UI-Frame", 0, 1, 0.00781250, 0.03125000 },
+    LeftTile = { "!UI-Frame", 0.35937500, 0.60937500, 0, 1 },
+    RightTile = { "!UI-Frame", 0.17187500, 0.32812500, 0, 1 },
+    InnerLeft = { "!UI-Frame", 0.09375000, 0.14062500, 0, 1 },
+    InnerRight = { "!UI-Frame", 0.01562500, 0.06250000, 0, 1 },
+}
+local FILE_SIZE = { [SHEET] = { 512, 1024 }, [TILE] = { 64, 512 }, ["UI-Frame"] = { 128, 128 },
+    ["_UI-Frame"] = { 256, 128 }, ["!UI-Frame"] = { 64, 256 } }
+
+-- A texture of a piece, at its own size (its coordinates times its file's size) unless sized after.
+local function Tex(parent, layer, name, blend)
+    local piece = A[name]
+    local texture = parent:CreateTexture(nil, layer)
+    texture:SetTexture(JOURNAL_ART .. piece[1])
+    texture:SetTexCoord(piece[2], piece[3], piece[4], piece[5])
+    local size = FILE_SIZE[piece[1]]
+    texture:SetWidth(math.abs(piece[3] - piece[2]) * size[1])
+    texture:SetHeight(math.abs(piece[5] - piece[4]) * size[2])
+    if blend then
+        texture:SetBlendMode(blend)
+    end
+    return texture
+end
+
+-- A piece made a button's normal, pushed or highlight texture, filling the button.
+local function ButtonTex(button, setter, name)
+    local texture = Tex(button, setter == "SetHighlightTexture" and "HIGHLIGHT" or "ARTWORK", name)
+    texture:SetAllPoints()
+    button[setter](button, texture)
+    return texture
+end
+
+local function Font(text, size, color, shadow)
+    text:SetFont(FONT_MORPHEUS, size)
+    if color then
+        text:SetTextColor(unpack(color))
+    end
+    text:SetShadowOffset(shadow and 1 or 0, shadow and -1 or 0)
+end
 
 local data = { instances = {}, order = {}, bosses = {}, wings = {}, details = {}, loaded = false, loading = false }
 local view = { page = "home", expansion = 0, type = 1, instance = nil, difficulty = 1, boss = nil, search = "",
@@ -173,73 +238,6 @@ local function OnServerMessage(message)
         Refresh()
     end
 end
-
--- Rounded, gold-edged boxes (Emberforge_Resources' art, the Classless window's look).
-local Box, BoxColor
-do
-    local FLIPS = { { 0, 1, 0, 1 }, { 1, 0, 0, 1 }, { 0, 1, 1, 0 }, { 1, 0, 1, 0 } }
-    local CORNERS = { "TOPLEFT", "TOPRIGHT", "BOTTOMLEFT", "BOTTOMRIGHT" }
-    BoxColor = function(target, fill, edge)
-        for _, piece in ipairs(target.boxFill) do
-            if piece.solid then
-                piece:SetTexture(unpack(fill))
-            else
-                piece:SetVertexColor(unpack(fill))
-            end
-        end
-        for _, piece in ipairs(target.boxEdge) do
-            piece:SetVertexColor(unpack(edge))
-        end
-    end
-    Box = function(target, fill, edge)
-        local size = 8
-        target.boxFill, target.boxEdge = {}, {}
-        local function Piece(list, layer, file, flip)
-            local texture = target:CreateTexture(nil, layer)
-            if file then
-                texture:SetTexture(ART .. file .. "Small")
-                texture:SetTexCoord(unpack(flip or FLIPS[1]))
-            else
-                texture.solid = true
-            end
-            list[#list + 1] = texture
-            return texture
-        end
-        for index, corner in ipairs(CORNERS) do
-            for _, piece in ipairs({ Piece(target.boxFill, "BACKGROUND", "FillCorner", FLIPS[index]),
-                Piece(target.boxEdge, "BORDER", "LineCorner", FLIPS[index]) }) do
-                piece:SetWidth(size)
-                piece:SetHeight(size)
-                piece:SetPoint(corner)
-            end
-        end
-        local middle = Piece(target.boxFill, "BACKGROUND")
-        middle:SetPoint("TOPLEFT", size, -0.5)
-        middle:SetPoint("BOTTOMRIGHT", -size, 0.5)
-        local left = Piece(target.boxFill, "BACKGROUND")
-        left:SetPoint("TOPLEFT", 0.5, -size)
-        left:SetPoint("BOTTOMRIGHT", target, "BOTTOMLEFT", size, size)
-        local right = Piece(target.boxFill, "BACKGROUND")
-        right:SetPoint("TOPLEFT", target, "TOPRIGHT", -size, -size)
-        right:SetPoint("BOTTOMRIGHT", -0.5, size)
-        local top = Piece(target.boxEdge, "BORDER", "LineEdge")
-        top:SetPoint("TOPLEFT", size, 0)
-        top:SetPoint("BOTTOMRIGHT", target, "TOPRIGHT", -size, -size)
-        local bottom = Piece(target.boxEdge, "BORDER", "LineEdge", FLIPS[3])
-        bottom:SetPoint("TOPLEFT", target, "BOTTOMLEFT", size, size)
-        bottom:SetPoint("BOTTOMRIGHT", -size, 0)
-        local leftEdge = Piece(target.boxEdge, "BORDER", "LineEdgeV")
-        leftEdge:SetPoint("TOPLEFT", 0, -size)
-        leftEdge:SetPoint("BOTTOMRIGHT", target, "BOTTOMLEFT", size, size)
-        local rightEdge = Piece(target.boxEdge, "BORDER", "LineEdgeV", FLIPS[2])
-        rightEdge:SetPoint("TOPLEFT", target, "TOPRIGHT", -size, -size)
-        rightEdge:SetPoint("BOTTOMRIGHT", 0, size)
-        BoxColor(target, fill, edge)
-    end
-end
-local CELL_FILL, CELL_EDGE = { 0.075, 0.055, 0.043, 0.96 }, { 0.38, 0.29, 0.16, 1 }
-local ON_FILL, ON_EDGE = { 0.3, 0.13, 0.03, 0.96 }, { 1, 0.72, 0.32, 1 }
-
 -- A creature's model in a frame (PlayerModel:SetCreature); portrait: the face camera.
 -- A humanoid's skin (its baked texture) can load after its model: drawn at once, it is white. So the model is set
 -- once more a moment later (setting it again restarts its animation: only once).
@@ -280,7 +278,6 @@ local function ShowCreature(model, creature, portrait)
         pending[model] = { creature = creature, portrait = portrait, time = 0, step = 1 }
     end
 end
-
 -- The Journal's data (Data.lua) by the server's names: a boss's key is its name, lowercase, letters and digits only;
 -- a name that is not a key matches one that holds it (or that it holds).
 local function Key(name)
@@ -316,290 +313,6 @@ end
 local function InstanceArt(map)
     return EmberforgeJournalArt and EmberforgeJournalArt[map]
 end
-
--- The window -----------------------------------------------------------------------------------------------------
-frame = CreateFrame("Frame", "EmberforgeJournal", UIParent)
-frame:SetWidth(WIDTH)
-frame:SetHeight(HEIGHT)
-frame:SetPoint("CENTER")
-frame:SetFrameStrata("HIGH")
-frame:SetToplevel(true)
-frame:EnableMouse(true)
-frame:SetMovable(true)
-frame:SetClampedToScreen(true)
-frame:RegisterForDrag("LeftButton")
-frame:SetScript("OnDragStart", frame.StartMoving)
-frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-frame:SetBackdrop({ edgeFile = BORDER, edgeSize = 16 })
-frame:SetBackdropBorderColor(EDGE[1], EDGE[2], EDGE[3], 1)
-do
-    local background = frame:CreateTexture(nil, "BACKGROUND")
-    background:SetTexture(1, 1, 1, 1)
-    background:SetGradientAlpha("VERTICAL", 0.04, 0.035, 0.03, 0.97, 0.1, 0.085, 0.07, 0.97)
-    background:SetPoint("TOPLEFT", 4, -4)
-    background:SetPoint("BOTTOMRIGHT", -4, 4)
-end
-frame:Hide()
-tinsert(UISpecialFrames, "EmberforgeJournal")
-
-local ui = {}       -- the window's parts, in a table (the main chunk's locals are limited)
-
-do
-    -- The title bar, right of the portrait, across the window; the close button at its right end.
-    local bar = CreateFrame("Frame", nil, frame)
-    bar:SetHeight(20)
-    bar:SetPoint("TOPLEFT", 58, -6)
-    bar:SetPoint("TOPRIGHT", -30, -6)
-    bar:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background", edgeFile = BORDER, tile = true,
-        tileSize = 16, edgeSize = 12, insets = { left = 3, right = 3, top = 3, bottom = 3 } })
-    bar:SetBackdropColor(0.08, 0.07, 0.06, 1)
-    bar:SetBackdropBorderColor(EDGE[1], EDGE[2], EDGE[3], 1)
-    local title = bar:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    title:SetPoint("CENTER")
-    title:SetTextColor(1, 1, 1)
-    title:SetText("Dungeon Journal")
-    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", 2, 1)
-
-    -- The portrait: the Journal's own (its book and skull), round, filling the gold ring, top left.
-    local portrait = frame:CreateTexture(nil, "OVERLAY")
-    portrait:SetWidth(66)
-    portrait:SetHeight(66)
-    portrait:SetPoint("TOPLEFT", -11, 13)
-    SetPortraitToTexture(portrait, JOURNAL_ART .. "UI-EJ-PortraitIcon")
-    local ring = frame:CreateTexture(nil, "OVERLAY")
-    ring:SetTexture(ART .. "Ring")
-    ring:SetWidth(76)
-    ring:SetHeight(76)
-    ring:SetPoint("CENTER", portrait, "CENTER")
-
-    -- The navigation bar: breadcrumbs on the left, the search box on the right.
-    local nav = CreateFrame("Frame", nil, frame)
-    nav:SetHeight(28)
-    nav:SetPoint("TOPLEFT", 58, -30)
-    nav:SetPoint("TOPRIGHT", -14, -30)
-    Box(nav, { 0.02, 0.015, 0.01, 0.9 }, CELL_EDGE)
-    ui.crumbs = {}
-    for index = 1, 3 do
-        local crumb = CreateFrame("Button", nil, nav)
-        crumb:SetHeight(22)
-        Box(crumb, CELL_FILL, CELL_EDGE)
-        crumb.text = crumb:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-        crumb.text:SetPoint("CENTER", -4, 0)
-        local arrow = crumb:CreateTexture(nil, "ARTWORK")
-        arrow:SetTexture(ART .. "ArrowRight")
-        arrow:SetVertexColor(1, 0.82, 0.4)
-        arrow:SetWidth(10)
-        arrow:SetHeight(10)
-        arrow:SetPoint("RIGHT", -6, 0)
-        local hover = crumb:CreateTexture(nil, "HIGHLIGHT")
-        hover:SetTexture(1, 0.6, 0.2, 0.12)
-        hover:SetPoint("TOPLEFT", 2, -2)
-        hover:SetPoint("BOTTOMRIGHT", -2, 2)
-        crumb:SetPoint("LEFT", index == 1 and nav or ui.crumbs[index - 1], index == 1 and "LEFT" or "RIGHT",
-            index == 1 and 4 or 2, 0)
-        crumb.level = index
-        crumb:SetScript("OnClick", function(self)
-            if self.level == 1 then
-                view.page, view.instance, view.boss = "home", nil, nil
-            elseif self.level == 2 then
-                view.page, view.boss = "instance", nil
-            end
-            Refresh()
-        end)
-        ui.crumbs[index] = crumb
-    end
-
-    local search = CreateFrame("EditBox", "EmberforgeJournalSearch", nav, "InputBoxTemplate")
-    search:SetWidth(190)
-    search:SetHeight(18)
-    search:SetPoint("RIGHT", -10, 0)
-    search:SetAutoFocus(false)
-    local hint = search:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    hint:SetPoint("LEFT", 4, 0)
-    hint:SetText("Search")
-    search:SetScript("OnTextChanged", function(self)
-        view.search = self:GetText():lower()
-        if view.search == "" then
-            hint:Show()
-        else
-            hint:Hide()
-        end
-        if view.page ~= "home" and view.search ~= "" then
-            view.page, view.instance, view.boss = "home", nil, nil
-        end
-        Refresh()
-    end)
-    search:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-    ui.search = search
-end
-
--- Home -----------------------------------------------------------------------------------------------------------
-do
-    local home = CreateFrame("Frame", nil, frame)
-    home:SetPoint("TOPLEFT", 14, -64)
-    home:SetPoint("BOTTOMRIGHT", -14, 14)
-    -- The expansion's own Journal background behind it all.
-    home.glow = home:CreateTexture(nil, "BACKGROUND")
-    home.glow:SetTexCoord(0, 496 / 512, 0, 1)
-    home.glow:SetAllPoints()
-    ui.home = home
-
-    local title = CreateFrame("Button", nil, home)
-    title:SetHeight(32)
-    title:SetWidth(360)
-    title:SetPoint("TOPLEFT", 12, -6)
-    title.text = title:CreateFontString(nil, "ARTWORK")
-    title.text:SetFont("Fonts\\MORPHEUS.TTF", 26)
-    title.text:SetShadowOffset(2, -2)
-    title.text:SetPoint("LEFT")
-    title.text:SetTextColor(1, 0.62, 0.3)
-    local arrow = title:CreateTexture(nil, "ARTWORK")
-    arrow:SetTexture(ART .. "ArrowDown")
-    arrow:SetVertexColor(1, 0.7, 0.35)
-    arrow:SetWidth(14)
-    arrow:SetHeight(14)
-    arrow:SetPoint("LEFT", title.text, "RIGHT", 8, -2)
-    local menu = CreateFrame("Frame", "EmberforgeJournalMenu", UIParent, "UIDropDownMenuTemplate")
-    title:SetScript("OnClick", function(self)
-        local items = {}
-        for expansion = 0, 2 do
-            items[#items + 1] = { text = EXPANSIONS[expansion], checked = view.expansion == expansion,
-                func = function()
-                    view.expansion = expansion
-                    Refresh()
-                end }
-        end
-        EasyMenu(items, menu, self, 0, 0, "MENU")
-    end)
-    ui.title = title
-
-    ui.typeTabs = {}
-    for index, kind in ipairs({ 1, 2 }) do
-        local tab = CreateFrame("Button", nil, home)
-        tab:SetWidth(140)
-        tab:SetHeight(28)
-        tab:SetPoint("TOPRIGHT", -12 - (2 - index) * 148, -8)
-        Box(tab, CELL_FILL, CELL_EDGE)
-        tab.label = tab:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-        tab.label:SetPoint("CENTER")
-        tab.label:SetText(TYPES[kind] .. "s")
-        tab.kind = kind
-        tab:SetScript("OnClick", function(self)
-            view.type = self.kind
-            Refresh()
-        end)
-        ui.typeTabs[index] = tab
-    end
-
-    local scroll = CreateFrame("ScrollFrame", "EmberforgeJournalTiles", home, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 12, -48)
-    scroll:SetPoint("BOTTOMRIGHT", -30, 10)
-    local grid = CreateFrame("Frame", nil, scroll)
-    grid:SetWidth(COLUMNS * (TILE_WIDTH + TILE_GAP))
-    grid:SetHeight(1)
-    scroll:SetScrollChild(grid)
-    ui.grid, ui.tiles = grid, {}
-end
-
-local function Tile(index)
-    local tile = ui.tiles[index]
-    if tile then
-        return tile
-    end
-    tile = CreateFrame("Button", nil, ui.grid)
-    tile:SetWidth(TILE_WIDTH)
-    tile:SetHeight(TILE_HEIGHT)
-    local column, row = (index - 1) % COLUMNS, math.floor((index - 1) / COLUMNS)
-    tile:SetPoint("TOPLEFT", column * (TILE_WIDTH + TILE_GAP), -row * (TILE_HEIGHT + TILE_GAP))
-    -- The Journal's tile frame over its art, and its glow under the mouse.
-    local edge = Piece(tile, "OVERLAY", 0, 340, 175, 435)
-    edge:SetAllPoints()
-    tile.fill = tile:CreateTexture(nil, "BACKGROUND")
-    tile.fill:SetTexture(1, 1, 1, 1)
-    tile.fill:SetPoint("TOPLEFT", 3, -3)
-    tile.fill:SetPoint("BOTTOMRIGHT", -3, 3)
-    tile.shine = tile:CreateTexture(nil, "BORDER")
-    tile.shine:SetTexture(1, 1, 1, 1)
-    tile.shine:SetPoint("TOPLEFT", 3, -3)
-    tile.shine:SetPoint("BOTTOMRIGHT", tile, "RIGHT", -3, 0)
-    -- Under the levels, a shade (on art).
-    tile.dim = tile:CreateTexture(nil, "BORDER")
-    tile.dim:SetTexture(1, 1, 1, 1)
-    tile.dim:SetGradientAlpha("VERTICAL", 0, 0, 0, 0.5, 0, 0, 0, 0)
-    tile.dim:SetPoint("TOPLEFT", tile, "LEFT", 3, 0)
-    tile.dim:SetPoint("BOTTOMRIGHT", -3, 3)
-    tile.name = tile:CreateFontString(nil, "ARTWORK")
-    tile.name:SetFont("Fonts\\MORPHEUS.TTF", 15)
-    tile.name:SetShadowOffset(1, -1)
-    tile.name:SetTextColor(1, 0.86, 0.45)
-    tile.name:SetPoint("TOPLEFT", 8, -6)
-    tile.name:SetPoint("BOTTOMRIGHT", -8, 6)
-    tile.name:SetJustifyV("MIDDLE")
-    local hover = Piece(tile, "HIGHLIGHT", 180, 344, 348, 434)
-    hover:SetBlendMode("ADD")
-    hover:SetAllPoints()
-    tile:SetScript("OnClick", function(self)
-        view.page, view.instance, view.boss, view.difficulty, view.tab = "instance", self.instance.key, nil, 1,
-            "bosses"
-        Refresh()
-    end)
-    ui.tiles[index] = tile
-    return tile
-end
-
-local function RefreshHome()
-    ui.title.text:SetText(EXPANSIONS[view.expansion])
-    ui.title:SetWidth(ui.title.text:GetStringWidth() + 30)
-    ui.home.glow:SetTexture(JOURNAL_ART .. EXPANSION_ART[view.expansion])
-    for _, tab in ipairs(ui.typeTabs) do
-        local on = tab.kind == view.type
-        BoxColor(tab, on and ON_FILL or CELL_FILL, on and ON_EDGE or CELL_EDGE)
-        tab.label:SetTextColor(on and 1 or GOLD[1], on and 1 or GOLD[2], on and 1 or GOLD[3])
-    end
-    local shown = {}
-    for _, instance in ipairs(data.order) do
-        local match = view.search ~= "" and instance.name:lower():find(view.search, 1, true)
-        if (view.search == "" and instance.expansion == view.expansion and instance.type == view.type) or match then
-            shown[#shown + 1] = instance
-        end
-    end
-    for index, instance in ipairs(shown) do
-        local tile = Tile(index)
-        local colors = TINTS[instance.expansion]
-        local art = InstanceArt(instance.map)
-        if art and art.button then
-            -- Its Journal button (the picture in its top left), else the dungeon finder's background.
-            tile.fill:SetTexture(JOURNAL_ART .. art.button)
-            if art.lfg then
-                tile.fill:SetTexCoord(0, 1, 0.1, 0.9)
-            else
-                tile.fill:SetTexCoord(4 / 256, 170 / 256, 4 / 128, 92 / 128)
-            end
-            tile.fill:SetVertexColor(1, 1, 1)
-            tile.shine:SetGradientAlpha("VERTICAL", 0, 0, 0, 0, 0, 0, 0, 0.5)
-            tile.dim:Show()
-        else
-            tile.fill:SetTexture(1, 1, 1, 1)
-            tile.fill:SetTexCoord(0, 1, 0, 1)
-            tile.fill:SetGradientAlpha("VERTICAL", colors[2][1], colors[2][2], colors[2][3], 1,
-                colors[1][1], colors[1][2], colors[1][3], 1)
-            tile.shine:SetGradientAlpha("VERTICAL", 1, 1, 1, 0, 1, 1, 1, 0.12)
-            tile.dim:Hide()
-        end
-        tile.name:SetText(instance.name)
-        tile.instance = instance
-        tile:Show()
-    end
-    for index = #shown + 1, #ui.tiles do
-        ui.tiles[index]:Hide()
-    end
-    ui.grid:SetHeight(math.max(1, math.ceil(#shown / COLUMNS) * (TILE_HEIGHT + TILE_GAP)))
-end
-
--- The book -------------------------------------------------------------------------------------------------------
--- Two pages: the instance page (left: its plate and details; right: Bosses or Loot) and the boss page (left: its
--- model and details; right: Abilities or Loot). Tabs on the book's right edge switch the right page.
 local SLOT_NAMES = {
     [1] = "Head", [2] = "Neck", [3] = "Shoulder", [4] = "Shirt", [5] = "Chest", [6] = "Waist", [7] = "Legs",
     [8] = "Feet", [9] = "Wrist", [10] = "Hands", [11] = "Finger", [12] = "Trinket", [13] = "One-Hand",
@@ -616,102 +329,6 @@ local RANKS = { [0] = "Normal", [1] = "Elite", [2] = "Rare Elite", [3] = "Boss",
 local CREATURE_TYPES = { [1] = "Beast", [2] = "Dragonkin", [3] = "Demon", [4] = "Elemental", [5] = "Giant",
     [6] = "Undead", [7] = "Humanoid", [8] = "Critter", [9] = "Mechanical", [10] = "Not specified", [11] = "Totem",
     [12] = "Non-combat Pet", [13] = "Gas Cloud" }
-
--- A scrolling list on a page: rows are frames stacked in its child, the scrollbar on its right.
-local lists = 0
-local function List(page, top)
-    lists = lists + 1
-    local scroll = CreateFrame("ScrollFrame", "EmberforgeJournalList" .. lists, page, "UIPanelScrollFrameTemplate")
-    scroll.scrollBarHideable = 1    -- the template hides the bar when nothing scrolls
-    scroll:SetPoint("TOPLEFT", 12, top)
-    scroll:SetPoint("BOTTOMRIGHT", -30, 14)
-    local child = CreateFrame("Frame", nil, scroll)
-    child:SetWidth(10)
-    child:SetHeight(10)
-    scroll:SetScrollChild(child)
-    scroll:SetScript("OnSizeChanged", function(self, width) child:SetWidth(width) end)
-    return { scroll = scroll, child = child, rows = {} }
-end
-
--- A scroll frame's bar shows only when its child is taller than it.
-local function FitScrollBar(scroll, child)
-    local bar = _G[scroll:GetName() .. "ScrollBar"]
-    if not bar then
-        return
-    end
-    if child:GetHeight() > scroll:GetHeight() + 2 then
-        bar:Show()
-    else
-        scroll:SetVerticalScroll(0)
-        bar:Hide()
-    end
-end
-
--- A scrolling text on a page, under `anchor`: its SetBody sets the text.
-local function TextScroll(page, anchor, gap)
-    lists = lists + 1
-    local scroll = CreateFrame("ScrollFrame", "EmberforgeJournalText" .. lists, page, "UIPanelScrollFrameTemplate")
-    scroll.scrollBarHideable = 1
-    scroll:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 4, gap)
-    scroll:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -30, 14)
-    local child = CreateFrame("Frame", nil, scroll)
-    child:SetWidth(10)
-    child:SetHeight(10)
-    scroll:SetScrollChild(child)
-    local text = child:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    text:SetPoint("TOPLEFT")
-    text:SetJustifyH("LEFT")
-    text:SetJustifyV("TOP")
-    text:SetSpacing(3)
-    text:SetTextColor(unpack(INK))
-    text:SetShadowOffset(0, 0)
-    local function Fit()
-        local width = scroll:GetWidth()
-        if width and width > 0 then
-            child:SetWidth(width)
-            text:SetWidth(width - 4)
-        end
-        child:SetHeight(math.max(1, text:GetStringHeight() + 6))
-        scroll:UpdateScrollChildRect()
-        FitScrollBar(scroll, child)
-    end
-    scroll:SetScript("OnSizeChanged", Fit)
-    scroll.SetBody = function(self, body)
-        text:SetText(body)
-        Fit()
-        self:SetVerticalScroll(0)
-    end
-    return scroll
-end
-
-local function ListShown(list, shown)
-    if shown then
-        list.scroll:Show()
-    else
-        list.scroll:Hide()
-    end
-end
-
--- Stacks a list's rows (those shown) and sets its height.
-local function Stack(list, count)
-    local y = 0
-    for index, row in ipairs(list.rows) do
-        if index <= count then
-            row:ClearAllPoints()
-            row:SetPoint("TOPLEFT", list.child, "TOPLEFT", 0, -y)
-            row:SetPoint("RIGHT", list.child, "RIGHT", 0, 0)
-            row:Show()
-            y = y + row:GetHeight() + 4
-        else
-            row:Hide()
-        end
-    end
-    list.child:SetHeight(math.max(1, y))
-    list.scroll:UpdateScrollChildRect()
-    FitScrollBar(list.scroll, list.child)
-end
-
--- A spell's description, read from a hidden tooltip (the client resolves its numbers).
 local scan = CreateFrame("GameTooltip", "EmberforgeJournalScan", UIParent, "GameTooltipTemplate")
 local function SpellDescription(spell)
     scan:SetOwner(WorldFrame, "ANCHOR_NONE")
@@ -722,344 +339,6 @@ local function SpellDescription(spell)
     scan:Hide()
     return text
 end
-
-do
-    local book = CreateFrame("Frame", nil, frame)
-    book:SetPoint("TOPLEFT", 16, -64)
-    book:SetPoint("BOTTOMRIGHT", -44, 16)
-    -- The Journal's open book.
-    local pages_art = book:CreateTexture(nil, "BACKGROUND")
-    pages_art:SetTexture(JOURNAL_ART .. "UI-EJ-JournalBG")
-    pages_art:SetTexCoord(0, 786 / 1024, 0, 425 / 512)
-    pages_art:SetAllPoints()
-    ui.book = book
-    local pages = {}
-    for index, side in ipairs({ "LEFT", "RIGHT" }) do
-        local page = CreateFrame("Frame", nil, book)
-        -- Inside the parchment's worn edges, clear of the spine.
-        page:SetPoint("TOP", 0, -12)
-        page:SetPoint("BOTTOM", 0, 14)
-        page:SetPoint(side, side == "LEFT" and 18 or -18, 0)
-        page:SetPoint(side == "LEFT" and "RIGHT" or "LEFT", book, "CENTER", side == "LEFT" and -16 or 16, 0)
-        pages[index] = page
-    end
-    ui.left, ui.right = pages[1], pages[2]
-
-    -- Left page, the instance: its plate (its art when there is any, else its expansion's colors), then its details.
-    local plate = CreateFrame("Frame", nil, ui.left)
-    plate:SetHeight(230)
-    plate:SetPoint("TOPLEFT", 14, -14)
-    plate:SetPoint("TOPRIGHT", -14, -14)
-    plate:SetBackdrop({ edgeFile = BORDER, edgeSize = 16, insets = { left = 4, right = 4, top = 4, bottom = 4 } })
-    plate:SetBackdropBorderColor(0.35, 0.22, 0.1, 1)
-    plate.fill = plate:CreateTexture(nil, "BACKGROUND")
-    plate.fill:SetPoint("TOPLEFT", 4, -4)
-    plate.fill:SetPoint("BOTTOMRIGHT", -4, 4)
-    plate.name = plate:CreateFontString(nil, "ARTWORK")
-    -- Its name across the top, on two lines when long (never cut).
-    plate.name:SetFont("Fonts\\MORPHEUS.TTF", 20)
-    plate.name:SetShadowOffset(2, -2)
-    plate.name:SetTextColor(1, 0.86, 0.45)
-    plate.name:SetPoint("TOPLEFT", 14, -14)
-    plate.name:SetPoint("TOPRIGHT", -14, -14)
-    plate.name:SetHeight(48)
-    plate.name:SetJustifyV("TOP")
-    plate.sub = plate:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    plate.sub:SetPoint("BOTTOM", 0, 12)
-    ui.plate = plate
-    ui.about = TextScroll(ui.left, plate, -8)
-
-    -- Left page, the boss: its model (drag to turn it), its name, then its details.
-    local model = CreateFrame("PlayerModel", nil, ui.left)
-    model:SetPoint("TOPLEFT", 14, -14)
-    model:SetPoint("TOPRIGHT", -14, -14)
-    model:SetHeight(220)
-    model:EnableMouse(true)
-    model:SetScript("OnMouseDown", function(self, button)
-        if button == "LeftButton" then
-            self.turning, self.lastX = true, GetCursorPosition()
-        end
-    end)
-    model:SetScript("OnMouseUp", function(self) self.turning = false end)
-    model:SetScript("OnUpdate", function(self)
-        if self.turning then
-            local x = GetCursorPosition()
-            self.facing = (self.facing or 0) + (x - self.lastX) / 80
-            self.lastX = x
-            self:SetFacing(self.facing)
-        end
-    end)
-    -- The Journal's paper frame around it.
-    local backdrop = ui.left:CreateTexture(nil, "BORDER")
-    backdrop:SetTexture(JOURNAL_ART .. "UI-EJ-BOSSMODELPAPERFRAME")
-    backdrop:SetTexCoord(0, 396 / 512, 0, 426 / 512)
-    backdrop:SetPoint("TOPLEFT", model, "TOPLEFT", -4, 4)
-    backdrop:SetPoint("BOTTOMRIGHT", model, "BOTTOMRIGHT", 4, -4)
-    local bossName = model:CreateFontString(nil, "OVERLAY")
-    bossName:SetFont("Fonts\\MORPHEUS.TTF", 22)
-    bossName:SetShadowOffset(2, -2)
-    bossName:SetTextColor(1, 0.86, 0.45)
-    bossName:SetPoint("BOTTOM", 0, 8)
-    local bossInfo = TextScroll(ui.left, model, -8)
-    ui.model, ui.modelBack, ui.bossName, ui.bossInfo = model, backdrop, bossName, bossInfo
-
-    -- Right page: its title and the difficulty buttons, then a list.
-    local header = ui.right:CreateFontString(nil, "ARTWORK")
-    header:SetFont("Fonts\\MORPHEUS.TTF", 20)
-    header:SetPoint("TOPLEFT", 10, -14)
-    header:SetPoint("RIGHT", ui.right, "RIGHT", -170, 0)
-    header:SetJustifyH("LEFT")
-    header:SetTextColor(unpack(TITLE))
-    header:SetShadowOffset(0, 0)
-    ui.header = header
-    ui.difficultyButtons = {}
-    for index = 1, 4 do
-        local button = CreateFrame("Button", nil, ui.right)
-        button:SetWidth(36)
-        button:SetHeight(22)
-        button:SetPoint("TOPRIGHT", -16 - (index - 1) * 40, -14)
-        Box(button, CELL_FILL, CELL_EDGE)
-        button.text = button:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-        button.text:SetPoint("CENTER")
-        button:SetScript("OnClick", function(self)
-            view.difficulty = self.index
-            Refresh()
-        end)
-        ui.difficultyButtons[index] = button
-    end
-    ui.bossList = List(ui.right, -46)
-    ui.lootList = List(ui.right, -46)
-    ui.abilityList = List(ui.right, -46)
-    ui.empty = ui.right:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    ui.empty:SetPoint("TOP", 0, -80)
-    ui.empty:SetTextColor(unpack(INK))
-    ui.empty:SetShadowOffset(0, 0)
-
-    -- The tabs on the book's right edge: Bosses (Abilities on a boss's page) and Loot.
-    ui.sideTabs = {}
-    for index, info in ipairs({ { "bosses", "Interface\\Icons\\INV_Misc_Bone_HumanSkull_01" },
-        { "loot", "Interface\\Icons\\INV_Box_02" } }) do
-        -- The Journal's tab squares: dark red, gold-edged black when chosen, a glow under the mouse.
-        local tab = CreateFrame("Button", nil, book)
-        tab:SetWidth(42)
-        tab:SetHeight(42)
-        tab:SetPoint("TOPLEFT", book, "TOPRIGHT", 0, -24 - (index - 1) * 48)
-        tab.off = Piece(tab, "BACKGROUND", 462, 52, 486, 76)
-        tab.off:SetAllPoints()
-        tab.on = Piece(tab, "BACKGROUND", 460, 22, 488, 50)
-        tab.on:SetAllPoints()
-        local icon = tab:CreateTexture(nil, "ARTWORK")
-        icon:SetTexture(info[2])
-        icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-        icon:SetWidth(30)
-        icon:SetHeight(30)
-        icon:SetPoint("CENTER")
-        tab.icon = icon
-        local glow = Piece(tab, "HIGHLIGHT", 376, 73, 394, 91)
-        glow:SetBlendMode("ADD")
-        glow:SetAllPoints()
-        tab.key = info[1]
-        tab:SetScript("OnClick", function(self)
-            view.tab = self.key
-            Refresh()
-        end)
-        tab:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(self.key == "loot" and "Loot" or (view.page == "boss" and "Abilities" or "Bosses"))
-            GameTooltip:Show()
-        end)
-        tab:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        ui.sideTabs[index] = tab
-    end
-end
-
--- The bosses' models, one a visible row with no Journal portrait: on the right page, over the list, placed by
--- hand at their row (the list's scroll taken off) and hidden when their row is scrolled out of sight.
-local function BossModel(index)
-    ui.bossModels = ui.bossModels or {}
-    local model = ui.bossModels[index]
-    if model then
-        return model
-    end
-    model = CreateFrame("PlayerModel", nil, ui.right)
-    -- In the boss button's round socket.
-    model:SetWidth(BOSS_HEIGHT - 10)
-    model:SetHeight(BOSS_HEIGHT - 10)
-    model:SetFrameLevel(ui.bossList.child:GetFrameLevel() + 10)
-    ui.bossModels[index] = model
-    return model
-end
-
-local function PlaceBossModels()
-    local list = ui.bossList
-    local models = ui.bossModels or {}
-    for _, model in pairs(models) do
-        model.wanted = false
-    end
-    if list.scroll:IsShown() then
-        local offset = list.scroll:GetVerticalScroll() or 0
-        local height = list.scroll:GetHeight() or 0
-        for index, row in ipairs(list.rows) do
-            local top = (index - 1) * (BOSS_HEIGHT + 4) - offset
-            if row:IsShown() and row.creature and top >= -1 and top + BOSS_HEIGHT <= height + 1 then
-                local model = BossModel(index)
-                model:ClearAllPoints()
-                model:SetPoint("TOPLEFT", list.scroll, "TOPLEFT", 10, -(top + 5))
-                model.wanted = true
-                if not model:IsShown() or model.creature ~= row.creature then
-                    model:Show()
-                    model.creature = row.creature
-                    ShowCreature(model, row.creature, true)
-                end
-            end
-        end
-    end
-    for _, model in pairs(models) do
-        if not model.wanted then
-            model:Hide()
-            model.creature, model.shown = nil, nil
-        end
-    end
-end
-
-ui.bossList.scroll:HookScript("OnVerticalScroll", PlaceBossModels)
-
--- Rows.
-local function BossRow(index)
-    local list = ui.bossList
-    local row = list.rows[index]
-    if row then
-        return row
-    end
-    row = CreateFrame("Button", nil, list.child)
-    row:SetHeight(BOSS_HEIGHT)
-    -- The Journal's boss button: a leather bar with a round socket at its left.
-    Bar(row, "BACKGROUND", BOSS_HEIGHT, 2, 107, 327, 161, 66, 300)
-    -- Its portrait: the Journal's (standing over the socket), else its model's face in the socket (BossModels:
-    -- drawn over the list, as models in a scrolling list draw out of place), else the Journal's default one.
-    row.art = row:CreateTexture(nil, "ARTWORK")
-    row.art:SetWidth(BOSS_HEIGHT * 2)
-    row.art:SetHeight(BOSS_HEIGHT)
-    row.art:SetPoint("BOTTOMLEFT", 0, 0)
-    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    row.name:SetPoint("LEFT", row, "LEFT", BOSS_HEIGHT * 2 + 6, 0)
-    row.name:SetPoint("RIGHT", -10, 0)
-    row.name:SetJustifyH("LEFT")
-    row.name:SetTextColor(1, 0.88, 0.62)
-    local hover = Piece(row, "HIGHLIGHT", 5, 166, 323, 213)
-    hover:SetBlendMode("ADD")
-    hover:SetAllPoints()
-    row:SetScript("OnClick", function(self)
-        view.page, view.boss, view.tab = "boss", self.index, "bosses"
-        Refresh()
-    end)
-    list.rows[index] = row
-    return row
-end
-
-local function LootRow(index)
-    local list = ui.lootList
-    local row = list.rows[index]
-    if row then
-        return row
-    end
-    row = CreateFrame("Button", nil, list.child)
-    row:SetHeight(42)
-    Bar(row, "BACKGROUND", 42, 66, 107, 327, 161, 80, 300)    -- the boss buttons' leather, without the socket
-    row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetWidth(34)
-    row.icon:SetHeight(34)
-    row.icon:SetPoint("LEFT", 4, 0)
-    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 8, -3)
-    row.name:SetPoint("RIGHT", -8, 0)
-    row.name:SetJustifyH("LEFT")
-    row.slot = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.slot:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 8, 3)
-    row.slot:SetTextColor(0.92, 0.86, 0.74)
-    row.kind = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.kind:SetPoint("BOTTOMRIGHT", -12, 6)
-    row.kind:SetTextColor(0.92, 0.86, 0.74)
-    local hover = row:CreateTexture(nil, "HIGHLIGHT")
-    hover:SetTexture(1, 0.8, 0.4, 0.15)
-    hover:SetPoint("TOPLEFT", 2, -2)
-    hover:SetPoint("BOTTOMRIGHT", -2, 2)
-    row:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetHyperlink("item:" .. self.item)
-        GameTooltip:Show()
-    end)
-    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    row:SetScript("OnClick", function(self)
-        if IsModifiedClick("CHATLINK") then
-            local _, link = GetItemInfo(self.item)
-            if link then
-                ChatEdit_InsertLink(link)
-            end
-        elseif IsModifiedClick("DRESSUP") then
-            DressUpItemLink("item:" .. self.item)
-        end
-    end)
-    list.rows[index] = row
-    return row
-end
-
-local function AbilityRow(index)
-    local list = ui.abilityList
-    local row = list.rows[index]
-    if row then
-        return row
-    end
-    row = CreateFrame("Button", nil, list.child)
-    -- Its title bar (a box holding its icon, name and flags), indented by its depth; its text under it.
-    row.bar = CreateFrame("Frame", nil, row)
-    row.bar:SetHeight(28)
-    -- The Journal's section bar: a framed square (the icon's) and a dark band fading out.
-    row.bar.pieces = Bar(row.bar, "BACKGROUND", 28, 0, 536, 330, 582, 46, 250)
-    row.icon = row.bar:CreateTexture(nil, "ARTWORK")
-    row.icon:SetWidth(22)
-    row.icon:SetHeight(22)
-    row.icon:SetPoint("LEFT", 3, 0)
-    row.name = row.bar:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    row.name:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
-    row.name:SetTextColor(1, 0.95, 0.85)
-    -- The ability's flags (the Journal's icons), after its name.
-    row.flags = {}
-    for index = 1, 4 do
-        local flag = CreateFrame("Frame", nil, row.bar)
-        flag:SetWidth(18)
-        flag:SetHeight(18)
-        flag:SetPoint("LEFT", index == 1 and row.name or row.flags[index - 1], "RIGHT", index == 1 and 6 or 1, 0)
-        flag.icon = flag:CreateTexture(nil, "ARTWORK")
-        flag.icon:SetAllPoints()
-        flag.icon:SetTexture(FLAG_ICONS)
-        flag:EnableMouse(true)
-        flag:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(self.label)
-            GameTooltip:Show()
-        end)
-        flag:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        row.flags[index] = flag
-    end
-    row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    row.text:SetPoint("RIGHT", -6, 0)
-    row.text:SetJustifyH("LEFT")
-    row.text:SetJustifyV("TOP")
-    row.text:SetTextColor(unpack(INK))
-    row.text:SetShadowOffset(0, 0)
-    row:SetScript("OnEnter", function(self)
-        if self.spell then
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetHyperlink("spell:" .. self.spell)
-            GameTooltip:Show()
-        end
-    end)
-    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    list.rows[index] = row
-    return row
-end
-
 local function DifficultyLabel(instance, difficulty)
     if instance.type == 2 then
         return difficulty.players > 0 and tostring(difficulty.players) or "R"
@@ -1116,6 +395,824 @@ local function Details(instance)
     end
     return details
 end
+-- Scrolling lists and texts --------------------------------------------------------------------------------------
+-- A scroll frame's bar shows only when its child is taller than it.
+local function FitScrollBar(scroll, child)
+    local bar = _G[scroll:GetName() .. "ScrollBar"]
+    if not bar then
+        return
+    end
+    if child:GetHeight() > scroll:GetHeight() + 2 then
+        bar:Show()
+    else
+        scroll:SetVerticalScroll(0)
+        bar:Hide()
+    end
+end
+
+-- A scrolling list (rows stacked in its child, gap pixels apart, the first `top` below its top), placed by `place`.
+local lists = 0
+local function List(parent, place, gap, top)
+    lists = lists + 1
+    local scroll = CreateFrame("ScrollFrame", "EmberforgeJournalList" .. lists, parent, "UIPanelScrollFrameTemplate")
+    scroll.scrollBarHideable = 1
+    place(scroll)
+    local child = CreateFrame("Frame", nil, scroll)
+    child:SetWidth(10)
+    child:SetHeight(10)
+    scroll:SetScrollChild(child)
+    scroll:SetScript("OnSizeChanged", function(self, width) child:SetWidth(width) end)
+    return { scroll = scroll, child = child, rows = {}, gap = gap or 4, top = top or 0 }
+end
+
+local function ListShown(list, shown)
+    if shown then
+        list.scroll:Show()
+    else
+        list.scroll:Hide()
+    end
+end
+
+local function Stack(list, count)
+    local y = list.top
+    for index, row in ipairs(list.rows) do
+        if index <= count then
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", list.child, "TOPLEFT", row.indent or 0, -y)
+            if not row.fixedWidth then
+                row:SetPoint("RIGHT", list.child, "RIGHT", 0, 0)
+            end
+            row:Show()
+            y = y + row:GetHeight() + list.gap
+        else
+            row:Hide()
+        end
+    end
+    list.child:SetHeight(math.max(1, y))
+    list.scroll:UpdateScrollChildRect()
+    FitScrollBar(list.scroll, list.child)
+end
+
+-- A scrolling text in ink: its SetBody sets the text.
+local function TextScroll(parent, place, color)
+    lists = lists + 1
+    local scroll = CreateFrame("ScrollFrame", "EmberforgeJournalText" .. lists, parent, "UIPanelScrollFrameTemplate")
+    scroll.scrollBarHideable = 1
+    place(scroll)
+    local child = CreateFrame("Frame", nil, scroll)
+    child:SetWidth(10)
+    child:SetHeight(10)
+    scroll:SetScrollChild(child)
+    local text = child:CreateFontString(nil, "ARTWORK", "GameFontBlack")
+    text:SetPoint("TOPLEFT", 5, -5)
+    text:SetJustifyH("LEFT")
+    text:SetJustifyV("TOP")
+    text:SetSpacing(2)
+    text:SetTextColor(unpack(color or INK))
+    local function Fit()
+        local width = scroll:GetWidth()
+        if width and width > 0 then
+            child:SetWidth(width)
+            text:SetWidth(width - 10)
+        end
+        child:SetHeight(math.max(1, text:GetStringHeight() + 12))
+        scroll:UpdateScrollChildRect()
+        FitScrollBar(scroll, child)
+    end
+    scroll:SetScript("OnSizeChanged", Fit)
+    scroll.SetBody = function(self, body)
+        text:SetText(body)
+        Fit()
+        self:SetVerticalScroll(0)
+    end
+    scroll.text = text
+    return scroll
+end
+
+-- The window: the standard portrait frame (SharedUIPanelTemplates' PortraitFrameTemplate) ---------------------------
+frame = CreateFrame("Frame", "EmberforgeJournal", UIParent)
+frame:SetWidth(WIDTH)
+frame:SetHeight(HEIGHT)
+frame:SetPoint("CENTER")
+frame:SetFrameStrata("HIGH")
+frame:SetToplevel(true)
+frame:EnableMouse(true)
+frame:SetMovable(true)
+frame:SetClampedToScreen(true)
+frame:RegisterForDrag("LeftButton")
+frame:SetScript("OnDragStart", frame.StartMoving)
+frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+frame:Hide()
+tinsert(UISpecialFrames, "EmberforgeJournal")
+
+local ui = {}       -- the window's parts, in a table (the main chunk's locals are limited)
+
+do
+    local bg = frame:CreateTexture(nil, "BACKGROUND")
+    bg:SetTexture(JOURNAL_ART .. "UI-Background-Rock")
+    bg:SetPoint("TOPLEFT", 2, -21)
+    bg:SetPoint("BOTTOMRIGHT", -2, 2)
+    local titleBg = Tex(frame, "BACKGROUND", "TitleTileBg")
+    titleBg:SetPoint("TOPLEFT", 2, -3)
+    titleBg:SetPoint("TOPRIGHT", -25, -3)
+
+    local portrait = frame:CreateTexture(nil, "OVERLAY")
+    portrait:SetWidth(60)
+    portrait:SetHeight(60)
+    portrait:SetPoint("TOPLEFT", -6, 7)
+    SetPortraitToTexture(portrait, JOURNAL_ART .. "UI-EJ-PortraitIcon")
+    local portraitFrame = Tex(frame, "OVERLAY", "Portrait")
+    portraitFrame:SetPoint("TOPLEFT", -14, 11)
+    local topRight = Tex(frame, "OVERLAY", "TopCornerRight")
+    topRight:SetPoint("TOPRIGHT", 0, 1)
+    local top = Tex(frame, "OVERLAY", "TitleTile")
+    top:SetPoint("TOPLEFT", portraitFrame, "TOPRIGHT", 0, -10)
+    top:SetPoint("TOPRIGHT", topRight, "TOPLEFT")
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("TOP", 0, -4)
+    title:SetPoint("LEFT", 60, 0)
+    title:SetPoint("RIGHT", -60, 0)
+    title:SetText("Dungeon Journal")
+
+    local streaks = Tex(frame, "BORDER", "TopTileStreaks")
+    streaks:SetPoint("TOPLEFT", 0, -21)
+    streaks:SetPoint("TOPRIGHT", -2, -21)
+    local botLeft = Tex(frame, "BORDER", "BotCornerLeft")
+    botLeft:SetPoint("BOTTOMLEFT", -6, -5)
+    local botRight = Tex(frame, "BORDER", "BotCornerRight")
+    botRight:SetPoint("BOTTOMRIGHT", 0, -5)
+    local bottom = Tex(frame, "BORDER", "Bot")
+    bottom:SetPoint("BOTTOMLEFT", botLeft, "BOTTOMRIGHT")
+    bottom:SetPoint("BOTTOMRIGHT", botRight, "BOTTOMLEFT")
+    local left = Tex(frame, "BORDER", "LeftTile")
+    left:SetPoint("TOPLEFT", portraitFrame, "BOTTOMLEFT", 8, 0)
+    left:SetPoint("BOTTOMLEFT", botLeft, "TOPLEFT")
+    local right = Tex(frame, "BORDER", "RightTile")
+    right:SetPoint("TOPRIGHT", topRight, "BOTTOMRIGHT", 1, 0)
+    right:SetPoint("BOTTOMRIGHT", botRight, "TOPRIGHT")
+
+    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", 4, 5)
+
+    -- The inset: marble, its thin inner border (InsetFrameTemplate).
+    local inset = CreateFrame("Frame", nil, frame)
+    inset:SetPoint("TOPRIGHT", -4, -60)
+    inset:SetPoint("BOTTOMLEFT", 4, 5)
+    local marble = inset:CreateTexture(nil, "BACKGROUND")
+    marble:SetTexture(JOURNAL_ART .. "UI-Background-Marble")
+    marble:SetAllPoints()
+    local corners = {}
+    for name, point in pairs({ InnerTopLeft = "TOPLEFT", InnerTopRight = "TOPRIGHT", InnerBotLeft = "BOTTOMLEFT",
+        InnerBotRight = "BOTTOMRIGHT" }) do
+        corners[name] = Tex(inset, "BORDER", name)
+        corners[name]:SetPoint(point)
+    end
+    -- Each edge: { piece, its first point, the corner and point it starts at, its second point, the corner and
+    -- point it ends at }.
+    local edges = {
+        { "InnerTop", "TOPLEFT", "InnerTopLeft", "TOPRIGHT", "TOPRIGHT", "InnerTopRight", "TOPLEFT" },
+        { "InnerBot", "BOTTOMLEFT", "InnerBotLeft", "BOTTOMRIGHT", "BOTTOMRIGHT", "InnerBotRight", "BOTTOMLEFT" },
+        { "InnerLeft", "TOPLEFT", "InnerTopLeft", "BOTTOMLEFT", "BOTTOMLEFT", "InnerBotLeft", "TOPLEFT" },
+        { "InnerRight", "TOPRIGHT", "InnerTopRight", "BOTTOMRIGHT", "BOTTOMRIGHT", "InnerBotRight", "TOPRIGHT" },
+    }
+    for _, edge in ipairs(edges) do
+        local texture = Tex(inset, "BORDER", edge[1])
+        texture:SetPoint(edge[2], corners[edge[3]], edge[4])
+        texture:SetPoint(edge[5], corners[edge[6]], edge[7])
+    end
+    ui.inset = inset
+
+    -- The breadcrumbs (where the Journal's navigation bar is): Home, the instance, the boss; each a button in the
+    -- Journal's filter button art.
+    ui.crumbs = {}
+    for index = 1, 3 do
+        local crumb = CreateFrame("Button", nil, frame)
+        crumb:SetHeight(26)
+        local leftCap, rightCap = Tex(crumb, "BACKGROUND", "FilterUp"), Tex(crumb, "BACKGROUND", "FilterUp")
+        local piece = A.FilterUp
+        leftCap:SetTexCoord(piece[2], (piece[2] + piece[3]) / 2, piece[4], piece[5])
+        leftCap:SetWidth(13)
+        leftCap:SetPoint("LEFT")
+        rightCap:SetTexCoord((piece[2] + piece[3]) / 2, piece[3], piece[4], piece[5])
+        rightCap:SetWidth(13)
+        rightCap:SetPoint("RIGHT")
+        local mid = Tex(crumb, "BACKGROUND", "FilterMid")
+        mid:SetPoint("TOPLEFT", leftCap, "TOPRIGHT")
+        mid:SetPoint("BOTTOMRIGHT", rightCap, "BOTTOMLEFT")
+        local hover = Tex(crumb, "HIGHLIGHT", "FilterHighlight", "ADD")
+        hover:SetAllPoints()
+        crumb.text = crumb:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+        crumb.text:SetPoint("CENTER", 0, 0)
+        crumb.text:SetTextColor(unpack(BUTTON_TEXT))
+        crumb:SetPoint("TOPLEFT", index == 1 and frame or ui.crumbs[index - 1], index == 1 and "TOPLEFT" or "TOPRIGHT",
+            index == 1 and 61 or 4, index == 1 and -27 or 0)
+        crumb.level = index
+        crumb:SetScript("OnClick", function(self)
+            if self.level == 1 then
+                view.page, view.instance, view.boss = "home", nil, nil
+            elseif self.level == 2 then
+                view.page, view.boss, view.tab = "instance", nil, "bosses"
+            end
+            Refresh()
+        end)
+        ui.crumbs[index] = crumb
+    end
+
+    local search = CreateFrame("EditBox", "EmberforgeJournalSearch", frame, "InputBoxTemplate")
+    search:SetWidth(200)
+    search:SetHeight(20)
+    search:SetPoint("TOPRIGHT", -20, -30)
+    search:SetAutoFocus(false)
+    local hint = search:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    hint:SetPoint("LEFT", 4, 0)
+    hint:SetText("Search")
+    search:SetScript("OnTextChanged", function(self)
+        view.search = self:GetText():lower()
+        if view.search == "" then
+            hint:Show()
+        else
+            hint:Hide()
+        end
+        if view.page ~= "home" and view.search ~= "" then
+            view.page, view.instance, view.boss = "home", nil, nil
+        end
+        Refresh()
+    end)
+    search:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    ui.search = search
+end
+
+-- Home (the Journal's instance select) ------------------------------------------------------------------------------
+do
+    local home = CreateFrame("Frame", nil, frame)
+    home:SetPoint("TOPLEFT", ui.inset, "TOPLEFT", 0, -2)
+    home:SetPoint("BOTTOMRIGHT", ui.inset, "BOTTOMRIGHT", -3, 0)
+    home.glow = home:CreateTexture(nil, "BACKGROUND")
+    home.glow:SetTexCoord(0, 496 / 512, 0, 1)
+    home.glow:SetAllPoints()
+    ui.home = home
+
+    -- The expansion's name, and the arrow opening the choice of expansions.
+    local title = CreateFrame("Button", nil, home)
+    title:SetHeight(34)
+    title:SetWidth(360)
+    title:SetPoint("TOPLEFT", 10, -10)
+    title.text = title:CreateFontString(nil, "ARTWORK")
+    Font(title.text, 28, TIER_TEXT, true)
+    title.text:SetPoint("LEFT")
+    local arrow = title:CreateTexture(nil, "ARTWORK")
+    arrow:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
+    arrow:SetWidth(28)
+    arrow:SetHeight(28)
+    arrow:SetPoint("LEFT", title.text, "RIGHT", 8, -2)
+    local menu = CreateFrame("Frame", "EmberforgeJournalMenu", UIParent, "UIDropDownMenuTemplate")
+    title:SetScript("OnClick", function(self)
+        local items = {}
+        for expansion = 0, 2 do
+            items[#items + 1] = { text = EXPANSIONS[expansion], checked = view.expansion == expansion,
+                func = function()
+                    view.expansion = expansion
+                    Refresh()
+                end }
+        end
+        EasyMenu(items, menu, self, 0, 0, "MENU")
+    end)
+    ui.title = title
+
+    -- The Dungeons and Raids tabs (EncounterTierTabTemplate: the grid tab's three pieces, chosen, under the mouse).
+    ui.typeTabs = {}
+    for index, kind in ipairs({ 2, 1 }) do
+        local tab = CreateFrame("Button", nil, home)
+        tab:SetWidth(116)
+        tab:SetHeight(36)
+        if index == 1 then
+            tab:SetPoint("BOTTOMRIGHT", home, "TOPRIGHT", -35, -45)
+        else
+            tab:SetPoint("BOTTOMRIGHT", ui.typeTabs[1], "BOTTOMLEFT", -20, 0)
+        end
+        tab.parts = {}
+        for _, state in ipairs({ "", "On" }) do
+            local leftPiece, rightPiece = Tex(tab, "BACKGROUND", "GridTabLeft" .. state),
+                Tex(tab, "BACKGROUND", "GridTabRight" .. state)
+            leftPiece:SetPoint("LEFT")
+            rightPiece:SetPoint("RIGHT")
+            local mid = Tex(tab, "BACKGROUND", "GridTabMid" .. state)
+            mid:SetPoint("TOPLEFT", leftPiece, "TOPRIGHT")
+            mid:SetPoint("BOTTOMRIGHT", rightPiece, "BOTTOMLEFT")
+            tab.parts[state] = { leftPiece, mid, rightPiece }
+        end
+        local hiLeft = Tex(tab, "HIGHLIGHT", "GridTabLeftHi", "ADD")
+        local hiRight = Tex(tab, "HIGHLIGHT", "GridTabRightHi", "ADD")
+        hiLeft:SetPoint("LEFT")
+        hiRight:SetPoint("RIGHT")
+        local hiMid = Tex(tab, "HIGHLIGHT", "GridTabMidHi", "ADD")
+        hiMid:SetPoint("TOPLEFT", hiLeft, "TOPRIGHT")
+        hiMid:SetPoint("BOTTOMRIGHT", hiRight, "BOTTOMLEFT")
+        tab.label = tab:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        tab.label:SetPoint("CENTER", 0, -1)
+        tab.label:SetText(TYPES[kind] .. "s")
+        tab.kind = kind
+        tab:SetScript("OnClick", function(self)
+            view.type = self.kind
+            Refresh()
+        end)
+        ui.typeTabs[index] = tab
+    end
+
+    local scroll = CreateFrame("ScrollFrame", "EmberforgeJournalTiles", home, "UIPanelScrollFrameTemplate")
+    scroll.scrollBarHideable = 1
+    scroll:SetPoint("TOPLEFT", 5, -49)
+    scroll:SetPoint("BOTTOMRIGHT", -26, 4)
+    local grid = CreateFrame("Frame", nil, scroll)
+    grid:SetWidth(COLUMNS * (TILE_WIDTH + TILE_GAP) + 12)
+    grid:SetHeight(1)
+    scroll:SetScrollChild(grid)
+    ui.grid, ui.tiles, ui.tileScroll = grid, {}, scroll
+end
+
+-- An instance's button (EncounterInstanceButtonTemplate): its art, the Journal's frame over it, its name.
+local function Tile(index)
+    local tile = ui.tiles[index]
+    if tile then
+        return tile
+    end
+    tile = CreateFrame("Button", nil, ui.grid)
+    tile:SetWidth(TILE_WIDTH)
+    tile:SetHeight(TILE_HEIGHT)
+    local column, row = (index - 1) % COLUMNS, math.floor((index - 1) / COLUMNS)
+    tile:SetPoint("TOPLEFT", 12 + column * (TILE_WIDTH + TILE_GAP), -10 - row * (TILE_HEIGHT + TILE_GAP))
+    tile.fill = tile:CreateTexture(nil, "BACKGROUND")
+    tile.fill:SetAllPoints()
+    ButtonTex(tile, "SetNormalTexture", "DungeonUp")
+    ButtonTex(tile, "SetPushedTexture", "DungeonDown")
+    ButtonTex(tile, "SetHighlightTexture", "DungeonHighlight")
+    tile.name = tile:CreateFontString(nil, "OVERLAY")
+    Font(tile.name, 17, { 1, 0.82, 0 }, true)
+    tile.name:SetShadowColor(0, 0, 0, 1)
+    tile.name:SetWidth(150)
+    tile.name:SetPoint("TOP", 0, -15)
+    tile:SetScript("OnClick", function(self)
+        view.page, view.instance, view.boss, view.difficulty, view.tab = "instance", self.instance.key, nil, 1,
+            "bosses"
+        Refresh()
+    end)
+    ui.tiles[index] = tile
+    return tile
+end
+
+local function RefreshHome()
+    ui.title.text:SetText(EXPANSIONS[view.expansion])
+    ui.title:SetWidth(ui.title.text:GetStringWidth() + 44)
+    ui.home.glow:SetTexture(JOURNAL_ART .. EXPANSION_ART[view.expansion])
+    for _, tab in ipairs(ui.typeTabs) do
+        local on = tab.kind == view.type
+        for state, pieces in pairs(tab.parts) do
+            for _, piece in ipairs(pieces) do
+                if (state == "On") == on then
+                    piece:Show()
+                else
+                    piece:Hide()
+                end
+            end
+        end
+        tab.label:SetTextColor(on and 1 or 1, on and 1 or 0.82, on and 1 or 0)
+    end
+    local shown = {}
+    for _, instance in ipairs(data.order) do
+        local match = view.search ~= "" and instance.name:lower():find(view.search, 1, true)
+        if (view.search == "" and instance.expansion == view.expansion and instance.type == view.type) or match then
+            shown[#shown + 1] = instance
+        end
+    end
+    for index, instance in ipairs(shown) do
+        local tile = Tile(index)
+        local art = InstanceArt(instance.map)
+        if art and art.button then
+            tile.fill:SetTexture(JOURNAL_ART .. art.button)
+            if art.lfg then
+                tile.fill:SetTexCoord(0, 1, 0.08, 0.92)
+            else
+                tile.fill:SetTexCoord(0, 0.68359375, 0, 0.7421875)
+            end
+        else
+            tile.fill:SetTexture(JOURNAL_ART .. "UI-EJ-DUNGEONBUTTON-Default")
+            tile.fill:SetTexCoord(0, 0.68359375, 0, 0.7421875)
+        end
+        tile.name:SetText(instance.name)
+        tile.instance = instance
+        tile:Show()
+    end
+    for index = #shown + 1, #ui.tiles do
+        ui.tiles[index]:Hide()
+    end
+    ui.grid:SetHeight(math.max(1, 10 + math.ceil(#shown / COLUMNS) * (TILE_HEIGHT + TILE_GAP)))
+    ui.tileScroll:UpdateScrollChildRect()
+    FitScrollBar(ui.tileScroll, ui.grid)
+end
+
+-- The book (the Journal's encounter frame) --------------------------------------------------------------------------
+do
+    local book = CreateFrame("Frame", nil, frame)
+    book:SetWidth(785)
+    book:SetHeight(425)
+    book:SetPoint("BOTTOMRIGHT", ui.inset, "BOTTOMRIGHT", -4, 2)
+    local pages = book:CreateTexture(nil, "BACKGROUND")
+    pages:SetTexture(JOURNAL_ART .. "UI-EJ-JournalBG")
+    pages:SetTexCoord(0, 0.766601562, 0, 0.830078125)
+    pages:SetAllPoints()
+    ui.book = book
+
+    -- The pages' header shadows and titles: the instance's on the left, the boss's on the right.
+    local leftShadow = Tex(book, "BORDER", "LeftPageHeader")
+    leftShadow:SetPoint("TOPLEFT", 0, -11)
+    local instanceTitle = book:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    instanceTitle:SetWidth(340)
+    instanceTitle:SetHeight(14)
+    instanceTitle:SetJustifyH("LEFT")
+    instanceTitle:SetPoint("TOPLEFT", 20, -20)
+    instanceTitle:SetTextColor(unpack(HEADER_TEXT))
+    local rightShadow = Tex(book, "BORDER", "RightPageHeader")
+    rightShadow:SetPoint("TOPRIGHT", 0, -11)
+    local encounterTitle = book:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    encounterTitle:SetWidth(227)
+    encounterTitle:SetHeight(14)
+    encounterTitle:SetJustifyH("LEFT")
+    encounterTitle:SetPoint("BOTTOMLEFT", book, "TOPRIGHT", -350, -36)
+    encounterTitle:SetTextColor(unpack(HEADER_TEXT))
+    ui.instanceTitle, ui.rightShadow, ui.encounterTitle = instanceTitle, rightShadow, encounterTitle
+
+    -- Left page: the bosses' buttons, or the boss.
+    ui.bossList = List(book, function(scroll)
+        scroll:SetWidth(338)
+        scroll:SetHeight(382)
+        scroll:SetPoint("BOTTOMLEFT", 25, 1)
+    end, BOSS_GAP, 14)
+
+    -- The boss on the left page: its portrait (the Journal's, standing on the page), its details and story.
+    local bossArt = book:CreateTexture(nil, "ARTWORK")
+    bossArt:SetWidth(128)
+    bossArt:SetHeight(64)
+    bossArt:SetPoint("TOPLEFT", 30, -48)
+    local bossInfo = TextScroll(book, function(scroll)
+        scroll:SetWidth(330)
+        scroll:SetHeight(300)
+        scroll:SetPoint("TOPLEFT", 30, -118)
+    end, DARK)
+    local bossLine = book:CreateFontString(nil, "ARTWORK", "GameFontBlack")
+    bossLine:SetPoint("TOPLEFT", bossArt, "TOPRIGHT", 8, -18)
+    bossLine:SetWidth(190)
+    bossLine:SetJustifyH("LEFT")
+    bossLine:SetTextColor(unpack(DARK))
+    ui.bossArt, ui.bossInfo, ui.bossLine = bossArt, bossInfo, bossLine
+
+    -- Right page, the instance: its framed picture (the Journal's own size and place), its name, its story.
+    local plate = CreateFrame("Frame", nil, book)
+    plate:SetWidth(390)
+    plate:SetHeight(425)
+    plate:SetPoint("BOTTOMRIGHT", -1, 2)
+    plate.fill = plate:CreateTexture(nil, "ARTWORK")
+    plate.fill:SetWidth(390)
+    plate.fill:SetHeight(336)
+    plate.fill:SetPoint("TOP", 3, -9)
+    local nameBg = Tex(plate, "OVERLAY", "DungeonNameBg")
+    nameBg:SetPoint("TOP", plate.fill, "TOP", 0, -32)
+    plate.name = plate:CreateFontString(nil, "OVERLAY")
+    Font(plate.name, 24, { 1, 0.82, 0 }, true)
+    plate.name:SetWidth(320)
+    plate.name:SetPoint("CENTER", nameBg, "CENTER", 0, 2)
+    ui.plate = plate
+    ui.about = TextScroll(plate, function(scroll)
+        scroll:SetWidth(315)
+        scroll:SetHeight(92)
+        scroll:SetPoint("BOTTOM", 0, 5)
+    end, INK)
+
+    -- Right page, a list: abilities, or loot.
+    local function RightList(gap)
+        return List(book, function(scroll)
+            scroll:SetWidth(330)
+            scroll:SetHeight(383)
+            scroll:SetPoint("BOTTOMRIGHT", -26, 1)
+        end, gap, 8)
+    end
+    ui.abilityList = RightList(4)
+    ui.lootList = RightList(3)
+
+    -- Right page, the boss's model (drag to turn it) in the Journal's paper frame.
+    local model = CreateFrame("PlayerModel", nil, book)
+    model:SetWidth(320)
+    model:SetHeight(340)
+    model:SetPoint("TOPRIGHT", -36, -52)
+    model:EnableMouse(true)
+    model:SetScript("OnMouseDown", function(self, button)
+        if button == "LeftButton" then
+            self.turning, self.lastX = true, GetCursorPosition()
+        end
+    end)
+    model:SetScript("OnMouseUp", function(self) self.turning = false end)
+    model:SetScript("OnUpdate", function(self)
+        if self.turning then
+            local x = GetCursorPosition()
+            self.facing = (self.facing or 0) + (x - self.lastX) / 80
+            self.lastX = x
+            self:SetFacing(self.facing)
+        end
+    end)
+    local paper = book:CreateTexture(nil, "BORDER")
+    paper:SetTexture(JOURNAL_ART .. "UI-EJ-BOSSMODELPAPERFRAME")
+    paper:SetTexCoord(0, 396 / 512, 0, 426 / 512)
+    paper:SetPoint("TOPLEFT", model, "TOPLEFT", -8, 8)
+    paper:SetPoint("BOTTOMRIGHT", model, "BOTTOMRIGHT", 8, -8)
+    ui.model, ui.modelBack = model, paper
+
+    ui.empty = book:CreateFontString(nil, "ARTWORK", "GameFontBlack")
+    ui.empty:SetPoint("TOP", book, "TOP", 195, -90)
+    ui.empty:SetTextColor(unpack(DARK))
+
+    -- The difficulty button, top right of the book (the Journal's filter button): a menu of the difficulties.
+    local difficulty = CreateFrame("Button", nil, book)
+    difficulty:SetWidth(101)
+    difficulty:SetHeight(26)
+    difficulty:SetPoint("TOPRIGHT", -19, -13)
+    local piece = A.FilterUp
+    local leftCap, rightCap = Tex(difficulty, "BACKGROUND", "FilterUp"), Tex(difficulty, "BACKGROUND", "FilterUp")
+    leftCap:SetTexCoord(piece[2], (piece[2] + piece[3]) / 2, piece[4], piece[5])
+    leftCap:SetWidth(13)
+    leftCap:SetPoint("LEFT")
+    rightCap:SetTexCoord((piece[2] + piece[3]) / 2, piece[3], piece[4], piece[5])
+    rightCap:SetWidth(13)
+    rightCap:SetPoint("RIGHT")
+    local mid = Tex(difficulty, "BACKGROUND", "FilterMid")
+    mid:SetPoint("TOPLEFT", leftCap, "TOPRIGHT")
+    mid:SetPoint("BOTTOMRIGHT", rightCap, "BOTTOMLEFT")
+    local hover = Tex(difficulty, "HIGHLIGHT", "FilterHighlight", "ADD")
+    hover:SetAllPoints()
+    difficulty.text = difficulty:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    difficulty.text:SetPoint("CENTER", 0, -1)
+    difficulty.text:SetTextColor(unpack(BUTTON_TEXT))
+    local menu = CreateFrame("Frame", "EmberforgeJournalDifficultyMenu", UIParent, "UIDropDownMenuTemplate")
+    difficulty:SetScript("OnClick", function(self)
+        local instance = data.instances[view.instance]
+        if not instance then
+            return
+        end
+        local items = {}
+        for index, entry in ipairs(instance.difficulties) do
+            items[#items + 1] = { text = DifficultyName(instance, entry), checked = view.difficulty == index,
+                func = function()
+                    view.difficulty = index
+                    Refresh()
+                end }
+        end
+        EasyMenu(items, menu, self, 0, 0, "MENU")
+    end)
+    ui.difficulty = difficulty
+
+    -- The tabs on the book's right edge (EncounterTabTemplate): the overview (abilities on a boss's page), loot,
+    -- and on a boss's page its model.
+    ui.sideTabs = {}
+    for index, info in ipairs({ { "bosses", "BossIcon", "Overview" }, { "loot", "LootIcon", "Loot" },
+        { "model", "ModelIcon", "Model" } }) do
+        local tab = CreateFrame("Button", nil, book)
+        tab:SetWidth(63)
+        tab:SetHeight(57)
+        if index == 1 then
+            tab:SetPoint("TOPLEFT", book, "TOPRIGHT", -12, -35)
+        else
+            tab:SetPoint("TOP", ui.sideTabs[index - 1], "BOTTOM", 0, 2)
+        end
+        tab.off = Tex(tab, "BACKGROUND", "TabUnselected")
+        tab.off:SetAllPoints()
+        tab.on = Tex(tab, "BACKGROUND", "TabSelected")
+        tab.on:SetAllPoints()
+        tab.iconOff = Tex(tab, "ARTWORK", info[2] .. "Off")
+        tab.iconOff:SetPoint("RIGHT", -6, 0)
+        tab.iconOn = Tex(tab, "ARTWORK", info[2] .. "On")
+        tab.iconOn:SetPoint("CENTER", tab.iconOff, "CENTER")
+        local glow = Tex(tab, "HIGHLIGHT", "TabHighlight", "ADD")
+        glow:SetAllPoints()
+        tab.key, tab.tip = info[1], info[3]
+        tab:SetScript("OnClick", function(self)
+            view.tab = self.key
+            Refresh()
+        end)
+        tab:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            local tip = self.tip
+            if self.key == "bosses" then
+                tip = view.page == "boss" and "Abilities" or "Overview"
+            end
+            GameTooltip:SetText(tip)
+            GameTooltip:Show()
+        end)
+        tab:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        ui.sideTabs[index] = tab
+    end
+end
+
+-- The bosses' models, one a visible row with no portrait: over the list, placed by hand at their row's socket (the
+-- list's scroll taken off), hidden when their row is scrolled out of sight (models in a scrolling list draw out of
+-- place).
+local function BossModel(index)
+    ui.bossModels = ui.bossModels or {}
+    local model = ui.bossModels[index]
+    if model then
+        return model
+    end
+    model = CreateFrame("PlayerModel", nil, ui.book)
+    model:SetWidth(BOSS_HEIGHT - 10)
+    model:SetHeight(BOSS_HEIGHT - 10)
+    model:SetFrameLevel(ui.bossList.child:GetFrameLevel() + 10)
+    ui.bossModels[index] = model
+    return model
+end
+
+local function PlaceBossModels()
+    local list = ui.bossList
+    local models = ui.bossModels or {}
+    for _, model in pairs(models) do
+        model.wanted = false
+    end
+    if list.scroll:IsShown() then
+        local offset = list.scroll:GetVerticalScroll() or 0
+        local height = list.scroll:GetHeight() or 0
+        for index, row in ipairs(list.rows) do
+            local top = list.top + (index - 1) * (BOSS_HEIGHT + list.gap) - offset
+            if row:IsShown() and row.creature and top >= -1 and top + BOSS_HEIGHT <= height + 1 then
+                local model = BossModel(index)
+                model:ClearAllPoints()
+                model:SetPoint("TOPLEFT", list.scroll, "TOPLEFT", 9, -(top + 5))
+                model.wanted = true
+                if not model:IsShown() or model.creature ~= row.creature then
+                    model:Show()
+                    model.creature = row.creature
+                    ShowCreature(model, row.creature, true)
+                end
+            end
+        end
+    end
+    for _, model in pairs(models) do
+        if not model.wanted then
+            model:Hide()
+            model.creature, model.shown = nil, nil
+        end
+    end
+end
+
+ui.bossList.scroll:HookScript("OnVerticalScroll", PlaceBossModels)
+
+-- Rows -----------------------------------------------------------------------------------------------------------
+-- A boss's button (EncounterBossButtonTemplate): the Journal's bar, its portrait standing over its left end.
+local function BossRow(index)
+    local list = ui.bossList
+    local row = list.rows[index]
+    if row then
+        return row
+    end
+    row = CreateFrame("Button", nil, list.child)
+    row:SetWidth(325)
+    row:SetHeight(BOSS_HEIGHT)
+    row.fixedWidth = true
+    ButtonTex(row, "SetNormalTexture", "BossUp")
+    ButtonTex(row, "SetPushedTexture", "BossDown")
+    ButtonTex(row, "SetHighlightTexture", "BossHighlight")
+    row.art = row:CreateTexture(nil, "OVERLAY")
+    row.art:SetWidth(128)
+    row.art:SetHeight(64)
+    row.art:SetPoint("TOPLEFT", -4, 13)
+    row.name = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    row.name:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF", 14)
+    row.name:SetWidth(200)
+    row.name:SetHeight(40)
+    row.name:SetJustifyH("LEFT")
+    row.name:SetPoint("LEFT", 105, -3)
+    row.name:SetTextColor(unpack(BOSS_TEXT))
+    row:SetScript("OnEnter", function(self) self.name:SetTextColor(unpack(BOSS_TEXT_HOVER)) end)
+    row:SetScript("OnLeave", function(self) self.name:SetTextColor(unpack(BOSS_TEXT)) end)
+    row:SetScript("OnClick", function(self)
+        view.page, view.boss, view.tab = "boss", self.index, "bosses"
+        Refresh()
+    end)
+    list.rows[index] = row
+    return row
+end
+
+-- A loot row (EncounterItemTemplate): the Journal's loot frame, the icon in its square, the name in its quality's
+-- color over the frame's dark band, the slot and type in ink below.
+local function LootRow(index)
+    local list = ui.lootList
+    local row = list.rows[index]
+    if row then
+        return row
+    end
+    row = CreateFrame("Button", nil, list.child)
+    row:SetWidth(321)
+    row:SetHeight(45)
+    row.fixedWidth = true
+    local back = Tex(row, "BACKGROUND", "LootFrame")
+    back:SetPoint("CENTER")
+    row.icon = row:CreateTexture(nil, "ARTWORK")
+    row.icon:SetWidth(42)
+    row.icon:SetHeight(42)
+    row.icon:SetPoint("TOPLEFT", 2, -2)
+    row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    row.name:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF", 13)
+    row.name:SetWidth(250)
+    row.name:SetHeight(14)
+    row.name:SetJustifyH("LEFT")
+    row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 7, -6)
+    row.kind = row:CreateFontString(nil, "ARTWORK", "GameFontBlack")
+    row.kind:SetJustifyH("RIGHT")
+    row.kind:SetPoint("BOTTOMRIGHT", -10, 6)
+    row.kind:SetTextColor(unpack(DARK))
+    row.slot = row:CreateFontString(nil, "ARTWORK", "GameFontBlack")
+    row.slot:SetJustifyH("LEFT")
+    row.slot:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 7, 5)
+    row.slot:SetTextColor(unpack(DARK))
+    local hover = row:CreateTexture(nil, "HIGHLIGHT")
+    hover:SetTexture(1, 0.85, 0.5, 0.12)
+    hover:SetAllPoints()
+    row:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetHyperlink("item:" .. self.item)
+        GameTooltip:Show()
+    end)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row:SetScript("OnClick", function(self)
+        if IsModifiedClick("CHATLINK") then
+            local _, link = GetItemInfo(self.item)
+            if link then
+                ChatEdit_InsertLink(link)
+            end
+        elseif IsModifiedClick("DRESSUP") then
+            DressUpItemLink("item:" .. self.item)
+        end
+    end)
+    list.rows[index] = row
+    return row
+end
+
+-- An ability (EncounterInfoTemplate): its paper header (the Journal's), its icon, name and flags on it, its text
+-- below on the ability text background.
+local function AbilityRow(index)
+    local list = ui.abilityList
+    local row = list.rows[index]
+    if row then
+        return row
+    end
+    row = CreateFrame("Button", nil, list.child)
+    row.bar = CreateFrame("Frame", nil, row)
+    row.bar:SetHeight(24)
+    row.bar:SetPoint("TOPLEFT")
+    row.bar:SetPoint("RIGHT")
+    local leftPiece, rightPiece = Tex(row.bar, "BACKGROUND", "PaperLeft"), Tex(row.bar, "BACKGROUND", "PaperRight")
+    leftPiece:SetPoint("LEFT", -1, -1)
+    rightPiece:SetPoint("RIGHT", 3, -1)
+    local mid = Tex(row.bar, "BACKGROUND", "PaperMid")
+    mid:SetPoint("LEFT", leftPiece, "RIGHT", -32, 0)
+    mid:SetPoint("RIGHT", rightPiece, "LEFT", 32, 0)
+    row.icon = row.bar:CreateTexture(nil, "ARTWORK")
+    row.icon:SetWidth(18)
+    row.icon:SetHeight(18)
+    row.icon:SetPoint("LEFT", 8, 0)
+    row.name = row.bar:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    row.name:SetPoint("LEFT", row.icon, "RIGHT", 5, -1)
+    row.name:SetJustifyH("LEFT")
+    row.flags = {}
+    for index = 1, 4 do
+        local flag = CreateFrame("Frame", nil, row.bar)
+        flag:SetWidth(18)
+        flag:SetHeight(18)
+        flag:SetPoint("RIGHT", index == 1 and row.bar or row.flags[index - 1], index == 1 and "RIGHT" or "LEFT",
+            index == 1 and -6 or -1, 0)
+        flag.icon = flag:CreateTexture(nil, "ARTWORK")
+        flag.icon:SetAllPoints()
+        flag.icon:SetTexture(FLAG_ICONS)
+        flag:EnableMouse(true)
+        flag:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(self.label)
+            GameTooltip:Show()
+        end)
+        flag:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        row.flags[index] = flag
+    end
+    row.textBg = Tex(row, "BACKGROUND", "AbilityTextBG")
+    row.text = row:CreateFontString(nil, "ARTWORK", "GameFontBlack")
+    row.text:SetJustifyH("LEFT")
+    row.text:SetJustifyV("TOP")
+    row.text:SetTextColor(unpack(INK))
+    row:SetScript("OnEnter", function(self)
+        if self.spell then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetHyperlink("spell:" .. self.spell)
+            GameTooltip:Show()
+        end
+    end)
+    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    list.rows[index] = row
+    return row
+end
 
 local function FillLoot(items)
     for index, item in ipairs(items) do
@@ -1141,14 +1238,11 @@ local function FillLoot(items)
     return #items
 end
 
--- An ability row: indented by its depth, its icon (none: its name moves in), its flags, its text (none: a heading).
+-- An ability: indented by its depth, its icon (none: its name moves in), its flags, its text (none: a heading).
 local function SetAbility(row, depth, icon, name, flags, text)
-    local indent = depth * 16
-    row.bar:ClearAllPoints()
-    row.bar:SetPoint("TOPLEFT", indent, 0)
-    row.bar:SetPoint("RIGHT")
+    row.indent = depth * 12
     row.icon:SetTexture(icon)
-    row.icon:SetWidth(icon and 22 or 1)
+    row.icon:SetWidth(icon and 18 or 1)
     row.icon:SetAlpha(icon and 1 or 0)
     row.name:SetText(name)
     local shown = 0
@@ -1166,16 +1260,27 @@ local function SetAbility(row, depth, icon, name, flags, text)
     for index = shown + 1, #row.flags do
         row.flags[index]:Hide()
     end
+    row.name:SetPoint("RIGHT", row.bar, "RIGHT", -8 - shown * 19, 0)
+    local width = 322 - row.indent
+    row:SetWidth(width)
+    row.fixedWidth = true
     row.text:ClearAllPoints()
-    row.text:SetPoint("TOPLEFT", indent + 8, -34)
-    row.text:SetPoint("RIGHT", -6, 0)
+    row.text:SetPoint("TOPLEFT", 10, -30)
+    row.text:SetWidth(width - 20)
     row.text:SetText(text or "")
-    -- A heading (no text): its bar gold-edged.
     local heading = not text or text == ""
-    for _, piece in ipairs(row.bar.pieces) do
-        piece:SetVertexColor(heading and 1 or 0.85, heading and 0.85 or 0.8, heading and 0.6 or 0.75)
+    if heading then
+        row.textBg:Hide()
+        row:SetHeight(26)
+    else
+        local height = row.text:GetStringHeight()
+        row.textBg:ClearAllPoints()
+        row.textBg:SetPoint("TOPLEFT", 2, -24)
+        row.textBg:SetPoint("TOPRIGHT", -2, -24)
+        row.textBg:SetHeight(height + 14)
+        row.textBg:Show()
+        row:SetHeight(40 + height)
     end
-    row:SetHeight(heading and 30 or (40 + row.text:GetStringHeight()))
 end
 
 local function FillAbilities(spells)
@@ -1207,6 +1312,14 @@ local function FillJournal(sections)
     return #sections
 end
 
+local function Shown(part, shown)
+    if shown then
+        part:Show()
+    else
+        part:Hide()
+    end
+end
+
 local function RefreshBook()
     local instance = data.instances[view.instance]
     if not instance then
@@ -1216,98 +1329,39 @@ local function RefreshBook()
     local details = Details(instance)
     local bosses = Bosses(instance)
     local bossPage = view.page == "boss" and bosses[view.boss]
-    local colors = TINTS[instance.expansion]
-    local art = InstanceArt(instance.map)
-    if art and art.lore then
-        -- Its Journal picture, inside its painted frame (zoomed past the frame's burnt edge), else the dungeon
-        -- finder's background.
-        ui.plate.fill:SetTexture(JOURNAL_ART .. art.lore)
-        if art.lfg then
-            ui.plate.fill:SetTexCoord(0.12, 0.88, 0, 1)
-        else
-            ui.plate.fill:SetTexCoord(38 / 512, 360 / 512, 46 / 512, 286 / 512)
-        end
-        ui.plate.fill:SetVertexColor(1, 1, 1)
-    else
-        ui.plate.fill:SetTexture(1, 1, 1, 1)
-        ui.plate.fill:SetTexCoord(0, 1, 0, 1)
-        ui.plate.fill:SetGradientAlpha("VERTICAL", colors[2][1], colors[2][2], colors[2][3], 1,
-            colors[1][1], colors[1][2], colors[1][3], 1)
+    if not bossPage and view.tab == "model" then
+        view.tab = "bosses"
     end
-    ui.plate.name:SetText(instance.name)
-    ui.plate.sub:SetText(TYPES[instance.type] .. ", " .. EXPANSIONS[instance.expansion])
-    local lore = EmberforgeJournalLore and EmberforgeJournalLore[instance.map]
-    local lines = {}
-    if lore then
-        lines[1] = lore .. "\n"
-    end
-    for _, difficulty in ipairs(instance.difficulties) do
-        lines[#lines + 1] = DifficultyName(instance, difficulty)
-    end
-    ui.about:SetBody(table.concat(lines, "\n"))
-
-    -- Left page: the instance, or the boss.
-    for _, part in ipairs({ ui.plate, ui.about }) do
-        if bossPage then part:Hide() else part:Show() end
-    end
-    for _, part in ipairs({ ui.model, ui.modelBack, ui.bossInfo }) do
-        if bossPage then part:Show() else part:Hide() end
-    end
-    if not bossPage then
-        ui.model.shown = nil        -- set again when it shows (a hidden model can lose its own)
-    end
-    local info = bossPage and details and details.info[bossPage.index]
     local journal = bossPage and JournalBoss(instance.map, bossPage.name)
-    if bossPage then
-        local creature = info and info.entry or bossPage.creature
-        if ui.model.shown ~= creature then
-            ui.model.facing = 0
-        end
-        ShowCreature(ui.model, creature, false)
-        ui.bossName:SetText(bossPage.name)
-        if info then
-            local health = info.health > 0 and (" " .. (info.health >= 1000000 and
-                string.format("%.1fM", info.health / 1000000) or info.health)) or " -"
-            local kind = info.type ~= 10 and CREATURE_TYPES[info.type]       -- not "Not specified"
-            ui.bossInfo:SetBody("Level " .. info.level .. " " .. (RANKS[info.rank] or "")
-                .. (kind and (", " .. kind) or "") .. "\nHealth:" .. health
-                .. (journal and journal.d and ("\n\n" .. journal.d) or ""))
-        else
-            ui.bossInfo:SetBody(journal and journal.d or "")
-        end
-    end
+    local info = bossPage and details and details.info[bossPage.index]
 
-    -- Right page: its title, the difficulty buttons, and the tab's list.
-    ui.header:SetText(view.tab == "loot" and "Loot" or (bossPage and "Abilities" or "Bosses"))
-    for index, button in ipairs(ui.difficultyButtons) do
-        local difficulty = instance.difficulties[index]
-        if difficulty and #instance.difficulties > 1 then
-            button.index = index
-            button.text:SetText(DifficultyLabel(instance, difficulty))
-            local on = index == view.difficulty
-            BoxColor(button, on and ON_FILL or CELL_FILL, on and ON_EDGE or CELL_EDGE)
-            button:Show()
-        else
-            button:Hide()
-        end
-    end
+    -- The titles on the pages' shadows.
+    ui.instanceTitle:SetText(instance.name)
+    ui.encounterTitle:SetText(bossPage and bossPage.name or "")
+    Shown(ui.rightShadow, bossPage)
+
+    -- The difficulty button.
+    local chosen = Chosen(instance)
+    ui.difficulty.text:SetText(chosen and DifficultyName(instance, chosen) or "")
+    ui.difficulty:SetWidth(math.max(90, ui.difficulty.text:GetStringWidth() + 34))
+    Shown(ui.difficulty, #instance.difficulties > 1)
+
+    -- The tabs: the model's on a boss's page only.
     for _, tab in ipairs(ui.sideTabs) do
         local on = tab.key == view.tab
-        if on then
-            tab.on:Show()
-            tab.off:Hide()
-        else
-            tab.on:Hide()
-            tab.off:Show()
-        end
-        tab.icon:SetVertexColor(on and 1 or 0.65, on and 1 or 0.65, on and 1 or 0.65)
+        Shown(tab.on, on)
+        Shown(tab.off, not on)
+        Shown(tab.iconOn, on)
+        Shown(tab.iconOff, not on)
+        Shown(tab, tab.key ~= "model" or bossPage)
     end
-    ListShown(ui.bossList, view.tab == "bosses" and not bossPage)
-    ListShown(ui.abilityList, view.tab == "bosses" and bossPage)
-    ListShown(ui.lootList, view.tab == "loot")
-    ui.empty:SetText("")
 
-    if view.tab == "bosses" and not bossPage then
+    -- The left page: the bosses, or the boss.
+    ListShown(ui.bossList, not bossPage)
+    for _, part in ipairs({ ui.bossArt, ui.bossInfo, ui.bossLine }) do
+        Shown(part, bossPage)
+    end
+    if not bossPage then
         for index, boss in ipairs(bosses) do
             local row = BossRow(index)
             row.index = index
@@ -1315,41 +1369,86 @@ local function RefreshBook()
             local portrait = Portrait(instance.map, boss.name)
             row.creature = not portrait and boss.creature > 0 and boss.creature or nil
             row.art:SetTexture(portrait or (JOURNAL_ART .. "UI-EJ-BOSS-Default"))
-            if row.creature then
-                row.art:Hide()
-            else
-                row.art:Show()
-            end
+            Shown(row.art, not row.creature)
         end
         Stack(ui.bossList, #bosses)
-        for index, row in ipairs(ui.bossList.rows) do
-            row.name:ClearAllPoints()
-            row.name:SetPoint("LEFT", row, "LEFT", row.creature and (BOSS_HEIGHT + 18) or (BOSS_HEIGHT * 2 + 6), 0)
-            row.name:SetPoint("RIGHT", -10, 0)
+    else
+        ui.bossArt:SetTexture(Portrait(instance.map, bossPage.name) or (JOURNAL_ART .. "UI-EJ-BOSS-Default"))
+        if info then
+            local health = info.health > 0 and (info.health >= 1000000 and
+                string.format("%.1fM", info.health / 1000000) or tostring(info.health)) or "-"
+            local kind = info.type ~= 10 and CREATURE_TYPES[info.type]       -- not "Not specified"
+            ui.bossLine:SetText("Level " .. info.level .. " " .. (RANKS[info.rank] or "")
+                .. (kind and (" " .. kind) or "") .. "\nHealth: " .. health)
+        else
+            ui.bossLine:SetText("")
         end
-        if #bosses == 0 then
-            ui.empty:SetText("No bosses listed")
+        ui.bossInfo:SetBody(journal and journal.d or "")
+    end
+
+    -- The right page: the instance's picture and story; else the tab's list or the model.
+    local overview = view.tab == "bosses" and not bossPage
+    Shown(ui.plate, overview)
+    if overview then
+        local art = InstanceArt(instance.map)
+        if art and art.lore then
+            ui.plate.fill:SetTexture(JOURNAL_ART .. art.lore)
+            if art.lfg then
+                ui.plate.fill:SetTexCoord(0.1, 0.9, 0, 1)
+            else
+                ui.plate.fill:SetTexCoord(0, 0.7617187, 0, 0.65625)
+            end
+        else
+            ui.plate.fill:SetTexture(JOURNAL_ART .. "UI-EJ-LOREBG-Default")
+            ui.plate.fill:SetTexCoord(0, 0.7617187, 0, 0.65625)
         end
-    elseif view.tab == "bosses" and journal and #journal.s > 0 then
+        ui.plate.name:SetText(instance.name)
+        local lore = EmberforgeJournalLore and EmberforgeJournalLore[instance.map]
+        local lines = {}
+        if lore then
+            lines[1] = lore .. "\n"
+        end
+        for _, entry in ipairs(instance.difficulties) do
+            lines[#lines + 1] = DifficultyName(instance, entry)
+        end
+        ui.about:SetBody(table.concat(lines, "\n"))
+    end
+    local modelShown = bossPage and view.tab == "model"
+    Shown(ui.model, modelShown)
+    Shown(ui.modelBack, modelShown)
+    if modelShown then
+        local creature = info and info.entry or bossPage.creature
+        if ui.model.shown ~= creature then
+            ui.model.facing = 0
+        end
+        ShowCreature(ui.model, creature, false)
+    else
+        ui.model.shown = nil        -- set again when it shows (a hidden model can lose its own)
+    end
+    ListShown(ui.abilityList, bossPage and view.tab == "bosses")
+    ListShown(ui.lootList, view.tab == "loot")
+    ui.empty:SetText("")
+
+    if bossPage and view.tab == "bosses" and journal and #journal.s > 0 then
         FillJournal(journal.s)
-    elseif not (details and details.ready) then
+    elseif (view.tab == "loot" or (bossPage and view.tab == "bosses")) and not (details and details.ready) then
         ui.empty:SetText("Loading...")
         Stack(ui.lootList, 0)
         Stack(ui.abilityList, 0)
     elseif view.tab == "loot" then
-        local items, shown = {}, {}
+        local items, own = {}, {}
         for _, boss in ipairs(bosses) do
-            shown[boss.index] = true
+            own[boss.index] = true
         end
         for _, item in ipairs(details.loot) do
-            if (bossPage and item.boss == bossPage.index) or (not bossPage and shown[item.boss]) then
+            if (bossPage and item.boss == bossPage.index) or (not bossPage and own[item.boss]) then
                 items[#items + 1] = item
             end
         end
         if FillLoot(items) == 0 then
             ui.empty:SetText("No loot listed")
         end
-    else
+    elseif bossPage and view.tab == "bosses" then
         if FillAbilities(details.abilities[bossPage.index] or {}) == 0 then
             ui.empty:SetText("No abilities listed")
         end
@@ -1365,7 +1464,7 @@ local function RefreshCrumbs()
     for index, crumb in ipairs(ui.crumbs) do
         if texts[index] then
             crumb.text:SetText(texts[index])
-            crumb:SetWidth(crumb.text:GetStringWidth() + 34)
+            crumb:SetWidth(crumb.text:GetStringWidth() + 30)
             crumb:Show()
         else
             crumb:Hide()

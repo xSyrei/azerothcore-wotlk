@@ -23,6 +23,7 @@ The instances Cataclysm rebuilt in place (Deadmines, Shadowfang Keep) keep their
 Cataclysm's, so they are left out. Raids the Journal of that client does not have get the dungeon finder's art.
 
 Usage: python3 mop_journal.py <EmberforgeExtract folder> <3.3.5a DBC folder>
+(the extract of patterns/journal-ui.txt merged into it: its Interface\\FrameGeneral art)
 (the 3.3.5a DBCs: `docker cp ac-worldserver:/azerothcore/env/dist/data/dbc ./dbc`)
 """
 
@@ -257,7 +258,8 @@ def main():
     dbc = extract / 'DBFilesClient'
     art_files = {}      # lowercase file name -> its path in the extract
     for path in extract.rglob('*'):
-        if path.suffix.lower() == '.blp' and path.parent.name.lower() in ('encounterjournal', 'lfgframe'):
+        if path.suffix.lower() == '.blp' and path.parent.name.lower() in ('encounterjournal', 'lfgframe',
+                                                                          'framegeneral'):
             art_files[path.name.lower()] = path
 
     file_data = Dbc(dbc / 'FileData.dbc')
@@ -354,7 +356,11 @@ def main():
     # The Journal's frame art: its book, its buttons and bars (one sheet), the paper behind a boss's model, and each
     # expansion's home background.
     for name in ('UI-EJ-JournalBG', 'UI-ENCOUNTERJOURNALTEXTURES', 'UI-EJ-BOSSMODELPAPERFRAME', 'UI-EJ-Classic',
-                 'UI-EJ-BurningCrusade', 'UI-EJ-WrathoftheLichKing', 'UI-EJ-PortraitIcon'):
+                 'UI-EJ-BurningCrusade', 'UI-EJ-WrathoftheLichKing', 'UI-EJ-PortraitIcon',
+                 'UI-EncounterJournalTextures_Tile',
+                 # The standard window frame the Journal sits in (Interface\\FrameGeneral): its border, portrait ring,
+                 # title bar, rock background and the inset's marble.
+                 'UI-Frame', '!UI-Frame', '_UI-Frame', 'UI-Background-Rock', 'UI-Background-Marble'):
         art(name + '.blp')
     out = ADDON / 'Art'
     out.mkdir(parents=True, exist_ok=True)
