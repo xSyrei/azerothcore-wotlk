@@ -6,7 +6,8 @@ JournalEncounterSection, with FileData for their art) and writes, for the instan
 (Classic, the Burning Crusade, Wrath of the Lich King, and the old Zul'Aman, Deadmines and Shadowfang Keep):
 
 - client-patch/AddOns/Emberforge_Journal/Data.lua:
-    EmberforgeJournalArt[map]        { button = tile art, lore = the instance's picture } (files in Art/)
+    EmberforgeJournalArt[map]        { button = tile art, lore = the instance's picture } (files in Art/), or
+                                     { screen = its loading screen } (the game's own)
     EmberforgeJournalLore[map]       the instance's description
     EmberforgeJournalBosses[map]     { [boss key] = { d = description, p = portrait, s = { sections } } }
                                      sections: { t = title, b = body, i = icon (Interface\\Icons\\),
@@ -14,13 +15,14 @@ JournalEncounterSection, with FileData for their art) and writes, for the instan
     EmberforgeJournalPortraits[key]  every boss portrait, by its boss's key (the art's own name)
   A boss key is its name, lowercase, letters and digits only; the addon matches the server's boss names to it.
 - client-patch/AddOns/Emberforge_Journal/Art/: the art those name (the client's own BLPs, as they are; the 3.3.5a
-  client reads them), and UI-EJ-Icons (the ability flags' icons, re-encoded).
+  client reads them), UI-EJ-Icons (the ability flags' icons, re-encoded) and UI-EJ-LOREBG-Frame (the pictures'
+  frame, empty: a loading screen goes in it).
 
 The abilities' numbers ($12345s1, $d, ...) are written out from the spell tables: the 3.3.5a client's Spell.dbc
 when the spell is there (the game's own values), else Mists of Pandaria's.
 
 The instances Cataclysm rebuilt in place (Deadmines, Shadowfang Keep) keep their art; their bosses and texts are
-Cataclysm's, so they are left out. Raids the Journal of that client does not have get the dungeon finder's art.
+Cataclysm's, so they are left out. Raids the Journal of that client does not have get their loading screens.
 
 Usage: python3 mop_journal.py <EmberforgeExtract folder> <3.3.5a DBC folder>
 (the extract of patterns/journal-ui.txt merged into it: its Interface\\FrameGeneral art)
@@ -50,13 +52,20 @@ REBUILT = {33, 36}
 OLD_ART = {289: 'SCHOLOMANCE', 309: 'ZULGURUB'}
 # Old maps whose story is their rebuilt version's (the old one's is a placeholder, or missing): old map -> map.
 OLD_STORY = {189: 1004, 289: 1007}
-# Raids the Journal does not have: the dungeon finder's background (Interface\LFGFrame\UI-LFG-BACKGROUND-<name>).
-LFG_ART = {
-    409: 'MOLTENCORE', 469: 'BLACKWINGLAIR', 509: 'AQRUINS', 531: 'AQTEMPLE', 533: 'NAXXRAMAS', 532: 'KARAZHAN',
-    565: 'GRUULSLAIR', 544: 'HELLFIRECITADELRAID', 548: 'COILFANG', 550: 'TEMPESTKEEP', 534: 'HYJALPAST',
-    564: 'BLACKTEMPLE', 580: 'SUNWELL', 624: 'VAULTOFARCHAVON', 616: 'MALYGOS', 615: 'CHAMBEROFASPECTS',
-    603: 'ULDUAR', 649: 'ARGENTRAID', 631: 'ICECROWNCITADEL',
+# Raids the Journal does not have: their loading screen (Interface\Glues\LoadingScreens\<name>, the 3.3.5a client's
+# own, not shipped), framed by the Journal's picture frame (UI-EJ-LOREBG-Frame) on the instance's page.
+LOADING_SCREENS = {
+    249: 'LoadScreenRaid', 409: 'LoadScreenMoltenCore', 469: 'LoadScreenBlackWingLair',
+    509: 'LoadScreenAhnQiraj20man', 531: 'LoadScreenAhnQiraj40man', 532: 'LoadScreenKarazhan',
+    533: 'LoadScreenNaxxramas', 534: 'LoadScreenCavernsTime', 544: 'LoadScreenHellfireCitadelRaid',
+    548: 'LoadScreenCoilFang', 550: 'LoadScreenTempestKeep', 564: 'LoadScreenBlackTemple',
+    565: 'LoadScreenGruulsLair', 580: 'LoadScreenSunwell', 603: 'LoadScreenUlduarRaid',
+    615: 'LoadScreenChamberBlack', 616: 'LoadScreenMalygos', 624: 'LoadScreenWintergrasp',
+    631: 'LoadScreenIcecrownCitadel', 649: 'LoadScreenArgentRaid', 724: 'LoadScreenRubySanctum',
 }
+# The Journal's picture frame: an instance's picture (its burnt edge and gilt border; the same on all, tinted), the
+# picture inside cut out (left, top, right, bottom, in the 512 by 512 file).
+FRAME_SOURCE, FRAME_HOLE = 'ui-ej-lorebg-utgardekeep.blp', (27, 39, 362, 293)
 SKIP_TIERS = {'Mists of Pandaria'}
 # The game's boss names (DungeonEncounter.dbc) that differ from the Journal's: map -> {game's: Journal's}.
 ALIASES = {
@@ -299,10 +308,8 @@ def main():
     for map_id, name in OLD_ART.items():
         art_by_map[map_id] = {'button': art(f'UI-EJ-DUNGEONBUTTON-{name}.blp'),
                               'lore': art(f'UI-EJ-LOREBG-{name}.blp')}
-    for map_id, name in LFG_ART.items():
-        picture = art(f'UI-LFG-BACKGROUND-{name}.BLP')
-        if picture:
-            art_by_map[map_id] = {'button': picture, 'lore': picture, 'lfg': 1}
+    for map_id, name in LOADING_SCREENS.items():
+        art_by_map[map_id] = {'screen': name}
 
     # Bosses: each encounter's description, its first creature's portrait, its sections in order (depth first).
     encounters = Dbc(dbc / 'JournalEncounter.dbc')
@@ -353,9 +360,8 @@ def main():
             portraits[key(path.stem[len('UI-EJ-BOSS-'):])] = art(path.name)
 
     art('UI-EJ-BOSS-Default.blp')       # the portrait of a boss the Journal has none for
-    # The Journal's frame art: its book, its buttons and bars (one sheet), the paper behind a boss's model, and each
-    # expansion's home background.
-    for name in ('UI-EJ-JournalBG', 'UI-ENCOUNTERJOURNALTEXTURES', 'UI-EJ-BOSSMODELPAPERFRAME', 'UI-EJ-Classic',
+    # The Journal's frame art: its book, its buttons and bars (one sheet), and each expansion's home background.
+    for name in ('UI-EJ-JournalBG', 'UI-ENCOUNTERJOURNALTEXTURES', 'UI-EJ-Classic',
                  'UI-EJ-BurningCrusade', 'UI-EJ-WrathoftheLichKing', 'UI-EJ-PortraitIcon',
                  'UI-EncounterJournalTextures_Tile',
                  # The standard window frame the Journal sits in (Interface\\FrameGeneral): its border, portrait ring,
@@ -370,6 +376,10 @@ def main():
     for name in sorted(used):
         shutil.copyfile(art_files[name], out / (art_files[name].stem + '.blp'))     # .blp: binary to git
     (out / 'UI-EJ-Icons.blp').write_bytes(blp.encode(read_bgra(art_files['ui-ej-icons.blp'])))
+    frame = Image.open(art_files[FRAME_SOURCE]).convert('RGBA')
+    left, top, right, bottom = FRAME_HOLE
+    frame.paste((0, 0, 0, 0), (left, top, right, bottom))
+    (out / 'UI-EJ-LOREBG-Frame.blp').write_bytes(blp.encode_dxt(frame))
 
     lines = ['-- The Dungeon Journal\'s art and texts, from the Mists of Pandaria client\'s Journal. Written by',
              '-- modules/mod-titan/tools/journal/mop_journal.py; edit that, not this file.',

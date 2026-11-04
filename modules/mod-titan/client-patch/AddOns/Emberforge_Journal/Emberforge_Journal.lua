@@ -6,14 +6,15 @@
 --   Journal's own portrait in the ring), a row of breadcrumbs (Home, the instance, the boss) and a search box, and
 --   the content in a marble inset.
 -- - Home: the expansion's background and name (click it to choose Classic, the Burning Crusade or Wrath), the
---   Dungeons and Raids tabs, and a grid of the instances' buttons (4 a row), each its Journal art and name.
+--   Dungeons and Raids tabs, and a grid of the instances' buttons (4 a row), each its Journal art (else its loading
+--   screen) and name.
 -- - An instance: the open book. Its left page: its title on the page's shadow, its bosses' buttons (the Journal's
 --   portrait, else our head shot, else the model's face, else the default portrait). Its right page: its framed
 --   picture with its name and story, or (by the tabs on the book's edge) its loot. The difficulty button at the top
 --   right of the book.
 -- - A boss: the left page its portrait, level, classification, health and story; the right page, by the tabs, its
 --   abilities (the Journal's: headings, icons, flags (tank, healer, heroic, interruptible...) and texts; else the
---   spells its script casts), its loot, or its model (drag to turn it).
+--   spells its script casts), or its loot.
 -- A wing of a map (Scarlet Monastery's Cathedral...) lists its own bosses (the server's W). The lists scroll, their
 -- bars showing only when they do. Data.lua and Art/ come from tools/journal/mop_journal.py (the Journal's texts,
 -- art and frame), Headshots.lua and Art/EF-BOSS-* from tools/journal/portraits.py.
@@ -30,6 +31,7 @@
 local PREFIX = "EFDJ"
 local JOURNAL_ART = "Interface\\AddOns\\Emberforge_Journal\\Art\\"
 local FLAG_ICONS = JOURNAL_ART .. "UI-EJ-Icons"
+local LOADING_SCREENS = "Interface\\Glues\\LoadingScreens\\"
 local FLAG_NAMES = { "Tank alert", "Damage dealer alert", "Healer alert", "Heroic difficulty", "Deadly",
     "Important", "Interruptible", "Magic effect", "Curse effect", "Poison effect", "Disease effect", "Enrage" }
 local EXPANSIONS = { [0] = "Classic", [1] = "Burning Crusade", [2] = "Wrath of the Lich King" }
@@ -68,8 +70,6 @@ local A = {
     BossIconOff = { SHEET, 0.85546875, 0.94921875, 0.52441406, 0.56640625 },
     LootIconOn = { SHEET, 0.63281250, 0.72656250, 0.61816406, 0.66015625 },
     LootIconOff = { SHEET, 0.73046875, 0.82421875, 0.61816406, 0.66015625 },
-    ModelIconOn = { SHEET, 0.8046875, 0.900390625, 0.662109375, 0.705078125 },
-    ModelIconOff = { SHEET, 0.90234375, 1, 0.662109375, 0.705078125 },
     LeftPageHeader = { SHEET, 0, 0.755859375, 0.9599609375, 1 },
     RightPageHeader = { SHEET, 0.755859375, 0, 0.9599609375, 1 },
     LootFrame = { SHEET, 0.00195313, 0.62890625, 0.61816406, 0.66210938 },
@@ -312,6 +312,12 @@ end
 
 local function InstanceArt(map)
     return EmberforgeJournalArt and EmberforgeJournalArt[map]
+end
+
+-- An instance with no Journal art: its loading screen (the game's own), else the game's plain dungeon or raid one.
+local function LoadingScreen(instance, art)
+    local name = art and art.screen or (instance.type == 2 and "LoadScreenRaid" or "LoadScreenDungeon")
+    return LOADING_SCREENS .. name
 end
 local SLOT_NAMES = {
     [1] = "Head", [2] = "Neck", [3] = "Shoulder", [4] = "Shirt", [5] = "Chest", [6] = "Waist", [7] = "Legs",
@@ -789,14 +795,11 @@ local function RefreshHome()
         local art = InstanceArt(instance.map)
         if art and art.button then
             tile.fill:SetTexture(JOURNAL_ART .. art.button)
-            if art.lfg then
-                tile.fill:SetTexCoord(0, 1, 0.08, 0.92)
-            else
-                tile.fill:SetTexCoord(0, 0.68359375, 0, 0.7421875)
-            end
-        else
-            tile.fill:SetTexture(JOURNAL_ART .. "UI-EJ-DUNGEONBUTTON-Default")
             tile.fill:SetTexCoord(0, 0.68359375, 0, 0.7421875)
+        else
+            -- A loading screen (4:3) cut to the button's shape.
+            tile.fill:SetTexture(LoadingScreen(instance, art))
+            tile.fill:SetTexCoord(0, 1, 0.13, 0.87)
         end
         tile.name:SetText(instance.name)
         tile.instance = instance
@@ -874,6 +877,10 @@ do
     plate.fill:SetWidth(390)
     plate.fill:SetHeight(336)
     plate.fill:SetPoint("TOP", 3, -9)
+    -- A loading screen in the Journal's empty picture frame (the frame's hole: 25..364 by 37..295 of its 512).
+    plate.screen = plate:CreateTexture(nil, "BORDER")
+    plate.screen:SetPoint("TOPLEFT", plate.fill, "TOPLEFT", 25, -37)
+    plate.screen:SetPoint("BOTTOMRIGHT", plate.fill, "TOPLEFT", 364, -295)
     local nameBg = Tex(plate, "OVERLAY", "DungeonNameBg")
     nameBg:SetPoint("TOP", plate.fill, "TOP", 0, -32)
     plate.name = plate:CreateFontString(nil, "OVERLAY")
@@ -897,33 +904,6 @@ do
     end
     ui.abilityList = RightList(4)
     ui.lootList = RightList(3)
-
-    -- Right page, the boss's model (drag to turn it) in the Journal's paper frame.
-    local model = CreateFrame("PlayerModel", nil, book)
-    model:SetWidth(320)
-    model:SetHeight(340)
-    model:SetPoint("TOPRIGHT", -36, -52)
-    model:EnableMouse(true)
-    model:SetScript("OnMouseDown", function(self, button)
-        if button == "LeftButton" then
-            self.turning, self.lastX = true, GetCursorPosition()
-        end
-    end)
-    model:SetScript("OnMouseUp", function(self) self.turning = false end)
-    model:SetScript("OnUpdate", function(self)
-        if self.turning then
-            local x = GetCursorPosition()
-            self.facing = (self.facing or 0) + (x - self.lastX) / 80
-            self.lastX = x
-            self:SetFacing(self.facing)
-        end
-    end)
-    local paper = book:CreateTexture(nil, "BORDER")
-    paper:SetTexture(JOURNAL_ART .. "UI-EJ-BOSSMODELPAPERFRAME")
-    paper:SetTexCoord(0, 396 / 512, 0, 426 / 512)
-    paper:SetPoint("TOPLEFT", model, "TOPLEFT", -8, 8)
-    paper:SetPoint("BOTTOMRIGHT", model, "BOTTOMRIGHT", 8, -8)
-    ui.model, ui.modelBack = model, paper
 
     ui.empty = book:CreateFontString(nil, "ARTWORK", "GameFontBlack")
     ui.empty:SetPoint("TOP", book, "TOP", 195, -90)
@@ -968,11 +948,9 @@ do
     end)
     ui.difficulty = difficulty
 
-    -- The tabs on the book's right edge (EncounterTabTemplate): the overview (abilities on a boss's page), loot,
-    -- and on a boss's page its model.
+    -- The tabs on the book's right edge (EncounterTabTemplate): the overview (abilities on a boss's page), loot.
     ui.sideTabs = {}
-    for index, info in ipairs({ { "bosses", "BossIcon", "Overview" }, { "loot", "LootIcon", "Loot" },
-        { "model", "ModelIcon", "Model" } }) do
+    for index, info in ipairs({ { "bosses", "BossIcon", "Overview" }, { "loot", "LootIcon", "Loot" } }) do
         local tab = CreateFrame("Button", nil, book)
         tab:SetWidth(63)
         tab:SetHeight(57)
@@ -1329,9 +1307,6 @@ local function RefreshBook()
     local details = Details(instance)
     local bosses = Bosses(instance)
     local bossPage = view.page == "boss" and bosses[view.boss]
-    if not bossPage and view.tab == "model" then
-        view.tab = "bosses"
-    end
     local journal = bossPage and JournalBoss(instance.map, bossPage.name)
     local info = bossPage and details and details.info[bossPage.index]
 
@@ -1346,14 +1321,13 @@ local function RefreshBook()
     ui.difficulty:SetWidth(math.max(90, ui.difficulty.text:GetStringWidth() + 34))
     Shown(ui.difficulty, #instance.difficulties > 1)
 
-    -- The tabs: the model's on a boss's page only.
+    -- The tabs.
     for _, tab in ipairs(ui.sideTabs) do
         local on = tab.key == view.tab
         Shown(tab.on, on)
         Shown(tab.off, not on)
         Shown(tab.iconOn, on)
         Shown(tab.iconOff, not on)
-        Shown(tab, tab.key ~= "model" or bossPage)
     end
 
     -- The left page: the bosses, or the boss.
@@ -1386,21 +1360,17 @@ local function RefreshBook()
         ui.bossInfo:SetBody(journal and journal.d or "")
     end
 
-    -- The right page: the instance's picture and story; else the tab's list or the model.
+    -- The right page: the instance's picture and story; else the tab's list.
     local overview = view.tab == "bosses" and not bossPage
     Shown(ui.plate, overview)
     if overview then
         local art = InstanceArt(instance.map)
-        if art and art.lore then
-            ui.plate.fill:SetTexture(JOURNAL_ART .. art.lore)
-            if art.lfg then
-                ui.plate.fill:SetTexCoord(0.1, 0.9, 0, 1)
-            else
-                ui.plate.fill:SetTexCoord(0, 0.7617187, 0, 0.65625)
-            end
-        else
-            ui.plate.fill:SetTexture(JOURNAL_ART .. "UI-EJ-LOREBG-Default")
-            ui.plate.fill:SetTexCoord(0, 0.7617187, 0, 0.65625)
+        local own = art and art.lore
+        ui.plate.fill:SetTexture(JOURNAL_ART .. (own or "UI-EJ-LOREBG-Frame"))
+        ui.plate.fill:SetTexCoord(0, 0.7617187, 0, 0.65625)
+        Shown(ui.plate.screen, not own)
+        if not own then
+            ui.plate.screen:SetTexture(LoadingScreen(instance, art))
         end
         ui.plate.name:SetText(instance.name)
         local lore = EmberforgeJournalLore and EmberforgeJournalLore[instance.map]
@@ -1412,18 +1382,6 @@ local function RefreshBook()
             lines[#lines + 1] = DifficultyName(instance, entry)
         end
         ui.about:SetBody(table.concat(lines, "\n"))
-    end
-    local modelShown = bossPage and view.tab == "model"
-    Shown(ui.model, modelShown)
-    Shown(ui.modelBack, modelShown)
-    if modelShown then
-        local creature = info and info.entry or bossPage.creature
-        if ui.model.shown ~= creature then
-            ui.model.facing = 0
-        end
-        ShowCreature(ui.model, creature, false)
-    else
-        ui.model.shown = nil        -- set again when it shows (a hidden model can lose its own)
     end
     ListShown(ui.abilityList, bossPage and view.tab == "bosses")
     ListShown(ui.lootList, view.tab == "loot")

@@ -57,6 +57,9 @@ EmberforgeJournalArt = {
     button = "UI-EJ-DUNGEONBUTTON-BlackrockDepths",
     lore = "UI-EJ-LOREBG-BlackrockDepths",
 },
+    [249] = {
+    screen = "LoadScreenRaid",
+},
     [269] = {
     button = "UI-EJ-DUNGEONBUTTON-CavernsOfTime",
     lore = "UI-EJ-LOREBG-CavernsOfTime",
@@ -82,43 +85,29 @@ EmberforgeJournalArt = {
     lore = "UI-EJ-LOREBG-RagefireChasm",
 },
     [409] = {
-    button = "UI-LFG-BACKGROUND-MOLTENCORE",
-    lore = "UI-LFG-BACKGROUND-MOLTENCORE",
-    lfg = 1,
+    screen = "LoadScreenMoltenCore",
 },
     [429] = {
     button = "UI-EJ-DUNGEONBUTTON-DireMaul",
     lore = "UI-EJ-LOREBG-DireMaul",
 },
     [469] = {
-    button = "UI-LFG-BACKGROUND-BLACKWINGLAIR",
-    lore = "UI-LFG-BACKGROUND-BLACKWINGLAIR",
-    lfg = 1,
+    screen = "LoadScreenBlackWingLair",
 },
     [509] = {
-    button = "UI-LFG-BACKGROUND-AQRUINS",
-    lore = "UI-LFG-BACKGROUND-AQRUINS",
-    lfg = 1,
+    screen = "LoadScreenAhnQiraj20man",
 },
     [531] = {
-    button = "UI-LFG-BACKGROUND-AQTEMPLE",
-    lore = "UI-LFG-BACKGROUND-AQTEMPLE",
-    lfg = 1,
+    screen = "LoadScreenAhnQiraj40man",
 },
     [532] = {
-    button = "UI-LFG-BACKGROUND-KARAZHAN",
-    lore = "UI-LFG-BACKGROUND-KARAZHAN",
-    lfg = 1,
+    screen = "LoadScreenKarazhan",
 },
     [533] = {
-    button = "UI-LFG-BACKGROUND-NAXXRAMAS",
-    lore = "UI-LFG-BACKGROUND-NAXXRAMAS",
-    lfg = 1,
+    screen = "LoadScreenNaxxramas",
 },
     [534] = {
-    button = "UI-LFG-BACKGROUND-HYJALPAST",
-    lore = "UI-LFG-BACKGROUND-HYJALPAST",
-    lfg = 1,
+    screen = "LoadScreenCavernsTime",
 },
     [540] = {
     button = "UI-EJ-DUNGEONBUTTON-HellfireCitadel",
@@ -133,9 +122,7 @@ EmberforgeJournalArt = {
     lore = "UI-EJ-LOREBG-HellfireCitadel",
 },
     [544] = {
-    button = "UI-LFG-BACKGROUND-HELLFIRECITADELRAID",
-    lore = "UI-LFG-BACKGROUND-HELLFIRECITADELRAID",
-    lfg = 1,
+    screen = "LoadScreenHellfireCitadelRaid",
 },
     [545] = {
     button = "UI-EJ-DUNGEONBUTTON-CoilfangReservoir",
@@ -150,14 +137,10 @@ EmberforgeJournalArt = {
     lore = "UI-EJ-LOREBG-CoilfangReservoir",
 },
     [548] = {
-    button = "UI-LFG-BACKGROUND-COILFANG",
-    lore = "UI-LFG-BACKGROUND-COILFANG",
-    lfg = 1,
+    screen = "LoadScreenCoilFang",
 },
     [550] = {
-    button = "UI-LFG-BACKGROUND-TEMPESTKEEP",
-    lore = "UI-LFG-BACKGROUND-TEMPESTKEEP",
-    lfg = 1,
+    screen = "LoadScreenTempestKeep",
 },
     [552] = {
     button = "UI-EJ-DUNGEONBUTTON-TempestKeep",
@@ -192,14 +175,10 @@ EmberforgeJournalArt = {
     lore = "UI-EJ-LOREBG-CavernsOfTime",
 },
     [564] = {
-    button = "UI-LFG-BACKGROUND-BLACKTEMPLE",
-    lore = "UI-LFG-BACKGROUND-BLACKTEMPLE",
-    lfg = 1,
+    screen = "LoadScreenBlackTemple",
 },
     [565] = {
-    button = "UI-LFG-BACKGROUND-GRUULSLAIR",
-    lore = "UI-LFG-BACKGROUND-GRUULSLAIR",
-    lfg = 1,
+    screen = "LoadScreenGruulsLair",
 },
     [568] = {
     button = "UI-EJ-DUNGEONBUTTON-ZulAman",
@@ -222,9 +201,7 @@ EmberforgeJournalArt = {
     lore = "UI-EJ-LOREBG-TheOculus",
 },
     [580] = {
-    button = "UI-LFG-BACKGROUND-SUNWELL",
-    lore = "UI-LFG-BACKGROUND-SUNWELL",
-    lfg = 1,
+    screen = "LoadScreenSunwell",
 },
     [585] = {
     button = "UI-EJ-DUNGEONBUTTON-MagistersTerrace",
@@ -251,9 +228,7 @@ EmberforgeJournalArt = {
     lore = "UI-EJ-LOREBG-HallsofLightning",
 },
     [603] = {
-    button = "UI-LFG-BACKGROUND-ULDUAR",
-    lore = "UI-LFG-BACKGROUND-ULDUAR",
-    lfg = 1,
+    screen = "LoadScreenUlduarRaid",
 },
     [604] = {
     button = "UI-EJ-DUNGEONBUTTON-Gundrak",
@@ -264,37 +239,27 @@ EmberforgeJournalArt = {
     lore = "UI-EJ-LOREBG-VioletHold",
 },
     [615] = {
-    button = "UI-LFG-BACKGROUND-CHAMBEROFASPECTS",
-    lore = "UI-LFG-BACKGROUND-CHAMBEROFASPECTS",
-    lfg = 1,
+    screen = "LoadScreenChamberBlack",
 },
     [616] = {
-    button = "UI-LFG-BACKGROUND-MALYGOS",
-    lore = "UI-LFG-BACKGROUND-MALYGOS",
-    lfg = 1,
+    screen = "LoadScreenMalygos",
 },
     [619] = {
     button = "UI-EJ-DUNGEONBUTTON-AhnkahetTheOldKingdom",
     lore = "UI-EJ-LOREBG-AhnkahetTheOldKingdom",
 },
     [624] = {
-    button = "UI-LFG-BACKGROUND-VAULTOFARCHAVON",
-    lore = "UI-LFG-BACKGROUND-VAULTOFARCHAVON",
-    lfg = 1,
+    screen = "LoadScreenWintergrasp",
 },
     [631] = {
-    button = "UI-LFG-BACKGROUND-ICECROWNCITADEL",
-    lore = "UI-LFG-BACKGROUND-ICECROWNCITADEL",
-    lfg = 1,
+    screen = "LoadScreenIcecrownCitadel",
 },
     [632] = {
     button = "UI-EJ-DUNGEONBUTTON-TheForgeofSouls",
     lore = "UI-EJ-LOREBG-TheForgeofSouls",
 },
     [649] = {
-    button = "UI-LFG-BACKGROUND-ARGENTRAID",
-    lore = "UI-LFG-BACKGROUND-ARGENTRAID",
-    lfg = 1,
+    screen = "LoadScreenArgentRaid",
 },
     [650] = {
     button = "UI-EJ-DUNGEONBUTTON-TrialOfTheChampion",
@@ -307,6 +272,9 @@ EmberforgeJournalArt = {
     [668] = {
     button = "UI-EJ-DUNGEONBUTTON-HallsofReflection",
     lore = "UI-EJ-LOREBG-HallsofReflection",
+},
+    [724] = {
+    screen = "LoadScreenRubySanctum",
 },
 }
 EmberforgeJournalLore = {
