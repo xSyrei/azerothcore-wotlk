@@ -48,8 +48,8 @@
 //                      K0 / K,<id>,...           known abilities (clear, then first rank ids)
 //                      R0 / R,<talent id>:<rank>,...   owned talent ranks (clear, then talents)
 //                      S,<picks left>,<locked>,<lock level>,<role>
-//                      G,<spell id>,<first rank id>   ability spin
-//                      H,<talent id>,<spell id>,<rank>   talent spin
+//                      G,<spell id>,<first rank id>,<level>   ability spin (for that level's roll)
+//                      H,<talent id>,<spell id>,<rank>,<level>   talent spin
 //                      O                         open the window
 //                      I,<0|1>                   spell ids on tooltips (GMs: .spellids)
 namespace
@@ -284,19 +284,19 @@ namespace Classless
         SendAddon(player, "O");
     }
 
-    void Reveal(Player* player, Wildcard::Ability const& ability)
+    void Reveal(Player* player, Wildcard::Ability const& ability, uint8 level)
     {
         int32 known = Wildcard::KnownRank(player, ability);
         if (known < 0)
             return;
 
-        SendAddon(player, Acore::StringFormat("G,{},{}", ability.Ranks[known].SpellId,
-            ability.Ranks.front().SpellId));
+        SendAddon(player, Acore::StringFormat("G,{},{},{}", ability.Ranks[known].SpellId,
+            ability.Ranks.front().SpellId, level));
     }
 
-    void RevealTalent(Player* player, uint32 talentId, uint32 spellId, uint8 rank)
+    void RevealTalent(Player* player, uint32 talentId, uint32 spellId, uint8 rank, uint8 level)
     {
-        SendAddon(player, Acore::StringFormat("H,{},{},{}", talentId, spellId, rank));
+        SendAddon(player, Acore::StringFormat("H,{},{},{},{}", talentId, spellId, rank, level));
     }
 }
 

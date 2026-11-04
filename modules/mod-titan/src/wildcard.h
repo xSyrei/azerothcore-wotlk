@@ -118,7 +118,8 @@ namespace Wildcard
 
     // Learns rank (from 0) of a talent the way Player::LearnTalent does once its checks pass; with reveal the
     // Classless window spins for it.
-    bool LearnTalentRank(Player* player, TalentEntry const* talentInfo, uint8 rank, bool reveal);
+    // level: the level the roll is for (0: the player's).
+    bool LearnTalentRank(Player* player, TalentEntry const* talentInfo, uint8 rank, bool reveal, uint8 level = 0);
 
     uint32 GetPicks(Player* player);
     void SetPicks(Player* player, uint32 picks);
@@ -137,9 +138,10 @@ namespace Classless
     void SendKnown(Player* player);
     void Open(Player* player);
     // Plays the Wildcard roll for a granted ability.
-    void Reveal(Player* player, Wildcard::Ability const& ability);
+    // level: the level the roll is for (several rolls from a jump of levels each say theirs).
+    void Reveal(Player* player, Wildcard::Ability const& ability, uint8 level);
     // Shows the spin for a talent rank (rank counts from 1).
-    void RevealTalent(Player* player, uint32 talentId, uint32 spellId, uint8 rank);
+    void RevealTalent(Player* player, uint32 talentId, uint32 spellId, uint8 rank, uint8 level);
     // GMs only: spell ids on the tooltips (.spellids), kept per character.
     bool ShowsSpellIds(Player* player);
     void SetShowSpellIds(Player* player, bool show);

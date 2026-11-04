@@ -569,7 +569,7 @@ namespace
 
     // Learns the next rank of a random talent from any class tree, the way Player::LearnTalent does
     // once its checks pass; with reveal the player's Classless window spins for it.
-    bool GrantTalent(Player* player, bool reveal)
+    bool GrantTalent(Player* player, bool reveal, uint8 rollLevel)
     {
         // The spells of the abilities the Hero knows (their known ranks), and their classes.
         std::vector<SpellInfo const*> knownSpells;
@@ -652,13 +652,13 @@ namespace
             return false;
 
         auto [talentInfo, currentRank] = candidates[urand(0, uint32(candidates.size() - 1))];
-        return LearnTalentRank(player, talentInfo, currentRank, reveal);
+        return LearnTalentRank(player, talentInfo, currentRank, reveal, rollLevel);
     }
 }
 
 namespace Wildcard
 {
-    bool LearnTalentRank(Player* player, TalentEntry const* talentInfo, uint8 rank, bool reveal)
+    bool LearnTalentRank(Player* player, TalentEntry const* talentInfo, uint8 rank, bool reveal, uint8 level)
     {
         uint8 currentRank = rank;
         uint32 spellId = talentInfo->RankID[currentRank];
@@ -684,7 +684,8 @@ namespace Wildcard
         player->addTalent(spellId, player->GetActiveSpecMask(), currentRank);
         Announce(player, spellId, currentRank ? "talent rank up" : "new talent");
         if (reveal)
-            Classless::RevealTalent(player, talentInfo->TalentID, spellId, currentRank + 1);
+            Classless::RevealTalent(player, talentInfo->TalentID, spellId, currentRank + 1,
+                level ? level : player->GetLevel());
         return true;
     }
 }
@@ -774,9 +775,11 @@ namespace
                 if (!ability)
                     break;
 
+                // The roll's level: the odd ones from FIRST_ROLL_LEVEL + 1, one each.
+                uint8 rollLevel = uint8(FIRST_ROLL_LEVEL + 1 + 2 * (granted - KIT_SIZE));
                 ++granted;
                 if (!kit && levelUp)
-                    Classless::Reveal(player, *ability);
+                    Classless::Reveal(player, *ability, std::min(rollLevel, level));
             }
 
             if (granted != before)
@@ -788,7 +791,7 @@ namespace
                 {
                     player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_CAPSTONE_GRANTED, 1);
                     if (levelUp)
-                        Classless::Reveal(player, *capstone);
+                        Classless::Reveal(player, *capstone, CAPSTONE_LEVEL);
                 }
         }
 
@@ -798,7 +801,9 @@ namespace
         uint32 lastTalentLevel = std::min<uint32>(level, CAPSTONE_LEVEL - 1);
         uint32 owedTalents = level >= FIRST_ROLL_LEVEL ? (lastTalentLevel - FIRST_ROLL_LEVEL) / 2 + 1 : 0;
         bool talentsChanged = false;
-        for (uint32 spent = SpentTalentPoints(player); spent < owedTalents && GrantTalent(player, levelUp); ++spent)
+        // The roll's level: the even ones from FIRST_ROLL_LEVEL, one each.
+        for (uint32 spent = SpentTalentPoints(player); spent < owedTalents
+            && GrantTalent(player, levelUp, uint8(std::min<uint32>(FIRST_ROLL_LEVEL + 2 * spent, level))); ++spent)
             talentsChanged = true;
 
         if (talentsChanged)

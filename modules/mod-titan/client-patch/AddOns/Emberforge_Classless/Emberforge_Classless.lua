@@ -15,7 +15,7 @@
 --                 N,<tab>.<talent>.<row>.<col>.<rank1>+<rank2>....<requires talent>.<its rank>;...
 --                 Q,<ability>.<talent>.<capstone>;... (talents learned as abilities, capstones: level 60 only) / E
 --                 K0 / K,<spell id>,...   R0 / R,<talent id>:<rank>,...   S,<picks left>,<locked>,<lock level>,<role>
---                 G,<spell id>,<first rank id>   H,<talent id>,<spell id>,<rank>   O
+--                 G,<spell id>,<first rank id>,<level>   H,<talent id>,<spell id>,<rank>,<level>   O
 --                 I,<0|1>   spell ids on tooltips (GMs, .spellids)
 
 local PREFIX = "EFCL"
@@ -351,12 +351,13 @@ local function OnServerMessage(message)
         data.role = tonumber(role) or 0
         Refresh()
     elseif kind == "G" then
-        local _, spell, firstRank = strsplit(",", message)
-        tinsert(reveals, { spell = tonumber(spell), firstRank = tonumber(firstRank) })
+        local _, spell, firstRank, level = strsplit(",", message)
+        tinsert(reveals, { spell = tonumber(spell), firstRank = tonumber(firstRank), level = tonumber(level) })
         ShowNextReveal()
     elseif kind == "H" then
-        local _, talent, spell, rank = strsplit(",", message)
-        tinsert(reveals, { talent = tonumber(talent), spell = tonumber(spell), rank = tonumber(rank) })
+        local _, talent, spell, rank, level = strsplit(",", message)
+        tinsert(reveals, { talent = tonumber(talent), spell = tonumber(spell), rank = tonumber(rank),
+            level = tonumber(level) })
         ShowNextReveal()
     elseif kind == "I" then
         data.spellIds = message == "I,1"
@@ -1432,8 +1433,6 @@ local function CreateRoll()
             REBUILD = 0.9, FORMED = 1.2, GONE = 1.65, DONE = 2.05 },
     }
     local T = TIMELINES.full
-    -- The reel drifts this far past the prize and eases back onto it.
-    local OVERSHOOT = 12
 
     -- The screen dims behind the roll.
     local backdrop = CreateFrame("Frame", nil, UIParent)
@@ -1669,10 +1668,20 @@ local function CreateRoll()
         end
     end
 
-    -- What a reel slot shows: a random ability or talent, or the prize.
-    local function RandomEntry(isTalent)
+    -- What a reel slot shows: a random ability or talent (a capstone's roll: capstones only), or the prize.
+    local function RandomEntry(isTalent, capstone)
         local pool = {}
-        if isTalent then
+        if capstone then
+            for id in pairs(data.capstones) do
+                if data.abilities[id] then
+                    pool[#pool + 1] = id
+                end
+            end
+            if #pool > 0 then
+                local ability = data.abilities[pool[math.random(#pool)]]
+                return ability.id, ability.class
+            end
+        elseif isTalent then
             for id in pairs(data.talentById) do
                 pool[#pool + 1] = id
             end
@@ -2011,16 +2020,10 @@ local function CreateRoll()
             bar:SetAlpha(0)
         end
         heading:SetAlpha(opening)
-        -- The reel: fast start, long slow finish (quintic ease-out) that drifts just past the prize,
-        -- then eases back onto it.
+        -- The reel: fast start, long slow finish (quintic ease-out) stopping right on the prize.
         local span = T.LANDED - T.OPENED
         local spin = span > 0 and Clamp((t - T.OPENED) / span) or 1
-        local run = Clamp(spin / 0.9)
-        local center = self.start + (self.target + OVERSHOOT - self.start) * (1 - (1 - run) ^ 5)
-        if spin > 0.9 then
-            local back = (spin - 0.9) / 0.1
-            center = self.target + OVERSHOOT * (1 - back * back * (3 - 2 * back))
-        end
+        local center = self.start + (self.target - self.start) * (1 - (1 - spin) ^ 5)
         ScrollTo(center, width)
         local passing = math.floor(center / SLOT_STEP)
         if spin > 0 and passing ~= self.passing then
@@ -2051,17 +2054,19 @@ local function CreateRoll()
             current.maxRank = talent and #talent.ranks or current.rank
         else
             local ability = data.abilities[current.firstRank]
+            current.capstone = data.capstones[current.firstRank]
             current.class = ability and ability.class
             current.tree = ability and AbilityTree(ability) ~= GENERAL and TREES[ability.class][AbilityTree(ability)][1]
         end
         revealTitle:SetText("Wildcard Roll")
-        revealKind:SetText("Level " .. UnitLevel("player") .. "  -  "
-            .. (current.talent and "New Talent" or "New Ability"))
+        -- The level the roll is for (the server's: the game's own can lag a level-up behind).
+        revealKind:SetText("Level " .. (current.level or UnitLevel("player")) .. "  -  "
+            .. (current.talent and "New Talent" or current.capstone and "Capstone" or "New Ability"))
         for index, slot in ipairs(slots) do
             if index == WINNER_SLOT then
                 FillSlot(slot, current.spell, current.class, false)
             else
-                local spell, class = RandomEntry(current.talent)
+                local spell, class = RandomEntry(current.talent, current.capstone)
                 FillSlot(slot, spell or current.spell, class or current.class, false)
             end
         end
