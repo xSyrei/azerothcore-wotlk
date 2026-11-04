@@ -610,7 +610,7 @@ do
             if self.level == 1 then
                 view.page, view.instance, view.boss = "home", nil, nil
             elseif self.level == 2 then
-                view.page, view.boss, view.tab = "instance", nil, "bosses"
+                view.page, view.boss = "instance", nil
             end
             Refresh()
         end)
@@ -1048,8 +1048,7 @@ local function BossRow(index)
         else
             view.page, view.boss = "boss", self.index
         end
-        view.tab = "bosses"
-        Refresh()
+        Refresh()           -- on the same tab: abilities stay abilities, loot stays loot
     end)
     list.rows[index] = row
     return row
