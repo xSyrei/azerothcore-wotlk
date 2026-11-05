@@ -70,6 +70,8 @@ ITEM_QUALITY_COLORS = setmetatable({}, { __index = function() return { hex = "|c
 function SendAddonMessage(prefix, message) sent[#sent + 1] = { prefix, message } end
 function UnitName() return "Tester" end
 function SetPortraitToTexture() end
+local items = {}
+function GetItemCount(id) return items[id] or 0 end
 function GetSpellInfo(id) return "Spell " .. id, "", "Interface\\Icons\\Spell_" .. id end
 function GetItemIcon() return "Interface\\Icons\\INV_Misc_QuestionMark" end
 function GetCursorPosition() return 0, 0 end
@@ -135,20 +137,51 @@ end
 local function server(message)
     events.scripts.OnEvent(events, "CHAT_MSG_ADDON", "EFDM", message, "WHISPER", "Tester")
 end
+local function lastSent()
+    return sent[#sent] and sent[#sent][2]
+end
 
-server("S,1500,100,125,100,5,750000,10000,13,10,50,1,2,4,8")
+server("S,1500,1000,1250,20000,5,750000,13,10,50,500,5000,12000,30000")
+server("E,3,21,24,100,2,0,0,4,2,8,60,4,8.10.20.30.40.50.60")
 server("O")
-check(frame:IsShown(), "O opens the shop")
-check(t.state.spark == 1500 and t.state.prices[1] == 100 and t.state.prices[2] == 125 and t.state.prices[3] == 10000,
-    "the prices are read")
-check(t.state.duplicates == 13 and t.state.goldLeft == 5, "the tallies are read")
+check(frame:IsShown(), "O opens the window")
+check(lastSent() == "LIST", "the first open asks for the catalog")
+check(t.pages[1]:IsShown() and not t.pages[2]:IsShown(), "Specializations is the first page")
+check(t.state.spark == 1500 and t.state.prices[0] == 1000 and t.state.prices[1] == 1250
+    and t.state.prices[2] == 20000 and t.state.prices[3] == 20000, "the pack prices are read")
+check(t.state.duplicates == 13 and t.state.goldLeft == 5 and t.state.cardPrices[3] == 30000, "the tallies are read")
+check(t.eyes.count == 3 and t.eyes.claimed == 21 and t.eyes.level == 24 and not t.eyes.canBuy, "the Eyes are read")
+check(t.eyes.ready == 3, "levels 22 to 24 are ready to claim")
+check(t.chip:IsShown(), "the claim chip shows over the unclaimed levels")
+check(t.claimButton.enabled and not t.buyEyes.enabled, "claiming is open, buying is not below 60")
+t.claimButton:Click()
+check(lastSent() == "CLAIM", "Claim asks the server")
+server("E,6,24,24,100,2,0,0,4,2,8,60,4,8.10.20.30.40.50.60")
+check(t.eyes.ready == 0 and not t.chip:IsShown() and not t.claimButton.enabled, "claimed: nothing left to claim")
+server("E,6,24,60,100,2,1,0,4,2,8,60,4,8.10.20.30.40.50.60")
+check(t.eyes.ready == 36 + 4 * 3, "at 60: every level from 25 owed, milestones four each")
+check(t.buyEyes.enabled, "at 60 the Eyes can be bought")
+t.buyEyes:Click()
+check(lastSent() == "EYES", "Buy asks the server")
 
-t.view.tab = 2
+t.tabs[2]:Click()
+check(t.pages[2]:IsShown(), "the Packs tab")
+items[910010], items[910013] = 3, 1
+events.scripts.OnEvent(events, "BAG_UPDATE")
+check(t.packWidgets[0].open.enabled and t.packWidgets[0].all.enabled, "three Skill Packs: Open and Open all")
+check(t.packWidgets[3].open.enabled and not t.packWidgets[3].all.enabled, "one Golden Talent Pack: Open only")
+check(not t.packWidgets[1].open.enabled, "no Talent Packs: nothing to open")
+t.packWidgets[0].all:Click()
+check(lastSent() == "OPEN,0,3", "Open all opens every pack in the bags")
+server("S,25000,1000,1250,20000,5,750000,13,10,50,500,5000,12000,30000")
+t.packWidgets[2].buy:Click()
+check(lastSent() == "BUY,2,0", "a Golden Skill Pack bought for Emberspark")
+
 server("K0")
-server("K,0.133.133.0.1.1.0;0.27243.27243.3.0.1.0")
+server("K,0.133.133.0.1.1.0;0.27243.27243.3.0.1.0;0.5.5.1.0.1.0")
 server("K,1.2300.90200.1.2.5.1")
 server("KE")
-check(#t.catalog == 3, "the catalog arrives in parts")
+check(#t.catalog == 4, "the catalog arrives in parts")
 server("U,0.27243.1.0")
 local seed
 for _, card in ipairs(t.catalog) do
@@ -157,12 +190,33 @@ end
 check(seed and seed.owned == 1, "an update marks a card owned")
 
 server("R,0,0.133.133.0.0.40;0.27243.27243.3.1.0;0.5.5.1.1.0")
-check(t.reveal:IsShown(), "a pack opened plays the reveal")
-t.reveal.scripts.OnUpdate(t.reveal, 3)
-t.reveal.scripts.OnMouseDown(t.reveal)
-check(not t.reveal:IsShown(), "a click after the reveal closes it")
-server("B,1.2300.90200.1")
-check(t.reveal:IsShown(), "a card bought shows too")
+check(t.reveal.phase == "rip" and #t.reveal.cards == 3, "a pack opened plays the reveal")
+for _ = 1, 200 do
+    t.stage.scripts.OnUpdate(t.stage, 0.05)
+end
+check(t.reveal.phase == "shown", "the cards deal out and turn over")
+server("R,1,1.2300.90200.1.1.0")
+check(#t.reveal.queue == 1, "a second pack waits its turn")
+t.stage.scripts.OnMouseDown(t.stage)
+check(t.reveal.phase == "dissolve", "a click dissolves the cards")
+for _ = 1, 18 do
+    t.stage.scripts.OnUpdate(t.stage, 0.05)
+end
+check(t.reveal.phase ~= "idle" and #t.reveal.cards == 1 and #t.reveal.queue == 0, "then the waiting pack opens")
+t.stage.scripts.OnMouseDown(t.stage)
+check(t.reveal.phase == "shown", "a click while it plays skips to the faces")
+
+server("M,0,2")
+server("R,0,0.133.133.0.0.40;0.27243.27243.3.1.0")
+server("R,0,0.5.5.1.1.0;0.6.6.0.0.40")
+server("ME")
+check(t.results:IsShown(), "Open all shows the results")
+check(#t.mass().cards == 4, "every card of the packs is in the list")
+
+t.tabs[3]:Click()
+check(t.pages[3]:IsShown() and t.cells[1]:IsShown() and t.cells[1].entry.rarity == 3, "the Cards grid, rarest first")
+t.cells[2]:Click()
+check(t.modal:IsShown(), "a card not owned opens the buy dialog")
 
 print(failures == 0 and "all passed" or (failures .. " failed"))
 os.exit(failures == 0 and 0 or 1)

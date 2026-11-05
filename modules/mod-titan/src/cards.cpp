@@ -34,6 +34,7 @@
 #include "Tokenize.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include <algorithm>
 #include <array>
 #include <map>
 #include <string_view>
@@ -44,15 +45,18 @@
 // a rarity. A card, once opened, is the account's forever (auth database: titan_cards), for every character on it;
 // slotting cards into Specializations (loadouts the level-up rolls follow) comes next.
 //
-// - Packs (items in the bags): a Skill Pack or Talent Pack holds 5 cards, a Golden Pack 5 Golden Cards. Each card's
-//   rarity is rolled (Common 70%, Rare 24%, Epic 5%, Legendary 1%), then a card of it, 3 times in 4 one suiting the
-//   Hero's role. A card already owned (every rank of a talent) is a duplicate: Emberspark back by its rarity, and the
-//   account's duplicate tally goes up. Every 10th duplicate gives a free pack of the same kind, every 50th a Golden
-//   Pack and 2,000 Emberspark.
-// - Silas Darkmoon (npc_titan_silas) opens the Darkmoon shop (the Emberforge_Darkmoon addon): Skill and Talent Packs
-//   for Emberspark, at prices that climb with each purchase and start over at a prestige; any card but a Golden one
-//   at a fixed price by rarity (500, 5,000, 12,000, 30,000); Skill Packs for gold too, 5 a week an account; Golden
-//   Packs.
+// - Packs (items in the bags, opened there or from the window): a Skill Pack or Talent Pack holds 5 cards of its kind,
+//   a Golden Skill or Golden Talent Pack 5 Golden ones. Each card's rarity is rolled (Common 70%, Rare 24%, Epic 5%,
+//   Legendary 1%), then a card of it, 3 times in 4 one suiting the Hero's role. A card already owned (every rank of a
+//   talent) is a duplicate: Emberspark back by its rarity, and the account's duplicate tally goes up. Every 10th
+//   duplicate gives a free pack of the same kind, every 50th a Golden Pack of it and 2,000 Emberspark.
+// - Silas Darkmoon (npc_titan_silas) opens the Darkmoon window (the Emberforge_Darkmoon addon): Skill and Talent Packs
+//   for Emberspark, at prices that climb with each purchase (from 1,000) and start over at a prestige; Golden Packs
+//   (20,000); any card but a Golden one at a fixed price by rarity (500, 5,000, 12,000, 30,000); Skill Packs for gold
+//   too, 5 a week an account.
+// - Eyes of Unlearning, the character's: one for every level from 8 to 60, four at the milestones (8, 10, 20 ... 60),
+//   claimed in the window; past that bought there, two at a time, only at 60, on the climbing price. A prestige lets
+//   the levels be claimed again and starts the price over. (Spending them comes with the Specializations.)
 //
 // Addon whispers with prefix EFDM (protocol in Emberforge_Darkmoon.lua).
 namespace
@@ -63,11 +67,18 @@ namespace
     constexpr uint32 SETTING_SKILL_PACKS = 0;   // bought this prestige, for the price
     constexpr uint32 SETTING_TALENT_PACKS = 1;
     constexpr uint32 SETTING_CARDS = 2;         // retired: cards have fixed prices now
+    constexpr uint32 SETTING_EYES = 3;          // Eyes of Unlearning the character has
+    constexpr uint32 SETTING_EYES_CLAIMED = 4;  // the leveling Eyes claimed through this level (0: none)
+    constexpr uint32 SETTING_EYE_PURCHASES = 5; // bought this prestige, for the price
+    constexpr uint32 SETTING_EYES_BOUGHT = 6;   // every Eye bought, ever
+    constexpr uint32 SETTING_ABILITIES_REROLLED = 7;
+    constexpr uint32 SETTING_TALENTS_REROLLED = 8;
     constexpr uint32 SETTING_SOURCE_NONE = UINT32_MAX;     // a fixed price (Golden Pack, a card), nothing counted
 
     constexpr uint32 ITEM_SKILL_PACK = 910010;
     constexpr uint32 ITEM_TALENT_PACK = 910011;
-    constexpr uint32 ITEM_GOLDEN_PACK = 910012;
+    constexpr uint32 ITEM_GOLDEN_SKILL_PACK = 910012;
+    constexpr uint32 ITEM_GOLDEN_TALENT_PACK = 910013;
     constexpr uint32 NPC_SILAS = 910110;
     constexpr float NPC_RANGE = 15.0f;
 
@@ -83,8 +94,16 @@ namespace
     {
         PACK_SKILL,
         PACK_TALENT,
-        PACK_GOLDEN,
+        PACK_GOLDEN_SKILL,
+        PACK_GOLDEN_TALENT,
+        MAX_PACKS
     };
+
+    constexpr std::array<uint32, MAX_PACKS> PACK_ITEMS = { ITEM_SKILL_PACK, ITEM_TALENT_PACK, ITEM_GOLDEN_SKILL_PACK,
+        ITEM_GOLDEN_TALENT_PACK };
+
+    constexpr bool IsGolden(uint8 pack) { return pack >= PACK_GOLDEN_SKILL; }
+    constexpr uint8 PackKind(uint8 pack) { return pack == PACK_SKILL || pack == PACK_GOLDEN_SKILL ? 0 : 1; }
 
     enum Rarity : uint8
     {
@@ -101,7 +120,15 @@ namespace
     constexpr uint32 GOLDEN_DUPLICATE_REFUND = 2000;
     constexpr std::array<uint32, MAX_RARITIES> CARD_PRICE = { 500, 5000, 12000, 30000 };   // a card bought outright
     constexpr uint32 FREE_PACK_EVERY = 10, GOLDEN_PACK_EVERY = 50, GOLDEN_PACK_BONUS = 2000;
-    constexpr uint32 GOLDEN_PACK_PRICE = 10000;
+    constexpr uint32 GOLDEN_PACK_PRICE = 20000;
+    constexpr uint32 PACK_PRICE_FACTOR = 10;   // packs climb the price ladder ten times over: 1,000, 1,250...
+    constexpr uint32 OPEN_AT_ONCE = 50;        // the most packs "Open all" opens in one go
+
+    // Eyes of Unlearning: one a level from EYE_FIRST_LEVEL to EYE_LAST_LEVEL, MILESTONE_EYES at the milestones; past
+    // that EYES_PER_PURCHASE at a time, at EYE_LAST_LEVEL only, on the ladder.
+    constexpr uint8 EYE_FIRST_LEVEL = 8, EYE_LAST_LEVEL = 60;
+    constexpr std::array<uint8, 7> EYE_MILESTONES = { 8, 10, 20, 30, 40, 50, 60 };
+    constexpr uint32 MILESTONE_EYES = 4, EYES_PER_PURCHASE = 2;
     constexpr uint32 GOLD_PACK_PRICE = 75 * GOLD, GOLD_PACKS_A_WEEK = 5;
     constexpr uint32 SUITING_CHANCE = 75;      // % of cards rolled from those suiting the Hero's role
     // The climbing price: the nth purchase this prestige costs PRICES[n], then 250 more each.
@@ -111,6 +138,12 @@ namespace
     uint32 Price(uint32 bought)
     {
         return bought < PRICES.size() ? PRICES[bought] : PRICES.back() + 250 * (bought - uint32(PRICES.size()) + 1);
+    }
+
+    uint32 LevelEyes(uint8 level)
+    {
+        return std::find(EYE_MILESTONES.begin(), EYE_MILESTONES.end(), level) != EYE_MILESTONES.end()
+            ? MILESTONE_EYES : 1;
     }
 
     struct Card
@@ -309,8 +342,40 @@ namespace
         SendAddon(player, "KE");
     }
 
-    // S,<Emberspark>,<Skill Pack>,<Talent Pack>,<card price factor: 1>,<gold packs left>,<gold price>,<Golden Pack>,
-    //   <duplicates>,<every N a pack>,<every N a Golden Pack>,<card price: common>,<rare>,<epic>,<legendary>
+    uint32 PackPrice(Player* player, uint8 pack)
+    {
+        return IsGolden(pack) ? GOLDEN_PACK_PRICE
+            : Price(Setting(player, pack == PACK_SKILL ? SETTING_SKILL_PACKS : SETTING_TALENT_PACKS))
+                * PACK_PRICE_FACTOR;
+    }
+
+    bool CanBuyEyes(Player* player)
+    {
+        return player->GetLevel() >= EYE_LAST_LEVEL;
+    }
+
+    // The leveling Eyes claimed through this level: none before EYE_FIRST_LEVEL.
+    uint8 EyesClaimed(Player* player)
+    {
+        return uint8(std::max<uint32>(Setting(player, SETTING_EYES_CLAIMED), EYE_FIRST_LEVEL - 1));
+    }
+
+    // E,<Eyes>,<claimed through level>,<level>,<Eye price>,<Eyes a purchase>,<can buy 0|1>,<Eyes bought>,
+    //   <abilities rerolled>,<talents rerolled>,<first level>,<last level>,<milestone Eyes>,<milestone.milestone...>
+    void SendEyes(Player* player)
+    {
+        std::string milestones;
+        for (uint8 level : EYE_MILESTONES)
+            milestones += (milestones.empty() ? "" : ".") + std::to_string(level);
+        SendAddon(player, Acore::StringFormat("E,{},{},{},{},{},{},{},{},{},{},{},{},{}", Setting(player, SETTING_EYES),
+            EyesClaimed(player), player->GetLevel(), Price(Setting(player, SETTING_EYE_PURCHASES)), EYES_PER_PURCHASE,
+            CanBuyEyes(player) ? 1 : 0, Setting(player, SETTING_EYES_BOUGHT),
+            Setting(player, SETTING_ABILITIES_REROLLED), Setting(player, SETTING_TALENTS_REROLLED), EYE_FIRST_LEVEL,
+            EYE_LAST_LEVEL, MILESTONE_EYES, milestones));
+    }
+
+    // S,<Emberspark>,<Skill Pack>,<Talent Pack>,<Golden Pack>,<gold packs left>,<gold price, copper>,<duplicates>,
+    //   <every N a pack>,<every N a Golden Pack>,<card price: common>,<rare>,<epic>,<legendary>; then E.
     void SendState(Player* player)
     {
         Emberspark::Query(player, [](Player* online, uint32 balance)
@@ -319,10 +384,11 @@ namespace
             uint32 duplicates = collection ? collection->duplicates : 0;
             uint32 goldLeft = !collection ? 0 : collection->goldWeek != Week() ? GOLD_PACKS_A_WEEK
                 : GOLD_PACKS_A_WEEK - std::min(GOLD_PACKS_A_WEEK, collection->goldBought);
-            SendAddon(online, Acore::StringFormat("S,{},{},{},{},{},{},{},{},{},{},{},{},{},{}", balance,
-                Price(Setting(online, SETTING_SKILL_PACKS)), Price(Setting(online, SETTING_TALENT_PACKS)),
-                1, goldLeft, GOLD_PACK_PRICE, GOLDEN_PACK_PRICE, duplicates, FREE_PACK_EVERY, GOLDEN_PACK_EVERY,
-                CARD_PRICE[0], CARD_PRICE[1], CARD_PRICE[2], CARD_PRICE[3]));
+            SendAddon(online, Acore::StringFormat("S,{},{},{},{},{},{},{},{},{},{},{},{},{}", balance,
+                PackPrice(online, PACK_SKILL), PackPrice(online, PACK_TALENT), GOLDEN_PACK_PRICE, goldLeft,
+                GOLD_PACK_PRICE, duplicates, FREE_PACK_EVERY, GOLDEN_PACK_EVERY, CARD_PRICE[0], CARD_PRICE[1],
+                CARD_PRICE[2], CARD_PRICE[3]));
+            SendEyes(online);
         });
     }
 
@@ -405,46 +471,63 @@ namespace
         }
         if (collection.duplicates % GOLDEN_PACK_EVERY == 0)
         {
-            GiveItems(player, ITEM_GOLDEN_PACK, 1);
+            GiveItems(player, card.Kind == KIND_SKILL ? ITEM_GOLDEN_SKILL_PACK : ITEM_GOLDEN_TALENT_PACK, 1);
             Emberspark::Add(accountId, GOLDEN_PACK_BONUS, "card duplicates bonus");
-            handler.PSendSysMessage("|cffa335eeDarkmoon:|r {} duplicates: a Golden Pack and {} Emberspark!",
-                collection.duplicates, Emberspark::Format(GOLDEN_PACK_BONUS));
+            handler.PSendSysMessage("|cffa335eeDarkmoon:|r {} duplicates: a Golden {} Pack and {} Emberspark!",
+                collection.duplicates, card.Kind == KIND_SKILL ? "Skill" : "Talent",
+                Emberspark::Format(GOLDEN_PACK_BONUS));
         }
         SaveTallies(accountId, collection);
         return false;
     }
 
     // Opens a pack: its cards to the account, R,<pack>,<kind>.<id>.<spell>.<rarity>.<new 0|1>.<refund>;... to the
-    // window, which plays the reveal, then U,<kind>.<id>.<owned>.<golden>;... and the state.
-    bool OpenPack(Player* player, uint8 pack)
+    // window, which plays the reveal, then U,<kind>.<id>.<owned>.<golden>;... The Emberspark the duplicates paid back
+    // is added to refunds.
+    void OpenPack(Player* player, Collection& collection, uint8 pack, uint32& refunds)
     {
-        Collection* collection = Loaded(player);
-        if (!collection)
-            return false;
-
         std::vector<std::string> shown, updates;
-        uint32 refunds = 0;
         for (uint32 i = 0; i < CARDS_PER_PACK; ++i)
         {
-            uint8 kind = pack == PACK_GOLDEN ? (urand(0, 1) ? KIND_SKILL : KIND_TALENT) : pack == PACK_SKILL
-                ? KIND_SKILL : KIND_TALENT;
-            Card const* card = RollCard(player, *collection, kind, pack == PACK_GOLDEN);
+            Card const* card = RollCard(player, collection, PackKind(pack), IsGolden(pack));
             if (!card)
                 continue;
             uint32 refund = 0;
-            bool fresh = AddCard(player, *collection, *card, pack == PACK_GOLDEN, refund);
+            bool fresh = AddCard(player, collection, *card, IsGolden(pack), refund);
             refunds += refund;
             shown.push_back(Acore::StringFormat("{}.{}.{}.{}.{}.{}", card->Kind, card->Id, card->SpellId,
                 card->Rarity, fresh ? 1 : 0, refund));
             updates.push_back(Acore::StringFormat("{}.{}.{}.{}", card->Kind, card->Id,
-                Owned(*collection, card->Kind, card->Id), Owned(*collection, card->Kind + 2, card->Id)));
+                Owned(collection, card->Kind, card->Id), Owned(collection, card->Kind + 2, card->Id)));
         }
         SendBatched(player, Acore::StringFormat("R,{},", pack), shown);
         SendBatched(player, "U,", updates);
+    }
+
+    // Opens count of the packs in the bags (one: the reveal; more: M,<pack>,<count> ... ME around them, which the
+    // window shows as one list), then the state.
+    void OpenPacks(Player* player, uint8 pack, uint32 count)
+    {
+        Collection* collection = Loaded(player);
+        if (!collection)
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("Your card collection is still loading. Try again.");
+            return;
+        }
+        count = std::min({ count, player->GetItemCount(PACK_ITEMS[pack]), OPEN_AT_ONCE });
+        if (!count)
+            return;
+        player->DestroyItemCount(PACK_ITEMS[pack], count, true);
+        if (count > 1)
+            SendAddon(player, Acore::StringFormat("M,{},{}", pack, count));
+        uint32 refunds = 0;
+        for (uint32 i = 0; i < count; ++i)
+            OpenPack(player, *collection, pack, refunds);
+        if (count > 1)
+            SendAddon(player, "ME");
         if (refunds)
             Emberspark::Announce(player, refunds, "for duplicates");
         SendState(player);
-        return true;
     }
 
     bool BesideSilas(Player* player)
@@ -485,7 +568,7 @@ namespace
 
     void BuyPack(Player* player, uint8 pack, bool withGold)
     {
-        uint32 entry = pack == PACK_SKILL ? ITEM_SKILL_PACK : pack == PACK_TALENT ? ITEM_TALENT_PACK : ITEM_GOLDEN_PACK;
+        uint32 entry = PACK_ITEMS[pack];
         if (withGold)
         {
             Collection* collection = Loaded(player);
@@ -514,8 +597,43 @@ namespace
 
         uint32 setting = pack == PACK_SKILL ? SETTING_SKILL_PACKS : pack == PACK_TALENT ? SETTING_TALENT_PACKS
             : SETTING_SOURCE_NONE;
-        BuyWithEmberspark(player, setting, GOLDEN_PACK_PRICE, "card pack",
+        BuyWithEmberspark(player, setting, PackPrice(player, pack), "card pack",
             [entry](Player* online) { GiveItems(online, entry, 1); });
+    }
+
+    // The leveling Eyes owed up to the player's level, claimed all at once.
+    void ClaimEyes(Player* player)
+    {
+        uint8 claimed = EyesClaimed(player);
+        uint8 through = std::min<uint8>(player->GetLevel(), EYE_LAST_LEVEL);
+        uint32 eyes = 0;
+        for (uint8 level = claimed + 1; level <= through; ++level)
+            eyes += LevelEyes(level);
+        if (eyes)
+        {
+            player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_EYES, Setting(player, SETTING_EYES) + eyes);
+            player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_EYES_CLAIMED, through);
+            ChatHandler(player->GetSession()).PSendSysMessage("|cffa335eeDarkmoon:|r {} Eye{} of Unlearning claimed.",
+                eyes, eyes == 1 ? "" : "s");
+        }
+        SendEyes(player);
+    }
+
+    void BuyEyes(Player* player)
+    {
+        if (!CanBuyEyes(player))
+        {
+            ChatHandler(player->GetSession()).PSendSysMessage("Eyes of Unlearning are bought at level {}.",
+                EYE_LAST_LEVEL);
+            return;
+        }
+        BuyWithEmberspark(player, SETTING_EYE_PURCHASES, 0, "eyes of unlearning", [](Player* online)
+        {
+            online->UpdatePlayerSetting(SETTING_SOURCE, SETTING_EYES,
+                Setting(online, SETTING_EYES) + EYES_PER_PURCHASE);
+            online->UpdatePlayerSetting(SETTING_SOURCE, SETTING_EYES_BOUGHT,
+                Setting(online, SETTING_EYES_BOUGHT) + EYES_PER_PURCHASE);
+        });
     }
 
     void BuyCard(Player* player, uint8 kind, uint32 id)
@@ -548,7 +666,8 @@ namespace Cards
 {
     void ResetPrices(Player* player)
     {
-        for (uint32 setting : { SETTING_SKILL_PACKS, SETTING_TALENT_PACKS, SETTING_CARDS })
+        for (uint32 setting : { SETTING_SKILL_PACKS, SETTING_TALENT_PACKS, SETTING_CARDS, SETTING_EYES_CLAIMED,
+            SETTING_EYE_PURCHASES })
             player->UpdatePlayerSetting(SETTING_SOURCE, setting, 0);
     }
 }
@@ -567,9 +686,9 @@ public:
             player->SendEquipError(EQUIP_ERR_CANT_DO_RIGHT_NOW, item, nullptr);
             return true;
         }
-        uint32 one = 1;
-        player->DestroyItemCount(item, one, true);
-        OpenPack(player, _pack);
+        if (item->GetEntry() != PACK_ITEMS[_pack])
+            return true;
+        OpenPacks(player, _pack, 1);
         return true;
     }
 
@@ -598,6 +717,7 @@ class titan_cards : public PlayerScript
 public:
     titan_cards() : PlayerScript("titan_cards", {
         PLAYERHOOK_ON_LOGIN,
+        PLAYERHOOK_ON_LEVEL_CHANGED,
         PLAYERHOOK_ON_LOGOUT,
         PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT
     }) { }
@@ -607,6 +727,12 @@ public:
         Load(player);
     }
 
+    // The leveling Eyes owed change: the window shows them.
+    void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
+    {
+        SendEyes(player);
+    }
+
     void OnPlayerLogout(Player* player) override
     {
         collections.erase(player->GetSession()->GetAccountId());
@@ -614,7 +740,8 @@ public:
         busy.erase(player->GetGUID());
     }
 
-    // Requests from the window: LIST (the catalog), BUY,<pack>,<0 Emberspark|1 gold>, CARD,<kind>,<id>.
+    // Requests from the window: LIST (the catalog and the state), BUY,<pack>,<0 Emberspark|1 gold>, CARD,<kind>,<id>,
+    // OPEN,<pack>,<count> (packs in the bags), CLAIM (the leveling Eyes), EYES (buy Eyes of Unlearning).
     bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg,
         Player* receiver) override
     {
@@ -628,11 +755,23 @@ public:
         {
             if (Collection* collection = Loaded(player))
                 SendCatalog(player, *collection);
+            SendState(player);
+        }
+        else if (request == "CLAIM")
+            ClaimEyes(player);
+        else if (request == "EYES" && BesideSilas(player))
+            BuyEyes(player);
+        else if (parts.size() == 3 && parts[0] == "OPEN")
+        {
+            Optional<uint8> pack = Acore::StringTo<uint8>(parts[1]);
+            Optional<uint32> count = Acore::StringTo<uint32>(parts[2]);
+            if (pack && count && *pack < MAX_PACKS)
+                OpenPacks(player, *pack, *count);
         }
         else if (parts.size() == 3 && parts[0] == "BUY" && BesideSilas(player))
         {
             Optional<uint8> pack = Acore::StringTo<uint8>(parts[1]);
-            if (pack && *pack <= PACK_GOLDEN)
+            if (pack && *pack < MAX_PACKS)
                 BuyPack(player, *pack, parts[2] == "1");
         }
         else if (parts.size() == 3 && parts[0] == "CARD" && BesideSilas(player))
@@ -650,7 +789,8 @@ void AddSC_cards()
 {
     new item_titan_card_pack("item_titan_skill_pack", PACK_SKILL);
     new item_titan_card_pack("item_titan_talent_pack", PACK_TALENT);
-    new item_titan_card_pack("item_titan_golden_pack", PACK_GOLDEN);
+    new item_titan_card_pack("item_titan_golden_pack", PACK_GOLDEN_SKILL);
+    new item_titan_card_pack("item_titan_golden_talent_pack", PACK_GOLDEN_TALENT);
     new npc_titan_silas();
     new titan_cards();
 }

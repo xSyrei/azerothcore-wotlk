@@ -326,19 +326,32 @@ Epic, Legendary from their tree's ninth row; abilities from level 30 Rare; Talen
 6-8, 9 and up). A card opened is the **account's** forever, for every character on it
 (`titan_cards` in the auth database, `data/sql/db-auth/titan_cards.sql`; `src/cards.cpp`). Slotting cards into
 Specializations, loadouts the level-up rolls follow, comes next.
-- **Packs** (items: Skill Card Pack 910010, Talent Card Pack 910011, Golden Card Pack 910012) hold 5 cards: a rarity
-  rolled for each (Common 70%, Rare 24%, Epic 5%, Legendary 1%), then a card of it, 3 times in 4 one suiting the Hero's
-  role. Golden Packs hold Golden Cards only, one the account has no Golden copy of when it can.
+- **Packs** (items: Skill Card Pack 910010, Talent Card Pack 910011, Golden Skill Card Pack 910012, Golden Talent
+  Card Pack 910013) hold 5 cards of their kind: a rarity rolled for each (Common 70%, Rare 24%, Epic 5%, Legendary 1%),
+  then a card of it, 3 times in 4 one suiting the Hero's role. Golden Packs hold Golden Cards only, one the account has
+  no Golden copy of when it can.
 - **Duplicates** (a card owned, every rank of a talent) pay Emberspark back: 40, 120, 400 or 1,200 by rarity, 2,000 for
-  a Golden Card. Every 10th duplicate of the account gives a free pack of the same kind, every 50th a Golden Pack and
-  2,000 Emberspark (`titan_card_tallies`).
+  a Golden Card. Every 10th duplicate of the account gives a free pack of the same kind, every 50th a Golden Pack of it
+  and 2,000 Emberspark (`titan_card_tallies`).
+- **Eyes of Unlearning** are the character's (its settings, `mod-titan-darkmoon`): one for every level from 8 to 60, four
+  at the milestones (8, 10, 20, 30, 40, 50, 60), 74 in all, claimed in the window; past that two at a time for
+  Emberspark, at level 60 only, on the climbing price (100, 125 ...). A prestige lets the levels be claimed again and
+  starts the price over. Spending them (rerolling an ability, a talent or a card just opened) comes with the
+  Specializations.
 - **Silas Darkmoon** (creature 910110, "Cards & Specializations", beside the Keeper of the Ember;
-  `data/sql/db-world/titan_darkmoon.sql`) opens the **Darkmoon shop** (the `Emberforge_Darkmoon` addon, prefix `EFDM`):
-  Skill and Talent Packs for Emberspark, at prices that climb with each purchase (100, 125, 150 ... 2,000, then 250
-  more each) and start over at a prestige; Skill Packs for 75 gold too (5 a week an account); Golden Packs for 10,000;
-  any card but a Golden one at a fixed price: Common 500, Rare 5,000, Epic 12,000, Legendary 30,000. The Cards tab browses every
-  card (by kind, rarity, not owned, a search) with what the account owns. Opening a pack from the bags plays its
-  reveal, the five cards turning over one by one.
+  `data/sql/db-world/titan_darkmoon.sql`) opens the **Darkmoon window** (the `Emberforge_Darkmoon` addon, prefix `EFDM`;
+  `/darkmoon` opens it anywhere to look):
+  - **Specializations**, the first page: the loadouts (Specialization I, the others to come), the Eyes' leveling track
+    and the Eyes for sale.
+  - **Packs**: the duplicate tallies; the packs in the bags, opened here (the pack rips open and its five cards turn
+    over; "Open all" opens up to 50 at once and lists the new cards) or from the bags; Skill and Talent Packs for
+    Emberspark, at prices that climb with each purchase (1,000, 1,250, 1,500 ... 20,000, then 2,500 more each) and
+    start over at a prestige; Skill Packs for 75 gold too (5 a week an account); Golden Packs for 20,000.
+  - **Cards**: every card (by kind, rarity, not owned, Golden, a search) with what the account owns, any one but a
+    Golden one bought at a fixed price: Common 500, Rare 5,000, Epic 12,000, Legendary 30,000.
+
+  Its art (card frames and backs, packs, the border and background: `client-patch/darkmoon_art/`) is in the addon,
+  `Art/`, made by `client-patch/build_darkmoon_art.py`.
 
 ## Emberspark
 Project Emberforge's server currency, one balance per **account** (`titan_emberspark` in the auth database,

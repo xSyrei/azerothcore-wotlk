@@ -1,5 +1,6 @@
--- Silas Darkmoon (src/cards.cpp): his Darkmoon shop (npc_titan_silas, the Emberforge_Darkmoon addon) sells Skill and
--- Talent Packs and any card for Emberspark, Skill Packs for gold, and Golden Packs. His own look (display 14855),
+-- Silas Darkmoon (src/cards.cpp): his Darkmoon window (npc_titan_silas, the Emberforge_Darkmoon addon) sells Skill and
+-- Talent Packs, Golden Skill and Golden Talent Packs, any card and Eyes of Unlearning for Emberspark, and Skill Packs
+-- for gold. His own look (display 14855),
 -- beside the Keeper of the Ember in Stormwind's Trade District and Orgrimmar's Valley of Strength.
 -- The packs: opened from the bags (item_titan_*_pack), the cards are the account's. Spell 3361 only makes them usable
 -- in the 3.3.5 client; the scripts handle the use.
@@ -8,6 +9,7 @@ SET @GUID := 9101010;
 SET @SKILL_PACK := 910010;
 SET @TALENT_PACK := 910011;
 SET @GOLDEN_PACK := 910012;
+SET @GOLDEN_TALENT_PACK := 910013;
 SET @CARRIER_SPELL := 3361;
 
 DELETE FROM `creature_template` WHERE `entry` = @NPC;
@@ -34,7 +36,7 @@ INSERT INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `position
 (@GUID, @NPC, 0, 1, 1, -8826.5, 640.5, 94.45, 3.9, 300, 'Silas Darkmoon (cards), Stormwind'),
 (@GUID + 1, @NPC, 1, 1, 1, 1631.0, -4411.5, 16.4, 0.44, 300, 'Silas Darkmoon (cards), Orgrimmar');
 
-DELETE FROM `item_template` WHERE `entry` IN (@SKILL_PACK, @TALENT_PACK, @GOLDEN_PACK);
+DELETE FROM `item_template` WHERE `entry` IN (@SKILL_PACK, @TALENT_PACK, @GOLDEN_PACK, @GOLDEN_TALENT_PACK);
 INSERT INTO `item_template` (`entry`, `class`, `subclass`, `SoundOverrideSubclass`, `name`, `displayid`, `Quality`,
     `Flags`, `BuyPrice`, `SellPrice`, `ItemLevel`, `RequiredLevel`, `stackable`, `bonding`, `spellid_1`,
     `spelltrigger_1`, `spellcharges_1`, `description`, `ScriptName`) VALUES
@@ -42,5 +44,7 @@ INSERT INTO `item_template` (`entry`, `class`, `subclass`, `SoundOverrideSubclas
     'Five Skill Cards, for your account''s collection.', 'item_titan_skill_pack'),
 (@TALENT_PACK, 15, 0, -1, 'Talent Card Pack', 44704, 3, 0, 0, 0, 1, 1, 200, 1, @CARRIER_SPELL, 0, 0,
     'Five Talent Cards, for your account''s collection.', 'item_titan_talent_pack'),
-(@GOLDEN_PACK, 15, 0, -1, 'Golden Card Pack', 56181, 5, 0, 0, 0, 1, 1, 200, 1, @CARRIER_SPELL, 0, 0,
-    'Five Golden Cards: one more of a card, past your slots.', 'item_titan_golden_pack');
+(@GOLDEN_PACK, 15, 0, -1, 'Golden Skill Card Pack', 56181, 5, 0, 0, 0, 1, 1, 200, 1, @CARRIER_SPELL, 0, 0,
+    'Five Golden Skill Cards: one more of a card, past your slots.', 'item_titan_golden_pack'),
+(@GOLDEN_TALENT_PACK, 15, 0, -1, 'Golden Talent Card Pack', 56264, 5, 0, 0, 0, 1, 1, 200, 1, @CARRIER_SPELL, 0, 0,
+    'Five Golden Talent Cards: one more of a card, past your slots.', 'item_titan_golden_talent_pack');
