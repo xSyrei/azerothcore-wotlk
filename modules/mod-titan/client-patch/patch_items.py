@@ -19,6 +19,9 @@ ITEMS = [
     (910003, 0, 8, -1, 1, 1103, 0, 0),     # Titan Tome of Randomization (book, like Blizzard's tomes)
     (910004, 0, 8, -1, 1, 1103, 0, 0),     # Titan Tome of Selection
     (910005, 15, 0, -1, 1, 12644, 0, 0),   # Smoldering Adventurer's Cache (a box, INV_Box_02)
+    (910010, 15, 0, -1, 1, 31755, 0, 0),   # Skill Card Pack (a tarot stack)
+    (910011, 15, 0, -1, 1, 44704, 0, 0),   # Talent Card Pack (the Furies card)
+    (910012, 15, 0, -1, 1, 56181, 0, 0),   # Golden Card Pack (the Greatness card)
 ]
 
 # Custom displays: (id, model file, model texture, inventory icon, item group sound, helmet geoset visibility)

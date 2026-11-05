@@ -1,0 +1,6 @@
+## Interface: 30300
+## Title: Emberforge Darkmoon
+## Notes: Silas Darkmoon's shop: card packs, any Skill or Talent Card, your account's collection, and the reveal when you open a pack.
+## Author: Project Emberforge
+## OptionalDeps: Emberforge_Classless
+Emberforge_Darkmoon.lua

@@ -319,6 +319,26 @@ its skin is baked by `client-patch/bake_npc.py` (the dwarf's skin, face, beard a
 (`HUMANOIDS`, with `creaturedisplayinfoextra_dbc` for the server); the hat is retail's dwarf male model
 (`models/gilneashat`, made static by `models/gltf_to_wowexport.py --pivot`), item display 90002 (`patch_items.py`).
 
+## Cards and Silas Darkmoon
+Every Wildcard ability is a **Skill Card** and every talent a **Talent Card** (one copy a rank), each Common, Rare,
+Epic or Legendary (Skill Cards: capstones Legendary, talent abilities Epic, abilities from level 30 Rare; Talent Cards
+by their tree row: 0-2, 3-5, 6-8, 9 and up). A card opened is the **account's** forever, for every character on it
+(`titan_cards` in the auth database, `data/sql/db-auth/titan_cards.sql`; `src/cards.cpp`). Slotting cards into
+Specializations, loadouts the level-up rolls follow, comes next.
+- **Packs** (items: Skill Card Pack 910010, Talent Card Pack 910011, Golden Card Pack 910012) hold 3 cards: a rarity
+  rolled for each (Common 70%, Rare 24%, Epic 5%, Legendary 1%), then a card of it, 3 times in 4 one suiting the Hero's
+  role. Golden Packs hold Golden Cards only, one the account has no Golden copy of when it can.
+- **Duplicates** (a card owned, every rank of a talent) pay Emberspark back: 40, 120, 400 or 1,200 by rarity, 2,000 for
+  a Golden Card. Every 10th duplicate of the account gives a free pack of the same kind, every 50th a Golden Pack and
+  2,000 Emberspark (`titan_card_tallies`).
+- **Silas Darkmoon** (creature 910110, "Cards & Specializations", beside the Keeper of the Ember;
+  `data/sql/db-world/titan_darkmoon.sql`) opens the **Darkmoon shop** (the `Emberforge_Darkmoon` addon, prefix `EFDM`):
+  Skill and Talent Packs and any card but a Golden one for Emberspark, Skill Packs for 75 gold too (5 a week an
+  account), Golden Packs for 10,000. Pack and card prices climb with each purchase (100, 125, 150 ... 2,000, then 250
+  more each; a card costs that times 1, 2, 4 or 8 by rarity) and start over at a prestige. The Cards tab browses every
+  card (by kind, rarity, not owned, a search) with what the account owns. Opening a pack from the bags plays its
+  reveal, the three cards turning over one by one.
+
 ## Emberspark
 Project Emberforge's server currency, one balance per **account** (`titan_emberspark` in the auth database,
 `data/sql/db-auth/titan_emberspark.sql`; `src/emberspark.cpp`), so the shop can sell and spend it too. Every change is

@@ -41,6 +41,26 @@ namespace Emberspark
         LoginDatabase.CommitTransaction(trans);
     }
 
+    void Spend(Player* player, uint32 amount, char const* reason, std::function<void(Player*, bool)> callback)
+    {
+        uint32 accountId = player->GetSession()->GetAccountId();
+        Query(player, [accountId, amount, reason, callback = std::move(callback)](Player* online, uint32 balance)
+        {
+            if (balance < amount)
+            {
+                callback(online, false);
+                return;
+            }
+            LoginDatabaseTransaction trans = LoginDatabase.BeginTransaction();
+            trans->Append(Acore::StringFormat("UPDATE `titan_emberspark` SET `balance` = `balance` - {} "
+                "WHERE `account_id` = {} AND `balance` >= {}", amount, accountId, amount));
+            trans->Append(Acore::StringFormat("INSERT INTO `titan_emberspark_log` (`account_id`, `amount`, `reason`) "
+                "VALUES ({}, -{}, '{}')", accountId, amount, reason));
+            LoginDatabase.CommitTransaction(trans);
+            callback(online, true);
+        });
+    }
+
     void Query(Player* player, std::function<void(Player*, uint32)> callback)
     {
         ObjectGuid guid = player->GetGUID();

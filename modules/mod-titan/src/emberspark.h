@@ -29,6 +29,10 @@ namespace Emberspark
 {
     // Adds amount to the account's balance and logs why (reason: a short constant, such as "prestige").
     void Add(uint32 accountId, uint32 amount, char const* reason);
+    // Takes amount from the player's account if it has that much, logging why, then calls back with the player (if
+    // still online) and whether it was taken. The deduction is guarded in the statement itself (balance >= amount),
+    // so the balance can never go below zero, even with the shop spending at the same moment.
+    void Spend(Player* player, uint32 amount, char const* reason, std::function<void(Player*, bool)> callback);
     // Reads the player's account balance without blocking, then calls back with the player, if still online.
     void Query(Player* player, std::function<void(Player*, uint32)> callback);
     // "Emberspark: +500 for your prestige." in the player's chat.

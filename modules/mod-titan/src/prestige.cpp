@@ -16,6 +16,7 @@
  */
 
 #include "prestige.h"
+#include "cards.h"
 #include "emberspark.h"
 #include "wildcard.h"
 #include "Chat.h"
@@ -251,6 +252,7 @@ namespace
         ForgetQuests(player);
         // A new Hero again: the next level change (this one) rolls a new kit, the tomes come back.
         Wildcard::Reset(player);
+        Cards::ResetPrices(player);
         player->GiveLevel(1);
         player->InitTalentForLevel();
         player->SetUInt32Value(PLAYER_XP, 0);
