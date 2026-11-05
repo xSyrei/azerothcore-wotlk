@@ -10,6 +10,7 @@
 *.tga    binary
 *.exe    binary
 *.jpg    binary
+*.webp   binary
 *.m2     binary
 *.skin   binary
 *.wav    binary
