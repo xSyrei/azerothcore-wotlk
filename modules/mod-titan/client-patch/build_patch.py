@@ -49,6 +49,9 @@ import wowexport_to_m2  # noqa: E402
 # (wow.export folder, exported model name, Emberforge model name, client folder)
 MODELS = [
     ('models/veridus/source', 'sword_1h_artifactskywall_d_06', 'Sword_1H_Veridus', 'Item\\ObjectComponents\\Weapon'),
+    # The Keeper of the Ember's top hat (gltf_to_wowexport.py made its OBJ from wow.export's glTF)
+    ('models/gilneashat/source', 'helm_cloth_gilneashat_a_01_dwm', 'Helm_Cloth_EFTopHat_DwM',
+     'Item\\ObjectComponents\\Head'),
 ]
 # (wow.export glTF folder, Emberforge model name, client folder, options): the Demon Hunter's demon forms, and
 # their Blade Dance variants (the dance in every stance and movement animation; the base form's textures)
@@ -75,7 +78,7 @@ CHARACTERS = [
 DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
         'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc',
         'SoundEntries.dbc', 'CreatureModelData.dbc', 'CreatureDisplayInfo.dbc',
-        'AnimationData.dbc', 'Talent.dbc', 'TalentTab.dbc', 'SpellChainEffects.dbc']
+        'AnimationData.dbc', 'Talent.dbc', 'TalentTab.dbc', 'SpellChainEffects.dbc', 'CreatureDisplayInfoExtra.dbc']
 
 
 def main():
@@ -130,6 +133,11 @@ def main():
                 if data[:4] != b'RIFF' or int.from_bytes(data[4:8], 'little') + 8 != len(data):
                     raise ValueError(f'sounds/{name}.wav: size does not match its RIFF header (damaged?)')
                 entries.append((f'{patch_spells.SOUNDS_DIR}\\{name}.wav', data))
+
+        # Our NPCs' baked skins (bake_npc.py)
+        for png in sorted((HERE / 'textures' / 'BakedNpcTextures').glob('*.png')):
+            with Image.open(png) as image:
+                entries.append((f'Textures\\BakedNpcTextures\\{png.stem}.blp', blp.encode(image.convert('RGBA'))))
 
         for png in sorted((HERE / 'icons').glob('INV_*.png')) + sorted((HERE / 'icons' / 'spells').glob('*.png')):
             with Image.open(png) as image:

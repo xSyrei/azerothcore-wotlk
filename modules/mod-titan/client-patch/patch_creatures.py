@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Add Emberforge's custom creature models to CreatureModelData.dbc and CreatureDisplayInfo.dbc (WoW 3.3.5a).
+"""Add Emberforge's custom creature models to CreatureModelData.dbc and CreatureDisplayInfo.dbc (WoW 3.3.5a), and our
+dressed humanoids (HUMANOIDS: a race's own model, a CreatureDisplayInfoExtra row with its look, worn items and baked
+skin, bake_npc.py's) to CreatureDisplayInfo.dbc and CreatureDisplayInfoExtra.dbc.
 
 A creature display (what a creature, or a player under a transform, looks like) names a CreatureModelData
 row, which names the model file. Each new row copies a Blizzard row (sounds, blood, footprints) and changes
@@ -13,6 +15,7 @@ import struct
 import sys
 from pathlib import Path
 
+import bake_npc
 from patch_items import Dbc
 
 MODEL_FIELDS = 28
@@ -38,6 +41,14 @@ CREATURES = [
 OTHER_GENDER = {90201: 90202, 90202: 90201, 90203: 90204, 90204: 90203, 90205: 0}
 BOUNDING_RADIUS = 0.6
 COMBAT_REACH = 2.0
+EXTRA_FIELDS = 21
+
+# (display id, a Blizzard display of the race and sex to copy (its model and sounds), bake_npc.NPCS's name, bounding
+# radius, combat reach): the extra row takes the display's id.
+HUMANOIDS = [
+    # The Keeper of the Ember (prestige.cpp): a dwarf male (display 825's model, 53), in a tuxedo and top hat
+    (90206, 825, 'EF-Keeper', 0.347, 1.5),
+]
 
 
 def as_float(value):
@@ -64,9 +75,20 @@ def patch(source, out):
         row[4] = as_bits(scale)                             # CreatureModelScale
         row[6:9] = [0, 0, 0]                                # no texture variations: the model names its textures
         displays.rows[display_id] = tuple(row)
+    extras = Dbc(source / 'CreatureDisplayInfoExtra.dbc', EXTRA_FIELDS)
+    for display_id, template_display, name, _, _ in HUMANOIDS:
+        npc = bake_npc.NPCS[name]
+        row = list(displays.rows[template_display])
+        row[0], row[3] = display_id, display_id         # ID, ExtendedDisplayInfoID
+        row[6:9] = [0, 0, 0]
+        displays.rows[display_id] = tuple(row)
+        items = [npc['items'].get(slot, 0) for slot in range(11)]
+        extras.rows[display_id] = (display_id, npc['race'], npc['sex'], npc['skin'], npc['face'], npc['hair_style'],
+                                   npc['hair_color'], npc['facial'], *items, 0, extras.add_string(f'{name}.blp'))
     out.mkdir(parents=True, exist_ok=True)
     models.save(out / 'CreatureModelData.dbc')
     displays.save(out / 'CreatureDisplayInfo.dbc')
+    extras.save(out / 'CreatureDisplayInfoExtra.dbc')
     return models, displays
 
 
@@ -78,9 +100,9 @@ def write_sql(models, displays, path):
     model_floats = {4, 7, 8, 9, 14, 15, 16} | set(range(17, 28))
     display_floats = {4}
     model_ids = ', '.join(str(c[1]) for c in CREATURES)
-    display_ids = ', '.join(str(c[0]) for c in CREATURES)
-    lines = ['-- Emberforge creature displays (the Demon Hunter\'s demon forms, Chi-Ji): written by',
-             '-- client-patch/patch_creatures.py --sql, which puts the same rows in the client patch.',
+    display_ids = ', '.join(str(c[0]) for c in CREATURES + HUMANOIDS)
+    lines = ['-- Emberforge creature displays (the Demon Hunter\'s demon forms, Chi-Ji, the Keeper of the Ember):',
+             '-- written by client-patch/patch_creatures.py --sql, which puts the same rows in the client patch.',
              f'DELETE FROM `creaturemodeldata_dbc` WHERE `ID` IN ({model_ids});',
              'INSERT INTO `creaturemodeldata_dbc` VALUES']
     rows = []
@@ -93,16 +115,28 @@ def write_sql(models, displays, path):
     lines += ['', f'DELETE FROM `creaturedisplayinfo_dbc` WHERE `ID` IN ({display_ids});',
               'INSERT INTO `creaturedisplayinfo_dbc` VALUES']
     rows = []
-    for c in CREATURES:
+    for c in CREATURES + HUMANOIDS:
         row = displays.rows[c[0]]
         values = ["''" if i in (6, 7, 8, 9) else sql_value(v, i in display_floats) for i, v in enumerate(row)]
         rows.append('(' + ','.join(values) + ')')
     lines.append(',\n'.join(rows) + ';')
+    humanoid_ids = ', '.join(str(h[0]) for h in HUMANOIDS)
+    lines += ['', f'DELETE FROM `creaturedisplayinfoextra_dbc` WHERE `ID` IN ({humanoid_ids});',
+              'INSERT INTO `creaturedisplayinfoextra_dbc` VALUES']
+    rows = []
+    for display_id, _, name, _, _ in HUMANOIDS:
+        npc = bake_npc.NPCS[name]
+        items = [npc['items'].get(slot, 0) for slot in range(11)]
+        values = [display_id, npc['race'], npc['sex'], npc['skin'], npc['face'], npc['hair_style'], npc['hair_color'],
+                  npc['facial'], *items, 0]
+        rows.append('(' + ','.join(str(v) for v in values) + f",'{name}.blp')")
+    lines.append(',\n'.join(rows) + ';')
     lines += ['', f'DELETE FROM `creature_model_info` WHERE `DisplayID` IN ({display_ids});',
               'INSERT INTO `creature_model_info` (`DisplayID`, `BoundingRadius`, `CombatReach`, `Gender`, '
               '`DisplayID_Other_Gender`) VALUES']
-    lines.append(',\n'.join(f'({c[0]},{BOUNDING_RADIUS},{COMBAT_REACH},{c[6]},{OTHER_GENDER[c[0]]})'
-                            for c in CREATURES) + ';')
+    lines.append(',\n'.join([f'({c[0]},{BOUNDING_RADIUS},{COMBAT_REACH},{c[6]},{OTHER_GENDER[c[0]]})'
+                              for c in CREATURES] + [f'({h[0]},{h[3]},{h[4]},{bake_npc.NPCS[h[2]]["sex"]},0)'
+                                                     for h in HUMANOIDS]) + ';')
     Path(path).write_text('\n'.join(lines) + '\n')
 
 
@@ -116,7 +150,8 @@ def main():
         sys.exit(__doc__)
     source, out = Path(args[0]), Path(args[1])
     models, displays = patch(source, out)
-    print(f'Wrote {out / "CreatureModelData.dbc"} and {out / "CreatureDisplayInfo.dbc"} ({len(CREATURES)} displays)')
+    print(f'Wrote {out / "CreatureModelData.dbc"}, {out / "CreatureDisplayInfo.dbc"} and '
+          f'{out / "CreatureDisplayInfoExtra.dbc"} ({len(CREATURES)} model displays, {len(HUMANOIDS)} humanoids)')
     if sql:
         write_sql(models, displays, sql)
         print(f'Wrote {sql}')

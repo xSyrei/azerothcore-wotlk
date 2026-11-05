@@ -310,8 +310,13 @@ a dungeon, battleground or queue.
 - **Role locked** during a run: the Classless window keeps the role chosen (a Hero with none still picks one).
 
 It is all kept in the character's settings (`mod-titan-prestige`: rank, run, its start, the fastest run, the stashed
-gear by slot). Still to come: the Keeper's new look (a dwarf in a tuxedo and top hat), the rank on the name or tooltip,
-Runic Enhancements carried over.
+gear by slot). Still to come: the rank on the name or tooltip, Runic Enhancements carried over.
+
+The Keeper is a grey-bearded dwarf in the Black Tuxedo, its pants, Dress Shoes and a Gilneas top hat (display 90206):
+its skin is baked by `client-patch/bake_npc.py` (the dwarf's skin, face, beard and the clothes' textures, from the
+3.3.5a client) into `textures/BakedNpcTextures/EF-Keeper.png`; the display rows are `patch_creatures.py`'s
+(`HUMANOIDS`, with `creaturedisplayinfoextra_dbc` for the server); the hat is retail's dwarf male model
+(`models/gilneashat`, made static by `models/gltf_to_wowexport.py --pivot`), item display 90002 (`patch_items.py`).
 
 ## Emberspark
 Project Emberforge's server currency, one balance per **account** (`titan_emberspark` in the auth database,

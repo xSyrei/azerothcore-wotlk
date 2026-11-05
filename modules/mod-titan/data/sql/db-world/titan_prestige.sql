@@ -1,7 +1,7 @@
 -- Prestige (src/prestige.cpp): the Keeper of the Ember, who forges level 60 Heroes anew at level 1. Talking to it
--- opens the Prestige window (npc_titan_prestige, the Emberforge_Prestige addon). A dark iron dwarf of the Thorium
--- Brotherhood's look (display 14666, Lokhtos Darkbargainer's), in Stormwind's Trade District and Orgrimmar's
--- Valley of Strength.
+-- opens the Prestige window (npc_titan_prestige, the Emberforge_Prestige addon). A grey-bearded dwarf in a black
+-- tuxedo and top hat (display 90206: client-patch/patch_creatures.py and bake_npc.py), in Stormwind's Trade
+-- District and Orgrimmar's Valley of Strength.
 SET @NPC := 910100;
 SET @GUID := 9101000;
 
@@ -21,7 +21,7 @@ INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entr
 DELETE FROM `creature_template_model` WHERE `CreatureID` = @NPC;
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES
-(@NPC, 0, 14666, 1, 1, 0);
+(@NPC, 0, 90206, 1, 1, 0);
 
 -- Its menu texts from before the window: gone.
 DELETE FROM `npc_text` WHERE `ID` IN (910100, 910101, 910102);

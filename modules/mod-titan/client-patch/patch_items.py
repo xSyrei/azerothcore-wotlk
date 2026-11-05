@@ -21,10 +21,14 @@ ITEMS = [
     (910005, 15, 0, -1, 1, 12644, 0, 0),   # Smoldering Adventurer's Cache (a box, INV_Box_02)
 ]
 
-# Custom displays: (id, model file, model texture, inventory icon, item group sound)
-# The model lives in Item\ObjectComponents\Weapon\ (weapons), the icon in Interface\Icons\.
+# Custom displays: (id, model file, model texture, inventory icon, item group sound, helmet geoset visibility)
+# The model lives in Item\ObjectComponents\Weapon\ (weapons) or Head\ (helms: the client adds the race's suffix,
+# _DwM...), the icon in Interface\Icons\.
 DISPLAYS = [
-    (90001, 'Sword_1H_Veridus.mdx', 'Sword_1H_Veridus', 'INV_Sword_1H_Veridus', 8),
+    (90001, 'Sword_1H_Veridus.mdx', 'Sword_1H_Veridus', 'INV_Sword_1H_Veridus', 8, 0),
+    # The Keeper of the Ember's top hat (a dwarf male's only: Helm_Cloth_EFTopHat_DwM). Visibility 249, a cloth hat's:
+    # the hair goes, the beard stays.
+    (90002, 'Helm_Cloth_EFTopHat.mdx', 'Helm_Cloth_EFTopHat_DwM', 'INV_Helmet_33', 0, 249),
 ]
 
 ITEM_FIELDS = 8
@@ -76,13 +80,14 @@ def main():
     print(f'Wrote {out / "Item.dbc"} ({len(ITEMS)} custom items)')
 
     displays = Dbc(source / 'ItemDisplayInfo.dbc', DISPLAY_FIELDS)
-    for display_id, model, texture, icon, group_sound in DISPLAYS:
+    for display_id, model, texture, icon, group_sound, helmet_vis in DISPLAYS:
         row = [0] * DISPLAY_FIELDS
         row[0] = display_id
         row[1] = displays.add_string(model)         # ModelName[0]
         row[3] = displays.add_string(texture)       # ModelTexture[0]
         row[5] = displays.add_string(icon)          # InventoryIcon[0]
         row[12] = group_sound                       # GroupSoundIndex
+        row[13] = row[14] = helmet_vis              # HelmetGeosetVisID (male, female)
         displays.rows[display_id] = tuple(row)
     displays.save(out / 'ItemDisplayInfo.dbc')
     print(f'Wrote {out / "ItemDisplayInfo.dbc"} ({len(DISPLAYS)} custom displays)')
