@@ -4,8 +4,8 @@ layout wowexport_to_m2.py reads, so it converts the same way.
 
 The glTF's positions are model space (Y up, as wow.export's OBJ). With --pivot they are moved by its skeleton's
 root bone pivot, so the model's origin is the point it hangs from: a helm then sits on the head, not a pivot's
-height above it, as the 3.3.5a client draws it (a doodad's pivot is anywhere: none). Its V runs down, the OBJ's up. Every primitive is a submesh with one opaque, lit
-texture unit.
+height above it, as the 3.3.5a client draws it (a doodad's pivot is anywhere: none). Its V runs down, the OBJ's up.
+Every primitive is a submesh with one opaque, lit texture unit.
 
 Usage: python3 gltf_to_wowexport.py <model.gltf> <out dir> <base name> [--pivot]
 """
