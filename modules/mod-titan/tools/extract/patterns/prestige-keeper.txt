@@ -1,0 +1,9 @@
+# The Keeper of the Ember's new look, from the 3.3.5a client (EmberforgeExtract.exe <Data> <this file>): the textures of
+# the Black Tuxedo (6834), Black Tuxedo Pants (6835) and Dress Shoes (6836), to bake onto a bearded dwarf.
+Item\TextureComponents\ArmUpperTexture\Cloth_B_08Black_Sleeve_AU*
+Item\TextureComponents\ArmLowerTexture\Cloth_B_08Black_Sleeve_AL*
+Item\TextureComponents\TorsoUpperTexture\Cloth_B_08Black_Chest_TU*
+Item\TextureComponents\TorsoLowerTexture\Cloth_B_08Black_Chest_TL*
+Item\TextureComponents\LegUpperTexture\Cloth_B_08Black_Pant_LU*
+Item\TextureComponents\LegLowerTexture\Cloth_B_08Black_Pant_LL*
+Item\TextureComponents\FootTexture\Cloth_B_08Black_Boot_FO*

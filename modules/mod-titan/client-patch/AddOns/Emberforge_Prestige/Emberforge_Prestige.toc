@@ -1,0 +1,6 @@
+## Interface: 30300
+## Title: Emberforge Prestige
+## Notes: The Prestige window, opened by the Keeper of the Ember: your prestige, what a prestige takes, keeps and gives, and the prestige itself.
+## Author: Project Emberforge
+## OptionalDeps: Emberforge_Classless
+Emberforge_Prestige.lua

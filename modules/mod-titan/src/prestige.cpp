@@ -26,14 +26,18 @@
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "ScriptMgr.h"
+#include "Creature.h"
 #include "ScriptedGossip.h"
 #include "StringFormat.h"
 #include "World.h"
+#include "WorldPacket.h"
 #include "WorldSession.h"
+#include <string_view>
+#include <unordered_map>
 #include <vector>
 
-// Prestige: at the level cap a Hero talks to the Prestige NPC (npc_titan_prestige, data/sql/db-world/
-// titan_prestige.sql) and starts again from level 1:
+// Prestige: at the level cap a Hero talks to the Keeper of the Ember (npc_titan_prestige, data/sql/db-world/
+// titan_prestige.sql), whose Prestige window (the Emberforge_Prestige addon) starts them again from level 1:
 // - lost: the level, every Wildcard ability and talent (a new random kit and both tomes, as a new Hero), every quest
 //   (in the log or done: all can be done, and rewarded, again);
 // - kept: gear, gold, Emberspark, professions, mounts, reputation, achievements and the role. Gear above level 1 goes
@@ -58,19 +62,11 @@ namespace
     constexpr uint32 SOULS_ON_PRESTIGE = 2;
     constexpr uint32 NPC_PRESTIGE = 910100;
 
-    enum PrestigeTexts : uint32
-    {
-        TEXT_READY = 910100,        // npc_text: at the cap
-        TEXT_NOT_YET = 910101,      // below it
-        TEXT_DETAILS = 910102,      // what is lost, kept and given
-    };
+    constexpr char const* PREFIX = "EFPR";     // addon whispers with Emberforge_Prestige (the window)
+    constexpr float NPC_RANGE = 15.0f;          // a prestige asked from the window: this close to the Keeper
 
-    enum PrestigeActions : uint32
-    {
-        ACTION_MENU = 1,
-        ACTION_PRESTIGE,
-        ACTION_DETAILS,
-    };
+    // The Keeper each player last opened the window at, to check they are still beside it when they prestige.
+    std::unordered_map<ObjectGuid, ObjectGuid> openedAt;
 
     uint32 Get(Player* player, uint32 index)
     {
@@ -282,36 +278,47 @@ namespace
             "|cffff8000[Prestige]|r {} has completed Prestige {} in {}!", player->GetName(), rank, Duration(took)));
     }
 
-    void ShowMenu(Player* player, ObjectGuid npc)
+    void SendAddon(Player* player, std::string const& payload)
     {
-        Emberspark::Query(player, [npc](Player* online, uint32 balance)
+        WorldPacket data;
+        std::string const message = std::string(PREFIX) + '\t' + payload;
+        ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, LANG_ADDON, player, player, message);
+        player->SendDirectMessage(&data);
+    }
+
+    // The window's state, then "O" to open it (see Emberforge_Prestige.lua for the fields).
+    void OpenWindow(Player* player)
+    {
+        Emberspark::Query(player, [](Player* online, uint32 balance)
         {
-            uint32 rank = Get(online, SETTING_RANK), next = rank + 1;
-            bool ready = Wildcard::IsHero(online) && online->GetLevel() >= MaxLevel();
-            ClearGossipMenuFor(online);
-            if (ready)
-                AddGossipItemFor(online, GOSSIP_ICON_BATTLE, Acore::StringFormat("Forge me anew: Prestige {}.", next),
-                    GOSSIP_SENDER_MAIN, ACTION_PRESTIGE, Acore::StringFormat("Return to level 1 as Prestige {}?\n\n"
-                    "Your Wildcard abilities and talents are rerolled, and every quest can be done again. Your gear "
-                    "waits in your bags until you reach its level. Your role is locked until level {}.\n\nYou get "
-                    "{} Emberspark, {} Titan Souls of Rested Experience and Prestigious (+{}% experience).", next,
-                    MaxLevel(), SPARK_ON_PRESTIGE, SOULS_ON_PRESTIGE, XP_BONUS_PCT), 0, false);
-            AddGossipItemFor(online, GOSSIP_ICON_CHAT, "What do I lose, keep and get?", GOSSIP_SENDER_MAIN,
-                ACTION_DETAILS);
-            AddGossipItemFor(online, GOSSIP_ICON_MONEY_BAG, Acore::StringFormat("Emberspark: {}",
-                Emberspark::Format(balance)), GOSSIP_SENDER_MAIN, ACTION_MENU);
-            if (rank)
-            {
-                std::string line = Acore::StringFormat("Prestige {}", rank);
-                if (OnRun(online))
-                    line += Acore::StringFormat(", this run: {}", Duration(uint32(GameTime::GetGameTime().count())
-                        - Get(online, SETTING_RUN_STARTED)));
-                if (uint32 fastest = Get(online, SETTING_FASTEST))
-                    line += Acore::StringFormat(", fastest: {}", Duration(fastest));
-                AddGossipItemFor(online, GOSSIP_ICON_TABARD, line, GOSSIP_SENDER_MAIN, ACTION_MENU);
-            }
-            SendGossipMenuFor(online, ready ? TEXT_READY : TEXT_NOT_YET, npc);
+            std::string why = CannotPrestige(online);
+            uint32 now = uint32(GameTime::GetGameTime().count()), started = Get(online, SETTING_RUN_STARTED);
+            SendAddon(online, Acore::StringFormat("S,{},{},{},{},{},{},{},{},{},{},{},{},{}", Get(online, SETTING_RANK),
+                online->GetLevel(), MaxLevel(), balance, OnRun(online) ? 1 : 0,
+                OnRun(online) && now > started ? now - started : 0, Get(online, SETTING_FASTEST), why.empty() ? 1 : 0,
+                SPARK_ON_PRESTIGE, SPARK_AT_MAX_LEVEL, SOULS_ON_PRESTIGE, XP_BONUS_PCT, why));
+            SendAddon(online, "O");
         });
+    }
+
+    // "PRESTIGE" from the window: checked again here, beside the Keeper it was opened at.
+    void OnPrestigeAsked(Player* player)
+    {
+        auto itr = openedAt.find(player->GetGUID());
+        Creature* keeper = itr != openedAt.end() ? player->GetMap()->GetCreature(itr->second) : nullptr;
+        if (!keeper || !player->IsWithinDistInMap(keeper, NPC_RANGE))
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("Speak to the Keeper of the Ember to prestige.");
+            return;
+        }
+        if (std::string why = CannotPrestige(player); !why.empty())
+        {
+            ChatHandler(player->GetSession()).SendSysMessage(why);
+            return;
+        }
+        openedAt.erase(itr);
+        SendAddon(player, "C");
+        DoPrestige(player);
     }
 }
 
@@ -328,6 +335,7 @@ namespace Prestige
     }
 }
 
+// Talking to the Keeper opens the Prestige window (Emberforge_Prestige) instead of a menu.
 class npc_titan_prestige : public CreatureScript
 {
 public:
@@ -335,28 +343,9 @@ public:
 
     bool OnGossipHello(Player* player, Creature* creature) override
     {
-        ShowMenu(player, creature->GetGUID());
-        return true;
-    }
-
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
-    {
-        ClearGossipMenuFor(player);
-        if (action == ACTION_PRESTIGE)
-        {
-            CloseGossipMenuFor(player);
-            if (std::string why = CannotPrestige(player); !why.empty())
-                ChatHandler(player->GetSession()).SendSysMessage(why);
-            else
-                DoPrestige(player);
-        }
-        else if (action == ACTION_DETAILS)
-        {
-            AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Back.", GOSSIP_SENDER_MAIN, ACTION_MENU);
-            SendGossipMenuFor(player, TEXT_DETAILS, creature);
-        }
-        else
-            ShowMenu(player, creature->GetGUID());
+        CloseGossipMenuFor(player);
+        openedAt[player->GetGUID()] = creature->GetGUID();
+        OpenWindow(player);
         return true;
     }
 };
@@ -367,8 +356,28 @@ public:
     titan_prestige() : PlayerScript("titan_prestige", {
         PLAYERHOOK_ON_LOGIN,
         PLAYERHOOK_ON_LEVEL_CHANGED,
-        PLAYERHOOK_ON_GIVE_EXP
+        PLAYERHOOK_ON_GIVE_EXP,
+        PLAYERHOOK_ON_LOGOUT,
+        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT
     }) { }
+
+    // Requests from the window: whispers to oneself in the addon language with our prefix, never delivered.
+    bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg,
+        Player* receiver) override
+    {
+        std::string const prefix = std::string(PREFIX) + '\t';
+        if (language != LANG_ADDON || receiver != player || msg.compare(0, prefix.size(), prefix) != 0)
+            return true;
+
+        if (std::string_view(msg).substr(prefix.size()) == "PRESTIGE")
+            OnPrestigeAsked(player);
+        return false;
+    }
+
+    void OnPlayerLogout(Player* player) override
+    {
+        openedAt.erase(player->GetGUID());
+    }
 
     // Prestigious while on a run (put back if a GM took it off), and gear taken out of the mail back on.
     void OnPlayerLogin(Player* player) override

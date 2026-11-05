@@ -1,7 +1,7 @@
--- Prestige (src/prestige.cpp): the Keeper of the Ember, who forges level 60 Heroes anew at level 1. Its menu is the
--- script's (npc_titan_prestige): the texts below, the prestige with its confirmation, the Emberspark balance and the
--- Hero's prestige, this run's time and the fastest. A dark iron dwarf of the Thorium Brotherhood's look (display
--- 14666, Lokhtos Darkbargainer's), in Stormwind's Trade District and Orgrimmar's Valley of Strength.
+-- Prestige (src/prestige.cpp): the Keeper of the Ember, who forges level 60 Heroes anew at level 1. Talking to it
+-- opens the Prestige window (npc_titan_prestige, the Emberforge_Prestige addon). A dark iron dwarf of the Thorium
+-- Brotherhood's look (display 14666, Lokhtos Darkbargainer's), in Stormwind's Trade District and Orgrimmar's
+-- Valley of Strength.
 SET @NPC := 910100;
 SET @GUID := 9101000;
 
@@ -23,15 +23,8 @@ INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`,
     `VerifiedBuild`) VALUES
 (@NPC, 0, 14666, 1, 1, 0);
 
--- At the cap, below it, and what is lost, kept and given ($B: a line break, $n: the player's name).
+-- Its menu texts from before the window: gone.
 DELETE FROM `npc_text` WHERE `ID` IN (910100, 910101, 910102);
-INSERT INTO `npc_text` (`ID`, `text0_0`, `text0_1`, `Probability0`) VALUES
-(910100, 'The forge burns for those who reach the summit, $n. Prestige, and you begin again at level 1: new abilities and talents, every quest to earn anew.$B$BYour gear waits in your bags and goes back on as soon as you reach its level. Your gold and your Emberspark stay yours.$B$BEvery prestige brings 500 Emberspark, 2 Titan Souls of Rested Experience and Prestigious: 10% more experience until level 60. Reach level 60 again for 5,000 Emberspark more.',
-    'The forge burns for those who reach the summit, $n. Prestige, and you begin again at level 1: new abilities and talents, every quest to earn anew.$B$BYour gear waits in your bags and goes back on as soon as you reach its level. Your gold and your Emberspark stay yours.$B$BEvery prestige brings 500 Emberspark, 2 Titan Souls of Rested Experience and Prestigious: 10% more experience until level 60. Reach level 60 again for 5,000 Emberspark more.', 1),
-(910101, 'Not yet, $n. Only those who have reached level 60 may be forged anew.$B$BWhen you do, come back to me. You will begin again at level 1 with new abilities and talents, keep your gear and your currency, and earn Emberspark for the journey.',
-    'Not yet, $n. Only those who have reached level 60 may be forged anew.$B$BWhen you do, come back to me. You will begin again at level 1 with new abilities and talents, keep your gear and your currency, and earn Emberspark for the journey.', 1),
-(910102, 'YOU LOSE$B- Your level: back to 1.$B- Your Wildcard abilities and talents, rerolled. The starting tomes come back.$B- Your quests: every one can be done, and rewarded, again.$B$BYOU KEEP$B- All your gear, back on once you reach its level. What does not fit in your bags comes by mail.$B- Gold and Emberspark.$B- Your role, locked until you reach level 60 again.$B- Professions, mounts, reputation and achievements.$B$BYOU GET$B- 500 Emberspark at once.$B- 2 Titan Souls of Rested Experience.$B- Prestigious: 10% more experience from everything, until level 60.$B- 5,000 Emberspark when you reach level 60 again.',
-    'YOU LOSE$B- Your level: back to 1.$B- Your Wildcard abilities and talents, rerolled. The starting tomes come back.$B- Your quests: every one can be done, and rewarded, again.$B$BYOU KEEP$B- All your gear, back on once you reach its level. What does not fit in your bags comes by mail.$B- Gold and Emberspark.$B- Your role, locked until you reach level 60 again.$B- Professions, mounts, reputation and achievements.$B$BYOU GET$B- 500 Emberspark at once.$B- 2 Titan Souls of Rested Experience.$B- Prestigious: 10% more experience from everything, until level 60.$B- 5,000 Emberspark when you reach level 60 again.', 1);
 
 -- Stormwind, Trade District; Orgrimmar, Valley of Strength (beside the holiday spawns there).
 DELETE FROM `creature` WHERE `id` = @NPC AND `guid` IN (@GUID, @GUID + 1);

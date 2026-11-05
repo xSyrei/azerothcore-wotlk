@@ -292,9 +292,12 @@ once when its slot is empty and the Hero can wear it.
 
 ## Prestige
 At level 60 a Hero can start again from level 1 at the **Keeper of the Ember** (creature 910100, "Prestige": Stormwind's
-Trade District and Orgrimmar's Valley of Strength; `src/prestige.cpp`, `data/sql/db-world/titan_prestige.sql`). Its
-menu shows the Emberspark balance, the Hero's prestige, this run's time and the fastest run, and what a prestige
-changes; the prestige itself asks for confirmation (alive, out of combat, not in a dungeon, battleground or queue).
+Trade District and Orgrimmar's Valley of Strength; `src/prestige.cpp`, `data/sql/db-world/titan_prestige.sql`).
+Talking to it opens the **Prestige window** (the `Emberforge_Prestige` addon, in the Classless window's look; addon
+whispers with prefix `EFPR`, protocol in both files): the Emberspark balance, the Hero's prestige, level, this run's
+time and the fastest run, what a prestige takes, keeps and gives, and level 60's reward. Its Prestige button asks for
+confirmation; the server checks again that the Hero is beside the Keeper (15 yards), alive, out of combat and not in
+a dungeon, battleground or queue.
 - **Lost:** the level (back to 1, at the race's starting point); every Wildcard ability and talent (a new random kit
   and both tomes, as a new Hero: `Wildcard::Reset`); every quest, in the log or done, so all can be done and rewarded
   again (but the game's hidden tracking quests).
@@ -307,8 +310,8 @@ changes; the prestige itself asks for confirmation (alive, out of combat, not in
 - **Role locked** during a run: the Classless window keeps the role chosen (a Hero with none still picks one).
 
 It is all kept in the character's settings (`mod-titan-prestige`: rank, run, its start, the fastest run, the stashed
-gear by slot). Still to come: the Prestige window (the mockup), the rank on the name or tooltip, Runic Enhancements
-carried over.
+gear by slot). Still to come: the Keeper's new look (a dwarf in a tuxedo and top hat), the rank on the name or tooltip,
+Runic Enhancements carried over.
 
 ## Emberspark
 Project Emberforge's server currency, one balance per **account** (`titan_emberspark` in the auth database,
