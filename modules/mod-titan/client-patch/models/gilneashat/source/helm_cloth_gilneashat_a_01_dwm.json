@@ -1,0 +1,28 @@
+{
+ "textures": [
+  {
+   "fileNameExternal": "helm_cloth_gilneashat_a_01commonb.png",
+   "flags": 0
+  }
+ ],
+ "materials": [
+  {
+   "flags": 0,
+   "blendingMode": 0
+  }
+ ],
+ "colors": [],
+ "skin": {
+  "textureUnits": [
+   {
+    "flags": 16,
+    "priority": 0,
+    "shaderID": 0,
+    "skinSectionIndex": 0,
+    "colorIndex": 0,
+    "materialIndex": 0,
+    "textureCount": 1
+   }
+  ]
+ }
+}

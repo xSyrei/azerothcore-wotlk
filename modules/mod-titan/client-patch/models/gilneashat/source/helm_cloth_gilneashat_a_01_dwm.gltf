@@ -1,0 +1,328 @@
+{
+	"asset": {
+		"version": "2.0",
+		"generator": "wow.export v0.2.20 win-x64 [01a19bdd-da5c-7000-ad45-2fab388d8473]"
+	},
+	"nodes": [
+		{
+			"name": "helm_cloth_gilneashat_a_01_dwm_helm_cloth_gilneashat_a_01commonb",
+			"children": [
+				1,
+				4
+			]
+		},
+		{
+			"name": "helm_cloth_gilneashat_a_01_dwm_helm_cloth_gilneashat_a_01commonb_skeleton",
+			"children": [
+				2
+			]
+		},
+		{
+			"name": "bone_0_p",
+			"translation": [
+				0.008171278052031994,
+				0.17691223323345184,
+				0
+			],
+			"children": [
+				3
+			]
+		},
+		{
+			"name": "bone_0"
+		},
+		{
+			"name": "helm_cloth_gilneashat_a_01_dwm_helm_cloth_gilneashat_a_01commonb_Geoset0",
+			"mesh": 0,
+			"skin": 0
+		}
+	],
+	"scenes": [
+		{
+			"name": "helm_cloth_gilneashat_a_01_dwm_helm_cloth_gilneashat_a_01commonb_Scene",
+			"nodes": [
+				0
+			]
+		}
+	],
+	"buffers": [
+		{
+			"byteLength": 4576,
+			"uri": "helm_cloth_gilneashat_a_01_dwm_helm_cloth_gilneashat_a_01commonb.bin"
+		}
+	],
+	"bufferViews": [
+		{
+			"buffer": 0,
+			"byteLength": 1032,
+			"byteOffset": 0,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 1032,
+			"byteOffset": 1032,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 344,
+			"byteOffset": 2064,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 344,
+			"byteOffset": 2408,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 64,
+			"byteOffset": 2752
+		},
+		{
+			"buffer": 0,
+			"byteLength": 688,
+			"byteOffset": 2816,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 688,
+			"byteOffset": 3504,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 384,
+			"byteOffset": 4192,
+			"target": 34963
+		}
+	],
+	"accessors": [
+		{
+			"name": "POSITION",
+			"bufferView": 0,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 86,
+			"type": "VEC3",
+			"min": [
+				-0.2552870810031891,
+				0.0014261140022426844,
+				-0.1999833583831787
+			],
+			"max": [
+				0.2268073856830597,
+				0.3077983260154724,
+				0.1999083310365677
+			]
+		},
+		{
+			"name": "NORMAL",
+			"bufferView": 1,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 86,
+			"type": "VEC3",
+			"min": [
+				-0.9979450702667236,
+				-0.9849583506584167,
+				-0.9945477843284607
+			],
+			"max": [
+				0.9986739158630371,
+				0.9849573373794556,
+				0.9945477843284607
+			]
+		},
+		{
+			"name": "JOINTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 86,
+			"type": "VEC4",
+			"bufferView": 2,
+			"min": [
+				0,
+				0,
+				0,
+				0
+			],
+			"max": [
+				0,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "WEIGHTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 86,
+			"normalized": true,
+			"type": "VEC4",
+			"bufferView": 3,
+			"min": [
+				255,
+				0,
+				0,
+				0
+			],
+			"max": [
+				255,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "INV_BIND_MATRICES",
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 1,
+			"type": "MAT4",
+			"bufferView": 4,
+			"min": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				-0.008171278052031994,
+				-0.17691223323345184,
+				0,
+				1
+			],
+			"max": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				-0.008171278052031994,
+				-0.17691223323345184,
+				0,
+				1
+			]
+		},
+		{
+			"name": "TEXCOORD_0",
+			"bufferView": 5,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 86,
+			"type": "VEC2",
+			"min": [
+				0.007400000002235174,
+				0.01810002326965332
+			],
+			"max": [
+				0.9883000254631042,
+				0.9787999987602234
+			]
+		},
+		{
+			"name": "TEXCOORD_1",
+			"bufferView": 6,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 86,
+			"type": "VEC2",
+			"min": [
+				0,
+				0
+			],
+			"max": [
+				0,
+				0
+			]
+		},
+		{
+			"bufferView": 7,
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 384,
+			"type": "SCALAR"
+		}
+	],
+	"meshes": [
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 5,
+						"TEXCOORD_1": 6
+					},
+					"indices": 7,
+					"mode": 4,
+					"material": 0
+				}
+			]
+		}
+	],
+	"scene": 0,
+	"skins": [
+		{
+			"name": "helm_cloth_gilneashat_a_01_dwm_helm_cloth_gilneashat_a_01commonb_Armature",
+			"joints": [
+				3
+			],
+			"inverseBindMatrices": 4,
+			"skeleton": 0
+		}
+	],
+	"animations": [
+		{
+			"samplers": [],
+			"channels": [],
+			"name": "Stand (ID 0 variation 0)"
+		}
+	],
+	"images": [
+		{
+			"uri": "helm_cloth_gilneashat_a_01commonb.png"
+		}
+	],
+	"textures": [
+		{
+			"source": 0
+		}
+	],
+	"materials": [
+		{
+			"name": "helm_cloth_gilneashat_a_01commonb",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 0
+				},
+				"metallicFactor": 0
+			}
+		}
+	]
+}
