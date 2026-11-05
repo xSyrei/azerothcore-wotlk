@@ -34,8 +34,8 @@ INSERT INTO `npc_text` (`ID`, `text0_0`, `text0_1`, `Probability0`) VALUES
     'YOU LOSE$B- Your level: back to 1.$B- Your Wildcard abilities and talents, rerolled. The starting tomes come back.$B- Your quests: every one can be done, and rewarded, again.$B$BYOU KEEP$B- All your gear, back on once you reach its level. What does not fit in your bags comes by mail.$B- Gold and Emberspark.$B- Your role, locked until you reach level 60 again.$B- Professions, mounts, reputation and achievements.$B$BYOU GET$B- 500 Emberspark at once.$B- 2 Titan Souls of Rested Experience.$B- Prestigious: 10% more experience from everything, until level 60.$B- 5,000 Emberspark when you reach level 60 again.', 1);
 
 -- Stormwind, Trade District; Orgrimmar, Valley of Strength (beside the holiday spawns there).
-DELETE FROM `creature` WHERE `id1` = @NPC AND `guid` IN (@GUID, @GUID + 1);
-INSERT INTO `creature` (`guid`, `id1`, `map`, `spawnMask`, `phaseMask`, `position_x`, `position_y`, `position_z`,
+DELETE FROM `creature` WHERE `id` = @NPC AND `guid` IN (@GUID, @GUID + 1);
+INSERT INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `position_x`, `position_y`, `position_z`,
     `orientation`, `spawntimesecs`, `Comment`) VALUES
 (@GUID, @NPC, 0, 1, 1, -8832.6, 643.6, 94.6, 4.22, 300, 'Keeper of the Ember (Prestige), Stormwind'),
 (@GUID + 1, @NPC, 1, 1, 1, 1627.5, -4412.4, 16.2, 0.44, 300, 'Keeper of the Ember (Prestige), Orgrimmar');
