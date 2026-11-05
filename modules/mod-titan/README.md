@@ -119,8 +119,8 @@ talking to it in addon whispers (prefix `EFCL`, protocol in both files).
   does (best rank for the level, with its companion spells), or that talent rank as a talent (plain `.learn`
   cannot give a Hero talents). Requirements, role and level are not checked.
 
-It needs two settings in `worldserver.conf` (set in the `.dist`; an existing config needs them by
-hand, and the server log says so at the first Hero login when they are missing):
+It needs two settings in `worldserver.conf` (set in the `.dist`, and by `docker-compose.yml`'s environment, which
+wins over an existing config; elsewhere by hand, and the server log says so at the first Hero login when missing):
 - `ValidateSkillLearnedBySpells = 0`, or other classes' spells are deleted at every login;
 - `EnablePlayerSettings = 1`, where each Hero's count of granted abilities is kept.
 
@@ -294,7 +294,8 @@ once when its slot is empty and the Hero can wear it.
 At level 60 a Hero can start again from level 1 at the **Keeper of the Ember** (creature 910100, "Prestige": Stormwind's
 Trade District and Orgrimmar's Valley of Strength; `src/prestige.cpp`, `data/sql/db-world/titan_prestige.sql`).
 Talking to it opens the **Prestige window** (the `Emberforge_Prestige` addon, in the Classless window's look; addon
-whispers with prefix `EFPR`, protocol in both files): the Emberspark balance, the Hero's prestige, level, this run's
+whispers with prefix `EFPR`, protocol in both files): the Emberspark balance, the Hero's prestige, a level ring
+(a dot a level, filling with their experience to the cap), this run's
 time and the fastest run, what a prestige takes, keeps and gives, and level 60's reward. Its Prestige button asks for
 confirmation; the server checks again that the Hero is beside the Keeper (15 yards), alive, out of combat and not in
 a dungeon, battleground or queue.

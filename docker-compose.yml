@@ -75,6 +75,11 @@ services:
       AC_LOGIN_DATABASE_INFO: "ac-database;3306;root;${DOCKER_DB_ROOT_PASSWORD:-password};acore_auth"
       AC_WORLD_DATABASE_INFO: "ac-database;3306;root;${DOCKER_DB_ROOT_PASSWORD:-password};acore_world"
       AC_CHARACTER_DATABASE_INFO: "ac-database;3306;root;${DOCKER_DB_ROOT_PASSWORD:-password};acore_characters"
+      # Project Emberforge (mod-titan): the level cap is 60, and Wildcard's two settings. These win over an
+      # existing worldserver.conf, which keeps the values it was made with.
+      AC_MAX_PLAYER_LEVEL: "60"
+      AC_ENABLE_PLAYER_SETTINGS: "1"
+      AC_VALIDATE_SKILL_LEARNED_BY_SPELLS: "0"
     ports:
       - ${DOCKER_WORLD_EXTERNAL_PORT:-8085}:8085
       - ${DOCKER_SOAP_EXTERNAL_PORT:-7878}:7878

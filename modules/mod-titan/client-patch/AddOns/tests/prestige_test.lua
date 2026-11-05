@@ -98,6 +98,9 @@ local popup
 function StaticPopup_Show(name, a, b) popup = { name = name, a = a, b = b } end
 function StaticPopup_Hide() popup = nil end
 ACCEPT, CANCEL = "Accept", "Cancel"
+local xp, xpMax = 0, 400
+function UnitXP() return xp end
+function UnitXPMax() return xpMax end
 function Widget:Enable() self.enabled = true end
 function Widget:Disable() self.enabled = false end
 function Widget:GetFrameLevel() return 1 end
@@ -139,6 +142,18 @@ check(not frame:IsShown() and popup == nil, "C closes the window")
 server("S,1,60,60,0,0,0,0,0,500,5000,2,10,Not now: you must be alive, out of combat, and on the ground.")
 check(state.why == "Not now: you must be alive, out of combat, and on the ground.", "a reason with commas stays whole")
 frame.scripts.OnUpdate(frame, 0.1)
+
+-- The ring: half way into level 30 of 60 is just under half lit; at the cap all of it.
+xp = 200
+server("S,1,30,60,0,1,60,0,0,500,5000,2,10,Come back at level 60.")
+server("O")
+check(math.abs(state.level - 30) < 0.01, "level 30 is read")
+events.scripts.OnEvent(events, "PLAYER_XP_UPDATE", "player")
+check(true, "an experience update while open redraws without error")
+events.scripts.OnEvent(events, "PLAYER_LEVEL_UP", "31")
+check(state.level == 31, "a level up while open moves the ring on")
+server("S,1,60,60,0,0,0,0,1,500,5000,2,10,")
+check(state.ready, "at the cap the ring is full and the button on")
 
 print(failures == 0 and "all passed" or (failures .. " failed"))
 os.exit(failures == 0 and 0 or 1)

@@ -206,21 +206,82 @@ rays:SetBlendMode("ADD")
 rays:SetVertexColor(1, 0.55, 0.15)
 rays:SetWidth(230)
 rays:SetHeight(230)
-rays:SetPoint("TOP", 0, 12)
-local emblem = you:CreateTexture(nil, "ARTWORK")
-emblem:SetTexture(ART .. "HeroEmblem")
-emblem:SetWidth(96)
-emblem:SetHeight(96)
-emblem:SetPoint("TOP", 0, -38)
-local ring = you:CreateTexture(nil, "OVERLAY")
-ring:SetTexture(ART .. "RingSelected")
-ring:SetWidth(132)
-ring:SetHeight(132)
-ring:SetPoint("CENTER", emblem, "CENTER")
+rays:SetPoint("TOP", 0, 30)
+-- The level ring: one dot a level around the circle (overlapping, so it reads as a ring), lit ember up to where
+-- the Hero is (their experience into the next level too), the leading dot brighter; the level in the middle.
+local RING_DOTS, RING_RADIUS, RING_DOT = 60, 54, 12
+local ringCenter = CreateFrame("Frame", nil, you)
+ringCenter:SetWidth(2 * RING_RADIUS + RING_DOT)
+ringCenter:SetHeight(2 * RING_RADIUS + RING_DOT)
+ringCenter:SetPoint("TOP", 0, -26)
+local ringDots = {}
+for index = 1, RING_DOTS do
+    local angle = math.pi / 2 - (index - 0.5) / RING_DOTS * 2 * math.pi   -- clockwise from the top
+    local dot = ringCenter:CreateTexture(nil, "ARTWORK")
+    dot:SetTexture(ART .. "Spark")
+    dot:SetBlendMode("ADD")
+    dot:SetWidth(RING_DOT)
+    dot:SetHeight(RING_DOT)
+    dot:SetPoint("CENTER", RING_RADIUS * math.cos(angle), RING_RADIUS * math.sin(angle))
+    ringDots[index] = dot
+end
+local ringHead = ringCenter:CreateTexture(nil, "OVERLAY")
+ringHead:SetTexture(ART .. "Spark")
+ringHead:SetBlendMode("ADD")
+ringHead:SetWidth(RING_DOT * 2.4)
+ringHead:SetHeight(RING_DOT * 2.4)
+ringHead:SetVertexColor(1, 0.8, 0.45)
+local ringLabel = Text(ringCenter, 10, SUBTEXT)
+ringLabel:SetPoint("CENTER", 0, 22)
+ringLabel:SetText("L E V E L")
+local ringLevel = Text(ringCenter, 34, GOLD, "Fonts\\MORPHEUS.TTF")
+ringLevel:SetPoint("CENTER", 0, -2)
+local ringOf = Text(ringCenter, 11, { 0.9, 0.86, 0.78 })
+ringOf:SetPoint("CENTER", 0, -26)
+
+-- How far the Hero is to the level cap, 0 to 1: their level, and their experience into the next one.
+local function Progress()
+    if state.level >= state.maxLevel then
+        return 1
+    end
+    local into = 0
+    local xpMax = UnitXPMax and UnitXPMax("player") or 0
+    if xpMax and xpMax > 0 then
+        into = (UnitXP("player") or 0) / xpMax
+    end
+    return math.max(0, math.min(1, (state.level - 1 + into) / math.max(1, state.maxLevel - 1)))
+end
+
+local function RefreshRing()
+    local lit = Progress() * RING_DOTS
+    for index, dot in ipairs(ringDots) do
+        if index <= lit then
+            dot:SetVertexColor(1, 0.5, 0.1)
+            dot:SetAlpha(1)
+        elseif index - 1 < lit then             -- the dot being filled: part lit
+            dot:SetVertexColor(1, 0.5, 0.1)
+            dot:SetAlpha(0.25 + 0.75 * (lit - index + 1))
+        else
+            dot:SetVertexColor(0.45, 0.36, 0.3)
+            dot:SetAlpha(0.35)
+        end
+    end
+    local head = ringDots[math.max(1, math.min(RING_DOTS, math.ceil(lit)))]
+    ringHead:ClearAllPoints()
+    ringHead:SetPoint("CENTER", head, "CENTER")
+    if lit > 0 then
+        ringHead:Show()
+    else
+        ringHead:Hide()
+    end
+    ringLevel:SetText(state.level)
+    ringOf:SetText("of " .. state.maxLevel)
+end
+
 local rankBadge = CreateFrame("Frame", nil, you)
 rankBadge:SetWidth(44)
 rankBadge:SetHeight(26)
-rankBadge:SetPoint("TOP", emblem, "BOTTOM", 0, 2)
+rankBadge:SetPoint("TOP", ringCenter, "BOTTOM", 0, 6)
 rankBadge:SetFrameLevel(you:GetFrameLevel() + 3)
 Box(rankBadge, BANNER_FILL, BANNER_EDGE, true)
 local rankText = Text(rankBadge, 15, GOLD, "Fonts\\MORPHEUS.TTF")
@@ -369,12 +430,12 @@ button:SetScript("OnClick", function()
     end
 end)
 
--- The rays turn slowly and the ring breathes.
+-- The rays breathe, and the ring's leading dot pulses.
 local elapsed = 0
 frame:SetScript("OnUpdate", function(_, delta)
     elapsed = elapsed + delta
     rays:SetAlpha(0.45 + 0.2 * math.sin(elapsed * 1.6))
-    ring:SetAlpha(0.75 + 0.25 * math.sin(elapsed * 2.2))
+    ringHead:SetAlpha(0.7 + 0.3 * math.sin(elapsed * 3))
 end)
 
 local function Refresh()
@@ -382,7 +443,8 @@ local function Refresh()
     rankText:SetText(state.rank > 0 and tostring(state.rank) or "-")
     nameText:SetText(UnitName("player"))
     levelValue:SetText(state.level .. " / " .. state.maxLevel)
-    bar:SetValue(math.min(1, state.level / math.max(1, state.maxLevel)))
+    RefreshRing()
+    bar:SetValue(Progress())
     runValue:SetText(state.onRun and Duration(state.run) or "--")
     fastestValue:SetText(Duration(state.fastest))
     lockText:SetText(state.onRun and ("Your role is locked for this prestige. At level " .. state.maxLevel
@@ -436,9 +498,18 @@ end
 
 local events = CreateFrame("Frame")
 events:RegisterEvent("CHAT_MSG_ADDON")
-events:SetScript("OnEvent", function(_, _, prefix, message, _, sender)
-    if prefix == PREFIX and sender == UnitName("player") then
-        OnServerMessage(message)
+events:RegisterEvent("PLAYER_XP_UPDATE")
+events:RegisterEvent("PLAYER_LEVEL_UP")
+events:SetScript("OnEvent", function(_, event, prefix, message, _, sender)
+    if event == "CHAT_MSG_ADDON" then
+        if prefix == PREFIX and sender == UnitName("player") then
+            OnServerMessage(message)
+        end
+    elseif frame:IsShown() then
+        if event == "PLAYER_LEVEL_UP" then
+            state.level = tonumber(prefix) or state.level
+        end
+        Refresh()
     end
 end)
 
