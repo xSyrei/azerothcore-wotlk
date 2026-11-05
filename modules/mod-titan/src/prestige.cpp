@@ -30,6 +30,7 @@
 #include "ScriptedGossip.h"
 #include "StringFormat.h"
 #include "World.h"
+#include "WorldSessionMgr.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include <string_view>
@@ -67,6 +68,15 @@ namespace
 
     // The Keeper each player last opened the window at, to check they are still beside it when they prestige.
     std::unordered_map<ObjectGuid, ObjectGuid> openedAt;
+
+    // A system message to every player online. (ChatHandler(nullptr).SendWorldText would use a session it has not:
+    // a crash.)
+    void Broadcast(std::string const& text)
+    {
+        WorldPacket data;
+        ChatHandler::BuildChatPacket(data, CHAT_MSG_SYSTEM, LANG_UNIVERSAL, nullptr, nullptr, text);
+        sWorldSessionMgr->SendGlobalMessage(&data);
+    }
 
     uint32 Get(Player* player, uint32 index)
     {
@@ -204,8 +214,9 @@ namespace
         }
     }
 
-    // Every quest can be done, and rewarded, again: the log is emptied and the done ones forgotten (but the hidden
-    // tracking quests the game uses as flags).
+    // Every quest can be done, and rewarded, again: the log is emptied, the done ones forgotten (but the hidden tracking
+    // quests the game uses as flags), and the dailies, weeklies and monthlies done (holidays reset theirs each year).
+    // Quest givers show theirs again once the Hero is home (the trip sends the world anew).
     void ForgetQuests(Player* player)
     {
         for (uint8 slot = 0; slot < MAX_QUEST_LOG_SIZE; ++slot)
@@ -220,7 +231,10 @@ namespace
         for (uint32 questId : rewarded)
             if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId);
                 !quest || !quest->HasFlag(QUEST_FLAGS_TRACKING))
-                player->RemoveRewardedQuest(questId);
+                player->RemoveRewardedQuest(questId, false);
+        player->ResetDailyQuestStatus();
+        player->ResetWeeklyQuestStatus();
+        player->ResetMonthlyQuestStatus();
     }
 
     void DoPrestige(Player* player)
@@ -250,7 +264,7 @@ namespace
         handler.PSendSysMessage("|cffff8000Prestige {}:|r you are forged anew. Your gear waits in your bags and goes "
             "back on as you reach its level; your role is locked until level {}.", rank, MaxLevel());
         Emberspark::Announce(player, SPARK_ON_PRESTIGE, "for your prestige");
-        ChatHandler(nullptr).SendWorldText(Acore::StringFormat(
+        Broadcast(Acore::StringFormat(
             "|cffff8000[Prestige]|r {} has been forged anew: Prestige {}!", player->GetName(), rank));
 
         // Saved before the trip home, the race's starting point.
@@ -274,7 +288,7 @@ namespace
         ChatHandler(player->GetSession()).PSendSysMessage("|cffff8000Prestige {}:|r level {} again, in {}. You can "
             "change your role again, and prestige once more.", rank, MaxLevel(), Duration(took));
         Emberspark::Announce(player, SPARK_AT_MAX_LEVEL, "for reaching the summit again");
-        ChatHandler(nullptr).SendWorldText(Acore::StringFormat(
+        Broadcast(Acore::StringFormat(
             "|cffff8000[Prestige]|r {} has completed Prestige {} in {}!", player->GetName(), rank, Duration(took)));
     }
 

@@ -299,8 +299,8 @@ time and the fastest run, what a prestige takes, keeps and gives, and level 60's
 confirmation; the server checks again that the Hero is beside the Keeper (15 yards), alive, out of combat and not in
 a dungeon, battleground or queue.
 - **Lost:** the level (back to 1, at the race's starting point); every Wildcard ability and talent (a new random kit
-  and both tomes, as a new Hero: `Wildcard::Reset`); every quest, in the log or done, so all can be done and rewarded
-  again (but the game's hidden tracking quests).
+  and both tomes, as a new Hero: `Wildcard::Reset`); every quest, in the log or done (dailies, weeklies and monthlies
+  too), so all can be done and rewarded again (but the game's hidden tracking quests).
 - **Kept:** gear, gold, Emberspark, professions, mounts, reputation, achievements and the role. Every piece worn that
   needs more than level 1 goes to the bags (what does not fit, by mail) and back on in its old slot as soon as its
   level allows, whatever is worn there then (to the bags). Gear left in the mail goes on once it is taken out.
