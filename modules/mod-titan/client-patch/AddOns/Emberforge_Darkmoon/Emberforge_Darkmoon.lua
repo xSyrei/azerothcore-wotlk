@@ -1,7 +1,7 @@
 -- Emberforge Darkmoon: Silas Darkmoon's shop (opened by talking to him) and the card reveal.
 -- Packs: Skill, Talent and Golden Card Packs for Emberspark (Skill Packs for gold too, a few a week), and how close the
 -- account is to its next free pack. Cards: every Skill and Talent Card, what the account owns, any one bought outright.
--- Opening a pack from the bags plays the reveal: its three cards turn over one by one.
+-- Opening a pack from the bags plays the reveal: its five cards turn over one by one.
 --
 -- The server (mod-titan, src/cards.cpp) talks in addon whispers to the player, prefix EFDM:
 --   from server   S,<Emberspark>,<Skill Pack>,<Talent Pack>,<card price>,<gold packs left>,<gold price, copper>,
@@ -28,11 +28,11 @@ local RARITY_COLORS = { [0] = { 0.92, 0.92, 0.92 }, { 0, 0.44, 0.87 }, { 0.64, 0
 local GOLDEN_COLOR = { 1, 0.84, 0.25 }
 local PACKS = {
     { kind = 0, name = "Skill Card Pack", icon = "Interface\\Icons\\INV_Misc_Ticket_Tarot_Stack_01",
-        text = "Three Skill Cards: abilities for your account's collection." },
+        text = "Five Skill Cards: abilities for your account's collection." },
     { kind = 1, name = "Talent Card Pack", icon = "Interface\\Icons\\INV_Misc_Ticket_Tarot_Furies",
-        text = "Three Talent Cards: a rank of a talent each." },
+        text = "Five Talent Cards: a rank of a talent each." },
     { kind = 2, name = "Golden Card Pack", icon = "Interface\\Icons\\INV_Inscription_TarotGreatness",
-        text = "Three Golden Cards: one more of a card, past your slots." },
+        text = "Five Golden Cards: one more of a card, past your slots." },
 }
 
 local state = { spark = 0, prices = { 0, 0, 0 }, cardPrice = 100, goldLeft = 0, goldPrice = 750000, duplicates = 0,
@@ -574,11 +574,11 @@ local revealHint = Text(reveal, 12, SUBTEXT)
 revealHint:SetPoint("CENTER", 0, -180)
 revealHint:SetText("Click anywhere to continue")
 local revealCards = {}
-for index = 1, 3 do
+for index = 1, 5 do
     local card = CreateFrame("Frame", nil, reveal)
     card:SetWidth(170)
     card:SetHeight(240)
-    card:SetPoint("CENTER", (index - 2) * 200, 0)
+    card:SetPoint("CENTER", (index - 3) * 186, 0)
     Box(card, { 0.05, 0.03, 0.08, 0.97 }, { 0.6, 0.45, 0.8, 1 })
     card.glow = card:CreateTexture(nil, "BACKGROUND")
     card.glow:SetTexture(ART .. "Rays")

@@ -39,8 +39,8 @@ INSERT INTO `item_template` (`entry`, `class`, `subclass`, `SoundOverrideSubclas
     `Flags`, `BuyPrice`, `SellPrice`, `ItemLevel`, `RequiredLevel`, `stackable`, `bonding`, `spellid_1`,
     `spelltrigger_1`, `spellcharges_1`, `description`, `ScriptName`) VALUES
 (@SKILL_PACK, 15, 0, -1, 'Skill Card Pack', 31755, 3, 0, 0, 0, 1, 1, 200, 1, @CARRIER_SPELL, 0, 0,
-    'Three Skill Cards, for your account''s collection.', 'item_titan_skill_pack'),
+    'Five Skill Cards, for your account''s collection.', 'item_titan_skill_pack'),
 (@TALENT_PACK, 15, 0, -1, 'Talent Card Pack', 44704, 3, 0, 0, 0, 1, 1, 200, 1, @CARRIER_SPELL, 0, 0,
-    'Three Talent Cards, for your account''s collection.', 'item_titan_talent_pack'),
+    'Five Talent Cards, for your account''s collection.', 'item_titan_talent_pack'),
 (@GOLDEN_PACK, 15, 0, -1, 'Golden Card Pack', 56181, 5, 0, 0, 0, 1, 1, 200, 1, @CARRIER_SPELL, 0, 0,
-    'Three Golden Cards: one more of a card, past your slots.', 'item_titan_golden_pack');
+    'Five Golden Cards: one more of a card, past your slots.', 'item_titan_golden_pack');

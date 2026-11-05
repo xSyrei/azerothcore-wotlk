@@ -44,14 +44,15 @@
 // a rarity. A card, once opened, is the account's forever (auth database: titan_cards), for every character on it;
 // slotting cards into Specializations (loadouts the level-up rolls follow) comes next.
 //
-// - Packs (items in the bags): a Skill Pack or Talent Pack holds 3 cards, a Golden Pack 3 Golden Cards. Each card's
+// - Packs (items in the bags): a Skill Pack or Talent Pack holds 5 cards, a Golden Pack 5 Golden Cards. Each card's
 //   rarity is rolled (Common 70%, Rare 24%, Epic 5%, Legendary 1%), then a card of it, 3 times in 4 one suiting the
 //   Hero's role. A card already owned (every rank of a talent) is a duplicate: Emberspark back by its rarity, and the
 //   account's duplicate tally goes up. Every 10th duplicate gives a free pack of the same kind, every 50th a Golden
 //   Pack and 2,000 Emberspark.
 // - Silas Darkmoon (npc_titan_silas) opens the Darkmoon shop (the Emberforge_Darkmoon addon): Skill and Talent Packs
-//   and any card (but Golden ones) for Emberspark, at prices that climb with each purchase and start over at a
-//   prestige; Skill Packs for gold too, 5 a week an account; Golden Packs.
+//   for Emberspark, at prices that climb with each purchase and start over at a prestige; any card but a Golden one
+//   at a fixed price by rarity (500, 5,000, 12,000, 30,000); Skill Packs for gold too, 5 a week an account; Golden
+//   Packs.
 //
 // Addon whispers with prefix EFDM (protocol in Emberforge_Darkmoon.lua).
 namespace
@@ -61,8 +62,8 @@ namespace
     constexpr char const* SETTING_SOURCE = "mod-titan-darkmoon";
     constexpr uint32 SETTING_SKILL_PACKS = 0;   // bought this prestige, for the price
     constexpr uint32 SETTING_TALENT_PACKS = 1;
-    constexpr uint32 SETTING_CARDS = 2;
-    constexpr uint32 SETTING_SOURCE_NONE = UINT32_MAX;     // a fixed price (the Golden Pack), nothing counted
+    constexpr uint32 SETTING_CARDS = 2;         // retired: cards have fixed prices now
+    constexpr uint32 SETTING_SOURCE_NONE = UINT32_MAX;     // a fixed price (Golden Pack, a card), nothing counted
 
     constexpr uint32 ITEM_SKILL_PACK = 910010;
     constexpr uint32 ITEM_TALENT_PACK = 910011;
@@ -94,11 +95,11 @@ namespace
         MAX_RARITIES
     };
 
-    constexpr uint32 CARDS_PER_PACK = 3;
+    constexpr uint32 CARDS_PER_PACK = 5;
     constexpr std::array<uint32, MAX_RARITIES> RARITY_CHANCE = { 70, 24, 5, 1 };
     constexpr std::array<uint32, MAX_RARITIES> DUPLICATE_REFUND = { 40, 120, 400, 1200 };
     constexpr uint32 GOLDEN_DUPLICATE_REFUND = 2000;
-    constexpr std::array<uint32, MAX_RARITIES> CARD_PRICE_FACTOR = { 1, 2, 4, 8 };    // times the climbing price
+    constexpr std::array<uint32, MAX_RARITIES> CARD_PRICE = { 500, 5000, 12000, 30000 };   // a card bought outright
     constexpr uint32 FREE_PACK_EVERY = 10, GOLDEN_PACK_EVERY = 50, GOLDEN_PACK_BONUS = 2000;
     constexpr uint32 GOLDEN_PACK_PRICE = 10000;
     constexpr uint32 GOLD_PACK_PRICE = 75 * GOLD, GOLD_PACKS_A_WEEK = 5;
@@ -129,12 +130,15 @@ namespace
         std::map<std::pair<uint8, uint32>, uint32> byId;
     };
 
+    // Talent abilities are Epic, Legendary from their tree's ninth row; the others Rare from level 30. Capstones are
+    // never cards: they stay the level 60 roll's, something to chase.
     Rarity SkillRarity(Wildcard::Ability const& ability)
     {
-        if (ability.Capstone)
-            return RARITY_LEGENDARY;
         if (ability.TalentId)
-            return RARITY_EPIC;
+        {
+            TalentEntry const* talent = sTalentStore.LookupEntry(ability.TalentId);
+            return talent && talent->Row >= 8 ? RARITY_LEGENDARY : RARITY_EPIC;
+        }
         return ability.Ranks.front().Level >= 30 ? RARITY_RARE : RARITY_COMMON;
     }
 
@@ -158,7 +162,8 @@ namespace
                 built.cards.push_back(card);
             };
             for (Wildcard::Ability const& ability : Wildcard::Abilities())
-                if (ability.Offered && !ability.Banned && !ability.Companion && !ability.Ranks.empty())
+                if (ability.Offered && !ability.Banned && !ability.Companion && !ability.Capstone
+                    && !ability.Ranks.empty())
                     add({ KIND_SKILL, ability.Ranks.front().SpellId, ability.Ranks.front().SpellId,
                         SkillRarity(ability), 1, ability.Roles });
             for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
@@ -304,8 +309,8 @@ namespace
         SendAddon(player, "KE");
     }
 
-    // S,<Emberspark>,<Skill Pack>,<Talent Pack>,<card base price>,<gold packs left>,<gold price>,<Golden Pack>,
-    //   <duplicates>,<every N a pack>,<every N a Golden Pack>,<factor common>,<rare>,<epic>,<legendary>
+    // S,<Emberspark>,<Skill Pack>,<Talent Pack>,<card price factor: 1>,<gold packs left>,<gold price>,<Golden Pack>,
+    //   <duplicates>,<every N a pack>,<every N a Golden Pack>,<card price: common>,<rare>,<epic>,<legendary>
     void SendState(Player* player)
     {
         Emberspark::Query(player, [](Player* online, uint32 balance)
@@ -316,9 +321,8 @@ namespace
                 : GOLD_PACKS_A_WEEK - std::min(GOLD_PACKS_A_WEEK, collection->goldBought);
             SendAddon(online, Acore::StringFormat("S,{},{},{},{},{},{},{},{},{},{},{},{},{},{}", balance,
                 Price(Setting(online, SETTING_SKILL_PACKS)), Price(Setting(online, SETTING_TALENT_PACKS)),
-                Price(Setting(online, SETTING_CARDS)), goldLeft, GOLD_PACK_PRICE, GOLDEN_PACK_PRICE, duplicates,
-                FREE_PACK_EVERY, GOLDEN_PACK_EVERY, CARD_PRICE_FACTOR[0], CARD_PRICE_FACTOR[1], CARD_PRICE_FACTOR[2],
-                CARD_PRICE_FACTOR[3]));
+                1, goldLeft, GOLD_PACK_PRICE, GOLDEN_PACK_PRICE, duplicates, FREE_PACK_EVERY, GOLDEN_PACK_EVERY,
+                CARD_PRICE[0], CARD_PRICE[1], CARD_PRICE[2], CARD_PRICE[3]));
         });
     }
 
@@ -453,14 +457,15 @@ namespace
         return false;
     }
 
-    // Pays the climbing price in Emberspark (one purchase at a time), then gives.
-    void BuyWithEmberspark(Player* player, uint32 setting, uint32 factor, char const* reason,
+    // Pays in Emberspark (one purchase at a time): a pack's climbing price (its setting counts the purchases), or a
+    // fixed price (setting SETTING_SOURCE_NONE), then gives.
+    void BuyWithEmberspark(Player* player, uint32 setting, uint32 fixedPrice, char const* reason,
         std::function<void(Player*)> give)
     {
         if (busy[player->GetGUID()])
             return;
         busy[player->GetGUID()] = true;
-        uint32 price = (setting == SETTING_SOURCE_NONE ? GOLDEN_PACK_PRICE : Price(Setting(player, setting))) * factor;
+        uint32 price = setting == SETTING_SOURCE_NONE ? fixedPrice : Price(Setting(player, setting));
         Emberspark::Spend(player, price, reason, [setting, price, give = std::move(give)](Player* online, bool paid)
         {
             busy[online->GetGUID()] = false;
@@ -509,7 +514,8 @@ namespace
 
         uint32 setting = pack == PACK_SKILL ? SETTING_SKILL_PACKS : pack == PACK_TALENT ? SETTING_TALENT_PACKS
             : SETTING_SOURCE_NONE;
-        BuyWithEmberspark(player, setting, 1, "card pack", [entry](Player* online) { GiveItems(online, entry, 1); });
+        BuyWithEmberspark(player, setting, GOLDEN_PACK_PRICE, "card pack",
+            [entry](Player* online) { GiveItems(online, entry, 1); });
     }
 
     void BuyCard(Player* player, uint8 kind, uint32 id)
@@ -524,7 +530,7 @@ namespace
             ChatHandler(player->GetSession()).SendSysMessage("You own that card already.");
             return;
         }
-        BuyWithEmberspark(player, SETTING_CARDS, CARD_PRICE_FACTOR[card.Rarity], "card", [&card](Player* online)
+        BuyWithEmberspark(player, SETTING_SOURCE_NONE, CARD_PRICE[card.Rarity], "card", [&card](Player* online)
         {
             if (Collection* owner = Loaded(online))
             {
