@@ -16,9 +16,11 @@
  */
 
 #include "wildcard.h"
+#include "emberspark.h"
 #include "Chat.h"
 #include "CommandScript.h"
 #include "DBCStores.h"
+#include "ObjectAccessor.h"
 #include "Player.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
@@ -32,6 +34,8 @@ using namespace Acore::ChatCommands;
 //   a talent rank as a talent (plain .learn cannot give a Hero talents). Requirements, role and level are ignored.
 // - .spellids [on|off]: shows the spell id on every spell tooltip (Classless window, spellbook, action bars, talents,
 //   buffs), for .learnability. Kept per character; the Emberforge_Classless addon draws it.
+// - .emberspark [amount]: adds amount Emberspark to the selected player's (or your) account; without one, shows the
+//   balance.
 class titan_commandscript : public CommandScript
 {
 public:
@@ -43,6 +47,7 @@ public:
         {
             { "learnability", HandleLearnAbility, SEC_GAMEMASTER, Console::No },
             { "spellids", HandleSpellIds, SEC_GAMEMASTER, Console::No },
+            { "emberspark", HandleEmberspark, SEC_GAMEMASTER, Console::No },
         };
         return commandTable;
     }
@@ -92,6 +97,35 @@ public:
 
         Classless::SendKnown(target);
         Classless::SendState(target);
+        return true;
+    }
+
+    static bool HandleEmberspark(ChatHandler* handler, Optional<uint32> amount)
+    {
+        Player* target = handler->getSelectedPlayerOrSelf();
+        if (!target)
+        {
+            handler->SendErrorMessage(LANG_NO_CHAR_SELECTED);
+            return false;
+        }
+
+        if (amount && *amount)
+        {
+            Emberspark::Add(target->GetSession()->GetAccountId(), *amount, "gm");
+            handler->PSendSysMessage("Added {} Emberspark to {}'s account.", Emberspark::Format(*amount),
+                target->GetName());
+            return true;
+        }
+
+        // Read without blocking; the answer goes to the GM, if still online.
+        ObjectGuid gm = handler->GetSession()->GetPlayer()->GetGUID();
+        std::string name = target->GetName();
+        Emberspark::Query(target, [gm, name](Player* /*online*/, uint32 balance)
+        {
+            if (Player* asker = ObjectAccessor::FindConnectedPlayer(gm))
+                ChatHandler(asker->GetSession()).PSendSysMessage("{}'s account: {} Emberspark.", name,
+                    Emberspark::Format(balance));
+        });
         return true;
     }
 

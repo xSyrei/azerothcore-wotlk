@@ -113,6 +113,8 @@ talking to it in addon whispers (prefix `EFCL`, protocol in both files).
 **GM commands** (`src/titan_commands.cpp`, GM accounts):
 - `.spellids [on|off]`: shows the spell id on every spell tooltip (the Classless window's abilities and talent
   ranks, the spellbook, action bars, buffs; the talent frame shows its talent id). Kept per character.
+- `.emberspark [amount]`: adds Emberspark to the selected player's (or your) account; without an amount, shows its
+  balance (see Emberspark).
 - `.learnability <spell id or link>`: teaches the selected player (or yourself) that ability the way Wildcard
   does (best rank for the level, with its companion spells), or that talent rank as a talent (plain `.learn`
   cannot give a Hero talents). Requirements, role and level are not checked.
@@ -288,7 +290,32 @@ level piece (an empty slot counts as 0; the next slot up when that one has nothi
 **Empty slots fill themselves**: gear a Hero gets (loot, quest rewards, purchases, crafting, caches) is put on at
 once when its slot is empty and the Hero can wear it.
 
-## Items
+## Prestige
+At level 60 a Hero can start again from level 1 at the **Keeper of the Ember** (creature 910100, "Prestige": Stormwind's
+Trade District and Orgrimmar's Valley of Strength; `src/prestige.cpp`, `data/sql/db-world/titan_prestige.sql`). Its
+menu shows the Emberspark balance, the Hero's prestige, this run's time and the fastest run, and what a prestige
+changes; the prestige itself asks for confirmation (alive, out of combat, not in a dungeon, battleground or queue).
+- **Lost:** the level (back to 1, at the race's starting point); every Wildcard ability and talent (a new random kit
+  and both tomes, as a new Hero: `Wildcard::Reset`); every quest, in the log or done, so all can be done and rewarded
+  again (but the game's hidden tracking quests).
+- **Kept:** gear, gold, Emberspark, professions, mounts, reputation, achievements and the role. Every piece worn that
+  needs more than level 1 goes to the bags (what does not fit, by mail) and back on in its old slot as soon as its
+  level allows, whatever is worn there then (to the bags). Gear left in the mail goes on once it is taken out.
+- **Given:** 500 Emberspark, 2 Titan Souls of Rested Experience (910001) and **Prestigious** (90607: 10% more
+  experience from everything, until level 60; the bonus is `OnPlayerGiveXP`'s, the buff shows it). Reaching level 60
+  again ends the run: 5,000 Emberspark more, and the fastest run is kept. Both are announced to the realm.
+- **Role locked** during a run: the Classless window keeps the role chosen (a Hero with none still picks one).
+
+It is all kept in the character's settings (`mod-titan-prestige`: rank, run, its start, the fastest run, the stashed
+gear by slot). Still to come: the Prestige window (the mockup), the rank on the name or tooltip, Runic Enhancements
+carried over.
+
+## Emberspark
+Project Emberforge's server currency, one balance per **account** (`titan_emberspark` in the auth database,
+`data/sql/db-auth/titan_emberspark.sql`; `src/emberspark.cpp`), so the shop can sell and spend it too. Every change is
+one atomic statement, logged in `titan_emberspark_log` with its reason. Earned by prestiges for now. GMs:
+`.emberspark [amount]` adds to the selected player's (or their own) account, or shows its balance.
+
 
 | Entry | Item | Effect |
 |---|---|---|

@@ -14,6 +14,8 @@ all three on every Hero at login (hero_resources.cpp).
 Roles (90603-90606), chosen in the Classless window (wildcard.cpp): a buff each, changing the threat the Hero causes
 (all schools): Melee and Ranged -50%, Tank +200%, Healer unchanged. Tank also takes 5% less damage (all schools) and
 has 5% more armor.
+
+Prestigious (90607): the buff of a prestige run, until level 60 (prestige.cpp).
 """
 
 EFFECT_APPLY_AURA = 6
@@ -107,4 +109,17 @@ SPELLS += [role(spell_id, name, icon, threat,
                 TANK_EXTRA if name == 'Tank' else ())
            for spell_id, name, icon, threat in ROLES]
 
-ICONS = [ICON] + [icon for _, _, icon, _ in ROLES]
+# Prestigious (90607): during a prestige run, until level 60 (prestige.cpp, which grants the bonus itself: every
+# experience source, OnPlayerGiveXP). The aura only shows it.
+PRESTIGE_ICON = 'INV_Emberforge_Emberspark'
+SPELLS.append({
+    'id': 90607, 'copy': SELF_TEMPLATE, 'name': 'Prestigious', 'icon': PRESTIGE_ICON,
+    'description': 'Experience gained increased by 10% until level 60. Granted by a prestige.',
+    'tooltip': 'Experience gained increased by 10% until level 60.',
+    'set': {**OWN, 'Attributes': SPELL_ATTR0_NO_AURA_CANCEL, 'AttributesEx': 0,
+            'AttributesEx3': SPELL_ATTR3_ALLOW_AURA_WHILE_DEAD},
+    'clear': [1, 2, 3],
+    'effects': {1: aura(AURA_DUMMY, 10, 0)},
+})
+
+ICONS = [ICON] + [icon for _, _, icon, _ in ROLES] + [PRESTIGE_ICON]

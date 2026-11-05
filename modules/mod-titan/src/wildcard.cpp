@@ -1351,6 +1351,14 @@ namespace Wildcard
         return cleared;
     }
 
+    void Reset(Player* player)
+    {
+        ClearAbilities(player);
+        player->resetTalents(true);
+        for (uint32 setting : { SETTING_ABILITIES_GRANTED, SETTING_PICKS_LEFT, SETTING_CAPSTONE_GRANTED })
+            player->UpdatePlayerSetting(SETTING_SOURCE, setting, 0);
+    }
+
     uint32 GetPicks(Player* player)
     {
         return player->GetPlayerSetting(SETTING_SOURCE, SETTING_PICKS_LEFT).value;

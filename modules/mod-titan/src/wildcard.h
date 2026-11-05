@@ -116,6 +116,9 @@ namespace Wildcard
     void Unlearn(Player* player, Ability const& ability);
     // Unlearns every offered ability (the kit and later Wildcard abilities; talents stay).
     uint32 ClearAbilities(Player* player);
+    // Prestige: forgets every Wildcard ability and talent and the count of what was granted, so the next level
+    // change rolls a new kit, then every roll again (prestige.cpp).
+    void Reset(Player* player);
 
     // Learns rank (from 0) of a talent the way Player::LearnTalent does once its checks pass; with reveal the
     // Classless window spins for it.
