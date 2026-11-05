@@ -214,8 +214,9 @@ namespace
         }
     }
 
-    // Every quest can be done, and rewarded, again: the log is emptied, the done ones forgotten (but the hidden tracking
-    // quests the game uses as flags), and the dailies, weeklies and monthlies done (holidays reset theirs each year).
+    // Every quest can be done, and rewarded, again: the log is emptied, the done ones forgotten (but the hidden
+    // tracking quests the game uses as flags), and the dailies, weeklies and monthlies done (holidays reset theirs
+    // each year).
     // Quest givers show theirs again once the Hero is home (the trip sends the world anew).
     void ForgetQuests(Player* player)
     {
