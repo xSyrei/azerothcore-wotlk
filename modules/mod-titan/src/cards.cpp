@@ -186,7 +186,8 @@ namespace
         // The spells and buffs a Hero's power rests on: the armors, the chained and burst spells, the rolling heals.
         "Chain Lightning", "Chain Heal", "Lava Burst", "Molten Armor", "Fel Armor", "Frostfire Bolt",
         "Seed of Corruption", "Prayer of Mending", "Lifebloom", "Savage Roar", "Kill Shot", "Fan of Knives",
-        "Ice Lance",
+        "Ice Lance", "Arcane Blast", "Shadowfiend", "Mind Sear", "Shadowflame", "Incinerate", "Holy Shield",
+        "Unbreakable Armor",
         // Emberforge's own: the Demon Hunter's Metamorphosis, Eye Beam and Fiery Brand, the Monk's Revival, Rising Sun
         // Kick, Fists of Fury and Essence Font.
         "Metamorphosis", "Eye Beam", "Fiery Brand", "Revival", "Rising Sun Kick", "Fists of Fury", "Essence Font",
@@ -194,7 +195,7 @@ namespace
     constexpr char const* EPIC_SKILLS[] = {
         // Cooldowns and defensives no talent teaches.
         "Ice Block", "Evocation", "Mirror Image", "Divine Shield", "Lay on Hands", "Cloak of Shadows", "Vanish",
-        "Evasion", "Innervate", "Barkskin", "Shadowfiend", "Divine Hymn", "Hymn of Hope", "Fire Elemental Totem",
+        "Evasion", "Innervate", "Barkskin", "Divine Hymn", "Hymn of Hope", "Fire Elemental Totem",
         "Earth Elemental Totem", "Shield Wall", "Retaliation", "Anti-Magic Shell", "Icebound Fortitude",
         "Empower Rune Weapon", "Deterrence", "Kill Command",
         // Emberforge's own.
