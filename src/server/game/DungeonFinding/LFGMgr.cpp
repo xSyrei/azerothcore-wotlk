@@ -20,6 +20,7 @@
 #include "Chat.h"
 #include "CharacterCache.h"
 #include "Common.h"
+#include "Config.h"
 #include "DBCStores.h"
 #include "DisableMgr.h"
 #include "GameEventMgr.h"
@@ -39,6 +40,7 @@
 #include "SharedDefines.h"
 #include "SocialMgr.h"
 #include "SpellAuras.h"
+#include "World.h"
 #include "WorldSession.h"
 
 namespace lfg
@@ -278,6 +280,20 @@ namespace lfg
                     LfgDungeonStore[dungeon->ID] = LFGDungeonData(dungeon);
                     break;
             }
+        }
+
+        // DungeonFinder.MinLevel (0: off): every normal-difficulty dungeon and random dungeon queues from that level to
+        // the level cap (heroics and raids keep their own; disabled maps stay locked).
+        if (uint8 minLevel = sConfigMgr->GetOption<uint8>("DungeonFinder.MinLevel", 0))
+        {
+            uint8 maxLevel = uint8(sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL));
+            for (auto& [id, data] : LfgDungeonStore)
+                if (data.difficulty == DUNGEON_DIFFICULTY_NORMAL
+                    && (data.type == LFG_TYPE_DUNGEON || data.type == LFG_TYPE_RANDOM))
+                {
+                    data.minlevel = minLevel;
+                    data.maxlevel = std::max(data.maxlevel, maxLevel);
+                }
         }
 
         // Fill teleport locations from DB

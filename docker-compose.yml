@@ -80,6 +80,8 @@ services:
       AC_MAX_PLAYER_LEVEL: "60"
       AC_ENABLE_PLAYER_SETTINGS: "1"
       AC_VALIDATE_SKILL_LEARNED_BY_SPELLS: "0"
+      # Every normal dungeon queues from level 10 (LFGMgr.cpp; zzz_titan_dungeon_finder.sql).
+      AC_DUNGEON_FINDER_MIN_LEVEL: "10"
     ports:
       - ${DOCKER_WORLD_EXTERNAL_PORT:-8085}:8085
       - ${DOCKER_SOAP_EXTERNAL_PORT:-7878}:7878

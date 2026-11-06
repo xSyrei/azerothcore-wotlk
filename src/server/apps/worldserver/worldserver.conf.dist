@@ -3430,6 +3430,15 @@ DungeonAccessRequirements.PortalAvgIlevelCheck = 0
 DungeonAccessRequirements.OptionalStringID = 0
 
 #
+#    DungeonFinder.MinLevel
+#        Description: Every normal-difficulty dungeon and random dungeon can be queued for from this level up to
+#                     MaxPlayerLevel in the dungeon finder (heroics and raids keep their own levels; disabled maps
+#                     stay locked). Their entrances keep dungeon_access_template's levels.
+#        Default:     0 - (Off: the levels of LFGDungeons.dbc)
+
+DungeonFinder.MinLevel = 0
+
+#
 ###################################################################################################
 
 ###################################################################################################
