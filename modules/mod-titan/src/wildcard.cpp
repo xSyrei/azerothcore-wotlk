@@ -417,7 +417,9 @@ namespace
     constexpr uint32 SPELL_PICK_LOCK = 1804;
 
     // Emberforge's own abilities (no trainer teaches them): the spells are in spell_dbc
-    // (data/sql/db-world/titan_demon_hunter_spells.sql) and the client patch (patch_spells.py).
+    // (data/sql/db-world/titan_demon_hunter_spells.sql) and the client patch (patch_spells.py). Their levels follow
+    // their power, over the whole 1-60 the way the classes' own do: the builders and spenders from 1, the major
+    // cooldowns late (Metamorphosis and Revival at 50, as the classes' big talent abilities), the capstones at 60.
     struct CustomAbility
     {
         uint32 SpellId;
@@ -429,44 +431,44 @@ namespace
         { 90100, CLASS_DEMON_HUNTER, SKILL_HAVOC, 1 },      // Demon's Bite
         { 90101, CLASS_DEMON_HUNTER, SKILL_HAVOC, 1 },      // Chaos Strike
         { 90103, CLASS_DEMON_HUNTER, SKILL_HAVOC, 1 },      // Fel Rush
-        { 90111, CLASS_DEMON_HUNTER, SKILL_HAVOC, 4 },      // Throw Glaive
-        { 90102, CLASS_DEMON_HUNTER, SKILL_HAVOC, 10 },     // Blade Dance
-        { 90114, CLASS_DEMON_HUNTER, SKILL_HAVOC, 12 },     // Consume Magic
-        { 90109, CLASS_DEMON_HUNTER, SKILL_HAVOC, 14 },     // Vengeful Retreat
-        { 90113, CLASS_DEMON_HUNTER, SKILL_HAVOC, 18 },     // Blur
-        { 90105, CLASS_DEMON_HUNTER, SKILL_HAVOC, 20 },     // Eye Beam
-        { 90112, CLASS_DEMON_HUNTER, SKILL_HAVOC, 24 },     // Chaos Nova
-        { 90116, CLASS_DEMON_HUNTER, SKILL_HAVOC, 30 },     // Metamorphosis
-        { 90121, CLASS_DEMON_HUNTER, SKILL_HAVOC, 30 },     // Fel Barrage
+        { 90111, CLASS_DEMON_HUNTER, SKILL_HAVOC, 6 },      // Throw Glaive
+        { 90102, CLASS_DEMON_HUNTER, SKILL_HAVOC, 16 },     // Blade Dance
+        { 90114, CLASS_DEMON_HUNTER, SKILL_HAVOC, 20 },     // Consume Magic
+        { 90109, CLASS_DEMON_HUNTER, SKILL_HAVOC, 22 },     // Vengeful Retreat
+        { 90113, CLASS_DEMON_HUNTER, SKILL_HAVOC, 28 },     // Blur
+        { 90112, CLASS_DEMON_HUNTER, SKILL_HAVOC, 30 },     // Chaos Nova
+        { 90105, CLASS_DEMON_HUNTER, SKILL_HAVOC, 34 },     // Eye Beam
+        { 90116, CLASS_DEMON_HUNTER, SKILL_HAVOC, 50 },     // Metamorphosis
+        { 90121, CLASS_DEMON_HUNTER, SKILL_HAVOC, 60 },     // Fel Barrage
         { 90119, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 1 },  // Immolation Aura
         { 90124, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 1 },  // Shear
         { 90125, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 1 },  // Soul Cleave
-        { 90129, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 6 },  // Torment
-        { 90127, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 10 }, // Demon Spikes
-        { 90117, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 16 }, // Felblade
-        { 90132, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 16 }, // Sigil of Chains
-        { 90128, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 20 }, // Fiery Brand
-        { 90138, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 24 }, // Soul Barrier
-        { 90118, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 26 }, // Darkness
-        { 90135, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 30 }, // Spirit Bomb
+        { 90129, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 8 },  // Torment
+        { 90127, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 14 }, // Demon Spikes
+        { 90117, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 24 }, // Felblade
+        { 90132, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 32 }, // Sigil of Chains
+        { 90128, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 36 }, // Fiery Brand
+        { 90138, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 44 }, // Soul Barrier
+        { 90118, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 48 }, // Darkness
+        { 90135, CLASS_DEMON_HUNTER, SKILL_VENGEANCE, 60 }, // Spirit Bomb
         { 90300, CLASS_MONK, SKILL_MISTWEAVER, 1 },         // Soothing Mist
         { 90301, CLASS_MONK, SKILL_MISTWEAVER, 1 },         // Vivify
-        { 90302, CLASS_MONK, SKILL_MISTWEAVER, 4 },         // Renewing Mist
-        { 90309, CLASS_MONK, SKILL_MISTWEAVER, 8 },         // Detox
-        { 90303, CLASS_MONK, SKILL_MISTWEAVER, 10 },        // Enveloping Mist
-        { 90308, CLASS_MONK, SKILL_MISTWEAVER, 14 },        // Thunder Focus Tea
-        { 90306, CLASS_MONK, SKILL_MISTWEAVER, 18 },        // Life Cocoon
-        { 90304, CLASS_MONK, SKILL_MISTWEAVER, 20 },        // Essence Font
-        { 90313, CLASS_MONK, SKILL_MISTWEAVER, 22 },        // Refreshing Jade Wind
-        { 90307, CLASS_MONK, SKILL_MISTWEAVER, 26 },        // Revival
-        { 90311, CLASS_MONK, SKILL_MISTWEAVER, 30 },        // Invoke Chi-Ji, the Red Crane (the capstone)
+        { 90302, CLASS_MONK, SKILL_MISTWEAVER, 6 },         // Renewing Mist
+        { 90309, CLASS_MONK, SKILL_MISTWEAVER, 12 },        // Detox
+        { 90303, CLASS_MONK, SKILL_MISTWEAVER, 18 },        // Enveloping Mist
+        { 90308, CLASS_MONK, SKILL_MISTWEAVER, 26 },        // Thunder Focus Tea
+        { 90306, CLASS_MONK, SKILL_MISTWEAVER, 32 },        // Life Cocoon
+        { 90304, CLASS_MONK, SKILL_MISTWEAVER, 38 },        // Essence Font
+        { 90313, CLASS_MONK, SKILL_MISTWEAVER, 42 },        // Refreshing Jade Wind
+        { 90307, CLASS_MONK, SKILL_MISTWEAVER, 50 },        // Revival
+        { 90311, CLASS_MONK, SKILL_MISTWEAVER, 60 },        // Invoke Chi-Ji, the Red Crane (the capstone)
         { 90320, CLASS_MONK, SKILL_WINDWALKER, 1 },         // Tiger Palm
-        { 90321, CLASS_MONK, SKILL_WINDWALKER, 3 },         // Blackout Kick
-        { 90322, CLASS_MONK, SKILL_WINDWALKER, 10 },        // Rising Sun Kick
-        { 90325, CLASS_MONK, SKILL_WINDWALKER, 12 },        // Spinning Crane Kick
-        { 90323, CLASS_MONK, SKILL_WINDWALKER, 16 },        // Fists of Fury
-        { 90327, CLASS_MONK, SKILL_WINDWALKER, 24 },        // Whirling Dragon Punch
-        { 90329, CLASS_MONK, SKILL_WINDWALKER, 30 },        // Storm, Earth, and Fire (the capstone)
+        { 90321, CLASS_MONK, SKILL_WINDWALKER, 4 },         // Blackout Kick
+        { 90322, CLASS_MONK, SKILL_WINDWALKER, 16 },        // Rising Sun Kick
+        { 90325, CLASS_MONK, SKILL_WINDWALKER, 20 },        // Spinning Crane Kick
+        { 90323, CLASS_MONK, SKILL_WINDWALKER, 30 },        // Fists of Fury
+        { 90327, CLASS_MONK, SKILL_WINDWALKER, 44 },        // Whirling Dragon Punch
+        { 90329, CLASS_MONK, SKILL_WINDWALKER, 60 },        // Storm, Earth, and Fire (the capstone)
     };
     constexpr std::pair<uint32, char const*> CUSTOM_SKILL_LINES[] = {
         { SKILL_HAVOC, "Havoc" },

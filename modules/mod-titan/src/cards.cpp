@@ -29,6 +29,8 @@
 #include "Random.h"
 #include "ScriptMgr.h"
 #include "ScriptedGossip.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 #include "StringConvert.h"
 #include "StringFormat.h"
 #include "Tokenize.h"
@@ -37,6 +39,8 @@
 #include <algorithm>
 #include <array>
 #include <map>
+#include <set>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -164,16 +168,74 @@ namespace
         std::map<std::pair<uint8, uint32>, uint32> byId;
     };
 
-    // Talent abilities are Epic, Legendary from their tree's ninth row; the others Rare from level 30. Capstones are
-    // never cards: they stay the level 60 roll's, something to chase.
+    // Skill Cards' rarity is their power: the cooldowns that change a fight, the forms and summons that change how a
+    // Hero plays, are Legendary; strong cooldowns, defensives and the specs' signature abilities Epic. By name (every
+    // rank and faction version); the rest: talent abilities Epic, abilities from level 30 Rare, Common.
+    constexpr char const* LEGENDARY_SKILLS[] = {
+        // Major damage and healing cooldowns.
+        "Icy Veins", "Arcane Power", "Combustion", "Power Infusion", "Avenging Wrath", "Bloodlust", "Heroism",
+        "Adrenaline Rush", "Death Wish", "Recklessness", "Bestial Wrath", "Army of the Dead", "Pain Suppression",
+        // Forms and summons that change how a Hero plays.
+        "Shadowform", "Moonkin Form", "Tree of Life", "Summon Water Elemental", "Summon Felguard", "Force of Nature",
+        // Emberforge's own: the Demon Hunter's Metamorphosis, the Monk's Revival.
+        "Metamorphosis", "Revival",
+    };
+    constexpr char const* EPIC_SKILLS[] = {
+        // Cooldowns and defensives no talent teaches.
+        "Ice Block", "Evocation", "Mirror Image", "Divine Shield", "Lay on Hands", "Cloak of Shadows", "Vanish",
+        "Evasion", "Innervate", "Barkskin", "Shadowfiend", "Divine Hymn", "Hymn of Hope", "Fire Elemental Totem",
+        "Earth Elemental Totem", "Shield Wall", "Retaliation", "Anti-Magic Shell", "Icebound Fortitude",
+        "Empower Rune Weapon", "Deterrence", "Kill Command", "Lava Burst", "Earth Shield",
+        // Emberforge's own.
+        "Eye Beam", "Fiery Brand", "Darkness", "Soul Barrier", "Life Cocoon", "Essence Font", "Thunder Focus Tea",
+        "Fists of Fury", "Whirling Dragon Punch", "Rising Sun Kick",
+    };
+    constexpr char const* RARE_SKILLS[] = {
+        // Emberforge's own (their levels are low for what they do).
+        "Blade Dance", "Chaos Nova", "Vengeful Retreat", "Blur", "Demon Spikes", "Felblade", "Sigil of Chains",
+        "Spinning Crane Kick", "Enveloping Mist", "Refreshing Jade Wind",
+    };
+
+    template <std::size_t N>
+    bool Listed(char const* const (&names)[N], std::string_view name)
+    {
+        return std::find(std::begin(names), std::end(names), name) != std::end(names);
+    }
+
+    std::string_view FirstRankName(Wildcard::Ability const& ability)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(ability.Ranks.front().SpellId);
+        char const* name = spellInfo ? spellInfo->SpellName[LOCALE_enUS] : nullptr;
+        return name ? name : "";
+    }
+
     Rarity SkillRarity(Wildcard::Ability const& ability)
     {
-        if (ability.TalentId)
-        {
-            TalentEntry const* talent = sTalentStore.LookupEntry(ability.TalentId);
-            return talent && talent->Row >= 8 ? RARITY_LEGENDARY : RARITY_EPIC;
-        }
+        std::string_view name = FirstRankName(ability);
+        if (Listed(LEGENDARY_SKILLS, name))
+            return RARITY_LEGENDARY;
+        if (Listed(EPIC_SKILLS, name) || ability.TalentId)
+            return RARITY_EPIC;
+        if (Listed(RARE_SKILLS, name))
+            return RARITY_RARE;
         return ability.Ranks.front().Level >= 30 ? RARITY_RARE : RARITY_COMMON;
+    }
+
+    // One card for what is one ability to the player: a talent's versions (Mangle (Cat) and (Bear), Feral Charge's),
+    // the form versions of a name (Swipe (Cat) and (Bear)), the faction versions (Bloodlust and Heroism, Seal of
+    // Vengeance and of Corruption, Teleport: Shattrath's two).
+    std::string CardKey(Wildcard::Ability const& ability)
+    {
+        if (ability.TalentId)
+            return "talent:" + std::to_string(ability.TalentId);
+        std::string name(FirstRankName(ability));
+        if (std::size_t paren = name.find(" ("); paren != std::string::npos)
+            name.erase(paren);
+        if (name == "Heroism")
+            return "Bloodlust";
+        if (name == "Seal of Corruption")
+            return "Seal of Vengeance";
+        return name;
     }
 
     Rarity TalentRarity(TalentEntry const* talent)
@@ -195,11 +257,29 @@ namespace
                 built.byRarity[card.Kind][card.Rarity].push_back(uint32(built.cards.size()));
                 built.cards.push_back(card);
             };
+            // Of the versions of one ability, the card is the lowest first rank's (the same on every start).
+            std::map<std::string, Wildcard::Ability const*> skills;
             for (Wildcard::Ability const& ability : Wildcard::Abilities())
-                if (ability.Offered && !ability.Banned && !ability.Companion && !ability.Capstone
-                    && !ability.Ranks.empty())
-                    add({ KIND_SKILL, ability.Ranks.front().SpellId, ability.Ranks.front().SpellId,
-                        SkillRarity(ability), 1, ability.Roles });
+            {
+                if (!ability.Offered || ability.Banned || ability.Companion || ability.Capstone
+                    || ability.Ranks.empty())
+                    continue;
+                Wildcard::Ability const*& kept = skills[CardKey(ability)];
+                if (!kept || ability.Ranks.front().SpellId < kept->Ranks.front().SpellId)
+                    kept = &ability;
+            }
+            std::set<uint32> order;
+            std::unordered_map<uint32, Wildcard::Ability const*> byFirst;
+            for (auto const& [key, ability] : skills)
+            {
+                order.insert(ability->Ranks.front().SpellId);
+                byFirst[ability->Ranks.front().SpellId] = ability;
+            }
+            for (uint32 first : order)
+            {
+                Wildcard::Ability const& ability = *byFirst[first];
+                add({ KIND_SKILL, first, first, SkillRarity(ability), 1, ability.Roles });
+            }
             for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
             {
                 TalentEntry const* talent = sTalentStore.LookupEntry(i);

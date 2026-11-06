@@ -191,7 +191,7 @@ Kill, Chaos Cleave to Eternal Reaping, Unbound Chaos to Inertia); the tree's arr
 TalentTab 413, talents 2325-2347, ranks 90253-90299, built the same way (`VENGEANCE` in `patch_talents.py`), one
 theme a column, row after row: strikes (Improved Shear, Shear Fury, Focused Cleave, Feast of Souls, Void Reaver),
 fire (Agonizing Flames, Infernal Armor, Fel Flame Fortification, Charred Flesh, Burning Alive, Fiery Demise,
-Vulnerability under Spirit Bomb, Vengeance's capstone at level 30), souls and spikes (Demonic Wards, Razor Spikes,
+Vulnerability under Spirit Bomb, Vengeance's capstone at level 60), souls and spikes (Demonic Wards, Razor Spikes,
 Painbringer, Calcified Spikes, Fallout, Feed the Demon, Last Resort), sigils and shields (Quickened and
 Concentrated Sigils, Cover of Darkness, Ruinous Bulwark). Fiery Demise, Vulnerability and Last Resort (a killing
 blow leaves 40% health, then Uncontained Fel for 3 min) are a UnitScript's (`titan_dh_damage_taken`); helpers
@@ -322,8 +322,11 @@ its skin is baked by `client-patch/bake_npc.py` (the dwarf's skin, face, beard a
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and
 every talent a **Talent Card** (the talent at its top rank: one card, bought or opened, and it is complete), each
-Common, Rare, Epic or Legendary (Skill Cards: talent abilities Epic, Legendary from their tree's ninth row; abilities
-from level 30 Rare; Talent Cards by their tree row: 0-2, 3-5, 6-8, 9 and up). A card opened is the **account's**
+Common, Rare, Epic or Legendary (Skill Cards by their power: the fight-changing cooldowns, forms and summons
+Legendary, Metamorphosis, Icy Veins, Power Infusion, Bloodlust and the like; strong cooldowns, defensives and talent
+abilities Epic; abilities from level 30 Rare; lists in `src/cards.cpp`. Talent Cards by their tree row: 0-2, 3-5, 6-8,
+9 and up). The versions of one ability are one card: a talent's (Mangle (Cat) and (Bear)), a form's (Swipe), a
+faction's (Bloodlust and Heroism). A card opened is the **account's**
 forever, for every character on it (`titan_cards` in the auth database, `data/sql/db-auth/titan_cards.sql`;
 `src/cards.cpp`). Slotting cards into Specializations, loadouts the level-up rolls follow, comes next.
 - **Packs** (items: Skill Card Pack 910010, Talent Card Pack 910011, Golden Skill Card Pack 910012, Golden Talent
