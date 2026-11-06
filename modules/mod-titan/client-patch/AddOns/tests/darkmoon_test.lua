@@ -196,10 +196,10 @@ for _ = 1, 200 do
 end
 check(t.reveal.phase == "shown", "the cards deal out and turn over")
 server("R,1,1.2300.90200.1.1.0")
-check(#t.reveal.queue == 1, "a second pack waits its turn")
+check(#t.reveal.queue == 1 and t.reveal.phase == "dissolve", "a second pack: the cards on show burn away first")
 t.stage.scripts.OnMouseDown(t.stage)
-check(t.reveal.phase == "dissolve", "a click dissolves the cards")
-for _ = 1, 18 do
+check(t.reveal.phase == "dissolve", "a click while they burn changes nothing")
+for _ = 1, 40 do
     t.stage.scripts.OnUpdate(t.stage, 0.05)
 end
 check(t.reveal.phase ~= "idle" and #t.reveal.cards == 1 and #t.reveal.queue == 0, "then the waiting pack opens")

@@ -38,8 +38,7 @@ local GOLDEN_INK, GOLDEN_RGB = { 0.42, 0.24, 0 }, { 1, 0.84, 0.3 }
 -- Where the icon, the banner and the parchment's lines sit on each kind's card (fractions of the card).
 local LAYOUT = {
     [0] = { x = 0.5, y = 0.287, r = 0.25, banner = 0.512, rarity = 0.705, kind = 0.765, note = 0.815, gems = 0.88 },
-    [1] = { x = 0.5, y = 0.268, r = 0.285, banner = 0.508, rarity = 0.665, kind = 0.725, note = 0.775, gems = 0.845,
-        behind = true },
+    [1] = { x = 0.5, y = 0.268, r = 0.285, banner = 0.508, rarity = 0.665, kind = 0.725, note = 0.775, gems = 0.845 },
 }
 local PACKS = {
     [0] = { name = "Skill Card Pack", item = 910010, art = "PackSkill", kind = 0 },
@@ -898,9 +897,12 @@ end
 Shelf(0, "Panel", "CARD PACKS", { 0, 1 })
 Shelf((PAGE_WIDTH + 14) / 2, "PanelGold", "GOLDEN PACKS", { 2, 3 })
 
--- Card faces: the frame art with the icon in its circle (behind the frame where its window is open, the Talent
--- Cards'), the name on the banner and the rarity on the parchment. What is drawn on the frame is a child of its own
--- (content), hidden while a card turns over.
+-- Card faces: the frame art, the icon in its circle under the frame's ring (build_darkmoon_art.py cuts it from the
+-- frame: see-through inside the circle, solid outside, so the square icon's corners never show), the name on the
+-- banner and the rarity on the parchment. What is drawn on the frame is a child of its own (content), hidden while a
+-- card turns over.
+local RING_SPAN = 2.4      -- the ring over the icon: this many radii across (build_darkmoon_art.py)
+local ICON_CROP = 0.07     -- the game's icons have a bevelled border: cut it off each edge
 local function CardFace(parent, width, height)
     local card = CreateFrame("Frame", nil, parent)
     card:SetWidth(width)
@@ -912,8 +914,6 @@ local function CardFace(parent, width, height)
     card.glow:SetPoint("TOPLEFT", -width * 0.35, width * 0.35)
     card.glow:SetPoint("BOTTOMRIGHT", width * 0.35, -width * 0.35)
     card.glow:Hide()
-    card.iconBehind = card:CreateTexture(nil, "BORDER")
-    card.iconBehind:Hide()
     card.frameArt = card:CreateTexture(nil, "ARTWORK")
     card.frameArt:SetAllPoints()
     card.back = card:CreateTexture(nil, "OVERLAY")
@@ -924,16 +924,25 @@ local function CardFace(parent, width, height)
     content:SetHeight(height)
     content:SetPoint("CENTER", 0, 0)
     card.content = content
-    card.iconOn = content:CreateTexture(nil, "BACKGROUND")
+    -- The icon (square, its border cut off) and over it the frame's ring, solid outside the circle.
+    card.icon = content:CreateTexture(nil, "BACKGROUND")
+    card.icon:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
+    card.ring = content:CreateTexture(nil, "BORDER")
+    -- The text, as large as the card allows: the name outlined on its dark banner, the rest in dark ink on the
+    -- parchment, lifted by a faint light edge.
     local scale = width / 190
-    card.name = Text(content, math.max(7, math.floor(13 * scale)), NAME_RGB[0], DISPLAY_FONT, "OUTLINE")
-    card.name:SetWidth(width * 0.8)
-    card.rarity = Text(content, math.max(7, math.floor(12 * scale)), INK_RGB[0], DISPLAY_FONT)
-    card.rarity:SetShadowOffset(0, 0)
-    card.kind = Text(content, math.max(6, math.floor(11 * scale)), { 0.16, 0.1, 0.05 }, BODY_FONT)
-    card.kind:SetShadowOffset(0, 0)
-    card.note = Text(content, math.max(6, math.floor(10 * scale)), { 0.24, 0.16, 0.08 }, BODY_FONT)
-    card.note:SetShadowOffset(0, 0)
+    card.name = Text(content, math.max(9, math.floor(16 * scale)), NAME_RGB[0], BODY_FONT, "OUTLINE")
+    card.name:SetWidth(width * 0.86)
+    card.name:SetShadowOffset(0, 0)
+    local function Ink(size, color)
+        local text = Text(content, size, color, BODY_FONT)
+        text:SetShadowColor(1, 0.93, 0.78, 0.45)
+        text:SetShadowOffset(1, -1)
+        return text
+    end
+    card.rarity = Ink(math.max(8, math.floor(15 * scale)), INK_RGB[0])
+    card.kind = Ink(math.max(8, math.floor(13 * scale)), { 0.1, 0.06, 0.03 })
+    card.note = Ink(math.max(7, math.floor(11 * scale)), { 0.16, 0.1, 0.05 })
     card.gems = {}
     for index = 1, 4 do
         local gem = content:CreateTexture(nil, "OVERLAY")
@@ -955,14 +964,17 @@ local function CardFace(parent, width, height)
         self.back:Hide()
         local frameFile = (entry.kind == 1 and "CardTalent" or "CardSkill") .. (golden and "Golden" or "")
         self.frameArt:SetTexture(ART .. frameFile)
-        local icon = layout.behind and self.iconBehind or self.iconOn
-        Shown(self.iconOn, not layout.behind)
-        Shown(self.iconBehind, layout.behind)
-        icon:ClearAllPoints()
-        icon:SetWidth(w * layout.r * 2)
-        icon:SetHeight(w * layout.r * 2)
-        icon:SetPoint("CENTER", self.content, "TOPLEFT", w * layout.x, -h * layout.y)
-        SetPortraitToTexture(icon, CardIcon(entry))
+        local cx, cy, size = w * layout.x, -h * layout.y, w * layout.r * 2
+        self.icon:ClearAllPoints()
+        self.icon:SetWidth(size)
+        self.icon:SetHeight(size)
+        self.icon:SetPoint("CENTER", self.content, "TOPLEFT", cx, cy)
+        self.icon:SetTexture(CardIcon(entry))
+        self.ring:SetTexture(ART .. frameFile .. "Ring")
+        self.ring:ClearAllPoints()
+        self.ring:SetWidth(size / 2 * RING_SPAN)
+        self.ring:SetHeight(size / 2 * RING_SPAN)
+        self.ring:SetPoint("CENTER", self.content, "TOPLEFT", cx, cy)
         self.name:ClearAllPoints()
         self.name:SetPoint("CENTER", self.content, "TOPLEFT", w / 2, -h * layout.banner)
         self.name:SetText(CardName(entry))
@@ -989,13 +1001,14 @@ local function CardFace(parent, width, height)
         self.lock:ClearAllPoints()
         self.lock:SetPoint("CENTER", self.content, "TOPLEFT", w / 2, -h * layout.y)
         Shown(self.lock, locked)
-        local shade = locked and 0.42 or 1
-        for _, texture in ipairs({ self.frameArt, self.iconOn, self.iconBehind }) do
+        -- Not owned: greyed and darker, the text still readable.
+        local shade = locked and 0.62 or 1
+        for _, texture in ipairs({ self.frameArt, self.icon, self.ring }) do
             texture:SetVertexColor(shade, shade, shade)
             texture:SetDesaturated(locked and true or false)
         end
         for _, text in ipairs({ self.name, self.rarity, self.kind, self.note }) do
-            text:SetAlpha(locked and 0.45 or 1)
+            text:SetAlpha(locked and 0.9 or 1)
         end
         self.content:Show()
     end
@@ -1003,7 +1016,6 @@ local function CardFace(parent, width, height)
     -- While it turns: the frame art alone, squeezed; afterwards what is drawn on it again.
     function card:SetContent(on)
         Shown(self.content, on)
-        Shown(self.iconBehind, on and self.layout and self.layout.behind)
     end
 
     function card:SetBack(kind, golden)
@@ -1011,7 +1023,6 @@ local function CardFace(parent, width, height)
         self.back:Show()
         self.frameArt:SetTexture(nil)
         self.layout = nil
-        self.iconBehind:Hide()
         self.content:Hide()
         self.glow:Hide()
     end
@@ -1026,10 +1037,43 @@ stage:SetFrameLevel(display:GetFrameLevel() + 2)
 stage:EnableMouse(true)
 local CARD_W, CARD_H = 128, 192
 local CARD_Y = -124        -- the cards' centers, from the display's top
+-- Each card sits in a clip of its own (a ScrollFrame, which clips what it holds): burning, the clip shrinks from the
+-- bottom up, so the card is eaten away behind its glowing edge. PAD: room in the clip for the card's glow.
+local PAD = 40
+local SLOT_W, SLOT_H = CARD_W + PAD * 2, CARD_H + PAD * 2
+local burnLayer = CreateFrame("Frame", nil, stage)
+burnLayer:SetAllPoints()
+burnLayer:SetFrameLevel(stage:GetFrameLevel() + 12)
 local revealCards = {}
 for index = 1, 5 do
-    local card = CardFace(stage, CARD_W, CARD_H)
+    local slot = CreateFrame("ScrollFrame", nil, stage)
+    slot:SetWidth(SLOT_W)
+    slot:SetHeight(SLOT_H)
+    local holder = CreateFrame("Frame", nil, slot)
+    holder:SetWidth(SLOT_W)
+    holder:SetHeight(SLOT_H)
+    slot:SetScrollChild(holder)
+    local card = CardFace(holder, CARD_W, CARD_H)
+    card:SetPoint("CENTER", 0, 0)
+    card.slot = slot
     card:Hide()
+    -- The burning edge: a bright streak over a wider ember glow, riding the clip's bottom.
+    card.edgeGlow = burnLayer:CreateTexture(nil, "ARTWORK")
+    card.edgeGlow:SetTexture(ART .. "Glow")
+    card.edgeGlow:SetBlendMode("ADD")
+    card.edgeGlow:SetVertexColor(1, 0.35, 0.08)
+    card.edgeGlow:SetWidth(CARD_W + 40)
+    card.edgeGlow:SetHeight(46)
+    card.edgeGlow:SetPoint("CENTER", slot, "BOTTOM", 0, 0)
+    card.edge = burnLayer:CreateTexture(nil, "OVERLAY")
+    card.edge:SetTexture(ART .. "Slash")
+    card.edge:SetBlendMode("ADD")
+    card.edge:SetVertexColor(1, 0.78, 0.35)
+    card.edge:SetWidth(CARD_W + 14)
+    card.edge:SetHeight(20)
+    card.edge:SetPoint("CENTER", slot, "BOTTOM", 0, 0)
+    card.edge:Hide()
+    card.edgeGlow:Hide()
     card.result = Text(card, 10, MUTED, BODY_FONT)
     card.result:SetPoint("TOP", card, "BOTTOM", 0, -3)
     card:EnableMouse(true)
@@ -1060,10 +1104,23 @@ local function SlotX(index, count)
     return PAGE_WIDTH / 2 + (index - (count + 1) / 2) * (CARD_W + 18)
 end
 
+-- A card's slot, centered at x, y on the stage (from its top left); burnt: how much of the card is gone, bottom up.
+local function PlaceCard(card, x, y, burnt)
+    card.slot:ClearAllPoints()
+    card.slot:SetPoint("TOP", stage, "TOPLEFT", x, y + SLOT_H / 2)
+    card.slot:SetHeight((burnt or 0) > 0 and math.max(1, PAD + CARD_H * (1 - burnt)) or SLOT_H)
+    card.x, card.y = x, y
+end
+
 local function ResetStage()
     for _, card in ipairs(revealCards) do
         card:Hide()
         card:SetAlpha(1)
+        card:SetWidth(CARD_W)
+        card.edge:Hide()
+        card.edgeGlow:Hide()
+        PlaceCard(card, card.x or PAGE_WIDTH / 2, card.y or CARD_Y, 0)
+        card.slot:SetHeight(SLOT_H)
     end
     packTop:Hide()
     packBottom:Hide()
@@ -1082,6 +1139,7 @@ local function NextOrIdle()
     else
         idle:Show()
     end
+    Refresh()
 end
 
 local function Dissolve()
@@ -1091,23 +1149,16 @@ local function Dissolve()
     reveal.phase = "dissolve"
     reveal.t = 0
     doneButton:Hide()
-    for index, card in ipairs(revealCards) do
-        if card:IsShown() then
-            local x, y = Where(card)
-            local rgb = reveal.golden and GOLDEN_RGB or RARITY_RGB[card.entry.rarity]
-            for _ = 1, 16 do
-                Emit({ x = x + math.random(-60, 60), y = y + math.random(-90, 90), vx = math.random(-30, 30),
-                    vy = math.random(40, 140), r = rgb[1], g = rgb[2], b = rgb[3], size = 5 + math.random() * 7,
-                    life = 0.7 + math.random() * 0.5, delay = index * 0.05 })
-            end
-        end
-    end
+    skipText:SetText("")
+    PlaySound("igQuestLogAbandonQuest")
 end
 doneButton:SetScript("OnClick", Dissolve)
 
 function StartReveal(pack, cards)
     if reveal.phase ~= "idle" then
+        -- Another pack opened: the cards on show burn away, then it plays.
         reveal.queue[#reveal.queue + 1] = { pack = pack, cards = cards }
+        Dissolve()
         return
     end
     idle:Hide()
@@ -1150,6 +1201,7 @@ local function TurnCard(card)
     local x, y = Where(card)
     local rgb = reveal.golden and GOLDEN_RGB or RARITY_RGB[card.entry.rarity]
     Burst(x, y, 8 + card.entry.rarity * 14, rgb, 60, 160 + card.entry.rarity * 90)
+    Ring(x, y, 90, { 1, 0.95, 0.85 })
     if card.entry.rarity >= 2 then
         Ring(x, y, 160 + card.entry.rarity * 40, rgb)
     end
@@ -1205,8 +1257,7 @@ stage:SetScript("OnUpdate", function(_, delta)
             if card.entry then
                 local p = Ease(math.max(0, math.min(1, (t - (index - 1) * 0.08) / 0.4)))
                 card:Show()
-                card:ClearAllPoints()
-                card:SetPoint("CENTER", stage, "TOPLEFT", cx + (SlotX(index, count) - cx) * p, cy + 30 * (1 - p))
+                PlaceCard(card, cx + (SlotX(index, count) - cx) * p, cy + 30 * (1 - p))
                 card:SetAlpha(p)
             end
         end
@@ -1248,13 +1299,34 @@ stage:SetScript("OnUpdate", function(_, delta)
             end
         end
     elseif reveal.phase == "dissolve" then
+        -- Each card burns from the bottom up, one after another: the clip shrinks behind a flickering edge that
+        -- sheds embers.
         for index, card in ipairs(revealCards) do
-            if card.entry then
-                local p = math.max(0, math.min(1, (t - index * 0.05) / 0.5))
-                card:SetAlpha(1 - p)
+            if card.entry and card:IsShown() then
+                local p = math.max(0, math.min(1, (t - (index - 1) * 0.12) / 0.9))
+                PlaceCard(card, card.x, card.y, p)
+                local burning = p > 0 and p < 1
+                Shown(card.edge, burning)
+                Shown(card.edgeGlow, burning)
+                if burning then
+                    local flicker = 0.75 + 0.25 * math.sin(t * 40 + index * 2)
+                    card.edge:SetAlpha(flicker)
+                    card.edgeGlow:SetAlpha(0.8 * flicker)
+                    local sx, sy = Where(stage)
+                    local x = sx - PAGE_WIDTH / 2 + card.x
+                    local y = sy + (stage:GetHeight() or 260) / 2 + card.y - CARD_H / 2 + CARD_H * p
+                    for _ = 1, 3 do
+                        local hot = math.random() < 0.5
+                        Emit({ x = x + (math.random() - 0.5) * CARD_W, y = y, vx = math.random(-25, 25),
+                            vy = math.random(50, 150), r = 1, g = hot and 0.75 or 0.4, b = hot and 0.3 or 0.08,
+                            size = 4 + math.random() * 6, life = 0.5 + math.random() * 0.6, drag = 0.97, grav = 40 })
+                    end
+                elseif p >= 1 then
+                    card:Hide()
+                end
             end
         end
-        if t > 0.85 then
+        if t > 1.1 + #reveal.cards * 0.12 then
             NextOrIdle()
         end
     end
@@ -1266,8 +1338,7 @@ stage:SetScript("OnMouseDown", function()
             if card.entry then
                 card:Show()
                 card:SetAlpha(1)
-                card:ClearAllPoints()
-                card:SetPoint("CENTER", stage, "TOPLEFT", SlotX(index, #reveal.cards), CARD_Y)
+                PlaceCard(card, SlotX(index, #reveal.cards), CARD_Y)
                 if not card.turned then
                     TurnCard(card)
                 end
@@ -1403,10 +1474,9 @@ local function RefreshPacks()
     end
     for pack, widget in pairs(packWidgets) do
         local owned = GetItemCount(PACKS[pack].item) or 0
-        local busy = reveal.phase ~= "idle"
         widget.owned:SetText("You have " .. owned)
-        widget.open:SetEnabled(owned > 0 and not busy)
-        widget.all:SetEnabled(owned > 1 and not busy)
+        widget.open:SetEnabled(owned > 0)
+        widget.all:SetEnabled(owned > 1)
         widget.all:SetLabel(owned > 1 and ("Open all " .. math.min(owned, 50)) or "Open all")
         local price = state.prices[pack] or 0
         widget.buy:SetLabel("Buy   |T" .. SPARK_ICON .. ":12|t " .. Thousands(price))

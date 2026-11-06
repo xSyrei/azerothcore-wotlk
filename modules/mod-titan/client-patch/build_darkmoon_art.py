@@ -180,12 +180,39 @@ def pieces():
     save_tga(slash.filter(ImageFilter.GaussianBlur(0.6)), 'Slash')
 
 
+# The icon's circle on each card front (fractions of the card: center x, y, radius of the width), as the addon's LAYOUT.
+RINGS = [('front', 'CardSkillRing', 0.5, 0.287, 0.25), ('front_gold', 'CardSkillGoldenRing', 0.5, 0.287, 0.25),
+         ('tfront', 'CardTalentRing', 0.5, 0.268, 0.285), ('tfront_gold', 'CardTalentGoldenRing', 0.5, 0.268, 0.285)]
+RING_SPAN = 2.4     # the ring's square: this many radii across
+
+
+def rings():
+    """The frame around each card's icon circle, see-through inside it and solid outside: drawn over the icon (a
+    square, as the game draws icons), it hides the icon's corners and its border, whatever the frame's window."""
+    for source, name, cx, cy, r in RINGS:
+        with Image.open(SOURCE / f'{source}.webp') as image:
+            card = image.convert('RGBA')
+        w, h = card.size
+        radius, half = r * w, r * w * RING_SPAN / 2
+        box = (round(w * cx - half), round(h * cy - half), round(w * cx + half), round(h * cy + half))
+        piece = card.crop(box)
+        solid = Image.new('RGBA', piece.size, (14, 8, 6, 255))
+        solid.alpha_composite(piece)
+        scale = 4
+        mask = Image.new('L', (piece.width * scale, piece.height * scale), 255)
+        c, rr = piece.width * scale / 2, (radius - 1) * scale
+        ImageDraw.Draw(mask).ellipse((c - rr, c - rr, c + rr, c + rr), fill=0)
+        solid.putalpha(mask.resize(piece.size, Image.Resampling.LANCZOS))
+        save_blp(solid, name, (256, 256))
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for source, name, size in PAINTED:
         with Image.open(SOURCE / f'{source}.webp') as image:
             save_blp(image, name, size)
     border()
+    rings()
     pieces()
 
 
