@@ -179,10 +179,13 @@ namespace
         // Forms and summons that change how a Hero plays.
         "Shadowform", "Moonkin Form", "Tree of Life", "Summon Water Elemental", "Summon Felguard", "Force of Nature",
         // The specs' signature abilities, the ones each is built around.
-        "Frost Strike", "Obliterate", "Heart Strike", "Scourge Strike", "Bloodthirst", "Mortal Strike", "Devastate",
+        "Frost Strike", "Heart Strike", "Scourge Strike", "Bloodthirst", "Mortal Strike", "Devastate",
         "Mangle", "Aimed Shot", "Black Arrow", "Pyroblast", "Holy Shock", "Crusader Strike", "Avenger's Shield",
         "Circle of Healing", "Vampiric Touch", "Mutilate", "Stormstrike", "Earth Shield", "Unstable Affliction",
         "Conflagrate",
+        // The spells and buffs a Hero's power rests on: the armors, the chained and the burst spells, the rolling heals.
+        "Chain Lightning", "Chain Heal", "Lava Burst", "Molten Armor", "Fel Armor", "Frostfire Bolt",
+        "Seed of Corruption", "Prayer of Mending", "Lifebloom", "Savage Roar", "Kill Shot", "Fan of Knives",
         // Emberforge's own: the Demon Hunter's Metamorphosis, Eye Beam and Fiery Brand, the Monk's Revival, Rising Sun
         // Kick, Fists of Fury and Essence Font.
         "Metamorphosis", "Eye Beam", "Fiery Brand", "Revival", "Rising Sun Kick", "Fists of Fury", "Essence Font",
@@ -192,9 +195,13 @@ namespace
         "Ice Block", "Evocation", "Mirror Image", "Divine Shield", "Lay on Hands", "Cloak of Shadows", "Vanish",
         "Evasion", "Innervate", "Barkskin", "Shadowfiend", "Divine Hymn", "Hymn of Hope", "Fire Elemental Totem",
         "Earth Elemental Totem", "Shield Wall", "Retaliation", "Anti-Magic Shell", "Icebound Fortitude",
-        "Empower Rune Weapon", "Deterrence", "Kill Command", "Lava Burst",
+        "Empower Rune Weapon", "Deterrence", "Kill Command",
         // Emberforge's own.
         "Darkness", "Soul Barrier", "Life Cocoon", "Thunder Focus Tea", "Whirling Dragon Punch",
+    };
+    // Starter abilities, Common whatever their level (Obliterate: the Frost Death Knight's first strike).
+    constexpr char const* COMMON_SKILLS[] = {
+        "Obliterate",
     };
     constexpr char const* RARE_SKILLS[] = {
         // Emberforge's own (their levels are low for what they do).
@@ -220,6 +227,8 @@ namespace
         std::string_view name = FirstRankName(ability);
         if (Listed(LEGENDARY_SKILLS, name))
             return RARITY_LEGENDARY;
+        if (Listed(COMMON_SKILLS, name))
+            return RARITY_COMMON;
         if (Listed(EPIC_SKILLS, name) || ability.TalentId)
             return RARITY_EPIC;
         if (Listed(RARE_SKILLS, name))
