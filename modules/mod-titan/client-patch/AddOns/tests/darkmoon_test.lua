@@ -190,10 +190,13 @@ end
 check(seed and seed.owned == 1, "an update marks a card owned")
 
 server("R,0,0.133.133.0.0.40;0.27243.27243.3.1.0;0.5.5.1.1.0")
-check(t.reveal.phase == "rip" and #t.reveal.cards == 3, "a pack opened plays the reveal")
-for _ = 1, 200 do
+check(t.reveal.phase == "fly" and #t.reveal.cards == 3, "a pack opened flies in from its shelf")
+local seen = {}
+for _ = 1, 120 do
     t.stage.scripts.OnUpdate(t.stage, 0.05)
+    seen[t.reveal.phase] = true
 end
+check(seen.charge and seen.rip and seen.burst and seen.turn, "it charges, tears, bursts, and the cards turn")
 check(t.reveal.phase == "shown", "the cards deal out and turn over")
 server("R,1,1.2300.90200.1.1.0")
 check(#t.reveal.queue == 1 and t.reveal.phase == "dissolve", "a second pack: the cards on show burn away first")
@@ -203,6 +206,11 @@ for _ = 1, 40 do
     t.stage.scripts.OnUpdate(t.stage, 0.05)
 end
 check(t.reveal.phase ~= "idle" and #t.reveal.cards == 1 and #t.reveal.queue == 0, "then the waiting pack opens")
+for _ = 1, 140 do
+    t.stage.scripts.OnUpdate(t.stage, 0.05)
+end
+check(t.reveal.phase == "idle", "left alone, the cards burn away by themselves")
+server("R,1,1.2300.90200.1.1.0")
 t.stage.scripts.OnMouseDown(t.stage)
 check(t.reveal.phase == "shown", "a click while it plays skips to the faces")
 
@@ -210,7 +218,14 @@ server("M,0,2")
 server("R,0,0.133.133.0.0.40;0.27243.27243.3.1.0")
 server("R,0,0.5.5.1.1.0;0.6.6.0.0.40")
 server("ME")
-check(t.results:IsShown(), "Open all shows the results")
+check(t.reveal.phase == "mfly" and not t.results:IsShown(), "Open all: the stack flies in first")
+seen = {}
+for _ = 1, 100 do
+    t.stage.scripts.OnUpdate(t.stage, 0.05)
+    seen[t.reveal.phase] = true
+end
+check(seen.mcharge and seen.mrip and seen.mburst, "the vortex charges, the pack tears, the cards erupt")
+check(t.results:IsShown(), "then the list of the new cards")
 check(#t.mass().cards == 4, "every card of the packs is in the list")
 
 t.tabs[3]:Click()

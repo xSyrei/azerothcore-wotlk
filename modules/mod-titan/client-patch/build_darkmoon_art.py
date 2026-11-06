@@ -170,6 +170,25 @@ def pieces():
     ImageDraw.Draw(inf).line(curve, fill=(255, 255, 255, 255), width=40, joint='curve')
     save_tga(inf.resize((128, 64), Image.Resampling.LANCZOS), 'Infinity')
 
+    # The beam out of a torn pack: from the gap (the bottom edge, half the width) widening upward to the whole width,
+    # brightest at its foot and fading as it rises.
+    beam = Image.new('L', (128, 256), 0)
+    for y in range(256):
+        rise = (255 - y) / 255                  # 0 at the foot, 1 at the top
+        half = 0.525 + 0.475 * rise             # half-width, as a share of the texture's
+        for x in range(128):
+            d = abs(x - 63.5) / 64 / half
+            beam.putpixel((x, y), int(255 * max(0.0, 1 - d) ** 1.2 * (1 - rise) ** 1.3))
+    save_tga(Image.merge('RGBA', (Image.new('L', (128, 256), 255),) * 3 + (beam,)), 'Beam')
+
+    # A legendary's pillar of light: a soft vertical band, fading at both ends.
+    pillar = Image.new('L', (64, 256), 0)
+    for y in range(256):
+        v = math.sin(math.pi * y / 255)
+        for x in range(64):
+            pillar.putpixel((x, y), int(255 * max(0.0, 1 - abs(x - 31.5) / 32) ** 1.4 * v))
+    save_tga(Image.merge('RGBA', (Image.new('L', (64, 256), 255),) * 3 + (pillar,)), 'Pillar')
+
     # The slash across a pack's top: a bright streak, soft at both ends.
     slash = Image.new('RGBA', (256, 32), (0, 0, 0, 0))
     for x in range(256):

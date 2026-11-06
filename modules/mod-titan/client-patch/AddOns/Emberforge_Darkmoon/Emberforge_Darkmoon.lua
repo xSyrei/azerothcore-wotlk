@@ -1087,18 +1087,78 @@ for index = 1, 5 do
     card:SetScript("OnLeave", function() GameTooltip:Hide() end)
     revealCards[index] = card
 end
-local packTop, packBottom = stage:CreateTexture(nil, "OVERLAY"), stage:CreateTexture(nil, "OVERLAY")
-local slash = stage:CreateTexture(nil, "OVERLAY")
-slash:SetTexture(ART .. "Slash")
-slash:SetBlendMode("ADD")
-slash:SetHeight(18)
-local TOP_CUT = 0.17
-local doneButton = Button(stage, 120, 24, "Done", function() end, "ButtonHot")
+-- What the rest of the window calls in the opening (the block below keeps its own helpers to itself: Lua 5.1 allows a
+-- chunk 200 locals).
+local reveal = { phase = "idle", t = 0, cards = {}, queue = {} }
+local StartReveal, StartMass, ResetStage
+local doneButton
+do -- the opening (not indented: it is most of the stage's code)
+-- The opening's pieces (the mockup's, port by port): behind the cards (on the stage itself) each card's rays and the
+-- legendary's pillar; over them (fxTop) the pack, its glow and rays, the tear's beam and slash, the falling scraps, the
+-- cards of "Open all"'s fountain, and the flash.
+local CLASSLESS_ART = "Interface\\AddOns\\Emberforge_Classless\\Art\\"
+local PACK_W, PACK_H = 112, 168
+local TEAR = 0.125                                 -- the tear line, as a share of the pack's height
+local CENTER_X, CENTER_Y = PAGE_WIDTH / 2, -128    -- the display's middle, on the stage
+local fxTop = CreateFrame("Frame", nil, stage)
+fxTop:SetAllPoints()
+fxTop:SetFrameLevel(stage:GetFrameLevel() + 10)
+local function FxTexture(parent, file, layer, add)
+    local texture = parent:CreateTexture(nil, layer or "ARTWORK")
+    texture:SetTexture(file)
+    if add then
+        texture:SetBlendMode("ADD")
+    end
+    texture:Hide()
+    return texture
+end
+-- Spins a texture about its center (3.3.5 has no SetRotation: the texture coordinates turn).
+local function Rotate(texture, angle)
+    local c, sn = math.cos(angle), math.sin(angle)
+    local function At(x, y)
+        return 0.5 + (x - 0.5) * c - (y - 0.5) * sn, 0.5 + (x - 0.5) * sn + (y - 0.5) * c
+    end
+    local ulx, uly = At(0, 0)
+    local llx, lly = At(0, 1)
+    local urx, ury = At(1, 0)
+    local lrx, lry = At(1, 1)
+    texture:SetTexCoord(ulx, uly, llx, lly, urx, ury, lrx, lry)
+end
+local function Place(texture, x, y, w, h, point)
+    texture:ClearAllPoints()
+    texture:SetPoint(point or "CENTER", stage, "TOPLEFT", x, y)
+    texture:SetWidth(math.max(0.5, w))
+    texture:SetHeight(math.max(0.5, h))
+end
+local fx2 = {
+    glow = FxTexture(fxTop, ART .. "Glow", "BACKGROUND", true),
+    rays = FxTexture(fxTop, CLASSLESS_ART .. "Rays", "BACKGROUND", true),
+    rays2 = FxTexture(fxTop, CLASSLESS_ART .. "Rays", "BACKGROUND", true),
+    beam = FxTexture(fxTop, ART .. "Beam", "BORDER", true),
+    pack = FxTexture(fxTop, nil, "ARTWORK"),
+    body = FxTexture(fxTop, nil, "ARTWORK"),
+    strip = FxTexture(fxTop, nil, "ARTWORK"),
+    slash = FxTexture(fxTop, ART .. "Slash", "OVERLAY", true),
+    tip = FxTexture(fxTop, ART .. "Glow", "OVERLAY", true),
+    flash = FxTexture(fxTop, ART .. "Solid", "OVERLAY", true),
+    count = Text(fxTop, 22, { 1, 1, 1 }, DISPLAY_FONT, "OUTLINE"),
+    stack = {},
+    flyers = {},
+}
+fx2.flash:SetTexture(1, 1, 1, 1)
+fx2.flash:SetAllPoints(stage)
+for index = 1, 3 do
+    fx2.stack[index] = FxTexture(fxTop, nil, "BORDER")
+end
+local cardBack = {}            -- a card's rays and the legendary's pillar, behind the cards (index: reveal slot)
+for index = 1, 5 do
+    cardBack[index] = { rays = FxTexture(stage, CLASSLESS_ART .. "Rays", "BACKGROUND", true),
+        pillar = FxTexture(stage, ART .. "Pillar", "BORDER", true) }
+end
+doneButton = Button(stage, 120, 24, "Done", function() end, "ButtonHot")
 doneButton:SetPoint("TOPRIGHT", -12, -8)
 local skipText = Text(stage, 10, MUTED, BODY_FONT)
 skipText:SetPoint("TOPLEFT", 14, -12)
-
-local reveal = { phase = "idle", t = 0, cards = {}, queue = {} }
 
 local function SlotX(index, count)
     return PAGE_WIDTH / 2 + (index - (count + 1) / 2) * (CARD_W + 18)
@@ -1251,21 +1311,29 @@ local function BurnStep(card, p, home)
     end
 end
 
-local function ResetStage()
+function ResetStage()
     for _, card in ipairs(revealCards) do
         card:Hide()
         card:SetAlpha(1)
         card:SetWidth(CARD_W)
         HideBurn(card)
     end
-    packTop:Hide()
-    packBottom:Hide()
-    slash:Hide()
+    for key, texture in pairs(fx2) do
+        if type(texture) == "table" and texture.Hide and key ~= "stack" and key ~= "flyers" then
+            texture:Hide()
+        end
+    end
+    for _, texture in ipairs(fx2.stack) do
+        texture:Hide()
+    end
+    for _, back in ipairs(cardBack) do
+        back.rays:Hide()
+        back.pillar:Hide()
+    end
     doneButton:Hide()
     skipText:SetText("")
 end
 
-local StartReveal
 local function NextOrIdle()
     reveal.phase = "idle"
     ResetStage()
@@ -1286,14 +1354,108 @@ local function Dissolve()
     reveal.t = 0
     doneButton:Hide()
     skipText:SetText("")
-    for _, card in ipairs(revealCards) do
+    for index, card in ipairs(revealCards) do
         if card.entry and card:IsShown() then
             LightBurn(card, reveal.golden)
         end
+        cardBack[index].rays:Hide()
+        cardBack[index].pillar:Hide()
     end
     PlaySound("igQuestLogAbandonQuest")
 end
 doneButton:SetScript("OnClick", Dissolve)
+
+-- The pack's own light: Skill Packs ember, Talent Packs silver-blue, Golden Packs gold; "Open all"'s vortex.
+local function PackRgb(info)
+    return info.golden and { 1, 0.84, 0.47 } or info.kind == 1 and { 0.55, 0.75, 1 } or { 1, 0.55, 0.24 }
+end
+local function VortexRgb(info)
+    return info.kind == 1 and { 0.35, 0.67, 1 } or { 1, 0.47, 0.16 }
+end
+local function Clamp(v, lo, hi)
+    return math.max(lo or 0, math.min(hi or 1, v))
+end
+local function Seg(t, from, to)
+    return Clamp((t - from) / (to - from))
+end
+local function Ease(p)
+    return 1 - (1 - p) * (1 - p) * (1 - p)
+end
+local function EaseInOut(p)
+    return p < 0.5 and 4 * p * p * p or 1 - (-2 * p + 2) ^ 3 / 2
+end
+local function BackOut(p)
+    local c = 1.70158
+    return 1 + (c + 1) * (p - 1) ^ 3 + c * (p - 1) ^ 2
+end
+
+-- A point of the stage (from its top left) in the window's coordinates (from its bottom left), for the particles.
+local function StagePoint(x, y)
+    local sx, sy = Where(stage)
+    return sx - PAGE_WIDTH / 2 + x, sy + (stage:GetHeight() or 260) / 2 + y
+end
+local function Flash(rgb, strength)
+    reveal.flash, reveal.flashRgb = strength, rgb
+end
+local function Shake(amount)
+    reveal.shake = math.max(reveal.shake or 0, amount)
+end
+
+-- The pack, whole (fly, charge) or torn (body below the tear, the strip above it lifting by k).
+local function DrawPack(info, x, y, scale, k, shake)
+    local w, h = PACK_W * scale, PACK_H * scale
+    if not k then
+        fx2.pack:SetTexture(ART .. info.art)
+        fx2.pack:SetTexCoord(0, 1, 0, 1)
+        Place(fx2.pack, x + (shake or 0), y, w, h)
+        fx2.pack:Show()
+        fx2.body:Hide()
+        fx2.strip:Hide()
+        return
+    end
+    fx2.pack:Hide()
+    fx2.body:SetTexture(ART .. info.art)
+    fx2.body:SetTexCoord(0, 1, TEAR, 1)
+    Place(fx2.body, x, y - h * TEAR / 2, w, h * (1 - TEAR))
+    fx2.body:Show()
+    fx2.strip:SetTexture(ART .. info.art)
+    fx2.strip:SetTexCoord(0, 1, 0, TEAR)
+    -- The strip peels up from its right end: it rises and leans away (no rotation here: it slides up and right).
+    Place(fx2.strip, x + 10 * k, y + h / 2 - h * TEAR / 2 + 14 * k, w, h * TEAR)
+    fx2.strip:Show()
+end
+
+-- Cards and pack bits flying free (the strip, the empty wrapper, "Open all"'s fountain): textures on fxTop.
+local function Fling(file, coords, x, y, w, h, vx, vy, grav, life, spin)
+    local flyer = table.remove(fx2.flyers.pool or {}) or { texture = fxTop:CreateTexture(nil, "ARTWORK") }
+    flyer.texture:SetTexture(file)
+    flyer.texture:SetTexCoord(unpack(coords or { 0, 1, 0, 1 }))
+    flyer.texture:Show()
+    flyer.x, flyer.y, flyer.w, flyer.h, flyer.vx, flyer.vy = x, y, w, h, vx, vy
+    flyer.grav, flyer.life, flyer.spin, flyer.age = grav or 900, life or 1.6, spin or 0, 0
+    fx2.flyers[#fx2.flyers + 1] = flyer
+end
+local function StepFlyers(delta)
+    fx2.flyers.pool = fx2.flyers.pool or {}
+    for index = #fx2.flyers, 1, -1 do
+        local f = fx2.flyers[index]
+        f.age = f.age + delta
+        f.vy = f.vy - f.grav * delta
+        f.vx = f.vx * 0.995
+        f.x, f.y = f.x + f.vx * delta, f.y + f.vy * delta
+        local fade = 1 - Seg(f.age, f.life * 0.65, f.life)
+        if fade <= 0 then
+            f.texture:Hide()
+            table.remove(fx2.flyers, index)
+            table.insert(fx2.flyers.pool, f)
+        else
+            -- Tumbling: the width swings as it spins.
+            local turn = f.spin ~= 0 and math.abs(math.cos(f.age * f.spin)) or 1
+            Place(f.texture, f.x, f.y, f.w * math.max(0.08, turn), f.h)
+            f.texture:SetAlpha(fade)
+        end
+    end
+end
 
 function StartReveal(pack, cards)
     if reveal.phase ~= "idle" then
@@ -1305,20 +1467,17 @@ function StartReveal(pack, cards)
     idle:Hide()
     ResetStage()
     local info = PACKS[pack] or PACKS[0]
-    reveal.phase, reveal.t, reveal.cards, reveal.golden, reveal.pack = "rip", 0, cards, info.golden, pack
-    for _, texture in ipairs({ packTop, packBottom }) do
-        texture:SetTexture(ART .. info.art)
-        texture:SetWidth(96)
-        texture:Show()
-        texture:SetAlpha(1)
-    end
-    packTop:SetTexCoord(0, 1, 0, TOP_CUT)
-    packTop:SetHeight(144 * TOP_CUT)
-    packBottom:SetTexCoord(0, 1, TOP_CUT, 1)
-    packBottom:SetHeight(144 * (1 - TOP_CUT))
+    reveal.phase, reveal.t, reveal.cards, reveal.golden, reveal.pack, reveal.info = "fly", 0, cards, info.golden,
+        pack, info
+    reveal.mass, reveal.skip = nil, false
+    -- From its shelf to the middle.
+    local widget = packWidgets[pack]
+    local wx, wy = Where(widget and widget.art or display)
+    local sx, sy = StagePoint(0, 0)
+    reveal.fromX, reveal.fromY = wx - sx, wy - sy
     for index, card in ipairs(revealCards) do
         local entry = cards[index]
-        card.entry, card.turned = entry, false
+        card.entry, card.turned, card.revealAt = entry, false, nil
         card:Hide()
         card.glow:Hide()
         card.result:SetText("")
@@ -1326,106 +1485,376 @@ function StartReveal(pack, cards)
             card:SetBack(info.kind, info.golden)
         end
     end
+    -- Rarest turned last.
+    reveal.order = {}
+    for index = 1, #cards do
+        reveal.order[index] = index
+    end
+    table.sort(reveal.order, function(a, b)
+        if cards[a].rarity ~= cards[b].rarity then
+            return cards[a].rarity < cards[b].rarity
+        end
+        return a < b
+    end)
     skipText:SetText("Click to skip")
     PlaySound("igQuestListOpen")
 end
 
-local function Ease(p)
-    return 1 - (1 - p) * (1 - p) * (1 - p)
+-- "Open all": the stack flies in, a vortex charges, the top pack tears and the cards erupt in a fountain; then the
+-- list of the new ones.
+function StartMass(pack, count, done)
+    if reveal.phase ~= "idle" then
+        Dissolve()
+    end
+    idle:Hide()
+    ResetStage()
+    local info = PACKS[pack] or PACKS[0]
+    reveal.phase, reveal.t, reveal.info, reveal.mass = "mfly", 0, info, { count = count, done = done, emitted = 0 }
+    reveal.cards, reveal.skip = {}, false
+    local widget = packWidgets[pack]
+    local wx, wy = Where(widget and widget.art or display)
+    local sx, sy = StagePoint(0, 0)
+    reveal.fromX, reveal.fromY = wx - sx, wy - sy
+    skipText:SetText("Click to skip")
+    PlaySound("igQuestListOpen")
 end
 
-local function TurnCard(card)
+local function TurnCard(card, slot)
     card.turned = true
     card:SetCard(card.entry, reveal.golden, false)
     card:SetContent(false)
-    Shown(card.glow, card.entry.rarity >= 2 or reveal.golden)
-    local x, y = Where(card)
-    local rgb = reveal.golden and GOLDEN_RGB or RARITY_RGB[card.entry.rarity]
-    Burst(x, y, 8 + card.entry.rarity * 14, rgb, 60, 160 + card.entry.rarity * 90)
-    Ring(x, y, 90, { 1, 0.95, 0.85 })
-    if card.entry.rarity >= 2 then
-        Ring(x, y, 160 + card.entry.rarity * 40, rgb)
+    Shown(card.glow, true)
+    local rarity = card.entry.rarity
+    local x, y = StagePoint(card.x, card.y)
+    local rgb = reveal.golden and GOLDEN_RGB or RARITY_RGB[rarity]
+    Burst(x, y, 20 + rarity * 25, rgb, 60, 160 + rarity * 110)
+    Ring(x, y, 120 + rarity * 70, rgb)
+    if rarity >= 2 or reveal.golden then
+        Ring(x, y, 200 + rarity * 60, { 1, 1, 1 })
     end
-    card.result:SetText(card.entry.new and "|cff8dff8aNew!|r"
-        or ("|cffd9a46aDuplicate  +" .. Thousands(card.entry.refund) .. " Emberspark|r"))
-    PlaySound(card.entry.rarity >= 3 and "LEVELUPSOUND" or card.entry.rarity >= 1 and "igMainMenuOptionCheckBoxOn"
+    if rarity >= 3 then
+        Flash({ 1, 0.75, 0.43 }, 0.9)
+        Shake(10)
+        Ring(x, y, 600, { 1, 0.63, 0.24 })
+        Burst(x, y, 90, { 1, 0.67, 0.27 }, 200, 700)
+    elseif rarity == 2 then
+        Flash({ 0.78, 0.51, 1 }, 0.4)
+        Shake(4)
+    end
+    if rarity >= 2 then
+        cardBack[slot].rays:SetVertexColor(rgb[1], rgb[2], rgb[3])
+        cardBack[slot].rays:Show()
+    end
+    Shown(cardBack[slot].pillar, rarity >= 3)
+    card.result:SetText(card.entry.new and "|cff8dff8aNEW|r"
+        or ("|cffffd38aDuplicate  +" .. Thousands(card.entry.refund) .. " Emberspark|r"))
+    -- A duplicate's Emberspark flies to the balance, a spark to the tally.
+    if not card.entry.new then
+        Fly(card, sparkPill.icon, 16, { 1, 0.75, 0.35 })
+        Fly(card, dupMeter, 10, { 1, 0.59, 0.27 })
+    end
+    PlaySound(rarity >= 3 and "LEVELUPSOUND" or rarity >= 1 and "igMainMenuOptionCheckBoxOn"
         or "igMainMenuOptionCheckBoxOff")
 end
 
+local function SkipToFaces()
+    for _, texture in ipairs({ fx2.pack, fx2.body, fx2.strip, fx2.slash, fx2.tip, fx2.beam, fx2.glow, fx2.rays,
+        fx2.rays2 }) do
+        texture:Hide()
+    end
+    for index, card in ipairs(revealCards) do
+        if card.entry then
+            card:Show()
+            card:SetAlpha(1)
+            card:SetScale(1)
+            PlaceCard(card, SlotX(index, #reveal.cards), CARD_Y)
+            if not card.turned then
+                TurnCard(card, index)
+            end
+            card:SetWidth(CARD_W)
+            card:SetContent(true)
+        end
+    end
+    reveal.phase, reveal.t = "shown", 0
+    doneButton:Show()
+    skipText:SetText("Hover a card for its spell. Click, or Done, to put them away.")
+end
+
 stage:SetScript("OnUpdate", function(_, delta)
+    delta = math.min(delta, 0.05)
+    StepFlyers(delta)
+    -- The flash and the shake fade whatever the phase.
+    if (reveal.flash or 0) > 0 then
+        reveal.flash = math.max(0, reveal.flash - delta * 2.2)
+        local rgb = reveal.flashRgb or { 1, 1, 1 }
+        fx2.flash:SetVertexColor(rgb[1], rgb[2], rgb[3])
+        fx2.flash:SetAlpha(reveal.flash * 0.55)
+        Shown(fx2.flash, reveal.flash > 0)
+    end
+    local shake = reveal.shake or 0
+    stage:ClearAllPoints()
+    if shake > 0 then
+        reveal.shake = math.max(0, shake - delta * 40)
+        local ox, oy = (math.random() * 2 - 1) * shake * 0.6, (math.random() * 2 - 1) * shake * 0.6
+        stage:SetPoint("TOPLEFT", display, "TOPLEFT", ox, oy)
+        stage:SetPoint("BOTTOMRIGHT", display, "BOTTOMRIGHT", ox, oy)
+    else
+        stage:SetAllPoints(display)
+    end
     if reveal.phase == "idle" then
         return
     end
-    reveal.t = reveal.t + math.min(delta, 0.05)
-    local t, count = reveal.t, #reveal.cards
-    local cx, cy = PAGE_WIDTH / 2, CARD_Y
-    if reveal.phase == "rip" then
-        -- The pack shakes, a slash runs across its crimp, the top flies off and the rest drops away.
-        local shake = t < 0.45 and math.sin(t * 60) * 3 * (1 - t / 0.45) or 0
-        local bottomY = cy - 144 * TOP_CUT / 2
-        packBottom:ClearAllPoints()
-        packBottom:SetPoint("CENTER", stage, "TOPLEFT", cx + shake, bottomY - math.max(0, t - 0.6) * 300)
-        packBottom:SetAlpha(math.max(0, 1 - math.max(0, t - 0.6) * 3))
-        local topP = math.max(0, t - 0.5)
-        packTop:ClearAllPoints()
-        packTop:SetPoint("BOTTOM", stage, "TOPLEFT", cx + shake + topP * 120, bottomY + 144 * (1 - TOP_CUT) / 2
-            + topP * 260)
-        packTop:SetAlpha(math.max(0, 1 - topP * 2.5))
-        if t > 0.35 and t < 0.6 then
-            local p = (t - 0.35) / 0.25
-            slash:Show()
-            slash:ClearAllPoints()
-            slash:SetWidth(40 + 110 * p)
-            slash:SetPoint("LEFT", stage, "TOPLEFT", cx - 60, bottomY + 144 * (1 - TOP_CUT) / 2)
-            slash:SetAlpha(1 - p * 0.5)
-        else
-            slash:Hide()
-        end
-        if t > 0.5 and not reveal.burst then
-            reveal.burst = true
-            local sx, sy = Where(stage)
-            local x = sx - PAGE_WIDTH / 2 + cx
-            local y = sy + (stage:GetHeight() or 260) / 2 + bottomY + 144 * (1 - TOP_CUT) / 2
-            Burst(x, y, 24, reveal.golden and GOLDEN_RGB or { 1, 0.62, 0.3 }, 60, 220, 0.9)
-        end
-        if t > 0.9 then
-            reveal.phase, reveal.t, reveal.burst = "deal", 0, nil
-            packTop:Hide()
-            packBottom:Hide()
-        end
-    elseif reveal.phase == "deal" then
-        for index, card in ipairs(revealCards) do
-            if card.entry then
-                local p = Ease(math.max(0, math.min(1, (t - (index - 1) * 0.08) / 0.4)))
-                card:Show()
-                PlaceCard(card, cx + (SlotX(index, count) - cx) * p, cy + 30 * (1 - p))
-                card:SetAlpha(p)
+    reveal.t = reveal.t + delta
+    local t, info, count = reveal.t, reveal.info or PACKS[0], #reveal.cards
+    local rgb = PackRgb(info)
+    local cx, cy = CENTER_X, CENTER_Y
+
+    if reveal.phase == "fly" or reveal.phase == "mfly" then
+        -- Up from the shelf in an arc, growing, rocking.
+        local span = reveal.phase == "mfly" and 0.55 or 0.6
+        local k = EaseInOut(Seg(t, 0, span))
+        local x = reveal.fromX + (cx - reveal.fromX) * k
+        local y = reveal.fromY + (cy - reveal.fromY) * k + math.sin(k * math.pi) * 80
+        reveal.x, reveal.y = x, y
+        DrawPack(info, x, y, 0.5 + 0.5 * k)
+        if reveal.mass then
+            for index, texture in ipairs(fx2.stack) do
+                if index < math.min(4, reveal.mass.count) then
+                    texture:SetTexture(ART .. info.art)
+                    Place(texture, x + index * 6, y + index * 6, PACK_W * (0.5 + 0.5 * k), PACK_H * (0.5 + 0.5 * k))
+                    texture:Show()
+                end
             end
         end
-        if t > 0.45 + count * 0.08 then
-            reveal.phase, reveal.t = "turn", 0
+        local px, py = StagePoint(x, y)
+        Emit({ x = px, y = py, vx = math.random(-30, 30), vy = math.random(-30, 30), r = rgb[1], g = rgb[2], b = rgb[3],
+            size = 6, life = 0.5 })
+        if t > span then
+            reveal.phase, reveal.t = reveal.phase == "mfly" and "mcharge" or "charge", 0
         end
-    elseif reveal.phase == "turn" then
-        -- Each card squeezes to its edge and opens again face up.
-        local all = true
+    elseif reveal.phase == "charge" or reveal.phase == "mcharge" then
+        -- It trembles and swells; light gathers behind it, motes drawn in.
+        local mass = reveal.phase == "mcharge"
+        local span = reveal.skip and 0.05 or mass and 1.1 or 0.8
+        local k = Seg(t, 0, span)
+        local light = mass and VortexRgb(info) or rgb
+        local tremble = math.sin(t * 70) * 3 * k
+        DrawPack(info, cx, cy, 1 + 0.08 * k, nil, tremble)
+        fx2.glow:SetVertexColor(light[1], light[2], light[3])
+        Place(fx2.glow, cx, cy, (mass and 440 or 360) * (0.5 + 0.5 * k), (mass and 440 or 360) * (0.5 + 0.5 * k))
+        fx2.glow:SetAlpha(0.4 + 0.6 * k)
+        fx2.glow:Show()
+        fx2.rays:SetVertexColor(light[1], light[2], light[3])
+        Place(fx2.rays, cx, cy, (mass and 520 or 440) * (0.5 + 0.5 * k), (mass and 520 or 440) * (0.5 + 0.5 * k))
+        fx2.rays:SetAlpha(0.35 * k + 0.1)
+        Rotate(fx2.rays, t * (mass and (2 + 8 * k) or 1.5))
+        fx2.rays:Show()
+        if mass then
+            fx2.rays2:SetVertexColor(rgb[1], rgb[2], rgb[3])
+            Place(fx2.rays2, cx, cy, 400 * (0.5 + 0.5 * k), 400 * (0.5 + 0.5 * k))
+            fx2.rays2:SetAlpha(0.3 * k + 0.1)
+            Rotate(fx2.rays2, -t * (1.5 + 6 * k))
+            fx2.rays2:Show()
+            for index, texture in ipairs(fx2.stack) do
+                if index < math.min(4, reveal.mass.count) then
+                    Place(texture, cx + index * 6 + tremble, cy + index * 6, PACK_W * (1 + 0.08 * k),
+                        PACK_H * (1 + 0.08 * k))
+                end
+            end
+            fx2.count:ClearAllPoints()
+            fx2.count:SetPoint("CENTER", stage, "TOPLEFT", cx + 90, cy + 100)
+            fx2.count:SetText("x" .. reveal.mass.count)
+            fx2.count:SetTextColor(1, 1, 1)
+            fx2.count:Show()
+        end
+        local px, py = StagePoint(cx, cy)
+        for _ = 1, mass and 6 or 4 do
+            local a, d = math.random() * math.pi * 2, 150 + math.random() * 110
+            local swirl = mass and 300 or 0
+            Emit({ x = px + math.cos(a) * d, y = py + math.sin(a) * d, vx = -math.sin(a) * swirl,
+                vy = math.cos(a) * swirl, tx = px, ty = py, life = 0.5, size = 3 + math.random() * 3,
+                r = math.random() < 0.5 and light[1] or rgb[1], g = math.random() < 0.5 and light[2] or rgb[2],
+                b = math.random() < 0.5 and light[3] or rgb[3] })
+        end
+        if k >= 1 then
+            reveal.phase, reveal.t = mass and "mrip" or "rip", 0
+            PlaySound("igQuestLogAbandonQuest")
+        end
+    elseif reveal.phase == "rip" or reveal.phase == "mrip" then
+        -- A blade's stroke along the tear, right to left; the strip lifts and light pours up out of the gap.
+        local mass = reveal.phase == "mrip"
+        local span = reveal.skip and 0.05 or mass and 0.5 or 0.45
+        local k = Seg(t, 0, span) ^ 1.6
+        local light = mass and VortexRgb(info) or rgb
+        local scale = mass and 1.08 or 1.08 + math.sin(t * 80) * 0.01 * (1 - k)
+        local w, h = PACK_W * scale, PACK_H * scale
+        local tearY = cy + h / 2 - h * TEAR
+        DrawPack(info, cx, cy, scale, k)
+        local across = Clamp(Seg(t, 0, span * 0.66) / 0.6)
+        local fade = 1 - Seg(Seg(t, 0, span * 0.66), 0.6, 1)
+        local x0, x1 = cx + w * 0.62, cx - w * 0.62
+        local tip = x0 + (x1 - x0) * Ease(across)
+        if fade > 0 then
+            fx2.slash:SetVertexColor(light[1], light[2], light[3])
+            Place(fx2.slash, (x0 + tip) / 2, tearY, math.max(2, x0 - tip), 10)
+            fx2.slash:SetAlpha(fade)
+            fx2.slash:Show()
+            fx2.tip:SetVertexColor(1, 1, 1)
+            Place(fx2.tip, tip, tearY, 34, 34)
+            fx2.tip:SetAlpha(across < 1 and fade or 0)
+            fx2.tip:Show()
+        else
+            fx2.slash:Hide()
+            fx2.tip:Hide()
+        end
+        fx2.beam:SetVertexColor(light[1], light[2], light[3])
+        Place(fx2.beam, cx, tearY, w * 1.6, 260 * k, "BOTTOM")
+        fx2.beam:SetAlpha(0.55 + 0.45 * k)
+        Shown(fx2.beam, k > 0.02)
+        fx2.glow:SetVertexColor(light[1], light[2], light[3])
+        Place(fx2.glow, cx, tearY, 120 + 320 * k, 120 + 320 * k)
+        fx2.glow:SetAlpha(0.4 + 0.6 * k)
+        fx2.glow:Show()
+        Rotate(fx2.rays, t * (mass and 10 or 1.5))
+        if k >= 1 then
+            -- The burst: a flash; the strip snaps free and spins off, the wrapper drops; rings, sparks, confetti.
+            reveal.phase, reveal.t = mass and "mburst" or "burst", 0
+            reveal.openX, reveal.openY = cx, tearY
+            Flash(light, mass and 1 or 0.8)
+            Shake(mass and 16 or 8)
+            fx2.strip:Hide()
+            fx2.body:Hide()
+            fx2.slash:Hide()
+            fx2.tip:Hide()
+            Fling(ART .. info.art, { 0, 1, 0, TEAR }, cx, tearY + h * TEAR / 2, w, h * TEAR,
+                -140 - math.random() * 140, 620, 900, 1.4, 7)
+            Fling(ART .. info.art, { 0, 1, TEAR, 1 }, cx, cy - h * TEAR / 2, w, h * (1 - TEAR),
+                math.random(-30, 30), -40, 420, 0.7, 0)
+            if mass then
+                for index, texture in ipairs(fx2.stack) do
+                    if texture:IsShown() then
+                        texture:Hide()
+                        Fling(ART .. info.art, nil, cx + index * 6, cy + index * 6, w, h, math.random(-60, 60),
+                            -(30 + index * 15), 420, 0.75, 0)
+                    end
+                end
+                fx2.count:Hide()
+            end
+            local ox, oy = StagePoint(cx, tearY)
+            Ring(ox, oy, mass and 700 or 420, light)
+            Ring(ox, oy, mass and 300 or 260, { 1, 1, 1 })
+            Burst(ox, oy, mass and 120 or 80, light, 150, mass and 700 or 500, 1.1)
+            local confetti = { { 1, 0.47, 0.78 }, { 0.47, 0.86, 1 }, { 1, 0.86, 0.47 }, { 0.75, 0.55, 1 } }
+            for q = 1, mass and 50 or 40 do
+                local c = confetti[q % 4 + 1]
+                Emit({ x = ox + math.random(-40, 40), y = oy, vx = math.random(-320, 320), vy = math.random(260, 680),
+                    grav = -700, drag = 0.99, life = 1 + math.random() * 0.8, size = 4 + math.random() * 4,
+                    texture = ART .. "Solid", r = c[1], g = c[2], b = c[3] })
+            end
+            PlaySound("igQuestListComplete")
+        end
+    elseif reveal.phase == "burst" then
+        -- Out of the opening the cards go, up and over to their places; the beam fades.
+        local fade = 1 - Seg(t, 0, 0.9)
+        Place(fx2.beam, reveal.openX, reveal.openY, PACK_W * 1.7, 260, "BOTTOM")
+        fx2.beam:SetAlpha(fade)
+        Place(fx2.glow, reveal.openX, reveal.openY, 280, 280)
+        fx2.glow:SetAlpha(fade)
+        fx2.rays:SetVertexColor(rgb[1], rgb[2], rgb[3])
+        Place(fx2.rays, reveal.openX, reveal.openY, 480, 480)
+        fx2.rays:SetAlpha(0.3 * fade)
+        Rotate(fx2.rays, t * 2)
+        fx2.rays:Show()
         for index, card in ipairs(revealCards) do
             if card.entry then
-                local start = (index - 1) * 0.35
-                local p = math.max(0, math.min(1, (t - start) / 0.3))
-                if p < 0.5 then
-                    card:SetWidth(math.max(1, CARD_W * (1 - p * 2)))
-                    all = false
-                elseif not card.turned then
-                    TurnCard(card)
-                    card:SetWidth(math.max(1, CARD_W * (p - 0.5) * 2))
-                    all = false
-                elseif p < 1 then
-                    card:SetWidth(math.max(1, CARD_W * (p - 0.5) * 2))
-                    all = false
-                else
-                    card:SetWidth(CARD_W)
-                    card:SetContent(true)
-                end
+                local k = Ease(Seg(t, (index - 1) * 0.07, 0.62 + (index - 1) * 0.07))
+                local j = 1 - k
+                local tx = SlotX(index, count)
+                local mx, my = reveal.openX + (tx - reveal.openX) * 0.35, reveal.openY + 100
+                local x = j * j * reveal.openX + 2 * j * k * mx + k * k * tx
+                local y = j * j * reveal.openY + 2 * j * k * my + k * k * CARD_Y
+                card:Show()
+                card:SetScale(math.max(0.05, 0.25 + 0.75 * BackOut(Seg(t, (index - 1) * 0.07,
+                    0.62 + (index - 1) * 0.07))))
+                card:SetAlpha(Clamp(k * 6))
+                PlaceCard(card, x, y)
+            end
+        end
+        if t > 0.95 then
+            for _, card in ipairs(revealCards) do
+                card:SetScale(1)
+            end
+            fx2.beam:Hide()
+            fx2.glow:Hide()
+            fx2.rays:Hide()
+            reveal.phase, reveal.t = "turn", 0
+        end
+    elseif reveal.phase == "mburst" then
+        -- The cards erupt in a fountain, spinning and tumbling, gone past the edges; then the list.
+        local m = reveal.mass
+        local total = math.min(60, m.count * 5 + 10)
+        local fade = 1 - Seg(t, 0, 1.4)
+        local light = VortexRgb(info)
+        while m.emitted < total and m.emitted < total / 0.9 * t do
+            m.emitted = m.emitted + 1
+            local a, v = math.pi / 2 + (math.random() * 2 - 1) * 1.15, 450 + math.random() * 600
+            local s = 0.32 + math.random() * 0.28
+            Fling(ART .. (info.kind == 1 and "BackTalent" or "BackSkill") .. (info.golden and "Golden" or ""), nil,
+                reveal.openX + math.random(-30, 30), reveal.openY, CARD_W * s, CARD_H * s, math.cos(a) * v,
+                math.sin(a) * v, 680, 1.7, 4 + math.random() * 5)
+        end
+        fx2.glow:SetVertexColor(light[1], light[2], light[3])
+        Place(fx2.glow, reveal.openX, reveal.openY, 320, 320)
+        fx2.glow:SetAlpha(0.6 * fade)
+        fx2.rays:SetVertexColor(light[1], light[2], light[3])
+        Place(fx2.rays, reveal.openX, reveal.openY, 560, 560)
+        fx2.rays:SetAlpha(0.28 * fade)
+        Rotate(fx2.rays, t * 4)
+        fx2.rays2:Hide()
+        fx2.beam:SetAlpha(fade)
+        if t > (reveal.skip and 0.3 or 1.7) then
+            ResetStage()
+            reveal.phase = "idle"
+            if m.done then
+                m.done()
+            end
+        end
+    elseif reveal.phase == "turn" then
+        -- One by one, rarest last; a rare one trembles and glows before it turns; each squeezes to its edge and opens
+        -- face up.
+        local all = true
+        local step = reveal.skip and 0.05 or 0.75
+        local extra = 0
+        for position, index in ipairs(reveal.order) do
+            local card = revealCards[index]
+            if card.entry.rarity >= 3 and not reveal.skip then
+                extra = 0.5
+            end
+            local start = 0.2 + (position - 1) * step + extra
+            local rare = card.entry.rarity >= 2 and not reveal.skip
+            if not card.turned and rare and t > start - 0.6 then
+                local k = Seg(t, start - 0.6, start)
+                PlaceCard(card, SlotX(index, count) + math.sin(t * 60) * 2 * k, CARD_Y)
+                local glow = reveal.golden and GOLDEN_RGB or RARITY_RGB[card.entry.rarity]
+                card.glow:SetVertexColor(glow[1], glow[2], glow[3], 0.7)
+                card.glow:SetAlpha(k)
+                card.glow:Show()
+            end
+            local p = Seg(t, start, start + 0.32)
+            if p < 0.5 then
+                card:SetWidth(math.max(1, CARD_W * (1 - p * 2)))
+                all = false
+            elseif not card.turned then
+                PlaceCard(card, SlotX(index, count), CARD_Y)
+                TurnCard(card, index)
+                card:SetWidth(math.max(1, CARD_W * (p - 0.5) * 2))
+                all = false
+            elseif p < 1 then
+                card:SetWidth(math.max(1, CARD_W * (p - 0.5) * 2))
+                all = false
+            else
+                card:SetWidth(CARD_W)
+                card:SetContent(true)
             end
         end
         if all then
@@ -1434,10 +1863,26 @@ stage:SetScript("OnUpdate", function(_, delta)
             skipText:SetText("Hover a card for its spell. Click, or Done, to put them away.")
         end
     elseif reveal.phase == "shown" then
-        for _, card in ipairs(revealCards) do
-            if card.entry and card.glow:IsShown() then
-                card.glow:SetAlpha(0.55 + 0.25 * math.sin(t * 3))
+        -- They glow, their rays turn, the legendary's pillar stands; after a while they burn away by themselves.
+        for index, card in ipairs(revealCards) do
+            if card.entry then
+                card.glow:SetAlpha(0.45 + 0.2 * math.sin(t * 3 + index) + card.entry.rarity * 0.1)
+                local back = cardBack[index]
+                if back.rays:IsShown() then
+                    local size = 280 + card.entry.rarity * 50
+                    Place(back.rays, card.x, card.y, size, size)
+                    back.rays:SetAlpha(0.45)
+                    Rotate(back.rays, t * 0.6 + index)
+                end
+                if back.pillar:IsShown() then
+                    Place(back.pillar, card.x, CENTER_Y, 150, 270)
+                    back.pillar:SetVertexColor(1, 0.67, 0.27)
+                    back.pillar:SetAlpha(0.75 + 0.2 * math.sin(t * 4))
+                end
             end
+        end
+        if t > 2.6 + count * 0.3 then
+            Dissolve()
         end
     elseif reveal.phase == "dissolve" then
         -- Card after card, 0.12 s apart.
@@ -1456,29 +1901,17 @@ stage:SetScript("OnUpdate", function(_, delta)
     end
 end)
 stage:SetScript("OnMouseDown", function()
-    if reveal.phase == "rip" or reveal.phase == "deal" or reveal.phase == "turn" then
-        -- Skip ahead: every card face up.
-        for index, card in ipairs(revealCards) do
-            if card.entry then
-                card:Show()
-                card:SetAlpha(1)
-                PlaceCard(card, SlotX(index, #reveal.cards), CARD_Y)
-                if not card.turned then
-                    TurnCard(card)
-                end
-                card:SetWidth(CARD_W)
-                card:SetContent(true)
-            end
-        end
-        packTop:Hide()
-        packBottom:Hide()
-        slash:Hide()
-        reveal.phase, reveal.t = "shown", 0
-        doneButton:Show()
+    if reveal.phase == "mfly" or reveal.phase == "mcharge" or reveal.phase == "mrip" or reveal.phase == "mburst" then
+        reveal.skip = true
+    elseif reveal.phase == "fly" or reveal.phase == "charge" or reveal.phase == "rip" or reveal.phase == "burst"
+        or reveal.phase == "turn" then
+        SkipToFaces()
     elseif reveal.phase == "shown" then
         Dissolve()
     end
 end)
+
+end -- the opening
 
 -- "Open all": the packs burst together, then one list of the new cards; the duplicates fill the tallies above.
 local results = CreateFrame("Frame", nil, display)
@@ -1987,15 +2420,18 @@ local function OnServerMessage(message)
         mass = { pack = tonumber(f[1]) or 0, count = tonumber(f[2]) or 0, cards = {}, offset = 0, collecting = true }
         mass.golden = PACKS[mass.pack] and PACKS[mass.pack].golden
     elseif kind == "ME" then
+        -- The packs open (the stack, the vortex, the fountain of cards), then the list of the new ones.
         mass.collecting = false
         OpenOn(2)
-        results:Show()
-        idle:Hide()
-        local x, y = Where(display)
-        Burst(x, y, 60, mass.golden and GOLDEN_RGB or { 1, 0.62, 0.3 }, 80, 360)
-        Ring(x, y, 300, mass.golden and GOLDEN_RGB or { 1, 0.62, 0.3 })
-        PlaySound("LEVELUPSOUND")
-        ShowResults()
+        results:Hide()
+        StartMass(mass.pack, mass.count, function()
+            results:Show()
+            idle:Hide()
+            local x, y = Where(display)
+            Burst(x, y, 40, mass.golden and GOLDEN_RGB or { 1, 0.62, 0.3 }, 80, 300)
+            PlaySound("LEVELUPSOUND")
+            ShowResults()
+        end)
     elseif kind == "R" then
         local pack, rest = body:match("^(%d+),(.*)$")
         local cards = ParseCards(rest)
