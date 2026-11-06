@@ -255,10 +255,50 @@ namespace
         return name;
     }
 
+    // Talent Cards' rarity is their power too: Legendary the talents a spec is built around, the procs and passives
+    // that change how it plays (Hot Streak, The Art of War, Sudden Death...); the rest by their tree's row (0-2
+    // Common, 3-5 Rare, deeper Epic).
+    constexpr char const* LEGENDARY_TALENTS[] = {
+        // Death Knight
+        "Vampiric Blood", "Sudden Doom", "Will of the Necropolis", "Threat of Thassarian", "Rage of Rivendare",
+        // Druid
+        "Eclipse", "Leader of the Pack", "King of the Jungle", "Living Seed", "Gift of the Earthmother",
+        // Hunter
+        "The Beast Within", "Kindred Spirits", "Master Marksman", "Wild Quiver", "Hunting Party",
+        // Mage
+        "Hot Streak", "Fingers of Frost", "Brain Freeze", "Missile Barrage", "Netherwind Presence",
+        // Paladin
+        "The Art of War", "Sanctified Wrath", "Righteous Vengeance", "Infusion of Light", "Ardent Defender",
+        // Priest
+        "Divine Aegis", "Borrowed Time", "Serendipity", "Twisted Faith", "Pain and Suffering",
+        // Rogue
+        "Honor Among Thieves", "Combat Potency", "Cut to the Chase", "Master Poisoner", "Cheat Death",
+        // Shaman
+        "Lightning Overload", "Maelstrom Weapon", "Tidal Waves", "Shamanistic Rage", "Mana Tide Totem", "Lava Lash",
+        // Warlock
+        "Everlasting Affliction", "Eradication", "Decimation", "Demonic Pact", "Backdraft", "Fire and Brimstone",
+        // Warrior
+        "Sudden Death", "Juggernaut", "Bloodsurge", "Rampage", "Sword and Board", "Wrecking Crew",
+        // Demon Hunter
+        "Demonic", "Demon Blades", "Cycle of Hatred", "Demonic Might", "Fiery Demise", "Last Resort", "Vulnerability",
+        "Burning Alive",
+        // Monk
+        "Dancing Mists", "Gift of the Celestials", "Secret Infusion", "Celestial Flock", "Transfer the Power",
+        "Xuen's Battlegear", "Thunderfist", "Storm's Fury",
+    };
+
+    std::string_view TalentName(TalentEntry const* talent)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(talent->RankID[0]);
+        char const* name = spellInfo ? spellInfo->SpellName[LOCALE_enUS] : nullptr;
+        return name ? name : "";
+    }
+
     Rarity TalentRarity(TalentEntry const* talent)
     {
-        return talent->Row >= 9 ? RARITY_LEGENDARY : talent->Row >= 6 ? RARITY_EPIC : talent->Row >= 3 ? RARITY_RARE
-            : RARITY_COMMON;
+        if (Listed(LEGENDARY_TALENTS, TalentName(talent)))
+            return RARITY_LEGENDARY;
+        return talent->Row >= 6 ? RARITY_EPIC : talent->Row >= 3 ? RARITY_RARE : RARITY_COMMON;
     }
 
     // Every offered ability (a Skill Card) and every talent of the Hero's trees not learned as an ability (a Talent
@@ -292,10 +332,12 @@ namespace
                 order.insert(ability->Ranks.front().SpellId);
                 byFirst[ability->Ranks.front().SpellId] = ability;
             }
+            std::set<std::string, std::less<>> skillNames;
             for (uint32 first : order)
             {
                 Wildcard::Ability const& ability = *byFirst[first];
                 add({ KIND_SKILL, first, first, SkillRarity(ability), 1, ability.Roles });
+                skillNames.insert(std::string(FirstRankName(ability)));
             }
             for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
             {
@@ -304,6 +346,9 @@ namespace
                     continue;
                 TalentTabEntry const* tab = sTalentTabStore.LookupEntry(talent->TalentTab);
                 if (!tab || tab->petTalentMask || !(tab->ClassMask & Wildcard::HERO_TALENT_CLASSMASK))
+                    continue;
+                // A talent that is a Skill Card already (Crusader Strike, Mutilate, Stormstrike, Earth Shield).
+                if (skillNames.contains(TalentName(talent)))
                     continue;
                 uint32 topRank = talent->RankID[0];
                 for (uint32 rank : talent->RankID)

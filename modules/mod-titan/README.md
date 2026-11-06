@@ -325,8 +325,9 @@ every talent a **Talent Card** (the talent at its top rank: one card, bought or 
 Common, Rare, Epic or Legendary (Skill Cards by their power: the fight-changing cooldowns, forms and summons
 Legendary, Metamorphosis, Icy Veins, Power Infusion, Bloodlust and the like, and each spec's signature (Frost Strike,
 Bloodthirst, Mortal Strike, Holy Shock...); strong cooldowns, defensives and talent
-abilities Epic; abilities from level 30 Rare; lists in `src/cards.cpp`. Talent Cards by their tree row: 0-2, 3-5, 6-8,
-9 and up). The versions of one ability are one card: a talent's (Mangle (Cat) and (Bear)), a form's (Swipe), a
+abilities Epic; abilities from level 30 Rare. Talent Cards the same way: Legendary the talents a spec is built
+around (Hot Streak, The Art of War, Sudden Death...), the rest by their tree row: 0-2 Common, 3-5 Rare, deeper Epic.
+The lists are in `src/cards.cpp`; a talent that is a Skill Card already is no Talent Card). The versions of one ability are one card: a talent's (Mangle (Cat) and (Bear)), a form's (Swipe), a
 faction's (Bloodlust and Heroism). A card opened is the **account's**
 forever, for every character on it (`titan_cards` in the auth database, `data/sql/db-auth/titan_cards.sql`;
 `src/cards.cpp`). Slotting cards into Specializations, loadouts the level-up rolls follow, comes next.
