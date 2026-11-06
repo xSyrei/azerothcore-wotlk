@@ -33,8 +33,7 @@ local GREEN = { 0.55, 1, 0.54 }
 local RARITY_NAMES = { [0] = "Common", "Rare", "Epic", "Legendary" }
 local RARITY_RGB = { [0] = { 0.9, 0.88, 0.96 }, { 0.31, 0.63, 1 }, { 0.77, 0.42, 1 }, { 1, 0.63, 0.24 } }
 local NAME_RGB = { [0] = { 0.96, 0.94, 0.92 }, { 0.37, 0.7, 1 }, { 0.81, 0.53, 1 }, { 1, 0.65, 0.25 } }
-local INK_RGB = { [0] = { 0.18, 0.16, 0.15 }, { 0.04, 0.25, 0.5 }, { 0.33, 0.08, 0.53 }, { 0.56, 0.24, 0 } }
-local GOLDEN_INK, GOLDEN_RGB = { 0.42, 0.24, 0 }, { 1, 0.84, 0.3 }
+local GOLDEN_RGB = { 1, 0.84, 0.3 }
 -- Where the icon, the banner and the parchment's lines sit on each kind's card (fractions of the card).
 local LAYOUT = {
     [0] = { x = 0.5, y = 0.287, r = 0.25, banner = 0.512, rarity = 0.705, kind = 0.765, note = 0.815, gems = 0.88 },
@@ -264,8 +263,10 @@ tinsert(UISpecialFrames, "EmberforgeDarkmoon")
 
 local background = frame:CreateTexture(nil, "BACKGROUND")
 background:SetTexture(ART .. "Background")
-background:SetPoint("TOPLEFT", 8, -8)
-background:SetPoint("BOTTOMRIGHT", -8, 8)
+-- Just under the border's gold on every side (its inner edge: 5 px in at the sides, 6 at the top, 12 at the bottom),
+-- so no gap shows between them, and short of the corners.
+background:SetPoint("TOPLEFT", 3, -4)
+background:SetPoint("BOTTOMRIGHT", -3, 10)
 
 -- The gold border: corners and crest whole, the rails stretched between (the border art is cut by
 -- build_darkmoon_art.py: corners 180 px, the crest 380 px wide, drawn at 0.6).
@@ -928,21 +929,21 @@ local function CardFace(parent, width, height)
     card.icon = content:CreateTexture(nil, "BACKGROUND")
     card.icon:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
     card.ring = content:CreateTexture(nil, "BORDER")
-    -- The text, as large as the card allows: the name outlined on its dark banner, the rest in dark ink on the
-    -- parchment, lifted by a faint light edge.
+    -- The text, as large as the card allows: the name and the rarity in their rarity's color, outlined dark (read
+    -- on any background, at any size); the kind and the note in crisp dark ink on the parchment, no shadow.
     local scale = width / 190
     card.name = Text(content, math.max(9, math.floor(16 * scale)), NAME_RGB[0], BODY_FONT, "OUTLINE")
     card.name:SetWidth(width * 0.86)
     card.name:SetShadowOffset(0, 0)
     local function Ink(size, color)
         local text = Text(content, size, color, BODY_FONT)
-        text:SetShadowColor(1, 0.93, 0.78, 0.45)
-        text:SetShadowOffset(1, -1)
+        text:SetShadowOffset(0, 0)
         return text
     end
-    card.rarity = Ink(math.max(8, math.floor(15 * scale)), INK_RGB[0])
-    card.kind = Ink(math.max(8, math.floor(13 * scale)), { 0.1, 0.06, 0.03 })
-    card.note = Ink(math.max(7, math.floor(11 * scale)), { 0.16, 0.1, 0.05 })
+    card.rarity = Text(content, math.max(9, math.floor(15 * scale)), NAME_RGB[0], BODY_FONT, "OUTLINE")
+    card.rarity:SetShadowOffset(0, 0)
+    card.kind = Ink(math.max(9, math.floor(14 * scale)), { 0.07, 0.04, 0.02 })
+    card.note = Ink(math.max(8, math.floor(12 * scale)), { 0.12, 0.07, 0.03 })
     card.gems = {}
     for index = 1, 4 do
         local gem = content:CreateTexture(nil, "OVERLAY")
@@ -982,7 +983,7 @@ local function CardFace(parent, width, height)
         self.rarity:ClearAllPoints()
         self.rarity:SetPoint("CENTER", self.content, "TOPLEFT", w / 2, -h * layout.rarity)
         self.rarity:SetText(string.upper((golden and "Golden " or "") .. RARITY_NAMES[entry.rarity]))
-        self.rarity:SetTextColor(unpack(golden and GOLDEN_INK or INK_RGB[entry.rarity]))
+        self.rarity:SetTextColor(unpack(golden and GOLDEN_RGB or NAME_RGB[entry.rarity]))
         self.kind:ClearAllPoints()
         self.kind:SetPoint("CENTER", self.content, "TOPLEFT", w / 2, -h * layout.kind)
         self.kind:SetText(entry.kind == 1 and "Talent Card" or "Skill Card")
@@ -1008,7 +1009,7 @@ local function CardFace(parent, width, height)
             texture:SetDesaturated(locked and true or false)
         end
         for _, text in ipairs({ self.name, self.rarity, self.kind, self.note }) do
-            text:SetAlpha(locked and 0.9 or 1)
+            text:SetAlpha(1)
         end
         self.content:Show()
     end
@@ -1037,13 +1038,18 @@ stage:SetFrameLevel(display:GetFrameLevel() + 2)
 stage:EnableMouse(true)
 local CARD_W, CARD_H = 128, 192
 local CARD_Y = -124        -- the cards' centers, from the display's top
--- Each card sits in a clip of its own (a ScrollFrame, which clips what it holds): burning, the clip shrinks from the
--- bottom up, so the card is eaten away behind its glowing edge. PAD: room in the clip for the card's glow.
+-- Each card sits in a slot (a ScrollFrame; PAD: room for its glow) to deal and turn over in. Burning away, the
+-- mockup's burn: noise eats crisp holes through the card from the bottom, rimmed in cream-white, motes lifting off.
+-- The client cannot touch a texture's pixels, so it is baked (build_darkmoon_art.py): for each card front, its frame
+-- and ring burning in BURN.FRAMES frames of one atlas, which a single texture steps through (mirrored at random, so
+-- the cards differ). Under it the icon, in small tiles, and over it the text and the gems go by the same noise
+-- (BurnNoise.lua), the baked rim covering the tiles' edges.
 local PAD = 40
+-- As baked: FRAMES in an atlas COLUMNS by ROWS; the burn runs p from 0 to REACH, its rim EDGE deep. TIME: the seconds
+-- a card takes to burn. NOISE_W by NOISE_H: BurnNoise.lua's cells (4 px on the card); ICON_TILE: the icon tiles'.
+local BURN = { FRAMES = 32, COLUMNS = 4, ROWS = 8, REACH = 1.08, EDGE = 0.035, TIME = 0.8, NOISE_W = 32, NOISE_H = 48 }
+BURN.ICON_TILE = CARD_W / BURN.NOISE_W
 local SLOT_W, SLOT_H = CARD_W + PAD * 2, CARD_H + PAD * 2
-local burnLayer = CreateFrame("Frame", nil, stage)
-burnLayer:SetAllPoints()
-burnLayer:SetFrameLevel(stage:GetFrameLevel() + 12)
 local revealCards = {}
 for index = 1, 5 do
     local slot = CreateFrame("ScrollFrame", nil, stage)
@@ -1057,23 +1063,17 @@ for index = 1, 5 do
     card:SetPoint("CENTER", 0, 0)
     card.slot = slot
     card:Hide()
-    -- The burning edge: a bright streak over a wider ember glow, riding the clip's bottom.
-    card.edgeGlow = burnLayer:CreateTexture(nil, "ARTWORK")
-    card.edgeGlow:SetTexture(ART .. "Glow")
-    card.edgeGlow:SetBlendMode("ADD")
-    card.edgeGlow:SetVertexColor(1, 0.35, 0.08)
-    card.edgeGlow:SetWidth(CARD_W + 40)
-    card.edgeGlow:SetHeight(46)
-    card.edgeGlow:SetPoint("CENTER", slot, "BOTTOM", 0, 0)
-    card.edge = burnLayer:CreateTexture(nil, "OVERLAY")
-    card.edge:SetTexture(ART .. "Slash")
-    card.edge:SetBlendMode("ADD")
-    card.edge:SetVertexColor(1, 0.78, 0.35)
-    card.edge:SetWidth(CARD_W + 14)
-    card.edge:SetHeight(20)
-    card.edge:SetPoint("CENTER", slot, "BOTTOM", 0, 0)
-    card.edge:Hide()
-    card.edgeGlow:Hide()
+    -- The burn: on the card's level, under what is drawn on it (its content: the text, the gems). Its icon tiles are
+    -- made the first time the card burns.
+    local burn = CreateFrame("Frame", nil, holder)
+    burn:SetWidth(CARD_W)
+    burn:SetHeight(CARD_H)
+    burn:SetPoint("CENTER", 0, 0)
+    burn:SetFrameLevel(card:GetFrameLevel())
+    burn:Hide()
+    burn.art = burn:CreateTexture(nil, "ARTWORK")
+    burn.art:SetAllPoints()
+    card.burn = burn
     card.result = Text(card, 10, MUTED, BODY_FONT)
     card.result:SetPoint("TOP", card, "BOTTOM", 0, -3)
     card:EnableMouse(true)
@@ -1104,12 +1104,151 @@ local function SlotX(index, count)
     return PAGE_WIDTH / 2 + (index - (count + 1) / 2) * (CARD_W + 18)
 end
 
--- A card's slot, centered at x, y on the stage (from its top left); burnt: how much of the card is gone, bottom up.
-local function PlaceCard(card, x, y, burnt)
+-- A card's slot, centered at x, y on the stage (from its top left).
+local function PlaceCard(card, x, y)
     card.slot:ClearAllPoints()
-    card.slot:SetPoint("TOP", stage, "TOPLEFT", x, y + SLOT_H / 2)
-    card.slot:SetHeight((burnt or 0) > 0 and math.max(1, PAD + CARD_H * (1 - burnt)) or SLOT_H)
+    card.slot:SetPoint("CENTER", stage, "TOPLEFT", x, y)
     card.x, card.y = x, y
+end
+
+-- The noise at a point of the card (0..1 across and down; mirrored: as the card burns mirrored).
+local noise = EmberforgeDarkmoon_BurnNoise
+local function Noise(u, v, mirrored)
+    if not noise then
+        return 1 - v
+    end
+    if mirrored then
+        u = 1 - u
+    end
+    local x = math.max(0, math.min(BURN.NOISE_W - 1, math.floor(u * BURN.NOISE_W)))
+    local y = math.max(0, math.min(BURN.NOISE_H - 1, math.floor(v * BURN.NOISE_H)))
+    local at = (y * BURN.NOISE_W + x) * 2 + 1
+    return (tonumber(noise:sub(at, at + 1)) or 99) / 100
+end
+
+local function HideBurn(card)
+    card.burn:Hide()
+    card.burning = nil
+    for _, texture in ipairs({ card.frameArt, card.icon, card.ring }) do
+        texture:SetAlpha(1)
+    end
+end
+
+-- The icon as tiles of the noise's cells (under the baked frame, which hides all but its circle), each with its noise.
+local function IconTiles(card)
+    local layout, w, h = card.layout or LAYOUT[0], CARD_W, CARD_H
+    local size = w * layout.r * 2
+    local left, top = w * layout.x - size / 2, h * layout.y - size / 2
+    local icon, span = CardIcon(card.entry), 1 - 2 * ICON_CROP
+    card.iconTiles = card.iconTiles or {}
+    local used = 0
+    for y = math.floor(top / BURN.ICON_TILE) * BURN.ICON_TILE, top + size - 0.01, BURN.ICON_TILE do
+        for x = math.floor(left / BURN.ICON_TILE) * BURN.ICON_TILE, left + size - 0.01, BURN.ICON_TILE do
+            local x0, y0 = math.max(x, left), math.max(y, top)
+            local x1, y1 = math.min(x + BURN.ICON_TILE, left + size), math.min(y + BURN.ICON_TILE, top + size)
+            if x1 - x0 > 0.3 and y1 - y0 > 0.3 then
+                used = used + 1
+                local tile = card.iconTiles[used]
+                if not tile then
+                    tile = { texture = card.burn:CreateTexture(nil, "BACKGROUND") }
+                    card.iconTiles[used] = tile
+                end
+                tile.texture:SetTexture(icon)
+                tile.texture:ClearAllPoints()
+                tile.texture:SetPoint("TOPLEFT", x0, -y0)
+                tile.texture:SetWidth(x1 - x0)
+                tile.texture:SetHeight(y1 - y0)
+                tile.texture:SetTexCoord(ICON_CROP + (x0 - left) / size * span, ICON_CROP + (x1 - left) / size * span,
+                    ICON_CROP + (y0 - top) / size * span, ICON_CROP + (y1 - top) / size * span)
+                tile.texture:Show()
+                tile.n = Noise((x0 + x1) / 2 / w, (y0 + y1) / 2 / h, card.mirrored)
+            end
+        end
+    end
+    for index = used + 1, #card.iconTiles do
+        card.iconTiles[index].texture:Hide()
+        card.iconTiles[index].n = -1
+    end
+    card.iconCount = used
+end
+
+-- The card as its burn, where it stands: the baked frame, the icon tiles, and what is drawn on it marked by its noise.
+local function LightBurn(card, golden)
+    local entry, layout = card.entry, card.layout or LAYOUT[0]
+    local w, h = CARD_W, CARD_H
+    card.mirrored = math.random() < 0.5
+    card.burn.art:SetTexture(ART .. "Burn" .. (entry.kind == 1 and "Talent" or "Skill") .. (golden and "Golden" or ""))
+    IconTiles(card)
+    card.marks = {}
+    local function Mark(region, x, y)
+        card.marks[#card.marks + 1] = { region = region, n = Noise(x / w, y / h, card.mirrored) }
+    end
+    Mark(card.name, w / 2, h * layout.banner)
+    Mark(card.rarity, w / 2, h * layout.rarity)
+    Mark(card.kind, w / 2, h * layout.kind)
+    Mark(card.note, w / 2, h * layout.note)
+    for index, gem in ipairs(card.gems) do
+        Mark(gem, w / 2 + (index - 1 - entry.rarity / 2) * w * 0.07, h * layout.gems)
+    end
+    for _, texture in ipairs({ card.frameArt, card.icon, card.ring }) do
+        texture:SetAlpha(0)
+    end
+    card.frame = -1
+    card.glow:Hide()
+    card.result:SetText("")
+    card.burn:Show()
+    card.burning = true
+end
+
+-- One step of a card's burn at p (0..BURN.REACH): the baked frame for it, the icon tiles and text it has reached
+-- gone, motes off the rim.
+local function BurnStep(card, p, home)
+    local frame = math.min(BURN.FRAMES - 1, math.floor(p / BURN.REACH * (BURN.FRAMES - 1) + 0.5))
+    if frame ~= card.frame then
+        card.frame = frame
+        local column, row = frame % BURN.COLUMNS, math.floor(frame / BURN.COLUMNS)
+        local u0, u1 = column / BURN.COLUMNS, (column + 1) / BURN.COLUMNS
+        local v0 = row / BURN.ROWS
+        local v1 = v0 + 0.75 / BURN.ROWS                  -- the card fills the top three quarters of its cell
+        if card.mirrored then
+            u0, u1 = u1, u0
+        end
+        card.burn.art:SetTexCoord(u0, u1, v0, v1)
+    end
+    for index = 1, card.iconCount or 0 do
+        local tile = card.iconTiles[index]
+        if tile.n >= 0 and tile.n < p + BURN.EDGE * 0.5 then
+            tile.texture:Hide()
+            tile.n = -1
+        end
+    end
+    for _, mark in ipairs(card.marks) do
+        if mark.n < p + BURN.EDGE * 0.5 then
+            mark.region:SetAlpha(0)
+        end
+    end
+    -- Motes lift off the rim (cells of the noise just ahead of p, on the card); from a new card some drift to the
+    -- Cards tab.
+    local bx, by = Where(card.burn)
+    local left, top = bx - CARD_W / 2, by + CARD_H / 2
+    local tx, ty = Where(tabs[3])
+    local emitted = 0
+    for _ = 1, 40 do
+        local u, v = math.random(), math.random()
+        local ahead = Noise(u, v, card.mirrored) - p
+        if ahead >= 0 and ahead < BURN.EDGE * 1.5 then
+            local white = math.random() < 0.5
+            local homing = home and math.random() < 0.35
+            Emit({ x = left + u * CARD_W, y = top - v * CARD_H, vx = math.random(-40, 40), vy = math.random(60, 160),
+                drag = 0.97, life = 0.9 + math.random() * 0.9, size = 3 + math.random() * 4, r = 1,
+                g = white and 0.97 or 0.84, b = white and 0.86 or 0.5, tx = homing and tx or nil,
+                ty = homing and ty or nil })
+            emitted = emitted + 1
+            if emitted >= 5 then
+                break
+            end
+        end
+    end
 end
 
 local function ResetStage()
@@ -1117,10 +1256,7 @@ local function ResetStage()
         card:Hide()
         card:SetAlpha(1)
         card:SetWidth(CARD_W)
-        card.edge:Hide()
-        card.edgeGlow:Hide()
-        PlaceCard(card, card.x or PAGE_WIDTH / 2, card.y or CARD_Y, 0)
-        card.slot:SetHeight(SLOT_H)
+        HideBurn(card)
     end
     packTop:Hide()
     packBottom:Hide()
@@ -1150,6 +1286,11 @@ local function Dissolve()
     reveal.t = 0
     doneButton:Hide()
     skipText:SetText("")
+    for _, card in ipairs(revealCards) do
+        if card.entry and card:IsShown() then
+            LightBurn(card, reveal.golden)
+        end
+    end
     PlaySound("igQuestLogAbandonQuest")
 end
 doneButton:SetScript("OnClick", Dissolve)
@@ -1299,34 +1440,17 @@ stage:SetScript("OnUpdate", function(_, delta)
             end
         end
     elseif reveal.phase == "dissolve" then
-        -- Each card burns from the bottom up, one after another: the clip shrinks behind a flickering edge that
-        -- sheds embers.
+        -- Card after card, 0.12 s apart.
         for index, card in ipairs(revealCards) do
-            if card.entry and card:IsShown() then
-                local p = math.max(0, math.min(1, (t - (index - 1) * 0.12) / 0.9))
-                PlaceCard(card, card.x, card.y, p)
-                local burning = p > 0 and p < 1
-                Shown(card.edge, burning)
-                Shown(card.edgeGlow, burning)
-                if burning then
-                    local flicker = 0.75 + 0.25 * math.sin(t * 40 + index * 2)
-                    card.edge:SetAlpha(flicker)
-                    card.edgeGlow:SetAlpha(0.8 * flicker)
-                    local sx, sy = Where(stage)
-                    local x = sx - PAGE_WIDTH / 2 + card.x
-                    local y = sy + (stage:GetHeight() or 260) / 2 + card.y - CARD_H / 2 + CARD_H * p
-                    for _ = 1, 3 do
-                        local hot = math.random() < 0.5
-                        Emit({ x = x + (math.random() - 0.5) * CARD_W, y = y, vx = math.random(-25, 25),
-                            vy = math.random(50, 150), r = 1, g = hot and 0.75 or 0.4, b = hot and 0.3 or 0.08,
-                            size = 4 + math.random() * 6, life = 0.5 + math.random() * 0.6, drag = 0.97, grav = 40 })
-                    end
-                elseif p >= 1 then
+            if card.burning then
+                local p = math.max(0, math.min(1, (t - (index - 1) * 0.12) / BURN.TIME)) * BURN.REACH
+                BurnStep(card, p, card.entry.new)
+                if p >= BURN.REACH then
                     card:Hide()
                 end
             end
         end
-        if t > 1.1 + #reveal.cards * 0.12 then
+        if t > BURN.TIME + 0.2 + #reveal.cards * 0.12 then
             NextOrIdle()
         end
     end

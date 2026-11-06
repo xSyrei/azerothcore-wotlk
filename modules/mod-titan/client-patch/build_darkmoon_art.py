@@ -17,7 +17,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / 'models'))
 
-from PIL import Image, ImageDraw, ImageFilter  # noqa: E402
+from PIL import Image, ImageChops, ImageDraw, ImageFilter  # noqa: E402
 
 import blp  # noqa: E402
 
@@ -181,15 +181,20 @@ def pieces():
 
 
 # The icon's circle on each card front (fractions of the card: center x, y, radius of the width), as the addon's LAYOUT.
-RINGS = [('front', 'CardSkillRing', 0.5, 0.287, 0.25), ('front_gold', 'CardSkillGoldenRing', 0.5, 0.287, 0.25),
-         ('tfront', 'CardTalentRing', 0.5, 0.268, 0.285), ('tfront_gold', 'CardTalentGoldenRing', 0.5, 0.268, 0.285)]
+# behind: the icon shows through the frame's own window (the Talent Cards', whose ornaments reach into the circle), so
+# inside the circle the ring keeps the frame as it is; else the circle is cleared (the Skill Cards' frame is solid
+# there and the icon goes on top).
+RINGS = [('front', 'CardSkillRing', 0.5, 0.287, 0.25, False),
+         ('front_gold', 'CardSkillGoldenRing', 0.5, 0.287, 0.25, False),
+         ('tfront', 'CardTalentRing', 0.5, 0.268, 0.285, True),
+         ('tfront_gold', 'CardTalentGoldenRing', 0.5, 0.268, 0.285, True)]
 RING_SPAN = 2.4     # the ring's square: this many radii across
 
 
 def rings():
     """The frame around each card's icon circle, see-through inside it and solid outside: drawn over the icon (a
     square, as the game draws icons), it hides the icon's corners and its border, whatever the frame's window."""
-    for source, name, cx, cy, r in RINGS:
+    for source, name, cx, cy, r, behind in RINGS:
         with Image.open(SOURCE / f'{source}.webp') as image:
             card = image.convert('RGBA')
         w, h = card.size
@@ -202,8 +207,91 @@ def rings():
         mask = Image.new('L', (piece.width * scale, piece.height * scale), 255)
         c, rr = piece.width * scale / 2, (radius - 1) * scale
         ImageDraw.Draw(mask).ellipse((c - rr, c - rr, c + rr, c + rr), fill=0)
-        solid.putalpha(mask.resize(piece.size, Image.Resampling.LANCZOS))
+        outside = mask.resize(piece.size, Image.Resampling.LANCZOS)
+        if behind:
+            outside = ImageChops.lighter(outside, piece.getchannel('A'))
+        solid.putalpha(outside)
         save_blp(solid, name, (256, 256))
+
+
+# The burn, baked: for each card front (its frame and ring, all that is the same on every card of it) 32 frames of
+# the mockup's burn: noise climbs through the card (from the bottom, from its left), behind it the card is gone, along
+# it a rim of cream-white. In the addon one texture steps through them (and mirrored, so cards differ); the icon, in
+# tiles under it, and the text go by the same noise (BurnNoise.lua: the noise at 4 px, two digits a cell).
+BURNS = [('front', 'BurnSkill', 0.5, 0.287, 0.25, False),
+         ('front_gold', 'BurnSkillGolden', 0.5, 0.287, 0.25, False),
+         ('tfront', 'BurnTalent', 0.5, 0.268, 0.285, True),
+         ('tfront_gold', 'BurnTalentGolden', 0.5, 0.268, 0.285, True)]
+BURN_FRAMES, BURN_COLUMNS = 32, 4           # the atlas: 4 across, 8 down
+BURN_CELL = (128, 256)                      # each frame's cell; the card fills its top 128x192
+BURN_SIZE = (256, 384)                      # baked at twice the size it is drawn, then brought down
+BURN_REACH, BURN_EDGE = 1.08, 0.035         # the burn runs p from 0 to BURN_REACH; the rim is BURN_EDGE deep
+NOISE_GRID = (32, 48)
+
+
+def burn_noise():
+    """The mockup's noise map: mostly from the bottom, from a point at the left, three octaves of value noise."""
+    import numpy as np
+    rng = np.random.default_rng(20261106)
+    w, h = BURN_SIZE
+
+    def octave(cell):
+        cw, ch = w // cell + 3, h // cell + 3
+        grid = rng.random((ch, cw))
+        ys, xs = np.mgrid[0:h, 0:w] / cell
+        x0, y0 = xs.astype(int), ys.astype(int)
+        tx, ty = xs - x0, ys - y0
+        tx, ty = tx * tx * (3 - 2 * tx), ty * ty * (3 - 2 * ty)
+        top = grid[y0, x0] + (grid[y0, x0 + 1] - grid[y0, x0]) * tx
+        bottom = grid[y0 + 1, x0] + (grid[y0 + 1, x0 + 1] - grid[y0 + 1, x0]) * tx
+        return top + (bottom - top) * ty
+
+    ys, xs = np.mgrid[0:h, 0:w]
+    start = 0.3 * w
+    octaves = octave(100) * 0.55 + octave(40) * 0.3 + octave(16) * 0.15
+    n = (1 - ys / h) * 0.55 + np.abs(xs - start) / w * 0.25 + octaves * 0.5
+    return (n - n.min()) / (n.max() - n.min())
+
+
+def burns():
+    import numpy as np
+    noise = burn_noise()
+    w, h = BURN_SIZE
+    cw, ch = BURN_CELL
+    rows = BURN_FRAMES // BURN_COLUMNS
+    cream, gold = np.array([255, 252, 240], float), np.array([255, 214, 140], float)
+    for source, name, cx, cy, r, behind in BURNS:
+        with Image.open(SOURCE / f'{source}.webp') as image:
+            card = np.asarray(blp.resize_straight(image.convert('RGBA'), (w, h)), float)
+        ys, xs = np.mgrid[0:h, 0:w]
+        circle = (xs - cx * w) ** 2 + (ys - cy * h) ** 2 < (r * w - 1) ** 2
+        frame = card.copy()
+        if not behind:
+            frame[circle, 3] = 0                    # the icon shows through here (it is drawn under)
+        present = (card[..., 3] > 8) | circle      # what burns: the card, its icon's circle too
+        atlas = Image.new('RGBA', (cw * BURN_COLUMNS, ch * rows), (0, 0, 0, 0))
+        for index in range(BURN_FRAMES):
+            p = index / (BURN_FRAMES - 1) * BURN_REACH
+            ahead = noise - p
+            out = frame.copy()
+            out[present & (ahead < 0), 3] = 0
+            rim = present & (ahead >= 0) & (ahead < BURN_EDGE)
+            k = (ahead[rim] / BURN_EDGE)[:, None]
+            out[rim, :3] = cream + (gold - cream) * k
+            out[rim, 3] = 255
+            cell = blp.resize_straight(Image.fromarray(out.astype(np.uint8), 'RGBA'), (cw, ch * 3 // 4))
+            atlas.paste(cell, ((index % BURN_COLUMNS) * cw, (index // BURN_COLUMNS) * ch))
+        (OUT / f'{name}.blp').write_bytes(blp.encode_dxt(atlas))
+        print(f'  {name}.blp {atlas.width}x{atlas.height} ({BURN_FRAMES} frames)')
+    gw, gh = NOISE_GRID
+    small = Image.fromarray((noise * 255).astype(np.uint8), 'L').resize((gw, gh), Image.Resampling.BOX)
+    digits = ''.join(f'{min(99, small.getpixel((x, y)) * 100 // 256):02d}' for y in range(gh) for x in range(gw))
+    (OUT.parent / 'BurnNoise.lua').write_text(
+        '-- Generated by client-patch/build_darkmoon_art.py: the cards\' burn noise (0-99, two digits a cell, '
+        'rows from\n'
+        f'-- the top), {gw}x{gh} cells; the baked burns (Art/Burn*.blp) run it from 0 to {BURN_REACH}.\n'
+        f'EmberforgeDarkmoon_BurnNoise = "{digits}"\n')
+    print('  BurnNoise.lua')
 
 
 def main():
@@ -214,6 +302,7 @@ def main():
     border()
     rings()
     pieces()
+    burns()
 
 
 if __name__ == '__main__':

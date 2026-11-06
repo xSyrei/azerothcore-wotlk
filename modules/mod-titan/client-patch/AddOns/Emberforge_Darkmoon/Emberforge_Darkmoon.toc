@@ -3,4 +3,5 @@
 ## Notes: Silas Darkmoon's window (/darkmoon): your specializations and Eyes of Unlearning, card packs and their reveal, and your account's Skill and Talent Cards.
 ## Author: Project Emberforge
 ## OptionalDeps: Emberforge_Classless
+BurnNoise.lua
 Emberforge_Darkmoon.lua

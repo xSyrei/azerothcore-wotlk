@@ -321,16 +321,16 @@ its skin is baked by `client-patch/bake_npc.py` (the dwarf's skin, face, beard a
 
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and
-every talent a **Talent Card** (one copy a rank), each Common, Rare, Epic or Legendary (Skill Cards: talent abilities
-Epic, Legendary from their tree's ninth row; abilities from level 30 Rare; Talent Cards by their tree row: 0-2, 3-5,
-6-8, 9 and up). A card opened is the **account's** forever, for every character on it
-(`titan_cards` in the auth database, `data/sql/db-auth/titan_cards.sql`; `src/cards.cpp`). Slotting cards into
-Specializations, loadouts the level-up rolls follow, comes next.
+every talent a **Talent Card** (the talent at its top rank: one card, bought or opened, and it is complete), each
+Common, Rare, Epic or Legendary (Skill Cards: talent abilities Epic, Legendary from their tree's ninth row; abilities
+from level 30 Rare; Talent Cards by their tree row: 0-2, 3-5, 6-8, 9 and up). A card opened is the **account's**
+forever, for every character on it (`titan_cards` in the auth database, `data/sql/db-auth/titan_cards.sql`;
+`src/cards.cpp`). Slotting cards into Specializations, loadouts the level-up rolls follow, comes next.
 - **Packs** (items: Skill Card Pack 910010, Talent Card Pack 910011, Golden Skill Card Pack 910012, Golden Talent
   Card Pack 910013) hold 5 cards of their kind: a rarity rolled for each (Common 70%, Rare 24%, Epic 5%, Legendary 1%),
   then a card of it, 3 times in 4 one suiting the Hero's role. Golden Packs hold Golden Cards only, one the account has
   no Golden copy of when it can.
-- **Duplicates** (a card owned, every rank of a talent) pay Emberspark back: 40, 120, 400 or 1,200 by rarity, 2,000 for
+- **Duplicates** (a card already owned) pay Emberspark back: 40, 120, 400 or 1,200 by rarity, 2,000 for
   a Golden Card. Every 10th duplicate of the account gives a free pack of the same kind, every 50th a Golden Pack of it
   and 2,000 Emberspark (`titan_card_tallies`).
 - **Eyes of Unlearning** are the character's (its settings, `mod-titan-darkmoon`): one for every level from 8 to 60, four

@@ -41,15 +41,16 @@
 #include <unordered_map>
 #include <vector>
 
-// Skill and Talent Cards: every Wildcard ability is a Skill Card, every talent a Talent Card (one copy a rank), each of
-// a rarity. A card, once opened, is the account's forever (auth database: titan_cards), for every character on it;
-// slotting cards into Specializations (loadouts the level-up rolls follow) comes next.
+// Skill and Talent Cards: every Wildcard ability is a Skill Card, every talent a Talent Card (the talent at its top
+// rank: one card, bought or opened, and it is complete), each of a rarity. A card, once opened, is the account's
+// forever (auth database: titan_cards), for every character on it; slotting cards into Specializations (loadouts the
+// level-up rolls follow) comes next.
 //
 // - Packs (items in the bags, opened there or from the window): a Skill Pack or Talent Pack holds 5 cards of its kind,
 //   a Golden Skill or Golden Talent Pack 5 Golden ones. Each card's rarity is rolled (Common 70%, Rare 24%, Epic 5%,
-//   Legendary 1%), then a card of it, 3 times in 4 one suiting the Hero's role. A card already owned (every rank of a
-//   talent) is a duplicate: Emberspark back by its rarity, and the account's duplicate tally goes up. Every 10th
-//   duplicate gives a free pack of the same kind, every 50th a Golden Pack of it and 2,000 Emberspark.
+//   Legendary 1%), then a card of it, 3 times in 4 one suiting the Hero's role. A card already owned is a duplicate:
+//   Emberspark back by its rarity, and the account's duplicate tally goes up. Every 10th duplicate gives a free pack
+//   of the same kind, every 50th a Golden Pack of it and 2,000 Emberspark.
 // - Silas Darkmoon (npc_titan_silas) opens the Darkmoon window (the Emberforge_Darkmoon addon): Skill and Talent Packs
 //   for Emberspark, at prices that climb with each purchase (from 1,000) and start over at a prestige; Golden Packs
 //   (20,000); any card but a Golden one at a fixed price by rarity (500, 5,000, 12,000, 30,000); Skill Packs for gold
@@ -150,9 +151,9 @@ namespace
     {
         uint8 Kind;         // KIND_SKILL or KIND_TALENT
         uint32 Id;          // first rank, or talent id
-        uint32 SpellId;     // what the client shows: the first rank
+        uint32 SpellId;     // what the client shows: the first rank, a talent's top rank
         uint8 Rarity;
-        uint8 MaxCount;     // 1, or the talent's ranks
+        uint8 MaxCount;     // copies to complete it: 1 (a Talent Card is the talent at its top rank)
         uint8 Roles;        // Wildcard RoleMask bits; 0: every role
     };
 
@@ -207,11 +208,11 @@ namespace
                 TalentTabEntry const* tab = sTalentTabStore.LookupEntry(talent->TalentTab);
                 if (!tab || tab->petTalentMask || !(tab->ClassMask & Wildcard::HERO_TALENT_CLASSMASK))
                     continue;
-                uint8 ranks = 0;
+                uint32 topRank = talent->RankID[0];
                 for (uint32 rank : talent->RankID)
                     if (rank)
-                        ++ranks;
-                add({ KIND_TALENT, talent->TalentID, talent->RankID[0], TalentRarity(talent), ranks, 0 });
+                        topRank = rank;
+                add({ KIND_TALENT, talent->TalentID, topRank, TalentRarity(talent), 1, 0 });
             }
             return built;
         }();
