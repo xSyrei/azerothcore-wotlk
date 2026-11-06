@@ -323,7 +323,8 @@ its skin is baked by `client-patch/bake_npc.py` (the dwarf's skin, face, beard a
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and
 every talent a **Talent Card** (the talent at its top rank: one card, bought or opened, and it is complete), each
 Common, Rare, Epic or Legendary (Skill Cards by their power: the fight-changing cooldowns, forms and summons
-Legendary, Metamorphosis, Icy Veins, Power Infusion, Bloodlust and the like; strong cooldowns, defensives and talent
+Legendary, Metamorphosis, Icy Veins, Power Infusion, Bloodlust and the like, and each spec's signature (Frost Strike,
+Bloodthirst, Mortal Strike, Holy Shock...); strong cooldowns, defensives and talent
 abilities Epic; abilities from level 30 Rare; lists in `src/cards.cpp`. Talent Cards by their tree row: 0-2, 3-5, 6-8,
 9 and up). The versions of one ability are one card: a talent's (Mangle (Cat) and (Bear)), a form's (Swipe), a
 faction's (Bloodlust and Heroism). A card opened is the **account's**

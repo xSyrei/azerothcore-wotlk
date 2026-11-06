@@ -169,7 +169,8 @@ namespace
     };
 
     // Skill Cards' rarity is their power: the cooldowns that change a fight, the forms and summons that change how a
-    // Hero plays, are Legendary; strong cooldowns, defensives and the specs' signature abilities Epic. By name (every
+    // Hero plays, and the strikes and spells a spec is built around are Legendary; strong cooldowns and defensives
+    // Epic. By name (every
     // rank and faction version); the rest: talent abilities Epic, abilities from level 30 Rare, Common.
     constexpr char const* LEGENDARY_SKILLS[] = {
         // Major damage and healing cooldowns.
@@ -177,18 +178,23 @@ namespace
         "Adrenaline Rush", "Death Wish", "Recklessness", "Bestial Wrath", "Army of the Dead", "Pain Suppression",
         // Forms and summons that change how a Hero plays.
         "Shadowform", "Moonkin Form", "Tree of Life", "Summon Water Elemental", "Summon Felguard", "Force of Nature",
-        // Emberforge's own: the Demon Hunter's Metamorphosis, the Monk's Revival.
-        "Metamorphosis", "Revival",
+        // The specs' signature abilities, the ones each is built around.
+        "Frost Strike", "Obliterate", "Heart Strike", "Scourge Strike", "Bloodthirst", "Mortal Strike", "Devastate",
+        "Mangle", "Aimed Shot", "Black Arrow", "Pyroblast", "Holy Shock", "Crusader Strike", "Avenger's Shield",
+        "Circle of Healing", "Vampiric Touch", "Mutilate", "Stormstrike", "Earth Shield", "Unstable Affliction",
+        "Conflagrate",
+        // Emberforge's own: the Demon Hunter's Metamorphosis, Eye Beam and Fiery Brand, the Monk's Revival, Rising Sun
+        // Kick, Fists of Fury and Essence Font.
+        "Metamorphosis", "Eye Beam", "Fiery Brand", "Revival", "Rising Sun Kick", "Fists of Fury", "Essence Font",
     };
     constexpr char const* EPIC_SKILLS[] = {
         // Cooldowns and defensives no talent teaches.
         "Ice Block", "Evocation", "Mirror Image", "Divine Shield", "Lay on Hands", "Cloak of Shadows", "Vanish",
         "Evasion", "Innervate", "Barkskin", "Shadowfiend", "Divine Hymn", "Hymn of Hope", "Fire Elemental Totem",
         "Earth Elemental Totem", "Shield Wall", "Retaliation", "Anti-Magic Shell", "Icebound Fortitude",
-        "Empower Rune Weapon", "Deterrence", "Kill Command", "Lava Burst", "Earth Shield",
+        "Empower Rune Weapon", "Deterrence", "Kill Command", "Lava Burst",
         // Emberforge's own.
-        "Eye Beam", "Fiery Brand", "Darkness", "Soul Barrier", "Life Cocoon", "Essence Font", "Thunder Focus Tea",
-        "Fists of Fury", "Whirling Dragon Punch", "Rising Sun Kick",
+        "Darkness", "Soul Barrier", "Life Cocoon", "Thunder Focus Tea", "Whirling Dragon Punch",
     };
     constexpr char const* RARE_SKILLS[] = {
         // Emberforge's own (their levels are low for what they do).
