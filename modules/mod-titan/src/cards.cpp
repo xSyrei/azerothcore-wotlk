@@ -183,7 +183,7 @@ namespace
         "Mangle", "Aimed Shot", "Black Arrow", "Pyroblast", "Holy Shock", "Crusader Strike", "Avenger's Shield",
         "Circle of Healing", "Vampiric Touch", "Mutilate", "Stormstrike", "Earth Shield", "Unstable Affliction",
         "Conflagrate",
-        // The spells and buffs a Hero's power rests on: the armors, the chained and the burst spells, the rolling heals.
+        // The spells and buffs a Hero's power rests on: the armors, the chained and burst spells, the rolling heals.
         "Chain Lightning", "Chain Heal", "Lava Burst", "Molten Armor", "Fel Armor", "Frostfire Bolt",
         "Seed of Corruption", "Prayer of Mending", "Lifebloom", "Savage Roar", "Kill Shot", "Fan of Knives",
         // Emberforge's own: the Demon Hunter's Metamorphosis, Eye Beam and Fiery Brand, the Monk's Revival, Rising Sun
