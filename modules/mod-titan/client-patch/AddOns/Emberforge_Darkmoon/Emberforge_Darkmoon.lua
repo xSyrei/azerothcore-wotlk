@@ -48,13 +48,16 @@ local PACKS = {
 local SPECS = {
     { name = "Specialization I", text = "The starter specialization that comes with every Hero. Its abilities and "
         .. "talents are the ones your level-up rolls gave you." },
-    { name = "Specialization II", text = "A second set of abilities and talents, rolled fresh. Switch between them "
-        .. "out of combat; each keeps its own rerolls." },
+    { name = "Specialization II", text = "A second set of abilities and talents, free for every Hero: rolled fresh "
+        .. "the first time you activate it. Switch between them out of combat, in the Classless window." },
     { name = "Specialization III", text = "A third loadout: keep one for each role you play, or one for raiding and "
         .. "one for the arena." },
     { name = "Specialization IV", text = "The fourth and last loadout." },
 }
 local ROMAN = { "I", "II", "III", "IV" }
+-- The Hero's specializations, from the server (src/specs.cpp, prefix EFSP): index 1-4 here, 0-3 there.
+local SPEC_PREFIX = "EFSP"
+local mySpecs = { active = 1 }
 local CARDS_PER_PAGE, GRID_COLUMNS = 14, 7
 
 local state = { spark = 0, prices = { [0] = 0, 0, 0, 0 }, goldLeft = 0, goldPrice = 750000, duplicates = 0,
@@ -555,7 +558,17 @@ for index = 1, 8 do
     slot:SetHeight(48)
     slot:SetPoint("TOPLEFT", 26 + (index - 1) * 44, -200)
 end
-local svButton = Button(specView, 165, 28, "Edit loadout (soon)", function() end, "Button")
+local svButton = Button(specView, 190, 28, "", function(self)
+    local spec = mySpecs[view.spec]
+    if not spec then
+        return
+    end
+    if not spec.owned then
+        SendAddonMessage(SPEC_PREFIX, "BUY," .. (view.spec - 1), "WHISPER", UnitName("player"))
+    elseif view.spec ~= mySpecs.active then
+        SendAddonMessage(SPEC_PREFIX, "ACTIVATE," .. (view.spec - 1), "WHISPER", UnitName("player"))
+    end
+end, "ButtonHot")
 svButton:SetPoint("BOTTOMRIGHT", -26, 26)
 
 -- The leveling track: a gold-framed rail from the first level to the last, filled to the Hero's level; the levels
@@ -696,23 +709,30 @@ buyEyes:SetPoint("RIGHT", -14, 0)
 
 local function RefreshSpecs()
     for index, item in ipairs(specItems) do
-        local chosen, active = index == view.spec, index == 1
+        local mine = mySpecs[index]
+        local chosen, active = index == view.spec, index == mySpecs.active
+        local owned = mine and mine.owned or index <= 2
         if item.chosen ~= chosen or not item.slices then
             item.chosen = chosen
             Slice9(item, chosen and "ButtonRed" or "Button", 10)
         end
-        item.sub:SetText(active and "ACTIVE" or "Coming soon")
-        item.sub:SetTextColor(unpack(active and GREEN or MUTED))
-        local dim = active and 1 or 0.55
+        item.name:SetText(mine and mine.name or SPECS[index].name)
+        item.sub:SetText(active and "ACTIVE" or owned and (mine and mine.locked and "OWNED - LOCKED" or "OWNED")
+            or ("Unlock - " .. Thousands(mine and mine.price or 0)))
+        item.sub:SetTextColor(unpack(active and GREEN or owned and GOLD or MUTED))
+        local dim = owned and 1 or 0.55
         item.numeral:SetTextColor(GOLD_HI[1] * dim, GOLD_HI[2] * dim, GOLD_HI[3] * dim)
         item.name:SetTextColor(GOLD_HI[1] * dim, GOLD_HI[2] * dim, GOLD_HI[3] * dim)
     end
-    local spec, owned = SPECS[view.spec], view.spec == 1
+    local spec, mine = SPECS[view.spec], mySpecs[view.spec]
+    local owned = mine and mine.owned or view.spec <= 2
+    local active = view.spec == mySpecs.active
     svNumeral:SetText(ROMAN[view.spec])
-    svName:SetText(spec.name)
-    svTag:SetText(owned and "ACTIVE" or "LOCKED")
-    svTag:SetTextColor(unpack(owned and GREEN or { 0.85, 0.64, 0.42 }))
-    svText:SetText(spec.text)
+    svName:SetText(mine and mine.name or spec.name)
+    svTag:SetText(active and "ACTIVE" or owned and "OWNED" or "NOT YET YOURS")
+    svTag:SetTextColor(unpack(active and GREEN or owned and GOLD or { 0.85, 0.64, 0.42 }))
+    svText:SetText(spec.text .. (mine and mine.locked and "  Locked: it cannot be rerolled or prestiged until you "
+        .. "unlock it." or ""))
     local stats = owned and { { Thousands(eyes.bought), "Eyes of Unlearning bought" },
         { Thousands(eyes.abilities), "Abilities rerolled" }, { Thousands(eyes.talents), "Talents rerolled" },
         { "0", "Cards slotted" } }
@@ -722,8 +742,17 @@ local function RefreshSpecs()
         stat.value:SetText(stats[index][1])
         stat.label:SetText(stats[index][2])
     end
-    svButton:SetLabel(owned and "Edit loadout (soon)" or "Coming soon")
-    svButton:SetEnabled(false)
+    if not owned then
+        local price = mine and mine.price or 0
+        svButton:SetLabel("Unlock  -  " .. Thousands(price) .. " Emberspark")
+        svButton:SetEnabled(state.spark >= price)
+    elseif active then
+        svButton:SetLabel("Active")
+        svButton:SetEnabled(false)
+    else
+        svButton:SetLabel("Activate")
+        svButton:SetEnabled(true)
+    end
 
     -- The track.
     local ready = 0
@@ -2453,6 +2482,7 @@ frame:SetScript("OnShow", function()
         asked = true
         Send("LIST")
     end
+    SendAddonMessage(SPEC_PREFIX, "LIST", "WHISPER", UnitName("player"))
     PlaySound("igCharacterInfoOpen")
     ShowTab(view.tab)
 end)
@@ -2612,6 +2642,20 @@ events:SetScript("OnEvent", function(_, event, prefix, message, _, sender)
     if event == "CHAT_MSG_ADDON" then
         if prefix == PREFIX and sender == UnitName("player") then
             OnServerMessage(message)
+        elseif prefix == SPEC_PREFIX and sender == UnitName("player") then
+            local kind, body = message:match("^([^,]+),?(.*)$")
+            if kind == "P" then
+                mySpecs.active = (tonumber(body:match("^(%d+)")) or 0) + 1
+            elseif kind == "S" then
+                local index, owned, locked, _, price, _, name =
+                    body:match("^(%d+),(%d+),(%d+),(%d+),(%d+),([^,]*),(.*)$")
+                if index then
+                    mySpecs[tonumber(index) + 1] = { owned = owned == "1", locked = locked == "1",
+                        price = tonumber(price) or 0, name = name }
+                end
+            elseif kind == "PE" and frame:IsShown() then
+                Refresh()
+            end
         end
     elseif frame:IsShown() then
         Refresh()

@@ -30,6 +30,7 @@ void AddSC_titan_commands();
 void AddSC_journal();
 void AddSC_prestige();
 void AddSC_cards();
+void AddSC_specs();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
 void Addmod_titanScripts()
@@ -49,4 +50,5 @@ void Addmod_titanScripts()
     AddSC_journal();
     AddSC_prestige();
     AddSC_cards();
+    AddSC_specs();
 }

@@ -557,10 +557,15 @@ namespace
         return best;
     }
 
+    // Set while a specialization is put back (specs.cpp): no chat line for each ability and talent.
+    bool quiet = false;
+    // A talent the next talent roll may not give (a reroll's: it gives another).
+    uint32 excludedTalent = 0;
+
     void Announce(Player* player, uint32 spellId, char const* what)
     {
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
-        if (!spellInfo)
+        if (!spellInfo || quiet)
             return;
 
         char const* name = spellInfo->SpellName[player->GetSession()->GetSessionDbcLocale()];
@@ -648,7 +653,7 @@ namespace
         for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
         {
             TalentEntry const* talentInfo = sTalentStore.LookupEntry(i);
-            if (!talentInfo)
+            if (!talentInfo || talentInfo->TalentID == excludedTalent)
                 continue;
 
             TalentTabEntry const* tabInfo = sTalentTabStore.LookupEntry(talentInfo->TalentTab);
@@ -1369,6 +1374,75 @@ namespace Wildcard
     void SetPicks(Player* player, uint32 picks)
     {
         player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_PICKS_LEFT, picks);
+    }
+
+    void SetQuiet(bool on)
+    {
+        quiet = on;
+    }
+
+    void CatchUpNow(Player* player)
+    {
+        CatchUp(player, true, false);
+    }
+
+    void LearnQuiet(Player* player, Ability const& ability)
+    {
+        if (BestRank(player, ability) < 0 || KnownRank(player, ability) >= 0)
+            return;
+        bool was = quiet;
+        quiet = true;
+        Learn(player, ability, "");
+        quiet = was;
+    }
+
+    bool GrantTalentExcept(Player* player, uint32 talentId, bool reveal)
+    {
+        excludedTalent = talentId;
+        bool granted = GrantTalent(player, reveal, player->GetLevel());
+        excludedTalent = 0;
+        return granted;
+    }
+
+    Ability const* GrantNewCapstone(Player* player)
+    {
+        return GrantCapstone(player);
+    }
+
+    uint8 TalentRank(Player const* player, TalentEntry const* talentInfo)
+    {
+        uint8 rank = 0;
+        for (uint8 i = 0; i < MAX_TALENT_RANK; ++i)
+            if (talentInfo->RankID[i] && player->HasTalent(talentInfo->RankID[i], player->GetActiveSpec()))
+                rank = i + 1;
+        return rank;
+    }
+
+    uint8 RemoveTalent(Player* player, TalentEntry const* talentInfo)
+    {
+        // As Player::resetTalents does it, for this talent's ranks only.
+        uint8 removed = TalentRank(player, talentInfo);
+        for (uint8 i = 0; i < MAX_TALENT_RANK; ++i)
+        {
+            uint32 spellId = talentInfo->RankID[i];
+            if (!spellId || !player->HasTalent(spellId, player->GetActiveSpec()))
+                continue;
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+            if (!spellInfo)
+                continue;
+            player->_removeTalentAurasAndSpells(spellId);
+            if (talentInfo->addToSpellBook && !spellInfo->HasAttribute(SPELL_ATTR0_PASSIVE)
+                && !spellInfo->HasEffect(SPELL_EFFECT_LEARN_SPELL))
+                player->removeSpell(spellId, player->GetActiveSpecMask(), false);
+            else
+                player->SendLearnPacket(spellId, false);
+            for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+                if (effect.IsEffect(SPELL_EFFECT_LEARN_SPELL)
+                    && sSpellMgr->IsAdditionalTalentSpell(effect.TriggerSpell))
+                    player->removeSpell(effect.TriggerSpell, player->GetActiveSpecMask(), false);
+            player->_removeTalent(spellId, player->GetActiveSpecMask());
+        }
+        return removed;
     }
 
     bool IsKitLocked(Player const* player)

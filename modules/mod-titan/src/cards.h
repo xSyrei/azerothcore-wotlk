@@ -18,6 +18,8 @@
 #ifndef MOD_TITAN_CARDS_H
 #define MOD_TITAN_CARDS_H
 
+#include "Define.h"
+
 class Player;
 
 // Skill and Talent Cards (cards.cpp): an account's collection, its packs and Silas Darkmoon's shop.
@@ -25,6 +27,13 @@ namespace Cards
 {
     // A prestige: the shop's prices start over (they climb with every purchase).
     void ResetPrices(Player* player);
+    // Eyes of Unlearning: spends one (false: none left); counts a reroll (talent: a Talent's, else an ability's).
+    bool SpendEye(Player* player, bool talent);
+    uint32 Eyes(Player* player);
+    // The player talked to Silas Darkmoon and is still beside him (else a line in chat, false).
+    bool BesideSilas(Player* player);
+    // Sends the Eyes' state to the Darkmoon window.
+    void SendEyes(Player* player);
 }
 
 #endif

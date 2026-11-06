@@ -319,6 +319,21 @@ its skin is baked by `client-patch/bake_npc.py` (the dwarf's skin, face, beard a
 (`HUMANOIDS`, with `creaturedisplayinfoextra_dbc` for the server); the hat is retail's dwarf male model
 (`models/gilneashat`, made static by `models/gltf_to_wowexport.py --pivot`), item display 90002 (`patch_items.py`).
 
+## Specializations
+A Hero has four loadouts of Wildcard abilities and talents (`src/specs.cpp`; characters database: `titan_specs`,
+`titan_spec_entries`, `data/sql/db-characters/titan_specs.sql`). Specialization I and II are free; III (25,000
+Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon window.
+- **Switching** (out of combat, not in a battleground): the Classless window's Specs tab, right-click a spec,
+  Activate (or the Darkmoon window's Specializations page). The active spec's abilities and talents are kept and the
+  other's put back, with what its level is owed since; a spec never used rolls anew, as a new Hero's.
+- **Names and icons**: click a spec's icon in the Specs tab (or right-click, Rename / icon): a name and any of the
+  macro icons.
+- **Rerolls**: right-click one of your spells or talents, Reroll: an Eye of Unlearning for another ability the Hero can
+  learn (a capstone for another capstone), or the talent's ranks for as many ranks of other talents.
+- **Locks**: right-click, Lock: a locked ability or talent is never rerolled, a locked spec's none are; padlocks show
+  on them. Nothing locked can be prestiged: unlock first. A prestige starts every spec over (names, icons and the ones
+  bought stay).
+
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and
 every talent a **Talent Card** (the talent at its top rank: one card, bought or opened, and it is complete), each

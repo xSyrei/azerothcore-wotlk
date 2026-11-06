@@ -125,6 +125,16 @@ namespace Wildcard
     // level: the level the roll is for (0: the player's).
     bool LearnTalentRank(Player* player, TalentEntry const* talentInfo, uint8 rank, bool reveal, uint8 level = 0);
 
+    // Specializations (specs.cpp): learning without the chat lines, the catch-up of what the level is owed, a talent
+    // roll that may not give one talent, a capstone roll, and one talent's ranks taken away.
+    void SetQuiet(bool on);
+    void CatchUpNow(Player* player);
+    void LearnQuiet(Player* player, Ability const& ability);
+    bool GrantTalentExcept(Player* player, uint32 talentId, bool reveal);
+    Ability const* GrantNewCapstone(Player* player);
+    uint8 TalentRank(Player const* player, TalentEntry const* talentInfo);
+    uint8 RemoveTalent(Player* player, TalentEntry const* talentInfo);
+
     uint32 GetPicks(Player* player);
     void SetPicks(Player* player, uint32 picks);
     bool IsKitLocked(Player const* player);

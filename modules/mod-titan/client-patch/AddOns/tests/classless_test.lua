@@ -79,6 +79,8 @@ Minimap = NewWidget("Minimap")
 function Minimap:GetCenter() return 100, 100 end
 function Minimap:GetEffectiveScale() return 1 end
 function GetCursorPosition() return 100, 180 end
+function Widget:GetEffectiveScale() return 1 end
+function Widget:GetStringHeight() return 14 end
 function GetBindingKey(action) for key, bound in pairs(bindings) do if bound == action then return key end end end
 function SetBinding(key, action) bindings[key] = action end
 function SaveBindings() end
@@ -347,12 +349,46 @@ EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
 specs.listTabs[2]:Click()
 check(list.listRows[1].talent and list.listRows[1].name.text:find("Improved Fireball", 1, true) == 1,
     "Talents tab lists Improved Fireball")
+-- Specializations (prefix EFSP): the Specs tab lists the Hero's four; right-click for options.
+local function specServer(message) event("CHAT_MSG_ADDON", "EFSP", message, "WHISPER", "Tester") end
+specServer("P,0,3")
+specServer("S,0,1,0,1,0,,Specialization I")
+specServer("S,1,1,0,0,0,Spell_Fire_Fire,Fire Build")
+specServer("S,2,0,0,0,25000,,Specialization III")
+specServer("S,3,0,0,0,50000,,Specialization IV")
+specServer("L0")
+specServer("L,1.34")
+specServer("PE")
 specs.listTabs[3]:Click()
-check(list.listRows[1].spec and list.listRows[1].name.text:find("Fire", 1, true) == 1, "Specs tab lists Fire")
-list.listRows[1]:Click()
-check(tree.treeTitle.text == "Fire  |cffffffff1 point|r" and shownCells(grid.cells) == "Fireball",
-    "clicking a spec opens it")
+check(list.listRows[1].mySpec == 0 and list.listRows[1].name.text:find("Specialization I|r\n|cff8dff8aActive", 1, true),
+    "Specs tab lists Specialization I, active")
+check(list.listRows[2].name.text:find("Fire Build", 1, true) and list.listRows[2].icon.texture
+    == "Interface\\Icons\\Spell_Fire_Fire", "a spec's own name and icon")
+check(list.listRows[3].name.text:find("25,000 Emberspark", 1, true), "Specialization III is for sale")
+list.listRows[2].scripts.OnClick(list.listRows[2], "RightButton")
+local options = EmberforgeClasslessOptions
+check(options:IsShown() and options.buttons[1].label.text == "Activate" and options.buttons[2].label.text == "Lock",
+    "right-click a spec: Activate, Lock")
+options.buttons[1]:Click()
+check(sent[#sent][1] == "EFSP" and lastSent() == "ACTIVATE,1" and not options:IsShown(), "Activate asks the server")
+list.listRows[2].iconButton:Click()
+check(EmberforgeClasslessSpecIcon:IsShown() and EmberforgeClasslessSpecName.text == "Fire Build",
+    "the icon opens the picker with the name")
+EmberforgeClasslessSpecIcon:Hide()
+specs.listTabs[2]:Click()
+check(list.listRows[1].lock.shown, "a locked talent shows its padlock")
+list.listRows[1].scripts.OnClick(list.listRows[1], "RightButton")
+check(options.buttons[1].label.text == "Unlock" and options.buttons[2].label.text == "Cancel",
+    "a locked talent: no reroll, Unlock")
+options.buttons[1]:Click()
+check(lastSent() == "LOCKENTRY,1,34,0", "Unlock asks the server")
 specs.listTabs[1]:Click()
+list.listRows[1].scripts.OnClick(list.listRows[1], "RightButton")
+check(options.buttons[1].label.text:find("Reroll", 1, true) == 1, "an ability: Reroll first")
+options.buttons[1]:Click()
+check(popup and popup.which == "EMBERFORGE_CLASSLESS_REROLL", "Reroll asks first")
+StaticPopupDialogs.EMBERFORGE_CLASSLESS_REROLL.OnAccept(nil, popup.data)
+check(lastSent() == "REROLL,0,133", "the reroll goes to the server")
 
 -- Abilities (your build): known abilities in the grid, owned talents in the tree panel.
 yourButton:Click()

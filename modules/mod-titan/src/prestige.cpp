@@ -17,6 +17,7 @@
 
 #include "prestige.h"
 #include "cards.h"
+#include "specs.h"
 #include "emberspark.h"
 #include "wildcard.h"
 #include "Chat.h"
@@ -117,6 +118,8 @@ namespace
             return "Not now: you must be alive, out of combat and on the ground.";
         if (player->GetMap()->Instanceable() || player->InBattlegroundQueue())
             return "Leave your dungeon, battleground or queue first.";
+        if (Specs::HasLocks(player))
+            return "Unlock your locked specializations and abilities first (Classless window: right-click them).";
         return {};
     }
 
@@ -252,6 +255,7 @@ namespace
         ForgetQuests(player);
         // A new Hero again: the next level change (this one) rolls a new kit, the tomes come back.
         Wildcard::Reset(player);
+        Specs::OnPrestige(player);
         Cards::ResetPrices(player);
         player->GiveLevel(1);
         player->InitTalentForLevel();

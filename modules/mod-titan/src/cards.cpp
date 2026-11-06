@@ -807,6 +807,33 @@ namespace
 
 namespace Cards
 {
+    bool SpendEye(Player* player, bool talent)
+    {
+        uint32 eyes = Setting(player, SETTING_EYES);
+        if (!eyes)
+            return false;
+        player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_EYES, eyes - 1);
+        uint32 counter = talent ? SETTING_TALENTS_REROLLED : SETTING_ABILITIES_REROLLED;
+        player->UpdatePlayerSetting(SETTING_SOURCE, counter, Setting(player, counter) + 1);
+        ::SendEyes(player);
+        return true;
+    }
+
+    uint32 Eyes(Player* player)
+    {
+        return Setting(player, SETTING_EYES);
+    }
+
+    bool BesideSilas(Player* player)
+    {
+        return ::BesideSilas(player);
+    }
+
+    void SendEyes(Player* player)
+    {
+        ::SendEyes(player);
+    }
+
     void ResetPrices(Player* player)
     {
         for (uint32 setting : { SETTING_SKILL_PACKS, SETTING_TALENT_PACKS, SETTING_CARDS, SETTING_EYES_CLAIMED,

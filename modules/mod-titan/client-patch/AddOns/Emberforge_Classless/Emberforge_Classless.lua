@@ -18,6 +18,13 @@
 --                 K0 / K,<spell id>,...   R0 / R,<talent id>:<rank>,...   S,<picks left>,<locked>,<lock level>,<role>
 --                 G,<spell id>,<first rank id>,<level>   H,<talent id>,<spell id>,<rank>,<level>   O
 --                 I,<0|1>   spell ids on tooltips (GMs, .spellids)
+-- Specializations (src/specs.cpp), prefix EFSP: the Specs tab lists the Hero's four; right-click a spell or talent to
+-- reroll it (an Eye of Unlearning) or lock it, a spec to activate or lock it; click a spec's icon to rename it and
+-- choose its icon.
+--   to server     LIST, ACTIVATE,<spec>, LOCK,<spec>,<0|1>, NAME,<spec>,<name>, ICON,<spec>,<icon>,
+--                 LOCKENTRY,<kind>,<id>,<0|1>, REROLL,<kind>,<id>   (kind: 0 ability by first rank, 1 talent)
+--   from server   P,<active>,<eyes>   S,<spec>,<owned>,<locked>,<used>,<price>,<icon>,<name>   L0 / L,<kind>.<id>;...
+--                 PE
 
 local PREFIX = "EFCL"
 local ART = "Interface\\AddOns\\Emberforge_Classless\\Art\\"
@@ -114,6 +121,14 @@ local data = {
     loaded = false,
     loading = false,
 }
+-- The Hero's specializations (index 0-3) and the active one's locks ("<kind>.<id>": kind 0 an ability, 1 a talent).
+data.specs = { active = 0, eyes = 0, loaded = false }
+data.locks = {}
+local SPEC_PREFIX = "EFSP"
+local SPEC_NUMERALS = { [0] = "I", "II", "III", "IV" }
+local LOCK_ICON = "Interface\\LFGFrame\\UI-LFG-ICON-LOCK"
+-- What the right panel's rows do on a right-click, and a spec's icon on a click (the block after the list).
+local SpecUI = {}
 -- spec: the spec tab (1-3, or GENERAL); tree: the talent tree shown (follows the last spec tab).
 local view = { class = nil, spec = 1, tree = 1, search = "", learnable = false, list = SPELLS,
     gridOffset = 0, listOffset = 0 }
@@ -261,26 +276,6 @@ local function TreePoints(tab)
         points = points + (data.talentRanks[talent.id] or 0)
     end
     return points
-end
-
--- Trees you have talent points in: { class, order, points }, most points first.
-local function OwnedSpecs()
-    local list = {}
-    for _, class in ipairs(CLASSES) do
-        for order, tab in pairs(data.trees[class.id] or {}) do
-            local points = TreePoints(tab)
-            if points > 0 then
-                list[#list + 1] = { class = class.id, order = order, points = points }
-            end
-        end
-    end
-    table.sort(list, function(a, b)
-        if a.points ~= b.points then
-            return a.points > b.points
-        end
-        return TREES[a.class][a.order][1] < TREES[b.class][b.order][1]
-    end)
-    return list
 end
 
 -- Messages from the server --------------------------------------------------------------------------
@@ -1070,14 +1065,23 @@ searchHint:SetPoint("LEFT", 0, 0)
 searchHint:SetText("Search all abilities")
 
 local function OnListEnter(self)
-    if self.talent then
+    if self.mySpec then
+        SpecUI.Tooltip(self)
+    elseif self.talent then
         OnTalentEnter(self)
     else
         OnCellEnter(self)
     end
 end
 
-local function OnListClick(self)
+local function OnListClick(self, button)
+    if button == "RightButton" then
+        SpecUI.Options(self)
+        return
+    end
+    if self.mySpec then
+        return
+    end
     if self.spec then
         view.class, view.spec, view.tree = self.spec.class, self.spec.order, self.spec.order
         ResetScrolls()
@@ -1104,6 +1108,25 @@ for index = 1, LIST_ROWS do
     row:SetScript("OnEnter", OnListEnter)
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     row:SetScript("OnClick", OnListClick)
+    row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    -- Locked: a padlock at the right end.
+    row.lock = row:CreateTexture(nil, "OVERLAY")
+    row.lock:SetTexture(LOCK_ICON)
+    row.lock:SetWidth(18)
+    row.lock:SetHeight(18)
+    row.lock:SetPoint("RIGHT", -8, 0)
+    row.lock:Hide()
+    -- A spec's icon: click it to choose another and rename the spec.
+    row.iconButton = CreateFrame("Button", nil, row)
+    row.iconButton:SetAllPoints(row.icon)
+    row.iconButton:SetScript("OnClick", function() SpecUI.Picker(row.mySpec) end)
+    row.iconButton:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Click to rename this specialization and choose its icon.", 1, 0.82, 0, true)
+        GameTooltip:Show()
+    end)
+    row.iconButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row.iconButton:Hide()
     listRows[index] = row
 end
 local listBar = Scrollbar(list, -46, LIST_ROWS * LIST_ROW_HEIGHT - 6, "listOffset")
@@ -1162,6 +1185,357 @@ StaticPopupDialogs["EMBERFORGE_CLASSLESS_PICK"] = {
     whileDead = true,
     hideOnEscape = true,
 }
+
+-- Specializations: the Specs tab's rows, the right-click options, the icon picker ---------------------------------
+
+do
+    local function SendSpec(message)
+        SendAddonMessage(SPEC_PREFIX, message, "WHISPER", UnitName("player"))
+    end
+
+    local function SpecIcon(spec)
+        return spec.icon ~= "" and ("Interface\\Icons\\" .. spec.icon) or "Interface\\Icons\\INV_Misc_Book_09"
+    end
+
+    local function Thousands(value)
+        local text = tostring(value)
+        while true do
+            local done
+            text, done = text:gsub("^(%d+)(%d%d%d)", "%1,%2")
+            if done == 0 then
+                return text
+            end
+        end
+    end
+
+    function SpecUI.List()
+        local list = {}
+        if not data.specs.loaded then
+            return list
+        end
+        local search = view.search:lower()
+        for index = 0, 3 do
+            local spec = data.specs[index]
+            if spec and (search == "" or spec.name:lower():find(search, 1, true)) then
+                list[#list + 1] = spec
+            end
+        end
+        return list
+    end
+
+    function SpecUI.FillRow(row, spec)
+        row.icon:SetTexture(SpecIcon(spec))
+        row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+        local state
+        if spec.index == data.specs.active then
+            state = "|cff8dff8aActive|r"
+        elseif spec.owned then
+            state = spec.used and "|cffdca352Right-click to activate|r" or "|cffdca352New: rolled when activated|r"
+        else
+            state = "|cff9a8a78Silas Darkmoon: " .. Thousands(spec.price) .. " Emberspark|r"
+        end
+        row.name:SetText((spec.owned and "|cffffffff" or "|cff9a8a78") .. spec.name .. "|r\n" .. state)
+        LightIcon(row.icon, spec.owned)
+        if spec.locked then
+            row.lock:Show()
+        end
+        if spec.owned then
+            row.iconButton:Show()
+        end
+    end
+
+    function SpecUI.Tooltip(row)
+        local spec = data.specs[row.mySpec]
+        if not spec then
+            return
+        end
+        GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(spec.name .. "  (Specialization " .. SPEC_NUMERALS[spec.index] .. ")", 1, 0.82, 0)
+        if not spec.owned then
+            GameTooltip:AddLine("Buy it from Silas Darkmoon, in the Darkmoon window.", 0.8, 0.8, 0.8, true)
+        else
+            GameTooltip:AddLine(spec.index == data.specs.active and "Your active specialization."
+                or "Its own abilities and talents, kept while another is active.", 0.8, 0.8, 0.8, true)
+            if spec.locked then
+                GameTooltip:AddLine("Locked: its abilities and talents cannot be rerolled, and you cannot prestige "
+                    .. "until it is unlocked.", 1, 0.5, 0.3, true)
+            end
+            GameTooltip:AddLine("Right-click for options; click the icon to rename it.", 0.3, 1, 0.3, true)
+        end
+        GameTooltip:Show()
+    end
+
+    -- The options popup: a small menu at the cursor.
+    local menu = CreateFrame("Frame", "EmberforgeClasslessOptions", UIParent)
+    menu:SetFrameStrata("FULLSCREEN_DIALOG")
+    menu:SetWidth(200)
+    menu:EnableMouse(true)
+    menu:SetClampedToScreen(true)
+    Box(menu, WINDOW_FILL, WINDOW_EDGE, true)
+    menu:Hide()
+    tinsert(UISpecialFrames, "EmberforgeClasslessOptions")
+    menu.title = menu:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    menu.title:SetPoint("TOPLEFT", 12, -10)
+    menu.title:SetWidth(176)
+    menu.title:SetJustifyH("LEFT")
+    menu.buttons = {}
+    for index = 1, 4 do
+        local button = CreateFrame("Button", nil, menu)
+        button:SetWidth(176)
+        button:SetHeight(24)
+        Box(button, CELL_FILL, CELL_EDGE, true)
+        RowHover(button)
+        button.label = button:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        button.label:SetPoint("CENTER", 0, 0)
+        button:SetScript("OnClick", function(self)
+            menu:Hide()
+            if self.action then
+                self.action()
+            end
+        end)
+        menu.buttons[index] = button
+    end
+    frame:HookScript("OnHide", function() menu:Hide() end)
+
+    local function ShowMenu(title, items)
+        menu.title:SetText(title)
+        local top = 16 + (menu.title:GetStringHeight() or 14)
+        for index, button in ipairs(menu.buttons) do
+            local item = items[index]
+            button:ClearAllPoints()
+            button:SetPoint("TOPLEFT", 12, -top - (index - 1) * 27)
+            if item then
+                button.label:SetText(item[1])
+                button.action = item[2]
+                button:Show()
+            else
+                button:Hide()
+            end
+        end
+        menu:SetHeight(top + #items * 27 + 8)
+        local x, y = GetCursorPosition()
+        local scale = UIParent:GetEffectiveScale()
+        menu:ClearAllPoints()
+        menu:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x / scale + 4, y / scale - 4)
+        menu:Show()
+    end
+
+    function SpecUI.Options(row)
+        if row.mySpec then
+            local spec = data.specs[row.mySpec]
+            if not spec then
+                return
+            end
+            if not spec.owned then
+                ShowMenu(spec.name .. "\n|cff9a8a78Buy it from Silas Darkmoon|r", { { CANCEL, nil } })
+                return
+            end
+            local items = {}
+            if spec.index ~= data.specs.active then
+                items[#items + 1] = { "Activate", function() SendSpec("ACTIVATE," .. spec.index) end }
+            end
+            items[#items + 1] = { spec.locked and "Unlock" or "Lock", function()
+                SendSpec("LOCK," .. spec.index .. "," .. (spec.locked and 0 or 1))
+            end }
+            items[#items + 1] = { "Rename / icon", function() SpecUI.Picker(spec.index) end }
+            items[#items + 1] = { CANCEL, nil }
+            ShowMenu(spec.name, items)
+            return
+        end
+        local kind, id, name
+        if row.talent then
+            kind, id, name = 1, row.talent.id, SpellName(row.talent.ranks[1])
+        elseif row.ability and data.known[row.ability.id] then
+            kind, id, name = 0, row.ability.id, SpellName(row.ability.id)
+        else
+            return
+        end
+        local locked = data.locks[kind .. "." .. id]
+        local active = data.specs[data.specs.active]
+        local specLocked = active and active.locked
+        local items = {}
+        if not locked and not specLocked then
+            items[#items + 1] = { "Reroll  (1 Eye of Unlearning)", function()
+                StaticPopup_Show("EMBERFORGE_CLASSLESS_REROLL", name, data.specs.eyes, { kind = kind, id = id })
+            end }
+        end
+        items[#items + 1] = { locked and "Unlock" or "Lock", function()
+            SendSpec("LOCKENTRY," .. kind .. "," .. id .. "," .. (locked and 0 or 1))
+        end }
+        items[#items + 1] = { CANCEL, nil }
+        ShowMenu(name .. (specLocked and "\n|cffff8040Your specialization is locked|r" or ""), items)
+    end
+
+    StaticPopupDialogs["EMBERFORGE_CLASSLESS_REROLL"] = {
+        text = "Spend an Eye of Unlearning to reroll %s?\n(You have %d.)",
+        button1 = ACCEPT,
+        button2 = CANCEL,
+        OnAccept = function(_, entry)
+            SendSpec("REROLL," .. entry.kind .. "," .. entry.id)
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+    }
+
+    -- The icon picker: the macro icons in a grid (the mouse wheel scrolls), and the spec's name.
+    local ICON_COLUMNS, ICON_ROWS, ICON_SIZE = 8, 5, 36
+    local picker = CreateFrame("Frame", "EmberforgeClasslessSpecIcon", UIParent)
+    picker:SetFrameStrata("FULLSCREEN_DIALOG")
+    picker:SetWidth(ICON_COLUMNS * (ICON_SIZE + 6) + 30)
+    picker:SetHeight(ICON_ROWS * (ICON_SIZE + 6) + 150)
+    picker:SetPoint("CENTER")
+    picker:EnableMouse(true)
+    picker:SetMovable(true)
+    picker:RegisterForDrag("LeftButton")
+    picker:SetScript("OnDragStart", picker.StartMoving)
+    picker:SetScript("OnDragStop", picker.StopMovingOrSizing)
+    Box(picker, WINDOW_FILL, WINDOW_EDGE)
+    picker:Hide()
+    tinsert(UISpecialFrames, "EmberforgeClasslessSpecIcon")
+    local pickerTitle = picker:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    pickerTitle:SetPoint("TOP", 0, -14)
+    local nameLabel = picker:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    nameLabel:SetPoint("TOPLEFT", 18, -48)
+    nameLabel:SetText("Name")
+    local nameBox = CreateFrame("Frame", nil, picker)
+    nameBox:SetHeight(26)
+    nameBox:SetPoint("TOPLEFT", 60, -42)
+    nameBox:SetPoint("TOPRIGHT", -18, -42)
+    Box(nameBox, { 0, 0, 0, 0.7 }, CELL_EDGE, true)
+    local nameEdit = CreateFrame("EditBox", "EmberforgeClasslessSpecName", nameBox)
+    nameEdit:SetPoint("TOPLEFT", 8, 0)
+    nameEdit:SetPoint("BOTTOMRIGHT", -8, 0)
+    nameEdit:SetFontObject(GameFontHighlight)
+    nameEdit:SetAutoFocus(false)
+    nameEdit:SetMaxLetters(24)
+    nameEdit:SetScript("OnEscapePressed", nameEdit.ClearFocus)
+    nameEdit:SetScript("OnEnterPressed", nameEdit.ClearFocus)
+    local iconCells, chosen, iconOffset = {}, nil, 0
+    local function Icons()
+        return GetNumMacroIcons and GetNumMacroIcons() or 0
+    end
+    local function IconName(index)
+        local texture = GetMacroIconInfo(index)
+        return texture and texture:match("([^\\]+)$") or nil
+    end
+    local function FillIcons()
+        local total = Icons()
+        for index, cell in ipairs(iconCells) do
+            local icon = iconOffset + index
+            local name = icon <= total and IconName(icon)
+            cell.iconName = name
+            if name then
+                cell.texture:SetTexture("Interface\\Icons\\" .. name)
+                if chosen ~= nil and name:lower() == chosen:lower() then
+                    cell.selected:Show()
+                else
+                    cell.selected:Hide()
+                end
+                cell:Show()
+            else
+                cell:Hide()
+            end
+        end
+    end
+    for index = 1, ICON_COLUMNS * ICON_ROWS do
+        local cell = CreateFrame("Button", nil, picker)
+        cell:SetWidth(ICON_SIZE)
+        cell:SetHeight(ICON_SIZE)
+        cell:SetPoint("TOPLEFT", 18 + ((index - 1) % ICON_COLUMNS) * (ICON_SIZE + 6),
+            -82 - math.floor((index - 1) / ICON_COLUMNS) * (ICON_SIZE + 6))
+        cell.texture = cell:CreateTexture(nil, "ARTWORK")
+        cell.texture:SetAllPoints()
+        cell.selected = cell:CreateTexture(nil, "OVERLAY")
+        cell.selected:SetTexture(ART .. "RingSelected")
+        cell.selected:SetBlendMode("ADD")
+        cell.selected:SetPoint("TOPLEFT", -6, 6)
+        cell.selected:SetPoint("BOTTOMRIGHT", 6, -6)
+        cell.selected:Hide()
+        cell:SetHighlightTexture(ART .. "RingHover", "ADD")
+        cell:SetScript("OnClick", function(self)
+            chosen = self.iconName
+            FillIcons()
+        end)
+        iconCells[index] = cell
+    end
+    picker:EnableMouseWheel(true)
+    picker:SetScript("OnMouseWheel", function(_, delta)
+        local last = math.max(0, math.ceil(Icons() / ICON_COLUMNS) - ICON_ROWS) * ICON_COLUMNS
+        iconOffset = math.max(0, math.min(last, iconOffset - delta * ICON_COLUMNS))
+        FillIcons()
+    end)
+    local scrollHint = picker:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    scrollHint:SetPoint("BOTTOMLEFT", 18, 52)
+    scrollHint:SetText("Scroll for more icons")
+    local function PickerButton(label, x, onClick)
+        local button = CreateFrame("Button", nil, picker)
+        button:SetWidth(120)
+        button:SetHeight(26)
+        button:SetPoint("BOTTOM", x, 16)
+        Box(button, CELL_FILL, CELL_EDGE, true)
+        RowHover(button)
+        button.label = button:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        button.label:SetPoint("CENTER", 0, 0)
+        button.label:SetText(label)
+        button:SetScript("OnClick", onClick)
+        return button
+    end
+    PickerButton(OKAY, -66, function()
+        local spec = data.specs[picker.spec]
+        if spec then
+            local name = (nameEdit:GetText() or ""):gsub("[^%w '%-]", "")
+            if name ~= spec.name then
+                SendSpec("NAME," .. spec.index .. "," .. name)
+            end
+            if chosen and chosen ~= spec.icon then
+                SendSpec("ICON," .. spec.index .. "," .. chosen)
+            end
+        end
+        picker:Hide()
+    end)
+    PickerButton(CANCEL, 66, function() picker:Hide() end)
+
+    function SpecUI.Picker(index)
+        local spec = data.specs[index]
+        if not spec or not spec.owned then
+            return
+        end
+        menu:Hide()
+        picker.spec = index
+        chosen = spec.icon ~= "" and spec.icon or nil
+        iconOffset = 0
+        pickerTitle:SetText("Specialization " .. SPEC_NUMERALS[index])
+        nameEdit:SetText(spec.name)
+        FillIcons()
+        picker:Show()
+    end
+
+    function SpecUI.OnMessage(message)
+        local kind, body = message:match("^([^,]+),?(.*)$")
+        if kind == "P" then
+            local active, eyes = body:match("^(%d+),(%d+)")
+            data.specs.active, data.specs.eyes = tonumber(active) or 0, tonumber(eyes) or 0
+        elseif kind == "S" then
+            local index, owned, locked, used, price, icon, name =
+                body:match("^(%d+),(%d+),(%d+),(%d+),(%d+),([^,]*),(.*)$")
+            index = tonumber(index)
+            if index then
+                data.specs[index] = { index = index, owned = owned == "1", locked = locked == "1", used = used == "1",
+                    price = tonumber(price) or 0, icon = icon or "", name = name or "" }
+            end
+        elseif kind == "L0" then
+            wipe(data.locks)
+        elseif kind == "L" then
+            for lock in body:gmatch("[^;]+") do
+                data.locks[lock] = true
+            end
+        elseif kind == "PE" then
+            data.specs.loaded = true
+            Refresh()
+        end
+    end
+end
 
 -- Refresh -------------------------------------------------------------------------------------------
 
@@ -1336,7 +1710,7 @@ local function RefreshList()
     if view.list == TALENTS then
         entries, emptyText = OwnedTalents(), "No talents yet. Wildcard rolls them from level 10."
     elseif view.list == SPECS then
-        entries, emptyText = OwnedSpecs(), "No talent points spent yet."
+        entries, emptyText = SpecUI.List(), "Loading your specializations..."
     else
         entries, emptyText = KnownAbilities(), "You know no abilities yet."
     end
@@ -1344,7 +1718,9 @@ local function RefreshList()
     listEmpty:SetText(#entries == 0 and data.loaded and emptyText or "")
     for index, row in ipairs(listRows) do
         local entry = entries[offset + index]
-        row.ability, row.talent, row.spec = nil, nil, nil
+        row.ability, row.talent, row.spec, row.mySpec = nil, nil, nil, nil
+        row.lock:Hide()
+        row.iconButton:Hide()
         if entry then
             if view.list == TALENTS then
                 row.talent = entry
@@ -1353,17 +1729,21 @@ local function RefreshList()
                 row.name:SetText(SpellName(entry.ranks[1]) .. "  |cffdca352" .. data.talentRanks[entry.id] .. "/"
                     .. #entry.ranks .. "|r")
             elseif view.list == SPECS then
-                row.spec = entry
-                SetClassPortrait(row.icon, entry.class)
-                row.name:SetText(TREES[entry.class][entry.order][1] .. "  |cffffffff" .. entry.points .. "|r\n"
-                    .. "|cffdca352" .. CLASS_NAMES[entry.class] .. "|r")
+                row.mySpec = entry.index
+                SpecUI.FillRow(row, entry)
             else
                 row.ability = entry
                 row.icon:SetTexture(SpellIcon(entry.id))
                 row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
                 row.name:SetText(SpellName(entry.id))
             end
-            LightIcon(row.icon, true)
+            if view.list ~= SPECS then
+                LightIcon(row.icon, true)
+                if data.locks[(view.list == TALENTS and "1." or "0.") .. (row.talent and row.talent.id
+                    or entry.id)] then
+                    row.lock:Show()
+                end
+            end
             row:Show()
         else
             row:Hide()
@@ -1413,6 +1793,7 @@ frame:SetScript("OnShow", function(self)
     if width and height then
         self:SetScale(math.min(1, (width - 20) / WIDTH, (height - 20) / HEIGHT))
     end
+    SendAddonMessage(SPEC_PREFIX, "LIST", "WHISPER", UnitName("player"))
     if not data.loaded and not data.loading then
         data.loading = true
         Send("LIST")
@@ -2341,6 +2722,8 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
     if event == "CHAT_MSG_ADDON" then
         if prefix == PREFIX and sender == UnitName("player") then
             OnServerMessage(message)
+        elseif prefix == SPEC_PREFIX and sender == UnitName("player") then
+            SpecUI.OnMessage(message)
         end
     elseif event == "PLAYER_LOGIN" then
         OnLogin()
