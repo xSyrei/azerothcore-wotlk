@@ -1369,8 +1369,9 @@ doneButton:SetScript("OnClick", Dissolve)
 local function PackRgb(info)
     return info.golden and { 1, 0.84, 0.47 } or info.kind == 1 and { 0.55, 0.75, 1 } or { 1, 0.55, 0.24 }
 end
+-- As in the reference video: an icy blue vortex for every pack, gold for the Golden ones.
 local function VortexRgb(info)
-    return info.kind == 1 and { 0.35, 0.67, 1 } or { 1, 0.47, 0.16 }
+    return info.golden and { 1, 0.84, 0.47 } or { 0.35, 0.67, 1 }
 end
 local function Clamp(v, lo, hi)
     return math.max(lo or 0, math.min(hi or 1, v))
@@ -1435,7 +1436,100 @@ local function Fling(file, coords, x, y, w, h, vx, vy, grav, life, spin)
     flyer.grav, flyer.life, flyer.spin, flyer.age = grav or 900, life or 1.6, spin or 0, 0
     fx2.flyers[#fx2.flyers + 1] = flyer
 end
+-- Turns and squashes a square texture's image (angle; across: its width's share, the card's tumble), by its texture
+-- coordinates: the corners of the region map back through the turn into the texture. crop: a margin cut off each edge.
+local SPIN_CARD = 210 / 256         -- the card's height in its spin texture (build_darkmoon_art.py)
+local function Spin(texture, angle, across, crop)
+    local c, sn = math.cos(-angle), math.sin(-angle)
+    local span = 1 - 2 * (crop or 0)
+    local function At(x, y)
+        local qx, qy = x - 0.5, y - 0.5
+        local px, py = (qx * c - qy * sn) / across, qx * sn + qy * c
+        return (crop or 0) + (0.5 + px) * span, (crop or 0) + (0.5 + py) * span
+    end
+    local ulx, uly = At(0, 0)
+    local llx, lly = At(0, 1)
+    local urx, ury = At(1, 0)
+    local lrx, lry = At(1, 1)
+    texture:SetTexCoord(ulx, uly, llx, lly, urx, ury, lrx, lry)
+end
+
+-- A card of "Open all"'s fountain: its back, or now and then its face (frame, icon, ring), turning and tumbling over
+-- the whole window (on the window's effects frame, each in a frame of its own so overlapping cards stay whole).
+local cardFlyers, cardPool = {}, {}
+local function FlingCard(info, entry, x, y, vx, vy, scale)
+    local flyer = table.remove(cardPool)
+    if not flyer then
+        flyer = { frame = CreateFrame("Frame", nil, fx) }
+        flyer.frame:SetAllPoints(fx)
+        flyer.art = flyer.frame:CreateTexture(nil, "BORDER")
+        flyer.icon = flyer.frame:CreateTexture(nil, "ARTWORK")
+        flyer.ring = flyer.frame:CreateTexture(nil, "OVERLAY")
+    end
+    local golden = info.golden and "Golden" or ""
+    local kind = (entry and entry.kind or info.kind) == 1 and "Talent" or "Skill"
+    flyer.entry = entry
+    flyer.art:SetTexture(ART .. (entry and "SpinCard" or "SpinBack") .. kind .. golden)
+    if entry then
+        flyer.layout = LAYOUT[entry.kind] or LAYOUT[0]
+        flyer.icon:SetTexture(CardIcon(entry))
+        flyer.ring:SetTexture(ART .. "Card" .. kind .. golden .. "Ring")
+    end
+    Shown(flyer.icon, entry ~= nil)
+    Shown(flyer.ring, entry ~= nil)
+    flyer.art:Show()
+    flyer.frame:Show()
+    flyer.x, flyer.y, flyer.vx, flyer.vy, flyer.scale, flyer.age = x, y, vx, vy, scale, 0
+    flyer.rot, flyer.vr = (math.random() * 2 - 1), (math.random() * 2 - 1) * 7
+    flyer.info = info
+    cardFlyers[#cardFlyers + 1] = flyer
+end
+
+local function StepCardFlyers(delta)
+    for index = #cardFlyers, 1, -1 do
+        local f = cardFlyers[index]
+        f.age = f.age + delta
+        f.vy = f.vy - 680 * delta
+        f.vx = f.vx * 0.995
+        f.x, f.y = f.x + f.vx * delta, f.y + f.vy * delta
+        f.rot = f.rot + f.vr * delta
+        local fade = 1 - Seg(f.age, 1.1, 1.7)
+        if fade <= 0 then
+            f.frame:Hide()
+            table.remove(cardFlyers, index)
+            cardPool[#cardPool + 1] = f
+        else
+            local h = CARD_H * f.scale
+            local across = math.max(0.08, math.abs(math.cos(f.age * 6 + f.vr)))
+            local size = h / SPIN_CARD
+            Place(f.art, f.x, f.y, size, size)
+            Spin(f.art, f.rot, across)
+            f.frame:SetAlpha(fade)
+            if f.entry then
+                -- The icon and its ring, where they sit on the card, turned with it.
+                local w = h * 2 / 3
+                local ox, oy = w * (f.layout.x - 0.5) * across, h * (f.layout.y - 0.5)
+                local c, sn = math.cos(f.rot), math.sin(f.rot)
+                local dx, dy = ox * c - oy * sn, ox * sn + oy * c
+                local iconSize = w * f.layout.r * 2
+                Place(f.icon, f.x + dx, f.y - dy, iconSize, iconSize)
+                Spin(f.icon, f.rot, across, ICON_CROP)
+                local ringSize = iconSize / 2 * RING_SPAN
+                Place(f.ring, f.x + dx, f.y - dy, ringSize, ringSize)
+                Spin(f.ring, f.rot, across)
+            end
+            if math.random() < 0.3 then
+                local px, py = StagePoint(f.x, f.y)
+                local rgb = f.entry and RARITY_RGB[f.entry.rarity] or PackRgb(f.info)
+                Emit({ x = px, y = py, vx = 0, vy = 0, life = 0.4, size = 2 + math.random() * 2, r = rgb[1], g = rgb[2],
+                    b = rgb[3] })
+            end
+        end
+    end
+end
+
 local function StepFlyers(delta)
+    StepCardFlyers(delta)
     fx2.flyers.pool = fx2.flyers.pool or {}
     for index = #fx2.flyers, 1, -1 do
         local f = fx2.flyers[index]
@@ -1502,14 +1596,15 @@ end
 
 -- "Open all": the stack flies in, a vortex charges, the top pack tears and the cards erupt in a fountain; then the
 -- list of the new ones.
-function StartMass(pack, count, done)
+function StartMass(pack, count, done, cards)
     if reveal.phase ~= "idle" then
         Dissolve()
     end
     idle:Hide()
     ResetStage()
     local info = PACKS[pack] or PACKS[0]
-    reveal.phase, reveal.t, reveal.info, reveal.mass = "mfly", 0, info, { count = count, done = done, emitted = 0 }
+    reveal.phase, reveal.t, reveal.info = "mfly", 0, info
+    reveal.mass = { count = count, done = done, emitted = 0, cards = cards }
     reveal.cards, reveal.skip = {}, false
     local widget = packWidgets[pack]
     local wx, wy = Where(widget and widget.art or display)
@@ -1583,6 +1678,38 @@ end
 stage:SetScript("OnUpdate", function(_, delta)
     delta = math.min(delta, 0.05)
     StepFlyers(delta)
+    -- "Open all"'s duplicates fill the tally one by one (from the burst on), a spark at each pip; every tenth a free
+    -- pack flies from the meter to its shelf.
+    local tally = state.tally
+    if tally and tally.go then
+        tally.wait = tally.wait - delta
+        while tally.wait <= 0 and tally.shown < tally.to do
+            tally.wait = tally.wait + tally.every
+            tally.shown = tally.shown + 1
+            state.shownDuplicates = tally.shown
+            local pip = dupMeter.pips[(tally.shown - 1) % state.packEvery + 1] or dupMeter
+            local x, y = Where(pip)
+            Burst(x, y, 12, { 1, 0.59, 0.27 }, 40, 160)
+            if tally.shown % state.packEvery == 0 then
+                Ring(x, y, 120, { 1, 0.59, 0.27 })
+                local widget = packWidgets[reveal.info and reveal.info.kind or 0]
+                if widget then
+                    Fly(pip, widget.art, 30, { 1, 0.65, 0.3 })
+                end
+            end
+            if tally.shown % state.goldenEvery == 0 then
+                local widget = packWidgets[(reveal.info and reveal.info.kind or 0) + 2]
+                if widget then
+                    Fly(goldMeter, widget.art, 40, GOLDEN_RGB)
+                end
+            end
+            Refresh()
+        end
+        if tally.shown >= tally.to then
+            state.tally, state.shownDuplicates = nil, nil
+            Refresh()
+        end
+    end
     -- The flash and the shake fade whatever the phase.
     if (reveal.flash or 0) > 0 then
         reveal.flash = math.max(0, reveal.flash - delta * 2.2)
@@ -1641,7 +1768,7 @@ stage:SetScript("OnUpdate", function(_, delta)
         local tremble = math.sin(t * 70) * 3 * k
         DrawPack(info, cx, cy, 1 + 0.08 * k, nil, tremble)
         fx2.glow:SetVertexColor(light[1], light[2], light[3])
-        Place(fx2.glow, cx, cy, (mass and 440 or 360) * (0.5 + 0.5 * k), (mass and 440 or 360) * (0.5 + 0.5 * k))
+        Place(fx2.glow, cx, cy, (mass and 620 or 360) * (0.5 + 0.5 * k), (mass and 620 or 360) * (0.5 + 0.5 * k))
         fx2.glow:SetAlpha(0.4 + 0.6 * k)
         fx2.glow:Show()
         fx2.rays:SetVertexColor(light[1], light[2], light[3])
@@ -1719,6 +1846,9 @@ stage:SetScript("OnUpdate", function(_, delta)
         if k >= 1 then
             -- The burst: a flash; the strip snaps free and spins off, the wrapper drops; rings, sparks, confetti.
             reveal.phase, reveal.t = mass and "mburst" or "burst", 0
+            if mass and state.tally then
+                state.tally.go = true
+            end
             reveal.openX, reveal.openY = cx, tearY
             Flash(light, mass and 1 or 0.8)
             Shake(mass and 16 or 8)
@@ -1792,16 +1922,16 @@ stage:SetScript("OnUpdate", function(_, delta)
     elseif reveal.phase == "mburst" then
         -- The cards erupt in a fountain, spinning and tumbling, gone past the edges; then the list.
         local m = reveal.mass
-        local total = math.min(60, m.count * 5 + 10)
+        local total = math.min(90, m.count * 5 + 12)
         local fade = 1 - Seg(t, 0, 1.4)
         local light = VortexRgb(info)
         while m.emitted < total and m.emitted < total / 0.9 * t do
             m.emitted = m.emitted + 1
             local a, v = math.pi / 2 + (math.random() * 2 - 1) * 1.15, 450 + math.random() * 600
-            local s = 0.32 + math.random() * 0.28
-            Fling(ART .. (info.kind == 1 and "BackTalent" or "BackSkill") .. (info.golden and "Golden" or ""), nil,
-                reveal.openX + math.random(-30, 30), reveal.openY, CARD_W * s, CARD_H * s, math.cos(a) * v,
-                math.sin(a) * v, 680, 1.7, 4 + math.random() * 5)
+            local entry = math.random() < 0.35 and m.cards and m.cards[(m.emitted - 1) % math.max(1, #m.cards) + 1]
+                or nil
+            FlingCard(info, entry, reveal.openX + math.random(-30, 30), reveal.openY + math.random(-5, 5),
+                math.cos(a) * v, math.sin(a) * v, 0.32 + math.random() * 0.28)
         end
         fx2.glow:SetVertexColor(light[1], light[2], light[3])
         Place(fx2.glow, reveal.openX, reveal.openY, 320, 320)
@@ -2012,7 +2142,7 @@ end, "ButtonHot")
 resultsDone:SetPoint("TOPRIGHT", -12, -8)
 
 local function RefreshPacks()
-    local dup = state.duplicates or 0
+    local dup = state.shownDuplicates or state.duplicates or 0
     dupMeter.count:SetText((dup % state.packEvery) .. " / " .. state.packEvery)
     for index, pip in ipairs(dupMeter.pips) do
         if index <= dup % state.packEvery then
@@ -2424,6 +2554,18 @@ local function OnServerMessage(message)
         mass.collecting = false
         OpenOn(2)
         results:Hide()
+        -- The tally shows where it stood before these packs, and fills as they burst (the state comes after this).
+        local duplicates = 0
+        for _, card in ipairs(mass.cards) do
+            if not card.new then
+                duplicates = duplicates + 1
+            end
+        end
+        if duplicates > 0 then
+            state.tally = { shown = state.duplicates or 0, to = (state.duplicates or 0) + duplicates, wait = 0.3,
+                every = math.max(0.022, math.min(0.11, 2.4 / duplicates)) }
+            state.shownDuplicates = state.tally.shown
+        end
         StartMass(mass.pack, mass.count, function()
             results:Show()
             idle:Hide()
@@ -2431,7 +2573,7 @@ local function OnServerMessage(message)
             Burst(x, y, 40, mass.golden and GOLDEN_RGB or { 1, 0.62, 0.3 }, 80, 300)
             PlaySound("LEVELUPSOUND")
             ShowResults()
-        end)
+        end, mass.cards)
     elseif kind == "R" then
         local pack, rest = body:match("^(%d+),(.*)$")
         local cards = ParseCards(rest)

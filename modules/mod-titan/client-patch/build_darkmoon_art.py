@@ -313,6 +313,25 @@ def burns():
     print('  BurnNoise.lua')
 
 
+# The cards of "Open all"'s fountain spin: each card's art centered in a transparent square with room to turn (its
+# diagonal fits), so the addon can rotate it by its texture coordinates (the 3.3.5 client turns nothing else).
+SPINS = [('back', 'SpinBackSkill'), ('back_gold', 'SpinBackSkillGolden'), ('tback', 'SpinBackTalent'),
+         ('tback_gold', 'SpinBackTalentGolden'), ('front', 'SpinCardSkill'), ('front_gold', 'SpinCardSkillGolden'),
+         ('tfront', 'SpinCardTalent'), ('tfront_gold', 'SpinCardTalentGolden')]
+SPIN_SIZE = 256
+SPIN_CARD_H = 210                   # the card's height in the square: sqrt(2^2 + 3^2) = 3.61 heights of 3 across
+
+
+def spins():
+    for source, name in SPINS:
+        with Image.open(SOURCE / f'{source}.webp') as image:
+            card = blp.resize_straight(image.convert('RGBA'), (SPIN_CARD_H * 2 // 3, SPIN_CARD_H))
+        square = Image.new('RGBA', (SPIN_SIZE, SPIN_SIZE), (0, 0, 0, 0))
+        square.alpha_composite(card, ((SPIN_SIZE - card.width) // 2, (SPIN_SIZE - card.height) // 2))
+        (OUT / f'{name}.blp').write_bytes(blp.encode_dxt(square))
+        print(f'  {name}.blp {SPIN_SIZE}x{SPIN_SIZE}')
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for source, name, size in PAINTED:
@@ -322,6 +341,7 @@ def main():
     rings()
     pieces()
     burns()
+    spins()
 
 
 if __name__ == '__main__':
