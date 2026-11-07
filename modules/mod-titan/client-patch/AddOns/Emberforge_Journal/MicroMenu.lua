@@ -5,7 +5,8 @@
 --   dungeon finder's tabs (or its key, H).
 -- - The dungeon finder and Player vs. Player windows are one: both carry the same two tabs on their right edge
 --   (as the spellbook's), Dungeons and Player vs. Player, each opening the other in its place.
--- - The dungeon finder opens from level 10 (its micro button, its key I), as the server queues from there.
+-- - The dungeon finder opens from level 10 (its micro button, its key I), as the server queues from there, and lists
+--   what the server lets the Hero queue for, whatever the client's own level ranges.
 -- - Its key: Shift-J, set once if nothing else uses it (Key Bindings: Emberforge).
 
 BINDING_HEADER_EMBERFORGE = "Project Emberforge"
@@ -105,6 +106,48 @@ local function EnableFinderButton()
     end
 end
 hooksecurefunc("UpdateMicroButtons", EnableFinderButton)
+-- Its lists: the stock client shows only the dungeons, specific and random, whose level range in its own
+-- LFGDungeons.dbc holds the Hero's level (LFDFrame.lua). The server is the judge here: what it does not lock (by
+-- level, gear or a closed dungeon) is listed.
+local function FinderFilter(dungeonID)
+    local info = LFGGetDungeonInfoByID and LFGGetDungeonInfoByID(dungeonID)
+    if not info or not LFG_RETURN_VALUES then
+        return false
+    end
+    return info[LFG_RETURN_VALUES.groupID] ~= 0 and EXPANSION_LEVEL >= info[LFG_RETURN_VALUES.expansionLevel]
+        and LFGLockList ~= nil and not LFGLockList[dungeonID]
+end
+LFDList_DefaultFilterFunction = FinderFilter
+LFD_CURRENT_FILTER = FinderFilter
+
+-- The random dungeons the server offers (the stock dropdown drops those outside the client's level ranges).
+function LFDQueueFrameTypeDropDown_Initialize()
+    local info = UIDropDownMenu_CreateInfo()
+    info.text = SPECIFIC_DUNGEONS
+    info.value = "specific"
+    info.func = LFDQueueFrameTypeDropDownButton_OnClick
+    info.checked = LFDQueueFrame.type == info.value
+    UIDropDownMenu_AddButton(info)
+    for i = 1, GetNumRandomDungeons() do
+        local id, name = GetLFGRandomDungeonInfo(i)
+        local expansionLevel = select(8, GetLFGDungeonInfo(id)) or 0
+        if EXPANSION_LEVEL >= expansionLevel then
+            local available = IsLFGDungeonJoinable(id)
+            info.text = name
+            info.value = id
+            info.isTitle = nil
+            info.func = available and LFDQueueFrameTypeDropDownButton_OnClick or nil
+            info.disabled = not available and 1 or nil
+            info.checked = available and LFDQueueFrame.type == id or nil
+            info.tooltipWhileDisabled = not available and 1 or nil
+            info.tooltipOnButton = not available and 1 or nil
+            info.tooltipTitle = not available and YOU_MAY_NOT_QUEUE_FOR_THIS or nil
+            info.tooltipText = not available and LFDConstructDeclinedMessage(id) or nil
+            UIDropDownMenu_AddButton(info)
+        end
+    end
+end
+
 local finderEvents = CreateFrame("Frame")
 finderEvents:RegisterEvent("PLAYER_LOGIN")
 finderEvents:RegisterEvent("PLAYER_LEVEL_UP")
