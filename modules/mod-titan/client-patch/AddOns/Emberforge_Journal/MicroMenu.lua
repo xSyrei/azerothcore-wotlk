@@ -5,6 +5,7 @@
 --   dungeon finder's tabs (or its key, H).
 -- - The dungeon finder and Player vs. Player windows are one: both carry the same two tabs on their right edge
 --   (as the spellbook's), Dungeons and Player vs. Player, each opening the other in its place.
+-- - The dungeon finder opens from level 10 (its micro button, its key I), as the server queues from there.
 -- - Its key: Shift-J, set once if nothing else uses it (Key Bindings: Emberforge).
 
 BINDING_HEADER_EMBERFORGE = "Project Emberforge"
@@ -78,6 +79,40 @@ end
 PlaceButton()
 
 -- One window for the dungeon finder and Player vs. Player ---------------------------------------------------------
+-- The dungeon finder from level 10 (the server queues every normal dungeon from there: DungeonFinder.MinLevel): the
+-- stock client keeps it shut below level 15, its key, its micro button and its toggle alike.
+local FINDER_LEVEL = 10
+SHOW_LFD_LEVEL = FINDER_LEVEL
+local function OpenFinder()
+    if not LFDParentFrame then
+        return
+    end
+    if LFDParentFrame:IsShown() then
+        HideUIPanel(LFDParentFrame)
+    else
+        ShowUIPanel(LFDParentFrame)
+    end
+end
+ToggleLFDParentFrame = OpenFinder
+local function EnableFinderButton()
+    if LFDMicroButton and UnitLevel("player") >= FINDER_LEVEL then
+        LFDMicroButton:Enable()
+        LFDMicroButton:SetScript("OnClick", OpenFinder)
+        if MicroButtonTooltipText then
+            LFDMicroButton.tooltipText = MicroButtonTooltipText(DUNGEONS_BUTTON or "Dungeon Finder", "TOGGLELFGPARENT")
+        end
+        LFDMicroButton.newbieText = NEWBIE_TOOLTIP_LFGPARENT or LFDMicroButton.newbieText
+    end
+end
+hooksecurefunc("UpdateMicroButtons", EnableFinderButton)
+local finderEvents = CreateFrame("Frame")
+finderEvents:RegisterEvent("PLAYER_LOGIN")
+finderEvents:RegisterEvent("PLAYER_LEVEL_UP")
+finderEvents:SetScript("OnEvent", function()
+    SHOW_LFD_LEVEL = FINDER_LEVEL
+    EnableFinderButton()
+end)
+
 local faction = UnitFactionGroup("player") == "Horde" and "INV_BannerPVP_01" or "INV_BannerPVP_02"
 local WINDOWS = {
     { frame = "LFDParentFrame", name = "Dungeons", icon = "Interface\\Icons\\INV_Misc_GroupNeedMore" },
