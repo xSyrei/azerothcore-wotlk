@@ -468,6 +468,8 @@ Heroic for every dungeon at 60 (Classic's included), and Heroic loot.
   Dungeon (raids keep their levels; the retired dungeons stay closed); `zzz_titan_dungeon_finder.sql` opens their
   entrances from 10, with no gear score. Both factions queue together (`AllowTwoSide.Interaction.Group`). The
   client's own level filters are lifted by `Emberforge_Journal/MicroMenu.lua`.
+  Finishing a random dungeon gives, beside its own rewards, 100 Emberspark (500 for a heroic) and a quarter of the
+  experience the Hero's level takes (`src/dungeon_rewards.cpp`).
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
 - `Spell::TakeRunePower`: runes give Rage instead of Runic Power (Emberforge has none; see Demon Hunter).

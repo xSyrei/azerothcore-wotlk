@@ -31,6 +31,7 @@ void AddSC_journal();
 void AddSC_prestige();
 void AddSC_cards();
 void AddSC_specs();
+void AddSC_dungeon_rewards();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
 void Addmod_titanScripts()
@@ -51,4 +52,5 @@ void Addmod_titanScripts()
     AddSC_prestige();
     AddSC_cards();
     AddSC_specs();
+    AddSC_dungeon_rewards();
 }

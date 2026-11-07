@@ -129,13 +129,26 @@ function LFDQueueFrameTypeDropDown_Initialize()
     info.func = LFDQueueFrameTypeDropDownButton_OnClick
     info.checked = LFDQueueFrame.type == info.value
     UIDropDownMenu_AddButton(info)
+    -- One of each difficulty (the earliest expansion's, as the server keeps), and the holiday bosses.
+    local chosen = {}
+    for i = 1, GetNumRandomDungeons() do
+        local id = GetLFGRandomDungeonInfo(i)
+        local _, _, _, _, _, _, _, expansionLevel, _, _, difficulty, _, _, isHoliday = GetLFGDungeonInfo(id)
+        if not isHoliday then
+            local best = chosen[difficulty or 0]
+            if not best or (expansionLevel or 0) < best.expansion then
+                chosen[difficulty or 0] = { id = id, expansion = expansionLevel or 0 }
+            end
+        end
+    end
     for i = 1, GetNumRandomDungeons() do
         local id, name = GetLFGRandomDungeonInfo(i)
         local _, _, _, _, _, _, _, expansionLevel, _, _, difficulty, _, _, isHoliday = GetLFGDungeonInfo(id)
+        local shown = isHoliday or (chosen[difficulty or 0] and chosen[difficulty or 0].id == id)
         if not isHoliday then
             name = (difficulty or 0) > 0 and "Random Heroic Dungeon" or "Random Dungeon"
         end
-        if EXPANSION_LEVEL >= (expansionLevel or 0) then
+        if shown and EXPANSION_LEVEL >= (expansionLevel or 0) then
             local available = IsLFGDungeonJoinable(id)
             info.text = name
             info.value = id
