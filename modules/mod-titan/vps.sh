@@ -47,9 +47,13 @@ if [ "$pass" != "$again" ]; then
     echo "FAILED: the two passwords differ. Run the script again."
     exit 1
 fi
-name=$(echo "$name" | tr '[:lower:]' '[:upper:]')
-if ! [[ "$name" =~ ^[A-Z0-9]{3,16}$ ]] || [ ${#pass} -lt 1 ] || [ ${#pass} -gt 16 ]; then
-    echo "FAILED: the name must be 3-16 letters or numbers and the password 1-16 characters. Run the script again."
+name=$(echo "$name" | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+if ! [[ "$name" =~ ^[A-Z0-9]{3,16}$ ]]; then
+    echo "FAILED: the name \"$name\" must be 3-16 letters or numbers, no spaces or symbols. Run the script again."
+    exit 1
+fi
+if [ ${#pass} -lt 1 ] || [ ${#pass} -gt 16 ]; then
+    echo "FAILED: the password was ${#pass} characters; the game allows 1-16. Run the script again."
     exit 1
 fi
 # A new account, or a new password for one that exists (running this again resets a forgotten password).
