@@ -282,8 +282,9 @@ namespace lfg
             }
         }
 
-        // DungeonFinder.MinLevel (0: off): every 5-player dungeon, normal and heroic, and every random dungeon queues
-        // from that level to the level cap (raids and the holiday bosses keep their own; disabled maps stay locked).
+        // DungeonFinder.MinLevel (0: off): every normal 5-player dungeon and random dungeon queues from that level to
+        // the level cap, every heroic one at the level cap (raids and the holiday bosses keep their own; disabled maps
+        // stay locked).
         // DungeonFinder.OneRandom: one random dungeon for all the normal ones and one for all the heroics, those of the
         // earliest expansion (their rewards reach the lowest levels); the other random dungeons are not offered.
         if (uint8 minLevel = sConfigMgr->GetOption<uint8>("DungeonFinder.MinLevel", 0))
@@ -293,7 +294,7 @@ namespace lfg
             for (auto& [id, data] : LfgDungeonStore)
                 if (data.type != LFG_TYPE_RAID && !data.seasonal)
                 {
-                    data.minlevel = minLevel;
+                    data.minlevel = data.difficulty == DUNGEON_DIFFICULTY_HEROIC ? maxLevel : minLevel;
                     data.maxlevel = std::max(data.maxlevel, maxLevel);
                     ++opened;
                 }

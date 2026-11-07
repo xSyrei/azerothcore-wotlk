@@ -195,7 +195,12 @@ void WorldSession::HandleLfgPlayerLockInfoRequestOpcode(WorldPacket& /*recvData*
             data << uint8(done);
             data << uint32(quest->GetRewOrReqMoney(playerLevel));
             if (playerLevelForXP < GetPlayer()->GetUInt32Value(PLAYER_FIELD_MAX_LEVEL))
-                data << uint32(quest->XPValue(playerLevelForXP));
+            {
+                // As the reward will give it (a module may change a quest's experience).
+                uint32 xp = quest->XPValue(playerLevelForXP);
+                sScriptMgr->OnPlayerQuestComputeXP(GetPlayer(), quest, xp);
+                data << uint32(xp);
+            }
             else
                 data << uint32(0);
             data << uint32(0);
@@ -496,7 +501,9 @@ void WorldSession::SendLfgPlayerReward(lfg::LfgPlayerRewardData const& rewardDat
     data << uint8(rewardData.done);
     data << uint32(1);
     data << uint32(rewardData.quest->GetRewOrReqMoney(playerLevel));
-    data << uint32(rewardData.quest->XPValue(playerLevelForXP));
+    uint32 xp = rewardData.quest->XPValue(playerLevelForXP);
+    sScriptMgr->OnPlayerQuestComputeXP(GetPlayer(), rewardData.quest, xp);
+    data << uint32(xp);
     data << uint32(0);
     data << uint32(0);
     data << uint8(itemNum);

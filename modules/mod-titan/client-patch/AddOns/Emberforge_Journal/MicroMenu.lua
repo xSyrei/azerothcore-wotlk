@@ -165,6 +165,42 @@ function LFDQueueFrameTypeDropDown_Initialize()
     end
 end
 
+-- The random dungeon's rewards: the Emberspark it gives too (src/dungeon_rewards.cpp), under the experience.
+local SPARK_ICON = "|TInterface\\Icons\\INV_Emberforge_Emberspark:14|t"
+hooksecurefunc("LFDQueueFrameRandom_UpdateFrame", function()
+    local parent = LFDQueueFrameRandomScrollFrameChildFrame
+    local dungeonID = LFDQueueFrame and LFDQueueFrame.type
+    if not parent or type(dungeonID) ~= "number" then
+        return
+    end
+    local _, _, _, _, _, _, _, _, _, _, difficulty, _, _, isHoliday = GetLFGDungeonInfo(dungeonID)
+    if not parent.sparkLabel then
+        -- As the money and experience lines.
+        parent.sparkLabel = parent:CreateFontString(nil, "ARTWORK", "QuestFont")
+        parent.sparkLabel:SetText("Emberspark:")
+        parent.sparkLabel:SetTextColor(1, 1, 1)
+        parent.sparkAmount = parent:CreateFontString(nil, "ARTWORK", "NumberFontNormalLarge")
+        parent.sparkAmount:SetPoint("LEFT", parent.sparkLabel, "RIGHT", 6, 0)
+    end
+    if isHoliday then
+        parent.sparkLabel:Hide()
+        parent.sparkAmount:Hide()
+        return
+    end
+    local last = parent.xpLabel:IsShown() and parent.xpLabel or parent.moneyLabel:IsShown() and parent.moneyLabel
+        or parent.rewardsDescription
+    parent.sparkLabel:ClearAllPoints()
+    if last == parent.rewardsDescription then
+        parent.sparkLabel:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 20, -10)
+    else
+        parent.sparkLabel:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -5)
+    end
+    parent.sparkAmount:SetText(((difficulty or 0) > 0 and "500" or "100") .. " " .. SPARK_ICON)
+    parent.sparkLabel:Show()
+    parent.sparkAmount:Show()
+    parent.spacer:SetPoint("TOPLEFT", parent.sparkLabel, "BOTTOMLEFT", 0, -10)
+end)
+
 local finderEvents = CreateFrame("Frame")
 finderEvents:RegisterEvent("PLAYER_LOGIN")
 finderEvents:RegisterEvent("PLAYER_LEVEL_UP")
@@ -174,9 +210,12 @@ finderEvents:SetScript("OnEvent", function()
 end)
 
 local faction = UnitFactionGroup("player") == "Horde" and "INV_BannerPVP_01" or "INV_BannerPVP_02"
+-- edge: how far in from the frame's right side its art ends (the Player vs. Player frame has a transparent margin).
 local WINDOWS = {
-    { frame = "LFDParentFrame", name = "Dungeons", icon = "Interface\\Icons\\INV_Misc_GroupNeedMore" },
-    { frame = "PVPParentFrame", name = "Player vs. Player", icon = "Interface\\Icons\\" .. faction },
+    { frame = "LFDParentFrame", name = "Dungeons", icon = "Interface\\Icons\\INV_Misc_GroupNeedMore", edge = 0,
+        top = -40 },
+    { frame = "PVPParentFrame", name = "Player vs. Player", icon = "Interface\\Icons\\" .. faction, edge = -32,
+        top = -65 },
 }
 local tabs = {}
 local function Window(index)
@@ -185,11 +224,19 @@ end
 
 -- The tabs onto the window shown, the shown one checked.
 local function PlaceTabs(shown)
+    local place = WINDOWS[2]
+    for _, window in ipairs(WINDOWS) do
+        if _G[window.frame] == shown then
+            place = window
+        end
+    end
     for index, tab in ipairs(tabs) do
         tab:SetParent(shown)
+        tab:SetFrameStrata(shown:GetFrameStrata())
+        tab:SetFrameLevel(shown:GetFrameLevel() + 20)
         tab:ClearAllPoints()
         if index == 1 then
-            tab:SetPoint("TOPLEFT", shown, "TOPRIGHT", -32, -65)
+            tab:SetPoint("TOPLEFT", shown, "TOPRIGHT", place.edge, place.top)
         else
             tab:SetPoint("TOPLEFT", tabs[index - 1], "BOTTOMLEFT", 0, -17)
         end
@@ -209,17 +256,21 @@ for index, window in ipairs(WINDOWS) do
     end)
     tab:SetScript("OnLeave", function() GameTooltip:Hide() end)
     tab:SetScript("OnClick", function(self)
+        -- Both are left-hand panels: showing one puts it in the other's place.
         local target = Window(index)
-        for other = 1, #WINDOWS do
-            local frame = Window(other)
-            if frame and frame ~= target and frame:IsShown() then
-                HideUIPanel(frame)
-            end
-        end
+        self:SetChecked(true)
         if target and not target:IsShown() then
             ShowUIPanel(target)
+            if not target:IsShown() then
+                for other = 1, #WINDOWS do
+                    local frame = Window(other)
+                    if frame and frame ~= target and frame:IsShown() then
+                        HideUIPanel(frame)
+                    end
+                end
+                ShowUIPanel(target)
+            end
         end
-        self:SetChecked(true)
     end)
     tab:Hide()
     tabs[index] = tab

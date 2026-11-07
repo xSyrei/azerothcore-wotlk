@@ -27,8 +27,9 @@
 #include "WorldSession.h"
 #include <unordered_map>
 
-// The dungeon finder's rewards, on top of its own: finishing a random dungeon (its reward quest, lfg_dungeon_rewards,
-// is rewarded) gives 100 Emberspark, 500 for a heroic, and a quarter of the experience the Hero's level takes.
+// The dungeon finder's rewards: finishing a random dungeon (its reward quest, lfg_dungeon_rewards, is rewarded) gives
+// 100 Emberspark, 500 for a heroic, and its experience is a quarter of what the Hero's level takes (the dungeon
+// finder shows that amount too: LFGHandler.cpp asks the same hook).
 namespace
 {
     constexpr uint32 DUNGEON_EMBERSPARK = 100;
@@ -75,7 +76,16 @@ public:
 class titan_dungeon_rewards : public PlayerScript
 {
 public:
-    titan_dungeon_rewards() : PlayerScript("titan_dungeon_rewards", { PLAYERHOOK_ON_PLAYER_COMPLETE_QUEST }) { }
+    titan_dungeon_rewards() : PlayerScript("titan_dungeon_rewards", {
+        PLAYERHOOK_ON_PLAYER_COMPLETE_QUEST,
+        PLAYERHOOK_ON_QUEST_COMPUTE_EXP
+    }) { }
+
+    void OnPlayerQuestComputeXP(Player* player, Quest const* quest, uint32& xpValue) override
+    {
+        if (rewardQuests.count(quest->GetQuestId()))
+            xpValue = player->GetUInt32Value(PLAYER_NEXT_LEVEL_XP) / EXPERIENCE_SHARE;
+    }
 
     void OnPlayerCompleteQuest(Player* player, Quest const* quest) override
     {
@@ -86,8 +96,6 @@ public:
         uint32 amount = heroic ? HEROIC_EMBERSPARK : DUNGEON_EMBERSPARK;
         Emberspark::Add(player->GetSession()->GetAccountId(), amount, heroic ? "heroic dungeon" : "dungeon");
         Emberspark::Announce(player, amount, heroic ? "for your heroic dungeon" : "for your dungeon");
-        if (player->GetLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
-            player->GiveXP(player->GetUInt32Value(PLAYER_NEXT_LEVEL_XP) / EXPERIENCE_SHARE, nullptr);
     }
 };
 

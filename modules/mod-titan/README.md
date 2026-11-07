@@ -464,12 +464,13 @@ Heroic for every dungeon at 60 (Classic's included), and Heroic loot.
 
 ## Core changes this module relies on
 - `LFGMgr::LoadLFGDungeons`, `DungeonFinder.MinLevel` and `DungeonFinder.OneRandom` (`docker-compose.yml`): every
-  dungeon, normal and heroic, can be queued for from level 10 to the cap, in one Random Dungeon and one Random Heroic
-  Dungeon (raids keep their levels; the retired dungeons stay closed); `zzz_titan_dungeon_finder.sql` opens their
-  entrances from 10, with no gear score. Both factions queue together (`AllowTwoSide.Interaction.Group`). The
-  client's own level filters are lifted by `Emberforge_Journal/MicroMenu.lua`.
-  Finishing a random dungeon gives, beside its own rewards, 100 Emberspark (500 for a heroic) and a quarter of the
-  experience the Hero's level takes (`src/dungeon_rewards.cpp`).
+  normal dungeon can be queued for from level 10 to the cap and every heroic at 60, in one Random Dungeon and one
+  Random Heroic Dungeon (raids keep their levels; the retired dungeons stay closed); `zzz_titan_dungeon_finder.sql`
+  opens their entrances the same, with no gear score. Both factions queue together (`AllowTwoSide.Interaction.Group`).
+  The client's own level filters are lifted by `Emberforge_Journal/MicroMenu.lua`. Finishing a random dungeon gives
+  100 Emberspark (500 for a heroic), and its experience is a quarter of what the Hero's level takes
+  (`src/dungeon_rewards.cpp`; `LFGHandler.cpp` shows the dungeon finder that amount, asking the quest experience
+  hook).
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
 - `Spell::TakeRunePower`: runes give Rage instead of Runic Power (Emberforge has none; see Demon Hunter).
