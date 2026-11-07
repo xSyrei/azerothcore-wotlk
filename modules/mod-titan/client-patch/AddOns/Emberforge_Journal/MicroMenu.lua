@@ -120,7 +120,8 @@ end
 LFDList_DefaultFilterFunction = FinderFilter
 LFD_CURRENT_FILTER = FinderFilter
 
--- The random dungeons the server offers (the stock dropdown drops those outside the client's level ranges).
+-- The random dungeons the server offers (the stock dropdown drops those outside the client's level ranges): one for
+-- every normal dungeon, one for every heroic (DungeonFinder.OneRandom), named for what they are.
 function LFDQueueFrameTypeDropDown_Initialize()
     local info = UIDropDownMenu_CreateInfo()
     info.text = SPECIFIC_DUNGEONS
@@ -130,8 +131,11 @@ function LFDQueueFrameTypeDropDown_Initialize()
     UIDropDownMenu_AddButton(info)
     for i = 1, GetNumRandomDungeons() do
         local id, name = GetLFGRandomDungeonInfo(i)
-        local expansionLevel = select(8, GetLFGDungeonInfo(id)) or 0
-        if EXPANSION_LEVEL >= expansionLevel then
+        local _, _, _, _, _, _, _, expansionLevel, _, _, difficulty, _, _, isHoliday = GetLFGDungeonInfo(id)
+        if not isHoliday then
+            name = (difficulty or 0) > 0 and "Random Heroic Dungeon" or "Random Dungeon"
+        end
+        if EXPANSION_LEVEL >= (expansionLevel or 0) then
             local available = IsLFGDungeonJoinable(id)
             info.text = name
             info.value = id

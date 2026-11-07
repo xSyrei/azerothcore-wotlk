@@ -463,9 +463,11 @@ instance creatures by player count and by level. Emberforge sets `AutoBalance.Le
 Heroic for every dungeon at 60 (Classic's included), and Heroic loot.
 
 ## Core changes this module relies on
-- `LFGMgr::LoadLFGDungeons`, `DungeonFinder.MinLevel` (10 in `docker-compose.yml`): every normal dungeon and random
-  dungeon can be queued for from level 10 to the cap (heroics and raids keep their levels; the retired dungeons stay
-  closed); `zzz_titan_dungeon_finder.sql` opens their entrances from 10, with no gear score.
+- `LFGMgr::LoadLFGDungeons`, `DungeonFinder.MinLevel` and `DungeonFinder.OneRandom` (`docker-compose.yml`): every
+  dungeon, normal and heroic, can be queued for from level 10 to the cap, in one Random Dungeon and one Random Heroic
+  Dungeon (raids keep their levels; the retired dungeons stay closed); `zzz_titan_dungeon_finder.sql` opens their
+  entrances from 10, with no gear score. Both factions queue together (`AllowTwoSide.Interaction.Group`). The
+  client's own level filters are lifted by `Emberforge_Journal/MicroMenu.lua`.
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
 - `Spell::TakeRunePower`: runes give Rage instead of Runic Power (Emberforge has none; see Demon Hunter).

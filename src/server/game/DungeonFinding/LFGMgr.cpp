@@ -282,18 +282,52 @@ namespace lfg
             }
         }
 
-        // DungeonFinder.MinLevel (0: off): every normal-difficulty dungeon and random dungeon queues from that level to
-        // the level cap (heroics and raids keep their own; disabled maps stay locked).
+        // DungeonFinder.MinLevel (0: off): every 5-player dungeon, normal and heroic, and every random dungeon queues
+        // from that level to the level cap (raids and the holiday bosses keep their own; disabled maps stay locked).
+        // DungeonFinder.OneRandom: one random dungeon for all the normal ones and one for all the heroics, those of the
+        // earliest expansion (their rewards reach the lowest levels); the other random dungeons are not offered.
         if (uint8 minLevel = sConfigMgr->GetOption<uint8>("DungeonFinder.MinLevel", 0))
         {
             uint8 maxLevel = uint8(sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL));
+            uint32 opened = 0;
             for (auto& [id, data] : LfgDungeonStore)
-                if (data.difficulty == DUNGEON_DIFFICULTY_NORMAL
-                    && (data.type == LFG_TYPE_DUNGEON || data.type == LFG_TYPE_RANDOM))
+                if (data.type != LFG_TYPE_RAID && !data.seasonal)
                 {
                     data.minlevel = minLevel;
                     data.maxlevel = std::max(data.maxlevel, maxLevel);
+                    ++opened;
                 }
+            LOG_INFO("server.loading", ">> Dungeon finder: {} dungeons and random dungeons open from level {}", opened,
+                minLevel);
+        }
+        if (sConfigMgr->GetOption<bool>("DungeonFinder.OneRandom", false))
+        {
+            // The kept random dungeon of each difficulty: the earliest expansion's.
+            std::map<Difficulty, LFGDungeonData const*> kept;
+            for (auto const& [id, data] : LfgDungeonStore)
+                if (data.type == LFG_TYPE_RANDOM && !data.seasonal)
+                {
+                    LFGDungeonData const*& best = kept[data.difficulty];
+                    if (!best || data.expansion < best->expansion)
+                        best = &data;
+                }
+            std::map<Difficulty, uint8> groups;
+            for (auto const& [difficulty, data] : kept)
+                groups[difficulty] = data->group;
+            for (auto itr = LfgDungeonStore.begin(); itr != LfgDungeonStore.end();)
+            {
+                LFGDungeonData& data = itr->second;
+                if (data.type == LFG_TYPE_RANDOM && !data.seasonal && kept[data.difficulty] != &data)
+                {
+                    itr = LfgDungeonStore.erase(itr);
+                    continue;
+                }
+                if (data.type != LFG_TYPE_RANDOM && data.type != LFG_TYPE_RAID && data.group
+                    && groups.count(data.difficulty))
+                    data.group = groups[data.difficulty];
+                ++itr;
+            }
+            LOG_INFO("server.loading", ">> Dungeon finder: one random dungeon for each difficulty");
         }
 
         // Fill teleport locations from DB
