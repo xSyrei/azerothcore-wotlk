@@ -120,16 +120,8 @@ end
 LFDList_DefaultFilterFunction = FinderFilter
 LFD_CURRENT_FILTER = FinderFilter
 
--- The random dungeons the server offers (the stock dropdown drops those outside the client's level ranges): one for
--- every normal dungeon, one for every heroic (DungeonFinder.OneRandom), named for what they are.
-function LFDQueueFrameTypeDropDown_Initialize()
-    local info = UIDropDownMenu_CreateInfo()
-    info.text = SPECIFIC_DUNGEONS
-    info.value = "specific"
-    info.func = LFDQueueFrameTypeDropDownButton_OnClick
-    info.checked = LFDQueueFrame.type == info.value
-    UIDropDownMenu_AddButton(info)
-    -- One of each difficulty (the earliest expansion's, as the server keeps), and the holiday bosses.
+-- The random dungeon kept for each difficulty (0 normal, 1 heroic): the earliest expansion's, as the server keeps.
+local function ChosenRandoms()
     local chosen = {}
     for i = 1, GetNumRandomDungeons() do
         local id = GetLFGRandomDungeonInfo(i)
@@ -141,6 +133,20 @@ function LFDQueueFrameTypeDropDown_Initialize()
             end
         end
     end
+    return chosen
+end
+
+-- The random dungeons the server offers (the stock dropdown drops those outside the client's level ranges): one for
+-- every normal dungeon, one for every heroic (DungeonFinder.OneRandom), named for what they are.
+function LFDQueueFrameTypeDropDown_Initialize()
+    local info = UIDropDownMenu_CreateInfo()
+    info.text = SPECIFIC_DUNGEONS
+    info.value = "specific"
+    info.func = LFDQueueFrameTypeDropDownButton_OnClick
+    info.checked = LFDQueueFrame.type == info.value
+    UIDropDownMenu_AddButton(info)
+    -- One of each difficulty, and the holiday bosses.
+    local chosen = ChosenRandoms()
     for i = 1, GetNumRandomDungeons() do
         local id, name = GetLFGRandomDungeonInfo(i)
         local _, _, _, _, _, _, _, expansionLevel, _, _, difficulty, _, _, isHoliday = GetLFGDungeonInfo(id)
@@ -199,6 +205,39 @@ hooksecurefunc("LFDQueueFrameRandom_UpdateFrame", function()
     parent.sparkLabel:Show()
     parent.sparkAmount:Show()
     parent.spacer:SetPoint("TOPLEFT", parent.sparkLabel, "BOTTOMLEFT", 0, -10)
+end)
+
+-- Random Dungeon is the default choice: when the finder opens, or the server's list comes, a type that is not one
+-- of those offered (the stock client picks its own "best" random dungeon, often one not offered) becomes it.
+local function DefaultToRandom()
+    if not LFDQueueFrame or not LFDQueueFrame_SetType then
+        return
+    end
+    local chosen = ChosenRandoms()
+    local normal, heroic = chosen[0] and chosen[0].id, chosen[1] and chosen[1].id
+    local current = LFDQueueFrame.type
+    local offered = current == "specific" or (current and (current == normal or current == heroic))
+    if type(current) == "number" and not offered then
+        local _, _, _, _, _, _, _, _, _, _, _, _, _, isHoliday = GetLFGDungeonInfo(current)
+        offered = isHoliday and IsLFGDungeonJoinable(current)
+    end
+    if not LFDParentFrame.emberforgeChosen or not offered then
+        if normal and IsLFGDungeonJoinable(normal) then
+            LFDQueueFrame_SetType(normal)
+            LFDParentFrame.emberforgeChosen = true
+        end
+    end
+end
+-- Once a session the finder starts on Random Dungeon; after that the player's own choice stays.
+if LFDParentFrame then
+    LFDParentFrame:HookScript("OnShow", DefaultToRandom)
+end
+local randomEvents = CreateFrame("Frame")
+randomEvents:RegisterEvent("LFG_UPDATE_RANDOM_INFO")
+randomEvents:SetScript("OnEvent", function()
+    if LFDParentFrame and LFDParentFrame:IsShown() then
+        DefaultToRandom()
+    end
 end)
 
 local finderEvents = CreateFrame("Frame")
