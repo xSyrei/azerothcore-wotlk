@@ -284,6 +284,14 @@ Rune costs are left to the server: `patch_spells.py` clears `RuneCostID` in the 
 but our own, 393). The client only recharges a real Death Knight's runes for casting, so a Hero's rune spell stayed
 refused ("Not enough runes") once its runes were spent, until another rune spell's cast told the client they were
 back. The server's copy keeps the costs: it checks and spends the runes, and `hero_runes` shows them on the rune bar.
+So the client no longer knows a rune spell's cost: `Emberforge_Resources` (`Runes.lua`) dims its action button
+while its runes are not ready (blue, like a spell short of mana; a Death rune stands in for any) and puts its runes on
+the tooltip. The costs come from `RuneCosts.lua`, which `patch_spells.py` writes from the client's `SpellRuneCost.dbc`
+(in the DBC folder it is given; without it the file is left as it is).
+
+**Publishing to players:** `publish-client.ps1` (on the PC with rclone set up for the CDN) uploads the two patch MPQs
+and the `Emberforge_*` addons where they changed, updates the launcher's manifest and raises its version. Purge
+Cloudflare's cache after.
 
 It also shows every piece of gear's item level on its tooltip ("Item Level 63" in gold under the name, as from
 Cataclysm on), for every class, and the character window's stats Cataclysm style (`StatPanel.lua`): a column on
