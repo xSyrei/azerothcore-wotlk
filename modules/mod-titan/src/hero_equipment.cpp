@@ -19,6 +19,7 @@
 #include "Bag.h"
 #include "Item.h"
 #include "Mail.h"
+#include "ObjectMgr.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 
@@ -83,8 +84,7 @@ namespace
         { 2092, 1 },        // a second Worn Dagger, for two daggers
         { 35, 1 },          // Bent Staff
         { 2362, 1 },        // Worn Wooden Shield
-        { 2504, 1 },        // Worn Shortbow
-        { 2512, 200 },      // Rough Arrow
+        { 2504, 1 },        // Worn Shortbow (its arrows come by themselves, EnsureAmmo)
     };
 
     bool IsHero(Player const* player)
@@ -122,6 +122,62 @@ namespace
             if (player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, kit.ItemId, kit.Count) == EQUIP_ERR_OK)
                 player->StoreNewItem(dest, kit.ItemId, true);
         }
+    }
+}
+
+// Ammo comes by itself: a Hero with a bow, crossbow or gun has the arrows or bullets of their level in the ammo slot
+// (one, given when missing: InfiniteAmmo.Enabled, set in docker-compose.yml, never spends it). Better ammo the Hero
+// put there stays.
+namespace
+{
+    struct AmmoTier
+    {
+        uint8 Level;
+        uint32 Arrow;
+        uint32 Bullet;
+    };
+
+    constexpr AmmoTier AMMO_TIERS[] = {
+        { 1, 2512, 2516 },      // Rough Arrow, Light Shot
+        { 10, 2515, 2519 },     // Sharp Arrow, Heavy Shot
+        { 25, 3030, 3033 },     // Razor Arrow, Solid Shot
+        { 40, 11285, 11284 },   // Jagged Arrow, Accurate Slugs
+        { 55, 28053, 28060 },   // Wicked Arrow, Impact Shot
+    };
+
+    void EnsureAmmo(Player* player)
+    {
+        Item* ranged = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED);
+        if (!ranged)
+            return;
+        uint32 subClass = ranged->GetTemplate()->SubClass;
+        bool arrows = subClass == ITEM_SUBCLASS_WEAPON_BOW || subClass == ITEM_SUBCLASS_WEAPON_CROSSBOW;
+        if (!arrows && subClass != ITEM_SUBCLASS_WEAPON_GUN)
+            return;
+
+        uint32 ammo = 0;
+        for (AmmoTier const& tier : AMMO_TIERS)
+            if (tier.Level <= player->GetLevel())
+                ammo = arrows ? tier.Arrow : tier.Bullet;
+        ItemTemplate const* wanted = sObjectMgr->GetItemTemplate(ammo);
+        if (!wanted)
+            return;
+
+        // The Hero's own, when it fits the weapon and is at least as good.
+        uint32 current = player->GetUInt32Value(PLAYER_AMMO_ID);
+        ItemTemplate const* own = current ? sObjectMgr->GetItemTemplate(current) : nullptr;
+        if (own && own->SubClass == wanted->SubClass && own->ItemLevel >= wanted->ItemLevel
+            && player->HasItemCount(current))
+            return;
+
+        if (!player->HasItemCount(ammo))
+        {
+            ItemPosCountVec dest;
+            if (player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, ammo, 1) != EQUIP_ERR_OK)
+                return;
+            player->StoreNewItem(dest, ammo, true);
+        }
+        player->SetAmmo(ammo);
     }
 }
 
@@ -213,8 +269,16 @@ public:
         PLAYERHOOK_ON_LOGIN,
         PLAYERHOOK_ON_FIRST_LOGIN,
         PLAYERHOOK_ON_LEVEL_CHANGED,
-        PLAYERHOOK_CHECK_ITEM_IN_SLOT_AT_LOAD_INVENTORY
+        PLAYERHOOK_CHECK_ITEM_IN_SLOT_AT_LOAD_INVENTORY,
+        PLAYERHOOK_ON_EQUIP
     }) { }
+
+    void OnPlayerEquip(Player* player, Item* item, uint8 /*bag*/, uint8 slot, bool /*update*/) override
+    {
+        // Not while the character loads: OnPlayerLogin sees to it then.
+        if (IsHero(player) && slot == EQUIPMENT_SLOT_RANGED && item && player->IsInWorld())
+            EnsureAmmo(player);
+    }
 
     // A Hero's gear is checked while the character loads, before its weapon and armor skills and Dual Wield are set
     // again (they belong to no Paladin, EnsureProficiencies), so the core took off what needed them and mailed it.
@@ -240,6 +304,7 @@ public:
             return;
         EnsureProficiencies(player);
         EquipSatchels(player);
+        EnsureAmmo(player);
     }
 
     void OnPlayerFirstLogin(Player* player) override
@@ -250,8 +315,10 @@ public:
 
     void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
     {
-        if (IsHero(player))
-            EnsureProficiencies(player);
+        if (!IsHero(player))
+            return;
+        EnsureProficiencies(player);
+        EnsureAmmo(player);
     }
 };
 

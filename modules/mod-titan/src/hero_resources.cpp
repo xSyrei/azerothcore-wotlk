@@ -228,8 +228,25 @@ public:
         }
     }
 
+    // Class abilities need no reagents, tools or totems (Rune of Portals, Soul Shards, a Fire Totem...): a Hero has
+    // every class's. Professions keep theirs (their spells have no class family). The client patch does the same
+    // (client-patch/patch_spells.py, drop_class_reagents).
+    static bool IsClassFamily(uint32 family)
+    {
+        return family != SPELLFAMILY_GENERIC && family != SPELLFAMILY_UNK1 && family != SPELLFAMILY_UNK2
+            && family != SPELLFAMILY_POTION && family != SPELLFAMILY_PET;
+    }
+
     void OnLoadSpellCustomAttr(SpellInfo* spellInfo) override
     {
+        if (IsClassFamily(spellInfo->SpellFamilyName))
+        {
+            spellInfo->Reagent.fill(0);
+            spellInfo->ReagentCount.fill(0);
+            spellInfo->Totem.fill(0);
+            spellInfo->TotemCategory.fill(0);
+        }
+
         if (spellInfo->PowerType == POWER_RUNIC_POWER)
             spellInfo->PowerType = POWER_RAGE;
         for (SpellEffectInfo& effect : spellInfo->_GetEffects())

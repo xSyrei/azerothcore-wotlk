@@ -86,6 +86,10 @@ services:
       AC_DUNGEON_FINDER_ONE_RANDOM: "1"
       AC_ALLOW_TWO_SIDE_INTERACTION_GROUP: "1"
       AC_ALLOW_TWO_SIDE_INTERACTION_CHAT: "1"
+      # The World channel (Emberforge_Resources joins it) talks across factions.
+      AC_ALLOW_TWO_SIDE_INTERACTION_CHANNEL: "1"
+      # A Hero's ammo is put in the ammo slot by itself (hero_equipment.cpp) and never spent.
+      AC_INFINITE_AMMO_ENABLED: "1"
     ports:
       - ${DOCKER_WORLD_EXTERNAL_PORT:-8085}:8085
       - ${DOCKER_SOAP_EXTERNAL_PORT:-7878}:7878
