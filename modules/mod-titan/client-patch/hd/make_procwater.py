@@ -71,9 +71,10 @@ def liquid_types(source):
     struct.pack_into('<I', data, 16, len(data) - strings_at)
     # More translucent at a glance (Fresnel adds 0.12 opacity, not 0.2).
     procedural[EDGE_OPACITY] = struct.unpack('<I', struct.pack('<f', 0.12))[0]
-    # Mostly the water's own colour looking down, mostly the sky across a lake (was a flat 0.2-0.3 either way).
-    procedural[REFLECTION_BASE] = struct.unpack('<I', struct.pack('<f', 0.05))[0]
-    procedural[REFLECTION_FRESNEL] = struct.unpack('<I', struct.pack('<f', 0.4))[0]
+    # Mostly the water's own colour looking down, more sky across a lake; enough looking down that the waves show
+    # (at 0.05 the surface read as flat glass).
+    procedural[REFLECTION_BASE] = struct.unpack('<I', struct.pack('<f', 0.12))[0]
+    procedural[REFLECTION_FRESNEL] = struct.unpack('<I', struct.pack('<f', 0.45))[0]
     for water in WATERS:
         if water in rows:
             for field in MATERIAL_FIELDS:
@@ -82,12 +83,12 @@ def liquid_types(source):
 
 
 def spec_frames():
-    """The specular mask: alpha 90-200 (x4 in the shader), glittering finely and looping, so the sun's highlight
+    """The specular mask: alpha 120-255 (x4 in the shader), glittering finely and looping, so the sun's highlight
     sparkles across the waves rather than shining as one flat sheet."""
     rng = np.random.default_rng(32)
     frames = []
     for field in periodic_noise(rng, 60, 240, 1.0, 2.0):
-        alpha = np.clip(145 + field * 32, 90, 200)
+        alpha = np.clip(190 + field * 40, 120, 255)
         rgba = np.dstack([np.full_like(alpha, 255), np.full_like(alpha, 255), np.full_like(alpha, 255), alpha])
         frames.append(Image.fromarray(np.round(rgba).astype(np.uint8), 'RGBA'))
     return frames
@@ -101,7 +102,7 @@ def normal_frames():
     for h in heights:
         gx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) * 0.5
         gy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) * 0.5
-        n = np.stack([-gx, -gy, np.full_like(h, 0.28)], -1)   # visible waves (no black in the sky cube now)
+        n = np.stack([-gx, -gy, np.full_like(h, 0.22)], -1)   # steep enough to read from above
         n /= np.linalg.norm(n, axis=-1, keepdims=True)
         x, y = (n[..., 0] * 0.5 + 0.5) * 255, (n[..., 1] * 0.5 + 0.5) * 255
         rgba = np.stack([x, y, y, x], -1)            # red/green and alpha/blue: the same normal
@@ -122,11 +123,12 @@ def reflection_map():
     spectrum = np.where((k >= 2) & (k <= 40), np.maximum(k, 1) ** -2.0, 0) * np.exp(1j * rng.uniform(0, 6.3, k.shape))
     clouds = np.real(np.fft.ifft2(spectrum))
     # Faint, soft clouds: strong ones broke every wave into white blobs.
-    clouds = np.clip((clouds - clouds.mean()) / clouds.std() * 0.25 + 0.1, 0, 1)
+    clouds = np.clip((clouds - clouds.mean()) / clouds.std() * 0.4 + 0.15, 0, 1)
     # Below the horizon stays a soft horizon tone: tilted waves look there, and black beside the bright sky read as
     # camouflage.
-    # A hazy teal-grey sky, darker than a sky looks, as water mirrors it (a pale one made it milky, a blue one dark).
-    zenith, horizon, below = np.array([36, 66, 76]), np.array([88, 112, 112]), np.array([34, 62, 62])
+    # A hazy teal-grey sky, darker than a sky looks, as water mirrors it (a pale one made it milky, a blue one dark),
+    # dark overhead and bright at the horizon: that contrast is what each tilted wave catches, the surface's life.
+    zenith, horizon, below = np.array([24, 50, 60]), np.array([118, 138, 136]), np.array([34, 62, 62])
     cloud = np.array([116, 130, 130])
     v = np.linspace(0, 1, face)[:, None] * np.ones((1, face))     # 0 top of a side face, 1 its bottom
     t = np.clip(v / 0.5, 0, 1)[..., None]

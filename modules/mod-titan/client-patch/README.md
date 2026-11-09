@@ -400,8 +400,9 @@ the top, the bottom; a flat image came out black, so the water reflected nothing
 than a sky looks, as water mirrors it (a pale one made the water milky), with faint clouds, paler at the horizon and
 a soft tone below it (tilted waves look there: black beside the sky read as camouflage). Slot 0, the refraction cube
 added to the water's own colour, is its own near-black teal map (`basicRefractionMap.blp`; sharing the sky's washed
-the water out). The waves' normals have up 0.28 and the
-reflection's share is 0.05 looking straight down, rising to 0.45 at a glance (c10.z, c10.w). `models/blp.py` encodes
+the water out). The waves' normals have up 0.22 and the
+reflection's share is 0.12 looking straight down, rising to 0.57 at a glance (c10.z, c10.w): the sky is dark
+overhead and bright at the horizon, so each tilted wave catches a different tone. `models/blp.py` encodes
 cube strips (width six times a power-of-two height).
 
 ## Atmosphere and water light (patch-enUS-8.MPQ)
