@@ -28,6 +28,8 @@ def c17, 2.2, 2.2, 2.2, 0          ; the sky picture times the hour's fog colour
 def c14, 0.6, 0.85, 4, 127.5        ; opaque from: start, end, 1 / (end - start); half of 255
 def c15, -1, 1, -1, 0.00392157      ; the signature: odd minus even bits; 1 / 255
 def c16, 1.25, 0.25, 1.25, 0        ; even pixels' bits (+ 0.25 / 255, so rounding or truncation keeps the bit)
+def c18, 0.0078125, 2048, 0.125, 8  ; data variant: 1 / 128 yards, 2048 steps, 1 / 8, 8
+def c19, 128, 16, 0.25, 0           ; data variant: blue's top bit, y's shift, half a rounding step
 def c13, 0.2, 0.29, 0.08, 0          ; the wave maps' scale: waves 5 and 3.5 times larger (at 1, a yard: marbling);
                                    ; the lowest a reflection looks (a crest's back face mirrored the dark below)
 dcl_texcoord4 v0.xyz
@@ -136,6 +138,7 @@ mad r0.xyz, r7, r1.w, r0
 ; Fog.
 add r0.xyz, r0, -c4
 mad r0.xyz, v7.x, r0, c4
+; --- tail: psLiquidProcWater_data.asm replaces from here for the ReShade water ---
 ; The signature where the water is opaque: each channel to an even step of 255, plus its bit.
 mov_sat r11.xyz, r0
 mul r11.xyz, r11, c14.w

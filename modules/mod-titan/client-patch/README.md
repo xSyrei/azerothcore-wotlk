@@ -445,23 +445,30 @@ layer):
    turns itself off rather than fog the screen.
 
 More effects, in this order around it (`ReShadePreset.ini`):
-- **Emberforge Water Reflections** (`Emberforge_Reflections.fx`), first: the city mirrored in the water (lamps, lit
-  windows, walls), rippled; the game's water can only mirror a fixed sky picture. It finds the water by the signature
-  Emberforge's water shader leaves (8 of a pixel's 3x3 carrying it, in either phase: a flat colour can never match,
-  so streets and floors stay matte), takes the water's normal from the depth buffer averaged over all the water on
-  screen, and marches a mirrored ray (bent by moving ripples) through the depth buffer; misses keep the water's own
-  sky reflection. First, as every later effect changes the colours; the game's Full Screen Glow wipes the signature,
-  so the launcher turns it off (`ffxGlow 0`) while Lighting is on. *Show the water it found* tints the water red.
+- **Emberforge Water** (`Emberforge_Water.fx`), first: the water drawn by ReShade, every part of its look on a slider
+  (colour: hue, saturation, brightness, a tint; waves: size, height, speed, wind direction, spread, small ripples,
+  shading, light direction; reflections: at a glance and looking down, brightness, distortion, sky; sparkle; field of
+  view). While Lighting is on, the launcher copies `Water-ReShade.MPQ` in as `patch-enUS-9.MPQ` (and deletes it when
+  off: without ReShade it shows as a checkerboard): a variant of the water shader (`hd/psLiquidProcWater_data.asm`,
+  spliced over the main one's tail) whose opaque water hands over, in a checkerboard (vPos), the water's own colour
+  (even pixels, lowest bits of red, green, blue 1, 0, 1) and its world position modulo 128 yards in sixteenths (odd
+  pixels: red and green the top 8 bits, blue bits 1-3 and 4-6 the low 3, bit 0 is 0 and bit 7 is 1; a flat colour
+  can never be both). The effect decodes both (water: 7 of a pixel's 3x3 fit, in either phase; its edge pixels too),
+  fills pixels drawn over (6 of 8 around), draws waves from the world position (so they stay put as the camera moves;
+  wave numbers whole turns per 128 yards), grades the colour, mirrors the city by a ray marched through the depth
+  buffer (bent by the waves, the sky's own colour where it finds nothing) and adds sparkle. First, as every later
+  effect changes the colours; the game's Full Screen Glow repaints every pixel, so the launcher turns it off
+  (`ffxGlow 0`) while Lighting is on. *Show the water it found* tints the water red.
 - **Emberforge Ambient Occlusion** (`Emberforge_AO.fx`): soft contact shadows in creases, corners and under
   objects, from the depth buffer at half resolution (12 samples on a turning spiral, a depth-aware blur), fading out
   with distance; never on the sky.
 - **Emberforge Bloom & Grade** (`Emberforge_Bloom.fx`), last: glow around bright light over three sizes (screen
   blended, no clipping), then vibrance, a gentle S-curve, warmth and a light vignette.
 
-Their settings (Home in game: ReShade's window): reflections (strength, ripples, field of view), shafts (intensity,
-length, sky threshold), fog (density, start, strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion
-(strength, radius, fade distance), bloom (intensity, threshold) and grade (vibrance, contrast, warmth, vignette). The UI
-is drawn into the same picture, so the effects touch it a little.
+Their settings (Home in game: ReShade's window): water (above), shafts (intensity, length, sky threshold), fog (density,
+start, strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion (strength, radius, fade distance),
+bloom (intensity, threshold) and grade (vibrance, contrast, warmth, vignette). The UI is drawn into the same picture, so
+the effects touch it a little.
 
 The client ships **ReShade 6.8.0** (`ReShade32.dll`, from the official installer at reshade.me,
 `ReShade_Setup_6.8.0.exe` SHA-256 `207aea16205fbf952bc8fe1879966672454cf04002e7ad34237c7990a5b3c0b4`; BSD-3-Clause,

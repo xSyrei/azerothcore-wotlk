@@ -35,6 +35,9 @@ import make_mpq  # noqa: E402
 from make_liquids import periodic_noise, SIZE, FRAMES  # noqa: E402
 
 OUT = HERE.parent / 'dist' / 'patch-enUS-7.MPQ'
+# The ReShade water's shader (psLiquidProcWater_data.asm): the launcher copies it in as patch-enUS-9.MPQ while
+# Lighting is on (the game does not load this name), and deletes that copy when it is off.
+RESHADE_OUT = HERE.parent / 'dist' / 'Water-ReShade.MPQ'
 PROCEDURAL = 100
 # Water and ocean (normal, slow, fast, WMO, interior, the raid and zone waters).
 WATERS = [1, 2, 5, 6, 9, 10, 13, 14, 17, 41, 61, 81]
@@ -193,6 +196,10 @@ def main():
     entries.append((SHADER, d3d9asm.bls(d3d9asm.assemble((HERE / 'psLiquidProcWater.asm').read_text()))))
     OUT.write_bytes(make_mpq.build(entries))
     print(f'Wrote {OUT} ({len(entries)} files, {OUT.stat().st_size / 2 ** 20:.1f} MB)')
+    shader = (HERE / 'psLiquidProcWater.asm').read_text()
+    data = shader.split('; --- tail:')[0] + (HERE / 'psLiquidProcWater_data.asm').read_text()
+    RESHADE_OUT.write_bytes(make_mpq.build([(SHADER, d3d9asm.bls(d3d9asm.assemble(data)))]))
+    print(f'Wrote {RESHADE_OUT}')
 
 
 if __name__ == '__main__':

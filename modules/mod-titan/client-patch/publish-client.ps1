@@ -16,8 +16,9 @@ $here = $PSScriptRoot
 
 # path in the client -> file here
 $local = [ordered]@{}
+# Water-ReShade.MPQ: the ReShade water's shader; the launcher copies it in as patch-enUS-9.MPQ while Lighting is on.
 foreach ($mpq in 'patch-enUS-4.MPQ', 'patch-enUS-5.MPQ', 'patch-enUS-6.MPQ', 'patch-enUS-7.MPQ',
-    'patch-enUS-8.MPQ') {
+    'patch-enUS-8.MPQ', 'Water-ReShade.MPQ') {
     $local["Data/enUS/$mpq"] = Join-Path $here "dist\$mpq"
 }
 # Volumetric lighting (reshade\): ReShade, its settings as defaults (the launcher copies them once; ReShade then
