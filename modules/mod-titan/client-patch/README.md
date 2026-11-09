@@ -373,7 +373,8 @@ frame tiles and the loop has no seam; then each texture takes the original's col
 (`hd/liquid_stats.json`: 256 quantiles each, statistics only), so the engine blends it as before. Lakes and oceans
 are made for calm, realistic water instead (the game lays their alpha over its water as light, so the originals'
 large patches read as stones): fine wind ripples in a low, even haze and tiny sun glints gathering where the swell
-faces the sun, the ocean's ripples running with the wind; fast water is foam scrolling a tile per loop; lava has dark crust islands in grainy
+faces the sun, the ocean's ripples running with the wind; fast water is foam scrolling a tile per loop; lava has
+dark crust islands in grainy
 glow; slime and orange slime are slow ridged swirls. `hd/build_hd.py` writes them to `dist/patch-enUS-6.MPQ`, an
 archive of its own (29 MB), published with the others.
 
