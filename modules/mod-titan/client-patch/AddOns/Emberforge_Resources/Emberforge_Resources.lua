@@ -111,6 +111,24 @@ local function ScanSpellbook()
     end
 end
 
+-- The pet frame sits under the player frame, where these bars and the runes go: it moves down below them (outside
+-- combat: it is a secure frame). Its stock place: 80, -60 from the player frame's top left.
+local PET_X, PET_Y = 80, -60
+local petY
+local function PlacePetFrame(lowest)
+    local y = PET_Y
+    local bottom, top = lowest and lowest:GetBottom(), PlayerFrame:GetTop()
+    if bottom and top then
+        y = math.min(PET_Y, math.floor(bottom - top) + 8)
+    end
+    if y == petY or InCombatLockdown() then
+        return
+    end
+    petY = y
+    PetFrame:ClearAllPoints()
+    PetFrame:SetPoint("TOPLEFT", PlayerFrame, "TOPLEFT", PET_X, y)
+end
+
 local function Layout()
     local previous
     for _, info in ipairs(BARS) do
@@ -134,13 +152,16 @@ local function Layout()
         end
     end
 
+    local lowest = previous
     if known[POWER_RUNES] then
         RuneFrame:ClearAllPoints()
         RuneFrame:SetPoint("TOPLEFT", previous or container, "BOTTOMLEFT", -4, -4)
         RuneFrame:Show()
+        lowest = RuneFrame
     else
         RuneFrame:Hide()
     end
+    PlacePetFrame(lowest)
 end
 
 local elapsedSinceUpdate = 0
@@ -163,3 +184,4 @@ container:RegisterEvent("PLAYER_ENTERING_WORLD")
 container:RegisterEvent("SPELLS_CHANGED")
 container:RegisterEvent("LEARNED_SPELL_IN_TAB")
 container:RegisterEvent("UNIT_DISPLAYPOWER")
+container:RegisterEvent("PLAYER_REGEN_ENABLED")

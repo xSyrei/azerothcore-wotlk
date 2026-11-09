@@ -289,6 +289,13 @@ while its runes are not ready (blue, like a spell short of mana; a Death rune st
 the tooltip. The costs come from `RuneCosts.lua`, which `patch_spells.py` writes from the client's `SpellRuneCost.dbc`
 (in the DBC folder it is given; without it the file is left as it is).
 
+**Combo points**: the client keeps them only for a Rogue or Druid. The server sends a Hero's (`hero_resources.cpp`,
+prefix EFCP) and `Emberforge_Resources` (`Combo.lua`) answers `GetComboPoints` with them, so the combo frame by the
+target shows them; a finisher (`ComboFinishers.lua`, written by `patch_spells.py` from the finishing-move attribute,
+plus our own: Soul Cleave, Spirit Bomb, Rising Sun Kick, Fists of Fury, Spinning Crane Kick) looks unusable while
+there are none. The pet frame moves down below the resource bars and runes (outside combat). The dungeon finder
+window (it holds the PvP tab) stays shut below level 10, by its key too.
+
 **Publishing to players:** `publish-client.ps1` (on the PC with rclone set up for the CDN) uploads the two patch MPQs
 and the `Emberforge_*` addons where they changed, updates the launcher's manifest and raises its version. Purge
 Cloudflare's cache after.

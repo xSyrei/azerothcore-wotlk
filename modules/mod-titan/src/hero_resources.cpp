@@ -15,6 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Chat.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "SpellInfo.h"
@@ -137,7 +138,22 @@ public:
     {
         uint32 Timer = 0;
         uint8 Cooling = 0;      // runes cooling down at the last update, a bit each
+        int16 ComboPoints = -1; // the combo points last sent (-1: none sent yet)
     };
+
+    // Combo points, likewise: the client keeps them only for a Rogue or Druid, so a Hero's never showed. The
+    // Emberforge_Resources addon (Combo.lua) gets them (prefix EFCP, the count) and shows them on the combo frame.
+    static void SendComboPoints(Player* player, State& state)
+    {
+        uint8 points = player->GetComboPoints();
+        if (state.ComboPoints == points)
+            return;
+        state.ComboPoints = points;
+        WorldPacket data;
+        ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, LANG_ADDON, player, player,
+            "EFCP\t" + std::to_string(points));
+        player->SendDirectMessage(&data);
+    }
 
     void OnPlayerUpdate(Player* player, uint32 diff) override
     {
@@ -145,6 +161,7 @@ public:
             return;
 
         State& state = _states[player->GetGUID().GetCounter()];
+        SendComboPoints(player, state);
         uint8 cooling = 0;
         for (uint8 i = 0; i < MAX_RUNES; ++i)
             if (player->GetRuneCooldown(i))

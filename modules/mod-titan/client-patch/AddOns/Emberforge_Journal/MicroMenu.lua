@@ -88,6 +88,12 @@ local function OpenFinder()
     if not LFDParentFrame then
         return
     end
+    -- Not before level 10, by its key (I) either: the window holds the PvP tab too.
+    if not LFDParentFrame:IsShown() and UnitLevel("player") < FINDER_LEVEL then
+        UIErrorsFrame:AddMessage(format(FEATURE_BECOMES_AVAILABLE_AT_LEVEL or "Available at level %d.", FINDER_LEVEL),
+            1.0, 0.1, 0.1, 1.0)
+        return
+    end
     if LFDParentFrame:IsShown() then
         HideUIPanel(LFDParentFrame)
     else
