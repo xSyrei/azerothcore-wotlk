@@ -2,9 +2,9 @@
 """A small Direct3D 9 shader assembler (ps_3_0): assembly text -> bytecode, and the client's .bls wrapper.
 
 Enough of the instruction set for the water shader: def, dcl_texcoordN / dcl_fog (inputs), dcl_vpos (the pixel's
-position on screen, read as vPos), dcl_2d / dcl_cube (samplers), and arithmetic and texld instructions with write masks, swizzles, negation and _sat. Comments start with
-';'. The client keeps each shader in a .bls file: a 28-byte header (its last word the bytecode's size), then the
-bytecode.
+position on screen, read as vPos), dcl_2d / dcl_cube (samplers), and arithmetic and texld instructions with write masks,
+swizzles, negation and _sat. Comments start with ';'. The client keeps each shader in a .bls file: a 28-byte header (its
+last word the bytecode's size), then the bytecode.
 """
 
 import struct

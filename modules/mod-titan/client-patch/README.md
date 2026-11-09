@@ -404,16 +404,16 @@ the water out). `models/blp.py` encodes cube strips (width six times a power-of-
 
 Its own shader: tuning settings could not give the water shape, as the game's shader divided its view vector by the
 horizontal distance only, so looking down its Fresnel saturated: no reflection and no change across the waves (flat
-glass). `hd/psLiquidProcWater.asm` replaces it (`Shaders\Pixel\ps_3_0\psLiquidProcWater.bls`, same inputs and
-constants; `hd/d3d9asm.py` assembles it and rebuilds the game's own shader byte for byte): a real Fresnel ((1 -
-cos)^4, the reflection's share 0.08 looking down to 0.88 at a glance), the water's colour lit by the waves (faces
-turned to the eye glow, light through the wave; faces turned away darker), reflections kept above the horizon (a
-crest's back face mirrored the dark below: specks), the wave maps read 5 and 3.5 times larger (at the game's scale
-they were a yard across: marbling), no refraction cube. Deep water is opaque (its opacity ramps to 1 from 0.6 to
-0.85) and signed for the water reflections (below): the lowest bit of red, green and blue is 1, 0, 1 where x + y is
-even and 0, 1, 0 where odd (vPos). The wave maps are a wind sea, as ocean renderers make one (`ocean_slopes`: a spectrum travelling downwind at deep water's speeds, choppy,
-so crests come sharp and troughs broad; round noise blobs read as anything but water), and their second coordinates
-cross the first (floats 4-7, the angles, were all 0).
+glass). `hd/psLiquidProcWater.asm` replaces it (`Shaders\Pixel\ps_3_0\psLiquidProcWater.bls`, same inputs and constants;
+`hd/d3d9asm.py` assembles it and rebuilds the game's own shader byte for byte): a real Fresnel ((1 - cos)^4, the
+reflection's share 0.08 looking down to 0.88 at a glance), the water's colour lit by the waves (faces turned to the eye
+glow, light through the wave; faces turned away darker), reflections kept above the horizon (a crest's back face
+mirrored the dark below: specks), the wave maps read 5 and 3.5 times larger (at the game's scale they were a yard
+across: marbling), no refraction cube. Deep water is opaque (its opacity ramps to 1 from 0.6 to 0.85) and signed for the
+water reflections (below): the lowest bit of red, green and blue is 1, 0, 1 where x + y is even and 0, 1, 0 where odd
+(vPos). The wave maps are a wind sea, as ocean renderers make one (`ocean_slopes`: a spectrum travelling downwind at
+deep water's speeds, choppy, so crests come sharp and troughs broad; round noise blobs read as anything but water), and
+their second coordinates cross the first (floats 4-7, the angles, were all 0).
 
 ## Atmosphere and water light (patch-enUS-8.MPQ)
 
@@ -457,9 +457,9 @@ More effects, in this order around it (`ReShadePreset.ini`):
 - **Emberforge Bloom & Grade** (`Emberforge_Bloom.fx`), last: glow around bright light over three sizes (screen
   blended, no clipping), then vibrance, a gentle S-curve, warmth and a light vignette.
 
-Their settings (Home in game: ReShade's window): reflections (strength, ripples, field of view), shafts (intensity, length, sky threshold), fog (density, start,
-strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion (strength, radius, fade distance), bloom
-(intensity, threshold) and grade (vibrance, contrast, warmth, vignette). The UI is drawn into the same picture, so the
+Their settings (Home in game: ReShade's window): reflections (strength, ripples, field of view), shafts (intensity,
+length, sky threshold), fog (density, start, strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion
+(strength, radius, fade distance), bloom (intensity, threshold) and grade (vibrance, contrast, warmth, vignette). The UI is drawn into the same picture, so the
 effects touch it a little.
 
 The client ships **ReShade 6.8.0** (`ReShade32.dll`, from the official installer at reshade.me,
