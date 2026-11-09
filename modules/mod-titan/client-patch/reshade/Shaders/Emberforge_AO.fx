@@ -52,6 +52,13 @@ float2 PS_Occlusion(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
     // The radius on screen shrinks with distance; a turn per pixel (interleaved) hides the sample pattern.
     float2 radius = min(Radius * 0.001 / max(depth, 0.005), 0.12) * float2(1.0 / BUFFER_ASPECT_RATIO, 1.0);
     float turn = frac(sin(dot(floor(pos.xy), float2(12.9898, 78.233))) * 43758.5453) * 6.2831853;
+    // The surface's own slope on screen (the smaller step each way, so an edge does not count as slope): a sample is
+    // only occluding when it stands out of that plane toward the eye. Without it a flat wall or floor seen at an
+    // angle darkened in blotches, half its samples always being nearer.
+    float2 pixel = BUFFER_PIXEL_SIZE * 2.0;
+    float right = Depth(uv + float2(pixel.x, 0)) - depth, left = depth - Depth(uv - float2(pixel.x, 0));
+    float down = Depth(uv + float2(0, pixel.y)) - depth, up = depth - Depth(uv - float2(0, pixel.y));
+    float2 slope = float2(abs(right) < abs(left) ? right : left, abs(down) < abs(up) ? down : up) / pixel;
     float occlusion = 0.0;
     [unroll]
     for (int i = 0; i < AO_SAMPLES; i++)
@@ -60,7 +67,8 @@ float2 PS_Occlusion(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         float angle = turn + i * 2.3999632;        // the golden angle
         float2 offset = float2(cos(angle), sin(angle)) * radius * sqrt(t);
         float sampled = Depth(uv + offset);
-        float nearer = (depth - sampled) / depth;  // how much nearer the eye, relative
+        float expected = depth + dot(offset, slope);
+        float nearer = (expected - sampled) / depth - 0.004;  // how much nearer the eye than the plane, relative
         // Nearer, but not by so much it is another object in front (a fade over the range).
         occlusion += saturate(nearer * 40.0) * saturate(1.0 - (nearer - 0.08) * 8.0);
     }

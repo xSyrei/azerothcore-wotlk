@@ -57,12 +57,13 @@ def liquid_types(source):
 
 def normal_frames():
     rng = np.random.default_rng(31)
-    heights = periodic_noise(rng, 4, 120, 2.0, 1.2)
+    # Rolling waves with ripples over them, steep enough to catch the light (the first try was too flat to see).
+    heights = periodic_noise(rng, 3, 140, 2.2, 1.2)
     frames = []
     for h in heights:
         gx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) * 0.5
         gy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) * 0.5
-        n = np.stack([-gx, -gy, np.full_like(h, 0.6)], -1)
+        n = np.stack([-gx, -gy, np.full_like(h, 0.2)], -1)
         n /= np.linalg.norm(n, axis=-1, keepdims=True)
         x, y = (n[..., 0] * 0.5 + 0.5) * 255, (n[..., 1] * 0.5 + 0.5) * 255
         rgba = np.stack([x, y, y, x], -1)            # red/green and alpha/blue: the same normal

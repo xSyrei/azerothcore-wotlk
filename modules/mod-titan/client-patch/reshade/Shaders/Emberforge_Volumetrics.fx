@@ -248,8 +248,12 @@ float3 PS_Composite(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
     // into wisps drifting through the space (noise in view space, with time).
     float distance = max(depth - FogStart, 0.0);
     float low = lerp(1.0, saturate(1.0 - view.y * 6.0) * 1.6, MistLow);
-    float3 drift = float3(Timer * 0.000012, Timer * 0.000004, Timer * 0.000009);
-    float wisps = lerp(1.0, Mist(view * 24.0 + drift * 24.0) * 1.8, MistAmount);
+    // Wisps about 20 yards across wherever they are (view space at 1000 yards a unit: depth's far plane), thinning
+    // and thickening the fog between 0.5 and 1.5 times, and none close to the eye: near the camera they read as
+    // smudges over the picture.
+    float3 drift = float3(Timer * 0.0012, Timer * 0.0004, Timer * 0.0009);
+    float near = smoothstep(0.03, 0.12, depth);
+    float wisps = 1.0 + (Mist(view * 50.0 + drift) - 0.5) * 2.0 * MistAmount * near;
     float fog = (1.0 - exp(-distance * FogDensity * 3.0 * low * wisps)) * FogAmount * (1.0 - sky) * valid;
 
     float2 toSun = (uv - sun.xy) * float2(BUFFER_ASPECT_RATIO, 1.0);
