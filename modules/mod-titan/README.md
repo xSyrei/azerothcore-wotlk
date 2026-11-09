@@ -24,7 +24,10 @@ the weapon and armor skills at every login and level (the core drops the ones a 
 have); `Emberforge_Resources` shows the ammo slot, which the character sheet hides for a Paladin.
 Fishing poles still need the Fishing profession. Runes recharge on the server, but the client only shows a
 real Death Knight's recharging, so `hero_runes` (`src/hero_resources.cpp`) sends a Hero's rune state while any is
-cooling down (every half second, and at once when one is spent or ready) and each rune as it comes back. At first login a Hero also finds one of each weapon kind
+cooling down (every half second, and at once when one is spent or ready) and each rune as it comes back. Death Knight abilities come
+from level 1 but hit like a level-55 class's, so below level 40 a Hero's Death Knight spells deal a share of their
+damage (`titan_dk_low_level`, same file): 8% at level 1, 18% at 10, 38% at 20, 65% at 30, all from 40 (Icy Touch
+about 19, 42, 90, 153, 236). Heals stay whole. At first login a Hero also finds one of each weapon kind
 in the bags: a Battleworn Claymore, a Shortsword and a Worn Dagger (both one-hand, to dual wield), a Bent Staff, a Worn Wooden Shield,
 a Worn Shortbow and 200 Rough Arrows.
 

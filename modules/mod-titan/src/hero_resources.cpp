@@ -18,6 +18,7 @@
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "SpellInfo.h"
+#include "Unit.h"
 #include "WorldPacket.h"
 #include <array>
 #include <unordered_map>
@@ -237,10 +238,78 @@ public:
     }
 };
 
+// Death Knight abilities come from level 1 for a Hero (wildcard.cpp, LEVEL_ONE_ABILITIES), but their damage is a
+// level-55 class's: Icy Touch hit a level-1 wolf for about 236. A Hero's Death Knight spells (their direct damage and their
+// diseases' and Death and Decay's ticks) deal a share of it below level 40 that follows what a level-appropriate
+// spell deals (a Mage's Frostbolt of that level against Icy Touch's): 8% at level 1, 18% at 10, 38% at 20, 65% at 30,
+// all of it from 40. Heals stay whole: the Death Knight's are a share of maximum health already.
+class titan_dk_low_level : public UnitScript
+{
+public:
+    titan_dk_low_level() : UnitScript("titan_dk_low_level", true, {
+        UNITHOOK_MODIFY_SPELL_DAMAGE_TAKEN,
+        UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK
+    }) { }
+
+    struct Point
+    {
+        uint8 Level;
+        float Share;
+    };
+
+    static constexpr std::array<Point, 5> CURVE = { { { 1, 0.08f }, { 10, 0.18f }, { 20, 0.38f }, { 30, 0.65f },
+        { 40, 1.0f } } };
+
+    static float Share(uint8 level)
+    {
+        if (level <= CURVE.front().Level)
+            return CURVE.front().Share;
+        for (std::size_t i = 1; i < CURVE.size(); ++i)
+            if (level < CURVE[i].Level)
+            {
+                Point const& low = CURVE[i - 1];
+                Point const& high = CURVE[i];
+                return low.Share + (high.Share - low.Share) * (level - low.Level) / float(high.Level - low.Level);
+            }
+        return 1.0f;
+    }
+
+    // The share for a Hero's Death Knight spell, 1 for anything else.
+    static float ShareFor(Unit* attacker, SpellInfo const* spellInfo)
+    {
+        if (!attacker || !spellInfo || spellInfo->SpellFamilyName != SPELLFAMILY_DEATHKNIGHT)
+            return 1.0f;
+        Player* player = attacker->ToPlayer();
+        if (!player || !hero_resources::IsHero(player))
+            return 1.0f;
+        return Share(player->GetLevel());
+    }
+
+    void ModifySpellDamageTaken(Unit* /*target*/, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
+    {
+        float share = ShareFor(attacker, spellInfo);
+        if (share < 1.0f && damage > 0)
+            damage = std::max<int32>(1, int32(damage * share));
+    }
+
+    void ModifyPeriodicDamageAurasTick(Unit* /*target*/, Unit* attacker, uint32& damage, SpellInfo const* spellInfo)
+        override
+    {
+        // The core runs periodic heals through this hook too.
+        if (spellInfo && (spellInfo->HasAura(SPELL_AURA_PERIODIC_HEAL)
+            || spellInfo->HasAura(SPELL_AURA_OBS_MOD_HEALTH)))
+            return;
+        float share = ShareFor(attacker, spellInfo);
+        if (share < 1.0f && damage > 0)
+            damage = std::max<uint32>(1, uint32(damage * share));
+    }
+};
+
 void AddSC_hero_resources()
 {
     new hero_resources();
     new hero_emberforged();
     new titan_runic_power_to_rage();
     new hero_runes();
+    new titan_dk_low_level();
 }
