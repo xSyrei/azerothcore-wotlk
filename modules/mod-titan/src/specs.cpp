@@ -54,7 +54,7 @@
 //   from server   P,<active>,<eyes>   S,<spec>,<owned>,<locked>,<used>,<price>,<icon>,<name>   (each of the four)
 //                 L0 / L,<kind>.<id>;...   the active spec's locks (kind: 0 ability by first rank, 1 talent)   PE
 //   to server     LIST, ACTIVATE,<spec>, LOCK,<spec>,<0|1>, NAME,<spec>,<name>, ICON,<spec>,<icon>, BUY,<spec>,
-//                 LOCKENTRY,<kind>,<id>,<0|1>, REROLL,<kind>,<id>
+//                 LOCKENTRY,<kind>,<id>,<0|1>, REROLL,<kind>,<id>, UNLEARN,<ability> (free, before the kit locks)
 namespace
 {
     constexpr char const* PREFIX = "EFSP";
@@ -399,6 +399,40 @@ namespace
         Send(player);
     }
 
+    // Before the kit locks (Wildcard::LOCK_LEVEL) an ability is unlearned for free: its pick comes back, to pick
+    // another in the Classless window. No Eye of Unlearning: those are for rerolls once the kit is locked.
+    void UnlearnFree(Player* player, uint32 id)
+    {
+        Loadouts* data = Loaded(player);
+        ChatHandler handler(player->GetSession());
+        Wildcard::Ability const* ability = Wildcard::FindAbility(id);
+        if (!data || !ability || !ability->Offered || !IsKnown(player, ENTRY_ABILITY, id))
+            return;
+        if (Wildcard::IsKitLocked(player))
+        {
+            handler.SendSysMessage("Your abilities are locked: reroll it with an Eye of Unlearning instead.");
+            return;
+        }
+        Spec& spec = data->Specs[data->Active];
+        auto entry = spec.Entries.find({ ENTRY_ABILITY, id });
+        if (spec.Locked || (entry != spec.Entries.end() && entry->second.Locked))
+        {
+            handler.SendSysMessage("Unlock it first (right-click it in the Classless window).");
+            return;
+        }
+        if (player->IsInCombat())
+        {
+            handler.SendSysMessage("Not in combat.");
+            return;
+        }
+        Wildcard::Unlearn(player, *ability);
+        Wildcard::SetPicks(player, Wildcard::GetPicks(player) + 1);
+        handler.SendSysMessage("Unlearned. Pick another ability in the Classless window.");
+        Classless::SendKnown(player);
+        Classless::SendState(player);
+        Send(player);
+    }
+
     void Reroll(Player* player, uint8 kind, uint32 id)
     {
         Loadouts* data = Loaded(player);
@@ -590,6 +624,8 @@ public:
             SetEntryLock(player, uint8(std::min<uint32>(spec, 2)), number(2), number(3) == 1);
         else if (command == "REROLL" && parts.size() == 3)
             Reroll(player, uint8(std::min<uint32>(spec, 2)), number(2));
+        else if (command == "UNLEARN" && parts.size() == 2)
+            UnlearnFree(player, spec);
         return false;
     }
 };

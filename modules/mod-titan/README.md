@@ -340,7 +340,8 @@ Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon wind
 - **Names and icons**: click a spec's icon in the Specs tab (or right-click, Rename / icon): a name and any of the
   macro icons.
 - **Rerolls**: right-click one of your spells or talents, Reroll: an Eye of Unlearning for another ability the Hero can
-  learn (a capstone for another capstone), or the talent's ranks for as many ranks of other talents.
+  learn (a capstone for another capstone), or the talent for another talent. Before the kit locks (level 9) an
+  ability is **unlearned for free** instead (Unlearn): its pick comes back, to pick another.
 - **Locks**: right-click, Lock: a locked ability or talent is never rerolled, a locked spec's none are; padlocks show
   on them. Nothing locked can be prestiged: unlock first. A prestige starts every spec over (names, icons and the ones
   bought stay).

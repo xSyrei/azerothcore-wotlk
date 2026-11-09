@@ -22,7 +22,8 @@
 -- reroll it (an Eye of Unlearning) or lock it, a spec to activate or lock it; click a spec's icon to rename it and
 -- choose its icon.
 --   to server     LIST, ACTIVATE,<spec>, LOCK,<spec>,<0|1>, NAME,<spec>,<name>, ICON,<spec>,<icon>,
---                 LOCKENTRY,<kind>,<id>,<0|1>, REROLL,<kind>,<id>   (kind: 0 ability by first rank, 1 talent)
+--                 LOCKENTRY,<kind>,<id>,<0|1>, REROLL,<kind>,<id>   (kind: 0 ability by first rank, 1 talent),
+--                 UNLEARN,<ability>   (free before the kit locks: the pick comes back)
 --   from server   P,<active>,<eyes>   S,<spec>,<owned>,<locked>,<used>,<price>,<icon>,<name>   L0 / L,<kind>.<id>;...
 --                 PE
 
@@ -1355,9 +1356,16 @@ do
         local specLocked = active and active.locked
         local items = {}
         if not locked and not specLocked then
-            items[#items + 1] = { "Reroll  (1 Eye of Unlearning)", function()
-                StaticPopup_Show("EMBERFORGE_CLASSLESS_REROLL", name, data.specs.eyes, { kind = kind, id = id })
-            end }
+            if kind == 0 and not data.locked then
+                -- Before the kit locks: free, the pick comes back.
+                items[#items + 1] = { "Unlearn  (free until level " .. data.lockLevel .. ")", function()
+                    SendSpec("UNLEARN," .. id)
+                end }
+            else
+                items[#items + 1] = { "Reroll  (1 Eye of Unlearning)", function()
+                    StaticPopup_Show("EMBERFORGE_CLASSLESS_REROLL", name, data.specs.eyes, { kind = kind, id = id })
+                end }
+            end
         end
         items[#items + 1] = { locked and "Unlock" or "Lock", function()
             SendSpec("LOCKENTRY," .. kind .. "," .. id .. "," .. (locked and 0 or 1))
