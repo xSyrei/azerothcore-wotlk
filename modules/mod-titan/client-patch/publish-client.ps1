@@ -4,9 +4,9 @@
 #   powershell -ExecutionPolicy Bypass -File "$HOME\azerothcore-wotlk\modules\mod-titan\client-patch\publish-client.ps1"
 #
 # Compares dist\patch-enUS-4/5/6/7/8.MPQ (gameplay, retextures, HD graphics, reflective water, atmosphere), the
-# volumetric lighting (reshade\) and every file of AddOns\Emberforge_* with the live manifest, uploads only what changed, drops
-# addon and shader files that no longer exist, raises the version (1.0.2 -> 1.0.3, or -Version 1.1.0) and uploads the
-# manifest last. Launchers then show Update. Purge Cloudflare's cache after.
+# volumetric lighting (reshade\) and every file of AddOns\Emberforge_* with the live manifest, uploads only what
+# changed, drops addon and shader files that no longer exist, raises the version (1.0.2 -> 1.0.3, or -Version 1.1.0)
+# and uploads the manifest last. Launchers then show Update. Purge Cloudflare's cache after.
 param([string]$Version)
 
 $ErrorActionPreference = 'Stop'
