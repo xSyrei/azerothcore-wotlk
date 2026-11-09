@@ -116,6 +116,9 @@ namespace Wildcard
     void Unlearn(Player* player, Ability const& ability);
     // Unlearns every offered ability (the kit and later Wildcard abilities; talents stay).
     uint32 ClearAbilities(Player* player);
+    // The Wildcard abilities the Hero knows (what picks and rolls give; not companions). Before the kit locks: the
+    // kit, never more than KIT_SIZE with the picks left.
+    uint32 KitAbilities(Player* player);
     // Prestige: forgets every Wildcard ability and talent and the count of what was granted, so the next level
     // change rolls a new kit, then every roll again (prestige.cpp).
     void Reset(Player* player);

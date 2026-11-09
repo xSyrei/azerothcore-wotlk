@@ -211,6 +211,12 @@ namespace
         ChatHandler handler(player->GetSession());
         Wildcard::Ability const* ability = Wildcard::FindAbility(spellId);
         uint32 picks = Wildcard::GetPicks(player);
+        // The kit holds KIT_SIZE abilities, whatever picks are left over.
+        if (picks && Wildcard::KitAbilities(player) >= Wildcard::KIT_SIZE)
+        {
+            picks = 0;
+            Wildcard::SetPicks(player, 0);
+        }
         if (!Wildcard::IsHero(player) || Wildcard::IsKitLocked(player) || !picks)
             handler.SendSysMessage("You have no ability picks. Use the Titan Tome of Selection first.");
         else if (ability && !Wildcard::MeetsRequirements(player, *ability))

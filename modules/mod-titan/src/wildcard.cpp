@@ -1431,6 +1431,15 @@ namespace Wildcard
                 player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
     }
 
+    uint32 KitAbilities(Player* player)
+    {
+        uint32 known = 0;
+        for (Ability const& ability : Abilities())
+            if (ability.Offered && KnownRank(player, ability) >= 0)
+                ++known;
+        return known;
+    }
+
     uint32 ClearAbilities(Player* player)
     {
         uint32 cleared = 0;

@@ -426,7 +426,9 @@ namespace
             return;
         }
         Wildcard::Unlearn(player, *ability);
-        Wildcard::SetPicks(player, Wildcard::GetPicks(player) + 1);
+        // Back to KIT_SIZE with the picks: never more (unlearning twice gave a fifth ability).
+        uint32 known = Wildcard::KitAbilities(player);
+        Wildcard::SetPicks(player, known < Wildcard::KIT_SIZE ? Wildcard::KIT_SIZE - known : 0);
         handler.SendSysMessage("Unlearned. Pick another ability in the Classless window.");
         Classless::SendKnown(player);
         Classless::SendState(player);
