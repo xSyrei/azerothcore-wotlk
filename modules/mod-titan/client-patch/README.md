@@ -459,8 +459,8 @@ More effects, in this order around it (`ReShadePreset.ini`):
 
 Their settings (Home in game: ReShade's window): reflections (strength, ripples, field of view), shafts (intensity,
 length, sky threshold), fog (density, start, strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion
-(strength, radius, fade distance), bloom (intensity, threshold) and grade (vibrance, contrast, warmth, vignette). The UI is drawn into the same picture, so the
-effects touch it a little.
+(strength, radius, fade distance), bloom (intensity, threshold) and grade (vibrance, contrast, warmth, vignette). The UI
+is drawn into the same picture, so the effects touch it a little.
 
 The client ships **ReShade 6.8.0** (`ReShade32.dll`, from the official installer at reshade.me,
 `ReShade_Setup_6.8.0.exe` SHA-256 `207aea16205fbf952bc8fe1879966672454cf04002e7ad34237c7990a5b3c0b4`; BSD-3-Clause,
