@@ -13,6 +13,7 @@
 !/modules/*.cmake
 !/modules/mod-titan/
 !/modules/mod-autobalance/
+!/modules/mod-aoe-loot/
 /build*/
 /var/*
 !/var/build/.gitkeep
