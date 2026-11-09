@@ -3,7 +3,8 @@
  *
  *  1. Bloom: what is brighter than the threshold (spells, torches, the sun on water, glowing runes), blurred wide
  *     over three sizes (a quarter, an eighth and a sixteenth of the screen) and added back softly.
- *  2. Grade: vibrance (lifts the dull colours more than the vivid ones, so skin and spells do not burn), a gentle
+ *  2. Sharpen: detail lifted where the picture is flat (contrast-adaptive, so edges do not ring).
+ *  3. Grade: vibrance (lifts the dull colours more than the vivid ones, so skin and spells do not burn), a gentle
  *     S-curve for contrast, warmth, and a light vignette.
  * Last in ReShadePreset.ini's order, over the light shafts and fog.
  */
@@ -20,6 +21,12 @@ uniform float BloomThreshold <
     ui_category = "Bloom"; ui_label = "Threshold";
     ui_tooltip = "Only light brighter than this glows.";
 > = 0.65;
+
+uniform float Sharpen <
+    ui_type = "slider"; ui_min = 0.0; ui_max = 1.5; ui_step = 0.01;
+    ui_category = "Grade"; ui_label = "Sharpen";
+    ui_tooltip = "Crisper textures (the old game's are soft).";
+> = 0.4;
 
 uniform float Vibrance <
     ui_type = "slider"; ui_min = -1.0; ui_max = 1.0; ui_step = 0.01;
@@ -128,6 +135,15 @@ float4 PS_Blur3Y(float4 p : SV_Position, float2 uv : TEXCOORD) : SV_Target
 float3 PS_Combine(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float3 color = tex2D(ReShade::BackBuffer, uv).rgb;
+
+    // Sharpen: the difference from the four neighbours, less where they already differ a lot (an edge).
+    float3 n = tex2D(ReShade::BackBuffer, uv + float2(0, -BUFFER_RCP_HEIGHT)).rgb;
+    float3 s = tex2D(ReShade::BackBuffer, uv + float2(0, BUFFER_RCP_HEIGHT)).rgb;
+    float3 e = tex2D(ReShade::BackBuffer, uv + float2(BUFFER_RCP_WIDTH, 0)).rgb;
+    float3 w = tex2D(ReShade::BackBuffer, uv + float2(-BUFFER_RCP_WIDTH, 0)).rgb;
+    float3 low = min(min(min(n, s), min(e, w)), color), high = max(max(max(n, s), max(e, w)), color);
+    float adapt = saturate(1.0 - (high.g - low.g) * 2.5);
+    color = clamp(color + (color * 4.0 - n - s - e - w) * 0.25 * Sharpen * adapt, low, high);
 
     float3 bloom = tex2D(Bloom1S, uv).rgb * 0.5 + tex2D(Bloom2S, uv).rgb * 0.3 + tex2D(Bloom3S, uv).rgb * 0.2;
     // Screen blend: bright areas glow without clipping to white.

@@ -462,13 +462,19 @@ More effects, in this order around it (`ReShadePreset.ini`):
 - **Emberforge Ambient Occlusion** (`Emberforge_AO.fx`): soft contact shadows in creases, corners and under
   objects, from the depth buffer at half resolution (12 samples on a turning spiral, a depth-aware blur), fading out
   with distance; never on the sky.
+- **Emberforge Light Sources** (`Emberforge_Lights.fx`), after the occlusion: lanterns, torches, campfires and lit
+  windows light what is around them. Emitters: what is bright and fire-coloured, averaged over 8x8 pixels (so text and
+  sparks do not count), at an eighth of the screen; each pixel (at half) gathers them on a 9x9 grid spanning the
+  light's reach, by 3D distance from the depth buffer and whether its surface faces them; the light multiplies the
+  surface's colour, plus a little glow in the air, flickering, dimmer by day. Settings: intensity, reach, glow, tint,
+  day dimming, flicker, threshold, warm lights only, *Show the light only*.
 - **Emberforge Bloom & Grade** (`Emberforge_Bloom.fx`), last: glow around bright light over three sizes (screen
-  blended, no clipping), then vibrance, a gentle S-curve, warmth and a light vignette.
+  blended, no clipping), then sharpening (contrast-adaptive), vibrance, a gentle S-curve, warmth and a light vignette.
 
-Their settings (Home in game: ReShade's window): water (above), shafts (intensity, length, sky threshold), fog (density,
-start, strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion (strength, radius, fade distance),
-bloom (intensity, threshold) and grade (vibrance, contrast, warmth, vignette). The UI is drawn into the same picture, so
-the effects touch it a little.
+Their settings (Home in game: ReShade's window): water and light sources (above), shafts (intensity, length, sky
+threshold), fog (density, start, strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion (strength,
+radius, fade distance), bloom (intensity, threshold) and grade (sharpen, vibrance, contrast, warmth, vignette). The UI
+is drawn into the same picture, so the effects touch it a little.
 
 The client ships **ReShade 6.8.0** (`ReShade32.dll`, from the official installer at reshade.me,
 `ReShade_Setup_6.8.0.exe` SHA-256 `207aea16205fbf952bc8fe1879966672454cf04002e7ad34237c7990a5b3c0b4`; BSD-3-Clause,

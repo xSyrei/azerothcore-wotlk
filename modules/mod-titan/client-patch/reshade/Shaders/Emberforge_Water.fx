@@ -219,10 +219,10 @@ float2 PS_Classify(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     int2 p = int2(pos.xy);
     float2 count = 0.0;
-    [unroll]
+    [loop]
     for (int y = -1; y <= 1; y++)
     {
-        [unroll]
+        [loop]
         for (int x = -1; x <= 1; x++)
         {
             int2 q = p + int2(x, y);
@@ -245,10 +245,10 @@ void PS_Decode(float4 pos : SV_Position, float2 uv : TEXCOORD,
     bool water = best >= 6.5 / 9.0;
     if (!water && Fits(Bytes(p), IsEven(p, phase)))
     {
-        [unroll]
+        [loop]
         for (int y = -1; y <= 1; y++)
         {
-            [unroll]
+            [loop]
             for (int x = -1; x <= 1; x++)
             {
                 float2 c = tex2Dfetch(ClassS, p + int2(x, y)).xy;
@@ -265,10 +265,10 @@ void PS_Decode(float4 pos : SV_Position, float2 uv : TEXCOORD,
     float colours = 0.0;
     float2 reference = 0.0, offsets = 0.0;
     float positions = 0.0;
-    [unroll]
+    [loop]
     for (int y = -1; y <= 1; y++)
     {
-        [unroll]
+        [loop]
         for (int x = -1; x <= 1; x++)
         {
             int2 q = p + int2(x, y);
@@ -483,7 +483,7 @@ float3 PS_Shade(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         if (behind > 0.0 && behind < max(1.5, dist * 0.25) && scene < YARDS * 0.999)
         {
             float lo = dist / 1.22 - 0.25, hi = dist;
-            [unroll]
+            [loop]
             for (int j = 0; j < 5; j++)
             {
                 float mid = (lo + hi) * 0.5;
