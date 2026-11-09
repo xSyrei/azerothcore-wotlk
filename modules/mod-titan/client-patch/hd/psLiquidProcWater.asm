@@ -8,6 +8,7 @@
 ; - The water's own colour is lit by the waves: faces turned to the eye glow (light through the wave), faces turned
 ;   away go darker, so every wave shows its shape, not only where it mirrors the sky.
 ; - No refraction cube (it added one flat colour).
+; - The wave maps are read 5 and 3.5 times larger (two scales, so the tiling does not show).
 ;
 ; Inputs: v0-v2 the surface's frame (tangent, bitangent, normal), v3 and v4 the near and far wave maps' coordinates
 ; (two sets each: .xy and .wz), v5 the depth texture's (.xy) and the glitter mask's (.wz), v6 the world position, v7
@@ -17,7 +18,9 @@
 ps_3_0
 def c0, 0, 2, -1, 1
 def c1, 0.5, 4, 0, 0
-def c12, 3, 0.4, -0.5, 1          ; wave light: tilt gain, glow, darkest, brightest
+def c12, 3, 0.3, -0.35, 1         ; wave light: tilt gain, glow, darkest, brightest
+def c13, 0.2, 0.29, 0.08, 0          ; the wave maps' scale: waves 5 and 3.5 times larger (at 1, a yard: marbling);
+                                   ; the lowest a reflection looks (a crest's back face mirrored the dark below)
 dcl_texcoord4 v0.xyz
 dcl_texcoord5 v1.xyz
 dcl_texcoord6 v2.xyz
@@ -33,12 +36,14 @@ dcl_2d s3
 dcl_2d s4
 dcl_2d s5
 ; Near waves: the map at two coordinates (red/green, then alpha/blue), z rebuilt, summed.
-texld r0, v3, s4
+mul r9, v3, c13.x
+texld r0, r9, s4
 mad r0.xy, r0, c0.y, c0.z
 dp2add r0.w, r0, -r0, c0.w
 rsq r0.w, r0.w
 rcp r0.z, r0.w
-texld r1, v3.wzzw, s4
+mul r9, v3, c13.y
+texld r1, r9.wzzw, s4
 mad r1.xy, r1.wzzw, c0.y, c0.z
 dp2add r0.w, r1, -r1, c0.w
 rsq r0.w, r0.w
@@ -46,12 +51,14 @@ rcp r1.z, r0.w
 add r0.xyz, r0, r1
 nrm r0.xyz, r0
 ; Far waves, the same from the second map.
-texld r1, v4, s5
+mul r9, v4, c13.x
+texld r1, r9, s5
 mad r1.xy, r1, c0.y, c0.z
 dp2add r1.w, r1, -r1, c0.w
 rsq r1.w, r1.w
 rcp r1.z, r1.w
-texld r2, v4.wzzw, s5
+mul r9, v4, c13.y
+texld r2, r9.wzzw, s5
 mad r2.xy, r2.wzzw, c0.y, c0.z
 dp2add r1.w, r2, -r2, c0.w
 rsq r1.w, r1.w
@@ -92,6 +99,7 @@ mad oC0.w, c11.x, r8.x, r3.w
 dp3 r1.w, r6, r5
 add r1.w, r1.w, r1.w
 mad r4.xyz, r5.xzyw, -r1.w, r6.xzyw
+max r4.y, r4.y, c13.z
 texld r2, r4, s1
 ; The water's colour lit by the wave: the slope toward the eye, scaled, kept within darkest..brightest.
 dp2add r8.z, r5, -r6, c0.x

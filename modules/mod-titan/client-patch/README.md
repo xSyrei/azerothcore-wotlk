@@ -407,7 +407,9 @@ horizontal distance only, so looking down its Fresnel saturated: no reflection a
 glass). `hd/psLiquidProcWater.asm` replaces it (`Shaders\Pixel\ps_3_0\psLiquidProcWater.bls`, same inputs and
 constants; `hd/d3d9asm.py` assembles it and rebuilds the game's own shader byte for byte): a real Fresnel ((1 -
 cos)^4, the reflection's share 0.08 looking down to 0.88 at a glance), the water's colour lit by the waves (faces
-turned to the eye glow, light through the wave; faces turned away darker), no refraction cube. The wave maps are a
+turned to the eye glow, light through the wave; faces turned away darker), reflections kept above the horizon (a
+crest's back face mirrored the dark below: specks), the wave maps read 5 and 3.5 times larger (at the game's scale
+they were a yard across: marbling), no refraction cube. The wave maps are a
 wind sea, as ocean renderers make one (`ocean_slopes`: a spectrum travelling downwind at deep water's speeds, choppy,
 so crests come sharp and troughs broad; round noise blobs read as anything but water), and their second coordinates
 cross the first (floats 4-7, the angles, were all 0).
@@ -417,8 +419,8 @@ cross the first (floats 4-7, the angles, were all 0).
 `hd/make_atmosphere.py` rewrites the client's lighting tables (every zone, every hour):
 - **Atmosphere**: outdoor fog (LightFloatBand band 0, longer than 83 yards) ends at 72% of its distance and starts
   0.15 sooner (band 1), so the distance hazes into each zone's fog and sky colour. Indoors keep theirs.
-- **Translucent water**: LightParams' shallow water opacity times 0.7, deep times 0.92 (lakes and oceans), so the
-  ground shows through near the shore.
+- **Water opacity**: LightParams' shallow water opacity times 0.95 (lakes and oceans; at 0.7 a pale canal floor shone
+  through and the water read as glass).
 - **Colour-matched water**: each zone's water colours (LightIntBand 14-17) take 45% clear sea teal (dimmed with the
   zone's own water at night) and 15% (shallows) or 10% (deep) of that zone's sky at the same hour (the horizon, band
   6, and the lower sky, band 5).

@@ -29,8 +29,8 @@ OUT = HERE.parent / 'dist' / 'patch-enUS-8.MPQ'
 FOG_END = 0.72          # outdoor fog ends at 72% of the distance it did
 FOG_START = 0.15        # and starts this much sooner (its start share lowered)
 FOG_MIN_END = 3000.0    # shorter fog (indoors, dungeons, under 83 yards) is left alone
-SHALLOW_ALPHA = 0.7     # shallow water's opacity, times this: the ground shows through near the shore
-DEEP_ALPHA = 0.92       # deep water's
+SHALLOW_ALPHA = 0.95    # shallow water's opacity, times this (at 0.7 a pale canal floor shone through: glass)
+DEEP_ALPHA = 1.0        # deep water's
 SKY_IN_SHALLOWS = 0.15  # the share of the sky's horizon colour in the shallows
 SKY_IN_DEEP = 0.1       # and of its lower sky in the deep
 # Clear sea water's own teal (the reference look), blended into every zone's colours, which keep the rest.

@@ -99,7 +99,7 @@ def spec_frames():
     return frames
 
 
-def ocean_slopes(seed=31, kmin=2, kmax=96, slope=0.18, chop=0.7):
+def ocean_slopes(seed=31, kmin=2, kmax=40, slope=0.17, chop=0.7):
     """FRAMES looping slope fields (x, y) of a wind sea, as ocean renderers make one: a spectrum of waves travelling
     downwind (energy falling with frequency, spread around the wind's direction), each moving at deep water's speed
     (whole turns per loop, faster for shorter waves). Choppy: each slope is divided by how much the waves' sideways
