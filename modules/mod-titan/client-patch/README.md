@@ -388,11 +388,22 @@ layer):
    night, indoors or looking away) and the sky's colour, eased over about a third of a second.
 3. **Light shafts**: the sky's light smeared toward the sun at half resolution (56 samples), so it streams around
    trees, roofs and mountains in front of it.
-4. **Fog**: from the depth buffer, exponential with distance, in the sky's colour and brighter toward the sun; never on
-   the sky. Without depth access it turns itself off rather than fog the screen.
+4. **Volumetric fog**: from the depth buffer, exponential with distance, in the sky's colour and brighter toward the
+   sun and where the shafts cross it (light scattered in the air); thicker low, below the eye line, and broken into
+   slow drifting wisps (three octaves of 3D noise in view space, with time). Never on the sky; without depth access it
+   turns itself off rather than fog the screen.
 
-Its settings (Home in game: ReShade's window): shaft intensity, length and sky threshold; fog density, start,
-strength and sun glow. The UI is drawn into the same picture, so the shafts and fog touch it a little.
+Two more effects, in this order around it (`ReShadePreset.ini`):
+- **Emberforge Ambient Occlusion** (`Emberforge_AO.fx`), first: soft contact shadows in creases, corners and under
+  objects, from the depth buffer at half resolution (12 samples on a turning spiral, a depth-aware blur), fading out
+  with distance; never on the sky.
+- **Emberforge Bloom & Grade** (`Emberforge_Bloom.fx`), last: glow around bright light over three sizes (screen
+  blended, no clipping), then vibrance, a gentle S-curve, warmth and a light vignette.
+
+Their settings (Home in game: ReShade's window): shafts (intensity, length, sky threshold), fog (density, start,
+strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion (strength, radius, fade distance), bloom
+(intensity, threshold) and grade (vibrance, contrast, warmth, vignette). The UI is drawn into the same picture, so the
+effects touch it a little.
 
 The client ships **ReShade 6.8.0** (`ReShade32.dll`, from the official installer at reshade.me,
 `ReShade_Setup_6.8.0.exe` SHA-256 `207aea16205fbf952bc8fe1879966672454cf04002e7ad34237c7990a5b3c0b4`; BSD-3-Clause,

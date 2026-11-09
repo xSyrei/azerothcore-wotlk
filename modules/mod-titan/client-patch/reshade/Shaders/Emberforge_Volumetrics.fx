@@ -60,7 +60,26 @@ uniform float SunScatter <
     ui_tooltip = "How much the fog lights up toward the sun.";
 > = 0.8;
 
+uniform float MistAmount <
+    ui_type = "slider"; ui_min = 0.0; ui_max = 1.0; ui_step = 0.01;
+    ui_category = "Fog"; ui_label = "Drifting mist";
+    ui_tooltip = "How much the fog breaks into slow drifting wisps (0: an even haze).";
+> = 0.55;
+
+uniform float MistLow <
+    ui_type = "slider"; ui_min = 0.0; ui_max = 1.0; ui_step = 0.01;
+    ui_category = "Fog"; ui_label = "Low-lying";
+    ui_tooltip = "How much thicker the fog lies low (valleys, the ground) than up high.";
+> = 0.5;
+
+uniform float ShaftScatter <
+    ui_type = "slider"; ui_min = 0.0; ui_max = 3.0; ui_step = 0.01;
+    ui_category = "Fog"; ui_label = "Shafts in the fog";
+    ui_tooltip = "How much the fog lights up where the sun's rays pass through it.";
+> = 1.2;
+
 uniform float FrameTime < source = "frametime"; >;
+uniform float Timer < source = "timer"; >;
 
 // Textures ---------------------------------------------------------------------------------------------------------
 
@@ -99,6 +118,30 @@ float Luma(float3 color)
 float IsSky(float2 uv)
 {
     return step(0.9995, ReShade::GetLinearizedDepth(uv));
+}
+
+// Smooth 3D value noise and three octaves of it, for the mist.
+float Hash(float3 p)
+{
+    p = frac(p * 0.3183099 + 0.1);
+    p *= 17.0;
+    return frac(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+float Noise(float3 x)
+{
+    float3 i = floor(x);
+    float3 f = frac(x);
+    f = f * f * (3.0 - 2.0 * f);
+    return lerp(lerp(lerp(Hash(i + float3(0, 0, 0)), Hash(i + float3(1, 0, 0)), f.x),
+                     lerp(Hash(i + float3(0, 1, 0)), Hash(i + float3(1, 1, 0)), f.x), f.y),
+                lerp(lerp(Hash(i + float3(0, 0, 1)), Hash(i + float3(1, 0, 1)), f.x),
+                     lerp(Hash(i + float3(0, 1, 1)), Hash(i + float3(1, 1, 1)), f.x), f.y), f.z);
+}
+
+float Mist(float3 p)
+{
+    return Noise(p) * 0.55 + Noise(p * 2.03 + 7.1) * 0.3 + Noise(p * 4.1 + 13.7) * 0.15;
 }
 
 // Pass 1: sky ------------------------------------------------------------------------------------------------------
@@ -197,17 +240,27 @@ float3 PS_Composite(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
     float valid = 1.0 - step(0.9999, ReShade::GetLinearizedDepth(float2(0.5, 0.75)))
         * step(0.9999, ReShade::GetLinearizedDepth(float2(0.5, 0.95)));
 
-    // Fog: exponential with distance past its start; never on the sky.
+    // Where the pixel is in view space (the camera's frame, about level): across, up, and away.
+    float2 ndc = uv * 2.0 - 1.0;
+    float3 view = float3(ndc.x * BUFFER_ASPECT_RATIO, -ndc.y, 1.0) * depth;
+
+    // Fog: exponential with distance past its start; never on the sky. Thicker low (below the eye line), and broken
+    // into wisps drifting through the space (noise in view space, with time).
     float distance = max(depth - FogStart, 0.0);
-    float fog = (1.0 - exp(-distance * FogDensity * 3.0)) * FogAmount * (1.0 - sky) * valid;
+    float low = lerp(1.0, saturate(1.0 - view.y * 6.0) * 1.6, MistLow);
+    float3 drift = float3(Timer * 0.000012, Timer * 0.000004, Timer * 0.000009);
+    float wisps = lerp(1.0, Mist(view * 24.0 + drift * 24.0) * 1.8, MistAmount);
+    float fog = (1.0 - exp(-distance * FogDensity * 3.0 * low * wisps)) * FogAmount * (1.0 - sky) * valid;
+
     float2 toSun = (uv - sun.xy) * float2(BUFFER_ASPECT_RATIO, 1.0);
     float glow = exp(-dot(toSun, toSun) * 6.0) * SunScatter * sun.z;
-    float3 fogColor = tint * (0.85 + glow);
+    float3 shafts = tex2D(ShaftSampler, uv).rgb * valid;
+    // The fog's colour: the sky's, brighter toward the sun and where the shafts cross it (light scattered in it).
+    float3 fogColor = tint * (0.85 + glow) + shafts * ShaftScatter;
     color = lerp(color, fogColor, saturate(fog));
 
     // Light shafts over everything but the sky's own pixels (they are the source).
-    float3 shafts = tex2D(ShaftSampler, uv).rgb * ShaftIntensity * valid;
-    color += shafts * (1.0 - sky * 0.6);
+    color += shafts * ShaftIntensity * (1.0 - sky * 0.6);
     return color;
 }
 
@@ -217,7 +270,11 @@ technique Emberforge_Volumetrics <
 >
 {
     pass Sky { VertexShader = PostProcessVS; PixelShader = PS_Sky; RenderTarget = SkyTex; GenerateMipMaps = true; }
-    pass Sun { VertexShader = PostProcessVS; PixelShader = PS_Sun; RenderTarget0 = SunTex; RenderTarget1 = SunColorTex; }
+    pass Sun
+    {
+        VertexShader = PostProcessVS; PixelShader = PS_Sun;
+        RenderTarget0 = SunTex; RenderTarget1 = SunColorTex;
+    }
     pass KeepSun
     {
         VertexShader = PostProcessVS; PixelShader = PS_KeepSun;
