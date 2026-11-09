@@ -23,6 +23,7 @@ ITEMS = [
     (910011, 15, 0, -1, 1, 44704, 0, 0),   # Talent Card Pack (the Furies card)
     (910012, 15, 0, -1, 1, 56181, 0, 0),   # Golden Skill Card Pack (the Greatness card)
     (910013, 15, 0, -1, 1, 56264, 0, 0),   # Golden Talent Card Pack (the Lords card)
+    (910020, 1, 0, -1, 7, 34796, 18, 0),   # Emberforged Satchel (a 30-slot bag, the Glacial Bag's look)
 ]
 
 # Custom displays: (id, model file, model texture, inventory icon, item group sound, helmet geoset visibility)

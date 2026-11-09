@@ -15,6 +15,10 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "DatabaseEnv.h"
+#include "Bag.h"
+#include "Item.h"
+#include "Mail.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 
@@ -119,6 +123,87 @@ namespace
     }
 }
 
+// Four Emberforged Satchels (30 slots each, data/sql/db-world/titan_satchels.sql) in the bag slots, put there at every
+// login: an empty bag slot gets one; another bag is emptied into the backpack and the satchels, then sent to the Hero
+// by mail and replaced (a bag whose contents do not fit stays, for the next login). Losing one is harmless.
+namespace
+{
+    constexpr uint32 ITEM_EMBERFORGED_SATCHEL = 910020;
+    constexpr uint32 NPC_KEEPER_OF_THE_EMBER = 910100;
+
+    bool EquipSatchel(Player* player, uint8 slot)
+    {
+        uint16 dest;
+        if (player->CanEquipNewItem(slot, dest, ITEM_EMBERFORGED_SATCHEL, false) != EQUIP_ERR_OK)
+            return false;
+        player->EquipNewItem(dest, ITEM_EMBERFORGED_SATCHEL, true);
+        return true;
+    }
+
+    // Moves a bag's contents into the backpack and the satchels worn. True if the bag is empty after.
+    bool EmptyBag(Player* player, uint8 slot, Bag* bag)
+    {
+        for (uint32 i = 0; i < bag->GetBagSize(); ++i)
+        {
+            Item* item = bag->GetItemByPos(uint8(i));
+            if (!item)
+                continue;
+
+            ItemPosCountVec dest;
+            bool stored = player->CanStoreItem(INVENTORY_SLOT_BAG_0, NULL_SLOT, dest, item, false) == EQUIP_ERR_OK;
+            for (uint8 other = INVENTORY_SLOT_BAG_START; !stored && other < INVENTORY_SLOT_BAG_END; ++other)
+            {
+                Item* satchel = player->GetItemByPos(INVENTORY_SLOT_BAG_0, other);
+                if (satchel && satchel->GetEntry() == ITEM_EMBERFORGED_SATCHEL)
+                {
+                    dest.clear();
+                    stored = player->CanStoreItem(other, NULL_SLOT, dest, item, false) == EQUIP_ERR_OK;
+                }
+            }
+            if (!stored)
+                continue;
+
+            player->RemoveItem(slot, uint8(i), true);
+            player->StoreItem(dest, item, true);
+        }
+        return bag->IsEmpty();
+    }
+
+    void MailOldBag(Player* player, Item* bag)
+    {
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        bag->DeleteFromInventoryDB(trans);
+        bag->SaveToDB(trans);
+        MailDraft("Your old bag", "An Emberforged Satchel took its place. Its contents are in your satchels.")
+            .AddItem(bag)
+            .SendMailTo(trans, player, MailSender(MAIL_CREATURE, NPC_KEEPER_OF_THE_EMBER), MAIL_CHECK_MASK_COPIED);
+        CharacterDatabase.CommitTransaction(trans);
+    }
+
+    void EquipSatchels(Player* player)
+    {
+        // Empty slots first: the satchels there take in the other bags' contents.
+        for (uint8 slot = INVENTORY_SLOT_BAG_START; slot < INVENTORY_SLOT_BAG_END; ++slot)
+            if (!player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+                EquipSatchel(player, slot);
+
+        for (uint8 slot = INVENTORY_SLOT_BAG_START; slot < INVENTORY_SLOT_BAG_END; ++slot)
+        {
+            Item* item = player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+            if (!item || item->GetEntry() == ITEM_EMBERFORGED_SATCHEL)
+                continue;
+
+            Bag* bag = item->ToBag();
+            if (!bag || !EmptyBag(player, slot, bag))
+                continue;
+
+            player->MoveItemFromInventory(INVENTORY_SLOT_BAG_0, slot, true);
+            MailOldBag(player, item);
+            EquipSatchel(player, slot);
+        }
+    }
+}
+
 class hero_equipment : public PlayerScript
 {
 public:
@@ -130,8 +215,10 @@ public:
 
     void OnPlayerLogin(Player* player) override
     {
-        if (IsHero(player))
-            EnsureProficiencies(player);
+        if (!IsHero(player))
+            return;
+        EnsureProficiencies(player);
+        EquipSatchels(player);
     }
 
     void OnPlayerFirstLogin(Player* player) override

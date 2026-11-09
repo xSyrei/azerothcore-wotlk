@@ -28,6 +28,11 @@ cooling down (every half second, and at once when one is spent or ready) and eac
 in the bags: a Battleworn Claymore, a Shortsword and a Worn Dagger (both one-hand, to dual wield), a Bent Staff, a Worn Wooden Shield,
 a Worn Shortbow and 200 Rough Arrows.
 
+Every Hero wears four **Emberforged Satchels** (item 910020, 30 slots, `data/sql/db-world/titan_satchels.sql`): at
+every login `src/hero_equipment.cpp` puts one in each empty bag slot, and replaces any other bag: its contents go
+into the backpack and the satchels, and the old bag comes by mail from the Keeper of the Ember. A bag whose contents
+do not fit stays until a later login. The client knows the item from `client-patch/patch_items.py`.
+
 Every character (Hero or not) keeps its weapon skills, Defense and Unarmed at the cap for its
 level: `src/max_skills.cpp` fills them at login and after every level up.
 
