@@ -52,10 +52,11 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   - **Titan Tome of Randomization** (910003) rerolls the 4 abilities;
   - **Titan Tome of Selection** (910004) clears them and opens the Classless window with 4 picks.
   At **level 9 the kit locks**: picks never spent are rolled at random and both tomes vanish.
-- **From level 8 the level-up rolls alternate**: a random talent rank at 8, a random ability at 9, a
+- **From level 8 the level-up rolls alternate**: a random talent at 8, a random ability at 9, a
   talent at 10, an ability at 11, and so on. Abilities come from every class trainer's list (all 10
-  classes; passives and hunter pet handling are left out); talents from any class's talent trees (tier and
-  prerequisite rules do not apply). Heroes have no talent points to spend in the UI. Characters that already had
+  classes; passives and hunter pet handling are left out); talents from any class's talent trees, each at its top
+  rank (talents rolled at a lower rank before go to their top rank at login). Tier rules do not apply; a talent
+  building on another (Eternal Reaping on Chaos Cleave) only comes once that one is known. Heroes have no talent points to spend in the UI. Characters that already had
   more than this keep them, and roll again once their level catches up.
 - **Talent abilities are abilities** (`TALENT_ABILITIES`: Mortal Strike, Shadowform, Mangle, Titan's Grip...): about
   130 talents are learned as abilities, rolled with the ability rolls from their tier's level (row 1: 10, row 11:

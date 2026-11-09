@@ -608,8 +608,57 @@ namespace
         return spent;
     }
 
-    // Learns the next rank of a random talent from any class tree, the way Player::LearnTalent does
-    // once its checks pass; with reveal the player's Classless window spins for it.
+    // The talents rolled (each roll gives one, at its top rank): a Hero's talents, but those learned as abilities.
+    uint32 RolledTalents(Player const* player)
+    {
+        uint32 rolled = 0;
+        for (auto const& [spellId, talent] : player->GetTalentMap())
+            if (talent->State != PLAYERSPELL_REMOVED && talent->IsInSpec(player->GetActiveSpec()))
+                if (TalentSpellPos const* talentPos = GetTalentSpellPos(spellId))
+                    if (!TalentAbility(talentPos->talent_id))
+                        ++rolled;
+
+        return rolled;
+    }
+
+    // A talent's top rank (index into RankID).
+    uint8 TopRank(TalentEntry const* talentInfo)
+    {
+        uint8 top = 0;
+        for (uint8 rank = 0; rank < MAX_TALENT_RANK; ++rank)
+            if (talentInfo->RankID[rank])
+                top = rank;
+        return top;
+    }
+
+    // The talent it builds on (Eternal Reaping on Chaos Cleave), at the rank it needs, is known.
+    bool HasPrerequisite(Player const* player, TalentEntry const* talentInfo)
+    {
+        if (!talentInfo->DependsOn)
+            return true;
+        TalentEntry const* required = sTalentStore.LookupEntry(talentInfo->DependsOn);
+        return required && TalentRank(player, required) > talentInfo->DependsOnRank;
+    }
+
+    // A talent learned at a lower rank (rolled before rolls gave the top one) goes to its top rank.
+    bool UpgradeTalents(Player* player)
+    {
+        bool upgraded = false;
+        for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
+        {
+            TalentEntry const* talentInfo = sTalentStore.LookupEntry(i);
+            if (!talentInfo || TalentAbility(talentInfo->TalentID))
+                continue;
+            uint8 rank = TalentRank(player, talentInfo);
+            uint8 top = TopRank(talentInfo);
+            if (rank && rank <= top)
+                upgraded |= LearnTalentRank(player, talentInfo, top, false);
+        }
+        return upgraded;
+    }
+
+    // Learns a random talent from any class tree at its top rank, the way Player::LearnTalent does once its checks
+    // pass; with reveal the player's Classless window spins for it. A talent another builds on comes first.
     bool GrantTalent(Player* player, bool reveal, uint8 rollLevel)
     {
         // The spells of the abilities the Hero knows (their known ranks), and their classes.
@@ -672,19 +721,15 @@ namespace
             if (!tabInfo || tabInfo->petTalentMask || !(tabInfo->ClassMask & HERO_TALENT_CLASSMASK))
                 continue;
 
-            uint8 currentRank = 0;
-            for (uint8 rank = 0; rank < MAX_TALENT_RANK; ++rank)
-                if (talentInfo->RankID[rank] && player->HasTalent(talentInfo->RankID[rank], player->GetActiveSpec()))
-                    currentRank = rank + 1;
+            if (TalentRank(player, talentInfo) || !HasPrerequisite(player, talentInfo))
+                continue;
 
-            if (currentRank < MAX_TALENT_RANK && talentInfo->RankID[currentRank])
-            {
-                int kind = relevance(talentInfo, tabInfo);
-                if (kind == 2)
-                    candidates.emplace_back(talentInfo, currentRank);
-                else if (kind == 1)
-                    generic.emplace_back(talentInfo, currentRank);
-            }
+            uint8 top = TopRank(talentInfo);
+            int kind = relevance(talentInfo, tabInfo);
+            if (kind == 2)
+                candidates.emplace_back(talentInfo, top);
+            else if (kind == 1)
+                generic.emplace_back(talentInfo, top);
         }
 
         if (candidates.empty())
@@ -706,6 +751,7 @@ namespace Wildcard
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
         if (!spellInfo)
             return false;
+        bool upgrade = TalentRank(player, talentInfo) > 0;
 
         bool learned = false;
         if (talentInfo->addToSpellBook && !spellInfo->HasAttribute(SPELL_ATTR0_PASSIVE)
@@ -723,7 +769,7 @@ namespace Wildcard
                 player->learnSpell(effect.TriggerSpell);
 
         player->addTalent(spellId, player->GetActiveSpecMask(), currentRank);
-        Announce(player, spellId, currentRank ? "talent rank up" : "new talent");
+        Announce(player, spellId, upgrade ? "talent rank up" : "new talent");
         if (reveal)
             Classless::RevealTalent(player, talentInfo->TalentID, spellId, currentRank + 1,
                 level ? level : player->GetLevel());
@@ -844,9 +890,9 @@ namespace
         // Even levels from FIRST_ROLL_LEVEL (8, 10, ...), but CAPSTONE_LEVEL's (a capstone, above).
         uint32 lastTalentLevel = std::min<uint32>(level, CAPSTONE_LEVEL - 1);
         uint32 owedTalents = level >= FIRST_ROLL_LEVEL ? (lastTalentLevel - FIRST_ROLL_LEVEL) / 2 + 1 : 0;
-        bool talentsChanged = false;
+        bool talentsChanged = UpgradeTalents(player);
         // The roll's level: the even ones from FIRST_ROLL_LEVEL, one each.
-        for (uint32 spent = SpentTalentPoints(player); spent < owedTalents
+        for (uint32 spent = RolledTalents(player); spent < owedTalents
             && GrantTalent(player, levelUp, uint8(std::min<uint32>(FIRST_ROLL_LEVEL + 2 * spent, level))); ++spent)
             talentsChanged = true;
 
