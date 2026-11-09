@@ -280,6 +280,11 @@ Emberforge has no Runic Power: `patch_spells.py` turns every spell costing or gi
 `Spell.dbc` (costs, energize and drain effects, power auras, texts), and the addon renames it to Rage
 in every UI string left (combat text, errors).
 
+Rune costs are left to the server: `patch_spells.py` clears `RuneCostID` in the client's `Spell.dbc` (every spell
+but our own, 393). The client only recharges a real Death Knight's runes for casting, so a Hero's rune spell stayed
+refused ("Not enough runes") once its runes were spent, until another rune spell's cast told the client they were
+back. The server's copy keeps the costs: it checks and spends the runes, and `hero_runes` shows them on the rune bar.
+
 It also shows every piece of gear's item level on its tooltip ("Item Level 63" in gold under the name, as from
 Cataclysm on), for every class, and the character window's stats Cataclysm style (`StatPanel.lua`): a column on
 its right with the average item level of what you wear on top, then two sections whose titles are filters you click

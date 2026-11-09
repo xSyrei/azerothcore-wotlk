@@ -1254,6 +1254,23 @@ def convert_runic_power(spells):
     return converted
 
 
+def drop_client_rune_costs(spells):
+    """The client leaves a rune cost to the server: the 3.3.5 client only recharges a real Death Knight's runes for
+    casting, so a Hero's rune spells stayed refused ("Not enough runes") after their runes were spent, though the
+    server had them ready again and the rune bar showed them (hero_runes, src/hero_resources.cpp, sends their
+    state). Without a rune cost the client lets the cast through, and the server, whose copy keeps the cost, checks
+    the runes and spends them. Our own spells (SPELLS, also in spell_dbc) have none."""
+    own = {spell['id'] for spell in SPELLS}
+    dropped = 0
+    for key, row in spells.rows.items():
+        if row[FIELDS['RuneCostID']] and key not in own:
+            row = list(row)
+            row[FIELDS['RuneCostID']] = 0
+            spells.rows[key] = tuple(row)
+            dropped += 1
+    return dropped
+
+
 def sql_columns():
     """spell_dbc's columns and their types, from the base schema."""
     schema = (HERE.parents[2] / 'data' / 'sql' / 'base' / 'db_world' / 'spell_dbc.sql').read_text()
@@ -1335,9 +1352,11 @@ def main():
     spells = Dbc(source / 'Spell.dbc', SPELL_FIELDS)
     build_spells(spells, icon_id)
     renamed = convert_runic_power(spells)
+    runes = drop_client_rune_costs(spells)
     spells.save(out / 'Spell.dbc')
     tabs, talents = build_talents(source, out, icon_id)
-    print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power turned into Rage in {renamed} spells) '
+    print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power turned into Rage in {renamed} spells, '
+          f'rune costs left to the server in {runes}) '
           f'and {out / "SpellIcon.dbc"}')
     if sql:
         write_sql(spells, sql, talent_sql(tabs, talents))
