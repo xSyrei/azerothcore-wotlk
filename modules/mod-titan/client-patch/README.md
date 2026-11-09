@@ -396,10 +396,11 @@ zone's light), 5 to the specular mask (its alpha, times 4) and 2 and 3 to the wa
 reflection share) and c11 (edge opacity, specular share). So slot 5 gets its own glittering specular mask
 (`basicSpecMask_<0-30>.blp`, a string added to LiquidType.dbc) and the edge opacity is 0.12. The reflection map is a
 real cube map, as the client keeps them (`TILESET\\Terrain Cube Maps`: a strip of six square faces, the four sides,
-the top, the bottom; a flat image came out black, so the water reflected nothing): a sky darker and deeper than a
-sky looks, as water mirrors it (a pale one made the water milky), with faint clouds, paler at the horizon and a soft
-tone below it (tilted waves look there: black beside the sky read as camouflage). Slot 0, the refraction cube added to the water's own colour, is its own near-black map
-(`basicRefractionMap.blp`; sharing the sky's washed the water out). The waves' normals have up 0.28 and the
+the top, the bottom; a flat image came out black, so the water reflected nothing): a hazy teal-grey sky, darker
+than a sky looks, as water mirrors it (a pale one made the water milky), with faint clouds, paler at the horizon and
+a soft tone below it (tilted waves look there: black beside the sky read as camouflage). Slot 0, the refraction cube
+added to the water's own colour, is its own near-black teal map (`basicRefractionMap.blp`; sharing the sky's washed
+the water out). The waves' normals have up 0.28 and the
 reflection's share is 0.05 looking straight down, rising to 0.45 at a glance (c10.z, c10.w). `models/blp.py` encodes
 cube strips (width six times a power-of-two height).
 
@@ -408,10 +409,11 @@ cube strips (width six times a power-of-two height).
 `hd/make_atmosphere.py` rewrites the client's lighting tables (every zone, every hour):
 - **Atmosphere**: outdoor fog (LightFloatBand band 0, longer than 83 yards) ends at 72% of its distance and starts
   0.15 sooner (band 1), so the distance hazes into each zone's fog and sky colour. Indoors keep theirs.
-- **Translucent water**: LightParams' shallow water opacity times 0.85, deep times 0.95 (lakes and oceans; 0.6 read
-  as tinted glass).
-- **Colour-matched water**: each zone's water colours (LightIntBand 14-17) take 30% (shallows) and 20% (deep) of
-  that zone's sky at the same hour (the horizon, band 6, and the lower sky, band 5), so water mirrors its sky.
+- **Translucent water**: LightParams' shallow water opacity times 0.7, deep times 0.92 (lakes and oceans), so the
+  ground shows through near the shore.
+- **Colour-matched water**: each zone's water colours (LightIntBand 14-17) take 45% clear sea teal (dimmed with the
+  zone's own water at night) and 15% (shallows) or 10% (deep) of that zone's sky at the same hour (the horizon, band
+  6, and the lower sky, band 5).
 
 ## Volumetric lighting (`reshade/`)
 

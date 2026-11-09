@@ -125,9 +125,9 @@ def reflection_map():
     clouds = np.clip((clouds - clouds.mean()) / clouds.std() * 0.25 + 0.1, 0, 1)
     # Below the horizon stays a soft horizon tone: tilted waves look there, and black beside the bright sky read as
     # camouflage.
-    # Darker and deeper than the sky looks, as water mirrors it (a pale one washed the water out, milky).
-    zenith, horizon, below = np.array([30, 54, 82]), np.array([84, 108, 128]), np.array([48, 66, 80])
-    cloud = np.array([120, 132, 144])
+    # A hazy teal-grey sky, darker than a sky looks, as water mirrors it (a pale one made it milky, a blue one dark).
+    zenith, horizon, below = np.array([36, 66, 76]), np.array([88, 112, 112]), np.array([34, 62, 62])
+    cloud = np.array([116, 130, 130])
     v = np.linspace(0, 1, face)[:, None] * np.ones((1, face))     # 0 top of a side face, 1 its bottom
     t = np.clip(v / 0.5, 0, 1)[..., None]
     sky = zenith * (1 - t) + horizon * t
@@ -151,7 +151,7 @@ def main():
                         blp.encode_dxt(frames[(i - 1) % FRAMES])))
     entries.append(('XTextures\\procWater\\basicReflectionMap.blp', blp.encode_dxt(reflection_map())))
     dark = np.zeros((128, 768, 4), np.uint8)
-    dark[...] = (8, 11, 13, 255)
+    dark[...] = (6, 14, 13, 255)          # a hint of teal from the depths
     entries.append((REFRACTION_MAP, blp.encode_dxt(Image.fromarray(dark, 'RGBA'))))
     masks = spec_frames()
     for i in range(FRAMES + 1):

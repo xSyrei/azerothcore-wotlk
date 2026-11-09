@@ -7,8 +7,8 @@
 - Translucent water: the water's opacity (LightParams: lakes' and oceans' shallow and deep alpha) is lowered, the
   shallows most, so the ground shows through near the shore and deep water still reads deep.
 - Colour-matched water: each zone's water colours (LightIntBand 14-17: river shallow, river deep, ocean shallow,
-  ocean deep) take on that zone's sky at the same hour (band 6, the horizon, for the shallows; band 5 for the deep),
-  as real water mirrors the sky over it: a dusk lake goes warm, a stormy sea grey.
+  ocean deep) move toward clear sea teal (TEAL_SHARE) and take a little of that zone's sky at the same hour (band 6,
+  the horizon, for the shallows; band 5 for the deep), so a dusk lake still goes warm, a stormy sea grey.
 
 Bands are per LightParams: LightIntBand id = params * 18 - 17 + band, LightFloatBand id = params * 6 - 5 + band; each
 holds up to 16 (time of day, value) keys.
@@ -29,10 +29,13 @@ OUT = HERE.parent / 'dist' / 'patch-enUS-8.MPQ'
 FOG_END = 0.72          # outdoor fog ends at 72% of the distance it did
 FOG_START = 0.15        # and starts this much sooner (its start share lowered)
 FOG_MIN_END = 3000.0    # shorter fog (indoors, dungeons, under 83 yards) is left alone
-SHALLOW_ALPHA = 0.85    # shallow water's opacity, times this (0.6 read as tinted glass)
-DEEP_ALPHA = 0.95       # deep water's
-SKY_IN_SHALLOWS = 0.3   # the share of the sky's horizon colour in the shallows
-SKY_IN_DEEP = 0.2       # and of its lower sky in the deep
+SHALLOW_ALPHA = 0.7     # shallow water's opacity, times this: the ground shows through near the shore
+DEEP_ALPHA = 0.92       # deep water's
+SKY_IN_SHALLOWS = 0.15  # the share of the sky's horizon colour in the shallows
+SKY_IN_DEEP = 0.1       # and of its lower sky in the deep
+# Clear sea water's own teal (the reference look), blended into every zone's colours, which keep the rest.
+TEAL_SHALLOW, TEAL_DEEP = (70, 136, 124), (20, 72, 74)
+TEAL_SHARE = 0.45
 
 BAND_SKY_LOW, BAND_HORIZON = 5, 6
 WATER_BANDS = {14: BAND_HORIZON, 15: BAND_SKY_LOW, 16: BAND_HORIZON, 17: BAND_SKY_LOW}
@@ -123,11 +126,17 @@ def int_bands(source):
         sky = all_bands.get(ident - band + WATER_BANDS[band])
         if not sky or not sky[1]:
             continue
-        share = SKY_IN_SHALLOWS if band in (14, 16) else SKY_IN_DEEP
+        shallow = band in (14, 16)
+        share = SKY_IN_SHALLOWS if shallow else SKY_IN_DEEP
+        teal = TEAL_SHALLOW if shallow else TEAL_DEEP
+        own = 1 - share - TEAL_SHARE
         blended = []
         for i in range(count):
             water, tint = unpack(values[i]), at_time(sky, times[i])
-            blended.append(pack(tuple(water[c] * (1 - share) + tint[c] * share for c in range(3))))
+            # The teal dims with the zone's own water (night, dark zones): scaled by its brightness, up to 1.
+            light = min(1.0, max(water) / 160.0)
+            blended.append(pack(tuple(water[c] * own + tint[c] * share + teal[c] * light * TEAL_SHARE
+                                      for c in range(3))))
         struct.pack_into(f'<{count}I', dbc.data, offset + 72, *blended)
     return bytes(dbc.data)
 
