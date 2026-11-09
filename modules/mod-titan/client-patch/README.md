@@ -378,7 +378,7 @@ dark crust islands in grainy
 glow; slime and orange slime are slow ridged swirls. `hd/build_hd.py` writes them to `dist/patch-enUS-6.MPQ`, an
 archive of its own (29 MB), published with the others.
 
-## Experimental reflective water (patch-enUS-7.MPQ, not published)
+## Reflective water (patch-enUS-7.MPQ)
 
 The client ships a full procedural water shader it never uses (`psLiquidProcWater` / `vsLiquidProcWater`,
 `Liquid::CMaterialProcWater`: two scrolling normal maps, Fresnel, a specular sun highlight, reflections, the game's
