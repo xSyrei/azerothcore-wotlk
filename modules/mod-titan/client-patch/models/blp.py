@@ -90,10 +90,12 @@ def _dxt_level(image, fmt):
 def encode_dxt(image):
     """A DXT-compressed BLP2 (the format of the game's own world textures), with a full mipmap chain:
     DXT1 when the image is opaque, DXT5 with its 8-bit alpha otherwise (terrain textures' specular maps,
-    cut-out masks)."""
+    cut-out masks). A cube map strip (six square faces side by side: width six times a power-of-two height, as
+    the client's TILESET\\Terrain Cube Maps) is accepted too."""
     image = image.convert('RGBA')
     width, height = image.size
-    if not (_is_pow2(width) and _is_pow2(height)):
+    cube = width == 6 * height and _is_pow2(height)
+    if not cube and not (_is_pow2(width) and _is_pow2(height)):
         raise ValueError(f'texture must be a power of two in both directions, got {width}x{height}')
     opaque = image.getchannel('A').getextrema()[0] == 255
     fmt, block = ('DXT1', 8) if opaque else ('DXT5', 16)
@@ -102,7 +104,7 @@ def encode_dxt(image):
     while True:
         blocks = max(1, (w + 3) // 4) * max(1, (h + 3) // 4)
         mips.append(_dxt_level(level, fmt)[:blocks * block])
-        if w == 1 and h == 1:
+        if w == 1 and h == 1:      # a cube strip too: down to 1x1, as the client's own
             break
         w, h = max(1, w // 2), max(1, h // 2)
         level = resize_straight(image, (w, h))

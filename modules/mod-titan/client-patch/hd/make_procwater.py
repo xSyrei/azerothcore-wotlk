@@ -46,6 +46,8 @@ MATERIAL_FIELDS = range(14, 45)
 SPEC_MASK = 'XTextures\\procWater\\basicSpecMask_%d.blp'
 SPEC_SLOT = 20              # texture slot 5
 EDGE_OPACITY = 40           # float 17: c11.x, the opacity Fresnel adds at a glance
+REFLECTION_BASE = 36        # float 13: c10.z, the share of reflection looking straight down
+REFLECTION_FRESNEL = 37     # float 14: c10.w, the share Fresnel adds at a glance
 
 
 def liquid_types(source):
@@ -64,6 +66,9 @@ def liquid_types(source):
     struct.pack_into('<I', data, 16, len(data) - strings_at)
     # More translucent at a glance (Fresnel adds 0.12 opacity, not 0.2).
     procedural[EDGE_OPACITY] = struct.unpack('<I', struct.pack('<f', 0.12))[0]
+    # Mostly the water's own colour looking down, mostly the sky across a lake (was a flat 0.2-0.3 either way).
+    procedural[REFLECTION_BASE] = struct.unpack('<I', struct.pack('<f', 0.1))[0]
+    procedural[REFLECTION_FRESNEL] = struct.unpack('<I', struct.pack('<f', 0.75))[0]
     for water in WATERS:
         if water in rows:
             for field in MATERIAL_FIELDS:
@@ -100,14 +105,31 @@ def normal_frames():
 
 
 def reflection_map():
-    """A sky over a horizon: deep blue overhead, pale toward the horizon, the dark sea below it."""
-    size = 256
-    v = np.linspace(0, 1, size)[:, None] * np.ones((1, size))
-    sky_top, sky_low, sea = np.array([60, 105, 170]), np.array([190, 210, 230]), np.array([30, 50, 60])
+    """The sky the water mirrors, as the client keeps cube maps (TILESET\\Terrain Cube Maps): one strip of six square
+    faces, the four sides, then the top and the bottom. A muted blue-grey sky (it is fixed, so it must not glow at
+    night) shading paler toward the horizon, soft clouds, and dark below the horizon: the shader also looks there,
+    for what it adds under the surface. On a flat image the cube came out black: no reflections at all."""
+    face = 256
+    rng = np.random.default_rng(33)
+    k1 = np.fft.fftfreq(face) * face
+    kx, ky = np.meshgrid(k1, k1)
+    k = np.hypot(kx, ky)
+    spectrum = np.where((k >= 2) & (k <= 40), np.maximum(k, 1) ** -2.0, 0) * np.exp(1j * rng.uniform(0, 6.3, k.shape))
+    clouds = np.real(np.fft.ifft2(spectrum))
+    clouds = np.clip((clouds - clouds.mean()) / clouds.std() * 0.5 + 0.1, 0, 1)
+    zenith, horizon, below = np.array([78, 102, 128]), np.array([150, 162, 172]), np.array([16, 24, 28])
+    cloud = np.array([190, 194, 198])
+    v = np.linspace(0, 1, face)[:, None] * np.ones((1, face))     # 0 top of a side face, 1 its bottom
     t = np.clip(v / 0.5, 0, 1)[..., None]
-    below = sea + (sky_low - sea) * np.exp(-(v[..., None] - 0.5) * 12)
-    color = np.where(v[..., None] < 0.5, sky_top * (1 - t) + sky_low * t, below)
-    return Image.fromarray(np.dstack([np.clip(color, 0, 255), np.full((size, size), 255)]).astype(np.uint8), 'RGBA')
+    sky = zenith * (1 - t) + horizon * t
+    sky = sky * (1 - clouds[..., None] * 0.6 * (1 - t)) + cloud * clouds[..., None] * 0.6 * (1 - t)
+    side = np.where(v[..., None] < 0.5, sky, below + (horizon - below) * np.exp(-(v[..., None] - 0.5) * 18))
+    top = zenith * (1 - clouds[..., None] * 0.6) + cloud * clouds[..., None] * 0.6
+    bottom = np.broadcast_to(below, (face, face, 3))
+    faces = [np.roll(side, i * face // 4, axis=1) for i in range(4)] + [top, bottom]
+    strip = np.concatenate(faces, axis=1)
+    rgba = np.dstack([np.clip(strip, 0, 255), np.full(strip.shape[:2], 255)])
+    return Image.fromarray(np.round(rgba).astype(np.uint8), 'RGBA')
 
 
 def main():
