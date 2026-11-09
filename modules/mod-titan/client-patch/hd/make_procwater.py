@@ -30,6 +30,7 @@ sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent / 'models'))
 sys.path.insert(0, str(HERE))
 import blp  # noqa: E402
+import d3d9asm  # noqa: E402
 import make_mpq  # noqa: E402
 from make_liquids import periodic_noise, SIZE, FRAMES  # noqa: E402
 
@@ -50,6 +51,8 @@ REFRACTION_MAP = 'XTextures\\procWater\\basicRefractionMap.blp'
 EDGE_OPACITY = 40           # float 17: c11.x, the opacity Fresnel adds at a glance
 REFLECTION_BASE = 36        # float 13: c10.z, the share of reflection looking straight down
 REFLECTION_FRESNEL = 37     # float 14: c10.w, the share Fresnel adds at a glance
+WAVE_ANGLES = range(27, 31)  # floats 4-7: the wave maps' scrolling angles
+SHADER = 'Shaders\\Pixel\\ps_3_0\\psLiquidProcWater.bls'
 
 
 def liquid_types(source):
@@ -71,10 +74,12 @@ def liquid_types(source):
     struct.pack_into('<I', data, 16, len(data) - strings_at)
     # More translucent at a glance (Fresnel adds 0.12 opacity, not 0.2).
     procedural[EDGE_OPACITY] = struct.unpack('<I', struct.pack('<f', 0.12))[0]
-    # Mostly the water's own colour looking down, more sky across a lake; enough looking down that the waves show
-    # (at 0.05 the surface read as flat glass).
-    procedural[REFLECTION_BASE] = struct.unpack('<I', struct.pack('<f', 0.12))[0]
-    procedural[REFLECTION_FRESNEL] = struct.unpack('<I', struct.pack('<f', 0.45))[0]
+    # Mostly the water's own colour looking down, mostly sky at a glance: the shader's Fresnel is real now, (1 - cos)^4.
+    procedural[REFLECTION_BASE] = struct.unpack('<I', struct.pack('<f', 0.08))[0]
+    procedural[REFLECTION_FRESNEL] = struct.unpack('<I', struct.pack('<f', 0.8))[0]
+    # The two wave maps' second coordinates cross the first (they all ran one way: the waves never crossed).
+    for field, angle in zip(WAVE_ANGLES, (0.0, 2.2, 0.6, 3.9)):
+        procedural[field] = struct.unpack('<I', struct.pack('<f', angle))[0]
     for water in WATERS:
         if water in rows:
             for field in MATERIAL_FIELDS:
@@ -94,15 +99,41 @@ def spec_frames():
     return frames
 
 
-def normal_frames():
-    rng = np.random.default_rng(31)
-    # Rolling waves with ripples over them, steep enough to catch the light (the first try was too flat to see).
-    heights = periodic_noise(rng, 3, 140, 2.2, 1.2)
+def ocean_slopes(seed=31, kmin=2, kmax=96, slope=0.18, chop=0.7):
+    """FRAMES looping slope fields (x, y) of a wind sea, as ocean renderers make one: a spectrum of waves travelling
+    downwind (energy falling with frequency, spread around the wind's direction), each moving at deep water's speed
+    (whole turns per loop, faster for shorter waves). Choppy: each slope is divided by how much the waves' sideways
+    motion squeezes the surface there, so crests come sharp and troughs broad, as on real water (round noise blobs
+    read as anything but water). slope: the RMS slope."""
+    rng = np.random.default_rng(seed)
+    k1 = np.fft.fftfreq(SIZE) * SIZE
+    kx, ky = np.meshgrid(k1, k1)
+    k = np.maximum(np.hypot(kx, ky), 1e-9)
+    downwind = kx / k
+    spread = np.where(downwind > 0, downwind ** 3, 0) + 0.06        # mostly with the wind, a little cross sea
+    amp = np.where((k >= kmin) & (k <= kmax), k ** -2.1 * spread, 0)
+    phase = rng.uniform(0, 2 * np.pi, k.shape)
+    turns = np.maximum(1, np.round(1.4 * np.sqrt(k / kmin)))
     frames = []
-    for h in heights:
-        gx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) * 0.5
-        gy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) * 0.5
-        n = np.stack([-gx, -gy, np.full_like(h, 0.22)], -1)   # steep enough to read from above
+    for t in range(FRAMES):
+        h = amp * np.exp(1j * (phase - 2 * np.pi * turns * t / FRAMES))
+        sx, sy = np.real(np.fft.ifft2(1j * kx * h)), np.real(np.fft.ifft2(1j * ky * h))
+        # The squeeze: the derivative of the sideways displacement (-i k/|k| h) along each axis.
+        dxx, dyy = np.real(np.fft.ifft2(kx * kx / k * h)), np.real(np.fft.ifft2(ky * ky / k * h))
+        frames.append((sx, sy, dxx, dyy))
+    # The squeeze's typical size is chop / 3 (a crest at three times that folds: kept from folding at 0.5, where
+    # sharper crests tipped into dark specks).
+    squeeze = chop / 3 / np.sqrt(np.mean([np.mean(f[2] ** 2 + f[3] ** 2) / 2 for f in frames]))
+    choppy = [(sx / np.maximum(1 - dxx * squeeze, 0.5), sy / np.maximum(1 - dyy * squeeze, 0.5))
+              for sx, sy, dxx, dyy in frames]
+    scale = slope / np.sqrt(np.mean([np.mean(sx ** 2 + sy ** 2) for sx, sy in choppy]))
+    return [(sx * scale, sy * scale) for sx, sy in choppy]
+
+
+def normal_frames():
+    frames = []
+    for sx, sy in ocean_slopes():
+        n = np.stack([-sx, -sy, np.ones_like(sx)], -1)
         n /= np.linalg.norm(n, axis=-1, keepdims=True)
         x, y = (n[..., 0] * 0.5 + 0.5) * 255, (n[..., 1] * 0.5 + 0.5) * 255
         rgba = np.stack([x, y, y, x], -1)            # red/green and alpha/blue: the same normal
@@ -158,6 +189,8 @@ def main():
     masks = spec_frames()
     for i in range(FRAMES + 1):
         entries.append((SPEC_MASK.replace('%d', str(i)), blp.encode_dxt(masks[(i - 1) % FRAMES])))
+    # Our water shader in place of the game's (psLiquidProcWater.asm says what it changes).
+    entries.append((SHADER, d3d9asm.bls(d3d9asm.assemble((HERE / 'psLiquidProcWater.asm').read_text()))))
     OUT.write_bytes(make_mpq.build(entries))
     print(f'Wrote {OUT} ({len(entries)} files, {OUT.stat().st_size / 2 ** 20:.1f} MB)')
 

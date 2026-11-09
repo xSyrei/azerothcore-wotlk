@@ -400,10 +400,17 @@ the top, the bottom; a flat image came out black, so the water reflected nothing
 than a sky looks, as water mirrors it (a pale one made the water milky), with faint clouds, paler at the horizon and
 a soft tone below it (tilted waves look there: black beside the sky read as camouflage). Slot 0, the refraction cube
 added to the water's own colour, is its own near-black teal map (`basicRefractionMap.blp`; sharing the sky's washed
-the water out). The waves' normals have up 0.22 and the
-reflection's share is 0.12 looking straight down, rising to 0.57 at a glance (c10.z, c10.w): the sky is dark
-overhead and bright at the horizon, so each tilted wave catches a different tone. `models/blp.py` encodes
-cube strips (width six times a power-of-two height).
+the water out). `models/blp.py` encodes cube strips (width six times a power-of-two height).
+
+Its own shader: tuning settings could not give the water shape, as the game's shader divided its view vector by the
+horizontal distance only, so looking down its Fresnel saturated: no reflection and no change across the waves (flat
+glass). `hd/psLiquidProcWater.asm` replaces it (`Shaders\Pixel\ps_3_0\psLiquidProcWater.bls`, same inputs and
+constants; `hd/d3d9asm.py` assembles it and rebuilds the game's own shader byte for byte): a real Fresnel ((1 -
+cos)^4, the reflection's share 0.08 looking down to 0.88 at a glance), the water's colour lit by the waves (faces
+turned to the eye glow, light through the wave; faces turned away darker), no refraction cube. The wave maps are a
+wind sea, as ocean renderers make one (`ocean_slopes`: a spectrum travelling downwind at deep water's speeds, choppy,
+so crests come sharp and troughs broad; round noise blobs read as anything but water), and their second coordinates
+cross the first (floats 4-7, the angles, were all 0).
 
 ## Atmosphere and water light (patch-enUS-8.MPQ)
 
