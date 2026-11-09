@@ -53,12 +53,12 @@ Nothing else comes from the base class (`data/sql/db-world/hero_cleanup.sql`):
 
 ## Wildcard
 How a Hero progresses (`src/wildcard.cpp`), fully random for now:
-- **Starting kit (levels 1-8)**: every Hero starts with 4 random abilities and two tomes in its
+- **Starting kit (levels 1-7)**: every Hero starts with 4 random abilities and two tomes in its
   bags (`data/sql/db-world/titan_tomes.sql`, `src/item_titan_tomes.cpp`), both usable any number of
-  times until level 9:
+  times through level 7:
   - **Titan Tome of Randomization** (910003) rerolls the 4 abilities;
   - **Titan Tome of Selection** (910004) clears them and opens the Classless window with 4 picks.
-  At **level 9 the kit locks**: picks never spent are rolled at random and both tomes vanish.
+  At **level 8 the kit locks**: picks never spent are rolled at random and both tomes vanish.
 - **From level 8 the level-up rolls alternate**: a random talent at 8, a random ability at 9, a
   talent at 10, an ability at 11, and so on. Abilities come from every class trainer's list (all 10
   classes; passives and hunter pet handling are left out); talents from any class's talent trees, each at its top
@@ -351,7 +351,7 @@ Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon wind
 - **Names and icons**: click a spec's icon in the Specs tab (or right-click, Rename / icon): a name and any of the
   macro icons.
 - **Rerolls**: right-click one of your spells or talents, Reroll: an Eye of Unlearning for another ability the Hero can
-  learn (a capstone for another capstone), or the talent for another talent. Before the kit locks (level 9) an
+  learn (a capstone for another capstone), or the talent for another talent. Before the kit locks (level 8) an
   ability is **unlearned for free** instead (Unlearn): its pick comes back, to pick another.
 - **Locks**: right-click, Lock: a locked ability or talent is never rerolled, a locked spec's none are; padlocks show
   on them. Nothing locked can be prestiged: unlock first. A prestige starts every spec over (names, icons and the ones

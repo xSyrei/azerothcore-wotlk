@@ -30,7 +30,7 @@ namespace Wildcard
 {
     constexpr uint8 HERO_CLASS = CLASS_PALADIN;
     constexpr uint8 KIT_SIZE = 4;                   // abilities in the starting kit
-    constexpr uint8 LOCK_LEVEL = 9;                 // the kit locks here and the tomes vanish
+    constexpr uint8 LOCK_LEVEL = 8;                 // the kit locks here and the tomes vanish (7: their last level)
     constexpr uint8 FIRST_ROLL_LEVEL = 8;           // level-up rolls alternate from here: a talent rank on even
                                                     // levels (8, 10...), an ability on odd ones (9, 11...)
     constexpr uint8 CAPSTONE_LEVEL = 60;            // its roll is a capstone ability instead of a talent rank, and

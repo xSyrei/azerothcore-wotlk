@@ -1,5 +1,5 @@
 -- Starting-kit tomes (src/item_titan_tomes.cpp): every Hero starts with both. They can be read any
--- number of times until level 9, when the abilities lock and the tomes vanish.
+-- number of times until level 8, when the abilities lock and the tomes vanish.
 -- Titan Tome of Randomization: rerolls the Hero's 4 starting abilities.
 -- Titan Tome of Selection: clears them for 4 picks in the Classless window.
 -- Spell 3361 only makes the items usable in the 3.3.5 client; the scripts handle the use and it is
@@ -12,8 +12,8 @@ SET @TOME_DISPLAY := 1103;
 
 DELETE FROM `item_template` WHERE `entry` IN (@RANDOMIZATION, @SELECTION);
 INSERT INTO `item_template` (`entry`, `class`, `subclass`, `SoundOverrideSubclass`, `name`, `displayid`, `Quality`, `Flags`, `BuyPrice`, `SellPrice`, `ItemLevel`, `RequiredLevel`, `stackable`, `bonding`, `spellid_1`, `spelltrigger_1`, `spellcharges_1`, `description`, `ScriptName`) VALUES
-(@RANDOMIZATION, 0, 8, -1, 'Titan Tome of Randomization', @TOME_DISPLAY, 4, 0, 0, 0, 1, 1, 1, 1, @CARRIER_SPELL, 0, 0, 'Rerolls your 4 starting abilities at random. Usable until level 9.', 'item_titan_tome_of_randomization'),
-(@SELECTION, 0, 8, -1, 'Titan Tome of Selection', @TOME_DISPLAY, 4, 0, 0, 0, 1, 1, 1, 1, @CARRIER_SPELL, 0, 0, 'Clears your abilities so you can choose 4 in the Classless window. Usable until level 9.', 'item_titan_tome_of_selection');
+(@RANDOMIZATION, 0, 8, -1, 'Titan Tome of Randomization', @TOME_DISPLAY, 4, 0, 0, 0, 1, 1, 1, 1, @CARRIER_SPELL, 0, 0, 'Rerolls your 4 starting abilities at random. Usable through level 7.', 'item_titan_tome_of_randomization'),
+(@SELECTION, 0, 8, -1, 'Titan Tome of Selection', @TOME_DISPLAY, 4, 0, 0, 0, 1, 1, 1, 1, @CARRIER_SPELL, 0, 0, 'Clears your abilities so you can choose 4 in the Classless window. Usable through level 7.', 'item_titan_tome_of_selection');
 
 DELETE FROM `playercreateinfo_item` WHERE `class` = @HERO AND `itemid` IN (@RANDOMIZATION, @SELECTION);
 INSERT INTO `playercreateinfo_item` (`race`, `class`, `itemid`, `amount`, `Note`) VALUES

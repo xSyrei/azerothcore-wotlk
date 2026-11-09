@@ -36,7 +36,7 @@
 
 // Wildcard: how the classless Hero progresses.
 //
-// - Starting kit (levels 1-8): KIT_SIZE random abilities. The Tome of Randomization rerolls them and
+// - Starting kit (levels 1-7): KIT_SIZE random abilities. The Tome of Randomization rerolls them and
 //   the Tome of Selection clears them for KIT_SIZE picks in the Classless window (item_titan_tomes.cpp).
 //   At LOCK_LEVEL the kit locks: unspent picks are filled at random and both tomes vanish.
 // - From FIRST_ROLL_LEVEL the level-up rolls alternate: a random talent rank at 8, a random ability

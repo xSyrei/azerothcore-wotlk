@@ -117,7 +117,7 @@ local data = {
     capstones = {},     -- ability (first rank id) -> roles (Wildcard::RoleMask bits): rolled at level 60 only, for them
     picks = 0,
     locked = false,
-    lockLevel = 9,
+    lockLevel = 8,
     role = 0,           -- Wildcard::Role: 0 none yet
     loaded = false,
     loading = false,
@@ -361,7 +361,7 @@ local function OnServerMessage(message)
         Refresh()
     elseif kind == "S" then
         local _, picks, locked, lockLevel, role = strsplit(",", message)
-        data.picks, data.locked, data.lockLevel = tonumber(picks) or 0, locked == "1", tonumber(lockLevel) or 9
+        data.picks, data.locked, data.lockLevel = tonumber(picks) or 0, locked == "1", tonumber(lockLevel) or 8
         data.role = tonumber(role) or 0
         Refresh()
     elseif kind == "G" then
