@@ -11,3 +11,4 @@ RuneCosts.lua
 Runes.lua
 ComboFinishers.lua
 Combo.lua
+WorldChat.lua

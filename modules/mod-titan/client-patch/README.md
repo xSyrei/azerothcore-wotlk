@@ -296,6 +296,10 @@ plus our own: Soul Cleave, Spirit Bomb, Rising Sun Kick, Fists of Fury, Spinning
 there are none. The pet frame moves down below the resource bars and runes (outside combat). The dungeon finder
 window (it holds the PvP tab) stays shut below level 10, by its key too.
 
+**World chat**: `Emberforge_Resources` (`WorldChat.lua`) joins everyone to the World channel a few seconds after
+login and shows it in the main chat window; `/world <message>` talks in it. Both factions share it
+(`AllowTwoSide.Interaction.Channel`, docker-compose.yml).
+
 **Publishing to players:** `publish-client.ps1` (on the PC with rclone set up for the CDN) uploads the two patch MPQs
 and the `Emberforge_*` addons where they changed, updates the launcher's manifest and raises its version. Purge
 Cloudflare's cache after.
