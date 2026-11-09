@@ -109,6 +109,9 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
     and Feral Charge. Everything else unlocks at its trainer level.
   - Tame Beast also teaches Call Pet, Dismiss Pet, Revive Pet and Feed Pet, and Heroes count as
     Hunters for pets (taming, resummoning, stables; `src/hero_resources.cpp`).
+  - A Hero's pets and demons know all their abilities from level 1 (each one's first rank; later ranks at their
+    levels; `src/pets.cpp`). Unlearning or rerolling the ability that summoned a pet dismisses it (a tamed beast
+    once Call Pet is gone; it stays in the stable).
 - **Pick Lock for everyone**: every player always knows Pick Lock, with Lockpicking at its maximum
   for their level (5 per level). The core drops the Rogue-only Lockpicking skill at each login for
   other classes ("invalid for the race/class" in the log), so it is set again every login.

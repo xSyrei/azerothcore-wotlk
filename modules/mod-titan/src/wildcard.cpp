@@ -19,6 +19,7 @@
 #include "Chat.h"
 #include "DBCStores.h"
 #include "ObjectMgr.h"
+#include "Pet.h"
 #include "Player.h"
 #include "Random.h"
 #include "ScriptMgr.h"
@@ -427,6 +428,7 @@ namespace
 
     // Every player always knows Pick Lock, with Lockpicking at its maximum for their level.
     constexpr uint32 SPELL_PICK_LOCK = 1804;
+    constexpr uint32 SPELL_CALL_PET = 883;
 
     // Emberforge's own abilities (no trainer teaches them): the spells are in spell_dbc
     // (data/sql/db-world/titan_demon_hunter_spells.sql) and the client patch (patch_spells.py). Their levels follow
@@ -1401,15 +1403,32 @@ namespace Wildcard
 
     void Unlearn(Player* player, Ability const& ability)
     {
-        for (Rank const& rank : ability.Ranks)
-            if (player->HasSpell(rank.SpellId))
-                player->removeSpell(rank.SpellId, SPEC_MASK_ALL, false);
-
+        // The spells going, and what they cast (Raise Dead's ghoul comes from the spell it triggers).
+        std::unordered_set<uint32> gone;
+        auto remove = [&](Ability const& unlearned)
+        {
+            for (Rank const& rank : unlearned.Ranks)
+            {
+                gone.insert(rank.SpellId);
+                if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(rank.SpellId))
+                    for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+                        if (effect.TriggerSpell)
+                            gone.insert(effect.TriggerSpell);
+                if (player->HasSpell(rank.SpellId))
+                    player->removeSpell(rank.SpellId, SPEC_MASK_ALL, false);
+            }
+        };
+        remove(ability);
         for (uint32 companionId : ability.Companions)
             if (Ability const* companion = FindAbility(companionId))
-                for (Rank const& rank : companion->Ranks)
-                    if (player->HasSpell(rank.SpellId))
-                        player->removeSpell(rank.SpellId, SPEC_MASK_ALL, false);
+                remove(*companion);
+
+        // The pet it summoned goes too: a demon or ghoul from these spells, or a tamed beast once Call Pet is gone
+        // (Tame Beast's companion). It stays in the stable.
+        if (Pet* pet = player->GetPet())
+            if (gone.count(pet->GetUInt32Value(UNIT_CREATED_BY_SPELL))
+                || (pet->getPetType() == HUNTER_PET && !player->HasSpell(SPELL_CALL_PET)))
+                player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
     }
 
     uint32 ClearAbilities(Player* player)
