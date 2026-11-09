@@ -45,6 +45,8 @@ MATERIAL_FIELDS = range(14, 45)
 # and its Fresnel part) and c11 (edge opacity, specular share and its Fresnel part).
 SPEC_MASK = 'XTextures\\procWater\\basicSpecMask_%d.blp'
 SPEC_SLOT = 20              # texture slot 5
+REFRACTION_SLOT = 15        # texture slot 0: s0, the cube added to the water's own colour (what is under it)
+REFRACTION_MAP = 'XTextures\\procWater\\basicRefractionMap.blp'
 EDGE_OPACITY = 40           # float 17: c11.x, the opacity Fresnel adds at a glance
 REFLECTION_BASE = 36        # float 13: c10.z, the share of reflection looking straight down
 REFLECTION_FRESNEL = 37     # float 14: c10.w, the share Fresnel adds at a glance
@@ -63,12 +65,15 @@ def liquid_types(source):
     strings_at = 20 + count * size
     procedural[SPEC_SLOT] = len(data) - strings_at
     data += SPEC_MASK.encode('ascii') + b'\0'
+    # Its own refraction cube in slot 0 (it shared the sky's, which washed the water out).
+    procedural[REFRACTION_SLOT] = len(data) - strings_at
+    data += REFRACTION_MAP.encode('ascii') + b'\0'
     struct.pack_into('<I', data, 16, len(data) - strings_at)
     # More translucent at a glance (Fresnel adds 0.12 opacity, not 0.2).
     procedural[EDGE_OPACITY] = struct.unpack('<I', struct.pack('<f', 0.12))[0]
     # Mostly the water's own colour looking down, mostly the sky across a lake (was a flat 0.2-0.3 either way).
     procedural[REFLECTION_BASE] = struct.unpack('<I', struct.pack('<f', 0.1))[0]
-    procedural[REFLECTION_FRESNEL] = struct.unpack('<I', struct.pack('<f', 0.75))[0]
+    procedural[REFLECTION_FRESNEL] = struct.unpack('<I', struct.pack('<f', 0.55))[0]
     for water in WATERS:
         if water in rows:
             for field in MATERIAL_FIELDS:
@@ -96,7 +101,7 @@ def normal_frames():
     for h in heights:
         gx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) * 0.5
         gy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) * 0.5
-        n = np.stack([-gx, -gy, np.full_like(h, 0.2)], -1)
+        n = np.stack([-gx, -gy, np.full_like(h, 0.4)], -1)    # gentle: steep waves shattered the reflection
         n /= np.linalg.norm(n, axis=-1, keepdims=True)
         x, y = (n[..., 0] * 0.5 + 0.5) * 255, (n[..., 1] * 0.5 + 0.5) * 255
         rgba = np.stack([x, y, y, x], -1)            # red/green and alpha/blue: the same normal
@@ -116,14 +121,17 @@ def reflection_map():
     k = np.hypot(kx, ky)
     spectrum = np.where((k >= 2) & (k <= 40), np.maximum(k, 1) ** -2.0, 0) * np.exp(1j * rng.uniform(0, 6.3, k.shape))
     clouds = np.real(np.fft.ifft2(spectrum))
-    clouds = np.clip((clouds - clouds.mean()) / clouds.std() * 0.5 + 0.1, 0, 1)
-    zenith, horizon, below = np.array([78, 102, 128]), np.array([150, 162, 172]), np.array([16, 24, 28])
+    # Faint, soft clouds: strong ones broke every wave into white blobs.
+    clouds = np.clip((clouds - clouds.mean()) / clouds.std() * 0.25 + 0.1, 0, 1)
+    # Below the horizon stays a soft horizon tone: tilted waves look there, and black beside the bright sky read as
+    # camouflage.
+    zenith, horizon, below = np.array([84, 104, 124]), np.array([140, 152, 162]), np.array([92, 104, 112])
     cloud = np.array([190, 194, 198])
     v = np.linspace(0, 1, face)[:, None] * np.ones((1, face))     # 0 top of a side face, 1 its bottom
     t = np.clip(v / 0.5, 0, 1)[..., None]
     sky = zenith * (1 - t) + horizon * t
     sky = sky * (1 - clouds[..., None] * 0.6 * (1 - t)) + cloud * clouds[..., None] * 0.6 * (1 - t)
-    side = np.where(v[..., None] < 0.5, sky, below + (horizon - below) * np.exp(-(v[..., None] - 0.5) * 18))
+    side = np.where(v[..., None] < 0.5, sky, below + (horizon - below) * np.exp(-(v[..., None] - 0.5) * 6))
     top = zenith * (1 - clouds[..., None] * 0.6) + cloud * clouds[..., None] * 0.6
     bottom = np.broadcast_to(below, (face, face, 3))
     faces = [np.roll(side, i * face // 4, axis=1) for i in range(4)] + [top, bottom]
@@ -141,6 +149,9 @@ def main():
         entries.append((f'XTextures\\procWater\\basicWaterHeightTex_{i}.blp',
                         blp.encode_dxt(frames[(i - 1) % FRAMES])))
     entries.append(('XTextures\\procWater\\basicReflectionMap.blp', blp.encode_dxt(reflection_map())))
+    dark = np.zeros((128, 768, 4), np.uint8)
+    dark[...] = (8, 11, 13, 255)
+    entries.append((REFRACTION_MAP, blp.encode_dxt(Image.fromarray(dark, 'RGBA'))))
     masks = spec_frames()
     for i in range(FRAMES + 1):
         entries.append((SPEC_MASK.replace('%d', str(i)), blp.encode_dxt(masks[(i - 1) % FRAMES])))
