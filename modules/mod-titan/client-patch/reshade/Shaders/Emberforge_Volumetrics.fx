@@ -158,7 +158,7 @@ float4 PS_Sky(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 void PS_Sun(float4 pos : SV_Position, float2 uv : TEXCOORD, out float4 sun : SV_Target0, out float4 tint : SV_Target1)
 {
     float2 centre = 0.0;
-    float weight = 0.0, peak = 0.0, sky = 0.0;
+    float weight = 0.0, peak = 0.0, sky = 0.0, zero = 0.0;
     float3 color = 0.0;
     [loop]
     for (int y = 0; y < SUN_GRID_Y; y++)
@@ -177,12 +177,17 @@ void PS_Sun(float4 pos : SV_Position, float2 uv : TEXCOORD, out float4 sun : SV_
             // The sky's own colour, for the fog (all of the sky, not only its bright part).
             float isSky = IsSky(at);
             sky += isSky;
+            zero += step(ReShade::GetLinearizedDepth(at), 0.0001);
             color += tex2Dlod(ReShade::BackBuffer, float4(at, 0, 0)).rgb * isSky;
         }
     }
     float2 at = weight > 1e-5 ? centre / weight : float2(0.5, 0.0);
     // How much sun shows: by the brightest sky on screen (none at night, under a roof, or looking away).
-    float shown = smoothstep(0.15, 0.6, peak);
+    // The depth buffer is real: not almost all sky (then ReShade read the wrong buffer this frame, and the shafts
+    // smeared the whole picture, text and all, toward the sun) and not empty.
+    float cells = SUN_GRID_X * SUN_GRID_Y;
+    float real = (sky < cells * 0.85 && zero < cells * 0.5) ? 1.0 : 0.0;
+    float shown = smoothstep(0.15, 0.6, peak) * real;
     float4 now = float4(at, shown, 0.0);
     float3 hue = sky > 0.5 ? color / sky : 0.6;
 
@@ -192,7 +197,9 @@ void PS_Sun(float4 pos : SV_Position, float2 uv : TEXCOORD, out float4 sun : SV_
     float4 prevTint = tex2Dfetch(SunColorPrevSampler, int2(0, 0));
     bool first = prev.w < 0.5;
     sun = first ? float4(now.xyz, 1.0) : float4(lerp(prev.xyz, now.xyz, ease), 1.0);
-    tint = first ? float4(hue, 1.0) : float4(lerp(prevTint.rgb, hue, ease), 1.0);
+    // The alpha: whether the depth is real, off at once on a bad frame, back over about a second.
+    float trust = real < 0.5 ? 0.0 : lerp(prevTint.a, 1.0, saturate(FrameTime / 1000.0));
+    tint = first ? float4(hue, real) : float4(lerp(prevTint.rgb, hue, ease), trust);
 }
 
 void PS_KeepSun(float4 pos : SV_Position, float2 uv : TEXCOORD, out float4 sun : SV_Target0,
@@ -207,6 +214,8 @@ void PS_KeepSun(float4 pos : SV_Position, float2 uv : TEXCOORD, out float4 sun :
 float4 PS_Shafts(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float4 sun = tex2Dfetch(SunSampler, int2(0, 0));
+    // Off at once on a frame whose depth is not real (the sun's strength only eases out).
+    sun.z *= tex2Dfetch(SunColorSampler, int2(0, 0)).a;
     if (sun.z < 0.01)
         return 0.0;
 
@@ -236,9 +245,8 @@ float3 PS_Composite(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
     float depth = ReShade::GetLinearizedDepth(uv);
     float sky = IsSky(uv);
 
-    // No depth buffer to read (cleared to one value everywhere): nothing to do.
-    float valid = 1.0 - step(0.9999, ReShade::GetLinearizedDepth(float2(0.5, 0.75)))
-        * step(0.9999, ReShade::GetLinearizedDepth(float2(0.5, 0.95)));
+    // Whether the depth buffer is real this frame (PS_Sun): no fog or shafts on a bad one.
+    float valid = tex2Dfetch(SunColorSampler, int2(0, 0)).a;
 
     // Where the pixel is in view space (the camera's frame, about level): across, up, and away.
     float2 ndc = uv * 2.0 - 1.0;

@@ -32,6 +32,11 @@ uniform float FadeDistance <
 
 #define AO_SAMPLES 12
 
+// 1 while the depth buffer looks real, 0 on a frame where ReShade picked an empty or wrong one (all far plane, all
+// zero, or one value everywhere): the occlusion is skipped then, not drawn black.
+texture AOValidTex { Width = 1; Height = 1; Format = R16F; };
+sampler AOValidSampler { Texture = AOValidTex; MinFilter = POINT; MagFilter = POINT; };
+
 texture AOTex { Width = BUFFER_WIDTH / 2; Height = BUFFER_HEIGHT / 2; Format = RG16F; };
 sampler AOSampler { Texture = AOTex; };
 texture AOBlurTex { Width = BUFFER_WIDTH / 2; Height = BUFFER_HEIGHT / 2; Format = RG16F; };
@@ -42,11 +47,31 @@ float Depth(float2 uv)
     return ReShade::GetLinearizedDepth(uv);
 }
 
+float PS_Check(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
+{
+    float far = 0.0, zero = 0.0, low = 1.0, high = 0.0;
+    [loop]
+    for (int y = 0; y < 8; y++)
+    {
+        [loop]
+        for (int x = 0; x < 8; x++)
+        {
+            float d = Depth((float2(x, y) + 0.5) / 8.0);
+            far += step(0.9995, d);
+            zero += step(d, 0.0001);
+            low = min(low, d);
+            high = max(high, d);
+        }
+    }
+    return (far < 56.0 && zero < 32.0 && high - low > 0.001) ? 1.0 : 0.0;
+}
+
 // x: how occluded (0-1); y: the pixel's depth, for the blur.
 float2 PS_Occlusion(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float depth = Depth(uv);
-    if (depth >= 0.9995)
+    // The sky, and no depth at all (an empty buffer: dividing by it made black pixels, the flashing).
+    if (depth >= 0.9995 || depth < 0.0001)
         return float2(0.0, depth);
 
     // The radius on screen shrinks with distance; a turn per pixel (interleaved) hides the sample pattern.
@@ -108,7 +133,10 @@ float2 PS_BlurY(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 float3 PS_Apply(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float3 color = tex2D(ReShade::BackBuffer, uv).rgb;
-    float occlusion = tex2D(AOSampler, uv).x;
+    float occlusion = tex2D(AOSampler, uv).x * tex2Dfetch(AOValidSampler, int2(0, 0)).x;
+    // A bad value (a NaN from bad depth) must never darken the picture.
+    if (!(occlusion >= 0.0))
+        occlusion = 0.0;
     return color * (1.0 - saturate(occlusion * Strength));
 }
 
@@ -117,6 +145,7 @@ technique Emberforge_AO <
     ui_tooltip = "Soft contact shadows in creases, corners and under objects.";
 >
 {
+    pass Check { VertexShader = PostProcessVS; PixelShader = PS_Check; RenderTarget = AOValidTex; }
     pass Occlusion { VertexShader = PostProcessVS; PixelShader = PS_Occlusion; RenderTarget = AOTex; }
     pass BlurX { VertexShader = PostProcessVS; PixelShader = PS_BlurX; RenderTarget = AOBlurTex; }
     pass BlurY { VertexShader = PostProcessVS; PixelShader = PS_BlurY; RenderTarget = AOTex; }
