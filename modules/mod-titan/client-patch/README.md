@@ -377,6 +377,17 @@ faces the sun, the ocean's ripples running with the wind; fast water is foam scr
 glow; slime and orange slime are slow ridged swirls. `hd/build_hd.py` writes them to `dist/patch-enUS-6.MPQ`, an
 archive of its own (29 MB), published with the others.
 
+## Experimental reflective water (patch-enUS-7.MPQ, not published)
+
+The client ships a full procedural water shader it never uses (`psLiquidProcWater` / `vsLiquidProcWater`,
+`Liquid::CMaterialProcWater`: two scrolling normal maps, Fresnel, a specular sun highlight, reflections, the game's
+fog); only LiquidType 100, "Basic Procedural Water", asks for it, and its textures were never shipped.
+`hd/make_procwater.py` moves every water and ocean liquid type onto that material (LiquidType 100's fields 14-44)
+and makes its textures: `XTextures\procWater\basicWaterHeightTex_<0-30>.blp` (looping wave normal maps, in
+red/green and again in alpha/blue, as the shader reads them) and `basicReflectionMap.blp` (a sky over a horizon).
+Whether the client feeds the shader all it needs shows only in game: try it by putting the archive in Data\enUS\,
+undo it by deleting it. `publish-client.ps1` leaves it out until it is known to work.
+
 ## Volumetric lighting (`reshade/`)
 
 **Emberforge Volumetrics** (`reshade/Shaders/Emberforge_Volumetrics.fx`): light shafts and atmospheric fog, a
