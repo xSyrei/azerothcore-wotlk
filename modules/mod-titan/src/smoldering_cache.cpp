@@ -42,7 +42,8 @@
 //   avoidance; no role a bit of everything. Armor type does not matter; the scores decide (plate wins a tank's for
 //   its armor). One of the three best is given.
 //
-// Gear a Hero gets (loot, quest rewards, purchases, caches) goes on by itself when its slot is empty.
+// Gear from a cache is soulbound. Gear a Hero gets (loot, quest rewards, purchases, caches) goes on by itself when its
+// slot is empty.
 namespace
 {
     constexpr uint32 ITEM_SMOLDERING_CACHE = 910005;
@@ -266,8 +267,27 @@ namespace
         float Score;
     };
 
-    // A green for that slot at the Hero's level: required level up to 4 under theirs, wider when there is none.
+    std::optional<Pick> PickGearOf(Player* player, GearSlot const& gear);
+
+    // A green for that slot at the Hero's level: required level up to 4 under theirs, wider when there is none. The
+    // main hand is a one-hand weapon or a two-hander, half the time each: two-handers score higher (their damage), so
+    // one-handers, and with them the off hand, stopped coming.
     std::optional<Pick> PickGear(Player* player, GearSlot const& gear)
+    {
+        if (gear.Slot == EQUIPMENT_SLOT_MAINHAND)
+        {
+            static constexpr GearSlot ONE_HAND = { EQUIPMENT_SLOT_MAINHAND, "main hand",
+                { INVTYPE_WEAPON, INVTYPE_WEAPONMAINHAND } };
+            static constexpr GearSlot TWO_HAND = { EQUIPMENT_SLOT_MAINHAND, "main hand", { INVTYPE_2HWEAPON } };
+            bool oneHand = roll_chance_i(50);
+            if (std::optional<Pick> pick = PickGearOf(player, oneHand ? ONE_HAND : TWO_HAND))
+                return pick;
+            return PickGearOf(player, oneHand ? TWO_HAND : ONE_HAND);
+        }
+        return PickGearOf(player, gear);
+    }
+
+    std::optional<Pick> PickGearOf(Player* player, GearSlot const& gear)
     {
         Wildcard::Role role = Wildcard::GetRole(player);
         uint8 level = player->GetLevel();
@@ -364,6 +384,8 @@ public:
         player->DestroyItemCount(item, one, true);
         if (Item* gearItem = player->StoreNewItem(dest, pick->Proto->ItemId, true, pick->RandomPropertyId))
         {
+            gearItem->SetBinding(true);     // soulbound, as the cache it came from
+            gearItem->SetState(ITEM_CHANGED, player);
             player->SendNewItem(gearItem, 1, true, false);
             handler.PSendSysMessage("|cffff8000Smoldering Adventurer's Cache:|r gear for your {}.", gear->Name);
         }

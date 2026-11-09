@@ -296,7 +296,8 @@ level piece (an empty slot counts as 0; the next slot up when that one has nothi
 - scored for the role: Melee strength, agility, attack power and weapon damage; Ranged intellect and spell power
   (and wand damage); Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor,
   defense and avoidance; no role a bit of everything. Armor type is whatever scores best (a tank's plate wins on
-  armor); one of the three best is given.
+  armor); one of the three best is given. The main hand gets a one-hand weapon or a two-hander, half the time
+  each (two-handers would always score higher). The gear is soulbound.
 
 **Empty slots fill themselves**: gear a Hero gets (loot, quest rewards, purchases, crafting, caches) is put on at
 once when its slot is empty and the Hero can wear it.
