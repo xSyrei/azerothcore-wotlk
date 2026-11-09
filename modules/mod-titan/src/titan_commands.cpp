@@ -18,6 +18,9 @@
 #include "wildcard.h"
 #include "emberspark.h"
 #include "Chat.h"
+#include "GameTime.h"
+#include "WorldPacket.h"
+#include "WorldSession.h"
 #include "CommandScript.h"
 #include "DBCStores.h"
 #include "ObjectAccessor.h"
@@ -39,6 +42,8 @@ using namespace Acore::ChatCommands;
 // - .runes: the selected player's (or your) runes as the server sees them: each one's type and how long until it is
 //   ready (0: ready). Tells a server-side rune problem from a client-side one: runes the server has ready that the
 //   game still refuses are the client's.
+// - .daytime [hour]: your own client's time of day (0-23), for looking at the lighting, water and fog at any hour;
+//   no one else's changes, and the clock runs on from there. Without an hour: back to the real time.
 class titan_commandscript : public CommandScript
 {
 public:
@@ -52,6 +57,7 @@ public:
             { "spellids", HandleSpellIds, SEC_GAMEMASTER, Console::No },
             { "emberspark", HandleEmberspark, SEC_GAMEMASTER, Console::No },
             { "runes", HandleRunes, SEC_GAMEMASTER, Console::No },
+            { "daytime", HandleDaytime, SEC_GAMEMASTER, Console::No },
         };
         return commandTable;
     }
@@ -148,6 +154,33 @@ public:
             handler->PSendSysMessage("Rune {}: {}, {} ms until ready (base {} ms)", i + 1,
                 type < 4 ? TYPES[type] : "?", target->GetRuneCooldown(i), target->GetRuneBaseCooldown(i, true));
         }
+        return true;
+    }
+
+    static bool HandleDaytime(ChatHandler* handler, Optional<uint32> hour)
+    {
+        time_t now = GameTime::GetGameTime().count();
+        time_t shown = now;
+        if (hour)
+        {
+            if (*hour > 23)
+            {
+                handler->SendErrorMessage("An hour from 0 to 23.");
+                return false;
+            }
+            tm local = Acore::Time::TimeBreakdown(now);
+            shown = now - (local.tm_hour * 3600 + local.tm_min * 60 + local.tm_sec) + *hour * 3600;
+        }
+        // As at login (Player::SendInitialPacketsAfterAddToMap): the client lights the world by this time.
+        WorldPacket data(SMSG_LOGIN_SETTIMESPEED, 4 + 4 + 4);
+        data.AppendPackedTime(shown);
+        data << float(0.01666667f);
+        data << uint32(0);
+        handler->GetSession()->SendPacket(&data);
+        if (hour)
+            handler->PSendSysMessage("Your time of day: {}:00 (only yours). .daytime puts it back.", *hour);
+        else
+            handler->SendSysMessage("Your time of day is the real time again.");
         return true;
     }
 

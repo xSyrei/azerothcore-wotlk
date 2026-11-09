@@ -134,6 +134,8 @@ talking to it in addon whispers (prefix `EFCL`, protocol in both files).
   ranks, the spellbook, action bars, buffs; the talent frame shows its talent id). Kept per character.
 - `.emberspark [amount]`: adds Emberspark to the selected player's (or your) account; without an amount, shows its
   balance (see Emberspark).
+- `.daytime [hour]`: your own client's time of day, 0-23 (only yours; the clock runs on from there), to look at the
+  lighting, water and fog at any hour. Without an hour: back to the real time.
 - `.runes`: the selected Hero's (or your) runes as the server sees them, each one's type and time until ready. If
   the server says a rune is ready but the game still refuses a rune spell, the problem is on the client.
 - `.learnability <spell id or link>`: teaches the selected player (or yourself) that ability the way Wildcard
