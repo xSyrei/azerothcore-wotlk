@@ -239,10 +239,10 @@ public:
 };
 
 // Death Knight abilities come from level 1 for a Hero (wildcard.cpp, LEVEL_ONE_ABILITIES), but their damage is a
-// level-55 class's: Icy Touch hit a level-1 wolf for about 236. A Hero's Death Knight spells (their direct damage and their
-// diseases' and Death and Decay's ticks) deal a share of it below level 40 that follows what a level-appropriate
-// spell deals (a Mage's Frostbolt of that level against Icy Touch's): 8% at level 1, 18% at 10, 38% at 20, 65% at 30,
-// all of it from 40. Heals stay whole: the Death Knight's are a share of maximum health already.
+// level-55 class's: Icy Touch hit a level-1 wolf for about 236. A Hero's Death Knight spells (their direct damage
+// and their diseases' and Death and Decay's ticks) deal a share of it below level 40 that follows what a
+// level-appropriate spell deals (a Mage's Frostbolt of that level against Icy Touch's): 8% at level 1, 18% at 10,
+// 38% at 20, 65% at 30, all of it from 40. Heals stay whole: the Death Knight's are a share of maximum health already.
 class titan_dk_low_level : public UnitScript
 {
 public:
