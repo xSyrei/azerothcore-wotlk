@@ -8,8 +8,8 @@ alpha are then given the original's distribution, by rank (liquid_stats.json: 25
 colour, sorted by brightness, and of its alpha; statistics, not the textures), so the engine blends them as it did:
 - lake_a, ocean_h: the glint masks over the water colour the game draws itself, which lays their alpha over its
   water as light. Made for calm, realistic water (not the originals' distribution: large patches of alpha read as
-  stones in game): fine wind ripples in a low, even haze, and tiny, sharp sun glints gathering where the swell faces
-  the sun. Lakes ripple every way; the ocean's ripples run with the wind over a long swell.
+  stones in game): fine wind ripples in a low, even haze and tiny, sharp sun glints, nothing larger (the texture
+  repeats across a lake, so a larger shape repeats as a grid). The ocean's ripples run with the wind.
 - fast_a: grey foam streaks scrolling a whole tile per loop.
 - lava, lavagreen: glowing liquid around dark crust, warped; slime, LavaOrange: smooth slow swirls.
 
@@ -101,15 +101,17 @@ def glint_frames(name, kmin, kmax, beta, speed, seed, stretch=(1.0, 1.0), angle=
     """Calm, realistic water over the colour the game draws: the engine lays this texture's alpha over its water as
     light, so big patches of it read as stones. Fine wind ripples in a low, even haze (haze +- ripple alpha, out of
     255), and sun glints only on the steepest facets: tiny, sparse and sharp (the brightest glints share of the
-    pixels). Lakes ripple every way; the ocean's ripples run with the wind over a long swell."""
+    pixels). Nothing larger than a few ripples: the texture repeats across a lake, and a larger shape would repeat as
+    a grid. Lakes ripple every way; the ocean's ripples run with the wind."""
     rng = np.random.default_rng(seed)
     ripples = periodic_noise(rng, kmin, kmax, beta, speed, stretch, angle=angle)
-    swell = periodic_noise(rng, 3, 12, 2.0, 0.7, stretch, angle=angle)
     sun = np.array([0.35, -0.25, 0.9]); sun /= np.linalg.norm(sun)
     half = sun + np.array([0, 0, 1.0]); half /= np.linalg.norm(half)
     frames = []
-    for h, s in zip(ripples, swell):
-        height = h + s * 1.4
+    for h in ripples:
+        # No shape larger than a few ripples: the game repeats the texture across a lake, and any larger shape repeats
+        # with it as a grid of squares.
+        height = h
         gx = (np.roll(height, -1, 1) - np.roll(height, 1, 1)) * 0.5
         gy = (np.roll(height, -1, 0) - np.roll(height, 1, 0)) * 0.5
         n = np.stack([-gx, -gy, np.full_like(height, 0.55)], -1)
@@ -118,9 +120,6 @@ def glint_frames(name, kmin, kmax, beta, speed, seed, stretch=(1.0, 1.0), angle=
         shade = (shade - shade.mean()) / (shade.std() + 1e-9)
         spec = n @ half
         # The glints: the given share of the brightest facets, sharpened to points.
-        # Glitter gathers where the swell tilts toward the sun, in patches, as on real water.
-        facing = s * 0.5 + 0.5
-        spec = spec + 0.025 * (facing - 0.5)
         cut = np.quantile(spec, 1.0 - glints)
         glint = np.clip((spec - cut) / (spec.max() - cut + 1e-9), 0, 1) ** 0.5
         alpha = np.clip(haze + ripple * np.tanh(shade * 0.8) + 225.0 * glint, 0, 255)
