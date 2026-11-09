@@ -16,13 +16,13 @@ uniform float Strength <
     ui_type = "slider"; ui_min = 0.0; ui_max = 2.0; ui_step = 0.01;
     ui_label = "Strength";
     ui_tooltip = "How dark the occluded corners get.";
-> = 0.9;
+> = 1.25;
 
 uniform float Radius <
     ui_type = "slider"; ui_min = 0.2; ui_max = 4.0; ui_step = 0.01;
     ui_label = "Radius";
     ui_tooltip = "How far a crease reaches out (larger: broader, softer shading).";
-> = 1.2;
+> = 1.4;
 
 uniform float FadeDistance <
     ui_type = "slider"; ui_min = 0.02; ui_max = 1.0; ui_step = 0.01;

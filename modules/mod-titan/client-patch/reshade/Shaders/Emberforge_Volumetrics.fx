@@ -22,7 +22,7 @@ uniform float ShaftIntensity <
     ui_type = "slider"; ui_min = 0.0; ui_max = 2.0; ui_step = 0.01;
     ui_category = "Light shafts"; ui_label = "Intensity";
     ui_tooltip = "How bright the rays streaming from the sun are.";
-> = 0.65;
+> = 0.8;
 
 uniform float ShaftLength <
     ui_type = "slider"; ui_min = 0.5; ui_max = 1.0; ui_step = 0.005;
@@ -40,43 +40,43 @@ uniform float FogDensity <
     ui_type = "slider"; ui_min = 0.0; ui_max = 4.0; ui_step = 0.01;
     ui_category = "Fog"; ui_label = "Density";
     ui_tooltip = "How thick the air gets with distance.";
-> = 1.1;
+> = 1.6;
 
 uniform float FogStart <
     ui_type = "slider"; ui_min = 0.0; ui_max = 0.5; ui_step = 0.005;
     ui_category = "Fog"; ui_label = "Start distance";
     ui_tooltip = "How far away the fog begins (share of the view distance).";
-> = 0.04;
+> = 0.03;
 
 uniform float FogAmount <
     ui_type = "slider"; ui_min = 0.0; ui_max = 1.0; ui_step = 0.01;
     ui_category = "Fog"; ui_label = "Strength";
     ui_tooltip = "The most the fog may cover the far distance.";
-> = 0.45;
+> = 0.6;
 
 uniform float SunScatter <
     ui_type = "slider"; ui_min = 0.0; ui_max = 2.0; ui_step = 0.01;
     ui_category = "Fog"; ui_label = "Sun glow in the fog";
     ui_tooltip = "How much the fog lights up toward the sun.";
-> = 0.8;
+> = 1.0;
 
 uniform float MistAmount <
     ui_type = "slider"; ui_min = 0.0; ui_max = 1.0; ui_step = 0.01;
     ui_category = "Fog"; ui_label = "Drifting mist";
     ui_tooltip = "How much the fog breaks into slow drifting wisps (0: an even haze).";
-> = 0.55;
+> = 0.7;
 
 uniform float MistLow <
     ui_type = "slider"; ui_min = 0.0; ui_max = 1.0; ui_step = 0.01;
     ui_category = "Fog"; ui_label = "Low-lying";
     ui_tooltip = "How much thicker the fog lies low (valleys, the ground) than up high.";
-> = 0.5;
+> = 0.6;
 
 uniform float ShaftScatter <
     ui_type = "slider"; ui_min = 0.0; ui_max = 3.0; ui_step = 0.01;
     ui_category = "Fog"; ui_label = "Shafts in the fog";
     ui_tooltip = "How much the fog lights up where the sun's rays pass through it.";
-> = 1.2;
+> = 1.5;
 
 uniform float FrameTime < source = "frametime"; >;
 uniform float Timer < source = "timer"; >;

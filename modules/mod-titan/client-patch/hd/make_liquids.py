@@ -6,8 +6,10 @@ Made, not upscaled: every liquid is time-periodic Fourier noise (each wave a who
 and a whole number of times around the 30 frames), so it tiles seamlessly and loops without a seam. Its colours and
 alpha are then given the original's distribution, by rank (liquid_stats.json: 256 quantiles of each original's
 colour, sorted by brightness, and of its alpha; statistics, not the textures), so the engine blends them as it did:
-- lake_a, ocean_h: the glint masks over the water colour the game draws itself (near black, faint alpha with bright
-  sparkles on the crests). Lakes ripple every way; the ocean swells one way with chop over it.
+- lake_a, ocean_h: the glint masks over the water colour the game draws itself, which lays their alpha over its
+  water as light. Made for calm, realistic water (not the originals' distribution: large patches of alpha read as
+  stones in game): fine wind ripples in a low, even haze, and tiny, sharp sun glints gathering where the swell faces
+  the sun. Lakes ripple every way; the ocean's ripples run with the wind over a long swell.
 - fast_a: grey foam streaks scrolling a whole tile per loop.
 - lava, lavagreen: glowing liquid around dark crust, warped; slime, LavaOrange: smooth slow swirls.
 
@@ -31,9 +33,10 @@ STATS = json.loads((HERE / 'liquid_stats.json').read_text())
 
 # Name -> (archive path pattern, kind, parameters).
 LIQUIDS = {
-    'lake_a': ('XTextures\\river\\lake_a.{}.blp', 'glint', dict(kmin=8, kmax=150, beta=2.3, speed=1.4, seed=11)),
+    'lake_a': ('XTextures\\river\\lake_a.{}.blp', 'glint', dict(kmin=36, kmax=230, beta=1.7, speed=1.6, seed=11)),
     'ocean_h': ('XTextures\\ocean\\ocean_h.{}.blp', 'glint',
-                dict(kmin=6, kmax=170, beta=2.2, speed=1.2, seed=12, stretch=(1.0, 2.4), angle=35)),
+                dict(kmin=24, kmax=230, beta=1.8, speed=1.4, seed=12, stretch=(1.0, 1.8), angle=35, haze=26.0,
+                     ripple=11.0, glints=0.006)),
     'fast_a': ('XTextures\\river\\fast_a.{}.blp', 'flow', dict(kmin=6, kmax=220, beta=1.25, speed=2.0, seed=13)),
     'lava': ('XTextures\\lava\\lava.{}.blp', 'crust', dict(kmin=3, kmax=40, beta=2.0, speed=0.8, seed=14)),
     'lavagreen': ('XTextures\\LavaGreen\\lavagreen.{}.blp', 'crust',
@@ -93,28 +96,36 @@ def by_rank(ranks, quantiles):
     return q[lo] * (1 - f) + q[hi] * f
 
 
-def glint_frames(name, kmin, kmax, beta, speed, seed, stretch=(1.0, 1.0), angle=0.0):
+def glint_frames(name, kmin, kmax, beta, speed, seed, stretch=(1.0, 1.0), angle=0.0, haze=22.0, ripple=17.0,
+                 glints=0.006):
+    """Calm, realistic water over the colour the game draws: the engine lays this texture's alpha over its water as
+    light, so big patches of it read as stones. Fine wind ripples in a low, even haze (haze +- ripple alpha, out of
+    255), and sun glints only on the steepest facets: tiny, sparse and sharp (the brightest glints share of the
+    pixels). Lakes ripple every way; the ocean's ripples run with the wind over a long swell."""
     rng = np.random.default_rng(seed)
-    heights = periodic_noise(rng, kmin, kmax, beta, speed, stretch, angle=angle)
-    # Fine flecks: a crest's glint breaks into small bright points, as on the originals.
-    flecks = periodic_noise(rng, 90, 250, 0.5, 3.0)
-    light = np.array([0.45, -0.35, 0.82]); light /= np.linalg.norm(light)
-    stats = STATS[name]
+    ripples = periodic_noise(rng, kmin, kmax, beta, speed, stretch, angle=angle)
+    swell = periodic_noise(rng, 3, 12, 2.0, 0.7, stretch, angle=angle)
+    sun = np.array([0.35, -0.25, 0.9]); sun /= np.linalg.norm(sun)
+    half = sun + np.array([0, 0, 1.0]); half /= np.linalg.norm(half)
     frames = []
-    for h, fleck in zip(heights, flecks):
-        gx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) * 0.5
-        gy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) * 0.5
-        n = np.stack([-gx, -gy, np.full_like(h, 0.35)], -1)
+    for h, s in zip(ripples, swell):
+        height = h + s * 1.4
+        gx = (np.roll(height, -1, 1) - np.roll(height, 1, 1)) * 0.5
+        gy = (np.roll(height, -1, 0) - np.roll(height, 1, 0)) * 0.5
+        n = np.stack([-gx, -gy, np.full_like(height, 0.55)], -1)
         n /= np.linalg.norm(n, axis=-1, keepdims=True)
-        lit = n @ light
-        # Glints: where the surface mirrors the light toward a viewer looking down.
-        half = light + np.array([0, 0, 1.0]); half /= np.linalg.norm(half)
-        spec = ((n @ half) ** 64) * np.clip(fleck * 0.5 + 0.6, 0, None) ** 3 + lit * 0.05
-        # The glints are the bright pixels too (the originals' brightest sit where their alpha peaks).
-        lum = by_rank(rank(rank(lit) * 0.2 + rank(spec) * 0.8), [p[0] for p in stats['palette']])
-        alpha = by_rank(rank(spec), stats['alpha'])
-        rgb = np.repeat(lum[..., None], 3, -1)
-        frames.append(np.dstack([rgb, alpha]))
+        shade = n @ sun
+        shade = (shade - shade.mean()) / (shade.std() + 1e-9)
+        spec = n @ half
+        # The glints: the given share of the brightest facets, sharpened to points.
+        # Glitter gathers where the swell tilts toward the sun, in patches, as on real water.
+        facing = s * 0.5 + 0.5
+        spec = spec + 0.025 * (facing - 0.5)
+        cut = np.quantile(spec, 1.0 - glints)
+        glint = np.clip((spec - cut) / (spec.max() - cut + 1e-9), 0, 1) ** 0.5
+        alpha = np.clip(haze + ripple * np.tanh(shade * 0.8) + 225.0 * glint, 0, 255)
+        lum = np.clip(4.0 + 3.0 * np.tanh(shade * 0.8) + 200.0 * glint, 0, 255)
+        frames.append(np.dstack([lum, lum, lum, alpha]))
     return frames
 
 

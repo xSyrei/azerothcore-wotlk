@@ -13,33 +13,33 @@
 uniform float BloomIntensity <
     ui_type = "slider"; ui_min = 0.0; ui_max = 2.0; ui_step = 0.01;
     ui_category = "Bloom"; ui_label = "Intensity";
-> = 0.35;
+> = 0.6;
 
 uniform float BloomThreshold <
     ui_type = "slider"; ui_min = 0.3; ui_max = 1.0; ui_step = 0.01;
     ui_category = "Bloom"; ui_label = "Threshold";
     ui_tooltip = "Only light brighter than this glows.";
-> = 0.72;
+> = 0.65;
 
 uniform float Vibrance <
     ui_type = "slider"; ui_min = -1.0; ui_max = 1.0; ui_step = 0.01;
     ui_category = "Grade"; ui_label = "Vibrance";
-> = 0.25;
+> = 0.3;
 
 uniform float Contrast <
     ui_type = "slider"; ui_min = 0.0; ui_max = 1.0; ui_step = 0.01;
     ui_category = "Grade"; ui_label = "Contrast";
-> = 0.18;
+> = 0.24;
 
 uniform float Warmth <
     ui_type = "slider"; ui_min = -1.0; ui_max = 1.0; ui_step = 0.01;
     ui_category = "Grade"; ui_label = "Warmth";
-> = 0.12;
+> = 0.15;
 
 uniform float Vignette <
     ui_type = "slider"; ui_min = 0.0; ui_max = 1.0; ui_step = 0.01;
     ui_category = "Grade"; ui_label = "Vignette";
-> = 0.22;
+> = 0.25;
 
 texture Bloom1 { Width = BUFFER_WIDTH / 4; Height = BUFFER_HEIGHT / 4; Format = RGBA16F; };
 texture Bloom1b { Width = BUFFER_WIDTH / 4; Height = BUFFER_HEIGHT / 4; Format = RGBA16F; };
