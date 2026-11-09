@@ -363,6 +363,19 @@ which plays a session against a mocked WoW API. Install: copy the folder into `I
 - The class icon on the character creation screen is still the Paladin one; changing it needs
   edited login-screen (GlueXML) files.
 
+## HD liquids (patch-enUS-6.MPQ)
+
+`hd/make_liquids.py` makes new animated textures for every liquid the client draws (LiquidType.dbc:
+`XTextures\river\lake_a`, `fast_a`, `ocean\ocean_h`, `lava\lava`, `slime\slime`, `LavaGreen\lavagreen`,
+`LavaOrange\LavaOrange`, frames 1-30) at 512x512, four times the originals' pixels. They are made, not upscaled:
+time-periodic Fourier noise (each wave a whole number of times across the tile and around the 30 frames), so every
+frame tiles and the loop has no seam; then each texture takes the original's colour and alpha distribution by rank
+(`hd/liquid_stats.json`: 256 quantiles each, statistics only), so the engine blends it as before. Lakes and oceans
+are glint masks over the water colour the game draws (near black, faint alpha with sparkles on the crests: the ocean
+swells diagonally with chop); fast water is foam scrolling a tile per loop; lava has dark crust islands in grainy
+glow; slime and orange slime are slow ridged swirls. `hd/build_hd.py` writes them to `dist/patch-enUS-6.MPQ`, an
+archive of its own (29 MB), published with the others.
+
 ## Volumetric lighting (`reshade/`)
 
 **Emberforge Volumetrics** (`reshade/Shaders/Emberforge_Volumetrics.fx`): light shafts and atmospheric fog, a
