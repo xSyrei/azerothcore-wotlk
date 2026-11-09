@@ -38,6 +38,14 @@ PROCEDURAL = 100
 # Water and ocean (normal, slow, fast, WMO, interior, the raid and zone waters).
 WATERS = [1, 2, 5, 6, 9, 10, 13, 14, 17, 41, 61, 81]
 MATERIAL_FIELDS = range(14, 45)
+# Read from Wow.exe (Liquid::CMaterialProcWater): the liquid's texture slots bind 0, 1 -> s0, s1 (the reflection
+# cube maps), 4 -> s2 (the engine's depth texture: colour and opacity by depth, from the zone's light), 5 -> s3 (its
+# alpha, times 4, masks the specular highlight), 2, 3 -> s4, s5 (the wave normal maps). Its floats from field 23:
+# 0-3 scroll speeds, 4-7 their angles, 11-17 the pixel shader's c10 (normal fade, refraction ratio, reflection share
+# and its Fresnel part) and c11 (edge opacity, specular share and its Fresnel part).
+SPEC_MASK = 'XTextures\\procWater\\basicSpecMask_%d.blp'
+SPEC_SLOT = 20              # texture slot 5
+EDGE_OPACITY = 40           # float 17: c11.x, the opacity Fresnel adds at a glance
 
 
 def liquid_types(source):
@@ -47,12 +55,32 @@ def liquid_types(source):
     for i in range(count):
         offset = 20 + i * size
         rows[struct.unpack_from('<I', data, offset)[0]] = offset
-    procedural = struct.unpack_from(f'<{fields}I', data, rows[PROCEDURAL])
+    procedural = list(struct.unpack_from(f'<{fields}I', data, rows[PROCEDURAL]))
+    # The specular mask in slot 5 (the ocean's glint texture there was almost transparent: no highlight), as a new
+    # string at the end of the string block.
+    strings_at = 20 + count * size
+    procedural[SPEC_SLOT] = len(data) - strings_at
+    data += SPEC_MASK.encode('ascii') + b'\0'
+    struct.pack_into('<I', data, 16, len(data) - strings_at)
+    # More translucent at a glance (Fresnel adds 0.12 opacity, not 0.2).
+    procedural[EDGE_OPACITY] = struct.unpack('<I', struct.pack('<f', 0.12))[0]
     for water in WATERS:
         if water in rows:
             for field in MATERIAL_FIELDS:
                 struct.pack_into('<I', data, rows[water] + field * 4, procedural[field])
     return bytes(data)
+
+
+def spec_frames():
+    """The specular mask: alpha 90-200 (x4 in the shader), glittering finely and looping, so the sun's highlight
+    sparkles across the waves rather than shining as one flat sheet."""
+    rng = np.random.default_rng(32)
+    frames = []
+    for field in periodic_noise(rng, 60, 240, 1.0, 2.0):
+        alpha = np.clip(145 + field * 32, 90, 200)
+        rgba = np.dstack([np.full_like(alpha, 255), np.full_like(alpha, 255), np.full_like(alpha, 255), alpha])
+        frames.append(Image.fromarray(np.round(rgba).astype(np.uint8), 'RGBA'))
+    return frames
 
 
 def normal_frames():
@@ -91,6 +119,9 @@ def main():
         entries.append((f'XTextures\\procWater\\basicWaterHeightTex_{i}.blp',
                         blp.encode_dxt(frames[(i - 1) % FRAMES])))
     entries.append(('XTextures\\procWater\\basicReflectionMap.blp', blp.encode_dxt(reflection_map())))
+    masks = spec_frames()
+    for i in range(FRAMES + 1):
+        entries.append((SPEC_MASK.replace('%d', str(i)), blp.encode_dxt(masks[(i - 1) % FRAMES])))
     OUT.write_bytes(make_mpq.build(entries))
     print(f'Wrote {OUT} ({len(entries)} files, {OUT.stat().st_size / 2 ** 20:.1f} MB)')
 

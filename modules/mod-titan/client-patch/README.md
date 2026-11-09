@@ -389,6 +389,22 @@ red/green and again in alpha/blue, as the shader reads them) and `basicReflectio
 Whether the client feeds the shader all it needs shows only in game: try it by putting the archive in Data\enUS\,
 undo it by deleting it. `publish-client.ps1` leaves it out until it is known to work.
 
+How the client drives it (read from Wow.exe, `Liquid::CMaterialProcWater`): the liquid's texture slots bind 0 and 1
+to the reflection cube maps, 4 to the engine's depth texture (the water's colour and opacity by depth, from the
+zone's light), 5 to the specular mask (its alpha, times 4) and 2 and 3 to the wave normal maps; its floats from field
+23 are the scroll speeds and angles and, from float 11, the pixel shader's c10 (normal fade, refraction ratio,
+reflection share) and c11 (edge opacity, specular share). So slot 5 gets its own glittering specular mask
+(`basicSpecMask_<0-30>.blp`, a string added to LiquidType.dbc) and the edge opacity is 0.12.
+
+## Atmosphere and water light (patch-enUS-8.MPQ)
+
+`hd/make_atmosphere.py` rewrites the client's lighting tables (every zone, every hour):
+- **Atmosphere**: outdoor fog (LightFloatBand band 0, longer than 83 yards) ends at 72% of its distance and starts
+  0.15 sooner (band 1), so the distance hazes into each zone's fog and sky colour. Indoors keep theirs.
+- **Translucent water**: LightParams' shallow water opacity times 0.6, deep times 0.85 (lakes and oceans).
+- **Colour-matched water**: each zone's water colours (LightIntBand 14-17) take 30% (shallows) and 20% (deep) of
+  that zone's sky at the same hour (the horizon, band 6, and the lower sky, band 5), so water mirrors its sky.
+
 ## Volumetric lighting (`reshade/`)
 
 **Emberforge Volumetrics** (`reshade/Shaders/Emberforge_Volumetrics.fx`): light shafts and atmospheric fog, a

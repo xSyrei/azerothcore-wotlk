@@ -3,8 +3,8 @@
 #
 #   powershell -ExecutionPolicy Bypass -File "$HOME\azerothcore-wotlk\modules\mod-titan\client-patch\publish-client.ps1"
 #
-# Compares dist\patch-enUS-4/5/6/7.MPQ (gameplay, retextures, HD graphics, reflective water), the volumetric
-# lighting (reshade\) and every file of AddOns\Emberforge_* with the live manifest, uploads only what changed, drops
+# Compares dist\patch-enUS-4/5/6/7/8.MPQ (gameplay, retextures, HD graphics, reflective water, atmosphere), the
+# volumetric lighting (reshade\) and every file of AddOns\Emberforge_* with the live manifest, uploads only what changed, drops
 # addon and shader files that no longer exist, raises the version (1.0.2 -> 1.0.3, or -Version 1.1.0) and uploads the
 # manifest last. Launchers then show Update. Purge Cloudflare's cache after.
 param([string]$Version)
@@ -16,7 +16,8 @@ $here = $PSScriptRoot
 
 # path in the client -> file here
 $local = [ordered]@{}
-foreach ($mpq in 'patch-enUS-4.MPQ', 'patch-enUS-5.MPQ', 'patch-enUS-6.MPQ', 'patch-enUS-7.MPQ') {
+foreach ($mpq in 'patch-enUS-4.MPQ', 'patch-enUS-5.MPQ', 'patch-enUS-6.MPQ', 'patch-enUS-7.MPQ',
+    'patch-enUS-8.MPQ') {
     $local["Data/enUS/$mpq"] = Join-Path $here "dist\$mpq"
 }
 # Volumetric lighting (reshade\): ReShade, its settings as defaults (the launcher copies them once; ReShade then
