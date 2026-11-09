@@ -96,10 +96,12 @@ def by_rank(ranks, quantiles):
 def glint_frames(name, kmin, kmax, beta, speed, seed, stretch=(1.0, 1.0), angle=0.0):
     rng = np.random.default_rng(seed)
     heights = periodic_noise(rng, kmin, kmax, beta, speed, stretch, angle=angle)
+    # Fine flecks: a crest's glint breaks into small bright points, as on the originals.
+    flecks = periodic_noise(rng, 90, 250, 0.5, 3.0)
     light = np.array([0.45, -0.35, 0.82]); light /= np.linalg.norm(light)
     stats = STATS[name]
     frames = []
-    for h in heights:
+    for h, fleck in zip(heights, flecks):
         gx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) * 0.5
         gy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) * 0.5
         n = np.stack([-gx, -gy, np.full_like(h, 0.35)], -1)
@@ -107,8 +109,9 @@ def glint_frames(name, kmin, kmax, beta, speed, seed, stretch=(1.0, 1.0), angle=
         lit = n @ light
         # Glints: where the surface mirrors the light toward a viewer looking down.
         half = light + np.array([0, 0, 1.0]); half /= np.linalg.norm(half)
-        spec = (n @ half) ** 64 + lit * 0.05
-        lum = by_rank(rank(lit), [p[0] for p in stats['palette']])
+        spec = ((n @ half) ** 64) * np.clip(fleck * 0.5 + 0.6, 0, None) ** 3 + lit * 0.05
+        # The glints are the bright pixels too (the originals' brightest sit where their alpha peaks).
+        lum = by_rank(rank(rank(lit) * 0.2 + rank(spec) * 0.8), [p[0] for p in stats['palette']])
         alpha = by_rank(rank(spec), stats['alpha'])
         rgb = np.repeat(lum[..., None], 3, -1)
         frames.append(np.dstack([rgb, alpha]))
