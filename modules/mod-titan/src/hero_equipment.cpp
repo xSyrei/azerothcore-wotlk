@@ -78,7 +78,9 @@ namespace
     constexpr KitItem STARTER_BAG_KIT[] = {
         { 23346, 1 },       // Battleworn Claymore (two-handed sword)
         { 2131, 1 },        // Shortsword (one-hand: either hand, for Dual Wield)
+        { 2131, 1 },        // a second Shortsword, for two swords
         { 2092, 1 },        // Worn Dagger (one-hand)
+        { 2092, 1 },        // a second Worn Dagger, for two daggers
         { 35, 1 },          // Bent Staff
         { 2362, 1 },        // Worn Wooden Shield
         { 2504, 1 },        // Worn Shortbow
@@ -210,8 +212,27 @@ public:
     hero_equipment() : PlayerScript("hero_equipment", {
         PLAYERHOOK_ON_LOGIN,
         PLAYERHOOK_ON_FIRST_LOGIN,
-        PLAYERHOOK_ON_LEVEL_CHANGED
+        PLAYERHOOK_ON_LEVEL_CHANGED,
+        PLAYERHOOK_CHECK_ITEM_IN_SLOT_AT_LOAD_INVENTORY
     }) { }
+
+    // A Hero's gear is checked while the character loads, before its weapon and armor skills and Dual Wield are set
+    // again (they belong to no Paladin, EnsureProficiencies), so the core took off what needed them and mailed it.
+    // Proficiency and Dual Wield refusals are ignored then: the gear stays where it was worn.
+    bool OnPlayerCheckItemInSlotAtLoadInventory(Player* player, Item* item, uint8 slot, uint8& err, uint16& dest)
+        override
+    {
+        if (!IsHero(player))
+            return true;
+        err = player->CanEquipItem(slot, dest, item, false, false);
+        if (err == EQUIP_ERR_NO_REQUIRED_PROFICIENCY || err == EQUIP_ERR_CANT_EQUIP_SKILL
+            || err == EQUIP_ERR_CANT_DUAL_WIELD)
+        {
+            err = EQUIP_ERR_OK;
+            dest = (INVENTORY_SLOT_BAG_0 << 8) | slot;
+        }
+        return false;
+    }
 
     void OnPlayerLogin(Player* player) override
     {

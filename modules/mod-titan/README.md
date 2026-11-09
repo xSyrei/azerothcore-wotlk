@@ -28,7 +28,7 @@ cooling down (every half second, and at once when one is spent or ready) and eac
 from level 1 but hit like a level-55 class's, so below level 40 a Hero's Death Knight spells deal a share of their
 damage (`titan_dk_low_level`, same file): 8% at level 1, 18% at 10, 38% at 20, 65% at 30, all from 40 (Icy Touch
 about 19, 42, 90, 153, 236). Heals stay whole. At first login a Hero also finds one of each weapon kind
-in the bags: a Battleworn Claymore, a Shortsword and a Worn Dagger (both one-hand, to dual wield), a Bent Staff, a Worn Wooden Shield,
+in the bags: a Battleworn Claymore, two Shortswords and two Worn Daggers (all one-hand, to dual wield either), a Bent Staff, a Worn Wooden Shield,
 a Worn Shortbow and 200 Rough Arrows.
 
 Every Hero wears four **Emberforged Satchels** (item 910020, 30 slots, `data/sql/db-world/titan_satchels.sql`): at
