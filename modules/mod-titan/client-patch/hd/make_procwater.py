@@ -72,8 +72,8 @@ def liquid_types(source):
     # More translucent at a glance (Fresnel adds 0.12 opacity, not 0.2).
     procedural[EDGE_OPACITY] = struct.unpack('<I', struct.pack('<f', 0.12))[0]
     # Mostly the water's own colour looking down, mostly the sky across a lake (was a flat 0.2-0.3 either way).
-    procedural[REFLECTION_BASE] = struct.unpack('<I', struct.pack('<f', 0.1))[0]
-    procedural[REFLECTION_FRESNEL] = struct.unpack('<I', struct.pack('<f', 0.55))[0]
+    procedural[REFLECTION_BASE] = struct.unpack('<I', struct.pack('<f', 0.05))[0]
+    procedural[REFLECTION_FRESNEL] = struct.unpack('<I', struct.pack('<f', 0.4))[0]
     for water in WATERS:
         if water in rows:
             for field in MATERIAL_FIELDS:
@@ -101,7 +101,7 @@ def normal_frames():
     for h in heights:
         gx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) * 0.5
         gy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) * 0.5
-        n = np.stack([-gx, -gy, np.full_like(h, 0.4)], -1)    # gentle: steep waves shattered the reflection
+        n = np.stack([-gx, -gy, np.full_like(h, 0.28)], -1)   # visible waves (no black in the sky cube now)
         n /= np.linalg.norm(n, axis=-1, keepdims=True)
         x, y = (n[..., 0] * 0.5 + 0.5) * 255, (n[..., 1] * 0.5 + 0.5) * 255
         rgba = np.stack([x, y, y, x], -1)            # red/green and alpha/blue: the same normal
@@ -125,8 +125,9 @@ def reflection_map():
     clouds = np.clip((clouds - clouds.mean()) / clouds.std() * 0.25 + 0.1, 0, 1)
     # Below the horizon stays a soft horizon tone: tilted waves look there, and black beside the bright sky read as
     # camouflage.
-    zenith, horizon, below = np.array([84, 104, 124]), np.array([140, 152, 162]), np.array([92, 104, 112])
-    cloud = np.array([190, 194, 198])
+    # Darker and deeper than the sky looks, as water mirrors it (a pale one washed the water out, milky).
+    zenith, horizon, below = np.array([30, 54, 82]), np.array([84, 108, 128]), np.array([48, 66, 80])
+    cloud = np.array([120, 132, 144])
     v = np.linspace(0, 1, face)[:, None] * np.ones((1, face))     # 0 top of a side face, 1 its bottom
     t = np.clip(v / 0.5, 0, 1)[..., None]
     sky = zenith * (1 - t) + horizon * t
