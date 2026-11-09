@@ -493,7 +493,8 @@ Heroic for every dungeon at 60 (Classic's included), and Heroic loot.
   The client's own level filters are lifted by `Emberforge_Journal/MicroMenu.lua`. Finishing a random dungeon gives
   100 Emberspark (500 for a heroic), and its experience is a quarter of what the Hero's level takes
   (`src/dungeon_rewards.cpp`; `LFGHandler.cpp` shows the dungeon finder that amount, asking the quest experience
-  hook).
+  hook). Every other quest gives 3 times its experience on turn-in, on top of `Rate.XP.Quest` (5), shown so in the
+  quest window too (`QUEST_XP_MULTIPLIER`, same file).
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
 - `Spell::TakeRunePower`: runes give Rage instead of Runic Power (Emberforge has none; see Demon Hunter).
