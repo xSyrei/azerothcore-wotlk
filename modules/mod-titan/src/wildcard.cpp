@@ -135,6 +135,18 @@ namespace
         "Victory Rush", "Defensive Stance", "Taunt", "Shield Block", "Bloodrage", "Sunder Armor",
     };
 
+    // Names in LEVEL_ONE_ABILITIES another class's ability shares: only this class's comes at level 1 (the Warlock's
+    // Death Coil keeps its level, 32).
+    struct LevelOneClass
+    {
+        char const* Name;
+        uint8 ClassId;
+    };
+
+    constexpr LevelOneClass LEVEL_ONE_CLASS_ONLY[] = {
+        { "Death Coil", CLASS_DEATH_KNIGHT },
+    };
+
     // Talents learned as abilities (by name; their talent's rank 1 spell, or what it teaches: Mangle's Cat and Bear
     // versions), never as talents: rolled with the abilities from their tier's level (row 1: 10, ... row 11: 60) and
     // lit on their talent tree in the Classless window when known.
@@ -463,9 +475,9 @@ namespace
         { 90307, CLASS_MONK, SKILL_MISTWEAVER, 50 },        // Revival
         { 90311, CLASS_MONK, SKILL_MISTWEAVER, 60 },        // Invoke Chi-Ji, the Red Crane (the capstone)
         { 90320, CLASS_MONK, SKILL_WINDWALKER, 1 },         // Tiger Palm
-        { 90321, CLASS_MONK, SKILL_WINDWALKER, 4 },         // Blackout Kick
+        { 90321, CLASS_MONK, SKILL_WINDWALKER, 1 },         // Blackout Kick
+        { 90325, CLASS_MONK, SKILL_WINDWALKER, 1 },         // Spinning Crane Kick
         { 90322, CLASS_MONK, SKILL_WINDWALKER, 16 },        // Rising Sun Kick
-        { 90325, CLASS_MONK, SKILL_WINDWALKER, 20 },        // Spinning Crane Kick
         { 90323, CLASS_MONK, SKILL_WINDWALKER, 30 },        // Fists of Fury
         { 90327, CLASS_MONK, SKILL_WINDWALKER, 44 },        // Whirling Dragon Punch
         { 90329, CLASS_MONK, SKILL_WINDWALKER, 60 },        // Storm, Earth, and Fire (the capstone)
@@ -934,6 +946,9 @@ namespace Wildcard
                 if (std::any_of(result.begin(), result.end(), [&](Ability const& a) { return hasName(a, name); }))
                     continue;
 
+                // The first spell of that name in a class skill line: the others are its parts (Tame Beast's
+                // channel, Stormstrike's two hits), which would show as more abilities of the same name.
+                SkillLineAbilityEntry const* first = nullptr;
                 for (uint32 i = 0; i < sSkillLineAbilityStore.GetNumRows(); ++i)
                 {
                     SkillLineAbilityEntry const* entry = sSkillLineAbilityStore.LookupEntry(i);
@@ -944,14 +959,20 @@ namespace Wildcard
                     if (!skill || skill->categoryId != SKILL_CATEGORY_CLASS)
                         continue;
 
-                    auto classItr = skillClass.find(skill->id);
-                    for (uint32 spellId : TaughtSpells(entry->Spell))
-                    {
-                        uint32 firstRank = sSpellMgr->GetFirstSpellInChain(spellId);
-                        addChain(firstRank, classItr != skillClass.end() ? classItr->second : 0);
-                        foundLevelOne.insert(firstRank);
-                        found.insert(name);
-                    }
+                    if (!first || sSpellMgr->GetFirstSpellInChain(entry->Spell)
+                        < sSpellMgr->GetFirstSpellInChain(first->Spell))
+                        first = entry;
+                }
+                if (!first)
+                    continue;
+
+                auto classItr = skillClass.find(first->SkillLine);
+                for (uint32 spellId : TaughtSpells(first->Spell))
+                {
+                    uint32 firstRank = sSpellMgr->GetFirstSpellInChain(spellId);
+                    addChain(firstRank, classItr != skillClass.end() ? classItr->second : 0);
+                    foundLevelOne.insert(firstRank);
+                    found.insert(name);
                 }
             }
 
@@ -1030,6 +1051,9 @@ namespace Wildcard
                 });
                 ability.Banned = matches(ability, BANNED_ABILITIES) || runeforging;
                 bool levelOne = matches(ability, LEVEL_ONE_ABILITIES) || foundLevelOne.count(firstRank);
+                for (LevelOneClass const& only : LEVEL_ONE_CLASS_ONLY)
+                    if (hasName(ability, only.Name) && ability.ClassId != only.ClassId)
+                        levelOne = false;
                 ability.Companion = matches(ability, TAME_BEAST_COMPANIONS);
                 if (ability.Companion)
                     companions.push_back(firstRank);
