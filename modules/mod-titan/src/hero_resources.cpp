@@ -119,7 +119,9 @@ public:
 // client only counts a spent rune's cooldown down for a real Death Knight: for a Hero it stays spent on the rune bar
 // and the client refuses rune spells. So while a Hero has a rune cooling down, the server sends the runes' state
 // every half second (SMSG_RESYNC_RUNES: each rune's type and how much of its cooldown has passed, 0-255), and the
-// moment one is ready, SMSG_ADD_RUNE_POWER for it.
+// moment one is spent or ready, at once. A ready rune's state goes out before its SMSG_ADD_RUNE_POWER: the client
+// casts from the resynced cooldown, so a rune that only got SMSG_ADD_RUNE_POWER looked ready on the rune bar but
+// stayed spent for casting, the last resync having found it still cooling down (until a relog reset the runes).
 class hero_runes : public PlayerScript
 {
 public:
@@ -147,21 +149,27 @@ public:
             if (player->GetRuneCooldown(i))
                 cooling |= 1 << i;
 
-        for (uint8 i = 0; i < MAX_RUNES; ++i)
-            if ((state.Cooling & ~cooling) & (1 << i))
-                player->AddRunePower(i);
+        uint8 ready = state.Cooling & ~cooling;
+        bool changed = cooling != state.Cooling;
         state.Cooling = cooling;
 
-        if (!cooling)
+        state.Timer += diff;
+        if (changed || (cooling && state.Timer >= RESYNC_INTERVAL))
         {
             state.Timer = 0;
-            return;
+            Resync(player);
         }
-        state.Timer += diff;
-        if (state.Timer < RESYNC_INTERVAL)
-            return;
-        state.Timer = 0;
+        if (!cooling)
+            state.Timer = 0;
 
+        for (uint8 i = 0; i < MAX_RUNES; ++i)
+            if (ready & (1 << i))
+                player->AddRunePower(i);
+    }
+
+    // Every rune's type and how much of its cooldown has passed (255: ready).
+    static void Resync(Player* player)
+    {
         WorldPacket data(SMSG_RESYNC_RUNES, 4 + MAX_RUNES * 2);
         data << uint32(MAX_RUNES);
         for (uint8 i = 0; i < MAX_RUNES; ++i)

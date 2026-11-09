@@ -24,7 +24,7 @@ the weapon and armor skills at every login and level (the core drops the ones a 
 have); `Emberforge_Resources` shows the ammo slot, which the character sheet hides for a Paladin.
 Fishing poles still need the Fishing profession. Runes recharge on the server, but the client only shows a
 real Death Knight's recharging, so `hero_runes` (`src/hero_resources.cpp`) sends a Hero's rune state while any is
-cooling down (every half second) and each rune as it comes back. At first login a Hero also finds one of each weapon kind
+cooling down (every half second, and at once when one is spent or ready) and each rune as it comes back. At first login a Hero also finds one of each weapon kind
 in the bags: a Battleworn Claymore, a Shortsword and a Worn Dagger (both one-hand, to dual wield), a Bent Staff, a Worn Wooden Shield,
 a Worn Shortbow and 200 Rough Arrows.
 
@@ -115,6 +115,8 @@ talking to it in addon whispers (prefix `EFCL`, protocol in both files).
   ranks, the spellbook, action bars, buffs; the talent frame shows its talent id). Kept per character.
 - `.emberspark [amount]`: adds Emberspark to the selected player's (or your) account; without an amount, shows its
   balance (see Emberspark).
+- `.runes`: the selected Hero's (or your) runes as the server sees them, each one's type and time until ready. If
+  the server says a rune is ready but the game still refuses a rune spell, the problem is on the client.
 - `.learnability <spell id or link>`: teaches the selected player (or yourself) that ability the way Wildcard
   does (best rank for the level, with its companion spells), or that talent rank as a talent (plain `.learn`
   cannot give a Hero talents). Requirements, role and level are not checked.

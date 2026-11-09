@@ -36,6 +36,9 @@ using namespace Acore::ChatCommands;
 //   buffs), for .learnability. Kept per character; the Emberforge_Classless addon draws it.
 // - .emberspark [amount]: adds amount Emberspark to the selected player's (or your) account; without one, shows the
 //   balance.
+// - .runes: the selected player's (or your) runes as the server sees them: each one's type and how long until it is
+//   ready (0: ready). Tells a server-side rune problem from a client-side one: runes the server has ready that the
+//   game still refuses are the client's.
 class titan_commandscript : public CommandScript
 {
 public:
@@ -48,6 +51,7 @@ public:
             { "learnability", HandleLearnAbility, SEC_GAMEMASTER, Console::No },
             { "spellids", HandleSpellIds, SEC_GAMEMASTER, Console::No },
             { "emberspark", HandleEmberspark, SEC_GAMEMASTER, Console::No },
+            { "runes", HandleRunes, SEC_GAMEMASTER, Console::No },
         };
         return commandTable;
     }
@@ -126,6 +130,24 @@ public:
                 ChatHandler(asker->GetSession()).PSendSysMessage("{}'s account: {} Emberspark.", name,
                     Emberspark::Format(balance));
         });
+        return true;
+    }
+
+    static bool HandleRunes(ChatHandler* handler)
+    {
+        Player* target = handler->getSelectedPlayerOrSelf();
+        if (!target || !target->IsClass(CLASS_DEATH_KNIGHT, CLASS_CONTEXT_ABILITY))
+        {
+            handler->SendErrorMessage("No runes: select a Hero.");
+            return false;
+        }
+        static char const* const TYPES[] = { "Blood", "Unholy", "Frost", "Death" };
+        for (uint8 i = 0; i < MAX_RUNES; ++i)
+        {
+            uint8 type = target->GetCurrentRune(i);
+            handler->PSendSysMessage("Rune {}: {}, {} ms until ready (base {} ms)", i + 1,
+                type < 4 ? TYPES[type] : "?", target->GetRuneCooldown(i), target->GetRuneBaseCooldown(i, true));
+        }
         return true;
     }
 
