@@ -8,6 +8,7 @@
 ; - The water's own colour is lit by the waves: faces turned to the eye glow (light through the wave), faces turned
 ;   away go darker, so every wave shows its shape, not only where it mirrors the sky.
 ; - No refraction cube (it added one flat colour).
+; - The sky picture is tinted by the hour's fog colour (c4): a fixed daytime sky made night water glow pale.
 ; - The wave maps are read 5 and 3.5 times larger (two scales, so the tiling does not show).
 ; - Deep water is opaque (its opacity ramps to 1 from 0.6 to 0.85) and signed for Emberforge_Reflections.fx (ReShade's
 ;   screen-space reflections of the city in the water): there, the lowest bit of red, green and blue is 1, 0, 1 on
@@ -22,7 +23,8 @@
 ps_3_0
 def c0, 0, 2, -1, 1
 def c1, 0.5, 4, 0, 0
-def c12, 3, 0.3, -0.35, 1         ; wave light: tilt gain, glow, darkest, brightest
+def c12, 3, 0.12, -0.5, 1         ; wave light: tilt gain, glow, darkest, brightest (subtle: 0.3 read as marble)
+def c17, 2.2, 2.2, 2.2, 0          ; the sky picture times the hour's fog colour, times this
 def c14, 0.6, 0.85, 4, 127.5        ; opaque from: start, end, 1 / (end - start); half of 255
 def c15, -1, 1, -1, 0.00392157      ; the signature: odd minus even bits; 1 / 255
 def c16, 1.25, 0.25, 1.25, 0        ; even pixels' bits (+ 0.25 / 255, so rounding or truncation keeps the bit)
@@ -113,6 +115,8 @@ add r1.w, r1.w, r1.w
 mad r4.xyz, r5.xzyw, -r1.w, r6.xzyw
 max r4.y, r4.y, c13.z
 texld r2, r4, s1
+mul r2.xyz, r2, c4
+mul r2.xyz, r2, c17
 ; The water's colour lit by the wave: the slope toward the eye, scaled, kept within darkest..brightest.
 dp2add r8.z, r5, -r6, c0.x
 mul r8.z, r8.z, c12.x
