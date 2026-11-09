@@ -3,9 +3,10 @@
 #
 #   powershell -ExecutionPolicy Bypass -File "$HOME\azerothcore-wotlk\modules\mod-titan\client-patch\publish-client.ps1"
 #
-# Compares dist\patch-enUS-4.MPQ, dist\patch-enUS-5.MPQ and every file of AddOns\Emberforge_* with the live
-# manifest, uploads only what changed, drops addon files that no longer exist, raises the version (1.0.2 -> 1.0.3,
-# or -Version 1.1.0) and uploads the manifest last. Launchers then show Update. Purge Cloudflare's cache after.
+# Compares dist\patch-enUS-4.MPQ, dist\patch-enUS-5.MPQ, the volumetric lighting (reshade\) and every file of
+# AddOns\Emberforge_* with the live manifest, uploads only what changed, drops addon and shader files that no longer
+# exist, raises the version (1.0.2 -> 1.0.3, or -Version 1.1.0) and uploads the manifest last. Launchers then show
+# Update. Purge Cloudflare's cache after.
 param([string]$Version)
 
 $ErrorActionPreference = 'Stop'
@@ -17,6 +18,16 @@ $here = $PSScriptRoot
 $local = [ordered]@{}
 foreach ($mpq in 'patch-enUS-4.MPQ', 'patch-enUS-5.MPQ') {
     $local["Data/enUS/$mpq"] = Join-Path $here "dist\$mpq"
+}
+# Volumetric lighting (reshade\): ReShade, its settings as defaults (the launcher copies them once; ReShade then
+# saves the player's own), and the shaders.
+$reshade = Join-Path $here 'reshade'
+$local['ReShade32.dll'] = Join-Path $reshade 'ReShade32.dll'
+$local['ReShade.default.ini'] = Join-Path $reshade 'ReShade.ini'
+$local['ReShadePreset.default.ini'] = Join-Path $reshade 'ReShadePreset.ini'
+$local['ReShade-LICENSE.md'] = Join-Path $reshade 'ReShade-LICENSE.md'
+foreach ($shader in Get-ChildItem (Join-Path $reshade 'Shaders') -File) {
+    $local["reshade-shaders/Shaders/$($shader.Name)"] = $shader.FullName
 }
 foreach ($addon in Get-ChildItem (Join-Path $here 'AddOns') -Directory -Filter 'Emberforge_*') {
     foreach ($file in Get-ChildItem $addon.FullName -Recurse -File) {
@@ -32,7 +43,8 @@ foreach ($entry in $manifest.files) { $live[$entry.path] = $entry }
 
 $files = New-Object System.Collections.ArrayList
 foreach ($entry in $manifest.files) {
-    $ours = $local.Contains($entry.path) -or $entry.path -like 'Interface/AddOns/Emberforge_*'
+    $ours = $local.Contains($entry.path) -or $entry.path -like 'Interface/AddOns/Emberforge_*' `
+        -or $entry.path -like 'reshade-shaders/*'
     if (-not $ours) { [void]$files.Add($entry) }
 }
 $changed = @()
@@ -42,7 +54,10 @@ foreach ($rel in $local.Keys) {
     if (-not $live.ContainsKey($rel) -or $live[$rel].sha256 -ne $sha) { $changed += $rel }
     [void]$files.Add([pscustomobject]@{ path = $rel; size = (Get-Item $full).Length; sha256 = $sha })
 }
-$removed = @($manifest.files | Where-Object { $_.path -like 'Interface/AddOns/Emberforge_*' -and -not $local.Contains($_.path) })
+$removed = @($manifest.files | Where-Object {
+    ($_.path -like 'Interface/AddOns/Emberforge_*' -or $_.path -like 'reshade-shaders/*') `
+        -and -not $local.Contains($_.path)
+})
 
 if (-not $changed -and -not $removed) {
     Write-Host "Nothing to publish: the CDN already has these files (version $($manifest.version))."

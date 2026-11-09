@@ -9,6 +9,7 @@
 *.png    binary
 *.tga    binary
 *.exe    binary
+*.dll    binary
 *.jpg    binary
 *.webp   binary
 *.m2     binary
@@ -46,3 +47,6 @@
 
 # Ignore sql/* files
 data/sql/*    linguist-documentation
+
+# ReShade's settings keep Windows line endings (ReShade writes them so).
+modules/mod-titan/client-patch/reshade/*.ini -text

@@ -362,3 +362,32 @@ which plays a session against a mocked WoW API. Install: copy the folder into `I
   `hero_class.sql` and the class mask in `worldserver.conf` together.
 - The class icon on the character creation screen is still the Paladin one; changing it needs
   edited login-screen (GlueXML) files.
+
+## Volumetric lighting (`reshade/`)
+
+**Emberforge Volumetrics** (`reshade/Shaders/Emberforge_Volumetrics.fx`): light shafts and atmospheric fog, a
+ReShade effect over the client's Direct3D 9 picture (the client draws its world itself, so this is a screen-space
+layer):
+
+1. **Sky**: the bright sky (pixels at the far plane, brighter than *Sky brightness threshold*), at an eighth of the
+   screen.
+2. **Sun**: where that light gathers (weighted to its hot spot), how much of it shows (by the brightest sky: none at
+   night, indoors or looking away) and the sky's colour, eased over about a third of a second.
+3. **Light shafts**: the sky's light smeared toward the sun at half resolution (56 samples), so it streams around
+   trees, roofs and mountains in front of it.
+4. **Fog**: from the depth buffer, exponential with distance, in the sky's colour and brighter toward the sun; never on
+   the sky. Without depth access it turns itself off rather than fog the screen.
+
+Its settings (Home in game: ReShade's window): shaft intensity, length and sky threshold; fog density, start,
+strength and sun glow. The UI is drawn into the same picture, so the shafts and fog touch it a little.
+
+The client ships **ReShade 6.8.0** (`ReShade32.dll`, from the official installer at reshade.me,
+`ReShade_Setup_6.8.0.exe` SHA-256 `207aea16205fbf952bc8fe1879966672454cf04002e7ad34237c7990a5b3c0b4`; BSD-3-Clause,
+`ReShade-LICENSE.md`),
+`ReShade.fxh` (CC0), and its settings as `ReShade.default.ini` / `ReShadePreset.default.ini`: WoW's depth is not
+reversed, depth copied before clears, the tutorial skipped, Home opens the window, Scroll Lock turns the effects off
+and on. The launcher's **Lighting: On/Off** puts ReShade in as `d3d9.dll` when the game starts (or takes it out; a
+`d3d9.dll` that is not ReShade stays), and copies the default settings once.
+
+To check the shader, ReShade's own compiler (`tools/fxc.cpp` in crosire/reshade) builds on Linux from its effect
+sources; it compiles for Shader Model 3 (Direct3D 9) and GLSL without errors.
