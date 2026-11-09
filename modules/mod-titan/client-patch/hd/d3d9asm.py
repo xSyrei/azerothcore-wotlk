@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """A small Direct3D 9 shader assembler (ps_3_0): assembly text -> bytecode, and the client's .bls wrapper.
 
-Enough of the instruction set for the water shader: def, dcl_texcoordN / dcl_fog (inputs), dcl_2d / dcl_cube
-(samplers), and arithmetic and texld instructions with write masks, swizzles, negation and _sat. Comments start with
+Enough of the instruction set for the water shader: def, dcl_texcoordN / dcl_fog (inputs), dcl_vpos (the pixel's
+position on screen, read as vPos), dcl_2d / dcl_cube (samplers), and arithmetic and texld instructions with write masks, swizzles, negation and _sat. Comments start with
 ';'. The client keeps each shader in a .bls file: a 28-byte header (its last word the bytecode's size), then the
 bytecode.
 """
@@ -22,6 +22,8 @@ BLS_HEADER = bytes.fromhex('53505847030001000100000080f803000002000000000000')
 
 
 def register(text):
+    if text == 'vPos':
+        return 0x80000000 | ((17 & 7) << 28) | ((17 & 0x18) << 8)
     for prefix in ('oC', 'r', 'v', 'c', 's'):
         if text.startswith(prefix) and text[len(prefix):].isdigit():
             kind = REGISTER_TYPES[prefix]
@@ -62,7 +64,9 @@ def assemble(text):
             words += [81 | (5 << 24), destination(args[0])] + floats(args[1:])
         elif op.startswith('dcl_'):
             kind = op[4:]
-            if kind in SAMPLER_TYPES:
+            if kind == 'vpos':
+                words += [31 | (2 << 24), 0x80000000, destination(args[0])]
+            elif kind in SAMPLER_TYPES:
                 words += [31 | (2 << 24), 0x80000000 | (SAMPLER_TYPES[kind] << 27), destination(args[0])]
             else:
                 usage = kind.rstrip('0123456789')

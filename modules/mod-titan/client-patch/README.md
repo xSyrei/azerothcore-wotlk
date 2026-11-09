@@ -409,8 +409,9 @@ constants; `hd/d3d9asm.py` assembles it and rebuilds the game's own shader byte 
 cos)^4, the reflection's share 0.08 looking down to 0.88 at a glance), the water's colour lit by the waves (faces
 turned to the eye glow, light through the wave; faces turned away darker), reflections kept above the horizon (a
 crest's back face mirrored the dark below: specks), the wave maps read 5 and 3.5 times larger (at the game's scale
-they were a yard across: marbling), no refraction cube. The wave maps are a
-wind sea, as ocean renderers make one (`ocean_slopes`: a spectrum travelling downwind at deep water's speeds, choppy,
+they were a yard across: marbling), no refraction cube. Deep water is opaque (its opacity ramps to 1 from 0.6 to
+0.85) and signed for the water reflections (below): the lowest bit of red, green and blue is 1, 0, 1 where x + y is
+even and 0, 1, 0 where odd (vPos). The wave maps are a wind sea, as ocean renderers make one (`ocean_slopes`: a spectrum travelling downwind at deep water's speeds, choppy,
 so crests come sharp and troughs broad; round noise blobs read as anything but water), and their second coordinates
 cross the first (floats 4-7, the angles, were all 0).
 
@@ -421,7 +422,7 @@ cross the first (floats 4-7, the angles, were all 0).
   0.15 sooner (band 1), so the distance hazes into each zone's fog and sky colour. Indoors keep theirs.
 - **Water opacity**: LightParams' shallow water opacity times 0.95 (lakes and oceans; at 0.7 a pale canal floor shone
   through and the water read as glass).
-- **Colour-matched water**: each zone's water colours (LightIntBand 14-17) take 45% clear sea teal (dimmed with the
+- **Colour-matched water**: each zone's water colours (LightIntBand 14-17) take 25% clear sea teal (dimmed with the
   zone's own water at night) and 15% (shallows) or 10% (deep) of that zone's sky at the same hour (the horizon, band
   6, and the lower sky, band 5).
 
@@ -442,14 +443,21 @@ layer):
    slow drifting wisps (three octaves of 3D noise in view space, with time). Never on the sky; without depth access it
    turns itself off rather than fog the screen.
 
-Two more effects, in this order around it (`ReShadePreset.ini`):
-- **Emberforge Ambient Occlusion** (`Emberforge_AO.fx`), first: soft contact shadows in creases, corners and under
+More effects, in this order around it (`ReShadePreset.ini`):
+- **Emberforge Water Reflections** (`Emberforge_Reflections.fx`), first: the city mirrored in the water (lamps, lit
+  windows, walls), rippled; the game's water can only mirror a fixed sky picture. It finds the water by the signature
+  Emberforge's water shader leaves (8 of a pixel's 3x3 carrying it, in either phase: a flat colour can never match,
+  so streets and floors stay matte), takes the water's normal from the depth buffer averaged over all the water on
+  screen, and marches a mirrored ray (bent by moving ripples) through the depth buffer; misses keep the water's own
+  sky reflection. First, as every later effect changes the colours; the game's Full Screen Glow wipes the signature,
+  so the launcher turns it off (`ffxGlow 0`) while Lighting is on. *Show the water it found* tints the water red.
+- **Emberforge Ambient Occlusion** (`Emberforge_AO.fx`): soft contact shadows in creases, corners and under
   objects, from the depth buffer at half resolution (12 samples on a turning spiral, a depth-aware blur), fading out
   with distance; never on the sky.
 - **Emberforge Bloom & Grade** (`Emberforge_Bloom.fx`), last: glow around bright light over three sizes (screen
   blended, no clipping), then vibrance, a gentle S-curve, warmth and a light vignette.
 
-Their settings (Home in game: ReShade's window): shafts (intensity, length, sky threshold), fog (density, start,
+Their settings (Home in game: ReShade's window): reflections (strength, ripples, field of view), shafts (intensity, length, sky threshold), fog (density, start,
 strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion (strength, radius, fade distance), bloom
 (intensity, threshold) and grade (vibrance, contrast, warmth, vignette). The UI is drawn into the same picture, so the
 effects touch it a little.

@@ -35,7 +35,7 @@ SKY_IN_SHALLOWS = 0.15  # the share of the sky's horizon colour in the shallows
 SKY_IN_DEEP = 0.1       # and of its lower sky in the deep
 # Clear sea water's own teal (the reference look), blended into every zone's colours, which keep the rest.
 TEAL_SHALLOW, TEAL_DEEP = (70, 136, 124), (20, 72, 74)
-TEAL_SHARE = 0.45
+TEAL_SHARE = 0.25      # (0.45 was bright: the reflections show on darker water)
 
 BAND_SKY_LOW, BAND_HORIZON = 5, 6
 WATER_BANDS = {14: BAND_HORIZON, 15: BAND_SKY_LOW, 16: BAND_HORIZON, 17: BAND_SKY_LOW}

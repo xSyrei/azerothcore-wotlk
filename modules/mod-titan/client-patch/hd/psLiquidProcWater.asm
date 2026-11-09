@@ -9,6 +9,10 @@
 ;   away go darker, so every wave shows its shape, not only where it mirrors the sky.
 ; - No refraction cube (it added one flat colour).
 ; - The wave maps are read 5 and 3.5 times larger (two scales, so the tiling does not show).
+; - Deep water is opaque (its opacity ramps to 1 from 0.6 to 0.85) and signed for Emberforge_Reflections.fx (ReShade's
+;   screen-space reflections of the city in the water): there, the lowest bit of red, green and blue is 1, 0, 1 on
+;   pixels where x + y is even and 0, 1, 0 where it is odd. Invisible, and nothing else on screen makes that
+;   checkerboard, so the effect finds exactly the water (floors and streets stay matte).
 ;
 ; Inputs: v0-v2 the surface's frame (tangent, bitangent, normal), v3 and v4 the near and far wave maps' coordinates
 ; (two sets each: .xy and .wz), v5 the depth texture's (.xy) and the glitter mask's (.wz), v6 the world position, v7
@@ -19,6 +23,9 @@ ps_3_0
 def c0, 0, 2, -1, 1
 def c1, 0.5, 4, 0, 0
 def c12, 3, 0.3, -0.35, 1         ; wave light: tilt gain, glow, darkest, brightest
+def c14, 0.6, 0.85, 4, 127.5        ; opaque from: start, end, 1 / (end - start); half of 255
+def c15, -1, 1, -1, 0.00392157      ; the signature: odd minus even bits; 1 / 255
+def c16, 1.25, 0.25, 1.25, 0        ; even pixels' bits (+ 0.25 / 255, so rounding or truncation keeps the bit)
 def c13, 0.2, 0.29, 0.08, 0          ; the wave maps' scale: waves 5 and 3.5 times larger (at 1, a yard: marbling);
                                    ; the lowest a reflection looks (a crest's back face mirrored the dark below)
 dcl_texcoord4 v0.xyz
@@ -29,6 +36,7 @@ dcl_texcoord1 v4
 dcl_texcoord2 v5
 dcl_texcoord3 v6.xyz
 dcl_fog v7.x
+dcl_vpos vPos.xy
 dcl_cube s0
 dcl_cube s1
 dcl_2d s2
@@ -92,9 +100,13 @@ dp3_sat r0.w, -r6, r5
 add r0.w, -r0.w, c0.w
 mul r8.x, r0.w, r0.w
 mul r8.y, r8.x, r8.x
-; Opacity: the depth's, plus the edge's at a glance.
+; Opacity: the depth's, plus the edge's at a glance; deep water ramps to opaque (r10.x: 1 where fully).
 texld r3, v5, s2
-mad oC0.w, c11.x, r8.x, r3.w
+mad r10.w, c11.x, r8.x, r3.w
+add r10.x, r10.w, -c14.x
+mul_sat r10.x, r10.x, c14.z
+lrp r10.w, r10.x, c0.w, r10.w
+add r10.y, r10.x, -c0.w
 ; The sky the wave mirrors.
 dp3 r1.w, r6, r5
 add r1.w, r1.w, r1.w
@@ -119,4 +131,18 @@ mad r1.w, c11.z, r8.x, c11.y
 mad r0.xyz, r7, r1.w, r0
 ; Fog.
 add r0.xyz, r0, -c4
-mad oC0.xyz, v7.x, r0, c4
+mad r0.xyz, v7.x, r0, c4
+; The signature where the water is opaque: each channel to an even step of 255, plus its bit.
+mov_sat r11.xyz, r0
+mul r11.xyz, r11, c14.w
+frc r12.xyz, r11
+add r11.xyz, r11, -r12
+add r12.w, vPos.x, vPos.y
+mul r12.w, r12.w, c1.x
+frc r12.w, r12.w
+add r12.w, r12.w, r12.w
+mad r12.xyz, c15, r12.w, c16
+mad r11.xyz, r11, c0.y, r12
+mul r11.xyz, r11, c15.w
+cmp oC0.xyz, r10.y, r11, r0
+mov oC0.w, r10.w
