@@ -31,7 +31,7 @@ ip=$(curl -s -4 ifconfig.me)
 if [ -z "$ip" ]; then
     echo "FAILED: could not find this server's public IP."
 else
-    echo "UPDATE realmlist SET address='$ip' WHERE id=1;" | db
+    echo "UPDATE realmlist SET address='$ip', name='Emberforge' WHERE id=1;" | db
     echo "OK: the realm now points at $(echo "SELECT CONCAT(name, ' -> ', address) FROM realmlist WHERE id=1;" | db)"
 fi
 
