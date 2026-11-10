@@ -472,7 +472,8 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   log. Without a readable depth (anti-aliasing on, or no `INTZ`) the water is drawn by the
   engine's shader blended, with the sky alone in it. Everything the copy pass changes is put back from the engine's
   own record of the game's state (vertex declaration, stream 0, samplers and render states included).
-- **Atmosphere** (`src/atmosphere.hlsl`): once the world is drawn (the first draw into the back buffer with the depth
+- **Atmosphere** (`src/atmosphere.hlsl`; off by default for now, to be reworked: *Engine atmosphere* in the panel
+  turns it on): once the world is drawn (the first draw into the back buffer with the depth
   test off after world draws: the interface), the engine copies the scene and its distances again and draws over it:
   the sky around the sun (and a soft disc) at half size, that light smeared toward the sun (light shafts streaming
   past roofs, trees, mountains), and over the whole world height fog by the true distance (thicker below the eye,

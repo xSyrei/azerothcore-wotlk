@@ -37,7 +37,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.11"
+#define EMBERFORGE_ENGINE_VERSION "0.12"
 
 namespace
 {
@@ -184,7 +184,9 @@ namespace
         float sunAzimuth = 6.2134f, sunHeight = 0.4712f;
         float shading = 1.0f, refraction = 3.0f, opacity = 0.85f;
         // The atmosphere: light shafts from the sun and fog lit by it.
-        bool atmosphere = true, atmosphereShow = false, sunFlip = false;
+        // Off for now (it is to be reworked): the water stays. Its saved key is new, so an older Emberforge.ini
+        // that saved it on does not turn it back on.
+        bool atmosphere = false, atmosphereShow = false, sunFlip = false;
         float shaftIntensity = 0.8f, shaftLength = 0.97f, skyThreshold = 0.55f, sunDisc = 0.3f, shaftScatter = 1.0f;
         // Subtle: haze in the distance and low down, the colours nearby kept (a thick veil made the world bland).
         float fogDensity = 0.15f, fogStart = 40.0f, fogFalloff = 0.05f, fogBelow = 0.0f, fogMost = 0.35f;
@@ -216,7 +218,7 @@ namespace
                 {"reflect_distortion", &distortion}, {"sky_brightness", &skyBrightness}, {"sparkle", &sparkle},
                 {"sparkle_size", &sparkleSize}, {"sun_azimuth", &sunAzimuth}, {"sun_height", &sunHeight},
                 {"wave_shading", &shading}, {"refraction", &refraction},
-                {"opacity", &opacity}, {"atmosphere", nullptr, &atmosphere}, {"sun_flip", nullptr, &sunFlip},
+                {"opacity", &opacity}, {"atmosphere_rework", nullptr, &atmosphere}, {"sun_flip", nullptr, &sunFlip},
                 {"shaft_intensity", &shaftIntensity}, {"shaft_length", &shaftLength},
                 {"sky_threshold", &skyThreshold}, {"sun_disc", &sunDisc}, {"shaft_scatter", &shaftScatter},
                 {"fog_density", &fogDensity}, {"fog_start", &fogStart}, {"fog_falloff", &fogFalloff},
