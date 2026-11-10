@@ -173,14 +173,16 @@ namespace
     struct Settings
     {
         bool water = true, waterCity = true, waterShow = false;
-        float tint[3] = {0.03f, 0.11f, 0.13f};
-        float tintAmount = 0.6f;
-        float hue = 0.0f, saturation = 1.0f, brightness = 0.6f, murk = 0.35f;
-        float waveSize = 4.0f, waveHeight = 0.25f, waveSpeed = 0.5f, wind = 0.7f;
-        float spread = 0.45f, ripples = 0.35f, detail = 0.3f, detailSize = 6.0f;
-        float reflectDown = 0.08f, reflectGlance = 0.9f, reflectBrightness = 0.9f, distortion = 1.0f;
-        float skyBrightness = 2.2f, sparkle = 1.0f, sparkleSize = 0.3f, sunAzimuth = 3.8f, sunHeight = 0.6f;
-        float shading = 0.4f, refraction = 1.0f, opacity = 0.85f;
+        // The defaults: the look tuned in game at Stormwind's canals (deep blue, clear, long slow waves).
+        float tint[3] = {0.0f, 0.1333f, 0.4118f};
+        float tintAmount = 1.0f;
+        float hue = 1.5359f, saturation = 1.716f, brightness = 0.188f, murk = 0.04f;
+        float waveSize = 20.0f, waveHeight = 0.309f, waveSpeed = 0.603f, wind = 0.8029f;
+        float spread = 0.053f, ripples = 0.242f, detail = 0.634f, detailSize = 11.1f;
+        float reflectDown = 0.217f, reflectGlance = 0.9f, reflectBrightness = 0.9f, distortion = 1.0f;
+        float skyBrightness = 2.2f, sparkle = 0.397f, sparkleSize = 0.093f;
+        float sunAzimuth = 6.2134f, sunHeight = 0.4712f;
+        float shading = 1.0f, refraction = 3.0f, opacity = 0.85f;
 
         struct Entry
         {
