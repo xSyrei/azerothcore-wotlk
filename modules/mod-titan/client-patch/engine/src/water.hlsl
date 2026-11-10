@@ -1,11 +1,13 @@
 // Emberforge Engine water: replaces the game's water pixel shader (psLiquidProcWater) while the game draws its water.
 // Compiled when the game starts (d3dcompiler_47.dll, ps_3_0); build.sh embeds this file in the engine.
 //
-// From the game, as its own shader has them: the water's world position (TEXCOORD3), the depth colour's coordinates
-// (TEXCOORD2.xy), the fog (FOG), the sky cube (s1), the depth colour and opacity ramp (s2), the wave normal map (s4),
-// the fog colour (c4), the sun's direction (c6), the highlight colour (c9).
+// From the game's water vertex shader (vs_3_0, whichever pixel shader the game pairs with it: Stormwind's canals get a
+// ps_2_0 one): the world position (TEXCOORD3), the depth colour's coordinates (TEXCOORD2.xy), the fog factor (FOG);
+// from its textures: the sky cube (s1), the depth colour and opacity ramp (s2), the wave normal map (s4).
 // From the engine: the scene behind the water (s13) and its distance from the eye in yards (s12), both copied just
-// before the first water draw; the camera (c12-c16); the screen and time (c17); the panel's sliders (c18-c24).
+// before the first water draw; the camera (c12-c16); the screen and time (c17); the panel's sliders (c18-c24); the
+// game's fog colour, the sun and its glint's colour (c25-c27). The game's own pixel constants are not read: the 2.0
+// and 3.0 water shaders lay them out differently.
 //
 // The water is drawn opaque over the copied scene: the bottom shows through shallow water and fades into the water's
 // own colour as it deepens, the sky and the city (marched through the depth) are mirrored by the Fresnel, waves of the
@@ -17,9 +19,6 @@ sampler2D WaveS : register(s4);
 sampler2D DistanceS : register(s12);
 sampler2D SceneS : register(s13);
 
-float4 FogColour : register(c4);
-float4 SunDirection : register(c6);
-float4 Highlight : register(c9);
 
 float4 ViewX : register(c12);        // the view matrix's rows (a world point times it: x, y, z, 1)
 float4 ViewY : register(c13);
@@ -34,6 +33,9 @@ float4 WaveB : register(c21);        // spread, ripples, detail strength, detail
 float4 Mirror : register(c22);       // reflectiveness looking down, at a glance, reflection brightness, distortion
 float4 Sky : register(c23);          // sky brightness, city reflections (0/1), sparkle, sparkle size
 float4 Other : register(c24);        // wave shading, refraction, opacity without depth, show the water (0/1)
+float4 FogColour : register(c25);    // the game's fog colour (its D3DRS_FOGCOLOR)
+float4 SunDirection : register(c26); // toward the sun
+float4 Highlight : register(c27);    // the glint's colour
 
 struct Input
 {
@@ -174,9 +176,7 @@ float4 main(Input i) : COLOR
     if (under)
         n = -n;
 
-    // The sun, from above (the game's direction may point either way).
     float3 sun = normalize(SunDirection.xyz);
-    sun = sun.z < 0.0 ? -sun : sun;
 
     // The water's own colour (the game's for this zone and hour), graded, lit by the waves.
     float4 game = tex2D(DepthColourS, i.depthUv.xy);

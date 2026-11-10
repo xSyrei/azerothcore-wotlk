@@ -37,7 +37,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.3"
+#define EMBERFORGE_ENGINE_VERSION "0.4"
 
 namespace
 {
@@ -179,7 +179,7 @@ namespace
         float waveSize = 4.0f, waveHeight = 0.25f, waveSpeed = 0.5f, wind = 0.7f;
         float spread = 0.45f, ripples = 0.35f, detail = 0.3f, detailSize = 6.0f;
         float reflectDown = 0.08f, reflectGlance = 0.9f, reflectBrightness = 0.9f, distortion = 1.0f;
-        float skyBrightness = 2.2f, sparkle = 1.0f, sparkleSize = 0.3f;
+        float skyBrightness = 2.2f, sparkle = 1.0f, sparkleSize = 0.3f, sunAzimuth = 3.8f, sunHeight = 0.6f;
         float shading = 0.4f, refraction = 1.0f, opacity = 0.85f;
 
         struct Entry
@@ -202,7 +202,8 @@ namespace
                 {"wave_detail_size", &detailSize}, {"reflect_down", &reflectDown},
                 {"reflect_glance", &reflectGlance}, {"reflect_brightness", &reflectBrightness},
                 {"reflect_distortion", &distortion}, {"sky_brightness", &skyBrightness}, {"sparkle", &sparkle},
-                {"sparkle_size", &sparkleSize}, {"wave_shading", &shading}, {"refraction", &refraction},
+                {"sparkle_size", &sparkleSize}, {"sun_azimuth", &sunAzimuth}, {"sun_height", &sunHeight},
+                {"wave_shading", &shading}, {"refraction", &refraction},
                 {"opacity", &opacity},
             };
             for (const Entry &e : entries)
@@ -257,7 +258,7 @@ namespace
 
     constexpr int kVertexConstants = 256, kPixelConstants = 32, kRenderStates = 256, kStages = 8;
     constexpr int kSamplers = 16, kSamplerStates = 14;
-    constexpr UINT kWaterConstants = 12;                      // the water shader's c12-c24 (src/water.hlsl)
+    constexpr UINT kWaterConstants = 12, kWaterConstantCount = 16;   // the water shader's c12-c27 (src/water.hlsl)
     // Render states an engine pass turns off (and puts back after).
     const D3DRENDERSTATETYPE kPassStates[] = {
         D3DRS_ZENABLE, D3DRS_ZWRITEENABLE, D3DRS_ALPHABLENDENABLE, D3DRS_ALPHATESTENABLE, D3DRS_STENCILENABLE,
@@ -806,14 +807,15 @@ namespace
         {
             if (!m_settings.water || !m_waterPs || m_recordingBlock || !IsWater())
                 return false;
-            // The engine's shader is shader model 3: it works only with a shader model 3 vertex shader.
-            if (Version(m_ps) != 0xFFFF0300 || Version(m_vs) != 0xFFFE0300)
+            // The engine's shader is shader model 3: it needs a shader model 3 vertex shader (the game's water has
+            // one, whether its pixel shader is 2.0 or 3.0).
+            if (Version(m_vs) != 0xFFFE0300)
             {
                 if (!m_waterVersionLogged)
                 {
                     m_waterVersionLogged = true;
-                    Log("water not replaced: the game's water is pixel %08lx / vertex %08lx (needs 3.0 for both)",
-                        static_cast<unsigned long>(Version(m_ps)), static_cast<unsigned long>(Version(m_vs)));
+                    Log("water not replaced: its vertex shader is %08lx (needs 3.0)",
+                        static_cast<unsigned long>(Version(m_vs)));
                 }
                 return false;
             }
@@ -831,7 +833,7 @@ namespace
                         m_waterCopied ? "yes" : "no");
                 }
             }
-            float constants[13][4] = {};
+            float constants[kWaterConstantCount][4] = {};
             memcpy(constants[0], view, sizeof(view));
             memcpy(constants[4], projection, sizeof(projection));
             float seconds = static_cast<float>(std::fmod(Seconds() - m_epoch, 3600.0));
@@ -848,8 +850,20 @@ namespace
             };
             memcpy(constants[5], screen, sizeof(screen));
             memcpy(constants[6], rows, sizeof(float) * 4 * 7);
+            // The fog colour the game set for its fixed-function fog (the 2.0 water's), the sun from the panel,
+            // and the glint: white by day, fading with the fog's brightness at night.
+            DWORD fog = m_rs[D3DRS_FOGCOLOR];
+            float fr = ((fog >> 16) & 0xFF) / 255.0f, fg = ((fog >> 8) & 0xFF) / 255.0f, fb = (fog & 0xFF) / 255.0f;
+            float day = std::fmin(1.0f, (0.2126f * fr + 0.7152f * fg + 0.0722f * fb) * 2.5f);
+            float ch = std::cos(s.sunHeight);
+            float sun[3][4] = {
+                {fr, fg, fb, 1.0f},
+                {ch * std::cos(s.sunAzimuth), ch * std::sin(s.sunAzimuth), std::sin(s.sunHeight), 0.0f},
+                {day * (0.8f + 0.2f * fr), day * (0.8f + 0.2f * fg), day * (0.8f + 0.2f * fb), 1.0f},
+            };
+            memcpy(constants[13], sun, sizeof(sun));
             real->SetPixelShader(m_waterPs);
-            real->SetPixelShaderConstantF(kWaterConstants, constants[0], 13);
+            real->SetPixelShaderConstantF(kWaterConstants, constants[0], kWaterConstantCount);
             if (m_waterCopied)
             {
                 real->SetTexture(12, m_distance);
@@ -873,7 +887,7 @@ namespace
         void EndWater()
         {
             real->SetPixelShader(static_cast<IDirect3DPixelShader9 *>(m_ps));
-            real->SetPixelShaderConstantF(kWaterConstants, m_psc[kWaterConstants], 13);
+            real->SetPixelShaderConstantF(kWaterConstants, m_psc[kWaterConstants], kWaterConstantCount);
             if (m_waterCopied)
             {
                 real->SetTexture(12, nullptr);
@@ -1044,7 +1058,8 @@ namespace
                     char text[48];
                     DWORD kind = code[i + 1], reg = code[i + 2];
                     DWORD type = ((reg >> 28) & 7) | ((reg >> 8) & 0x18);
-                    snprintf(text, sizeof(text), " %s%lu(%lu/%lu)", type == 10 ? "s" : (type == 1 ? "v" : "o"),
+                    const char *prefix = type == 10 ? "s" : (type == 1 ? "v" : (type == 3 ? "t" : "o"));
+                    snprintf(text, sizeof(text), " %s%lu(%lu/%lu)", prefix,
                              static_cast<unsigned long>(reg & 0x7FF),
                              static_cast<unsigned long>(type == 10 ? (kind >> 27) & 0xF : kind & 0x1F),
                              static_cast<unsigned long>((kind >> 16) & 0xF));
@@ -1382,6 +1397,8 @@ namespace
             ImGui::SeparatorText("Sparkle");
             ImGui::SliderFloat("Sparkle", &s.sparkle, 0.0f, 3.0f);
             ImGui::SliderFloat("Sparkle size", &s.sparkleSize, 0.0f, 1.0f);
+            ImGui::SliderAngle("Sun direction", &s.sunAzimuth, 0.0f, 360.0f);
+            ImGui::SliderAngle("Sun height", &s.sunHeight, 5.0f, 90.0f);
             ImGui::PopItemWidth();
         }
 

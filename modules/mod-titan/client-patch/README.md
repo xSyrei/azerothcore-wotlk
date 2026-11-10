@@ -464,7 +464,10 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   waves; the sun glints in the game's highlight colour. The water is recognised by its shader's declarations (cube
   maps in s0/s1, 2D maps in s2-s5, the fog), or, whatever else its code holds, by a shader reading cube maps in s0 and
   s1 drawn with cube maps bound there. Stormwind's canals are WMO Water (LiquidType 13, material 1: the animated
-  `lake_a` textures, its glint mask in s3) drawn with a procedural-water shader whose bytecode matched none we know.
+  `lake_a` textures, its glint mask in s3) drawn with a **ps_2_0** procedural-water shader (`f04dff60`) beside a
+  vs_3_0 vertex shader: the reason the `hd/` ps_3_0 water never showed there. The engine's ps_3_0 shader pairs with
+  that vertex shader, and reads none of the game's pixel constants (the 2.0 shader's differ): the fog colour comes
+  from `D3DRS_FOGCOLOR` (the 2.0 water is fogged by fixed function), the sun from the panel.
   The first water draw's shaders go to `Emberforge_water_ps.bin` / `_vs.bin` and their declarations to the
   log. Without a readable depth (anti-aliasing on, or no `INTZ`) the water is drawn by the
   engine's shader blended, with the sky alone in it. Everything the copy pass changes is put back from the engine's
