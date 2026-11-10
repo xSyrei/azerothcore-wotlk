@@ -37,7 +37,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.5"
+#define EMBERFORGE_ENGINE_VERSION "0.6"
 
 namespace
 {
@@ -186,7 +186,7 @@ namespace
         // The atmosphere: light shafts from the sun and fog lit by it.
         bool atmosphere = true, atmosphereShow = false, sunFlip = false;
         float shaftIntensity = 0.8f, shaftLength = 0.97f, skyThreshold = 0.55f, sunDisc = 0.3f, shaftScatter = 1.0f;
-        float fogDensity = 0.25f, fogStart = 15.0f, fogFalloff = 0.02f, fogBelow = 10.0f, fogMost = 0.6f;
+        float fogDensity = 0.8f, fogStart = 10.0f, fogFalloff = 0.02f, fogBelow = 10.0f, fogMost = 0.6f;
         float sunGlow = 0.8f, mist = 0.5f, mistSize = 25.0f, mistSpeed = 1.0f;
 
         struct Entry
@@ -1451,6 +1451,23 @@ namespace
             }
             m_last = m_frame;
             m_cameraSeenLast = m_cameraSeen;
+            // Why the atmosphere was or was not drawn this frame, for the panel.
+            if (!m_settings.atmosphere)
+                m_atmosphereWhy = "off";
+            else if (m_last.atmosphere)
+                m_atmosphereWhy = "drawn";
+            else if (!m_compositePs)
+                m_atmosphereWhy = "not drawn: its shaders failed";
+            else if (!m_half[0] || !m_half[1])
+                m_atmosphereWhy = "not drawn: its targets failed";
+            else if (!m_worldDrawn)
+                m_atmosphereWhy = "not drawn: no world seen (depth not the engine's?)";
+            else if (!m_atmosphereDone)
+                m_atmosphereWhy = "not drawn: the interface never started";
+            else if (!m_cameraSeen)
+                m_atmosphereWhy = "not drawn: camera not found";
+            else
+                m_atmosphereWhy = "not drawn: the scene copy failed";
             m_sunSeenLast = m_sunSeen;
             m_frame = Counters();
             m_waterPrepared = false;
@@ -1546,8 +1563,8 @@ namespace
             ImGui::Text("Water draws: %u (%u drawn by the engine%s)", m_last.waterDraws, m_last.waterReplaced,
                         m_last.waterReplaced && !m_waterCopied ? ", no depth: plain" : "");
             ImGui::Text("Readable depth: %s", m_intz ? "yes" : "no");
-            ImGui::Text("Atmosphere: %s, camera %s, sun %s", m_last.atmosphere ? "drawn" : "not drawn",
-                        m_cameraSeenLast ? "found" : "not found", m_sunSeenLast ? "found" : "not found");
+            ImGui::Text("Atmosphere: %s; camera %s, sun %s", m_atmosphereWhy, m_cameraSeenLast ? "found" : "not found",
+                        m_sunSeenLast ? "found" : "not found");
             WaterPanel();
             AtmospherePanel();
             if (ImGui::CollapsingHeader("Diagnostics"))
@@ -1696,6 +1713,7 @@ namespace
         UINT m_rt0Width = 0, m_rt0Height = 0;
         bool m_worldDrawn = false, m_atmosphereDone = false, m_cameraSeen = false, m_sunSeen = false;
         bool m_cameraSeenLast = false, m_sunSeenLast = false;
+        const char *m_atmosphereWhy = "not drawn yet";
         float m_worldMinZ = 0.0f, m_worldMaxZ = 1.0f;
         DWORD m_worldFog = 0;
         float m_camera[4][4] = {}, m_cameraProjection[3] = {};
