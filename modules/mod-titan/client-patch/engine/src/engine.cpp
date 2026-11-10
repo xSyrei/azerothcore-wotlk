@@ -64,7 +64,8 @@ namespace
 
     void Log(const char *format, ...)
     {
-        static FILE *file = fopen((GameFolder() + "Emberforge.log").c_str(), "w");
+        // Appended to: the game loads and unloads d3d9.dll more than once (one log per game start: see DllMain).
+        static FILE *file = fopen((GameFolder() + "Emberforge.log").c_str(), "a");
         if (!file)
             return;
         va_list args;
@@ -881,18 +882,28 @@ namespace
 
 // ---- Loaded ----
 
-BOOL APIENTRY DllMain(HMODULE, DWORD reason, LPVOID)
+BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved)
 {
     if (reason == DLL_PROCESS_ATTACH)
     {
+        // The game loads d3d9.dll by name, checks the graphics card through it and frees it (FreeLibrary) before it
+        // loads it again to draw: unloaded in between, the engine lost its place. Pinned, it stays for the game's life.
+        HMODULE pinned = nullptr;
+        GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_PIN | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                           reinterpret_cast<LPCSTR>(&DllMain), &pinned);
+        // A fresh log for each game start (the log is appended to while it runs).
+        std::string path = GameFolder() + "Emberforge.log";
+        if (FILE *fresh = fopen(path.c_str(), "w"))
+            fclose(fresh);
         char exe[MAX_PATH] = {};
         GetModuleFileNameA(nullptr, exe, MAX_PATH);
-        Log("Emberforge Engine %s loaded by %s", EMBERFORGE_ENGINE_VERSION, exe);
+        Log("Emberforge Engine %s loaded by %s%s", EMBERFORGE_ENGINE_VERSION, exe, pinned ? " (pinned)" : "");
     }
     else if (reason == DLL_PROCESS_DETACH)
     {
-        Log("game closed");
+        Log(reserved ? "game closed" : "unloaded");
     }
+    (void)module;
     return TRUE;
 }
 
