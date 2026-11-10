@@ -353,8 +353,10 @@ A Hero has four loadouts of Wildcard abilities and talents (`src/specs.cpp`; cha
 `titan_spec_entries`, `data/sql/db-characters/titan_specs.sql`). Specialization I and II are free; III (25,000
 Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon window.
 - **Switching** (out of combat, not in a battleground): the Classless window's Specs tab, right-click a spec,
-  Activate (or the Darkmoon window's Specializations page). The active spec's abilities and talents are kept and the
-  other's put back, with what its level is owed since; a spec never used rolls anew, as a new Hero's.
+  Activate (or the Darkmoon window's Specializations page). The active spec's abilities, talents and action bars are
+  kept and the other's put back, with what its level is owed since; a spec never used starts as a copy of the one
+  left (no locks), to make its own with rerolls. Action bars: `titan_spec_actions`
+  (`data/sql/db-characters/titan_spec_actions.sql`).
 - **Names and icons**: click a spec's icon in the Specs tab (or right-click, Rename / icon): a name and any of the
   macro icons.
 - **Rerolls**: right-click one of your spells or talents, Reroll: an Eye of Unlearning for another ability the Hero can

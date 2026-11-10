@@ -90,11 +90,12 @@ namespace
         bool Used = false;      // has been active: holds abilities and talents
         uint32 Granted = 0, Picks = 0, Capstone = 0;            // Wildcard's counts, while inactive
         std::map<std::pair<uint8, uint32>, Entry> Entries;      // inactive: all it holds; active: its locks
+        std::map<uint8, std::pair<uint32, uint8>> Actions;      // inactive: its action bars (button: action, type)
     };
 
     struct Loadouts
     {
-        uint8 Pending = 2;
+        uint8 Pending = 3;
         uint8 Active = 0;
         std::array<Spec, MAX_SPECS> Specs;
     };
@@ -199,6 +200,18 @@ namespace
         CharacterDatabase.CommitTransaction(trans);
     }
 
+    void SaveActions(Player* player, uint8 index, Spec const& spec)
+    {
+        uint32 guid = player->GetGUID().GetCounter();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        trans->Append(Acore::StringFormat("DELETE FROM `titan_spec_actions` WHERE `guid` = {} AND `spec` = {}", guid,
+            index));
+        for (auto const& [button, action] : spec.Actions)
+            trans->Append(Acore::StringFormat("INSERT INTO `titan_spec_actions` (`guid`, `spec`, `button`, `action`, "
+                "`type`) VALUES ({}, {}, {}, {}, {})", guid, index, button, action.first, action.second));
+        CharacterDatabase.CommitTransaction(trans);
+    }
+
     void Load(Player* player)
     {
         ObjectGuid guid = player->GetGUID();
@@ -265,6 +278,51 @@ namespace
                 entry = entry->second.Locked ? std::next(entry) : active.erase(entry);
             --itr->second.Pending;
         }));
+        queries.AddCallback(CharacterDatabase.AsyncQuery(Acore::StringFormat("SELECT `spec`, `button`, `action`, "
+            "`type` FROM `titan_spec_actions` WHERE `guid` = {}", guid.GetCounter()))
+            .WithCallback([guid](QueryResult result)
+        {
+            auto itr = loadouts.find(guid);
+            if (itr == loadouts.end())
+                return;
+            if (result)
+                do
+                {
+                    Field* fields = result->Fetch();
+                    uint8 index = fields[0].Get<uint8>();
+                    // The active spec's bars are the Hero's own.
+                    if (index >= MAX_SPECS || index == itr->second.Active)
+                        continue;
+                    itr->second.Specs[index].Actions[fields[1].Get<uint8>()] = { fields[2].Get<uint32>(),
+                        fields[3].Get<uint8>() };
+                } while (result->NextRow());
+            --itr->second.Pending;
+        }));
+    }
+
+    // The Hero's action bars, into the spec.
+    void KeepActions(Player* player, Spec& spec)
+    {
+        spec.Actions.clear();
+        for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
+            if (ActionButton const* action = player->GetActionButton(button))
+                spec.Actions[button] = { action->GetAction(), uint8(action->GetType()) };
+    }
+
+    // The spec's action bars, the Hero's (after its spells are learned: a button needs its spell known), and the
+    // client told.
+    void PutBackActions(Player* player, Spec& spec)
+    {
+        for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
+        {
+            auto itr = spec.Actions.find(button);
+            if (itr != spec.Actions.end())
+                player->addActionButton(button, itr->second.first, itr->second.second);
+            else if (player->GetActionButton(button))
+                player->removeActionButton(button);
+        }
+        spec.Actions.clear();
+        player->SendActionButtons(1);
     }
 
     TalentEntry const* HeroTalent(uint32 talentId)
@@ -303,7 +361,8 @@ namespace
         spec.Capstone = Wild(player, WILDCARD_CAPSTONE);
     }
 
-    // The spec's abilities and talents the Hero's, then what its level is owed since; a spec never used rolls anew.
+    // The spec's abilities and talents the Hero's, then what its level is owed since (a spec never used is first
+    // made a copy of the one left: Activate).
     void PutBack(Player* player, Spec& spec)
     {
         Wildcard::SetQuiet(true);
@@ -359,16 +418,34 @@ namespace
         }
         Spec& current = data->Specs[data->Active];
         Keep(player, current);
+        KeepActions(player, current);
         SaveEntries(player, data->Active, current);
         SaveSpec(player, data->Active, current);
+        SaveActions(player, data->Active, current);
+        // A spec never used starts as a copy of this one (its abilities, talents, counts and bars, no locks): each
+        // is then made its own by rerolls.
         bool fresh = !target.Used;
+        if (fresh)
+        {
+            target.Entries = current.Entries;
+            for (auto& [key, entry] : target.Entries)
+                entry.Locked = false;
+            target.Granted = current.Granted;
+            target.Picks = current.Picks;
+            target.Capstone = current.Capstone;
+            target.Actions = current.Actions;
+            target.Used = true;
+        }
+        player->SendActionButtons(2);                     // the client's bars cleared while the spells change
         PutBack(player, target);
+        PutBackActions(player, target);
         data->Active = index;
         player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_ACTIVE, index);
         SaveSpec(player, index, target);
         SaveEntries(player, index, target);
+        SaveActions(player, index, target);
         handler.PSendSysMessage("|cffff8000Specialization:|r {} is active{}.", target.Name,
-            fresh ? ": its abilities and talents are rolled anew" : "");
+            fresh ? ": a copy of the one you left, to make its own with rerolls" : "");
         Send(player);
         Classless::SendKnown(player);
         Classless::SendState(player);
@@ -539,10 +616,13 @@ namespace Specs
             return;
         CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_spec_entries` WHERE `guid` = {}",
             player->GetGUID().GetCounter()));
+        CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_spec_actions` WHERE `guid` = {}",
+            player->GetGUID().GetCounter()));
         for (uint8 i = 0; i < MAX_SPECS; ++i)
         {
             Spec& spec = data->Specs[i];
             spec.Entries.clear();
+            spec.Actions.clear();
             spec.Used = i == data->Active;
             spec.Granted = spec.Picks = spec.Capstone = 0;
             SaveSpec(player, i, spec);
@@ -576,6 +656,8 @@ public:
         CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_specs` WHERE `guid` = {}",
             guid.GetCounter()));
         CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_spec_entries` WHERE `guid` = {}",
+            guid.GetCounter()));
+        CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_spec_actions` WHERE `guid` = {}",
             guid.GetCounter()));
     }
 
