@@ -10,6 +10,7 @@
 *.tga    binary
 *.exe    binary
 *.dll    binary
+*.addon32 binary
 *.jpg    binary
 *.webp   binary
 *.m2     binary
