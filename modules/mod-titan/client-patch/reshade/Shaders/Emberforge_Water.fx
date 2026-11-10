@@ -7,8 +7,8 @@
  *   green and blue is 1, 0, 1;
  * - odd pixels: where it is in the world, x and y modulo 128 yards in 2048 steps: red and green the top 8 bits, blue's
  *   bits 1-3 and 4-6 the low 3 of x and y, blue's bit 0 is 0 and bit 7 is 1.
- * A flat colour can never be both, so streets and floors never pass for water. (Shallows, still see-through, keep the
- * game's own drawing.)
+ * A flat colour can never be both, so streets and floors never pass for water. All water is handed over, made
+ * opaque, however shallow.
  *
  *  1. Classify: how many of each pixel's 3x3 fit the checkerboard, in either phase.
  *  2. Decode: the colour and world position (a pass each) at every pixel of water (and at its edge pixels).

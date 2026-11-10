@@ -1,5 +1,5 @@
 ; The ReShade water's variant of psLiquidProcWater.asm's tail (make_procwater.py splices it in from the "tail" line):
-; opaque water hands Emberforge_Water.fx what it needs to draw the water itself, in a checkerboard (vPos):
+; all water, made opaque, hands Emberforge_Water.fx what it needs to draw the water itself, in a checkerboard (vPos):
 ; - even pixels (x + y even): the water's own colour by depth, this zone and hour, fogged, without waves or
 ;   reflections; the lowest bit of red, green and blue is 1, 0, 1;
 ; - odd pixels: where it is in the world, x and y modulo 128 yards in 2048 steps (a sixteenth of a yard): red and
@@ -36,6 +36,7 @@ add r12.w, vPos.x, vPos.y
 mul r12.w, r12.w, c1.x
 frc r12.w, r12.w
 add r12.w, r12.w, -c1.x
-cmp r18.xyz, r12.w, r17, r11
-cmp oC0.xyz, r10.y, r18, r0
-mov oC0.w, r10.w
+; Every pixel of water, however shallow (only opaque water keeps the bits exact, and Stormwind's canals never got
+; deep enough): ReShade draws all of it.
+cmp oC0.xyz, r12.w, r17, r11
+mov oC0.w, c0.w
