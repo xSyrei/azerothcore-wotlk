@@ -85,8 +85,9 @@ namespace Wildcard
         bool Companion;             // only learned along with another ability (Tame Beast's pet spells)
         std::vector<uint32> Companions; // first ranks learned along with this one
         // What it needs first, as groups of first ranks: one ability of every group must be known (the
-        // form or stance it is cast in, stealth, a pet). Empty: nothing.
+        // form or stance it is cast in, stealth, a pet, a combo point builder). Empty: nothing.
         std::vector<std::vector<uint32>> Requires;
+        int8 ComboGroup = -1;       // the group of Requires that is "awards combo points" (a finisher's), or -1
         uint8 Roles = 0;            // RoleMask() bits of the roles it serves; 0: every role (buffs, utility)
         uint32 TalentId = 0;        // a talent's ability (Mortal Strike...): learned as an ability, never as a talent
         bool Capstone = false;      // rolled at CAPSTONE_LEVEL only (Bladestorm, Divine Storm...)

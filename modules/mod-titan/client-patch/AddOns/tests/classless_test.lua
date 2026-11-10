@@ -75,6 +75,9 @@ function PlaySound(name) sounds[#sounds + 1] = name end
 ALL, ACCEPT, CANCEL, OKAY = "All", "Accept", "Cancel", "Okay"
 CLASS_ICON_TCOORDS = setmetatable({}, { __index = function() return { 0, 0.25, 0, 0.25 } end })
 GameTooltip = NewWidget("GameTooltip")
+GameTooltip.lines = {}
+function GameTooltip:AddLine(text, r, g, b) self.lines[#self.lines + 1] = { text = text, r = r, g = g, b = b } end
+function GameTooltip:SetOwner(owner) self.owner, self.lines = owner, {} end
 Minimap = NewWidget("Minimap")
 function Minimap:GetCenter() return 100, 100 end
 function Minimap:GetEffectiveScale() return 1 end
@@ -92,8 +95,10 @@ local SPELLS = {
     [133] = "Fireball", [116] = "Frostbolt", [78] = "Heroic Strike", [772] = "Rend", [5176] = "Wrath",
     [11069] = "Improved Fireball", [12338] = "Improved Fireball", [11078] = "Improved Fire Blast",
     [16462] = "Deflection", [11071] = "Frostbite", [90101] = "Chaos Strike",
+    [2098] = "Eviscerate", [1752] = "Sinister Strike", [53] = "Backstab",
 }
 function GetSpellInfo(id) return SPELLS[id], "", "Interface\\Icons\\Spell_" .. id end
+function IsSpellKnown() return false end
 function GetSpellLink(id) return "[" .. (SPELLS[id] or "?") .. "]" end
 function IsModifiedClick() return false end
 function ChatEdit_InsertLink() end
@@ -501,6 +506,24 @@ ShapeshiftButton2.hooked.OnClick(ShapeshiftButton2)
 check(#sent == before, "clicking another stance is the game's (it switches)")
 ShapeshiftButton1.hooked.OnClick(ShapeshiftButton1)
 check(lastSent() == "CANCEL,2457", "clicking the lit stance button asks to leave it")
+
+-- A finisher needs a combo point builder: the server leads that group with a 0, and the tooltip names it in a line
+-- of its own (not every builder), red until one is known.
+server("A,4.38.1.2098.0/1752/53")
+EmberforgeClasslessSearch.text = "Eviscerate"
+EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
+local eviscerate = grid.cells[1]
+eviscerate.scripts.OnEnter(eviscerate)
+local needLine
+for _, line in ipairs(GameTooltip.lines) do
+    if line.text:find("^Requires") then
+        needLine = line
+    end
+end
+check(needLine and needLine.text == "Requires an ability that awards combo points" and needLine.r == 1,
+    "a finisher's tooltip asks for an ability that awards combo points, in red")
+EmberforgeClasslessSearch.text = ""
+EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
 
 -- Other addons' messages are ignored.
 before = #sent

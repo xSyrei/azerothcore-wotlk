@@ -98,6 +98,10 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   Beast; Health Funnel: a demon; Death Pact: Raise Dead) is rolled or picked only once the Hero knows an
   ability giving it. Forms, stances and stealth are read from the spells; pets from their targets and
   `PET_ABILITIES`. The Classless window shows them on the ability ("Requires Cat Form", red until met).
+  A finisher (it spends combo points: the game's own by their spell, the Monk's and Demon Hunter's by name,
+  `SCRIPTED_FINISHERS`) needs an ability awarding combo points (by its spell's effect, or `CODE_BUILDERS`: Mangle
+  (Cat), Hemorrhage); Overpower is not one (its point comes from a dodge). The window says "Requires an ability that
+  awards combo points".
 - **Ability lists** (`src/wildcard.cpp`, by spell name, every rank and faction version; a name that
   matches nothing is logged at startup):
   - `BANNED_ABILITIES`: taken out of the game for Heroes (class mounts, tracking and scouting,

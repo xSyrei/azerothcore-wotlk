@@ -180,9 +180,13 @@ namespace
 
             std::string entry = Acore::StringFormat("{}.{}.{}.{}", ability.ClassId, ability.SkillLine,
                 ability.Ranks.front().Level, ability.Ranks.front().SpellId);
+            // Its requirements: groups (+) of givers (/). The combo point group leads with a 0 (the window names it
+            // "an ability that awards combo points" instead of listing every builder).
             for (std::size_t group = 0; group < ability.Requires.size(); ++group)
             {
                 entry += group ? '+' : '.';
+                if (int(group) == ability.ComboGroup)
+                    entry += "0/";
                 for (std::size_t i = 0; i < ability.Requires[group].size(); ++i)
                     entry += (i ? "/" : "") + std::to_string(ability.Requires[group][i]);
             }
@@ -220,7 +224,7 @@ namespace
         if (!Wildcard::IsHero(player) || Wildcard::IsKitLocked(player) || !picks)
             handler.SendSysMessage("You have no ability picks. Use the Titan Tome of Selection first.");
         else if (ability && !Wildcard::MeetsRequirements(player, *ability))
-            handler.SendSysMessage("You need its form, stance, stealth or pet ability first.");
+            handler.SendSysMessage("You need its form, stance, stealth, pet or combo point ability first.");
         else if (!ability || !Wildcard::CanLearn(player, *ability))
             handler.SendSysMessage("You cannot learn that ability yet.");
         else

@@ -242,6 +242,16 @@ namespace
         char const* Name;
         std::span<char const* const> Pets;
     };
+    // Finishers whose scripts take the combo points (the Monk's, the Demon Hunter's: src/monk.cpp,
+    // src/demon_hunter.cpp); the game's own say so in their spell (SpellInfo::NeedsComboPoints).
+    constexpr char const* SCRIPTED_FINISHERS[] = {
+        "Rising Sun Kick", "Fists of Fury", "Spinning Crane Kick", "Soul Cleave", "Spirit Bomb", "Soul Barrier",
+    };
+    // Not finishers though their spell says so: Overpower's point comes from the target dodging, not a builder.
+    constexpr char const* NOT_FINISHERS[] = { "Overpower" };
+    // Builders the core awards combo points for in code (SpellEffects.cpp), not by their spell's effect.
+    constexpr char const* CODE_BUILDERS[] = { "Mangle (Cat)", "Hemorrhage" };
+
     constexpr NeedsPet PET_ABILITIES[] = {
         { "Kill Command", HUNTER_PETS }, { "Bestial Wrath", HUNTER_PETS }, { "Intimidation", HUNTER_PETS },
         { "Master's Call", HUNTER_PETS }, { "Eyes of the Beast", HUNTER_PETS }, { "Mend Pet", HUNTER_PETS },
@@ -1173,9 +1183,10 @@ namespace Wildcard
             }
 
             // Requirements. Forms and stances: the abilities whose spells give each form (any rank).
-            // Stealth: those that stealth. Pets: by name or class.
+            // Stealth: those that stealth. Pets: by name or class. Combo points: those awarding them.
             std::unordered_map<uint32, std::vector<uint32>> formGivers;
             std::vector<uint32> stealthGivers;
+            std::vector<uint32> comboGivers;
             for (Ability const& ability : result)
             {
                 uint32 firstRank = ability.Ranks.front().SpellId;
@@ -1191,7 +1202,15 @@ namespace Wildcard
                         else if (effect.ApplyAuraName == SPELL_AURA_MOD_STEALTH
                             && std::find(stealthGivers.begin(), stealthGivers.end(), firstRank) == stealthGivers.end())
                             stealthGivers.push_back(firstRank);
+                        if (effect.Effect == SPELL_EFFECT_ADD_COMBO_POINTS && ability.Offered && !ability.Banned
+                            && std::find(comboGivers.begin(), comboGivers.end(), firstRank) == comboGivers.end())
+                            comboGivers.push_back(firstRank);
                     }
+                if (ability.Offered && !ability.Banned
+                    && std::any_of(std::begin(CODE_BUILDERS), std::end(CODE_BUILDERS),
+                        [&](char const* name) { return hasName(ability, name); })
+                    && std::find(comboGivers.begin(), comboGivers.end(), firstRank) == comboGivers.end())
+                    comboGivers.push_back(firstRank);
             }
 
             auto byNames = [&](std::span<char const* const> names)
@@ -1204,7 +1223,7 @@ namespace Wildcard
                 return givers;
             };
 
-            uint32 unreachable = 0;
+            uint32 unreachable = 0, finishers = 0;
             for (Ability& ability : result)
             {
                 if (!ability.Offered)
@@ -1251,6 +1270,23 @@ namespace Wildcard
                 if (!pets.empty())
                     ability.Requires.push_back(byNames(pets));
 
+                // A finisher (it spends combo points): only with an ability awarding them.
+                auto named = [&](auto const& names)
+                {
+                    return std::any_of(std::begin(names), std::end(names),
+                        [&](char const* name) { return hasName(ability, name); });
+                };
+                bool finisher = (std::any_of(ability.Ranks.begin(), ability.Ranks.end(), [](Rank const& rank)
+                {
+                    return sSpellMgr->AssertSpellInfo(rank.SpellId)->NeedsComboPoints();
+                }) || named(SCRIPTED_FINISHERS)) && !named(NOT_FINISHERS);
+                if (finisher)
+                {
+                    ability.ComboGroup = int8(ability.Requires.size());
+                    ability.Requires.push_back(comboGivers);
+                    ++finishers;
+                }
+
                 if (std::any_of(ability.Requires.begin(), ability.Requires.end(),
                     [](std::vector<uint32> const& givers) { return givers.empty(); }))
                     ++unreachable;
@@ -1272,6 +1308,11 @@ namespace Wildcard
             if (unreachable)
                 LOG_INFO("module", "mod-titan: Wildcard: {} abilities need a form, stealth or pet no ability gives; "
                     "they are never rolled", unreachable);
+            LOG_INFO("module", "mod-titan: Wildcard: {} finishers need one of {} combo point builders", finishers,
+                comboGivers.size());
+            for (char const* name : SCRIPTED_FINISHERS)
+                if (std::none_of(result.begin(), result.end(), [&](Ability const& a) { return hasName(a, name); }))
+                    LOG_WARN("module", "mod-titan: Wildcard scripted finisher \"{}\" matches no ability", name);
 
             for (char const* name : BANNED_ABILITIES)
                 if (!found.count(name))

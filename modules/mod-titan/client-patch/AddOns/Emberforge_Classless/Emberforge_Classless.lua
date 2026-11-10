@@ -784,12 +784,19 @@ local function OnCellEnter(self)
             1, 0.5, 0.1, true)
     end
     for _, givers in ipairs(self.ability.requires or {}) do
-        local names, met = {}, false
+        local names, met, combo = {}, false, false
         for _, giver in ipairs(givers) do
-            names[#names + 1] = SpellName(giver)
-            met = met or Knows(giver)
+            if giver == 0 then
+                combo = true     -- a finisher's: any ability awarding combo points (the server lists them all)
+            else
+                names[#names + 1] = SpellName(giver)
+                met = met or Knows(giver)
+            end
         end
         local text = #names > 0 and ("Requires " .. table.concat(names, " or ")) or "Requires a form no ability gives"
+        if combo then
+            text = "Requires an ability that awards combo points"
+        end
         if met then
             GameTooltip:AddLine(text, 0.7, 0.7, 0.7, true)
         else
