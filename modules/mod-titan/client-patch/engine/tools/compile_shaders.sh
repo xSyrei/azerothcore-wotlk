@@ -9,7 +9,7 @@ trap 'rm -rf "$work"' EXIT
 cp "$D3DCOMPILER" "$work/d3dcompiler_47.dll"
 x86_64-w64-mingw32-gcc -O2 tools/fxc.c -o "$work/fxc.exe"
 # file:entry, each to k<File><Entry>PixelShader (the entry left out when it is main).
-SHADERS="water:main distance:main atmosphere:Sky atmosphere:ShaftsPass atmosphere:Composite"
+SHADERS="water:main distance:main atmosphere:Sky atmosphere:ShaftsPass atmosphere:Scatter atmosphere:Composite"
 for shader in $SHADERS; do
     name=${shader%%:*}
     entry=${shader#*:}

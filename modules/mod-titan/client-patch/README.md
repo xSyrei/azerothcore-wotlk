@@ -481,7 +481,12 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   from the sun or moon as the sky draws them: each a blended, textured quad in the sky pass (fixed function, depth
   range at 1), its view transform's translation where it stands in view space (the sun's texture is the larger; the
   body above the horizon wins). The lighting's direction (the models' c12, which does not match the drawn sun) is
-  the fallback, and its colour (c13) colours the light; *Flip the sun* turns it around. Every part
+  the fallback, and its colour (c13) colours the light; *Flip the sun* turns it around. The body only sets the
+  light's direction: the whole world is lit by it. Surfaces (normals from the depth) facing it brighten in its colour
+  and those turned away darken, each first checked for something in the way toward the sun through the depth (soft
+  shadows); and along every view ray 16 points of air are checked the same way, so sunlit air glows and air in a
+  shadow does not (shafts and shadow streaks from whatever angle the sun stands at, behind the camera too). The fog's
+  colour is taken only from opaque fogged draws (the sky dome): the game sets it black or grey for blended ones. Every part
   is a slider in the panel's Atmosphere section.
 - The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's
   `d3dcompiler_47.dll` under Wine (any 64-bit copy, e.g. an Electron app's: Wine's own compiler cannot build shader

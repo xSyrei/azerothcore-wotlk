@@ -37,7 +37,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.8"
+#define EMBERFORGE_ENGINE_VERSION "0.10"
 
 namespace
 {
@@ -189,6 +189,10 @@ namespace
         // Subtle: haze in the distance and low down, the colours nearby kept (a thick veil made the world bland).
         float fogDensity = 0.15f, fogStart = 40.0f, fogFalloff = 0.05f, fogBelow = 0.0f, fogMost = 0.35f;
         float sunGlow = 0.8f, mist = 0.35f, mistSize = 25.0f, mistSpeed = 1.0f;
+        // The sun lighting the world: surfaces facing it, and the air it reaches.
+        float sunLight = 0.6f, airLight = 0.5f, airDistance = 120.0f;
+        bool fogOwn = false;                                   // the fog's colour: the game's (by zone and hour) or own
+        float fogColour[3] = {0.55f, 0.62f, 0.7f};
 
         struct Entry
         {
@@ -217,7 +221,9 @@ namespace
                 {"sky_threshold", &skyThreshold}, {"sun_disc", &sunDisc}, {"shaft_scatter", &shaftScatter},
                 {"fog_density", &fogDensity}, {"fog_start", &fogStart}, {"fog_falloff", &fogFalloff},
                 {"fog_below", &fogBelow}, {"fog_most", &fogMost}, {"sun_glow", &sunGlow}, {"mist", &mist},
-                {"mist_size", &mistSize}, {"mist_speed", &mistSpeed},
+                {"mist_size", &mistSize}, {"mist_speed", &mistSpeed}, {"fog_own", nullptr, &fogOwn},
+                {"sun_light", &sunLight}, {"air_light", &airLight}, {"air_distance", &airDistance},
+                {"fog_colour_r", &fogColour[0]}, {"fog_colour_g", &fogColour[1]}, {"fog_colour_b", &fogColour[2]},
             };
             for (const Entry &e : entries)
                 f(e);
@@ -271,8 +277,8 @@ namespace
 
     constexpr int kVertexConstants = 256, kPixelConstants = 32, kRenderStates = 256, kStages = 8;
     constexpr int kSamplers = 16, kSamplerStates = 14;
-    constexpr DWORD kPassStages = 4;                          // the stages an engine pass binds (and puts back)
-    constexpr UINT kPassConstants = 12;                       // the pixel constants it sets (c0-c11)
+    constexpr DWORD kPassStages = 5;                          // the stages an engine pass binds (and puts back)
+    constexpr UINT kPassConstants = 14;                       // the pixel constants it sets (c0-c13)
     constexpr UINT kWaterConstants = 12, kWaterConstantCount = 16;   // the water shader's c12-c27 (src/water.hlsl)
     // Render states an engine pass turns off (and puts back after).
     const D3DRENDERSTATETYPE kPassStates[] = {
@@ -329,7 +335,7 @@ namespace
             ReleaseTargets();
             if (m_waterPs)
                 m_waterPs->Release();
-            for (IDirect3DPixelShader9 *shader : {m_distancePs, m_skyPs, m_shaftsPs, m_compositePs})
+            for (IDirect3DPixelShader9 *shader : {m_distancePs, m_skyPs, m_shaftsPs, m_compositePs, m_scatterPs})
                 if (shader)
                     shader->Release();
             ShutdownPanel();
@@ -734,8 +740,9 @@ namespace
             bool sky = SUCCEEDED(real->CreatePixelShader(kAtmosphereSkyPixelShader, &m_skyPs));
             bool shafts = SUCCEEDED(real->CreatePixelShader(kAtmosphereShaftsPixelShader, &m_shaftsPs));
             bool composite = SUCCEEDED(real->CreatePixelShader(kAtmosphereCompositePixelShader, &m_compositePs));
-            if (!sky || !shafts || !composite)
-                m_skyPs = m_shaftsPs = m_compositePs = nullptr;
+            bool scatter = SUCCEEDED(real->CreatePixelShader(kAtmosphereScatterPixelShader, &m_scatterPs));
+            if (!sky || !shafts || !composite || !scatter)
+                m_skyPs = m_shaftsPs = m_compositePs = m_scatterPs = nullptr;
             Log("engine shaders: water %s, distance %s, atmosphere %s", m_waterPs ? "ok" : "failed",
                 m_distancePs ? "ok" : "failed", m_compositePs ? "ok" : "failed");
         }
@@ -758,7 +765,7 @@ namespace
             if (FAILED(real->CreateTexture(desc.Width, desc.Height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_R32F,
                                            D3DPOOL_DEFAULT, &m_distance, nullptr)))
                 m_distance = nullptr;
-            // The atmosphere's two half-size targets (sky light, shafts): half floats, or 8 bits where not.
+            // The atmosphere's half-size targets (sky light, shafts, scatter): half floats, or 8 bits where not.
             for (IDirect3DTexture9 *&half : m_half)
             {
                 if (FAILED(real->CreateTexture(desc.Width / 2, desc.Height / 2, 1, D3DUSAGE_RENDERTARGET,
@@ -803,7 +810,7 @@ namespace
                 m_intzSurface->Release();
                 m_intzSurface = nullptr;
             }
-            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance, &m_half[0], &m_half[1]})
+            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance, &m_half[0], &m_half[1], &m_half[2]})
             {
                 if (*texture)
                     (*texture)->Release();
@@ -1148,19 +1155,29 @@ namespace
                 if (!m_worldDrawn)
                     return;
                 m_atmosphereDone = true;
-                if (m_settings.atmosphere && m_compositePs && m_cameraSeen && m_half[0] && m_half[1])
+                if (m_settings.atmosphere && m_compositePs && m_cameraSeen && m_half[0] && m_half[1] && m_half[2])
                     Atmosphere();
                 return;
             }
             // The world: drawn with depth into the engine's depth buffer, in its depth range (the sky is drawn at 1).
+            // Its depth range is the widest any of it used (one odd draw does not skew the distances).
             if (m_rs[D3DRS_ZENABLE] && m_rs[D3DRS_ZWRITEENABLE] && m_ds && m_ds == m_intzSurface &&
                 m_viewport.MaxZ < 0.999f)
             {
+                if (!m_worldDrawn)
+                {
+                    m_worldMinZ = m_viewport.MinZ;
+                    m_worldMaxZ = m_viewport.MaxZ;
+                }
                 m_worldDrawn = true;
-                m_worldMinZ = m_viewport.MinZ;
-                m_worldMaxZ = m_viewport.MaxZ;
-                m_worldFog = m_rs[D3DRS_FOGCOLOR];
+                m_worldMinZ = std::fmin(m_worldMinZ, m_viewport.MinZ);
+                m_worldMaxZ = std::fmax(m_worldMaxZ, m_viewport.MaxZ);
             }
+            // The fog's colour from opaque fogged draws only (the sky dome): the game sets it black or grey for
+            // blended draws (particles, glows) so they are not fogged, which washed the view in the wrong colour.
+            // Kept from frame to frame (indoors no sky is drawn).
+            if (m_rs[D3DRS_FOGENABLE] && !m_rs[D3DRS_ALPHABLENDENABLE])
+                m_worldFog = m_rs[D3DRS_FOGCOLOR];
         }
 
         void Atmosphere()
@@ -1201,7 +1218,9 @@ namespace
             float constants[kPassConstants][4] = {
                 {u, v, shown, 0.0f},
                 {m_sunColour[0], m_sunColour[1], m_sunColour[2], s.shaftIntensity},
-                {((fog >> 16) & 0xFF) / 255.0f, ((fog >> 8) & 0xFF) / 255.0f, (fog & 0xFF) / 255.0f, s.fogDensity},
+                {s.fogOwn ? s.fogColour[0] : ((fog >> 16) & 0xFF) / 255.0f,
+                 s.fogOwn ? s.fogColour[1] : ((fog >> 8) & 0xFF) / 255.0f,
+                 s.fogOwn ? s.fogColour[2] : (fog & 0xFF) / 255.0f, s.fogDensity},
                 {s.fogStart, s.fogFalloff, s.fogMost, s.sunGlow},
                 {s.shaftLength, s.skyThreshold, s.shaftScatter, s.sunDisc},
                 {m_cameraProjection[0], m_cameraProjection[1], m_cameraProjection[2], s.atmosphereShow ? 1.0f : 0.0f},
@@ -1210,7 +1229,9 @@ namespace
                 {view[2][0], view[2][1], view[2][2], 0.0f},
                 {eye[0], eye[1], eye[2], s.fogBelow},
                 {sun[0], sun[1], sun[2], seconds},
-                {s.mist, s.mistSize, s.mistSpeed, 0.0f},
+                {s.mist, s.mistSize, s.mistSpeed, 1.0f / m_height},
+                {vx, vy, vz, 1.0f},
+                {s.sunLight, s.airLight, s.airDistance, 1.0f / m_width},
             };
             if (!m_sunSeen)
                 constants[1][0] = constants[1][1] = constants[1][2] = 0.8f;
@@ -1222,7 +1243,9 @@ namespace
             Bind(2, m_half[0], true);
             DrawInto(m_half[1], m_shaftsPs, m_width / 2, m_height / 2);
             Bind(2, nullptr, false);
+            DrawInto(m_half[2], m_scatterPs, m_width / 2, m_height / 2);
             Bind(3, m_half[1], true);
+            Bind(4, m_half[2], true);
             DrawInto(nullptr, m_compositePs, m_width, m_height);
             RestoreAfterPass();
             ++m_frame.atmosphere;
@@ -1507,7 +1530,7 @@ namespace
                 m_atmosphereWhy = "drawn";
             else if (!m_compositePs)
                 m_atmosphereWhy = "not drawn: its shaders failed";
-            else if (!m_half[0] || !m_half[1])
+            else if (!m_half[0] || !m_half[1] || !m_half[2])
                 m_atmosphereWhy = "not drawn: its targets failed";
             else if (!m_worldDrawn)
                 m_atmosphereWhy = "not drawn: no world seen (depth not the engine's?)";
@@ -1665,6 +1688,10 @@ namespace
             ImGui::Checkbox("Show its light alone", &s.atmosphereShow);
             ImGui::SameLine();
             ImGui::Checkbox("Flip the sun", &s.sunFlip);
+            ImGui::SeparatorText("Sunlight");
+            ImGui::SliderFloat("Sunlight on the world", &s.sunLight, 0.0f, 2.0f);
+            ImGui::SliderFloat("Sunlight in the air", &s.airLight, 0.0f, 3.0f);
+            ImGui::SliderFloat("Air lit out to", &s.airDistance, 20.0f, 400.0f, "%.0f yards");
             ImGui::SeparatorText("Light shafts");
             ImGui::SliderFloat("Shaft intensity", &s.shaftIntensity, 0.0f, 3.0f);
             ImGui::SliderFloat("Shaft length", &s.shaftLength, 0.85f, 1.0f, "%.3f");
@@ -1672,6 +1699,16 @@ namespace
             ImGui::SliderFloat("Sun disc size", &s.sunDisc, 0.0f, 1.0f);
             ImGui::SliderFloat("Shafts in the fog", &s.shaftScatter, 0.0f, 3.0f);
             ImGui::SeparatorText("Fog");
+            float game[3] = {((m_worldFog >> 16) & 0xFF) / 255.0f, ((m_worldFog >> 8) & 0xFF) / 255.0f,
+                             (m_worldFog & 0xFF) / 255.0f};
+            ImGui::ColorEdit3("The game's fog colour now", game, ImGuiColorEditFlags_NoInputs |
+                              ImGuiColorEditFlags_NoPicker);
+            ImGui::Checkbox("Own fog colour", &s.fogOwn);
+            if (s.fogOwn)
+            {
+                ImGui::SameLine();
+                ImGui::ColorEdit3("##fogcolour", s.fogColour, ImGuiColorEditFlags_NoInputs);
+            }
             ImGui::SliderFloat("Fog density", &s.fogDensity, 0.0f, 3.0f, "%.2f per 100 yards");
             ImGui::SliderFloat("Fog start", &s.fogStart, 0.0f, 200.0f, "%.0f yards");
             ImGui::SliderFloat("Fog most", &s.fogMost, 0.0f, 1.0f);
@@ -1763,7 +1800,8 @@ namespace
         bool m_waterPrepared = false, m_waterCopied = false, m_waterLogged = false;
         double m_epoch = Seconds();
         IDirect3DPixelShader9 *m_skyPs = nullptr, *m_shaftsPs = nullptr, *m_compositePs = nullptr;
-        IDirect3DTexture9 *m_half[2] = {};
+        IDirect3DPixelShader9 *m_scatterPs = nullptr;
+        IDirect3DTexture9 *m_half[3] = {};
         UINT m_rt0Width = 0, m_rt0Height = 0;
         bool m_worldDrawn = false, m_atmosphereDone = false, m_cameraSeen = false, m_sunSeen = false;
         bool m_cameraSeenLast = false, m_sunSeenLast = false;
