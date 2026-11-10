@@ -5,20 +5,26 @@
 // engine keeps its own copy of everything the game sets: render targets, depth, render states, shaders (fingerprinted
 // when created), textures, shader constants (the camera), the viewport.
 //
-// This version learns how the client draws: Home opens its panel (what it sees each frame), and "Capture one frame"
-// writes every draw of the next frame to Emberforge_capture.txt in the game's folder. The lighting effects are rebuilt
-// on those facts next.
+// Home opens its panel: what it sees each frame, every look on a slider (kept in Emberforge.ini in the game's folder),
+// and "Capture one frame", which writes every draw of the next frame to Emberforge_capture.txt.
+//
+// The water: the game's depth buffer is swapped for one that can be read (INTZ); at the frame's first water draw the
+// engine copies the scene drawn so far and turns the depth into distances (src/distance.hlsl), then draws the water
+// with its own shader (src/water.hlsl) in place of the game's.
 
 #include <windows.h>
 #include <initguid.h>   // defines the interface IDs d3d9.h declares
 #include <d3d9.h>
 
+#include <cmath>
 #include <cstdarg>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <imgui.h>
 #include <backends/imgui_impl_dx9.h>
@@ -26,10 +32,11 @@
 
 #include "forward.h"
 #include "known_shaders.h"
+#include "shaders.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.1"
+#define EMBERFORGE_ENGINE_VERSION "0.2"
 
 namespace
 {
@@ -113,9 +120,149 @@ namespace
         return (i + 1) * sizeof(DWORD);
     }
 
+    // The game's water pixel shader, by what it declares (whatever its exact bytecode, Blizzard's or a patch's): a
+    // ps_3_0 shader with cube maps in s0 and s1 (refraction and sky), 2D maps in s2-s5, and the fog as an input.
+    bool LooksLikeWater(const DWORD *code)
+    {
+        if (!code || code[0] != 0xFFFF0300)
+            return false;
+        int cubes = 0, maps = 0;
+        bool fog = false;
+        for (size_t i = 1; code[i] != 0x0000FFFF && i < (1u << 20);)
+        {
+            DWORD token = code[i];
+            DWORD op = token & 0xFFFF;
+            if (op == 0xFFFE)
+            {
+                i += 1 + ((token >> 16) & 0x7FFF);
+                continue;
+            }
+            if (op == 31)                                            // dcl: its kind, then the register
+            {
+                DWORD kind = code[i + 1], reg = code[i + 2];
+                DWORD type = ((reg >> 28) & 7) | ((reg >> 8) & 0x18), number = reg & 0x7FF;
+                if (type == 10 && ((kind >> 27) & 0xF) == 3 && number <= 1)
+                    ++cubes;
+                else if (type == 10 && ((kind >> 27) & 0xF) == 2 && number >= 2 && number <= 5)
+                    ++maps;
+                else if (type == 1 && (kind & 0x1F) == 11)
+                    fog = true;
+            }
+            i += 1 + ((token >> 24) & 0xF);
+        }
+        return cubes == 2 && maps == 4 && fog;
+    }
+
+    const D3DFORMAT kIntz = static_cast<D3DFORMAT>(MAKEFOURCC('I', 'N', 'T', 'Z'));
+
+    double Seconds()
+    {
+        static LARGE_INTEGER frequency = [] {
+            LARGE_INTEGER f;
+            QueryPerformanceFrequency(&f);
+            return f;
+        }();
+        LARGE_INTEGER now;
+        QueryPerformanceCounter(&now);
+        return static_cast<double>(now.QuadPart) / static_cast<double>(frequency.QuadPart);
+    }
+
+    // ---- The looks, on the panel's sliders, kept in Emberforge.ini ----
+
+    struct Settings
+    {
+        bool water = true, waterCity = true, waterShow = false;
+        float tint[3] = {0.03f, 0.11f, 0.13f};
+        float tintAmount = 0.6f;
+        float hue = 0.0f, saturation = 1.0f, brightness = 0.6f, murk = 0.35f;
+        float waveSize = 4.0f, waveHeight = 0.25f, waveSpeed = 0.5f, wind = 0.7f;
+        float spread = 0.45f, ripples = 0.35f, detail = 0.3f, detailSize = 6.0f;
+        float reflectDown = 0.08f, reflectGlance = 0.9f, reflectBrightness = 0.9f, distortion = 1.0f;
+        float skyBrightness = 2.2f, sparkle = 1.0f, sparkleSize = 0.3f;
+        float shading = 0.4f, refraction = 1.0f, opacity = 0.85f;
+
+        struct Entry
+        {
+            const char *name;
+            float *number;
+            bool *flag;
+        };
+
+        template <typename F>
+        void Each(F f)
+        {
+            const Entry entries[] = {
+                {"water", nullptr, &water}, {"water_city", nullptr, &waterCity},
+                {"water_tint_r", &tint[0]}, {"water_tint_g", &tint[1]}, {"water_tint_b", &tint[2]},
+                {"water_tint_amount", &tintAmount}, {"water_hue", &hue}, {"water_saturation", &saturation},
+                {"water_brightness", &brightness}, {"water_murk", &murk}, {"wave_size", &waveSize},
+                {"wave_height", &waveHeight}, {"wave_speed", &waveSpeed}, {"wave_wind", &wind},
+                {"wave_spread", &spread}, {"wave_ripples", &ripples}, {"wave_detail", &detail},
+                {"wave_detail_size", &detailSize}, {"reflect_down", &reflectDown},
+                {"reflect_glance", &reflectGlance}, {"reflect_brightness", &reflectBrightness},
+                {"reflect_distortion", &distortion}, {"sky_brightness", &skyBrightness}, {"sparkle", &sparkle},
+                {"sparkle_size", &sparkleSize}, {"wave_shading", &shading}, {"refraction", &refraction},
+                {"opacity", &opacity},
+            };
+            for (const Entry &e : entries)
+                f(e);
+        }
+
+        static std::string Path()
+        {
+            return GameFolder() + "Emberforge.ini";
+        }
+
+        void Load()
+        {
+            FILE *file = fopen(Path().c_str(), "r");
+            if (!file)
+                return;
+            char line[256];
+            while (fgets(line, sizeof(line), file))
+            {
+                char *equals = strchr(line, '=');
+                if (!equals)
+                    continue;
+                *equals = 0;
+                float value = static_cast<float>(atof(equals + 1));
+                Each([&](const Entry &e) {
+                    if (strcmp(e.name, line) != 0)
+                        return;
+                    if (e.number)
+                        *e.number = value;
+                    else
+                        *e.flag = value != 0.0f;
+                });
+            }
+            fclose(file);
+        }
+
+        bool Save()
+        {
+            FILE *file = fopen(Path().c_str(), "w");
+            if (!file)
+                return false;
+            fprintf(file, "; Emberforge Engine settings (the panel's Save writes them; Home opens the panel)\n");
+            Each([&](const Entry &e) {
+                fprintf(file, "%s=%g\n", e.name, e.number ? *e.number : (*e.flag ? 1.0 : 0.0));
+            });
+            fclose(file);
+            return true;
+        }
+    };
+
     // ---- The device the game gets ----
 
     constexpr int kVertexConstants = 256, kPixelConstants = 32, kRenderStates = 256, kStages = 8;
+    constexpr int kSamplers = 16, kSamplerStates = 14;
+    constexpr UINT kWaterConstants = 12;                      // the water shader's c12-c24 (src/water.hlsl)
+    // Render states an engine pass turns off (and puts back after).
+    const D3DRENDERSTATETYPE kPassStates[] = {
+        D3DRS_ZENABLE, D3DRS_ZWRITEENABLE, D3DRS_ALPHABLENDENABLE, D3DRS_ALPHATESTENABLE, D3DRS_STENCILENABLE,
+        D3DRS_SCISSORTESTENABLE, D3DRS_FOGENABLE, D3DRS_SRGBWRITEENABLE, D3DRS_CLIPPLANEENABLE,
+        D3DRS_SEPARATEALPHABLENDENABLE,
+    };
 
     // How many of count registers from start fit below limit.
     UINT Clamp(UINT start, UINT count, int limit)
@@ -153,12 +300,20 @@ namespace
         {
             m_pure = (behavior & D3DCREATE_PUREDEVICE) != 0;
             g_device = this;
+            m_settings.Load();
             Defaults(params);
             Log("device created: window %p, %s", static_cast<void *>(window), m_pure ? "pure" : "not pure");
+            CreateShaders();
+            CreateTargets(params);
         }
 
         ~Device() override
         {
+            ReleaseTargets();
+            if (m_waterPs)
+                m_waterPs->Release();
+            if (m_distancePs)
+                m_distancePs->Release();
             ShutdownPanel();
             if (g_device == this)
                 g_device = nullptr;
@@ -210,6 +365,9 @@ namespace
 
         HRESULT STDMETHODCALLTYPE SetDepthStencilSurface(IDirect3DSurface9 *surface) override
         {
+            // The game's own depth buffer (the automatic one) is swapped for the engine's, which can be read.
+            if (surface && surface == m_autoDepth && m_intzSurface)
+                surface = m_intzSurface;
             if (!m_recordingBlock)
             {
                 m_ds = surface;
@@ -217,6 +375,35 @@ namespace
                     Write("depth = %s", Describe(surface).c_str());
             }
             return real->SetDepthStencilSurface(surface);
+        }
+
+        HRESULT STDMETHODCALLTYPE SetVertexDeclaration(IDirect3DVertexDeclaration9 *declaration) override
+        {
+            if (!m_recordingBlock)
+            {
+                m_declaration = declaration;
+                m_fvfLast = false;
+            }
+            return real->SetVertexDeclaration(declaration);
+        }
+
+        HRESULT STDMETHODCALLTYPE SetStreamSource(UINT stream, IDirect3DVertexBuffer9 *buffer, UINT offset,
+                                                  UINT stride) override
+        {
+            if (!m_recordingBlock && stream == 0)
+            {
+                m_stream = buffer;
+                m_streamOffset = offset;
+                m_streamStride = stride;
+            }
+            return real->SetStreamSource(stream, buffer, offset, stride);
+        }
+
+        HRESULT STDMETHODCALLTYPE SetSamplerState(DWORD sampler, D3DSAMPLERSTATETYPE type, DWORD value) override
+        {
+            if (!m_recordingBlock && sampler < kSamplers && type < kSamplerStates)
+                m_ss[sampler][type] = value;
+            return real->SetSamplerState(sampler, type, value);
         }
 
         HRESULT STDMETHODCALLTYPE SetRenderState(D3DRENDERSTATETYPE state, DWORD value) override
@@ -259,7 +446,20 @@ namespace
         {
             HRESULT hr = real->CreatePixelShader(code, shader);
             if (SUCCEEDED(hr) && code && shader && *shader)
-                m_hashes[*shader] = Fnv(code, BytecodeSize(code));
+            {
+                uint32_t hash = Fnv(code, BytecodeSize(code));
+                m_hashes[*shader] = hash;
+                // A new shader may reuse a freed one's address: it is water or not by its own code.
+                if (LooksLikeWater(code) || hash == kWaterShader || hash == kWaterShaderReShade)
+                {
+                    if (m_waterShaders.insert(*shader).second)
+                        Log("water shader found: %08x", hash);
+                }
+                else
+                {
+                    m_waterShaders.erase(*shader);
+                }
+            }
             return hr;
         }
 
@@ -287,7 +487,10 @@ namespace
         HRESULT STDMETHODCALLTYPE SetFVF(DWORD fvf) override
         {
             if (!m_recordingBlock)
+            {
                 m_fvf = fvf;
+                m_fvfLast = true;
+            }
             return real->SetFVF(fvf);
         }
 
@@ -358,14 +561,22 @@ namespace
         HRESULT STDMETHODCALLTYPE DrawPrimitive(D3DPRIMITIVETYPE type, UINT start, UINT count) override
         {
             OnDraw("draw", type, count);
-            return real->DrawPrimitive(type, start, count);
+            bool water = BeginWater();
+            HRESULT hr = real->DrawPrimitive(type, start, count);
+            if (water)
+                EndWater();
+            return hr;
         }
 
         HRESULT STDMETHODCALLTYPE DrawIndexedPrimitive(D3DPRIMITIVETYPE type, INT base, UINT minIndex, UINT vertices,
                                                        UINT start, UINT count) override
         {
             OnDraw("indexed", type, count);
-            return real->DrawIndexedPrimitive(type, base, minIndex, vertices, start, count);
+            bool water = BeginWater();
+            HRESULT hr = real->DrawIndexedPrimitive(type, base, minIndex, vertices, start, count);
+            if (water)
+                EndWater();
+            return hr;
         }
 
         HRESULT STDMETHODCALLTYPE DrawPrimitiveUP(D3DPRIMITIVETYPE type, UINT count, const void *data,
@@ -411,11 +622,14 @@ namespace
         {
             if (m_panelReady)
                 ImGui_ImplDX9_InvalidateDeviceObjects();
+            ReleaseTargets();                            // a reset fails while video-memory resources live
             HRESULT hr = real->Reset(params);
             if (m_panelReady && SUCCEEDED(hr))
                 ImGui_ImplDX9_CreateDeviceObjects();
             Defaults(params);                            // a reset sets every state back to its default
             Log("device reset: %s", SUCCEEDED(hr) ? "ok" : "failed");
+            if (SUCCEEDED(hr))
+                CreateTargets(params);
             return hr;
         }
 
@@ -448,6 +662,19 @@ namespace
             m_rs[D3DRS_CULLMODE] = D3DCULL_CCW;
             m_rs[D3DRS_COLORWRITEENABLE] = 0xF;
             m_rs[D3DRS_LIGHTING] = TRUE;
+            for (auto &sampler : m_ss)
+            {
+                memset(sampler, 0, sizeof(sampler));
+                sampler[D3DSAMP_ADDRESSU] = sampler[D3DSAMP_ADDRESSV] = sampler[D3DSAMP_ADDRESSW] = D3DTADDRESS_WRAP;
+                sampler[D3DSAMP_MAGFILTER] = sampler[D3DSAMP_MINFILTER] = D3DTEXF_POINT;
+                sampler[D3DSAMP_MAXANISOTROPY] = 1;
+            }
+            m_declaration = nullptr;
+            m_fvf = 0;
+            m_fvfLast = false;
+            m_stream = nullptr;
+            m_streamOffset = m_streamStride = 0;
+            m_autoDepth = nullptr;
             // The surfaces are only pointers for telling targets apart: no reference kept.
             IDirect3DSurface9 *surface = nullptr;
             if (SUCCEEDED(real->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &surface)) && surface)
@@ -460,14 +687,265 @@ namespace
             }
             if (depth && SUCCEEDED(real->GetDepthStencilSurface(&surface)) && surface)
             {
-                m_ds = surface;
+                m_ds = m_autoDepth = surface;
                 surface->Release();
             }
         }
 
+        // ---- The engine's own resources ----
+
+        void CreateShaders()
+        {
+            if (FAILED(real->CreatePixelShader(kWaterPixelShader, &m_waterPs)))
+                m_waterPs = nullptr;
+            if (FAILED(real->CreatePixelShader(kDistancePixelShader, &m_distancePs)))
+                m_distancePs = nullptr;
+            Log("engine shaders: water %s, distance %s", m_waterPs ? "ok" : "failed", m_distancePs ? "ok" : "failed");
+        }
+
+        // The readable depth buffer (in place of the automatic one), the scene's copy and the distances: the size of
+        // the back buffer, made again after every reset.
+        void CreateTargets(const D3DPRESENT_PARAMETERS *params)
+        {
+            IDirect3DSurface9 *back = nullptr;
+            if (FAILED(real->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &back)) || !back)
+                return;
+            D3DSURFACE_DESC desc = {};
+            back->GetDesc(&desc);
+            back->Release();
+            m_width = desc.Width;
+            m_height = desc.Height;
+            if (FAILED(real->CreateTexture(desc.Width, desc.Height, 1, D3DUSAGE_RENDERTARGET, desc.Format,
+                                           D3DPOOL_DEFAULT, &m_scene, nullptr)))
+                m_scene = nullptr;
+            if (FAILED(real->CreateTexture(desc.Width, desc.Height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_R32F,
+                                           D3DPOOL_DEFAULT, &m_distance, nullptr)))
+                m_distance = nullptr;
+            bool intz = false;
+            IDirect3D9 *d3d = nullptr;
+            D3DDEVICE_CREATION_PARAMETERS creation = {};
+            if (SUCCEEDED(real->GetDirect3D(&d3d)) && d3d)
+            {
+                real->GetCreationParameters(&creation);
+                intz = SUCCEEDED(d3d->CheckDeviceFormat(creation.AdapterOrdinal, creation.DeviceType, D3DFMT_X8R8G8B8,
+                                                        D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_TEXTURE, kIntz));
+                d3d->Release();
+            }
+            bool plain = desc.MultiSampleType == D3DMULTISAMPLE_NONE;
+            if (intz && plain && m_autoDepth && params && params->EnableAutoDepthStencil &&
+                SUCCEEDED(real->CreateTexture(desc.Width, desc.Height, 1, D3DUSAGE_DEPTHSTENCIL, kIntz,
+                                              D3DPOOL_DEFAULT, &m_intz, nullptr)))
+            {
+                m_intz->GetSurfaceLevel(0, &m_intzSurface);
+                // Bound now, before the game draws: it starts as the depth buffer the game sees.
+                real->SetDepthStencilSurface(m_intzSurface);
+                m_ds = m_intzSurface;
+                real->Clear(0, nullptr, D3DCLEAR_ZBUFFER | D3DCLEAR_STENCIL, 0, 1.0f, 0);
+            }
+            Log("engine targets %ux%u: scene %s, distance %s, readable depth %s", desc.Width, desc.Height,
+                m_scene ? "ok" : "failed", m_distance ? "ok" : "failed",
+                m_intz ? "ok" : (!intz ? "not supported" : (!plain ? "off (anti-aliasing)" : "failed")));
+        }
+
+        void ReleaseTargets()
+        {
+            if (m_intzSurface)
+            {
+                // The automatic depth buffer back in place (a reset expects it bound).
+                if (m_autoDepth && m_ds == m_intzSurface)
+                    real->SetDepthStencilSurface(m_autoDepth);
+                m_intzSurface->Release();
+                m_intzSurface = nullptr;
+            }
+            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance})
+            {
+                if (*texture)
+                    (*texture)->Release();
+                *texture = nullptr;
+            }
+        }
+
+        // ---- The water ----
+
+        // The camera, from the water's vertex shader constants: the projection in c0-c3 (x and y scales, then an
+        // infinite far plane: (0, 0, 1, 1) and (0, 0, -near, 0)) and the view in c5-c8 (rows: a world point times
+        // them). Checked each frame: false if they are not there.
+        bool Camera(float view[4][4], float projection[4]) const
+        {
+            const float (*c)[4] = m_vsc;
+            bool infinite = std::fabs(c[2][2] - 1.0f) < 1e-3f && std::fabs(c[2][3] - 1.0f) < 1e-3f &&
+                            std::fabs(c[3][3]) < 1e-4f && c[3][2] < 0.0f && c[0][0] > 0.0f && c[1][1] > 0.0f;
+            if (!infinite)
+                return false;
+            for (int row = 0; row < 3; ++row)
+            {
+                float length = c[5 + row][0] * c[5 + row][0] + c[5 + row][1] * c[5 + row][1] +
+                               c[5 + row][2] * c[5 + row][2];
+                if (std::fabs(length - 1.0f) > 0.02f)
+                    return false;
+            }
+            if (std::fabs(c[8][3] - 1.0f) > 1e-3f)
+                return false;
+            memcpy(view, c[5], sizeof(float) * 16);
+            projection[0] = c[0][0];
+            projection[1] = c[1][1];
+            projection[2] = -c[3][2];
+            projection[3] = 1.0f;
+            return true;
+        }
+
+        // Before a draw: the game's water is drawn with the engine's shader.
+        bool BeginWater()
+        {
+            if (!m_settings.water || !m_waterPs || m_recordingBlock || !IsWater())
+                return false;
+            float view[4][4] = {}, projection[4] = {};
+            bool camera = Camera(view, projection);
+            if (!m_waterPrepared)
+            {
+                m_waterPrepared = true;
+                m_waterCopied = camera && CopyScene(projection[2]);
+                if (!m_waterLogged)
+                {
+                    m_waterLogged = true;
+                    Log("first water: camera %s, depth bound %s, scene and depth copied %s",
+                        camera ? "found" : "not found", m_ds && m_ds == m_intzSurface ? "the engine's" : "another",
+                        m_waterCopied ? "yes" : "no");
+                }
+            }
+            float constants[13][4] = {};
+            memcpy(constants[0], view, sizeof(view));
+            memcpy(constants[4], projection, sizeof(projection));
+            float seconds = static_cast<float>(std::fmod(Seconds() - m_epoch, 3600.0));
+            const Settings &s = m_settings;
+            float screen[4] = {1.0f / m_width, 1.0f / m_height, seconds, m_waterCopied ? 1.0f : 0.0f};
+            float rows[8][4] = {
+                {s.tint[0], s.tint[1], s.tint[2], s.tintAmount},
+                {s.hue, s.saturation, s.brightness, s.murk},
+                {s.waveSize, s.waveHeight, s.waveSpeed, s.wind},
+                {s.spread, s.ripples, s.detail, s.detailSize},
+                {s.reflectDown, s.reflectGlance, s.reflectBrightness, s.distortion},
+                {s.skyBrightness, s.waterCity ? 1.0f : 0.0f, s.sparkle, s.sparkleSize},
+                {s.shading, s.refraction, s.opacity, s.waterShow ? 1.0f : 0.0f},
+            };
+            memcpy(constants[5], screen, sizeof(screen));
+            memcpy(constants[6], rows, sizeof(float) * 4 * 7);
+            real->SetPixelShader(m_waterPs);
+            real->SetPixelShaderConstantF(kWaterConstants, constants[0], 13);
+            if (m_waterCopied)
+            {
+                real->SetTexture(12, m_distance);
+                real->SetTexture(13, m_scene);
+                for (DWORD sampler : {12u, 13u})
+                {
+                    DWORD filter = sampler == 12 ? D3DTEXF_POINT : D3DTEXF_LINEAR;
+                    real->SetSamplerState(sampler, D3DSAMP_MINFILTER, filter);
+                    real->SetSamplerState(sampler, D3DSAMP_MAGFILTER, filter);
+                    real->SetSamplerState(sampler, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+                    real->SetSamplerState(sampler, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+                    real->SetSamplerState(sampler, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+                    real->SetSamplerState(sampler, D3DSAMP_SRGBTEXTURE, FALSE);
+                }
+            }
+            ++m_frame.waterReplaced;
+            return true;
+        }
+
+        // After it: the game's shader and constants back.
+        void EndWater()
+        {
+            real->SetPixelShader(static_cast<IDirect3DPixelShader9 *>(m_ps));
+            real->SetPixelShaderConstantF(kWaterConstants, m_psc[kWaterConstants], 13);
+            if (m_waterCopied)
+            {
+                real->SetTexture(12, nullptr);
+                real->SetTexture(13, nullptr);
+            }
+        }
+
+        // At the frame's first water draw: the scene drawn so far (no water yet), and the depth buffer turned into
+        // distances in yards. The game's state is put back as it was after.
+        bool CopyScene(float nearPlane)
+        {
+            if (!m_scene || !m_distance || !m_distancePs || !m_intzSurface || m_ds != m_intzSurface || !m_rt[0])
+                return false;
+            D3DSURFACE_DESC desc = {};
+            m_rt[0]->GetDesc(&desc);
+            if (desc.Width != m_width || desc.Height != m_height)
+                return false;
+            IDirect3DSurface9 *scene = nullptr, *distance = nullptr;
+            m_scene->GetSurfaceLevel(0, &scene);
+            m_distance->GetSurfaceLevel(0, &distance);
+            bool ok = scene && distance && SUCCEEDED(real->StretchRect(m_rt[0], nullptr, scene, nullptr, D3DTEXF_NONE));
+            if (ok)
+            {
+                real->SetRenderTarget(0, distance);
+                real->SetDepthStencilSurface(nullptr);
+                real->SetVertexShader(nullptr);
+                real->SetPixelShader(m_distancePs);
+                real->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
+                real->SetTexture(0, m_intz);
+                real->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
+                real->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
+                real->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+                real->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+                real->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+                real->SetSamplerState(0, D3DSAMP_SRGBTEXTURE, FALSE);
+                for (D3DRENDERSTATETYPE state : kPassStates)
+                    real->SetRenderState(state, FALSE);
+                real->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+                real->SetRenderState(D3DRS_COLORWRITEENABLE, 0xF);
+                float params[4] = {nearPlane, m_viewport.MinZ, m_viewport.MaxZ, 0.0f};
+                real->SetPixelShaderConstantF(0, params, 1);
+                DrawFullScreen();
+                RestoreAfterPass();
+            }
+            if (scene)
+                scene->Release();
+            if (distance)
+                distance->Release();
+            return ok;
+        }
+
+        void DrawFullScreen()
+        {
+            // Pixel centres on texel centres (Direct3D 9's half-pixel offset).
+            float w = static_cast<float>(m_width) - 0.5f, h = static_cast<float>(m_height) - 0.5f;
+            const float quad[4][6] = {
+                {-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f}, {w, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f},
+                {-0.5f, h, 0.0f, 1.0f, 0.0f, 1.0f}, {w, h, 0.0f, 1.0f, 1.0f, 1.0f},
+            };
+            real->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, quad, sizeof(quad[0]));
+        }
+
+        // Puts back what an engine pass changed, from the state the engine keeps.
+        void RestoreAfterPass()
+        {
+            real->SetRenderTarget(0, m_rt[0]);
+            real->SetDepthStencilSurface(m_ds);
+            real->SetViewport(&m_viewport);                  // a render target change resets it
+            real->SetVertexShader(static_cast<IDirect3DVertexShader9 *>(m_vs));
+            real->SetPixelShader(static_cast<IDirect3DPixelShader9 *>(m_ps));
+            if (m_fvfLast || !m_declaration)
+                real->SetFVF(m_fvf);
+            else
+                real->SetVertexDeclaration(m_declaration);
+            real->SetStreamSource(0, m_stream, m_streamOffset, m_streamStride);   // DrawPrimitiveUP cleared it
+            real->SetTexture(0, m_tex[0]);
+            for (D3DSAMPLERSTATETYPE type : {D3DSAMP_MINFILTER, D3DSAMP_MAGFILTER, D3DSAMP_MIPFILTER,
+                                             D3DSAMP_ADDRESSU, D3DSAMP_ADDRESSV, D3DSAMP_SRGBTEXTURE})
+                real->SetSamplerState(0, type, m_ss[0][type]);
+            for (D3DRENDERSTATETYPE state : kPassStates)
+                real->SetRenderState(state, m_rs[state]);
+            real->SetRenderState(D3DRS_CULLMODE, m_rs[D3DRS_CULLMODE]);
+            real->SetRenderState(D3DRS_COLORWRITEENABLE, m_rs[D3DRS_COLORWRITEENABLE]);
+            real->SetPixelShaderConstantF(0, m_psc[0], 1);
+        }
+
         struct Counters
         {
-            unsigned draws = 0, waterDraws = 0, targetChanges = 0, depthClears = 0, scenes = 0, stateBlocks = 0;
+            unsigned draws = 0, waterDraws = 0, waterReplaced = 0, targetChanges = 0, depthClears = 0, scenes = 0,
+                     stateBlocks = 0;
         };
 
         uint32_t Hash(void *shader) const
@@ -480,8 +958,7 @@ namespace
 
         bool IsWater() const
         {
-            uint32_t hash = Hash(m_ps);
-            return hash == kWaterShader || hash == kWaterShaderReShade;
+            return m_ps && m_waterShaders.count(m_ps) != 0;
         }
 
         static std::string Describe(IDirect3DSurface9 *surface)
@@ -630,6 +1107,7 @@ namespace
             }
             m_last = m_frame;
             m_frame = Counters();
+            m_waterPrepared = false;
         }
 
         // ---- The panel (Home) ----
@@ -712,20 +1190,39 @@ namespace
             }
             ImGui::GetIO().MouseDrawCursor = true;
             ImGui::SetNextWindowPos(ImVec2(40, 40), ImGuiCond_FirstUseEver);
-            ImGui::SetNextWindowSize(ImVec2(420, 0), ImGuiCond_FirstUseEver);
+            ImGui::SetNextWindowSize(ImVec2(540, 680), ImGuiCond_FirstUseEver);
             ImGui::Begin("Emberforge Engine " EMBERFORGE_ENGINE_VERSION, &g_panel);
             ImGui::TextUnformatted("What it sees each frame (Home: open/close)");
             ImGui::Separator();
             ImGui::Text("Device: Direct3D 9%s", m_pure ? " (pure: kept by the engine)" : "");
             ImGui::Text("Draws: %u in %u scenes", m_last.draws, m_last.scenes);
-            ImGui::Text("Water draws: %u", m_last.waterDraws);
-            ImGui::Text("Render target changes: %u, depth clears: %u", m_last.targetChanges, m_last.depthClears);
-            ImGui::Text("State blocks: %u", m_last.stateBlocks);
-            ImGui::Spacing();
-            if (ImGui::Button(m_capture == Capture::Idle ? "Capture one frame" : "Capturing..."))
-                RequestCapture();
-            if (!m_capturePath.empty())
-                ImGui::TextWrapped("Last capture: %s", m_capturePath.c_str());
+            ImGui::Text("Water draws: %u (%u drawn by the engine%s)", m_last.waterDraws, m_last.waterReplaced,
+                        m_last.waterReplaced && !m_waterCopied ? ", no depth: plain" : "");
+            ImGui::Text("Readable depth: %s", m_intz ? "yes" : "no");
+            WaterPanel();
+            if (ImGui::CollapsingHeader("Diagnostics"))
+            {
+                ImGui::Text("Render target changes: %u, depth clears: %u", m_last.targetChanges, m_last.depthClears);
+                ImGui::Text("State blocks: %u", m_last.stateBlocks);
+                if (ImGui::Button(m_capture == Capture::Idle ? "Capture one frame" : "Capturing..."))
+                    RequestCapture();
+                if (!m_capturePath.empty())
+                    ImGui::TextWrapped("Last capture: %s", m_capturePath.c_str());
+            }
+            ImGui::Separator();
+            if (ImGui::Button("Save"))
+                m_settingsSaved = m_settings.Save();
+            ImGui::SameLine();
+            if (ImGui::Button("Load saved"))
+                m_settings.Load();
+            ImGui::SameLine();
+            if (ImGui::Button("Defaults"))
+                m_settings = Settings();
+            if (m_settingsSaved)
+            {
+                ImGui::SameLine();
+                ImGui::TextUnformatted("saved to Emberforge.ini");
+            }
             ImGui::End();
             ImGui::EndFrame();
             ImGui::Render();
@@ -734,6 +1231,47 @@ namespace
                 ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
                 real->EndScene();
             }
+        }
+
+        void WaterPanel()
+        {
+            Settings &s = m_settings;
+            if (!ImGui::CollapsingHeader("Water", ImGuiTreeNodeFlags_DefaultOpen))
+                return;
+            ImGui::PushItemWidth(220);
+            ImGui::Checkbox("Engine water", &s.water);
+            ImGui::SameLine();
+            ImGui::Checkbox("Show it", &s.waterShow);
+            ImGui::SeparatorText("Colour");
+            ImGui::ColorEdit3("Tint colour", s.tint);
+            ImGui::SliderFloat("Tint amount", &s.tintAmount, 0.0f, 1.0f);
+            ImGui::SliderAngle("Hue shift", &s.hue, -180.0f, 180.0f);
+            ImGui::SliderFloat("Saturation", &s.saturation, 0.0f, 2.0f);
+            ImGui::SliderFloat("Brightness", &s.brightness, 0.0f, 2.0f);
+            ImGui::SliderFloat("Murkiness", &s.murk, 0.0f, 3.0f, "%.2f per yard");
+            ImGui::SliderFloat("Wave shading", &s.shading, 0.0f, 1.0f);
+            ImGui::SeparatorText("Waves");
+            ImGui::SliderFloat("Wave size", &s.waveSize, 0.5f, 20.0f, "%.1f yards");
+            ImGui::SliderFloat("Wave height", &s.waveHeight, 0.0f, 1.0f);
+            ImGui::SliderFloat("Wave speed", &s.waveSpeed, 0.0f, 3.0f);
+            ImGui::SliderAngle("Wind direction", &s.wind, 0.0f, 360.0f);
+            ImGui::SliderFloat("Spread", &s.spread, 0.0f, 1.0f);
+            ImGui::SliderFloat("Small ripples", &s.ripples, 0.0f, 1.0f);
+            ImGui::SliderFloat("Wave texture", &s.detail, 0.0f, 1.0f);
+            ImGui::SliderFloat("Wave texture size", &s.detailSize, 0.5f, 30.0f, "%.1f yards");
+            ImGui::SeparatorText("Reflections");
+            ImGui::Checkbox("Mirror the city", &s.waterCity);
+            ImGui::SliderFloat("Reflectiveness looking down", &s.reflectDown, 0.0f, 1.0f);
+            ImGui::SliderFloat("Reflectiveness at a glance", &s.reflectGlance, 0.0f, 1.0f);
+            ImGui::SliderFloat("Reflection brightness", &s.reflectBrightness, 0.0f, 2.0f);
+            ImGui::SliderFloat("Distortion", &s.distortion, 0.0f, 3.0f);
+            ImGui::SliderFloat("Sky brightness", &s.skyBrightness, 0.0f, 4.0f);
+            ImGui::SliderFloat("Refraction", &s.refraction, 0.0f, 3.0f);
+            ImGui::SliderFloat("Opacity (no depth)", &s.opacity, 0.0f, 1.0f);
+            ImGui::SeparatorText("Sparkle");
+            ImGui::SliderFloat("Sparkle", &s.sparkle, 0.0f, 3.0f);
+            ImGui::SliderFloat("Sparkle size", &s.sparkleSize, 0.0f, 1.0f);
+            ImGui::PopItemWidth();
         }
 
         HWND m_window;
@@ -752,7 +1290,23 @@ namespace
         float m_psc[kPixelConstants][4] = {};
         D3DVIEWPORT9 m_viewport = {};
         DWORD m_fvf = 0;
+        bool m_fvfLast = false;
+        IDirect3DVertexDeclaration9 *m_declaration = nullptr;
+        IDirect3DVertexBuffer9 *m_stream = nullptr;
+        UINT m_streamOffset = 0, m_streamStride = 0;
+        DWORD m_ss[kSamplers][kSamplerStates] = {};
         D3DMATRIX m_world = {}, m_view = {}, m_projection = {};
+        std::unordered_set<void *> m_waterShaders;
+
+        Settings m_settings;
+        bool m_settingsSaved = false;
+        IDirect3DSurface9 *m_autoDepth = nullptr;            // the game's automatic depth buffer (no reference kept)
+        IDirect3DTexture9 *m_intz = nullptr, *m_scene = nullptr, *m_distance = nullptr;
+        IDirect3DSurface9 *m_intzSurface = nullptr;
+        IDirect3DPixelShader9 *m_waterPs = nullptr, *m_distancePs = nullptr;
+        UINT m_width = 0, m_height = 0;
+        bool m_waterPrepared = false, m_waterCopied = false, m_waterLogged = false;
+        double m_epoch = Seconds();
 
         Counters m_frame, m_last;
         Capture m_capture = Capture::Idle;

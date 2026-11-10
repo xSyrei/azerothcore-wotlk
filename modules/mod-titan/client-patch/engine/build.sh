@@ -2,9 +2,13 @@
 # Builds the Emberforge Engine (dist/Emberforge-d3d9.dll; the launcher puts it in the game folder as d3d9.dll) with
 # MinGW-w64:   apt-get install g++-mingw-w64-i686    then    sh build.sh
 # Generates src/forward.h (tools/gen_forward.py: the Direct3D 9 pass-through classes) and src/known_shaders.h (the water
-# shaders' fingerprints, from hd/psLiquidProcWater*.asm).
+# shaders' fingerprints, from hd/psLiquidProcWater*.asm). With D3DCOMPILER set (a 64-bit d3dcompiler_47.dll) and Wine,
+# it compiles src/*.hlsl to src/shaders.h too (tools/compile_shaders.sh); otherwise the committed shaders.h is used.
 set -e
 cd "$(dirname "$0")"
+if [ -n "$D3DCOMPILER" ]; then
+    sh tools/compile_shaders.sh
+fi
 python3 tools/gen_forward.py > src/forward.h
 python3 - <<'PY'
 import sys

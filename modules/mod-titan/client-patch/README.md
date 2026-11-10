@@ -442,13 +442,35 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   pass-through classes (`src/forward.h`) from MinGW's `d3d9.h`, and the water shaders' fingerprints (FNV-1a of
   `hd/psLiquidProcWater*.asm`'s bytecode) go into `src/known_shaders.h`. Dear ImGui (`third_party/imgui`, MIT) draws
   its panel.
-- First version, learning how the client draws: Home opens its panel (draws, scenes, water draws, render target
-  changes, depth clears, state blocks each frame); *Capture one frame* writes every draw of the next frame (targets,
-  depth, blend and depth states, shader fingerprints, textures, viewport, the first 16 vertex shader constants or the
-  fixed-function matrices: the camera; the water's pixel constants) to `Emberforge_capture.txt`, and
-  `Emberforge.log` notes start-up, in the game's folder. The effects are rebuilt on what it shows.
-- Tested under Wine (Linux players run it so): it wraps a pure device, passes frames, draws its panel, captures, and
-  releases cleanly.
+- Home opens its panel: what it sees each frame, every look on a slider (*Save* keeps them in `Emberforge.ini` in the
+  game's folder, read at start), and under Diagnostics *Capture one frame*, which writes every draw of the next frame
+  (targets, depth, blend and depth states, shader fingerprints, textures, viewport, the first 16 vertex shader
+  constants or the fixed-function matrices; the water's pixel constants) to `Emberforge_capture.txt`.
+  `Emberforge.log` notes start-up, the engine's resources and the first water draw.
+- What a capture showed (1920x1080, Stormwind): 4 shadow cascades first (2048² targets), then the world straight into
+  the back buffer, its depth range 0-0.94 (the sky at 1, drawn by fixed function), the water (pixel shader `f04dff60`,
+  Blizzard's: cube maps in s0/s1, blended, no depth write), particles, and the UI from the first draw with the depth
+  test off (`ZFUNC` always). The water's vertex shader holds the camera: the projection in c0-c3 (infinite, near plane
+  0.2001) and the view in c5-c8.
+- **Water.** The game's depth buffer (the automatic one) is swapped for an `INTZ` texture of the same size, which a
+  shader can read. At the frame's first water draw the engine copies the scene drawn so far (no water in it yet) and
+  turns the depth into distances in yards (`src/distance.hlsl`, into an R32F texture), then draws every water draw
+  with its own pixel shader (`src/water.hlsl`) in place of the game's, with the game's inputs (world position, fog,
+  sky cube, the zone's water colour, its wave map) plus the copies in s12/s13 and the camera and sliders in c12-c24.
+  The water is drawn opaque over the copy: the bottom shows through shallow water and fades into the water's colour
+  (graded: tint, hue, saturation, brightness) as it deepens (murkiness); waves of the panel's size, height, speed and
+  wind direction move over the world position, with the game's wave map as finer texture; the Fresnel mirrors the sky
+  (in the hour's fog colour) and the city, found by marching the reflected ray through the distances and bent by the
+  waves; the sun glints in the game's highlight colour. The water shader is recognised by what it declares, so
+  Blizzard's and ours both count. Without a readable depth (anti-aliasing on, or no `INTZ`) the water is drawn by the
+  engine's shader blended, with the sky alone in it. Everything the copy pass changes is put back from the engine's
+  own record of the game's state (vertex declaration, stream 0, samplers and render states included).
+- The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's
+  `d3dcompiler_47.dll` under Wine (any 64-bit copy, e.g. an Electron app's: Wine's own compiler cannot build shader
+  model 3): `D3DCOMPILER=/path/to/d3dcompiler_47.dll sh build.sh`. Players need no compiler.
+- Tested under Wine (Linux players run it so) with a scene shaped like the game's (pure device, automatic D24X8 depth,
+  depth range 0-0.94, the water shader from `hd/`, a wall behind the water): the wall is mirrored and bent by the
+  waves, the floor shows through, the draws after the water are unchanged, and a device reset keeps it working.
 
 The ReShade effects below are no longer shipped (kept as the reference for the engine's).
 
