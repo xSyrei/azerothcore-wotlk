@@ -429,19 +429,28 @@ read as anything but water), and their second coordinates cross the first (float
 
 ## Emberforge Engine (`engine/`)
 
-Our own lighting engine, a ReShade add-on (`dist/Emberforge.addon32`, a 32-bit Windows DLL beside ReShade, which is
-now its build with add-on support): the effects alone only see the finished picture and a depth buffer ReShade
-guesses at, so they guessed where the water is, whether the world is on screen and how the camera sits, unstably
-(stale depth burned into occlusion, the sky taken for water). Inside the game's own Direct3D 9 drawing those are
-facts. `engine/build.sh` builds it with MinGW-w64 (`g++-mingw-w64-i686`) against the vendored ReShade add-on headers
-and Dear ImGui header (`engine/third_party`, their licenses beside them); it records the water shaders' fingerprints
-(FNV-1a of `hd/psLiquidProcWater*.asm`'s bytecode) in `src/known_shaders.h`.
+Our own lighting engine, replacing ReShade: the ReShade effects only saw the finished picture and a depth buffer
+ReShade guessed at, so they guessed where the water is, whether the world is on screen and how the camera sits,
+unstably (stale depth burned into occlusion, the sky taken for water). The engine is the game's `d3d9.dll`
+(`dist/Emberforge-d3d9.dll`; with Lighting on the launcher copies it into the game folder as `d3d9.dll`, and removes it
+when off): it loads Windows' real one and hands the game a device of its own that passes every call on, so it sees all
+the game draws. The game makes a *pure* device, which answers no questions about its state, so the engine keeps its
+own copy of everything the game sets (render targets, depth, render states, shaders fingerprinted when created,
+textures, shader constants, viewport, transforms), starting from Direct3D's defaults.
 
-First version: it learns how the client draws. An *Emberforge* tab in ReShade's window shows each frame's draws,
-water draws, render target changes and depth clears; *Capture one frame* writes every draw of the next frame (render
-target, depth, blend and depth states, shader fingerprints, textures, viewport, the vertex shader's first 16
-constants: the camera; the water's pixel constants) to `Emberforge_capture.txt` in the game's folder. The effects are
-rebuilt on what it shows.
+- `engine/build.sh` builds it with MinGW-w64 (`g++-mingw-w64-i686`); `tools/gen_forward.py` generates the
+  pass-through classes (`src/forward.h`) from MinGW's `d3d9.h`, and the water shaders' fingerprints (FNV-1a of
+  `hd/psLiquidProcWater*.asm`'s bytecode) go into `src/known_shaders.h`. Dear ImGui (`third_party/imgui`, MIT) draws
+  its panel.
+- First version, learning how the client draws: Home opens its panel (draws, scenes, water draws, render target
+  changes, depth clears, state blocks each frame); *Capture one frame* writes every draw of the next frame (targets,
+  depth, blend and depth states, shader fingerprints, textures, viewport, the first 16 vertex shader constants or the
+  fixed-function matrices: the camera; the water's pixel constants) to `Emberforge_capture.txt`, and
+  `Emberforge.log` notes start-up, in the game's folder. The effects are rebuilt on what it shows.
+- Tested under Wine (Linux players run it so): it wraps a pure device, passes frames, draws its panel, captures, and
+  releases cleanly.
+
+The ReShade effects below are no longer shipped (kept as the reference for the engine's).
 
 ## Volumetric lighting (`reshade/`)
 

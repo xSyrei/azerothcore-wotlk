@@ -1,5 +1,0 @@
-## Interface: 30300
-## Title: Emberforge Lighting
-## Notes: Tells the Emberforge Lighting effects (ReShade) when the world is on screen, so they leave loading screens, the map and videos alone.
-## Author: Project Emberforge
-Emberforge_Lighting.lua

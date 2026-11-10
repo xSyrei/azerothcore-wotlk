@@ -4,8 +4,9 @@
 #   powershell -ExecutionPolicy Bypass -File "$HOME\azerothcore-wotlk\modules\mod-titan\client-patch\publish-client.ps1"
 #
 # Compares dist\patch-enUS-4/5/6/7/8.MPQ (gameplay, retextures, HD graphics, reflective water, atmosphere), the
-# volumetric lighting (reshade\) and every file of AddOns\Emberforge_* with the live manifest, uploads only what
-# changed, drops addon and shader files that no longer exist, raises the version (1.0.2 -> 1.0.3, or -Version 1.1.0)
+# Emberforge Engine (dist\Emberforge-d3d9.dll) and every file of AddOns\Emberforge_* with the live manifest, uploads
+# only what changed, drops files no longer shipped (old addon files, ReShade), raises the version (1.0.2 -> 1.0.3,
+# or -Version 1.1.0)
 # and uploads the manifest last. Launchers then show Update. Purge Cloudflare's cache after.
 param([string]$Version)
 
@@ -16,23 +17,16 @@ $here = $PSScriptRoot
 
 # path in the client -> file here
 $local = [ordered]@{}
-# Water-ReShade.MPQ: the ReShade water's shader; the launcher copies it in as patch-enUS-9.MPQ while Lighting is on.
 foreach ($mpq in 'patch-enUS-4.MPQ', 'patch-enUS-5.MPQ', 'patch-enUS-6.MPQ', 'patch-enUS-7.MPQ',
-    'patch-enUS-8.MPQ', 'Water-ReShade.MPQ') {
+    'patch-enUS-8.MPQ') {
     $local["Data/enUS/$mpq"] = Join-Path $here "dist\$mpq"
 }
-# Volumetric lighting (reshade\): ReShade (its build with add-on support), its settings as defaults (the launcher
-# copies them once; ReShade then saves the player's own), and the shaders.
-$reshade = Join-Path $here 'reshade'
-$local['ReShade32.dll'] = Join-Path $reshade 'ReShade32.dll'
-$local['ReShade.default.ini'] = Join-Path $reshade 'ReShade.ini'
-$local['ReShadePreset.default.ini'] = Join-Path $reshade 'ReShadePreset.ini'
-$local['ReShade-LICENSE.md'] = Join-Path $reshade 'ReShade-LICENSE.md'
-# The Emberforge Engine (engine\, built by engine/build.sh): a ReShade add-on, loaded from beside ReShade.
-$local['Emberforge.addon32'] = Join-Path $here 'dist\Emberforge.addon32'
-foreach ($shader in Get-ChildItem (Join-Path $reshade 'Shaders') -File) {
-    $local["reshade-shaders/Shaders/$($shader.Name)"] = $shader.FullName
-}
+# The Emberforge Engine (engine\, built by engine/build.sh): the launcher puts it in the game folder as d3d9.dll while
+# Lighting is on.
+$local['Emberforge-d3d9.dll'] = Join-Path $here 'dist\Emberforge-d3d9.dll'
+# No longer shipped (ReShade, which the engine replaced): dropped from the manifest.
+$retired = @('ReShade32.dll', 'ReShade.default.ini', 'ReShadePreset.default.ini', 'ReShade-LICENSE.md',
+    'Emberforge.addon32', 'Data/enUS/Water-ReShade.MPQ')
 foreach ($addon in Get-ChildItem (Join-Path $here 'AddOns') -Directory -Filter 'Emberforge_*') {
     foreach ($file in Get-ChildItem $addon.FullName -Recurse -File) {
         $rel = $file.FullName.Substring($addon.FullName.Length + 1).Replace('\', '/')
@@ -48,7 +42,7 @@ foreach ($entry in $manifest.files) { $live[$entry.path] = $entry }
 $files = New-Object System.Collections.ArrayList
 foreach ($entry in $manifest.files) {
     $ours = $local.Contains($entry.path) -or $entry.path -like 'Interface/AddOns/Emberforge_*' `
-        -or $entry.path -like 'reshade-shaders/*'
+        -or $entry.path -like 'reshade-shaders/*' -or $retired -contains $entry.path
     if (-not $ours) { [void]$files.Add($entry) }
 }
 $changed = @()
@@ -59,8 +53,8 @@ foreach ($rel in $local.Keys) {
     [void]$files.Add([pscustomobject]@{ path = $rel; size = (Get-Item $full).Length; sha256 = $sha })
 }
 $removed = @($manifest.files | Where-Object {
-    ($_.path -like 'Interface/AddOns/Emberforge_*' -or $_.path -like 'reshade-shaders/*') `
-        -and -not $local.Contains($_.path)
+    ($_.path -like 'Interface/AddOns/Emberforge_*' -or $_.path -like 'reshade-shaders/*' `
+        -or $retired -contains $_.path) -and -not $local.Contains($_.path)
 })
 
 if (-not $changed -and -not $removed) {
