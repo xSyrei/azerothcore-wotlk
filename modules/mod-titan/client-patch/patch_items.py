@@ -8,9 +8,12 @@ an ItemDisplayInfo row naming the model, its texture and the inventory icon.
 Usage: python3 patch_items.py <dir with original DBCs> <output dir>
 """
 
+import json
 import struct
 import sys
 from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
 
 # (entry, class, subclass, SoundOverrideSubclass, Material, displayid, InventoryType, sheath)
 ITEMS = [
@@ -78,11 +81,13 @@ def main():
     source, out = Path(sys.argv[1]), Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
 
+    # The Smoldering Adventurer's Cache's Leveling Scaled pool (tools/scaling/scaled_gear.py)
+    scaled = [tuple(row) for row in json.loads((HERE / 'scaled_gear.json').read_text())['items']]
     items = Dbc(source / 'Item.dbc', ITEM_FIELDS)
-    for row in ITEMS:
+    for row in ITEMS + scaled:
         items.rows[row[0]] = tuple(v & 0xFFFFFFFF for v in row)
     items.save(out / 'Item.dbc')
-    print(f'Wrote {out / "Item.dbc"} ({len(ITEMS)} custom items)')
+    print(f'Wrote {out / "Item.dbc"} ({len(ITEMS) + len(scaled)} custom items)')
 
     displays = Dbc(source / 'ItemDisplayInfo.dbc', DISPLAY_FIELDS)
     for display_id, model, texture, icon, group_sound, helmet_vis in DISPLAYS:

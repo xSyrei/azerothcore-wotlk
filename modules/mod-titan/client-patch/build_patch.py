@@ -5,7 +5,8 @@ It is a language patch (installed as Data\\enUS\\patch-enUS-4.MPQ): the client r
 tables from the language archives, which outrank patches placed directly in Data\\.
 
 - DBFilesClient: ChrClasses / CharBaseInfo (Hero class, patch_hero_class.py),
-  Item / ItemDisplayInfo (custom items, patch_items.py), Spell / SpellIcon / SpellVisual /
+  Item / ItemDisplayInfo (custom items, patch_items.py), ItemRandomSuffix / SpellItemEnchantment
+  (Leveling Scaled gear, patch_scaled_gear.py), Spell / SpellIcon / SpellVisual /
   SpellVisualKit / SpellVisualEffectName (Emberforge's own spells, the Demon Hunter's, patch_spells.py)
 - spell effect models (Spells\\Emberforge: trails and the Eye Beam beam, models/spell_effects.py, from spells/*.png)
 - spell sounds (Sound\\Spells\\Emberforge, from sounds/*.wav)
@@ -78,7 +79,8 @@ CHARACTERS = [
 DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
         'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc',
         'SoundEntries.dbc', 'CreatureModelData.dbc', 'CreatureDisplayInfo.dbc',
-        'AnimationData.dbc', 'Talent.dbc', 'TalentTab.dbc', 'SpellChainEffects.dbc', 'CreatureDisplayInfoExtra.dbc']
+        'AnimationData.dbc', 'Talent.dbc', 'TalentTab.dbc', 'SpellChainEffects.dbc', 'CreatureDisplayInfoExtra.dbc',
+        'ItemRandomSuffix.dbc', 'SpellItemEnchantment.dbc']
 
 
 def main():
@@ -87,7 +89,8 @@ def main():
     dbc_dir = Path(sys.argv[1]).resolve()
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
-        for script in ('patch_hero_class.py', 'patch_items.py', 'patch_spells.py', 'patch_creatures.py'):
+        for script in ('patch_hero_class.py', 'patch_items.py', 'patch_scaled_gear.py', 'patch_spells.py',
+                       'patch_creatures.py'):
             subprocess.run([sys.executable, str(HERE / script), str(dbc_dir), str(tmp / 'dbc')], check=True)
         entries = [(f'DBFilesClient\\{name}', (tmp / 'dbc' / name).read_bytes()) for name in DBCS]
 

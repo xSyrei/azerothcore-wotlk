@@ -311,17 +311,23 @@ hit for weapon damage, attack power or a script's amount, and the utility ones, 
 ## Smoldering Adventurer's Cache
 A Hero gets a **Smoldering Adventurer's Cache** (910005, stacks to 200; `src/smoldering_cache.cpp`,
 `data/sql/db-world/titan_smoldering_cache.sql`) for every level gained and every quest turned in (by mail when the
-bags are full). Opening one gives a piece of Blizzard gear for the Hero's level in the slot of their lowest item
-level piece (an empty slot counts as 0; the next slot up when that one has nothing for their level):
-- uncommon (green) items only, with stats only (no "Equip:", "Use:" or "Chance on hit:" lines, their random
-  enchantment such as "of the Bear" included), whose required level is within 4 of the Hero's (wider when there
-  are none) and whose item level fits it (unused items with no required level are left out), that the Hero can
-  use. Greens start around level 5: a cache opened before that stays in the bags;
-- scored for the role: Melee strength, agility, attack power and weapon damage; Ranged intellect and spell power
-  (and wand damage); Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor,
-  defense and avoidance; no role a bit of everything. Armor type is whatever scores best (a tank's plate wins on
-  armor); one of the three best is given. The main hand gets a one-hand weapon or a two-hander, half the time
-  each (two-handers would always score higher). The gear is soulbound.
+bags are full). Opening one gives a piece of **Leveling Scaled** gear for the Hero's level in the slot of their lowest
+item level piece (an empty slot counts as 0; a scaled piece counts at the level it was made for):
+- the cache has its own pool (no Blizzard gear; `src/scaled_gear.h`, `data/sql/db-world/titan_scaled_gear.sql`, both
+  made by `tools/scaling/scaled_gear.py`): a cloth, leather, mail and plate set (Emberweave, Emberhide, Emberlink,
+  Emberforged), a cloak, neck, ring, trinket, shield, off-hand and one weapon of each kind (911000-911050),
+  uncommon and soulbound;
+- each copy gets a random suffix, "(Leveling Scaled 42)": its stats, armor and weapon damage are those of a green of
+  item level `level + 5` (level 60 at most), fixed at the level the cache was opened at. The template itself has
+  none, so the client and the Character window show item level 65 for every piece. A suffix is a stat mix (Bear,
+  Monkey, Eagle, Owl, Tiger, Sorcerer, Elder, Champion, Hunt), one per mix, item kind and level (suffixes 2000+,
+  weapon damage enchantments 30000+; the client has them too, `client-patch/patch_scaled_gear.py`);
+- scored for the role: Melee strength or agility (whichever the Hero's melee abilities use: a warrior's, paladin's or
+  death knight's strength, the others' agility), attack power and weapon damage; Ranged intellect and spell power;
+  Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor and defense; no role a
+  bit of everything. Armor type is whatever scores best among the role's two: Tank plate or mail, Melee leather or
+  mail, Ranged cloth or mail, Healer leather or plate. A random pick within 90% of the best is given. The main hand
+  gets a one-hand weapon or a two-hander, half the time each (two-handers would always score higher).
 
 **Empty slots fill themselves**: gear a Hero gets (loot, quest rewards, purchases, crafting, caches) is put on at
 once when its slot is empty and the Hero can wear it.

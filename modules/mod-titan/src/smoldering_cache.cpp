@@ -16,6 +16,7 @@
  */
 
 #include "wildcard.h"
+#include "scaled_gear.h"
 #include "Chat.h"
 #include "DBCStores.h"
 #include "Containers.h"
@@ -31,25 +32,26 @@
 #include <unordered_map>
 
 // Smoldering Adventurer's Cache (data/sql/db-world/titan_smoldering_cache.sql): a Hero gets one for every level gained
-// and every quest turned in. Opening one gives a piece of Blizzard gear for the Hero's level in the slot of their
-// lowest item level piece (an empty slot counts as 0; the next one up when that slot has nothing for their level),
-// picked for their role (Wildcard::Role):
+// and every quest turned in. Opening one gives a piece of Leveling Scaled gear (tools/scaling/scaled_gear.py,
+// scaled_gear.h) in the slot of their lowest item level piece (an empty slot counts as 0), fixed at the level it was
+// opened at: a small pool (a cloth, leather, mail and plate set, a cloak, a neck, a ring, a trinket, weapons, a shield
+// and an off-hand) whose stats, armor and weapon damage come from a suffix per stat mix, kind and level ("(Leveling
+// Scaled 23)"), at a green's item level for that level. For the Hero's role (Wildcard::Role):
 //
-// - from the uncommon (green) items for that slot whose required level is just under the Hero's, with stats only (no
-//   "Equip:", "Use:" or "Chance on hit:", their random enchantment too), that the Hero can use;
-// - scored by the stats the role wants: Melee strength, agility, attack power and weapon damage; Ranged intellect
-//   and spell power; Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor and
-//   avoidance; no role a bit of everything. Armor type does not matter; the scores decide (plate wins a tank's for
-//   its armor). One of the three best is given.
+// - every pool item for the slot, with every stat mix it can take, is scored by the stats the role wants (Melee
+//   strength or agility, by the classes of its melee abilities, attack power and weapon damage; Ranged intellect and
+//   spell power; Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor and
+//   defense; no role a bit of everything);
+// - armor is one of the role's two types, whichever scores best: Tank plate or mail, Melee leather or mail, Ranged
+//   cloth or mail, Healer leather or plate (no role: any);
+// - one of the picks within 10% of the best is given.
 //
 // Gear from a cache is soulbound. Gear a Hero gets (loot, quest rewards, purchases, caches) goes on by itself when its
 // slot is empty.
 namespace
 {
     constexpr uint32 ITEM_SMOLDERING_CACHE = 910005;
-    constexpr uint8 LEVEL_WINDOW = 4;           // required levels from the Hero's level - 4 to it
-    constexpr uint8 TOP_PICKS = 3;
-    constexpr uint32 CLASSIC_MAX_LEVEL = 60;
+    constexpr float NEAR_BEST = 0.9f;           // picks this close to the best are as good
 
     struct GearSlot
     {
@@ -79,50 +81,49 @@ namespace
         { EQUIPMENT_SLOT_RANGED, "ranged", { INVTYPE_RANGED, INVTYPE_THROWN, INVTYPE_RANGEDRIGHT } },
     };
 
-    bool IsPlaceholder(std::string const& name)
+    struct PoolItem
     {
-        for (char const* word : { "Monster", "NPC Equip", "Test", "TEST", "OLD", "Deprecated", "[PH]", "QA " })
-            if (name.find(word) != std::string::npos)
-                return true;
-        return false;
-    }
+        ItemTemplate const* Proto;
+        ScaledGear::Item const* Scaled;
+    };
 
-    // Every item that may come out of a cache, by InventoryType. Built on first use.
-    std::unordered_map<uint8, std::vector<ItemTemplate const*>> const& Pool()
+    // The Leveling Scaled pool, by InventoryType. Built on first use.
+    std::unordered_map<uint8, std::vector<PoolItem>> const& Pool()
     {
-        static std::unordered_map<uint8, std::vector<ItemTemplate const*>> const pool = []
+        static std::unordered_map<uint8, std::vector<PoolItem>> const pool = []
         {
-            std::unordered_map<uint8, std::vector<ItemTemplate const*>> items;
-            for (auto const& [entry, proto] : *sObjectMgr->GetItemTemplateStore())
-            {
-                // Uncommon, with a real required level and an item level that fits it (unused items have none:
-                // a required level 0 item level 187 helm), stats only: no "Equip:", "Use:" or "Chance on hit:".
-                if ((proto.Class != ITEM_CLASS_ARMOR && proto.Class != ITEM_CLASS_WEAPON)
-                    || proto.Quality != ITEM_QUALITY_UNCOMMON || !proto.RequiredLevel
-                    || proto.ItemLevel > proto.RequiredLevel * 5 / 2 + 10 || proto.ScalingStatDistribution
-                    // Until the level and power squish (.agents/plans/phase-0): up to 60, Classic's item levels
-                    // only, not the Burning Crusade's stronger greens that ask levels 57-60.
-                    || (proto.RequiredLevel <= CLASSIC_MAX_LEVEL && proto.ItemLevel > proto.RequiredLevel + 10)
-                    || std::any_of(std::begin(proto.Spells), std::end(proto.Spells),
-                        [](_Spell const& spell) { return spell.SpellId != 0; })
-                    || proto.RequiredSkill || proto.RequiredSpell || proto.RequiredHonorRank
-                    || proto.RequiredCityRank || proto.RequiredReputationFaction || proto.HolidayId
-                    || proto.Bonding == BIND_QUEST_ITEM || IsPlaceholder(proto.Name1))
-                    continue;
-                if (proto.Class == ITEM_CLASS_WEAPON && (proto.SubClass == ITEM_SUBCLASS_WEAPON_FISHING_POLE
-                    || proto.SubClass == ITEM_SUBCLASS_WEAPON_MISC || proto.SubClass == ITEM_SUBCLASS_WEAPON_obsolete
-                    || proto.SubClass == ITEM_SUBCLASS_WEAPON_EXOTIC || proto.SubClass == ITEM_SUBCLASS_WEAPON_EXOTIC2
-                    || proto.SubClass == ITEM_SUBCLASS_WEAPON_SPEAR))
-                    continue;
-                items[uint8(proto.InventoryType)].push_back(&proto);
-            }
+            std::unordered_map<uint8, std::vector<PoolItem>> items;
+            for (ScaledGear::Item const& scaled : ScaledGear::ITEMS)
+                if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(scaled.Entry))
+                    items[uint8(proto->InventoryType)].push_back({ proto, &scaled });
             return items;
         }();
         return pool;
     }
 
+    // A Melee Hero's main stat, by the classes of the melee abilities it knows: the rogue's, hunter's, druid's,
+    // shaman's, Demon Hunter's and Monk's are Agility's, the warrior's, paladin's and death knight's Strength's.
+    bool PrefersAgility(Player* player)
+    {
+        int32 agility = 0, strength = 0;
+        for (Wildcard::Ability const& ability : Wildcard::Abilities())
+        {
+            if (!ability.Offered || !(ability.Roles & Wildcard::RoleMask(Wildcard::ROLE_MELEE))
+                || Wildcard::KnownRank(player, ability) < 0)
+                continue;
+            switch (ability.ClassId)
+            {
+                case CLASS_WARRIOR: case CLASS_PALADIN: case CLASS_DEATH_KNIGHT: ++strength; break;
+                case CLASS_ROGUE: case CLASS_HUNTER: case CLASS_DRUID: case CLASS_SHAMAN:
+                case Wildcard::CLASS_DEMON_HUNTER: case Wildcard::CLASS_MONK: ++agility; break;
+                default: break;
+            }
+        }
+        return agility > strength;
+    }
+
     // How much a role wants a point of a stat (ItemModType).
-    float StatWeight(Wildcard::Role role, uint32 stat)
+    float StatWeight(Wildcard::Role role, bool agility, uint32 stat)
     {
         using namespace Wildcard;
         bool rating = (stat >= ITEM_MOD_HIT_MELEE_RATING && stat <= ITEM_MOD_HASTE_SPELL_RATING)
@@ -132,7 +133,8 @@ namespace
             case ROLE_MELEE:
                 switch (stat)
                 {
-                    case ITEM_MOD_STRENGTH: case ITEM_MOD_AGILITY: return 1.0f;
+                    case ITEM_MOD_STRENGTH: return agility ? 0.4f : 1.0f;
+                    case ITEM_MOD_AGILITY: return agility ? 1.0f : 0.4f;
                     case ITEM_MOD_ATTACK_POWER: return 0.5f;
                     case ITEM_MOD_RANGED_ATTACK_POWER: return 0.3f;
                     case ITEM_MOD_ARMOR_PENETRATION_RATING: case ITEM_MOD_EXPERTISE_RATING: return 0.8f;
@@ -173,66 +175,86 @@ namespace
         }
     }
 
-    // The stats of a random enchantment (ItemRandomProperties, or ItemRandomSuffix when negative); false when it
-    // has more than stats (an equip spell, a proc).
-    bool AddRandomStats(uint32 itemId, int32 randomPropertyId, std::vector<std::pair<uint32, int32>>& stats)
+    // What a suffix gives the item: its stats (the factor of the item's template), armor and weapon damage.
+    struct SuffixParts
     {
-        bool statsOnly = true;
-        auto addEnchant = [&](uint32 enchantId, float scale, bool scaled)
-        {
-            SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(enchantId);
-            if (!enchant)
-                return;
-            for (uint8 i = 0; i < MAX_SPELL_ITEM_ENCHANTMENT_EFFECTS; ++i)
-            {
-                if (enchant->type[i] == ITEM_ENCHANTMENT_TYPE_STAT)
-                    stats.emplace_back(enchant->spellid[i], scaled ? int32(scale) : int32(enchant->amount[i]));
-                else if (enchant->type[i] != ITEM_ENCHANTMENT_TYPE_NONE
-                    && enchant->type[i] != ITEM_ENCHANTMENT_TYPE_RESISTANCE)
-                    statsOnly = false;
-            }
-        };
+        std::vector<std::pair<uint32, int32>> Stats;
+        int32 Armor = 0;
+        int32 WeaponDamage = 0;
+    };
 
-        if (randomPropertyId > 0)
+    SuffixParts SuffixOf(uint32 itemId, int32 randomPropertyId)
+    {
+        SuffixParts parts;
+        ItemRandomSuffixEntry const* suffix = randomPropertyId < 0
+            ? sItemRandomSuffixStore.LookupEntry(-randomPropertyId) : nullptr;
+        if (!suffix)
+            return parts;
+        uint32 factor = GenerateEnchSuffixFactor(itemId);
+        for (uint8 i = 0; i < MAX_ITEM_ENCHANTMENT_EFFECTS; ++i)
         {
-            if (ItemRandomPropertiesEntry const* properties = sItemRandomPropertiesStore.LookupEntry(randomPropertyId))
-                for (uint32 enchantId : properties->Enchantment)
-                    addEnchant(enchantId, 0.0f, false);
-        }
-        else if (randomPropertyId < 0)
-        {
-            if (ItemRandomSuffixEntry const* suffix = sItemRandomSuffixStore.LookupEntry(-randomPropertyId))
+            SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(suffix->Enchantment[i]);
+            if (!enchant)
+                continue;
+            int32 amount = int32(factor * suffix->AllocationPct[i] / 10000);
+            for (uint8 e = 0; e < MAX_SPELL_ITEM_ENCHANTMENT_EFFECTS; ++e)
             {
-                uint32 factor = GenerateEnchSuffixFactor(itemId);
-                for (uint8 i = 0; i < MAX_ITEM_ENCHANTMENT_EFFECTS; ++i)
-                    addEnchant(suffix->Enchantment[i], float(factor * suffix->AllocationPct[i]) / 10000.0f, true);
+                if (enchant->type[e] == ITEM_ENCHANTMENT_TYPE_STAT)
+                    parts.Stats.emplace_back(enchant->spellid[e], amount);
+                else if (enchant->type[e] == ITEM_ENCHANTMENT_TYPE_RESISTANCE
+                    && enchant->spellid[e] == SPELL_SCHOOL_NORMAL)
+                    parts.Armor += amount;
+                else if (enchant->type[e] == ITEM_ENCHANTMENT_TYPE_DAMAGE)
+                    parts.WeaponDamage += int32(enchant->amount[e]);
             }
         }
-        return statsOnly;
+        return parts;
     }
 
-    // The item's worth to the role; nullopt when its random enchantment has more than stats.
-    std::optional<float> Score(Wildcard::Role role, ItemTemplate const* proto, int32 randomPropertyId)
+    // The item's worth to the role with that suffix.
+    float Score(Wildcard::Role role, bool agility, ItemTemplate const* proto, int32 randomPropertyId)
     {
-        std::vector<std::pair<uint32, int32>> stats;
-        for (uint32 i = 0; i < proto->StatsCount && i < MAX_ITEM_PROTO_STATS; ++i)
-            stats.emplace_back(proto->ItemStat[i].ItemStatType, proto->ItemStat[i].ItemStatValue);
-        if (!AddRandomStats(proto->ItemId, randomPropertyId, stats))
-            return std::nullopt;
-
+        SuffixParts parts = SuffixOf(proto->ItemId, randomPropertyId);
         float score = 0.0f;
-        for (auto const& [stat, value] : stats)
-            score += StatWeight(role, stat) * value;
-
-        score += proto->Armor * (role == Wildcard::ROLE_TANK ? 0.05f : 0.01f);
+        for (auto const& [stat, value] : parts.Stats)
+            score += StatWeight(role, agility, stat) * value;
+        score += (proto->Armor + parts.Armor) * (role == Wildcard::ROLE_TANK ? 0.05f : 0.01f);
         if (proto->Class == ITEM_CLASS_WEAPON && proto->Delay)
         {
-            float dps = (proto->Damage[0].DamageMin + proto->Damage[0].DamageMax) / 2.0f / (proto->Delay / 1000.0f);
+            float hit = (proto->Damage[0].DamageMin + proto->Damage[0].DamageMax) / 2.0f + parts.WeaponDamage;
+            float dps = hit / (proto->Delay / 1000.0f);
             bool physical = role == Wildcard::ROLE_MELEE || role == Wildcard::ROLE_TANK || role == Wildcard::ROLE_NONE;
             bool wand = proto->SubClass == ITEM_SUBCLASS_WEAPON_WAND;
             score += dps * (physical ? (wand ? 0.0f : 2.0f) : (wand ? 1.5f : 0.0f));
         }
         return score;
+    }
+
+    // The armor types a role chooses between (no role: any).
+    bool ArmorSuitsRole(Wildcard::Role role, uint8 armorType)
+    {
+        if (!armorType)
+            return true;
+        switch (role)
+        {
+            case Wildcard::ROLE_TANK:
+                return armorType == ITEM_SUBCLASS_ARMOR_PLATE || armorType == ITEM_SUBCLASS_ARMOR_MAIL;
+            case Wildcard::ROLE_MELEE:
+                return armorType == ITEM_SUBCLASS_ARMOR_LEATHER || armorType == ITEM_SUBCLASS_ARMOR_MAIL;
+            case Wildcard::ROLE_RANGED:
+                return armorType == ITEM_SUBCLASS_ARMOR_CLOTH || armorType == ITEM_SUBCLASS_ARMOR_MAIL;
+            case Wildcard::ROLE_HEALER:
+                return armorType == ITEM_SUBCLASS_ARMOR_LEATHER || armorType == ITEM_SUBCLASS_ARMOR_PLATE;
+            default: return true;
+        }
+    }
+
+    // An item's item level: a Leveling Scaled piece's is its level's (its template's is the same for every level).
+    uint32 ItemLevelOf(Item const* item)
+    {
+        if (uint8 level = ScaledGear::LevelOf(item->GetItemRandomPropertyId()))
+            return ScaledGear::ItemLevelOf(level);
+        return item->GetTemplate()->ItemLevel;
     }
 
     // The Hero's gear slots from the lowest item level piece up (empty: 0; ties in random order); the off hand only
@@ -249,7 +271,7 @@ namespace
             if (gear.Slot == EQUIPMENT_SLOT_OFFHAND && twoHanded)
                 continue;
             Item* item = player->GetItemByPos(INVENTORY_SLOT_BAG_0, gear.Slot);
-            slots.emplace_back(item ? item->GetTemplate()->ItemLevel : 0, &gear);
+            slots.emplace_back(item ? ItemLevelOf(item) : 0, &gear);
         }
         Acore::Containers::RandomShuffle(slots);
         std::stable_sort(slots.begin(), slots.end(), [](auto const& a, auto const& b) { return a.first < b.first; });
@@ -269,9 +291,8 @@ namespace
 
     std::optional<Pick> PickGearOf(Player* player, GearSlot const& gear);
 
-    // A green for that slot at the Hero's level: required level up to 4 under theirs, wider when there is none. The
-    // main hand is a one-hand weapon or a two-hander, half the time each: two-handers score higher (their damage), so
-    // one-handers, and with them the off hand, stopped coming.
+    // A pool piece for that slot. The main hand is a one-hand weapon or a two-hander, half the time each: two-handers
+    // score higher (their damage), so one-handers, and with them the off hand, would stop coming.
     std::optional<Pick> PickGear(Player* player, GearSlot const& gear)
     {
         if (gear.Slot == EQUIPMENT_SLOT_MAINHAND)
@@ -287,37 +308,39 @@ namespace
         return PickGearOf(player, gear);
     }
 
+    // Every pool item for the slot with every suffix set it takes, at the Hero's level, scored; one near the best.
     std::optional<Pick> PickGearOf(Player* player, GearSlot const& gear)
     {
         Wildcard::Role role = Wildcard::GetRole(player);
-        uint8 level = player->GetLevel();
-        for (uint8 window : { LEVEL_WINDOW, uint8(LEVEL_WINDOW * 2), level })
+        bool agility = role == Wildcard::ROLE_MELEE && PrefersAgility(player);
+        uint8 level = uint8(std::min<uint32>(player->GetLevel(), ScaledGear::LEVELS));
+        std::vector<Pick> picks;
+        for (uint8 type : gear.Types)
         {
-            uint8 lowest = level > window ? level - window : 0;
-            std::vector<Pick> picks;
-            for (uint8 type : gear.Types)
-            {
-                if (!type)
-                    break;
-                auto itr = Pool().find(type);
-                if (itr == Pool().end())
-                    continue;
-                for (ItemTemplate const* proto : itr->second)
-                    if (proto->RequiredLevel <= level && proto->RequiredLevel >= lowest
-                        && player->CanUseItem(proto) == EQUIP_ERR_OK)
-                    {
-                        int32 random = Item::GenerateItemRandomPropertyId(proto->ItemId);
-                        if (std::optional<float> score = Score(role, proto, random))
-                            picks.push_back({ proto, random, *score });
-                    }
-            }
-            if (picks.empty())
+            if (!type)
+                break;
+            auto itr = Pool().find(type);
+            if (itr == Pool().end())
                 continue;
-
-            std::sort(picks.begin(), picks.end(), [](Pick const& a, Pick const& b) { return a.Score > b.Score; });
-            return picks[urand(0, std::min<uint32>(TOP_PICKS, uint32(picks.size())) - 1)];
+            for (PoolItem const& item : itr->second)
+            {
+                if (!ArmorSuitsRole(role, item.Scaled->ArmorType) || player->CanUseItem(item.Proto) != EQUIP_ERR_OK)
+                    continue;
+                for (uint8 i = 0; i < item.Scaled->SetCount; ++i)
+                {
+                    int32 random = -int32(ScaledGear::Suffix(item.Scaled->Sets[i], level));
+                    picks.push_back({ item.Proto, random, Score(role, agility, item.Proto, random) });
+                }
+            }
         }
-        return std::nullopt;
+        if (picks.empty())
+            return std::nullopt;
+
+        std::sort(picks.begin(), picks.end(), [](Pick const& a, Pick const& b) { return a.Score > b.Score; });
+        std::size_t near = 1;
+        while (near < picks.size() && picks[near].Score >= picks.front().Score * NEAR_BEST)
+            ++near;
+        return picks[urand(0, uint32(near) - 1)];
     }
 
     // Caches into the bags; what does not fit comes by mail.
@@ -367,8 +390,7 @@ public:
             }
         if (!pick)
         {
-            handler.SendSysMessage("The cache's embers flicker: nothing in it fits you yet. Keep it: its gear starts "
-                "around level 5.");
+            handler.SendSysMessage("The cache's embers flicker: nothing in it fits you.");
             player->SendEquipError(EQUIP_ERR_CANT_DO_RIGHT_NOW, item, nullptr);
             return true;
         }
