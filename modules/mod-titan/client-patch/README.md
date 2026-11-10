@@ -427,6 +427,22 @@ read as anything but water), and their second coordinates cross the first (float
   zone's own water at night) and 15% (shallows) or 10% (deep) of that zone's sky at the same hour (the horizon, band
   6, and the lower sky, band 5).
 
+## Emberforge Engine (`engine/`)
+
+Our own lighting engine, a ReShade add-on (`dist/Emberforge.addon32`, a 32-bit Windows DLL beside ReShade, which is
+now its build with add-on support): the effects alone only see the finished picture and a depth buffer ReShade
+guesses at, so they guessed where the water is, whether the world is on screen and how the camera sits, unstably
+(stale depth burned into occlusion, the sky taken for water). Inside the game's own Direct3D 9 drawing those are
+facts. `engine/build.sh` builds it with MinGW-w64 (`g++-mingw-w64-i686`) against the vendored ReShade add-on headers
+and Dear ImGui header (`engine/third_party`, their licenses beside them); it records the water shaders' fingerprints
+(FNV-1a of `hd/psLiquidProcWater*.asm`'s bytecode) in `src/known_shaders.h`.
+
+First version: it learns how the client draws. An *Emberforge* tab in ReShade's window shows each frame's draws,
+water draws, render target changes and depth clears; *Capture one frame* writes every draw of the next frame (render
+target, depth, blend and depth states, shader fingerprints, textures, viewport, the vertex shader's first 16
+constants: the camera; the water's pixel constants) to `Emberforge_capture.txt` in the game's folder. The effects are
+rebuilt on what it shows.
+
 ## Volumetric lighting (`reshade/`)
 
 **Emberforge Volumetrics** (`reshade/Shaders/Emberforge_Volumetrics.fx`): light shafts and atmospheric fog, a

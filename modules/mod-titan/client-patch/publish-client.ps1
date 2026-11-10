@@ -21,13 +21,15 @@ foreach ($mpq in 'patch-enUS-4.MPQ', 'patch-enUS-5.MPQ', 'patch-enUS-6.MPQ', 'pa
     'patch-enUS-8.MPQ', 'Water-ReShade.MPQ') {
     $local["Data/enUS/$mpq"] = Join-Path $here "dist\$mpq"
 }
-# Volumetric lighting (reshade\): ReShade, its settings as defaults (the launcher copies them once; ReShade then
-# saves the player's own), and the shaders.
+# Volumetric lighting (reshade\): ReShade (its build with add-on support), its settings as defaults (the launcher
+# copies them once; ReShade then saves the player's own), and the shaders.
 $reshade = Join-Path $here 'reshade'
 $local['ReShade32.dll'] = Join-Path $reshade 'ReShade32.dll'
 $local['ReShade.default.ini'] = Join-Path $reshade 'ReShade.ini'
 $local['ReShadePreset.default.ini'] = Join-Path $reshade 'ReShadePreset.ini'
 $local['ReShade-LICENSE.md'] = Join-Path $reshade 'ReShade-LICENSE.md'
+# The Emberforge Engine (engine\, built by engine/build.sh): a ReShade add-on, loaded from beside ReShade.
+$local['Emberforge.addon32'] = Join-Path $here 'dist\Emberforge.addon32'
 foreach ($shader in Get-ChildItem (Join-Path $reshade 'Shaders') -File) {
     $local["reshade-shaders/Shaders/$($shader.Name)"] = $shader.FullName
 }
