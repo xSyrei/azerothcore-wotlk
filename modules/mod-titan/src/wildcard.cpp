@@ -1084,13 +1084,18 @@ namespace Wildcard
                 if (!tab || tab->petTalentMask || !(tab->ClassMask & HERO_TALENT_CLASSMASK))
                     continue;
 
+                // Listed, or a talent among the level 1 abilities (Crusader Strike, Mutilate, Stormstrike): either way
+                // an ability, never a talent roll.
                 std::string_view name = SpellName(talent->RankID[0]);
                 auto listed = std::find_if(std::begin(TALENT_ABILITIES), std::end(TALENT_ABILITIES),
                     [name](char const* listedName) { return name == listedName; });
-                if (listed == std::end(TALENT_ABILITIES))
+                bool levelOneTalent = std::any_of(std::begin(LEVEL_ONE_ABILITIES), std::end(LEVEL_ONE_ABILITIES),
+                    [name](char const* listedName) { return name == listedName; });
+                if (listed == std::end(TALENT_ABILITIES) && !levelOneTalent)
                     continue;
 
-                found.insert(*listed);
+                if (listed != std::end(TALENT_ABILITIES))
+                    found.insert(*listed);
                 uint8 classId = 0;
                 for (uint8 c = CLASS_WARRIOR; c <= CLASS_DEMON_HUNTER; ++c)
                     if (tab->ClassMask & (1 << (c - 1)))

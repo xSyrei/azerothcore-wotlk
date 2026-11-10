@@ -65,7 +65,8 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   rank (talents rolled at a lower rank before go to their top rank at login). Tier rules do not apply; a talent
   building on another (Eternal Reaping on Chaos Cleave) only comes once that one is known. Heroes have no talent points to spend in the UI. Characters that already had
   more than this keep them, and roll again once their level catches up.
-- **Talent abilities are abilities** (`TALENT_ABILITIES`: Mortal Strike, Shadowform, Mangle, Titan's Grip...): about
+- **Talent abilities are abilities** (`TALENT_ABILITIES`, and any talent among `LEVEL_ONE_ABILITIES`: Crusader
+  Strike, Mutilate, Stormstrike; Mortal Strike, Shadowform, Mangle, Titan's Grip...): about
   130 talents are learned as abilities, rolled with the ability rolls from their tier's level (row 1: 10, row 11:
   60), never by a talent roll. They stay on their talent tree in the Classless window, lit when known. Ones rolled
   as talents before are kept, and their points no longer count, so another talent is owed.
