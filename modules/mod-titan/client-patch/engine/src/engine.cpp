@@ -899,6 +899,8 @@ extern "C"
 
     __declspec(dllexport) HRESULT WINAPI Direct3DCreate9Ex(UINT sdk, IDirect3D9Ex **d3d)
     {
+        // Not wrapped: frames drawn this way pass the engine by (the launcher sets the game's gxApi to "d3d9").
+        Log("Direct3DCreate9Ex asked for: the game draws past the engine (its gxApi should be \"d3d9\")");
         auto create = Real<HRESULT(WINAPI *)(UINT, IDirect3D9Ex **)>("Direct3DCreate9Ex");
         return create ? create(sdk, d3d) : E_NOTIMPL;
     }
