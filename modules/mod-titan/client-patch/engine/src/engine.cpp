@@ -25,6 +25,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include <imgui.h>
 #include <backends/imgui_impl_dx9.h>
@@ -36,7 +37,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.2"
+#define EMBERFORGE_ENGINE_VERSION "0.3"
 
 namespace
 {
@@ -438,7 +439,11 @@ namespace
         {
             HRESULT hr = real->CreateVertexShader(code, shader);
             if (SUCCEEDED(hr) && code && shader && *shader)
-                m_hashes[*shader] = Fnv(code, BytecodeSize(code));
+            {
+                size_t size = BytecodeSize(code);
+                m_hashes[*shader] = Fnv(code, size);
+                m_code[*shader].assign(code, code + size / sizeof(DWORD));
+            }
             return hr;
         }
 
@@ -447,8 +452,10 @@ namespace
             HRESULT hr = real->CreatePixelShader(code, shader);
             if (SUCCEEDED(hr) && code && shader && *shader)
             {
-                uint32_t hash = Fnv(code, BytecodeSize(code));
+                size_t size = BytecodeSize(code);
+                uint32_t hash = Fnv(code, size);
                 m_hashes[*shader] = hash;
+                m_code[*shader].assign(code, code + size / sizeof(DWORD));
                 // A new shader may reuse a freed one's address: it is water or not by its own code.
                 if (LooksLikeWater(code) || hash == kWaterShader || hash == kWaterShaderReShade)
                 {
@@ -799,6 +806,17 @@ namespace
         {
             if (!m_settings.water || !m_waterPs || m_recordingBlock || !IsWater())
                 return false;
+            // The engine's shader is shader model 3: it works only with a shader model 3 vertex shader.
+            if (Version(m_ps) != 0xFFFF0300 || Version(m_vs) != 0xFFFE0300)
+            {
+                if (!m_waterVersionLogged)
+                {
+                    m_waterVersionLogged = true;
+                    Log("water not replaced: the game's water is pixel %08lx / vertex %08lx (needs 3.0 for both)",
+                        static_cast<unsigned long>(Version(m_ps)), static_cast<unsigned long>(Version(m_vs)));
+                }
+                return false;
+            }
             float view[4][4] = {}, projection[4] = {};
             bool camera = Camera(view, projection);
             if (!m_waterPrepared)
@@ -961,6 +979,83 @@ namespace
             return m_ps && m_waterShaders.count(m_ps) != 0;
         }
 
+        static bool IsCube(IDirect3DBaseTexture9 *texture)
+        {
+            return texture && texture->GetType() == D3DRTYPE_CUBETEXTURE;
+        }
+
+        // The shader declares cube samplers in s0 and s1.
+        bool ReadsCubes(void *shader) const
+        {
+            auto found = m_code.find(shader);
+            if (found == m_code.end())
+                return false;
+            const std::vector<DWORD> &code = found->second;
+            int cubes = 0;
+            for (size_t i = 1; i + 2 < code.size() && code[i] != 0x0000FFFF;)
+            {
+                DWORD token = code[i], op = token & 0xFFFF;
+                if (op == 0xFFFE)
+                {
+                    i += 1 + ((token >> 16) & 0x7FFF);
+                    continue;
+                }
+                DWORD reg = code[i + 2];
+                if (op == 31 && (((reg >> 28) & 7) | ((reg >> 8) & 0x18)) == 10 && (reg & 0x7FF) <= 1 &&
+                    ((code[i + 1] >> 27) & 0xF) == 3)
+                    ++cubes;
+                i += 1 + ((token >> 24) & 0xF);
+            }
+            return cubes == 2;
+        }
+
+        DWORD Version(void *shader) const
+        {
+            auto found = m_code.find(shader);
+            return found == m_code.end() || found->second.empty() ? 0 : found->second[0];
+        }
+
+        // A shader's bytecode to a file in the game's folder, and its declarations to the log.
+        void DumpShader(void *shader, const char *name)
+        {
+            auto found = shader ? m_code.find(shader) : m_code.end();
+            if (found == m_code.end() || found->second.empty())
+            {
+                Log("%s: no shader bound (fixed function) or its code unknown", name);
+                return;
+            }
+            const std::vector<DWORD> &code = found->second;
+            if (FILE *file = fopen((GameFolder() + name).c_str(), "wb"))
+            {
+                fwrite(code.data(), sizeof(DWORD), code.size(), file);
+                fclose(file);
+            }
+            std::string decls;
+            for (size_t i = 1; i < code.size() && code[i] != 0x0000FFFF;)
+            {
+                DWORD token = code[i], op = token & 0xFFFF;
+                if (op == 0xFFFE)
+                {
+                    i += 1 + ((token >> 16) & 0x7FFF);
+                    continue;
+                }
+                if (op == 31 && i + 2 < code.size())
+                {
+                    char text[48];
+                    DWORD kind = code[i + 1], reg = code[i + 2];
+                    DWORD type = ((reg >> 28) & 7) | ((reg >> 8) & 0x18);
+                    snprintf(text, sizeof(text), " %s%lu(%lu/%lu)", type == 10 ? "s" : (type == 1 ? "v" : "o"),
+                             static_cast<unsigned long>(reg & 0x7FF),
+                             static_cast<unsigned long>(type == 10 ? (kind >> 27) & 0xF : kind & 0x1F),
+                             static_cast<unsigned long>((kind >> 16) & 0xF));
+                    decls += text;
+                }
+                i += 1 + ((token >> 24) & 0xF);
+            }
+            Log("%s: hash %08x, version %08lx, %u words, declares%s", name, Hash(shader),
+                static_cast<unsigned long>(code[0]), static_cast<unsigned>(code.size()), decls.c_str());
+        }
+
         static std::string Describe(IDirect3DSurface9 *surface)
         {
             if (!surface)
@@ -991,8 +1086,24 @@ namespace
                 m_firstDraw = true;
                 Log("first draw (%s)", kind);
             }
+            // Water by what is bound, whatever else its code says: the game's liquids read cube maps (the
+            // reflections) in s0 and s1, with cube maps bound there.
+            if (m_ps && !m_recordingBlock && !IsWater() && IsCube(m_tex[0]) && IsCube(m_tex[1]) &&
+                ReadsCubes(m_ps))
+            {
+                m_waterShaders.insert(m_ps);
+                Log("water found by its textures: pixel shader %08x, vertex shader %08x", Hash(m_ps), Hash(m_vs));
+            }
             if (IsWater())
+            {
                 ++m_frame.waterDraws;
+                if (!m_waterDumped)
+                {
+                    m_waterDumped = true;
+                    DumpShader(m_ps, "Emberforge_water_ps.bin");
+                    DumpShader(m_vs, "Emberforge_water_vs.bin");
+                }
+            }
             if (m_capture == Capture::Recording)
                 WriteDraw(kind, type, count);
             ++m_frame.draws;
@@ -1286,6 +1397,8 @@ namespace
         void *m_vs = nullptr;
         void *m_ps = nullptr;
         std::unordered_map<void *, uint32_t> m_hashes;
+        std::unordered_map<void *, std::vector<DWORD>> m_code;
+        bool m_waterDumped = false, m_waterVersionLogged = false;
         float m_vsc[kVertexConstants][4] = {};
         float m_psc[kPixelConstants][4] = {};
         D3DVIEWPORT9 m_viewport = {};
