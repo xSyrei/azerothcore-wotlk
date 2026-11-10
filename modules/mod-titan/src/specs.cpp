@@ -554,10 +554,10 @@ namespace
         }
         else
         {
+            // One talent for one: a roll gives a talent at its top rank (Wildcard counts talents, not their ranks).
             TalentEntry const* talent = HeroTalent(id);
-            uint8 ranks = Wildcard::RemoveTalent(player, talent);
-            for (uint8 i = 0; i < ranks; ++i)
-                Wildcard::GrantTalentExcept(player, id, i == 0);
+            if (Wildcard::RemoveTalent(player, talent))
+                Wildcard::GrantTalentExcept(player, id, true);
             player->InitTalentForLevel();
             Cards::SpendEye(player, true);
         }
