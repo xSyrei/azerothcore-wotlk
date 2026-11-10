@@ -486,7 +486,8 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   and those turned away darken, each first checked for something in the way toward the sun through the depth (soft
   shadows); and along every view ray 16 points of air are checked the same way, so sunlit air glows and air in a
   shadow does not (shafts and shadow streaks from whatever angle the sun stands at, behind the camera too). The fog's
-  colour is taken only from opaque fogged draws (the sky dome): the game sets it black or grey for blended ones. Every part
+  colour is taken only from opaque fogged draws (the sky dome): the game sets it black or grey for blended ones.
+  Every part
   is a slider in the panel's Atmosphere section.
 - The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's
   `d3dcompiler_47.dll` under Wine (any 64-bit copy, e.g. an Electron app's: Wine's own compiler cannot build shader
