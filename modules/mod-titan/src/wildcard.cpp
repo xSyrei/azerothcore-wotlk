@@ -232,6 +232,22 @@ namespace
     constexpr char const* TAME_BEAST = "Tame Beast";
     constexpr char const* TAME_BEAST_COMPANIONS[] = { "Call Pet", "Dismiss Pet", "Revive Pet", "Feed Pet" };
 
+    // Group versions of a buff: learned with the buff once the Hero's level reaches them (the rank-ups give them, as a
+    // trainer would), never rolled on their own, and gone with it.
+    struct GroupVersion
+    {
+        char const* Single;
+        char const* Group;
+    };
+    constexpr GroupVersion GROUP_VERSIONS[] = {
+        { "Arcane Intellect", "Arcane Brilliance" }, { "Dalaran Intellect", "Dalaran Brilliance" },
+        { "Power Word: Fortitude", "Prayer of Fortitude" }, { "Divine Spirit", "Prayer of Spirit" },
+        { "Shadow Protection", "Prayer of Shadow Protection" }, { "Mark of the Wild", "Gift of the Wild" },
+        { "Blessing of Might", "Greater Blessing of Might" }, { "Blessing of Wisdom", "Greater Blessing of Wisdom" },
+        { "Blessing of Kings", "Greater Blessing of Kings" },
+        { "Blessing of Sanctuary", "Greater Blessing of Sanctuary" },
+    };
+
     // Abilities that need a pet without targeting it (those that do are found by their targets): the
     // abilities giving that pet.
     constexpr char const* HUNTER_PETS[] = { "Tame Beast" };
@@ -607,6 +623,16 @@ namespace
             if (known >= 0 && best > known)
                 player->learnSpell(ability.Ranks[best].SpellId);
         }
+        // Companions the Hero's level now reaches (a group buff: Arcane Brilliance with Arcane Intellect).
+        for (Ability const& ability : Abilities())
+            if (ability.Offered && KnownRank(player, ability) >= 0)
+                for (uint32 companionId : ability.Companions)
+                    if (Ability const* companion = FindAbility(companionId))
+                        if (int32 best = BestRank(player, *companion); best >= 0 && KnownRank(player, *companion) < 0)
+                        {
+                            player->learnSpell(companion->Ranks[best].SpellId);
+                            Announce(player, companion->Ranks[best].SpellId, "came with your ability:");
+                        }
     }
 
     uint32 SpentTalentPoints(Player const* player)
@@ -1152,6 +1178,30 @@ namespace Wildcard
                     ability.Companions = companions;
                 if (auto itr = talentCompanions.find(ability.Ranks.front().SpellId); itr != talentCompanions.end())
                     ability.Companions = itr->second;
+            }
+
+            // Group buffs: their single-target buff's companions, never offered on their own.
+            for (GroupVersion const& pair : GROUP_VERSIONS)
+            {
+                std::vector<Ability*> singles, groups;
+                for (Ability& ability : result)
+                {
+                    if (hasName(ability, pair.Single))
+                        singles.push_back(&ability);
+                    else if (hasName(ability, pair.Group))
+                        groups.push_back(&ability);
+                }
+                if (singles.empty() || groups.empty())
+                    LOG_WARN("module", "mod-titan: Wildcard group version \"{}\" / \"{}\" matches no ability",
+                        pair.Single, pair.Group);
+                for (Ability* group : groups)
+                {
+                    group->Companion = true;
+                    group->Offered = false;
+                    for (Ability* single : singles)
+                        if (single->ClassId == group->ClassId)
+                            single->Companions.push_back(group->Ranks.front().SpellId);
+                }
             }
 
             for (CustomAbility const& custom : CUSTOM_ABILITIES)
