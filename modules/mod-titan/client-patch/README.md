@@ -471,6 +471,10 @@ More effects, in this order around it (`ReShadePreset.ini`):
 - **Emberforge Bloom & Grade** (`Emberforge_Bloom.fx`), last: glow around bright light over three sizes (screen
   blended, no clipping), then sharpening (contrast-adaptive), vibrance, a gentle S-curve, warmth and a light vignette.
 
+The world map covers the world, but the depth buffer still holds the world behind it, so the depth effects shaded
+the map ("burning"). While it is open, the `Emberforge_Lighting` addon draws two 8x8 blocks in the top-left corner
+(magenta, green); occlusion, light sources and fog pause while they see them (`reshade/Shaders/Emberforge.fxh`).
+
 Their settings (Home in game: ReShade's window): water and light sources (above), shafts (intensity, length, sky
 threshold), fog (density, start, strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion (strength,
 radius, fade distance), bloom (intensity, threshold) and grade (sharpen, vibrance, contrast, warmth, vignette). The UI

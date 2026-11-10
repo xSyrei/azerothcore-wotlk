@@ -2,17 +2,19 @@
  * Emberforge Light Sources: lanterns, torches, campfires, braziers and lit windows light what is around them, with
  * flicker, for the WoW 3.3.5a client, a ReShade effect. The game draws its flames glowing, but they light nothing.
  *
- *  1. Emitters, at an eighth of the screen: what is bright and warm (a flame's colours: red over green over blue),
- *     averaged over 8x8 pixels so thin bright things (text, sparks) do not count, with its depth.
- *  2. Light, at half the screen: each pixel gathers the emitters around it on a 9x9 grid spanning the light's reach,
- *     each by its distance in 3D (from the depth buffer: a lamp lights the wall beside it, not the mountain behind) and
- *     by whether the surface faces it.
+ *  1. Emitters, at an eighth of the screen (its mips average larger areas): what is bright and warm (a flame's
+ *     colours: red over green over blue), averaged over 8x8 pixels so thin bright things (text, sparks) do not count,
+ *     with its depth.
+ *  2. Light, at half the screen: each pixel gathers the emitters around it on a 9x9 grid spanning the light's reach
+ *     (each tap the emitters averaged over its cell, so none falls between taps), each by its distance in 3D (from
+ *     the depth buffer: a lamp lights the wall beside it, not the mountain behind) and whether the surface faces it.
  *  3. Applied: the light multiplies the surface's own colour (lighting it, as real light does) plus a little glow in
  *     the air, flickering; less by day.
  * After the water and occlusion, before the fog and bloom (ReShadePreset.ini's order).
  */
 
 #include "ReShade.fxh"
+#include "Emberforge.fxh"
 
 uniform float Intensity <
     ui_type = "slider"; ui_min = 0.0; ui_max = 4.0; ui_step = 0.01;
@@ -77,8 +79,9 @@ uniform float Timer < source = "timer"; >;
 #define YARDS 1000.0
 #define GRID 4                   // taps each way from the centre: (2 * GRID + 1)^2
 
-texture EmitTex { Width = BUFFER_WIDTH / 8; Height = BUFFER_HEIGHT / 8; Format = RGBA16F; };
-sampler EmitS { Texture = EmitTex; MinFilter = POINT; MagFilter = POINT; };
+// rgb: emission; a: emission (luma) times depth, so averages over the mips keep the emitters' own depth.
+texture EmitTex { Width = BUFFER_WIDTH / 8; Height = BUFFER_HEIGHT / 8; Format = RGBA16F; MipLevels = 7; };
+sampler EmitS { Texture = EmitTex; MipFilter = LINEAR; };
 texture LightTex { Width = BUFFER_WIDTH / 2; Height = BUFFER_HEIGHT / 2; Format = RGBA16F; };
 sampler LightS { Texture = LightTex; };
 
@@ -114,12 +117,13 @@ float4 PS_Emit(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
     c /= 16.0;
     float depth = ReShade::GetLinearizedDepth(uv);
     if (depth >= 0.9995 || depth <= 0.0001)
-        return float4(0.0, 0.0, 0.0, depth);
+        return 0.0;
     float bright = smoothstep(Threshold, Threshold + 0.15, max(c.r, max(c.g, c.b)));
     // Fire: red over green over blue.
     float fire = saturate((c.r - c.b) / max(c.r, 1e-3) * 1.6) * saturate((c.g - c.b * 0.8) / max(c.r, 1e-3) * 2.0);
     float colourOk = lerp(1.0, smoothstep(0.25, 0.6, fire), Warmth);
-    return float4(c * bright * colourOk, depth);
+    float3 e = c * bright * colourOk;
+    return float4(e, Luma(e) * depth);
 }
 
 float4 PS_Gather(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
@@ -139,10 +143,13 @@ float4 PS_Gather(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
     float3 n = normalize(cross(dy, dx));
     n = dot(n, -p) < 0.0 ? -n : n;
 
-    // The grid spans the light's reach on screen at this depth.
+    // The grid spans the light's reach on screen at this depth; each tap reads the emitters averaged over its own cell
+    // (the mip that wide), so a lamp between taps still counts.
     float2 t = TanHalfFov();
     float2 span = Reach / (p.z * 2.0 * t);                     // the reach as a share of the screen
     float2 step = span / GRID;
+    float lod = clamp(log2(max(step.x * BUFFER_WIDTH, step.y * BUFFER_HEIGHT) / 8.0), 0.0, 6.0);
+    float cell = step.x * step.y;                              // a cell's share of the screen
     float3 light = 0.0;
     [loop]
     for (int y = -GRID; y <= GRID; y++)
@@ -151,23 +158,31 @@ float4 PS_Gather(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         for (int x = -GRID; x <= GRID; x++)
         {
             float2 at = uv + float2(x, y) * step;
-            float4 e = tex2Dlod(EmitS, float4(at, 0, 0));
-            if (max(e.r, max(e.g, e.b)) <= 0.0)
-                continue;
-            float3 d = ViewPos(at, e.a) - p;
-            float dist = length(d);
-            float fall = saturate(1.0 - dist / Reach);
-            float facing = saturate(dot(n, d / max(dist, 1e-3)) * 0.75 + 0.25);
-            light += e.rgb * fall * fall * facing;
+            float4 e = tex2Dlod(EmitS, float4(at, 0, lod));
+            float luma = Luma(e.rgb);
+            if (luma > 1e-4)
+            {
+                // The emitters' depth (weighted by their light), and their power: their light over the cell's area
+                // in the world there (the screen area times depth squared).
+                float depthE = e.a / luma;
+                float3 d = ViewPos(at, depthE) - p;
+                float dist = length(d);
+                float fall = saturate(1.0 - dist / Reach);
+                float facing = saturate(dot(n, d / max(dist, 1e-3)) * 0.75 + 0.25);
+                float area = cell * 4.0 * t.x * t.y * depthE * depthE * YARDS * YARDS;
+                light += e.rgb * area * fall * fall * facing;
+            }
         }
     }
-    // Normalised so a light's strength does not depend on how many grid taps it covers.
-    return float4(light * (6.0 / ((2 * GRID + 1) * (2 * GRID + 1))) / max(step.x * step.y * 4000.0, 0.05), 1.0);
+    // A lantern (half a square yard of bright glass) two yards away about doubles a surface's light at intensity 1.
+    return float4(light * (400.0 / (Reach * Reach)), 1.0);
 }
 
 float3 PS_Apply(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float3 colour = tex2D(ReShade::BackBuffer, uv).rgb;
+    if (EmberforgeUiCovers() > 0.5)             // the world map is over the world (Emberforge.fxh)
+        return colour;
     float3 light = tex2D(LightS, uv).rgb * LightTint;
     if (!all(light == light))                                  // a NaN from bad depth never shows
         light = 0.0;
@@ -187,7 +202,7 @@ technique Emberforge_Lights <
     ui_tooltip = "Lanterns, torches, campfires and lit windows light what is around them, with flicker.";
 >
 {
-    pass Emit { VertexShader = PostProcessVS; PixelShader = PS_Emit; RenderTarget = EmitTex; }
+    pass Emit { VertexShader = PostProcessVS; PixelShader = PS_Emit; RenderTarget = EmitTex; GenerateMipMaps = true; }
     pass Gather { VertexShader = PostProcessVS; PixelShader = PS_Gather; RenderTarget = LightTex; }
     pass Apply { VertexShader = PostProcessVS; PixelShader = PS_Apply; }
 }

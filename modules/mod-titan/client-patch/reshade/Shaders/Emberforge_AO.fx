@@ -11,6 +11,7 @@
  */
 
 #include "ReShade.fxh"
+#include "Emberforge.fxh"
 
 uniform float Strength <
     ui_type = "slider"; ui_min = 0.0; ui_max = 2.0; ui_step = 0.01;
@@ -63,7 +64,8 @@ float PS_Check(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
             high = max(high, d);
         }
     }
-    return (far < 56.0 && zero < 32.0 && high - low > 0.001) ? 1.0 : 0.0;
+    // Not under the world map (Emberforge.fxh): the depth there is the world behind it.
+    return (far < 56.0 && zero < 32.0 && high - low > 0.001 && EmberforgeUiCovers() < 0.5) ? 1.0 : 0.0;
 }
 
 // x: how occluded (0-1); y: the pixel's depth, for the blur.

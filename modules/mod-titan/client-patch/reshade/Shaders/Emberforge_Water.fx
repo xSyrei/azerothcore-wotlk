@@ -11,7 +11,7 @@
  * game's own drawing.)
  *
  *  1. Classify: how many of each pixel's 3x3 fit the checkerboard, in either phase.
- *  2. Decode: the colour and world position at every pixel of water (and at its edge pixels).
+ *  2. Decode: the colour and world position (a pass each) at every pixel of water (and at its edge pixels).
  *  3. Fill: pixels inside the water that lost it (a raindrop, a spell, a thin line drawn over it) take it from around.
  *  4. Up and sky: the water's normal from the depth buffer, and the sky's colour, each averaged over the screen.
  *  5. Shade: waves from the world position (so they stay put as the camera moves), colour grading, the city mirrored
@@ -158,21 +158,21 @@ uniform float Timer < source = "timer"; >;
 #define YARDS 1000.0       // ReShade's linearised depth is a share of the far plane; times this it is roughly yards
 #define PERIOD 128.0       // the world position wraps every 128 yards
 
-texture ClassTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RG16F; };
-sampler ClassS { Texture = ClassTex; MinFilter = POINT; MagFilter = POINT; };
-texture ColourTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RGBA16F; };
-sampler ColourS { Texture = ColourTex; MinFilter = POINT; MagFilter = POINT; };
-texture WorldTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RG32F; };
-sampler WorldS { Texture = WorldTex; MinFilter = POINT; MagFilter = POINT; };
-texture ColourFillTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RGBA16F; };
-sampler ColourFillS { Texture = ColourFillTex; MinFilter = POINT; MagFilter = POINT; };
-texture WorldFillTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RG32F; };
-sampler WorldFillS { Texture = WorldFillTex; MinFilter = POINT; MagFilter = POINT; };
+texture EfWaterClassTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RG16F; };
+sampler EfWaterClassS { Texture = EfWaterClassTex; MinFilter = POINT; MagFilter = POINT; };
+texture EfWaterColourTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RGBA16F; };
+sampler EfWaterColourS { Texture = EfWaterColourTex; MinFilter = POINT; MagFilter = POINT; };
+texture EfWaterWorldTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RG32F; };
+sampler EfWaterWorldS { Texture = EfWaterWorldTex; MinFilter = POINT; MagFilter = POINT; };
+texture EfWaterColourFillTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RGBA16F; };
+sampler EfWaterColourFillS { Texture = EfWaterColourFillTex; MinFilter = POINT; MagFilter = POINT; };
+texture EfWaterWorldFillTex { Width = BUFFER_WIDTH; Height = BUFFER_HEIGHT; Format = RG32F; };
+sampler EfWaterWorldFillS { Texture = EfWaterWorldFillTex; MinFilter = POINT; MagFilter = POINT; };
 // Sums over a grid whose smallest mip is the screen's average: the water's normal, and the sky's colour.
-texture UpTex { Width = 256; Height = 256; Format = RGBA16F; MipLevels = 9; };
-sampler UpS { Texture = UpTex; };
-texture SkyTex { Width = 128; Height = 128; Format = RGBA16F; MipLevels = 8; };
-sampler SkyS { Texture = SkyTex; };
+texture EfWaterUpTex { Width = 256; Height = 256; Format = RGBA16F; MipLevels = 9; };
+sampler EfWaterUpS { Texture = EfWaterUpTex; };
+texture EfWaterSkyTex { Width = 128; Height = 128; Format = RGBA16F; MipLevels = 8; };
+sampler EfWaterSkyS { Texture = EfWaterSkyTex; };
 
 // ---------------------------------------------------------------------------------------------------------------
 // Decoding
@@ -219,10 +219,10 @@ float2 PS_Classify(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     int2 p = int2(pos.xy);
     float2 count = 0.0;
-    [loop]
+    [unroll]
     for (int y = -1; y <= 1; y++)
     {
-        [loop]
+        [unroll]
         for (int x = -1; x <= 1; x++)
         {
             int2 q = p + int2(x, y);
@@ -234,102 +234,127 @@ float2 PS_Classify(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
     return count / 9.0;
 }
 
-void PS_Decode(float4 pos : SV_Position, float2 uv : TEXCOORD,
-               out float4 colour : SV_Target0, out float2 world : SV_Target1)
+// Whether this pixel is water (7 of 9 fit; or at its edge: it fits and a neighbour is water), and its phase.
+bool IsWater(int2 p, out float phase)
 {
-    int2 p = int2(pos.xy);
-    float2 own = tex2Dfetch(ClassS, p).xy;
-    float phase = own.y > own.x ? 1.0 : 0.0;
-    float best = max(own.x, own.y);
-    // Water: 7 of 9 fit; or at its edge: this pixel fits and a neighbour is water.
-    bool water = best >= 6.5 / 9.0;
-    if (!water && Fits(Bytes(p), IsEven(p, phase)))
-    {
-        [loop]
-        for (int y = -1; y <= 1; y++)
-        {
-            [loop]
-            for (int x = -1; x <= 1; x++)
-            {
-                float2 c = tex2Dfetch(ClassS, p + int2(x, y)).xy;
-                water = water || (phase > 0.5 ? c.y : c.x) >= 6.5 / 9.0;
-            }
-        }
-    }
-    colour = 0.0;
-    world = 0.0;
-    if (!water)
-        return;
-
-    float3 sum = 0.0;
-    float colours = 0.0;
-    float2 reference = 0.0, offsets = 0.0;
-    float positions = 0.0;
-    [loop]
+    float2 own = tex2Dfetch(EfWaterClassS, p).xy;
+    phase = own.y > own.x ? 1.0 : 0.0;
+    bool water = max(own.x, own.y) >= 6.5 / 9.0;
+    bool fits = Fits(Bytes(p), IsEven(p, phase));
+    [unroll]
     for (int y = -1; y <= 1; y++)
     {
-        [loop]
+        [unroll]
+        for (int x = -1; x <= 1; x++)
+        {
+            float2 c = tex2Dfetch(EfWaterClassS, p + int2(x, y)).xy;
+            water = water || (fits && (phase > 0.5 ? c.y : c.x) >= 6.5 / 9.0);
+        }
+    }
+    return water;
+}
+
+// The water's colour: the 3x3's colour pixels averaged (a: 1 where water).
+float4 PS_DecodeColour(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
+{
+    int2 p = int2(pos.xy);
+    float phase;
+    if (!IsWater(p, phase))
+        return 0.0;
+    float3 sum = 0.0;
+    float count = 0.0;
+    [unroll]
+    for (int y = -1; y <= 1; y++)
+    {
+        [unroll]
         for (int x = -1; x <= 1; x++)
         {
             int2 q = p + int2(x, y);
             float3 b = Bytes(q);
             bool even = IsEven(q, phase);
-            if (!Fits(b, even))
-                continue;
-            if (even)
+            if (even && Fits(b, even))
             {
                 sum += b / 255.0;
-                colours += 1.0;
-            }
-            else
-            {
-                float2 w = Position(b);
-                if (positions == 0.0)
-                    reference = w;
-                offsets += Unwrap(w - reference);
-                positions += 1.0;
+                count += 1.0;
             }
         }
     }
-    if (colours == 0.0 || positions == 0.0)
-        return;
-    colour = float4(sum / colours, 1.0);
-    world = reference + offsets / positions;
+    return count > 0.0 ? float4(sum / count, 1.0) : 0.0;
+}
+
+// Where the water is in the world: the 3x3's position pixels averaged (around the first, across the wrap).
+float4 PS_DecodeWorld(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
+{
+    int2 p = int2(pos.xy);
+    float phase;
+    if (!IsWater(p, phase))
+        return 0.0;
+    float2 reference = 0.0, offsets = 0.0;
+    float count = 0.0;
+    [unroll]
+    for (int y = -1; y <= 1; y++)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; x++)
+        {
+            int2 q = p + int2(x, y);
+            float3 b = Bytes(q);
+            bool even = IsEven(q, phase);
+            if (!even && Fits(b, even))
+            {
+                float2 w = Position(b);
+                reference = count == 0.0 ? w : reference;
+                offsets += Unwrap(w - reference);
+                count += 1.0;
+            }
+        }
+    }
+    return count > 0.0 ? float4(reference + offsets / count, 0.0, 1.0) : 0.0;
 }
 
 // Inside the water, pixels something was drawn over take the water from around (8 directions, 2 pixels away: 6 of
 // them must be water, so the water never grows over the shore or a boat).
-void PS_Fill(float4 pos : SV_Position, float2 uv : TEXCOORD,
-             out float4 colour : SV_Target0, out float2 world : SV_Target1)
+static const float2 AROUND[8] = {
+    float2(2, 0), float2(-2, 0), float2(0, 2), float2(0, -2),
+    float2(2, 2), float2(-2, -2), float2(2, -2), float2(-2, 2) };
+
+float4 PS_FillColour(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     int2 p = int2(pos.xy);
-    colour = tex2Dfetch(ColourS, p);
-    world = tex2Dfetch(WorldS, p).xy;
-    if (colour.a > 0.5)
-        return;
-    static const int2 around[8] = {
-        int2(2, 0), int2(-2, 0), int2(0, 2), int2(0, -2), int2(2, 2), int2(-2, -2), int2(2, -2), int2(-2, 2) };
+    float4 own = tex2Dfetch(EfWaterColourS, p);
+    if (own.a > 0.5)
+        return own;
     float4 sum = 0.0;
-    float2 reference = 0.0, offsets = 0.0;
-    float found = 0.0;
     [unroll]
     for (int i = 0; i < 8; i++)
     {
-        float4 c = tex2Dfetch(ColourS, p + around[i]);
-        if (c.a < 0.5)
-            continue;
-        float2 w = tex2Dfetch(WorldS, p + around[i]).xy;
-        if (found == 0.0)
-            reference = w;
-        offsets += Unwrap(w - reference);
-        sum += c;
-        found += 1.0;
+        float4 c = tex2Dfetch(EfWaterColourS, p + int2(AROUND[i]));
+        sum += c.a > 0.5 ? float4(c.rgb, 1.0) : 0.0;
     }
-    if (found >= 6.0)
+    return sum.a >= 6.0 ? float4(sum.rgb / sum.a, 1.0) : own;
+}
+
+float4 PS_FillWorld(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
+{
+    int2 p = int2(pos.xy);
+    float4 own = tex2Dfetch(EfWaterWorldS, p);
+    if (tex2Dfetch(EfWaterColourS, p).a > 0.5)
+        return own;
+    float2 reference = 0.0, offsets = 0.0;
+    float count = 0.0;
+    [unroll]
+    for (int i = 0; i < 8; i++)
     {
-        colour = float4(sum.rgb / found, 1.0);
-        world = reference + offsets / found;
+        int2 q = p + int2(AROUND[i]);
+        float2 w = tex2Dfetch(EfWaterWorldS, q).xy;
+        if (tex2Dfetch(EfWaterColourS, q).a > 0.5)
+        {
+            reference = count == 0.0 ? w : reference;
+            offsets += Unwrap(w - reference);
+            count += 1.0;
+        }
     }
+    return count >= 6.0 ? float4(reference + offsets / count, 0.0, 1.0) : own;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -358,7 +383,7 @@ float2 Project(float3 p)
 
 float4 PS_Up(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
-    float water = tex2Dlod(ColourFillS, float4(uv, 0, 0)).a;
+    float water = tex2Dlod(EfWaterColourFillS, float4(uv, 0, 0)).a;
     float depth = ReShade::GetLinearizedDepth(uv);
     if (water < 0.5 || depth <= 0.0001 || depth >= 0.9995)
         return 0.0;
@@ -401,14 +426,12 @@ float2 Waves(float2 w, float time, float footprint)
         float angle = wind + waves[i].y * WaveSpread * 1.6;
         float2 k = float2(cos(angle), sin(angle)) * (6.2831853 / wavelength);
         k = round(k * PERIOD / 6.2831853) * (6.2831853 / PERIOD);       // whole turns per period
-        float kk = length(k);
-        if (kk < 1e-4)
-            continue;
+        float kk = max(length(k), 1e-4);
         float omega = sqrt(9.8 * kk) * WaveSpeed;
         // Steepness from Wave height (ripples from Small ripples), faded where a wave is shorter than a few pixels.
         float steep = (waves[i].w > 0.5 ? Ripples * 0.35 : WaveHeight * 0.3) * waves[i].z;
         float visible = saturate(6.2831853 / kk / (footprint * 6.0) - 1.0);
-        slope += k / kk * steep * cos(dot(k, w) - omega * time) * visible;
+        slope += k / kk * steep * cos(dot(k, w) - omega * time) * visible * (length(k) > 1e-4 ? 1.0 : 0.0);
     }
     return slope;
 }
@@ -434,15 +457,16 @@ float3 PS_Shade(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float3 original = tex2D(ReShade::BackBuffer, uv).rgb;
     int2 p = int2(pos.xy);
-    float4 base = tex2Dfetch(ColourFillS, p);
+    float4 base = tex2Dfetch(EfWaterColourFillS, p);
     if (base.a < 0.5)
         return original;
 
-    float2 w = tex2Dfetch(WorldFillS, p).xy;
+    float2 w = tex2Dfetch(EfWaterWorldFillS, p).xy;
     // Yards per pixel across and down (for fading waves too fine to show and for bending the reflection).
-    float4 right = tex2Dfetch(ColourFillS, p + int2(1, 0)), down = tex2Dfetch(ColourFillS, p + int2(0, 1));
-    float2 wx = right.a > 0.5 ? Unwrap(tex2Dfetch(WorldFillS, p + int2(1, 0)).xy - w) : 0.0;
-    float2 wy = down.a > 0.5 ? Unwrap(tex2Dfetch(WorldFillS, p + int2(0, 1)).xy - w) : 0.0;
+    float4 right = tex2Dfetch(EfWaterColourFillS, p + int2(1, 0));
+    float4 down = tex2Dfetch(EfWaterColourFillS, p + int2(0, 1));
+    float2 wx = right.a > 0.5 ? Unwrap(tex2Dfetch(EfWaterWorldFillS, p + int2(1, 0)).xy - w) : 0.0;
+    float2 wy = down.a > 0.5 ? Unwrap(tex2Dfetch(EfWaterWorldFillS, p + int2(0, 1)).xy - w) : 0.0;
     float footprint = max(max(length(wx), length(wy)), 0.002);
 
     float2 slope = Waves(w, Timer * 0.001, footprint);
@@ -453,7 +477,7 @@ float3 PS_Shade(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
     colour *= 1.0 + WaveShading * clamp(dot(slope, toLight) * 3.0, -0.6, 0.6);
 
     // The view and the water's up, for the Fresnel and the reflection.
-    float4 upSum = tex2Dlod(UpS, float4(0.5, 0.5, 0, 8));
+    float4 upSum = tex2Dlod(EfWaterUpS, float4(0.5, 0.5, 0, 8));
     float3 up = upSum.w > 1e-5 ? normalize(upSum.xyz / upSum.w) : float3(0.0, 1.0, 0.0);
     float3 at = ViewPos(uv);
     float3 v = normalize(at);
@@ -461,7 +485,7 @@ float3 PS_Shade(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
     float share = lerp(ReflectionDown, ReflectionGlance, fresnel);
 
     // The sky's colour (or, with no sky on screen, the water's own a little brighter).
-    float4 skySum = tex2Dlod(SkyS, float4(0.5, 0.5, 0, 7));
+    float4 skySum = tex2Dlod(EfWaterSkyS, float4(0.5, 0.5, 0, 7));
     float3 sky = skySum.w > 1e-4 ? skySum.rgb / skySum.w : base.rgb * 1.4;
     float3 mirrored = sky * SkyReflection;
 
@@ -483,7 +507,7 @@ float3 PS_Shade(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         if (behind > 0.0 && behind < max(1.5, dist * 0.25) && scene < YARDS * 0.999)
         {
             float lo = dist / 1.22 - 0.25, hi = dist;
-            [loop]
+            [unroll]
             for (int j = 0; j < 5; j++)
             {
                 float mid = (lo + hi) * 0.5;
@@ -506,7 +530,7 @@ float3 PS_Shade(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
             }
             hit += shift * BUFFER_PIXEL_SIZE;
             float2 edge = saturate(min(hit, 1.0 - hit) * 10.0);
-            float onWater = tex2Dlod(ColourFillS, float4(hit, 0, 0)).a;
+            float onWater = tex2Dlod(EfWaterColourFillS, float4(hit, 0, 0)).a;
             float found = edge.x * edge.y * (1.0 - onWater);
             mirrored = lerp(mirrored, tex2Dlod(ReShade::BackBuffer, float4(hit, 0, 0)).rgb, found);
             break;
@@ -535,17 +559,15 @@ technique Emberforge_Water <
                  "Glow off.";
 >
 {
-    pass Classify { VertexShader = PostProcessVS; PixelShader = PS_Classify; RenderTarget = ClassTex; }
-    pass Decode
+    pass Classify { VertexShader = PostProcessVS; PixelShader = PS_Classify; RenderTarget = EfWaterClassTex; }
+    pass DecodeColour { VertexShader = PostProcessVS; PixelShader = PS_DecodeColour; RenderTarget = EfWaterColourTex; }
+    pass DecodeWorld { VertexShader = PostProcessVS; PixelShader = PS_DecodeWorld; RenderTarget = EfWaterWorldTex; }
+    pass FillColour
     {
-        VertexShader = PostProcessVS; PixelShader = PS_Decode; RenderTarget0 = ColourTex; RenderTarget1 = WorldTex;
+        VertexShader = PostProcessVS; PixelShader = PS_FillColour; RenderTarget = EfWaterColourFillTex;
     }
-    pass Fill
-    {
-        VertexShader = PostProcessVS; PixelShader = PS_Fill;
-        RenderTarget0 = ColourFillTex; RenderTarget1 = WorldFillTex;
-    }
-    pass Up { VertexShader = PostProcessVS; PixelShader = PS_Up; RenderTarget = UpTex; }
-    pass Sky { VertexShader = PostProcessVS; PixelShader = PS_Sky; RenderTarget = SkyTex; }
+    pass FillWorld { VertexShader = PostProcessVS; PixelShader = PS_FillWorld; RenderTarget = EfWaterWorldFillTex; }
+    pass Up { VertexShader = PostProcessVS; PixelShader = PS_Up; RenderTarget = EfWaterUpTex; }
+    pass Sky { VertexShader = PostProcessVS; PixelShader = PS_Sky; RenderTarget = EfWaterSkyTex; }
     pass Shade { VertexShader = PostProcessVS; PixelShader = PS_Shade; }
 }
