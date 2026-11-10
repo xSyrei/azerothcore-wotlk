@@ -21,6 +21,7 @@
  */
 
 #include "ReShade.fxh"
+#include "Emberforge.fxh"
 
 // ---- Colour ----
 uniform float HueShift <
@@ -456,6 +457,9 @@ float3 Grade(float3 c)
 float3 PS_Shade(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float3 original = tex2D(ReShade::BackBuffer, uv).rgb;
+    // Only in the world, and never on the marker's pixels (Emberforge.fxh).
+    if (EmberforgeInWorld() < 0.5 || EmberforgeMarkerPixel(pos))
+        return original;
     int2 p = int2(pos.xy);
     float4 base = tex2Dfetch(EfWaterColourFillS, p);
     if (base.a < 0.5)

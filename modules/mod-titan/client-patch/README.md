@@ -471,9 +471,12 @@ More effects, in this order around it (`ReShadePreset.ini`):
 - **Emberforge Bloom & Grade** (`Emberforge_Bloom.fx`), last: glow around bright light over three sizes (screen
   blended, no clipping), then sharpening (contrast-adaptive), vibrance, a gentle S-curve, warmth and a light vignette.
 
-The world map covers the world, but the depth buffer still holds the world behind it, so the depth effects shaded
-the map ("burning"). While it is open, the `Emberforge_Lighting` addon draws two 8x8 blocks in the top-left corner
-(magenta, green); occlusion, light sources and fog pause while they see them (`reshade/Shaders/Emberforge.fxh`).
+Only the world: ReShade sees one finished picture (the world, loading, login and character screens, the world map,
+videos). Only while the world is on screen does the `Emberforge_Lighting` addon (on WorldFrame, so Alt+Z keeps it)
+draw two 4x4 near-black blocks in the top-left corner, (2, 1, 3) and (1, 3, 2) out of 255; every effect runs only
+while it finds them and leaves those pixels as they are (`reshade/Shaders/Emberforge.fxh`). The map is why: its
+depth is the world behind it, and occlusion "burned" it. The game's own interface over the world (bars, chat) is in
+the same picture and still gets the colour grade.
 
 Their settings (Home in game: ReShade's window): water and light sources (above), shafts (intensity, length, sky
 threshold), fog (density, start, strength, sun glow, drifting mist, low-lying, shafts in the fog), occlusion (strength,

@@ -241,7 +241,8 @@ float4 PS_Shafts(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 float3 PS_Composite(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float3 color = tex2D(ReShade::BackBuffer, uv).rgb;
-    if (EmberforgeUiCovers() > 0.5)              // the world map is over the world (Emberforge.fxh)
+    // Only in the world, and never on the marker's pixels (Emberforge.fxh).
+    if (EmberforgeInWorld() < 0.5 || EmberforgeMarkerPixel(pos))
         return color;
     float4 sun = tex2Dfetch(SunSampler, int2(0, 0));
     float3 tint = tex2Dfetch(SunColorSampler, int2(0, 0)).rgb;

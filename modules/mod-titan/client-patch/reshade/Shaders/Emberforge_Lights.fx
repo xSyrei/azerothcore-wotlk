@@ -181,7 +181,8 @@ float4 PS_Gather(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 float3 PS_Apply(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float3 colour = tex2D(ReShade::BackBuffer, uv).rgb;
-    if (EmberforgeUiCovers() > 0.5)             // the world map is over the world (Emberforge.fxh)
+    // Only in the world, and never on the marker's pixels (Emberforge.fxh).
+    if (EmberforgeInWorld() < 0.5 || EmberforgeMarkerPixel(pos))
         return colour;
     float3 light = tex2D(LightS, uv).rgb * LightTint;
     if (!all(light == light))                                  // a NaN from bad depth never shows

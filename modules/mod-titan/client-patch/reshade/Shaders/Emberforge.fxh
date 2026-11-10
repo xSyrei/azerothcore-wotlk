@@ -1,18 +1,25 @@
 /*
- * Shared by the Emberforge effects.
+ * Shared by the Emberforge effects: whether the world is on screen.
  *
- * The world map (and any full-screen window) covers the world, but the depth buffer still holds the world behind it,
- * so effects that read depth would shade the window ("burning" onto the map). While such a window is open, the
- * Emberforge_Lighting addon draws two 8x8 blocks in the screen's top-left corner, magenta then green; the depth effects
- * pause while they see them. Read before any effect has changed those pixels: the effects that change colours skip
- * themselves while the blocks show, so the blocks reach every later effect untouched.
+ * ReShade sees one finished picture: the world, loading screens, the login and character screens, the world map and
+ * videos alike. Only while the world is on screen (in game, no map or video over it) does the Emberforge_Lighting
+ * addon draw two 4x4 near-black blocks in the top-left corner, (2, 1, 3) then (1, 3, 2) out of 255; every effect
+ * runs only while it finds them. Loading and login screens run no addons, so they never carry it. Each effect leaves
+ * those 8x4 pixels as they are, so the blocks reach every effect after it untouched. (The game's own interface over
+ * the world, bars and chat, is in the same picture and still gets the colour grade.)
  */
 
 #pragma once
 
-float EmberforgeUiCovers()
+float EmberforgeInWorld()
 {
-    float3 a = tex2Dfetch(ReShade::BackBuffer, int2(3, 3)).rgb;
-    float3 b = tex2Dfetch(ReShade::BackBuffer, int2(11, 3)).rgb;
-    return all(abs(a - float3(1.0, 0.0, 1.0)) < 0.08) && all(abs(b - float3(0.0, 1.0, 0.0)) < 0.08) ? 1.0 : 0.0;
+    float3 a = floor(tex2Dfetch(ReShade::BackBuffer, int2(1, 1)).rgb * 255.0 + 0.5);
+    float3 b = floor(tex2Dfetch(ReShade::BackBuffer, int2(5, 2)).rgb * 255.0 + 0.5);
+    return all(a == float3(2.0, 1.0, 3.0)) && all(b == float3(1.0, 3.0, 2.0)) ? 1.0 : 0.0;
+}
+
+// The marker's pixels, which no effect changes.
+bool EmberforgeMarkerPixel(float4 pos)
+{
+    return pos.x < 8.0 && pos.y < 4.0;
 }

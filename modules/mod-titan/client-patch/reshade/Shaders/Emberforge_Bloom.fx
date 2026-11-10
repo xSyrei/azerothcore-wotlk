@@ -10,6 +10,7 @@
  */
 
 #include "ReShade.fxh"
+#include "Emberforge.fxh"
 
 uniform float BloomIntensity <
     ui_type = "slider"; ui_min = 0.0; ui_max = 2.0; ui_step = 0.01;
@@ -135,6 +136,9 @@ float4 PS_Blur3Y(float4 p : SV_Position, float2 uv : TEXCOORD) : SV_Target
 float3 PS_Combine(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float3 color = tex2D(ReShade::BackBuffer, uv).rgb;
+    // Only in the world, and never on the marker's pixels (Emberforge.fxh).
+    if (EmberforgeInWorld() < 0.5 || EmberforgeMarkerPixel(pos))
+        return color;
 
     // Sharpen: the difference from the four neighbours, less where they already differ a lot (an edge).
     float3 n = tex2D(ReShade::BackBuffer, uv + float2(0, -BUFFER_RCP_HEIGHT)).rgb;

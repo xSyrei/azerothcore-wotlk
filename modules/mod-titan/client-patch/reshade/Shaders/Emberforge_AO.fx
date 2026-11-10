@@ -64,8 +64,8 @@ float PS_Check(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
             high = max(high, d);
         }
     }
-    // Not under the world map (Emberforge.fxh): the depth there is the world behind it.
-    return (far < 56.0 && zero < 32.0 && high - low > 0.001 && EmberforgeUiCovers() < 0.5) ? 1.0 : 0.0;
+    // Only in the world (Emberforge.fxh): not on the map, whose depth is the world behind it.
+    return (far < 56.0 && zero < 32.0 && high - low > 0.001 && EmberforgeInWorld() > 0.5) ? 1.0 : 0.0;
 }
 
 // x: how occluded (0-1); y: the pixel's depth, for the blur.
@@ -135,6 +135,8 @@ float2 PS_BlurY(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 float3 PS_Apply(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     float3 color = tex2D(ReShade::BackBuffer, uv).rgb;
+    if (EmberforgeMarkerPixel(pos))              // the marker stays as it is (Emberforge.fxh)
+        return color;
     float occlusion = tex2D(AOSampler, uv).x * tex2Dfetch(AOValidSampler, int2(0, 0)).x;
     // A bad value (a NaN from bad depth) must never darken the picture.
     if (!(occlusion >= 0.0))
