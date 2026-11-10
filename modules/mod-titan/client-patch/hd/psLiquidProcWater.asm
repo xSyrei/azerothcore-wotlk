@@ -28,8 +28,8 @@ def c17, 2.2, 2.2, 2.2, 0          ; the sky picture times the hour's fog colour
 def c14, 0.6, 0.85, 4, 127.5        ; opaque from: start, end, 1 / (end - start); half of 255
 def c15, -1, 1, -1, 0.00392157      ; the signature: odd minus even bits; 1 / 255
 def c16, 1.25, 0.25, 1.25, 0        ; even pixels' bits (+ 0.25 / 255, so rounding or truncation keeps the bit)
-def c18, 0.0078125, 2048, 0.125, 8  ; data variant: 1 / 128 yards, 2048 steps, 1 / 8, 8
-def c19, 128, 16, 0.25, 0           ; data variant: blue's top bit, y's shift, half a rounding step
+def c18, 0.0078125, 1024, 0.25, 4   ; data variant: 1 / 128 yards, 1024 steps, 1 / 4, 4
+def c19, 128, 8, 0.25, 64           ; data variant: blue's top bit, y's shift, rounding, the check (x 0.5)
 def c13, 0.2, 0.29, 0.08, 0          ; the wave maps' scale: waves 5 and 3.5 times larger (at 1, a yard: marbling);
                                    ; the lowest a reflection looks (a crest's back face mirrored the dark below)
 dcl_texcoord4 v0.xyz

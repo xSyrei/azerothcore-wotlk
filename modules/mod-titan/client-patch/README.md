@@ -452,13 +452,14 @@ More effects, in this order around it (`ReShadePreset.ini`):
   off: without ReShade it shows as a checkerboard): a variant of the water shader (`hd/psLiquidProcWater_data.asm`,
   spliced over the main one's tail) whose water, all of it made opaque, hands over, in a checkerboard (vPos), the
   water's own colour (even pixels, lowest bits of red, green, blue 1, 0, 1) and its world position modulo 128 yards in
-  sixteenths (odd pixels: red and green the top 8 bits, blue bits 1-3 and 4-6 the low 3, bit 0 is 0 and bit 7 is 1; a
-  flat colour can never be both). The effect decodes both (water: 7 of a pixel's 3x3 fit, in either phase; its edge
-  pixels too), fills pixels drawn over (6 of 8 around), draws waves from the world position (so they stay put as the
-  camera moves; wave numbers whole turns per 128 yards), grades the colour, mirrors the city by a ray marched through
-  the depth buffer (bent by the waves, the sky's own colour where it finds nothing) and adds sparkle. First, as every
-  later effect changes the colours; the game's Full Screen Glow repaints every pixel, so the launcher turns it off
-  (`ffxGlow 0`) while Lighting is on. *Show the water it found* tints the water red.
+  eighths (odd pixels: red and green the top 8 bits, blue bits 1-2 and 3-4 the low 2, bit 5 a check (red + green odd),
+  bits 0 and 6 are 0, bit 7 is 1; a flat colour can never be both, and a sky's blues passed fewer tag bits by chance:
+  red specks). The effect decodes both (water: all 9 of a pixel's 3x3 fit, in either phase, and two of its four
+  neighbours are water; its edge pixels too), fills pixels drawn over (6 of 8 around), draws waves from the world
+  position (so they stay put as the camera moves; wave numbers whole turns per 128 yards), grades the colour, mirrors
+  the city by a ray marched through the depth buffer (bent by the waves, the sky's own colour where it finds nothing)
+  and adds sparkle. First, as every later effect changes the colours; the game's Full Screen Glow repaints every pixel,
+  so the launcher turns it off (`ffxGlow 0`) while Lighting is on. *Show the water it found* tints the water red.
 - **Emberforge Ambient Occlusion** (`Emberforge_AO.fx`): soft contact shadows in creases, corners and under
   objects, from the depth buffer at half resolution (12 samples on a turning spiral, a depth-aware blur), fading out
   with distance; never on the sky.

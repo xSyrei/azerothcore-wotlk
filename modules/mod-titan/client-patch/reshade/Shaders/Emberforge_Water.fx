@@ -5,8 +5,8 @@
  * patch-enUS-9.MPQ) that hands this effect what it needs instead of a finished picture, in a checkerboard:
  * - even pixels (x + y even): the water's own colour (by depth, this zone and hour, fogged); the lowest bit of red,
  *   green and blue is 1, 0, 1;
- * - odd pixels: where it is in the world, x and y modulo 128 yards in 2048 steps: red and green the top 8 bits, blue's
- *   bits 1-3 and 4-6 the low 3 of x and y, blue's bit 0 is 0 and bit 7 is 1.
+ * - odd pixels: where it is in the world, x and y modulo 128 yards in 1024 steps: red and green the top 8 bits, blue's
+ *   bits 1-2 and 3-4 the low 2 of x and y, bit 5 a check (red + green odd), bit 0 and bit 6 are 0, bit 7 is 1.
  * A flat colour can never be both, so streets and floors never pass for water. All water is handed over, made
  * opaque, however shallow.
  *
@@ -193,7 +193,8 @@ bool Fits(float3 b, bool even)
 {
     if (even)
         return Odd(b.r) > 0.5 && Odd(b.g) < 0.5 && Odd(b.b) > 0.5;
-    return Odd(b.b) < 0.5 && b.b >= 128.0;
+    float check = floor((b.b - 128.0) / 32.0);                  // bit 5 (0 or 1 when bit 6 is 0)
+    return Odd(b.b) < 0.5 && b.b >= 128.0 && b.b < 192.0 && check == Odd(b.r + b.g);
 }
 
 // Even in phase 0 when x + y is even; phase 1 the other way round.
@@ -204,10 +205,11 @@ bool IsEven(int2 p, float phase)
 
 float2 Position(float3 b)
 {
-    float low = b.b - 128.0;                                    // 16 y + 2 x (+ 0)
-    float lowY = floor(low / 16.0);
-    float lowX = floor((low - lowY * 16.0) / 2.0);
-    return float2(b.r * 8.0 + lowX, b.g * 8.0 + lowY) / 16.0;   // yards, 0-128
+    float low = b.b - 128.0;
+    low -= floor(low / 32.0) * 32.0;                            // 8 y + 2 x (+ 0), without the check
+    float lowY = floor(low / 8.0);
+    float lowX = floor((low - lowY * 8.0) / 2.0);
+    return float2(b.r * 4.0 + lowX, b.g * 4.0 + lowY) / 8.0;    // yards, 0-128
 }
 
 float2 Unwrap(float2 d)
@@ -215,11 +217,14 @@ float2 Unwrap(float2 d)
     return d - PERIOD * floor(d / PERIOD + 0.5);
 }
 
-// x: how many of the 3x3 fit in phase 0, y: in phase 1 (each over 9).
+// x: how many of the 3x3 fit in phase 0, y: in phase 1 (each over 9); 0 for a phase whose position pixels do not
+// agree (all within 8 yards of each other): real water's neighbours are next to each other in the world, while a
+// sky's blues pass the position pixels' bits by chance half the time and decode to anywhere.
 float2 PS_Classify(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
 {
     int2 p = int2(pos.xy);
-    float2 count = 0.0;
+    float2 count = 0.0, apart = 0.0, found = 0.0;
+    float2 first0 = 0.0, first1 = 0.0;
     [unroll]
     for (int y = -1; y <= 1; y++)
     {
@@ -228,19 +233,33 @@ float2 PS_Classify(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
         {
             int2 q = p + int2(x, y);
             float3 b = Bytes(q);
-            count.x += Fits(b, IsEven(q, 0.0)) ? 1.0 : 0.0;
-            count.y += Fits(b, IsEven(q, 1.0)) ? 1.0 : 0.0;
+            bool even0 = IsEven(q, 0.0);
+            bool fit0 = Fits(b, even0), fit1 = Fits(b, !even0);
+            count += float2(fit0 ? 1.0 : 0.0, fit1 ? 1.0 : 0.0);
+            float2 w = Position(b);
+            if (fit0 && !even0)
+            {
+                first0 = found.x == 0.0 ? w : first0;
+                apart.x += any(abs(Unwrap(w - first0)) > 8.0) ? 1.0 : 0.0;
+                found.x += 1.0;
+            }
+            if (fit1 && even0)
+            {
+                first1 = found.y == 0.0 ? w : first1;
+                apart.y += any(abs(Unwrap(w - first1)) > 8.0) ? 1.0 : 0.0;
+                found.y += 1.0;
+            }
         }
     }
-    return count / 9.0;
+    return float2(apart.x > 0.0 ? 0.0 : count.x, apart.y > 0.0 ? 0.0 : count.y) / 9.0;
 }
 
-// Whether this pixel is water (7 of 9 fit; or at its edge: it fits and a neighbour is water), and its phase.
+// Whether this pixel is water (all 9 fit; or at its edge: it fits and a neighbour is), and its phase.
 bool IsWater(int2 p, out float phase)
 {
     float2 own = tex2Dfetch(EfWaterClassS, p).xy;
     phase = own.y > own.x ? 1.0 : 0.0;
-    bool water = max(own.x, own.y) >= 6.5 / 9.0;
+    bool water = max(own.x, own.y) >= 8.5 / 9.0;
     bool fits = Fits(Bytes(p), IsEven(p, phase));
     [unroll]
     for (int y = -1; y <= 1; y++)
@@ -249,7 +268,7 @@ bool IsWater(int2 p, out float phase)
         for (int x = -1; x <= 1; x++)
         {
             float2 c = tex2Dfetch(EfWaterClassS, p + int2(x, y)).xy;
-            water = water || (fits && (phase > 0.5 ? c.y : c.x) >= 6.5 / 9.0);
+            water = water || (fits && (phase > 0.5 ? c.y : c.x) >= 8.5 / 9.0);
         }
     }
     return water;
@@ -469,6 +488,11 @@ float3 PS_Shade(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target
     // Yards per pixel across and down (for fading waves too fine to show and for bending the reflection).
     float4 right = tex2Dfetch(EfWaterColourFillS, p + int2(1, 0));
     float4 down = tex2Dfetch(EfWaterColourFillS, p + int2(0, 1));
+    // Water has water beside it: a lone pixel that passed by chance (a few a frame in a bright sky) is not drawn.
+    float beside = right.a + down.a + tex2Dfetch(EfWaterColourFillS, p - int2(1, 0)).a
+        + tex2Dfetch(EfWaterColourFillS, p - int2(0, 1)).a;
+    if (beside < 1.5)
+        return original;
     float2 wx = right.a > 0.5 ? Unwrap(tex2Dfetch(EfWaterWorldFillS, p + int2(1, 0)).xy - w) : 0.0;
     float2 wy = down.a > 0.5 ? Unwrap(tex2Dfetch(EfWaterWorldFillS, p + int2(0, 1)).xy - w) : 0.0;
     float footprint = max(max(length(wx), length(wy)), 0.002);
