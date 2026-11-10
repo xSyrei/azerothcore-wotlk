@@ -178,7 +178,8 @@ namespace
         "Cold Blood", "Hunger For Blood", "Riposte", "Blade Flurry", "Adrenaline Rush", "Killing Spree",
         "Ghostly Strike", "Preparation", "Hemorrhage", "Premeditation", "Shadowstep", "Shadow Dance",
         // Shaman
-        "Elemental Mastery", "Totem of Wrath", "Thunderstorm", "Feral Spirit", "Riptide",
+        "Elemental Mastery", "Totem of Wrath", "Thunderstorm", "Feral Spirit", "Riptide", "Earth Shield",
+        "Tidal Force", "Mana Tide Totem", "Shamanistic Rage", "Lava Lash",
         // Warlock
         "Curse of Exhaustion", "Dark Pact", "Unstable Affliction", "Haunt", "Soul Link", "Fel Domination",
         "Demonic Empowerment", "Summon Felguard", "Metamorphosis", "Shadowburn", "Conflagrate", "Shadowfury",
@@ -245,7 +246,7 @@ namespace
     // Finishers whose scripts take the combo points (the Monk's, the Demon Hunter's: src/monk.cpp,
     // src/demon_hunter.cpp); the game's own say so in their spell (SpellInfo::NeedsComboPoints).
     constexpr char const* SCRIPTED_FINISHERS[] = {
-        "Rising Sun Kick", "Fists of Fury", "Spinning Crane Kick", "Soul Cleave", "Spirit Bomb", "Soul Barrier",
+        "Spinning Crane Kick", "Soul Cleave", "Spirit Bomb", "Soul Barrier",
     };
     // Not finishers though their spell says so: Overpower's point comes from the target dodging, not a builder.
     constexpr char const* NOT_FINISHERS[] = { "Overpower" };

@@ -334,10 +334,10 @@ class spell_titan_monk_jade_wind_heal : public SpellScript
     }
 };
 
-// Windwalker's finishers (Rising Sun Kick, Fists of Fury, Spinning Crane Kick): usable from 1 combo
-// point (Tiger Palm awards them, on the Monk's current target, at most 5), they take them all and hit as hard as the
-// points spent: their spell values are the 5-point ones, scaled by points / 5. With Energy Burst, spending 5 restores
-// Energy; with Ancient Teachings or Shattered Souls, the points may come back (combo_points.h).
+// Windwalker's finisher, Spinning Crane Kick: usable from 1 combo point (Tiger Palm awards them, on the Monk's
+// current target, at most 5), it takes them all and hits as hard as the points spent: its spell values are the 5-point
+// ones, scaled by points / 5. With Energy Burst, spending 5 restores Energy; with Ancient Teachings or Shattered
+// Souls, the points may come back (combo_points.h). Rising Sun Kick and Fists of Fury cost no combo points.
 constexpr uint8 MAX_COMBO_POINTS = 5;
 
 class spell_titan_monk_finisher : public SpellScript
@@ -381,8 +381,8 @@ class spell_titan_monk_finisher : public SpellScript
     }
 };
 
-// Fists of Fury (90323) and Spinning Crane Kick (90325): the combo points they were cast with (read when the channel
-// starts, before the cast takes them), kept as the channel's amount for its strikes.
+// Spinning Crane Kick (90325): the combo points it was cast with (read when the channel starts, before the cast takes
+// them), kept as the channel's amount for its strikes.
 class spell_titan_monk_finisher_channel : public AuraScript
 {
     PrepareAuraScript(spell_titan_monk_finisher_channel);
@@ -400,17 +400,14 @@ class spell_titan_monk_finisher_channel : public AuraScript
     }
 };
 
-// Their strikes (90324, 90326): as strong as the points their channel was cast with (their spell values the
-// 5-point ones).
+// Its strikes (90326): as strong as the points its channel was cast with (their spell values the 5-point ones).
 class spell_titan_monk_finisher_strike : public SpellScript
 {
     PrepareSpellScript(spell_titan_monk_finisher_strike);
 
     void Scale()
     {
-        uint32 channel = GetSpellInfo()->Id == SPELL_FISTS_OF_FURY_STRIKE ? SPELL_FISTS_OF_FURY
-            : SPELL_SPINNING_CRANE_KICK;
-        AuraEffect const* points = GetCaster()->GetAuraEffect(channel, EFFECT_0);
+        AuraEffect const* points = GetCaster()->GetAuraEffect(SPELL_SPINNING_CRANE_KICK, EFFECT_0);
         int32 spent = points ? std::clamp<int32>(points->GetAmount(), 1, MAX_COMBO_POINTS) : MAX_COMBO_POINTS;
         SetHitDamage(GetHitDamage() * spent / MAX_COMBO_POINTS);
     }

@@ -123,6 +123,14 @@ RAGE = 1                        # the Demon Hunter's power (Fury, the client's R
 ONE_HANDED_WEAPONS = 0xA091     # one-handed axes, maces and swords, fist weapons, daggers
 ITEM_CLASS_WEAPON = 2
 SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON = 0x400
+# The client starts (and keeps) auto-attacking on a melee ability with this (Sinister Strike has it); without it,
+# using one turned auto-attack off.
+SPELL_ATTR1_INITIATE_COMBAT, SPELL_ATTR0_PASSIVE, DMG_CLASS_MELEE_ATTACK = 0x200, 0x40, 2
+# Targets that are an enemy: one, around a point or the caster, a cone.
+ENEMY_TARGETS = {6, 15, 16, 24, 53, 104}
+# Melee abilities cast on the caster whose strikes hit the enemies around (spins and channels): Blade Dance, Fists of
+# Fury, Spinning Crane Kick, Whirling Dragon Punch. They start auto-attack too.
+STRIKES_AROUND = {90102, 90323, 90325, 90327}
 EFFECT_SCHOOL_DAMAGE, EFFECT_APPLY_AURA, EFFECT_ENERGIZE = 2, 6, 30
 EFFECT_WEAPON_PERCENT_DAMAGE, EFFECT_TRIGGER_SPELL, EFFECT_NORMALIZED_WEAPON_DMG = 31, 64, 121
 EFFECT_CHARGE_DEST = 149
@@ -760,18 +768,18 @@ SPELLS = [
                         'TargetA': TARGET_DEST_DEST, 'TargetB': 0, 'RadiusIndex': 0, 'BonusMultiplier': 0.0}},
     },
     {
-        # Vengeance's builder: Demon's Bite's strike, 10 Fury and 2 combo points (effect 3).
+        # Vengeance's builder: Demon's Bite's strike, 10 Fury and 1 combo point (effect 3: 0 + 1 die side).
         'id': 90124, 'copy': 1752, 'name': 'Shear', 'icon': 'Ability_DemonHunter_Shear',
         'visual': 'Shear', 'two_weapons': True,
-        'description': 'Shear your target\'s flesh for your weapon damage plus $s1 Physical damage. Awards 2 combo '
-                       'points and generates 10 Rage.',
+        'description': 'Shear your target\'s flesh for your weapon damage plus $s1 Physical damage. Awards 1 combo '
+                       'point and generates 10 Rage.',
         'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': RAGE, 'ManaCost': 0,
                 'StartRecoveryTime': 1500, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 80},
         'effects': {
             1: {'Effect': EFFECT_NORMALIZED_WEAPON_DMG, 'BasePoints': 4, 'DieSides': 1, 'RealPointsPerLevel': 1.0},
             2: {'Effect': EFFECT_ENERGIZE, 'BasePoints': 99, 'DieSides': 1, 'MiscValue': RAGE,
                 'TargetA': TARGET_UNIT_CASTER, 'TargetB': 0},
-            3: {'Effect': EFFECT_ADD_COMBO_POINTS, 'BasePoints': 1, 'DieSides': 1, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
+            3: {'Effect': EFFECT_ADD_COMBO_POINTS, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
                 'TriggerSpell': 0},
         },
     },
@@ -1172,6 +1180,11 @@ def build_spells(spells, icon_id):
             row[FIELDS['EquippedItemSubClassMask']] = ONE_HANDED_WEAPONS
             row[FIELDS['EquippedItemInventoryTypeMask']] = 0
             row[FIELDS['AttributesEx3']] |= SPELL_ATTR3_REQUIRES_MAIN_HAND_WEAPON
+        # A melee ability used on enemies starts auto-attack, as Blizzard's do (not a self buff, not a passive).
+        targets = {row[EFFECT_FIELDS[name][0] + n] for name in ('TargetA', 'TargetB') for n in range(3)}
+        if (row[FIELDS['DmgClass']] == DMG_CLASS_MELEE_ATTACK and not row[FIELDS['Attributes']] & SPELL_ATTR0_PASSIVE
+                and (targets & ENEMY_TARGETS or spell['id'] in STRIKES_AROUND)):
+            row[FIELDS['AttributesEx']] |= SPELL_ATTR1_INITIATE_COMBAT
         if 'visual' in spell:
             row[FIELDS['SpellVisual']] = VISUALS[spell['visual']]['id']
         # No stance or form needed (or forbidden): Blade Dance's Whirlwind wanted Berserker Stance.
@@ -1297,7 +1310,7 @@ FINISHERS_LUA = HERE / 'AddOns' / 'Emberforge_Resources' / 'ComboFinishers.lua'
 # Finishers by their spell attributes (AttributesEx: finishing move, damage or duration).
 FINISHING_MOVE = 0x00100000 | 0x00400000
 # Ours spend combo points in their scripts (src/demon_hunter.cpp, src/monk.cpp), without the attribute.
-CUSTOM_FINISHERS = ['Soul Cleave', 'Spirit Bomb', 'Rising Sun Kick', 'Fists of Fury', 'Spinning Crane Kick']
+CUSTOM_FINISHERS = ['Soul Cleave', 'Spirit Bomb', 'Spinning Crane Kick']
 
 
 def write_finishers(spells):
