@@ -492,6 +492,9 @@ Heroic for every dungeon at 60 (Classic's included), and Heroic loot.
   normal dungeon can be queued for from level 10 to the cap and every heroic at 60, in one Random Dungeon and one
   Random Heroic Dungeon (raids keep their levels; the retired dungeons stay closed); `zzz_titan_dungeon_finder.sql`
   opens their entrances the same, with no gear score. Both factions queue together (`AllowTwoSide.Interaction.Group`).
+- Both factions as one: chat, channels and groups across factions are settings (`AllowTwoSide.Interaction.*`,
+  `docker-compose.yml`); mail, `/who`, friends and trade across factions are RBAC permissions, which the stock data
+  gives only to staff, so `data/sql/db-auth/titan_two_side.sql` links them (27, 28, 29, 51) to the Player role (199).
   The client's own level filters are lifted by `Emberforge_Journal/MicroMenu.lua`. Finishing a random dungeon gives
   100 Emberspark (500 for a heroic), and its experience is a quarter of what the Hero's level takes
   (`src/dungeon_rewards.cpp`; `LFGHandler.cpp` shows the dungeon finder that amount, asking the quest experience
