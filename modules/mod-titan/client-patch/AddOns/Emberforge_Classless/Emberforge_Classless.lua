@@ -204,7 +204,32 @@ local function AbilityTree(ability)
     return GENERAL
 end
 
-local function HasGeneral(class)
+-- A spec tab with something in it: abilities of that tree, or a talent tree (Brewmaster has neither yet).
+local function SpecHasContent(class, index)
+    if data.trees[class] and data.trees[class][index] then
+        return true
+    end
+    for _, ability in pairs(data.abilities) do
+        if ability.class == class and AbilityTree(ability) == index then
+            return true
+        end
+    end
+    return false
+end
+
+local HasGeneral
+
+-- The first spec of a class worth opening on (the first tree with content, else General, else the first).
+local function FirstSpec(class)
+    for index in ipairs(TREES[class] or {}) do
+        if SpecHasContent(class, index) then
+            return index
+        end
+    end
+    return HasGeneral(class) and GENERAL or 1
+end
+
+function HasGeneral(class)
     for _, ability in pairs(data.abilities) do
         if ability.class == class and AbilityTree(ability) == GENERAL then
             return true
@@ -635,7 +660,8 @@ local function ClassButton(index, id, label)
     text:SetText(label)
     button.label = text
     button:SetScript("OnClick", function(self)
-        view.class, view.spec, view.tree = self.id, 1, 1
+        local first = FirstSpec(self.id)
+        view.class, view.spec, view.tree = self.id, first, first ~= GENERAL and first or 1
         ResetScrolls()
         Refresh()
     end)
@@ -777,7 +803,10 @@ local function OnCellEnter(self)
         return
     end
     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-    GameTooltip:SetHyperlink("spell:" .. self.ability.id)
+    -- The rank the Hero knows (its highest, by name: the spellbook's), else the first rank.
+    local link = data.known[self.ability.id] and GetSpellLink(SpellName(self.ability.id))
+    local known = link and link:match("spell:(%d+)")
+    GameTooltip:SetHyperlink("spell:" .. (known or self.ability.id))
     GameTooltip:AddLine((CLASS_NAMES[self.ability.class] or "") .. " - level " .. self.ability.level, 0.7, 0.7, 0.7)
     if data.capstones[self.ability.id] then
         GameTooltip:AddLine("Capstone: rolled at level 60 only, for " .. CapstoneRoles(self.ability.id) .. ".",
@@ -1570,7 +1599,7 @@ local function RefreshSpecs()
     local trees = TREES[view.class]
     for index, button in ipairs(specButtons) do
         if not trees or view.search ~= "" or (index == GENERAL and not HasGeneral(view.class))
-            or (index ~= GENERAL and not trees[index]) then
+            or (index ~= GENERAL and (not trees[index] or not SpecHasContent(view.class, index))) then
             button:Hide()
         else
             button:SetText(index == GENERAL and "General" or trees[index][1])

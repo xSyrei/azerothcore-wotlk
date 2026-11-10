@@ -323,19 +323,20 @@ EmberforgeClasslessLearnable.scripts.OnClick(EmberforgeClasslessLearnable)
 
 -- Demon Hunter and Monk: their own specs. The Demon Hunter's trees are on the warlock's art (no "no tree" note).
 demonHunterButton:Click()
-check(shownTabs(specs.specButtons) == "Havoc,Vengeance", "Demon Hunter specs: Havoc, Vengeance")
+-- Only specs with something in them (abilities or a talent tree): here Havoc alone.
+check(shownTabs(specs.specButtons) == "Havoc", "Demon Hunter specs: Havoc (Vengeance has nothing here)")
 specs.specButtons[1]:Click()
 check(shownCells(grid.cells) == "Chaos Strike", "Havoc lists the Demon Hunter's own Chaos Strike")
 check(not tree.treeNote.shown and tree.backgrounds[1].texture == "Interface\\TalentFrame\\WarlockSummoning-TopLeft",
     "Havoc on the Demonology art, no note")
 monkButton:Click()
-check(shownTabs(specs.specButtons) == "Brewmaster,Mistweaver,Windwalker",
-    "Monk specs: Brewmaster, Mistweaver, Windwalker")
+check(shownTabs(specs.specButtons) == "", "Monk: no spec tabs while none has anything")
 check(grid.empty.text == "No abilities here.", "Monk has no abilities yet")
 
 -- Abilities outside the three trees get a General tab (Wrath's skill line has no tree here).
 druidButton:Click()
-check(shownTabs(specs.specButtons) == "Balance,Feral Combat,Restoration,General", "Druid gets a General tab")
+check(shownTabs(specs.specButtons) == "General" and specs.specButtons[4].selected ~= false,
+    "Druid: only General has abilities here, and opens on it")
 specs.specButtons[4]:Click()
 check(shownCells(grid.cells) == "Wrath"
     and tree.backgrounds[1].texture == "Interface\\TalentFrame\\DruidBalance-TopLeft",
