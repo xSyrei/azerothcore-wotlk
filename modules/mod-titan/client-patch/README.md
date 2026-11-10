@@ -472,6 +472,14 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   log. Without a readable depth (anti-aliasing on, or no `INTZ`) the water is drawn by the
   engine's shader blended, with the sky alone in it. Everything the copy pass changes is put back from the engine's
   own record of the game's state (vertex declaration, stream 0, samplers and render states included).
+- **Atmosphere** (`src/atmosphere.hlsl`): once the world is drawn (the first draw into the back buffer with the depth
+  test off after world draws: the interface), the engine copies the scene and its distances again and draws over it:
+  the sky around the sun (and a soft disc) at half size, that light smeared toward the sun (light shafts streaming
+  past roofs, trees, mountains), and over the whole world height fog by the true distance (thicker below the eye,
+  drifting in wisps), lit toward the sun and where the shafts cross it. The interface is drawn after, untouched. The
+  camera comes from the terrain's and buildings' vertex shaders (view in c0-c3, projection in c4-c7), the sun from
+  the models' (its light's direction in c12, its colour in c13; *Flip the sun* if it ever stands opposite). Every part
+  is a slider in the panel's Atmosphere section.
 - The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's
   `d3dcompiler_47.dll` under Wine (any 64-bit copy, e.g. an Electron app's: Wine's own compiler cannot build shader
   model 3): `D3DCOMPILER=/path/to/d3dcompiler_47.dll sh build.sh`. Players need no compiler.

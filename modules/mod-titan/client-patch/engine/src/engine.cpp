@@ -37,7 +37,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.4"
+#define EMBERFORGE_ENGINE_VERSION "0.5"
 
 namespace
 {
@@ -183,6 +183,11 @@ namespace
         float skyBrightness = 2.2f, sparkle = 0.397f, sparkleSize = 0.093f;
         float sunAzimuth = 6.2134f, sunHeight = 0.4712f;
         float shading = 1.0f, refraction = 3.0f, opacity = 0.85f;
+        // The atmosphere: light shafts from the sun and fog lit by it.
+        bool atmosphere = true, atmosphereShow = false, sunFlip = false;
+        float shaftIntensity = 0.8f, shaftLength = 0.97f, skyThreshold = 0.55f, sunDisc = 0.3f, shaftScatter = 1.0f;
+        float fogDensity = 0.25f, fogStart = 15.0f, fogFalloff = 0.02f, fogBelow = 10.0f, fogMost = 0.6f;
+        float sunGlow = 0.8f, mist = 0.5f, mistSize = 25.0f, mistSpeed = 1.0f;
 
         struct Entry
         {
@@ -206,7 +211,12 @@ namespace
                 {"reflect_distortion", &distortion}, {"sky_brightness", &skyBrightness}, {"sparkle", &sparkle},
                 {"sparkle_size", &sparkleSize}, {"sun_azimuth", &sunAzimuth}, {"sun_height", &sunHeight},
                 {"wave_shading", &shading}, {"refraction", &refraction},
-                {"opacity", &opacity},
+                {"opacity", &opacity}, {"atmosphere", nullptr, &atmosphere}, {"sun_flip", nullptr, &sunFlip},
+                {"shaft_intensity", &shaftIntensity}, {"shaft_length", &shaftLength},
+                {"sky_threshold", &skyThreshold}, {"sun_disc", &sunDisc}, {"shaft_scatter", &shaftScatter},
+                {"fog_density", &fogDensity}, {"fog_start", &fogStart}, {"fog_falloff", &fogFalloff},
+                {"fog_below", &fogBelow}, {"fog_most", &fogMost}, {"sun_glow", &sunGlow}, {"mist", &mist},
+                {"mist_size", &mistSize}, {"mist_speed", &mistSpeed},
             };
             for (const Entry &e : entries)
                 f(e);
@@ -260,6 +270,8 @@ namespace
 
     constexpr int kVertexConstants = 256, kPixelConstants = 32, kRenderStates = 256, kStages = 8;
     constexpr int kSamplers = 16, kSamplerStates = 14;
+    constexpr DWORD kPassStages = 4;                          // the stages an engine pass binds (and puts back)
+    constexpr UINT kPassConstants = 12;                       // the pixel constants it sets (c0-c11)
     constexpr UINT kWaterConstants = 12, kWaterConstantCount = 16;   // the water shader's c12-c27 (src/water.hlsl)
     // Render states an engine pass turns off (and puts back after).
     const D3DRENDERSTATETYPE kPassStates[] = {
@@ -316,8 +328,9 @@ namespace
             ReleaseTargets();
             if (m_waterPs)
                 m_waterPs->Release();
-            if (m_distancePs)
-                m_distancePs->Release();
+            for (IDirect3DPixelShader9 *shader : {m_distancePs, m_skyPs, m_shaftsPs, m_compositePs})
+                if (shader)
+                    shader->Release();
             ShutdownPanel();
             if (g_device == this)
                 g_device = nullptr;
@@ -360,6 +373,8 @@ namespace
             if (!m_recordingBlock && index < 4)
             {
                 m_rt[index] = surface;
+                if (index == 0)
+                    TargetSize(surface);
                 ++m_frame.targetChanges;
                 if (m_capture == Capture::Recording)
                     Write("target %lu = %s", static_cast<unsigned long>(index), Describe(surface).c_str());
@@ -570,6 +585,7 @@ namespace
 
         HRESULT STDMETHODCALLTYPE DrawPrimitive(D3DPRIMITIVETYPE type, UINT start, UINT count) override
         {
+            BeforeDraw();
             OnDraw("draw", type, count);
             bool water = BeginWater();
             HRESULT hr = real->DrawPrimitive(type, start, count);
@@ -581,6 +597,7 @@ namespace
         HRESULT STDMETHODCALLTYPE DrawIndexedPrimitive(D3DPRIMITIVETYPE type, INT base, UINT minIndex, UINT vertices,
                                                        UINT start, UINT count) override
         {
+            BeforeDraw();
             OnDraw("indexed", type, count);
             bool water = BeginWater();
             HRESULT hr = real->DrawIndexedPrimitive(type, base, minIndex, vertices, start, count);
@@ -592,6 +609,7 @@ namespace
         HRESULT STDMETHODCALLTYPE DrawPrimitiveUP(D3DPRIMITIVETYPE type, UINT count, const void *data,
                                                   UINT stride) override
         {
+            BeforeDraw();
             OnDraw("draw-up", type, count);
             return real->DrawPrimitiveUP(type, count, data, stride);
         }
@@ -600,6 +618,7 @@ namespace
                                                          UINT count, const void *indices, D3DFORMAT format,
                                                          const void *data, UINT stride) override
         {
+            BeforeDraw();
             OnDraw("indexed-up", type, count);
             return real->DrawIndexedPrimitiveUP(type, minIndex, vertices, count, indices, format, data, stride);
         }
@@ -690,6 +709,7 @@ namespace
             if (SUCCEEDED(real->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &surface)) && surface)
             {
                 m_rt[0] = surface;
+                TargetSize(surface);
                 D3DSURFACE_DESC desc = {};
                 surface->GetDesc(&desc);
                 m_viewport = {0, 0, desc.Width, desc.Height, 0.0f, 1.0f};
@@ -710,7 +730,13 @@ namespace
                 m_waterPs = nullptr;
             if (FAILED(real->CreatePixelShader(kDistancePixelShader, &m_distancePs)))
                 m_distancePs = nullptr;
-            Log("engine shaders: water %s, distance %s", m_waterPs ? "ok" : "failed", m_distancePs ? "ok" : "failed");
+            bool sky = SUCCEEDED(real->CreatePixelShader(kAtmosphereSkyPixelShader, &m_skyPs));
+            bool shafts = SUCCEEDED(real->CreatePixelShader(kAtmosphereShaftsPixelShader, &m_shaftsPs));
+            bool composite = SUCCEEDED(real->CreatePixelShader(kAtmosphereCompositePixelShader, &m_compositePs));
+            if (!sky || !shafts || !composite)
+                m_skyPs = m_shaftsPs = m_compositePs = nullptr;
+            Log("engine shaders: water %s, distance %s, atmosphere %s", m_waterPs ? "ok" : "failed",
+                m_distancePs ? "ok" : "failed", m_compositePs ? "ok" : "failed");
         }
 
         // The readable depth buffer (in place of the automatic one), the scene's copy and the distances: the size of
@@ -731,6 +757,15 @@ namespace
             if (FAILED(real->CreateTexture(desc.Width, desc.Height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_R32F,
                                            D3DPOOL_DEFAULT, &m_distance, nullptr)))
                 m_distance = nullptr;
+            // The atmosphere's two half-size targets (sky light, shafts): half floats, or 8 bits where not.
+            for (IDirect3DTexture9 *&half : m_half)
+            {
+                if (FAILED(real->CreateTexture(desc.Width / 2, desc.Height / 2, 1, D3DUSAGE_RENDERTARGET,
+                                               D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT, &half, nullptr)) &&
+                    FAILED(real->CreateTexture(desc.Width / 2, desc.Height / 2, 1, D3DUSAGE_RENDERTARGET,
+                                               D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &half, nullptr)))
+                    half = nullptr;
+            }
             bool intz = false;
             IDirect3D9 *d3d = nullptr;
             D3DDEVICE_CREATION_PARAMETERS creation = {};
@@ -767,7 +802,7 @@ namespace
                 m_intzSurface->Release();
                 m_intzSurface = nullptr;
             }
-            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance})
+            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance, &m_half[0], &m_half[1]})
             {
                 if (*texture)
                     (*texture)->Release();
@@ -826,7 +861,7 @@ namespace
             if (!m_waterPrepared)
             {
                 m_waterPrepared = true;
-                m_waterCopied = camera && CopyScene(projection[2]);
+                m_waterCopied = camera && CopyScene(projection[2], m_viewport.MinZ, m_viewport.MaxZ);
                 if (!m_waterLogged)
                 {
                     m_waterLogged = true;
@@ -899,7 +934,7 @@ namespace
 
         // At the frame's first water draw: the scene drawn so far (no water yet), and the depth buffer turned into
         // distances in yards. The game's state is put back as it was after.
-        bool CopyScene(float nearPlane)
+        bool CopyScene(float nearPlane, float minZ, float maxZ)
         {
             if (!m_scene || !m_distance || !m_distancePs || !m_intzSurface || m_ds != m_intzSurface || !m_rt[0])
                 return false;
@@ -929,9 +964,9 @@ namespace
                     real->SetRenderState(state, FALSE);
                 real->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
                 real->SetRenderState(D3DRS_COLORWRITEENABLE, 0xF);
-                float params[4] = {nearPlane, m_viewport.MinZ, m_viewport.MaxZ, 0.0f};
+                float params[4] = {nearPlane, minZ, maxZ, 0.0f};
                 real->SetPixelShaderConstantF(0, params, 1);
-                DrawFullScreen();
+                DrawFullScreen(m_width, m_height);
                 RestoreAfterPass();
             }
             if (scene)
@@ -941,10 +976,10 @@ namespace
             return ok;
         }
 
-        void DrawFullScreen()
+        void DrawFullScreen(UINT width, UINT height)
         {
             // Pixel centres on texel centres (Direct3D 9's half-pixel offset).
-            float w = static_cast<float>(m_width) - 0.5f, h = static_cast<float>(m_height) - 0.5f;
+            float w = static_cast<float>(width) - 0.5f, h = static_cast<float>(height) - 0.5f;
             const float quad[4][6] = {
                 {-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f}, {w, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f},
                 {-0.5f, h, 0.0f, 1.0f, 0.0f, 1.0f}, {w, h, 0.0f, 1.0f, 1.0f, 1.0f},
@@ -965,21 +1000,191 @@ namespace
             else
                 real->SetVertexDeclaration(m_declaration);
             real->SetStreamSource(0, m_stream, m_streamOffset, m_streamStride);   // DrawPrimitiveUP cleared it
-            real->SetTexture(0, m_tex[0]);
-            for (D3DSAMPLERSTATETYPE type : {D3DSAMP_MINFILTER, D3DSAMP_MAGFILTER, D3DSAMP_MIPFILTER,
-                                             D3DSAMP_ADDRESSU, D3DSAMP_ADDRESSV, D3DSAMP_SRGBTEXTURE})
-                real->SetSamplerState(0, type, m_ss[0][type]);
+            for (DWORD stage = 0; stage < kPassStages; ++stage)
+            {
+                real->SetTexture(stage, m_tex[stage]);
+                for (D3DSAMPLERSTATETYPE type : {D3DSAMP_MINFILTER, D3DSAMP_MAGFILTER, D3DSAMP_MIPFILTER,
+                                                 D3DSAMP_ADDRESSU, D3DSAMP_ADDRESSV, D3DSAMP_SRGBTEXTURE})
+                    real->SetSamplerState(stage, type, m_ss[stage][type]);
+            }
             for (D3DRENDERSTATETYPE state : kPassStates)
                 real->SetRenderState(state, m_rs[state]);
             real->SetRenderState(D3DRS_CULLMODE, m_rs[D3DRS_CULLMODE]);
             real->SetRenderState(D3DRS_COLORWRITEENABLE, m_rs[D3DRS_COLORWRITEENABLE]);
-            real->SetPixelShaderConstantF(0, m_psc[0], 1);
+            real->SetPixelShaderConstantF(0, m_psc[0], kPassConstants);
+        }
+
+        // A texture for an engine pass, read with clamping, filtered or not.
+        void Bind(DWORD stage, IDirect3DTexture9 *texture, bool filtered)
+        {
+            DWORD filter = filtered ? D3DTEXF_LINEAR : D3DTEXF_POINT;
+            real->SetTexture(stage, texture);
+            real->SetSamplerState(stage, D3DSAMP_MINFILTER, filter);
+            real->SetSamplerState(stage, D3DSAMP_MAGFILTER, filter);
+            real->SetSamplerState(stage, D3DSAMP_MIPFILTER, D3DTEXF_NONE);
+            real->SetSamplerState(stage, D3DSAMP_ADDRESSU, D3DTADDRESS_CLAMP);
+            real->SetSamplerState(stage, D3DSAMP_ADDRESSV, D3DTADDRESS_CLAMP);
+            real->SetSamplerState(stage, D3DSAMP_SRGBTEXTURE, FALSE);
+        }
+
+        // The state every engine pass draws with (no depth, blending, tests or clipping).
+        void PassState()
+        {
+            real->SetDepthStencilSurface(nullptr);
+            real->SetVertexShader(nullptr);
+            real->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
+            for (D3DRENDERSTATETYPE state : kPassStates)
+                real->SetRenderState(state, FALSE);
+            real->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+            real->SetRenderState(D3DRS_COLORWRITEENABLE, 0xF);
+        }
+
+        void DrawInto(IDirect3DTexture9 *target, IDirect3DPixelShader9 *shader, UINT width, UINT height)
+        {
+            IDirect3DSurface9 *surface = nullptr;
+            if (target && SUCCEEDED(target->GetSurfaceLevel(0, &surface)) && surface)
+            {
+                real->SetRenderTarget(0, surface);
+                surface->Release();
+            }
+            else
+            {
+                real->SetRenderTarget(0, m_rt[0]);
+            }
+            real->SetPixelShader(shader);
+            DrawFullScreen(width, height);
+        }
+
+        // ---- The atmosphere ----
+
+        // The camera and the sun, from the game's vertex shader constants as each draw goes by. The terrain's and
+        // the buildings' shaders hold the view in c0-c3 (rows: a world point times them) and the projection in c4-c7
+        // (infinite: (0, 0, 1, 1) and (0, 0, -near, 0)); the models' shaders hold the projection transposed in c2-c5
+        // and the sun's light in c12 (the direction it travels) and c13 (its colour).
+        void WatchConstants()
+        {
+            const float (*c)[4] = m_vsc;
+            auto near0 = [](float a, float b) { return std::fabs(a - b) < 1e-3f; };
+            auto unit = [](const float *v) {
+                return std::fabs(v[0] * v[0] + v[1] * v[1] + v[2] * v[2] - 1.0f) < 0.02f;
+            };
+            if (near0(c[6][2], 1.0f) && near0(c[6][3], 1.0f) && near0(c[7][3], 0.0f) && c[7][2] < 0.0f &&
+                c[4][0] > 0.0f && c[5][1] > 0.0f && near0(c[3][3], 1.0f) && unit(c[0]) && unit(c[1]) && unit(c[2]))
+            {
+                memcpy(m_camera, c[0], sizeof(m_camera));
+                m_cameraProjection[0] = c[4][0];
+                m_cameraProjection[1] = c[5][1];
+                m_cameraProjection[2] = -c[7][2];
+                m_cameraSeen = true;
+            }
+            else if (near0(c[4][2], 1.0f) && c[4][3] < 0.0f && near0(c[5][2], 1.0f) && near0(c[5][3], 0.0f) &&
+                     unit(c[12]))
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    m_sunDirection[i] = -c[12][i];
+                    m_sunColour[i] = std::fmax(0.0f, std::fmin(c[13][i], 2.0f));
+                }
+                m_sunSeen = true;
+            }
+        }
+
+        // Once the world is drawn and the interface is about to be: the atmosphere over the world.
+        void BeforeDraw()
+        {
+            if (m_recordingBlock || m_atmosphereDone)
+                return;
+            bool screen = m_rt0Width == m_width && m_rt0Height == m_height && m_width != 0;
+            if (!screen)
+                return;
+            if (m_rs[D3DRS_ZFUNC] == D3DCMP_ALWAYS)
+            {
+                if (!m_worldDrawn)
+                    return;
+                m_atmosphereDone = true;
+                if (m_settings.atmosphere && m_compositePs && m_cameraSeen && m_half[0] && m_half[1])
+                    Atmosphere();
+                return;
+            }
+            // The world: drawn with depth into the engine's depth buffer, in its depth range (the sky is drawn at 1).
+            if (m_rs[D3DRS_ZENABLE] && m_rs[D3DRS_ZWRITEENABLE] && m_ds && m_ds == m_intzSurface &&
+                m_viewport.MaxZ < 0.999f)
+            {
+                m_worldDrawn = true;
+                m_worldMinZ = m_viewport.MinZ;
+                m_worldMaxZ = m_viewport.MaxZ;
+                m_worldFog = m_rs[D3DRS_FOGCOLOR];
+            }
+        }
+
+        void Atmosphere()
+        {
+            const Settings &s = m_settings;
+            if (!CopyScene(m_cameraProjection[2], m_worldMinZ, m_worldMaxZ))
+                return;
+            const float (*view)[4] = m_camera;
+            float sun[3] = {m_sunDirection[0], m_sunDirection[1], m_sunDirection[2]};
+            if (!m_sunSeen)
+            {
+                sun[0] = 0.5f;                                   // no model drawn: a sun high in the south-west
+                sun[1] = -0.5f;
+                sun[2] = 0.7f;
+            }
+            if (s.sunFlip)
+                for (float &v : sun)
+                    v = -v;
+            // The sun on screen: its direction in view space, projected.
+            float vx = sun[0] * view[0][0] + sun[1] * view[1][0] + sun[2] * view[2][0];
+            float vy = sun[0] * view[0][1] + sun[1] * view[1][1] + sun[2] * view[2][1];
+            float vz = sun[0] * view[0][2] + sun[1] * view[1][2] + sun[2] * view[2][2];
+            float u = 0.5f, v = -1.0f, shown = 0.0f;
+            if (vz > 0.01f)
+            {
+                u = 0.5f + 0.5f * m_cameraProjection[0] * vx / vz;
+                v = 0.5f - 0.5f * m_cameraProjection[1] * vy / vz;
+                float off = std::fmax(std::fmax(-u, u - 1.0f), std::fmax(-v, v - 1.0f));   // past the screen's edge
+                shown = std::fmin(1.0f, vz * 5.0f) * std::fmax(0.0f, 1.0f - off / 0.6f);
+            }
+            shown *= std::fmax(0.0f, std::fmin(1.0f, sun[2] * 6.0f + 0.3f));   // none once the sun is down
+            DWORD fog = m_worldFog;
+            float eye[3];
+            for (int i = 0; i < 3; ++i)
+                eye[i] = -(view[i][0] * view[3][0] + view[i][1] * view[3][1] + view[i][2] * view[3][2]);
+            float seconds = static_cast<float>(std::fmod(Seconds() - m_epoch, 3600.0));
+            float constants[kPassConstants][4] = {
+                {u, v, shown, 0.0f},
+                {m_sunColour[0], m_sunColour[1], m_sunColour[2], s.shaftIntensity},
+                {((fog >> 16) & 0xFF) / 255.0f, ((fog >> 8) & 0xFF) / 255.0f, (fog & 0xFF) / 255.0f, s.fogDensity},
+                {s.fogStart, s.fogFalloff, s.fogMost, s.sunGlow},
+                {s.shaftLength, s.skyThreshold, s.shaftScatter, s.sunDisc},
+                {m_cameraProjection[0], m_cameraProjection[1], m_cameraProjection[2], s.atmosphereShow ? 1.0f : 0.0f},
+                {view[0][0], view[0][1], view[0][2], 0.0f},
+                {view[1][0], view[1][1], view[1][2], 0.0f},
+                {view[2][0], view[2][1], view[2][2], 0.0f},
+                {eye[0], eye[1], eye[2], s.fogBelow},
+                {sun[0], sun[1], sun[2], seconds},
+                {s.mist, s.mistSize, s.mistSpeed, 0.0f},
+            };
+            if (!m_sunSeen)
+                constants[1][0] = constants[1][1] = constants[1][2] = 0.8f;
+            PassState();
+            real->SetPixelShaderConstantF(0, constants[0], kPassConstants);
+            Bind(0, m_scene, true);
+            Bind(1, m_distance, false);
+            DrawInto(m_half[0], m_skyPs, m_width / 2, m_height / 2);
+            Bind(2, m_half[0], true);
+            DrawInto(m_half[1], m_shaftsPs, m_width / 2, m_height / 2);
+            Bind(2, nullptr, false);
+            Bind(3, m_half[1], true);
+            DrawInto(nullptr, m_compositePs, m_width, m_height);
+            RestoreAfterPass();
+            ++m_frame.atmosphere;
         }
 
         struct Counters
         {
             unsigned draws = 0, waterDraws = 0, waterReplaced = 0, targetChanges = 0, depthClears = 0, scenes = 0,
-                     stateBlocks = 0;
+                     stateBlocks = 0, atmosphere = 0;
         };
 
         uint32_t Hash(void *shader) const
@@ -993,6 +1198,15 @@ namespace
         bool IsWater() const
         {
             return m_ps && m_waterShaders.count(m_ps) != 0;
+        }
+
+        void TargetSize(IDirect3DSurface9 *surface)
+        {
+            D3DSURFACE_DESC desc = {};
+            if (surface)
+                surface->GetDesc(&desc);
+            m_rt0Width = desc.Width;
+            m_rt0Height = desc.Height;
         }
 
         static bool IsCube(IDirect3DBaseTexture9 *texture)
@@ -1121,6 +1335,8 @@ namespace
                     DumpShader(m_vs, "Emberforge_water_vs.bin");
                 }
             }
+            if (m_vs && !m_recordingBlock)
+                WatchConstants();
             if (m_capture == Capture::Recording)
                 WriteDraw(kind, type, count);
             ++m_frame.draws;
@@ -1234,8 +1450,11 @@ namespace
                 }
             }
             m_last = m_frame;
+            m_cameraSeenLast = m_cameraSeen;
+            m_sunSeenLast = m_sunSeen;
             m_frame = Counters();
             m_waterPrepared = false;
+            m_worldDrawn = m_atmosphereDone = m_cameraSeen = m_sunSeen = false;
         }
 
         // ---- The panel (Home) ----
@@ -1327,7 +1546,10 @@ namespace
             ImGui::Text("Water draws: %u (%u drawn by the engine%s)", m_last.waterDraws, m_last.waterReplaced,
                         m_last.waterReplaced && !m_waterCopied ? ", no depth: plain" : "");
             ImGui::Text("Readable depth: %s", m_intz ? "yes" : "no");
+            ImGui::Text("Atmosphere: %s, camera %s, sun %s", m_last.atmosphere ? "drawn" : "not drawn",
+                        m_cameraSeenLast ? "found" : "not found", m_sunSeenLast ? "found" : "not found");
             WaterPanel();
+            AtmospherePanel();
             if (ImGui::CollapsingHeader("Diagnostics"))
             {
                 ImGui::Text("Render target changes: %u, depth clears: %u", m_last.targetChanges, m_last.depthClears);
@@ -1359,6 +1581,36 @@ namespace
                 ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
                 real->EndScene();
             }
+        }
+
+        void AtmospherePanel()
+        {
+            Settings &s = m_settings;
+            if (!ImGui::CollapsingHeader("Atmosphere", ImGuiTreeNodeFlags_DefaultOpen))
+                return;
+            ImGui::PushItemWidth(220);
+            ImGui::Checkbox("Engine atmosphere", &s.atmosphere);
+            ImGui::SameLine();
+            ImGui::Checkbox("Show its light alone", &s.atmosphereShow);
+            ImGui::SameLine();
+            ImGui::Checkbox("Flip the sun", &s.sunFlip);
+            ImGui::SeparatorText("Light shafts");
+            ImGui::SliderFloat("Shaft intensity", &s.shaftIntensity, 0.0f, 3.0f);
+            ImGui::SliderFloat("Shaft length", &s.shaftLength, 0.85f, 1.0f, "%.3f");
+            ImGui::SliderFloat("Sky brightness threshold", &s.skyThreshold, 0.0f, 1.0f);
+            ImGui::SliderFloat("Sun disc size", &s.sunDisc, 0.0f, 1.0f);
+            ImGui::SliderFloat("Shafts in the fog", &s.shaftScatter, 0.0f, 3.0f);
+            ImGui::SeparatorText("Fog");
+            ImGui::SliderFloat("Fog density", &s.fogDensity, 0.0f, 3.0f, "%.2f per 100 yards");
+            ImGui::SliderFloat("Fog start", &s.fogStart, 0.0f, 200.0f, "%.0f yards");
+            ImGui::SliderFloat("Fog most", &s.fogMost, 0.0f, 1.0f);
+            ImGui::SliderFloat("Height falloff", &s.fogFalloff, 0.0f, 0.2f, "%.3f per yard");
+            ImGui::SliderFloat("Thickest below the eye", &s.fogBelow, -50.0f, 100.0f, "%.0f yards");
+            ImGui::SliderFloat("Sun glow in the fog", &s.sunGlow, 0.0f, 3.0f);
+            ImGui::SliderFloat("Drifting mist", &s.mist, 0.0f, 1.0f);
+            ImGui::SliderFloat("Mist size", &s.mistSize, 2.0f, 100.0f, "%.0f yards");
+            ImGui::SliderFloat("Mist speed", &s.mistSpeed, 0.0f, 5.0f);
+            ImGui::PopItemWidth();
         }
 
         void WaterPanel()
@@ -1439,6 +1691,15 @@ namespace
         UINT m_width = 0, m_height = 0;
         bool m_waterPrepared = false, m_waterCopied = false, m_waterLogged = false;
         double m_epoch = Seconds();
+        IDirect3DPixelShader9 *m_skyPs = nullptr, *m_shaftsPs = nullptr, *m_compositePs = nullptr;
+        IDirect3DTexture9 *m_half[2] = {};
+        UINT m_rt0Width = 0, m_rt0Height = 0;
+        bool m_worldDrawn = false, m_atmosphereDone = false, m_cameraSeen = false, m_sunSeen = false;
+        bool m_cameraSeenLast = false, m_sunSeenLast = false;
+        float m_worldMinZ = 0.0f, m_worldMaxZ = 1.0f;
+        DWORD m_worldFog = 0;
+        float m_camera[4][4] = {}, m_cameraProjection[3] = {};
+        float m_sunDirection[3] = {0.0f, 0.0f, 1.0f}, m_sunColour[3] = {1.0f, 1.0f, 1.0f};
 
         Counters m_frame, m_last;
         Capture m_capture = Capture::Idle;
