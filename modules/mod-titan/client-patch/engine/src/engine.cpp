@@ -37,7 +37,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.7"
+#define EMBERFORGE_ENGINE_VERSION "0.8"
 
 namespace
 {
@@ -186,8 +186,9 @@ namespace
         // The atmosphere: light shafts from the sun and fog lit by it.
         bool atmosphere = true, atmosphereShow = false, sunFlip = false;
         float shaftIntensity = 0.8f, shaftLength = 0.97f, skyThreshold = 0.55f, sunDisc = 0.3f, shaftScatter = 1.0f;
-        float fogDensity = 0.8f, fogStart = 10.0f, fogFalloff = 0.02f, fogBelow = 10.0f, fogMost = 0.6f;
-        float sunGlow = 0.8f, mist = 0.5f, mistSize = 25.0f, mistSpeed = 1.0f;
+        // Subtle: haze in the distance and low down, the colours nearby kept (a thick veil made the world bland).
+        float fogDensity = 0.15f, fogStart = 40.0f, fogFalloff = 0.05f, fogBelow = 0.0f, fogMost = 0.35f;
+        float sunGlow = 0.8f, mist = 0.35f, mistSize = 25.0f, mistSpeed = 1.0f;
 
         struct Entry
         {
