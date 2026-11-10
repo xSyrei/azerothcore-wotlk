@@ -526,6 +526,14 @@ check(needLine and needLine.text == "Requires an ability that awards combo point
 EmberforgeClasslessSearch.text = ""
 EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
 
+-- A talent learned as an ability (the server's Q list: Crusader Strike, Mortal Strike...) is lit on its tree but is
+-- not one of the Hero's talents: the Talents list and the points leave it out.
+local ownedTalents = upvalues(up.RefreshList).OwnedTalents
+local before = #ownedTalents()
+server("R,34:1")
+server("Q,133.34.0")
+check(#ownedTalents() == before - 1, "a talent learned as an ability leaves the Talents list")
+
 -- Other addons' messages are ignored.
 before = #sent
 event("CHAT_MSG_ADDON", "OTHER", "O", "WHISPER", "Someone")

@@ -283,11 +283,13 @@ local function KnownAbilities()
     return list
 end
 
+-- The talents the Hero owns: not the talents learned as abilities (Crusader Strike, Mortal Strike...), which the
+-- server lights on their tree but are abilities (the Spells list).
 local function OwnedTalents()
     local list = {}
     for _, talents in pairs(data.talents) do
         for _, talent in ipairs(talents) do
-            if (data.talentRanks[talent.id] or 0) > 0 then
+            if (data.talentRanks[talent.id] or 0) > 0 and not data.talentAbilities[talent.id] then
                 list[#list + 1] = talent
             end
         end
@@ -299,7 +301,9 @@ end
 local function TreePoints(tab)
     local points = 0
     for _, talent in ipairs(data.talents[tab] or {}) do
-        points = points + (data.talentRanks[talent.id] or 0)
+        if not data.talentAbilities[talent.id] then     -- an ability (lit on the tree), not a talent point
+            points = points + (data.talentRanks[talent.id] or 0)
+        end
     end
     return points
 end
