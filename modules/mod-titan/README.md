@@ -92,7 +92,9 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   combat; kept per character). Each is a buff (90603-90606, `client-patch/patch_player.py`): Melee and
   Ranged cause 50% less threat, Tank 200% more (and takes 5% less damage, with 5% more armor), Healer
   unchanged.
-- Owned abilities upgrade to the best rank for the Hero's level by themselves, no trainer needed. Group buffs come the
+- Owned abilities upgrade to the best rank for the Hero's level by themselves, no trainer needed: every rank up to it
+  is learned, as a trainer teaches them, and after every learn (a roll, reroll, pick, spec switch or talent) all the
+  Hero's abilities are checked for ranks still pending, so none is left behind. Group buffs come the
   same way (`GROUP_VERSIONS`): Arcane Brilliance with Arcane Intellect, Prayer of Fortitude, Spirit and Shadow
   Protection with their single-target buffs, Gift of the Wild with Mark of the Wild, Dalaran Brilliance with Dalaran
   Intellect, the Greater Blessings with the Blessings, each once the Hero's level reaches it; never rolled on their

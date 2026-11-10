@@ -614,14 +614,18 @@ namespace
             what, spellId, name ? name : "?");
     }
 
+    // Every ability the Hero knows: every rank its level allows, learned (as a trainer teaches them, each one), from
+    // the lowest one missing; nothing pending is left. Run after every level, login and learn.
     void UpgradeRanks(Player* player)
     {
         for (Ability const& ability : Abilities())
         {
-            int32 known = KnownRank(player, ability);
+            if (KnownRank(player, ability) < 0)
+                continue;
             int32 best = BestRank(player, ability);
-            if (known >= 0 && best > known)
-                player->learnSpell(ability.Ranks[best].SpellId);
+            for (int32 i = 0; i <= best; ++i)
+                if (!player->HasSpell(ability.Ranks[i].SpellId))
+                    player->learnSpell(ability.Ranks[i].SpellId);
         }
         // Companions the Hero's level now reaches (a group buff: Arcane Brilliance with Arcane Intellect).
         for (Ability const& ability : Abilities())
@@ -630,7 +634,8 @@ namespace
                     if (Ability const* companion = FindAbility(companionId))
                         if (int32 best = BestRank(player, *companion); best >= 0 && KnownRank(player, *companion) < 0)
                         {
-                            player->learnSpell(companion->Ranks[best].SpellId);
+                            for (int32 i = 0; i <= best; ++i)
+                                player->learnSpell(companion->Ranks[i].SpellId);
                             Announce(player, companion->Ranks[best].SpellId, "came with your ability:");
                         }
     }
@@ -809,6 +814,7 @@ namespace Wildcard
 
         player->addTalent(spellId, player->GetActiveSpecMask(), currentRank);
         Announce(player, spellId, upgrade ? "talent rank up" : "new talent");
+        UpgradeRanks(player);                   // an ability the talent teaches: every rank the level allows
         if (reveal)
             Classless::RevealTalent(player, talentInfo->TalentID, spellId, currentRank + 1,
                 level ? level : player->GetLevel());
@@ -1465,14 +1471,20 @@ namespace Wildcard
 
     void Learn(Player* player, Ability const& ability, char const* what)
     {
-        uint32 spellId = ability.Ranks[BestRank(player, ability)].SpellId;
-        player->learnSpell(spellId);
-        Announce(player, spellId, what);
+        // Every rank up to the best the level allows (not the best alone: a reroll left Heroes at rank 1), then
+        // every other ability checked for ranks still pending.
+        int32 best = BestRank(player, ability);
+        for (int32 i = 0; i <= best; ++i)
+            if (!player->HasSpell(ability.Ranks[i].SpellId))
+                player->learnSpell(ability.Ranks[i].SpellId);
+        Announce(player, ability.Ranks[best].SpellId, what);
 
         for (uint32 companionId : ability.Companions)
             if (Ability const* companion = FindAbility(companionId))
-                if (int32 best = BestRank(player, *companion); best >= 0 && KnownRank(player, *companion) < 0)
-                    player->learnSpell(companion->Ranks[best].SpellId);
+                if (int32 top = BestRank(player, *companion); top >= 0 && KnownRank(player, *companion) < 0)
+                    for (int32 i = 0; i <= top; ++i)
+                        player->learnSpell(companion->Ranks[i].SpellId);
+        UpgradeRanks(player);
     }
 
     Ability const* GrantRandom(Player* player, char const* what)
