@@ -118,11 +118,9 @@ namespace
 
     LRESULT CALLBACK PanelWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
-        if (msg == WM_KEYDOWN && wParam == VK_HOME && !(lParam & (1 << 30)))
-        {
-            g_panel = !g_panel;
+        // Home belongs to the engine (read in Present): the game does not see it.
+        if ((msg == WM_KEYDOWN || msg == WM_KEYUP) && wParam == VK_HOME)
             return 0;
-        }
         if (g_panel && ImGui::GetCurrentContext())
         {
             ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
@@ -644,11 +642,38 @@ namespace
         {
             if (!InitPanel())
                 return;
-            if (!g_panel)
+            // Home, read from the keyboard directly (the game may not pass every key to its window), while the game's
+            // window is in front.
+            bool home = (GetAsyncKeyState(VK_HOME) & 0x8000) != 0;
+            if (home && !m_homeDown && GetForegroundWindow() == m_window)
+                g_panel = !g_panel;
+            m_homeDown = home;
+            // For the first seconds of play, a note that the engine is on.
+            if (m_started == 0)
+                m_started = GetTickCount();
+            bool note = GetTickCount() - m_started < 10000;
+            if (!g_panel && !note)
                 return;
             ImGui_ImplDX9_NewFrame();
             ImGui_ImplWin32_NewFrame();
             ImGui::NewFrame();
+            if (!g_panel)
+            {
+                ImGui::SetNextWindowPos(ImVec2(12, 12));
+                ImGui::SetNextWindowBgAlpha(0.6f);
+                ImGui::Begin("##note", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                                 ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoFocusOnAppearing);
+                ImGui::TextUnformatted("Emberforge Engine " EMBERFORGE_ENGINE_VERSION " on. Home: its panel.");
+                ImGui::End();
+                ImGui::EndFrame();
+                ImGui::Render();
+                if (SUCCEEDED(real->BeginScene()))
+                {
+                    ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+                    real->EndScene();
+                }
+                return;
+            }
             ImGui::GetIO().MouseDrawCursor = true;
             ImGui::SetNextWindowPos(ImVec2(40, 40), ImGuiCond_FirstUseEver);
             ImGui::SetNextWindowSize(ImVec2(420, 0), ImGuiCond_FirstUseEver);
@@ -699,6 +724,8 @@ namespace
         std::string m_capturePath;
 
         bool m_panelReady = false, m_panelFailed = false;
+        bool m_homeDown = false;
+        DWORD m_started = 0;
     };
 
     // ---- IDirect3D9: hands out our device ----
