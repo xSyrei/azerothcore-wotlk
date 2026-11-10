@@ -480,7 +480,10 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   camera comes from the terrain's and buildings' vertex shaders (view in c0-c3, projection in c4-c7). The rays come
   from the sun or moon as the sky draws them: each a blended, textured quad in the sky pass (fixed function, depth
   range at 1), its view transform's translation where it stands in view space (the sun's texture is the larger; the
-  body above the horizon wins). The lighting's direction (the models' c12, which does not match the drawn sun) is
+  body above the horizon wins). The game skips a body's quad while it is off screen, so each is remembered in the
+  world by its texture (turned out of view space by the sky dome's rotation) for ten minutes: the light keeps its
+  direction whichever way the camera turns. A frame with no terrain or buildings drawn (looking up) takes the camera
+  from the sky dome's rotation and the last position. The lighting's direction (the models' c12, which does not match the drawn sun) is
   the fallback, and its colour (c13) colours the light; *Flip the sun* turns it around. The body only sets the
   light's direction: the whole world is lit by it. Surfaces (normals from the depth) facing it brighten in its colour
   and those turned away darken, each first checked for something in the way toward the sun through the depth (soft

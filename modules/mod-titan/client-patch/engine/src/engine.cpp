@@ -37,7 +37,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.10"
+#define EMBERFORGE_ENGINE_VERSION "0.11"
 
 namespace
 {
@@ -1083,7 +1083,7 @@ namespace
                 m_cameraProjection[0] = c[4][0];
                 m_cameraProjection[1] = c[5][1];
                 m_cameraProjection[2] = -c[7][2];
-                m_cameraSeen = true;
+                m_cameraSeen = m_cameraEver = true;
             }
             else if (near0(c[4][2], 1.0f) && c[4][3] < 0.0f && near0(c[5][2], 1.0f) && near0(c[5][3], 0.0f) &&
                      unit(c[12]))
@@ -1097,49 +1097,97 @@ namespace
             }
         }
 
-        // The sun and the moon as the game draws them: in the sky pass (fixed function, the depth range at 1), each a
-        // textured, blended quad (2 triangles) placed by its view transform, whose translation is where it stands
-        // in view space (its rotation only turns the quad toward the eye). The sun's texture is the larger.
+        // The sky pass (fixed function, the depth range at 1). Its dome is drawn with the camera's rotation (and no
+        // translation): kept, for frames that draw no terrain or buildings (looking up, or at water and models only).
+        // The sun and the moon are each a textured, blended quad (2 triangles) placed by its view transform, whose
+        // translation is where it stands in view space (its rotation only turns the quad toward the eye). Each body
+        // is remembered in the world by its texture: the game does not draw it while it is off screen, and the light
+        // must not turn then (the sun moves slowly). The sun's texture is the larger.
         void WatchSky(UINT count)
         {
-            if (count != 2 || m_viewport.MinZ < 0.999f || !m_rs[D3DRS_ALPHABLENDENABLE] || !m_tex[0] ||
-                m_tex[0]->GetType() != D3DRTYPE_TEXTURE)
+            if (m_viewport.MinZ < 0.999f)
+                return;
+            if (count > 100 && !m_rs[D3DRS_ALPHABLENDENABLE])
+            {
+                for (int i = 0; i < 3; ++i)
+                    for (int j = 0; j < 3; ++j)
+                        m_skyRotation[i][j] = (&m_view._11)[i * 4 + j];
+                m_skyProjection[0] = m_projection._11;
+                m_skyProjection[1] = m_projection._22;
+                m_skySeen = true;
+                return;
+            }
+            if (count != 2 || !m_rs[D3DRS_ALPHABLENDENABLE] || !m_tex[0] || m_tex[0]->GetType() != D3DRTYPE_TEXTURE)
                 return;
             float t[3] = {m_view._41, m_view._42, m_view._43};
             float length = std::sqrt(t[0] * t[0] + t[1] * t[1] + t[2] * t[2]);
-            if (length < 1.0f || m_bodies >= 4)
+            if (length < 1.0f || !m_skySeen)
                 return;
+            // Out of view space by the sky dome's rotation (this frame's camera).
+            float world[3];
+            for (int i = 0; i < 3; ++i)
+                world[i] = (m_skyRotation[i][0] * t[0] + m_skyRotation[i][1] * t[1] + m_skyRotation[i][2] * t[2]) /
+                           length;
             D3DSURFACE_DESC desc = {};
             static_cast<IDirect3DTexture9 *>(m_tex[0])->GetLevelDesc(0, &desc);
-            Body &body = m_body[m_bodies++];
-            for (int i = 0; i < 3; ++i)
-                body.view[i] = t[i] / length;
-            body.size = desc.Width;
+            Body *slot = nullptr;
+            for (Body &body : m_body)
+                if (body.texture == m_tex[0])
+                    slot = &body;
+            if (!slot)
+            {
+                slot = &m_body[0];                           // a new one takes the longest unseen
+                for (Body &body : m_body)
+                    if (body.seen < slot->seen)
+                        slot = &body;
+            }
+            slot->texture = m_tex[0];
+            slot->size = desc.Width;
+            slot->seen = Seconds();
+            memcpy(slot->world, world, sizeof(world));
+            m_bodyDrawn = true;
         }
 
-        // Toward the sun or the moon in the world: the drawn body above the horizon (the sun, the larger, when both
-        // are), turned out of view space by the camera. False if none is drawn above the horizon.
+        // Toward the sun or the moon in the world: the body above the horizon (the sun, the larger, when both are),
+        // as last drawn in the last ten minutes. False if none.
         bool CelestialDirection(float out[3]) const
         {
-            int best = -1;
-            float bestHeight = 0.0f;
-            for (int b = 0; b < m_bodies; ++b)
+            const Body *best = nullptr;
+            double now = Seconds();
+            for (const Body &body : m_body)
             {
-                float world[3];
-                for (int i = 0; i < 3; ++i)
-                    world[i] = m_camera[i][0] * m_body[b].view[0] + m_camera[i][1] * m_body[b].view[1] +
-                               m_camera[i][2] * m_body[b].view[2];
-                if (world[2] < -0.05f)
+                if (!body.texture || now - body.seen > 600.0 || body.world[2] < -0.05f)
                     continue;
-                if (best < 0 || m_body[b].size > m_body[best].size)
-                {
-                    best = b;
-                    bestHeight = world[2];
-                    memcpy(out, world, sizeof(world));
-                }
+                if (!best || body.size > best->size)
+                    best = &body;
             }
-            (void)bestHeight;
-            return best >= 0;
+            if (best)
+                memcpy(out, best->world, sizeof(best->world));
+            return best != nullptr;
+        }
+
+        // A frame with no terrain or buildings drawn: the camera from the sky dome's rotation and the last position.
+        bool CameraFromSky()
+        {
+            if (!m_skySeen || !m_cameraEver)
+                return false;
+            float eye[3];
+            for (int i = 0; i < 3; ++i)
+                eye[i] = -(m_camera[i][0] * m_camera[3][0] + m_camera[i][1] * m_camera[3][1] +
+                           m_camera[i][2] * m_camera[3][2]);
+            for (int i = 0; i < 3; ++i)
+            {
+                for (int j = 0; j < 3; ++j)
+                    m_camera[i][j] = m_skyRotation[i][j];
+                m_camera[i][3] = 0.0f;
+            }
+            for (int j = 0; j < 3; ++j)
+                m_camera[3][j] = -(eye[0] * m_skyRotation[0][j] + eye[1] * m_skyRotation[1][j] +
+                                   eye[2] * m_skyRotation[2][j]);
+            m_camera[3][3] = 1.0f;
+            m_cameraProjection[0] = m_skyProjection[0];
+            m_cameraProjection[1] = m_skyProjection[1];
+            return true;
         }
 
         // Once the world is drawn and the interface is about to be: the atmosphere over the world.
@@ -1155,6 +1203,8 @@ namespace
                 if (!m_worldDrawn)
                     return;
                 m_atmosphereDone = true;
+                if (!m_cameraSeen)
+                    m_cameraSeen = CameraFromSky();
                 if (m_settings.atmosphere && m_compositePs && m_cameraSeen && m_half[0] && m_half[1] && m_half[2])
                     Atmosphere();
                 return;
@@ -1546,7 +1596,7 @@ namespace
             m_worldDrawn = m_atmosphereDone = m_cameraSeen = m_sunSeen = false;
             m_fromSkyLast = m_fromSky;
             m_fromSky = false;
-            m_bodies = 0;
+            m_skySeen = m_bodyDrawn = false;
         }
 
         // ---- The panel (Home) ----
@@ -1808,11 +1858,14 @@ namespace
         const char *m_atmosphereWhy = "not drawn yet";
         struct Body
         {
-            float view[3];
+            IDirect3DBaseTexture9 *texture;                  // which body (only compared, no reference kept)
             UINT size;
+            float world[3];                                  // toward it in the world, as last drawn
+            double seen;
         };
         Body m_body[4] = {};
-        int m_bodies = 0;
+        bool m_skySeen = false, m_bodyDrawn = false, m_cameraEver = false;
+        float m_skyRotation[3][3] = {}, m_skyProjection[2] = {};
         bool m_fromSky = false, m_fromSkyLast = false;
         float m_worldMinZ = 0.0f, m_worldMaxZ = 1.0f;
         DWORD m_worldFog = 0;
