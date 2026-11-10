@@ -17,6 +17,7 @@
 
 #include "prestige.h"
 #include "cards.h"
+#include "scaled_gear.h"
 #include "specs.h"
 #include "emberspark.h"
 #include "wildcard.h"
@@ -44,8 +45,8 @@
 // - lost: the level, every Wildcard ability and talent (a new random kit and both tomes, as a new Hero), every quest
 //   (in the log or done: all can be done, and rewarded, again);
 // - kept: gear, gold, Emberspark, professions, mounts, reputation, achievements and the role (it can change during the
-//   run; the specialization cannot: specs.cpp). Gear above level 1 goes
-//   to the bags (what does not fit, by mail) and back on as soon as its level requirement is met;
+//   run; the specialization cannot: specs.cpp). Gear above level 1 (Prestige::EquipLevel) goes to the bags (what
+//   does not fit, by mail) and back on as soon as the Hero reaches its level;
 // - given: 500 Emberspark, 2 Titan Souls of Rested Experience, Prestigious (+10% experience) until level 60, and the
 //   quest Trial of Ember: Prestigious: done at level 60, where the run ends; turned in to the Keeper, it gives 5,000
 //   Emberspark.
@@ -103,6 +104,10 @@ namespace
         return Get(player, SETTING_RUN) && player->GetLevel() < MaxLevel();
     }
 
+    // Classic items with no required level ask for their item level less this; later ones the level cap.
+    constexpr uint32 CLASSIC_ITEM_LEVEL = 70;
+    constexpr uint32 CLASSIC_LEVEL_GAP = 10;
+
     // 3h 12m, or 12m.
     std::string Duration(uint32 seconds)
     {
@@ -139,17 +144,19 @@ namespace
             player->SendItemRetrievalMail(entry, noSpace);
     }
 
-    // Takes off every piece the player could not wear at level 1, into the bags (the rest by mail), and remembers the
-    // slot of each, to put it back on once its level allows (Reequip).
-    void StashGear(Player* player)
+    // Takes off every piece above the level given (Prestige::EquipLevel), into the bags (the rest by mail), and
+    // remembers the slot of each, to put it back on once its level allows (Reequip). Returns how many.
+    uint32 StashGear(Player* player, uint8 level)
     {
         std::vector<Item*> toMail;
+        uint32 stashed = 0;
         for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
         {
-            Set(player, SETTING_GEAR + slot, 0);
             Item* item = player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
-            if (!item || item->GetTemplate()->RequiredLevel <= 1)
+            if (!item || Prestige::EquipLevel(item) <= level)
                 continue;
+
+            ++stashed;
 
             Set(player, SETTING_GEAR + slot, item->GetGUID().GetCounter());
             ItemPosCountVec dest;
@@ -180,6 +187,7 @@ namespace
             draft.SendMailTo(trans, player, MailSender(MAIL_CREATURE, NPC_PRESTIGE), MAIL_CHECK_MASK_COPIED);
             CharacterDatabase.CommitTransaction(trans);
         }
+        return stashed;
     }
 
     // Puts stashed gear back on in its old slot once its level allows, whatever the Hero wears there now (to the
@@ -197,7 +205,7 @@ namespace
             if (item && item->IsEquipped())                         // the Hero put it on already
                 Set(player, SETTING_GEAR + slot, 0);
             else if (item && Player::IsInventoryPos(item->GetPos())
-                && item->GetTemplate()->RequiredLevel <= player->GetLevel())
+                && Prestige::EquipLevel(item) <= player->GetLevel())
             {
                 uint16 dest;
                 if (player->CanEquipItem(slot, dest, item, true) == EQUIP_ERR_OK)
@@ -254,7 +262,9 @@ namespace
 
         player->Dismount();
         player->RemoveAurasByType(SPELL_AURA_MOUNTED);
-        StashGear(player);
+        for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
+            Set(player, SETTING_GEAR + slot, 0);
+        StashGear(player, 1);
         ForgetQuests(player);
         // A new Hero again: the next level change (this one) rolls a new kit, the tomes come back.
         Wildcard::Reset(player);
@@ -368,6 +378,19 @@ namespace Prestige
     {
         return Wildcard::IsHero(player) && OnRun(player);
     }
+
+    uint8 EquipLevel(Item const* item)
+    {
+        if (uint8 scaled = ScaledGear::LevelOf(item->GetItemRandomPropertyId()))
+            return scaled;
+        ItemTemplate const* proto = item->GetTemplate();
+        if (proto->RequiredLevel || proto->Quality < ITEM_QUALITY_UNCOMMON || proto->Quality == ITEM_QUALITY_HEIRLOOM
+            || (proto->Class != ITEM_CLASS_WEAPON && proto->Class != ITEM_CLASS_ARMOR))
+            return proto->RequiredLevel;
+        if (proto->ItemLevel > CLASSIC_ITEM_LEVEL)
+            return MaxLevel();
+        return uint8(proto->ItemLevel > CLASSIC_LEVEL_GAP ? proto->ItemLevel - CLASSIC_LEVEL_GAP : 0);
+    }
 }
 
 // Talking to the Keeper opens the Prestige window (Emberforge_Prestige) instead of a menu.
@@ -410,8 +433,16 @@ public:
         PLAYERHOOK_ON_LEVEL_CHANGED,
         PLAYERHOOK_ON_GIVE_EXP,
         PLAYERHOOK_ON_LOGOUT,
-        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT
+        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT,
+        PLAYERHOOK_CAN_EQUIP_ITEM
     }) { }
+
+    // A Hero cannot put on gear above their level (Prestige::EquipLevel: also gear with no required level).
+    bool OnPlayerCanEquipItem(Player* player, uint8 /*slot*/, uint16& /*dest*/, Item* item, bool /*swap*/,
+        bool notLoading) override
+    {
+        return !notLoading || !item || !Wildcard::IsHero(player) || Prestige::EquipLevel(item) <= player->GetLevel();
+    }
 
     // Requests from the window: whispers to oneself in the addon language with our prefix, never delivered.
     bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg,
@@ -443,6 +474,10 @@ public:
         }
         else
             player->RemoveAurasDueToSpell(SPELL_PRESTIGIOUS);
+        // Gear worn above the Hero's level (worn before EquipLevel: e.g. prestiged in gear with no required level)
+        if (uint32 stashed = StashGear(player, player->GetLevel()))
+            ChatHandler(player->GetSession()).PSendSysMessage("|cffff8000Emberforge:|r {} of your pieces are above "
+                "your level. They wait in your bags and go back on by themselves once you reach their level.", stashed);
         Reequip(player);
     }
 

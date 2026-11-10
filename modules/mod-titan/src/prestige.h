@@ -20,6 +20,7 @@
 
 #include "Define.h"
 
+class Item;
 class Player;
 
 // Prestige (prestige.cpp): a level 60 Hero starts again at level 1 from the Prestige NPC, for Emberspark.
@@ -28,6 +29,11 @@ namespace Prestige
     uint32 GetRank(Player* player);
     // During a run (prestiged, level 60 not reached again): the specialization cannot change (specs.cpp).
     bool IsOnRun(Player* player);
+    // The level a Hero needs to wear an item: a Leveling Scaled piece's own level, else its required level. A weapon
+    // or armor of uncommon quality or better with none (many quest rewards: the quest has it) asks for its item
+    // level less 10 (classic, item level 70 at most) or the level cap (the later ones: with no required level, the
+    // squish left them their full power).
+    uint8 EquipLevel(Item const* item);
 }
 
 #endif

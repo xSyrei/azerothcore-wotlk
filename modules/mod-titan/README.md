@@ -347,6 +347,11 @@ a dungeon, battleground or queue.
 - **Kept:** gear, gold, Emberspark, professions, mounts, reputation, achievements and the role. Every piece worn that
   needs more than level 1 goes to the bags (what does not fit, by mail) and back on in its old slot as soon as its
   level allows, whatever is worn there then (to the bags). Gear left in the mail goes on once it is taken out.
+  A piece's level (`Prestige::EquipLevel`) is its required level, a Leveling Scaled piece's own, or for a weapon or
+  armor (uncommon or better) with none, as many quest rewards (the quest has it): its item level less 10, up to item
+  level 70, else the level cap. A Hero cannot put on gear above their level, and gear worn above it at login comes off
+  the same way (ratings are worth far more at low levels: TBC rewards on a level 1 Hero gave hundreds of percent of
+  critical strike).
 - **Given:** 500 Emberspark, 2 Titan Souls of Rested Experience (910001), **Prestigious** (90607: 10% more
   experience from everything, until level 60; the bonus is `OnPlayerGiveXP`'s, the buff shows it) and the quest
   **Trial of Ember: Prestigious** (910100, `titan_prestige.sql`). Reaching level 60 again ends the run (the fastest
