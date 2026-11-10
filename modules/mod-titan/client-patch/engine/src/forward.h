@@ -293,3 +293,33 @@ public:
     HRESULT STDMETHODCALLTYPE CreateQuery(D3DQUERYTYPE Type, IDirect3DQuery9** ppQuery) override
     { return real->CreateQuery(Type, ppQuery); }
 };
+
+class SwapChain9Forward : public IDirect3DSwapChain9
+{
+protected:
+    IDirect3DSwapChain9 *real;
+
+public:
+    explicit SwapChain9Forward(IDirect3DSwapChain9 *r) : real(r) {}
+    virtual ~SwapChain9Forward() = default;
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvObject) override
+    { return real->QueryInterface(riid, ppvObject); }
+    ULONG STDMETHODCALLTYPE AddRef() override
+    { return real->AddRef(); }
+    ULONG STDMETHODCALLTYPE Release() override
+    { return real->Release(); }
+    HRESULT STDMETHODCALLTYPE Present(const RECT *src_rect, const RECT *dst_rect, HWND dst_window_override, const RGNDATA *dirty_region, DWORD flags) override
+    { return real->Present(src_rect, dst_rect, dst_window_override, dirty_region, flags); }
+    HRESULT STDMETHODCALLTYPE GetFrontBufferData(struct IDirect3DSurface9 *pDestSurface) override
+    { return real->GetFrontBufferData(pDestSurface); }
+    HRESULT STDMETHODCALLTYPE GetBackBuffer(UINT iBackBuffer, D3DBACKBUFFER_TYPE Type, struct IDirect3DSurface9 **ppBackBuffer) override
+    { return real->GetBackBuffer(iBackBuffer, Type, ppBackBuffer); }
+    HRESULT STDMETHODCALLTYPE GetRasterStatus(D3DRASTER_STATUS *pRasterStatus) override
+    { return real->GetRasterStatus(pRasterStatus); }
+    HRESULT STDMETHODCALLTYPE GetDisplayMode(D3DDISPLAYMODE *pMode) override
+    { return real->GetDisplayMode(pMode); }
+    HRESULT STDMETHODCALLTYPE GetDevice(struct IDirect3DDevice9 **ppDevice) override
+    { return real->GetDevice(ppDevice); }
+    HRESULT STDMETHODCALLTYPE GetPresentParameters(D3DPRESENT_PARAMETERS *pPresentationParameters) override
+    { return real->GetPresentParameters(pPresentationParameters); }
+};

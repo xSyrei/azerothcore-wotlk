@@ -374,10 +374,26 @@ namespace
         HRESULT STDMETHODCALLTYPE Present(const RECT *source, const RECT *dest, HWND window,
                                           const RGNDATA *dirty) override
         {
-            EndFrame();
-            DrawPanel();
+            if (!m_presentedByDevice)
+            {
+                m_presentedByDevice = true;
+                Log("first frame shown (device Present) after %u draws", m_frame.draws);
+            }
+            OnPresent();
             return real->Present(source, dest, window, dirty);
         }
+
+        // A frame is about to be shown (by the device or a swap chain): the frame ends, the panel is drawn.
+        void OnPresent()
+        {
+            EndFrame();
+            DrawPanel();
+        }
+
+        // Frames shown through a swap chain come to OnPresent too.
+        HRESULT STDMETHODCALLTYPE GetSwapChain(UINT index, IDirect3DSwapChain9 **chain) override;
+        HRESULT STDMETHODCALLTYPE CreateAdditionalSwapChain(D3DPRESENT_PARAMETERS *params,
+                                                            IDirect3DSwapChain9 **chain) override;
 
         HRESULT STDMETHODCALLTYPE Reset(D3DPRESENT_PARAMETERS *params) override
         {
@@ -481,6 +497,11 @@ namespace
 
         void OnDraw(const char *kind, D3DPRIMITIVETYPE type, UINT count)
         {
+            if (!m_firstDraw)
+            {
+                m_firstDraw = true;
+                Log("first draw (%s)", kind);
+            }
             if (IsWater())
                 ++m_frame.waterDraws;
             if (m_capture == Capture::Recording)
@@ -612,9 +633,12 @@ namespace
             ImGuiIO &io = ImGui::GetIO();
             io.IniFilename = nullptr;
             ImGui::StyleColorsDark();
-            if (!ImGui_ImplWin32_Init(m_window) || !ImGui_ImplDX9_Init(real))
+            bool win32 = ImGui_ImplWin32_Init(m_window);
+            bool dx9 = win32 && ImGui_ImplDX9_Init(real);
+            if (!win32 || !dx9)
             {
-                Log("panel: could not start");
+                Log("panel: could not start (window %p: %s, Direct3D: %s)", static_cast<void *>(m_window),
+                    win32 ? "ok" : "failed", dx9 ? "ok" : "failed");
                 ImGui::DestroyContext();
                 m_panelFailed = true;
                 return false;
@@ -725,8 +749,74 @@ namespace
 
         bool m_panelReady = false, m_panelFailed = false;
         bool m_homeDown = false;
+        bool m_presentedByDevice = false, m_firstDraw = false;
         DWORD m_started = 0;
     };
+
+    // ---- A swap chain: its Present shows a frame too ----
+
+    class SwapChain final : public SwapChain9Forward
+    {
+    public:
+        SwapChain(IDirect3DSwapChain9 *chain, Device *device) : SwapChain9Forward(chain), m_device(device) {}
+
+        ULONG STDMETHODCALLTYPE Release() override
+        {
+            ULONG refs = real->Release();
+            if (refs == 0)
+                delete this;
+            return refs;
+        }
+
+        HRESULT STDMETHODCALLTYPE Present(const RECT *source, const RECT *dest, HWND window, const RGNDATA *dirty,
+                                          DWORD flags) override
+        {
+            if (!m_logged)
+            {
+                m_logged = true;
+                Log("first frame shown (swap chain Present)");
+            }
+            if (g_device == m_device)
+                m_device->OnPresent();
+            return real->Present(source, dest, window, dirty, flags);
+        }
+
+        HRESULT STDMETHODCALLTYPE GetDevice(IDirect3DDevice9 **device) override
+        {
+            if (!device)
+                return D3DERR_INVALIDCALL;
+            m_device->AddRef();
+            *device = m_device;
+            return D3D_OK;
+        }
+
+    private:
+        Device *m_device;
+        bool m_logged = false;
+    };
+
+    HRESULT STDMETHODCALLTYPE Device::GetSwapChain(UINT index, IDirect3DSwapChain9 **chain)
+    {
+        HRESULT hr = real->GetSwapChain(index, chain);
+        if (SUCCEEDED(hr) && chain && *chain)
+        {
+            Log("swap chain %u asked for", index);
+            *chain = new SwapChain(*chain, this);
+        }
+        return hr;
+    }
+
+    HRESULT STDMETHODCALLTYPE Device::CreateAdditionalSwapChain(D3DPRESENT_PARAMETERS *params,
+                                                                IDirect3DSwapChain9 **chain)
+    {
+        HRESULT hr = real->CreateAdditionalSwapChain(params, chain);
+        if (SUCCEEDED(hr) && chain && *chain)
+        {
+            Log("additional swap chain created");
+            *chain = new SwapChain(*chain, this);
+        }
+        return hr;
+    }
 
     // ---- IDirect3D9: hands out our device ----
 
@@ -761,6 +851,10 @@ namespace
             if (SUCCEEDED(hr) && device && *device)
             {
                 HWND window = params && params->hDeviceWindow ? params->hDeviceWindow : focus;
+                Log("CreateDevice: %ux%u %s, flags %08lx, focus %p, device window %p",
+                    params ? params->BackBufferWidth : 0, params ? params->BackBufferHeight : 0,
+                    params && params->Windowed ? "windowed" : "full screen", static_cast<unsigned long>(behavior),
+                    static_cast<void *>(focus), params ? static_cast<void *>(params->hDeviceWindow) : nullptr);
                 *device = new Device(*device, window, behavior, params);
             }
             else
@@ -770,6 +864,19 @@ namespace
             return hr;
         }
     };
+}
+
+// ---- Loaded ----
+
+BOOL APIENTRY DllMain(HMODULE, DWORD reason, LPVOID)
+{
+    if (reason == DLL_PROCESS_ATTACH)
+    {
+        char exe[MAX_PATH] = {};
+        GetModuleFileNameA(nullptr, exe, MAX_PATH);
+        Log("Emberforge Engine %s loaded by %s", EMBERFORGE_ENGINE_VERSION, exe);
+    }
+    return TRUE;
 }
 
 // ---- What the game imports from d3d9.dll ----
@@ -785,7 +892,8 @@ extern "C"
             return nullptr;
         }
         IDirect3D9 *d3d = create(sdk);
-        Log("Emberforge Engine %s started", EMBERFORGE_ENGINE_VERSION);
+        Log("Emberforge Engine %s started (Direct3DCreate9 %u: %s)", EMBERFORGE_ENGINE_VERSION, sdk,
+            d3d ? "ok" : "failed");
         return d3d ? new Direct3D9(d3d) : nullptr;
     }
 
