@@ -75,6 +75,17 @@ namespace
         fflush(file);
     }
 
+    uint32_t Fnv(const void *data, size_t size);
+}
+
+// Every call the game makes on its IDirect3D9 (few, at start-up), with what it returned.
+void EngineTrace(const char *call, unsigned long result)
+{
+    Log("  %s -> %08lx", call, result);
+}
+
+namespace
+{
     uint32_t Fnv(const void *data, size_t size)
     {
         const uint8_t *bytes = static_cast<const uint8_t *>(data);
@@ -827,6 +838,7 @@ namespace
 
         HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **object) override
         {
+            Log("  IDirect3D9::QueryInterface %08lx-%04x", static_cast<unsigned long>(riid.Data1), riid.Data2);
             if (riid == IID_IUnknown || riid == IID_IDirect3D9)
             {
                 AddRef();
@@ -839,6 +851,7 @@ namespace
         ULONG STDMETHODCALLTYPE Release() override
         {
             ULONG refs = real->Release();
+            Log("  IDirect3D9::Release -> %lu", static_cast<unsigned long>(refs));
             if (refs == 0)
                 delete this;
             return refs;
@@ -875,6 +888,10 @@ BOOL APIENTRY DllMain(HMODULE, DWORD reason, LPVOID)
         char exe[MAX_PATH] = {};
         GetModuleFileNameA(nullptr, exe, MAX_PATH);
         Log("Emberforge Engine %s loaded by %s", EMBERFORGE_ENGINE_VERSION, exe);
+    }
+    else if (reason == DLL_PROCESS_DETACH)
+    {
+        Log("game closed");
     }
     return TRUE;
 }
