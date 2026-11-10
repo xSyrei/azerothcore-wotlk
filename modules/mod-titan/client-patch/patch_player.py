@@ -30,8 +30,8 @@ MAGIC_SCHOOLS = 0x7E
 TARGET_UNIT_CASTER = 1
 DURATION_INFINITE = 21
 SELF_TEMPLATE = 26669           # Evasion: an aura on the caster (the buff you see)
-PASSIVE_TEMPLATE = 12320        # Cruelty (Rank 1): a passive, hidden aura
 SPELL_ATTR0_NO_AURA_CANCEL = 0x80000000
+SPELL_ATTR0_DO_NOT_DISPLAY = 0x80        # not on the buff bar
 SPELL_ATTR3_ALLOW_AURA_WHILE_DEAD = 0x100000
 ICON = 'Spell_Fire_Fire'           # the client's own fire icon
 
@@ -50,6 +50,10 @@ OWN = {'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'Sp
        'SpellVisual': 0, 'RangeIndex': 1, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 0,
        'DurationIndex': DURATION_INFINITE, 'ProcFlags': 0, 'ProcChance': 101}
 
+# The buff's hidden halves: as the buff, not on the buff bar.
+HIDDEN = {**OWN, 'Attributes': SPELL_ATTR0_NO_AURA_CANCEL | SPELL_ATTR0_DO_NOT_DISPLAY, 'AttributesEx': 0,
+          'AttributesEx3': SPELL_ATTR3_ALLOW_AURA_WHILE_DEAD}
+
 SPELLS = [
     {
         'id': 90600, 'copy': SELF_TEMPLATE, 'name': 'Emberforged Hero', 'icon': ICON,
@@ -65,16 +69,18 @@ SPELLS = [
                     3: aura(AURA_MOD_RANGED_ATTACK_POWER_OF_STAT_PERCENT, 300, STAT_INTELLECT)},
     },
     {
-        'id': 90601, 'copy': PASSIVE_TEMPLATE, 'name': 'Emberforged Hero', 'icon': ICON, 'description': '',
-        'set': OWN,
+        # Built as the buff you see (passive copies of a talent's spell never took on a Hero: no spell power came of
+        # Intellect or Spirit), only hidden.
+        'id': 90601, 'copy': SELF_TEMPLATE, 'name': 'Emberforged Hero', 'icon': ICON, 'description': '',
+        'set': HIDDEN,
         'clear': [1, 2, 3],
         'effects': {1: aura(AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT, 200, MAGIC_SCHOOLS, STAT_INTELLECT),
                     2: aura(AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT, 25, MAGIC_SCHOOLS, STAT_SPIRIT),
                     3: aura(AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT, 200, STAT_INTELLECT)},
     },
     {
-        'id': 90602, 'copy': PASSIVE_TEMPLATE, 'name': 'Emberforged Hero', 'icon': ICON, 'description': '',
-        'set': OWN,
+        'id': 90602, 'copy': SELF_TEMPLATE, 'name': 'Emberforged Hero', 'icon': ICON, 'description': '',
+        'set': HIDDEN,
         'clear': [1, 2, 3],
         'effects': {1: aura(AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT, 25, STAT_SPIRIT)},
     },
