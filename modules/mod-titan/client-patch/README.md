@@ -477,8 +477,11 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   the sky around the sun (and a soft disc) at half size, that light smeared toward the sun (light shafts streaming
   past roofs, trees, mountains), and over the whole world height fog by the true distance (thicker below the eye,
   drifting in wisps), lit toward the sun and where the shafts cross it. The interface is drawn after, untouched. The
-  camera comes from the terrain's and buildings' vertex shaders (view in c0-c3, projection in c4-c7), the sun from
-  the models' (its light's direction in c12, its colour in c13; *Flip the sun* if it ever stands opposite). Every part
+  camera comes from the terrain's and buildings' vertex shaders (view in c0-c3, projection in c4-c7). The rays come
+  from the sun or moon as the sky draws them: each a blended, textured quad in the sky pass (fixed function, depth
+  range at 1), its view transform's translation where it stands in view space (the sun's texture is the larger; the
+  body above the horizon wins). The lighting's direction (the models' c12, which does not match the drawn sun) is
+  the fallback, and its colour (c13) colours the light; *Flip the sun* turns it around. Every part
   is a slider in the panel's Atmosphere section.
 - The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's
   `d3dcompiler_47.dll` under Wine (any 64-bit copy, e.g. an Electron app's: Wine's own compiler cannot build shader

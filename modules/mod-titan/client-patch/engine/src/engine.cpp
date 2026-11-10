@@ -37,7 +37,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.6"
+#define EMBERFORGE_ENGINE_VERSION "0.7"
 
 namespace
 {
@@ -1089,6 +1089,51 @@ namespace
             }
         }
 
+        // The sun and the moon as the game draws them: in the sky pass (fixed function, the depth range at 1), each a
+        // textured, blended quad (2 triangles) placed by its view transform, whose translation is where it stands
+        // in view space (its rotation only turns the quad toward the eye). The sun's texture is the larger.
+        void WatchSky(UINT count)
+        {
+            if (count != 2 || m_viewport.MinZ < 0.999f || !m_rs[D3DRS_ALPHABLENDENABLE] || !m_tex[0] ||
+                m_tex[0]->GetType() != D3DRTYPE_TEXTURE)
+                return;
+            float t[3] = {m_view._41, m_view._42, m_view._43};
+            float length = std::sqrt(t[0] * t[0] + t[1] * t[1] + t[2] * t[2]);
+            if (length < 1.0f || m_bodies >= 4)
+                return;
+            D3DSURFACE_DESC desc = {};
+            static_cast<IDirect3DTexture9 *>(m_tex[0])->GetLevelDesc(0, &desc);
+            Body &body = m_body[m_bodies++];
+            for (int i = 0; i < 3; ++i)
+                body.view[i] = t[i] / length;
+            body.size = desc.Width;
+        }
+
+        // Toward the sun or the moon in the world: the drawn body above the horizon (the sun, the larger, when both
+        // are), turned out of view space by the camera. False if none is drawn above the horizon.
+        bool CelestialDirection(float out[3]) const
+        {
+            int best = -1;
+            float bestHeight = 0.0f;
+            for (int b = 0; b < m_bodies; ++b)
+            {
+                float world[3];
+                for (int i = 0; i < 3; ++i)
+                    world[i] = m_camera[i][0] * m_body[b].view[0] + m_camera[i][1] * m_body[b].view[1] +
+                               m_camera[i][2] * m_body[b].view[2];
+                if (world[2] < -0.05f)
+                    continue;
+                if (best < 0 || m_body[b].size > m_body[best].size)
+                {
+                    best = b;
+                    bestHeight = world[2];
+                    memcpy(out, world, sizeof(world));
+                }
+            }
+            (void)bestHeight;
+            return best >= 0;
+        }
+
         // Once the world is drawn and the interface is about to be: the atmosphere over the world.
         void BeforeDraw()
         {
@@ -1124,7 +1169,8 @@ namespace
                 return;
             const float (*view)[4] = m_camera;
             float sun[3] = {m_sunDirection[0], m_sunDirection[1], m_sunDirection[2]};
-            if (!m_sunSeen)
+            m_fromSky = CelestialDirection(sun);
+            if (!m_fromSky && !m_sunSeen)
             {
                 sun[0] = 0.5f;                                   // no model drawn: a sun high in the south-west
                 sun[1] = -0.5f;
@@ -1337,6 +1383,8 @@ namespace
             }
             if (m_vs && !m_recordingBlock)
                 WatchConstants();
+            else if (!m_vs && !m_recordingBlock)
+                WatchSky(count);
             if (m_capture == Capture::Recording)
                 WriteDraw(kind, type, count);
             ++m_frame.draws;
@@ -1472,6 +1520,9 @@ namespace
             m_frame = Counters();
             m_waterPrepared = false;
             m_worldDrawn = m_atmosphereDone = m_cameraSeen = m_sunSeen = false;
+            m_fromSkyLast = m_fromSky;
+            m_fromSky = false;
+            m_bodies = 0;
         }
 
         // ---- The panel (Home) ----
@@ -1563,8 +1614,10 @@ namespace
             ImGui::Text("Water draws: %u (%u drawn by the engine%s)", m_last.waterDraws, m_last.waterReplaced,
                         m_last.waterReplaced && !m_waterCopied ? ", no depth: plain" : "");
             ImGui::Text("Readable depth: %s", m_intz ? "yes" : "no");
-            ImGui::Text("Atmosphere: %s; camera %s, sun %s", m_atmosphereWhy, m_cameraSeenLast ? "found" : "not found",
-                        m_sunSeenLast ? "found" : "not found");
+            ImGui::Text("Atmosphere: %s; camera %s; rays from %s", m_atmosphereWhy,
+                        m_cameraSeenLast ? "found" : "not found",
+                        m_fromSkyLast ? "the sun/moon in the sky"
+                                      : (m_sunSeenLast ? "the light's direction" : "a guess"));
             WaterPanel();
             AtmospherePanel();
             if (ImGui::CollapsingHeader("Diagnostics"))
@@ -1714,6 +1767,14 @@ namespace
         bool m_worldDrawn = false, m_atmosphereDone = false, m_cameraSeen = false, m_sunSeen = false;
         bool m_cameraSeenLast = false, m_sunSeenLast = false;
         const char *m_atmosphereWhy = "not drawn yet";
+        struct Body
+        {
+            float view[3];
+            UINT size;
+        };
+        Body m_body[4] = {};
+        int m_bodies = 0;
+        bool m_fromSky = false, m_fromSkyLast = false;
         float m_worldMinZ = 0.0f, m_worldMaxZ = 1.0f;
         DWORD m_worldFog = 0;
         float m_camera[4][4] = {}, m_cameraProjection[3] = {};

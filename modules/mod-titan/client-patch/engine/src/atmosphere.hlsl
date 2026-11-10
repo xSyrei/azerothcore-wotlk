@@ -127,7 +127,8 @@ float4 Composite(float2 uv : TEXCOORD0) : COLOR
 
     // The fog's light: its own colour, brighter toward the sun (forward scattering) and where the shafts cross it.
     float toward = saturate(dot(dir, ToSun.xyz));
-    float glow = (pow(toward, 8.0) * 0.6 + pow(toward, 64.0)) * FogShape.w * saturate(ToSun.z * 5.0 + 0.5);
+    // Close around the sun (a wide glow washed the whole view in its colour).
+    float glow = (pow(toward, 48.0) * 0.35 + pow(toward, 400.0)) * FogShape.w * saturate(ToSun.z * 5.0 + 0.5);
     float3 shafts = tex2Dlod(ShaftS, float4(uv, 0, 0)).rgb;
     float3 fogLight = Fog.rgb + SunColour.rgb * glow + shafts * Shafts.z;
     if (Projection.w > 0.5)
