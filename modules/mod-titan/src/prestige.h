@@ -26,8 +26,8 @@ class Player;
 namespace Prestige
 {
     uint32 GetRank(Player* player);
-    // During a run (prestiged, level 60 not reached again) the role chosen stays: true when it cannot change.
-    bool IsRoleLocked(Player* player);
+    // During a run (prestiged, level 60 not reached again): the specialization cannot change (specs.cpp).
+    bool IsOnRun(Player* player);
 }
 
 #endif

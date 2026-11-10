@@ -338,10 +338,12 @@ a dungeon, battleground or queue.
 - **Kept:** gear, gold, Emberspark, professions, mounts, reputation, achievements and the role. Every piece worn that
   needs more than level 1 goes to the bags (what does not fit, by mail) and back on in its old slot as soon as its
   level allows, whatever is worn there then (to the bags). Gear left in the mail goes on once it is taken out.
-- **Given:** 500 Emberspark, 2 Titan Souls of Rested Experience (910001) and **Prestigious** (90607: 10% more
-  experience from everything, until level 60; the bonus is `OnPlayerGiveXP`'s, the buff shows it). Reaching level 60
-  again ends the run: 5,000 Emberspark more, and the fastest run is kept. Both are announced to the realm.
-- **Role locked** during a run: the Classless window keeps the role chosen (a Hero with none still picks one).
+- **Given:** 500 Emberspark, 2 Titan Souls of Rested Experience (910001), **Prestigious** (90607: 10% more
+  experience from everything, until level 60; the bonus is `OnPlayerGiveXP`'s, the buff shows it) and the quest
+  **Trial of Ember: Prestigious** (910100, `titan_prestige.sql`). Reaching level 60 again ends the run (the fastest
+  run is kept) and completes the quest; turned in to the Keeper (who offers it before the window), it gives 5,000
+  Emberspark. A run started before the quest existed gets them at level 60. Both are announced to the realm.
+- **Specialization locked** during a run (`specs.cpp`); the role can change.
 
 It is all kept in the character's settings (`mod-titan-prestige`: rank, run, its start, the fastest run, the stashed
 gear by slot). Still to come: the rank on the name or tooltip, Runic Enhancements carried over.

@@ -346,12 +346,8 @@ public:
             Optional<uint32> role = Acore::StringTo<uint32>(request.substr(5));
             if (Wildcard::IsHero(player) && role && *role < Wildcard::MAX_ROLES)
             {
-                // A prestige run keeps the role chosen (one is still picked when there is none).
-                if (Prestige::IsRoleLocked(player) && Wildcard::GetRole(player) != Wildcard::ROLE_NONE
-                    && *role != Wildcard::GetRole(player))
-                    ChatHandler(player->GetSession()).SendSysMessage("Your role is locked for this prestige. "
-                        "Reach the level cap to change it.");
-                else if (!Wildcard::SetRole(player, Wildcard::Role(*role)))
+                // The role can change during a prestige run too (the specialization cannot: specs.cpp).
+                if (!Wildcard::SetRole(player, Wildcard::Role(*role)))
                     ChatHandler(player->GetSession()).SendSysMessage("You can't change your role in combat.");
                 Classless::SendState(player);
             }

@@ -43,10 +43,12 @@
 // titan_prestige.sql), whose Prestige window (the Emberforge_Prestige addon) starts them again from level 1:
 // - lost: the level, every Wildcard ability and talent (a new random kit and both tomes, as a new Hero), every quest
 //   (in the log or done: all can be done, and rewarded, again);
-// - kept: gear, gold, Emberspark, professions, mounts, reputation, achievements and the role. Gear above level 1 goes
+// - kept: gear, gold, Emberspark, professions, mounts, reputation, achievements and the role (it can change during the
+//   run; the specialization cannot: specs.cpp). Gear above level 1 goes
 //   to the bags (what does not fit, by mail) and back on as soon as its level requirement is met;
-// - given: 500 Emberspark, 2 Titan Souls of Rested Experience and Prestigious (+10% experience) until level 60, where
-//   the run ends with 5,000 Emberspark more. The role is locked during the run.
+// - given: 500 Emberspark, 2 Titan Souls of Rested Experience, Prestigious (+10% experience) until level 60, and the
+//   quest Trial of Ember: Prestigious: done at level 60, where the run ends; turned in to the Keeper, it gives 5,000
+//   Emberspark.
 // Everything is kept in the character's settings (EnablePlayerSettings = 1, which Wildcard needs too).
 namespace
 {
@@ -64,6 +66,7 @@ namespace
     constexpr uint32 ITEM_SOUL_OF_RESTED_EXPERIENCE = 910001;
     constexpr uint32 SOULS_ON_PRESTIGE = 2;
     constexpr uint32 NPC_PRESTIGE = 910100;
+    constexpr uint32 QUEST_TRIAL = 910100;      // Trial of Ember: Prestigious (titan_prestige.sql)
 
     constexpr char const* PREFIX = "EFPR";     // addon whispers with Emberforge_Prestige (the window)
     constexpr float NPC_RANGE = 15.0f;          // a prestige asked from the window: this close to the Keeper
@@ -265,11 +268,15 @@ namespace
 
         GiveItems(player, ITEM_SOUL_OF_RESTED_EXPERIENCE, SOULS_ON_PRESTIGE);
         player->AddAura(SPELL_PRESTIGIOUS, player);
+        // The run's quest (the quests were all forgotten above): done at level 60, turned in to the Keeper.
+        if (Quest const* trial = sObjectMgr->GetQuestTemplate(QUEST_TRIAL))
+            player->AddQuestAndCheckCompletion(trial, nullptr);
         Emberspark::Add(player->GetSession()->GetAccountId(), SPARK_ON_PRESTIGE, "prestige");
 
         ChatHandler handler(player->GetSession());
         handler.PSendSysMessage("|cffff8000Prestige {}:|r you are forged anew. Your gear waits in your bags and goes "
-            "back on as you reach its level; your role is locked until level {}.", rank, MaxLevel());
+            "back on as you reach its level; your specialization is locked until level {}, where the Keeper awaits "
+            "you with your reward.", rank, MaxLevel());
         Emberspark::Announce(player, SPARK_ON_PRESTIGE, "for your prestige");
         Broadcast(Acore::StringFormat(
             "|cffff8000[Prestige]|r {} has been forged anew: Prestige {}!", player->GetName(), rank));
@@ -280,7 +287,8 @@ namespace
             player->TeleportTo(info->mapId, info->positionX, info->positionY, info->positionZ, info->orientation);
     }
 
-    // The run ends at the cap: 5,000 Emberspark, the fastest run kept, Prestigious gone, the role free.
+    // The run ends at the cap: the fastest run kept, Prestigious gone, the specialization free, and the run's quest
+    // done (its 5,000 Emberspark at the Keeper: OnQuestReward). A run started before the quest gets them now.
     void FinishRun(Player* player)
     {
         Set(player, SETTING_RUN, 0);
@@ -289,12 +297,18 @@ namespace
         if (!fastest || took < fastest)
             Set(player, SETTING_FASTEST, took);
         player->RemoveAurasDueToSpell(SPELL_PRESTIGIOUS);
-        Emberspark::Add(player->GetSession()->GetAccountId(), SPARK_AT_MAX_LEVEL, "prestige max level");
+        bool trial = player->GetQuestStatus(QUEST_TRIAL) == QUEST_STATUS_INCOMPLETE;
+        if (trial)
+            player->AreaExploredOrEventHappens(QUEST_TRIAL);
+        else
+            Emberspark::Add(player->GetSession()->GetAccountId(), SPARK_AT_MAX_LEVEL, "prestige max level");
 
         uint32 rank = Get(player, SETTING_RANK);
         ChatHandler(player->GetSession()).PSendSysMessage("|cffff8000Prestige {}:|r level {} again, in {}. You can "
-            "change your role again, and prestige once more.", rank, MaxLevel(), Duration(took));
-        Emberspark::Announce(player, SPARK_AT_MAX_LEVEL, "for reaching the summit again");
+            "change your specialization again, and prestige once more.{}", rank, MaxLevel(), Duration(took),
+            trial ? " Return to the Keeper of the Ember for your reward." : "");
+        if (!trial)
+            Emberspark::Announce(player, SPARK_AT_MAX_LEVEL, "for reaching the summit again");
         Broadcast(Acore::StringFormat(
             "|cffff8000[Prestige]|r {} has completed Prestige {} in {}!", player->GetName(), rank, Duration(took)));
     }
@@ -350,7 +364,7 @@ namespace Prestige
         return Get(player, SETTING_RANK);
     }
 
-    bool IsRoleLocked(Player* player)
+    bool IsOnRun(Player* player)
     {
         return Wildcard::IsHero(player) && OnRun(player);
     }
@@ -364,10 +378,27 @@ public:
 
     bool OnGossipHello(Player* player, Creature* creature) override
     {
+        // The run's quest, done: turned in here first (the window after).
+        if (player->GetQuestStatus(QUEST_TRIAL) == QUEST_STATUS_COMPLETE)
+        {
+            player->PrepareQuestMenu(creature->GetGUID());
+            player->SendPreparedQuest(creature->GetGUID());
+            return true;
+        }
         CloseGossipMenuFor(player);
         openedAt[player->GetGUID()] = creature->GetGUID();
         OpenWindow(player);
         return true;
+    }
+
+    // Trial of Ember: Prestigious turned in: the run's 5,000 Emberspark.
+    bool OnQuestReward(Player* player, Creature* /*creature*/, Quest const* quest, uint32 /*opt*/) override
+    {
+        if (quest->GetQuestId() != QUEST_TRIAL)
+            return false;
+        Emberspark::Add(player->GetSession()->GetAccountId(), SPARK_AT_MAX_LEVEL, "prestige trial");
+        Emberspark::Announce(player, SPARK_AT_MAX_LEVEL, "for the Trial of Ember");
+        return false;
     }
 };
 

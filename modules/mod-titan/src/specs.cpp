@@ -18,6 +18,7 @@
 #include "specs.h"
 #include "cards.h"
 #include "emberspark.h"
+#include "prestige.h"
 #include "wildcard.h"
 #include "Chat.h"
 #include "DBCStores.h"
@@ -414,6 +415,13 @@ namespace
         if (player->IsInCombat() || !player->IsAlive() || player->InBattleground() || player->IsInFlight())
         {
             handler.SendSysMessage("Not now: you must be alive, out of combat and out of battlegrounds.");
+            return;
+        }
+        // A prestige run keeps its specialization to the end (the role can change).
+        if (Prestige::IsOnRun(player))
+        {
+            handler.SendSysMessage("Your specialization is locked for this prestige. Reach the level cap to change "
+                "it.");
             return;
         }
         Spec& current = data->Specs[data->Active];
