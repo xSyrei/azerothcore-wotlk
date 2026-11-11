@@ -1,6 +1,7 @@
 #include "ABAllMapScript.h"
 
 #include "ABConfig.h"
+#include "ABCreatureInfo.h"
 #include "ABMapInfo.h"
 #include "ABUtils.h"
 
@@ -44,26 +45,24 @@ void AutoBalance_AllMapScript::OnPlayerEnterAll(Map* map, Player* player)
     WorldSession* session = player->GetSession();
     LocaleConstant locale = session->GetSessionDbLocaleIndex();
 
-    // if the previous player count is the same as the new player count, update without force
-    if ((prevAdjustedPlayerCount == mapABInfo->adjustedPlayerCount) && (mapABInfo->adjustedPlayerCount != 1))
+    // Project Emberforge: every creature is checked and scaled again whenever a player enters, so whoever is in the
+    // dungeon always meets it scaled (one judged not worth scaling before, e.g. not yet hostile, is checked again).
+    for (Creature* creature : mapABInfo->allMapCreatures)
     {
-        LOG_DEBUG("module.AutoBalance", "AutoBalance_AllMapScript::OnPlayerEnterAll: Player difficulty unchanged at {}. Updating map data (no force).",
-            mapABInfo->adjustedPlayerCount
-        );
-
-        // Update the map's data
-        UpdateMapDataIfNeeded(map, false);
+        if (!creature)
+            continue;
+        AutoBalanceCreatureInfo* creatureABInfo =
+            creature->CustomData.GetDefault<AutoBalanceCreatureInfo>("AutoBalanceCreatureInfo");
+        creatureABInfo->relevance = AUTOBALANCE_RELEVANCE_UNCHECKED;
+        creatureABInfo->mapConfigTime = 1;
     }
-    else
-    {
-        LOG_DEBUG("module.AutoBalance", "AutoBalance_AllMapScript::OnPlayerEnterAll: Player difficulty changed from ({})->({}). Updating map data (force).",
-            prevAdjustedPlayerCount,
-            mapABInfo->adjustedPlayerCount
-        );
 
-        // Update the map's data, forced
-        UpdateMapDataIfNeeded(map, true);
-    }
+    // Update the map's data, forced (Project Emberforge: always, so every creature above is scaled again)
+    LOG_DEBUG("module.AutoBalance", "AutoBalance_AllMapScript::OnPlayerEnterAll: Player difficulty ({})->({}). Updating map data (force).",
+        prevAdjustedPlayerCount,
+        mapABInfo->adjustedPlayerCount
+    );
+    UpdateMapDataIfNeeded(map, true);
 
     // see which existing creatures are active
     for (std::vector<Creature*>::iterator creatureIterator = mapABInfo->allMapCreatures.begin(); creatureIterator != mapABInfo->allMapCreatures.end(); ++creatureIterator)

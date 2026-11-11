@@ -20,7 +20,8 @@ public:
             UNITHOOK_MODIFY_SPELL_DAMAGE_TAKEN,
             UNITHOOK_MODIFY_MELEE_DAMAGE,
             UNITHOOK_MODIFY_HEAL_RECEIVED,
-            UNITHOOK_ON_AURA_APPLY
+            UNITHOOK_ON_AURA_APPLY,
+            UNITHOOK_ON_UNIT_ENTER_COMBAT
         })
     {
     }
@@ -30,6 +31,7 @@ public:
     void ModifyMeleeDamage(Unit* target, Unit* source, uint32& amount) override;
     void ModifyHealReceived(Unit* target, Unit* source, uint32& amount, SpellInfo const* spellInfo) override;
     void OnAuraApply(Unit* unit, Aura* aura) override;
+    void OnUnitEnterCombat(Unit* unit, Unit* victim) override;
 
 private:
     [[maybe_unused]] bool _debug_damage_and_healing = false; // defaults to false, overwritten in each function

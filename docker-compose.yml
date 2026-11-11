@@ -90,6 +90,9 @@ services:
       AC_AUTO_BALANCE_LEVEL_SCALING_SKIP_HIGHER_LEVELS: "0"
       AC_AUTO_BALANCE_LEVEL_SCALING_SKIP_LOWER_LEVELS: "0"
       AC_AUTO_BALANCE_REWARD_SCALING_XP: "0"
+      # Dungeons are always scaled for 5 players, whoever comes (raids: their own setting).
+      AC_AUTO_BALANCE_MIN_PLAYERS: "5"
+      AC_AUTO_BALANCE_MIN_PLAYERS_HEROIC: "5"
       AC_ALLOW_TWO_SIDE_INTERACTION_CHAT: "1"
       # The World channel (Emberforge_Resources joins it) talks across factions.
       AC_ALLOW_TWO_SIDE_INTERACTION_CHANNEL: "1"

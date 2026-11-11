@@ -79,8 +79,9 @@ AutoBalance.Disable.PerInstance = ""
 #                 AutoBalance.MinPlayers.Heroic = 5
 #
 #        Default: 1
-AutoBalance.MinPlayers = 1
-AutoBalance.MinPlayers.Heroic = 1
+#        Project Emberforge: 5 and 5, a dungeon is always as strong as for a full group (whoever comes).
+AutoBalance.MinPlayers = 5
+AutoBalance.MinPlayers.Heroic = 5
 AutoBalance.MinPlayers.Raid = 1
 AutoBalance.MinPlayers.RaidHeroic = 1
 

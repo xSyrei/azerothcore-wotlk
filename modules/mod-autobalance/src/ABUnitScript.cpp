@@ -555,3 +555,20 @@ bool AutoBalance_UnitScript::_isAuraWithEffectType(SpellInfo const* spellInfo, A
         LOG_DEBUG("module.AutoBalance_DamageHealingCC", "AutoBalance_UnitScript::_isAuraWithEffectType: SpellInfo has no aura of the target type, returning false.");
     return false;
 }
+
+// Project Emberforge: a creature judged not worth scaling (friendly or neutral when first checked: scripted ambushes,
+// bosses that turn hostile mid-event) is checked again when it enters combat, and scaled from then on.
+void AutoBalance_UnitScript::OnUnitEnterCombat(Unit* unit, Unit* /*victim*/)
+{
+    Creature* creature = unit ? unit->ToCreature() : nullptr;
+    if (!creature || !creature->GetMap() || !creature->GetMap()->IsDungeon())
+        return;
+
+    AutoBalanceCreatureInfo* creatureABInfo =
+        creature->CustomData.GetDefault<AutoBalanceCreatureInfo>("AutoBalanceCreatureInfo");
+    if (creatureABInfo->relevance != AUTOBALANCE_RELEVANCE_FALSE)
+        return;
+
+    creatureABInfo->relevance = AUTOBALANCE_RELEVANCE_UNCHECKED;
+    creatureABInfo->mapConfigTime = 1;
+}

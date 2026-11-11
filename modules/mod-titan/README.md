@@ -515,7 +515,12 @@ Every 5-player dungeon is fought at every Hero's own level, Dragonflight's way (
 - **mod-autobalance** scales the creatures by player count and level. Emberforge's changes: it scales to the group's
   **lowest** level (`ABUtils.cpp`, marked), up or down from the dungeon's own (`AutoBalance.LevelScaling.Skip*Levels`
   0, `conf/AutoBalance.conf.dist`); its "dynamic" method keeps trash a little under and bosses a little over; its
-  kill experience scaling is off (`AutoBalance.RewardScaling.XP` 0). Commands: `.ab mapstat`, `.ab creaturestat`.
+  kill experience scaling is off (`AutoBalance.RewardScaling.XP` 0). A dungeon is always as strong as for 5 players,
+  whoever comes (`AutoBalance.MinPlayers` and `.Heroic` 5; raids keep theirs). Every creature is checked and scaled
+  again whenever a player enters (`ABAllMapScript.cpp`), and one it judged not worth scaling (not yet hostile:
+  scripted ambushes, bosses that turn hostile mid-event) again when it enters combat (`ABUnitScript.cpp`). The
+  settings are also in `docker-compose.yml`, over an existing `AutoBalance.conf`. Commands: `.ab mapstat`,
+  `.ab creaturestat`.
 - **Every player meets the creatures at their own level**: a creature counts as at the player's level, with its offset
   from the group's lowest. The damage a player (and their pets) deals is scaled by the creature's health at its level
   over its health at that one, the damage they take by its damage there over its own (`creature_classlevelstats`, its
