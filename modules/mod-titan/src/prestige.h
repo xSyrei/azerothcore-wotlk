@@ -29,10 +29,9 @@ namespace Prestige
     uint32 GetRank(Player* player);
     // During a run (prestiged, level 60 not reached again): the specialization cannot change (specs.cpp).
     bool IsOnRun(Player* player);
-    // The level a Hero needs to wear an item: a Leveling Scaled piece's own level, else its required level. A weapon
-    // or armor of uncommon quality or better with none (many quest rewards: the quest has it) asks for its item
-    // level less 10 (classic, item level 70 at most) or the level cap (the later ones: with no required level, the
-    // squish left them their full power).
+    // The level a Hero needs to wear an item: its required level. A weapon or armor of uncommon quality or better
+    // with none that the squish found no source level for (zz_titan_squish.sql gives quest rewards their quest's)
+    // asks for its item level less 10 (classic, item level 70 at most) or the level cap (the later ones).
     uint8 EquipLevel(Item const* item);
 }
 

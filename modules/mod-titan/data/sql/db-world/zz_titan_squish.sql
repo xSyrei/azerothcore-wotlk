@@ -1,4 +1,4 @@
--- The level and power squish (option B), version 2: written by
+-- The level and power squish (option B), version 3: written by
 -- modules/mod-titan/tools/squish/squish.py, which says what it does. Edit the script, not this file.
 -- Safe to run again: it computes from the original values it keeps in titan_squish_*_original.
 -- Named zz_ to run after every other world SQL of the module.
@@ -421,10 +421,45 @@ INSERT INTO `titan_squish_zone` (`zone`, `expansion`) VALUES
 (4890, 2), (4891, 2), (4892, 2), (4893, 2), (4894, 2), (4895, 2), (4896, 2), (4897, 2), (4898, 2), (4904, 2), (4905, 2), (4906, 2),
 (4908, 2), (4910, 2), (4987, 2);
 
+-- Quests: the originals, kept once (here: items with no required level take their quests' levels).
+CREATE TABLE IF NOT EXISTS `titan_squish_quest_original` (`ID` INT UNSIGNED NOT NULL, `QuestLevel` SMALLINT NOT NULL, `MinLevel` TINYINT UNSIGNED NOT NULL, `MaxLevel` TINYINT UNSIGNED NOT NULL, `expansion` TINYINT NOT NULL, PRIMARY KEY (`ID`));
+INSERT IGNORE INTO `titan_squish_quest_original` SELECT q.`ID`, q.`QuestLevel`, q.`MinLevel`, COALESCE(a.`MaxLevel`, 0),
+    COALESCE(z.`expansion`, IF(q.`QuestLevel` > 70, 2, IF(q.`QuestLevel` > 60, 1, 0)))
+    FROM `quest_template` q LEFT JOIN `quest_template_addon` a ON a.`ID` = q.`ID`
+    LEFT JOIN `titan_squish_zone` z ON q.`QuestSortID` > 0 AND z.`zone` = q.`QuestSortID`;
+
 -- Items: the originals, kept once.
 CREATE TABLE IF NOT EXISTS `titan_squish_item_original` (`entry` INT UNSIGNED NOT NULL, `Quality` TINYINT UNSIGNED NOT NULL, `RequiredLevel` TINYINT UNSIGNED NOT NULL, `ItemLevel` SMALLINT UNSIGNED NOT NULL, `armor` SMALLINT UNSIGNED NOT NULL, `block` INT UNSIGNED NOT NULL, `dmg_min1` FLOAT NOT NULL, `dmg_max1` FLOAT NOT NULL, `dmg_min2` FLOAT NOT NULL, `dmg_max2` FLOAT NOT NULL, `stat_value1` INT NOT NULL, `stat_value2` INT NOT NULL, `stat_value3` INT NOT NULL, `stat_value4` INT NOT NULL, `stat_value5` INT NOT NULL, `stat_value6` INT NOT NULL, `stat_value7` INT NOT NULL, `stat_value8` INT NOT NULL, `stat_value9` INT NOT NULL, `stat_value10` INT NOT NULL, PRIMARY KEY (`entry`));
 INSERT IGNORE INTO `titan_squish_item_original` SELECT `entry`, `Quality`, `RequiredLevel`, `ItemLevel`, `armor`, `block`, `dmg_min1`, `dmg_max1`, `dmg_min2`, `dmg_max2`, `stat_value1`, `stat_value2`, `stat_value3`, `stat_value4`, `stat_value5`, `stat_value6`, `stat_value7`, `stat_value8`, `stat_value9`, `stat_value10` FROM `item_template`
-    WHERE `class` IN (2, 4) AND `Quality` <= 4 AND `RequiredLevel` > 0 AND `ScalingStatDistribution` = 0;
+    WHERE `class` IN (2, 4) AND `Quality` <= 4 AND `ScalingStatDistribution` = 0
+        AND (`RequiredLevel` > 0 OR (`Quality` >= 2 AND `ItemLevel` > 1 AND `entry` < 900000));
+
+-- Items with no required level: where they come from. The quests that reward them (their lowest level)...
+DROP TABLE IF EXISTS `titan_squish_item_source`;
+CREATE TABLE `titan_squish_item_source` (`entry` INT UNSIGNED NOT NULL, `req` TINYINT UNSIGNED NOT NULL, `expansion` TINYINT NOT NULL, PRIMARY KEY (`entry`));
+INSERT INTO `titan_squish_item_source` (`entry`, `req`, `expansion`)
+SELECT o.`entry`, MIN(LEAST(80, IF(q.`expansion` > 0 AND q.`QuestLevel` > 0, q.`QuestLevel`, IF(q.`MinLevel` > 0, q.`MinLevel`, q.`QuestLevel`)))), MAX(q.`expansion`)
+    FROM `titan_squish_item_original` o
+    JOIN `quest_template` t ON o.`entry` IN (t.`RewardItem1`, t.`RewardItem2`, t.`RewardItem3`, t.`RewardItem4`,
+        t.`RewardChoiceItemID1`, t.`RewardChoiceItemID2`, t.`RewardChoiceItemID3`, t.`RewardChoiceItemID4`,
+        t.`RewardChoiceItemID5`, t.`RewardChoiceItemID6`)
+    JOIN `titan_squish_quest_original` q ON q.`ID` = t.`ID`
+    WHERE o.`RequiredLevel` = 0 AND (q.`MinLevel` > 0 OR q.`QuestLevel` > 0)
+    GROUP BY o.`entry`
+    -- past Classic's item levels only from Burning Crusade or Wrath quests (not a level 1 holiday quest's)
+    HAVING MAX(o.`ItemLevel`) <= IF(MAX(o.`Quality`) >= 4, 92, 76)
+        OR (MIN(LEAST(80, IF(q.`expansion` > 0 AND q.`QuestLevel` > 0, q.`QuestLevel`, IF(q.`MinLevel` > 0, q.`MinLevel`, q.`QuestLevel`)))) >= 58 AND MAX(q.`expansion`) > 0);
+-- ... else, past Classic's item levels (green and blue 76, epic 92), where its expansion's curve reaches it
+-- (Wrath's from item level 130, epics 175).
+INSERT IGNORE INTO `titan_squish_item_source` (`entry`, `req`, `expansion`)
+SELECT x.`entry`, COALESCE(
+        (SELECT MIN(c.`req`) FROM `titan_squish_curve` c WHERE c.`expansion` = x.`e` AND c.`quality` = x.`q`
+            AND c.`req` BETWEEN x.`low` AND x.`low` + 12 AND c.`ilvl` >= x.`ItemLevel`), x.`low` + 12), x.`e`
+    FROM (SELECT `entry`, `ItemLevel`, LEAST(4, GREATEST(2, `Quality`)) AS `q`,
+            IF(`ItemLevel` >= IF(`Quality` >= 4, 175, 130), 2, 1) AS `e`,
+            IF(`ItemLevel` >= IF(`Quality` >= 4, 175, 130), 68, 58) AS `low`
+        FROM `titan_squish_item_original`
+        WHERE `RequiredLevel` = 0 AND `ItemLevel` > IF(`Quality` >= 4, 92, 76)) x;
 
 -- Items: their expansion, new required level, new item level and the factors, from the originals.
 DROP TABLE IF EXISTS `titan_squish_item_work`;
@@ -437,7 +472,10 @@ SELECT `entry`,
         WHEN `RequiredLevel` <= 70 THEN IF(`ItemLevel` < 130, 1, 2)
         ELSE 2 END,
     LEAST(4, GREATEST(2, `Quality`)), `RequiredLevel`, `ItemLevel`
-FROM `titan_squish_item_original`;
+FROM `titan_squish_item_original` WHERE `RequiredLevel` > 0
+UNION ALL SELECT o.`entry`, s.`expansion`, LEAST(4, GREATEST(2, o.`Quality`)), s.`req`, o.`ItemLevel`
+    FROM `titan_squish_item_original` o JOIN `titan_squish_item_source` s ON s.`entry` = o.`entry`
+    WHERE o.`RequiredLevel` = 0;
 UPDATE `titan_squish_item_work` SET `new_req` = (CASE WHEN CAST(`old_req` AS SIGNED) > 83 THEN CAST(`old_req` AS SIGNED) WHEN CAST(`old_req` AS SIGNED) >= 71 THEN ROUND(40 + (CAST(`old_req` AS SIGNED) - 68) * 20 / 12) WHEN CAST(`old_req` AS SIGNED) >= 68 THEN IF(`expansion` = 2, ROUND(40 + (CAST(`old_req` AS SIGNED) - 68) * 20 / 12), ROUND(40 + (CAST(`old_req` AS SIGNED) - 58) * 20 / 12)) WHEN CAST(`old_req` AS SIGNED) >= 64 THEN ROUND(40 + (CAST(`old_req` AS SIGNED) - 58) * 20 / 12) WHEN CAST(`old_req` AS SIGNED) >= 61 THEN IF(`expansion` = 0, CAST(`old_req` AS SIGNED), ROUND(40 + (CAST(`old_req` AS SIGNED) - 58) * 20 / 12)) WHEN CAST(`old_req` AS SIGNED) >= 58 THEN IF(`expansion` = 1, ROUND(40 + (CAST(`old_req` AS SIGNED) - 58) * 20 / 12), CAST(`old_req` AS SIGNED)) ELSE CAST(`old_req` AS SIGNED) END);
 UPDATE `titan_squish_item_work` w
     JOIN `titan_squish_curve` o ON o.`expansion` = w.`expansion` AND o.`quality` = w.`q` AND o.`req` = LEAST(80, w.`old_req`)
@@ -469,6 +507,7 @@ UPDATE `item_template` t
         t.`stat_value9` = IF(o.`stat_value9` > 0, GREATEST(1, ROUND(o.`stat_value9` * w.`stat_factor`)), ROUND(o.`stat_value9` * w.`stat_factor`)),
         t.`stat_value10` = IF(o.`stat_value10` > 0, GREATEST(1, ROUND(o.`stat_value10` * w.`stat_factor`)), ROUND(o.`stat_value10` * w.`stat_factor`));
 DROP TABLE `titan_squish_item_work`;
+DROP TABLE `titan_squish_item_source`;
 
 -- Creatures: their level by their expansion, and Classic's stats rows (exp 0).
 CREATE TABLE IF NOT EXISTS `titan_squish_creature_original` (`entry` INT UNSIGNED NOT NULL, `minlevel` TINYINT UNSIGNED NOT NULL, `maxlevel` TINYINT UNSIGNED NOT NULL, `exp` SMALLINT NOT NULL, PRIMARY KEY (`entry`));
@@ -478,12 +517,7 @@ UPDATE `creature_template` t JOIN `titan_squish_creature_original` o ON o.`entry
         t.`maxlevel` = (CASE WHEN CAST(o.`maxlevel` AS SIGNED) > 83 THEN CAST(o.`maxlevel` AS SIGNED) WHEN CAST(o.`maxlevel` AS SIGNED) >= 71 THEN ROUND(40 + (CAST(o.`maxlevel` AS SIGNED) - 68) * 20 / 12) WHEN CAST(o.`maxlevel` AS SIGNED) >= 68 THEN IF(o.`exp` = 2, ROUND(40 + (CAST(o.`maxlevel` AS SIGNED) - 68) * 20 / 12), ROUND(40 + (CAST(o.`maxlevel` AS SIGNED) - 58) * 20 / 12)) WHEN CAST(o.`maxlevel` AS SIGNED) >= 64 THEN ROUND(40 + (CAST(o.`maxlevel` AS SIGNED) - 58) * 20 / 12) WHEN CAST(o.`maxlevel` AS SIGNED) >= 61 THEN IF(o.`exp` = 0, CAST(o.`maxlevel` AS SIGNED), ROUND(40 + (CAST(o.`maxlevel` AS SIGNED) - 58) * 20 / 12)) WHEN CAST(o.`maxlevel` AS SIGNED) >= 58 THEN IF(o.`exp` = 1, ROUND(40 + (CAST(o.`maxlevel` AS SIGNED) - 58) * 20 / 12), CAST(o.`maxlevel` AS SIGNED)) ELSE CAST(o.`maxlevel` AS SIGNED) END), t.`exp` = 0
     WHERE o.`maxlevel` <= 83;
 
--- Quests: their levels; where bands overlap, by their zone's expansion (no zone: by level).
-CREATE TABLE IF NOT EXISTS `titan_squish_quest_original` (`ID` INT UNSIGNED NOT NULL, `QuestLevel` SMALLINT NOT NULL, `MinLevel` TINYINT UNSIGNED NOT NULL, `MaxLevel` TINYINT UNSIGNED NOT NULL, `expansion` TINYINT NOT NULL, PRIMARY KEY (`ID`));
-INSERT IGNORE INTO `titan_squish_quest_original` SELECT q.`ID`, q.`QuestLevel`, q.`MinLevel`, COALESCE(a.`MaxLevel`, 0),
-    COALESCE(z.`expansion`, IF(q.`QuestLevel` > 70, 2, IF(q.`QuestLevel` > 60, 1, 0)))
-    FROM `quest_template` q LEFT JOIN `quest_template_addon` a ON a.`ID` = q.`ID`
-    LEFT JOIN `titan_squish_zone` z ON q.`QuestSortID` > 0 AND z.`zone` = q.`QuestSortID`;
+-- Quests: their levels; where bands overlap, by their zone's expansion (originals: above).
 UPDATE `quest_template` t JOIN `titan_squish_quest_original` o ON o.`ID` = t.`ID`
     SET t.`QuestLevel` = IF(o.`QuestLevel` > 0, (CASE WHEN CAST(o.`QuestLevel` AS SIGNED) > 83 THEN CAST(o.`QuestLevel` AS SIGNED) WHEN CAST(o.`QuestLevel` AS SIGNED) >= 71 THEN ROUND(40 + (CAST(o.`QuestLevel` AS SIGNED) - 68) * 20 / 12) WHEN CAST(o.`QuestLevel` AS SIGNED) >= 68 THEN IF(o.`expansion` = 2, ROUND(40 + (CAST(o.`QuestLevel` AS SIGNED) - 68) * 20 / 12), ROUND(40 + (CAST(o.`QuestLevel` AS SIGNED) - 58) * 20 / 12)) WHEN CAST(o.`QuestLevel` AS SIGNED) >= 64 THEN ROUND(40 + (CAST(o.`QuestLevel` AS SIGNED) - 58) * 20 / 12) WHEN CAST(o.`QuestLevel` AS SIGNED) >= 61 THEN IF(o.`expansion` = 0, CAST(o.`QuestLevel` AS SIGNED), ROUND(40 + (CAST(o.`QuestLevel` AS SIGNED) - 58) * 20 / 12)) WHEN CAST(o.`QuestLevel` AS SIGNED) >= 58 THEN IF(o.`expansion` = 1, ROUND(40 + (CAST(o.`QuestLevel` AS SIGNED) - 58) * 20 / 12), CAST(o.`QuestLevel` AS SIGNED)) ELSE CAST(o.`QuestLevel` AS SIGNED) END), o.`QuestLevel`),
         t.`MinLevel` = IF(o.`MinLevel` > 0, (CASE WHEN CAST(o.`MinLevel` AS SIGNED) > 83 THEN CAST(o.`MinLevel` AS SIGNED) WHEN CAST(o.`MinLevel` AS SIGNED) >= 71 THEN ROUND(40 + (CAST(o.`MinLevel` AS SIGNED) - 68) * 20 / 12) WHEN CAST(o.`MinLevel` AS SIGNED) >= 68 THEN IF(o.`expansion` = 2, ROUND(40 + (CAST(o.`MinLevel` AS SIGNED) - 68) * 20 / 12), ROUND(40 + (CAST(o.`MinLevel` AS SIGNED) - 58) * 20 / 12)) WHEN CAST(o.`MinLevel` AS SIGNED) >= 64 THEN ROUND(40 + (CAST(o.`MinLevel` AS SIGNED) - 58) * 20 / 12) WHEN CAST(o.`MinLevel` AS SIGNED) >= 61 THEN IF(o.`expansion` = 0, CAST(o.`MinLevel` AS SIGNED), ROUND(40 + (CAST(o.`MinLevel` AS SIGNED) - 58) * 20 / 12)) WHEN CAST(o.`MinLevel` AS SIGNED) >= 58 THEN IF(o.`expansion` = 1, ROUND(40 + (CAST(o.`MinLevel` AS SIGNED) - 58) * 20 / 12), CAST(o.`MinLevel` AS SIGNED)) ELSE CAST(o.`MinLevel` AS SIGNED) END), 0);

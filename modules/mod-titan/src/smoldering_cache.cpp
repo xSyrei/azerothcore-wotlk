@@ -35,8 +35,8 @@
 // and every quest turned in. Opening one gives a piece of Leveling Scaled gear (tools/scaling/scaled_gear.py,
 // scaled_gear.h) in the slot of their lowest item level piece (an empty slot counts as 0), fixed at the level it was
 // opened at: a small pool (a cloth, leather, mail and plate set, a cloak, a neck, a ring, a trinket, weapons, a shield
-// and an off-hand) whose stats, armor and weapon damage come from a suffix per stat mix, kind and level ("(Leveling
-// Scaled 23)"), at a green's item level for that level. For the Hero's role (Wildcard::Role):
+// and an off-hand), each piece a template per level (a green's item level, armor and damage there, that required
+// level) and a suffix per stat mix ("(Leveling Scaled)"). For the Hero's role (Wildcard::Role):
 //
 // - every pool item for the slot, with every stat mix it can take, is scored by the stats the role wants (Melee
 //   strength or agility, by the classes of its melee abilities, attack power and weapon damage; Ranged intellect and
@@ -81,21 +81,15 @@ namespace
         { EQUIPMENT_SLOT_RANGED, "ranged", { INVTYPE_RANGED, INVTYPE_THROWN, INVTYPE_RANGEDRIGHT } },
     };
 
-    struct PoolItem
+    // The Leveling Scaled pool's pieces, by InventoryType (their level 1 template's). Built on first use.
+    std::unordered_map<uint8, std::vector<ScaledGear::Item const*>> const& Pool()
     {
-        ItemTemplate const* Proto;
-        ScaledGear::Item const* Scaled;
-    };
-
-    // The Leveling Scaled pool, by InventoryType. Built on first use.
-    std::unordered_map<uint8, std::vector<PoolItem>> const& Pool()
-    {
-        static std::unordered_map<uint8, std::vector<PoolItem>> const pool = []
+        static std::unordered_map<uint8, std::vector<ScaledGear::Item const*>> const pool = []
         {
-            std::unordered_map<uint8, std::vector<PoolItem>> items;
+            std::unordered_map<uint8, std::vector<ScaledGear::Item const*>> items;
             for (ScaledGear::Item const& scaled : ScaledGear::ITEMS)
-                if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(scaled.Entry))
-                    items[uint8(proto->InventoryType)].push_back({ proto, &scaled });
+                if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(scaled.First))
+                    items[uint8(proto->InventoryType)].push_back(&scaled);
             return items;
         }();
         return pool;
@@ -175,21 +169,14 @@ namespace
         }
     }
 
-    // What a suffix gives the item: its stats (the factor of the item's template), armor and weapon damage.
-    struct SuffixParts
+    // The stats a suffix gives the item (by the factor of the item's template).
+    std::vector<std::pair<uint32, int32>> SuffixStats(uint32 itemId, int32 randomPropertyId)
     {
-        std::vector<std::pair<uint32, int32>> Stats;
-        int32 Armor = 0;
-        int32 WeaponDamage = 0;
-    };
-
-    SuffixParts SuffixOf(uint32 itemId, int32 randomPropertyId)
-    {
-        SuffixParts parts;
+        std::vector<std::pair<uint32, int32>> stats;
         ItemRandomSuffixEntry const* suffix = randomPropertyId < 0
             ? sItemRandomSuffixStore.LookupEntry(-randomPropertyId) : nullptr;
         if (!suffix)
-            return parts;
+            return stats;
         uint32 factor = GenerateEnchSuffixFactor(itemId);
         for (uint8 i = 0; i < MAX_ITEM_ENCHANTMENT_EFFECTS; ++i)
         {
@@ -198,30 +185,22 @@ namespace
                 continue;
             int32 amount = int32(factor * suffix->AllocationPct[i] / 10000);
             for (uint8 e = 0; e < MAX_SPELL_ITEM_ENCHANTMENT_EFFECTS; ++e)
-            {
                 if (enchant->type[e] == ITEM_ENCHANTMENT_TYPE_STAT)
-                    parts.Stats.emplace_back(enchant->spellid[e], amount);
-                else if (enchant->type[e] == ITEM_ENCHANTMENT_TYPE_RESISTANCE
-                    && enchant->spellid[e] == SPELL_SCHOOL_NORMAL)
-                    parts.Armor += amount;
-                else if (enchant->type[e] == ITEM_ENCHANTMENT_TYPE_DAMAGE)
-                    parts.WeaponDamage += int32(enchant->amount[e]);
-            }
+                    stats.emplace_back(enchant->spellid[e], amount);
         }
-        return parts;
+        return stats;
     }
 
     // The item's worth to the role with that suffix.
     float Score(Wildcard::Role role, bool agility, ItemTemplate const* proto, int32 randomPropertyId)
     {
-        SuffixParts parts = SuffixOf(proto->ItemId, randomPropertyId);
         float score = 0.0f;
-        for (auto const& [stat, value] : parts.Stats)
+        for (auto const& [stat, value] : SuffixStats(proto->ItemId, randomPropertyId))
             score += StatWeight(role, agility, stat) * value;
-        score += (proto->Armor + parts.Armor) * (role == Wildcard::ROLE_TANK ? 0.05f : 0.01f);
+        score += proto->Armor * (role == Wildcard::ROLE_TANK ? 0.05f : 0.01f);
         if (proto->Class == ITEM_CLASS_WEAPON && proto->Delay)
         {
-            float hit = (proto->Damage[0].DamageMin + proto->Damage[0].DamageMax) / 2.0f + parts.WeaponDamage;
+            float hit = (proto->Damage[0].DamageMin + proto->Damage[0].DamageMax) / 2.0f;
             float dps = hit / (proto->Delay / 1000.0f);
             bool physical = role == Wildcard::ROLE_MELEE || role == Wildcard::ROLE_TANK || role == Wildcard::ROLE_NONE;
             bool wand = proto->SubClass == ITEM_SUBCLASS_WEAPON_WAND;
@@ -249,14 +228,6 @@ namespace
         }
     }
 
-    // An item's item level: a Leveling Scaled piece's is its level's (its template's is the same for every level).
-    uint32 ItemLevelOf(Item const* item)
-    {
-        if (uint8 level = ScaledGear::LevelOf(item->GetItemRandomPropertyId()))
-            return ScaledGear::ItemLevelOf(level);
-        return item->GetTemplate()->ItemLevel;
-    }
-
     // The Hero's gear slots from the lowest item level piece up (empty: 0; ties in random order); the off hand only
     // when free to hold one.
     std::vector<GearSlot const*> SlotsByLevel(Player* player)
@@ -271,7 +242,7 @@ namespace
             if (gear.Slot == EQUIPMENT_SLOT_OFFHAND && twoHanded)
                 continue;
             Item* item = player->GetItemByPos(INVENTORY_SLOT_BAG_0, gear.Slot);
-            slots.emplace_back(item ? ItemLevelOf(item) : 0, &gear);
+            slots.emplace_back(item ? item->GetTemplate()->ItemLevel : 0, &gear);
         }
         Acore::Containers::RandomShuffle(slots);
         std::stable_sort(slots.begin(), slots.end(), [](auto const& a, auto const& b) { return a.first < b.first; });
@@ -308,7 +279,7 @@ namespace
         return PickGearOf(player, gear);
     }
 
-    // Every pool item for the slot with every suffix set it takes, at the Hero's level, scored; one near the best.
+    // Every pool piece for the slot at the Hero's level, with every suffix it takes, scored; one near the best.
     std::optional<Pick> PickGearOf(Player* player, GearSlot const& gear)
     {
         Wildcard::Role role = Wildcard::GetRole(player);
@@ -322,14 +293,15 @@ namespace
             auto itr = Pool().find(type);
             if (itr == Pool().end())
                 continue;
-            for (PoolItem const& item : itr->second)
+            for (ScaledGear::Item const* scaled : itr->second)
             {
-                if (!ArmorSuitsRole(role, item.Scaled->ArmorType) || player->CanUseItem(item.Proto) != EQUIP_ERR_OK)
+                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(ScaledGear::Entry(*scaled, level));
+                if (!proto || !ArmorSuitsRole(role, scaled->ArmorType) || player->CanUseItem(proto) != EQUIP_ERR_OK)
                     continue;
-                for (uint8 i = 0; i < item.Scaled->SetCount; ++i)
+                for (uint8 i = 0; i < scaled->SuffixCount; ++i)
                 {
-                    int32 random = -int32(ScaledGear::Suffix(item.Scaled->Sets[i], level));
-                    picks.push_back({ item.Proto, random, Score(role, agility, item.Proto, random) });
+                    int32 random = -int32(scaled->Suffixes[i]);
+                    picks.push_back({ proto, random, Score(role, agility, proto, random) });
                 }
             }
         }

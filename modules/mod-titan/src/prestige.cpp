@@ -17,7 +17,6 @@
 
 #include "prestige.h"
 #include "cards.h"
-#include "scaled_gear.h"
 #include "specs.h"
 #include "emberspark.h"
 #include "wildcard.h"
@@ -381,8 +380,6 @@ namespace Prestige
 
     uint8 EquipLevel(Item const* item)
     {
-        if (uint8 scaled = ScaledGear::LevelOf(item->GetItemRandomPropertyId()))
-            return scaled;
         ItemTemplate const* proto = item->GetTemplate();
         if (proto->RequiredLevel || proto->Quality < ITEM_QUALITY_UNCOMMON || proto->Quality == ITEM_QUALITY_HEIRLOOM
             || (proto->Class != ITEM_CLASS_WEAPON && proto->Class != ITEM_CLASS_ARMOR))

@@ -5,7 +5,7 @@ It is a language patch (installed as Data\\enUS\\patch-enUS-4.MPQ): the client r
 tables from the language archives, which outrank patches placed directly in Data\\.
 
 - DBFilesClient: ChrClasses / CharBaseInfo (Hero class, patch_hero_class.py),
-  Item / ItemDisplayInfo (custom items, patch_items.py), ItemRandomSuffix / SpellItemEnchantment
+  Item / ItemDisplayInfo (custom items, patch_items.py), ItemRandomSuffix
   (Leveling Scaled gear, patch_scaled_gear.py), Spell / SpellIcon / SpellVisual /
   SpellVisualKit / SpellVisualEffectName (Emberforge's own spells, the Demon Hunter's, patch_spells.py)
 - spell effect models (Spells\\Emberforge: trails and the Eye Beam beam, models/spell_effects.py, from spells/*.png)
@@ -80,7 +80,7 @@ DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc',
         'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc',
         'SoundEntries.dbc', 'CreatureModelData.dbc', 'CreatureDisplayInfo.dbc',
         'AnimationData.dbc', 'Talent.dbc', 'TalentTab.dbc', 'SpellChainEffects.dbc', 'CreatureDisplayInfoExtra.dbc',
-        'ItemRandomSuffix.dbc', 'SpellItemEnchantment.dbc']
+        'ItemRandomSuffix.dbc']
 
 
 def main():

@@ -13,7 +13,12 @@ the Burning Crusade and Wrath are squished into 40-60, beside Classic's own 40-6
   Classic item of its quality has there, read from the Classic items themselves), its height above its own
   expansion's curve shrunk with the band; stats and block by the stat budget ratio (RandPropPoints.dbc), armor and
   weapon damage by the item level ratio. Random "of the ..." stats follow the item level by themselves.
-  Heirlooms, items with no required level, and legendaries are left alone.
+  Heirlooms and legendaries are left alone. An item with no required level (uncommon to epic: many quest rewards,
+  the quest has the level) gets one from where it comes from: the lowest level of the quests that reward it (a Burning
+  Crusade or Wrath quest's level, a Classic quest's minimum level; their zone's expansion), else, past Classic's item levels, the required
+  level where its expansion's curve reaches its item level; then it is squished as the others (Classic's keep
+  their power and get that required level). Classic's with no quest stay without (mod-titan's
+  Prestige::EquipLevel judges them by item level).
 - Creatures: their level by the map (the level decides the band; creature_template.exp only where bands overlap,
   58-63 and 68-70: many Outland and Northrend creatures are marked 0; Classic's unchanged), and exp 0, so their
   health, damage and armor come from Classic's stats rows at the new level.
@@ -36,7 +41,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-VERSION = 2
+VERSION = 3
 ROOT = Path(__file__).resolve().parents[4]
 ITEMS = ROOT / 'data/sql/base/db_world/item_template.sql'
 OUT = ROOT / 'modules/mod-titan/data/sql/db-world/zz_titan_squish.sql'
@@ -150,6 +155,12 @@ def level_sql(level, exp):
             f"WHEN {lvl} >= 58 THEN IF({exp} = 1, {tbc}, {classic}) ELSE {classic} END)")
 
 
+# The level an item rewarded by a quest is for: a Burning Crusade or Wrath quest's level (its zone's: Icecrown's 78-80,
+# squished to 57-60), a Classic quest's minimum level (wearable when the quest can be done).
+QUEST_REQ = ('LEAST(80, IF(q.`expansion` > 0 AND q.`QuestLevel` > 0, q.`QuestLevel`, '
+             'IF(q.`MinLevel` > 0, q.`MinLevel`, q.`QuestLevel`)))')
+
+
 def values(rows, per_line=8):
     lines = [', '.join(rows[i:i + per_line]) for i in range(0, len(rows), per_line)]
     return ',\n'.join(lines) + ';'
@@ -195,6 +206,16 @@ def main():
         'INSERT INTO `titan_squish_zone` (`zone`, `expansion`) VALUES',
         values([f'({a}, {e})' for a, e in sorted(zones.items())], 12),
         '',
+        '-- Quests: the originals, kept once (here: items with no required level take their quests\' levels).',
+        'CREATE TABLE IF NOT EXISTS `titan_squish_quest_original` (`ID` INT UNSIGNED NOT NULL, `QuestLevel` SMALLINT '
+        'NOT NULL, `MinLevel` TINYINT UNSIGNED NOT NULL, `MaxLevel` TINYINT UNSIGNED NOT NULL, `expansion` TINYINT '
+        'NOT NULL, PRIMARY KEY (`ID`));',
+        'INSERT IGNORE INTO `titan_squish_quest_original` SELECT q.`ID`, q.`QuestLevel`, q.`MinLevel`, '
+        'COALESCE(a.`MaxLevel`, 0),',
+        '    COALESCE(z.`expansion`, IF(q.`QuestLevel` > 70, 2, IF(q.`QuestLevel` > 60, 1, 0)))',
+        '    FROM `quest_template` q LEFT JOIN `quest_template_addon` a ON a.`ID` = q.`ID`',
+        '    LEFT JOIN `titan_squish_zone` z ON q.`QuestSortID` > 0 AND z.`zone` = q.`QuestSortID`;',
+        '',
         '-- Items: the originals, kept once.',
         'CREATE TABLE IF NOT EXISTS `titan_squish_item_original` (`entry` INT UNSIGNED NOT NULL, '
         '`Quality` TINYINT UNSIGNED NOT NULL, `RequiredLevel` TINYINT UNSIGNED NOT NULL, '
@@ -204,7 +225,37 @@ def main():
         'INSERT IGNORE INTO `titan_squish_item_original` SELECT `entry`, `Quality`, `RequiredLevel`, `ItemLevel`, '
         '`armor`, `block`, `dmg_min1`, `dmg_max1`, `dmg_min2`, `dmg_max2`, '
         + ', '.join(f'`stat_value{i}`' for i in stats) + ' FROM `item_template`',
-        '    WHERE `class` IN (2, 4) AND `Quality` <= 4 AND `RequiredLevel` > 0 AND `ScalingStatDistribution` = 0;',
+        '    WHERE `class` IN (2, 4) AND `Quality` <= 4 AND `ScalingStatDistribution` = 0',
+        '        AND (`RequiredLevel` > 0 OR (`Quality` >= 2 AND `ItemLevel` > 1 AND `entry` < 900000));',
+        '',
+        '-- Items with no required level: where they come from. The quests that reward them (their lowest level)...',
+        'DROP TABLE IF EXISTS `titan_squish_item_source`;',
+        'CREATE TABLE `titan_squish_item_source` (`entry` INT UNSIGNED NOT NULL, `req` TINYINT UNSIGNED NOT NULL, '
+        '`expansion` TINYINT NOT NULL, PRIMARY KEY (`entry`));',
+        'INSERT INTO `titan_squish_item_source` (`entry`, `req`, `expansion`)',
+        'SELECT o.`entry`, MIN(' + QUEST_REQ + '), MAX(q.`expansion`)',
+        '    FROM `titan_squish_item_original` o',
+        '    JOIN `quest_template` t ON o.`entry` IN (t.`RewardItem1`, t.`RewardItem2`, t.`RewardItem3`, '
+        't.`RewardItem4`,',
+        '        t.`RewardChoiceItemID1`, t.`RewardChoiceItemID2`, t.`RewardChoiceItemID3`, t.`RewardChoiceItemID4`,',
+        '        t.`RewardChoiceItemID5`, t.`RewardChoiceItemID6`)',
+        '    JOIN `titan_squish_quest_original` q ON q.`ID` = t.`ID`',
+        '    WHERE o.`RequiredLevel` = 0 AND (q.`MinLevel` > 0 OR q.`QuestLevel` > 0)',
+        '    GROUP BY o.`entry`',
+        '    -- past Classic\'s item levels only from Burning Crusade or Wrath quests (not a level 1 holiday quest\'s)',
+        '    HAVING MAX(o.`ItemLevel`) <= IF(MAX(o.`Quality`) >= 4, 92, 76)',
+        '        OR (MIN(' + QUEST_REQ + ') >= 58 AND MAX(q.`expansion`) > 0);',
+        '-- ... else, past Classic\'s item levels (green and blue 76, epic 92), where its expansion\'s curve reaches it',
+        '-- (Wrath\'s from item level 130, epics 175).',
+        'INSERT IGNORE INTO `titan_squish_item_source` (`entry`, `req`, `expansion`)',
+        'SELECT x.`entry`, COALESCE(',
+        '        (SELECT MIN(c.`req`) FROM `titan_squish_curve` c WHERE c.`expansion` = x.`e` AND c.`quality` = x.`q`',
+        '            AND c.`req` BETWEEN x.`low` AND x.`low` + 12 AND c.`ilvl` >= x.`ItemLevel`), x.`low` + 12), x.`e`',
+        '    FROM (SELECT `entry`, `ItemLevel`, LEAST(4, GREATEST(2, `Quality`)) AS `q`,',
+        '            IF(`ItemLevel` >= IF(`Quality` >= 4, 175, 130), 2, 1) AS `e`,',
+        '            IF(`ItemLevel` >= IF(`Quality` >= 4, 175, 130), 68, 58) AS `low`',
+        '        FROM `titan_squish_item_original`',
+        '        WHERE `RequiredLevel` = 0 AND `ItemLevel` > IF(`Quality` >= 4, 92, 76)) x;',
         '',
         '-- Items: their expansion, new required level, new item level and the factors, from the originals.',
         'DROP TABLE IF EXISTS `titan_squish_item_work`;',
@@ -221,7 +272,10 @@ def main():
         '        WHEN `RequiredLevel` <= 70 THEN IF(`ItemLevel` < 130, 1, 2)',
         '        ELSE 2 END,',
         '    LEAST(4, GREATEST(2, `Quality`)), `RequiredLevel`, `ItemLevel`',
-        'FROM `titan_squish_item_original`;',
+        'FROM `titan_squish_item_original` WHERE `RequiredLevel` > 0',
+        'UNION ALL SELECT o.`entry`, s.`expansion`, LEAST(4, GREATEST(2, o.`Quality`)), s.`req`, o.`ItemLevel`',
+        '    FROM `titan_squish_item_original` o JOIN `titan_squish_item_source` s ON s.`entry` = o.`entry`',
+        '    WHERE o.`RequiredLevel` = 0;',
         'UPDATE `titan_squish_item_work` SET `new_req` = ' + level_sql('`old_req`', '`expansion`') + ';',
         'UPDATE `titan_squish_item_work` w',
         '    JOIN `titan_squish_curve` o ON o.`expansion` = w.`expansion` AND o.`quality` = w.`q` AND '
@@ -250,6 +304,7 @@ def main():
         ',\n'.join(f'        t.`stat_value{i}` = IF(o.`stat_value{i}` > 0, GREATEST(1, ROUND(o.`stat_value{i}` * '
                    f'w.`stat_factor`)), ROUND(o.`stat_value{i}` * w.`stat_factor`))' for i in stats) + ';',
         'DROP TABLE `titan_squish_item_work`;',
+        'DROP TABLE `titan_squish_item_source`;',
         '',
         '-- Creatures: their level by their expansion, and Classic\'s stats rows (exp 0).',
         'CREATE TABLE IF NOT EXISTS `titan_squish_creature_original` (`entry` INT UNSIGNED NOT NULL, '
@@ -262,15 +317,7 @@ def main():
         '        t.`maxlevel` = ' + level_sql('o.`maxlevel`', 'o.`exp`') + ', t.`exp` = 0',
         '    WHERE o.`maxlevel` <= 83;',
         '',
-        '-- Quests: their levels; where bands overlap, by their zone\'s expansion (no zone: by level).',
-        'CREATE TABLE IF NOT EXISTS `titan_squish_quest_original` (`ID` INT UNSIGNED NOT NULL, `QuestLevel` SMALLINT '
-        'NOT NULL, `MinLevel` TINYINT UNSIGNED NOT NULL, `MaxLevel` TINYINT UNSIGNED NOT NULL, `expansion` TINYINT '
-        'NOT NULL, PRIMARY KEY (`ID`));',
-        'INSERT IGNORE INTO `titan_squish_quest_original` SELECT q.`ID`, q.`QuestLevel`, q.`MinLevel`, '
-        'COALESCE(a.`MaxLevel`, 0),',
-        '    COALESCE(z.`expansion`, IF(q.`QuestLevel` > 70, 2, IF(q.`QuestLevel` > 60, 1, 0)))',
-        '    FROM `quest_template` q LEFT JOIN `quest_template_addon` a ON a.`ID` = q.`ID`',
-        '    LEFT JOIN `titan_squish_zone` z ON q.`QuestSortID` > 0 AND z.`zone` = q.`QuestSortID`;',
+        '-- Quests: their levels; where bands overlap, by their zone\'s expansion (originals: above).',
         'UPDATE `quest_template` t JOIN `titan_squish_quest_original` o ON o.`ID` = t.`ID`',
         '    SET t.`QuestLevel` = IF(o.`QuestLevel` > 0, ' + level_sql('o.`QuestLevel`', 'o.`expansion`')
         + ', o.`QuestLevel`),',

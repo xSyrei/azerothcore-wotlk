@@ -315,13 +315,13 @@ bags are full). Opening one gives a piece of **Leveling Scaled** gear for the He
 item level piece (an empty slot counts as 0; a scaled piece counts at the level it was made for):
 - the cache has its own pool (no Blizzard gear; `src/scaled_gear.h`, `data/sql/db-world/titan_scaled_gear.sql`, both
   made by `tools/scaling/scaled_gear.py`): a cloth, leather, mail and plate set (Emberweave, Emberhide, Emberlink,
-  Emberforged), a cloak, neck, ring, trinket, shield, off-hand and one weapon of each kind (911000-911050),
-  uncommon and soulbound;
-- each copy gets a random suffix, "(Leveling Scaled 42)": its stats, armor and weapon damage are those of a green of
-  item level `level + 5` (level 60 at most), fixed at the level the cache was opened at. The template itself has
-  none, so the client and the Character window show item level 65 for every piece. A suffix is a stat mix (Bear,
-  Monkey, Eagle, Owl, Tiger, Sorcerer, Elder, Champion, Hunt), one per mix, item kind and level (suffixes 2000+,
-  weapon damage enchantments 30000+; the client has them too, `client-patch/patch_scaled_gear.py`);
+  Emberforged), a cloak, neck, ring, trinket, shield, off-hand and one weapon of each kind, uncommon and soulbound;
+- every piece has a template per level (912000 + piece x 60 + level - 1): item level `level + 5` (level 60's: 65),
+  required level `level`, and a green's armor and weapon damage at that item level, so the tooltip and the Character
+  window show the piece's real item level. Its stats come from a suffix, "(Leveling Scaled)", one per stat mix (Bear,
+  Monkey, Eagle, Owl, Tiger, Sorcerer, Elder, Champion, Hunt; suffixes 2000-2008, the client has them too:
+  `client-patch/patch_scaled_gear.py`), scaled by the template's item level as any green's. Below item level 10 a
+  green has no stat budget: the first few levels' pieces have armor and damage only;
 - scored for the role: Melee strength or agility (whichever the Hero's melee abilities use: a warrior's, paladin's or
   death knight's strength, the others' agility), attack power and weapon damage; Ranged intellect and spell power;
   Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor and defense; no role a
@@ -347,9 +347,8 @@ a dungeon, battleground or queue.
 - **Kept:** gear, gold, Emberspark, professions, mounts, reputation, achievements and the role. Every piece worn that
   needs more than level 1 goes to the bags (what does not fit, by mail) and back on in its old slot as soon as its
   level allows, whatever is worn there then (to the bags). Gear left in the mail goes on once it is taken out.
-  A piece's level (`Prestige::EquipLevel`) is its required level, a Leveling Scaled piece's own, or for a weapon or
-  armor (uncommon or better) with none, as many quest rewards (the quest has it): its item level less 10, up to item
-  level 70, else the level cap. A Hero cannot put on gear above their level, and gear worn above it at login comes off
+  A piece's level (`Prestige::EquipLevel`) is its required level, or for a weapon or armor (uncommon or better)
+  with none (the squish gives most one: below) its item level less 10, up to item level 70, else the level cap. A Hero cannot put on gear above their level, and gear worn above it at login comes off
   the same way (ratings are worth far more at low levels: TBC rewards on a level 1 Hero gave hundreds of percent of
   critical strike).
 - **Given:** 500 Emberspark, 2 Titan Souls of Rested Experience (910001), **Prestigious** (90607: 10% more
@@ -496,6 +495,10 @@ stays as it is, 1-60; the Burning Crusade and Wrath both squish into 40-60, besi
 - **Items** (weapons and armor): Classic's unchanged; the others' required level by that map, their item level onto
   Classic's curve there (a level 60 green is item level 65 whatever its expansion), stats and block by the stat budget ratio, armor and weapon
   damage by the item level ratio; random "of the ..." stats follow the item level.
+  Items with no required level (many quest rewards: the quest has it) get one from where they come from: the
+  lowest of the quests that reward them (a Burning Crusade or Wrath quest's level: Icecrown's rewards land at 57-60;
+  a Classic quest's minimum level), else, past Classic's item levels, where their expansion's curve reaches their item
+  level. They are then squished as the others; Classic's keep their power and get the required level.
 - **Creatures**: their level by the map (the level decides the band, their expansion only where bands overlap), and
   Classic's stats rows at the new level: a Northrend mob at 55 is as strong as a Classic level 55 mob.
 - **Quests**: their levels by the map (where bands overlap, by their zone's expansion).
