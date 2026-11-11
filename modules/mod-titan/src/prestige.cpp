@@ -17,10 +17,13 @@
 
 #include "prestige.h"
 #include "cards.h"
+#include "hero_equipment.h"
 #include "specs.h"
 #include "emberspark.h"
 #include "wildcard.h"
+#include "Bag.h"
 #include "Chat.h"
+#include "DBCStores.h"
 #include "DatabaseEnv.h"
 #include "GameTime.h"
 #include "Item.h"
@@ -44,11 +47,12 @@
 // - lost: the level, every Wildcard ability and talent (a new random kit and both tomes, as a new Hero), every quest
 //   (in the log or done: all can be done, and rewarded, again);
 // - kept: gear, gold, Emberspark, professions, mounts, reputation, achievements and the role (it can change during the
-//   run; the specialization cannot: specs.cpp). Gear above level 1 (Prestige::EquipLevel) goes to the bags (what
-//   does not fit, by mail) and back on as soon as the Hero reaches its level;
-// - given: 500 Emberspark, 2 Titan Souls of Rested Experience, Prestigious (+10% experience) until level 60, and the
-//   quest Trial of Ember: Prestigious: done at level 60, where the run ends; turned in to the Keeper, it gives 5,000
-//   Emberspark.
+//   run; the specialization cannot: specs.cpp). Every piece worn is packed into a Prestige Gear Cache (one item in the
+//   bags, by mail when they are full): used, it gives the gear back (the very items: enchantments, gems and all), and
+//   each piece goes back on in its old slot as soon as the Hero reaches its level (Reequip);
+// - given: the race's starting outfit, worn, and the starter weapons in the bags (a new Hero's), 500 Emberspark, 2
+//   Titan Souls of Rested Experience, Prestigious (+10% experience) until level 60, and the quest Trial of Ember:
+//   Prestigious: done at level 60, where the run ends; turned in to the Keeper, it gives 5,000 Emberspark.
 // Everything is kept in the character's settings (EnablePlayerSettings = 1, which Wildcard needs too).
 namespace
 {
@@ -67,6 +71,7 @@ namespace
     constexpr uint32 SOULS_ON_PRESTIGE = 2;
     constexpr uint32 NPC_PRESTIGE = 910100;
     constexpr uint32 QUEST_TRIAL = 910100;      // Trial of Ember: Prestigious (titan_prestige.sql)
+    constexpr uint32 ITEM_PRESTIGE_CACHE = 910021;  // Prestige Gear Cache (titan_prestige.sql)
 
     constexpr char const* PREFIX = "EFPR";     // addon whispers with Emberforge_Prestige (the window)
     constexpr float NPC_RANGE = 15.0f;          // a prestige asked from the window: this close to the Keeper
@@ -228,6 +233,86 @@ namespace
         }
     }
 
+    // Packs every piece worn into a new Prestige Gear Cache: the items leave the inventory but stay in the database
+    // (item_instance, as mailed ones), listed by the cache's guid in titan_prestige_gear (db-characters); the slot of
+    // each is remembered for Reequip. The cache goes to the bags, or by mail when they are full. Returns how many.
+    uint32 PackGear(Player* player)
+    {
+        std::vector<std::pair<uint8, Item*>> worn;
+        for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
+            if (Item* item = player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+                worn.emplace_back(slot, item);
+        if (worn.empty())
+            return 0;
+
+        Item* cache = Item::CreateItem(ITEM_PRESTIGE_CACHE, 1, player);
+        if (!cache)
+            return 0;                               // no template: the gear stays on
+        cache->SetBinding(true);
+        uint32 cacheGuid = cache->GetGUID().GetCounter();
+
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        for (auto const& [slot, item] : worn)
+        {
+            uint32 itemGuid = item->GetGUID().GetCounter();
+            Set(player, SETTING_GEAR + slot, itemGuid);
+            player->MoveItemFromInventory(INVENTORY_SLOT_BAG_0, slot, true);
+            item->DeleteFromInventoryDB(trans);
+            item->SetState(ITEM_CHANGED);
+            item->SaveToDB(trans);
+            trans->Append("INSERT INTO `titan_prestige_gear` (`cache_guid`, `item_guid`, `slot`) VALUES ({}, {}, {})",
+                cacheGuid, itemGuid, slot);
+            delete item;
+        }
+
+        ItemPosCountVec dest;
+        if (player->CanStoreItem(NULL_BAG, NULL_SLOT, dest, cache, false) == EQUIP_ERR_OK)
+        {
+            player->StoreItem(dest, cache, true);
+            player->SendNewItem(cache, 1, true, false);
+        }
+        else
+        {
+            cache->SaveToDB(trans);
+            MailDraft("Your gear, kept safe", "Your bags were full, so the forge sent your Prestige Gear Cache here. "
+                "Use it to take your gear back.")
+                .AddItem(cache)
+                .SendMailTo(trans, player, MailSender(MAIL_CREATURE, NPC_PRESTIGE), MAIL_CHECK_MASK_COPIED);
+        }
+        CharacterDatabase.CommitTransaction(trans);
+        return uint32(worn.size());
+    }
+
+    // A new Hero's gear: the race's starting outfit worn (Player::Create's: CharStartOutfit.dbc and
+    // playercreateinfo_item; a unique item they still have, the Hearthstone, skipped), the starter weapons in the bags.
+    void GiveStarterGear(Player* player)
+    {
+        std::vector<std::pair<uint32, uint32>> items;
+        if (CharStartOutfitEntry const* outfit =
+            GetCharStartOutfitEntry(player->getRace(), player->getClass(), player->getGender()))
+            for (int32 itemId : outfit->ItemId)
+                if (itemId > 0)
+                    if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(uint32(itemId)))
+                        items.emplace_back(uint32(itemId), std::max<uint32>(proto->BuyCount, 1));
+        if (PlayerInfo const* info = sObjectMgr->GetPlayerInfo(player->getRace(), player->getClass()))
+            for (PlayerCreateInfoItem const& item : info->item)
+                items.emplace_back(item.item_id, item.item_amount);
+
+        for (auto const& [itemId, count] : items)
+        {
+            ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+            if (!proto || (proto->MaxCount > 0 && player->HasItemCount(itemId, uint32(proto->MaxCount), true)))
+                continue;
+            uint16 dest;
+            if (player->CanEquipNewItem(NULL_SLOT, dest, itemId, false) == EQUIP_ERR_OK)
+                player->EquipNewItem(dest, itemId, true);
+            else
+                GiveItems(player, itemId, count);
+        }
+        for (auto const& [itemId, count] : HeroEquipment::StarterBagKit())
+            GiveItems(player, itemId, count);
+    }
+
     // Every quest can be done, and rewarded, again: the log is emptied, the done ones forgotten (but the hidden
     // tracking quests the game uses as flags), and the dailies, weeklies and monthlies done (holidays reset theirs
     // each year).
@@ -263,7 +348,7 @@ namespace
         player->RemoveAurasByType(SPELL_AURA_MOUNTED);
         for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
             Set(player, SETTING_GEAR + slot, 0);
-        StashGear(player, 1);
+        uint32 packed = PackGear(player);
         ForgetQuests(player);
         // A new Hero again: the next level change (this one) rolls a new kit, the tomes come back.
         Wildcard::Reset(player);
@@ -272,6 +357,7 @@ namespace
         player->GiveLevel(1);
         player->InitTalentForLevel();
         player->SetUInt32Value(PLAYER_XP, 0);
+        GiveStarterGear(player);
         GiveItems(player, Wildcard::TOME_OF_RANDOMIZATION, 1);
         GiveItems(player, Wildcard::TOME_OF_SELECTION, 1);
 
@@ -283,9 +369,10 @@ namespace
         Emberspark::Add(player->GetSession()->GetAccountId(), SPARK_ON_PRESTIGE, "prestige");
 
         ChatHandler handler(player->GetSession());
-        handler.PSendSysMessage("|cffff8000Prestige {}:|r you are forged anew. Your gear waits in your bags and goes "
-            "back on as you reach its level; your specialization is locked until level {}, where the Keeper awaits "
-            "you with your reward.", rank, MaxLevel());
+        handler.PSendSysMessage("|cffff8000Prestige {}:|r you are forged anew, in a new Hero's gear.{} Your "
+            "specialization is locked until level {}, where the Keeper awaits you with your reward.", rank,
+            packed ? " Your old gear is packed in your |cffa335eePrestige Gear Cache|r: use it to take it back, and "
+            "each piece goes back on as you reach its level." : "", MaxLevel());
         Emberspark::Announce(player, SPARK_ON_PRESTIGE, "for your prestige");
         Broadcast(Acore::StringFormat(
             "|cffff8000[Prestige]|r {} has been forged anew: Prestige {}!", player->GetName(), rank));
@@ -422,6 +509,67 @@ public:
     }
 };
 
+// The Prestige Gear Cache: used, it gives back the gear packed into it (PackGear), the very items, into the bags; what
+// does not fit stays in it. Empty, it is gone. Gear that can go back on does (Reequip).
+class item_titan_prestige_cache : public ItemScript
+{
+public:
+    item_titan_prestige_cache() : ItemScript("item_titan_prestige_cache") { }
+
+    bool OnUse(Player* player, Item* cache, SpellCastTargets const& /*targets*/) override
+    {
+        uint32 cacheGuid = cache->GetGUID().GetCounter();
+        // Item::LoadFromDB's fields first (as CHAR_SEL_MAILITEMS), then the guid and entry.
+        QueryResult result = CharacterDatabase.Query("SELECT ii.`creatorGuid`, ii.`giftCreatorGuid`, ii.`count`, "
+            "ii.`duration`, ii.`charges`, ii.`flags`, ii.`enchantments`, ii.`randomPropertyId`, ii.`durability`, "
+            "ii.`playedTime`, ii.`text`, g.`item_guid`, ii.`itemEntry` FROM `titan_prestige_gear` g "
+            "JOIN `item_instance` ii ON ii.`guid` = g.`item_guid` WHERE g.`cache_guid` = {}", cacheGuid);
+
+        ChatHandler handler(player->GetSession());
+        uint32 back = 0, left = 0;
+        if (result)
+        {
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+            do
+            {
+                Field* fields = result->Fetch();
+                uint32 itemGuid = fields[11].Get<uint32>(), entry = fields[12].Get<uint32>();
+                ItemTemplate const* proto = sObjectMgr->GetItemTemplate(entry);
+                if (!proto)
+                {
+                    ++left;
+                    continue;
+                }
+                Item* item = NewItemOrBag(proto);
+                ItemPosCountVec dest;
+                if (!item->LoadFromDB(itemGuid, player->GetGUID(), fields, entry)
+                    || player->CanStoreItem(NULL_BAG, NULL_SLOT, dest, item, false) != EQUIP_ERR_OK)
+                {
+                    delete item;
+                    ++left;
+                    continue;
+                }
+                player->MoveItemToInventory(dest, item, true);
+                trans->Append("DELETE FROM `titan_prestige_gear` WHERE `item_guid` = {}", itemGuid);
+                ++back;
+            } while (result->NextRow());
+            player->SaveInventoryAndGoldToDB(trans);
+            CharacterDatabase.CommitTransaction(trans);
+        }
+
+        if (left)
+            handler.PSendSysMessage("|cffff8000Prestige Gear Cache:|r {} pieces back in your bags; {} still in the "
+                "cache: make room in your bags and use it again.", back, left);
+        else
+        {
+            handler.PSendSysMessage("|cffff8000Prestige Gear Cache:|r {} pieces back in your bags.", back);
+            player->DestroyItem(cache->GetBagSlot(), cache->GetSlot(), true);
+        }
+        Reequip(player);
+        return true;
+    }
+};
+
 class titan_prestige : public PlayerScript
 {
 public:
@@ -498,4 +646,5 @@ void AddSC_prestige()
 {
     new npc_titan_prestige();
     new titan_prestige();
+    new item_titan_prestige_cache();
 }

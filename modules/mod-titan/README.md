@@ -344,17 +344,21 @@ a dungeon, battleground or queue.
 - **Lost:** the level (back to 1, at the race's starting point); every Wildcard ability and talent (a new random kit
   and both tomes, as a new Hero: `Wildcard::Reset`); every quest, in the log or done (dailies, weeklies and monthlies
   too), so all can be done and rewarded again (but the game's hidden tracking quests).
-- **Kept:** gear, gold, Emberspark, professions, mounts, reputation, achievements and the role. Every piece worn that
-  needs more than level 1 goes to the bags (what does not fit, by mail) and back on in its old slot as soon as its
-  level allows, whatever is worn there then (to the bags). Gear left in the mail goes on once it is taken out.
+- **Kept:** gear, gold, Emberspark, professions, mounts, reputation, achievements and the role. Every piece worn is
+  packed into a **Prestige Gear Cache** (910021, `titan_prestige.sql`; one bag slot, by mail when the bags are full):
+  the very items stay in the database (`item_instance`, listed by the cache in `titan_prestige_gear`,
+  `data/sql/db-characters/`). Used, the cache gives them back into the bags (what does not fit stays in it; empty, it
+  is gone), and each piece goes back on in its old slot as soon as its level allows, whatever is worn there then (to
+  the bags). Destroying the cache destroys the gear in it (its tooltip says so).
   A piece's level (`Prestige::EquipLevel`) is its required level, or for a weapon or armor (uncommon or better)
-  with none (the squish gives most one: below) its item level less 10, up to item level 70, else the level cap. A Hero cannot put on gear above their level, and gear worn above it at login comes off
-  the same way (ratings are worth far more at low levels: TBC rewards on a level 1 Hero gave hundreds of percent of
-  critical strike).
-- **Given:** 500 Emberspark, 2 Titan Souls of Rested Experience (910001), **Prestigious** (90607: 10% more
-  experience from everything, until level 60; the bonus is `OnPlayerGiveXP`'s, the buff shows it) and the quest
-  **Trial of Ember: Prestigious** (910100, `titan_prestige.sql`). Reaching level 60 again ends the run (the fastest
-  run is kept) and completes the quest; turned in to the Keeper (who offers it before the window), it gives 5,000
+  with none (the squish gives most one: below) its item level less 10, up to item level 70, else the level cap. A
+  Hero cannot put on gear above their level, and gear worn above it at login comes off into the bags (ratings are
+  worth far more at low levels: TBC rewards on a level 1 Hero gave hundreds of percent of critical strike).
+- **Given:** a new Hero's gear (the race's starting outfit, worn, and the starter weapons in the bags,
+  `HeroEquipment::StarterBagKit`), 500 Emberspark, 2 Titan Souls of Rested Experience (910001), **Prestigious**
+  (90607: 10% more experience from everything, until level 60; the bonus is `OnPlayerGiveXP`'s, the buff shows
+  it) and the quest **Trial of Ember: Prestigious** (910100, `titan_prestige.sql`). Reaching level 60 again ends
+  the run (the fastest run is kept) and completes the quest; turned in to the Keeper (who offers it before the window), it gives 5,000
   Emberspark. A run started before the quest existed gets them at level 60. Both are announced to the realm.
 - **Specialization locked** during a run (`specs.cpp`); the role can change.
 

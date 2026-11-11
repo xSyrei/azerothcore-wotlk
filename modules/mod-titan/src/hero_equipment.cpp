@@ -15,6 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "hero_equipment.h"
 #include "DatabaseEnv.h"
 #include "Bag.h"
 #include "Item.h"
@@ -123,6 +124,14 @@ namespace
                 player->StoreNewItem(dest, kit.ItemId, true);
         }
     }
+}
+
+std::vector<std::pair<uint32, uint32>> HeroEquipment::StarterBagKit()
+{
+    std::vector<std::pair<uint32, uint32>> kit;
+    for (KitItem const& item : STARTER_BAG_KIT)
+        kit.emplace_back(item.ItemId, item.Count);
+    return kit;
 }
 
 // Ammo comes by itself: a Hero with a bow, crossbow or gun has the arrows or bullets of their level in the ammo slot

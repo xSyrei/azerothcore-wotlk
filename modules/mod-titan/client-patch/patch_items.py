@@ -27,6 +27,7 @@ ITEMS = [
     (910012, 15, 0, -1, 1, 56181, 0, 0),   # Golden Skill Card Pack (the Greatness card)
     (910013, 15, 0, -1, 1, 56264, 0, 0),   # Golden Talent Card Pack (the Lords card)
     (910020, 1, 0, -1, 7, 34796, 18, 0),   # Emberforged Satchel (a 30-slot bag, the Glacial Bag's look)
+    (910021, 15, 0, -1, 1, 9515, 0, 0),    # Prestige Gear Cache (an ornate box)
 ]
 
 # Custom displays: (id, model file, model texture, inventory icon, item group sound, helmet geoset visibility)
