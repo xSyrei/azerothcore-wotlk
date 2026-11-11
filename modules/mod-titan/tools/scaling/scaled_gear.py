@@ -67,6 +67,10 @@ SLOT_ARMOR = {1: 0.8125, 3: 0.75, 5: 1.0, 20: 1.0, 9: 0.4375, 10: 0.625, 6: 0.56
 # Damage per second per item level, a green's (median), and the speeds the pool's weapons are made at.
 DPS_PER_LEVEL = {'one-hand': 0.518, 'dagger': 0.518, 'two-hand': 0.677, 'ranged': 0.555, 'wand': 0.807}
 SPEED = {'one-hand': 2600, 'dagger': 1800, 'two-hand': 3400, 'ranged': 2800, 'wand': 1500}
+# Ranged weapons, as Blizzard's: their range (RangedModRange 100: the client computes a shot's range from it, 0 is out
+# of range everywhere) and ammo (bows arrows 2, guns bullets 3; wands none).
+RANGED_RANGE = 100
+AMMO_TYPE = {2: 2, 3: 3, 18: 2}
 DAMAGE_SPREAD = 0.3             # minimum and maximum damage: the average less and plus this share
 
 ARMOR_MIXES = {'cloth': ['Owl', 'Sorcerer'], 'leather': ['Monkey', 'Owl'],
@@ -173,17 +177,21 @@ def write_sql(templates, suffixes):
         '',
         '-- A template per piece and level: item level = level + 5, a green\'s armor and damage there.',
         f'DELETE FROM `item_template` WHERE `entry` BETWEEN {FIRST_ITEM} AND {last};',
-        'INSERT INTO `item_template` (`entry`, `class`, `subclass`, `SoundOverrideSubclass`, `name`, `displayid`,',
-        '    `Quality`, `SellPrice`, `InventoryType`, `AllowableClass`, `AllowableRace`, `ItemLevel`, `RequiredLevel`,',
-        '    `stackable`, `armor`, `dmg_min1`, `dmg_max1`, `delay`, `bonding`, `Material`, `sheath`, `MaxDurability`,',
-        '    `RandomSuffix`, `VerifiedBuild`) VALUES',
+        '-- (SoundOverrideSubclass, AllowableClass and AllowableRace: their default, -1.)',
+        'INSERT INTO `item_template` (`entry`, `class`, `subclass`, `name`, `displayid`,',
+        '    `Quality`, `SellPrice`, `InventoryType`, `ItemLevel`, `RequiredLevel`,',
+        '    `stackable`, `armor`, `dmg_min1`, `dmg_max1`, `delay`, `ammo_type`, `RangedModRange`, `bonding`,',
+        '    `Material`, `sheath`, `MaxDurability`, `RandomSuffix`, `VerifiedBuild`) VALUES',
     ]
     rows = []
     for t in templates:
-        rows.append(f"({t['entry']}, {t['class']}, {t['subclass']}, -1, {sql_text(t['name'])}, {t['display']}, "
-                    f"{QUALITY_UNCOMMON}, {t['item_level']}, {t['inventory']}, -1, -1, {t['item_level']}, "
-                    f"{t['level']}, 1, {t['armor_value']}, {t['damage'][0]}, {t['damage'][1]}, {t['delay']}, 1, "
-                    f"{t['material']}, {t['sheath']}, {t['durability']}, {SUFFIX_GROUP}, 0)")
+        ranged = t['weapon'] in ('ranged', 'wand')
+        ammo = AMMO_TYPE.get(t['subclass'], 0) if t['class'] == 2 else 0
+        rows.append(f"({t['entry']}, {t['class']}, {t['subclass']}, {sql_text(t['name'])}, {t['display']}, "
+                    f"{QUALITY_UNCOMMON}, {t['item_level']}, {t['inventory']}, {t['item_level']}, "
+                    f"{t['level']}, 1, {t['armor_value']}, {t['damage'][0]}, {t['damage'][1]}, {t['delay']}, "
+                    f"{ammo}, {RANGED_RANGE if ranged else 0}, 1, {t['material']}, {t['sheath']}, "
+                    f"{t['durability']}, {SUFFIX_GROUP}, 0)")
     lines.append(',\n'.join(rows) + ';')
     lines += [
         '',
