@@ -148,9 +148,14 @@ local function PlaceTabs()
     end
 end
 
+-- Every moved region is cleared before any is anchored again: put back one at a time, a region could be anchored to
+-- one still hanging off it in our layout (the resistance row: MagicResFrame2 off 3, 3 back onto 2), a loop the client
+-- refuses ("is dependent on this").
 local function Restore()
-    for region, points in pairs(moved) do
+    for region in pairs(moved) do
         region:ClearAllPoints()
+    end
+    for region, points in pairs(moved) do
         for _, point in ipairs(points) do
             region:SetPoint(unpack(point))
         end
