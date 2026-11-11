@@ -97,7 +97,7 @@ end
 
 dofile(DIR .. "Catalog.lua")
 dofile(DIR .. "Emberforge_Runes.lua")
-local frame = EmberforgeRunes
+local frame = EmberforgeLegendaryRunes
 local state, view = EmberforgeRunes_State, EmberforgeRunes_View
 local function server(message) EmberforgeRunes_OnMessage(message) end
 local function lastSent() return sent[#sent] and sent[#sent][2] end

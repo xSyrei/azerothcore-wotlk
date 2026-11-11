@@ -158,7 +158,7 @@ end
 
 -- Window ---------------------------------------------------------------------------------------------------------
 
-local frame = CreateFrame("Frame", "EmberforgeRunes", UIParent)
+local frame = CreateFrame("Frame", "EmberforgeLegendaryRunes", UIParent)
 frame:SetWidth(WIDTH)
 frame:SetHeight(HEIGHT)
 frame:SetPoint("CENTER")
@@ -172,7 +172,7 @@ frame:SetScript("OnDragStart", frame.StartMoving)
 frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 Box(frame, WINDOW_FILL, WINDOW_EDGE)
 frame:Hide()
-tinsert(UISpecialFrames, "EmberforgeRunes")         -- Escape closes it
+tinsert(UISpecialFrames, "EmberforgeLegendaryRunes")  -- Escape closes it
 
 local title = Text(frame, 24, GOLD, "Fonts\\MORPHEUS.TTF")
 title:SetPoint("TOP", 0, -16)
