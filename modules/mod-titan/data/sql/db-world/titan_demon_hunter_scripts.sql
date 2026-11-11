@@ -1,12 +1,13 @@
--- Demon Hunter spell scripts (src/demon_hunter.cpp). Every ability needs a one-handed weapon in
--- each hand: the off hand is checked by spell_titan_dh_dual_weapons. A negative id binds every rank
--- (client-patch/patch_ranks.py); the DELETEs clear the single-rank rows from before too.
-DELETE FROM `spell_script_names` WHERE `spell_id` IN (90100, -90100, 90101, 90102, 90103, 90105);
+-- Demon Hunter spell scripts (src/demon_hunter.cpp). The attacks need a one-handed weapon in
+-- each hand: the off hand is checked by spell_titan_dh_dual_weapons (Fel Rush, which needs none, no longer).
+-- A negative id binds every rank (client-patch/patch_ranks.py); the DELETEs clear the single-rank rows from
+-- before too.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (90100, -90100, 90101, 90102, 90105);
+DELETE FROM `spell_script_names` WHERE `spell_id` = 90103 AND `ScriptName` = 'spell_titan_dh_dual_weapons';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-90100, 'spell_titan_dh_dual_weapons'),
 (90101, 'spell_titan_dh_dual_weapons'),
 (90102, 'spell_titan_dh_dual_weapons'),
-(90103, 'spell_titan_dh_dual_weapons'),
 (90105, 'spell_titan_dh_dual_weapons');
 
 -- Blade Dance: its four strikes (spell_titan_dh_blade_dance), and their share of attack power.
@@ -38,11 +39,10 @@ DELETE FROM `spell_script_names` WHERE `spell_id` = 90103 AND `ScriptName` = 'sp
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90103, 'spell_titan_dh_fel_rush');
 
--- Vengeful Retreat and Throw Glaive: both weapons needed; their hits' share of attack power; Throw
+-- Throw Glaive: both weapons needed (Vengeful Retreat: none); their hits' share of attack power; Throw
 -- Glaive's ricochet reaches 10 yards (a ranged spell's chain would reach 7.5).
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (90109, 90111) AND `ScriptName` = 'spell_titan_dh_dual_weapons';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(90109, 'spell_titan_dh_dual_weapons'),
 (90111, 'spell_titan_dh_dual_weapons');
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (90110, 90111);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
@@ -52,12 +52,8 @@ DELETE FROM `spell_jump_distance` WHERE `ID` = 90111;
 INSERT INTO `spell_jump_distance` (`ID`, `JumpDistance`) VALUES
 (90111, 10);
 
--- Chaos Nova, Blur and Consume Magic: both weapons needed; Chaos Nova's share of attack power.
+-- Chaos Nova, Blur and Consume Magic need no weapon; Chaos Nova's share of attack power.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (90112, 90113, 90114) AND `ScriptName` = 'spell_titan_dh_dual_weapons';
-INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(90112, 'spell_titan_dh_dual_weapons'),
-(90113, 'spell_titan_dh_dual_weapons'),
-(90114, 'spell_titan_dh_dual_weapons');
 DELETE FROM `spell_bonus_data` WHERE `entry` = 90112;
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90112, 0, 0, 0.4, 0, 'Chaos Nova');
@@ -72,13 +68,12 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90105, 'spell_titan_dh_eye_beam'),
 (90112, 'spell_titan_dh_chaos_nova');
 
--- Felblade, Darkness and Immolation Aura: both weapons needed; Felblade's and Immolation Aura's pulses'
+-- Felblade and Immolation Aura: both weapons needed (Darkness: none); Felblade's and Immolation Aura's pulses'
 -- share of attack power; Darkness's chance to avoid a hit (spell_titan_dh_darkness).
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (90117, 90118, 90119)
     AND `ScriptName` = 'spell_titan_dh_dual_weapons';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90117, 'spell_titan_dh_dual_weapons'),
-(90118, 'spell_titan_dh_dual_weapons'),
 (90119, 'spell_titan_dh_dual_weapons');
 DELETE FROM `spell_script_names` WHERE `spell_id` = 90118 AND `ScriptName` = 'spell_titan_dh_darkness';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
@@ -128,16 +123,13 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90157, 0, 0, 0, 0, 'Trail of Ruin'),
 (90158, 0, 0, 0, 0, 'Soul Rending');
 
--- Vengeance: Shear, Soul Cleave, Demon Spikes, Fiery Brand and Torment need both weapons; Soul Cleave eats Soul
--- Fragments (spell_titan_dh_soul_cleave); Fiery Brand's share of attack power.
+-- Vengeance: Shear and Soul Cleave need both weapons (Demon Spikes, Fiery Brand and Torment: none); Soul Cleave
+-- eats Soul Fragments (spell_titan_dh_soul_cleave); Fiery Brand's share of attack power.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (90124, -90124, 90125, -90125, 90127, 90128, 90129)
     AND `ScriptName` = 'spell_titan_dh_dual_weapons';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-90124, 'spell_titan_dh_dual_weapons'),
-(-90125, 'spell_titan_dh_dual_weapons'),
-(90127, 'spell_titan_dh_dual_weapons'),
-(90128, 'spell_titan_dh_dual_weapons'),
-(90129, 'spell_titan_dh_dual_weapons');
+(-90125, 'spell_titan_dh_dual_weapons');
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (90125, -90125) AND `ScriptName` = 'spell_titan_dh_soul_cleave';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-90125, 'spell_titan_dh_soul_cleave');
@@ -145,12 +137,11 @@ DELETE FROM `spell_bonus_data` WHERE `entry` = 90128;
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90128, 0, 0, 0.5, 0, 'Fiery Brand');
 
--- Spirit Bomb, Soul Barrier and Sigil of Chains: both weapons needed; their scripts (Soul Fragments eaten, Frailty's
--- healing, the sigil's pull); the explosion's and the healing's amounts are the scripts' own.
+-- Spirit Bomb and Soul Barrier: both weapons needed (Sigil of Chains: none); their scripts (Soul Fragments
+-- eaten, Frailty's healing, the sigil's pull); the explosion's and the healing's amounts are the scripts' own.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (90132, 90135, 90138)
     AND `ScriptName` = 'spell_titan_dh_dual_weapons';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(90132, 'spell_titan_dh_dual_weapons'),
 (90135, 'spell_titan_dh_dual_weapons'),
 (90138, 'spell_titan_dh_dual_weapons');
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_dh_spirit_bomb', 'spell_titan_dh_frailty',

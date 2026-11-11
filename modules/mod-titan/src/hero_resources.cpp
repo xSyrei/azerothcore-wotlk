@@ -264,6 +264,11 @@ public:
             spellInfo->TotemCategory.fill(0);
         }
 
+        // A Warrior's abilities need no stance (their passives keep theirs: a stance's own applies only in it), as
+        // the client patch does (patch_spells.py, free_warrior_stances).
+        if (spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR && !spellInfo->IsPassive())
+            spellInfo->Stances = 0;
+
         if (spellInfo->PowerType == POWER_RUNIC_POWER)
             spellInfo->PowerType = POWER_RAGE;
         for (SpellEffectInfo& effect : spellInfo->_GetEffects())
@@ -272,11 +277,13 @@ public:
     }
 };
 
-// Death Knight abilities come from level 1 for a Hero (wildcard.cpp, LEVEL_ONE_ABILITIES), but their damage is a
-// level-55 class's: Icy Touch hit a level-1 wolf for about 236. A Hero's Death Knight spells (their direct damage
-// and their diseases' and Death and Decay's ticks) deal a share of it below level 40 that follows what a
-// level-appropriate spell deals (a Mage's Frostbolt of that level against Icy Touch's): 8% at level 1, 18% at 10,
-// 38% at 20, 65% at 30, all of it from 40. Heals stay whole: the Death Knight's are a share of maximum health already.
+// Death Knight abilities come from level 1 for a Hero (wildcard.cpp, LEVEL_ONE_ABILITIES), but their numbers are a
+// level-55 class's: Icy Touch hit a level-1 wolf for about 236. Below level 40 a Hero's Death Knight abilities with
+// those numbers (Spell.dbc level 55 and up) deal a share of their damage: the spells (Icy Touch, Death Coil, Death and
+// Decay's ticks) 15% at level 1, 25% at 10, 45% at 20, 70% at 30; the weapon strikes (Plague Strike, Blood Strike,
+// Heart Strike...), whose weapon part is already the Hero's, 35%, 50%, 70%, 85%; all of it from 40. The diseases
+// (Frost Fever, Blood Plague: level 0, their ticks from attack power) and the heals (a share of maximum health) stay
+// whole.
 class titan_dk_low_level : public UnitScript
 {
 public:
@@ -291,32 +298,44 @@ public:
         float Share;
     };
 
-    static constexpr std::array<Point, 5> CURVE = { { { 1, 0.08f }, { 10, 0.18f }, { 20, 0.38f }, { 30, 0.65f },
-        { 40, 1.0f } } };
+    using Curve = std::array<Point, 5>;
+    static constexpr Curve SPELLS = { { { 1, 0.15f }, { 10, 0.25f }, { 20, 0.45f }, { 30, 0.7f }, { 40, 1.0f } } };
+    static constexpr Curve STRIKES = { { { 1, 0.35f }, { 10, 0.5f }, { 20, 0.7f }, { 30, 0.85f }, { 40, 1.0f } } };
+    // The level the Death Knight's own abilities start at: below it (the diseases, 0) nothing is scaled.
+    static constexpr uint32 DEATH_KNIGHT_LEVEL = 55;
 
-    static float Share(uint8 level)
+    static float Share(Curve const& curve, uint8 level)
     {
-        if (level <= CURVE.front().Level)
-            return CURVE.front().Share;
-        for (std::size_t i = 1; i < CURVE.size(); ++i)
-            if (level < CURVE[i].Level)
+        if (level <= curve.front().Level)
+            return curve.front().Share;
+        for (std::size_t i = 1; i < curve.size(); ++i)
+            if (level < curve[i].Level)
             {
-                Point const& low = CURVE[i - 1];
-                Point const& high = CURVE[i];
+                Point const& low = curve[i - 1];
+                Point const& high = curve[i];
                 return low.Share + (high.Share - low.Share) * (level - low.Level) / float(high.Level - low.Level);
             }
         return 1.0f;
     }
 
+    static bool IsWeaponStrike(SpellInfo const* spellInfo)
+    {
+        return spellInfo->HasEffect(SPELL_EFFECT_WEAPON_DAMAGE)
+            || spellInfo->HasEffect(SPELL_EFFECT_WEAPON_PERCENT_DAMAGE)
+            || spellInfo->HasEffect(SPELL_EFFECT_NORMALIZED_WEAPON_DMG)
+            || spellInfo->HasEffect(SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL);
+    }
+
     // The share for a Hero's Death Knight spell, 1 for anything else.
     static float ShareFor(Unit* attacker, SpellInfo const* spellInfo)
     {
-        if (!attacker || !spellInfo || spellInfo->SpellFamilyName != SPELLFAMILY_DEATHKNIGHT)
+        if (!attacker || !spellInfo || spellInfo->SpellFamilyName != SPELLFAMILY_DEATHKNIGHT
+            || spellInfo->SpellLevel < DEATH_KNIGHT_LEVEL)
             return 1.0f;
         Player* player = attacker->ToPlayer();
         if (!player || !hero_resources::IsHero(player))
             return 1.0f;
-        return Share(player->GetLevel());
+        return Share(IsWeaponStrike(spellInfo) ? STRIKES : SPELLS, player->GetLevel());
     }
 
     void ModifySpellDamageTaken(Unit* /*target*/, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override

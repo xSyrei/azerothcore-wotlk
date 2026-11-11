@@ -451,6 +451,8 @@ VISUALS = {
 # Spells: id, the Blizzard spell copied, name, tooltip text, aura text, icon, then column changes.
 # "two_weapons": needs a one-handed weapon in each hand (the main hand checked here, the off hand by
 # the server's spell_titan_dh_dual_weapons, src/demon_hunter.cpp).
+# The ones that move, defend or taunt (Fel Rush, Vengeful Retreat, Blur, Darkness, Demon Spikes, Torment...) need no
+# weapon.
 # Effects not listed keep the copied spell's; "clear" empties effects (numbers 1-3); "unset" clears
 # bits of the copied spell's flag columns.
 SPELLS = [
@@ -499,7 +501,7 @@ SPELLS = [
     },
     {
         'id': 90103, 'copy': 1953, 'name': 'Fel Rush', 'icon': 'Ability_DemonHunter_FelRush',
-        'two_weapons': True, 'visual': 'FelRush',
+        'visual': 'FelRush',
         'description': 'Rush forward $a1 yards in a burst of fel energy, dealing $90104s1 Shadow damage to '
                        'enemies in your path.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'ManaCostPercentage': 0,
@@ -569,7 +571,7 @@ SPELLS = [
     {
         # Disengage's backward leap (farther), clearing snares; 90110 hits and slows the enemies left behind.
         'id': 90109, 'copy': 781, 'name': 'Vengeful Retreat', 'icon': 'Ability_DemonHunter_VengefulRetreat',
-        'two_weapons': True, 'visual': 'VengefulRetreat',
+        'visual': 'VengefulRetreat',
         'description': 'Remove all snares and vault away. Nearby enemies take 40% of your attack power as '
                        'Physical damage and have their movement speed reduced by 70% for 3 sec.',
         # A hunter-family spell (no class flags, so no hunter talent or glyph touches it): the core
@@ -618,7 +620,7 @@ SPELLS = [
         # The Burning Crusade demons' Chaos Nova: everything within 8 yards takes 1 damage plus attack
         # power (spell_bonus_data) and is stunned for 2 sec.
         'id': 90112, 'copy': 36225, 'name': 'Chaos Nova', 'icon': 'Spell_Fire_FelFireNova',
-        'two_weapons': True, 'visual': 'ChaosNova',
+        'visual': 'ChaosNova',
         'description': 'Unleash an eruption of fel energy, dealing 40% of your attack power as Shadow damage '
                        'and stunning all enemies within 8 yards for 2 sec.',
         'tooltip': 'Stunned.',
@@ -636,7 +638,7 @@ SPELLS = [
     {
         # Evasion's dodge, and 35% less damage taken instead of its ranged miss chance.
         'id': 90113, 'copy': 26669, 'name': 'Blur', 'icon': 'Ability_DemonHunter_Blur',
-        'two_weapons': True, 'visual': 'Blur',
+        'visual': 'Blur',
         'description': 'Increases your chance to dodge by 50% and reduces all damage taken by 35% for $d.',
         'tooltip': 'Dodge chance increased by 50%. Damage taken reduced by 35%.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 60000, 'DurationIndex': DURATION_10S,
@@ -697,7 +699,7 @@ SPELLS = [
         # Consecration's persistent area, on allies: a shield of no size (-1) that spell_titan_dh_darkness turns
         # into a 20% chance to take nothing from each hit.
         'id': 90118, 'copy': 26573, 'name': 'Darkness', 'icon': 'Ability_DemonHunter_Darkness',
-        'two_weapons': True, 'visual': 'Darkness',
+        'visual': 'Darkness',
         'description': 'Summon darkness around you in an 8 yard radius for $d. Allies in it have a 20% chance to '
                        'avoid all damage from an attack.',
         'tooltip': '20% chance to avoid all damage from an attack.',
@@ -818,7 +820,7 @@ SPELLS = [
     {
         # Evasion's self buff: 20% parry and 30% more armor for 6 sec, off the global cooldown.
         'id': 90127, 'copy': 26669, 'name': 'Demon Spikes', 'icon': 'Ability_DemonHunter_DemonSpikes',
-        'visual': 'DemonSpikes', 'two_weapons': True,
+        'visual': 'DemonSpikes',
         'description': 'Surge with fel power, increasing your chance to parry by $s1% and your armor by $s2% for '
                        '$d.',
         'tooltip': 'Parry chance increased by $s1%. Armor increased by $s2%.',
@@ -837,7 +839,7 @@ SPELLS = [
         # Fire Blast's: 1 damage plus attack power (spell_bonus_data), and the target deals 40% less damage for
         # 8 sec. Effect 3 ticks every 2 sec for Burning Alive (talent) to spread it (spell_titan_dh_fiery_brand).
         'id': 90128, 'copy': 2136, 'name': 'Fiery Brand', 'icon': 'Ability_DemonHunter_FieryBrand',
-        'visual': 'FieryBrand', 'two_weapons': True,
+        'visual': 'FieryBrand',
         'description': 'Brand an enemy with a demonic symbol, dealing 50% of your attack power as Fire damage. The '
                        'branded enemy deals 40% less damage for $d.',
         'tooltip': 'Branded: damage dealt reduced by 40%.',
@@ -858,7 +860,6 @@ SPELLS = [
     {
         # Taunt, at 30 yards, every 8 sec, no Rage.
         'id': 90129, 'copy': 355, 'name': 'Torment', 'icon': 'Ability_DemonHunter_Torment',
-        'two_weapons': True,
         'description': 'Taunt the target to attack you.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 8000, 'RangeIndex': RANGE_30,
                 'PowerType': 0, 'ManaCost': 0, 'BaseLevel': 6, 'SpellLevel': 6},
@@ -935,7 +936,7 @@ SPELLS = [
         # Death and Decay's ground-targeted persistent area: the sigil arms for 1.5 sec, slowing enemies in it,
         # then spell_titan_dh_sigil_of_chains pulls every enemy within 8 yards to its center (90133).
         'id': 90132, 'copy': 43265, 'name': 'Sigil of Chains', 'icon': 'Ability_DemonHunter_SigilOfChains',
-        'visual': 'SigilOfChains', 'two_weapons': True,
+        'visual': 'SigilOfChains',
         'description': 'Place a Sigil of Chains at the target location. After 1.5 sec, it pulls all enemies '
                        'within 8 yards to its center and slows them by 70% for 6 sec.',
         'tooltip': 'Movement speed reduced by 70%.',
@@ -965,7 +966,7 @@ SPELLS = [
         # Counterspell: interrupts and locks the school out for 3 sec; also removes one magic buff
         # from the target and gives 20 Fury.
         'id': 90114, 'copy': 2139, 'name': 'Consume Magic', 'icon': 'Ability_DemonHunter_ConsumeMagic',
-        'two_weapons': True, 'visual': 'ConsumeMagic',
+        'visual': 'ConsumeMagic',
         'description': "Interrupt the target's spellcasting, preventing any spell in that school from being "
                        'cast for $d, and consume 1 beneficial Magic effect from it. Generates 20 Rage.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 15000, 'RangeIndex': RANGE_20,
@@ -1309,6 +1310,51 @@ def drop_class_reagents(spells):
     return dropped
 
 
+SPELLFAMILY_WARRIOR, SPELLFAMILY_DEATHKNIGHT = 4, 15
+STANCES_COLUMNS = (12, 13)                          # Stances (a 64-bit mask)
+UNHOLY_PRESENCE, UNHOLY_PRESENCE_GCD_EFFECT = 48265, 1    # its effect 2: -0.5 sec GCD on the masked spells
+DK_GCD, DK_UNHOLY_GCD = 1500, 1000
+
+
+def free_warrior_stances(spells):
+    """A Hero uses a Warrior's abilities in any stance (or none): Battle Stance's Charge, Berserker Stance's
+    Whirlwind... The passives keep theirs (a stance's own passive applies only in it). The server does the same to
+    its copy (hero_resources.cpp, titan_runic_power_to_rage)."""
+    freed = 0
+    for key, row in spells.rows.items():
+        if (row[FIELDS['SpellFamilyName']] != SPELLFAMILY_WARRIOR or row[FIELDS['Attributes']] & SPELL_ATTR0_PASSIVE
+                or not any(row[c] for c in STANCES_COLUMNS)):
+            continue
+        row = list(row)
+        for column in STANCES_COLUMNS:
+            row[column] = 0
+        spells.rows[key] = tuple(row)
+        freed += 1
+    return freed
+
+
+def unholy_presence_gcd(spells):
+    """Unholy Presence takes 0.5 sec off the Death Knight's global cooldown with a spell modifier, which the client
+    applies only to its own class's spells (ChrClasses' SpellClassSet: a Hero is a Paladin), so it kept a Hero's
+    Death Knight abilities at 1.5 sec and held the cast back. The client's copy of each ability the presence covers
+    starts a 1 sec global cooldown; the server keeps 1.5 sec, 1 sec in Unholy Presence, and its spell queue
+    (SpellQueue.Window) holds a press that comes early."""
+    presence = spells.rows[UNHOLY_PRESENCE]
+    mask = [presence[CLASS_MASK + UNHOLY_PRESENCE_GCD_EFFECT * 3 + k] for k in range(3)]
+    flags = ('SpellFamilyFlags0', 'SpellFamilyFlags1', 'SpellFamilyFlags2')
+    changed = 0
+    for key, row in spells.rows.items():
+        if (row[FIELDS['SpellFamilyName']] != SPELLFAMILY_DEATHKNIGHT or row[FIELDS['StartRecoveryTime']] != DK_GCD
+                or row[FIELDS['Attributes']] & SPELL_ATTR0_PASSIVE
+                or not any(row[FIELDS[name]] & bits for name, bits in zip(flags, mask))):
+            continue
+        row = list(row)
+        row[FIELDS['StartRecoveryTime']] = DK_UNHOLY_GCD
+        spells.rows[key] = tuple(row)
+        changed += 1
+    return changed
+
+
 FINISHERS_LUA = HERE / 'AddOns' / 'Emberforge_Resources' / 'ComboFinishers.lua'
 # Finishers by their spell attributes (AttributesEx: finishing move, damage or duration).
 FINISHING_MOVE = 0x00100000 | 0x00400000
@@ -1443,12 +1489,14 @@ def main():
     runes = drop_client_rune_costs(spells)
     write_rune_costs(source, runes)
     reagents = drop_class_reagents(spells)
+    stances = free_warrior_stances(spells)
+    gcds = unholy_presence_gcd(spells)
     write_finishers(spells)
     spells.save(out / 'Spell.dbc')
     tabs, talents = build_talents(source, out, icon_id)
     print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power turned into Rage in {renamed} spells, '
           f'rune costs left to the server in {len(runes)}, '
-          f'reagents dropped from {reagents}) '
+          f'reagents dropped from {reagents}, stances freed in {stances}, Unholy Presence\'s GCD on {gcds}) '
           f'and {out / "SpellIcon.dbc"}')
     if sql:
         write_sql(spells, sql, talent_sql(tabs, talents))

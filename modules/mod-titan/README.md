@@ -25,9 +25,13 @@ have); `Emberforge_Resources` shows the ammo slot, which the character sheet hid
 Fishing poles still need the Fishing profession. Runes recharge on the server, but the client only shows a
 real Death Knight's recharging, so `hero_runes` (`src/hero_resources.cpp`) sends a Hero's rune state while any is
 cooling down (every half second, and at once when one is spent or ready) and each rune as it comes back. Death Knight abilities come
-from level 1 but hit like a level-55 class's, so below level 40 a Hero's Death Knight spells deal a share of their
-damage (`titan_dk_low_level`, same file): 8% at level 1, 18% at 10, 38% at 20, 65% at 30, all from 40 (Icy Touch
-about 19, 42, 90, 153, 236). Heals stay whole. At first login a Hero also finds one of each weapon kind
+from level 1 but hit like a level-55 class's, so below level 40 a Hero's Death Knight abilities deal a share of their
+damage (`titan_dk_low_level`, same file): the spells (Icy Touch, Death Coil, Death and Decay) 15% at level 1, 25% at
+10, 45% at 20, 70% at 30; the weapon strikes (Plague Strike, Blood Strike...) 35%, 50%, 70%, 85%; all from 40. The
+diseases (their ticks are attack power's) and the heals stay whole. Unholy Presence's 0.5 sec off the global cooldown
+is the server's alone (the client applies a spell modifier only to its own class's spells), so the client patch gives
+the Death Knight abilities it covers a 1 sec global cooldown (`unholy_presence_gcd`, `patch_spells.py`); the server
+keeps 1.5 sec outside the presence, and its spell queue takes a press that comes early. At first login a Hero also finds one of each weapon kind
 in the bags: a Battleworn Claymore, two Shortswords and two Worn Daggers (all one-hand, to dual wield either), a Bent Staff, a Worn Wooden Shield,
 a Worn Shortbow. Ammo comes by itself: with a bow, crossbow or gun, the arrows or bullets of the Hero's level are put
 in the ammo slot (Rough, Sharp, Razor, Jagged and Wicked Arrows; Light, Heavy and Solid Shot, Accurate Slugs, Impact
@@ -100,8 +104,8 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   Protection with their single-target buffs, Gift of the Wild with Mark of the Wild, Dalaran Brilliance with Dalaran
   Intellect, the Greater Blessings with the Blessings, each once the Hero's level reaches it; never rolled on their
   own, and gone with the buff.
-- **Requirements**: an ability cast only in a form or stance (Swipe (Cat): Cat Form; Overpower: Battle
-  Stance), only in stealth (Ambush: Stealth; Pounce: Prowl) or on a pet (Mend Pet, Kill Command: Tame
+- **Requirements**: an ability cast only in a form (Swipe (Cat): Cat Form; a Warrior's abilities need no stance:
+  `hero_resources.cpp` and `free_warrior_stances`, `patch_spells.py`), only in stealth (Ambush: Stealth; Pounce: Prowl) or on a pet (Mend Pet, Kill Command: Tame
   Beast; Health Funnel: a demon; Death Pact: Raise Dead) is rolled or picked only once the Hero knows an
   ability giving it. Forms, stances and stealth are read from the spells; pets from their targets and
   `PET_ABILITIES`. The Classless window shows them on the ability ("Requires Cat Form", red until met).
@@ -196,8 +200,9 @@ before): it grows with Shadow spell power and Shadow damage bonuses.
 | 90132 | Sigil of Chains | 16 (Vengeance) | Ground-targeted sigil, 30 yards; after 1.5 sec pulls every enemy within 8 yards to its center (90133, the core's pull to a point) and slows them 70% for 6 sec (`spell_titan_dh_sigil_of_chains`); 60 sec cooldown |
 | 90138 | Soul Barrier | 24 (Vengeance) | Absorbs 20% of maximum health for 12 sec, 5% more per combo point spent (all, `spell_titan_dh_soul_barrier`); 30 sec cooldown |
 
-Every ability above needs a one-handed weapon in each hand (two one-handed weapons, or a main-hand
-and an off-hand weapon; not a shield or held-in-off-hand item). The main hand is checked by the
+Every attack above needs a one-handed weapon in each hand (two one-handed weapons, or a main-hand
+and an off-hand weapon; not a shield or held-in-off-hand item); Fel Rush, Vengeful Retreat, Chaos Nova, Blur,
+Consume Magic, Darkness, Demon Spikes, Fiery Brand, Torment and Sigil of Chains need no weapon. The main hand is checked by the
 spells themselves, the off hand by `spell_titan_dh_dual_weapons` (`src/demon_hunter.cpp`, bound in
 `titan_demon_hunter_scripts.sql`). Every Hero can dual wield (see Equipment).
 
