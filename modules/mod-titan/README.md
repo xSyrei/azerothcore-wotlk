@@ -509,13 +509,25 @@ run any number of times. After an update puts original values back (a core updat
 60 are simply out of reach; Death Knight abilities learned above 60 too), creature spells with fixed damage, items
 with no required level, and dungeon level ranges (with the dungeon scaling).
 
-## Dungeon scaling (mod-autobalance)
-`modules/mod-autobalance` is AzerothCore's AutoBalance module, vendored unchanged except its config: it scales
-instance creatures by player count and by level. Emberforge sets `AutoBalance.LevelScaling.SkipHigherLevels` and
-`SkipLowerLevels` to 0 (in `conf/AutoBalance.conf.dist`), so every dungeon scales to the group, up or down; its
-"dynamic" method keeps trash a little under and bosses a little over the group's highest level. Its commands:
-`.ab mapstat`, `.ab creaturestat` (on a target). Still to come on top of it: every dungeon queueable from 10 to 60,
-Heroic for every dungeon at 60 (Classic's included), and Heroic loot.
+## Dungeon scaling
+Every 5-player dungeon is fought at every Hero's own level, Dragonflight's way (`src/dungeon_scaling.cpp` on top of
+`modules/mod-autobalance`, AzerothCore's AutoBalance module):
+- **mod-autobalance** scales the creatures by player count and level. Emberforge's changes: it scales to the group's
+  **lowest** level (`ABUtils.cpp`, marked), up or down from the dungeon's own (`AutoBalance.LevelScaling.Skip*Levels`
+  0, `conf/AutoBalance.conf.dist`); its "dynamic" method keeps trash a little under and bosses a little over; its
+  kill experience scaling is off (`AutoBalance.RewardScaling.XP` 0). Commands: `.ab mapstat`, `.ab creaturestat`.
+- **Every player meets the creatures at their own level**: a creature counts as at the player's level, with its offset
+  from the group's lowest. The damage a player (and their pets) deals is scaled by the creature's health at its level
+  over its health at that one, the damage they take by its damage there over its own (`creature_classlevelstats`, its
+  class): a level 45 with a level 12 deals about 16% and takes about 4 times as much, as against level 45 creatures.
+  Heals between players of different levels go by their health the same way.
+- **Easier the lower the Hero**: at level 10 (and below) creatures have half their health (the Hero's damage doubled)
+  and deal 75% of their damage, evenly up to the intended difficulty at level 60. Heroics are level 60: as intended.
+- **Experience** for a kill is each member's own: what `Acore::XP::Gain` gives for the creature at their level, split
+  evenly over the group's members in range (the core's, nothing for a creature gray to them, is replaced). Prestige's
+  bonus and experience auras apply.
+- Not converted: absorb shields across levels (a level 45's shield on a level 12 is a level 45's), and the level
+  difference in hit, dodge and crit chances (the higher players fight creatures below them: a small edge).
 
 ## Core changes this module relies on
 - `LFGMgr::LoadLFGDungeons`, `DungeonFinder.MinLevel` and `DungeonFinder.OneRandom` (`docker-compose.yml`): every

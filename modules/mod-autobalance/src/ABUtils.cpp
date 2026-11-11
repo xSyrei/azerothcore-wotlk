@@ -2582,7 +2582,9 @@ void UpdateMapPlayerStats(Map* map)
         }
     }
 
-    mapABInfo->highestPlayerLevel = highestPlayerLevel;
+    // Project Emberforge: creatures scale to the LOWEST player's level (highestPlayerLevel is the level everything here
+    // scales to); mod-titan's dungeon_scaling.cpp meets every higher player at their own level.
+    mapABInfo->highestPlayerLevel = lowestPlayerLevel ? lowestPlayerLevel : highestPlayerLevel;
     mapABInfo->lowestPlayerLevel  = lowestPlayerLevel;
 
     if (!highestPlayerLevel)
