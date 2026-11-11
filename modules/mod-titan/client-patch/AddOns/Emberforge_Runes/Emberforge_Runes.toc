@@ -4,4 +4,5 @@
 ## Author: Project Emberforge
 ## OptionalDeps: Emberforge_Classless
 Catalog.lua
+Art.lua
 Emberforge_Runes.lua

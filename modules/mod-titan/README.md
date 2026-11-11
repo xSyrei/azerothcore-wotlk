@@ -398,8 +398,12 @@ empowered effect; three modifier slots (Invocation: how you build; Manifestation
 utility or a tradeoff) take one pick each, from three.
 - **The panel** (`Emberforge_Runes`, `/runes`; addon whispers with prefix `EFRN`, protocol in both files) opens by
   itself at level 10, and at login while the active specialization has no rune: up to three runes suggested from
-  the Hero's abilities and role, and Browse all for every rune (one missing a required ability greyed, naming it;
-  one not built yet: Coming soon). Binding asks first.
+  the Hero's abilities and role, and Browse all for every rune, three a page (one missing a required ability or not
+  built yet shakes and says so). Binding asks first. It is the "Legendary Rune Panel" mockup over the game world: the
+  chosen card erupts and the rest burn away, it condenses into the rune's medallion, which breaks into the three
+  slots, and each slot's three options rise in (a done slot can be chosen again). Its art is baked from the mockup's
+  own drawing code by `client-patch/build_rune_art.py` (`rune_art/bake.js` in headless Chromium: `Art/`, `Art.lua`);
+  its fonts are Cinzel and Alegreya Sans (`Fonts/`, SIL Open Font License).
 - **One rune per specialization**, chosen once: only a prestige clears them (`titan_runes`, db-characters; chosen
   again from level 10). Modifiers change freely out of combat. A new specialization picks its own.
 - **Built so far: the Rune of Fel Commandment** (rune 21; the other 20 are listed). Needs Throw Glaive, Demon's Bite

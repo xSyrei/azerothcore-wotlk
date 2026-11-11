@@ -1,5 +1,5 @@
 -- Offline test for Emberforge_Runes: loads the addon against a mocked WoW 3.3.5 API and plays the panel the way
--- the server drives it (see src/runes.cpp). Run: lua5.1 runes_test.lua
+-- the server drives it (see src/runes.cpp), stepping its animation. Run: lua5.1 runes_test.lua
 local DIR = (arg and arg[1]) or "../Emberforge_Runes/"
 local failures = 0
 local function check(ok, what)
@@ -20,9 +20,9 @@ Widget.__index = function(self, key)
         return function() end
     end
 end
-local function NewWidget(name)
-    local widget = setmetatable({ shown = true, scripts = {}, text = "", width = 36, height = 36, name = name },
-        Widget)
+local function NewWidget(name, parent)
+    local widget = setmetatable({ shown = true, scripts = {}, text = "", width = 36, height = 36, name = name,
+        parent = parent }, Widget)
     if name then
         _G[name] = widget
     end
@@ -30,12 +30,12 @@ local function NewWidget(name)
 end
 function Widget:GetName() return self.name end
 function Widget:CreateTexture()
-    local texture = NewWidget()
+    local texture = NewWidget(nil, self)
     self.textures = self.textures or {}
     self.textures[#self.textures + 1] = texture
     return texture
 end
-function Widget:CreateFontString() return NewWidget() end
+function Widget:CreateFontString() return NewWidget(nil, self) end
 function Widget:SetScript(event, handler) self.scripts[event] = handler end
 function Widget:Show()
     local wasShown = self.shown
@@ -44,24 +44,33 @@ function Widget:Show()
         self.scripts.OnShow(self)
     end
 end
-function Widget:Hide() self.shown = false end
+function Widget:Hide()
+    local wasShown = self.shown
+    self.shown = false
+    if wasShown and self.scripts.OnHide then
+        self.scripts.OnHide(self)
+    end
+end
 function Widget:IsShown() return self.shown end
-function Widget:SetText(text) self.text = text end
+function Widget:SetText(text) self.text = text or "" end
 function Widget:GetText() return self.text end
+function Widget:GetStringWidth() return #self.text * 8 end
 function Widget:SetTexture(texture) self.texture = texture end
 function Widget:SetTextColor(r, g, b) self.color = { r, g, b } end
-function Widget:SetVertexColor(r, g, b) self.vertex = { r, g, b } end
 function Widget:SetDesaturated(on) self.desaturated = on end
+function Widget:SetAlpha(alpha) self.alpha = alpha end
 function Widget:GetWidth() return self.width end
 function Widget:GetHeight() return self.height end
+function Widget:SetFrameLevel(level) self.level = level end
+function Widget:GetFrameLevel() return self.level or 1 end
 function Widget:GetParent() return self.parent end
 function Widget:Click() self.scripts.OnClick(self, "LeftButton") end
 
 UIParent = NewWidget("UIParent")
+UIParent.width, UIParent.height = 1600, 900
 local frames = {}
 function CreateFrame(_, name, parent)
-    local widget = NewWidget(name)
-    widget.parent = parent
+    local widget = NewWidget(name, parent)
     frames[#frames + 1] = widget
     return widget
 end
@@ -96,102 +105,117 @@ for index = 1, 12 do
 end
 
 dofile(DIR .. "Catalog.lua")
+dofile(DIR .. "Art.lua")
 dofile(DIR .. "Emberforge_Runes.lua")
 local frame = EmberforgeLegendaryRunes
-local state, view = EmberforgeRunes_State, EmberforgeRunes_View
+local view, debug = EmberforgeRunes_View, EmberforgeRunes_Debug
 local function server(message) EmberforgeRunes_OnMessage(message) end
 local function lastSent() return sent[#sent] and sent[#sent][2] end
-
-local function upvalues(fn)
-    local values, i = {}, 1
-    while true do
-        local name, value = debug.getupvalue(fn, i)
-        if not name then
-            break
-        end
-        values[name] = value
-        i = i + 1
+local function run(seconds)
+    for _ = 1, math.floor(seconds / 0.02 + 0.5) do
+        debug.Step(0.02)
     end
-    return values
 end
-local panel = upvalues(EmberforgeRunes_Open)
-local parts = upvalues(panel.Refresh)
-local cards = upvalues(parts.RefreshOffers).cards
-local rows = upvalues(parts.RefreshBrowse).rows
-local columns = upvalues(parts.RefreshBuild).columns
-local footer = parts.footer
 frame:Hide()
 
--- The catalog: 21 runes, 9 modifiers each, Fel Commandment last.
+-- The catalog and the art: 21 runes; Fel Commandment's build view in the mockup's words.
 check(#EmberforgeRunesCatalog == 21, "the catalog holds the doc's 21 runes")
-local fel = EmberforgeRunesCatalog[21]
-check(fel.name == "Rune of Fel Commandment" and #fel.mods == 9 and fel.mods[3].name == "Dreadfire Discipline",
-    "Fel Commandment is rune 21, its modifiers in slot order")
+local fel = EmberforgeRunesArt.runes[21]
+check(fel.built and fel.asks[2] == "What your Chaos Bolt Volley does" and #fel.texts == 9,
+    "Art.lua has Fel Commandment's questions and option words")
 
--- Below level 10: nothing opens, the panel says when.
+-- Below level 10: nothing opens; /runes says when.
 server("R,21,-")
 server("S,8,10,1,0,0,0,0,-,0")
 check(not frame:IsShown(), "below level 10 the panel stays closed")
 SlashCmdList.EMBERFORGERUNES()
-check(frame:IsShown() and parts.locked.text == "Legendary Runes unlock at level 10.", "/runes says when it unlocks")
+check(frame:IsShown() and view.mode == "locked" and debug.head.subtitle.text == "Legendary Runes unlock at level 10.",
+    "/runes shows when the runes unlock")
 check(lastSent() == "STATE", "opening asks the server for the state")
 frame:Hide()
 
--- Level 10, no rune: the panel opens by itself once, with the offers.
+-- Level 10, no rune: the panel opens by itself once, the suggested cards rising in.
 server("S,10,10,1,0,0,0,0,21,1")
-check(frame:IsShown() and view.page == "offers", "unlocked with no rune: the panel opens on the offers")
-check(cards[1].shown and cards[1].name.text == "Rune of Fel Commandment" and not cards[2].shown,
-    "one card: the rune the Hero's abilities fit")
+check(frame:IsShown() and view.mode == "offers" and view.phase == "intro", "unlocked with no rune: the offers open")
+run(1.6)
+check(view.phase == "offer" and debug.cards[1].rune and debug.cards[1].rune.id == 21 and not debug.cards[2].rune,
+    "one card: the rune the Hero's abilities fit, settled")
+check(debug.browseAsk.target == 1, "Browse all is offered")
 frame:Hide()
 server("S,10,10,1,0,0,0,0,21,1")
 check(not frame:IsShown(), "it opens by itself only once a session")
 
--- Browse all: every rune; Fel Commandment available, the rest coming.
+-- Browse all: a page of three; the unbuilt ones shake and say they are coming.
 EmberforgeRunes_Open()
-view.page = "browse"
-panel.Refresh()
-check(view.page == "browse" and rows[1].shown and rows[1].status.text == "Coming soon",
-    "Browse all lists every rune; the unbuilt ones say Coming soon")
-view.browseOffset = 12
-panel.Refresh()
-check(rows[9].name.text == "Rune of Fel Commandment" and rows[9].status.text == "Choose",
-    "scrolled down: Fel Commandment can be chosen")
--- Missing an ability: greyed, naming it.
+debug.browseAsk.pill:Click()
+run(1.6)
+check(view.mode == "browse" and debug.cards[1].rune.id == 1 and debug.cards[3].rune.id == 3,
+    "Browse all shows the first page")
+check(debug.cards[1].status.text == "Coming soon", "an unbuilt rune says Coming soon")
+debug.hits[1]:Click()
+check(debug.cards[1].shake and debug.note.text.text:find("coming soon"), "choosing it shakes the card and says why")
+for _ = 1, 6 do
+    debug.pager.next:Click()
+end
+run(1.6)
+check(view.page == 7 and debug.cards[3].rune.id == 21, "the last page ends with Fel Commandment")
 server("R,21,90111/688+697")
-panel.Refresh()
-check(rows[9].status.text == "Needs Throw Glaive, and Summon Imp or Summon Voidwalker",
+debug.hits[3]:Click()
+check(debug.note.text.text:find("needs Throw Glaive, and Summon Imp or Summon Voidwalker"),
     "a rune missing abilities names them")
 server("R,21,-")
-panel.Refresh()
 
--- Binding asks first.
-rows[9]:Click()
+-- Binding asks first; the server's bind sets the eruption off.
+debug.hits[3]:Click()
 check(popup and popup.name == "EMBERFORGE_RUNE_BIND" and popup.a == "Rune of Fel Commandment",
     "choosing asks to confirm the bind")
 StaticPopupDialogs.EMBERFORGE_RUNE_BIND.OnAccept(nil, 21)
 check(lastSent() == "PICK,21", "accepting sends PICK,21")
-
--- Bound: the build view, its three slots.
-view.page = "offers"
 server("N,21,1,3,686+29722")
 server("S,10,10,1,21,0,0,0,21,0")
-check(view.page == "build" and columns[1].options[1].name.text == "Infernal Pact"
-    and columns[3].options[3].name.text == "Pact of Ruin", "bound: the build view shows its nine modifiers")
-check(not columns[1].options[3].enabled and columns[1].options[3].text.text:find("Needs Shadow Bolt or Incinerate"),
-    "Dreadfire Discipline, missing Shadow Bolt or Incinerate, is greyed and says so")
-columns[1].options[3]:Click()
-check(lastSent() == "PICK,21", "a greyed modifier sends nothing")
-columns[1].options[1]:Click()
-check(lastSent() == "MOD,1,1", "picking Infernal Pact sends MOD,1,1")
-check(footer.text:find("Choose your Invocation"), "the footer asks for the first empty slot")
+check(view.phase == "erupt" and view.chosen == 3, "bound: the chosen card erupts")
+run(1.2)
+check(debug.cards[1].noise ~= nil, "the other cards burn")
+run(2.5)
+check(view.medal ~= nil and view.phase == "split", "the card condenses into the medallion, which splits")
+run(1.6)
+check(view.phase == "build" and view.active == 1 and debug.choose.target == 1, "the slots, and the first choice")
+local options = debug.options
+check(options[1].name.text == "Infernal Pact" and options[1].text.text:find("once every 2 sec")
+    and options[1].ability.text == "YOUR DEMON", "the options in the mockup's words")
+check(options[3].missing and options[3].ability.text:find("NEEDS SHADOW BOLT OR INCINERATE"),
+    "Dreadfire Discipline, missing Shadow Bolt or Incinerate, says so")
+local before = #sent
+options[3]:Click()
+check(#sent == before and debug.note.text.text:find("needs Shadow Bolt or Incinerate"), "a greyed option sends nothing")
 
--- The three picks of a build: complete, named.
+-- A pick streams into its slot, and the next slot asks.
+options[1]:Click()
+check(lastSent() == "MOD,1,1", "picking Infernal Pact sends MOD,1,1")
+run(0.6)
+check(view.picks[1] == 1 and view.active == 2 and debug.slots[1].pick.text == "Infernal Pact",
+    "the slot takes it; Manifestation is next")
+server("S,10,10,1,21,1,0,0,21,0")
+options[3]:Click()
+run(0.6)
+server("S,10,10,1,21,1,3,0,21,0")
+options[1]:Click()
+run(0.6)
 server("S,10,10,1,21,1,3,1,21,0")
-check(footer.text == "Your rune is complete: Demon commander.", "a doc build is named when complete")
-server("S,10,10,1,21,1,2,1,21,0")
-check(footer.text == "Your rune is complete.", "other picks: complete, no name")
+check(view.active == nil and debug.done.target == 1 and debug.done.name.text == "Demon Commander",
+    "the three picks of a doc build: complete, named")
+
+-- A done slot can be chosen again.
+debug.slots[2]:Click()
+check(view.active == 2 and debug.choose.target == 1 and options[3].picked, "a done slot opens its choices again")
 server("E,Modifiers can't be changed in combat.")
-check(footer.text:find("in combat"), "a refusal shows in the footer")
+check(debug.note.text.text:find("in combat"), "a refusal shows in the note")
+
+-- Reopened, bound: the medallion straight away.
+frame:Hide()
+EmberforgeRunes_Open()
+check(view.mode == "build" and view.phase == "build" and view.medal.split == 1, "reopened: the build, no eruption")
+frame:Hide()
 
 -- The glow: Throw Glaive on button 3 glows at 5 Fel Command, with the Felguard mark in Metamorphosis.
 actions[3] = 90111
