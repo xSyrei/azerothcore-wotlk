@@ -27,6 +27,7 @@ from pathlib import Path
 import patch_monk
 import patch_player
 import patch_ranks
+import patch_runes
 import patch_talents
 
 HERE = Path(__file__).resolve().parent
@@ -180,7 +181,8 @@ ICONS = ['Ability_DemonHunter_ChaosStrike', 'Ability_DemonHunter_BladeDance', 'A
          'Ability_DemonHunter_DemonSpikes', 'Ability_DemonHunter_FieryBrand', 'Ability_DemonHunter_Torment',
          'Spell_Shadow_SoulGem', 'Ability_DemonHunter_SpiritBomb', 'Ability_DemonHunter_SoulBarrier',
          'Ability_DemonHunter_SigilOfChains']
-ICONS += [name for name in patch_talents.ICONS + patch_monk.ICONS + patch_player.ICONS if name not in ICONS]
+ICONS += [name for name in patch_talents.ICONS + patch_monk.ICONS + patch_player.ICONS + patch_runes.ICONS
+          if name not in ICONS]
 
 # Our effect models and their SpellVisualEffectName ids. "shape" picks the builder in
 # models/spell_effects.py: "weapon" (weapon_trail, for both weapons; the default) or "body"
@@ -980,6 +982,7 @@ SPELLS = [
 SPELLS += patch_talents.SPELLS      # the talents' ranks and helper spells
 SPELLS += patch_monk.SPELLS         # the Monk's
 SPELLS += patch_player.SPELLS       # every Hero's (Emberforged Hero)
+SPELLS += patch_runes.SPELLS        # the Legendary Runes' (Fel Commandment)
 RANK_SPELLS, RANK_CHAINS = patch_ranks.ranks(SPELLS)
 SPELLS += RANK_SPELLS               # the Demon Hunter's and Monk's later ranks
 EFFECTS.update(patch_monk.EFFECTS)

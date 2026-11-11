@@ -18,6 +18,7 @@
 #include "prestige.h"
 #include "cards.h"
 #include "hero_equipment.h"
+#include "runes.h"
 #include "specs.h"
 #include "emberspark.h"
 #include "wildcard.h"
@@ -354,6 +355,7 @@ namespace
         // A new Hero again: the next level change (this one) rolls a new kit, the tomes come back.
         Wildcard::Reset(player);
         Specs::OnPrestige(player);
+        LegendaryRunes::OnPrestige(player);
         Cards::ResetPrices(player);
         player->GiveLevel(1);
         player->InitTalentForLevel();

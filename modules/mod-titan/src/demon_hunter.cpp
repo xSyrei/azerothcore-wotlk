@@ -17,6 +17,7 @@
 
 #include "CellImpl.h"
 #include "combo_points.h"
+#include "runes.h"
 #include "GameTime.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
@@ -185,7 +186,8 @@ namespace
 }
 
 // Fel Rush (90103): the core's charge to a point (Spell::EffectChargeDest), at Fel Rush's own
-// speed: a snap across the 15 yards instead of the charge speed's third of a second.
+// speed: a snap across the 15 yards instead of the charge speed's third of a second. Fel Rift (runes.cpp) sends it
+// to the volley's target instead.
 class spell_titan_dh_fel_rush : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_fel_rush);
@@ -201,6 +203,11 @@ class spell_titan_dh_fel_rush : public SpellScript
             return;
 
         Position pos = dest->GetPosition();
+        // Fel Rift (Rune of Fel Commandment): for 3 sec after a volley, to the glaive's first target, whichever way
+        // the Hero faces, stopping in front of it.
+        if (Player* player = caster->ToPlayer())
+            if (Unit* rift = LegendaryRunes::FelRiftTarget(player))
+                pos = rift->GetNearPosition(rift->GetCombatReach() + 1.0f, rift->GetAngle(caster));
         if (!caster->IsWithinLOS(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ()))
             pos = caster->GetFirstCollisionPosition(caster->GetDistance(pos), caster->GetRelativeAngle(&pos));
 

@@ -18,6 +18,8 @@
 #ifndef MOD_TITAN_SPECS_H
 #define MOD_TITAN_SPECS_H
 
+#include "Define.h"
+
 class Player;
 
 // Specializations (specs.cpp): a Hero's loadouts of Wildcard abilities and talents, rerolls and locks.
@@ -28,6 +30,8 @@ namespace Specs
     // A prestige: every specialization starts over (the active one is the new Hero's; the others roll anew when
     // activated). Names, icons and the ones bought stay.
     void OnPrestige(Player* player);
+    // The active specialization's index (0 to 3).
+    uint8 ActiveSpec(Player* player);
 }
 
 #endif

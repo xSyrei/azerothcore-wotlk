@@ -19,6 +19,7 @@
 #include "cards.h"
 #include "emberspark.h"
 #include "prestige.h"
+#include "runes.h"
 #include "wildcard.h"
 #include "Chat.h"
 #include "DBCStores.h"
@@ -457,6 +458,7 @@ namespace
         Send(player);
         Classless::SendKnown(player);
         Classless::SendState(player);
+        LegendaryRunes::OnSpecChanged(player);
     }
 
     bool IsKnown(Player* player, uint8 kind, uint32 id)
@@ -615,6 +617,11 @@ namespace Specs
                     return true;
         }
         return false;
+    }
+
+    uint8 ActiveSpec(Player* player)
+    {
+        return uint8(std::min<uint32>(player->GetPlayerSetting(SETTING_SOURCE, SETTING_ACTIVE).value, MAX_SPECS - 1));
     }
 
     void OnPrestige(Player* player)

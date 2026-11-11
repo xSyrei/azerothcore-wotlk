@@ -1,0 +1,7 @@
+## Interface: 30300
+## Title: Emberforge Runes
+## Notes: The Legendary Rune panel (/runes): bind a rune to each specialization from level 10, and choose its three modifiers. Throw Glaive glows at 5 Fel Command.
+## Author: Project Emberforge
+## OptionalDeps: Emberforge_Classless
+Catalog.lua
+Emberforge_Runes.lua

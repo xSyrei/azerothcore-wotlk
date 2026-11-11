@@ -391,6 +391,33 @@ Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon wind
   on them. Nothing locked can be prestiged: unlock first. A prestige starts every spec over (names, icons and the ones
   bought stay).
 
+## Legendary Runes
+From level 10 a Hero binds a **Legendary Rune** to each specialization (`src/runes.cpp`; the design: the
+"Emberforge Legendary Runes" doc). A rune is a loop: a builder makes a resource, a spender cashes it in with an
+empowered effect; three modifier slots (Invocation: how you build; Manifestation: what the spender does; Adaptation:
+utility or a tradeoff) take one pick each, from three.
+- **The panel** (`Emberforge_Runes`, `/runes`; addon whispers with prefix `EFRN`, protocol in both files) opens by
+  itself at level 10, and at login while the active specialization has no rune: up to three runes suggested from
+  the Hero's abilities and role, and Browse all for every rune (one missing a required ability greyed, naming it;
+  one not built yet: Coming soon). Binding asks first.
+- **One rune per specialization**, chosen once: only a prestige clears them (`titan_runes`, db-characters; chosen
+  again from level 10). Modifiers change freely out of combat. A new specialization picks its own.
+- **Built so far: the Rune of Fel Commandment** (rune 21; the other 20 are listed). Needs Throw Glaive, Demon's Bite
+  or Chaos Strike, and a warlock demon summon. Demon's Bite, Chaos Strike (2 on a crit) and the Hero's demon (once
+  every 4 sec) grant **Fel Command** (90701, up to 5, 20 sec). At 5, Throw Glaive also fires a **Chaos Bolt Volley**:
+  3 bolts 0.15 sec apart, the first at the target, the next at other enemies within 10 yards (nearest first,
+  crowd-controlled ones skipped), each 60% of a Chaos Bolt of the Hero's level plus the higher of spell power or
+  half attack power (Fire, never resisted). In Metamorphosis (the Demon Hunter's or Demonology's) 5 bolts and a
+  **Felguard** (910120, 8 sec: Felstorm, Cleave, no threat; another volley resets it). Its modifiers: Infernal Pact,
+  Demonic Ascension, Dreadfire Discipline (Shadow Bolt or Incinerate build instead of Demon's Bite; offered only to a
+  Hero with one); Fel Summons (imps, 910121), Shattered Glaive, Commander's Fury; Metamorphic Bond, Fel Rift (Fel
+  Rush to the volley's target, `demon_hunter.cpp`), Pact of Ruin. Numbers: the doc's tuning table, in `runes.cpp`.
+- Spells 90700-90718 (`client-patch/patch_runes.py`, in `titan_demon_hunter_spells.sql` and the client patch): the
+  rune's aura (its procs grant the stacks), Fel Command, the bolt, the summons' no-threat auras, Commander's Fury,
+  Metamorphic Bond, Fel Rift, Felstorm, Metamorphic Cleave, and one hidden marker per modifier. The panel's texts:
+  `Emberforge_Runes/Catalog.lua`, made from the doc by `tools/runes/make_catalog.py`. Throw Glaive's button glows
+  and shows Chaos Bolt at 5 Fel Command (a Felguard mark in Metamorphosis).
+
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and
 every talent a **Talent Card** (the talent at its top rank: one card, bought or opened, and it is complete), each
