@@ -625,13 +625,17 @@ for index = 1, 3 do
 end
 
 -- Done: the build the three picks make.
-local done = Group(800, 603, 1000, 110)
+local done = Group(800, 603, 1000, 170)
 done.eyebrow = Label(done, "DoneEyebrow")
 In(done.eyebrow, done, 0, -34)
 done.name = Text(done, CINZEL, 30, GOLDEN)
 In(done.name, done, 0, 0)
 done.list = Text(done, SANS, 18, { 1, 1, 1 })
 In(done.list, done, 0, 40)
+-- The slots take a click to choose again; the line under the build says so.
+done.hint = Text(done, SANS, 16, GOLDEN)
+In(done.hint, done, 0, 74)
+done.hint:SetText("Click on a modifier to change it")
 
 -- The medallion -------------------------------------------------------------------------------------------------
 
@@ -1183,6 +1187,7 @@ local function ShowDone()
     done.name:SetText(rune and BuildName(rune) or "Your own build")
     done.list:SetText(table.concat(names, "  \194\183  "))
     done.list:SetTextColor(theme.muted[1], theme.muted[2], theme.muted[3])
+    done.hint:SetAlpha(0.8)
     Fade(choose, false)
     Fade(done, true)
 end

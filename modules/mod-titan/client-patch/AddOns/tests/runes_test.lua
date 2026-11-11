@@ -204,6 +204,7 @@ run(0.6)
 server("S,10,10,1,21,1,3,1,21,0")
 check(view.active == nil and debug.done.target == 1 and debug.done.name.text == "Demon Commander",
     "the three picks of a doc build: complete, named")
+check(debug.done.hint.text == "Click on a modifier to change it", "the done view says a modifier can be changed")
 
 -- A done slot can be chosen again.
 debug.slots[2]:Click()
