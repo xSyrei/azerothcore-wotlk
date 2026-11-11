@@ -169,8 +169,12 @@ local function Picking()
     return data.picks > 0 and not data.locked
 end
 
--- A known ability (first rank) or spell: abilities in the list, talents and the rest by the client.
+-- A known ability (first rank) or spell: abilities in the list, talents and the rest by the client. Not a spell
+-- id (0: a finisher's need group marker) is never known: IsSpellKnown throws on 0, which stopped the window's refresh.
 local function Knows(id)
+    if not id or id <= 0 then
+        return false
+    end
     return data.known[id] or IsSpellKnown(id)
 end
 

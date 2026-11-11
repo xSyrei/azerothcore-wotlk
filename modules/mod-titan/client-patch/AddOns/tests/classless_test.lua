@@ -94,11 +94,17 @@ function UnitLevel() return playerLevel end
 local SPELLS = {
     [133] = "Fireball", [116] = "Frostbolt", [78] = "Heroic Strike", [772] = "Rend", [5176] = "Wrath",
     [11069] = "Improved Fireball", [12338] = "Improved Fireball", [11078] = "Improved Fire Blast",
-    [16462] = "Deflection", [11071] = "Frostbite", [90101] = "Chaos Strike",
+    [16462] = "Deflection", [11071] = "Frostbite", [90101] = "Chaos Strike", [90120] = "Shear", [90121] = "Soul Cleave",
     [2098] = "Eviscerate", [1752] = "Sinister Strike", [53] = "Backstab",
 }
 function GetSpellInfo(id) return SPELLS[id], "", "Interface\\Icons\\Spell_" .. id end
-function IsSpellKnown() return false end
+-- As the client's: a spell id below 1 is a usage error.
+function IsSpellKnown(id)
+    if type(id) ~= "number" or id < 1 then
+        error("Usage: IsSpellKnown(spellID[, isPet])")
+    end
+    return false
+end
 function GetSpellLink(id) return "[" .. (SPELLS[id] or "?") .. "]" end
 function IsModifiedClick() return false end
 function ChatEdit_InsertLink() end
@@ -329,6 +335,17 @@ specs.specButtons[1]:Click()
 check(shownCells(grid.cells) == "Chaos Strike", "Havoc lists the Demon Hunter's own Chaos Strike")
 check(not tree.treeNote.shown and tree.backgrounds[1].texture == "Interface\\TalentFrame\\WarlockSummoning-TopLeft",
     "Havoc on the Demonology art, no note")
+-- Vengeance while picking (Tome of Selection): Soul Cleave, a finisher, needs a combo point builder (its need group
+-- starts with the 0 marker, which the client's IsSpellKnown refuses). The grid and the tree both follow the tab.
+server("T,12,2001,Vengeance")
+server("A,12.2001.1.90120;12.2001.1.90121.0/90120")
+server("S,3,0,9")                                   -- the state again (3 picks left): the window refreshes
+check(shownTabs(specs.specButtons) == "Havoc,Vengeance", "Vengeance shows once it has abilities")
+specs.specButtons[2]:Click()
+check(shownCells(grid.cells) == "Shear,Soul Cleave", "Vengeance lists Shear and Soul Cleave (no Havoc left over)")
+check(tree.treeTitle.text == "Vengeance  |cffffffff0 points|r", "the tree follows the tab: Vengeance")
+specs.specButtons[1]:Click()
+check(tree.treeTitle.text == "Havoc  |cffffffff0 points|r", "and back to Havoc")
 monkButton:Click()
 check(shownTabs(specs.specButtons) == "", "Monk: no spec tabs while none has anything")
 check(grid.empty.text == "No abilities here.", "Monk has no abilities yet")
@@ -345,7 +362,7 @@ check(shownCells(grid.cells) == "Wrath"
 -- Search covers every class.
 EmberforgeClasslessSearch.text = "r"
 EmberforgeClasslessSearch.scripts.OnTextChanged(EmberforgeClasslessSearch)
-check(shownCells(grid.cells) == "Chaos Strike,Fireball,Heroic Strike,Wrath,Frostbolt,Rend",
+check(shownCells(grid.cells) == "Chaos Strike,Fireball,Heroic Strike,Shear,Wrath,Frostbolt,Rend",
     "search 'r' finds abilities of every class")
 check(shownTabs(specs.specButtons) == "", "spec tabs hide while searching")
 EmberforgeClasslessSearch.text = ""
