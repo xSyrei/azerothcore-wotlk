@@ -284,7 +284,8 @@ namespace
     }
 
     // A new Hero's gear: the race's starting outfit worn (Player::Create's: CharStartOutfit.dbc and
-    // playercreateinfo_item; a unique item they still have, the Hearthstone, skipped), the starter weapons in the bags.
+    // playercreateinfo_item, the two Titan Tomes among them; a unique item they still have, the Hearthstone, skipped),
+    // the starter weapons in the bags.
     void GiveStarterGear(Player* player)
     {
         std::vector<std::pair<uint32, uint32>> items;
@@ -357,9 +358,7 @@ namespace
         player->GiveLevel(1);
         player->InitTalentForLevel();
         player->SetUInt32Value(PLAYER_XP, 0);
-        GiveStarterGear(player);
-        GiveItems(player, Wildcard::TOME_OF_RANDOMIZATION, 1);
-        GiveItems(player, Wildcard::TOME_OF_SELECTION, 1);
+        GiveStarterGear(player);                // the tomes too: they are a new Hero's (playercreateinfo_item)
 
         GiveItems(player, ITEM_SOUL_OF_RESTED_EXPERIENCE, SOULS_ON_PRESTIGE);
         player->AddAura(SPELL_PRESTIGIOUS, player);
