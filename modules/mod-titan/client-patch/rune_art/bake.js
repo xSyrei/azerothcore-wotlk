@@ -75,9 +75,12 @@ function paintCard(r, CS, w, h) {
     g.beginPath(); g.arc(ex + Math.cos(a) * 66, ey + Math.sin(a) * 66, i % 6 ? 1.2 : 2.6, 0, Math.PI * 2); g.fill(); }
   const well = g.createRadialGradient(ex, ey, 0, ex, ey, 56); well.addColorStop(0, r.glow + '0.35)'); well.addColorStop(1, '#05020b');
   g.fillStyle = well; g.beginPath(); g.arc(ex, ey, 56, 0, Math.PI * 2); g.fill();
+  if (r.img) iconDisc(g, r.img, ex, ey, 56);
+  else {
   g.save(); g.translate(ex - 36, ey - 36); g.scale(3, 3); g.lineWidth = 1.4; g.lineCap = 'round'; g.lineJoin = 'round';
   g.shadowColor = r.hue; g.shadowBlur = 8; g.strokeStyle = '#fff'; g.stroke(new Path2D(r.glyph));
   g.shadowBlur = 0; g.lineWidth = 0.8; g.strokeStyle = r.hue; g.stroke(new Path2D(r.glyph)); g.restore();
+  }
   g.fillStyle = '#ffffff'; g.font = '700 22px Cinzel'; g.shadowColor = '#000'; g.shadowBlur = 4;
   let y = wrap(g, r.name, CW / 2, 254, CW - 50, 27); g.shadowBlur = 0;
   g.font = '500 14px "Alegreya Sans"'; g.fillStyle = r.hue; g.letterSpacing = '2px';
@@ -85,6 +88,15 @@ function paintCard(r, CS, w, h) {
   g.font = '400 16px "Alegreya Sans"'; g.fillStyle = r.theme.card; y = wrap(g, r.text, CW / 2, y + 54, CW - 54, 21);
   g.font = 'italic 400 13px "Alegreya Sans"'; g.fillStyle = r.theme.from; wrap(g, 'From your ' + r.from, CW / 2, CH - 34, CW - 54, 17);
   return c;
+}
+
+// A rune's own icon in place of its glyph: in the emblem's well (radius points), its edge sinking into the dark.
+function iconDisc(g, img, x, y, radius) {
+  g.save(); g.beginPath(); g.arc(x, y, radius, 0, Math.PI * 2); g.clip();
+  g.imageSmoothingQuality = 'high'; g.drawImage(img, x - radius, y - radius, radius * 2, radius * 2);
+  const edge = g.createRadialGradient(x, y, radius * 0.6, x, y, radius);
+  edge.addColorStop(0, 'rgba(5,2,11,0)'); edge.addColorStop(1, 'rgba(5,2,11,0.85)');
+  g.fillStyle = edge; g.fillRect(x - radius, y - radius, radius * 2, radius * 2); g.restore();
 }
 
 // The mockup's sprite: a soft round glow, white at its heart.
@@ -107,11 +119,16 @@ function soft(size) {
 const R = 94, SPAN = 260;
 function square(size) { const c = canvas(size, size), g = c.getContext('2d'); g.translate(size / 2, size / 2);
   g.scale(size / SPAN, size / SPAN); return [c, g]; }
-function core(theme, glyph, size) {
+function core(theme, glyph, size, img) {
   const [c, g] = square(size);
   const grad = g.createRadialGradient(0, 0, 0, 0, 0, R * 0.78);
   grad.addColorStop(0, theme.core); grad.addColorStop(1, '#07030f');
   g.fillStyle = grad; g.beginPath(); g.arc(0, 0, R * 0.78, 0, Math.PI * 2); g.fill();
+  if (img) {
+    iconDisc(g, img, 0, 0, R * 0.78);
+    g.strokeStyle = 'rgba(232,194,122,0.8)'; g.lineWidth = 2; g.beginPath(); g.arc(0, 0, R * 0.78, 0, Math.PI * 2);
+    g.stroke(); return c;
+  }
   g.strokeStyle = 'rgba(232,194,122,0.8)'; g.lineWidth = 2; g.stroke();
   const gs = R * 0.055; g.translate(-12 * gs, -12 * gs); g.scale(gs, gs);
   g.lineCap = 'round'; g.lineJoin = 'round'; g.shadowColor = theme.hue; g.shadowBlur = 14 * size / SPAN;
@@ -263,12 +280,16 @@ async function main() {
     await page.evaluate(() => Promise.all([document.fonts.load('700 22px Cinzel'), document.fonts.load('900 22px Cinzel'),
         document.fonts.load('400 16px "Alegreya Sans"'), document.fonts.load('500 14px "Alegreya Sans"'),
         document.fonts.load('700 14px "Alegreya Sans"'), document.fonts.load('italic 400 13px "Alegreya Sans"')]));
-    const pieces = await page.evaluate((job) => {
+    const pieces = await page.evaluate(async (job) => {
         const out = {};
+        for (const r of job.runes) {
+            if (r.icon) r.img = await new Promise((done) => { const i = new Image(); i.onload = () => done(i);
+                i.src = r.icon; });
+        }
         const put = (name, c) => { out[name] = c.toDataURL('image/png'); };
         for (const r of job.runes) {
             put('Card' + r.id, paintCard(r, job.card.scale, job.card.size, job.card.size));
-            if (r.built) put('Core' + r.id, core(r.theme, r.glyph, job.core));
+            if (r.built) put('Core' + r.id, core(r.theme, r.glyph, job.core, r.img));
         }
         for (const [name, theme] of Object.entries(job.themes)) {
             put('Sprite' + name, sprite('rgb(' + theme.rgb + ')', 64));

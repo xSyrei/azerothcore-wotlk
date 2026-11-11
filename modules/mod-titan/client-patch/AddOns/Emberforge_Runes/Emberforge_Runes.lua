@@ -1281,6 +1281,29 @@ for _, slot in ipairs(slots) do
             ShowOptions(self.index)
         end
     end)
+    -- Hovered (a slot that can be chosen again): the disc swells and brightens, the pick turns gold, and the
+    -- tooltip names what it does.
+    slot:SetScript("OnEnter", function(self)
+        local rune = RuneById(state.rune)
+        local pick = view.picks[self.index]
+        if view.phase ~= "build" or pick == 0 or not rune then
+            return
+        end
+        self.hover = true
+        local number = (self.index - 1) * 3 + pick
+        local entry = art.runes[state.rune] or {}
+        local mod = rune.mods[number]
+        GameTooltip:SetOwner(self, self.side == "l" and "ANCHOR_LEFT" or "ANCHOR_RIGHT")
+        GameTooltip:AddLine(mod and mod.name or "", GOLDEN[1], GOLDEN[2], GOLDEN[3])
+        GameTooltip:AddLine(entry.texts and entry.texts[number] or (mod and mod.text) or "", 1, 1, 1, true)
+        GameTooltip:AddLine(view.active == self.index and "Choosing" or "Click to change", theme.rgb[1],
+            theme.rgb[2], theme.rgb[3])
+        GameTooltip:Show()
+    end)
+    slot:SetScript("OnLeave", function(self)
+        self.hover = false
+        GameTooltip:Hide()
+    end)
 end
 
 -- The panel as the state has it: locked, offers, browse or the build.
@@ -1567,15 +1590,25 @@ local function Step(dt)
             option.bg:SetTexture(ART .. (hot and "OptionHot" or "Option") .. (theme.key or "Arcane"))
         end
     end
-    -- The active slot's disc beats.
+    -- The active slot's disc beats; a hovered one swells, brightens, and its pick turns gold.
     for _, slot in ipairs(slots) do
+        slot.lit = lerp(slot.lit or 0, slot.hover and 1 or 0, 0.25)
+        local lit = slot.lit
+        local span = art.num.span * (1 + 0.12 * lit)
+        slot.disc:SetWidth(span)
+        slot.disc:SetHeight(span)
+        slot.glow:SetWidth(110 * (1 + 0.35 * lit))
+        slot.glow:SetHeight(110 * (1 + 0.35 * lit))
         if slot.kind == "Active" then
-            slot.glow:SetAlpha(0.35 + 0.3 * math.sin(now * math.pi / 0.8))
+            slot.glow:SetAlpha(clamp(0.35 + 0.3 * math.sin(now * math.pi / 0.8) + 0.3 * lit))
             slot.glow:Show()
         elseif slot.kind == "Done" then
             slot.glow:SetVertexColor(theme.hot[1], theme.hot[2], theme.hot[3])
-            slot.glow:SetAlpha(0.35)
+            slot.glow:SetAlpha(clamp(0.35 + 0.5 * lit))
             slot.glow:Show()
+            slot.pick:SetTextColor(lerp(1, GOLDEN[1], lit), lerp(1, GOLDEN[2], lit), lerp(1, GOLDEN[3], lit))
+            slot.small:SetVertexColor(lerp(theme.muted[1], 1, lit), lerp(theme.muted[2], 1, lit),
+                lerp(theme.muted[3], 1, lit))
         else
             slot.glow:Hide()
         end

@@ -14,6 +14,7 @@ Font License, AddOns/Emberforge_Runes/Fonts/).
 Usage: python3 build_rune_art.py
 """
 
+import base64
 import json
 import math
 import subprocess
@@ -287,6 +288,12 @@ def main():
                                                                                                          start))]
     for entry in runes:
         entry['name'] = names[entry['id']]
+        # A rune with its own icon (icons/spells/, as its catalog entry names it) shows it in place of its glyph.
+        start = catalog.index(f'{{ id = {entry["id"]},')
+        icon = catalog[catalog.index('icon = "', start) + 8:catalog.index('",', catalog.index('icon = "', start))]
+        png = HERE / 'icons' / 'spells' / f'{icon}.png'
+        if png.exists():
+            entry['icon'] = 'data:image/png;base64,' + base64.b64encode(png.read_bytes()).decode()
     fonts = {'FONT_CINZEL_700': FONTS / 'Cinzel-Bold.ttf', 'FONT_CINZEL_900': FONTS / 'Cinzel-Black.ttf',
              'FONT_ALEGREYA_400': FONTS / 'AlegreyaSans-Regular.ttf',
              'FONT_ALEGREYA_500': FONTS / 'AlegreyaSans-Medium.ttf',
