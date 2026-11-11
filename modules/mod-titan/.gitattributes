@@ -1,0 +1,3 @@
+# Fonts are binary (the repository marks every file text by default).
+*.ttf binary
+*.otf binary
