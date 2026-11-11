@@ -524,7 +524,10 @@ Every 5-player dungeon is fought at every Hero's own level, Dragonflight's way (
   kill experience scaling is off (`AutoBalance.RewardScaling.XP` 0). A dungeon is always as strong as for 5 players,
   whoever comes (`AutoBalance.MinPlayers` and `.Heroic` 5; raids keep theirs). Every creature is checked and scaled
   again whenever a player enters (`ABAllMapScript.cpp`), and one it judged not worth scaling (not yet hostile:
-  scripted ambushes, bosses that turn hostile mid-event) again when it enters combat (`ABUnitScript.cpp`). The
+  scripted ambushes, bosses that turn hostile mid-event) again when it enters combat (`ABUnitScript.cpp`). Every
+  hostile creature scales, whatever its level: upstream's window around the map's Dungeon Finder levels is gone
+  (`ABAllCreatureScript.cpp`; those levels are Blizzard's, not the squish's, so creatures a little below the rest,
+  Sethekk Halls' level 53 Avian Darkhawk, were never scaled). The
   settings are also in `docker-compose.yml`, over an existing `AutoBalance.conf`. Commands: `.ab mapstat`,
   `.ab creaturestat`.
 - **Every player meets the creatures at their own level**: a creature counts as at the player's level, with its offset

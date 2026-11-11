@@ -468,33 +468,9 @@ void AutoBalance_AllCreatureScript::ModifyCreatureAttributes(Creature* creature)
         return;
     }
 
-    // if this creature is below 85% of the minimum LFG level for the map, make no changes
-    // if this creature is above 115% of the maximum LFG level for the map, make no changes
-    // if this is a critter that is substantial enough to be considered a real enemy, still modify it
-    // if this is a trigger, still modify it
-    if (
-        (
-            (creatureABInfo->UnmodifiedLevel < (uint8)(((float)mapABInfo->lfgMinLevel * .85f) + 0.5f)) ||
-            (creatureABInfo->UnmodifiedLevel > (uint8)(((float)mapABInfo->lfgMaxLevel * 1.15f) + 0.5f))
-            ) &&
-        (
-            !(creature->IsCritter() && creatureABInfo->UnmodifiedLevel >= 5 && creature->GetMaxHealth() > 100) &&
-            !creature->IsTrigger()
-            )
-        )
-    {
-        LOG_DEBUG("module.AutoBalance", "AutoBalance_AllCreatureScript::ModifyCreatureAttributes: Creature {} ({}) | is a {} outside of the expected NPC level range for the map ({} to {}), not modified.",
-            creature->GetName(),
-            creatureABInfo->UnmodifiedLevel,
-            creature->IsCritter() ? "critter" : "creature",
-            (uint8)(((float)mapABInfo->lfgMinLevel * .85f) + 0.5f),
-            (uint8)(((float)mapABInfo->lfgMaxLevel * 1.15f) + 0.5f)
-        );
-
-        creatureABInfo->selectedLevel = creatureABInfo->UnmodifiedLevel;
-
-        return;
-    }
+    // Project Emberforge: no level window. Upstream skips creatures below 85% of the map's minimum LFG level or above
+    // 115% of its maximum, but those LFG levels are Blizzard's, not the squish's (Sethekk Halls: 65-73 for creatures
+    // of 53-58), so lower ones (the Avian Darkhawk, 53) were never scaled. Relevance (hostile to the players) decides.
 
     // if the creature was dead (but this function is being called because they are being revived), reset it and allow modifications
     if (creatureABInfo->wasAliveNowDead)
