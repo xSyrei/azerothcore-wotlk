@@ -26,7 +26,7 @@ icons={'Rune of the Unbroken Wall':'Ability_Warrior_ShieldMastery','Rune of the 
 'Rune of the Deadeye':'Ability_Hunter_AimedShot','Rune of the Warbringer':'Ability_Warrior_SavageBlow',
 'Rune of the Shadowblade':'Ability_Backstab','Rune of the Crusade':'Spell_Holy_CrusaderStrike',
 'Rune of the Fel Hunger':'Ability_DemonHunter_EyeBeam','Rune of the Fierce Tiger':'Ability_Monk_RisingSunKick',
-'Rune of Fel Commandment':'Spell_Shadow_DemonicTactics'}
+'Rune of Fel Commandment':'Ability_Rune_FelCommandment'}
 runes=[]
 for r in ov:
     s=L.index('### '+r['name']); e=s+1

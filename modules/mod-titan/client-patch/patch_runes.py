@@ -37,7 +37,7 @@ FIREBOLT = 3110
 SPELL_ATTR3_ALWAYS_HIT, SPELL_ATTR3_IGNORE_CASTER_MODIFIERS = 0x40000, 0x20000000
 SPELL_ATTR4_CANNOT_BE_RESISTED, SPELL_ATTR4_NO_PARTIAL_IMMUNITY = 0x1, 0x800
 
-RUNE_ICON = 'Spell_Shadow_DemonicTactics'
+RUNE_ICON = 'Ability_Rune_FelCommandment'          # icons/spells/: the rune's own
 SHOWN = {**OWN, 'Attributes': SPELL_ATTR0_NO_AURA_CANCEL, 'AttributesEx': 0,
          'AttributesEx3': SPELL_ATTR3_ALLOW_AURA_WHILE_DEAD}
 # A helper the script casts: free, instant, off the global cooldown, no cooldown of its own.
