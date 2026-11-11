@@ -3073,19 +3073,19 @@ INSERT INTO `item_template` (`entry`, `class`, `subclass`, `name`, `displayid`,
 (915058, 2, 19, 'Ember Wand', 20815, 2, 64, 26, 64, 59, 1, 0, 54, 101, 1500, 0, 100, 1, 2, 0, 55, 9110, 0),
 (915059, 2, 19, 'Ember Wand', 20815, 2, 65, 26, 65, 60, 1, 0, 55, 102, 1500, 0, 100, 1, 2, 0, 55, 9110, 0);
 
--- The suffixes: one per stat mix, "(Leveling Scaled)".
+-- The suffixes: one per stat mix, nameless (the tag is under the item name: Emberforge_Resources).
 INSERT INTO `itemrandomsuffix_dbc` (`ID`, `Name_Lang_enUS`, `Name_Lang_Mask`, `InternalName`,
     `Enchantment_1`, `Enchantment_2`, `Enchantment_3`, `Enchantment_4`, `Enchantment_5`, `AllocationPct_1`,
     `AllocationPct_2`, `AllocationPct_3`, `AllocationPct_4`, `AllocationPct_5`) VALUES
-(2000, '(Leveling Scaled)', 16712190, 'scaled_Bear', 2805, 2803, 0, 0, 0, 6666, 6666, 0, 0, 0),
-(2001, '(Leveling Scaled)', 16712190, 'scaled_Monkey', 2802, 2803, 0, 0, 0, 6666, 6666, 0, 0, 0),
-(2002, '(Leveling Scaled)', 16712190, 'scaled_Eagle', 2803, 2804, 0, 0, 0, 6666, 6666, 0, 0, 0),
-(2003, '(Leveling Scaled)', 16712190, 'scaled_Owl', 2804, 2806, 0, 0, 0, 6666, 6666, 0, 0, 0),
-(2004, '(Leveling Scaled)', 16712190, 'scaled_Tiger', 2802, 2805, 0, 0, 0, 6666, 6666, 0, 0, 0),
-(2005, '(Leveling Scaled)', 16712190, 'scaled_Sorcerer', 2803, 2804, 2824, 0, 0, 5259, 5259, 6153, 0, 0),
-(2006, '(Leveling Scaled)', 16712190, 'scaled_Elder', 2803, 2804, 2816, 0, 0, 5259, 5259, 2104, 0, 0),
-(2007, '(Leveling Scaled)', 16712190, 'scaled_Champion', 2805, 2803, 2813, 0, 0, 5259, 5259, 5259, 0, 0),
-(2008, '(Leveling Scaled)', 16712190, 'scaled_Hunt', 2825, 2802, 2804, 0, 0, 14532, 4106, 3193, 0, 0);
+(2000, '', 16712190, 'scaled_Bear', 2805, 2803, 0, 0, 0, 6666, 6666, 0, 0, 0),
+(2001, '', 16712190, 'scaled_Monkey', 2802, 2803, 0, 0, 0, 6666, 6666, 0, 0, 0),
+(2002, '', 16712190, 'scaled_Eagle', 2803, 2804, 0, 0, 0, 6666, 6666, 0, 0, 0),
+(2003, '', 16712190, 'scaled_Owl', 2804, 2806, 0, 0, 0, 6666, 6666, 0, 0, 0),
+(2004, '', 16712190, 'scaled_Tiger', 2802, 2805, 0, 0, 0, 6666, 6666, 0, 0, 0),
+(2005, '', 16712190, 'scaled_Sorcerer', 2803, 2804, 2824, 0, 0, 5259, 5259, 6153, 0, 0),
+(2006, '', 16712190, 'scaled_Elder', 2803, 2804, 2816, 0, 0, 5259, 5259, 2104, 0, 0),
+(2007, '', 16712190, 'scaled_Champion', 2805, 2803, 2813, 0, 0, 5259, 5259, 5259, 0, 0),
+(2008, '', 16712190, 'scaled_Hunt', 2825, 2802, 2804, 0, 0, 14532, 4106, 3193, 0, 0);
 
 -- The group the templates name (RandomSuffix 9110): for items made without the cache (a GM's
 -- .additem), any suffix; the cache picks its own.

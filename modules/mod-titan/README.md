@@ -318,10 +318,12 @@ item level piece (an empty slot counts as 0; a scaled piece counts at the level 
   Emberforged), a cloak, neck, ring, trinket, shield, off-hand and one weapon of each kind, uncommon and soulbound;
 - every piece has a template per level (912000 + piece x 60 + level - 1): item level `level + 5` (level 60's: 65),
   required level `level`, and a green's armor and weapon damage at that item level, so the tooltip and the Character
-  window show the piece's real item level. Its stats come from a suffix, "(Leveling Scaled)", one per stat mix (Bear,
-  Monkey, Eagle, Owl, Tiger, Sorcerer, Elder, Champion, Hunt; suffixes 2000-2008, the client has them too:
-  `client-patch/patch_scaled_gear.py`), scaled by the template's item level as any green's. Below item level 10 a
-  green has no stat budget: the first few levels' pieces have armor and damage only;
+  window show the piece's real item level. Its stats come from a nameless suffix, one per stat mix (Bear, Monkey,
+  Eagle, Owl, Tiger, Sorcerer, Elder, Champion, Hunt; suffixes 2000-2008, the client has them too:
+  `client-patch/patch_scaled_gear.py`), scaled by the template's item level as any green's; a suffix that would show
+  a "+0" line is not given (a green's stat budget is too small at the lowest levels: those pieces have armor and
+  damage only). The tooltip tags the piece "Leveling Scaled" in green under its name, above its item level (as a
+  tier piece's tag; the `Emberforge_Resources` addon, by item id);
 - scored for the role: Melee strength or agility (whichever the Hero's melee abilities use: a warrior's, paladin's or
   death knight's strength, the others' agility), attack power and weapon damage; Ranged intellect and spell power;
   Healer intellect, spirit, spell power and mana regeneration; Tank stamina, strength, armor and defense; no role a

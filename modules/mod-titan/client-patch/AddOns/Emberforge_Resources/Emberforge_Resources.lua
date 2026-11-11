@@ -28,9 +28,24 @@ for key, text in pairs(_G) do
 end
 
 -- Item level on gear tooltips (for everyone), as from Cataclysm on: "Item Level 63" in gold under the item's name.
--- 3.3.5 has no line to insert, so it goes at the top of the second line's text (its own line once shown).
+-- 3.3.5 has no line to insert, so it goes at the top of the second line's text (its own line once shown). Leveling
+-- Scaled gear (the Smoldering Adventurer's Cache's, items 912000-915059: tools/scaling/scaled_gear.py) gets its tag
+-- above it, in the green of "Heroic", as later expansions tag a tier piece.
 do
     local ITEM_LEVEL_COLOR = "|cffffd100"
+    local TAG_COLOR = "|cff1eff00"
+    local TAGS = {
+        { first = 912000, last = 915059, text = "Leveling Scaled" },
+    }
+    local function Tag(link)
+        local id = tonumber(link:match("item:(%d+)"))
+        for _, tag in ipairs(TAGS) do
+            if id and id >= tag.first and id <= tag.last then
+                return TAG_COLOR .. tag.text .. "|r\n"
+            end
+        end
+        return ""
+    end
     local function AddItemLevel(tooltip)
         if tooltip.emberforgeItemLevel then
             return
@@ -46,7 +61,8 @@ do
         end
         tooltip.emberforgeItemLevel = true
         local text = line:GetText()
-        line:SetText(ITEM_LEVEL_COLOR .. "Item Level " .. itemLevel .. "|r" .. (text and ("\n" .. text) or ""))
+        line:SetText(Tag(link) .. ITEM_LEVEL_COLOR .. "Item Level " .. itemLevel .. "|r"
+            .. (text and ("\n" .. text) or ""))
         tooltip:Show()
     end
     for _, name in ipairs({ "GameTooltip", "ItemRefTooltip", "ShoppingTooltip1", "ShoppingTooltip2",

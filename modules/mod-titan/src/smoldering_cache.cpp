@@ -36,7 +36,8 @@
 // scaled_gear.h) in the slot of their lowest item level piece (an empty slot counts as 0), fixed at the level it was
 // opened at: a small pool (a cloth, leather, mail and plate set, a cloak, a neck, a ring, a trinket, weapons, a shield
 // and an off-hand), each piece a template per level (a green's item level, armor and damage there, that required
-// level) and a suffix per stat mix ("(Leveling Scaled)"). For the Hero's role (Wildcard::Role):
+// level) and a suffix per stat mix (nameless: the "Leveling Scaled" tag is the Emberforge_Resources addon's, under
+// the item's name). For the Hero's role (Wildcard::Role):
 //
 // - every pool item for the slot, with every stat mix it can take, is scored by the stats the role wants (Melee
 //   strength or agility, by the classes of its melee abilities, attack power and weapon damage; Ranged intellect and
@@ -298,11 +299,21 @@ namespace
                 ItemTemplate const* proto = sObjectMgr->GetItemTemplate(ScaledGear::Entry(*scaled, level));
                 if (!proto || !ArmorSuitsRole(role, scaled->ArmorType) || player->CanUseItem(proto) != EQUIP_ERR_OK)
                     continue;
+                // A suffix that would show a "+0" line (a green's stat budget is too small at the lowest levels) is
+                // not offered; with none left, the piece has no suffix (armor and damage only).
+                bool suffixed = false;
                 for (uint8 i = 0; i < scaled->SuffixCount; ++i)
                 {
                     int32 random = -int32(scaled->Suffixes[i]);
+                    auto stats = SuffixStats(proto->ItemId, random);
+                    if (stats.empty() || std::any_of(stats.begin(), stats.end(),
+                        [](auto const& stat) { return stat.second <= 0; }))
+                        continue;
+                    suffixed = true;
                     picks.push_back({ proto, random, Score(role, agility, proto, random) });
                 }
+                if (!suffixed)
+                    picks.push_back({ proto, 0, Score(role, agility, proto, 0) });
             }
         }
         if (picks.empty())

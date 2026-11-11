@@ -4,7 +4,7 @@ was opened at.
 
 The 3.3.5 client caches an item's level, armor and damage per template, so every piece has a template per level
 (1-60): item level L + 5, required level L, a green's armor and weapon damage at that item level (Blizzard's greens'
-medians per item level, the slot's share of the chest's armor). Stats come from a random suffix, "(Leveling Scaled)":
+medians per item level, the slot's share of the chest's armor). Stats come from a random suffix (nameless):
 one per stat mix (Blizzard's Wrath "of the Bear" kind), whose amounts the core scales by the template's item level,
 quality and slot (GenerateEnchSuffixFactor, RandPropPoints.dbc), as for any green. Below item level 10 a green has no
 stat budget: the first few levels' pieces have armor and damage only.
@@ -155,7 +155,8 @@ def build():
                               'armor_value': armor, 'damage': (low, high),
                               'delay': SPEED[piece['weapon']] if piece['weapon'] else 0})
 
-    suffixes = [{'id': SUFFIX_BASE + i, 'mix': mix, 'name': '(Leveling Scaled)', 'internal': f'scaled_{mix}',
+    # No name: the tag "Leveling Scaled" goes under the item's name (the Emberforge_Resources addon), not in it.
+    suffixes = [{'id': SUFFIX_BASE + i, 'mix': mix, 'name': '', 'internal': f'scaled_{mix}',
                  'enchants': [e for e, _ in MIXES[mix]], 'alloc': [a for _, a in MIXES[mix]]}
                 for i, mix in enumerate(MIXES)]
     return pieces, templates, suffixes
@@ -195,7 +196,7 @@ def write_sql(templates, suffixes):
     lines.append(',\n'.join(rows) + ';')
     lines += [
         '',
-        '-- The suffixes: one per stat mix, "(Leveling Scaled)".',
+        '-- The suffixes: one per stat mix, nameless (the tag is under the item name: Emberforge_Resources).',
         'INSERT INTO `itemrandomsuffix_dbc` (`ID`, `Name_Lang_enUS`, `Name_Lang_Mask`, `InternalName`,',
         '    `Enchantment_1`, `Enchantment_2`, `Enchantment_3`, `Enchantment_4`, `Enchantment_5`, `AllocationPct_1`,',
         '    `AllocationPct_2`, `AllocationPct_3`, `AllocationPct_4`, `AllocationPct_5`) VALUES',
