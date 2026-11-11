@@ -85,6 +85,11 @@ services:
       AC_DUNGEON_FINDER_MIN_LEVEL: "10"
       AC_DUNGEON_FINDER_ONE_RANDOM: "1"
       AC_ALLOW_TWO_SIDE_INTERACTION_GROUP: "1"
+      # Dungeon scaling (mod-titan's dungeon_scaling.cpp): mod-autobalance scales every dungeon up or down to the group,
+      # and leaves kill experience to mod-titan. These win over an existing AutoBalance.conf.
+      AC_AUTO_BALANCE_LEVEL_SCALING_SKIP_HIGHER_LEVELS: "0"
+      AC_AUTO_BALANCE_LEVEL_SCALING_SKIP_LOWER_LEVELS: "0"
+      AC_AUTO_BALANCE_REWARD_SCALING_XP: "0"
       AC_ALLOW_TWO_SIDE_INTERACTION_CHAT: "1"
       # The World channel (Emberforge_Resources joins it) talks across factions.
       AC_ALLOW_TWO_SIDE_INTERACTION_CHANNEL: "1"
