@@ -9,9 +9,7 @@ void AutoBalance_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit* s
 {
     // if the spell is negative (damage), we need to flip the sign
     // if the spell is positive (healing or other) we keep it the same
-    // Project Emberforge: damage only (periodic damage and leech ticks), so always scaled as damage (as
-    // ModifySpellDamageTaken below).
-    int32 adjustedAmount = int32(amount) * -1;
+    int32 adjustedAmount = !spellInfo->IsPositive() ? amount * -1 : amount;
 
     // only debug if the source or target is a player
     bool _debug_damage_and_healing = ((source && (source->GetTypeId() == TYPEID_PLAYER || source->IsControlledByPlayer())) || (target && target->GetTypeId() == TYPEID_PLAYER));
@@ -31,11 +29,9 @@ void AutoBalance_UnitScript::ModifyPeriodicDamageAurasTick(Unit* target, Unit* s
 
 void AutoBalance_UnitScript::ModifySpellDamageTaken(Unit* target, Unit* source, int32& amount, SpellInfo const* spellInfo)
 {
-    // Project Emberforge: this hook only ever carries damage (Unit::CalculateSpellDamageTaken), so it is always
-    // scaled as damage. Upstream took a positive spell's amount as healing, which left the damage of a creature's own
-    // buffs (Lightning Shield and other damage shields, procs) unscaled: a level 77's shield hitting a level 14 for
-    // its full amount.
-    int32 adjustedAmount = amount * -1;
+    // if the spell is negative (damage), we need to flip the sign to negative
+    // if the spell is positive (healing or other) we keep it the same (positive)
+    int32 adjustedAmount = !spellInfo->IsPositive() ? amount * -1 : amount;
 
     // only debug if the source or target is a player
     bool _debug_damage_and_healing = ((source && (source->GetTypeId() == TYPEID_PLAYER || source->IsControlledByPlayer())) || (target && target->GetTypeId() == TYPEID_PLAYER));

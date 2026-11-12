@@ -130,8 +130,21 @@ namespace
         return creature && !creature->IsControlledByPlayer() && !creature->IsPet() ? creature : nullptr;
     }
 
+    // Damage a creature deals through its own buff (Lightning Shield, damage shields, procs: the spell is a positive
+    // one), from its template's level to the level it fights at. mod-autobalance takes a positive spell's amount for
+    // healing (ABUnitScript.cpp) and leaves it whole: a level 77's Lightning Shield hit a level 14 for its 650.
+    float OwnBuffScale(Creature* enemy, SpellInfo const* spellInfo)
+    {
+        if (!spellInfo || !spellInfo->IsPositive())
+            return 1.0f;
+        CreatureTemplate const* info = enemy->GetCreatureTemplate();
+        float own = Damage(info->maxlevel, info->unit_class, info->expansion);
+        float now = Damage(enemy->GetLevel(), info->unit_class, info->expansion);
+        return own > 0.0f && now > 0.0f && now < own ? now / own : 1.0f;
+    }
+
     // Damage a player (or their pet) deals to a creature, or takes from one.
-    float DamageScale(Unit* target, Unit* attacker)
+    float DamageScale(Unit* target, Unit* attacker, SpellInfo const* spellInfo = nullptr)
     {
         if (!attacker || !target || !IsScaled(target->GetMap()))
             return 1.0f;
@@ -155,7 +168,7 @@ namespace
                 float own = Damage(enemy->GetLevel(), info->unit_class, info->expansion);
                 float there = Damage(at, info->unit_class, info->expansion);
                 float scale = own > 0.0f ? there / own : 1.0f;
-                return scale * DamageFactor(player->GetLevel());
+                return scale * DamageFactor(player->GetLevel()) * OwnBuffScale(enemy, spellInfo);
             }
 
         return 1.0f;
@@ -262,15 +275,15 @@ public:
         Scale(damage, DamageScale(target, attacker));
     }
 
-    void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* /*spellInfo*/) override
+    void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
     {
-        Scale(damage, DamageScale(target, attacker));
+        Scale(damage, DamageScale(target, attacker, spellInfo));
     }
 
     void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage,
-        SpellInfo const* /*spellInfo*/) override
+        SpellInfo const* spellInfo) override
     {
-        Scale(damage, DamageScale(target, attacker));
+        Scale(damage, DamageScale(target, attacker, spellInfo));
     }
 
     // A heal between players of different levels: by their health at each level.
