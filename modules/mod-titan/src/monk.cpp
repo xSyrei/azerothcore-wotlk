@@ -444,26 +444,6 @@ class spell_titan_monk_blackout_kick : public SpellScript
     }
 };
 
-// Whirling Dragon Punch (90327): only while Rising Sun Kick and Fists of Fury are both cooling down.
-class spell_titan_monk_whirling_dragon_punch : public SpellScript
-{
-    PrepareSpellScript(spell_titan_monk_whirling_dragon_punch);
-
-    SpellCastResult CheckCooldowns()
-    {
-        Player* player = GetCaster()->ToPlayer();
-        if (!player || !player->HasSpellCooldown(KnownRankOf(player, SPELL_RISING_SUN_KICK))
-            || !player->HasSpellCooldown(SPELL_FISTS_OF_FURY))
-            return SPELL_FAILED_NOT_READY;
-        return SPELL_CAST_OK;
-    }
-
-    void Register() override
-    {
-        OnCheckCast += SpellCheckCastFn(spell_titan_monk_whirling_dragon_punch::CheckCooldowns);
-    }
-};
-
 // Storm, Earth, and Fire (90329): while the Monk's spirits are out, every Windwalker strike the Monk lands is echoed
 // by each spirit on the same enemy, for 35% of its damage (Earth: Nature, Fire: Fire).
 class spell_titan_monk_sef_echo : public SpellScript
@@ -678,7 +658,6 @@ void AddSC_monk()
     RegisterSpellScript(spell_titan_monk_finisher_channel);
     RegisterSpellScript(spell_titan_monk_finisher_strike);
     RegisterSpellScript(spell_titan_monk_blackout_kick);
-    RegisterSpellScript(spell_titan_monk_whirling_dragon_punch);
     RegisterSpellScript(spell_titan_monk_life_cocoon);
     RegisterSpellScript(spell_titan_monk_revival);
     RegisterCreatureAI(npc_titan_chi_ji);

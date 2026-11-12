@@ -14,7 +14,6 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90325, 'spell_titan_monk_finisher'),
 (90325, 'spell_titan_monk_finisher_channel'),
 (-90321, 'spell_titan_monk_blackout_kick'),
-(90327, 'spell_titan_monk_whirling_dragon_punch'),
 (-90320, 'spell_titan_monk_sef_echo'),
 (-90321, 'spell_titan_monk_sef_echo'),
 (-90322, 'spell_titan_monk_sef_echo'),
