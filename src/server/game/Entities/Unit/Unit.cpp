@@ -2171,6 +2171,11 @@ void Unit::DealDamageShieldDamage(Unit* victim)
             damage = this->SpellDamageBonusTaken(caster, i_spellProto, damage, SPELL_DIRECT_DAMAGE);
         }
 
+        // Scripts scale this damage as any other spell's (CalculateSpellDamageTaken's hook): level scaling modules.
+        int32 shieldDamage = int32(damage);
+        sScriptMgr->ModifySpellDamageTaken(this, victim, shieldDamage, i_spellProto);
+        damage = uint32(std::max(0, shieldDamage));
+
         uint32 absorb = 0;
 
         DamageInfo dmgInfo(victim, this, damage, i_spellProto, i_spellProto->GetSchoolMask(), SPELL_DIRECT_DAMAGE);
