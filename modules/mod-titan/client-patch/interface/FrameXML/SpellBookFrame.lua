@@ -49,8 +49,10 @@ function SpellBook_BuildTabs()
 	end
 
 	wipe(spellTabs);
+	-- Emberforge: the game may have no tab yet (at login, before the spells come): the book's own one stands in.
 	local name, texture = GetSpellTabInfo(1);
-	tinsert(spellTabs, { name = name, texture = texture, slots = general });
+	tinsert(spellTabs, { name = name or GENERAL, texture = texture or "Interface\\Icons\\INV_Misc_Book_09",
+		slots = general });
 	for _, class in ipairs(CLASS_TABS) do
 		local token, className, icon = unpack(class);
 		if ( byClass[token] ) then
@@ -248,7 +250,9 @@ function SpellBookFrame_Update(showing)
 			and i > tabScroll and i <= tabScroll + VISIBLE_TABS ) then
 			name, texture = spellTabs[i].name, spellTabs[i].texture;
 			skillLineTab:SetNormalTexture(texture);
-			skillLineTab:GetNormalTexture():SetTexCoord(unpack(spellTabs[i].coords or FULL_TEXTURE));
+			if ( skillLineTab:GetNormalTexture() ) then
+				skillLineTab:GetNormalTexture():SetTexCoord(unpack(spellTabs[i].coords or FULL_TEXTURE));
+			end
 			skillLineTab.tooltip = name;
 			skillLineTab:Show();
 
