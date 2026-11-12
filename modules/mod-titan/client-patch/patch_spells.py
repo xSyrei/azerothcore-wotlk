@@ -451,8 +451,8 @@ VISUALS = {
 # Spells: id, the Blizzard spell copied, name, tooltip text, aura text, icon, then column changes.
 # "two_weapons": needs a one-handed weapon in each hand (the main hand checked here, the off hand by
 # the server's spell_titan_dh_dual_weapons, src/demon_hunter.cpp).
-# The ones that move, defend or taunt (Fel Rush, Vengeful Retreat, Blur, Darkness, Demon Spikes, Torment...) need no
-# weapon.
+# The ones that move, defend or taunt (Fel Rush, Vengeful Retreat, Blur, Darkness, Demon Spikes, Torment...) and
+# Immolation Aura need no weapon.
 # Effects not listed keep the copied spell's; "clear" empties effects (numbers 1-3); "unset" clears
 # bits of the copied spell's flag columns.
 SPELLS = [
@@ -714,7 +714,7 @@ SPELLS = [
         # The Metamorphosis warlock's: a pulse (90120) every second and one at once (effect 3, instead of its
         # immunity), and 20 Fury (effect 2).
         'id': 90119, 'copy': 50589, 'name': 'Immolation Aura', 'icon': 'Spell_Fire_Incinerate',
-        'two_weapons': True, 'visual': 'ImmolationAura',
+        'visual': 'ImmolationAura',
         'description': 'Engulf yourself in flames for $d, dealing 20% of your attack power as Fire damage to '
                        'enemies within 8 yards at once and every sec. Generates 20 Rage.',
         'tooltip': 'Burning nearby enemies every sec.',
@@ -1358,6 +1358,21 @@ def free_warrior_stances(spells):
     return freed
 
 
+THUNDER_CLAP = (6343, 8198, 8204, 8205, 11580, 11581, 25264, 47501, 47502)
+HEARTHSTONE = 8690
+
+
+def hero_tuning(spells):
+    """Thunder Clap (every rank) costs 10 Rage, not 20; the Hearthstone cools down in 5 minutes, not 30. The server
+    does the same (hero_resources.cpp, titan_runic_power_to_rage)."""
+    for spell_id, changes in [(rank, {'ManaCost': 100}) for rank in THUNDER_CLAP] + \
+            [(HEARTHSTONE, {'CategoryRecoveryTime': 5 * 60 * 1000})]:
+        row = list(spells.rows[spell_id])
+        for name, value in changes.items():
+            row[FIELDS[name]] = value
+        spells.rows[spell_id] = tuple(row)
+
+
 def unholy_presence_gcd(spells):
     """Unholy Presence takes 0.5 sec off the Death Knight's global cooldown with a spell modifier, which the client
     applies only to its own class's spells (ChrClasses' SpellClassSet: a Hero is a Paladin), so it kept a Hero's
@@ -1515,6 +1530,7 @@ def main():
     write_rune_costs(source, runes)
     reagents = drop_class_reagents(spells)
     stances = free_warrior_stances(spells)
+    hero_tuning(spells)
     gcds = unholy_presence_gcd(spells)
     write_finishers(spells)
     tabs, talents = build_talents(source, out, icon_id)

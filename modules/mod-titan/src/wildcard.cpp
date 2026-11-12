@@ -357,7 +357,8 @@ namespace
         { "Invoke Chi-Ji, the Red Crane", TAG_HEALER }, { "Thunder Focus Tea", TAG_HEALER },
         { "Battle Stance", TAG_MELEE | TAG_TANK }, { "Berserker Stance", TAG_MELEE },
         { "Cat Form", TAG_MELEE }, { "Moonkin Form", TAG_RANGED }, { "Tree of Life", TAG_HEALER },
-        { "Shadowform", TAG_RANGED },
+        { "Shadowform", TAG_RANGED }, { "Conjure Food", TAG_RANGED }, { "Conjure Water", TAG_RANGED },
+        { "Conjure Refreshment", TAG_RANGED },
     };
 
     // What a spell does, as role tags: its damage (melee or ranged physical: Melee; magic: Ranged), heals and
@@ -835,35 +836,78 @@ namespace
         return upgraded;
     }
 
+    // The Demon Hunter's scripted talents (a dummy aura: no spell class mask names their ability), each with the
+    // abilities it improves, so it counts as linked to them, not to every Demon Hunter ability.
+    struct TalentFor
+    {
+        char const* Talent;
+        std::array<char const*, 2> Abilities;
+    };
+    constexpr TalentFor SCRIPTED_TALENTS[] = {
+        // Havoc
+        { "Blind Fury", { "Eye Beam" } }, { "Demonic Appetite", { "Chaos Strike" } },
+        { "Prepared", { "Vengeful Retreat" } }, { "Bloodlet", { "Throw Glaive" } },
+        { "Desperate Instincts", { "Blur" } }, { "Momentum", { "Fel Rush", "Vengeful Retreat" } },
+        { "Chaos Cleave", { "Chaos Strike" } }, { "Cycle of Hatred", { "Chaos Strike", "Eye Beam" } },
+        { "Trail of Ruin", { "Blade Dance" } }, { "Unbound Chaos", { "Immolation Aura", "Fel Rush" } },
+        { "Demonic", { "Eye Beam" } }, { "Eternal Reaping", { "Chaos Strike" } }, { "Inertia", { "Fel Rush" } },
+        // Vengeance
+        { "Shear Fury", { "Shear" } }, { "Infernal Armor", { "Immolation Aura" } },
+        { "Razor Spikes", { "Demon Spikes" } }, { "Painbringer", { "Soul Cleave", "Spirit Bomb" } },
+        { "Concentrated Sigils", { "Sigil of Chains" } }, { "Charred Flesh", { "Fiery Brand" } },
+        { "Fallout", { "Immolation Aura" } }, { "Cover of Darkness", { "Darkness" } },
+        { "Burning Alive", { "Fiery Brand" } }, { "Feed the Demon", { "Demon Spikes" } },
+        { "Feast of Souls", { "Soul Cleave" } }, { "Fiery Demise", { "Fiery Brand" } },
+        { "Ruinous Bulwark", { "Soul Barrier" } }, { "Void Reaver", { "Soul Cleave" } },
+        { "Vulnerability", { "Spirit Bomb" } }, { "Fel Flame Fortification", { "Immolation Aura" } },
+    };
+
+    // How much likelier a talent improving an ability the Hero knows is than one only for a class they have an
+    // ability of (a scripted talent of another kind): reports had the Demon Hunter's barely ever rolling, lost
+    // among every class's.
+    constexpr uint32 SPECIFIC_WEIGHT = 4;
+
     // Learns a random talent from any class tree at its top rank, the way Player::LearnTalent does once its checks
     // pass; with reveal the player's Classless window spins for it. A talent another builds on comes first.
     bool GrantTalent(Player* player, bool reveal, uint8 rollLevel)
     {
         // The spells of the abilities the Hero knows (their known ranks), and their classes.
         std::vector<SpellInfo const*> knownSpells;
+        std::unordered_set<std::string> knownNames;
         uint32 knownClasses = 0;
         for (Ability const& ability : Abilities())
             if (int32 rank = KnownRank(player, ability); rank >= 0)
             {
                 knownSpells.push_back(sSpellMgr->AssertSpellInfo(ability.Ranks[rank].SpellId));
+                knownNames.insert(FirstRankName(ability.Ranks.front().SpellId));
                 if (ability.ClassId)
                     knownClasses |= 1 << (ability.ClassId - 1);
             }
 
-        // Relevant: for a known ability. Generic: stats and the like suiting the role, or teaching an ability that
-        // does.
+        // Relevant: for a known ability (3: that ability's own; 2: a scripted talent of a class the Hero has an
+        // ability of). Generic (1): stats and the like suiting the role, or teaching an ability that does.
         auto relevance = [&](TalentEntry const* talentInfo, TalentTabEntry const* tabInfo) -> int
         {
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(talentInfo->RankID[0]);
             if (!spellInfo || TalentAbility(talentInfo->TalentID))
                 return 0;
 
+            std::string const name = FirstRankName(talentInfo->RankID[0]);
+            for (TalentFor const& scripted : SCRIPTED_TALENTS)
+                if (name == scripted.Talent)
+                {
+                    for (char const* ability : scripted.Abilities)
+                        if (ability && knownNames.count(ability))
+                            return 3;
+                    return 0;
+                }
+
             // A talent for every spell of a kind ("all means all"): for a Hero knowing any of that kind.
             if (GlobalReach(spellInfo->Id, spellInfo) >= 0)
             {
                 for (SpellInfo const* known : knownSpells)
                     if (GlobalReach(spellInfo->Id, known) == 1)
-                        return 2;
+                        return 3;
                 return 0;
             }
 
@@ -885,7 +929,7 @@ namespace
                 masked = true;
                 for (SpellInfo const* known : knownSpells)
                     if (known->IsAffected(spellInfo->SpellFamilyName, effect.SpellClassMask))
-                        return 2;
+                        return 3;
             }
             if (masked)
                 return 0;
@@ -898,6 +942,7 @@ namespace
         };
 
         std::vector<std::pair<TalentEntry const*, uint8>> candidates, generic;
+        std::vector<uint32> weights;                    // candidates': SPECIFIC_WEIGHT for an ability's own
         for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
         {
             TalentEntry const* talentInfo = sTalentStore.LookupEntry(i);
@@ -914,21 +959,35 @@ namespace
 
             uint8 top = TopRank(talentInfo);
             int kind = relevance(talentInfo, tabInfo);
-            if (kind == 2)
+            if (kind >= 2)
+            {
                 candidates.emplace_back(talentInfo, top);
+                weights.push_back(kind == 3 ? SPECIFIC_WEIGHT : 1);
+            }
             else if (kind == 1)
                 generic.emplace_back(talentInfo, top);
         }
 
-        // About 70% of the rolls improve an ability the Hero knows, the rest are talents for everyone that suit the
-        // role (stats, all damage or healing, defense...); either pool stands in when the other is empty.
+        // About 70% of the rolls improve an ability the Hero knows (one for an ability's own SPECIFIC_WEIGHT times as
+        // likely as a scripted talent only for its class), the rest are talents for everyone that suit the role
+        // (stats, all damage or healing, defense...); either pool stands in when the other is empty.
         constexpr uint32 LINKED_PCT = 70;
         bool linked = !candidates.empty() && (generic.empty() || urand(1, 100) <= LINKED_PCT);
         std::vector<std::pair<TalentEntry const*, uint8>>& pool = linked ? candidates : generic;
         if (pool.empty())
             return false;
 
-        auto [talentInfo, currentRank] = pool[urand(0, uint32(pool.size() - 1))];
+        std::size_t pick = urand(0, uint32(pool.size() - 1));
+        if (linked)
+        {
+            uint32 total = 0;
+            for (uint32 weight : weights)
+                total += weight;
+            uint32 roll = urand(1, total);
+            for (pick = 0; pick + 1 < weights.size() && roll > weights[pick]; ++pick)
+                roll -= weights[pick];
+        }
+        auto [talentInfo, currentRank] = pool[pick];
         LOG_DEBUG("module", "Wildcard: {} rolled talent {} ({}; {} linked, {} for the role)", player->GetName(),
             FirstRankName(talentInfo->RankID[0]), linked ? "linked" : "role", candidates.size(), generic.size());
         return LearnTalentRank(player, talentInfo, currentRank, reveal, rollLevel);
@@ -1776,8 +1835,31 @@ namespace Wildcard
         }
     }
 
+    // The Mage's conjured food and water: rolled only for a Ranged Hero who knows another Mage ability.
+    constexpr char const* CONJURES[] = { "Conjure Food", "Conjure Water", "Conjure Refreshment" };
+
+    bool ConjureAllowed(Player* player, Ability const& ability)
+    {
+        std::string const name = FirstRankName(ability.Ranks.front().SpellId);
+        auto isConjure = [](std::string const& spell)
+        {
+            return std::any_of(std::begin(CONJURES), std::end(CONJURES),
+                [&spell](char const* conjure) { return spell == conjure; });
+        };
+        if (!isConjure(name))
+            return true;
+        if (GetRole(player) != ROLE_RANGED)
+            return false;
+        for (Ability const& other : Abilities())
+            if (other.ClassId == CLASS_MAGE && KnownRank(player, other) >= 0
+                && !isConjure(FirstRankName(other.Ranks.front().SpellId)))
+                return true;
+        return false;
+    }
+
     // An ability roll (the kit's, a level's, a reroll's), steered so a build takes shape:
-    // - those suiting the Hero's role (any when none does), never one blacklisted by a reroll;
+    // - those suiting the Hero's role (any when none does), never one blacklisted by a reroll; conjured food and
+    //   water only for a Ranged Hero with another Mage ability (ConjureAllowed);
     // - one pet family: once the Hero summons a hunter pet, a demon or a ghoul, the other families' summons stay out;
     // - the kit (before LOCK_LEVEL) gets 2 abilities doing the role's work first (Healer: heals; Tank: a threat
     //   ability, then a melee one; no role: damage);
@@ -1790,6 +1872,7 @@ namespace Wildcard
         std::vector<Ability const*> candidates, others;
         for (Ability const& ability : Abilities())
             if (!ability.Capstone && CanLearn(player, ability) && PetAllowed(facts, ability)
+                && ConjureAllowed(player, ability)
                 && !IsBlacklisted(player, FirstRankName(ability.Ranks.front().SpellId)))
                 (SuitsRole(player, ability.Roles) ? candidates : others).push_back(&ability);
 

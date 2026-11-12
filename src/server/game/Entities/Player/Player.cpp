@@ -11185,6 +11185,24 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
         if (rec != std::max(baseRec, 0) || catrec != std::max(baseCatrec, 0))
             needsCooldownPacket = true;
 
+        // The packets go out before the cast's SMSG_SPELL_GO, on which the client starts the spell's own cooldown
+        // again (its own spell mods only): told once more just after it (mod-titan's classless Heroes).
+        if (needsCooldownPacket)
+        {
+            uint32 const spellId = spellInfo->Id;
+            m_Events.AddEventAtOffset([this, spellId]()
+            {
+                if (uint32 left = GetSpellCooldownDelay(spellId))
+                {
+                    WorldPacket data;
+                    BuildCooldownPacket(data, SPELL_COOLDOWN_FLAG_NONE, spellId, left);
+                    SendDirectMessage(&data);
+                }
+                else
+                    SendClearCooldown(spellId, this);
+            }, 150ms);
+        }
+
         // no cooldown after applying spell mods
         if (rec == 0 && catrec == 0)
         {

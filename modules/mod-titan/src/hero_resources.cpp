@@ -19,8 +19,10 @@
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "SpellInfo.h"
+#include "SpellMgr.h"
 #include "Unit.h"
 #include "WorldPacket.h"
+#include <algorithm>
 #include <array>
 #include <unordered_map>
 
@@ -272,6 +274,12 @@ public:
             && family != SPELLFAMILY_POTION && family != SPELLFAMILY_PET;
     }
 
+    static constexpr std::array<uint32, 9> THUNDER_CLAP = { 6343, 8198, 8204, 8205, 11580, 11581, 25264, 47501,
+        47502 };
+    static constexpr uint32 THUNDER_CLAP_RAGE = 100;            // in tenths
+    static constexpr uint32 HEARTHSTONE = 8690;
+    static constexpr uint32 HEARTHSTONE_COOLDOWN_MS = 5 * MINUTE * IN_MILLISECONDS;
+
     void OnLoadSpellCustomAttr(SpellInfo* spellInfo) override
     {
         if (IsClassFamily(spellInfo->SpellFamilyName))
@@ -289,6 +297,13 @@ public:
 
         if (spellInfo->PowerType == POWER_RUNIC_POWER)
             spellInfo->PowerType = POWER_RAGE;
+
+        // Thunder Clap (every rank) costs 10 Rage, not 20; the Hearthstone cools down in 5 minutes, not 30. The client
+        // patch does the same (patch_spells.py, hero_tuning).
+        if (std::find(THUNDER_CLAP.begin(), THUNDER_CLAP.end(), spellInfo->Id) != THUNDER_CLAP.end())
+            spellInfo->ManaCost = THUNDER_CLAP_RAGE;
+        if (spellInfo->Id == HEARTHSTONE)
+            spellInfo->CategoryRecoveryTime = HEARTHSTONE_COOLDOWN_MS;
 
         // Mana costs are 30% of the game's (spells needing mana cost too much for a Hero of every class's spells),
         // rounded to the nearest; the client patch cuts its copy the same way (patch_spells.py, reduce_mana_costs).
@@ -385,6 +400,66 @@ public:
     }
 };
 
+// A Hero's damage tuning by ability (players' reports): Soul Cleave 25% less, Blade Dance (its strikes) 15% less, every
+// Feral Combat ability 25% more, every Rogue ability 30% more. Direct damage and ticks; by first rank, so every rank.
+class titan_hero_damage_tuning : public UnitScript
+{
+public:
+    titan_hero_damage_tuning() : UnitScript("titan_hero_damage_tuning", true, {
+        UNITHOOK_MODIFY_SPELL_DAMAGE_TAKEN,
+        UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK
+    }) { }
+
+    static constexpr uint32 SOUL_CLEAVE = 90125;
+    static constexpr std::array<uint32, 3> BLADE_DANCE = { 90102, 90107, 90108 };
+    static constexpr float SOUL_CLEAVE_SHARE = 0.75f, BLADE_DANCE_SHARE = 0.85f;
+    static constexpr float FERAL_SHARE = 1.25f, ROGUE_SHARE = 1.3f;
+
+    static bool IsFeral(SpellInfo const* spellInfo)
+    {
+        if (spellInfo->SpellFamilyName != SPELLFAMILY_DRUID)
+            return false;
+        SkillLineAbilityMapBounds bounds = sSpellMgr->GetSkillLineAbilityMapBounds(spellInfo->Id);
+        return std::any_of(bounds.first, bounds.second,
+            [](auto const& pair) { return pair.second->SkillLine == SKILL_FERAL_COMBAT; });
+    }
+
+    static float Factor(Unit* attacker, SpellInfo const* spellInfo)
+    {
+        Player* player = attacker ? attacker->ToPlayer() : nullptr;
+        if (!player || !spellInfo || !hero_resources::IsHero(player))
+            return 1.0f;
+        SpellInfo const* first = spellInfo->GetFirstRankSpell();
+        if (first->Id == SOUL_CLEAVE)
+            return SOUL_CLEAVE_SHARE;
+        if (std::find(BLADE_DANCE.begin(), BLADE_DANCE.end(), first->Id) != BLADE_DANCE.end())
+            return BLADE_DANCE_SHARE;
+        if (spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE)
+            return ROGUE_SHARE;
+        if (IsFeral(first))
+            return FERAL_SHARE;
+        return 1.0f;
+    }
+
+    void ModifySpellDamageTaken(Unit* /*target*/, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
+    {
+        float factor = Factor(attacker, spellInfo);
+        if (factor != 1.0f && damage > 0)
+            damage = std::max<int32>(1, int32(damage * factor + 0.5f));
+    }
+
+    void ModifyPeriodicDamageAurasTick(Unit* /*target*/, Unit* attacker, uint32& damage, SpellInfo const* spellInfo)
+        override
+    {
+        if (spellInfo && (spellInfo->HasAura(SPELL_AURA_PERIODIC_HEAL)
+            || spellInfo->HasAura(SPELL_AURA_OBS_MOD_HEALTH)))
+            return;
+        float factor = Factor(attacker, spellInfo);
+        if (factor != 1.0f && damage > 0)
+            damage = std::max<uint32>(1, uint32(damage * factor + 0.5f));
+    }
+};
+
 void AddSC_hero_resources()
 {
     new hero_resources();
@@ -392,4 +467,5 @@ void AddSC_hero_resources()
     new titan_runic_power_to_rage();
     new hero_runes();
     new titan_dk_low_level();
+    new titan_hero_damage_tuning();
 }

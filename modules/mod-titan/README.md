@@ -31,7 +31,12 @@ damage (`titan_dk_low_level`, same file): the spells (Icy Touch, Death Coil, Dea
 diseases (their ticks are attack power's) and the heals stay whole. Unholy Presence's 0.5 sec off the global cooldown
 is the server's alone (the client applies a spell modifier only to its own class's spells), so the client patch gives
 the Death Knight abilities it covers a 1 sec global cooldown (`unholy_presence_gcd`, `patch_spells.py`); the server
-keeps 1.5 sec outside the presence, and its spell queue takes a press that comes early. At first login a Hero also finds one of each weapon kind
+keeps 1.5 sec outside the presence, and its spell queue takes a press that comes early. Tuning by ability
+(`titan_hero_damage_tuning`, same file): Soul Cleave deals 25% less, Blade Dance's strikes 15% less, every Feral Combat
+ability 25% more and every Rogue ability 30% more; Thunder Clap costs 10 Rage and the Hearthstone cools down in 5
+minutes (server and client patch: `hero_tuning`). A talent shortening another class's cooldown: the client starts the
+spell's own again on the cast, so the server tells it the real one once more just after (`Player.cpp`,
+`AddSpellAndCategoryCooldowns`); a cost cut is charged, but the client shows (and checks) the full cost. At first login a Hero also finds one of each weapon kind
 in the bags: a Battleworn Claymore, two Shortswords and two Worn Daggers (all one-hand, to dual wield either), a Bent Staff, a Worn Wooden Shield,
 a Worn Shortbow. Ammo comes by itself: with a bow, crossbow or gun, the arrows or bullets of the Hero's level are put
 in the ammo slot (Rough, Sharp, Razor, Jagged and Wicked Arrows; Light, Heavy and Solid Shot, Accurate Slugs, Impact

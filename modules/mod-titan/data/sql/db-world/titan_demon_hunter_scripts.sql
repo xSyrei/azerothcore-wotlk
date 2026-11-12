@@ -68,13 +68,12 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90105, 'spell_titan_dh_eye_beam'),
 (90112, 'spell_titan_dh_chaos_nova');
 
--- Felblade and Immolation Aura: both weapons needed (Darkness: none); Felblade's and Immolation Aura's pulses'
+-- Felblade: both weapons needed (Darkness and Immolation Aura: none); Felblade's and Immolation Aura's pulses'
 -- share of attack power; Darkness's chance to avoid a hit (spell_titan_dh_darkness).
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (90117, 90118, 90119)
     AND `ScriptName` = 'spell_titan_dh_dual_weapons';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(90117, 'spell_titan_dh_dual_weapons'),
-(90119, 'spell_titan_dh_dual_weapons');
+(90117, 'spell_titan_dh_dual_weapons');
 DELETE FROM `spell_script_names` WHERE `spell_id` = 90118 AND `ScriptName` = 'spell_titan_dh_darkness';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90118, 'spell_titan_dh_darkness');

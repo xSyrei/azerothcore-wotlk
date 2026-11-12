@@ -142,9 +142,7 @@ frame:EnableMouse(true)
 frame:Hide()
 tinsert(UISpecialFrames, "EmberforgeLegendaryRunes")    -- Escape closes it
 
-local dim = frame:CreateTexture(nil, "BACKGROUND")      -- the world, darkened toward the edges
-dim:SetAllPoints()
-dim:SetTexture(ART .. "Dim")
+-- The world is left as it is behind the panel (no dimming: it got in the way).
 
 local stage = CreateFrame("Frame", nil, frame)
 stage:SetWidth(W)

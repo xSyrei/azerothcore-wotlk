@@ -1900,32 +1900,8 @@ local function CreateRoll()
     }
     local T = TIMELINES.full
 
-    -- The screen dims behind the roll.
-    local backdrop = CreateFrame("Frame", nil, UIParent)
-    backdrop:SetAllPoints(UIParent)
-    backdrop:SetFrameStrata("DIALOG")
-    backdrop:SetFrameLevel(1)
-    local dim = backdrop:CreateTexture(nil, "BACKGROUND")
-    dim:SetTexture(0, 0, 0, 0.3)
-    dim:SetAllPoints()
-    local vignette = backdrop:CreateTexture(nil, "BORDER")
-    vignette:SetTexture(ART .. "Shade")
-    vignette:SetAllPoints()
-    backdrop:SetAlpha(0)
-    backdrop:Hide()
-    backdrop:SetScript("OnUpdate", function(self, elapsed)
-        local alpha = (self:GetAlpha() or 0) + (self.target - (self:GetAlpha() or 0)) * math.min(1, elapsed * 6)
-        self:SetAlpha(alpha)
-        if self.target == 0 and alpha < 0.02 then
-            self:Hide()
-        end
-    end)
-    local function Dim(on)
-        backdrop.target = on and 1 or 0
-        if on then
-            backdrop:Show()
-        end
-    end
+    -- The screen is left as it is behind the roll (no dimming: it got in the way).
+    local function Dim() end
 
     local reveal = CreateFrame("Frame", "EmberforgeClasslessReveal", UIParent)
     reveal:SetWidth(700)
