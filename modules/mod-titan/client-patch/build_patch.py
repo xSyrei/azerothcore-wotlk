@@ -119,7 +119,9 @@ def main():
             textures = [HERE / 'spells' / f'{t}.png' if t else None for t in spec.get('textures', (spec['model'],))]
             options = dict(spec.get('options', {}))
             if 'export' in options:
-                options['export'] = HERE / 'spells' / options['export']
+                exports = options['export']
+                options['export'] = ([HERE / 'spells' / e for e in exports] if isinstance(exports, (list, tuple))
+                                     else HERE / 'spells' / exports)
             files = make(*textures, tmp / 'effects', spec['model'], patch_spells.EFFECTS_DIR, **options)
             for f in files:
                 entries.append((f'{patch_spells.EFFECTS_DIR}\\{f}', (tmp / 'effects' / f).read_bytes()))

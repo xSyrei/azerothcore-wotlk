@@ -101,6 +101,7 @@ namespace
         SPELL_SEAT_OF_THE_PARAGON       = 90738,
         SPELL_HALLOWED_FOOTSTEPS        = 90739,
         SPELL_PARAGON_MODIFIER_FIRST    = 90740,    // + slot * 3 + choice
+        SPELL_PARAGON_AWAKEN            = 90749,    // its look as it turns on (a shockwave and a flash)
 
         SPELL_CONSECRATION          = 26573,        // first rank
 
@@ -1047,6 +1048,7 @@ class spell_titan_rune_consecration : public SpellScript
             return;
         PreventHitDefaultEffect(effIndex);
         caster->AddAura(SPELL_SANCTIFIED_PARAGON, caster);
+        caster->CastSpell(caster, SPELL_PARAGON_AWAKEN, true);
     }
 
     void Register() override

@@ -920,7 +920,8 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
     """A lasting effect around a body (a kit's base slot) from a wow.export glTF's meshes (its bones and
     animation left out: each layer turns on its own), each layer a dict of
 
-    - mesh: index of the glTF mesh; texture: index into the textures given;
+    - mesh: index of the glTF mesh; source: which export it is in, when export is a list of them (0: the first);
+      texture: index into the textures given;
     - tint: red, green, blue (0 to 1) the texture is multiplied by; alpha: its opacity (0 to 1);
     - turn: seconds per turn about the middle (negative: the other way; 0: still);
     - scroll: (u, v) texture repeats a second the texture slides by (wind flowing; None: still);
@@ -938,7 +939,9 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
     *textures, out_dir, name, client_dir = args
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    meshes = _gltf_meshes(export)
+    exports = export if isinstance(export, (list, tuple)) else [export]
+    sources = [_gltf_meshes(path) for path in exports]
+    meshes = [mesh for source in sources for mesh in source]
     for number, layer in enumerate(layers):
         with Image.open(textures[layer['texture']]) as image:
             (out_dir / f'{name}_{number}.blp').write_bytes(blp.encode(image.convert('RGBA')))
@@ -951,7 +954,7 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
         return len(globals_ms) - 1
 
     for number, layer in enumerate(layers):
-        positions, uvs, faces = meshes[layer['mesh']]
+        positions, uvs, faces = sources[layer.get('source', 0)][layer['mesh']]
         rotation = empty_track()
         turn = layer.get('turn', 0.0)
         if turn:
@@ -974,7 +977,7 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
         triangles += [first + f for f in faces]
         sections.append((first, len(positions), start, len(faces)))
     vertex_count = len(vertices) // 48
-    every = [p for positions, _, _ in meshes for p in positions]
+    every = [p for layer in layers for p in sources[layer.get('source', 0)][layer['mesh']][0]]
     lo = tuple(min(p[i] for p in every) * scale for i in range(3))
     hi = tuple(max(p[i] for p in every) * scale for i in range(3))
     radius = math.dist(lo, hi) / 2

@@ -33,7 +33,8 @@ The Rune of the Sanctified Paragon (the "Rune of the Sanctified Paragon" concept
 - 90737 Shelter of the Paragon: an absorb (its amount set by the script), 6 sec;
 - 90738 Seat of the Paragon: 20% more damage and healing from the aura while still (a larger sigil beneath you);
 - 90739 Hallowed Footsteps: a patch of sanctified ground left behind, 3 sec (fading glyphs);
-- 90740-90748 its nine modifiers' markers (Presence, Manifestation, Covenant: 3 each), hidden.
+- 90740-90748 its nine modifiers' markers (Presence, Manifestation, Covenant: 3 each), hidden;
+- 90749 its waking: the shockwave and flash as the aura turns on (a hidden 3 sec aura, its look only).
 """
 
 import patch_player
@@ -217,6 +218,11 @@ SPELLS += [
                         'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8}},
     },
 ]
+SPELLS += [{
+    'id': 90749, 'copy': SELF_TEMPLATE, 'name': 'Sanctified Paragon', 'icon': 'Spell_Holy_InnerFire',
+    'description': '', 'tooltip': '', 'visual': 'SanctifiedParagonAwaken',
+    'set': {**HIDDEN, 'DurationIndex': DURATION_3S}, 'clear': [1, 2, 3], 'effects': {1: aura(AURA_DUMMY, 1, 0)},
+}]
 PARAGON_MODIFIERS = [
     ('Boundless Sanctity', 'Hallowed Footsteps', 'Seat of the Paragon'),
     ('Sanctified Condemnation', 'Merciful Ground', 'Unwelcome Before the Light'),
@@ -226,37 +232,76 @@ SPELLS += [buff(90740 + slot * 3 + choice, name, PARAGON_ICON, '', DURATION_INFI
                 {1: aura(AURA_DUMMY, 1, 0)}, hidden=True)
            for slot, names in enumerate(PARAGON_MODIFIERS) for choice, name in enumerate(names)]
 
-# Its look (patch_spells.EFFECTS / VISUALS). Retail's Remorseless Winter state (spells/PAL_SanctifiedParagon:
-# deathknight_remorselesswinter_state's storm about the body, mesh 2; its floor pieces left out), its texture gray so
-# its tint is the color: Holy gold, see-through. The storm's own smoke was not in the export: Windwalk's wind
-# instead. The sigil, glyph and flakes are ours (build_paragon_art.py).
+# Its look (patch_spells.EFFECTS / VISUALS): a storm of Holy light about the Hero, from two retail Remorseless Winter
+# exports (spells/PAL_SanctifiedParagon, wow.export glTFs; every texture made gray so the tint is the color):
+# deathknight_remorselesswinter_state's storm (mesh 2, its own smoke band) with blades of light (the crane kick's
+# streak) whipping round it, and cfx_deathknight_remorselesswinter_aura01's rising funnel (mesh 0) and its dome (2, 3)
+# with energy flowing over it; flakes of light tumbling up (retail's flipping snowflake, an 8-frame flipbook), embers
+# and sparks; a crown of light above the head; a shockwave and flash as it wakes (90749). No floor: the ground stays
+# clear. The sigil and glyph of Seat of the Paragon and Hallowed Footsteps are ours (build_paragon_art.py).
 PARAGON = 'PAL_SanctifiedParagon'
-GOLD, PALE_GOLD, WHITE_GOLD = (1.0, 0.78, 0.32), (1.0, 0.88, 0.55), (1.0, 0.96, 0.82)
+GOLD, PALE_GOLD, WHITE_GOLD = (1.0, 0.72, 0.25), (1.0, 0.86, 0.5), (1.0, 0.96, 0.82)
+STATE = f'{PARAGON}/deathknight_remorselesswinter_state.gltf'
+AURA = f'{PARAGON}/cfx_deathknight_remorselesswinter_aura01.gltf'
 EFFECTS = {
     'SanctifiedParagon': {'model': 'PAL_SanctifiedParagon', 'effect': 7151, 'shape': 'spun',
-                          'textures': (f'{PARAGON}/swirl_wind',),
-                          'options': {'export': f'{PARAGON}/deathknight_remorselesswinter_state.gltf', 'layers': (
-                              # the storm: retail's swirl twice, turning and flowing at two speeds (no floor: the
-                              # ground stays clear)
-                              {'mesh': 2, 'texture': 0, 'tint': WHITE_GOLD, 'alpha': 0.6, 'turn': 1.6,
-                               'scroll': (-0.5, 0.0)},
-                              {'mesh': 2, 'texture': 0, 'tint': GOLD, 'alpha': 0.45, 'turn': 2.6,
-                               'scroll': (0.35, 0.2)})}},
-    # Sacred embers rising around the Hero, in place of retail's snow: flakes of light and motes.
+                          'textures': (f'{PARAGON}/beam_smokegrey', f'{PARAGON}/streak_halfcircle_01',
+                                       f'{PARAGON}/7fx_wavey_mask_02_vert', f'{PARAGON}/7fx_energyscroll_desat',
+                                       f'{PARAGON}/cfx_priest_protectedbynature_aura_4212610'),
+                          'options': {'export': (STATE, AURA), 'layers': (
+                              # the storm: retail's swirl in its own smoke, fast, two speeds
+                              {'source': 0, 'mesh': 2, 'texture': 0, 'tint': WHITE_GOLD, 'alpha': 0.14,
+                               'turn': 0.9, 'scroll': (-0.6, 0.0)},
+                              {'source': 0, 'mesh': 2, 'texture': 0, 'tint': GOLD, 'alpha': 0.1, 'turn': 1.4,
+                               'scroll': (0.4, 0.1)},
+                              # blades of light whipping round it, one set flashing
+                              {'source': 0, 'mesh': 2, 'texture': 1, 'tint': WHITE_GOLD, 'alpha': 0.55, 'turn': 0.7},
+                              {'source': 0, 'mesh': 2, 'texture': 1, 'tint': GOLD, 'alpha': 0.45, 'turn': -1.1,
+                               'flicker': (0.45, 0.3)},
+                              # the column of light rising out of the storm (aura01's funnel), its light climbing
+                              {'source': 1, 'mesh': 0, 'texture': 2, 'tint': PALE_GOLD, 'alpha': 0.18, 'turn': 3.0,
+                               'scroll': (0.0, -0.8), 'grow': (0.6, 0.6)},
+                              # the dome about the Hero, energy flowing over it, a second skin pulsing
+                              {'source': 1, 'mesh': 2, 'texture': 3, 'tint': GOLD, 'alpha': 0.45, 'turn': 4.0,
+                               'scroll': (0.25, -0.6)},
+                              {'source': 1, 'mesh': 3, 'texture': 4, 'tint': WHITE_GOLD, 'alpha': 0.07, 'turn': -6.0,
+                               'scroll': (0.0, -0.3), 'flicker': (1.2, 0.0)})}},
+    # The light about the body (the chest slot): flakes of light tumbling up and spiralling with the storm (retail's
+    # flipping snowflake: 8 frames), embers and sparks, and a glow at the core.
     'SanctifiedParagonEmbers': {'model': 'PAL_SanctifiedParagonEmbers', 'effect': 7152, 'shape': 'mist',
-                                'textures': (f'{PARAGON}/holy_flakes', 'MONK_Flare', 'MONK_Glow'),
+                                'textures': (f'{PARAGON}/snowflake_flipping_01', f'{PARAGON}/ember_offset_grey',
+                                             'MONK_Flare', 'MONK_Glow'),
                                 'options': {'layers': (
-                                    # flakes of light drifting up through the aura (holy_flakes: a 2x2 sprite
-                                    # sheet, each flake its own cell, one to a card)
-                                    {'texture': 0, 'sheet': (2, 2), 'tint': WHITE_GOLD, 'alpha': 0.95, 'turn': 3.0,
-                                     'pulse': 1.1, 'rise': (2.4, 2.2), 'cards': tuple((r, -0.9, 0.35) for r in
-                                                                        (1.4, 2.8, 4.2, 5.6, 7.0, 2.1, 4.9, 3.5,
-                                                                         6.3, 0.9))},
-                                    {'texture': 1, 'tint': WHITE_GOLD, 'alpha': 1.0, 'turn': -2.2, 'pulse': 0.9,
-                                     'rise': (2.6, 1.8), 'cards': tuple((r, -0.9, 0.18) for r in
-                                                                        (1.2, 3.6, 6.0, 7.2, 0.8, 5.4))},
-                                    {'texture': 2, 'tint': GOLD, 'alpha': 0.12, 'pulse': 0,
-                                     'cards': ((0.0, 0.0, 2.6),)})}},
+                                    {'texture': 3, 'tint': GOLD, 'alpha': 0.35, 'pulse': 1.4,
+                                     'cards': ((0.0, 0.0, 2.2),)},
+                                    {'texture': 0, 'sheet': (8, 1), 'flip': 0.8, 'tint': WHITE_GOLD, 'alpha': 1.0,
+                                     'turn': 1.4, 'pulse': 0, 'rise': (3.2, 1.6),
+                                     'cards': tuple((r, -1.0 + 0.15 * (i % 4), 0.32) for i, r in enumerate(
+                                         (0.8, 1.3, 1.8, 2.3, 2.8, 1.0, 1.6, 2.1, 2.6, 3.0, 1.2, 2.0, 2.5, 1.5)))},
+                                    {'texture': 1, 'tint': WHITE_GOLD, 'alpha': 1.0, 'turn': -1.9, 'pulse': 0.7,
+                                     'rise': (3.6, 1.3), 'cards': tuple((r, -1.0, 0.22) for r in
+                                                                        (0.7, 1.1, 1.5, 1.9, 2.3, 2.7, 3.1, 1.3, 2.5,
+                                                                         0.9, 1.7, 2.9))},
+                                    {'texture': 2, 'tint': WHITE_GOLD, 'alpha': 1.0, 'turn': 2.4, 'pulse': 0.5,
+                                     'rise': (2.8, 1.1), 'cards': tuple((r, -0.8, 0.16) for r in
+                                                                        (1.0, 1.8, 2.6, 1.4, 2.2, 3.0, 0.6, 2.0))})}},
+    # A crown of light above the head: motes of light circling a soft halo.
+    'SanctifiedParagonCrown': {'model': 'PAL_SanctifiedParagonCrown', 'effect': 7155, 'shape': 'mist',
+                               'textures': ('MONK_Flare', 'MONK_Glow'),
+                               'options': {'layers': (
+                                   {'texture': 1, 'tint': GOLD, 'alpha': 0.5, 'pulse': 1.6,
+                                    'cards': ((0.0, 0.45, 0.9),)},
+                                   {'texture': 0, 'tint': WHITE_GOLD, 'alpha': 1.0, 'turn': 2.5, 'pulse': 0,
+                                    'cards': tuple((0.38, 0.45, 0.16) for _ in range(8))},
+                                   {'texture': 0, 'tint': GOLD, 'alpha': 0.9, 'turn': -3.5, 'pulse': 0.8,
+                                    'cards': tuple((0.24, 0.55, 0.12) for _ in range(5))})}},
+    # Waking (90749, cast as the aura turns on): a golden shockwave rolling out and a flash of light.
+    'SanctifiedParagonAwaken': {'model': 'PAL_SanctifiedParagonAwaken', 'effect': 7156, 'shape': 'burst',
+                                'textures': (f'{PARAGON}/shockwavewater1extreme', 'MONK_Glow', None),
+                                'options': {'size': 16.0, 'ring_tint': GOLD, 'ring_blend': 4, 'flash_sheet': False,
+                                            'flash_tint': WHITE_GOLD,
+                                            'ring': {'scale': ([0, 250, 650], [1.0, 16.0, 17.0]),
+                                                     'fade': ([0, 150, 550, 800], [0x7FFF, 0x7FFF, 0, 0])}}},
     # Seat of the Paragon: a larger holy sigil beneath the Hero while the bonus is on.
     'SeatOfTheParagon': {'model': 'PAL_SeatOfTheParagon', 'effect': 7153, 'shape': 'zone',
                          'textures': (f'{PARAGON}/holy_sigil', f'{PARAGON}/holy_inscriptions'),
@@ -272,11 +317,13 @@ EFFECTS = {
                               {'texture': 0, 'size': 8.0, 'height': 0.1, 'tint': GOLD, 'alpha': 0.5, 'turn': 18.0,
                                'blend': 4},)}},
 }
-KIT_CHEST, KIT_BASE, KIT_WORLD = 4, 5, 14
+KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_WORLD = 3, 4, 5, 14
 VISUALS = {
     'SanctifiedParagon': {'copy': 32, 'id': 16759, 'clear': ('precast', 'cast', 'impact'), 'kits': {
-        'state': (15708, {KIT_BASE: 'SanctifiedParagon', KIT_CHEST: 'SanctifiedParagonEmbers', 'sound': None,
-                          'procs': False})}},
+        'state': (15708, {KIT_BASE: 'SanctifiedParagon', KIT_CHEST: 'SanctifiedParagonEmbers',
+                          KIT_HEAD: 'SanctifiedParagonCrown', 'sound': None, 'procs': False})}},
+    'SanctifiedParagonAwaken': {'copy': 58, 'id': 16762, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15711, {KIT_BASE: 'SanctifiedParagonAwaken', KIT_CHEST: 0, 'sound': None})}},
     'SeatOfTheParagon': {'copy': 32, 'id': 16760, 'clear': ('precast', 'cast', 'impact'), 'kits': {
         'state': (15709, {KIT_BASE: 'SeatOfTheParagon', 'sound': None, 'procs': False})}},
     'HallowedFootsteps': {'copy': 9735, 'id': 16761, 'clear': ('precast', 'state', 'area'), 'kits': {

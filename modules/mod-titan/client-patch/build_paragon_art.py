@@ -3,11 +3,9 @@
 white on black (drawn additive, tinted gold by the models), made here rather than taken from a demon's sigil.
 
 - holy_inscriptions.png: a band of inscriptions (Cinzel capitals, the Paragon's words, crosses between) between two
-  thin circles, the outer one at the texture's edge: the aura's turning holy writing and its luminous boundary;
+  thin circles, the outer one at the texture's edge: the ring of holy writing about Seat of the Paragon's sigil;
 - holy_sigil.png: Seat of the Paragon's larger sigil (rings, rays and an eight-pointed star);
 - holy_glyph.png: Hallowed Footsteps' small glyph (a ring and a four-pointed star).
-- holy_flakes.png: a 2x2 sprite sheet of soft flakes of light with a glow, one to a cell (after the user's
-  reference sheet), the embers rising through the aura.
 
 Usage: python3 build_paragon_art.py
 """
@@ -15,7 +13,7 @@ Usage: python3 build_paragon_art.py
 import math
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / 'spells' / 'PAL_SanctifiedParagon'
@@ -98,30 +96,12 @@ def glyph():
     return as_additive(glow(image, 3))
 
 
-def flakes():
-    size = 128
-    image = Image.new('L', (size, size), 0)
-    # (x, y, length, width, degrees): four flakes, scattered as the reference's
-    for x, y, length, width, turn in ((42, 26, 12, 8, -30), (96, 44, 11, 6, 40), (16, 82, 10, 6, -15),
-                                       (86, 80, 14, 7, 75)):
-        flake = Image.new('L', (40, 40), 0)
-        ImageDraw.Draw(flake).ellipse([20 - length / 2, 20 - width / 2, 20 + length / 2, 20 + width / 2], fill=255)
-        flake = flake.rotate(turn, resample=Image.BICUBIC)
-        image.paste(255, (x - 20, y - 20), flake)
-    halo = image.filter(ImageFilter.GaussianBlur(5)).point(lambda v: min(255, int(v * 1.8)))
-    core = image.filter(ImageFilter.GaussianBlur(1))
-    alpha = ImageChops.lighter(halo, core)
-    white = Image.new('L', (size, size), 255)
-    return Image.merge('RGBA', (white, white, white, alpha))
-
-
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     inscriptions().save(OUT / 'holy_inscriptions.png')
     sigil().save(OUT / 'holy_sigil.png')
     glyph().save(OUT / 'holy_glyph.png')
-    flakes().save(OUT / 'holy_flakes.png')
-    print(f'Wrote {OUT}/holy_inscriptions.png, holy_sigil.png, holy_glyph.png, holy_flakes.png')
+    print(f'Wrote {OUT}/holy_inscriptions.png, holy_sigil.png, holy_glyph.png')
 
 
 if __name__ == '__main__':

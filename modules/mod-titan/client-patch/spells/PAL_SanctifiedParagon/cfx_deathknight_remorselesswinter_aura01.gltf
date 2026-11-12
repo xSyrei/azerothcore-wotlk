@@ -1,0 +1,882 @@
+{
+	"asset": {
+		"version": "2.0",
+		"generator": "wow.export v0.2.21 win-x64 [01a1b2f4-1a35-7000-9849-075ee4fa5b50]"
+	},
+	"nodes": [
+		{
+			"name": "cfx_deathknight_remorselesswinter_aura01",
+			"children": [
+				1,
+				18,
+				19,
+				20,
+				21
+			]
+		},
+		{
+			"name": "cfx_deathknight_remorselesswinter_aura01_skeleton",
+			"children": [
+				2,
+				4,
+				6,
+				8,
+				10,
+				12,
+				14,
+				16
+			]
+		},
+		{
+			"name": "bone_0_p",
+			"translation": [
+				0,
+				1.4170114994049072,
+				0
+			],
+			"children": [
+				3
+			]
+		},
+		{
+			"name": "bone_0"
+		},
+		{
+			"name": "bone_1_p",
+			"translation": [
+				0,
+				2.025773763656616,
+				0
+			],
+			"children": [
+				5
+			]
+		},
+		{
+			"name": "bone_1"
+		},
+		{
+			"name": "bone_2_p",
+			"translation": [
+				0,
+				1.5277777910232544,
+				0
+			],
+			"children": [
+				7
+			]
+		},
+		{
+			"name": "bone_2"
+		},
+		{
+			"name": "bone_3_p",
+			"translation": [
+				0.13244982063770294,
+				1.5141195058822632,
+				0
+			],
+			"children": [
+				9
+			]
+		},
+		{
+			"name": "bone_3"
+		},
+		{
+			"name": "bone_4_p",
+			"translation": [
+				0.13244982063770294,
+				1.5141195058822632,
+				0
+			],
+			"children": [
+				11
+			]
+		},
+		{
+			"name": "bone_4"
+		},
+		{
+			"name": "bone_5_p",
+			"translation": [
+				0.13244982063770294,
+				1.462985634803772,
+				0
+			],
+			"children": [
+				13
+			]
+		},
+		{
+			"name": "bone_5"
+		},
+		{
+			"name": "bone_6_p",
+			"translation": [
+				0.13244982063770294,
+				1.462985634803772,
+				0
+			],
+			"children": [
+				15
+			]
+		},
+		{
+			"name": "bone_6"
+		},
+		{
+			"name": "bone_7_p",
+			"translation": [
+				0.13244982063770294,
+				1.5141195058822632,
+				0
+			],
+			"children": [
+				17
+			]
+		},
+		{
+			"name": "bone_7"
+		},
+		{
+			"name": "cfx_deathknight_remorselesswinter_aura01_Geoset0",
+			"mesh": 0,
+			"skin": 0
+		},
+		{
+			"name": "cfx_deathknight_remorselesswinter_aura01_Geoset1",
+			"mesh": 1,
+			"skin": 0
+		},
+		{
+			"name": "cfx_deathknight_remorselesswinter_aura01_Geoset2",
+			"mesh": 2,
+			"skin": 0
+		},
+		{
+			"name": "cfx_deathknight_remorselesswinter_aura01_Geoset3",
+			"mesh": 3,
+			"skin": 0
+		}
+	],
+	"scenes": [
+		{
+			"name": "cfx_deathknight_remorselesswinter_aura01_Scene",
+			"nodes": [
+				0
+			]
+		}
+	],
+	"buffers": [
+		{
+			"byteLength": 1272860,
+			"uri": "cfx_deathknight_remorselesswinter_aura01.bin"
+		},
+		{
+			"uri": "cfx_deathknight_remorselesswinter_aura01_anim0-0.bin",
+			"byteLength": 3620
+		}
+	],
+	"bufferViews": [
+		{
+			"buffer": 0,
+			"byteLength": 304740,
+			"byteOffset": 0,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 304740,
+			"byteOffset": 304740,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 101580,
+			"byteOffset": 609480,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 101580,
+			"byteOffset": 711060,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 512,
+			"byteOffset": 812640
+		},
+		{
+			"buffer": 1,
+			"byteLength": 724,
+			"byteOffset": 0,
+			"name": "ROT_TIMESTAMPS_1_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 2896,
+			"byteOffset": 724,
+			"name": "ROT_VALUES_1_0"
+		},
+		{
+			"buffer": 0,
+			"byteLength": 203160,
+			"byteOffset": 813152,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 203160,
+			"byteOffset": 1016312,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 5760,
+			"byteOffset": 1219472,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 12,
+			"byteOffset": 1225232,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 23808,
+			"byteOffset": 1225244,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 23808,
+			"byteOffset": 1249052,
+			"target": 34963
+		}
+	],
+	"accessors": [
+		{
+			"name": "POSITION",
+			"bufferView": 0,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 25395,
+			"type": "VEC3",
+			"min": [
+				-4.247809886932373,
+				-1.0786378383636475,
+				-3.670680284500122
+			],
+			"max": [
+				4.186819553375244,
+				6.300273895263672,
+				3.6862640380859375
+			]
+		},
+		{
+			"name": "NORMAL",
+			"bufferView": 1,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 25395,
+			"type": "VEC3",
+			"min": [
+				-1,
+				-1,
+				-1
+			],
+			"max": [
+				1,
+				1,
+				1
+			]
+		},
+		{
+			"name": "JOINTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 25395,
+			"type": "VEC4",
+			"bufferView": 2,
+			"min": [
+				0,
+				0,
+				0,
+				0
+			],
+			"max": [
+				2,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "WEIGHTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 25395,
+			"normalized": true,
+			"type": "VEC4",
+			"bufferView": 3,
+			"min": [
+				255,
+				0,
+				0,
+				0
+			],
+			"max": [
+				255,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "INV_BIND_MATRICES",
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 8,
+			"type": "MAT4",
+			"bufferView": 4,
+			"min": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				-0.13244982063770294,
+				-2.025773763656616,
+				0,
+				1
+			],
+			"max": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				-1.4170114994049072,
+				0,
+				1
+			]
+		},
+		{
+			"name": "ROT_TIMESTAMPS_1_0",
+			"bufferView": 5,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1.334
+			],
+			"count": 181
+		},
+		{
+			"name": "ROT_VALUES_1_0",
+			"bufferView": 6,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0,
+				0,
+				-0.000030517578125,
+				-0.99993896484375
+			],
+			"max": [
+				0.000030517578125,
+				0.999969482421875,
+				0,
+				1
+			],
+			"count": 181
+		},
+		{
+			"name": "TEXCOORD_0",
+			"bufferView": 7,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 25395,
+			"type": "VEC2",
+			"min": [
+				-5.960464477539063e-8,
+				0
+			],
+			"max": [
+				1.000000238418579,
+				1.0000001192092896
+			]
+		},
+		{
+			"name": "TEXCOORD_1",
+			"bufferView": 8,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 25395,
+			"type": "VEC2",
+			"min": [
+				-0.5746522545814514,
+				-1.0908713340759277
+			],
+			"max": [
+				2.0948386192321777,
+				2.0253119468688965
+			]
+		},
+		{
+			"bufferView": 9,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 2880,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 10,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 6,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 11,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 11904,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 12,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 11904,
+			"type": "SCALAR"
+		}
+	],
+	"meshes": [
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 7,
+						"TEXCOORD_1": 8
+					},
+					"indices": 9,
+					"mode": 4,
+					"material": 9
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 7,
+						"TEXCOORD_1": 8
+					},
+					"indices": 10,
+					"mode": 4,
+					"material": 11
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 7,
+						"TEXCOORD_1": 8
+					},
+					"indices": 11,
+					"mode": 4,
+					"material": 12
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 7,
+						"TEXCOORD_1": 8
+					},
+					"indices": 12,
+					"mode": 4,
+					"material": 12
+				}
+			]
+		}
+	],
+	"scene": 0,
+	"skins": [
+		{
+			"name": "cfx_deathknight_remorselesswinter_aura01_Armature",
+			"joints": [
+				3,
+				5,
+				7,
+				9,
+				11,
+				13,
+				15,
+				17
+			],
+			"inverseBindMatrices": 4,
+			"skeleton": 0
+		}
+	],
+	"animations": [
+		{
+			"samplers": [
+				{
+					"input": 5,
+					"interpolation": "LINEAR",
+					"output": 6
+				}
+			],
+			"channels": [
+				{
+					"sampler": 0,
+					"target": {
+						"node": 5,
+						"path": "rotation"
+					}
+				}
+			],
+			"name": "Stand (ID 0 variation 0)"
+		},
+		{
+			"samplers": [],
+			"channels": [],
+			"name": "Hold (ID 158 variation 0)"
+		},
+		{
+			"samplers": [],
+			"channels": [],
+			"name": "Decay (ID 159 variation 0)"
+		}
+	],
+	"images": [
+		{
+			"uri": "snowflake_flipping_01.png"
+		},
+		{
+			"uri": "wispymagic_vert_azeritemist_blue_128_greyrotate_solid.png"
+		},
+		{
+			"uri": "grey50percentsquare16x16_a.png"
+		},
+		{
+			"uri": "ember_offset_grey.png"
+		},
+		{
+			"uri": "smoke_loose_02_256_blend_contrast.png"
+		},
+		{
+			"uri": "7fx_snow_thickwhite.png"
+		},
+		{
+			"uri": "smoke_loose_01.png"
+		},
+		{
+			"uri": "7fx_energyscroll_desat.png"
+		},
+		{
+			"uri": "cloud_soft_mod2x_darkspirit_light.png"
+		},
+		{
+			"uri": "7fx_wavey_mask_02_vert.png"
+		},
+		{
+			"uri": "8fx_general_windtileblur_a.png"
+		},
+		{
+			"uri": "cfx_demonhunter_thehunt_aura03_6190036.png"
+		},
+		{
+			"uri": "cfx_priest_protectedbynature_aura_4212610.png"
+		},
+		{
+			"uri": "cfx_priest_protectedbynature_aura_4497803.png"
+		}
+	],
+	"textures": [
+		{
+			"source": 0
+		},
+		{
+			"source": 1
+		},
+		{
+			"source": 2
+		},
+		{
+			"source": 3
+		},
+		{
+			"source": 4
+		},
+		{
+			"source": 5
+		},
+		{
+			"source": 6
+		},
+		{
+			"source": 7
+		},
+		{
+			"source": 8
+		},
+		{
+			"source": 9
+		},
+		{
+			"source": 10
+		},
+		{
+			"source": 11
+		},
+		{
+			"source": 12
+		},
+		{
+			"source": 13
+		}
+	],
+	"materials": [
+		{
+			"name": "snowflake_flipping_01",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 0
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "wispymagic_vert_azeritemist_blue_128_greyrotate_solid",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 1
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "grey50percentsquare16x16_a",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 2
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "ember_offset_grey",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 3
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "smoke_loose_02_256_blend_contrast",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 4
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "7fx_snow_thickwhite",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 5
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "smoke_loose_01",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 6
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "7fx_energyscroll_desat",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 7
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "cloud_soft_mod2x_darkspirit_light",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 8
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "7fx_wavey_mask_02_vert",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 9
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "8fx_general_windtileblur_a",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 10
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "cfx_demonhunter_thehunt_aura03_6190036",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 11
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "cfx_priest_protectedbynature_aura_4212610",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 12
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "cfx_priest_protectedbynature_aura_4497803",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 13
+				},
+				"metallicFactor": 0
+			}
+		}
+	]
+}
