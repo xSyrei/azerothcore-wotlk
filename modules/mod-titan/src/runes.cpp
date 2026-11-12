@@ -106,7 +106,7 @@ namespace
     enum Modifier : uint8
     {
         MOD_INFERNAL_PACT, MOD_DEMONIC_ASCENSION, MOD_DREADFIRE_DISCIPLINE,
-        MOD_FEL_SUMMONS, MOD_SHATTERED_GLAIVE, MOD_COMMANDERS_FURY,
+        MOD_IMP_LEGION, MOD_SHATTERED_GLAIVE, MOD_FEL_HOST,
         MOD_METAMORPHIC_BOND, MOD_FEL_RIFT, MOD_PACT_OF_RUIN,
     };
 
@@ -131,8 +131,10 @@ namespace
     constexpr uint8 CHAOS_BOLT_RANK1_LEVEL = 60;
     constexpr uint32 FELGUARD_DURATION_MS = 8000;
     constexpr uint32 FEL_IMP_DURATION_MS = 10000;
-    constexpr uint32 FEL_SUMMONS_CHANCE = 25;
-    constexpr std::size_t MAX_FEL_IMPS = 3;
+    // Imp Legion and Fel Host: every Throw Glaive spends the Fel Command, a demon (10 sec) for each stack, no limit
+    // to how many are out; each bolt of a volley deals 10% more for every one of the Hero's demons out.
+    constexpr uint32 LEGION_DURATION_MS = 10000;
+    constexpr uint32 BOLT_PCT_PER_DEMON = 10;
     constexpr int32 SHATTER_CUT_MS = 3000, SHATTER_BUDGET_MS = 9000;
     constexpr uint32 PACT_OF_RUIN_PCT = 3;
     constexpr float BOND_CLEAVE_RANGE = 5.0f;
@@ -338,30 +340,45 @@ namespace
         if (!felguard)
             return;
         state.Felguard = felguard->GetGUID();
-        if (HasMarker(player, MOD_COMMANDERS_FURY))
-            felguard->AddAura(SPELL_COMMANDERS_FURY, felguard);
         if (felguard->IsAIEnabled && target)
             felguard->AI()->AttackStart(target);
     }
 
-    void SummonImp(Player* player, Unit* target)
+    bool Legion(Player* player)
+    {
+        return HasMarker(player, MOD_IMP_LEGION) || HasMarker(player, MOD_FEL_HOST);
+    }
+
+    // The legion's demons still out (Imp Legion's imps, Fel Host's Felguards), the dead ones dropped.
+    std::size_t LegionOut(Player* player)
     {
         State& state = StateOf(player);
         state.Imps.erase(std::remove_if(state.Imps.begin(), state.Imps.end(), [player](ObjectGuid guid)
         {
-            Creature* imp = ObjectAccessor::GetCreature(*player, guid);
-            return !imp || !imp->IsAlive();
+            Creature* demon = ObjectAccessor::GetCreature(*player, guid);
+            return !demon || !demon->IsAlive();
         }), state.Imps.end());
-        if (state.Imps.size() >= MAX_FEL_IMPS)
+        return state.Imps.size();
+    }
+
+    // One of the legion's demons by the target (an imp; a Felguard with felguard), for LEGION_DURATION_MS.
+    void SummonDemon(Player* player, Unit* target, bool felguard)
+    {
+        State& state = StateOf(player);
+        Position pos = target->GetNearPosition(frand(3.0f, 6.0f), target->GetAngle(player) + frand(-1.2f, 1.2f));
+        TempSummon* demon = player->GetMap()->SummonCreature(felguard ? NPC_RUNE_FELGUARD : NPC_RUNE_FEL_IMP, pos,
+            sSummonPropertiesStore.LookupEntry(SUMMON_PROPERTIES_GUARDIAN), LEGION_DURATION_MS, player);
+        if (!demon)
             return;
-        Position pos = target->GetNearPosition(4.0f, target->GetAngle(player));
-        TempSummon* imp = player->GetMap()->SummonCreature(NPC_RUNE_FEL_IMP, pos,
-            sSummonPropertiesStore.LookupEntry(SUMMON_PROPERTIES_GUARDIAN), FEL_IMP_DURATION_MS, player);
-        if (!imp)
-            return;
-        state.Imps.push_back(imp->GetGUID());
-        if (imp->IsAIEnabled)
-            imp->AI()->AttackStart(target);
+        state.Imps.push_back(demon->GetGUID());
+        if (demon->IsAIEnabled)
+            demon->AI()->AttackStart(target);
+    }
+
+    // Every demon of the Hero's out: the legion's, the volley's Felguard and their own warlock demon.
+    std::size_t DemonsOut(Player* player)
+    {
+        return LegionOut(player) + (Felguard(player) ? 1 : 0) + (Demon(player) ? 1 : 0);
     }
 
     // Stacks, the Felguard and the imps gone (death, prestige, a spec or modifier change).
@@ -428,12 +445,12 @@ namespace
         }
 
         int32 damage = BoltDamage(player);
+        if (Legion(player))
+            damage += damage * int32(BOLT_PCT_PER_DEMON * DemonsOut(player)) / 100;
         player->CastCustomSpell(target, SPELL_VOLLEY_BOLT, &damage, nullptr, nullptr, true);
 
         if (!volley->Hit.insert(target->GetGUID()).second)
             return;
-        if (HasMarker(player, MOD_FEL_SUMMONS) && roll_chance_i(FEL_SUMMONS_CHANCE))
-            SummonImp(player, target);
         if (HasMarker(player, MOD_SHATTERED_GLAIVE) && target->GetGUID() != volley->Primary)
             player->CastSpell(target, SPELL_THROW_GLAIVE, true);    // the glaive bounces to it, full damage
     }
@@ -467,13 +484,6 @@ namespace
 
         if (empowered)
             SummonFelguard(player, primary);
-        if (HasMarker(player, MOD_COMMANDERS_FURY))
-        {
-            if (Pet* demon = Demon(player))
-                demon->AddAura(SPELL_COMMANDERS_FURY, demon);
-            if (Creature* felguard = Felguard(player))
-                felguard->AddAura(SPELL_COMMANDERS_FURY, felguard);
-        }
         if (HasMarker(player, MOD_FEL_RIFT))
         {
             state.RiftTarget = primary->GetGUID();
@@ -747,8 +757,23 @@ class spell_titan_rune_throw_glaive : public SpellScript
     void Volley()
     {
         Unit* target = GetExplTargetUnit();
-        if (Armed() && target)
-            FireVolley(GetCaster()->ToPlayer(), target);
+        Player* player = GetCaster()->ToPlayer();
+        if (!target || !player || GetSpell()->IsTriggered() || !player->HasAura(SPELL_RUNE_FEL_COMMANDMENT))
+            return;
+        // Imp Legion / Fel Host: every throw spends the Fel Command, a demon for each stack (Felguards in
+        // Metamorphosis with Fel Host), before the volley so its bolts count them.
+        uint8 stacks = Stacks(player);
+        bool armed = Armed();
+        if (Legion(player) && stacks)
+        {
+            bool felguards = HasMarker(player, MOD_FEL_HOST) && InMetamorphosis(player);
+            for (uint8 i = 0; i < stacks; ++i)
+                SummonDemon(player, target, felguards);
+            if (!armed)
+                player->RemoveAurasDueToSpell(SPELL_FEL_COMMAND);
+        }
+        if (armed)
+            FireVolley(player, target);
     }
 
     void Register() override
@@ -803,7 +828,7 @@ struct npc_titan_rune_felguard : public ScriptedAI
     }
 };
 
-// Fel Summons' imp (910121): 10 sec, Firebolt at its enemy every 2 sec from where it stands (a quarter of a volley
+// Imp Legion's imp (910121): 10 sec, Firebolt at its enemy every 2 sec from where it stands (a quarter of a volley
 // bolt), then the Hero's target; no threat.
 struct npc_titan_rune_fel_imp : public ScriptedAI
 {

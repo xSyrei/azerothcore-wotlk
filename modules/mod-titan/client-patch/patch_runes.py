@@ -11,7 +11,7 @@ The Rune of Fel Commandment (the design: the "Emberforge Legendary Runes" doc, i
   resisted, its damage set by the script (no caster modifiers: the script has them);
 - 90703 the Felguard's guardian aura and 90704 the imps': no threat (they never pull a dungeon's creatures off the
   tank), hidden;
-- 90705 Commander's Fury (on your demon and the Felguard): 30% more damage, 20% attack speed, 10 sec;
+- 90705 Commander's Fury (no longer given: Fel Host took its place; kept for the auras players may still have);
 - 90706 Metamorphic Bond (on your demon while you are in Metamorphosis): 30% less damage taken;
 - 90707 Fel Rift: 3 sec after a volley, Fel Rush carries you to the glaive's first target;
 - 90708 Felstorm: the Felguard's spin, an NPC Whirlwind's tick (weapon damage around it), 4 ticks over 2 sec;
@@ -106,7 +106,7 @@ SPELLS[0]['set'] = {**SPELLS[0]['set'], 'ProcFlags': PROC_DONE_MELEE_SPELL | PRO
 # The modifiers' markers: (slot, choice) -> 90710 + slot * 3 + choice, hidden.
 MODIFIERS = [
     ('Infernal Pact', 'Demonic Ascension', 'Dreadfire Discipline'),
-    ('Fel Summons', 'Shattered Glaive', "Commander's Fury"),
+    ('Imp Legion', 'Shattered Glaive', 'Fel Host'),
     ('Metamorphic Bond', 'Fel Rift', 'Pact of Ruin'),
 ]
 SPELLS += [buff(90710 + slot * 3 + choice, name, RUNE_ICON, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},

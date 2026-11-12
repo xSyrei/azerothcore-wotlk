@@ -435,11 +435,14 @@ utility or a tradeoff) take one pick each, from three.
   half attack power (Fire, never resisted). In Metamorphosis (the Demon Hunter's or Demonology's) 5 bolts and a
   **Felguard** (910120, 8 sec: Felstorm, Cleave, no threat; another volley resets it). Its modifiers: Infernal Pact,
   Demonic Ascension, Dreadfire Discipline (Shadow Bolt or Incinerate build instead of Demon's Bite; offered only to a
-  Hero with one); Fel Summons (imps, 910121), Shattered Glaive, Commander's Fury; Metamorphic Bond, Fel Rift (Fel
-  Rush to the volley's target, `demon_hunter.cpp`), Pact of Ruin. Numbers: the doc's tuning table, in `runes.cpp`.
+  Hero with one); Imp Legion, Shattered Glaive, Fel Host (both legions: every Throw Glaive spends the Fel Command,
+  a demon for each stack for 10 sec with no limit to how many are out, Fel Imps 910121, or Felguards in
+  Metamorphosis with Fel Host; each volley bolt deals 10% more for every demon out, the Hero's own included);
+  Metamorphic Bond, Fel Rift (Fel Rush to the volley's target, `demon_hunter.cpp`), Pact of Ruin. Numbers: the
+  doc's tuning table, in `runes.cpp`.
 - Spells 90700-90718 (`client-patch/patch_runes.py`, in `titan_demon_hunter_spells.sql` and the client patch): the
-  rune's aura (its procs grant the stacks), Fel Command, the bolt, the summons' no-threat auras, Commander's Fury,
-  Metamorphic Bond, Fel Rift, Felstorm, Metamorphic Cleave, and one hidden marker per modifier. The panel's texts:
+  rune's aura (its procs grant the stacks), Fel Command, the bolt, the summons' no-threat auras, Commander's Fury (no
+  longer given), Metamorphic Bond, Fel Rift, Felstorm, Metamorphic Cleave, and one hidden marker per modifier. The panel's texts:
   `Emberforge_Runes/Catalog.lua`, made from the doc by `tools/runes/make_catalog.py`. Throw Glaive's button glows
   and shows Chaos Bolt at 5 Fel Command (a Felguard mark in Metamorphosis).
 

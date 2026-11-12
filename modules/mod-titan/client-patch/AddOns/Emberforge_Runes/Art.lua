@@ -296,9 +296,9 @@ EmberforgeRunesArt = {
                 "Your demon",
                 "Metamorphosis",
                 "Shadow Bolt · Incinerate",
-                "Chaos Bolt Volley",
                 "Throw Glaive",
-                "Your demon",
+                "Throw Glaive",
+                "Throw Glaive · Metamorphosis",
                 "Metamorphosis",
                 "Fel Rush",
                 "Risk and reward",
@@ -310,12 +310,13 @@ EmberforgeRunesArt = {
                         "empowered volley.",
                 "Shadow Bolt and Incinerate grant 1 Fel Command each. Demon's Bite " ..
                         "grants none.",
-                "Each enemy the volley hits has a 25% chance to spawn an imp that " ..
-                        "fights for 10 sec.",
+                "Every throw spends your Fel Command: a Fel Imp for each stack, for 10 " ..
+                        "sec. Volley bolts deal 10% more per demon you have out.",
                 "The glaive bounces to every enemy hit. Each critical bolt takes 3 sec " ..
                         "off Throw Glaive.",
-                "After a volley, your demon deals 30% more damage and attacks 20% " ..
-                        "faster for 10 sec.",
+                "Every throw spends your Fel Command: a demon for each stack, for 10 " ..
+                        "sec, Felguards in Metamorphosis. Volley bolts deal 10% more per demon " ..
+                        "out.",
                 "In Metamorphosis, your demon takes 30% less damage and its attacks " ..
                         "cleave.",
                 "For 3 sec after a volley, Fel Rush carries you to the glaive's first " ..

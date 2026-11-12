@@ -1303,8 +1303,9 @@ EmberforgeRunesCatalog = {
           text = "Shadow Bolt and Incinerate grant 1 Fel Command each; Demon's Bite grants none.",
         },
         {
-          name = "Fel Summons",
-          text = "Each enemy struck by the volley has a 25% chance to spawn an imp that fights for 10 sec.",
+          name = "Imp Legion",
+          text = "Every Throw Glaive spends your Fel Command: a Fel Imp for each stack, fighting for 10 sec. " ..
+              "Each volley bolt deals 10% more for every demon you have out.",
         },
         {
           name = "Shattered Glaive",
@@ -1312,8 +1313,10 @@ EmberforgeRunesCatalog = {
               "Glaive's cooldown by 3 sec.",
         },
         {
-          name = "Commander's Fury",
-          text = "The volley empowers your demon: 30% more damage and 20% attack speed for 10 sec.",
+          name = "Fel Host",
+          text = "Every Throw Glaive spends your Fel Command: a demon for each stack, for 10 sec: Felguards " ..
+              "in Metamorphosis, Fel Imps outside it. Each volley bolt deals 10% more for every demon you " ..
+              "have out.",
         },
         {
           name = "Metamorphic Bond",
@@ -1331,8 +1334,8 @@ EmberforgeRunesCatalog = {
       builds = {
         {
           name = "Demon commander",
-          mods = { "Infernal Pact", "Commander's Fury", "Metamorphic Bond" },
-          text = "Your demon does the work, and Metamorphosis makes it a second tank.",
+          mods = { "Infernal Pact", "Fel Host", "Metamorphic Bond" },
+          text = "A host of demons answers every throw, and Metamorphosis makes them Felguards.",
         },
         {
           name = "Chaos artillery",
@@ -1341,7 +1344,7 @@ EmberforgeRunesCatalog = {
         },
         {
           name = "Fel legion",
-          mods = { "Demonic Ascension", "Fel Summons", "Fel Rift" },
+          mods = { "Demonic Ascension", "Imp Legion", "Fel Rift" },
           text = "Pop Metamorphosis, fire a five-bolt volley with a Felguard and imps behind it, and dash in.",
         },
       },

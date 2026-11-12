@@ -50,6 +50,17 @@ for r in ov:
             if m and '+' in m.group(2):
                 builds.append((m.group(1), [y.strip() for y in m.group(2).split('+')], m.group(3)))
     assert len(builds)==3
+    # Changed since the doc: Fel Commandment's Manifestation, the demons each throw calls (src/runes.cpp).
+    if r['name']=='Rune of Fel Commandment':
+        renamed={'Fel Summons':'Imp Legion',"Commander's Fury":'Fel Host'}
+        texts={'Imp Legion':'Every Throw Glaive spends your Fel Command: a Fel Imp for each stack, fighting for 10 '
+               'sec. Each volley bolt deals 10% more for every demon you have out.',
+               'Fel Host':'Every Throw Glaive spends your Fel Command: a demon for each stack, for 10 sec: Felguards '
+               'in Metamorphosis, Fel Imps outside it. Each volley bolt deals 10% more for every demon you have out.'}
+        mods=[(renamed.get(n,n),texts.get(renamed.get(n,n),t)) for n,t in mods]
+        builds=[(a,[renamed.get(m,m) for m in ms],t.replace('Your demon does the work, and Metamorphosis makes it a '
+            'second tank.','A host of demons answers every throw, and Metamorphosis makes them Felguards.'))
+            for a,ms,t in builds]
     runes.append(dict(r,core=core,loop=loop,mods=mods,builds=builds,icon=icons[r['name']]))
 
 def lit(s): return '"'+s.replace('\\','\\\\').replace('"','\\"')+'"'
