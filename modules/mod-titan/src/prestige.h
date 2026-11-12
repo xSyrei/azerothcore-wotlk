@@ -33,7 +33,8 @@ namespace Prestige
     bool ReachedCap(Player* player);
     // The level a Hero needs to wear an item: its required level. A weapon or armor of uncommon quality or better
     // with none that the squish found no source level for (zz_titan_squish.sql gives quest rewards their quest's)
-    // asks for its item level less 10 (classic, item level 70 at most) or the level cap (the later ones).
+    // asks for its item level less 10 (classic, item level 70 at most; none when soulbound: a drop or a reward, only
+    // had at the Hero's own level) or the level cap (the later ones).
     uint8 EquipLevel(Item const* item);
 }
 

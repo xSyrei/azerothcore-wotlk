@@ -483,6 +483,10 @@ namespace Prestige
             return proto->RequiredLevel;
         if (proto->ItemLevel > CLASSIC_ITEM_LEVEL)
             return MaxLevel();
+        // Soulbound gear (a drop, a dungeon's reward bag: the Tumultuous Cloak of the dungeon finder's) is only had
+        // where it is earned, at the Hero's own level: no gate. The gate is for gear that changes hands.
+        if (proto->Bonding == BIND_WHEN_PICKED_UP)
+            return 0;
         return uint8(proto->ItemLevel > CLASSIC_LEVEL_GAP ? proto->ItemLevel - CLASSIC_LEVEL_GAP : 0);
     }
 }
@@ -597,7 +601,15 @@ public:
     bool OnPlayerCanEquipItem(Player* player, uint8 /*slot*/, uint16& /*dest*/, Item* item, bool /*swap*/,
         bool notLoading) override
     {
-        return !notLoading || !item || !Wildcard::IsHero(player) || Prestige::EquipLevel(item) <= player->GetLevel();
+        if (!notLoading || !item || !Wildcard::IsHero(player))
+            return true;
+        uint8 level = Prestige::EquipLevel(item);
+        if (level <= player->GetLevel())
+            return true;
+        // The client only says "You can't do that right now": the level it needs, said here.
+        ChatHandler(player->GetSession()).PSendSysMessage("|cffff2020You need level {} to equip {}.|r", level,
+            item->GetTemplate()->Name1);
+        return false;
     }
 
     // Requests from the window: whispers to oneself in the addon language with our prefix, never delivered.

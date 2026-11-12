@@ -374,7 +374,8 @@ a dungeon, battleground or queue.
   is gone), and each piece goes back on in its old slot as soon as its level allows, whatever is worn there then (to
   the bags). Destroying the cache destroys the gear in it (its tooltip says so).
   A piece's level (`Prestige::EquipLevel`) is its required level, or for a weapon or armor (uncommon or better)
-  with none (the squish gives most one: below) its item level less 10, up to item level 70, else the level cap. A
+  with none (the squish gives most one: below) its item level less 10, up to item level 70 (none when soulbound:
+  dungeon drops and rewards come at the Hero's own level), else the level cap. A
   Hero cannot put on gear above their level, and gear worn above it at login comes off into the bags (ratings are
   worth far more at low levels: TBC rewards on a level 1 Hero gave hundreds of percent of critical strike).
 - **Given:** a new Hero's gear (the race's starting outfit, worn, and the starter weapons in the bags,
