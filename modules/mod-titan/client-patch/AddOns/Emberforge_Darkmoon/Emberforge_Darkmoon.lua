@@ -750,6 +750,10 @@ local function RefreshSpecs()
     elseif active then
         svButton:SetLabel("Active")
         svButton:SetEnabled(false)
+    elseif view.spec > 1 and not mySpecs.capped then
+        -- Every specialization but the first opens at the level cap (specs.cpp).
+        svButton:SetLabel("Reach level 60 first")
+        svButton:SetEnabled(false)
     else
         svButton:SetLabel("Activate")
         svButton:SetEnabled(true)
@@ -2647,6 +2651,7 @@ events:SetScript("OnEvent", function(_, event, prefix, message, _, sender)
             local kind, body = message:match("^([^,]+),?(.*)$")
             if kind == "P" then
                 mySpecs.active = (tonumber(body:match("^(%d+)")) or 0) + 1
+                mySpecs.capped = body:match("^%d+,%d+,(%d)") == "1"
             elseif kind == "S" then
                 local index, owned, locked, _, price, _, name =
                     body:match("^(%d+),(%d+),(%d+),(%d+),(%d+),([^,]*),(.*)$")

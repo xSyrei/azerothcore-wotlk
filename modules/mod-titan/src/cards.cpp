@@ -16,6 +16,7 @@
  */
 
 #include "cards.h"
+#include "item_use.h"
 #include "emberspark.h"
 #include "wildcard.h"
 #include "Chat.h"
@@ -850,6 +851,7 @@ public:
 
     bool OnUse(Player* player, Item* item, SpellCastTargets const& /*targets*/) override
     {
+        EndItemUse(player, item);
         if (!Loaded(player))
         {
             ChatHandler(player->GetSession()).SendSysMessage("Your card collection is still loading. Try again.");

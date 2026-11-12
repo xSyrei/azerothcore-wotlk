@@ -1378,7 +1378,12 @@ do
             end
             local items = {}
             if spec.index ~= data.specs.active then
-                items[#items + 1] = { "Activate", function() SendSpec("ACTIVATE," .. spec.index) end }
+                if spec.index > 0 and not data.specs.capped then
+                    -- Every specialization but the first opens at the level cap (specs.cpp).
+                    items[#items + 1] = { "|cff808080Activate  (reach level 60 first)|r", nil }
+                else
+                    items[#items + 1] = { "Activate", function() SendSpec("ACTIVATE," .. spec.index) end }
+                end
             end
             items[#items + 1] = { spec.locked and "Unlock" or "Lock", function()
                 SendSpec("LOCK," .. spec.index .. "," .. (spec.locked and 0 or 1))
@@ -1573,8 +1578,9 @@ do
     function SpecUI.OnMessage(message)
         local kind, body = message:match("^([^,]+),?(.*)$")
         if kind == "P" then
-            local active, eyes = body:match("^(%d+),(%d+)")
+            local active, eyes, capped = body:match("^(%d+),(%d+),?(%d*)")
             data.specs.active, data.specs.eyes = tonumber(active) or 0, tonumber(eyes) or 0
+            data.specs.capped = capped == "1"
         elseif kind == "S" then
             local index, owned, locked, used, price, icon, name =
                 body:match("^(%d+),(%d+),(%d+),(%d+),(%d+),([^,]*),(.*)$")

@@ -65,13 +65,13 @@ INSERT INTO `creature_questender` (`id`, `quest`) VALUES
 (@NPC, @QUEST);
 
 -- Prestige Gear Cache: every piece worn at a prestige is packed into one (src/prestige.cpp, titan_prestige_gear in
--- db-characters); used, it gives the gear back. Soulbound, unsellable. Spell 3361 only makes the item usable in the
--- 3.3.5 client; the script handles the use.
+-- db-characters); used, it gives the gear back. Soulbound, unsellable. Spell 90608 (instant, empty) only makes the
+-- item usable in the 3.3.5 client; the script handles the use.
 SET @CACHE := 910021;
 DELETE FROM `item_template` WHERE `entry` = @CACHE;
 INSERT INTO `item_template` (`entry`, `class`, `subclass`, `SoundOverrideSubclass`, `name`, `displayid`, `Quality`,
     `Flags`, `BuyPrice`, `SellPrice`, `ItemLevel`, `RequiredLevel`, `stackable`, `bonding`, `spellid_1`,
     `spelltrigger_1`, `spellcharges_1`, `description`, `ScriptName`) VALUES
-(@CACHE, 15, 0, -1, 'Prestige Gear Cache', 9515, 4, 0, 0, 0, 1, 0, 1, 1, 3361, 0, 0,
+(@CACHE, 15, 0, -1, 'Prestige Gear Cache', 9515, 4, 0, 0, 0, 1, 0, 1, 1, 90608, 0, 0,
     'The gear you wore when you were forged anew. Use it to take it back. Destroying it destroys the gear inside.',
     'item_titan_prestige_cache');

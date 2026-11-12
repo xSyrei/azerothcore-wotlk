@@ -16,6 +16,7 @@
  */
 
 #include "wildcard.h"
+#include "item_use.h"
 #include "Chat.h"
 #include "Player.h"
 #include "ScriptMgr.h"
@@ -59,6 +60,7 @@ public:
 
     bool OnUse(Player* player, Item* item, SpellCastTargets const& /*targets*/) override
     {
+        EndItemUse(player, item);
         if (!CanUseTome(player, item))
             return true;
 
@@ -83,6 +85,7 @@ public:
 
     bool OnUse(Player* player, Item* item, SpellCastTargets const& /*targets*/) override
     {
+        EndItemUse(player, item);
         if (!CanUseTome(player, item))
             return true;
 

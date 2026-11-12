@@ -133,10 +133,14 @@ public:
     }) { }
 
     static constexpr uint32 RESYNC_INTERVAL = 500;
+    // While no rune cools, the state goes again this often: the client knows a Hero's runes only from these (none
+    // came before the first rune was spent, so the rune bar stood empty after a login or a reload).
+    static constexpr uint32 IDLE_RESYNC_INTERVAL = 10000;
 
     struct State
     {
         uint32 Timer = 0;
+        uint32 IdleTimer = IDLE_RESYNC_INTERVAL;     // the first update sends them
         uint8 Cooling = 0;      // runes cooling down at the last update, a bit each
         int16 ComboPoints = -1; // the combo points last sent (-1: none sent yet)
     };
@@ -178,7 +182,15 @@ public:
             Resync(player);
         }
         if (!cooling)
+        {
             state.Timer = 0;
+            state.IdleTimer += diff;
+            if (state.IdleTimer >= IDLE_RESYNC_INTERVAL)
+            {
+                state.IdleTimer = 0;
+                Resync(player);
+            }
+        }
 
         for (uint8 i = 0; i < MAX_RUNES; ++i)
             if (ready & (1 << i))
@@ -212,6 +224,12 @@ private:
 // Emberforge has no Runic Power: every spell costing it costs Rage (the same tenths), and every effect giving, taking
 // or raising it does so to Rage, as the client patch does (client-patch/patch_spells.py, convert_runic_power). Runes
 // give Rage instead too (a core change in Spell::TakeRunePower).
+// A mana cost's share kept: 30%, rounded half up (as patch_spells.py's reduce_mana_costs).
+static uint32 ManaShare(uint32 cost)
+{
+    return (cost * 3 + 5) / 10;
+}
+
 class titan_runic_power_to_rage : public GlobalScript
 {
 public:
@@ -271,6 +289,15 @@ public:
 
         if (spellInfo->PowerType == POWER_RUNIC_POWER)
             spellInfo->PowerType = POWER_RAGE;
+
+        // Mana costs are 30% of the game's (spells needing mana cost too much for a Hero of every class's spells),
+        // rounded to the nearest; the client patch cuts its copy the same way (patch_spells.py, reduce_mana_costs).
+        if (spellInfo->PowerType == POWER_MANA)
+        {
+            spellInfo->ManaCost = ManaShare(spellInfo->ManaCost);
+            spellInfo->ManaCostPerlevel = ManaShare(spellInfo->ManaCostPerlevel);
+            spellInfo->ManaCostPercentage = ManaShare(spellInfo->ManaCostPercentage);
+        }
         for (SpellEffectInfo& effect : spellInfo->_GetEffects())
             if (effect.MiscValue == POWER_RUNIC_POWER && IsPowerEffect(effect))
                 effect.MiscValue = POWER_RAGE;

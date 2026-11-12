@@ -2,15 +2,15 @@
 -- Talent Packs, Golden Skill and Golden Talent Packs, any card and Eyes of Unlearning for Emberspark, and Skill Packs
 -- for gold. His own look (display 14855),
 -- beside the Keeper of the Ember in Stormwind's Trade District and Orgrimmar's Valley of Strength.
--- The packs: opened from the bags (item_titan_*_pack), the cards are the account's. Spell 3361 only makes them usable
--- in the 3.3.5 client; the scripts handle the use.
+-- The packs: opened from the bags (item_titan_*_pack), the cards are the account's. Spell 90608 (instant,
+-- empty) only makes them usable in the 3.3.5 client; the scripts handle the use.
 SET @NPC := 910110;
 SET @GUID := 9101010;
 SET @SKILL_PACK := 910010;
 SET @TALENT_PACK := 910011;
 SET @GOLDEN_PACK := 910012;
 SET @GOLDEN_TALENT_PACK := 910013;
-SET @CARRIER_SPELL := 3361;
+SET @CARRIER_SPELL := 90608;
 
 DELETE FROM `creature_template` WHERE `entry` = @NPC;
 INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,

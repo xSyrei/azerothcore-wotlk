@@ -16,6 +16,7 @@
  */
 
 #include "prestige.h"
+#include "item_use.h"
 #include "cards.h"
 #include "hero_equipment.h"
 #include "runes.h"
@@ -62,6 +63,7 @@ namespace
     constexpr uint32 SETTING_RUN = 1;           // 1 during a run: from a prestige to level 60
     constexpr uint32 SETTING_RUN_STARTED = 2;   // unix time of the last prestige
     constexpr uint32 SETTING_FASTEST = 3;       // the fastest run to level 60, in seconds (0: none yet)
+    constexpr uint32 SETTING_REACHED_CAP = 4;   // 1 once the Hero has reached the level cap (unlocks specializations)
     constexpr uint32 SETTING_GEAR = 10;         // + equipment slot: the item taken off there (guid counter; 0: none)
 
     constexpr uint32 SPELL_PRESTIGIOUS = 90607; // the buff (client-patch/patch_player.py); the bonus is OnPlayerGiveXP
@@ -466,6 +468,13 @@ namespace Prestige
         return Wildcard::IsHero(player) && OnRun(player);
     }
 
+    bool ReachedCap(Player* player)
+    {
+        if (player->GetLevel() >= MaxLevel() && !Get(player, SETTING_REACHED_CAP))
+            player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_REACHED_CAP, 1);
+        return Get(player, SETTING_REACHED_CAP) || Get(player, SETTING_RANK);
+    }
+
     uint8 EquipLevel(Item const* item)
     {
         ItemTemplate const* proto = item->GetTemplate();
@@ -519,6 +528,7 @@ public:
 
     bool OnUse(Player* player, Item* cache, SpellCastTargets const& /*targets*/) override
     {
+        EndItemUse(player, cache);
         uint32 cacheGuid = cache->GetGUID().GetCounter();
         // Item::LoadFromDB's fields first (as CHAR_SEL_MAILITEMS), then the guid and entry.
         QueryResult result = CharacterDatabase.Query("SELECT ii.`creatorGuid`, ii.`giftCreatorGuid`, ii.`count`, "
@@ -632,6 +642,7 @@ public:
         if (!Wildcard::IsHero(player))
             return;
         Reequip(player);
+        Prestige::ReachedCap(player);           // records the first time
         if (Get(player, SETTING_RUN) && player->GetLevel() >= MaxLevel())
             FinishRun(player);
     }

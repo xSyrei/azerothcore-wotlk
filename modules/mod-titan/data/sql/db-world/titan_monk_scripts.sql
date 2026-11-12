@@ -45,7 +45,7 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90314, 0.07, 0, 0, 0, 'Refreshing Jade Wind - heal'),
 (90321, 0, 0, 0.4, 0, 'Blackout Kick'),
 (90322, 0, 0, 1.4, 0, 'Rising Sun Kick'),
-(90324, 0, 0, 0.3, 0, 'Fists of Fury - strike'),
+(90324, 0, 0, 0.375, 0, 'Fists of Fury - strike'),
 (90326, 0, 0, 0.225, 0, 'Spinning Crane Kick - strike (5 combo points)'),
 (90330, 0, 0, 0, 0, 'Storm, Earth, and Fire - Earth Spirit echo'),
 (90331, 0, 0, 0, 0, 'Storm, Earth, and Fire - Fire Spirit echo'),

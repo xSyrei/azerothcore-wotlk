@@ -16,6 +16,7 @@
  */
 
 #include "wildcard.h"
+#include "item_use.h"
 #include "scaled_gear.h"
 #include "Chat.h"
 #include "DBCStores.h"
@@ -361,6 +362,7 @@ public:
 
     bool OnUse(Player* player, Item* item, SpellCastTargets const& /*targets*/) override
     {
+        EndItemUse(player, item);
         // The lowest slot that has gear for the Hero's level (a level 2 Hero's empty neck may have none).
         ChatHandler handler(player->GetSession());
         GearSlot const* gear = nullptr;

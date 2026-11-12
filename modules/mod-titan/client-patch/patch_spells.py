@@ -1316,6 +1316,29 @@ UNHOLY_PRESENCE, UNHOLY_PRESENCE_GCD_EFFECT = 48265, 1    # its effect 2: -0.5 s
 DK_GCD, DK_UNHOLY_GCD = 1500, 1000
 
 
+MANA, MANA_COLUMNS = 0, (42, 43, 204)              # PowerType; ManaCost, ManaCostPerlevel, ManaCostPercentage
+
+
+def mana_share(cost):
+    """30% of a mana cost, rounded half up (as the server's ManaShare, src/hero_resources.cpp)."""
+    return (cost * 3 + 5) // 10
+
+
+def reduce_mana_costs(spells):
+    """Every mana cost at 30% of the game's: the server cuts its copy at load (hero_resources.cpp), our own spells'
+    spell_dbc rows included, so this runs after write_sql (their rows there keep the full cost)."""
+    reduced = 0
+    for key, row in spells.rows.items():
+        if row[FIELDS['PowerType']] != MANA or not any(row[c] for c in MANA_COLUMNS):
+            continue
+        row = list(row)
+        for column in MANA_COLUMNS:
+            row[column] = mana_share(row[column])
+        spells.rows[key] = tuple(row)
+        reduced += 1
+    return reduced
+
+
 def free_warrior_stances(spells):
     """A Hero uses a Warrior's abilities in any stance (or none): Battle Stance's Charge, Berserker Stance's
     Whirlwind... The passives keep theirs (a stance's own passive applies only in it). The server does the same to
@@ -1492,14 +1515,17 @@ def main():
     stances = free_warrior_stances(spells)
     gcds = unholy_presence_gcd(spells)
     write_finishers(spells)
-    spells.save(out / 'Spell.dbc')
     tabs, talents = build_talents(source, out, icon_id)
-    print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power turned into Rage in {renamed} spells, '
-          f'rune costs left to the server in {len(runes)}, '
-          f'reagents dropped from {reagents}, stances freed in {stances}, Unholy Presence\'s GCD on {gcds}) '
-          f'and {out / "SpellIcon.dbc"}')
     if sql:
         write_sql(spells, sql, talent_sql(tabs, talents))
+    mana = reduce_mana_costs(spells)
+    spells.save(out / 'Spell.dbc')
+    print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power turned into Rage in {renamed} spells, '
+          f'rune costs left to the server in {len(runes)}, '
+          f'reagents dropped from {reagents}, stances freed in {stances}, Unholy Presence\'s GCD on {gcds}, '
+          f'mana costs cut in {mana}) '
+          f'and {out / "SpellIcon.dbc"}')
+    if sql:
         print(f'Wrote {sql}')
 
 

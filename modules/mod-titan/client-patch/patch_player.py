@@ -128,4 +128,17 @@ SPELLS.append({
     'effects': {1: aura(AURA_DUMMY, 10, 0)},
 })
 
+# Item use (90608): the spell the Smoldering Adventurer's Cache and the Titan Tomes carry. Their scripts do the work
+# (smoldering_cache.cpp, item_titan_tomes.cpp) and end the client's cast; the spell is instant, shows nothing and is
+# used on the move. (The cast-time spell they carried before left the client casting until the Hero moved.)
+EFFECT_DUMMY = 3
+SPELLS.append({
+    'id': 90608, 'copy': SELF_TEMPLATE, 'name': 'Use', 'icon': ICON, 'description': '', 'tooltip': '',
+    'set': {**OWN, 'Attributes': 0, 'AttributesEx': 0, 'AttributesEx3': 0, 'CastingTimeIndex': 1, 'DurationIndex': 0,
+            'SpellVisual': 0, 'InterruptFlags': 0, 'AuraInterruptFlags': 0, 'ChannelInterruptFlags': 0,
+            'RecoveryTime': 0, 'CategoryRecoveryTime': 0, 'StartRecoveryTime': 0, 'StartRecoveryCategory': 0},
+    'clear': [1, 2, 3],
+    'effects': {1: {'Effect': EFFECT_DUMMY, 'BasePoints': 0, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER}},
+})
+
 ICONS = [ICON] + [icon for _, _, icon, _ in ROLES] + [PRESTIGE_ICON]

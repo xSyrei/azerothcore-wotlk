@@ -2,12 +2,12 @@
 -- number of times until level 8, when the abilities lock and the tomes vanish.
 -- Titan Tome of Randomization: rerolls the Hero's 4 starting abilities.
 -- Titan Tome of Selection: clears them for 4 picks in the Classless window.
--- Spell 3361 only makes the items usable in the 3.3.5 client; the scripts handle the use and it is
+-- Spell 90608 (instant, empty) only makes the items usable in the 3.3.5 client; the scripts handle the use and it is
 -- never cast. Kept in its own file after hero_outfit.sql, which rewrites whole races' start items.
 SET @HERO := 2;
 SET @RANDOMIZATION := 910003;
 SET @SELECTION := 910004;
-SET @CARRIER_SPELL := 3361;
+SET @CARRIER_SPELL := 90608;                 -- instant, shows nothing (client-patch/patch_player.py)
 SET @TOME_DISPLAY := 1103;
 
 DELETE FROM `item_template` WHERE `entry` IN (@RANDOMIZATION, @SELECTION);

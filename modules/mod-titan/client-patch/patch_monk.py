@@ -871,14 +871,16 @@ SPELLS += [
         'id': 90323, 'copy': 1949, 'name': 'Fists of Fury', 'icon': 'Monk_Ability_FistOfFury',
         'visual': 'FistsOfFury',
         'description': 'Pummel all targets in front of you every sec for $d, each strike dealing '
-                       '${$90324m1+$AP*0.3} Physical damage.',
+                       '${$90324m1+$AP*0.375} Physical damage.',
         'tooltip': 'Pummeling all targets in front.',
-        'set': windwalker(90323, 16, RecoveryTime=24000, DurationIndex=DURATION_4S),
+        # Damage taken never shortens the channel (Hellfire's pushback, CHANNEL_FLAG_DELAY, cleared).
+        'set': windwalker(90323, 16, RecoveryTime=24000, DurationIndex=DURATION_4S,
+                          ChannelInterruptFlags=0x7C0C & ~0x4000),
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 1000, 'TriggerSpell': 90324}},
     },
     strikes(90324, 16, 'Fists of Fury', 'Monk_Ability_FistOfFury', 'FistsOfFuryStrike', TARGET_UNIT_CONE_ENEMY,
-            damage=(4, 1.5)),
+            damage=(5, 1.875)),                 # 25% above its first tuning (4, 1.5; AP 0.3)
     {
         # Bladestorm's spin (moving allowed), striking (90326) everything within 8 yards every 0.5 sec for 1.5 sec;
         # none of Bladestorm's immunities; a finisher (base and 4.5% of attack power a combo point, each strike).

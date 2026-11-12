@@ -390,6 +390,11 @@ check(list.listRows[2].name.text:find("Fire Build", 1, true) and list.listRows[2
 check(list.listRows[3].name.text:find("25,000 Emberspark", 1, true), "Specialization III is for sale")
 list.listRows[2].scripts.OnClick(list.listRows[2], "RightButton")
 local options = EmberforgeClasslessOptions
+check(options:IsShown() and options.buttons[1].label.text:find("reach level 60 first", 1, true),
+    "below the level cap the other specializations cannot be activated")
+options:Hide()
+specServer("P,0,3,1")
+list.listRows[2].scripts.OnClick(list.listRows[2], "RightButton")
 check(options:IsShown() and options.buttons[1].label.text == "Activate" and options.buttons[2].label.text == "Lock",
     "right-click a spec: Activate, Lock")
 options.buttons[1]:Click()

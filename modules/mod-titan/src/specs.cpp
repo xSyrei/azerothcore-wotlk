@@ -151,7 +151,8 @@ namespace
         Loadouts* data = Loaded(player);
         if (!data)
             return;
-        SendAddon(player, Acore::StringFormat("P,{},{}", data->Active, Cards::Eyes(player)));
+        SendAddon(player, Acore::StringFormat("P,{},{},{}", data->Active, Cards::Eyes(player),
+            Prestige::ReachedCap(player) ? 1 : 0));
         std::vector<std::string> locks;
         for (uint8 i = 0; i < MAX_SPECS; ++i)
         {
@@ -410,6 +411,12 @@ namespace
         if (!data || index >= MAX_SPECS || index == data->Active)
             return;
         Spec& target = data->Specs[index];
+        // Every specialization but the first opens once the Hero has reached the level cap (or prestiged).
+        if (index > 0 && !Prestige::ReachedCap(player))
+        {
+            handler.SendSysMessage("Your other specializations open once you reach level 60 for the first time.");
+            return;
+        }
         if (!target.Owned)
         {
             handler.PSendSysMessage("Buy {} from Silas Darkmoon first.", target.Name);

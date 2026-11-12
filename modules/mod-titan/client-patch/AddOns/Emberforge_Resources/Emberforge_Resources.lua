@@ -123,6 +123,11 @@ local function ScanSpellbook()
             if powerType == POWER_RUNES or (cost and cost > 0) then
                 known[powerType] = true
             end
+            -- A rune cost the client patch left to the server (RuneCosts.lua): the client's own data no longer has
+            -- it, so the spell shows no rune power type.
+            if EmberforgeRuneCosts and EmberforgeRuneCosts[spellId] then
+                known[POWER_RUNES] = true
+            end
         end
     end
 end

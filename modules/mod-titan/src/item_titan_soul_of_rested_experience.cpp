@@ -16,6 +16,7 @@
  */
 
 #include "Chat.h"
+#include "item_use.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "ScriptMgr.h"
@@ -36,6 +37,7 @@ public:
 
     bool OnUse(Player* player, Item* item, SpellCastTargets const& /*targets*/) override
     {
+        EndItemUse(player, item);
         uint8 const maxLevel = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
         uint8 const level = player->GetLevel();
 
