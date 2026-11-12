@@ -30,10 +30,12 @@
 
 // Dungeon scaling, Dragonflight's way: every 5-player dungeon is fought at every Hero's own level.
 //
-// mod-autobalance scales the creatures to the group's lowest level (its one Emberforge change, ABUtils.cpp), so no
-// one fights creatures below them: trash at that level, bosses up to 2 over (its "dynamic" method, floor 0 and
-// ceiling 2 in docker-compose.yml). Here,
-// for every player in a 5-player dungeon:
+// The dungeon's creatures are at the group's lowest level (bosses BOSS_LEVELS over): the core's own stats for that
+// level (Creature::SelectLevel, through OnBeforeCreatureSelectLevel: health, mana, armor, melee damage), set when a
+// creature spawns or respawns and again for every creature out of combat whenever a player enters. Their spells
+// (damage, healing, their own buffs' damage: Lightning Shield) carry their native level's amounts, so are scaled by
+// the class damage (healing: health) at the level they are at over the native one. Then, for every player in a
+// 5-player dungeon:
 // - the creature is as if at the player's own level (the same offset from the group's lowest level): the damage the
 //   player and their pets deal is scaled by the creature's health at its level over its health at that one, and the
 //   damage they take by the creature's damage there over its own (creature_classlevelstats, its class), so a level
@@ -50,6 +52,13 @@ namespace
     constexpr float EASE_DAMAGE = 0.75f;        // creatures' damage there
     constexpr uint8 HEALTH_PROXY_CLASS = CLASS_WARRIOR;         // players' health by level: a warrior creature's
     constexpr uint8 HIGHEST_STATS_LEVEL = 83;
+    constexpr uint8 BOSS_LEVELS = 2;            // bosses over the group's lowest level
+
+    // A dungeon's scaling, on its map (its own thread's).
+    struct ScalingInfo : public DataMap::Base
+    {
+        uint8 target = 0;                       // the level the creatures are at (0: no player yet, native levels)
+    };
 
     bool granting = false;                      // our own experience, through OnPlayerGiveXP
 
@@ -82,8 +91,13 @@ namespace
         return EASE_DAMAGE + (1.0f - EASE_DAMAGE) * Progress(level);
     }
 
-    // The level the creatures are scaled to: the lowest player's (GMs aside), as mod-autobalance's.
-    uint8 TargetLevel(Map* map)
+    ScalingInfo* Info(Map* map)
+    {
+        return map->CustomData.GetDefault<ScalingInfo>("titan_dungeon_scaling");
+    }
+
+    // The lowest player's level (GMs aside).
+    uint8 LowestPlayer(Map* map)
     {
         uint8 lowest = 0;
         for (auto const& ref : map->GetPlayers())
@@ -91,6 +105,25 @@ namespace
                 if (!player->IsGameMaster() && (!lowest || player->GetLevel() < lowest))
                     lowest = player->GetLevel();
         return lowest;
+    }
+
+    // The level the creatures are scaled to.
+    uint8 TargetLevel(Map* map)
+    {
+        uint8 target = Info(map)->target;
+        return target ? target : LowestPlayer(map);
+    }
+
+    // The dungeon's own creature (not a player's pet, guardian, totem or charm).
+    bool IsDungeonCreature(Creature const* creature)
+    {
+        return !creature->IsPet() && !creature->IsControlledByPlayer() && !creature->GetCharmerOrOwnerGUID().IsPlayer();
+    }
+
+    uint8 LevelInDungeon(Creature const* creature, uint8 target)
+    {
+        int32 level = int32(target) + (creature->IsDungeonBoss() ? BOSS_LEVELS : 0);
+        return uint8(std::clamp<int32>(level, 1, HIGHEST_STATS_LEVEL));
     }
 
     // The level a creature is to a player: the player's, with the creature's offset from the group's lowest level.
@@ -130,21 +163,49 @@ namespace
         return creature && !creature->IsControlledByPlayer() && !creature->IsPet() ? creature : nullptr;
     }
 
-    // Damage a creature deals through its own buff (Lightning Shield, damage shields, procs: the spell is a positive
-    // one), from its template's level to the level it fights at. mod-autobalance takes a positive spell's amount for
-    // healing (ABUnitScript.cpp) and leaves it whole: a level 77's Lightning Shield hit a level 14 for its 650.
-    float OwnBuffScale(Creature* enemy, SpellInfo const* spellInfo)
+    // A dungeon creature's spell, from its native level's amount to the level it is at: by its class damage there
+    // over its own (healing: health). Spells by a share of health stay as they are.
+    float SpellScale(Unit* caster, SpellInfo const* spellInfo, bool healing)
     {
-        if (!spellInfo || !spellInfo->IsPositive())
+        Creature* creature = caster ? caster->ToCreature() : nullptr;
+        if (!creature || !spellInfo || !IsDungeonCreature(creature) || !IsScaled(creature->GetMap())
+            || spellInfo->HasAura(SPELL_AURA_PERIODIC_DAMAGE_PERCENT))
             return 1.0f;
-        CreatureTemplate const* info = enemy->GetCreatureTemplate();
-        float own = Damage(info->maxlevel, info->unit_class, info->expansion);
-        float now = Damage(enemy->GetLevel(), info->unit_class, info->expansion);
-        return own > 0.0f && now > 0.0f && now < own ? now / own : 1.0f;
+        CreatureTemplate const* info = creature->GetCreatureTemplate();
+        uint8 native = std::max(info->minlevel, info->maxlevel);
+        if (native == creature->GetLevel())
+            return 1.0f;
+        float own = healing ? Health(native, info->unit_class, info->expansion)
+            : Damage(native, info->unit_class, info->expansion);
+        float now = healing ? Health(creature->GetLevel(), info->unit_class, info->expansion)
+            : Damage(creature->GetLevel(), info->unit_class, info->expansion);
+        return own > 0.0f && now > 0.0f ? now / own : 1.0f;
+    }
+
+    // A creature's level and the stats the core gives it there (Creature::UpdateEntry's armor, then every stat).
+    void Rescale(Creature* creature)
+    {
+        creature->SelectLevel(true);
+        CreatureTemplate const* info = creature->GetCreatureTemplate();
+        if (CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(creature->GetLevel(), info->unit_class))
+            creature->SetStatFlatModifier(UNIT_MOD_ARMOR, BASE_VALUE, stats->GenerateArmor(info));
+        creature->UpdateAllStats();
+    }
+
+    // Every creature of the dungeon out of combat to the group's lowest level (a fight in progress keeps its own).
+    void ScaleTo(Map* map, uint8 target)
+    {
+        ScalingInfo* info = Info(map);
+        if (!target || info->target == target)
+            return;
+        info->target = target;
+        for (auto const& [spawnId, creature] : map->GetCreatureBySpawnIdStore())
+            if (creature->IsInWorld() && creature->IsAlive() && !creature->IsInCombat() && IsDungeonCreature(creature))
+                Rescale(creature);
     }
 
     // Damage a player (or their pet) deals to a creature, or takes from one.
-    float DamageScale(Unit* target, Unit* attacker, SpellInfo const* spellInfo = nullptr)
+    float DamageScale(Unit* target, Unit* attacker)
     {
         if (!attacker || !target || !IsScaled(target->GetMap()))
             return 1.0f;
@@ -168,7 +229,7 @@ namespace
                 float own = Damage(enemy->GetLevel(), info->unit_class, info->expansion);
                 float there = Damage(at, info->unit_class, info->expansion);
                 float scale = own > 0.0f ? there / own : 1.0f;
-                return scale * DamageFactor(player->GetLevel()) * OwnBuffScale(enemy, spellInfo);
+                return scale * DamageFactor(player->GetLevel());
             }
 
         return 1.0f;
@@ -277,20 +338,26 @@ public:
 
     void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
     {
-        Scale(damage, DamageScale(target, attacker, spellInfo));
+        Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false));
     }
 
     void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage,
         SpellInfo const* spellInfo) override
     {
-        Scale(damage, DamageScale(target, attacker, spellInfo));
+        Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false));
     }
 
     // A heal between players of different levels: by their health at each level.
-    void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* /*spellInfo*/) override
+    void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
     {
         if (!target || !IsScaled(target->GetMap()))
             return;
+        // A creature's heal: from its native level, as its damage.
+        if (Creature* creature = healer ? healer->ToCreature() : nullptr; creature && IsDungeonCreature(creature))
+        {
+            Scale(heal, SpellScale(healer, spellInfo, true));
+            return;
+        }
         Player* from = PlayerOf(healer);
         Player* to = PlayerOf(target);
         if (!from || !to || from->GetLevel() == to->GetLevel())
@@ -306,6 +373,35 @@ public:
         if (Creature* creature = EnemyOf(unit))
             if (killer && IsScaled(creature->GetMap()))
                 RewardKill(creature);
+    }
+};
+
+// A dungeon creature's level as it spawns or respawns (the core then gives it that level's stats).
+class titan_dungeon_scaling_creature : public AllCreatureScript
+{
+public:
+    titan_dungeon_scaling_creature() : AllCreatureScript("titan_dungeon_scaling_creature") { }
+
+    void OnBeforeCreatureSelectLevel(CreatureTemplate const* /*cinfo*/, Creature* creature, uint8& level) override
+    {
+        Map* map = creature->GetMap();
+        if (!IsScaled(map) || !IsDungeonCreature(creature))
+            return;
+        if (uint8 target = Info(map)->target)
+            level = LevelInDungeon(creature, target);
+    }
+};
+
+// A player entering: the dungeon at the lowest level of those in it.
+class titan_dungeon_scaling_map : public AllMapScript
+{
+public:
+    titan_dungeon_scaling_map() : AllMapScript("titan_dungeon_scaling_map", { ALLMAPHOOK_ON_PLAYER_ENTER_ALL }) { }
+
+    void OnPlayerEnterAll(Map* map, Player* player) override
+    {
+        if (IsScaled(map) && !player->IsGameMaster())
+            ScaleTo(map, LowestPlayer(map));
     }
 };
 
@@ -326,4 +422,6 @@ void AddSC_dungeon_scaling()
 {
     new titan_dungeon_scaling_unit();
     new titan_dungeon_scaling_player();
+    new titan_dungeon_scaling_creature();
+    new titan_dungeon_scaling_map();
 }
