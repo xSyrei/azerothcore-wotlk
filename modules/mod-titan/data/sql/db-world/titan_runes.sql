@@ -39,3 +39,19 @@ INSERT INTO `spell_proc` (`SpellId`, `SchoolMask`, `SpellFamilyName`, `SpellFami
     `SpellFamilyMask2`, `ProcFlags`, `SpellTypeMask`, `SpellPhaseMask`, `HitMask`, `AttributesMask`,
     `DisableEffectsMask`, `ProcsPerMinute`, `Chance`, `Cooldown`, `Charges`) VALUES
 (90700, 0, 0, 0, 0, 0, 65552, 1, 2, 1027, 0, 0, 0, 100, 0, 0);
+
+-- The Rune of the Sanctified Paragon: Consecration (every rank) toggles its aura; the aura's tick deals the ground's
+-- damage and runs the modifiers.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_consecration',
+    'spell_titan_rune_sanctified_paragon');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(-26573, 'spell_titan_rune_consecration'),
+(90731, 'spell_titan_rune_sanctified_paragon');
+
+-- Its damage, heal and shield carry the Hero's power already (runes.cpp ParagonTick: Consecration's 4% of spell
+-- power and attack power): none of their own.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90732, 90734, 90737);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90732, 0, 0, 0, 0, 'Sanctified Paragon - Consecration tick'),
+(90734, 0, 0, 0, 0, 'Sanctified Paragon - Merciful Ground'),
+(90737, 0, 0, 0, 0, 'Sanctified Paragon - Shelter of the Paragon');

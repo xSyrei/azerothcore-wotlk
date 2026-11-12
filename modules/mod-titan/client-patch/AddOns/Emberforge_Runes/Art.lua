@@ -23,22 +23,34 @@ EmberforgeRunesArt = {
         span = 260,
     },
     labels = {
-        Choose1 = {
+        ChooseAdaptation = {
+            w = 498,
+            h = 84,
+            u = 0.7295,
+            v = 0.9844,
+        },
+        ChooseCovenant = {
+            w = 471,
+            h = 84,
+            u = 0.6904,
+            v = 0.9844,
+        },
+        ChooseInvocation = {
             w = 499,
             h = 84,
             u = 0.7314,
             v = 0.9844,
         },
-        Choose2 = {
+        ChooseManifestation = {
             w = 553,
             h = 84,
             u = 0.8105,
             v = 0.9844,
         },
-        Choose3 = {
-            w = 498,
+        ChoosePresence = {
+            w = 455,
             h = 84,
-            u = 0.7295,
+            u = 0.667,
             v = 0.9844,
         },
         DoneEyebrow = {
@@ -53,22 +65,34 @@ EmberforgeRunesArt = {
             u = 0.9688,
             v = 0.7188,
         },
-        Slot1 = {
+        SlotAdaptation = {
+            w = 112,
+            h = 28,
+            u = 0.875,
+            v = 0.875,
+        },
+        SlotCovenant = {
+            w = 96,
+            h = 28,
+            u = 0.75,
+            v = 0.875,
+        },
+        SlotInvocation = {
             w = 110,
             h = 28,
             u = 0.8594,
             v = 0.875,
         },
-        Slot2 = {
+        SlotManifestation = {
             w = 139,
             h = 28,
             u = 0.543,
             v = 0.875,
         },
-        Slot3 = {
-            w = 112,
+        SlotPresence = {
+            w = 91,
             h = 28,
-            u = 0.875,
+            u = 0.7109,
             v = 0.875,
         },
         Title = {
@@ -194,6 +218,11 @@ EmberforgeRunesArt = {
                 "Completing empowered Arcane Missiles restores 3% of your maximum mana.",
                 "Empowered Arcane Missiles channels 30% faster, but Arcane Blasts that " ..
                         "build Insight cost 15% more mana.",
+            },
+            slots = {
+                "Invocation",
+                "Manifestation",
+                "Adaptation",
             },
         },
         [11] = {
@@ -323,6 +352,64 @@ EmberforgeRunesArt = {
                         "target.",
                 "The volley fires 2 extra bolts, but each bolt costs 3% of your maximum " ..
                         "health.",
+            },
+            slots = {
+                "Invocation",
+                "Manifestation",
+                "Adaptation",
+            },
+        },
+        [22] = {
+            rgb = { 1, 0.871, 0.549 },
+            hot = { 1, 0.953, 0.843 },
+            ink = { 1, 0.988, 0.957 },
+            muted = { 0.906, 0.843, 0.737 },
+            hue = { 1, 1, 0.694 },
+            inner = { 1, 0.976, 0.918 },
+            built = true,
+            core = "Consecration becomes **Sanctified Paragon**: a permanent aura that " ..
+                    "follows you, sanctifying the ground within 8 yards. Cast Consecration " ..
+                    "to turn it on or off.",
+            asks = {
+                "How your Consecration occupies the battlefield",
+                "What happens to those within your sanctuary",
+                "How Consecration supports your survival or control",
+            },
+            abilities = {
+                "Radius",
+                "Footsteps",
+                "Standing still",
+                "Condemnation",
+                "Healing",
+                "First tick",
+                "Damage reduction · Threat",
+                "Slow",
+                "Shields",
+            },
+            texts = {
+                "Increases Consecration's radius to 12 yards, but reduces its damage by " ..
+                        "15%.",
+                "Moving leaves sanctified ground behind you for 3 sec. An enemy is " ..
+                        "struck once a tick, however many patches it stands in.",
+                "Remaining still for 3 sec increases Consecration's damage and healing " ..
+                        "by 20%, until you move.",
+                "Each tick applies Condemnation: 3% more damage from your Consecration " ..
+                        "a stack, up to 10. Stacks fade 3 sec outside it.",
+                "Each second, Consecration heals you and up to 4 injured allies for 25% " ..
+                        "of a tick's damage.",
+                "Each enemy's first tick deals 150% more damage, once every 12 sec per " ..
+                        "enemy.",
+                "Each enemy in your Consecration grants you 1% damage reduction, up to " ..
+                        "5%. Consecration generates 50% more threat.",
+                "Enemies damaged by Consecration are slowed by 20% for 2 sec, refreshed " ..
+                        "by each tick.",
+                "Every 5 sec, you and up to 4 nearby allies gain a shield absorbing 50% " ..
+                        "of a tick, for 6 sec.",
+            },
+            slots = {
+                "Presence",
+                "Manifestation",
+                "Covenant",
             },
         },
     },

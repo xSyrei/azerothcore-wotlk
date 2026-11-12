@@ -31,7 +31,7 @@ local MED_R = 94
 local SEG_SPAN = 260                                    -- the medallion's pieces span this square
 -- The slots about the medallion: Invocation (left), Manifestation (right), Adaptation (below).
 local SLOT_POS = { { 530, 300, "l" }, { 1070, 300, "r" }, { 800, 452, "b" } }
-local SLOT_NAMES = { "Invocation", "Manifestation", "Adaptation" }
+local SLOT_NAMES = { "Invocation", "Manifestation", "Adaptation" }      -- a rune's own (Art.lua) win
 local GOLDEN = { 1, 0.886, 0.659 }                      -- #ffe2a8
 local EMBER = { 1, 0.702, 0.361 }                       -- #ffb35c
 
@@ -224,6 +224,18 @@ local function Label(parent, name)
     texture:SetWidth(spec.w)
     texture:SetHeight(spec.h)
     return texture
+end
+
+-- A baked label put in place of another (the slot names a rune has: the Sanctified Paragon's Presence, Covenant).
+local function SetLabel(texture, name)
+    local spec = art.labels[name]
+    if not spec then
+        return
+    end
+    texture:SetTexture(ART .. name)
+    texture:SetTexCoord(0, spec.u, 0, spec.v)
+    texture:SetWidth(spec.w)
+    texture:SetHeight(spec.h)
 end
 
 -- The mockup's .ui blocks: they fade in and rise 10 points (0.6 sec), and fade out sinking.
@@ -567,7 +579,7 @@ for index, place in ipairs(SLOT_POS) do
     slot.numeral = Text(slot, CINZEL_BLACK, 18, { 1, 1, 1 })
     In(slot.numeral, slot, 0, 0)
     slot.numeral:SetText(({ "I", "II", "III" })[index])
-    slot.small = Label(slot, "Slot" .. index)
+    slot.small = Label(slot, "Slot" .. SLOT_NAMES[index])
     slot.pick = Text(slot, CINZEL, 20, { 1, 1, 1 }, side == "l" and "RIGHT" or "LEFT", side == "b" and 230 or 260)
     local pad = 6                                       -- the baked label's margin
     if side == "l" then
@@ -586,7 +598,7 @@ end
 local choose = Group(800, 640, 1200, 240)
 choose.labels = {}
 for index = 1, 3 do
-    choose.labels[index] = Label(choose, "Choose" .. index)
+    choose.labels[index] = Label(choose, "Choose" .. SLOT_NAMES[index])
     In(choose.labels[index], choose, 0, -82)
 end
 choose.ask = Text(choose, SANS, 17, art.arcane.muted)
@@ -1109,8 +1121,16 @@ local function FirstEmpty()
     end
 end
 
+-- The rune's slot names (the doc's three unless it has its own).
+local function SlotNames(runeId)
+    local entry = art.runes[runeId]
+    return entry and entry.slots or SLOT_NAMES
+end
+
 local function ShowSlots(active)
+    local names = SlotNames(state.rune)
     for index, slot in ipairs(slots) do
+        SetLabel(slot.small, "Slot" .. names[index])
         local pick = view.picks[index]
         local rune = RuneById(state.rune)
         local mod = rune and pick > 0 and rune.mods[(index - 1) * 3 + pick]
@@ -1139,7 +1159,9 @@ local function ShowOptions(slot)
     local rune = RuneById(state.rune)
     local entry = art.runes[state.rune] or {}
     view.active = slot
+    local names = SlotNames(state.rune)
     for index, label in ipairs(choose.labels) do
+        SetLabel(label, "Choose" .. names[index])
         if index == slot then
             label:Show()
         else

@@ -121,6 +121,10 @@ RUNES = [
      'a volley of Chaos Bolts.', 'Throw Glaive, Chaos Strike and your demon',
      'M3 3c0 6 3.5 9 9 9s9-3 9-9M5.5 16c2 2.6 4.2 3.8 6.5 3.8s4.5-1.2 6.5-3.8c-2-2.4-4.2-3.6-6.5-3.6S7.5 13.6 5.5 '
      '16ZM12 14.6v2.8'),
+    (22, (255, 222, 140), 'Holy · Consecration', 'Consecration becomes a sanctuary that follows you: a damage aura, '
+     'a defensive zone or a source of healing.', 'Consecration',
+     'M12 3v4M12 17v4M3 12h4M17 12h4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1'
+     'M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1'),
 ]
 
 # The runes the panel builds (their build view: the medallion, the slots, the options): the mockup's words for them.
@@ -177,6 +181,36 @@ BUILT = {
                   'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z', 'M5 19 19 5M9 5h10v10',
                   'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z'],
     },
+    22: {
+        'core': 'Consecration becomes **Sanctified Paragon**: a permanent aura that follows you, sanctifying the ground '
+                'within 8 yards. Cast Consecration to turn it on or off.',
+        'slots': ['Presence', 'Manifestation', 'Covenant'],
+        'asks': ['How your Consecration occupies the battlefield', 'What happens to those within your sanctuary',
+                 'How Consecration supports your survival or control'],
+        'texts': ['Increases Consecration\'s radius to 12 yards, but reduces its damage by 15%.',
+                  'Moving leaves sanctified ground behind you for 3 sec. An enemy is struck once a tick, however '
+                  'many patches it stands in.',
+                  'Remaining still for 3 sec increases Consecration\'s damage and healing by 20%, until you move.',
+                  'Each tick applies Condemnation: 3% more damage from your Consecration a stack, up to 10. Stacks '
+                  'fade 3 sec outside it.',
+                  'Each second, Consecration heals you and up to 4 injured allies for 25% of a tick\'s damage.',
+                  'Each enemy\'s first tick deals 150% more damage, once every 12 sec per enemy.',
+                  'Each enemy in your Consecration grants you 1% damage reduction, up to 5%. Consecration '
+                  'generates 50% more threat.',
+                  'Enemies damaged by Consecration are slowed by 20% for 2 sec, refreshed by each tick.',
+                  'Every 5 sec, you and up to 4 nearby allies gain a shield absorbing 50% of a tick, for 6 sec.'],
+        'abilities': ['Radius', 'Footsteps', 'Standing still', 'Condemnation', 'Healing', 'First tick',
+                      'Damage reduction · Threat', 'Slow', 'Shields'],
+        'icons': ['M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0',
+                  'M8 20c-2 0-3-2-2-4l2-4M16 12c2 0 3-2 2-4l-2-4M9 9h.5M15 15h.5',
+                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM9 12h6',
+                  'M12 2v20M8 6h8M6 12h12',
+                  'M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10ZM12 9v6M9 12h6',
+                  'M12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9Z',
+                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
+                  'M4 12h10M10 8l4 4-4 4M18 5v14',
+                  'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 7v10M7 12h10'],
+    },
 }
 
 # Sizes. The card (300 x 440 points) at CARD_SCALE pixels a point fills the top-left of a 512 square; the medallion's
@@ -199,11 +233,12 @@ LABELS = {
     'DoneEyebrow': {'text': 'YOUR RUNE IS COMPLETE', 'font': '700 14px Cinzel', 'spacing': '5px', 'color': '#ffb35c',
                     'height': 18, 'pad': 4, 'scale': 2},
 }
-for _slot, _name in enumerate(['Invocation', 'Manifestation', 'Adaptation'], 1):
-    LABELS[f'Choose{_slot}'] = {'text': 'Choose your ' + _name, 'font': '700 28px Cinzel', 'spacing': '3px',
+# Every slot name a built rune uses (the doc's three; the Sanctified Paragon's Presence and Covenant), by name.
+for _name in ['Invocation', 'Manifestation', 'Adaptation', 'Presence', 'Covenant']:
+    LABELS[f'Choose{_name}'] = {'text': 'Choose your ' + _name, 'font': '700 28px Cinzel', 'spacing': '3px',
                                 'color': '#ffe2a8', 'glows': [['rgba(255,150,60,0.55)', 20]], 'shadow': '#000',
                                 'shadowY': 2, 'height': 36, 'pad': 24, 'scale': 1.5}
-    LABELS[f'Slot{_slot}'] = {'text': _name.upper(), 'font': '400 13px "Alegreya Sans"', 'spacing': '3px',
+    LABELS[f'Slot{_name}'] = {'text': _name.upper(), 'font': '400 13px "Alegreya Sans"', 'spacing': '3px',
                               'color': '#ffffff', 'shadow': '#000', 'shadowBlur': 4, 'height': 16, 'pad': 6,
                               'scale': 2}
 
@@ -284,7 +319,7 @@ def main():
         runes.append(entry)
     names = {}
     catalog = (ADDON / 'Catalog.lua').read_text()
-    for rune_id in range(1, 22):
+    for rune_id in [r[0] for r in RUNES]:
         start = catalog.index(f'{{ id = {rune_id},')
         names[rune_id] = catalog[catalog.index('name = "', start) + 8:catalog.index('",', catalog.index('name = "',
                                                                                                          start))]
@@ -346,7 +381,8 @@ def main():
         if entry['id'] in BUILT:
             built = BUILT[entry['id']]
             rune.update({'built': True, 'core': built['core'], 'asks': built['asks'], 'abilities': built['abilities'],
-                         'texts': built['texts']})
+                         'texts': built['texts'],
+                         'slots': built.get('slots', ['Invocation', 'Manifestation', 'Adaptation'])})
         art['runes'][entry['id']] = rune
     art['arcane'] = {'rgb': floats(ARCANE['rgb']), 'hot': floats(ARCANE['hot']), 'ink': floats(ARCANE['ink']),
                      'muted': floats(ARCANE['muted'])}

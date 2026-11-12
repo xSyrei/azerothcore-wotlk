@@ -1,5 +1,6 @@
--- The Legendary Runes, generated from the "Emberforge Legendary Runes" design doc. src/runes.cpp numbers them in
--- this order; the server builds rune 21 (Fel Commandment) so far. Modifiers: 3 per slot, in slot order.
+-- The Legendary Runes, generated from the "Emberforge Legendary Runes" design doc (tools/runes/make_catalog.py),
+-- then rune 22 (the Sanctified Paragon, its own doc; slots: its own names) added by hand. src/runes.cpp numbers them
+-- in this order; the server builds runes 21 (Fel Commandment) and 22 so far. Modifiers: 3 per slot, in slot order.
 EmberforgeRunesCatalog = {
     { id = 1,
       name = "Rune of the Unbroken Wall",
@@ -1346,6 +1347,81 @@ EmberforgeRunesCatalog = {
           name = "Fel legion",
           mods = { "Demonic Ascension", "Imp Legion", "Fel Rift" },
           text = "Pop Metamorphosis, fire a five-bolt volley with a Felguard and imps behind it, and dash in.",
+        },
+      },
+    },
+    { id = 22,
+      name = "Rune of the Sanctified Paragon",
+      role = "Any (Consecration)",
+      icon = "Ability_Rune_SanctifiedParagon",
+      slots = { "Presence", "Manifestation", "Covenant" },
+      builtFrom = "Consecration",
+      spentWith = "Consecration (on and off)",
+      resource = "Sanctified ground",
+      core = "Consecration becomes a permanent, toggleable aura that follows you, sanctifying the ground within " ..
+          "8 yards. Enemies within the area suffer Holy damage every second. Turning it on costs Consecration's " ..
+          "mana; keeping it on costs nothing. Its damage is your Consecration rank's.",
+      loop = "Turn your sanctuary on and shape it into a damage aura, a defensive zone or a source of healing.",
+      mods = {
+        {
+          name = "Boundless Sanctity",
+          text = "Increases Consecration's radius to 12 yards, but reduces its damage by 15%.",
+        },
+        {
+          name = "Hallowed Footsteps",
+          text = "Moving leaves sanctified ground behind you for 3 sec. These trails apply Consecration's " ..
+              "effects, but an enemy is struck only once a tick.",
+        },
+        {
+          name = "Seat of the Paragon",
+          text = "Remaining stationary for 3 sec increases Consecration's damage and healing by 20%. This bonus " ..
+              "ends when you move.",
+        },
+        {
+          name = "Sanctified Condemnation",
+          text = "Each damaging tick applies Condemnation, increasing the damage the enemy takes from your " ..
+              "Consecration by 3%, stacking up to 10 times. Stacks expire after 3 sec outside it.",
+        },
+        {
+          name = "Merciful Ground",
+          text = "Consecration also heals you and up to 4 nearby injured allies each second for 25% of its tick " ..
+              "damage. No enemy needs to be present.",
+        },
+        {
+          name = "Unwelcome Before the Light",
+          text = "Each enemy's first damaging tick from your Consecration deals 150% additional damage, once per " ..
+              "enemy every 12 sec.",
+        },
+        {
+          name = "Bastion of Faith",
+          text = "While Consecration is active, each enemy within it grants you 1% damage reduction, up to 5%. " ..
+              "Consecration generates 50% additional threat.",
+        },
+        {
+          name = "Weight of the Unworthy",
+          text = "Enemies damaged by Consecration are slowed by 20% for 2 sec. Repeated ticks refresh the duration.",
+        },
+        {
+          name = "Shelter of the Paragon",
+          text = "Every 5 sec, Consecration grants you and up to 4 nearby allies an absorb shield equal to 50% of " ..
+              "one tick. Shields last 6 sec and refresh rather than stack.",
+        },
+      },
+      builds = {
+        {
+          name = "The Living Sanctuary",
+          mods = { "Boundless Sanctity", "Merciful Ground", "Shelter of the Paragon" },
+          text = "Steady healing and small protective shields in a moving sanctuary.",
+        },
+        {
+          name = "The Immovable Paragon",
+          mods = { "Seat of the Paragon", "Sanctified Condemnation", "Bastion of Faith" },
+          text = "Hold ground, build sustained damage, and gain protection while surrounded.",
+        },
+        {
+          name = "The Hallowed March",
+          mods = { "Hallowed Footsteps", "Unwelcome Before the Light", "Weight of the Unworthy" },
+          text = "Advance through enemies, leaving damaging trails that slow pursuit.",
         },
       },
     },

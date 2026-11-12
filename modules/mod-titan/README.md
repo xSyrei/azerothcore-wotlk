@@ -447,6 +447,20 @@ utility or a tradeoff) take one pick each, from three.
   longer given), Metamorphic Bond, Fel Rift, Felstorm, Metamorphic Cleave, and one hidden marker per modifier. The panel's texts:
   `Emberforge_Runes/Catalog.lua`, made from the doc by `tools/runes/make_catalog.py`. Throw Glaive's button glows
   and shows Chaos Bolt at 5 Fel Command (a Felguard mark in Metamorphosis).
+- **The Rune of the Sanctified Paragon** (rune 22, its own concept doc; its slots Presence, Manifestation, Covenant,
+  the panel's labels follow a rune's own `slots` in `Art.lua`). Needs Consecration; suggested to every role.
+  Consecration becomes **Sanctified Paragon** (90731): cast it to turn a lasting aura on (Consecration's mana and
+  cooldown; no ground left behind), again to turn it off (free). Every second, each enemy within 8 yards takes a tick
+  (90732, Holy): the Hero's Consecration rank's plus 4% of spell power and attack power, as Consecration's. Its
+  modifiers: Boundless Sanctity (12 yards, 15% less), Hallowed Footsteps (moving leaves patches of 4 yards for 3 sec,
+  90739; an enemy is struck once a tick), Seat of the Paragon (still 3 sec: 20% more damage and healing, 90738, a
+  sigil beneath); Sanctified Condemnation (90733, 3% more a stack, up to 10, 3 sec), Merciful Ground (the Hero and
+  4 injured allies healed a quarter of a tick, 90734), Unwelcome Before the Light (an enemy's first tick 150% more,
+  once in 12 sec); Bastion of Faith (1% less damage taken an enemy in the aura, up to 5%, 90735; 50% more threat),
+  Weight of the Unworthy (20% slower 2 sec, 90736), Shelter of the Paragon (every 5 sec the Hero and 4 allies shielded
+  for half a tick, 6 sec, 90737). Spells 90730-90748 (`patch_runes.py`); its look: retail's Remorseless Winter
+  (`client-patch/spells/PAL_SanctifiedParagon`, a wow.export glTF: the ground flare and the storm, gold and
+  see-through) with our holy writing ring, sigil, glyph and flakes of light (`client-patch/build_paragon_art.py`).
 
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and

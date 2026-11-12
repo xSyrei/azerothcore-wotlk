@@ -983,11 +983,13 @@ SPELLS = [
 SPELLS += patch_talents.SPELLS      # the talents' ranks and helper spells
 SPELLS += patch_monk.SPELLS         # the Monk's
 SPELLS += patch_player.SPELLS       # every Hero's (Emberforged Hero)
-SPELLS += patch_runes.SPELLS        # the Legendary Runes' (Fel Commandment)
+SPELLS += patch_runes.SPELLS        # the Legendary Runes' (Fel Commandment, the Sanctified Paragon)
 RANK_SPELLS, RANK_CHAINS = patch_ranks.ranks(SPELLS)
 SPELLS += RANK_SPELLS               # the Demon Hunter's and Monk's later ranks
 EFFECTS.update(patch_monk.EFFECTS)
 VISUALS.update(patch_monk.VISUALS)
+EFFECTS.update(patch_runes.EFFECTS)
+VISUALS.update(patch_runes.VISUALS)
 SOUNDS.update(patch_monk.SOUNDS)
 CHAIN_EFFECTS = dict(patch_monk.CHAIN_EFFECTS)      # beams: id, the Blizzard beam copied, our texture, changes
 

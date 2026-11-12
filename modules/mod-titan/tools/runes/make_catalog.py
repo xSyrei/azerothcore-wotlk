@@ -3,6 +3,9 @@
 its first tab exported as plain text (headings as "## "/"### " lines, table cells as " | "-separated lines), every
 rune with its core, loop, nine modifiers and three builds, in the doc's order (src/runes.cpp numbers them so).
 
+Rune 22 (the Sanctified Paragon, its own doc) is not in that doc: it is added by hand at the end of Catalog.lua;
+keep it when regenerating.
+
 Usage: python3 make_catalog.py <exported tab .txt> <out Catalog.lua>
 """
 import re, sys

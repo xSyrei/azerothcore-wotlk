@@ -118,8 +118,13 @@ local function run(seconds)
 end
 frame:Hide()
 
--- The catalog and the art: 21 runes; Fel Commandment's build view in the mockup's words.
-check(#EmberforgeRunesCatalog == 21, "the catalog holds the doc's 21 runes")
+-- The catalog and the art: the doc's 21 runes and the Sanctified Paragon; Fel Commandment's build view in the
+-- mockup's words.
+check(#EmberforgeRunesCatalog == 22 and EmberforgeRunesCatalog[22].name == "Rune of the Sanctified Paragon",
+    "the catalog holds the doc's 21 runes, then the Sanctified Paragon")
+local paragon = EmberforgeRunesArt.runes[22]
+check(paragon.built and paragon.slots[1] == "Presence" and paragon.slots[3] == "Covenant" and #paragon.texts == 9,
+    "Art.lua has the Sanctified Paragon's slots (Presence, Manifestation, Covenant) and its words")
 local fel = EmberforgeRunesArt.runes[21]
 check(fel.built and fel.asks[2] == "What your Chaos Bolt Volley does" and #fel.texts == 9,
     "Art.lua has Fel Commandment's questions and option words")
@@ -216,7 +221,21 @@ check(debug.note.text.text:find("in combat"), "a refusal shows in the note")
 frame:Hide()
 EmberforgeRunes_Open()
 check(view.mode == "build" and view.phase == "build" and view.medal.split == 1, "reopened: the build, no eruption")
+check(debug.slots[1].small.texture:find("SlotInvocation$") and debug.choose.labels[1].texture:find("ChooseInvocation$"),
+    "Fel Commandment's slots carry the doc's names")
 frame:Hide()
+
+-- Another specialization bound to the Sanctified Paragon: its slots carry its own names.
+server("R,22,-")
+server("S,10,10,2,22,0,0,0,22,0")
+EmberforgeRunes_Open()
+run(0.2)
+check(view.mode == "build" and debug.slots[1].small.texture:find("SlotPresence$")
+    and debug.slots[3].small.texture:find("SlotCovenant$"), "the Sanctified Paragon's slots: Presence, Covenant")
+check(debug.choose.labels[1].texture:find("ChoosePresence$") and debug.options[1].name.text == "Boundless Sanctity",
+    "choosing its Presence: Boundless Sanctity first")
+frame:Hide()
+server("S,10,10,1,21,1,3,1,21,0")
 
 -- The glow: Throw Glaive on button 3 glows at 5 Fel Command, with the Felguard mark in Metamorphosis.
 actions[3] = 90111

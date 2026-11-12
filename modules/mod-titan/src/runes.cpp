@@ -24,6 +24,7 @@
 #include "GameTime.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
+#include "Group.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Pet.h"
@@ -46,15 +47,17 @@
 
 // Legendary Runes (the design: the "Emberforge Legendary Runes" doc). Twenty-one runes, each a loop (a builder
 // makes a resource, a spender cashes it in) and three modifier slots (Invocation, Manifestation, Adaptation), one
-// pick each. Only the Rune of Fel Commandment is built so far; the panel lists the others as coming.
+// pick each, and a 22nd, the Rune of the Sanctified Paragon (its own concept doc; slots Presence, Manifestation,
+// Covenant). Built so far: Fel Commandment and the Sanctified Paragon; the panel lists the others as coming.
 //
 // - Unlocked at level 10: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
 //   under Browse all (one missing a required ability greyed, naming it).
 // - One rune per specialization (titan_runes, db-characters), chosen once: only a prestige clears it. Modifiers
 //   change freely out of combat.
-// - The rune works through auras: 90700 while the active spec's rune is Fel Commandment, and one marker per picked
-//   modifier (90710 + slot * 3 + choice); scripts look for them.
+// - The rune works through auras: its own while it is the active spec's (90700 Fel Commandment, 90730 the
+//   Sanctified Paragon), and one marker per picked modifier (90710 / 90740 + slot * 3 + choice); scripts look for
+//   them.
 //
 // Protocol (fields by ','; the client sends STATE, PICK,<rune>, MOD,<slot 1-3>,<choice 1-3>):
 //   S,<level>,<unlock level>,<spec>,<rune>,<m1>,<m2>,<m3>,<offers a.b.c or ->,<prompt 0/1>
@@ -71,6 +74,7 @@ namespace
     constexpr uint8 MAX_OFFERS = 3;
 
     constexpr uint8 RUNE_FEL_COMMANDMENT = 21;      // the doc's order: the 20 class runes, then the hybrid
+    constexpr uint8 RUNE_SANCTIFIED_PARAGON = 22;   // its own doc
 
     enum Spells : uint32
     {
@@ -85,6 +89,20 @@ namespace
         SPELL_FELSTORM              = 90708,
         SPELL_METAMORPHIC_CLEAVE    = 90709,
         SPELL_MODIFIER_FIRST        = 90710,        // + slot * 3 + choice
+
+        SPELL_RUNE_SANCTIFIED_PARAGON   = 90730,
+        SPELL_SANCTIFIED_PARAGON        = 90731,    // the aura (Consecration turned on)
+        SPELL_PARAGON_TICK              = 90732,
+        SPELL_CONDEMNATION              = 90733,
+        SPELL_MERCIFUL_GROUND           = 90734,
+        SPELL_BASTION_OF_FAITH          = 90735,
+        SPELL_WEIGHT_OF_THE_UNWORTHY    = 90736,
+        SPELL_SHELTER_OF_THE_PARAGON    = 90737,
+        SPELL_SEAT_OF_THE_PARAGON       = 90738,
+        SPELL_HALLOWED_FOOTSTEPS        = 90739,
+        SPELL_PARAGON_MODIFIER_FIRST    = 90740,    // + slot * 3 + choice
+
+        SPELL_CONSECRATION          = 26573,        // first rank
 
         SPELL_DEMONS_BITE           = 90100,
         SPELL_CHAOS_STRIKE          = 90101,
@@ -109,6 +127,28 @@ namespace
         MOD_IMP_LEGION, MOD_SHATTERED_GLAIVE, MOD_FEL_HOST,
         MOD_METAMORPHIC_BOND, MOD_FEL_RIFT, MOD_PACT_OF_RUIN,
     };
+
+    // The Sanctified Paragon's modifiers: slot (0 Presence, 1 Manifestation, 2 Covenant) x 3 + choice.
+    enum ParagonModifier : uint8
+    {
+        MOD_BOUNDLESS_SANCTITY, MOD_HALLOWED_FOOTSTEPS, MOD_SEAT_OF_THE_PARAGON,
+        MOD_SANCTIFIED_CONDEMNATION, MOD_MERCIFUL_GROUND, MOD_UNWELCOME_BEFORE_THE_LIGHT,
+        MOD_BASTION_OF_FAITH, MOD_WEIGHT_OF_THE_UNWORTHY, MOD_SHELTER_OF_THE_PARAGON,
+    };
+
+    // The Sanctified Paragon's tuning (the doc's initial proposals).
+    constexpr float PARAGON_RADIUS = 8.0f, BOUNDLESS_RADIUS = 12.0f, BOUNDLESS_DAMAGE = 0.85f;
+    constexpr float CONSECRATION_COEFFICIENT = 0.04f;           // spell power and attack power, a tick
+    constexpr float TRAIL_RADIUS = 4.0f, TRAIL_SPACING = 3.0f;  // a footstep's patch; one at most every 3 yards
+    constexpr uint32 TRAIL_MS = 3000;
+    constexpr float MOVED = 0.3f;                               // yards between ticks that count as moving
+    constexpr uint32 SEAT_MS = 3000;
+    constexpr float SEAT_BONUS = 1.2f;
+    constexpr uint32 CONDEMNATION_PCT = 3, CONDEMNATION_STACKS = 10;
+    constexpr float MERCIFUL_SHARE = 0.25f, SHELTER_SHARE = 0.5f, UNWELCOME_BONUS = 2.5f;
+    constexpr uint32 MERCIFUL_ALLIES = 4, SHELTER_ALLIES = 4, BASTION_STACKS = 5;
+    constexpr uint32 UNWELCOME_MS = 12000, SHELTER_MS = 5000;
+    constexpr float BASTION_THREAT = 0.5f;
 
     constexpr uint32 NPC_RUNE_FELGUARD = 910120;
     constexpr uint32 NPC_RUNE_FEL_IMP = 910121;
@@ -148,6 +188,8 @@ namespace
         uint8 Id;
         uint8 Roles;
         std::vector<std::vector<uint32>> Requires;
+        uint32 Aura;                // worn while it is the active spec's rune
+        uint32 MarkerFirst;         // its modifiers' markers: + slot * 3 + choice
     };
 
     std::vector<RuneDef> const& Catalog()
@@ -157,7 +199,13 @@ namespace
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_THROW_GLAIVE }, { SPELL_DEMONS_BITE, SPELL_CHAOS_STRIKE },
                 { SPELL_SUMMON_IMP, SPELL_SUMMON_VOIDWALKER, SPELL_SUMMON_SUCCUBUS, SPELL_SUMMON_FELHUNTER,
-                  SPELL_SUMMON_FELGUARD } } },
+                  SPELL_SUMMON_FELGUARD } },
+              SPELL_RUNE_FEL_COMMANDMENT, SPELL_MODIFIER_FIRST },
+            // Every role: a damage aura, a defensive zone or a source of healing, as its modifiers make it.
+            { RUNE_SANCTIFIED_PARAGON,
+              uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)
+                  | Wildcard::RoleMask(Wildcard::ROLE_HEALER) | Wildcard::RoleMask(Wildcard::ROLE_TANK)),
+              { { SPELL_CONSECRATION } }, SPELL_RUNE_SANCTIFIED_PARAGON, SPELL_PARAGON_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -193,6 +241,14 @@ namespace
         ObjectGuid Felguard;
         std::vector<ObjectGuid> Imps;
         ObjectGuid RiftTarget;
+
+        // The Sanctified Paragon.
+        Position LastPosition;
+        bool HasLastPosition = false;
+        uint32 StillSince = 0;                      // game ms
+        uint32 LastShelter = 0;
+        std::vector<std::pair<Position, uint32>> Trail;             // footsteps: where, when
+        std::unordered_map<ObjectGuid, uint32> Unwelcomed;          // enemy -> last bonus tick (game ms)
     };
 
     std::unordered_map<ObjectGuid::LowType, State> states;
@@ -235,6 +291,11 @@ namespace
     bool HasMarker(Unit* unit, uint8 modifier)
     {
         return unit && unit->HasAura(SPELL_MODIFIER_FIRST + modifier);
+    }
+
+    bool HasParagonMarker(Unit* unit, uint8 modifier)
+    {
+        return unit && unit->HasAura(SPELL_PARAGON_MODIFIER_FIRST + modifier);
     }
 
     bool InMetamorphosis(Unit* unit)
@@ -396,6 +457,11 @@ namespace
         state.Imps.clear();
         state.Felguard.Clear();
         state.RiftTarget.Clear();
+        for (uint32 spell : { SPELL_SANCTIFIED_PARAGON, SPELL_SEAT_OF_THE_PARAGON, SPELL_BASTION_OF_FAITH })
+            player->RemoveAurasDueToSpell(spell);
+        state.Trail.clear();
+        state.Unwelcomed.clear();
+        state.HasLastPosition = false;
         if (Pet* demon = player->GetPet())
         {
             demon->RemoveAurasDueToSpell(SPELL_METAMORPHIC_BOND);
@@ -491,13 +557,186 @@ namespace
         }
     }
 
+    // ---- The Sanctified Paragon -------------------------------------------------------------------------------
+
+    // The Hero's best Consecration rank they know, else 0.
+    uint32 ConsecrationRank(Player* player)
+    {
+        uint32 best = 0;
+        for (uint32 id = SPELL_CONSECRATION; id; id = sSpellMgr->GetNextSpellInChain(id))
+            if (player->HasSpell(id))
+                best = id;
+        return best;
+    }
+
+    // A tick of the Hero's Consecration before the target's mitigation: their rank's tick and 4% of their spell
+    // power and attack power (as Consecration's). The damage, heal and shield spells add no power of their own
+    // (spell_bonus_data 0): the modifiers scale all of it.
+    float ParagonTick(Player* player)
+    {
+        SpellInfo const* rank = sSpellMgr->GetSpellInfo(ConsecrationRank(player));
+        int32 points = rank ? std::max(1, rank->Effects[EFFECT_0].CalcValue(player)) : 1;
+        float power = float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY))
+            + player->GetTotalAttackPowerValue(BASE_ATTACK);
+        return float(points) + power * CONSECRATION_COEFFICIENT;
+    }
+
+    // Allies of the Hero's within range (themselves first, then their group's, nearest first), alive.
+    std::vector<Unit*> AlliesAround(Player* player, float range)
+    {
+        std::vector<Unit*> allies = { player };
+        if (Group* group = player->GetGroup())
+            for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+                if (Player* member = ref->GetSource())
+                    if (member != player && member->IsInMap(player) && member->IsAlive()
+                        && member->IsWithinDistInMap(player, range))
+                        allies.push_back(member);
+        std::sort(allies.begin() + 1, allies.end(), [player](Unit* a, Unit* b)
+        {
+            return player->GetExactDist(a) < player->GetExactDist(b);
+        });
+        return allies;
+    }
+
+    // A second of the aura (90731's tick): the ground within 8 yards (12 with Boundless Sanctity, and the footsteps'
+    // patches with Hallowed Footsteps) sanctified: each enemy there takes one tick, and the modifiers act. Nothing
+    // a modifier makes (heals, shields, the bonus damage) sets off another.
+    void SanctifiedGround(Player* player)
+    {
+        if (!player->IsAlive() || !ConsecrationRank(player))
+            return;
+        State& state = StateOf(player);
+        uint32 now = GameTime::GetGameTimeMS().count();
+        bool boundless = HasParagonMarker(player, MOD_BOUNDLESS_SANCTITY);
+        float radius = boundless ? BOUNDLESS_RADIUS : PARAGON_RADIUS;
+
+        // Moving or still (Seat of the Paragon, Hallowed Footsteps).
+        Position here = player->GetPosition();
+        bool moved = state.HasLastPosition && state.LastPosition.GetExactDist(&here) > MOVED;
+        if (!state.HasLastPosition || moved)
+            state.StillSince = now;
+        if (moved && HasParagonMarker(player, MOD_HALLOWED_FOOTSTEPS)
+            && (state.Trail.empty() || state.Trail.back().first.GetExactDist(&state.LastPosition) >= TRAIL_SPACING))
+        {
+            state.Trail.emplace_back(state.LastPosition, now);
+            player->CastSpell(state.LastPosition.GetPositionX(), state.LastPosition.GetPositionY(),
+                state.LastPosition.GetPositionZ(), SPELL_HALLOWED_FOOTSTEPS, true);
+        }
+        state.LastPosition = here;
+        state.HasLastPosition = true;
+        state.Trail.erase(std::remove_if(state.Trail.begin(), state.Trail.end(),
+            [now](auto const& step) { return now - step.second >= TRAIL_MS; }), state.Trail.end());
+
+        bool seated = HasParagonMarker(player, MOD_SEAT_OF_THE_PARAGON) && now - state.StillSince >= SEAT_MS;
+        if (seated && !player->HasAura(SPELL_SEAT_OF_THE_PARAGON))
+            player->AddAura(SPELL_SEAT_OF_THE_PARAGON, player);
+        else if (!seated)
+            player->RemoveAurasDueToSpell(SPELL_SEAT_OF_THE_PARAGON);
+        float seat = seated ? SEAT_BONUS : 1.0f;
+
+        // The enemies sanctified this second: the aura's, then the footsteps' (each once).
+        std::vector<Unit*> enemies = EnemiesAround(player, player, radius);
+        std::size_t inAura = enemies.size();
+        if (HasParagonMarker(player, MOD_HALLOWED_FOOTSTEPS))
+            for (auto const& step : state.Trail)
+                for (Unit* enemy : EnemiesAround(player, player, player->GetExactDist(&step.first) + TRAIL_RADIUS))
+                    if (enemy->GetExactDist(&step.first) <= TRAIL_RADIUS
+                        && std::find(enemies.begin(), enemies.end(), enemy) == enemies.end())
+                        enemies.push_back(enemy);
+
+        float full = ParagonTick(player);
+        for (Unit* enemy : enemies)
+        {
+            float amount = full * (boundless ? BOUNDLESS_DAMAGE : 1.0f) * seat;
+            if (HasParagonMarker(player, MOD_SANCTIFIED_CONDEMNATION))
+                if (Aura* condemned = enemy->GetAura(SPELL_CONDEMNATION, player->GetGUID()))
+                    amount *= 1.0f + CONDEMNATION_PCT * condemned->GetStackAmount() / 100.0f;
+            if (HasParagonMarker(player, MOD_UNWELCOME_BEFORE_THE_LIGHT))
+            {
+                auto itr = state.Unwelcomed.find(enemy->GetGUID());
+                if (itr == state.Unwelcomed.end() || now - itr->second >= UNWELCOME_MS)
+                {
+                    amount *= UNWELCOME_BONUS;
+                    state.Unwelcomed[enemy->GetGUID()] = now;
+                }
+            }
+            int32 damage = std::max<int32>(1, int32(amount));
+            player->CastCustomSpell(enemy, SPELL_PARAGON_TICK, &damage, nullptr, nullptr, true);
+            if (!enemy->IsAlive())
+                continue;
+            if (HasParagonMarker(player, MOD_SANCTIFIED_CONDEMNATION))
+            {
+                Aura* condemned = enemy->GetAura(SPELL_CONDEMNATION, player->GetGUID());
+                if (!condemned)
+                    condemned = player->AddAura(SPELL_CONDEMNATION, enemy);
+                else if (condemned->GetStackAmount() < CONDEMNATION_STACKS)
+                    condemned->ModStackAmount(1);
+                if (condemned)
+                    condemned->RefreshDuration();
+            }
+            if (HasParagonMarker(player, MOD_WEIGHT_OF_THE_UNWORTHY))
+                player->CastSpell(enemy, SPELL_WEIGHT_OF_THE_UNWORTHY, true);
+            if (HasParagonMarker(player, MOD_BASTION_OF_FAITH) && enemy->CanHaveThreatList())
+                enemy->AddThreat(player, float(damage) * BASTION_THREAT, SPELL_SCHOOL_MASK_HOLY);
+        }
+
+        // Bastion of Faith: 1% less damage taken for each enemy in the aura, 5% at most.
+        if (HasParagonMarker(player, MOD_BASTION_OF_FAITH) && inAura)
+        {
+            Aura* bastion = player->GetAura(SPELL_BASTION_OF_FAITH);
+            if (!bastion)
+                bastion = player->AddAura(SPELL_BASTION_OF_FAITH, player);
+            if (bastion)
+            {
+                bastion->SetStackAmount(uint8(std::min<std::size_t>(inAura, BASTION_STACKS)));
+                bastion->RefreshDuration();
+            }
+        }
+        else
+            player->RemoveAurasDueToSpell(SPELL_BASTION_OF_FAITH);
+
+        // Merciful Ground: the Hero and up to 4 injured allies in the aura healed for a quarter of a tick.
+        if (HasParagonMarker(player, MOD_MERCIFUL_GROUND))
+        {
+            int32 heal = std::max<int32>(1, int32(full * MERCIFUL_SHARE * seat));
+            uint32 healed = 0;
+            for (Unit* ally : AlliesAround(player, radius))
+            {
+                if (ally->IsFullHealth())
+                    continue;
+                player->CastCustomSpell(ally, SPELL_MERCIFUL_GROUND, &heal, nullptr, nullptr, true);
+                if (ally != player && ++healed >= MERCIFUL_ALLIES)
+                    break;
+            }
+        }
+
+        // Shelter of the Paragon: every 5 sec, the Hero and up to 4 allies in the aura shielded for half a tick (a
+        // new shield replaces the last).
+        if (HasParagonMarker(player, MOD_SHELTER_OF_THE_PARAGON) && now - state.LastShelter >= SHELTER_MS)
+        {
+            state.LastShelter = now;
+            int32 shield = std::max<int32>(1, int32(full * SHELTER_SHARE));
+            uint32 shielded = 0;
+            for (Unit* ally : AlliesAround(player, radius))
+            {
+                player->CastCustomSpell(ally, SPELL_SHELTER_OF_THE_PARAGON, &shield, nullptr, nullptr, true);
+                if (ally != player && ++shielded >= SHELTER_ALLIES)
+                    break;
+            }
+        }
+    }
+
     // ---- The rune's auras ------------------------------------------------------------------------------------
 
     std::vector<uint32> RuneAuras()
     {
-        std::vector<uint32> auras = { SPELL_RUNE_FEL_COMMANDMENT };
-        for (uint32 i = 0; i < SLOTS * CHOICES; ++i)
-            auras.push_back(SPELL_MODIFIER_FIRST + i);
+        std::vector<uint32> auras;
+        for (RuneDef const& rune : Catalog())
+        {
+            auras.push_back(rune.Aura);
+            for (uint32 i = 0; i < SLOTS * CHOICES; ++i)
+                auras.push_back(rune.MarkerFirst + i);
+        }
         return auras;
     }
 
@@ -507,15 +746,18 @@ namespace
         for (uint32 spell : RuneAuras())
             player->RemoveAurasDueToSpell(spell);
         Choice const& choice = ActiveChoice(player);
-        if (player->GetLevel() < UNLOCK_LEVEL || choice.Rune != RUNE_FEL_COMMANDMENT)
+        RuneDef const* rune = FindRune(choice.Rune);
+        if (player->GetLevel() < UNLOCK_LEVEL || !rune)
         {
             ClearCombat(player);
             return;
         }
-        player->AddAura(SPELL_RUNE_FEL_COMMANDMENT, player);
+        if (rune->Id != RUNE_SANCTIFIED_PARAGON)
+            player->RemoveAurasDueToSpell(SPELL_SANCTIFIED_PARAGON);
+        player->AddAura(rune->Aura, player);
         for (uint8 slot = 0; slot < SLOTS; ++slot)
             if (uint8 pick = choice.Mods[slot])
-                player->AddAura(SPELL_MODIFIER_FIRST + slot * CHOICES + pick - 1, player);
+                player->AddAura(rune->MarkerFirst + slot * CHOICES + pick - 1, player);
     }
 
     void Save(Player* player, uint8 spec)
@@ -783,6 +1025,75 @@ class spell_titan_rune_throw_glaive : public SpellScript
     }
 };
 
+// Consecration (every rank) with the Sanctified Paragon: no ground left behind; the cast turns the aura on (paying
+// Consecration's cost and starting its cooldown), and a cast while it is on turns it off (free, no cooldown).
+class spell_titan_rune_consecration : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_consecration);
+
+    SpellCastResult Toggle()
+    {
+        Unit* caster = GetCaster();
+        if (!caster->HasAura(SPELL_RUNE_SANCTIFIED_PARAGON) || !caster->HasAura(SPELL_SANCTIFIED_PARAGON))
+            return SPELL_CAST_OK;
+        caster->RemoveAurasDueToSpell(SPELL_SANCTIFIED_PARAGON);
+        return SPELL_FAILED_DONT_REPORT;
+    }
+
+    void Sanctify(SpellEffIndex effIndex)
+    {
+        Unit* caster = GetCaster();
+        if (!caster->HasAura(SPELL_RUNE_SANCTIFIED_PARAGON))
+            return;
+        PreventHitDefaultEffect(effIndex);
+        caster->AddAura(SPELL_SANCTIFIED_PARAGON, caster);
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_consecration::Toggle);
+        OnEffectHit += SpellEffectFn(spell_titan_rune_consecration::Sanctify, EFFECT_0,
+            SPELL_EFFECT_PERSISTENT_AREA_AURA);
+    }
+};
+
+// Sanctified Paragon (90731): a second of sanctified ground each tick (SanctifiedGround); its bonuses go with it.
+class spell_titan_rune_sanctified_paragon : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_sanctified_paragon);
+
+    void Tick(AuraEffect const* /*aurEff*/)
+    {
+        if (Player* player = GetTarget()->ToPlayer())
+        {
+            if (!player->HasAura(SPELL_RUNE_SANCTIFIED_PARAGON))
+                return Remove();
+            SanctifiedGround(player);
+        }
+    }
+
+    void Gone(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Unit* target = GetTarget();
+        target->RemoveAurasDueToSpell(SPELL_SEAT_OF_THE_PARAGON);
+        target->RemoveAurasDueToSpell(SPELL_BASTION_OF_FAITH);
+        if (Player* player = target->ToPlayer())
+        {
+            State& state = StateOf(player);
+            state.Trail.clear();
+            state.HasLastPosition = false;
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_rune_sanctified_paragon::Tick, EFFECT_0,
+            SPELL_AURA_PERIODIC_DUMMY);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_titan_rune_sanctified_paragon::Gone, EFFECT_0,
+            SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
 // The rune's Felguard (910120): 8 sec at the Hero's side, on the Hero's target (the next when it dies). Felstorm as
 // it arrives (a 2 sec spin: 4 ticks), then Cleave and melee. 50% of the Hero's power (spell power or attack power,
 // the higher) in its weapon, 30% of their health; no threat.
@@ -1002,6 +1313,8 @@ void AddSC_runes()
 {
     RegisterSpellScript(spell_titan_rune_fel_commandment);
     RegisterSpellScript(spell_titan_rune_throw_glaive);
+    RegisterSpellScript(spell_titan_rune_consecration);
+    RegisterSpellScript(spell_titan_rune_sanctified_paragon);
     RegisterCreatureAI(npc_titan_rune_felguard);
     RegisterCreatureAI(npc_titan_rune_fel_imp);
     new titan_runes_player();
