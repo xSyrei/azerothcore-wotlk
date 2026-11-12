@@ -138,8 +138,9 @@ How a Hero progresses (`src/wildcard.cpp`): random, steered so a build takes sha
   - `LEVEL_ONE_ABILITIES`: available from level 1 (first rank; later ranks keep their trainer
     levels), including talent and starting abilities such as Mutilate, Stormstrike, Crusader Strike
     and Feral Charge. Everything else unlocks at its trainer level.
-  - Tame Beast also teaches Call Pet, Dismiss Pet, Revive Pet and Feed Pet, and Heroes count as
-    Hunters for pets (taming, resummoning, stables; `src/hero_resources.cpp`).
+  - Tame Beast also teaches Call Pet, Dismiss Pet, Revive Pet, Mend Pet and Feed Pet (all at level 1;
+    unlearning Tame Beast unlearns them), and Heroes count as Hunters for pets (taming, resummoning, stables;
+    `src/hero_resources.cpp`).
   - A Hero's pets and demons know all their abilities from level 1 (each one's first rank; later ranks at their
     levels; `src/pets.cpp`). Unlearning or rerolling the ability that summoned a pet dismisses it (a tamed beast
     once Call Pet is gone; it stays in the stable).

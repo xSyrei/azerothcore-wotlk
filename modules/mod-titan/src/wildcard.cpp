@@ -60,7 +60,7 @@
 //   the Hero's role, not a talent rank.
 // - Owned abilities upgrade to the best rank for the Hero's level by themselves.
 // - An ability cast only in a form or stance (Swipe (Cat): Cat Form, Overpower: Battle Stance), only
-//   in stealth (Ambush) or on a pet (Mend Pet: Tame Beast) is only rolled or picked once the Hero
+//   in stealth (Ambush) or on a pet (Kill Command: Tame Beast) is only rolled or picked once the Hero
 //   knows an ability giving that form, stealth or pet.
 //
 // Grants are caught up at login and on every level change, so a multi-level jump or a character
@@ -259,10 +259,10 @@ namespace
         { 90329, CAP_MELEE },       // Storm, Earth, and Fire (Monk, Windwalker)
     };
 
-    // Learned together with Tame Beast (and removed with it), so a tamed pet can be called back,
-    // dismissed, revived and fed. They are not offered on their own.
+    // Learned together with Tame Beast (and removed with it), at level 1 as it is, so a tamed pet can be called back,
+    // dismissed, revived, healed and fed. They are not offered on their own.
     constexpr char const* TAME_BEAST = "Tame Beast";
-    constexpr char const* TAME_BEAST_COMPANIONS[] = { "Call Pet", "Dismiss Pet", "Revive Pet", "Feed Pet" };
+    constexpr char const* TAME_BEAST_COMPANIONS[] = { "Call Pet", "Dismiss Pet", "Revive Pet", "Mend Pet", "Feed Pet" };
 
     // Group versions of a buff: learned with the buff once the Hero's level reaches them (the rank-ups give them, as a
     // trainer would), never rolled on their own, and gone with it.
@@ -303,7 +303,7 @@ namespace
 
     constexpr NeedsPet PET_ABILITIES[] = {
         { "Kill Command", HUNTER_PETS }, { "Bestial Wrath", HUNTER_PETS }, { "Intimidation", HUNTER_PETS },
-        { "Master's Call", HUNTER_PETS }, { "Eyes of the Beast", HUNTER_PETS }, { "Mend Pet", HUNTER_PETS },
+        { "Master's Call", HUNTER_PETS }, { "Eyes of the Beast", HUNTER_PETS },
         { "Health Funnel", DEMONS }, { "Demonic Empowerment", DEMONS }, { "Soul Link", DEMONS },
         { "Death Pact", UNDEAD_MINIONS }, { "Ghoul Frenzy", UNDEAD_MINIONS },
     };
@@ -1308,7 +1308,10 @@ namespace Wildcard
                         levelOne = false;
                 ability.Companion = matches(ability, TAME_BEAST_COMPANIONS);
                 if (ability.Companion)
+                {
                     companions.push_back(firstRank);
+                    levelOne = true;
+                }
                 if (talentExtras.count(firstRank) && !talentAbilities.count(firstRank))
                     ability.Companion = true;
 
