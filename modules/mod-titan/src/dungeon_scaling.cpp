@@ -53,6 +53,11 @@ namespace
     constexpr uint8 HEALTH_PROXY_CLASS = CLASS_WARRIOR;         // players' health by level: a warrior creature's
     constexpr uint8 HIGHEST_STATS_LEVEL = 83;
     constexpr uint8 BOSS_LEVELS = 2;            // bosses over the group's lowest level
+    // The most a creature's DamageModifier counts for (creature_template; trash, bosses): each expansion tuned its own
+    // (dungeon elites: Classic's about 4.6, Wrath's 7.5 to 15), which at a level 20's base damage made a pack of
+    // Wrath trash hit for hundreds. Melee and spells alike.
+    constexpr float MAX_DAMAGE_MODIFIER = 3.0f;
+    constexpr float MAX_BOSS_DAMAGE_MODIFIER = 5.0f;
 
     // A dungeon's scaling, on its map (its own thread's).
     struct ScalingInfo : public DataMap::Base
@@ -180,6 +185,17 @@ namespace
         float now = healing ? Health(creature->GetLevel(), info->unit_class, info->expansion)
             : Damage(creature->GetLevel(), info->unit_class, info->expansion);
         return own > 0.0f && now > 0.0f ? now / own : 1.0f;
+    }
+
+    // A dungeon creature's damage (melee and spells) with its DamageModifier capped (MAX_DAMAGE_MODIFIER).
+    float ModifierCap(Unit* attacker)
+    {
+        Creature* creature = attacker ? attacker->ToCreature() : nullptr;
+        if (!creature || !IsDungeonCreature(creature) || !IsScaled(creature->GetMap()))
+            return 1.0f;
+        float modifier = creature->GetCreatureTemplate()->DamageModifier;
+        float cap = creature->IsDungeonBoss() ? MAX_BOSS_DAMAGE_MODIFIER : MAX_DAMAGE_MODIFIER;
+        return modifier > cap ? cap / modifier : 1.0f;
     }
 
     // A creature's level and the stats the core gives it there (Creature::UpdateEntry's armor, then every stat).
@@ -333,18 +349,18 @@ public:
 
     void ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage) override
     {
-        Scale(damage, DamageScale(target, attacker));
+        Scale(damage, DamageScale(target, attacker) * ModifierCap(attacker));
     }
 
     void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
     {
-        Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false));
+        Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false) * ModifierCap(attacker));
     }
 
     void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage,
         SpellInfo const* spellInfo) override
     {
-        Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false));
+        Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false) * ModifierCap(attacker));
     }
 
     // A heal between players of different levels: by their health at each level.

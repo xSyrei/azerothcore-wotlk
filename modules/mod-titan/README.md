@@ -581,6 +581,9 @@ replaced mod-autobalance):
   damage (their own buffs' too: Lightning Shield, damage shields) is scaled by their class damage at the level they
   are at over the native one, healing by their health; spells by a share of health stay. A dungeon is as strong as
   for 5 players, whoever comes.
+- **Creature damage multipliers are capped** at 3 (bosses 5: `MAX_DAMAGE_MODIFIER`, `MAX_BOSS_DAMAGE_MODIFIER`), melee
+  and spells alike: each expansion tuned its own `DamageModifier` (dungeon elites: Classic's about 4.6, Wrath's 7.5 to
+  15), so a level 20 pack of Wrath trash hit for hundreds.
 - **Every player meets the creatures at their own level**: a creature counts as at the player's level, with its offset
   from the group's lowest. The damage a player (and their pets) deals is scaled by the creature's health at its level
   over its health at that one, the damage they take by its damage there over its own (`creature_classlevelstats`, its
