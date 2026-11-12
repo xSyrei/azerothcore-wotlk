@@ -288,7 +288,7 @@ Chi.
 | 90322 | Rising Sun Kick | 10 | No combo points: a base and 140% of attack power, and Mortal Wounds (healing taken -25%, 10 sec); 10 sec cooldown |
 | 90325 | Spinning Crane Kick | 12 | Finisher: 1.5 sec spin, moving allowed: a base and 4.5% of attack power a combo point to all enemies within 8 yards every 0.5 sec (90326, `spell_titan_monk_finisher_strike`) |
 | 90323 | Fists of Fury | 16 | No combo points: 4 sec channel: a base and 30% of attack power to all enemies in a cone in front every sec (90324); 24 sec cooldown |
-| 90327 | Whirling Dragon Punch | 24 | 90% weapon damage to all enemies within 8 yards three times in a second (90328); 30 sec cooldown, no other requirement |
+| 90327 | Whirling Dragon Punch | 24 | 90% weapon damage to all enemies within 8 yards three times in a second (90328); 24 sec cooldown, no other requirement |
 | 90329 | Storm, Earth, and Fire | 30 | Windwalker's capstone: an Earth and a Fire spirit (creatures 90330, 90331, `npc_titan_monk_sef_spirit`, the Monk's look cloned onto them) fight at the Monk's side for 15 sec, each echoing every Windwalker strike the Monk lands for 35% of its damage (90330, 90331: Nature, Fire; `spell_titan_monk_sef_echo`); 90 sec cooldown |
 
 ### Monk talents

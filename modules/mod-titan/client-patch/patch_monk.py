@@ -897,13 +897,13 @@ SPELLS += [
     strikes(90326, 12, 'Spinning Crane Kick', 'Ability_Monk_CraneKick_New', 'CraneKickStrike', TARGET_SRC_CASTER,
             TARGET_UNIT_SRC_AREA_ENEMY, damage=(3, 1.2)),
     {
-        # Bladestorm's spin, three strikes (90328) in a second; a 30 second cooldown, nothing else asked.
+        # Bladestorm's spin, three strikes (90328) in a second; a 24 second cooldown, nothing else asked.
         'id': 90327, 'copy': 46924, 'name': 'Whirling Dragon Punch', 'icon': 'Ability_Monk_HurricaneStrike',
         'visual': 'WhirlingDragonPunch',
         'description': 'Erupt into a whirling punch, striking all enemies within 8 yards for $90328s1% weapon damage '
                        'three times.',
         'tooltip': 'Whirling.',
-        'set': windwalker(90327, 24, RecoveryTime=30000, DurationIndex=DURATION_1S),
+        'set': windwalker(90327, 24, RecoveryTime=24000, DurationIndex=DURATION_1S),
         'clear': [2, 3],
         'effects': {1: {'Amplitude': 333, 'TriggerSpell': 90328}},
     },
