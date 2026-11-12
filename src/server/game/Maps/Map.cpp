@@ -2039,7 +2039,9 @@ Map::EnterState InstanceMap::CannotEnter(Player* player, bool loginCheck)
     // xinef: dont allow LFG Group to enter other instance that is selected
     if (Group* group = player->GetGroup())
         if (group->isLFGGroup())
-            if (!sLFGMgr->inLfgDungeonMap(group->GetGUID(), GetId(), GetDifficulty()))
+            if (!sLFGMgr->inLfgDungeonMap(group->GetGUID(), GetId(), GetDifficulty())
+                // Project Emberforge: once its dungeon is done, the group may go anywhere
+                && sLFGMgr->GetState(group->GetGUID()) != lfg::LFG_STATE_FINISHED_DUNGEON)
             {
                 player->SendTransferAborted(GetId(), TRANSFER_ABORT_MAP_NOT_ALLOWED);
                 return CANNOT_ENTER_UNSPECIFIED_REASON;
