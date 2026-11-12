@@ -928,6 +928,9 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
     - flicker: (seconds, phase) the layer flashing on and fading out over and over, phase (0 to 1) of the way into
       its beat (rapid bursts; None: steady);
     - grow: (from, to) the layer's size (times scale) over duration (with fade: played once);
+    - stretch: (x, y, z) the layer's size along each axis instead (a storm spread wide and low);
+    - hollow: yards (before stretch): only the mesh's triangles at least this far from the middle (room about the
+      body);
     - blend: BLEND_ADD (the default) or BLEND_ALPHA.
 
     The model scaled by scale; all unlit, both faces drawn, textures repeating. fade: None (one looping Stand of
@@ -955,6 +958,13 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
 
     for number, layer in enumerate(layers):
         positions, uvs, faces = sources[layer.get('source', 0)][layer['mesh']]
+        if layer.get('hollow'):
+            # Only the triangles at least hollow yards (before stretch) from the middle: the space about the body
+            # left clear.
+            inner = layer['hollow']
+            faces = [v for i in range(0, len(faces), 3) for v in faces[i:i + 3]
+                     if math.hypot(sum(positions[f][0] for f in faces[i:i + 3]) / 3,
+                                   sum(positions[f][1] for f in faces[i:i + 3]) / 3) >= inner]
         rotation = empty_track()
         turn = layer.get('turn', 0.0)
         if turn:
@@ -965,7 +975,10 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
                                          for i in range(5)])], '4h')
             rotation = rotation[:2] + struct.pack('<h', global_sequence(turn_ms)) + rotation[4:]
         growing = empty_track()
-        if layer.get('grow'):
+        if layer.get('stretch'):
+            stretch = tuple(map(float, layer['stretch']))
+            growing = track(blob, 1, [([0, duration], [stretch, stretch])], '3f')
+        elif layer.get('grow'):
             small, big = layer['grow']
             growing = track(blob, 1, [([0, duration], [(float(small),) * 3, (float(big),) * 3])], '3f')
         bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
@@ -977,7 +990,8 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
         triangles += [first + f for f in faces]
         sections.append((first, len(positions), start, len(faces)))
     vertex_count = len(vertices) // 48
-    every = [p for layer in layers for p in sources[layer.get('source', 0)][layer['mesh']][0]]
+    every = [tuple(c * k for c, k in zip(p, layer.get('stretch', (layer.get('grow', (1.0,))[0],) * 3)))
+             for layer in layers for p in sources[layer.get('source', 0)][layer['mesh']][0]]
     lo = tuple(min(p[i] for p in every) * scale for i in range(3))
     hi = tuple(max(p[i] for p in every) * scale for i in range(3))
     radius = math.dist(lo, hi) / 2

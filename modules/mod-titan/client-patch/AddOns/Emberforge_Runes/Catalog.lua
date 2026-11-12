@@ -1357,71 +1357,69 @@ EmberforgeRunesCatalog = {
       slots = { "Presence", "Manifestation", "Covenant" },
       builtFrom = "Consecration",
       spentWith = "Consecration (on and off)",
-      resource = "Sanctified ground",
-      core = "Consecration becomes a permanent, toggleable aura that follows you, sanctifying the ground within " ..
-          "8 yards. Enemies within the area suffer Holy damage every second. Turning it on costs Consecration's " ..
-          "mana; keeping it on costs nothing. Its damage is your Consecration rank's.",
-      loop = "Turn your sanctuary on and shape it into a damage aura, a defensive zone or a source of healing.",
+      resource = "Mana (1% of base a second)",
+      core = "Consecration becomes a toggleable aura that follows you within 8 yards, dealing Holy damage every " ..
+          "second at 40% of your normal Consecration damage. While active, it consumes 1% of your base mana " ..
+          "each second and ends if you cannot pay it. It replaces your normal Consecration.",
+      loop = "Choose what your sanctuary does: damage, healing or protection, each at the aura's reduced rate.",
       mods = {
         {
           name = "Boundless Sanctity",
-          text = "Increases Consecration's radius to 12 yards, but reduces its damage by 15%.",
+          text = "Radius increases to 12 yards, but damage, healing and absorption are reduced by 25%.",
         },
         {
           name = "Hallowed Footsteps",
-          text = "Moving leaves sanctified ground behind you for 3 sec. These trails apply Consecration's " ..
-              "effects, but an enemy is struck only once a tick.",
+          text = "Aura radius becomes 4 yards. Moving leaves trails lasting 2 sec; they share the aura's ticks " ..
+              "and never strike an enemy twice.",
         },
         {
           name = "Seat of the Paragon",
-          text = "Remaining stationary for 3 sec increases Consecration's damage and healing by 20%. This bonus " ..
-              "ends when you move.",
+          text = "After standing still for 3 sec, the aura's output increases by 10%. Moving removes the bonus.",
         },
         {
           name = "Sanctified Condemnation",
-          text = "Each damaging tick applies Condemnation, increasing the damage the enemy takes from your " ..
-              "Consecration by 3%, stacking up to 10 times. Stacks expire after 3 sec outside it.",
+          text = "Damage. Consecutive ticks increase that enemy's damage taken from your Consecration by 2%, up " ..
+              "to 10%. Stacks expire after 2 sec outside the aura.",
         },
         {
           name = "Merciful Ground",
-          text = "Consecration also heals you and up to 4 nearby injured allies each second for 25% of its tick " ..
-              "damage. No enemy needs to be present.",
-        },
-        {
-          name = "Unwelcome Before the Light",
-          text = "Each enemy's first damaging tick from your Consecration deals 150% additional damage, once per " ..
-              "enemy every 12 sec.",
-        },
-        {
-          name = "Bastion of Faith",
-          text = "While Consecration is active, each enemy within it grants you 1% damage reduction, up to 5%. " ..
-              "Consecration generates 50% additional threat.",
-        },
-        {
-          name = "Weight of the Unworthy",
-          text = "Enemies damaged by Consecration are slowed by 20% for 2 sec. Repeated ticks refresh the duration.",
+          text = "Healing. Consecration no longer damages enemies: each pulse heals the single most injured party " ..
+              "member within range.",
         },
         {
           name = "Shelter of the Paragon",
-          text = "Every 5 sec, Consecration grants you and up to 4 nearby allies an absorb shield equal to 50% of " ..
-              "one tick. Shields last 6 sec and refresh rather than stack.",
+          text = "Protection. Consecration no longer damages enemies: every 5 sec it shields one nearby party " ..
+              "member. Only one shield from your aura at a time.",
+        },
+        {
+          name = "Bastion of Faith",
+          text = "The aura generates 50% more threat. Only with Sanctified Condemnation.",
+        },
+        {
+          name = "Weight of the Unworthy",
+          text = "After 3 consecutive damaging ticks, an enemy is slowed by 15% until it leaves the aura. Only " ..
+              "with Sanctified Condemnation.",
+        },
+        {
+          name = "Measured Devotion",
+          text = "Reduces the aura's mana cost by 25%, but reduces its output by 10%.",
         },
       },
       builds = {
         {
           name = "The Living Sanctuary",
-          mods = { "Boundless Sanctity", "Merciful Ground", "Shelter of the Paragon" },
-          text = "Steady healing and small protective shields in a moving sanctuary.",
+          mods = { "Boundless Sanctity", "Merciful Ground", "Measured Devotion" },
+          text = "Wider single-target healing with reduced output and lower upkeep.",
         },
         {
           name = "The Immovable Paragon",
           mods = { "Seat of the Paragon", "Sanctified Condemnation", "Bastion of Faith" },
-          text = "Hold ground, build sustained damage, and gain protection while surrounded.",
+          text = "Stationary damage and increased threat; no passive mitigation.",
         },
         {
           name = "The Hallowed March",
-          mods = { "Hallowed Footsteps", "Unwelcome Before the Light", "Weight of the Unworthy" },
-          text = "Advance through enemies, leaving damaging trails that slow pursuit.",
+          mods = { "Hallowed Footsteps", "Sanctified Condemnation", "Weight of the Unworthy" },
+          text = "Narrower coverage, short trails, and a delayed slow.",
         },
       },
     },

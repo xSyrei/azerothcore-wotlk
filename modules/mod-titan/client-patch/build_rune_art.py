@@ -182,34 +182,34 @@ BUILT = {
                   'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z'],
     },
     22: {
-        'core': 'Consecration becomes **Sanctified Paragon**: a permanent aura that follows you, sanctifying the ground '
-                'within 8 yards. Cast Consecration to turn it on or off.',
+        'core': 'Consecration becomes **Sanctified Paragon**: an aura that follows you within 8 yards at 40% of '
+                'Consecration\'s damage, for 1% of your base mana a second. Cast Consecration to turn it on or off.',
         'slots': ['Presence', 'Manifestation', 'Covenant'],
-        'asks': ['How your Consecration occupies the battlefield', 'What happens to those within your sanctuary',
-                 'How Consecration supports your survival or control'],
-        'texts': ['Increases Consecration\'s radius to 12 yards, but reduces its damage by 15%.',
-                  'Moving leaves sanctified ground behind you for 3 sec. An enemy is struck once a tick, however '
-                  'many patches it stands in.',
-                  'Remaining still for 3 sec increases Consecration\'s damage and healing by 20%, until you move.',
-                  'Each tick applies Condemnation: 3% more damage from your Consecration a stack, up to 10. Stacks '
-                  'fade 3 sec outside it.',
-                  'Each second, Consecration heals you and up to 4 injured allies for 25% of a tick\'s damage.',
-                  'Each enemy\'s first tick deals 150% more damage, once every 12 sec per enemy.',
-                  'Each enemy in your Consecration grants you 1% damage reduction, up to 5%. Consecration '
-                  'generates 50% more threat.',
-                  'Enemies damaged by Consecration are slowed by 20% for 2 sec, refreshed by each tick.',
-                  'Every 5 sec, you and up to 4 nearby allies gain a shield absorbing 50% of a tick, for 6 sec.'],
-        'abilities': ['Radius', 'Footsteps', 'Standing still', 'Condemnation', 'Healing', 'First tick',
-                      'Damage reduction · Threat', 'Slow', 'Shields'],
+        'asks': ['How your sanctuary covers the ground', 'Damage, healing or protection',
+                 'Threat, control or upkeep'],
+        'texts': ['Radius 12 yards, but damage, healing and absorption are 25% lower.',
+                  'Radius 4 yards. Moving leaves trails for 2 sec; an enemy is struck once a tick, however many it '
+                  'stands in.',
+                  'Standing still for 3 sec raises the aura\'s output by 10%, until you move.',
+                  'Damage. Each tick in a row raises the damage an enemy takes from your Consecration by 2%, up to '
+                  '10%. Gone 2 sec outside the aura.',
+                  'Healing. No damage: each pulse heals the single most injured party member in range.',
+                  'Protection. No damage: every 5 sec, one nearby party member is shielded. One shield at a time.',
+                  'The aura generates 50% more threat. Needs Sanctified Condemnation.',
+                  'From its third damaging tick in a row, an enemy is slowed by 15% while it stays. Needs '
+                  'Sanctified Condemnation.',
+                  'The aura costs 25% less mana, but its output is 10% lower.'],
+        'abilities': ['Radius', 'Footsteps', 'Standing still', 'Condemnation', 'Healing', 'Shields',
+                      'Threat', 'Slow', 'Mana'],
         'icons': ['M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0',
                   'M8 20c-2 0-3-2-2-4l2-4M16 12c2 0 3-2 2-4l-2-4M9 9h.5M15 15h.5',
                   'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM9 12h6',
                   'M12 2v20M8 6h8M6 12h12',
                   'M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10ZM12 9v6M9 12h6',
-                  'M12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9Z',
+                  'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 7v10M7 12h10',
                   'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
                   'M4 12h10M10 8l4 4-4 4M18 5v14',
-                  'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 7v10M7 12h10'],
+                  'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z'],
     },
 }
 

@@ -133,23 +133,28 @@ namespace
     enum ParagonModifier : uint8
     {
         MOD_BOUNDLESS_SANCTITY, MOD_HALLOWED_FOOTSTEPS, MOD_SEAT_OF_THE_PARAGON,
-        MOD_SANCTIFIED_CONDEMNATION, MOD_MERCIFUL_GROUND, MOD_UNWELCOME_BEFORE_THE_LIGHT,
-        MOD_BASTION_OF_FAITH, MOD_WEIGHT_OF_THE_UNWORTHY, MOD_SHELTER_OF_THE_PARAGON,
+        MOD_SANCTIFIED_CONDEMNATION, MOD_MERCIFUL_GROUND, MOD_SHELTER_OF_THE_PARAGON,
+        MOD_BASTION_OF_FAITH, MOD_WEIGHT_OF_THE_UNWORTHY, MOD_MEASURED_DEVOTION,
     };
 
-    // The Sanctified Paragon's tuning (the doc's initial proposals).
-    constexpr float PARAGON_RADIUS = 8.0f, BOUNDLESS_RADIUS = 12.0f, BOUNDLESS_DAMAGE = 0.85f;
+    // The Sanctified Paragon's tuning (the revised balance draft's initial values).
+    constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
+    constexpr float UPKEEP_PCT = 1.0f;                          // of base mana, a second
+    constexpr float PARAGON_RADIUS = 8.0f, BOUNDLESS_RADIUS = 12.0f, BOUNDLESS_OUTPUT = 0.75f;
     constexpr float CONSECRATION_COEFFICIENT = 0.04f;           // spell power and attack power, a tick
+    constexpr float FOOTSTEPS_RADIUS = 4.0f;                    // the aura's own with Hallowed Footsteps
     constexpr float TRAIL_RADIUS = 4.0f, TRAIL_SPACING = 3.0f;  // a footstep's patch; one at most every 3 yards
-    constexpr uint32 TRAIL_MS = 3000;
+    constexpr uint32 TRAIL_MS = 2000;
     constexpr float MOVED = 0.3f;                               // yards between ticks that count as moving
     constexpr uint32 SEAT_MS = 3000;
-    constexpr float SEAT_BONUS = 1.2f;
-    constexpr uint32 CONDEMNATION_PCT = 3, CONDEMNATION_STACKS = 10;
-    constexpr float MERCIFUL_SHARE = 0.25f, SHELTER_SHARE = 0.5f, UNWELCOME_BONUS = 2.5f;
-    constexpr uint32 MERCIFUL_ALLIES = 4, SHELTER_ALLIES = 4, BASTION_STACKS = 5;
-    constexpr uint32 UNWELCOME_MS = 12000, SHELTER_MS = 5000;
+    constexpr float SEAT_OUTPUT = 1.1f;
+    constexpr uint32 CONDEMNATION_PCT = 2, CONDEMNATION_STACKS = 5;
+    constexpr float MERCIFUL_SHARE = 1.0f;                      // of the aura's tick, healed (to tune)
+    constexpr uint32 SHELTER_MS = 5000;
+    constexpr float SHELTER_TICKS = 5.0f;                       // a shield of five ticks (to tune)
     constexpr float BASTION_THREAT = 0.5f;
+    constexpr uint8 WEIGHT_TICKS = 3;
+    constexpr float DEVOTION_UPKEEP = 0.75f, DEVOTION_OUTPUT = 0.9f;
 
     constexpr uint32 NPC_RUNE_FELGUARD = 910120;
     constexpr uint32 NPC_RUNE_FEL_IMP = 910121;
@@ -248,8 +253,9 @@ namespace
         bool HasLastPosition = false;
         uint32 StillSince = 0;                      // game ms
         uint32 LastShelter = 0;
+        ObjectGuid Sheltered;                                       // the one ally holding its shield
         std::vector<std::pair<Position, uint32>> Trail;             // footsteps: where, when
-        std::unordered_map<ObjectGuid, uint32> Unwelcomed;          // enemy -> last bonus tick (game ms)
+        std::unordered_map<ObjectGuid, uint8> Weighed;              // enemy -> damaging ticks in a row
     };
 
     std::unordered_map<ObjectGuid::LowType, State> states;
@@ -461,7 +467,7 @@ namespace
         for (uint32 spell : { SPELL_SANCTIFIED_PARAGON, SPELL_SEAT_OF_THE_PARAGON, SPELL_BASTION_OF_FAITH })
             player->RemoveAurasDueToSpell(spell);
         state.Trail.clear();
-        state.Unwelcomed.clear();
+        state.Weighed.clear();
         state.HasLastPosition = false;
         if (Pet* demon = player->GetPet())
         {
@@ -599,24 +605,51 @@ namespace
         return allies;
     }
 
-    // A second of the aura (90731's tick): the ground within 8 yards (12 with Boundless Sanctity, and the footsteps'
-    // patches with Hallowed Footsteps) sanctified: each enemy there takes one tick, and the modifiers act. Nothing
-    // a modifier makes (heals, shields, the bonus damage) sets off another.
-    void SanctifiedGround(Player* player)
+    // The party members within range (the Hero first), alive, most injured first (by share of health).
+    std::vector<Unit*> MostInjured(Player* player, float range)
+    {
+        std::vector<Unit*> allies = AlliesAround(player, range);
+        std::stable_sort(allies.begin(), allies.end(), [](Unit* a, Unit* b)
+        {
+            return a->GetHealthPct() < b->GetHealthPct();
+        });
+        return allies;
+    }
+
+    // A second of the aura (90731's tick), the revised balance draft's: its upkeep (1% of base mana, 0.75% with
+    // Measured Devotion; the aura ends when it cannot be paid), then one pulse at 40% of a Consecration tick, through
+    // the Manifestation picked: damage to each enemy within 8 yards (12 with Boundless Sanctity, 4 and the
+    // footsteps' patches with Hallowed Footsteps; an enemy once a pulse however many it stands in), or a heal on the
+    // single most injured party member (Merciful Ground), or a shield every 5 sec on one (Shelter of the Paragon).
+    // Nothing a modifier makes sets off another; toggling neither pulses at once nor resets their timers.
+    // false: the upkeep could not be paid (the aura's script ends it).
+    bool SanctifiedGround(Player* player)
     {
         if (!player->IsAlive() || !ConsecrationRank(player))
-            return;
+            return true;
         State& state = StateOf(player);
         uint32 now = GameTime::GetGameTimeMS().count();
+
+        bool devotion = HasParagonMarker(player, MOD_MEASURED_DEVOTION);
+        int32 upkeep = std::max<int32>(1, int32(player->GetCreateMana() * UPKEEP_PCT / 100.0f
+            * (devotion ? DEVOTION_UPKEEP : 1.0f)));
+        if (player->GetPower(POWER_MANA) < upkeep)
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeSanctified Paragon:|r out of mana.");
+            return false;
+        }
+        player->ModifyPower(POWER_MANA, -upkeep);
+
         bool boundless = HasParagonMarker(player, MOD_BOUNDLESS_SANCTITY);
-        float radius = boundless ? BOUNDLESS_RADIUS : PARAGON_RADIUS;
+        bool footsteps = HasParagonMarker(player, MOD_HALLOWED_FOOTSTEPS);
+        float radius = boundless ? BOUNDLESS_RADIUS : footsteps ? FOOTSTEPS_RADIUS : PARAGON_RADIUS;
 
         // Moving or still (Seat of the Paragon, Hallowed Footsteps).
         Position here = player->GetPosition();
         bool moved = state.HasLastPosition && state.LastPosition.GetExactDist(&here) > MOVED;
         if (!state.HasLastPosition || moved)
             state.StillSince = now;
-        if (moved && HasParagonMarker(player, MOD_HALLOWED_FOOTSTEPS)
+        if (moved && footsteps
             && (state.Trail.empty() || state.Trail.back().first.GetExactDist(&state.LastPosition) >= TRAIL_SPACING))
         {
             state.Trail.emplace_back(state.LastPosition, now);
@@ -633,39 +666,69 @@ namespace
             player->AddAura(SPELL_SEAT_OF_THE_PARAGON, player);
         else if (!seated)
             player->RemoveAurasDueToSpell(SPELL_SEAT_OF_THE_PARAGON);
-        float seat = seated ? SEAT_BONUS : 1.0f;
 
-        // The enemies sanctified this second: the aura's, then the footsteps' (each once).
+        float output = ParagonTick(player) * PARAGON_SHARE * (boundless ? BOUNDLESS_OUTPUT : 1.0f)
+            * (seated ? SEAT_OUTPUT : 1.0f) * (devotion ? DEVOTION_OUTPUT : 1.0f);
+
+        // Merciful Ground: no damage; the single most injured party member within range healed.
+        if (HasParagonMarker(player, MOD_MERCIFUL_GROUND))
+        {
+            for (Unit* ally : MostInjured(player, radius))
+                if (!ally->IsFullHealth())
+                {
+                    int32 heal = std::max<int32>(1, int32(output * MERCIFUL_SHARE));
+                    player->CastCustomSpell(ally, SPELL_MERCIFUL_GROUND, &heal, nullptr, nullptr, true);
+                    break;
+                }
+            return true;
+        }
+
+        // Shelter of the Paragon: no damage; every 5 sec one party member within range (the most injured) shielded,
+        // one shield of the aura's at a time (the last one's goes), none on an ally another Paragon shields.
+        if (HasParagonMarker(player, MOD_SHELTER_OF_THE_PARAGON))
+        {
+            if (now - state.LastShelter < SHELTER_MS)
+                return true;
+            for (Unit* ally : MostInjured(player, radius))
+            {
+                if (ally->HasAura(SPELL_SHELTER_OF_THE_PARAGON) && ally->GetGUID() != state.Sheltered)
+                    continue;
+                if (Unit* last = state.Sheltered ? ObjectAccessor::GetUnit(*player, state.Sheltered) : nullptr)
+                    last->RemoveAurasDueToSpell(SPELL_SHELTER_OF_THE_PARAGON, player->GetGUID());
+                int32 shield = std::max<int32>(1, int32(output * SHELTER_TICKS));
+                player->CastCustomSpell(ally, SPELL_SHELTER_OF_THE_PARAGON, &shield, nullptr, nullptr, true);
+                state.Sheltered = ally->GetGUID();
+                state.LastShelter = now;
+                break;
+            }
+            return true;
+        }
+
+        // Damage (Sanctified Condemnation, or no Manifestation yet): the enemies sanctified this second, the aura's
+        // then the footsteps' (each once).
         std::vector<Unit*> enemies = EnemiesAround(player, player, radius);
-        std::size_t inAura = enemies.size();
-        if (HasParagonMarker(player, MOD_HALLOWED_FOOTSTEPS))
+        if (footsteps)
             for (auto const& step : state.Trail)
                 for (Unit* enemy : EnemiesAround(player, player, player->GetExactDist(&step.first) + TRAIL_RADIUS))
                     if (enemy->GetExactDist(&step.first) <= TRAIL_RADIUS
                         && std::find(enemies.begin(), enemies.end(), enemy) == enemies.end())
                         enemies.push_back(enemy);
 
-        float full = ParagonTick(player);
+        bool condemnation = HasParagonMarker(player, MOD_SANCTIFIED_CONDEMNATION);
+        bool weight = condemnation && HasParagonMarker(player, MOD_WEIGHT_OF_THE_UNWORTHY);
+        bool bastion = condemnation && HasParagonMarker(player, MOD_BASTION_OF_FAITH);
+        std::unordered_map<ObjectGuid, uint8> weighed;
         for (Unit* enemy : enemies)
         {
-            float amount = full * (boundless ? BOUNDLESS_DAMAGE : 1.0f) * seat;
-            if (HasParagonMarker(player, MOD_SANCTIFIED_CONDEMNATION))
+            float amount = output;
+            if (condemnation)
                 if (Aura* condemned = enemy->GetAura(SPELL_CONDEMNATION, player->GetGUID()))
                     amount *= 1.0f + CONDEMNATION_PCT * condemned->GetStackAmount() / 100.0f;
-            if (HasParagonMarker(player, MOD_UNWELCOME_BEFORE_THE_LIGHT))
-            {
-                auto itr = state.Unwelcomed.find(enemy->GetGUID());
-                if (itr == state.Unwelcomed.end() || now - itr->second >= UNWELCOME_MS)
-                {
-                    amount *= UNWELCOME_BONUS;
-                    state.Unwelcomed[enemy->GetGUID()] = now;
-                }
-            }
             int32 damage = std::max<int32>(1, int32(amount));
             player->CastCustomSpell(enemy, SPELL_PARAGON_TICK, &damage, nullptr, nullptr, true);
             if (!enemy->IsAlive())
                 continue;
-            if (HasParagonMarker(player, MOD_SANCTIFIED_CONDEMNATION))
+            if (condemnation)
             {
                 Aura* condemned = enemy->GetAura(SPELL_CONDEMNATION, player->GetGUID());
                 if (!condemned)
@@ -675,56 +738,25 @@ namespace
                 if (condemned)
                     condemned->RefreshDuration();
             }
-            if (HasParagonMarker(player, MOD_WEIGHT_OF_THE_UNWORTHY))
-                player->CastSpell(enemy, SPELL_WEIGHT_OF_THE_UNWORTHY, true);
-            if (HasParagonMarker(player, MOD_BASTION_OF_FAITH) && enemy->CanHaveThreatList())
+            // Weight of the Unworthy: slowed from the third damaging tick in a row, while it stays in the aura.
+            if (weight)
+            {
+                auto itr = state.Weighed.find(enemy->GetGUID());
+                uint8 ticks = uint8(std::min<uint32>((itr != state.Weighed.end() ? itr->second : 0) + 1, 255));
+                weighed[enemy->GetGUID()] = ticks;
+                if (ticks >= WEIGHT_TICKS)
+                    player->CastSpell(enemy, SPELL_WEIGHT_OF_THE_UNWORTHY, true);
+            }
+            if (bastion && enemy->CanHaveThreatList())
                 enemy->AddThreat(player, float(damage) * BASTION_THREAT, SPELL_SCHOOL_MASK_HOLY);
         }
-
-        // Bastion of Faith: 1% less damage taken for each enemy in the aura, 5% at most.
-        if (HasParagonMarker(player, MOD_BASTION_OF_FAITH) && inAura)
-        {
-            Aura* bastion = player->GetAura(SPELL_BASTION_OF_FAITH);
-            if (!bastion)
-                bastion = player->AddAura(SPELL_BASTION_OF_FAITH, player);
-            if (bastion)
-            {
-                bastion->SetStackAmount(uint8(std::min<std::size_t>(inAura, BASTION_STACKS)));
-                bastion->RefreshDuration();
-            }
-        }
-        else
-            player->RemoveAurasDueToSpell(SPELL_BASTION_OF_FAITH);
-
-        // Merciful Ground: the Hero and up to 4 injured allies in the aura healed for a quarter of a tick.
-        if (HasParagonMarker(player, MOD_MERCIFUL_GROUND))
-        {
-            int32 heal = std::max<int32>(1, int32(full * MERCIFUL_SHARE * seat));
-            uint32 healed = 0;
-            for (Unit* ally : AlliesAround(player, radius))
-            {
-                if (ally->IsFullHealth())
-                    continue;
-                player->CastCustomSpell(ally, SPELL_MERCIFUL_GROUND, &heal, nullptr, nullptr, true);
-                if (ally != player && ++healed >= MERCIFUL_ALLIES)
-                    break;
-            }
-        }
-
-        // Shelter of the Paragon: every 5 sec, the Hero and up to 4 allies in the aura shielded for half a tick (a
-        // new shield replaces the last).
-        if (HasParagonMarker(player, MOD_SHELTER_OF_THE_PARAGON) && now - state.LastShelter >= SHELTER_MS)
-        {
-            state.LastShelter = now;
-            int32 shield = std::max<int32>(1, int32(full * SHELTER_SHARE));
-            uint32 shielded = 0;
-            for (Unit* ally : AlliesAround(player, radius))
-            {
-                player->CastCustomSpell(ally, SPELL_SHELTER_OF_THE_PARAGON, &shield, nullptr, nullptr, true);
-                if (ally != player && ++shielded >= SHELTER_ALLIES)
-                    break;
-            }
-        }
+        // Those not struck this second lose the count and the slow.
+        for (auto const& [guid, ticks] : state.Weighed)
+            if (!weighed.count(guid))
+                if (Unit* enemy = ObjectAccessor::GetUnit(*player, guid))
+                    enemy->RemoveAurasDueToSpell(SPELL_WEIGHT_OF_THE_UNWORTHY, player->GetGUID());
+        state.Weighed = std::move(weighed);
+        return true;
     }
 
     // ---- The rune's auras ------------------------------------------------------------------------------------
@@ -866,6 +898,22 @@ namespace
             return Refuse(player, "Modifiers can't be changed in combat.");
         if (Missing(player, ModifierNeeds(choice.Rune, slot - 1, pick - 1)) != "-")
             return Refuse(player, "You lack an ability this modifier needs.");
+        // The Sanctified Paragon: Bastion of Faith and Weight of the Unworthy work on its damage only (Sanctified
+        // Condemnation); another Manifestation lets go of either.
+        if (choice.Rune == RUNE_SANCTIFIED_PARAGON)
+        {
+            uint8 condemnation = MOD_SANCTIFIED_CONDEMNATION % CHOICES + 1;
+            auto damageOnly = [](uint8 covenant) { return covenant == MOD_BASTION_OF_FAITH % CHOICES + 1
+                || covenant == MOD_WEIGHT_OF_THE_UNWORTHY % CHOICES + 1; };
+            if (slot == 3 && damageOnly(pick) && choice.Mods[1] != condemnation)
+                return Refuse(player, "That modifier needs Sanctified Condemnation as your Manifestation.");
+            if (slot == 2 && pick != condemnation && damageOnly(choice.Mods[2]))
+            {
+                choice.Mods[2] = 0;
+                ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeLegendary Rune:|r your Covenant needs "
+                    "Sanctified Condemnation: choose it again.");
+            }
+        }
         if (choice.Mods[slot - 1] == pick)
             return SendState(player);
         choice.Mods[slot - 1] = pick;
@@ -1068,9 +1116,8 @@ class spell_titan_rune_sanctified_paragon : public AuraScript
     {
         if (Player* player = GetTarget()->ToPlayer())
         {
-            if (!player->HasAura(SPELL_RUNE_SANCTIFIED_PARAGON))
+            if (!player->HasAura(SPELL_RUNE_SANCTIFIED_PARAGON) || !SanctifiedGround(player))
                 return Remove();
-            SanctifiedGround(player);
         }
     }
 

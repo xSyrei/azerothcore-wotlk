@@ -367,13 +367,13 @@ EmberforgeRunesArt = {
             hue = { 1, 1, 0.694 },
             inner = { 1, 0.976, 0.918 },
             built = true,
-            core = "Consecration becomes **Sanctified Paragon**: a permanent aura that " ..
-                    "follows you, sanctifying the ground within 8 yards. Cast Consecration " ..
-                    "to turn it on or off.",
+            core = "Consecration becomes **Sanctified Paragon**: an aura that follows you " ..
+                    "within 8 yards at 40% of Consecration's damage, for 1% of your base " ..
+                    "mana a second. Cast Consecration to turn it on or off.",
             asks = {
-                "How your Consecration occupies the battlefield",
-                "What happens to those within your sanctuary",
-                "How Consecration supports your survival or control",
+                "How your sanctuary covers the ground",
+                "Damage, healing or protection",
+                "Threat, control or upkeep",
             },
             abilities = {
                 "Radius",
@@ -381,30 +381,27 @@ EmberforgeRunesArt = {
                 "Standing still",
                 "Condemnation",
                 "Healing",
-                "First tick",
-                "Damage reduction · Threat",
-                "Slow",
                 "Shields",
+                "Threat",
+                "Slow",
+                "Mana",
             },
             texts = {
-                "Increases Consecration's radius to 12 yards, but reduces its damage by " ..
-                        "15%.",
-                "Moving leaves sanctified ground behind you for 3 sec. An enemy is " ..
-                        "struck once a tick, however many patches it stands in.",
-                "Remaining still for 3 sec increases Consecration's damage and healing " ..
-                        "by 20%, until you move.",
-                "Each tick applies Condemnation: 3% more damage from your Consecration " ..
-                        "a stack, up to 10. Stacks fade 3 sec outside it.",
-                "Each second, Consecration heals you and up to 4 injured allies for 25% " ..
-                        "of a tick's damage.",
-                "Each enemy's first tick deals 150% more damage, once every 12 sec per " ..
-                        "enemy.",
-                "Each enemy in your Consecration grants you 1% damage reduction, up to " ..
-                        "5%. Consecration generates 50% more threat.",
-                "Enemies damaged by Consecration are slowed by 20% for 2 sec, refreshed " ..
-                        "by each tick.",
-                "Every 5 sec, you and up to 4 nearby allies gain a shield absorbing 50% " ..
-                        "of a tick, for 6 sec.",
+                "Radius 12 yards, but damage, healing and absorption are 25% lower.",
+                "Radius 4 yards. Moving leaves trails for 2 sec; an enemy is struck " ..
+                        "once a tick, however many it stands in.",
+                "Standing still for 3 sec raises the aura's output by 10%, until you " ..
+                        "move.",
+                "Damage. Each tick in a row raises the damage an enemy takes from your " ..
+                        "Consecration by 2%, up to 10%. Gone 2 sec outside the aura.",
+                "Healing. No damage: each pulse heals the single most injured party " ..
+                        "member in range.",
+                "Protection. No damage: every 5 sec, one nearby party member is " ..
+                        "shielded. One shield at a time.",
+                "The aura generates 50% more threat. Needs Sanctified Condemnation.",
+                "From its third damaging tick in a row, an enemy is slowed by 15% while " ..
+                        "it stays. Needs Sanctified Condemnation.",
+                "The aura costs 25% less mana, but its output is 10% lower.",
             },
             slots = {
                 "Presence",
