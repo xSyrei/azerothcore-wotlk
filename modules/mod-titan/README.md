@@ -580,7 +580,11 @@ replaced mod-autobalance):
   lowest level of those in the dungeon. Their spells carry their native level's amounts (the template's level), so
   damage (their own buffs' too: Lightning Shield, damage shields) is scaled by their class damage at the level they
   are at over the native one, healing by their health; spells by a share of health stay. A dungeon is as strong as
-  for 5 players, whoever comes.
+  for 5 players, whoever comes. It follows the lowest level as players level up too (creatures out of combat).
+- **Each player sees the creatures at their own level**: their level, health and maximum health are patched per
+  receiver (`OnPatchValuesUpdate`): the level the player meets them at, and the health their damage takes to empty
+  (a level 60 with a level 25 sees level 60 creatures with a level 60's health). Sent again when someone levels.
+  Combat text still shows the damage actually dealt (smaller than the health bar's drop for the higher player).
 - **Creature damage multipliers are capped** at 3 (bosses 5: `MAX_DAMAGE_MODIFIER`, `MAX_BOSS_DAMAGE_MODIFIER`), melee
   and spells alike: each expansion tuned its own `DamageModifier` (dungeon elites: Classic's about 4.6, Wrath's 7.5 to
   15), so a level 20 pack of Wrath trash hit for hundreds.

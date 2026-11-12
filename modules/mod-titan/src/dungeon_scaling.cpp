@@ -220,6 +220,15 @@ namespace
                 Rescale(creature);
     }
 
+    // Every dungeon creature's level and health sent again (a player leveled: their view of each changed).
+    void Resend(Map* map)
+    {
+        for (auto const& [spawnId, creature] : map->GetCreatureBySpawnIdStore())
+            if (creature->IsInWorld() && IsDungeonCreature(creature))
+                for (uint16 index : { UNIT_FIELD_LEVEL, UNIT_FIELD_HEALTH, UNIT_FIELD_MAXHEALTH })
+                    creature->ForceValuesUpdateAtIndex(index);
+    }
+
     // Damage a player (or their pet) deals to a creature, or takes from one.
     float DamageScale(Unit* target, Unit* attacker)
     {
@@ -249,6 +258,29 @@ namespace
             }
 
         return 1.0f;
+    }
+
+    // How a dungeon creature looks to a player: at their level, its health as much as their damage takes to empty it
+    // (DamageScale's own over there, and the ease), so a level 60 sees a level 60 creature with a level 60's health.
+    struct View
+    {
+        uint8 level;
+        float health;                           // the factor on its health and maximum health
+    };
+
+    View ViewFor(Creature const* creature, Player const* viewer)
+    {
+        CreatureTemplate const* info = creature->GetCreatureTemplate();
+        uint8 at = LevelFor(creature, viewer->GetLevel(), TargetLevel(creature->GetMap()));
+        float own = Health(creature->GetLevel(), info->unit_class, info->expansion);
+        float there = Health(at, info->unit_class, info->expansion);
+        float factor = own > 0.0f ? there / own * HealthFactor(viewer->GetLevel()) : 1.0f;
+        return { at, factor };
+    }
+
+    uint32 Shown(uint32 health, float factor)
+    {
+        return health ? std::max<uint32>(1, uint32(float(health) * factor + 0.5f)) : 0;
     }
 
     template <typename T>
@@ -344,8 +376,40 @@ public:
         UNITHOOK_MODIFY_SPELL_DAMAGE_TAKEN,
         UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK,
         UNITHOOK_MODIFY_HEAL_RECEIVED,
-        UNITHOOK_ON_UNIT_DEATH
+        UNITHOOK_ON_UNIT_DEATH,
+        UNITHOOK_SHOULD_TRACK_VALUES_UPDATE_POS_BY_INDEX,
+        UNITHOOK_ON_PATCH_VALUES_UPDATE
     }) { }
+
+    // A dungeon creature's level, health and maximum health go to each player as they see it (ViewFor): the core
+    // builds the fields once and patches these per receiver.
+    bool ShouldTrackValuesUpdatePosByIndex(Unit const* unit, uint8 /*updateType*/, uint16 index) override
+    {
+        if (index != UNIT_FIELD_LEVEL && index != UNIT_FIELD_HEALTH && index != UNIT_FIELD_MAXHEALTH)
+            return false;
+        Creature const* creature = unit->ToCreature();
+        return creature && IsDungeonCreature(creature) && IsScaled(creature->GetMap());
+    }
+
+    void OnPatchValuesUpdate(Unit const* unit, ByteBuffer& buffer, BuildValuesCachePosPointers& positions,
+        Player* target) override
+    {
+        if (positions.other.empty() || !target)
+            return;
+        Creature const* creature = unit->ToCreature();
+        if (!creature || !IsDungeonCreature(creature) || !IsScaled(creature->GetMap()))
+            return;
+        View view = ViewFor(creature, target);
+        for (auto const& [index, position] : positions.other)
+        {
+            if (index == UNIT_FIELD_LEVEL)
+                buffer.put<uint32>(position, view.level);
+            else if (index == UNIT_FIELD_HEALTH)
+                buffer.put<uint32>(position, Shown(creature->GetHealth(), view.health));
+            else if (index == UNIT_FIELD_MAXHEALTH)
+                buffer.put<uint32>(position, Shown(creature->GetMaxHealth(), view.health));
+        }
+    }
 
     void ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage) override
     {
@@ -416,15 +480,28 @@ public:
 
     void OnPlayerEnterAll(Map* map, Player* player) override
     {
-        if (IsScaled(map) && !player->IsGameMaster())
-            ScaleTo(map, LowestPlayer(map));
+        if (!IsScaled(map) || player->IsGameMaster())
+            return;
+        ScaleTo(map, LowestPlayer(map));
+        Resend(map);
     }
 };
 
 class titan_dungeon_scaling_player : public PlayerScript
 {
 public:
-    titan_dungeon_scaling_player() : PlayerScript("titan_dungeon_scaling_player", { PLAYERHOOK_ON_GIVE_EXP }) { }
+    titan_dungeon_scaling_player() : PlayerScript("titan_dungeon_scaling_player", {
+        PLAYERHOOK_ON_GIVE_EXP,
+        PLAYERHOOK_ON_LEVEL_CHANGED
+    }) { }
+
+    // A player leveling in a dungeon: the dungeon follows the lowest level (every creature out of combat).
+    void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
+    {
+        Map* map = player->GetMap();
+        if (IsScaled(map) && !player->IsGameMaster())
+            ScaleTo(map, LowestPlayer(map));
+    }
 
     // The core's experience for a kill in a scaled dungeon: none, ours instead (RewardKill).
     void OnPlayerGiveXP(Player* player, uint32& amount, Unit* victim, uint8 xpSource) override
