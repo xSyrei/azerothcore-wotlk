@@ -16,6 +16,7 @@
  */
 
 #include "wildcard.h"
+#include "global_talents.h"
 #include "Chat.h"
 #include "DBCStores.h"
 #include "DatabaseEnv.h"
@@ -77,6 +78,7 @@ namespace
     constexpr uint32 SETTING_ROLE = 2;
     constexpr uint32 SETTING_CAPSTONE_GRANTED = 3;
     constexpr uint32 SETTING_REROLLS = 4;           // rerolls made: the blacklist's clock
+    constexpr uint32 SETTING_COOLDOWN_STREAK = 5;   // ability rolls in a row that gave a cooldown
     constexpr uint32 BLACKLIST_REROLLS = 25;        // a name rerolled away is not rolled for this many rerolls
 
     // Each Hero's blacklist: name (English, first rank's) -> the reroll count it lasts until (titan_reroll_blacklist).
@@ -306,6 +308,24 @@ namespace
         { "Death Pact", UNDEAD_MINIONS }, { "Ghoul Frenzy", UNDEAD_MINIONS },
     };
 
+    // Abilities that only work with another: rolled once the Hero knows one of its partners (as a finisher waits for a
+    // combo point builder). By name, every rank and faction version.
+    constexpr char const* IMMOLATES[] = { "Immolate", "Shadowflame" };
+    constexpr char const* FROST_CHILLS[] = { "Frostbolt", "Frost Nova", "Cone of Cold", "Blizzard", "Frostfire Bolt" };
+    constexpr char const* DISEASES[] = { "Icy Touch", "Plague Strike" };
+    constexpr char const* HEALS_OVER_TIME[] = { "Rejuvenation", "Regrowth" };
+    constexpr char const* FLAME_SHOCK[] = { "Flame Shock" };
+    constexpr char const* POISONS[] = { "Deadly Poison" };
+    constexpr char const* CORRUPTIONS[] = { "Corruption", "Unstable Affliction" };
+    constexpr char const* SHADOW_WORD_PAIN[] = { "Shadow Word: Pain" };
+    constexpr NeedsPet PAIRED_ABILITIES[] = {
+        { "Conflagrate", IMMOLATES }, { "Ice Lance", FROST_CHILLS }, { "Deep Freeze", FROST_CHILLS },
+        { "Obliterate", DISEASES }, { "Scourge Strike", DISEASES }, { "Blood Boil", DISEASES },
+        { "Pestilence", DISEASES }, { "Heart Strike", DISEASES }, { "Swiftmend", HEALS_OVER_TIME },
+        { "Lava Burst", FLAME_SHOCK }, { "Envenom", POISONS }, { "Haunt", CORRUPTIONS },
+        { "Mind Flay", SHADOW_WORD_PAIN },
+    };
+
     // A pet targeted by a class's ability: that class's pets.
     std::span<char const* const> ClassPets(uint8 classId)
     {
@@ -412,6 +432,40 @@ namespace
             }
         }
         return roles;
+    }
+
+    // A talent whose words reach every spell of a kind (global_talents.h): -1 when it is not one, else whether its
+    // modifiers reach checkSpell (any class's: titan_global_talents).
+    int GlobalReach(uint32 talentSpellId, SpellInfo const* checkSpell)
+    {
+        static std::unordered_map<uint32, GlobalTalents::Entry> const entries = []
+        {
+            std::unordered_map<uint32, GlobalTalents::Entry> map;
+            for (GlobalTalents::Entry const& entry : GlobalTalents::ENTRIES)
+                map[entry.SpellId] = entry;
+            return map;
+        }();
+        auto itr = entries.find(talentSpellId);
+        if (itr == entries.end())
+            return -1;
+        if (checkSpell->IsPassive())
+            return 0;
+
+        bool heals = checkSpell->HasEffect(SPELL_EFFECT_HEAL) || checkSpell->HasEffect(SPELL_EFFECT_HEAL_PCT)
+            || checkSpell->HasAura(SPELL_AURA_PERIODIC_HEAL);
+        bool damages = checkSpell->HasEffect(SPELL_EFFECT_SCHOOL_DAMAGE)
+            || checkSpell->HasAura(SPELL_AURA_PERIODIC_DAMAGE) || checkSpell->HasAura(SPELL_AURA_PERIODIC_LEECH)
+            || checkSpell->HasEffect(SPELL_EFFECT_HEALTH_LEECH);
+        switch (itr->second.Kind)
+        {
+            case GlobalTalents::HEALING:
+                return heals ? 1 : 0;
+            case GlobalTalents::SPELLS:
+                return checkSpell->DmgClass == SPELL_DAMAGE_CLASS_MAGIC && (heals || damages) ? 1 : 0;
+            case GlobalTalents::SCHOOL:
+                return damages && (checkSpell->SchoolMask & itr->second.School) ? 1 : 0;
+        }
+        return 0;
     }
 
     // A generic talent's role tags, from the stats it raises (0: any role).
@@ -804,6 +858,15 @@ namespace
             if (!spellInfo || TalentAbility(talentInfo->TalentID))
                 return 0;
 
+            // A talent for every spell of a kind ("all means all"): for a Hero knowing any of that kind.
+            if (GlobalReach(spellInfo->Id, spellInfo) >= 0)
+            {
+                for (SpellInfo const* known : knownSpells)
+                    if (GlobalReach(spellInfo->Id, known) == 1)
+                        return 2;
+                return 0;
+            }
+
             bool masked = false;
             for (SpellEffectInfo const& effect : spellInfo->GetEffects())
             {
@@ -857,12 +920,17 @@ namespace
                 generic.emplace_back(talentInfo, top);
         }
 
-        if (candidates.empty())
-            candidates = std::move(generic);
-        if (candidates.empty())
+        // About 70% of the rolls improve an ability the Hero knows, the rest are talents for everyone that suit the
+        // role (stats, all damage or healing, defense...); either pool stands in when the other is empty.
+        constexpr uint32 LINKED_PCT = 70;
+        bool linked = !candidates.empty() && (generic.empty() || urand(1, 100) <= LINKED_PCT);
+        std::vector<std::pair<TalentEntry const*, uint8>>& pool = linked ? candidates : generic;
+        if (pool.empty())
             return false;
 
-        auto [talentInfo, currentRank] = candidates[urand(0, uint32(candidates.size() - 1))];
+        auto [talentInfo, currentRank] = pool[urand(0, uint32(pool.size() - 1))];
+        LOG_DEBUG("module", "Wildcard: {} rolled talent {} ({}; {} linked, {} for the role)", player->GetName(),
+            FirstRankName(talentInfo->RankID[0]), linked ? "linked" : "role", candidates.size(), generic.size());
         return LearnTalentRank(player, talentInfo, currentRank, reveal, rollLevel);
     }
 }
@@ -1419,6 +1487,9 @@ namespace Wildcard
                             pets = ClassPets(ability.ClassId);
                 if (!pets.empty())
                     ability.Requires.push_back(byNames(pets));
+                for (NeedsPet const& pair : PAIRED_ABILITIES)
+                    if (hasName(ability, pair.Name))
+                        ability.Requires.push_back(byNames(pair.Pets));
 
                 // A finisher (it spends combo points): only with an ability awarding them.
                 auto named = [&](auto const& names)
@@ -1580,21 +1651,186 @@ namespace Wildcard
         UpgradeRanks(player);
     }
 
+    namespace
+    {
+        // What the Hero's known abilities already do, for weighing a roll.
+        struct RollFacts
+        {
+            std::array<uint8, MAX_SPELL_SCHOOL> SchoolCounts = {};  // damage abilities dealing each school
+            uint32 Powers = 0;          // 1 << power type of every resource they spend (POWER_RUNE: runes)
+            uint8 PetFamily = 0;        // 1 hunter pet, 2 demons, 3 undead minions; 0 none
+            std::array<uint8, 8> RoleCounts = {};   // known abilities with each role tag
+        };
+
+        uint8 PetFamilyOf(Ability const& ability)
+        {
+            SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(ability.Ranks.front().SpellId);
+            char const* name = spellInfo->SpellName[0];
+            if (!name)
+                return 0;
+            auto in = [name](std::span<char const* const> names)
+            {
+                return std::any_of(names.begin(), names.end(), [name](char const* n) { return !strcmp(n, name); });
+            };
+            if (in(HUNTER_PETS) || !strcmp(name, "Call Pet"))
+                return 1;
+            if (in(DEMONS))
+                return 2;
+            if (in(UNDEAD_MINIONS))
+                return 3;
+            return 0;
+        }
+
+        bool IsCooldown(uint32 spellId)
+        {
+            SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(spellId);
+            return spellInfo->RecoveryTime >= 10000 || spellInfo->CategoryRecoveryTime >= 10000;
+        }
+
+        // The resources a spell spends, as 1 << power type (POWER_RUNE for a rune cost).
+        uint32 PowersOf(SpellInfo const* spellInfo)
+        {
+            uint32 powers = 0;
+            if (spellInfo->ManaCost || spellInfo->ManaCostPercentage)
+                powers |= 1 << spellInfo->PowerType;
+            if (spellInfo->RuneCostID)
+                powers |= 1 << POWER_RUNE;
+            return powers;
+        }
+
+        // The schools a spell deals damage in (0 if it deals none).
+        uint32 DamageSchools(SpellInfo const* spellInfo)
+        {
+            return (SpellRoles(spellInfo) & (TAG_MELEE | TAG_RANGED)) ? spellInfo->SchoolMask : 0;
+        }
+
+        RollFacts Facts(Player* player)
+        {
+            RollFacts facts;
+            for (Ability const& ability : Abilities())
+            {
+                if (KnownRank(player, ability) < 0)
+                    continue;
+                SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(ability.Ranks.front().SpellId);
+                uint32 schools = DamageSchools(spellInfo);
+                for (uint8 school = 0; school < MAX_SPELL_SCHOOL; ++school)
+                    if (schools & (1 << school))
+                        ++facts.SchoolCounts[school];
+                facts.Powers |= PowersOf(spellInfo);
+                if (uint8 family = PetFamilyOf(ability))
+                    facts.PetFamily = family;
+                for (uint8 bit = 0; bit < 8; ++bit)
+                    if (ability.Roles & (1 << bit))
+                        ++facts.RoleCounts[bit];
+            }
+            return facts;
+        }
+
+        bool PetAllowed(RollFacts const& facts, Ability const& ability)
+        {
+            uint8 family = PetFamilyOf(ability);
+            return !family || !facts.PetFamily || family == facts.PetFamily;
+        }
+
+        // The role tags the kit still lacks (0: none): 2 abilities doing the role's work.
+        uint8 KitNeed(Player* player, RollFacts const& facts)
+        {
+            auto count = [&](uint8 tags)
+            {
+                uint8 n = 0;
+                for (uint8 bit = 0; bit < 8; ++bit)
+                    if (tags & (1 << bit))
+                        n = std::max(n, facts.RoleCounts[bit]);
+                return n;
+            };
+            switch (GetRole(player))
+            {
+                case ROLE_MELEE: return count(TAG_MELEE) < 2 ? TAG_MELEE : 0;
+                case ROLE_RANGED: return count(TAG_RANGED) < 2 ? TAG_RANGED : 0;
+                case ROLE_HEALER: return count(TAG_HEALER) < 2 ? TAG_HEALER : 0;
+                case ROLE_TANK:
+                    if (count(TAG_TANK) < 1)
+                        return TAG_TANK;
+                    return count(TAG_MELEE) < 1 ? TAG_MELEE : 0;
+                default:
+                    return count(TAG_MELEE | TAG_RANGED) < 2 ? uint8(TAG_MELEE | TAG_RANGED) : 0;
+            }
+        }
+
+        float Weight(RollFacts const& facts, Ability const& ability)
+        {
+            SpellInfo const* spellInfo = sSpellMgr->AssertSpellInfo(ability.Ranks.front().SpellId);
+            float weight = 1.0f;
+            uint32 schools = DamageSchools(spellInfo);
+            uint8 matching = 0;
+            for (uint8 school = 0; school < MAX_SPELL_SCHOOL; ++school)
+                if (schools & (1 << school))
+                    matching = std::max(matching, facts.SchoolCounts[school]);
+            weight *= 1.0f + 0.25f * std::min<uint8>(matching, 4);
+            if (uint32 powers = PowersOf(spellInfo); powers && (powers & facts.Powers))
+                weight *= 1.4f;
+            return weight;
+        }
+    }
+
+    // An ability roll (the kit's, a level's, a reroll's), steered so a build takes shape:
+    // - those suiting the Hero's role (any when none does), never one blacklisted by a reroll;
+    // - one pet family: once the Hero summons a hunter pet, a demon or a ghoul, the other families' summons stay out;
+    // - the kit (before LOCK_LEVEL) gets 2 abilities doing the role's work first (Healer: heals; Tank: a threat
+    //   ability, then a melee one; no role: damage);
+    // - after 2 rolls in a row gave a cooldown (10 sec or more), the next is one to press on repeat;
+    // - weighted toward the damage schools the Hero's abilities already deal (+25% a matching ability, up to 4) and
+    //   the resources they already spend (+40%).
     Ability const* GrantRandom(Player* player, char const* what)
     {
-        // Those suiting the Hero's role; any when none does.
+        RollFacts facts = Facts(player);
         std::vector<Ability const*> candidates, others;
         for (Ability const& ability : Abilities())
-            if (!ability.Capstone && CanLearn(player, ability)
+            if (!ability.Capstone && CanLearn(player, ability) && PetAllowed(facts, ability)
                 && !IsBlacklisted(player, FirstRankName(ability.Ranks.front().SpellId)))
                 (SuitsRole(player, ability.Roles) ? candidates : others).push_back(&ability);
 
         if (candidates.empty())
             candidates = std::move(others);
+
+        char const* reason = "role";
+        auto narrow = [&](auto keep, char const* why)
+        {
+            std::vector<Ability const*> kept;
+            std::copy_if(candidates.begin(), candidates.end(), std::back_inserter(kept), keep);
+            if (!kept.empty())
+            {
+                candidates = std::move(kept);
+                reason = why;
+            }
+        };
+        if (player->GetLevel() < LOCK_LEVEL)
+            if (uint8 need = KitNeed(player, facts))
+                narrow([need](Ability const* ability) { return (ability->Roles & need) != 0; }, "kit floor");
+        if (player->GetPlayerSetting(SETTING_SOURCE, SETTING_COOLDOWN_STREAK).value >= 2)
+            narrow([](Ability const* ability) { return !IsCooldown(ability->Ranks.front().SpellId); }, "no cooldown");
         if (candidates.empty())
             return nullptr;
 
-        Ability const* ability = candidates[urand(0, uint32(candidates.size() - 1))];
+        std::vector<float> weights;
+        float total = 0.0f;
+        for (Ability const* ability : candidates)
+        {
+            weights.push_back(Weight(facts, *ability));
+            total += weights.back();
+        }
+        float roll = frand(0.0f, total);
+        std::size_t chosen = 0;
+        for (; chosen + 1 < candidates.size() && roll >= weights[chosen]; ++chosen)
+            roll -= weights[chosen];
+
+        Ability const* ability = candidates[chosen];
+        bool cooldown = IsCooldown(ability->Ranks.front().SpellId);
+        uint32 streak = player->GetPlayerSetting(SETTING_SOURCE, SETTING_COOLDOWN_STREAK).value;
+        player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_COOLDOWN_STREAK, cooldown ? streak + 1 : 0);
+        LOG_DEBUG("module", "Wildcard: {} rolled ability {} ({}; weight {:.2f} of {:.2f}, {} candidates)",
+            player->GetName(), FirstRankName(ability->Ranks.front().SpellId), reason, weights[chosen], total,
+            candidates.size());
         Learn(player, *ability, what);
         return ability;
     }
@@ -1929,7 +2165,24 @@ public:
     }
 };
 
+// "All means all": a talent whose words reach every spell of a kind ("all your healing spells", "your spells", "your
+// Frost spells": global_talents.h, tools/wildcard/global_talents.py) has its spell modifiers apply to every class's
+// spells of that kind, not only its own class's (SpellInfo::IsAffectedBySpellMod: false here means affected). A Hero
+// has every class's spells; the talent's own class's keep its own masks too.
+class titan_global_talents : public GlobalScript
+{
+public:
+    titan_global_talents() : GlobalScript("titan_global_talents", { GLOBALHOOK_ON_IS_AFFECTED_BY_SPELL_MOD_CHECK }) { }
+
+    bool OnIsAffectedBySpellModCheck(SpellInfo const* affectSpell, SpellInfo const* checkSpell,
+        SpellModifier const* /*mod*/) override
+    {
+        return GlobalReach(affectSpell->Id, checkSpell) != 1;
+    }
+};
+
 void AddSC_wildcard()
 {
+    new titan_global_talents();
     new titan_wildcard();
 }

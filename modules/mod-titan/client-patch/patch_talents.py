@@ -186,7 +186,8 @@ HAVOC = [
      lambda r: {1: mod(SPELLMOD_DAMAGE, FEL_RUSH_HIT, 15 * r), 2: dummy(10 * r)}, {}),
     ('Any Means Necessary', 7, 0, 'Ability_Warlock_ChaosBolt', None, 3,
      lambda r: f'Your Shadow damage abilities deal {4 * r}% more damage.',
-     lambda r: {1: mod(SPELLMOD_DAMAGE, CHAOS_DAMAGE, 4 * r)}, {}),
+     # Any Shadow damage, any class's (an aura, not a modifier of the Demon Hunter's own).
+     lambda r: {1: aura(AURA_MOD_DAMAGE_PERCENT_DONE, 4 * r, SHADOW)}, {}),
     ('Cycle of Hatred', 7, 1, 'Ability_DemonHunter_CycleOfHatred', None, 3,
      lambda r: f'Chaos Strike reduces the remaining cooldown of Eye Beam by {r} sec.',
      lambda r: {1: dummy(r)}, {}),
@@ -287,7 +288,7 @@ VENGEANCE = [
     ('Demonic Wards', 0, 3, 'Spell_Shadow_AntiMagicShell', None, 3,
      lambda r: f'Reduces all damage you take by {(3, 6, 10)[r - 1]}%.',
      lambda r: {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_MOD_DAMAGE_PERCENT_TAKEN,
-                    'BasePoints': -(3, 6, 10)[r - 1] - 1, 'DieSides': 1, 'MiscValue': SHADOW,
+                    'BasePoints': -(3, 6, 10)[r - 1] - 1, 'DieSides': 1, 'MiscValue': SCHOOL_ALL,
                     'TargetA': TARGET_UNIT_CASTER}}, {}),
     ('Fel Flame Fortification', 8, 0, 'Spell_Fire_FireArmor', 'Infernal Armor', 2,
      lambda r: f'While Immolation Aura burns, you take {5 * r}% less damage.',

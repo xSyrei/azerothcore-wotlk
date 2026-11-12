@@ -11156,6 +11156,7 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
             rec = GetAttackTime(RANGED_ATTACK);
 
         // Now we have cooldown data (if found any), time to apply mods
+        int32 const baseRec = rec, baseCatrec = catrec;
         if (rec > 0)
             ApplySpellMod(spellInfo->Id, SPELLMOD_COOLDOWN, rec, spell);
 
@@ -11178,9 +11179,19 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
         if (rec < 0) rec = 0;
         if (catrec < 0) catrec = 0;
 
+        // The client applies spell mods only to its own class's spells (ChrClasses' SpellClassSet): a mod changing
+        // another class's spell's cooldown (mod-titan's classless Heroes) is told to it, or it keeps the button on
+        // the spell's own cooldown.
+        if (rec != std::max(baseRec, 0) || catrec != std::max(baseCatrec, 0))
+            needsCooldownPacket = true;
+
         // no cooldown after applying spell mods
         if (rec == 0 && catrec == 0)
+        {
+            if (needsCooldownPacket)
+                SendClearCooldown(spellInfo->Id, this);
             return;
+        }
 
         catrecTime = catrec ? catrec : 0;
         recTime    = rec ? rec : catrecTime;

@@ -56,7 +56,8 @@ Nothing else comes from the base class (`data/sql/db-world/hero_cleanup.sql`):
 - no talent points to spend: Wildcard grants talents (below).
 
 ## Wildcard
-How a Hero progresses (`src/wildcard.cpp`), fully random for now:
+How a Hero progresses (`src/wildcard.cpp`): random, steered so a build takes shape (the decisions:
+`.agents/plans/wildcard-pass/`).
 - **Starting kit (levels 1-7)**: every Hero starts with 4 random abilities and two tomes in its
   bags (`data/sql/db-world/titan_tomes.sql`, `src/item_titan_tomes.cpp`), both usable any number of
   times through level 7:
@@ -90,9 +91,24 @@ How a Hero progresses (`src/wildcard.cpp`), fully random for now:
   Melee, Ranged takes Ranged, Healer takes Healer and Ranged, Tank takes Tank and Melee. Untagged abilities (buffs,
   utility, crowd control) suit every role; with no role, or nothing left that suits, anything goes. Tome of
   Selection picks are free.
-- **Talents for what you know**: a talent rank goes to a talent improving an ability the Hero knows (one its class
-  masks modify; a scripted talent: one of its class's abilities). When none is left: generic talents (stats,
-  damage, crit, healing, armor and avoidance) suiting the role, and talents teaching an ability that suits it.
+- **Ability rolls are steered** (`GrantRandom`): one pet family (once a Hero summons a hunter pet, a demon or a
+  ghoul, the other families' summons stay out); the kit (before level 8) first gets 2 abilities doing the role's
+  work (Healer: heals; Tank: a threat ability, then a melee one; no role: damage); after 2 rolls in a row gave a
+  cooldown of 10 sec or more, the next is one to press on repeat; and the pick is weighted toward the damage schools
+  the Hero's abilities already deal (+25% a matching ability, up to 4) and the resources they spend (+40%).
+  Abilities that only work with another wait for it (`PAIRED_ABILITIES`: Conflagrate for Immolate, Ice Lance for a
+  Frost chill, Obliterate and Scourge Strike for a disease, Swiftmend for a heal over time...).
+- **Talents**: about 70% of the talent rolls improve an ability the Hero knows (one its class masks modify; a
+  scripted talent: one of its class's abilities), the rest are talents for everyone suiting the role (stats, all
+  damage or healing, armor and avoidance, talents teaching an ability for the role); either pool stands in for the
+  other. **"All means all"**: a talent whose words reach every spell of a kind ("all your healing spells", "your
+  spells", "your Frost spells": 44 of the game's talents, `src/global_talents.h` from
+  `tools/wildcard/global_talents.py`) applies to every class's spells of that kind (`titan_global_talents`), and is
+  rolled for a Hero knowing one; Grace of the Crane (all healing), Any Means Necessary (all Shadow damage) and
+  Demonic Wards (all damage taken) too. A talent's changed cooldown is told to the client (Player.cpp), which
+  applies spell modifiers only to its own class's spells.
+- **Reroll blacklist**: a name rerolled away (an ability, or a talent of that name in every tree: Toughness) is not
+  rolled again for 25 rerolls (`titan_reroll_blacklist`, db-characters).
 - **Roles**: Melee, Ranged, Healer or Tank, picked in the Classless window under the classes (not in
   combat; kept per character). Each is a buff (90603-90606, `client-patch/patch_player.py`): Melee and
   Ranged cause 50% less threat, Tank 200% more (and takes 5% less damage, with 5% more armor), Healer

@@ -71,7 +71,8 @@ def dummy(value):
 MISTWEAVER = [
     ('Grace of the Crane', 0, 0, 'Spell_Nature_Rejuvenation', None, 3,
      lambda r: f'All your healing spells heal for {2 * r}% more.',
-     lambda r: {1: mod(SPELLMOD_DAMAGE, HEALS, 2 * r), 2: mod(SPELLMOD_DOT, HEALS, 2 * r)}, {}),
+     # All means all: every healing spell, any class's (an aura, not a modifier of the Monk's own).
+     lambda r: {1: aura(AURA_MOD_HEALING_DONE_PERCENT, 2 * r)}, {}),
     ('Improved Vivify', 0, 2, 'Ability_Monk_Vivify', None, 3,
      lambda r: f'Vivify heals for {5 * r}% more.',
      lambda r: {1: mod(SPELLMOD_DAMAGE, VIVIFY | VIVIFY_SPLASH, 5 * r)}, {}),
