@@ -1740,6 +1740,9 @@ public:
     std::string const& GetGuildName();
     [[nodiscard]] uint32 GetFreeTalentPoints() const { return GetUInt32Value(PLAYER_CHARACTER_POINTS1); }
     void SetFreeTalentPoints(uint32 points);
+    // The talent points the player is counted as having spent (mod-titan's Wildcard sets it after granting talents
+    // its own way, so InitTalentForLevel never resets them).
+    void SetUsedTalentCount(uint32 count) { m_usedTalentCount = count; }
     bool resetTalents(bool noResetCost = false);
     [[nodiscard]] uint32 resetTalentsCost() const;
     bool IsMaxLevel() const;

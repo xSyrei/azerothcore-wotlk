@@ -384,7 +384,9 @@ namespace
                     while (rank && !talent->RankID[rank - 1])
                         --rank;
                     if (rank)
-                        Wildcard::LearnTalentRank(player, talent, rank - 1, false);
+                        Wildcard::SetQuiet(true);
+                Wildcard::LearnTalentRank(player, talent, rank - 1, false);
+                Wildcard::SetQuiet(false);
                 }
             }
             player->UpdatePlayerSetting(WILDCARD_SOURCE, WILDCARD_GRANTED, spec.Granted);
@@ -526,7 +528,12 @@ namespace
     {
         Loadouts* data = Loaded(player);
         ChatHandler handler(player->GetSession());
-        if (!data || kind > ENTRY_TALENT || !IsKnown(player, kind, id))
+        if (!data)
+        {
+            handler.SendSysMessage("Your specializations are still loading. Try again in a moment.");
+            return;
+        }
+        if (kind > ENTRY_TALENT || !IsKnown(player, kind, id))
             return;
         Spec& spec = data->Specs[data->Active];
         auto entry = spec.Entries.find({ kind, id });
@@ -542,33 +549,54 @@ namespace
         }
         if (!Cards::Eyes(player))
         {
-            handler.SendSysMessage("You need an Eye of Unlearning: claim them in the Darkmoon window, or buy them from "
-                "Silas Darkmoon at level 60.");
+            char const* text = "You don't have any Eyes of Unlearning. Visit Silas Darkmoon in any of the Main Cities.";
+            handler.SendSysMessage(text);
+            WorldPacket error(SMSG_NOTIFICATION, strlen(text) + 1);
+            error << text;
+            player->SendDirectMessage(&error);
             return;
         }
 
         if (kind == ENTRY_ABILITY)
         {
             Wildcard::Ability const* old = Wildcard::FindAbility(id);
-            // The new one first: the old one, still known, cannot come again.
+            // The new one first: the old one, still known, cannot come again; nor can its name for 25 rerolls.
+            std::string gone = Wildcard::Blacklist(player, old->Ranks.front().SpellId);
             Wildcard::Ability const* rolled = old->Capstone ? Wildcard::GrantNewCapstone(player)
                 : Wildcard::GrantRandom(player, "rerolled into");
             if (!rolled)
             {
+                Wildcard::Unblacklist(player, gone);
                 handler.SendSysMessage("There is nothing else to reroll it into.");
                 return;
             }
             Wildcard::Unlearn(player, *old);
+            Wildcard::CountReroll(player);
             Cards::SpendEye(player, false);
             Classless::Reveal(player, *rolled, player->GetLevel());
         }
         else
         {
             // One talent for one: a roll gives a talent at its top rank (Wildcard counts talents, not their ranks).
+            // Nothing else to roll into: the talent comes back, and the Eye is kept.
             TalentEntry const* talent = HeroTalent(id);
-            if (Wildcard::RemoveTalent(player, talent))
-                Wildcard::GrantTalentExcept(player, id, true);
+            uint8 rank = Wildcard::RemoveTalent(player, talent);
+            if (!rank)
+                return;
+            // Every talent of its name (Toughness of any tree) stays out for 25 rerolls.
+            std::string gone = Wildcard::Blacklist(player, talent->RankID[0]);
+            if (!Wildcard::GrantTalentExcept(player, id, true))
+            {
+                Wildcard::Unblacklist(player, gone);
+                Wildcard::SetQuiet(true);
+                Wildcard::LearnTalentRank(player, talent, rank - 1, false);
+                Wildcard::SetQuiet(false);
+                handler.SendSysMessage("There is nothing else to reroll it into.");
+                Classless::SendKnown(player);
+                return;
+            }
             player->InitTalentForLevel();
+            Wildcard::CountReroll(player);
             Cards::SpendEye(player, true);
         }
         Classless::SendKnown(player);

@@ -19,6 +19,7 @@
 #define MOD_TITAN_WILDCARD_H
 
 #include "SharedDefines.h"
+#include <string>
 #include <vector>
 
 class Player;
@@ -138,6 +139,11 @@ namespace Wildcard
     Ability const* GrantNewCapstone(Player* player);
     uint8 TalentRank(Player const* player, TalentEntry const* talentInfo);
     uint8 RemoveTalent(Player* player, TalentEntry const* talentInfo);
+    // The reroll blacklist (titan_reroll_blacklist): a name rerolled away is not rolled again for 25 rerolls.
+    // Blacklist returns the name kept out ("" if none), Unblacklist takes it back, CountReroll counts one.
+    std::string Blacklist(Player* player, uint32 spellId);
+    void Unblacklist(Player* player, std::string const& name);
+    void CountReroll(Player* player);
 
     uint32 GetPicks(Player* player);
     void SetPicks(Player* player, uint32 picks);

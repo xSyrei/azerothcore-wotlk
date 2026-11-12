@@ -18,6 +18,7 @@
 #include "wildcard.h"
 #include "Chat.h"
 #include "DBCStores.h"
+#include "DatabaseEnv.h"
 #include "ObjectMgr.h"
 #include "Pet.h"
 #include "Player.h"
@@ -25,8 +26,10 @@
 #include "ScriptMgr.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
+#include "StringFormat.h"
 #include "Trainer.h"
 #include "World.h"
+#include "WorldSession.h"
 #include <algorithm>
 #include <array>
 #include <span>
@@ -73,6 +76,33 @@ namespace
     constexpr uint32 SETTING_PICKS_LEFT = 1;
     constexpr uint32 SETTING_ROLE = 2;
     constexpr uint32 SETTING_CAPSTONE_GRANTED = 3;
+    constexpr uint32 SETTING_REROLLS = 4;           // rerolls made: the blacklist's clock
+    constexpr uint32 BLACKLIST_REROLLS = 25;        // a name rerolled away is not rolled for this many rerolls
+
+    // Each Hero's blacklist: name (English, first rank's) -> the reroll count it lasts until (titan_reroll_blacklist).
+    std::unordered_map<ObjectGuid::LowType, std::unordered_map<std::string, uint32>> blacklists;
+
+    std::string FirstRankName(uint32 spellId)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        return spellInfo && spellInfo->SpellName[0] ? spellInfo->GetFirstRankSpell()->SpellName[0] : "";
+    }
+
+    std::string EscapeName(std::string name)
+    {
+        CharacterDatabase.EscapeString(name);
+        return name;
+    }
+
+    bool IsBlacklisted(Player* player, std::string const& name)
+    {
+        auto itr = blacklists.find(player->GetGUID().GetCounter());
+        if (itr == blacklists.end())
+            return false;
+        auto entry = itr->second.find(name);
+        return entry != itr->second.end()
+            && player->GetPlayerSetting(SETTING_SOURCE, SETTING_REROLLS).value < entry->second;
+    }
 
     // The roles' buffs, by Role (ROLE_NONE has none).
     constexpr std::array<uint32, MAX_ROLES> ROLE_SPELLS = { 0, 90603, 90604, 90605, 90606 };
@@ -640,16 +670,25 @@ namespace
                         }
     }
 
+    // The talent points a Hero has spent, counted the way the core counts them (Player::addTalent at loading: every
+    // talent row of the active specialization, its rank + 1). Wildcard's own grants keep the core's count equal to it
+    // (SyncTalentCount), and CalculateTalentsPoints returns it: the core's "more talents than allowed" reset
+    // (InitTalentForLevel) never fires for a Hero. It fired on a reroll into a talent of fewer ranks and at login,
+    // wiping every talent.
     uint32 SpentTalentPoints(Player const* player)
     {
         uint32 spent = 0;
         for (auto const& [spellId, talent] : player->GetTalentMap())
             if (talent->State != PLAYERSPELL_REMOVED && talent->IsInSpec(player->GetActiveSpec()))
                 if (TalentSpellPos const* talentPos = GetTalentSpellPos(spellId))
-                    if (!TalentAbility(talentPos->talent_id))   // one rolled before it was an ability
-                        spent += talentPos->rank + 1;
+                    spent += talentPos->rank + 1;
 
         return spent;
+    }
+
+    void SyncTalentCount(Player* player)
+    {
+        player->SetUsedTalentCount(SpentTalentPoints(player));
     }
 
     // The talents rolled (each roll gives one, at its top rank): a Hero's talents, but those learned as abilities.
@@ -682,6 +721,47 @@ namespace
             return true;
         TalentEntry const* required = sTalentStore.LookupEntry(talentInfo->DependsOn);
         return required && TalentRank(player, required) > talentInfo->DependsOnRank;
+    }
+
+    // The Paladin's own skill lines (Holy, Protection, Retribution) teach their spells at every login to whoever has
+    // the skill (Player::learnSkillRewardedSpells: Holy Light and Seal of Righteousness, as temporary spells); a Hero
+    // created before hero_cleanup.sql kept them, and Wildcard then counted those spells as known and ranked them up.
+    // Only the temporary ones go: a Hero's own, rolled Holy Light stays.
+    void DropSkillLineSpells(Player* player)
+    {
+        static constexpr std::array<uint32, 3> PALADIN_SKILLS = { 184, 267, 594 };
+        std::vector<uint32> temporary;
+        for (auto const& [spellId, spell] : player->GetSpellMap())
+        {
+            if (spell->State != PLAYERSPELL_TEMPORARY)
+                continue;
+            auto bounds = sSpellMgr->GetSkillLineAbilityMapBounds(spellId);
+            for (auto itr = bounds.first; itr != bounds.second; ++itr)
+                if (std::find(PALADIN_SKILLS.begin(), PALADIN_SKILLS.end(), itr->second->SkillLine)
+                    != PALADIN_SKILLS.end())
+                {
+                    temporary.push_back(spellId);
+                    break;
+                }
+        }
+        for (uint32 spellId : temporary)
+            player->removeSpell(spellId, SPEC_MASK_ALL, true);
+    }
+
+    // A talent known at two ranks (an older rank left by the rank-up before this fix): only the higher stays.
+    void DropStaleRanks(Player* player)
+    {
+        for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
+            if (TalentEntry const* talentInfo = sTalentStore.LookupEntry(i))
+                if (uint8 known = TalentRank(player, talentInfo); known > 1)
+                    for (uint8 rank = 0; rank + 1 < known; ++rank)
+                    {
+                        uint32 spellId = talentInfo->RankID[rank];
+                        if (spellId && player->HasTalent(spellId, player->GetActiveSpec()))
+                            player->_removeTalent(spellId, player->GetActiveSpecMask());
+                    }
+        SyncTalentCount(player);
+        player->InitTalentForLevel();
     }
 
     // A talent learned at a lower rank (rolled before rolls gave the top one) goes to its top rank.
@@ -765,7 +845,8 @@ namespace
             if (!tabInfo || tabInfo->petTalentMask || !(tabInfo->ClassMask & HERO_TALENT_CLASSMASK))
                 continue;
 
-            if (TalentRank(player, talentInfo) || !HasPrerequisite(player, talentInfo))
+            if (TalentRank(player, talentInfo) || !HasPrerequisite(player, talentInfo)
+                || IsBlacklisted(player, FirstRankName(talentInfo->RankID[0])))
                 continue;
 
             uint8 top = TopRank(talentInfo);
@@ -795,7 +876,8 @@ namespace Wildcard
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
         if (!spellInfo)
             return false;
-        bool upgrade = TalentRank(player, talentInfo) > 0;
+        uint8 known = TalentRank(player, talentInfo);     // the rank known (1 up), 0 for none
+        bool upgrade = known > 0;
 
         bool learned = false;
         if (talentInfo->addToSpellBook && !spellInfo->HasAttribute(SPELL_ATTR0_PASSIVE)
@@ -812,7 +894,12 @@ namespace Wildcard
             if (effect.IsEffect(SPELL_EFFECT_LEARN_SPELL) && sSpellMgr->IsAdditionalTalentSpell(effect.TriggerSpell))
                 player->learnSpell(effect.TriggerSpell);
 
-        player->addTalent(spellId, player->GetActiveSpecMask(), currentRank);
+        // The rank known goes (addTalent removes it), and any lower one left from before.
+        for (uint8 i = 0; known && i + 1 < known; ++i)
+            if (talentInfo->RankID[i] && player->HasTalent(talentInfo->RankID[i], player->GetActiveSpec()))
+                player->_removeTalent(talentInfo->RankID[i], player->GetActiveSpecMask());
+        player->addTalent(spellId, player->GetActiveSpecMask(), known);
+        SyncTalentCount(player);
         Announce(player, spellId, upgrade ? "talent rank up" : "new talent");
         UpgradeRanks(player);                   // an ability the talent teaches: every rank the level allows
         if (reveal)
@@ -857,7 +944,8 @@ namespace
         Role role = GetRole(player);
         std::vector<Ability const*> candidates, others;
         for (Ability const& ability : Abilities())
-            if (ability.Capstone && CanLearn(player, ability))
+            if (ability.Capstone && CanLearn(player, ability)
+                && !IsBlacklisted(player, FirstRankName(ability.Ranks.front().SpellId)))
                 (role == ROLE_NONE || (ability.CapstoneRoles & RoleMask(role)) ? candidates : others)
                     .push_back(&ability);
 
@@ -1497,7 +1585,8 @@ namespace Wildcard
         // Those suiting the Hero's role; any when none does.
         std::vector<Ability const*> candidates, others;
         for (Ability const& ability : Abilities())
-            if (!ability.Capstone && CanLearn(player, ability))
+            if (!ability.Capstone && CanLearn(player, ability)
+                && !IsBlacklisted(player, FirstRankName(ability.Ranks.front().SpellId)))
                 (SuitsRole(player, ability.Roles) ? candidates : others).push_back(&ability);
 
         if (candidates.empty())
@@ -1616,6 +1705,40 @@ namespace Wildcard
         return GrantCapstone(player);
     }
 
+    // The reroll blacklist: a spell's name (any rank, any class's talent of that name) kept out of every roll for the
+    // next BLACKLIST_REROLLS rerolls.
+    std::string Blacklist(Player* player, uint32 spellId)
+    {
+        std::string name = FirstRankName(spellId);
+        if (name.empty())
+            return name;
+        uint32 until = player->GetPlayerSetting(SETTING_SOURCE, SETTING_REROLLS).value + 1 + BLACKLIST_REROLLS;
+        blacklists[player->GetGUID().GetCounter()][name] = until;
+        CharacterDatabase.Execute("REPLACE INTO `titan_reroll_blacklist` (`guid`, `name`, `until_reroll`) VALUES "
+            "({}, '{}', {})", player->GetGUID().GetCounter(), EscapeName(name), until);
+        return name;
+    }
+
+    void Unblacklist(Player* player, std::string const& name)
+    {
+        if (name.empty())
+            return;
+        blacklists[player->GetGUID().GetCounter()].erase(name);
+        CharacterDatabase.Execute("DELETE FROM `titan_reroll_blacklist` WHERE `guid` = {} AND `name` = '{}'",
+            player->GetGUID().GetCounter(), EscapeName(name));
+    }
+
+    void CountReroll(Player* player)
+    {
+        uint32 count = player->GetPlayerSetting(SETTING_SOURCE, SETTING_REROLLS).value + 1;
+        player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_REROLLS, count);
+        auto& names = blacklists[player->GetGUID().GetCounter()];
+        for (auto itr = names.begin(); itr != names.end();)
+            itr = itr->second <= count ? names.erase(itr) : std::next(itr);
+        CharacterDatabase.Execute("DELETE FROM `titan_reroll_blacklist` WHERE `guid` = {} AND `until_reroll` <= {}",
+            player->GetGUID().GetCounter(), count);
+    }
+
     uint8 TalentRank(Player const* player, TalentEntry const* talentInfo)
     {
         uint8 rank = 0;
@@ -1649,6 +1772,7 @@ namespace Wildcard
                     player->removeSpell(effect.TriggerSpell, player->GetActiveSpecMask(), false);
             player->_removeTalent(spellId, player->GetActiveSpecMask());
         }
+        SyncTalentCount(player);
         return removed;
     }
 
@@ -1722,14 +1846,41 @@ public:
         PLAYERHOOK_ON_LEVEL_CHANGED,
         PLAYERHOOK_ON_PLAYER_RESURRECT,
         PLAYERHOOK_ON_CALCULATE_TALENTS_POINTS,
-        PLAYERHOOK_CAN_LEARN_TALENT
+        PLAYERHOOK_CAN_LEARN_TALENT,
+        PLAYERHOOK_ON_LOGOUT,
+        PLAYERHOOK_ON_DELETE
     }) { }
+
+    void OnPlayerLogout(Player* player) override
+    {
+        blacklists.erase(player->GetGUID().GetCounter());
+    }
+
+    void OnPlayerDelete(ObjectGuid guid, uint32 /*accountId*/) override
+    {
+        blacklists.erase(guid.GetCounter());
+        CharacterDatabase.Execute("DELETE FROM `titan_reroll_blacklist` WHERE `guid` = {}", guid.GetCounter());
+    }
 
     void OnPlayerLogin(Player* player) override
     {
         EnsurePickLock(player);
         if (!IsHero(player))
             return;
+
+        // The reroll blacklist, for the rolls to come (the login's own catch-up rolls run before it is in: they
+        // only give what the level is owed).
+        ObjectGuid::LowType low = player->GetGUID().GetCounter();
+        blacklists.erase(low);
+        player->GetSession()->GetQueryProcessor().AddCallback(CharacterDatabase.AsyncQuery(Acore::StringFormat(
+            "SELECT `name`, `until_reroll` FROM `titan_reroll_blacklist` WHERE `guid` = {}", low))
+            .WithCallback([low](QueryResult result)
+        {
+            if (result)
+                do
+                    blacklists[low][(*result)[0].Get<std::string>()] = (*result)[1].Get<uint32>();
+                while (result->NextRow());
+        }));
 
         // Without saved settings the ability count resets every login and would be granted again.
         bool settingsSaved = sWorld->getBoolConfig(CONFIG_PLAYER_SETTINGS_ENABLED);
@@ -1745,6 +1896,8 @@ public:
                     "other classes' spells are deleted at login until then");
         }
 
+        DropSkillLineSpells(player);
+        DropStaleRanks(player);
         CatchUp(player, settingsSaved, false);
         ApplyRole(player);
     }

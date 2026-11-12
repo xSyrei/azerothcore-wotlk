@@ -124,6 +124,7 @@ local data = {
 }
 -- The Hero's specializations (index 0-3) and the active one's locks ("<kind>.<id>": kind 0 an ability, 1 a talent).
 data.specs = { active = 0, eyes = 0, loaded = false }
+local NO_EYES = "You don't have any Eyes of Unlearning. Visit Silas Darkmoon in any of the Main Cities."
 data.locks = {}
 local SPEC_PREFIX = "EFSP"
 local SPEC_NUMERALS = { [0] = "I", "II", "III", "IV" }
@@ -1407,6 +1408,12 @@ do
                 end }
             else
                 items[#items + 1] = { "Reroll  (1 Eye of Unlearning)", function()
+                    if (data.specs.eyes or 0) < 1 then
+                        -- No Eyes: say where they come from instead of asking.
+                        UIErrorsFrame:AddMessage(NO_EYES, 1, 0.1, 0.1)
+                        DEFAULT_CHAT_FRAME:AddMessage("|cffff2020" .. NO_EYES .. "|r")
+                        return
+                    end
                     StaticPopup_Show("EMBERFORGE_CLASSLESS_REROLL", name, data.specs.eyes, { kind = kind, id = id })
                 end }
             end
