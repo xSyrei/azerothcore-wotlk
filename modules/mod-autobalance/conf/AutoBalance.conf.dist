@@ -777,11 +777,12 @@ AutoBalance.LevelScaling.SkipLowerLevels = 0
 #        Only takes effect if AutoBalance.LevelScaling.Method = "dynamic"
 #
 #        Default: 5
-AutoBalance.LevelScaling.DynamicLevel.Ceiling.Dungeons = 1
-AutoBalance.LevelScaling.DynamicLevel.Floor.Dungeons = 5
+#        Project Emberforge: dungeons 2 and 0, creatures at the group's level to 2 above, never under.
+AutoBalance.LevelScaling.DynamicLevel.Ceiling.Dungeons = 2
+AutoBalance.LevelScaling.DynamicLevel.Floor.Dungeons = 0
 
 AutoBalance.LevelScaling.DynamicLevel.Ceiling.HeroicDungeons = 2
-AutoBalance.LevelScaling.DynamicLevel.Floor.HeroicDungeons = 5
+AutoBalance.LevelScaling.DynamicLevel.Floor.HeroicDungeons = 0
 
 AutoBalance.LevelScaling.DynamicLevel.Ceiling.Raids = 3
 AutoBalance.LevelScaling.DynamicLevel.Floor.Raids = 5

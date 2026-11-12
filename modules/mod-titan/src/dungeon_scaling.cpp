@@ -31,7 +31,8 @@
 // Dungeon scaling, Dragonflight's way: every 5-player dungeon is fought at every Hero's own level.
 //
 // mod-autobalance scales the creatures to the group's lowest level (its one Emberforge change, ABUtils.cpp), so no
-// one fights creatures above them; trash stays a little under and bosses a little over (its "dynamic" method). Here,
+// one fights creatures below them: trash at that level, bosses up to 2 over (its "dynamic" method, floor 0 and
+// ceiling 2 in docker-compose.yml). Here,
 // for every player in a 5-player dungeon:
 // - the creature is as if at the player's own level (the same offset from the group's lowest level): the damage the
 //   player and their pets deal is scaled by the creature's health at its level over its health at that one, and the
