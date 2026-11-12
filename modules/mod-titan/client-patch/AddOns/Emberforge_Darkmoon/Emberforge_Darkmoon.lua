@@ -167,6 +167,36 @@ local function Tint(target, r, g, b, a)
     end
 end
 
+-- A card's NEW / DUPLICATE ribbon: a rounded tag across its top edge, green for a new card, amber for a duplicate
+-- (whose card is faded with it).
+local NEW_TAG, DUPLICATE_TAG = { 0.16, 0.55, 0.12 }, { 0.62, 0.38, 0.08 }
+local function Badge(parent, size)
+    local badge = CreateFrame("Frame", nil, parent)
+    badge:SetHeight(size + 8)
+    badge:SetFrameLevel(parent:GetFrameLevel() + 6)
+    Slice9(badge, "Solid", 6, "BORDER")
+    badge.text = badge:CreateFontString(nil, "OVERLAY")
+    badge.text:SetFont(DISPLAY_FONT, size)
+    badge.text:SetPoint("CENTER", 0, 0)
+    badge:Hide()
+    return badge
+end
+
+local function SetBadge(badge, owner, entry)
+    if not entry then
+        badge:Hide()
+        owner:SetAlpha(1)
+        return
+    end
+    local color = entry.new and NEW_TAG or DUPLICATE_TAG
+    Tint(badge, color[1], color[2], color[3], 0.95)
+    badge.text:SetText(entry.new and "NEW" or "DUPLICATE")
+    badge.text:SetTextColor(1, entry.new and 1 or 0.92, entry.new and 0.85 or 0.7)
+    badge:SetWidth((badge.text:GetStringWidth() or 40) + 18)
+    badge:Show()
+    owner:SetAlpha(entry.new and 1 or 0.6)
+end
+
 local function Panel(parent, file, x, y, width, height)
     local panel = CreateFrame("Frame", nil, parent)
     panel:SetPoint("TOPLEFT", x, -y)
@@ -536,28 +566,33 @@ svName:SetPoint("TOPLEFT", 110, -20)
 local svTag = Text(specView, 10, GREEN, BODY_FONT)
 svTag:SetPoint("TOPLEFT", svName, "BOTTOMLEFT", 0, -5)
 local svText = Text(specView, 12, { 0.9, 0.83, 0.69 }, BODY_FONT)
-svText:SetPoint("TOPLEFT", 26, -78)
-svText:SetWidth(560)
+-- Room for four lines (the longest text, with the Locked note): the stat boxes start below it.
+svText:SetPoint("TOPLEFT", 26, -74)
+svText:SetWidth(627)
+svText:SetHeight(60)
 svText:SetJustifyH("LEFT")
+svText:SetJustifyV("TOP")
 local svStats = {}
 for index = 1, 4 do
-    local stat = Panel(specView, "Panel", 26 + (index - 1) * 158, 112, 148, 54)
+    local stat = Panel(specView, "Panel", 26 + (index - 1) * 158, 138, 148, 54)
     Tint(stat, 0.8, 0.8, 0.8)
     stat.value = Text(stat, 21, GOLD_HI, DISPLAY_FONT)
     stat.value:SetPoint("TOPLEFT", 12, -8)
     stat.label = Text(stat, 10, MUTED, BODY_FONT)
     stat.label:SetPoint("TOPLEFT", stat.value, "BOTTOMLEFT", 0, -3)
+    stat.label:SetWidth(128)
+    stat.label:SetJustifyH("LEFT")
     svStats[index] = stat
 end
 local slotLabel = Text(specView, 10, MUTED, BODY_FONT)
-slotLabel:SetPoint("TOPLEFT", 26, -184)
+slotLabel:SetPoint("TOPLEFT", 26, -204)
 slotLabel:SetText("CARD SLOTS  -  LOADOUTS ARE COMING NEXT")
 for index = 1, 8 do
     local slot = specView:CreateTexture(nil, "ARTWORK")
     slot:SetTexture(ART .. "Slot")
     slot:SetWidth(35)
     slot:SetHeight(48)
-    slot:SetPoint("TOPLEFT", 26 + (index - 1) * 44, -200)
+    slot:SetPoint("TOPLEFT", 26 + (index - 1) * 44, -219)
 end
 local svButton = Button(specView, 190, 28, "", function(self)
     local spec = mySpecs[view.spec]
@@ -578,6 +613,9 @@ local track = Panel(specPage, "Panel", 237, PAGE_HEIGHT - 169, PAGE_WIDTH - 237,
 Heading(track, "LEVELING REWARDS", 14, 12)
 local trackSum = Text(track, 10, MUTED, BODY_FONT)
 trackSum:SetPoint("TOPLEFT", 190, -16)
+-- It ends before the Claim button (the track is 679 wide, the button 142 at its right).
+trackSum:SetWidth(679 - 190 - 142 - 26)
+trackSum:SetJustifyH("LEFT")
 local claimButton = Button(track, 142, 24, "Claim", function(self)
     if eyes.ready and eyes.ready > 0 then
         Fly(self, eyePill.icon, 24, GREEN)
@@ -621,6 +659,26 @@ for index = 1, 7 do
     gems[index] = gem
     local tick = Text(rail, 9, MUTED, BODY_FONT)
     ticks[index] = tick
+    -- Hovered: what the milestone gives, with the Eye's icon (textures take no mouse: a frame over it does).
+    local hover = CreateFrame("Frame", nil, rail)
+    hover:SetWidth(22)
+    hover:SetHeight(22)
+    hover:SetFrameLevel(rail:GetFrameLevel() + 5)
+    hover:EnableMouse(true)
+    hover:SetScript("OnEnter", function(self)
+        if not self.level then
+            return
+        end
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("Level " .. self.level, 1, 0.91, 0.64)
+        GameTooltip:AddLine("|T" .. ART .. "Eye:16:16|t  +" .. eyes.milestoneEyes .. " Eyes of Unlearning",
+            0.8, 1, 0.75)
+        GameTooltip:AddLine(self.level <= eyes.claimed and "Claimed" or self.level <= eyes.level and "Ready to claim"
+            or "Reach level " .. self.level, 0.85, 0.64, 0.42)
+        GameTooltip:Show()
+    end)
+    hover:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    gem.hover = hover
 end
 local head = CreateFrame("Frame", nil, rail)
 head:SetWidth(26)
@@ -734,10 +792,10 @@ local function RefreshSpecs()
     svTag:SetTextColor(unpack(active and GREEN or owned and GOLD or { 0.85, 0.64, 0.42 }))
     svText:SetText(spec.text .. (mine and mine.locked and "  Locked: it cannot be rerolled or prestiged until you "
         .. "unlock it." or ""))
-    local stats = owned and { { Thousands(eyes.bought), "Eyes of Unlearning bought" },
+    local stats = owned and { { Thousands(eyes.bought), "Eyes bought" },
         { Thousands(eyes.abilities), "Abilities rerolled" }, { Thousands(eyes.talents), "Talents rerolled" },
         { "0", "Cards slotted" } }
-        or { { "-", "Eyes of Unlearning bought" }, { "-", "Abilities rerolled" }, { "-", "Talents rerolled" },
+        or { { "-", "Eyes bought" }, { "-", "Abilities rerolled" }, { "-", "Talents rerolled" },
         { "-", "Cards slotted" } }
     for index, stat in ipairs(svStats) do
         stat.value:SetText(stats[index][1])
@@ -778,6 +836,9 @@ local function RefreshSpecs()
             local x = 3 + At(level)
             gem:ClearAllPoints()
             gem:SetPoint("CENTER", rail, "LEFT", x, 0)
+            gem.hover.level = level
+            gem.hover:ClearAllPoints()
+            gem.hover:SetPoint("CENTER", gem, "CENTER")
             if level <= eyes.claimed then
                 gem:SetVertexColor(1, 0.72, 0.3)
             elseif level <= eyes.level then
@@ -812,8 +873,8 @@ local function RefreshSpecs()
     for level = eyes.first, math.min(eyes.claimed, eyes.last) do
         claimedEyes = claimedEyes + LevelEyes(level)
     end
-    trackSum:SetText(string.format("Level %d  -  %d of %d Eyes claimed  -  milestones give %d", eyes.level,
-        claimedEyes, total, eyes.milestoneEyes) .. (open and "  -  the shop is open without limit" or ""))
+    trackSum:SetText(string.format("Level %d  -  %d of %d Eyes claimed", eyes.level, claimedEyes, total)
+        .. (open and "  -  the shop is open" or ""))
     claimButton:SetEnabled(ready > 0)
     claimButton:SetLabel(ready > 0 and ("Claim " .. ready .. (ready == 1 and " Eye" or " Eyes")) or "Nothing to claim")
 
@@ -1110,6 +1171,8 @@ for index = 1, 5 do
     card.burn = burn
     card.result = Text(card, 10, MUTED, BODY_FONT)
     card.result:SetPoint("TOP", card, "BOTTOM", 0, -3)
+    card.badge = Badge(holder, 13)
+    card.badge:SetPoint("CENTER", card, "TOP", 0, -2)
     card:EnableMouse(true)
     card:SetScript("OnEnter", function(self)
         if self.entry and self.turned then
@@ -1290,6 +1353,9 @@ local function LightBurn(card, golden)
     card.frame = -1
     card.glow:Hide()
     card.result:SetText("")
+    if card.badge then
+        SetBadge(card.badge, card, nil)
+    end
     card.burn:Show()
     card.burning = true
 end
@@ -1609,6 +1675,7 @@ function StartReveal(pack, cards)
         card:Hide()
         card.glow:Hide()
         card.result:SetText("")
+        SetBadge(card.badge, card, nil)
         if entry then
             card:SetBack(info.kind, info.golden)
         end
@@ -1675,8 +1742,9 @@ local function TurnCard(card, slot)
         cardBack[slot].rays:Show()
     end
     Shown(cardBack[slot].pillar, rarity >= 3)
-    card.result:SetText(card.entry.new and "|cff8dff8aNEW|r"
-        or ("|cffffd38aDuplicate  +" .. Thousands(card.entry.refund) .. " Emberspark|r"))
+    card.result:SetText(card.entry.new and ""
+        or ("|cffffd38a+" .. Thousands(card.entry.refund) .. " Emberspark|r"))
+    SetBadge(card.badge, card, card.entry)
     -- A duplicate's Emberspark flies to the balance, a spark to the tally.
     if not card.entry.new then
         Fly(card, sparkPill.icon, 16, { 1, 0.75, 0.35 })
@@ -2114,6 +2182,8 @@ for index = 1, RESULT_ROWS * RESULT_COLUMNS do
     item.name:SetJustifyH("LEFT")
     item.sub = Text(item, 9, MUTED, BODY_FONT)
     item.sub:SetPoint("TOPLEFT", item.name, "BOTTOMLEFT", 0, -2)
+    item.badge = Badge(item, 9)
+    item.badge:SetPoint("TOPRIGHT", -3, 6)
     item:EnableMouse(true)
     item:SetScript("OnEnter", function(self)
         if self.entry then
@@ -2126,6 +2196,21 @@ for index = 1, RESULT_ROWS * RESULT_COLUMNS do
     resultItems[index] = item
 end
 local mass = { cards = {}, offset = 0 }
+-- Every card opened: the new ones first, then the duplicates (faded), the rarest first in each.
+local function ResultCards()
+    local list = {}
+    for _, entry in ipairs(mass.cards) do
+        list[#list + 1] = entry
+    end
+    table.sort(list, function(a, b)
+        if a.new ~= b.new then
+            return a.new
+        end
+        return a.rarity > b.rarity
+    end)
+    return list
+end
+
 local function ShowResults()
     local fresh = {}
     for _, entry in ipairs(mass.cards) do
@@ -2133,11 +2218,12 @@ local function ShowResults()
             fresh[#fresh + 1] = entry
         end
     end
-    table.sort(fresh, function(a, b) return a.rarity > b.rarity end)
+    local shown = ResultCards()
     for index, item in ipairs(resultItems) do
-        local entry = fresh[mass.offset + index]
+        local entry = shown[mass.offset + index]
         item.entry = entry
         Shown(item, entry ~= nil)
+        SetBadge(item.badge, item, entry)
         if entry then
             item.icon:SetTexture(CardIcon(entry))
             item.name:SetText(CardName(entry))
@@ -2147,26 +2233,20 @@ local function ShowResults()
             Tint(item, unpack(RARITY_RGB[entry.rarity]))
         end
     end
-    Shown(resultsNone, #fresh == 0)
-    resultsNone:SetText("No new cards this time: every one was a duplicate.")
+    Shown(resultsNone, #shown == 0)
+    resultsNone:SetText("No cards.")
     local refunds = 0
     for _, entry in ipairs(mass.cards) do
         refunds = refunds + (entry.refund or 0)
     end
     resultsTitle:SetText(string.format("%d %s opened", mass.count or 0, (mass.count or 0) == 1 and "pack" or "packs"))
     resultsSum:SetText(string.format("%d cards  -  %d new  -  %d duplicates (+%s Emberspark)%s", #mass.cards, #fresh,
-        #mass.cards - #fresh, Thousands(refunds), #fresh > #resultItems and "  -  scroll for more" or ""))
+        #mass.cards - #fresh, Thousands(refunds), #shown > #resultItems and "  -  scroll for more" or ""))
 end
 results:EnableMouseWheel(true)
 results:SetScript("OnMouseWheel", function(_, direction)
-    local fresh = 0
-    for _, entry in ipairs(mass.cards) do
-        if entry.new then
-            fresh = fresh + 1
-        end
-    end
     mass.offset = math.max(0, math.min(mass.offset - direction * RESULT_COLUMNS,
-        math.max(0, math.ceil((fresh - #resultItems) / RESULT_COLUMNS) * RESULT_COLUMNS)))
+        math.max(0, math.ceil((#mass.cards - #resultItems) / RESULT_COLUMNS) * RESULT_COLUMNS)))
     ShowResults()
 end)
 local resultsDone = Button(results, 120, 24, "Done", function()
@@ -2680,5 +2760,6 @@ end
 -- for tests
 EmberforgeDarkmoon_State = { state = state, eyes = eyes, catalog = catalog, view = view, reveal = reveal,
     stage = stage, results = results, modal = modal, cells = cells, packWidgets = packWidgets, tabs = tabs,
+    revealCards = revealCards, resultItems = resultItems, gems = gems,
     pages = pages, claimButton = claimButton, buyEyes = buyEyes, mass = function() return mass end, chip = chip,
     doneButton = doneButton }

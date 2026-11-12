@@ -54,6 +54,7 @@ function Widget:GetHeight() return self.height end
 function Widget:GetStringWidth() return #(self.text or "") * 6 end
 function Widget:GetStringHeight() return 14 end
 function Widget:Click() self.scripts.OnClick(self, "LeftButton") end
+function Widget:SetAlpha(alpha) self.alpha = alpha end
 
 UIParent = NewWidget("UIParent")
 WorldFrame = NewWidget("WorldFrame")
@@ -198,6 +199,9 @@ for _ = 1, 120 do
 end
 check(seen.charge and seen.rip and seen.burst and seen.turn, "it charges, tears, bursts, and the cards turn")
 check(t.reveal.phase == "shown", "the cards deal out and turn over")
+local cards = t.revealCards
+check(cards[1].badge.text.text == "DUPLICATE" and cards[1].alpha == 0.6 and cards[2].badge.text.text == "NEW"
+    and cards[2].alpha == 1, "a duplicate is tagged DUPLICATE and faded, a new card tagged NEW")
 server("R,1,1.2300.90200.1.1.0")
 check(#t.reveal.queue == 1 and t.reveal.phase == "dissolve", "a second pack: the cards on show burn away first")
 t.stage.scripts.OnMouseDown(t.stage)
@@ -227,6 +231,10 @@ end
 check(seen.mcharge and seen.mrip and seen.mburst, "the vortex charges, the pack tears, the cards erupt")
 check(t.results:IsShown(), "then the list of the new cards")
 check(#t.mass().cards == 4, "every card of the packs is in the list")
+local items = t.resultItems
+check(items[1].badge.text.text == "NEW" and items[2].badge.text.text == "NEW" and items[3].badge.text.text
+    == "DUPLICATE" and items[4]:IsShown() and items[4].alpha == 0.6,
+    "the list: the new cards first, then the duplicates, faded")
 
 t.tabs[3]:Click()
 check(t.pages[3]:IsShown() and t.cells[1]:IsShown() and t.cells[1].entry.rarity == 3, "the Cards grid, rarest first")

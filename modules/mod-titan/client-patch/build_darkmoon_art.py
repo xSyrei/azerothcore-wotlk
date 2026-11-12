@@ -4,7 +4,7 @@
 The painted art (darkmoon_art/*.webp: the cards' fronts and backs, the packs, the window's border and background) is
 brought to power-of-two sizes (the 3.3.5a client loads nothing else; the addon draws each at its own aspect again)
 and written as DXT BLPs (models/blp.py). The border is cut into its corners, crest and rails, the way the window
-pieces it to its size. The small pieces drawn here (rounded panels and buttons, the Eye of Unlearning, the bar's
+pieces it to its size. The small pieces drawn here (rounded panels and buttons, the Eye of Unlearning's icon, the bar's
 diamonds and orbs, glows) are uncompressed TGAs, sharp at any tint.
 
 Usage: python3 build_darkmoon_art.py
@@ -106,29 +106,12 @@ def pieces():
     save_tga(rounded(64, 12, (0, 0, 0, 0), (107, 74, 32, 255), 1), 'Slot')
     save_tga(rounded(64, 12, (255, 255, 255, 255), (255, 255, 255, 255), 1), 'Solid')
 
-    # The Eye of Unlearning: a gold almond and a fel-green iris.
-    s = 512
-    eye = Image.new('RGBA', (s, s), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(eye)
-    almond = [(s * 0.06 + (s * 0.88) * t, s / 2 - math.sin(math.pi * t) * s * 0.36) for t in
-              [i / 60 for i in range(61)]]
-    almond += [(x, s - y) for x, y in reversed(almond)]
-    draw.polygon(almond, fill=(10, 6, 4, 255))
-    iris = Image.new('RGBA', (s, s), (0, 0, 0, 0))
-    for r in range(int(s * 0.2), 0, -1):
-        t = r / (s * 0.2)
-        color = (int(234 - 221 * t), int(255 - 181 * t), int(216 - 200 * t), 255)
-        ImageDraw.Draw(iris).ellipse((s / 2 - r, s / 2 - r, s / 2 + r, s / 2 + r), fill=color)
-    mask = Image.new('L', (s, s), 0)
-    ImageDraw.Draw(mask).polygon(almond, fill=255)
-    eye.paste(iris, (0, 0), Image.composite(iris.getchannel('A'), Image.new('L', (s, s), 0), mask))
-    draw.ellipse((s / 2 - s * 0.04, s / 2 - s * 0.13, s / 2 + s * 0.04, s / 2 + s * 0.13), fill=(4, 16, 4, 255))
-    draw.line(almond + [almond[0]], fill=(214, 156, 64, 255), width=int(s * 0.045), joint='curve')
-    for k in (-1, 1):
-        x = s / 2 + k * s * 0.44
-        draw.polygon([(x, s / 2), (x + k * s * 0.06, s / 2 - s * 0.05), (x + k * s * 0.06, s / 2 + s * 0.05)],
-                     fill=(214, 156, 64, 255))
-    save_tga(eye.resize((128, 128), Image.Resampling.LANCZOS), 'Eye')
+    # The Eye of Unlearning: its icon (darkmoon_art/eye.png), the icon's dark rim trimmed as the game trims its icons.
+    with Image.open(SOURCE / 'eye.png') as source:
+        icon = source.convert('RGBA')
+    trim = round(icon.width * 0.07)
+    icon = icon.crop((trim, trim, icon.width - trim, icon.height - trim))
+    save_tga(icon.resize((64, 64), Image.Resampling.LANCZOS), 'Eye')
 
     # A soft round glow, an orb, a diamond and a ring (white, tinted by the addon).
     glow = Image.new('L', (64, 64), 0)
