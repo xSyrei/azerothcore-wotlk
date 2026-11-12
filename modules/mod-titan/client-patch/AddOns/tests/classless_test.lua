@@ -32,6 +32,12 @@ function Widget:CreateTexture() return NewWidget() end
 function Widget:CreateFontString() return NewWidget() end
 function Widget:SetScript(event, handler) self.scripts[event] = handler end
 function Widget:GetScript(event) return self.scripts[event] end
+function Widget:GetFrameLevel()
+    return self.level or 1
+end
+function Widget:SetFrameLevel(level)
+    self.level = level
+end
 function Widget:Show()
     local wasShown = self.shown
     self.shown = true
@@ -403,6 +409,10 @@ list.listRows[2].iconButton:Click()
 check(EmberforgeClasslessSpecIcon:IsShown() and EmberforgeClasslessSpecName.text == "Fire Build",
     "the icon opens the picker with the name")
 EmberforgeClasslessSpecIcon:Hide()
+check(list.listRows[2].gear.shown, "a spec row shows the gear on its icon")
+list.listRows[2].gear:Click()
+check(options:IsShown() and options.buttons[1].label.text == "Activate", "the gear opens the spec's options")
+options:Hide()
 specs.listTabs[2]:Click()
 check(list.listRows[1].lock.shown, "a locked talent shows its padlock")
 list.listRows[1].scripts.OnClick(list.listRows[1], "RightButton")

@@ -179,16 +179,8 @@ Map::EnterState MapMgr::PlayerCannotEnter(uint32 mapid, Player* player, bool log
         }
     }
 
-    // xinef: dont allow LFG Group to enter other instance that is selected
-    if (group)
-        if (group->isLFGGroup())
-            if (!sLFGMgr->inLfgDungeonMap(group->GetGUID(), mapid, targetDifficulty)
-                // Project Emberforge: once its dungeon is done, the group may go anywhere
-                && sLFGMgr->GetState(group->GetGUID()) != lfg::LFG_STATE_FINISHED_DUNGEON)
-            {
-                player->SendTransferAborted(mapid, TRANSFER_ABORT_MAP_NOT_ALLOWED);
-                return Map::CANNOT_ENTER_UNSPECIFIED_REASON;
-            }
+    // Project Emberforge: a dungeon finder group may enter any dungeon (upstream kept it to its own, which shut it
+    // out after a server restart lost which dungeon that was).
 
     if (!player->IsAlive())
     {

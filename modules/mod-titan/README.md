@@ -643,7 +643,11 @@ replaced mod-autobalance):
   (`src/dungeon_rewards.cpp`; `LFGHandler.cpp` shows the dungeon finder that amount, asking the quest experience
   hook). Every other quest gives 3 times its experience on turn-in, on top of `Rate.XP.Quest` (5), shown so in the
   quest window too (`QUEST_XP_MULTIPLIER`, same file).
-  Deserter and Dungeon Cooldown last 5 minutes (same file).
+  The dungeon finder gives no Deserter (`DungeonFinder.CastDeserter` 0, `docker-compose.yml`) and no Random Dungeon
+  Cooldown (`LFGMgr.cpp`): the next random can be queued at once (both auras, still given elsewhere, last 5 minutes:
+  same file). A teleport in refused for the player's state (in combat as the group formed, dead, falling) is tried
+  again every 2 sec for 2 min; back in a dungeon finder group after a relog or a restart, the client is told again
+  (its eye offers the teleport in: `LFGScripts.cpp`), and such a group may walk into any dungeon (`MapMgr.cpp`).
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
 - `Spell::TakeRunePower`: runes give Rage instead of Runic Power (Emberforge has none; see Demon Hunter).

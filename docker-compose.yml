@@ -84,6 +84,9 @@ services:
       # Random Dungeon and one Random Heroic Dungeon, both factions together.
       AC_DUNGEON_FINDER_MIN_LEVEL: "10"
       AC_DUNGEON_FINDER_ONE_RANDOM: "1"
+      # No Deserter from the dungeon finder (leaving a group early costs nothing; battlegrounds keep theirs). Its
+      # Random Dungeon Cooldown is gone too (LFGMgr.cpp): the next random can be queued at once.
+      AC_DUNGEON_FINDER_CAST_DESERTER: "0"
       AC_ALLOW_TWO_SIDE_INTERACTION_GROUP: "1"
       AC_ALLOW_TWO_SIDE_INTERACTION_CHAT: "1"
       # The World channel (Emberforge_Resources joins it) talks across factions.

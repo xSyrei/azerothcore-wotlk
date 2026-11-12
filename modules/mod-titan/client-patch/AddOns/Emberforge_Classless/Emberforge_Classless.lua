@@ -1173,6 +1173,25 @@ for index = 1, LIST_ROWS do
     end)
     row.iconButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
     row.iconButton:Hide()
+    -- A small gear on the icon's bottom right: the spec's options, as a right-click on the row.
+    row.gear = CreateFrame("Button", nil, row)
+    row.gear:SetWidth(14)
+    row.gear:SetHeight(14)
+    row.gear:SetPoint("BOTTOMRIGHT", row.icon, "BOTTOMRIGHT", 4, -4)
+    row.gear:SetFrameLevel(row.iconButton:GetFrameLevel() + 2)
+    row.gear.icon = row.gear:CreateTexture(nil, "OVERLAY")
+    row.gear.icon:SetAllPoints()
+    row.gear.icon:SetTexture("Interface\\Icons\\INV_Misc_Gear_01")
+    row.gear.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    row.gear:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
+    row.gear:SetScript("OnClick", function() SpecUI.Options(row) end)
+    row.gear:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Edit this specialization.", 1, 0.82, 0, true)
+        GameTooltip:Show()
+    end)
+    row.gear:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row.gear:Hide()
     listRows[index] = row
 end
 local listBar = Scrollbar(list, -46, LIST_ROWS * LIST_ROW_HEIGHT - 6, "listOffset")
@@ -1288,6 +1307,7 @@ do
         if spec.owned then
             row.iconButton:Show()
         end
+        row.gear:Show()
     end
 
     function SpecUI.Tooltip(row)
@@ -1786,6 +1806,7 @@ local function RefreshList()
         row.ability, row.talent, row.spec, row.mySpec = nil, nil, nil, nil
         row.lock:Hide()
         row.iconButton:Hide()
+        row.gear:Hide()
         if entry then
             if view.list == TALENTS then
                 row.talent = entry

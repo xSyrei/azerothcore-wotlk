@@ -16,6 +16,8 @@
  */
 
 #include "LFGMgr.h"
+#include <functional>
+#include <memory>
 #include "BattlegroundMgr.h"
 #include "Chat.h"
 #include "CharacterCache.h"
@@ -1917,17 +1919,10 @@ namespace lfg
                 if (player->GetGroup() != grp) // pussywizard: could not add because group was full
                     continue;
 
-                // Add the cooldown spell if queued for a random dungeon
-                // xinef: add aura
-                if ((randomDungeon || selectedRandomLfgDungeon(player->GetGUID())) && !player->HasAura(LFG_SPELL_DUNGEON_COOLDOWN))
-                {
+                // Project Emberforge: no Random Dungeon Cooldown: a group may queue for the next random as soon as it
+                // likes (the cooldown also covered the dungeon finder's window with its countdown).
+                if (randomDungeon || selectedRandomLfgDungeon(player->GetGUID()))
                     randomDungeon = true;
-                    // if player is debugging, don't add dungeon cooldown
-                    if (!m_Testing)
-                    {
-                        player->AddAura(LFG_SPELL_DUNGEON_COOLDOWN, player);
-                    }
-                }
 
                 if (player->GetMapId() == uint32(dungeon->map))
                 {
@@ -2367,6 +2362,37 @@ namespace lfg
         if (error != LFG_TELEPORTERROR_OK)
         {
             player->GetSession()->SendLfgTeleportError(uint8(error));
+
+            // Project Emberforge: a teleport in refused for the player's state (in combat as the group formed, dead,
+            // falling, in a vehicle) is tried again every 2 sec for 2 min while they are in the group and outside its
+            // dungeon, instead of leaving them out of it for good.
+            if (!out && error != LFG_TELEPORTERROR_INVALID_LOCATION)
+            {
+                ObjectGuid playerGuid = player->GetGUID();
+                uint32 dungeonMap = dungeon->map;
+                auto retries = std::make_shared<uint32>(0);
+                std::shared_ptr<std::function<void()>> retry = std::make_shared<std::function<void()>>();
+                *retry = [playerGuid, dungeonMap, retries, retry]()
+                {
+                    Player* waiting = ObjectAccessor::FindConnectedPlayer(playerGuid);
+                    Group* group = waiting ? waiting->GetGroup() : nullptr;
+                    if (!waiting || !group || !group->isLFGGroup() || waiting->GetMapId() == dungeonMap
+                        || waiting->IsBeingTeleported() || ++*retries > 60)
+                    {
+                        *retry = nullptr;                       // the cycle broken: freed
+                        return;
+                    }
+                    if (sLFGMgr->GetState(group->GetGUID()) != LFG_STATE_DUNGEON || !waiting->IsAlive()
+                        || waiting->IsInCombat() || waiting->IsFalling() || waiting->GetVehicle())
+                    {
+                        waiting->m_Events.AddEventAtOffset([retry]() { if (*retry) (*retry)(); }, 2s);
+                        return;
+                    }
+                    *retry = nullptr;
+                    sLFGMgr->TeleportPlayer(waiting, false);
+                };
+                player->m_Events.AddEventAtOffset([retry]() { if (*retry) (*retry)(); }, 2s);
+            }
 
             LOG_DEBUG("lfg", "Player [{}] could NOT be teleported in to map [{}] (x: {}, y: {}, z: {}) Error: {}",
             player->GetName(), dungeon->map, dungeon->x, dungeon->y, dungeon->z, error);

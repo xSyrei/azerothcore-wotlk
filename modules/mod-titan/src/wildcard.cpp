@@ -278,6 +278,7 @@ namespace
         { "Blessing of Might", "Greater Blessing of Might" }, { "Blessing of Wisdom", "Greater Blessing of Wisdom" },
         { "Blessing of Kings", "Greater Blessing of Kings" },
         { "Blessing of Sanctuary", "Greater Blessing of Sanctuary" },
+        { "Demon Skin", "Demon Armor" },        // its later form, from Demon Armor's level
     };
 
     // Abilities that need a pet without targeting it (those that do are found by their targets): the

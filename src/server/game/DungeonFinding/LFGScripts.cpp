@@ -90,7 +90,23 @@ namespace lfg
 
         sLFGMgr->InitializeLockedDungeons(player, group);
         sLFGMgr->SetTeam(player->GetGUID(), player->GetTeamId());
-        /// @todo - Restore LfgPlayerData and send proper status to player if it was in a group
+
+        // Project Emberforge: back in a dungeon finder group (a relog, a server restart): the client is told again,
+        // so its eye offers the teleport into the group's dungeon.
+        if (group && group->isLFGGroup())
+        {
+            LfgState state = sLFGMgr->GetState(group->GetGUID());
+            uint32 dungeon = sLFGMgr->GetDungeon(group->GetGUID(), false);
+            if (dungeon && (state == LFG_STATE_DUNGEON || state == LFG_STATE_FINISHED_DUNGEON))
+            {
+                sLFGMgr->SetupGroupMember(guid, group->GetGUID());
+                LfgDungeonSet dungeons;
+                dungeons.insert(dungeon);
+                WorldSession* session = player->GetSession();
+                session->SendLfgUpdateParty(LfgUpdateData(LFG_UPDATETYPE_GROUP_FOUND, state, dungeons));
+                session->SendLfgUpdateParty(LfgUpdateData(LFG_UPDATETYPE_REMOVED_FROM_QUEUE, state, dungeons));
+            }
+        }
     }
 
     void LFGPlayerScript::OnPlayerBindToInstance(Player* player, Difficulty difficulty, uint32 mapId, bool /*permanent*/)
