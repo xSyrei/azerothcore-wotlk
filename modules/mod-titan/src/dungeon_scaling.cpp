@@ -58,11 +58,14 @@ namespace
     // Wrath trash hit for hundreds. Melee and spells alike.
     constexpr float MAX_DAMAGE_MODIFIER = 3.0f;
     constexpr float MAX_BOSS_DAMAGE_MODIFIER = 5.0f;
+    constexpr uint8 NATIVE_LEVEL_SPREAD = 10;   // a creature this far from the dungeon's level counts as at it
 
     // A dungeon's scaling, on its map (its own thread's).
     struct ScalingInfo : public DataMap::Base
     {
         uint8 target = 0;                       // the level the creatures are at (0: no player yet, native levels)
+        int16 native = -1;                      // the dungeon's own level (LFGDungeons.dbc; -1 not looked up, 0 none)
+        uint8 expansion = 0;                    // and its expansion (creature_classlevelstats' damage column)
     };
 
     bool granting = false;                      // our own experience, through OnPlayerGiveXP
@@ -168,6 +171,38 @@ namespace
         return creature && !creature->IsControlledByPlayer() && !creature->IsPet() ? creature : nullptr;
     }
 
+    // The level the dungeon was made for: its Dungeon Finder target level (this difficulty's, else any), 0 if none.
+    uint8 DungeonLevel(Map* map)
+    {
+        ScalingInfo* scaling = Info(map);
+        if (scaling->native < 0)
+        {
+            scaling->native = 0;
+            for (LFGDungeonEntry const* dungeon : sLFGDungeonStore)
+                if (dungeon->MapID == map->GetId() && dungeon->TargetLevel
+                    && (!scaling->native || dungeon->Difficulty == uint32(map->GetDifficulty())))
+                {
+                    scaling->native = int16(dungeon->TargetLevel);
+                    scaling->expansion = uint8(std::min<uint32>(dungeon->ExpansionLevel,
+                        EXPANSION_WRATH_OF_THE_LICH_KING));
+                }
+        }
+        return uint8(scaling->native);
+    }
+
+    // A creature's native level, its spells' amounts are for: its template's; the dungeon's for a trigger, or for one
+    // far from it (invisible stalkers and helpers are often level 1 or 80, whatever the dungeon).
+    uint8 NativeLevel(Creature* creature)
+    {
+        CreatureTemplate const* info = creature->GetCreatureTemplate();
+        uint8 native = std::max(info->minlevel, info->maxlevel);
+        uint8 dungeon = DungeonLevel(creature->GetMap());
+        if (dungeon && (creature->HasFlagsExtra(CREATURE_FLAG_EXTRA_TRIGGER)
+            || std::abs(int32(native) - int32(dungeon)) > NATIVE_LEVEL_SPREAD))
+            return dungeon;
+        return native;
+    }
+
     // A dungeon creature's spell, from its native level's amount to the level it is at: by its class damage there
     // over its own (healing: health). Spells by a share of health stay as they are.
     float SpellScale(Unit* caster, SpellInfo const* spellInfo, bool healing)
@@ -177,7 +212,7 @@ namespace
             || spellInfo->HasAura(SPELL_AURA_PERIODIC_DAMAGE_PERCENT))
             return 1.0f;
         CreatureTemplate const* info = creature->GetCreatureTemplate();
-        uint8 native = std::max(info->minlevel, info->maxlevel);
+        uint8 native = NativeLevel(creature);
         if (native == creature->GetLevel())
             return 1.0f;
         float own = healing ? Health(native, info->unit_class, info->expansion)
@@ -185,6 +220,24 @@ namespace
         float now = healing ? Health(creature->GetLevel(), info->unit_class, info->expansion)
             : Damage(creature->GetLevel(), info->unit_class, info->expansion);
         return own > 0.0f && now > 0.0f ? now / own : 1.0f;
+    }
+
+    // A boss mechanic a player deals to another (a spell they don't know: Krystallus' Shatter, cast by each stoned
+    // player on those around them): from the dungeon's level to the one hit's, as a creature's spell, and the ease.
+    float MechanicScale(Unit* target, Unit* attacker, SpellInfo const* spellInfo)
+    {
+        Player* caster = attacker ? attacker->ToPlayer() : nullptr;
+        Player* hit = PlayerOf(target);
+        if (!caster || !hit || !spellInfo || target == attacker || !IsScaled(caster->GetMap())
+            || caster->HasSpell(spellInfo->Id) || spellInfo->HasAura(SPELL_AURA_PERIODIC_DAMAGE_PERCENT))
+            return 1.0f;
+        uint8 native = DungeonLevel(caster->GetMap());
+        if (!native || native <= hit->GetLevel())
+            return 1.0f;
+        uint8 expansion = Info(caster->GetMap())->expansion;
+        float own = Damage(native, HEALTH_PROXY_CLASS, expansion);
+        float now = Damage(hit->GetLevel(), HEALTH_PROXY_CLASS, expansion);
+        return own > 0.0f && now > 0.0f ? now / own * DamageFactor(hit->GetLevel()) : 1.0f;
     }
 
     // A dungeon creature's damage (melee and spells) with its DamageModifier capped (MAX_DAMAGE_MODIFIER).
@@ -418,13 +471,15 @@ public:
 
     void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
     {
-        Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false) * ModifierCap(attacker));
+        Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false) * ModifierCap(attacker)
+            * MechanicScale(target, attacker, spellInfo));
     }
 
     void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage,
         SpellInfo const* spellInfo) override
     {
-        Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false) * ModifierCap(attacker));
+        Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false) * ModifierCap(attacker)
+            * MechanicScale(target, attacker, spellInfo));
     }
 
     // A heal between players of different levels: by their health at each level.

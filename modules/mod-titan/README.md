@@ -585,6 +585,10 @@ replaced mod-autobalance):
   receiver (`OnPatchValuesUpdate`): the level the player meets them at, and the health their damage takes to empty
   (a level 60 with a level 25 sees level 60 creatures with a level 60's health). Sent again when someone levels.
   Combat text still shows the damage actually dealt (smaller than the health bar's drop for the higher player).
+- **Boss mechanics players deal each other** (a spell they don't know: Krystallus' Shatter, cast by each stoned
+  player on those around) scale from the dungeon's level (its Dungeon Finder target level) to the one hit's, with the
+  ease. Triggers and creatures more than 10 levels from the dungeon's level (invisible stalkers, often level 1 or 80)
+  have their spells scaled from the dungeon's level, not their own.
 - **Creature damage multipliers are capped** at 3 (bosses 5: `MAX_DAMAGE_MODIFIER`, `MAX_BOSS_DAMAGE_MODIFIER`), melee
   and spells alike: each expansion tuned its own `DamageModifier` (dungeon elites: Classic's about 4.6, Wrath's 7.5 to
   15), so a level 20 pack of Wrath trash hit for hundreds.
