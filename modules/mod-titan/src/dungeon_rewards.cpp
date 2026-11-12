@@ -22,6 +22,7 @@
 #include "Log.h"
 #include "Player.h"
 #include "QuestDef.h"
+#include "SpellInfo.h"
 #include "ScriptMgr.h"
 #include "World.h"
 #include "WorldSession.h"
@@ -41,6 +42,9 @@ namespace
     constexpr uint32 QUEST_XP_MULTIPLIER = 3;
 
     std::unordered_map<uint32, bool> rewardQuests;     // reward quest -> heroic
+    // Deserter (leaving a dungeon finder group early) and Dungeon Cooldown (between random dungeons) last 5 minutes,
+    // not 30 and 15: SpellDuration.dbc's 5-minute entry.
+    constexpr uint32 FIVE_MINUTES_DURATION = 5;
 
     void LoadRewardQuests()
     {
@@ -77,6 +81,20 @@ public:
     }
 };
 
+class titan_dungeon_rewards_spells : public GlobalScript
+{
+public:
+    titan_dungeon_rewards_spells() : GlobalScript("titan_dungeon_rewards_spells",
+        { GLOBALHOOK_ON_LOAD_SPELL_CUSTOM_ATTR }) { }
+
+    void OnLoadSpellCustomAttr(SpellInfo* spellInfo) override
+    {
+        if (spellInfo->Id == lfg::LFG_SPELL_DUNGEON_DESERTER || spellInfo->Id == lfg::LFG_SPELL_DUNGEON_COOLDOWN)
+            if (SpellDurationEntry const* duration = sSpellDurationStore.LookupEntry(FIVE_MINUTES_DURATION))
+                spellInfo->DurationEntry = duration;
+    }
+};
+
 class titan_dungeon_rewards : public PlayerScript
 {
 public:
@@ -109,5 +127,6 @@ public:
 void AddSC_dungeon_rewards()
 {
     new titan_dungeon_rewards_world();
+    new titan_dungeon_rewards_spells();
     new titan_dungeon_rewards();
 }

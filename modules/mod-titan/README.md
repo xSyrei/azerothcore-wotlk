@@ -613,6 +613,7 @@ Every 5-player dungeon is fought at every Hero's own level, Dragonflight's way (
   (`src/dungeon_rewards.cpp`; `LFGHandler.cpp` shows the dungeon finder that amount, asking the quest experience
   hook). Every other quest gives 3 times its experience on turn-in, on top of `Rate.XP.Quest` (5), shown so in the
   quest window too (`QUEST_XP_MULTIPLIER`, same file).
+  Deserter and Dungeon Cooldown last 5 minutes (same file).
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
 - `Spell::TakeRunePower`: runes give Rage instead of Runic Power (Emberforge has none; see Demon Hunter).
