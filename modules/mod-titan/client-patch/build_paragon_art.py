@@ -6,8 +6,8 @@ white on black (drawn additive, tinted gold by the models), made here rather tha
   thin circles, the outer one at the texture's edge: the aura's turning holy writing and its luminous boundary;
 - holy_sigil.png: Seat of the Paragon's larger sigil (rings, rays and an eight-pointed star);
 - holy_glyph.png: Hallowed Footsteps' small glyph (a ring and a four-pointed star).
-- holy_flakes.png: four soft flakes of light with a glow (after the user's reference sprite), the embers rising
-  through the aura.
+- holy_flakes.png: a 2x2 sprite sheet of soft flakes of light with a glow, one to a cell (after the user's
+  reference sheet), the embers rising through the aura.
 
 Usage: python3 build_paragon_art.py
 """

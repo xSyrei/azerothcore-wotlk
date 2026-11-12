@@ -459,8 +459,9 @@ utility or a tradeoff) take one pick each, from three.
   once in 12 sec); Bastion of Faith (1% less damage taken an enemy in the aura, up to 5%, 90735; 50% more threat),
   Weight of the Unworthy (20% slower 2 sec, 90736), Shelter of the Paragon (every 5 sec the Hero and 4 allies shielded
   for half a tick, 6 sec, 90737). Spells 90730-90748 (`patch_runes.py`); its look: retail's Remorseless Winter
-  (`client-patch/spells/PAL_SanctifiedParagon`, a wow.export glTF: the ground flare and the storm, gold and
-  see-through) with our holy writing ring, sigil, glyph and flakes of light (`client-patch/build_paragon_art.py`).
+  (`client-patch/spells/PAL_SanctifiedParagon`, a wow.export glTF: its storm about the body, gold and see-through;
+  no floor) with flakes of light rising (a 2x2 sprite sheet); Seat's sigil and the footsteps' glyphs are ours
+  (`client-patch/build_paragon_art.py`).
 
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and

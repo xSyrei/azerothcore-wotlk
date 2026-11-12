@@ -227,44 +227,31 @@ SPELLS += [buff(90740 + slot * 3 + choice, name, PARAGON_ICON, '', DURATION_INFI
            for slot, names in enumerate(PARAGON_MODIFIERS) for choice, name in enumerate(names)]
 
 # Its look (patch_spells.EFFECTS / VISUALS). Retail's Remorseless Winter state (spells/PAL_SanctifiedParagon:
-# deathknight_remorselesswinter_state's meshes: 0 the ground flare, 2 the storm around the body; 1, the ring above
-# them, is left out), every texture gray so its tint is the color: Holy gold, see-through. The ground pieces are grown to the
-# aura's 8 yards (the flare's square is 0.3 yards: 53.8 times, as retail's Stand grows it). The holy writing, sigil
-# and glyph are ours (build_paragon_art.py); the storm's own smoke was not in the export: Windwalk's wind instead.
+# deathknight_remorselesswinter_state's storm about the body, mesh 2; its floor pieces left out), its texture gray so
+# its tint is the color: Holy gold, see-through. The storm's own smoke was not in the export: Windwalk's wind
+# instead. The sigil, glyph and flakes are ours (build_paragon_art.py).
 PARAGON = 'PAL_SanctifiedParagon'
 GOLD, PALE_GOLD, WHITE_GOLD = (1.0, 0.78, 0.32), (1.0, 0.88, 0.55), (1.0, 0.96, 0.82)
-GROUND = 53.8
 EFFECTS = {
     'SanctifiedParagon': {'model': 'PAL_SanctifiedParagon', 'effect': 7151, 'shape': 'spun',
-                          'textures': (f'{PARAGON}/t_vfx_flare05b', f'{PARAGON}/holy_inscriptions',
-                                       f'{PARAGON}/swirl_wind'),
+                          'textures': (f'{PARAGON}/swirl_wind',),
                           'options': {'export': f'{PARAGON}/deathknight_remorselesswinter_state.gltf', 'layers': (
-                              # the sanctified ground: retail's flare, soft, out to the edge
-                              {'mesh': 0, 'texture': 0, 'tint': GOLD, 'alpha': 0.35, 'turn': 40.0,
-                               'grow': (GROUND, GROUND)},
-                              # the luminous ring at the boundary, its holy writing turning slowly
-                              {'mesh': 0, 'texture': 1, 'tint': PALE_GOLD, 'alpha': 0.8, 'turn': 40.0,
-                               'grow': (GROUND, GROUND)},
-                              # a second band of it closer in, turning the other way
-                              {'mesh': 0, 'texture': 1, 'tint': GOLD, 'alpha': 0.4, 'turn': -24.0,
-                               'grow': (GROUND * 0.6, GROUND * 0.6)},
-                              # the storm: retail's swirl twice, turning and flowing at two speeds
-                              {'mesh': 2, 'texture': 2, 'tint': WHITE_GOLD, 'alpha': 0.6, 'turn': 1.6,
+                              # the storm: retail's swirl twice, turning and flowing at two speeds (no floor: the
+                              # ground stays clear)
+                              {'mesh': 2, 'texture': 0, 'tint': WHITE_GOLD, 'alpha': 0.6, 'turn': 1.6,
                                'scroll': (-0.5, 0.0)},
-                              {'mesh': 2, 'texture': 2, 'tint': GOLD, 'alpha': 0.45, 'turn': 2.6,
-                               'scroll': (0.35, 0.2)},
-                              # a third band of writing about the Hero's feet, faint (retail's raised ring, mesh 1,
-                              # would rise with its growing: our models grow from the ground, not its bone)
-                              {'mesh': 0, 'texture': 1, 'tint': PALE_GOLD, 'alpha': 0.3, 'turn': -16.0,
-                               'grow': (GROUND * 0.3, GROUND * 0.3)})}},
+                              {'mesh': 2, 'texture': 0, 'tint': GOLD, 'alpha': 0.45, 'turn': 2.6,
+                               'scroll': (0.35, 0.2)})}},
     # Sacred embers rising around the Hero, in place of retail's snow: flakes of light and motes.
     'SanctifiedParagonEmbers': {'model': 'PAL_SanctifiedParagonEmbers', 'effect': 7152, 'shape': 'mist',
                                 'textures': (f'{PARAGON}/holy_flakes', 'MONK_Flare', 'MONK_Glow'),
                                 'options': {'layers': (
-                                    # flakes of light (holy_flakes: four to a card) drifting up through the aura
-                                    {'texture': 0, 'tint': WHITE_GOLD, 'alpha': 0.9, 'turn': 3.0, 'pulse': 1.1,
-                                     'rise': (2.4, 2.2), 'cards': tuple((r, -0.9, 0.9) for r in
-                                                                        (1.4, 2.8, 4.2, 5.6, 7.0, 2.1, 4.9))},
+                                    # flakes of light drifting up through the aura (holy_flakes: a 2x2 sprite
+                                    # sheet, each flake its own cell, one to a card)
+                                    {'texture': 0, 'sheet': (2, 2), 'tint': WHITE_GOLD, 'alpha': 0.95, 'turn': 3.0,
+                                     'pulse': 1.1, 'rise': (2.4, 2.2), 'cards': tuple((r, -0.9, 0.35) for r in
+                                                                        (1.4, 2.8, 4.2, 5.6, 7.0, 2.1, 4.9, 3.5,
+                                                                         6.3, 0.9))},
                                     {'texture': 1, 'tint': WHITE_GOLD, 'alpha': 1.0, 'turn': -2.2, 'pulse': 0.9,
                                      'rise': (2.6, 1.8), 'cards': tuple((r, -0.9, 0.18) for r in
                                                                         (1.2, 3.6, 6.0, 7.2, 0.8, 5.4))},
