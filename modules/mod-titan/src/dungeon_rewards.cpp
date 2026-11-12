@@ -28,9 +28,9 @@
 #include <unordered_map>
 
 // The dungeon finder's rewards: finishing a random dungeon (its reward quest, lfg_dungeon_rewards, is rewarded) gives
-// 100 Emberspark, 500 for a heroic, and its experience is a quarter of what the Hero's level takes (the dungeon
-// finder shows that amount too: LFGHandler.cpp asks the same hook). Every other quest gives QUEST_XP_MULTIPLIER times
-// its experience.
+// 100 Emberspark, 500 for a heroic, and its experience is a quarter of what the Hero's level takes, times
+// Rate.XP.Quest as every quest's (the dungeon finder shows that amount too: LFGHandler.cpp asks the same hook).
+// Every other quest gives QUEST_XP_MULTIPLIER times its experience.
 namespace
 {
     constexpr uint32 DUNGEON_EMBERSPARK = 100;
@@ -88,7 +88,8 @@ public:
     void OnPlayerQuestComputeXP(Player* player, Quest const* quest, uint32& xpValue) override
     {
         if (rewardQuests.count(quest->GetQuestId()))
-            xpValue = player->GetUInt32Value(PLAYER_NEXT_LEVEL_XP) / EXPERIENCE_SHARE;
+            xpValue = uint32(float(player->GetUInt32Value(PLAYER_NEXT_LEVEL_XP) / EXPERIENCE_SHARE)
+                * sWorld->getRate(RATE_XP_QUEST));
         else
             xpValue *= QUEST_XP_MULTIPLIER;
     }

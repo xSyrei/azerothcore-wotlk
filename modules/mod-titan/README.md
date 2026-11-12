@@ -608,7 +608,8 @@ Every 5-player dungeon is fought at every Hero's own level, Dragonflight's way (
   `docker-compose.yml`); mail, `/who`, friends and trade across factions are RBAC permissions, which the stock data
   gives only to staff, so `data/sql/db-auth/titan_two_side.sql` links them (27, 28, 29, 51) to the Player role (199).
   The client's own level filters are lifted by `Emberforge_Journal/MicroMenu.lua`. Finishing a random dungeon gives
-  100 Emberspark (500 for a heroic), and its experience is a quarter of what the Hero's level takes
+  100 Emberspark (500 for a heroic), and its experience is a quarter of what the Hero's level takes, times
+  `Rate.XP.Quest`
   (`src/dungeon_rewards.cpp`; `LFGHandler.cpp` shows the dungeon finder that amount, asking the quest experience
   hook). Every other quest gives 3 times its experience on turn-in, on top of `Rate.XP.Quest` (5), shown so in the
   quest window too (`QUEST_XP_MULTIPLIER`, same file).
