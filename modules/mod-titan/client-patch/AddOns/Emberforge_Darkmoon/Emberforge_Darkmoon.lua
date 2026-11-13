@@ -66,7 +66,8 @@ local state = { spark = 0, prices = { [0] = 0, 0, 0, 0 }, goldLeft = 0, goldPric
 local eyes = { count = 0, claimed = 7, level = 1, price = 100, perBuy = 2, canBuy = false, bought = 0, abilities = 0,
     talents = 0, first = 8, last = 60, milestoneEyes = 4, milestones = { 8, 10, 20, 30, 40, 50, 60 } }
 local catalog, byKey, catalogLoaded, asked = {}, {}, false, false
-local view = { tab = 1, spec = 1, kind = 0, rarity = -1, missing = false, golden = false, search = "", offset = 0 }
+local view = { tab = 1, spec = 1, kind = 0, rarity = -1, missing = false, ownedOnly = false, golden = false,
+    search = "", offset = 0 }
 
 local function Send(message)
     SendAddonMessage(PREFIX, message, "WHISPER", UnitName("player"))
@@ -2322,8 +2323,14 @@ for rarity = -1, 3 do
     end)
     Place(rarityChips[rarity], rarity == 3 and 14 or 5)
 end
+-- Owned and Not owned: one or the other (or neither: every card).
+local ownedChip = Chip("Owned", 52, function()
+    view.ownedOnly, view.missing, view.offset = not view.ownedOnly, false, 0
+    Refresh()
+end)
+Place(ownedChip)
 local missingChip = Chip("Not owned", 72, function()
-    view.missing, view.offset = not view.missing, 0
+    view.missing, view.ownedOnly, view.offset = not view.missing, false, 0
     Refresh()
 end)
 Place(missingChip)
@@ -2414,6 +2421,9 @@ local function Matches(card)
     if view.missing and owned >= (view.golden and 1 or card.max) then
         return false
     end
+    if view.ownedOnly and owned < 1 then
+        return false
+    end
     return view.search == "" or string.find(string.lower(CardName(card)), view.search, 1, true) ~= nil
 end
 
@@ -2424,6 +2434,7 @@ local function RefreshCards()
     for rarity, chipButton in pairs(rarityChips) do
         chipButton:SetOn(view.rarity == rarity)
     end
+    ownedChip:SetOn(view.ownedOnly)
     missingChip:SetOn(view.missing)
     goldenChip:SetOn(view.golden)
     local shown, owned, total, golden = {}, 0, 0, 0

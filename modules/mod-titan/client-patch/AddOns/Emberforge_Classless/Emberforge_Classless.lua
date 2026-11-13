@@ -591,6 +591,54 @@ Box(frame, WINDOW_FILL, WINDOW_EDGE)
 frame:Hide()
 tinsert(UISpecialFrames, "EmberforgeClassless")     -- Escape closes it
 
+-- Its size: smaller than its art by default (SCALE_DEFAULT), and the grip in the bottom right corner scales it
+-- (dragged right or left; kept per character). The top left corner stays where it is.
+local SCALE_MIN, SCALE_MAX, SCALE_DEFAULT = 0.5, 1.15, 0.78
+local function SetWindowScale(scale, save)
+    scale = math.max(SCALE_MIN, math.min(SCALE_MAX, scale))
+    local old, left, top = frame:GetScale(), frame:GetLeft(), frame:GetTop()
+    frame:SetScale(scale)
+    if left and top then
+        frame:ClearAllPoints()
+        frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left * old / scale, top * old / scale)
+    end
+    if save and EmberforgeClasslessDB then
+        EmberforgeClasslessDB.scale = scale
+    end
+end
+frame:SetScale(SCALE_DEFAULT)
+local grip = CreateFrame("Button", nil, frame)
+grip:SetWidth(18)
+grip:SetHeight(18)
+grip:SetPoint("BOTTOMRIGHT", -6, 6)
+grip:SetFrameLevel(frame:GetFrameLevel() + 20)
+grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+grip:SetScript("OnMouseDown", function(self)
+    self.from, self.scale = GetCursorPosition(), frame:GetScale()
+end)
+grip:SetScript("OnMouseUp", function(self)
+    self.from = nil
+end)
+grip:SetScript("OnUpdate", function(self)
+    if not self.from then
+        return
+    end
+    local x = GetCursorPosition()
+    local moved = (x - self.from) / UIParent:GetEffectiveScale()
+    SetWindowScale(self.scale * (1 + moved / (WIDTH * self.scale)), true)
+end)
+grip:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("Window size")
+    GameTooltip:AddLine("Drag to make the window larger or smaller.", 1, 1, 1, true)
+    GameTooltip:Show()
+end)
+grip:SetScript("OnLeave", function()
+    GameTooltip:Hide()
+end)
+
 local headerGlow = frame:CreateTexture(nil, "BORDER")
 headerGlow:SetTexture(ART .. "HeaderGlow")
 headerGlow:SetBlendMode("ADD")
@@ -2686,6 +2734,7 @@ end
 
 local function OnLogin()
     EmberforgeClasslessDB = EmberforgeClasslessDB or {}
+    frame:SetScale(math.max(SCALE_MIN, math.min(SCALE_MAX, EmberforgeClasslessDB.scale or SCALE_DEFAULT)))
     PlaceMinimapButton(EmberforgeClasslessDB.minimapAngle or math.rad(200))
     if not EmberforgeClasslessDB.boundKey and not GetBindingKey("EMBERFORGE_CLASSLESS_TOGGLE") then
         SetBinding("N", "EMBERFORGE_CLASSLESS_TOGGLE")
