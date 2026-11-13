@@ -34,10 +34,11 @@
 #include "forward.h"
 #include "known_shaders.h"
 #include "shaders.h"
+#include "spellmods.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.12"
+#define EMBERFORGE_ENGINE_VERSION "0.13"
 
 namespace
 {
@@ -635,6 +636,7 @@ namespace
         HRESULT STDMETHODCALLTYPE Present(const RECT *source, const RECT *dest, HWND window,
                                           const RGNDATA *dirty) override
         {
+            SpellMods::Tick();
             if (!m_presentedByDevice)
             {
                 m_presentedByDevice = true;
@@ -1903,6 +1905,7 @@ namespace
         HRESULT STDMETHODCALLTYPE Present(const RECT *source, const RECT *dest, HWND window, const RGNDATA *dirty,
                                           DWORD flags) override
         {
+            SpellMods::Tick();
             if (!m_logged)
             {
                 m_logged = true;
@@ -2000,6 +2003,10 @@ namespace
     };
 }
 
+// ---- Spell modifiers by class family (a classless Hero's talents in the client's costs and cooldowns) ----
+
+#include "spellmods.cpp"
+
 // ---- Loaded ----
 
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved)
@@ -2018,6 +2025,13 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved)
         char exe[MAX_PATH] = {};
         GetModuleFileNameA(nullptr, exe, MAX_PATH);
         Log("Emberforge Engine %s loaded by %s%s", EMBERFORGE_ENGINE_VERSION, exe, pinned ? " (pinned)" : "");
+        // Once: the game loads d3d9.dll more than once, but pinned, this runs at the first load only.
+        static bool spellModsInstalled = false;
+        if (!spellModsInstalled)
+        {
+            spellModsInstalled = true;
+            SpellMods::Install();
+        }
     }
     else if (reason == DLL_PROCESS_DETACH)
     {

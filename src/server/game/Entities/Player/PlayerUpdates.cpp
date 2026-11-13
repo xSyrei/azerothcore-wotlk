@@ -73,6 +73,12 @@ void Player::Update(uint32 p_time)
     // used to implement delayed far teleports
     SetMustDelayTeleport(true);
     ProcessSpellQueue();
+    // Project Emberforge: the spell modifiers by class family for the Emberforge engine, once something changed.
+    if (m_spellModsByFamilyDirty)
+    {
+        m_spellModsByFamilyDirty = false;
+        SendSpellModifiersByFamily();
+    }
     Unit::Update(p_time);
     SetMustDelayTeleport(false);
 

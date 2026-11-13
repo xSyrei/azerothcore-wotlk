@@ -1810,6 +1810,8 @@ public:
     SkillStatusMap& GetSkillStatusMap() { return mSkillStatus; }
 
     void AddSpellMod(SpellModifier* mod, bool apply);
+    // Project Emberforge: every spell modifier with its class family, for the Emberforge engine (Player.cpp).
+    void SendSpellModifiersByFamily();
     bool IsAffectedBySpellmod(SpellInfo const* spellInfo, SpellModifier* mod, Spell* spell = nullptr);
     bool HasSpellMod(SpellModifier* mod, Spell* spell);
     template <class T>
@@ -2899,6 +2901,7 @@ protected:
     int32 m_spellPenetrationItemMod;
 
     SpellModContainer m_spellMods[MAX_SPELLMOD];
+    bool m_spellModsByFamilyDirty = true;               // SendSpellModifiersByFamily due (Player::Update)
     //uint32 m_pad;
     //        Spell* m_spellModTakingSpell;  // Spell for which charges are dropped in spell::finish
 

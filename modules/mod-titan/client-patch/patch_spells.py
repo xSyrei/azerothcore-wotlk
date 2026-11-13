@@ -1531,7 +1531,8 @@ def main():
     reagents = drop_class_reagents(spells)
     stances = free_warrior_stances(spells)
     hero_tuning(spells)
-    gcds = unholy_presence_gcd(spells)
+    # unholy_presence_gcd is no longer run: the Emberforge engine applies every class's spell modifiers on the
+    # client (engine/src/spellmods.cpp), Unholy Presence's 0.5 sec off the Death Knight's global cooldown included.
     write_finishers(spells)
     tabs, talents = build_talents(source, out, icon_id)
     if sql:
@@ -1540,7 +1541,7 @@ def main():
     spells.save(out / 'Spell.dbc')
     print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power turned into Rage in {renamed} spells, '
           f'rune costs left to the server in {len(runes)}, '
-          f'reagents dropped from {reagents}, stances freed in {stances}, Unholy Presence\'s GCD on {gcds}, '
+          f'reagents dropped from {reagents}, stances freed in {stances}, '
           f'mana costs cut in {mana}) '
           f'and {out / "SpellIcon.dbc"}')
     if sql:

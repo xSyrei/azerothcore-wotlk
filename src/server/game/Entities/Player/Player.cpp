@@ -95,7 +95,9 @@
 #include "WorldStateDefines.h"
 #include "WorldStatePackets.h"
 #include <cmath>
+#include <map>
 #include <queue>
+#include <tuple>
 
 /// @todo: this import is not necessary for compilation and marked as unused by the IDE
 //  however, for some reasons removing it would cause a damn linking issue
@@ -10145,6 +10147,36 @@ void Player::AddSpellMod(SpellModifier* mod, bool apply)
         if (!mod->ownerAura)
             delete mod;
     }
+    m_spellModsByFamilyDirty = true;
+}
+
+// Project Emberforge: SMSG_SET_FLAT/PCT_SPELL_MODIFIER carry no class family, and the client applies them to its own
+// class's spells only (Wow.exe 0x7FD970 checks ChrClasses' SpellClassSet): a classless Hero's talents for another
+// class's abilities never showed (costs, cooldowns, cast times, tooltips). The Emberforge engine
+// (mod-titan/client-patch/engine/src/spellmods.cpp) applies these instead: every modifier the player has, totalled
+// by class family, bit, op and kind, as one message on opcode 0x51A (CMSG_CLEAR_HOLIDAY_BG_WIN_TIME, which the client
+// never handles: one without the engine drops it). Sent from Player::Update once anything changed, and at login.
+void Player::SendSpellModifiersByFamily()
+{
+    std::map<std::tuple<uint8, uint8, uint8, uint8>, int32> totals;   // family, bit, op, kind (0 flat, 1 pct)
+    for (uint8 op = 0; op < MAX_SPELLMOD; ++op)
+        for (SpellModifier const* mod : m_spellMods[op])
+        {
+            SpellInfo const* info = sSpellMgr->GetSpellInfo(mod->spellId);
+            uint32 family = info ? info->SpellFamilyName : 0;
+            if (family > 0xFF)
+                continue;
+            uint8 kind = mod->type == SPELLMOD_PCT ? 1 : 0;
+            for (uint8 bit = 0; bit < 96; ++bit)
+                if (mod->mask[bit / 32] & (uint32(1) << (bit % 32)))
+                    totals[{ uint8(family), bit, op, kind }] += mod->value;
+        }
+
+    WorldPacket data(uint16(0x51A), 4 + totals.size() * 8);
+    data << uint32(totals.size());
+    for (auto const& [key, value] : totals)
+        data << std::get<0>(key) << std::get<1>(key) << std::get<2>(key) << std::get<3>(key) << int32(value);
+    SendDirectMessage(&data);
 }
 
 // Restore spellmods in case of failed cast

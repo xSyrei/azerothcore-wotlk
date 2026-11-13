@@ -29,14 +29,17 @@ from level 1 but hit like a level-55 class's, so below level 40 a Hero's Death K
 damage (`titan_dk_low_level`, same file): the spells (Icy Touch, Death Coil, Death and Decay) 15% at level 1, 25% at
 10, 45% at 20, 70% at 30; the weapon strikes (Plague Strike, Blood Strike...) 35%, 50%, 70%, 85%; all from 40. The
 diseases (their ticks are attack power's) and the heals stay whole. Unholy Presence's 0.5 sec off the global cooldown
-is the server's alone (the client applies a spell modifier only to its own class's spells), so the client patch gives
-the Death Knight abilities it covers a 1 sec global cooldown (`unholy_presence_gcd`, `patch_spells.py`); the server
-keeps 1.5 sec outside the presence, and its spell queue takes a press that comes early. Tuning by ability
+reaches the client through the spell modifiers by family (below). Tuning by ability
 (`titan_hero_damage_tuning`, same file): Soul Cleave deals 25% less, Blade Dance's strikes 15% less, every Feral Combat
 ability 25% more and every Rogue ability 30% more; Thunder Clap costs 10 Rage and the Hearthstone cools down in 5
-minutes (server and client patch: `hero_tuning`). A talent shortening another class's cooldown: the client starts the
-spell's own again on the cast, so the server tells it the real one once more just after (`Player.cpp`,
-`AddSpellAndCategoryCooldowns`); a cost cut is charged, but the client shows (and checks) the full cost. At first login a Hero also finds one of each weapon kind
+minutes (server and client patch: `hero_tuning`). Spell modifiers by family: the client applies a
+spell modifier (talents' cost, cooldown, cast time, range cuts) only to its own class's spells, and a Hero is a
+Paladin to it. The server sends every modifier the player has, totalled by class family, on opcode 0x51A whenever they
+change (`Player::SendSpellModifiersByFamily`), and the Emberforge engine (`client-patch/engine/src/spellmods.cpp`)
+replaces the client's lookup with one by the spell's own family: tooltips, buttons, the client's resource check and
+its cooldowns show the talents. Talents made global on the server ("all means all") are not mirrored. As a fallback
+for clients without the engine, the server tells the client a cooldown once more just after a cast when a talent
+shortened it (`Player.cpp`, `AddSpellAndCategoryCooldowns`). At first login a Hero also finds one of each weapon kind
 in the bags: a Battleworn Claymore, two Shortswords and two Worn Daggers (all one-hand, to dual wield either), a Bent Staff, a Worn Wooden Shield,
 a Worn Shortbow. Ammo comes by itself: with a bow, crossbow or gun, the arrows or bullets of the Hero's level are put
 in the ammo slot (Rough, Sharp, Razor, Jagged and Wicked Arrows; Light, Heavy and Solid Shot, Accurate Slugs, Impact
