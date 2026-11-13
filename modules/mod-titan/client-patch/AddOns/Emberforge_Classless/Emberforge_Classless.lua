@@ -1932,6 +1932,7 @@ local function CreateRoll()
     reveal:SetFrameStrata("DIALOG")
     reveal:SetFrameLevel(20)
     reveal:SetToplevel(true)
+    reveal:EnableMouse(false)           -- only Skip takes clicks: the camera still turns behind the roll
     reveal:Hide()
 
     local heading = CreateFrame("Frame", nil, reveal)
@@ -1974,6 +1975,8 @@ local function CreateRoll()
 
     -- The reel: a strip of icons in a scroll frame (it clips its child) as wide as the opened track.
     local reel = CreateFrame("ScrollFrame", nil, bar)
+    reel:EnableMouse(false)
+    reel:EnableMouseWheel(false)
     reel:SetWidth(REEL_WIDTH)
     reel:SetHeight(BAR_HEIGHT - 6)
     reel:SetPoint("CENTER")

@@ -434,8 +434,12 @@ empowered effect; three modifier slots (Invocation: how you build; Manifestation
 utility or a tradeoff) take one pick each, from three.
 - **The panel** (`Emberforge_Runes`, `/runes`; addon whispers with prefix `EFRN`, protocol in both files) opens by
   itself at level 10, and at login while the active specialization has no rune: up to three runes suggested from
-  the Hero's abilities and role, and Browse all for every rune, three a page (one missing a required ability or not
-  built yet shakes and says so). Binding asks first. It is the "Legendary Rune Panel" mockup over the game world: the
+  the Hero's abilities and role, and Browse all for every rune, three a page (one not built yet shakes and says so).
+  Each card shows the roles it serves (the LFG role icons under its LEGENDARY: damage, healing, tanking) and, for a
+  rune with its build words, a **Preview** button: the medallion, slots and options as if bound, any slot open and
+  picks tried there only (nothing sent), then Back or Choose this rune. Binding asks first; a rune missing a required
+  ability can still be bound after a large warning naming what it lacks (`PICK,<rune>,1`). The stage takes no clicks
+  itself (only its cards and buttons), so the camera still turns behind it, as it does behind a Wildcard roll. It is the "Legendary Rune Panel" mockup over the game world: the
   chosen card erupts and the rest burn away, it condenses into the rune's medallion, which breaks into the three
   slots, and each slot's three options rise in (a done slot can be chosen again). Its art is baked from the mockup's
   own drawing code by `client-patch/build_rune_art.py` (`rune_art/bake.js` in headless Chromium: `Art/`, `Art.lua`);

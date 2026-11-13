@@ -6,6 +6,9 @@
 -- then the chosen card erupts, the others burn away, it condenses into the rune's medallion, the medallion breaks
 -- into its three slots (Invocation, Manifestation, Adaptation), and the three choices for each follow. Bound: the
 -- medallion and its slots straight away; a done slot can be chosen again (free, out of combat).
+-- Each card shows the roles its rune serves (damage, healing, tanking) under its eyebrow, and a Preview button: the
+-- rune's medallion, slots and options as if bound, its picks tried locally (nothing is sent), then Back or Choose.
+-- The stage takes no clicks itself (only its cards and buttons do): the camera still turns behind it.
 -- The art is baked from the mockup's own drawing code (build_rune_art.py: Art/, Art.lua); the runes' words are
 -- Catalog.lua. Also here: Throw Glaive's glow at 5 Fel Command (Rune of Fel Commandment).
 --
@@ -14,7 +17,8 @@
 --                 R,<rune>,<missing>   (a rune the server builds; missing: groups by '/', one of by '+'; '-' none)
 --                 N,<rune>,<slot>,<choice>,<missing>   (a modifier's own needs)
 --                 E,<text>   O (open the panel)
---   to server     STATE   PICK,<rune>   MOD,<slot 1-3>,<choice 1-3>
+--   to server     STATE   PICK,<rune>[,1]   MOD,<slot 1-3>,<choice 1-3>
+--                 (PICK's 1: the Hero was warned of the abilities it lacks and binds it anyway)
 
 local PREFIX = "EFRN"
 local ART = "Interface\\AddOns\\Emberforge_Runes\\Art\\"
@@ -47,6 +51,28 @@ local view = { mode = nil, phase = nil, page = 1, prompted = {}, now = 0, t0 = 0
 
 local function Send(message)
     SendAddonMessage(PREFIX, message, "WHISPER", UnitName("player"))
+end
+
+-- The rune the build view shows: the one previewed, else the bound one.
+local function BuildRune()
+    return view.preview or state.rune
+end
+
+-- The roles a rune serves, as the LFG role icons name them (its own list, else its role's words).
+local ROLE_ORDER = { "DAMAGER", "HEALER", "TANK" }
+local function Roles(rune)
+    if rune.roles then
+        return rune.roles
+    end
+    local role = rune.role or ""
+    if role:find("^Tank") then
+        return { "TANK" }
+    elseif role:find("^Healer") then
+        return { "HEALER" }
+    elseif role:find("^Any") then
+        return ROLE_ORDER
+    end
+    return { "DAMAGER" }
 end
 
 local function Split(text, sep)
@@ -138,7 +164,7 @@ end
 local frame = CreateFrame("Frame", "EmberforgeLegendaryRunes", UIParent)
 frame:SetAllPoints(UIParent)
 frame:SetFrameStrata("HIGH")                         -- under the bind question (DIALOG)
-frame:EnableMouse(true)
+frame:EnableMouse(false)                             -- clicks off the cards and buttons reach the world
 frame:Hide()
 tinsert(UISpecialFrames, "EmberforgeLegendaryRunes")    -- Escape closes it
 
@@ -479,7 +505,7 @@ In(head.title, head, 0, -24)
 head.subtitle = Text(head, SANS, 20, art.arcane.muted)
 In(head.subtitle, head, 0, 24)
 
-local note = Group(800, 718, 1100, 30)
+local note = Group(800, 758, 1100, 30)
 note.text = Text(note, SANS, 17, GOLDEN)
 In(note.text, note, 0, 0)
 local function Note(text)
@@ -488,7 +514,7 @@ local function Note(text)
     Fade(note, true)
 end
 
-local Refresh, Enter, StartIntro
+local Refresh, Enter, StartIntro, AskBind
 
 -- Unbound: "Not seeing what you're looking for?" and Browse all; browsing, the pages.
 local browseAsk = Group(800, 805, 700, 80)
@@ -541,6 +567,21 @@ closer.pill.label:SetFont(CINZEL, 14)
 PillText(closer.pill, "Close")
 In(closer.pill, closer, 0, 0)
 closer.x = W - 26 - closer.pill.width / 2
+
+-- Previewing: what it is, Back to the cards and Choose (unbound, a rune the server builds).
+local previewBar = Group(800, 805, 900, 80)
+previewBar.text = Text(previewBar, SANS, 18, GOLDEN)
+In(previewBar.text, previewBar, 0, -22)
+previewBar.back = Pill(previewBar, "Back", function()
+    view.preview = nil
+    view.mode = view.previewFrom or "offers"
+    Enter()
+end)
+previewBar.choose = Pill(previewBar, "Choose this rune", function()
+    if view.preview then
+        AskBind(RuneById(view.preview))
+    end
+end)
 
 -- Bound: the rune's name and its line, above the medallion.
 local buildHead = Group(800, 120, 1000, 160)
@@ -738,6 +779,31 @@ end
 -- The cards ---------------------------------------------------------------------------------------------------------
 
 local cardArt = art.card
+local ROLE_SIZE, ROLE_Y = 22, CH / 2 - 58                 -- the role icons: their size, above the card's centre
+-- An LFG role's piece of UI-LFG-ICON-ROLES (the game's own, else its grid: 67-point cells of 256).
+local function RoleCoords(role)
+    if GetTexCoordsForRole then
+        return GetTexCoordsForRole(role)
+    end
+    local cell = 67 / 256
+    local x, y = ({ TANK = { 1, 2 }, HEALER = { 2, 1 }, DAMAGER = { 2, 2 } })[role][1],
+        ({ TANK = { 1, 2 }, HEALER = { 2, 1 }, DAMAGER = { 2, 2 } })[role][2]
+    return (x - 1) * cell, x * cell, (y - 1) * cell, y * cell
+end
+local function SetRoles(card, rune)
+    local list = Roles(rune)
+    for r, icon in ipairs(card.roles) do
+        local role = list[r]
+        if role then
+            icon:SetTexCoord(RoleCoords(role))
+            icon:ClearAllPoints()
+            icon:SetPoint("CENTER", card.holder, "CENTER", (r - (#list + 1) / 2) * (ROLE_SIZE + 8), ROLE_Y)
+            icon:Show()
+        else
+            icon:Hide()
+        end
+    end
+end
 local TILE = 10                                         -- the burn's pieces, in points
 local TILES_X, TILES_Y = CW / TILE, CH / TILE
 
@@ -765,6 +831,16 @@ for index = 1, 3 do
     card.emblem:SetWidth(180)
     card.emblem:SetHeight(180)
     card.status = Text(layers.ui, SANS, 16, art.arcane.muted, "CENTER", 300)
+    -- The roles it serves, under the card's LEGENDARY (the LFG role icons).
+    card.roles = {}
+    for r = 1, 3 do
+        local icon = holder:CreateTexture(nil, "OVERLAY")
+        icon:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
+        icon:SetWidth(ROLE_SIZE)
+        icon:SetHeight(ROLE_SIZE)
+        icon:Hide()
+        card.roles[r] = icon
+    end
     holder:Hide()
     cards[index] = card
 
@@ -777,6 +853,21 @@ for index = 1, 3 do
     hit:SetScript("OnLeave", function(self) self.card.hover = false end)
     hit:Hide()
     hits[index] = hit
+end
+
+-- Under each card with its build words: Preview (OpenPreview, below).
+local previews = {}
+local OpenPreview
+for index = 1, 3 do
+    local preview = Pill(layers.ui, "Preview", function(self)
+        if self.rune and view.phase == "offer" then
+            OpenPreview(self.rune.id)
+        end
+    end)
+    preview.label:SetFont(CINZEL, 14)
+    PillText(preview, "Preview")
+    preview:Hide()
+    previews[index] = preview
 end
 
 -- The burn: the card in TILE-point pieces, each going at its noise (the mockup's: three octaves of value noise and a
@@ -930,6 +1021,13 @@ local function DrawCard(card)
         card.art:SetAlpha(card.a)
         card.art:Show()
     end
+    for _, icon in ipairs(card.roles) do
+        icon:SetAlpha(card.noise and 0 or clamp(card.a * fade))
+    end
+    local preview = previews[card.index]
+    if preview and preview.on then
+        preview:SetAlpha(clamp(card.a * fade))
+    end
     local pulse = 0.35 + 0.25 * math.sin(view.now * 2.2 + card.index) + card.glow * 1.2 + (card.hover and 0.4 or 0)
     card.emblem:SetVertexColor(glow[1], glow[2], glow[3])
     card.emblem:SetAlpha(clamp(card.a * clamp(pulse, 0, 1.4) * 0.9 * fade))
@@ -944,6 +1042,8 @@ local function HideCards()
         card.status:Hide()
         card.rune = nil
         hits[index]:Hide()
+        previews[index].on = false
+        previews[index]:Hide()
     end
 end
 
@@ -974,7 +1074,8 @@ end
 
 local function UseTheme(runeId)
     theme = Theme(runeId)
-    for _, pill in ipairs({ browseAsk.pill, pager.previous, pager.back, pager.next, closer.pill }) do
+    for _, pill in ipairs({ browseAsk.pill, pager.previous, pager.back, pager.next, closer.pill, previewBar.back,
+        previewBar.choose, previews[1], previews[2], previews[3] }) do
         PillArt(pill)
     end
     head.subtitle:SetTextColor(theme.muted[1], theme.muted[2], theme.muted[3])
@@ -1004,6 +1105,15 @@ function StartIntro()
         card.burn, card.gone, card.flip, card.shake, card.erupted, card.hover = -1, false, 1, nil, false, false
         card.art:SetTexture(ART .. "Card" .. rune.id)
         card.art:SetDesaturated(false)
+        SetRoles(card, rune)
+        local preview = previews[index]
+        preview.rune = rune
+        preview.on = art.runes[rune.id] and art.runes[rune.id].built or false
+        if preview.on then
+            At(preview, card.homeX, CARD_Y + CH / 2 + 26)
+            preview:SetAlpha(0)
+            preview:Show()
+        end
         local hit = hits[index]
         At(hit, card.homeX, CARD_Y)
         hit.rune = rune
@@ -1012,7 +1122,7 @@ function StartIntro()
             local standing, missing = Standing(rune)
             card.status:SetText(state.rune == rune.id and "Bound" or (standing == "soon" and "Coming soon"
                 or (standing == "missing" and ("Needs " .. missing) or "")))
-            At(card.status, card.homeX, CARD_Y + CH / 2 + 22)
+            At(card.status, card.homeX, CARD_Y + CH / 2 + 66)
             card.status:Show()
         end
     end
@@ -1048,28 +1158,72 @@ StaticPopupDialogs["EMBERFORGE_RUNE_BIND"] = {
     hideOnEscape = true,
 }
 
+-- Missing abilities: a rune can still be bound, after a warning that names them (the server then takes it).
+StaticPopupDialogs["EMBERFORGE_RUNE_BIND_MISSING"] = {
+    text = "|cffff3b30WARNING|r\n\nYou will not be able to use %s: you don't have %s.\n\nIt stays bound to this "
+        .. "specialization until your next prestige, whether you learn them or not.\n\nBind it anyway?",
+    button1 = "Bind anyway",
+    button2 = CANCEL or "Cancel",
+    showAlert = 1,
+    OnShow = function(self)
+        self.text:SetFontObject(GameFontHighlightLarge)
+    end,
+    OnHide = function(self)
+        self.text:SetFontObject(GameFontHighlight)
+    end,
+    OnAccept = function(_, data)
+        view.pending = data
+        Send("PICK," .. data .. ",1")
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+
+-- Why a rune cannot be bound now (nil: it can).
+local function BindRefusal(rune)
+    if state.rune ~= 0 then
+        return state.rune == rune.id and "This rune is bound to your specialization."
+            or "Your specialization's rune is bound until your next prestige."
+    end
+    if Standing(rune) == "soon" then
+        return rune.name .. " is coming soon."
+    end
+end
+
+AskBind = function(rune)
+    if not rune then
+        return
+    end
+    local why = BindRefusal(rune)
+    if why then
+        Note(why)
+        return
+    end
+    local standing, missing = Standing(rune)
+    local dialog
+    if standing == "missing" then
+        dialog = StaticPopup_Show("EMBERFORGE_RUNE_BIND_MISSING", rune.name, missing)
+    else
+        dialog = StaticPopup_Show("EMBERFORGE_RUNE_BIND", rune.name)
+    end
+    if dialog then
+        dialog.data = rune.id
+    end
+end
+
 local function ClickCard(card)
     if view.phase ~= "offer" or not card.rune then
         return
     end
-    local rune = card.rune
-    if state.rune ~= 0 then
-        Refuse(card, state.rune == rune.id and "This rune is bound to your specialization."
-            or "Your specialization's rune is bound until your next prestige.")
-        return
-    end
-    local standing, missing = Standing(rune)
-    if standing == "soon" then
-        Refuse(card, rune.name .. " is coming soon.")
-    elseif standing == "missing" then
-        Refuse(card, rune.name .. " needs " .. missing .. ".")
+    local why = BindRefusal(card.rune)
+    if why then
+        Refuse(card, why)
     else
-        local dialog = StaticPopup_Show("EMBERFORGE_RUNE_BIND", rune.name)
-        if dialog then
-            dialog.data = rune.id
-        end
+        AskBind(card.rune)
     end
 end
+
 for _, hit in ipairs(hits) do
     hit:SetScript("OnClick", function(self) ClickCard(self.card) end)
 end
@@ -1081,6 +1235,10 @@ local function Erupt(index)
     SetBuildHead(cards[index].rune.id)
     for _, hit in ipairs(hits) do
         hit:Hide()
+    end
+    for _, preview in ipairs(previews) do
+        preview.on = false
+        preview:Hide()
     end
     Fade(head, false)
     Fade(browseAsk, false)
@@ -1126,11 +1284,11 @@ local function SlotNames(runeId)
 end
 
 local function ShowSlots(active)
-    local names = SlotNames(state.rune)
+    local names = SlotNames(BuildRune())
     for index, slot in ipairs(slots) do
         SetLabel(slot.small, (("Slot" .. names[index]):gsub(" ", "")))
         local pick = view.picks[index]
-        local rune = RuneById(state.rune)
+        local rune = RuneById(BuildRune())
         local mod = rune and pick > 0 and rune.mods[(index - 1) * 3 + pick]
         local kind = index == active and "Active" or (pick > 0 and "Done" or "Plain")
         slot.kind = kind
@@ -1154,10 +1312,11 @@ local function ShowSlots(active)
 end
 
 local function ShowOptions(slot)
-    local rune = RuneById(state.rune)
-    local entry = art.runes[state.rune] or {}
+    local runeId = BuildRune()
+    local rune = RuneById(runeId)
+    local entry = art.runes[runeId] or {}
     view.active = slot
-    local names = SlotNames(state.rune)
+    local names = SlotNames(runeId)
     for index, label in ipairs(choose.labels) do
         SetLabel(label, (("Choose" .. names[index]):gsub(" ", "")))
         if index == slot then
@@ -1171,7 +1330,7 @@ local function ShowOptions(slot)
     for index, option in ipairs(options) do
         local number = (slot - 1) * 3 + index
         local mod = rune and rune.mods[number]
-        local missing = MissingText(state.needs[state.rune .. "." .. slot .. "." .. index])
+        local missing = MissingText(state.needs[runeId .. "." .. slot .. "." .. index])
         option.slot, option.choice, option.missing = slot, index, missing
         option.picked = view.picks[slot] == index
         option.name:SetText(mod and mod.name or "")
@@ -1185,7 +1344,7 @@ local function ShowOptions(slot)
         end
         option.text:SetText(entry.texts and entry.texts[number] or (mod and mod.text) or "")
         option.text:SetTextColor(theme.muted[1], theme.muted[2], theme.muted[3])
-        option.icon:SetTexture(ART .. "Icon" .. state.rune .. "_" .. number)
+        option.icon:SetTexture(ART .. "Icon" .. runeId .. "_" .. number)
         option.icon:SetDesaturated(missing ~= nil)
         option.shown, option.inAt, option.leaving = 0, view.now + 0.08 + (index - 1) * 0.11, nil
         option:Enable()
@@ -1196,7 +1355,7 @@ local function ShowOptions(slot)
 end
 
 local function ShowDone()
-    local rune = RuneById(state.rune)
+    local rune = RuneById(BuildRune())
     view.active = nil
     ShowSlots(nil)
     local names = {}
@@ -1207,6 +1366,8 @@ local function ShowDone()
     done.name:SetText(rune and BuildName(rune) or "Your own build")
     done.list:SetText(table.concat(names, "  \194\183  "))
     done.list:SetTextColor(theme.muted[1], theme.muted[2], theme.muted[3])
+    done.hint:SetText(view.preview and "A preview: click a modifier to try another"
+        or "Click on a modifier to change it")
     done.hint:SetAlpha(0.8)
     Fade(choose, false)
     Fade(done, true)
@@ -1223,24 +1384,53 @@ end
 
 -- Bound: the medallion already open, its slots in place (no eruption).
 local function OpenBuild()
-    UseTheme(state.rune)
+    local runeId = BuildRune()
+    UseTheme(runeId)
     ClearParticles()
     HideCards()
-    SetBuildHead(state.rune)
-    view.picks = { state.mods[1], state.mods[2], state.mods[3] }
+    SetBuildHead(runeId)
+    view.picks = view.preview and { 0, 0, 0 } or { state.mods[1], state.mods[2], state.mods[3] }
     view.medal = { x = CENTER_X, y = CENTER_Y, split = 1, charge = 0, cracked = true, slotted = true }
     for slot = 1, 3 do
         if view.picks[slot] > 0 then
             view.medal.charge = view.medal.charge + 1
         end
     end
-    medal.core:SetTexture(ART .. "Core" .. state.rune)
+    medal.core:SetTexture(ART .. "Core" .. runeId)
     view.phase, view.t0 = "build", view.now
     Fade(buildHead, true)
     for _, slot in ipairs(slots) do
         Fade(slot, true)
     end
     ShowBuild()
+end
+
+-- A rune's build as if bound: its medallion, slots and options (picks tried here only), Back and Choose.
+OpenPreview = function(runeId)
+    view.preview, view.previewFrom = runeId, view.mode
+    view.mode = "preview"
+    HideAll()
+    Fade(closer, true)
+    OpenBuild()
+    local rune = RuneById(runeId)
+    previewBar.text:SetText("Previewing " .. (rune and rune.name or "this rune") .. ": nothing is bound")
+    if BindRefusal(rune) == nil then
+        previewBar.choose:Show()
+    else
+        previewBar.choose:Hide()
+    end
+    local gap = 16
+    local shown = previewBar.choose:IsShown() and { previewBar.back, previewBar.choose } or { previewBar.back }
+    local total = -gap
+    for _, pill in ipairs(shown) do
+        total = total + pill.width + gap
+    end
+    local x = -total / 2
+    for _, pill in ipairs(shown) do
+        In(pill, previewBar, x + pill.width / 2, 22)
+        x = x + pill.width + gap
+    end
+    Fade(previewBar, true)
 end
 
 -- A pick: light streams from the option into its slot, which takes it (the mockup's enhance).
@@ -1254,7 +1444,9 @@ local function Enhance(option)
     end
     local slot, choice = option.slot, option.choice
     view.busy = true
-    Send("MOD," .. slot .. "," .. choice)
+    if not view.preview then
+        Send("MOD," .. slot .. "," .. choice)
+    end
     local fx, fy = choose.x + option.dx, choose.y + 68
     local place = SLOT_POS[slot]
     local sx, sy = place[1], place[2]
@@ -1297,21 +1489,21 @@ end
 -- A done slot can be chosen again; an empty one after it waits its turn.
 for _, slot in ipairs(slots) do
     slot:SetScript("OnClick", function(self)
-        if view.phase == "build" and not view.busy and view.picks[self.index] > 0 then
+        if view.phase == "build" and not view.busy and (view.picks[self.index] > 0 or view.preview) then
             ShowOptions(self.index)
         end
     end)
     -- Hovered (a slot that can be chosen again): the disc swells and brightens, the pick turns gold, and the
     -- tooltip names what it does.
     slot:SetScript("OnEnter", function(self)
-        local rune = RuneById(state.rune)
+        local rune = RuneById(BuildRune())
         local pick = view.picks[self.index]
         if view.phase ~= "build" or pick == 0 or not rune then
             return
         end
         self.hover = true
         local number = (self.index - 1) * 3 + pick
-        local entry = art.runes[state.rune] or {}
+        local entry = art.runes[BuildRune()] or {}
         local mod = rune.mods[number]
         GameTooltip:SetOwner(self, self.side == "l" and "ANCHOR_LEFT" or "ANCHOR_RIGHT")
         GameTooltip:AddLine(mod and mod.name or "", GOLDEN[1], GOLDEN[2], GOLDEN[3])
@@ -1364,6 +1556,17 @@ function Refresh()
     if state.level < state.unlock then
         if view.mode ~= "locked" then
             Enter()
+        end
+        return
+    end
+    -- Previewing: it stays until Back, or it opens as the bound build once the server binds it.
+    if view.mode == "preview" then
+        if state.rune ~= 0 and view.pending == state.rune then
+            view.pending, view.preview = nil, nil
+            Fade(previewBar, false)
+            view.mode = "build"
+            OpenBuild()
+            Shock(CENTER_X, CENTER_Y, 520, theme.hot)
         end
         return
     end
@@ -1660,6 +1863,7 @@ frame:SetScript("OnHide", function()
     HideCards()
     ClearParticles()
     view.medal, view.chosen, view.phase, view.busy, view.pending = nil, nil, nil, false, nil
+    view.preview, view.previewFrom = nil, nil
     HideMedal()
     rays:Hide()
     timers = {}
@@ -1720,7 +1924,7 @@ local function OnMessage(message)
         if frame:IsShown() then
             Note(state.error)
             view.busy = false
-            if view.phase == "build" then
+            if view.phase == "build" and not view.preview then
                 view.picks = { state.mods[1], state.mods[2], state.mods[3] }
                 ShowBuild()
             end
@@ -1850,5 +2054,6 @@ EmberforgeRunes_State = state
 EmberforgeRunes_View = view
 EmberforgeRunes_Open = Open
 EmberforgeRunes_Debug = { cards = cards, hits = hits, options = options, slots = slots, head = head, note = note,
+    previews = previews, previewBar = previewBar,
     browseAsk = browseAsk, pager = pager, choose = choose, done = done, buildHead = buildHead, empty = empty,
     closer = closer, Step = Step, medal = medal }

@@ -86,7 +86,7 @@ function GetSpellInfo(id) return SPELLS[id] end
 tinsert = table.insert
 StaticPopupDialogs = {}
 local popup
-function StaticPopup_Show(name, a) popup = { name = name, a = a } return popup end
+function StaticPopup_Show(name, a, b) popup = { name = name, a = a, b = b } return popup end
 ACCEPT, CANCEL = "Accept", "Cancel"
 -- The player's buffs (name -> stacks) and the action bars (button -> spell id).
 local buffs, actions = {}, {}
@@ -168,10 +168,29 @@ for _ = 1, 6 do
 end
 run(1.6)
 check(view.page == 7 and debug.cards[3].rune.id == 21, "the last page ends with Fel Commandment")
+check(debug.cards[3].roles[1].shown and not debug.cards[3].roles[2].shown
+    and debug.cards[1].roles[1].shown, "each card shows its roles (Fel Commandment: damage only)")
 server("R,21,90111/688+697")
 debug.hits[3]:Click()
-check(debug.note.text.text:find("needs Throw Glaive, and Summon Imp or Summon Voidwalker"),
-    "a rune missing abilities names them")
+check(popup and popup.name == "EMBERFORGE_RUNE_BIND_MISSING"
+    and popup.b == "Throw Glaive, and Summon Imp or Summon Voidwalker",
+    "a rune missing abilities warns, naming them, before it can be bound")
+StaticPopupDialogs.EMBERFORGE_RUNE_BIND_MISSING.OnAccept(nil, 21)
+check(lastSent() == "PICK,21,1", "binding it anyway says so to the server")
+view.pending = nil
+
+-- Preview: the build as if bound, its picks tried here only; Back returns to the page.
+check(debug.previews[3].on and not debug.previews[1].on, "Preview under a rune with its build words only")
+debug.previews[3]:Click()
+check(view.mode == "preview" and view.phase == "build" and debug.options[1].name.text == "Infernal Pact",
+    "previewing shows its medallion and first options")
+local sentBefore = #sent
+debug.options[2]:Click()
+run(0.7)
+check(#sent == sentBefore and view.picks[1] == 2, "a pick in the preview is tried, not sent")
+debug.previewBar.back:Click()
+run(1.6)
+check(view.mode == "browse" and view.page == 7 and not view.preview, "Back returns to the page it came from")
 server("R,21,-")
 
 -- Binding asks first; the server's bind sets the eruption off.

@@ -54,14 +54,16 @@
 //
 // - Unlocked at level 10: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
-//   under Browse all (one missing a required ability greyed, naming it).
+//   under Browse all (one missing a required ability says so; it can still be bound after a warning naming what it
+//   lacks), each with a Preview of its build that binds nothing.
 // - One rune per specialization (titan_runes, db-characters), chosen once: only a prestige clears it. Modifiers
 //   change freely out of combat.
 // - The rune works through auras: its own while it is the active spec's (90700 Fel Commandment, 90730 the
 //   Sanctified Paragon, 90750 the Stormbound Conduit), and one marker per picked modifier (90710 / 90740 / 90760 +
 //   slot * 3 + choice); scripts look for them.
 //
-// Protocol (fields by ','; the client sends STATE, PICK,<rune>, MOD,<slot 1-3>,<choice 1-3>):
+// Protocol (fields by ','; the client sends STATE, PICK,<rune>[,1], MOD,<slot 1-3>,<choice 1-3>; PICK's 1: warned
+// of the abilities the rune needs and lacks, the Hero binds it anyway):
 //   S,<level>,<unlock level>,<spec>,<rune>,<m1>,<m2>,<m3>,<offers a.b.c or ->,<prompt 0/1>
 //   R,<rune>,<missing>      an implemented rune and the abilities it lacks (groups by '/', one of by '+'; '-' none)
 //   N,<rune>,<slot>,<choice>,<missing>      a modifier with needs of its own
@@ -1059,7 +1061,7 @@ namespace
         ChatHandler(player->GetSession()).PSendSysMessage("|cffa335eeLegendary Rune:|r {}", why);
     }
 
-    void OnPick(Player* player, uint8 runeId)
+    void OnPick(Player* player, uint8 runeId, bool anyway)
     {
         Choice& choice = ActiveChoice(player);
         RuneDef const* rune = FindRune(runeId);
@@ -1071,7 +1073,7 @@ namespace
             return Refuse(player, "This specialization is empty until you prestige in it.");
         if (!rune)
             return Refuse(player, "That rune is not available yet.");
-        if (Missing(player, rune->Requires) != "-")
+        if (Missing(player, rune->Requires) != "-" && !anyway)
             return Refuse(player, "You lack an ability this rune needs.");
         choice = Choice();
         choice.Rune = runeId;
@@ -1144,7 +1146,7 @@ namespace
         if (parts[0] == "STATE")
             SendState(player);
         else if (parts[0] == "PICK")
-            OnPick(player, uint8(number(1)));
+            OnPick(player, uint8(number(1)), number(2) == 1);
         else if (parts[0] == "MOD")
             OnModifier(player, uint8(number(1)), uint8(number(2)));
     }
