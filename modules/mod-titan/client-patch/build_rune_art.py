@@ -490,6 +490,9 @@ def main():
             if png.stem in shares:
                 labels[png.stem] = {'w': shares[png.stem][0], 'h': shares[png.stem][1], 'u': round(u, 4),
                                     'v': round(v, 4)}
+    # The rune button's ring (rune_art/rune_ring.png, the gold silhouette): 256 pixels a side.
+    with Image.open(HERE / 'rune_art' / 'rune_ring.png') as ring:
+        save(ring.convert('RGBA').resize((256, 256), Image.LANCZOS), 'RuneRing')
     print(f'  {len(list(OUT.iterdir()))} files in {OUT.relative_to(HERE)}')
 
     art = {'card': {'u': round(300 * CARD['scale'] / CARD['size'], 4), 'v': round(440 * CARD['scale'] / CARD['size'],

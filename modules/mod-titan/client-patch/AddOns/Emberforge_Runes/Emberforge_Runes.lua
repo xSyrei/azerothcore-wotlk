@@ -2071,7 +2071,142 @@ events:SetScript("OnUpdate", function(_, elapsed)
     end
 end)
 
+-- The rune button: the active specialization's rune in the gold ring (Art/RuneRing; its icon made round by
+-- SetPortraitToTexture), just under the minimap and clear of the buffs. A click opens the panel; it glows while
+-- the specialization has no rune to choose. Shift-drag moves it (kept per character), right-click puts it back.
+EmberforgeRunesDB = EmberforgeRunesDB or {}
+local RUNE_BUTTON_SIZE = 58
+local runeButton = CreateFrame("Button", "EmberforgeRuneButton", UIParent)
+runeButton:SetWidth(RUNE_BUTTON_SIZE)
+runeButton:SetHeight(RUNE_BUTTON_SIZE)
+runeButton:SetFrameStrata("MEDIUM")
+runeButton:SetMovable(true)
+runeButton:SetClampedToScreen(true)
+runeButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+runeButton:RegisterForDrag("LeftButton")
+runeButton.icon = runeButton:CreateTexture(nil, "BACKGROUND")
+runeButton.icon:SetPoint("CENTER")
+runeButton.icon:SetWidth(RUNE_BUTTON_SIZE * 0.76)
+runeButton.icon:SetHeight(RUNE_BUTTON_SIZE * 0.76)
+runeButton.glow = runeButton:CreateTexture(nil, "BORDER")
+runeButton.glow:SetTexture(ART .. "Soft")
+runeButton.glow:SetBlendMode("ADD")
+runeButton.glow:SetPoint("CENTER")
+runeButton.glow:SetWidth(RUNE_BUTTON_SIZE * 1.6)
+runeButton.glow:SetHeight(RUNE_BUTTON_SIZE * 1.6)
+runeButton.glow:SetVertexColor(1, 0.75, 0.3)
+runeButton.glow:Hide()
+runeButton.ring = runeButton:CreateTexture(nil, "ARTWORK")
+runeButton.ring:SetTexture(ART .. "RuneRing")
+runeButton.ring:SetAllPoints()
+runeButton.shine = runeButton:CreateTexture(nil, "HIGHLIGHT")
+runeButton.shine:SetTexture(ART .. "Soft")
+runeButton.shine:SetBlendMode("ADD")
+runeButton.shine:SetPoint("CENTER")
+runeButton.shine:SetWidth(RUNE_BUTTON_SIZE * 0.8)
+runeButton.shine:SetHeight(RUNE_BUTTON_SIZE * 0.8)
+runeButton.shine:SetAlpha(0.35)
+
+local function PlaceRuneButton()
+    runeButton:ClearAllPoints()
+    local spot = EmberforgeRunesDB.button
+    if spot then
+        runeButton:SetPoint("CENTER", UIParent, "BOTTOMLEFT", spot[1], spot[2])
+    else
+        -- Left of the minimap, level with its lower half: clear of its ring and its own buttons, under the buffs.
+        runeButton:SetPoint("RIGHT", MinimapCluster or UIParent, "BOTTOMLEFT", -16, 46)
+    end
+end
+
+-- Its icon: the bound rune's own, else a rune stone; grey below the unlock level.
+local function UpdateRuneButton()
+    local rune = state.rune ~= 0 and RuneById(state.rune)
+    local icon = rune and rune.icon and ("Interface\\Icons\\" .. rune.icon) or "Interface\\Icons\\INV_Misc_Rune_01"
+    if SetPortraitToTexture then
+        SetPortraitToTexture(runeButton.icon, icon)
+    else
+        runeButton.icon:SetTexture(icon)
+    end
+    local locked = state.level < state.unlock
+    runeButton.icon:SetDesaturated(locked)
+    runeButton.glow.on = not locked and state.rune == 0 and state.loaded
+    runeButton.glow:SetShown(runeButton.glow.on)
+end
+if not runeButton.glow.SetShown then
+    runeButton.glow.SetShown = function(self, on)
+        if on then
+            self:Show()
+        else
+            self:Hide()
+        end
+    end
+end
+
+runeButton:SetScript("OnClick", function(self, button)
+    if button == "RightButton" and IsShiftKeyDown() then
+        EmberforgeRunesDB.button = nil
+        PlaceRuneButton()
+        return
+    end
+    if frame:IsShown() then
+        frame:Hide()
+    else
+        Open()
+    end
+end)
+runeButton:SetScript("OnDragStart", function(self)
+    if IsShiftKeyDown() then
+        self:StartMoving()
+    end
+end)
+runeButton:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    local x, y = self:GetCenter()
+    EmberforgeRunesDB.button = { x, y }
+end)
+runeButton:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+    local rune = state.rune ~= 0 and RuneById(state.rune)
+    GameTooltip:AddLine(rune and rune.name or "Legendary Runes", GOLDEN[1], GOLDEN[2], GOLDEN[3])
+    if state.level < state.unlock then
+        GameTooltip:AddLine("Unlocks at level " .. state.unlock .. ".", 0.8, 0.8, 0.8, true)
+    elseif state.rune == 0 then
+        GameTooltip:AddLine("Your specialization has no rune yet: choose one.", 1, 0.82, 0.4, true)
+    else
+        GameTooltip:AddLine("Your specialization's Legendary Rune. Click to see or change its modifiers.", 1, 1, 1,
+            true)
+    end
+    GameTooltip:AddLine("Shift-drag to move it; shift-right-click to put it back.", 0.6, 0.6, 0.6, true)
+    GameTooltip:Show()
+end)
+runeButton:SetScript("OnLeave", function()
+    GameTooltip:Hide()
+end)
+runeButton:SetScript("OnUpdate", function(self, elapsed)
+    if not self.glow.on then
+        return
+    end
+    self.pulse = ((self.pulse or 0) + elapsed * 2.5) % (2 * math.pi)
+    self.glow:SetAlpha(0.45 + 0.35 * math.sin(self.pulse))
+end)
+runeButton:RegisterEvent("PLAYER_LOGIN")
+runeButton:SetScript("OnEvent", function()
+    EmberforgeRunesDB = EmberforgeRunesDB or {}
+    PlaceRuneButton()
+    UpdateRuneButton()
+end)
+PlaceRuneButton()
+UpdateRuneButton()
+
+-- The button follows the server's state.
+local RunesOnMessage = OnMessage
+OnMessage = function(message)
+    RunesOnMessage(message)
+    UpdateRuneButton()
+end
+
 -- For tests and other addons.
+EmberforgeRunes_Button = runeButton
 EmberforgeRunes_OnMessage = OnMessage
 EmberforgeRunes_State = state
 EmberforgeRunes_View = view
