@@ -21,6 +21,7 @@
 #include "CellImpl.h"
 #include "Chat.h"
 #include "DatabaseEnv.h"
+#include "DynamicObject.h"
 #include "GameTime.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
@@ -48,9 +49,10 @@
 // Legendary Runes (the design: the "Emberforge Legendary Runes" doc). Twenty-one runes, each a loop (a builder
 // makes a resource, a spender cashes it in) and three modifier slots (Invocation, Manifestation, Adaptation), one
 // pick each, a 22nd, the Rune of the Sanctified Paragon (its own concept doc; slots Presence, Manifestation,
-// Covenant), and a 23rd, the Rune of the Stormbound Conduit (its own doc; slots Conductivity, Arc Pattern, Lightning
-// Shield). Built so far: Fel Commandment, the Sanctified Paragon and the Stormbound Conduit; the panel lists the
-// others as coming.
+// Covenant), a 23rd, the Rune of the Stormbound Conduit (its own doc; slots Conductivity, Arc Pattern, Lightning
+// Shield), and a 24th, the Rune of Echoing Thunder (its own doc; slots Thunderfield, Echo Pattern, Shield
+// Resonance). Built so far: Fel Commandment, the Sanctified Paragon, the Stormbound Conduit and Echoing Thunder;
+// the panel lists the others as coming.
 //
 // - Unlocked at level 10: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
@@ -59,8 +61,8 @@
 // - One rune per specialization (titan_runes, db-characters), chosen once: only a prestige clears it. Modifiers
 //   change freely out of combat.
 // - The rune works through auras: its own while it is the active spec's (90700 Fel Commandment, 90730 the
-//   Sanctified Paragon, 90750 the Stormbound Conduit), and one marker per picked modifier (90710 / 90740 / 90760 +
-//   slot * 3 + choice); scripts look for them.
+//   Sanctified Paragon, 90750 the Stormbound Conduit, 90770 Echoing Thunder), and one marker per picked modifier
+//   (90710 / 90740 / 90760 / 90780 + slot * 3 + choice); scripts look for them.
 //
 // Protocol (fields by ','; the client sends STATE, PICK,<rune>[,1], MOD,<slot 1-3>,<choice 1-3>; PICK's 1: warned
 // of the abilities the rune needs and lacks, the Hero binds it anyway):
@@ -80,6 +82,7 @@ namespace
     constexpr uint8 RUNE_FEL_COMMANDMENT = 21;      // the doc's order: the 20 class runes, then the hybrid
     constexpr uint8 RUNE_SANCTIFIED_PARAGON = 22;   // its own doc
     constexpr uint8 RUNE_STORMBOUND_CONDUIT = 23;   // its own doc
+    constexpr uint8 RUNE_ECHOING_THUNDER = 24;      // its own doc
 
     enum Spells : uint32
     {
@@ -115,7 +118,19 @@ namespace
         SPELL_STORMBOUND_RETALIATION    = 90754,    // a Lightning Shield retaliation the rune makes
         SPELL_STORM_MODIFIER_FIRST      = 90760,    // + slot * 3 + choice
 
+        SPELL_RUNE_ECHOING_THUNDER      = 90770,
+        SPELL_THUNDERFIELD              = 90771,    // the storm on the ground (a dynamic object)
+        SPELL_THUNDERFIELD_MARCH        = 90772,    // March of the Storm's: on the Hero
+        SPELL_THUNDER_ECHO_WAVE         = 90773,    // the echo's cone, its look
+        SPELL_THUNDER_ECHO              = 90774,
+        SPELL_THUNDER_ECHO_BURST        = 90775,    // a burst about the Shield Slam target, its look
+        SPELL_SHELTERING_REVERBERATION  = 90776,
+        SPELL_DEAFENING_IMPACT          = 90777,
+        SPELL_THUNDER_MODIFIER_FIRST    = 90780,    // + slot * 3 + choice
+
         SPELL_CONSECRATION          = 26573,        // first rank
+        SPELL_THUNDER_CLAP          = 6343,         // first ranks
+        SPELL_SHIELD_SLAM           = 23922,
         SPELL_LIGHTNING_BOLT        = 403,          // first ranks
         SPELL_CHAIN_LIGHTNING       = 421,
         SPELL_LIGHTNING_SHIELD      = 324,
@@ -175,6 +190,29 @@ namespace
     constexpr float STORM_WITHIN_RANGE = 8.0f;
     constexpr float VIOLENT_ARCS = 1.4f, VIOLENT_RETALIATION = 0.9f;
     constexpr uint32 LIGHTNING_SHIELD_FAMILY_FLAG = 0x400;      // SpellFamilyFlags0
+
+    // Echoing Thunder's modifiers: slot (0 Thunderfield, 1 Echo Pattern, 2 Shield Resonance) x 3 + choice.
+    enum ThunderModifier : uint8
+    {
+        MOD_LINGERING_THUNDER, MOD_MARCH_OF_THE_STORM, MOD_ROLLING_FRONT,
+        MOD_REVERBERATING_IMPACT, MOD_FOCUSED_PEAL, MOD_DISTANT_RUMBLE,
+        MOD_COMMANDING_THUNDER, MOD_SHELTERING_REVERBERATION, MOD_DEAFENING_IMPACT,
+    };
+
+    // Echoing Thunder's tuning (the draft's initial values; the field's radius, the cone's reach and angle are ours:
+    // Thunder Clap's 8 yards, 10 yards, 90 degrees).
+    constexpr uint32 THUNDERFIELD_MS = 4000, LINGERING_MS = 6000;
+    constexpr float THUNDERFIELD_RADIUS = 8.0f, ROLLING_RANGE = 10.0f;
+    constexpr float ECHO_SHARE = 0.15f;                         // of Shield Slam's damage before mitigation
+    constexpr uint32 ECHO_INTERVAL_MS = 2000;
+    constexpr std::size_t ECHO_TARGETS = 4;
+    constexpr float ECHO_REACH = 10.0f, ECHO_ARC = float(M_PI) / 2.0f, REVERBERATING_RADIUS = 6.0f;
+    constexpr float LINGERING_ECHO = 0.85f, MARCH_ECHO = 0.8f, REVERBERATING_ECHO = 0.85f, FOCUSED_ECHO = 1.3f;
+    constexpr float DISTANT_REACH = 2.0f, DISTANT_ECHO = 0.8f;
+    constexpr float COMMANDING_ECHO = 0.9f, COMMANDING_THREAT = 1.0f;     // 100% more threat
+    constexpr float SHELTERING_ECHO = 0.75f, SHELTERING_SHARE = 0.05f;    // of block value
+    constexpr uint32 SHELTERING_INTERVAL_MS = 6000;
+    constexpr float DEAFENING_ECHO = 0.85f;
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
@@ -257,6 +295,10 @@ namespace
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_LIGHTNING_BOLT }, { SPELL_LIGHTNING_SHIELD } }, SPELL_RUNE_STORMBOUND_CONDUIT,
               SPELL_STORM_MODIFIER_FIRST },
+            // Tanks: Thunder Clap places the storm, Shield Slam echoes it (and needs the shield the rune asks for).
+            { RUNE_ECHOING_THUNDER, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
+              { { SPELL_THUNDER_CLAP }, { SPELL_SHIELD_SLAM } }, SPELL_RUNE_ECHOING_THUNDER,
+              SPELL_THUNDER_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -314,6 +356,14 @@ namespace
         // The Stormbound Conduit.
         uint32 StormTimer = 0;                      // ms since Storm Within's last pulse
         bool Pulsing = false;                       // a Storm Within pulse is landing: it never arcs
+
+        // Echoing Thunder.
+        uint32 ThunderMap = 0;
+        Position ThunderPos;
+        uint32 ThunderUntil = 0;                    // game ms
+        bool ThunderFollows = false;                // March of the Storm
+        uint32 LastEcho = 0;
+        uint32 LastSheltering = 0;
     };
 
     std::unordered_map<ObjectGuid::LowType, State> states;
@@ -961,6 +1011,138 @@ namespace
         Retaliate(player, target, shield, true);
     }
 
+    // ---- Echoing Thunder ---------------------------------------------------------------------------------------
+
+    bool HasThunderMarker(Unit* unit, uint8 modifier)
+    {
+        return unit && unit->HasAura(SPELL_THUNDER_MODIFIER_FIRST + modifier);
+    }
+
+    // Thunder Clap's storm: one at a time (a new one replaces it), 4 sec (6 with Lingering Thunder); beneath the
+    // Hero, or their hostile target within 10 yards (Rolling Front), or following them (March of the Storm).
+    void PlaceThunderfield(Player* player)
+    {
+        State& state = StateOf(player);
+        uint32 now = GameTime::GetGameTimeMS().count();
+        uint32 ms = HasThunderMarker(player, MOD_LINGERING_THUNDER) ? LINGERING_MS : THUNDERFIELD_MS;
+        state.ThunderUntil = now + ms;
+        state.ThunderFollows = HasThunderMarker(player, MOD_MARCH_OF_THE_STORM);
+        player->RemoveAurasDueToSpell(SPELL_THUNDERFIELD_MARCH);
+        player->RemoveDynObject(SPELL_THUNDERFIELD);
+        if (state.ThunderFollows)
+        {
+            if (Aura* aura = player->AddAura(SPELL_THUNDERFIELD_MARCH, player))
+            {
+                aura->SetMaxDuration(int32(ms));
+                aura->SetDuration(int32(ms));
+            }
+            return;
+        }
+        Position center = player->GetPosition();
+        if (HasThunderMarker(player, MOD_ROLLING_FRONT))
+            if (Unit* target = player->GetSelectedUnit())
+                if (target->IsAlive() && player->IsValidAttackTarget(target)
+                    && player->IsWithinDistInMap(target, ROLLING_RANGE))
+                    center = target->GetPosition();
+        state.ThunderMap = player->GetMapId();
+        state.ThunderPos = center;
+        player->CastSpell(center.GetPositionX(), center.GetPositionY(), center.GetPositionZ(), SPELL_THUNDERFIELD,
+            true);
+        if (DynamicObject* field = player->GetDynObject(SPELL_THUNDERFIELD))
+            field->SetDuration(int32(ms));
+    }
+
+    bool InThunderfield(Player* player)
+    {
+        State& state = StateOf(player);
+        if (GameTime::GetGameTimeMS().count() >= state.ThunderUntil)
+            return false;
+        if (state.ThunderFollows)
+            return true;
+        return player->GetMapId() == state.ThunderMap
+            && player->GetExactDist(&state.ThunderPos) <= THUNDERFIELD_RADIUS;
+    }
+
+    // Thunder Echo: once every 2 sec at most, 15% of Shield Slam's damage before mitigation (each modifier's share
+    // of it), as Nature damage that never crits on its own, to each of up to 4 enemies once: in a 90 degree cone
+    // toward the target, 10 yards (20 with Distant Rumble); or within 6 yards of the target (Reverberating Impact);
+    // or the target alone (Focused Peal). Its damage never echoes again.
+    void ThunderEcho(Player* player, Unit* target, int32 slamDamage)
+    {
+        State& state = StateOf(player);
+        uint32 now = GameTime::GetGameTimeMS().count();
+        if (now - state.LastEcho < ECHO_INTERVAL_MS || slamDamage <= 0)
+            return;
+        state.LastEcho = now;
+
+        float damage = slamDamage * ECHO_SHARE;
+        bool reverberating = HasThunderMarker(player, MOD_REVERBERATING_IMPACT);
+        bool focused = HasThunderMarker(player, MOD_FOCUSED_PEAL);
+        bool distant = HasThunderMarker(player, MOD_DISTANT_RUMBLE);
+        for (auto [modifier, share] : { std::pair{ MOD_LINGERING_THUNDER, LINGERING_ECHO },
+                 std::pair{ MOD_MARCH_OF_THE_STORM, MARCH_ECHO }, std::pair{ MOD_REVERBERATING_IMPACT,
+                 REVERBERATING_ECHO }, std::pair{ MOD_FOCUSED_PEAL, FOCUSED_ECHO }, std::pair{ MOD_DISTANT_RUMBLE,
+                 DISTANT_ECHO }, std::pair{ MOD_COMMANDING_THUNDER, COMMANDING_ECHO },
+                 std::pair{ MOD_SHELTERING_REVERBERATION, SHELTERING_ECHO }, std::pair{ MOD_DEAFENING_IMPACT,
+                 DEAFENING_ECHO } })
+            if (HasThunderMarker(player, modifier))
+                damage *= share;
+
+        std::vector<Unit*> targets;
+        if (target->IsAlive())
+            targets.push_back(target);
+        if (!focused)
+        {
+            float reach = reverberating ? REVERBERATING_RADIUS : ECHO_REACH * (distant ? DISTANT_REACH : 1.0f);
+            float facing = player->GetAngle(target);
+            for (Unit* enemy : EnemiesAround(player, reverberating ? target : static_cast<WorldObject*>(player),
+                reach))
+            {
+                if (targets.size() >= ECHO_TARGETS)
+                    break;
+                if (enemy == target)
+                    continue;
+                if (!reverberating)
+                {
+                    float diff = std::fabs(Position::NormalizeOrientation(player->GetAngle(enemy) - facing));
+                    if (std::min(diff, float(2 * M_PI) - diff) > ECHO_ARC / 2.0f)
+                        continue;
+                }
+                targets.push_back(enemy);
+            }
+        }
+
+        // Its look: the wave from the Hero toward the target, or a burst about the target.
+        if (reverberating || focused)
+            target->CastSpell(target, SPELL_THUNDER_ECHO_BURST, true);
+        else
+            player->CastSpell(player, SPELL_THUNDER_ECHO_WAVE, true);
+
+        int32 each = std::max<int32>(1, int32(damage));
+        bool commanding = HasThunderMarker(player, MOD_COMMANDING_THUNDER);
+        bool deafening = HasThunderMarker(player, MOD_DEAFENING_IMPACT);
+        for (Unit* enemy : targets)
+        {
+            player->CastCustomSpell(enemy, SPELL_THUNDER_ECHO, &each, nullptr, nullptr, true);
+            if (!enemy->IsAlive())
+                continue;
+            if (commanding && enemy->CanHaveThreatList())
+                enemy->AddThreat(player, float(each) * COMMANDING_THREAT, SPELL_SCHOOL_MASK_NATURE);
+            if (deafening)
+                player->CastSpell(enemy, SPELL_DEAFENING_IMPACT, true);
+        }
+
+        // Sheltering Reverberation: an absorb of 5% of block value for 3 sec, once every 6 sec, never stacked.
+        if (HasThunderMarker(player, MOD_SHELTERING_REVERBERATION)
+            && now - state.LastSheltering >= SHELTERING_INTERVAL_MS)
+        {
+            state.LastSheltering = now;
+            player->RemoveAurasDueToSpell(SPELL_SHELTERING_REVERBERATION);
+            int32 absorb = std::max<int32>(1, int32(player->GetShieldBlockValue() * SHELTERING_SHARE));
+            player->CastCustomSpell(player, SPELL_SHELTERING_REVERBERATION, &absorb, nullptr, nullptr, true);
+        }
+    }
+
     // ---- The rune's auras ------------------------------------------------------------------------------------
 
     std::vector<uint32> RuneAuras()
@@ -1438,6 +1620,44 @@ class spell_titan_rune_lightning_shield_damage : public SpellScript
     }
 };
 
+// Thunder Clap (every rank) with Echoing Thunder: its storm (PlaceThunderfield).
+class spell_titan_rune_thunder_clap : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_thunder_clap);
+
+    void Storm()
+    {
+        if (Player* player = GetCaster()->ToPlayer())
+            if (player->HasAura(SPELL_RUNE_ECHOING_THUNDER))
+                PlaceThunderfield(player);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_rune_thunder_clap::Storm);
+    }
+};
+
+// Shield Slam (every rank) with Echoing Thunder: landed from inside the Thunderfield, a Thunder Echo (its damage
+// before the target's mitigation).
+class spell_titan_rune_shield_slam : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_shield_slam);
+
+    void Echo()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && player->HasAura(SPELL_RUNE_ECHOING_THUNDER) && InThunderfield(player))
+            ThunderEcho(player, target, GetHitDamage());
+    }
+
+    void Register() override
+    {
+        OnHit += SpellHitFn(spell_titan_rune_shield_slam::Echo);
+    }
+};
+
 // The rune's Felguard (910120): 8 sec at the Hero's side, on the Hero's target (the next when it dies). Felstorm as
 // it arrives (a 2 sec spin: 4 ticks), then Cleave and melee. 50% of the Hero's power (spell power or attack power,
 // the higher) in its weapon, 30% of their health; no threat.
@@ -1675,6 +1895,8 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_stormbound_conduit);
     RegisterSpellScript(spell_titan_rune_lightning_shield);
     RegisterSpellScript(spell_titan_rune_lightning_shield_damage);
+    RegisterSpellScript(spell_titan_rune_thunder_clap);
+    RegisterSpellScript(spell_titan_rune_shield_slam);
     RegisterCreatureAI(npc_titan_rune_felguard);
     RegisterCreatureAI(npc_titan_rune_fel_imp);
     new titan_runes_player();

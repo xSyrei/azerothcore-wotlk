@@ -47,6 +47,12 @@ EmberforgeRunesArt = {
             u = 0.6904,
             v = 0.9844,
         },
+        ChooseEchoPattern = {
+            w = 537,
+            h = 84,
+            u = 0.7871,
+            v = 0.9844,
+        },
         ChooseInvocation = {
             w = 499,
             h = 84,
@@ -69,6 +75,18 @@ EmberforgeRunesArt = {
             w = 455,
             h = 84,
             u = 0.667,
+            v = 0.9844,
+        },
+        ChooseShieldResonance = {
+            w = 614,
+            h = 84,
+            u = 0.8994,
+            v = 0.9844,
+        },
+        ChooseThunderfield = {
+            w = 540,
+            h = 84,
+            u = 0.791,
             v = 0.9844,
         },
         DoneEyebrow = {
@@ -107,6 +125,12 @@ EmberforgeRunesArt = {
             u = 0.75,
             v = 0.875,
         },
+        SlotEchoPattern = {
+            w = 128,
+            h = 28,
+            u = 1,
+            v = 0.875,
+        },
         SlotInvocation = {
             w = 110,
             h = 28,
@@ -129,6 +153,18 @@ EmberforgeRunesArt = {
             w = 91,
             h = 28,
             u = 0.7109,
+            v = 0.875,
+        },
+        SlotShieldResonance = {
+            w = 167,
+            h = 28,
+            u = 0.6523,
+            v = 0.875,
+        },
+        SlotThunderfield = {
+            w = 132,
+            h = 28,
+            u = 0.5156,
             v = 0.875,
         },
         Title = {
@@ -495,6 +531,54 @@ EmberforgeRunesArt = {
                 "Conductivity",
                 "Arc Pattern",
                 "Lightning Shield",
+            },
+        },
+        [24] = {
+            rgb = { 0.471, 0.627, 1 },
+            hot = { 0.816, 0.871, 1 },
+            ink = { 0.949, 0.965, 1 },
+            muted = { 0.694, 0.745, 0.918 },
+            hue = { 0.604, 0.78, 1 },
+            inner = { 0.906, 0.933, 1 },
+            built = true,
+            core = "Thunder Clap leaves a **Thunderfield** for 4 sec. Shield Slam landed " ..
+                    "inside it releases a **Thunder Echo** toward your target: 15% of its " ..
+                    "damage to up to 4 enemies.",
+            asks = {
+                "Where your storm stands",
+                "The shape of your echo",
+                "What the echo does for you",
+            },
+            abilities = {
+                "Thunder Clap",
+                "Thunder Clap",
+                "Thunder Clap",
+                "Shield Slam",
+                "Shield Slam",
+                "Shield Slam",
+                "Threat",
+                "Block value",
+                "Slow",
+            },
+            texts = {
+                "The Thunderfield lasts 6 sec, but the echo deals 15% less damage.",
+                "The Thunderfield follows you, 5 yards wide, but the echo deals 20% " ..
+                        "less damage.",
+                "Thunder Clap places the Thunderfield beneath your hostile target " ..
+                        "within 10 yards. You must still stand inside it.",
+                "A 6-yard burst around Shield Slam's target instead of the cone; 15% " ..
+                        "less damage.",
+                "The echo strikes only Shield Slam's target, for 30% more damage.",
+                "The cone reaches twice as far, but deals 20% less damage.",
+                "The echo generates 100% more threat, but deals 10% less damage.",
+                "The echo deals 25% less damage and shields you for 5% of your block " ..
+                        "value, 3 sec, once every 6 sec.",
+                "The echo deals 15% less damage and slows its targets by 15% for 2 sec.",
+            },
+            slots = {
+                "Thunderfield",
+                "Echo Pattern",
+                "Shield Resonance",
             },
         },
     },

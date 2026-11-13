@@ -48,6 +48,20 @@ The Rune of the Stormbound Conduit (the "Rune of the Stormbound Conduit" concept
 - 90754 Lightning Shield: a retaliation the rune makes (Distant Conductor, Storm Within): the Hero's Lightning
   Shield rank's damage, its spell power share through spell_bonus_data; a bolt from the sky;
 - 90760-90768 its nine modifiers' markers (Conductivity, Arc Pattern, Lightning Shield: 3 each), hidden.
+
+The Rune of Echoing Thunder (the "Rune of Echoing Thunder" concept doc), 90770 on:
+
+- 90770 the rune: a buff the Hero wears while their active specialization's rune is Echoing Thunder;
+- 90771 Thunderfield: where Thunder Clap leaves its storm (a patch of ground, 8 yards, 4 sec; the script places it
+  and sets its time); its look: cracked earth with lightning running through it (build_thunder_art.py);
+- 90772 Thunderfield (March of the Storm): the storm following the Hero, 5 yards (a buff with the same ground);
+- 90773 Thunder Echo's wave: Shockwave's look from the Hero toward the target (no effect);
+- 90774 Thunder Echo: Nature damage (its amount set by the script, never a critical strike of its own);
+- 90775 its burst about the Shield Slam target (Reverberating Impact, Focused Peal): Thunder Clap's look, cast by
+  the target (no effect);
+- 90776 Sheltering Reverberation: an absorb (its amount set by the script), 3 sec;
+- 90777 Deafening Impact: movement speed 15% slower, 2 sec;
+- 90780-90788 its nine modifiers' markers (Thunderfield, Echo Pattern, Shield Resonance: 3 each), hidden.
 """
 
 import patch_player
@@ -71,6 +85,11 @@ SPELL_ATTR4_CANNOT_BE_RESISTED, SPELL_ATTR4_NO_PARTIAL_IMMUNITY = 0x1, 0x800
 RUNE_ICON = 'Ability_Rune_FelCommandment'          # icons/spells/: the rune's own
 PARAGON_ICON = 'Ability_Rune_SanctifiedParagon'    # icons/spells/: the Sanctified Paragon's own
 STORM_ICON = 'Ability_Rune_StormboundConduit'     # icons/spells/: the Stormbound Conduit's own
+THUNDER_ICON = 'Ability_Rune_EchoingThunder'       # icons/spells/: Echoing Thunder's own
+SHOCKWAVE, THUNDER_CLAP = 46968, 6343
+VISUAL_SHOCKWAVE, VISUAL_THUNDER_BURST, VISUAL_THUNDER_HIT = 10703, 7449, 145
+SPELL_ATTR2_CANT_CRIT = 0x20000000
+DURATION_6S_INDEX = 32
 LIGHTNING_BOLT, CHAIN_LIGHTNING, LIGHTNING_SHIELD_DAMAGE = 403, 421, 26364
 # Client SpellVisuals the Stormbound Conduit borrows (impact or state only: nothing on the Hero): a crackle looping
 # on the chest (Shredder Aura's), a bolt from the sky (Storm's Fury's Call Lightning), and Chain Lightning's strike
@@ -398,6 +417,103 @@ SPELLS += [buff(90760 + slot * 3 + choice, name, STORM_ICON, '', DURATION_INFINI
                 {1: aura(AURA_DUMMY, 1, 0)}, hidden=True)
            for slot, names in enumerate(STORM_MODIFIERS) for choice, name in enumerate(names)]
 
+# The Rune of Echoing Thunder (90770 on; runes.cpp's Echoing Thunder section).
+THUNDER = 'WAR_EchoingThunder'
+STORM_BLUE, PALE_BLUE = (0.45, 0.7, 1.0), (0.75, 0.88, 1.0)
+EFFECTS.update({
+    # The Thunderfield: cracked earth with lightning running through it, slowly turning, a paler layer over it.
+    'Thunderfield': {'model': 'WAR_Thunderfield', 'effect': 7157, 'shape': 'zone',
+                     'textures': (f'{THUNDER}/thunder_cracks',),
+                     'options': {'layers': (
+                         {'texture': 0, 'size': 16.0, 'height': 0.1, 'tint': STORM_BLUE, 'alpha': 0.8, 'turn': 40.0,
+                          'blend': 4},
+                         {'texture': 0, 'size': 15.0, 'height': 0.14, 'tint': PALE_BLUE, 'alpha': 0.45,
+                          'turn': -55.0, 'blend': 4})}},
+    # March of the Storm: the same ground, 5 yards, under the Hero.
+    'ThunderfieldMarch': {'model': 'WAR_ThunderfieldMarch', 'effect': 7158, 'shape': 'zone',
+                          'textures': (f'{THUNDER}/thunder_cracks',),
+                          'options': {'layers': (
+                              {'texture': 0, 'size': 10.0, 'height': 0.1, 'tint': STORM_BLUE, 'alpha': 0.8,
+                               'turn': 40.0, 'blend': 4},
+                              {'texture': 0, 'size': 9.4, 'height': 0.14, 'tint': PALE_BLUE, 'alpha': 0.45,
+                               'turn': -55.0, 'blend': 4})}},
+})
+SPELLS += [
+    buff(90770, 'Rune of Echoing Thunder', THUNDER_ICON,
+         'Thunder Clap leaves a Thunderfield for 4 sec. Shield Slam landed while you stand in it releases a Thunder '
+         'Echo toward your target: Nature damage to up to 4 enemies, 15% of Shield Slam\'s damage.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {
+        'id': 90771, 'copy': CONSECRATION, 'name': 'Thunderfield', 'icon': 'Spell_Nature_ThunderClap',
+        'description': '', 'tooltip': '', 'visual': 'Thunderfield',
+        'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
+                'DurationIndex': DURATION_6S_INDEX, 'RangeIndex': RANGE_VISION},
+        'effects': {1: {'Effect': EFFECT_PERSISTENT_AREA_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 1,
+                        'RealPointsPerLevel': 0.0, 'Amplitude': 0, 'TargetA': TARGET_DEST_CASTER,
+                        'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8}},
+    },
+    {
+        **buff(90772, 'Thunderfield', 'Spell_Nature_ThunderClap',
+               'A Thunderfield follows you: Shield Slam releases a Thunder Echo.', DURATION_6S_INDEX,
+               {1: aura(AURA_DUMMY, 1, 0)}),
+        'visual': 'ThunderfieldMarch',
+    },
+    {
+        'id': 90773, 'copy': SHOCKWAVE, 'name': 'Thunder Echo', 'icon': 'Spell_Nature_ThunderClap',
+        'description': '', 'tooltip': '',
+        'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
+                'SpellVisual': VISUAL_SHOCKWAVE, 'RangeIndex': 1, 'ProcFlags': 0},
+        'effects': {1: {'Effect': EFFECT_DUMMY, 'Aura': 0, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
+                        'TargetA': 1, 'TargetB': 0, 'RadiusIndex': 0}},
+        'clear': [2, 3],
+    },
+    {
+        'id': 90774, 'copy': LIGHTNING_BOLT, 'name': 'Thunder Echo', 'icon': 'Spell_Nature_ThunderClap',
+        'description': 'A shockwave of thunder.', 'tooltip': '',
+        'set': {**HARMFUL, 'Speed': 0.0, 'SchoolMask': NATURE, 'SpellVisual': VISUAL_THUNDER_HIT,
+                'AttributesEx2': SPELL_ATTR2_CANT_CRIT,
+                'AttributesEx3': SPELL_ATTR3_ALWAYS_HIT | SPELL_ATTR3_IGNORE_CASTER_MODIFIERS,
+                'AttributesEx4': SPELL_ATTR4_NO_PARTIAL_IMMUNITY | SPELL_ATTR4_CANNOT_BE_RESISTED},
+        'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
+                        'ChainTarget': 0, 'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0}},
+        'clear': [2, 3],
+    },
+    {
+        'id': 90775, 'copy': SELF_TEMPLATE, 'name': 'Thunder Echo', 'icon': 'Spell_Nature_ThunderClap',
+        'description': '', 'tooltip': '',
+        'set': {**HIDDEN, 'Attributes': SPELL_ATTR0_ALLOW_CAST_WHILE_DEAD, 'SpellVisual': VISUAL_THUNDER_BURST,
+                'DurationIndex': 0},
+        'effects': {1: {'Effect': EFFECT_DUMMY, 'Aura': 0, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
+                        'TargetA': 1, 'TargetB': 0}},
+        'clear': [2, 3],
+    },
+    {
+        'id': 90776, 'copy': POWER_WORD_SHIELD, 'name': 'Sheltering Reverberation',
+        'icon': 'Ability_Warrior_ShieldWall',
+        'description': 'Absorbs damage.', 'tooltip': 'Absorbs $s1 damage.',
+        'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
+                'RangeIndex': 1, 'DurationIndex': DURATION_3S, 'SchoolMask': 1},
+        'effects': {1: {'Effect': 6, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': 0, 'DieSides': 1,
+                        'RealPointsPerLevel': 0.0, 'MiscValue': ALL_SCHOOLS, 'TargetA': 1, 'TargetB': 0}},
+        'clear': [2, 3],
+    },
+    {
+        'id': 90777, 'copy': CRIPPLING_POISON, 'name': 'Deafening Impact', 'icon': 'Spell_Nature_ThunderClap',
+        'description': 'Movement speed reduced by 15%.', 'tooltip': 'Movement speed reduced by $s1%.',
+        'set': {**HARMFUL, 'DurationIndex': DURATION_2S, 'SchoolMask': NATURE},
+        'effects': {1: {**aura(AURA_MOD_DECREASE_SPEED, -15, 0), 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
+        'clear': [2, 3],
+    },
+]
+THUNDER_MODIFIERS = [
+    ('Lingering Thunder', 'March of the Storm', 'Rolling Front'),
+    ('Reverberating Impact', 'Focused Peal', 'Distant Rumble'),
+    ('Commanding Thunder', 'Sheltering Reverberation', 'Deafening Impact'),
+]
+SPELLS += [buff(90780 + slot * 3 + choice, name, THUNDER_ICON, '', DURATION_INFINITE,
+                {1: aura(AURA_DUMMY, 1, 0)}, hidden=True)
+           for slot, names in enumerate(THUNDER_MODIFIERS) for choice, name in enumerate(names)]
+
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_WORLD = 3, 4, 5, 14
 VISUALS = {
     'SanctifiedParagon': {'copy': 32, 'id': 16759, 'clear': ('precast', 'cast', 'impact'), 'kits': {
@@ -409,9 +525,14 @@ VISUALS = {
         'state': (15709, {KIT_BASE: 'SeatOfTheParagon', 'sound': None, 'procs': False})}},
     'HallowedFootsteps': {'copy': 9735, 'id': 16761, 'clear': ('precast', 'state', 'area'), 'kits': {
         'persistent': (15710, {KIT_WORLD: 'HallowedFootsteps', 'procs': False})}},
+    'Thunderfield': {'copy': 9735, 'id': 16763, 'clear': ('precast', 'state', 'area'), 'kits': {
+        'persistent': (15712, {KIT_WORLD: 'Thunderfield', 'procs': False})}},
+    'ThunderfieldMarch': {'copy': 32, 'id': 16764, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15713, {KIT_BASE: 'ThunderfieldMarch', 'sound': None, 'procs': False})}},
 }
 
-ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, 'Spell_Nature_LightningOverload', 'Spell_Nature_ChainLightning',
+ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, THUNDER_ICON, 'Spell_Nature_ThunderClap', 'Ability_Warrior_ShieldWall',
+         'Spell_Nature_LightningOverload', 'Spell_Nature_ChainLightning',
          'Spell_Nature_LightningShield', 'Spell_Holy_InnerFire', 'Spell_Holy_RighteousFury', 'Spell_Holy_HealingAura',
          'Spell_Holy_DevotionAura', 'Spell_Holy_SealOfWrath', 'Spell_Holy_PowerWordShield', 'Spell_Holy_HolyGuidance',
          'Spell_Fire_FelFlameRing', 'Ability_Warlock_ChaosBolt', 'Spell_Shadow_SummonFelGuard',

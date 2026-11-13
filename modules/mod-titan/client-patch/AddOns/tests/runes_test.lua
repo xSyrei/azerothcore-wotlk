@@ -120,9 +120,13 @@ frame:Hide()
 
 -- The catalog and the art: the doc's 21 runes, the Sanctified Paragon and the Stormbound Conduit; Fel
 -- Commandment's build view in the mockup's words.
-check(#EmberforgeRunesCatalog == 23 and EmberforgeRunesCatalog[22].name == "Rune of the Sanctified Paragon"
-    and EmberforgeRunesCatalog[23].name == "Rune of the Stormbound Conduit",
-    "the catalog holds the doc's 21 runes, then the Sanctified Paragon and the Stormbound Conduit")
+check(#EmberforgeRunesCatalog == 24 and EmberforgeRunesCatalog[22].name == "Rune of the Sanctified Paragon"
+    and EmberforgeRunesCatalog[23].name == "Rune of the Stormbound Conduit"
+    and EmberforgeRunesCatalog[24].name == "Rune of Echoing Thunder",
+    "the catalog holds the doc's 21 runes, then the Paragon, the Stormbound Conduit and Echoing Thunder")
+local thunder = EmberforgeRunesArt.runes[24]
+check(thunder.built and thunder.slots[3] == "Shield Resonance" and #thunder.texts == 9
+    and EmberforgeRunesCatalog[24].roles[1] == "TANK", "Art.lua has Echoing Thunder's slots and words; a tank's rune")
 local storm = EmberforgeRunesArt.runes[23]
 check(storm.built and storm.slots[2] == "Arc Pattern" and #storm.texts == 9 and #EmberforgeRunesCatalog[23].mods == 9,
     "Art.lua has the Stormbound Conduit's slots (Conductivity, Arc Pattern, Lightning Shield) and its words")

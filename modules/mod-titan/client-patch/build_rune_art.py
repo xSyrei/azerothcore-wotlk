@@ -128,6 +128,8 @@ RUNES = [
     (23, (95, 170, 255), 'Lightning · Stormbound', 'Lightning Bolt connects enemies; your lightning arcs through '
      'them.', 'Lightning Bolt and Lightning Shield',
      'M13 2 5 13h6l-1 9 8-12h-6l1-8ZM3 8l3 2-3 3M21 8l-3 2 3 3'),
+    (24, (120, 160, 255), 'Protection · Thunder', 'Thunder Clap leaves a storm; Shield Slam echoes through it.',
+     'Thunder Clap and Shield Slam', 'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM13 7l-4 6h4l-2 5'),
 ]
 
 # The runes the panel builds (their build view: the medallion, the slots, the options): the mockup's words for them.
@@ -244,6 +246,34 @@ BUILT = {
                   'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM13 7l-4 6h4l-2 5',
                   'M13 2 4 14h7l-1 8 9-12h-7z'],
     },
+    24: {
+        'core': 'Thunder Clap leaves a **Thunderfield** for 4 sec. Shield Slam landed inside it releases a **Thunder '
+                'Echo** toward your target: 15% of its damage to up to 4 enemies.',
+        'slots': ['Thunderfield', 'Echo Pattern', 'Shield Resonance'],
+        'asks': ['Where your storm stands', 'The shape of your echo', 'What the echo does for you'],
+        'texts': ['The Thunderfield lasts 6 sec, but the echo deals 15% less damage.',
+                  'The Thunderfield follows you, 5 yards wide, but the echo deals 20% less damage.',
+                  'Thunder Clap places the Thunderfield beneath your hostile target within 10 yards. You must still '
+                  'stand inside it.',
+                  'A 6-yard burst around Shield Slam\'s target instead of the cone; 15% less damage.',
+                  'The echo strikes only Shield Slam\'s target, for 30% more damage.',
+                  'The cone reaches twice as far, but deals 20% less damage.',
+                  'The echo generates 100% more threat, but deals 10% less damage.',
+                  'The echo deals 25% less damage and shields you for 5% of your block value, 3 sec, once every 6 '
+                  'sec.',
+                  'The echo deals 15% less damage and slows its targets by 15% for 2 sec.'],
+        'abilities': ['Thunder Clap', 'Thunder Clap', 'Thunder Clap', 'Shield Slam', 'Shield Slam', 'Shield Slam',
+                      'Threat', 'Block value', 'Slow'],
+        'icons': ['M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
+                  'M5 19 19 5M9 5h10v10',
+                  'M4 12h10M10 8l4 4-4 4M18 5v14',
+                  'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+                  'M12 2v4M12 18v4M2 12h4M18 12h4M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',
+                  'M3 12h14M13 7l5 5-5 5M21 7v10',
+                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
+                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM9 12h6',
+                  'M4 12c3-6 5-6 8 0s5 6 8 0'],
+    },
 }
 
 # Sizes. The card (300 x 440 points) at CARD_SCALE pixels a point fills the top-left of a 512 square; the medallion's
@@ -269,7 +299,7 @@ LABELS = {
 # Every slot name a built rune uses (the doc's three; the Sanctified Paragon's Presence and Covenant; the Stormbound
 # Conduit's three), by name (its spaces left out of the key: the panel does the same).
 for _name in ['Invocation', 'Manifestation', 'Adaptation', 'Presence', 'Covenant', 'Conductivity', 'Arc Pattern',
-              'Lightning Shield']:
+              'Lightning Shield', 'Thunderfield', 'Echo Pattern', 'Shield Resonance']:
     _key = _name.replace(' ', '')
     LABELS[f'Choose{_key}'] = {'text': 'Choose your ' + _name, 'font': '700 28px Cinzel', 'spacing': '3px',
                                 'color': '#ffe2a8', 'glows': [['rgba(255,150,60,0.55)', 20]], 'shadow': '#000',

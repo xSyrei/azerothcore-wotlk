@@ -1,4 +1,4 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-90768: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-90788: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
@@ -80,3 +80,17 @@ DELETE FROM `spell_bonus_data` WHERE `entry` IN (90752, 90754);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90752, 0, 0, 0, 0, 'Stormbound Conduit - secondary arc'),
 (90754, 0.147, 0, 0, 0, 'Stormbound Conduit - Lightning Shield retaliation');
+
+-- The Rune of Echoing Thunder: Thunder Clap (every rank) leaves its Thunderfield; Shield Slam (every rank) landed
+-- in it releases a Thunder Echo.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_thunder_clap',
+    'spell_titan_rune_shield_slam');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(-6343, 'spell_titan_rune_thunder_clap'),
+(-23922, 'spell_titan_rune_shield_slam');
+
+-- The echo's damage is the script's (a share of Shield Slam's, power already in it); the absorb's too.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90774, 90776);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90774, 0, 0, 0, 0, 'Echoing Thunder - Thunder Echo'),
+(90776, 0, 0, 0, 0, 'Echoing Thunder - Sheltering Reverberation');

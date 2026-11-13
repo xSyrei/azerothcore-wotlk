@@ -1502,4 +1502,77 @@ EmberforgeRunesCatalog = {
         },
       },
     },
+    { id = 24,
+      name = "Rune of Echoing Thunder",
+      role = "Tank (Thunder Clap, Shield Slam)",
+      roles = { "TANK" },
+      icon = "Ability_Rune_EchoingThunder",
+      slots = { "Thunderfield", "Echo Pattern", "Shield Resonance" },
+      builtFrom = "Thunder Clap (the Thunderfield)",
+      spentWith = "Shield Slam (Thunder Echo)",
+      resource = "None: where you stand",
+      core = "Thunder Clap leaves a Thunderfield at your location for 4 sec. Landing Shield Slam while you stand " ..
+          "inside it releases a Thunder Echo in a cone toward your target, dealing Nature damage equal to 15% of " ..
+          "Shield Slam's damage to up to 4 enemies, once every 2 sec at most. One Thunderfield at a time: a new " ..
+          "Thunder Clap replaces it. Needs a shield.",
+      loop = "Thunder Clap where you will fight, step into the storm, and aim your Shield Slams through the pack.",
+      mods = {
+        {
+          name = "Lingering Thunder",
+          text = "The Thunderfield lasts 6 sec, but Thunder Echo deals 15% less damage.",
+        },
+        {
+          name = "March of the Storm",
+          text = "The Thunderfield follows you for its duration, but its radius is 5 yards and Thunder Echo deals " ..
+              "20% less damage.",
+        },
+        {
+          name = "Rolling Front",
+          text = "Thunder Clap places the Thunderfield beneath your hostile target within 10 yards instead. You " ..
+              "must still stand inside it.",
+        },
+        {
+          name = "Reverberating Impact",
+          text = "A 6-yard burst around Shield Slam's target instead of the cone, up to 4 enemies; 15% less damage.",
+        },
+        {
+          name = "Focused Peal",
+          text = "Thunder Echo strikes only Shield Slam's target, for 30% more damage.",
+        },
+        {
+          name = "Distant Rumble",
+          text = "The cone reaches twice as far, but deals 20% less damage. Still up to 4 enemies.",
+        },
+        {
+          name = "Commanding Thunder",
+          text = "Thunder Echo generates 100% more threat, but deals 10% less damage.",
+        },
+        {
+          name = "Sheltering Reverberation",
+          text = "Thunder Echo deals 25% less damage; it grants you an absorb of 5% of your block value for 3 " ..
+              "sec, once every 6 sec.",
+        },
+        {
+          name = "Deafening Impact",
+          text = "Thunder Echo deals 15% less damage, and slows the enemies it hits by 15% for 2 sec.",
+        },
+      },
+      builds = {
+        {
+          name = "Stormfront Vanguard",
+          mods = { "March of the Storm", "Reverberating Impact", "Commanding Thunder" },
+          text = "Move with the pack and spread threat through bursts around your Shield Slam target.",
+        },
+        {
+          name = "Immovable Bulwark",
+          mods = { "Lingering Thunder", "Focused Peal", "Sheltering Reverberation" },
+          text = "Hold position and gain a small, periodic defensive benefit against one enemy.",
+        },
+        {
+          name = "Thunderline",
+          mods = { "Rolling Front", "Distant Rumble", "Deafening Impact" },
+          text = "Establish a field ahead, step into it, and aim echoes through approaching enemies.",
+        },
+      },
+    },
 }
