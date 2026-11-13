@@ -509,12 +509,13 @@ utility or a tradeoff) take one pick each, from three.
   lightning running through it, `client-patch/build_thunder_art.py`). Shield Slam landed while the Hero stands in it
   releases a **Thunder Echo** (90774): 15% of Shield Slam's damage before mitigation as Nature damage that never
   crits on its own, to each of up to 4 enemies once, in a 90 degree cone toward the target 10 yards long (Shockwave's
-  look, 90773), once every 2 sec at most; it never echoes again. Modifiers: Lingering Thunder (6 sec, 15% less),
-  March of the Storm (the field follows the Hero, 5 yards, 90772; 20% less), Rolling Front (the field beneath the
-  hostile target within 10 yards); Reverberating Impact (a 6 yard burst about the target, 15% less; Thunder Clap's
-  look, 90775), Focused Peal (the target alone, 30% more), Distant Rumble (20 yards, 20% less); Commanding Thunder
-  (100% more threat, 10% less), Sheltering Reverberation (25% less; an absorb of 5% of block value for 3 sec, once
-  every 6 sec, 90776), Deafening Impact (15% less; 15% slower for 2 sec, 90777). Spells 90770-90788
+  look, 90773), once every 2 sec at most; it never echoes again. Modifiers (the revised draft: benefits, no damage
+  penalties): Lingering Thunder (6 sec), March of the Storm (the field follows the Hero, 5 yards, 90772), Rolling
+  Front (the field beneath the hostile target within 10 yards; the echo 10% more); Reverberating Impact (a 6 yard
+  burst about the target; Thunder Clap's look, 90775), Focused Peal (the target alone, 40% more), Distant Rumble
+  (15 yards; 20% more beyond 10); Commanding Thunder (50% more threat), Sheltering Reverberation (an absorb of 5% of
+  block value for 3 sec, once every 6 sec, never stacked, 90776), Deafening Impact (15% slower for 2 sec, 90777; 10%
+  more on an enemy under the Hero's Thunder Clap). Spells 90770-90788
   (`patch_runes.py`); scripts `spell_titan_rune_thunder_clap` and `spell_titan_rune_shield_slam` (`titan_runes.sql`).
 
 ## Cards and Silas Darkmoon

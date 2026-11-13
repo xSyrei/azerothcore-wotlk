@@ -561,19 +561,20 @@ EmberforgeRunesArt = {
                 "Slow",
             },
             texts = {
-                "The Thunderfield lasts 6 sec, but the echo deals 15% less damage.",
-                "The Thunderfield follows you, 5 yards wide, but the echo deals 20% " ..
-                        "less damage.",
+                "The Thunderfield lasts 6 sec instead of 4.",
+                "The Thunderfield follows you for its duration, 5 yards wide.",
                 "Thunder Clap places the Thunderfield beneath your hostile target " ..
-                        "within 10 yards. You must still stand inside it.",
-                "A 6-yard burst around Shield Slam's target instead of the cone; 15% " ..
-                        "less damage.",
-                "The echo strikes only Shield Slam's target, for 30% more damage.",
-                "The cone reaches twice as far, but deals 20% less damage.",
-                "The echo generates 100% more threat, but deals 10% less damage.",
-                "The echo deals 25% less damage and shields you for 5% of your block " ..
-                        "value, 3 sec, once every 6 sec.",
-                "The echo deals 15% less damage and slows its targets by 15% for 2 sec.",
+                        "within 10 yards; standing in it, the echo deals 10% more damage.",
+                "A 6-yard burst around Shield Slam's target instead of the cone, up to " ..
+                        "4 enemies.",
+                "The echo strikes only Shield Slam's target, for 40% more damage.",
+                "The cone reaches 50% farther; enemies beyond its normal reach take 20% " ..
+                        "more damage.",
+                "The echo generates 50% more threat.",
+                "The echo shields you for 5% of your block value for 3 sec, once every " ..
+                        "6 sec; it never stacks.",
+                "The echo slows its targets by 15% for 2 sec, and deals 10% more to " ..
+                        "enemies under your Thunder Clap.",
             },
             slots = {
                 "Thunderfield",

@@ -251,17 +251,17 @@ BUILT = {
                 'Echo** toward your target: 15% of its damage to up to 4 enemies.',
         'slots': ['Thunderfield', 'Echo Pattern', 'Shield Resonance'],
         'asks': ['Where your storm stands', 'The shape of your echo', 'What the echo does for you'],
-        'texts': ['The Thunderfield lasts 6 sec, but the echo deals 15% less damage.',
-                  'The Thunderfield follows you, 5 yards wide, but the echo deals 20% less damage.',
-                  'Thunder Clap places the Thunderfield beneath your hostile target within 10 yards. You must still '
-                  'stand inside it.',
-                  'A 6-yard burst around Shield Slam\'s target instead of the cone; 15% less damage.',
-                  'The echo strikes only Shield Slam\'s target, for 30% more damage.',
-                  'The cone reaches twice as far, but deals 20% less damage.',
-                  'The echo generates 100% more threat, but deals 10% less damage.',
-                  'The echo deals 25% less damage and shields you for 5% of your block value, 3 sec, once every 6 '
-                  'sec.',
-                  'The echo deals 15% less damage and slows its targets by 15% for 2 sec.'],
+        'texts': ['The Thunderfield lasts 6 sec instead of 4.',
+                  'The Thunderfield follows you for its duration, 5 yards wide.',
+                  'Thunder Clap places the Thunderfield beneath your hostile target within 10 yards; standing in it, '
+                  'the echo deals 10% more damage.',
+                  'A 6-yard burst around Shield Slam\'s target instead of the cone, up to 4 enemies.',
+                  'The echo strikes only Shield Slam\'s target, for 40% more damage.',
+                  'The cone reaches 50% farther; enemies beyond its normal reach take 20% more damage.',
+                  'The echo generates 50% more threat.',
+                  'The echo shields you for 5% of your block value for 3 sec, once every 6 sec; it never stacks.',
+                  'The echo slows its targets by 15% for 2 sec, and deals 10% more to enemies under your Thunder '
+                  'Clap.'],
         'abilities': ['Thunder Clap', 'Thunder Clap', 'Thunder Clap', 'Shield Slam', 'Shield Slam', 'Shield Slam',
                       'Threat', 'Block value', 'Slow'],
         'icons': ['M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',

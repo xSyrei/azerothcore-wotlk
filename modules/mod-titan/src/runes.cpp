@@ -199,20 +199,20 @@ namespace
         MOD_COMMANDING_THUNDER, MOD_SHELTERING_REVERBERATION, MOD_DEAFENING_IMPACT,
     };
 
-    // Echoing Thunder's tuning (the draft's initial values; the field's radius, the cone's reach and angle are ours:
-    // Thunder Clap's 8 yards, 10 yards, 90 degrees).
+    // Echoing Thunder's tuning (the revised draft's initial values: modifiers give benefits, no damage penalties;
+    // the field's radius, the cone's reach and angle are ours: Thunder Clap's 8 yards, 10 yards, 90 degrees).
     constexpr uint32 THUNDERFIELD_MS = 4000, LINGERING_MS = 6000;
     constexpr float THUNDERFIELD_RADIUS = 8.0f, ROLLING_RANGE = 10.0f;
     constexpr float ECHO_SHARE = 0.15f;                         // of Shield Slam's damage before mitigation
     constexpr uint32 ECHO_INTERVAL_MS = 2000;
     constexpr std::size_t ECHO_TARGETS = 4;
     constexpr float ECHO_REACH = 10.0f, ECHO_ARC = float(M_PI) / 2.0f, REVERBERATING_RADIUS = 6.0f;
-    constexpr float LINGERING_ECHO = 0.85f, MARCH_ECHO = 0.8f, REVERBERATING_ECHO = 0.85f, FOCUSED_ECHO = 1.3f;
-    constexpr float DISTANT_REACH = 2.0f, DISTANT_ECHO = 0.8f;
-    constexpr float COMMANDING_ECHO = 0.9f, COMMANDING_THREAT = 1.0f;     // 100% more threat
-    constexpr float SHELTERING_ECHO = 0.75f, SHELTERING_SHARE = 0.05f;    // of block value
+    constexpr float ROLLING_ECHO = 1.1f, FOCUSED_ECHO = 1.4f;
+    constexpr float DISTANT_REACH = 1.5f, DISTANT_FAR_ECHO = 1.2f;       // beyond the cone's own reach
+    constexpr float COMMANDING_THREAT = 0.5f;                           // 50% more threat
+    constexpr float SHELTERING_SHARE = 0.05f;                           // of block value
     constexpr uint32 SHELTERING_INTERVAL_MS = 6000;
-    constexpr float DEAFENING_ECHO = 0.85f;
+    constexpr float DEAFENING_ECHO = 1.1f;                              // on an enemy under the Hero's Thunder Clap
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
@@ -1063,10 +1063,20 @@ namespace
             && player->GetExactDist(&state.ThunderPos) <= THUNDERFIELD_RADIUS;
     }
 
-    // Thunder Echo: once every 2 sec at most, 15% of Shield Slam's damage before mitigation (each modifier's share
-    // of it), as Nature damage that never crits on its own, to each of up to 4 enemies once: in a 90 degree cone
-    // toward the target, 10 yards (20 with Distant Rumble); or within 6 yards of the target (Reverberating Impact);
-    // or the target alone (Focused Peal). Its damage never echoes again.
+    // Under the Hero's Thunder Clap (any rank's slow).
+    bool ThunderClapped(Player* player, Unit* enemy)
+    {
+        for (uint32 id = SPELL_THUNDER_CLAP; id; id = sSpellMgr->GetNextSpellInChain(id))
+            if (enemy->HasAura(id, player->GetGUID()))
+                return true;
+        return false;
+    }
+
+    // Thunder Echo: once every 2 sec at most, 15% of Shield Slam's damage before mitigation, as Nature damage that
+    // never crits on its own, to each of up to 4 enemies once: in a 90 degree cone toward the target, 10 yards (15
+    // with Distant Rumble, 20% more beyond 10); or within 6 yards of the target (Reverberating Impact); or the target
+    // alone (Focused Peal, 40% more). Rolling Front: 10% more; Deafening Impact: 10% more on an enemy under the Hero's
+    // Thunder Clap. Its damage never echoes again.
     void ThunderEcho(Player* player, Unit* target, int32 slamDamage)
     {
         State& state = StateOf(player);
@@ -1079,14 +1089,10 @@ namespace
         bool reverberating = HasThunderMarker(player, MOD_REVERBERATING_IMPACT);
         bool focused = HasThunderMarker(player, MOD_FOCUSED_PEAL);
         bool distant = HasThunderMarker(player, MOD_DISTANT_RUMBLE);
-        for (auto [modifier, share] : { std::pair{ MOD_LINGERING_THUNDER, LINGERING_ECHO },
-                 std::pair{ MOD_MARCH_OF_THE_STORM, MARCH_ECHO }, std::pair{ MOD_REVERBERATING_IMPACT,
-                 REVERBERATING_ECHO }, std::pair{ MOD_FOCUSED_PEAL, FOCUSED_ECHO }, std::pair{ MOD_DISTANT_RUMBLE,
-                 DISTANT_ECHO }, std::pair{ MOD_COMMANDING_THUNDER, COMMANDING_ECHO },
-                 std::pair{ MOD_SHELTERING_REVERBERATION, SHELTERING_ECHO }, std::pair{ MOD_DEAFENING_IMPACT,
-                 DEAFENING_ECHO } })
-            if (HasThunderMarker(player, modifier))
-                damage *= share;
+        if (HasThunderMarker(player, MOD_ROLLING_FRONT))
+            damage *= ROLLING_ECHO;
+        if (focused)
+            damage *= FOCUSED_ECHO;
 
         std::vector<Unit*> targets;
         if (target->IsAlive())
@@ -1118,11 +1124,16 @@ namespace
         else
             player->CastSpell(player, SPELL_THUNDER_ECHO_WAVE, true);
 
-        int32 each = std::max<int32>(1, int32(damage));
         bool commanding = HasThunderMarker(player, MOD_COMMANDING_THUNDER);
         bool deafening = HasThunderMarker(player, MOD_DEAFENING_IMPACT);
         for (Unit* enemy : targets)
         {
+            float amount = damage;
+            if (distant && !reverberating && player->GetExactDist(enemy) > ECHO_REACH)
+                amount *= DISTANT_FAR_ECHO;
+            if (deafening && ThunderClapped(player, enemy))
+                amount *= DEAFENING_ECHO;
+            int32 each = std::max<int32>(1, int32(amount));
             player->CastCustomSpell(enemy, SPELL_THUNDER_ECHO, &each, nullptr, nullptr, true);
             if (!enemy->IsAlive())
                 continue;

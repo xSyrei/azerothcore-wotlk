@@ -1519,42 +1519,43 @@ EmberforgeRunesCatalog = {
       mods = {
         {
           name = "Lingering Thunder",
-          text = "The Thunderfield lasts 6 sec, but Thunder Echo deals 15% less damage.",
+          text = "The Thunderfield lasts 6 sec instead of 4.",
         },
         {
           name = "March of the Storm",
-          text = "The Thunderfield follows you for its duration, but its radius is 5 yards and Thunder Echo deals " ..
-              "20% less damage.",
+          text = "The Thunderfield follows you for its duration, with a radius of 5 yards.",
         },
         {
           name = "Rolling Front",
-          text = "Thunder Clap places the Thunderfield beneath your hostile target within 10 yards instead. You " ..
-              "must still stand inside it.",
+          text = "Thunder Clap places the Thunderfield beneath your hostile target within 10 yards instead. " ..
+              "While you stand inside it, Thunder Echo deals 10% more damage.",
         },
         {
           name = "Reverberating Impact",
-          text = "A 6-yard burst around Shield Slam's target instead of the cone, up to 4 enemies; 15% less damage.",
+          text = "A 6-yard burst around Shield Slam's target instead of the cone, up to 4 enemies.",
         },
         {
           name = "Focused Peal",
-          text = "Thunder Echo strikes only Shield Slam's target, for 30% more damage.",
+          text = "Thunder Echo strikes only Shield Slam's target, for 40% more damage.",
         },
         {
           name = "Distant Rumble",
-          text = "The cone reaches twice as far, but deals 20% less damage. Still up to 4 enemies.",
+          text = "The cone reaches 50% farther; enemies beyond its normal reach take 20% more damage. Still up " ..
+              "to 4 enemies.",
         },
         {
           name = "Commanding Thunder",
-          text = "Thunder Echo generates 100% more threat, but deals 10% less damage.",
+          text = "Thunder Echo generates 50% more threat.",
         },
         {
           name = "Sheltering Reverberation",
-          text = "Thunder Echo deals 25% less damage; it grants you an absorb of 5% of your block value for 3 " ..
-              "sec, once every 6 sec.",
+          text = "Thunder Echo grants you an absorb of 5% of your block value for 3 sec, once every 6 sec; it " ..
+              "never stacks.",
         },
         {
           name = "Deafening Impact",
-          text = "Thunder Echo deals 15% less damage, and slows the enemies it hits by 15% for 2 sec.",
+          text = "Enemies hit by Thunder Echo are slowed by 15% for 2 sec. Against an enemy already under your " ..
+              "Thunder Clap, the echo deals 10% more damage.",
         },
       },
       builds = {
@@ -1566,7 +1567,7 @@ EmberforgeRunesCatalog = {
         {
           name = "Immovable Bulwark",
           mods = { "Lingering Thunder", "Focused Peal", "Sheltering Reverberation" },
-          text = "Hold position and gain a small, periodic defensive benefit against one enemy.",
+          text = "Hold position with stronger single-target echoes and a small periodic absorb.",
         },
         {
           name = "Thunderline",
