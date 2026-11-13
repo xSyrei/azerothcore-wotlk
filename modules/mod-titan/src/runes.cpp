@@ -57,7 +57,7 @@
 // Commandment, the Sanctified Paragon, the Stormbound Conduit, Echoing Thunder, the Wellspring and the Wandering
 // Mist; the panel lists the others as coming.
 //
-// - Unlocked at level 10: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
+// - Unlocked at level 5: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
 //   under Browse all (one missing a required ability says so; it can still be bound after a warning naming what it
 //   lacks), each with a Preview of its build that binds nothing.
@@ -77,7 +77,7 @@
 namespace
 {
     constexpr char const* PREFIX = "EFRN";
-    constexpr uint8 UNLOCK_LEVEL = 10;
+    constexpr uint8 UNLOCK_LEVEL = 5;
     constexpr uint8 MAX_SPECS = 4;
     constexpr uint8 SLOTS = 3;
     constexpr uint8 CHOICES = 3;
@@ -1416,7 +1416,7 @@ namespace
         return auras;
     }
 
-    // The active spec's rune and modifiers as auras (none below level 10).
+    // The active spec's rune and modifiers as auras (none below UNLOCK_LEVEL).
     void Apply(Player* player)
     {
         for (uint32 spell : RuneAuras())
@@ -2233,7 +2233,7 @@ public:
             guid.GetCounter()));
     }
 
-    // Level 10: the panel opens while the active spec has no rune.
+    // UNLOCK_LEVEL: the panel opens while the active spec has no rune.
     void OnPlayerLevelChanged(Player* player, uint8 oldLevel) override
     {
         if (!Wildcard::IsHero(player))

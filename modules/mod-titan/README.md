@@ -428,12 +428,12 @@ Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon wind
   by it); the other specs keep their builds (names, icons and the ones bought stay).
 
 ## Legendary Runes
-From level 10 a Hero binds a **Legendary Rune** to each specialization (`src/runes.cpp`; the design: the
+From level 5 a Hero binds a **Legendary Rune** to each specialization (`src/runes.cpp`; the design: the
 "Emberforge Legendary Runes" doc). A rune is a loop: a builder makes a resource, a spender cashes it in with an
 empowered effect; three modifier slots (Invocation: how you build; Manifestation: what the spender does; Adaptation:
 utility or a tradeoff) take one pick each, from three.
 - **The panel** (`Emberforge_Runes`, `/runes`; addon whispers with prefix `EFRN`, protocol in both files) opens by
-  itself at level 10, and at login while the active specialization has no rune: up to three runes suggested from
+  itself at level 5, and at login while the active specialization has no rune: up to three runes suggested from
   the Hero's abilities and role, and Browse all for every rune, three a page (one not built yet shakes and says so).
   Each card shows the roles it serves (the LFG role icons under its LEGENDARY: damage, healing, tanking) and, for a
   rune with its build words, a **Preview** button: the medallion, slots and options as if bound, any slot open and
@@ -445,7 +445,7 @@ utility or a tradeoff) take one pick each, from three.
   own drawing code by `client-patch/build_rune_art.py` (`rune_art/bake.js` in headless Chromium: `Art/`, `Art.lua`);
   its fonts are Cinzel and Alegreya Sans (`Fonts/`, SIL Open Font License).
 - **One rune per specialization**, chosen once: only a prestige clears them (`titan_runes`, db-characters; chosen
-  again from level 10). Modifiers change freely out of combat. A new specialization picks its own.
+  again from level 5). Modifiers change freely out of combat. A new specialization picks its own.
 - **Built so far: the Rune of Fel Commandment** (rune 21; the other 20 are listed). Needs Throw Glaive and any one
   of Demon's Bite, Chaos Strike, Shadow Bolt or Incinerate (Infernal Pact and Metamorphic Bond also a warlock demon
   summon). Demon's Bite, Chaos Strike (2 on a crit), Shadow Bolt, Incinerate (2 each with Dreadfire Discipline,

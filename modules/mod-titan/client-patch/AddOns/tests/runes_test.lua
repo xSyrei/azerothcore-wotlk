@@ -310,5 +310,18 @@ buffs["Fel Command"] = nil
 fire("UNIT_AURA", "player")
 check(not volleyShown(ActionButton3), "spent: the glow goes")
 
+-- The rune button: from the unlock level (5); unbound, its icon turns through the runes; bound, it settles.
+local button = EmberforgeRunes_Button
+server("S,4,5,1,0,0,0,0,-,0")
+check(not button.shown, "below level 5 the rune button is hidden")
+server("S,5,5,1,0,0,0,0,-,0")
+check(button.shown and button.turning ~= nil and button.glow.on, "at level 5, unbound: shown, glowing, turning")
+local first = button.turning.index
+button.scripts.OnUpdate(button, 2.6)
+button.scripts.OnUpdate(button, 0.7)
+check(button.turning.index ~= first, "its icon turns to the next rune's")
+server("S,10,5,1,21,1,3,1,21,0")
+check(button.shown and button.turning == nil and not button.glow.on, "bound: it settles on the rune, no glow")
+
 print(failures == 0 and "All checks passed" or (failures .. " check(s) failed"))
 os.exit(failures == 0 and 0 or 1)

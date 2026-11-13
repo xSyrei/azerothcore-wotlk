@@ -1,7 +1,7 @@
 -- Emberforge Runes: the Legendary Rune panel, as the "Legendary Rune Panel" mockup draws it: no window, one 16:9
 -- stage over the game world (1600 x 900 points, scaled to the screen), its artwork, light and particles.
 --
--- Unbound (level 10 on): "Legendary Runic Enhancements", up to three rune cards the server suggests for the Hero's
+-- Unbound (level 5 on): "Legendary Runic Enhancements", up to three rune cards the server suggests for the Hero's
 -- abilities, and Browse all (every rune, three a page). Choosing one asks first (a rune is bound until a prestige),
 -- then the chosen card erupts, the others burn away, it condenses into the rune's medallion, the medallion breaks
 -- into its three slots (Invocation, Manifestation, Adaptation), and the three choices for each follow. Bound: the
@@ -44,7 +44,7 @@ local art = EmberforgeRunesArt or { runes = {}, labels = {}, card = { u = 1, v =
     option = { u = 1, v = 1, margin = 24 }, pill = { u = 1, v = 1, margin = 20, width = 106 }, num = { span = 80 },
     arcane = { rgb = { 0.73, 0.55, 1 }, hot = { 0.92, 0.84, 1 }, ink = { 0.95, 0.9, 1 }, muted = { 0.8, 0.72, 0.9 } } }
 
-local state = { level = UnitLevel and UnitLevel("player") or 1, unlock = 10, spec = 1, rune = 0, mods = { 0, 0, 0 },
+local state = { level = UnitLevel and UnitLevel("player") or 1, unlock = 5, spec = 1, rune = 0, mods = { 0, 0, 0 },
     offers = {}, prompt = false, built = {}, needs = {}, error = nil, loaded = false }
 -- mode: locked, offers, browse or build; phase: the mockup's (intro, offer, erupt, condense, split, build).
 local view = { mode = nil, phase = nil, page = 1, prompted = {}, now = 0, t0 = 0, picks = { 0, 0, 0 } }
@@ -2072,8 +2072,9 @@ events:SetScript("OnUpdate", function(_, elapsed)
 end)
 
 -- The rune button: the active specialization's rune in the gold ring (Art/RuneRing; its icon made round by
--- SetPortraitToTexture), just under the minimap and clear of the buffs. A click opens the panel; it glows while
--- the specialization has no rune to choose. Dragging it moves it anywhere (kept per character); shift-right-click
+-- SetPortraitToTexture), left of the minimap and clear of the buffs, from the unlock level (5). A click opens the
+-- panel. Until the specialization has a rune it glows, and its icon turns through every rune's (each 2.5 sec, a
+-- crossfade), settling on the rune once one is bound. Dragging it moves it anywhere (kept per character); shift-right-click
 -- puts it back.
 EmberforgeRunesDB = EmberforgeRunesDB or {}
 local RUNE_BUTTON_SIZE = 58
@@ -2089,6 +2090,12 @@ runeButton.icon = runeButton:CreateTexture(nil, "BACKGROUND")
 runeButton.icon:SetPoint("CENTER")
 runeButton.icon:SetWidth(RUNE_BUTTON_SIZE * 0.76)
 runeButton.icon:SetHeight(RUNE_BUTTON_SIZE * 0.76)
+-- The next icon, fading in over the last while they turn.
+runeButton.nextIcon = runeButton:CreateTexture(nil, "BACKGROUND")
+runeButton.nextIcon:SetPoint("CENTER")
+runeButton.nextIcon:SetWidth(RUNE_BUTTON_SIZE * 0.76)
+runeButton.nextIcon:SetHeight(RUNE_BUTTON_SIZE * 0.76)
+runeButton.nextIcon:SetAlpha(0)
 runeButton.glow = runeButton:CreateTexture(nil, "BORDER")
 runeButton.glow:SetTexture(ART .. "Soft")
 runeButton.glow:SetBlendMode("ADD")
@@ -2119,18 +2126,43 @@ local function PlaceRuneButton()
     end
 end
 
--- Its icon: the bound rune's own, else a rune stone; grey below the unlock level.
-local function UpdateRuneButton()
-    local rune = state.rune ~= 0 and RuneById(state.rune)
-    local icon = rune and rune.icon and ("Interface\\Icons\\" .. rune.icon) or "Interface\\Icons\\INV_Misc_Rune_01"
+local function RoundIcon(texture, icon)
+    local path = "Interface\\Icons\\" .. (icon or "INV_Misc_Rune_01")
     if SetPortraitToTexture then
-        SetPortraitToTexture(runeButton.icon, icon)
+        SetPortraitToTexture(texture, path)
     else
-        runeButton.icon:SetTexture(icon)
+        texture:SetTexture(path)
     end
-    local locked = state.level < state.unlock
-    runeButton.icon:SetDesaturated(locked)
-    runeButton.glow.on = not locked and state.rune == 0 and state.loaded
+end
+
+-- The runes the unbound button turns through: every one with an icon, in the catalog's order.
+local cycle = {}
+for _, rune in ipairs(catalog) do
+    if rune.icon then
+        cycle[#cycle + 1] = rune.icon
+    end
+end
+local CYCLE_SECONDS, FADE_SECONDS = 2.5, 0.6
+
+-- Shown from the unlock level; its icon the bound rune's, else turning (OnUpdate).
+local function UpdateRuneButton()
+    if not state.loaded or state.level < state.unlock then
+        runeButton:Hide()
+        return
+    end
+    runeButton:Show()
+    local rune = state.rune ~= 0 and RuneById(state.rune)
+    if rune then
+        RoundIcon(runeButton.icon, rune.icon)
+        runeButton.icon:SetAlpha(1)
+        runeButton.nextIcon:SetAlpha(0)
+        runeButton.turning = nil
+    elseif not runeButton.turning and #cycle > 0 then
+        runeButton.turning = { index = math.random(#cycle), t = 0 }
+        RoundIcon(runeButton.icon, cycle[runeButton.turning.index])
+        runeButton.icon:SetAlpha(1)
+    end
+    runeButton.glow.on = state.rune == 0
     runeButton.glow:SetShown(runeButton.glow.on)
 end
 if not runeButton.glow.SetShown then
@@ -2193,14 +2225,40 @@ runeButton:SetScript("OnLeave", function()
     GameTooltip:Hide()
 end)
 runeButton:SetScript("OnUpdate", function(self, elapsed)
-    if not self.glow.on then
+    if self.glow.on then
+        self.pulse = ((self.pulse or 0) + elapsed * 2.5) % (2 * math.pi)
+        self.glow:SetAlpha(0.45 + 0.35 * math.sin(self.pulse))
+    end
+    -- Unbound: the next rune's icon fades in over the last, then takes its place.
+    local turn = self.turning
+    if not turn then
         return
     end
-    self.pulse = ((self.pulse or 0) + elapsed * 2.5) % (2 * math.pi)
-    self.glow:SetAlpha(0.45 + 0.35 * math.sin(self.pulse))
+    turn.t = turn.t + elapsed
+    if turn.t >= CYCLE_SECONDS and not turn.fading then
+        turn.fading = 0
+        turn.next = turn.index % #cycle + 1
+        RoundIcon(self.nextIcon, cycle[turn.next])
+    end
+    if turn.fading then
+        turn.fading = turn.fading + elapsed
+        local k = math.min(1, turn.fading / FADE_SECONDS)
+        self.nextIcon:SetAlpha(k)
+        self.icon:SetAlpha(1 - k)
+        if k >= 1 then
+            RoundIcon(self.icon, cycle[turn.next])
+            self.icon:SetAlpha(1)
+            self.nextIcon:SetAlpha(0)
+            turn.index, turn.t, turn.fading = turn.next, 0, nil
+        end
+    end
 end)
 runeButton:RegisterEvent("PLAYER_LOGIN")
-runeButton:SetScript("OnEvent", function()
+runeButton:RegisterEvent("PLAYER_LEVEL_UP")
+runeButton:SetScript("OnEvent", function(_, event, level)
+    if event == "PLAYER_LEVEL_UP" then
+        state.level = tonumber(level) or state.level
+    end
     EmberforgeRunesDB = EmberforgeRunesDB or {}
     PlaceRuneButton()
     UpdateRuneButton()
