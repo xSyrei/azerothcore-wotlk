@@ -442,14 +442,15 @@ utility or a tradeoff) take one pick each, from three.
   its fonts are Cinzel and Alegreya Sans (`Fonts/`, SIL Open Font License).
 - **One rune per specialization**, chosen once: only a prestige clears them (`titan_runes`, db-characters; chosen
   again from level 10). Modifiers change freely out of combat. A new specialization picks its own.
-- **Built so far: the Rune of Fel Commandment** (rune 21; the other 20 are listed). Needs Throw Glaive, Demon's Bite
-  or Chaos Strike, and a warlock demon summon. Demon's Bite, Chaos Strike (2 on a crit) and the Hero's demon (once
-  every 4 sec) grant **Fel Command** (90701, up to 5, 20 sec). At 5, Throw Glaive also fires a **Chaos Bolt Volley**:
+- **Built so far: the Rune of Fel Commandment** (rune 21; the other 20 are listed). Needs Throw Glaive and any one
+  of Demon's Bite, Chaos Strike, Shadow Bolt or Incinerate (Infernal Pact and Metamorphic Bond also a warlock demon
+  summon). Demon's Bite, Chaos Strike (2 on a crit), Shadow Bolt, Incinerate (2 each with Dreadfire Discipline,
+  which stops Demon's Bite's) and the Hero's demon (once every 4 sec) grant **Fel Command** (90701, up to 5, 20 sec). At 5, Throw Glaive also fires a **Chaos Bolt Volley**:
   3 bolts 0.15 sec apart, the first at the target, the next at other enemies within 10 yards (nearest first,
   crowd-controlled ones skipped), each 60% of a Chaos Bolt of the Hero's level plus the higher of spell power or
   half attack power (Fire, never resisted). In Metamorphosis (the Demon Hunter's or Demonology's) 5 bolts and a
   **Felguard** (910120, 8 sec: Felstorm, Cleave, no threat; another volley resets it). Its modifiers: Infernal Pact,
-  Demonic Ascension, Dreadfire Discipline (Shadow Bolt or Incinerate build instead of Demon's Bite; offered only to a
+  Demonic Ascension, Dreadfire Discipline (Shadow Bolt and Incinerate build 2, Demon's Bite none; offered only to a
   Hero with one); Imp Legion, Shattered Glaive, Fel Host (both legions: every Throw Glaive spends the Fel Command,
   a demon for each stack for 10 sec with no limit to how many are out, Fel Imps 910121, or Felguards in
   Metamorphosis with Fel Host; each volley bolt deals 10% more for every demon out, the Hero's own included);

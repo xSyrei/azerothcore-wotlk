@@ -4,7 +4,7 @@
 The Rune of Fel Commandment (the design: the "Emberforge Legendary Runes" doc, its Fel Commandment tab), 90700 on:
 
 - 90700 the rune: a buff the Hero wears while their active specialization's rune is Fel Commandment; its procs
-  (Demon's Bite, Chaos Strike; Shadow Bolt and Incinerate with Dreadfire Discipline) grant Fel Command
+  (Demon's Bite, Chaos Strike, Shadow Bolt, Incinerate) grant Fel Command
   (runes.cpp: an AuraScript reads the spell and the crit);
 - 90701 Fel Command: up to 5 stacks, 20 sec (each new stack restarts it);
 - 90702 a Chaos Bolt Volley's bolt: Chaos Bolt's flight and look, instant, free, off the global cooldown, never
@@ -87,8 +87,9 @@ def buff(spell_id, name, icon, text, duration, effects, hidden=False, stacks=0):
 SPELLS = [
     {
         **buff(90700, 'Rune of Fel Commandment', RUNE_ICON,
-               'Demon\'s Bite, Chaos Strike and your demon\'s attacks grant Fel Command, up to 5. At 5, Throw Glaive '
-               'becomes Chaos Bolt Volley.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+               'Demon\'s Bite, Chaos Strike, Shadow Bolt, Incinerate and your demon\'s attacks grant Fel Command, '
+               'up to 5. At 5, Throw Glaive becomes Chaos Bolt Volley.', DURATION_INFINITE,
+               {1: aura(AURA_DUMMY, 1, 0)}),
     },
     buff(90701, 'Fel Command', 'Spell_Fire_FelFlameRing',
          'Fel Command. At 5, your next Throw Glaive fires a Chaos Bolt Volley.', DURATION_20S,

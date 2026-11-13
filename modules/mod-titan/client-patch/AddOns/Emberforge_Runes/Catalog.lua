@@ -1281,10 +1281,11 @@ EmberforgeRunesCatalog = {
       name = "Rune of Fel Commandment",
       role = "Hybrid (Havoc, Demonology)",
       icon = "Ability_Rune_FelCommandment",
-      builtFrom = "Demon's Bite, Chaos Strike, your demon's attacks",
+      builtFrom = "Demon's Bite, Chaos Strike, Shadow Bolt, Incinerate, your demon's attacks",
       spentWith = "Throw Glaive (Chaos Bolt Volley)",
       resource = "Fel Command",
-      core = "Demon's Bite, Chaos Strike and your summoned demon's attacks grant Fel Command, up to 5. At 5, " ..
+      core = "Demon's Bite, Chaos Strike, Shadow Bolt, Incinerate and your summoned demon's attacks grant " ..
+          "Fel Command, up to 5. At 5, " ..
           "Throw Glaive becomes Chaos Bolt Volley: you hurl the glaive and 3 Chaos Bolts at up to 3 enemies, " ..
           "each bolt dealing 60% of a Chaos Bolt's damage. The volley consumes all Fel Command. In " ..
           "Metamorphosis, it fires 5 bolts and calls a Felguard to your side for 8 sec.",
@@ -1301,7 +1302,7 @@ EmberforgeRunesCatalog = {
         },
         {
           name = "Dreadfire Discipline",
-          text = "Shadow Bolt and Incinerate grant 1 Fel Command each; Demon's Bite grants none.",
+          text = "Shadow Bolt and Incinerate grant 2 Fel Command each; Demon's Bite grants none.",
         },
         {
           name = "Imp Legion",

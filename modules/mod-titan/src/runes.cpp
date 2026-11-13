@@ -203,9 +203,9 @@ namespace
         static std::vector<RuneDef> const runes = {
             { RUNE_FEL_COMMANDMENT,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_THROW_GLAIVE }, { SPELL_DEMONS_BITE, SPELL_CHAOS_STRIKE },
-                { SPELL_SUMMON_IMP, SPELL_SUMMON_VOIDWALKER, SPELL_SUMMON_SUCCUBUS, SPELL_SUMMON_FELHUNTER,
-                  SPELL_SUMMON_FELGUARD } },
+              // Throw Glaive (it spends the stacks) and any one generator.
+              { { SPELL_THROW_GLAIVE },
+                { SPELL_DEMONS_BITE, SPELL_CHAOS_STRIKE, SPELL_SHADOW_BOLT, SPELL_INCINERATE } },
               SPELL_RUNE_FEL_COMMANDMENT, SPELL_MODIFIER_FIRST },
             // Every role: a damage aura, a defensive zone or a source of healing, as its modifiers make it.
             { RUNE_SANCTIFIED_PARAGON,
@@ -224,11 +224,18 @@ namespace
         return nullptr;
     }
 
-    // A modifier's own needs (Dreadfire Discipline: Shadow Bolt or Incinerate).
+    // A modifier's own needs (Dreadfire Discipline: Shadow Bolt or Incinerate; Infernal Pact and Metamorphic Bond:
+    // a demon to summon).
     std::vector<std::vector<uint32>> ModifierNeeds(uint8 rune, uint8 slot, uint8 choice)
     {
-        if (rune == RUNE_FEL_COMMANDMENT && slot * CHOICES + choice == MOD_DREADFIRE_DISCIPLINE)
+        if (rune != RUNE_FEL_COMMANDMENT)
+            return {};
+        uint8 modifier = slot * CHOICES + choice;
+        if (modifier == MOD_DREADFIRE_DISCIPLINE)
             return { { SPELL_SHADOW_BOLT, SPELL_INCINERATE } };
+        if (modifier == MOD_INFERNAL_PACT || modifier == MOD_METAMORPHIC_BOND)
+            return { { SPELL_SUMMON_IMP, SPELL_SUMMON_VOIDWALKER, SPELL_SUMMON_SUCCUBUS, SPELL_SUMMON_FELHUNTER,
+                       SPELL_SUMMON_FELGUARD } };
         return {};
     }
 
@@ -983,9 +990,9 @@ namespace LegendaryRunes
     }
 }
 
-// The rune's aura (90700): Demon's Bite and Chaos Strike hits grant Fel Command (a Chaos Strike crit 2); with
-// Dreadfire Discipline, Shadow Bolt and Incinerate instead of Demon's Bite. A volley bolt's crit takes 3 sec off
-// Throw Glaive with Shattered Glaive (9 sec a volley at most).
+// The rune's aura (90700): Demon's Bite, Chaos Strike, Shadow Bolt and Incinerate hits grant Fel Command (a
+// Chaos Strike crit 2); with Dreadfire Discipline, Shadow Bolt and Incinerate 2 and Demon's Bite none. A volley
+// bolt's crit takes 3 sec off Throw Glaive with Shattered Glaive (9 sec a volley at most).
 class spell_titan_rune_fel_commandment : public AuraScript
 {
     PrepareAuraScript(spell_titan_rune_fel_commandment);
@@ -1015,8 +1022,8 @@ class spell_titan_rune_fel_commandment : public AuraScript
             Gain(player, crit ? 2 : 1);
         else if (first == SPELL_DEMONS_BITE && !dreadfire)
             Gain(player, 1);
-        else if ((first == SPELL_SHADOW_BOLT || first == SPELL_INCINERATE) && dreadfire)
-            Gain(player, 1);
+        else if (first == SPELL_SHADOW_BOLT || first == SPELL_INCINERATE)
+            Gain(player, dreadfire ? 2 : 1);
         return false;                               // the stacks are granted here; nothing else to proc
     }
 
