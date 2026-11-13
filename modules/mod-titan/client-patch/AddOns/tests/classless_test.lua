@@ -523,8 +523,9 @@ check(frame:IsShown(), "the Talents key opens the Classless window")
 frame.hooked.OnShow()
 check(TalentMicroButton.buttonState == "PUSHED" and TalentMicroButton.shown, "the Talents button shows it open")
 
--- Leaving a stance: right-clicking its buff, or clicking its lit stance bar button, asks the server.
-auras = { { "Battle Stance", 2457 }, { "Arcane Intellect", 1459 } }
+-- Leaving a stance: casting it again while it is up (action button, spellbook, stance bar), or right-clicking its
+-- buff, asks the server; another class's forms too (the Paladin client's stance bar never lists them).
+auras = { { "Battle Stance", 2457 }, { "Arcane Intellect", 1459 }, { "Cat Form", 768 } }
 forms = { { "Battle Stance", true }, { "Defensive Stance", false } }
 before = #sent
 local buff = NewWidget()
@@ -534,11 +535,23 @@ check(#sent == before, "an ordinary buff is left to the game")
 buff.id = 1
 hooks.BuffButton_OnClick(buff)
 check(lastSent() == "CANCEL,2457", "right-clicking the stance's buff asks to leave it")
+hooks.CancelUnitBuff("player", 3)
+check(lastSent() == "CANCEL,768", "cancelling a form's buff asks to leave it")
 before = #sent
 ShapeshiftButton2.hooked.OnClick(ShapeshiftButton2)
 check(#sent == before, "clicking another stance is the game's (it switches)")
 ShapeshiftButton1.hooked.OnClick(ShapeshiftButton1)
 check(lastSent() == "CANCEL,2457", "clicking the lit stance button asks to leave it")
+actions = { [5] = { "spell", 12, "spell", 768 }, [6] = { "spell", 13, "spell", 71 } }
+function GetActionInfo(slot) return unpack(actions[slot] or {}) end
+SPELLS[768], SPELLS[71] = SPELLS[768] or "Cat Form", SPELLS[71] or "Defensive Stance"
+hooks.UseAction(5)
+check(lastSent() == "CANCEL,768", "pressing an action button of the form it is in leaves it")
+before = #sent
+hooks.UseAction(6)
+check(#sent == before, "pressing another stance's button is the game's")
+hooks.CastSpellByName("Battle Stance()")
+check(lastSent() == "CANCEL,2457", "casting the stance by name while in it leaves it")
 
 -- A finisher needs a combo point builder: the server leads that group with a 0, and the tooltip names it in a line
 -- of its own (not every builder), red until one is known.

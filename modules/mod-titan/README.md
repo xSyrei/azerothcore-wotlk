@@ -29,7 +29,10 @@ from level 1 but hit like a level-55 class's, so below level 40 a Hero's Death K
 damage (`titan_dk_low_level`, same file): the spells (Icy Touch, Death Coil, Death and Decay) 15% at level 1, 25% at
 10, 45% at 20, 70% at 30; the weapon strikes (Plague Strike, Blood Strike...) 35%, 50%, 70%, 85%; all from 40. The
 diseases (their ticks are attack power's) and the heals stay whole. Unholy Presence's 0.5 sec off the global cooldown
-reaches the client through the spell modifiers by family (below). Tuning by ability
+reaches the client through the spell modifiers by family (below). Stances, presences and forms (every
+class's, Stealth and Shadowform too) toggle off for a Hero, in or out of combat: casting one again while in it, or
+right-clicking its buff, has the Classless addon ask the server to leave it (`CANCEL`, `classless.cpp`), since the
+client (a Paladin's) neither toggles another class's forms nor lets a stance or presence go. Tuning by ability
 (`titan_hero_damage_tuning`, same file): Soul Cleave deals 25% less, Blade Dance's strikes 15% less, every Feral Combat
 ability 25% more and every Rogue ability 30% more; Thunder Clap costs 10 Rage and the Hearthstone cools down in 5
 minutes (server and client patch: `hero_tuning`). Spell modifiers by family: the client applies a

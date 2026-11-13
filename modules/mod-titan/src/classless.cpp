@@ -248,7 +248,7 @@ namespace
 
     // Leaves a stance, presence or form the player is in. The game keeps a warrior in a stance (their forms are
     // not toggleable: SpellShapeshiftForm.dbc) and a death knight in a presence; a Hero need not stay in either:
-    // the Classless addon asks for it when the buff is right-clicked or the stance bar's lit button clicked.
+    // the Classless addon asks for it when one is cast again while it is up, or its buff is right-clicked.
     void CancelForm(Player* player, uint32 spellId)
     {
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
@@ -257,7 +257,7 @@ namespace
 
         uint32 firstRank = spellInfo->GetFirstRankSpell()->Id;
         bool presence = std::find(std::begin(PRESENCES), std::end(PRESENCES), firstRank) != std::end(PRESENCES);
-        if (!presence && !spellInfo->HasAura(SPELL_AURA_MOD_SHAPESHIFT))
+        if (!presence && !spellInfo->HasAura(SPELL_AURA_MOD_SHAPESHIFT) && !spellInfo->HasAura(SPELL_AURA_MOD_STEALTH))
             return;
 
         player->RemoveOwnedAura(spellId, ObjectGuid::Empty, 0, AURA_REMOVE_BY_CANCEL);

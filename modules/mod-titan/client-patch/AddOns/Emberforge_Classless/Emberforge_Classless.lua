@@ -2725,52 +2725,65 @@ frame:HookScript("OnHide", TalentButton)
 TalentButton()
 
 -- Leaving a stance, presence or form: the game keeps a warrior in a stance and a death knight in a presence (their
--- buffs cannot be right-clicked off, their lit stance bar button does nothing). For a Hero the server lets them go
--- (CANCEL), asked when the buff is right-clicked or the stance bar's lit button is clicked again.
-local PRESENCES = { ["Blood Presence"] = true, ["Frost Presence"] = true, ["Unholy Presence"] = true }
+-- buffs cannot be right-clicked off), and a Hero is a Paladin to the client, which neither lists another class's
+-- forms on its stance bar nor toggles them off when cast again. For a Hero the server lets them go (CANCEL): asked
+-- when one of these is cast again while it is up (an action button, the spellbook, the stance bar) or its buff is
+-- right-clicked. A second ask for the same buff is harmless: the server finds it gone.
+local TOGGLES = {
+    ["Blood Presence"] = true, ["Frost Presence"] = true, ["Unholy Presence"] = true,
+    ["Bear Form"] = true, ["Dire Bear Form"] = true, ["Cat Form"] = true, ["Aquatic Form"] = true,
+    ["Travel Form"] = true, ["Flight Form"] = true, ["Swift Flight Form"] = true, ["Moonkin Form"] = true,
+    ["Tree of Life"] = true, ["Shadowform"] = true, ["Stealth"] = true, ["Metamorphosis"] = true,
+    ["Battle Stance"] = true, ["Defensive Stance"] = true, ["Berserker Stance"] = true,
+}
 
--- The player's buff of that name: its spell id.
-local function BuffSpell(name)
+-- Asks to leave the form of that name when the player is in it: every buff of the name (Tree of Life's form and
+-- its passive aura share it; the server keeps the passive).
+local function LeaveForm(name)
+    if not name or not TOGGLES[name] then
+        return
+    end
     for index = 1, 40 do
         local buff, _, _, _, _, _, _, _, _, _, spellId = UnitBuff("player", index)
         if not buff then
-            return nil
+            return
         end
-        if buff == name then
-            return spellId
+        if buff == name and spellId then
+            Send("CANCEL," .. spellId)
         end
     end
 end
 
--- A stance bar form's name, when it is the one the player is in.
-local function ActiveForm(name)
-    for index = 1, GetNumShapeshiftForms() do
-        local _, formName, active = GetShapeshiftFormInfo(index)
-        if active and formName == name then
-            return true
-        end
+hooksecurefunc("CancelUnitBuff", function(unit, index, filter)
+    if unit and UnitIsUnit(unit, "player") and type(index) == "number" then
+        LeaveForm((UnitAura(unit, index, filter or "HELPFUL")))
     end
-    return PRESENCES[name]
-end
-
+end)
 hooksecurefunc("BuffButton_OnClick", function(self)
     local unit = self.unit or PlayerFrame.unit or "player"
-    if not UnitIsUnit(unit, "player") then
-        return
+    if UnitIsUnit(unit, "player") then
+        LeaveForm((UnitAura(unit, self:GetID(), self.filter or "HELPFUL")))
     end
-    local name, _, _, _, _, _, _, _, _, _, spellId = UnitAura(unit, self:GetID(), self.filter or "HELPFUL")
-    if name and spellId and ActiveForm(name) then
-        Send("CANCEL," .. spellId)
+end)
+hooksecurefunc("UseAction", function(slot)
+    local kind, id, subType, spellId = GetActionInfo(slot)
+    if kind == "spell" then
+        LeaveForm(spellId and GetSpellInfo(spellId) or GetSpellName(id, subType or BOOKTYPE_SPELL))
     end
+end)
+hooksecurefunc("CastSpell", function(slot, book)
+    LeaveForm((GetSpellName(slot, book or BOOKTYPE_SPELL)))
+end)
+hooksecurefunc("CastSpellByName", function(name)
+    LeaveForm(name and (name:gsub("%(.*%)", ""):gsub("^%s+", ""):gsub("%s+$", "")))
 end)
 for index = 1, NUM_SHAPESHIFT_SLOTS or 10 do
     local stance = _G["ShapeshiftButton" .. index]
     if stance then
         stance:HookScript("OnClick", function(self)
             local _, name, active = GetShapeshiftFormInfo(self:GetID())
-            local spellId = active and BuffSpell(name)
-            if spellId then
-                Send("CANCEL," .. spellId)
+            if active then
+                LeaveForm(name)
             end
         end)
     end
