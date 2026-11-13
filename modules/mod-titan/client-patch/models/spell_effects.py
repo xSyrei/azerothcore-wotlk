@@ -916,31 +916,44 @@ def _gltf_meshes(path):
     return meshes
 
 
-def _hollowed(layer, mesh, bands=5, piece=0.3):
-    """A spun layer as the parts it is drawn in: itself, or, with hollow, its middle left clear with a soft edge.
-    The triangles near the edge are cut (in half along their longest side across, the fade being radial) until no
-    side is longer than piece yards across, then each piece goes by its middle's distance into bands fading in over soft yards from hollow; the rest
-    whole at full strength."""
+def _hollowed(layer, mesh, levels=6, piece=0.3):
+    """A spun layer as the parts it is drawn in: itself, or, with hollow and / or fade_top, its middle left clear with a
+    soft edge and / or its top fading out. The triangles near either edge are cut in half along their longest side
+    (across for the middle's, up for the top's) until no side is longer than piece yards (before stretch), then each
+    piece is drawn at its strength: fading in over soft yards out from hollow, and out over the top fade_top share of
+    the mesh's height; pieces of about the same strength (levels of them) share a part."""
     positions, uvs, faces = mesh
-    inner = layer.get('hollow')
-    if not inner:
+    inner, top = layer.get('hollow') or 0.0, layer.get('fade_top') or 0.0
+    if not inner and not top:
         return [{**layer, 'geometry': mesh}]
-    soft = layer.get('soft', 0.8)
+    soft = layer.get('soft', 0.8) if inner else 0.0
+    heights = [p[2] for p in positions]
+    peak = max(heights)
+    fall = top * (peak - min(heights))
     points, coords, halves = list(positions), list(uvs), {}
 
-    def middle(tri):
-        return math.hypot(sum(points[v][0] for v in tri) / 3, sum(points[v][1] for v in tri) / 3)
+    def across(v):
+        return math.hypot(points[v][0], points[v][1])
+
+    def strength(tri):
+        distance = sum(across(v) for v in tri) / 3
+        height = sum(points[v][2] for v in tri) / 3
+        inward = 1.0 if not inner else (0.0 if distance < inner else min(1.0, (distance - inner) / soft))
+        upward = 1.0 if not top else max(0.0, min(1.0, (peak - height) / fall))
+        return inward * upward
 
     def split(tri, depth=0):
-        a, b, c = tri
-        def flat(u, w):
-            return math.dist(points[u][:2], points[w][:2])     # across: the fade is radial
+        far = [across(v) for v in tri]
+        ups = [points[v][2] for v in tri]
+        radial = inner and min(far) < inner + soft + piece and max(far) > inner - piece
+        rising = top and max(ups) > peak - fall - piece
 
-        sides = [(flat(a, b), (a, b, c)), (flat(b, c), (b, c, a)), (flat(c, a), (c, a, b))]
-        longest, (p, q, r) = max(sides)
-        near = min(math.hypot(*points[v][:2]) for v in tri) < inner + soft + longest
-        far = max(math.hypot(*points[v][:2]) for v in tri) > inner - longest
-        if depth >= 10 or longest <= piece or not (near and far):
+        def size(u, w):
+            return max(math.dist(points[u][:2], points[w][:2]) if radial else 0.0,
+                       abs(points[u][2] - points[w][2]) if rising else 0.0)
+        a, b, c = tri
+        longest, (p, q, r) = max((size(a, b), (a, b, c)), (size(b, c), (b, c, a)), (size(c, a), (c, a, b)))
+        if depth >= 10 or longest <= piece:
             return [tri]
         edge = (min(p, q), max(p, q))
         if edge not in halves:                                  # neighbours share the new point
@@ -950,22 +963,17 @@ def _hollowed(layer, mesh, bands=5, piece=0.3):
         m = halves[edge]
         return split((p, m, r), depth + 1) + split((m, q, r), depth + 1)
 
-    pieces = [t for i in range(0, len(faces), 3) for t in split(tuple(faces[i:i + 3]))]
-    groups = [[] for _ in range(bands + 1)]
-    for tri in pieces:
-        distance = middle(tri)
-        if distance < inner:
-            continue
-        band = min(bands, int((distance - inner) / soft * bands))
-        groups[band].append(tri)
+    groups = {}
+    for i in range(0, len(faces), 3):
+        for tri in split(tuple(faces[i:i + 3])):
+            level = round(strength(tri) * levels)
+            if level:
+                groups.setdefault(level, []).append(tri)
     parts = []
-    for band, tris in enumerate(groups):
-        if not tris:
-            continue
+    for level, tris in sorted(groups.items()):
         keep = sorted({v for tri in tris for v in tri})
         local = {v: i for i, v in enumerate(keep)}
-        strength = (band + 0.5) / bands if band < bands else 1.0
-        parts.append({**layer, 'alpha': layer.get('alpha', 1.0) * strength,
+        parts.append({**layer, 'alpha': layer.get('alpha', 1.0) * level / levels,
                       'geometry': ([points[v] for v in keep], [coords[v] for v in keep],
                                    [local[v] for tri in tris for v in tri])})
     return parts
