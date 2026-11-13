@@ -43,14 +43,15 @@
 //
 // - Four: Specialization I and II free, III and IV bought from Silas Darkmoon (the Darkmoon window). One is active:
 //   its abilities and talents are the Hero's. Activating another (out of combat; the Classless window, right-click)
-//   keeps the active one's, takes them away and puts the other's back; one never used rolls anew, as a new Hero's
-//   (Wildcard's catch-up: the kit, then every level's roll). A spec put back gets what its level is owed since.
+//   keeps the active one's, takes them away and puts the other's back. One never built is empty (dormant): no
+//   abilities, talents, rune or bars, nothing rolled into it, until the Hero prestiges in it, which builds it from
+//   level 1 as a new Hero's (the other specs keep their builds). A spec put back gets what its level is owed since.
 // - Each has a name and an icon, chosen in the Classless window.
 // - A reroll (right-click an ability or talent) spends an Eye of Unlearning (cards.cpp): the ability for another the
 //   Hero can learn (a capstone for another capstone), the talent's ranks for as many of other talents.
 // - Locks: a locked ability or talent is never rerolled; a locked specialization's none are. Nothing locked can be
-//   prestiged: the Hero unlocks first. A prestige starts every specialization over (names, icons and the bought ones
-//   stay).
+//   prestiged: the Hero unlocks first. A prestige starts the active specialization over; the others keep their builds
+//   (names, icons and the bought ones stay).
 //
 // Addon whispers, prefix EFSP, to and from the Classless and Darkmoon windows:
 //   from server   P,<active>,<eyes>   S,<spec>,<owned>,<locked>,<used>,<price>,<icon>,<name>   (each of the four)
@@ -63,6 +64,7 @@ namespace
     constexpr std::size_t MAX_PAYLOAD = 230;
     constexpr char const* SETTING_SOURCE = "mod-titan-specs";
     constexpr uint32 SETTING_ACTIVE = 0;
+    constexpr uint32 SETTING_DORMANT = 1;       // the active spec is empty until the next prestige
     constexpr char const* WILDCARD_SOURCE = "mod-titan-wildcard";       // wildcard.cpp's settings
     constexpr uint32 WILDCARD_GRANTED = 0, WILDCARD_PICKS = 1, WILDCARD_CAPSTONE = 3;
     constexpr uint8 MAX_SPECS = 4;
@@ -227,11 +229,12 @@ namespace
             data.Specs[i].Name = DefaultName(i);
             data.Specs[i].Owned = i < FREE_SPECS;
         }
-        data.Specs[data.Active].Used = true;
+        bool dormant = player->GetPlayerSetting(SETTING_SOURCE, SETTING_DORMANT).value != 0;
+        data.Specs[data.Active].Used = !dormant;
         QueryCallbackProcessor& queries = player->GetSession()->GetQueryProcessor();
         queries.AddCallback(CharacterDatabase.AsyncQuery(Acore::StringFormat("SELECT `spec`, `name`, `icon`, `owned`, "
             "`locked`, `used`, `granted`, `picks`, `capstone` FROM `titan_specs` WHERE `guid` = {}", guid.GetCounter()))
-            .WithCallback([guid](QueryResult result)
+            .WithCallback([guid, dormant](QueryResult result)
         {
             auto itr = loadouts.find(guid);
             if (itr == loadouts.end())
@@ -249,7 +252,7 @@ namespace
                     spec.Icon = Clean(fields[2].Get<std::string>(), true);
                     spec.Owned = fields[3].Get<uint8>() || index < FREE_SPECS;
                     spec.Locked = fields[4].Get<uint8>();
-                    spec.Used = fields[5].Get<uint8>() || index == itr->second.Active;
+                    spec.Used = fields[5].Get<uint8>() || (index == itr->second.Active && !dormant);
                     spec.Granted = fields[6].Get<uint32>();
                     spec.Picks = fields[7].Get<uint32>();
                     spec.Capstone = fields[8].Get<uint32>();
@@ -370,6 +373,18 @@ namespace
     {
         Wildcard::SetQuiet(true);
         Wildcard::Reset(player);
+        // A spec never built: empty, nothing rolled into it, until a prestige in it.
+        if (!spec.Used)
+        {
+            for (uint32 setting : { WILDCARD_GRANTED, WILDCARD_PICKS, WILDCARD_CAPSTONE })
+                player->UpdatePlayerSetting(WILDCARD_SOURCE, setting, 0);
+            player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_DORMANT, 1);
+            player->InitTalentForLevel();
+            Wildcard::SetQuiet(false);
+            spec.Entries.clear();
+            return;
+        }
+        player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_DORMANT, 0);
         if (spec.Used)
         {
             for (auto const& [key, entry] : spec.Entries)
@@ -385,9 +400,7 @@ namespace
                     while (rank && !talent->RankID[rank - 1])
                         --rank;
                     if (rank)
-                        Wildcard::SetQuiet(true);
-                Wildcard::LearnTalentRank(player, talent, rank - 1, false);
-                Wildcard::SetQuiet(false);
+                        Wildcard::LearnTalentRank(player, talent, rank - 1, false);
                 }
             }
             player->UpdatePlayerSetting(WILDCARD_SOURCE, WILDCARD_GRANTED, spec.Granted);
@@ -440,19 +453,13 @@ namespace
         SaveEntries(player, data->Active, current);
         SaveSpec(player, data->Active, current);
         SaveActions(player, data->Active, current);
-        // A spec never used starts as a copy of this one (its abilities, talents, counts and bars, no locks): each
-        // is then made its own by rerolls.
-        bool fresh = !target.Used;
-        if (fresh)
+        // A spec never built is empty: no abilities, talents, rune or bars until the Hero prestiges in it.
+        bool dormant = !target.Used;
+        if (dormant)
         {
-            target.Entries = current.Entries;
-            for (auto& [key, entry] : target.Entries)
-                entry.Locked = false;
-            target.Granted = current.Granted;
-            target.Picks = current.Picks;
-            target.Capstone = current.Capstone;
-            target.Actions = current.Actions;
-            target.Used = true;
+            target.Entries.clear();
+            target.Actions.clear();
+            target.Granted = target.Picks = target.Capstone = 0;
         }
         player->SendActionButtons(2);                     // the client's bars cleared while the spells change
         PutBack(player, target);
@@ -463,7 +470,7 @@ namespace
         SaveEntries(player, index, target);
         SaveActions(player, index, target);
         handler.PSendSysMessage("|cffff8000Specialization:|r {} is active{}.", target.Name,
-            fresh ? ": a copy of the one you left, to make its own with rerolls" : "");
+            dormant ? ": it is empty until you prestige in it, which builds it from level 1" : "");
         Send(player);
         Classless::SendKnown(player);
         Classless::SendState(player);
@@ -654,6 +661,11 @@ namespace Specs
         return false;
     }
 
+    bool IsDormant(Player* player)
+    {
+        return player->GetPlayerSetting(SETTING_SOURCE, SETTING_DORMANT).value != 0;
+    }
+
     uint8 ActiveSpec(Player* player)
     {
         return uint8(std::min<uint32>(player->GetPlayerSetting(SETTING_SOURCE, SETTING_ACTIVE).value, MAX_SPECS - 1));
@@ -664,19 +676,20 @@ namespace Specs
         Loadouts* data = Loaded(player);
         if (!data)
             return;
-        CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_spec_entries` WHERE `guid` = {}",
-            player->GetGUID().GetCounter()));
-        CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_spec_actions` WHERE `guid` = {}",
-            player->GetGUID().GetCounter()));
-        for (uint8 i = 0; i < MAX_SPECS; ++i)
-        {
-            Spec& spec = data->Specs[i];
-            spec.Entries.clear();
-            spec.Actions.clear();
-            spec.Used = i == data->Active;
-            spec.Granted = spec.Picks = spec.Capstone = 0;
-            SaveSpec(player, i, spec);
-        }
+        // The active spec starts over (built from level 1 by the new Hero's rolls, a dormant one included); the
+        // others keep their builds.
+        uint8 active = data->Active;
+        CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_spec_entries` WHERE `guid` = {} AND "
+            "`spec` = {}", player->GetGUID().GetCounter(), active));
+        CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_spec_actions` WHERE `guid` = {} AND "
+            "`spec` = {}", player->GetGUID().GetCounter(), active));
+        Spec& spec = data->Specs[active];
+        spec.Entries.clear();
+        spec.Actions.clear();
+        spec.Used = true;
+        spec.Granted = spec.Picks = spec.Capstone = 0;
+        SaveSpec(player, active, spec);
+        player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_DORMANT, 0);
     }
 }
 

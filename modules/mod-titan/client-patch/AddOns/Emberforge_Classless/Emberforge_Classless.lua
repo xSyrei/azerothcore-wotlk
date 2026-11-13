@@ -1295,7 +1295,8 @@ do
         if spec.index == data.specs.active then
             state = "|cff8dff8aActive|r"
         elseif spec.owned then
-            state = spec.used and "|cffdca352Right-click to activate|r" or "|cffdca352New: rolled when activated|r"
+            state = spec.used and "|cffdca352Right-click to activate|r"
+                or "|cffdca352Empty: built by a prestige in it|r"
         else
             state = "|cff9a8a78Silas Darkmoon: " .. Thousands(spec.price) .. " Emberspark|r"
         end

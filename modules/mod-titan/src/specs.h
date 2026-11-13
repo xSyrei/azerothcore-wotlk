@@ -27,9 +27,11 @@ namespace Specs
 {
     // A locked specialization, ability or talent: the Hero cannot prestige until it is unlocked.
     bool HasLocks(Player* player);
-    // A prestige: every specialization starts over (the active one is the new Hero's; the others roll anew when
-    // activated). Names, icons and the ones bought stay.
+    // A prestige: the active specialization starts over (the new Hero's, built from level 1); the others keep their
+    // builds. Names, icons and the ones bought stay.
     void OnPrestige(Player* player);
+    // The active specialization was never built: empty (no abilities, talents, rune or rolls) until a prestige.
+    bool IsDormant(Player* player);
     // The active specialization's index (0 to 3).
     uint8 ActiveSpec(Player* player);
 }

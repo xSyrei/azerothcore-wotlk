@@ -826,7 +826,8 @@ namespace
 
     bool Prompt(Player* player)
     {
-        return Wildcard::IsHero(player) && player->GetLevel() >= UNLOCK_LEVEL && !ActiveChoice(player).Rune;
+        return Wildcard::IsHero(player) && player->GetLevel() >= UNLOCK_LEVEL && !ActiveChoice(player).Rune
+            && !Specs::IsDormant(player);
     }
 
     void SendState(Player* player)
@@ -876,6 +877,8 @@ namespace
             return Refuse(player, Acore::StringFormat("Legendary Runes unlock at level {}.", UNLOCK_LEVEL));
         if (choice.Rune)
             return Refuse(player, "This specialization already has its rune: only a prestige changes it.");
+        if (Specs::IsDormant(player))
+            return Refuse(player, "This specialization is empty until you prestige in it.");
         if (!rune)
             return Refuse(player, "That rune is not available yet.");
         if (Missing(player, rune->Requires) != "-")

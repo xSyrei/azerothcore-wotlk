@@ -407,8 +407,10 @@ A Hero has four loadouts of Wildcard abilities and talents (`src/specs.cpp`; cha
 Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon window.
 - **Switching** (out of combat, not in a battleground): the Classless window's Specs tab, right-click a spec,
   Activate (or the Darkmoon window's Specializations page). The active spec's abilities, talents and action bars are
-  kept and the other's put back, with what its level is owed since; a spec never used starts as a copy of the one
-  left (no locks), to make its own with rerolls. Action bars: `titan_spec_actions`
+  kept and the other's put back, with what its level is owed since. A spec never built is empty (dormant: no
+  abilities, talents, rune or bars, nothing rolled into it, no picks, `Specs::IsDormant`) until the Hero prestiges
+  while it is active: the prestige builds it from level 1 and the other specs keep their builds. Action bars:
+  `titan_spec_actions`
   (`data/sql/db-characters/titan_spec_actions.sql`).
 - **Names and icons**: click a spec's icon in the Specs tab (or right-click, Rename / icon): a name and any of the
   macro icons.
@@ -416,8 +418,8 @@ Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon wind
   learn (a capstone for another capstone), or the talent for another talent. Before the kit locks (level 8) an
   ability is **unlearned for free** instead (Unlearn): its pick comes back, to pick another.
 - **Locks**: right-click, Lock: a locked ability or talent is never rerolled, a locked spec's none are; padlocks show
-  on them. Nothing locked can be prestiged: unlock first. A prestige starts every spec over (names, icons and the ones
-  bought stay).
+  on them. Nothing locked can be prestiged: unlock first. A prestige starts the active spec over (a dormant one is built
+  by it); the other specs keep their builds (names, icons and the ones bought stay).
 
 ## Legendary Runes
 From level 10 a Hero binds a **Legendary Rune** to each specialization (`src/runes.cpp`; the design: the

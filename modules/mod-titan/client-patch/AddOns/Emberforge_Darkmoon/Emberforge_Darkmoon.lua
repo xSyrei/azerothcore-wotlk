@@ -48,9 +48,9 @@ local PACKS = {
 local SPECS = {
     { name = "Specialization I", text = "The starter specialization that comes with every Hero. Its abilities and "
         .. "talents are the ones your level-up rolls gave you." },
-    { name = "Specialization II", text = "A second set of abilities, talents and action bars, free for every Hero: "
-        .. "a copy of the one you leave the first time you activate it, to make its own with rerolls. Switch between "
-        .. "them out of combat, in the Classless window." },
+    { name = "Specialization II", text = "A second set of abilities, talents, rune and action bars, free for every "
+        .. "Hero from level 60. It starts empty: prestige while it is active to build it from level 1, your other "
+        .. "specializations keeping theirs. Switch between them out of combat, in the Classless window." },
     { name = "Specialization III", text = "A third loadout: keep one for each role you play, or one for raiding and "
         .. "one for the arena." },
     { name = "Specialization IV", text = "The fourth and last loadout." },

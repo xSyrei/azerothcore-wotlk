@@ -16,6 +16,7 @@
  */
 
 #include "wildcard.h"
+#include "specs.h"
 #include "global_talents.h"
 #include "Chat.h"
 #include "DBCStores.h"
@@ -1091,6 +1092,9 @@ namespace
     // for each ability and talent; catching up at login does not.
     void CatchUp(Player* player, bool grantAbilities, bool levelUp)
     {
+        // A dormant specialization (never built) holds nothing until the Hero prestiges in it.
+        if (Specs::IsDormant(player))
+            return;
         uint8 level = player->GetLevel();
 
         // Banned abilities go, and are owed again (rolled anew below).

@@ -17,6 +17,7 @@
 
 #include "wildcard.h"
 #include "prestige.h"
+#include "specs.h"
 #include "Chat.h"
 #include "DBCStores.h"
 #include "Player.h"
@@ -212,6 +213,11 @@ namespace
 
     void Pick(Player* player, uint32 spellId)
     {
+        if (Specs::IsDormant(player))
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("This specialization is empty until you prestige in it.");
+            return;
+        }
         ChatHandler handler(player->GetSession());
         Wildcard::Ability const* ability = Wildcard::FindAbility(spellId);
         uint32 picks = Wildcard::GetPicks(player);
