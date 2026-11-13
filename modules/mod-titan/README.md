@@ -539,6 +539,36 @@ utility or a tradeoff) take one pick each, from three.
   (switching straight to another ally: a tick over 4 sec on the last, once every 12 sec, 90813), Jade Shelter (an
   absorb of 20% of a Wandering Mist's healing, 4 sec, once every 8 sec, 90814), Effortless Breathing (from 3 sec in,
   15% of a tick's mana back). Scripts in `titan_runes.sql`; spells 90790-90828 (`patch_runes.py`).
+- **The Rune of the Threefold Grave** (rune 27, its own concept doc; Melee DPS or Tank; needs Death Strike and Icy
+  Touch or Plague Strike; slots Inscription, Dominion, Requiem). Icy Touch lays a frozen line through its target,
+  Plague Strike a diseased patch under it, Death Strike a blood circle under the Hero: one of each, 12 sec, moved by
+  recasting. **Requiem** (90831, taught while the rune is bound, 8 sec) turns the **Dominion** Rime → Blight → Gore;
+  each second every enemy in a scar (once, up to 10) takes the Dominion's tick (level x 2 + 6% of attack power): Rime
+  frost and a 30% slow, Blight disease (leaving it: a residual infection), Gore blood (Death Strike landed in a scar:
+  a Grave Ward, a quarter of its damage, up to 10% of health). Leaving a Dominion bids its farewell within one budget
+  of 3 ticks shared by the scars. Modifiers: Converging Graves, March of the Dead, Long Burial; Cruel Winter, Grave
+  Pestilence, Crimson Bastion; Reverse the Dirge, Lingering Dominion, Chosen Ending (three Requiems, 20 sec shared).
+- **The Rune of the Unbroken Onslaught** (rune 28; Melee DPS; Mortal Strike or Bloodthirst; slots Wake,
+  Follow-Through, Pursuit). Mortal Strike or Bloodthirst cuts a **Weapon Wake** through its target (6 sec); the next
+  different melee ability striking an enemy in it reopens it once: 60% of a normalized swing to each enemy along it (up
+  to 6), the first target 25% more, 0.6 sec later. Executioner's Cut, Whirling Steel, Raking Passage; Overpowering
+  Echo, Bloodletting, Aftershock; Relentless, Battlefield Claim, Changing Prey.
+- **The Rune of the Dawnbound Crusader** (rune 29; Healer or Melee DPS; Crusader Strike or Holy Shock; slots
+  Doctrine, Manifestation, Oath). **Dawn Vow** (90891, taught, 10 sec) binds an ally or the Hero. Judgment marks an
+  enemy; Crusader Strike on it sends a **Dawn Echo** from the vow 0.75 sec later (half its damage), Holy Shock one at
+  once. Mercy, Retribution, Communion; Dawnwave, Sunburst, Sacred Ground; Steadfast, Passing the Torch, Shared
+  Pilgrimage.
+- **The Rune of the Hollow Congregation** (rune 30; Ranged DPS; Mind Flay and Mind Blast; slots Congregation, Sermon,
+  Command). Two seconds into Mind Flay a **Hollow Echo** (creature 910122, the Hero's look, hollowed) stays and
+  channels 40% of a Mind Flay tick for 10 sec, two at most; Mind Blast turns them on its target in a barrage (3 bolts,
+  60% of a tick each), then they channel again. Following Shadows, Haunted Ground, Possession; Unison, Dissonance,
+  Accusation; Last Word, Procession, Silent Witness.
+- **The Rune of the Shattered Sun** (rune 31; Ranged DPS; Fireball and Frostbolt; slots Formation, Fracture,
+  Collapse). Fireball embeds a **Sunshard** (15 sec, two at most); Frostbolt on it fractures it, 60% of its damage to
+  each enemy within 8 yards, leaving a **Broken Core** (6 sec) the next Fireball collapses for its damage again. Twin
+  Suns, Orbiting Sun, Solar Anchor; Splinterstorm, Solar Lance, Scalding Ground; Implosion, Chain Reaction, Second
+  Sunrise. Scripts in `titan_runes.sql`; spells 90830-90978 (`patch_runes.py`); their ground looks from Echoing
+  Thunder's cracks, the monk's mist, the Illidari sigil and `build_wake_art.py`'s gash.
 
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and

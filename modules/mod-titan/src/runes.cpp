@@ -53,9 +53,9 @@
 // Covenant), a 23rd, the Rune of the Stormbound Conduit (its own doc; slots Conductivity, Arc Pattern, Lightning
 // Shield), and a 24th, the Rune of Echoing Thunder (its own doc; slots Thunderfield, Echo Pattern, Shield
 // Resonance), a 25th, the Rune of the Wellspring (slots Wellspring, Current, Undertow) and a 26th, the Rune of the
-// Wandering Mist (slots Mistflow, Technique, Mistweaver's Approach), each its own doc. Built so far: Fel
-// Commandment, the Sanctified Paragon, the Stormbound Conduit, Echoing Thunder, the Wellspring and the Wandering
-// Mist; the panel lists the others as coming.
+// Wandering Mist (slots Mistflow, Technique, Mistweaver's Approach), each its own doc, then five more, each its own
+// doc too: 27 the Threefold Grave, 28 the Unbroken Onslaught, 29 the Dawnbound Crusader, 30 the Hollow Congregation,
+// 31 the Shattered Sun. Built so far: those eleven; the panel lists the doc's others as coming.
 //
 // - Unlocked at level 5: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
@@ -65,8 +65,9 @@
 //   change freely out of combat.
 // - The rune works through auras: its own while it is the active spec's (90700 Fel Commandment, 90730 the
 //   Sanctified Paragon, 90750 the Stormbound Conduit, 90770 Echoing Thunder, 90790 the Wellspring, 90810 the
-//   Wandering Mist), and one marker per picked modifier (90710 / 90740 / 90760 / 90780 / 90800 / 90820 + slot * 3 +
-//   choice); scripts look for them.
+//   Wandering Mist, 90830 / 90860 / 90890 / 90920 / 90950 the five after), and one marker per picked modifier
+//   (90710 / 90740 / 90760 / 90780 / 90800 / 90820, and 20 on from each of the five's first, + slot * 3 + choice);
+//   scripts look for them. Two teach an action while bound: Requiem (the Threefold Grave) and Dawn Vow.
 //
 // Protocol (fields by ','; the client sends STATE, PICK,<rune>[,1], MOD,<slot 1-3>,<choice 1-3>; PICK's 1: warned
 // of the abilities the rune needs and lacks, the Hero binds it anyway):
@@ -89,6 +90,11 @@ namespace
     constexpr uint8 RUNE_ECHOING_THUNDER = 24;      // its own doc
     constexpr uint8 RUNE_WELLSPRING = 25;           // its own doc
     constexpr uint8 RUNE_WANDERING_MIST = 26;       // its own doc
+    constexpr uint8 RUNE_THREEFOLD_GRAVE = 27;      // its own doc, and the four after it
+    constexpr uint8 RUNE_UNBROKEN_ONSLAUGHT = 28;
+    constexpr uint8 RUNE_DAWNBOUND_CRUSADER = 29;
+    constexpr uint8 RUNE_HOLLOW_CONGREGATION = 30;
+    constexpr uint8 RUNE_SHATTERED_SUN = 31;
 
     enum Spells : uint32
     {
@@ -147,6 +153,78 @@ namespace
         SPELL_ROLLING_MIST              = 90813,
         SPELL_JADE_SHELTER              = 90814,
         SPELL_MIST_MODIFIER_FIRST       = 90820,    // + slot * 3 + choice
+
+        SPELL_RUNE_THREEFOLD_GRAVE      = 90830,
+        SPELL_REQUIEM                   = 90831,    // the action the rune teaches: the next Dominion
+        SPELL_REQUIEM_FIRST             = 90832,    // Chosen Ending's three: + Dominion
+        SPELL_DOMINION_FIRST            = 90835,    // the Hero's Dominion: + Dominion
+        SPELL_RIME                      = 90838,
+        SPELL_RIME_CHILL                = 90839,
+        SPELL_BLIGHT                    = 90840,
+        SPELL_RESIDUAL_INFECTION        = 90841,
+        SPELL_GORE                      = 90842,
+        SPELL_GRAVE_WARD                = 90843,
+        SPELL_RIME_FAREWELL             = 90844,    // its look: a frost nova about each enemy
+        SPELL_SCAR_FIRST                = 90845,    // the scars on the ground: + Scar
+        SPELL_BLOOD_CIRCLE_MARCH        = 90848,    // March of the Dead's: on the Hero
+        SPELL_CRUEL_WINTER              = 90849,
+        SPELL_GRAVE_MODIFIER_FIRST      = 90850,    // + slot * 3 + choice
+
+        SPELL_RUNE_UNBROKEN_ONSLAUGHT   = 90860,
+        SPELL_WEAPON_WAKE               = 90861,    // the wake's attack
+        SPELL_WAKE_BLEED                = 90862,
+        SPELL_WAKE_GROUND               = 90863,    // the wake on the ground
+        SPELL_WAKE_AFTERSHOCK           = 90864,
+        SPELL_ONSLAUGHT_MODIFIER_FIRST  = 90880,    // + slot * 3 + choice
+
+        SPELL_RUNE_DAWNBOUND_CRUSADER   = 90890,
+        SPELL_DAWN_VOW                  = 90891,    // the action the rune teaches
+        SPELL_DAWN_VOWED                = 90892,    // on the ally
+        SPELL_DAWN_MARK                 = 90893,
+        SPELL_DAWN_ECHO_HEAL            = 90894,
+        SPELL_DAWN_ECHO_DAMAGE          = 90895,
+        SPELL_DAWN_BOLT                 = 90896,    // its look from the vow: Holy Shock's, harmful
+        SPELL_DAWN_BOLT_HEAL            = 90897,    // and helpful
+        SPELL_SUNBURST                  = 90898,    // its look about the vow
+        SPELL_SACRED_GROUND             = 90899,
+        SPELL_DAWN_AFTERIMAGE           = 90900,
+        SPELL_DAWN_MODIFIER_FIRST       = 90910,    // + slot * 3 + choice
+
+        SPELL_RUNE_HOLLOW_CONGREGATION  = 90920,
+        SPELL_HOLLOW_ECHO               = 90921,    // on the echo: its look, no threat
+        SPELL_HOLLOW_FLAY               = 90922,
+        SPELL_HOLLOW_BOLT               = 90923,
+        SPELL_HOLLOW_SCREAM             = 90924,
+        SPELL_HOLLOW_LAST_WORD          = 90925,
+        SPELL_HOLLOW_MODIFIER_FIRST     = 90940,    // + slot * 3 + choice
+
+        SPELL_RUNE_SHATTERED_SUN        = 90950,
+        SPELL_SUNSHARD                  = 90951,
+        SPELL_BROKEN_CORE               = 90952,
+        SPELL_FRACTURE                  = 90953,
+        SPELL_FRACTURE_LOOK             = 90954,    // a ring of ice about where it breaks
+        SPELL_COLLAPSE                  = 90955,
+        SPELL_COLLAPSE_LOOK             = 90956,
+        SPELL_SCALDING_GROUND           = 90957,
+        SPELL_SOLAR_ANCHOR              = 90958,    // a shard left on the ground
+        SPELL_SUN_MODIFIER_FIRST        = 90970,    // + slot * 3 + choice
+
+        SPELL_ICY_TOUCH             = 45477,        // first ranks
+        SPELL_PLAGUE_STRIKE         = 45462,
+        SPELL_DEATH_STRIKE          = 49998,
+        SPELL_MORTAL_STRIKE         = 12294,
+        SPELL_BLOODTHIRST           = 23881,
+        SPELL_CRUSADER_STRIKE       = 35395,
+        SPELL_HOLY_SHOCK            = 20473,
+        SPELL_JUDGEMENT_OF_LIGHT    = 20271,
+        SPELL_JUDGEMENT_OF_WISDOM   = 53408,
+        SPELL_JUDGEMENT_OF_JUSTICE  = 53407,
+        SPELL_MIND_FLAY             = 15407,
+        SPELL_MIND_BLAST            = 8092,
+        SPELL_SHADOW_WORD_PAIN      = 589,
+        SPELL_CLONE_ME              = 45204,        // a copy of the caster's look (Mirror Image's)
+        SPELL_FIREBALL              = 133,
+        SPELL_FROSTBOLT             = 116,
 
         SPELL_CONSECRATION          = 26573,        // first rank
         SPELL_CHAIN_HEAL            = 1064,         // first ranks
@@ -277,6 +355,115 @@ namespace
     constexpr float EFFORTLESS_SHARE = 0.15f;
     constexpr int32 SOOTHING_MIST_TICKS = 8;
 
+    // The Threefold Grave's modifiers: slot (0 Inscription, 1 Dominion, 2 Requiem) x 3 + choice.
+    enum GraveModifier : uint8
+    {
+        MOD_CONVERGING_GRAVES, MOD_MARCH_OF_THE_DEAD, MOD_LONG_BURIAL,
+        MOD_CRUEL_WINTER, MOD_GRAVE_PESTILENCE, MOD_CRIMSON_BASTION,
+        MOD_REVERSE_THE_DIRGE, MOD_LINGERING_DOMINION, MOD_CHOSEN_ENDING,
+    };
+
+    // The scars (Icy Touch's frozen line, Plague Strike's diseased patch, Death Strike's blood circle) and the
+    // Dominions Requiem turns through.
+    enum Scar : uint8 { SCAR_FROZEN_LINE, SCAR_DISEASED_PATCH, SCAR_BLOOD_CIRCLE, SCARS };
+    enum Dominion : uint8 { DOMINION_RIME, DOMINION_BLIGHT, DOMINION_GORE, DOMINIONS };
+
+    // The Threefold Grave's tuning (the concept draft leaves it to us). A scar's tick: the Hero's level and 6% of
+    // their attack power, each enemy once a second however many scars it stands in.
+    constexpr uint32 SCAR_MS = 12000, LONG_BURIAL_MS = 20000, GRAVE_TICK_MS = 1000;
+    constexpr float LINE_HALF_LENGTH = 5.0f, LINE_HALF_WIDTH = 1.5f, PATCH_RADIUS = 5.0f, CIRCLE_RADIUS = 6.0f;
+    constexpr float SCAR_LEVEL = 2.0f, SCAR_AP = 0.06f;
+    constexpr float RIME_SHARE = 0.8f, BLIGHT_SHARE = 1.0f, GORE_SHARE = 0.9f;
+    constexpr int32 RIME_SLOW = -30, CRUEL_WINTER_SLOW = -50;
+    constexpr float PESTILENCE = 1.3f;                          // Blight's ticks with Grave Pestilence
+    constexpr float RESIDUAL_SHARE = 0.5f;                      // a residual infection's tick, of a scar tick
+    constexpr int32 RESIDUAL_MS = 3000, PESTILENCE_RESIDUAL_MS = 6000;
+    constexpr float FAREWELL_BUDGET = 3.0f;                     // scar ticks, shared between the scars
+    constexpr float CONVERGING_TWO = 1.3f, CONVERGING_THREE = 1.5f;
+    constexpr float GRAVE_WARD_SHARE = 0.25f, GRAVE_WARD_CAP_PCT = 10.0f;
+    constexpr float BASTION_WARD_SHARE = 0.4f, BASTION_WARD_CAP_PCT = 15.0f;
+    constexpr int32 GRAVE_WARD_MS = 8000, PRESERVED_WARD_MS = 5000;
+    constexpr float PRESERVED_WARD = 0.5f;                      // of the ward kept as Gore ends (all: Crimson Bastion)
+    constexpr uint32 LINGERING_DOMINION_MS = 3000;
+    constexpr uint32 CHOSEN_ENDING_MS = 20000;              // Requiem: 8 sec (its data)
+    constexpr float LINGERING_OUTPUT = 0.5f;
+    constexpr std::size_t SCAR_TARGETS = 10;
+
+    // Unbroken Onslaught's modifiers: slot (0 Wake, 1 Follow-Through, 2 Pursuit) x 3 + choice.
+    enum OnslaughtModifier : uint8
+    {
+        MOD_EXECUTIONERS_CUT, MOD_WHIRLING_STEEL, MOD_RAKING_PASSAGE,
+        MOD_OVERPOWERING_ECHO, MOD_BLOODLETTING, MOD_AFTERSHOCK,
+        MOD_RELENTLESS, MOD_BATTLEFIELD_CLAIM, MOD_CHANGING_PREY,
+    };
+
+    // Unbroken Onslaught's tuning: the wake's attack is 60% of a normalized main-hand swing to each enemy along it
+    // (up to 6), its primary target 25% more (50% with Executioner's Cut).
+    constexpr uint32 WAKE_MS = 6000, CLAIM_MS = 10000, WAKE_DELAY_MS = 600, AFTERSHOCK_MS = 1500;
+    constexpr float WAKE_SHARE = 0.6f, WAKE_PRIMARY = 1.25f, EXECUTIONER_PRIMARY = 1.5f, AFTERSHOCK_SHARE = 0.5f;
+    constexpr float WAKE_HALF_LENGTH = 4.0f, WAKE_HALF_WIDTH = 1.5f, CUT_HALF_WIDTH = 1.0f;
+    constexpr float CRESCENT_RADIUS = 8.0f, CRESCENT_ARC = float(M_PI) / 2.0f;     // each side of the facing
+    constexpr float RAKE_BEHIND = 2.0f, RAKE_BEYOND = 14.0f;
+    constexpr float BLEED_SHARE = 0.3f, BLEED_CAP = 0.6f;       // of the wake's hit; at most, of a swing
+    constexpr int32 BLEED_TICKS = 6;
+    constexpr std::size_t WAKE_TARGETS = 6;
+
+    // The Dawnbound Crusader's modifiers: slot (0 Doctrine, 1 Manifestation, 2 Oath) x 3 + choice.
+    enum DawnModifier : uint8
+    {
+        MOD_MERCY, MOD_RETRIBUTION, MOD_COMMUNION,
+        MOD_DAWNWAVE, MOD_SUNBURST, MOD_SACRED_GROUND,
+        MOD_STEADFAST, MOD_PASSING_THE_TORCH, MOD_SHARED_PILGRIMAGE,
+    };
+
+    // The Dawnbound Crusader's tuning: an echo is half of what set it off (Crusader Strike's damage, Holy Shock's
+    // damage or healing), released from the vow 0.75 sec later.
+    constexpr float DAWN_SHARE = 0.5f, COMMUNION_OUTPUT = 0.85f, AFTERIMAGE_SHARE = 0.5f;
+    constexpr uint32 DAWN_PENDING_MS = 750, DAWN_MARK_MS = 15000;
+    constexpr float DAWN_REACH = 15.0f, PILGRIMAGE_CAP = 15.0f, PILGRIMAGE_PER_YARD = 0.5f;
+    constexpr float DAWNWAVE_WIDTH = 3.0f, DAWNWAVE_SHARE = 0.6f, SUNBURST_RADIUS = 8.0f, SUNBURST_SHARE = 0.5f;
+    constexpr float SACRED_RADIUS = 8.0f, SACRED_SHARE = 0.25f;     // Consecration's ground
+    constexpr uint32 SACRED_MS = 4000;
+    constexpr int32 AFTERIMAGE_MS = 6000;
+    constexpr std::size_t DAWN_TARGETS = 5;
+
+    // The Hollow Congregation's modifiers: slot (0 Congregation, 1 Sermon, 2 Command) x 3 + choice.
+    enum HollowModifier : uint8
+    {
+        MOD_FOLLOWING_SHADOWS, MOD_HAUNTED_GROUND, MOD_POSSESSION,
+        MOD_UNISON, MOD_DISSONANCE, MOD_ACCUSATION,
+        MOD_LAST_WORD, MOD_PROCESSION, MOD_SILENT_WITNESS,
+    };
+
+    // The Hollow Congregation's tuning: an echo's channel ticks for 40% of the Hero's Mind Flay tick; a barrage is 3
+    // bolts each, 0.4 sec apart, 60% of a tick each.
+    constexpr uint32 FLAY_ECHO_AFTER_MS = 2000, HOLLOW_ECHO_MS = 10000, BARRAGE_SPACING_MS = 400;
+    constexpr std::size_t MAX_HOLLOW_ECHOES = 2;
+    constexpr uint32 BARRAGE_BOLTS = 3;
+    constexpr float HOLLOW_SHARE = 0.4f, BARRAGE_SHARE = 0.6f, UNISON_BARRAGE = 1.2f, SCREAM_SHARE = 1.5f;
+    constexpr float HOLLOW_RANGE = 30.0f, HAUNTED_RANGE = 40.0f, SCREAM_WIDTH = 2.0f;
+    constexpr float LAST_WORD_TICKS = 3.0f, SILENT_WITNESS = 1.3f;
+    constexpr std::size_t SCREAM_TARGETS = 5;
+
+    // The Shattered Sun's modifiers: slot (0 Formation, 1 Fracture, 2 Collapse) x 3 + choice.
+    enum SunModifier : uint8
+    {
+        MOD_TWIN_SUNS, MOD_ORBITING_SUN, MOD_SOLAR_ANCHOR,
+        MOD_SPLINTERSTORM, MOD_SOLAR_LANCE, MOD_SCALDING_GROUND,
+        MOD_IMPLOSION, MOD_CHAIN_REACTION, MOD_SECOND_SUNRISE,
+    };
+
+    // The Shattered Sun's tuning: a fracture is 60% of the Frostbolt's damage to each enemy in the ring (8 yards),
+    // a collapse the Fireball's damage again on its host.
+    constexpr std::size_t MAX_SHARDS = 2, TWIN_SUNS_SHARDS = 3, FRACTURE_TARGETS = 8;
+    constexpr int32 SUNSHARD_MS = 15000, BROKEN_CORE_MS = 6000;
+    constexpr float FRACTURE_SHARE = 0.6f, FRACTURE_RADIUS = 8.0f, COLLAPSE_SHARE = 1.0f, IMPLOSION = 1.4f;
+    constexpr float SPLINTER_REACH = 12.0f, SPLINTER_ARC = float(M_PI) / 4.0f, LANCE_REACH = 20.0f;
+    constexpr float LANCE_HALF_WIDTH = 1.5f, SCALDING_RADIUS = 6.0f, SCALDING_SHARE = 0.15f;
+    constexpr uint32 SCALDING_MS = 4000, SUNRISE_DELAY_MS = 2000;
+    constexpr float SUNRISE_SHARE = 0.4f, SUNRISE_PER_ENEMY = 0.1f, SUNRISE_CAP = 0.5f, CHAIN_RANGE = 15.0f;
+    constexpr float CHAIN_SHARE = 0.5f, ORBIT_RANGE = 40.0f;
+
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
     constexpr float UPKEEP_PCT = 1.0f;                          // of base mana, a second
@@ -298,6 +485,7 @@ namespace
 
     constexpr uint32 NPC_RUNE_FELGUARD = 910120;
     constexpr uint32 NPC_RUNE_FEL_IMP = 910121;
+    constexpr uint32 NPC_HOLLOW_ECHO = 910122;
     // SummonProperties 61: category ally, type guardian. A pet-category row (67) would make a controllable guardian
     // that takes the pet slot from the Hero's own demon.
     constexpr uint32 SUMMON_PROPERTIES_GUARDIAN = 61;
@@ -368,6 +556,27 @@ namespace
               SPELL_WELLSPRING_MODIFIER_FIRST },
             { RUNE_WANDERING_MIST, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
               { { SPELL_SOOTHING_MIST } }, SPELL_RUNE_WANDERING_MIST, SPELL_MIST_MODIFIER_FIRST },
+            // DPS or Tank: Death Strike's blood circle and one of the other two scars.
+            { RUNE_THREEFOLD_GRAVE,
+              uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_TANK)),
+              { { SPELL_DEATH_STRIKE }, { SPELL_ICY_TOUCH, SPELL_PLAGUE_STRIKE } }, SPELL_RUNE_THREEFOLD_GRAVE,
+              SPELL_GRAVE_MODIFIER_FIRST },
+            // Melee DPS: Mortal Strike or Bloodthirst cuts the wake.
+            { RUNE_UNBROKEN_ONSLAUGHT, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
+              { { SPELL_MORTAL_STRIKE, SPELL_BLOODTHIRST } }, SPELL_RUNE_UNBROKEN_ONSLAUGHT,
+              SPELL_ONSLAUGHT_MODIFIER_FIRST },
+            // Healer or melee DPS: Crusader Strike (on the Judgment target) or Holy Shock makes the echoes.
+            { RUNE_DAWNBOUND_CRUSADER,
+              uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER) | Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
+              { { SPELL_CRUSADER_STRIKE, SPELL_HOLY_SHOCK } }, SPELL_RUNE_DAWNBOUND_CRUSADER,
+              SPELL_DAWN_MODIFIER_FIRST },
+            // Ranged DPS: Mind Flay leaves the echoes, Mind Blast commands them.
+            { RUNE_HOLLOW_CONGREGATION, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_MIND_FLAY }, { SPELL_MIND_BLAST } }, SPELL_RUNE_HOLLOW_CONGREGATION,
+              SPELL_HOLLOW_MODIFIER_FIRST },
+            // Ranged DPS: Fireball embeds and collapses, Frostbolt fractures.
+            { RUNE_SHATTERED_SUN, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_FIREBALL }, { SPELL_FROSTBOLT } }, SPELL_RUNE_SHATTERED_SUN, SPELL_SUN_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -391,6 +600,10 @@ namespace
             return { { SPELL_ENVELOPING_MIST } };
         if (rune == RUNE_WANDERING_MIST && modifier == MOD_VIVACIOUS_FLOW)
             return { { SPELL_VIVIFY } };
+        if (rune == RUNE_DAWNBOUND_CRUSADER && modifier == MOD_STEADFAST)
+            return { { SPELL_HOLY_SHOCK } };
+        if (rune == RUNE_HOLLOW_CONGREGATION && modifier == MOD_DISSONANCE)
+            return { { SPELL_SHADOW_WORD_PAIN } };
         if (rune != RUNE_FEL_COMMANDMENT)
             return {};
         if (modifier == MOD_DREADFIRE_DISCIPLINE)
@@ -449,6 +662,58 @@ namespace
         uint32 LastWander = 0, LastRolling = 0, LastJadeShelter = 0;
         ObjectGuid LastWanderTarget;                // the most recently healed Wandering Mist target
         ObjectGuid LesserTarget;                    // the lesser Enveloping Mist's (Comforting Veil)
+
+        // The Threefold Grave: each scar a line From..To or a circle at From (Until 0: none).
+        struct ScarAt
+        {
+            uint32 Map = 0;
+            Position From, To;
+            uint32 Until = 0;                       // game ms
+        };
+        std::array<ScarAt, SCARS> Scars;
+        uint8 Dominion = DOMINION_RIME;
+        uint8 Lingering = DOMINIONS;                // Lingering Dominion: the last one, until LingerUntil
+        uint32 LingerUntil = 0;
+        uint32 GraveTimer = 0;
+        std::set<ObjectGuid> InBlight;              // enemies Blight touched on the last tick
+
+        // Unbroken Onslaught: the wake, a line From..To or a crescent at From facing Facing.
+        bool Wake = false, WakeCrescent = false;
+        uint32 WakeMap = 0;
+        Position WakeFrom, WakeTo;
+        float WakeFacing = 0.0f, WakeHalfWidth = 0.0f;
+        uint32 WakeUntil = 0, WakeCreator = 0, WakeTimer = 0;
+        ObjectGuid WakePrimary;
+        Position WakeOffset;                        // Relentless: from its target, as cut
+
+        // The Dawnbound Crusader.
+        ObjectGuid Vow, Marked;
+        bool Pending = false;
+        uint32 PendingAt = 0;                       // game ms the pending echo releases
+        float PendingAmount = 0.0f;
+        bool PendingHeal = false;
+        uint32 Echoes = 0;                          // echoes released (Communion alternates)
+        Position HeroWas, VowWas;
+        float Pilgrimage = 0.0f;                    // Shared Pilgrimage's yards
+        uint32 DawnTimer = 0;
+        Position SacredAt;                          // Sacred Ground's patch (SacredUntil 0: none)
+        uint32 SacredMap = 0, SacredUntil = 0, SacredTimer = 0;
+        float SacredTick = 0.0f;
+        bool SacredHeal = false;
+
+        // The Hollow Congregation.
+        std::vector<ObjectGuid> HollowEchoes;       // oldest first
+        uint32 FlayStart = 0;
+        bool FlayEchoed = true;
+        ObjectGuid FlayTarget;
+        std::unordered_map<ObjectGuid, ObjectGuid> EchoHosts;      // Possession: echo -> its enemy
+
+        // The Shattered Sun: the enemies holding a shard, oldest first, and Solar Anchor's places.
+        std::vector<ObjectGuid> Shards;
+        std::unordered_map<ObjectGuid, Position> Anchors;
+        Position ScaldAt;                           // Scalding Ground (ScaldUntil 0: none)
+        uint32 ScaldMap = 0, ScaldUntil = 0, ScaldTimer = 0;
+        float ScaldTick = 0.0f;
     };
 
     std::unordered_map<ObjectGuid::LowType, State> states;
@@ -642,9 +907,12 @@ namespace
         return LegionOut(player) + (Felguard(player) ? 1 : 0) + (Demon(player) ? 1 : 0);
     }
 
+    void ClearLegends(Player* player);
+
     // Stacks, the Felguard and the imps gone (death, prestige, a spec or modifier change).
     void ClearCombat(Player* player)
     {
+        ClearLegends(player);
         player->RemoveAurasDueToSpell(SPELL_FEL_COMMAND);
         player->RemoveAurasDueToSpell(SPELL_FEL_RIFT);
         State& state = StateOf(player);
@@ -1402,6 +1670,1231 @@ namespace
         }
     }
 
+    // ---- Shared by the runes below ----------------------------------------------------------------------------
+
+    uint32 Now()
+    {
+        return GameTime::GetGameTimeMS().count();
+    }
+
+    bool Marked(Unit* unit, uint32 first, uint8 modifier)
+    {
+        return unit && unit->HasAura(first + modifier);
+    }
+
+    Position Toward(Position const& from, float angle, float distance)
+    {
+        return Position(from.GetPositionX() + distance * std::cos(angle),
+            from.GetPositionY() + distance * std::sin(angle), from.GetPositionZ(), angle);
+    }
+
+    // In the plane: from p to the segment a..b.
+    float SegmentDist(Position const& p, Position const& a, Position const& b)
+    {
+        float dx = b.GetPositionX() - a.GetPositionX(), dy = b.GetPositionY() - a.GetPositionY();
+        float length = dx * dx + dy * dy;
+        float t = length > 0.0f ? ((p.GetPositionX() - a.GetPositionX()) * dx
+            + (p.GetPositionY() - a.GetPositionY()) * dy) / length : 0.0f;
+        t = std::clamp(t, 0.0f, 1.0f);
+        float x = a.GetPositionX() + t * dx - p.GetPositionX(), y = a.GetPositionY() + t * dy - p.GetPositionY();
+        return std::sqrt(x * x + y * y);
+    }
+
+    bool InArc(Position const& center, float facing, Position const& p, float halfArc)
+    {
+        float diff = std::fabs(Position::NormalizeOrientation(center.GetAngle(&p) - facing));
+        return std::min(diff, float(2 * M_PI) - diff) <= halfArc;
+    }
+
+    // A stretch of ground: a line From..To HalfWidth either side, or a cone at From, Radius long, Arc either side of
+    // Facing (a circle at Arc pi).
+    struct Shape
+    {
+        bool Cone = false;
+        Position From, To;
+        float Facing = 0.0f, HalfWidth = 0.0f, Radius = 0.0f, Arc = float(M_PI);
+
+        bool Holds(Unit* unit) const
+        {
+            float reach = unit->GetCombatReach() * 0.5f;
+            Position at = unit->GetPosition();
+            if (Cone)
+                return From.GetExactDist2d(&at) <= Radius + reach && InArc(From, Facing, at, Arc);
+            return SegmentDist(at, From, To) <= HalfWidth + reach;
+        }
+
+        float Extent() const
+        {
+            return Cone ? Radius : From.GetExactDist2d(&To) + HalfWidth;
+        }
+
+        // Where its look lies: patches along the line, or across the cone.
+        std::vector<Position> Points(float spacing) const
+        {
+            std::vector<Position> points;
+            if (Cone)
+            {
+                if (Arc >= float(M_PI) - 0.01f)
+                    return { From };
+                for (int32 i = -2; i <= 2; ++i)
+                    points.push_back(Toward(From, Facing + Arc * i / 2.5f, Radius * 0.6f));
+                return points;
+            }
+            float length = From.GetExactDist2d(&To);
+            uint32 count = std::max<uint32>(1, uint32(length / spacing) + 1);
+            float angle = From.GetAngle(&To);
+            for (uint32 i = 0; i < count; ++i)
+                points.push_back(Toward(From, angle, count > 1 ? length * i / (count - 1) : 0.0f));
+            return points;
+        }
+    };
+
+    Shape Circle(Position const& at, float radius)
+    {
+        Shape shape;
+        shape.Cone = true;
+        shape.From = at;
+        shape.Radius = radius;
+        return shape;
+    }
+
+    // The enemies the Hero may hit within the shape, nearest the Hero first, up to cap.
+    std::vector<Unit*> EnemiesIn(Player* player, Shape const& shape, std::size_t cap)
+    {
+        float reach = player->GetExactDist2d(&shape.From) + shape.Extent() + 5.0f;
+        std::vector<Unit*> found;
+        for (Unit* enemy : EnemiesAround(player, player, reach))
+        {
+            if (found.size() >= cap)
+                break;
+            if (shape.Holds(enemy))
+                found.push_back(enemy);
+        }
+        return found;
+    }
+
+    // A look on the ground: spellId's patches at each point (its earlier ones gone), each on the ground there.
+    void PlaceDecals(Player* player, uint32 spellId, std::vector<Position> const& points)
+    {
+        player->RemoveDynObject(spellId);
+        for (Position const& point : points)
+        {
+            float z = point.GetPositionZ();
+            player->UpdateGroundPositionZ(point.GetPositionX(), point.GetPositionY(), z);
+            player->CastSpell(point.GetPositionX(), point.GetPositionY(), z, spellId, true);
+        }
+    }
+
+    // A spell of the Hero's on the unit for ms (its own duration the longest it can last).
+    void Lasting(Player* player, Unit* unit, uint32 spellId, int32 ms, int32 const* amount = nullptr)
+    {
+        unit->RemoveAurasDueToSpell(spellId, player->GetGUID());
+        if (amount)
+            player->CastCustomSpell(unit, spellId, amount, nullptr, nullptr, true);
+        else
+            player->CastSpell(unit, spellId, true);
+        if (Aura* aura = unit->GetAura(spellId, player->GetGUID()))
+        {
+            aura->SetMaxDuration(ms);
+            aura->SetDuration(ms);
+        }
+    }
+
+    bool Valid(Player* player, Unit* enemy)
+    {
+        return enemy && enemy->IsAlive() && enemy->IsInMap(player) && player->IsValidAttackTarget(enemy);
+    }
+
+    // ---- The Threefold Grave -----------------------------------------------------------------------------------
+
+    bool HasGraveMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_GRAVE_MODIFIER_FIRST, modifier);
+    }
+
+    // A scar's tick: the Hero's level and their attack power.
+    float ScarTick(Player* player)
+    {
+        return SCAR_LEVEL * player->GetLevel() + player->GetTotalAttackPowerValue(BASE_ATTACK) * SCAR_AP;
+    }
+
+    bool ScarActive(Player* player, uint8 scar)
+    {
+        State::ScarAt const& at = StateOf(player).Scars[scar];
+        return at.Until > Now() && at.Map == player->GetMapId();
+    }
+
+    // The scar's ground: the frozen line, the diseased patch, the blood circle (on the Hero with March of the Dead).
+    Shape ScarShape(Player* player, uint8 scar)
+    {
+        State::ScarAt const& at = StateOf(player).Scars[scar];
+        if (scar == SCAR_FROZEN_LINE)
+        {
+            Shape line;
+            line.From = at.From;
+            line.To = at.To;
+            line.HalfWidth = LINE_HALF_WIDTH;
+            return line;
+        }
+        if (scar == SCAR_DISEASED_PATCH)
+            return Circle(at.From, PATCH_RADIUS);
+        return Circle(HasGraveMarker(player, MOD_MARCH_OF_THE_DEAD) ? player->GetPosition() : at.From,
+            CIRCLE_RADIUS);
+    }
+
+    uint8 ScarsHolding(Player* player, Unit* unit)
+    {
+        uint8 count = 0;
+        for (uint8 scar = 0; scar < SCARS; ++scar)
+            if (ScarActive(player, scar) && ScarShape(player, scar).Holds(unit))
+                ++count;
+        return count;
+    }
+
+    // Icy Touch, Plague Strike, Death Strike: their scar, moved here (12 sec, 20 with Long Burial).
+    void Inscribe(Player* player, uint8 scar, Unit* target)
+    {
+        State::ScarAt& at = StateOf(player).Scars[scar];
+        at.Map = player->GetMapId();
+        uint32 ms = HasGraveMarker(player, MOD_LONG_BURIAL) ? LONG_BURIAL_MS : SCAR_MS;
+        at.Until = Now() + ms;
+        uint32 look = SPELL_SCAR_FIRST + scar;
+        if (scar == SCAR_FROZEN_LINE)
+        {
+            float facing = player->GetAngle(target);
+            at.From = Toward(target->GetPosition(), facing + float(M_PI), LINE_HALF_LENGTH);
+            at.To = Toward(target->GetPosition(), facing, LINE_HALF_LENGTH);
+            PlaceDecals(player, look, ScarShape(player, scar).Points(2.5f));
+        }
+        else if (scar == SCAR_DISEASED_PATCH)
+        {
+            at.From = target->GetPosition();
+            PlaceDecals(player, look, { at.From });
+        }
+        else if (HasGraveMarker(player, MOD_MARCH_OF_THE_DEAD))
+        {
+            at.From = player->GetPosition();
+            player->RemoveDynObject(look);
+            Lasting(player, player, SPELL_BLOOD_CIRCLE_MARCH, int32(ms));
+        }
+        else
+        {
+            at.From = player->GetPosition();
+            PlaceDecals(player, look, { at.From });
+        }
+    }
+
+    void ClearScar(Player* player, uint8 scar)
+    {
+        StateOf(player).Scars[scar].Until = 0;
+        player->RemoveDynObject(SPELL_SCAR_FIRST + scar);
+        if (scar == SCAR_BLOOD_CIRCLE)
+            player->RemoveAurasDueToSpell(SPELL_BLOOD_CIRCLE_MARCH);
+    }
+
+    // A residual infection: a scar's half tick every second, 3 sec (6 with Grave Pestilence).
+    void Infect(Player* player, Unit* enemy)
+    {
+        bool pestilence = HasGraveMarker(player, MOD_GRAVE_PESTILENCE);
+        int32 tick = std::max<int32>(1, int32(ScarTick(player) * RESIDUAL_SHARE * (pestilence ? PESTILENCE : 1.0f)));
+        Lasting(player, enemy, SPELL_RESIDUAL_INFECTION, pestilence ? PESTILENCE_RESIDUAL_MS : RESIDUAL_MS, &tick);
+    }
+
+    // A Dominion's tick on an enemy in the scars: Rime's frost and slow, Blight's disease, Gore's blood.
+    void Dominate(Player* player, Unit* enemy, uint8 dominion, float scale)
+    {
+        float tick = ScarTick(player) * scale;
+        if (dominion == DOMINION_RIME)
+        {
+            int32 damage = std::max<int32>(1, int32(tick * RIME_SHARE));
+            player->CastCustomSpell(enemy, SPELL_RIME, &damage, nullptr, nullptr, true);
+            int32 slow = HasGraveMarker(player, MOD_CRUEL_WINTER) ? CRUEL_WINTER_SLOW : RIME_SLOW;
+            if (enemy->IsAlive())
+                player->CastCustomSpell(enemy, SPELL_RIME_CHILL, &slow, nullptr, nullptr, true);
+        }
+        else if (dominion == DOMINION_BLIGHT)
+        {
+            float share = BLIGHT_SHARE * (HasGraveMarker(player, MOD_GRAVE_PESTILENCE) ? PESTILENCE : 1.0f);
+            int32 damage = std::max<int32>(1, int32(tick * share));
+            player->CastCustomSpell(enemy, SPELL_BLIGHT, &damage, nullptr, nullptr, true);
+        }
+        else
+        {
+            int32 damage = std::max<int32>(1, int32(tick * GORE_SHARE));
+            player->CastCustomSpell(enemy, SPELL_GORE, &damage, nullptr, nullptr, true);
+        }
+    }
+
+    // Leaving a Dominion, its farewell, all of it within one budget (three scar ticks) shared between the scars:
+    // Rime a last burst of slowing frost (rooting with Cruel Winter), Blight every residual infection at once, Gore
+    // half the Grave Ward kept a few seconds (all of it with Crimson Bastion).
+    void Farewell(Player* player, uint8 dominion)
+    {
+        float budget = ScarTick(player) * FAREWELL_BUDGET;
+        if (dominion == DOMINION_RIME)
+        {
+            uint8 scars = 0;
+            for (uint8 scar = 0; scar < SCARS; ++scar)
+                scars += ScarActive(player, scar) ? 1 : 0;
+            if (!scars)
+                return;
+            std::size_t hit = 0;
+            for (Unit* enemy : EnemiesAround(player, player, 40.0f))
+            {
+                uint8 count = ScarsHolding(player, enemy);
+                if (!count)
+                    continue;
+                if (++hit > SCAR_TARGETS)
+                    break;
+                int32 damage = std::max<int32>(1, int32(budget * count / scars));
+                enemy->CastSpell(enemy, SPELL_RIME_FAREWELL, true);
+                player->CastCustomSpell(enemy, SPELL_RIME, &damage, nullptr, nullptr, true);
+                if (!enemy->IsAlive())
+                    continue;
+                if (HasGraveMarker(player, MOD_CRUEL_WINTER))
+                    player->CastSpell(enemy, SPELL_CRUEL_WINTER, true);
+                int32 slow = CRUEL_WINTER_SLOW;
+                player->CastCustomSpell(enemy, SPELL_RIME_CHILL, &slow, nullptr, nullptr, true);
+            }
+        }
+        else if (dominion == DOMINION_BLIGHT)
+        {
+            std::vector<std::pair<Unit*, float>> infected;
+            float total = 0.0f;
+            for (Unit* enemy : EnemiesAround(player, player, 60.0f))
+                if (Aura* aura = enemy->GetAura(SPELL_RESIDUAL_INFECTION, player->GetGUID()))
+                    if (AuraEffect* effect = aura->GetEffect(EFFECT_0))
+                    {
+                        float left = effect->GetAmount() * std::ceil(aura->GetDuration() / 1000.0f);
+                        infected.emplace_back(enemy, left);
+                        total += left;
+                    }
+            float scale = total > budget ? budget / total : 1.0f;
+            for (auto const& [enemy, left] : infected)
+            {
+                enemy->RemoveAurasDueToSpell(SPELL_RESIDUAL_INFECTION, player->GetGUID());
+                int32 damage = std::max<int32>(1, int32(left * scale));
+                player->CastCustomSpell(enemy, SPELL_BLIGHT, &damage, nullptr, nullptr, true);
+            }
+        }
+        else if (Aura* ward = player->GetAura(SPELL_GRAVE_WARD))
+        {
+            if (!HasGraveMarker(player, MOD_CRIMSON_BASTION))
+                if (AuraEffect* effect = ward->GetEffect(EFFECT_0))
+                    effect->ChangeAmount(std::max<int32>(1, int32(effect->GetAmount() * PRESERVED_WARD)));
+            if (ward->GetDuration() > PRESERVED_WARD_MS)
+                ward->SetDuration(PRESERVED_WARD_MS);
+        }
+    }
+
+    // The Hero's Dominion (its buff and look); farewell: the last one's farewell, and Lingering Dominion's 3 sec.
+    void SetDominion(Player* player, uint8 dominion, bool farewell)
+    {
+        State& state = StateOf(player);
+        uint8 last = state.Dominion;
+        if (farewell && last != dominion)
+        {
+            Farewell(player, last);
+            if (HasGraveMarker(player, MOD_LINGERING_DOMINION))
+            {
+                state.Lingering = last;
+                state.LingerUntil = Now() + LINGERING_DOMINION_MS;
+            }
+        }
+        state.Dominion = dominion;
+        state.InBlight.clear();
+        for (uint8 other = 0; other < DOMINIONS; ++other)
+            if (other != dominion)
+                player->RemoveAurasDueToSpell(SPELL_DOMINION_FIRST + other);
+        player->CastSpell(player, SPELL_DOMINION_FIRST + dominion, true);
+    }
+
+    // Requiem's next Dominion: Rime, Blight, Gore (Gore, Blight, Rime with Reverse the Dirge).
+    uint8 NextDominion(Player* player)
+    {
+        uint8 step = HasGraveMarker(player, MOD_REVERSE_THE_DIRGE) ? DOMINIONS - 1 : 1;
+        return uint8((StateOf(player).Dominion + step) % DOMINIONS);
+    }
+
+    bool GoreActive(Player* player)
+    {
+        State& state = StateOf(player);
+        return state.Dominion == DOMINION_GORE
+            || (state.Lingering == DOMINION_GORE && Now() < state.LingerUntil);
+    }
+
+    // Death Strike connecting while the Hero stands in a scar under Gore: a Grave Ward of a quarter of its damage
+    // (40% with Crimson Bastion), added up to 10% of their health (15%), 8 sec.
+    void GraveWard(Player* player, int32 damage)
+    {
+        if (damage <= 0 || !GoreActive(player) || !ScarsHolding(player, player))
+            return;
+        bool bastion = HasGraveMarker(player, MOD_CRIMSON_BASTION);
+        int32 cap = int32(player->CountPctFromMaxHealth(int32(bastion ? BASTION_WARD_CAP_PCT : GRAVE_WARD_CAP_PCT)));
+        int32 have = 0;
+        if (AuraEffect* ward = player->GetAuraEffect(SPELL_GRAVE_WARD, EFFECT_0))
+            have = ward->GetAmount();
+        int32 amount = std::min(cap, have + int32(damage * (bastion ? BASTION_WARD_SHARE : GRAVE_WARD_SHARE)));
+        if (amount > 0)
+            Lasting(player, player, SPELL_GRAVE_WARD, GRAVE_WARD_MS, &amount);
+    }
+
+    // Every second: the scars' Dominion (and Lingering Dominion's last one, at half) on each enemy in them, once
+    // however many scars it stands in (more with Converging Graves), up to 10; enemies leaving Blight infected.
+    void GraveTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        state.GraveTimer += diff;
+        if (state.GraveTimer < GRAVE_TICK_MS)
+            return;
+        state.GraveTimer = 0;
+        uint32 now = Now();
+        bool any = false;
+        for (uint8 scar = 0; scar < SCARS; ++scar)
+        {
+            State::ScarAt const& at = state.Scars[scar];
+            if (at.Until && (at.Until <= now || at.Map != player->GetMapId()))
+                ClearScar(player, scar);
+            any = any || state.Scars[scar].Until;
+        }
+        if (!any || !player->IsAlive())
+        {
+            state.InBlight.clear();
+            return;
+        }
+        bool lingering = state.Lingering < DOMINIONS && now < state.LingerUntil;
+        bool converging = HasGraveMarker(player, MOD_CONVERGING_GRAVES);
+        std::set<ObjectGuid> blighted;
+        std::size_t hit = 0;
+        for (Unit* enemy : EnemiesAround(player, player, 40.0f))
+        {
+            uint8 count = ScarsHolding(player, enemy);
+            if (!count)
+                continue;
+            if (++hit > SCAR_TARGETS)
+                break;
+            float scale = !converging || count < 2 ? 1.0f : count >= 3 ? CONVERGING_THREE : CONVERGING_TWO;
+            Dominate(player, enemy, state.Dominion, scale);
+            if (lingering && enemy->IsAlive())
+                Dominate(player, enemy, state.Lingering, scale * LINGERING_OUTPUT);
+            if (state.Dominion == DOMINION_BLIGHT || (lingering && state.Lingering == DOMINION_BLIGHT))
+                blighted.insert(enemy->GetGUID());
+        }
+        for (ObjectGuid guid : state.InBlight)
+            if (!blighted.count(guid))
+                if (Unit* enemy = ObjectAccessor::GetUnit(*player, guid); Valid(player, enemy))
+                    Infect(player, enemy);
+        state.InBlight = std::move(blighted);
+    }
+
+    // ---- Unbroken Onslaught ------------------------------------------------------------------------------------
+
+    bool HasOnslaughtMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_ONSLAUGHT_MODIFIER_FIRST, modifier);
+    }
+
+    // The wake through the target, as the Wake slot cuts it, from the Hero's angle to the target.
+    Shape WakeShape(Player* player, Unit* target)
+    {
+        Shape shape;
+        float facing = player->GetAngle(target);
+        Position at = target->GetPosition();
+        if (HasOnslaughtMarker(player, MOD_WHIRLING_STEEL))
+        {
+            shape.Cone = true;
+            shape.From = player->GetPosition();
+            shape.Facing = facing;
+            shape.Radius = CRESCENT_RADIUS;
+            shape.Arc = CRESCENT_ARC;
+            return shape;
+        }
+        bool raking = HasOnslaughtMarker(player, MOD_RAKING_PASSAGE);
+        shape.From = Toward(at, facing + float(M_PI), raking ? RAKE_BEHIND : WAKE_HALF_LENGTH);
+        shape.To = Toward(at, facing, raking ? RAKE_BEYOND : WAKE_HALF_LENGTH);
+        shape.HalfWidth = HasOnslaughtMarker(player, MOD_EXECUTIONERS_CUT) ? CUT_HALF_WIDTH : WAKE_HALF_WIDTH;
+        return shape;
+    }
+
+    void EndWake(Player* player)
+    {
+        StateOf(player).Wake = false;
+        player->RemoveDynObject(SPELL_WAKE_GROUND);
+    }
+
+    // The wake's attack: 60% of a normalized swing to each enemy along it (up to 6), its primary target more;
+    // Bloodletting: a bleed of 30% of the hit over 6 sec, refreshed, never above 60% of a swing.
+    void WakeStrike(Player* player, Shape const& shape, ObjectGuid primary, float share)
+    {
+        if (!player->IsInWorld() || !player->IsAlive())
+            return;
+        float swing = float(player->CalculateDamage(BASE_ATTACK, true, true));
+        float bonus = HasOnslaughtMarker(player, MOD_EXECUTIONERS_CUT) ? EXECUTIONER_PRIMARY : WAKE_PRIMARY;
+        bool bleed = HasOnslaughtMarker(player, MOD_BLOODLETTING);
+        for (Unit* enemy : EnemiesIn(player, shape, WAKE_TARGETS))
+        {
+            float amount = swing * WAKE_SHARE * share * (enemy->GetGUID() == primary ? bonus : 1.0f);
+            int32 damage = std::max<int32>(1, int32(amount));
+            player->CastCustomSpell(enemy, share < 1.0f ? SPELL_WAKE_AFTERSHOCK : SPELL_WEAPON_WAKE, &damage,
+                nullptr, nullptr, true);
+            if (!bleed || !enemy->IsAlive())
+                continue;
+            int32 tick = int32(damage * BLEED_SHARE / BLEED_TICKS);
+            if (AuraEffect const* last = enemy->GetAuraEffect(SPELL_WAKE_BLEED, EFFECT_0, player->GetGUID()))
+                tick = std::max(tick, last->GetAmount());
+            tick = std::max<int32>(1, std::min(tick, int32(swing * BLEED_CAP / BLEED_TICKS)));
+            Lasting(player, enemy, SPELL_WAKE_BLEED, BLEED_TICKS * 1000, &tick);
+        }
+    }
+
+    // A different melee ability through the wake reopens it, once: its attack along the wake a moment later (at
+    // once with Overpowering Echo), Aftershock a second impact there 1.5 sec on at half. Changing Prey: the one
+    // struck takes the primary target's bonus.
+    void ReopenWake(Player* player, Unit* struck)
+    {
+        State& state = StateOf(player);
+        Shape shape;
+        shape.Cone = state.WakeCrescent;
+        shape.From = state.WakeFrom;
+        shape.To = state.WakeTo;
+        shape.Facing = state.WakeFacing;
+        shape.HalfWidth = state.WakeHalfWidth;
+        shape.Radius = CRESCENT_RADIUS;
+        shape.Arc = CRESCENT_ARC;
+        ObjectGuid primary = HasOnslaughtMarker(player, MOD_CHANGING_PREY) ? struck->GetGUID() : state.WakePrimary;
+        EndWake(player);
+        uint32 delay = HasOnslaughtMarker(player, MOD_OVERPOWERING_ECHO) ? 0 : WAKE_DELAY_MS;
+        if (!delay)
+            WakeStrike(player, shape, primary, 1.0f);
+        else
+            player->m_Events.AddEventAtOffset([player, shape, primary]() { WakeStrike(player, shape, primary, 1.0f); },
+                Milliseconds(delay));
+        if (HasOnslaughtMarker(player, MOD_AFTERSHOCK))
+            player->m_Events.AddEventAtOffset([player, shape, primary]()
+            {
+                WakeStrike(player, shape, primary, AFTERSHOCK_SHARE);
+            }, Milliseconds(delay + AFTERSHOCK_MS));
+    }
+
+    // Mortal Strike or Bloodthirst: a new wake through the target (the last one gone), 6 sec (10 with Battlefield
+    // Claim), fixed where it was cut (following the target with Relentless).
+    void CutWake(Player* player, Unit* target, uint32 creator)
+    {
+        State& state = StateOf(player);
+        Shape shape = WakeShape(player, target);
+        state.Wake = true;
+        state.WakeCrescent = shape.Cone;
+        state.WakeFrom = shape.From;
+        state.WakeTo = shape.To;
+        state.WakeFacing = shape.Facing;
+        state.WakeHalfWidth = shape.HalfWidth;
+        state.WakeMap = player->GetMapId();
+        state.WakeCreator = creator;
+        state.WakePrimary = target->GetGUID();
+        state.WakeOffset = target->GetPosition();
+        state.WakeUntil = Now() + (HasOnslaughtMarker(player, MOD_BATTLEFIELD_CLAIM) ? CLAIM_MS : WAKE_MS);
+        PlaceDecals(player, SPELL_WAKE_GROUND, shape.Points(2.5f));
+    }
+
+    bool InWake(Player* player, Unit* unit)
+    {
+        State& state = StateOf(player);
+        if (!state.Wake || state.WakeMap != player->GetMapId() || Now() >= state.WakeUntil)
+            return false;
+        Shape shape;
+        shape.Cone = state.WakeCrescent;
+        shape.From = state.WakeFrom;
+        shape.To = state.WakeTo;
+        shape.Facing = state.WakeFacing;
+        shape.HalfWidth = state.WakeHalfWidth;
+        shape.Radius = CRESCENT_RADIUS;
+        shape.Arc = CRESCENT_ARC;
+        return shape.Holds(unit);
+    }
+
+    // The wake's end; Relentless: it follows its target (moved with it, twice a second).
+    void WakeTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        if (!state.Wake)
+            return;
+        if (Now() >= state.WakeUntil || state.WakeMap != player->GetMapId())
+            return EndWake(player);
+        state.WakeTimer += diff;
+        if (state.WakeTimer < 500 || !HasOnslaughtMarker(player, MOD_RELENTLESS))
+            return;
+        state.WakeTimer = 0;
+        Unit* target = ObjectAccessor::GetUnit(*player, state.WakePrimary);
+        if (!target || !target->IsAlive() || target->GetExactDist2d(&state.WakeOffset) < 1.0f)
+            return;
+        float dx = target->GetPositionX() - state.WakeOffset.GetPositionX();
+        float dy = target->GetPositionY() - state.WakeOffset.GetPositionY();
+        for (Position* point : { &state.WakeFrom, &state.WakeTo })
+            point->Relocate(point->GetPositionX() + dx, point->GetPositionY() + dy, target->GetPositionZ());
+        state.WakeOffset = target->GetPosition();
+        Shape shape;
+        shape.Cone = state.WakeCrescent;
+        shape.From = state.WakeFrom;
+        shape.To = state.WakeTo;
+        shape.Facing = state.WakeFacing;
+        shape.Radius = CRESCENT_RADIUS;
+        shape.Arc = CRESCENT_ARC;
+        PlaceDecals(player, SPELL_WAKE_GROUND, shape.Points(2.5f));
+    }
+
+    // ---- The Dawnbound Crusader --------------------------------------------------------------------------------
+
+    bool HasDawnMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_DAWN_MODIFIER_FIRST, modifier);
+    }
+
+    // The vowed ally, or the Hero themselves while there is none (gone, dead, elsewhere).
+    Unit* VowOf(Player* player)
+    {
+        State& state = StateOf(player);
+        Unit* vow = state.Vow ? ObjectAccessor::GetUnit(*player, state.Vow) : nullptr;
+        if (!vow || !vow->IsAlive() || !vow->IsInMap(player) || !vow->HasAura(SPELL_DAWN_VOWED, player->GetGUID()))
+            return player;
+        return vow;
+    }
+
+    void DropVow(Player* player)
+    {
+        State& state = StateOf(player);
+        if (state.Vow)
+            if (Unit* vow = ObjectAccessor::GetUnit(*player, state.Vow))
+                vow->RemoveAurasDueToSpell(SPELL_DAWN_VOWED, player->GetGUID());
+        player->RemoveAurasDueToSpell(SPELL_DAWN_VOWED, player->GetGUID());
+        state.Vow.Clear();
+    }
+
+    Unit* JudgmentTarget(Player* player)
+    {
+        State& state = StateOf(player);
+        Unit* marked = state.Marked ? ObjectAccessor::GetUnit(*player, state.Marked) : nullptr;
+        return Valid(player, marked) && marked->HasAura(SPELL_DAWN_MARK, player->GetGUID()) ? marked : nullptr;
+    }
+
+    // The Doctrine: Mercy heals, Retribution strikes, Communion turns between them (a Healer's echoes heal and
+    // anyone else's strike until a Doctrine is chosen).
+    bool EchoHeals(Player* player)
+    {
+        State& state = StateOf(player);
+        if (HasDawnMarker(player, MOD_MERCY))
+            return true;
+        if (HasDawnMarker(player, MOD_RETRIBUTION))
+            return false;
+        if (HasDawnMarker(player, MOD_COMMUNION))
+            return state.Echoes % 2 == 0;
+        return Wildcard::GetRole(player) == Wildcard::ROLE_HEALER;
+    }
+
+    void EchoOn(Player* player, Unit* unit, float amount, bool heal)
+    {
+        int32 points = std::max<int32>(1, int32(amount));
+        player->CastCustomSpell(unit, heal ? SPELL_DAWN_ECHO_HEAL : SPELL_DAWN_ECHO_DAMAGE, &points, nullptr,
+            nullptr, true);
+    }
+
+    // A Dawn Echo from the vow: on one (the most injured ally within reach of it, or the Judgment target, else the
+    // nearest enemy), or along the way to the Judgment target (Dawnwave), or all about the vow (Sunburst), or as a
+    // patch of consecrated ground there (Sacred Ground: a quarter a second for 4 sec, the last patch replaced).
+    void Emit(Player* player, Unit* vow, float amount, bool heal, float reach)
+    {
+        State& state = StateOf(player);
+        Unit* marked = JudgmentTarget(player);
+        auto single = [&]() -> Unit*
+        {
+            if (heal)
+            {
+                std::vector<Unit*> allies = InjuredAllies(player, vow, reach, nullptr);
+                return allies.empty() ? nullptr : allies.front();
+            }
+            if (marked && marked->IsWithinDistInMap(vow, reach))
+                return marked;
+            std::vector<Unit*> enemies = EnemiesAround(player, vow, reach);
+            return enemies.empty() ? nullptr : enemies.front();
+        };
+        uint32 look = heal ? SPELL_DAWN_BOLT_HEAL : SPELL_DAWN_BOLT;
+
+        if (HasDawnMarker(player, MOD_DAWNWAVE))
+        {
+            Unit* toward = marked && marked->IsWithinDistInMap(vow, reach * 2.0f) ? marked : single();
+            if (!toward)
+                return;
+            Shape line;
+            line.From = vow->GetPosition();
+            line.To = Toward(line.From, vow->GetAngle(toward), vow->GetExactDist2d(toward) + 2.0f);
+            line.HalfWidth = DAWNWAVE_WIDTH / 2.0f;
+            vow->CastSpell(toward, look, true);
+            std::vector<Unit*> touched;
+            if (heal)
+            {
+                for (Unit* ally : InjuredAllies(player, vow, vow->GetExactDist2d(toward) + 5.0f, nullptr))
+                    if (touched.size() < DAWN_TARGETS && line.Holds(ally))
+                        touched.push_back(ally);
+            }
+            else
+                touched = EnemiesIn(player, line, DAWN_TARGETS);
+            for (Unit* unit : touched)
+                EchoOn(player, unit, amount * DAWNWAVE_SHARE, heal);
+            return;
+        }
+        if (HasDawnMarker(player, MOD_SUNBURST))
+        {
+            vow->CastSpell(vow, SPELL_SUNBURST, true);
+            std::vector<Unit*> touched = heal ? InjuredAllies(player, vow, SUNBURST_RADIUS, nullptr)
+                : EnemiesAround(player, vow, SUNBURST_RADIUS);
+            if (touched.size() > DAWN_TARGETS)
+                touched.resize(DAWN_TARGETS);
+            for (Unit* unit : touched)
+                EchoOn(player, unit, amount * SUNBURST_SHARE, heal);
+            return;
+        }
+        if (HasDawnMarker(player, MOD_SACRED_GROUND))
+        {
+            state.SacredAt = vow->GetPosition();
+            state.SacredMap = player->GetMapId();
+            state.SacredUntil = Now() + SACRED_MS;
+            state.SacredTick = amount * SACRED_SHARE;
+            state.SacredHeal = heal;
+            state.SacredTimer = 0;
+            PlaceDecals(player, SPELL_SACRED_GROUND, { state.SacredAt });
+            return;
+        }
+        if (Unit* unit = single())
+        {
+            vow->CastSpell(unit, look, true);
+            EchoOn(player, unit, amount, heal);
+        }
+    }
+
+    // The pending echo, released: from the vow, its reach 15 yards and Shared Pilgrimage's yards; Steadfast's
+    // afterimage repeats it at half.
+    void ReleaseEcho(Player* player)
+    {
+        State& state = StateOf(player);
+        if (!state.Pending)
+            return;
+        state.Pending = false;
+        Unit* vow = VowOf(player);
+        bool heal = EchoHeals(player);
+        float amount = state.PendingAmount * (HasDawnMarker(player, MOD_COMMUNION) ? COMMUNION_OUTPUT : 1.0f);
+        ++state.Echoes;
+        float reach = DAWN_REACH;
+        if (HasDawnMarker(player, MOD_SHARED_PILGRIMAGE))
+            reach += std::min(PILGRIMAGE_CAP, state.Pilgrimage);
+        state.Pilgrimage = 0.0f;
+        Emit(player, vow, amount, heal, reach);
+        if (vow->HasAura(SPELL_DAWN_AFTERIMAGE, player->GetGUID()))
+        {
+            vow->RemoveAurasDueToSpell(SPELL_DAWN_AFTERIMAGE, player->GetGUID());
+            Emit(player, vow, amount * AFTERIMAGE_SHARE, heal, reach);
+        }
+    }
+
+    // An echo pending: half of what set it off, released 0.75 sec on (another one meanwhile joins it).
+    void QueueEcho(Player* player, float amount)
+    {
+        State& state = StateOf(player);
+        if (amount <= 0.0f)
+            return;
+        state.PendingAmount = state.Pending ? state.PendingAmount + amount * DAWN_SHARE : amount * DAWN_SHARE;
+        state.Pending = true;
+        state.PendingAt = Now() + DAWN_PENDING_MS;
+    }
+
+    // The vow moved to the ally (one at a time); Passing the Torch: a pending echo released from them at once.
+    void Vow(Player* player, Unit* ally)
+    {
+        State& state = StateOf(player);
+        if (state.Vow && state.Vow != ally->GetGUID())
+            if (Unit* last = ObjectAccessor::GetUnit(*player, state.Vow))
+                last->RemoveAurasDueToSpell(SPELL_DAWN_VOWED, player->GetGUID());
+        state.Vow = ally->GetGUID();
+        if (!ally->HasAura(SPELL_DAWN_VOWED, player->GetGUID()))
+            player->AddAura(SPELL_DAWN_VOWED, ally);
+        state.VowWas = ally->GetPosition();
+        if (state.Pending && HasDawnMarker(player, MOD_PASSING_THE_TORCH))
+            ReleaseEcho(player);
+    }
+
+    void Mark(Player* player, Unit* enemy)
+    {
+        State& state = StateOf(player);
+        if (state.Marked && state.Marked != enemy->GetGUID())
+            if (Unit* last = ObjectAccessor::GetUnit(*player, state.Marked))
+                last->RemoveAurasDueToSpell(SPELL_DAWN_MARK, player->GetGUID());
+        state.Marked = enemy->GetGUID();
+        Lasting(player, enemy, SPELL_DAWN_MARK, int32(DAWN_MARK_MS));
+    }
+
+    // Four times a second: the pending echo's release, Shared Pilgrimage's yards, Sacred Ground's ticks.
+    void DawnTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        state.DawnTimer += diff;
+        if (state.DawnTimer < 250)
+            return;
+        uint32 elapsed = state.DawnTimer;
+        state.DawnTimer = 0;
+        uint32 now = Now();
+        if (state.Pending && now >= state.PendingAt)
+            ReleaseEcho(player);
+
+        Unit* vow = VowOf(player);
+        Position hero = player->GetPosition(), there = vow->GetPosition();
+        if (state.HeroWas.GetExactDist2d(&hero) < 10.0f)
+            state.Pilgrimage += state.HeroWas.GetExactDist2d(&hero) * PILGRIMAGE_PER_YARD;
+        if (vow != player && state.VowWas.GetExactDist2d(&there) < 10.0f)
+            state.Pilgrimage += state.VowWas.GetExactDist2d(&there) * PILGRIMAGE_PER_YARD;
+        state.HeroWas = hero;
+        state.VowWas = there;
+
+        if (!state.SacredUntil)
+            return;
+        if (now >= state.SacredUntil || state.SacredMap != player->GetMapId())
+        {
+            state.SacredUntil = 0;
+            player->RemoveDynObject(SPELL_SACRED_GROUND);
+            return;
+        }
+        state.SacredTimer += elapsed;
+        if (state.SacredTimer < 1000)
+            return;
+        state.SacredTimer = 0;
+        Shape patch = Circle(state.SacredAt, SACRED_RADIUS);
+        if (state.SacredHeal)
+        {
+            std::size_t healed = 0;
+            for (Unit* ally : InjuredAllies(player, player, 60.0f, nullptr))
+                if (healed < DAWN_TARGETS && patch.Holds(ally))
+                {
+                    ++healed;
+                    EchoOn(player, ally, state.SacredTick, true);
+                }
+        }
+        else
+            for (Unit* enemy : EnemiesIn(player, patch, DAWN_TARGETS))
+                EchoOn(player, enemy, state.SacredTick, false);
+    }
+
+    // ---- The Hollow Congregation -------------------------------------------------------------------------------
+
+    bool HasHollowMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_HOLLOW_MODIFIER_FIRST, modifier);
+    }
+
+    // A tick of the Hero's best Mind Flay: its rank's, a quarter of spell power, and their Shadow damage bonuses.
+    float FlayTick(Player* player)
+    {
+        uint32 best = 0;
+        for (uint32 id = SPELL_MIND_FLAY; id; id = sSpellMgr->GetNextSpellInChain(id))
+            if (player->HasSpell(id))
+                best = id;
+        SpellInfo const* rank = sSpellMgr->GetSpellInfo(best ? best : uint32(SPELL_MIND_FLAY));
+        float points = rank ? float(std::max(1, rank->Effects[EFFECT_2].CalcValue(player))) : 1.0f;
+        float power = float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_SHADOW)) * 0.257f;
+        return (points + power)
+            * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, SPELL_SCHOOL_MASK_SHADOW);
+    }
+
+    std::vector<Creature*> LiveEchoes(Player* player)
+    {
+        State& state = StateOf(player);
+        std::vector<Creature*> echoes;
+        std::vector<ObjectGuid> kept;
+        for (ObjectGuid guid : state.HollowEchoes)
+            if (Creature* echo = ObjectAccessor::GetCreature(*player, guid); echo && echo->IsAlive())
+            {
+                echoes.push_back(echo);
+                kept.push_back(guid);
+            }
+        state.HollowEchoes = kept;
+        return echoes;
+    }
+
+    void DismissEchoes(Player* player)
+    {
+        for (Creature* echo : LiveEchoes(player))
+            if (TempSummon* summon = echo->ToTempSummon())
+                summon->UnSummon();
+        StateOf(player).HollowEchoes.clear();
+        StateOf(player).EchoHosts.clear();
+    }
+
+    // Two seconds into Mind Flay: a Hollow Echo where the Hero stands (on the target with Possession, one an
+    // enemy), 10 sec; a third replaces the oldest.
+    void LeaveEcho(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        std::vector<Creature*> echoes = LiveEchoes(player);
+        if (echoes.size() >= MAX_HOLLOW_ECHOES)
+            if (TempSummon* oldest = echoes.front()->ToTempSummon())
+            {
+                oldest->UnSummon();
+                state.HollowEchoes.erase(state.HollowEchoes.begin());
+            }
+        Unit* host = nullptr;
+        if (HasHollowMarker(player, MOD_POSSESSION))
+        {
+            auto hosted = [&](Unit* enemy)
+            {
+                for (Creature* echo : LiveEchoes(player))
+                    if (auto host = state.EchoHosts.find(echo->GetGUID());
+                        host != state.EchoHosts.end() && host->second == enemy->GetGUID())
+                        return true;
+                return false;
+            };
+            std::vector<Unit*> candidates = { target };
+            for (Unit* enemy : EnemiesAround(player, player, HOLLOW_RANGE))
+                candidates.push_back(enemy);
+            for (Unit* enemy : candidates)
+                if (Valid(player, enemy) && !hosted(enemy))
+                {
+                    host = enemy;
+                    break;
+                }
+        }
+        Position pos = host ? host->GetPosition() : player->GetNearPosition(1.5f, frand(0.0f, 2.0f * float(M_PI)));
+        TempSummon* echo = player->GetMap()->SummonCreature(NPC_HOLLOW_ECHO, pos,
+            sSummonPropertiesStore.LookupEntry(SUMMON_PROPERTIES_GUARDIAN), HOLLOW_ECHO_MS, player);
+        if (!echo)
+            return;
+        state.HollowEchoes.push_back(echo->GetGUID());
+        if (echo->IsAIEnabled)
+        {
+            echo->AI()->SetGUID(target ? target->GetGUID() : ObjectGuid::Empty, 0);
+            if (host)
+                echo->AI()->SetGUID(host->GetGUID(), 1);
+        }
+        if (host)
+            state.EchoHosts[echo->GetGUID()] = host->GetGUID();
+    }
+
+    // Mind Blast's command: every echo turns on its target (Dissonance: each on another enemy with the Hero's
+    // Shadow Word: Pain, the target first), beside it with Procession, in a barrage of 3 bolts (Unison: together,
+    // 20% more) or a piercing scream along the way (Accusation); then their channels resume on it.
+    void CommandEchoes(Player* player, Unit* target)
+    {
+        std::vector<Creature*> echoes = LiveEchoes(player);
+        if (echoes.empty())
+            return;
+        std::vector<Unit*> victims;
+        if (HasHollowMarker(player, MOD_DISSONANCE))
+        {
+            auto pained = [player](Unit* enemy)
+            {
+                for (uint32 id = SPELL_SHADOW_WORD_PAIN; id; id = sSpellMgr->GetNextSpellInChain(id))
+                    if (enemy->HasAura(id, player->GetGUID()))
+                        return true;
+                return false;
+            };
+            if (pained(target))
+                victims.push_back(target);
+            for (Unit* enemy : EnemiesAround(player, player, HAUNTED_RANGE))
+                if (enemy != target && pained(enemy))
+                    victims.push_back(enemy);
+        }
+        bool unison = HasHollowMarker(player, MOD_UNISON), accusation = HasHollowMarker(player, MOD_ACCUSATION);
+        float tick = FlayTick(player);
+        int32 bolt = std::max<int32>(1, int32(tick * BARRAGE_SHARE * (unison ? UNISON_BARRAGE : 1.0f)));
+        ObjectGuid owner = player->GetGUID();
+        for (std::size_t i = 0; i < echoes.size(); ++i)
+        {
+            Creature* echo = echoes[i];
+            Unit* victim = i < victims.size() ? victims[i] : target;
+            ObjectGuid victimGuid = victim->GetGUID();
+            echo->InterruptNonMeleeSpells(false);
+            if (HasHollowMarker(player, MOD_PROCESSION))
+            {
+                Position spot = victim->GetNearPosition(3.0f, float(M_PI) / 2.0f + float(M_PI) * i);
+                echo->NearTeleportTo(spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(),
+                    echo->GetAngle(victim));
+            }
+            if (echo->IsAIEnabled)
+            {
+                echo->AI()->SetGUID(victimGuid, 0);
+                echo->AI()->SetData(0, BARRAGE_BOLTS * BARRAGE_SPACING_MS + 300);
+            }
+            if (accusation)
+            {
+                int32 scream = std::max<int32>(1, int32(tick * BARRAGE_SHARE * SCREAM_SHARE));
+                echo->m_Events.AddEventAtOffset([echo, owner, victimGuid, scream]()
+                {
+                    Player* hero = ObjectAccessor::GetPlayer(*echo, owner);
+                    Unit* at = ObjectAccessor::GetUnit(*echo, victimGuid);
+                    if (!hero || !at || !at->IsAlive())
+                        return;
+                    Shape line;
+                    line.From = echo->GetPosition();
+                    line.To = Toward(line.From, echo->GetAngle(at), echo->GetExactDist2d(at) + 3.0f);
+                    line.HalfWidth = SCREAM_WIDTH;
+                    for (Unit* enemy : EnemiesIn(hero, line, SCREAM_TARGETS))
+                        echo->CastCustomSpell(enemy, SPELL_HOLLOW_SCREAM, &scream, nullptr, nullptr, true);
+                }, Milliseconds(unison ? 0 : 150 * i));
+                continue;
+            }
+            for (uint32 b = 0; b < BARRAGE_BOLTS; ++b)
+                echo->m_Events.AddEventAtOffset([echo, victimGuid, bolt]()
+                {
+                    Unit* at = ObjectAccessor::GetUnit(*echo, victimGuid);
+                    if (at && at->IsAlive())
+                        echo->CastCustomSpell(at, SPELL_HOLLOW_BOLT, &bolt, nullptr, nullptr, true);
+                }, Milliseconds(b * BARRAGE_SPACING_MS + (unison ? 0 : 150 * i)));
+        }
+    }
+
+    // Mind Flay held two seconds leaves its echo.
+    void HollowTick(Player* player)
+    {
+        State& state = StateOf(player);
+        if (state.FlayEchoed || Now() - state.FlayStart < FLAY_ECHO_AFTER_MS)
+            return;
+        Spell* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
+        if (!channel || channel->m_spellInfo->GetFirstRankSpell()->Id != SPELL_MIND_FLAY)
+        {
+            state.FlayEchoed = true;
+            return;
+        }
+        state.FlayEchoed = true;
+        Unit* target = ObjectAccessor::GetUnit(*player, state.FlayTarget);
+        LeaveEcho(player, Valid(player, target) ? target : nullptr);
+    }
+
+    // ---- The Shattered Sun ---------------------------------------------------------------------------------------
+
+    bool HasSunMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_SUN_MODIFIER_FIRST, modifier);
+    }
+
+    bool HasShard(Player* player, Unit* unit)
+    {
+        return unit->HasAura(SPELL_SUNSHARD, player->GetGUID());
+    }
+
+    // The shards still held, and Solar Anchor's left on the ground where theirs were embedded.
+    void PruneShards(Player* player)
+    {
+        State& state = StateOf(player);
+        std::vector<ObjectGuid> kept;
+        for (ObjectGuid guid : state.Shards)
+            if (Unit* host = ObjectAccessor::GetUnit(*player, guid); host && host->IsAlive() && HasShard(player, host))
+                kept.push_back(guid);
+            else
+                state.Anchors.erase(guid);
+        bool changed = kept.size() != state.Shards.size();
+        state.Shards = kept;
+        if (!changed)
+            return;
+        std::vector<Position> anchors;
+        for (auto const& [guid, at] : state.Anchors)
+            anchors.push_back(at);
+        PlaceDecals(player, SPELL_SOLAR_ANCHOR, anchors);
+    }
+
+    // Fireball: a Sunshard in the target (refreshed if it has one), two held at most (three with Twin Suns): the
+    // oldest goes. Solar Anchor: the shard stays where it went in.
+    void Embed(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        PruneShards(player);
+        bool anchor = HasSunMarker(player, MOD_SOLAR_ANCHOR);
+        if (!HasShard(player, target))
+        {
+            std::size_t most = HasSunMarker(player, MOD_TWIN_SUNS) ? TWIN_SUNS_SHARDS : MAX_SHARDS;
+            while (state.Shards.size() >= most)
+            {
+                if (Unit* oldest = ObjectAccessor::GetUnit(*player, state.Shards.front()))
+                    oldest->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
+                state.Anchors.erase(state.Shards.front());
+                state.Shards.erase(state.Shards.begin());
+            }
+            state.Shards.push_back(target->GetGUID());
+        }
+        Lasting(player, target, SPELL_SUNSHARD, SUNSHARD_MS);
+        if (!anchor)
+            return;
+        state.Anchors[target->GetGUID()] = target->GetPosition();
+        std::vector<Position> anchors;
+        for (auto const& [guid, at] : state.Anchors)
+            anchors.push_back(at);
+        PlaceDecals(player, SPELL_SOLAR_ANCHOR, anchors);
+    }
+
+    // Frostbolt on a shard's host: it breaks, 60% of the bolt's damage to each enemy within 8 yards (up to 8): about
+    // the host, or its anchor (Solar Anchor), or the Hero's own target (Orbiting Sun); a cone away from the Hero
+    // (Splinterstorm), a line on through it (Solar Lance); Scalding Ground leaves a hazard. A Broken Core stays.
+    void Fracture(Player* player, Unit* host, float base)
+    {
+        State& state = StateOf(player);
+        host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
+        Position at = host->GetPosition();
+        if (auto anchor = state.Anchors.find(host->GetGUID()); anchor != state.Anchors.end())
+            at = anchor->second;
+        Unit* look = host;
+        if (HasSunMarker(player, MOD_ORBITING_SUN))
+            if (Unit* aimed = player->GetSelectedUnit(); Valid(player, aimed) && aimed != host
+                && player->IsWithinDistInMap(aimed, ORBIT_RANGE))
+            {
+                at = aimed->GetPosition();
+                look = aimed;
+            }
+        PruneShards(player);
+
+        Shape shape = Circle(at, FRACTURE_RADIUS);
+        float away = player->GetAngle(&at);
+        if (HasSunMarker(player, MOD_SPLINTERSTORM))
+        {
+            shape.Facing = away;
+            shape.Radius = SPLINTER_REACH;
+            shape.Arc = SPLINTER_ARC;
+        }
+        else if (HasSunMarker(player, MOD_SOLAR_LANCE))
+        {
+            shape = Shape();
+            shape.From = at;
+            shape.To = Toward(at, away, LANCE_REACH);
+            shape.HalfWidth = LANCE_HALF_WIDTH;
+        }
+        look->CastSpell(look, SPELL_FRACTURE_LOOK, true);
+        int32 damage = std::max<int32>(1, int32(base * FRACTURE_SHARE));
+        for (Unit* enemy : EnemiesIn(player, shape, FRACTURE_TARGETS))
+            player->CastCustomSpell(enemy, SPELL_FRACTURE, &damage, nullptr, nullptr, true);
+        if (host->IsAlive())
+            Lasting(player, host, SPELL_BROKEN_CORE, BROKEN_CORE_MS);
+        if (HasSunMarker(player, MOD_SCALDING_GROUND))
+        {
+            state.ScaldAt = at;
+            state.ScaldMap = player->GetMapId();
+            state.ScaldUntil = Now() + SCALDING_MS;
+            state.ScaldTick = base * SCALDING_SHARE;
+            state.ScaldTimer = 0;
+            PlaceDecals(player, SPELL_SCALDING_GROUND, { at });
+        }
+    }
+
+    // Fireball on a Broken Core: the inward collapse, the Fireball's damage again on it (40% more with Implosion);
+    // Chain Reaction breaks one other shard within 15 yards; Second Sunrise pulses there 2 sec on, 40% to each
+    // enemy within 8 yards, 10% more for each other one there (50% at most).
+    void Collapse(Player* player, Unit* host, float fireball)
+    {
+        host->RemoveAurasDueToSpell(SPELL_BROKEN_CORE, player->GetGUID());
+        host->CastSpell(host, SPELL_COLLAPSE_LOOK, true);
+        int32 damage = std::max<int32>(1, int32(fireball * COLLAPSE_SHARE
+            * (HasSunMarker(player, MOD_IMPLOSION) ? IMPLOSION : 1.0f)));
+        Position at = host->GetPosition();
+        player->CastCustomSpell(host, SPELL_COLLAPSE, &damage, nullptr, nullptr, true);
+
+        if (HasSunMarker(player, MOD_CHAIN_REACTION))
+        {
+            PruneShards(player);
+            for (ObjectGuid guid : StateOf(player).Shards)
+                if (Unit* other = ObjectAccessor::GetUnit(*player, guid); other && other != host
+                    && other->GetExactDist2d(&at) <= CHAIN_RANGE)
+                {
+                    Fracture(player, other, fireball * CHAIN_SHARE);
+                    break;
+                }
+        }
+        if (HasSunMarker(player, MOD_SECOND_SUNRISE))
+            player->m_Events.AddEventAtOffset([player, at, fireball]()
+            {
+                if (!player->IsInWorld() || !player->IsAlive())
+                    return;
+                std::vector<Unit*> enemies = EnemiesIn(player, Circle(at, FRACTURE_RADIUS), FRACTURE_TARGETS);
+                if (enemies.empty())
+                    return;
+                enemies.front()->CastSpell(enemies.front(), SPELL_COLLAPSE_LOOK, true);
+                float bonus = std::min(SUNRISE_CAP, SUNRISE_PER_ENEMY * float(enemies.size() - 1));
+                int32 pulse = std::max<int32>(1, int32(fireball * SUNRISE_SHARE * (1.0f + bonus)));
+                for (Unit* enemy : enemies)
+                    player->CastCustomSpell(enemy, SPELL_COLLAPSE, &pulse, nullptr, nullptr, true);
+            }, Milliseconds(SUNRISE_DELAY_MS));
+    }
+
+    // Scalding Ground's ticks.
+    void SunTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        if (!state.ScaldUntil)
+            return;
+        if (Now() >= state.ScaldUntil || state.ScaldMap != player->GetMapId())
+        {
+            state.ScaldUntil = 0;
+            player->RemoveDynObject(SPELL_SCALDING_GROUND);
+            return;
+        }
+        state.ScaldTimer += diff;
+        if (state.ScaldTimer < 1000)
+            return;
+        state.ScaldTimer = 0;
+        int32 damage = std::max<int32>(1, int32(state.ScaldTick));
+        for (Unit* enemy : EnemiesIn(player, Circle(state.ScaldAt, SCALDING_RADIUS), FRACTURE_TARGETS))
+            player->CastCustomSpell(enemy, SPELL_FRACTURE, &damage, nullptr, nullptr, true);
+    }
+
+    // What the five leave behind (death, logout, a spec or modifier change): scars, the wake, a pending echo and
+    // its ground, the echoes, the shards. The vow and the Dominion stay.
+    void ClearLegends(Player* player)
+    {
+        State& state = StateOf(player);
+        for (uint8 scar = 0; scar < SCARS; ++scar)
+            ClearScar(player, scar);
+        state.InBlight.clear();
+        state.LingerUntil = 0;
+        EndWake(player);
+        state.Pending = false;
+        state.SacredUntil = 0;
+        player->RemoveDynObject(SPELL_SACRED_GROUND);
+        DismissEchoes(player);
+        state.FlayEchoed = true;
+        for (ObjectGuid guid : state.Shards)
+            if (Unit* host = ObjectAccessor::GetUnit(*player, guid))
+                host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
+        state.Shards.clear();
+        state.Anchors.clear();
+        player->RemoveDynObject(SPELL_SOLAR_ANCHOR);
+        state.ScaldUntil = 0;
+        player->RemoveDynObject(SPELL_SCALDING_GROUND);
+    }
+
+    // The actions the rune teaches while it is the active spec's (taught again at each login, never saved):
+    // Requiem (Chosen Ending: its three), Dawn Vow; the Dominion's buff; the vow on the Hero until they choose.
+    void ApplyLegend(Player* player, uint8 rune)
+    {
+        bool grave = rune == RUNE_THREEFOLD_GRAVE;
+        bool chosen = grave && HasGraveMarker(player, MOD_CHOSEN_ENDING);
+        auto teach = [player](uint32 spellId, bool wanted)
+        {
+            if (wanted && !player->HasSpell(spellId))
+                player->learnSpell(spellId, true);
+            else if (!wanted && player->HasSpell(spellId))
+                player->removeSpell(spellId, SPEC_MASK_ALL, true);
+        };
+        teach(SPELL_REQUIEM, grave && !chosen);
+        for (uint8 dominion = 0; dominion < DOMINIONS; ++dominion)
+            teach(SPELL_REQUIEM_FIRST + dominion, chosen);
+        teach(SPELL_DAWN_VOW, rune == RUNE_DAWNBOUND_CRUSADER);
+
+        State& state = StateOf(player);
+        if (grave)
+        {
+            if (!player->HasAura(SPELL_DOMINION_FIRST + state.Dominion))
+                SetDominion(player, state.Dominion, false);
+        }
+        else
+            for (uint8 dominion = 0; dominion < DOMINIONS; ++dominion)
+                player->RemoveAurasDueToSpell(SPELL_DOMINION_FIRST + dominion);
+        if (rune != RUNE_DAWNBOUND_CRUSADER)
+            DropVow(player);
+        else if (VowOf(player) == player)
+            Vow(player, player);
+    }
+
     // ---- The rune's auras ------------------------------------------------------------------------------------
 
     std::vector<uint32> RuneAuras()
@@ -1426,6 +2919,7 @@ namespace
         if (player->GetLevel() < UNLOCK_LEVEL || !rune)
         {
             ClearCombat(player);
+            ApplyLegend(player, 0);
             return;
         }
         if (rune->Id != RUNE_SANCTIFIED_PARAGON)
@@ -1434,6 +2928,7 @@ namespace
         for (uint8 slot = 0; slot < SLOTS; ++slot)
             if (uint8 pick = choice.Mods[slot])
                 player->AddAura(rune->MarkerFirst + slot * CHOICES + pick - 1, player);
+        ApplyLegend(player, rune->Id);
     }
 
     void Save(Player* player, uint8 spec)
@@ -2109,6 +3604,381 @@ class spell_titan_rune_mist_technique : public SpellScript
     }
 };
 
+// Requiem with the Threefold Grave: the next Dominion; Chosen Ending's three: theirs.
+class spell_titan_rune_requiem : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_requiem);
+
+    void Turn()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || !player->HasAura(SPELL_RUNE_THREEFOLD_GRAVE))
+            return;
+        uint32 id = GetSpellInfo()->Id;
+        SetDominion(player, id == SPELL_REQUIEM ? NextDominion(player) : uint8(id - SPELL_REQUIEM_FIRST), true);
+        if (id == SPELL_REQUIEM)
+            return;
+        // Chosen Ending: the three share their cooldown (each its own in the data, the others set here).
+        WorldPacket data(SMSG_SPELL_COOLDOWN, 8 + 1 + 2 * 8);
+        data << player->GetGUID();
+        data << uint8(0);
+        for (uint8 dominion = 0; dominion < DOMINIONS; ++dominion)
+            if (uint32 other = SPELL_REQUIEM_FIRST + dominion; other != id)
+            {
+                player->AddSpellCooldown(other, 0, CHOSEN_ENDING_MS);
+                data << uint32(other) << uint32(CHOSEN_ENDING_MS);
+            }
+        player->SendDirectMessage(&data);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_rune_requiem::Turn);
+    }
+};
+
+// Icy Touch, Plague Strike and Death Strike (every rank) with the Threefold Grave: their scar; Death Strike's
+// Grave Ward first (standing in a scar as it lands).
+class spell_titan_rune_scar_strike : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_scar_strike);
+
+    void Inscribe()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_THREEFOLD_GRAVE) || _done)
+            return;
+        _done = true;
+        uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        if (first == SPELL_DEATH_STRIKE)
+        {
+            GraveWard(player, GetHitDamage());
+            ::Inscribe(player, SCAR_BLOOD_CIRCLE, target);
+        }
+        else
+            ::Inscribe(player, first == SPELL_ICY_TOUCH ? SCAR_FROZEN_LINE : SCAR_DISEASED_PATCH, target);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_scar_strike::Inscribe);
+    }
+
+    bool _done = false;
+};
+
+// Mortal Strike and Bloodthirst (every rank) with Unbroken Onslaught: the other one through the wake reopens it,
+// then either cuts a new wake through its target.
+class spell_titan_rune_wake_cut : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_wake_cut);
+
+    void Cut()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_UNBROKEN_ONSLAUGHT))
+            return;
+        uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        if (StateOf(player).WakeCreator != first && InWake(player, target))
+            ReopenWake(player, target);
+        if (target->IsAlive())
+            CutWake(player, target, first);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_wake_cut::Cut);
+    }
+};
+
+// Unbroken Onslaught's aura: any other melee ability striking an enemy in the wake reopens it.
+class spell_titan_rune_unbroken_onslaught : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_unbroken_onslaught);
+
+    bool CheckProc(ProcEventInfo& eventInfo)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        SpellInfo const* spell = eventInfo.GetSpellInfo();
+        Unit* struck = eventInfo.GetActionTarget();
+        if (!player || !spell || !struck || struck == player || spell->DmgClass != SPELL_DAMAGE_CLASS_MELEE)
+            return false;
+        uint32 first = spell->GetFirstRankSpell()->Id;
+        if (first == SPELL_MORTAL_STRIKE || first == SPELL_BLOODTHIRST
+            || (spell->Id >= SPELL_RUNE_UNBROKEN_ONSLAUGHT && spell->Id < SPELL_RUNE_DAWNBOUND_CRUSADER))
+            return false;
+        if (InWake(player, struck))
+            ReopenWake(player, struck);
+        return false;
+    }
+
+    void Register() override
+    {
+        DoCheckProc += AuraCheckProcFn(spell_titan_rune_unbroken_onslaught::CheckProc);
+    }
+};
+
+// Dawn Vow: the vow moves to the ally.
+class spell_titan_rune_dawn_vow : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_dawn_vow);
+
+    void Swear()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (Unit* ally = GetHitUnit(); player && ally && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
+            Vow(player, ally);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_dawn_vow::Swear);
+    }
+};
+
+// A Judgement with the Dawnbound Crusader: the Dawn Mark on its target (one at a time).
+class spell_titan_rune_judgement : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_judgement);
+
+    void Mark()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && target->IsAlive() && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
+            ::Mark(player, target);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_judgement::Mark);
+    }
+};
+
+// Crusader Strike on the Dawn Mark's enemy: a Dawn Echo pending. Holy Shock's damage or heal (every rank): an echo
+// at once, then Steadfast's afterimage on the vow.
+class spell_titan_rune_dawn_echo : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_dawn_echo);
+
+    void Echo()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
+            return;
+        if (GetSpellInfo()->GetFirstRankSpell()->Id == SPELL_CRUSADER_STRIKE)
+        {
+            if (target->HasAura(SPELL_DAWN_MARK, player->GetGUID()))
+                QueueEcho(player, float(GetHitDamage()));
+            return;
+        }
+        QueueEcho(player, float(GetHitDamage() + GetHitHeal()));
+        ReleaseEcho(player);
+        if (!HasDawnMarker(player, MOD_STEADFAST))
+            return;
+        Unit* vow = VowOf(player);
+        vow->RemoveAurasDueToSpell(SPELL_DAWN_AFTERIMAGE, player->GetGUID());
+        if (Aura* afterimage = player->AddAura(SPELL_DAWN_AFTERIMAGE, vow))
+        {
+            afterimage->SetMaxDuration(AFTERIMAGE_MS);
+            afterimage->SetDuration(AFTERIMAGE_MS);
+        }
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_dawn_echo::Echo);
+    }
+};
+
+// Mind Flay (every rank) with the Hollow Congregation: its start, for the echo two seconds in.
+class spell_titan_rune_mind_flay : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_mind_flay);
+
+    void Start()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || !player->HasAura(SPELL_RUNE_HOLLOW_CONGREGATION))
+            return;
+        State& state = StateOf(player);
+        state.FlayStart = Now();
+        state.FlayEchoed = false;
+        state.FlayTarget = GetExplTargetUnit() ? GetExplTargetUnit()->GetGUID() : ObjectGuid::Empty;
+    }
+
+    void Register() override
+    {
+        OnCast += SpellCastFn(spell_titan_rune_mind_flay::Start);
+    }
+};
+
+// Mind Blast (every rank) with the Hollow Congregation: the echoes' command.
+class spell_titan_rune_mind_blast : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_mind_blast);
+
+    void Command()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && target->IsAlive() && player->HasAura(SPELL_RUNE_HOLLOW_CONGREGATION))
+            CommandEchoes(player, target);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_mind_blast::Command);
+    }
+};
+
+// Fireball and Frostbolt (every rank) with the Shattered Sun: a Fireball collapses a Broken Core or embeds a shard,
+// a Frostbolt fractures a shard.
+class spell_titan_rune_shattered_sun : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_shattered_sun);
+
+    void Strike()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_SHATTERED_SUN))
+            return;
+        float damage = float(std::max(1, GetHitDamage()));
+        if (GetSpellInfo()->GetFirstRankSpell()->Id == SPELL_FROSTBOLT)
+        {
+            if (HasShard(player, target))
+                Fracture(player, target, damage);
+            return;
+        }
+        if (target->HasAura(SPELL_BROKEN_CORE, player->GetGUID()))
+            Collapse(player, target, damage);
+        else if (target->IsAlive())
+            Embed(player, target);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_shattered_sun::Strike);
+    }
+};
+
+// A Hollow Echo (910122): the Hero's look, hollowed; for 10 sec a weaker Mind Flay on its enemy (the one it was left
+// for, then the Hero's), 30 yards (40 with Haunted Ground), drifting after the Hero (Following Shadows) or riding
+// its enemy (Possession); quiet during a barrage. Last Word: a last, stronger attack as it fades. Silent Witness:
+// stronger while the Hero moves and does not channel.
+struct npc_titan_rune_hollow_echo : public ScriptedAI
+{
+    npc_titan_rune_hollow_echo(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(WorldObject* summoner) override
+    {
+        Player* owner = summoner ? summoner->ToPlayer() : nullptr;
+        if (!owner)
+            return;
+        _owner = owner->GetGUID();
+        owner->CastSpell(me, SPELL_CLONE_ME, true);
+        me->AddAura(SPELL_HOLLOW_ECHO, me);
+        me->SetReactState(REACT_PASSIVE);
+        if (HasHollowMarker(owner, MOD_FOLLOWING_SHADOWS))
+            me->GetMotionMaster()->MoveFollow(owner, 2.5f, frand(1.5f, 4.8f));
+        scheduler.Schedule(200ms, [this](TaskContext channel)
+        {
+            Channel();
+            channel.Repeat(500ms);
+        });
+        scheduler.Schedule(Milliseconds(HOLLOW_ECHO_MS - 400), [this](TaskContext)
+        {
+            Player* hero = Owner();
+            Unit* target = Target(hero);
+            if (!hero || !target || !HasHollowMarker(hero, MOD_LAST_WORD))
+                return;
+            int32 damage = std::max<int32>(1, int32(FlayTick(hero) * HOLLOW_SHARE * LAST_WORD_TICKS));
+            me->CastCustomSpell(target, SPELL_HOLLOW_LAST_WORD, &damage, nullptr, nullptr, true);
+        });
+    }
+
+    void SetGUID(ObjectGuid const& guid, int32 id) override
+    {
+        if (id == 0)
+            _target = guid;
+        else
+        {
+            _host = guid;
+            if (Unit* host = ObjectAccessor::GetUnit(*me, guid))
+                me->GetMotionMaster()->MoveFollow(host, 0.5f, frand(0.0f, 2.0f * float(M_PI)));
+        }
+    }
+
+    void SetData(uint32 /*id*/, uint32 value) override
+    {
+        _quietUntil = Now() + value;
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+
+    void UpdateAI(uint32 diff) override
+    {
+        scheduler.Update(diff);
+    }
+
+private:
+    Player* Owner() const
+    {
+        return ObjectAccessor::GetPlayer(*me, _owner);
+    }
+
+    // Its enemy: the one it was given (its host with Possession), else the Hero's, else the nearest to it.
+    Unit* Target(Player* hero)
+    {
+        if (!hero)
+            return nullptr;
+        float range = HasHollowMarker(hero, MOD_HAUNTED_GROUND) ? HAUNTED_RANGE : HOLLOW_RANGE;
+        auto fits = [&](Unit* unit)
+        {
+            return Valid(hero, unit) && me->IsWithinDistInMap(unit, range) && me->IsWithinLOSInMap(unit);
+        };
+        for (ObjectGuid guid : { _host, _target })
+            if (Unit* unit = guid ? ObjectAccessor::GetUnit(*me, guid) : nullptr; fits(unit))
+                return unit;
+        if (Unit* chosen = hero->GetSelectedUnit(); fits(chosen))
+        {
+            _target = chosen->GetGUID();
+            return chosen;
+        }
+        for (Unit* enemy : EnemiesAround(hero, me, range))
+            if (fits(enemy))
+            {
+                _target = enemy->GetGUID();
+                return enemy;
+            }
+        return nullptr;
+    }
+
+    void Channel()
+    {
+        if (Now() < _quietUntil || me->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+            return;
+        Player* hero = Owner();
+        Unit* target = Target(hero);
+        if (!target)
+            return;
+        float tick = FlayTick(hero) * HOLLOW_SHARE;
+        if (HasHollowMarker(hero, MOD_SILENT_WITNESS) && hero->isMoving()
+            && !hero->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+            tick *= SILENT_WITNESS;
+        int32 damage = std::max<int32>(1, int32(tick));
+        me->SetFacingToObject(target);
+        me->CastCustomSpell(target, SPELL_HOLLOW_FLAY, &damage, nullptr, nullptr, true);
+    }
+
+    ObjectGuid _owner, _target, _host;
+    uint32 _quietUntil = 0;
+};
+
 // The rune's Felguard (910120): 8 sec at the Hero's side, on the Hero's target (the next when it dies). Felstorm as
 // it arrives (a 2 sec spin: 4 ticks), then Cleave and melee. 50% of the Hero's power (spell power or attack power,
 // the higher) in its weapon, 30% of their health; no threat.
@@ -2224,6 +4094,7 @@ public:
     void OnPlayerLogout(Player* player) override
     {
         ClearCombat(player);
+        DropVow(player);
         states.erase(player->GetGUID().GetCounter());
     }
 
@@ -2252,11 +4123,22 @@ public:
         ClearCombat(player);
     }
 
-    // Metamorphic Bond on the Hero's demon while they are in Metamorphosis; Storm Within's pulses.
+    // Metamorphic Bond on the Hero's demon while they are in Metamorphosis; Storm Within's pulses; the five
+    // newest runes' timers.
     void OnPlayerUpdate(Player* player, uint32 diff) override
     {
         if (player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
             StormPulse(player, diff);
+        if (player->HasAura(SPELL_RUNE_THREEFOLD_GRAVE))
+            GraveTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_UNBROKEN_ONSLAUGHT))
+            WakeTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
+            DawnTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_HOLLOW_CONGREGATION))
+            HollowTick(player);
+        if (player->HasAura(SPELL_RUNE_SHATTERED_SUN))
+            SunTick(player, diff);
         if (!player->HasAura(SPELL_RUNE_FEL_COMMANDMENT))
             return;
         State& state = StateOf(player);
@@ -2363,6 +4245,17 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_soothing_mist_cast);
     RegisterSpellScript(spell_titan_rune_soothing_mist);
     RegisterSpellScript(spell_titan_rune_mist_technique);
+    RegisterSpellScript(spell_titan_rune_requiem);
+    RegisterSpellScript(spell_titan_rune_scar_strike);
+    RegisterSpellScript(spell_titan_rune_wake_cut);
+    RegisterSpellScript(spell_titan_rune_unbroken_onslaught);
+    RegisterSpellScript(spell_titan_rune_dawn_vow);
+    RegisterSpellScript(spell_titan_rune_judgement);
+    RegisterSpellScript(spell_titan_rune_dawn_echo);
+    RegisterSpellScript(spell_titan_rune_mind_flay);
+    RegisterSpellScript(spell_titan_rune_mind_blast);
+    RegisterSpellScript(spell_titan_rune_shattered_sun);
+    RegisterCreatureAI(npc_titan_rune_hollow_echo);
     RegisterCreatureAI(npc_titan_rune_felguard);
     RegisterCreatureAI(npc_titan_rune_fel_imp);
     new titan_runes_player();

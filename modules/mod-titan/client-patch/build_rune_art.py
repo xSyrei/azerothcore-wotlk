@@ -134,6 +134,21 @@ RUNES = [
      'on from.', 'Chain Heal and Earth Shield', 'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10ZM8 14c2 2 6 2 8 0'),
     (26, (90, 225, 140), 'Mistweaver · Jade Mist', 'Soothing Mist sends ribbons of jade mist to your injured '
      'allies.', 'Soothing Mist', 'M4 9c3-3 6-3 8 0s5 3 8 0M4 15c3-3 6-3 8 0s5 3 8 0'),
+    (27, (150, 200, 235), 'Frost, Unholy & Blood · Grave', 'Three strikes scar the ground; Requiem turns what '
+     'every scar does.', 'Icy Touch, Plague Strike and Death Strike',
+     'M12 3a6 6 0 0 0-6 6c0 2.4 1.2 3.8 2 4.6V17h8v-3.4c.8-.8 2-2.2 2-4.6a6 6 0 0 0-6-6ZM10 10h.01M14 10h.01'
+     'M9 21h6M10 17v4M14 17v4'),
+    (28, (235, 70, 60), 'Arms & Fury · Onslaught', 'Mortal Strike cuts a wake; your next strike through it reopens '
+     'the wound.', 'Mortal Strike or Bloodthirst', 'M4 20 20 4M14 4h6v6M4 14l6 6M7 11l6 6'),
+    (29, (255, 200, 90), 'Holy & Retribution · Dawn', 'Vow an ally; your strikes send echoes of the dawn from '
+     'them.', 'Judgment, Crusader Strike and Holy Shock',
+     'M3 18h18M6 18a6 6 0 0 1 12 0M12 6V3M5.6 9.6 3.5 7.5M18.4 9.6l2.1-2.1M12 12v3'),
+    (30, (170, 110, 235), 'Shadow · Congregation', 'Mind Flay leaves hollow echoes; Mind Blast commands them.',
+     'Mind Flay and Mind Blast',
+     'M12 3c-3 0-5 2.5-5 6v10l2-2 3 3 3-3 2 2V9c0-3.5-2-6-5-6ZM10 10h.01M14 10h.01'),
+    (31, (120, 200, 240), 'Fire & Frost · Shattered Sun', 'Fireball embeds a Sunshard; Frostbolt breaks it, '
+     'Fireball collapses it.', 'Fireball and Frostbolt',
+     'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2'),
 ]
 
 # The runes the panel builds (their build view: the medallion, the slots, the options): the mockup's words for them.
@@ -331,6 +346,201 @@ BUILT = {
                   'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
                   'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z'],
     },
+    27: {
+        'core': '**Icy Touch**, **Plague Strike** and **Death Strike** each leave a scar. **Requiem** turns your '
+                'Dominion, Rime to Blight to Gore, and every scar changes with it.',
+        'slots': ['Inscription', 'Dominion', 'Requiem'],
+        'asks': ['How your scars lie', 'What your Dominion becomes', 'How Requiem turns'],
+        'texts': [
+            'Enemies in two scars take 30% more, in all three 50% more.',
+            'Your blood circle follows you.',
+            'Your scars last 20 sec instead of 12.',
+            'Rime slows by 50%; its farewell freezes enemies for 2 sec.',
+            'Blight deals 30% more; its residual infection lasts 6 sec.',
+            'Grave Ward takes 40% of Death Strike, up to 15% of your health, and Gore keeps it all.',
+            'Requiem turns the other way: Rime to Gore to Blight.',
+            'The Dominion you leave works at half for 3 sec.',
+            'Requiem becomes three actions, one for each Dominion, sharing 20 sec.',
+        ],
+        'abilities': [
+            'Overlap',
+            'Blood circle',
+            'Duration',
+            'Rime',
+            'Blight',
+            'Gore',
+            'Order',
+            'Transitions',
+            'Control',
+        ],
+        'icons': [
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+            'M8 4c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4ZM16 10c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4Z',
+            'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 7v5l3 2',
+            'M12 2v20M2 12h20M5 5l14 14M19 5 5 19',
+            'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z',
+            'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
+            'M4 8h14l-4-4M20 16H6l4 4',
+            'M4 12a8 8 0 0 1 14-5l2-2v6h-6l2-2a5 5 0 0 0-9 3',
+            'M6 6h.01M12 6h.01M18 6h.01M6 12h12M6 18h12',
+        ],
+    },
+    28: {
+        'core': '**Mortal Strike** or **Bloodthirst** cuts a **Weapon Wake** through its target. Your next '
+                'different melee strike through it reopens the wake for another attack.',
+        'slots': ['Wake', 'Follow-Through', 'Pursuit'],
+        'asks': ['The shape of your wake', 'What reopening does', 'Where the wake goes'],
+        'texts': [
+            'A narrow cleft: its first target takes 50% more.',
+            'A broad crescent in front of you, 8 yards.',
+            'A long slash, 14 yards past your target.',
+            'Reopening attacks at once.',
+            "The wake's attack leaves a bleed, refreshed and capped.",
+            'A second impact there 1.5 sec later, at half.',
+            'Your wake follows its first target.',
+            'Your wake stays put and lasts 10 sec.',
+            'Striking another enemy through it gives that enemy the bonus.',
+        ],
+        'abilities': [
+            'Narrow',
+            'Crescent',
+            'Long',
+            'Instant',
+            'Bleed',
+            'Aftershock',
+            'Follow',
+            'Longer',
+            'Transfer',
+        ],
+        'icons': [
+            'M4 20 20 4',
+            'M3 16a9 9 0 0 1 18 0',
+            'M4 12h10M10 8l4 4-4 4M18 5v14',
+            'M13 2 4 14h7l-1 8 9-12h-7z',
+            'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z',
+            'M3 18h18M6 14h12M9 10h6',
+            'M8 4c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4ZM16 10c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4Z',
+            'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 7v5l3 2',
+            'M4 8h14l-4-4M20 16H6l4 4',
+        ],
+    },
+    29: {
+        'core': 'Bind an ally with **Dawn Vow**. **Crusader Strike** on your Judgment target and **Holy Shock** '
+                'send **Dawn Echoes** from them.',
+        'slots': ['Doctrine', 'Manifestation', 'Oath'],
+        'asks': ['What your echoes do', 'How the echoes appear', 'What your vow carries'],
+        'texts': [
+            'Echoes heal the most injured ally near your vow.',
+            'Echoes strike an enemy near your vow, your Judgment target first.',
+            'Echoes turn between healing and damage, at 85% each.',
+            'Echoes travel from your vow toward your Judgment target.',
+            'Echoes pulse around your vow, 8 yards.',
+            'Echoes leave consecrated ground at your vow.',
+            'Holy Shock gives your vow an afterimage that repeats the next echo at half.',
+            'Moving your vow releases a pending echo at once.',
+            "Movement by you or your vow extends the next echo's reach.",
+        ],
+        'abilities': [
+            'Heal',
+            'Damage',
+            'Both',
+            'Path',
+            'Pulse',
+            'Ground',
+            'Holy Shock',
+            'Dawn Vow',
+            'Reach',
+        ],
+        'icons': [
+            'M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z',
+            'M13 2 4 14h7l-1 8 9-12h-7z',
+            'M4 8h14l-4-4M20 16H6l4 4',
+            'M4 12h10M10 8l4 4-4 4M18 5v14',
+            'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3M12 19v3M2 12h3M19 12h3',
+            'M3 18h18M6 14h12M9 10h6',
+            'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
+            'M4 12a8 8 0 0 1 14-5l2-2v6h-6l2-2a5 5 0 0 0-9 3',
+            'M8 4c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4ZM16 10c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4Z',
+        ],
+    },
+    30: {
+        'core': 'Two seconds into **Mind Flay**, a **Hollow Echo** stays behind and channels a weaker one. **Mind'
+                ' Blast** turns every echo on its target in a barrage.',
+        'slots': ['Congregation', 'Sermon', 'Command'],
+        'asks': ['Where your echoes stay', 'How they answer Mind Blast', 'What else they obey'],
+        'texts': [
+            'Your echoes drift after you.',
+            'Your echoes stay put and reach 40 yards.',
+            'Your echoes ride their victims, one each.',
+            'The barrage lands together, 20% stronger.',
+            'Echoes turn on separate enemies with your Shadow Word: Pain.',
+            'Each echo screams through every enemy toward the target.',
+            'A fading echo repeats its last attack, three times as strong.',
+            'Mind Blast moves your echoes beside its target.',
+            'Moving without channeling makes their channels 30% stronger.',
+        ],
+        'abilities': [
+            'Follow',
+            'Range',
+            'Possession',
+            'Together',
+            'Spread',
+            'Line',
+            'Fade',
+            'Move',
+            'Movement',
+        ],
+        'icons': [
+            'M8 4c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4ZM16 10c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4Z',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+            'M12 3v8M12 11 5 21M12 11l7 10',
+            'M13 2 4 14h7l-1 8 9-12h-7z',
+            'M12 3v8M12 11 5 21M12 11l7 10',
+            'M4 20 20 4',
+            'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 7v5l3 2',
+            'M4 12h10M10 8l4 4-4 4M18 5v14',
+            'M8 4c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4ZM16 10c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4Z',
+        ],
+    },
+    31: {
+        'core': '**Fireball** embeds a burning **Sunshard**. **Frostbolt** fractures it into a ring of burning '
+                'ice, and your next **Fireball** collapses the Broken Core.',
+        'slots': ['Formation', 'Fracture', 'Collapse'],
+        'asks': ['How your shards are held', 'How a shard breaks', 'How the core collapses'],
+        'texts': [
+            'Hold a third shard on another enemy.',
+            'A breaking shard blasts your current target.',
+            'A shard stays on the ground where it went in.',
+            'The fracture becomes a cone away from you, 12 yards.',
+            'The fracture pierces on through in a line, 20 yards.',
+            'The fracture leaves Frostfire ground for 4 sec.',
+            'The collapse deals 40% more.',
+            'The collapse breaks one other shard nearby.',
+            'The collapse pulses again 2 sec later, stronger on a crowd.',
+        ],
+        'abilities': [
+            'Three',
+            'Orbit',
+            'Anchor',
+            'Cone',
+            'Line',
+            'Ground',
+            'Focus',
+            'Chain',
+            'Pulse',
+        ],
+        'icons': [
+            'M6 6h.01M12 6h.01M18 6h.01M6 12h12M6 18h12',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0',
+            'M3 18h18M6 14h12M9 10h6',
+            'M12 20 4 6h16Z',
+            'M4 20 20 4',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-5 3-7 1 2 2 3 3 3 0-3-1-5 0-7Z',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+            'M4 12a8 8 0 0 1 14-5l2-2v6h-6l2-2a5 5 0 0 0-9 3',
+            'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3M12 19v3M2 12h3M19 12h3',
+        ],
+    },
 }
 
 # Sizes. The card (300 x 440 points) at CARD_SCALE pixels a point fills the top-left of a 512 square; the medallion's
@@ -354,11 +564,13 @@ LABELS = {
                     'height': 18, 'pad': 4, 'scale': 2},
 }
 # Every slot name a built rune uses (the doc's three; the Sanctified Paragon's Presence and Covenant; the Stormbound
-# Conduit's, Echoing Thunder's, the Wellspring's and the Wandering Mist's), by name (the key its letters and digits
-# only: the panel does the same).
+# Conduit's, Echoing Thunder's, the Wellspring's, the Wandering Mist's and the five after them), by name (the key its
+# letters and digits only: the panel does the same).
 for _name in ['Invocation', 'Manifestation', 'Adaptation', 'Presence', 'Covenant', 'Conductivity', 'Arc Pattern',
               'Lightning Shield', 'Thunderfield', 'Echo Pattern', 'Shield Resonance', 'Wellspring', 'Current',
-              'Undertow', 'Mistflow', 'Technique', "Mistweaver's Approach"]:
+              'Undertow', 'Mistflow', 'Technique', "Mistweaver's Approach", 'Inscription', 'Dominion',
+              'Requiem', 'Wake', 'Follow-Through', 'Pursuit', 'Doctrine', 'Oath', 'Congregation', 'Sermon',
+              'Command', 'Formation', 'Fracture', 'Collapse']:
     _key = ''.join(c for c in _name if c.isalnum())
     LABELS[f'Choose{_key}'] = {'text': 'Choose your ' + _name, 'font': '700 28px Cinzel', 'spacing': '3px',
                                 'color': '#ffe2a8', 'glows': [['rgba(255,150,60,0.55)', 20]], 'shadow': '#000',

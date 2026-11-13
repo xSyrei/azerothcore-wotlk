@@ -1,9 +1,10 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-90828: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-90978: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
 SET @IMP := 910121;
-DELETE FROM `creature_template` WHERE `entry` IN (@FELGUARD, @IMP);
+SET @HOLLOW_ECHO := 910122;
+DELETE FROM `creature_template` WHERE `entry` IN (@FELGUARD, @IMP, @HOLLOW_ECHO);
 INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
     `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
     `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
@@ -17,13 +18,17 @@ INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entr
     'npc_titan_rune_felguard', 0),
 (@IMP, 0, 0, 0, 0, 0, 'Fel Imp', 'Fel Commandment', NULL, 0, 1, 60, 0, 35, 0, 1, 1.14286, 1, 1, 20, 0, 0, 1,
     2000, 2000, 1, 1, 8, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0,
-    'npc_titan_rune_fel_imp', 0);
+    'npc_titan_rune_fel_imp', 0),
+(@HOLLOW_ECHO, 0, 0, 0, 0, 0, 'Hollow Echo', 'Hollow Congregation', NULL, 0, 1, 80, 0, 35, 0, 1, 1.14286, 1, 1, 20,
+    0, 0, 1, 2000, 2000, 1, 1, 8, 33554434, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0,
+    0, 'npc_titan_rune_hollow_echo', 0);
 
-DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@FELGUARD, @IMP);
+DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@FELGUARD, @IMP, @HOLLOW_ECHO);
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES
 (@FELGUARD, 0, 14255, 1, 1, 0),
-(@IMP, 0, 4449, 1, 1, 0);
+(@IMP, 0, 4449, 1, 1, 0),
+(@HOLLOW_ECHO, 0, 11686, 1, 1, 0);
 
 -- The rune's aura grants Fel Command from its procs; Throw Glaive fires the volley.
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_fel_commandment',
@@ -122,3 +127,66 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90812, 0, 0, 0, 0, 'Wandering Mist - lesser Enveloping Mist'),
 (90813, 0, 0, 0, 0, 'Wandering Mist - Rolling Mist'),
 (90814, 0, 0, 0, 0, 'Wandering Mist - Jade Shelter');
+
+-- The five runes after them. The Threefold Grave: Requiem (and Chosen Ending's three) turn the Dominion; Icy
+-- Touch, Plague Strike and Death Strike (every rank) inscribe their scars.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_requiem', 'spell_titan_rune_scar_strike',
+    'spell_titan_rune_wake_cut', 'spell_titan_rune_unbroken_onslaught', 'spell_titan_rune_dawn_vow',
+    'spell_titan_rune_judgement', 'spell_titan_rune_dawn_echo', 'spell_titan_rune_mind_flay',
+    'spell_titan_rune_mind_blast', 'spell_titan_rune_shattered_sun');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90831, 'spell_titan_rune_requiem'),
+(90832, 'spell_titan_rune_requiem'),
+(90833, 'spell_titan_rune_requiem'),
+(90834, 'spell_titan_rune_requiem'),
+(-45477, 'spell_titan_rune_scar_strike'),
+(-45462, 'spell_titan_rune_scar_strike'),
+(-49998, 'spell_titan_rune_scar_strike'),
+-- Unbroken Onslaught: Mortal Strike and Bloodthirst (every rank) cut the wake; the rune's aura reads every other
+-- melee ability.
+(-12294, 'spell_titan_rune_wake_cut'),
+(-23881, 'spell_titan_rune_wake_cut'),
+(90860, 'spell_titan_rune_unbroken_onslaught'),
+-- The Dawnbound Crusader: Dawn Vow, the Judgements' mark, Crusader Strike's and Holy Shock's echoes.
+(90891, 'spell_titan_rune_dawn_vow'),
+(20271, 'spell_titan_rune_judgement'),
+(53407, 'spell_titan_rune_judgement'),
+(53408, 'spell_titan_rune_judgement'),
+(35395, 'spell_titan_rune_dawn_echo'),
+(-25912, 'spell_titan_rune_dawn_echo'),
+(-25914, 'spell_titan_rune_dawn_echo'),
+-- The Hollow Congregation: Mind Flay leaves the echoes, Mind Blast commands them (every rank).
+(-15407, 'spell_titan_rune_mind_flay'),
+(-8092, 'spell_titan_rune_mind_blast'),
+-- The Shattered Sun: Fireball and Frostbolt (every rank).
+(-133, 'spell_titan_rune_shattered_sun'),
+(-116, 'spell_titan_rune_shattered_sun');
+
+-- Unbroken Onslaught's procs: melee abilities that hit (normal, crit or absorbed); the script picks the ones that
+-- reopen the wake.
+DELETE FROM `spell_proc` WHERE `SpellId` = 90860;
+INSERT INTO `spell_proc` (`SpellId`, `SchoolMask`, `SpellFamilyName`, `SpellFamilyMask0`, `SpellFamilyMask1`,
+    `SpellFamilyMask2`, `ProcFlags`, `SpellTypeMask`, `SpellPhaseMask`, `HitMask`, `AttributesMask`,
+    `DisableEffectsMask`, `ProcsPerMinute`, `Chance`, `Cooldown`, `Charges`) VALUES
+(90860, 0, 0, 0, 0, 0, 16, 1, 2, 1027, 0, 0, 0, 100, 0, 0);
+
+-- Their damage, heals and absorbs are the scripts' (shares of the Hero's own hits and power, already in them).
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90838, 90840, 90841, 90842, 90843, 90861, 90862, 90864, 90894,
+    90895, 90922, 90923, 90924, 90925, 90953, 90955);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90838, 0, 0, 0, 0, 'Threefold Grave - Rime'),
+(90840, 0, 0, 0, 0, 'Threefold Grave - Blight'),
+(90841, 0, 0, 0, 0, 'Threefold Grave - Residual Infection'),
+(90842, 0, 0, 0, 0, 'Threefold Grave - Gore'),
+(90843, 0, 0, 0, 0, 'Threefold Grave - Grave Ward'),
+(90861, 0, 0, 0, 0, 'Unbroken Onslaught - Weapon Wake'),
+(90862, 0, 0, 0, 0, 'Unbroken Onslaught - Bloodletting'),
+(90864, 0, 0, 0, 0, 'Unbroken Onslaught - Aftershock'),
+(90894, 0, 0, 0, 0, 'Dawnbound Crusader - Dawn Echo heal'),
+(90895, 0, 0, 0, 0, 'Dawnbound Crusader - Dawn Echo damage'),
+(90922, 0, 0, 0, 0, 'Hollow Congregation - Hollow Flay'),
+(90923, 0, 0, 0, 0, 'Hollow Congregation - barrage'),
+(90924, 0, 0, 0, 0, 'Hollow Congregation - Accusation'),
+(90925, 0, 0, 0, 0, 'Hollow Congregation - Last Word'),
+(90953, 0, 0, 0, 0, 'Shattered Sun - Fracture'),
+(90955, 0, 0, 0, 0, 'Shattered Sun - Collapse');

@@ -120,12 +120,29 @@ frame:Hide()
 
 -- The catalog and the art: the doc's 21 runes, the Sanctified Paragon and the Stormbound Conduit; Fel
 -- Commandment's build view in the mockup's words.
-check(#EmberforgeRunesCatalog == 26 and EmberforgeRunesCatalog[22].name == "Rune of the Sanctified Paragon"
+check(#EmberforgeRunesCatalog == 31 and EmberforgeRunesCatalog[22].name == "Rune of the Sanctified Paragon"
     and EmberforgeRunesCatalog[23].name == "Rune of the Stormbound Conduit"
     and EmberforgeRunesCatalog[24].name == "Rune of Echoing Thunder"
     and EmberforgeRunesCatalog[25].name == "Rune of the Wellspring"
     and EmberforgeRunesCatalog[26].name == "Rune of the Wandering Mist",
     "the catalog holds the doc's 21 runes, then the Paragon, the Conduit, Echoing Thunder, the Wellspring, the Mist")
+-- The five after them: each built, with its three slots, nine options and three builds.
+for id, name in pairs({ [27] = "Rune of the Threefold Grave", [28] = "Rune of the Unbroken Onslaught",
+    [29] = "Rune of the Dawnbound Crusader", [30] = "Rune of the Hollow Congregation",
+    [31] = "Rune of the Shattered Sun" }) do
+    local entry, rune = EmberforgeRunesArt.runes[id], EmberforgeRunesCatalog[id]
+    check(rune.name == name and entry.built and #entry.slots == 3 and #entry.texts == 9 and #rune.mods == 9
+        and #rune.builds == 3, "built with its words: " .. name)
+    for _, build in ipairs(rune.builds) do
+        for _, mod in ipairs(build.mods) do
+            local found = false
+            for _, option in ipairs(rune.mods) do
+                found = found or option.name == mod
+            end
+            check(found, name .. ": build " .. build.name .. " names a real modifier (" .. mod .. ")")
+        end
+    end
+end
 for _, id in ipairs({ 25, 26 }) do
     local entry = EmberforgeRunesArt.runes[id]
     check(entry.built and #entry.texts == 9 and #EmberforgeRunesCatalog[id].mods == 9
