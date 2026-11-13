@@ -916,7 +916,7 @@ def _gltf_meshes(path):
     return meshes
 
 
-def _hollowed(layer, mesh, levels=6, piece=0.3):
+def _hollowed(layer, mesh, levels=6, piece=0.4):
     """A spun layer as the parts it is drawn in: itself, or, with hollow and / or fade_top, its middle left clear with a
     soft edge and / or its top fading out. The triangles near either edge are cut in half along their longest side
     (across for the middle's, up for the top's) until no side is longer than piece yards (before stretch), then each
@@ -1048,6 +1048,9 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
         triangles += [first + f for f in faces]
         sections.append((first, len(positions), start, len(faces)))
     vertex_count = len(vertices) // 48
+    if vertex_count > 0xFFFF or len(triangles) > 0xFFFF:
+        raise ValueError(f'{name}: {vertex_count} vertices, {len(triangles)} indices; a skin holds 65535 of each '
+                         '(cut fewer pieces: _hollowed piece)')
     every = [tuple(c * k for c, k in zip(p, layer.get('stretch', (layer.get('grow', (1.0,))[0],) * 3)))
              for layer in whole for p in sources[layer.get('source', 0)][layer['mesh']][0]]
     lo = tuple(min(p[i] for p in every) * scale for i in range(3))
