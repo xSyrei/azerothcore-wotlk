@@ -1453,7 +1453,7 @@ EmberforgeRunesCatalog = {
         },
         {
           name = "Live Wire",
-          text = "Lightning Shield retaliations make the attacker Conductive. Not with Storm Within.",
+          text = "Enemies that strike you in melee become Conductive, whatever your Lightning Shield does.",
         },
         {
           name = "Forked Tempest",
@@ -1471,7 +1471,7 @@ EmberforgeRunesCatalog = {
         {
           name = "Storm Within",
           text = "Lightning Shield no longer strikes back: every 3 sec it pulses at the nearest Conductive enemy " ..
-              "within 8 yards, using a charge. Pulses never arc. Not with Live Wire.",
+              "within 8 yards, using a charge. Pulses never arc.",
         },
         {
           name = "Violent Reprisal",
@@ -1479,8 +1479,8 @@ EmberforgeRunesCatalog = {
         },
         {
           name = "Distant Conductor",
-          text = "Lightning Bolt hits trigger a Lightning Shield retaliation at their target, using a charge, " ..
-              "once every 3 sec. Being struck no longer does.",
+          text = "Every Lightning Bolt hit fires a Lightning Shield retaliation at its target, using a charge. " ..
+              "Being struck no longer does.",
         },
       },
       builds = {

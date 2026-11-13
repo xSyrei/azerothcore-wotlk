@@ -231,13 +231,24 @@ local function Text(parent, font, size, color, justify, width)
     local text = parent:CreateFontString(nil, "OVERLAY")
     text:SetFont(font, size)
     text:SetShadowColor(0, 0, 0, 1)
-    text:SetShadowOffset(0, -1)
+    text:SetShadowOffset(1, -1.5)
     text:SetTextColor(color[1], color[2], color[3], color[4] or 1)
     text:SetJustifyH(justify or "CENTER")
     if width then
         text:SetWidth(width)
     end
     return text
+end
+
+-- A soft dark pool behind words over the bright world (the Soft glow, drawn dark instead of adding light).
+local function Shade(parent, width, height, alpha)
+    local shade = parent:CreateTexture(nil, "BACKGROUND")
+    shade:SetTexture(ART .. "Soft")
+    shade:SetVertexColor(0, 0, 0)
+    shade:SetAlpha(alpha or 0.7)
+    shade:SetWidth(width)
+    shade:SetHeight(height)
+    return shade
 end
 
 -- One of the mockup's baked lines of lettering (Art.lua has its size and the share of its texture it fills).
@@ -568,10 +579,8 @@ PillText(closer.pill, "Close")
 In(closer.pill, closer, 0, 0)
 closer.x = W - 26 - closer.pill.width / 2
 
--- Previewing: what it is, Back to the cards and Choose (unbound, a rune the server builds).
+-- Previewing: Back to the cards and Choose (unbound, a rune the server builds).
 local previewBar = Group(800, 805, 900, 80)
-previewBar.text = Text(previewBar, SANS, 18, GOLDEN)
-In(previewBar.text, previewBar, 0, -22)
 previewBar.back = Pill(previewBar, "Back", function()
     view.preview = nil
     view.mode = view.previewFrom or "offers"
@@ -589,6 +598,8 @@ buildHead.eyebrow = Label(buildHead, "Eyebrow")
 In(buildHead.eyebrow, buildHead, 0, -67)
 buildHead.name = Text(buildHead, CINZEL_BLACK, 40, { 1, 1, 1 })
 In(buildHead.name, buildHead, 0, -27)
+buildHead.shade = Shade(buildHead, 1150, 330, 0.8)
+In(buildHead.shade, buildHead, 0, 10)
 buildHead.glow = Tex(buildHead, "BACKGROUND", "Soft", "ADD")
 In(buildHead.glow, buildHead, 0, -27, 760, 120)
 buildHead.core = Text(buildHead, SANS, 17, { 1, 1, 1 }, "CENTER", 620)
@@ -611,6 +622,8 @@ for index, place in ipairs(SLOT_POS) do
     local x, y, side = place[1], place[2], place[3]
     local slot = Group(x, y, 54, 54, "Button")
     slot.index, slot.side = index, side
+    slot.shade = Shade(slot, 420, 130, 0.75)
+    In(slot.shade, slot, side == "l" and -150 or (side == "r" and 150 or 140), 0)
     slot.glow = Tex(slot, "BACKGROUND", "Soft", "ADD")
     In(slot.glow, slot, 0, 0, 110, 110)
     slot.disc = Tex(slot, "BORDER")
@@ -640,6 +653,8 @@ for index = 1, 3 do
     choose.labels[index] = Label(choose, "Choose" .. SLOT_NAMES[index])
     In(choose.labels[index], choose, 0, -82)
 end
+choose.shade = Shade(choose, 900, 150, 0.75)
+In(choose.shade, choose, 0, -66)
 choose.ask = Text(choose, SANS, 17, art.arcane.muted)
 In(choose.ask, choose, 0, -47)
 
@@ -677,6 +692,8 @@ end
 
 -- Done: the build the three picks make.
 local done = Group(800, 603, 1000, 170)
+done.shade = Shade(done, 1000, 260, 0.75)
+In(done.shade, done, 0, 20)
 done.eyebrow = Label(done, "DoneEyebrow")
 In(done.eyebrow, done, 0, -34)
 done.name = Text(done, CINZEL, 30, GOLDEN)
@@ -1303,9 +1320,9 @@ local function ShowSlots(active)
             slot.pick:SetText(mod and mod.name or "")
             slot.pick:SetTextColor(1, 1, 1)
         else
-            slot.numeral:SetTextColor(theme.rgb[1], theme.rgb[2], theme.rgb[3], 0.55)
+            slot.numeral:SetTextColor(theme.rgb[1], theme.rgb[2], theme.rgb[3], 0.85)
             slot.pick:SetText("Locked")
-            slot.pick:SetTextColor(theme.muted[1], theme.muted[2], theme.muted[3], 0.6)
+            slot.pick:SetTextColor(theme.muted[1], theme.muted[2], theme.muted[3], 0.9)
         end
         slot.small:SetVertexColor(theme.muted[1], theme.muted[2], theme.muted[3])
     end
@@ -1413,7 +1430,6 @@ OpenPreview = function(runeId)
     Fade(closer, true)
     OpenBuild()
     local rune = RuneById(runeId)
-    previewBar.text:SetText("Previewing " .. (rune and rune.name or "this rune") .. ": nothing is bound")
     if BindRefusal(rune) == nil then
         previewBar.choose:Show()
     else
@@ -1653,12 +1669,12 @@ local function Step(dt)
         for i, card in ipairs(cards) do
             if card.rune then
                 card.a = 1
-                card.lift = lerp(card.lift, card.hover and 18 or 0, 0.15)
+                card.lift = lerp(card.lift, card.hover and 18 or 0, clamp(dt * 9))
                 card.y = CARD_Y + math.sin(now * 1.3 + (i - 1) * 1.7) * 6
                 local shake = card.shake and now - card.shake or 9
                 card.x = card.homeX + (shake < 0.45 and math.sin(shake * 60) * 10 * (1 - shake / 0.45) or 0)
-                card.s = lerp(card.s, card.hover and 1.05 or 1, 0.15)
-                card.glow = lerp(card.glow, card.hover and 0.45 or 0, 0.12)
+                card.s = lerp(card.s, card.hover and 1.05 or 1, clamp(dt * 9))
+                card.glow = lerp(card.glow, card.hover and 0.45 or 0, clamp(dt * 7))
                 if card.hover and math.random() < 0.5 then
                     Emit({ x = card.x + rand(-CW / 2, CW / 2) * card.s, y = card.y + CH / 2 * card.s - card.lift,
                         vx = rand(-10, 10), vy = rand(-90, -40), life = rand(0.6, 1.2), size = rand(2, 5),
@@ -1677,7 +1693,7 @@ local function Step(dt)
         me.glow = charge < 1 and charge * 1.2 or lerp(1.2, 0.6, seg(t, 0.45, 2.0))
         me.s = charge < 1 and (1 + 0.06 * easeOut(charge) + math.sin(now * 60) * 0.004 * charge)
             or lerp(1.12, 1.04, easeOut(seg(t, 0.45, 1.2)))
-        me.lift = lerp(me.lift, 10, 0.1)
+        me.lift = lerp(me.lift, 10, clamp(dt * 6))
         if charge < 1 then
             for _ = 1, 6 do
                 local angle, d = rand(0, TAU), rand(220, 340)
@@ -1702,7 +1718,7 @@ local function Step(dt)
             if i ~= view.chosen and card.rune then
                 local bk = seg(t, 0.35, 2.15)
                 card.burn = (bk * bk * 0.35 + bk * 0.65) * 1.08
-                card.lift = lerp(card.lift, 0, 0.1)
+                card.lift = lerp(card.lift, 0, clamp(dt * 6))
                 card.x = card.x + math.sin(now * 40 + i) * 0.4 * seg(t, 0.3, 0.6)
             end
         end
@@ -1805,17 +1821,24 @@ local function Step(dt)
             local target = option.leaving and 0 or (now >= (option.inAt or 0) and 1 or 0)
             option.shown = clamp(option.shown + (target > option.shown and dt or -dt) / 0.45)
             local k = target == 1 and backOut(option.shown) or option.shown
-            option.lift = lerp(option.lift, (option.hover and option.shown >= 1) and 8 or 0, 0.2)
+            -- The lift eases by time (steady at any frame rate), and the hit area stays where the card rests:
+            -- lifted, it would leave the mouse behind and drop back, over and over.
+            option.lift = lerp(option.lift, (option.hover and option.shown >= 1) and 8 or 0, clamp(dt * 12))
             option:ClearAllPoints()
             option:SetPoint("CENTER", choose, "CENTER", option.dx, -(68 + 26 * (1 - k) - option.lift))
+            option:SetHitRectInsets(0, 0, option.lift, -option.lift)
             option:SetAlpha(option.missing and option.shown * 0.55 or option.shown)
             local hot = option.picked or (option.hover and not option.missing)
-            option.bg:SetTexture(ART .. (hot and "OptionHot" or "Option") .. (theme.key or "Arcane"))
+            local look = (hot and "OptionHot" or "Option") .. (theme.key or "Arcane")
+            if option.look ~= look then
+                option.look = look
+                option.bg:SetTexture(ART .. look)
+            end
         end
     end
     -- The active slot's disc beats; a hovered one swells, brightens, and its pick turns gold.
     for _, slot in ipairs(slots) do
-        slot.lit = lerp(slot.lit or 0, slot.hover and 1 or 0, 0.25)
+        slot.lit = lerp(slot.lit or 0, slot.hover and 1 or 0, clamp(dt * 15))
         local lit = slot.lit
         local span = art.num.span * (1 + 0.12 * lit)
         slot.disc:SetWidth(span)

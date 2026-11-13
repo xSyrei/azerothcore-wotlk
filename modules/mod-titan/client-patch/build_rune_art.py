@@ -222,17 +222,17 @@ BUILT = {
         'texts': ['Conductive lasts 12 sec instead of 6.',
                   'Lightning Bolt also makes one enemy within 8 yards of its target Conductive, but arcs deal 20% '
                   'less damage.',
-                  'Lightning Shield retaliations make the attacker Conductive. Not with Storm Within.',
+                  'Enemies that strike you in melee become Conductive, whatever your Lightning Shield does.',
                   'Arcs strike up to 2 eligible enemies, splitting their damage between them.',
                   'Chain Lightning\'s arc returns to its Conductive target for 50% of its damage instead of striking '
                   'another enemy.',
                   'Arcs travel 50% farther, but deal 15% less damage.',
                   'No retaliation when struck: every 3 sec your shield pulses at the nearest Conductive enemy within '
-                  '8 yards, using a charge. Not with Live Wire.',
+                  '8 yards, using a charge. Pulses never arc.',
                   'Lightning Shield\'s arcs deal 40% more damage, but its retaliation deals 10% less.',
-                  'Lightning Bolt hits trigger a Lightning Shield retaliation at their target, using a charge, once '
-                  'every 3 sec. Being struck no longer does.'],
-        'abilities': ['Conductive', 'Lightning Bolt', 'Lightning Shield', 'Arcs', 'Chain Lightning', 'Arcs',
+                  'Every Lightning Bolt hit fires a Lightning Shield retaliation at its target, using a charge. Being '
+                  'struck no longer does.'],
+        'abilities': ['Conductive', 'Lightning Bolt', 'Melee attackers', 'Arcs', 'Chain Lightning', 'Arcs',
                       'Lightning Shield', 'Lightning Shield', 'Lightning Bolt · Lightning Shield'],
         'icons': ['M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
                   'M12 3v6M5 21l7-12 7 12M3 12h4M17 12h4',

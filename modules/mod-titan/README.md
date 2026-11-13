@@ -490,13 +490,15 @@ utility or a tradeoff) take one pick each, from three.
   yards of it for 15% of the Hero's best Lightning Bolt's damage (rank and spell power); each Lightning Shield
   retaliation arcs to one Conductive enemy within 8 yards of its target for 25% of its damage. Arcs (90752, their
   bolt 90753 cast from the enemy they leave) never arc again. Modifiers: Persistent Current (12 sec), Branching
-  Current (a second enemy within 8 yards of the bolt's target, arcs 20% less), Live Wire (a retaliation makes the
-  attacker Conductive); Forked Tempest (an arc split between 2 enemies), Closed Circuit (Chain Lightning's arc back
+  Current (a second enemy within 8 yards of the bolt's target, arcs 20% less), Live Wire (enemies striking the
+  Hero in melee range become Conductive, whatever the shield does); Forked Tempest (an arc split between 2 enemies), Closed Circuit (Chain Lightning's arc back
   into its target at half), Faraday Field (arcs reach 12 yards, 15% less); Storm Within (no retaliation when struck:
   every 3 sec a pulse at the nearest Conductive enemy within 8 yards in combat, a charge each, no arc), Violent
-  Reprisal (arcs 40% more, the retaliation 10% less), Distant Conductor (a Lightning Bolt hit fires a retaliation at
-  its target, a charge, once every 3 sec; none when struck). Live Wire and Storm Within are refused together. The
-  rune's retaliations (90754) are the shield's rank's damage with its spell power share. Spells 90750-90768
+  Reprisal (arcs 40% more, the retaliation 10% less), Distant Conductor (every Lightning Bolt hit fires a
+  retaliation at its target, a charge each; none when struck). Every pick works with every other. The rune's
+  retaliations (90754) are the shield's rank's damage with its spell power share, struck from the sky; Conductive
+  crackles on its enemy; an arc lands as Chain Lightning's strike with a bolt from the sky (client visuals 10778,
+  12145, 12082). Spells 90750-90768
   (`patch_runes.py`); scripts `spell_titan_rune_stormbound_conduit` (the rune's procs),
   `spell_titan_rune_lightning_shield` and `spell_titan_rune_lightning_shield_damage` (`titan_runes.sql`).
 

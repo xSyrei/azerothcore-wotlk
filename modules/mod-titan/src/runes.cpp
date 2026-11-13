@@ -174,7 +174,6 @@ namespace
     constexpr uint32 STORM_WITHIN_MS = 3000, STORM_CHECK_MS = 250;
     constexpr float STORM_WITHIN_RANGE = 8.0f;
     constexpr float VIOLENT_ARCS = 1.4f, VIOLENT_RETALIATION = 0.9f;
-    constexpr uint32 DISTANT_CONDUCTOR_MS = 3000;
     constexpr uint32 LIGHTNING_SHIELD_FAMILY_FLAG = 0x400;      // SpellFamilyFlags0
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
@@ -314,7 +313,6 @@ namespace
 
         // The Stormbound Conduit.
         uint32 StormTimer = 0;                      // ms since Storm Within's last pulse
-        uint32 LastDistantConductor = 0;            // game ms
         bool Pulsing = false;                       // a Storm Within pulse is landing: it never arcs
     };
 
@@ -1109,14 +1107,6 @@ namespace
                     "Sanctified Condemnation: choose it again.");
             }
         }
-        // The Stormbound Conduit: Live Wire's application comes from the retaliation Storm Within replaces.
-        if (choice.Rune == RUNE_STORMBOUND_CONDUIT)
-        {
-            uint8 liveWire = MOD_LIVE_WIRE % CHOICES + 1, stormWithin = MOD_STORM_WITHIN % CHOICES + 1;
-            if ((slot == 1 && pick == liveWire && choice.Mods[2] == stormWithin)
-                || (slot == 3 && pick == stormWithin && choice.Mods[0] == liveWire))
-                return Refuse(player, "Live Wire and Storm Within can't be chosen together.");
-        }
         if (choice.Mods[slot - 1] == pick)
             return SendState(player);
         choice.Mods[slot - 1] = pick;
@@ -1347,7 +1337,7 @@ class spell_titan_rune_sanctified_paragon : public AuraScript
 };
 
 // The Stormbound Conduit's aura (90750): a Lightning Bolt hit makes its target Conductive (Branching Current: one
-// more enemy within 8 yards; Distant Conductor: a Lightning Shield retaliation at it, once every 3 sec); a Chain
+// more enemy within 8 yards; Distant Conductor: a Lightning Shield retaliation at it, a charge each); a Chain
 // Lightning hit on a Conductive enemy (each jump's) arcs for 15% of Lightning Bolt's damage.
 class spell_titan_rune_stormbound_conduit : public AuraScript
 {
@@ -1373,16 +1363,8 @@ class spell_titan_rune_stormbound_conduit : public AuraScript
                         break;
                     }
             if (HasStormMarker(player, MOD_DISTANT_CONDUCTOR))
-            {
-                State& state = StateOf(player);
-                uint32 now = GameTime::GetGameTimeMS().count();
-                AuraEffect* shield = Shield(player);
-                if (shield && now - state.LastDistantConductor >= DISTANT_CONDUCTOR_MS)
-                {
-                    state.LastDistantConductor = now;
+                if (AuraEffect* shield = Shield(player))
                     Retaliate(player, target, shield, false);
-                }
-            }
         }
         else if (first == SPELL_CHAIN_LIGHTNING && IsConductive(player, target))
             Arc(player, target, LightningBoltDamage(player, target) * CHAIN_ARC_SHARE, false);
@@ -1415,8 +1397,8 @@ class spell_titan_rune_lightning_shield : public AuraScript
 };
 
 // A Lightning Shield retaliation (its damage, every rank, and the rune's own 90754) with the Stormbound Conduit:
-// Violent Reprisal takes 10% off it; Live Wire makes its target Conductive; it arcs to a Conductive enemy near the
-// target for 25% of its damage (40% more with Violent Reprisal). A Storm Within pulse does neither.
+// Violent Reprisal takes 10% off it; it arcs to a Conductive enemy near the target for 25% of its damage (40% more
+// with Violent Reprisal). A Storm Within pulse never arcs.
 class spell_titan_rune_lightning_shield_damage : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_lightning_shield_damage);
@@ -1435,8 +1417,6 @@ class spell_titan_rune_lightning_shield_damage : public SpellScript
         }
         if (StateOf(player).Pulsing)
             return;
-        if (HasStormMarker(player, MOD_LIVE_WIRE) && target->IsAlive())
-            MakeConductive(player, target);
         Arc(player, target, damage * SHIELD_ARC_SHARE, true);
     }
 
@@ -1612,6 +1592,7 @@ public:
     }
 };
 
+// Live Wire (the Stormbound Conduit): melee attackers become Conductive.
 // The Hero's demon: a hit grants Fel Command, once every 4 sec (2 with Infernal Pact); with Metamorphic Bond, in
 // Metamorphosis, it strikes 2 more enemies within 5 yards for half. Entering Metamorphosis with Demonic Ascension:
 // 5 Fel Command.
@@ -1622,6 +1603,16 @@ public:
 
     void OnDamage(Unit* attacker, Unit* victim, uint32& damage) override
     {
+        // Live Wire: an enemy that strikes the Hero in melee range becomes Conductive (whatever their shield does).
+        if (attacker && victim && damage && attacker != victim && victim->IsPlayer())
+        {
+            Player* hero = victim->ToPlayer();
+            if (HasStormMarker(hero, MOD_LIVE_WIRE) && hero->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT)
+                && attacker->IsAlive() && !IsConductive(hero, attacker) && hero->IsWithinMeleeRange(attacker)
+                && hero->IsValidAttackTarget(attacker))
+                MakeConductive(hero, attacker);
+        }
+
         static bool cleaving = false;
         if (!attacker || !victim || !damage || cleaving || !attacker->IsPet())
             return;

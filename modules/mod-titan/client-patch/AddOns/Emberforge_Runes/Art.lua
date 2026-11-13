@@ -464,7 +464,7 @@ EmberforgeRunesArt = {
             abilities = {
                 "Conductive",
                 "Lightning Bolt",
-                "Lightning Shield",
+                "Melee attackers",
                 "Arcs",
                 "Chain Lightning",
                 "Arcs",
@@ -476,20 +476,20 @@ EmberforgeRunesArt = {
                 "Conductive lasts 12 sec instead of 6.",
                 "Lightning Bolt also makes one enemy within 8 yards of its target " ..
                         "Conductive, but arcs deal 20% less damage.",
-                "Lightning Shield retaliations make the attacker Conductive. Not with " ..
-                        "Storm Within.",
+                "Enemies that strike you in melee become Conductive, whatever your " ..
+                        "Lightning Shield does.",
                 "Arcs strike up to 2 eligible enemies, splitting their damage between " ..
                         "them.",
                 "Chain Lightning's arc returns to its Conductive target for 50% of its " ..
                         "damage instead of striking another enemy.",
                 "Arcs travel 50% farther, but deal 15% less damage.",
                 "No retaliation when struck: every 3 sec your shield pulses at the " ..
-                        "nearest Conductive enemy within 8 yards, using a charge. Not with Live " ..
-                        "Wire.",
+                        "nearest Conductive enemy within 8 yards, using a charge. Pulses never " ..
+                        "arc.",
                 "Lightning Shield's arcs deal 40% more damage, but its retaliation " ..
                         "deals 10% less.",
-                "Lightning Bolt hits trigger a Lightning Shield retaliation at their " ..
-                        "target, using a charge, once every 3 sec. Being struck no longer does.",
+                "Every Lightning Bolt hit fires a Lightning Shield retaliation at its " ..
+                        "target, using a charge. Being struck no longer does.",
             },
             slots = {
                 "Conductivity",

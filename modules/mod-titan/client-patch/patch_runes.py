@@ -40,11 +40,13 @@ The Rune of the Stormbound Conduit (the "Rune of the Stormbound Conduit" concept
 
 - 90750 the rune: a buff the Hero wears while their active specialization's rune is the Stormbound Conduit; its
   procs (Lightning Bolt and Chain Lightning hits) make enemies Conductive and arc (runes.cpp);
-- 90751 Conductive: on an enemy, 6 sec (12 with Persistent Current, set by the script), one per Hero;
-- 90752 Stormbound Arc: a secondary arc's Nature damage (its amount set by the script, no caster modifiers);
+- 90751 Conductive: on an enemy, 6 sec (12 with Persistent Current, set by the script), one per Hero; lightning
+  crackling on it;
+- 90752 Stormbound Arc: a secondary arc's Nature damage (its amount set by the script, no caster modifiers), a
+  strike of lightning where it lands;
 - 90753 its look: Chain Lightning's bolt from the Conductive enemy to the next (cast by that enemy, no effect);
 - 90754 Lightning Shield: a retaliation the rune makes (Distant Conductor, Storm Within): the Hero's Lightning
-  Shield rank's damage, its spell power share through spell_bonus_data;
+  Shield rank's damage, its spell power share through spell_bonus_data; a bolt from the sky;
 - 90760-90768 its nine modifiers' markers (Conductivity, Arc Pattern, Lightning Shield: 3 each), hidden.
 """
 
@@ -70,6 +72,10 @@ RUNE_ICON = 'Ability_Rune_FelCommandment'          # icons/spells/: the rune's o
 PARAGON_ICON = 'Ability_Rune_SanctifiedParagon'    # icons/spells/: the Sanctified Paragon's own
 STORM_ICON = 'Ability_Rune_StormboundConduit'     # icons/spells/: the Stormbound Conduit's own
 LIGHTNING_BOLT, CHAIN_LIGHTNING, LIGHTNING_SHIELD_DAMAGE = 403, 421, 26364
+# Client SpellVisuals the Stormbound Conduit borrows (impact or state only: nothing on the Hero): a crackle looping
+# on the chest (Shredder Aura's), a bolt from the sky (Storm's Fury's Call Lightning), and Chain Lightning's strike
+# with a bolt from the sky.
+VISUAL_CRACKLE, VISUAL_SKY_STRIKE, VISUAL_ARC_STRIKE = 10778, 12145, 12082
 NATURE = 0x8
 EFFECT_DUMMY, TARGET_UNIT_TARGET_ANY = 3, 25
 SPELL_ATTR0_ALLOW_CAST_WHILE_DEAD = 0x800000
@@ -348,14 +354,14 @@ SPELLS += [
         'id': 90751, 'copy': CRIPPLING_POISON, 'name': 'Conductive', 'icon': 'Spell_Nature_LightningOverload',
         'description': 'Conductive: the Stormbound Conduit\'s lightning arcs through it.',
         'tooltip': 'Conductive: lightning arcs through it.',
-        'set': {**HARMFUL, 'DurationIndex': DURATION_6S, 'SchoolMask': NATURE},
+        'set': {**HARMFUL, 'DurationIndex': DURATION_6S, 'SchoolMask': NATURE, 'SpellVisual': VISUAL_CRACKLE},
         'effects': {1: {**aura(AURA_DUMMY, 1, 0), 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
         'clear': [2, 3],
     },
     {
         'id': 90752, 'copy': LIGHTNING_BOLT, 'name': 'Stormbound Arc', 'icon': 'Spell_Nature_ChainLightning',
         'description': 'A secondary arc of lightning.', 'tooltip': '',
-        'set': {**HARMFUL, 'Speed': 0.0, 'SchoolMask': NATURE,
+        'set': {**HARMFUL, 'Speed': 0.0, 'SchoolMask': NATURE, 'SpellVisual': VISUAL_ARC_STRIKE,
                 'AttributesEx3': SPELL_ATTR3_ALWAYS_HIT | SPELL_ATTR3_IGNORE_CASTER_MODIFIERS,
                 'AttributesEx4': SPELL_ATTR4_NO_PARTIAL_IMMUNITY | SPELL_ATTR4_CANNOT_BE_RESISTED},
         'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
@@ -377,7 +383,7 @@ SPELLS += [
         'id': 90754, 'copy': LIGHTNING_SHIELD_DAMAGE, 'name': 'Lightning Shield',
         'icon': 'Spell_Nature_LightningShield',
         'description': 'A Lightning Shield retaliation.', 'tooltip': '',
-        'set': {**HARMFUL, 'Speed': 0.0, 'SchoolMask': NATURE},
+        'set': {**HARMFUL, 'Speed': 0.0, 'SchoolMask': NATURE, 'SpellVisual': VISUAL_SKY_STRIKE},
         'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'ChainTarget': 0,
                         'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0}},
         'clear': [2, 3],
