@@ -125,6 +125,9 @@ RUNES = [
      'a defensive zone or a source of healing.', 'Consecration',
      'M12 3v4M12 17v4M3 12h4M17 12h4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1'
      'M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1'),
+    (23, (95, 170, 255), 'Lightning · Stormbound', 'Lightning Bolt connects enemies; your lightning arcs through '
+     'them.', 'Lightning Bolt and Lightning Shield',
+     'M13 2 5 13h6l-1 9 8-12h-6l1-8ZM3 8l3 2-3 3M21 8l-3 2 3 3'),
 ]
 
 # The runes the panel builds (their build view: the medallion, the slots, the options): the mockup's words for them.
@@ -211,6 +214,36 @@ BUILT = {
                   'M4 12h10M10 8l4 4-4 4M18 5v14',
                   'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z'],
     },
+    23: {
+        'core': 'Lightning Bolt makes its target **Conductive** for 6 sec. Chain Lightning striking a Conductive enemy '
+                '**arcs** to one nearby enemy, and Lightning Shield\'s retaliations arc to a nearby Conductive one.',
+        'slots': ['Conductivity', 'Arc Pattern', 'Lightning Shield'],
+        'asks': ['How you make connections', 'Where your arcs travel', 'What your Lightning Shield does'],
+        'texts': ['Conductive lasts 12 sec instead of 6.',
+                  'Lightning Bolt also makes one enemy within 8 yards of its target Conductive, but arcs deal 20% '
+                  'less damage.',
+                  'Lightning Shield retaliations make the attacker Conductive. Not with Storm Within.',
+                  'Arcs strike up to 2 eligible enemies, splitting their damage between them.',
+                  'Chain Lightning\'s arc returns to its Conductive target for 50% of its damage instead of striking '
+                  'another enemy.',
+                  'Arcs travel 50% farther, but deal 15% less damage.',
+                  'No retaliation when struck: every 3 sec your shield pulses at the nearest Conductive enemy within '
+                  '8 yards, using a charge. Not with Live Wire.',
+                  'Lightning Shield\'s arcs deal 40% more damage, but its retaliation deals 10% less.',
+                  'Lightning Bolt hits trigger a Lightning Shield retaliation at their target, using a charge, once '
+                  'every 3 sec. Being struck no longer does.'],
+        'abilities': ['Conductive', 'Lightning Bolt', 'Lightning Shield', 'Arcs', 'Chain Lightning', 'Arcs',
+                      'Lightning Shield', 'Lightning Shield', 'Lightning Bolt · Lightning Shield'],
+        'icons': ['M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
+                  'M12 3v6M5 21l7-12 7 12M3 12h4M17 12h4',
+                  'M4 12c3-6 5-6 8 0s5 6 8 0',
+                  'M12 3v8M12 11 5 21M12 11l7 10',
+                  'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 4v4l3-2',
+                  'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0',
+                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM12 8v4M12 15v.5',
+                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM13 7l-4 6h4l-2 5',
+                  'M13 2 4 14h7l-1 8 9-12h-7z'],
+    },
 }
 
 # Sizes. The card (300 x 440 points) at CARD_SCALE pixels a point fills the top-left of a 512 square; the medallion's
@@ -233,12 +266,15 @@ LABELS = {
     'DoneEyebrow': {'text': 'YOUR RUNE IS COMPLETE', 'font': '700 14px Cinzel', 'spacing': '5px', 'color': '#ffb35c',
                     'height': 18, 'pad': 4, 'scale': 2},
 }
-# Every slot name a built rune uses (the doc's three; the Sanctified Paragon's Presence and Covenant), by name.
-for _name in ['Invocation', 'Manifestation', 'Adaptation', 'Presence', 'Covenant']:
-    LABELS[f'Choose{_name}'] = {'text': 'Choose your ' + _name, 'font': '700 28px Cinzel', 'spacing': '3px',
+# Every slot name a built rune uses (the doc's three; the Sanctified Paragon's Presence and Covenant; the Stormbound
+# Conduit's three), by name (its spaces left out of the key: the panel does the same).
+for _name in ['Invocation', 'Manifestation', 'Adaptation', 'Presence', 'Covenant', 'Conductivity', 'Arc Pattern',
+              'Lightning Shield']:
+    _key = _name.replace(' ', '')
+    LABELS[f'Choose{_key}'] = {'text': 'Choose your ' + _name, 'font': '700 28px Cinzel', 'spacing': '3px',
                                 'color': '#ffe2a8', 'glows': [['rgba(255,150,60,0.55)', 20]], 'shadow': '#000',
                                 'shadowY': 2, 'height': 36, 'pad': 24, 'scale': 1.5}
-    LABELS[f'Slot{_name}'] = {'text': _name.upper(), 'font': '400 13px "Alegreya Sans"', 'spacing': '3px',
+    LABELS[f'Slot{_key}'] = {'text': _name.upper(), 'font': '400 13px "Alegreya Sans"', 'spacing': '3px',
                               'color': '#ffffff', 'shadow': '#000', 'shadowBlur': 4, 'height': 16, 'pad': 6,
                               'scale': 2}
 
@@ -328,7 +364,10 @@ def main():
         # A rune with its own icon (icons/spells/, as its catalog entry names it) shows it in place of its glyph.
         start = catalog.index(f'{{ id = {entry["id"]},')
         icon = catalog[catalog.index('icon = "', start) + 8:catalog.index('",', catalog.index('icon = "', start))]
-        png = HERE / 'icons' / 'spells' / f'{icon}.png'
+        # A larger copy (icons/spells/large/, not in the client patch) for the card, when there is one.
+        png = HERE / 'icons' / 'spells' / 'large' / f'{icon}.png'
+        if not png.exists():
+            png = HERE / 'icons' / 'spells' / f'{icon}.png'
         if png.exists():
             entry['icon'] = 'data:image/png;base64,' + base64.b64encode(png.read_bytes()).decode()
     fonts = {'FONT_CINZEL_700': FONTS / 'Cinzel-Bold.ttf', 'FONT_CINZEL_900': FONTS / 'Cinzel-Black.ttf',

@@ -118,10 +118,14 @@ local function run(seconds)
 end
 frame:Hide()
 
--- The catalog and the art: the doc's 21 runes and the Sanctified Paragon; Fel Commandment's build view in the
--- mockup's words.
-check(#EmberforgeRunesCatalog == 22 and EmberforgeRunesCatalog[22].name == "Rune of the Sanctified Paragon",
-    "the catalog holds the doc's 21 runes, then the Sanctified Paragon")
+-- The catalog and the art: the doc's 21 runes, the Sanctified Paragon and the Stormbound Conduit; Fel
+-- Commandment's build view in the mockup's words.
+check(#EmberforgeRunesCatalog == 23 and EmberforgeRunesCatalog[22].name == "Rune of the Sanctified Paragon"
+    and EmberforgeRunesCatalog[23].name == "Rune of the Stormbound Conduit",
+    "the catalog holds the doc's 21 runes, then the Sanctified Paragon and the Stormbound Conduit")
+local storm = EmberforgeRunesArt.runes[23]
+check(storm.built and storm.slots[2] == "Arc Pattern" and #storm.texts == 9 and #EmberforgeRunesCatalog[23].mods == 9,
+    "Art.lua has the Stormbound Conduit's slots (Conductivity, Arc Pattern, Lightning Shield) and its words")
 local paragon = EmberforgeRunesArt.runes[22]
 check(paragon.built and paragon.slots[1] == "Presence" and paragon.slots[3] == "Covenant" and #paragon.texts == 9,
     "Art.lua has the Sanctified Paragon's slots (Presence, Manifestation, Covenant) and its words")
@@ -234,6 +238,17 @@ check(view.mode == "build" and debug.slots[1].small.texture:find("SlotPresence$"
     and debug.slots[3].small.texture:find("SlotCovenant$"), "the Sanctified Paragon's slots: Presence, Covenant")
 check(debug.choose.labels[1].texture:find("ChoosePresence$") and debug.options[1].name.text == "Boundless Sanctity",
     "choosing its Presence: Boundless Sanctity first")
+frame:Hide()
+
+-- The Stormbound Conduit: slot names with a space find their labels (baked without it).
+server("R,23,-")
+server("S,10,10,3,23,0,0,0,23,0")
+EmberforgeRunes_Open()
+run(0.2)
+check(view.mode == "build" and debug.slots[2].small.texture:find("SlotArcPattern$")
+    and debug.slots[3].small.texture:find("SlotLightningShield$"), "the Stormbound Conduit's slots: Arc Pattern...")
+check(debug.choose.labels[1].texture:find("ChooseConductivity$")
+    and debug.options[1].name.text == "Persistent Current", "choosing its Conductivity: Persistent Current first")
 frame:Hide()
 server("S,10,10,1,21,1,3,1,21,0")
 

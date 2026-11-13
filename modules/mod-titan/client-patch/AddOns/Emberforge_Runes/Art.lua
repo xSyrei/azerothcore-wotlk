@@ -29,6 +29,18 @@ EmberforgeRunesArt = {
             u = 0.7295,
             v = 0.9844,
         },
+        ChooseArcPattern = {
+            w = 512,
+            h = 84,
+            u = 0.75,
+            v = 0.9844,
+        },
+        ChooseConductivity = {
+            w = 543,
+            h = 84,
+            u = 0.7959,
+            v = 0.9844,
+        },
         ChooseCovenant = {
             w = 471,
             h = 84,
@@ -39,6 +51,12 @@ EmberforgeRunesArt = {
             w = 499,
             h = 84,
             u = 0.7314,
+            v = 0.9844,
+        },
+        ChooseLightningShield = {
+            w = 603,
+            h = 84,
+            u = 0.8838,
             v = 0.9844,
         },
         ChooseManifestation = {
@@ -71,6 +89,18 @@ EmberforgeRunesArt = {
             u = 0.875,
             v = 0.875,
         },
+        SlotArcPattern = {
+            w = 117,
+            h = 28,
+            u = 0.9141,
+            v = 0.875,
+        },
+        SlotConductivity = {
+            w = 129,
+            h = 28,
+            u = 0.5039,
+            v = 0.875,
+        },
         SlotCovenant = {
             w = 96,
             h = 28,
@@ -81,6 +111,12 @@ EmberforgeRunesArt = {
             w = 110,
             h = 28,
             u = 0.8594,
+            v = 0.875,
+        },
+        SlotLightningShield = {
+            w = 162,
+            h = 28,
+            u = 0.6328,
             v = 0.875,
         },
         SlotManifestation = {
@@ -407,6 +443,58 @@ EmberforgeRunesArt = {
                 "Presence",
                 "Manifestation",
                 "Covenant",
+            },
+        },
+        [23] = {
+            rgb = { 0.373, 0.667, 1 },
+            hot = { 0.78, 0.882, 1 },
+            ink = { 0.937, 0.965, 1 },
+            muted = { 0.655, 0.761, 0.918 },
+            hue = { 0.494, 0.824, 1 },
+            inner = { 0.886, 0.941, 1 },
+            built = true,
+            core = "Lightning Bolt makes its target **Conductive** for 6 sec. Chain " ..
+                    "Lightning striking a Conductive enemy **arcs** to one nearby enemy, " ..
+                    "and Lightning Shield's retaliations arc to a nearby Conductive one.",
+            asks = {
+                "How you make connections",
+                "Where your arcs travel",
+                "What your Lightning Shield does",
+            },
+            abilities = {
+                "Conductive",
+                "Lightning Bolt",
+                "Lightning Shield",
+                "Arcs",
+                "Chain Lightning",
+                "Arcs",
+                "Lightning Shield",
+                "Lightning Shield",
+                "Lightning Bolt · Lightning Shield",
+            },
+            texts = {
+                "Conductive lasts 12 sec instead of 6.",
+                "Lightning Bolt also makes one enemy within 8 yards of its target " ..
+                        "Conductive, but arcs deal 20% less damage.",
+                "Lightning Shield retaliations make the attacker Conductive. Not with " ..
+                        "Storm Within.",
+                "Arcs strike up to 2 eligible enemies, splitting their damage between " ..
+                        "them.",
+                "Chain Lightning's arc returns to its Conductive target for 50% of its " ..
+                        "damage instead of striking another enemy.",
+                "Arcs travel 50% farther, but deal 15% less damage.",
+                "No retaliation when struck: every 3 sec your shield pulses at the " ..
+                        "nearest Conductive enemy within 8 yards, using a charge. Not with Live " ..
+                        "Wire.",
+                "Lightning Shield's arcs deal 40% more damage, but its retaliation " ..
+                        "deals 10% less.",
+                "Lightning Bolt hits trigger a Lightning Shield retaliation at their " ..
+                        "target, using a charge, once every 3 sec. Being struck no longer does.",
+            },
+            slots = {
+                "Conductivity",
+                "Arc Pattern",
+                "Lightning Shield",
             },
         },
     },

@@ -1,4 +1,4 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-90718: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-90768: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
@@ -55,3 +55,28 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90732, 0, 0, 0, 0, 'Sanctified Paragon - Consecration tick'),
 (90734, 0, 0, 0, 0, 'Sanctified Paragon - Merciful Ground'),
 (90737, 0, 0, 0, 0, 'Sanctified Paragon - Shelter of the Paragon');
+
+-- The Rune of the Stormbound Conduit: its aura reads Lightning Bolt and Chain Lightning hits; Lightning Shield
+-- (every rank) gives way to Storm Within and Distant Conductor; its retaliations (every rank, and the rune's own)
+-- arc and take its modifiers.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_stormbound_conduit',
+    'spell_titan_rune_lightning_shield', 'spell_titan_rune_lightning_shield_damage');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90750, 'spell_titan_rune_stormbound_conduit'),
+(-324, 'spell_titan_rune_lightning_shield'),
+(-26364, 'spell_titan_rune_lightning_shield_damage'),
+(90754, 'spell_titan_rune_lightning_shield_damage');
+
+-- Its procs: harmful spells that hit (normal, crit or absorbed); the script picks Lightning Bolt and Chain Lightning.
+DELETE FROM `spell_proc` WHERE `SpellId` = 90750;
+INSERT INTO `spell_proc` (`SpellId`, `SchoolMask`, `SpellFamilyName`, `SpellFamilyMask0`, `SpellFamilyMask1`,
+    `SpellFamilyMask2`, `ProcFlags`, `SpellTypeMask`, `SpellPhaseMask`, `HitMask`, `AttributesMask`,
+    `DisableEffectsMask`, `ProcsPerMinute`, `Chance`, `Cooldown`, `Charges`) VALUES
+(90750, 0, 0, 0, 0, 0, 65536, 1, 2, 1027, 0, 0, 0, 100, 0, 0);
+
+-- An arc's damage is the script's (a share of what it comes from, power already in it); the rune's retaliation
+-- carries Lightning Shield's spell power share.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90752, 90754);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90752, 0, 0, 0, 0, 'Stormbound Conduit - secondary arc'),
+(90754, 0.147, 0, 0, 0, 'Stormbound Conduit - Lightning Shield retaliation');

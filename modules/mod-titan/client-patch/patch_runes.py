@@ -35,6 +35,17 @@ The Rune of the Sanctified Paragon (the "Rune of the Sanctified Paragon" concept
 - 90739 Hallowed Footsteps: a patch of sanctified ground left behind (fading glyphs), 2 sec;
 - 90740-90748 its nine modifiers' markers (Presence, Manifestation, Covenant: 3 each), hidden;
 - 90749 its waking: the shockwave and flash as the aura turns on (a hidden 3 sec aura, its look only).
+
+The Rune of the Stormbound Conduit (the "Rune of the Stormbound Conduit" concept doc), 90750 on:
+
+- 90750 the rune: a buff the Hero wears while their active specialization's rune is the Stormbound Conduit; its
+  procs (Lightning Bolt and Chain Lightning hits) make enemies Conductive and arc (runes.cpp);
+- 90751 Conductive: on an enemy, 6 sec (12 with Persistent Current, set by the script), one per Hero;
+- 90752 Stormbound Arc: a secondary arc's Nature damage (its amount set by the script, no caster modifiers);
+- 90753 its look: Chain Lightning's bolt from the Conductive enemy to the next (cast by that enemy, no effect);
+- 90754 Lightning Shield: a retaliation the rune makes (Distant Conductor, Storm Within): the Hero's Lightning
+  Shield rank's damage, its spell power share through spell_bonus_data;
+- 90760-90768 its nine modifiers' markers (Conductivity, Arc Pattern, Lightning Shield: 3 each), hidden.
 """
 
 import patch_player
@@ -57,6 +68,11 @@ SPELL_ATTR4_CANNOT_BE_RESISTED, SPELL_ATTR4_NO_PARTIAL_IMMUNITY = 0x1, 0x800
 
 RUNE_ICON = 'Ability_Rune_FelCommandment'          # icons/spells/: the rune's own
 PARAGON_ICON = 'Ability_Rune_SanctifiedParagon'    # icons/spells/: the Sanctified Paragon's own
+STORM_ICON = 'Ability_Rune_StormboundConduit'     # icons/spells/: the Stormbound Conduit's own
+LIGHTNING_BOLT, CHAIN_LIGHTNING, LIGHTNING_SHIELD_DAMAGE = 403, 421, 26364
+NATURE = 0x8
+EFFECT_DUMMY, TARGET_UNIT_TARGET_ANY = 3, 25
+SPELL_ATTR0_ALLOW_CAST_WHILE_DEAD = 0x800000
 CONSECRATION = 26573
 EXORCISM = 879                                      # a direct Holy damage spell
 CRIPPLING_POISON = 3409                             # a harmful aura on an enemy (slow)
@@ -318,6 +334,64 @@ EFFECTS = {
                               {'texture': 0, 'size': 8.0, 'height': 0.1, 'tint': GOLD, 'alpha': 0.5, 'turn': 18.0,
                                'blend': 4},)}},
 }
+# The Rune of the Stormbound Conduit (90750 on; runes.cpp's Stormbound Conduit section).
+STORM_RUNE = buff(90750, 'Rune of the Stormbound Conduit', STORM_ICON,
+                  'Lightning Bolt makes its target Conductive for 6 sec. Chain Lightning striking a Conductive enemy '
+                  'arcs to one nearby enemy for 15% of Lightning Bolt\'s damage, and your Lightning Shield\'s '
+                  'retaliations arc to one nearby Conductive enemy for 25% of their damage.',
+                  DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)})
+# Its procs: Lightning Bolt and Chain Lightning land as harmful spells; the script picks them out.
+STORM_RUNE['set'] = {**STORM_RUNE['set'], 'ProcFlags': PROC_DONE_MAGIC_SPELL_NEGATIVE, 'ProcChance': 101}
+SPELLS += [
+    STORM_RUNE,
+    {
+        'id': 90751, 'copy': CRIPPLING_POISON, 'name': 'Conductive', 'icon': 'Spell_Nature_LightningOverload',
+        'description': 'Conductive: the Stormbound Conduit\'s lightning arcs through it.',
+        'tooltip': 'Conductive: lightning arcs through it.',
+        'set': {**HARMFUL, 'DurationIndex': DURATION_6S, 'SchoolMask': NATURE},
+        'effects': {1: {**aura(AURA_DUMMY, 1, 0), 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
+        'clear': [2, 3],
+    },
+    {
+        'id': 90752, 'copy': LIGHTNING_BOLT, 'name': 'Stormbound Arc', 'icon': 'Spell_Nature_ChainLightning',
+        'description': 'A secondary arc of lightning.', 'tooltip': '',
+        'set': {**HARMFUL, 'Speed': 0.0, 'SchoolMask': NATURE,
+                'AttributesEx3': SPELL_ATTR3_ALWAYS_HIT | SPELL_ATTR3_IGNORE_CASTER_MODIFIERS,
+                'AttributesEx4': SPELL_ATTR4_NO_PARTIAL_IMMUNITY | SPELL_ATTR4_CANNOT_BE_RESISTED},
+        'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
+                        'ChainTarget': 0, 'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0}},
+        'clear': [2, 3],
+    },
+    {
+        'id': 90753, 'copy': CHAIN_LIGHTNING, 'name': 'Stormbound Arc', 'icon': 'Spell_Nature_ChainLightning',
+        'description': '', 'tooltip': '',
+        'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0,
+                'SpellFamilyFlags2': 0, 'RangeIndex': RANGE_VISION, 'Speed': 0.0, 'ProcFlags': 0,
+                'Attributes': SPELL_ATTR0_ALLOW_CAST_WHILE_DEAD},
+        'effects': {1: {'Effect': EFFECT_DUMMY, 'Aura': 0, 'BasePoints': 0, 'DieSides': 1,
+                        'RealPointsPerLevel': 0.0, 'ChainTarget': 0, 'TargetA': TARGET_UNIT_TARGET_ANY,
+                        'TargetB': 0}},
+        'clear': [2, 3],
+    },
+    {
+        'id': 90754, 'copy': LIGHTNING_SHIELD_DAMAGE, 'name': 'Lightning Shield',
+        'icon': 'Spell_Nature_LightningShield',
+        'description': 'A Lightning Shield retaliation.', 'tooltip': '',
+        'set': {**HARMFUL, 'Speed': 0.0, 'SchoolMask': NATURE},
+        'effects': {1: {'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0, 'ChainTarget': 0,
+                        'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0}},
+        'clear': [2, 3],
+    },
+]
+STORM_MODIFIERS = [
+    ('Persistent Current', 'Branching Current', 'Live Wire'),
+    ('Forked Tempest', 'Closed Circuit', 'Faraday Field'),
+    ('Storm Within', 'Violent Reprisal', 'Distant Conductor'),
+]
+SPELLS += [buff(90760 + slot * 3 + choice, name, STORM_ICON, '', DURATION_INFINITE,
+                {1: aura(AURA_DUMMY, 1, 0)}, hidden=True)
+           for slot, names in enumerate(STORM_MODIFIERS) for choice, name in enumerate(names)]
+
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_WORLD = 3, 4, 5, 14
 VISUALS = {
     'SanctifiedParagon': {'copy': 32, 'id': 16759, 'clear': ('precast', 'cast', 'impact'), 'kits': {
@@ -331,7 +405,8 @@ VISUALS = {
         'persistent': (15710, {KIT_WORLD: 'HallowedFootsteps', 'procs': False})}},
 }
 
-ICONS = [RUNE_ICON, PARAGON_ICON, 'Spell_Holy_InnerFire', 'Spell_Holy_RighteousFury', 'Spell_Holy_HealingAura',
+ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, 'Spell_Nature_LightningOverload', 'Spell_Nature_ChainLightning',
+         'Spell_Nature_LightningShield', 'Spell_Holy_InnerFire', 'Spell_Holy_RighteousFury', 'Spell_Holy_HealingAura',
          'Spell_Holy_DevotionAura', 'Spell_Holy_SealOfWrath', 'Spell_Holy_PowerWordShield', 'Spell_Holy_HolyGuidance',
          'Spell_Fire_FelFlameRing', 'Ability_Warlock_ChaosBolt', 'Spell_Shadow_SummonFelGuard',
          'Spell_Shadow_SummonImp', 'Ability_Warlock_DemonicEmpowerment', 'Spell_Shadow_DemonForm',

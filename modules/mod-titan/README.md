@@ -479,6 +479,22 @@ utility or a tradeoff) take one pick each, from three.
   wall at the aura's edge with the middle clear, gold and see-through, no floor; flakes of light tumbling up through
   the aura (retail's flipping snowflake), embers and sparks, a crown of light above the head, a golden shockwave and
   flash as it turns on (90749); Seat's sigil and the footsteps' glyphs are ours (`client-patch/build_paragon_art.py`).
+- **The Rune of the Stormbound Conduit** (rune 23, its own concept doc; its slots Conductivity, Arc Pattern and
+  Lightning Shield), DPS only (Melee and Ranged): needs Lightning Bolt and Lightning Shield (Closed Circuit also
+  Chain Lightning). No resource: a Lightning Bolt hit makes its target **Conductive** (90751, 6 sec, refreshed, one
+  per Hero, never consumed); each Chain Lightning hit (every jump) on a Conductive enemy arcs to one enemy within 8
+  yards of it for 15% of the Hero's best Lightning Bolt's damage (rank and spell power); each Lightning Shield
+  retaliation arcs to one Conductive enemy within 8 yards of its target for 25% of its damage. Arcs (90752, their
+  bolt 90753 cast from the enemy they leave) never arc again. Modifiers: Persistent Current (12 sec), Branching
+  Current (a second enemy within 8 yards of the bolt's target, arcs 20% less), Live Wire (a retaliation makes the
+  attacker Conductive); Forked Tempest (an arc split between 2 enemies), Closed Circuit (Chain Lightning's arc back
+  into its target at half), Faraday Field (arcs reach 12 yards, 15% less); Storm Within (no retaliation when struck:
+  every 3 sec a pulse at the nearest Conductive enemy within 8 yards in combat, a charge each, no arc), Violent
+  Reprisal (arcs 40% more, the retaliation 10% less), Distant Conductor (a Lightning Bolt hit fires a retaliation at
+  its target, a charge, once every 3 sec; none when struck). Live Wire and Storm Within are refused together. The
+  rune's retaliations (90754) are the shield's rank's damage with its spell power share. Spells 90750-90768
+  (`patch_runes.py`); scripts `spell_titan_rune_stormbound_conduit` (the rune's procs),
+  `spell_titan_rune_lightning_shield` and `spell_titan_rune_lightning_shield_damage` (`titan_runes.sql`).
 
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and

@@ -47,8 +47,10 @@
 
 // Legendary Runes (the design: the "Emberforge Legendary Runes" doc). Twenty-one runes, each a loop (a builder
 // makes a resource, a spender cashes it in) and three modifier slots (Invocation, Manifestation, Adaptation), one
-// pick each, and a 22nd, the Rune of the Sanctified Paragon (its own concept doc; slots Presence, Manifestation,
-// Covenant). Built so far: Fel Commandment and the Sanctified Paragon; the panel lists the others as coming.
+// pick each, a 22nd, the Rune of the Sanctified Paragon (its own concept doc; slots Presence, Manifestation,
+// Covenant), and a 23rd, the Rune of the Stormbound Conduit (its own doc; slots Conductivity, Arc Pattern, Lightning
+// Shield). Built so far: Fel Commandment, the Sanctified Paragon and the Stormbound Conduit; the panel lists the
+// others as coming.
 //
 // - Unlocked at level 10: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
@@ -56,8 +58,8 @@
 // - One rune per specialization (titan_runes, db-characters), chosen once: only a prestige clears it. Modifiers
 //   change freely out of combat.
 // - The rune works through auras: its own while it is the active spec's (90700 Fel Commandment, 90730 the
-//   Sanctified Paragon), and one marker per picked modifier (90710 / 90740 + slot * 3 + choice); scripts look for
-//   them.
+//   Sanctified Paragon, 90750 the Stormbound Conduit), and one marker per picked modifier (90710 / 90740 / 90760 +
+//   slot * 3 + choice); scripts look for them.
 //
 // Protocol (fields by ','; the client sends STATE, PICK,<rune>, MOD,<slot 1-3>,<choice 1-3>):
 //   S,<level>,<unlock level>,<spec>,<rune>,<m1>,<m2>,<m3>,<offers a.b.c or ->,<prompt 0/1>
@@ -75,6 +77,7 @@ namespace
 
     constexpr uint8 RUNE_FEL_COMMANDMENT = 21;      // the doc's order: the 20 class runes, then the hybrid
     constexpr uint8 RUNE_SANCTIFIED_PARAGON = 22;   // its own doc
+    constexpr uint8 RUNE_STORMBOUND_CONDUIT = 23;   // its own doc
 
     enum Spells : uint32
     {
@@ -103,7 +106,18 @@ namespace
         SPELL_PARAGON_MODIFIER_FIRST    = 90740,    // + slot * 3 + choice
         SPELL_PARAGON_AWAKEN            = 90749,    // its look as it turns on (a shockwave and a flash)
 
+        SPELL_RUNE_STORMBOUND_CONDUIT   = 90750,
+        SPELL_CONDUCTIVE                = 90751,
+        SPELL_STORMBOUND_ARC            = 90752,    // a secondary arc's damage
+        SPELL_STORMBOUND_ARC_VISUAL     = 90753,    // its bolt, cast by the enemy it leaves
+        SPELL_STORMBOUND_RETALIATION    = 90754,    // a Lightning Shield retaliation the rune makes
+        SPELL_STORM_MODIFIER_FIRST      = 90760,    // + slot * 3 + choice
+
         SPELL_CONSECRATION          = 26573,        // first rank
+        SPELL_LIGHTNING_BOLT        = 403,          // first ranks
+        SPELL_CHAIN_LIGHTNING       = 421,
+        SPELL_LIGHTNING_SHIELD      = 324,
+        SPELL_LIGHTNING_SHIELD_DAMAGE = 26364,
 
         SPELL_DEMONS_BITE           = 90100,
         SPELL_CHAOS_STRIKE          = 90101,
@@ -136,6 +150,30 @@ namespace
         MOD_SANCTIFIED_CONDEMNATION, MOD_MERCIFUL_GROUND, MOD_SHELTER_OF_THE_PARAGON,
         MOD_BASTION_OF_FAITH, MOD_WEIGHT_OF_THE_UNWORTHY, MOD_MEASURED_DEVOTION,
     };
+
+    // The Stormbound Conduit's modifiers: slot (0 Conductivity, 1 Arc Pattern, 2 Lightning Shield) x 3 + choice.
+    enum StormModifier : uint8
+    {
+        MOD_PERSISTENT_CURRENT, MOD_BRANCHING_CURRENT, MOD_LIVE_WIRE,
+        MOD_FORKED_TEMPEST, MOD_CLOSED_CIRCUIT, MOD_FARADAY_FIELD,
+        MOD_STORM_WITHIN, MOD_VIOLENT_REPRISAL, MOD_DISTANT_CONDUCTOR,
+    };
+
+    // The Stormbound Conduit's tuning (the draft's initial values; the arc range, Storm Within's pulse and the
+    // Lightning Bolt reference are ours to tune).
+    constexpr int32 CONDUCTIVE_MS = 6000, PERSISTENT_CONDUCTIVE_MS = 12000;
+    constexpr float ARC_RANGE = 8.0f;                           // a secondary arc's reach from the enemy it leaves
+    constexpr float BRANCHING_RANGE = 8.0f, BRANCHING_ARCS = 0.8f;
+    constexpr float CHAIN_ARC_SHARE = 0.15f;                    // of Lightning Bolt's damage
+    constexpr float SHIELD_ARC_SHARE = 0.25f;                   // of the retaliation's damage
+    constexpr std::size_t FORKED_TARGETS = 2;
+    constexpr float CLOSED_CIRCUIT_SHARE = 0.5f;
+    constexpr float FARADAY_REACH = 1.5f, FARADAY_ARCS = 0.85f;
+    constexpr uint32 STORM_WITHIN_MS = 3000, STORM_CHECK_MS = 250;
+    constexpr float STORM_WITHIN_RANGE = 8.0f;
+    constexpr float VIOLENT_ARCS = 1.4f, VIOLENT_RETALIATION = 0.9f;
+    constexpr uint32 DISTANT_CONDUCTOR_MS = 3000;
+    constexpr uint32 LIGHTNING_SHIELD_FAMILY_FLAG = 0x400;      // SpellFamilyFlags0
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
@@ -212,6 +250,12 @@ namespace
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)
                   | Wildcard::RoleMask(Wildcard::ROLE_HEALER) | Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_CONSECRATION } }, SPELL_RUNE_SANCTIFIED_PARAGON, SPELL_PARAGON_MODIFIER_FIRST },
+            // DPS only: Lightning Bolt makes the connections, Lightning Shield's retaliations (and Chain Lightning,
+            // if known) arc through them.
+            { RUNE_STORMBOUND_CONDUIT,
+              uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_LIGHTNING_BOLT }, { SPELL_LIGHTNING_SHIELD } }, SPELL_RUNE_STORMBOUND_CONDUIT,
+              SPELL_STORM_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -225,12 +269,14 @@ namespace
     }
 
     // A modifier's own needs (Dreadfire Discipline: Shadow Bolt or Incinerate; Infernal Pact and Metamorphic Bond:
-    // a demon to summon).
+    // a demon to summon; Closed Circuit: Chain Lightning).
     std::vector<std::vector<uint32>> ModifierNeeds(uint8 rune, uint8 slot, uint8 choice)
     {
+        uint8 modifier = slot * CHOICES + choice;
+        if (rune == RUNE_STORMBOUND_CONDUIT && modifier == MOD_CLOSED_CIRCUIT)
+            return { { SPELL_CHAIN_LIGHTNING } };
         if (rune != RUNE_FEL_COMMANDMENT)
             return {};
-        uint8 modifier = slot * CHOICES + choice;
         if (modifier == MOD_DREADFIRE_DISCIPLINE)
             return { { SPELL_SHADOW_BOLT, SPELL_INCINERATE } };
         if (modifier == MOD_INFERNAL_PACT || modifier == MOD_METAMORPHIC_BOND)
@@ -263,6 +309,11 @@ namespace
         ObjectGuid Sheltered;                                       // the one ally holding its shield
         std::vector<std::pair<Position, uint32>> Trail;             // footsteps: where, when
         std::unordered_map<ObjectGuid, uint8> Weighed;              // enemy -> damaging ticks in a row
+
+        // The Stormbound Conduit.
+        uint32 StormTimer = 0;                      // ms since Storm Within's last pulse
+        uint32 LastDistantConductor = 0;            // game ms
+        bool Pulsing = false;                       // a Storm Within pulse is landing: it never arcs
     };
 
     std::unordered_map<ObjectGuid::LowType, State> states;
@@ -766,6 +817,138 @@ namespace
         return true;
     }
 
+    // ---- The Stormbound Conduit -------------------------------------------------------------------------------
+
+    bool HasStormMarker(Unit* unit, uint8 modifier)
+    {
+        return unit && unit->HasAura(SPELL_STORM_MODIFIER_FIRST + modifier);
+    }
+
+    bool IsConductive(Player* player, Unit* unit)
+    {
+        return unit->HasAura(SPELL_CONDUCTIVE, player->GetGUID());
+    }
+
+    // Conductive on the enemy: 6 sec (12 with Persistent Current), refreshed by a new one; never stacks.
+    void MakeConductive(Player* player, Unit* target)
+    {
+        player->CastSpell(target, SPELL_CONDUCTIVE, true);
+        if (Aura* aura = target->GetAura(SPELL_CONDUCTIVE, player->GetGUID()))
+        {
+            int32 ms = HasStormMarker(player, MOD_PERSISTENT_CURRENT) ? PERSISTENT_CONDUCTIVE_MS : CONDUCTIVE_MS;
+            aura->SetMaxDuration(ms);
+            aura->SetDuration(ms);
+        }
+    }
+
+    // The player's Lightning Shield (any rank): its proc effect.
+    AuraEffect* Shield(Player* player)
+    {
+        return player->GetAuraEffect(SPELL_AURA_PROC_TRIGGER_SPELL, SPELLFAMILY_SHAMAN, LIGHTNING_SHIELD_FAMILY_FLAG, 0,
+            0, player->GetGUID());
+    }
+
+    // The damage the player's best Lightning Bolt would deal the target (its rank's, with their spell power).
+    float LightningBoltDamage(Player* player, Unit* target)
+    {
+        SpellInfo const* best = nullptr;
+        for (uint32 id = SPELL_LIGHTNING_BOLT; id; id = sSpellMgr->GetNextSpellInChain(id))
+            if (player->HasSpell(id))
+                best = sSpellMgr->GetSpellInfo(id);
+        if (!best)
+            return 0.0f;
+        int32 base = std::max<int32>(0, best->Effects[EFFECT_0].CalcValue(player));
+        return float(player->SpellDamageBonusDone(target, best, uint32(base), SPELL_DIRECT_DAMAGE, EFFECT_0));
+    }
+
+    // Secondary arcs leaving source: Chain Lightning's to any enemy near it (Closed Circuit: back into source at
+    // half), Lightning Shield's to a Conductive one; Forked Tempest splits one between two. An arc never arcs again
+    // (its damage is a spell of its own).
+    void Arc(Player* player, Unit* source, float damage, bool shield)
+    {
+        float range = ARC_RANGE;
+        if (HasStormMarker(player, MOD_BRANCHING_CURRENT))
+            damage *= BRANCHING_ARCS;
+        if (HasStormMarker(player, MOD_FARADAY_FIELD))
+        {
+            range *= FARADAY_REACH;
+            damage *= FARADAY_ARCS;
+        }
+        if (shield && HasStormMarker(player, MOD_VIOLENT_REPRISAL))
+            damage *= VIOLENT_ARCS;
+
+        std::vector<Unit*> targets;
+        if (!shield && HasStormMarker(player, MOD_CLOSED_CIRCUIT))
+        {
+            targets.push_back(source);
+            damage *= CLOSED_CIRCUIT_SHARE;
+        }
+        else
+        {
+            for (Unit* enemy : EnemiesAround(player, source, range))
+                if (enemy != source && (!shield || IsConductive(player, enemy)))
+                    targets.push_back(enemy);
+            std::size_t most = HasStormMarker(player, MOD_FORKED_TEMPEST) ? FORKED_TARGETS : 1;
+            if (targets.size() > most)
+                targets.resize(most);
+        }
+        if (targets.empty() || damage < 1.0f)
+            return;
+        int32 each = std::max<int32>(1, int32(damage / targets.size()));
+        for (Unit* target : targets)
+        {
+            if (target != source)
+                source->CastSpell(target, SPELL_STORMBOUND_ARC_VISUAL, true);
+            player->CastCustomSpell(target, SPELL_STORMBOUND_ARC, &each, nullptr, nullptr, true);
+        }
+    }
+
+    // A Lightning Shield retaliation the rune makes (Distant Conductor, Storm Within): the shield's rank's damage at
+    // the target, a charge spent. A pulse never arcs.
+    void Retaliate(Player* player, Unit* target, AuraEffect* shield, bool pulse)
+    {
+        uint32 damageSpell = sSpellMgr->GetSpellWithRank(SPELL_LIGHTNING_SHIELD_DAMAGE,
+            shield->GetSpellInfo()->GetRank());
+        SpellInfo const* info = sSpellMgr->GetSpellInfo(damageSpell);
+        if (!info)
+            return;
+        int32 damage = std::max<int32>(1, info->Effects[EFFECT_0].CalcValue(player));
+        Aura* aura = shield->GetBase();
+        State& state = StateOf(player);
+        state.Pulsing = pulse;
+        player->CastCustomSpell(target, SPELL_STORMBOUND_RETALIATION, &damage, nullptr, nullptr, true);
+        state.Pulsing = false;
+        aura->DropCharge();
+    }
+
+    // Storm Within: every 3 sec, a pulse at the nearest Conductive enemy within 8 yards (checked every 0.25 sec
+    // until there is one).
+    void StormPulse(Player* player, uint32 diff)
+    {
+        if (!HasStormMarker(player, MOD_STORM_WITHIN))
+            return;
+        State& state = StateOf(player);
+        state.StormTimer += diff;
+        if (state.StormTimer < STORM_WITHIN_MS)
+            return;
+        AuraEffect* shield = Shield(player);
+        Unit* target = nullptr;
+        if (shield && player->IsInCombat())
+            for (Unit* enemy : EnemiesAround(player, player, STORM_WITHIN_RANGE))
+                if (IsConductive(player, enemy))
+                {
+                    target = enemy;
+                    break;
+                }
+        if (!target)
+        {
+            state.StormTimer = STORM_WITHIN_MS - STORM_CHECK_MS;
+            return;
+        }
+        state.StormTimer = 0;
+        Retaliate(player, target, shield, true);
+    }
+
     // ---- The rune's auras ------------------------------------------------------------------------------------
 
     std::vector<uint32> RuneAuras()
@@ -923,6 +1106,14 @@ namespace
                 ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeLegendary Rune:|r your Covenant needs "
                     "Sanctified Condemnation: choose it again.");
             }
+        }
+        // The Stormbound Conduit: Live Wire's application comes from the retaliation Storm Within replaces.
+        if (choice.Rune == RUNE_STORMBOUND_CONDUIT)
+        {
+            uint8 liveWire = MOD_LIVE_WIRE % CHOICES + 1, stormWithin = MOD_STORM_WITHIN % CHOICES + 1;
+            if ((slot == 1 && pick == liveWire && choice.Mods[2] == stormWithin)
+                || (slot == 3 && pick == stormWithin && choice.Mods[0] == liveWire))
+                return Refuse(player, "Live Wire and Storm Within can't be chosen together.");
         }
         if (choice.Mods[slot - 1] == pick)
             return SendState(player);
@@ -1153,6 +1344,106 @@ class spell_titan_rune_sanctified_paragon : public AuraScript
     }
 };
 
+// The Stormbound Conduit's aura (90750): a Lightning Bolt hit makes its target Conductive (Branching Current: one
+// more enemy within 8 yards; Distant Conductor: a Lightning Shield retaliation at it, once every 3 sec); a Chain
+// Lightning hit on a Conductive enemy (each jump's) arcs for 15% of Lightning Bolt's damage.
+class spell_titan_rune_stormbound_conduit : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_stormbound_conduit);
+
+    bool CheckProc(ProcEventInfo& eventInfo)
+    {
+        SpellInfo const* spell = eventInfo.GetSpellInfo();
+        Player* player = GetTarget()->ToPlayer();
+        Unit* target = eventInfo.GetActionTarget();
+        if (!spell || !player || !target || target == player || !target->IsAlive()
+            || !(eventInfo.GetHitMask() & (PROC_HIT_NORMAL | PROC_HIT_CRITICAL | PROC_HIT_ABSORB)))
+            return false;
+        uint32 first = spell->GetFirstRankSpell()->Id;
+        if (first == SPELL_LIGHTNING_BOLT)
+        {
+            MakeConductive(player, target);
+            if (HasStormMarker(player, MOD_BRANCHING_CURRENT))
+                for (Unit* enemy : EnemiesAround(player, target, BRANCHING_RANGE))
+                    if (enemy != target)
+                    {
+                        MakeConductive(player, enemy);
+                        break;
+                    }
+            if (HasStormMarker(player, MOD_DISTANT_CONDUCTOR))
+            {
+                State& state = StateOf(player);
+                uint32 now = GameTime::GetGameTimeMS().count();
+                AuraEffect* shield = Shield(player);
+                if (shield && now - state.LastDistantConductor >= DISTANT_CONDUCTOR_MS)
+                {
+                    state.LastDistantConductor = now;
+                    Retaliate(player, target, shield, false);
+                }
+            }
+        }
+        else if (first == SPELL_CHAIN_LIGHTNING && IsConductive(player, target))
+            Arc(player, target, LightningBoltDamage(player, target) * CHAIN_ARC_SHARE, false);
+        return false;                               // the rune's work is done here; nothing else to proc
+    }
+
+    void Register() override
+    {
+        DoCheckProc += AuraCheckProcFn(spell_titan_rune_stormbound_conduit::CheckProc);
+    }
+};
+
+// Lightning Shield (every rank) with the Stormbound Conduit: Storm Within and Distant Conductor replace the
+// retaliation when struck.
+class spell_titan_rune_lightning_shield : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_lightning_shield);
+
+    bool CheckProc(ProcEventInfo& /*eventInfo*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        return !player || !player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT)
+            || (!HasStormMarker(player, MOD_STORM_WITHIN) && !HasStormMarker(player, MOD_DISTANT_CONDUCTOR));
+    }
+
+    void Register() override
+    {
+        DoCheckProc += AuraCheckProcFn(spell_titan_rune_lightning_shield::CheckProc);
+    }
+};
+
+// A Lightning Shield retaliation (its damage, every rank, and the rune's own 90754) with the Stormbound Conduit:
+// Violent Reprisal takes 10% off it; Live Wire makes its target Conductive; it arcs to a Conductive enemy near the
+// target for 25% of its damage (40% more with Violent Reprisal). A Storm Within pulse does neither.
+class spell_titan_rune_lightning_shield_damage : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_lightning_shield_damage);
+
+    void Strike()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
+            return;
+        int32 damage = GetHitDamage();
+        if (HasStormMarker(player, MOD_VIOLENT_REPRISAL))
+        {
+            damage = int32(damage * VIOLENT_RETALIATION);
+            SetHitDamage(damage);
+        }
+        if (StateOf(player).Pulsing)
+            return;
+        if (HasStormMarker(player, MOD_LIVE_WIRE) && target->IsAlive())
+            MakeConductive(player, target);
+        Arc(player, target, damage * SHIELD_ARC_SHARE, true);
+    }
+
+    void Register() override
+    {
+        OnHit += SpellHitFn(spell_titan_rune_lightning_shield_damage::Strike);
+    }
+};
+
 // The rune's Felguard (910120): 8 sec at the Hero's side, on the Hero's target (the next when it dies). Felstorm as
 // it arrives (a 2 sec spin: 4 ticks), then Cleave and melee. 50% of the Hero's power (spell power or attack power,
 // the higher) in its weapon, 30% of their health; no threat.
@@ -1296,9 +1587,11 @@ public:
         ClearCombat(player);
     }
 
-    // Metamorphic Bond on the Hero's demon while they are in Metamorphosis.
+    // Metamorphic Bond on the Hero's demon while they are in Metamorphosis; Storm Within's pulses.
     void OnPlayerUpdate(Player* player, uint32 diff) override
     {
+        if (player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
+            StormPulse(player, diff);
         if (!player->HasAura(SPELL_RUNE_FEL_COMMANDMENT))
             return;
         State& state = StateOf(player);
@@ -1374,6 +1667,9 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_throw_glaive);
     RegisterSpellScript(spell_titan_rune_consecration);
     RegisterSpellScript(spell_titan_rune_sanctified_paragon);
+    RegisterSpellScript(spell_titan_rune_stormbound_conduit);
+    RegisterSpellScript(spell_titan_rune_lightning_shield);
+    RegisterSpellScript(spell_titan_rune_lightning_shield_damage);
     RegisterCreatureAI(npc_titan_rune_felguard);
     RegisterCreatureAI(npc_titan_rune_fel_imp);
     new titan_runes_player();
