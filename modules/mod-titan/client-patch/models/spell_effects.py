@@ -916,6 +916,61 @@ def _gltf_meshes(path):
     return meshes
 
 
+def _hollowed(layer, mesh, bands=5, piece=0.3):
+    """A spun layer as the parts it is drawn in: itself, or, with hollow, its middle left clear with a soft edge.
+    The triangles near the edge are cut (in half along their longest side across, the fade being radial) until no
+    side is longer than piece yards across, then each piece goes by its middle's distance into bands fading in over soft yards from hollow; the rest
+    whole at full strength."""
+    positions, uvs, faces = mesh
+    inner = layer.get('hollow')
+    if not inner:
+        return [{**layer, 'geometry': mesh}]
+    soft = layer.get('soft', 0.8)
+    points, coords, halves = list(positions), list(uvs), {}
+
+    def middle(tri):
+        return math.hypot(sum(points[v][0] for v in tri) / 3, sum(points[v][1] for v in tri) / 3)
+
+    def split(tri, depth=0):
+        a, b, c = tri
+        def flat(u, w):
+            return math.dist(points[u][:2], points[w][:2])     # across: the fade is radial
+
+        sides = [(flat(a, b), (a, b, c)), (flat(b, c), (b, c, a)), (flat(c, a), (c, a, b))]
+        longest, (p, q, r) = max(sides)
+        near = min(math.hypot(*points[v][:2]) for v in tri) < inner + soft + longest
+        far = max(math.hypot(*points[v][:2]) for v in tri) > inner - longest
+        if depth >= 10 or longest <= piece or not (near and far):
+            return [tri]
+        edge = (min(p, q), max(p, q))
+        if edge not in halves:                                  # neighbours share the new point
+            points.append(tuple((points[p][k] + points[q][k]) / 2 for k in range(3)))
+            coords.append(tuple((coords[p][k] + coords[q][k]) / 2 for k in range(2)))
+            halves[edge] = len(points) - 1
+        m = halves[edge]
+        return split((p, m, r), depth + 1) + split((m, q, r), depth + 1)
+
+    pieces = [t for i in range(0, len(faces), 3) for t in split(tuple(faces[i:i + 3]))]
+    groups = [[] for _ in range(bands + 1)]
+    for tri in pieces:
+        distance = middle(tri)
+        if distance < inner:
+            continue
+        band = min(bands, int((distance - inner) / soft * bands))
+        groups[band].append(tri)
+    parts = []
+    for band, tris in enumerate(groups):
+        if not tris:
+            continue
+        keep = sorted({v for tri in tris for v in tri})
+        local = {v: i for i, v in enumerate(keep)}
+        strength = (band + 0.5) / bands if band < bands else 1.0
+        parts.append({**layer, 'alpha': layer.get('alpha', 1.0) * strength,
+                      'geometry': ([points[v] for v in keep], [coords[v] for v in keep],
+                                   [local[v] for tri in tris for v in tri])})
+    return parts
+
+
 def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
     """A lasting effect around a body (a kit's base slot) from a wow.export glTF's meshes (its bones and
     animation left out: each layer turns on its own), each layer a dict of
@@ -929,8 +984,8 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
       its beat (rapid bursts; None: steady);
     - grow: (from, to) the layer's size (times scale) over duration (with fade: played once);
     - stretch: (x, y, z) the layer's size along each axis instead (a storm spread wide and low);
-    - hollow: yards (before stretch): only the mesh's triangles at least this far from the middle (room about the
-      body);
+    - hollow: yards (before stretch): the middle left clear (room about the body), its edge soft: the triangles
+      about it cut small and faded in over soft yards (before stretch; default 0.8) out from it;
     - blend: BLEND_ADD (the default) or BLEND_ALPHA.
 
     The model scaled by scale; all unlit, both faces drawn, textures repeating. fade: None (one looping Stand of
@@ -944,9 +999,11 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
     out_dir.mkdir(parents=True, exist_ok=True)
     exports = export if isinstance(export, (list, tuple)) else [export]
     sources = [_gltf_meshes(path) for path in exports]
-    meshes = [mesh for source in sources for mesh in source]
-    for number, layer in enumerate(layers):
-        with Image.open(textures[layer['texture']]) as image:
+    whole = layers
+    layers = [part for layer in layers for part in _hollowed(layer, sources[layer.get('source', 0)][layer['mesh']])]
+    used = sorted({layer['texture'] for layer in layers})
+    for number in used:
+        with Image.open(textures[number]) as image:
             (out_dir / f'{name}_{number}.blp').write_bytes(blp.encode(image.convert('RGBA')))
 
     blob = Blob(0x130)
@@ -957,14 +1014,7 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
         return len(globals_ms) - 1
 
     for number, layer in enumerate(layers):
-        positions, uvs, faces = sources[layer.get('source', 0)][layer['mesh']]
-        if layer.get('hollow'):
-            # Only the triangles at least hollow yards (before stretch) from the middle: the space about the body
-            # left clear.
-            inner = layer['hollow']
-            faces = [v for i in range(0, len(faces), 3) for v in faces[i:i + 3]
-                     if math.hypot(sum(positions[f][0] for f in faces[i:i + 3]) / 3,
-                                   sum(positions[f][1] for f in faces[i:i + 3]) / 3) >= inner]
+        positions, uvs, faces = layer['geometry']
         rotation = empty_track()
         turn = layer.get('turn', 0.0)
         if turn:
@@ -991,7 +1041,7 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
         sections.append((first, len(positions), start, len(faces)))
     vertex_count = len(vertices) // 48
     every = [tuple(c * k for c, k in zip(p, layer.get('stretch', (layer.get('grow', (1.0,))[0],) * 3)))
-             for layer in layers for p in sources[layer.get('source', 0)][layer['mesh']][0]]
+             for layer in whole for p in sources[layer.get('source', 0)][layer['mesh']][0]]
     lo = tuple(min(p[i] for p in every) * scale for i in range(3))
     hi = tuple(max(p[i] for p in every) * scale for i in range(3))
     radius = math.dist(lo, hi) / 2
@@ -1035,7 +1085,7 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
     colors_ref = blob.add(colors, len(layers))
     textures_blob = b''
     for number in range(len(layers)):
-        path = f'{client_dir}\\{name}_{number}.blp'
+        path = f'{client_dir}\\{name}_{layers[number]["texture"]}.blp'
         ref = blob.add(path.encode() + b'\0', len(path) + 1)
         textures_blob += struct.pack('<II2I', 0, WRAP_U | 0x2, *ref)
     textures_ref = blob.add(textures_blob, len(layers))
@@ -1090,7 +1140,7 @@ def spun_model(*args, export, layers=(), scale=1.0, duration=1000, fade=None):
     batches_ref = skin.add(batch_data, len(sections))
     skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup, *tris, *props, *sections_ref, *batches_ref, 21)
     (out_dir / f'{name}00.skin').write_bytes(bytes(skin.data))
-    return [f'{name}.m2', f'{name}00.skin'] + [f'{name}_{number}.blp' for number in range(len(layers))]
+    return [f'{name}.m2', f'{name}00.skin'] + [f'{name}_{number}.blp' for number in used]
 
 
 def recolor(image, tint, brightness=1.0):

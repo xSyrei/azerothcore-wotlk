@@ -237,11 +237,12 @@ SPELLS += [buff(90740 + slot * 3 + choice, name, PARAGON_ICON, '', DURATION_INFI
 # exports (spells/PAL_SanctifiedParagon, wow.export glTFs; every texture made gray so the tint is the color):
 # deathknight_remorselesswinter_state's storm (mesh 2, its own smoke band) with blades of light (the crane kick's
 # streak) whipping round it and cfx_deathknight_remorselesswinter_aura01's rising funnel (mesh 0), all spread out to a
-# low wall at the aura's edge with the middle left clear (hollow, stretch: the Hero and what is about them stay in
-# sight); flakes of light tumbling up through the aura (retail's flipping snowflake, an 8-frame flipbook), embers and
+# low wall at the aura's edge with the middle left clear (hollow, its edge faded in; stretch: the Hero and what is
+# about them stay in sight), faint as a mist; flakes of light tumbling up through the aura (retail's flipping snowflake, an 8-frame flipbook), embers and
 # sparks; a crown of light above the head; a shockwave and flash as it wakes (90749). No floor. The sigil and glyph of Seat of the Paragon and Hallowed Footsteps are ours (build_paragon_art.py).
 PARAGON = 'PAL_SanctifiedParagon'
 GOLD, PALE_GOLD, WHITE_GOLD = (1.0, 0.72, 0.25), (1.0, 0.86, 0.5), (1.0, 0.96, 0.82)
+DEEP_GOLD = (1.0, 0.55, 0.12)                       # the mist's warmest: vibrant, not white (additive)
 STATE = f'{PARAGON}/deathknight_remorselesswinter_state.gltf'
 AURA = f'{PARAGON}/cfx_deathknight_remorselesswinter_aura01.gltf'
 EFFECTS = {
@@ -251,17 +252,17 @@ EFFECTS = {
                           'options': {'export': (STATE, AURA), 'layers': (
                               # the storm, spread out to the aura's edge: retail's swirl without its middle
                               # (hollow), stretched to a low wall about 6 to 8 yards out, under 2 yards high
-                              {'source': 0, 'mesh': 2, 'texture': 0, 'tint': WHITE_GOLD, 'alpha': 0.16,
+                              {'source': 0, 'mesh': 2, 'texture': 0, 'tint': GOLD, 'alpha': 0.07,
                                'turn': 1.6, 'scroll': (-0.6, 0.0), 'hollow': 1.8, 'stretch': (2.8, 2.8, 0.42)},
-                              {'source': 0, 'mesh': 2, 'texture': 0, 'tint': GOLD, 'alpha': 0.12, 'turn': 2.4,
+                              {'source': 0, 'mesh': 2, 'texture': 0, 'tint': DEEP_GOLD, 'alpha': 0.06, 'turn': 2.4,
                                'scroll': (0.4, 0.1), 'hollow': 1.8, 'stretch': (2.6, 2.6, 0.38)},
                               # blades of light whipping round that wall
-                              {'source': 0, 'mesh': 2, 'texture': 1, 'tint': WHITE_GOLD, 'alpha': 0.45, 'turn': 1.3,
+                              {'source': 0, 'mesh': 2, 'texture': 1, 'tint': PALE_GOLD, 'alpha': 0.12, 'turn': 1.3,
                                'hollow': 1.8, 'stretch': (2.7, 2.7, 0.4)},
-                              {'source': 0, 'mesh': 2, 'texture': 1, 'tint': GOLD, 'alpha': 0.35, 'turn': -1.9,
+                              {'source': 0, 'mesh': 2, 'texture': 1, 'tint': GOLD, 'alpha': 0.09, 'turn': -1.9,
                                'flicker': (0.45, 0.3), 'hollow': 1.8, 'stretch': (2.5, 2.5, 0.35)},
                               # light rising at the boundary (aura01's funnel, its outer part, low)
-                              {'source': 1, 'mesh': 0, 'texture': 2, 'tint': PALE_GOLD, 'alpha': 0.2, 'turn': 5.0,
+                              {'source': 1, 'mesh': 0, 'texture': 2, 'tint': GOLD, 'alpha': 0.07, 'turn': 5.0,
                                'scroll': (0.0, -0.8), 'hollow': 2.6, 'stretch': (1.85, 1.85, 0.35)})}},
     # Light about the Hero, spread out through the aura (the chest slot): flakes of light tumbling up and spiralling
     # with the storm (retail's flipping snowflake: 8 frames), embers and sparks; the middle left clear.
