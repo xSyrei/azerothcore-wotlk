@@ -2073,7 +2073,8 @@ end)
 
 -- The rune button: the active specialization's rune in the gold ring (Art/RuneRing; its icon made round by
 -- SetPortraitToTexture), just under the minimap and clear of the buffs. A click opens the panel; it glows while
--- the specialization has no rune to choose. Shift-drag moves it (kept per character), right-click puts it back.
+-- the specialization has no rune to choose. Dragging it moves it anywhere (kept per character); shift-right-click
+-- puts it back.
 EmberforgeRunesDB = EmberforgeRunesDB or {}
 local RUNE_BUTTON_SIZE = 58
 local runeButton = CreateFrame("Button", "EmberforgeRuneButton", UIParent)
@@ -2143,6 +2144,10 @@ if not runeButton.glow.SetShown then
 end
 
 runeButton:SetScript("OnClick", function(self, button)
+    -- The release that ends a drag is not a click.
+    if self.dragged and GetTime() - self.dragged < 0.2 then
+        return
+    end
     if button == "RightButton" and IsShiftKeyDown() then
         EmberforgeRunesDB.button = nil
         PlaceRuneButton()
@@ -2155,16 +2160,21 @@ runeButton:SetScript("OnClick", function(self, button)
     end
 end)
 runeButton:SetScript("OnDragStart", function(self)
-    if IsShiftKeyDown() then
-        self:StartMoving()
-    end
+    self.moving = true
+    GameTooltip:Hide()
+    self:StartMoving()
 end)
 runeButton:SetScript("OnDragStop", function(self)
     self:StopMovingOrSizing()
+    self.moving = nil
+    self.dragged = GetTime()
     local x, y = self:GetCenter()
     EmberforgeRunesDB.button = { x, y }
 end)
 runeButton:SetScript("OnEnter", function(self)
+    if self.moving then
+        return
+    end
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     local rune = state.rune ~= 0 and RuneById(state.rune)
     GameTooltip:AddLine(rune and rune.name or "Legendary Runes", GOLDEN[1], GOLDEN[2], GOLDEN[3])
@@ -2176,7 +2186,7 @@ runeButton:SetScript("OnEnter", function(self)
         GameTooltip:AddLine("Your specialization's Legendary Rune. Click to see or change its modifiers.", 1, 1, 1,
             true)
     end
-    GameTooltip:AddLine("Shift-drag to move it; shift-right-click to put it back.", 0.6, 0.6, 0.6, true)
+    GameTooltip:AddLine("Drag to move it anywhere; shift-right-click to put it back.", 0.6, 0.6, 0.6, true)
     GameTooltip:Show()
 end)
 runeButton:SetScript("OnLeave", function()
