@@ -5624,7 +5624,9 @@ SpellCastResult Spell::CheckRuneCost(uint32 RuneCostID)
     for (uint32 i = 0; i < RUNE_DEATH; ++i)
     {
         runeCost[i] = src->RuneCost[i];
-        if (Player* modOwner = unitCaster->GetSpellModOwner())
+        // Project Emberforge: a classless Hero's cost cuts (Rage, mana, energy talents of every class) are not
+        // rune counts: a flat cut of 1 made a one-rune spell free.
+        if (Player* modOwner = unitCaster->GetSpellModOwner(); modOwner && modOwner->getClass() == CLASS_DEATH_KNIGHT)
             modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_COST, runeCost[i], this);
     }
 
@@ -5668,7 +5670,8 @@ void Spell::TakeRunePower(bool didHit)
     for (uint32 i = 0; i < RUNE_DEATH; ++i)
     {
         runeCost[i] = runeCostData->RuneCost[i];
-        if (Player* modOwner = unitCaster->GetSpellModOwner())
+        // Project Emberforge: as CheckRuneCost, a Hero's cost cuts leave rune counts alone.
+        if (Player* modOwner = unitCaster->GetSpellModOwner(); modOwner && modOwner->getClass() == CLASS_DEATH_KNIGHT)
             modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_COST, runeCost[i], this);
     }
 

@@ -38,7 +38,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.13"
+#define EMBERFORGE_ENGINE_VERSION "0.14"
 
 namespace
 {
@@ -2009,6 +2009,62 @@ namespace
 
 // ---- Loaded ----
 
+// The client keeps what the server told it about items, creatures and quests in Cache\WDB and never asks again: an
+// answer from before an update (the Hearthstone's 30 min cooldown) outlived it. When the client patch changes
+// (Data\enUS\patch-enUS-4.MPQ: its size and write time, kept in Cache\Emberforge.patch), Cache\WDB is cleared once,
+// before the game reads it; the client asks the server afresh.
+namespace
+{
+    void ClearFolder(const std::string &folder)
+    {
+        WIN32_FIND_DATAA found;
+        HANDLE search = FindFirstFileA((folder + "\\*").c_str(), &found);
+        if (search == INVALID_HANDLE_VALUE)
+            return;
+        do
+        {
+            std::string name = found.cFileName;
+            if (name == "." || name == "..")
+                continue;
+            std::string path = folder + "\\" + name;
+            if (found.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                ClearFolder(path);
+            else
+                DeleteFileA(path.c_str());
+        } while (FindNextFileA(search, &found));
+        FindClose(search);
+    }
+
+    void FreshCacheOnNewPatch()
+    {
+        std::string game = GameFolder();
+        WIN32_FILE_ATTRIBUTE_DATA info;
+        if (!GetFileAttributesExA((game + "Data\\enUS\\patch-enUS-4.MPQ").c_str(), GetFileExInfoStandard, &info))
+            return;
+        char stamp[64];
+        snprintf(stamp, sizeof(stamp), "%lu %lu %lu", info.nFileSizeLow, info.ftLastWriteTime.dwLowDateTime,
+                 info.ftLastWriteTime.dwHighDateTime);
+        std::string marker = game + "Cache\\Emberforge.patch";
+        char last[64] = {};
+        if (FILE *file = fopen(marker.c_str(), "r"))
+        {
+            if (!fgets(last, sizeof(last), file))
+                last[0] = 0;
+            fclose(file);
+        }
+        if (strcmp(last, stamp) == 0)
+            return;
+        ClearFolder(game + "Cache\\WDB");
+        CreateDirectoryA((game + "Cache").c_str(), nullptr);
+        if (FILE *file = fopen(marker.c_str(), "w"))
+        {
+            fputs(stamp, file);
+            fclose(file);
+        }
+        Log("new client patch: Cache\\WDB cleared (the client asks the server afresh)");
+    }
+}
+
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved)
 {
     if (reason == DLL_PROCESS_ATTACH)
@@ -2030,6 +2086,7 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved)
         if (!spellModsInstalled)
         {
             spellModsInstalled = true;
+            FreshCacheOnNewPatch();
             SpellMods::Install();
         }
     }
