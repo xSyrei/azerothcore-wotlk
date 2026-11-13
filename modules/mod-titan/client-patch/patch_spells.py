@@ -502,7 +502,7 @@ SPELLS = [
     {
         'id': 90103, 'copy': 1953, 'name': 'Fel Rush', 'icon': 'Ability_DemonHunter_FelRush',
         'visual': 'FelRush',
-        'description': 'Rush forward $a1 yards in a burst of fel energy, dealing $90104s1 Shadow damage to '
+        'description': 'Rush forward 17 yards in a burst of fel energy, dealing $90104s1 Shadow damage to '
                        'enemies in your path.',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 10000, 'ManaCostPercentage': 0,
                 'SchoolMask': SHADOW, 'BaseLevel': 1, 'SpellLevel': 1},
@@ -795,15 +795,14 @@ SPELLS = [
         'visual': 'SoulCleave', 'two_weapons': True,
         'description': 'Finishing move that viciously strikes up to 5 enemies in front of you and heals you. Physical '
                        'damage and healing per combo point:\r\n'
-                       + patch_monk.per_point('$m1', 0.15, extra=lambda points: f', heals {8 + 3 * points}% of '
-                                              'maximum health'),
+                       + patch_monk.per_point('$m1', 0.15, extra=lambda points: f', heals {(8 + 3 * points) / 2:g}% '
+                                              'of maximum health per enemy struck'),
         'set': {'Category': 0, 'AttributesEx': 0, 'PowerType': RAGE, 'ManaCost': 0,
                 'StartRecoveryTime': 1500, 'MaxAffectedTargets': 5, 'BaseLevel': 1, 'SpellLevel': 1},
         'clear': [2, 3],
         'effects': {
             1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 9, 'DieSides': 1, 'RealPointsPerLevel': 5.0,
                 'TargetA': TARGET_UNIT_CONE_ENEMY, 'RadiusIndex': RADIUS_8},
-            2: {'Effect': EFFECT_HEAL_PCT, 'BasePoints': 7, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER},
         },
     },
     {
@@ -865,14 +864,16 @@ SPELLS = [
                 'PowerType': 0, 'ManaCost': 0, 'BaseLevel': 6, 'SpellLevel': 6},
     },
     {
-        # Soul Cleave's healing from the combo points it spends: % of maximum health, set by the script.
+        # Soul Cleave's healing, for each enemy struck: an amount set by the script (half of 8% and 3% a combo point
+        # of maximum health); never a critical heal.
         'id': 90131, 'copy': 26669, 'name': 'Soul Cleave', 'icon': 'Ability_DemonHunter_SoulCleave',
         'visual': 'SoulCleaveHeal', 'description': '',
         'set': {'Category': 0, 'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'StartRecoveryCategory': 0,
                 'StartRecoveryTime': 0, 'PowerType': 0, 'ManaCost': 0, 'DurationIndex': 0, 'BaseLevel': 1,
-                'SpellLevel': 1},
+                'SpellLevel': 1, 'AttributesEx2': 0x20000000},
         'clear': [1, 2, 3],
-        'effects': {1: {'Effect': EFFECT_HEAL_PCT, 'BasePoints': 4, 'DieSides': 1, 'TargetA': TARGET_UNIT_CASTER}},
+        'effects': {1: {'Effect': EFFECT_HEAL, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
+                        'TargetA': TARGET_UNIT_CASTER}},
     },
     {
         # Vengeance's capstone, a finisher. Spends every combo point (at least 1): spell_titan_dh_spirit_bomb sets

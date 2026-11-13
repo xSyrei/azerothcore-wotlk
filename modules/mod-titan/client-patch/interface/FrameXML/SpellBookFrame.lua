@@ -1,5 +1,5 @@
 MAX_SPELLS = 1024;
-MAX_SKILLLINE_TABS = 12;	-- Emberforge: General and up to 11 classes (below)
+MAX_SKILLLINE_TABS = 13;	-- Emberforge: General and up to 12 classes (below: the Demon Hunter the twelfth)
 SPELLS_PER_PAGE = 12;
 MAX_SPELL_PAGES = ceil(MAX_SPELLS / SPELLS_PER_PAGE);
 BOOKTYPE_SPELL = "spell";

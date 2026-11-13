@@ -34,7 +34,9 @@ class's, Stealth and Shadowform too) toggle off for a Hero, in or out of combat:
 right-clicking its buff, has the Classless addon ask the server to leave it (`CANCEL`, `classless.cpp`), since the
 client (a Paladin's) neither toggles another class's forms nor lets a stance or presence go. Tuning by ability
 (`titan_hero_damage_tuning`, same file): Soul Cleave deals 25% less, Blade Dance's strikes 15% less, every Feral Combat
-ability 25% more and every Rogue ability 30% more; Thunder Clap costs 10 Rage and the Hearthstone cools down in 5
+ability 25% more and every Rogue ability 30% more, Rising Sun Kick 20% less, Demon's Bite and Chaos Strike 25% less,
+Death and Decay 15% less (Soul Cleave heals, for each enemy struck, half of 8% and 3% a combo point of maximum
+health, never critically; Fel Rush dashes 15% farther and faster); Thunder Clap costs 10 Rage and the Hearthstone cools down in 5
 minutes (server and client patch: `hero_tuning`). Spell modifiers by family: the client applies a
 spell modifier (talents' cost, cooldown, cast time, range cuts) only to its own class's spells, and a Hero is a
 Paladin to it. The server sends every modifier the player has, totalled by class family, on opcode 0x51A whenever they

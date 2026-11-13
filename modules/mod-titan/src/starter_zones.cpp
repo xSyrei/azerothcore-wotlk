@@ -18,12 +18,14 @@
 
 #include "CombatManager.h"
 #include "PassiveAI.h"
+#include "DBCStores.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include <unordered_map>
 
-// The starting areas (titan_starter_zones.sql): their training dummy and a mount from level 1.
+// The starting areas (titan_starter_zones.sql): their training dummy, a mount from level 1, and every flight point
+// the player's faction can use known from the start (taught at login: the taxi mask is saved with the character).
 //
 // The training dummy (910130, data/sql/db-world/titan_starter_zones.sql): as the core's
 // npc_training_dummy (never damaged, so the hits still show; combat with an attacker ends 5 sec after their last
@@ -107,6 +109,13 @@ public:
         uint32 mount = RaceMount(player->getRace());
         if (!player->HasSpell(mount))
             player->learnSpell(mount);
+
+        // Every flight point with a mount for the player's faction (theirs and the neutral ones).
+        uint8 side = player->GetTeamId() == TEAM_ALLIANCE ? 1 : 0;
+        for (uint32 i = 0; i < sTaxiNodesStore.GetNumRows(); ++i)
+            if (TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(i))
+                if (node->MountCreatureID[side])
+                    player->m_taxi.SetTaximaskNode(node->ID);
     }
 };
 

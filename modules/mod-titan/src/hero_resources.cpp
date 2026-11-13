@@ -413,6 +413,12 @@ public:
     static constexpr uint32 SOUL_CLEAVE = 90125;
     static constexpr std::array<uint32, 3> BLADE_DANCE = { 90102, 90107, 90108 };
     static constexpr float SOUL_CLEAVE_SHARE = 0.75f, BLADE_DANCE_SHARE = 0.85f;
+    // Rising Sun Kick 20% less; Demon's Bite and Chaos Strike 25% less; Death and Decay (every rank, and the
+    // damage its ground deals) 15% less.
+    static constexpr uint32 RISING_SUN_KICK = 90322, DEMONS_BITE = 90100, CHAOS_STRIKE = 90101;
+    static constexpr uint32 DEATH_AND_DECAY = 43265, DEATH_AND_DECAY_DAMAGE = 52212;
+    static constexpr float RISING_SUN_KICK_SHARE = 0.8f, DEMON_HUNTER_STRIKE_SHARE = 0.75f;
+    static constexpr float DEATH_AND_DECAY_SHARE = 0.85f;
     static constexpr float FERAL_SHARE = 1.25f, ROGUE_SHARE = 1.3f;
 
     static bool IsFeral(SpellInfo const* spellInfo)
@@ -432,6 +438,12 @@ public:
         SpellInfo const* first = spellInfo->GetFirstRankSpell();
         if (first->Id == SOUL_CLEAVE)
             return SOUL_CLEAVE_SHARE;
+        if (first->Id == RISING_SUN_KICK)
+            return RISING_SUN_KICK_SHARE;
+        if (first->Id == DEMONS_BITE || first->Id == CHAOS_STRIKE)
+            return DEMON_HUNTER_STRIKE_SHARE;
+        if (first->Id == DEATH_AND_DECAY || first->Id == DEATH_AND_DECAY_DAMAGE)
+            return DEATH_AND_DECAY_SHARE;
         if (std::find(BLADE_DANCE.begin(), BLADE_DANCE.end(), first->Id) != BLADE_DANCE.end())
             return BLADE_DANCE_SHARE;
         if (spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE)

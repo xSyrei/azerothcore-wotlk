@@ -2860,6 +2860,21 @@ frame:SetScript("OnEvent", function(self, event, prefix, message, channel, sende
     end
 end)
 
+-- /castplayer <spell>: a ground spell (Death and Decay, Blizzard, Rain of Fire...) cast where you stand, in a macro
+-- too (the 3.3.5 client has no @player for them). The server casts it (CASTAT): the spell's highest rank known.
+SLASH_EMBERFORGECASTPLAYER1 = "/castplayer"
+SLASH_EMBERFORGECASTPLAYER2 = "/castfeet"
+SlashCmdList["EMBERFORGECASTPLAYER"] = function(message)
+    local name = message and message:gsub("^%s+", ""):gsub("%s+$", "") or ""
+    local link = name ~= "" and GetSpellLink(name)
+    local spellId = link and tonumber(link:match("spell:(%d+)"))
+    if not spellId then
+        DEFAULT_CHAT_FRAME:AddMessage("|cffff8000/castplayer:|r you don't know a spell called " .. name .. ".")
+        return
+    end
+    Send("CASTAT," .. spellId)
+end
+
 SLASH_EMBERFORGECLASSLESS1 = "/classless"
 SLASH_EMBERFORGECLASSLESS2 = "/cl"
 -- "/cl instant" switches instant Wildcard rolls on or off.

@@ -186,13 +186,14 @@ namespace
 }
 
 // Fel Rush (90103): the core's charge to a point (Spell::EffectChargeDest), at Fel Rush's own
-// speed: a snap across the 15 yards instead of the charge speed's third of a second. Fel Rift (runes.cpp) sends it
-// to the volley's target instead.
+// speed: a snap across its 15 yards made 15% longer and faster (17.25 yards at 207 a second) instead of the charge
+// speed's third of a second. Fel Rift (runes.cpp) sends it to the volley's target instead.
 class spell_titan_dh_fel_rush : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_fel_rush);
 
-    static constexpr float DASH_SPEED = 180.0f;     // yards per second (charges: 42)
+    static constexpr float DASH_SPEED = 207.0f;     // yards per second (charges: 42)
+    static constexpr float DASH_REACH = 1.15f;      // of the spell's 15 yards
 
     void Dash(SpellEffIndex effIndex)
     {
@@ -203,6 +204,8 @@ class spell_titan_dh_fel_rush : public SpellScript
             return;
 
         Position pos = dest->GetPosition();
+        pos = caster->GetFirstCollisionPosition(caster->GetExactDist2d(&pos) * DASH_REACH,
+            caster->GetRelativeAngle(&pos));
         // Fel Rift (Rune of Fel Commandment): for 3 sec after a volley, to the glaive's first target, whichever way
         // the Hero faces, stopping in front of it.
         if (Player* player = caster->ToPlayer())
@@ -793,13 +796,14 @@ namespace
 }
 
 // Soul Cleave (90125), a finisher: from 1 combo point, spends them all, hitting as hard as the points spent (its
-// weapon damage the 5-point value, scaled) and healing for 3% more of maximum health a point (90131). Feast of Souls
-// (talent): more healing over 6 sec (3 ticks); Void Reaver (talent): the enemies struck deal less damage.
+// weapon damage the 5-point value, scaled), and for each enemy struck heals for half of 8% and 3% a point of maximum
+// health (90131, never critical). Feast of Souls (talent): more healing over 6 sec (3 ticks); Void Reaver (talent):
+// the enemies struck deal less damage.
 class spell_titan_dh_soul_cleave : public SpellScript
 {
     PrepareSpellScript(spell_titan_dh_soul_cleave);
 
-    static constexpr int32 HEAL_PCT_PER_POINT = 3;
+    static constexpr float HEAL_PCT_BASE = 8.0f, HEAL_PCT_PER_POINT = 3.0f, HEAL_SHARE_PER_TARGET = 0.5f;
     static constexpr int32 FEAST_TICKS = 3;
 
     uint8 _points = 0;
@@ -827,7 +831,7 @@ class spell_titan_dh_soul_cleave : public SpellScript
     void SpendPoints()
     {
         Unit* caster = GetCaster();
-        CastWithValue(caster, SPELL_SOUL_CLEAVE_HEAL, SpendComboPoints(caster) * HEAL_PCT_PER_POINT, caster);
+        SpendComboPoints(caster);
         if (int32 pct = TalentValue(caster, TALENT_FEAST_OF_SOULS))
             CastWithValue(caster, SPELL_FEAST_OF_SOULS, int32(caster->CountPctFromMaxHealth(pct)) / FEAST_TICKS,
                 caster);
@@ -836,6 +840,8 @@ class spell_titan_dh_soul_cleave : public SpellScript
     void Reave()
     {
         Unit* caster = GetCaster();
+        float pct = (HEAL_PCT_BASE + HEAL_PCT_PER_POINT * _points) * HEAL_SHARE_PER_TARGET;
+        CastWithValue(caster, SPELL_SOUL_CLEAVE_HEAL, int32(caster->GetMaxHealth() * pct / 100.0f), caster);
         if (Unit* target = GetHitUnit())
             if (int32 pct = TalentValue(caster, TALENT_VOID_REAVER))
                 CastWithValue(caster, SPELL_VOID_REAVER, -pct, target);

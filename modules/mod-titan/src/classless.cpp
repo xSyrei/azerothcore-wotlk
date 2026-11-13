@@ -39,6 +39,7 @@
 //                      PICK,<first rank id>      spend a Selection pick on that ability
 //                      ROLE,<role>               play that role (Wildcard::Role; not in combat)
 //                      CANCEL,<spell id>         leave that stance, presence or form (the game will not)
+//                      CASTAT,<spell id>         cast that ground spell where the player stands (/castplayer)
 //   server -> client   B / T,<class>,<skill line>,<name>
 //                      A,<class>.<skill line>.<level>.<id>[.<needs>];...   needs: groups by '+', each one of
 //                                                its abilities by '/' (first ranks: a form, stealth, a pet)
@@ -245,6 +246,22 @@ namespace
         Classless::SendState(player);
     }
 
+    // /castplayer (the Classless addon): a ground-targeted spell the player knows (Death and Decay, Blizzard, Rain of
+    // Fire...) cast where they stand, as if they had clicked their own feet: a normal cast, its cost, cast time and
+    // cooldowns as ever. The 3.3.5 client has no @player or @cursor for ground spells.
+    void CastAtFeet(Player* player, uint32 spellId)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (!spellInfo || !player->HasActiveSpell(spellId) || !player->IsAlive())
+            return;
+        if (!(spellInfo->GetExplicitTargetMask() & TARGET_FLAG_DEST_LOCATION))
+        {
+            ChatHandler(player->GetSession()).SendSysMessage("/castplayer is for spells cast on the ground.");
+            return;
+        }
+        player->CastSpell(player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), spellId, false);
+    }
+
     // The Death Knight's presences: auras the game never lets go (SPELL_ATTR0_NO_AURA_CANCEL), every rank.
     constexpr uint32 PRESENCES[] = { 48263, 48265, 48266 };
 
@@ -348,6 +365,11 @@ public:
         {
             if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(7)))
                 CancelForm(player, *spellId);
+        }
+        else if (request.starts_with("CASTAT,"))
+        {
+            if (Optional<uint32> spellId = Acore::StringTo<uint32>(request.substr(7)))
+                CastAtFeet(player, *spellId);
         }
         else if (request.starts_with("ROLE,"))
         {

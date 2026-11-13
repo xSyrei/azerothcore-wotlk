@@ -24,6 +24,11 @@ DELETE FROM `spell_bonus_data` WHERE `entry` = 90125;
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90125, 0, 0, 0.75, 0, 'Soul Cleave (5 combo points)');
 
+-- Soul Cleave's heal (an amount of maximum health the script sets): no power of its own.
+DELETE FROM `spell_bonus_data` WHERE `entry` = 90131;
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90131, 0, 0, 0, 0, 'Soul Cleave - heal');
+
 -- Fel Rush: its damage (90104) only hits the enemies in the dash's path.
 DELETE FROM `spell_script_names` WHERE `spell_id` = 90104 AND `ScriptName` = 'spell_titan_dh_fel_rush_damage';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES

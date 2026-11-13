@@ -1053,6 +1053,31 @@ namespace
                 generic.emplace_back(talentInfo, top);
         }
 
+        // A bear tank's own (Survival of the Fittest, Natural Reaction): with Bear Form known, 30% of the rolls go to
+        // one of them while either is still to come.
+        static constexpr char const* BEAR_TALENTS[] = { "Survival of the Fittest", "Natural Reaction" };
+        static constexpr uint32 BEAR_TALENT_PCT = 30;
+        if (std::any_of(knownNames.begin(), knownNames.end(), [](std::string const& known)
+            { return known == "Bear Form" || known == "Dire Bear Form"; }) && urand(1, 100) <= BEAR_TALENT_PCT)
+        {
+            std::vector<std::pair<TalentEntry const*, uint8>> bear;
+            for (auto const* pool : { &candidates, &generic })
+                for (auto const& entry : *pool)
+                {
+                    std::string const name = FirstRankName(entry.first->RankID[0]);
+                    if (std::any_of(std::begin(BEAR_TALENTS), std::end(BEAR_TALENTS),
+                        [&name](char const* bearTalent) { return name == bearTalent; }))
+                        bear.push_back(entry);
+                }
+            if (!bear.empty())
+            {
+                auto [talentInfo, currentRank] = bear[urand(0, uint32(bear.size() - 1))];
+                LOG_DEBUG("module", "Wildcard: {} rolled talent {} (bear tank)", player->GetName(),
+                    FirstRankName(talentInfo->RankID[0]));
+                return LearnTalentRank(player, talentInfo, currentRank, reveal, rollLevel);
+            }
+        }
+
         // About 70% of the rolls improve an ability the Hero knows (one for an ability's own SPECIFIC_WEIGHT times as
         // likely as a scripted talent only for its class), the rest are talents for everyone that suit the role
         // (stats, all damage or healing, defense...); either pool stands in when the other is empty.
@@ -1958,31 +1983,41 @@ namespace Wildcard
         }
     }
 
-    // The Mage's conjured food and water: rolled only for a Ranged Hero who knows another Mage ability.
+    // Utility spells: the Mage's conjured food and water (rolled only for a Ranged Hero), and every class's
+    // teleports and portals. A Mage's are rolled only for a Hero who knows another Mage ability that is not one of
+    // them; all are a tenth as likely as any other ability (Weight).
     constexpr char const* CONJURES[] = { "Conjure Food", "Conjure Water", "Conjure Refreshment" };
+    constexpr float UTILITY_WEIGHT = 0.1f;
+
+    bool IsUtility(std::string const& name)
+    {
+        return name.rfind("Teleport", 0) == 0 || name.rfind("Portal", 0) == 0
+            || std::any_of(std::begin(CONJURES), std::end(CONJURES),
+                [&name](char const* conjure) { return name == conjure; });
+    }
 
     bool ConjureAllowed(Player* player, Ability const& ability)
     {
         std::string const name = FirstRankName(ability.Ranks.front().SpellId);
-        auto isConjure = [](std::string const& spell)
-        {
-            return std::any_of(std::begin(CONJURES), std::end(CONJURES),
-                [&spell](char const* conjure) { return spell == conjure; });
-        };
-        if (!isConjure(name))
+        if (!IsUtility(name))
             return true;
-        if (GetRole(player) != ROLE_RANGED)
+        bool conjure = std::any_of(std::begin(CONJURES), std::end(CONJURES),
+            [&name](char const* spell) { return name == spell; });
+        if (conjure && GetRole(player) != ROLE_RANGED)
             return false;
+        if (ability.ClassId != CLASS_MAGE)
+            return true;
         for (Ability const& other : Abilities())
             if (other.ClassId == CLASS_MAGE && KnownRank(player, other) >= 0
-                && !isConjure(FirstRankName(other.Ranks.front().SpellId)))
+                && !IsUtility(FirstRankName(other.Ranks.front().SpellId)))
                 return true;
         return false;
     }
 
     // An ability roll (the kit's, a level's, a reroll's), steered so a build takes shape:
     // - those suiting the Hero's role (any when none does), never one blacklisted by a reroll; conjured food and
-    //   water only for a Ranged Hero with another Mage ability (ConjureAllowed);
+    //   water only for a Ranged Hero, a Mage's teleports and portals only with another Mage ability (ConjureAllowed),
+//   and every utility spell a tenth as likely;
     // - one pet family: once the Hero summons a hunter pet, a demon or a ghoul, the other families' summons stay out;
     // - the kit (before LOCK_LEVEL) gets 2 abilities doing the role's work first (Healer: heals; Tank: a threat
     //   ability, then a melee one; no role: damage);
@@ -2025,7 +2060,8 @@ namespace Wildcard
         float total = 0.0f;
         for (Ability const* ability : candidates)
         {
-            weights.push_back(Weight(facts, *ability));
+            weights.push_back(Weight(facts, *ability)
+                * (IsUtility(FirstRankName(ability->Ranks.front().SpellId)) ? UTILITY_WEIGHT : 1.0f));
             total += weights.back();
         }
         float roll = frand(0.0f, total);
