@@ -107,6 +107,8 @@ namespace Wildcard
     // Offered, not known, allowed for the player's race, available at the player's level and its
     // requirements met.
     bool CanLearn(Player const* player, Ability const& ability);
+    // A pet summon of another family than the Hero's (Tame Beast for a demon summoner, and so on): one family.
+    bool PetConflict(Player const* player, Ability const& ability);
     void Learn(Player* player, Ability const& ability, char const* what);
     // Learns a random learnable ability (not a capstone); the ability, or nullptr if none is left.
     Ability const* GrantRandom(Player* player, char const* what);

@@ -264,6 +264,10 @@ namespace
     // dismissed, revived, healed and fed. They are not offered on their own.
     constexpr char const* TAME_BEAST = "Tame Beast";
     constexpr char const* TAME_BEAST_COMPANIONS[] = { "Call Pet", "Dismiss Pet", "Revive Pet", "Mend Pet", "Feed Pet" };
+    // Call Pet and Dismiss Pet come from a quest, not a trainer, so they are not Wildcard abilities (found by name
+    // above): taught with Tame Beast (TamerSpells) and gone with it.
+    constexpr uint32 SPELL_TAME_BEAST = 1515;
+    constexpr uint32 TAMER_SPELLS[] = { 883, 2641 };       // Call Pet, Dismiss Pet
 
     // Group versions of a buff: learned with the buff once the Hero's level reaches them (the rank-ups give them, as a
     // trainer would), never rolled on their own, and gone with it.
@@ -469,6 +473,55 @@ namespace
                 return damages && (checkSpell->SchoolMask & itr->second.School) ? 1 : 0;
         }
         return 0;
+    }
+
+    // The resources a talent gives or raises (1 << power type): energizing (itself or a spell it triggers), more of a
+    // resource or its regeneration. 0: none.
+    uint32 ResourcePowers(SpellInfo const* spellInfo, uint8 depth = 0)
+    {
+        uint32 powers = 0;
+        for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+        {
+            auto power = [&effect]() -> uint32
+            {
+                return effect.MiscValue >= 0 && effect.MiscValue < MAX_POWERS ? 1u << effect.MiscValue : 0u;
+            };
+            switch (effect.Effect)
+            {
+                case SPELL_EFFECT_ENERGIZE:
+                case SPELL_EFFECT_ENERGIZE_PCT:
+                    powers |= power();
+                    break;
+                case SPELL_EFFECT_TRIGGER_SPELL:
+                    if (depth < 1)
+                        if (SpellInfo const* triggered = sSpellMgr->GetSpellInfo(effect.TriggerSpell))
+                            powers |= ResourcePowers(triggered, depth + 1);
+                    break;
+                case SPELL_EFFECT_APPLY_AURA:
+                    switch (effect.ApplyAuraName)
+                    {
+                        case SPELL_AURA_MOD_INCREASE_ENERGY:
+                        case SPELL_AURA_MOD_INCREASE_ENERGY_PERCENT:
+                        case SPELL_AURA_MOD_POWER_REGEN:
+                        case SPELL_AURA_MOD_POWER_REGEN_PERCENT:
+                        case SPELL_AURA_PERIODIC_ENERGIZE:
+                            powers |= power();
+                            break;
+                        case SPELL_AURA_PROC_TRIGGER_SPELL:
+                        case SPELL_AURA_PERIODIC_TRIGGER_SPELL:
+                            if (depth < 1)
+                                if (SpellInfo const* triggered = sSpellMgr->GetSpellInfo(effect.TriggerSpell))
+                                    powers |= ResourcePowers(triggered, depth + 1);
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        return powers;
     }
 
     // A generic talent's role tags, from the stats it raises (0: any role).
@@ -701,10 +754,21 @@ namespace
             what, spellId, name ? name : "?");
     }
 
+    // Call Pet and Dismiss Pet for a Hero with Tame Beast.
+    void TamerSpells(Player* player)
+    {
+        if (!player->HasSpell(SPELL_TAME_BEAST))
+            return;
+        for (uint32 spellId : TAMER_SPELLS)
+            if (!player->HasSpell(spellId))
+                player->learnSpell(spellId);
+    }
+
     // Every ability the Hero knows: every rank its level allows, learned (as a trainer teaches them, each one), from
     // the lowest one missing; nothing pending is left. Run after every level, login and learn.
     void UpgradeRanks(Player* player)
     {
+        TamerSpells(player);
         for (Ability const& ability : Abilities())
         {
             if (KnownRank(player, ability) < 0)
@@ -877,10 +941,16 @@ namespace
         std::vector<SpellInfo const*> knownSpells;
         std::unordered_set<std::string> knownNames;
         uint32 knownClasses = 0;
+        uint32 knownPowers = 0;             // 1 << every power type the known abilities spend (POWER_RUNE: runes)
         for (Ability const& ability : Abilities())
             if (int32 rank = KnownRank(player, ability); rank >= 0)
             {
                 knownSpells.push_back(sSpellMgr->AssertSpellInfo(ability.Ranks[rank].SpellId));
+                SpellInfo const* known = knownSpells.back();
+                if (known->ManaCost || known->ManaCostPercentage || known->ManaCostPerlevel)
+                    knownPowers |= 1 << known->PowerType;
+                if (known->RuneCostID)
+                    knownPowers |= 1 << POWER_RUNE;
                 knownNames.insert(FirstRankName(ability.Ranks.front().SpellId));
                 if (ability.ClassId)
                     knownClasses |= 1 << (ability.ClassId - 1);
@@ -895,6 +965,19 @@ namespace
                 return 0;
 
             std::string const name = FirstRankName(talentInfo->RankID[0]);
+
+            // A weapon's or shield's talent (Two-Handed Weapon Specialization, Mace Specialization, Shield
+            // Specialization...): only while the Hero wields what it asks for; Dual Wield Specialization with a
+            // weapon in each hand.
+            if (spellInfo->EquippedItemClass >= 0 && !player->HasItemFitToSpellRequirements(spellInfo))
+                return 0;
+            if (name.find("Dual Wield") != std::string::npos && !player->GetWeaponForAttack(OFF_ATTACK, true))
+                return 0;
+            // A resource's talent (more Energy, faster Rage, Energy back on a hit...): only for a Hero who spends
+            // that resource.
+            if (uint32 powers = ResourcePowers(spellInfo); powers & ~knownPowers)
+                return 0;
+
             for (TalentFor const& scripted : SCRIPTED_TALENTS)
                 if (name == scripted.Talent)
                 {
@@ -1673,11 +1756,46 @@ namespace Wildcard
         });
     }
 
+    // A pet ability's family by name: 1 a hunter pet (Tame Beast), 2 a demon, 3 an undead minion; 0 none.
+    uint8 PetFamilyByName(std::string const& name)
+    {
+        auto in = [&name](std::span<char const* const> names)
+        {
+            return std::any_of(names.begin(), names.end(), [&name](char const* n) { return name == n; });
+        };
+        return in(HUNTER_PETS) ? 1 : in(DEMONS) ? 2 : in(UNDEAD_MINIONS) ? 3 : 0;
+    }
+
+    // The family of the pets a Hero summons (0: none): a Hero keeps one, so a demon summoner never tames a beast.
+    uint8 KnownPetFamily(Player const* player)
+    {
+        static std::vector<std::pair<Ability const*, uint8>> const summons = []
+        {
+            std::vector<std::pair<Ability const*, uint8>> list;
+            for (Ability const& ability : Abilities())
+                if (uint8 family = PetFamilyByName(FirstRankName(ability.Ranks.front().SpellId)))
+                    list.emplace_back(&ability, family);
+            return list;
+        }();
+        for (auto const& [ability, family] : summons)
+            if (KnownRank(player, *ability) >= 0)
+                return family;
+        return 0;
+    }
+
+    bool PetConflict(Player const* player, Ability const& ability)
+    {
+        uint8 family = PetFamilyByName(FirstRankName(ability.Ranks.front().SpellId));
+        uint8 known = family ? KnownPetFamily(player) : 0;
+        return family && known && family != known;
+    }
+
     bool CanLearn(Player const* player, Ability const& ability)
     {
         return ability.Offered && BestRank(player, ability) >= 0 && KnownRank(player, ability) < 0
             && (!ability.Capstone || player->GetLevel() >= CAPSTONE_LEVEL)
-            && FitsRace(player, ability.Ranks.front().SpellId) && MeetsRequirements(player, ability);
+            && FitsRace(player, ability.Ranks.front().SpellId) && MeetsRequirements(player, ability)
+            && !PetConflict(player, ability);
     }
 
     bool FitsPlayer(Player const* player, Ability const& ability)
@@ -1947,6 +2065,10 @@ namespace Wildcard
         for (uint32 companionId : ability.Companions)
             if (Ability const* companion = FindAbility(companionId))
                 remove(*companion);
+        if (!player->HasSpell(SPELL_TAME_BEAST))
+            for (uint32 spellId : TAMER_SPELLS)
+                if (player->HasSpell(spellId))
+                    player->removeSpell(spellId, SPEC_MASK_ALL, false);
 
         // The pet it summoned goes too: a demon or ghoul from these spells, or a tamed beast once Call Pet is gone
         // (Tame Beast's companion). It stays in the stable.

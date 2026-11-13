@@ -229,6 +229,8 @@ namespace
         }
         if (!Wildcard::IsHero(player) || Wildcard::IsKitLocked(player) || !picks)
             handler.SendSysMessage("You have no ability picks. Use the Titan Tome of Selection first.");
+        else if (ability && Wildcard::PetConflict(player, *ability))
+            handler.SendSysMessage("A Hero keeps one kind of pet: your demons, beast or undead minion rule it out.");
         else if (ability && !Wildcard::MeetsRequirements(player, *ability))
             handler.SendSysMessage("You need its form, stance, stealth, pet or combo point ability first.");
         else if (!ability || !Wildcard::CanLearn(player, *ability))
