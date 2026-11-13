@@ -469,8 +469,10 @@ utility or a tradeoff) take one pick each, from three.
   Presence, Manifestation, Covenant, the panel's labels follow a rune's own `slots` in `Art.lua`). Needs Consecration;
   suggested to every role. Consecration becomes **Sanctified Paragon** (90731): cast it to turn a lasting aura on
   (Consecration's mana and cooldown; no ground left behind), again to turn it off (free). It costs 1% of base mana a
-  second and ends when that cannot be paid. Every second one pulse at 40% of a Consecration tick (the Hero's rank's
-  plus 4% of spell power and attack power), through the Manifestation: Sanctified Condemnation (damage to each enemy
+  second and ends when that cannot be paid. Every second one pulse at 40% of a Consecration tick (as the core makes
+  one: the Hero's rank, Consecration's share of spell power and attack power, every talent and bonus raising it; the
+  heal and the shield add 8% of healing power a tick, the shield their healing done bonuses), through the
+  Manifestation: Sanctified Condemnation (damage to each enemy
   within 8 yards, 90732; 2% more a tick in a row, up to 10%, 90733) or none, Merciful Ground (no damage: the single
   most injured party member healed, 90734) or Shelter of the Paragon (no damage: every 5 sec one party member
   shielded for five ticks, 90737, one shield of the aura's at a time). Presence: Boundless Sanctity (12 yards, 25%

@@ -180,7 +180,7 @@ namespace
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
     constexpr float UPKEEP_PCT = 1.0f;                          // of base mana, a second
     constexpr float PARAGON_RADIUS = 8.0f, BOUNDLESS_RADIUS = 12.0f, BOUNDLESS_OUTPUT = 0.75f;
-    constexpr float CONSECRATION_COEFFICIENT = 0.04f;           // spell power and attack power, a tick
+    constexpr float SUPPORT_COEFFICIENT = 0.08f;                // healing power, a heal's or shield's tick
     constexpr float FOOTSTEPS_RADIUS = 4.0f;                    // the aura's own with Hallowed Footsteps
     constexpr float TRAIL_RADIUS = 4.0f, TRAIL_SPACING = 3.0f;  // a footstep's patch; one at most every 3 yards
     constexpr uint32 TRAIL_MS = 2000;
@@ -634,16 +634,28 @@ namespace
         return best;
     }
 
-    // A tick of the Hero's Consecration before the target's mitigation: their rank's tick and 4% of their spell
-    // power and attack power (as Consecration's). The damage, heal and shield spells add no power of their own
+    // A tick of the Hero's Consecration before the target's mitigation, as the core makes one: their rank's tick
+    // with Consecration's share of spell power and attack power (spell_bonus_data) and every talent, glyph and
+    // bonus that raises Consecration or Holy damage. The damage, heal and shield spells add no power of their own
     // (spell_bonus_data 0): the modifiers scale all of it.
     float ParagonTick(Player* player)
     {
         SpellInfo const* rank = sSpellMgr->GetSpellInfo(ConsecrationRank(player));
-        int32 points = rank ? std::max(1, rank->Effects[EFFECT_0].CalcValue(player)) : 1;
-        float power = float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY))
-            + player->GetTotalAttackPowerValue(BASE_ATTACK);
-        return float(points) + power * CONSECRATION_COEFFICIENT;
+        if (!rank)
+            return 1.0f;
+        int32 points = std::max(1, rank->Effects[EFFECT_0].CalcValue(player));
+        return float(player->SpellDamageBonusDone(player, rank, uint32(points), DOT, EFFECT_0));
+    }
+
+    // Merciful Ground's heal and Shelter of the Paragon's shield: the tick (its talents and power), and the Hero's
+    // healing power on top (SUPPORT_COEFFICIENT a tick). A shield takes their healing done bonuses here (an absorb
+    // gets none from the core); the heal gets them as it lands.
+    float ParagonSupport(Player* player, float output, bool shield)
+    {
+        float healing = float(player->SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_HOLY)) * SUPPORT_COEFFICIENT
+            * PARAGON_SHARE;
+        float done = shield ? player->GetTotalAuraMultiplier(SPELL_AURA_MOD_HEALING_DONE_PERCENT) : 1.0f;
+        return (output + healing) * done;
     }
 
     // Allies of the Hero's within range (themselves first, then their group's, nearest first), alive.
@@ -734,7 +746,7 @@ namespace
             for (Unit* ally : MostInjured(player, radius))
                 if (!ally->IsFullHealth())
                 {
-                    int32 heal = std::max<int32>(1, int32(output * MERCIFUL_SHARE));
+                    int32 heal = std::max<int32>(1, int32(ParagonSupport(player, output, false) * MERCIFUL_SHARE));
                     player->CastCustomSpell(ally, SPELL_MERCIFUL_GROUND, &heal, nullptr, nullptr, true);
                     break;
                 }
@@ -753,7 +765,7 @@ namespace
                     continue;
                 if (Unit* last = state.Sheltered ? ObjectAccessor::GetUnit(*player, state.Sheltered) : nullptr)
                     last->RemoveAurasDueToSpell(SPELL_SHELTER_OF_THE_PARAGON, player->GetGUID());
-                int32 shield = std::max<int32>(1, int32(output * SHELTER_TICKS));
+                int32 shield = std::max<int32>(1, int32(ParagonSupport(player, output, true) * SHELTER_TICKS));
                 player->CastCustomSpell(ally, SPELL_SHELTER_OF_THE_PARAGON, &shield, nullptr, nullptr, true);
                 state.Sheltered = ally->GetGUID();
                 state.LastShelter = now;
