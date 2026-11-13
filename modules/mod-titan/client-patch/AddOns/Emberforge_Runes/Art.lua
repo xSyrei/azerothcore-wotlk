@@ -47,6 +47,12 @@ EmberforgeRunesArt = {
             u = 0.6904,
             v = 0.9844,
         },
+        ChooseCurrent = {
+            w = 446,
+            h = 84,
+            u = 0.6533,
+            v = 0.9844,
+        },
         ChooseEchoPattern = {
             w = 537,
             h = 84,
@@ -71,6 +77,18 @@ EmberforgeRunesArt = {
             u = 0.8105,
             v = 0.9844,
         },
+        ChooseMistflow = {
+            w = 460,
+            h = 84,
+            u = 0.6738,
+            v = 0.9844,
+        },
+        ChooseMistweaversApproach = {
+            w = 707,
+            h = 84,
+            u = 0.5181,
+            v = 0.9844,
+        },
         ChoosePresence = {
             w = 455,
             h = 84,
@@ -83,10 +101,28 @@ EmberforgeRunesArt = {
             u = 0.8994,
             v = 0.9844,
         },
+        ChooseTechnique = {
+            w = 482,
+            h = 84,
+            u = 0.7061,
+            v = 0.9844,
+        },
         ChooseThunderfield = {
             w = 540,
             h = 84,
             u = 0.791,
+            v = 0.9844,
+        },
+        ChooseUndertow = {
+            w = 476,
+            h = 84,
+            u = 0.6973,
+            v = 0.9844,
+        },
+        ChooseWellspring = {
+            w = 496,
+            h = 84,
+            u = 0.7266,
             v = 0.9844,
         },
         DoneEyebrow = {
@@ -125,6 +161,12 @@ EmberforgeRunesArt = {
             u = 0.75,
             v = 0.875,
         },
+        SlotCurrent = {
+            w = 84,
+            h = 28,
+            u = 0.6562,
+            v = 0.875,
+        },
         SlotEchoPattern = {
             w = 128,
             h = 28,
@@ -149,6 +191,18 @@ EmberforgeRunesArt = {
             u = 0.543,
             v = 0.875,
         },
+        SlotMistflow = {
+            w = 93,
+            h = 28,
+            u = 0.7266,
+            v = 0.875,
+        },
+        SlotMistweaversApproach = {
+            w = 217,
+            h = 28,
+            u = 0.8477,
+            v = 0.875,
+        },
         SlotPresence = {
             w = 91,
             h = 28,
@@ -161,10 +215,28 @@ EmberforgeRunesArt = {
             u = 0.6523,
             v = 0.875,
         },
+        SlotTechnique = {
+            w = 102,
+            h = 28,
+            u = 0.7969,
+            v = 0.875,
+        },
         SlotThunderfield = {
             w = 132,
             h = 28,
             u = 0.5156,
+            v = 0.875,
+        },
+        SlotUndertow = {
+            w = 100,
+            h = 28,
+            u = 0.7812,
+            v = 0.875,
+        },
+        SlotWellspring = {
+            w = 111,
+            h = 28,
+            u = 0.8672,
             v = 0.875,
         },
         Title = {
@@ -580,6 +652,101 @@ EmberforgeRunesArt = {
                 "Thunderfield",
                 "Echo Pattern",
                 "Shield Resonance",
+            },
+        },
+        [25] = {
+            rgb = { 0.275, 0.843, 0.824 },
+            hot = { 0.745, 0.945, 0.937 },
+            ink = { 0.925, 0.984, 0.98 },
+            muted = { 0.616, 0.831, 0.847 },
+            hue = { 0.384, 1, 1 },
+            inner = { 0.871, 0.973, 0.969 },
+            built = true,
+            core = "Chain Heal on your Earth Shield wearer makes them a **Wellspring** for " ..
+                    "6 sec. Your next Chain Heal to reach them **jumps once more**, to an " ..
+                    "injured ally, for 30% of the healing they received.",
+            asks = {
+                "How your spring lasts and reaches",
+                "How the additional heal lands",
+                "What follows the heal",
+            },
+            abilities = {
+                "Earth Shield",
+                "Wellspring",
+                "Reach",
+                "Low health",
+                "Two allies",
+                "One ally",
+                "Absorb",
+                "Reach",
+                "Heal over time",
+            },
+            texts = {
+                "When Earth Shield heals its wearer, your Wellspring on them is " ..
+                        "refreshed to 6 sec.",
+                "Your Wellspring lasts 10 sec instead of 6.",
+                "The additional jump reaches 50% farther.",
+                "The additional jump heals for 25% more if its target is below 50% " ..
+                        "health.",
+                "The additional jump heals up to two injured allies, sharing its " ..
+                        "healing equally.",
+                "The additional jump heals one ally for 15% more.",
+                "Each ally it heals gains an absorb of 20% of the healing, for 4 sec.",
+                "The additional jump reaches an ally 5 yards farther.",
+                "Each ally it heals is healed for 20% more over 4 sec.",
+            },
+            slots = {
+                "Wellspring",
+                "Current",
+                "Undertow",
+            },
+        },
+        [26] = {
+            rgb = { 0.353, 0.882, 0.549 },
+            hot = { 0.773, 0.957, 0.843 },
+            ink = { 0.933, 0.988, 0.957 },
+            muted = { 0.647, 0.847, 0.737 },
+            hue = { 0.475, 1, 0.694 },
+            inner = { 0.882, 0.98, 0.918 },
+            built = true,
+            core = "While you channel Soothing Mist, its ticks may send a **Wandering " ..
+                    "Mist** to an injured ally near your target, for 30% of the tick. " ..
+                    "**Enveloping Mist** and **Vivify** on your target keep the channel.",
+            asks = {
+                "How the mist finds allies",
+                "What your other spells add",
+                "How you keep the healing going",
+            },
+            abilities = {
+                "Reach",
+                "Most injured",
+                "Two allies",
+                "Enveloping Mist",
+                "Vivify",
+                "Enveloping Mist",
+                "Switching targets",
+                "Absorb",
+                "Mana",
+            },
+            texts = {
+                "Wandering Mist reaches 30 yards from your Soothing Mist target.",
+                "Wandering Mist goes to the most injured ally in range.",
+                "Wandering Mist heals two injured allies, sharing its healing equally.",
+                "Enveloping Mist on your Soothing Mist target also wraps your last " ..
+                        "Wandering Mist ally, for 15% of it.",
+                "Vivify on your Soothing Mist target also heals your last Wandering " ..
+                        "Mist ally for 20% of it.",
+                "Soothing Mist heals 10% more on a target wearing your Enveloping Mist.",
+                "Once every 12 sec, switching Soothing Mist to another ally leaves a " ..
+                        "lingering mist on the last.",
+                "Once every 8 sec, Wandering Mist shields its ally for 20% of its " ..
+                        "healing, 4 sec.",
+                "After 3 sec of channeling, Soothing Mist's ticks cost 15% less mana.",
+            },
+            slots = {
+                "Mistflow",
+                "Technique",
+                "Mistweaver's Approach",
             },
         },
     },

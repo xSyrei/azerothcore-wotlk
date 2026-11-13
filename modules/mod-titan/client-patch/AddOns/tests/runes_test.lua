@@ -120,10 +120,17 @@ frame:Hide()
 
 -- The catalog and the art: the doc's 21 runes, the Sanctified Paragon and the Stormbound Conduit; Fel
 -- Commandment's build view in the mockup's words.
-check(#EmberforgeRunesCatalog == 24 and EmberforgeRunesCatalog[22].name == "Rune of the Sanctified Paragon"
+check(#EmberforgeRunesCatalog == 26 and EmberforgeRunesCatalog[22].name == "Rune of the Sanctified Paragon"
     and EmberforgeRunesCatalog[23].name == "Rune of the Stormbound Conduit"
-    and EmberforgeRunesCatalog[24].name == "Rune of Echoing Thunder",
-    "the catalog holds the doc's 21 runes, then the Paragon, the Stormbound Conduit and Echoing Thunder")
+    and EmberforgeRunesCatalog[24].name == "Rune of Echoing Thunder"
+    and EmberforgeRunesCatalog[25].name == "Rune of the Wellspring"
+    and EmberforgeRunesCatalog[26].name == "Rune of the Wandering Mist",
+    "the catalog holds the doc's 21 runes, then the Paragon, the Conduit, Echoing Thunder, the Wellspring, the Mist")
+for _, id in ipairs({ 25, 26 }) do
+    local entry = EmberforgeRunesArt.runes[id]
+    check(entry.built and #entry.texts == 9 and #EmberforgeRunesCatalog[id].mods == 9
+        and EmberforgeRunesCatalog[id].roles[1] == "HEALER", "a healer's rune with its words: rune " .. id)
+end
 local thunder = EmberforgeRunesArt.runes[24]
 check(thunder.built and thunder.slots[3] == "Shield Resonance" and #thunder.texts == 9
     and EmberforgeRunesCatalog[24].roles[1] == "TANK", "Art.lua has Echoing Thunder's slots and words; a tank's rune")

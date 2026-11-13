@@ -1303,7 +1303,7 @@ end
 local function ShowSlots(active)
     local names = SlotNames(BuildRune())
     for index, slot in ipairs(slots) do
-        SetLabel(slot.small, (("Slot" .. names[index]):gsub(" ", "")))
+        SetLabel(slot.small, (("Slot" .. names[index]):gsub("[^%w]", "")))
         local pick = view.picks[index]
         local rune = RuneById(BuildRune())
         local mod = rune and pick > 0 and rune.mods[(index - 1) * 3 + pick]
@@ -1335,7 +1335,7 @@ local function ShowOptions(slot)
     view.active = slot
     local names = SlotNames(runeId)
     for index, label in ipairs(choose.labels) do
-        SetLabel(label, (("Choose" .. names[index]):gsub(" ", "")))
+        SetLabel(label, (("Choose" .. names[index]):gsub("[^%w]", "")))
         if index == slot then
             label:Show()
         else

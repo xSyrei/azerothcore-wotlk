@@ -517,6 +517,26 @@ utility or a tradeoff) take one pick each, from three.
   block value for 3 sec, once every 6 sec, never stacked, 90776), Deafening Impact (15% slower for 2 sec, 90777; 10%
   more on an enemy under the Hero's Thunder Clap). Spells 90770-90788
   (`patch_runes.py`); scripts `spell_titan_rune_thunder_clap` and `spell_titan_rune_shield_slam` (`titan_runes.sql`).
+- **The Rune of the Wellspring** (rune 25, its own concept doc; slots Wellspring, Current, Undertow), for Healers:
+  needs Chain Heal and Earth Shield. Chain Heal healing the wearer of the Hero's Earth Shield makes them the
+  **Wellspring** (90791, 6 sec, Riptide's swirl; one at a time). A later Chain Heal reaching it (not one that made it
+  that cast; one a cast) jumps once more (90792, its bolt 90795 from the Wellspring) to the most injured party or raid
+  member within 12.5 yards of it, for 30% of the healing the Wellspring received, and refreshes it while it wears the
+  shield; the jump never jumps again. Modifiers: Flowing Waters (Earth Shield's heal refreshes it to 6 sec), Lasting
+  Spring (10 sec), Widening Waters (50% farther); Deep Current (25% more below half health), Split Tributary (two
+  allies, shared), Concentrated Current (15% more); Tidal Shelter (an absorb of 20% of the effective healing, 4 sec,
+  90793), Long Reach (5 yards farther), Renewing Current (20% more over 4 sec, 90794).
+- **The Rune of the Wandering Mist** (rune 26, its own concept doc; slots Mistflow, Technique, Mistweaver's
+  Approach), for Healers: needs Soothing Mist (Comforting Veil and Peaceful Focus also Enveloping Mist, Vivacious
+  Flow Vivify). Soothing Mist's ticks have a 25% chance, once every 2 sec, to send a **Wandering Mist** (90811) to an
+  injured ally within 20 yards of the channel target for 30% of the tick's effective healing; Enveloping Mist and
+  Vivify on the channel target are cast at once (their mana as ever) and keep the channel. Modifiers: Flowing
+  Currents (30 yards), Gathering Mists (the most injured), Drifting Mist (two allies, shared); Comforting Veil (a
+  lesser Enveloping Mist, 15%, on the most recent Wandering Mist ally within 20 yards, 90812), Vivacious Flow (Vivify:
+  20% to that ally), Peaceful Focus (Soothing Mist 10% more on a target with the Hero's Enveloping Mist); Rolling Mist
+  (switching straight to another ally: a tick over 4 sec on the last, once every 12 sec, 90813), Jade Shelter (an
+  absorb of 20% of a Wandering Mist's healing, 4 sec, once every 8 sec, 90814), Effortless Breathing (from 3 sec in,
+  15% of a tick's mana back). Scripts in `titan_runes.sql`; spells 90790-90828 (`patch_runes.py`).
 
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and

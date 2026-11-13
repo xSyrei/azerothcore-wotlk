@@ -1,4 +1,4 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-90788: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-90828: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
@@ -94,3 +94,31 @@ DELETE FROM `spell_bonus_data` WHERE `entry` IN (90774, 90776);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90774, 0, 0, 0, 0, 'Echoing Thunder - Thunder Echo'),
 (90776, 0, 0, 0, 0, 'Echoing Thunder - Sheltering Reverberation');
+
+-- The Rune of the Wellspring: Chain Heal (every rank) makes and reaches the Wellspring; Earth Shield's heal refreshes
+-- it (Flowing Waters).
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_chain_heal',
+    'spell_titan_rune_earth_shield_heal');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(-1064, 'spell_titan_rune_chain_heal'),
+(379, 'spell_titan_rune_earth_shield_heal');
+
+-- The Rune of the Wandering Mist: Soothing Mist's cast and ticks; Enveloping Mist and Vivify woven into the channel.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_soothing_mist_cast',
+    'spell_titan_rune_soothing_mist', 'spell_titan_rune_mist_technique');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90300, 'spell_titan_rune_soothing_mist_cast'),
+(90300, 'spell_titan_rune_soothing_mist'),
+(90301, 'spell_titan_rune_mist_technique'),
+(90303, 'spell_titan_rune_mist_technique');
+
+-- Their heals, heals over time and absorbs are the scripts' (shares of healing done, power already in it).
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90792, 90793, 90794, 90811, 90812, 90813, 90814);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90792, 0, 0, 0, 0, 'Wellspring - additional jump'),
+(90793, 0, 0, 0, 0, 'Wellspring - Tidal Shelter'),
+(90794, 0, 0, 0, 0, 'Wellspring - Renewing Current'),
+(90811, 0, 0, 0, 0, 'Wandering Mist'),
+(90812, 0, 0, 0, 0, 'Wandering Mist - lesser Enveloping Mist'),
+(90813, 0, 0, 0, 0, 'Wandering Mist - Rolling Mist'),
+(90814, 0, 0, 0, 0, 'Wandering Mist - Jade Shelter');

@@ -62,6 +62,24 @@ The Rune of Echoing Thunder (the "Rune of Echoing Thunder" concept doc), 90770 o
 - 90776 Sheltering Reverberation: an absorb (its amount set by the script), 3 sec;
 - 90777 Deafening Impact: movement speed 15% slower, 2 sec;
 - 90780-90788 its nine modifiers' markers (Thunderfield, Echo Pattern, Shield Resonance: 3 each), hidden.
+
+The Rune of the Wellspring (the "Rune of the Wellspring" concept doc), 90790 on:
+
+- 90790 the rune; 90791 Wellspring: on the Earth Shield wearer Chain Heal made one, 6 sec (10 with Lasting Spring),
+  Riptide's swirl of water about them;
+- 90792 Wellspring: the additional jump's heal (its amount set by the script), Chain Heal's bolt and its look;
+- 90793 Tidal Shelter: an absorb, 4 sec; 90794 Renewing Current: healing every sec for 4 sec;
+- 90795 the jump's bolt from the Wellspring to the ally (cast by the Wellspring, no effect);
+- 90800-90808 its nine modifiers' markers (Wellspring, Current, Undertow: 3 each), hidden.
+
+The Rune of the Wandering Mist (the "Rune of the Wandering Mist" concept doc), 90810 on:
+
+- 90810 the rune; 90811 Wandering Mist: a ribbon of jade mist's heal (its amount set by the script), Vivify's
+  splash look;
+- 90812 lesser Enveloping Mist (Comforting Veil): healing every sec for 6 sec, Enveloping Mist's look;
+- 90813 lingering mist (Rolling Mist): healing every sec for 4 sec;
+- 90814 Jade Shelter: an absorb, 4 sec;
+- 90820-90828 its nine modifiers' markers (Mistflow, Technique, Mistweaver's Approach: 3 each), hidden.
 """
 
 import patch_player
@@ -86,6 +104,10 @@ RUNE_ICON = 'Ability_Rune_FelCommandment'          # icons/spells/: the rune's o
 PARAGON_ICON = 'Ability_Rune_SanctifiedParagon'    # icons/spells/: the Sanctified Paragon's own
 STORM_ICON = 'Ability_Rune_StormboundConduit'     # icons/spells/: the Stormbound Conduit's own
 THUNDER_ICON = 'Ability_Rune_EchoingThunder'       # icons/spells/: Echoing Thunder's own
+WELLSPRING_ICON = 'Ability_Rune_Wellspring'        # icons/spells/: the Wellspring's own
+MIST_ICON = 'Ability_Rune_WanderingMist'           # icons/spells/: the Wandering Mist's own
+CHAIN_HEAL, VISUAL_RIPTIDE = 1064, 12994
+AURA_PERIODIC_HEAL, DURATION_4S = 8, 35
 SHOCKWAVE, THUNDER_CLAP = 46968, 6343
 VISUAL_SHOCKWAVE, VISUAL_THUNDER_BURST, VISUAL_THUNDER_HIT = 10703, 7449, 145
 SPELL_ATTR2_CANT_CRIT = 0x20000000
@@ -514,6 +536,100 @@ SPELLS += [buff(90780 + slot * 3 + choice, name, THUNDER_ICON, '', DURATION_INFI
                 {1: aura(AURA_DUMMY, 1, 0)}, hidden=True)
            for slot, names in enumerate(THUNDER_MODIFIERS) for choice, name in enumerate(names)]
 
+# The Rune of the Wellspring (90790 on) and of the Wandering Mist (90810 on; runes.cpp's sections of theirs).
+HEAL_SET = {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
+            'RangeIndex': RANGE_VISION, 'SchoolMask': NATURE, 'AttributesEx2': SPELL_ATTR2_CANT_CRIT,
+            'AttributesEx3': SPELL_ATTR3_IGNORE_CASTER_MODIFIERS, 'ProcFlags': 0}
+
+
+def periodic_heal(spell_id, name, icon, text, duration, visual=None):
+    """A heal over time the script casts (its tick set by the script), every sec."""
+    spell = {'id': spell_id, 'copy': LESSER_HEAL, 'name': name, 'icon': icon, 'description': text,
+             'tooltip': 'Healing every 1 sec.', 'set': {**HEAL_SET, 'DurationIndex': duration},
+             'effects': {1: {'Effect': 6, 'Aura': AURA_PERIODIC_HEAL, 'Amplitude': 1000, 'BasePoints': 0,
+                             'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_UNIT_TARGET_ALLY,
+                             'TargetB': 0}},
+             'clear': [2, 3]}
+    if visual:
+        spell['visual'] = visual
+    return spell
+
+
+def absorb(spell_id, name, icon, duration):
+    return {'id': spell_id, 'copy': POWER_WORD_SHIELD, 'name': name, 'icon': icon, 'description': 'Absorbs damage.',
+            'tooltip': 'Absorbs $s1 damage.', 'set': {**HEAL_SET, 'DurationIndex': duration},
+            'effects': {1: {'Effect': 6, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': 0, 'DieSides': 1,
+                            'RealPointsPerLevel': 0.0, 'MiscValue': ALL_SCHOOLS, 'TargetA': TARGET_UNIT_TARGET_ALLY,
+                            'TargetB': 0}},
+            'clear': [2, 3]}
+
+
+SPELLS += [
+    buff(90790, 'Rune of the Wellspring', WELLSPRING_ICON,
+         'When Chain Heal heals the wearer of your Earth Shield, they become a Wellspring for 6 sec. Your next Chain '
+         'Heal to reach them jumps once more, to an injured ally, for 30% of the healing they received.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {
+        **buff(90791, 'Wellspring', 'Spell_Nature_HealingWaveGreater',
+               'A Wellspring: your Chain Heal reaching it flows on to another ally.', DURATION_10S,
+               {1: aura(AURA_DUMMY, 1, 0)}),
+        'set': {**SHOWN, 'DurationIndex': DURATION_10S, 'SpellVisual': VISUAL_RIPTIDE},
+    },
+    {
+        'id': 90792, 'copy': LESSER_HEAL, 'name': 'Wellspring', 'icon': 'Spell_Nature_HealingWaveGreater',
+        'description': 'A current of the Wellspring.', 'tooltip': '',
+        'set': {**HEAL_SET, 'SpellVisual': 3659},
+        'effects': {1: {'Effect': EFFECT_HEAL, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
+                        'TargetA': TARGET_UNIT_TARGET_ALLY, 'TargetB': 0}},
+        'clear': [2, 3],
+    },
+    absorb(90793, 'Tidal Shelter', 'Spell_Frost_SummonWaterElemental', DURATION_4S),
+    periodic_heal(90794, 'Renewing Current', 'Spell_Nature_Rejuvenation', 'Healing over time.', DURATION_4S),
+    {
+        'id': 90795, 'copy': CHAIN_HEAL, 'name': 'Wellspring', 'icon': 'Spell_Nature_HealingWaveGreater',
+        'description': '', 'tooltip': '',
+        'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0,
+                'SpellFamilyFlags2': 0, 'RangeIndex': RANGE_VISION, 'Speed': 0.0, 'ProcFlags': 0,
+                'Attributes': SPELL_ATTR0_ALLOW_CAST_WHILE_DEAD},
+        'effects': {1: {'Effect': EFFECT_DUMMY, 'Aura': 0, 'BasePoints': 0, 'DieSides': 1,
+                        'RealPointsPerLevel': 0.0, 'ChainTarget': 0, 'TargetA': TARGET_UNIT_TARGET_ANY,
+                        'TargetB': 0}},
+        'clear': [2, 3],
+    },
+    buff(90810, 'Rune of the Wandering Mist', MIST_ICON,
+         'While you channel Soothing Mist, its healing ticks have a 25% chance to send a Wandering Mist to another '
+         'injured ally within 20 yards of your channel target, healing for 30% of the tick, once every 2 sec. '
+         'Enveloping Mist and Vivify on your Soothing Mist target are cast at once, without breaking the channel.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {
+        'id': 90811, 'copy': LESSER_HEAL, 'name': 'Wandering Mist', 'icon': 'Ability_Monk_SoothingMists',
+        'description': 'A ribbon of jade mist.', 'tooltip': '', 'visual': 'VivifySplash',
+        'set': {**HEAL_SET},
+        'effects': {1: {'Effect': EFFECT_HEAL, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
+                        'TargetA': TARGET_UNIT_TARGET_ALLY, 'TargetB': 0}},
+        'clear': [2, 3],
+    },
+    periodic_heal(90812, 'Enveloping Mist', 'Spell_Monk_EnvelopingMist', 'A lesser Enveloping Mist.', DURATION_6S,
+                  'EnvelopingMist'),
+    periodic_heal(90813, 'Rolling Mist', 'Ability_Monk_SoothingMists', 'A lingering mist.', DURATION_4S),
+    absorb(90814, 'Jade Shelter', 'Ability_Monk_SoothingMists', DURATION_4S),
+]
+WELLSPRING_MODIFIERS = [
+    ('Flowing Waters', 'Lasting Spring', 'Widening Waters'),
+    ('Deep Current', 'Split Tributary', 'Concentrated Current'),
+    ('Tidal Shelter', 'Long Reach', 'Renewing Current'),
+]
+MIST_MODIFIERS = [
+    ('Flowing Currents', 'Gathering Mists', 'Drifting Mist'),
+    ('Comforting Veil', 'Vivacious Flow', 'Peaceful Focus'),
+    ('Rolling Mist', 'Jade Shelter', 'Effortless Breathing'),
+]
+SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
+                hidden=True)
+           for first, icon, modifiers in ((90800, WELLSPRING_ICON, WELLSPRING_MODIFIERS),
+                                          (90820, MIST_ICON, MIST_MODIFIERS))
+           for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
+
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_WORLD = 3, 4, 5, 14
 VISUALS = {
     'SanctifiedParagon': {'copy': 32, 'id': 16759, 'clear': ('precast', 'cast', 'impact'), 'kits': {
@@ -531,7 +647,10 @@ VISUALS = {
         'state': (15713, {KIT_BASE: 'ThunderfieldMarch', 'sound': None, 'procs': False})}},
 }
 
-ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, THUNDER_ICON, 'Spell_Nature_ThunderClap', 'Ability_Warrior_ShieldWall',
+ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, THUNDER_ICON, WELLSPRING_ICON, MIST_ICON,
+         'Spell_Nature_HealingWaveGreater', 'Spell_Frost_SummonWaterElemental', 'Spell_Nature_Rejuvenation',
+         'Ability_Monk_SoothingMists', 'Spell_Monk_EnvelopingMist', 'Spell_Nature_ThunderClap',
+         'Ability_Warrior_ShieldWall',
          'Spell_Nature_LightningOverload', 'Spell_Nature_ChainLightning',
          'Spell_Nature_LightningShield', 'Spell_Holy_InnerFire', 'Spell_Holy_RighteousFury', 'Spell_Holy_HealingAura',
          'Spell_Holy_DevotionAura', 'Spell_Holy_SealOfWrath', 'Spell_Holy_PowerWordShield', 'Spell_Holy_HolyGuidance',

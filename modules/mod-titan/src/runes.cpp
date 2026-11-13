@@ -20,6 +20,7 @@
 #include "wildcard.h"
 #include "CellImpl.h"
 #include "Chat.h"
+#include "Containers.h"
 #include "DatabaseEnv.h"
 #include "DynamicObject.h"
 #include "GameTime.h"
@@ -51,8 +52,10 @@
 // pick each, a 22nd, the Rune of the Sanctified Paragon (its own concept doc; slots Presence, Manifestation,
 // Covenant), a 23rd, the Rune of the Stormbound Conduit (its own doc; slots Conductivity, Arc Pattern, Lightning
 // Shield), and a 24th, the Rune of Echoing Thunder (its own doc; slots Thunderfield, Echo Pattern, Shield
-// Resonance). Built so far: Fel Commandment, the Sanctified Paragon, the Stormbound Conduit and Echoing Thunder;
-// the panel lists the others as coming.
+// Resonance), a 25th, the Rune of the Wellspring (slots Wellspring, Current, Undertow) and a 26th, the Rune of the
+// Wandering Mist (slots Mistflow, Technique, Mistweaver's Approach), each its own doc. Built so far: Fel
+// Commandment, the Sanctified Paragon, the Stormbound Conduit, Echoing Thunder, the Wellspring and the Wandering
+// Mist; the panel lists the others as coming.
 //
 // - Unlocked at level 10: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
@@ -61,8 +64,9 @@
 // - One rune per specialization (titan_runes, db-characters), chosen once: only a prestige clears it. Modifiers
 //   change freely out of combat.
 // - The rune works through auras: its own while it is the active spec's (90700 Fel Commandment, 90730 the
-//   Sanctified Paragon, 90750 the Stormbound Conduit, 90770 Echoing Thunder), and one marker per picked modifier
-//   (90710 / 90740 / 90760 / 90780 + slot * 3 + choice); scripts look for them.
+//   Sanctified Paragon, 90750 the Stormbound Conduit, 90770 Echoing Thunder, 90790 the Wellspring, 90810 the
+//   Wandering Mist), and one marker per picked modifier (90710 / 90740 / 90760 / 90780 / 90800 / 90820 + slot * 3 +
+//   choice); scripts look for them.
 //
 // Protocol (fields by ','; the client sends STATE, PICK,<rune>[,1], MOD,<slot 1-3>,<choice 1-3>; PICK's 1: warned
 // of the abilities the rune needs and lacks, the Hero binds it anyway):
@@ -83,6 +87,8 @@ namespace
     constexpr uint8 RUNE_SANCTIFIED_PARAGON = 22;   // its own doc
     constexpr uint8 RUNE_STORMBOUND_CONDUIT = 23;   // its own doc
     constexpr uint8 RUNE_ECHOING_THUNDER = 24;      // its own doc
+    constexpr uint8 RUNE_WELLSPRING = 25;           // its own doc
+    constexpr uint8 RUNE_WANDERING_MIST = 26;       // its own doc
 
     enum Spells : uint32
     {
@@ -128,7 +134,27 @@ namespace
         SPELL_DEAFENING_IMPACT          = 90777,
         SPELL_THUNDER_MODIFIER_FIRST    = 90780,    // + slot * 3 + choice
 
+        SPELL_RUNE_WELLSPRING           = 90790,
+        SPELL_WELLSPRING                = 90791,    // on the Earth Shield wearer
+        SPELL_WELLSPRING_HEAL           = 90792,    // the additional jump
+        SPELL_TIDAL_SHELTER             = 90793,
+        SPELL_RENEWING_CURRENT          = 90794,
+        SPELL_WELLSPRING_JUMP           = 90795,    // the jump's bolt, its look
+        SPELL_WELLSPRING_MODIFIER_FIRST = 90800,    // + slot * 3 + choice
+        SPELL_RUNE_WANDERING_MIST       = 90810,
+        SPELL_WANDERING_MIST            = 90811,
+        SPELL_LESSER_ENVELOPING_MIST    = 90812,
+        SPELL_ROLLING_MIST              = 90813,
+        SPELL_JADE_SHELTER              = 90814,
+        SPELL_MIST_MODIFIER_FIRST       = 90820,    // + slot * 3 + choice
+
         SPELL_CONSECRATION          = 26573,        // first rank
+        SPELL_CHAIN_HEAL            = 1064,         // first ranks
+        SPELL_EARTH_SHIELD          = 974,
+        SPELL_EARTH_SHIELD_HEAL     = 379,
+        SPELL_SOOTHING_MIST         = 90300,        // the Monk's (patch_monk.py)
+        SPELL_VIVIFY                = 90301,
+        SPELL_ENVELOPING_MIST       = 90303,
         SPELL_THUNDER_CLAP          = 6343,         // first ranks
         SPELL_SHIELD_SLAM           = 23922,
         SPELL_LIGHTNING_BOLT        = 403,          // first ranks
@@ -213,6 +239,43 @@ namespace
     constexpr float SHELTERING_SHARE = 0.05f;                           // of block value
     constexpr uint32 SHELTERING_INTERVAL_MS = 6000;
     constexpr float DEAFENING_ECHO = 1.1f;                              // on an enemy under the Hero's Thunder Clap
+
+    // The Wellspring's modifiers: slot (0 Wellspring, 1 Current, 2 Undertow) x 3 + choice.
+    enum WellspringModifier : uint8
+    {
+        MOD_FLOWING_WATERS, MOD_LASTING_SPRING, MOD_WIDENING_WATERS,
+        MOD_DEEP_CURRENT, MOD_SPLIT_TRIBUTARY, MOD_CONCENTRATED_CURRENT,
+        MOD_TIDAL_SHELTER, MOD_LONG_REACH, MOD_RENEWING_CURRENT,
+    };
+
+    // The Wellspring's tuning (the draft's initial values; the jump's range is Chain Heal's own).
+    constexpr int32 WELLSPRING_MS = 6000, LASTING_SPRING_MS = 10000;
+    constexpr float WELLSPRING_SHARE = 0.3f;                    // of the healing the Wellspring received
+    constexpr float CHAIN_HEAL_JUMP = 12.5f, WIDENING_REACH = 1.5f, LONG_REACH = 5.0f;
+    constexpr float DEEP_CURRENT = 1.25f, DEEP_CURRENT_BELOW_PCT = 50.0f, CONCENTRATED_CURRENT = 1.15f;
+    constexpr std::size_t SPLIT_ALLIES = 2;
+    constexpr float UNDERTOW_SHARE = 0.2f;                      // of the jump's effective healing
+    constexpr int32 UNDERTOW_TICKS = 4;
+
+    // The Wandering Mist's modifiers: slot (0 Mistflow, 1 Technique, 2 Mistweaver's Approach) x 3 + choice.
+    enum MistModifier : uint8
+    {
+        MOD_FLOWING_CURRENTS, MOD_GATHERING_MISTS, MOD_DRIFTING_MIST,
+        MOD_COMFORTING_VEIL, MOD_VIVACIOUS_FLOW, MOD_PEACEFUL_FOCUS,
+        MOD_ROLLING_MIST, MOD_JADE_SHELTER, MOD_EFFORTLESS_BREATHING,
+    };
+
+    // The Wandering Mist's tuning (the draft's initial values).
+    constexpr uint32 WANDER_CHANCE = 25, WANDER_INTERVAL_MS = 2000;
+    constexpr float WANDER_SHARE = 0.3f, WANDER_RANGE = 20.0f, FLOWING_RANGE = 30.0f;
+    constexpr float VEIL_SHARE = 0.15f, VIVACIOUS_SHARE = 0.2f, SECONDARY_RANGE = 20.0f, PEACEFUL_PCT = 10.0f;
+    constexpr uint32 ROLLING_INTERVAL_MS = 12000, ROLLING_SWITCH_MS = 1500;
+    constexpr int32 ROLLING_TICKS = 4;
+    constexpr uint32 JADE_SHELTER_INTERVAL_MS = 8000;
+    constexpr float JADE_SHELTER_SHARE = 0.2f;
+    constexpr uint32 EFFORTLESS_AFTER_MS = 3000;
+    constexpr float EFFORTLESS_SHARE = 0.15f;
+    constexpr int32 SOOTHING_MIST_TICKS = 8;
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
@@ -299,6 +362,12 @@ namespace
             { RUNE_ECHOING_THUNDER, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_THUNDER_CLAP }, { SPELL_SHIELD_SLAM } }, SPELL_RUNE_ECHOING_THUNDER,
               SPELL_THUNDER_MODIFIER_FIRST },
+            // Healers: Chain Heal through the Earth Shield wearer; Soothing Mist's channel.
+            { RUNE_WELLSPRING, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
+              { { SPELL_CHAIN_HEAL }, { SPELL_EARTH_SHIELD } }, SPELL_RUNE_WELLSPRING,
+              SPELL_WELLSPRING_MODIFIER_FIRST },
+            { RUNE_WANDERING_MIST, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
+              { { SPELL_SOOTHING_MIST } }, SPELL_RUNE_WANDERING_MIST, SPELL_MIST_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -318,6 +387,10 @@ namespace
         uint8 modifier = slot * CHOICES + choice;
         if (rune == RUNE_STORMBOUND_CONDUIT && modifier == MOD_CLOSED_CIRCUIT)
             return { { SPELL_CHAIN_LIGHTNING } };
+        if (rune == RUNE_WANDERING_MIST && (modifier == MOD_COMFORTING_VEIL || modifier == MOD_PEACEFUL_FOCUS))
+            return { { SPELL_ENVELOPING_MIST } };
+        if (rune == RUNE_WANDERING_MIST && modifier == MOD_VIVACIOUS_FLOW)
+            return { { SPELL_VIVIFY } };
         if (rune != RUNE_FEL_COMMANDMENT)
             return {};
         if (modifier == MOD_DREADFIRE_DISCIPLINE)
@@ -364,6 +437,18 @@ namespace
         bool ThunderFollows = false;                // March of the Storm
         uint32 LastEcho = 0;
         uint32 LastSheltering = 0;
+
+        // The Wellspring.
+        ObjectGuid Wellspring;
+
+        // The Wandering Mist.
+        ObjectGuid MistTarget;                      // Soothing Mist's channel target
+        uint32 MistSince = 0;                       // the channel's start, game ms
+        uint32 MistLastTick = 0;
+        int32 MistTickAmount = 0;
+        uint32 LastWander = 0, LastRolling = 0, LastJadeShelter = 0;
+        ObjectGuid LastWanderTarget;                // the most recently healed Wandering Mist target
+        ObjectGuid LesserTarget;                    // the lesser Enveloping Mist's (Comforting Veil)
     };
 
     std::unordered_map<ObjectGuid::LowType, State> states;
@@ -1154,6 +1239,169 @@ namespace
         }
     }
 
+    // ---- Healing runes: the Wellspring, the Wandering Mist ------------------------------------------------------
+
+    bool HasWellMarker(Unit* unit, uint8 modifier)
+    {
+        return unit && unit->HasAura(SPELL_WELLSPRING_MODIFIER_FIRST + modifier);
+    }
+
+    bool HasMistMarker(Unit* unit, uint8 modifier)
+    {
+        return unit && unit->HasAura(SPELL_MIST_MODIFIER_FIRST + modifier);
+    }
+
+    // The Hero and their party or raid members alive and injured within range of center, but except, most injured
+    // first.
+    std::vector<Unit*> InjuredAllies(Player* player, WorldObject* center, float range, Unit* except)
+    {
+        std::vector<Unit*> allies;
+        auto consider = [&](Player* ally)
+        {
+            if (ally != except && ally->IsAlive() && !ally->IsFullHealth() && ally->IsInMap(player)
+                && ally->IsWithinDistInMap(center, range))
+                allies.push_back(ally);
+        };
+        consider(player);
+        if (Group* group = player->GetGroup())
+            for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
+                if (Player* member = ref->GetSource(); member && member != player)
+                    consider(member);
+        std::sort(allies.begin(), allies.end(), [](Unit* a, Unit* b) { return a->GetHealthPct() < b->GetHealthPct(); });
+        return allies;
+    }
+
+    // A heal's effective share on the ally now (no overhealing).
+    int32 Effective(Unit* ally, int32 amount)
+    {
+        return std::max<int32>(0, std::min<int32>(amount, int32(ally->GetMaxHealth() - ally->GetHealth())));
+    }
+
+    // An absorb or heal over time of the Hero's on the ally, refreshed rather than stacked.
+    void Refresh(Player* player, Unit* ally, uint32 spellId, int32 amount)
+    {
+        if (amount <= 0)
+            return;
+        ally->RemoveAurasDueToSpell(spellId, player->GetGUID());
+        player->CastCustomSpell(ally, spellId, &amount, nullptr, nullptr, true);
+    }
+
+    bool HasEarthShield(Player* player, Unit* unit)
+    {
+        for (uint32 id = SPELL_EARTH_SHIELD; id; id = sSpellMgr->GetNextSpellInChain(id))
+            if (unit->HasAura(id, player->GetGUID()))
+                return true;
+        return false;
+    }
+
+    bool IsWellspring(Player* player, Unit* unit)
+    {
+        return StateOf(player).Wellspring == unit->GetGUID() && unit->HasAura(SPELL_WELLSPRING, player->GetGUID());
+    }
+
+    // The Wellspring on the unit (one at a time: the last one's goes), 6 sec (10 with Lasting Spring), or refreshed.
+    void MakeWellspring(Player* player, Unit* unit)
+    {
+        State& state = StateOf(player);
+        if (state.Wellspring && state.Wellspring != unit->GetGUID())
+            if (Unit* last = ObjectAccessor::GetUnit(*player, state.Wellspring))
+                last->RemoveAurasDueToSpell(SPELL_WELLSPRING, player->GetGUID());
+        state.Wellspring = unit->GetGUID();
+        int32 ms = HasWellMarker(player, MOD_LASTING_SPRING) ? LASTING_SPRING_MS : WELLSPRING_MS;
+        Aura* aura = unit->GetAura(SPELL_WELLSPRING, player->GetGUID());
+        if (!aura)
+            aura = player->AddAura(SPELL_WELLSPRING, unit);
+        if (aura)
+        {
+            aura->SetMaxDuration(ms);
+            aura->SetDuration(ms);
+        }
+    }
+
+    // The Wellspring's additional jump: 30% of the healing it received to the most injured ally within Chain Heal's
+    // jump range of it (50% farther with Widening Waters, 5 yards more with Long Reach): Split Tributary shares it
+    // between two, Concentrated Current gives one 15% more, Deep Current 25% more to one below half health. Tidal
+    // Shelter and Renewing Current follow up for 20% of each one's effective healing. It never jumps again.
+    void WellspringJump(Player* player, Unit* holder, int32 received)
+    {
+        float range = CHAIN_HEAL_JUMP * (HasWellMarker(player, MOD_WIDENING_WATERS) ? WIDENING_REACH : 1.0f)
+            + (HasWellMarker(player, MOD_LONG_REACH) ? LONG_REACH : 0.0f);
+        std::vector<Unit*> allies = InjuredAllies(player, holder, range, holder);
+        if (allies.empty() || received <= 0)
+            return;
+        bool split = HasWellMarker(player, MOD_SPLIT_TRIBUTARY);
+        if (allies.size() > (split ? SPLIT_ALLIES : 1))
+            allies.resize(split ? SPLIT_ALLIES : 1);
+        float base = received * WELLSPRING_SHARE / float(allies.size());
+        if (HasWellMarker(player, MOD_CONCENTRATED_CURRENT))
+            base *= CONCENTRATED_CURRENT;
+        for (Unit* ally : allies)
+        {
+            float amount = base;
+            if (HasWellMarker(player, MOD_DEEP_CURRENT) && ally->GetHealthPct() < DEEP_CURRENT_BELOW_PCT)
+                amount *= DEEP_CURRENT;
+            int32 heal = std::max<int32>(1, int32(amount));
+            int32 effective = Effective(ally, heal);
+            holder->CastSpell(ally, SPELL_WELLSPRING_JUMP, true);
+            player->CastCustomSpell(ally, SPELL_WELLSPRING_HEAL, &heal, nullptr, nullptr, true);
+            if (HasWellMarker(player, MOD_TIDAL_SHELTER))
+                Refresh(player, ally, SPELL_TIDAL_SHELTER, int32(effective * UNDERTOW_SHARE));
+            if (HasWellMarker(player, MOD_RENEWING_CURRENT))
+                Refresh(player, ally, SPELL_RENEWING_CURRENT, int32(effective * UNDERTOW_SHARE / UNDERTOW_TICKS));
+        }
+    }
+
+    // Soothing Mist's channel target, while the Hero channels it.
+    Unit* MistChannelTarget(Player* player)
+    {
+        Spell* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
+        if (!channel || channel->m_spellInfo->Id != SPELL_SOOTHING_MIST)
+            return nullptr;
+        return ObjectAccessor::GetUnit(*player, player->GetGuidValue(UNIT_FIELD_CHANNEL_OBJECT));
+    }
+
+    // The most recently healed Wandering Mist target, still alive, injured and within 20 yards of the channel target.
+    Unit* SecondaryAlly(Player* player, Unit* channelTarget)
+    {
+        State& state = StateOf(player);
+        Unit* ally = state.LastWanderTarget ? ObjectAccessor::GetUnit(*player, state.LastWanderTarget) : nullptr;
+        if (!ally || ally == channelTarget || !ally->IsAlive() || ally->IsFullHealth()
+            || !ally->IsWithinDistInMap(channelTarget, SECONDARY_RANGE))
+            return nullptr;
+        return ally;
+    }
+
+    // A Wandering Mist: to an injured ally within 20 yards of the channel target (30 with Flowing Currents), at random
+    // (the most injured with Gathering Mists), or shared between two (Drifting Mist). Jade Shelter: once every 8 sec
+    // an absorb of 20% of the healing delivered. It never makes another.
+    void Wander(Player* player, Unit* channelTarget, float heal)
+    {
+        State& state = StateOf(player);
+        float range = HasMistMarker(player, MOD_FLOWING_CURRENTS) ? FLOWING_RANGE : WANDER_RANGE;
+        std::vector<Unit*> allies = InjuredAllies(player, channelTarget, range, channelTarget);
+        if (allies.empty() || heal < 1.0f)
+            return;
+        bool drifting = HasMistMarker(player, MOD_DRIFTING_MIST);
+        if (!HasMistMarker(player, MOD_GATHERING_MISTS))
+            Acore::Containers::RandomShuffle(allies);
+        if (allies.size() > (drifting ? 2u : 1u))
+            allies.resize(drifting ? 2 : 1);
+        uint32 now = GameTime::GetGameTimeMS().count();
+        for (Unit* ally : allies)
+        {
+            int32 amount = std::max<int32>(1, int32(heal / float(allies.size())));
+            int32 effective = Effective(ally, amount);
+            player->CastCustomSpell(ally, SPELL_WANDERING_MIST, &amount, nullptr, nullptr, true);
+            state.LastWanderTarget = ally->GetGUID();
+            if (HasMistMarker(player, MOD_JADE_SHELTER) && now - state.LastJadeShelter >= JADE_SHELTER_INTERVAL_MS
+                && effective > 0)
+            {
+                state.LastJadeShelter = now;
+                Refresh(player, ally, SPELL_JADE_SHELTER, int32(effective * JADE_SHELTER_SHARE));
+            }
+        }
+    }
+
     // ---- The rune's auras ------------------------------------------------------------------------------------
 
     std::vector<uint32> RuneAuras()
@@ -1669,6 +1917,198 @@ class spell_titan_rune_shield_slam : public SpellScript
     }
 };
 
+// Chain Heal (every rank) with the Wellspring: healing the Earth Shield wearer makes them the Wellspring; reaching
+// the Wellspring (not one this cast made) sends its additional jump and refreshes it while they wear the shield.
+// One jump a cast.
+class spell_titan_rune_chain_heal : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_chain_heal);
+
+    void Flow()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_WELLSPRING))
+            return;
+        bool shielded = HasEarthShield(player, target);
+        if (IsWellspring(player, target) && !_jumped && target->GetGUID() != _made)
+        {
+            _jumped = true;
+            WellspringJump(player, target, GetHitHeal());
+            if (shielded)
+                MakeWellspring(player, target);
+            return;
+        }
+        if (shielded && !IsWellspring(player, target))
+        {
+            MakeWellspring(player, target);
+            _made = target->GetGUID();
+        }
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_chain_heal::Flow);
+    }
+
+    bool _jumped = false;
+    ObjectGuid _made;
+};
+
+// Earth Shield's heal (every rank) with Flowing Waters: healing its wearer refreshes their Wellspring to 6 sec.
+class spell_titan_rune_earth_shield_heal : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_earth_shield_heal);
+
+    void Flow()
+    {
+        Unit* origin = GetOriginalCaster() ? GetOriginalCaster() : GetCaster();
+        Player* player = origin ? origin->ToPlayer() : nullptr;
+        Unit* target = GetHitUnit();
+        if (!player || !target || !HasWellMarker(player, MOD_FLOWING_WATERS) || !IsWellspring(player, target))
+            return;
+        Aura* aura = target->GetAura(SPELL_WELLSPRING, player->GetGUID());
+        if (aura && aura->GetDuration() < WELLSPRING_MS)
+        {
+            aura->SetMaxDuration(std::max(aura->GetMaxDuration(), WELLSPRING_MS));
+            aura->SetDuration(WELLSPRING_MS);
+        }
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_earth_shield_heal::Flow);
+    }
+};
+
+// Soothing Mist's cast with the Wandering Mist: the channel's start (Effortless Breathing), and Rolling Mist when it
+// moves straight from one ally to another: a lingering mist on the last, a tick over 4 sec, once every 12 sec.
+class spell_titan_rune_soothing_mist_cast : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_soothing_mist_cast);
+
+    void Start()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetExplTargetUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_WANDERING_MIST))
+            return;
+        State& state = StateOf(player);
+        uint32 now = GameTime::GetGameTimeMS().count();
+        if (HasMistMarker(player, MOD_ROLLING_MIST) && state.MistTarget && state.MistTarget != target->GetGUID()
+            && now - state.MistLastTick <= ROLLING_SWITCH_MS && now - state.LastRolling >= ROLLING_INTERVAL_MS)
+            if (Unit* last = ObjectAccessor::GetUnit(*player, state.MistTarget); last && last->IsAlive())
+            {
+                state.LastRolling = now;
+                Refresh(player, last, SPELL_ROLLING_MIST, std::max<int32>(1, state.MistTickAmount / ROLLING_TICKS));
+            }
+        state.MistTarget = target->GetGUID();
+        state.MistSince = now;
+    }
+
+    void Register() override
+    {
+        OnCast += SpellCastFn(spell_titan_rune_soothing_mist_cast::Start);
+    }
+};
+
+// Soothing Mist's ticks with the Wandering Mist: a 25% chance, once every 2 sec, of a Wandering Mist for 30% of the
+// tick's effective healing; with Effortless Breathing, from 3 sec into the channel, 15% of a tick's mana back.
+class spell_titan_rune_soothing_mist : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_soothing_mist);
+
+    void Tick(AuraEffect const* aurEff)
+    {
+        Unit* caster = GetCaster();
+        Player* player = caster ? caster->ToPlayer() : nullptr;
+        Unit* target = GetTarget();
+        if (!player || !player->HasAura(SPELL_RUNE_WANDERING_MIST))
+            return;
+        State& state = StateOf(player);
+        uint32 now = GameTime::GetGameTimeMS().count();
+        state.MistTarget = target->GetGUID();
+        state.MistLastTick = now;
+        state.MistTickAmount = aurEff->GetAmount();
+
+        if (HasMistMarker(player, MOD_EFFORTLESS_BREATHING) && now - state.MistSince >= EFFORTLESS_AFTER_MS)
+        {
+            int32 cost = int32(GetSpellInfo()->ManaCostPercentage * player->GetCreateMana() / 100);
+            if (int32 back = int32(cost * EFFORTLESS_SHARE / SOOTHING_MIST_TICKS); back > 0)
+                player->ModifyPower(POWER_MANA, back);
+        }
+
+        int32 effective = Effective(target, aurEff->GetAmount());
+        if (effective > 0 && now - state.LastWander >= WANDER_INTERVAL_MS && roll_chance_i(WANDER_CHANCE))
+        {
+            state.LastWander = now;
+            Wander(player, target, effective * WANDER_SHARE);
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_rune_soothing_mist::Tick, EFFECT_0,
+            SPELL_AURA_PERIODIC_HEAL);
+    }
+};
+
+// Enveloping Mist and Vivify with the Wandering Mist: on the Soothing Mist target, cast at once (their mana and
+// cooldowns as ever) without breaking the channel; then Comforting Veil (Enveloping Mist: a lesser one on the most
+// recent Wandering Mist target, 15% of it) or Vivacious Flow (Vivify: 20% of its healing to that ally).
+class spell_titan_rune_mist_technique : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_mist_technique);
+
+    SpellCastResult Weave()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetExplTargetUnit();
+        if (!player || !target || GetSpell()->IsTriggered() || !player->HasAura(SPELL_RUNE_WANDERING_MIST)
+            || MistChannelTarget(player) != target)
+            return SPELL_CAST_OK;
+        player->CastSpell(target, GetSpellInfo()->Id, TriggerCastFlags(TRIGGERED_IGNORE_CAST_IN_PROGRESS
+            | TRIGGERED_CAST_DIRECTLY));
+        return SPELL_FAILED_DONT_REPORT;
+    }
+
+    void Share()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_WANDERING_MIST) || MistChannelTarget(player) != target)
+            return;
+        Unit* ally = SecondaryAlly(player, target);
+        if (!ally)
+            return;
+        State& state = StateOf(player);
+        uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        if (first == SPELL_ENVELOPING_MIST && HasMistMarker(player, MOD_COMFORTING_VEIL))
+        {
+            AuraEffect const* mist = target->GetAuraEffect(SPELL_ENVELOPING_MIST, EFFECT_0, player->GetGUID());
+            if (!mist)
+                return;
+            if (state.LesserTarget && state.LesserTarget != ally->GetGUID())
+                if (Unit* last = ObjectAccessor::GetUnit(*player, state.LesserTarget))
+                    last->RemoveAurasDueToSpell(SPELL_LESSER_ENVELOPING_MIST, player->GetGUID());
+            state.LesserTarget = ally->GetGUID();
+            Refresh(player, ally, SPELL_LESSER_ENVELOPING_MIST,
+                std::max<int32>(1, int32(mist->GetAmount() * VEIL_SHARE)));
+        }
+        else if (first == SPELL_VIVIFY && HasMistMarker(player, MOD_VIVACIOUS_FLOW))
+        {
+            int32 heal = std::max<int32>(1, int32(GetHitHeal() * VIVACIOUS_SHARE));
+            player->CastCustomSpell(ally, SPELL_WANDERING_MIST, &heal, nullptr, nullptr, true);
+        }
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_mist_technique::Weave);
+        AfterHit += SpellHitFn(spell_titan_rune_mist_technique::Share);
+    }
+};
+
 // The rune's Felguard (910120): 8 sec at the Hero's side, on the Hero's target (the next when it dies). Felstorm as
 // it arrives (a 2 sec spin: 4 ticks), then Cleave and melee. 50% of the Hero's power (spell power or attack power,
 // the higher) in its weapon, 30% of their health; no threat.
@@ -1842,7 +2282,17 @@ public:
 class titan_runes_unit : public UnitScript
 {
 public:
-    titan_runes_unit() : UnitScript("titan_runes_unit", true, { UNITHOOK_ON_DAMAGE, UNITHOOK_ON_AURA_APPLY }) { }
+    titan_runes_unit() : UnitScript("titan_runes_unit", true, { UNITHOOK_ON_DAMAGE, UNITHOOK_ON_AURA_APPLY,
+        UNITHOOK_MODIFY_HEAL_RECEIVED }) { }
+
+    // Peaceful Focus (the Wandering Mist): Soothing Mist 10% stronger on a target wearing the Hero's Enveloping Mist.
+    void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
+    {
+        if (target && healer && spellInfo && spellInfo->Id == SPELL_SOOTHING_MIST && healer->IsPlayer()
+            && HasMistMarker(healer, MOD_PEACEFUL_FOCUS) && healer->HasAura(SPELL_RUNE_WANDERING_MIST)
+            && target->HasAura(SPELL_ENVELOPING_MIST, healer->GetGUID()))
+            heal = uint32(heal * (1.0f + PEACEFUL_PCT / 100.0f));
+    }
 
     void OnDamage(Unit* attacker, Unit* victim, uint32& damage) override
     {
@@ -1908,6 +2358,11 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_lightning_shield_damage);
     RegisterSpellScript(spell_titan_rune_thunder_clap);
     RegisterSpellScript(spell_titan_rune_shield_slam);
+    RegisterSpellScript(spell_titan_rune_chain_heal);
+    RegisterSpellScript(spell_titan_rune_earth_shield_heal);
+    RegisterSpellScript(spell_titan_rune_soothing_mist_cast);
+    RegisterSpellScript(spell_titan_rune_soothing_mist);
+    RegisterSpellScript(spell_titan_rune_mist_technique);
     RegisterCreatureAI(npc_titan_rune_felguard);
     RegisterCreatureAI(npc_titan_rune_fel_imp);
     new titan_runes_player();

@@ -130,6 +130,10 @@ RUNES = [
      'M13 2 5 13h6l-1 9 8-12h-6l1-8ZM3 8l3 2-3 3M21 8l-3 2 3 3'),
     (24, (120, 160, 255), 'Protection · Thunder', 'Thunder Clap leaves a storm; Shield Slam echoes through it.',
      'Thunder Clap and Shield Slam', 'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM13 7l-4 6h4l-2 5'),
+    (25, (70, 215, 210), 'Restoration · Wellspring', 'Your Earth Shield bearer becomes a spring Chain Heal flows '
+     'on from.', 'Chain Heal and Earth Shield', 'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10ZM8 14c2 2 6 2 8 0'),
+    (26, (90, 225, 140), 'Mistweaver · Jade Mist', 'Soothing Mist sends ribbons of jade mist to your injured '
+     'allies.', 'Soothing Mist', 'M4 9c3-3 6-3 8 0s5 3 8 0M4 15c3-3 6-3 8 0s5 3 8 0'),
 ]
 
 # The runes the panel builds (their build view: the medallion, the slots, the options): the mockup's words for them.
@@ -274,6 +278,59 @@ BUILT = {
                   'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM9 12h6',
                   'M4 12c3-6 5-6 8 0s5 6 8 0'],
     },
+    25: {
+        'core': 'Chain Heal on your Earth Shield wearer makes them a **Wellspring** for 6 sec. Your next Chain Heal to '
+                'reach them **jumps once more**, to an injured ally, for 30% of the healing they received.',
+        'slots': ['Wellspring', 'Current', 'Undertow'],
+        'asks': ['How your spring lasts and reaches', 'How the additional heal lands', 'What follows the heal'],
+        'texts': ['When Earth Shield heals its wearer, your Wellspring on them is refreshed to 6 sec.',
+                  'Your Wellspring lasts 10 sec instead of 6.',
+                  'The additional jump reaches 50% farther.',
+                  'The additional jump heals for 25% more if its target is below 50% health.',
+                  'The additional jump heals up to two injured allies, sharing its healing equally.',
+                  'The additional jump heals one ally for 15% more.',
+                  'Each ally it heals gains an absorb of 20% of the healing, for 4 sec.',
+                  'The additional jump reaches an ally 5 yards farther.',
+                  'Each ally it heals is healed for 20% more over 4 sec.'],
+        'abilities': ['Earth Shield', 'Wellspring', 'Reach', 'Low health', 'Two allies', 'One ally', 'Absorb',
+                      'Reach', 'Heal over time'],
+        'icons': ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 7v10M7 12h10',
+                  'M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
+                  'M5 19 19 5M9 5h10v10',
+                  'M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10ZM12 9v6M9 12h6',
+                  'M12 3v8M12 11 5 21M12 11l7 10',
+                  'M12 2v4M12 18v4M2 12h4M18 12h4M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',
+                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
+                  'M4 12h10M10 8l4 4-4 4M18 5v14',
+                  'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z'],
+    },
+    26: {
+        'core': 'While you channel Soothing Mist, its ticks may send a **Wandering Mist** to an injured ally near your '
+                'target, for 30% of the tick. **Enveloping Mist** and **Vivify** on your target keep the channel.',
+        'slots': ['Mistflow', 'Technique', "Mistweaver's Approach"],
+        'asks': ['How the mist finds allies', 'What your other spells add', 'How you keep the healing going'],
+        'texts': ['Wandering Mist reaches 30 yards from your Soothing Mist target.',
+                  'Wandering Mist goes to the most injured ally in range.',
+                  'Wandering Mist heals two injured allies, sharing its healing equally.',
+                  'Enveloping Mist on your Soothing Mist target also wraps your last Wandering Mist ally, for 15% '
+                  'of it.',
+                  'Vivify on your Soothing Mist target also heals your last Wandering Mist ally for 20% of it.',
+                  'Soothing Mist heals 10% more on a target wearing your Enveloping Mist.',
+                  'Once every 12 sec, switching Soothing Mist to another ally leaves a lingering mist on the last.',
+                  'Once every 8 sec, Wandering Mist shields its ally for 20% of its healing, 4 sec.',
+                  'After 3 sec of channeling, Soothing Mist\'s ticks cost 15% less mana.'],
+        'abilities': ['Reach', 'Most injured', 'Two allies', 'Enveloping Mist', 'Vivify', 'Enveloping Mist',
+                      'Switching targets', 'Absorb', 'Mana'],
+        'icons': ['M5 19 19 5M9 5h10v10',
+                  'M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z',
+                  'M12 3v8M12 11 5 21M12 11l7 10',
+                  'M4 9c3-3 6-3 8 0s5 3 8 0M4 15c3-3 6-3 8 0s5 3 8 0',
+                  'M13 2 4 14h7l-1 8 9-12h-7z',
+                  'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+                  'M4 12h10M10 8l4 4-4 4M18 5v14',
+                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
+                  'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z'],
+    },
 }
 
 # Sizes. The card (300 x 440 points) at CARD_SCALE pixels a point fills the top-left of a 512 square; the medallion's
@@ -297,10 +354,12 @@ LABELS = {
                     'height': 18, 'pad': 4, 'scale': 2},
 }
 # Every slot name a built rune uses (the doc's three; the Sanctified Paragon's Presence and Covenant; the Stormbound
-# Conduit's three), by name (its spaces left out of the key: the panel does the same).
+# Conduit's, Echoing Thunder's, the Wellspring's and the Wandering Mist's), by name (the key its letters and digits
+# only: the panel does the same).
 for _name in ['Invocation', 'Manifestation', 'Adaptation', 'Presence', 'Covenant', 'Conductivity', 'Arc Pattern',
-              'Lightning Shield', 'Thunderfield', 'Echo Pattern', 'Shield Resonance']:
-    _key = _name.replace(' ', '')
+              'Lightning Shield', 'Thunderfield', 'Echo Pattern', 'Shield Resonance', 'Wellspring', 'Current',
+              'Undertow', 'Mistflow', 'Technique', "Mistweaver's Approach"]:
+    _key = ''.join(c for c in _name if c.isalnum())
     LABELS[f'Choose{_key}'] = {'text': 'Choose your ' + _name, 'font': '700 28px Cinzel', 'spacing': '3px',
                                 'color': '#ffe2a8', 'glows': [['rgba(255,150,60,0.55)', 20]], 'shadow': '#000',
                                 'shadowY': 2, 'height': 36, 'pad': 24, 'scale': 1.5}
