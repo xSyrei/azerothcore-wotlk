@@ -87,6 +87,8 @@ services:
       # No Deserter from the dungeon finder (leaving a group early costs nothing; battlegrounds keep theirs). Its
       # Random Dungeon Cooldown is gone too (LFGMgr.cpp): the next random can be queued at once.
       AC_DUNGEON_FINDER_CAST_DESERTER: "0"
+      # No resurrection sickness (Emberforge): it starts above the level cap.
+      AC_DEATH_SICKNESS_LEVEL: "100"
       AC_ALLOW_TWO_SIDE_INTERACTION_GROUP: "1"
       AC_ALLOW_TWO_SIDE_INTERACTION_CHAT: "1"
       # The World channel (Emberforge_Resources joins it) talks across factions.
