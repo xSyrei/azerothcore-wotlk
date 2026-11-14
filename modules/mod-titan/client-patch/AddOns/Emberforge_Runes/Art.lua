@@ -125,12 +125,6 @@ EmberforgeRunesArt = {
             u = 0.7559,
             v = 0.9844,
         },
-        ChooseHuntingBehavior = {
-            w = 619,
-            h = 84,
-            u = 0.9072,
-            v = 0.9844,
-        },
         ChooseInvocation = {
             w = 499,
             h = 84,
@@ -225,6 +219,12 @@ EmberforgeRunesArt = {
             w = 482,
             h = 84,
             u = 0.7061,
+            v = 0.9844,
+        },
+        ChooseTheWrath = {
+            w = 481,
+            h = 84,
+            u = 0.7051,
             v = 0.9844,
         },
         ChooseTiming = {
@@ -359,12 +359,6 @@ EmberforgeRunesArt = {
             u = 0.9453,
             v = 0.875,
         },
-        SlotHuntingBehavior = {
-            w = 170,
-            h = 28,
-            u = 0.6641,
-            v = 0.875,
-        },
         SlotInvocation = {
             w = 110,
             h = 28,
@@ -459,6 +453,12 @@ EmberforgeRunesArt = {
             w = 102,
             h = 28,
             u = 0.7969,
+            v = 0.875,
+        },
+        SlotTheWrath = {
+            w = 104,
+            h = 28,
+            u = 0.8125,
             v = 0.875,
         },
         SlotTiming = {
@@ -1020,18 +1020,19 @@ EmberforgeRunesArt = {
             hue = { 0.561, 1, 0.604 },
             inner = { 0.898, 0.976, 0.906 },
             built = true,
-            core = "**Kill Command** unleashes a **Spectral Beast** in your pet's likeness " ..
-                    "on its target for 10 sec. It bites for part of your pet's damage.",
+            core = "**Kill Command** unleashes a **Spectral Beast** in your pet's " ..
+                    "likeness. During **Bestial Wrath**, Kill Command recovers in 5 sec and " ..
+                    "a beast joins the hunt every second.",
             asks = {
-                "How the beast bites",
-                "How the beast hunts",
-                "How the beast says farewell",
+                "How the beasts bite",
+                "How the pack hunts",
+                "How a beast says farewell",
             },
             abilities = {
                 "Alpha",
                 "Ravage",
                 "Bleed",
-                "+4 sec",
+                "Wrath",
                 "Command",
                 "Scent",
                 "Pounce",
@@ -1042,7 +1043,7 @@ EmberforgeRunesArt = {
                 "The beast's bites deal 30% more.",
                 "Bites strike 2 more enemies for half.",
                 "Bites leave a refreshing bleed.",
-                "It stays on its prey 4 sec longer.",
+                "Kill Command in Bestial Wrath: 2 sec longer.",
                 "It turns to whatever you target.",
                 "Its prey dead, it hunts on.",
                 "A last pounce: a bite at 200%.",
@@ -1051,7 +1052,7 @@ EmberforgeRunesArt = {
             },
             slots = {
                 "Spectral Beast",
-                "Hunting Behavior",
+                "The Wrath",
                 "Final Attack",
             },
         },

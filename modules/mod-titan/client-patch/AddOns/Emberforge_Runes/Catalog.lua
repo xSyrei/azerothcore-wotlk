@@ -554,14 +554,15 @@ EmberforgeRunesCatalog = {
       roles = { "DAMAGER" },
       icon = "Ability_Rune_WildHunt",
       keywords = "hunter pet beast spectral wolf companion summon kill command bleed physical",
-      slots = { "Spectral Beast", "Hunting Behavior", "Final Attack" },
+      slots = { "Spectral Beast", "The Wrath", "Final Attack" },
       builtFrom = "Your pet",
-      spentWith = "Kill Command",
-      resource = "A Spectral Beast",
+      spentWith = "Kill Command, Bestial Wrath",
+      resource = "Spectral Beasts, up to 8",
       core = "Kill Command unleashes a Spectral Beast in your pet's likeness on its target for 10 sec, as well as " ..
-          "empowering your pet. The beast bites every 1.5 sec for 60% of your pet's attack, and goes when its prey " ..
-          "dies. One at a time: a new one replaces the last. Needs a living pet and an enemy.",
-      loop = "Kill Command whenever it is ready; the beast hunts beside your pet.",
+          "empowering your pet. Each beast bites every 1.5 sec for 60% of your pet's attack and goes when its prey " ..
+          "dies; up to 8 hunt at once. During Bestial Wrath, Kill Command recovers in 5 sec and a beast joins the " ..
+          "hunt every second for 4 sec. Needs a living pet and an enemy.",
+      loop = "Kill Command whenever it is ready; Bestial Wrath to unleash the whole pack, Kill Command every 5 sec.",
       mods = {
         { name = "Alpha Predator",
           text = "The beast's bites deal 30% more." },
@@ -569,8 +570,8 @@ EmberforgeRunesCatalog = {
           text = "Its bites also strike 2 enemies within 5 yards for half." },
         { name = "Ghostfang",
           text = "Its bites leave a bleed of a quarter of a bite every second for 4 sec, refreshed, never stacked." },
-        { name = "Fixed Prey",
-          text = "The beast stays on its prey 4 sec longer." },
+        { name = "Unending Wrath",
+          text = "Each Kill Command during Bestial Wrath makes it last 2 sec longer, up to 10 sec more." },
         { name = "Hunter's Command",
           text = "The beast turns to whatever enemy you target." },
         { name = "Blood Scent",
@@ -583,8 +584,8 @@ EmberforgeRunesCatalog = {
           text = "As the beast fades, your pet deals 30% more damage for 6 sec." },
       },
       builds = {
-        { name = "The Alpha", mods = { "Alpha Predator", "Fixed Prey", "Final Pounce" },
-          text = "One prey, hunted to the end." },
+        { name = "The Alpha", mods = { "Alpha Predator", "Unending Wrath", "Final Pounce" },
+          text = "A longer wrath, a bigger pack." },
         { name = "The Pack", mods = { "Pack Ravager", "Blood Scent", "Frenzied Farewell" },
           text = "Tear through every enemy near." },
         { name = "The Huntmaster", mods = { "Ghostfang", "Hunter's Command", "Parting Howl" },

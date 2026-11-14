@@ -829,7 +829,8 @@ SPELLS += [
 
     buff(91130, 'Rune of the Wild Hunt', HUNT_ICON,
          'Kill Command unleashes a Spectral Beast in your pet\'s likeness on its target for 10 sec: it bites for '
-         'part of your pet\'s damage. One at a time.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'part of your pet\'s damage. During Bestial Wrath, Kill Command recovers in 5 sec and a beast joins the '
+         'hunt every second.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {**shown(91131, 'Spectral Beast', HUNT_ICON, '', DURATION_INFINITE,
              effects={1: aura(AURA_MOD_THREAT, -100, ALL_SCHOOLS)}),
      'set': {**HIDDEN, 'DurationIndex': DURATION_INFINITE, 'SpellVisual': VISUAL_GHOST}},
@@ -866,7 +867,7 @@ LEGEND_MODIFIERS = [
                          ('Quick Death', 'Patient Killer', 'Open Wound'),
                          ('Death Follows', 'Vanishing Act', 'Marked for Murder')]),
     (91150, HUNT_ICON, [('Alpha Predator', 'Pack Ravager', 'Ghostfang'),
-                        ('Fixed Prey', "Hunter's Command", 'Blood Scent'),
+                        ('Unending Wrath', "Hunter's Command", 'Blood Scent'),
                         ('Final Pounce', 'Frenzied Farewell', 'Parting Howl')]),
 ]
 next(spell for spell in SPELLS if spell['id'] == 90923)['set']['Speed'] = 20.0

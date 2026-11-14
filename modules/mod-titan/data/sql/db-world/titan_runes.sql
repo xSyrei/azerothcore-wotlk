@@ -224,15 +224,16 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91134, 0, 0, 0, 0, 'Wild Hunt - Ghostfang tick');
 
 -- The Spectral Blade: Eviscerate calls the phantom; Sinister Strike, Backstab and Hemorrhage spend Marked for Murder
--- (every rank). The Wild Hunt: Kill Command unleashes the Spectral Beast (910123, the Hero's pet's look).
+-- (every rank). The Wild Hunt: Kill Command and Bestial Wrath unleash Spectral Beasts (910123, the Hero's pet's look).
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_eviscerate',
-    'spell_titan_rune_marked_strike', 'spell_titan_rune_kill_command');
+    'spell_titan_rune_marked_strike', 'spell_titan_rune_kill_command', 'spell_titan_rune_bestial_wrath');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-2098, 'spell_titan_rune_eviscerate'),
 (-1752, 'spell_titan_rune_marked_strike'),
 (-53, 'spell_titan_rune_marked_strike'),
 (-16511, 'spell_titan_rune_marked_strike'),
-(34026, 'spell_titan_rune_kill_command');
+(34026, 'spell_titan_rune_kill_command'),
+(19574, 'spell_titan_rune_bestial_wrath');
 
 -- Their strikes are shares of the Hero's (or their pet's) own hits: no bonuses of their own.
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (90981, 91132, 91136);

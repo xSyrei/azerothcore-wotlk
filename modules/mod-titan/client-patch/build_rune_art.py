@@ -115,8 +115,8 @@ RUNES = [
      'Eviscerate and your combo points',
      'M4 20 15 9M15 9l5-5-1 6-4-1ZM6 14l4 4'),
     (33, (110, 220, 120), 'Hunter · Wild Hunt',
-     'Kill Command unleashes a spectral copy of your pet.',
-     'Kill Command and your pet',
+     'Kill Command and Bestial Wrath unleash spectral copies of your pet.',
+     'Kill Command, Bestial Wrath and your pet',
      'M4 18l3-9 3 3 2-6 2 6 3-3 3 9Z'),
 ]
 
@@ -584,15 +584,15 @@ BUILT = {
         ],
     },
     33: {
-        'core': "**Kill Command** unleashes a **Spectral Beast** in your pet's likeness on its target for 10 sec. It "
-                "bites for part of your pet's damage.",
-        'slots': ['Spectral Beast', 'Hunting Behavior', 'Final Attack'],
-        'asks': ['How the beast bites', 'How the beast hunts', 'How the beast says farewell'],
+        'core': "**Kill Command** unleashes a **Spectral Beast** in your pet's likeness. During **Bestial Wrath**, "
+                'Kill Command recovers in 5 sec and a beast joins the hunt every second.',
+        'slots': ['Spectral Beast', 'The Wrath', 'Final Attack'],
+        'asks': ['How the beasts bite', 'How the pack hunts', 'How a beast says farewell'],
         'texts': [
             "The beast's bites deal 30% more.",
             'Bites strike 2 more enemies for half.',
             'Bites leave a refreshing bleed.',
-            'It stays on its prey 4 sec longer.',
+            'Kill Command in Bestial Wrath: 2 sec longer.',
             'It turns to whatever you target.',
             'Its prey dead, it hunts on.',
             'A last pounce: a bite at 200%.',
@@ -603,7 +603,7 @@ BUILT = {
             'Alpha',
             'Ravage',
             'Bleed',
-            '+4 sec',
+            'Wrath',
             'Command',
             'Scent',
             'Pounce',

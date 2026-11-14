@@ -18,6 +18,7 @@
 #include "Chat.h"
 #include "Player.h"
 #include "ScriptMgr.h"
+#include "Spell.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
 #include "Unit.h"
@@ -472,6 +473,27 @@ public:
     }
 };
 
+// A Hero's buff on their own pet or summon more than 10 levels below the spell (Bestial Wrath, Spell.dbc level 40, on
+// a level-12 pet): the core drops the target and the cast fails with "Target is too low level". A Hero learns any
+// spell at any level, so it lands on their own minions anyway (other players still get the core's rule).
+class titan_hero_low_level_buffs : public AllSpellScript
+{
+public:
+    titan_hero_low_level_buffs() : AllSpellScript("titan_hero_low_level_buffs",
+        { ALLSPELLHOOK_ON_SCALE_AURA_UNIT_ADD }) { }
+
+    void OnScaleAuraUnitAdd(Spell* spell, Unit* target, uint32 /*effectMask*/, bool /*checkIfValid*/,
+        bool /*implicit*/, uint8 auraScaleMask, TargetInfo& targetInfo) override
+    {
+        if (!auraScaleMask || targetInfo.scaleAura || targetInfo.effectMask != auraScaleMask || !target)
+            return;
+        Unit* caster = spell->GetCaster() ? spell->GetCaster()->ToUnit() : nullptr;
+        Player* player = caster ? caster->ToPlayer() : nullptr;
+        if (player && hero_resources::IsHero(player) && target->GetCharmerOrOwnerGUID() == player->GetGUID())
+            targetInfo.scaleAura = true;
+    }
+};
+
 void AddSC_hero_resources()
 {
     new hero_resources();
@@ -480,4 +502,5 @@ void AddSC_hero_resources()
     new hero_runes();
     new titan_dk_low_level();
     new titan_hero_damage_tuning();
+    new titan_hero_low_level_buffs();
 }

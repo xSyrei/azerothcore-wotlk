@@ -234,6 +234,7 @@ namespace
         SPELL_BACKSTAB              = 53,
         SPELL_HEMORRHAGE            = 16511,
         SPELL_KILL_COMMAND          = 34026,
+        SPELL_BESTIAL_WRATH         = 19574,
 
         SPELL_ICY_TOUCH             = 45477,        // first ranks
         SPELL_PLAGUE_STRIKE         = 45462,
@@ -506,12 +507,17 @@ namespace
     enum HuntModifier : uint8
     {
         MOD_ALPHA_PREDATOR, MOD_PACK_RAVAGER, MOD_GHOSTFANG,
-        MOD_FIXED_PREY, MOD_HUNTERS_COMMAND, MOD_BLOOD_SCENT,
+        MOD_UNENDING_WRATH, MOD_HUNTERS_COMMAND, MOD_BLOOD_SCENT,
         MOD_FINAL_POUNCE, MOD_FRENZIED_FAREWELL, MOD_PARTING_HOWL,
     };
 
-    // The Wild Hunt's tuning: the Spectral Beast bites every 1.5 sec for 60% of the Hero's pet's swing, for 10 sec.
-    constexpr uint32 BEAST_MS = 10000, FIXED_PREY_MS = 4000, BITE_MS = 1500, FAREWELL_SPACING_MS = 150;
+    // The Wild Hunt's tuning: a Spectral Beast bites every 1.5 sec for 60% of the Hero's pet's swing, for 10 sec (a
+    // Kill Command's) or 4 sec (Bestial Wrath's: one a second for 10 sec); 8 out at most. In Bestial Wrath, Kill
+    // Command comes back in 5 sec; Unending Wrath: each one there adds 2 sec to it, 10 sec more at most.
+    constexpr uint32 BEAST_MS = 10000, WRATH_BEAST_MS = 4000, WRATH_CALL_MS = 1000, WRATH_KILL_COMMAND_MS = 5000;
+    constexpr int32 UNENDING_MS = 2000, UNENDING_MOST_MS = 10000;
+    constexpr std::size_t MAX_BEASTS = 8;
+    constexpr uint32 BITE_MS = 1500, FAREWELL_SPACING_MS = 150;
     constexpr uint32 FAREWELL_BITES = 4;
     constexpr float BITE_SHARE = 0.6f, ALPHA_PREDATOR = 1.3f, RAVAGER_SHARE = 0.5f, GHOSTFANG_SHARE = 0.25f;
     constexpr float POUNCE = 2.0f, FAREWELL_SHARE = 0.6f, BEAST_RANGE = 40.0f, RAVAGER_RADIUS = 5.0f;
@@ -639,10 +645,10 @@ namespace
             // Melee DPS: Eviscerate's phantom.
             { RUNE_SPECTRAL_BLADE, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_EVISCERATE } }, SPELL_RUNE_SPECTRAL_BLADE, SPELL_BLADE_MODIFIER_FIRST },
-            // DPS: Kill Command (a pet's) unleashes the beast.
+            // DPS: Kill Command or Bestial Wrath (a pet's) unleashes the beasts.
             { RUNE_WILD_HUNT,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_KILL_COMMAND } }, SPELL_RUNE_WILD_HUNT, SPELL_HUNT_MODIFIER_FIRST },
+              { { SPELL_KILL_COMMAND, SPELL_BESTIAL_WRATH } }, SPELL_RUNE_WILD_HUNT, SPELL_HUNT_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -678,6 +684,8 @@ namespace
             return { { SPELL_JUDGEMENT_OF_LIGHT, SPELL_JUDGEMENT_OF_WISDOM, SPELL_JUDGEMENT_OF_JUSTICE } };
         if (rune == RUNE_HOLLOW_CONGREGATION && modifier == MOD_DISSONANCE)
             return { { SPELL_SHADOW_WORD_PAIN } };
+        if (rune == RUNE_WILD_HUNT && modifier == MOD_UNENDING_WRATH)
+            return { { SPELL_KILL_COMMAND }, { SPELL_BESTIAL_WRATH } };
         if (rune == RUNE_SPECTRAL_BLADE && modifier == MOD_MARKED_FOR_MURDER)
             return { { SPELL_SINISTER_STRIKE, SPELL_BACKSTAB, SPELL_HEMORRHAGE } };
         if (rune != RUNE_FEL_COMMANDMENT)
@@ -764,8 +772,11 @@ namespace
         uint32 ScaldMap = 0, ScaldUntil = 0, ScaldTimer = 0;
         float ScaldTick = 0.0f;
 
-        // The Wild Hunt: its one Spectral Beast.
-        ObjectGuid SpectralBeast;
+        // The Wild Hunt: its Spectral Beasts (oldest first), and Bestial Wrath's calling.
+        std::vector<ObjectGuid> SpectralBeasts;
+        uint32 WrathTimer = 0;
+        int32 WrathAdded = 0;                       // Unending Wrath's, this Bestial Wrath
+
     };
 
     std::unordered_map<ObjectGuid::LowType, State> states;
@@ -2608,24 +2619,39 @@ namespace
         return Marked(unit, SPELL_HUNT_MODIFIER_FIRST, modifier);
     }
 
-    Creature* SpectralBeast(Player* player)
+    std::vector<Creature*> LiveBeasts(Player* player)
     {
-        ObjectGuid guid = StateOf(player).SpectralBeast;
-        Creature* beast = guid ? ObjectAccessor::GetCreature(*player, guid) : nullptr;
-        return beast && beast->IsAlive() ? beast : nullptr;
+        State& state = StateOf(player);
+        std::vector<Creature*> live;
+        std::vector<ObjectGuid> kept;
+        for (ObjectGuid guid : state.SpectralBeasts)
+            if (Creature* beast = ObjectAccessor::GetCreature(*player, guid); beast && beast->IsAlive())
+            {
+                live.push_back(beast);
+                kept.push_back(guid);
+            }
+        state.SpectralBeasts = kept;
+        return live;
     }
 
     void DismissBeast(Player* player)
     {
-        if (Creature* beast = SpectralBeast(player))
+        for (Creature* beast : LiveBeasts(player))
             if (TempSummon* summon = beast->ToTempSummon())
                 summon->UnSummon();
-        StateOf(player).SpectralBeast.Clear();
+        StateOf(player).SpectralBeasts.clear();
     }
 
-    // Kill Command: a Spectral Beast on the pet's enemy (else the Hero's target), at its side; one at a time (the
-    // last one simply goes, no farewell). Needs a living pet and an enemy.
-    void Unleash(Player* player)
+    // The Hero's pet in Bestial Wrath (theirs).
+    bool InWrath(Player* player)
+    {
+        Pet* pet = player->GetPet();
+        return pet && pet->IsAlive() && pet->HasAura(SPELL_BESTIAL_WRATH, player->GetGUID());
+    }
+
+    // A Spectral Beast for ms on the pet's enemy (else the Hero's target), at its side; 8 at most (the oldest simply
+    // goes, no farewell). Needs a living pet and an enemy.
+    void Unleash(Player* player, uint32 ms)
     {
         Pet* pet = player->GetPet();
         if (!pet || !pet->IsAlive())
@@ -2635,16 +2661,67 @@ namespace
             target = player->GetSelectedUnit();
         if (!Valid(player, target) || !player->IsWithinDistInMap(target, BEAST_RANGE))
             return;
-        DismissBeast(player);
-        uint32 ms = BEAST_MS + (HasHuntMarker(player, MOD_FIXED_PREY) ? FIXED_PREY_MS : 0);
+        std::vector<Creature*> beasts = LiveBeasts(player);
+        State& state = StateOf(player);
+        if (beasts.size() >= MAX_BEASTS)
+            if (TempSummon* oldest = beasts.front()->ToTempSummon())
+            {
+                oldest->UnSummon();
+                state.SpectralBeasts.erase(state.SpectralBeasts.begin());
+            }
         Position pos = target->GetNearPosition(1.5f, frand(0.0f, 2.0f * float(M_PI)));
         TempSummon* beast = player->GetMap()->SummonCreature(NPC_SPECTRAL_BEAST, pos,
             sSummonPropertiesStore.LookupEntry(SUMMON_PROPERTIES_GUARDIAN), ms, player);
         if (!beast)
             return;
-        StateOf(player).SpectralBeast = beast->GetGUID();
+        state.SpectralBeasts.push_back(beast->GetGUID());
         if (beast->IsAIEnabled)
+        {
             beast->AI()->SetGUID(target->GetGUID(), 0);
+            beast->AI()->SetData(0, ms);
+        }
+    }
+
+    // Kill Command: a beast for 10 sec. In Bestial Wrath it comes back in 5 sec; Unending Wrath adds 2 sec to it.
+    void KillCommand(Player* player)
+    {
+        Unleash(player, BEAST_MS);
+        if (!InWrath(player))
+            return;
+        if (player->GetSpellCooldownDelay(SPELL_KILL_COMMAND) > WRATH_KILL_COMMAND_MS)
+            player->ModifySpellCooldown(SPELL_KILL_COMMAND,
+                int32(WRATH_KILL_COMMAND_MS) - int32(player->GetSpellCooldownDelay(SPELL_KILL_COMMAND)));
+        State& state = StateOf(player);
+        if (HasHuntMarker(player, MOD_UNENDING_WRATH) && state.WrathAdded < UNENDING_MOST_MS)
+            if (Aura* wrath = player->GetPet()->GetAura(SPELL_BESTIAL_WRATH, player->GetGUID()))
+            {
+                state.WrathAdded += UNENDING_MS;
+                wrath->SetMaxDuration(wrath->GetMaxDuration() + UNENDING_MS);
+                wrath->SetDuration(wrath->GetDuration() + UNENDING_MS);
+            }
+    }
+
+    // Bestial Wrath: Kill Command at most 5 sec away; then a beast a second while it lasts (WrathTick).
+    void BestialWrath(Player* player)
+    {
+        State& state = StateOf(player);
+        state.WrathAdded = 0;
+        state.WrathTimer = WRATH_CALL_MS;
+        if (player->GetSpellCooldownDelay(SPELL_KILL_COMMAND) > WRATH_KILL_COMMAND_MS)
+            player->ModifySpellCooldown(SPELL_KILL_COMMAND,
+                int32(WRATH_KILL_COMMAND_MS) - int32(player->GetSpellCooldownDelay(SPELL_KILL_COMMAND)));
+    }
+
+    void WrathTick(Player* player, uint32 diff)
+    {
+        if (!InWrath(player))
+            return;
+        State& state = StateOf(player);
+        state.WrathTimer += diff;
+        if (state.WrathTimer < WRATH_CALL_MS)
+            return;
+        state.WrathTimer = 0;
+        Unleash(player, WRATH_BEAST_MS);
     }
 
     // ---- The rune's auras ------------------------------------------------------------------------------------
@@ -3885,6 +3962,8 @@ public:
             DawnTick(player, diff);
         if (player->HasAura(SPELL_RUNE_SHATTERED_SUN))
             SunTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_WILD_HUNT))
+            WrathTick(player, diff);
         if (!player->HasAura(SPELL_RUNE_FEL_COMMANDMENT))
             return;
         State& state = StateOf(player);
@@ -4006,7 +4085,25 @@ class spell_titan_rune_marked_strike : public SpellScript
     }
 };
 
-// Kill Command with the Wild Hunt: the Spectral Beast.
+// Bestial Wrath with the Wild Hunt: Kill Command at most 5 sec away, and a beast a second while it lasts.
+class spell_titan_rune_bestial_wrath : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_bestial_wrath);
+
+    void Hunt()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (player && player->HasAura(SPELL_RUNE_WILD_HUNT))
+            BestialWrath(player);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_rune_bestial_wrath::Hunt);
+    }
+};
+
+// Kill Command with the Wild Hunt: a Spectral Beast.
 class spell_titan_rune_kill_command : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_kill_command);
@@ -4015,7 +4112,7 @@ class spell_titan_rune_kill_command : public SpellScript
     {
         Player* player = GetCaster()->ToPlayer();
         if (player && player->HasAura(SPELL_RUNE_WILD_HUNT))
-            Unleash(player);
+            KillCommand(player);
     }
 
     void Register() override
@@ -4024,9 +4121,10 @@ class spell_titan_rune_kill_command : public SpellScript
     }
 };
 
-// The Wild Hunt's Spectral Beast (910123): the Hero's pet's look, ghostly, no threat; for 10 sec (14 with Fixed
-// Prey) it chases its prey and bites every 1.5 sec for 60% of the pet's swing (Alpha Predator 30% more; Pack
-// Ravager: 2 more enemies within 5 yards at half; Ghostfang: a refreshing bleed of a quarter of a bite a second).
+// The Wild Hunt's Spectral Beast (910123): the Hero's pet's look, ghostly, no threat; for 10 sec (Kill Command's)
+// or 4 (Bestial Wrath's) it chases its prey and bites every 1.5 sec for 60% of the pet's swing (Alpha Predator 30%
+// more; Pack Ravager: 2 more enemies within 5 yards at half; Ghostfang: a refreshing bleed of a quarter of a bite a
+// second).
 // Its prey dead, it goes (Blood Scent: on to the Hero's target, else the nearest enemy); Hunter's Command: it turns
 // to the Hero's target. Its natural end: Final Pounce (a bite at 200%), Frenzied Farewell (4 quick bites at 60%)
 // or Parting Howl (the Hero's pet 30% stronger for 6 sec).
@@ -4054,7 +4152,11 @@ struct npc_titan_rune_spectral_beast : public ScriptedAI
             Hunt();
             bite.Repeat(Milliseconds(BITE_MS));
         });
-        uint32 ms = BEAST_MS + (HasHuntMarker(owner, MOD_FIXED_PREY) ? FIXED_PREY_MS : 0);
+    }
+
+    // Its lifetime (Unleash): the farewell just before it ends.
+    void SetData(uint32 /*id*/, uint32 ms) override
+    {
         scheduler.Schedule(Milliseconds(ms - FAREWELL_BITES * FAREWELL_SPACING_MS - 200), [this](TaskContext)
         {
             Farewell();
@@ -4209,6 +4311,7 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_eviscerate);
     RegisterSpellScript(spell_titan_rune_marked_strike);
     RegisterSpellScript(spell_titan_rune_kill_command);
+    RegisterSpellScript(spell_titan_rune_bestial_wrath);
     RegisterCreatureAI(npc_titan_rune_spectral_beast);
     new titan_runes_player();
     new titan_runes_unit();

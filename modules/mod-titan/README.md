@@ -547,13 +547,17 @@ utility or a tradeoff) take one pick each, from three.
   (a refreshing bleed instead, 20% more over 4 sec, 90983); Death Follows (the nearest enemy within 10 yards if the
   victim died), Vanishing Act (30% speed, 3 sec, 90985), Marked for Murder (next Sinister Strike, Backstab or
   Hemorrhage on it 30% more, 90986).
-- **The Rune of the Wild Hunt** (rune 33; DPS with a pet; Kill Command). Kill Command keeps its effect and unleashes a
-  **Spectral Beast** (910123: the pet's look, Ghost Visual, no threat) on the pet's target (else the Hero's) for 10
-  sec; it bites every 1.5 sec for 60% of the pet's swing (Spectral Bite 91132) and leaves when its prey dies. One at a
-  time. Alpha Predator (30% more), Pack Ravager (2 more within 5 yards at half), Ghostfang (a refreshing bleed, 91133);
-  Fixed Prey (4 sec longer), Hunter's Command (turns to the Hero's target), Blood Scent (hunts on after a kill); and
-  on its natural end Final Pounce (a bite at 200%), Frenzied Farewell (4 bites at 60%) or Parting Howl (the pet 30%
-  stronger for 6 sec, 91135).
+- **The Rune of the Wild Hunt** (rune 33; DPS with a pet; Kill Command or Bestial Wrath). Kill Command keeps its
+  effect and unleashes a **Spectral Beast** (910123: the pet's look, Ghost Visual, no threat) on the pet's target
+  (else the Hero's) for 10 sec; each bites every 1.5 sec for 60% of the pet's swing (Spectral Bite 91132) and leaves
+  when its prey dies; 8 out at most (the oldest goes). During **Bestial Wrath** (on the pet), Kill Command recovers in
+  5 sec and a 4 sec beast joins every second. Alpha Predator (30% more), Pack Ravager (2 more within 5 yards at half),
+  Ghostfang (a refreshing bleed, 91133); Unending Wrath (each Kill Command in Bestial Wrath adds 2 sec to it, 10 at
+  most), Hunter's Command (turns to the Hero's target), Blood Scent (hunts on after a kill); and on a beast's natural
+  end Final Pounce (a bite at 200%), Frenzied Farewell (4 bites at 60%) or Parting Howl (the pet 30% stronger for 6
+  sec, 91135).
+- A Hero's buff on their own pet or summon lands whatever its level (`hero_resources.cpp`): the core drops a positive
+  aura's target more than 10 levels below the spell ("Target is too low level": Bestial Wrath, level 40).
 - Scripts in `titan_runes.sql`; spells 90750-91158 (`patch_runes.py`); their looks from the curated VFX library
   (`client-patch/spells/RUNE_VFX`).
 
