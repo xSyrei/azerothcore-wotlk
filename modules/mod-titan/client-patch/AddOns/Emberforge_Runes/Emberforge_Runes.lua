@@ -2521,3 +2521,6 @@ EmberforgeRunes_Debug = { cards = cards, hits = hits, options = options, slots =
     previews = previews, previewBar = previewBar,
     browseAsk = browseAsk, pager = pager, choose = choose, done = done, buildHead = buildHead, empty = empty,
     closer = closer, Step = Step, medal = medal }
+
+-- Loaded to the end (Loader.lua's /runes stands aside).
+EmberforgeRunes_Loaded = true

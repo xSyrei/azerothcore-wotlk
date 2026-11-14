@@ -130,6 +130,17 @@ for index = 1, 12 do
     _G["ActionButton" .. index .. "Icon"] = button:CreateTexture(nil, "BORDER")
 end
 
+-- The loader first: until the rest loads, /runes says why the panel is missing and asks for the state.
+local chat = {}
+DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) chat[#chat + 1] = text end }
+local handler = function() end
+function geterrorhandler() return handler end
+function seterrorhandler(fn) handler = fn end
+dofile(DIR .. "Loader.lua")
+handler("Interface\\AddOns\\Emberforge_Runes\\Emberforge_Runes.lua:12: attempt to index nil")
+SlashCmdList["EMBERFORGERUNES"]()
+check(chat[1] and chat[1]:find("did not load") and chat[2] and chat[2]:find("Emberforge_Runes.lua:12", 1, true)
+    and sent[#sent][2] == "STATE", "before the panel loads, /runes reports its load error and asks for the state")
 dofile(DIR .. "Catalog.lua")
 dofile(DIR .. "Art.lua")
 dofile(DIR .. "Emberforge_Runes.lua")
