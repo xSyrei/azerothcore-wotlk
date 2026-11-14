@@ -155,19 +155,26 @@ local function run(seconds)
 end
 frame:Hide()
 
--- The catalog and the art: the doc's 21 runes, the Sanctified Paragon and the Stormbound Conduit; Fel
--- Commandment's build view in the mockup's words.
-check(#EmberforgeRunesCatalog == 31 and EmberforgeRunesCatalog[22].name == "Rune of the Sanctified Paragon"
-    and EmberforgeRunesCatalog[23].name == "Rune of the Stormbound Conduit"
-    and EmberforgeRunesCatalog[24].name == "Rune of Echoing Thunder"
-    and EmberforgeRunesCatalog[25].name == "Rune of the Wellspring"
-    and EmberforgeRunesCatalog[26].name == "Rune of the Wandering Mist",
-    "the catalog holds the doc's 21 runes, then the Paragon, the Conduit, Echoing Thunder, the Wellspring, the Mist")
+-- The catalog and the art: only the runes the server builds (the first draft's placeholders are gone).
+local function ById(id)
+    for _, rune in ipairs(EmberforgeRunesCatalog) do
+        if rune.id == id then
+            return rune
+        end
+    end
+end
+check(#EmberforgeRunesCatalog == 11 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
+    and ById(22).name == "Rune of the Sanctified Paragon" and ById(23).name == "Rune of the Stormbound Conduit"
+    and ById(24).name == "Rune of Echoing Thunder" and ById(25).name == "Rune of the Wellspring"
+    and ById(26).name == "Rune of the Wandering Mist", "the catalog holds only the runes the server builds")
+for _, rune in ipairs(EmberforgeRunesCatalog) do
+    check(EmberforgeRunesArt.runes[rune.id] and EmberforgeRunesArt.runes[rune.id].built, "built: " .. rune.name)
+end
 -- The five after them: each built, with its three slots, nine options and three builds.
 for id, name in pairs({ [27] = "Rune of the Threefold Grave", [28] = "Rune of the Unbroken Onslaught",
     [29] = "Rune of the Dawnbound Crusader", [30] = "Rune of the Hollow Congregation",
     [31] = "Rune of the Shattered Sun" }) do
-    local entry, rune = EmberforgeRunesArt.runes[id], EmberforgeRunesCatalog[id]
+    local entry, rune = EmberforgeRunesArt.runes[id], ById(id)
     check(rune.name == name and entry.built and #entry.slots == 3 and #entry.texts == 9 and #rune.mods == 9
         and #rune.builds == 3, "built with its words: " .. name)
     for _, build in ipairs(rune.builds) do
@@ -182,15 +189,14 @@ for id, name in pairs({ [27] = "Rune of the Threefold Grave", [28] = "Rune of th
 end
 for _, id in ipairs({ 25, 26 }) do
     local entry = EmberforgeRunesArt.runes[id]
-    check(entry.built and #entry.texts == 9 and #EmberforgeRunesCatalog[id].mods == 9
-        and EmberforgeRunesCatalog[id].roles[1] == "HEALER", "a healer's rune with its words: rune " .. id)
+    check(entry.built and #entry.texts == 9 and #ById(id).mods == 9
+        and ById(id).roles[1] == "HEALER", "a healer's rune with its words: rune " .. id)
 end
 local thunder = EmberforgeRunesArt.runes[24]
 check(thunder.built and thunder.slots[3] == "Resonance" and #thunder.texts == 9
-    and EmberforgeRunesCatalog[24].roles[1] == "TANK", "Art.lua has Echoing Thunder's slots and words; a tank's rune")
+    and ById(24).roles[1] == "TANK", "Art.lua has Echoing Thunder's slots and words; a tank's rune")
 local storm = EmberforgeRunesArt.runes[23]
-check(storm.built and storm.slots[2] == "Lightning Shield" and #storm.texts == 9
-    and #EmberforgeRunesCatalog[23].mods == 9,
+check(storm.built and storm.slots[2] == "Lightning Shield" and #storm.texts == 9 and #ById(23).mods == 9,
     "Art.lua has the Stormbound Conduit's slots (Arcs, Lightning Shield, Surge) and its words")
 local paragon = EmberforgeRunesArt.runes[22]
 check(paragon.built and paragon.slots[1] == "Presence" and paragon.slots[3] == "Covenant" and #paragon.texts == 9,
@@ -220,34 +226,73 @@ frame:Hide()
 server("S,10,10,1,0,0,0,0,21,1")
 check(not frame:IsShown(), "it opens by itself only once a session")
 
--- Browse all: a page of three; the unbuilt ones shake and say they are coming.
+-- Browse all: every rune in one list, searched and filtered.
 EmberforgeRunes_Open()
 debug.browseAsk.pill:Click()
-run(1.6)
-check(view.mode == "browse" and debug.cards[1].rune.id == 1 and debug.cards[3].rune.id == 3,
-    "Browse all shows the first page")
-check(debug.cards[1].status.text == "Coming soon", "an unbuilt rune says Coming soon")
-debug.hits[1]:Click()
-check(debug.cards[1].shake and debug.note.text.text:find("coming soon"), "choosing it shakes the card and says why")
-for _ = 1, 6 do
-    debug.pager.next:Click()
+run(0.7)
+local rows, browse = debug.rows, debug.browse
+local function listed()
+    local ids = {}
+    for _, rune in ipairs(browse.list) do
+        ids[#ids + 1] = rune.id
+    end
+    return table.concat(ids, ",")
 end
-run(1.6)
-check(view.page == 7 and debug.cards[3].rune.id == 21, "the last page ends with Fel Commandment")
-check(debug.cards[3].roles[1].shown and not debug.cards[3].roles[2].shown
-    and debug.cards[1].roles[1].shown, "each card shows its roles (Fel Commandment: damage only)")
+check(view.mode == "browse" and view.phase == "browse" and debug.browser.target == 1 and #browse.list == 11
+    and rows[1].shown and rows[5].shown and debug.browser.count.text == "11 runes",
+    "Browse all lists every rune, five rows at a time")
+check(rows[1].rune.id == 21 and rows[1].status.text == "Usable now" and rows[2].status.text == "Coming soon",
+    "the usable rune comes first; each row says where it stands")
+debug.browser.scripts.OnMouseWheel(debug.browser, -1)
+check(browse.offset == 1 and rows[1].rune == browse.list[2], "the mouse wheel scrolls the list")
+debug.browser.scripts.OnMouseWheel(debug.browser, -20)
+check(browse.offset == 6, "it stops at the end")
+local search = debug.search
+search.text = "lightning"
+search.scripts.OnTextChanged(search)
+check(browse.offset == 0 and rows[1].rune.id == 23 and not search.hint.shown, "the search finds a rune by its name")
+search.text = "warlock glaive"
+search.scripts.OnTextChanged(search)
+check(listed() == "21" and debug.browser.count.text == "1 of 11 runes", "and by the abilities it uses")
+search.text = "soothing heal"
+search.scripts.OnTextChanged(search)
+check(listed() == "26", "every word must match: Soothing Mist's healing rune")
+search.text = "xyzzy"
+search.scripts.OnTextChanged(search)
+check(#browse.list == 0 and not rows[1].shown and debug.empty.target == 1
+    and debug.empty.text.text:find("No rune matches"), "nothing found says so")
+search.text = ""
+search.scripts.OnTextChanged(search)
+check(search.hint.shown and #browse.list == 11, "an empty search lists every rune again")
+debug.chips[3]:Click()
+local healers = true
+for _, rune in ipairs(browse.list) do
+    local heals = false
+    for _, role in ipairs(rune.roles or {}) do
+        heals = heals or role == "HEALER"
+    end
+    healers = healers and heals
+end
+check(healers and #browse.list >= 3 and debug.chips[3].on and not debug.chips[1].on, "the Healing filter")
+debug.chips[1]:Click()
+debug.chips[5]:Click()
+check(listed() == "21" and debug.chips[5].on, "Usable now: only the runes nothing is missing for")
+debug.chips[5]:Click()
 server("R,21,90111/688+697")
-debug.hits[3]:Click()
+check(rows[1].status.text:find("Needs Throw Glaive"), "a rune missing abilities says what it needs")
+rows[1].choose:Click()
 check(popup and popup.name == "EMBERFORGE_RUNE_BIND_MISSING"
     and popup.b == "Throw Glaive, and Summon Imp or Summon Voidwalker",
     "a rune missing abilities warns, naming them, before it can be bound")
 StaticPopupDialogs.EMBERFORGE_RUNE_BIND_MISSING.OnAccept(nil, 21)
 check(lastSent() == "PICK,21,1", "binding it anyway says so to the server")
 view.pending = nil
+server("R,21,-")
 
--- Preview: the build as if bound, its picks tried here only; Back returns to the page.
-check(debug.previews[3].on and not debug.previews[1].on, "Preview under a rune with its build words only")
-debug.previews[3]:Click()
+-- Preview: the build as if bound, its picks tried here only; Back returns to the list as it was.
+search.text = "fel"
+search.scripts.OnTextChanged(search)
+rows[1].preview:Click()
 check(view.mode == "preview" and view.phase == "build" and debug.options[1].name.text == "Infernal Pact",
     "previewing shows its medallion and first options")
 local sentBefore = #sent
@@ -255,25 +300,23 @@ debug.options[2]:Click()
 run(0.7)
 check(#sent == sentBefore and view.picks[1] == 2, "a pick in the preview is tried, not sent")
 debug.previewBar.back:Click()
-run(1.6)
-check(view.mode == "browse" and view.page == 7 and not view.preview, "Back returns to the page it came from")
-server("R,21,-")
+run(0.7)
+check(view.mode == "browse" and view.phase == "browse" and not view.preview and browse.query == "fel"
+    and rows[1].rune.id == 21, "Back returns to the list, its search kept")
 
--- Binding asks first; the server's bind sets the eruption off.
-debug.hits[3]:Click()
+-- Binding asks first; the server's bind fades the list and the chosen rune's card comes in and erupts.
+rows[1].choose:Click()
 check(popup and popup.name == "EMBERFORGE_RUNE_BIND" and popup.a == "Rune of Fel Commandment",
     "choosing asks to confirm the bind")
 StaticPopupDialogs.EMBERFORGE_RUNE_BIND.OnAccept(nil, 21)
 check(lastSent() == "PICK,21", "accepting sends PICK,21")
 server("N,21,1,3,686+29722")
 server("S,10,10,1,21,0,0,0,21,0")
-check(view.phase == "erupt" and view.chosen == 3, "bound: the chosen card erupts")
-run(1.2)
-check(debug.cards[1].noise ~= nil, "the other cards burn")
-local burning = debug.cards[1]
-check(burning.noise ~= "baked" or (burning.baked.shown and burning.baked.texture:find("Burn%d+$")
-    and not burning.art.shown), "a built rune's card burns as a Skill Card does: its baked frames, not tiles")
-run(2.5)
+check(view.phase == "arrive" and debug.browser.target == 0 and debug.cards[1].rune.id == 21,
+    "bound: the list fades away and the chosen rune's card comes in")
+run(0.7)
+check(view.phase == "erupt" and view.chosen == 1, "then it erupts")
+run(3.7)
 check(view.medal ~= nil and view.phase == "split", "the card condenses into the medallion, which splits")
 run(1.6)
 check(view.phase == "build" and view.active == 1 and debug.choose.target == 1, "the slots, and the first choice")

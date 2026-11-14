@@ -7,8 +7,8 @@ glows, its lettering) in headless Chromium, one PNG a piece, and this script bri
 (small or sharp: the glows, the ring pieces, the buttons). Art.lua tells the addon each rune's colours and words and
 where each piece sits in its texture.
 
-The runes' card words and glyphs are here (RUNES): the mockup has three (the Arcane Mind, Fel Commandment, and a
-Frozen Heart that is not one of the 21); the rest are written to match. Fonts: Cinzel and Alegreya Sans (SIL Open
+The runes' card words and glyphs are here (RUNES): the runes the server builds (the first draft's twenty placeholders
+are gone). Fonts: Cinzel and Alegreya Sans (SIL Open
 Font License, AddOns/Emberforge_Runes/Fonts/).
 
 Usage: python3 build_rune_art.py
@@ -65,58 +65,6 @@ FEL = {'rgb': '110,235,80', 'hot': '214,255,196', 'hue': '#8cff6a', 'inner': '#e
 
 # Each rune: (id, colour or theme, school, card text, "From your ...", glyph: a 24-point line drawing).
 RUNES = [
-    (1, (120, 160, 255), 'Protection · Shield', 'Blocks and Revenge build Bulwark. Shield Slam turns it into a '
-     'shield.', 'Shield Block and Revenge', 'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM8 10h8M8 14h8'),
-    (2, (240, 60, 80), 'Blood · Death Knight', 'Your strikes gather Vitae. Rune Tap drinks it to heal through '
-     'spikes.', 'Heart Strike and Death Strike',
-     'M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11ZM9 15h6M12 12v6'),
-    (3, (255, 110, 200), 'Vengeance · Demon Hunter', 'Shear shatters souls. Soul Cleave devours them to heal and '
-     'weaken.', 'Shear and Soul Cleave',
-     'M12 2c2 3 5 5 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-8ZM6 19h12M9 22h6'),
-    (4, (255, 210, 110), 'Holy · Protection', 'Holy Shield blocks build Sanctity. Avenger\'s Shield carries it '
-     'down the pack.', 'Holy Shield and Avenger\'s Shield',
-     'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM12 8l1.4 2.9 3.2.5-2.3 2.2.5 3.1L12 15.2l-2.8 1.5.5-3.1'
-     '-2.3-2.2 3.2-.5Z'),
-    (5, (255, 232, 150), 'Holy · Paladin', 'Direct heals build Radiance. Holy Shock bursts it across your '
-     'allies.', 'Flash of Light and Holy Light',
-     'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17'
-     'M17 7l2.1-2.1'),
-    (6, (255, 200, 150), 'Discipline · Priest', 'Your Smites build Atonement. Power Word: Shield spends it on '
-     'whoever needs it.', 'Smite and Holy Fire', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 7v10M8 11h8'),
-    (7, (70, 190, 255), 'Restoration · Shaman', 'Healing Waves raise a Tidal Surge. Chain Heal sweeps it through '
-     'the group.', 'Healing Wave and Lesser Healing Wave',
-     'M3 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0M3 14c2-2 4-2 6 0s4 2 6 0 4-2 6 0M3 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0M12 2v4'),
-    (8, (160, 230, 100), 'Restoration · Druid', 'Rejuvenation grows Verdancy. Swiftmend plants a healing '
-     'grove.', 'Rejuvenation',
-     'M12 21V10M12 14c-4 0-7-3-7-7 4 0 7 3 7 7ZM12 11c3 0 6-2 6-6-3 0-6 2-6 6ZM8 21h8'),
-    (9, (90, 235, 175), 'Mistweaver · Monk', 'Soothing Mist gathers Jade Essence. Enveloping Mist finishes the '
-     'heal.', 'Soothing Mist', 'M17 4c-3-1-7 0-7 3s7 3 7 7-4 6-8 5M17 4l2 1M7 19l-2 1M9 20c1 1 3 1 4 0'),
-    (10, ARCANE, 'Arcane · Mage', 'Arcane Blast builds Arcane Insight. At 4, your next Arcane Missiles is free and '
-     'fires an extra volley.', 'Arcane Blast and Arcane Missiles', 'M12 2 4 7v10l8 5 8-5V7ZM12 2v20M4 7l16 10M20 7 4 17'),
-    (11, (255, 125, 45), 'Fire · Mage', 'Fireball and Scorch criticals stoke Kindling, then an instant '
-     'Pyroblast.', 'Fireball and Scorch',
-     'M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 4 3 4 0-4-2-6 0-10ZM12 15a2 2 0 0 0 2 2'),
-    (12, (140, 90, 255), 'Shadow · Priest', 'Mind Flay gathers Shadow Orbs. Mind Blast spends them.',
-     'Mind Flay and Mind Blast', 'M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z'),
-    (13, (110, 215, 255), 'Elemental · Shaman', 'Lightning Bolt builds Static Charge. Earth Shock discharges '
-     'it.', 'Lightning Bolt and Earth Shock', 'M13 2 5 13h6l-1 9 8-12h-6l1-8ZM4 6l2 2M20 6l-2 2'),
-    (14, (200, 80, 230), 'Affliction · Warlock', 'Your curses harvest souls. Drain Life reaps them.',
-     'Corruption and Curse of Agony', 'M5 21 15 5M15 5c3 0 6 2 6 6-2-2-4-3-7-3M8 16l3 3'),
-    (15, (225, 215, 120), 'Marksmanship · Hunter', 'Steady Shot lines up Steady Aim. Aimed Shot lands the big '
-     'hit.', 'Steady Shot and Aimed Shot',
-     'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 1v6M12 17v6M1 12h6M17 12h6M12 11v2'),
-    (16, (255, 95, 60), 'Arms · Warrior', 'Overpower and Slam build Battle Trance. Mortal Strike cashes it in, '
-     'then a free Execute.', 'Overpower and Slam',
-     'M4 4l12 12M20 4 8 16M14 18l4-4M6 14l4 4M16 16l3 3M8 16l-3 3'),
-    (17, (200, 205, 235), 'Subtlety · Rogue', 'Finishers sharpen your Shadow Edge. An empowered Backstab refills '
-     'your combo points.', 'finishing moves and Backstab', 'M12 2l2 4v9h-4V6ZM8 15h8M12 15v4M10 21h4'),
-    (18, (255, 190, 90), 'Retribution · Paladin', 'Crusader Strike builds Zeal. Judgement unleashes it and '
-     'speeds your swings.', 'Crusader Strike and Judgement', 'M12 3v18M7 8h10M9 21h6M8 3h8'),
-    (19, (190, 255, 70), 'Havoc · Demon Hunter', 'Demon\'s Bite and Chaos Strike feed your Hunger. Eye Beam '
-     'unleashes it.', 'Demon\'s Bite and Chaos Strike',
-     'M3 12c3-4 6-6 9-6s6 2 9 6c-3 4-6 6-9 6s-6-2-9-6ZM11 12l1-3 1 3-1 3Z'),
-    (20, (255, 155, 70), 'Windwalker · Monk', 'Tiger Palm builds Tiger Spirit. Rising Sun Kick, then a free Fists '
-     'of Fury.', 'Tiger Palm and Rising Sun Kick', 'M6 4c2 5 2 11 0 16M12 3c2 6 2 12 0 18M18 4c2 5 2 11 0 16'),
     (21, FEL, 'Fel · Havoc & Demonology', 'Your strikes and your demon build Fel Command. At 5, Throw Glaive hurls '
      'a volley of Chaos Bolts.', 'Throw Glaive, Chaos Strike and your demon',
      'M3 3c0 6 3.5 9 9 9s9-3 9-9M5.5 16c2 2.6 4.2 3.8 6.5 3.8s4.5-1.2 6.5-3.8c-2-2.4-4.2-3.6-6.5-3.6S7.5 13.6 5.5 '
@@ -168,32 +116,6 @@ RUNES = [
 # core: the build view's line (**bold** in the rune's ink); asks: each slot's question; texts and abilities: each
 # option's words and its small line; icons: each option's drawing (the mockup's).
 BUILT = {
-    10: {
-        'core': 'Casting Arcane Blast generates **Arcane Insight**. At 4 stacks, your next Arcane Missiles consumes all '
-                'Insight, requires no mana, and fires an additional volley.',
-        'asks': ['How you build Arcane Insight', 'What your empowered Arcane Missiles does',
-                 'Utility, or a new tradeoff'],
-        'texts': ['Arcane Blast critical strikes generate 1 additional Insight.',
-                  'Arcane Explosion generates 1 Insight when it hits at least 3 enemies. Once per cast.',
-                  'Insight stacks to 6. Empowered Arcane Missiles consumes them all and deals 8% more damage per '
-                  'stack beyond 4.',
-                  'The additional volley deals 50% increased damage to your primary target.',
-                  'The additional volley also strikes up to 3 nearby enemies for 40% of its damage.',
-                  'Leaves an Arcane Echo that deals 20% of the channel\'s damage over 6 sec.',
-                  'You can move while channeling empowered Arcane Missiles.',
-                  'Completing empowered Arcane Missiles restores 3% of your maximum mana.',
-                  'Empowered Arcane Missiles channels 30% faster, but Arcane Blasts that build Insight cost 15% more '
-                  'mana.'],
-        'abilities': ['Arcane Blast', 'Arcane Explosion', 'Arcane Insight', 'Additional volley', 'Additional volley',
-                      'Empowered Arcane Missiles', 'Mobility', 'Mana', 'Risk and reward'],
-        'icons': ['M13 2 4 14h7l-1 8 9-12h-7z',
-                  'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
-                  'M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
-                  'M12 2v4M12 18v4M2 12h4M18 12h4M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',
-                  'M12 3v6M5 21l7-12 7 12M3 12h4M17 12h4', 'M4 12c3-6 5-6 8 0s5 6 8 0',
-                  'M5 19 19 5M9 5h10v10', 'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z',
-                  'M12 2 3 7v10l9 5 9-5V7Z M12 8v5M12 16v.5'],
-    },
     21: {
         'core': 'Your strikes and your demon build **Fel Command**. At 5, Throw Glaive becomes **Chaos Bolt Volley**: '
                 'the glaive and 3 Chaos Bolts.',
@@ -657,71 +579,6 @@ def pow2(n):
     return 1 << max(0, math.ceil(math.log2(n)))
 
 
-# The cards' burn, as the Skill Cards' (build_darkmoon_art.py): noise climbing through the card from the bottom and
-# a point at its left, the card gone behind it, a cream-white rim along it; baked for each built rune's card in
-# BURN['frames'] frames of one atlas (BURN['columns'] across, the card filling the top of each cell), which the panel
-# steps one texture through (mirrored at random, so the cards differ), motes lifting off the rim by the same noise
-# (Art.lua's burn.noise: BURN['grid'] cells, two digits each).
-BURN = {'frames': 16, 'columns': 4, 'cell': (256, 512), 'card': (256, 376), 'work': (512, 752), 'reach': 1.08,
-        'edge': 0.035, 'grid': (30, 44)}
-
-
-def burn_noise():
-    import numpy as np
-    rng = np.random.default_rng(20261114)
-    w, h = BURN['work']
-
-    def octave(cell):
-        cw, ch = w // cell + 3, h // cell + 3
-        grid = rng.random((ch, cw))
-        ys, xs = np.mgrid[0:h, 0:w] / cell
-        x0, y0 = xs.astype(int), ys.astype(int)
-        tx, ty = xs - x0, ys - y0
-        tx, ty = tx * tx * (3 - 2 * tx), ty * ty * (3 - 2 * ty)
-        top = grid[y0, x0] + (grid[y0, x0 + 1] - grid[y0, x0]) * tx
-        bottom = grid[y0 + 1, x0] + (grid[y0 + 1, x0 + 1] - grid[y0 + 1, x0]) * tx
-        return top + (bottom - top) * ty
-
-    ys, xs = np.mgrid[0:h, 0:w]
-    octaves = octave(200) * 0.55 + octave(80) * 0.3 + octave(32) * 0.15
-    n = (1 - ys / h) * 0.55 + np.abs(xs - 0.3 * w) / w * 0.25 + octaves * 0.5
-    return (n - n.min()) / (n.max() - n.min())
-
-
-def bake_burn(card_png, rune_id, noise):
-    """Card<id>'s burn atlas, Burn<id>.blp (DXT5, no mipmaps: drawn at its own size)."""
-    import numpy as np
-    w, h = BURN['work']
-    cw, ch = BURN['cell']
-    rows = BURN['frames'] // BURN['columns']
-    cream, gold = np.array([255, 252, 240], float), np.array([255, 214, 140], float)
-    with Image.open(card_png) as image:
-        source = image.convert('RGBA')
-    span = round(300 * CARD['scale'])
-    card = np.asarray(blp.resize_straight(source.crop((0, 0, span, round(440 * CARD['scale']))), (w, h)), float)
-    present = card[..., 3] > 8
-    atlas = Image.new('RGBA', (cw * BURN['columns'], ch * rows), (0, 0, 0, 0))
-    for index in range(BURN['frames']):
-        p = index / (BURN['frames'] - 1) * BURN['reach']
-        ahead = noise - p
-        out = card.copy()
-        out[present & (ahead < 0), 3] = 0
-        rim = present & (ahead >= 0) & (ahead < BURN['edge'])
-        k = (ahead[rim] / BURN['edge'])[:, None]
-        out[rim, :3] = cream + (gold - cream) * k
-        out[rim, 3] = 255
-        cell = blp.resize_straight(Image.fromarray(out.astype(np.uint8), 'RGBA'), BURN['card'])
-        atlas.paste(cell, ((index % BURN['columns']) * cw, (index // BURN['columns']) * ch))
-    (OUT / f'Burn{rune_id}.blp').write_bytes(blp.encode_dxt(atlas, mips=False))
-
-
-def burn_digits(noise):
-    import numpy as np
-    gw, gh = BURN['grid']
-    small = Image.fromarray((noise * 255).astype(np.uint8), 'L').resize((gw, gh), Image.Resampling.BOX)
-    return ''.join(f'{min(99, small.getpixel((x, y)) * 100 // 256):02d}' for y in range(gh) for x in range(gw))
-
-
 def save(image, name):
     """The piece at the top-left of a power-of-two canvas; returns the share of it the piece fills (u, v)."""
     w, h = image.size
@@ -837,13 +694,6 @@ def main():
             if png.stem in shares:
                 labels[png.stem] = {'w': shares[png.stem][0], 'h': shares[png.stem][1], 'u': round(u, 4),
                                     'v': round(v, 4)}
-        noise = burn_noise()
-        burned = []
-        for png in sorted((work / 'png').glob('Card*.png')):
-            if png.stem[4:].isdigit() and int(png.stem[4:]) in BUILT:
-                bake_burn(png, int(png.stem[4:]), noise)
-                burned.append(int(png.stem[4:]))
-        print(f'  burns for runes {burned}')
     # The rune button's ring (rune_art/rune_ring.png, the gold silhouette): 256 pixels a side, uncompressed (DXT's
     # blocks broke its thin gold rim up into pixels).
     with Image.open(HERE / 'rune_art' / 'rune_ring.png') as ring:
@@ -859,10 +709,6 @@ def main():
                     'v': round((46 + 2 * PILL['margin']) * PILL['scale'] / PILL['size'][1], 4),
                     'margin': PILL['margin'], 'width': 106},
            'num': {'span': NUM['size'] / NUM['scale']}, 'seg': {'span': 260}, 'labels': labels, 'runes': {}}
-    art['burn'] = {'frames': BURN['frames'], 'columns': BURN['columns'],
-                   'rows': BURN['frames'] // BURN['columns'], 'u': BURN['card'][0] / BURN['cell'][0],
-                   'v': round(BURN['card'][1] / BURN['cell'][1], 4), 'reach': BURN['reach'], 'edge': BURN['edge'],
-                   'w': BURN['grid'][0], 'h': BURN['grid'][1], 'noise': burn_digits(noise)}
     for entry in runes:
         th = entry['theme']
         rune = {'rgb': floats(th['rgb']), 'hot': floats(th['hot']), 'ink': floats(th['ink']),
@@ -870,13 +716,15 @@ def main():
                 'inner': floats(css(tuple(int(th['inner'][i:i + 2], 16) for i in (1, 3, 5))))}
         if entry['id'] in BUILT:
             built = BUILT[entry['id']]
-            rune.update({'built': True, 'burn': entry['id'] in burned, 'core': built['core'], 'asks': built['asks'],
+            rune.update({'built': True, 'core': built['core'], 'asks': built['asks'],
                          'abilities': built['abilities'],
                          'texts': built['texts'],
                          'slots': built.get('slots', ['Invocation', 'Manifestation', 'Adaptation'])})
         art['runes'][entry['id']] = rune
     art['arcane'] = {'rgb': floats(ARCANE['rgb']), 'hot': floats(ARCANE['hot']), 'ink': floats(ARCANE['ink']),
-                     'muted': floats(ARCANE['muted'])}
+                     'muted': floats(ARCANE['muted']),
+                     'hue': floats(css(tuple(int(ARCANE['hue'][i:i + 2], 16) for i in (1, 3, 5)))),
+                     'inner': floats(css(tuple(int(ARCANE['inner'][i:i + 2], 16) for i in (1, 3, 5))))}
     text = ('-- Generated by client-patch/build_rune_art.py: the rune panel\'s art (Art/), each rune\'s colours and the '
             'words of\n-- the runes the panel builds (the "Legendary Rune Panel" mockup\'s).\nEmberforgeRunesArt = '
             + lua(art).lstrip() + '\n')

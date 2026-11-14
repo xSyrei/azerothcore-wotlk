@@ -2,8 +2,9 @@
 -- stage over the game world (1600 x 900 points, scaled to the screen), its artwork, light and particles.
 --
 -- Unbound (level 5 on): "Legendary Runic Enhancements", up to three rune cards the server suggests for the Hero's
--- abilities, and Browse all (every rune, three a page). Choosing one asks first (a rune is bound until a prestige),
--- then the chosen card erupts, the others burn away, it condenses into the rune's medallion, the medallion breaks
+-- abilities, and Browse all (every rune in one list: a search over names, abilities and keywords, role and "usable now"
+-- filters, scrolled with the mouse wheel). Choosing one asks first (a rune is bound until a prestige), then the
+-- chosen card erupts, the others fade away, it condenses into the rune's medallion, the medallion breaks
 -- into its three slots (Invocation, Manifestation, Adaptation), and the three choices for each follow. Bound: the
 -- medallion and its slots straight away; a done slot can be chosen again (free, out of combat).
 -- Each card shows the roles its rune serves (damage, healing, tanking) under its eyebrow, and a Preview button: the
@@ -143,9 +144,8 @@ local TAU = 2 * math.pi
 local function Theme(runeId)
     local entry = art.runes[runeId]
     if not entry or runeId == 10 or not runeId then
-        local arcane = art.runes[10] or {}
         return { key = "Arcane", rgb = art.arcane.rgb, hot = art.arcane.hot, ink = art.arcane.ink,
-            muted = art.arcane.muted, hue = arcane.hue or art.arcane.rgb, inner = arcane.inner or art.arcane.hot }
+            muted = art.arcane.muted, hue = art.arcane.hue or art.arcane.rgb, inner = art.arcane.inner or art.arcane.hot }
     end
     return { key = entry.built and tostring(runeId) or nil, rgb = entry.rgb, hot = entry.hot, ink = entry.ink,
         muted = entry.muted, hue = entry.hue, inner = entry.inner }
@@ -319,7 +319,7 @@ end
 -- The pill button: its ends and a stretched middle, its words in Cinzel.
 local function PillArt(pill)
     local spec = art.pill
-    local file = (pill.hot and "PillHot" or "Pill") .. (theme.key or "Arcane")
+    local file = ((pill.hot or pill.on) and "PillHot" or "Pill") .. (theme.key or "Arcane")
     local cap = spec.margin + 23
     local width = pill.width + 2 * spec.margin
     local u = function(points) return points / spec.width * spec.u end
@@ -330,7 +330,7 @@ local function PillArt(pill)
     pill.middle:SetTexCoord(u(cap), u(spec.width - cap), 0, spec.v)
     pill.right:SetTexCoord(u(spec.width - cap), spec.u, 0, spec.v)
     pill.middle:SetWidth(math.max(0.01, width - 2 * cap))
-    local color = pill.hot and { 1, 1, 1 } or theme.hot
+    local color = (pill.hot or pill.on) and { 1, 1, 1 } or theme.hot
     pill.label:SetTextColor(color[1], color[2], color[3])
 end
 local function PillText(pill, text)
@@ -535,39 +535,18 @@ local browseAsk = Group(800, 805, 700, 80)
 browseAsk.text = Text(browseAsk, SANS, 18, art.arcane.muted)
 In(browseAsk.text, browseAsk, 0, -22)
 browseAsk.pill = Pill(browseAsk, "Browse all and choose one manually", function()
-    view.mode, view.page = "browse", 1
+    view.mode = "browse"
     Enter()
 end)
 In(browseAsk.pill, browseAsk, 0, 22)
 
-local pager = Group(800, 805, 900, 80)
-pager.text = Text(pager, SANS, 18, art.arcane.muted)
-In(pager.text, pager, 0, -22)
-local function Pages()
-    return math.max(1, math.ceil(#catalog / 3))
-end
-pager.previous = Pill(pager, "Previous", function()
-    view.page = view.page > 1 and view.page - 1 or Pages()
-    StartIntro()
-end)
+-- Browsing: back to the suggestions.
+local pager = Group(800, 840, 900, 60)
 pager.back = Pill(pager, "Back to your suggestions", function()
     view.mode = "offers"
     Enter()
 end)
-pager.next = Pill(pager, "Next", function()
-    view.page = view.page < Pages() and view.page + 1 or 1
-    StartIntro()
-end)
-local function LayPager()
-    local gap = 16
-    local total = pager.previous.width + pager.back.width + pager.next.width + 2 * gap
-    local x = -total / 2
-    for _, pill in ipairs({ pager.previous, pager.back, pager.next }) do
-        In(pill, pager, x + pill.width / 2, 22)
-        x = x + pill.width + gap
-    end
-end
-LayPager()
+In(pager.back, pager, 0, 0)
 
 local empty = Group(800, 450, 900, 60)
 empty.text = Text(empty, SANS, 20, art.arcane.muted, "CENTER", 700)
@@ -824,9 +803,6 @@ local function SetRoles(card, rune)
         end
     end
 end
-local TILE = 10                                         -- the burn's pieces, in points
-local TILES_X, TILES_Y = CW / TILE, CH / TILE
-
 local cards = {}
 local hits = {}
 for index = 1, 3 do
@@ -890,199 +866,6 @@ for index = 1, 3 do
     previews[index] = preview
 end
 
--- The burn of a card without a baked one: the card in TILE-point pieces, each going at its noise (the mockup's:
--- three octaves of value noise and a fire that catches near a bottom corner and climbs), rimmed in flame and charred
--- just behind it.
-local function NoiseMap(seed)
-    local function octave(cell)
-        local cw, ch = math.ceil(CW / cell) + 2, math.ceil(CH / cell) + 2
-        local values = {}
-        for i = 1, cw * ch do
-            values[i] = math.random()
-        end
-        return function(x, y)
-            local fx, fy = x / cell, y / cell
-            local x0, y0 = math.floor(fx), math.floor(fy)
-            local tx, ty = fx - x0, fy - y0
-            local sx, sy = tx * tx * (3 - 2 * tx), ty * ty * (3 - 2 * ty)
-            local function at(ix, iy) return values[iy * cw + ix + 1] end
-            return lerp(lerp(at(x0, y0), at(x0 + 1, y0), sx), lerp(at(x0, y0 + 1), at(x0 + 1, y0 + 1), sx), sy)
-        end
-    end
-    local o1, o2, o3 = octave(90), octave(36), octave(14)
-    local ix, iy, maxD = seed * CW, CH * 1.05, math.sqrt(CW * CW + CH * CH)
-    local map, lo, hi = {}, 1e9, -1e9
-    for row = 0, TILES_Y - 1 do
-        for column = 0, TILES_X - 1 do
-            local x, y = (column + 0.5) * TILE, (row + 0.5) * TILE
-            local n = o1(x, y) * 0.55 + o2(x, y) * 0.3 + o3(x, y) * 0.15
-            local d = math.sqrt((x - ix) ^ 2 + (y - iy) ^ 2) / maxD
-            local v = d * 0.72 + n * 0.42
-            map[#map + 1] = v
-            lo, hi = math.min(lo, v), math.max(hi, v)
-        end
-    end
-    for i = 1, #map do
-        map[i] = (map[i] - lo) / (hi - lo)
-    end
-    return map
-end
-
--- The Skill Cards' burn (build_rune_art.py bakes it for each built rune's card, Art/Burn<id>): one texture steps
--- through its frames, mirrored at random, motes lifting off the rim by the same noise (art.burn.noise). A card
--- without one burns in tiles (below).
-local BURN = art.burn
-local function BakedNoise(u, v, mirrored)
-    if mirrored then
-        u = 1 - u
-    end
-    local x = math.max(0, math.min(BURN.w - 1, math.floor(u * BURN.w)))
-    local y = math.max(0, math.min(BURN.h - 1, math.floor(v * BURN.h)))
-    local at = (y * BURN.w + x) * 2 + 1
-    return (tonumber(BURN.noise:sub(at, at + 1)) or 99) / 100
-end
-
-local function LightBakedBurn(card)
-    card.baked = card.baked or Tex(card.holder, "ARTWORK")
-    card.baked:ClearAllPoints()
-    card.baked:SetPoint("CENTER")
-    card.baked:SetWidth(CW)
-    card.baked:SetHeight(CH)
-    card.baked:SetTexture(ART .. "Burn" .. card.rune.id)
-    card.baked:Show()
-    card.mirrored = math.random() < 0.5
-    card.frame = -1
-    card.noise = "baked"
-    card.art:Hide()
-end
-
-local function BakedStep(card, p)
-    local frame = math.min(BURN.frames - 1, math.max(0, math.floor(p / BURN.reach * (BURN.frames - 1) + 0.5)))
-    if frame ~= card.frame then
-        card.frame = frame
-        local column, row = frame % BURN.columns, math.floor(frame / BURN.columns)
-        local u0, u1 = column / BURN.columns, (column + BURN.u) / BURN.columns
-        local v0 = row / BURN.rows
-        local v1 = v0 + BURN.v / BURN.rows
-        if card.mirrored then
-            u0, u1 = u1, u0
-        end
-        card.baked:SetTexCoord(u0, u1, v0, v1)
-    end
-    local emitted = 0
-    for _ = 1, 40 do
-        local u, v = math.random(), math.random()
-        local ahead = BakedNoise(u, v, card.mirrored) - p
-        if ahead >= 0 and ahead < BURN.edge * 1.5 then
-            local white = math.random() < 0.5
-            Emit({ x = card.x + (u - 0.5) * CW * card.s, y = card.y + (v - 0.5) * CH * card.s, vx = rand(-40, 40),
-                vy = rand(-160, -60), grav = -40, life = rand(0.9, 1.8), size = rand(3, 7), drag = 0.97, alpha = 0.95,
-                kind = white and "SpriteCream" or "SpriteEmber" })
-            emitted = emitted + 1
-            if emitted >= 5 then
-                break
-            end
-        end
-    end
-end
-
-local function LightBurn(card)
-    local entry = art.runes[card.rune.id]
-    if BURN and entry and entry.burn then
-        return LightBakedBurn(card)
-    end
-    card.noise = NoiseMap(rand(0.1, 0.9))
-    card.tiles = card.tiles or {}
-    local file = "Card" .. card.rune.id
-    local i = 0
-    for row = 0, TILES_Y - 1 do
-        for column = 0, TILES_X - 1 do
-            i = i + 1
-            local tile = card.tiles[i]
-            if not tile then
-                tile = Tex(card.holder, "ARTWORK")
-                tile:SetWidth(TILE)
-                tile:SetHeight(TILE)
-                tile:SetPoint("TOPLEFT", card.holder, "TOPLEFT", column * TILE, -row * TILE)
-                card.tiles[i] = tile
-            end
-            tile.file = ART .. file
-            tile.u0, tile.u1 = column / TILES_X * cardArt.u, (column + 1) / TILES_X * cardArt.u
-            tile.v0, tile.v1 = row / TILES_Y * cardArt.v, (row + 1) / TILES_Y * cardArt.v
-            tile:SetTexture(tile.file)
-            tile:SetTexCoord(tile.u0, tile.u1, tile.v0, tile.v1)
-            tile:SetVertexColor(1, 1, 1)
-            tile:Show()
-            tile.look = "whole"
-        end
-    end
-    card.art:Hide()
-end
-
-local function EndBurn(card)
-    if card.baked then
-        card.baked:Hide()
-    end
-    for _, tile in ipairs(card.tiles or {}) do
-        tile:Hide()
-    end
-    card.noise = nil
-end
-
--- Each tile is touched only when its look changes: gone, a step of the flame (solid, as the mockup paints its burning
--- edge) or of the char (the card darkened), or whole.
-local function TileState(tile, look, flame, r, g, b)
-    if tile.look == look then
-        return
-    end
-    tile.look = look
-    if look == "gone" then
-        tile:Hide()
-        return
-    end
-    tile:Show()
-    if flame then
-        tile:SetTexture(r, g, b)
-        tile:SetVertexColor(1, 1, 1)
-    else
-        tile:SetTexture(tile.file)
-        tile:SetTexCoord(tile.u0, tile.u1, tile.v0, tile.v1)
-        tile:SetVertexColor(r, g, b)
-    end
-end
-
-local function BurnStep(card, p)
-    if card.noise == "baked" then
-        return BakedStep(card, p)
-    end
-    local edge, charW = 0.06, 0.12
-    local embers = 0
-    for i, tile in ipairs(card.tiles) do
-        local v = card.noise[i] - p
-        if v < 0 then
-            TileState(tile, "gone")
-        else
-            if v < edge then
-                local k = math.floor(v / edge * 4) / 4
-                TileState(tile, "flame" .. k, true, 1, (120 + 135 * (1 - k) ^ 2) / 255, (40 + 150 * (1 - k) ^ 3) / 255)
-                if embers < 6 and math.random() < 0.08 then
-                    embers = embers + 1
-                    local column, row = (i - 1) % TILES_X, math.floor((i - 1) / TILES_X)
-                    local px, py = (column + 0.5) * TILE - CW / 2, (row + 0.5) * TILE - CH / 2
-                    Emit({ x = card.x + px * card.s, y = card.y + py * card.s, vx = rand(-30, 30), vy = rand(-140, -50),
-                        grav = -40, life = rand(0.6, 1.4), size = rand(2, 5), drag = 0.97, alpha = 0.95,
-                        kind = math.random() < 0.6 and "SpriteEmber" or "SpriteCream" })
-                end
-            elseif v < edge + charW then
-                local k = math.floor((v - edge) / charW * 6) / 6
-                TileState(tile, "char" .. k, false, 0.15 + 0.85 * k + 0.2 * (1 - k), 0.1 + 0.9 * k, 0.1 + 0.9 * k)
-            else
-                TileState(tile, "whole", false, 1, 1, 1)
-            end
-        end
-    end
-end
-
 local function DrawCard(card)
     if card.gone or card.a <= 0 then
         card.holder:Hide()
@@ -1094,7 +877,7 @@ local function DrawCard(card)
     holder:ClearAllPoints()
     holder:SetPoint("CENTER", stage, "TOPLEFT", card.x / scale, -(card.y - card.lift) / scale)
     holder:Show()
-    local fade = card.burn >= 0 and clamp(1 - card.burn * 1.1) or 1
+    local fade = 1
     local glow = card.theme.rgb
     local auraR = 260 + card.glow * 160
     card.aura:SetWidth(auraR * 2)
@@ -1103,15 +886,11 @@ local function DrawCard(card)
     card.aura:SetAlpha(clamp(card.a * (0.22 + card.glow * 0.5) * fade))
     card.back:SetVertexColor(glow[1], glow[2], glow[3])
     card.back:SetAlpha(clamp(card.a * (0.55 + card.glow * 0.6) * fade * 0.8))
-    if card.noise then
-        BurnStep(card, card.burn)
-    else
-        card.art:SetWidth(CW * (card.flip or 1))
-        card.art:SetAlpha(card.a)
-        card.art:Show()
-    end
+    card.art:SetWidth(CW * (card.flip or 1))
+    card.art:SetAlpha(card.a)
+    card.art:Show()
     for _, icon in ipairs(card.roles) do
-        icon:SetAlpha(card.noise and 0 or clamp(card.a * fade))
+        icon:SetAlpha(clamp(card.a * fade))
     end
     local preview = previews[card.index]
     if preview and preview.on then
@@ -1124,9 +903,6 @@ end
 
 local function HideCards()
     for index, card in ipairs(cards) do
-        if card.noise then
-            EndBurn(card)
-        end
         card.holder:Hide()
         card.status:Hide()
         card.rune = nil
@@ -1136,19 +912,13 @@ local function HideCards()
     end
 end
 
--- The runes on show: the server's suggestions, or a page of every rune.
+-- The runes on show as cards: the server's suggestions.
 local function Shown()
     local list = {}
-    if view.mode == "browse" then
-        for i = (view.page - 1) * 3 + 1, math.min(#catalog, view.page * 3) do
-            list[#list + 1] = catalog[i]
-        end
-    else
-        for _, id in ipairs(state.offers) do
-            local rune = RuneById(id)
-            if rune and #list < 3 then
-                list[#list + 1] = rune
-            end
+    for _, id in ipairs(state.offers) do
+        local rune = RuneById(id)
+        if rune and #list < 3 then
+            list[#list + 1] = rune
         end
     end
     return list
@@ -1163,9 +933,12 @@ end
 
 local function UseTheme(runeId)
     theme = Theme(runeId)
-    for _, pill in ipairs({ browseAsk.pill, pager.previous, pager.back, pager.next, closer.pill, previewBar.back,
+    for _, pill in ipairs({ browseAsk.pill, pager.back, closer.pill, previewBar.back,
         previewBar.choose, previews[1], previews[2], previews[3] }) do
         PillArt(pill)
+    end
+    if EmberforgeRunes_ThemeBrowser then
+        EmberforgeRunes_ThemeBrowser()
     end
     head.subtitle:SetTextColor(theme.muted[1], theme.muted[2], theme.muted[3])
 end
@@ -1191,7 +964,7 @@ function StartIntro()
         card.rune, card.theme = rune, Theme(rune.id)
         card.homeX = layout[index]
         card.x, card.y, card.s, card.a, card.lift, card.glow = card.homeX, CARD_Y + 60, 0.92, 0, 0, 0
-        card.burn, card.gone, card.flip, card.shake, card.erupted, card.hover = -1, false, 1, nil, false, false
+        card.gone, card.flip, card.shake, card.erupted, card.hover = false, 1, nil, false, false
         card.art:SetTexture(ART .. "Card" .. rune.id)
         card.art:SetDesaturated(false)
         SetRoles(card, rune)
@@ -1207,24 +980,13 @@ function StartIntro()
         At(hit, card.homeX, CARD_Y)
         hit.rune = rune
         hit:Show()
-        if view.mode == "browse" then
-            local standing, missing = Standing(rune)
-            card.status:SetText(state.rune == rune.id and "Bound" or (standing == "soon" and "Coming soon"
-                or (standing == "missing" and ("Needs " .. missing) or "")))
-            At(card.status, card.homeX, CARD_Y + CH / 2 + 66)
-            card.status:Show()
-        end
     end
     view.phase, view.t0 = "intro", view.now
     view.offersKey = table.concat(state.offers, ".")
-    Fade(empty, view.mode == "offers" and #list == 0)
+    empty.text:SetText("None of the runes fits your abilities yet. Browse all to see what each one needs.")
+    Fade(empty, #list == 0)
     After(0.15, function() Fade(head, true) end)
-    if view.mode == "browse" then
-        pager.text:SetText("Page " .. view.page .. " of " .. Pages())
-        After(1.1, function() Fade(pager, true) end)
-    else
-        After(1.1, function() Fade(browseAsk, true) end)
-    end
+    After(1.1, function() Fade(browseAsk, true) end)
 end
 
 -- A card that cannot be chosen shakes, and the note says why.
@@ -1317,7 +1079,7 @@ for _, hit in ipairs(hits) do
     hit:SetScript("OnClick", function(self) ClickCard(self.card) end)
 end
 
--- The chosen card erupts; the rest burn away (the mockup's choose).
+-- The chosen card erupts; the rest fade quickly away.
 local function Erupt(index)
     view.chosen, view.phase, view.t0 = index, "erupt", view.now
     UseTheme(cards[index].rune.id)
@@ -1333,13 +1095,352 @@ local function Erupt(index)
     Fade(browseAsk, false)
     Fade(pager, false)
     Fade(note, false)
-    for i, card in ipairs(cards) do
+    for _, card in ipairs(cards) do
         card.hover = false
         card.status:Hide()
-        if i ~= index and card.rune then
-            LightBurn(card)
+    end
+end
+
+-- Browse all: every rune in one list --------------------------------------------------------------------------------
+-- A search over each rune's words (its name, role, the abilities it uses, its core, modifiers and keywords: every
+-- word typed must be found), role filters and "Usable now" (nothing missing), five rows at a time, scrolled with the
+-- mouse wheel. A row's Preview (or a click on it) opens its build as if bound; Choose binds it.
+local ROW_H, ROWS = 96, 5
+local browser = Group(800, 500, 1180, 640)
+browser.speed = 0.25                                    -- it fades out quickly when a rune is chosen
+browser:EnableMouseWheel(true)
+local browse = { query = "", role = nil, usable = false, offset = 0, list = {} }
+
+local search = CreateFrame("EditBox", nil, browser)
+search:SetWidth(560)
+search:SetHeight(42)
+search:SetPoint("CENTER", browser, "CENTER", -290, 300)
+search:SetFont(SANS, 19)
+search:SetTextColor(1, 1, 1)
+search:SetAutoFocus(false)
+search:SetTextInsets(44, 14, 0, 0)
+search.shade = Shade(search, 640, 96, 0.8)
+search.shade:SetPoint("CENTER")
+search.icon = search:CreateTexture(nil, "OVERLAY")
+search.icon:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
+search.icon:SetWidth(18)
+search.icon:SetHeight(18)
+search.icon:SetPoint("LEFT", search, "LEFT", 16, -1)
+search.hint = Text(search, SANS, 18, art.arcane.muted, "LEFT", 480)
+search.hint:SetPoint("LEFT", search, "LEFT", 44, 0)
+search.hint:SetText("Search by name, ability or keyword")
+browser.count = Text(browser, SANS, 17, art.arcane.muted, "RIGHT", 360)
+browser.count:SetPoint("CENTER", browser, "CENTER", 390, -300)
+
+local chips = {}
+local Fill
+local function Chip(text, role)
+    local chip = Pill(browser, text, function(self)
+        if self.role == "usable" then
+            browse.usable = not browse.usable
+        else
+            browse.role = self.role
+        end
+        browse.offset = 0
+        Fill()
+    end)
+    chip.role = role
+    chip.label:SetFont(CINZEL, 14)
+    PillText(chip, text)
+    chips[#chips + 1] = chip
+    return chip
+end
+Chip("All", nil)
+Chip("Damage", "DAMAGER")
+Chip("Healing", "HEALER")
+Chip("Tank", "TANK")
+Chip("Usable now", "usable")
+do
+    local x = -570
+    for _, chip in ipairs(chips) do
+        In(chip, browser, x + chip.width / 2, -246)
+        x = x + chip.width + 12
+    end
+end
+
+-- The rows: a rune's icon, name, role icons, its abilities and its core; its standing; Preview and Choose.
+local rows = {}
+for index = 1, ROWS do
+    local row = CreateFrame("Button", nil, browser)
+    row:SetWidth(1160)
+    row:SetHeight(ROW_H - 8)
+    row:SetPoint("TOP", browser, "CENTER", 0, 208 - (index - 1) * ROW_H)
+    row.shade = Shade(row, 1260, 150, 0.62)
+    row.shade:SetPoint("CENTER")
+    row.glow = Tex(row, "BORDER", "Soft", "ADD")
+    row.glow:SetPoint("CENTER")
+    row.glow:SetWidth(1200)
+    row.glow:SetHeight(130)
+    row.glow:SetAlpha(0)
+    row.icon = row:CreateTexture(nil, "ARTWORK")
+    row.icon:SetWidth(64)
+    row.icon:SetHeight(64)
+    row.icon:SetPoint("LEFT", row, "LEFT", 14, 0)
+    row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    row.name = Text(row, CINZEL, 21, { 1, 1, 1 }, "LEFT", 560)
+    row.name:SetPoint("TOPLEFT", row, "TOPLEFT", 96, -8)
+    row.uses = Text(row, SANS, 15, art.arcane.muted, "LEFT", 620)
+    row.uses:SetPoint("TOPLEFT", row, "TOPLEFT", 96, -36)
+    row.core = Text(row, SANS, 15, { 0.92, 0.9, 0.95 }, "LEFT", 640)
+    row.core:SetPoint("TOPLEFT", row, "TOPLEFT", 96, -56)
+    row.status = Text(row, SANS, 15, GOLDEN, "RIGHT", 280)
+    row.status:SetPoint("TOPRIGHT", row, "TOPRIGHT", -14, -10)
+    row.roles = {}
+    for r = 1, 3 do
+        local icon = row:CreateTexture(nil, "OVERLAY")
+        icon:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-ROLES")
+        icon:SetWidth(20)
+        icon:SetHeight(20)
+        icon:Hide()
+        row.roles[r] = icon
+    end
+    row.preview = Pill(row, "Preview", function(self)
+        if self:GetParent().rune then
+            OpenPreview(self:GetParent().rune.id)
+        end
+    end)
+    row.preview.label:SetFont(CINZEL, 13)
+    PillText(row.preview, "Preview")
+    row.choose = Pill(row, "Choose", function(self)
+        if self:GetParent().rune then
+            AskBind(self:GetParent().rune)
+        end
+    end)
+    row.choose.label:SetFont(CINZEL, 13)
+    PillText(row.choose, "Choose")
+    row.choose:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -14, 0)
+    row.preview:SetPoint("RIGHT", row.choose, "LEFT", -10, 0)
+    row:SetScript("OnClick", function(self)
+        if self.rune then
+            OpenPreview(self.rune.id)
+        end
+    end)
+    row:SetScript("OnEnter", function(self) self.glow:SetAlpha(0.22) end)
+    row:SetScript("OnLeave", function(self) self.glow:SetAlpha(0) end)
+    row:Hide()
+    rows[index] = row
+end
+browser.track = Tex(browser, "ARTWORK")
+browser.track:SetTexture(1, 1, 1)
+browser.track:SetVertexColor(1, 1, 1, 0.12)
+browser.track:SetWidth(4)
+browser.track:SetHeight(ROWS * ROW_H - 8)
+browser.track:SetPoint("TOP", browser, "CENTER", 596, 208)
+browser.thumb = Tex(browser, "OVERLAY")
+browser.thumb:SetTexture(1, 1, 1)
+browser.thumb:SetWidth(4)
+
+-- Every word of a rune the search can find, lower case (made once).
+local ROLE_WORDS = { DAMAGER = "damage dps damager", HEALER = "healer healing heal", TANK = "tank tanking" }
+local haystacks = {}
+local function Haystack(rune)
+    if haystacks[rune.id] then
+        return haystacks[rune.id]
+    end
+    local words = { rune.name, rune.role, rune.builtFrom, rune.spentWith, rune.resource, rune.core, rune.loop,
+        rune.keywords }
+    for _, mod in ipairs(rune.mods or {}) do
+        words[#words + 1] = mod.name
+        words[#words + 1] = mod.text
+    end
+    local entry = art.runes[rune.id] or {}
+    for _, list in ipairs({ entry.abilities or {}, entry.texts or {}, entry.slots or {} }) do
+        for _, word in ipairs(list) do
+            words[#words + 1] = word
         end
     end
+    for _, role in ipairs(Roles(rune)) do
+        words[#words + 1] = ROLE_WORDS[role]
+    end
+    local text = {}
+    for _, word in ipairs(words) do
+        if type(word) == "string" then
+            text[#text + 1] = word:lower()
+        end
+    end
+    haystacks[rune.id] = table.concat(text, " | "):gsub("%*%*", "")
+    return haystacks[rune.id]
+end
+
+local function HasRole(rune, wanted)
+    for _, role in ipairs(Roles(rune)) do
+        if role == wanted then
+            return true
+        end
+    end
+    return false
+end
+
+-- The runes the search and filters let through: those whose name matches first, then the usable ones, then the
+-- catalog's order.
+local function Filtered()
+    local query = browse.query:lower()
+    local found = {}
+    for order, rune in ipairs(catalog) do
+        local match = true
+        for word in query:gmatch("%S+") do
+            if not Haystack(rune):find(word, 1, true) then
+                match = false
+                break
+            end
+        end
+        if match and (not browse.role or HasRole(rune, browse.role))
+            and (not browse.usable or Standing(rune) == "ok") then
+            local named = query ~= "" and rune.name:lower():find(query, 1, true) and 0 or 1
+            found[#found + 1] = { rune = rune, rank = named * 1000 + (Standing(rune) == "ok" and 0 or 100) + order }
+        end
+    end
+    table.sort(found, function(a, b) return a.rank < b.rank end)
+    local list = {}
+    for _, item in ipairs(found) do
+        list[#list + 1] = item.rune
+    end
+    return list
+end
+
+local function FillRow(row, rune)
+    row.rune = rune
+    if not rune then
+        row:Hide()
+        return
+    end
+    local look = Theme(rune.id)
+    row.icon:SetTexture("Interface\\Icons\\" .. (rune.icon or "INV_Misc_Rune_01"))
+    row.name:SetText(rune.name)
+    row.name:SetTextColor(look.ink[1], look.ink[2], look.ink[3])
+    row.glow:SetVertexColor(look.rgb[1], look.rgb[2], look.rgb[3])
+    local uses = rune.builtFrom or ""
+    if rune.spentWith and not rune.spentWith:find("automatic") and rune.spentWith ~= rune.builtFrom then
+        uses = uses .. " · " .. rune.spentWith
+    end
+    row.uses:SetText((rune.role or "") .. (uses ~= "" and ("  —  " .. uses) or ""))
+    local entry = art.runes[rune.id] or {}
+    row.core:SetText(((entry.core or rune.core or ""):gsub("%*%*", "")))
+    local list = Roles(rune)
+    for r, icon in ipairs(row.roles) do
+        if list[r] then
+            icon:SetTexCoord(RoleCoords(list[r]))
+            icon:ClearAllPoints()
+            icon:SetPoint("LEFT", row.name, "LEFT", (row.name:GetStringWidth() or 200) + 12 + (r - 1) * 24, 0)
+            icon:Show()
+        else
+            icon:Hide()
+        end
+    end
+    local standing, missing = Standing(rune)
+    if state.rune == rune.id then
+        row.status:SetText("Bound to this specialization")
+        row.status:SetTextColor(GOLDEN[1], GOLDEN[2], GOLDEN[3])
+    elseif standing == "missing" then
+        row.status:SetText("Needs " .. missing)
+        row.status:SetTextColor(1, 0.45, 0.4)
+    elseif standing == "soon" then
+        row.status:SetText("Coming soon")
+        row.status:SetTextColor(0.7, 0.7, 0.7)
+    else
+        row.status:SetText("Usable now")
+        row.status:SetTextColor(0.55, 1, 0.55)
+    end
+    if BindRefusal(rune) == nil then
+        row.choose:Show()
+    else
+        row.choose:Hide()
+    end
+    row:Show()
+end
+
+Fill = function()
+    browse.list = Filtered()
+    local most = math.max(0, #browse.list - ROWS)
+    browse.offset = math.max(0, math.min(browse.offset, most))
+    for index, row in ipairs(rows) do
+        FillRow(row, browse.list[browse.offset + index])
+    end
+    for _, chip in ipairs(chips) do
+        chip.on = chip.role == "usable" and browse.usable or (chip.role ~= "usable" and chip.role == browse.role)
+        PillArt(chip)
+    end
+    browser.count:SetText(#browse.list == #catalog and (#catalog .. " runes")
+        or (#browse.list .. " of " .. #catalog .. " runes"))
+    empty.text:SetText("No rune matches your search.")
+    Fade(empty, #browse.list == 0)
+    local span = ROWS * ROW_H - 8
+    if most > 0 then
+        local size = math.max(30, span * ROWS / #browse.list)
+        browser.thumb:SetHeight(size)
+        browser.thumb:ClearAllPoints()
+        browser.thumb:SetPoint("TOP", browser.track, "TOP", 0, -(span - size) * browse.offset / most)
+        browser.thumb:SetVertexColor(theme.rgb[1], theme.rgb[2], theme.rgb[3], 0.8)
+        browser.thumb:Show()
+        browser.track:Show()
+    else
+        browser.thumb:Hide()
+        browser.track:Hide()
+    end
+end
+
+browser:SetScript("OnMouseWheel", function(_, delta)
+    browse.offset = browse.offset - delta
+    Fill()
+end)
+search:SetScript("OnTextChanged", function(self)
+    browse.query = self:GetText() or ""
+    browse.offset = 0
+    if browse.query == "" then
+        self.hint:Show()
+    else
+        self.hint:Hide()
+    end
+    Fill()
+end)
+search:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+search:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+
+EmberforgeRunes_ThemeBrowser = function()
+    for _, chip in ipairs(chips) do
+        PillArt(chip)
+    end
+    for _, row in ipairs(rows) do
+        PillArt(row.preview)
+        PillArt(row.choose)
+    end
+end
+
+local function ShowBrowser()
+    UseTheme(nil)
+    ClearParticles()
+    HideCards()
+    view.medal, view.chosen = nil, nil
+    HideMedal()
+    rays:Hide()
+    view.phase = "browse"
+    Fade(head, true)
+    Fade(browser, true)
+    Fade(pager, true)
+    Fill()
+end
+
+-- A rune chosen from the list: the list fades out quickly and its card comes in, then erupts.
+local function ComeIn(rune)
+    HideCards()
+    Fade(browser, false)
+    Fade(pager, false)
+    Fade(empty, false)
+    Fade(head, false)
+    local card = cards[1]
+    card.rune, card.theme = rune, Theme(rune.id)
+    card.homeX = 800
+    card.x, card.y, card.s, card.a, card.lift, card.glow = 800, CARD_Y + 50, 0.9, 0, 0, 0
+    card.gone, card.flip, card.shake, card.erupted, card.hover = false, 1, nil, false, false
+    card.art:SetTexture(ART .. "Card" .. rune.id)
+    card.art:SetDesaturated(false)
+    SetRoles(card, rune)
+    view.phase, view.t0 = "arrive", view.now
 end
 
 -- The build view's words and options for the picks as they stand.
@@ -1630,10 +1731,14 @@ function Enter()
     if view.mode ~= "browse" then
         view.mode = "offers"
     end
-    head.subtitle:SetText(view.mode == "browse" and "Every Legendary Rune, three at a time"
+    head.subtitle:SetText(view.mode == "browse" and "Every Legendary Rune: search by name, ability or keyword"
         or "Choices based off of your current abilities")
     browseAsk.text:SetText("Not seeing what you're looking for?")
-    StartIntro()
+    if view.mode == "browse" then
+        ShowBrowser()
+    else
+        StartIntro()
+    end
 end
 
 -- A new state from the server, while the panel is open.
@@ -1655,6 +1760,15 @@ function Refresh()
             view.mode = "build"
             OpenBuild()
             Shock(CENTER_X, CENTER_Y, 520, theme.hot)
+        end
+        return
+    end
+    if view.mode == "browse" and view.phase == "browse" then
+        if state.rune ~= 0 and view.pending == state.rune then
+            view.pending = nil
+            ComeIn(RuneById(state.rune))
+        else
+            Fill()
         end
         return
     end
@@ -1708,7 +1822,7 @@ local function Step(dt)
     end
     for _, group in ipairs(groups) do
         if group.alpha ~= group.target then
-            local step = dt / 0.6
+            local step = dt / (group.speed or 0.6)
             group.alpha = group.target > group.alpha and math.min(1, group.alpha + step)
                 or math.max(0, group.alpha - step)
             group:SetAlpha(group.alpha)
@@ -1759,6 +1873,13 @@ local function Step(dt)
         if view.pending and state.rune == view.pending then
             Refresh()
         end
+    elseif phase == "arrive" then
+        local card = cards[1]
+        local k = easeOut(seg(t, 0.2, 0.55))
+        card.a, card.y, card.s = k, CARD_Y + 50 * (1 - k), 0.9 + 0.1 * k
+        if t > 0.6 then
+            Erupt(1)
+        end
     elseif phase == "erupt" then
         local me = cards[view.chosen]
         local charge = seg(t, 0, 0.45)
@@ -1788,10 +1909,11 @@ local function Step(dt)
         end
         for i, card in ipairs(cards) do
             if i ~= view.chosen and card.rune then
-                local bk = seg(t, 0.35, 2.15)
-                card.burn = (bk * bk * 0.35 + bk * 0.65) * 1.08
+                local gone = seg(t, 0, 0.35)
+                card.a = 1 - gone
+                card.s = lerp(card.s, 0.92, clamp(dt * 8))
                 card.lift = lerp(card.lift, 0, clamp(dt * 6))
-                card.x = card.x + math.sin(now * 40 + i) * 0.4 * seg(t, 0.3, 0.6)
+                card.gone = gone >= 1
             end
         end
         if me.erupted then
@@ -1803,7 +1925,6 @@ local function Step(dt)
             for i, card in ipairs(cards) do
                 if i ~= view.chosen and card.rune then
                     card.gone = true
-                    EndBurn(card)
                 end
             end
             me.from = { x = me.x, y = me.y, s = me.s }
@@ -2026,6 +2147,9 @@ local function OnMessage(message)
         Refresh()
     elseif kind == "R" then
         state.built[tonumber(parts[2]) or 0] = parts[3] or "-"
+        if frame:IsShown() and view.phase == "browse" then
+            Fill()
+        end
     elseif kind == "N" then
         state.needs[(parts[2] or "") .. "." .. (parts[3] or "") .. "." .. (parts[4] or "")] = parts[5] or "-"
     elseif kind == "E" then
@@ -2520,6 +2644,7 @@ EmberforgeRunes_Open = Open
 EmberforgeRunes_Debug = { cards = cards, hits = hits, options = options, slots = slots, head = head, note = note,
     previews = previews, previewBar = previewBar,
     browseAsk = browseAsk, pager = pager, choose = choose, done = done, buildHead = buildHead, empty = empty,
+    browser = browser, search = search, chips = chips, rows = rows, browse = browse,
     closer = closer, Step = Step, medal = medal }
 
 -- Loaded to the end (Loader.lua's /runes stands aside).
