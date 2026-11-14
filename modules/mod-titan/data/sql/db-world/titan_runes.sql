@@ -176,7 +176,7 @@ INSERT INTO `spell_proc` (`SpellId`, `SchoolMask`, `SpellFamilyName`, `SpellFami
 (90860, 0, 0, 0, 0, 0, 16, 1, 2, 1027, 0, 0, 0, 100, 0, 0);
 
 -- Their damage, heals and absorbs are the scripts' (shares of the Hero's own hits and power, already in them).
-DELETE FROM `spell_bonus_data` WHERE `entry` IN (90838, 90840, 90841, 90842, 90843, 90861, 90862, 90864, 90865,
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90838, 90840, 90841, 90842, 90843, 90844, 90861, 90862, 90864, 90865,
     90894, 90895, 90900, 90922, 90923, 90924, 90925, 90926, 90953, 90955);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90838, 0, 0, 0, 0, 'Threefold Grave - Frozen Grave'),
@@ -184,6 +184,7 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90841, 0, 0, 0, 0, 'Threefold Grave - Grave Pestilence'),
 (90842, 0, 0, 0, 0, 'Threefold Grave - Crimson Grave'),
 (90843, 0, 0, 0, 0, 'Threefold Grave - Crimson Ward'),
+(90844, 0, 0, 0, 0, 'Threefold Grave - Grave Ward'),
 (90861, 0, 0, 0, 0, 'Unbroken Onslaught - Weapon Wake'),
 (90862, 0, 0, 0, 0, 'Unbroken Onslaught - Bloodletting'),
 (90864, 0, 0, 0, 0, 'Unbroken Onslaught - Aftershock'),

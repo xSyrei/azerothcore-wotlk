@@ -155,7 +155,7 @@ namespace
         SPELL_MIST_MODIFIER_FIRST       = 90820,    // + slot * 3 + choice
 
         SPELL_RUNE_THREEFOLD_GRAVE      = 90830,
-        SPELL_SHARED_BURIAL             = 90831,    // on an enemy in two Graves or more (Spreading Death: after)
+        SPELL_SHARED_BURIAL             = 90831,    // on an enemy in two Graves or more
         SPELL_GRAVE_PESTILENCE_TICK     = 90832,    // the damage over time's ticks (spell_titan_rune_dot)
         SPELL_WAKE_BLEED_TICK           = 90833,
         SPELL_HOLLOW_FLAY_TICK          = 90834,
@@ -165,8 +165,9 @@ namespace
         SPELL_GRAVE_PESTILENCE          = 90841,
         SPELL_CRIMSON_GRAVE             = 90842,
         SPELL_CRIMSON_WARD              = 90843,
+        SPELL_GRAVE_WARD                = 90844,    // Grave Ward's heal
         SPELL_GRAVE_GROUND_FIRST        = 90845,    // the Graves on the ground: + Grave
-        SPELL_CRIMSON_MARCH             = 90848,    // March of the Dead's Crimson Grave: on the Hero
+        SPELL_CRIMSON_MARCH             = 90848,    // the first draft's March of the Dead (on the Hero): removed
         SPELL_GRAVE_MODIFIER_FIRST      = 90850,    // + slot * 3 + choice
 
         SPELL_RUNE_UNBROKEN_ONSLAUGHT   = 90860,
@@ -355,31 +356,31 @@ namespace
     // The Threefold Grave's modifiers: slot (0 Burial Grounds, 1 Gravekeeper, 2 Shared Burial) x 3 + choice.
     enum GraveModifier : uint8
     {
-        MOD_GATHERED_DEAD, MOD_MARCH_OF_THE_DEAD, MOD_FAR_REACHING_GRAVES,
+        MOD_FAR_REACHING_GRAVES, MOD_LONG_REST, MOD_MARCH_OF_THE_DEAD,
         MOD_CRUEL_WINTER, MOD_GRAVE_PESTILENCE, MOD_CRIMSON_BASTION,
-        MOD_DEEP_BURIAL, MOD_SPREADING_DEATH, MOD_HALLOWED_BY_NOTHING,
+        MOD_DEEP_BURIAL, MOD_GRAVE_HUNGER, MOD_GRAVE_WARD,
     };
 
-    // The Graves: Icy Touch's Frozen Grave and Plague Strike's Plagued Grave beneath their target, Blood Strike's
-    // Crimson Grave beneath the Hero (a Frost, an Unholy and a Blood rune's strike).
+    // The Graves: Icy Touch's Frozen Grave, Plague Strike's Plagued Grave and Blood Strike's Crimson Grave, each
+    // beneath its target (a Frost, an Unholy and a Blood rune's strike).
     enum Grave : uint8 { GRAVE_FROZEN, GRAVE_PLAGUED, GRAVE_CRIMSON, GRAVES };
 
-    // The Threefold Grave's tuning (the revised draft's 8 sec; the rest ours). A Grave's tick: the Hero's level x 2
-    // and 6% of their attack power, with their damage bonuses for its school; each Grave its own tick on every enemy
-    // in it (up to 10), 20% more on one in two or three (Shared Burial; 35% with Deep Burial).
-    constexpr uint32 GRAVE_MS = 8000, GRAVE_TICK_MS = 1000, HALLOWED_MS = 2000, SPREADING_MS = 3000;
-    constexpr float GRAVE_RADIUS = 5.0f, FAR_REACHING = 1.5f, CRIMSON_RADIUS = 6.0f, GATHER_RANGE = 10.0f;
+    // The Threefold Grave's tuning. A Grave's tick: the Hero's level x 2 and 6% of their attack power, with their
+    // damage bonuses for its school; each Grave its own tick on every enemy in it (up to 10), 20% more on one in two
+    // or three (Shared Burial; 35% with Deep Burial).
+    constexpr uint32 GRAVE_MS = 8000, LONG_REST_MS = 12000, GRAVE_TICK_MS = 1000;
+    constexpr float GRAVE_RADIUS = 5.0f, FAR_REACHING = 1.5f;
     constexpr float GRAVE_LEVEL = 2.0f, GRAVE_AP = 0.06f;
     constexpr float FROZEN_SHARE = 0.8f, PLAGUED_SHARE = 1.0f, CRIMSON_SHARE = 0.9f;
     constexpr int32 GRAVE_SLOW = -30, CRUEL_WINTER_SLOW = -50;
     constexpr int32 CHILL_MS = 1200, CRUEL_WINTER_MS = 3000;    // the slow outlasts a tick; Cruel Winter's lingers
     constexpr float PESTILENCE_SHARE = 0.4f;                    // Grave Pestilence's disease tick, of a Grave tick
     constexpr int32 PESTILENCE_MS = 4000;
-    constexpr float SHARED_BURIAL = 1.2f, DEEP_BURIAL = 1.35f;
+    constexpr float SHARED_BURIAL = 1.2f, DEEP_BURIAL = 1.35f, GRAVE_HUNGER = 1.25f, HUNGER_BELOW_PCT = 35.0f;
     constexpr float CRIMSON_WARD_PCT = 5.0f, CRIMSON_WARD_CAP_PCT = 15.0f, BASTION_WARD_CAP_PCT = 25.0f;
     constexpr int32 CRIMSON_WARD_MS = 8000;
-    constexpr uint32 CRIMSON_WARD_ICD_MS = 3000;
-    constexpr std::size_t GRAVE_TARGETS = 10;
+    constexpr float GRAVE_WARD_PCT = 1.0f;                      // of maximum health, an enemy in a Grave, a tick
+    constexpr std::size_t GRAVE_TARGETS = 10, GRAVE_WARD_ENEMIES = 3;
 
     // Unbroken Onslaught's modifiers: slot (0 Wake, 1 Follow-Through, 2 Pursuit) x 3 + choice.
     enum OnslaughtModifier : uint8
@@ -553,7 +554,7 @@ namespace
             // DPS or Tank: Blood Strike's blood circle and one of the other two scars.
             { RUNE_THREEFOLD_GRAVE,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_TANK)),
-              { { SPELL_BLOOD_STRIKE }, { SPELL_ICY_TOUCH, SPELL_PLAGUE_STRIKE } }, SPELL_RUNE_THREEFOLD_GRAVE,
+              { { SPELL_BLOOD_STRIKE, SPELL_ICY_TOUCH, SPELL_PLAGUE_STRIKE } }, SPELL_RUNE_THREEFOLD_GRAVE,
               SPELL_GRAVE_MODIFIER_FIRST },
             // Melee DPS: Mortal Strike or Bloodthirst cuts the wake.
             { RUNE_UNBROKEN_ONSLAUGHT, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
@@ -659,12 +660,11 @@ namespace
         {
             uint32 Map = 0;
             Position From;
+            ObjectGuid Host;                        // the enemy it was laid beneath (March of the Dead)
             uint32 Until = 0;                       // game ms
-            bool Extended = false;                  // Hallowed by Nothing, once a Grave
         };
         std::array<GraveAt, GRAVES> Graves;
-        uint32 GraveTimer = 0, LastWard = 0;
-        std::unordered_map<ObjectGuid, uint32> Buried;      // Spreading Death: enemy -> Shared Burial until
+        uint32 GraveTimer = 0;
 
         // Unbroken Onslaught: the wake, a line From..To or a crescent at From facing Facing.
         bool Wake = false, WakeCrescent = false;
@@ -1692,7 +1692,7 @@ namespace
 
     // A Grave's tick: the Hero's level and their attack power; their damage bonuses and talents raise it as the core
     // applies them to the Graves' damage spells.
-    float GravePower(Player* player, SpellSchoolMask /*school*/)
+    float GravePower(Player* player)
     {
         return GRAVE_LEVEL * player->GetLevel() + player->GetTotalAttackPowerValue(BASE_ATTACK) * GRAVE_AP;
     }
@@ -1703,15 +1703,11 @@ namespace
         return at.Until > Now() && at.Map == player->GetMapId();
     }
 
-    // Its ground: 5 yards (7.5 with Far-Reaching Graves) about where it was laid; the Crimson Grave 6, on the Hero
-    // with March of the Dead.
+    // Its ground: 5 yards (7.5 with Far-Reaching Graves) about where it lies.
     Shape GraveShape(Player* player, uint8 grave)
     {
-        State::GraveAt const& at = StateOf(player).Graves[grave];
-        if (grave == GRAVE_CRIMSON)
-            return Circle(HasGraveMarker(player, MOD_MARCH_OF_THE_DEAD) ? player->GetPosition() : at.From,
-                CRIMSON_RADIUS);
-        return Circle(at.From, GRAVE_RADIUS * (HasGraveMarker(player, MOD_FAR_REACHING_GRAVES) ? FAR_REACHING : 1.0f));
+        return Circle(StateOf(player).Graves[grave].From,
+            GRAVE_RADIUS * (HasGraveMarker(player, MOD_FAR_REACHING_GRAVES) ? FAR_REACHING : 1.0f));
     }
 
     bool InGrave(Player* player, uint8 grave, Unit* unit)
@@ -1731,51 +1727,22 @@ namespace
     {
         StateOf(player).Graves[grave].Until = 0;
         player->RemoveDynObject(SPELL_GRAVE_GROUND_FIRST + grave);
-        if (grave == GRAVE_CRIMSON)
-            player->RemoveAurasDueToSpell(SPELL_CRIMSON_MARCH);
     }
 
-    // A Grave laid (the last of its kind gone), 8 sec.
-    void LayGrave(Player* player, uint8 grave, Position const& where)
+    // A Grave beneath the target (the last of its kind gone), 8 sec (12 with Long Rest).
+    void LayGrave(Player* player, uint8 grave, Unit* target)
     {
         State::GraveAt& at = StateOf(player).Graves[grave];
         at.Map = player->GetMapId();
-        at.From = where;
-        at.Until = Now() + GRAVE_MS;
-        at.Extended = false;
-        uint32 look = SPELL_GRAVE_GROUND_FIRST + grave;
-        if (grave == GRAVE_CRIMSON && HasGraveMarker(player, MOD_MARCH_OF_THE_DEAD))
-        {
-            player->RemoveDynObject(look);
-            Lasting(player, player, SPELL_CRIMSON_MARCH, int32(GRAVE_MS));
-            return;
-        }
-        PlaceDecals(player, look, { where });
+        at.From = target->GetPosition();
+        at.Host = target->GetGUID();
+        at.Until = Now() + (HasGraveMarker(player, MOD_LONG_REST) ? LONG_REST_MS : GRAVE_MS);
+        PlaceDecals(player, SPELL_GRAVE_GROUND_FIRST + grave, { at.From });
     }
 
-    // Icy Touch or Plague Strike: its Grave beneath the target, or (Gathered Dead) on the Crimson Grave when that is
-    // within 10 yards of the target.
-    void LayTargetGrave(Player* player, uint8 grave, Unit* target)
+    // Blood Strike's shield: 5% of the Hero's health added, up to 15% (25% with Crimson Bastion), 8 sec.
+    void CrimsonWard(Player* player)
     {
-        Position where = target->GetPosition();
-        if (HasGraveMarker(player, MOD_GATHERED_DEAD) && GraveActive(player, GRAVE_CRIMSON))
-        {
-            Position crimson = GraveShape(player, GRAVE_CRIMSON).From;
-            if (target->GetExactDist2d(&crimson) <= GATHER_RANGE)
-                where = crimson;
-        }
-        LayGrave(player, grave, where);
-    }
-
-    // The Crimson Grave's shield: 5% of the Hero's health added, up to 15% (25% with Crimson Bastion), 8 sec; once
-    // every 3 sec but on the strike that lays the Grave.
-    void CrimsonWard(Player* player, bool laying)
-    {
-        State& state = StateOf(player);
-        uint32 now = Now();
-        if (!laying && now - state.LastWard < CRIMSON_WARD_ICD_MS)
-            return;
-        state.LastWard = now;
         float cap = HasGraveMarker(player, MOD_CRIMSON_BASTION) ? BASTION_WARD_CAP_PCT : CRIMSON_WARD_CAP_PCT;
         int32 have = 0;
         if (AuraEffect* ward = player->GetAuraEffect(SPELL_CRIMSON_WARD, EFFECT_0))
@@ -1786,37 +1753,9 @@ namespace
             Lasting(player, player, SPELL_CRIMSON_WARD, CRIMSON_WARD_MS, &amount);
     }
 
-    // Blood Strike landed: inside the Hero's Crimson Grave it stays, and grants its shield (Hallowed by Nothing: in
-    // another Grave too, every Grave 2 sec longer, once each); else the Crimson Grave is laid beneath them, its shield
-    // at once.
-    void BloodStrike(Player* player)
-    {
-        if (!InGrave(player, GRAVE_CRIMSON, player))
-        {
-            LayGrave(player, GRAVE_CRIMSON, player->GetPosition());
-            CrimsonWard(player, true);
-            return;
-        }
-        CrimsonWard(player, false);
-        if (!HasGraveMarker(player, MOD_HALLOWED_BY_NOTHING) || GravesHolding(player, player) < 2)
-            return;
-        State& state = StateOf(player);
-        for (uint8 grave = 0; grave < GRAVES; ++grave)
-        {
-            State::GraveAt& at = state.Graves[grave];
-            if (!GraveActive(player, grave) || at.Extended)
-                continue;
-            at.Extended = true;
-            at.Until += HALLOWED_MS;
-            if (grave == GRAVE_CRIMSON)
-                if (Aura* march = player->GetAura(SPELL_CRIMSON_MARCH))
-                    march->SetDuration(march->GetDuration() + int32(HALLOWED_MS));
-        }
-    }
-
-    // Every second: each Grave's tick on each enemy in it (up to 10), Shared Burial's 20% (35%) on one in two or more
-    // (or, Spreading Death, just out of an overlap), the Frozen Grave's slow, Grave Pestilence's disease; the
-    // Crimson Grave's shield gone once the Hero leaves it (kept with Crimson Bastion).
+    // Every second: March of the Dead moves each Grave to its enemy; each Grave's tick on each enemy in it (up to
+    // 10), Shared Burial's 20% (35%) on one in two or more, Grave Hunger's 25% below 35% health, the Frozen Grave's
+    // slow, Grave Pestilence's disease; Grave Ward's healing.
     void GraveTick(Player* player, uint32 diff)
     {
         State& state = StateOf(player);
@@ -1826,19 +1765,27 @@ namespace
         state.GraveTimer = 0;
         uint32 now = Now();
         bool any = false;
+        bool marching = HasGraveMarker(player, MOD_MARCH_OF_THE_DEAD);
         for (uint8 grave = 0; grave < GRAVES; ++grave)
         {
-            State::GraveAt const& at = state.Graves[grave];
+            State::GraveAt& at = state.Graves[grave];
             if (at.Until && (at.Until <= now || at.Map != player->GetMapId()))
                 ClearGrave(player, grave);
-            any = any || state.Graves[grave].Until;
+            if (!at.Until)
+                continue;
+            any = true;
+            if (!marching)
+                continue;
+            Unit* host = ObjectAccessor::GetUnit(*player, at.Host);
+            if (host && host->IsAlive() && host->GetExactDist2d(&at.From) > 1.0f)
+            {
+                at.From = host->GetPosition();
+                PlaceDecals(player, SPELL_GRAVE_GROUND_FIRST + grave, { at.From });
+            }
         }
-        if (!HasGraveMarker(player, MOD_CRIMSON_BASTION) && !InGrave(player, GRAVE_CRIMSON, player))
-            player->RemoveAurasDueToSpell(SPELL_CRIMSON_WARD);
         if (!any || !player->IsAlive())
             return;
 
-        bool spreading = HasGraveMarker(player, MOD_SPREADING_DEATH);
         float burial = HasGraveMarker(player, MOD_DEEP_BURIAL) ? DEEP_BURIAL : SHARED_BURIAL;
         std::size_t hit = 0;
         for (Unit* enemy : EnemiesAround(player, player, 50.0f))
@@ -1848,21 +1795,19 @@ namespace
                 continue;
             if (++hit > GRAVE_TARGETS)
                 break;
-            if (count >= 2 && spreading)
-                state.Buried[enemy->GetGUID()] = now + SPREADING_MS;
-            auto buried = state.Buried.find(enemy->GetGUID());
-            bool shared = count >= 2 || (spreading && buried != state.Buried.end() && buried->second > now);
-            float scale = shared ? burial : 1.0f;
-            if (shared)
+            float scale = count >= 2 ? burial : 1.0f;
+            if (count >= 2)
                 Lasting(player, enemy, SPELL_SHARED_BURIAL, 1500);
+            if (HasGraveMarker(player, MOD_GRAVE_HUNGER) && enemy->GetHealthPct() < HUNGER_BELOW_PCT)
+                scale *= GRAVE_HUNGER;
+            float power = GravePower(player);
             for (uint8 grave = 0; grave < GRAVES && enemy->IsAlive(); ++grave)
             {
                 if (!InGrave(player, grave, enemy))
                     continue;
                 if (grave == GRAVE_FROZEN)
                 {
-                    int32 damage = std::max<int32>(1, int32(GravePower(player, SPELL_SCHOOL_MASK_FROST)
-                        * FROZEN_SHARE * scale));
+                    int32 damage = std::max<int32>(1, int32(power * FROZEN_SHARE * scale));
                     player->CastCustomSpell(enemy, SPELL_FROZEN_GRAVE, &damage, nullptr, nullptr, true);
                     bool cruel = HasGraveMarker(player, MOD_CRUEL_WINTER);
                     int32 slow = cruel ? CRUEL_WINTER_SLOW : GRAVE_SLOW;
@@ -1871,7 +1816,6 @@ namespace
                 }
                 else if (grave == GRAVE_PLAGUED)
                 {
-                    float power = GravePower(player, SPELL_SCHOOL_MASK_SHADOW);
                     int32 damage = std::max<int32>(1, int32(power * PLAGUED_SHARE * scale));
                     player->CastCustomSpell(enemy, SPELL_PLAGUED_GRAVE, &damage, nullptr, nullptr, true);
                     if (HasGraveMarker(player, MOD_GRAVE_PESTILENCE) && enemy->IsAlive())
@@ -1882,14 +1826,17 @@ namespace
                 }
                 else
                 {
-                    int32 damage = std::max<int32>(1, int32(GravePower(player, SPELL_SCHOOL_MASK_SHADOW)
-                        * CRIMSON_SHARE * scale));
+                    int32 damage = std::max<int32>(1, int32(power * CRIMSON_SHARE * scale));
                     player->CastCustomSpell(enemy, SPELL_CRIMSON_GRAVE, &damage, nullptr, nullptr, true);
                 }
             }
         }
-        for (auto it = state.Buried.begin(); it != state.Buried.end();)
-            it = it->second <= now ? state.Buried.erase(it) : std::next(it);
+        if (HasGraveMarker(player, MOD_GRAVE_WARD) && hit && !player->IsFullHealth())
+        {
+            int32 heal = std::max<int32>(1, int32(player->GetMaxHealth() * GRAVE_WARD_PCT / 100.0f
+                * float(std::min(hit, GRAVE_WARD_ENEMIES))));
+            player->CastCustomSpell(player, SPELL_GRAVE_WARD, &heal, nullptr, nullptr, true);
+        }
     }
 
     // ---- Unbroken Onslaught ------------------------------------------------------------------------------------
@@ -2454,7 +2401,6 @@ namespace
         for (uint8 grave = 0; grave < GRAVES; ++grave)
             ClearGrave(player, grave);
         player->RemoveAurasDueToSpell(SPELL_CRIMSON_WARD);
-        state.Buried.clear();
         EndWake(player);
         state.SacredUntil = 0;
         player->RemoveDynObject(SPELL_SACRED_GROUND);
@@ -2481,6 +2427,7 @@ namespace
             unlearn(old);
         for (uint32 old = 90835; old <= 90837; ++old)
             player->RemoveAurasDueToSpell(old);
+        player->RemoveAurasDueToSpell(SPELL_CRIMSON_MARCH);
         // The Dawnbound Crusader's first draft taught Dawn Vow and vowed the Hero: gone with it.
         unlearn(SPELL_DAWN_VOW);
         player->RemoveAurasDueToSpell(SPELL_DAWN_VOWED);
@@ -3200,9 +3147,10 @@ class spell_titan_rune_grave_strike : public SpellScript
         _done = true;
         uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
         if (first == SPELL_BLOOD_STRIKE)
-            BloodStrike(player);
-        else
-            LayTargetGrave(player, first == SPELL_ICY_TOUCH ? GRAVE_FROZEN : GRAVE_PLAGUED, target);
+            CrimsonWard(player);
+        if (target->IsAlive())
+            LayGrave(player, first == SPELL_ICY_TOUCH ? GRAVE_FROZEN : first == SPELL_PLAGUE_STRIKE ? GRAVE_PLAGUED
+                : GRAVE_CRIMSON, target);
     }
 
     void Register() override

@@ -79,8 +79,8 @@ The five after them (their own concept docs), each with its markers 20 on from i
 
 - the Threefold Grave, 90830 (its revised draft): Shared Burial 90831, the Frozen Grave's damage 90838 and slow
   90839, the Plagued Grave's 90840, Grave Pestilence 90841, the Crimson Grave's 90842, Crimson Ward 90843, the
-  Graves' grounds 90845-90847 (March of the Dead's on the Hero 90848); 90832-90837, 90844 and 90849 were the first
-  draft's (Requiem, the Dominions);
+  Graves' grounds 90845-90847, Grave Ward 90844; 90848 was the first March of the Dead's (on the Hero), 90832-90837
+  and 90849 the first draft's (Requiem, the Dominions);
 - the Unbroken Onslaught, 90860 (its procs: melee abilities): Weapon Wake 90861, Bloodletting 90862, the wake's
   ground 90863, Aftershock 90864, Second Wind 90865;
 - the Dawnbound Crusader, 90890: the first draft's Dawn Vow 90891 (on the ally 90892; unlearned), the echo's heal
@@ -709,8 +709,8 @@ ONSLAUGHT_RUNE['set'] = {**ONSLAUGHT_RUNE['set'], 'ProcFlags': PROC_DONE_MELEE_S
 SPELLS += [
     buff(90830, 'Rune of the Threefold Grave', GRAVE_ICON,
          'Icy Touch lays a Frozen Grave beneath its target, Plague Strike a Plagued Grave, Blood Strike a Crimson '
-         'Grave beneath you: one of each, 8 sec. Enemies in two or more take 20% more from your Graves. Blood Strike '
-         'in your Crimson Grave grants a shield.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'Grave: one of each, 8 sec. Enemies in two or more take 20% more from your Graves. Blood Strike also '
+         'shields you.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     harmful(90831, 'Shared Burial', 'Spell_Shadow_DeathPact', 'Taking more damage from the Threefold Grave.',
             DURATION_2S, aura(AURA_DUMMY, 1, 0), SHADOW),
     strike(90832, 'Grave Pestilence', 'Spell_Shadow_CreepingPlague', SHADOW, modifiers=True),
@@ -729,6 +729,8 @@ SPELLS += [
     ground(90847, 'Crimson Grave', 'Spell_Deathknight_BloodBoil', 'GraveBloodCircle', DURATION_20S),
     shown(90848, 'Crimson Grave', 'Spell_Deathknight_BloodBoil', 'Your Crimson Grave follows you.', DURATION_20S,
           key='GraveBloodMarch'),
+    {**heal(90844, 'Grave Ward', 'Spell_Deathknight_BloodBoil', 'The dead mend you.'),
+     'set': {**HEAL_SET, 'SchoolMask': SHADOW, 'AttributesEx2': 0, 'SpellVisual': 0}},
 
     ONSLAUGHT_RUNE,
     strike(90861, 'Weapon Wake', 'Ability_Warrior_Cleave', PHYSICAL, key='WakeHit', modifiers=True),
@@ -802,9 +804,9 @@ SPELLS += [
     ground(90957, 'Scalding Ground', 'Spell_Fire_Incinerate', 'ScaldingGround', DURATION_6S),
 ]
 LEGEND_MODIFIERS = [
-    (90850, GRAVE_ICON, [('Gathered Dead', 'March of the Dead', 'Far-Reaching Graves'),
+    (90850, GRAVE_ICON, [('Far-Reaching Graves', 'Long Rest', 'March of the Dead'),
                          ('Cruel Winter', 'Grave Pestilence', 'Crimson Bastion'),
-                         ('Deep Burial', 'Spreading Death', 'Hallowed by Nothing')]),
+                         ('Deep Burial', 'Grave Hunger', 'Grave Ward')]),
     (90880, ONSLAUGHT_ICON, [("Executioner's Cut", 'Whirling Steel', 'Raking Passage'),
                              ('Overpowering Echo', 'Bloodletting', 'Aftershock'),
                              ('Relentless', 'Battlefield Claim', 'Second Wind')]),
