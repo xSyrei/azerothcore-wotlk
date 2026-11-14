@@ -174,6 +174,7 @@ namespace
         SPELL_WAKE_BLEED                = 90862,
         SPELL_WAKE_GROUND               = 90863,    // the wake on the ground
         SPELL_WAKE_AFTERSHOCK           = 90864,
+        SPELL_SECOND_WIND               = 90865,
         SPELL_ONSLAUGHT_MODIFIER_FIRST  = 90880,    // + slot * 3 + choice
 
         SPELL_RUNE_DAWNBOUND_CRUSADER   = 90890,
@@ -385,7 +386,7 @@ namespace
     {
         MOD_EXECUTIONERS_CUT, MOD_WHIRLING_STEEL, MOD_RAKING_PASSAGE,
         MOD_OVERPOWERING_ECHO, MOD_BLOODLETTING, MOD_AFTERSHOCK,
-        MOD_RELENTLESS, MOD_BATTLEFIELD_CLAIM, MOD_CHANGING_PREY,
+        MOD_RELENTLESS, MOD_BATTLEFIELD_CLAIM, MOD_SECOND_WIND,
     };
 
     // Unbroken Onslaught's tuning: the wake's attack is 60% of a normalized main-hand swing to each enemy along it
@@ -398,6 +399,7 @@ namespace
     constexpr float BLEED_SHARE = 0.3f, BLEED_CAP = 0.6f;       // of the wake's hit; at most, of a swing
     constexpr int32 BLEED_TICKS = 6;
     constexpr std::size_t WAKE_TARGETS = 6;
+    constexpr float SECOND_WIND_PCT = 1.0f;                     // of maximum health, an enemy the wake hits
 
     // The Dawnbound Crusader's modifiers: slot (0 Echo, 1 Light, 2 Grace) x 3 + choice.
     enum DawnModifier : uint8
@@ -1926,7 +1928,8 @@ namespace
     }
 
     // The wake's attack: 60% of a normalized swing to each enemy along it (up to 6), its primary target more;
-    // Bloodletting: a bleed of 30% of the hit over 6 sec, refreshed, never above 60% of a swing.
+    // Bloodletting: a bleed of 30% of the hit over 6 sec, refreshed, never above 60% of a swing; Second Wind: 1% of
+    // the Hero's health back for each enemy hit.
     void WakeStrike(Player* player, Shape const& shape, ObjectGuid primary, float share)
     {
         if (!player->IsInWorld() || !player->IsAlive())
@@ -1934,7 +1937,14 @@ namespace
         float swing = float(player->CalculateDamage(BASE_ATTACK, true, true));
         float bonus = HasOnslaughtMarker(player, MOD_EXECUTIONERS_CUT) ? EXECUTIONER_PRIMARY : WAKE_PRIMARY;
         bool bleed = HasOnslaughtMarker(player, MOD_BLOODLETTING);
-        for (Unit* enemy : EnemiesIn(player, shape, WAKE_TARGETS))
+        std::vector<Unit*> enemies = EnemiesIn(player, shape, WAKE_TARGETS);
+        if (HasOnslaughtMarker(player, MOD_SECOND_WIND) && !enemies.empty())
+        {
+            int32 heal = std::max<int32>(1, int32(player->GetMaxHealth() * SECOND_WIND_PCT / 100.0f
+                * float(enemies.size())));
+            player->CastCustomSpell(player, SPELL_SECOND_WIND, &heal, nullptr, nullptr, true);
+        }
+        for (Unit* enemy : enemies)
         {
             float amount = swing * WAKE_SHARE * share * (enemy->GetGUID() == primary ? bonus : 1.0f);
             int32 damage = std::max<int32>(1, int32(amount));
@@ -1950,10 +1960,9 @@ namespace
         }
     }
 
-    // A different melee ability through the wake reopens it, once: its attack along the wake a moment later (at
-    // once with Overpowering Echo), Aftershock a second impact there 1.5 sec on at half. Changing Prey: the one
-    // struck takes the primary target's bonus.
-    void ReopenWake(Player* player, Unit* struck)
+    // The next different melee ability (on any enemy) reopens the wake, once: its attack along the wake a moment
+    // later (at once with Overpowering Echo), Aftershock a second impact there 1.5 sec on at half.
+    void ReopenWake(Player* player)
     {
         State& state = StateOf(player);
         Shape shape;
@@ -1964,7 +1973,7 @@ namespace
         shape.HalfWidth = state.WakeHalfWidth;
         shape.Radius = CRESCENT_RADIUS;
         shape.Arc = CRESCENT_ARC;
-        ObjectGuid primary = HasOnslaughtMarker(player, MOD_CHANGING_PREY) ? struck->GetGUID() : state.WakePrimary;
+        ObjectGuid primary = state.WakePrimary;
         EndWake(player);
         uint32 delay = HasOnslaughtMarker(player, MOD_OVERPOWERING_ECHO) ? 0 : WAKE_DELAY_MS;
         if (!delay)
@@ -1999,20 +2008,10 @@ namespace
         PlaceDecals(player, SPELL_WAKE_GROUND, shape.Points(2.5f));
     }
 
-    bool InWake(Player* player, Unit* unit)
+    bool WakeOpen(Player* player)
     {
         State& state = StateOf(player);
-        if (!state.Wake || state.WakeMap != player->GetMapId() || Now() >= state.WakeUntil)
-            return false;
-        Shape shape;
-        shape.Cone = state.WakeCrescent;
-        shape.From = state.WakeFrom;
-        shape.To = state.WakeTo;
-        shape.Facing = state.WakeFacing;
-        shape.HalfWidth = state.WakeHalfWidth;
-        shape.Radius = CRESCENT_RADIUS;
-        shape.Arc = CRESCENT_ARC;
-        return shape.Holds(unit);
+        return state.Wake && state.WakeMap == player->GetMapId() && Now() < state.WakeUntil;
     }
 
     // The wake's end; Relentless: it follows its target (moved with it, twice a second).
@@ -3214,8 +3213,8 @@ class spell_titan_rune_grave_strike : public SpellScript
     bool _done = false;
 };
 
-// Mortal Strike and Bloodthirst (every rank) with Unbroken Onslaught: the other one through the wake reopens it,
-// then either cuts a new wake through its target.
+// Mortal Strike and Bloodthirst (every rank) with Unbroken Onslaught: the other one reopens the wake, then either
+// cuts a new wake through its target.
 class spell_titan_rune_wake_cut : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_wake_cut);
@@ -3227,8 +3226,8 @@ class spell_titan_rune_wake_cut : public SpellScript
         if (!player || !target || !player->HasAura(SPELL_RUNE_UNBROKEN_ONSLAUGHT))
             return;
         uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
-        if (StateOf(player).WakeCreator != first && InWake(player, target))
-            ReopenWake(player, target);
+        if (StateOf(player).WakeCreator != first && WakeOpen(player))
+            ReopenWake(player);
         if (target->IsAlive())
             CutWake(player, target, first);
     }
@@ -3239,7 +3238,7 @@ class spell_titan_rune_wake_cut : public SpellScript
     }
 };
 
-// Unbroken Onslaught's aura: any other melee ability striking an enemy in the wake reopens it.
+// Unbroken Onslaught's aura: any other melee ability that strikes an enemy reopens the wake.
 class spell_titan_rune_unbroken_onslaught : public AuraScript
 {
     PrepareAuraScript(spell_titan_rune_unbroken_onslaught);
@@ -3255,8 +3254,8 @@ class spell_titan_rune_unbroken_onslaught : public AuraScript
         if (first == SPELL_MORTAL_STRIKE || first == SPELL_BLOODTHIRST
             || (spell->Id >= SPELL_RUNE_UNBROKEN_ONSLAUGHT && spell->Id < SPELL_RUNE_DAWNBOUND_CRUSADER))
             return false;
-        if (InWake(player, struck))
-            ReopenWake(player, struck);
+        if (WakeOpen(player))
+            ReopenWake(player);
         return false;
     }
 

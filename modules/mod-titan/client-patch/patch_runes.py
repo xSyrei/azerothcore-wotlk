@@ -82,7 +82,7 @@ The five after them (their own concept docs), each with its markers 20 on from i
   Graves' grounds 90845-90847 (March of the Dead's on the Hero 90848); 90832-90837, 90844 and 90849 were the first
   draft's (Requiem, the Dominions);
 - the Unbroken Onslaught, 90860 (its procs: melee abilities): Weapon Wake 90861, Bloodletting 90862, the wake's
-  ground 90863, Aftershock 90864;
+  ground 90863, Aftershock 90864, Second Wind 90865;
 - the Dawnbound Crusader, 90890: the first draft's Dawn Vow 90891 (on the ally 90892; unlearned), the echo's heal
   and damage 90894-90895, their looks 90896-90897, Sunburst's 90898, Sacred Ground 90899, Radiant Ward 90900;
 - the Hollow Congregation, 90920: the echo's look 90921, Hollow Flay 90922, the barrage's bolt 90923, Accusation
@@ -700,9 +700,9 @@ def shown(spell_id, name, icon, text, duration, key=None, effects=None):
 
 
 ONSLAUGHT_RUNE = buff(90860, 'Rune of the Unbroken Onslaught', ONSLAUGHT_ICON,
-                      'Mortal Strike and Bloodthirst cut a Weapon Wake through their target for 6 sec. The next '
-                      'different melee ability to strike an enemy in the wake reopens it: another attack along it, '
-                      '60% of a weapon swing to each enemy, its first target 25% more.',
+                      'Mortal Strike and Bloodthirst cut a Weapon Wake through their target for 6 sec. Your next '
+                      'other melee ability rips it open: 60% of a weapon swing to every enemy in it, its first '
+                      'target 25% more.',
                       DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)})
 # Its procs: every melee ability that hits; the script picks the ones that reopen the wake.
 ONSLAUGHT_RUNE['set'] = {**ONSLAUGHT_RUNE['set'], 'ProcFlags': PROC_DONE_MELEE_SPELL, 'ProcChance': 101}
@@ -735,6 +735,8 @@ SPELLS += [
     dot(90862, 'Bloodletting', 'Ability_Gouge', PHYSICAL, DURATION_6S, 'Bleeding every 1 sec.'),
     ground(90863, 'Weapon Wake', 'Ability_Warrior_Cleave', 'OnslaughtWake', DURATION_10S),
     strike(90864, 'Aftershock', 'Ability_Warrior_Shockwave', PHYSICAL, VISUAL_THUNDER_HIT, modifiers=True),
+    {**heal(90865, 'Second Wind', 'Ability_Hunter_Harass', 'The onslaught carries you on.'),
+     'set': {**HEAL_SET, 'SchoolMask': PHYSICAL, 'AttributesEx2': 0, 'SpellVisual': 0}},
 
     buff(90890, 'Rune of the Dawnbound Crusader', DAWN_ICON,
          'Crusader Strike and Holy Shock send a Dawn Echo a moment later: half of their damage again, or half of '
@@ -805,7 +807,7 @@ LEGEND_MODIFIERS = [
                          ('Deep Burial', 'Spreading Death', 'Hallowed by Nothing')]),
     (90880, ONSLAUGHT_ICON, [("Executioner's Cut", 'Whirling Steel', 'Raking Passage'),
                              ('Overpowering Echo', 'Bloodletting', 'Aftershock'),
-                             ('Relentless', 'Battlefield Claim', 'Changing Prey')]),
+                             ('Relentless', 'Battlefield Claim', 'Second Wind')]),
     (90910, DAWN_ICON, [('Sunburst', 'Focused Dawn', 'Communion'),
                         ('Sacred Ground', 'Steadfast', "Judgment's Echo"),
                         ("Dawn's Mercy", 'Swift Dawn', 'Radiant Ward')]),
