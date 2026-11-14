@@ -100,8 +100,8 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90774, 0, 0, 0, 0, 'Echoing Thunder - Thunder Echo'),
 (90776, 0, 0, 0, 0, 'Echoing Thunder - Sheltering Reverberation');
 
--- The Rune of the Wellspring: Chain Heal (every rank) makes and reaches the Wellspring; Earth Shield's heal refreshes
--- it (Flowing Waters).
+-- The Rune of the Wellspring: Chain Heal (every rank) jumps once more and favors the Earth Shield wearer; Earth
+-- Shield's heal flows on (Flowing Waters).
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_chain_heal',
     'spell_titan_rune_earth_shield_heal');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
@@ -120,12 +120,12 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 -- Their heals, heals over time and absorbs are the scripts' (shares of healing done, power already in it).
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (90792, 90793, 90794, 90811, 90812, 90813, 90814);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
-(90792, 0, 0, 0, 0, 'Wellspring - additional jump'),
+(90792, 0, 0, 0, 0, 'Wellspring - extra jump'),
 (90793, 0, 0, 0, 0, 'Wellspring - Tidal Shelter'),
 (90794, 0, 0, 0, 0, 'Wellspring - Renewing Current'),
 (90811, 0, 0, 0, 0, 'Wandering Mist'),
 (90812, 0, 0, 0, 0, 'Wandering Mist - lesser Enveloping Mist'),
-(90813, 0, 0, 0, 0, 'Wandering Mist - Rolling Mist'),
+(90813, 0, 0, 0, 0, 'Wandering Mist - Lingering Mist'),
 (90814, 0, 0, 0, 0, 'Wandering Mist - Jade Shelter');
 
 -- The five runes after them. The Threefold Grave: Icy Touch, Plague Strike and Blood Strike (every rank) lay

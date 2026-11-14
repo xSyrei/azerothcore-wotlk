@@ -60,21 +60,20 @@ The Rune of Echoing Thunder (the "Rune of Echoing Thunder" concept doc), 90770 o
 
 The Rune of the Wellspring (the "Rune of the Wellspring" concept doc), 90790 on:
 
-- 90790 the rune; 90791 Wellspring: on the Earth Shield wearer Chain Heal made one, 6 sec (10 with Lasting Spring),
-  Riptide's swirl of water about them;
-- 90792 Wellspring: the additional jump's heal (its amount set by the script), Chain Heal's bolt and its look;
+- 90790 the rune (90791, the first draft's Wellspring, is gone);
+- 90792 Wellspring: the extra jump's heal (its amount set by the script), Chain Heal's bolt and its look;
 - 90793 Tidal Shelter: an absorb, 4 sec; 90794 Renewing Current: healing every sec for 4 sec;
-- 90795 the jump's bolt from the Wellspring to the ally (cast by the Wellspring, no effect);
-- 90800-90808 its nine modifiers' markers (Wellspring, Current, Undertow: 3 each), hidden.
+- 90795 the jump's bolt from the ally it leaves to the next (cast by that ally, no effect);
+- 90800-90808 its nine modifiers' markers (Spring, Earth, Undertow: 3 each), hidden.
 
 The Rune of the Wandering Mist (the "Rune of the Wandering Mist" concept doc), 90810 on:
 
 - 90810 the rune; 90811 Wandering Mist: a ribbon of jade mist's heal (its amount set by the script), Vivify's
   splash look;
 - 90812 lesser Enveloping Mist (Comforting Veil): healing every sec for 6 sec, Enveloping Mist's look;
-- 90813 lingering mist (Rolling Mist): healing every sec for 4 sec;
+- 90813 Lingering Mist: healing every sec for 4 sec;
 - 90814 Jade Shelter: an absorb, 4 sec;
-- 90820-90828 its nine modifiers' markers (Mistflow, Technique, Mistweaver's Approach: 3 each), hidden.
+- 90820-90828 its nine modifiers' markers (Mistflow, Technique, Approach: 3 each), hidden.
 
 The five after them (their own concept docs), each with its markers 20 on from its first:
 
@@ -545,15 +544,9 @@ def absorb(spell_id, name, icon, duration):
 
 SPELLS += [
     buff(90790, 'Rune of the Wellspring', WELLSPRING_ICON,
-         'When Chain Heal heals the wearer of your Earth Shield, they become a Wellspring for 6 sec. Your next Chain '
-         'Heal to reach them jumps once more, to an injured ally, for 30% of the healing they received.',
+         'Chain Heal jumps once more from its last target, to the most injured ally nearby, for 40% of its first '
+         'heal. It heals the wearer of your Earth Shield for 20% more.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
-    {
-        **buff(90791, 'Wellspring', 'Spell_Nature_HealingWaveGreater',
-               'A Wellspring: your Chain Heal reaching it flows on to another ally.', DURATION_10S,
-               {1: aura(AURA_DUMMY, 1, 0)}),
-        'set': {**SHOWN, 'DurationIndex': DURATION_10S, 'SpellVisual': VISUAL_RIPTIDE},
-    },
     {
         'id': 90792, 'copy': LESSER_HEAL, 'name': 'Wellspring', 'icon': 'Spell_Nature_HealingWaveGreater',
         'description': 'A current of the Wellspring.', 'tooltip': '',
@@ -576,9 +569,9 @@ SPELLS += [
         'clear': [2, 3],
     },
     buff(90810, 'Rune of the Wandering Mist', MIST_ICON,
-         'While you channel Soothing Mist, its healing ticks have a 25% chance to send a Wandering Mist to another '
-         'injured ally within 20 yards of your channel target, healing for 30% of the tick, once every 2 sec. '
-         'Enveloping Mist and Vivify on your Soothing Mist target are cast at once, without breaking the channel.',
+         'Each Soothing Mist tick also sends a Wandering Mist to your most injured ally within 20 yards of its target, '
+         'healing for 25% of the tick. Enveloping Mist and Vivify on your Soothing Mist target are cast at once, '
+         'without breaking the channel.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {
         'id': 90811, 'copy': LESSER_HEAL, 'name': 'Wandering Mist', 'icon': 'Ability_Monk_SoothingMists',
@@ -590,18 +583,18 @@ SPELLS += [
     },
     periodic_heal(90812, 'Enveloping Mist', 'Spell_Monk_EnvelopingMist', 'A lesser Enveloping Mist.', DURATION_6S,
                   'EnvelopingMist'),
-    periodic_heal(90813, 'Rolling Mist', 'Ability_Monk_SoothingMists', 'A lingering mist.', DURATION_4S),
+    periodic_heal(90813, 'Lingering Mist', 'Ability_Monk_SoothingMists', 'A lingering mist.', DURATION_4S),
     absorb(90814, 'Jade Shelter', 'Ability_Monk_SoothingMists', DURATION_4S),
 ]
 WELLSPRING_MODIFIERS = [
-    ('Flowing Waters', 'Lasting Spring', 'Widening Waters'),
-    ('Deep Current', 'Split Tributary', 'Concentrated Current'),
-    ('Tidal Shelter', 'Long Reach', 'Renewing Current'),
+    ('Split Tributary', 'Deep Current', 'Concentrated Current'),
+    ('Flowing Waters', 'Bedrock', 'Renewed Shield'),
+    ('Tidal Shelter', 'Renewing Current', 'Long Reach'),
 ]
 MIST_MODIFIERS = [
-    ('Flowing Currents', 'Gathering Mists', 'Drifting Mist'),
+    ('Flowing Currents', 'Drifting Mist', 'Jade Shelter'),
     ('Comforting Veil', 'Vivacious Flow', 'Peaceful Focus'),
-    ('Rolling Mist', 'Jade Shelter', 'Effortless Breathing'),
+    ('Effortless Breathing', 'Lingering Mist', 'Deep Breath'),
 ]
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
