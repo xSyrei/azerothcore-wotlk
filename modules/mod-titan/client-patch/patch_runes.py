@@ -144,6 +144,9 @@ EFFECT_HEAL, EFFECT_PERSISTENT_AREA_AURA = 10, 27
 AURA_SCHOOL_ABSORB, AURA_MOD_DECREASE_SPEED, AURA_PERIODIC_DUMMY = 69, 33, 226
 AURA_MOD_HEALING_DONE_PERCENT = 136
 TARGET_UNIT_TARGET_ALLY, TARGET_DEST_CASTER, TARGET_UNIT_DEST_AREA_ENEMY = 21, 18, 16
+# The script lays its grounds where it chooses (CastSpell at x, y, z): at the caster (18) would put every one at the
+# Hero's feet.
+TARGET_DEST_DEST = 87
 RADIUS_8 = 14
 DURATION_2S, DURATION_6S = 39, 32
 SHOWN = {**OWN, 'Attributes': SPELL_ATTR0_NO_AURA_CANCEL, 'AttributesEx': 0,
@@ -293,7 +296,7 @@ SPELLS += [
         'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
                 'DurationIndex': DURATION_2S, 'RangeIndex': RANGE_VISION},
         'effects': {1: {'Effect': EFFECT_PERSISTENT_AREA_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 1,
-                        'RealPointsPerLevel': 0.0, 'Amplitude': 0, 'TargetA': TARGET_DEST_CASTER,
+                        'RealPointsPerLevel': 0.0, 'Amplitude': 0, 'TargetA': TARGET_DEST_DEST,
                         'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8}},
     },
 ]
@@ -485,7 +488,7 @@ SPELLS += [
         'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
                 'DurationIndex': DURATION_6S_INDEX, 'RangeIndex': RANGE_VISION},
         'effects': {1: {'Effect': EFFECT_PERSISTENT_AREA_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 1,
-                        'RealPointsPerLevel': 0.0, 'Amplitude': 0, 'TargetA': TARGET_DEST_CASTER,
+                        'RealPointsPerLevel': 0.0, 'Amplitude': 0, 'TargetA': TARGET_DEST_DEST,
                         'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8}},
     },
     {
@@ -709,7 +712,7 @@ def ground(spell_id, name, icon, key, duration):
     return {'id': spell_id, 'copy': CONSECRATION, 'name': name, 'icon': icon, 'description': '', 'tooltip': '',
             'visual': key, 'set': {**FREE, **NO_FAMILY, 'DurationIndex': duration, 'RangeIndex': RANGE_VISION},
             'effects': {1: {'Effect': EFFECT_PERSISTENT_AREA_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 1,
-                            'RealPointsPerLevel': 0.0, 'Amplitude': 0, 'TargetA': TARGET_DEST_CASTER,
+                            'RealPointsPerLevel': 0.0, 'Amplitude': 0, 'TargetA': TARGET_DEST_DEST,
                             'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8}}}
 
 
