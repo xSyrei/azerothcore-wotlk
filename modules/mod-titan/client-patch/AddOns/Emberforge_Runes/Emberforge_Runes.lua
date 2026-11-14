@@ -1933,6 +1933,9 @@ local function OnMessage(message)
         end
         state.prompt = parts[10] == "1"
         state.loaded = true
+        if EmberforgeRunes_UpdateGlow then
+            EmberforgeRunes_UpdateGlow()       -- the changed abilities' icons follow the bound rune
+        end
         -- Unlocked and unbound: the panel opens by itself, once a session for each specialization.
         if state.prompt and not view.prompted[state.spec] then
             view.prompted[state.spec] = true
@@ -1966,7 +1969,7 @@ local glow = { buttons = {}, phase = 0 }
 local BAR_BUTTONS = { "ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", "MultiBarRightButton",
     "MultiBarLeftButton", "BonusActionButton" }
 local THROW_GLAIVE, FEL_COMMAND, METAMORPHOSIS = 90111, 90701, 90116
-local CONSECRATION, PARAGON_RUNE = 26573, 90730
+local CONSECRATION, SANCTIFIED_PARAGON = 26573, 22
 local CHAOS_BOLT_ICON = "Interface\\Icons\\Ability_Warlock_ChaosBolt"
 local PARAGON_ICON = "Interface\\Icons\\Ability_Rune_SanctifiedParagon"
 
@@ -2011,7 +2014,8 @@ end
 
 local function State()
     return { glaive = GetSpellInfo(THROW_GLAIVE), consecration = GetSpellInfo(CONSECRATION),
-             armed = Stacks() >= 5, meta = Buff(METAMORPHOSIS) ~= nil, paragon = Buff(PARAGON_RUNE) ~= nil }
+             armed = Stacks() >= 5, meta = Buff(METAMORPHOSIS) ~= nil,
+             paragon = state.rune == SANCTIFIED_PARAGON and (state.level or 0) >= (state.unlock or 5) }
 end
 
 local function Overlay(button)

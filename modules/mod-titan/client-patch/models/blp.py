@@ -123,6 +123,35 @@ def encode_dxt(image):
     return header + b''.join(mips)
 
 
+def encode_raw(image):
+    """An uncompressed BLP2 (encoding 3: 32-bit BGRA a pixel), with a full mipmap chain: four times a DXT5's size,
+    for fine art DXT's 4x4 blocks would break up (thin rims, filigree)."""
+    image = image.convert('RGBA')
+    width, height = image.size
+    if not (_is_pow2(width) and _is_pow2(height)):
+        raise ValueError(f'texture must be a power of two in both directions, got {width}x{height}')
+    mips, level, w, h = [], image, width, height
+    while True:
+        r, g, b, a = level.split()
+        mips.append(Image.merge('RGBA', (b, g, r, a)).tobytes())
+        if w == 1 and h == 1:
+            break
+        w, h = max(1, w // 2), max(1, h // 2)
+        level = image.resize((w, h), Image.Resampling.LANCZOS)
+
+    header_size = 4 + 4 + 4 + 8 + 16 * 4 * 2 + 256 * 4
+    offsets, sizes, position = [], [], header_size
+    for data in mips:
+        offsets.append(position)
+        sizes.append(len(data))
+        position += len(data)
+    offsets += [0] * (16 - len(offsets))
+    sizes += [0] * (16 - len(sizes))
+    header = struct.pack('<4sIBBBBII', b'BLP2', 1, 3, 8, 8, 1, width, height)
+    header += struct.pack('<16I', *offsets) + struct.pack('<16I', *sizes) + b'\0' * 1024
+    return header + b''.join(mips)
+
+
 def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)

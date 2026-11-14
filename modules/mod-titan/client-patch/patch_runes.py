@@ -986,3 +986,9 @@ ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, THUNDER_ICON, WELLSPRING_ICON, MIS
          'Spell_Shadow_SummonImp', 'Ability_Warlock_DemonicEmpowerment', 'Spell_Shadow_DemonForm',
          'Spell_Shadow_DemonicCircleTeleport', 'Ability_Warrior_Cleave']
 assert patch_player  # the helpers' module
+
+# The runes' own auras stay off the buff bar (the rune button shows the bound rune): hidden, their words kept.
+RUNE_AURAS = {90700, 90730, 90750, 90770, 90790, 90810, 90830, 90860, 90890, 90920, 90950}
+for _spell in SPELLS:
+    if _spell['id'] in RUNE_AURAS:
+        _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}

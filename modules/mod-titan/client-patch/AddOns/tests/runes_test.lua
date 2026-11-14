@@ -341,12 +341,10 @@ local PARAGON_ICON = "Interface\\Icons\\Ability_Rune_SanctifiedParagon"
 actions[4] = 26573
 fire("UNIT_AURA", "player")
 check(not iconShown(ActionButton4, PARAGON_ICON), "Consecration keeps its own icon without the rune")
-buffs["Rune of the Sanctified Paragon"] = 0
-fire("UNIT_AURA", "player")
+server("S,10,5,1,22,0,0,0,-,0")
 check(iconShown(ActionButton4, PARAGON_ICON) and not iconShown(ActionButton3, PARAGON_ICON),
     "with the Sanctified Paragon bound, Consecration's button shows the rune's icon")
-buffs["Rune of the Sanctified Paragon"] = nil
-fire("UNIT_AURA", "player")
+server("S,10,5,1,21,1,3,1,21,0")
 check(not iconShown(ActionButton4, PARAGON_ICON), "the rune gone, Consecration's own icon is back")
 actions[4] = nil
 
