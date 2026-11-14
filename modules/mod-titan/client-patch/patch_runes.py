@@ -93,8 +93,8 @@ The five after them (their own concept docs), each with its markers 20 on from i
   90894-90895, its looks from the vow 90896-90897, Sunburst's 90898, Sacred Ground 90899, Afterimage 90900;
 - the Hollow Congregation, 90920: the echo's look 90921, Hollow Flay 90922, the barrage's bolt 90923, Accusation
   90924, Last Word 90925;
-- the Shattered Sun, 90950: Sunshard 90951, Broken Core 90952, Fracture 90953 and its look 90954, Collapse 90955 and
-  its look 90956, Scalding Ground 90957, Solar Anchor 90958.
+- the Shattered Sun, 90950: Sunshard 90951 (stacks), Frozen Core 90952, Shatter 90953 and its look 90954, Second
+  Sunrise 90955 and its look 90956, Scalding Ground 90957.
 """
 
 import math
@@ -811,20 +811,18 @@ SPELLS += [
     strike(90925, 'Last Word', 'Spell_Shadow_DemonicFortitude', SHADOW, VISUAL_MIND_BLAST),
 
     buff(90950, 'Rune of the Shattered Sun', SUN_ICON,
-         'Your fire spells embed burning Sunshards (Fireball and Pyroblast in 2 more enemies nearby; 5 at most). Your '
-         'frost spells fracture them into rings of burning ice that set off every shard nearby in a chain; your next '
-         'fire spell on a Broken Core collapses it.',
+         'Your fire spells embed burning Sunshards in their target, up to 5. A frost spell shatters every shard in its '
+         'target: a burst of 25% of its damage per shard to each enemy within 8 yards.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
-    harmful(90951, 'Sunshard', 'Ability_Mage_LivingBomb', 'A burning Sunshard: a frost spell fractures it.',
-            DURATION_15S, aura(AURA_DUMMY, 1, 0), FIRE, key='Sunshard'),
-    harmful(90952, 'Broken Core', 'Ability_Mage_FrostFireBolt', 'A Broken Core: a fire spell collapses it.',
-            DURATION_6S, aura(AURA_DUMMY, 1, 0), FROSTFIRE, key='BrokenCore'),
-    strike(90953, 'Fracture', 'Spell_Frost_FrostNova', FROSTFIRE),
-    look(90954, 'Fracture', 'Spell_Frost_FrostNova', VISUAL_FROST_NOVA),
-    strike(90955, 'Collapse', 'Spell_Fire_SoulBurn', FROSTFIRE),
-    look(90956, 'Collapse', 'Spell_Fire_SoulBurn', VISUAL_BLAST_WAVE),
+    {**harmful(90951, 'Sunshard', 'Ability_Mage_LivingBomb', 'Burning Sunshards: a frost spell shatters them.',
+               DURATION_15S, aura(AURA_DUMMY, 1, 0), FIRE, key='Sunshard')},
+    harmful(90952, 'Frozen Core', 'Ability_Mage_FrostFireBolt', 'Movement speed reduced by 40%.',
+            DURATION_6S, aura(AURA_MOD_DECREASE_SPEED, -40, 0), FROSTFIRE, key='BrokenCore'),
+    strike(90953, 'Shatter', 'Spell_Frost_FrostNova', FROSTFIRE),
+    look(90954, 'Shatter', 'Spell_Frost_FrostNova', VISUAL_FROST_NOVA),
+    strike(90955, 'Second Sunrise', 'Spell_Fire_SoulBurn', FROSTFIRE),
+    look(90956, 'Second Sunrise', 'Spell_Fire_SoulBurn', VISUAL_BLAST_WAVE),
     ground(90957, 'Scalding Ground', 'Spell_Fire_Incinerate', 'ScaldingGround', DURATION_6S),
-    ground(90958, 'Solar Anchor', 'Ability_Mage_LivingBomb', 'SolarAnchor', DURATION_15S),
 ]
 LEGEND_MODIFIERS = [
     (90850, GRAVE_ICON, [('Gathered Dead', 'March of the Dead', 'Far-Reaching Graves'),
@@ -839,11 +837,12 @@ LEGEND_MODIFIERS = [
     (90940, HOLLOW_ICON, [('Following Shadows', 'Haunted Ground', 'Possession'),
                           ('Unison', 'Dissonance', 'Accusation'),
                           ('Last Word', 'Procession', 'Silent Witness')]),
-    (90970, SUN_ICON, [('Wildfire', 'Orbiting Sun', 'Solar Anchor'),
-                       ('Splinterstorm', 'Solar Lance', 'Scalding Ground'),
-                       ('Implosion', 'Endless Chain', 'Second Sunrise')]),
+    (90970, SUN_ICON, [('Wildfire', 'Spreading Sun', 'Heavy Sun'),
+                       ('Wide Burst', 'Scalding Ground', 'Chain Reaction'),
+                       ('Implosion', 'Second Sunrise', 'Frozen Core')]),
 ]
 next(spell for spell in SPELLS if spell['id'] == 90923)['set']['Speed'] = 20.0
+next(spell for spell in SPELLS if spell['id'] == 90951)['set']['StackAmount'] = 8
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
            for first, icon, modifiers in LEGEND_MODIFIERS
@@ -1026,13 +1025,6 @@ EFFECTS.update({
         ('ice_pieces_2_white_sheet', {'spots': ring(3.6, 8, 0.3, 1.0), 'sheet': (4, 4), 'flip': 1.0,
                                       'tint': (1.0, 0.6, 0.2), 'alpha': 0.9, 'rise': (2.0, 1.8), 'pulse': 0}),
     )),
-    # Solar Anchor: a sun pinned above the ground, rays turning about it, a gold ring under it.
-    'SolarAnchor': looping('MAGE_SolarAnchor', 7165, (
-        ('Circle02', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 4.2, 0.0),), 'tint': SUN_GOLD, 'alpha': 0.85,
-                      'turn': 6.0, 'pulse': 0}),
-        ('sun_rays', {'spots': ((0.0, 0.0, 1.2, 3.4, 0.0),), 'tint': SUN_RAYS, 'alpha': 0.9, 'pulse': 1.4}),
-        ('sun_glint', {'spots': ((0.0, 0.0, 1.2, 2.0, 0.0),), 'tint': WHITE_HOT, 'alpha': 1.0, 'pulse': 0.7}),
-    )),
 })
 
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_WORLD = 3, 4, 5, 14
@@ -1066,8 +1058,6 @@ VISUALS.update({
         'persistent': (15718, {KIT_WORLD: 'OnslaughtWake', 'procs': False})}},
     'ScaldingGround': {'copy': 9735, 'id': 16770, 'clear': ('precast', 'state', 'area'), 'kits': {
         'persistent': (15719, {KIT_WORLD: 'ScaldingGround', 'procs': False})}},
-    'SolarAnchor': {'copy': 9735, 'id': 16771, 'clear': ('precast', 'state', 'area'), 'kits': {
-        'persistent': (15720, {KIT_WORLD: 'SolarAnchor', 'procs': False})}},
     # Icy Touch's, Plague Strike's and Blood Boil's hits without their casts on the Hero; Cleave's hit.
     'GraveRimeHit': {'copy': 11152, 'id': 16772, 'clear': ('precast', 'cast'), 'kits': {}},
     'GraveBlightHit': {'copy': 11624, 'id': 16773, 'clear': ('precast', 'cast', 'state'), 'kits': {}},

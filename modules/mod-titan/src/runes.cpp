@@ -202,13 +202,12 @@ namespace
 
         SPELL_RUNE_SHATTERED_SUN        = 90950,
         SPELL_SUNSHARD                  = 90951,
-        SPELL_BROKEN_CORE               = 90952,
+        SPELL_FROZEN_CORE               = 90952,    // Frozen Core's slow
         SPELL_FRACTURE                  = 90953,
         SPELL_FRACTURE_LOOK             = 90954,    // a ring of ice about where it breaks
         SPELL_COLLAPSE                  = 90955,
         SPELL_COLLAPSE_LOOK             = 90956,
         SPELL_SCALDING_GROUND           = 90957,
-        SPELL_SOLAR_ANCHOR              = 90958,    // a shard left on the ground
         SPELL_SUN_MODIFIER_FIRST        = 90970,    // + slot * 3 + choice
 
         SPELL_ICY_TOUCH             = 45477,        // first ranks
@@ -451,26 +450,21 @@ namespace
     // The Shattered Sun's modifiers: slot (0 Formation, 1 Fracture, 2 Collapse) x 3 + choice.
     enum SunModifier : uint8
     {
-        MOD_WILDFIRE, MOD_ORBITING_SUN, MOD_SOLAR_ANCHOR,
-        MOD_SPLINTERSTORM, MOD_SOLAR_LANCE, MOD_SCALDING_GROUND,
-        MOD_IMPLOSION, MOD_ENDLESS_CHAIN, MOD_SECOND_SUNRISE,
+        MOD_WILDFIRE, MOD_SPREADING_SUN, MOD_HEAVY_SUN,
+        MOD_WIDE_BURST, MOD_SCALDING_GROUND, MOD_CHAIN_REACTION,
+        MOD_IMPLOSION, MOD_SECOND_SUNRISE, MOD_FROZEN_CORE,
     };
 
-    // The Shattered Sun's tuning: Fireball and Pyroblast spread shards to 2 more enemies within 8 yards (4 with
-    // Wildfire), 5 held (7); a fracture is 60% of the frost spell's damage (the Hero's own floor: level x 4 and 40%
-    // of their spell power) to each enemy in the ring (8 yards), and sets off every shard within 10 yards of it, a
-    // link at a time, each 75% of the last (15 yards, no loss with Endless Chain); a collapse the fire spell's damage
-    // again on its host.
-    constexpr std::size_t MAX_SHARDS = 5, WILDFIRE_SHARDS = 7, SPREAD = 2, WILDFIRE_SPREAD = 4, FRACTURE_TARGETS = 8;
-    constexpr float SPREAD_RANGE = 8.0f, SUN_LEVEL = 4.0f, SUN_POWER = 0.4f;
-    constexpr float CHAIN_RADIUS = 10.0f, ENDLESS_RADIUS = 15.0f, CHAIN_FALLOFF = 0.75f;
-    constexpr uint32 CHAIN_LINK_MS = 180;
-    constexpr int32 SUNSHARD_MS = 15000, BROKEN_CORE_MS = 6000;
-    constexpr float FRACTURE_SHARE = 0.6f, FRACTURE_RADIUS = 8.0f, COLLAPSE_SHARE = 1.0f, IMPLOSION = 1.4f;
-    constexpr float SPLINTER_REACH = 12.0f, SPLINTER_ARC = float(M_PI) / 4.0f, LANCE_REACH = 20.0f;
-    constexpr float LANCE_HALF_WIDTH = 1.5f, SCALDING_RADIUS = 6.0f, SCALDING_SHARE = 0.15f;
+    // The Shattered Sun's tuning: a fire spell embeds a Sunshard in its target, stacking to 5 (8 with Heavy Sun); a
+    // frost spell on it shatters them all, 25% of its damage per shard (the Hero's floor at least: level x 4 and 40%
+    // of their spell power) to each enemy within 8 yards.
+    constexpr uint8 MAX_SHARDS = 5, HEAVY_SHARDS = 8;
+    constexpr std::size_t SPREAD = 2, FRACTURE_TARGETS = 10;
+    constexpr float SPREAD_RANGE = 8.0f, SUN_LEVEL = 4.0f, SUN_POWER = 0.4f, SHARD_SHARE = 0.25f;
+    constexpr int32 SUNSHARD_MS = 15000, FROZEN_CORE_MS = 3000;
+    constexpr float FRACTURE_RADIUS = 8.0f, WIDE_RADIUS = 12.0f, CHAIN_RADIUS = 10.0f, CHAIN_SHARE = 0.5f;
+    constexpr float IMPLOSION = 1.4f, SCALDING_RADIUS = 6.0f, SCALDING_SHARE = 0.15f, SUNRISE_SHARE = 0.4f;
     constexpr uint32 SCALDING_MS = 4000, SUNRISE_DELAY_MS = 2000;
-    constexpr float SUNRISE_SHARE = 0.4f, SUNRISE_PER_ENEMY = 0.1f, SUNRISE_CAP = 0.5f, ORBIT_RANGE = 40.0f;
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
@@ -717,9 +711,8 @@ namespace
         ObjectGuid FlayTarget;
         std::unordered_map<ObjectGuid, ObjectGuid> EchoHosts;      // Possession: echo -> its enemy
 
-        // The Shattered Sun: the enemies holding a shard, oldest first, and Solar Anchor's places.
+        // The Shattered Sun: the enemies holding shards.
         std::vector<ObjectGuid> Shards;
-        std::unordered_map<ObjectGuid, Position> Anchors;
         Position ScaldAt;                           // Scalding Ground (ScaldUntil 0: none)
         uint32 ScaldMap = 0, ScaldUntil = 0, ScaldTimer = 0;
         float ScaldTick = 0.0f;
@@ -2646,80 +2639,27 @@ namespace
         return Marked(unit, SPELL_SUN_MODIFIER_FIRST, modifier);
     }
 
-    bool HasShard(Player* player, Unit* unit)
+    uint8 Shards(Player* player, Unit* unit)
     {
-        return unit->HasAura(SPELL_SUNSHARD, player->GetGUID());
+        Aura* aura = unit->GetAura(SPELL_SUNSHARD, player->GetGUID());
+        return aura ? aura->GetStackAmount() : 0;
     }
 
-    // The shards still held, and Solar Anchor's left on the ground where theirs were embedded.
-    void PruneShards(Player* player)
+    // count Sunshards in the target (up to 5, 8 with Heavy Sun), all renewed to 15 sec.
+    void Embed(Player* player, Unit* target, uint8 count)
     {
-        State& state = StateOf(player);
-        std::vector<ObjectGuid> kept;
-        for (ObjectGuid guid : state.Shards)
-            if (Unit* host = ObjectAccessor::GetUnit(*player, guid); host && host->IsAlive() && HasShard(player, host))
-                kept.push_back(guid);
-            else
-                state.Anchors.erase(guid);
-        bool changed = kept.size() != state.Shards.size();
-        state.Shards = kept;
-        if (!changed)
-            return;
-        std::vector<Position> anchors;
-        for (auto const& [guid, at] : state.Anchors)
-            anchors.push_back(at);
-        PlaceDecals(player, SPELL_SOLAR_ANCHOR, anchors);
-    }
-
-    // A fire spell: a Sunshard in the target (refreshed if it has one), five held at most (seven with Wildfire): the
-    // oldest goes. Solar Anchor: the shard stays where it went in.
-    void Embed(Player* player, Unit* target)
-    {
-        State& state = StateOf(player);
-        PruneShards(player);
-        bool anchor = HasSunMarker(player, MOD_SOLAR_ANCHOR);
-        if (!HasShard(player, target))
-        {
-            std::size_t most = HasSunMarker(player, MOD_WILDFIRE) ? WILDFIRE_SHARDS : MAX_SHARDS;
-            while (state.Shards.size() >= most)
-            {
-                if (Unit* oldest = ObjectAccessor::GetUnit(*player, state.Shards.front()))
-                    oldest->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
-                state.Anchors.erase(state.Shards.front());
-                state.Shards.erase(state.Shards.begin());
-            }
-            state.Shards.push_back(target->GetGUID());
-        }
+        uint8 most = HasSunMarker(player, MOD_HEAVY_SUN) ? HEAVY_SHARDS : MAX_SHARDS;
+        uint8 shards = std::min<uint8>(most, Shards(player, target) + count);
         Lasting(player, target, SPELL_SUNSHARD, SUNSHARD_MS);
-        if (!anchor)
-            return;
-        state.Anchors[target->GetGUID()] = target->GetPosition();
-        std::vector<Position> anchors;
-        for (auto const& [guid, at] : state.Anchors)
-            anchors.push_back(at);
-        PlaceDecals(player, SPELL_SOLAR_ANCHOR, anchors);
+        if (Aura* aura = target->GetAura(SPELL_SUNSHARD, player->GetGUID()))
+            aura->SetStackAmount(shards);
+        State& state = StateOf(player);
+        if (std::find(state.Shards.begin(), state.Shards.end(), target->GetGUID()) == state.Shards.end())
+            state.Shards.push_back(target->GetGUID());
     }
 
-    // Fireball and Pyroblast: the shard spreads to 2 more enemies within 8 yards of the target (4 with Wildfire),
-    // those without one first, nearest first.
-    void Spread(Player* player, Unit* target)
-    {
-        std::size_t count = HasSunMarker(player, MOD_WILDFIRE) ? WILDFIRE_SPREAD : SPREAD;
-        std::vector<Unit*> around = EnemiesAround(player, target, SPREAD_RANGE);
-        std::stable_partition(around.begin(), around.end(), [player](Unit* enemy) { return !HasShard(player, enemy); });
-        for (Unit* enemy : around)
-        {
-            if (!count)
-                break;
-            if (enemy == target)
-                continue;
-            Embed(player, enemy);
-            --count;
-        }
-    }
-
-    // The Hero's floor for a fracture's base: level x 4 and 40% of their spell power (Fire or Frost, the higher),
-    // with their Frostfire damage bonuses; a weak frost spell (Frost Nova, Ice Lance) still breaks a shard well.
+    // The Hero's floor for a shatter's base: level x 4 and 40% of their spell power (Fire or Frost, the higher), with
+    // their Frostfire damage bonuses; a weak frost spell (Frost Nova, Ice Lance) still shatters well.
     float SunPower(Player* player)
     {
         float power = float(std::max(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE),
@@ -2728,126 +2668,73 @@ namespace
             SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, SPELL_SCHOOL_MASK_FIRE | SPELL_SCHOOL_MASK_FROST);
     }
 
-    void Fracture(Player* player, Unit* host, float base, std::shared_ptr<std::set<ObjectGuid>> chained = nullptr);
-
-    // The chain reaction: every other shard within 10 yards of a fracture (15 with Endless Chain) breaks a moment
-    // later at 75% of it (the same with Endless Chain), and so on; each shard once a chain.
-    void ChainFrom(Player* player, Position const& at, float base, std::shared_ptr<std::set<ObjectGuid>> chained)
+    // The shards' burst about their host: each enemy within 8 yards (12 with Wide Burst) takes the burst, the host
+    // 40% more with Implosion; Frozen Core slows them, Scalding Ground leaves burning ground, Second Sunrise pulses
+    // again.
+    void Burst(Player* player, Unit* host, float burst)
     {
-        bool endless = HasSunMarker(player, MOD_ENDLESS_CHAIN);
-        float radius = endless ? ENDLESS_RADIUS : CHAIN_RADIUS;
-        float next = base * (endless ? 1.0f : CHAIN_FALLOFF);
-        uint32 link = 0;
-        for (ObjectGuid guid : StateOf(player).Shards)
-        {
-            if (chained->count(guid))
-                continue;
-            Unit* other = ObjectAccessor::GetUnit(*player, guid);
-            if (!other || !HasShard(player, other) || other->GetExactDist2d(&at) > radius)
-                continue;
-            chained->insert(guid);
-            ++link;
-            player->m_Events.AddEventAtOffset([player, guid, next, chained]()
-            {
-                if (!player->IsInWorld() || !player->IsAlive())
-                    return;
-                if (Unit* shard = ObjectAccessor::GetUnit(*player, guid); shard && HasShard(player, shard))
-                    Fracture(player, shard, next, chained);
-            }, Milliseconds(CHAIN_LINK_MS * link));
-        }
-    }
-
-    // A frost spell on a shard's host: it breaks, 60% of its damage (or the Hero's floor) to each enemy within 8
-    // yards (up to 8): about the host, or its anchor (Solar Anchor), or the Hero's own target (Orbiting Sun); a cone
-    // away from the Hero (Splinterstorm), a line on through it (Solar Lance); Scalding Ground leaves a hazard. A
-    // Broken Core stays; the chain reaction follows.
-    void Fracture(Player* player, Unit* host, float base, std::shared_ptr<std::set<ObjectGuid>> chained)
-    {
-        if (!chained)
-            chained = std::make_shared<std::set<ObjectGuid>>();
-        chained->insert(host->GetGUID());
-        base = std::max(base, SunPower(player));
-        State& state = StateOf(player);
-        host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
         Position at = host->GetPosition();
-        if (auto anchor = state.Anchors.find(host->GetGUID()); anchor != state.Anchors.end())
-            at = anchor->second;
-        Unit* look = host;
-        if (HasSunMarker(player, MOD_ORBITING_SUN))
-            if (Unit* aimed = player->GetSelectedUnit(); Valid(player, aimed) && aimed != host
-                && player->IsWithinDistInMap(aimed, ORBIT_RANGE))
-            {
-                at = aimed->GetPosition();
-                look = aimed;
-            }
-        PruneShards(player);
-
-        Shape shape = Circle(at, FRACTURE_RADIUS);
-        float away = player->GetAngle(&at);
-        if (HasSunMarker(player, MOD_SPLINTERSTORM))
+        float radius = HasSunMarker(player, MOD_WIDE_BURST) ? WIDE_RADIUS : FRACTURE_RADIUS;
+        host->CastSpell(host, SPELL_FRACTURE_LOOK, true);
+        for (Unit* enemy : EnemiesIn(player, Circle(at, radius), FRACTURE_TARGETS))
         {
-            shape.Facing = away;
-            shape.Radius = SPLINTER_REACH;
-            shape.Arc = SPLINTER_ARC;
-        }
-        else if (HasSunMarker(player, MOD_SOLAR_LANCE))
-        {
-            shape = Shape();
-            shape.From = at;
-            shape.To = Toward(at, away, LANCE_REACH);
-            shape.HalfWidth = LANCE_HALF_WIDTH;
-        }
-        look->CastSpell(look, SPELL_FRACTURE_LOOK, true);
-        int32 damage = std::max<int32>(1, int32(base * FRACTURE_SHARE));
-        for (Unit* enemy : EnemiesIn(player, shape, FRACTURE_TARGETS))
+            float share = enemy == host && HasSunMarker(player, MOD_IMPLOSION) ? IMPLOSION : 1.0f;
+            int32 damage = std::max<int32>(1, int32(burst * share));
             player->CastCustomSpell(enemy, SPELL_FRACTURE, &damage, nullptr, nullptr, true);
-        if (host->IsAlive())
-            Lasting(player, host, SPELL_BROKEN_CORE, BROKEN_CORE_MS);
+            if (HasSunMarker(player, MOD_FROZEN_CORE) && enemy->IsAlive())
+                Lasting(player, enemy, SPELL_FROZEN_CORE, FROZEN_CORE_MS);
+        }
         if (HasSunMarker(player, MOD_SCALDING_GROUND))
         {
+            State& state = StateOf(player);
             state.ScaldAt = at;
             state.ScaldMap = player->GetMapId();
             state.ScaldUntil = Now() + SCALDING_MS;
-            state.ScaldTick = base * SCALDING_SHARE;
+            state.ScaldTick = burst * SCALDING_SHARE;
             state.ScaldTimer = 0;
             PlaceDecals(player, SPELL_SCALDING_GROUND, { at });
         }
-        ChainFrom(player, at, base, chained);
-    }
-
-    // A fire spell on a Broken Core: the inward collapse, its damage again on it (the Hero's floor at least; 40% more
-    // with Implosion); Second Sunrise pulses there 2 sec on, 40% to each enemy within 8 yards, 10% more for each
-    // other one there (50% at most).
-    void Collapse(Player* player, Unit* host, float fireball)
-    {
-        host->RemoveAurasDueToSpell(SPELL_BROKEN_CORE, player->GetGUID());
-        host->CastSpell(host, SPELL_COLLAPSE_LOOK, true);
-        fireball = std::max(fireball, SunPower(player));
-        int32 damage = std::max<int32>(1, int32(fireball * COLLAPSE_SHARE
-            * (HasSunMarker(player, MOD_IMPLOSION) ? IMPLOSION : 1.0f)));
-        Position at = host->GetPosition();
-        player->CastCustomSpell(host, SPELL_COLLAPSE, &damage, nullptr, nullptr, true);
-
         if (HasSunMarker(player, MOD_SECOND_SUNRISE))
-            player->m_Events.AddEventAtOffset([player, at, fireball]()
+            player->m_Events.AddEventAtOffset([player, at, radius, burst]()
             {
                 if (!player->IsInWorld() || !player->IsAlive())
                     return;
-                std::vector<Unit*> enemies = EnemiesIn(player, Circle(at, FRACTURE_RADIUS), FRACTURE_TARGETS);
+                std::vector<Unit*> enemies = EnemiesIn(player, Circle(at, radius), FRACTURE_TARGETS);
                 if (enemies.empty())
                     return;
                 enemies.front()->CastSpell(enemies.front(), SPELL_COLLAPSE_LOOK, true);
-                float bonus = std::min(SUNRISE_CAP, SUNRISE_PER_ENEMY * float(enemies.size() - 1));
-                int32 pulse = std::max<int32>(1, int32(fireball * SUNRISE_SHARE * (1.0f + bonus)));
+                int32 pulse = std::max<int32>(1, int32(burst * SUNRISE_SHARE));
                 for (Unit* enemy : enemies)
                     player->CastCustomSpell(enemy, SPELL_COLLAPSE, &pulse, nullptr, nullptr, true);
             }, Milliseconds(SUNRISE_DELAY_MS));
     }
 
-    // Scalding Ground's ticks.
+    // A frost spell on a host: every shard in it shatters, 25% of the spell's damage each (the Hero's floor at
+    // least). Chain Reaction: shards in other enemies within 10 yards shatter too, at half (once, no further chain).
+    void Shatter(Player* player, Unit* host, float frost, bool chained = false)
+    {
+        uint8 shards = Shards(player, host);
+        if (!shards)
+            return;
+        host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
+        float base = std::max(frost, SunPower(player));
+        Burst(player, host, base * SHARD_SHARE * shards * (chained ? CHAIN_SHARE : 1.0f));
+        if (chained || !HasSunMarker(player, MOD_CHAIN_REACTION))
+            return;
+        for (Unit* other : EnemiesAround(player, host, CHAIN_RADIUS))
+            if (other != host && Shards(player, other))
+                Shatter(player, other, frost, true);
+    }
+
+    // Scalding Ground's ticks; the shards' hosts kept for clearing.
     void SunTick(Player* player, uint32 diff)
     {
         State& state = StateOf(player);
+        state.Shards.erase(std::remove_if(state.Shards.begin(), state.Shards.end(), [player](ObjectGuid guid)
+        {
+            Unit* host = ObjectAccessor::GetUnit(*player, guid);
+            return !host || !Shards(player, host);
+        }), state.Shards.end());
         if (!state.ScaldUntil)
             return;
         if (Now() >= state.ScaldUntil || state.ScaldMap != player->GetMapId())
@@ -2884,8 +2771,6 @@ namespace
             if (Unit* host = ObjectAccessor::GetUnit(*player, guid))
                 host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
         state.Shards.clear();
-        state.Anchors.clear();
-        player->RemoveDynObject(SPELL_SOLAR_ANCHOR);
         state.ScaldUntil = 0;
         player->RemoveDynObject(SPELL_SCALDING_GROUND);
     }
@@ -3840,27 +3725,34 @@ class spell_titan_rune_shattered_sun : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_shattered_sun);
 
+    // A frost spell shatters the target's shards; a fire spell embeds one (Wildfire: Fireball and Pyroblast two;
+    // Spreading Sun: they also embed one in 2 more enemies within 8 yards).
     void Strike()
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
         if (!player || !target || !player->HasAura(SPELL_RUNE_SHATTERED_SUN))
             return;
-        float damage = float(std::max(0, GetHitDamage()));
         uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
         if (first == SPELL_FROSTBOLT || first == SPELL_ICE_LANCE || first == SPELL_FROST_NOVA
             || first == SPELL_CONE_OF_COLD)
         {
-            if (HasShard(player, target))
-                Fracture(player, target, damage);
+            Shatter(player, target, float(std::max(0, GetHitDamage())));
             return;
         }
-        if (target->HasAura(SPELL_BROKEN_CORE, player->GetGUID()))
-            Collapse(player, target, damage);
-        else if (target->IsAlive())
-            Embed(player, target);
-        if (first == SPELL_FIREBALL || first == SPELL_PYROBLAST)
-            Spread(player, target);
+        if (!target->IsAlive())
+            return;
+        bool big = first == SPELL_FIREBALL || first == SPELL_PYROBLAST;
+        Embed(player, target, big && HasSunMarker(player, MOD_WILDFIRE) ? 2 : 1);
+        if (!big || !HasSunMarker(player, MOD_SPREADING_SUN))
+            return;
+        std::size_t count = SPREAD;
+        for (Unit* enemy : EnemiesAround(player, target, SPREAD_RANGE))
+            if (enemy != target && count)
+            {
+                Embed(player, enemy, 1);
+                --count;
+            }
     }
 
     void Register() override

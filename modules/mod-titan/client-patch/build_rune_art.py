@@ -146,8 +146,9 @@ RUNES = [
     (30, (170, 110, 235), 'Shadow · Congregation', 'Mind Flay leaves hollow echoes; Mind Blast commands them.',
      'Mind Flay and Mind Blast',
      'M12 3c-3 0-5 2.5-5 6v10l2-2 3 3 3-3 2 2V9c0-3.5-2-6-5-6ZM10 10h.01M14 10h.01'),
-    (31, (120, 200, 240), 'Fire & Frost · Shattered Sun', 'Fire seeds burning shards; frost shatters them in a '
-     'chain reaction.', 'Your fire and frost spells',
+    (31, (120, 200, 240), 'Fire & Frost · Shattered Sun',
+     'Fire embeds burning shards; frost shatters them in a burst.',
+     'Your fire and frost spells',
      'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2'),
 ]
 
@@ -503,32 +504,31 @@ BUILT = {
         ],
     },
     31: {
-        'core': 'Your fire spells embed burning **Sunshards**, Fireball and Pyroblast in nearby enemies too. Your'
-                ' frost spells shatter one in a **chain reaction** through the rest; fire then collapses the '
-                '**Broken Core**.',
-        'slots': ['Formation', 'Fracture', 'Collapse'],
-        'asks': ['How your shards spread', 'How a shard breaks', 'What the collapse adds'],
+        'core': 'Your fire spells embed **Sunshards** in their target, up to 5. Your next **frost spell** on it '
+                'shatters them all in a burst around it.',
+        'slots': ['Formation', 'Shatter', 'Sunfall'],
+        'asks': ['How you embed shards', 'How the burst spreads', 'What the burst adds'],
         'texts': [
-            'Fireball and Pyroblast spread to 4 more enemies; hold 7 shards.',
-            'A breaking shard blasts your current target.',
-            'A shard stays on the ground where it went in.',
-            'The fracture becomes a cone away from you, 12 yards.',
-            'The fracture pierces on through in a line, 20 yards.',
-            'The fracture leaves Frostfire ground for 4 sec.',
-            'The collapse deals 40% more.',
-            'Chain reactions reach 15 yards and lose no strength.',
-            'The collapse pulses again 2 sec later, stronger on a crowd.',
+            'Fireball and Pyroblast embed 2 shards.',
+            'Fireball and Pyroblast also embed in 2 nearby enemies.',
+            'Your target holds up to 8 shards.',
+            'The burst reaches 12 yards.',
+            'The burst leaves burning ground for 4 sec.',
+            'Shards in nearby enemies shatter too, at half.',
+            'The burst deals 40% more to your target.',
+            'The burst flares again 2 sec later.',
+            'The burst slows enemies by 40%.',
         ],
         'abilities': [
+            'Wildfire',
             'Spread',
-            'Orbit',
-            'Anchor',
-            'Cone',
-            'Line',
+            '8 shards',
+            '12 yards',
             'Ground',
-            'Focus',
             'Chain',
+            'Implosion',
             'Pulse',
+            'Slow',
         ],
         'icons': [
             'M12 3v8M12 11 5 21M12 11l7 10',
