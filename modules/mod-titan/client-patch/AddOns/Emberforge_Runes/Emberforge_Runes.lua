@@ -10,7 +10,8 @@
 -- rune's medallion, slots and options as if bound, its picks tried locally (nothing is sent), then Back or Choose.
 -- The stage takes no clicks itself (only its cards and buttons do): the camera still turns behind it.
 -- The art is baked from the mockup's own drawing code (build_rune_art.py: Art/, Art.lua); the runes' words are
--- Catalog.lua. Also here: Throw Glaive's glow at 5 Fel Command (Rune of Fel Commandment).
+-- Catalog.lua. Also here: the changed abilities' icons (Consecration with the Sanctified Paragon; Throw Glaive at 5
+-- Fel Command, glowing).
 --
 -- The server (mod-titan, src/runes.cpp) talks in addon whispers to the player, prefix EFRN:
 --   from server   S,<level>,<unlock level>,<spec>,<rune>,<m1>,<m2>,<m3>,<offers a.b.c or ->,<prompt 0|1>
@@ -1957,25 +1958,60 @@ local function OnMessage(message)
     end
 end
 
--- Throw Glaive's glow at 5 Fel Command (brighter, with a purple rim, in Metamorphosis): the client has no proc glow,
--- so a pulsing border is drawn over each action button holding Throw Glaive, with Chaos Bolt's icon over it.
+-- Abilities a rune changes show the rune's look on the action bars: Consecration (any rank) the Sanctified
+-- Paragon's icon while that rune is bound; Throw Glaive Chaos Bolt's icon at 5 Fel Command, with a pulsing border
+-- (brighter, a purple rim and the Felguard in Metamorphosis): the client has no proc glow, so both are drawn over
+-- each action button holding the ability. In the spellbook, Consecration shows the Paragon's icon too.
 local glow = { buttons = {}, phase = 0 }
 local BAR_BUTTONS = { "ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", "MultiBarRightButton",
     "MultiBarLeftButton", "BonusActionButton" }
-local THROW_GLAIVE, FEL_COMMAND = 90111, 90701
+local THROW_GLAIVE, FEL_COMMAND, METAMORPHOSIS = 90111, 90701, 90116
+local CONSECRATION, PARAGON_RUNE = 26573, 90730
+local CHAOS_BOLT_ICON = "Interface\\Icons\\Ability_Warlock_ChaosBolt"
+local PARAGON_ICON = "Interface\\Icons\\Ability_Rune_SanctifiedParagon"
 
-local function Stacks()
-    local name = GetSpellInfo(FEL_COMMAND)
+local function Buff(spellId)
+    local name = GetSpellInfo(spellId)
     if not name then
-        return 0
+        return nil
     end
-    local _, _, _, count = UnitBuff("player", name)
-    return count or 0
+    local found, _, _, count = UnitBuff("player", name)
+    return found and (count or 0) or nil
 end
 
-local function InMetamorphosis()
-    local name = GetSpellInfo(90116)
-    return name and UnitBuff("player", name) ~= nil
+local function Stacks()
+    return Buff(FEL_COMMAND) or 0
+end
+
+-- The spell an action slot holds, by name (3.3.5's GetActionInfo gives a spellbook index, the spell's id fourth).
+local function ActionSpell(slot)
+    local kind, id, subType, spellId = GetActionInfo(slot)
+    if kind ~= "spell" or not id then
+        return nil
+    end
+    if spellId then
+        return (GetSpellInfo(spellId))
+    end
+    return GetSpellName and GetSpellName(id, subType or BOOKTYPE_SPELL) or (GetSpellInfo(id))
+end
+
+-- What an ability looks like now: (icon, glow) while a rune changes it, else nil.
+local function Changed(spellName, state)
+    if not spellName then
+        return nil
+    end
+    if spellName == state.glaive and state.armed then
+        return CHAOS_BOLT_ICON, true
+    end
+    if spellName == state.consecration and state.paragon then
+        return PARAGON_ICON, false
+    end
+    return nil
+end
+
+local function State()
+    return { glaive = GetSpellInfo(THROW_GLAIVE), consecration = GetSpellInfo(CONSECRATION),
+             armed = Stacks() >= 5, meta = Buff(METAMORPHOSIS) ~= nil, paragon = Buff(PARAGON_RUNE) ~= nil }
 end
 
 local function Overlay(button)
@@ -1991,7 +2027,6 @@ local function Overlay(button)
     overlay.border:SetHeight(button:GetHeight() * 1.9)
     overlay.border:SetPoint("CENTER")
     overlay.icon = button:CreateTexture(nil, "OVERLAY")
-    overlay.icon:SetTexture("Interface\\Icons\\Ability_Warlock_ChaosBolt")
     overlay.icon:SetAllPoints()
     overlay.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
     overlay.felguard = button:CreateTexture(nil, "OVERLAY")
@@ -2004,21 +2039,26 @@ local function Overlay(button)
 end
 
 local function UpdateGlow()
-    local armed = Stacks() >= 5
-    local meta = armed and InMetamorphosis()
-    local glaive = GetSpellInfo(THROW_GLAIVE)
+    local state = State()
+    local pulsing = false
     for _, bar in ipairs(BAR_BUTTONS) do
         for index = 1, 12 do
             local button = _G[bar .. index]
             if button and button.action then
-                local kind, id = GetActionInfo(button.action)
-                local holds = kind == "spell" and id and GetSpellInfo(id) == glaive
-                if holds and armed then
+                local icon, glowing = Changed(ActionSpell(button.action), state)
+                if icon then
                     local overlay = Overlay(button)
-                    overlay.border:SetVertexColor(meta and 0.75 or 0.35, meta and 0.45 or 1, meta and 1 or 0.3)
-                    overlay.border:Show()
+                    overlay.icon:SetTexture(icon)
                     overlay.icon:Show()
-                    if meta then
+                    if glowing then
+                        local meta = state.meta
+                        overlay.border:SetVertexColor(meta and 0.75 or 0.35, meta and 0.45 or 1, meta and 1 or 0.3)
+                        overlay.border:Show()
+                        pulsing = true
+                    else
+                        overlay.border:Hide()
+                    end
+                    if glowing and state.meta then
                         overlay.felguard:Show()
                     else
                         overlay.felguard:Hide()
@@ -2031,13 +2071,32 @@ local function UpdateGlow()
             end
         end
     end
-    glow.armed = armed
+    glow.armed = pulsing
+end
+EmberforgeRunes_UpdateGlow = UpdateGlow
+
+-- The spellbook: Consecration's icon the Paragon's while that rune is bound.
+if SpellButton_UpdateButton and hooksecurefunc then
+    hooksecurefunc("SpellButton_UpdateButton", function(button)
+        local slot = SpellBook_GetSpellID and SpellBook_GetSpellID(button:GetID())
+        local icon = _G[button:GetName() .. "IconTexture"]
+        if not slot or not icon or (SpellBookFrame and SpellBookFrame.bookType ~= BOOKTYPE_SPELL) then
+            return
+        end
+        local name = GetSpellName(slot, BOOKTYPE_SPELL)
+        local state = State()
+        if name and name == state.consecration and state.paragon then
+            icon:SetTexture(PARAGON_ICON)
+        end
+    end)
 end
 
 local events = CreateFrame("Frame")
 events:RegisterEvent("CHAT_MSG_ADDON")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("UNIT_AURA")
+events:RegisterEvent("SPELLS_CHANGED")
+events:RegisterEvent("UPDATE_BONUS_ACTIONBAR")
 events:RegisterEvent("ACTIONBAR_SLOT_CHANGED")
 events:RegisterEvent("ACTIONBAR_PAGE_CHANGED")
 events:RegisterEvent("PLAYER_LEVEL_UP")
@@ -2054,6 +2113,9 @@ events:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
     elseif event == "UNIT_AURA" then
         if prefix == "player" then
             UpdateGlow()
+            if SpellBookFrame and SpellBookFrame:IsShown() and SpellBookFrame_Update then
+                SpellBookFrame_Update()
+            end
         end
     else
         UpdateGlow()

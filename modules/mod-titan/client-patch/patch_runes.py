@@ -24,8 +24,8 @@ The Rune of the Sanctified Paragon (the "Rune of the Sanctified Paragon" concept
 - 90731 Sanctified Paragon: Consecration as a lasting aura around the Hero (cast Consecration to turn it on, again
   to turn it off), a tick every second (runes.cpp: the AuraScript deals it); its look: retail's Remorseless Winter
   (spells/PAL_SanctifiedParagon: its meshes, gold and see-through) with a gold ring of glyphs and embers rising;
-- 90732 Consecration: a tick's Holy damage (its amount the Hero's Consecration rank's; spell power and attack
-  power through spell_bonus_data, as Consecration's);
+- 90732 Consecration: a tick's Holy damage (its amount the script's: the Hero's Consecration rank's with its power
+  and bonuses, and the aura's own share of spell power; the Hero's modifiers not again);
 - 90733 Condemnation (Sanctified Condemnation): 2% a stack, up to 5, on an enemy, 2 sec;
 - 90734 Merciful Ground: a heal (its amount set by the script);
 - 90735 Bastion of Faith's former damage reduction (no longer given: the revised Bastion is threat only);
@@ -239,7 +239,7 @@ SPELLS += [
     {
         'id': 90732, 'copy': EXORCISM, 'name': 'Consecration', 'icon': 'Spell_Holy_InnerFire',
         'description': 'Sanctified ground.', 'tooltip': '',
-        'set': {**HARMFUL, 'SchoolMask': HOLY},
+        'set': {**HARMFUL, 'SchoolMask': HOLY, 'AttributesEx3': SPELL_ATTR3_IGNORE_CASTER_MODIFIERS},
         'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
                         'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0}},
         'clear': [2, 3],

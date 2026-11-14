@@ -80,7 +80,8 @@ GameTooltip = NewWidget("GameTooltip")
 function SendAddonMessage(prefix, message) sent[#sent + 1] = { prefix, message } end
 function UnitName() return "Tester" end
 function UnitLevel() return 12 end
-local SPELLS = { [90111] = "Throw Glaive", [90701] = "Fel Command", [90116] = "Metamorphosis",
+local SPELLS = { [26573] = "Consecration", [90730] = "Rune of the Sanctified Paragon",
+    [90111] = "Throw Glaive", [90701] = "Fel Command", [90116] = "Metamorphosis",
     [686] = "Shadow Bolt", [29722] = "Incinerate", [688] = "Summon Imp", [697] = "Summon Voidwalker" }
 function GetSpellInfo(id) return SPELLS[id] end
 tinsert = table.insert
@@ -97,7 +98,7 @@ function UnitBuff(_, name)
 end
 function GetActionInfo(slot)
     if actions[slot] then
-        return "spell", actions[slot]
+        return "spell", 40 + slot, "spell", actions[slot]       -- 3.3.5: a spellbook index, the spell's id fourth
     end
 end
 for index = 1, 12 do
@@ -326,6 +327,28 @@ check(volleyShown(ActionButton3) and not volleyShown(ActionButton4),
 buffs["Fel Command"] = nil
 fire("UNIT_AURA", "player")
 check(not volleyShown(ActionButton3), "spent: the glow goes")
+
+-- Consecration on button 4 shows the Sanctified Paragon's icon while that rune is bound (no glow).
+local function iconShown(button, path)
+    for _, texture in ipairs(button.textures or {}) do
+        if texture.texture == path and texture.shown then
+            return true
+        end
+    end
+    return false
+end
+local PARAGON_ICON = "Interface\\Icons\\Ability_Rune_SanctifiedParagon"
+actions[4] = 26573
+fire("UNIT_AURA", "player")
+check(not iconShown(ActionButton4, PARAGON_ICON), "Consecration keeps its own icon without the rune")
+buffs["Rune of the Sanctified Paragon"] = 0
+fire("UNIT_AURA", "player")
+check(iconShown(ActionButton4, PARAGON_ICON) and not iconShown(ActionButton3, PARAGON_ICON),
+    "with the Sanctified Paragon bound, Consecration's button shows the rune's icon")
+buffs["Rune of the Sanctified Paragon"] = nil
+fire("UNIT_AURA", "player")
+check(not iconShown(ActionButton4, PARAGON_ICON), "the rune gone, Consecration's own icon is back")
+actions[4] = nil
 
 -- The rune button: from the unlock level (5); unbound, its icon turns through the runes; bound, it settles.
 local button = EmberforgeRunes_Button

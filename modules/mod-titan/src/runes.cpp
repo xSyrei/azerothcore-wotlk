@@ -466,6 +466,7 @@ namespace
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
+    constexpr float PARAGON_POWER = 0.15f;                      // spell power in a tick: 6% of it a second
     constexpr float UPKEEP_PCT = 1.0f;                          // of base mana, a second
     constexpr float PARAGON_RADIUS = 8.0f, BOUNDLESS_RADIUS = 12.0f, BOUNDLESS_OUTPUT = 0.75f;
     constexpr float SUPPORT_COEFFICIENT = 0.08f;                // healing power, a heal's or shield's tick
@@ -802,7 +803,8 @@ namespace
     }
 
     // A Chaos Bolt of the Hero's level (rank 1's, scaled by a creature's damage at that level below 60) x 0.6, plus
-    // the higher of spell power and half the attack power x Chaos Bolt's coefficient x 0.6.
+    // the higher of spell power and half the attack power x Chaos Bolt's coefficient x 0.6, with the Hero's Fire
+    // damage bonuses (the bolt ignores their modifiers).
     int32 BoltDamage(Player* player)
     {
         uint8 level = std::min<uint8>(player->GetLevel(), CHAOS_BOLT_RANK1_LEVEL);
@@ -813,7 +815,8 @@ namespace
             scale = there->BaseDamage[0] / top->BaseDamage[0];
         float power = std::max(float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE)),
             player->GetTotalAttackPowerValue(BASE_ATTACK) / 2.0f);
-        float damage = (CHAOS_BOLT_RANK1_AVERAGE * scale + power * CHAOS_BOLT_COEFFICIENT) * BOLT_SHARE;
+        float damage = (CHAOS_BOLT_RANK1_AVERAGE * scale + power * CHAOS_BOLT_COEFFICIENT) * BOLT_SHARE
+            * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, SPELL_SCHOOL_MASK_FIRE);
         return std::max<int32>(1, int32(damage));
     }
 
@@ -1038,16 +1041,21 @@ namespace
     }
 
     // A tick of the Hero's Consecration before the target's mitigation, as the core makes one: their rank's tick
-    // with Consecration's share of spell power and attack power (spell_bonus_data) and every talent, glyph and
-    // bonus that raises Consecration or Holy damage. The damage, heal and shield spells add no power of their own
-    // (spell_bonus_data 0): the modifiers scale all of it.
+    // with Consecration's share of spell power and attack power (spell_bonus_data, 4% each) and every talent, glyph
+    // and bonus that raises Consecration or Holy damage; and the aura's own power on top, PARAGON_POWER of the
+    // higher of the Hero's Holy spell power and half their attack power, with their Holy damage bonuses. The damage,
+    // heal and shield spells add nothing of their own (spell_bonus_data 0, caster modifiers ignored): this is all.
     float ParagonTick(Player* player)
     {
         SpellInfo const* rank = sSpellMgr->GetSpellInfo(ConsecrationRank(player));
         if (!rank)
             return 1.0f;
         int32 points = std::max(1, rank->Effects[EFFECT_0].CalcValue(player));
-        return float(player->SpellDamageBonusDone(player, rank, uint32(points), DOT, EFFECT_0));
+        float tick = float(player->SpellDamageBonusDone(player, rank, uint32(points), DOT, EFFECT_0));
+        float power = std::max(float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY)),
+            player->GetTotalAttackPowerValue(BASE_ATTACK) / 2.0f);
+        return tick + power * PARAGON_POWER
+            * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, SPELL_SCHOOL_MASK_HOLY);
     }
 
     // Merciful Ground's heal and Shelter of the Paragon's shield: the tick (its talents and power), and the Hero's
@@ -1812,10 +1820,12 @@ namespace
         return Marked(unit, SPELL_GRAVE_MODIFIER_FIRST, modifier);
     }
 
-    // A scar's tick: the Hero's level and their attack power.
-    float ScarTick(Player* player)
+    // A scar's tick: the Hero's level and their attack power, with their damage bonuses for its school (Rime's frost,
+    // Blight's and Gore's shadow; the spells ignore the Hero's modifiers, so they are here).
+    float ScarTick(Player* player, SpellSchoolMask school = SPELL_SCHOOL_MASK_SHADOW)
     {
-        return SCAR_LEVEL * player->GetLevel() + player->GetTotalAttackPowerValue(BASE_ATTACK) * SCAR_AP;
+        return (SCAR_LEVEL * player->GetLevel() + player->GetTotalAttackPowerValue(BASE_ATTACK) * SCAR_AP)
+            * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, school);
     }
 
     bool ScarActive(Player* player, uint8 scar)
@@ -1903,7 +1913,8 @@ namespace
     // A Dominion's tick on an enemy in the scars: Rime's frost and slow, Blight's disease, Gore's blood.
     void Dominate(Player* player, Unit* enemy, uint8 dominion, float scale)
     {
-        float tick = ScarTick(player) * scale;
+        float tick = ScarTick(player, dominion == DOMINION_RIME ? SPELL_SCHOOL_MASK_FROST : SPELL_SCHOOL_MASK_SHADOW)
+            * scale;
         if (dominion == DOMINION_RIME)
         {
             int32 damage = std::max<int32>(1, int32(tick * RIME_SHARE));
@@ -1930,7 +1941,8 @@ namespace
     // half the Grave Ward kept a few seconds (all of it with Crimson Bastion).
     void Farewell(Player* player, uint8 dominion)
     {
-        float budget = ScarTick(player) * FAREWELL_BUDGET;
+        float budget = ScarTick(player, dominion == DOMINION_RIME ? SPELL_SCHOOL_MASK_FROST : SPELL_SCHOOL_MASK_SHADOW)
+            * FAREWELL_BUDGET;
         if (dominion == DOMINION_RIME)
         {
             uint8 scars = 0;
