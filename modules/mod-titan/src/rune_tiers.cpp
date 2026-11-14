@@ -101,7 +101,7 @@ namespace
         PREFIX_PROVOKING
     };
 
-    struct RuneInfo
+    struct TierInfo
     {
         uint32 Id = 0;
         uint8 Rarity = RARITY_NONE;
@@ -109,7 +109,7 @@ namespace
         uint8 Prefix = 0;                                   // an Uncommon's
     };
 
-    std::unordered_map<uint32, RuneInfo> catalog;
+    std::unordered_map<uint32, TierInfo> catalog;
     std::array<std::vector<uint32>, MAX_RARITY> byRarity;
 
     void LoadCatalog()
@@ -127,7 +127,7 @@ namespace
         do
         {
             Field* fields = result->Fetch();
-            RuneInfo info { fields[0].Get<uint32>(), fields[1].Get<uint8>(), fields[2].Get<uint32>(),
+            TierInfo info { fields[0].Get<uint32>(), fields[1].Get<uint8>(), fields[2].Get<uint32>(),
                 fields[3].Get<uint8>() };
             if (info.Rarity == RARITY_NONE || info.Rarity >= MAX_RARITY || !sSpellMgr->GetSpellInfo(info.Ability))
                 continue;
@@ -137,7 +137,7 @@ namespace
         LOG_INFO("module", "Runes of Enhancement: {} runes.", catalog.size());
     }
 
-    RuneInfo const* Find(uint32 id)
+    TierInfo const* Find(uint32 id)
     {
         auto itr = catalog.find(id);
         return itr != catalog.end() ? &itr->second : nullptr;
@@ -226,7 +226,7 @@ namespace
     {
         std::unordered_set<uint32> claimed;
         for (auto const& [rune, socket] : state.Owned)
-            if (RuneInfo const* info = Find(rune); info && info->Rarity == RARITY_UNCOMMON)
+            if (TierInfo const* info = Find(rune); info && info->Rarity == RARITY_UNCOMMON)
                 claimed.insert(info->Ability);
         return claimed;
     }
@@ -235,7 +235,7 @@ namespace
     {
         std::unordered_set<uint32> dormant;
         for (auto const& [rune, socket] : state.Owned)
-            if (RuneInfo const* info = Find(rune); info && !Knows(player, info->Ability))
+            if (TierInfo const* info = Find(rune); info && !Knows(player, info->Ability))
                 dormant.insert(info->Ability);
         return dormant;
     }
@@ -327,16 +327,22 @@ namespace
         state.Resonant.clear();
     }
 
-    void AddMod(Player* player, State& state, uint32 ability, SpellModOp op, int32 pct)
+    SpellModifier* NewMod(Player* player, uint32 ability, SpellModOp op, SpellModType type, int32 value)
     {
         SpellModifier* mod = new SpellModifier();
         mod->op = op;
-        mod->type = SPELLMOD_PCT;
-        mod->value = pct;
+        mod->type = type;
+        mod->value = value;
         mod->spellId = SPELL_RUNE_MODIFIERS;                // no mask: nothing is sent to the client
         modAbility[mod] = ability;
         player->AddSpellMod(mod, true);
-        state.Mods.push_back(mod);
+        return mod;
+    }
+
+    void AddMod(Player* player, State& state, uint32 ability, SpellModOp op, int32 pct,
+        SpellModType type = SPELLMOD_PCT)
+    {
+        state.Mods.push_back(NewMod(player, ability, op, type, pct));
     }
 
     // The held runes' effects, anew (dormant runes have none).
@@ -347,7 +353,7 @@ namespace
         std::unordered_map<uint32, uint8> tiersOn;          // ability -> rarities held on it (bits)
         for (auto const& [rune, socket] : state.Owned)
         {
-            RuneInfo const* info = Find(rune);
+            TierInfo const* info = Find(rune);
             if (!info || state.Dormant.count(info->Ability))
                 continue;
             tiersOn[info->Ability] |= uint8(1 << info->Rarity);
@@ -370,6 +376,18 @@ namespace
         for (auto const& [ability, bits] : tiersOn)
             if (bits == all)
                 state.Resonant.insert(ability);
+        // The Epics' and Rares' lasting effects (rune_effects.cpp).
+        for (RuneTiers::RuneMod const& mod : RuneEffects::Mods())
+            if (RuneTiers::Has(player, mod.Rune))
+                AddMod(player, state, mod.Spell, SpellModOp(mod.Op), mod.Value, SpellModType(mod.Type));
+        for (RuneTiers::RuneAura const& aura : RuneEffects::Auras())
+        {
+            bool held = RuneTiers::Has(player, aura.Rune);
+            if (held && !player->HasAura(aura.Aura))
+                player->AddAura(aura.Aura, player);
+            else if (!held)
+                player->RemoveAurasDueToSpell(aura.Aura);
+        }
     }
 
     State* HeroState(Unit* unit)
@@ -402,7 +420,7 @@ namespace
         std::string chunk;
         for (auto const& [rune, socket] : state.Owned)
         {
-            RuneInfo const* info = Find(rune);
+            TierInfo const* info = Find(rune);
             std::string item = Acore::StringFormat("{}:{}:{}", rune, socket,
                 info && state.Dormant.count(info->Ability) ? 1 : 0);
             if (!chunk.empty() && chunk.size() + item.size() + 1 > CHUNK)
@@ -422,7 +440,7 @@ namespace
 
     // ---- Offers ----------------------------------------------------------------------------------------------
 
-    bool Offerable(Player* player, State const& state, RuneInfo const& info, std::unordered_set<uint32> const& claimed,
+    bool Offerable(Player* player, State const& state, TierInfo const& info, std::unordered_set<uint32> const& claimed,
         std::vector<uint32> const& taken)
     {
         if (state.Owned.count(info.Id) || std::find(taken.begin(), taken.end(), info.Id) != taken.end()
@@ -521,7 +539,7 @@ namespace
     {
         for (auto const& [rune, at] : state.Owned)
             if (at == socket)
-                if (RuneInfo const* info = Find(rune); info && info->Rarity == rarity)
+                if (TierInfo const* info = Find(rune); info && info->Rarity == rarity)
                     return rune;
         return 0;
     }
@@ -540,7 +558,7 @@ namespace
         Offer* offer = FindOffer(state, seq);
         if (!offer || choice < 1 || choice > CHOICES || !offer->Runes[choice - 1])
             return Error(player, "That offer is no longer there.");
-        RuneInfo const* info = Find(offer->Runes[choice - 1]);
+        TierInfo const* info = Find(offer->Runes[choice - 1]);
         if (!info)
             return Error(player, "That rune no longer exists.");
         if (state.Owned.count(info->Id))
@@ -625,7 +643,7 @@ namespace
             State& state = StateOf(player);
             std::vector<uint32> uncommons;
             for (auto const& [rune, socket] : state.Owned)
-                if (RuneInfo const* info = Find(rune); info && info->Rarity == RARITY_UNCOMMON
+                if (TierInfo const* info = Find(rune); info && info->Rarity == RARITY_UNCOMMON
                     && info->Ability == num(1))
                     uncommons.push_back(rune);
             for (uint32 rune : uncommons)
@@ -639,6 +657,26 @@ namespace
 
 namespace RuneTiers
 {
+    bool Has(Player* player, uint32 rune)
+    {
+        auto itr = states.find(player->GetGUID().GetCounter());
+        if (itr == states.end() || !itr->second.Owned.count(rune))
+            return false;
+        TierInfo const* info = Find(rune);
+        return info && !itr->second.Dormant.count(info->Ability);
+    }
+
+    SpellModifier* AddAbilityMod(Player* player, uint32 ability, uint8 op, uint8 type, int32 value)
+    {
+        return NewMod(player, ability, SpellModOp(op), SpellModType(type), value);
+    }
+
+    void RemoveAbilityMod(Player* player, SpellModifier* mod)
+    {
+        modAbility.erase(mod);
+        player->AddSpellMod(mod, false);                    // deletes it
+    }
+
     bool GrantOffer(Player* player, uint8 level)
     {
         if (!MakeOffer(player, level))
@@ -712,6 +750,7 @@ public:
         if (itr == states.end())
             return;
         RemoveEffects(player, itr->second);
+        RuneEffects::Forget(player);
         states.erase(itr);
     }
 

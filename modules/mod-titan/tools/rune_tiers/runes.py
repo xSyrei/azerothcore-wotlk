@@ -5,10 +5,10 @@ Append, never insert or remove: generate.py numbers them in this order (Epics 10
 
 # (class, spec, home ability, name, effect): two per spec, one idea each, simple on purpose.
 EPICS = [
-    ('Warrior', 'Arms', 'Overpower', 'Rune of the Open Guard', 'Overpower can be used at any time.'),
+    ('Warrior', 'Arms', 'Overpower', 'Rune of the Open Guard', 'Overpower strikes twice.'),
     ('Warrior', 'Arms', 'Execute', 'Rune of the Headsman', 'Execute works below 35% health instead of 20%.'),
     ('Warrior', 'Fury', 'Whirlwind', 'Rune of the Unending Storm', 'Whirlwind has no cooldown.'),
-    ('Warrior', 'Fury', 'Slam', 'Rune of the Raging Blow', 'Slam is instant and strikes with both weapons.'),
+    ('Warrior', 'Fury', 'Slam', 'Rune of the Raging Blow', 'Slam is instant.'),
     ('Warrior', 'Protection', 'Revenge', 'Rune of the Avenger', 'Revenge can always be used and hits 3 enemies.'),
     ('Warrior', 'Protection', 'Shockwave', 'Rune of the Quaking Earth', "Shockwave's cooldown is halved."),
     ('Paladin', 'Holy', 'Holy Light', 'Rune of the Beacon', 'Holy Light also heals you for half as much.'),
@@ -114,7 +114,7 @@ RARES = [
      'Holy Light also heals allies within 8 yards of its target for 10% as much.'),
     ('Paladin', 'Judgement of Light', 'Rune of Holy Wrath', 'Your Judgements extend your Consecration by 2 sec.'),
     ('Paladin', "Avenger's Shield", 'Rune of the Shining Shield',
-     "Avenger's Shield strikes 2 more enemies and silences 1 sec longer."),
+     "Avenger's Shield strikes 2 more enemies."),
     ('Paladin', 'Exorcism', 'Rune of the Exorcist', 'Exorcism critical strikes make your next Flash of Light instant.'),
     ('Paladin', 'Hammer of Justice', 'Rune of the Reckoning Hammer',
      'Each Crusader Strike that hits takes 1 sec off the cooldown of Hammer of Justice.'),

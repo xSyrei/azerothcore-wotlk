@@ -91,7 +91,8 @@ The five after them (their own concept docs), each with its markers 20 on from i
   Sunrise 90955 and its look 90956, Scalding Ground 90957;
 - the Spectral Blade, 90980: Phantom Strike 90981, Open Wound 90983 and its tick 90984, Vanishing Act 90985, Marked
   for Murder 90986; modifiers' markers 91120-91128;
-- Runes of Enhancement: 91170, the source of the Uncommons' spell modifiers (family 99);
+- Runes of Enhancement: 91170, the source of the Uncommons' spell modifiers (family 99); the Epics' and Rares'
+  strikes 91171-91177, heal 91178, Grasping Mind 91179, Phoenix 91180, Quick Recovery 91181;
 - the Wild Hunt, 91130: the Spectral Beast's look 91131, Spectral Bite 91132, Ghostfang 91133 and its tick 91134,
   Parting Howl (on the Hero's pet) 91135, Final Pounce 91136; modifiers' markers 91150-91158.
 """
@@ -1136,10 +1137,38 @@ ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, THUNDER_ICON, WELLSPRING_ICON, MIS
          'Spell_Fire_FelFlameRing', 'Ability_Warlock_ChaosBolt', 'Spell_Shadow_SummonFelGuard',
          'Spell_Shadow_SummonImp', 'Ability_Warlock_DemonicEmpowerment', 'Spell_Shadow_DemonForm',
          'Spell_Shadow_DemonicCircleTeleport', 'Ability_Warrior_Cleave', 'Ability_Rogue_Eviscerate',
-         'Ability_Rogue_Sprint', 'Ability_Rogue_FindWeakness', 'Ability_Hunter_KillCommand', 'Ability_Druid_Rake']
+         'Ability_Rogue_Sprint', 'Ability_Rogue_FindWeakness', 'Ability_Hunter_KillCommand', 'Ability_Druid_Rake',
+         'Spell_Nature_StarFall', 'Spell_Fire_FlameBolt', 'Spell_Frost_FrostBolt02', 'Spell_Shadow_ShadowBolt',
+         'Spell_Shadow_LifeDrain', 'Spell_Holy_FlashHeal', 'Spell_Fire_SealOfFire', 'Spell_Shadow_ShadowWard']
 assert patch_player  # the helpers' module
 
 # The runes' own auras stay off the buff bar (the rune button shows the bound rune): hidden, their words kept.
+# Runes of Enhancement's Epic and Rare effects (src/rune_effects.cpp): strikes and a heal of an amount the script
+# sets (shares of the Hero's own hits, their bonuses in it already), Grasping Mind (Mind Flay: -5% damage done),
+# Phoenix (Combustion: fire spells always strike critically, 6 sec), Quick Recovery (Evasion: heals on a dodge; its
+# procs in titan_rune_effects.sql).
+ARCANE = 0x40
+AURA_MOD_SPELL_CRIT_CHANCE_SCHOOL, PROC_TAKEN_MELEE_AUTO_ATTACK = 71, 0x8
+SPELLS += [
+    strike(91171, 'Rune Strike', 'Ability_Warrior_Cleave', PHYSICAL),
+    strike(91172, 'Rune Strike', 'Spell_Nature_StarFall', ARCANE),
+    strike(91173, 'Rune Strike', 'Spell_Fire_FlameBolt', FIRE),
+    strike(91174, 'Rune Strike', 'Spell_Frost_FrostBolt02', FROST),
+    strike(91175, 'Rune Strike', 'Spell_Shadow_ShadowBolt', SHADOW),
+    strike(91176, 'Rune Strike', 'Spell_Holy_HolyBolt', HOLY),
+    strike(91177, 'Open Vein', 'Spell_Shadow_LifeDrain', PHYSICAL),
+    {**heal(91178, 'Rune Mend', 'Spell_Holy_FlashHeal', 'A rune mends you.'),
+     'set': {**HEAL_SET, 'SchoolMask': HOLY, 'AttributesEx2': 0, 'SpellVisual': 0}},
+    harmful(91179, 'Grasping Mind', 'Spell_Shadow_SiphonMana', 'Damage done reduced by 5%.', DURATION_4S,
+            aura(AURA_MOD_DAMAGE_PERCENT_DONE, -5, ALL_SCHOOLS), SHADOW),
+    buff(91180, 'Phoenix', 'Spell_Fire_SealOfFire', 'Your fire spells always strike critically.', DURATION_6S,
+         {1: aura(AURA_MOD_SPELL_CRIT_CHANCE_SCHOOL, 100, FIRE)}),
+    buff(91181, 'Quick Recovery', 'Spell_Shadow_ShadowWard', '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
+         hidden=True),
+]
+next(spell for spell in SPELLS if spell['id'] == 91177)['effects'][1]['Mechanic'] = 15     # a bleed: no armor
+SPELLS[-1]['set'] = {**SPELLS[-1]['set'], 'ProcFlags': PROC_TAKEN_MELEE_AUTO_ATTACK, 'ProcChance': 101}
+
 # Runes of Enhancement (src/rune_tiers.cpp): the source its Uncommons' spell modifiers name. Family 99 (no spell's)
 # so the core matches it to nothing; the server's own check matches each modifier to its rune's ability.
 SPELLS.append({**buff(91170, 'Runes of Enhancement', BLADE_ICON, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},

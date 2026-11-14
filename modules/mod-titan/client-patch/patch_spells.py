@@ -1359,6 +1359,33 @@ def free_warrior_stances(spells):
     return freed
 
 
+# Runes of Enhancement's usability (src/rune_effects.cpp): what a rune lifts the client must not refuse first. The
+# server's copy loses the same rules and checks them itself, for everyone without the rune.
+CASTER_AURA_STATE, TARGET_AURA_STATE, SPELL_ATTR0_ONLY_STEALTHED = 20, 21, 0x00020000
+RUNE_FREED = {('Revenge', SPELLFAMILY_WARRIOR): CASTER_AURA_STATE, ('Execute', SPELLFAMILY_WARRIOR): TARGET_AURA_STATE,
+              ('Hammer of Wrath', 10): TARGET_AURA_STATE, ('Deep Freeze', 3): TARGET_AURA_STATE,
+              ('Ambush', 8): None}
+
+
+def rune_usability(spells):
+    """Revenge without a block or dodge, Execute and Hammer of Wrath above 20% health, Deep Freeze on a target not
+    frozen, Ambush out of Stealth: allowed here (the server says no without the rune)."""
+    freed = 0
+    for key, row in spells.rows.items():
+        name = spells.string(row[NAME])
+        rule = (name, row[FIELDS['SpellFamilyName']])
+        if rule not in RUNE_FREED or row[FIELDS['Attributes']] & SPELL_ATTR0_PASSIVE:
+            continue
+        row = list(row)
+        if RUNE_FREED[rule] is None:
+            row[FIELDS['Attributes']] &= ~SPELL_ATTR0_ONLY_STEALTHED
+        else:
+            row[RUNE_FREED[rule]] = 0
+        spells.rows[key] = tuple(row)
+        freed += 1
+    return freed
+
+
 THUNDER_CLAP = (6343, 8198, 8204, 8205, 11580, 11581, 25264, 47501, 47502)
 HEARTHSTONE = 8690
 
@@ -1531,6 +1558,7 @@ def main():
     write_rune_costs(source, runes)
     reagents = drop_class_reagents(spells)
     stances = free_warrior_stances(spells)
+    rune_usability(spells)
     hero_tuning(spells)
     # unholy_presence_gcd is no longer run: the Emberforge engine applies every class's spell modifiers on the
     # client (engine/src/spellmods.cpp), Unholy Presence's 0.5 sec off the Death Knight's global cooldown included.
