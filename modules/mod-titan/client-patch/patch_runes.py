@@ -937,24 +937,23 @@ def thunderfield(model, effect, across):
                               'alpha': 0.9, 'turn': 60.0, 'pulse': 0}),
         ('Lightning_Circular_01', {'flat': True, 'spots': ((0.0, 0.0, 0.12, across * 0.94, 0.0),), 'tint': PALE_BLUE,
                                    'alpha': 0.85, 'turn': -18.0, 'pulse': 0.7}),
-        ('Lightning_2x2_01', {'flat': True, 'spots': ring(4.0 * k, 6, 0.1, 4.5 * k, 15.0), 'sheet': (2, 2),
-                              'tint': (0.7, 0.86, 1.0), 'alpha': 0.95, 'flash': 0.9}),
-        ('lightning_strike_2_sheet', {'spots': ring(5.2 * k, 4, 1.7 * k, 3.4 * k), 'sheet': (4, 4), 'flip': 0.8,
-                                      'tint': (0.82, 0.92, 1.0), 'alpha': 0.95, 'pulse': 0}),
+        ('lightning_bolt_4x4', {'spots': ring(5.2 * k, 4, 1.7 * k, 3.4 * k), 'sheet': (4, 4), 'flip': 0.8,
+                                'max_size': 1024, 'tint': (0.82, 0.92, 1.0), 'alpha': 0.95, 'pulse': 0}),
         ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.1, across * 0.3, 0.0),), 'tint': PALE_BLUE,
                                'alpha': 0.55, 'scale': [(0.0, 0.3), (1.0, 3.2)], 'scale_beat': 1.6, 'pulse': 1.6}),
     ))
 
 
 SLASH_RED, EMBER = (1.0, 0.16, 0.1), (1.0, 0.55, 0.2)
-FROSTFIRE_GLOW = (0.85, 0.55, 1.0)
+SUN_RAYS, SUN_ORANGE = (1.0, 0.72, 0.28), (1.0, 0.45, 0.1)
+WHITE_HOT, ICE_GLINT = (1.0, 0.93, 0.75), (0.65, 0.88, 1.0)
 EFFECTS.update({
     'Thunderfield': thunderfield('WAR_Thunderfield', 7157, 16.0),
     'ThunderfieldMarch': thunderfield('WAR_ThunderfieldMarch', 7158, 10.0),
     # A Thunder Echo landing: a bolt from the sky and a ring of sparks at the feet.
     'ThunderEchoHit': burst('WAR_ThunderEchoHit', 7166, (
-        ('lightning_strike_2_sheet', {'spots': ((0.0, 0.0, 1.5, 3.2, 0.0),), 'sheet': (4, 4), 'flip': 0.7,
-                                      'tint': (0.8, 0.92, 1.0), 'alpha': 1.0, 'pulse': 0}),
+        ('lightning_bolt_4x4', {'spots': ((0.0, 0.0, 2.3, 4.6, 0.0),), 'sheet': (4, 4), 'flip': 0.7,
+                                'max_size': 1024, 'tint': (0.8, 0.92, 1.0), 'alpha': 1.0, 'pulse': 0}),
         ('sonic_impact_white_sheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 3.0, 0.0),), 'sheet': (4, 2),
                                       'flip': 0.6, 'tint': PALE_BLUE, 'alpha': 0.95, 'pulse': 0}),
     ), 700),
@@ -964,8 +963,8 @@ EFFECTS.update({
                                'scale': [(0.0, 0.3), (0.6, 5.5), (1.0, 6.5)], 'pulse': 0}),
         ('Lightning_Circular_01', {'flat': True, 'spots': ((0.0, 0.0, 0.14, 9.0, 0.0),), 'tint': STORM_BLUE,
                                    'alpha': 0.9, 'scale': [(0.0, 0.2), (0.5, 1.0), (1.0, 1.1)], 'pulse': 0}),
-        ('lightning_strike_2_sheet', {'spots': ring(2.5, 3, 1.4, 3.0), 'sheet': (4, 4), 'flip': 0.8,
-                                      'tint': (0.8, 0.92, 1.0), 'alpha': 1.0, 'pulse': 0}),
+        ('lightning_bolt_4x4', {'spots': ring(2.5, 3, 1.4, 3.0), 'sheet': (4, 4), 'flip': 0.8,
+                                'max_size': 1024, 'tint': (0.8, 0.92, 1.0), 'alpha': 1.0, 'pulse': 0}),
     )),
     # The Weapon Wake: crossed blade cuts glowing red on the ground, a soft red glow under them.
     'OnslaughtWake': looping('WAR_OnslaughtWake', 7163, (
@@ -979,7 +978,7 @@ EFFECTS.update({
     'WakeSlash': burst('WAR_WakeSlash', 7168, (
         ('new_cleave_a_1_sheet', {'spots': ((0.0, 0.0, 0.0, 3.6, 20.0), (0.0, 0.0, 0.2, 3.0, -40.0)), 'sheet': (4, 2),
                                   'flip': 0.45, 'alpha': 1.0, 'pulse': 0, 'blend': 2}),
-        ('impact_new_1_a_new_sheet', {'spots': ((0.0, 0.0, 0.1, 2.6, 0.0),), 'sheet': (4, 2), 'flip': 0.4,
+        ('impact_new_1_a_new_sheet', {'spots': ((0.0, 0.0, 0.1, 2.6, 0.0),), 'sheet': (3, 2), 'flip': 0.4,
                                       'tint': SLASH_RED, 'alpha': 1.0, 'pulse': 0}),
     ), 600),
     # Aftershock: the ground jolting where the wake was.
@@ -989,45 +988,50 @@ EFFECTS.update({
         ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 1.5, 0.0),), 'tint': SLASH_RED,
                                'alpha': 0.8, 'scale': [(0.0, 0.4), (1.0, 3.5)], 'pulse': 0}),
     ), 600),
-    # A Sunshard: a burning star in the enemy, a cold one turning against it.
+    # A Sunshard: a small sun burning in the enemy, rays turning about a white-hot glint.
     'SunshardGlow': looping('MAGE_SunshardGlow', 7170, (
-        ('Impact_Yellow_01', {'spots': ((0.0, 0.0, 0.0, 2.4, 0.0),), 'alpha': 0.95, 'pulse': 1.1}),
-        ('Impact_Blue_01', {'spots': ((0.0, 0.0, 0.0, 1.6, 45.0),), 'alpha': 0.8, 'pulse': 0.8}),
+        ('sun_rays', {'spots': ((0.0, 0.0, 0.0, 3.0, 0.0),), 'tint': SUN_RAYS, 'alpha': 0.85, 'pulse': 1.2}),
+        ('sun_glint', {'spots': ((0.0, 0.0, 0.0, 1.5, 0.0),), 'tint': WHITE_HOT, 'alpha': 1.0, 'pulse': 0.6}),
     )),
-    # A fracture: a ring of burning ice rushing out, shards bursting.
+    # A fracture: frost cracks the shard: an icy glint, the sun bursting out in flame, a ring of fire rushing out.
     'SunFracture': burst('MAGE_SunFracture', 7171, (
-        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 2.0, 0.0),), 'tint': FROSTFIRE_GLOW,
-                               'alpha': 0.95, 'scale': [(0.0, 0.3), (0.55, 8.0), (1.0, 8.5)], 'pulse': 0}),
-        ('spritesheet_4', {'spots': ((0.0, 0.0, 1.0, 4.5, 0.0),), 'sheet': (2, 2), 'flip': 0.5,
-                           'tint': (0.75, 0.9, 1.0), 'alpha': 1.0, 'pulse': 0}),
-        ('ice_pieces_2_white_sheet', {'spots': ring(2.0, 6, 0.6, 1.4), 'sheet': (4, 4), 'flip': 0.8,
-                                      'tint': (0.8, 0.9, 1.0), 'alpha': 0.9, 'rise': (1.5, 0.9), 'pulse': 0}),
-        ('impact_new_1_a_new_sheet', {'spots': ring(1.2, 3, 0.8, 2.4), 'sheet': (4, 2), 'flip': 0.45,
-                                      'tint': EMBER, 'alpha': 1.0, 'pulse': 0}),
-    )),
-    # A collapse: a ring drawn inward and a burst of frostfire.
+        ('sun_star', {'spots': ((0.0, 0.0, 1.0, 3.6, 0.0),), 'tint': ICE_GLINT, 'alpha': 1.0, 'pulse': 0,
+                      'scale': [(0.0, 0.2), (0.12, 1.3), (0.4, 0.5), (1.0, 0.0)]}),
+        ('spritesheet_4', {'spots': ((0.0, 0.0, 1.0, 3.0, 0.0),), 'sheet': (2, 2), 'flip': 0.3,
+                           'tint': ICE_GLINT, 'alpha': 0.9, 'pulse': 0}),
+        ('sun_fireburst_4x4', {'spots': ring(0.8, 3, 1.0, 2.8), 'sheet': (4, 4), 'tint': WHITE_HOT, 'alpha': 1.0,
+                               'pulse': 0}),
+        ('sun_ring', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 7.0, 0.0),), 'tint': SUN_ORANGE, 'alpha': 0.9,
+                      'pulse': 0, 'scale': [(0.0, 0.15), (0.45, 1.0), (1.0, 1.15)]}),
+    ), 550),
+    # A collapse: the sun drawn in to a point, then bursting: a corona flaring out, flame and a ring of fire.
     'SunCollapse': burst('MAGE_SunCollapse', 7172, (
-        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 2.0, 0.0),), 'tint': EMBER, 'alpha': 0.9,
-                               'scale': [(0.0, 4.0), (0.35, 0.3), (1.0, 0.3)], 'pulse': 0}),
-        ('generic_explosion_1_sheet', {'spots': ((0.0, 0.0, 1.2, 5.0, 0.0),), 'sheet': (4, 4), 'flip': 0.9,
-                                       'alpha': 1.0, 'pulse': 0, 'blend': 2}),
-        ('Impact_Blue_01', {'spots': ((0.0, 0.0, 1.2, 3.5, 0.0),), 'alpha': 0.9, 'pulse': 0,
-                            'scale': [(0.0, 0.2), (0.3, 1.3), (1.0, 0.0)]}),
-    ), 1000),
-    # Scalding Ground: cracked earth glowing frostfire, smoke curling on it, embers rising.
+        ('sun_ring', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 6.0, 0.0),), 'tint': SUN_ORANGE, 'alpha': 0.9,
+                      'pulse': 0, 'scale': [(0.0, 1.0), (0.25, 0.05), (0.3, 0.05), (0.7, 1.4), (1.0, 1.6)]}),
+        ('sun_corona', {'spots': ((0.0, 0.0, 1.2, 5.0, 0.0),), 'tint': SUN_RAYS, 'alpha': 1.0, 'pulse': 0,
+                        'scale': [(0.0, 0.0), (0.25, 0.1), (0.4, 1.2), (1.0, 1.5)]}),
+        ('sun_glint', {'spots': ((0.0, 0.0, 1.2, 3.0, 0.0),), 'tint': WHITE_HOT, 'alpha': 1.0, 'pulse': 0,
+                       'scale': [(0.0, 0.6), (0.25, 0.15), (0.35, 1.4), (1.0, 0.2)]}),
+        ('sun_fireburst_4x4', {'spots': ((0.0, 0.0, 1.2, 4.5, 0.0),), 'sheet': (4, 4), 'tint': WHITE_HOT,
+                               'alpha': 1.0, 'pulse': 0}),
+    ), 750),
+    # Scalding Ground: cracked earth glowing with sunfire, flames licking up about it, a heat haze pulsing.
     'ScaldingGround': looping('MAGE_ScaldingGround', 7164, (
-        ('Circle_Cracks_02', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 12.0, 0.0),), 'tint': FROSTFIRE_GLOW,
+        ('Circle_Cracks_02', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 12.0, 0.0),), 'tint': SUN_ORANGE,
                               'alpha': 0.9, 'turn': 70.0, 'pulse': 0}),
-        ('generic_smoke_1_sheet_bw', {'flat': True, 'spots': ring(3.0, 6, 0.12, 4.5), 'sheet': (4, 4), 'flip': 2.0,
-                                      'tint': (1.0, 0.45, 0.7), 'alpha': 0.55, 'pulse': 0, 'turn': 30.0}),
-        ('ice_pieces_2_white_sheet', {'spots': ring(3.6, 8, 0.3, 1.2), 'sheet': (4, 4), 'flip': 1.0,
-                                      'tint': (1.0, 0.65, 0.55), 'alpha': 0.9, 'rise': (2.0, 1.8), 'pulse': 0}),
+        ('sun_rays', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 11.0, 0.0),), 'tint': SUN_ORANGE, 'alpha': 0.35,
+                      'turn': -40.0, 'pulse': 1.6}),
+        ('sun_flames_4x4', {'spots': ring(3.2, 7, 1.2, 2.4), 'sheet': (4, 4), 'flip': 0.9, 'tint': (1.0, 0.8, 0.55),
+                            'alpha': 0.95, 'pulse': 0}),
+        ('ice_pieces_2_white_sheet', {'spots': ring(3.6, 8, 0.3, 1.0), 'sheet': (4, 4), 'flip': 1.0,
+                                      'tint': (1.0, 0.6, 0.2), 'alpha': 0.9, 'rise': (2.0, 1.8), 'pulse': 0}),
     )),
-    # Solar Anchor: a burning star pinned to the ground, a gold ring turning about it.
+    # Solar Anchor: a sun pinned above the ground, rays turning about it, a gold ring under it.
     'SolarAnchor': looping('MAGE_SolarAnchor', 7165, (
-        ('Circle02', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 3.2, 0.0),), 'tint': SUN_GOLD, 'alpha': 0.9,
-                      'turn': 6.0, 'pulse': 1.4}),
-        ('Impact_Yellow_01', {'spots': ((0.0, 0.0, 0.6, 2.2, 0.0),), 'alpha': 0.95, 'pulse': 1.0}),
+        ('Circle02', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 4.2, 0.0),), 'tint': SUN_GOLD, 'alpha': 0.85,
+                      'turn': 6.0, 'pulse': 0}),
+        ('sun_rays', {'spots': ((0.0, 0.0, 1.2, 3.4, 0.0),), 'tint': SUN_RAYS, 'alpha': 0.9, 'pulse': 1.4}),
+        ('sun_glint', {'spots': ((0.0, 0.0, 1.2, 2.0, 0.0),), 'tint': WHITE_HOT, 'alpha': 1.0, 'pulse': 0.7}),
     )),
 })
 
