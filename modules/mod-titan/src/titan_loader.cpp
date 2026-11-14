@@ -36,6 +36,7 @@ void AddSC_dungeon_scaling();
 void AddSC_runes();
 void AddSC_pets();
 void AddSC_starter_zones();
+void AddSC_rune_tiers();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
 void Addmod_titanScripts()
@@ -61,4 +62,5 @@ void Addmod_titanScripts()
     AddSC_runes();
     AddSC_pets();
     AddSC_starter_zones();
+    AddSC_rune_tiers();
 }

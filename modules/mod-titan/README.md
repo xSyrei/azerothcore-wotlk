@@ -561,6 +561,25 @@ utility or a tradeoff) take one pick each, from three.
 - Scripts in `titan_runes.sql`; spells 90750-91158 (`patch_runes.py`); their looks from the curated VFX library
   (`client-patch/spells/RUNE_VFX`).
 
+## Runes of Enhancement
+Epic, Rare and Uncommon runes beside the Legendary Rune (`src/rune_tiers.cpp`), shown in the Halo window.
+- **Catalog** (`titan_rune_catalog`, world; the window's `Emberforge_Runes/Tiers.lua`): written by
+  `tools/rune_tiers/generate.py <patch_spells output> <DBC dir> [--doc]` from `runes.py` (68 Epics, 2 a spec; 60
+  Rares) and `pool.py` (the Wildcard pool's 416 combat abilities and their prefixes: 952 Uncommons). Ids are stable:
+  Epics 1001 on, Rares 2001 on (append only), an Uncommon 1000000 + its ability's first rank x 8 + its prefix (0 Rapid,
+  1 Aggressive, 2 Mending, 3 Critical, 4 Refreshing, 5 Provoking).
+- **Offers**: every 5 levels a choice of 3 (each Uncommon 60%, Rare 30%, Epic 10%), from runes on abilities the Hero
+  knows and holds none of, none already waiting in another offer; Provoking for Tanks only; with 10 abilities holding
+  Uncommons, only on those. Offers wait until taken (`titan_rune_offers`). Levels reached before the system (or while
+  away) are owed and made at login, told once. A prestige keeps the runes; its level 1 starts the offers again.
+  `.runeoffer [level]` (GM) makes one now.
+- **Sockets**: 5 Epic, 10 Rare (a full set: the window names the one to replace); Uncommons on up to 10 abilities.
+  Releasing a rune or an ability's Uncommons is free (`titan_rune_owned`).
+- **Dormancy**: a rune on an ability the Hero no longer knows is dormant; checked a second after spells change, told
+  once per ability ("your runes on X are dormant"), and when it wakes.
+- **Effects**: next (Uncommons and Resonance, then the Rares and Epics in batches); the window comes first.
+- Protocol: addon whispers, prefix `EFRT` (see `rune_tiers.cpp`).
+
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and
 every talent a **Talent Card** (the talent at its top rank: one card, bought or opened, and it is complete), each

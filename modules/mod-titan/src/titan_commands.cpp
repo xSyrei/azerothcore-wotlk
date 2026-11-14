@@ -18,6 +18,7 @@
 #include "wildcard.h"
 #include "emberspark.h"
 #include "runes.h"
+#include "rune_tiers.h"
 #include "Chat.h"
 #include "GameTime.h"
 #include "WorldPacket.h"
@@ -45,6 +46,8 @@ using namespace Acore::ChatCommands;
 //   game still refuses are the client's.
 // - .unbindrune (anyone): lets go of the active specialization's Legendary Rune and its modifiers, and opens the
 //   rune panel to bind another (out of combat). A GM's with a Hero selected does it for them.
+// - .runeoffer [level]: offers the selected Hero (or you) a choice of 3 Runes of Enhancement now, as the level
+//   offers do (level: the one the offer shows; the Hero's own without one).
 // - .daytime [hour]: your own client's time of day (0-23), for looking at the lighting, water and fog at any hour;
 //   no one else's changes, and the clock runs on from there. Without an hour: back to the real time.
 class titan_commandscript : public CommandScript
@@ -61,6 +64,7 @@ public:
             { "emberspark", HandleEmberspark, SEC_GAMEMASTER, Console::No },
             { "runes", HandleRunes, SEC_GAMEMASTER, Console::No },
             { "daytime", HandleDaytime, SEC_GAMEMASTER, Console::No },
+            { "runeoffer", HandleRuneOffer, SEC_GAMEMASTER, Console::No },
             { "unbindrune", HandleUnbindRune, SEC_PLAYER, Console::No },
         };
         return commandTable;
@@ -185,6 +189,23 @@ public:
             handler->PSendSysMessage("Rune {}: {}, {} ms until ready (base {} ms)", i + 1,
                 type < 4 ? TYPES[type] : "?", target->GetRuneCooldown(i), target->GetRuneBaseCooldown(i, true));
         }
+        return true;
+    }
+
+    static bool HandleRuneOffer(ChatHandler* handler, Optional<uint32> level)
+    {
+        Player* target = handler->getSelectedPlayerOrSelf();
+        if (!target || !Wildcard::IsHero(target))
+        {
+            handler->SendErrorMessage("Only a Hero is offered runes.", false);
+            return false;
+        }
+        if (!RuneTiers::GrantOffer(target, uint8(std::min<uint32>(level.value_or(target->GetLevel()), 255))))
+        {
+            handler->SendErrorMessage("There is no rune to offer: the Hero knows no ability with runes left.", false);
+            return false;
+        }
+        handler->PSendSysMessage("{} is offered a choice of runes.", target->GetName());
         return true;
     }
 
