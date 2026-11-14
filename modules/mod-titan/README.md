@@ -577,7 +577,11 @@ Epic, Rare and Uncommon runes beside the Legendary Rune (`src/rune_tiers.cpp`), 
   Releasing a rune or an ability's Uncommons is free (`titan_rune_owned`).
 - **Dormancy**: a rune on an ability the Hero no longer knows is dormant; checked a second after spells change, told
   once per ability ("your runes on X are dormant"), and when it wakes.
-- **Effects**: next (Uncommons and Resonance, then the Rares and Epics in batches); the window comes first.
+- **The Halo** (`Emberforge_Runes/Halo.lua`, art by `client-patch/build_halo_art.py`): the rune button and `/runes`
+  open it. The Legendary Rune in the centre (clicked: its own panel), 5 Epic sockets on the inner ring, 10 Rare on the
+  outer, the Uncommons by ability on the right under the selected rune's words (Release asks first). An offer opens it
+  on a choice of 3; a full set of sockets asks which one to replace. Tests: `AddOns/tests/halo_test.lua`.
+- **Effects**: next (Uncommons and Resonance, then the Rares and Epics in batches).
 - Protocol: addon whispers, prefix `EFRT` (see `rune_tiers.cpp`).
 
 ## Cards and Silas Darkmoon
