@@ -85,8 +85,8 @@ The five after them (their own concept docs), each with its markers 20 on from i
   draft's (Requiem, the Dominions);
 - the Unbroken Onslaught, 90860 (its procs: melee abilities): Weapon Wake 90861, Bloodletting 90862, the wake's
   ground 90863, Aftershock 90864;
-- the Dawnbound Crusader, 90890: Dawn Vow 90891 (on the ally 90892), Dawn Mark 90893, the echo's heal and damage
-  90894-90895, its looks from the vow 90896-90897, Sunburst's 90898, Sacred Ground 90899, Afterimage 90900;
+- the Dawnbound Crusader, 90890: the first draft's Dawn Vow 90891 (on the ally 90892; unlearned), the echo's heal
+  and damage 90894-90895, their looks 90896-90897, Sunburst's 90898, Sacred Ground 90899, Radiant Ward 90900;
 - the Hollow Congregation, 90920: the echo's look 90921, Hollow Flay 90922, the barrage's bolt 90923, Accusation
   90924, Last Word 90925;
 - the Shattered Sun, 90950: Sunshard 90951 (stacks), Frozen Core 90952, Shatter 90953 and its look 90954, Second
@@ -745,16 +745,14 @@ SPELLS += [
     strike(90864, 'Aftershock', 'Ability_Warrior_Shockwave', PHYSICAL, VISUAL_THUNDER_HIT, modifiers=True),
 
     buff(90890, 'Rune of the Dawnbound Crusader', DAWN_ICON,
-         'Dawn Vow binds an ally (or you) as the point your power rises from. Judgment marks an enemy: Crusader '
-         'Strike on it sends a Dawn Echo from your vow, half of its damage, and Holy Shock one at once.',
+         'Crusader Strike and Holy Shock send a Dawn Echo a moment later: half of their damage again, or half of '
+         'Holy Shock\'s healing on your most injured ally nearby.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     action(90891, 'Dawn Vow', 'Ability_Paladin_BeaconofLight',
            'Swear your Dawn Vow to an ally, or yourself: your Dawn Echoes rise from them.', 10000,
            target=TARGET_UNIT_TARGET_ALLY, range_index=RANGE_40, visual=VISUAL_BEACON),
     shown(90892, 'Dawn Vow', 'Ability_Paladin_BeaconofLight', 'A Dawnbound Crusader\'s echoes rise from you.',
           DURATION_INFINITE, key='DawnVow'),
-    harmful(90893, 'Dawn Mark', 'Spell_Holy_RighteousFury', 'Marked by Judgment: Crusader Strike sends Dawn Echoes.',
-            DURATION_15S, aura(AURA_DUMMY, 1, 0), HOLY),
     heal(90894, 'Dawn Echo', 'Spell_Holy_SearingLight', 'An echo of the dawn.'),
     strike(90895, 'Dawn Echo', 'Spell_Holy_SearingLight', HOLY),
     look(90896, 'Dawn Echo', 'Spell_Holy_SearingLight', VISUAL_HOLY_SHOCK, TARGET_UNIT_TARGET_ANY),
@@ -763,8 +761,13 @@ SPELLS += [
     # Sacred Ground: Consecration's own ground.
     {key: value for key, value in ground(90899, 'Sacred Ground', 'Spell_Holy_InnerFire', None, DURATION_6S).items()
      if key != 'visual'},
-    shown(90900, 'Afterimage', 'Spell_Holy_AuraMastery', 'Your next Dawn Echo repeats at half strength.',
-          DURATION_6S, key='DawnAfterimage'),
+    {'id': 90900, 'copy': POWER_WORD_SHIELD, 'name': 'Radiant Ward', 'icon': 'Spell_Holy_AuraMastery',
+     'description': 'Absorbs damage.', 'tooltip': 'Absorbs $s1 damage.',
+     'set': {**FREE, **NO_FAMILY, 'RangeIndex': RANGE_40, 'DurationIndex': DURATION_8S, 'SchoolMask': HOLY},
+     'effects': {1: {'Effect': 6, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': 0, 'DieSides': 1,
+                     'RealPointsPerLevel': 0.0, 'MiscValue': ALL_SCHOOLS, 'TargetA': TARGET_UNIT_TARGET_ALLY,
+                     'TargetB': 0}},
+     'clear': [2, 3]},
 
     buff(90920, 'Rune of the Hollow Congregation', HOLLOW_ICON,
          'Two seconds into Mind Flay, a Hollow Echo stays where you stand and channels a weaker Mind Flay for 10 '
@@ -809,9 +812,9 @@ LEGEND_MODIFIERS = [
     (90880, ONSLAUGHT_ICON, [("Executioner's Cut", 'Whirling Steel', 'Raking Passage'),
                              ('Overpowering Echo', 'Bloodletting', 'Aftershock'),
                              ('Relentless', 'Battlefield Claim', 'Changing Prey')]),
-    (90910, DAWN_ICON, [('Mercy', 'Retribution', 'Communion'),
-                        ('Dawnwave', 'Sunburst', 'Sacred Ground'),
-                        ('Steadfast', 'Passing the Torch', 'Shared Pilgrimage')]),
+    (90910, DAWN_ICON, [('Sunburst', 'Focused Dawn', 'Communion'),
+                        ('Sacred Ground', 'Steadfast', "Judgment's Echo"),
+                        ("Dawn's Mercy", 'Swift Dawn', 'Radiant Ward')]),
     (90940, HOLLOW_ICON, [('Following Shadows', 'Haunted Ground', 'Possession'),
                           ('Unison', 'Dissonance', 'Accusation'),
                           ('Last Word', 'Procession', 'Silent Witness')]),

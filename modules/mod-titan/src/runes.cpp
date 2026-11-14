@@ -70,7 +70,7 @@
 //   Sanctified Paragon, 90750 the Stormbound Conduit, 90770 Echoing Thunder, 90790 the Wellspring, 90810 the
 //   Wandering Mist, 90830 / 90860 / 90890 / 90920 / 90950 the five after), and one marker per picked modifier
 //   (90710 / 90740 / 90760 / 90780 / 90800 / 90820, and 20 on from each of the five's first, + slot * 3 + choice);
-//   scripts look for them. One teaches an action while bound: Dawn Vow.
+//   scripts look for them.
 //
 // Protocol (fields by ','; the client sends STATE, PICK,<rune>[,1], MOD,<slot 1-3>,<choice 1-3>; PICK's 1: warned
 // of the abilities the rune needs and lacks, the Hero binds it anyway):
@@ -178,16 +178,15 @@ namespace
         SPELL_ONSLAUGHT_MODIFIER_FIRST  = 90880,    // + slot * 3 + choice
 
         SPELL_RUNE_DAWNBOUND_CRUSADER   = 90890,
-        SPELL_DAWN_VOW                  = 90891,    // the action the rune teaches
-        SPELL_DAWN_VOWED                = 90892,    // on the ally
-        SPELL_DAWN_MARK                 = 90893,
+        SPELL_DAWN_VOW                  = 90891,    // the first draft's action and vow: unlearned, removed
+        SPELL_DAWN_VOWED                = 90892,
         SPELL_DAWN_ECHO_HEAL            = 90894,
         SPELL_DAWN_ECHO_DAMAGE          = 90895,
-        SPELL_DAWN_BOLT                 = 90896,    // its look from the vow: Holy Shock's, harmful
+        SPELL_DAWN_BOLT                 = 90896,    // its look: Holy Shock's, harmful
         SPELL_DAWN_BOLT_HEAL            = 90897,    // and helpful
-        SPELL_SUNBURST                  = 90898,    // its look about the vow
+        SPELL_SUNBURST                  = 90898,    // Sunburst's look
         SPELL_SACRED_GROUND             = 90899,
-        SPELL_DAWN_AFTERIMAGE           = 90900,
+        SPELL_RADIANT_WARD              = 90900,
         SPELL_DAWN_MODIFIER_FIRST       = 90910,    // + slot * 3 + choice
 
         SPELL_RUNE_HOLLOW_CONGREGATION  = 90920,
@@ -406,23 +405,22 @@ namespace
     constexpr int32 BLEED_TICKS = 6;
     constexpr std::size_t WAKE_TARGETS = 6;
 
-    // The Dawnbound Crusader's modifiers: slot (0 Doctrine, 1 Manifestation, 2 Oath) x 3 + choice.
+    // The Dawnbound Crusader's modifiers: slot (0 Echo, 1 Light, 2 Grace) x 3 + choice.
     enum DawnModifier : uint8
     {
-        MOD_MERCY, MOD_RETRIBUTION, MOD_COMMUNION,
-        MOD_DAWNWAVE, MOD_SUNBURST, MOD_SACRED_GROUND,
-        MOD_STEADFAST, MOD_PASSING_THE_TORCH, MOD_SHARED_PILGRIMAGE,
+        MOD_SUNBURST, MOD_FOCUSED_DAWN, MOD_COMMUNION,
+        MOD_SACRED_GROUND, MOD_STEADFAST, MOD_JUDGMENTS_ECHO,
+        MOD_DAWNS_MERCY, MOD_SWIFT_DAWN, MOD_RADIANT_WARD,
     };
 
-    // The Dawnbound Crusader's tuning: an echo is half of what set it off (Crusader Strike's damage, Holy Shock's
-    // damage or healing), released from the vow 0.75 sec later.
-    constexpr float DAWN_SHARE = 0.5f, COMMUNION_OUTPUT = 0.85f, AFTERIMAGE_SHARE = 0.5f;
-    constexpr uint32 DAWN_PENDING_MS = 750, DAWN_MARK_MS = 15000;
-    constexpr float DAWN_REACH = 15.0f, PILGRIMAGE_CAP = 15.0f, PILGRIMAGE_PER_YARD = 0.5f;
-    constexpr float DAWNWAVE_WIDTH = 3.0f, DAWNWAVE_SHARE = 0.6f, SUNBURST_RADIUS = 8.0f, SUNBURST_SHARE = 0.5f;
+    // The Dawnbound Crusader's tuning: an echo is half of what set it off, 0.75 sec later.
+    constexpr float DAWN_SHARE = 0.5f, FOCUSED_DAWN = 1.4f, COMMUNION_SHARE = 0.7f;   // Communion: 35% each way
+    constexpr uint32 DAWN_DELAY_MS = 750;
+    constexpr float DAWN_REACH = 15.0f, SUNBURST_RADIUS = 8.0f, SUNBURST_SHARE = 0.4f;
     constexpr float SACRED_RADIUS = 8.0f, SACRED_SHARE = 0.25f;     // Consecration's ground
     constexpr uint32 SACRED_MS = 4000;
-    constexpr int32 AFTERIMAGE_MS = 6000;
+    constexpr float STEADFAST_SHARE = 0.5f, MERCY_SHARE = 0.2f, RADIANT_SHARE = 0.25f;
+    constexpr int32 SWIFT_DAWN_MS = 500, RADIANT_MS = 8000;
     constexpr std::size_t DAWN_TARGETS = 5;
 
     // The Hollow Congregation's modifiers: slot (0 Congregation, 1 Sermon, 2 Command) x 3 + choice.
@@ -603,6 +601,8 @@ namespace
             return { { SPELL_VIVIFY } };
         if (rune == RUNE_DAWNBOUND_CRUSADER && modifier == MOD_STEADFAST)
             return { { SPELL_HOLY_SHOCK } };
+        if (rune == RUNE_DAWNBOUND_CRUSADER && modifier == MOD_JUDGMENTS_ECHO)
+            return { { SPELL_JUDGEMENT_OF_LIGHT, SPELL_JUDGEMENT_OF_WISDOM, SPELL_JUDGEMENT_OF_JUSTICE } };
         if (rune == RUNE_HOLLOW_CONGREGATION && modifier == MOD_DISSONANCE)
             return { { SPELL_SHADOW_WORD_PAIN } };
         if (rune != RUNE_FEL_COMMANDMENT)
@@ -681,15 +681,6 @@ namespace
         Position WakeOffset;                        // Relentless: from its target, as cut
 
         // The Dawnbound Crusader.
-        ObjectGuid Vow, Marked;
-        bool Pending = false;
-        uint32 PendingAt = 0;                       // game ms the pending echo releases
-        float PendingAmount = 0.0f;
-        bool PendingHeal = false;
-        uint32 Echoes = 0;                          // echoes released (Communion alternates)
-        Position HeroWas, VowWas;
-        float Pilgrimage = 0.0f;                    // Shared Pilgrimage's yards
-        uint32 DawnTimer = 0;
         Position SacredAt;                          // Sacred Ground's patch (SacredUntil 0: none)
         uint32 SacredMap = 0, SacredUntil = 0, SacredTimer = 0;
         float SacredTick = 0.0f;
@@ -2146,222 +2137,126 @@ namespace
         return Marked(unit, SPELL_DAWN_MODIFIER_FIRST, modifier);
     }
 
-    // The vowed ally, or the Hero themselves while there is none (gone, dead, elsewhere).
-    Unit* VowOf(Player* player)
-    {
-        State& state = StateOf(player);
-        Unit* vow = state.Vow ? ObjectAccessor::GetUnit(*player, state.Vow) : nullptr;
-        if (!vow || !vow->IsAlive() || !vow->IsInMap(player) || !vow->HasAura(SPELL_DAWN_VOWED, player->GetGUID()))
-            return player;
-        return vow;
-    }
-
-    void DropVow(Player* player)
-    {
-        State& state = StateOf(player);
-        if (state.Vow)
-            if (Unit* vow = ObjectAccessor::GetUnit(*player, state.Vow))
-                vow->RemoveAurasDueToSpell(SPELL_DAWN_VOWED, player->GetGUID());
-        player->RemoveAurasDueToSpell(SPELL_DAWN_VOWED, player->GetGUID());
-        state.Vow.Clear();
-    }
-
-    Unit* JudgmentTarget(Player* player)
-    {
-        State& state = StateOf(player);
-        Unit* marked = state.Marked ? ObjectAccessor::GetUnit(*player, state.Marked) : nullptr;
-        return Valid(player, marked) && marked->HasAura(SPELL_DAWN_MARK, player->GetGUID()) ? marked : nullptr;
-    }
-
-    // The Doctrine: Mercy heals, Retribution strikes, Communion turns between them (a Healer's echoes heal and
-    // anyone else's strike until a Doctrine is chosen).
-    bool EchoHeals(Player* player)
-    {
-        State& state = StateOf(player);
-        if (HasDawnMarker(player, MOD_MERCY))
-            return true;
-        if (HasDawnMarker(player, MOD_RETRIBUTION))
-            return false;
-        if (HasDawnMarker(player, MOD_COMMUNION))
-            return state.Echoes % 2 == 0;
-        return Wildcard::GetRole(player) == Wildcard::ROLE_HEALER;
-    }
-
     void EchoOn(Player* player, Unit* unit, float amount, bool heal)
     {
         int32 points = std::max<int32>(1, int32(amount));
+        player->CastSpell(unit, heal ? SPELL_DAWN_BOLT_HEAL : SPELL_DAWN_BOLT, true);
         player->CastCustomSpell(unit, heal ? SPELL_DAWN_ECHO_HEAL : SPELL_DAWN_ECHO_DAMAGE, &points, nullptr,
             nullptr, true);
+        if (heal && HasDawnMarker(player, MOD_RADIANT_WARD))
+        {
+            int32 ward = std::max<int32>(1, int32(amount * RADIANT_SHARE));
+            unit->RemoveAurasDueToSpell(SPELL_RADIANT_WARD, player->GetGUID());
+            player->CastCustomSpell(unit, SPELL_RADIANT_WARD, &ward, nullptr, nullptr, true);
+            if (Aura* aura = unit->GetAura(SPELL_RADIANT_WARD, player->GetGUID()))
+            {
+                aura->SetMaxDuration(RADIANT_MS);
+                aura->SetDuration(RADIANT_MS);
+            }
+        }
+        if (!heal && HasDawnMarker(player, MOD_DAWNS_MERCY))
+        {
+            int32 mercy = std::max<int32>(1, int32(amount * MERCY_SHARE));
+            player->CastCustomSpell(player, SPELL_DAWN_ECHO_HEAL, &mercy, nullptr, nullptr, true);
+        }
     }
 
-    // A Dawn Echo from the vow: on one (the most injured ally within reach of it, or the Judgment target, else the
-    // nearest enemy), or along the way to the Judgment target (Dawnwave), or all about the vow (Sunburst), or as a
-    // patch of consecrated ground there (Sacred Ground: a quarter a second for 4 sec, the last patch replaced).
-    void Emit(Player* player, Unit* vow, float amount, bool heal, float reach)
+    // One echo landing: a strike on the enemy (the nearest one within 15 yards if it is gone) or a heal on the most
+    // injured ally within 15 yards of the Hero; Sunburst splashes it about there, Sacred Ground leaves a patch.
+    void Echo(Player* player, ObjectGuid enemyGuid, float amount, bool heal)
     {
-        State& state = StateOf(player);
-        Unit* marked = JudgmentTarget(player);
-        auto single = [&]() -> Unit*
+        Unit* unit = nullptr;
+        if (heal)
         {
-            if (heal)
-            {
-                std::vector<Unit*> allies = InjuredAllies(player, vow, reach, nullptr);
-                return allies.empty() ? nullptr : allies.front();
-            }
-            if (marked && marked->IsWithinDistInMap(vow, reach))
-                return marked;
-            std::vector<Unit*> enemies = EnemiesAround(player, vow, reach);
-            return enemies.empty() ? nullptr : enemies.front();
-        };
-        uint32 look = heal ? SPELL_DAWN_BOLT_HEAL : SPELL_DAWN_BOLT;
-
-        if (HasDawnMarker(player, MOD_DAWNWAVE))
-        {
-            Unit* toward = marked && marked->IsWithinDistInMap(vow, reach * 2.0f) ? marked : single();
-            if (!toward)
-                return;
-            Shape line;
-            line.From = vow->GetPosition();
-            line.To = Toward(line.From, vow->GetAngle(toward), vow->GetExactDist2d(toward) + 2.0f);
-            line.HalfWidth = DAWNWAVE_WIDTH / 2.0f;
-            vow->CastSpell(toward, look, true);
-            std::vector<Unit*> touched;
-            if (heal)
-            {
-                for (Unit* ally : InjuredAllies(player, vow, vow->GetExactDist2d(toward) + 5.0f, nullptr))
-                    if (touched.size() < DAWN_TARGETS && line.Holds(ally))
-                        touched.push_back(ally);
-            }
-            else
-                touched = EnemiesIn(player, line, DAWN_TARGETS);
-            for (Unit* unit : touched)
-                EchoOn(player, unit, amount * DAWNWAVE_SHARE, heal);
-            return;
+            std::vector<Unit*> allies = InjuredAllies(player, player, DAWN_REACH, nullptr);
+            unit = allies.empty() ? player : allies.front();
         }
+        else
+        {
+            unit = ObjectAccessor::GetUnit(*player, enemyGuid);
+            if (!Valid(player, unit) || !unit->IsWithinDistInMap(player, DAWN_REACH * 2.0f))
+            {
+                std::vector<Unit*> enemies = EnemiesAround(player, player, DAWN_REACH);
+                unit = enemies.empty() ? nullptr : enemies.front();
+            }
+        }
+        if (!unit)
+            return;
+        EchoOn(player, unit, amount, heal);
         if (HasDawnMarker(player, MOD_SUNBURST))
         {
-            vow->CastSpell(vow, SPELL_SUNBURST, true);
-            std::vector<Unit*> touched = heal ? InjuredAllies(player, vow, SUNBURST_RADIUS, nullptr)
-                : EnemiesAround(player, vow, SUNBURST_RADIUS);
-            if (touched.size() > DAWN_TARGETS)
-                touched.resize(DAWN_TARGETS);
-            for (Unit* unit : touched)
-                EchoOn(player, unit, amount * SUNBURST_SHARE, heal);
-            return;
+            unit->CastSpell(unit, SPELL_SUNBURST, true);
+            std::vector<Unit*> touched = heal ? InjuredAllies(player, unit, SUNBURST_RADIUS, unit)
+                : EnemiesAround(player, unit, SUNBURST_RADIUS);
+            std::size_t count = 0;
+            for (Unit* other : touched)
+                if (other != unit && count++ < DAWN_TARGETS)
+                    EchoOn(player, other, amount * SUNBURST_SHARE, heal);
         }
         if (HasDawnMarker(player, MOD_SACRED_GROUND))
         {
-            state.SacredAt = vow->GetPosition();
+            State& state = StateOf(player);
+            state.SacredAt = unit->GetPosition();
             state.SacredMap = player->GetMapId();
             state.SacredUntil = Now() + SACRED_MS;
             state.SacredTick = amount * SACRED_SHARE;
             state.SacredHeal = heal;
             state.SacredTimer = 0;
             PlaceDecals(player, SPELL_SACRED_GROUND, { state.SacredAt });
-            return;
-        }
-        if (Unit* unit = single())
-        {
-            vow->CastSpell(unit, look, true);
-            EchoOn(player, unit, amount, heal);
         }
     }
 
-    // The pending echo, released: from the vow, its reach 15 yards and Shared Pilgrimage's yards; Steadfast's
-    // afterimage repeats it at half.
-    void ReleaseEcho(Player* player)
+    // A Dawn Echo of what was dealt or healed: half of it 0.75 sec later (40% more with Focused Dawn). A damage echo
+    // heals instead for a Healer; Communion makes every echo both, at 35% each. Swift Dawn: Crusader Strike and Holy
+    // Shock come back 0.5 sec sooner.
+    void QueueEcho(Player* player, Unit* target, float amount, bool heal, float share = DAWN_SHARE)
     {
-        State& state = StateOf(player);
-        if (!state.Pending)
-            return;
-        state.Pending = false;
-        Unit* vow = VowOf(player);
-        bool heal = EchoHeals(player);
-        float amount = state.PendingAmount * (HasDawnMarker(player, MOD_COMMUNION) ? COMMUNION_OUTPUT : 1.0f);
-        ++state.Echoes;
-        float reach = DAWN_REACH;
-        if (HasDawnMarker(player, MOD_SHARED_PILGRIMAGE))
-            reach += std::min(PILGRIMAGE_CAP, state.Pilgrimage);
-        state.Pilgrimage = 0.0f;
-        Emit(player, vow, amount, heal, reach);
-        if (vow->HasAura(SPELL_DAWN_AFTERIMAGE, player->GetGUID()))
-        {
-            vow->RemoveAurasDueToSpell(SPELL_DAWN_AFTERIMAGE, player->GetGUID());
-            Emit(player, vow, amount * AFTERIMAGE_SHARE, heal, reach);
-        }
-    }
-
-    // An echo pending: half of what set it off, released 0.75 sec on (another one meanwhile joins it).
-    void QueueEcho(Player* player, float amount)
-    {
-        State& state = StateOf(player);
         if (amount <= 0.0f)
             return;
-        state.PendingAmount = state.Pending ? state.PendingAmount + amount * DAWN_SHARE : amount * DAWN_SHARE;
-        state.Pending = true;
-        state.PendingAt = Now() + DAWN_PENDING_MS;
+        amount *= share * (HasDawnMarker(player, MOD_FOCUSED_DAWN) ? FOCUSED_DAWN : 1.0f);
+        bool communion = HasDawnMarker(player, MOD_COMMUNION);
+        if (!heal && Wildcard::GetRole(player) == Wildcard::ROLE_HEALER)
+            heal = true;
+        ObjectGuid enemy = target && !heal ? target->GetGUID() : ObjectGuid::Empty;
+        if (communion && target && player->IsValidAttackTarget(target))
+            enemy = target->GetGUID();
+        player->m_Events.AddEventAtOffset([player, enemy, amount, heal, communion]()
+        {
+            if (!player->IsInWorld() || !player->IsAlive())
+                return;
+            if (communion)
+            {
+                Echo(player, enemy, amount * COMMUNION_SHARE, false);
+                Echo(player, enemy, amount * COMMUNION_SHARE, true);
+            }
+            else
+                Echo(player, enemy, amount, heal);
+        }, Milliseconds(DAWN_DELAY_MS));
+        if (HasDawnMarker(player, MOD_SWIFT_DAWN))
+            for (uint32 first : { SPELL_CRUSADER_STRIKE, SPELL_HOLY_SHOCK })
+                for (uint32 id = first; id; id = sSpellMgr->GetNextSpellInChain(id))
+                    if (player->HasSpell(id))
+                        player->ModifySpellCooldown(id, -SWIFT_DAWN_MS);
     }
 
-    // The vow moved to the ally (one at a time); Passing the Torch: a pending echo released from them at once.
-    void Vow(Player* player, Unit* ally)
-    {
-        State& state = StateOf(player);
-        if (state.Vow && state.Vow != ally->GetGUID())
-            if (Unit* last = ObjectAccessor::GetUnit(*player, state.Vow))
-                last->RemoveAurasDueToSpell(SPELL_DAWN_VOWED, player->GetGUID());
-        state.Vow = ally->GetGUID();
-        if (!ally->HasAura(SPELL_DAWN_VOWED, player->GetGUID()))
-            player->AddAura(SPELL_DAWN_VOWED, ally);
-        state.VowWas = ally->GetPosition();
-        if (state.Pending && HasDawnMarker(player, MOD_PASSING_THE_TORCH))
-            ReleaseEcho(player);
-    }
-
-    void Mark(Player* player, Unit* enemy)
-    {
-        State& state = StateOf(player);
-        if (state.Marked && state.Marked != enemy->GetGUID())
-            if (Unit* last = ObjectAccessor::GetUnit(*player, state.Marked))
-                last->RemoveAurasDueToSpell(SPELL_DAWN_MARK, player->GetGUID());
-        state.Marked = enemy->GetGUID();
-        Lasting(player, enemy, SPELL_DAWN_MARK, int32(DAWN_MARK_MS));
-    }
-
-    // Four times a second: the pending echo's release, Shared Pilgrimage's yards, Sacred Ground's ticks.
+    // Sacred Ground's ticks.
     void DawnTick(Player* player, uint32 diff)
     {
         State& state = StateOf(player);
-        state.DawnTimer += diff;
-        if (state.DawnTimer < 250)
-            return;
-        uint32 elapsed = state.DawnTimer;
-        state.DawnTimer = 0;
-        uint32 now = Now();
-        if (state.Pending && now >= state.PendingAt)
-            ReleaseEcho(player);
-
-        Unit* vow = VowOf(player);
-        Position hero = player->GetPosition(), there = vow->GetPosition();
-        if (state.HeroWas.GetExactDist2d(&hero) < 10.0f)
-            state.Pilgrimage += state.HeroWas.GetExactDist2d(&hero) * PILGRIMAGE_PER_YARD;
-        if (vow != player && state.VowWas.GetExactDist2d(&there) < 10.0f)
-            state.Pilgrimage += state.VowWas.GetExactDist2d(&there) * PILGRIMAGE_PER_YARD;
-        state.HeroWas = hero;
-        state.VowWas = there;
-
         if (!state.SacredUntil)
             return;
-        if (now >= state.SacredUntil || state.SacredMap != player->GetMapId())
+        if (Now() >= state.SacredUntil || state.SacredMap != player->GetMapId())
         {
             state.SacredUntil = 0;
             player->RemoveDynObject(SPELL_SACRED_GROUND);
             return;
         }
-        state.SacredTimer += elapsed;
+        state.SacredTimer += diff;
         if (state.SacredTimer < 1000)
             return;
         state.SacredTimer = 0;
         Shape patch = Circle(state.SacredAt, SACRED_RADIUS);
+        int32 tick = std::max<int32>(1, int32(state.SacredTick));
         if (state.SacredHeal)
         {
             std::size_t healed = 0;
@@ -2369,12 +2264,12 @@ namespace
                 if (healed < DAWN_TARGETS && patch.Holds(ally))
                 {
                     ++healed;
-                    EchoOn(player, ally, state.SacredTick, true);
+                    player->CastCustomSpell(ally, SPELL_DAWN_ECHO_HEAL, &tick, nullptr, nullptr, true);
                 }
         }
         else
             for (Unit* enemy : EnemiesIn(player, patch, DAWN_TARGETS))
-                EchoOn(player, enemy, state.SacredTick, false);
+                player->CastCustomSpell(enemy, SPELL_DAWN_ECHO_DAMAGE, &tick, nullptr, nullptr, true);
     }
 
     // ---- The Hollow Congregation -------------------------------------------------------------------------------
@@ -2682,7 +2577,7 @@ namespace
     }
 
     // What the five leave behind (death, logout, a spec or modifier change): the Graves and their shield, the wake,
-    // a pending echo and its ground, the echoes, the shards. The vow stays.
+    // Sacred Ground, the echoes, the shards.
     void ClearLegends(Player* player)
     {
         State& state = StateOf(player);
@@ -2691,7 +2586,6 @@ namespace
         player->RemoveAurasDueToSpell(SPELL_CRIMSON_WARD);
         state.Buried.clear();
         EndWake(player);
-        state.Pending = false;
         state.SacredUntil = 0;
         player->RemoveDynObject(SPELL_SACRED_GROUND);
         DismissEchoes(player);
@@ -2704,28 +2598,23 @@ namespace
         player->RemoveDynObject(SPELL_SCALDING_GROUND);
     }
 
-    // The action the rune teaches while it is the active spec's (taught again at each login, never saved): Dawn Vow;
-    // the vow on the Hero until they choose.
-    void ApplyLegend(Player* player, uint8 rune)
+    // At each login and rune change: what earlier drafts taught or left on the Hero, gone.
+    void ApplyLegend(Player* player, uint8 /*rune*/)
     {
-        auto teach = [player](uint32 spellId, bool wanted)
+        auto unlearn = [player](uint32 spellId)
         {
-            if (wanted && !player->HasSpell(spellId))
-                player->learnSpell(spellId, true);
-            else if (!wanted && player->HasSpell(spellId))
+            if (player->HasSpell(spellId))
                 player->removeSpell(spellId, SPEC_MASK_ALL, true);
         };
         // The Threefold Grave's first draft taught Requiem (90831) and three more (90832-90834), and wore a
         // Dominion (90835-90837): gone with it.
         for (uint32 old = 90831; old <= 90834; ++old)
-            teach(old, false);
+            unlearn(old);
         for (uint32 old = 90835; old <= 90837; ++old)
             player->RemoveAurasDueToSpell(old);
-        teach(SPELL_DAWN_VOW, rune == RUNE_DAWNBOUND_CRUSADER);
-        if (rune != RUNE_DAWNBOUND_CRUSADER)
-            DropVow(player);
-        else if (VowOf(player) == player)
-            Vow(player, player);
+        // The Dawnbound Crusader's first draft taught Dawn Vow and vowed the Hero: gone with it.
+        unlearn(SPELL_DAWN_VOW);
+        player->RemoveAurasDueToSpell(SPELL_DAWN_VOWED);
     }
 
     // ---- The rune's auras ------------------------------------------------------------------------------------
@@ -3532,45 +3421,36 @@ class spell_titan_rune_unbroken_onslaught : public AuraScript
     }
 };
 
-// Dawn Vow: the vow moves to the ally.
+// Dawn Vow: the first draft's action (unlearned); nothing.
 class spell_titan_rune_dawn_vow : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_dawn_vow);
 
-    void Swear()
-    {
-        Player* player = GetCaster()->ToPlayer();
-        if (Unit* ally = GetHitUnit(); player && ally && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
-            Vow(player, ally);
-    }
-
-    void Register() override
-    {
-        AfterHit += SpellHitFn(spell_titan_rune_dawn_vow::Swear);
-    }
+    void Register() override { }
 };
 
-// A Judgement with the Dawnbound Crusader: the Dawn Mark on its target (one at a time).
+// A Judgement with the Dawnbound Crusader and Judgment's Echo: a Dawn Echo of its damage.
 class spell_titan_rune_judgement : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_judgement);
 
-    void Mark()
+    void Echo()
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (player && target && target->IsAlive() && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
-            ::Mark(player, target);
+        if (player && target && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER)
+            && HasDawnMarker(player, MOD_JUDGMENTS_ECHO))
+            QueueEcho(player, target, float(GetHitDamage()), false);
     }
 
     void Register() override
     {
-        AfterHit += SpellHitFn(spell_titan_rune_judgement::Mark);
+        AfterHit += SpellHitFn(spell_titan_rune_judgement::Echo);
     }
 };
 
-// Crusader Strike on the Dawn Mark's enemy: a Dawn Echo pending. Holy Shock's damage or heal (every rank): an echo
-// at once, then Steadfast's afterimage on the vow.
+// Crusader Strike and Holy Shock's damage or heal (every rank): a Dawn Echo of it; Steadfast: Holy Shock's twice,
+// the second at half.
 class spell_titan_rune_dawn_echo : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_dawn_echo);
@@ -3581,23 +3461,11 @@ class spell_titan_rune_dawn_echo : public SpellScript
         Unit* target = GetHitUnit();
         if (!player || !target || !player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
             return;
-        if (GetSpellInfo()->GetFirstRankSpell()->Id == SPELL_CRUSADER_STRIKE)
-        {
-            if (target->HasAura(SPELL_DAWN_MARK, player->GetGUID()))
-                QueueEcho(player, float(GetHitDamage()));
-            return;
-        }
-        QueueEcho(player, float(GetHitDamage() + GetHitHeal()));
-        ReleaseEcho(player);
-        if (!HasDawnMarker(player, MOD_STEADFAST))
-            return;
-        Unit* vow = VowOf(player);
-        vow->RemoveAurasDueToSpell(SPELL_DAWN_AFTERIMAGE, player->GetGUID());
-        if (Aura* afterimage = player->AddAura(SPELL_DAWN_AFTERIMAGE, vow))
-        {
-            afterimage->SetMaxDuration(AFTERIMAGE_MS);
-            afterimage->SetDuration(AFTERIMAGE_MS);
-        }
+        bool heal = GetHitHeal() > 0;
+        float amount = float(heal ? GetHitHeal() : GetHitDamage());
+        QueueEcho(player, target, amount, heal);
+        if (GetSpellInfo()->GetFirstRankSpell()->Id != SPELL_CRUSADER_STRIKE && HasDawnMarker(player, MOD_STEADFAST))
+            QueueEcho(player, target, amount, heal, DAWN_SHARE * STEADFAST_SHARE);
     }
 
     void Register() override
@@ -3961,7 +3829,6 @@ public:
     void OnPlayerLogout(Player* player) override
     {
         ClearCombat(player);
-        DropVow(player);
         states.erase(player->GetGUID().GetCounter());
     }
 
