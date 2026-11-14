@@ -540,7 +540,21 @@ utility or a tradeoff) take one pick each, from three.
   Spreading Sun (and 1 in 2 nearby), Heavy Sun (8 shards); Wide Burst (12 yards), Scalding Ground, Chain Reaction
   (shards within 10 yards shatter at half); Implosion (40% more to the target), Second Sunrise (again at 40%, 2 sec
   on), Frozen Core (40% slow, 90952).
-- Scripts in `titan_runes.sql`; spells 90750-90978 (`patch_runes.py`); their looks from the curated VFX library
+- **The Rune of the Spectral Blade** (rune 32, doc "Phantom Edge"; Melee DPS; Eviscerate). Eviscerate keeps its place
+  and calls a phantom behind its victim: 0.6 sec later it strikes for 50% of Eviscerate's damage (Phantom Strike
+  90981: Shadow, cannot crit, triggers no poisons). Executioner (40% more), Thousand Cuts (3 cuts, 15% more in all),
+  Shadow Cleave (3 more within 8 yards at half); Quick Death (0.1 sec), Patient Killer (2 sec, 40% more), Open Wound
+  (a refreshing bleed instead, 20% more over 4 sec, 90983); Death Follows (the nearest enemy within 10 yards if the
+  victim died), Vanishing Act (30% speed, 3 sec, 90985), Marked for Murder (next Sinister Strike, Backstab or
+  Hemorrhage on it 30% more, 90986).
+- **The Rune of the Wild Hunt** (rune 33; DPS with a pet; Kill Command). Kill Command keeps its effect and unleashes a
+  **Spectral Beast** (910123: the pet's look, Ghost Visual, no threat) on the pet's target (else the Hero's) for 10
+  sec; it bites every 1.5 sec for 60% of the pet's swing (Spectral Bite 91012) and leaves when its prey dies. One at a
+  time. Alpha Predator (30% more), Pack Ravager (2 more within 5 yards at half), Ghostfang (a refreshing bleed, 91013);
+  Fixed Prey (4 sec longer), Hunter's Command (turns to the Hero's target), Blood Scent (hunts on after a kill); and
+  on its natural end Final Pounce (a bite at 200%), Frenzied Farewell (4 bites at 60%) or Parting Howl (the pet 30%
+  stronger for 6 sec, 91015).
+- Scripts in `titan_runes.sql`; spells 90750-91038 (`patch_runes.py`); their looks from the curated VFX library
   (`client-patch/spells/RUNE_VFX`).
 
 ## Cards and Silas Darkmoon

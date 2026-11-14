@@ -88,7 +88,11 @@ The five after them (their own concept docs), each with its markers 20 on from i
 - the Hollow Congregation, 90920: the echo's look 90921, Hollow Flay 90922, the barrage's bolt 90923, Accusation
   90924, Last Word 90925, Shadow Mend 90926;
 - the Shattered Sun, 90950: Sunshard 90951 (stacks), Frozen Core 90952, Shatter 90953 and its look 90954, Second
-  Sunrise 90955 and its look 90956, Scalding Ground 90957.
+  Sunrise 90955 and its look 90956, Scalding Ground 90957;
+- the Spectral Blade, 90980: Phantom Strike 90981, Open Wound 90983 and its tick 90984, Vanishing Act 90985, Marked
+  for Murder 90986; modifiers' markers 91000-91008;
+- the Wild Hunt, 91010: the Spectral Beast's look 91011, Spectral Bite 91012, Ghostfang 91013 and its tick 91014,
+  Parting Howl (on the Hero's pet) 91015, Final Pounce 91016; modifiers' markers 91030-91038.
 """
 
 import math
@@ -803,6 +807,44 @@ SPELLS += [
     look(90956, 'Second Sunrise', 'Spell_Fire_SoulBurn', VISUAL_BLAST_WAVE),
     ground(90957, 'Scalding Ground', 'Spell_Fire_Incinerate', 'ScaldingGround', DURATION_6S),
 ]
+# ---- The Spectral Blade (90980) and the Wild Hunt (91010); modifiers' markers 20 on from each one's first.
+BLADE_ICON = 'Ability_Rune_SpectralBlade'
+HUNT_ICON = 'Ability_Rune_WildHunt'
+AURA_MOD_INCREASE_SPEED = 31
+VISUAL_GHOSTLY_STRIKE, VISUAL_GHOST, VISUAL_KILL_COMMAND, VISUAL_DASH = 4159, 886, 8138, 2276
+SPELLS += [
+    buff(90980, 'Rune of the Spectral Blade', BLADE_ICON,
+         'Eviscerate calls a phantom assassin behind its victim: a moment later it strikes for half of '
+         'Eviscerate\'s damage again.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {**strike(90981, 'Phantom Strike', 'Ability_Rogue_Eviscerate', SHADOW, VISUAL_GHOSTLY_STRIKE)},
+    dot(90983, 'Open Wound', 'Ability_Rogue_Eviscerate', PHYSICAL, DURATION_4S, 'Bleeding every second.'),
+    strike(90984, 'Open Wound', 'Ability_Rogue_Eviscerate', PHYSICAL),
+    {**buff(90985, 'Vanishing Act', 'Ability_Rogue_Sprint', 'Movement speed increased by 30%.', DURATION_3S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_3S, 'SpellVisual': VISUAL_DASH}},
+    harmful(90986, 'Marked for Murder', 'Ability_Rogue_FindWeakness',
+            'Your next Sinister Strike, Backstab or Hemorrhage deals 30% more to this target.', DURATION_10S,
+            aura(AURA_DUMMY, 1, 0), SHADOW),
+
+    buff(91010, 'Rune of the Wild Hunt', HUNT_ICON,
+         'Kill Command unleashes a Spectral Beast in your pet\'s likeness on its target for 10 sec: it bites for '
+         'part of your pet\'s damage. One at a time.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {**shown(91011, 'Spectral Beast', HUNT_ICON, '', DURATION_INFINITE,
+             effects={1: aura(AURA_MOD_THREAT, -100, ALL_SCHOOLS)}),
+     'set': {**HIDDEN, 'DurationIndex': DURATION_INFINITE, 'SpellVisual': VISUAL_GHOST}},
+    strike(91012, 'Spectral Bite', 'Ability_Hunter_KillCommand', PHYSICAL),
+    dot(91013, 'Ghostfang', 'Ability_Druid_Rake', PHYSICAL, DURATION_4S, 'Bleeding every second.'),
+    strike(91014, 'Ghostfang', 'Ability_Druid_Rake', PHYSICAL),
+    {**buff(91015, 'Parting Howl', 'Ability_Hunter_KillCommand', 'Damage done increased by 30%.', DURATION_6S,
+            {1: aura(AURA_MOD_DAMAGE_PERCENT_DONE, 30, ALL_SCHOOLS)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_6S, 'SpellVisual': VISUAL_KILL_COMMAND}},
+    strike(91016, 'Final Pounce', 'Ability_Hunter_KillCommand', PHYSICAL, VISUAL_KILL_COMMAND),
+]
+next(spell for spell in SPELLS if spell['id'] == 90981)['set']['AttributesEx2'] = SPELL_ATTR2_CANT_CRIT
+# The bleeds' ticks: armor never reduces them (Unit::IsDamageReducedByArmor).
+for _bleed in (90984, 91014):
+    next(spell for spell in SPELLS if spell['id'] == _bleed)['effects'][1]['Mechanic'] = 15
+
 LEGEND_MODIFIERS = [
     (90850, GRAVE_ICON, [('Far-Reaching Graves', 'Long Rest', 'March of the Dead'),
                          ('Cruel Winter', 'Grave Pestilence', 'Crimson Bastion'),
@@ -819,6 +861,12 @@ LEGEND_MODIFIERS = [
     (90970, SUN_ICON, [('Wildfire', 'Spreading Sun', 'Heavy Sun'),
                        ('Wide Burst', 'Scalding Ground', 'Chain Reaction'),
                        ('Implosion', 'Second Sunrise', 'Frozen Core')]),
+    (91000, BLADE_ICON, [('Executioner', 'Thousand Cuts', 'Shadow Cleave'),
+                         ('Quick Death', 'Patient Killer', 'Open Wound'),
+                         ('Death Follows', 'Vanishing Act', 'Marked for Murder')]),
+    (91030, HUNT_ICON, [('Alpha Predator', 'Pack Ravager', 'Ghostfang'),
+                        ('Fixed Prey', "Hunter's Command", 'Blood Scent'),
+                        ('Final Pounce', 'Frenzied Farewell', 'Parting Howl')]),
 ]
 next(spell for spell in SPELLS if spell['id'] == 90923)['set']['Speed'] = 20.0
 next(spell for spell in SPELLS if spell['id'] == 90951)['set']['StackAmount'] = 8
@@ -1067,7 +1115,7 @@ VISUALS.update({
 })
 
 ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, THUNDER_ICON, WELLSPRING_ICON, MIST_ICON,
-         GRAVE_ICON, ONSLAUGHT_ICON, DAWN_ICON, HOLLOW_ICON, SUN_ICON, 'Spell_Shadow_DeathPact',
+         GRAVE_ICON, ONSLAUGHT_ICON, DAWN_ICON, HOLLOW_ICON, SUN_ICON, BLADE_ICON, HUNT_ICON, 'Spell_Shadow_DeathPact',
          'Spell_Deathknight_ClassIcon', 'Spell_Deathknight_FrostPresence', 'Spell_Deathknight_UnholyPresence',
          'Spell_Deathknight_BloodPresence', 'Spell_Deathknight_IceTouch', 'Spell_Frost_ChillingBlast',
          'Spell_Shadow_PlagueCloud', 'Spell_Shadow_CreepingPlague', 'Spell_Deathknight_BloodBoil',
@@ -1084,11 +1132,12 @@ ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, THUNDER_ICON, WELLSPRING_ICON, MIS
          'Spell_Holy_DevotionAura', 'Spell_Holy_SealOfWrath', 'Spell_Holy_PowerWordShield', 'Spell_Holy_HolyGuidance',
          'Spell_Fire_FelFlameRing', 'Ability_Warlock_ChaosBolt', 'Spell_Shadow_SummonFelGuard',
          'Spell_Shadow_SummonImp', 'Ability_Warlock_DemonicEmpowerment', 'Spell_Shadow_DemonForm',
-         'Spell_Shadow_DemonicCircleTeleport', 'Ability_Warrior_Cleave']
+         'Spell_Shadow_DemonicCircleTeleport', 'Ability_Warrior_Cleave', 'Ability_Rogue_Eviscerate',
+         'Ability_Rogue_Sprint', 'Ability_Rogue_FindWeakness', 'Ability_Hunter_KillCommand', 'Ability_Druid_Rake']
 assert patch_player  # the helpers' module
 
 # The runes' own auras stay off the buff bar (the rune button shows the bound rune): hidden, their words kept.
-RUNE_AURAS = {90700, 90730, 90750, 90770, 90790, 90810, 90830, 90860, 90890, 90920, 90950}
+RUNE_AURAS = {90700, 90730, 90750, 90770, 90790, 90810, 90830, 90860, 90890, 90920, 90950, 90980, 91010}
 for _spell in SPELLS:
     if _spell['id'] in RUNE_AURAS:
         _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}

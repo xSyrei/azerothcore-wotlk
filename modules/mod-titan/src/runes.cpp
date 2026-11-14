@@ -57,7 +57,7 @@
 // Resonance), a 25th, the Rune of the Wellspring (slots Wellspring, Current, Undertow) and a 26th, the Rune of the
 // Wandering Mist (slots Mistflow, Technique, Mistweaver's Approach), each its own doc, then five more, each its own
 // doc too: 27 the Threefold Grave, 28 the Unbroken Onslaught, 29 the Dawnbound Crusader, 30 the Hollow Congregation,
-// 31 the Shattered Sun. Built so far: those eleven; the panel lists the doc's others as coming.
+// 31 the Shattered Sun; then 32 the Spectral Blade (its doc: Phantom Edge) and 33 the Wild Hunt. Built: all thirteen.
 //
 // - Unlocked at level 5: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
@@ -68,7 +68,8 @@
 //   change freely out of combat.
 // - The rune works through auras: its own while it is the active spec's (90700 Fel Commandment, 90730 the
 //   Sanctified Paragon, 90750 the Stormbound Conduit, 90770 Echoing Thunder, 90790 the Wellspring, 90810 the
-//   Wandering Mist, 90830 / 90860 / 90890 / 90920 / 90950 the five after), and one marker per picked modifier
+//   Wandering Mist, 90830 / 90860 / 90890 / 90920 / 90950 the five after, 90980 the Spectral Blade, 91010 the
+//   Wild Hunt), and one marker per picked modifier
 //   (90710 / 90740 / 90760 / 90780 / 90800 / 90820, and 20 on from each of the five's first, + slot * 3 + choice);
 //   scripts look for them.
 //
@@ -98,6 +99,8 @@ namespace
     constexpr uint8 RUNE_DAWNBOUND_CRUSADER = 29;
     constexpr uint8 RUNE_HOLLOW_CONGREGATION = 30;
     constexpr uint8 RUNE_SHATTERED_SUN = 31;
+    constexpr uint8 RUNE_SPECTRAL_BLADE = 32;      // its doc: Phantom Edge
+    constexpr uint8 RUNE_WILD_HUNT = 33;
 
     enum Spells : uint32
     {
@@ -208,6 +211,29 @@ namespace
         SPELL_COLLAPSE_LOOK             = 90956,
         SPELL_SCALDING_GROUND           = 90957,
         SPELL_SUN_MODIFIER_FIRST        = 90970,    // + slot * 3 + choice
+
+        SPELL_RUNE_SPECTRAL_BLADE       = 90980,
+        SPELL_PHANTOM_STRIKE            = 90981,    // cannot crit
+        SPELL_OPEN_WOUND                = 90983,
+        SPELL_OPEN_WOUND_TICK           = 90984,
+        SPELL_VANISHING_ACT             = 90985,
+        SPELL_MARKED_FOR_MURDER         = 90986,
+        SPELL_BLADE_MODIFIER_FIRST      = 91000,    // + slot * 3 + choice
+
+        SPELL_RUNE_WILD_HUNT            = 91010,
+        SPELL_SPECTRAL_BEAST            = 91011,    // on the beast: its look, no threat
+        SPELL_SPECTRAL_BITE             = 91012,
+        SPELL_GHOSTFANG                 = 91013,
+        SPELL_GHOSTFANG_TICK            = 91014,
+        SPELL_PARTING_HOWL              = 91015,    // on the Hero's pet
+        SPELL_FINAL_POUNCE              = 91016,
+        SPELL_HUNT_MODIFIER_FIRST       = 91030,    // + slot * 3 + choice
+
+        SPELL_EVISCERATE            = 2098,         // first ranks
+        SPELL_SINISTER_STRIKE       = 1752,
+        SPELL_BACKSTAB              = 53,
+        SPELL_HEMORRHAGE            = 16511,
+        SPELL_KILL_COMMAND          = 34026,
 
         SPELL_ICY_TOUCH             = 45477,        // first ranks
         SPELL_PLAGUE_STRIKE         = 45462,
@@ -458,6 +484,40 @@ namespace
     constexpr float IMPLOSION = 1.4f, SCALDING_RADIUS = 6.0f, SCALDING_SHARE = 0.15f, SUNRISE_SHARE = 0.4f;
     constexpr uint32 SCALDING_MS = 4000, SUNRISE_DELAY_MS = 2000;
 
+    // The Spectral Blade's modifiers: slot (0 Execution Style, 1 Timing, 2 Aftermath) x 3 + choice.
+    enum BladeModifier : uint8
+    {
+        MOD_EXECUTIONER, MOD_THOUSAND_CUTS, MOD_SHADOW_CLEAVE,
+        MOD_QUICK_DEATH, MOD_PATIENT_KILLER, MOD_OPEN_WOUND,
+        MOD_DEATH_FOLLOWS, MOD_VANISHING_ACT, MOD_MARKED_FOR_MURDER,
+    };
+
+    // The Spectral Blade's tuning: Eviscerate's phantom strikes for half of its damage, 0.6 sec later; it cannot crit
+    // and triggers nothing (a spell of its own).
+    constexpr float PHANTOM_SHARE = 0.5f, EXECUTIONER = 1.4f, THOUSAND_CUTS = 1.15f, CLEAVE_SHARE = 0.5f;
+    constexpr float PATIENT_KILLER = 1.4f, OPEN_WOUND = 1.2f, MARKED_BONUS = 1.3f;
+    constexpr float CLEAVE_RADIUS = 8.0f, FOLLOW_RANGE = 10.0f;
+    constexpr uint32 PHANTOM_DELAY_MS = 600, QUICK_DEATH_MS = 100, PATIENT_KILLER_MS = 2000, CUT_SPACING_MS = 200;
+    constexpr uint32 CUTS = 3;
+    constexpr int32 OPEN_WOUND_MS = 4000, OPEN_WOUND_TICKS = 4, VANISHING_ACT_MS = 3000, MARKED_MS = 10000;
+    constexpr std::size_t CLEAVE_TARGETS = 3;
+
+    // The Wild Hunt's modifiers: slot (0 Spectral Beast, 1 Hunting Behavior, 2 Final Attack) x 3 + choice.
+    enum HuntModifier : uint8
+    {
+        MOD_ALPHA_PREDATOR, MOD_PACK_RAVAGER, MOD_GHOSTFANG,
+        MOD_FIXED_PREY, MOD_HUNTERS_COMMAND, MOD_BLOOD_SCENT,
+        MOD_FINAL_POUNCE, MOD_FRENZIED_FAREWELL, MOD_PARTING_HOWL,
+    };
+
+    // The Wild Hunt's tuning: the Spectral Beast bites every 1.5 sec for 60% of the Hero's pet's swing, for 10 sec.
+    constexpr uint32 BEAST_MS = 10000, FIXED_PREY_MS = 4000, BITE_MS = 1500, FAREWELL_SPACING_MS = 150;
+    constexpr uint32 FAREWELL_BITES = 4;
+    constexpr float BITE_SHARE = 0.6f, ALPHA_PREDATOR = 1.3f, RAVAGER_SHARE = 0.5f, GHOSTFANG_SHARE = 0.25f;
+    constexpr float POUNCE = 2.0f, FAREWELL_SHARE = 0.6f, BEAST_RANGE = 40.0f, RAVAGER_RADIUS = 5.0f;
+    constexpr int32 GHOSTFANG_MS = 4000;
+    constexpr std::size_t RAVAGER_TARGETS = 2;
+
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
     constexpr float PARAGON_POWER = 0.15f;                      // spell power in a tick: 6% of it a second
@@ -483,6 +543,7 @@ namespace
     constexpr uint32 NPC_RUNE_FELGUARD = 910120;
     constexpr uint32 NPC_RUNE_FEL_IMP = 910121;
     constexpr uint32 NPC_HOLLOW_ECHO = 910122;
+    constexpr uint32 NPC_SPECTRAL_BEAST = 910123;
     // SummonProperties 61: category ally, type guardian. A pet-category row (67) would make a controllable guardian
     // that takes the pet slot from the Hero's own demon.
     constexpr uint32 SUMMON_PROPERTIES_GUARDIAN = 61;
@@ -575,6 +636,13 @@ namespace
               { { SPELL_FIREBALL, SPELL_PYROBLAST, SPELL_FIRE_BLAST, SPELL_SCORCH },
                 { SPELL_FROSTBOLT, SPELL_ICE_LANCE, SPELL_FROST_NOVA, SPELL_CONE_OF_COLD } }, SPELL_RUNE_SHATTERED_SUN,
               SPELL_SUN_MODIFIER_FIRST },
+            // Melee DPS: Eviscerate's phantom.
+            { RUNE_SPECTRAL_BLADE, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
+              { { SPELL_EVISCERATE } }, SPELL_RUNE_SPECTRAL_BLADE, SPELL_BLADE_MODIFIER_FIRST },
+            // DPS: Kill Command (a pet's) unleashes the beast.
+            { RUNE_WILD_HUNT,
+              uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_KILL_COMMAND } }, SPELL_RUNE_WILD_HUNT, SPELL_HUNT_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -610,6 +678,8 @@ namespace
             return { { SPELL_JUDGEMENT_OF_LIGHT, SPELL_JUDGEMENT_OF_WISDOM, SPELL_JUDGEMENT_OF_JUSTICE } };
         if (rune == RUNE_HOLLOW_CONGREGATION && modifier == MOD_DISSONANCE)
             return { { SPELL_SHADOW_WORD_PAIN } };
+        if (rune == RUNE_SPECTRAL_BLADE && modifier == MOD_MARKED_FOR_MURDER)
+            return { { SPELL_SINISTER_STRIKE, SPELL_BACKSTAB, SPELL_HEMORRHAGE } };
         if (rune != RUNE_FEL_COMMANDMENT)
             return {};
         if (modifier == MOD_DREADFIRE_DISCIPLINE)
@@ -693,6 +763,9 @@ namespace
         Position ScaldAt;                           // Scalding Ground (ScaldUntil 0: none)
         uint32 ScaldMap = 0, ScaldUntil = 0, ScaldTimer = 0;
         float ScaldTick = 0.0f;
+
+        // The Wild Hunt: its one Spectral Beast.
+        ObjectGuid SpectralBeast;
     };
 
     std::unordered_map<ObjectGuid::LowType, State> states;
@@ -880,6 +953,7 @@ namespace
     }
 
     void ClearLegends(Player* player);
+    void DismissBeast(Player* player);
 
     // Stacks, the Felguard and the imps gone (death, prestige, a spec or modifier change).
     void ClearCombat(Player* player)
@@ -1634,6 +1708,8 @@ namespace
             case SPELL_GRAVE_PESTILENCE: return SPELL_GRAVE_PESTILENCE_TICK;
             case SPELL_WAKE_BLEED: return SPELL_WAKE_BLEED_TICK;
             case SPELL_HOLLOW_FLAY: return SPELL_HOLLOW_FLAY_TICK;
+            case SPELL_OPEN_WOUND: return SPELL_OPEN_WOUND_TICK;
+            case SPELL_GHOSTFANG: return SPELL_GHOSTFANG_TICK;
             default: return 0;
         }
     }
@@ -2403,6 +2479,7 @@ namespace
         state.Shards.clear();
         state.ScaldUntil = 0;
         player->RemoveDynObject(SPELL_SCALDING_GROUND);
+        DismissBeast(player);
     }
 
     // At each login and rune change: what earlier drafts taught or left on the Hero, gone.
@@ -2423,6 +2500,151 @@ namespace
         // The Dawnbound Crusader's first draft taught Dawn Vow and vowed the Hero: gone with it.
         unlearn(SPELL_DAWN_VOW);
         player->RemoveAurasDueToSpell(SPELL_DAWN_VOWED);
+    }
+
+    // ---- The Spectral Blade ------------------------------------------------------------------------------------
+
+    bool HasBladeMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_BLADE_MODIFIER_FIRST, modifier);
+    }
+
+    // The phantom's blow on one enemy: a strike, or (Open Wound) a bleed of it over 4 sec, refreshed.
+    void PhantomBlow(Player* player, Unit* enemy, float amount)
+    {
+        int32 points = std::max<int32>(1, int32(amount));
+        if (HasBladeMarker(player, MOD_OPEN_WOUND))
+        {
+            int32 tick = std::max<int32>(1, points / OPEN_WOUND_TICKS);
+            Lasting(player, enemy, SPELL_OPEN_WOUND, OPEN_WOUND_MS, &tick);
+        }
+        else
+            player->CastCustomSpell(enemy, SPELL_PHANTOM_STRIKE, &points, nullptr, nullptr, true);
+    }
+
+    // The phantom arriving: on its victim (Death Follows: the nearest enemy within 10 yards if it died first, once),
+    // all of it at once (Executioner 40% more), in 3 quick cuts (Thousand Cuts, 15% more; one bleed with Open Wound)
+    // or with up to 3 more enemies within 8 yards at half (Shadow Cleave). Then the aftermath.
+    void Phantom(Player* player, ObjectGuid victimGuid, Position at, float amount)
+    {
+        Unit* victim = ObjectAccessor::GetUnit(*player, victimGuid);
+        if (!Valid(player, victim))
+        {
+            victim = nullptr;
+            if (HasBladeMarker(player, MOD_DEATH_FOLLOWS))
+            {
+                float best = FOLLOW_RANGE;
+                for (Unit* enemy : EnemiesAround(player, player, FOLLOW_RANGE * 3.0f))
+                    if (float dist = enemy->GetExactDist(at); dist <= best)
+                    {
+                        best = dist;
+                        victim = enemy;
+                    }
+            }
+            if (!victim)
+                return;
+        }
+        if (HasBladeMarker(player, MOD_EXECUTIONER))
+            PhantomBlow(player, victim, amount * EXECUTIONER);
+        else if (HasBladeMarker(player, MOD_THOUSAND_CUTS) && !HasBladeMarker(player, MOD_OPEN_WOUND))
+        {
+            float cut = amount * THOUSAND_CUTS / CUTS;
+            ObjectGuid target = victim->GetGUID();
+            for (uint32 i = 0; i < CUTS; ++i)
+                player->m_Events.AddEventAtOffset([player, target, cut]()
+                {
+                    Unit* unit = ObjectAccessor::GetUnit(*player, target);
+                    if (player->IsInWorld() && Valid(player, unit))
+                        PhantomBlow(player, unit, cut);
+                }, Milliseconds(i * CUT_SPACING_MS));
+        }
+        else if (HasBladeMarker(player, MOD_THOUSAND_CUTS))
+            PhantomBlow(player, victim, amount * THOUSAND_CUTS);
+        else
+            PhantomBlow(player, victim, amount);
+        if (HasBladeMarker(player, MOD_SHADOW_CLEAVE))
+        {
+            std::size_t count = 0;
+            for (Unit* enemy : EnemiesAround(player, victim, CLEAVE_RADIUS))
+                if (enemy != victim && count++ < CLEAVE_TARGETS)
+                    PhantomBlow(player, enemy, amount * CLEAVE_SHARE);
+        }
+        if (HasBladeMarker(player, MOD_VANISHING_ACT))
+            Lasting(player, player, SPELL_VANISHING_ACT, VANISHING_ACT_MS);
+        if (HasBladeMarker(player, MOD_MARKED_FOR_MURDER))
+            Lasting(player, victim, SPELL_MARKED_FOR_MURDER, MARKED_MS);
+    }
+
+    // Eviscerate's hit: the phantom, half of it, 0.6 sec later (0.1 with Quick Death; 2 sec and 40% more with
+    // Patient Killer; 20% more as Open Wound's bleed).
+    void QueuePhantom(Player* player, Unit* victim, float damage)
+    {
+        if (damage <= 0.0f)
+            return;
+        float amount = damage * PHANTOM_SHARE;
+        uint32 delay = PHANTOM_DELAY_MS;
+        if (HasBladeMarker(player, MOD_QUICK_DEATH))
+            delay = QUICK_DEATH_MS;
+        else if (HasBladeMarker(player, MOD_PATIENT_KILLER))
+        {
+            delay = PATIENT_KILLER_MS;
+            amount *= PATIENT_KILLER;
+        }
+        else if (HasBladeMarker(player, MOD_OPEN_WOUND))
+            amount *= OPEN_WOUND;
+        ObjectGuid target = victim->GetGUID();
+        Position at = victim->GetPosition();
+        player->m_Events.AddEventAtOffset([player, target, at, amount]()
+        {
+            if (player->IsInWorld() && player->IsAlive() && player->HasAura(SPELL_RUNE_SPECTRAL_BLADE))
+                Phantom(player, target, at, amount);
+        }, Milliseconds(delay));
+    }
+
+    // ---- The Wild Hunt -----------------------------------------------------------------------------------------
+
+    bool HasHuntMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_HUNT_MODIFIER_FIRST, modifier);
+    }
+
+    Creature* SpectralBeast(Player* player)
+    {
+        ObjectGuid guid = StateOf(player).SpectralBeast;
+        Creature* beast = guid ? ObjectAccessor::GetCreature(*player, guid) : nullptr;
+        return beast && beast->IsAlive() ? beast : nullptr;
+    }
+
+    void DismissBeast(Player* player)
+    {
+        if (Creature* beast = SpectralBeast(player))
+            if (TempSummon* summon = beast->ToTempSummon())
+                summon->UnSummon();
+        StateOf(player).SpectralBeast.Clear();
+    }
+
+    // Kill Command: a Spectral Beast on the pet's enemy (else the Hero's target), at its side; one at a time (the
+    // last one simply goes, no farewell). Needs a living pet and an enemy.
+    void Unleash(Player* player)
+    {
+        Pet* pet = player->GetPet();
+        if (!pet || !pet->IsAlive())
+            return;
+        Unit* target = pet->GetVictim();
+        if (!Valid(player, target))
+            target = player->GetSelectedUnit();
+        if (!Valid(player, target) || !player->IsWithinDistInMap(target, BEAST_RANGE))
+            return;
+        DismissBeast(player);
+        uint32 ms = BEAST_MS + (HasHuntMarker(player, MOD_FIXED_PREY) ? FIXED_PREY_MS : 0);
+        Position pos = target->GetNearPosition(1.5f, frand(0.0f, 2.0f * float(M_PI)));
+        TempSummon* beast = player->GetMap()->SummonCreature(NPC_SPECTRAL_BEAST, pos,
+            sSummonPropertiesStore.LookupEntry(SUMMON_PROPERTIES_GUARDIAN), ms, player);
+        if (!beast)
+            return;
+        StateOf(player).SpectralBeast = beast->GetGUID();
+        if (beast->IsAIEnabled)
+            beast->AI()->SetGUID(target->GetGUID(), 0);
     }
 
     // ---- The rune's auras ------------------------------------------------------------------------------------
@@ -3743,6 +3965,218 @@ public:
     }
 };
 
+// Eviscerate (every rank) with the Spectral Blade: its phantom.
+class spell_titan_rune_eviscerate : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_eviscerate);
+
+    void Phantom()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && player->HasAura(SPELL_RUNE_SPECTRAL_BLADE))
+            QueuePhantom(player, target, float(GetHitDamage()));
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_eviscerate::Phantom);
+    }
+};
+
+// Sinister Strike, Backstab and Hemorrhage (every rank) on a target Marked for Murder by the Hero: 30% more, and the
+// mark is spent.
+class spell_titan_rune_marked_strike : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_marked_strike);
+
+    void Strike()
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+        if (!caster || !target || !target->HasAura(SPELL_MARKED_FOR_MURDER, caster->GetGUID()))
+            return;
+        SetHitDamage(int32(GetHitDamage() * MARKED_BONUS));
+        target->RemoveAurasDueToSpell(SPELL_MARKED_FOR_MURDER, caster->GetGUID());
+    }
+
+    void Register() override
+    {
+        OnHit += SpellHitFn(spell_titan_rune_marked_strike::Strike);
+    }
+};
+
+// Kill Command with the Wild Hunt: the Spectral Beast.
+class spell_titan_rune_kill_command : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_kill_command);
+
+    void Hunt()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (player && player->HasAura(SPELL_RUNE_WILD_HUNT))
+            Unleash(player);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_rune_kill_command::Hunt);
+    }
+};
+
+// The Wild Hunt's Spectral Beast (910123): the Hero's pet's look, ghostly, no threat; for 10 sec (14 with Fixed
+// Prey) it chases its prey and bites every 1.5 sec for 60% of the pet's swing (Alpha Predator 30% more; Pack
+// Ravager: 2 more enemies within 5 yards at half; Ghostfang: a refreshing bleed of a quarter of a bite a second).
+// Its prey dead, it goes (Blood Scent: on to the Hero's target, else the nearest enemy); Hunter's Command: it turns
+// to the Hero's target. Its natural end: Final Pounce (a bite at 200%), Frenzied Farewell (4 quick bites at 60%)
+// or Parting Howl (the Hero's pet 30% stronger for 6 sec).
+struct npc_titan_rune_spectral_beast : public ScriptedAI
+{
+    npc_titan_rune_spectral_beast(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(WorldObject* summoner) override
+    {
+        Player* owner = summoner ? summoner->ToPlayer() : nullptr;
+        Pet* pet = owner ? owner->GetPet() : nullptr;
+        if (!owner || !pet)
+            return;
+        _owner = owner->GetGUID();
+        me->SetDisplayId(pet->GetDisplayId());
+        me->SetNativeDisplayId(pet->GetDisplayId());
+        me->SetObjectScale(pet->GetObjectScale());
+        me->AddAura(SPELL_SPECTRAL_BEAST, me);
+        me->SetReactState(REACT_PASSIVE);
+        float swing = (pet->GetFloatValue(UNIT_FIELD_MINDAMAGE) + pet->GetFloatValue(UNIT_FIELD_MAXDAMAGE)) / 2.0f
+            * pet->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, SPELL_SCHOOL_MASK_NORMAL);
+        _bite = std::max(swing, 2.0f * owner->GetLevel()) * BITE_SHARE;
+        scheduler.Schedule(300ms, [this](TaskContext bite)
+        {
+            Hunt();
+            bite.Repeat(Milliseconds(BITE_MS));
+        });
+        uint32 ms = BEAST_MS + (HasHuntMarker(owner, MOD_FIXED_PREY) ? FIXED_PREY_MS : 0);
+        scheduler.Schedule(Milliseconds(ms - FAREWELL_BITES * FAREWELL_SPACING_MS - 200), [this](TaskContext)
+        {
+            Farewell();
+        });
+    }
+
+    void SetGUID(ObjectGuid const& guid, int32 /*id*/) override
+    {
+        _prey = guid;
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+
+    void UpdateAI(uint32 diff) override
+    {
+        scheduler.Update(diff);
+    }
+
+private:
+    Player* Owner() const
+    {
+        return ObjectAccessor::GetPlayer(*me, _owner);
+    }
+
+    Unit* Prey(Player* hero)
+    {
+        auto fits = [&](Unit* unit) { return Valid(hero, unit) && me->IsWithinDistInMap(unit, BEAST_RANGE); };
+        if (HasHuntMarker(hero, MOD_HUNTERS_COMMAND))
+            if (Unit* chosen = hero->GetSelectedUnit(); fits(chosen))
+            {
+                _prey = chosen->GetGUID();
+                return chosen;
+            }
+        if (Unit* prey = _prey ? ObjectAccessor::GetUnit(*me, _prey) : nullptr; fits(prey))
+            return prey;
+        if (!HasHuntMarker(hero, MOD_BLOOD_SCENT))
+            return nullptr;
+        Unit* next = hero->GetSelectedUnit();
+        if (!fits(next))
+        {
+            std::vector<Unit*> enemies = EnemiesAround(hero, me, BEAST_RANGE / 2.0f);
+            next = enemies.empty() ? nullptr : enemies.front();
+        }
+        if (next)
+            _prey = next->GetGUID();
+        return next;
+    }
+
+    void Bite(Player* hero, Unit* prey, float share, uint32 spellId = SPELL_SPECTRAL_BITE)
+    {
+        float amount = _bite * share * (HasHuntMarker(hero, MOD_ALPHA_PREDATOR) ? ALPHA_PREDATOR : 1.0f);
+        int32 damage = std::max<int32>(1, int32(amount));
+        me->SetFacingToObject(prey);
+        me->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+        me->CastCustomSpell(prey, spellId, &damage, nullptr, nullptr, true);
+        if (HasHuntMarker(hero, MOD_PACK_RAVAGER))
+        {
+            int32 cleave = std::max<int32>(1, int32(amount * RAVAGER_SHARE));
+            std::size_t count = 0;
+            for (Unit* enemy : EnemiesAround(hero, prey, RAVAGER_RADIUS))
+                if (enemy != prey && count++ < RAVAGER_TARGETS)
+                    me->CastCustomSpell(enemy, SPELL_SPECTRAL_BITE, &cleave, nullptr, nullptr, true);
+        }
+        if (HasHuntMarker(hero, MOD_GHOSTFANG))
+        {
+            int32 tick = std::max<int32>(1, int32(amount * GHOSTFANG_SHARE));
+            Lasting(hero, prey, SPELL_GHOSTFANG, GHOSTFANG_MS, &tick);
+        }
+    }
+
+    void Hunt()
+    {
+        Player* hero = Owner();
+        Unit* prey = hero ? Prey(hero) : nullptr;
+        if (!prey)
+        {
+            me->DespawnOrUnsummon();
+            return;
+        }
+        if (_chasing != prey->GetGUID())
+        {
+            _chasing = prey->GetGUID();
+            me->SetTarget(_chasing);
+            me->GetMotionMaster()->MoveChase(prey);
+        }
+        if (me->IsWithinMeleeRange(prey))
+            Bite(hero, prey, 1.0f);
+    }
+
+    void Farewell()
+    {
+        Player* hero = Owner();
+        if (!hero)
+            return;
+        if (HasHuntMarker(hero, MOD_PARTING_HOWL))
+        {
+            if (Pet* pet = hero->GetPet(); pet && pet->IsAlive())
+            {
+                pet->RemoveAurasDueToSpell(SPELL_PARTING_HOWL);
+                pet->CastSpell(pet, SPELL_PARTING_HOWL, true);
+            }
+            return;
+        }
+        Unit* prey = Prey(hero);
+        if (!prey)
+            return;
+        if (HasHuntMarker(hero, MOD_FINAL_POUNCE))
+            Bite(hero, prey, POUNCE, SPELL_FINAL_POUNCE);
+        else if (HasHuntMarker(hero, MOD_FRENZIED_FAREWELL))
+            for (uint32 i = 0; i < FAREWELL_BITES; ++i)
+                scheduler.Schedule(Milliseconds(i * FAREWELL_SPACING_MS), [this](TaskContext)
+                {
+                    Player* owner = Owner();
+                    if (Unit* at = owner ? Prey(owner) : nullptr)
+                        Bite(owner, at, FAREWELL_SHARE);
+                });
+    }
+
+    ObjectGuid _owner, _prey, _chasing;
+    float _bite = 1.0f;
+};
+
 void AddSC_runes()
 {
     RegisterSpellScript(spell_titan_rune_fel_commandment);
@@ -3772,6 +4206,10 @@ void AddSC_runes()
     RegisterCreatureAI(npc_titan_rune_hollow_echo);
     RegisterCreatureAI(npc_titan_rune_felguard);
     RegisterCreatureAI(npc_titan_rune_fel_imp);
+    RegisterSpellScript(spell_titan_rune_eviscerate);
+    RegisterSpellScript(spell_titan_rune_marked_strike);
+    RegisterSpellScript(spell_titan_rune_kill_command);
+    RegisterCreatureAI(npc_titan_rune_spectral_beast);
     new titan_runes_player();
     new titan_runes_unit();
 }

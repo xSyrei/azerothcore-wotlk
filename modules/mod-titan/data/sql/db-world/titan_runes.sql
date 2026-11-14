@@ -1,10 +1,11 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-90978: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-91038: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
 SET @IMP := 910121;
 SET @HOLLOW_ECHO := 910122;
-DELETE FROM `creature_template` WHERE `entry` IN (@FELGUARD, @IMP, @HOLLOW_ECHO);
+SET @SPECTRAL_BEAST := 910123;
+DELETE FROM `creature_template` WHERE `entry` IN (@FELGUARD, @IMP, @HOLLOW_ECHO, @SPECTRAL_BEAST);
 INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
     `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
     `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
@@ -21,14 +22,18 @@ INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entr
     'npc_titan_rune_fel_imp', 0),
 (@HOLLOW_ECHO, 0, 0, 0, 0, 0, 'Hollow Echo', 'Hollow Congregation', NULL, 0, 1, 80, 0, 35, 0, 1, 1.14286, 1, 1, 20,
     0, 0, 1, 2000, 2000, 1, 1, 8, 33554434, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0,
-    0, 'npc_titan_rune_hollow_echo', 0);
+    0, 'npc_titan_rune_hollow_echo', 0),
+(@SPECTRAL_BEAST, 0, 0, 0, 0, 0, 'Spectral Beast', 'Wild Hunt', NULL, 0, 1, 80, 0, 35, 0, 1.2, 1.6, 1, 1, 20,
+    0, 0, 1, 2000, 2000, 1, 1, 1, 33554434, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0,
+    0, 'npc_titan_rune_spectral_beast', 0);
 
-DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@FELGUARD, @IMP, @HOLLOW_ECHO);
+DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@FELGUARD, @IMP, @HOLLOW_ECHO, @SPECTRAL_BEAST);
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES
 (@FELGUARD, 0, 14255, 1, 1, 0),
 (@IMP, 0, 4449, 1, 1, 0),
-(@HOLLOW_ECHO, 0, 11686, 1, 1, 0);
+(@HOLLOW_ECHO, 0, 11686, 1, 1, 0),
+(@SPECTRAL_BEAST, 0, 903, 1, 1, 0);
 
 -- The rune's aura grants Fel Command from its procs; Throw Glaive fires the volley.
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_fel_commandment',
@@ -206,10 +211,32 @@ DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_titan_rune_dot';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90841, 'spell_titan_rune_dot'),
 (90862, 'spell_titan_rune_dot'),
-(90922, 'spell_titan_rune_dot');
+(90922, 'spell_titan_rune_dot'),
+(90983, 'spell_titan_rune_dot'),
+(91013, 'spell_titan_rune_dot');
 
-DELETE FROM `spell_bonus_data` WHERE `entry` IN (90832, 90833, 90834);
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90832, 90833, 90834, 90984, 91014);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90832, 0, 0, 0, 0, 'Threefold Grave - Grave Pestilence tick'),
 (90833, 0, 0, 0, 0, 'Unbroken Onslaught - Bloodletting tick'),
-(90834, 0, 0, 0, 0, 'Hollow Congregation - Hollow Flay tick');
+(90834, 0, 0, 0, 0, 'Hollow Congregation - Hollow Flay tick'),
+(90984, 0, 0, 0, 0, 'Spectral Blade - Open Wound tick'),
+(91014, 0, 0, 0, 0, 'Wild Hunt - Ghostfang tick');
+
+-- The Spectral Blade: Eviscerate calls the phantom; Sinister Strike, Backstab and Hemorrhage spend Marked for Murder
+-- (every rank). The Wild Hunt: Kill Command unleashes the Spectral Beast (910123, the Hero's pet's look).
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_eviscerate',
+    'spell_titan_rune_marked_strike', 'spell_titan_rune_kill_command');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(-2098, 'spell_titan_rune_eviscerate'),
+(-1752, 'spell_titan_rune_marked_strike'),
+(-53, 'spell_titan_rune_marked_strike'),
+(-16511, 'spell_titan_rune_marked_strike'),
+(34026, 'spell_titan_rune_kill_command');
+
+-- Their strikes are shares of the Hero's (or their pet's) own hits: no bonuses of their own.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90981, 91012, 91016);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90981, 0, 0, 0, 0, 'Spectral Blade - Phantom Strike'),
+(91012, 0, 0, 0, 0, 'Wild Hunt - Spectral Bite'),
+(91016, 0, 0, 0, 0, 'Wild Hunt - Final Pounce');

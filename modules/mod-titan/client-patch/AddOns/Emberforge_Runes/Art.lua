@@ -29,6 +29,12 @@ EmberforgeRunesArt = {
             u = 0.7295,
             v = 0.9844,
         },
+        ChooseAftermath = {
+            w = 484,
+            h = 84,
+            u = 0.709,
+            v = 0.9844,
+        },
         ChooseApproach = {
             w = 466,
             h = 84,
@@ -83,6 +89,18 @@ EmberforgeRunesArt = {
             u = 0.5615,
             v = 0.9844,
         },
+        ChooseExecutionStyle = {
+            w = 588,
+            h = 84,
+            u = 0.8613,
+            v = 0.9844,
+        },
+        ChooseFinalAttack = {
+            w = 522,
+            h = 84,
+            u = 0.7646,
+            v = 0.9844,
+        },
         ChooseFollowThrough = {
             w = 596,
             h = 84,
@@ -105,6 +123,12 @@ EmberforgeRunesArt = {
             w = 516,
             h = 84,
             u = 0.7559,
+            v = 0.9844,
+        },
+        ChooseHuntingBehavior = {
+            w = 619,
+            h = 84,
+            u = 0.9072,
             v = 0.9844,
         },
         ChooseInvocation = {
@@ -173,6 +197,12 @@ EmberforgeRunesArt = {
             u = 0.6377,
             v = 0.9844,
         },
+        ChooseSpectralBeast = {
+            w = 562,
+            h = 84,
+            u = 0.8232,
+            v = 0.9844,
+        },
         ChooseSpring = {
             w = 413,
             h = 84,
@@ -195,6 +225,12 @@ EmberforgeRunesArt = {
             w = 482,
             h = 84,
             u = 0.7061,
+            v = 0.9844,
+        },
+        ChooseTiming = {
+            w = 414,
+            h = 84,
+            u = 0.6064,
             v = 0.9844,
         },
         ChooseUndertow = {
@@ -225,6 +261,12 @@ EmberforgeRunesArt = {
             w = 112,
             h = 28,
             u = 0.875,
+            v = 0.875,
+        },
+        SlotAftermath = {
+            w = 105,
+            h = 28,
+            u = 0.8203,
             v = 0.875,
         },
         SlotApproach = {
@@ -281,6 +323,18 @@ EmberforgeRunesArt = {
             u = 0.8438,
             v = 0.875,
         },
+        SlotExecutionStyle = {
+            w = 152,
+            h = 28,
+            u = 0.5938,
+            v = 0.875,
+        },
+        SlotFinalAttack = {
+            w = 122,
+            h = 28,
+            u = 0.9531,
+            v = 0.875,
+        },
         SlotFollowThrough = {
             w = 156,
             h = 28,
@@ -303,6 +357,12 @@ EmberforgeRunesArt = {
             w = 121,
             h = 28,
             u = 0.9453,
+            v = 0.875,
+        },
+        SlotHuntingBehavior = {
+            w = 170,
+            h = 28,
+            u = 0.6641,
             v = 0.875,
         },
         SlotInvocation = {
@@ -371,6 +431,12 @@ EmberforgeRunesArt = {
             u = 0.6406,
             v = 0.875,
         },
+        SlotSpectralBeast = {
+            w = 142,
+            h = 28,
+            u = 0.5547,
+            v = 0.875,
+        },
         SlotSpring = {
             w = 71,
             h = 28,
@@ -395,6 +461,12 @@ EmberforgeRunesArt = {
             u = 0.7969,
             v = 0.875,
         },
+        SlotTiming = {
+            w = 71,
+            h = 28,
+            u = 0.5547,
+            v = 0.875,
+        },
         SlotUndertow = {
             w = 100,
             h = 28,
@@ -415,209 +487,6 @@ EmberforgeRunesArt = {
         },
     },
     runes = {
-        [1] = {
-            rgb = { 0.471, 0.627, 1 },
-            hot = { 0.816, 0.871, 1 },
-            ink = { 0.949, 0.965, 1 },
-            muted = { 0.694, 0.745, 0.918 },
-            hue = { 0.604, 0.78, 1 },
-            inner = { 0.906, 0.933, 1 },
-        },
-        [2] = {
-            rgb = { 0.941, 0.235, 0.314 },
-            hot = { 0.98, 0.733, 0.761 },
-            ink = { 0.996, 0.925, 0.933 },
-            muted = { 0.882, 0.588, 0.643 },
-            hue = { 1, 0.341, 0.431 },
-            inner = { 0.988, 0.863, 0.878 },
-        },
-        [3] = {
-            rgb = { 1, 0.431, 0.784 },
-            hot = { 1, 0.8, 0.925 },
-            ink = { 1, 0.941, 0.98 },
-            muted = { 0.906, 0.667, 0.831 },
-            hue = { 1, 0.561, 0.957 },
-            inner = { 1, 0.898, 0.961 },
-        },
-        [4] = {
-            rgb = { 1, 0.824, 0.431 },
-            hot = { 1, 0.937, 0.8 },
-            ink = { 1, 0.98, 0.941 },
-            muted = { 0.906, 0.824, 0.69 },
-            hue = { 1, 1, 0.561 },
-            inner = { 1, 0.969, 0.898 },
-        },
-        [5] = {
-            rgb = { 1, 0.91, 0.588 },
-            hot = { 1, 0.969, 0.855 },
-            ink = { 1, 0.992, 0.957 },
-            muted = { 0.906, 0.859, 0.753 },
-            hue = { 1, 1, 0.737 },
-            inner = { 1, 0.984, 0.925 },
-        },
-        [6] = {
-            rgb = { 1, 0.784, 0.588 },
-            hot = { 1, 0.925, 0.855 },
-            ink = { 1, 0.98, 0.957 },
-            muted = { 0.906, 0.808, 0.753 },
-            hue = { 1, 0.957, 0.737 },
-            inner = { 1, 0.961, 0.925 },
-        },
-        [7] = {
-            rgb = { 0.275, 0.745, 1 },
-            hot = { 0.745, 0.91, 1 },
-            ink = { 0.925, 0.973, 1 },
-            muted = { 0.616, 0.792, 0.918 },
-            hue = { 0.384, 0.914, 1 },
-            inner = { 0.871, 0.953, 1 },
-        },
-        [8] = {
-            rgb = { 0.627, 0.902, 0.392 },
-            hot = { 0.871, 0.965, 0.788 },
-            ink = { 0.965, 0.988, 0.941 },
-            muted = { 0.757, 0.855, 0.675 },
-            hue = { 0.78, 1, 0.518 },
-            inner = { 0.933, 0.98, 0.89 },
-        },
-        [9] = {
-            rgb = { 0.353, 0.922, 0.686 },
-            hot = { 0.773, 0.973, 0.89 },
-            ink = { 0.933, 0.992, 0.969 },
-            muted = { 0.647, 0.863, 0.792 },
-            hue = { 0.475, 1, 0.847 },
-            inner = { 0.882, 0.984, 0.945 },
-        },
-        [10] = {
-            rgb = { 0.725, 0.549, 1 },
-            hot = { 0.922, 0.843, 1 },
-            ink = { 0.945, 0.902, 1 },
-            muted = { 0.796, 0.722, 0.902 },
-            hue = { 0.78, 0.608, 1 },
-            inner = { 0.937, 0.878, 1 },
-            built = true,
-            burn = true,
-            core = "Casting Arcane Blast generates **Arcane Insight**. At 4 stacks, your " ..
-                    "next Arcane Missiles consumes all Insight, requires no mana, and fires " ..
-                    "an additional volley.",
-            asks = {
-                "How you build Arcane Insight",
-                "What your empowered Arcane Missiles does",
-                "Utility, or a new tradeoff",
-            },
-            abilities = {
-                "Arcane Blast",
-                "Arcane Explosion",
-                "Arcane Insight",
-                "Additional volley",
-                "Additional volley",
-                "Empowered Arcane Missiles",
-                "Mobility",
-                "Mana",
-                "Risk and reward",
-            },
-            texts = {
-                "Arcane Blast critical strikes generate 1 additional Insight.",
-                "Arcane Explosion generates 1 Insight when it hits at least 3 enemies. " ..
-                        "Once per cast.",
-                "Insight stacks to 6. Empowered Arcane Missiles consumes them all and " ..
-                        "deals 8% more damage per stack beyond 4.",
-                "The additional volley deals 50% increased damage to your primary " ..
-                        "target.",
-                "The additional volley also strikes up to 3 nearby enemies for 40% of " ..
-                        "its damage.",
-                "Leaves an Arcane Echo that deals 20% of the channel's damage over 6 " ..
-                        "sec.",
-                "You can move while channeling empowered Arcane Missiles.",
-                "Completing empowered Arcane Missiles restores 3% of your maximum mana.",
-                "Empowered Arcane Missiles channels 30% faster, but Arcane Blasts that " ..
-                        "build Insight cost 15% more mana.",
-            },
-            slots = {
-                "Invocation",
-                "Manifestation",
-                "Adaptation",
-            },
-        },
-        [11] = {
-            rgb = { 1, 0.49, 0.176 },
-            hot = { 1, 0.824, 0.714 },
-            ink = { 1, 0.949, 0.918 },
-            muted = { 0.906, 0.69, 0.588 },
-            hue = { 1, 0.627, 0.275 },
-            inner = { 1, 0.91, 0.851 },
-        },
-        [12] = {
-            rgb = { 0.549, 0.353, 1 },
-            hot = { 0.843, 0.773, 1 },
-            ink = { 0.957, 0.933, 1 },
-            muted = { 0.725, 0.635, 0.918 },
-            hue = { 0.694, 0.475, 1 },
-            inner = { 0.918, 0.882, 1 },
-        },
-        [13] = {
-            rgb = { 0.431, 0.843, 1 },
-            hot = { 0.8, 0.945, 1 },
-            ink = { 0.941, 0.984, 1 },
-            muted = { 0.678, 0.831, 0.918 },
-            hue = { 0.561, 1, 1 },
-            inner = { 0.898, 0.973, 1 },
-        },
-        [14] = {
-            rgb = { 0.784, 0.314, 0.902 },
-            hot = { 0.925, 0.761, 0.965 },
-            ink = { 0.98, 0.933, 0.988 },
-            muted = { 0.82, 0.62, 0.878 },
-            hue = { 0.957, 0.431, 1 },
-            inner = { 0.961, 0.878, 0.98 },
-        },
-        [15] = {
-            rgb = { 0.882, 0.843, 0.471 },
-            hot = { 0.957, 0.945, 0.816 },
-            ink = { 0.988, 0.984, 0.949 },
-            muted = { 0.859, 0.831, 0.706 },
-            hue = { 1, 1, 0.604 },
-            inner = { 0.98, 0.973, 0.906 },
-        },
-        [16] = {
-            rgb = { 1, 0.373, 0.235 },
-            hot = { 1, 0.78, 0.733 },
-            ink = { 1, 0.937, 0.925 },
-            muted = { 0.906, 0.643, 0.612 },
-            hue = { 1, 0.494, 0.341 },
-            inner = { 1, 0.886, 0.863 },
-        },
-        [17] = {
-            rgb = { 0.784, 0.804, 0.922 },
-            hot = { 0.925, 0.933, 0.973 },
-            ink = { 0.98, 0.98, 0.992 },
-            muted = { 0.82, 0.816, 0.886 },
-            hue = { 0.957, 0.98, 1 },
-            inner = { 0.961, 0.965, 0.984 },
-        },
-        [18] = {
-            rgb = { 1, 0.745, 0.353 },
-            hot = { 1, 0.91, 0.773 },
-            ink = { 1, 0.973, 0.933 },
-            muted = { 0.906, 0.792, 0.659 },
-            hue = { 1, 0.914, 0.475 },
-            inner = { 1, 0.953, 0.882 },
-        },
-        [19] = {
-            rgb = { 0.745, 1, 0.275 },
-            hot = { 0.91, 1, 0.745 },
-            ink = { 0.973, 1, 0.925 },
-            muted = { 0.804, 0.894, 0.627 },
-            hue = { 0.914, 1, 0.384 },
-            inner = { 0.953, 1, 0.871 },
-        },
-        [20] = {
-            rgb = { 1, 0.608, 0.275 },
-            hot = { 1, 0.863, 0.745 },
-            ink = { 1, 0.961, 0.925 },
-            muted = { 0.906, 0.737, 0.627 },
-            hue = { 1, 0.761, 0.384 },
-            inner = { 1, 0.929, 0.871 },
-        },
         [21] = {
             rgb = { 0.431, 0.922, 0.314 },
             hot = { 0.839, 1, 0.769 },
@@ -626,7 +495,6 @@ EmberforgeRunesArt = {
             hue = { 0.549, 1, 0.416 },
             inner = { 0.886, 1, 0.839 },
             built = true,
-            burn = true,
             core = "Your strikes and your demon build **Fel Command**. At 5, Throw Glaive " ..
                     "becomes **Chaos Bolt Volley**: the glaive and 3 Chaos Bolts.",
             asks = {
@@ -670,7 +538,6 @@ EmberforgeRunesArt = {
             hue = { 1, 1, 0.694 },
             inner = { 1, 0.976, 0.918 },
             built = true,
-            burn = true,
             core = "Consecration becomes **Sanctified Paragon**: an aura that follows you " ..
                     "within 8 yards at 40% of Consecration's damage, for 1% of your base " ..
                     "mana a second. Cast Consecration to turn it on or off.",
@@ -721,7 +588,6 @@ EmberforgeRunesArt = {
             hue = { 0.494, 0.824, 1 },
             inner = { 0.886, 0.941, 1 },
             built = true,
-            burn = true,
             core = "**Lightning Bolt** arcs to 2 nearby enemies for 30% of its damage. " ..
                     "Your **Lightning Shield**'s retaliations arc too.",
             asks = {
@@ -765,7 +631,6 @@ EmberforgeRunesArt = {
             hue = { 0.604, 0.78, 1 },
             inner = { 0.906, 0.933, 1 },
             built = true,
-            burn = true,
             core = "**Thunder Clap** charges you with thunder. Your next **Shield Slam** " ..
                     "releases a **Thunder Echo** around its target.",
             asks = {
@@ -809,7 +674,6 @@ EmberforgeRunesArt = {
             hue = { 0.384, 1, 1 },
             inner = { 0.871, 0.973, 0.969 },
             built = true,
-            burn = true,
             core = "**Chain Heal** jumps once more, for 40% of its first heal, and heals " ..
                     "your **Earth Shield** wearer for 20% more.",
             asks = {
@@ -853,7 +717,6 @@ EmberforgeRunesArt = {
             hue = { 0.475, 1, 0.694 },
             inner = { 0.882, 0.98, 0.918 },
             built = true,
-            burn = true,
             core = "Each **Soothing Mist** tick also sends a **Wandering Mist** to your " ..
                     "most injured ally nearby, for 25% of the tick.",
             asks = {
@@ -897,7 +760,6 @@ EmberforgeRunesArt = {
             hue = { 0.737, 0.957, 1 },
             inner = { 0.925, 0.961, 0.984 },
             built = true,
-            burn = true,
             core = "**Icy Touch**, **Plague Strike** and **Blood Strike** each lay their " ..
                     "**Grave** beneath their target; enemies in two take more. Blood Strike " ..
                     "shields you.",
@@ -942,7 +804,6 @@ EmberforgeRunesArt = {
             hue = { 1, 0.384, 0.341 },
             inner = { 0.984, 0.871, 0.863 },
             built = true,
-            burn = true,
             core = "**Mortal Strike** or **Bloodthirst** cuts a **Weapon Wake**; your next " ..
                     "other melee ability rips it open.",
             asks = {
@@ -986,7 +847,6 @@ EmberforgeRunesArt = {
             hue = { 1, 0.957, 0.475 },
             inner = { 1, 0.961, 0.882 },
             built = true,
-            burn = true,
             core = "**Crusader Strike** and **Holy Shock** send a **Dawn Echo** a moment " ..
                     "later: half of their damage or healing again.",
             asks = {
@@ -1030,7 +890,6 @@ EmberforgeRunesArt = {
             hue = { 0.824, 0.561, 1 },
             inner = { 0.941, 0.898, 0.984 },
             built = true,
-            burn = true,
             core = "**Mind Flay** calls a **Hollow Echo** to your side; it follows you and " ..
                     "flays your target. **Mind Blast** turns every echo on its target in a " ..
                     "barrage.",
@@ -1075,7 +934,6 @@ EmberforgeRunesArt = {
             hue = { 0.604, 0.957, 1 },
             inner = { 0.906, 0.961, 0.988 },
             built = true,
-            burn = true,
             core = "Your fire spells embed **Sunshards** in their target, up to 5. Your " ..
                     "next **frost spell** on it shatters them all in a burst around it.",
             asks = {
@@ -1111,23 +969,99 @@ EmberforgeRunesArt = {
                 "Sunfall",
             },
         },
-    },
-    burn = {
-        frames = 16,
-        columns = 4,
-        rows = 4,
-        u = 1,
-        v = 0.7344,
-        reach = 1.08,
-        edge = 0.035,
-        w = 30,
-        h = 44,
-        noise = "979792837876747165616364616062646668707479807979808387909190979489847871707066626262636364666467737475757680828181868885969288837771696965626263626364666568747574757680827978818281959287817671706964606364616164666670757575767679817876757576929086807672706864616263616063666770737373757678807673717376888784807673706764626262606062646870696970727578787370717480878583827977747067656464656665656767676667697175767472737580868483848382787570676768717168666564646364666772757576757679858484868581797670676972747572696764605959636669717375778081848384878580787669667175767675726964585656606567677174778181828484838279777468667176767573717066585759606164666972778181808383808079767167667176767673717268605960585659626569758080797880828278746966656973767775737369646058545051555965727777767577818178736765656772767876757370656257514646505663707475707375747677746966676974777978746966646158524645485663677174656870697174716867677073757675726662605957534848505763666973606063656767666466686869697069676662575657555355576063656974545355596162636366686868696967656459545355575859606264656772484648525559616264666767717169666258555252576261606366656669434245495357586062626466686967646257535151556060606365646565394144485155575857576062646464626157505051535659616264646460353739434648515353525557575757575957525151545859596060626259323235384142454948495152515151525657555250556159575757596059323234373939424646484849515150515555545250546058555555575857323133353838414345484848515350515354535150535755535353555655272832353839414144464950515149505355555351515250485050515151252731353840404143464950494846485255555452504845444648494948282830353737394145494744424040424649525251474442424649515148302831353636374043464339363535384145495050464241424649515148293134383938393938373736353334363842454849464345484646484947313336393937373734323331292828303337404448484850535048495048333638403732323232323025211919232832343846515557575655545351343739403731292828292621161315192529303544505759585755545350353637383530262323242320141114182327293341485357585551504947343536363328231817171817141216192125283238445052525149494846333435333025191411101314151719211922283235414646444646484844282930312822160905040610151819191821263032374142424344444443232325282620140702000105141916161719252830333639414141404044222426282620140701000003111717181921252729323637374042424243222628292621140702000001081316181923262829323533333842454442232627292621161104010001040812161924293131323333353741444441232526282620161306020100020409141925303332313031343640444440212424222016141207050301030406122026272929282728313539454641182221171412111007060302040506101924242626272728303439454642",
+        [32] = {
+            rgb = { 0.667, 0.392, 1 },
+            hot = { 0.882, 0.788, 1 },
+            ink = { 0.965, 0.941, 1 },
+            muted = { 0.773, 0.651, 0.918 },
+            hue = { 0.824, 0.518, 1 },
+            inner = { 0.941, 0.89, 1 },
+            built = true,
+            core = "**Eviscerate** calls a **phantom assassin** behind its victim: a " ..
+                    "moment later it strikes for half of Eviscerate's damage again.",
+            asks = {
+                "How the phantom strikes",
+                "When the phantom strikes",
+                "What follows its blow",
+            },
+            abilities = {
+                "Execute",
+                "Cuts",
+                "Cleave",
+                "Instant",
+                "2 sec",
+                "Bleed",
+                "Follow",
+                "Speed",
+                "Mark",
+            },
+            texts = {
+                "The phantom strikes 40% harder.",
+                "Three quick cuts, 15% more in all.",
+                "Also strikes up to 3 nearby enemies for half.",
+                "The phantom strikes almost at once.",
+                "Waits 2 sec, strikes 40% harder.",
+                "A bleed instead: 20% more over 4 sec.",
+                "Its victim dead, it strikes the nearest enemy.",
+                "30% movement speed for 3 sec.",
+                "Your next Sinister Strike, Backstab or Hemorrhage +30%.",
+            },
+            slots = {
+                "Execution Style",
+                "Timing",
+                "Aftermath",
+            },
+        },
+        [33] = {
+            rgb = { 0.431, 0.863, 0.471 },
+            hot = { 0.8, 0.953, 0.816 },
+            ink = { 0.941, 0.988, 0.949 },
+            muted = { 0.678, 0.839, 0.706 },
+            hue = { 0.561, 1, 0.604 },
+            inner = { 0.898, 0.976, 0.906 },
+            built = true,
+            core = "**Kill Command** unleashes a **Spectral Beast** in your pet's likeness " ..
+                    "on its target for 10 sec. It bites for part of your pet's damage.",
+            asks = {
+                "How the beast bites",
+                "How the beast hunts",
+                "How the beast says farewell",
+            },
+            abilities = {
+                "Alpha",
+                "Ravage",
+                "Bleed",
+                "+4 sec",
+                "Command",
+                "Scent",
+                "Pounce",
+                "Flurry",
+                "Howl",
+            },
+            texts = {
+                "The beast's bites deal 30% more.",
+                "Bites strike 2 more enemies for half.",
+                "Bites leave a refreshing bleed.",
+                "It stays on its prey 4 sec longer.",
+                "It turns to whatever you target.",
+                "Its prey dead, it hunts on.",
+                "A last pounce: a bite at 200%.",
+                "A last flurry of 4 bites.",
+                "Your pet deals 30% more for 6 sec.",
+            },
+            slots = {
+                "Spectral Beast",
+                "Hunting Behavior",
+                "Final Attack",
+            },
+        },
     },
     arcane = {
         rgb = { 0.725, 0.549, 1 },
         hot = { 0.922, 0.843, 1 },
         ink = { 0.945, 0.902, 1 },
         muted = { 0.796, 0.722, 0.902 },
+        hue = { 0.78, 0.608, 1 },
+        inner = { 0.937, 0.878, 1 },
     },
 }

@@ -163,7 +163,7 @@ local function ById(id)
         end
     end
 end
-check(#EmberforgeRunesCatalog == 11 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
+check(#EmberforgeRunesCatalog == 13 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
     and ById(22).name == "Rune of the Sanctified Paragon" and ById(23).name == "Rune of the Stormbound Conduit"
     and ById(24).name == "Rune of Echoing Thunder" and ById(25).name == "Rune of the Wellspring"
     and ById(26).name == "Rune of the Wandering Mist", "the catalog holds only the runes the server builds")
@@ -173,7 +173,7 @@ end
 -- The five after them: each built, with its three slots, nine options and three builds.
 for id, name in pairs({ [27] = "Rune of the Threefold Grave", [28] = "Rune of the Unbroken Onslaught",
     [29] = "Rune of the Dawnbound Crusader", [30] = "Rune of the Hollow Congregation",
-    [31] = "Rune of the Shattered Sun" }) do
+    [31] = "Rune of the Shattered Sun", [32] = "Rune of the Spectral Blade", [33] = "Rune of the Wild Hunt" }) do
     local entry, rune = EmberforgeRunesArt.runes[id], ById(id)
     check(rune.name == name and entry.built and #entry.slots == 3 and #entry.texts == 9 and #rune.mods == 9
         and #rune.builds == 3, "built with its words: " .. name)
@@ -238,32 +238,38 @@ local function listed()
     end
     return table.concat(ids, ",")
 end
-check(view.mode == "browse" and view.phase == "browse" and debug.browser.target == 1 and #browse.list == 11
-    and rows[1].shown and rows[5].shown and debug.browser.count.text == "11 runes",
+check(view.mode == "browse" and view.phase == "browse" and debug.browser.target == 1 and #browse.list == 13
+    and rows[1].shown and rows[5].shown and debug.browser.count.text == "13 runes",
     "Browse all lists every rune, five rows at a time")
 check(rows[1].rune.id == 21 and rows[1].status.text == "Usable now" and rows[2].status.text == "Coming soon",
     "the usable rune comes first; each row says where it stands")
 debug.browser.scripts.OnMouseWheel(debug.browser, -1)
 check(browse.offset == 1 and rows[1].rune == browse.list[2], "the mouse wheel scrolls the list")
 debug.browser.scripts.OnMouseWheel(debug.browser, -20)
-check(browse.offset == 6, "it stops at the end")
+check(browse.offset == 8, "it stops at the end")
 local search = debug.search
 search.text = "lightning"
 search.scripts.OnTextChanged(search)
 check(browse.offset == 0 and rows[1].rune.id == 23 and not search.hint.shown, "the search finds a rune by its name")
 search.text = "warlock glaive"
 search.scripts.OnTextChanged(search)
-check(listed() == "21" and debug.browser.count.text == "1 of 11 runes", "and by the abilities it uses")
+check(listed() == "21" and debug.browser.count.text == "1 of 13 runes", "and by the abilities it uses")
 search.text = "soothing heal"
 search.scripts.OnTextChanged(search)
 check(listed() == "26", "every word must match: Soothing Mist's healing rune")
+search.text = "rogue"
+search.scripts.OnTextChanged(search)
+check(listed() == "32", "by keyword: the rogue's rune")
+search.text = "kill command"
+search.scripts.OnTextChanged(search)
+check(listed() == "33", "by ability: Kill Command's rune")
 search.text = "xyzzy"
 search.scripts.OnTextChanged(search)
 check(#browse.list == 0 and not rows[1].shown and debug.empty.target == 1
     and debug.empty.text.text:find("No rune matches"), "nothing found says so")
 search.text = ""
 search.scripts.OnTextChanged(search)
-check(search.hint.shown and #browse.list == 11, "an empty search lists every rune again")
+check(search.hint.shown and #browse.list == 13, "an empty search lists every rune again")
 debug.chips[3]:Click()
 local healers = true
 for _, rune in ipairs(browse.list) do
