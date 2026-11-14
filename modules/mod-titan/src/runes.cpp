@@ -134,9 +134,7 @@ namespace
         SPELL_STORM_MODIFIER_FIRST      = 90760,    // + slot * 3 + choice
 
         SPELL_RUNE_ECHOING_THUNDER      = 90770,
-        SPELL_THUNDERFIELD              = 90771,    // the storm on the ground (a dynamic object)
-        SPELL_THUNDERFIELD_MARCH        = 90772,    // March of the Storm's: on the Hero
-        SPELL_THUNDER_ECHO_WAVE         = 90773,    // the echo's cone, its look
+        SPELL_THUNDERFIELD_MARCH        = 90772,    // the charge: a small storm about the Hero
         SPELL_THUNDER_ECHO              = 90774,
         SPELL_THUNDER_ECHO_BURST        = 90775,    // a burst about the Shield Slam target, its look
         SPELL_SHELTERING_REVERBERATION  = 90776,
@@ -302,28 +300,26 @@ namespace
     constexpr float VIOLENT_ARCS = 1.4f, VIOLENT_RETALIATION = 0.9f;
     constexpr uint32 LIGHTNING_SHIELD_FAMILY_FLAG = 0x400;      // SpellFamilyFlags0
 
-    // Echoing Thunder's modifiers: slot (0 Thunderfield, 1 Echo Pattern, 2 Shield Resonance) x 3 + choice.
+    // Echoing Thunder's modifiers: slot (0 Charge, 1 Echo, 2 Resonance) x 3 + choice.
     enum ThunderModifier : uint8
     {
-        MOD_LINGERING_THUNDER, MOD_MARCH_OF_THE_STORM, MOD_ROLLING_FRONT,
-        MOD_REVERBERATING_IMPACT, MOD_FOCUSED_PEAL, MOD_DISTANT_RUMBLE,
-        MOD_COMMANDING_THUNDER, MOD_SHELTERING_REVERBERATION, MOD_DEAFENING_IMPACT,
+        MOD_DOUBLE_CHARGE, MOD_LINGERING_CHARGE, MOD_COMMANDING_THUNDER,
+        MOD_FOCUSED_PEAL, MOD_DISTANT_RUMBLE, MOD_DEAFENING_IMPACT,
+        MOD_SHELTERING_REVERBERATION, MOD_BATTLE_RHYTHM, MOD_ROLLING_THUNDER,
     };
 
-    // Echoing Thunder's tuning (the revised draft's initial values: modifiers give benefits, no damage penalties;
-    // the field's radius, the cone's reach and angle are ours: Thunder Clap's 8 yards, 10 yards, 90 degrees).
-    constexpr uint32 THUNDERFIELD_MS = 4000, LINGERING_MS = 6000;
-    constexpr float THUNDERFIELD_RADIUS = 8.0f, ROLLING_RANGE = 10.0f;
-    constexpr float ECHO_SHARE = 0.15f;                         // of Shield Slam's damage before mitigation
-    constexpr uint32 ECHO_INTERVAL_MS = 2000;
-    constexpr std::size_t ECHO_TARGETS = 4;
-    constexpr float ECHO_REACH = 10.0f, ECHO_ARC = float(M_PI) / 2.0f, REVERBERATING_RADIUS = 6.0f;
-    constexpr float ROLLING_ECHO = 1.1f, FOCUSED_ECHO = 1.4f;
-    constexpr float DISTANT_REACH = 1.5f, DISTANT_FAR_ECHO = 1.2f;       // beyond the cone's own reach
-    constexpr float COMMANDING_THREAT = 0.5f;                           // 50% more threat
-    constexpr float SHELTERING_SHARE = 0.05f;                           // of block value
-    constexpr uint32 SHELTERING_INTERVAL_MS = 6000;
-    constexpr float DEAFENING_ECHO = 1.1f;                              // on an enemy under the Hero's Thunder Clap
+    // Echoing Thunder's tuning: Thunder Clap charges the Hero for 8 sec (20 with Lingering Charge); the next Shield
+    // Slam releases the echo: 30% of its damage before mitigation to each enemy within 6 yards of its target (up to
+    // 5).
+    constexpr int32 CHARGE_MS = 8000, LINGERING_CHARGE_MS = 20000;
+    constexpr uint8 DOUBLE_CHARGES = 2;
+    constexpr float ECHO_SHARE = 0.3f, ECHO_RADIUS = 6.0f, DISTANT_RADIUS = 10.0f, FOCUSED_ECHO = 1.6f;
+    constexpr std::size_t ECHO_TARGETS = 5;
+    constexpr float COMMANDING_THREAT = 1.0f;                           // twice the threat
+    constexpr float SHELTERING_PCT = 3.0f, SHELTERING_CAP_PCT = 15.0f;  // of maximum health, an enemy hit
+    constexpr int32 SHELTERING_MS = 6000, DEAFENING_MS = 3000;
+    constexpr int32 RHYTHM_RAGE = 20;                                   // 2 rage an enemy hit
+    constexpr int32 ROLLING_MS = 1000;                                  // off Thunder Clap's cooldown, an enemy hit
 
     // The Wellspring's modifiers: slot (0 Wellspring, 1 Current, 2 Undertow) x 3 + choice.
     enum WellspringModifier : uint8
@@ -649,12 +645,7 @@ namespace
         bool Pulsing = false;                       // a Storm Within pulse is landing: it never arcs
 
         // Echoing Thunder.
-        uint32 ThunderMap = 0;
-        Position ThunderPos;
-        uint32 ThunderUntil = 0;                    // game ms
-        bool ThunderFollows = false;                // March of the Storm
-        uint32 LastEcho = 0;
-        uint32 LastSheltering = 0;
+        uint8 ThunderCharges = 0;                   // echoes left in the charge
 
         // The Wellspring.
         ObjectGuid Wellspring;
@@ -1380,140 +1371,78 @@ namespace
         return unit && unit->HasAura(SPELL_THUNDER_MODIFIER_FIRST + modifier);
     }
 
-    // Thunder Clap's storm: one at a time (a new one replaces it), 4 sec (6 with Lingering Thunder); beneath the
-    // Hero, or their hostile target within 10 yards (Rolling Front), or following them (March of the Storm).
-    void PlaceThunderfield(Player* player)
+    // Thunder Clap: the Hero is charged (the small storm about them), one echo (two with Double Charge).
+    void ChargeThunder(Player* player)
     {
-        State& state = StateOf(player);
-        uint32 now = GameTime::GetGameTimeMS().count();
-        uint32 ms = HasThunderMarker(player, MOD_LINGERING_THUNDER) ? LINGERING_MS : THUNDERFIELD_MS;
-        state.ThunderUntil = now + ms;
-        state.ThunderFollows = HasThunderMarker(player, MOD_MARCH_OF_THE_STORM);
+        int32 ms = HasThunderMarker(player, MOD_LINGERING_CHARGE) ? LINGERING_CHARGE_MS : CHARGE_MS;
+        StateOf(player).ThunderCharges = HasThunderMarker(player, MOD_DOUBLE_CHARGE) ? DOUBLE_CHARGES : 1;
         player->RemoveAurasDueToSpell(SPELL_THUNDERFIELD_MARCH);
-        player->RemoveDynObject(SPELL_THUNDERFIELD);
-        if (state.ThunderFollows)
+        if (Aura* aura = player->AddAura(SPELL_THUNDERFIELD_MARCH, player))
         {
-            if (Aura* aura = player->AddAura(SPELL_THUNDERFIELD_MARCH, player))
-            {
-                aura->SetMaxDuration(int32(ms));
-                aura->SetDuration(int32(ms));
-            }
-            return;
+            aura->SetMaxDuration(ms);
+            aura->SetDuration(ms);
         }
-        Position center = player->GetPosition();
-        if (HasThunderMarker(player, MOD_ROLLING_FRONT))
-            if (Unit* target = player->GetSelectedUnit())
-                if (target->IsAlive() && player->IsValidAttackTarget(target)
-                    && player->IsWithinDistInMap(target, ROLLING_RANGE))
-                    center = target->GetPosition();
-        state.ThunderMap = player->GetMapId();
-        state.ThunderPos = center;
-        player->CastSpell(center.GetPositionX(), center.GetPositionY(), center.GetPositionZ(), SPELL_THUNDERFIELD,
-            true);
-        if (DynamicObject* field = player->GetDynObject(SPELL_THUNDERFIELD))
-            field->SetDuration(int32(ms));
     }
 
-    bool InThunderfield(Player* player)
-    {
-        State& state = StateOf(player);
-        if (GameTime::GetGameTimeMS().count() >= state.ThunderUntil)
-            return false;
-        if (state.ThunderFollows)
-            return true;
-        return player->GetMapId() == state.ThunderMap
-            && player->GetExactDist(&state.ThunderPos) <= THUNDERFIELD_RADIUS;
-    }
-
-    // Under the Hero's Thunder Clap (any rank's slow).
-    bool ThunderClapped(Player* player, Unit* enemy)
-    {
-        for (uint32 id = SPELL_THUNDER_CLAP; id; id = sSpellMgr->GetNextSpellInChain(id))
-            if (enemy->HasAura(id, player->GetGUID()))
-                return true;
-        return false;
-    }
-
-    // Thunder Echo: once every 2 sec at most, 15% of Shield Slam's damage before mitigation, as Nature damage that
-    // never crits on its own, to each of up to 4 enemies once: in a 90 degree cone toward the target, 10 yards (15
-    // with Distant Rumble, 20% more beyond 10); or within 6 yards of the target (Reverberating Impact); or the target
-    // alone (Focused Peal, 40% more). Rolling Front: 10% more; Deafening Impact: 10% more on an enemy under the Hero's
-    // Thunder Clap. Its damage never echoes again.
+    // Shield Slam while charged: the echo bursts about its target, 30% of the slam's damage before mitigation to
+    // each enemy within 6 yards (10 with Distant Rumble; the target alone, 60% more, with Focused Peal), up to 5.
     void ThunderEcho(Player* player, Unit* target, int32 slamDamage)
     {
         State& state = StateOf(player);
-        uint32 now = GameTime::GetGameTimeMS().count();
-        if (now - state.LastEcho < ECHO_INTERVAL_MS || slamDamage <= 0)
+        if (!player->HasAura(SPELL_THUNDERFIELD_MARCH) || !state.ThunderCharges || slamDamage <= 0)
             return;
-        state.LastEcho = now;
+        if (!--state.ThunderCharges)
+            player->RemoveAurasDueToSpell(SPELL_THUNDERFIELD_MARCH);
 
-        float damage = slamDamage * ECHO_SHARE;
-        bool reverberating = HasThunderMarker(player, MOD_REVERBERATING_IMPACT);
         bool focused = HasThunderMarker(player, MOD_FOCUSED_PEAL);
-        bool distant = HasThunderMarker(player, MOD_DISTANT_RUMBLE);
-        if (HasThunderMarker(player, MOD_ROLLING_FRONT))
-            damage *= ROLLING_ECHO;
-        if (focused)
-            damage *= FOCUSED_ECHO;
-
+        float damage = slamDamage * ECHO_SHARE * (focused ? FOCUSED_ECHO : 1.0f);
         std::vector<Unit*> targets;
         if (target->IsAlive())
             targets.push_back(target);
         if (!focused)
-        {
-            float reach = reverberating ? REVERBERATING_RADIUS : ECHO_REACH * (distant ? DISTANT_REACH : 1.0f);
-            float facing = player->GetAngle(target);
-            for (Unit* enemy : EnemiesAround(player, reverberating ? target : static_cast<WorldObject*>(player),
-                reach))
-            {
-                if (targets.size() >= ECHO_TARGETS)
-                    break;
-                if (enemy == target)
-                    continue;
-                if (!reverberating)
-                {
-                    float diff = std::fabs(Position::NormalizeOrientation(player->GetAngle(enemy) - facing));
-                    if (std::min(diff, float(2 * M_PI) - diff) > ECHO_ARC / 2.0f)
-                        continue;
-                }
-                targets.push_back(enemy);
-            }
-        }
+            for (Unit* enemy : EnemiesAround(player, target,
+                HasThunderMarker(player, MOD_DISTANT_RUMBLE) ? DISTANT_RADIUS : ECHO_RADIUS))
+                if (enemy != target && targets.size() < ECHO_TARGETS)
+                    targets.push_back(enemy);
+        target->CastSpell(target, SPELL_THUNDER_ECHO_BURST, true);
 
-        // Its look: the wave from the Hero toward the target, or a burst about the target.
-        if (reverberating || focused)
-            target->CastSpell(target, SPELL_THUNDER_ECHO_BURST, true);
-        else
-            player->CastSpell(player, SPELL_THUNDER_ECHO_WAVE, true);
-
-        bool commanding = HasThunderMarker(player, MOD_COMMANDING_THUNDER);
-        bool deafening = HasThunderMarker(player, MOD_DEAFENING_IMPACT);
+        int32 each = std::max<int32>(1, int32(damage));
         for (Unit* enemy : targets)
         {
-            float amount = damage;
-            if (distant && !reverberating && player->GetExactDist(enemy) > ECHO_REACH)
-                amount *= DISTANT_FAR_ECHO;
-            if (deafening && ThunderClapped(player, enemy))
-                amount *= DEAFENING_ECHO;
-            int32 each = std::max<int32>(1, int32(amount));
             player->CastCustomSpell(enemy, SPELL_THUNDER_ECHO, &each, nullptr, nullptr, true);
             if (!enemy->IsAlive())
                 continue;
-            if (commanding && enemy->CanHaveThreatList())
+            if (HasThunderMarker(player, MOD_COMMANDING_THUNDER) && enemy->CanHaveThreatList())
                 enemy->AddThreat(player, float(each) * COMMANDING_THREAT, SPELL_SCHOOL_MASK_NATURE);
-            if (deafening)
-                player->CastSpell(enemy, SPELL_DEAFENING_IMPACT, true);
+            if (!HasThunderMarker(player, MOD_DEAFENING_IMPACT))
+                continue;
+            player->CastSpell(enemy, SPELL_DEAFENING_IMPACT, true);
+            if (Aura* slow = enemy->GetAura(SPELL_DEAFENING_IMPACT, player->GetGUID()))
+            {
+                slow->SetMaxDuration(DEAFENING_MS);
+                slow->SetDuration(DEAFENING_MS);
+            }
         }
 
-        // Sheltering Reverberation: an absorb of 5% of block value for 3 sec, once every 6 sec, never stacked.
-        if (HasThunderMarker(player, MOD_SHELTERING_REVERBERATION)
-            && now - state.LastSheltering >= SHELTERING_INTERVAL_MS)
+        float hit = float(targets.size());
+        if (HasThunderMarker(player, MOD_SHELTERING_REVERBERATION) && hit > 0)
         {
-            state.LastSheltering = now;
             player->RemoveAurasDueToSpell(SPELL_SHELTERING_REVERBERATION);
-            int32 absorb = std::max<int32>(1, int32(player->GetShieldBlockValue() * SHELTERING_SHARE));
+            int32 absorb = std::max<int32>(1, int32(player->GetMaxHealth()
+                * std::min(SHELTERING_CAP_PCT, SHELTERING_PCT * hit) / 100.0f));
             player->CastCustomSpell(player, SPELL_SHELTERING_REVERBERATION, &absorb, nullptr, nullptr, true);
+            if (Aura* aura = player->GetAura(SPELL_SHELTERING_REVERBERATION))
+            {
+                aura->SetMaxDuration(SHELTERING_MS);
+                aura->SetDuration(SHELTERING_MS);
+            }
         }
+        if (HasThunderMarker(player, MOD_BATTLE_RHYTHM))
+            player->ModifyPower(POWER_RAGE, RHYTHM_RAGE * int32(targets.size()));
+        if (HasThunderMarker(player, MOD_ROLLING_THUNDER))
+            for (uint32 id = SPELL_THUNDER_CLAP; id; id = sSpellMgr->GetNextSpellInChain(id))
+                if (player->HasSpell(id))
+                    player->ModifySpellCooldown(id, -ROLLING_MS * int32(targets.size()));
     }
 
     // ---- Healing runes: the Wellspring, the Wandering Mist ------------------------------------------------------
@@ -3294,7 +3223,7 @@ class spell_titan_rune_lightning_shield_damage : public SpellScript
     }
 };
 
-// Thunder Clap (every rank) with Echoing Thunder: its storm (PlaceThunderfield).
+// Thunder Clap (every rank) with Echoing Thunder: the charge (ChargeThunder).
 class spell_titan_rune_thunder_clap : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_thunder_clap);
@@ -3303,7 +3232,7 @@ class spell_titan_rune_thunder_clap : public SpellScript
     {
         if (Player* player = GetCaster()->ToPlayer())
             if (player->HasAura(SPELL_RUNE_ECHOING_THUNDER))
-                PlaceThunderfield(player);
+                ChargeThunder(player);
     }
 
     void Register() override
@@ -3312,8 +3241,8 @@ class spell_titan_rune_thunder_clap : public SpellScript
     }
 };
 
-// Shield Slam (every rank) with Echoing Thunder: landed from inside the Thunderfield, a Thunder Echo (its damage
-// before the target's mitigation).
+// Shield Slam (every rank) with Echoing Thunder: while charged, a Thunder Echo (its damage before the target's
+// mitigation).
 class spell_titan_rune_shield_slam : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_shield_slam);
@@ -3322,7 +3251,7 @@ class spell_titan_rune_shield_slam : public SpellScript
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (player && target && player->HasAura(SPELL_RUNE_ECHOING_THUNDER) && InThunderfield(player))
+        if (player && target && player->HasAura(SPELL_RUNE_ECHOING_THUNDER))
             ThunderEcho(player, target, GetHitDamage());
     }
 

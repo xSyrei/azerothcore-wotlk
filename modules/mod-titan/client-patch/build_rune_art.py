@@ -128,14 +128,9 @@ RUNES = [
     (23, (95, 170, 255), 'Lightning · Stormbound', 'Lightning Bolt connects enemies; your lightning arcs through '
      'them.', 'Lightning Bolt and Lightning Shield',
      'M13 2 5 13h6l-1 9 8-12h-6l1-8ZM3 8l3 2-3 3M21 8l-3 2 3 3'),
-    (24, (120, 160, 255), 'Protection · Thunder', 'Thunder Clap leaves a storm; Shield Slam echoes through it.',
-     'Thunder Clap and Shield Slam', 'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM13 7l-4 6h4l-2 5'),
-    (25, (70, 215, 210), 'Restoration · Wellspring', 'Your Earth Shield bearer becomes a spring Chain Heal flows '
-     'on from.', 'Chain Heal and Earth Shield', 'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10ZM8 14c2 2 6 2 8 0'),
-    (26, (90, 225, 140), 'Mistweaver · Jade Mist', 'Soothing Mist sends ribbons of jade mist to your injured '
-     'allies.', 'Soothing Mist', 'M4 9c3-3 6-3 8 0s5 3 8 0M4 15c3-3 6-3 8 0s5 3 8 0'),
-    (27, (150, 200, 235), 'Frost, Unholy & Blood · Grave', 'Three strikes lay three Graves; enemies caught in '
-     'two take more.', 'Icy Touch, Plague Strike and Blood Strike',
+    (24, (120, 160, 255), 'Protection · Thunder',
+     'Thunder Clap charges you; Shield Slam echoes it.',
+     'Thunder Clap and Shield Slam',
      'M12 3a6 6 0 0 0-6 6c0 2.4 1.2 3.8 2 4.6V17h8v-3.4c.8-.8 2-2.2 2-4.6a6 6 0 0 0-6-6ZM10 10h.01M14 10h.01'
      'M9 21h6M10 17v4M14 17v4'),
     (28, (235, 70, 60), 'Arms & Fury · Onslaught', 'Mortal Strike cuts a wake; your next strike through it reopens '
@@ -267,32 +262,43 @@ BUILT = {
                   'M13 2 4 14h7l-1 8 9-12h-7z'],
     },
     24: {
-        'core': 'Thunder Clap leaves a **Thunderfield** for 4 sec. Shield Slam landed inside it releases a **Thunder '
-                'Echo** toward your target: 15% of its damage to up to 4 enemies.',
-        'slots': ['Thunderfield', 'Echo Pattern', 'Shield Resonance'],
-        'asks': ['Where your storm stands', 'The shape of your echo', 'What the echo does for you'],
-        'texts': ['The Thunderfield lasts 6 sec instead of 4.',
-                  'The Thunderfield follows you for its duration, 5 yards wide.',
-                  'Thunder Clap places the Thunderfield beneath your hostile target within 10 yards; standing in it, '
-                  'the echo deals 10% more damage.',
-                  'A 6-yard burst around Shield Slam\'s target instead of the cone, up to 4 enemies.',
-                  'The echo strikes only Shield Slam\'s target, for 40% more damage.',
-                  'The cone reaches 50% farther; enemies beyond its normal reach take 20% more damage.',
-                  'The echo generates 50% more threat.',
-                  'The echo shields you for 5% of your block value for 3 sec, once every 6 sec; it never stacks.',
-                  'The echo slows its targets by 15% for 2 sec, and deals 10% more to enemies under your Thunder '
-                  'Clap.'],
-        'abilities': ['Thunder Clap', 'Thunder Clap', 'Thunder Clap', 'Shield Slam', 'Shield Slam', 'Shield Slam',
-                      'Threat', 'Block value', 'Slow'],
-        'icons': ['M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
-                  'M5 19 19 5M9 5h10v10',
-                  'M4 12h10M10 8l4 4-4 4M18 5v14',
-                  'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
-                  'M12 2v4M12 18v4M2 12h4M18 12h4M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',
-                  'M3 12h14M13 7l5 5-5 5M21 7v10',
-                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
-                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM9 12h6',
-                  'M4 12c3-6 5-6 8 0s5 6 8 0'],
+        'core': '**Thunder Clap** charges you with thunder. Your next **Shield Slam** releases a **Thunder Echo** '
+                'around its target.',
+        'slots': ['Charge', 'Echo', 'Resonance'],
+        'asks': ['How you hold the charge', 'How the echo strikes', 'What the echo gives you'],
+        'texts': [
+            'The charge holds 2 echoes.',
+            'The charge lasts 20 sec.',
+            'The echo generates twice the threat.',
+            'The echo strikes only the target, 60% more.',
+            'The echo reaches 10 yards.',
+            'The echo slows enemies by 30%.',
+            'The echo shields you, 3% of health per enemy.',
+            'The echo grants 2 rage per enemy.',
+            "The echo cuts Thunder Clap's cooldown.",
+        ],
+        'abilities': [
+            '2 echoes',
+            '20 sec',
+            'Threat',
+            'Focus',
+            '10 yards',
+            'Slow',
+            'Shield',
+            'Rage',
+            'Cooldown',
+        ],
+        'icons': [
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
+            'M5 19 19 5M9 5h10v10',
+            'M4 12h10M10 8l4 4-4 4M18 5v14',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+            'M12 2v4M12 18v4M2 12h4M18 12h4M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z',
+            'M3 12h14M13 7l5 5-5 5M21 7v10',
+            'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
+            'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM9 12h6',
+            'M4 12c3-6 5-6 8 0s5 6 8 0',
+        ],
     },
     25: {
         'core': 'Chain Heal on your Earth Shield wearer makes them a **Wellspring** for 6 sec. Your next Chain Heal to '

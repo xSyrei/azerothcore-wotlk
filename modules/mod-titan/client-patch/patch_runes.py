@@ -52,16 +52,12 @@ The Rune of the Stormbound Conduit (the "Rune of the Stormbound Conduit" concept
 The Rune of Echoing Thunder (the "Rune of Echoing Thunder" concept doc), 90770 on:
 
 - 90770 the rune: a buff the Hero wears while their active specialization's rune is Echoing Thunder;
-- 90771 Thunderfield: where Thunder Clap leaves its storm (a patch of ground, 8 yards, 4 sec; the script places it
-  and sets its time); its look: cracked earth with lightning running through it (build_thunder_art.py);
-- 90772 Thunderfield (March of the Storm): the storm following the Hero, 5 yards (a buff with the same ground);
-- 90773 Thunder Echo's wave: Shockwave's look from the Hero toward the target (no effect);
+- 90772 Thunder Charge: Thunder Clap's charge on the Hero (a small storm about them; the script sets its time);
 - 90774 Thunder Echo: Nature damage (its amount set by the script, never a critical strike of its own);
-- 90775 its burst about the Shield Slam target (Reverberating Impact, Focused Peal): Thunder Clap's look, cast by
-  the target (no effect);
-- 90776 Sheltering Reverberation: an absorb (its amount set by the script), 3 sec;
-- 90777 Deafening Impact: movement speed 15% slower, 2 sec;
-- 90780-90788 its nine modifiers' markers (Thunderfield, Echo Pattern, Shield Resonance: 3 each), hidden.
+- 90775 its burst about the Shield Slam target: Thunder Clap's look, cast by the target (no effect);
+- 90776 Sheltering Reverberation: an absorb (its amount and time set by the script);
+- 90777 Deafening Impact: movement speed 30% slower (the script sets its time);
+- 90780-90788 its nine modifiers' markers (Charge, Echo, Resonance: 3 each), hidden.
 
 The Rune of the Wellspring (the "Rune of the Wellspring" concept doc), 90790 on:
 
@@ -464,32 +460,14 @@ THUNDER = 'WAR_EchoingThunder'
 STORM_BLUE, PALE_BLUE = (0.45, 0.7, 1.0), (0.75, 0.88, 1.0)
 SPELLS += [
     buff(90770, 'Rune of Echoing Thunder', THUNDER_ICON,
-         'Thunder Clap leaves a Thunderfield for 4 sec. Shield Slam landed while you stand in it releases a Thunder '
-         'Echo toward your target: Nature damage to up to 4 enemies, 15% of Shield Slam\'s damage.',
+         'Thunder Clap charges you with thunder. Your next Shield Slam releases a Thunder Echo: 30% of its damage '
+         'to up to 5 enemies within 6 yards of its target.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {
-        'id': 90771, 'copy': CONSECRATION, 'name': 'Thunderfield', 'icon': 'Spell_Nature_ThunderClap',
-        'description': '', 'tooltip': '', 'visual': 'Thunderfield',
-        'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
-                'DurationIndex': DURATION_6S_INDEX, 'RangeIndex': RANGE_VISION},
-        'effects': {1: {'Effect': EFFECT_PERSISTENT_AREA_AURA, 'Aura': AURA_DUMMY, 'BasePoints': 0, 'DieSides': 1,
-                        'RealPointsPerLevel': 0.0, 'Amplitude': 0, 'TargetA': TARGET_DEST_DEST,
-                        'TargetB': TARGET_UNIT_DEST_AREA_ENEMY, 'RadiusIndex': RADIUS_8}},
-    },
-    {
-        **buff(90772, 'Thunderfield', 'Spell_Nature_ThunderClap',
-               'A Thunderfield follows you: Shield Slam releases a Thunder Echo.', DURATION_6S_INDEX,
+        **buff(90772, 'Thunder Charge', 'Spell_Nature_ThunderClap',
+               'Charged: your next Shield Slam releases a Thunder Echo.', DURATION_INFINITE,
                {1: aura(AURA_DUMMY, 1, 0)}),
         'visual': 'ThunderfieldMarch',
-    },
-    {
-        'id': 90773, 'copy': SHOCKWAVE, 'name': 'Thunder Echo', 'icon': 'Spell_Nature_ThunderClap',
-        'description': '', 'tooltip': '',
-        'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
-                'SpellVisual': VISUAL_SHOCKWAVE, 'RangeIndex': 1, 'ProcFlags': 0},
-        'effects': {1: {'Effect': EFFECT_DUMMY, 'Aura': 0, 'BasePoints': 0, 'DieSides': 1, 'RealPointsPerLevel': 0.0,
-                        'TargetA': 1, 'TargetB': 0, 'RadiusIndex': 0}},
-        'clear': [2, 3],
     },
     {
         'id': 90774, 'copy': LIGHTNING_BOLT, 'name': 'Thunder Echo', 'icon': 'Spell_Nature_ThunderClap',
@@ -523,16 +501,16 @@ SPELLS += [
     },
     {
         'id': 90777, 'copy': CRIPPLING_POISON, 'name': 'Deafening Impact', 'icon': 'Spell_Nature_ThunderClap',
-        'description': 'Movement speed reduced by 15%.', 'tooltip': 'Movement speed reduced by $s1%.',
-        'set': {**HARMFUL, 'DurationIndex': DURATION_2S, 'SchoolMask': NATURE},
-        'effects': {1: {**aura(AURA_MOD_DECREASE_SPEED, -15, 0), 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
+        'description': 'Movement speed reduced by 30%.', 'tooltip': 'Movement speed reduced by $s1%.',
+        'set': {**HARMFUL, 'DurationIndex': DURATION_6S_INDEX, 'SchoolMask': NATURE},
+        'effects': {1: {**aura(AURA_MOD_DECREASE_SPEED, -30, 0), 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
         'clear': [2, 3],
     },
 ]
 THUNDER_MODIFIERS = [
-    ('Lingering Thunder', 'March of the Storm', 'Rolling Front'),
-    ('Reverberating Impact', 'Focused Peal', 'Distant Rumble'),
-    ('Commanding Thunder', 'Sheltering Reverberation', 'Deafening Impact'),
+    ('Double Charge', 'Lingering Charge', 'Commanding Thunder'),
+    ('Focused Peal', 'Distant Rumble', 'Deafening Impact'),
+    ('Sheltering Reverberation', 'Battle Rhythm', 'Rolling Thunder'),
 ]
 SPELLS += [buff(90780 + slot * 3 + choice, name, THUNDER_ICON, '', DURATION_INFINITE,
                 {1: aura(AURA_DUMMY, 1, 0)}, hidden=True)
@@ -948,7 +926,7 @@ SUN_RAYS, SUN_ORANGE = (1.0, 0.72, 0.28), (1.0, 0.45, 0.1)
 WHITE_HOT, ICE_GLINT = (1.0, 0.93, 0.75), (0.65, 0.88, 1.0)
 EFFECTS.update({
     'Thunderfield': thunderfield('WAR_Thunderfield', 7157, 16.0),
-    'ThunderfieldMarch': thunderfield('WAR_ThunderfieldMarch', 7158, 10.0),
+    'ThunderfieldMarch': thunderfield('WAR_ThunderfieldMarch', 7158, 6.0),
     # A Thunder Echo landing: a bolt from the sky and a ring of sparks at the feet.
     'ThunderEchoHit': burst('WAR_ThunderEchoHit', 7166, (
         ('lightning_bolt_4x4', {'spots': ((0.0, 0.0, 2.3, 4.6, 0.0),), 'sheet': (4, 4), 'flip': 0.7,

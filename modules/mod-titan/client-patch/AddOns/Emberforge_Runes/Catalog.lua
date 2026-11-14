@@ -1507,73 +1507,40 @@ EmberforgeRunesCatalog = {
       role = "Tank (Thunder Clap, Shield Slam)",
       roles = { "TANK" },
       icon = "Ability_Rune_EchoingThunder",
-      slots = { "Thunderfield", "Echo Pattern", "Shield Resonance" },
-      builtFrom = "Thunder Clap (the Thunderfield)",
-      spentWith = "Shield Slam (Thunder Echo)",
-      resource = "None: where you stand",
-      core = "Thunder Clap leaves a Thunderfield at your location for 4 sec. Landing Shield Slam while you stand " ..
-          "inside it releases a Thunder Echo in a cone toward your target, dealing Nature damage equal to 15% of " ..
-          "Shield Slam's damage to up to 4 enemies, once every 2 sec at most. One Thunderfield at a time: a new " ..
-          "Thunder Clap replaces it. Needs a shield.",
-      loop = "Thunder Clap where you will fight, step into the storm, and aim your Shield Slams through the pack.",
+      slots = { "Charge", "Echo", "Resonance" },
+      builtFrom = "Thunder Clap",
+      spentWith = "Shield Slam",
+      resource = "Thunder Charge",
+      core = "Thunder Clap charges you with thunder for 8 sec. Your next Shield Slam releases a Thunder Echo: 30% " ..
+          "of its damage as Nature damage to up to 5 enemies within 6 yards of its target. Needs a shield.",
+      loop = "Thunder Clap, then Shield Slam. Every time.",
       mods = {
-        {
-          name = "Lingering Thunder",
-          text = "The Thunderfield lasts 6 sec instead of 4.",
-        },
-        {
-          name = "March of the Storm",
-          text = "The Thunderfield follows you for its duration, with a radius of 5 yards.",
-        },
-        {
-          name = "Rolling Front",
-          text = "Thunder Clap places the Thunderfield beneath your hostile target within 10 yards instead. " ..
-              "While you stand inside it, Thunder Echo deals 10% more damage.",
-        },
-        {
-          name = "Reverberating Impact",
-          text = "A 6-yard burst around Shield Slam's target instead of the cone, up to 4 enemies.",
-        },
-        {
-          name = "Focused Peal",
-          text = "Thunder Echo strikes only Shield Slam's target, for 40% more damage.",
-        },
-        {
-          name = "Distant Rumble",
-          text = "The cone reaches 50% farther; enemies beyond its normal reach take 20% more damage. Still up " ..
-              "to 4 enemies.",
-        },
-        {
-          name = "Commanding Thunder",
-          text = "Thunder Echo generates 50% more threat.",
-        },
-        {
-          name = "Sheltering Reverberation",
-          text = "Thunder Echo grants you an absorb of 5% of your block value for 3 sec, once every 6 sec; it " ..
-              "never stacks.",
-        },
-        {
-          name = "Deafening Impact",
-          text = "Enemies hit by Thunder Echo are slowed by 15% for 2 sec. Against an enemy already under your " ..
-              "Thunder Clap, the echo deals 10% more damage.",
-        },
+        { name = "Double Charge",
+          text = "The charge holds 2 Thunder Echoes." },
+        { name = "Lingering Charge",
+          text = "The charge lasts 20 sec." },
+        { name = "Commanding Thunder",
+          text = "Thunder Echo generates twice the threat." },
+        { name = "Focused Peal",
+          text = "Thunder Echo strikes only Shield Slam's target, for 60% more." },
+        { name = "Distant Rumble",
+          text = "Thunder Echo reaches 10 yards around the target." },
+        { name = "Deafening Impact",
+          text = "Enemies hit by Thunder Echo are slowed by 30% for 3 sec." },
+        { name = "Sheltering Reverberation",
+          text = "Thunder Echo shields you for 3% of your maximum health per enemy hit (up to 15%) for 6 sec." },
+        { name = "Battle Rhythm",
+          text = "Thunder Echo grants 2 rage per enemy hit." },
+        { name = "Rolling Thunder",
+          text = "Each enemy Thunder Echo hits takes 1 sec off Thunder Clap's cooldown." },
       },
       builds = {
-        {
-          name = "Stormfront Vanguard",
-          mods = { "March of the Storm", "Reverberating Impact", "Commanding Thunder" },
-          text = "Move with the pack and spread threat through bursts around your Shield Slam target.",
-        },
-        {
-          name = "Immovable Bulwark",
-          mods = { "Lingering Thunder", "Focused Peal", "Sheltering Reverberation" },
-          text = "Hold position with stronger single-target echoes and a small periodic absorb.",
-        },
-        {
-          name = "Thunderline",
-          mods = { "Rolling Front", "Distant Rumble", "Deafening Impact" },
-          text = "Establish a field ahead, step into it, and aim echoes through approaching enemies.",
-        },
+        { name = "The Raid Wall", mods = { "Double Charge", "Focused Peal", "Sheltering Reverberation" },
+          text = "Hit one boss hard and stay shielded." },
+        { name = "The Pack Puller", mods = { "Commanding Thunder", "Distant Rumble", "Rolling Thunder" },
+          text = "Grab every enemy and keep the thunder rolling." },
+        { name = "The Storm Engine", mods = { "Lingering Charge", "Deafening Impact", "Battle Rhythm" },
+          text = "Slow everything and never run out of rage." },
       },
     },
     { id = 25,
