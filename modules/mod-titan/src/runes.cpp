@@ -397,8 +397,8 @@ namespace
     constexpr float WAKE_HALF_LENGTH = 4.0f, WAKE_HALF_WIDTH = 1.5f, CUT_HALF_WIDTH = 1.0f;
     constexpr float CRESCENT_RADIUS = 8.0f, CRESCENT_ARC = float(M_PI) / 2.0f;     // each side of the facing
     constexpr float RAKE_BEHIND = 2.0f, RAKE_BEYOND = 14.0f;
-    constexpr float BLEED_SHARE = 0.3f, BLEED_CAP = 0.6f;       // of the wake's hit; at most, of a swing
-    constexpr int32 BLEED_TICKS = 6;
+    constexpr float BLEED_SHARE = 0.3f;                         // of the wake's hit, every second
+    constexpr int32 BLEED_TICKS = 4;
     constexpr std::size_t WAKE_TARGETS = 6;
     constexpr float SECOND_WIND_PCT = 1.0f;                     // of maximum health, an enemy the wake hits
 
@@ -1866,7 +1866,7 @@ namespace
     }
 
     // The wake's attack: 60% of a normalized swing to each enemy along it (up to 6), its primary target more;
-    // Bloodletting: a bleed of 30% of the hit over 6 sec, refreshed, never above 60% of a swing; Second Wind: 1% of
+    // Bloodletting: a bleed of 30% of the hit every second for 4 sec, refreshed; Second Wind: 1% of
     // the Hero's health back for each enemy hit.
     void WakeStrike(Player* player, Shape const& shape, ObjectGuid primary, float share)
     {
@@ -1890,10 +1890,7 @@ namespace
                 nullptr, nullptr, true);
             if (!bleed || !enemy->IsAlive())
                 continue;
-            int32 tick = int32(damage * BLEED_SHARE / BLEED_TICKS);
-            if (AuraEffect const* last = enemy->GetAuraEffect(SPELL_WAKE_BLEED, EFFECT_0, player->GetGUID()))
-                tick = std::max(tick, last->GetAmount());
-            tick = std::max<int32>(1, std::min(tick, int32(swing * BLEED_CAP / BLEED_TICKS)));
+            int32 tick = std::max<int32>(1, int32(damage * BLEED_SHARE));
             Lasting(player, enemy, SPELL_WAKE_BLEED, BLEED_TICKS * 1000, &tick);
         }
     }

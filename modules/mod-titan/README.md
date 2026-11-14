@@ -519,8 +519,8 @@ utility or a tradeoff) take one pick each, from three.
 - **The Rune of the Unbroken Onslaught** (rune 28; Melee DPS; Mortal Strike or Bloodthirst). Either cuts a **Weapon
   Wake** through its target (6 sec); the next other melee ability (on any enemy) rips it open: 60% of a normalized
   swing to each enemy in it (up to 6), the first 25% more, 0.6 sec later. Executioner's Cut, Whirling Steel, Raking
-  Passage; Overpowering Echo, Bloodletting, Aftershock; Relentless, Battlefield Claim, Second Wind (1% health per enemy
-  hit, 90865).
+  Passage; Overpowering Echo, Bloodletting (30% of the hit a second for 4 sec, a bleed: no armor), Aftershock;
+  Relentless, Battlefield Claim, Second Wind (1% health per enemy hit, 90865).
 - **The Rune of the Dawnbound Crusader** (rune 29; Healer or Melee DPS; Crusader Strike or Holy Shock). Each sends a
   **Dawn Echo** 0.75 sec later: half of its damage again on the same enemy, or half of Holy Shock's healing on the most
   injured ally within 15 yards (a Healer's Crusader Strike echoes as a heal). Sunburst (40% to 5 more within 8

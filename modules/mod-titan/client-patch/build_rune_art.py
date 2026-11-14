@@ -468,7 +468,7 @@ BUILT = {
             'A broad crescent in front of you, 8 yards.',
             'A long slash, 14 yards past your target.',
             'The wake rips open at once.',
-            'Enemies hit bleed for 30% over 6 sec.',
+            'Enemies hit bleed for 30% a second, 4 sec.',
             'The wake strikes again at half.',
             'Your wake follows its target.',
             'Your wake lasts 10 sec.',

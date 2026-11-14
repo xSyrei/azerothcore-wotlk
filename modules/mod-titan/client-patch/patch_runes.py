@@ -822,6 +822,8 @@ LEGEND_MODIFIERS = [
 ]
 next(spell for spell in SPELLS if spell['id'] == 90923)['set']['Speed'] = 20.0
 next(spell for spell in SPELLS if spell['id'] == 90951)['set']['StackAmount'] = 8
+# Bloodletting's tick is a bleed: armor never reduces it (Unit::IsDamageReducedByArmor).
+next(spell for spell in SPELLS if spell['id'] == 90833)['effects'][1]['Mechanic'] = 15
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
            for first, icon, modifiers in LEGEND_MODIFIERS
