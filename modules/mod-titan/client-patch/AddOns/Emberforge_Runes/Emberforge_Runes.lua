@@ -2012,8 +2012,11 @@ local function OnMessage(message)
         end
         state.prompt = parts[10] == "1"
         state.loaded = true
+        if EmberforgeRunes_UpdateRuneButton then
+            EmberforgeRunes_UpdateRuneButton()  -- first: nothing below may keep the button hidden
+        end
         if EmberforgeRunes_UpdateGlow then
-            EmberforgeRunes_UpdateGlow()       -- the changed abilities' icons follow the bound rune
+            pcall(EmberforgeRunes_UpdateGlow)   -- the changed abilities' icons follow the bound rune
         end
         -- Unlocked and unbound: the panel opens by itself, once a session for each specialization.
         if state.prompt and not view.prompted[state.spec] then
@@ -2253,6 +2256,7 @@ events:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
         UpdateGlow()
     elseif event == "PLAYER_LEVEL_UP" then
         Send("STATE")
+        EmberforgeRunes_Asking.again = 3       -- and once more when the level's rolls have settled
     elseif event == "UNIT_AURA" then
         if prefix == "player" then
             UpdateGlow()
@@ -2470,14 +2474,21 @@ runeButton:SetScript("OnEvent", function(_, event, level)
 end)
 PlaceRuneButton()
 UpdateRuneButton()
+EmberforgeRunes_UpdateRuneButton = UpdateRuneButton
 
 -- Until the server's state arrives, asked again every 3 sec (a request sent while loading can be lost); after a
 -- minute without one, the chat says so.
 local asking = CreateFrame("Frame")
 asking.wait, asking.tries = 3, 0
 asking:SetScript("OnUpdate", function(self, elapsed)
+    if self.again then
+        self.again = self.again - elapsed
+        if self.again <= 0 then
+            self.again = nil
+            Send("STATE")
+        end
+    end
     if state.loaded then
-        self:Hide()
         return
     end
     self.wait = self.wait - elapsed

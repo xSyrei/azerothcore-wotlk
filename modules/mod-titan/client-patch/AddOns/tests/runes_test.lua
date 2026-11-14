@@ -380,6 +380,20 @@ check(button.turning.index ~= first, "its icon turns to the next rune's")
 server("S,10,5,1,21,1,3,1,21,0")
 check(button.shown and button.turning == nil and not button.glow.on, "bound: it settles on the rune, no glow")
 
+-- An error in the action bars' update (a stale spellbook slot as a level's spells change) never keeps the rune
+-- button hidden; a level up asks for the state again, and once more 3 sec later.
+local glowWas = EmberforgeRunes_UpdateGlow
+EmberforgeRunes_UpdateGlow = function() error("Invalid spell slot") end
+button:Hide()
+server("S,11,5,1,21,1,3,1,21,0")
+check(button.shown, "the rune button shows even when the bars' update fails")
+EmberforgeRunes_UpdateGlow = glowWas
+local before = #sent
+fire("PLAYER_LEVEL_UP", "12")
+check(#sent == before + 1 and lastSent() == "STATE", "a level up asks for the state")
+EmberforgeRunes_Asking.scripts.OnUpdate(EmberforgeRunes_Asking, 3.1)
+check(#sent == before + 2 and lastSent() == "STATE", "and once more when the level has settled")
+
 -- A rune aura's amount (V): the server's, added to its tooltip; a stale one is replaced, others left alone.
 server("V,90843,A,412")
 auras[1], auras[2] = 90843, 26573

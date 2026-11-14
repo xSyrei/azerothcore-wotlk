@@ -478,6 +478,8 @@ namespace
     constexpr uint8 WEIGHT_TICKS = 3;
     constexpr float DEVOTION_UPKEEP = 0.75f, DEVOTION_OUTPUT = 0.9f;
 
+    constexpr uint32 RUNE_WATCH_MS = 5000;
+
     constexpr uint32 NPC_RUNE_FELGUARD = 910120;
     constexpr uint32 NPC_RUNE_FEL_IMP = 910121;
     constexpr uint32 NPC_HOLLOW_ECHO = 910122;
@@ -684,6 +686,7 @@ namespace
         std::vector<ObjectGuid> HollowEchoes;       // oldest first
 
         std::unordered_map<uint32, int32> Reported;  // the rune auras' amounts last told to the addon (Report)
+        uint32 WatchTimer = 0;                      // the bound rune's aura checked (OnPlayerUpdate)
 
         // The Shattered Sun: the enemies holding shards.
         std::vector<ObjectGuid> Shards;
@@ -3617,6 +3620,15 @@ public:
         SendState(player);
         if (oldLevel < UNLOCK_LEVEL && player->GetLevel() >= UNLOCK_LEVEL && Prompt(player))
             Send(player, "O");
+        // Again once the level's other work (Wildcard's rolls, the spec's rebuild) has run.
+        ObjectGuid guid = player->GetGUID();
+        player->m_Events.AddEventAtOffset([player, guid]()
+        {
+            if (!player->IsInWorld() || player->GetGUID() != guid)
+                return;
+            Apply(player);
+            SendState(player);
+        }, 2s);
     }
 
     void OnPlayerJustDied(Player* player) override
@@ -3628,6 +3640,19 @@ public:
     // newest runes' timers.
     void OnPlayerUpdate(Player* player, uint32 diff) override
     {
+        // A bound rune whose aura went missing (something removed it) is put back, every 5 sec at most.
+        State& watch = StateOf(player);
+        watch.WatchTimer += diff;
+        if (watch.WatchTimer >= RUNE_WATCH_MS)
+        {
+            watch.WatchTimer = 0;
+            if (player->IsAlive() && Wildcard::IsHero(player) && player->GetLevel() >= UNLOCK_LEVEL)
+                if (RuneDef const* bound = FindRune(ActiveChoice(player).Rune); bound && !player->HasAura(bound->Aura))
+                {
+                    Apply(player);
+                    SendState(player);
+                }
+        }
         if (player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
             StormPulse(player, diff);
         if (player->HasAura(SPELL_RUNE_THREEFOLD_GRAVE))
