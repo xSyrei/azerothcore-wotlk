@@ -10286,6 +10286,10 @@ void Player::ApplyModToSpell(SpellModifier* mod, Spell* spell)
     if (!spell)
         return;
 
+    // a modifier no aura owns (a module's) has no charges to drop
+    if (!mod->ownerAura)
+        return;
+
     // don't do anything with no charges
     if (mod->ownerAura->IsUsingCharges() && !mod->ownerAura->GetCharges())
         return;
