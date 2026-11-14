@@ -35,6 +35,12 @@ EmberforgeRunesArt = {
             u = 0.75,
             v = 0.9844,
         },
+        ChooseBurialGrounds = {
+            w = 580,
+            h = 84,
+            u = 0.8496,
+            v = 0.9844,
+        },
         ChooseCollapse = {
             w = 455,
             h = 84,
@@ -107,6 +113,12 @@ EmberforgeRunesArt = {
             u = 0.6729,
             v = 0.9844,
         },
+        ChooseGravekeeper = {
+            w = 516,
+            h = 84,
+            u = 0.7559,
+            v = 0.9844,
+        },
         ChooseInscription = {
             w = 505,
             h = 84,
@@ -173,6 +185,12 @@ EmberforgeRunesArt = {
             u = 0.626,
             v = 0.9844,
         },
+        ChooseSharedBurial = {
+            w = 548,
+            h = 84,
+            u = 0.8027,
+            v = 0.9844,
+        },
         ChooseShieldResonance = {
             w = 614,
             h = 84,
@@ -231,6 +249,12 @@ EmberforgeRunesArt = {
             w = 117,
             h = 28,
             u = 0.9141,
+            v = 0.875,
+        },
+        SlotBurialGrounds = {
+            w = 150,
+            h = 28,
+            u = 0.5859,
             v = 0.875,
         },
         SlotCollapse = {
@@ -305,6 +329,12 @@ EmberforgeRunesArt = {
             u = 0.7109,
             v = 0.875,
         },
+        SlotGravekeeper = {
+            w = 121,
+            h = 28,
+            u = 0.9453,
+            v = 0.875,
+        },
         SlotInscription = {
             w = 115,
             h = 28,
@@ -369,6 +399,12 @@ EmberforgeRunesArt = {
             w = 78,
             h = 28,
             u = 0.6094,
+            v = 0.875,
+        },
+        SlotSharedBurial = {
+            w = 137,
+            h = 28,
+            u = 0.5352,
             v = 0.875,
         },
         SlotShieldResonance = {
@@ -933,41 +969,42 @@ EmberforgeRunesArt = {
             inner = { 0.925, 0.961, 0.984 },
             built = true,
             burn = true,
-            core = "**Icy Touch**, **Plague Strike** and **Blood Strike** each leave a " ..
-                    "scar. **Requiem** turns your Dominion, Rime to Blight to Gore, and " ..
-                    "every scar changes with it.",
+            core = "**Icy Touch**, **Plague Strike** and **Blood Strike** each lay a Grave " ..
+                    "for 8 sec. Enemies in two or more take 20% more; **Blood Strike** in " ..
+                    "your Crimson Grave grants a shield.",
             asks = {
-                "How your scars lie",
-                "What your Dominion becomes",
-                "How Requiem turns",
+                "Where your Graves lie",
+                "What your Graves keep",
+                "How the overlap pays",
             },
             abilities = {
+                "Gather",
+                "Follow",
+                "Radius",
+                "Frost",
+                "Disease",
+                "Blood",
                 "Overlap",
-                "Blood circle",
-                "Duration",
-                "Rime",
-                "Blight",
-                "Gore",
-                "Order",
-                "Transitions",
-                "Control",
+                "Linger",
+                "Extend",
             },
             texts = {
-                "Enemies in two scars take 30% more, in all three 50% more.",
-                "Your blood circle follows you.",
-                "Your scars last 20 sec instead of 12.",
-                "Rime slows by 50%; its farewell freezes enemies for 2 sec.",
-                "Blight deals 30% more; its residual infection lasts 6 sec.",
-                "Grave Ward takes 40% of Blood Strike, up to 15% of your health, and " ..
-                        "Gore keeps it all.",
-                "Requiem turns the other way: Rime to Gore to Blight.",
-                "The Dominion you leave works at half for 3 sec.",
-                "Requiem becomes three actions, one for each Dominion, sharing 20 sec.",
+                "Icy Touch and Plague Strike lay their Graves on your Crimson Grave " ..
+                        "nearby.",
+                "Your Crimson Grave follows you.",
+                "Frozen and Plagued Graves are 50% wider.",
+                "The Frozen Grave slows by 50%, and the slow lingers 3 sec.",
+                "The Plagued Grave leaves a short disease on what it damages.",
+                "The Crimson shield holds up to 25% of your health and stays when you " ..
+                        "leave.",
+                "Shared Burial raises your Graves' damage by 35%.",
+                "Enemies leaving an overlap keep Shared Burial for 3 sec.",
+                "Blood Strike in two Graves extends your Graves by 2 sec, once each.",
             },
             slots = {
-                "Inscription",
-                "Dominion",
-                "Requiem",
+                "Burial Grounds",
+                "Gravekeeper",
+                "Shared Burial",
             },
         },
         [28] = {
@@ -1114,16 +1151,16 @@ EmberforgeRunesArt = {
             inner = { 0.906, 0.961, 0.988 },
             built = true,
             burn = true,
-            core = "**Fireball** embeds a burning **Sunshard**. **Frostbolt** fractures it " ..
-                    "into a ring of burning ice, and your next **Fireball** collapses the " ..
-                    "Broken Core.",
+            core = "Your fire spells embed burning **Sunshards**, Fireball and Pyroblast " ..
+                    "in nearby enemies too. Your frost spells shatter one in a **chain " ..
+                    "reaction** through the rest; fire then collapses the **Broken Core**.",
             asks = {
-                "How your shards are held",
+                "How your shards spread",
                 "How a shard breaks",
-                "How the core collapses",
+                "What the collapse adds",
             },
             abilities = {
-                "Three",
+                "Spread",
                 "Orbit",
                 "Anchor",
                 "Cone",
@@ -1134,14 +1171,14 @@ EmberforgeRunesArt = {
                 "Pulse",
             },
             texts = {
-                "Hold a third shard on another enemy.",
+                "Fireball and Pyroblast spread to 4 more enemies; hold 7 shards.",
                 "A breaking shard blasts your current target.",
                 "A shard stays on the ground where it went in.",
                 "The fracture becomes a cone away from you, 12 yards.",
                 "The fracture pierces on through in a line, 20 yards.",
                 "The fracture leaves Frostfire ground for 4 sec.",
                 "The collapse deals 40% more.",
-                "The collapse breaks one other shard nearby.",
+                "Chain reactions reach 15 yards and lose no strength.",
                 "The collapse pulses again 2 sec later, stronger on a crowd.",
             },
             slots = {

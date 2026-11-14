@@ -83,9 +83,10 @@ The Rune of the Wandering Mist (the "Rune of the Wandering Mist" concept doc), 9
 
 The five after them (their own concept docs), each with its markers 20 on from its first:
 
-- the Threefold Grave, 90830: Requiem 90831 (Chosen Ending's three 90832-90834), the Dominions' buffs 90835-90837,
-  Rime 90838 and its slow 90839, Blight 90840, Residual Infection 90841, Gore 90842, Grave Ward 90843, Rime's
-  farewell look 90844, the scars' grounds 90845-90847 (March of the Dead's on the Hero 90848), Cruel Winter 90849;
+- the Threefold Grave, 90830 (its revised draft): Shared Burial 90831, the Frozen Grave's damage 90838 and slow
+  90839, the Plagued Grave's 90840, Grave Pestilence 90841, the Crimson Grave's 90842, Crimson Ward 90843, the
+  Graves' grounds 90845-90847 (March of the Dead's on the Hero 90848); 90832-90837, 90844 and 90849 were the first
+  draft's (Requiem, the Dominions);
 - the Unbroken Onslaught, 90860 (its procs: melee abilities): Weapon Wake 90861, Bloodletting 90862, the wake's
   ground 90863, Aftershock 90864;
 - the Dawnbound Crusader, 90890: Dawn Vow 90891 (on the ally 90892), Dawn Mark 90893, the echo's heal and damage
@@ -748,39 +749,26 @@ ONSLAUGHT_RUNE = buff(90860, 'Rune of the Unbroken Onslaught', ONSLAUGHT_ICON,
                       DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)})
 # Its procs: every melee ability that hits; the script picks the ones that reopen the wake.
 ONSLAUGHT_RUNE['set'] = {**ONSLAUGHT_RUNE['set'], 'ProcFlags': PROC_DONE_MELEE_SPELL, 'ProcChance': 101}
-DOMINIONS = (('Rime', 'Spell_Deathknight_FrostPresence', 'Your scars freeze and slow the enemies in them.'),
-             ('Blight', 'Spell_Deathknight_UnholyPresence', 'Your scars sicken the enemies in them.'),
-             ('Gore', 'Spell_Deathknight_BloodPresence',
-              'Your scars bleed the enemies in them; Blood Strike in a scar grants a Grave Ward.'))
 SPELLS += [
     buff(90830, 'Rune of the Threefold Grave', GRAVE_ICON,
-         'Icy Touch inscribes a frozen line beneath its target, Plague Strike a diseased patch, Blood Strike a blood '
-         'circle beneath you: one of each, for 12 sec. Requiem turns your Dominion, Rime to Blight to Gore, and '
-         'every scar changes with it.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
-    action(90831, 'Requiem', 'Spell_Deathknight_ClassIcon',
-           'Turn your Dominion: Rime to Blight to Gore. The Dominion you leave bids its farewell.', 8000),
-    *[{**action(90832 + i, f'Requiem: {name}', icon, f'Your Dominion becomes {name}. The one you leave bids its '
-                'farewell. Shares a 20 sec cooldown with the other Requiems.', 20000)}
-      for i, (name, icon, _) in enumerate(DOMINIONS)],
-    *[shown(90835 + i, f'Dominion of {name}', icon, text, DURATION_INFINITE, key=f'Dominion{name}')
-      for i, (name, icon, text) in enumerate(DOMINIONS)],
-    strike(90838, 'Rime', 'Spell_Deathknight_IceTouch', FROST, key='GraveRimeHit'),
-    harmful(90839, 'Rime', 'Spell_Frost_ChillingBlast', 'Movement speed reduced by $s1%.', DURATION_2S,
+         'Icy Touch lays a Frozen Grave beneath its target, Plague Strike a Plagued Grave, Blood Strike a Crimson '
+         'Grave beneath you: one of each, 8 sec. Enemies in two or more take 20% more from your Graves. Blood Strike '
+         'in your Crimson Grave grants a shield.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    harmful(90831, 'Shared Burial', 'Spell_Shadow_DeathPact', 'Taking more damage from the Threefold Grave.',
+            DURATION_2S, aura(AURA_DUMMY, 1, 0), SHADOW),
+    strike(90838, 'Frozen Grave', 'Spell_Deathknight_IceTouch', FROST, key='GraveRimeHit'),
+    harmful(90839, 'Frozen Grave', 'Spell_Frost_ChillingBlast', 'Movement speed reduced by $s1%.', DURATION_6S,
             aura(AURA_MOD_DECREASE_SPEED, -30, 0), FROST),
-    strike(90840, 'Blight', 'Spell_Shadow_PlagueCloud', SHADOW, key='GraveBlightHit'),
-    dot(90841, 'Residual Infection', 'Spell_Shadow_CreepingPlague', SHADOW, DURATION_6S,
-        'Shadow damage every 1 sec.'),
-    strike(90842, 'Gore', 'Spell_Deathknight_BloodBoil', SHADOW, key='GraveGoreHit'),
-    {**absorb(90843, 'Grave Ward', 'Spell_Deathknight_DeathStrike', DURATION_10S),
+    strike(90840, 'Plagued Grave', 'Spell_Shadow_PlagueCloud', SHADOW, key='GraveBlightHit'),
+    dot(90841, 'Grave Pestilence', 'Spell_Shadow_CreepingPlague', SHADOW, DURATION_6S, 'Shadow damage every 1 sec.'),
+    strike(90842, 'Crimson Grave', 'Spell_Deathknight_BloodBoil', SHADOW, key='GraveGoreHit'),
+    {**absorb(90843, 'Crimson Ward', 'Spell_Deathknight_DeathStrike', DURATION_10S),
      'set': {**HEAL_SET, 'DurationIndex': DURATION_10S, 'SchoolMask': SHADOW}},
-    look(90844, 'Rime', 'Spell_Frost_FrostNova', VISUAL_FROST_NOVA),
-    ground(90845, 'Frozen Line', 'Spell_Deathknight_IceTouch', 'GraveFrozenLine', DURATION_20S),
-    ground(90846, 'Diseased Patch', 'Spell_Shadow_PlagueCloud', 'GraveDiseasedPatch', DURATION_20S),
-    ground(90847, 'Blood Circle', 'Spell_Deathknight_BloodBoil', 'GraveBloodCircle', DURATION_20S),
-    shown(90848, 'Blood Circle', 'Spell_Deathknight_BloodBoil', 'Your blood circle follows you.', DURATION_20S,
+    ground(90845, 'Frozen Grave', 'Spell_Deathknight_IceTouch', 'GraveFrozenLine', DURATION_20S),
+    ground(90846, 'Plagued Grave', 'Spell_Shadow_PlagueCloud', 'GraveDiseasedPatch', DURATION_20S),
+    ground(90847, 'Crimson Grave', 'Spell_Deathknight_BloodBoil', 'GraveBloodCircle', DURATION_20S),
+    shown(90848, 'Crimson Grave', 'Spell_Deathknight_BloodBoil', 'Your Crimson Grave follows you.', DURATION_20S,
           key='GraveBloodMarch'),
-    harmful(90849, 'Cruel Winter', 'Spell_Frost_FrostNova', 'Frozen in place.', DURATION_2S,
-            aura(AURA_MOD_ROOT, 1, 0), FROST),
 
     ONSLAUGHT_RUNE,
     strike(90861, 'Weapon Wake', 'Ability_Warrior_Cleave', PHYSICAL, key='WakeHit'),
@@ -833,12 +821,13 @@ SPELLS += [
     strike(90925, 'Last Word', 'Spell_Shadow_DemonicFortitude', SHADOW, VISUAL_MIND_BLAST),
 
     buff(90950, 'Rune of the Shattered Sun', SUN_ICON,
-         'Fireball embeds a burning Sunshard in its target (two at most). Frostbolt on it fractures the shard into a '
-         'ring of burning ice; the enemy keeps a Broken Core, and your next Fireball on it collapses it inward.',
+         'Your fire spells embed burning Sunshards (Fireball and Pyroblast in 2 more enemies nearby; 5 at most). Your '
+         'frost spells fracture them into rings of burning ice that set off every shard nearby in a chain; your next '
+         'fire spell on a Broken Core collapses it.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
-    harmful(90951, 'Sunshard', 'Ability_Mage_LivingBomb', 'A burning Sunshard: Frostbolt fractures it.',
+    harmful(90951, 'Sunshard', 'Ability_Mage_LivingBomb', 'A burning Sunshard: a frost spell fractures it.',
             DURATION_15S, aura(AURA_DUMMY, 1, 0), FIRE, key='Sunshard'),
-    harmful(90952, 'Broken Core', 'Ability_Mage_FrostFireBolt', 'A Broken Core: Fireball collapses it.',
+    harmful(90952, 'Broken Core', 'Ability_Mage_FrostFireBolt', 'A Broken Core: a fire spell collapses it.',
             DURATION_6S, aura(AURA_DUMMY, 1, 0), FROSTFIRE, key='BrokenCore'),
     strike(90953, 'Fracture', 'Spell_Frost_FrostNova', FROSTFIRE),
     look(90954, 'Fracture', 'Spell_Frost_FrostNova', VISUAL_FROST_NOVA),
@@ -848,9 +837,9 @@ SPELLS += [
     ground(90958, 'Solar Anchor', 'Ability_Mage_LivingBomb', 'SolarAnchor', DURATION_15S),
 ]
 LEGEND_MODIFIERS = [
-    (90850, GRAVE_ICON, [('Converging Graves', 'March of the Dead', 'Long Burial'),
+    (90850, GRAVE_ICON, [('Gathered Dead', 'March of the Dead', 'Far-Reaching Graves'),
                          ('Cruel Winter', 'Grave Pestilence', 'Crimson Bastion'),
-                         ('Reverse the Dirge', 'Lingering Dominion', 'Chosen Ending')]),
+                         ('Deep Burial', 'Spreading Death', 'Hallowed by Nothing')]),
     (90880, ONSLAUGHT_ICON, [("Executioner's Cut", 'Whirling Steel', 'Raking Passage'),
                              ('Overpowering Echo', 'Bloodletting', 'Aftershock'),
                              ('Relentless', 'Battlefield Claim', 'Changing Prey')]),
@@ -860,9 +849,9 @@ LEGEND_MODIFIERS = [
     (90940, HOLLOW_ICON, [('Following Shadows', 'Haunted Ground', 'Possession'),
                           ('Unison', 'Dissonance', 'Accusation'),
                           ('Last Word', 'Procession', 'Silent Witness')]),
-    (90970, SUN_ICON, [('Twin Suns', 'Orbiting Sun', 'Solar Anchor'),
+    (90970, SUN_ICON, [('Wildfire', 'Orbiting Sun', 'Solar Anchor'),
                        ('Splinterstorm', 'Solar Lance', 'Scalding Ground'),
-                       ('Implosion', 'Chain Reaction', 'Second Sunrise')]),
+                       ('Implosion', 'Endless Chain', 'Second Sunrise')]),
 ]
 next(spell for spell in SPELLS if spell['id'] == 90923)['set']['Speed'] = 20.0
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
@@ -890,8 +879,8 @@ def blood_circle(model, effect):
 EFFECTS.update({
     'GraveFrozenLine': {'model': 'DK_GraveFrozenLine', 'effect': 7159, 'shape': 'zone', 'textures': (CRACKS, CLOUDS),
                         'options': {'layers': (
-                            {'texture': 0, 'size': 4.5, 'height': 0.1, 'tint': ICE, 'alpha': 0.85, 'blend': 4},
-                            {'texture': 1, 'size': 4.0, 'height': 0.16, 'tint': ICE, 'alpha': 0.4, 'turn': 30.0,
+                            {'texture': 0, 'size': 10.0, 'height': 0.1, 'tint': ICE, 'alpha': 0.85, 'blend': 4},
+                            {'texture': 1, 'size': 9.5, 'height': 0.16, 'tint': ICE, 'alpha': 0.4, 'turn': 30.0,
                              'round': True, 'blend': 4})}},
     'GraveDiseasedPatch': {'model': 'DK_GraveDiseasedPatch', 'effect': 7160, 'shape': 'zone',
                            'textures': (CLOUDS, CRACKS),
@@ -956,10 +945,6 @@ VISUALS.update({
     'GraveBlightHit': {'copy': 11624, 'id': 16773, 'clear': ('precast', 'cast', 'state'), 'kits': {}},
     'GraveGoreHit': {'copy': 11117, 'id': 16774, 'clear': ('precast', 'cast'), 'kits': {}},
     'WakeHit': {'copy': 219, 'id': 16775, 'clear': ('precast', 'cast'), 'kits': {}},
-    # The Dominions: each presence's flash as it turns.
-    'DominionRime': {'copy': 11115, 'id': 16776, 'clear': ('precast', 'cast'), 'kits': {}},
-    'DominionBlight': {'copy': 11116, 'id': 16777, 'clear': ('precast', 'cast'), 'kits': {}},
-    'DominionGore': {'copy': 11114, 'id': 16778, 'clear': ('precast', 'cast'), 'kits': {}},
     # States: Power Infusion's glow on the vow, Hand of Freedom's on its afterimage, the NPC Shadowform on a Hollow
     # Echo, Living Bomb's on a Sunshard, Deep Freeze's on a Broken Core.
     'DawnVow': {'copy': 7553, 'id': 16779, 'clear': ('precast', 'cast', 'impact'), 'kits': {}},
@@ -970,7 +955,7 @@ VISUALS.update({
 })
 
 ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, THUNDER_ICON, WELLSPRING_ICON, MIST_ICON,
-         GRAVE_ICON, ONSLAUGHT_ICON, DAWN_ICON, HOLLOW_ICON, SUN_ICON,
+         GRAVE_ICON, ONSLAUGHT_ICON, DAWN_ICON, HOLLOW_ICON, SUN_ICON, 'Spell_Shadow_DeathPact',
          'Spell_Deathknight_ClassIcon', 'Spell_Deathknight_FrostPresence', 'Spell_Deathknight_UnholyPresence',
          'Spell_Deathknight_BloodPresence', 'Spell_Deathknight_IceTouch', 'Spell_Frost_ChillingBlast',
          'Spell_Shadow_PlagueCloud', 'Spell_Shadow_CreepingPlague', 'Spell_Deathknight_BloodBoil',

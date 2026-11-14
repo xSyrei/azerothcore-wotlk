@@ -541,15 +541,15 @@ utility or a tradeoff) take one pick each, from three.
   15% of a tick's mana back). Scripts in `titan_runes.sql`; spells 90790-90828 (`patch_runes.py`).
 - **Changing a rune:** `.unbindrune` (any player, out of combat; a GM's with a Hero selected does it for them) lets
   go of the active specialization's rune and its modifiers and opens the panel to bind another.
-- **The Rune of the Threefold Grave** (rune 27, its own concept doc; Melee DPS or Tank; needs Blood Strike and Icy
-  Touch or Plague Strike; slots Inscription, Dominion, Requiem). Icy Touch lays a frozen line through its target,
-  Plague Strike a diseased patch under it, Blood Strike a blood circle under the Hero: one of each, 12 sec, moved by
-  recasting. **Requiem** (90831, taught while the rune is bound, 8 sec) turns the **Dominion** Rime → Blight → Gore;
-  each second every enemy in a scar (once, up to 10) takes the Dominion's tick (level x 2 + 6% of attack power): Rime
-  frost and a 30% slow, Blight disease (leaving it: a residual infection), Gore blood (Blood Strike landed in a scar:
-  a Grave Ward, a quarter of its damage, up to 10% of health). Leaving a Dominion bids its farewell within one budget
-  of 3 ticks shared by the scars. Modifiers: Converging Graves, March of the Dead, Long Burial; Cruel Winter, Grave
-  Pestilence, Crimson Bastion; Reverse the Dirge, Lingering Dominion, Chosen Ending (three Requiems, 20 sec shared).
+- **The Rune of the Threefold Grave** (rune 27, its revised concept doc; Melee DPS or Tank; needs Blood Strike and
+  Icy Touch or Plague Strike; slots Burial Grounds, Gravekeeper, Shared Burial). Each strike lays its Grave for 8 sec,
+  one of each: Icy Touch a **Frozen Grave** beneath the target (Frost damage, 30% slow), Plague Strike a **Plagued
+  Grave** (Shadow damage), Blood Strike a **Crimson Grave** beneath the Hero (damage). A Grave's tick each second:
+  level x 2 + 6% of attack power with the Hero's school bonuses, every enemy in it (up to 10); **Shared Burial**: 20%
+  more on an enemy in two or more. Blood Strike inside the Crimson Grave keeps it in place and grants a shield (5% of
+  health, up to 15%, once every 3 sec; at once from the strike that lays it). Gathered Dead, March of the Dead,
+  Far-Reaching Graves; Cruel Winter, Grave Pestilence, Crimson Bastion; Deep Burial, Spreading Death, Hallowed by
+  Nothing.
 - **The Rune of the Unbroken Onslaught** (rune 28; Melee DPS; Mortal Strike or Bloodthirst; slots Wake,
   Follow-Through, Pursuit). Mortal Strike or Bloodthirst cuts a **Weapon Wake** through its target (6 sec); the next
   different melee ability striking an enemy in it reopens it once: 60% of a normalized swing to each enemy along it (up
@@ -565,11 +565,13 @@ utility or a tradeoff) take one pick each, from three.
   channels 40% of a Mind Flay tick for 10 sec, two at most; Mind Blast turns them on its target in a barrage (3 bolts,
   60% of a tick each), then they channel again. Following Shadows, Haunted Ground, Possession; Unison, Dissonance,
   Accusation; Last Word, Procession, Silent Witness.
-- **The Rune of the Shattered Sun** (rune 31; Ranged DPS; Fireball and Frostbolt; slots Formation, Fracture,
-  Collapse). Fireball embeds a **Sunshard** (15 sec, two at most); Frostbolt on it fractures it, 60% of its damage to
-  each enemy within 8 yards, leaving a **Broken Core** (6 sec) the next Fireball collapses for its damage again. Twin
-  Suns, Orbiting Sun, Solar Anchor; Splinterstorm, Solar Lance, Scalding Ground; Implosion, Chain Reaction, Second
-  Sunrise. Scripts in `titan_runes.sql`; spells 90830-90978 (`patch_runes.py`); their ground looks from Echoing
+- **The Rune of the Shattered Sun** (rune 31; Ranged DPS; a fire and a frost spell; slots Formation, Fracture,
+  Collapse). Fire spells (Fireball, Pyroblast, Fire Blast, Scorch) embed a **Sunshard** (15 sec, 5 at most), Fireball
+  and Pyroblast in 2 more enemies within 8 yards too; frost spells (Frostbolt, Ice Lance, Frost Nova, Cone of Cold)
+  fracture one, 60% of their damage (at least level x 4 + 40% of spell power) to each enemy within 8 yards, and set
+  off every shard within 10 yards in a **chain reaction** (each link 75% of the last), leaving **Broken Cores** (6
+  sec) a fire spell collapses for its damage again. Wildfire, Orbiting Sun, Solar Anchor; Splinterstorm, Solar Lance,
+  Scalding Ground; Implosion, Endless Chain, Second Sunrise. Scripts in `titan_runes.sql`; spells 90830-90978 (`patch_runes.py`); their ground looks from Echoing
   Thunder's cracks, the monk's mist, the Illidari sigil and `build_wake_art.py`'s gash.
 
 ## Cards and Silas Darkmoon

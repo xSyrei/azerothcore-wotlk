@@ -68,7 +68,7 @@
 //   Sanctified Paragon, 90750 the Stormbound Conduit, 90770 Echoing Thunder, 90790 the Wellspring, 90810 the
 //   Wandering Mist, 90830 / 90860 / 90890 / 90920 / 90950 the five after), and one marker per picked modifier
 //   (90710 / 90740 / 90760 / 90780 / 90800 / 90820, and 20 on from each of the five's first, + slot * 3 + choice);
-//   scripts look for them. Two teach an action while bound: Requiem (the Threefold Grave) and Dawn Vow.
+//   scripts look for them. One teaches an action while bound: Dawn Vow.
 //
 // Protocol (fields by ','; the client sends STATE, PICK,<rune>[,1], MOD,<slot 1-3>,<choice 1-3>; PICK's 1: warned
 // of the abilities the rune needs and lacks, the Hero binds it anyway):
@@ -156,19 +156,15 @@ namespace
         SPELL_MIST_MODIFIER_FIRST       = 90820,    // + slot * 3 + choice
 
         SPELL_RUNE_THREEFOLD_GRAVE      = 90830,
-        SPELL_REQUIEM                   = 90831,    // the action the rune teaches: the next Dominion
-        SPELL_REQUIEM_FIRST             = 90832,    // Chosen Ending's three: + Dominion
-        SPELL_DOMINION_FIRST            = 90835,    // the Hero's Dominion: + Dominion
-        SPELL_RIME                      = 90838,
-        SPELL_RIME_CHILL                = 90839,
-        SPELL_BLIGHT                    = 90840,
-        SPELL_RESIDUAL_INFECTION        = 90841,
-        SPELL_GORE                      = 90842,
-        SPELL_GRAVE_WARD                = 90843,
-        SPELL_RIME_FAREWELL             = 90844,    // its look: a frost nova about each enemy
-        SPELL_SCAR_FIRST                = 90845,    // the scars on the ground: + Scar
-        SPELL_BLOOD_CIRCLE_MARCH        = 90848,    // March of the Dead's: on the Hero
-        SPELL_CRUEL_WINTER              = 90849,
+        SPELL_SHARED_BURIAL             = 90831,    // on an enemy in two Graves or more (Spreading Death: after)
+        SPELL_FROZEN_GRAVE              = 90838,    // the Graves' damage
+        SPELL_GRAVE_CHILL               = 90839,
+        SPELL_PLAGUED_GRAVE             = 90840,
+        SPELL_GRAVE_PESTILENCE          = 90841,
+        SPELL_CRIMSON_GRAVE             = 90842,
+        SPELL_CRIMSON_WARD              = 90843,
+        SPELL_GRAVE_GROUND_FIRST        = 90845,    // the Graves on the ground: + Grave
+        SPELL_CRIMSON_MARCH             = 90848,    // March of the Dead's Crimson Grave: on the Hero
         SPELL_GRAVE_MODIFIER_FIRST      = 90850,    // + slot * 3 + choice
 
         SPELL_RUNE_UNBROKEN_ONSLAUGHT   = 90860,
@@ -226,6 +222,12 @@ namespace
         SPELL_CLONE_ME              = 45204,        // a copy of the caster's look (Mirror Image's)
         SPELL_FIREBALL              = 133,
         SPELL_FROSTBOLT             = 116,
+        SPELL_PYROBLAST             = 11366,
+        SPELL_FIRE_BLAST            = 2136,
+        SPELL_SCORCH                = 2948,
+        SPELL_ICE_LANCE             = 30455,
+        SPELL_FROST_NOVA            = 122,
+        SPELL_CONE_OF_COLD          = 120,
 
         SPELL_CONSECRATION          = 26573,        // first rank
         SPELL_CHAIN_HEAL            = 1064,         // first ranks
@@ -356,39 +358,34 @@ namespace
     constexpr float EFFORTLESS_SHARE = 0.15f;
     constexpr int32 SOOTHING_MIST_TICKS = 8;
 
-    // The Threefold Grave's modifiers: slot (0 Inscription, 1 Dominion, 2 Requiem) x 3 + choice.
+    // The Threefold Grave's modifiers: slot (0 Burial Grounds, 1 Gravekeeper, 2 Shared Burial) x 3 + choice.
     enum GraveModifier : uint8
     {
-        MOD_CONVERGING_GRAVES, MOD_MARCH_OF_THE_DEAD, MOD_LONG_BURIAL,
+        MOD_GATHERED_DEAD, MOD_MARCH_OF_THE_DEAD, MOD_FAR_REACHING_GRAVES,
         MOD_CRUEL_WINTER, MOD_GRAVE_PESTILENCE, MOD_CRIMSON_BASTION,
-        MOD_REVERSE_THE_DIRGE, MOD_LINGERING_DOMINION, MOD_CHOSEN_ENDING,
+        MOD_DEEP_BURIAL, MOD_SPREADING_DEATH, MOD_HALLOWED_BY_NOTHING,
     };
 
-    // The scars (Icy Touch's frozen line, Plague Strike's diseased patch, Blood Strike's blood circle: a Frost, an
-    // Unholy and a Blood rune's strike) and the Dominions Requiem turns through.
-    enum Scar : uint8 { SCAR_FROZEN_LINE, SCAR_DISEASED_PATCH, SCAR_BLOOD_CIRCLE, SCARS };
-    enum Dominion : uint8 { DOMINION_RIME, DOMINION_BLIGHT, DOMINION_GORE, DOMINIONS };
+    // The Graves: Icy Touch's Frozen Grave and Plague Strike's Plagued Grave beneath their target, Blood Strike's
+    // Crimson Grave beneath the Hero (a Frost, an Unholy and a Blood rune's strike).
+    enum Grave : uint8 { GRAVE_FROZEN, GRAVE_PLAGUED, GRAVE_CRIMSON, GRAVES };
 
-    // The Threefold Grave's tuning (the concept draft leaves it to us). A scar's tick: the Hero's level and 6% of
-    // their attack power, each enemy once a second however many scars it stands in.
-    constexpr uint32 SCAR_MS = 12000, LONG_BURIAL_MS = 20000, GRAVE_TICK_MS = 1000;
-    constexpr float LINE_HALF_LENGTH = 5.0f, LINE_HALF_WIDTH = 1.5f, PATCH_RADIUS = 5.0f, CIRCLE_RADIUS = 6.0f;
-    constexpr float SCAR_LEVEL = 2.0f, SCAR_AP = 0.06f;
-    constexpr float RIME_SHARE = 0.8f, BLIGHT_SHARE = 1.0f, GORE_SHARE = 0.9f;
-    constexpr int32 RIME_SLOW = -30, CRUEL_WINTER_SLOW = -50;
-    constexpr float PESTILENCE = 1.3f;                          // Blight's ticks with Grave Pestilence
-    constexpr float RESIDUAL_SHARE = 0.5f;                      // a residual infection's tick, of a scar tick
-    constexpr int32 RESIDUAL_MS = 3000, PESTILENCE_RESIDUAL_MS = 6000;
-    constexpr float FAREWELL_BUDGET = 3.0f;                     // scar ticks, shared between the scars
-    constexpr float CONVERGING_TWO = 1.3f, CONVERGING_THREE = 1.5f;
-    constexpr float GRAVE_WARD_SHARE = 0.25f, GRAVE_WARD_CAP_PCT = 10.0f;
-    constexpr float BASTION_WARD_SHARE = 0.4f, BASTION_WARD_CAP_PCT = 15.0f;
-    constexpr int32 GRAVE_WARD_MS = 8000, PRESERVED_WARD_MS = 5000;
-    constexpr float PRESERVED_WARD = 0.5f;                      // of the ward kept as Gore ends (all: Crimson Bastion)
-    constexpr uint32 LINGERING_DOMINION_MS = 3000;
-    constexpr uint32 CHOSEN_ENDING_MS = 20000;              // Requiem: 8 sec (its data)
-    constexpr float LINGERING_OUTPUT = 0.5f;
-    constexpr std::size_t SCAR_TARGETS = 10;
+    // The Threefold Grave's tuning (the revised draft's 8 sec; the rest ours). A Grave's tick: the Hero's level x 2
+    // and 6% of their attack power, with their damage bonuses for its school; each Grave its own tick on every enemy
+    // in it (up to 10), 20% more on one in two or three (Shared Burial; 35% with Deep Burial).
+    constexpr uint32 GRAVE_MS = 8000, GRAVE_TICK_MS = 1000, HALLOWED_MS = 2000, SPREADING_MS = 3000;
+    constexpr float GRAVE_RADIUS = 5.0f, FAR_REACHING = 1.5f, CRIMSON_RADIUS = 6.0f, GATHER_RANGE = 10.0f;
+    constexpr float GRAVE_LEVEL = 2.0f, GRAVE_AP = 0.06f;
+    constexpr float FROZEN_SHARE = 0.8f, PLAGUED_SHARE = 1.0f, CRIMSON_SHARE = 0.9f;
+    constexpr int32 GRAVE_SLOW = -30, CRUEL_WINTER_SLOW = -50;
+    constexpr int32 CHILL_MS = 1200, CRUEL_WINTER_MS = 3000;    // the slow outlasts a tick; Cruel Winter's lingers
+    constexpr float PESTILENCE_SHARE = 0.4f;                    // Grave Pestilence's disease tick, of a Grave tick
+    constexpr int32 PESTILENCE_MS = 4000;
+    constexpr float SHARED_BURIAL = 1.2f, DEEP_BURIAL = 1.35f;
+    constexpr float CRIMSON_WARD_PCT = 5.0f, CRIMSON_WARD_CAP_PCT = 15.0f, BASTION_WARD_CAP_PCT = 25.0f;
+    constexpr int32 CRIMSON_WARD_MS = 8000;
+    constexpr uint32 CRIMSON_WARD_ICD_MS = 3000;
+    constexpr std::size_t GRAVE_TARGETS = 10;
 
     // Unbroken Onslaught's modifiers: slot (0 Wake, 1 Follow-Through, 2 Pursuit) x 3 + choice.
     enum OnslaughtModifier : uint8
@@ -449,21 +446,26 @@ namespace
     // The Shattered Sun's modifiers: slot (0 Formation, 1 Fracture, 2 Collapse) x 3 + choice.
     enum SunModifier : uint8
     {
-        MOD_TWIN_SUNS, MOD_ORBITING_SUN, MOD_SOLAR_ANCHOR,
+        MOD_WILDFIRE, MOD_ORBITING_SUN, MOD_SOLAR_ANCHOR,
         MOD_SPLINTERSTORM, MOD_SOLAR_LANCE, MOD_SCALDING_GROUND,
-        MOD_IMPLOSION, MOD_CHAIN_REACTION, MOD_SECOND_SUNRISE,
+        MOD_IMPLOSION, MOD_ENDLESS_CHAIN, MOD_SECOND_SUNRISE,
     };
 
-    // The Shattered Sun's tuning: a fracture is 60% of the Frostbolt's damage to each enemy in the ring (8 yards),
-    // a collapse the Fireball's damage again on its host.
-    constexpr std::size_t MAX_SHARDS = 2, TWIN_SUNS_SHARDS = 3, FRACTURE_TARGETS = 8;
+    // The Shattered Sun's tuning: Fireball and Pyroblast spread shards to 2 more enemies within 8 yards (4 with
+    // Wildfire), 5 held (7); a fracture is 60% of the frost spell's damage (the Hero's own floor: level x 4 and 40%
+    // of their spell power) to each enemy in the ring (8 yards), and sets off every shard within 10 yards of it, a
+    // link at a time, each 75% of the last (15 yards, no loss with Endless Chain); a collapse the fire spell's damage
+    // again on its host.
+    constexpr std::size_t MAX_SHARDS = 5, WILDFIRE_SHARDS = 7, SPREAD = 2, WILDFIRE_SPREAD = 4, FRACTURE_TARGETS = 8;
+    constexpr float SPREAD_RANGE = 8.0f, SUN_LEVEL = 4.0f, SUN_POWER = 0.4f;
+    constexpr float CHAIN_RADIUS = 10.0f, ENDLESS_RADIUS = 15.0f, CHAIN_FALLOFF = 0.75f;
+    constexpr uint32 CHAIN_LINK_MS = 180;
     constexpr int32 SUNSHARD_MS = 15000, BROKEN_CORE_MS = 6000;
     constexpr float FRACTURE_SHARE = 0.6f, FRACTURE_RADIUS = 8.0f, COLLAPSE_SHARE = 1.0f, IMPLOSION = 1.4f;
     constexpr float SPLINTER_REACH = 12.0f, SPLINTER_ARC = float(M_PI) / 4.0f, LANCE_REACH = 20.0f;
     constexpr float LANCE_HALF_WIDTH = 1.5f, SCALDING_RADIUS = 6.0f, SCALDING_SHARE = 0.15f;
     constexpr uint32 SCALDING_MS = 4000, SUNRISE_DELAY_MS = 2000;
-    constexpr float SUNRISE_SHARE = 0.4f, SUNRISE_PER_ENEMY = 0.1f, SUNRISE_CAP = 0.5f, CHAIN_RANGE = 15.0f;
-    constexpr float CHAIN_SHARE = 0.5f, ORBIT_RANGE = 40.0f;
+    constexpr float SUNRISE_SHARE = 0.4f, SUNRISE_PER_ENEMY = 0.1f, SUNRISE_CAP = 0.5f, ORBIT_RANGE = 40.0f;
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
@@ -576,9 +578,11 @@ namespace
             { RUNE_HOLLOW_CONGREGATION, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_MIND_FLAY }, { SPELL_MIND_BLAST } }, SPELL_RUNE_HOLLOW_CONGREGATION,
               SPELL_HOLLOW_MODIFIER_FIRST },
-            // Ranged DPS: Fireball embeds and collapses, Frostbolt fractures.
+            // Ranged DPS: a fire spell embeds and collapses, a frost spell fractures.
             { RUNE_SHATTERED_SUN, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_FIREBALL }, { SPELL_FROSTBOLT } }, SPELL_RUNE_SHATTERED_SUN, SPELL_SUN_MODIFIER_FIRST },
+              { { SPELL_FIREBALL, SPELL_PYROBLAST, SPELL_FIRE_BLAST, SPELL_SCORCH },
+                { SPELL_FROSTBOLT, SPELL_ICE_LANCE, SPELL_FROST_NOVA, SPELL_CONE_OF_COLD } }, SPELL_RUNE_SHATTERED_SUN,
+              SPELL_SUN_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -665,19 +669,17 @@ namespace
         ObjectGuid LastWanderTarget;                // the most recently healed Wandering Mist target
         ObjectGuid LesserTarget;                    // the lesser Enveloping Mist's (Comforting Veil)
 
-        // The Threefold Grave: each scar a line From..To or a circle at From (Until 0: none).
-        struct ScarAt
+        // The Threefold Grave: each Grave a circle at From (Until 0: none).
+        struct GraveAt
         {
             uint32 Map = 0;
-            Position From, To;
+            Position From;
             uint32 Until = 0;                       // game ms
+            bool Extended = false;                  // Hallowed by Nothing, once a Grave
         };
-        std::array<ScarAt, SCARS> Scars;
-        uint8 Dominion = DOMINION_RIME;
-        uint8 Lingering = DOMINIONS;                // Lingering Dominion: the last one, until LingerUntil
-        uint32 LingerUntil = 0;
-        uint32 GraveTimer = 0;
-        std::set<ObjectGuid> InBlight;              // enemies Blight touched on the last tick
+        std::array<GraveAt, GRAVES> Graves;
+        uint32 GraveTimer = 0, LastWard = 0;
+        std::unordered_map<ObjectGuid, uint32> Buried;      // Spreading Death: enemy -> Shared Burial until
 
         // Unbroken Onslaught: the wake, a line From..To or a crescent at From facing Facing.
         bool Wake = false, WakeCrescent = false;
@@ -1821,239 +1823,134 @@ namespace
         return Marked(unit, SPELL_GRAVE_MODIFIER_FIRST, modifier);
     }
 
-    // A scar's tick: the Hero's level and their attack power, with their damage bonuses for its school (Rime's frost,
-    // Blight's and Gore's shadow; the spells ignore the Hero's modifiers, so they are here).
-    float ScarTick(Player* player, SpellSchoolMask school = SPELL_SCHOOL_MASK_SHADOW)
+    // A Grave's tick: the Hero's level and their attack power, with their damage bonuses for its school (the spells
+    // ignore the Hero's modifiers, so they are here).
+    float GravePower(Player* player, SpellSchoolMask school)
     {
-        return (SCAR_LEVEL * player->GetLevel() + player->GetTotalAttackPowerValue(BASE_ATTACK) * SCAR_AP)
+        return (GRAVE_LEVEL * player->GetLevel() + player->GetTotalAttackPowerValue(BASE_ATTACK) * GRAVE_AP)
             * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, school);
     }
 
-    bool ScarActive(Player* player, uint8 scar)
+    bool GraveActive(Player* player, uint8 grave)
     {
-        State::ScarAt const& at = StateOf(player).Scars[scar];
+        State::GraveAt const& at = StateOf(player).Graves[grave];
         return at.Until > Now() && at.Map == player->GetMapId();
     }
 
-    // The scar's ground: the frozen line, the diseased patch, the blood circle (on the Hero with March of the Dead).
-    Shape ScarShape(Player* player, uint8 scar)
+    // Its ground: 5 yards (7.5 with Far-Reaching Graves) about where it was laid; the Crimson Grave 6, on the Hero
+    // with March of the Dead.
+    Shape GraveShape(Player* player, uint8 grave)
     {
-        State::ScarAt const& at = StateOf(player).Scars[scar];
-        if (scar == SCAR_FROZEN_LINE)
-        {
-            Shape line;
-            line.From = at.From;
-            line.To = at.To;
-            line.HalfWidth = LINE_HALF_WIDTH;
-            return line;
-        }
-        if (scar == SCAR_DISEASED_PATCH)
-            return Circle(at.From, PATCH_RADIUS);
-        return Circle(HasGraveMarker(player, MOD_MARCH_OF_THE_DEAD) ? player->GetPosition() : at.From,
-            CIRCLE_RADIUS);
+        State::GraveAt const& at = StateOf(player).Graves[grave];
+        if (grave == GRAVE_CRIMSON)
+            return Circle(HasGraveMarker(player, MOD_MARCH_OF_THE_DEAD) ? player->GetPosition() : at.From,
+                CRIMSON_RADIUS);
+        return Circle(at.From, GRAVE_RADIUS * (HasGraveMarker(player, MOD_FAR_REACHING_GRAVES) ? FAR_REACHING : 1.0f));
     }
 
-    uint8 ScarsHolding(Player* player, Unit* unit)
+    bool InGrave(Player* player, uint8 grave, Unit* unit)
+    {
+        return GraveActive(player, grave) && GraveShape(player, grave).Holds(unit);
+    }
+
+    uint8 GravesHolding(Player* player, Unit* unit)
     {
         uint8 count = 0;
-        for (uint8 scar = 0; scar < SCARS; ++scar)
-            if (ScarActive(player, scar) && ScarShape(player, scar).Holds(unit))
-                ++count;
+        for (uint8 grave = 0; grave < GRAVES; ++grave)
+            count += InGrave(player, grave, unit) ? 1 : 0;
         return count;
     }
 
-    // Icy Touch, Plague Strike, Blood Strike: their scar, moved here (12 sec, 20 with Long Burial).
-    void Inscribe(Player* player, uint8 scar, Unit* target)
+    void ClearGrave(Player* player, uint8 grave)
     {
-        State::ScarAt& at = StateOf(player).Scars[scar];
+        StateOf(player).Graves[grave].Until = 0;
+        player->RemoveDynObject(SPELL_GRAVE_GROUND_FIRST + grave);
+        if (grave == GRAVE_CRIMSON)
+            player->RemoveAurasDueToSpell(SPELL_CRIMSON_MARCH);
+    }
+
+    // A Grave laid (the last of its kind gone), 8 sec.
+    void LayGrave(Player* player, uint8 grave, Position const& where)
+    {
+        State::GraveAt& at = StateOf(player).Graves[grave];
         at.Map = player->GetMapId();
-        uint32 ms = HasGraveMarker(player, MOD_LONG_BURIAL) ? LONG_BURIAL_MS : SCAR_MS;
-        at.Until = Now() + ms;
-        uint32 look = SPELL_SCAR_FIRST + scar;
-        if (scar == SCAR_FROZEN_LINE)
+        at.From = where;
+        at.Until = Now() + GRAVE_MS;
+        at.Extended = false;
+        uint32 look = SPELL_GRAVE_GROUND_FIRST + grave;
+        if (grave == GRAVE_CRIMSON && HasGraveMarker(player, MOD_MARCH_OF_THE_DEAD))
         {
-            float facing = player->GetAngle(target);
-            at.From = Toward(target->GetPosition(), facing + float(M_PI), LINE_HALF_LENGTH);
-            at.To = Toward(target->GetPosition(), facing, LINE_HALF_LENGTH);
-            PlaceDecals(player, look, ScarShape(player, scar).Points(2.5f));
-        }
-        else if (scar == SCAR_DISEASED_PATCH)
-        {
-            at.From = target->GetPosition();
-            PlaceDecals(player, look, { at.From });
-        }
-        else if (HasGraveMarker(player, MOD_MARCH_OF_THE_DEAD))
-        {
-            at.From = player->GetPosition();
             player->RemoveDynObject(look);
-            Lasting(player, player, SPELL_BLOOD_CIRCLE_MARCH, int32(ms));
-        }
-        else
-        {
-            at.From = player->GetPosition();
-            PlaceDecals(player, look, { at.From });
-        }
-    }
-
-    void ClearScar(Player* player, uint8 scar)
-    {
-        StateOf(player).Scars[scar].Until = 0;
-        player->RemoveDynObject(SPELL_SCAR_FIRST + scar);
-        if (scar == SCAR_BLOOD_CIRCLE)
-            player->RemoveAurasDueToSpell(SPELL_BLOOD_CIRCLE_MARCH);
-    }
-
-    // A residual infection: a scar's half tick every second, 3 sec (6 with Grave Pestilence).
-    void Infect(Player* player, Unit* enemy)
-    {
-        bool pestilence = HasGraveMarker(player, MOD_GRAVE_PESTILENCE);
-        int32 tick = std::max<int32>(1, int32(ScarTick(player) * RESIDUAL_SHARE * (pestilence ? PESTILENCE : 1.0f)));
-        Lasting(player, enemy, SPELL_RESIDUAL_INFECTION, pestilence ? PESTILENCE_RESIDUAL_MS : RESIDUAL_MS, &tick);
-    }
-
-    // A Dominion's tick on an enemy in the scars: Rime's frost and slow, Blight's disease, Gore's blood.
-    void Dominate(Player* player, Unit* enemy, uint8 dominion, float scale)
-    {
-        float tick = ScarTick(player, dominion == DOMINION_RIME ? SPELL_SCHOOL_MASK_FROST : SPELL_SCHOOL_MASK_SHADOW)
-            * scale;
-        if (dominion == DOMINION_RIME)
-        {
-            int32 damage = std::max<int32>(1, int32(tick * RIME_SHARE));
-            player->CastCustomSpell(enemy, SPELL_RIME, &damage, nullptr, nullptr, true);
-            int32 slow = HasGraveMarker(player, MOD_CRUEL_WINTER) ? CRUEL_WINTER_SLOW : RIME_SLOW;
-            if (enemy->IsAlive())
-                player->CastCustomSpell(enemy, SPELL_RIME_CHILL, &slow, nullptr, nullptr, true);
-        }
-        else if (dominion == DOMINION_BLIGHT)
-        {
-            float share = BLIGHT_SHARE * (HasGraveMarker(player, MOD_GRAVE_PESTILENCE) ? PESTILENCE : 1.0f);
-            int32 damage = std::max<int32>(1, int32(tick * share));
-            player->CastCustomSpell(enemy, SPELL_BLIGHT, &damage, nullptr, nullptr, true);
-        }
-        else
-        {
-            int32 damage = std::max<int32>(1, int32(tick * GORE_SHARE));
-            player->CastCustomSpell(enemy, SPELL_GORE, &damage, nullptr, nullptr, true);
-        }
-    }
-
-    // Leaving a Dominion, its farewell, all of it within one budget (three scar ticks) shared between the scars:
-    // Rime a last burst of slowing frost (rooting with Cruel Winter), Blight every residual infection at once, Gore
-    // half the Grave Ward kept a few seconds (all of it with Crimson Bastion).
-    void Farewell(Player* player, uint8 dominion)
-    {
-        float budget = ScarTick(player, dominion == DOMINION_RIME ? SPELL_SCHOOL_MASK_FROST : SPELL_SCHOOL_MASK_SHADOW)
-            * FAREWELL_BUDGET;
-        if (dominion == DOMINION_RIME)
-        {
-            uint8 scars = 0;
-            for (uint8 scar = 0; scar < SCARS; ++scar)
-                scars += ScarActive(player, scar) ? 1 : 0;
-            if (!scars)
-                return;
-            std::size_t hit = 0;
-            for (Unit* enemy : EnemiesAround(player, player, 40.0f))
-            {
-                uint8 count = ScarsHolding(player, enemy);
-                if (!count)
-                    continue;
-                if (++hit > SCAR_TARGETS)
-                    break;
-                int32 damage = std::max<int32>(1, int32(budget * count / scars));
-                enemy->CastSpell(enemy, SPELL_RIME_FAREWELL, true);
-                player->CastCustomSpell(enemy, SPELL_RIME, &damage, nullptr, nullptr, true);
-                if (!enemy->IsAlive())
-                    continue;
-                if (HasGraveMarker(player, MOD_CRUEL_WINTER))
-                    player->CastSpell(enemy, SPELL_CRUEL_WINTER, true);
-                int32 slow = CRUEL_WINTER_SLOW;
-                player->CastCustomSpell(enemy, SPELL_RIME_CHILL, &slow, nullptr, nullptr, true);
-            }
-        }
-        else if (dominion == DOMINION_BLIGHT)
-        {
-            std::vector<std::pair<Unit*, float>> infected;
-            float total = 0.0f;
-            for (Unit* enemy : EnemiesAround(player, player, 60.0f))
-                if (Aura* aura = enemy->GetAura(SPELL_RESIDUAL_INFECTION, player->GetGUID()))
-                    if (AuraEffect* effect = aura->GetEffect(EFFECT_0))
-                    {
-                        float left = effect->GetAmount() * std::ceil(aura->GetDuration() / 1000.0f);
-                        infected.emplace_back(enemy, left);
-                        total += left;
-                    }
-            float scale = total > budget ? budget / total : 1.0f;
-            for (auto const& [enemy, left] : infected)
-            {
-                enemy->RemoveAurasDueToSpell(SPELL_RESIDUAL_INFECTION, player->GetGUID());
-                int32 damage = std::max<int32>(1, int32(left * scale));
-                player->CastCustomSpell(enemy, SPELL_BLIGHT, &damage, nullptr, nullptr, true);
-            }
-        }
-        else if (Aura* ward = player->GetAura(SPELL_GRAVE_WARD))
-        {
-            if (!HasGraveMarker(player, MOD_CRIMSON_BASTION))
-                if (AuraEffect* effect = ward->GetEffect(EFFECT_0))
-                    effect->ChangeAmount(std::max<int32>(1, int32(effect->GetAmount() * PRESERVED_WARD)));
-            if (ward->GetDuration() > PRESERVED_WARD_MS)
-                ward->SetDuration(PRESERVED_WARD_MS);
-        }
-    }
-
-    // The Hero's Dominion (its buff and look); farewell: the last one's farewell, and Lingering Dominion's 3 sec.
-    void SetDominion(Player* player, uint8 dominion, bool farewell)
-    {
-        State& state = StateOf(player);
-        uint8 last = state.Dominion;
-        if (farewell && last != dominion)
-        {
-            Farewell(player, last);
-            if (HasGraveMarker(player, MOD_LINGERING_DOMINION))
-            {
-                state.Lingering = last;
-                state.LingerUntil = Now() + LINGERING_DOMINION_MS;
-            }
-        }
-        state.Dominion = dominion;
-        state.InBlight.clear();
-        for (uint8 other = 0; other < DOMINIONS; ++other)
-            if (other != dominion)
-                player->RemoveAurasDueToSpell(SPELL_DOMINION_FIRST + other);
-        player->CastSpell(player, SPELL_DOMINION_FIRST + dominion, true);
-    }
-
-    // Requiem's next Dominion: Rime, Blight, Gore (Gore, Blight, Rime with Reverse the Dirge).
-    uint8 NextDominion(Player* player)
-    {
-        uint8 step = HasGraveMarker(player, MOD_REVERSE_THE_DIRGE) ? DOMINIONS - 1 : 1;
-        return uint8((StateOf(player).Dominion + step) % DOMINIONS);
-    }
-
-    bool GoreActive(Player* player)
-    {
-        State& state = StateOf(player);
-        return state.Dominion == DOMINION_GORE
-            || (state.Lingering == DOMINION_GORE && Now() < state.LingerUntil);
-    }
-
-    // Blood Strike connecting while the Hero stands in a scar under Gore: a Grave Ward of a quarter of its damage
-    // (40% with Crimson Bastion), added up to 10% of their health (15%), 8 sec.
-    void GraveWard(Player* player, int32 damage)
-    {
-        if (damage <= 0 || !GoreActive(player) || !ScarsHolding(player, player))
+            Lasting(player, player, SPELL_CRIMSON_MARCH, int32(GRAVE_MS));
             return;
-        bool bastion = HasGraveMarker(player, MOD_CRIMSON_BASTION);
-        int32 cap = int32(player->CountPctFromMaxHealth(int32(bastion ? BASTION_WARD_CAP_PCT : GRAVE_WARD_CAP_PCT)));
-        int32 have = 0;
-        if (AuraEffect* ward = player->GetAuraEffect(SPELL_GRAVE_WARD, EFFECT_0))
-            have = ward->GetAmount();
-        int32 amount = std::min(cap, have + int32(damage * (bastion ? BASTION_WARD_SHARE : GRAVE_WARD_SHARE)));
-        if (amount > 0)
-            Lasting(player, player, SPELL_GRAVE_WARD, GRAVE_WARD_MS, &amount);
+        }
+        PlaceDecals(player, look, { where });
     }
 
-    // Every second: the scars' Dominion (and Lingering Dominion's last one, at half) on each enemy in them, once
-    // however many scars it stands in (more with Converging Graves), up to 10; enemies leaving Blight infected.
+    // Icy Touch or Plague Strike: its Grave beneath the target, or (Gathered Dead) on the Crimson Grave when that is
+    // within 10 yards of the target.
+    void LayTargetGrave(Player* player, uint8 grave, Unit* target)
+    {
+        Position where = target->GetPosition();
+        if (HasGraveMarker(player, MOD_GATHERED_DEAD) && GraveActive(player, GRAVE_CRIMSON))
+        {
+            Position crimson = GraveShape(player, GRAVE_CRIMSON).From;
+            if (target->GetExactDist2d(&crimson) <= GATHER_RANGE)
+                where = crimson;
+        }
+        LayGrave(player, grave, where);
+    }
+
+    // The Crimson Grave's shield: 5% of the Hero's health added, up to 15% (25% with Crimson Bastion), 8 sec; once
+    // every 3 sec but on the strike that lays the Grave.
+    void CrimsonWard(Player* player, bool laying)
+    {
+        State& state = StateOf(player);
+        uint32 now = Now();
+        if (!laying && now - state.LastWard < CRIMSON_WARD_ICD_MS)
+            return;
+        state.LastWard = now;
+        float cap = HasGraveMarker(player, MOD_CRIMSON_BASTION) ? BASTION_WARD_CAP_PCT : CRIMSON_WARD_CAP_PCT;
+        int32 have = 0;
+        if (AuraEffect* ward = player->GetAuraEffect(SPELL_CRIMSON_WARD, EFFECT_0))
+            have = ward->GetAmount();
+        int32 amount = std::min(int32(player->CountPctFromMaxHealth(int32(cap))),
+            have + int32(player->CountPctFromMaxHealth(int32(CRIMSON_WARD_PCT))));
+        if (amount > 0)
+            Lasting(player, player, SPELL_CRIMSON_WARD, CRIMSON_WARD_MS, &amount);
+    }
+
+    // Blood Strike landed: inside the Hero's Crimson Grave it stays, and grants its shield (Hallowed by Nothing: in
+    // another Grave too, every Grave 2 sec longer, once each); else the Crimson Grave is laid beneath them, its shield
+    // at once.
+    void BloodStrike(Player* player)
+    {
+        if (!InGrave(player, GRAVE_CRIMSON, player))
+        {
+            LayGrave(player, GRAVE_CRIMSON, player->GetPosition());
+            CrimsonWard(player, true);
+            return;
+        }
+        CrimsonWard(player, false);
+        if (!HasGraveMarker(player, MOD_HALLOWED_BY_NOTHING) || GravesHolding(player, player) < 2)
+            return;
+        State& state = StateOf(player);
+        for (uint8 grave = 0; grave < GRAVES; ++grave)
+        {
+            State::GraveAt& at = state.Graves[grave];
+            if (!GraveActive(player, grave) || at.Extended)
+                continue;
+            at.Extended = true;
+            at.Until += HALLOWED_MS;
+            if (grave == GRAVE_CRIMSON)
+                if (Aura* march = player->GetAura(SPELL_CRIMSON_MARCH))
+                    march->SetDuration(march->GetDuration() + int32(HALLOWED_MS));
+        }
+    }
+
+    // Every second: each Grave's tick on each enemy in it (up to 10), Shared Burial's 20% (35%) on one in two or more
+    // (or, Spreading Death, just out of an overlap), the Frozen Grave's slow, Grave Pestilence's disease; the
+    // Crimson Grave's shield gone once the Hero leaves it (kept with Crimson Bastion).
     void GraveTick(Player* player, uint32 diff)
     {
         State& state = StateOf(player);
@@ -2063,41 +1960,70 @@ namespace
         state.GraveTimer = 0;
         uint32 now = Now();
         bool any = false;
-        for (uint8 scar = 0; scar < SCARS; ++scar)
+        for (uint8 grave = 0; grave < GRAVES; ++grave)
         {
-            State::ScarAt const& at = state.Scars[scar];
+            State::GraveAt const& at = state.Graves[grave];
             if (at.Until && (at.Until <= now || at.Map != player->GetMapId()))
-                ClearScar(player, scar);
-            any = any || state.Scars[scar].Until;
+                ClearGrave(player, grave);
+            any = any || state.Graves[grave].Until;
         }
+        if (!HasGraveMarker(player, MOD_CRIMSON_BASTION) && !InGrave(player, GRAVE_CRIMSON, player))
+            player->RemoveAurasDueToSpell(SPELL_CRIMSON_WARD);
         if (!any || !player->IsAlive())
-        {
-            state.InBlight.clear();
             return;
-        }
-        bool lingering = state.Lingering < DOMINIONS && now < state.LingerUntil;
-        bool converging = HasGraveMarker(player, MOD_CONVERGING_GRAVES);
-        std::set<ObjectGuid> blighted;
+
+        bool spreading = HasGraveMarker(player, MOD_SPREADING_DEATH);
+        float burial = HasGraveMarker(player, MOD_DEEP_BURIAL) ? DEEP_BURIAL : SHARED_BURIAL;
         std::size_t hit = 0;
-        for (Unit* enemy : EnemiesAround(player, player, 40.0f))
+        for (Unit* enemy : EnemiesAround(player, player, 50.0f))
         {
-            uint8 count = ScarsHolding(player, enemy);
+            uint8 count = GravesHolding(player, enemy);
             if (!count)
                 continue;
-            if (++hit > SCAR_TARGETS)
+            if (++hit > GRAVE_TARGETS)
                 break;
-            float scale = !converging || count < 2 ? 1.0f : count >= 3 ? CONVERGING_THREE : CONVERGING_TWO;
-            Dominate(player, enemy, state.Dominion, scale);
-            if (lingering && enemy->IsAlive())
-                Dominate(player, enemy, state.Lingering, scale * LINGERING_OUTPUT);
-            if (state.Dominion == DOMINION_BLIGHT || (lingering && state.Lingering == DOMINION_BLIGHT))
-                blighted.insert(enemy->GetGUID());
+            if (count >= 2 && spreading)
+                state.Buried[enemy->GetGUID()] = now + SPREADING_MS;
+            auto buried = state.Buried.find(enemy->GetGUID());
+            bool shared = count >= 2 || (spreading && buried != state.Buried.end() && buried->second > now);
+            float scale = shared ? burial : 1.0f;
+            if (shared)
+                Lasting(player, enemy, SPELL_SHARED_BURIAL, 1500);
+            for (uint8 grave = 0; grave < GRAVES && enemy->IsAlive(); ++grave)
+            {
+                if (!InGrave(player, grave, enemy))
+                    continue;
+                if (grave == GRAVE_FROZEN)
+                {
+                    int32 damage = std::max<int32>(1, int32(GravePower(player, SPELL_SCHOOL_MASK_FROST)
+                        * FROZEN_SHARE * scale));
+                    player->CastCustomSpell(enemy, SPELL_FROZEN_GRAVE, &damage, nullptr, nullptr, true);
+                    bool cruel = HasGraveMarker(player, MOD_CRUEL_WINTER);
+                    int32 slow = cruel ? CRUEL_WINTER_SLOW : GRAVE_SLOW;
+                    if (enemy->IsAlive())
+                        Lasting(player, enemy, SPELL_GRAVE_CHILL, cruel ? CRUEL_WINTER_MS : CHILL_MS, &slow);
+                }
+                else if (grave == GRAVE_PLAGUED)
+                {
+                    float power = GravePower(player, SPELL_SCHOOL_MASK_SHADOW);
+                    int32 damage = std::max<int32>(1, int32(power * PLAGUED_SHARE * scale));
+                    player->CastCustomSpell(enemy, SPELL_PLAGUED_GRAVE, &damage, nullptr, nullptr, true);
+                    if (HasGraveMarker(player, MOD_GRAVE_PESTILENCE) && enemy->IsAlive())
+                    {
+                        int32 tick = std::max<int32>(1, int32(power * PESTILENCE_SHARE));
+                        Lasting(player, enemy, SPELL_GRAVE_PESTILENCE, PESTILENCE_MS, &tick);
+                    }
+                }
+                else
+                {
+                    int32 damage = std::max<int32>(1, int32(GravePower(player, SPELL_SCHOOL_MASK_SHADOW)
+                        * CRIMSON_SHARE * scale));
+                    player->CastCustomSpell(enemy, SPELL_CRIMSON_GRAVE, &damage, nullptr, nullptr, true);
+                }
+            }
         }
-        for (ObjectGuid guid : state.InBlight)
-            if (!blighted.count(guid))
-                if (Unit* enemy = ObjectAccessor::GetUnit(*player, guid); Valid(player, enemy))
-                    Infect(player, enemy);
-        state.InBlight = std::move(blighted);
+        for (auto it = state.Buried.begin(); it != state.Buried.end();)
+            it = it->second <= now ? state.Buried.erase(it) : std::next(it);
     }
 
     // ---- Unbroken Onslaught ------------------------------------------------------------------------------------
@@ -2709,7 +2635,7 @@ namespace
         PlaceDecals(player, SPELL_SOLAR_ANCHOR, anchors);
     }
 
-    // Fireball: a Sunshard in the target (refreshed if it has one), two held at most (three with Twin Suns): the
+    // A fire spell: a Sunshard in the target (refreshed if it has one), five held at most (seven with Wildfire): the
     // oldest goes. Solar Anchor: the shard stays where it went in.
     void Embed(Player* player, Unit* target)
     {
@@ -2718,7 +2644,7 @@ namespace
         bool anchor = HasSunMarker(player, MOD_SOLAR_ANCHOR);
         if (!HasShard(player, target))
         {
-            std::size_t most = HasSunMarker(player, MOD_TWIN_SUNS) ? TWIN_SUNS_SHARDS : MAX_SHARDS;
+            std::size_t most = HasSunMarker(player, MOD_WILDFIRE) ? WILDFIRE_SHARDS : MAX_SHARDS;
             while (state.Shards.size() >= most)
             {
                 if (Unit* oldest = ObjectAccessor::GetUnit(*player, state.Shards.front()))
@@ -2738,11 +2664,73 @@ namespace
         PlaceDecals(player, SPELL_SOLAR_ANCHOR, anchors);
     }
 
-    // Frostbolt on a shard's host: it breaks, 60% of the bolt's damage to each enemy within 8 yards (up to 8): about
-    // the host, or its anchor (Solar Anchor), or the Hero's own target (Orbiting Sun); a cone away from the Hero
-    // (Splinterstorm), a line on through it (Solar Lance); Scalding Ground leaves a hazard. A Broken Core stays.
-    void Fracture(Player* player, Unit* host, float base)
+    // Fireball and Pyroblast: the shard spreads to 2 more enemies within 8 yards of the target (4 with Wildfire),
+    // those without one first, nearest first.
+    void Spread(Player* player, Unit* target)
     {
+        std::size_t count = HasSunMarker(player, MOD_WILDFIRE) ? WILDFIRE_SPREAD : SPREAD;
+        std::vector<Unit*> around = EnemiesAround(player, target, SPREAD_RANGE);
+        std::stable_partition(around.begin(), around.end(), [player](Unit* enemy) { return !HasShard(player, enemy); });
+        for (Unit* enemy : around)
+        {
+            if (!count)
+                break;
+            if (enemy == target)
+                continue;
+            Embed(player, enemy);
+            --count;
+        }
+    }
+
+    // The Hero's floor for a fracture's base: level x 4 and 40% of their spell power (Fire or Frost, the higher),
+    // with their Frostfire damage bonuses; a weak frost spell (Frost Nova, Ice Lance) still breaks a shard well.
+    float SunPower(Player* player)
+    {
+        float power = float(std::max(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE),
+            player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FROST)));
+        return (SUN_LEVEL * player->GetLevel() + power * SUN_POWER) * player->GetTotalAuraMultiplierByMiscMask(
+            SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, SPELL_SCHOOL_MASK_FIRE | SPELL_SCHOOL_MASK_FROST);
+    }
+
+    void Fracture(Player* player, Unit* host, float base, std::shared_ptr<std::set<ObjectGuid>> chained = nullptr);
+
+    // The chain reaction: every other shard within 10 yards of a fracture (15 with Endless Chain) breaks a moment
+    // later at 75% of it (the same with Endless Chain), and so on; each shard once a chain.
+    void ChainFrom(Player* player, Position const& at, float base, std::shared_ptr<std::set<ObjectGuid>> chained)
+    {
+        bool endless = HasSunMarker(player, MOD_ENDLESS_CHAIN);
+        float radius = endless ? ENDLESS_RADIUS : CHAIN_RADIUS;
+        float next = base * (endless ? 1.0f : CHAIN_FALLOFF);
+        uint32 link = 0;
+        for (ObjectGuid guid : StateOf(player).Shards)
+        {
+            if (chained->count(guid))
+                continue;
+            Unit* other = ObjectAccessor::GetUnit(*player, guid);
+            if (!other || !HasShard(player, other) || other->GetExactDist2d(&at) > radius)
+                continue;
+            chained->insert(guid);
+            ++link;
+            player->m_Events.AddEventAtOffset([player, guid, next, chained]()
+            {
+                if (!player->IsInWorld() || !player->IsAlive())
+                    return;
+                if (Unit* shard = ObjectAccessor::GetUnit(*player, guid); shard && HasShard(player, shard))
+                    Fracture(player, shard, next, chained);
+            }, Milliseconds(CHAIN_LINK_MS * link));
+        }
+    }
+
+    // A frost spell on a shard's host: it breaks, 60% of its damage (or the Hero's floor) to each enemy within 8
+    // yards (up to 8): about the host, or its anchor (Solar Anchor), or the Hero's own target (Orbiting Sun); a cone
+    // away from the Hero (Splinterstorm), a line on through it (Solar Lance); Scalding Ground leaves a hazard. A
+    // Broken Core stays; the chain reaction follows.
+    void Fracture(Player* player, Unit* host, float base, std::shared_ptr<std::set<ObjectGuid>> chained)
+    {
+        if (!chained)
+            chained = std::make_shared<std::set<ObjectGuid>>();
+        chained->insert(host->GetGUID());
+        base = std::max(base, SunPower(player));
         State& state = StateOf(player);
         host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
         Position at = host->GetPosition();
@@ -2788,31 +2776,22 @@ namespace
             state.ScaldTimer = 0;
             PlaceDecals(player, SPELL_SCALDING_GROUND, { at });
         }
+        ChainFrom(player, at, base, chained);
     }
 
-    // Fireball on a Broken Core: the inward collapse, the Fireball's damage again on it (40% more with Implosion);
-    // Chain Reaction breaks one other shard within 15 yards; Second Sunrise pulses there 2 sec on, 40% to each
-    // enemy within 8 yards, 10% more for each other one there (50% at most).
+    // A fire spell on a Broken Core: the inward collapse, its damage again on it (the Hero's floor at least; 40% more
+    // with Implosion); Second Sunrise pulses there 2 sec on, 40% to each enemy within 8 yards, 10% more for each
+    // other one there (50% at most).
     void Collapse(Player* player, Unit* host, float fireball)
     {
         host->RemoveAurasDueToSpell(SPELL_BROKEN_CORE, player->GetGUID());
         host->CastSpell(host, SPELL_COLLAPSE_LOOK, true);
+        fireball = std::max(fireball, SunPower(player));
         int32 damage = std::max<int32>(1, int32(fireball * COLLAPSE_SHARE
             * (HasSunMarker(player, MOD_IMPLOSION) ? IMPLOSION : 1.0f)));
         Position at = host->GetPosition();
         player->CastCustomSpell(host, SPELL_COLLAPSE, &damage, nullptr, nullptr, true);
 
-        if (HasSunMarker(player, MOD_CHAIN_REACTION))
-        {
-            PruneShards(player);
-            for (ObjectGuid guid : StateOf(player).Shards)
-                if (Unit* other = ObjectAccessor::GetUnit(*player, guid); other && other != host
-                    && other->GetExactDist2d(&at) <= CHAIN_RANGE)
-                {
-                    Fracture(player, other, fireball * CHAIN_SHARE);
-                    break;
-                }
-        }
         if (HasSunMarker(player, MOD_SECOND_SUNRISE))
             player->m_Events.AddEventAtOffset([player, at, fireball]()
             {
@@ -2850,15 +2829,15 @@ namespace
             player->CastCustomSpell(enemy, SPELL_FRACTURE, &damage, nullptr, nullptr, true);
     }
 
-    // What the five leave behind (death, logout, a spec or modifier change): scars, the wake, a pending echo and
-    // its ground, the echoes, the shards. The vow and the Dominion stay.
+    // What the five leave behind (death, logout, a spec or modifier change): the Graves and their shield, the wake,
+    // a pending echo and its ground, the echoes, the shards. The vow stays.
     void ClearLegends(Player* player)
     {
         State& state = StateOf(player);
-        for (uint8 scar = 0; scar < SCARS; ++scar)
-            ClearScar(player, scar);
-        state.InBlight.clear();
-        state.LingerUntil = 0;
+        for (uint8 grave = 0; grave < GRAVES; ++grave)
+            ClearGrave(player, grave);
+        player->RemoveAurasDueToSpell(SPELL_CRIMSON_WARD);
+        state.Buried.clear();
         EndWake(player);
         state.Pending = false;
         state.SacredUntil = 0;
@@ -2875,12 +2854,10 @@ namespace
         player->RemoveDynObject(SPELL_SCALDING_GROUND);
     }
 
-    // The actions the rune teaches while it is the active spec's (taught again at each login, never saved):
-    // Requiem (Chosen Ending: its three), Dawn Vow; the Dominion's buff; the vow on the Hero until they choose.
+    // The action the rune teaches while it is the active spec's (taught again at each login, never saved): Dawn Vow;
+    // the vow on the Hero until they choose.
     void ApplyLegend(Player* player, uint8 rune)
     {
-        bool grave = rune == RUNE_THREEFOLD_GRAVE;
-        bool chosen = grave && HasGraveMarker(player, MOD_CHOSEN_ENDING);
         auto teach = [player](uint32 spellId, bool wanted)
         {
             if (wanted && !player->HasSpell(spellId))
@@ -2888,20 +2865,13 @@ namespace
             else if (!wanted && player->HasSpell(spellId))
                 player->removeSpell(spellId, SPEC_MASK_ALL, true);
         };
-        teach(SPELL_REQUIEM, grave && !chosen);
-        for (uint8 dominion = 0; dominion < DOMINIONS; ++dominion)
-            teach(SPELL_REQUIEM_FIRST + dominion, chosen);
+        // The Threefold Grave's first draft taught Requiem (90831) and three more (90832-90834), and wore a
+        // Dominion (90835-90837): gone with it.
+        for (uint32 old = 90831; old <= 90834; ++old)
+            teach(old, false);
+        for (uint32 old = 90835; old <= 90837; ++old)
+            player->RemoveAurasDueToSpell(old);
         teach(SPELL_DAWN_VOW, rune == RUNE_DAWNBOUND_CRUSADER);
-
-        State& state = StateOf(player);
-        if (grave)
-        {
-            if (!player->HasAura(SPELL_DOMINION_FIRST + state.Dominion))
-                SetDominion(player, state.Dominion, false);
-        }
-        else
-            for (uint8 dominion = 0; dominion < DOMINIONS; ++dominion)
-                player->RemoveAurasDueToSpell(SPELL_DOMINION_FIRST + dominion);
         if (rune != RUNE_DAWNBOUND_CRUSADER)
             DropVow(player);
         else if (VowOf(player) == player)
@@ -3633,46 +3603,12 @@ class spell_titan_rune_mist_technique : public SpellScript
     }
 };
 
-// Requiem with the Threefold Grave: the next Dominion; Chosen Ending's three: theirs.
-class spell_titan_rune_requiem : public SpellScript
+// Icy Touch, Plague Strike and Blood Strike (every rank) with the Threefold Grave: their Grave.
+class spell_titan_rune_grave_strike : public SpellScript
 {
-    PrepareSpellScript(spell_titan_rune_requiem);
+    PrepareSpellScript(spell_titan_rune_grave_strike);
 
-    void Turn()
-    {
-        Player* player = GetCaster()->ToPlayer();
-        if (!player || !player->HasAura(SPELL_RUNE_THREEFOLD_GRAVE))
-            return;
-        uint32 id = GetSpellInfo()->Id;
-        SetDominion(player, id == SPELL_REQUIEM ? NextDominion(player) : uint8(id - SPELL_REQUIEM_FIRST), true);
-        if (id == SPELL_REQUIEM)
-            return;
-        // Chosen Ending: the three share their cooldown (each its own in the data, the others set here).
-        WorldPacket data(SMSG_SPELL_COOLDOWN, 8 + 1 + 2 * 8);
-        data << player->GetGUID();
-        data << uint8(0);
-        for (uint8 dominion = 0; dominion < DOMINIONS; ++dominion)
-            if (uint32 other = SPELL_REQUIEM_FIRST + dominion; other != id)
-            {
-                player->AddSpellCooldown(other, 0, CHOSEN_ENDING_MS);
-                data << uint32(other) << uint32(CHOSEN_ENDING_MS);
-            }
-        player->SendDirectMessage(&data);
-    }
-
-    void Register() override
-    {
-        AfterCast += SpellCastFn(spell_titan_rune_requiem::Turn);
-    }
-};
-
-// Icy Touch, Plague Strike and Blood Strike (every rank) with the Threefold Grave: their scar; Blood Strike's
-// Grave Ward first (standing in a scar as it lands).
-class spell_titan_rune_scar_strike : public SpellScript
-{
-    PrepareSpellScript(spell_titan_rune_scar_strike);
-
-    void Inscribe()
+    void Lay()
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
@@ -3681,17 +3617,14 @@ class spell_titan_rune_scar_strike : public SpellScript
         _done = true;
         uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
         if (first == SPELL_BLOOD_STRIKE)
-        {
-            GraveWard(player, GetHitDamage());
-            ::Inscribe(player, SCAR_BLOOD_CIRCLE, target);
-        }
+            BloodStrike(player);
         else
-            ::Inscribe(player, first == SPELL_ICY_TOUCH ? SCAR_FROZEN_LINE : SCAR_DISEASED_PATCH, target);
+            LayTargetGrave(player, first == SPELL_ICY_TOUCH ? GRAVE_FROZEN : GRAVE_PLAGUED, target);
     }
 
     void Register() override
     {
-        AfterHit += SpellHitFn(spell_titan_rune_scar_strike::Inscribe);
+        AfterHit += SpellHitFn(spell_titan_rune_grave_strike::Lay);
     }
 
     bool _done = false;
@@ -3864,8 +3797,9 @@ class spell_titan_rune_mind_blast : public SpellScript
     }
 };
 
-// Fireball and Frostbolt (every rank) with the Shattered Sun: a Fireball collapses a Broken Core or embeds a shard,
-// a Frostbolt fractures a shard.
+// The Shattered Sun's fire spells (Fireball, Pyroblast, Fire Blast, Scorch; every rank) collapse a Broken Core or
+// embed a shard (Fireball and Pyroblast spread it); its frost spells (Frostbolt, Ice Lance, Frost Nova, Cone of Cold)
+// fracture a shard.
 class spell_titan_rune_shattered_sun : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_shattered_sun);
@@ -3876,8 +3810,10 @@ class spell_titan_rune_shattered_sun : public SpellScript
         Unit* target = GetHitUnit();
         if (!player || !target || !player->HasAura(SPELL_RUNE_SHATTERED_SUN))
             return;
-        float damage = float(std::max(1, GetHitDamage()));
-        if (GetSpellInfo()->GetFirstRankSpell()->Id == SPELL_FROSTBOLT)
+        float damage = float(std::max(0, GetHitDamage()));
+        uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        if (first == SPELL_FROSTBOLT || first == SPELL_ICE_LANCE || first == SPELL_FROST_NOVA
+            || first == SPELL_CONE_OF_COLD)
         {
             if (HasShard(player, target))
                 Fracture(player, target, damage);
@@ -3887,6 +3823,8 @@ class spell_titan_rune_shattered_sun : public SpellScript
             Collapse(player, target, damage);
         else if (target->IsAlive())
             Embed(player, target);
+        if (first == SPELL_FIREBALL || first == SPELL_PYROBLAST)
+            Spread(player, target);
     }
 
     void Register() override
@@ -4274,8 +4212,7 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_soothing_mist_cast);
     RegisterSpellScript(spell_titan_rune_soothing_mist);
     RegisterSpellScript(spell_titan_rune_mist_technique);
-    RegisterSpellScript(spell_titan_rune_requiem);
-    RegisterSpellScript(spell_titan_rune_scar_strike);
+    RegisterSpellScript(spell_titan_rune_grave_strike);
     RegisterSpellScript(spell_titan_rune_wake_cut);
     RegisterSpellScript(spell_titan_rune_unbroken_onslaught);
     RegisterSpellScript(spell_titan_rune_dawn_vow);

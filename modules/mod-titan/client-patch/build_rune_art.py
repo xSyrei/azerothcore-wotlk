@@ -134,8 +134,8 @@ RUNES = [
      'on from.', 'Chain Heal and Earth Shield', 'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10ZM8 14c2 2 6 2 8 0'),
     (26, (90, 225, 140), 'Mistweaver · Jade Mist', 'Soothing Mist sends ribbons of jade mist to your injured '
      'allies.', 'Soothing Mist', 'M4 9c3-3 6-3 8 0s5 3 8 0M4 15c3-3 6-3 8 0s5 3 8 0'),
-    (27, (150, 200, 235), 'Frost, Unholy & Blood · Grave', 'Three strikes scar the ground; Requiem turns what '
-     'every scar does.', 'Icy Touch, Plague Strike and Blood Strike',
+    (27, (150, 200, 235), 'Frost, Unholy & Blood · Grave', 'Three strikes lay three Graves; enemies caught in '
+     'two take more.', 'Icy Touch, Plague Strike and Blood Strike',
      'M12 3a6 6 0 0 0-6 6c0 2.4 1.2 3.8 2 4.6V17h8v-3.4c.8-.8 2-2.2 2-4.6a6 6 0 0 0-6-6ZM10 10h.01M14 10h.01'
      'M9 21h6M10 17v4M14 17v4'),
     (28, (235, 70, 60), 'Arms & Fury · Onslaught', 'Mortal Strike cuts a wake; your next strike through it reopens '
@@ -146,8 +146,8 @@ RUNES = [
     (30, (170, 110, 235), 'Shadow · Congregation', 'Mind Flay leaves hollow echoes; Mind Blast commands them.',
      'Mind Flay and Mind Blast',
      'M12 3c-3 0-5 2.5-5 6v10l2-2 3 3 3-3 2 2V9c0-3.5-2-6-5-6ZM10 10h.01M14 10h.01'),
-    (31, (120, 200, 240), 'Fire & Frost · Shattered Sun', 'Fireball embeds a Sunshard; Frostbolt breaks it, '
-     'Fireball collapses it.', 'Fireball and Frostbolt',
+    (31, (120, 200, 240), 'Fire & Frost · Shattered Sun', 'Fire seeds burning shards; frost shatters them in a '
+     'chain reaction.', 'Your fire and frost spells',
      'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2'),
 ]
 
@@ -347,42 +347,42 @@ BUILT = {
                   'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z'],
     },
     27: {
-        'core': '**Icy Touch**, **Plague Strike** and **Blood Strike** each leave a scar. **Requiem** turns your '
-                'Dominion, Rime to Blight to Gore, and every scar changes with it.',
-        'slots': ['Inscription', 'Dominion', 'Requiem'],
-        'asks': ['How your scars lie', 'What your Dominion becomes', 'How Requiem turns'],
+        'core': '**Icy Touch**, **Plague Strike** and **Blood Strike** each lay a Grave for 8 sec. Enemies in two'
+                ' or more take 20% more; **Blood Strike** in your Crimson Grave grants a shield.',
+        'slots': ['Burial Grounds', 'Gravekeeper', 'Shared Burial'],
+        'asks': ['Where your Graves lie', 'What your Graves keep', 'How the overlap pays'],
         'texts': [
-            'Enemies in two scars take 30% more, in all three 50% more.',
-            'Your blood circle follows you.',
-            'Your scars last 20 sec instead of 12.',
-            'Rime slows by 50%; its farewell freezes enemies for 2 sec.',
-            'Blight deals 30% more; its residual infection lasts 6 sec.',
-            'Grave Ward takes 40% of Blood Strike, up to 15% of your health, and Gore keeps it all.',
-            'Requiem turns the other way: Rime to Gore to Blight.',
-            'The Dominion you leave works at half for 3 sec.',
-            'Requiem becomes three actions, one for each Dominion, sharing 20 sec.',
+            'Icy Touch and Plague Strike lay their Graves on your Crimson Grave nearby.',
+            'Your Crimson Grave follows you.',
+            'Frozen and Plagued Graves are 50% wider.',
+            'The Frozen Grave slows by 50%, and the slow lingers 3 sec.',
+            'The Plagued Grave leaves a short disease on what it damages.',
+            'The Crimson shield holds up to 25% of your health and stays when you leave.',
+            "Shared Burial raises your Graves' damage by 35%.",
+            'Enemies leaving an overlap keep Shared Burial for 3 sec.',
+            'Blood Strike in two Graves extends your Graves by 2 sec, once each.',
         ],
         'abilities': [
+            'Gather',
+            'Follow',
+            'Radius',
+            'Frost',
+            'Disease',
+            'Blood',
             'Overlap',
-            'Blood circle',
-            'Duration',
-            'Rime',
-            'Blight',
-            'Gore',
-            'Order',
-            'Transitions',
-            'Control',
+            'Linger',
+            'Extend',
         ],
         'icons': [
             'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
             'M8 4c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4ZM16 10c1.5 0 2 2 2 4s-1 3-2 3-2-1-2-3 .5-4 2-4Z',
-            'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 7v5l3 2',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0',
             'M12 2v20M2 12h20M5 5l14 14M19 5 5 19',
             'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z',
             'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6Z',
-            'M4 8h14l-4-4M20 16H6l4 4',
-            'M4 12a8 8 0 0 1 14-5l2-2v6h-6l2-2a5 5 0 0 0-9 3',
             'M6 6h.01M12 6h.01M18 6h.01M6 12h12M6 18h12',
+            'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 7v5l3 2',
+            'M4 12a8 8 0 0 1 14-5l2-2v6h-6l2-2a5 5 0 0 0-9 3',
         ],
     },
     28: {
@@ -503,23 +503,24 @@ BUILT = {
         ],
     },
     31: {
-        'core': '**Fireball** embeds a burning **Sunshard**. **Frostbolt** fractures it into a ring of burning '
-                'ice, and your next **Fireball** collapses the Broken Core.',
+        'core': 'Your fire spells embed burning **Sunshards**, Fireball and Pyroblast in nearby enemies too. Your'
+                ' frost spells shatter one in a **chain reaction** through the rest; fire then collapses the '
+                '**Broken Core**.',
         'slots': ['Formation', 'Fracture', 'Collapse'],
-        'asks': ['How your shards are held', 'How a shard breaks', 'How the core collapses'],
+        'asks': ['How your shards spread', 'How a shard breaks', 'What the collapse adds'],
         'texts': [
-            'Hold a third shard on another enemy.',
+            'Fireball and Pyroblast spread to 4 more enemies; hold 7 shards.',
             'A breaking shard blasts your current target.',
             'A shard stays on the ground where it went in.',
             'The fracture becomes a cone away from you, 12 yards.',
             'The fracture pierces on through in a line, 20 yards.',
             'The fracture leaves Frostfire ground for 4 sec.',
             'The collapse deals 40% more.',
-            'The collapse breaks one other shard nearby.',
+            'Chain reactions reach 15 yards and lose no strength.',
             'The collapse pulses again 2 sec later, stronger on a crowd.',
         ],
         'abilities': [
-            'Three',
+            'Spread',
             'Orbit',
             'Anchor',
             'Cone',
@@ -530,7 +531,7 @@ BUILT = {
             'Pulse',
         ],
         'icons': [
-            'M6 6h.01M12 6h.01M18 6h.01M6 12h12M6 18h12',
+            'M12 3v8M12 11 5 21M12 11l7 10',
             'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0',
             'M3 18h18M6 14h12M9 10h6',
             'M12 20 4 6h16Z',
@@ -570,7 +571,7 @@ for _name in ['Invocation', 'Manifestation', 'Adaptation', 'Presence', 'Covenant
               'Lightning Shield', 'Thunderfield', 'Echo Pattern', 'Shield Resonance', 'Wellspring', 'Current',
               'Undertow', 'Mistflow', 'Technique', "Mistweaver's Approach", 'Inscription', 'Dominion',
               'Requiem', 'Wake', 'Follow-Through', 'Pursuit', 'Doctrine', 'Oath', 'Congregation', 'Sermon',
-              'Command', 'Formation', 'Fracture', 'Collapse']:
+              'Command', 'Formation', 'Fracture', 'Collapse', 'Burial Grounds', 'Gravekeeper', 'Shared Burial']:
     _key = ''.join(c for c in _name if c.isalnum())
     LABELS[f'Choose{_key}'] = {'text': 'Choose your ' + _name, 'font': '700 28px Cinzel', 'spacing': '3px',
                                 'color': '#ffe2a8', 'glows': [['rgba(255,150,60,0.55)', 20]], 'shadow': '#000',

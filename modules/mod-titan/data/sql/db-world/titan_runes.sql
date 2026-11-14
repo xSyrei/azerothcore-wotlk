@@ -128,20 +128,17 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90813, 0, 0, 0, 0, 'Wandering Mist - Rolling Mist'),
 (90814, 0, 0, 0, 0, 'Wandering Mist - Jade Shelter');
 
--- The five runes after them. The Threefold Grave: Requiem (and Chosen Ending's three) turn the Dominion; Icy
--- Touch, Plague Strike and Blood Strike (every rank) inscribe their scars.
+-- The five runes after them. The Threefold Grave: Icy Touch, Plague Strike and Blood Strike (every rank) lay
+-- their Graves.
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_requiem', 'spell_titan_rune_scar_strike',
+    'spell_titan_rune_grave_strike',
     'spell_titan_rune_wake_cut', 'spell_titan_rune_unbroken_onslaught', 'spell_titan_rune_dawn_vow',
     'spell_titan_rune_judgement', 'spell_titan_rune_dawn_echo', 'spell_titan_rune_mind_flay',
     'spell_titan_rune_mind_blast', 'spell_titan_rune_shattered_sun');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(90831, 'spell_titan_rune_requiem'),
-(90832, 'spell_titan_rune_requiem'),
-(90833, 'spell_titan_rune_requiem'),
-(90834, 'spell_titan_rune_requiem'),
-(-45477, 'spell_titan_rune_scar_strike'),
-(-45462, 'spell_titan_rune_scar_strike'),
-(-45902, 'spell_titan_rune_scar_strike'),
+(-45477, 'spell_titan_rune_grave_strike'),
+(-45462, 'spell_titan_rune_grave_strike'),
+(-45902, 'spell_titan_rune_grave_strike'),
 -- Unbroken Onslaught: Mortal Strike and Bloodthirst (every rank) cut the wake; the rune's aura reads every other
 -- melee ability.
 (-12294, 'spell_titan_rune_wake_cut'),
@@ -158,9 +155,16 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 -- The Hollow Congregation: Mind Flay leaves the echoes, Mind Blast commands them (every rank).
 (-15407, 'spell_titan_rune_mind_flay'),
 (-8092, 'spell_titan_rune_mind_blast'),
--- The Shattered Sun: Fireball and Frostbolt (every rank).
+-- The Shattered Sun: its fire spells (Fireball, Pyroblast, Fire Blast, Scorch) and frost spells (Frostbolt, Ice
+-- Lance, Frost Nova, Cone of Cold), every rank.
 (-133, 'spell_titan_rune_shattered_sun'),
-(-116, 'spell_titan_rune_shattered_sun');
+(-11366, 'spell_titan_rune_shattered_sun'),
+(-2136, 'spell_titan_rune_shattered_sun'),
+(-2948, 'spell_titan_rune_shattered_sun'),
+(-116, 'spell_titan_rune_shattered_sun'),
+(-30455, 'spell_titan_rune_shattered_sun'),
+(-122, 'spell_titan_rune_shattered_sun'),
+(-120, 'spell_titan_rune_shattered_sun');
 
 -- Unbroken Onslaught's procs: melee abilities that hit (normal, crit or absorbed); the script picks the ones that
 -- reopen the wake.
@@ -174,11 +178,11 @@ INSERT INTO `spell_proc` (`SpellId`, `SchoolMask`, `SpellFamilyName`, `SpellFami
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (90838, 90840, 90841, 90842, 90843, 90861, 90862, 90864, 90894,
     90895, 90922, 90923, 90924, 90925, 90953, 90955);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
-(90838, 0, 0, 0, 0, 'Threefold Grave - Rime'),
-(90840, 0, 0, 0, 0, 'Threefold Grave - Blight'),
-(90841, 0, 0, 0, 0, 'Threefold Grave - Residual Infection'),
-(90842, 0, 0, 0, 0, 'Threefold Grave - Gore'),
-(90843, 0, 0, 0, 0, 'Threefold Grave - Grave Ward'),
+(90838, 0, 0, 0, 0, 'Threefold Grave - Frozen Grave'),
+(90840, 0, 0, 0, 0, 'Threefold Grave - Plagued Grave'),
+(90841, 0, 0, 0, 0, 'Threefold Grave - Grave Pestilence'),
+(90842, 0, 0, 0, 0, 'Threefold Grave - Crimson Grave'),
+(90843, 0, 0, 0, 0, 'Threefold Grave - Crimson Ward'),
 (90861, 0, 0, 0, 0, 'Unbroken Onslaught - Weapon Wake'),
 (90862, 0, 0, 0, 0, 'Unbroken Onslaught - Bloodletting'),
 (90864, 0, 0, 0, 0, 'Unbroken Onslaught - Aftershock'),

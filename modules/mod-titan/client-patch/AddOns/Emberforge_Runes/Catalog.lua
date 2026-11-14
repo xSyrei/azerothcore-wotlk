@@ -1666,44 +1666,45 @@ EmberforgeRunesCatalog = {
       role = "Melee DPS or Tank (Icy Touch, Plague Strike, Blood Strike)",
       roles = { "DAMAGER", "TANK" },
       icon = "Ability_Rune_ThreefoldGrave",
-      slots = { "Inscription", "Dominion", "Requiem" },
+      slots = { "Burial Grounds", "Gravekeeper", "Shared Burial" },
       builtFrom = "Icy Touch, Plague Strike and Blood Strike",
-      spentWith = "Requiem",
-      resource = "None: your scars",
-      core = "Icy Touch inscribes a frozen line beneath its target, Plague Strike a diseased patch beneath its " ..
-          "target, Blood Strike a blood circle beneath you: one scar of each, for 12 sec; recasting moves it. " ..
-          "Requiem (taught by the rune, 8 sec cooldown) turns your Dominion, Rime to Blight to Gore, and every " ..
-          "scar changes with it. Rime: frost damage and a 30% slow. Blight: disease damage, and enemies leaving " ..
-          "carry a residual infection. Gore: blood damage, and Blood Strike landed while you stand in a scar " ..
-          "grants a Grave Ward (an absorb, up to 10% of your health). The Dominion you leave bids a farewell: " ..
-          "Rime a last burst of slowing frost, Blight every residual infection at once, Gore keeps half its ward " ..
-          "a few seconds. Farewells share one budget between your scars.",
-      loop = "Lay the scars where the fight will be, then turn the Dominion as enemies move in and damage comes.",
+      spentWith = "Your Graves",
+      resource = "None: one Grave of each kind",
+      core = "Icy Touch lays a Frozen Grave beneath its target (Frost damage and a 30% slow), Plague Strike a " ..
+          "Plagued Grave (Shadow damage), Blood Strike a Crimson Grave beneath you (damage): one of each, 8 sec; " ..
+          "another replaces it. Enemies standing in two or more take 20% more from your Graves (Shared Burial). " ..
+          "Blood Strike landed inside your Crimson Grave keeps it where it is and grants a shield of 5% of your " ..
+          "health, up to 15% (once every 3 sec; the strike that lays the Grave grants it at once).",
+      loop = "Against a boss, set your Crimson Grave with Blood Strike, then lay the Frozen and Plagued Graves " ..
+          "beneath it and fight from the overlap. Against a pack, frost across its approach, disease where it " ..
+          "gathers, blood where you stand.",
       mods = {
-        { name = "Converging Graves",
-          text = "An enemy standing in two of your scars takes 30% more from them, in all three 50% more." },
-        { name = "March of the Dead", text = "Your blood circle follows you." },
-        { name = "Long Burial", text = "Your scars last 20 sec instead of 12." },
+        { name = "Gathered Dead",
+          text = "Icy Touch and Plague Strike lay their Graves on your Crimson Grave when it is within 10 yards of " ..
+              "the struck enemy." },
+        { name = "March of the Dead",
+          text = "Your Crimson Grave follows you. Frozen and Plagued Graves stay where they are laid." },
+        { name = "Far-Reaching Graves", text = "Frozen and Plagued Graves are 50% wider." },
         { name = "Cruel Winter",
-          text = "Rime slows by 50% instead of 30%, and its farewell freezes enemies in place for 2 sec." },
+          text = "The Frozen Grave slows by 50%, and enemies leaving it stay slowed for 3 sec." },
         { name = "Grave Pestilence",
-          text = "Blight deals 30% more, and its residual infection lasts 6 sec instead of 3." },
+          text = "The Plagued Grave infects the enemies it damages with a short disease; further hits refresh it." },
         { name = "Crimson Bastion",
-          text = "Grave Ward takes 40% of Blood Strike's damage, up to 15% of your health, and Gore's farewell " ..
-              "keeps all of it." },
-        { name = "Reverse the Dirge", text = "Requiem turns the other way: Rime to Gore to Blight." },
-        { name = "Lingering Dominion",
-          text = "The Dominion you leave keeps working at half strength for 3 sec." },
-        { name = "Chosen Ending",
-          text = "Requiem becomes three actions, one for each Dominion, sharing a 20 sec cooldown." },
+          text = "The Crimson Grave's shield holds up to 25% of your health, and stays when you leave the Grave." },
+        { name = "Deep Burial", text = "Shared Burial raises your Graves' damage by 35% instead of 20%." },
+        { name = "Spreading Death",
+          text = "Enemies leaving an overlap keep Shared Burial for 3 sec in any of your Graves." },
+        { name = "Hallowed by Nothing",
+          text = "Blood Strike landed while you stand in your Crimson Grave and another Grave extends your Graves " ..
+              "by 2 sec, each once." },
       },
       builds = {
-        { name = "The Frozen Gate", mods = { "Long Burial", "Cruel Winter", "Chosen Ending" },
-          text = "Hold a chokepoint with lasting scars and a frost you call down when you need it." },
-        { name = "The Plague Field", mods = { "Converging Graves", "Grave Pestilence", "Lingering Dominion" },
-          text = "Stack the scars on one spot and let the sickness linger through each turn." },
-        { name = "The Crimson Wall", mods = { "March of the Dead", "Crimson Bastion", "Reverse the Dirge" },
-          text = "Carry your circle into the fight and keep a ward up between turns." },
+        { name = "The Killing Floor", mods = { "Gathered Dead", "Grave Pestilence", "Deep Burial" },
+          text = "Stack every Grave on one spot and keep the boss buried in it." },
+        { name = "The Moving Crypt", mods = { "March of the Dead", "Crimson Bastion", "Spreading Death" },
+          text = "Carry your circle through the fight and keep your shield with you." },
+        { name = "The Long Vigil", mods = { "Far-Reaching Graves", "Cruel Winter", "Hallowed by Nothing" },
+          text = "Hold wide ground, slow what comes and keep your Graves standing." },
       },
     },
     { id = 28,
@@ -1835,22 +1836,23 @@ EmberforgeRunesCatalog = {
     },
     { id = 31,
       name = "Rune of the Shattered Sun",
-      role = "Ranged DPS (Fireball, Frostbolt)",
+      role = "Ranged DPS (fire and frost spells)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_ShatteredSun",
       slots = { "Formation", "Fracture", "Collapse" },
-      builtFrom = "Fireball",
-      spentWith = "Frostbolt, then Fireball",
+      builtFrom = "Fireball, Pyroblast, Fire Blast or Scorch",
+      spentWith = "Frostbolt, Ice Lance, Frost Nova or Cone of Cold",
       resource = "None: your Sunshards",
-      core = "Fireball embeds a burning Sunshard in its target for 15 sec: two at most, on different enemies; " ..
-          "another Fireball refreshes it. Frostbolt striking that enemy fractures the shard into a ring of " ..
-          "burning ice, 60% of the Frostbolt's damage to each enemy within 8 yards. The enemy keeps a Broken Core " ..
-          "for 6 sec: your next Fireball on it collapses it inward, its damage again as Frostfire. Each shard " ..
-          "fractures and collapses once, and these never make more shards.",
-      loop = "Embed, fracture outward, then collapse inward: finish on a priority enemy, or spread shards through " ..
-          "a pack before breaking them.",
+      core = "Your fire spells embed a burning Sunshard in their target for 15 sec; Fireball and Pyroblast also " ..
+          "spread one to 2 more enemies within 8 yards (5 shards at most). Your frost spells fracture a shard " ..
+          "into a ring of burning ice, 60% of their damage to each enemy within 8 yards, and set off every shard " ..
+          "within 10 yards in a chain reaction, each link 75% of the last. A fractured enemy keeps a Broken Core " ..
+          "for 6 sec: your next fire spell on it collapses it inward for its damage again.",
+      loop = "Seed a pack with Fireball, then break one shard with a frost spell and watch the rest go up. On a " ..
+          "single enemy: embed, fracture, collapse.",
       mods = {
-        { name = "Twin Suns", text = "Hold a third shard on another enemy." },
+        { name = "Wildfire",
+          text = "Fireball and Pyroblast spread shards to 4 more enemies, and you can hold 7." },
         { name = "Orbiting Sun",
           text = "A shard breaking sends its blast at your current target instead (within 40 yards)." },
         { name = "Solar Anchor",
@@ -1859,10 +1861,10 @@ EmberforgeRunesCatalog = {
           text = "The fracture becomes a broad cone facing away from you, 12 yards long." },
         { name = "Solar Lance", text = "The fracture pierces on through its enemy in a line, 20 yards." },
         { name = "Scalding Ground",
-          text = "The fracture leaves Frostfire ground for 4 sec, 15% of the Frostbolt each second." },
+          text = "The fracture leaves Frostfire ground for 4 sec, 15% of it each second." },
         { name = "Implosion", text = "The collapse deals 40% more to its enemy." },
-        { name = "Chain Reaction",
-          text = "The collapse also breaks one other shard within 15 yards, once, at half the Fireball's damage." },
+        { name = "Endless Chain",
+          text = "Chain reactions reach 15 yards instead of 10, and their links lose no strength." },
         { name = "Second Sunrise",
           text = "The collapse pulses again 2 sec later, 40% of it to each enemy within 8 yards, 10% more for " ..
               "every other enemy there (50% more at most)." },
@@ -1870,8 +1872,8 @@ EmberforgeRunesCatalog = {
       builds = {
         { name = "The Dying Star", mods = { "Orbiting Sun", "Solar Lance", "Implosion" },
           text = "Pour every shard into one enemy and break it hard." },
-        { name = "The Burning Field", mods = { "Twin Suns", "Scalding Ground", "Chain Reaction" },
-          text = "Seed a pack with shards and set them off together." },
+        { name = "The Burning Field", mods = { "Wildfire", "Scalding Ground", "Endless Chain" },
+          text = "Seed a whole pack and set it off in one chain." },
         { name = "The Eclipse", mods = { "Solar Anchor", "Splinterstorm", "Second Sunrise" },
           text = "Prepare the ground, then catch enemies as they gather on it." },
       },
