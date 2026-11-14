@@ -245,7 +245,7 @@ check(view.medal ~= nil and view.phase == "split", "the card condenses into the 
 run(1.6)
 check(view.phase == "build" and view.active == 1 and debug.choose.target == 1, "the slots, and the first choice")
 local options = debug.options
-check(options[1].name.text == "Infernal Pact" and options[1].text.text:find("once every 2 sec")
+check(options[1].name.text == "Infernal Pact" and options[1].text.text:find("twice as often")
     and options[1].ability.text == "YOUR DEMON", "the options in the mockup's words")
 check(options[3].missing and options[3].ability.text:find("NEEDS SHADOW BOLT OR INCINERATE"),
     "Dreadfire Discipline, missing Shadow Bolt or Incinerate, says so")

@@ -448,25 +448,18 @@ utility or a tradeoff) take one pick each, from three.
   its fonts are Cinzel and Alegreya Sans (`Fonts/`, SIL Open Font License).
 - **One rune per specialization**, chosen once: only a prestige clears them (`titan_runes`, db-characters; chosen
   again from level 5). Modifiers change freely out of combat. A new specialization picks its own.
-- **Built so far: the Rune of Fel Commandment** (rune 21; the other 20 are listed). Needs Throw Glaive and any one
-  of Demon's Bite, Chaos Strike, Shadow Bolt or Incinerate (Infernal Pact and Metamorphic Bond also a warlock demon
-  summon). Demon's Bite, Chaos Strike (2 on a crit), Shadow Bolt, Incinerate (2 each with Dreadfire Discipline,
-  which stops Demon's Bite's) and the Hero's demon (once every 4 sec) grant **Fel Command** (90701, up to 5, 20 sec). At 5, Throw Glaive also fires a **Chaos Bolt Volley**:
-  3 bolts 0.15 sec apart, the first at the target, the next at other enemies within 10 yards (nearest first,
-  crowd-controlled ones skipped), each 60% of a Chaos Bolt of the Hero's level plus the higher of spell power or
-  half attack power (Fire, never resisted). In Metamorphosis (the Demon Hunter's or Demonology's) 5 bolts and a
-  **Felguard** (910120, 8 sec: Felstorm, Cleave, no threat; another volley resets it). Its modifiers: Infernal Pact,
-  Demonic Ascension, Dreadfire Discipline (Shadow Bolt and Incinerate build 2, Demon's Bite none; offered only to a
-  Hero with one); Imp Legion, Shattered Glaive, Fel Host (both legions: every Throw Glaive spends the Fel Command,
-  a demon for each stack for 10 sec with no limit to how many are out, Fel Imps 910121, or Felguards in
-  Metamorphosis with Fel Host; each volley bolt deals 10% more for every demon out, the Hero's own included);
-  Metamorphic Bond, Fel Rift (Fel Rush to the volley's target, `demon_hunter.cpp`), Pact of Ruin. Numbers: the
-  doc's tuning table, in `runes.cpp`.
-- Spells 90700-90718 (`client-patch/patch_runes.py`, in `titan_demon_hunter_spells.sql` and the client patch): the
-  rune's aura (its procs grant the stacks), Fel Command, the bolt, the summons' no-threat auras, Commander's Fury (no
-  longer given), Metamorphic Bond, Fel Rift, Felstorm, Metamorphic Cleave, and one hidden marker per modifier. The panel's texts:
-  `Emberforge_Runes/Catalog.lua`, made from the doc by `tools/runes/make_catalog.py`. Throw Glaive's button glows
-  and shows Chaos Bolt at 5 Fel Command (a Felguard mark in Metamorphosis).
+- **Every rune is one trigger and one payoff** (all but the Sanctified Paragon, simplified together): nothing to
+  stand in, no marks or vows to keep up, effects follow the Hero or the target; each rune is worth about 15-20% of its
+  role's output on one target, AoE on top. Every modifier is one plain sentence. Numbers live in `runes.cpp`.
+- **The Rune of Fel Commandment** (rune 21). Needs Throw Glaive and any one of Demon's Bite, Chaos Strike, Shadow
+  Bolt or Incinerate. Those (a Chaos Strike crit 2) and the Hero's demon (once every 4 sec) grant **Fel Command**
+  (90701, up to 5). At 5, Throw Glaive also fires a **Chaos Bolt Volley**: 3 bolts 0.15 sec apart at the target and
+  up to 2 enemies within 10 yards, each 60% of a Chaos Bolt of the Hero's level plus the higher of spell power or half
+  attack power. Modifiers: Infernal Pact, Demonic Ascension (Metamorphosis grants 5), Dreadfire Discipline (Shadow
+  Bolt and Incinerate grant 2); Barrage (2 more bolts), Shattered Glaive (a crit bolt takes 3 sec off Throw Glaive),
+  Felguard's Call (a Felguard, 910120, 8 sec); Metamorphic Bond, Imp Legion (a Fel Imp, 910121, per bolt, 10 sec),
+  Pact of Ruin (2 more bolts, 3% health each). Spells 90700-90718; Throw Glaive's button glows and shows Chaos Bolt at
+  5 Fel Command.
 - **The Rune of the Sanctified Paragon** (rune 22, its own concept doc and its revised balance draft; its slots
   Presence, Manifestation, Covenant, the panel's labels follow a rune's own `slots` in `Art.lua`). Needs Consecration;
   suggested to every role. Consecration becomes **Sanctified Paragon** (90731): cast it to turn a lasting aura on
@@ -487,92 +480,68 @@ utility or a tradeoff) take one pick each, from three.
   wall at the aura's edge with the middle clear, gold and see-through, no floor; flakes of light tumbling up through
   the aura (retail's flipping snowflake), embers and sparks, a crown of light above the head, a golden shockwave and
   flash as it turns on (90749); Seat's sigil and the footsteps' glyphs are ours (`client-patch/build_paragon_art.py`).
-- **The Rune of the Stormbound Conduit** (rune 23, its own concept doc; its slots Conductivity, Arc Pattern and
-  Lightning Shield), DPS only (Melee and Ranged): needs Lightning Bolt and Lightning Shield (Closed Circuit also
-  Chain Lightning). No resource: a Lightning Bolt hit makes its target **Conductive** (90751, 6 sec, refreshed, one
-  per Hero, never consumed); each Chain Lightning hit (every jump) on a Conductive enemy arcs to one enemy within 8
-  yards of it for 15% of the Hero's best Lightning Bolt's damage (rank and spell power); each Lightning Shield
-  retaliation arcs to one Conductive enemy within 8 yards of its target for 25% of its damage. Arcs (90752, their
-  bolt 90753 cast from the enemy they leave) never arc again. Modifiers: Persistent Current (12 sec), Branching
-  Current (a second enemy within 8 yards of the bolt's target, arcs 20% less), Live Wire (enemies striking the
-  Hero in melee range become Conductive, whatever the shield does); Forked Tempest (an arc split between 2 enemies), Closed Circuit (Chain Lightning's arc back
-  into its target at half), Faraday Field (arcs reach 12 yards, 15% less); Storm Within (no retaliation when struck:
-  every 3 sec a pulse at the nearest Conductive enemy within 8 yards in combat, a charge each, no arc), Violent
-  Reprisal (arcs 40% more, the retaliation 10% less), Distant Conductor (every Lightning Bolt hit fires a
-  retaliation at its target, a charge each; none when struck). Every pick works with every other. The rune's
-  retaliations (90754) are the shield's rank's damage with its spell power share, struck from the sky; Conductive
-  crackles on its enemy; an arc lands as Chain Lightning's strike with a bolt from the sky (client visuals 10778,
-  12145, 12082). Spells 90750-90768
-  (`patch_runes.py`); scripts `spell_titan_rune_stormbound_conduit` (the rune's procs),
-  `spell_titan_rune_lightning_shield` and `spell_titan_rune_lightning_shield_damage` (`titan_runes.sql`).
-- **The Rune of Echoing Thunder** (rune 24, its own concept doc; its slots Thunderfield, Echo Pattern and Shield
-  Resonance), for Tanks: needs Thunder Clap and Shield Slam (and a shield, as Shield Slam does). Thunder Clap leaves
-  a **Thunderfield** (90771, 8 yards, 4 sec; one at a time, a new Thunder Clap replaces it; cracked earth with
-  lightning running through it, `client-patch/build_thunder_art.py`). Shield Slam landed while the Hero stands in it
-  releases a **Thunder Echo** (90774): 15% of Shield Slam's damage before mitigation as Nature damage that never
-  crits on its own, to each of up to 4 enemies once, in a 90 degree cone toward the target 10 yards long (Shockwave's
-  look, 90773), once every 2 sec at most; it never echoes again. Modifiers (the revised draft: benefits, no damage
-  penalties): Lingering Thunder (6 sec), March of the Storm (the field follows the Hero, 5 yards, 90772), Rolling
-  Front (the field beneath the hostile target within 10 yards; the echo 10% more); Reverberating Impact (a 6 yard
-  burst about the target; Thunder Clap's look, 90775), Focused Peal (the target alone, 40% more), Distant Rumble
-  (15 yards; 20% more beyond 10); Commanding Thunder (50% more threat), Sheltering Reverberation (an absorb of 5% of
-  block value for 3 sec, once every 6 sec, never stacked, 90776), Deafening Impact (15% slower for 2 sec, 90777; 10%
-  more on an enemy under the Hero's Thunder Clap). Spells 90770-90788
-  (`patch_runes.py`); scripts `spell_titan_rune_thunder_clap` and `spell_titan_rune_shield_slam` (`titan_runes.sql`).
-- **The Rune of the Wellspring** (rune 25, its own concept doc; slots Wellspring, Current, Undertow), for Healers:
-  needs Chain Heal and Earth Shield. Chain Heal healing the wearer of the Hero's Earth Shield makes them the
-  **Wellspring** (90791, 6 sec, Riptide's swirl; one at a time). A later Chain Heal reaching it (not one that made it
-  that cast; one a cast) jumps once more (90792, its bolt 90795 from the Wellspring) to the most injured party or raid
-  member within 12.5 yards of it, for 30% of the healing the Wellspring received, and refreshes it while it wears the
-  shield; the jump never jumps again. Modifiers: Flowing Waters (Earth Shield's heal refreshes it to 6 sec), Lasting
-  Spring (10 sec), Widening Waters (50% farther); Deep Current (25% more below half health), Split Tributary (two
-  allies, shared), Concentrated Current (15% more); Tidal Shelter (an absorb of 20% of the effective healing, 4 sec,
-  90793), Long Reach (5 yards farther), Renewing Current (20% more over 4 sec, 90794).
-- **The Rune of the Wandering Mist** (rune 26, its own concept doc; slots Mistflow, Technique, Mistweaver's
-  Approach), for Healers: needs Soothing Mist (Comforting Veil and Peaceful Focus also Enveloping Mist, Vivacious
-  Flow Vivify). Soothing Mist's ticks have a 25% chance, once every 2 sec, to send a **Wandering Mist** (90811) to an
-  injured ally within 20 yards of the channel target for 30% of the tick's effective healing; Enveloping Mist and
-  Vivify on the channel target are cast at once (their mana as ever) and keep the channel. Modifiers: Flowing
-  Currents (30 yards), Gathering Mists (the most injured), Drifting Mist (two allies, shared); Comforting Veil (a
-  lesser Enveloping Mist, 15%, on the most recent Wandering Mist ally within 20 yards, 90812), Vivacious Flow (Vivify:
-  20% to that ally), Peaceful Focus (Soothing Mist 10% more on a target with the Hero's Enveloping Mist); Rolling Mist
-  (switching straight to another ally: a tick over 4 sec on the last, once every 12 sec, 90813), Jade Shelter (an
-  absorb of 20% of a Wandering Mist's healing, 4 sec, once every 8 sec, 90814), Effortless Breathing (from 3 sec in,
-  15% of a tick's mana back). Scripts in `titan_runes.sql`; spells 90790-90828 (`patch_runes.py`).
+- **The Rune of the Stormbound Conduit** (rune 23; DPS; needs Lightning Bolt). Lightning Bolt arcs to 2 enemies
+  within 10 yards of its target for 30% of its damage each; while Lightning Shield is up its retaliations arc to 1
+  nearby enemy for 50%. Arcs (90752, their bolt 90753) never arc again. Forked Tempest (3 arcs), Closed Circuit (one
+  arc back into the target for 60%), Faraday Field (15 yards, 10% more); Live Wire (retaliations arc to 2), Storm
+  Within (a retaliation at the nearest enemy every 3 sec in combat), Distant Conductor (Lightning Bolt also fires one;
+  the three need Lightning Shield, none spends a charge; 90754); Chain Surge (each Chain Lightning hit arcs once,
+  20%), Static Ward (each arc adds 1% health to an absorb, up to 10%, 90751), Overcharge (a crit's arcs 50% more).
+- **The Rune of Echoing Thunder** (rune 24; Tanks; Thunder Clap and Shield Slam, and a shield). Thunder Clap
+  charges the Hero (90772, 8 sec, a small storm about them); the next Shield Slam releases a **Thunder Echo** (90774):
+  30% of its damage before mitigation as Nature damage to up to 5 enemies within 6 yards of its target (Thunder
+  Clap's look, 90775). Double Charge (2 echoes), Lingering Charge (20 sec), Commanding Thunder (twice the threat);
+  Focused Peal (the target alone, 60% more), Distant Rumble (10 yards), Deafening Impact (30% slow, 3 sec, 90777);
+  Sheltering Reverberation (3% health absorb per enemy, up to 15%, 6 sec, 90776), Battle Rhythm (2 rage per enemy),
+  Rolling Thunder (1 sec off Thunder Clap per enemy).
+- **The Rune of the Wellspring** (rune 25; Healers; needs Chain Heal). Every Chain Heal jumps once more from its
+  last target (90792, its bolt 90795) to the most injured ally within 12.5 yards it did not heal, for 40% of its first
+  heal, and heals the Hero's Earth Shield wearer 20% more. Split Tributary (2 allies, 25% each), Deep Current (40% more
+  below half health), Concentrated Current (20% more); Flowing Waters (Earth Shield's heals flow on, half), Bedrock
+  (40% on the wearer), Renewed Shield (a charge back; the three need Earth Shield); Tidal Shelter (an absorb, 90793),
+  Renewing Current (over 4 sec, 90794), Long Reach (20 yards).
+- **The Rune of the Wandering Mist** (rune 26; Healers; Soothing Mist). Every Soothing Mist tick sends a **Wandering
+  Mist** (90811) to the most injured ally within 20 yards of its target for 25% of the tick; Enveloping Mist and
+  Vivify on the channel target are cast at once and keep the channel. Flowing Currents (30 yards), Drifting Mist (2
+  allies, 15% each), Jade Shelter (an absorb of 10%, 90814); Comforting Veil (a lesser Enveloping Mist, 30%, 90812),
+  Vivacious Flow (Vivify: 30% to that ally), Peaceful Focus (Soothing Mist 15% more with Enveloping Mist); Effortless
+  Breathing (25% less mana), Lingering Mist (the channel's end: 2 ticks over 4 sec, 90813), Deep Breath (0.3% mana
+  per Wandering Mist).
 - **Changing a rune:** `.unbindrune` (any player, out of combat; a GM's with a Hero selected does it for them) lets
   go of the active specialization's rune and its modifiers and opens the panel to bind another.
-- **The Rune of the Threefold Grave** (rune 27, its revised concept doc; Melee DPS or Tank; needs Blood Strike and
-  Icy Touch or Plague Strike; slots Burial Grounds, Gravekeeper, Shared Burial). Each strike lays its Grave for 8 sec,
-  one of each: Icy Touch a **Frozen Grave** beneath the target (Frost damage, 30% slow), Plague Strike a **Plagued
-  Grave** (Shadow damage), Blood Strike a **Crimson Grave** beneath the Hero (damage). A Grave's tick each second:
-  level x 2 + 6% of attack power with the Hero's school bonuses, every enemy in it (up to 10); **Shared Burial**: 20%
-  more on an enemy in two or more. Blood Strike inside the Crimson Grave keeps it in place and grants a shield (5% of
-  health, up to 15%, once every 3 sec; at once from the strike that lays it). Gathered Dead, March of the Dead,
-  Far-Reaching Graves; Cruel Winter, Grave Pestilence, Crimson Bastion; Deep Burial, Spreading Death, Hallowed by
-  Nothing.
-- **The Rune of the Unbroken Onslaught** (rune 28; Melee DPS; Mortal Strike or Bloodthirst; slots Wake,
-  Follow-Through, Pursuit). Mortal Strike or Bloodthirst cuts a **Weapon Wake** through its target (6 sec); the next
-  different melee ability striking an enemy in it reopens it once: 60% of a normalized swing to each enemy along it (up
-  to 6), the first target 25% more, 0.6 sec later. Executioner's Cut, Whirling Steel, Raking Passage; Overpowering
-  Echo, Bloodletting, Aftershock; Relentless, Battlefield Claim, Changing Prey.
-- **The Rune of the Dawnbound Crusader** (rune 29; Healer or Melee DPS; Crusader Strike or Holy Shock; slots
-  Doctrine, Manifestation, Oath). **Dawn Vow** (90891, taught, 10 sec) binds an ally or the Hero. Judgment marks an
-  enemy; Crusader Strike on it sends a **Dawn Echo** from the vow 0.75 sec later (half its damage), Holy Shock one at
-  once. Mercy, Retribution, Communion; Dawnwave, Sunburst, Sacred Ground; Steadfast, Passing the Torch, Shared
-  Pilgrimage.
-- **The Rune of the Hollow Congregation** (rune 30; Ranged DPS; Mind Flay and Mind Blast; slots Congregation, Sermon,
-  Command). Two seconds into Mind Flay a **Hollow Echo** (creature 910122, the Hero's look, hollowed) stays and
-  channels 40% of a Mind Flay tick for 10 sec, two at most; Mind Blast turns them on its target in a barrage (3 bolts,
-  60% of a tick each), then they channel again. Following Shadows, Haunted Ground, Possession; Unison, Dissonance,
-  Accusation; Last Word, Procession, Silent Witness.
-- **The Rune of the Shattered Sun** (rune 31; Ranged DPS; a fire and a frost spell; slots Formation, Fracture,
-  Collapse). Fire spells (Fireball, Pyroblast, Fire Blast, Scorch) embed a **Sunshard** (15 sec, 5 at most), Fireball
-  and Pyroblast in 2 more enemies within 8 yards too; frost spells (Frostbolt, Ice Lance, Frost Nova, Cone of Cold)
-  fracture one, 60% of their damage (at least level x 4 + 40% of spell power) to each enemy within 8 yards, and set
-  off every shard within 10 yards in a **chain reaction** (each link 75% of the last), leaving **Broken Cores** (6
-  sec) a fire spell collapses for its damage again. Wildfire, Orbiting Sun, Solar Anchor; Splinterstorm, Solar Lance,
-  Scalding Ground; Implosion, Endless Chain, Second Sunrise. Scripts in `titan_runes.sql`; spells 90830-90978 (`patch_runes.py`); their ground looks from Echoing
-  Thunder's cracks, the monk's mist, the Illidari sigil and `build_wake_art.py`'s gash.
+- **The Rune of the Threefold Grave** (rune 27; Melee DPS or Tank; any of Icy Touch, Plague Strike, Blood Strike).
+  Each lays its Grave beneath its target for 8 sec, one of each: a **Frozen Grave** (Frost, 30% slow), a **Plagued
+  Grave** (Shadow), a **Crimson Grave**; a Grave's tick each second is level x 2 + 6% of attack power to every enemy
+  in it (up to 10), 20% more on one in two or more (**Shared Burial**). Every Blood Strike also shields the Hero (5% of
+  health, up to 15%). Far-Reaching Graves, Long Rest (12 sec), March of the Dead (Graves follow their enemy); Cruel
+  Winter, Grave Pestilence, Crimson Bastion (shield up to 25%); Deep Burial (35%), Grave Hunger (25% more below 35%),
+  Grave Ward (1% health a second per buried enemy, up to 3%, 90844).
+- **The Rune of the Unbroken Onslaught** (rune 28; Melee DPS; Mortal Strike or Bloodthirst). Either cuts a **Weapon
+  Wake** through its target (6 sec); the next other melee ability (on any enemy) rips it open: 60% of a normalized
+  swing to each enemy in it (up to 6), the first 25% more, 0.6 sec later. Executioner's Cut, Whirling Steel, Raking
+  Passage; Overpowering Echo, Bloodletting, Aftershock; Relentless, Battlefield Claim, Second Wind (1% health per enemy
+  hit, 90865).
+- **The Rune of the Dawnbound Crusader** (rune 29; Healer or Melee DPS; Crusader Strike or Holy Shock). Each sends a
+  **Dawn Echo** 0.75 sec later: half of its damage again on the same enemy, or half of Holy Shock's healing on the most
+  injured ally within 15 yards (a Healer's Crusader Strike echoes as a heal). Sunburst (40% to 5 more within 8
+  yards), Focused Dawn (40% more), Communion (both, 35% each); Sacred Ground, Steadfast (Holy Shock echoes twice),
+  Judgment's Echo (a Judgement echoes level x 5 + power); Dawn's Mercy (20% of echo damage heals the Hero), Swift Dawn
+  (0.5 sec off both cooldowns per echo), Radiant Ward (25% as an absorb, 90900). The first draft's Dawn Vow is
+  unlearned at login.
+- **The Rune of the Hollow Congregation** (rune 30; Ranged DPS; Mind Flay and Mind Blast). Mind Flay calls a **Hollow
+  Echo** (creature 910122) to the Hero's side for 10 sec, 3 at most: it follows them and flays their target (40% of a
+  tick); Mind Blast turns every echo on its target in a barrage (3 bolts, 60% of a tick each). Gathering (4), Lasting
+  Echoes (15 sec), Last Word; Unison, Dissonance, Accusation; Fervor (25% more while flaying), Shadow Mend (10% back
+  as healing, 90926), Swift Command (Mind Blast 0.5 sec sooner per echo).
+- **The Rune of the Shattered Sun** (rune 31; Ranged DPS; a fire and a frost spell). Fire spells (Fireball,
+  Pyroblast, Fire Blast, Scorch) embed a **Sunshard** in their target (90951, stacking to 5, 15 sec); a frost spell
+  (Frostbolt, Ice Lance, Frost Nova, Cone of Cold) shatters every shard in its target: 25% of its damage per shard (at
+  least level x 4 + 40% of spell power) to each enemy within 8 yards. Wildfire (Fireball and Pyroblast embed 2),
+  Spreading Sun (and 1 in 2 nearby), Heavy Sun (8 shards); Wide Burst (12 yards), Scalding Ground, Chain Reaction
+  (shards within 10 yards shatter at half); Implosion (40% more to the target), Second Sunrise (again at 40%, 2 sec
+  on), Frozen Core (40% slow, 90952).
+- Scripts in `titan_runes.sql`; spells 90750-90978 (`patch_runes.py`); their looks from the curated VFX library
+  (`client-patch/spells/RUNE_VFX`).
 
 ## Cards and Silas Darkmoon
 Every Wildcard ability but the capstones (they stay the level 60 roll's, something to chase) is a **Skill Card**, and

@@ -737,7 +737,7 @@ SPELLS += [
     dot(90862, 'Bloodletting', 'Ability_Gouge', PHYSICAL, DURATION_6S, 'Bleeding every 1 sec.'),
     ground(90863, 'Weapon Wake', 'Ability_Warrior_Cleave', 'OnslaughtWake', DURATION_10S),
     strike(90864, 'Aftershock', 'Ability_Warrior_Shockwave', PHYSICAL, VISUAL_THUNDER_HIT, modifiers=True),
-    {**heal(90865, 'Second Wind', 'Ability_Hunter_Harass', 'The onslaught carries you on.'),
+    {**heal(90865, 'Second Wind', 'Ability_Warrior_Cleave', 'The onslaught carries you on.'),
      'set': {**HEAL_SET, 'SchoolMask': PHYSICAL, 'AttributesEx2': 0, 'SpellVisual': 0}},
 
     buff(90890, 'Rune of the Dawnbound Crusader', DAWN_ICON,
@@ -786,7 +786,7 @@ SPELLS += [
      'copy': SHADOW_BOLT},
     strike(90924, 'Accusation', 'Spell_Shadow_PsychicScream', SHADOW, VISUAL_MIND_BLAST),
     strike(90925, 'Last Word', 'Spell_Shadow_DemonicFortitude', SHADOW, VISUAL_MIND_BLAST),
-    {**heal(90926, 'Shadow Mend', 'Spell_Shadow_ShadowMend', 'Your Hollow Echoes mend you.'),
+    {**heal(90926, 'Shadow Mend', 'Spell_Shadow_SiphonMana', 'Your Hollow Echoes mend you.'),
      'set': {**HEAL_SET, 'SchoolMask': SHADOW, 'AttributesEx2': 0, 'SpellVisual': 0}},
 
     buff(90950, 'Rune of the Shattered Sun', SUN_ICON,

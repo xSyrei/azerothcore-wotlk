@@ -29,10 +29,16 @@ EmberforgeRunesArt = {
             u = 0.7295,
             v = 0.9844,
         },
-        ChooseArcPattern = {
-            w = 512,
+        ChooseApproach = {
+            w = 466,
             h = 84,
-            u = 0.75,
+            u = 0.6826,
+            v = 0.9844,
+        },
+        ChooseArcs = {
+            w = 375,
+            h = 84,
+            u = 0.5498,
             v = 0.9844,
         },
         ChooseBurialGrounds = {
@@ -41,22 +47,16 @@ EmberforgeRunesArt = {
             u = 0.8496,
             v = 0.9844,
         },
-        ChooseCollapse = {
-            w = 455,
+        ChooseCharge = {
+            w = 424,
             h = 84,
-            u = 0.667,
+            u = 0.6211,
             v = 0.9844,
         },
         ChooseCommand = {
             w = 465,
             h = 84,
             u = 0.6816,
-            v = 0.9844,
-        },
-        ChooseConductivity = {
-            w = 543,
-            h = 84,
-            u = 0.7959,
             v = 0.9844,
         },
         ChooseCongregation = {
@@ -71,28 +71,16 @@ EmberforgeRunesArt = {
             u = 0.6904,
             v = 0.9844,
         },
-        ChooseCurrent = {
-            w = 446,
+        ChooseEarth = {
+            w = 398,
             h = 84,
-            u = 0.6533,
+            u = 0.583,
             v = 0.9844,
         },
-        ChooseDoctrine = {
-            w = 463,
+        ChooseEcho = {
+            w = 383,
             h = 84,
-            u = 0.6787,
-            v = 0.9844,
-        },
-        ChooseDominion = {
-            w = 469,
-            h = 84,
-            u = 0.6875,
-            v = 0.9844,
-        },
-        ChooseEchoPattern = {
-            w = 537,
-            h = 84,
-            u = 0.7871,
+            u = 0.5615,
             v = 0.9844,
         },
         ChooseFollowThrough = {
@@ -107,10 +95,10 @@ EmberforgeRunesArt = {
             u = 0.7119,
             v = 0.9844,
         },
-        ChooseFracture = {
-            w = 459,
+        ChooseGrace = {
+            w = 401,
             h = 84,
-            u = 0.6729,
+            u = 0.5879,
             v = 0.9844,
         },
         ChooseGravekeeper = {
@@ -119,16 +107,16 @@ EmberforgeRunesArt = {
             u = 0.7559,
             v = 0.9844,
         },
-        ChooseInscription = {
-            w = 505,
-            h = 84,
-            u = 0.7402,
-            v = 0.9844,
-        },
         ChooseInvocation = {
             w = 499,
             h = 84,
             u = 0.7314,
+            v = 0.9844,
+        },
+        ChooseLight = {
+            w = 391,
+            h = 84,
+            u = 0.5732,
             v = 0.9844,
         },
         ChooseLightningShield = {
@@ -149,18 +137,6 @@ EmberforgeRunesArt = {
             u = 0.6738,
             v = 0.9844,
         },
-        ChooseMistweaversApproach = {
-            w = 707,
-            h = 84,
-            u = 0.5181,
-            v = 0.9844,
-        },
-        ChooseOath = {
-            w = 382,
-            h = 84,
-            u = 0.5596,
-            v = 0.9844,
-        },
         ChoosePresence = {
             w = 455,
             h = 84,
@@ -173,10 +149,10 @@ EmberforgeRunesArt = {
             u = 0.6299,
             v = 0.9844,
         },
-        ChooseRequiem = {
-            w = 440,
+        ChooseResonance = {
+            w = 488,
             h = 84,
-            u = 0.6445,
+            u = 0.7148,
             v = 0.9844,
         },
         ChooseSermon = {
@@ -191,22 +167,34 @@ EmberforgeRunesArt = {
             u = 0.8027,
             v = 0.9844,
         },
-        ChooseShieldResonance = {
-            w = 614,
+        ChooseShatter = {
+            w = 435,
             h = 84,
-            u = 0.8994,
+            u = 0.6377,
+            v = 0.9844,
+        },
+        ChooseSpring = {
+            w = 413,
+            h = 84,
+            u = 0.6055,
+            v = 0.9844,
+        },
+        ChooseSunfall = {
+            w = 432,
+            h = 84,
+            u = 0.6328,
+            v = 0.9844,
+        },
+        ChooseSurge = {
+            w = 396,
+            h = 84,
+            u = 0.5801,
             v = 0.9844,
         },
         ChooseTechnique = {
             w = 482,
             h = 84,
             u = 0.7061,
-            v = 0.9844,
-        },
-        ChooseThunderfield = {
-            w = 540,
-            h = 84,
-            u = 0.791,
             v = 0.9844,
         },
         ChooseUndertow = {
@@ -219,12 +207,6 @@ EmberforgeRunesArt = {
             w = 381,
             h = 84,
             u = 0.5586,
-            v = 0.9844,
-        },
-        ChooseWellspring = {
-            w = 496,
-            h = 84,
-            u = 0.7266,
             v = 0.9844,
         },
         DoneEyebrow = {
@@ -245,10 +227,16 @@ EmberforgeRunesArt = {
             u = 0.875,
             v = 0.875,
         },
-        SlotArcPattern = {
-            w = 117,
+        SlotApproach = {
+            w = 96,
             h = 28,
-            u = 0.9141,
+            u = 0.75,
+            v = 0.875,
+        },
+        SlotArcs = {
+            w = 52,
+            h = 28,
+            u = 0.8125,
             v = 0.875,
         },
         SlotBurialGrounds = {
@@ -257,22 +245,16 @@ EmberforgeRunesArt = {
             u = 0.5859,
             v = 0.875,
         },
-        SlotCollapse = {
-            w = 89,
+        SlotCharge = {
+            w = 75,
             h = 28,
-            u = 0.6953,
+            u = 0.5859,
             v = 0.875,
         },
         SlotCommand = {
             w = 94,
             h = 28,
             u = 0.7344,
-            v = 0.875,
-        },
-        SlotConductivity = {
-            w = 129,
-            h = 28,
-            u = 0.5039,
             v = 0.875,
         },
         SlotCongregation = {
@@ -287,28 +269,16 @@ EmberforgeRunesArt = {
             u = 0.75,
             v = 0.875,
         },
-        SlotCurrent = {
-            w = 84,
+        SlotEarth = {
+            w = 63,
             h = 28,
-            u = 0.6562,
+            u = 0.9844,
             v = 0.875,
         },
-        SlotDoctrine = {
-            w = 92,
+        SlotEcho = {
+            w = 54,
             h = 28,
-            u = 0.7188,
-            v = 0.875,
-        },
-        SlotDominion = {
-            w = 96,
-            h = 28,
-            u = 0.75,
-            v = 0.875,
-        },
-        SlotEchoPattern = {
-            w = 128,
-            h = 28,
-            u = 1,
+            u = 0.8438,
             v = 0.875,
         },
         SlotFollowThrough = {
@@ -323,10 +293,10 @@ EmberforgeRunesArt = {
             u = 0.8125,
             v = 0.875,
         },
-        SlotFracture = {
-            w = 91,
+        SlotGrace = {
+            w = 63,
             h = 28,
-            u = 0.7109,
+            u = 0.9844,
             v = 0.875,
         },
         SlotGravekeeper = {
@@ -335,16 +305,16 @@ EmberforgeRunesArt = {
             u = 0.9453,
             v = 0.875,
         },
-        SlotInscription = {
-            w = 115,
-            h = 28,
-            u = 0.8984,
-            v = 0.875,
-        },
         SlotInvocation = {
             w = 110,
             h = 28,
             u = 0.8594,
+            v = 0.875,
+        },
+        SlotLight = {
+            w = 59,
+            h = 28,
+            u = 0.9219,
             v = 0.875,
         },
         SlotLightningShield = {
@@ -365,18 +335,6 @@ EmberforgeRunesArt = {
             u = 0.7266,
             v = 0.875,
         },
-        SlotMistweaversApproach = {
-            w = 217,
-            h = 28,
-            u = 0.8477,
-            v = 0.875,
-        },
-        SlotOath = {
-            w = 55,
-            h = 28,
-            u = 0.8594,
-            v = 0.875,
-        },
         SlotPresence = {
             w = 91,
             h = 28,
@@ -389,10 +347,10 @@ EmberforgeRunesArt = {
             u = 0.625,
             v = 0.875,
         },
-        SlotRequiem = {
-            w = 83,
+        SlotResonance = {
+            w = 105,
             h = 28,
-            u = 0.6484,
+            u = 0.8203,
             v = 0.875,
         },
         SlotSermon = {
@@ -407,22 +365,34 @@ EmberforgeRunesArt = {
             u = 0.5352,
             v = 0.875,
         },
-        SlotShieldResonance = {
-            w = 167,
+        SlotShatter = {
+            w = 82,
             h = 28,
-            u = 0.6523,
+            u = 0.6406,
+            v = 0.875,
+        },
+        SlotSpring = {
+            w = 71,
+            h = 28,
+            u = 0.5547,
+            v = 0.875,
+        },
+        SlotSunfall = {
+            w = 80,
+            h = 28,
+            u = 0.625,
+            v = 0.875,
+        },
+        SlotSurge = {
+            w = 63,
+            h = 28,
+            u = 0.9844,
             v = 0.875,
         },
         SlotTechnique = {
             w = 102,
             h = 28,
             u = 0.7969,
-            v = 0.875,
-        },
-        SlotThunderfield = {
-            w = 132,
-            h = 28,
-            u = 0.5156,
             v = 0.875,
         },
         SlotUndertow = {
@@ -435,12 +405,6 @@ EmberforgeRunesArt = {
             w = 57,
             h = 28,
             u = 0.8906,
-            v = 0.875,
-        },
-        SlotWellspring = {
-            w = 111,
-            h = 28,
-            u = 0.8672,
             v = 0.875,
         },
         Title = {
@@ -664,12 +628,11 @@ EmberforgeRunesArt = {
             built = true,
             burn = true,
             core = "Your strikes and your demon build **Fel Command**. At 5, Throw Glaive " ..
-                    "becomes **Chaos Bolt Volley**: the glaive and 3 Chaos Bolts, or 5 and " ..
-                    "a Felguard in Metamorphosis.",
+                    "becomes **Chaos Bolt Volley**: the glaive and 3 Chaos Bolts.",
             asks = {
                 "How you build Fel Command",
                 "What your Chaos Bolt Volley does",
-                "How you survive and move",
+                "What your pact brings",
             },
             abilities = {
                 "Your demon",
@@ -677,31 +640,21 @@ EmberforgeRunesArt = {
                 "Shadow Bolt · Incinerate",
                 "Throw Glaive",
                 "Throw Glaive",
-                "Throw Glaive · Metamorphosis",
-                "Metamorphosis",
-                "Fel Rush",
-                "Risk and reward",
+                "Felguard",
+                "Your demon",
+                "Imps",
+                "Health",
             },
             texts = {
-                "Your demon grants Fel Command twice as often: once every 2 sec instead " ..
-                        "of 4.",
-                "Entering Metamorphosis grants 5 Fel Command, so your first throw is an " ..
-                        "empowered volley.",
-                "Shadow Bolt and Incinerate grant 1 Fel Command each. Demon's Bite " ..
-                        "grants none.",
-                "Every throw spends your Fel Command: a Fel Imp for each stack, for 10 " ..
-                        "sec. Volley bolts deal 10% more per demon you have out.",
-                "The glaive bounces to every enemy hit. Each critical bolt takes 3 sec " ..
-                        "off Throw Glaive.",
-                "Every throw spends your Fel Command: a demon for each stack, for 10 " ..
-                        "sec, Felguards in Metamorphosis. Volley bolts deal 10% more per demon " ..
-                        "out.",
-                "In Metamorphosis, your demon takes 30% less damage and its attacks " ..
-                        "cleave.",
-                "For 3 sec after a volley, Fel Rush carries you to the glaive's first " ..
-                        "target.",
-                "The volley fires 2 extra bolts, but each bolt costs 3% of your maximum " ..
-                        "health.",
+                "Your demon grants Fel Command twice as often.",
+                "Metamorphosis grants 5 Fel Command.",
+                "Shadow Bolt and Incinerate grant 2 each.",
+                "The volley fires 2 more bolts.",
+                "Critical bolts cut Throw Glaive's cooldown.",
+                "The volley calls a Felguard for 8 sec.",
+                "In Metamorphosis your demon is tougher and cleaves.",
+                "The volley calls a Fel Imp for each bolt.",
+                "2 more bolts, 3% of your health each.",
             },
             slots = {
                 "Invocation",
@@ -769,48 +722,39 @@ EmberforgeRunesArt = {
             inner = { 0.886, 0.941, 1 },
             built = true,
             burn = true,
-            core = "Lightning Bolt makes its target **Conductive** for 6 sec. Chain " ..
-                    "Lightning striking a Conductive enemy **arcs** to one nearby enemy, " ..
-                    "and Lightning Shield's retaliations arc to a nearby Conductive one.",
+            core = "**Lightning Bolt** arcs to 2 nearby enemies for 30% of its damage. " ..
+                    "Your **Lightning Shield**'s retaliations arc too.",
             asks = {
-                "How you make connections",
-                "Where your arcs travel",
+                "Where your arcs go",
                 "What your Lightning Shield does",
+                "What the storm adds",
             },
             abilities = {
-                "Conductive",
-                "Lightning Bolt",
-                "Melee attackers",
-                "Arcs",
+                "3 arcs",
+                "Single target",
+                "15 yards",
+                "2 arcs",
+                "Pulse",
+                "Retaliation",
                 "Chain Lightning",
-                "Arcs",
-                "Lightning Shield",
-                "Lightning Shield",
-                "Lightning Bolt · Lightning Shield",
+                "Shield",
+                "Critical",
             },
             texts = {
-                "Conductive lasts 12 sec instead of 6.",
-                "Lightning Bolt also makes one enemy within 8 yards of its target " ..
-                        "Conductive, but arcs deal 20% less damage.",
-                "Enemies that strike you in melee become Conductive, whatever your " ..
-                        "Lightning Shield does.",
-                "Arcs strike up to 2 eligible enemies, splitting their damage between " ..
-                        "them.",
-                "Chain Lightning's arc returns to its Conductive target for 50% of its " ..
-                        "damage instead of striking another enemy.",
-                "Arcs travel 50% farther, but deal 15% less damage.",
-                "No retaliation when struck: every 3 sec your shield pulses at the " ..
-                        "nearest Conductive enemy within 8 yards, using a charge. Pulses never " ..
-                        "arc.",
-                "Lightning Shield's arcs deal 40% more damage, but its retaliation " ..
-                        "deals 10% less.",
-                "Every Lightning Bolt hit fires a Lightning Shield retaliation at its " ..
-                        "target, using a charge. Being struck no longer does.",
+                "Lightning Bolt arcs to 3 enemies.",
+                "The arc strikes your target again, 60%.",
+                "Arcs reach 15 yards, 10% stronger.",
+                "Retaliations arc to 2 enemies.",
+                "Lightning Shield strikes every 3 sec.",
+                "Lightning Bolt fires a retaliation too.",
+                "Chain Lightning arcs too.",
+                "Each arc shields you, up to 10%.",
+                "Critical arcs deal 50% more.",
             },
             slots = {
-                "Conductivity",
-                "Arc Pattern",
+                "Arcs",
                 "Lightning Shield",
+                "Surge",
             },
         },
         [24] = {
@@ -822,45 +766,39 @@ EmberforgeRunesArt = {
             inner = { 0.906, 0.933, 1 },
             built = true,
             burn = true,
-            core = "Thunder Clap leaves a **Thunderfield** for 4 sec. Shield Slam landed " ..
-                    "inside it releases a **Thunder Echo** toward your target: 15% of its " ..
-                    "damage to up to 4 enemies.",
+            core = "**Thunder Clap** charges you with thunder. Your next **Shield Slam** " ..
+                    "releases a **Thunder Echo** around its target.",
             asks = {
-                "Where your storm stands",
-                "The shape of your echo",
-                "What the echo does for you",
+                "How you hold the charge",
+                "How the echo strikes",
+                "What the echo gives you",
             },
             abilities = {
-                "Thunder Clap",
-                "Thunder Clap",
-                "Thunder Clap",
-                "Shield Slam",
-                "Shield Slam",
-                "Shield Slam",
+                "2 echoes",
+                "20 sec",
                 "Threat",
-                "Block value",
+                "Focus",
+                "10 yards",
                 "Slow",
+                "Shield",
+                "Rage",
+                "Cooldown",
             },
             texts = {
-                "The Thunderfield lasts 6 sec instead of 4.",
-                "The Thunderfield follows you for its duration, 5 yards wide.",
-                "Thunder Clap places the Thunderfield beneath your hostile target " ..
-                        "within 10 yards; standing in it, the echo deals 10% more damage.",
-                "A 6-yard burst around Shield Slam's target instead of the cone, up to " ..
-                        "4 enemies.",
-                "The echo strikes only Shield Slam's target, for 40% more damage.",
-                "The cone reaches 50% farther; enemies beyond its normal reach take 20% " ..
-                        "more damage.",
-                "The echo generates 50% more threat.",
-                "The echo shields you for 5% of your block value for 3 sec, once every " ..
-                        "6 sec; it never stacks.",
-                "The echo slows its targets by 15% for 2 sec, and deals 10% more to " ..
-                        "enemies under your Thunder Clap.",
+                "The charge holds 2 echoes.",
+                "The charge lasts 20 sec.",
+                "The echo generates twice the threat.",
+                "The echo strikes only the target, 60% more.",
+                "The echo reaches 10 yards.",
+                "The echo slows enemies by 30%.",
+                "The echo shields you, 3% of health per enemy.",
+                "The echo grants 2 rage per enemy.",
+                "The echo cuts Thunder Clap's cooldown.",
             },
             slots = {
-                "Thunderfield",
-                "Echo Pattern",
-                "Shield Resonance",
+                "Charge",
+                "Echo",
+                "Resonance",
             },
         },
         [25] = {
@@ -872,42 +810,38 @@ EmberforgeRunesArt = {
             inner = { 0.871, 0.973, 0.969 },
             built = true,
             burn = true,
-            core = "Chain Heal on your Earth Shield wearer makes them a **Wellspring** for " ..
-                    "6 sec. Your next Chain Heal to reach them **jumps once more**, to an " ..
-                    "injured ally, for 30% of the healing they received.",
+            core = "**Chain Heal** jumps once more, for 40% of its first heal, and heals " ..
+                    "your **Earth Shield** wearer for 20% more.",
             asks = {
-                "How your spring lasts and reaches",
-                "How the additional heal lands",
-                "What follows the heal",
+                "Where the extra jump goes",
+                "What your Earth Shield adds",
+                "What the jump leaves behind",
             },
             abilities = {
-                "Earth Shield",
-                "Wellspring",
-                "Reach",
+                "2 allies",
                 "Low health",
-                "Two allies",
-                "One ally",
-                "Absorb",
-                "Reach",
-                "Heal over time",
+                "Power",
+                "Earth Shield",
+                "Wearer",
+                "Charges",
+                "Shield",
+                "Over time",
+                "20 yards",
             },
             texts = {
-                "When Earth Shield heals its wearer, your Wellspring on them is " ..
-                        "refreshed to 6 sec.",
-                "Your Wellspring lasts 10 sec instead of 6.",
-                "The additional jump reaches 50% farther.",
-                "The additional jump heals for 25% more if its target is below 50% " ..
-                        "health.",
-                "The additional jump heals up to two injured allies, sharing its " ..
-                        "healing equally.",
-                "The additional jump heals one ally for 15% more.",
-                "Each ally it heals gains an absorb of 20% of the healing, for 4 sec.",
-                "The additional jump reaches an ally 5 yards farther.",
-                "Each ally it heals is healed for 20% more over 4 sec.",
+                "The extra jump heals 2 allies, 25% each.",
+                "40% more to an ally below half health.",
+                "The extra jump heals 20% more.",
+                "Earth Shield's heals flow on to an ally.",
+                "Your Earth Shield wearer: 40% more.",
+                "Chain Heal restores an Earth Shield charge.",
+                "The jump also shields its ally, 20%.",
+                "The jump also heals 20% over 4 sec.",
+                "The extra jump reaches 20 yards.",
             },
             slots = {
-                "Wellspring",
-                "Current",
+                "Spring",
+                "Earth",
                 "Undertow",
             },
         },
@@ -920,44 +854,39 @@ EmberforgeRunesArt = {
             inner = { 0.882, 0.98, 0.918 },
             built = true,
             burn = true,
-            core = "While you channel Soothing Mist, its ticks may send a **Wandering " ..
-                    "Mist** to an injured ally near your target, for 30% of the tick. " ..
-                    "**Enveloping Mist** and **Vivify** on your target keep the channel.",
+            core = "Each **Soothing Mist** tick also sends a **Wandering Mist** to your " ..
+                    "most injured ally nearby, for 25% of the tick.",
             asks = {
-                "How the mist finds allies",
-                "What your other spells add",
-                "How you keep the healing going",
+                "Where your mist wanders",
+                "How your techniques share",
+                "How you sustain it",
             },
             abilities = {
-                "Reach",
-                "Most injured",
-                "Two allies",
+                "30 yards",
+                "2 allies",
+                "Shield",
                 "Enveloping Mist",
                 "Vivify",
                 "Enveloping Mist",
-                "Switching targets",
-                "Absorb",
+                "Mana",
+                "Lingering",
                 "Mana",
             },
             texts = {
-                "Wandering Mist reaches 30 yards from your Soothing Mist target.",
-                "Wandering Mist goes to the most injured ally in range.",
-                "Wandering Mist heals two injured allies, sharing its healing equally.",
-                "Enveloping Mist on your Soothing Mist target also wraps your last " ..
-                        "Wandering Mist ally, for 15% of it.",
-                "Vivify on your Soothing Mist target also heals your last Wandering " ..
-                        "Mist ally for 20% of it.",
-                "Soothing Mist heals 10% more on a target wearing your Enveloping Mist.",
-                "Once every 12 sec, switching Soothing Mist to another ally leaves a " ..
-                        "lingering mist on the last.",
-                "Once every 8 sec, Wandering Mist shields its ally for 20% of its " ..
-                        "healing, 4 sec.",
-                "After 3 sec of channeling, Soothing Mist's ticks cost 15% less mana.",
+                "Wandering Mist reaches 30 yards.",
+                "Wandering Mist heals 2 allies, 15% each.",
+                "Wandering Mist also shields, 10%.",
+                "Enveloping Mist wraps a second ally.",
+                "Vivify heals a second ally for 30%.",
+                "Soothing Mist 15% stronger with Enveloping Mist.",
+                "Soothing Mist costs 25% less mana.",
+                "The channel's end leaves 2 more ticks.",
+                "Each Wandering Mist restores mana.",
             },
             slots = {
                 "Mistflow",
                 "Technique",
-                "Mistweaver's Approach",
+                "Approach",
             },
         },
         [27] = {
@@ -969,37 +898,35 @@ EmberforgeRunesArt = {
             inner = { 0.925, 0.961, 0.984 },
             built = true,
             burn = true,
-            core = "**Icy Touch**, **Plague Strike** and **Blood Strike** each lay a Grave " ..
-                    "for 8 sec. Enemies in two or more take 20% more; **Blood Strike** in " ..
-                    "your Crimson Grave grants a shield.",
+            core = "**Icy Touch**, **Plague Strike** and **Blood Strike** each lay their " ..
+                    "**Grave** beneath their target; enemies in two take more. Blood Strike " ..
+                    "shields you.",
             asks = {
-                "Where your Graves lie",
-                "What your Graves keep",
-                "How the overlap pays",
+                "How your Graves lie",
+                "What each Grave keeps",
+                "What a shared burial gives",
             },
             abilities = {
-                "Gather",
+                "Wider",
+                "12 sec",
                 "Follow",
-                "Radius",
-                "Frost",
-                "Disease",
-                "Blood",
-                "Overlap",
-                "Linger",
-                "Extend",
+                "Frozen Grave",
+                "Plagued Grave",
+                "Blood Strike",
+                "Shared",
+                "Execute",
+                "Heal",
             },
             texts = {
-                "Icy Touch and Plague Strike lay their Graves on your Crimson Grave " ..
-                        "nearby.",
-                "Your Crimson Grave follows you.",
-                "Frozen and Plagued Graves are 50% wider.",
-                "The Frozen Grave slows by 50%, and the slow lingers 3 sec.",
-                "The Plagued Grave leaves a short disease on what it damages.",
-                "The Crimson shield holds up to 25% of your health and stays when you " ..
-                        "leave.",
-                "Shared Burial raises your Graves' damage by 35%.",
-                "Enemies leaving an overlap keep Shared Burial for 3 sec.",
-                "Blood Strike in two Graves extends your Graves by 2 sec, once each.",
+                "Your Graves are 50% wider.",
+                "Your Graves last 12 sec.",
+                "Your Graves follow their enemy.",
+                "The Frozen Grave slows by 50%.",
+                "The Plagued Grave spreads a disease.",
+                "Blood Strike's shield holds up to 25%.",
+                "Two or more Graves: 35% more.",
+                "Graves deal 25% more below 35% health.",
+                "Your Graves heal you each second.",
             },
             slots = {
                 "Burial Grounds",
@@ -1016,35 +943,34 @@ EmberforgeRunesArt = {
             inner = { 0.984, 0.871, 0.863 },
             built = true,
             burn = true,
-            core = "**Mortal Strike** or **Bloodthirst** cuts a **Weapon Wake** through " ..
-                    "its target. Your next different melee strike through it reopens the " ..
-                    "wake for another attack.",
+            core = "**Mortal Strike** or **Bloodthirst** cuts a **Weapon Wake**; your next " ..
+                    "other melee ability rips it open.",
             asks = {
                 "The shape of your wake",
-                "What reopening does",
-                "Where the wake goes",
+                "How it rips open",
+                "What it gives you",
             },
             abilities = {
-                "Narrow",
+                "Cleft",
                 "Crescent",
-                "Long",
-                "Instant",
+                "Long slash",
+                "At once",
                 "Bleed",
                 "Aftershock",
                 "Follow",
-                "Longer",
-                "Transfer",
+                "10 sec",
+                "Heal",
             },
             texts = {
-                "A narrow cleft: its first target takes 50% more.",
+                "A narrow cleft: the first target takes 50% more.",
                 "A broad crescent in front of you, 8 yards.",
                 "A long slash, 14 yards past your target.",
-                "Reopening attacks at once.",
-                "The wake's attack leaves a bleed, refreshed and capped.",
-                "A second impact there 1.5 sec later, at half.",
-                "Your wake follows its first target.",
-                "Your wake stays put and lasts 10 sec.",
-                "Striking another enemy through it gives that enemy the bonus.",
+                "The wake rips open at once.",
+                "Enemies hit bleed for 30% over 6 sec.",
+                "The wake strikes again at half.",
+                "Your wake follows its target.",
+                "Your wake lasts 10 sec.",
+                "Each enemy hit heals you for 1%.",
             },
             slots = {
                 "Wake",
@@ -1061,40 +987,39 @@ EmberforgeRunesArt = {
             inner = { 1, 0.961, 0.882 },
             built = true,
             burn = true,
-            core = "Bind an ally with **Dawn Vow**. **Crusader Strike** on your Judgment " ..
-                    "target and **Holy Shock** send **Dawn Echoes** from them.",
+            core = "**Crusader Strike** and **Holy Shock** send a **Dawn Echo** a moment " ..
+                    "later: half of their damage or healing again.",
             asks = {
-                "What your echoes do",
-                "How the echoes appear",
-                "What your vow carries",
+                "What your echoes become",
+                "What light they leave",
+                "What grace they give",
             },
             abilities = {
-                "Heal",
-                "Damage",
+                "Splash",
+                "Power",
                 "Both",
-                "Path",
-                "Pulse",
                 "Ground",
                 "Holy Shock",
-                "Dawn Vow",
-                "Reach",
+                "Judgement",
+                "Self-heal",
+                "Cooldowns",
+                "Shield",
             },
             texts = {
-                "Echoes heal the most injured ally near your vow.",
-                "Echoes strike an enemy near your vow, your Judgment target first.",
-                "Echoes turn between healing and damage, at 85% each.",
-                "Echoes travel from your vow toward your Judgment target.",
-                "Echoes pulse around your vow, 8 yards.",
-                "Echoes leave consecrated ground at your vow.",
-                "Holy Shock gives your vow an afterimage that repeats the next echo at " ..
-                        "half.",
-                "Moving your vow releases a pending echo at once.",
-                "Movement by you or your vow extends the next echo's reach.",
+                "Each echo splashes 5 more nearby, 40%.",
+                "Your echoes are 40% stronger.",
+                "Every echo strikes and heals, 35% each.",
+                "Each echo leaves consecrated ground.",
+                "Holy Shock echoes twice.",
+                "Judgement echoes too.",
+                "Damaging echoes heal you for 20%.",
+                "Each echo shortens your cooldowns.",
+                "Healing echoes also shield, 25%.",
             },
             slots = {
-                "Doctrine",
-                "Manifestation",
-                "Oath",
+                "Echo",
+                "Light",
+                "Grace",
             },
         },
         [30] = {
@@ -1106,35 +1031,35 @@ EmberforgeRunesArt = {
             inner = { 0.941, 0.898, 0.984 },
             built = true,
             burn = true,
-            core = "Two seconds into **Mind Flay**, a **Hollow Echo** stays behind and " ..
-                    "channels a weaker one. **Mind Blast** turns every echo on its target " ..
-                    "in a barrage.",
+            core = "**Mind Flay** calls a **Hollow Echo** to your side; it follows you and " ..
+                    "flays your target. **Mind Blast** turns every echo on its target in a " ..
+                    "barrage.",
             asks = {
-                "Where your echoes stay",
+                "How many echoes you keep",
                 "How they answer Mind Blast",
-                "What else they obey",
+                "What else they give",
             },
             abilities = {
-                "Follow",
-                "Range",
-                "Possession",
+                "4 echoes",
+                "15 sec",
+                "Fade",
                 "Together",
                 "Spread",
                 "Line",
-                "Fade",
-                "Move",
-                "Movement",
+                "Fervor",
+                "Self-heal",
+                "Cooldown",
             },
             texts = {
-                "Your echoes drift after you.",
-                "Your echoes stay put and reach 40 yards.",
-                "Your echoes ride their victims, one each.",
+                "You can have 4 echoes.",
+                "Your echoes last 15 sec.",
+                "A fading echo strikes three times as hard.",
                 "The barrage lands together, 20% stronger.",
-                "Echoes turn on separate enemies with your Shadow Word: Pain.",
+                "Echoes turn on enemies with your Shadow Word: Pain.",
                 "Each echo screams through every enemy toward the target.",
-                "A fading echo repeats its last attack, three times as strong.",
-                "Mind Blast moves your echoes beside its target.",
-                "Moving without channeling makes their channels 30% stronger.",
+                "Echoes deal 25% more while you flay.",
+                "Echoes heal you for 10% of their damage.",
+                "Mind Blast comes back sooner per echo.",
             },
             slots = {
                 "Congregation",
@@ -1151,40 +1076,39 @@ EmberforgeRunesArt = {
             inner = { 0.906, 0.961, 0.988 },
             built = true,
             burn = true,
-            core = "Your fire spells embed burning **Sunshards**, Fireball and Pyroblast " ..
-                    "in nearby enemies too. Your frost spells shatter one in a **chain " ..
-                    "reaction** through the rest; fire then collapses the **Broken Core**.",
+            core = "Your fire spells embed **Sunshards** in their target, up to 5. Your " ..
+                    "next **frost spell** on it shatters them all in a burst around it.",
             asks = {
-                "How your shards spread",
-                "How a shard breaks",
-                "What the collapse adds",
+                "How you embed shards",
+                "How the burst spreads",
+                "What the burst adds",
             },
             abilities = {
+                "Wildfire",
                 "Spread",
-                "Orbit",
-                "Anchor",
-                "Cone",
-                "Line",
+                "8 shards",
+                "12 yards",
                 "Ground",
-                "Focus",
                 "Chain",
+                "Implosion",
                 "Pulse",
+                "Slow",
             },
             texts = {
-                "Fireball and Pyroblast spread to 4 more enemies; hold 7 shards.",
-                "A breaking shard blasts your current target.",
-                "A shard stays on the ground where it went in.",
-                "The fracture becomes a cone away from you, 12 yards.",
-                "The fracture pierces on through in a line, 20 yards.",
-                "The fracture leaves Frostfire ground for 4 sec.",
-                "The collapse deals 40% more.",
-                "Chain reactions reach 15 yards and lose no strength.",
-                "The collapse pulses again 2 sec later, stronger on a crowd.",
+                "Fireball and Pyroblast embed 2 shards.",
+                "Fireball and Pyroblast also embed in 2 nearby enemies.",
+                "Your target holds up to 8 shards.",
+                "The burst reaches 12 yards.",
+                "The burst leaves burning ground for 4 sec.",
+                "Shards in nearby enemies shatter too, at half.",
+                "The burst deals 40% more to your target.",
+                "The burst flares again 2 sec later.",
+                "The burst slows enemies by 40%.",
             },
             slots = {
                 "Formation",
-                "Fracture",
-                "Collapse",
+                "Shatter",
+                "Sunfall",
             },
         },
     },
