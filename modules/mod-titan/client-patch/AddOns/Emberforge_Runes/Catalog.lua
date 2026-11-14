@@ -1428,78 +1428,44 @@ EmberforgeRunesCatalog = {
     },
     { id = 23,
       name = "Rune of the Stormbound Conduit",
-      role = "DPS (Lightning)",
+      role = "DPS (Lightning Bolt)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_StormboundConduit",
-      slots = { "Conductivity", "Arc Pattern", "Lightning Shield" },
-      builtFrom = "Lightning Bolt (Conductive enemies)",
-      spentWith = "Chain Lightning and Lightning Shield (arcs)",
-      resource = "None: Conductive enemies",
-      core = "Lightning Bolt makes its target Conductive for 6 sec. Chain Lightning striking a Conductive enemy " ..
-          "arcs to one nearby enemy for 15% of Lightning Bolt's damage. While Lightning Shield is active, its " ..
-          "retaliations arc to one nearby Conductive enemy for 25% of their damage. Conductive does not stack " ..
-          "and is not consumed; arcs never arc again.",
-      loop = "Connect enemies with Lightning Bolt, then let Chain Lightning and your shield's lightning travel " ..
-          "through them. No charge to build, no cast to bank: where the lightning goes is the rune.",
+      slots = { "Arcs", "Lightning Shield", "Surge" },
+      builtFrom = "Lightning Bolt",
+      spentWith = "Arcs (automatic)",
+      resource = "None",
+      core = "Lightning Bolt arcs to 2 enemies within 10 yards of its target for 30% of its damage each. While " ..
+          "Lightning Shield is up, its retaliations arc to 1 nearby enemy for 50% of their damage. Arcs never arc " ..
+          "again.",
+      loop = "Cast Lightning Bolt. The storm does the rest.",
       mods = {
-        {
-          name = "Persistent Current",
-          text = "Conductive lasts 12 sec instead of 6.",
-        },
-        {
-          name = "Branching Current",
-          text = "Lightning Bolt also makes one enemy within 8 yards of its target Conductive, but your arcs deal " ..
-              "20% less damage.",
-        },
-        {
-          name = "Live Wire",
-          text = "Enemies that strike you in melee become Conductive, whatever your Lightning Shield does.",
-        },
-        {
-          name = "Forked Tempest",
-          text = "Arcs strike up to 2 eligible enemies, splitting their damage between them.",
-        },
-        {
-          name = "Closed Circuit",
-          text = "Chain Lightning's arc returns to the Conductive enemy it struck for 50% of the arc's damage, " ..
-              "instead of striking another enemy.",
-        },
-        {
-          name = "Faraday Field",
-          text = "Arcs travel 50% farther, but deal 15% less damage.",
-        },
-        {
-          name = "Storm Within",
-          text = "Lightning Shield no longer strikes back: every 3 sec it pulses at the nearest Conductive enemy " ..
-              "within 8 yards, using a charge. Pulses never arc.",
-        },
-        {
-          name = "Violent Reprisal",
-          text = "Lightning Shield's arcs deal 40% more damage, but its retaliation deals 10% less.",
-        },
-        {
-          name = "Distant Conductor",
-          text = "Every Lightning Bolt hit fires a Lightning Shield retaliation at its target, using a charge. " ..
-              "Being struck no longer does.",
-        },
+        { name = "Forked Tempest",
+          text = "Lightning Bolt arcs to 3 enemies." },
+        { name = "Closed Circuit",
+          text = "Lightning Bolt's arc strikes its own target again for 60% instead." },
+        { name = "Faraday Field",
+          text = "Arcs reach 15 yards and deal 10% more." },
+        { name = "Live Wire",
+          text = "Lightning Shield's retaliations arc to 2 enemies." },
+        { name = "Storm Within",
+          text = "Lightning Shield strikes the nearest enemy within 8 yards every 3 sec in combat." },
+        { name = "Distant Conductor",
+          text = "Lightning Bolt also fires a Lightning Shield retaliation at its target." },
+        { name = "Chain Surge",
+          text = "Each Chain Lightning hit arcs to 1 more enemy for 20% of it." },
+        { name = "Static Ward",
+          text = "Each arc shields you for 1% of your maximum health, up to 10%, for 8 sec." },
+        { name = "Overcharge",
+          text = "Arcs from a critical strike deal 50% more." },
       },
       builds = {
-        {
-          name = "Ranged Storm Caster",
-          mods = { "Persistent Current", "Closed Circuit", "Distant Conductor" },
-          text = "Long connections, Chain Lightning folding back into its target, and your shield fired with " ..
-              "every Lightning Bolt.",
-        },
-        {
-          name = "Pack Damage",
-          mods = { "Branching Current", "Forked Tempest", "Violent Reprisal" },
-          text = "More enemies connected, every arc split across two, and a shield that arcs hard.",
-        },
-        {
-          name = "Close-Range Lightning",
-          mods = { "Persistent Current", "Closed Circuit", "Storm Within" },
-          text = "Long connections and a shield that pulses at the Conductive enemies around you.",
-        },
+        { name = "The Thunderhead", mods = { "Closed Circuit", "Distant Conductor", "Overcharge" },
+          text = "Pour every bolt into one enemy." },
+        { name = "The Wildfire Storm", mods = { "Forked Tempest", "Live Wire", "Chain Surge" },
+          text = "Light up the whole pack." },
+        { name = "The Lightning Rod", mods = { "Faraday Field", "Storm Within", "Static Ward" },
+          text = "Fight up close, shielded by the storm." },
       },
     },
     { id = 24,

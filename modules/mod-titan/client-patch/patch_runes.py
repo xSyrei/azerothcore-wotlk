@@ -39,15 +39,14 @@ The Rune of the Sanctified Paragon (the "Rune of the Sanctified Paragon" concept
 The Rune of the Stormbound Conduit (the "Rune of the Stormbound Conduit" concept doc), 90750 on:
 
 - 90750 the rune: a buff the Hero wears while their active specialization's rune is the Stormbound Conduit; its
-  procs (Lightning Bolt and Chain Lightning hits) make enemies Conductive and arc (runes.cpp);
-- 90751 Conductive: on an enemy, 6 sec (12 with Persistent Current, set by the script), one per Hero; lightning
-  crackling on it;
+  procs (Lightning Bolt and Chain Lightning hits) arc (runes.cpp);
+- 90751 Static Ward: an absorb the arcs build (its amount and time set by the script), lightning crackling on it;
 - 90752 Stormbound Arc: a secondary arc's Nature damage (its amount set by the script, no caster modifiers), a
   strike of lightning where it lands;
-- 90753 its look: Chain Lightning's bolt from the Conductive enemy to the next (cast by that enemy, no effect);
+- 90753 its look: Chain Lightning's bolt from the enemy it leaves to the next (cast by that enemy, no effect);
 - 90754 Lightning Shield: a retaliation the rune makes (Distant Conductor, Storm Within): the Hero's Lightning
   Shield rank's damage, its spell power share through spell_bonus_data; a bolt from the sky;
-- 90760-90768 its nine modifiers' markers (Conductivity, Arc Pattern, Lightning Shield: 3 each), hidden.
+- 90760-90768 its nine modifiers' markers (Arcs, Lightning Shield, Surge: 3 each), hidden.
 
 The Rune of Echoing Thunder (the "Rune of Echoing Thunder" concept doc), 90770 on:
 
@@ -399,20 +398,20 @@ EFFECTS = {
 }
 # The Rune of the Stormbound Conduit (90750 on; runes.cpp's Stormbound Conduit section).
 STORM_RUNE = buff(90750, 'Rune of the Stormbound Conduit', STORM_ICON,
-                  'Lightning Bolt makes its target Conductive for 6 sec. Chain Lightning striking a Conductive enemy '
-                  'arcs to one nearby enemy for 15% of Lightning Bolt\'s damage, and your Lightning Shield\'s '
-                  'retaliations arc to one nearby Conductive enemy for 25% of their damage.',
+                  'Lightning Bolt arcs to 2 enemies within 10 yards of its target for 30% of its damage. Your '
+                  'Lightning Shield\'s retaliations arc to 1 nearby enemy for 50% of theirs.',
                   DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)})
 # Its procs: Lightning Bolt and Chain Lightning land as harmful spells; the script picks them out.
 STORM_RUNE['set'] = {**STORM_RUNE['set'], 'ProcFlags': PROC_DONE_MAGIC_SPELL_NEGATIVE, 'ProcChance': 101}
 SPELLS += [
     STORM_RUNE,
     {
-        'id': 90751, 'copy': CRIPPLING_POISON, 'name': 'Conductive', 'icon': 'Spell_Nature_LightningOverload',
-        'description': 'Conductive: the Stormbound Conduit\'s lightning arcs through it.',
-        'tooltip': 'Conductive: lightning arcs through it.',
-        'set': {**HARMFUL, 'DurationIndex': DURATION_6S, 'SchoolMask': NATURE, 'SpellVisual': VISUAL_CRACKLE},
-        'effects': {1: {**aura(AURA_DUMMY, 1, 0), 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
+        'id': 90751, 'copy': POWER_WORD_SHIELD, 'name': 'Static Ward', 'icon': 'Spell_Nature_LightningOverload',
+        'description': 'Absorbs damage.', 'tooltip': 'Absorbs $s1 damage.',
+        'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
+                'RangeIndex': 1, 'DurationIndex': DURATION_6S, 'SchoolMask': NATURE, 'SpellVisual': VISUAL_CRACKLE},
+        'effects': {1: {'Effect': 6, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': 0, 'DieSides': 1,
+                        'RealPointsPerLevel': 0.0, 'MiscValue': ALL_SCHOOLS, 'TargetA': 1, 'TargetB': 0}},
         'clear': [2, 3],
     },
     {
@@ -447,9 +446,9 @@ SPELLS += [
     },
 ]
 STORM_MODIFIERS = [
-    ('Persistent Current', 'Branching Current', 'Live Wire'),
     ('Forked Tempest', 'Closed Circuit', 'Faraday Field'),
-    ('Storm Within', 'Violent Reprisal', 'Distant Conductor'),
+    ('Live Wire', 'Storm Within', 'Distant Conductor'),
+    ('Chain Surge', 'Static Ward', 'Overcharge'),
 ]
 SPELLS += [buff(90760 + slot * 3 + choice, name, STORM_ICON, '', DURATION_INFINITE,
                 {1: aura(AURA_DUMMY, 1, 0)}, hidden=True)

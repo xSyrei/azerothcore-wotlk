@@ -125,8 +125,9 @@ RUNES = [
      'a defensive zone or a source of healing.', 'Consecration',
      'M12 3v4M12 17v4M3 12h4M17 12h4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1'
      'M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1'),
-    (23, (95, 170, 255), 'Lightning · Stormbound', 'Lightning Bolt connects enemies; your lightning arcs through '
-     'them.', 'Lightning Bolt and Lightning Shield',
+    (23, (95, 170, 255), 'Lightning · Stormbound',
+     'Lightning Bolt arcs through nearby enemies.',
+     'Lightning Bolt and Lightning Shield',
      'M13 2 5 13h6l-1 9 8-12h-6l1-8ZM3 8l3 2-3 3M21 8l-3 2 3 3'),
     (24, (120, 160, 255), 'Protection · Thunder',
      'Thunder Clap charges you; Shield Slam echoes it.',
@@ -235,34 +236,43 @@ BUILT = {
                   'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z'],
     },
     23: {
-        'core': 'Lightning Bolt makes its target **Conductive** for 6 sec. Chain Lightning striking a Conductive enemy '
-                '**arcs** to one nearby enemy, and Lightning Shield\'s retaliations arc to a nearby Conductive one.',
-        'slots': ['Conductivity', 'Arc Pattern', 'Lightning Shield'],
-        'asks': ['How you make connections', 'Where your arcs travel', 'What your Lightning Shield does'],
-        'texts': ['Conductive lasts 12 sec instead of 6.',
-                  'Lightning Bolt also makes one enemy within 8 yards of its target Conductive, but arcs deal 20% '
-                  'less damage.',
-                  'Enemies that strike you in melee become Conductive, whatever your Lightning Shield does.',
-                  'Arcs strike up to 2 eligible enemies, splitting their damage between them.',
-                  'Chain Lightning\'s arc returns to its Conductive target for 50% of its damage instead of striking '
-                  'another enemy.',
-                  'Arcs travel 50% farther, but deal 15% less damage.',
-                  'No retaliation when struck: every 3 sec your shield pulses at the nearest Conductive enemy within '
-                  '8 yards, using a charge. Pulses never arc.',
-                  'Lightning Shield\'s arcs deal 40% more damage, but its retaliation deals 10% less.',
-                  'Every Lightning Bolt hit fires a Lightning Shield retaliation at its target, using a charge. Being '
-                  'struck no longer does.'],
-        'abilities': ['Conductive', 'Lightning Bolt', 'Melee attackers', 'Arcs', 'Chain Lightning', 'Arcs',
-                      'Lightning Shield', 'Lightning Shield', 'Lightning Bolt · Lightning Shield'],
-        'icons': ['M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
-                  'M12 3v6M5 21l7-12 7 12M3 12h4M17 12h4',
-                  'M4 12c3-6 5-6 8 0s5 6 8 0',
-                  'M12 3v8M12 11 5 21M12 11l7 10',
-                  'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 4v4l3-2',
-                  'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0',
-                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM12 8v4M12 15v.5',
-                  'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM13 7l-4 6h4l-2 5',
-                  'M13 2 4 14h7l-1 8 9-12h-7z'],
+        'core': "**Lightning Bolt** arcs to 2 nearby enemies for 30% of its damage. Your **Lightning Shield**'s "
+                'retaliations arc too.',
+        'slots': ['Arcs', 'Lightning Shield', 'Surge'],
+        'asks': ['Where your arcs go', 'What your Lightning Shield does', 'What the storm adds'],
+        'texts': [
+            'Lightning Bolt arcs to 3 enemies.',
+            'The arc strikes your target again, 60%.',
+            'Arcs reach 15 yards, 10% stronger.',
+            'Retaliations arc to 2 enemies.',
+            'Lightning Shield strikes every 3 sec.',
+            'Lightning Bolt fires a retaliation too.',
+            'Chain Lightning arcs too.',
+            'Each arc shields you, up to 10%.',
+            'Critical arcs deal 50% more.',
+        ],
+        'abilities': [
+            '3 arcs',
+            'Single target',
+            '15 yards',
+            '2 arcs',
+            'Pulse',
+            'Retaliation',
+            'Chain Lightning',
+            'Shield',
+            'Critical',
+        ],
+        'icons': [
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z',
+            'M12 3v6M5 21l7-12 7 12M3 12h4M17 12h4',
+            'M4 12c3-6 5-6 8 0s5 6 8 0',
+            'M12 3v8M12 11 5 21M12 11l7 10',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 4v4l3-2',
+            'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0',
+            'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM12 8v4M12 15v.5',
+            'M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6ZM13 7l-4 6h4l-2 5',
+            'M13 2 4 14h7l-1 8 9-12h-7z',
+        ],
     },
     24: {
         'core': '**Thunder Clap** charges you with thunder. Your next **Shield Slam** releases a **Thunder Echo** '
@@ -576,11 +586,8 @@ LABELS = {
 # Every slot name a built rune uses (the doc's three; the Sanctified Paragon's Presence and Covenant; the Stormbound
 # Conduit's, Echoing Thunder's, the Wellspring's, the Wandering Mist's and the five after them), by name (the key its
 # letters and digits only: the panel does the same).
-for _name in ['Invocation', 'Manifestation', 'Adaptation', 'Presence', 'Covenant', 'Conductivity', 'Arc Pattern',
-              'Lightning Shield', 'Thunderfield', 'Echo Pattern', 'Shield Resonance', 'Wellspring', 'Current',
-              'Undertow', 'Mistflow', 'Technique', "Mistweaver's Approach", 'Inscription', 'Dominion',
-              'Requiem', 'Wake', 'Follow-Through', 'Pursuit', 'Doctrine', 'Oath', 'Congregation', 'Sermon',
-              'Command', 'Formation', 'Fracture', 'Collapse', 'Burial Grounds', 'Gravekeeper', 'Shared Burial']:
+for _name in dict.fromkeys(['Invocation', 'Manifestation', 'Adaptation']
+                          + [name for built in BUILT.values() for name in built.get('slots', [])]):
     _key = ''.join(c for c in _name if c.isalnum())
     LABELS[f'Choose{_key}'] = {'text': 'Choose your ' + _name, 'font': '700 28px Cinzel', 'spacing': '3px',
                                 'color': '#ffe2a8', 'glows': [['rgba(255,150,60,0.55)', 20]], 'shadow': '#000',

@@ -153,11 +153,12 @@ for _, id in ipairs({ 25, 26 }) do
         and EmberforgeRunesCatalog[id].roles[1] == "HEALER", "a healer's rune with its words: rune " .. id)
 end
 local thunder = EmberforgeRunesArt.runes[24]
-check(thunder.built and thunder.slots[3] == "Shield Resonance" and #thunder.texts == 9
+check(thunder.built and thunder.slots[3] == "Resonance" and #thunder.texts == 9
     and EmberforgeRunesCatalog[24].roles[1] == "TANK", "Art.lua has Echoing Thunder's slots and words; a tank's rune")
 local storm = EmberforgeRunesArt.runes[23]
-check(storm.built and storm.slots[2] == "Arc Pattern" and #storm.texts == 9 and #EmberforgeRunesCatalog[23].mods == 9,
-    "Art.lua has the Stormbound Conduit's slots (Conductivity, Arc Pattern, Lightning Shield) and its words")
+check(storm.built and storm.slots[2] == "Lightning Shield" and #storm.texts == 9
+    and #EmberforgeRunesCatalog[23].mods == 9,
+    "Art.lua has the Stormbound Conduit's slots (Arcs, Lightning Shield, Surge) and its words")
 local paragon = EmberforgeRunesArt.runes[22]
 check(paragon.built and paragon.slots[1] == "Presence" and paragon.slots[3] == "Covenant" and #paragon.texts == 9,
     "Art.lua has the Sanctified Paragon's slots (Presence, Manifestation, Covenant) and its words")
@@ -299,10 +300,10 @@ server("R,23,-")
 server("S,10,10,3,23,0,0,0,23,0")
 EmberforgeRunes_Open()
 run(0.2)
-check(view.mode == "build" and debug.slots[2].small.texture:find("SlotArcPattern$")
-    and debug.slots[3].small.texture:find("SlotLightningShield$"), "the Stormbound Conduit's slots: Arc Pattern...")
-check(debug.choose.labels[1].texture:find("ChooseConductivity$")
-    and debug.options[1].name.text == "Persistent Current", "choosing its Conductivity: Persistent Current first")
+check(view.mode == "build" and debug.slots[2].small.texture:find("SlotLightningShield$")
+    and debug.slots[3].small.texture:find("SlotSurge$"), "the Stormbound Conduit's slots: Lightning Shield...")
+check(debug.choose.labels[1].texture:find("ChooseArcs$")
+    and debug.options[1].name.text == "Forked Tempest", "choosing its Arcs: Forked Tempest first")
 frame:Hide()
 server("S,10,10,1,21,1,3,1,21,0")
 
