@@ -102,7 +102,10 @@ function GetActionInfo(slot)
     end
 end
 for index = 1, 12 do
-    NewWidget("ActionButton" .. index).action = index
+    local button = NewWidget("ActionButton" .. index)
+    button.action = index
+    button.GetName = function() return "ActionButton" .. index end
+    _G["ActionButton" .. index .. "Icon"] = button:CreateTexture(nil, "BORDER")
 end
 
 dofile(DIR .. "Catalog.lua")
@@ -314,12 +317,7 @@ local function fire(event, unit)
     end
 end
 local function volleyShown(button)
-    for _, texture in ipairs(button.textures or {}) do
-        if texture.texture == "Interface\\Icons\\Ability_Warlock_ChaosBolt" and texture.shown then
-            return true
-        end
-    end
-    return false
+    return _G[button:GetName() .. "Icon"].texture == "Interface\\Icons\\Ability_Warlock_ChaosBolt"
 end
 fire("UNIT_AURA", "player")
 check(not volleyShown(ActionButton3), "4 stacks: no glow")
@@ -333,12 +331,7 @@ check(not volleyShown(ActionButton3), "spent: the glow goes")
 
 -- Consecration on button 4 shows the Sanctified Paragon's icon while that rune is bound (no glow).
 local function iconShown(button, path)
-    for _, texture in ipairs(button.textures or {}) do
-        if texture.texture == path and texture.shown then
-            return true
-        end
-    end
-    return false
+    return _G[button:GetName() .. "Icon"].texture == path
 end
 local PARAGON_ICON = "Interface\\Icons\\Ability_Rune_SanctifiedParagon"
 actions[4] = 26573

@@ -2099,9 +2099,6 @@ local function Overlay(button)
     overlay.border:SetWidth(button:GetWidth() * 1.9)
     overlay.border:SetHeight(button:GetHeight() * 1.9)
     overlay.border:SetPoint("CENTER")
-    overlay.icon = button:CreateTexture(nil, "OVERLAY")
-    overlay.icon:SetAllPoints()
-    overlay.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
     overlay.felguard = button:CreateTexture(nil, "OVERLAY")
     overlay.felguard:SetTexture("Interface\\Icons\\Spell_Shadow_SummonFelGuard")
     overlay.felguard:SetWidth(14)
@@ -2111,40 +2108,64 @@ local function Overlay(button)
     return overlay
 end
 
+-- The button's own icon swapped (so it keeps the icon's place inside the border, the cooldown sweep over it and the
+-- out-of-range and unusable tints), and put back from the action once the rune lets go.
+local function SetIcon(button, path)
+    local icon = _G[(button:GetName() or "") .. "Icon"]
+    if not icon then
+        return
+    end
+    if path then
+        icon:SetTexture(path)
+        button.emberforgeIcon = path
+    elseif button.emberforgeIcon then
+        button.emberforgeIcon = nil
+        icon:SetTexture(GetActionTexture and GetActionTexture(button.action) or nil)
+    end
+end
+
+local function UpdateButton(button, state)
+    local icon, glowing = Changed(ActionSpell(button.action), state)
+    SetIcon(button, icon)
+    if icon and glowing then
+        local overlay, meta = Overlay(button), state.meta
+        overlay.border:SetVertexColor(meta and 0.75 or 0.35, meta and 0.45 or 1, meta and 1 or 0.3)
+        overlay.border:Show()
+        if meta then
+            overlay.felguard:Show()
+        else
+            overlay.felguard:Hide()
+        end
+        return true
+    end
+    if glow.buttons[button] then
+        for _, texture in pairs(glow.buttons[button]) do
+            texture:Hide()
+        end
+    end
+    return false
+end
+
 local function UpdateGlow()
     local state = State()
     local pulsing = false
     for _, bar in ipairs(BAR_BUTTONS) do
         for index = 1, 12 do
             local button = _G[bar .. index]
-            if button and button.action then
-                local icon, glowing = Changed(ActionSpell(button.action), state)
-                if icon then
-                    local overlay = Overlay(button)
-                    overlay.icon:SetTexture(icon)
-                    overlay.icon:Show()
-                    if glowing then
-                        local meta = state.meta
-                        overlay.border:SetVertexColor(meta and 0.75 or 0.35, meta and 0.45 or 1, meta and 1 or 0.3)
-                        overlay.border:Show()
-                        pulsing = true
-                    else
-                        overlay.border:Hide()
-                    end
-                    if glowing and state.meta then
-                        overlay.felguard:Show()
-                    else
-                        overlay.felguard:Hide()
-                    end
-                elseif glow.buttons[button] then
-                    for _, texture in pairs(glow.buttons[button]) do
-                        texture:Hide()
-                    end
-                end
+            if button and button.action and UpdateButton(button, state) then
+                pulsing = true
             end
         end
     end
     glow.armed = pulsing
+end
+-- Blizzard's own update sets the icon back from the action: the swap follows it.
+if hooksecurefunc and ActionButton_Update then
+    hooksecurefunc("ActionButton_Update", function(button)
+        if button.action then
+            UpdateButton(button, State())
+        end
+    end)
 end
 EmberforgeRunes_UpdateGlow = UpdateGlow
 
