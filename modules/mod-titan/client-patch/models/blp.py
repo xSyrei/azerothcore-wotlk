@@ -87,11 +87,12 @@ def _dxt_level(image, fmt):
     return data[128 + (20 if data[84:88] == b'DX10' else 0):]
 
 
-def encode_dxt(image):
+def encode_dxt(image, mips=True):
     """A DXT-compressed BLP2 (the format of the game's own world textures), with a full mipmap chain:
     DXT1 when the image is opaque, DXT5 with its 8-bit alpha otherwise (terrain textures' specular maps,
     cut-out masks). A cube map strip (six square faces side by side: width six times a power-of-two height, as
-    the client's TILESET\\Terrain Cube Maps) is accepted too."""
+    the client's TILESET\\Terrain Cube Maps) is accepted too. mips=False: the top level alone (UI art drawn at its own
+    size: a quarter smaller)."""
     image = image.convert('RGBA')
     width, height = image.size
     cube = width == 6 * height and _is_pow2(height)
@@ -100,27 +101,28 @@ def encode_dxt(image):
     opaque = image.getchannel('A').getextrema()[0] == 255
     fmt, block = ('DXT1', 8) if opaque else ('DXT5', 16)
 
-    mips, level, w, h = [], image, width, height
+    levels, level, w, h = [], image, width, height
     while True:
         blocks = max(1, (w + 3) // 4) * max(1, (h + 3) // 4)
-        mips.append(_dxt_level(level, fmt)[:blocks * block])
-        if w == 1 and h == 1:      # a cube strip too: down to 1x1, as the client's own
+        levels.append(_dxt_level(level, fmt)[:blocks * block])
+        if not mips or (w == 1 and h == 1):      # a cube strip too: down to 1x1, as the client's own
             break
         w, h = max(1, w // 2), max(1, h // 2)
         level = resize_straight(image, (w, h))
 
     header_size = 4 + 4 + 4 + 8 + 16 * 4 * 2 + 256 * 4
     offsets, sizes, position = [], [], header_size
-    for data in mips:
+    for data in levels:
         offsets.append(position)
         sizes.append(len(data))
         position += len(data)
     offsets += [0] * (16 - len(offsets))
     sizes += [0] * (16 - len(sizes))
     # encoding 2 (DXT); alpha depth 0 or 8, alpha encoding 0 (DXT1) or 7 (DXT5)
-    header = struct.pack('<4sIBBBBII', b'BLP2', 1, 2, 0 if opaque else 8, 0 if opaque else 7, 1, width, height)
+    header = struct.pack('<4sIBBBBII', b'BLP2', 1, 2, 0 if opaque else 8, 0 if opaque else 7, 1 if mips else 0,
+                         width, height)
     header += struct.pack('<16I', *offsets) + struct.pack('<16I', *sizes) + b'\0' * 1024
-    return header + b''.join(mips)
+    return header + b''.join(levels)
 
 
 def encode_raw(image):

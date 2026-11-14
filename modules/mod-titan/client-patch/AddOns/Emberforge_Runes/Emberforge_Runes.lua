@@ -888,8 +888,9 @@ for index = 1, 3 do
     previews[index] = preview
 end
 
--- The burn: the card in TILE-point pieces, each going at its noise (the mockup's: three octaves of value noise and a
--- fire that catches near a bottom corner and climbs), rimmed in flame and charred just behind it.
+-- The burn of a card without a baked one: the card in TILE-point pieces, each going at its noise (the mockup's:
+-- three octaves of value noise and a fire that catches near a bottom corner and climbs), rimmed in flame and charred
+-- just behind it.
 local function NoiseMap(seed)
     local function octave(cell)
         local cw, ch = math.ceil(CW / cell) + 2, math.ceil(CH / cell) + 2
@@ -925,7 +926,69 @@ local function NoiseMap(seed)
     return map
 end
 
+-- The Skill Cards' burn (build_rune_art.py bakes it for each built rune's card, Art/Burn<id>): one texture steps
+-- through its frames, mirrored at random, motes lifting off the rim by the same noise (art.burn.noise). A card
+-- without one burns in tiles (below).
+local BURN = art.burn
+local function BakedNoise(u, v, mirrored)
+    if mirrored then
+        u = 1 - u
+    end
+    local x = math.max(0, math.min(BURN.w - 1, math.floor(u * BURN.w)))
+    local y = math.max(0, math.min(BURN.h - 1, math.floor(v * BURN.h)))
+    local at = (y * BURN.w + x) * 2 + 1
+    return (tonumber(BURN.noise:sub(at, at + 1)) or 99) / 100
+end
+
+local function LightBakedBurn(card)
+    card.baked = card.baked or Tex(card.holder, "ARTWORK")
+    card.baked:ClearAllPoints()
+    card.baked:SetPoint("CENTER")
+    card.baked:SetWidth(CW)
+    card.baked:SetHeight(CH)
+    card.baked:SetTexture(ART .. "Burn" .. card.rune.id)
+    card.baked:Show()
+    card.mirrored = math.random() < 0.5
+    card.frame = -1
+    card.noise = "baked"
+    card.art:Hide()
+end
+
+local function BakedStep(card, p)
+    local frame = math.min(BURN.frames - 1, math.max(0, math.floor(p / BURN.reach * (BURN.frames - 1) + 0.5)))
+    if frame ~= card.frame then
+        card.frame = frame
+        local column, row = frame % BURN.columns, math.floor(frame / BURN.columns)
+        local u0, u1 = column / BURN.columns, (column + BURN.u) / BURN.columns
+        local v0 = row / BURN.rows
+        local v1 = v0 + BURN.v / BURN.rows
+        if card.mirrored then
+            u0, u1 = u1, u0
+        end
+        card.baked:SetTexCoord(u0, u1, v0, v1)
+    end
+    local emitted = 0
+    for _ = 1, 40 do
+        local u, v = math.random(), math.random()
+        local ahead = BakedNoise(u, v, card.mirrored) - p
+        if ahead >= 0 and ahead < BURN.edge * 1.5 then
+            local white = math.random() < 0.5
+            Emit({ x = card.x + (u - 0.5) * CW * card.s, y = card.y + (v - 0.5) * CH * card.s, vx = rand(-40, 40),
+                vy = rand(-160, -60), grav = -40, life = rand(0.9, 1.8), size = rand(3, 7), drag = 0.97, alpha = 0.95,
+                kind = white and "SpriteCream" or "SpriteEmber" })
+            emitted = emitted + 1
+            if emitted >= 5 then
+                break
+            end
+        end
+    end
+end
+
 local function LightBurn(card)
+    local entry = art.runes[card.rune.id]
+    if BURN and entry and entry.burn then
+        return LightBakedBurn(card)
+    end
     card.noise = NoiseMap(rand(0.1, 0.9))
     card.tiles = card.tiles or {}
     local file = "Card" .. card.rune.id
@@ -955,6 +1018,9 @@ local function LightBurn(card)
 end
 
 local function EndBurn(card)
+    if card.baked then
+        card.baked:Hide()
+    end
     for _, tile in ipairs(card.tiles or {}) do
         tile:Hide()
     end
@@ -984,6 +1050,9 @@ local function TileState(tile, look, flame, r, g, b)
 end
 
 local function BurnStep(card, p)
+    if card.noise == "baked" then
+        return BakedStep(card, p)
+    end
     local edge, charW = 0.06, 0.12
     local embers = 0
     for i, tile in ipairs(card.tiles) do

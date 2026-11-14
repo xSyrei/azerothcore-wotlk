@@ -17,6 +17,7 @@
 
 #include "wildcard.h"
 #include "emberspark.h"
+#include "runes.h"
 #include "Chat.h"
 #include "GameTime.h"
 #include "WorldPacket.h"
@@ -42,6 +43,8 @@ using namespace Acore::ChatCommands;
 // - .runes: the selected player's (or your) runes as the server sees them: each one's type and how long until it is
 //   ready (0: ready). Tells a server-side rune problem from a client-side one: runes the server has ready that the
 //   game still refuses are the client's.
+// - .unbindrune (anyone): lets go of the active specialization's Legendary Rune and its modifiers, and opens the
+//   rune panel to bind another (out of combat). A GM's with a Hero selected does it for them.
 // - .daytime [hour]: your own client's time of day (0-23), for looking at the lighting, water and fog at any hour;
 //   no one else's changes, and the clock runs on from there. Without an hour: back to the real time.
 class titan_commandscript : public CommandScript
@@ -58,6 +61,7 @@ public:
             { "emberspark", HandleEmberspark, SEC_GAMEMASTER, Console::No },
             { "runes", HandleRunes, SEC_GAMEMASTER, Console::No },
             { "daytime", HandleDaytime, SEC_GAMEMASTER, Console::No },
+            { "unbindrune", HandleUnbindRune, SEC_PLAYER, Console::No },
         };
         return commandTable;
     }
@@ -136,6 +140,33 @@ public:
                 ChatHandler(asker->GetSession()).PSendSysMessage("{}'s account: {} Emberspark.", name,
                     Emberspark::Format(balance));
         });
+        return true;
+    }
+
+    static bool HandleUnbindRune(ChatHandler* handler)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        Player* target = player;
+        if (handler->GetSession()->GetSecurity() >= SEC_GAMEMASTER)
+            if (Player* selected = handler->getSelectedPlayer())
+                target = selected;
+        if (!Wildcard::IsHero(target))
+        {
+            handler->SendErrorMessage("Only a Hero has Legendary Runes.", false);
+            return false;
+        }
+        if (target->IsInCombat())
+        {
+            handler->SendErrorMessage("A rune can't be unbound in combat.", false);
+            return false;
+        }
+        if (!LegendaryRunes::Unbind(target))
+        {
+            handler->SendErrorMessage("This specialization has no Legendary Rune bound.", false);
+            return false;
+        }
+        if (target != player)
+            handler->PSendSysMessage("{}'s rune is unbound.", target->GetName());
         return true;
     }
 

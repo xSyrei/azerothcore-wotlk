@@ -587,6 +587,71 @@ def pow2(n):
     return 1 << max(0, math.ceil(math.log2(n)))
 
 
+# The cards' burn, as the Skill Cards' (build_darkmoon_art.py): noise climbing through the card from the bottom and
+# a point at its left, the card gone behind it, a cream-white rim along it; baked for each built rune's card in
+# BURN['frames'] frames of one atlas (BURN['columns'] across, the card filling the top of each cell), which the panel
+# steps one texture through (mirrored at random, so the cards differ), motes lifting off the rim by the same noise
+# (Art.lua's burn.noise: BURN['grid'] cells, two digits each).
+BURN = {'frames': 16, 'columns': 4, 'cell': (256, 512), 'card': (256, 376), 'work': (512, 752), 'reach': 1.08,
+        'edge': 0.035, 'grid': (30, 44)}
+
+
+def burn_noise():
+    import numpy as np
+    rng = np.random.default_rng(20261114)
+    w, h = BURN['work']
+
+    def octave(cell):
+        cw, ch = w // cell + 3, h // cell + 3
+        grid = rng.random((ch, cw))
+        ys, xs = np.mgrid[0:h, 0:w] / cell
+        x0, y0 = xs.astype(int), ys.astype(int)
+        tx, ty = xs - x0, ys - y0
+        tx, ty = tx * tx * (3 - 2 * tx), ty * ty * (3 - 2 * ty)
+        top = grid[y0, x0] + (grid[y0, x0 + 1] - grid[y0, x0]) * tx
+        bottom = grid[y0 + 1, x0] + (grid[y0 + 1, x0 + 1] - grid[y0 + 1, x0]) * tx
+        return top + (bottom - top) * ty
+
+    ys, xs = np.mgrid[0:h, 0:w]
+    octaves = octave(200) * 0.55 + octave(80) * 0.3 + octave(32) * 0.15
+    n = (1 - ys / h) * 0.55 + np.abs(xs - 0.3 * w) / w * 0.25 + octaves * 0.5
+    return (n - n.min()) / (n.max() - n.min())
+
+
+def bake_burn(card_png, rune_id, noise):
+    """Card<id>'s burn atlas, Burn<id>.blp (DXT5, no mipmaps: drawn at its own size)."""
+    import numpy as np
+    w, h = BURN['work']
+    cw, ch = BURN['cell']
+    rows = BURN['frames'] // BURN['columns']
+    cream, gold = np.array([255, 252, 240], float), np.array([255, 214, 140], float)
+    with Image.open(card_png) as image:
+        source = image.convert('RGBA')
+    span = round(300 * CARD['scale'])
+    card = np.asarray(blp.resize_straight(source.crop((0, 0, span, round(440 * CARD['scale']))), (w, h)), float)
+    present = card[..., 3] > 8
+    atlas = Image.new('RGBA', (cw * BURN['columns'], ch * rows), (0, 0, 0, 0))
+    for index in range(BURN['frames']):
+        p = index / (BURN['frames'] - 1) * BURN['reach']
+        ahead = noise - p
+        out = card.copy()
+        out[present & (ahead < 0), 3] = 0
+        rim = present & (ahead >= 0) & (ahead < BURN['edge'])
+        k = (ahead[rim] / BURN['edge'])[:, None]
+        out[rim, :3] = cream + (gold - cream) * k
+        out[rim, 3] = 255
+        cell = blp.resize_straight(Image.fromarray(out.astype(np.uint8), 'RGBA'), BURN['card'])
+        atlas.paste(cell, ((index % BURN['columns']) * cw, (index // BURN['columns']) * ch))
+    (OUT / f'Burn{rune_id}.blp').write_bytes(blp.encode_dxt(atlas, mips=False))
+
+
+def burn_digits(noise):
+    import numpy as np
+    gw, gh = BURN['grid']
+    small = Image.fromarray((noise * 255).astype(np.uint8), 'L').resize((gw, gh), Image.Resampling.BOX)
+    return ''.join(f'{min(99, small.getpixel((x, y)) * 100 // 256):02d}' for y in range(gh) for x in range(gw))
+
+
 def save(image, name):
     """The piece at the top-left of a power-of-two canvas; returns the share of it the piece fills (u, v)."""
     w, h = image.size
@@ -702,6 +767,13 @@ def main():
             if png.stem in shares:
                 labels[png.stem] = {'w': shares[png.stem][0], 'h': shares[png.stem][1], 'u': round(u, 4),
                                     'v': round(v, 4)}
+        noise = burn_noise()
+        burned = []
+        for png in sorted((work / 'png').glob('Card*.png')):
+            if png.stem[4:].isdigit() and int(png.stem[4:]) in BUILT:
+                bake_burn(png, int(png.stem[4:]), noise)
+                burned.append(int(png.stem[4:]))
+        print(f'  burns for runes {burned}')
     # The rune button's ring (rune_art/rune_ring.png, the gold silhouette): 256 pixels a side, uncompressed (DXT's
     # blocks broke its thin gold rim up into pixels).
     with Image.open(HERE / 'rune_art' / 'rune_ring.png') as ring:
@@ -717,6 +789,10 @@ def main():
                     'v': round((46 + 2 * PILL['margin']) * PILL['scale'] / PILL['size'][1], 4),
                     'margin': PILL['margin'], 'width': 106},
            'num': {'span': NUM['size'] / NUM['scale']}, 'seg': {'span': 260}, 'labels': labels, 'runes': {}}
+    art['burn'] = {'frames': BURN['frames'], 'columns': BURN['columns'],
+                   'rows': BURN['frames'] // BURN['columns'], 'u': BURN['card'][0] / BURN['cell'][0],
+                   'v': round(BURN['card'][1] / BURN['cell'][1], 4), 'reach': BURN['reach'], 'edge': BURN['edge'],
+                   'w': BURN['grid'][0], 'h': BURN['grid'][1], 'noise': burn_digits(noise)}
     for entry in runes:
         th = entry['theme']
         rune = {'rgb': floats(th['rgb']), 'hot': floats(th['hot']), 'ink': floats(th['ink']),
@@ -724,7 +800,8 @@ def main():
                 'inner': floats(css(tuple(int(th['inner'][i:i + 2], 16) for i in (1, 3, 5))))}
         if entry['id'] in BUILT:
             built = BUILT[entry['id']]
-            rune.update({'built': True, 'core': built['core'], 'asks': built['asks'], 'abilities': built['abilities'],
+            rune.update({'built': True, 'burn': entry['id'] in burned, 'core': built['core'], 'asks': built['asks'],
+                         'abilities': built['abilities'],
                          'texts': built['texts'],
                          'slots': built.get('slots', ['Invocation', 'Manifestation', 'Adaptation'])})
         art['runes'][entry['id']] = rune

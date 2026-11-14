@@ -61,7 +61,8 @@
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
 //   under Browse all (one missing a required ability says so; it can still be bound after a warning naming what it
 //   lacks), each with a Preview of its build that binds nothing.
-// - One rune per specialization (titan_runes, db-characters), chosen once: only a prestige clears it. Modifiers
+// - One rune per specialization (titan_runes, db-characters), chosen once: a prestige clears it, or .unbindrune
+//   (titan_commands.cpp) lets go of the active one to bind another. Modifiers
 //   change freely out of combat.
 // - The rune works through auras: its own while it is the active spec's (90700 Fel Commandment, 90730 the
 //   Sanctified Paragon, 90750 the Stormbound Conduit, 90770 Echoing Thunder, 90790 the Wellspring, 90810 the
@@ -3026,7 +3027,7 @@ namespace
         if (player->GetLevel() < UNLOCK_LEVEL)
             return Refuse(player, Acore::StringFormat("Legendary Runes unlock at level {}.", UNLOCK_LEVEL));
         if (choice.Rune)
-            return Refuse(player, "This specialization already has its rune: only a prestige changes it.");
+            return Refuse(player, "This specialization already has its rune: .unbindrune lets go of it.");
         if (Specs::IsDormant(player))
             return Refuse(player, "This specialization is empty until you prestige in it.");
         if (!rune)
@@ -3111,6 +3112,22 @@ namespace LegendaryRunes
         SendState(player);
         if (Prompt(player))
             Send(player, "O");
+    }
+
+    bool Unbind(Player* player)
+    {
+        Choice& choice = ActiveChoice(player);
+        if (!choice.Rune)
+            return false;
+        choice = Choice();
+        Save(player, Specs::ActiveSpec(player));
+        ClearCombat(player);
+        Apply(player);
+        ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeLegendary Rune:|r unbound. Choose another in the "
+            "rune panel.");
+        SendState(player);
+        Send(player, "O");
+        return true;
     }
 
     void OnPrestige(Player* player)

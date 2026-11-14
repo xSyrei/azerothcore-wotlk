@@ -539,6 +539,8 @@ utility or a tradeoff) take one pick each, from three.
   (switching straight to another ally: a tick over 4 sec on the last, once every 12 sec, 90813), Jade Shelter (an
   absorb of 20% of a Wandering Mist's healing, 4 sec, once every 8 sec, 90814), Effortless Breathing (from 3 sec in,
   15% of a tick's mana back). Scripts in `titan_runes.sql`; spells 90790-90828 (`patch_runes.py`).
+- **Changing a rune:** `.unbindrune` (any player, out of combat; a GM's with a Hero selected does it for them) lets
+  go of the active specialization's rune and its modifiers and opens the panel to bind another.
 - **The Rune of the Threefold Grave** (rune 27, its own concept doc; Melee DPS or Tank; needs Death Strike and Icy
   Touch or Plague Strike; slots Inscription, Dominion, Requiem). Icy Touch lays a frozen line through its target,
   Plague Strike a diseased patch under it, Death Strike a blood circle under the Hero: one of each, 12 sec, moved by

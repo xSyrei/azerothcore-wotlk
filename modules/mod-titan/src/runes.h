@@ -21,14 +21,17 @@
 class Player;
 class Unit;
 
-// Legendary Runes (runes.cpp): one rune per specialization, chosen from level 10, kept until a prestige; its three
-// modifiers change freely out of combat.
+// Legendary Runes (runes.cpp): one rune per specialization, chosen from level 5, kept until a prestige or
+// .unbindrune; its three modifiers change freely out of combat.
 namespace LegendaryRunes
 {
     // The active specialization changed: its rune's auras on, the last one's (stacks, summons) gone.
     void OnSpecChanged(Player* player);
-    // A prestige: every specialization's rune is cleared, to be chosen again from level 10.
+    // A prestige: every specialization's rune is cleared, to be chosen again from level 5.
     void OnPrestige(Player* player);
+    // The active specialization's rune let go of (modifiers too, its auras and actions gone), the panel opened to
+    // bind another. false: it had none.
+    bool Unbind(Player* player);
     // Fel Rift (Fel Commandment): the enemy Fel Rush carries the Hero to, for 3 sec after a volley; else nullptr.
     Unit* FelRiftTarget(Player* player);
 }

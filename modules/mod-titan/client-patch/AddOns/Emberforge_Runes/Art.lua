@@ -495,6 +495,7 @@ EmberforgeRunesArt = {
             hue = { 0.78, 0.608, 1 },
             inner = { 0.937, 0.878, 1 },
             built = true,
+            burn = true,
             core = "Casting Arcane Blast generates **Arcane Insight**. At 4 stacks, your " ..
                     "next Arcane Missiles consumes all Insight, requires no mana, and fires " ..
                     "an additional volley.",
@@ -625,6 +626,7 @@ EmberforgeRunesArt = {
             hue = { 0.549, 1, 0.416 },
             inner = { 0.886, 1, 0.839 },
             built = true,
+            burn = true,
             core = "Your strikes and your demon build **Fel Command**. At 5, Throw Glaive " ..
                     "becomes **Chaos Bolt Volley**: the glaive and 3 Chaos Bolts, or 5 and " ..
                     "a Felguard in Metamorphosis.",
@@ -679,6 +681,7 @@ EmberforgeRunesArt = {
             hue = { 1, 1, 0.694 },
             inner = { 1, 0.976, 0.918 },
             built = true,
+            burn = true,
             core = "Consecration becomes **Sanctified Paragon**: an aura that follows you " ..
                     "within 8 yards at 40% of Consecration's damage, for 1% of your base " ..
                     "mana a second. Cast Consecration to turn it on or off.",
@@ -729,6 +732,7 @@ EmberforgeRunesArt = {
             hue = { 0.494, 0.824, 1 },
             inner = { 0.886, 0.941, 1 },
             built = true,
+            burn = true,
             core = "Lightning Bolt makes its target **Conductive** for 6 sec. Chain " ..
                     "Lightning striking a Conductive enemy **arcs** to one nearby enemy, " ..
                     "and Lightning Shield's retaliations arc to a nearby Conductive one.",
@@ -781,6 +785,7 @@ EmberforgeRunesArt = {
             hue = { 0.604, 0.78, 1 },
             inner = { 0.906, 0.933, 1 },
             built = true,
+            burn = true,
             core = "Thunder Clap leaves a **Thunderfield** for 4 sec. Shield Slam landed " ..
                     "inside it releases a **Thunder Echo** toward your target: 15% of its " ..
                     "damage to up to 4 enemies.",
@@ -830,6 +835,7 @@ EmberforgeRunesArt = {
             hue = { 0.384, 1, 1 },
             inner = { 0.871, 0.973, 0.969 },
             built = true,
+            burn = true,
             core = "Chain Heal on your Earth Shield wearer makes them a **Wellspring** for " ..
                     "6 sec. Your next Chain Heal to reach them **jumps once more**, to an " ..
                     "injured ally, for 30% of the healing they received.",
@@ -877,6 +883,7 @@ EmberforgeRunesArt = {
             hue = { 0.475, 1, 0.694 },
             inner = { 0.882, 0.98, 0.918 },
             built = true,
+            burn = true,
             core = "While you channel Soothing Mist, its ticks may send a **Wandering " ..
                     "Mist** to an injured ally near your target, for 30% of the tick. " ..
                     "**Enveloping Mist** and **Vivify** on your target keep the channel.",
@@ -925,6 +932,7 @@ EmberforgeRunesArt = {
             hue = { 0.737, 0.957, 1 },
             inner = { 0.925, 0.961, 0.984 },
             built = true,
+            burn = true,
             core = "**Icy Touch**, **Plague Strike** and **Death Strike** each leave a " ..
                     "scar. **Requiem** turns your Dominion, Rime to Blight to Gore, and " ..
                     "every scar changes with it.",
@@ -970,6 +978,7 @@ EmberforgeRunesArt = {
             hue = { 1, 0.384, 0.341 },
             inner = { 0.984, 0.871, 0.863 },
             built = true,
+            burn = true,
             core = "**Mortal Strike** or **Bloodthirst** cuts a **Weapon Wake** through " ..
                     "its target. Your next different melee strike through it reopens the " ..
                     "wake for another attack.",
@@ -1014,6 +1023,7 @@ EmberforgeRunesArt = {
             hue = { 1, 0.957, 0.475 },
             inner = { 1, 0.961, 0.882 },
             built = true,
+            burn = true,
             core = "Bind an ally with **Dawn Vow**. **Crusader Strike** on your Judgment " ..
                     "target and **Holy Shock** send **Dawn Echoes** from them.",
             asks = {
@@ -1058,6 +1068,7 @@ EmberforgeRunesArt = {
             hue = { 0.824, 0.561, 1 },
             inner = { 0.941, 0.898, 0.984 },
             built = true,
+            burn = true,
             core = "Two seconds into **Mind Flay**, a **Hollow Echo** stays behind and " ..
                     "channels a weaker one. **Mind Blast** turns every echo on its target " ..
                     "in a barrage.",
@@ -1102,6 +1113,7 @@ EmberforgeRunesArt = {
             hue = { 0.604, 0.957, 1 },
             inner = { 0.906, 0.961, 0.988 },
             built = true,
+            burn = true,
             core = "**Fireball** embeds a burning **Sunshard**. **Frostbolt** fractures it " ..
                     "into a ring of burning ice, and your next **Fireball** collapses the " ..
                     "Broken Core.",
@@ -1138,6 +1150,18 @@ EmberforgeRunesArt = {
                 "Collapse",
             },
         },
+    },
+    burn = {
+        frames = 16,
+        columns = 4,
+        rows = 4,
+        u = 1,
+        v = 0.7344,
+        reach = 1.08,
+        edge = 0.035,
+        w = 30,
+        h = 44,
+        noise = "979792837876747165616364616062646668707479807979808387909190979489847871707066626262636364666467737475757680828181868885969288837771696965626263626364666568747574757680827978818281959287817671706964606364616164666670757575767679817876757576929086807672706864616263616063666770737373757678807673717376888784807673706764626262606062646870696970727578787370717480878583827977747067656464656665656767676667697175767472737580868483848382787570676768717168666564646364666772757576757679858484868581797670676972747572696764605959636669717375778081848384878580787669667175767675726964585656606567677174778181828484838279777468667176767573717066585759606164666972778181808383808079767167667176767673717268605960585659626569758080797880828278746966656973767775737369646058545051555965727777767577818178736765656772767876757370656257514646505663707475707375747677746966676974777978746966646158524645485663677174656870697174716867677073757675726662605957534848505763666973606063656767666466686869697069676662575657555355576063656974545355596162636366686868696967656459545355575859606264656772484648525559616264666767717169666258555252576261606366656669434245495357586062626466686967646257535151556060606365646565394144485155575857576062646464626157505051535659616264646460353739434648515353525557575757575957525151545859596060626259323235384142454948495152515151525657555250556159575757596059323234373939424646484849515150515555545250546058555555575857323133353838414345484848515350515354535150535755535353555655272832353839414144464950515149505355555351515250485050515151252731353840404143464950494846485255555452504845444648494948282830353737394145494744424040424649525251474442424649515148302831353636374043464339363535384145495050464241424649515148293134383938393938373736353334363842454849464345484646484947313336393937373734323331292828303337404448484850535048495048333638403732323232323025211919232832343846515557575655545351343739403731292828292621161315192529303544505759585755545350353637383530262323242320141114182327293341485357585551504947343536363328231817171817141216192125283238445052525149494846333435333025191411101314151719211922283235414646444646484844282930312822160905040610151819191821263032374142424344444443232325282620140702000105141916161719252830333639414141404044222426282620140701000003111717181921252729323637374042424243222628292621140702000001081316181923262829323533333842454442232627292621161104010001040812161924293131323333353741444441232526282620161306020100020409141925303332313031343640444440212424222016141207050301030406122026272929282728313539454641182221171412111007060302040506101924242626272728303439454642",
     },
     arcane = {
         rgb = { 0.725, 0.549, 1 },
