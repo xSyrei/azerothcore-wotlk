@@ -1977,6 +1977,12 @@ end
 SLASH_EMBERFORGERUNES1 = "/runes"
 SLASH_EMBERFORGERUNES2 = "/rune"
 SlashCmdList["EMBERFORGERUNES"] = function()
+    if not state.loaded then
+        Send("STATE")
+        DEFAULT_CHAT_FRAME:AddMessage("|cffa335eeLegendary Runes:|r asking the server for your rune; try again in a "
+            .. "moment.")
+        return
+    end
     if frame:IsShown() then
         frame:Hide()
     else
@@ -2421,6 +2427,28 @@ runeButton:SetScript("OnEvent", function(_, event, level)
 end)
 PlaceRuneButton()
 UpdateRuneButton()
+
+-- Until the server's state arrives, asked again every 3 sec (a request sent while loading can be lost); after a
+-- minute without one, the chat says so.
+local asking = CreateFrame("Frame")
+asking.wait, asking.tries = 3, 0
+asking:SetScript("OnUpdate", function(self, elapsed)
+    if state.loaded then
+        self:Hide()
+        return
+    end
+    self.wait = self.wait - elapsed
+    if self.wait > 0 then
+        return
+    end
+    self.wait, self.tries = 3, self.tries + 1
+    Send("STATE")
+    if self.tries == 20 and DEFAULT_CHAT_FRAME then
+        DEFAULT_CHAT_FRAME:AddMessage("|cffa335eeLegendary Runes:|r the server has not answered the rune panel. "
+            .. "Please report this.")
+    end
+end)
+EmberforgeRunes_Asking = asking
 
 -- The button follows the server's state.
 local RunesOnMessage = OnMessage

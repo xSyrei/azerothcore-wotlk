@@ -42,6 +42,8 @@
 #include "WorldSession.h"
 #include <algorithm>
 #include <array>
+#include <map>
+#include <tuple>
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -157,6 +159,9 @@ namespace
 
         SPELL_RUNE_THREEFOLD_GRAVE      = 90830,
         SPELL_SHARED_BURIAL             = 90831,    // on an enemy in two Graves or more (Spreading Death: after)
+        SPELL_GRAVE_PESTILENCE_TICK     = 90832,    // the damage over time's ticks (spell_titan_rune_dot)
+        SPELL_WAKE_BLEED_TICK           = 90833,
+        SPELL_HOLLOW_FLAY_TICK          = 90834,
         SPELL_FROZEN_GRAVE              = 90838,    // the Graves' damage
         SPELL_GRAVE_CHILL               = 90839,
         SPELL_PLAGUED_GRAVE             = 90840,
@@ -1796,9 +1801,41 @@ namespace
         }
     }
 
-    // A spell of the Hero's on the unit for ms (its own duration the longest it can last).
+    // The runes' damage over time: a periodic dummy whose tick (keyed by target, spell and caster) the script keeps
+    // and deals each second as its own spell's damage (spell_titan_rune_dot), not the aura's amount.
+    using DotKey = std::tuple<ObjectGuid, uint32, ObjectGuid>;
+    std::map<DotKey, int32> dotTicks;
+
+    uint32 DotDamageSpell(uint32 spellId)
+    {
+        switch (spellId)
+        {
+            case SPELL_GRAVE_PESTILENCE: return SPELL_GRAVE_PESTILENCE_TICK;
+            case SPELL_WAKE_BLEED: return SPELL_WAKE_BLEED_TICK;
+            case SPELL_HOLLOW_FLAY: return SPELL_HOLLOW_FLAY_TICK;
+            default: return 0;
+        }
+    }
+
+    void SetDotTick(Unit* caster, Unit* target, uint32 spellId, int32 tick)
+    {
+        dotTicks[{ target->GetGUID(), spellId, caster->GetGUID() }] = std::max(1, tick);
+    }
+
+    // A spell of the Hero's on the unit for ms (its own duration the longest it can last). A damage over time
+    // already there keeps ticking on its own time: its tick and duration are renewed.
     void Lasting(Player* player, Unit* unit, uint32 spellId, int32 ms, int32 const* amount = nullptr)
     {
+        if (DotDamageSpell(spellId) && amount)
+        {
+            SetDotTick(player, unit, spellId, *amount);
+            if (Aura* aura = unit->GetAura(spellId, player->GetGUID()))
+            {
+                aura->SetMaxDuration(std::max(aura->GetMaxDuration(), ms));
+                aura->SetDuration(ms);
+                return;
+            }
+        }
         unit->RemoveAurasDueToSpell(spellId, player->GetGUID());
         if (amount)
             player->CastCustomSpell(unit, spellId, amount, nullptr, nullptr, true);
@@ -1823,12 +1860,11 @@ namespace
         return Marked(unit, SPELL_GRAVE_MODIFIER_FIRST, modifier);
     }
 
-    // A Grave's tick: the Hero's level and their attack power, with their damage bonuses for its school (the spells
-    // ignore the Hero's modifiers, so they are here).
-    float GravePower(Player* player, SpellSchoolMask school)
+    // A Grave's tick: the Hero's level and their attack power; their damage bonuses and talents raise it as the core
+    // applies them to the Graves' damage spells.
+    float GravePower(Player* player, SpellSchoolMask /*school*/)
     {
-        return (GRAVE_LEVEL * player->GetLevel() + player->GetTotalAttackPowerValue(BASE_ATTACK) * GRAVE_AP)
-            * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, school);
+        return GRAVE_LEVEL * player->GetLevel() + player->GetTotalAttackPowerValue(BASE_ATTACK) * GRAVE_AP;
     }
 
     bool GraveActive(Player* player, uint8 grave)
@@ -3833,6 +3869,39 @@ class spell_titan_rune_shattered_sun : public SpellScript
     }
 };
 
+// The runes' damage over time (Grave Pestilence, Bloodletting, Hollow Flay): each second its kept tick, dealt as
+// its own damage spell by whoever put it there.
+class spell_titan_rune_dot : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_dot);
+
+    void Tick(AuraEffect const* /*aurEff*/)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetTarget();
+        if (!caster || !target || !target->IsAlive())
+            return;
+        auto tick = dotTicks.find({ target->GetGUID(), GetId(), caster->GetGUID() });
+        if (tick == dotTicks.end())
+            return;
+        int32 damage = tick->second;
+        caster->CastCustomSpell(target, DotDamageSpell(GetId()), &damage, nullptr, nullptr, true);
+    }
+
+    void Gone(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (GetCasterGUID() && !GetTarget()->HasAura(GetId(), GetCasterGUID()))
+            dotTicks.erase({ GetTarget()->GetGUID(), GetId(), GetCasterGUID() });
+    }
+
+    void Register() override
+    {
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_rune_dot::Tick, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_titan_rune_dot::Gone, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY,
+            AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
 // A Hollow Echo (910122): the Hero's look, hollowed; for 10 sec a weaker Mind Flay on its enemy (the one it was left
 // for, then the Hero's), 30 yards (40 with Haunted Ground), drifting after the Hero (Following Shadows) or riding
 // its enemy (Possession); quiet during a barrage. Last Word: a last, stronger attack as it fades. Silent Witness:
@@ -3939,6 +4008,7 @@ private:
             tick *= SILENT_WITNESS;
         int32 damage = std::max<int32>(1, int32(tick));
         me->SetFacingToObject(target);
+        SetDotTick(me, target, SPELL_HOLLOW_FLAY, damage);
         me->CastCustomSpell(target, SPELL_HOLLOW_FLAY, &damage, nullptr, nullptr, true);
     }
 
@@ -4051,11 +4121,20 @@ public:
         return false;
     }
 
+    // The panel's state goes out a few seconds in as well, without waiting to be asked: a request sent while the
+    // client was still loading, or its answer, can be lost.
     void OnPlayerLogin(Player* player) override
     {
         Load(player);
-        if (Wildcard::IsHero(player))
-            Apply(player);
+        if (!Wildcard::IsHero(player))
+            return;
+        Apply(player);
+        ObjectGuid guid = player->GetGUID();
+        player->m_Events.AddEventAtOffset([player, guid]()
+        {
+            if (player->IsInWorld() && player->GetGUID() == guid)
+                SendState(player);
+        }, 5s);
     }
 
     void OnPlayerLogout(Player* player) override
@@ -4071,18 +4150,15 @@ public:
             guid.GetCounter()));
     }
 
-    // UNLOCK_LEVEL: the panel opens while the active spec has no rune.
+    // Every level: the panel's state (its level); at UNLOCK_LEVEL the panel opens while the active spec has no rune.
     void OnPlayerLevelChanged(Player* player, uint8 oldLevel) override
     {
         if (!Wildcard::IsHero(player))
             return;
         Apply(player);
-        if (oldLevel < UNLOCK_LEVEL && player->GetLevel() >= UNLOCK_LEVEL)
-        {
-            SendState(player);
-            if (Prompt(player))
-                Send(player, "O");
-        }
+        SendState(player);
+        if (oldLevel < UNLOCK_LEVEL && player->GetLevel() >= UNLOCK_LEVEL && Prompt(player))
+            Send(player, "O");
     }
 
     void OnPlayerJustDied(Player* player) override
@@ -4213,6 +4289,7 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_soothing_mist);
     RegisterSpellScript(spell_titan_rune_mist_technique);
     RegisterSpellScript(spell_titan_rune_grave_strike);
+    RegisterSpellScript(spell_titan_rune_dot);
     RegisterSpellScript(spell_titan_rune_wake_cut);
     RegisterSpellScript(spell_titan_rune_unbroken_onslaught);
     RegisterSpellScript(spell_titan_rune_dawn_vow);

@@ -194,3 +194,17 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90925, 0, 0, 0, 0, 'Hollow Congregation - Last Word'),
 (90953, 0, 0, 0, 0, 'Shattered Sun - Fracture'),
 (90955, 0, 0, 0, 0, 'Shattered Sun - Collapse');
+
+-- The runes' damage over time (Grave Pestilence, Bloodletting, Hollow Flay): periodic dummies whose ticks the script
+-- deals as their own damage spells (90832-90834), the amount kept by the script.
+DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_titan_rune_dot';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(90841, 'spell_titan_rune_dot'),
+(90862, 'spell_titan_rune_dot'),
+(90922, 'spell_titan_rune_dot');
+
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90832, 90833, 90834);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(90832, 0, 0, 0, 0, 'Threefold Grave - Grave Pestilence tick'),
+(90833, 0, 0, 0, 0, 'Unbroken Onslaught - Bloodletting tick'),
+(90834, 0, 0, 0, 0, 'Hollow Congregation - Hollow Flay tick');

@@ -75,12 +75,14 @@ private:
     std::unordered_map<ObjectGuid, Milliseconds> _combatTimer;
 };
 
-// A mount from level 1: Apprentice Riding and the race's first mount (its trainer's), taught at each login while the
-// player lacks them (a prestige or a respec cannot take them for good).
+// A mount from level 1: Apprentice Riding and the race's first mount (its trainer's), taught at login (and again a
+// few seconds in, after the Hero's own login has settled their spells) and at every level change (a prestige takes
+// every spell away and sets the level to 1) while the player lacks them; and every flight point of their faction.
 class titan_starter_mount : public PlayerScript
 {
 public:
-    titan_starter_mount() : PlayerScript("titan_starter_mount", { PLAYERHOOK_ON_LOGIN }) { }
+    titan_starter_mount() : PlayerScript("titan_starter_mount", { PLAYERHOOK_ON_LOGIN,
+        PLAYERHOOK_ON_LEVEL_CHANGED }) { }
 
     static constexpr uint32 APPRENTICE_RIDING = 33388;
 
@@ -102,13 +104,24 @@ public:
         }
     }
 
-    void OnPlayerLogin(Player* player) override
+    static void Teach(Player* player)
     {
         if (!player->HasSpell(APPRENTICE_RIDING))
             player->learnSpell(APPRENTICE_RIDING);
         uint32 mount = RaceMount(player->getRace());
         if (!player->HasSpell(mount))
             player->learnSpell(mount);
+    }
+
+    void OnPlayerLogin(Player* player) override
+    {
+        Teach(player);
+        ObjectGuid guid = player->GetGUID();
+        player->m_Events.AddEventAtOffset([player, guid]()
+        {
+            if (player->IsInWorld() && player->GetGUID() == guid)
+                Teach(player);
+        }, 3s);
 
         // Every flight point with a mount for the player's faction (theirs and the neutral ones).
         uint8 side = player->GetTeamId() == TEAM_ALLIANCE ? 1 : 0;
@@ -116,6 +129,11 @@ public:
             if (TaxiNodesEntry const* node = sTaxiNodesStore.LookupEntry(i))
                 if (node->MountCreatureID[side])
                     player->m_taxi.SetTaximaskNode(node->ID);
+    }
+
+    void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
+    {
+        Teach(player);
     }
 };
 

@@ -678,11 +678,13 @@ def action(spell_id, name, icon, text, cooldown, target=TARGET_UNIT_CASTER, rang
             'clear': [2, 3]}
 
 
-def strike(spell_id, name, icon, school, visual=0, text='', key=None):
-    """Damage on an enemy (its amount set by the script, the Hero's power already in it)."""
+def strike(spell_id, name, icon, school, visual=0, text='', key=None, modifiers=False):
+    """Damage on an enemy (its amount set by the script: a share of a hit, the Hero's bonuses already in it; or,
+    modifiers, raw power the Hero's damage bonuses and talents then raise as the core applies them)."""
     spell = {'id': spell_id, 'copy': LIGHTNING_BOLT, 'name': name, 'icon': icon, 'description': text,
              'tooltip': '', 'set': {**HARMFUL, 'Speed': 0.0, 'SchoolMask': school, 'SpellVisual': visual,
-                                    'AttributesEx3': SPELL_ATTR3_ALWAYS_HIT | SPELL_ATTR3_IGNORE_CASTER_MODIFIERS,
+                                    'AttributesEx3': SPELL_ATTR3_ALWAYS_HIT
+                                    | (0 if modifiers else SPELL_ATTR3_IGNORE_CASTER_MODIFIERS),
                                     'AttributesEx4': SPELL_ATTR4_NO_PARTIAL_IMMUNITY | SPELL_ATTR4_CANNOT_BE_RESISTED},
              'effects': {1: {'Effect': EFFECT_SCHOOL_DAMAGE, 'BasePoints': 0, 'DieSides': 1,
                              'RealPointsPerLevel': 0.0, 'ChainTarget': 0, 'TargetA': TARGET_UNIT_TARGET_ENEMY,
@@ -704,8 +706,9 @@ def harmful(spell_id, name, icon, text, duration, effect, school, key=None):
 
 
 def dot(spell_id, name, icon, school, duration, text):
+    """Damage over time: a periodic dummy each second, its damage the script's own spell (spell_titan_rune_dot)."""
     return harmful(spell_id, name, icon, text, duration,
-                   {**aura(AURA_PERIODIC_DAMAGE, 1, 0), 'Amplitude': 1000}, school)
+                   {**aura(AURA_PERIODIC_DUMMY, 1, 0), 'Amplitude': 1000}, school)
 
 
 def ground(spell_id, name, icon, key, duration):
@@ -756,12 +759,15 @@ SPELLS += [
          'in your Crimson Grave grants a shield.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     harmful(90831, 'Shared Burial', 'Spell_Shadow_DeathPact', 'Taking more damage from the Threefold Grave.',
             DURATION_2S, aura(AURA_DUMMY, 1, 0), SHADOW),
-    strike(90838, 'Frozen Grave', 'Spell_Deathknight_IceTouch', FROST, key='GraveRimeHit'),
+    strike(90832, 'Grave Pestilence', 'Spell_Shadow_CreepingPlague', SHADOW, modifiers=True),
+    strike(90833, 'Bloodletting', 'Ability_Gouge', PHYSICAL, modifiers=True),
+    strike(90834, 'Hollow Flay', 'Spell_Shadow_SiphonMana', SHADOW),
+    strike(90838, 'Frozen Grave', 'Spell_Deathknight_IceTouch', FROST, key='GraveRimeHit', modifiers=True),
     harmful(90839, 'Frozen Grave', 'Spell_Frost_ChillingBlast', 'Movement speed reduced by $s1%.', DURATION_6S,
             aura(AURA_MOD_DECREASE_SPEED, -30, 0), FROST),
-    strike(90840, 'Plagued Grave', 'Spell_Shadow_PlagueCloud', SHADOW, key='GraveBlightHit'),
+    strike(90840, 'Plagued Grave', 'Spell_Shadow_PlagueCloud', SHADOW, key='GraveBlightHit', modifiers=True),
     dot(90841, 'Grave Pestilence', 'Spell_Shadow_CreepingPlague', SHADOW, DURATION_6S, 'Shadow damage every 1 sec.'),
-    strike(90842, 'Crimson Grave', 'Spell_Deathknight_BloodBoil', SHADOW, key='GraveGoreHit'),
+    strike(90842, 'Crimson Grave', 'Spell_Deathknight_BloodBoil', SHADOW, key='GraveGoreHit', modifiers=True),
     {**absorb(90843, 'Crimson Ward', 'Spell_Deathknight_DeathStrike', DURATION_10S),
      'set': {**HEAL_SET, 'DurationIndex': DURATION_10S, 'SchoolMask': SHADOW}},
     ground(90845, 'Frozen Grave', 'Spell_Deathknight_IceTouch', 'GraveFrozenLine', DURATION_20S),
@@ -771,10 +777,10 @@ SPELLS += [
           key='GraveBloodMarch'),
 
     ONSLAUGHT_RUNE,
-    strike(90861, 'Weapon Wake', 'Ability_Warrior_Cleave', PHYSICAL, key='WakeHit'),
+    strike(90861, 'Weapon Wake', 'Ability_Warrior_Cleave', PHYSICAL, key='WakeHit', modifiers=True),
     dot(90862, 'Bloodletting', 'Ability_Gouge', PHYSICAL, DURATION_6S, 'Bleeding every 1 sec.'),
     ground(90863, 'Weapon Wake', 'Ability_Warrior_Cleave', 'OnslaughtWake', DURATION_10S),
-    strike(90864, 'Aftershock', 'Ability_Warrior_Shockwave', PHYSICAL, VISUAL_THUNDER_HIT),
+    strike(90864, 'Aftershock', 'Ability_Warrior_Shockwave', PHYSICAL, VISUAL_THUNDER_HIT, modifiers=True),
 
     buff(90890, 'Rune of the Dawnbound Crusader', DAWN_ICON,
          'Dawn Vow binds an ally (or you) as the point your power rises from. Judgment marks an enemy: Crusader '
@@ -810,7 +816,7 @@ SPELLS += [
         'description': 'A hollow echo of Mind Flay.', 'tooltip': 'Shadow damage every 1 sec.',
         'set': {**FREE, **NO_FAMILY, 'RangeIndex': RANGE_VISION, 'SchoolMask': SHADOW, 'ProcFlags': 0,
                 'InterruptFlags': 0, 'AuraInterruptFlags': 0, 'ChannelInterruptFlags': 0, **SCRIPTED},
-        'effects': {1: {**aura(AURA_PERIODIC_DAMAGE, 1, 0), 'Amplitude': 1000,
+        'effects': {1: {**aura(AURA_PERIODIC_DUMMY, 1, 0), 'Amplitude': 1000,
                         'TargetA': TARGET_UNIT_TARGET_ENEMY}},
         'clear': [2, 3],
     },

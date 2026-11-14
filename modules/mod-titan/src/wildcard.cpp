@@ -267,6 +267,7 @@ namespace
     // Call Pet and Dismiss Pet come from a quest, not a trainer, so they are not Wildcard abilities (found by name
     // above): taught with Tame Beast (TamerSpells) and gone with it.
     constexpr uint32 SPELL_TAME_BEAST = 1515;
+    constexpr uint32 SPELL_COLD_BLOOD = 14177;     // "your next offensive ability": every class's (GlobalReach)
     constexpr uint32 TAMER_SPELLS[] = { 883, 2641 };       // Call Pet, Dismiss Pet
 
     // Group versions of a buff: learned with the buff once the Hero's level reaches them (the rank-ups give them, as a
@@ -452,6 +453,19 @@ namespace
                 map[entry.SpellId] = entry;
             return map;
         }();
+        // Cold Blood: "your next offensive ability", every class's (a direct hit of any kind, melee or spell).
+        if (talentSpellId == SPELL_COLD_BLOOD)
+        {
+            if (checkSpell->IsPassive())
+                return 0;
+            for (SpellEffectInfo const& effect : checkSpell->GetEffects())
+                if (effect.IsEffect(SPELL_EFFECT_SCHOOL_DAMAGE) || effect.IsEffect(SPELL_EFFECT_WEAPON_DAMAGE)
+                    || effect.IsEffect(SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL)
+                    || effect.IsEffect(SPELL_EFFECT_NORMALIZED_WEAPON_DMG)
+                    || effect.IsEffect(SPELL_EFFECT_WEAPON_PERCENT_DAMAGE))
+                    return 1;
+            return 0;
+        }
         auto itr = entries.find(talentSpellId);
         if (itr == entries.end())
             return -1;
@@ -522,6 +536,30 @@ namespace
             }
         }
         return powers;
+    }
+
+    // Talents for a resource whose data shows none (a dummy the core scripts): the powers they are for, any of them.
+    std::pair<char const*, uint32> const SCRIPTED_RESOURCE_TALENTS[] = {
+        { "Relentless Strikes", 1u << POWER_ENERGY },
+        { "Endless Rage", 1u << POWER_RAGE },
+        { "King of the Jungle", (1u << POWER_ENERGY) | (1u << POWER_RAGE) },
+        { "Furor", (1u << POWER_ENERGY) | (1u << POWER_RAGE) },
+        { "Primal Precision", 1u << POWER_ENERGY },
+        { "Overkill", 1u << POWER_ENERGY },
+    };
+
+    bool WearsShield(Player* player)
+    {
+        Item* offhand = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND);
+        return offhand && offhand->GetTemplate()->Class == ITEM_CLASS_ARMOR
+            && offhand->GetTemplate()->SubClass == ITEM_SUBCLASS_ARMOR_SHIELD;
+    }
+
+    bool WieldsThrown(Player* player)
+    {
+        Item* ranged = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED);
+        return ranged && ranged->GetTemplate()->Class == ITEM_CLASS_WEAPON
+            && ranged->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_THROWN;
     }
 
     // A generic talent's role tags, from the stats it raises (0: any role).
@@ -973,10 +1011,18 @@ namespace
                 return 0;
             if (name.find("Dual Wield") != std::string::npos && !player->GetWeaponForAttack(OFF_ATTACK, true))
                 return 0;
+            // The shield's and thrown weapon's talents whose data names no item: by name.
+            if ((name == "Shield Specialization" || name == "Shield Mastery") && !WearsShield(player))
+                return 0;
+            if (name == "Throwing Specialization" && !WieldsThrown(player))
+                return 0;
             // A resource's talent (more Energy, faster Rage, Energy back on a hit...): only for a Hero who spends
-            // that resource.
+            // that resource; the scripted ones whose data names none (Relentless Strikes...) by name, any of theirs.
             if (uint32 powers = ResourcePowers(spellInfo); powers & ~knownPowers)
                 return 0;
+            for (auto const& [scriptedName, powers] : SCRIPTED_RESOURCE_TALENTS)
+                if (name == scriptedName && !(powers & knownPowers))
+                    return 0;
 
             for (TalentFor const& scripted : SCRIPTED_TALENTS)
                 if (name == scripted.Talent)
