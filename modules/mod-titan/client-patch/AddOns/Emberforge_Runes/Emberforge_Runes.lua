@@ -2098,6 +2098,16 @@ local function Stacks()
     return Buff(FEL_COMMAND) or 0
 end
 
+-- A spellbook slot's spell name, or nil: GetSpellName raises an error on a slot past the book's end (the spellbook
+-- updates its empty buttons too).
+local function BookSpellName(slot, bookType)
+    if not GetSpellName or not slot then
+        return nil
+    end
+    local ok, name = pcall(GetSpellName, slot, bookType or BOOKTYPE_SPELL)
+    return ok and name or nil
+end
+
 -- The spell an action slot holds, by name (3.3.5's GetActionInfo gives a spellbook index, the spell's id fourth).
 local function ActionSpell(slot)
     local kind, id, subType, spellId = GetActionInfo(slot)
@@ -2107,7 +2117,7 @@ local function ActionSpell(slot)
     if spellId then
         return (GetSpellInfo(spellId))
     end
-    return GetSpellName and GetSpellName(id, subType or BOOKTYPE_SPELL) or (GetSpellInfo(id))
+    return BookSpellName(id, subType) or (GetSpellInfo(id))
 end
 
 -- What an ability looks like now: (icon, glow) while a rune changes it, else nil.
@@ -2216,7 +2226,7 @@ if SpellButton_UpdateButton and hooksecurefunc then
         if not slot or not icon or (SpellBookFrame and SpellBookFrame.bookType ~= BOOKTYPE_SPELL) then
             return
         end
-        local name = GetSpellName(slot, BOOKTYPE_SPELL)
+        local name = BookSpellName(slot, BOOKTYPE_SPELL)
         local state = State()
         if name and name == state.consecration and state.paragon then
             icon:SetTexture(PARAGON_ICON)
