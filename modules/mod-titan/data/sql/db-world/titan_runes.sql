@@ -1,4 +1,4 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-91038: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-91158: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
@@ -213,15 +213,15 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90862, 'spell_titan_rune_dot'),
 (90922, 'spell_titan_rune_dot'),
 (90983, 'spell_titan_rune_dot'),
-(91013, 'spell_titan_rune_dot');
+(91133, 'spell_titan_rune_dot');
 
-DELETE FROM `spell_bonus_data` WHERE `entry` IN (90832, 90833, 90834, 90984, 91014);
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90832, 90833, 90834, 90984, 91134);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90832, 0, 0, 0, 0, 'Threefold Grave - Grave Pestilence tick'),
 (90833, 0, 0, 0, 0, 'Unbroken Onslaught - Bloodletting tick'),
 (90834, 0, 0, 0, 0, 'Hollow Congregation - Hollow Flay tick'),
 (90984, 0, 0, 0, 0, 'Spectral Blade - Open Wound tick'),
-(91014, 0, 0, 0, 0, 'Wild Hunt - Ghostfang tick');
+(91134, 0, 0, 0, 0, 'Wild Hunt - Ghostfang tick');
 
 -- The Spectral Blade: Eviscerate calls the phantom; Sinister Strike, Backstab and Hemorrhage spend Marked for Murder
 -- (every rank). The Wild Hunt: Kill Command unleashes the Spectral Beast (910123, the Hero's pet's look).
@@ -235,8 +235,8 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (34026, 'spell_titan_rune_kill_command');
 
 -- Their strikes are shares of the Hero's (or their pet's) own hits: no bonuses of their own.
-DELETE FROM `spell_bonus_data` WHERE `entry` IN (90981, 91012, 91016);
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (90981, 91132, 91136);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90981, 0, 0, 0, 0, 'Spectral Blade - Phantom Strike'),
-(91012, 0, 0, 0, 0, 'Wild Hunt - Spectral Bite'),
-(91016, 0, 0, 0, 0, 'Wild Hunt - Final Pounce');
+(91132, 0, 0, 0, 0, 'Wild Hunt - Spectral Bite'),
+(91136, 0, 0, 0, 0, 'Wild Hunt - Final Pounce');

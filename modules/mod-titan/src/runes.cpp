@@ -68,7 +68,7 @@
 //   change freely out of combat.
 // - The rune works through auras: its own while it is the active spec's (90700 Fel Commandment, 90730 the
 //   Sanctified Paragon, 90750 the Stormbound Conduit, 90770 Echoing Thunder, 90790 the Wellspring, 90810 the
-//   Wandering Mist, 90830 / 90860 / 90890 / 90920 / 90950 the five after, 90980 the Spectral Blade, 91010 the
+//   Wandering Mist, 90830 / 90860 / 90890 / 90920 / 90950 the five after, 90980 the Spectral Blade, 91130 the
 //   Wild Hunt), and one marker per picked modifier
 //   (90710 / 90740 / 90760 / 90780 / 90800 / 90820, and 20 on from each of the five's first, + slot * 3 + choice);
 //   scripts look for them.
@@ -218,16 +218,16 @@ namespace
         SPELL_OPEN_WOUND_TICK           = 90984,
         SPELL_VANISHING_ACT             = 90985,
         SPELL_MARKED_FOR_MURDER         = 90986,
-        SPELL_BLADE_MODIFIER_FIRST      = 91000,    // + slot * 3 + choice
+        SPELL_BLADE_MODIFIER_FIRST      = 91120,    // + slot * 3 + choice
 
-        SPELL_RUNE_WILD_HUNT            = 91010,
-        SPELL_SPECTRAL_BEAST            = 91011,    // on the beast: its look, no threat
-        SPELL_SPECTRAL_BITE             = 91012,
-        SPELL_GHOSTFANG                 = 91013,
-        SPELL_GHOSTFANG_TICK            = 91014,
-        SPELL_PARTING_HOWL              = 91015,    // on the Hero's pet
-        SPELL_FINAL_POUNCE              = 91016,
-        SPELL_HUNT_MODIFIER_FIRST       = 91030,    // + slot * 3 + choice
+        SPELL_RUNE_WILD_HUNT            = 91130,
+        SPELL_SPECTRAL_BEAST            = 91131,    // on the beast: its look, no threat
+        SPELL_SPECTRAL_BITE             = 91132,
+        SPELL_GHOSTFANG                 = 91133,
+        SPELL_GHOSTFANG_TICK            = 91134,
+        SPELL_PARTING_HOWL              = 91135,    // on the Hero's pet
+        SPELL_FINAL_POUNCE              = 91136,
+        SPELL_HUNT_MODIFIER_FIRST       = 91150,    // + slot * 3 + choice
 
         SPELL_EVISCERATE            = 2098,         // first ranks
         SPELL_SINISTER_STRIKE       = 1752,

@@ -549,12 +549,12 @@ utility or a tradeoff) take one pick each, from three.
   Hemorrhage on it 30% more, 90986).
 - **The Rune of the Wild Hunt** (rune 33; DPS with a pet; Kill Command). Kill Command keeps its effect and unleashes a
   **Spectral Beast** (910123: the pet's look, Ghost Visual, no threat) on the pet's target (else the Hero's) for 10
-  sec; it bites every 1.5 sec for 60% of the pet's swing (Spectral Bite 91012) and leaves when its prey dies. One at a
-  time. Alpha Predator (30% more), Pack Ravager (2 more within 5 yards at half), Ghostfang (a refreshing bleed, 91013);
+  sec; it bites every 1.5 sec for 60% of the pet's swing (Spectral Bite 91132) and leaves when its prey dies. One at a
+  time. Alpha Predator (30% more), Pack Ravager (2 more within 5 yards at half), Ghostfang (a refreshing bleed, 91133);
   Fixed Prey (4 sec longer), Hunter's Command (turns to the Hero's target), Blood Scent (hunts on after a kill); and
   on its natural end Final Pounce (a bite at 200%), Frenzied Farewell (4 bites at 60%) or Parting Howl (the pet 30%
-  stronger for 6 sec, 91015).
-- Scripts in `titan_runes.sql`; spells 90750-91038 (`patch_runes.py`); their looks from the curated VFX library
+  stronger for 6 sec, 91135).
+- Scripts in `titan_runes.sql`; spells 90750-91158 (`patch_runes.py`); their looks from the curated VFX library
   (`client-patch/spells/RUNE_VFX`).
 
 ## Cards and Silas Darkmoon
