@@ -266,8 +266,8 @@ namespace
     enum Modifier : uint8
     {
         MOD_INFERNAL_PACT, MOD_DEMONIC_ASCENSION, MOD_DREADFIRE_DISCIPLINE,
-        MOD_IMP_LEGION, MOD_SHATTERED_GLAIVE, MOD_FEL_HOST,
-        MOD_METAMORPHIC_BOND, MOD_FEL_RIFT, MOD_PACT_OF_RUIN,
+        MOD_BARRAGE, MOD_SHATTERED_GLAIVE, MOD_FELGUARDS_CALL,
+        MOD_METAMORPHIC_BOND, MOD_IMP_LEGION, MOD_PACT_OF_RUIN,
     };
 
     // The Sanctified Paragon's modifiers: slot (0 Presence, 1 Manifestation, 2 Covenant) x 3 + choice.
@@ -491,7 +491,7 @@ namespace
     constexpr uint8 MAX_STACKS = 5;
     constexpr uint32 DEMON_STACK_INTERVAL_MS = 4000;
     constexpr uint32 INFERNAL_PACT_INTERVAL_MS = 2000;
-    constexpr uint32 BOLTS = 3, BOLTS_EMPOWERED = 5, PACT_OF_RUIN_BOLTS = 2;
+    constexpr uint32 BOLTS = 3, BARRAGE_BOLTS_MORE = 2, PACT_OF_RUIN_BOLTS = 2;
     constexpr Milliseconds BOLT_SPACING = 150ms;
     constexpr float BOLT_RANGE = 10.0f;             // the volley's other targets, around the glaive's
     constexpr float BOLT_SHARE = 0.6f;              // of a Chaos Bolt
@@ -503,7 +503,6 @@ namespace
     // Imp Legion and Fel Host: every Throw Glaive spends the Fel Command, a demon (10 sec) for each stack, no limit
     // to how many are out; each bolt of a volley deals 10% more for every one of the Hero's demons out.
     constexpr uint32 LEGION_DURATION_MS = 10000;
-    constexpr uint32 BOLT_PCT_PER_DEMON = 10;
     constexpr int32 SHATTER_CUT_MS = 3000, SHATTER_BUDGET_MS = 9000;
     constexpr uint32 PACT_OF_RUIN_PCT = 3;
     constexpr float BOND_CLEAVE_RANGE = 5.0f;
@@ -847,24 +846,7 @@ namespace
             felguard->AI()->AttackStart(target);
     }
 
-    bool Legion(Player* player)
-    {
-        return HasMarker(player, MOD_IMP_LEGION) || HasMarker(player, MOD_FEL_HOST);
-    }
-
-    // The legion's demons still out (Imp Legion's imps, Fel Host's Felguards), the dead ones dropped.
-    std::size_t LegionOut(Player* player)
-    {
-        State& state = StateOf(player);
-        state.Imps.erase(std::remove_if(state.Imps.begin(), state.Imps.end(), [player](ObjectGuid guid)
-        {
-            Creature* demon = ObjectAccessor::GetCreature(*player, guid);
-            return !demon || !demon->IsAlive();
-        }), state.Imps.end());
-        return state.Imps.size();
-    }
-
-    // One of the legion's demons by the target (an imp; a Felguard with felguard), for LEGION_DURATION_MS.
+    // One of Imp Legion's imps by the target, for LEGION_DURATION_MS.
     void SummonDemon(Player* player, Unit* target, bool felguard)
     {
         State& state = StateOf(player);
@@ -876,12 +858,6 @@ namespace
         state.Imps.push_back(demon->GetGUID());
         if (demon->IsAIEnabled)
             demon->AI()->AttackStart(target);
-    }
-
-    // Every demon of the Hero's out: the legion's, the volley's Felguard and their own warlock demon.
-    std::size_t DemonsOut(Player* player)
-    {
-        return LegionOut(player) + (Felguard(player) ? 1 : 0) + (Demon(player) ? 1 : 0);
     }
 
     void ClearLegends(Player* player);
@@ -956,24 +932,16 @@ namespace
         }
 
         int32 damage = BoltDamage(player);
-        if (Legion(player))
-            damage += damage * int32(BOLT_PCT_PER_DEMON * DemonsOut(player)) / 100;
         player->CastCustomSpell(target, SPELL_VOLLEY_BOLT, &damage, nullptr, nullptr, true);
-
-        if (!volley->Hit.insert(target->GetGUID()).second)
-            return;
-        if (HasMarker(player, MOD_SHATTERED_GLAIVE) && target->GetGUID() != volley->Primary)
-            player->CastSpell(target, SPELL_THROW_GLAIVE, true);    // the glaive bounces to it, full damage
     }
 
-    // Chaos Bolt Volley: at 5 Fel Command, Throw Glaive also fires 3 bolts (5 in Metamorphosis, then the Felguard;
-    // Pact of Ruin 2 more), 0.15 sec apart: the first at the glaive's target, each next at another enemy within
-    // 10 yards of it, nearest first; extra bolts go to the target.
+    // Chaos Bolt Volley: at 5 Fel Command, Throw Glaive also fires 3 bolts (Barrage and Pact of Ruin 2 more each),
+    // 0.15 sec apart: the first at the glaive's target, each next at another enemy within 10 yards of it, nearest
+    // first; extra bolts go to the target. Felguard's Call: a Felguard; Imp Legion: an imp for each bolt.
     void FireVolley(Player* player, Unit* primary)
     {
         player->RemoveAurasDueToSpell(SPELL_FEL_COMMAND);
-        bool empowered = InMetamorphosis(player);
-        uint32 bolts = (empowered ? BOLTS_EMPOWERED : BOLTS)
+        uint32 bolts = BOLTS + (HasMarker(player, MOD_BARRAGE) ? BARRAGE_BOLTS_MORE : 0)
             + (HasMarker(player, MOD_PACT_OF_RUIN) ? PACT_OF_RUIN_BOLTS : 0);
 
         auto volley = std::make_shared<Volley>();
@@ -993,13 +961,11 @@ namespace
             player->m_Events.AddEventAtOffset([player, volley, i]() { FireBolt(player, volley, i); },
                 Milliseconds(BOLT_SPACING.count() * i));
 
-        if (empowered)
+        if (HasMarker(player, MOD_FELGUARDS_CALL))
             SummonFelguard(player, primary);
-        if (HasMarker(player, MOD_FEL_RIFT))
-        {
-            state.RiftTarget = primary->GetGUID();
-            player->AddAura(SPELL_FEL_RIFT, player);
-        }
+        if (HasMarker(player, MOD_IMP_LEGION))
+            for (uint32 i = 0; i < bolts; ++i)
+                SummonDemon(player, primary, false);
     }
 
     // ---- The Sanctified Paragon -------------------------------------------------------------------------------
@@ -2676,7 +2642,7 @@ namespace LegendaryRunes
 }
 
 // The rune's aura (90700): Demon's Bite, Chaos Strike, Shadow Bolt and Incinerate hits grant Fel Command (a
-// Chaos Strike crit 2); with Dreadfire Discipline, Shadow Bolt and Incinerate 2 and Demon's Bite none. A volley
+// Chaos Strike crit 2); with Dreadfire Discipline, Shadow Bolt and Incinerate 2. A volley
 // bolt's crit takes 3 sec off Throw Glaive with Shattered Glaive (9 sec a volley at most).
 class spell_titan_rune_fel_commandment : public AuraScript
 {
@@ -2705,7 +2671,7 @@ class spell_titan_rune_fel_commandment : public AuraScript
         bool dreadfire = HasMarker(player, MOD_DREADFIRE_DISCIPLINE);
         if (first == SPELL_CHAOS_STRIKE)
             Gain(player, crit ? 2 : 1);
-        else if (first == SPELL_DEMONS_BITE && !dreadfire)
+        else if (first == SPELL_DEMONS_BITE)
             Gain(player, 1);
         else if (first == SPELL_SHADOW_BOLT || first == SPELL_INCINERATE)
             Gain(player, dreadfire ? 2 : 1);
@@ -2719,7 +2685,7 @@ class spell_titan_rune_fel_commandment : public AuraScript
 };
 
 // Throw Glaive (90111) with the rune at 5 Fel Command: Chaos Bolt Volley. Not when the only enemy about is
-// crowd-controlled (the volley would break it). A triggered throw (Shattered Glaive's bounce) never fires one.
+// crowd-controlled (the volley would break it). A triggered throw never fires one.
 class spell_titan_rune_throw_glaive : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_throw_glaive);
@@ -2746,19 +2712,7 @@ class spell_titan_rune_throw_glaive : public SpellScript
         Player* player = GetCaster()->ToPlayer();
         if (!target || !player || GetSpell()->IsTriggered() || !player->HasAura(SPELL_RUNE_FEL_COMMANDMENT))
             return;
-        // Imp Legion / Fel Host: every throw spends the Fel Command, a demon for each stack (Felguards in
-        // Metamorphosis with Fel Host), before the volley so its bolts count them.
-        uint8 stacks = Stacks(player);
-        bool armed = Armed();
-        if (Legion(player) && stacks)
-        {
-            bool felguards = HasMarker(player, MOD_FEL_HOST) && InMetamorphosis(player);
-            for (uint8 i = 0; i < stacks; ++i)
-                SummonDemon(player, target, felguards);
-            if (!armed)
-                player->RemoveAurasDueToSpell(SPELL_FEL_COMMAND);
-        }
-        if (armed)
+        if (Armed())
             FireVolley(player, target);
     }
 

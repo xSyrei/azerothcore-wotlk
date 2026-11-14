@@ -263,10 +263,10 @@ server("S,10,10,1,21,1,0,0,21,0")
 options[3]:Click()
 run(0.6)
 server("S,10,10,1,21,1,3,0,21,0")
-options[1]:Click()
+options[2]:Click()
 run(0.6)
-server("S,10,10,1,21,1,3,1,21,0")
-check(view.active == nil and debug.done.target == 1 and debug.done.name.text == "Demon Commander",
+server("S,10,10,1,21,1,3,2,21,0")
+check(view.active == nil and debug.done.target == 1 and debug.done.name.text == "The Legion's Master",
     "the three picks of a doc build: complete, named")
 check(debug.done.hint.text == "Click on a modifier to change it", "the done view says a modifier can be changed")
 

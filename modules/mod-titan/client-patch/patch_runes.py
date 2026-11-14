@@ -215,8 +215,8 @@ SPELLS[0]['set'] = {**SPELLS[0]['set'], 'ProcFlags': PROC_DONE_MELEE_SPELL | PRO
 # The modifiers' markers: (slot, choice) -> 90710 + slot * 3 + choice, hidden.
 MODIFIERS = [
     ('Infernal Pact', 'Demonic Ascension', 'Dreadfire Discipline'),
-    ('Imp Legion', 'Shattered Glaive', 'Fel Host'),
-    ('Metamorphic Bond', 'Fel Rift', 'Pact of Ruin'),
+    ('Barrage', 'Shattered Glaive', "Felguard's Call"),
+    ('Metamorphic Bond', 'Imp Legion', 'Pact of Ruin'),
 ]
 SPELLS += [buff(90710 + slot * 3 + choice, name, RUNE_ICON, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)

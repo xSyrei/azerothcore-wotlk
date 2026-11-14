@@ -2038,7 +2038,7 @@ end
 
 -- Abilities a rune changes show the rune's look on the action bars: Consecration (any rank) the Sanctified
 -- Paragon's icon while that rune is bound; Throw Glaive Chaos Bolt's icon at 5 Fel Command, with a pulsing border
--- (brighter, a purple rim and the Felguard in Metamorphosis): the client has no proc glow, so both are drawn over
+-- (brighter, a purple rim in Metamorphosis): the client has no proc glow, so both are drawn over
 -- each action button holding the ability. In the spellbook, Consecration shows the Paragon's icon too.
 local glow = { buttons = {}, phase = 0 }
 local BAR_BUTTONS = { "ActionButton", "MultiBarBottomLeftButton", "MultiBarBottomRightButton", "MultiBarRightButton",
@@ -2137,11 +2137,7 @@ local function UpdateButton(button, state)
         local overlay, meta = Overlay(button), state.meta
         overlay.border:SetVertexColor(meta and 0.75 or 0.35, meta and 0.45 or 1, meta and 1 or 0.3)
         overlay.border:Show()
-        if meta then
-            overlay.felguard:Show()
-        else
-            overlay.felguard:Hide()
-        end
+        overlay.felguard:Hide()
         return true
     end
     if glow.buttons[button] then

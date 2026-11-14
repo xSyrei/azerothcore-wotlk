@@ -1282,74 +1282,41 @@ EmberforgeRunesCatalog = {
       role = "Hybrid (Havoc, Demonology)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_FelCommandment",
+      slots = { "Invocation", "Manifestation", "Adaptation" },
       builtFrom = "Demon's Bite, Chaos Strike, Shadow Bolt, Incinerate, your demon's attacks",
       spentWith = "Throw Glaive (Chaos Bolt Volley)",
       resource = "Fel Command",
-      core = "Demon's Bite, Chaos Strike, Shadow Bolt, Incinerate and your summoned demon's attacks grant " ..
-          "Fel Command, up to 5. At 5, " ..
-          "Throw Glaive becomes Chaos Bolt Volley: you hurl the glaive and 3 Chaos Bolts at up to 3 enemies, " ..
-          "each bolt dealing 60% of a Chaos Bolt's damage. The volley consumes all Fel Command. In " ..
-          "Metamorphosis, it fires 5 bolts and calls a Felguard to your side for 8 sec.",
-      loop = "Fight beside your demon to build Fel Command, unleash the volley, and save a full volley for " ..
-          "Metamorphosis to call in the Felguard.",
+      core = "Demon's Bite, Chaos Strike, Shadow Bolt, Incinerate and your summoned demon's attacks grant Fel " ..
+          "Command, up to 5. At 5, Throw Glaive becomes Chaos Bolt Volley: you hurl the glaive and 3 Chaos Bolts at " ..
+          "up to 3 enemies, each bolt dealing 60% of a Chaos Bolt's damage. The volley consumes all Fel Command.",
+      loop = "Build to 5 Fel Command, then throw your glaive.",
       mods = {
-        {
-          name = "Infernal Pact",
-          text = "Your summoned demon's attacks grant Fel Command twice as fast.",
-        },
-        {
-          name = "Demonic Ascension",
-          text = "Entering Metamorphosis instantly grants 5 Fel Command.",
-        },
-        {
-          name = "Dreadfire Discipline",
-          text = "Shadow Bolt and Incinerate grant 2 Fel Command each; Demon's Bite grants none.",
-        },
-        {
-          name = "Imp Legion",
-          text = "Every Throw Glaive spends your Fel Command: a Fel Imp for each stack, fighting for 10 sec. " ..
-              "Each volley bolt deals 10% more for every demon you have out.",
-        },
-        {
-          name = "Shattered Glaive",
-          text = "The glaive ricochets between the volley's targets, and each critical bolt reduces Throw " ..
-              "Glaive's cooldown by 3 sec.",
-        },
-        {
-          name = "Fel Host",
-          text = "Every Throw Glaive spends your Fel Command: a demon for each stack, for 10 sec: Felguards " ..
-              "in Metamorphosis, Fel Imps outside it. Each volley bolt deals 10% more for every demon you " ..
-              "have out.",
-        },
-        {
-          name = "Metamorphic Bond",
-          text = "While you are in Metamorphosis, your demon takes 30% less damage and its attacks cleave.",
-        },
-        {
-          name = "Fel Rift",
-          text = "For 3 sec after the volley, Fel Rush carries you to the glaive's first target.",
-        },
-        {
-          name = "Pact of Ruin",
-          text = "The volley fires 2 extra bolts, but costs 3% of your maximum health per bolt.",
-        },
+        { name = "Infernal Pact",
+          text = "Your summoned demon's attacks grant Fel Command twice as fast." },
+        { name = "Demonic Ascension",
+          text = "Entering Metamorphosis instantly grants 5 Fel Command." },
+        { name = "Dreadfire Discipline",
+          text = "Shadow Bolt and Incinerate grant 2 Fel Command each." },
+        { name = "Barrage",
+          text = "The volley fires 2 more bolts." },
+        { name = "Shattered Glaive",
+          text = "Each critical bolt takes 3 sec off Throw Glaive's cooldown." },
+        { name = "Felguard's Call",
+          text = "The volley calls a Felguard to your side for 8 sec." },
+        { name = "Metamorphic Bond",
+          text = "While you are in Metamorphosis, your demon takes 30% less damage and its attacks cleave." },
+        { name = "Imp Legion",
+          text = "The volley calls a Fel Imp for each bolt, fighting for 10 sec." },
+        { name = "Pact of Ruin",
+          text = "The volley fires 2 more bolts, but costs 3% of your maximum health per bolt." },
       },
       builds = {
-        {
-          name = "Demon commander",
-          mods = { "Infernal Pact", "Fel Host", "Metamorphic Bond" },
-          text = "A host of demons answers every throw, and Metamorphosis makes them Felguards.",
-        },
-        {
-          name = "Chaos artillery",
-          mods = { "Dreadfire Discipline", "Shattered Glaive", "Pact of Ruin" },
-          text = "A caster who builds with Shadow Bolt and fires a seven-bolt volley.",
-        },
-        {
-          name = "Fel legion",
-          mods = { "Demonic Ascension", "Imp Legion", "Fel Rift" },
-          text = "Pop Metamorphosis, fire a five-bolt volley with a Felguard and imps behind it, and dash in.",
-        },
+        { name = "The Fel Storm", mods = { "Dreadfire Discipline", "Barrage", "Pact of Ruin" },
+          text = "Seven bolts, every throw." },
+        { name = "The Legion's Master", mods = { "Infernal Pact", "Felguard's Call", "Imp Legion" },
+          text = "Fight beside an army of demons." },
+        { name = "The Demon Within", mods = { "Demonic Ascension", "Shattered Glaive", "Metamorphic Bond" },
+          text = "Transform and throw again and again." },
       },
     },
     { id = 22,
