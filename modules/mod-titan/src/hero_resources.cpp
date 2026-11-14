@@ -296,6 +296,16 @@ public:
         if (spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR && !spellInfo->IsPassive())
             spellInfo->Stances = 0;
 
+        // A buff cast at the caster's own pet (Bestial Wrath, Kill Command's...) is never downranked to the pet's
+        // level: a Hero's pet may be far below the spell (titan_hero_low_level_buffs), and with no rank for its
+        // level the core would assert (Spell::DoSpellHitOnUnit, GetAuraRankForLevel).
+        for (SpellEffectInfo const& effect : spellInfo->Effects)
+            if (effect.TargetA.GetTarget() == TARGET_UNIT_PET)
+            {
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_ALLOW_LOW_LEVEL_BUFF;
+                break;
+            }
+
         if (spellInfo->PowerType == POWER_RUNIC_POWER)
             spellInfo->PowerType = POWER_RAGE;
 
@@ -489,7 +499,10 @@ public:
             return;
         Unit* caster = spell->GetCaster() ? spell->GetCaster()->ToUnit() : nullptr;
         Player* player = caster ? caster->ToPlayer() : nullptr;
-        if (player && hero_resources::IsHero(player) && target->GetCharmerOrOwnerGUID() == player->GetGUID())
+        // Only when the core finds a rank of it for the target's level (pet spells always: their attribute above);
+        // with none, Spell::DoSpellHitOnUnit asserts and the world server stops.
+        if (player && hero_resources::IsHero(player) && target->GetCharmerOrOwnerGUID() == player->GetGUID()
+            && spell->GetSpellInfo()->GetAuraRankForLevel(target->GetLevel()))
             targetInfo.scaleAura = true;
     }
 };
