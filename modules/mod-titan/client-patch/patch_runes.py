@@ -88,7 +88,7 @@ The five after them (their own concept docs), each with its markers 20 on from i
 - the Dawnbound Crusader, 90890: the first draft's Dawn Vow 90891 (on the ally 90892; unlearned), the echo's heal
   and damage 90894-90895, their looks 90896-90897, Sunburst's 90898, Sacred Ground 90899, Radiant Ward 90900;
 - the Hollow Congregation, 90920: the echo's look 90921, Hollow Flay 90922, the barrage's bolt 90923, Accusation
-  90924, Last Word 90925;
+  90924, Last Word 90925, Shadow Mend 90926;
 - the Shattered Sun, 90950: Sunshard 90951 (stacks), Frozen Core 90952, Shatter 90953 and its look 90954, Second
   Sunrise 90955 and its look 90956, Scalding Ground 90957.
 """
@@ -770,8 +770,8 @@ SPELLS += [
      'clear': [2, 3]},
 
     buff(90920, 'Rune of the Hollow Congregation', HOLLOW_ICON,
-         'Two seconds into Mind Flay, a Hollow Echo stays where you stand and channels a weaker Mind Flay for 10 '
-         'sec (two at most). Mind Blast turns every echo on its target in a short barrage; then they channel again.',
+         'Mind Flay calls a Hollow Echo to your side for 10 sec (3 at most): it follows you and flays your target. '
+         'Mind Blast turns every echo on its target in a short barrage.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {**shown(90921, 'Hollow Echo', 'Spell_Shadow_Shadowform', '', DURATION_INFINITE, key='HollowEcho',
              effects={1: aura(AURA_MOD_THREAT, -100, ALL_SCHOOLS)}),
@@ -790,6 +790,8 @@ SPELLS += [
      'copy': SHADOW_BOLT},
     strike(90924, 'Accusation', 'Spell_Shadow_PsychicScream', SHADOW, VISUAL_MIND_BLAST),
     strike(90925, 'Last Word', 'Spell_Shadow_DemonicFortitude', SHADOW, VISUAL_MIND_BLAST),
+    {**heal(90926, 'Shadow Mend', 'Spell_Shadow_ShadowMend', 'Your Hollow Echoes mend you.'),
+     'set': {**HEAL_SET, 'SchoolMask': SHADOW, 'AttributesEx2': 0, 'SpellVisual': 0}},
 
     buff(90950, 'Rune of the Shattered Sun', SUN_ICON,
          'Your fire spells embed burning Sunshards in their target, up to 5. A frost spell shatters every shard in its '
@@ -815,9 +817,9 @@ LEGEND_MODIFIERS = [
     (90910, DAWN_ICON, [('Sunburst', 'Focused Dawn', 'Communion'),
                         ('Sacred Ground', 'Steadfast', "Judgment's Echo"),
                         ("Dawn's Mercy", 'Swift Dawn', 'Radiant Ward')]),
-    (90940, HOLLOW_ICON, [('Following Shadows', 'Haunted Ground', 'Possession'),
+    (90940, HOLLOW_ICON, [('Gathering', 'Lasting Echoes', 'Last Word'),
                           ('Unison', 'Dissonance', 'Accusation'),
-                          ('Last Word', 'Procession', 'Silent Witness')]),
+                          ('Fervor', 'Shadow Mend', 'Swift Command')]),
     (90970, SUN_ICON, [('Wildfire', 'Spreading Sun', 'Heavy Sun'),
                        ('Wide Burst', 'Scalding Ground', 'Chain Reaction'),
                        ('Implosion', 'Second Sunrise', 'Frozen Core')]),

@@ -144,7 +144,8 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-12294, 'spell_titan_rune_wake_cut'),
 (-23881, 'spell_titan_rune_wake_cut'),
 (90860, 'spell_titan_rune_unbroken_onslaught'),
--- The Dawnbound Crusader: Dawn Vow, the Judgements' mark, Crusader Strike's and Holy Shock's echoes.
+-- The Dawnbound Crusader: Crusader Strike's, Holy Shock's and (Judgment's Echo) the Judgements' echoes; Dawn
+-- Vow's script does nothing (the first draft's action, unlearned).
 (90891, 'spell_titan_rune_dawn_vow'),
 (20271, 'spell_titan_rune_judgement'),
 (53407, 'spell_titan_rune_judgement'),
@@ -152,7 +153,7 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (35395, 'spell_titan_rune_dawn_echo'),
 (-25912, 'spell_titan_rune_dawn_echo'),
 (-25914, 'spell_titan_rune_dawn_echo'),
--- The Hollow Congregation: Mind Flay leaves the echoes, Mind Blast commands them (every rank).
+-- The Hollow Congregation: Mind Flay calls the echoes, Mind Blast commands them (every rank).
 (-15407, 'spell_titan_rune_mind_flay'),
 (-8092, 'spell_titan_rune_mind_blast'),
 -- The Shattered Sun: its fire spells (Fireball, Pyroblast, Fire Blast, Scorch) and frost spells (Frostbolt, Ice
@@ -176,7 +177,7 @@ INSERT INTO `spell_proc` (`SpellId`, `SchoolMask`, `SpellFamilyName`, `SpellFami
 
 -- Their damage, heals and absorbs are the scripts' (shares of the Hero's own hits and power, already in them).
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (90838, 90840, 90841, 90842, 90843, 90861, 90862, 90864, 90894,
-    90895, 90922, 90923, 90924, 90925, 90953, 90955);
+    90895, 90900, 90922, 90923, 90924, 90925, 90926, 90953, 90955);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (90838, 0, 0, 0, 0, 'Threefold Grave - Frozen Grave'),
 (90840, 0, 0, 0, 0, 'Threefold Grave - Plagued Grave'),
@@ -187,13 +188,15 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90862, 0, 0, 0, 0, 'Unbroken Onslaught - Bloodletting'),
 (90864, 0, 0, 0, 0, 'Unbroken Onslaught - Aftershock'),
 (90894, 0, 0, 0, 0, 'Dawnbound Crusader - Dawn Echo heal'),
+(90900, 0, 0, 0, 0, 'Dawnbound Crusader - Radiant Ward'),
 (90895, 0, 0, 0, 0, 'Dawnbound Crusader - Dawn Echo damage'),
 (90922, 0, 0, 0, 0, 'Hollow Congregation - Hollow Flay'),
 (90923, 0, 0, 0, 0, 'Hollow Congregation - barrage'),
 (90924, 0, 0, 0, 0, 'Hollow Congregation - Accusation'),
 (90925, 0, 0, 0, 0, 'Hollow Congregation - Last Word'),
-(90953, 0, 0, 0, 0, 'Shattered Sun - Fracture'),
-(90955, 0, 0, 0, 0, 'Shattered Sun - Collapse');
+(90926, 0, 0, 0, 0, 'Hollow Congregation - Shadow Mend'),
+(90953, 0, 0, 0, 0, 'Shattered Sun - Shatter'),
+(90955, 0, 0, 0, 0, 'Shattered Sun - Second Sunrise');
 
 -- The runes' damage over time (Grave Pestilence, Bloodletting, Hollow Flay): periodic dummies whose ticks the script
 -- deals as their own damage spells (90832-90834), the amount kept by the script.

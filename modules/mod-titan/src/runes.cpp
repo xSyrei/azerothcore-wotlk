@@ -195,6 +195,7 @@ namespace
         SPELL_HOLLOW_BOLT               = 90923,
         SPELL_HOLLOW_SCREAM             = 90924,
         SPELL_HOLLOW_LAST_WORD          = 90925,
+        SPELL_HOLLOW_MEND               = 90926,    // Shadow Mend's heal
         SPELL_HOLLOW_MODIFIER_FIRST     = 90940,    // + slot * 3 + choice
 
         SPELL_RUNE_SHATTERED_SUN        = 90950,
@@ -419,26 +420,27 @@ namespace
     constexpr float DAWN_REACH = 15.0f, SUNBURST_RADIUS = 8.0f, SUNBURST_SHARE = 0.4f;
     constexpr float SACRED_RADIUS = 8.0f, SACRED_SHARE = 0.25f;     // Consecration's ground
     constexpr uint32 SACRED_MS = 4000;
-    constexpr float STEADFAST_SHARE = 0.5f, MERCY_SHARE = 0.2f, RADIANT_SHARE = 0.25f;
+    constexpr float STEADFAST_SHARE = 0.5f, MERCY_SHARE = 0.2f, RADIANT_SHARE = 0.25f, JUDGMENT_LEVEL = 5.0f;
     constexpr int32 SWIFT_DAWN_MS = 500, RADIANT_MS = 8000;
     constexpr std::size_t DAWN_TARGETS = 5;
 
     // The Hollow Congregation's modifiers: slot (0 Congregation, 1 Sermon, 2 Command) x 3 + choice.
     enum HollowModifier : uint8
     {
-        MOD_FOLLOWING_SHADOWS, MOD_HAUNTED_GROUND, MOD_POSSESSION,
+        MOD_GATHERING, MOD_LASTING_ECHOES, MOD_LAST_WORD,
         MOD_UNISON, MOD_DISSONANCE, MOD_ACCUSATION,
-        MOD_LAST_WORD, MOD_PROCESSION, MOD_SILENT_WITNESS,
+        MOD_FERVOR, MOD_SHADOW_MEND, MOD_SWIFT_COMMAND,
     };
 
     // The Hollow Congregation's tuning: an echo's channel ticks for 40% of the Hero's Mind Flay tick; a barrage is 3
     // bolts each, 0.4 sec apart, 60% of a tick each.
-    constexpr uint32 FLAY_ECHO_AFTER_MS = 2000, HOLLOW_ECHO_MS = 10000, BARRAGE_SPACING_MS = 400;
-    constexpr std::size_t MAX_HOLLOW_ECHOES = 2;
+    constexpr uint32 HOLLOW_ECHO_MS = 10000, LASTING_ECHO_MS = 15000, BARRAGE_SPACING_MS = 400;
+    constexpr std::size_t MAX_HOLLOW_ECHOES = 3, GATHERING_ECHOES = 4;
     constexpr uint32 BARRAGE_BOLTS = 3;
     constexpr float HOLLOW_SHARE = 0.4f, BARRAGE_SHARE = 0.6f, UNISON_BARRAGE = 1.2f, SCREAM_SHARE = 1.5f;
-    constexpr float HOLLOW_RANGE = 30.0f, HAUNTED_RANGE = 40.0f, SCREAM_WIDTH = 2.0f;
-    constexpr float LAST_WORD_TICKS = 3.0f, SILENT_WITNESS = 1.3f;
+    constexpr float HOLLOW_RANGE = 40.0f, SCREAM_WIDTH = 2.0f;
+    constexpr float LAST_WORD_TICKS = 3.0f, FERVOR = 1.25f, MEND_SHARE = 0.1f, FLAY_CHANNEL_TICKS = 3.0f;
+    constexpr int32 SWIFT_COMMAND_MS = 500;
     constexpr std::size_t SCREAM_TARGETS = 5;
 
     // The Shattered Sun's modifiers: slot (0 Formation, 1 Fracture, 2 Collapse) x 3 + choice.
@@ -688,10 +690,6 @@ namespace
 
         // The Hollow Congregation.
         std::vector<ObjectGuid> HollowEchoes;       // oldest first
-        uint32 FlayStart = 0;
-        bool FlayEchoed = true;
-        ObjectGuid FlayTarget;
-        std::unordered_map<ObjectGuid, ObjectGuid> EchoHosts;      // Possession: echo -> its enemy
 
         // The Shattered Sun: the enemies holding shards.
         std::vector<ObjectGuid> Shards;
@@ -2314,61 +2312,36 @@ namespace
             if (TempSummon* summon = echo->ToTempSummon())
                 summon->UnSummon();
         StateOf(player).HollowEchoes.clear();
-        StateOf(player).EchoHosts.clear();
     }
 
-    // Two seconds into Mind Flay: a Hollow Echo where the Hero stands (on the target with Possession, one an
-    // enemy), 10 sec; a third replaces the oldest.
-    void LeaveEcho(Player* player, Unit* target)
+    // Mind Flay: a Hollow Echo beside the Hero, following them, 10 sec (15 with Lasting Echoes); a fourth (fifth
+    // with Gathering) replaces the oldest.
+    void CallEcho(Player* player, Unit* target)
     {
         State& state = StateOf(player);
         std::vector<Creature*> echoes = LiveEchoes(player);
-        if (echoes.size() >= MAX_HOLLOW_ECHOES)
+        std::size_t most = HasHollowMarker(player, MOD_GATHERING) ? GATHERING_ECHOES : MAX_HOLLOW_ECHOES;
+        if (echoes.size() >= most)
             if (TempSummon* oldest = echoes.front()->ToTempSummon())
             {
                 oldest->UnSummon();
                 state.HollowEchoes.erase(state.HollowEchoes.begin());
             }
-        Unit* host = nullptr;
-        if (HasHollowMarker(player, MOD_POSSESSION))
-        {
-            auto hosted = [&](Unit* enemy)
-            {
-                for (Creature* echo : LiveEchoes(player))
-                    if (auto host = state.EchoHosts.find(echo->GetGUID());
-                        host != state.EchoHosts.end() && host->second == enemy->GetGUID())
-                        return true;
-                return false;
-            };
-            std::vector<Unit*> candidates = { target };
-            for (Unit* enemy : EnemiesAround(player, player, HOLLOW_RANGE))
-                candidates.push_back(enemy);
-            for (Unit* enemy : candidates)
-                if (Valid(player, enemy) && !hosted(enemy))
-                {
-                    host = enemy;
-                    break;
-                }
-        }
-        Position pos = host ? host->GetPosition() : player->GetNearPosition(1.5f, frand(0.0f, 2.0f * float(M_PI)));
+        uint32 ms = HasHollowMarker(player, MOD_LASTING_ECHOES) ? LASTING_ECHO_MS : HOLLOW_ECHO_MS;
+        Position pos = player->GetNearPosition(1.5f, frand(0.0f, 2.0f * float(M_PI)));
         TempSummon* echo = player->GetMap()->SummonCreature(NPC_HOLLOW_ECHO, pos,
-            sSummonPropertiesStore.LookupEntry(SUMMON_PROPERTIES_GUARDIAN), HOLLOW_ECHO_MS, player);
+            sSummonPropertiesStore.LookupEntry(SUMMON_PROPERTIES_GUARDIAN), ms, player);
         if (!echo)
             return;
         state.HollowEchoes.push_back(echo->GetGUID());
         if (echo->IsAIEnabled)
-        {
             echo->AI()->SetGUID(target ? target->GetGUID() : ObjectGuid::Empty, 0);
-            if (host)
-                echo->AI()->SetGUID(host->GetGUID(), 1);
-        }
-        if (host)
-            state.EchoHosts[echo->GetGUID()] = host->GetGUID();
     }
 
     // Mind Blast's command: every echo turns on its target (Dissonance: each on another enemy with the Hero's
-    // Shadow Word: Pain, the target first), beside it with Procession, in a barrage of 3 bolts (Unison: together,
-    // 20% more) or a piercing scream along the way (Accusation); then their channels resume on it.
+    // Shadow Word: Pain, the target first), in a barrage of 3 bolts (Unison: together, 20% more) or a piercing
+    // scream along the way (Accusation); then their channels resume on it. Swift Command: Mind Blast 0.5 sec sooner
+    // for each.
     void CommandEchoes(Player* player, Unit* target)
     {
         std::vector<Creature*> echoes = LiveEchoes(player);
@@ -2386,7 +2359,7 @@ namespace
             };
             if (pained(target))
                 victims.push_back(target);
-            for (Unit* enemy : EnemiesAround(player, player, HAUNTED_RANGE))
+            for (Unit* enemy : EnemiesAround(player, player, HOLLOW_RANGE))
                 if (enemy != target && pained(enemy))
                     victims.push_back(enemy);
         }
@@ -2400,12 +2373,6 @@ namespace
             Unit* victim = i < victims.size() ? victims[i] : target;
             ObjectGuid victimGuid = victim->GetGUID();
             echo->InterruptNonMeleeSpells(false);
-            if (HasHollowMarker(player, MOD_PROCESSION))
-            {
-                Position spot = victim->GetNearPosition(3.0f, float(M_PI) / 2.0f + float(M_PI) * i);
-                echo->NearTeleportTo(spot.GetPositionX(), spot.GetPositionY(), spot.GetPositionZ(),
-                    echo->GetAngle(victim));
-            }
             if (echo->IsAIEnabled)
             {
                 echo->AI()->SetGUID(victimGuid, 0);
@@ -2437,23 +2404,10 @@ namespace
                         echo->CastCustomSpell(at, SPELL_HOLLOW_BOLT, &bolt, nullptr, nullptr, true);
                 }, Milliseconds(b * BARRAGE_SPACING_MS + (unison ? 0 : 150 * i)));
         }
-    }
-
-    // Mind Flay held two seconds leaves its echo.
-    void HollowTick(Player* player)
-    {
-        State& state = StateOf(player);
-        if (state.FlayEchoed || Now() - state.FlayStart < FLAY_ECHO_AFTER_MS)
-            return;
-        Spell* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
-        if (!channel || channel->m_spellInfo->GetFirstRankSpell()->Id != SPELL_MIND_FLAY)
-        {
-            state.FlayEchoed = true;
-            return;
-        }
-        state.FlayEchoed = true;
-        Unit* target = ObjectAccessor::GetUnit(*player, state.FlayTarget);
-        LeaveEcho(player, Valid(player, target) ? target : nullptr);
+        if (HasHollowMarker(player, MOD_SWIFT_COMMAND))
+            for (uint32 id = SPELL_MIND_BLAST; id; id = sSpellMgr->GetNextSpellInChain(id))
+                if (player->HasSpell(id))
+                    player->ModifySpellCooldown(id, -SWIFT_COMMAND_MS * int32(echoes.size()));
     }
 
     // ---- The Shattered Sun ---------------------------------------------------------------------------------------
@@ -2589,7 +2543,6 @@ namespace
         state.SacredUntil = 0;
         player->RemoveDynObject(SPELL_SACRED_GROUND);
         DismissEchoes(player);
-        state.FlayEchoed = true;
         for (ObjectGuid guid : state.Shards)
             if (Unit* host = ObjectAccessor::GetUnit(*player, guid))
                 host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
@@ -3438,9 +3391,14 @@ class spell_titan_rune_judgement : public SpellScript
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (player && target && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER)
-            && HasDawnMarker(player, MOD_JUDGMENTS_ECHO))
-            QueueEcho(player, target, float(GetHitDamage()), false);
+        if (!player || !target || !player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER)
+            || !HasDawnMarker(player, MOD_JUDGMENTS_ECHO))
+            return;
+        // A Judgement's own cast deals nothing (its seal's spell does): the echo is the Hero's level x 5 and the
+        // higher of their Holy spell power or half their attack power.
+        float power = std::max(float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY)),
+            player->GetTotalAttackPowerValue(BASE_ATTACK) / 2.0f);
+        QueueEcho(player, target, JUDGMENT_LEVEL * player->GetLevel() + power, false);
     }
 
     void Register() override
@@ -3474,7 +3432,7 @@ class spell_titan_rune_dawn_echo : public SpellScript
     }
 };
 
-// Mind Flay (every rank) with the Hollow Congregation: its start, for the echo two seconds in.
+// Mind Flay (every rank) with the Hollow Congregation: a Hollow Echo called.
 class spell_titan_rune_mind_flay : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_mind_flay);
@@ -3482,12 +3440,8 @@ class spell_titan_rune_mind_flay : public SpellScript
     void Start()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (!player || !player->HasAura(SPELL_RUNE_HOLLOW_CONGREGATION))
-            return;
-        State& state = StateOf(player);
-        state.FlayStart = Now();
-        state.FlayEchoed = false;
-        state.FlayTarget = GetExplTargetUnit() ? GetExplTargetUnit()->GetGUID() : ObjectGuid::Empty;
+        if (player && player->HasAura(SPELL_RUNE_HOLLOW_CONGREGATION))
+            CallEcho(player, GetExplTargetUnit());
     }
 
     void Register() override
@@ -3591,10 +3545,10 @@ class spell_titan_rune_dot : public AuraScript
     }
 };
 
-// A Hollow Echo (910122): the Hero's look, hollowed; for 10 sec a weaker Mind Flay on its enemy (the one it was left
-// for, then the Hero's), 30 yards (40 with Haunted Ground), drifting after the Hero (Following Shadows) or riding
-// its enemy (Possession); quiet during a barrage. Last Word: a last, stronger attack as it fades. Silent Witness:
-// stronger while the Hero moves and does not channel.
+// A Hollow Echo (910122): the Hero's look, hollowed, following them; for 10 sec (15 with Lasting Echoes) a weaker
+// Mind Flay on the Hero's target (else the one it was called for, else the nearest), 40 yards; quiet during a
+// barrage. Last Word: a last, stronger attack as it fades. Fervor: stronger while the Hero channels Mind Flay.
+// Shadow Mend: each channel heals the Hero for 10% of its damage.
 struct npc_titan_rune_hollow_echo : public ScriptedAI
 {
     npc_titan_rune_hollow_echo(Creature* creature) : ScriptedAI(creature) { }
@@ -3608,14 +3562,14 @@ struct npc_titan_rune_hollow_echo : public ScriptedAI
         owner->CastSpell(me, SPELL_CLONE_ME, true);
         me->AddAura(SPELL_HOLLOW_ECHO, me);
         me->SetReactState(REACT_PASSIVE);
-        if (HasHollowMarker(owner, MOD_FOLLOWING_SHADOWS))
-            me->GetMotionMaster()->MoveFollow(owner, 2.5f, frand(1.5f, 4.8f));
+        me->GetMotionMaster()->MoveFollow(owner, 2.5f, frand(1.5f, 4.8f));
         scheduler.Schedule(200ms, [this](TaskContext channel)
         {
             Channel();
             channel.Repeat(500ms);
         });
-        scheduler.Schedule(Milliseconds(HOLLOW_ECHO_MS - 400), [this](TaskContext)
+        uint32 ms = HasHollowMarker(owner, MOD_LASTING_ECHOES) ? LASTING_ECHO_MS : HOLLOW_ECHO_MS;
+        scheduler.Schedule(Milliseconds(ms - 400), [this](TaskContext)
         {
             Player* hero = Owner();
             Unit* target = Target(hero);
@@ -3626,16 +3580,9 @@ struct npc_titan_rune_hollow_echo : public ScriptedAI
         });
     }
 
-    void SetGUID(ObjectGuid const& guid, int32 id) override
+    void SetGUID(ObjectGuid const& guid, int32 /*id*/) override
     {
-        if (id == 0)
-            _target = guid;
-        else
-        {
-            _host = guid;
-            if (Unit* host = ObjectAccessor::GetUnit(*me, guid))
-                me->GetMotionMaster()->MoveFollow(host, 0.5f, frand(0.0f, 2.0f * float(M_PI)));
-        }
+        _target = guid;
     }
 
     void SetData(uint32 /*id*/, uint32 value) override
@@ -3656,25 +3603,24 @@ private:
         return ObjectAccessor::GetPlayer(*me, _owner);
     }
 
-    // Its enemy: the one it was given (its host with Possession), else the Hero's, else the nearest to it.
+    // Its enemy: the one Mind Blast gave it during a barrage, else the Hero's target, else the one it was called
+    // for, else the nearest to it.
     Unit* Target(Player* hero)
     {
         if (!hero)
             return nullptr;
-        float range = HasHollowMarker(hero, MOD_HAUNTED_GROUND) ? HAUNTED_RANGE : HOLLOW_RANGE;
         auto fits = [&](Unit* unit)
         {
-            return Valid(hero, unit) && me->IsWithinDistInMap(unit, range) && me->IsWithinLOSInMap(unit);
+            return Valid(hero, unit) && me->IsWithinDistInMap(unit, HOLLOW_RANGE) && me->IsWithinLOSInMap(unit);
         };
-        for (ObjectGuid guid : { _host, _target })
-            if (Unit* unit = guid ? ObjectAccessor::GetUnit(*me, guid) : nullptr; fits(unit))
-                return unit;
-        if (Unit* chosen = hero->GetSelectedUnit(); fits(chosen))
+        if (Unit* chosen = hero->GetSelectedUnit(); Now() >= _quietUntil && fits(chosen))
         {
             _target = chosen->GetGUID();
             return chosen;
         }
-        for (Unit* enemy : EnemiesAround(hero, me, range))
+        if (Unit* unit = _target ? ObjectAccessor::GetUnit(*me, _target) : nullptr; fits(unit))
+            return unit;
+        for (Unit* enemy : EnemiesAround(hero, me, HOLLOW_RANGE))
             if (fits(enemy))
             {
                 _target = enemy->GetGUID();
@@ -3692,16 +3638,23 @@ private:
         if (!target)
             return;
         float tick = FlayTick(hero) * HOLLOW_SHARE;
-        if (HasHollowMarker(hero, MOD_SILENT_WITNESS) && hero->isMoving()
-            && !hero->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
-            tick *= SILENT_WITNESS;
+        if (HasHollowMarker(hero, MOD_FERVOR))
+            if (Spell* flay = hero->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
+                flay && flay->m_spellInfo->GetFirstRankSpell()->Id == SPELL_MIND_FLAY)
+                tick *= FERVOR;
         int32 damage = std::max<int32>(1, int32(tick));
         me->SetFacingToObject(target);
         SetDotTick(me, target, SPELL_HOLLOW_FLAY, damage);
         me->CastCustomSpell(target, SPELL_HOLLOW_FLAY, &damage, nullptr, nullptr, true);
+        if (!HasHollowMarker(hero, MOD_SHADOW_MEND))
+            return;
+        SpellInfo const* flay = sSpellMgr->GetSpellInfo(SPELL_HOLLOW_FLAY);
+        float ticks = flay && flay->GetMaxDuration() > 0 ? flay->GetMaxDuration() / 1000.0f : FLAY_CHANNEL_TICKS;
+        int32 mend = std::max<int32>(1, int32(damage * ticks * MEND_SHARE));
+        hero->CastCustomSpell(hero, SPELL_HOLLOW_MEND, &mend, nullptr, nullptr, true);
     }
 
-    ObjectGuid _owner, _target, _host;
+    ObjectGuid _owner, _target;
     uint32 _quietUntil = 0;
 };
 
@@ -3866,8 +3819,6 @@ public:
             WakeTick(player, diff);
         if (player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
             DawnTick(player, diff);
-        if (player->HasAura(SPELL_RUNE_HOLLOW_CONGREGATION))
-            HollowTick(player);
         if (player->HasAura(SPELL_RUNE_SHATTERED_SUN))
             SunTick(player, diff);
         if (!player->HasAura(SPELL_RUNE_FEL_COMMANDMENT))
