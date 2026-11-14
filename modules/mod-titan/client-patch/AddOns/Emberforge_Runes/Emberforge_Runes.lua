@@ -18,6 +18,8 @@
 --                 R,<rune>,<missing>   (a rune the server builds; missing: groups by '/', one of by '+'; '-' none)
 --                 N,<rune>,<slot>,<choice>,<missing>   (a modifier's own needs)
 --                 E,<text>   O (open the panel)
+--                 V,<spell>,<kind>,<amount>   (a rune aura's amount: A absorb, H healing a second, D damage a
+--                 second, S slow %; the client only knows its Spell.dbc base, so the tooltips add it)
 --   to server     STATE   PICK,<rune>[,1]   MOD,<slot 1-3>,<choice 1-3>
 --                 (PICK's 1: the Hero was warned of the abilities it lacks and binds it anyway)
 
@@ -1992,6 +1994,8 @@ end
 
 -- Messages ---------------------------------------------------------------------------------------------------------
 
+local auraAmounts = {}                                  -- spell id -> { kind, amount } (V)
+
 local function OnMessage(message)
     local parts = Split(message, ",")
     local kind = parts[1]
@@ -2033,7 +2037,40 @@ local function OnMessage(message)
         end
     elseif kind == "O" then
         Open()
+    elseif kind == "V" then
+        local spell, amount = tonumber(parts[2]), tonumber(parts[4])
+        if spell and amount then
+            auraAmounts[spell] = { kind = parts[3], amount = amount }
+        end
     end
+end
+
+-- The rune auras' tooltips: their real amounts (V), as the server set them.
+local AMOUNT_LINES = {
+    A = "Absorbs %d damage.",
+    H = "Heals %d every second.",
+    D = "%d damage every second.",
+    S = "Movement speed reduced by %d%%.",
+}
+
+local function AddAuraAmount(tooltip, unit, index, filter)
+    local spellId = select(11, UnitAura(unit, index, filter))
+    local known = spellId and auraAmounts[spellId]
+    if not known or not AMOUNT_LINES[known.kind] then
+        return
+    end
+    tooltip:AddLine(string.format(AMOUNT_LINES[known.kind], known.amount), 1, 0.82, 0)
+    tooltip:Show()
+end
+
+if hooksecurefunc and GameTooltip then
+    hooksecurefunc(GameTooltip, "SetUnitAura", AddAuraAmount)
+    hooksecurefunc(GameTooltip, "SetUnitBuff", function(tooltip, unit, index, filter)
+        AddAuraAmount(tooltip, unit, index, filter or "HELPFUL")
+    end)
+    hooksecurefunc(GameTooltip, "SetUnitDebuff", function(tooltip, unit, index, filter)
+        AddAuraAmount(tooltip, unit, index, filter or "HARMFUL")
+    end)
 end
 
 -- Abilities a rune changes show the rune's look on the action bars: Consecration (any rank) the Sanctified

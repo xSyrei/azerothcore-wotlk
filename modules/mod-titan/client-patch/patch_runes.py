@@ -273,7 +273,7 @@ SPELLS += [
     },
     {
         'id': 90737, 'copy': POWER_WORD_SHIELD, 'name': 'Shelter of the Paragon', 'icon': 'Spell_Holy_PowerWordShield',
-        'description': 'Absorbs damage.', 'tooltip': 'Absorbs $s1 damage.',
+        'description': 'Absorbs damage.', 'tooltip': 'Absorbs damage.',
         'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
                 'RangeIndex': RANGE_VISION, 'DurationIndex': DURATION_6S, 'SchoolMask': HOLY},
         'effects': {1: {'Effect': 6, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': 0, 'DieSides': 1,
@@ -406,7 +406,7 @@ SPELLS += [
     STORM_RUNE,
     {
         'id': 90751, 'copy': POWER_WORD_SHIELD, 'name': 'Static Ward', 'icon': 'Spell_Nature_LightningOverload',
-        'description': 'Absorbs damage.', 'tooltip': 'Absorbs $s1 damage.',
+        'description': 'Absorbs damage.', 'tooltip': 'Absorbs damage.',
         'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
                 'RangeIndex': 1, 'DurationIndex': DURATION_6S, 'SchoolMask': NATURE, 'SpellVisual': VISUAL_CRACKLE},
         'effects': {1: {'Effect': 6, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': 0, 'DieSides': 1,
@@ -490,7 +490,7 @@ SPELLS += [
     {
         'id': 90776, 'copy': POWER_WORD_SHIELD, 'name': 'Sheltering Reverberation',
         'icon': 'Ability_Warrior_ShieldWall',
-        'description': 'Absorbs damage.', 'tooltip': 'Absorbs $s1 damage.',
+        'description': 'Absorbs damage.', 'tooltip': 'Absorbs damage.',
         'set': {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
                 'RangeIndex': 1, 'DurationIndex': DURATION_3S, 'SchoolMask': 1},
         'effects': {1: {'Effect': 6, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': 0, 'DieSides': 1,
@@ -523,7 +523,7 @@ HEAL_SET = {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFl
 def periodic_heal(spell_id, name, icon, text, duration, visual=None):
     """A heal over time the script casts (its tick set by the script), every sec."""
     spell = {'id': spell_id, 'copy': LESSER_HEAL, 'name': name, 'icon': icon, 'description': text,
-             'tooltip': 'Healing every 1 sec.', 'set': {**HEAL_SET, 'DurationIndex': duration},
+             'tooltip': 'Healing every second.', 'set': {**HEAL_SET, 'DurationIndex': duration},
              'effects': {1: {'Effect': 6, 'Aura': AURA_PERIODIC_HEAL, 'Amplitude': 1000, 'BasePoints': 0,
                              'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_UNIT_TARGET_ALLY,
                              'TargetB': 0}},
@@ -535,7 +535,7 @@ def periodic_heal(spell_id, name, icon, text, duration, visual=None):
 
 def absorb(spell_id, name, icon, duration):
     return {'id': spell_id, 'copy': POWER_WORD_SHIELD, 'name': name, 'icon': icon, 'description': 'Absorbs damage.',
-            'tooltip': 'Absorbs $s1 damage.', 'set': {**HEAL_SET, 'DurationIndex': duration},
+            'tooltip': 'Absorbs damage.', 'set': {**HEAL_SET, 'DurationIndex': duration},
             'effects': {1: {'Effect': 6, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': 0, 'DieSides': 1,
                             'RealPointsPerLevel': 0.0, 'MiscValue': ALL_SCHOOLS, 'TargetA': TARGET_UNIT_TARGET_ALLY,
                             'TargetB': 0}},
@@ -717,10 +717,10 @@ SPELLS += [
     strike(90833, 'Bloodletting', 'Ability_Gouge', PHYSICAL, modifiers=True),
     strike(90834, 'Hollow Flay', 'Spell_Shadow_SiphonMana', SHADOW),
     strike(90838, 'Frozen Grave', 'Spell_Deathknight_IceTouch', FROST, key='GraveRimeHit', modifiers=True),
-    harmful(90839, 'Frozen Grave', 'Spell_Frost_ChillingBlast', 'Movement speed reduced by $s1%.', DURATION_6S,
+    harmful(90839, 'Frozen Grave', 'Spell_Frost_ChillingBlast', 'Movement speed reduced.', DURATION_6S,
             aura(AURA_MOD_DECREASE_SPEED, -30, 0), FROST),
     strike(90840, 'Plagued Grave', 'Spell_Shadow_PlagueCloud', SHADOW, key='GraveBlightHit', modifiers=True),
-    dot(90841, 'Grave Pestilence', 'Spell_Shadow_CreepingPlague', SHADOW, DURATION_6S, 'Shadow damage every 1 sec.'),
+    dot(90841, 'Grave Pestilence', 'Spell_Shadow_CreepingPlague', SHADOW, DURATION_6S, 'Shadow damage every second.'),
     strike(90842, 'Crimson Grave', 'Spell_Deathknight_BloodBoil', SHADOW, key='GraveGoreHit', modifiers=True),
     {**absorb(90843, 'Crimson Ward', 'Spell_Deathknight_DeathStrike', DURATION_10S),
      'set': {**HEAL_SET, 'DurationIndex': DURATION_10S, 'SchoolMask': SHADOW}},
@@ -734,7 +734,7 @@ SPELLS += [
 
     ONSLAUGHT_RUNE,
     strike(90861, 'Weapon Wake', 'Ability_Warrior_Cleave', PHYSICAL, key='WakeHit', modifiers=True),
-    dot(90862, 'Bloodletting', 'Ability_Gouge', PHYSICAL, DURATION_6S, 'Bleeding every 1 sec.'),
+    dot(90862, 'Bloodletting', 'Ability_Gouge', PHYSICAL, DURATION_6S, 'Bleeding every second.'),
     ground(90863, 'Weapon Wake', 'Ability_Warrior_Cleave', 'OnslaughtWake', DURATION_10S),
     strike(90864, 'Aftershock', 'Ability_Warrior_Shockwave', PHYSICAL, VISUAL_THUNDER_HIT, modifiers=True),
     {**heal(90865, 'Second Wind', 'Ability_Warrior_Cleave', 'The onslaught carries you on.'),
@@ -758,7 +758,7 @@ SPELLS += [
     {key: value for key, value in ground(90899, 'Sacred Ground', 'Spell_Holy_InnerFire', None, DURATION_6S).items()
      if key != 'visual'},
     {'id': 90900, 'copy': POWER_WORD_SHIELD, 'name': 'Radiant Ward', 'icon': 'Spell_Holy_AuraMastery',
-     'description': 'Absorbs damage.', 'tooltip': 'Absorbs $s1 damage.',
+     'description': 'Absorbs damage.', 'tooltip': 'Absorbs damage.',
      'set': {**FREE, **NO_FAMILY, 'RangeIndex': RANGE_40, 'DurationIndex': DURATION_8S, 'SchoolMask': HOLY},
      'effects': {1: {'Effect': 6, 'Aura': AURA_SCHOOL_ABSORB, 'BasePoints': 0, 'DieSides': 1,
                      'RealPointsPerLevel': 0.0, 'MiscValue': ALL_SCHOOLS, 'TargetA': TARGET_UNIT_TARGET_ALLY,
@@ -774,7 +774,7 @@ SPELLS += [
      'set': {**HIDDEN, 'DurationIndex': DURATION_INFINITE}},
     {
         'id': 90922, 'copy': MIND_FLAY, 'name': 'Hollow Flay', 'icon': 'Spell_Shadow_SiphonMana',
-        'description': 'A hollow echo of Mind Flay.', 'tooltip': 'Shadow damage every 1 sec.',
+        'description': 'A hollow echo of Mind Flay.', 'tooltip': 'Shadow damage every second.',
         'set': {**FREE, **NO_FAMILY, 'RangeIndex': RANGE_VISION, 'SchoolMask': SHADOW, 'ProcFlags': 0,
                 'InterruptFlags': 0, 'AuraInterruptFlags': 0, 'ChannelInterruptFlags': 0, **SCRIPTED},
         'effects': {1: {**aura(AURA_PERIODIC_DUMMY, 1, 0), 'Amplitude': 1000,

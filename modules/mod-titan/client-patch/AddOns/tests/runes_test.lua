@@ -77,6 +77,28 @@ end
 local sent = {}
 UISpecialFrames, SlashCmdList = {}, {}
 GameTooltip = NewWidget("GameTooltip")
+-- The tooltip's aura methods and the hooks on them (only on tables: the action bar hooks stay unset here).
+local tooltipLines = {}
+function GameTooltip:SetUnitBuff() end
+function GameTooltip:SetUnitDebuff() end
+function GameTooltip:SetUnitAura() end
+function GameTooltip:AddLine(text) tooltipLines[#tooltipLines + 1] = text end
+function hooksecurefunc(target, method, hook)
+    if type(target) ~= "table" then
+        return
+    end
+    local original = target[method]
+    target[method] = function(...)
+        original(...)
+        hook(...)
+    end
+end
+local auras = {}                                -- index -> spell id, the aura tooltip's
+function UnitAura(_, index)
+    if auras[index] then
+        return "Aura", "", "", 0, nil, 0, 0, "player", nil, nil, auras[index]
+    end
+end
 function SendAddonMessage(prefix, message) sent[#sent + 1] = { prefix, message } end
 function UnitName() return "Tester" end
 function UnitLevel() return 12 end
@@ -357,6 +379,19 @@ button.scripts.OnUpdate(button, 0.7)
 check(button.turning.index ~= first, "its icon turns to the next rune's")
 server("S,10,5,1,21,1,3,1,21,0")
 check(button.shown and button.turning == nil and not button.glow.on, "bound: it settles on the rune, no glow")
+
+-- A rune aura's amount (V): the server's, added to its tooltip; a stale one is replaced, others left alone.
+server("V,90843,A,412")
+auras[1], auras[2] = 90843, 26573
+GameTooltip:SetUnitBuff("player", 1)
+check(tooltipLines[#tooltipLines] == "Absorbs 412 damage.", "an absorb's tooltip shows the server's amount")
+server("V,90841,D,57")
+auras[3] = 90841
+GameTooltip:SetUnitDebuff("target", 3)
+check(tooltipLines[#tooltipLines] == "57 damage every second.", "a damage over time shows its tick")
+local count = #tooltipLines
+GameTooltip:SetUnitBuff("player", 2)
+check(#tooltipLines == count, "another aura's tooltip is left alone")
 
 print(failures == 0 and "All checks passed" or (failures .. " check(s) failed"))
 os.exit(failures == 0 and 0 or 1)

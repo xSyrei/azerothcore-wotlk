@@ -683,6 +683,8 @@ namespace
         // The Hollow Congregation.
         std::vector<ObjectGuid> HollowEchoes;       // oldest first
 
+        std::unordered_map<uint32, int32> Reported;  // the rune auras' amounts last told to the addon (Report)
+
         // The Shattered Sun: the enemies holding shards.
         std::vector<ObjectGuid> Shards;
         Position ScaldAt;                           // Scalding Ground (ScaldUntil 0: none)
@@ -748,6 +750,20 @@ namespace
         std::string const message = std::string(PREFIX) + '\t' + payload;
         ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, LANG_ADDON, player, player, message);
         player->SendDirectMessage(&data);
+    }
+
+    // A rune aura's amount, told to the Hero's panel addon (V,<spell>,<kind>,<amount>): the 3.3.5 client never learns
+    // an aura's amount from the server and would show its Spell.dbc base (1) in the tooltip. Kinds: A absorb, H
+    // healing a second, D damage a second, S slow (percent).
+    void Report(Player* player, uint32 spellId, char kind, int32 amount)
+    {
+        if (!player || !amount)
+            return;
+        int32& last = StateOf(player).Reported[spellId];
+        if (last == std::abs(amount))
+            return;                                 // told once a change: Graves tick every second
+        last = std::abs(amount);
+        Send(player, Acore::StringFormat("V,{},{},{}", spellId, kind, last));
     }
 
     // ---- Fel Commandment ------------------------------------------------------------------------------------
@@ -1118,6 +1134,7 @@ namespace
                     last->RemoveAurasDueToSpell(SPELL_SHELTER_OF_THE_PARAGON, player->GetGUID());
                 int32 shield = std::max<int32>(1, int32(ParagonSupport(player, output, true) * SHELTER_TICKS));
                 player->CastCustomSpell(ally, SPELL_SHELTER_OF_THE_PARAGON, &shield, nullptr, nullptr, true);
+                Report(player, SPELL_SHELTER_OF_THE_PARAGON, 'A', shield);
                 state.Sheltered = ally->GetGUID();
                 state.LastShelter = now;
                 break;
@@ -1203,9 +1220,11 @@ namespace
         {
             ward->ChangeAmount(std::min(cap, ward->GetAmount() + step));
             ward->GetBase()->SetDuration(STATIC_WARD_MS);
+            Report(player, SPELL_STATIC_WARD, 'A', ward->GetAmount());
             return;
         }
         player->CastCustomSpell(player, SPELL_STATIC_WARD, &step, nullptr, nullptr, true);
+        Report(player, SPELL_STATIC_WARD, 'A', step);
         if (Aura* aura = player->GetAura(SPELL_STATIC_WARD, player->GetGUID()))
         {
             aura->SetMaxDuration(STATIC_WARD_MS);
@@ -1342,6 +1361,7 @@ namespace
             int32 absorb = std::max<int32>(1, int32(player->GetMaxHealth()
                 * std::min(SHELTERING_CAP_PCT, SHELTERING_PCT * hit) / 100.0f));
             player->CastCustomSpell(player, SPELL_SHELTERING_REVERBERATION, &absorb, nullptr, nullptr, true);
+            Report(player, SPELL_SHELTERING_REVERBERATION, 'A', absorb);
             if (Aura* aura = player->GetAura(SPELL_SHELTERING_REVERBERATION))
             {
                 aura->SetMaxDuration(SHELTERING_MS);
@@ -1401,6 +1421,8 @@ namespace
             return;
         ally->RemoveAurasDueToSpell(spellId, player->GetGUID());
         player->CastCustomSpell(ally, spellId, &amount, nullptr, nullptr, true);
+        bool shield = spellId == SPELL_TIDAL_SHELTER || spellId == SPELL_JADE_SHELTER;
+        Report(player, spellId, shield ? 'A' : 'H', amount);
     }
 
     bool HasEarthShield(Player* player, Unit* unit)
@@ -1622,6 +1644,9 @@ namespace
     // already there keeps ticking on its own time: its tick and duration are renewed.
     void Lasting(Player* player, Unit* unit, uint32 spellId, int32 ms, int32 const* amount = nullptr)
     {
+        if (amount)
+            Report(player, spellId, DotDamageSpell(spellId) ? 'D' : spellId == SPELL_CRIMSON_WARD ? 'A'
+                : spellId == SPELL_GRAVE_CHILL ? 'S' : 'H', *amount);
         if (DotDamageSpell(spellId) && amount)
         {
             SetDotTick(player, unit, spellId, *amount);
@@ -1975,6 +2000,7 @@ namespace
             int32 ward = std::max<int32>(1, int32(amount * RADIANT_SHARE));
             unit->RemoveAurasDueToSpell(SPELL_RADIANT_WARD, player->GetGUID());
             player->CastCustomSpell(unit, SPELL_RADIANT_WARD, &ward, nullptr, nullptr, true);
+            Report(player, SPELL_RADIANT_WARD, 'A', ward);
             if (Aura* aura = unit->GetAura(SPELL_RADIANT_WARD, player->GetGUID()))
             {
                 aura->SetMaxDuration(RADIANT_MS);
@@ -3438,6 +3464,7 @@ private:
         int32 damage = std::max<int32>(1, int32(tick));
         me->SetFacingToObject(target);
         SetDotTick(me, target, SPELL_HOLLOW_FLAY, damage);
+        Report(hero, SPELL_HOLLOW_FLAY, 'D', damage);
         me->CastCustomSpell(target, SPELL_HOLLOW_FLAY, &damage, nullptr, nullptr, true);
         if (!HasHollowMarker(hero, MOD_SHADOW_MEND))
             return;
