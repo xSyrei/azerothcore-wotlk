@@ -64,6 +64,7 @@ namespace
     constexpr uint32 SETTING_RUN_STARTED = 2;   // unix time of the last prestige
     constexpr uint32 SETTING_FASTEST = 3;       // the fastest run to level 60, in seconds (0: none yet)
     constexpr uint32 SETTING_REACHED_CAP = 4;   // 1 once the Hero has reached the level cap (unlocks specializations)
+    constexpr uint32 SETTING_PAID_RANK = 5;     // the last prestige rank whose 5,000 Emberspark were paid
     constexpr uint32 SETTING_GEAR = 10;         // + equipment slot: the item taken off there (guid counter; 0: none)
 
     constexpr uint32 SPELL_PRESTIGIOUS = 90607; // the buff (client-patch/patch_player.py); the bonus is OnPlayerGiveXP
@@ -386,6 +387,23 @@ namespace
             player->TeleportTo(info->mapId, info->positionX, info->positionY, info->positionZ, info->orientation);
     }
 
+    // The run's 5,000 Emberspark are owed once a prestige rank: only after a prestige, its run done (level 60), and
+    // not yet paid for that rank, however the quest came to be in the log.
+    bool TrialOwed(Player* player)
+    {
+        uint32 rank = Get(player, SETTING_RANK);
+        return rank && Get(player, SETTING_PAID_RANK) < rank && !OnRun(player) && player->GetLevel() >= MaxLevel();
+    }
+
+    void PayTrial(Player* player, char const* why, char const* announce)
+    {
+        if (!TrialOwed(player))
+            return;
+        Set(player, SETTING_PAID_RANK, Get(player, SETTING_RANK));
+        Emberspark::Add(player->GetSession()->GetAccountId(), SPARK_AT_MAX_LEVEL, why);
+        Emberspark::Announce(player, SPARK_AT_MAX_LEVEL, announce);
+    }
+
     // The run ends at the cap: the fastest run kept, Prestigious gone, the specialization free, and the run's quest
     // done (its 5,000 Emberspark at the Keeper: OnQuestReward). A run started before the quest gets them now.
     void FinishRun(Player* player)
@@ -400,14 +418,12 @@ namespace
         if (trial)
             player->AreaExploredOrEventHappens(QUEST_TRIAL);
         else
-            Emberspark::Add(player->GetSession()->GetAccountId(), SPARK_AT_MAX_LEVEL, "prestige max level");
+            PayTrial(player, "prestige max level", "for reaching the summit again");
 
         uint32 rank = Get(player, SETTING_RANK);
         ChatHandler(player->GetSession()).PSendSysMessage("|cffff8000Prestige {}:|r level {} again, in {}. You can "
             "change your specialization again, and prestige once more.{}", rank, MaxLevel(), Duration(took),
             trial ? " Return to the Keeper of the Ember for your reward." : "");
-        if (!trial)
-            Emberspark::Announce(player, SPARK_AT_MAX_LEVEL, "for reaching the summit again");
         Broadcast(Acore::StringFormat(
             "|cffff8000[Prestige]|r {} has completed Prestige {} in {}!", player->GetName(), rank, Duration(took)));
     }
@@ -499,7 +515,13 @@ public:
 
     bool OnGossipHello(Player* player, Creature* creature) override
     {
-        // The run's quest, done: turned in here first (the window after).
+        // The run's quest, done: turned in here first (the window after). One not owed (no prestige run behind it,
+        // or this rank's already paid) is taken out of the log instead.
+        if (player->GetQuestStatus(QUEST_TRIAL) == QUEST_STATUS_COMPLETE && !TrialOwed(player))
+        {
+            player->RemoveActiveQuest(QUEST_TRIAL, false);
+            player->RemoveRewardedQuest(QUEST_TRIAL, false);
+        }
         if (player->GetQuestStatus(QUEST_TRIAL) == QUEST_STATUS_COMPLETE)
         {
             player->PrepareQuestMenu(creature->GetGUID());
@@ -512,13 +534,12 @@ public:
         return true;
     }
 
-    // Trial of Ember: Prestigious turned in: the run's 5,000 Emberspark.
+    // Trial of Ember: Prestigious turned in: the run's 5,000 Emberspark, once a prestige rank (PayTrial).
     bool OnQuestReward(Player* player, Creature* /*creature*/, Quest const* quest, uint32 /*opt*/) override
     {
         if (quest->GetQuestId() != QUEST_TRIAL)
             return false;
-        Emberspark::Add(player->GetSession()->GetAccountId(), SPARK_AT_MAX_LEVEL, "prestige trial");
-        Emberspark::Announce(player, SPARK_AT_MAX_LEVEL, "for the Trial of Ember");
+        PayTrial(player, "prestige trial", "for the Trial of Ember");
         return false;
     }
 };
