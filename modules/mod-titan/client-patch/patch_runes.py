@@ -97,6 +97,8 @@ The five after them (their own concept docs), each with its markers 20 on from i
   its look 90956, Scalding Ground 90957, Solar Anchor 90958.
 """
 
+import math
+
 import patch_player
 from patch_player import aura, OWN, HIDDEN, SELF_TEMPLATE, SPELL_ATTR0_NO_AURA_CANCEL, SPELL_ATTR3_ALLOW_AURA_WHILE_DEAD
 
@@ -460,24 +462,6 @@ SPELLS += [buff(90760 + slot * 3 + choice, name, STORM_ICON, '', DURATION_INFINI
 # The Rune of Echoing Thunder (90770 on; runes.cpp's Echoing Thunder section).
 THUNDER = 'WAR_EchoingThunder'
 STORM_BLUE, PALE_BLUE = (0.45, 0.7, 1.0), (0.75, 0.88, 1.0)
-EFFECTS.update({
-    # The Thunderfield: cracked earth with lightning running through it, slowly turning, a paler layer over it.
-    'Thunderfield': {'model': 'WAR_Thunderfield', 'effect': 7157, 'shape': 'zone',
-                     'textures': (f'{THUNDER}/thunder_cracks',),
-                     'options': {'layers': (
-                         {'texture': 0, 'size': 16.0, 'height': 0.1, 'tint': STORM_BLUE, 'alpha': 0.8, 'turn': 40.0,
-                          'blend': 4},
-                         {'texture': 0, 'size': 15.0, 'height': 0.14, 'tint': PALE_BLUE, 'alpha': 0.45,
-                          'turn': -55.0, 'blend': 4})}},
-    # March of the Storm: the same ground, 5 yards, under the Hero.
-    'ThunderfieldMarch': {'model': 'WAR_ThunderfieldMarch', 'effect': 7158, 'shape': 'zone',
-                          'textures': (f'{THUNDER}/thunder_cracks',),
-                          'options': {'layers': (
-                              {'texture': 0, 'size': 10.0, 'height': 0.1, 'tint': STORM_BLUE, 'alpha': 0.8,
-                               'turn': 40.0, 'blend': 4},
-                              {'texture': 0, 'size': 9.4, 'height': 0.14, 'tint': PALE_BLUE, 'alpha': 0.45,
-                               'turn': -55.0, 'blend': 4})}},
-})
 SPELLS += [
     buff(90770, 'Rune of Echoing Thunder', THUNDER_ICON,
          'Thunder Clap leaves a Thunderfield for 4 sec. Shield Slam landed while you stand in it releases a Thunder '
@@ -874,43 +858,177 @@ CRACKS, CLOUDS = f'{THUNDER}/thunder_cracks', 'MONK_Mist_Clouds'
 SIGIL, RING, GLYPH = 'DH_SigilOfChains_Sigil', 'DH_SigilOfChains_Ring', 'DH_SigilOfChains_Glyph'
 
 
-def blood_circle(model, effect):
-    return {'model': model, 'effect': effect, 'shape': 'zone', 'textures': (RING, SIGIL),
+# The Threefold Grave's grounds (mist() with flat layers: rune circles and cracks lying on the ground, animated
+# flipbooks of smoke on it, motes rising off it; spells/RUNE_VFX).
+VFX = 'RUNE_VFX'
+
+
+def ring(radius, count, height, size, turned=0.0):
+    """count spots evenly around a ring, each turned to face along it."""
+    return tuple((radius * math.cos(2 * math.pi * k / count), radius * math.sin(2 * math.pi * k / count), height,
+                  size, turned + 360.0 * k / count) for k in range(count))
+
+
+def grave(model, effect, circle, inner, across, tint, deep, extra):
+    """A Grave: a turning rune circle and an inner one turning the other way, its own life on top (extra)."""
+    return {'model': model, 'effect': effect, 'shape': 'mist',
+            'textures': (f'{VFX}/{circle}', f'{VFX}/{inner}') + tuple(f'{VFX}/{t}' for t, _ in extra),
             'options': {'layers': (
-                {'texture': 0, 'size': 12.0, 'height': 0.1, 'tint': BLOOD, 'alpha': 0.9, 'blend': 4},
-                {'texture': 1, 'size': 11.5, 'height': 0.14, 'tint': BLOOD, 'alpha': 0.55, 'turn': 30.0,
-                 'blend': 4})}}
+                {'texture': 0, 'flat': True, 'spots': ((0.0, 0.0, 0.08, across, 0.0),), 'tint': tint, 'alpha': 0.95,
+                 'turn': 40.0, 'pulse': 0},
+                {'texture': 1, 'flat': True, 'spots': ((0.0, 0.0, 0.06, across * 0.86, 0.0),), 'tint': deep,
+                 'alpha': 0.7, 'turn': -70.0, 'pulse': 3.0},
+            ) + tuple({**layer, 'texture': 2 + k} for k, (_, layer) in enumerate(extra))}}
+
+
+FROST_TINT, FROST_DEEP = (0.55, 0.85, 1.0), (0.35, 0.6, 1.0)
+PLAGUE_TINT, PLAGUE_DEEP = (0.45, 1.0, 0.25), (0.25, 0.7, 0.1)
+BLOOD_TINT, BLOOD_DEEP = (1.0, 0.12, 0.08), (0.65, 0.02, 0.02)
+FROZEN = grave('DK_GraveFrozen', 7159, 'MagicCircle4', 'Circle_Cracks_01', 10.5, FROST_TINT, FROST_DEEP, (
+    ('ice_smoke_1_w_sheet', {'flat': True, 'spots': ring(2.6, 5, 0.12, 4.2), 'sheet': (4, 4), 'flip': 1.8,
+                             'tint': FROST_TINT, 'alpha': 0.55, 'pulse': 0, 'turn': 25.0}),
+    ('ice_pieces_2_white_sheet', {'spots': ring(3.6, 8, 0.3, 1.3), 'sheet': (4, 4), 'flip': 1.2,
+                                  'tint': (0.8, 0.94, 1.0), 'alpha': 0.85, 'rise': (2.2, 2.4), 'pulse': 0}),
+))
+PLAGUED = grave('DK_GravePlagued', 7160, 'MagicCircle9', 'magic_debuff_circle', 10.5, PLAGUE_TINT, PLAGUE_DEEP, (
+    ('generic_smoke_1_sheet_bw', {'flat': True, 'spots': ring(2.4, 6, 0.12, 4.0), 'sheet': (4, 4), 'flip': 2.2,
+                                  'tint': PLAGUE_TINT, 'alpha': 0.5, 'pulse': 0, 'turn': -30.0}),
+    ('poison_dot_1_sheet', {'spots': ring(3.0, 6, 0.4, 1.5), 'sheet': (4, 4), 'flip': 1.0, 'alpha': 0.9,
+                            'rise': (1.2, 1.0), 'pulse': 0}),
+    ('skullflip', {'spots': ring(1.8, 2, 0.6, 1.6), 'sheet': (4, 4), 'flip': 1.6, 'tint': PLAGUE_TINT,
+                   'alpha': 0.55, 'rise': (2.4, 1.6), 'pulse': 0, 'turn': 6.0}),
+))
+
+
+def crimson(model, effect):
+    return grave(model, effect, 'Circle_DragonLord_01', 'MagicCircle1', 12.5, BLOOD_TINT, BLOOD_DEEP, (
+        ('blood_explosion_ground_sheet', {'flat': True, 'spots': ring(3.4, 4, 0.1, 3.6, 30.0), 'sheet': (2, 2),
+                                          'tint': (0.7, 0.05, 0.05), 'alpha': 0.75, 'pulse': 0, 'blend': 2}),
+        ('new_blood_1_sheet', {'spots': ring(4.2, 6, 0.5, 1.4), 'sheet': (4, 4), 'flip': 0.9, 'alpha': 0.9,
+                               'pulse': 0, 'blend': 2}),
+    ))
 
 
 EFFECTS.update({
-    'GraveFrozenLine': {'model': 'DK_GraveFrozenLine', 'effect': 7159, 'shape': 'zone', 'textures': (CRACKS, CLOUDS),
-                        'options': {'layers': (
-                            {'texture': 0, 'size': 10.0, 'height': 0.1, 'tint': ICE, 'alpha': 0.85, 'blend': 4},
-                            {'texture': 1, 'size': 9.5, 'height': 0.16, 'tint': ICE, 'alpha': 0.4, 'turn': 30.0,
-                             'round': True, 'blend': 4})}},
-    'GraveDiseasedPatch': {'model': 'DK_GraveDiseasedPatch', 'effect': 7160, 'shape': 'zone',
-                           'textures': (CLOUDS, CRACKS),
-                           'options': {'layers': (
-                               {'texture': 0, 'size': 10.0, 'height': 0.12, 'tint': PLAGUE, 'alpha': 0.6,
-                                'turn': 40.0, 'round': True, 'blend': 4},
-                               {'texture': 1, 'size': 10.0, 'height': 0.1, 'tint': PLAGUE, 'alpha': 0.5,
-                                'turn': -60.0, 'blend': 4})}},
-    'GraveBloodCircle': blood_circle('DK_GraveBloodCircle', 7161),
-    'GraveBloodMarch': blood_circle('DK_GraveBloodMarch', 7162),
-    'OnslaughtWake': {'model': 'WAR_OnslaughtWake', 'effect': 7163, 'shape': 'zone',
-                      'textures': ('WAR_UnbrokenOnslaught/wake_gash',),
-                      'options': {'layers': (
-                          {'texture': 0, 'size': 3.4, 'height': 0.12, 'tint': WAKE_RED, 'alpha': 0.95,
-                           'blend': 4},)}},
-    'ScaldingGround': {'model': 'MAGE_ScaldingGround', 'effect': 7164, 'shape': 'zone', 'textures': (CRACKS, CLOUDS),
-                       'options': {'layers': (
-                           {'texture': 0, 'size': 12.0, 'height': 0.1, 'tint': FROSTFIRE_TINT, 'alpha': 0.8,
-                            'turn': 50.0, 'blend': 4},
-                           {'texture': 1, 'size': 11.0, 'height': 0.16, 'tint': (1.0, 0.4, 0.6), 'alpha': 0.5,
-                            'turn': -25.0, 'round': True, 'blend': 4})}},
-    'SolarAnchor': {'model': 'MAGE_SolarAnchor', 'effect': 7165, 'shape': 'zone', 'textures': (GLYPH,),
-                    'options': {'layers': (
-                        {'texture': 0, 'size': 3.0, 'height': 0.15, 'tint': SUN_GOLD, 'turn': 8.0, 'blend': 4},)}},
+    'GraveFrozenLine': FROZEN,
+    'GraveDiseasedPatch': PLAGUED,
+    'GraveBloodCircle': crimson('DK_GraveCrimson', 7161),
+    'GraveBloodMarch': crimson('DK_GraveCrimsonMarch', 7162),
+})
+
+# Echoing Thunder, the Unbroken Onslaught and the Shattered Sun, rebuilt on the same layered looks: grounds of
+# turning rune rings and cracks with flipbooks lying on them and billboards over them; one-shot bursts and hits
+# (fade: played once) for the moments that matter.
+def burst(model, effect, layers, duration=900):
+    return {'model': model, 'effect': effect, 'shape': 'mist', 'textures': tuple(f'{VFX}/{t}' for t, _ in layers),
+            'options': {'layers': tuple({**layer, 'texture': k} for k, (_, layer) in enumerate(layers)),
+                        'duration': duration, 'fade': (0, 300)}}
+
+
+def looping(model, effect, layers):
+    return {'model': model, 'effect': effect, 'shape': 'mist', 'textures': tuple(f'{VFX}/{t}' for t, _ in layers),
+            'options': {'layers': tuple({**layer, 'texture': k} for k, (_, layer) in enumerate(layers))}}
+
+
+def thunderfield(model, effect, across):
+    k = across / 16.0
+    return looping(model, effect, (
+        ('Circle_Cracks_02', {'flat': True, 'spots': ((0.0, 0.0, 0.08, across, 0.0),), 'tint': STORM_BLUE,
+                              'alpha': 0.9, 'turn': 60.0, 'pulse': 0}),
+        ('Lightning_Circular_01', {'flat': True, 'spots': ((0.0, 0.0, 0.12, across * 0.94, 0.0),), 'tint': PALE_BLUE,
+                                   'alpha': 0.85, 'turn': -18.0, 'pulse': 0.7}),
+        ('Lightning_2x2_01', {'flat': True, 'spots': ring(4.0 * k, 6, 0.1, 4.5 * k, 15.0), 'sheet': (2, 2),
+                              'tint': (0.7, 0.86, 1.0), 'alpha': 0.95, 'flash': 0.9}),
+        ('lightning_strike_2_sheet', {'spots': ring(5.2 * k, 4, 1.7 * k, 3.4 * k), 'sheet': (4, 4), 'flip': 0.8,
+                                      'tint': (0.82, 0.92, 1.0), 'alpha': 0.95, 'pulse': 0}),
+        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.1, across * 0.3, 0.0),), 'tint': PALE_BLUE,
+                               'alpha': 0.55, 'scale': [(0.0, 0.3), (1.0, 3.2)], 'scale_beat': 1.6, 'pulse': 1.6}),
+    ))
+
+
+SLASH_RED, EMBER = (1.0, 0.16, 0.1), (1.0, 0.55, 0.2)
+FROSTFIRE_GLOW = (0.85, 0.55, 1.0)
+EFFECTS.update({
+    'Thunderfield': thunderfield('WAR_Thunderfield', 7157, 16.0),
+    'ThunderfieldMarch': thunderfield('WAR_ThunderfieldMarch', 7158, 10.0),
+    # A Thunder Echo landing: a bolt from the sky and a ring of sparks at the feet.
+    'ThunderEchoHit': burst('WAR_ThunderEchoHit', 7166, (
+        ('lightning_strike_2_sheet', {'spots': ((0.0, 0.0, 1.5, 3.2, 0.0),), 'sheet': (4, 4), 'flip': 0.7,
+                                      'tint': (0.8, 0.92, 1.0), 'alpha': 1.0, 'pulse': 0}),
+        ('sonic_impact_white_sheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 3.0, 0.0),), 'sheet': (4, 2),
+                                      'flip': 0.6, 'tint': PALE_BLUE, 'alpha': 0.95, 'pulse': 0}),
+    ), 700),
+    # Shield Slam's burst about its target (Reverberating Impact, Focused Peal): a ring rushing out and bolts.
+    'ThunderBurst': burst('WAR_ThunderBurst', 7167, (
+        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 2.0, 0.0),), 'tint': PALE_BLUE, 'alpha': 0.9,
+                               'scale': [(0.0, 0.3), (0.6, 5.5), (1.0, 6.5)], 'pulse': 0}),
+        ('Lightning_Circular_01', {'flat': True, 'spots': ((0.0, 0.0, 0.14, 9.0, 0.0),), 'tint': STORM_BLUE,
+                                   'alpha': 0.9, 'scale': [(0.0, 0.2), (0.5, 1.0), (1.0, 1.1)], 'pulse': 0}),
+        ('lightning_strike_2_sheet', {'spots': ring(2.5, 3, 1.4, 3.0), 'sheet': (4, 4), 'flip': 0.8,
+                                      'tint': (0.8, 0.92, 1.0), 'alpha': 1.0, 'pulse': 0}),
+    )),
+    # The Weapon Wake: crossed blade cuts glowing red on the ground, a soft red glow under them.
+    'OnslaughtWake': looping('WAR_OnslaughtWake', 7163, (
+        ('preparation_circle_a', {'flat': True, 'spots': ((0.0, 0.0, 0.06, 3.6, 0.0),), 'tint': (0.8, 0.05, 0.03),
+                                  'alpha': 0.6, 'pulse': 1.2}),
+        ('DaggerSlashSpriteSheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 4.6, 35.0), (0.0, 0.0, 0.12, 4.0, -55.0),
+                                                            (0.0, 0.0, 0.14, 3.4, 100.0)),
+                                    'sheet': (4, 4), 'tint': (1.0, 0.4, 0.3), 'alpha': 1.0, 'pulse': 0.9}),
+    )),
+    # Reopening the wake: red slashes and sparks on each enemy along it.
+    'WakeSlash': burst('WAR_WakeSlash', 7168, (
+        ('new_cleave_a_1_sheet', {'spots': ((0.0, 0.0, 0.0, 3.6, 20.0), (0.0, 0.0, 0.2, 3.0, -40.0)), 'sheet': (4, 2),
+                                  'flip': 0.45, 'alpha': 1.0, 'pulse': 0, 'blend': 2}),
+        ('impact_new_1_a_new_sheet', {'spots': ((0.0, 0.0, 0.1, 2.6, 0.0),), 'sheet': (4, 2), 'flip': 0.4,
+                                      'tint': SLASH_RED, 'alpha': 1.0, 'pulse': 0}),
+    ), 600),
+    # Aftershock: the ground jolting where the wake was.
+    'WakeAftershock': burst('WAR_WakeAftershock', 7169, (
+        ('sonic_impact_white_sheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 3.6, 0.0),), 'sheet': (4, 2),
+                                      'flip': 0.5, 'tint': EMBER, 'alpha': 1.0, 'pulse': 0}),
+        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 1.5, 0.0),), 'tint': SLASH_RED,
+                               'alpha': 0.8, 'scale': [(0.0, 0.4), (1.0, 3.5)], 'pulse': 0}),
+    ), 600),
+    # A Sunshard: a burning star in the enemy, a cold one turning against it.
+    'SunshardGlow': looping('MAGE_SunshardGlow', 7170, (
+        ('Impact_Yellow_01', {'spots': ((0.0, 0.0, 0.0, 2.4, 0.0),), 'alpha': 0.95, 'pulse': 1.1}),
+        ('Impact_Blue_01', {'spots': ((0.0, 0.0, 0.0, 1.6, 45.0),), 'alpha': 0.8, 'pulse': 0.8}),
+    )),
+    # A fracture: a ring of burning ice rushing out, shards bursting.
+    'SunFracture': burst('MAGE_SunFracture', 7171, (
+        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 2.0, 0.0),), 'tint': FROSTFIRE_GLOW,
+                               'alpha': 0.95, 'scale': [(0.0, 0.3), (0.55, 8.0), (1.0, 8.5)], 'pulse': 0}),
+        ('spritesheet_4', {'spots': ((0.0, 0.0, 1.0, 4.5, 0.0),), 'sheet': (2, 2), 'flip': 0.5,
+                           'tint': (0.75, 0.9, 1.0), 'alpha': 1.0, 'pulse': 0}),
+        ('ice_pieces_2_white_sheet', {'spots': ring(2.0, 6, 0.6, 1.4), 'sheet': (4, 4), 'flip': 0.8,
+                                      'tint': (0.8, 0.9, 1.0), 'alpha': 0.9, 'rise': (1.5, 0.9), 'pulse': 0}),
+        ('impact_new_1_a_new_sheet', {'spots': ring(1.2, 3, 0.8, 2.4), 'sheet': (4, 2), 'flip': 0.45,
+                                      'tint': EMBER, 'alpha': 1.0, 'pulse': 0}),
+    )),
+    # A collapse: a ring drawn inward and a burst of frostfire.
+    'SunCollapse': burst('MAGE_SunCollapse', 7172, (
+        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 2.0, 0.0),), 'tint': EMBER, 'alpha': 0.9,
+                               'scale': [(0.0, 4.0), (0.35, 0.3), (1.0, 0.3)], 'pulse': 0}),
+        ('generic_explosion_1_sheet', {'spots': ((0.0, 0.0, 1.2, 5.0, 0.0),), 'sheet': (4, 4), 'flip': 0.9,
+                                       'alpha': 1.0, 'pulse': 0, 'blend': 2}),
+        ('Impact_Blue_01', {'spots': ((0.0, 0.0, 1.2, 3.5, 0.0),), 'alpha': 0.9, 'pulse': 0,
+                            'scale': [(0.0, 0.2), (0.3, 1.3), (1.0, 0.0)]}),
+    ), 1000),
+    # Scalding Ground: cracked earth glowing frostfire, smoke curling on it, embers rising.
+    'ScaldingGround': looping('MAGE_ScaldingGround', 7164, (
+        ('Circle_Cracks_02', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 12.0, 0.0),), 'tint': FROSTFIRE_GLOW,
+                              'alpha': 0.9, 'turn': 70.0, 'pulse': 0}),
+        ('generic_smoke_1_sheet_bw', {'flat': True, 'spots': ring(3.0, 6, 0.12, 4.5), 'sheet': (4, 4), 'flip': 2.0,
+                                      'tint': (1.0, 0.45, 0.7), 'alpha': 0.55, 'pulse': 0, 'turn': 30.0}),
+        ('ice_pieces_2_white_sheet', {'spots': ring(3.6, 8, 0.3, 1.2), 'sheet': (4, 4), 'flip': 1.0,
+                                      'tint': (1.0, 0.65, 0.55), 'alpha': 0.9, 'rise': (2.0, 1.8), 'pulse': 0}),
+    )),
+    # Solar Anchor: a burning star pinned to the ground, a gold ring turning about it.
+    'SolarAnchor': looping('MAGE_SolarAnchor', 7165, (
+        ('Circle02', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 3.2, 0.0),), 'tint': SUN_GOLD, 'alpha': 0.9,
+                      'turn': 6.0, 'pulse': 1.4}),
+        ('Impact_Yellow_01', {'spots': ((0.0, 0.0, 0.6, 2.2, 0.0),), 'alpha': 0.95, 'pulse': 1.0}),
+    )),
 })
 
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_WORLD = 3, 4, 5, 14
@@ -950,13 +1068,26 @@ VISUALS.update({
     'GraveRimeHit': {'copy': 11152, 'id': 16772, 'clear': ('precast', 'cast'), 'kits': {}},
     'GraveBlightHit': {'copy': 11624, 'id': 16773, 'clear': ('precast', 'cast', 'state'), 'kits': {}},
     'GraveGoreHit': {'copy': 11117, 'id': 16774, 'clear': ('precast', 'cast'), 'kits': {}},
-    'WakeHit': {'copy': 219, 'id': 16775, 'clear': ('precast', 'cast'), 'kits': {}},
+    'WakeHit': {'copy': 219, 'id': 16775, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15723, {KIT_CHEST: 'WakeSlash'})}},
+    # The new hits and bursts (one-shot looks in an impact kit).
+    'ThunderEchoHitLook': {'copy': 145, 'id': 16784, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15721, {KIT_BASE: 'ThunderEchoHit'})}},
+    'ThunderBurstLook': {'copy': 7449, 'id': 16785, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15722, {KIT_BASE: 'ThunderBurst'})}},
+    'WakeAftershockLook': {'copy': 145, 'id': 16786, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15724, {KIT_BASE: 'WakeAftershock'})}},
+    'SunFractureLook': {'copy': 17, 'id': 16787, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15726, {KIT_BASE: 'SunFracture'})}},
+    'SunCollapseLook': {'copy': 963, 'id': 16788, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15727, {KIT_BASE: 'SunCollapse'})}},
     # States: Power Infusion's glow on the vow, Hand of Freedom's on its afterimage, the NPC Shadowform on a Hollow
     # Echo, Living Bomb's on a Sunshard, Deep Freeze's on a Broken Core.
     'DawnVow': {'copy': 7553, 'id': 16779, 'clear': ('precast', 'cast', 'impact'), 'kits': {}},
     'DawnAfterimage': {'copy': 4050, 'id': 16780, 'clear': ('precast', 'cast', 'impact'), 'kits': {}},
     'HollowEcho': {'copy': 3619, 'id': 16781, 'clear': ('precast', 'cast', 'impact'), 'kits': {}},
-    'Sunshard': {'copy': 10692, 'id': 16782, 'clear': ('precast', 'cast', 'impact'), 'kits': {}},
+    'Sunshard': {'copy': 32, 'id': 16782, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15725, {KIT_CHEST: 'SunshardGlow', 'sound': None, 'procs': False})}},
     'BrokenCore': {'copy': 9963, 'id': 16783, 'clear': ('precast', 'cast', 'impact'), 'kits': {}},
 })
 
@@ -986,3 +1117,10 @@ RUNE_AURAS = {90700, 90730, 90750, 90770, 90790, 90810, 90830, 90860, 90890, 909
 for _spell in SPELLS:
     if _spell['id'] in RUNE_AURAS:
         _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}
+
+# The spells that wear the new hits and bursts.
+for _spell in SPELLS:
+    _key = {90774: 'ThunderEchoHitLook', 90775: 'ThunderBurstLook', 90864: 'WakeAftershockLook',
+            90954: 'SunFractureLook', 90956: 'SunCollapseLook'}.get(_spell['id'])
+    if _key:
+        _spell['visual'] = _key

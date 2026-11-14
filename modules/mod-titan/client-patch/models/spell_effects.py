@@ -683,7 +683,12 @@ def mist(*args, layers=(), duration=1000, fade=None):
       turned in its own plane) (bursts in front of the body, at angles of their own);
     - flash: seconds per burst: each puff flashing on and fading out over and over, each on a beat of its own
       (instead of pulse); grow: (from, to) its size over the burst;
-    - blend: BLEND_ADD (the default) or BLEND_ALPHA.
+    - blend: BLEND_ADD (the default) or BLEND_ALPHA;
+    - flat: the layer's cards lie on the ground (spots: x, y, height, yards across, degrees turned) instead of
+      facing the camera: rune circles, cracks, a flipbook of smoke lying on the ground;
+    - scale: [(0 to 1, size)...]: each card's size over a beat (scale_beat seconds, looping; with fade: over
+      duration, once), a ring spreading out, a flash swelling;
+    - max_size: the texture's longest side at most, in pixels (512 by default).
 
     fade: None (one looping Stand of duration milliseconds, for a state kit) or (in, out) milliseconds, fading
     in at the start and out by the end of duration (an impact kit's, played once). All unlit. Called as
@@ -695,7 +700,16 @@ def mist(*args, layers=(), duration=1000, fade=None):
     out_dir.mkdir(parents=True, exist_ok=True)
     for index, layer in enumerate(layers):
         with Image.open(textures[layer['texture']]) as image:
-            (out_dir / f'{name}_{index}.blp').write_bytes(blp.encode(image.convert('RGBA')))
+            image = image.convert('RGBA')
+            most = layer.get('max_size', 512)
+            if max(image.size) > most:
+                factor = most / max(image.size)
+                image = image.resize((max(1, int(image.width * factor)), max(1, int(image.height * factor))),
+                                     Image.Resampling.LANCZOS)
+            pow2 = tuple(1 << (n - 1).bit_length() for n in image.size)
+            if pow2 != image.size:
+                image = image.resize(pow2, Image.Resampling.LANCZOS)
+            (out_dir / f'{name}_{index}.blp').write_bytes(blp.encode(image))
 
     # Each puff a card in the YZ plane (a billboard faces +X to the camera) around its bone's pivot; bones: one
     # circling the middle per layer, then one per puff, a child of its layer's.
@@ -756,19 +770,36 @@ def mist(*args, layers=(), duration=1000, fade=None):
         columns, rows = layer.get('sheet') or (1, 1)
         half, first = across / 2, len(vertices) // 48
         cos_r, sin_r = math.cos(math.radians(roll)), math.sin(math.radians(roll))
+        flat = layer.get('flat')
         for y, u in ((-half, 0.0), (half, 1.0 / columns)):
             for z, v in ((-half, 1.0 / rows), (half, 0.0)):
-                vertices += struct.pack('<3f4B4B3f2f2f', cx, cy + y * cos_r - z * sin_r, cz + y * sin_r + z * cos_r,
-                                        255, 0, 0, 0, len(layers) + card, 0, 0, 0, 1.0, 0.0, 0.0, u, v, 0.0, 0.0)
+                if flat:        # on the ground: x across, y along, turned by roll
+                    position = (cx + y * cos_r - z * sin_r, cy + y * sin_r + z * cos_r, cz)
+                    normal = (0.0, 0.0, 1.0)
+                else:
+                    position = (cx, cy + y * cos_r - z * sin_r, cz + y * sin_r + z * cos_r)
+                    normal = (1.0, 0.0, 0.0)
+                vertices += struct.pack('<3f4B4B3f2f2f', *position, 255, 0, 0, 0, len(layers) + card, 0, 0, 0,
+                                        *normal, u, v, 0.0, 0.0)
         triangles += [first, first + 1, first + 2, first + 2, first + 1, first + 3]
         growing = empty_track()
-        if layer.get('grow') and layer.get('flash'):
+        if layer.get('scale'):
+            shape = layer['scale']
+            if fade:
+                keys = [round(t * duration) for t, _ in shape]
+                growing = track(blob, 1, [(keys, [(float(size),) * 3 for _, size in shape])], '3f')
+            else:
+                beat = int(layer.get('scale_beat', 1.0) * 1000)
+                keys, sizes = phased(shape, burst_of(number, index) if layer.get('stagger') else 0.0, beat)
+                growing = track(blob, 1, [(keys, [(float(size),) * 3 for size in sizes])], '3f')
+                growing = growing[:2] + struct.pack('<h', global_sequence(beat)) + growing[4:]
+        elif layer.get('grow') and layer.get('flash'):
             small, big = layer['grow']
             beat = int(layer['flash'] * 1000)
             keys, sizes = phased([(0.0, small), (0.45, big), (0.95, big), (1.0, small)], burst_of(number, index), beat)
             growing = track(blob, 1, [(keys, [(float(size),) * 3 for size in sizes])], '3f')
             growing = growing[:2] + struct.pack('<h', global_sequence(beat)) + growing[4:]
-        bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | BONE_BILLBOARD, number, 0, 0, 0)
+        bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | (0 if flat else BONE_BILLBOARD), number, 0, 0, 0)
         bones += empty_track() + empty_track() + growing + struct.pack('<3f', cx, cy, cz)
     vertex_count = len(vertices) // 48
     reach = max(math.hypot(p[0], p[1]) + across for _, _, p, across, _ in cards)
