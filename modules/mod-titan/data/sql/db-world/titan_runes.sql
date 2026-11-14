@@ -129,7 +129,7 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90814, 0, 0, 0, 0, 'Wandering Mist - Jade Shelter');
 
 -- The five runes after them. The Threefold Grave: Requiem (and Chosen Ending's three) turn the Dominion; Icy
--- Touch, Plague Strike and Death Strike (every rank) inscribe their scars.
+-- Touch, Plague Strike and Blood Strike (every rank) inscribe their scars.
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_requiem', 'spell_titan_rune_scar_strike',
     'spell_titan_rune_wake_cut', 'spell_titan_rune_unbroken_onslaught', 'spell_titan_rune_dawn_vow',
     'spell_titan_rune_judgement', 'spell_titan_rune_dawn_echo', 'spell_titan_rune_mind_flay',
@@ -141,7 +141,7 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (90834, 'spell_titan_rune_requiem'),
 (-45477, 'spell_titan_rune_scar_strike'),
 (-45462, 'spell_titan_rune_scar_strike'),
-(-49998, 'spell_titan_rune_scar_strike'),
+(-45902, 'spell_titan_rune_scar_strike'),
 -- Unbroken Onslaught: Mortal Strike and Bloodthirst (every rank) cut the wake; the rune's aura reads every other
 -- melee ability.
 (-12294, 'spell_titan_rune_wake_cut'),

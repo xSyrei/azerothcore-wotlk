@@ -1663,18 +1663,18 @@ EmberforgeRunesCatalog = {
     },
     { id = 27,
       name = "Rune of the Threefold Grave",
-      role = "Melee DPS or Tank (Icy Touch, Plague Strike, Death Strike)",
+      role = "Melee DPS or Tank (Icy Touch, Plague Strike, Blood Strike)",
       roles = { "DAMAGER", "TANK" },
       icon = "Ability_Rune_ThreefoldGrave",
       slots = { "Inscription", "Dominion", "Requiem" },
-      builtFrom = "Icy Touch, Plague Strike and Death Strike",
+      builtFrom = "Icy Touch, Plague Strike and Blood Strike",
       spentWith = "Requiem",
       resource = "None: your scars",
       core = "Icy Touch inscribes a frozen line beneath its target, Plague Strike a diseased patch beneath its " ..
-          "target, Death Strike a blood circle beneath you: one scar of each, for 12 sec; recasting moves it. " ..
+          "target, Blood Strike a blood circle beneath you: one scar of each, for 12 sec; recasting moves it. " ..
           "Requiem (taught by the rune, 8 sec cooldown) turns your Dominion, Rime to Blight to Gore, and every " ..
           "scar changes with it. Rime: frost damage and a 30% slow. Blight: disease damage, and enemies leaving " ..
-          "carry a residual infection. Gore: blood damage, and Death Strike landed while you stand in a scar " ..
+          "carry a residual infection. Gore: blood damage, and Blood Strike landed while you stand in a scar " ..
           "grants a Grave Ward (an absorb, up to 10% of your health). The Dominion you leave bids a farewell: " ..
           "Rime a last burst of slowing frost, Blight every residual infection at once, Gore keeps half its ward " ..
           "a few seconds. Farewells share one budget between your scars.",
@@ -1689,7 +1689,7 @@ EmberforgeRunesCatalog = {
         { name = "Grave Pestilence",
           text = "Blight deals 30% more, and its residual infection lasts 6 sec instead of 3." },
         { name = "Crimson Bastion",
-          text = "Grave Ward takes 40% of Death Strike's damage, up to 15% of your health, and Gore's farewell " ..
+          text = "Grave Ward takes 40% of Blood Strike's damage, up to 15% of your health, and Gore's farewell " ..
               "keeps all of it." },
         { name = "Reverse the Dirge", text = "Requiem turns the other way: Rime to Gore to Blight." },
         { name = "Lingering Dominion",

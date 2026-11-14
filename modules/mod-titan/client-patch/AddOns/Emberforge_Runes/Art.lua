@@ -933,7 +933,7 @@ EmberforgeRunesArt = {
             inner = { 0.925, 0.961, 0.984 },
             built = true,
             burn = true,
-            core = "**Icy Touch**, **Plague Strike** and **Death Strike** each leave a " ..
+            core = "**Icy Touch**, **Plague Strike** and **Blood Strike** each leave a " ..
                     "scar. **Requiem** turns your Dominion, Rime to Blight to Gore, and " ..
                     "every scar changes with it.",
             asks = {
@@ -958,7 +958,7 @@ EmberforgeRunesArt = {
                 "Your scars last 20 sec instead of 12.",
                 "Rime slows by 50%; its farewell freezes enemies for 2 sec.",
                 "Blight deals 30% more; its residual infection lasts 6 sec.",
-                "Grave Ward takes 40% of Death Strike, up to 15% of your health, and " ..
+                "Grave Ward takes 40% of Blood Strike, up to 15% of your health, and " ..
                         "Gore keeps it all.",
                 "Requiem turns the other way: Rime to Gore to Blight.",
                 "The Dominion you leave works at half for 3 sec.",

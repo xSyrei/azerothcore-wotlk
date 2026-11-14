@@ -135,7 +135,7 @@ RUNES = [
     (26, (90, 225, 140), 'Mistweaver · Jade Mist', 'Soothing Mist sends ribbons of jade mist to your injured '
      'allies.', 'Soothing Mist', 'M4 9c3-3 6-3 8 0s5 3 8 0M4 15c3-3 6-3 8 0s5 3 8 0'),
     (27, (150, 200, 235), 'Frost, Unholy & Blood · Grave', 'Three strikes scar the ground; Requiem turns what '
-     'every scar does.', 'Icy Touch, Plague Strike and Death Strike',
+     'every scar does.', 'Icy Touch, Plague Strike and Blood Strike',
      'M12 3a6 6 0 0 0-6 6c0 2.4 1.2 3.8 2 4.6V17h8v-3.4c.8-.8 2-2.2 2-4.6a6 6 0 0 0-6-6ZM10 10h.01M14 10h.01'
      'M9 21h6M10 17v4M14 17v4'),
     (28, (235, 70, 60), 'Arms & Fury · Onslaught', 'Mortal Strike cuts a wake; your next strike through it reopens '
@@ -347,7 +347,7 @@ BUILT = {
                   'M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-4 3-6 6-10Z'],
     },
     27: {
-        'core': '**Icy Touch**, **Plague Strike** and **Death Strike** each leave a scar. **Requiem** turns your '
+        'core': '**Icy Touch**, **Plague Strike** and **Blood Strike** each leave a scar. **Requiem** turns your '
                 'Dominion, Rime to Blight to Gore, and every scar changes with it.',
         'slots': ['Inscription', 'Dominion', 'Requiem'],
         'asks': ['How your scars lie', 'What your Dominion becomes', 'How Requiem turns'],
@@ -357,7 +357,7 @@ BUILT = {
             'Your scars last 20 sec instead of 12.',
             'Rime slows by 50%; its farewell freezes enemies for 2 sec.',
             'Blight deals 30% more; its residual infection lasts 6 sec.',
-            'Grave Ward takes 40% of Death Strike, up to 15% of your health, and Gore keeps it all.',
+            'Grave Ward takes 40% of Blood Strike, up to 15% of your health, and Gore keeps it all.',
             'Requiem turns the other way: Rime to Gore to Blight.',
             'The Dominion you leave works at half for 3 sec.',
             'Requiem becomes three actions, one for each Dominion, sharing 20 sec.',

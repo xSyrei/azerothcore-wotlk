@@ -212,7 +212,7 @@ namespace
 
         SPELL_ICY_TOUCH             = 45477,        // first ranks
         SPELL_PLAGUE_STRIKE         = 45462,
-        SPELL_DEATH_STRIKE          = 49998,
+        SPELL_BLOOD_STRIKE          = 45902,
         SPELL_MORTAL_STRIKE         = 12294,
         SPELL_BLOODTHIRST           = 23881,
         SPELL_CRUSADER_STRIKE       = 35395,
@@ -364,8 +364,8 @@ namespace
         MOD_REVERSE_THE_DIRGE, MOD_LINGERING_DOMINION, MOD_CHOSEN_ENDING,
     };
 
-    // The scars (Icy Touch's frozen line, Plague Strike's diseased patch, Death Strike's blood circle) and the
-    // Dominions Requiem turns through.
+    // The scars (Icy Touch's frozen line, Plague Strike's diseased patch, Blood Strike's blood circle: a Frost, an
+    // Unholy and a Blood rune's strike) and the Dominions Requiem turns through.
     enum Scar : uint8 { SCAR_FROZEN_LINE, SCAR_DISEASED_PATCH, SCAR_BLOOD_CIRCLE, SCARS };
     enum Dominion : uint8 { DOMINION_RIME, DOMINION_BLIGHT, DOMINION_GORE, DOMINIONS };
 
@@ -558,10 +558,10 @@ namespace
               SPELL_WELLSPRING_MODIFIER_FIRST },
             { RUNE_WANDERING_MIST, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
               { { SPELL_SOOTHING_MIST } }, SPELL_RUNE_WANDERING_MIST, SPELL_MIST_MODIFIER_FIRST },
-            // DPS or Tank: Death Strike's blood circle and one of the other two scars.
+            // DPS or Tank: Blood Strike's blood circle and one of the other two scars.
             { RUNE_THREEFOLD_GRAVE,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_TANK)),
-              { { SPELL_DEATH_STRIKE }, { SPELL_ICY_TOUCH, SPELL_PLAGUE_STRIKE } }, SPELL_RUNE_THREEFOLD_GRAVE,
+              { { SPELL_BLOOD_STRIKE }, { SPELL_ICY_TOUCH, SPELL_PLAGUE_STRIKE } }, SPELL_RUNE_THREEFOLD_GRAVE,
               SPELL_GRAVE_MODIFIER_FIRST },
             // Melee DPS: Mortal Strike or Bloodthirst cuts the wake.
             { RUNE_UNBROKEN_ONSLAUGHT, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
@@ -1862,7 +1862,7 @@ namespace
         return count;
     }
 
-    // Icy Touch, Plague Strike, Death Strike: their scar, moved here (12 sec, 20 with Long Burial).
+    // Icy Touch, Plague Strike, Blood Strike: their scar, moved here (12 sec, 20 with Long Burial).
     void Inscribe(Player* player, uint8 scar, Unit* target)
     {
         State::ScarAt& at = StateOf(player).Scars[scar];
@@ -2036,7 +2036,7 @@ namespace
             || (state.Lingering == DOMINION_GORE && Now() < state.LingerUntil);
     }
 
-    // Death Strike connecting while the Hero stands in a scar under Gore: a Grave Ward of a quarter of its damage
+    // Blood Strike connecting while the Hero stands in a scar under Gore: a Grave Ward of a quarter of its damage
     // (40% with Crimson Bastion), added up to 10% of their health (15%), 8 sec.
     void GraveWard(Player* player, int32 damage)
     {
@@ -3666,7 +3666,7 @@ class spell_titan_rune_requiem : public SpellScript
     }
 };
 
-// Icy Touch, Plague Strike and Death Strike (every rank) with the Threefold Grave: their scar; Death Strike's
+// Icy Touch, Plague Strike and Blood Strike (every rank) with the Threefold Grave: their scar; Blood Strike's
 // Grave Ward first (standing in a scar as it lands).
 class spell_titan_rune_scar_strike : public SpellScript
 {
@@ -3680,7 +3680,7 @@ class spell_titan_rune_scar_strike : public SpellScript
             return;
         _done = true;
         uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
-        if (first == SPELL_DEATH_STRIKE)
+        if (first == SPELL_BLOOD_STRIKE)
         {
             GraveWard(player, GetHitDamage());
             ::Inscribe(player, SCAR_BLOOD_CIRCLE, target);

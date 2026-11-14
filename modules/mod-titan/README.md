@@ -541,12 +541,12 @@ utility or a tradeoff) take one pick each, from three.
   15% of a tick's mana back). Scripts in `titan_runes.sql`; spells 90790-90828 (`patch_runes.py`).
 - **Changing a rune:** `.unbindrune` (any player, out of combat; a GM's with a Hero selected does it for them) lets
   go of the active specialization's rune and its modifiers and opens the panel to bind another.
-- **The Rune of the Threefold Grave** (rune 27, its own concept doc; Melee DPS or Tank; needs Death Strike and Icy
+- **The Rune of the Threefold Grave** (rune 27, its own concept doc; Melee DPS or Tank; needs Blood Strike and Icy
   Touch or Plague Strike; slots Inscription, Dominion, Requiem). Icy Touch lays a frozen line through its target,
-  Plague Strike a diseased patch under it, Death Strike a blood circle under the Hero: one of each, 12 sec, moved by
+  Plague Strike a diseased patch under it, Blood Strike a blood circle under the Hero: one of each, 12 sec, moved by
   recasting. **Requiem** (90831, taught while the rune is bound, 8 sec) turns the **Dominion** Rime → Blight → Gore;
   each second every enemy in a scar (once, up to 10) takes the Dominion's tick (level x 2 + 6% of attack power): Rime
-  frost and a 30% slow, Blight disease (leaving it: a residual infection), Gore blood (Death Strike landed in a scar:
+  frost and a 30% slow, Blight disease (leaving it: a residual infection), Gore blood (Blood Strike landed in a scar:
   a Grave Ward, a quarter of its damage, up to 10% of health). Leaving a Dominion bids its farewell within one budget
   of 3 ticks shared by the scars. Modifiers: Converging Graves, March of the Dead, Long Burial; Cruel Winter, Grave
   Pestilence, Crimson Bastion; Reverse the Dirge, Lingering Dominion, Chosen Ending (three Requiems, 20 sec shared).

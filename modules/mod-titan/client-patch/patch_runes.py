@@ -748,10 +748,10 @@ ONSLAUGHT_RUNE['set'] = {**ONSLAUGHT_RUNE['set'], 'ProcFlags': PROC_DONE_MELEE_S
 DOMINIONS = (('Rime', 'Spell_Deathknight_FrostPresence', 'Your scars freeze and slow the enemies in them.'),
              ('Blight', 'Spell_Deathknight_UnholyPresence', 'Your scars sicken the enemies in them.'),
              ('Gore', 'Spell_Deathknight_BloodPresence',
-              'Your scars bleed the enemies in them; Death Strike in a scar grants a Grave Ward.'))
+              'Your scars bleed the enemies in them; Blood Strike in a scar grants a Grave Ward.'))
 SPELLS += [
     buff(90830, 'Rune of the Threefold Grave', GRAVE_ICON,
-         'Icy Touch inscribes a frozen line beneath its target, Plague Strike a diseased patch, Death Strike a blood '
+         'Icy Touch inscribes a frozen line beneath its target, Plague Strike a diseased patch, Blood Strike a blood '
          'circle beneath you: one of each, for 12 sec. Requiem turns your Dominion, Rime to Blight to Gore, and '
          'every scar changes with it.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     action(90831, 'Requiem', 'Spell_Deathknight_ClassIcon',
