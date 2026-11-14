@@ -20,6 +20,7 @@
 #include "DynamicObject.h"
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
+#include "Pet.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "Spell.h"
@@ -34,7 +35,7 @@
 #include <vector>
 
 // Runes of Enhancement: the Epic and Rare runes' own effects (rune_tiers.cpp holds, offers and applies the runes;
-// tools/rune_tiers/runes.py words them). Batch one: the Warrior, Paladin, Rogue, Priest and Mage runes.
+// tools/rune_tiers/runes.py words them): every class's.
 //
 // - Lasting spell modifiers and auras (Mods, Auras): applied by rune_tiers.cpp while a rune is held and awake.
 // - Cooldowns cut just after the cast, server and client alike (TRIMS).
@@ -60,6 +61,23 @@ namespace
         RUNE_OPPORTUNIST = 2016, RUNE_VENOMOUS_WOUND, RUNE_SHADOWS_EDGE, RUNE_QUICK_RECOVERY, RUNE_AMBUSHER,
         RUNE_MINDS_ECHO, RUNE_GLIMMERING_SHIELD, RUNE_SEARING_LIGHT, RUNE_FLASHING_GRACE, RUNE_GRASPING_MIND,
         RUNE_KINDLING = 2036, RUNE_FROSTFIRE_BRIDGE, RUNE_CHARGED_BLAST, RUNE_FROZEN_STEP, RUNE_DEEP_CHILL,
+        // Hunter, Death Knight, Shaman, Warlock, Druid, Demon Hunter, Monk.
+        RUNE_ALPHA = 1013, RUNE_KINDRED_SPIRITS, RUNE_MARKSMAN, RUNE_ENDLESS_BARRAGE, RUNE_BLAST_RADIUS,
+        RUNE_DARK_HUNTER,
+        RUNE_BLOOD_DEBT = 1031, RUNE_CRIMSON_TIDE, RUNE_TWIN_BLADES, RUNE_ENDLESS_WINTER, RUNE_FESTERING_WOUND,
+        RUNE_DEFILE, RUNE_LAVA_SURGE, RUNE_STORMS_REACH, RUNE_ASCENDANCE, RUNE_MOLTEN_EDGE, RUNE_TIDAL_ECHO,
+        RUNE_ANCESTRAL_WAVE,
+        RUNE_HAUNTING = 1049, RUNE_CONTAGION, RUNE_DEMON_WITHIN, RUNE_MOLTEN_SOUL, RUNE_CHAOS, RUNE_FIRE_AND_BRIMSTONE,
+        RUNE_CELESTIAL_FALL, RUNE_LUNAR_STRIKE, RUNE_PRIMAL_WRATH, RUNE_THRASH, RUNE_EVER_BLOOMING, RUNE_BLOOMING_GROVE,
+        RUNE_UNENDING_FURY, RUNE_DEATH_SWEEP, RUNE_SOUL_BARRAGE, RUNE_BURNING_BRAND, RUNE_RISING_STORM,
+        RUNE_DRAGONS_FURY, RUNE_OVERFLOWING_FONT, RUNE_SILKEN_COCOON,
+        RUNE_RAPTORS_EDGE = 2011, RUNE_SERPENTS_KISS, RUNE_STEADY_HAND, RUNE_HUNTERS_LEAP, RUNE_PACK_LEADER,
+        RUNE_PLAGUE_BEARER = 2026, RUNE_PLAGUED_BLOOD, RUNE_BLOODY_CROWN, RUNE_KILLING_FROST, RUNE_SHAMBLING_DEAD,
+        RUNE_CHAIN_SPARK, RUNE_MOLTEN_FLOW, RUNE_TIDAL_WAVE, RUNE_EARTHEN_GRIP, RUNE_MAELSTROM,
+        RUNE_LINGERING_CURSE = 2041, RUNE_BACKDRAFT, RUNE_SIPHONING_SOUL, RUNE_BACKLASH, RUNE_DREAD, RUNE_LUNAR_FALL,
+        RUNE_SHREDDER, RUNE_LINGERING_BLOOM, RUNE_THICK_HIDE, RUNE_REJUVENATING_TOUCH, RUNE_FEL_EDGE,
+        RUNE_SPREADING_FLAME, RUNE_VENGEFUL_STEP, RUNE_SOUL_FEAST, RUNE_BRANDING_IRON, RUNE_SECOND_BREATH,
+        RUNE_TIGERS_CLAW, RUNE_BLACKOUT_COMBO, RUNE_MISTWEAVERS_GRACE, RUNE_WHIRLING_CRANE,
     };
 
     // First ranks.
@@ -84,10 +102,39 @@ namespace
         SPELL_DEEP_FREEZE = 44572, SPELL_ICY_VEINS = 12472, SPELL_FIREBALL = 133, SPELL_FIRE_BLAST = 2136,
         SPELL_FROSTBOLT = 116, SPELL_ARCANE_BLAST_STACK = 36032, SPELL_BLINK = 1953, SPELL_FROST_NOVA = 122,
         SPELL_CONE_OF_COLD = 120,
+        SPELL_INTIMIDATION = 19577, SPELL_MEND_PET = 136, SPELL_AIMED_SHOT = 19434, SPELL_MULTI_SHOT = 2643,
+        SPELL_EXPLOSIVE_SHOT_HIT = 53352, SPELL_BLACK_ARROW = 3674, SPELL_RAPTOR_STRIKE = 2973,
+        SPELL_ARCANE_SHOT = 3044,
+        SPELL_SERPENT_STING = 1978, SPELL_STEADY_SHOT = 56641, SPELL_DISENGAGE = 781, SPELL_KILL_COMMAND = 34026,
+        SPELL_DEATH_STRIKE = 49998, SPELL_DEATH_STRIKE_HEAL = 45470, SPELL_VAMPIRIC_BLOOD = 55233,
+        SPELL_OBLITERATE = 49020, SPELL_HOWLING_BLAST = 49184, SPELL_SCOURGE_STRIKE = 55090,
+        SPELL_DEATH_AND_DECAY = 43265, SPELL_BLOOD_BOIL = 48721, SPELL_HEART_STRIKE = 55050,
+        SPELL_RAISE_DEAD_GHOUL = 46585, SPELL_RAISE_DEAD_PET = 52150, SPELL_FROST_FEVER = 55095,
+        SPELL_BLOOD_PLAGUE = 55078,
+        SPELL_LAVA_BURST = 51505, SPELL_CHAIN_LIGHTNING = 421, SPELL_STORMSTRIKE_MAIN = 32175,
+        SPELL_STORMSTRIKE_OFF = 32176, SPELL_LAVA_LASH = 60103, SPELL_FLAME_SHOCK = 8050, SPELL_RIPTIDE = 61295,
+        SPELL_HEALING_WAVE = 331, SPELL_LIGHTNING_BOLT = 403, SPELL_EARTH_SHOCK = 8042,
+        SPELL_HAUNT = 48181, SPELL_UNSTABLE_AFFLICTION = 30108, SPELL_METAMORPHOSIS_WARLOCK = 47241,
+        SPELL_SOUL_FIRE = 6353, SPELL_CHAOS_BOLT = 50796, SPELL_CONFLAGRATE = 17962, SPELL_IMMOLATE = 348,
+        SPELL_CORRUPTION = 172, SPELL_INCINERATE = 29722, SPELL_SHADOW_BOLT = 686, SPELL_DRAIN_LIFE = 689,
+        SPELL_FEAR = 5782,
+        SPELL_STARFALL = 48505, SPELL_MOONFIRE = 8921, SPELL_FEROCIOUS_BITE = 22568, SPELL_SWIPE_BEAR = 779,
+        SPELL_WILD_GROWTH = 48438, SPELL_SWIFTMEND = 18562, SPELL_STARFIRE = 2912, SPELL_SHRED = 5221, SPELL_RIP = 1079,
+        SPELL_MAUL = 6807, SPELL_REGROWTH = 8936, SPELL_REJUVENATION = 774,
+        // The Demon Hunter's and the Monk's (patch_spells.py, patch_monk.py).
+        SPELL_DEMONS_BITE = 90100, SPELL_BLADE_DANCE_STRIKE = 90107, SPELL_BLADE_DANCE_FINAL = 90108,
+        SPELL_FEL_RUSH = 90103, SPELL_EYE_BEAM = 90105, SPELL_VENGEFUL_RETREAT = 90109, SPELL_METAMORPHOSIS_DH = 90116,
+        SPELL_IMMOLATION_AURA = 90119, SPELL_IMMOLATION_TICK = 90120, SPELL_SOUL_CLEAVE = 90125,
+        SPELL_FIERY_BRAND = 90128, SPELL_SPIRIT_BOMB_BLAST = 90136,
+        SPELL_VIVIFY = 90301, SPELL_RENEWING_MIST = 90302, SPELL_ENVELOPING_MIST = 90303,
+        SPELL_ESSENCE_FONT_BOLT = 90305,
+        SPELL_LIFE_COCOON = 90306, SPELL_TIGER_PALM = 90320, SPELL_BLACKOUT_KICK = 90321, SPELL_RISING_SUN_KICK = 90322,
+        SPELL_FISTS_OF_FURY = 90323, SPELL_CRANE_KICK_STRIKE = 90326, SPELL_WHIRLING_DRAGON_PUNCH = 90327,
         // Our own (patch_runes.py).
         SPELL_STRIKE_PHYSICAL = 91171, SPELL_STRIKE_ARCANE = 91172, SPELL_STRIKE_FIRE = 91173,
         SPELL_STRIKE_FROST = 91174, SPELL_STRIKE_SHADOW = 91175, SPELL_STRIKE_HOLY = 91176, SPELL_BLEED = 91177,
         SPELL_RUNE_MEND = 91178, SPELL_GRASPING_MIND = 91179, SPELL_PHOENIX = 91180, SPELL_QUICK_RECOVERY = 91181,
+        SPELL_ALPHA = 91182, SPELL_HUNTERS_LEAP = 91183, SPELL_EARTHEN_GRIP = 91184,
     };
 
     // Deadly Poison's damage over time, by rank (Venomous Wound: the best for the Hero's level).
@@ -102,10 +149,16 @@ namespace
         uint32 Spell;
         uint32 Pct;                                         // of the cooldown taken off (100: none left)
     };
-    constexpr std::array<Trim, 4> TRIMS = { {
+    constexpr std::array<Trim, 11> TRIMS = { {
         { RUNE_UNENDING_STORM, SPELL_WHIRLWIND, 100 }, { RUNE_QUAKING_EARTH, SPELL_SHOCKWAVE, 50 },
         { RUNE_TEMPEST, SPELL_DIVINE_STORM, 50 }, { RUNE_GUARDIAN, SPELL_GUARDIAN_SPIRIT, 50 },
+        { RUNE_MARKSMAN, SPELL_AIMED_SHOT, 100 }, { RUNE_ENDLESS_WINTER, SPELL_HOWLING_BLAST, 100 },
+        { RUNE_DEFILE, SPELL_DEATH_AND_DECAY, 50 }, { RUNE_LAVA_SURGE, SPELL_LAVA_BURST, 50 },
+        { RUNE_CELESTIAL_FALL, SPELL_STARFALL, 50 }, { RUNE_DRAGONS_FURY, SPELL_WHIRLING_DRAGON_PUNCH, 50 },
+        { RUNE_SILKEN_COCOON, SPELL_LIFE_COCOON, 50 },
     } };
+    constexpr std::array<uint32, 2> DISEASES = { SPELL_FROST_FEVER, SPELL_BLOOD_PLAGUE };
+    constexpr int32 RIP_EXTEND_MS = 2000, RIP_EXTEND_MOST_MS = 6000, IMMOLATION_EXTEND_MOST_MS = 4000;
 
     // A Hero's one-off modifiers ("your next X") and passing state.
     struct Effects
@@ -113,6 +166,11 @@ namespace
         std::unordered_map<uint32, SpellModifier*> Next;    // ability -> its modifier until it is cast
         bool FreeRevenge = false;
         uint8 BlastStacks = 0;                              // Arcane Blast's, at the last Arcane Barrage
+        uint8 Diseases = 0;                                 // on the last Death Strike's target
+        uint8 Backdraft = 0;                                // Incinerates or Shadow Bolts left faster
+        bool BlackoutCombo = false;
+        int32 ImmolationAdded = 0;                          // ms, this Immolation Aura
+        std::unordered_map<ObjectGuid, int32> RipAdded;     // target -> ms Shred added to its Rip
     };
     std::unordered_map<ObjectGuid::LowType, Effects> effects;
 
@@ -247,6 +305,49 @@ namespace
             }, Milliseconds(i * OPEN_VEIN_MS));
     }
 
+    uint8 Diseases(Unit* target, ObjectGuid caster)
+    {
+        uint8 count = 0;
+        for (uint32 disease : DISEASES)
+            count += target->HasAura(disease, caster) ? 1 : 0;
+        return count;
+    }
+
+    // A heal over 6 sec, in 3 parts.
+    void HealOverTime(Player* player, Unit* target, float total)
+    {
+        float tick = total / 3;
+        ObjectGuid ally = target->GetGUID(), hero = player->GetGUID();
+        for (uint32 i = 1; i <= 3; ++i)
+            player->m_Events.AddEventAtOffset([player, hero, ally, tick]()
+            {
+                if (player->GetGUID() == hero && player->IsInWorld())
+                    Mend(player, ObjectAccessor::GetUnit(*player, ally), tick);
+            }, Milliseconds(i * 2000));
+    }
+
+    // The Hero's auras of these abilities (every rank) on the target: id and time left.
+    std::vector<std::pair<uint32, int32>> AurasOf(Unit* target, ObjectGuid caster, std::initializer_list<uint32> firsts)
+    {
+        std::vector<std::pair<uint32, int32>> found;
+        for (uint32 first : firsts)
+            for (uint32 id = first; id; id = sSpellMgr->GetNextSpellInChain(id))
+                if (Aura* aura = target->GetAura(id, caster))
+                    found.emplace_back(id, aura->GetDuration());
+        return found;
+    }
+
+    void SpreadAura(Player* player, uint32 spellId, Unit* to, int32 duration = 0)
+    {
+        if (to->HasAura(spellId, player->GetGUID()))
+            return;
+        if (Aura* aura = player->AddAura(spellId, to); aura && duration > 0)
+        {
+            aura->SetMaxDuration(duration);
+            aura->SetDuration(duration);
+        }
+    }
+
     bool HitWasCrit(Spell* spell, Unit* target)
     {
         for (TargetInfo const& info : *spell->GetUniqueTargetInfo())
@@ -271,6 +372,12 @@ namespace RuneEffects
             { RUNE_FROZEN_HEART, SPELL_ICY_VEINS, SPELLMOD_DURATION, SPELLMOD_PCT, 100 },
             { RUNE_LONG_WOUND, SPELL_REND, SPELLMOD_DURATION, SPELLMOD_FLAT, 6000 },
             { RUNE_WRECKING_CHARGE, SPELL_CHARGE_STUN, SPELLMOD_DURATION, SPELLMOD_FLAT, 1000 },
+            { RUNE_CRIMSON_TIDE, SPELL_VAMPIRIC_BLOOD, SPELLMOD_DURATION, SPELLMOD_PCT, 100 },
+            { RUNE_SHAMBLING_DEAD, SPELL_RAISE_DEAD_GHOUL, SPELLMOD_DURATION, SPELLMOD_FLAT, 30000 },
+            { RUNE_SHAMBLING_DEAD, SPELL_RAISE_DEAD_PET, SPELLMOD_DURATION, SPELLMOD_FLAT, 30000 },
+            { RUNE_STORMS_REACH, SPELL_CHAIN_LIGHTNING, SPELLMOD_JUMP_TARGETS, SPELLMOD_FLAT, 3 },
+            { RUNE_DEMON_WITHIN, SPELL_METAMORPHOSIS_WARLOCK, SPELLMOD_DURATION, SPELLMOD_PCT, 100 },
+            { RUNE_MOLTEN_SOUL, SPELL_SOUL_FIRE, SPELLMOD_CASTING_TIME, SPELLMOD_PCT, -100 },
         };
         return mods;
     }
@@ -475,29 +582,256 @@ class spell_titan_rune_tier_hit : public SpellScript
                     CutCooldown(player, SPELL_FROST_NOVA, 2000);
                 break;
             default:
+                AfterHitMore(player, target, damage, heal, crit);
                 break;
         }
     }
 
-    // Circle of Healing with the Wide Circle: 5 more injured allies (not healed already) for its best heal.
+    // Batch two: Hunter, Death Knight, Shaman, Warlock, Druid, Demon Hunter, Monk.
+    void AfterHitMore(Player* player, Unit* target, float damage, float heal, bool crit)
+    {
+        auto has = [player](uint32 rune) { return RuneTiers::Has(player, rune); };
+        ObjectGuid hero = player->GetGUID();
+        switch (First(GetSpellInfo()->Id))
+        {
+            case SPELL_MULTI_SHOT:
+                if (has(RUNE_ENDLESS_BARRAGE))
+                    Hit(player, target, SPELL_STRIKE_PHYSICAL, damage);
+                break;
+            case SPELL_RAPTOR_STRIKE:
+                if (has(RUNE_RAPTORS_EDGE))
+                    for (Unit* enemy : Enemies(player, target, NEARBY, 2))
+                        Hit(player, enemy, SPELL_STRIKE_PHYSICAL, damage);
+                break;
+            case SPELL_ARCANE_SHOT:
+                if (has(RUNE_SERPENTS_KISS))
+                    Refresh(target, SPELL_SERPENT_STING, hero);
+                break;
+            case SPELL_STEADY_SHOT:
+                if (has(RUNE_STEADY_HAND) && crit)
+                    CutCooldown(player, SPELL_AIMED_SHOT, 2000);
+                break;
+            case SPELL_DEATH_STRIKE:
+                EffectsOf(player).Diseases = Diseases(target, hero);
+                break;
+            case SPELL_OBLITERATE:
+                if (has(RUNE_TWIN_BLADES))
+                    for (Unit* enemy : Enemies(player, target, NEARBY, 1))
+                        Hit(player, enemy, SPELL_STRIKE_PHYSICAL, damage);
+                if (has(RUNE_KILLING_FROST) && crit)
+                    if (uint32 blast = KnownRank(player, SPELL_HOWLING_BLAST))
+                        player->RemoveSpellCooldown(blast, true);
+                break;
+            case SPELL_SCOURGE_STRIKE:
+                if (has(RUNE_FESTERING_WOUND))
+                    for (uint32 disease : DISEASES)
+                        if (target->HasAura(disease, hero))
+                            for (Unit* enemy : Enemies(player, target, NEARBY, 5))
+                                player->CastSpell(enemy, disease, true);
+                break;
+            case SPELL_BLOOD_BOIL:
+                if (has(RUNE_PLAGUE_BEARER))
+                    if (Unit* source = player->GetSelectedUnit(); source && source != target)
+                        for (uint32 disease : DISEASES)
+                            if (source->HasAura(disease, hero))
+                                player->CastSpell(target, disease, true);
+                break;
+            case SPELL_HEART_STRIKE:
+                if (has(RUNE_BLOODY_CROWN) && crit)
+                    Mend(player, player, float(player->CountPctFromMaxHealth(2)));
+                break;
+            case SPELL_STORMSTRIKE_MAIN:
+            case SPELL_STORMSTRIKE_OFF:
+                if (has(RUNE_ASCENDANCE))
+                    for (Unit* enemy : Enemies(player, target, NEARBY, 4))
+                        if (player->HasInArc(float(M_PI), enemy))
+                            Hit(player, enemy, SPELL_STRIKE_PHYSICAL, damage);
+                if (has(RUNE_MAELSTROM) && crit)
+                    Next(player, SPELL_LIGHTNING_BOLT, SPELLMOD_CASTING_TIME, -100);
+                break;
+            case SPELL_LAVA_LASH:
+                if (has(RUNE_MOLTEN_EDGE))
+                    for (auto const& [shock, left] : AurasOf(target, hero, { SPELL_FLAME_SHOCK }))
+                        for (Unit* enemy : Enemies(player, target, 10.0f, 4))
+                            player->CastSpell(enemy, shock, true);
+                break;
+            case SPELL_RIPTIDE:
+                if (has(RUNE_TIDAL_ECHO) && !GetSpell()->IsTriggered())
+                    for (Unit* ally : Injured(player, target, 20.0f, { target->GetGUID() }, 1))
+                        player->CastSpell(ally, GetSpellInfo()->Id, true);
+                break;
+            case SPELL_HEALING_WAVE:
+                if (has(RUNE_ANCESTRAL_WAVE))
+                    for (Unit* ally : Injured(player, target, 10.0f, { target->GetGUID() }, 2))
+                        Mend(player, ally, heal * 0.3f);
+                break;
+            case SPELL_LIGHTNING_BOLT:
+                if (has(RUNE_CHAIN_SPARK) && crit)
+                    Next(player, SPELL_CHAIN_LIGHTNING, SPELLMOD_CASTING_TIME, -100);
+                break;
+            case SPELL_EARTH_SHOCK:
+                if (has(RUNE_EARTHEN_GRIP))
+                    player->CastSpell(target, SPELL_EARTHEN_GRIP, true);
+                break;
+            case SPELL_HAUNT:
+                if (has(RUNE_HAUNTING))
+                    for (Unit* enemy : Enemies(player, target, NEARBY, 1))
+                        Hit(player, enemy, SPELL_STRIKE_SHADOW, damage);
+                break;
+            case SPELL_CHAOS_BOLT:
+                if (has(RUNE_CHAOS))
+                    for (Unit* enemy : Enemies(player, target, NEARBY, 2))
+                        Hit(player, enemy, SPELL_STRIKE_FIRE, damage);
+                break;
+            case SPELL_CONFLAGRATE:
+                if (has(RUNE_FIRE_AND_BRIMSTONE))
+                    Restore(player, target);
+                break;
+            case SPELL_MOONFIRE:
+                if (has(RUNE_LUNAR_STRIKE))
+                    for (Unit* enemy : Enemies(player, target, NEARBY, 5))
+                        Hit(player, enemy, SPELL_STRIKE_ARCANE, damage);
+                if (has(RUNE_LUNAR_FALL) && crit)
+                    Next(player, SPELL_STARFIRE, SPELLMOD_CASTING_TIME, -100);
+                break;
+            case SPELL_FEROCIOUS_BITE:
+                if (has(RUNE_PRIMAL_WRATH))
+                {
+                    OpenVein(player, target, damage / 2);
+                    for (Unit* enemy : Enemies(player, target, NEARBY, 5))
+                        OpenVein(player, enemy, damage / 2);
+                }
+                break;
+            case SPELL_SWIPE_BEAR:
+                if (has(RUNE_THRASH))
+                    OpenVein(player, target, damage / 2);
+                break;
+            case SPELL_SWIFTMEND:
+                if (has(RUNE_BLOOMING_GROVE))
+                    Restore(player, target);
+                if (has(RUNE_LINGERING_BLOOM))
+                    HealOverTime(player, target, heal / 2);
+                break;
+            case SPELL_SHRED:
+                if (has(RUNE_SHREDDER))
+                    for (uint32 id = SPELL_RIP; id; id = sSpellMgr->GetNextSpellInChain(id))
+                        if (Aura* rip = target->GetAura(id, hero))
+                        {
+                            int32& added = EffectsOf(player).RipAdded[target->GetGUID()];
+                            if (added >= RIP_EXTEND_MOST_MS)
+                                break;
+                            added += RIP_EXTEND_MS;
+                            rip->SetMaxDuration(rip->GetMaxDuration() + RIP_EXTEND_MS);
+                            rip->SetDuration(rip->GetDuration() + RIP_EXTEND_MS);
+                        }
+                break;
+            case SPELL_MAUL:
+                if (has(RUNE_THICK_HIDE) && crit)
+                    player->ModifyPower(POWER_RAGE, 50);
+                break;
+            case SPELL_REGROWTH:
+                if (has(RUNE_REJUVENATING_TOUCH))
+                    Refresh(target, SPELL_REJUVENATION, hero);
+                break;
+            case SPELL_DEMONS_BITE:
+                if (has(RUNE_FEL_EDGE) && crit)
+                    player->ModifyPower(POWER_RAGE, 50);
+                break;
+            case SPELL_BLADE_DANCE_STRIKE:
+            case SPELL_BLADE_DANCE_FINAL:
+                if (has(RUNE_DEATH_SWEEP))
+                    Hit(player, target, SPELL_STRIKE_PHYSICAL, damage);
+                break;
+            case SPELL_SOUL_CLEAVE:
+                if (has(RUNE_SOUL_FEAST))
+                    Mend(player, player, float(player->CountPctFromMaxHealth(3)));
+                break;
+            case SPELL_FIERY_BRAND:
+                if (has(RUNE_BURNING_BRAND))
+                    for (Unit* enemy : Enemies(player, target, NEARBY, 10))
+                        SpreadAura(player, SPELL_FIERY_BRAND, enemy);
+                else if (has(RUNE_BRANDING_IRON))
+                    if (Aura* brand = target->GetAura(SPELL_FIERY_BRAND, hero))
+                        for (Unit* enemy : Enemies(player, target, NEARBY, 2))
+                            SpreadAura(player, SPELL_FIERY_BRAND, enemy, brand->GetMaxDuration() / 2);
+                break;
+            case SPELL_VIVIFY:
+                if (has(RUNE_SECOND_BREATH))
+                    for (Unit* ally : Injured(player, target, 20.0f, { target->GetGUID() }, 1))
+                        Mend(player, ally, heal / 2);
+                break;
+            case SPELL_TIGER_PALM:
+                if (has(RUNE_TIGERS_CLAW))
+                    CutCooldown(player, SPELL_RISING_SUN_KICK, 1000);
+                break;
+            case SPELL_BLACKOUT_KICK:
+                if (has(RUNE_BLACKOUT_COMBO))
+                    EffectsOf(player).BlackoutCombo = true;
+                break;
+            case SPELL_ENVELOPING_MIST:
+                if (has(RUNE_MISTWEAVERS_GRACE))
+                    SpreadAura(player, SPELL_RENEWING_MIST, target);
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Conflagrate (Fire and Brimstone) and Swiftmend (the Blooming Grove) keep what they would consume.
+    void Snapshot()
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetHitUnit();
+        if (!caster || !target)
+            return;
+        uint32 first = First(GetSpellInfo()->Id);
+        if (first == SPELL_CONFLAGRATE)
+            _kept = AurasOf(target, caster->GetGUID(), { SPELL_IMMOLATE });
+        else if (first == SPELL_SWIFTMEND)
+            _kept = AurasOf(target, caster->GetGUID(), { SPELL_REJUVENATION, SPELL_REGROWTH });
+    }
+
+    void Restore(Player* player, Unit* target)
+    {
+        for (auto const& [id, left] : _kept)
+            if (!target->HasAura(id, player->GetGUID()) && left > 0)
+                if (Aura* aura = player->AddAura(id, target))
+                    aura->SetDuration(left);
+        _kept.clear();
+    }
+
+    // Circle of Healing with the Wide Circle: 5 more injured allies (not healed already) for its best heal. Wild
+    // Growth with the Ever-Blooming: its heal over time on 3 more.
     void AfterCastEffects()
     {
         Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr;
-        if (!player || First(GetSpellInfo()->Id) != SPELL_CIRCLE_OF_HEALING || !RuneTiers::Has(player, RUNE_WIDE_CIRCLE)
-            || _heal <= 0.0f)
+        if (!player)
             return;
         Unit* center = GetExplTargetUnit() ? GetExplTargetUnit() : player;
-        for (Unit* ally : Injured(player, center, 15.0f, _hit, CIRCLE_MORE))
-            Mend(player, ally, _heal);
+        uint32 first = First(GetSpellInfo()->Id);
+        if (first == SPELL_CIRCLE_OF_HEALING && RuneTiers::Has(player, RUNE_WIDE_CIRCLE) && _heal > 0.0f)
+            for (Unit* ally : Injured(player, center, 15.0f, _hit, CIRCLE_MORE))
+                Mend(player, ally, _heal);
+        else if (first == SPELL_WILD_GROWTH && RuneTiers::Has(player, RUNE_EVER_BLOOMING))
+            for (Unit* ally : Injured(player, center, 30.0f, _hit, 3))
+                SpreadAura(player, GetSpellInfo()->Id, ally);
     }
 
     void Register() override
     {
+        BeforeHit += BeforeSpellHitFn(spell_titan_rune_tier_hit::SnapshotOnHit);
         AfterHit += SpellHitFn(spell_titan_rune_tier_hit::AfterHitEffects);
         AfterCast += SpellCastFn(spell_titan_rune_tier_hit::AfterCastEffects);
     }
 
+    void SnapshotOnHit(SpellMissInfo missInfo)
+    {
+        if (missInfo == SPELL_MISS_NONE)
+            Snapshot();
+    }
+
 private:
+    std::vector<std::pair<uint32, int32>> _kept;
     uint32 _cleaved = 0;
     float _heal = 0.0f;
     std::unordered_set<ObjectGuid> _hit;
@@ -529,10 +863,16 @@ class spell_titan_rune_tier_spread : public AuraScript
                     player->CastSpell(enemy, GetId(), true);
                 }
         }
-        else if (first == SPELL_VAMPIRIC_TOUCH && removed == AURA_REMOVE_BY_DEATH
-            && RuneTiers::Has(player, RUNE_ENDLESS_THIRST))
+        else if (removed == AURA_REMOVE_BY_DEATH
+            && ((first == SPELL_VAMPIRIC_TOUCH && RuneTiers::Has(player, RUNE_ENDLESS_THIRST))
+                || (first == SPELL_UNSTABLE_AFFLICTION && RuneTiers::Has(player, RUNE_CONTAGION))
+                || (first == SPELL_CORRUPTION && RuneTiers::Has(player, RUNE_LINGERING_CURSE))))
             for (Unit* enemy : Enemies(player, target, 10.0f, 1))
                 player->CastSpell(enemy, GetId(), true);
+        else if (first == SPELL_BLACK_ARROW && removed == AURA_REMOVE_BY_DEATH
+            && RuneTiers::Has(player, RUNE_DARK_HUNTER))
+            if (uint32 arrow = KnownRank(player, SPELL_BLACK_ARROW))
+                player->RemoveSpellCooldown(arrow, true);
     }
 
     void Register() override
@@ -623,6 +963,29 @@ public:
             damage = int32(damage * (1.0f + 0.1f * EffectsOf(player).BlastStacks));
         else if (first == SPELL_HOLY_SHIELD && RuneTiers::Has(player, RUNE_SACRED_WALL))
             Mend(player, player, float(player->CountPctFromMaxHealth(1)));
+        else if (first == SPELL_EXPLOSIVE_SHOT_HIT && RuneTiers::Has(player, RUNE_BLAST_RADIUS))
+            for (Unit* enemy : Enemies(player, target, NEARBY, 5))
+                Hit(player, enemy, SPELL_STRIKE_FIRE, float(damage));
+        else if (first == SPELL_SPIRIT_BOMB_BLAST && RuneTiers::Has(player, RUNE_SOUL_BARRAGE))
+            Mend(player, player, damage * 0.2f);
+        else if (first == SPELL_TIGER_PALM && EffectsOf(player).BlackoutCombo)
+        {
+            EffectsOf(player).BlackoutCombo = false;
+            damage *= 2;
+        }
+        else if (first == SPELL_CRANE_KICK_STRIKE && RuneTiers::Has(player, RUNE_WHIRLING_CRANE))
+        {
+            std::size_t near = std::min<std::size_t>(5, Enemies(player, player, NEARBY, 5).size());
+            damage = int32(damage * (1.0f + 0.1f * near));
+        }
+        else if (first == SPELL_IMMOLATION_TICK && RuneTiers::Has(player, RUNE_SPREADING_FLAME))
+            if (Aura* immolation = player->GetAura(SPELL_IMMOLATION_AURA);
+                immolation && EffectsOf(player).ImmolationAdded < IMMOLATION_EXTEND_MOST_MS)
+            {
+                EffectsOf(player).ImmolationAdded += 1000;
+                immolation->SetMaxDuration(immolation->GetMaxDuration() + 1000);
+                immolation->SetDuration(immolation->GetDuration() + 1000);
+            }
     }
 
     void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage,
@@ -659,6 +1022,19 @@ public:
                 if (RuneTiers::Has(player, RUNE_GRASPING_MIND))
                     player->CastSpell(target, SPELL_GRASPING_MIND, true);
                 break;
+            case SPELL_FLAME_SHOCK:
+                if (RuneTiers::Has(player, RUNE_MOLTEN_FLOW) && roll_chance_i(10))
+                    if (uint32 burst = KnownRank(player, SPELL_LAVA_BURST))
+                        player->RemoveSpellCooldown(burst, true);
+                break;
+            case SPELL_IMMOLATE:
+                if (RuneTiers::Has(player, RUNE_BACKLASH) && roll_chance_i(10))
+                    Next(player, SPELL_INCINERATE, SPELLMOD_CASTING_TIME, -100);
+                break;
+            case SPELL_CORRUPTION:
+                if (RuneTiers::Has(player, RUNE_DREAD) && !AurasOf(target, player->GetGUID(), { SPELL_FEAR }).empty())
+                    damage = uint32(damage * 1.2f);
+                break;
             default:
                 break;
         }
@@ -667,9 +1043,39 @@ public:
     void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
     {
         Player* player = HeroOf(healer);
-        if (player && IsAbility(spellInfo, SPELL_FLASH_OF_LIGHT) && target->HealthBelowPct(35)
-            && RuneTiers::Has(player, RUNE_INFUSION))
-            heal = uint32(heal * 1.5f);
+        if (!player || !spellInfo)
+            return;
+        switch (First(spellInfo->Id))
+        {
+            case SPELL_FLASH_OF_LIGHT:
+                if (target->HealthBelowPct(35) && RuneTiers::Has(player, RUNE_INFUSION))
+                    heal = uint32(heal * 1.5f);
+                break;
+            case SPELL_DEATH_STRIKE_HEAL:
+                if (RuneTiers::Has(player, RUNE_BLOOD_DEBT))
+                    heal *= 2;
+                if (RuneTiers::Has(player, RUNE_PLAGUED_BLOOD))
+                    heal = uint32(heal * (1.0f + 0.05f * EffectsOf(player).Diseases));
+                break;
+            case SPELL_DRAIN_LIFE:
+                if (RuneTiers::Has(player, RUNE_SIPHONING_SOUL))
+                    if (Spell* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+                        if (Unit* drained = channel->m_targets.GetUnitTarget();
+                            drained && !AurasOf(drained, player->GetGUID(), { SPELL_CORRUPTION }).empty())
+                            heal = uint32(heal * 1.2f);
+                break;
+            case SPELL_MEND_PET:
+                if (target != player && RuneTiers::Has(player, RUNE_KINDRED_SPIRITS))
+                    Mend(player, player, float(heal));
+                break;
+            case SPELL_ESSENCE_FONT_BOLT:
+                if (RuneTiers::Has(player, RUNE_OVERFLOWING_FONT))
+                    for (Unit* ally : Injured(player, player, 30.0f, { target->GetGUID() }, 1))
+                        Mend(player, ally, float(heal));
+                break;
+            default:
+                break;
+        }
     }
 
     // The Unbroken Ward: the Hero's Power Word: Shield leaves no Weakened Soul.
@@ -703,8 +1109,22 @@ public:
         SpellInfo const* spellInfo = spell->GetSpellInfo();
         uint32 first = First(spellInfo->Id), spellId = spellInfo->Id;
         auto has = [player](uint32 rune) { return RuneTiers::Has(player, rune); };
+        // Backdraft: two Incinerates or Shadow Bolts faster, then spent together.
+        Effects& fx = EffectsOf(player);
+        bool backdraft = (first == SPELL_INCINERATE || first == SPELL_SHADOW_BOLT) && fx.Backdraft > 0;
+        if (backdraft && --fx.Backdraft == 0)
+        {
+            ObjectGuid guid = player->GetGUID();
+            player->m_Events.AddEventAtOffset([player, guid]()
+            {
+                if (player->GetGUID() != guid)
+                    return;
+                Spend(player, SPELL_INCINERATE);
+                Spend(player, SPELL_SHADOW_BOLT);
+            }, 1ms);
+        }
         // "Your next X" is spent once the cast has taken its cost and time (after this hook).
-        if (EffectsOf(player).Next.count(first))
+        else if (!backdraft && fx.Next.count(first))
         {
             ObjectGuid guid = player->GetGUID();
             player->m_Events.AddEventAtOffset([player, guid, first]()
@@ -752,6 +1172,52 @@ public:
                     EffectsOf(player).BlastStacks = stacks->GetStackAmount();
                 else
                     EffectsOf(player).BlastStacks = 0;
+                break;
+            case SPELL_INTIMIDATION:
+                if (Pet* pet = player->GetPet(); pet && has(RUNE_ALPHA))
+                    pet->CastSpell(pet, SPELL_ALPHA, true);
+                break;
+            case SPELL_DISENGAGE:
+                if (has(RUNE_HUNTERS_LEAP))
+                    player->CastSpell(player, SPELL_HUNTERS_LEAP, true);
+                break;
+            case SPELL_KILL_COMMAND:
+                if (Pet* pet = player->GetPet(); pet && pet->IsAlive() && has(RUNE_PACK_LEADER))
+                    Mend(player, pet, float(pet->CountPctFromMaxHealth(10)));
+                break;
+            case SPELL_RIPTIDE:
+                if (has(RUNE_TIDAL_WAVE))
+                    Next(player, SPELL_HEALING_WAVE, SPELLMOD_CASTING_TIME, -30);
+                break;
+            case SPELL_RISING_SUN_KICK:
+                if (has(RUNE_RISING_STORM))
+                    player->RemoveSpellCooldown(SPELL_FISTS_OF_FURY, true);
+                break;
+            case SPELL_VENGEFUL_RETREAT:
+                if (has(RUNE_VENGEFUL_STEP))
+                    player->RemoveSpellCooldown(SPELL_FEL_RUSH, true);
+                break;
+            case SPELL_EYE_BEAM:
+                if (has(RUNE_UNENDING_FURY) && !player->HasAura(SPELL_METAMORPHOSIS_DH))
+                {
+                    player->CastSpell(player, SPELL_METAMORPHOSIS_DH, true);
+                    if (Aura* form = player->GetAura(SPELL_METAMORPHOSIS_DH))
+                    {
+                        form->SetMaxDuration(6000);
+                        form->SetDuration(6000);
+                    }
+                }
+                break;
+            case SPELL_CONFLAGRATE:
+                if (has(RUNE_BACKDRAFT))
+                {
+                    fx.Backdraft = 2;
+                    Next(player, SPELL_INCINERATE, SPELLMOD_CASTING_TIME, -20);
+                    Next(player, SPELL_SHADOW_BOLT, SPELLMOD_CASTING_TIME, -20);
+                }
+                break;
+            case SPELL_IMMOLATION_AURA:
+                fx.ImmolationAdded = 0;
                 break;
             default:
                 break;

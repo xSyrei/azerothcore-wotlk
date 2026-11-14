@@ -92,7 +92,8 @@ The five after them (their own concept docs), each with its markers 20 on from i
 - the Spectral Blade, 90980: Phantom Strike 90981, Open Wound 90983 and its tick 90984, Vanishing Act 90985, Marked
   for Murder 90986; modifiers' markers 91120-91128;
 - Runes of Enhancement: 91170, the source of the Uncommons' spell modifiers (family 99); the Epics' and Rares'
-  strikes 91171-91177, heal 91178, Grasping Mind 91179, Phoenix 91180, Quick Recovery 91181;
+  strikes 91171-91177, heal 91178, Grasping Mind 91179, Phoenix 91180, Quick Recovery 91181, Alpha 91182, Hunter's
+  Leap 91183, Earthen Grip 91184;
 - the Wild Hunt, 91130: the Spectral Beast's look 91131, Spectral Bite 91132, Ghostfang 91133 and its tick 91134,
   Parting Howl (on the Hero's pet) 91135, Final Pounce 91136; modifiers' markers 91150-91158.
 """
@@ -1139,7 +1140,8 @@ ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, THUNDER_ICON, WELLSPRING_ICON, MIS
          'Spell_Shadow_DemonicCircleTeleport', 'Ability_Warrior_Cleave', 'Ability_Rogue_Eviscerate',
          'Ability_Rogue_Sprint', 'Ability_Rogue_FindWeakness', 'Ability_Hunter_KillCommand', 'Ability_Druid_Rake',
          'Spell_Nature_StarFall', 'Spell_Fire_FlameBolt', 'Spell_Frost_FrostBolt02', 'Spell_Shadow_ShadowBolt',
-         'Spell_Shadow_LifeDrain', 'Spell_Holy_FlashHeal', 'Spell_Fire_SealOfFire', 'Spell_Shadow_ShadowWard']
+         'Spell_Shadow_LifeDrain', 'Spell_Holy_FlashHeal', 'Spell_Fire_SealOfFire', 'Spell_Shadow_ShadowWard',
+         'Ability_Devour', 'Ability_Rogue_Feint', 'Spell_Nature_EarthBind']
 assert patch_player  # the helpers' module
 
 # The runes' own auras stay off the buff bar (the rune button shows the bound rune): hidden, their words kept.
@@ -1166,8 +1168,18 @@ SPELLS += [
     buff(91181, 'Quick Recovery', 'Spell_Shadow_ShadowWard', '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
          hidden=True),
 ]
-next(spell for spell in SPELLS if spell['id'] == 91177)['effects'][1]['Mechanic'] = 15     # a bleed: no armor
 SPELLS[-1]['set'] = {**SPELLS[-1]['set'], 'ProcFlags': PROC_TAKEN_MELEE_AUTO_ATTACK, 'ProcChance': 101}
+# Batch two: Alpha (Intimidation: the pet +30% damage, 10 sec), Hunter's Leap (Disengage: +30% speed, 4 sec),
+# Earthen Grip (Earth Shock: -50% speed, 3 sec).
+SPELLS += [
+    buff(91182, 'Alpha', 'Ability_Devour', 'Damage done increased by 30%.', DURATION_10S,
+         {1: aura(AURA_MOD_DAMAGE_PERCENT_DONE, 30, ALL_SCHOOLS)}),
+    buff(91183, "Hunter's Leap", 'Ability_Rogue_Feint', 'Movement speed increased by 30%.', DURATION_4S,
+         {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}),
+    harmful(91184, 'Earthen Grip', 'Spell_Nature_EarthBind', 'Movement speed reduced by 50%.', DURATION_3S,
+            aura(AURA_MOD_DECREASE_SPEED, -50, 0), NATURE),
+]
+next(spell for spell in SPELLS if spell['id'] == 91177)['effects'][1]['Mechanic'] = 15     # a bleed: no armor
 
 # Runes of Enhancement (src/rune_tiers.cpp): the source its Uncommons' spell modifiers name. Family 99 (no spell's)
 # so the core matches it to nothing; the server's own check matches each modifier to its rune's ability.

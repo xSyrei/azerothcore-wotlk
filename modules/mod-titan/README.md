@@ -587,14 +587,15 @@ Epic, Rare and Uncommon runes beside the Legendary Rune (`src/rune_tiers.cpp`), 
   after the cast (server and client alike). Aggressive (+10% damage) and Mending (+10% healing) act on the hits, the
   ticks and the heals. Dormant runes do nothing.
 - **Resonance**: an ability holding an Epic, a Rare and an Uncommon (none dormant) deals and heals 10% more.
-- **Epic and Rare effects** (`src/rune_effects.cpp`, `titan_rune_effects.sql`; helper spells 91171-91181): batch
-  one is the Warrior, Paladin, Rogue, Priest and Mage runes. Lasting spell modifiers and auras (durations, targets,
+- **Epic and Rare effects** (`src/rune_effects.cpp`, `titan_rune_effects.sql`; helper spells 91171-91184): every
+  class's runes. Lasting spell modifiers and auras (durations, targets,
   cast times, Penance's tick rate) are applied with the Uncommons'; cooldowns a rune halves or removes are cut just
   after the cast. The usability a rune lifts (Revenge without a block, Execute at 35%, Hammer of Wrath at any health,
   Deep Freeze on any target, Ambush out of Stealth, Backstab from the front) is gone from the spell for everyone at
   load (server and client, `patch_spells.py rune_usability`) and checked by `titan_rune_effects_checks` for anyone
   without the rune. Extra hits and heals are shares of the Hero's own hit (strikes 91171-91177, heal 91178).
-- **Next**: the Death Knight, Shaman, Hunter, Warlock, Druid, Demon Hunter and Monk runes.
+  Runes that keep what a spell consumes (Conflagrate's Immolate, Swiftmend's heal over time) snapshot it before the
+  hit and put it back after. Backdraft speeds the next two Incinerates or Shadow Bolts.
 - Protocol: addon whispers, prefix `EFRT` (see `rune_tiers.cpp`).
 
 ## Cards and Silas Darkmoon
