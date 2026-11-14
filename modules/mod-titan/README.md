@@ -581,7 +581,13 @@ Epic, Rare and Uncommon runes beside the Legendary Rune (`src/rune_tiers.cpp`), 
   open it. The Legendary Rune in the centre (clicked: its own panel), 5 Epic sockets on the inner ring, 10 Rare on the
   outer, the Uncommons by ability on the right under the selected rune's words (Release asks first). An offer opens it
   on a choice of 3; a full set of sockets asks which one to replace. Tests: `AddOns/tests/halo_test.lua`.
-- **Effects**: next (Uncommons and Resonance, then the Rares and Epics in batches).
+- **Uncommon effects**: Rapid (cast time -10%), Critical (critical strikes +20%) and Provoking (threat +50%) are spell
+  modifiers named after spell 91170 (family 99, so the core matches it to nothing; `titan_rune_tiers_mods` matches
+  each to its rune's ability, every rank; nothing is sent to the client). Refreshing takes 10% off the cooldown just
+  after the cast (server and client alike). Aggressive (+10% damage) and Mending (+10% healing) act on the hits, the
+  ticks and the heals. Dormant runes do nothing.
+- **Resonance**: an ability holding an Epic, a Rare and an Uncommon (none dormant) deals and heals 10% more.
+- **Next**: the Rares' and Epics' own effects, in batches.
 - Protocol: addon whispers, prefix `EFRT` (see `rune_tiers.cpp`).
 
 ## Cards and Silas Darkmoon

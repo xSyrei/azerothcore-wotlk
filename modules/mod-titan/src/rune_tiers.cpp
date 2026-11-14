@@ -23,7 +23,9 @@
 #include "GameTime.h"
 #include "Player.h"
 #include "ScriptMgr.h"
+#include "Spell.h"
 #include "SpellInfo.h"
+#include "SpellAuraDefines.h"
 #include "SpellMgr.h"
 #include "StringConvert.h"
 #include "StringFormat.h"
@@ -48,7 +50,13 @@
 // - Sockets: 5 Epic, 10 Rare (a full set: the one to replace is chosen). Uncommons: any number, on 10 abilities.
 // - Releasing a rune, or an ability's Uncommons, is free.
 // - A rune on an ability the Hero no longer knows is dormant (told once, by ability); it wakes when it is learned
-//   again. The runes' effects are their own work (Uncommons and Resonance next, then Rares and Epics).
+//   again; its effects pause with it.
+// - Uncommons on their ability: Rapid (cast time -10%), Critical (critical strikes +20%) and Provoking (threat +50%)
+//   as spell modifiers named after 91170 (family 99: the core matches it to nothing; the check below matches each to
+//   its rune's ability, every rank); Refreshing (cooldown -10%) taken off the cooldown just after the cast, so the
+//   client's cooldown agrees; Aggressive (damage +10%) and Mending (healing +10%) on the hits and ticks.
+// - Resonance: an ability holding an Epic, a Rare and an Uncommon (none dormant) is 10% stronger: its damage and
+//   healing. The Rares' and Epics' own effects: next.
 //
 // Protocol (prefix EFRT, fields by ','; the client sends STATE, PICK,<seq>,<choice 1-3>[,<socket>], REL,<rune>,
 // RELA,<ability>):
@@ -70,6 +78,9 @@ namespace
     constexpr std::size_t CHUNK = 220;                      // an addon message's payload, at most
     constexpr uint32 DORMANCY_DELAY_MS = 1000;              // after a spell is learned or forgotten
     constexpr uint32 LOGIN_QUIET_MS = 15000;                // the login's own spell changes say nothing
+    constexpr uint32 SPELL_RUNE_MODIFIERS = 91170;          // the Uncommons' spell modifiers' source (family 99)
+    constexpr int32 RAPID_PCT = -10, CRITICAL_PCT = 20, PROVOKING_PCT = 50, REFRESHING_PCT = 10;
+    constexpr float AGGRESSIVE = 1.10f, MENDING = 1.10f, RESONANCE = 1.10f;
 
     enum Rarity : uint8
     {
@@ -154,7 +165,15 @@ namespace
         bool DormancyDirty = false;
         uint32 DormancyTimer = 0;
         uint32 QuietUntil = 0;                              // game ms
+
+        // The runes' effects: abilities (first ranks) and the spell modifiers on them.
+        std::unordered_set<uint32> Aggressive, Mending, Refreshing, Resonant;
+        std::vector<SpellModifier*> Mods;
     };
+
+    std::unordered_map<SpellModifier const*, uint32> modAbility;    // an Uncommon's modifier -> its ability
+
+    void ApplyEffects(Player* player);
 
     std::unordered_map<ObjectGuid::LowType, State> states;
 
@@ -289,6 +308,88 @@ namespace
             state.OfferedLevel = result->Fetch()[0].Get<uint8>();
         state.Dormant = DormantAbilities(player, state);
         state.QuietUntil = Now() + LOGIN_QUIET_MS;
+        ApplyEffects(player);
+    }
+
+    // ---- Effects ---------------------------------------------------------------------------------------------
+
+    void RemoveEffects(Player* player, State& state)
+    {
+        for (SpellModifier* mod : state.Mods)
+        {
+            modAbility.erase(mod);
+            player->AddSpellMod(mod, false);                // deletes it
+        }
+        state.Mods.clear();
+        state.Aggressive.clear();
+        state.Mending.clear();
+        state.Refreshing.clear();
+        state.Resonant.clear();
+    }
+
+    void AddMod(Player* player, State& state, uint32 ability, SpellModOp op, int32 pct)
+    {
+        SpellModifier* mod = new SpellModifier();
+        mod->op = op;
+        mod->type = SPELLMOD_PCT;
+        mod->value = pct;
+        mod->spellId = SPELL_RUNE_MODIFIERS;                // no mask: nothing is sent to the client
+        modAbility[mod] = ability;
+        player->AddSpellMod(mod, true);
+        state.Mods.push_back(mod);
+    }
+
+    // The held runes' effects, anew (dormant runes have none).
+    void ApplyEffects(Player* player)
+    {
+        State& state = StateOf(player);
+        RemoveEffects(player, state);
+        std::unordered_map<uint32, uint8> tiersOn;          // ability -> rarities held on it (bits)
+        for (auto const& [rune, socket] : state.Owned)
+        {
+            RuneInfo const* info = Find(rune);
+            if (!info || state.Dormant.count(info->Ability))
+                continue;
+            tiersOn[info->Ability] |= uint8(1 << info->Rarity);
+            if (info->Rarity != RARITY_UNCOMMON)
+                continue;
+            switch (info->Prefix)
+            {
+                case PREFIX_RAPID: AddMod(player, state, info->Ability, SPELLMOD_CASTING_TIME, RAPID_PCT); break;
+                case PREFIX_CRITICAL:
+                    AddMod(player, state, info->Ability, SPELLMOD_CRIT_DAMAGE_BONUS, CRITICAL_PCT);
+                    break;
+                case PREFIX_PROVOKING: AddMod(player, state, info->Ability, SPELLMOD_THREAT, PROVOKING_PCT); break;
+                case PREFIX_AGGRESSIVE: state.Aggressive.insert(info->Ability); break;
+                case PREFIX_MENDING: state.Mending.insert(info->Ability); break;
+                case PREFIX_REFRESHING: state.Refreshing.insert(info->Ability); break;
+                default: break;
+            }
+        }
+        uint8 const all = uint8((1 << RARITY_UNCOMMON) | (1 << RARITY_RARE) | (1 << RARITY_EPIC));
+        for (auto const& [ability, bits] : tiersOn)
+            if (bits == all)
+                state.Resonant.insert(ability);
+    }
+
+    State* HeroState(Unit* unit)
+    {
+        Player* player = unit ? unit->ToPlayer() : nullptr;
+        if (!player)
+            return nullptr;
+        auto itr = states.find(player->GetGUID().GetCounter());
+        return itr != states.end() ? &itr->second : nullptr;
+    }
+
+    float Factor(State const& state, SpellInfo const* spellInfo, bool heal)
+    {
+        if (!spellInfo)
+            return 1.0f;
+        uint32 first = sSpellMgr->GetFirstSpellInChain(spellInfo->Id);
+        float factor = state.Resonant.count(first) ? RESONANCE : 1.0f;
+        if (heal ? state.Mending.count(first) : state.Aggressive.count(first))
+            factor *= heal ? MENDING : AGGRESSIVE;
+        return factor;
     }
 
     // ---- The window ------------------------------------------------------------------------------------------
@@ -474,6 +575,7 @@ namespace
         state.Offers.erase(std::remove_if(state.Offers.begin(), state.Offers.end(),
             [seq](Offer const& o) { return o.Seq == seq; }), state.Offers.end());
         state.Dormant = DormantAbilities(player, state);
+        ApplyEffects(player);
         SendState(player);
     }
 
@@ -495,6 +597,7 @@ namespace
                     Say(player, Acore::StringFormat("your runes on {} wake.", AbilityName(ability)));
         }
         state.Dormant = std::move(now);
+        ApplyEffects(player);
         SendState(player);
     }
 
@@ -514,6 +617,7 @@ namespace
             if (state.Owned.count(num(1)))
                 Release(player, state, num(1));
             state.Dormant = DormantAbilities(player, state);
+            ApplyEffects(player);
             SendState(player);
         }
         else if (parts[0] == "RELA")
@@ -527,6 +631,7 @@ namespace
             for (uint32 rune : uncommons)
                 Release(player, state, rune);
             state.Dormant = DormantAbilities(player, state);
+            ApplyEffects(player);
             SendState(player);
         }
     }
@@ -567,6 +672,7 @@ public:
         PLAYERHOOK_ON_FORGOT_SPELL,
         PLAYERHOOK_ON_UPDATE,
         PLAYERHOOK_ON_DELETE,
+        PLAYERHOOK_ON_SPELL_CAST,
         PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT
     }) { }
 
@@ -602,7 +708,30 @@ public:
 
     void OnPlayerLogout(Player* player) override
     {
-        states.erase(player->GetGUID().GetCounter());
+        auto itr = states.find(player->GetGUID().GetCounter());
+        if (itr == states.end())
+            return;
+        RemoveEffects(player, itr->second);
+        states.erase(itr);
+    }
+
+    // Refreshing: 10% off the cooldown just started (server and client alike), the next moment.
+    void OnPlayerSpellCast(Player* player, Spell* spell, bool /*skipCheck*/) override
+    {
+        State* state = HeroState(player);
+        if (!state || state->Refreshing.empty() || spell->IsTriggered())
+            return;
+        uint32 spellId = spell->GetSpellInfo()->Id;
+        if (!state->Refreshing.count(sSpellMgr->GetFirstSpellInChain(spellId)))
+            return;
+        ObjectGuid guid = player->GetGUID();
+        player->m_Events.AddEventAtOffset([player, guid, spellId]()
+        {
+            if (player->GetGUID() != guid)
+                return;
+            if (uint32 left = player->GetSpellCooldownDelay(spellId))
+                player->ModifySpellCooldown(spellId, -int32(left * REFRESHING_PCT / 100));
+        }, 1ms);
     }
 
     void OnPlayerDelete(ObjectGuid guid, uint32 /*accountId*/) override
@@ -653,8 +782,58 @@ private:
     }
 };
 
+// The Uncommons' spell modifiers (source 91170): each on its rune's ability, every rank, and nothing else (true:
+// the core's own check, which family 99 fails).
+class titan_rune_tiers_mods : public GlobalScript
+{
+public:
+    titan_rune_tiers_mods() : GlobalScript("titan_rune_tiers_mods",
+        { GLOBALHOOK_ON_IS_AFFECTED_BY_SPELL_MOD_CHECK }) { }
+
+    bool OnIsAffectedBySpellModCheck(SpellInfo const* affectSpell, SpellInfo const* checkSpell,
+        SpellModifier const* mod) override
+    {
+        if (affectSpell->Id != SPELL_RUNE_MODIFIERS)
+            return true;
+        auto itr = modAbility.find(mod);
+        return itr == modAbility.end() || sSpellMgr->GetFirstSpellInChain(checkSpell->Id) != itr->second;
+    }
+};
+
+// Aggressive, Mending and Resonance on the hits, the ticks and the heals of a Hero's abilities.
+class titan_rune_tiers_unit : public UnitScript
+{
+public:
+    titan_rune_tiers_unit() : UnitScript("titan_rune_tiers_unit", true, { UNITHOOK_MODIFY_SPELL_DAMAGE_TAKEN,
+        UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK, UNITHOOK_MODIFY_HEAL_RECEIVED }) { }
+
+    void ModifySpellDamageTaken(Unit* /*target*/, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
+    {
+        if (State* state = damage > 0 ? HeroState(attacker) : nullptr)
+            damage = int32(damage * Factor(*state, spellInfo, false));
+    }
+
+    // A heal over time's tick passes here too (then as a heal): only damage here.
+    void ModifyPeriodicDamageAurasTick(Unit* /*target*/, Unit* attacker, uint32& damage,
+        SpellInfo const* spellInfo) override
+    {
+        if (!spellInfo || spellInfo->HasAura(SPELL_AURA_PERIODIC_HEAL) || spellInfo->HasAura(SPELL_AURA_OBS_MOD_HEALTH))
+            return;
+        if (State* state = HeroState(attacker))
+            damage = uint32(damage * Factor(*state, spellInfo, false));
+    }
+
+    void ModifyHealReceived(Unit* /*target*/, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
+    {
+        if (State* state = HeroState(healer))
+            heal = uint32(heal * Factor(*state, spellInfo, true));
+    }
+};
+
 void AddSC_rune_tiers()
 {
     new titan_rune_tiers_world();
     new titan_rune_tiers_player();
+    new titan_rune_tiers_mods();
+    new titan_rune_tiers_unit();
 }

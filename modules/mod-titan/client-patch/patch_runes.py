@@ -91,6 +91,7 @@ The five after them (their own concept docs), each with its markers 20 on from i
   Sunrise 90955 and its look 90956, Scalding Ground 90957;
 - the Spectral Blade, 90980: Phantom Strike 90981, Open Wound 90983 and its tick 90984, Vanishing Act 90985, Marked
   for Murder 90986; modifiers' markers 91120-91128;
+- Runes of Enhancement: 91170, the source of the Uncommons' spell modifiers (family 99);
 - the Wild Hunt, 91130: the Spectral Beast's look 91131, Spectral Bite 91132, Ghostfang 91133 and its tick 91134,
   Parting Howl (on the Hero's pet) 91135, Final Pounce 91136; modifiers' markers 91150-91158.
 """
@@ -1139,6 +1140,13 @@ ICONS = [RUNE_ICON, PARAGON_ICON, STORM_ICON, THUNDER_ICON, WELLSPRING_ICON, MIS
 assert patch_player  # the helpers' module
 
 # The runes' own auras stay off the buff bar (the rune button shows the bound rune): hidden, their words kept.
+# Runes of Enhancement (src/rune_tiers.cpp): the source its Uncommons' spell modifiers name. Family 99 (no spell's)
+# so the core matches it to nothing; the server's own check matches each modifier to its rune's ability.
+SPELLS.append({**buff(91170, 'Runes of Enhancement', BLADE_ICON, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
+                      hidden=True)})
+SPELLS[-1]['set'] = {**SPELLS[-1]['set'], 'SpellFamilyName': 99, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0,
+                     'SpellFamilyFlags2': 0}
+
 RUNE_AURAS = {90700, 90730, 90750, 90770, 90790, 90810, 90830, 90860, 90890, 90920, 90950, 90980, 91130}
 for _spell in SPELLS:
     if _spell['id'] in RUNE_AURAS:
