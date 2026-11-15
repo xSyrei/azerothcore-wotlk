@@ -488,7 +488,9 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
     volumetric light.
   - **Haze** by distance (past its start) and, the camera known (the terrain's and buildings' vertex shaders: view in
     c0-c3, projection in c4-c7; the sky dome's rotation on frames without them), by height and in drifting wisps;
-    in the game's haze colour (or an own one), dimmer by night.
+    in the game's haze colour (or an own one), dimmer by night. Day and night have their own density, start, most
+    cover and height falloff (mixed by the night amount): by day thick and close (the sunlit air brighter, the light
+    behind it glowing through), by night thinner.
   - **Colour grade**: a day tint and a night tint (mixed by the night), saturation, contrast, exposure, a soft
     shoulder for the highlights the light added, a vignette.
   - **Point lights** (up to 8 a frame): each lights the surfaces within its reach (normals from the depth, by

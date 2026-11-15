@@ -45,7 +45,7 @@ float4 LightAt[kLights * 2] : register(c15);
 float4 Shade : register(c31);         // ambient occlusion: strength, radius (yards), how much by night, compare (0/1)
 float4 Glow : register(c33);          // the scene's lamps: light on surfaces, (by day) how much they light, on (0/1)
 float4 Split : register(c32);         // by day: warmth of the highlights, coolness of the shadows, daylight's own
-                                      // brightening of the air, (spare)
+                                      // brightening of the air, the light glowing through the haze
 
 static const float3 kLuma = float3(0.2126, 0.7152, 0.0722);
 static const float kSky = 50000.0;
@@ -342,7 +342,8 @@ float4 Final(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
     float haze = HazeAmount(uv, z, sky);
     float3 hazeLight = Haze.rgb * lerp(1.0 + Split.z, Light.w, night);
     colour = lerp(colour, hazeLight, haze);
-    float3 halos = wide * haze * Light.z * (0.4 + 0.6 * night) * 4.0;
+    // The light behind and within the haze glowing through it (by day the sunlit air: Split.w).
+    float3 halos = wide * haze * Light.z * lerp(Split.w, 1.0, night) * 4.0;
     colour += halos;
 
     // The scene's own lamps lighting what is about them (their colour on the surface's).

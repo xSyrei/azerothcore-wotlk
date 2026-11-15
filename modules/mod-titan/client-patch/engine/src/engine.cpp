@@ -38,7 +38,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.18"
+#define EMBERFORGE_ENGINE_VERSION "0.19"
 
 namespace
 {
@@ -209,8 +209,11 @@ namespace
         float spill = 0.9f, halos = 0.6f, hazeNightLight = 0.45f;
         // Haze: subtle by day (colours nearby kept), in the game's colour.
         float hazeDensity = 0.25f, hazeStart = 20.0f, hazeFalloff = 0.03f, hazeMost = 0.6f, hazeBelow = 0.0f;
+        // By day its own: thick, starting close, the air lit (the night's above; mixed by the night amount).
+        float dayHazeDensity = 0.75f, dayHazeStart = 8.0f, dayHazeFalloff = 0.018f, dayHazeMost = 0.82f,
+              dayHazeGlow = 1.3f;
         float hazeColour[3] = {0.55f, 0.62f, 0.7f};
-        float mist = 0.3f, mistSize = 25.0f, mistSpeed = 1.0f;
+        float mist = 0.45f, mistSize = 25.0f, mistSpeed = 1.0f;
         // The colour grade: a warm day, a cool night.
         float dayTint[3] = {1.0f, 0.95f, 0.86f}, nightTint[3] = {0.72f, 0.84f, 1.0f};
         float gradeTint = 0.35f, gradeSaturation = 1.15f, contrast = 1.1f, vignette = 0.25f, exposure = 1.0f,
@@ -223,7 +226,7 @@ namespace
         // Ambient occlusion (soft contact shadows from the depth); by day warm highlights, cool shadows, and the air
         // a little brighter (sunlit).
         bool compare = false;
-        float ao = 0.65f, aoRadius = 2.5f, aoNight = 0.4f, warmth = 0.08f, coolness = 0.08f, dayAir = 0.15f;
+        float ao = 0.65f, aoRadius = 2.5f, aoNight = 0.4f, warmth = 0.08f, coolness = 0.08f, dayAir = 0.35f;
 
         struct Entry
         {
@@ -267,6 +270,9 @@ namespace
                 {"atmosphere_haze_night_light", &hazeNightLight}, {"atmosphere_haze_density", &hazeDensity},
                 {"atmosphere_haze_start", &hazeStart}, {"atmosphere_haze_falloff", &hazeFalloff},
                 {"atmosphere_haze_most", &hazeMost}, {"atmosphere_haze_below", &hazeBelow},
+                {"atmosphere_day_haze_density", &dayHazeDensity}, {"atmosphere_day_haze_start", &dayHazeStart},
+                {"atmosphere_day_haze_falloff", &dayHazeFalloff}, {"atmosphere_day_haze_most", &dayHazeMost},
+                {"atmosphere_day_haze_glow", &dayHazeGlow},
                 {"atmosphere_haze_own", nullptr, &hazeOwn}, {"atmosphere_haze_r", &hazeColour[0]},
                 {"atmosphere_haze_g", &hazeColour[1]}, {"atmosphere_haze_b", &hazeColour[2]},
                 {"atmosphere_mist", &mist}, {"atmosphere_mist_size", &mistSize},
@@ -1344,8 +1350,9 @@ namespace
                  mix(s.dayShade[1], s.nightBlue[1]), mix(s.dayShade[2], s.nightBlue[2])},
                 {s.hazeOwn ? s.hazeColour[0] : ((fog >> 16) & 0xFF) / 255.0f,
                  s.hazeOwn ? s.hazeColour[1] : ((fog >> 8) & 0xFF) / 255.0f,
-                 s.hazeOwn ? s.hazeColour[2] : (fog & 0xFF) / 255.0f, s.hazeDensity},
-                {s.hazeStart, s.hazeFalloff, s.hazeMost, s.hazeBelow},
+                 s.hazeOwn ? s.hazeColour[2] : (fog & 0xFF) / 255.0f, mix(s.dayHazeDensity, s.hazeDensity)},
+                {mix(s.dayHazeStart, s.hazeStart), mix(s.dayHazeFalloff, s.hazeFalloff),
+                 mix(s.dayHazeMost, s.hazeMost), s.hazeBelow},
                 {m_cameraProjection[0], m_cameraProjection[1], nearPlane, m_cameraSeen ? 1.0f : 0.0f},
                 {view[0][0], view[0][1], view[0][2], 0.0f},
                 {view[1][0], view[1][1], view[1][2], 0.0f},
@@ -1392,7 +1399,7 @@ namespace
             constants[32][0] = s.warmth;
             constants[32][1] = s.coolness;
             constants[32][2] = s.dayAir;
-            constants[32][3] = 0.0f;
+            constants[32][3] = s.dayHazeGlow;
             bool lamps = s.lamps && m_emitPs && m_gatherPs && m_emit && m_gather;
             constants[33][0] = s.lampStrength;
             constants[33][1] = s.lightsByDay;
@@ -1957,6 +1964,13 @@ namespace
                 ImGui::SameLine();
                 ImGui::ColorEdit3("##hazecolour", s.hazeColour, ImGuiColorEditFlags_NoInputs);
             }
+            ImGui::TextUnformatted("By day");
+            ImGui::SliderFloat("Day haze density", &s.dayHazeDensity, 0.0f, 3.0f, "%.2f per 100 yards");
+            ImGui::SliderFloat("Day haze start", &s.dayHazeStart, 0.0f, 200.0f, "%.0f yards");
+            ImGui::SliderFloat("Day haze most", &s.dayHazeMost, 0.0f, 1.0f);
+            ImGui::SliderFloat("Day height falloff", &s.dayHazeFalloff, 0.0f, 0.2f, "%.3f per yard");
+            ImGui::SliderFloat("Light glowing through the day haze", &s.dayHazeGlow, 0.0f, 4.0f);
+            ImGui::TextUnformatted("By night");
             ImGui::SliderFloat("Haze density", &s.hazeDensity, 0.0f, 2.0f, "%.2f per 100 yards");
             ImGui::SliderFloat("Haze start", &s.hazeStart, 0.0f, 200.0f, "%.0f yards");
             ImGui::SliderFloat("Haze most", &s.hazeMost, 0.0f, 1.0f);
