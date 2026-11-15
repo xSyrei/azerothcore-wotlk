@@ -2336,18 +2336,18 @@ namespace Wildcard
             return false;
 
         player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_ROLE, role);
-        ApplyRole(player);
+        ApplyRole(player, true);
         return true;
     }
 
-    void ApplyRole(Player* player)
+    void ApplyRole(Player* player, bool fresh)
     {
         Role role = GetRole(player);
         for (uint8 i = ROLE_MELEE; i < MAX_ROLES; ++i)
         {
-            if (i != role)
+            if (i != role || fresh)
                 player->RemoveAurasDueToSpell(ROLE_SPELLS[i]);
-            else if (!player->HasAura(ROLE_SPELLS[i]))
+            if (i == role && !player->HasAura(ROLE_SPELLS[i]))
                 player->AddAura(ROLE_SPELLS[i], player);
         }
     }
@@ -2430,7 +2430,7 @@ public:
         DropSkillLineSpells(player);
         DropStaleRanks(player);
         CatchUp(player, settingsSaved, false);
-        ApplyRole(player);
+        ApplyRole(player, true);
     }
 
     void OnPlayerResurrect(Player* player, float /*restorePercent*/, bool& /*applySickness*/) override

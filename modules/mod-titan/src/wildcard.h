@@ -155,7 +155,9 @@ namespace Wildcard
     // Sets the role and its buff; false (and nothing changed) in combat.
     bool SetRole(Player* player, Role role);
     // Puts the role's buff on, and takes the others off (login, resurrection).
-    void ApplyRole(Player* player);
+    // The role's buff on the Hero, the others' off. fresh: put on again even if there (at login, on a change), so a
+    // buff saved before its spell gained an effect has it (a loaded aura keeps the effects it was saved with).
+    void ApplyRole(Player* player, bool fresh = false);
 }
 
 namespace Classless

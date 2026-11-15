@@ -100,18 +100,24 @@ public:
 
     static constexpr std::array<uint32, 3> SPELLS = { 90600, 90601, 90602 };
 
-    static void Forge(Player* player)
+    // fresh (at login): put on again even if there, so a buff saved before its spell gained an effect (the
+    // pushback cut) has it: a loaded aura keeps the effects it was saved with.
+    static void Forge(Player* player, bool fresh = false)
     {
         if (player->getClass() != hero_resources::HERO_CLASS)
             return;
         for (uint32 spellId : SPELLS)
+        {
+            if (fresh)
+                player->RemoveAurasDueToSpell(spellId);
             if (!player->HasAura(spellId))
                 player->AddAura(spellId, player);
+        }
     }
 
     void OnPlayerLogin(Player* player) override
     {
-        Forge(player);
+        Forge(player, true);
     }
 
     void OnPlayerResurrect(Player* player, float /*restorePercent*/, bool& /*applySickness*/) override
