@@ -984,6 +984,20 @@ def thunderfield(model, effect, across):
 
 SLASH_RED, EMBER = (1.0, 0.16, 0.1), (1.0, 0.55, 0.2)
 SUN_ORANGE = (1.0, 0.45, 0.1)
+FLAME_ORANGE, FLAME_GOLD = (1.0, 0.42, 0.12), (1.0, 0.72, 0.32)
+
+
+def flames(spots, alpha=0.9, flicker=0.32):
+    """Fire standing at spots (upright, base on the ground): soft wisps of flame flickering between their four
+    shapes, thin tongues licking up through them. Both sheets' cells fade out before their edges."""
+    tongues = tuple((x, y, z + size * 0.1, size * 0.8, 0.0) for x, y, z, size, _ in spots)
+    return (
+        ('fire_wisps_2x2', {'spots': tuple((x, y, z + size * 0.15, size * 1.35, 0.0) for x, y, z, size, _ in spots),
+                            'sheet': (2, 2), 'flip': flicker, 'tint': FLAME_ORANGE,
+                            'alpha': alpha, 'pulse': 0}),
+        ('fire_tongues_4x4', {'spots': tongues, 'sheet': (4, 4), 'flip': 0.9, 'tint': FLAME_GOLD,
+                              'alpha': alpha, 'pulse': 0}),
+    )
 WHITE_HOT, ICE_GLINT = (1.0, 0.93, 0.75), (0.65, 0.88, 1.0)
 EFFECTS.update({
     'Thunderfield': thunderfield('WAR_Thunderfield', 7157, 16.0),
@@ -1030,8 +1044,7 @@ EFFECTS.update({
     'SunshardGlow': looping('MAGE_SunshardGlow', 7170, (
         ('sun_fireburst_4x4', {'spots': ((0.0, 0.0, 0.0, 1.5, 0.0),), 'sheet': (4, 4), 'flip': 0.9,
                                'tint': (1.0, 0.72, 0.42), 'alpha': 0.85, 'pulse': 0}),
-        ('sun_flames_4x4', {'spots': ((0.1, 0.22, 0.45, 1.9, 0.0), (0.0, -0.2, 0.4, 1.6, 0.0)), 'sheet': (4, 4),
-                            'flip': 1.1, 'tint': (1.0, 0.86, 0.62), 'alpha': 0.95, 'pulse': 0}),
+        *flames(((0.1, 0.22, 0.45, 1.9, 0.0), (0.0, -0.2, 0.4, 1.6, 0.0))),
     )),
     # A fracture: frost cracks the shard: an icy glint, the sun bursting out in flame, a ring of fire rushing out.
     'SunFracture': burst('MAGE_SunFracture', 7171, (
@@ -1041,8 +1054,7 @@ EFFECTS.update({
                            'tint': ICE_GLINT, 'alpha': 0.9, 'pulse': 0}),
         ('sun_fireburst_4x4', {'spots': ring(0.8, 4, 1.0, 3.4), 'sheet': (4, 4), 'tint': WHITE_HOT, 'alpha': 1.0,
                                'pulse': 0}),
-        ('sun_flames_4x4', {'spots': upright(ring(1.6, 6, 0.8, 1.8)), 'sheet': (4, 4), 'tint': (1.0, 0.86, 0.62),
-                            'alpha': 0.95, 'pulse': 0}),
+        *flames(ring(1.6, 6, 0.8, 1.8)),
         ('sun_ring', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 7.0, 0.0),), 'tint': SUN_ORANGE, 'alpha': 0.9,
                       'pulse': 0, 'scale': [(0.0, 0.15), (0.45, 1.0), (1.0, 1.15)]}),
     ), 550),
@@ -1053,15 +1065,13 @@ EFFECTS.update({
         ('sun_fireburst_4x4', {'spots': ((0.0, 0.0, 1.2, 4.5, 0.0), (0.4, 0.3, 1.6, 3.2, 140.0)), 'sheet': (4, 4),
                                'tint': WHITE_HOT, 'alpha': 1.0, 'pulse': 0,
                                'scale': [(0.0, 0.2), (0.3, 0.3), (0.45, 1.1), (1.0, 1.3)]}),
-        ('sun_flames_4x4', {'spots': upright(ring(2.2, 8, 1.0, 2.2)), 'sheet': (4, 4), 'tint': (1.0, 0.86, 0.62),
-                            'alpha': 1.0, 'pulse': 0}),
+        *flames(ring(2.2, 8, 1.0, 2.2), 1.0),
     ), 750),
     # Scalding Ground: still, cracked earth glowing with heat, flames standing up across it and flaring between.
     'ScaldingGround': looping('MAGE_ScaldingGround', 7164, (
         ('Circle_Cracks_02', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 12.0, 0.0),), 'tint': SUN_ORANGE,
                               'alpha': 0.85, 'pulse': 2.4}),
-        ('sun_flames_4x4', {'spots': upright(ring(2.0, 5, 0.8, 1.8, 15.0) + ring(4.4, 9, 1.0, 2.2)),
-                            'sheet': (4, 4), 'flip': 1.1, 'tint': (1.0, 0.82, 0.55), 'alpha': 0.95, 'pulse': 0}),
+        *flames(ring(2.0, 5, 0.8, 1.8, 15.0) + ring(4.4, 9, 1.0, 2.2)),
         ('sun_fireburst_4x4', {'spots': upright(ring(3.3, 6, 0.45, 1.0, 30.0)), 'sheet': (4, 4), 'flip': 0.8,
                                'tint': (1.0, 0.62, 0.3), 'alpha': 0.8, 'pulse': 0}),
     )),
