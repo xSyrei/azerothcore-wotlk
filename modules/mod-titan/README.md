@@ -768,6 +768,9 @@ replaced mod-autobalance):
   level 60 ones twice it.
 - **10% more damage** throughout (`DAMAGE_PASS` 1.1): every scaled creature's damage to Heroes, and boss mechanics
   between players.
+- **`.dungeonscale`** (GM): what the scaling does here: the creatures' level, whether you count (GMs do not:
+  entering in GM mode leaves the creatures at their own levels), and for the creature selected its levels (template,
+  now, to you) and the factors on your damage to it and its to you.
 - **Experience** for a kill is each member's own: what `Acore::XP::Gain` gives for the creature at their level, split
   evenly over the group's members in range (the core's, nothing for a creature gray to them, is replaced). Prestige's
   bonus and experience auras apply.

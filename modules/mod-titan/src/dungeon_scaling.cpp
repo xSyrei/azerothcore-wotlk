@@ -15,6 +15,8 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Chat.h"
+#include "CommandScript.h"
 #include "Creature.h"
 #include "DBCStores.h"
 #include "Formulas.h"
@@ -572,8 +574,58 @@ public:
     }
 };
 
+using namespace Acore::ChatCommands;
+
+// .dungeonscale (GM): what the scaling does here, for you and the creature selected: whether the map is scaled, the
+// level its creatures are at and whether you count for it (a GM does not: entering in GM mode leaves the creatures at
+// their own levels), the creature's own, current and seen levels, and the factors on your damage to it and its to you.
+class titan_dungeon_scaling_commands : public CommandScript
+{
+public:
+    titan_dungeon_scaling_commands() : CommandScript("titan_dungeon_scaling_commands") { }
+
+    ChatCommandTable GetCommands() const override
+    {
+        static ChatCommandTable commandTable =
+        {
+            { "dungeonscale", HandleDungeonScale, SEC_GAMEMASTER, Console::No },
+        };
+        return commandTable;
+    }
+
+    static bool HandleDungeonScale(ChatHandler* handler)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        Map* map = player->GetMap();
+        if (!IsScaled(map))
+        {
+            handler->PSendSysMessage("Not a scaled map (5-player dungeons only): {}.", map->GetMapName());
+            return true;
+        }
+        handler->PSendSysMessage("{}: scaled; creatures at level {} (the lowest player's: {}); its own level {}.",
+            map->GetMapName(), TargetLevel(map), LowestPlayer(map), DungeonLevel(map));
+        if (player->IsGameMaster())
+            handler->PSendSysMessage("You are in GM mode: you do not count. Entering in GM mode leaves the creatures "
+                "at their own levels; turn it off (.gm off) and enter again to test the scaling.");
+        handler->PSendSysMessage("At your level {}: creatures' health x{:.2f}, their damage x{:.2f}.",
+            player->GetLevel(), HealthFactor(player->GetLevel()), DamageFactor(player->GetLevel()));
+        Creature* creature = handler->getSelectedCreature();
+        if (!creature || !EnemyOf(creature))
+            return true;
+        CreatureTemplate const* info = creature->GetCreatureTemplate();
+        uint8 seen = LevelFor(creature, player->GetLevel(), TargetLevel(map));
+        handler->PSendSysMessage("{}: template levels {}-{}, now {}, to you {}{}.", creature->GetName(), info->minlevel,
+            info->maxlevel, creature->GetLevel(), seen, creature->IsDungeonBoss() ? " (a boss)" : "");
+        handler->PSendSysMessage("Your damage to it x{:.3f}; its melee to you x{:.3f} (its damage modifier capped "
+            "x{:.2f}).", DamageScale(creature, player), DamageScale(player, creature) * ModifierCap(creature),
+            ModifierCap(creature));
+        return true;
+    }
+};
+
 void AddSC_dungeon_scaling()
 {
+    new titan_dungeon_scaling_commands();
     new titan_dungeon_scaling_unit();
     new titan_dungeon_scaling_player();
     new titan_dungeon_scaling_creature();
