@@ -44,6 +44,7 @@
 // - easier the lower the Hero: at level 10 creatures have half their health (the Hero's damage doubled) and deal
 //   75% of their damage, evenly up to the intended difficulty at the level cap (heroics: always);
 // - and twice the health throughout (HEALTH_PASS): the damage the Hero deals halved, the health they see doubled;
+//   their damage 10% more (DAMAGE_PASS);
 // - experience for kills as if the creature were at their level: the core's (none for a creature gray to them) is
 //   replaced by Acore::XP::Gain's at that level, split evenly over the group's members in range.
 namespace
@@ -53,6 +54,8 @@ namespace
     constexpr float EASE_DAMAGE = 0.75f;        // creatures' damage there
     // Every scaled creature's health on top of all that (Heroes melted them at the intended difficulty).
     constexpr float HEALTH_PASS = 2.0f;
+    // And their damage on top of all that.
+    constexpr float DAMAGE_PASS = 1.1f;
     constexpr uint8 HEALTH_PROXY_CLASS = CLASS_WARRIOR;         // players' health by level: a warrior creature's
     constexpr uint8 HIGHEST_STATS_LEVEL = 83;
     constexpr uint8 BOSS_LEVELS = 2;            // bosses over the group's lowest level
@@ -99,7 +102,7 @@ namespace
 
     float DamageFactor(uint8 level)
     {
-        return EASE_DAMAGE + (1.0f - EASE_DAMAGE) * Progress(level);
+        return (EASE_DAMAGE + (1.0f - EASE_DAMAGE) * Progress(level)) * DAMAGE_PASS;
     }
 
     ScalingInfo* Info(Map* map)

@@ -766,6 +766,8 @@ replaced mod-autobalance):
 - **Twice the health** throughout (`HEALTH_PASS` 2): on top of the above, every scaled creature has double its
   health (the damage Heroes deal halved, the health they see doubled): level 10 creatures have their whole health,
   level 60 ones twice it.
+- **10% more damage** throughout (`DAMAGE_PASS` 1.1): every scaled creature's damage to Heroes, and boss mechanics
+  between players.
 - **Experience** for a kill is each member's own: what `Acore::XP::Gain` gives for the creature at their level, split
   evenly over the group's members in range (the core's, nothing for a creature gray to them, is replaced). Prestige's
   bonus and experience auras apply.
