@@ -498,7 +498,13 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
     texture's fingerprint); the panel's test light stands ahead of the camera meanwhile.
   - **Ambient occlusion**: 12 points on a turning spiral within a radius (yards) around each surface point, from
     the depth and its normal: corners, doorways, the ground under eaves and along walls darken (less by night).
-  - **By day**: warm highlights and cool shadows, and the haze a little brighter (sunlit air).
+  - **By day**: the night's mood, milder (*Day's shade*: the shade darker and cool, what the sun lights kept
+    bright); warm highlights and cool shadows, and the haze a little brighter (sunlit air). The day's and the
+    night's settings are mixed by the night amount.
+  - **The scene's lamps**: everything that shines on screen past a threshold (lower by night: lamps, windows, fire,
+    spells) is found at a 16th of the screen with where it stands (its brightness-weighted distance), and at half
+    the screen each surface point gathers their light from a 9 x 9 grid of cells about it (by distance within a
+    reach, and by how it faces each): lamps light the street, walls and people about them. Lamps off screen do not.
   Every part is a slider in the panel's Atmosphere section; *Compare* leaves the left half of the screen untouched;
   *Show* draws one part alone (bloom, haze, the night's darkening, the spill, the point lights, the occlusion). Its settings' keys are `atmosphere_*` and `light*` in `Emberforge.ini`.
 - The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's

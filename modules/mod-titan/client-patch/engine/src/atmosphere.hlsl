@@ -14,14 +14,16 @@ sampler2D SceneS : register(s0);      // the world as drawn (Bright, Final)
 sampler2D DistanceS : register(s1);   // the eye's distance (view z) in yards, 100000 for the sky
 sampler2D LevelS : register(s2);      // Down: the level above; Up: this level's own; Final: the bloom
 sampler2D WideS : register(s3);       // Up: the smaller level, spread; Final: the wide light (the spill, the halos)
+sampler2D GatherS : register(s4);     // Final: the light the scene's own lamps cast (Gather's output)
 
 // Bright, Down, Up.
 float4 Texel : register(c0);          // the source's texel (x, y), threshold, knee
 float4 BrightShape : register(c1);    // how much the sky counts, how much light colour is kept (saturation)
 
 // Final.
-float4 Night : register(c0);          // how much it is night (0-1), the dark's brightness by night, keep from, keep to
-float4 NightLook : register(c1);      // the dark's loss of colour by night, the night's blue (rgb)
+float4 Night : register(c0);          // how much it is night (0-1), the shade's brightness, keep from, keep to (day
+                                      // and night mixed by the engine: the same mood, milder by day)
+float4 NightLook : register(c1);      // the shade's loss of colour, its colour (rgb): cool by day, blue by night
 float4 Haze : register(c2);           // haze colour (rgb), density (per 100 yards)
 float4 HazeShape : register(c3);      // start (yards), height falloff (per yard), most cover, thickest below the eye
 float4 Projection : register(c4);     // x scale, y scale, near plane, the camera known (0/1)
@@ -41,6 +43,7 @@ static const int kLights = 8;
 float4 Lights : register(c14);        // count, strength on surfaces, glow in the air, (by day) how much they show
 float4 LightAt[kLights * 2] : register(c15);
 float4 Shade : register(c31);         // ambient occlusion: strength, radius (yards), how much by night, compare (0/1)
+float4 Glow : register(c33);          // the scene's lamps: light on surfaces, (by day) how much they light, on (0/1)
 float4 Split : register(c32);         // by day: warmth of the highlights, coolness of the shadows, daylight's own
                                       // brightening of the air, (spare)
 
@@ -239,6 +242,69 @@ float HazeAmount(float2 uv, float z, bool sky)
     return saturate((1.0 - exp(-depth * wisp)) * HazeShape.z);
 }
 
+// Emit: at a 16th of the screen, each cell's lamps: the light of what shines past the threshold in it (16 points),
+// and where it is (its brightness-weighted distance). The sky emits nothing.
+float4 Emit(float2 uv : TEXCOORD0) : COLOR
+{
+    float3 sum = 0.0;
+    float weight = 0.0, depth = 0.0;
+    [unroll]
+    for (int y = 0; y < 4; y++)
+    {
+        [unroll]
+        for (int x = 0; x < 4; x++)
+        {
+            float2 at = uv + Texel.xy * (float2(x, y) * 4.0 - 6.0);
+            float z = Distance(at);
+            if (z < kSky)
+            {
+                float3 c = Sample(SceneS, at);
+                float l = dot(c, kLuma);
+                float w = smoothstep(Texel.z - Texel.w, Texel.z + Texel.w, l);
+                sum += c * w;
+                weight += w;
+                depth += z * w;
+            }
+        }
+    }
+    return float4(sum / 16.0, weight > 1e-3 ? depth / weight : 0.0);
+}
+
+// Gather: at half the screen, the light each surface point takes from the lamps about it on screen: a 9 x 9 grid of
+// cells around it (Texel.z cells apart, shifted per pixel), each lamp by distance (within Texel.w yards) and by how
+// the surface faces it.
+float4 Gather(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
+{
+    float z = Distance(uv);
+    if (z >= kSky)
+        return 0.0;
+    float3 p = ViewRay(uv) * z;
+    float3 n = Normal(uv, z);
+    float reach = Texel.w;
+    float2 jitter = frac(float2(52.9829189, 41.7193) * frac(dot(pixel, float2(0.06711056, 0.00583715)))) - 0.5;
+    float3 light = 0.0;
+    [loop]
+    for (int y = -4; y <= 4; y++)
+    {
+        [loop]
+        for (int x = -4; x <= 4; x++)
+        {
+            float2 at = uv + (float2(x, y) + jitter) * Texel.z * Texel.xy;
+            float4 e = tex2Dlod(LevelS, float4(at, 0, 0));
+            if (e.a > 0.0 && dot(e.rgb, kLuma) > 1e-3)
+            {
+                float3 q = ViewRay(at) * e.a;
+                float3 toLamp = q - p;
+                float d = length(toLamp);
+                float fall = saturate(1.0 - (d / reach) * (d / reach));
+                float facing = saturate(dot(n, toLamp / max(d, 1e-3)) * 0.8 + 0.2);
+                light += e.rgb * fall * fall * facing / (1.0 + d * d * 0.12);
+            }
+        }
+    }
+    return float4(light * Texel.z * Texel.z * 0.08, 1.0);
+}
+
 float4 Final(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
 {
     float3 scene = Sample(SceneS, uv);
@@ -251,12 +317,13 @@ float4 Final(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
     float3 wide = Sample(WideS, uv) / 3.0;            // the three widest
     float night = Night.x;
 
-    // Night: the dark parts darker and colder; what is lit (lamps, windows, fire, spells) keeps its light.
+    // The mood, day and night alike: the shade darker and colder; what is lit (sunlit walls by day; lamps,
+    // windows, fire and spells by night) keeps its light.
     float l = dot(scene, kLuma);
     float keep = smoothstep(Night.z, Night.w, l);
-    float3 colour = scene * lerp(lerp(1.0, Night.y, night), 1.0, keep);
+    float3 colour = scene * lerp(Night.y, 1.0, keep);
     float grey = dot(colour, kLuma);
-    colour = lerp(colour, grey * NightLook.yzw, night * NightLook.x * (1.0 - keep));
+    colour = lerp(colour, grey * NightLook.yzw, NightLook.x * (1.0 - keep));
 
     // Ambient occlusion (by night less: little ambient light is left to block).
     float ao = 1.0;
@@ -277,6 +344,14 @@ float4 Final(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
     colour = lerp(colour, hazeLight, haze);
     float3 halos = wide * haze * Light.z * (0.4 + 0.6 * night) * 4.0;
     colour += halos;
+
+    // The scene's own lamps lighting what is about them (their colour on the surface's).
+    float3 lamps = 0.0;
+    if (!sky && Glow.z > 0.5)
+    {
+        lamps = Sample(GatherS, uv) * (scene * 1.6 + 0.04) * Glow.x * lerp(Glow.y, 1.0, night);
+        colour += lamps;
+    }
 
     // The point lights: brighter by night (by day they show by Lights.w).
     float3 lit = 0.0, glow = 0.0;
@@ -299,11 +374,11 @@ float4 Final(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
         if (Eye.w < 2.5)
             return float4(lerp(0.0, hazeLight, haze) + halos, 1.0);
         if (Eye.w < 3.5)
-            return float4(lerp(float3(1, 1, 1), float3(0.1, 0.15, 0.4), night * (1.0 - keep)), 1.0);
+            return float4(lerp(float3(1, 1, 1), float3(0.1, 0.15, 0.4), (1.0 - Night.y) * (1.0 - keep)), 1.0);
         if (Eye.w < 4.5)
             return float4(spill, 1.0);
         if (Eye.w < 5.5)
-            return float4(lit + glow, 1.0);
+            return float4(lit + glow + lamps, 1.0);
         return float4(ao.xxx, 1.0);
     }
 

@@ -38,7 +38,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.17"
+#define EMBERFORGE_ENGINE_VERSION "0.18"
 
 namespace
 {
@@ -197,6 +197,14 @@ namespace
         float nightForce = 0.0f, nightFrom = 0.32f, nightTo = 0.12f, nightDark = 0.55f, keepFrom = 0.3f,
               keepTo = 0.7f, nightDesaturate = 0.55f;
         float nightBlue[3] = {0.62f, 0.76f, 1.0f};
+        // The same mood by day, milder: the shade darker and cool, what the sun lights kept bright and warm.
+        float dayDark = 0.7f, dayKeepFrom = 0.32f, dayKeepTo = 0.78f, dayDesaturate = 0.12f;
+        float dayShade[3] = {0.86f, 0.93f, 1.06f};
+        // The scene's own lamps (everything that shines on screen: lamps, windows, fire, spells) lighting what is
+        // about them in 3D: past a threshold (lower by night), within a reach, cells apart on screen.
+        bool lamps = true;
+        float lampStrength = 1.2f, lampReach = 10.0f, lampStep = 3.0f, lampThreshold = 0.92f,
+              lampNightThreshold = 0.45f;
         // The lights by night: their spill on the ground and walls around them, their halos in the haze.
         float spill = 0.9f, halos = 0.6f, hazeNightLight = 0.45f;
         // Haze: subtle by day (colours nearby kept), in the game's colour.
@@ -249,6 +257,12 @@ namespace
                 {"atmosphere_keep_from", &keepFrom}, {"atmosphere_keep_to", &keepTo},
                 {"atmosphere_night_desaturate", &nightDesaturate}, {"atmosphere_night_blue_r", &nightBlue[0]},
                 {"atmosphere_night_blue_g", &nightBlue[1]}, {"atmosphere_night_blue_b", &nightBlue[2]},
+                {"atmosphere_day_dark", &dayDark}, {"atmosphere_day_keep_from", &dayKeepFrom},
+                {"atmosphere_day_keep_to", &dayKeepTo}, {"atmosphere_day_desaturate", &dayDesaturate},
+                {"atmosphere_day_shade_r", &dayShade[0]}, {"atmosphere_day_shade_g", &dayShade[1]},
+                {"atmosphere_day_shade_b", &dayShade[2]}, {"lamps", nullptr, &lamps},
+                {"lamp_strength", &lampStrength}, {"lamp_reach", &lampReach}, {"lamp_step", &lampStep},
+                {"lamp_threshold", &lampThreshold}, {"lamp_night_threshold", &lampNightThreshold},
                 {"atmosphere_spill", &spill}, {"atmosphere_halos", &halos},
                 {"atmosphere_haze_night_light", &hazeNightLight}, {"atmosphere_haze_density", &hazeDensity},
                 {"atmosphere_haze_start", &hazeStart}, {"atmosphere_haze_falloff", &hazeFalloff},
@@ -323,7 +337,7 @@ namespace
     constexpr int kVertexConstants = 256, kPixelConstants = 64, kRenderStates = 256, kStages = 8;
     constexpr int kSamplers = 16, kSamplerStates = 14;
     constexpr DWORD kPassStages = 5;                          // the stages an engine pass binds (and puts back)
-    constexpr UINT kPassConstants = 33;                       // the pixel constants it sets (c0-c32)
+    constexpr UINT kPassConstants = 34;                       // the pixel constants it sets (c0-c33)
     constexpr int kLights = 8;                                // point lights a frame (src/atmosphere.hlsl)
     constexpr UINT kWaterConstants = 12, kWaterConstantCount = 16;   // the water shader's c12-c27 (src/water.hlsl)
     // Render states an engine pass turns off (and puts back after).
@@ -381,7 +395,8 @@ namespace
             ReleaseTargets();
             if (m_waterPs)
                 m_waterPs->Release();
-            for (IDirect3DPixelShader9 *shader : {m_distancePs, m_brightPs, m_downPs, m_upPs, m_finalPs})
+            for (IDirect3DPixelShader9 *shader : {m_distancePs, m_brightPs, m_downPs, m_upPs, m_finalPs, m_emitPs,
+                                                  m_gatherPs})
                 if (shader)
                     shader->Release();
             ShutdownPanel();
@@ -788,6 +803,9 @@ namespace
             bool down = SUCCEEDED(real->CreatePixelShader(kAtmosphereDownPixelShader, &m_downPs));
             bool up = SUCCEEDED(real->CreatePixelShader(kAtmosphereUpPixelShader, &m_upPs));
             bool finished = SUCCEEDED(real->CreatePixelShader(kAtmosphereFinalPixelShader, &m_finalPs));
+            if (FAILED(real->CreatePixelShader(kAtmosphereEmitPixelShader, &m_emitPs)) ||
+                FAILED(real->CreatePixelShader(kAtmosphereGatherPixelShader, &m_gatherPs)))
+                m_emitPs = m_gatherPs = nullptr;
             if (!bright || !down || !up || !finished)
                 m_brightPs = m_downPs = m_upPs = m_finalPs = nullptr;
             Log("engine shaders: water %s, distance %s, atmosphere %s", m_waterPs ? "ok" : "failed",
@@ -831,6 +849,16 @@ namespace
                         *texture = nullptr;
                 }
             }
+            // The scene's lamps: a 16th of the screen (their light and where they are), and the light they cast at
+            // half: half floats only (the distances do not fit in 8 bits).
+            m_emitWidth = std::max(1u, desc.Width / 16);
+            m_emitHeight = std::max(1u, desc.Height / 16);
+            if (FAILED(real->CreateTexture(m_emitWidth, m_emitHeight, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A16B16G16R16F,
+                                           D3DPOOL_DEFAULT, &m_emit, nullptr)))
+                m_emit = nullptr;
+            if (FAILED(real->CreateTexture(desc.Width / 2, desc.Height / 2, 1, D3DUSAGE_RENDERTARGET,
+                                           D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT, &m_gather, nullptr)))
+                m_gather = nullptr;
             bool intz = false;
             IDirect3D9 *d3d = nullptr;
             D3DDEVICE_CREATION_PARAMETERS creation = {};
@@ -867,7 +895,7 @@ namespace
                 m_intzSurface->Release();
                 m_intzSurface = nullptr;
             }
-            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance})
+            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance, &m_emit, &m_gather})
             {
                 if (*texture)
                     (*texture)->Release();
@@ -1308,9 +1336,12 @@ namespace
             for (int i = 0; i < 3; ++i)
                 tint[i] = s.dayTint[i] + (s.nightTint[i] - s.dayTint[i]) * night;
             float seconds = static_cast<float>(std::fmod(Seconds() - m_epoch, 3600.0));
+            auto mix = [night](float day, float dark) { return day + (dark - day) * night; };
             float constants[kPassConstants][4] = {
-                {night, s.nightDark, s.keepFrom, std::fmax(s.keepTo, s.keepFrom + 0.01f)},
-                {s.nightDesaturate, s.nightBlue[0], s.nightBlue[1], s.nightBlue[2]},
+                {night, mix(s.dayDark, s.nightDark), mix(s.dayKeepFrom, s.keepFrom),
+                 std::fmax(mix(s.dayKeepTo, s.keepTo), mix(s.dayKeepFrom, s.keepFrom) + 0.01f)},
+                {mix(s.dayDesaturate, s.nightDesaturate), mix(s.dayShade[0], s.nightBlue[0]),
+                 mix(s.dayShade[1], s.nightBlue[1]), mix(s.dayShade[2], s.nightBlue[2])},
                 {s.hazeOwn ? s.hazeColour[0] : ((fog >> 16) & 0xFF) / 255.0f,
                  s.hazeOwn ? s.hazeColour[1] : ((fog >> 8) & 0xFF) / 255.0f,
                  s.hazeOwn ? s.hazeColour[2] : (fog & 0xFF) / 255.0f, s.hazeDensity},
@@ -1362,11 +1393,33 @@ namespace
             constants[32][1] = s.coolness;
             constants[32][2] = s.dayAir;
             constants[32][3] = 0.0f;
+            bool lamps = s.lamps && m_emitPs && m_gatherPs && m_emit && m_gather;
+            constants[33][0] = s.lampStrength;
+            constants[33][1] = s.lightsByDay;
+            constants[33][2] = lamps ? 1.0f : 0.0f;
+            constants[33][3] = 0.0f;
+            // The scene's lamps: where they shine (a 16th of the screen), then the light they cast (half).
+            if (lamps)
+            {
+                real->SetPixelShaderConstantF(0, constants[0], kPassConstants);
+                float threshold = s.lampThreshold + (s.lampNightThreshold - s.lampThreshold) * night;
+                float emit[4] = {1.0f / m_width, 1.0f / m_height, threshold, 0.12f};
+                real->SetPixelShaderConstantF(0, emit, 1);
+                Bind(0, m_scene, false);
+                Bind(1, m_distance, false);
+                DrawInto(m_emit, m_emitPs, m_emitWidth, m_emitHeight);
+                float gather[4] = {1.0f / m_emitWidth, 1.0f / m_emitHeight, std::fmax(s.lampStep, 1.0f),
+                                   std::fmax(s.lampReach, 1.0f)};
+                real->SetPixelShaderConstantF(0, gather, 1);
+                Bind(2, m_emit, false);
+                DrawInto(m_gather, m_gatherPs, m_width / 2, m_height / 2);
+            }
             real->SetPixelShaderConstantF(0, constants[0], kPassConstants);
             Bind(0, m_scene, false);
             Bind(1, m_distance, false);
             Bind(2, m_up[0], true);
             Bind(3, m_up[2], true);
+            Bind(4, lamps ? m_gather : nullptr, true);
             DrawInto(nullptr, m_finalPs, m_width, m_height);
             RestoreAfterPass();
             ++m_frame.atmosphere;
@@ -1853,6 +1906,11 @@ namespace
                 ImGui::SliderFloat("Night (by hand)", &s.nightForce, 0.0f, 1.0f);
             ImGui::SliderFloat("Day above", &s.nightFrom, 0.0f, 1.0f, "%.3f");
             ImGui::SliderFloat("Full night below", &s.nightTo, 0.0f, 1.0f, "%.3f");
+            ImGui::SliderFloat("Day's shade", &s.dayDark, 0.05f, 1.0f, "%.2f (1: none)");
+            ImGui::SliderFloat("Sunlit kept from", &s.dayKeepFrom, 0.0f, 1.0f);
+            ImGui::SliderFloat("Sunlit kept fully at", &s.dayKeepTo, 0.0f, 1.0f);
+            ImGui::SliderFloat("Day shade's colour loss", &s.dayDesaturate, 0.0f, 1.0f);
+            ImGui::ColorEdit3("Day shade's colour", s.dayShade, ImGuiColorEditFlags_NoInputs);
             ImGui::SliderFloat("Night's darkness", &s.nightDark, 0.05f, 1.0f, "%.2f (1: none)");
             ImGui::SliderFloat("Lights kept from", &s.keepFrom, 0.0f, 1.0f);
             ImGui::SliderFloat("Lights kept fully at", &s.keepTo, 0.0f, 1.0f);
@@ -1868,7 +1926,16 @@ namespace
             ImGui::SliderFloat("Glow reach", &s.bloomReach, 0.3f, 1.5f);
             ImGui::SliderFloat("Lights on the paths", &s.spill, 0.0f, 3.0f);
             ImGui::SliderFloat("Lights' halos in the haze", &s.halos, 0.0f, 3.0f);
-            ImGui::SeparatorText("Point lights (street lamps)");
+            ImGui::SeparatorText("The scene's lamps (lamps, windows, fire, spells light what is about them)");
+            ImGui::Checkbox("Lamps light their surroundings", &s.lamps);
+            if (!m_emit || !m_gather || !m_emitPs)
+                ImGui::TextUnformatted("(not available: this card has no half-float targets)");
+            ImGui::SliderFloat("Lamp light", &s.lampStrength, 0.0f, 5.0f);
+            ImGui::SliderFloat("Lamp reach", &s.lampReach, 2.0f, 30.0f, "%.0f yards");
+            ImGui::SliderFloat("Lamp threshold by day", &s.lampThreshold, 0.0f, 1.0f);
+            ImGui::SliderFloat("Lamp threshold by night", &s.lampNightThreshold, 0.0f, 1.0f);
+            ImGui::SliderFloat("Search spacing", &s.lampStep, 1.0f, 8.0f, "%.1f cells");
+            ImGui::SeparatorText("Point lights (test)");
             ImGui::TextWrapped("Street lamps are found once a capture beside one shows their draw; the test light "
                                "stands ahead of the camera to judge the look.");
             ImGui::Checkbox("Point lights", &s.lights);
@@ -2000,6 +2067,9 @@ namespace
         bool m_waterPrepared = false, m_waterCopied = false, m_waterLogged = false;
         double m_epoch = Seconds();
         IDirect3DPixelShader9 *m_brightPs = nullptr, *m_downPs = nullptr, *m_upPs = nullptr, *m_finalPs = nullptr;
+        IDirect3DPixelShader9 *m_emitPs = nullptr, *m_gatherPs = nullptr;
+        IDirect3DTexture9 *m_emit = nullptr, *m_gather = nullptr;
+        UINT m_emitWidth = 1, m_emitHeight = 1;
         static constexpr int kLevels = 5;                    // the light's levels: a half of the screen to a 32nd
         IDirect3DTexture9 *m_down[kLevels] = {}, *m_up[kLevels] = {};
         UINT m_levelWidth[kLevels] = {}, m_levelHeight[kLevels] = {};
