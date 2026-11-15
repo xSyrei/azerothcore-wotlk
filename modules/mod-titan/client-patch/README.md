@@ -504,9 +504,13 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
     bright); warm highlights and cool shadows, and the haze a little brighter (sunlit air). The day's and the
     night's settings are mixed by the night amount.
   - **The scene's lamps**: everything that shines on screen past a threshold (lower by night: lamps, windows, fire,
-    spells) is found at a 16th of the screen with where it stands (its brightness-weighted distance), and at half
-    the screen each surface point gathers their light from a 9 x 9 grid of cells about it (by distance within a
-    reach, and by how it faces each): lamps light the street, walls and people about them. Lamps off screen do not.
+    spells), in 64-pixel cells: its light (Emit), and where it is (Where: its brightness-weighted centre, and the
+    nearest surface right about the glowing pixels, 6, 16 and 32 pixels out: a lamp's glass is drawn without depth,
+    so its own pixels hold what is behind it; its frame and post are the nearest). At a quarter of the screen each
+    surface point gathers the light of every cell within 6 of it (none skipped), by distance within a reach and by
+    how it faces each, a lamp's light scaled by its distance squared (one far off covers fewer pixels, its light is
+    the same): lamps light the street, walls and people about them. Lamps off screen do not. The ambient occlusion
+    and the gather use the same pattern at every pixel (a per-pixel turn showed as diagonal lines).
   Every part is a slider in the panel's Atmosphere section; *Compare* leaves the left half of the screen untouched;
   *Show* draws one part alone (bloom, haze, the night's darkening, the spill, the point lights, the occlusion). Its settings' keys are `atmosphere_*` and `light*` in `Emberforge.ini`.
 - The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's

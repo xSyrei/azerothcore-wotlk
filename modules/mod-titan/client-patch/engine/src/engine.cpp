@@ -38,7 +38,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.19"
+#define EMBERFORGE_ENGINE_VERSION "0.20"
 
 namespace
 {
@@ -203,7 +203,7 @@ namespace
         // The scene's own lamps (everything that shines on screen: lamps, windows, fire, spells) lighting what is
         // about them in 3D: past a threshold (lower by night), within a reach, cells apart on screen.
         bool lamps = true;
-        float lampStrength = 1.2f, lampReach = 10.0f, lampStep = 3.0f, lampThreshold = 0.92f,
+        float lampStrength = 1.2f, lampReach = 10.0f, lampStep = 1.0f, lampThreshold = 0.92f,
               lampNightThreshold = 0.45f;
         // The lights by night: their spill on the ground and walls around them, their halos in the haze.
         float spill = 0.9f, halos = 0.6f, hazeNightLight = 0.45f;
@@ -345,6 +345,7 @@ namespace
     constexpr DWORD kPassStages = 5;                          // the stages an engine pass binds (and puts back)
     constexpr UINT kPassConstants = 34;                       // the pixel constants it sets (c0-c33)
     constexpr int kLights = 8;                                // point lights a frame (src/atmosphere.hlsl)
+    constexpr float kLampGain = 9.0f;                         // the scene's lamps' light, as gathered (calibrated)
     constexpr UINT kWaterConstants = 12, kWaterConstantCount = 16;   // the water shader's c12-c27 (src/water.hlsl)
     // Render states an engine pass turns off (and puts back after).
     const D3DRENDERSTATETYPE kPassStates[] = {
@@ -402,7 +403,7 @@ namespace
             if (m_waterPs)
                 m_waterPs->Release();
             for (IDirect3DPixelShader9 *shader : {m_distancePs, m_brightPs, m_downPs, m_upPs, m_finalPs, m_emitPs,
-                                                  m_gatherPs})
+                                                  m_wherePs, m_gatherPs})
                 if (shader)
                     shader->Release();
             ShutdownPanel();
@@ -810,8 +811,9 @@ namespace
             bool up = SUCCEEDED(real->CreatePixelShader(kAtmosphereUpPixelShader, &m_upPs));
             bool finished = SUCCEEDED(real->CreatePixelShader(kAtmosphereFinalPixelShader, &m_finalPs));
             if (FAILED(real->CreatePixelShader(kAtmosphereEmitPixelShader, &m_emitPs)) ||
+                FAILED(real->CreatePixelShader(kAtmosphereWherePixelShader, &m_wherePs)) ||
                 FAILED(real->CreatePixelShader(kAtmosphereGatherPixelShader, &m_gatherPs)))
-                m_emitPs = m_gatherPs = nullptr;
+                m_emitPs = m_wherePs = m_gatherPs = nullptr;
             if (!bright || !down || !up || !finished)
                 m_brightPs = m_downPs = m_upPs = m_finalPs = nullptr;
             Log("engine shaders: water %s, distance %s, atmosphere %s", m_waterPs ? "ok" : "failed",
@@ -855,15 +857,17 @@ namespace
                         *texture = nullptr;
                 }
             }
-            // The scene's lamps: a 16th of the screen (their light and where they are), and the light they cast at
-            // half: half floats only (the distances do not fit in 8 bits).
-            m_emitWidth = std::max(1u, desc.Width / 16);
-            m_emitHeight = std::max(1u, desc.Height / 16);
-            if (FAILED(real->CreateTexture(m_emitWidth, m_emitHeight, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A16B16G16R16F,
-                                           D3DPOOL_DEFAULT, &m_emit, nullptr)))
-                m_emit = nullptr;
-            if (FAILED(real->CreateTexture(desc.Width / 2, desc.Height / 2, 1, D3DUSAGE_RENDERTARGET,
-                                           D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT, &m_gather, nullptr)))
+            // The scene's lamps: 64-pixel cells (their light; where it is), and the light they cast at a quarter:
+            // half floats only (the distances do not fit in 8 bits).
+            m_emitWidth = std::max(1u, desc.Width / 64);
+            m_emitHeight = std::max(1u, desc.Height / 64);
+            for (IDirect3DTexture9 **texture : {&m_emit, &m_where})
+                if (FAILED(real->CreateTexture(m_emitWidth, m_emitHeight, 1, D3DUSAGE_RENDERTARGET,
+                                               D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT, texture, nullptr)))
+                    *texture = nullptr;
+            if (FAILED(real->CreateTexture(std::max(1u, desc.Width / 4), std::max(1u, desc.Height / 4), 1,
+                                           D3DUSAGE_RENDERTARGET, D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT, &m_gather,
+                                           nullptr)))
                 m_gather = nullptr;
             bool intz = false;
             IDirect3D9 *d3d = nullptr;
@@ -901,7 +905,7 @@ namespace
                 m_intzSurface->Release();
                 m_intzSurface = nullptr;
             }
-            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance, &m_emit, &m_gather})
+            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance, &m_emit, &m_where, &m_gather})
             {
                 if (*texture)
                     (*texture)->Release();
@@ -1400,7 +1404,7 @@ namespace
             constants[32][1] = s.coolness;
             constants[32][2] = s.dayAir;
             constants[32][3] = s.dayHazeGlow;
-            bool lamps = s.lamps && m_emitPs && m_gatherPs && m_emit && m_gather;
+            bool lamps = s.lamps && m_emitPs && m_wherePs && m_gatherPs && m_emit && m_where && m_gather;
             constants[33][0] = s.lampStrength;
             constants[33][1] = s.lightsByDay;
             constants[33][2] = lamps ? 1.0f : 0.0f;
@@ -1415,11 +1419,12 @@ namespace
                 Bind(0, m_scene, false);
                 Bind(1, m_distance, false);
                 DrawInto(m_emit, m_emitPs, m_emitWidth, m_emitHeight);
-                float gather[4] = {1.0f / m_emitWidth, 1.0f / m_emitHeight, std::fmax(s.lampStep, 1.0f),
-                                   std::fmax(s.lampReach, 1.0f)};
+                DrawInto(m_where, m_wherePs, m_emitWidth, m_emitHeight);
+                float gather[4] = {1.0f / m_emitWidth, 1.0f / m_emitHeight, kLampGain, std::fmax(s.lampReach, 1.0f)};
                 real->SetPixelShaderConstantF(0, gather, 1);
                 Bind(2, m_emit, false);
-                DrawInto(m_gather, m_gatherPs, m_width / 2, m_height / 2);
+                Bind(3, m_where, false);
+                DrawInto(m_gather, m_gatherPs, std::max(1u, m_width / 4), std::max(1u, m_height / 4));
             }
             real->SetPixelShaderConstantF(0, constants[0], kPassConstants);
             Bind(0, m_scene, false);
@@ -1935,13 +1940,12 @@ namespace
             ImGui::SliderFloat("Lights' halos in the haze", &s.halos, 0.0f, 3.0f);
             ImGui::SeparatorText("The scene's lamps (lamps, windows, fire, spells light what is about them)");
             ImGui::Checkbox("Lamps light their surroundings", &s.lamps);
-            if (!m_emit || !m_gather || !m_emitPs)
+            if (!m_emit || !m_where || !m_gather || !m_emitPs)
                 ImGui::TextUnformatted("(not available: this card has no half-float targets)");
             ImGui::SliderFloat("Lamp light", &s.lampStrength, 0.0f, 5.0f);
             ImGui::SliderFloat("Lamp reach", &s.lampReach, 2.0f, 30.0f, "%.0f yards");
             ImGui::SliderFloat("Lamp threshold by day", &s.lampThreshold, 0.0f, 1.0f);
             ImGui::SliderFloat("Lamp threshold by night", &s.lampNightThreshold, 0.0f, 1.0f);
-            ImGui::SliderFloat("Search spacing", &s.lampStep, 1.0f, 8.0f, "%.1f cells");
             ImGui::SeparatorText("Point lights (test)");
             ImGui::TextWrapped("Street lamps are found once a capture beside one shows their draw; the test light "
                                "stands ahead of the camera to judge the look.");
@@ -2081,8 +2085,8 @@ namespace
         bool m_waterPrepared = false, m_waterCopied = false, m_waterLogged = false;
         double m_epoch = Seconds();
         IDirect3DPixelShader9 *m_brightPs = nullptr, *m_downPs = nullptr, *m_upPs = nullptr, *m_finalPs = nullptr;
-        IDirect3DPixelShader9 *m_emitPs = nullptr, *m_gatherPs = nullptr;
-        IDirect3DTexture9 *m_emit = nullptr, *m_gather = nullptr;
+        IDirect3DPixelShader9 *m_emitPs = nullptr, *m_wherePs = nullptr, *m_gatherPs = nullptr;
+        IDirect3DTexture9 *m_emit = nullptr, *m_where = nullptr, *m_gather = nullptr;
         UINT m_emitWidth = 1, m_emitHeight = 1;
         static constexpr int kLevels = 5;                    // the light's levels: a half of the screen to a 32nd
         IDirect3DTexture9 *m_down[kLevels] = {}, *m_up[kLevels] = {};

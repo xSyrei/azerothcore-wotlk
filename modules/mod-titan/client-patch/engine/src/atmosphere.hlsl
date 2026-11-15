@@ -135,13 +135,13 @@ float Occlusion(float2 uv, float z, float2 pixel)
     float radius = Shade.y;
     // The radius on screen at this distance (in uv), never under a few pixels or over a fifth of the screen.
     float2 span = clamp(radius * Projection.xy * 0.5 / z, Screen.xy * 3.0, 0.2);
-    float turn = frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715)))) * 6.2831853;
+    // The same spiral at every pixel: a per-pixel turn showed as fine diagonal lines on smooth surfaces.
     float closed = 0.0;
     [unroll]
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < 16; i++)
     {
-        float t = (i + 0.5) / 12.0;
-        float a = turn + i * 2.3999632;                   // the golden angle
+        float t = (i + 0.5) / 16.0;
+        float a = 0.4 + i * 2.3999632;                    // the golden angle
         float2 at = uv + float2(cos(a), sin(a)) * span * t;
         float3 q = ViewRay(at) * Distance(at);
         float3 d = q - p;
@@ -149,7 +149,7 @@ float Occlusion(float2 uv, float z, float2 pixel)
         float range = saturate(1.0 - l / radius);
         closed += saturate(dot(n, d / max(l, 1e-3)) - 0.15) * range;
     }
-    return saturate(1.0 - closed / 12.0 * 2.2);
+    return saturate(1.0 - closed / 16.0 * 2.2);
 }
 
 // The point lights: on the surface (by distance and how it faces each), and in the air along the view ray (the
@@ -242,38 +242,70 @@ float HazeAmount(float2 uv, float z, bool sky)
     return saturate((1.0 - exp(-depth * wisp)) * HazeShape.z);
 }
 
-// Emit: at a 16th of the screen, each cell's lamps: the light of what shines past the threshold in it (16 points),
-// and where it is (its brightness-weighted distance). The sky emits nothing.
+// The scene's lamps, in 64-pixel cells, two passes over the same 8 x 8 points: Emit, the light of all that shines
+// past the threshold in the cell (as an average); Where, where in the cell that light is (its brightness-weighted
+// centre on screen) and how far: the nearest surface within a wider window about the cell (a lamp's glass is drawn
+// without depth, so its own pixels hold what is behind it; its frame and post are the nearest). Texel: the screen's
+// pixel (x, y), the threshold, its softness. A cell of sky alone does not emit.
+float LampWeight(float3 c)
+{
+    return smoothstep(Texel.z - Texel.w, Texel.z + Texel.w, dot(c, kLuma));
+}
+
 float4 Emit(float2 uv : TEXCOORD0) : COLOR
 {
     float3 sum = 0.0;
-    float weight = 0.0, depth = 0.0;
     [unroll]
-    for (int y = 0; y < 4; y++)
+    for (int y = 0; y < 8; y++)
     {
         [unroll]
-        for (int x = 0; x < 4; x++)
+        for (int x = 0; x < 8; x++)
         {
-            float2 at = uv + Texel.xy * (float2(x, y) * 4.0 - 6.0);
-            float z = Distance(at);
-            if (z < kSky)
+            float3 c = Sample(SceneS, uv + Texel.xy * (float2(x, y) * 8.0 - 28.0));
+            sum += c * LampWeight(c);
+        }
+    }
+    return float4(sum / 64.0, 1.0);
+}
+
+float4 Where(float2 uv : TEXCOORD0) : COLOR
+{
+    float2 centre = 0.0;
+    float weight = 0.0, nearest = kSky;
+    [loop]
+    for (int y = 0; y < 8; y++)
+    {
+        [loop]
+        for (int x = 0; x < 8; x++)
+        {
+            float2 at = uv + Texel.xy * (float2(x, y) * 8.0 - 28.0);
+            float w = LampWeight(Sample(SceneS, at));
+            if (w > 0.0)
             {
-                float3 c = Sample(SceneS, at);
-                float l = dot(c, kLuma);
-                float w = smoothstep(Texel.z - Texel.w, Texel.z + Texel.w, l);
-                sum += c * w;
+                centre += at * w;
                 weight += w;
-                depth += z * w;
+                // The nearest surface right about the light (its own frame and post, however thin far off).
+                nearest = min(nearest, Distance(at));
+                [unroll]
+                for (int k = 0; k < 4; k++)
+                {
+                    float2 dir = float2(k == 0 ? 1 : (k == 1 ? -1 : 0), k == 2 ? 1 : (k == 3 ? -1 : 0));
+                    nearest = min(nearest, Distance(at + dir * Texel.xy * 6.0));
+                    nearest = min(nearest, Distance(at + dir * Texel.xy * 16.0));
+                    nearest = min(nearest, Distance(at + dir * Texel.xy * 32.0));
+                }
             }
         }
     }
-    return float4(sum / 16.0, weight > 1e-3 ? depth / weight : 0.0);
+    if (weight < 1e-3 || nearest >= kSky)
+        return 0.0;
+    return float4(centre / weight, nearest, 1.0);
 }
 
-// Gather: at half the screen, the light each surface point takes from the lamps about it on screen: a 9 x 9 grid of
-// cells around it (Texel.z cells apart, shifted per pixel), each lamp by distance (within Texel.w yards) and by how
-// the surface faces it.
-float4 Gather(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
+// Gather: at a quarter of the screen, the light each surface point takes from every lamp cell within 6 cells of it
+// (none skipped: a lamp is often one cell), by distance (within Texel.w yards) and by how the surface faces it.
+// Texel here: the cells' size (x, y), the gain, the reach.
+float4 Gather(float2 uv : TEXCOORD0) : COLOR
 {
     float z = Distance(uv);
     if (z >= kSky)
@@ -281,28 +313,31 @@ float4 Gather(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
     float3 p = ViewRay(uv) * z;
     float3 n = Normal(uv, z);
     float reach = Texel.w;
-    float2 jitter = frac(float2(52.9829189, 41.7193) * frac(dot(pixel, float2(0.06711056, 0.00583715)))) - 0.5;
+    float2 cell = (floor(uv / Texel.xy) + 0.5) * Texel.xy;
     float3 light = 0.0;
     [loop]
-    for (int y = -4; y <= 4; y++)
+    for (int y = -6; y <= 6; y++)
     {
         [loop]
-        for (int x = -4; x <= 4; x++)
+        for (int x = -6; x <= 6; x++)
         {
-            float2 at = uv + (float2(x, y) + jitter) * Texel.z * Texel.xy;
-            float4 e = tex2Dlod(LevelS, float4(at, 0, 0));
-            if (e.a > 0.0 && dot(e.rgb, kLuma) > 1e-3)
+            float2 at = cell + float2(x, y) * Texel.xy;
+            float4 where = tex2Dlod(WideS, float4(at, 0, 0));
+            if (where.w > 0.5)
             {
-                float3 q = ViewRay(at) * e.a;
+                // The cell's light by how far the lamp is: a lamp covers fewer pixels further off, its light
+                // does not weaken for it.
+                float3 e = tex2Dlod(LevelS, float4(at, 0, 0)).rgb * clamp(where.z * where.z / 225.0, 0.1, 16.0);
+                float3 q = ViewRay(where.xy) * where.z;
                 float3 toLamp = q - p;
                 float d = length(toLamp);
                 float fall = saturate(1.0 - (d / reach) * (d / reach));
                 float facing = saturate(dot(n, toLamp / max(d, 1e-3)) * 0.8 + 0.2);
-                light += e.rgb * fall * fall * facing / (1.0 + d * d * 0.12);
+                light += e * fall * fall * facing / (1.0 + d * d * 0.12);
             }
         }
     }
-    return float4(light * Texel.z * Texel.z * 0.08, 1.0);
+    return float4(light * Texel.z, 1.0);
 }
 
 float4 Final(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
