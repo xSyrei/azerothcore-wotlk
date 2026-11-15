@@ -629,6 +629,18 @@ namespace
             SendState(player);
         else if (parts[0] == "PICK")
             Pick(player, num(1), uint8(num(2)), uint8(num(3)));
+        else if (parts[0] == "SKIP")
+        {
+            // An offer passed up: gone for good, nothing taken.
+            State& state = StateOf(player);
+            if (!FindOffer(state, num(1)))
+                return Error(player, "That offer is no longer there.");
+            uint32 seq = num(1);
+            DeleteOffer(player, seq);
+            state.Offers.erase(std::remove_if(state.Offers.begin(), state.Offers.end(),
+                [seq](Offer const& o) { return o.Seq == seq; }), state.Offers.end());
+            SendState(player);
+        }
         else if (parts[0] == "REL")
         {
             State& state = StateOf(player);

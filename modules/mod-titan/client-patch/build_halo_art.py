@@ -41,6 +41,57 @@ def svg(size, body, defs=''):
             f'<defs>{defs}</defs>{body}</svg>')
 
 
+def tall(width, height, view_w, view_h, body, defs=''):
+    """A non-square piece: drawn on a view_w x view_h canvas, stretched to a power-of-two texture; the addon draws
+    it back at view_w x view_h, so its proportions come back."""
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+            f'viewBox="0 0 {view_w} {view_h}" preserveAspectRatio="none"><defs>{defs}</defs>{body}</svg>')
+
+
+# The offer card: 240 x 360, corners cut by 16.
+CARD = 'M16 1H224L239 16V344L224 359H16L1 344V16Z'
+CARD_INNER = 'M19 8H221L232 19V341L221 352H19L8 341V19Z'
+
+
+def card_pieces(out):
+    # The frame (tinted by rarity): the cut outline, a faint inner line, crest and foot diamonds, corner marks.
+    marks = ''.join(f'<path d="{d}" fill="none" stroke="#fff" stroke-width="1.6" stroke-opacity=".8"/>' for d in (
+        'M4 40V22L22 4H40', 'M200 4H218L236 22V40', 'M4 320V338L22 356H40', 'M200 356H218L236 338V320'))
+    out['HaloCardFrame'] = tall(256, 512, 240, 360,
+                                f'<path d="{CARD}" fill="none" stroke="#fff" stroke-width="2"/>'
+                                f'<path d="{CARD_INNER}" fill="none" stroke="#fff" stroke-width="1" '
+                                f'stroke-opacity=".28"/>{marks}'
+                                '<path d="M120 -6L127 1L120 8L113 1Z" fill="#fff"/>'
+                                '<path d="M120 352L127 359L120 366L113 359Z" fill="#fff"/>')
+    # The body (untinted): dark, lighter at the top, a darker foot.
+    out['HaloCardFill'] = tall(256, 512, 240, 360,
+                               f'<path d="{CARD}" fill="url(#v)"/><path d="{CARD}" fill="url(#t)"/>',
+                               '<linearGradient id="v" x1="0" y1="0" x2="0" y2="1">'
+                               '<stop offset="0" stop-color="#1f1a26"/><stop offset=".55" stop-color="#110f16"/>'
+                               '<stop offset="1" stop-color="#08070b"/></linearGradient>'
+                               '<radialGradient id="t" cx=".5" cy=".18" r=".55">'
+                               '<stop offset="0" stop-color="#ffffff" stop-opacity=".07"/>'
+                               '<stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>')
+    # The light behind the rune (tinted, added): an ellipse at the top, and a band along the frame.
+    out['HaloCardGlow'] = tall(256, 512, 240, 360,
+                               '<ellipse cx="120" cy="86" rx="120" ry="110" fill="url(#r)"/>'
+                               f'<path d="{CARD}" fill="none" stroke="url(#e)" stroke-width="10"/>',
+                               '<radialGradient id="r"><stop offset="0" stop-color="#fff" stop-opacity=".9"/>'
+                               '<stop offset=".45" stop-color="#fff" stop-opacity=".25"/>'
+                               '<stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>'
+                               '<linearGradient id="e" x1="0" y1="0" x2="0" y2="1">'
+                               '<stop offset="0" stop-color="#fff" stop-opacity=".5"/>'
+                               '<stop offset="1" stop-color="#fff" stop-opacity=".08"/></linearGradient>')
+    # A divider: a line fading out both ways, a diamond in the middle.
+    out['HaloDivider'] = tall(256, 32, 240, 16,
+                              '<rect x="0" y="7.4" width="240" height="1.2" fill="url(#l)"/>'
+                              '<path d="M120 2L126 8L120 14L114 8Z" fill="none" stroke="#fff" stroke-width="1.2"/>'
+                              '<path d="M120 5.5L122.5 8L120 10.5L117.5 8Z" fill="#fff"/>',
+                              '<linearGradient id="l"><stop offset="0" stop-color="#fff" stop-opacity="0"/>'
+                              '<stop offset=".5" stop-color="#fff"/><stop offset="1" stop-color="#fff" '
+                              'stop-opacity="0"/></linearGradient>')
+
+
 def pieces():
     out = {}
     out['HaloRing'] = svg(512, '<circle cx="256" cy="256" r="252" fill="none" stroke="#fff" stroke-width="3"/>')
@@ -84,6 +135,7 @@ def pieces():
                                        f'stroke-linejoin="round"/></g>')
     out['HaloPlus'] = svg(32, '<path d="M16 6v20M6 16h20" stroke="#fff" stroke-width="3" stroke-linecap="round"/>')
     out['HaloCorner'] = svg(64, '<path d="M2 62V2h60" fill="none" stroke="#fff" stroke-width="3"/>')
+    card_pieces(out)
     return out
 
 
@@ -95,10 +147,10 @@ const fs = require('fs');
   const browser = await chromium.launch();
   const page = await browser.newPage();
   for (const job of jobs) {
-    await page.setViewportSize({ width: job.size, height: job.size });
+    await page.setViewportSize({ width: job.width, height: job.height });
     await page.setContent(`<html><body style="margin:0;background:transparent">${job.svg}</body></html>`);
     await page.screenshot({ path: job.out, omitBackground: true,
-      clip: { x: 0, y: 0, width: job.size, height: job.size } });
+      clip: { x: 0, y: 0, width: job.width, height: job.height } });
   }
   await browser.close();
 })();
@@ -110,14 +162,16 @@ def main():
         tmp = Path(tmp)
         jobs = []
         for name, text in pieces().items():
-            size = int(text.split('width="', 1)[1].split('"', 1)[0])
-            jobs.append({'name': name, 'size': size, 'svg': text, 'out': str(tmp / f'{name}.png')})
+            width = int(text.split('width="', 1)[1].split('"', 1)[0])
+            height = int(text.split('height="', 1)[1].split('"', 1)[0])
+            jobs.append({'name': name, 'width': width, 'height': height, 'svg': text,
+                         'out': str(tmp / f'{name}.png')})
         (tmp / 'jobs.json').write_text(json.dumps(jobs))
         (tmp / 'render.js').write_text(RENDER)
         subprocess.run(['node', str(tmp / 'render.js'), str(tmp / 'jobs.json')], check=True, cwd=tmp)
         for job in jobs:
             Image.open(job['out']).convert('RGBA').save(OUT / f'{job["name"]}.tga')
-            print(f'  {job["name"]}.tga ({job["size"]})')
+            print(f'  {job["name"]}.tga ({job["width"]} x {job["height"]})')
 
 
 if __name__ == '__main__':

@@ -579,8 +579,12 @@ Epic, Rare and Uncommon runes beside the Legendary Rune (`src/rune_tiers.cpp`), 
   once per ability ("your runes on X are dormant"), and when it wakes.
 - **The Halo** (`Emberforge_Runes/Halo.lua`, art by `client-patch/build_halo_art.py`): the rune button and `/runes`
   open it. The Legendary Rune in the centre (clicked: its own panel), 5 Epic sockets on the inner ring, 10 Rare on the
-  outer, the Uncommons by ability on the right under the selected rune's words (Release asks first). An offer opens it
-  on a choice of 3; a full set of sockets asks which one to replace. Tests: `AddOns/tests/halo_test.lua`.
+  outer (each held rune shows its ability's icon), the Uncommons by ability on the right under the selected rune's
+  words (Release asks first); the Legendary selected shows its build slot by slot. A window over the world (clicks
+  around it reach the game): dragged to move, the corner grip sizes it (kept per character). An offer opens it on 3
+  cards (each says what taking it does: the socket it fills, the ability slot it takes, a Resonance it completes); a
+  full set of sockets asks which one to replace; Skip (asks first, `SKIP`) throws the offer away. Tests:
+  `AddOns/tests/halo_test.lua`.
 - **Uncommon effects**: Rapid (cast time -10%), Critical (critical strikes +20%) and Provoking (threat +50%) are spell
   modifiers named after spell 91170 (family 99, so the core matches it to nothing; `titan_rune_tiers_mods` matches
   each to its rune's ability, every rank; nothing is sent to the client). Refreshing takes 10% off the cooldown just

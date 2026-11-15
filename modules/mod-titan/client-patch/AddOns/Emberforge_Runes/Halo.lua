@@ -17,7 +17,7 @@ local C = 300                                           -- the wheel's centre, i
 local EPIC_R, RARE_R = 124, 214
 local SIZE = { epic = 52, rare = 38 }
 local LEGEND = 112
-local ROWS = 9                                          -- Uncommon rows shown at once
+local ROWS = 7                                          -- Uncommon rows shown at once
 
 local COLOR = {
     legend = { 1, 0.70, 0.36 }, epic = { 0.77, 0.48, 1 }, rare = { 0.44, 0.69, 1 }, uncommon = { 0.42, 0.94, 0.42 },
@@ -64,24 +64,57 @@ local function Info(id)
     end
 end
 
+-- An ability's icon (its spell's), round when the client can make it so.
+local function AbilityIcon(texture, ability)
+    local icon = ability and GetSpellInfo and select(3, GetSpellInfo(ability))
+    if icon and SetPortraitToTexture then
+        SetPortraitToTexture(texture, icon)
+    else
+        texture:SetTexture(icon or (ART .. "HaloFill"))
+    end
+    return icon
+end
+
 -- Widgets -----------------------------------------------------------------------------------------------------------
 
 local frame = CreateFrame("Frame", "EmberforgeHalo", UIParent)
 frame:SetAllPoints(UIParent)
 frame:SetFrameStrata("DIALOG")
-frame:EnableMouse(true)
 frame:Hide()
 tinsert(UISpecialFrames, "EmberforgeHalo")             -- Escape closes it
 
+-- The window: dragged by its backdrop; its size by the grip in the bottom right corner (kept per character), by
+-- default about two thirds of the screen's height.
 local stage = CreateFrame("Frame", nil, frame)
 stage:SetWidth(W)
 stage:SetHeight(H)
 stage:SetPoint("CENTER")
-local function Fit()
-    local scale = math.min(UIParent:GetWidth() / W, UIParent:GetHeight() / H, 1.25) * 0.94
-    if scale > 0 then
-        stage:SetScale(scale)
+stage:EnableMouse(true)
+stage:SetMovable(true)
+stage:SetClampedToScreen(true)
+stage:RegisterForDrag("LeftButton")
+stage:SetScript("OnDragStart", function(self) self:StartMoving() end)
+stage:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+local SCALE_MIN, SCALE_MAX = 0.45, 1.3
+local function DefaultScale()
+    local fit = math.min(UIParent:GetWidth() / W, UIParent:GetHeight() / H)
+    return fit > 0 and math.min(1, fit * 0.68) or 0.8
+end
+local function SetWindowScale(scale, save)
+    scale = math.max(SCALE_MIN, math.min(SCALE_MAX, scale))
+    local old, left, top = stage:GetScale(), stage:GetLeft(), stage:GetTop()
+    stage:SetScale(scale)
+    if left and top and old then
+        stage:ClearAllPoints()
+        stage:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", left * old / scale, top * old / scale)
     end
+    if save and EmberforgeRunesDB then
+        EmberforgeRunesDB.haloScale = scale
+    end
+end
+local function Fit()
+    local saved = EmberforgeRunesDB and EmberforgeRunesDB.haloScale
+    stage:SetScale(math.max(SCALE_MIN, math.min(SCALE_MAX, saved or DefaultScale())))
 end
 frame:SetScript("OnShow", Fit)
 
@@ -158,6 +191,37 @@ close.text:SetPoint("CENTER")
 close.text:SetText("X")
 close:SetScript("OnClick", function() frame:Hide() end)
 
+local grip = CreateFrame("Button", nil, stage)
+grip:SetWidth(18)
+grip:SetHeight(18)
+grip:SetPoint("BOTTOMRIGHT", -8, 8)
+grip:SetFrameLevel(stage:GetFrameLevel() + 40)
+grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+grip:SetScript("OnMouseDown", function(self)
+    self.from, self.scale = GetCursorPosition(), stage:GetScale()
+end)
+grip:SetScript("OnMouseUp", function(self)
+    self.from = nil
+end)
+grip:SetScript("OnUpdate", function(self)
+    if not self.from then
+        return
+    end
+    local x = GetCursorPosition()
+    local moved = (x - self.from) / UIParent:GetEffectiveScale()
+    SetWindowScale(self.scale * (1 + moved / (W * self.scale)), true)
+end)
+grip:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("Window size")
+    GameTooltip:AddLine("Drag to make the window larger or smaller. Drag the window itself to move it.", 1, 1, 1,
+        true)
+    GameTooltip:Show()
+end)
+grip:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
 -- The wheel ---------------------------------------------------------------------------------------------------------
 
 local wheel = CreateFrame("Frame", nil, stage)
@@ -205,7 +269,7 @@ ringLabels.rare:SetPoint("CENTER", wheel, "TOPLEFT", C, -(C - RARE_R))
 ringLabels.epic:SetPoint("CENTER", wheel, "TOPLEFT", C, -(C + EPIC_R))
 
 local sockets = { epic = {}, rare = {} }
-local Refresh, Pick                                  -- below
+local Refresh, Pick, Fate, ShowBuild                -- below
 for kind, count in pairs({ epic = 5, rare = 10 }) do
     local radius, size = kind == "epic" and EPIC_R or RARE_R, SIZE[kind]
     local offset = kind == "epic" and 0 or 18
@@ -222,10 +286,14 @@ for kind, count in pairs({ epic = 5, rare = 10 }) do
         socket.glow:SetBlendMode("ADD")
         socket.fill = Tex(socket, "HaloFill", size, "BORDER")
         socket.fill:SetPoint("CENTER")
-        socket.ring = Tex(socket, "HaloSocketRing", size, "ARTWORK")
+        socket.ring = Tex(socket, "HaloSocketRing", size, "OVERLAY")
         socket.ring:SetPoint("CENTER")
         socket.dash = Tex(socket, "HaloSocketDash", size, "ARTWORK")
         socket.dash:SetPoint("CENTER")
+        socket.icon = socket:CreateTexture(nil, "ARTWORK")
+        socket.icon:SetWidth(size - 6)
+        socket.icon:SetHeight(size - 6)
+        socket.icon:SetPoint("CENTER")
         socket.glyph = Tex(socket, nil, size * 0.5, "OVERLAY")
         socket.glyph:SetPoint("CENTER")
         socket.plus = Tex(socket, "HaloPlus", size * 0.28, "OVERLAY")
@@ -282,15 +350,30 @@ detail.note:SetPoint("TOPLEFT", detail.text, "BOTTOMLEFT", 0, -8)
 detail.action = Pill(panel, "", 170)
 detail.action:SetPoint("TOPLEFT", panel, "TOPLEFT", 0, -238)
 
+-- The Legendary's build, under its name: each slot's chosen modifier and what it does.
+local build = {}
+build.head = Text(panel, CINZEL, 11, COLOR.gold, "LEFT", 400)
+build.head:SetPoint("TOPLEFT", detail.ability, "BOTTOMLEFT", 0, -12)
+for i = 1, 3 do
+    local row = {}
+    row.slot = Text(panel, CINZEL, 10, COLOR.legend, "LEFT")
+    row.slot:SetPoint("TOPLEFT", i == 1 and build.head or build[i - 1].text, "BOTTOMLEFT", 0, -11)
+    row.name = Text(panel, SANS_MEDIUM, 15, COLOR.ink, "LEFT", 290)
+    row.name:SetPoint("BOTTOMLEFT", row.slot, "BOTTOMRIGHT", 8, -2)
+    row.text = Text(panel, SANS, 13, { 0.74, 0.70, 0.63 }, "LEFT", 400)
+    row.text:SetPoint("TOPLEFT", row.slot, "BOTTOMLEFT", 0, -5)
+    build[i] = row
+end
+
 local counts = Text(panel, CINZEL, 13, COLOR.ink, "LEFT", 410)
-counts:SetPoint("TOPLEFT", 0, -290)
+counts:SetPoint("TOPLEFT", 0, -340)
 local listTitle = Text(panel, CINZEL, 11, COLOR.uncommon, "LEFT", 410)
-listTitle:SetPoint("TOPLEFT", 0, -324)
+listTitle:SetPoint("TOPLEFT", 0, -372)
 
 local list = CreateFrame("Frame", nil, panel)
 list:SetWidth(410)
 list:SetHeight(ROWS * 28)
-list:SetPoint("TOPLEFT", 0, -344)
+list:SetPoint("TOPLEFT", 0, -392)
 list:EnableMouseWheel(true)
 local rows = {}
 for i = 1, ROWS do
@@ -318,8 +401,9 @@ list:SetScript("OnMouseWheel", function(_, delta)
     Refresh()
 end)
 
--- The offer ---------------------------------------------------------------------------------------------------------
+-- The offer: three cards over the dimmed Halo -------------------------------------------------------------------------
 
+local CARD_W, CARD_H, CARD_GAP = 240, 360, 28
 local offer = CreateFrame("Frame", nil, stage)
 offer:SetAllPoints()
 offer:SetFrameLevel(stage:GetFrameLevel() + 20)
@@ -327,51 +411,114 @@ offer:EnableMouse(true)
 offer:Hide()
 offer.bg = offer:CreateTexture(nil, "BACKGROUND")
 offer.bg:SetAllPoints()
-offer.bg:SetTexture(0.02, 0.02, 0.03, 0.94)
-offer.eyebrow = Text(offer, CINZEL, 12, COLOR.muted, "CENTER", 600)
-offer.eyebrow:SetPoint("TOP", 0, -110)
-offer.title = Text(offer, CINZEL, 32, COLOR.ink, "CENTER", 600)
+offer.bg:SetTexture(0.015, 0.012, 0.02, 0.95)
+offer.light = Tex(offer, "Soft", 900, "BORDER")
+offer.light:SetPoint("CENTER", offer, "TOP", 0, -330)
+offer.light:SetBlendMode("ADD")
+Tint(offer.light, { 0.55, 0.36, 0.16 }, 0.22)
+offer.eyebrow = Text(offer, CINZEL, 12, COLOR.gold, "CENTER", 600)
+offer.eyebrow:SetPoint("TOP", 0, -46)
+offer.title = Text(offer, CINZEL, 30, COLOR.ink, "CENTER", 600)
 offer.title:SetPoint("TOP", offer.eyebrow, "BOTTOM", 0, -8)
 offer.title:SetText("Choose a Rune")
+offer.rule = Tex(offer, "HaloDivider", nil, "ARTWORK")
+offer.rule:SetWidth(360)
+offer.rule:SetHeight(16)
+offer.rule:SetPoint("TOP", offer.title, "BOTTOM", 0, -8)
+Tint(offer.rule, COLOR.gold, 0.7)
+offer.sub = Text(offer, SANS, 14, COLOR.muted, "CENTER", 700)
+offer.sub:SetPoint("TOP", offer.rule, "BOTTOM", 0, -6)
+offer.sub:SetText("Take one of the three, or skip the offer for nothing.")
+
+local function CardHover(card, on)
+    local color = card.color or COLOR.gold
+    card.hover = on
+    Tint(card.frame, color, on and 1 or 0.7)
+    Tint(card.glow, color, on and 0.5 or 0.24)
+    card:ClearAllPoints()
+    card:SetPoint("TOP", offer, "TOP", card.x, on and -164 or -158)
+    card.choose.text:SetTextColor(unpack(on and COLOR.ink or color))
+    card.choose.bg:SetTexture(color[1] * 0.25, color[2] * 0.25, color[3] * 0.25, on and 0.95 or 0.6)
+end
+
 offer.cards = {}
 for i = 1, 3 do
     local card = CreateFrame("Button", nil, offer)
-    card:SetWidth(250)
-    card:SetHeight(320)
-    card:SetPoint("TOP", offer, "TOP", (i - 2) * 280, -200)
-    card.bg = card:CreateTexture(nil, "BACKGROUND")
-    card.bg:SetAllPoints()
-    card.bg:SetTexture(1, 1, 1, 0.03)
-    card.edge = Tex(card, "HaloRing", 96, "BORDER")
-    card.edge:SetPoint("TOP", 0, -26)
-    card.fill = Tex(card, "HaloFill", 90, "BORDER")
-    card.fill:SetPoint("CENTER", card.edge, "CENTER")
-    card.glow = Tex(card, "Soft", 170, "BACKGROUND")
-    card.glow:SetPoint("CENTER", card.edge, "CENTER")
+    card:SetWidth(CARD_W)
+    card:SetHeight(CARD_H)
+    card.x = (i - 2) * (CARD_W + CARD_GAP)
+    card:SetPoint("TOP", offer, "TOP", card.x, -158)
+    card.fill = Tex(card, "HaloCardFill", nil, "BACKGROUND")
+    card.fill:SetAllPoints()
+    card.glow = Tex(card, "HaloCardGlow", nil, "BORDER")
+    card.glow:SetAllPoints()
     card.glow:SetBlendMode("ADD")
-    card.gem = Tex(card, nil, 58, "ARTWORK")
-    card.gem:SetPoint("CENTER", card.edge, "CENTER")
-    card.rarity = Text(card, CINZEL, 11, COLOR.gold, "CENTER", 230)
-    card.rarity:SetPoint("TOP", card.edge, "BOTTOM", 0, -14)
-    card.name = Text(card, CINZEL, 18, COLOR.ink, "CENTER", 230)
+    card.frame = Tex(card, "HaloCardFrame", nil, "ARTWORK")
+    card.frame:SetAllPoints()
+    -- The rune: its ability's icon in a ringed socket, the rarity's gem below it.
+    card.socket = Tex(card, "HaloFill", 92, "ARTWORK")
+    card.socket:SetPoint("CENTER", card, "TOP", 0, -74)
+    card.icon = card:CreateTexture(nil, "OVERLAY")
+    card.icon:SetWidth(78)
+    card.icon:SetHeight(78)
+    card.icon:SetPoint("CENTER", card.socket, "CENTER")
+    card.ring = Tex(card, "HaloSocketRing", 96, "OVERLAY")
+    card.ring:SetPoint("CENTER", card.socket, "CENTER")
+    card.gem = Tex(card, nil, 34, "OVERLAY")
+    card.gem:SetPoint("CENTER", card.socket, "BOTTOM", 0, 0)
+    card.rarity = Text(card, CINZEL, 11, COLOR.gold, "CENTER", 210)
+    card.rarity:SetPoint("TOP", card, "TOP", 0, -138)
+    card.name = Text(card, CINZEL, 17, COLOR.ink, "CENTER", 210)
     card.name:SetPoint("TOP", card.rarity, "BOTTOM", 0, -6)
-    card.ability = Text(card, SANS, 13, COLOR.muted, "CENTER", 230)
-    card.ability:SetPoint("TOP", card.name, "BOTTOM", 0, -4)
-    card.text = Text(card, SANS, 14, { 0.80, 0.76, 0.68 }, "CENTER", 220)
-    card.text:SetPoint("TOP", card.ability, "BOTTOM", 0, -10)
-    card.hl = card:CreateTexture(nil, "HIGHLIGHT")
-    card.hl:SetAllPoints()
-    card.hl:SetTexture(1, 0.85, 0.5, 0.06)
+    card.ability = Text(card, SANS, 13, COLOR.muted, "CENTER", 210)
+    card.ability:SetPoint("TOP", card.name, "BOTTOM", 0, -3)
+    card.rule = Tex(card, "HaloDivider", nil, "ARTWORK")
+    card.rule:SetWidth(180)
+    card.rule:SetHeight(12)
+    card.rule:SetPoint("TOP", card.ability, "BOTTOM", 0, -8)
+    card.text = Text(card, SANS, 14, { 0.84, 0.80, 0.72 }, "CENTER", 200)
+    card.text:SetPoint("TOP", card.rule, "BOTTOM", 0, -8)
+    -- What taking it does: the socket it fills, the ability slot it takes, a Resonance it completes.
+    card.fate = Text(card, SANS, 12, COLOR.muted, "CENTER", 210)
+    card.fate:SetPoint("BOTTOM", card, "BOTTOM", 0, 52)
+    card.choose = Pill(card, "CHOOSE", 150)
+    card.choose:SetPoint("BOTTOM", card, "BOTTOM", 0, 14)
+    card.choose:EnableMouse(false)
     card.index = i
     card:SetScript("OnClick", function(self) Pick(self.index) end)
+    card:SetScript("OnEnter", function(self) CardHover(self, true) end)
+    card:SetScript("OnLeave", function(self) CardHover(self, false) end)
     offer.cards[i] = card
 end
-offer.prev = Pill(offer, "<", 44)
-offer.prev:SetPoint("TOP", offer, "TOP", -170, -560)
-offer.next = Pill(offer, ">", 44)
-offer.next:SetPoint("TOP", offer, "TOP", 170, -560)
-offer.later = Pill(offer, "DECIDE LATER", 200, COLOR.muted)
-offer.later:SetPoint("TOP", offer, "TOP", 0, -560)
+
+-- Below the cards: skip (asks first), the pager, decide later.
+offer.skip = Pill(offer, "SKIP OFFER", 160, { 0.85, 0.48, 0.42 })
+offer.skip:SetPoint("TOP", offer, "TOP", -300, -548)
+offer.later = Pill(offer, "DECIDE LATER", 160, COLOR.muted)
+offer.later:SetPoint("TOP", offer, "TOP", 300, -548)
+offer.prev = Pill(offer, "<", 40)
+offer.prev:SetPoint("TOP", offer, "TOP", -80, -548)
+offer.next = Pill(offer, ">", 40)
+offer.next:SetPoint("TOP", offer, "TOP", 80, -548)
+offer.page = Text(offer, CINZEL, 13, COLOR.gold, "CENTER", 100)
+offer.page:SetPoint("TOP", offer, "TOP", 0, -557)
+offer.skip:SetScript("OnClick", function()
+    local current = state.offers[view.offer]
+    if current and StaticPopup_Show then
+        local popup = StaticPopup_Show("EMBERFORGE_RUNE_SKIP", current.level)
+        if popup then
+            popup.data = current.seq
+        end
+    end
+end)
+if StaticPopupDialogs then
+    StaticPopupDialogs.EMBERFORGE_RUNE_SKIP = {
+        text = "Skip the level %d rune offer?\nIts three runes are gone for good.",
+        button1 = ACCEPT or "Accept", button2 = CANCEL or "Cancel",
+        OnAccept = function(_, seq) Send("SKIP," .. seq) end,
+        timeout = 0, whileDead = true, hideOnEscape = true,
+    }
+end
 offer.later:SetScript("OnClick", function()
     offer:Hide()
     view.replace = nil
@@ -421,8 +568,15 @@ local function DrawSocket(socket, rune)
     Tint(socket.dash, color, rune and 0 or 0.45)
     Tint(socket.plus, color, rune and 0 or 0.55)
     Tint(socket.glow, color, live and 0.22 or 0)
+    -- A held rune shows its ability's icon (greyed while dormant); the rune mark only if the icon is unknown.
+    local info = rune and Info(rune)
+    local icon = info and AbilityIcon(socket.icon, info.ability)
+    socket.icon:SetAlpha(icon and 1 or 0)
+    if socket.icon.SetDesaturated then
+        socket.icon:SetDesaturated(held and held.dormant and true or false)
+    end
     socket.glyph:SetTexture(ART .. "HaloGlyph" .. ((rune or socket.index) % 10 + 1))
-    Tint(socket.glyph, color, rune and 1 or 0)
+    Tint(socket.glyph, color, rune and not icon and 1 or 0)
     socket.sel:SetAlpha((selected or replacing) and 0.9 or 0)
 end
 
@@ -483,6 +637,25 @@ local function AskRelease(label, rune, ability)
 end
 
 -- The Legendary in the centre: the bound rune of Emberforge_Runes.lua, if any.
+function ShowBuild(legendary)
+    local shown = legendary ~= nil
+    local picks = EmberforgeRunes_State and EmberforgeRunes_State.mods or {}
+    local slotNames = legendary and legendary.slots or { "Invocation", "Manifestation", "Adaptation" }
+    local chosen = 0
+    for i, row in ipairs(build) do
+        local pick = picks[i] or 0
+        local mod = legendary and pick > 0 and legendary.mods and legendary.mods[(i - 1) * 3 + pick]
+        if mod then
+            chosen = chosen + 1
+        end
+        row.slot:SetText(shown and (slotNames[i] or ""):upper() or "")
+        row.name:SetText(shown and (mod and mod.name or "Not chosen yet") or "")
+        row.name:SetTextColor(unpack(mod and COLOR.ink or COLOR.faint))
+        row.text:SetText(shown and mod and mod.text or "")
+    end
+    build.head:SetText(shown and ("YOUR BUILD  ·  %d / 3 CHOSEN"):format(chosen) or "")
+end
+
 local function LegendaryRune()
     local legendaryState = EmberforgeRunes_State
     if not legendaryState or not legendaryState.rune or legendaryState.rune == 0 then
@@ -493,6 +666,43 @@ local function LegendaryRune()
             return rune
         end
     end
+end
+
+-- What taking a rune does, for its card: the socket it fills or must replace, the ability slot it takes, and the
+-- Resonance (Epic, Rare and Uncommon on one ability) it completes.
+function Fate(info, socketed, uncommons)
+    local onAbility = { epic = false, rare = false, uncommon = uncommons[info.ability] ~= nil }
+    for kind, held in pairs(socketed) do
+        for _, rune in pairs(held) do
+            local other = Info(rune)
+            if other and other.ability == info.ability then
+                onAbility[kind] = true
+            end
+        end
+    end
+    local before = onAbility.epic and onAbility.rare and onAbility.uncommon
+    onAbility[info.rarity] = true
+    if not before and onAbility.epic and onAbility.rare and onAbility.uncommon then
+        return "|cffffb35cCompletes Resonance on " .. info.abilityName .. "|r"
+    end
+    if info.rarity == "uncommon" then
+        local abilities = 0
+        for _ in pairs(uncommons) do
+            abilities = abilities + 1
+        end
+        if uncommons[info.ability] then
+            return "Joins your " .. info.abilityName .. " runes"
+        elseif abilities >= state.slots then
+            return "|cffff8a73All " .. state.slots .. " ability slots are full|r"
+        end
+        return ("Takes ability slot %d of %d"):format(abilities + 1, state.slots)
+    end
+    local count, max = RuneCount(socketed, info.rarity), state.sockets[info.rarity]
+    if count >= max then
+        return "Replaces one of your " .. max .. " " .. LABEL[info.rarity]:lower() .. " runes"
+    end
+    return ("Fills %s socket %d of %d"):format(LABEL[info.rarity]:sub(1, 1) .. LABEL[info.rarity]:sub(2):lower(),
+        count + 1, max)
 end
 
 function Refresh()
@@ -521,10 +731,11 @@ function Refresh()
 
     -- The selected rune's words.
     local sel = view.sel
+    ShowBuild(sel.kind == "legend" and legendary or nil)
     if sel.kind == "legend" then
-        ShowDetail("LEGENDARY", COLOR.legend, legendary and legendary.name or "No Legendary Rune yet",
-            legendary and legendary.role or "", legendary and "Click the medallion to see and change its build."
-            or "Click the medallion to choose your Legendary Rune.", nil, nil)
+        ShowDetail("LEGENDARY  ·  CLICK THE MEDALLION TO CHANGE IT", COLOR.legend, legendary and legendary.name
+            or "No Legendary Rune yet", legendary and legendary.role or "", not legendary
+            and "Click the medallion to choose your Legendary Rune." or nil, nil, nil)
     elseif sel.kind == "ability" then
         local ability = tiers.abilities[sel.ability]
         local held = uncommons[sel.ability] or {}
@@ -615,21 +826,26 @@ function Refresh()
     view.offer = math.max(1, math.min(view.offer, #state.offers))
     local current = state.offers[view.offer]
     if current and offer:IsShown() then
-        offer.eyebrow:SetText(("LEVEL %d  ·  OFFER %d OF %d"):format(current.level, view.offer, #state.offers))
+        offer.eyebrow:SetText(("LEVEL %d REWARD"):format(current.level))
+        offer.page:SetText(("%d / %d"):format(view.offer, #state.offers))
         for i, card in ipairs(offer.cards) do
             local info = Info(current.runes[i])
             card.rune = current.runes[i]
             if info then
                 local color = COLOR[info.rarity]
+                card.color = color
+                AbilityIcon(card.icon, info.ability)
                 card.gem:SetTexture(ART .. GEM[info.rarity])
                 Tint(card.gem, color)
-                Tint(card.edge, color, 0.9)
-                Tint(card.glow, color, 0.25)
-                card.rarity:SetText(LABEL[info.rarity])
+                Tint(card.ring, color, 0.95)
+                card.rarity:SetText(LABEL[info.rarity] .. " RUNE")
                 card.rarity:SetTextColor(color[1], color[2], color[3])
+                Tint(card.rule, color, 0.6)
                 card.name:SetText(info.name)
-                card.ability:SetText(info.abilityName)
+                card.ability:SetText(info.abilityName .. (info.spec and ("  ·  " .. info.spec) or ""))
                 card.text:SetText(info.text)
+                card.fate:SetText(Fate(info, socketed, uncommons))
+                CardHover(card, card.hover)
                 card:Show()
             else
                 card:Hide()
@@ -638,9 +854,11 @@ function Refresh()
         if #state.offers > 1 then
             offer.prev:Show()
             offer.next:Show()
+            offer.page:Show()
         else
             offer.prev:Hide()
             offer.next:Hide()
+            offer.page:Hide()
         end
     end
     if view.replace then
@@ -799,4 +1017,5 @@ EmberforgeHalo_State = function() return state end
 EmberforgeHalo_View = view
 EmberforgeHalo_Debug = { frame = frame, legend = legend, sockets = sockets, detail = detail, rows = rows,
     list = list, offer = offer, offersButton = offersButton, banner = banner, note = note, counts = counts,
-    listTitle = listTitle, ringLabels = ringLabels, Info = Info, Open = Open }
+    listTitle = listTitle, ringLabels = ringLabels, Info = Info, Open = Open, build = build }
+EmberforgeHalo_Refresh = function() Refresh() end

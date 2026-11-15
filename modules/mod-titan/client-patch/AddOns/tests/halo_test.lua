@@ -69,7 +69,7 @@ function hooksecurefunc() end
 function SendAddonMessage(prefix, message) sent[#sent + 1] = { prefix, message } end
 function UnitName() return "Tester" end
 function UnitLevel() return 30 end
-function GetSpellInfo() return nil end
+function GetSpellInfo(id) if id then return "Spell" .. id, "", "Interface\\Icons\\Test" end end
 function UnitBuff() end
 function GetActionInfo() end
 function GetTime() return 100 end
@@ -154,8 +154,16 @@ server("Z")
 server("O")
 local offer = debug.offer
 check(debug.frame.shown and offer.shown and offer.cards[1].name.text == "Aggressive Fireball"
-    and offer.cards[2].rarity.text == "RARE" and offer.cards[3].rarity.text == "EPIC",
+    and offer.cards[2].rarity.text == "RARE RUNE" and offer.cards[3].rarity.text == "EPIC RUNE",
     "an offer opens the Halo on its three runes")
+check(offer.cards[1].fate.text == "Takes ability slot 1 of 10"
+    and offer.cards[2].fate.text == "Fills Rare socket 1 of 10"
+    and offer.cards[3].fate.text:find("Replaces one of your 5 epic runes"), "each card says what taking it does")
+check(offer.page.text == "1 / 1" and not offer.prev.shown, "one offer: no pager")
+offer.skip:Click()
+check(popup and popup.name == "EMBERFORGE_RUNE_SKIP" and popup.a == 30, "skipping asks first")
+StaticPopupDialogs.EMBERFORGE_RUNE_SKIP.OnAccept(nil, popup.data)
+check(lastSent() == "EFRT SKIP,7", "a skipped offer goes to the server")
 offer.cards[1]:Click()
 check(lastSent() == "EFRT PICK,7,1", "an Uncommon is taken at once")
 
@@ -166,6 +174,22 @@ check(view.replace and not offer.shown and debug.banner.text:find("Choose a sock
     "a full set of Epic sockets asks which one to replace")
 sockets.epic[4]:Click()
 check(lastSent() == "EFRT PICK,7,3,4" and not view.replace, "the chosen socket goes with the pick")
+
+-- A held rune's socket shows its ability's icon.
+check(sockets.epic[1].icon.alpha == 1 and sockets.epic[1].icon.texture == "Interface\\Icons\\Test"
+    and sockets.epic[3].icon.alpha == 1, "held runes show their ability's icon")
+
+-- The Legendary selected: its build, slot by slot.
+EmberforgeRunes_State.rune, EmberforgeRunes_State.mods = 31, { 1, 0, 2 }
+debug.frame:Show()
+view.sel = { kind = "legend" }
+EmberforgeHalo_Refresh()
+check(debug.build.head.text == "YOUR BUILD  ·  2 / 3 CHOSEN" and debug.build[1].slot.text == "FORMATION"
+    and debug.build[2].name.text == "Not chosen yet" and debug.build[3].text.text ~= "",
+    "the Legendary's build is broken down under it")
+view.sel = { kind = "epic", index = 1 }
+EmberforgeHalo_Refresh()
+check(debug.build.head.text == "" and debug.build[1].name.text == "", "and hidden for other runes")
 
 -- The Legendary in the centre opens its own panel.
 debug.frame:Show()
