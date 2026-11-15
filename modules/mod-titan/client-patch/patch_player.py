@@ -8,7 +8,8 @@ already turns Strength into 2 attack power and Agility into 1 ranged attack powe
 - Intellect: 3 ranged attack power, 2 spell power (damage and healing);
 - Spirit: 0.25 spell power (damage and healing).
 
-The buff you see (90600) and two hidden ones (90601, 90602: an aura holds at most three effects). The server puts
+The buff you see (90600) and two hidden ones (90601, 90602: an aura holds at most three effects); 90602 also
+cuts the pushback of being hit while casting to 10% of the usual. The server puts
 all three on every Hero at login (hero_resources.cpp).
 
 Roles (90603-90606), chosen in the Classless window (wildcard.cpp): a buff each, changing the threat the Hero causes
@@ -21,6 +22,10 @@ Prestigious (90607): the buff of a prestige run, until level 60 (prestige.cpp).
 EFFECT_APPLY_AURA = 6
 AURA_DUMMY, AURA_MOD_THREAT = 4, 10
 AURA_MOD_DAMAGE_PERCENT_TAKEN, AURA_MOD_RESISTANCE_PCT = 87, 101
+AURA_REDUCE_PUSHBACK = 149
+# Being hit while casting delays a cast or shortens a channel by 10% of the usual (Heroes are pulled from far off
+# and hit often: the full pushback left casters unable to finish a spell).
+PUSHBACK_REDUCED_PCT = 90
 ALL_SCHOOLS = 0x7F
 SCHOOL_MASK_NORMAL = 0x1        # resistance of the physical school: armor
 AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT, AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT = 174, 175
@@ -82,7 +87,8 @@ SPELLS = [
         'id': 90602, 'copy': SELF_TEMPLATE, 'name': 'Emberforged Hero', 'icon': ICON, 'description': '',
         'set': HIDDEN,
         'clear': [1, 2, 3],
-        'effects': {1: aura(AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT, 25, STAT_SPIRIT)},
+        'effects': {1: aura(AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT, 25, STAT_SPIRIT),
+                    2: aura(AURA_REDUCE_PUSHBACK, PUSHBACK_REDUCED_PCT, 0)},
     },
 ]
 

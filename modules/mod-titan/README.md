@@ -676,6 +676,10 @@ Strength to 2 attack power and Agility to 1 ranged attack power:
 - Intellect: 3 ranged attack power, 2 spell power (damage and healing);
 - Spirit: 0.25 spell power (damage and healing).
 
+It also cuts the pushback of being hit while casting to 10% of the usual (90602: Reduce Pushback 90%): a cast is
+delayed by 0.05 sec a hit instead of 0.5, a channel loses 2.5% of its time instead of 25%. Heroes are pulled from far
+off and hit often; the full pushback left casters unable to finish a spell.
+
 ## Dungeon Journal
 `/journal` or `/dj` (the `Emberforge_Journal` addon, `client-patch/AddOns/`; server side `src/journal.cpp`, addon
 whispers with prefix `EFDJ`), laid out as Cataclysm's: a home page per expansion (its name the title, Dungeons and
