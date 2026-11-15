@@ -553,13 +553,13 @@ empty.text = Text(empty, SANS, 20, art.arcane.muted, "CENTER", 700)
 In(empty.text, empty, 0, 0)
 empty.text:SetText("None of the runes fits your abilities yet. Browse all to see what each one needs.")
 
--- The close button, where the mockup has its Replay.
-local closer = Group(1500, 856, 200, 46)
+-- The close button: top right, under the buffs and clear of the minimap (at the bottom it was lost on the bars).
+local closer = Group(1500, 96, 200, 46)
 closer.pill = Pill(closer, "Close", function() frame:Hide() end)
 closer.pill.label:SetFont(CINZEL, 14)
 PillText(closer.pill, "Close")
 In(closer.pill, closer, 0, 0)
-closer.x = W - 26 - closer.pill.width / 2
+closer.x = W - 330 - closer.pill.width / 2
 
 -- Previewing: Back to the cards and Choose (unbound, a rune the server builds).
 local previewBar = Group(800, 805, 900, 80)
@@ -1679,6 +1679,7 @@ local function Enhance(option)
         end
         Shock(sx, sy, 110, theme.hot)
         local wasEmpty = view.picks[slot] == 0
+        local firstBuild = wasEmpty and not view.preview and not (EmberforgeRunesDB and EmberforgeRunesDB.builtOnce)
         view.picks[slot] = choice
         if view.medal and wasEmpty then
             view.medal.charge = math.min(3, (view.medal.charge or 0) + 1)
@@ -1690,6 +1691,20 @@ local function Enhance(option)
             ShowDone()
             Shock(CENTER_X, CENTER_Y, 520, theme.hot)
             flash.level = 0.7
+            -- The first build finished: a moment to see it complete, then on to the runes (the Halo).
+            if firstBuild then
+                if EmberforgeRunesDB then
+                    EmberforgeRunesDB.builtOnce = true
+                end
+                After(2.6, function()
+                    if frame:IsShown() and view.phase == "build" then
+                        frame:Hide()
+                        if EmberforgeHalo_Open then
+                            EmberforgeHalo_Open()
+                        end
+                    end
+                end)
+            end
         end
     end)
 end

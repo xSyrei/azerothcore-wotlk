@@ -256,14 +256,23 @@ legend.segments:SetPoint("CENTER", legend, "CENTER")
 legend.sel = Tex(wheel, "HaloRing", LEGEND + 22, "BORDER")
 legend.sel:SetPoint("CENTER", legend, "CENTER")
 Tint(legend.sel, COLOR.gold, 0.8)
-legend.title = Text(wheel, CINZEL, 11, COLOR.legend, "CENTER", 220)
+-- The words on the wheel, over the sockets (between the two lower Epic sockets a long name was cut off under them).
+local wheelText = CreateFrame("Frame", nil, wheel)
+wheelText:SetAllPoints()
+wheelText:SetFrameLevel(wheel:GetFrameLevel() + 30)
+legend.title = Text(wheelText, CINZEL, 11, COLOR.legend, "CENTER", 220)
 legend.title:SetPoint("TOP", legend, "BOTTOM", 0, -24)
-legend.name = Text(wheel, CINZEL, 14, COLOR.ink, "CENTER", 220)
+legend.name = Text(wheelText, CINZEL, 14, COLOR.ink, "CENTER", 220)
 legend.name:SetPoint("TOP", legend.title, "BOTTOM", 0, -3)
+legend.shade = Tex(wheelText, "Soft", nil, "BACKGROUND")
+legend.shade:SetWidth(260)
+legend.shade:SetHeight(90)
+legend.shade:SetPoint("CENTER", legend.name, "CENTER", 0, 4)
+Tint(legend.shade, { 0, 0, 0 }, 0.85)
 
 local ringLabels = {
-    rare = Text(wheel, CINZEL, 11, COLOR.rare, "CENTER", 200),
-    epic = Text(wheel, CINZEL, 11, COLOR.epic, "CENTER", 200),
+    rare = Text(wheelText, CINZEL, 11, COLOR.rare, "CENTER", 200),
+    epic = Text(wheelText, CINZEL, 11, COLOR.epic, "CENTER", 200),
 }
 ringLabels.rare:SetPoint("CENTER", wheel, "TOPLEFT", C, -(C - RARE_R))
 ringLabels.epic:SetPoint("CENTER", wheel, "TOPLEFT", C, -(C + EPIC_R))
@@ -1056,3 +1065,5 @@ EmberforgeHalo_Debug = { frame = frame, legend = legend, sockets = sockets, deta
     list = list, offer = offer, offersButton = offersButton, banner = banner, note = note, counts = counts,
     listTitle = listTitle, ringLabels = ringLabels, Info = Info, Open = Open, build = build }
 EmberforgeHalo_Refresh = function() Refresh() end
+-- The Legendary panel's way here (once a first build is complete).
+EmberforgeHalo_Open = function() Open(false) end

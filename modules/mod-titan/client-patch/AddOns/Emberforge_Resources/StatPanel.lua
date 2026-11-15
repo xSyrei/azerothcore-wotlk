@@ -3,7 +3,8 @@
 -- A column on the right of the character window (Character tab only), inside the one window CharacterSkin.lua draws:
 -- the average item level of what you wear, a standalone number on top; then two sections, each a filter: click its
 -- title to choose Attributes, Melee, Ranged, Spell or Defenses (Blizzard's own stat lines and tooltips,
--- UpdatePaperdollStats). Fixed in size, it fits the column: nothing scrolls or is cut. The choices, and whether the
+-- UpdatePaperdollStats; every line's tooltip, with what the gear you wear gives of it). Fixed in size, it fits the
+-- column: nothing scrolls or is cut. The choices, and whether the
 -- column shows (the arrow at the bottom of the model), are kept per character. The 3.3.5 stat area under the model
 -- is hidden.
 
@@ -85,6 +86,62 @@ local function AverageItemLevel()
     return math.floor(total / #SLOTS + 0.5)
 end
 
+-- What the gear worn gives, by stat (GetItemStats' keys), made again when the gear changes.
+local gear
+local function Gear()
+    if gear then
+        return gear
+    end
+    gear = {}
+    for slot = 1, 19 do
+        local link = GetInventoryItemLink("player", slot)
+        local stats = link and GetItemStats and GetItemStats(link)
+        for key, amount in pairs(stats or {}) do
+            gear[key] = (gear[key] or 0) + amount
+        end
+    end
+    return gear
+end
+
+-- A stat line's label (without its colon) to its GetItemStats key.
+local GEAR_KEYS = {
+    [SPELL_STAT1_NAME or "Strength"] = "ITEM_MOD_STRENGTH_SHORT",
+    [SPELL_STAT2_NAME or "Agility"] = "ITEM_MOD_AGILITY_SHORT",
+    [SPELL_STAT3_NAME or "Stamina"] = "ITEM_MOD_STAMINA_SHORT",
+    [SPELL_STAT4_NAME or "Intellect"] = "ITEM_MOD_INTELLECT_SHORT",
+    [SPELL_STAT5_NAME or "Spirit"] = "ITEM_MOD_SPIRIT_SHORT",
+    [ARMOR or "Armor"] = "RESISTANCE0_NAME",
+    [ATTACK_POWER_TOOLTIP or "Attack Power"] = "ITEM_MOD_ATTACK_POWER_SHORT",
+    ["Spell Power"] = "ITEM_MOD_SPELL_POWER_SHORT",
+}
+
+-- A line's tooltip: Blizzard's own (the script it set, else the text it left on the line), then the gear's share.
+local function RowEnter(self)
+    if self.blizzardEnter then
+        self.blizzardEnter(self)
+    elseif self.tooltip then
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(self.tooltip)
+        if self.tooltip2 then
+            GameTooltip:AddLine(self.tooltip2, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, true)
+        end
+    end
+    local label = self.label and self.label:GetText()
+    local name = label and label:gsub(":%s*$", "")
+    local key = name and GEAR_KEYS[name]
+    local amount = key and Gear()[key]
+    if amount and amount ~= 0 then
+        if not GameTooltip:IsOwned(self) then
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(name)
+        end
+        GameTooltip:AddLine(("From your gear: %+d %s"):format(amount, name), 0.1, 1, 0.1)
+    end
+    if GameTooltip:IsOwned(self) then
+        GameTooltip:Show()
+    end
+end
+
 -- A row: Blizzard's stat frame names (prefix .. index, its Label and StatText), a stripe behind every other one.
 local function Row(prefix, index, anchor)
     local row = CreateFrame("Frame", prefix .. index, panel)
@@ -94,6 +151,7 @@ local function Row(prefix, index, anchor)
     row:EnableMouse(true)
     local label = row:CreateFontString(prefix .. index .. "Label", "ARTWORK", "GameFontNormalSmall")
     label:SetPoint("LEFT", 6, 0)
+    row.label = label
     local value = row:CreateFontString(prefix .. index .. "StatText", "ARTWORK", "GameFontHighlightSmall")
     value:SetPoint("RIGHT", -6, 0)
     if index % 2 == 1 then
@@ -125,8 +183,19 @@ local function UpdateSection(index)
     local section = sections[index]
     local key = Choice(index)
     section.header.text:SetText(CategoryText(key))
+    -- The rows are shared by every category: what the last one left on them goes first.
+    for row = 1, ROWS do
+        local frame = _G[section.prefix .. row]
+        frame:SetScript("OnEnter", nil)
+        frame.tooltip, frame.tooltip2 = nil, nil
+    end
     if UpdatePaperdollStats then
         UpdatePaperdollStats(section.prefix, key)
+    end
+    for row = 1, ROWS do
+        local frame = _G[section.prefix .. row]
+        frame.blizzardEnter = frame:GetScript("OnEnter")
+        frame:SetScript("OnEnter", RowEnter)
     end
 end
 
@@ -231,6 +300,9 @@ for _, event in ipairs({ "PLAYER_EQUIPMENT_CHANGED", "UNIT_INVENTORY_CHANGED", "
     panel:RegisterEvent(event)
 end
 panel:SetScript("OnEvent", function(_, event, unit)
+    if event == "PLAYER_EQUIPMENT_CHANGED" or event == "UNIT_INVENTORY_CHANGED" then
+        gear = nil
+    end
     if event == "PLAYER_LOGIN" then
         SetArrow()
     elseif not unit or unit == "player" then
