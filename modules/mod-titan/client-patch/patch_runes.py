@@ -902,6 +902,11 @@ def ring(radius, count, height, size, turned=0.0):
                   size, turned + 360.0 * k / count) for k in range(count))
 
 
+def upright(spots):
+    """Spots for camera-facing flames: unturned in their own plane (ring() rolls each one about its middle)."""
+    return tuple((x, y, z, size, 0.0) for x, y, z, size, _ in spots)
+
+
 def grave(model, effect, circle, inner, across, tint, deep, extra):
     """A Grave: a turning rune circle and an inner one turning the other way, its own life on top (extra)."""
     return {'model': model, 'effect': effect, 'shape': 'mist',
@@ -978,7 +983,7 @@ def thunderfield(model, effect, across):
 
 
 SLASH_RED, EMBER = (1.0, 0.16, 0.1), (1.0, 0.55, 0.2)
-SUN_RAYS, SUN_ORANGE = (1.0, 0.72, 0.28), (1.0, 0.45, 0.1)
+SUN_ORANGE = (1.0, 0.45, 0.1)
 WHITE_HOT, ICE_GLINT = (1.0, 0.93, 0.75), (0.65, 0.88, 1.0)
 EFFECTS.update({
     'Thunderfield': thunderfield('WAR_Thunderfield', 7157, 16.0),
@@ -1021,19 +1026,23 @@ EFFECTS.update({
         ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 1.5, 0.0),), 'tint': SLASH_RED,
                                'alpha': 0.8, 'scale': [(0.0, 0.4), (1.0, 3.5)], 'pulse': 0}),
     ), 600),
-    # A Sunshard: a small sun burning in the enemy, rays turning about a white-hot glint.
+    # A Sunshard: a fire burning in the enemy: two flames licking up out of a rolling knot of fire.
     'SunshardGlow': looping('MAGE_SunshardGlow', 7170, (
-        ('sun_rays', {'spots': ((0.0, 0.0, 0.0, 3.0, 0.0),), 'tint': SUN_RAYS, 'alpha': 0.85, 'pulse': 1.2}),
-        ('sun_glint', {'spots': ((0.0, 0.0, 0.0, 1.5, 0.0),), 'tint': WHITE_HOT, 'alpha': 1.0, 'pulse': 0.6}),
+        ('sun_fireburst_4x4', {'spots': ((0.0, 0.0, 0.0, 1.5, 0.0),), 'sheet': (4, 4), 'flip': 0.9,
+                               'tint': (1.0, 0.72, 0.42), 'alpha': 0.85, 'pulse': 0}),
+        ('sun_flames_4x4', {'spots': ((0.1, 0.22, 0.45, 1.9, 0.0), (0.0, -0.2, 0.4, 1.6, 0.0)), 'sheet': (4, 4),
+                            'flip': 1.1, 'tint': (1.0, 0.86, 0.62), 'alpha': 0.95, 'pulse': 0}),
     )),
     # A fracture: frost cracks the shard: an icy glint, the sun bursting out in flame, a ring of fire rushing out.
     'SunFracture': burst('MAGE_SunFracture', 7171, (
-        ('sun_star', {'spots': ((0.0, 0.0, 1.0, 3.6, 0.0),), 'tint': ICE_GLINT, 'alpha': 1.0, 'pulse': 0,
+        ('sun_star', {'spots': ((0.0, 0.0, 1.0, 2.4, 0.0),), 'tint': ICE_GLINT, 'alpha': 0.7, 'pulse': 0,
                       'scale': [(0.0, 0.2), (0.12, 1.3), (0.4, 0.5), (1.0, 0.0)]}),
         ('spritesheet_4', {'spots': ((0.0, 0.0, 1.0, 3.0, 0.0),), 'sheet': (2, 2), 'flip': 0.3,
                            'tint': ICE_GLINT, 'alpha': 0.9, 'pulse': 0}),
-        ('sun_fireburst_4x4', {'spots': ring(0.8, 3, 1.0, 2.8), 'sheet': (4, 4), 'tint': WHITE_HOT, 'alpha': 1.0,
+        ('sun_fireburst_4x4', {'spots': ring(0.8, 4, 1.0, 3.4), 'sheet': (4, 4), 'tint': WHITE_HOT, 'alpha': 1.0,
                                'pulse': 0}),
+        ('sun_flames_4x4', {'spots': upright(ring(1.6, 6, 0.8, 1.8)), 'sheet': (4, 4), 'tint': (1.0, 0.86, 0.62),
+                            'alpha': 0.95, 'pulse': 0}),
         ('sun_ring', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 7.0, 0.0),), 'tint': SUN_ORANGE, 'alpha': 0.9,
                       'pulse': 0, 'scale': [(0.0, 0.15), (0.45, 1.0), (1.0, 1.15)]}),
     ), 550),
@@ -1041,23 +1050,20 @@ EFFECTS.update({
     'SunCollapse': burst('MAGE_SunCollapse', 7172, (
         ('sun_ring', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 6.0, 0.0),), 'tint': SUN_ORANGE, 'alpha': 0.9,
                       'pulse': 0, 'scale': [(0.0, 1.0), (0.25, 0.05), (0.3, 0.05), (0.7, 1.4), (1.0, 1.6)]}),
-        ('sun_corona', {'spots': ((0.0, 0.0, 1.2, 5.0, 0.0),), 'tint': SUN_RAYS, 'alpha': 1.0, 'pulse': 0,
-                        'scale': [(0.0, 0.0), (0.25, 0.1), (0.4, 1.2), (1.0, 1.5)]}),
-        ('sun_glint', {'spots': ((0.0, 0.0, 1.2, 3.0, 0.0),), 'tint': WHITE_HOT, 'alpha': 1.0, 'pulse': 0,
-                       'scale': [(0.0, 0.6), (0.25, 0.15), (0.35, 1.4), (1.0, 0.2)]}),
-        ('sun_fireburst_4x4', {'spots': ((0.0, 0.0, 1.2, 4.5, 0.0),), 'sheet': (4, 4), 'tint': WHITE_HOT,
-                               'alpha': 1.0, 'pulse': 0}),
+        ('sun_fireburst_4x4', {'spots': ((0.0, 0.0, 1.2, 4.5, 0.0), (0.4, 0.3, 1.6, 3.2, 140.0)), 'sheet': (4, 4),
+                               'tint': WHITE_HOT, 'alpha': 1.0, 'pulse': 0,
+                               'scale': [(0.0, 0.2), (0.3, 0.3), (0.45, 1.1), (1.0, 1.3)]}),
+        ('sun_flames_4x4', {'spots': upright(ring(2.2, 8, 1.0, 2.2)), 'sheet': (4, 4), 'tint': (1.0, 0.86, 0.62),
+                            'alpha': 1.0, 'pulse': 0}),
     ), 750),
-    # Scalding Ground: cracked earth glowing with sunfire, flames licking up about it, a heat haze pulsing.
+    # Scalding Ground: still, cracked earth glowing with heat, flames standing up across it and flaring between.
     'ScaldingGround': looping('MAGE_ScaldingGround', 7164, (
         ('Circle_Cracks_02', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 12.0, 0.0),), 'tint': SUN_ORANGE,
-                              'alpha': 0.9, 'turn': 70.0, 'pulse': 0}),
-        ('sun_rays', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 11.0, 0.0),), 'tint': SUN_ORANGE, 'alpha': 0.35,
-                      'turn': -40.0, 'pulse': 1.6}),
-        ('sun_flames_4x4', {'spots': ring(3.2, 7, 1.2, 2.4), 'sheet': (4, 4), 'flip': 0.9, 'tint': (1.0, 0.8, 0.55),
-                            'alpha': 0.95, 'pulse': 0}),
-        ('ice_pieces_2_white_sheet', {'spots': ring(3.6, 8, 0.3, 1.0), 'sheet': (4, 4), 'flip': 1.0,
-                                      'tint': (1.0, 0.6, 0.2), 'alpha': 0.9, 'rise': (2.0, 1.8), 'pulse': 0}),
+                              'alpha': 0.85, 'pulse': 2.4}),
+        ('sun_flames_4x4', {'spots': upright(ring(2.0, 5, 0.8, 1.8, 15.0) + ring(4.4, 9, 1.0, 2.2)),
+                            'sheet': (4, 4), 'flip': 1.1, 'tint': (1.0, 0.82, 0.55), 'alpha': 0.95, 'pulse': 0}),
+        ('sun_fireburst_4x4', {'spots': upright(ring(3.3, 6, 0.45, 1.0, 30.0)), 'sheet': (4, 4), 'flip': 0.8,
+                               'tint': (1.0, 0.62, 0.3), 'alpha': 0.8, 'pulse': 0}),
     )),
 })
 
