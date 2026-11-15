@@ -28,12 +28,18 @@ float4 Projection : register(c4);     // x scale, y scale, near plane, the camer
 float4 ViewX : register(c5);          // the view's rows (world x, y, z), to turn view directions into the world
 float4 ViewY : register(c6);
 float4 ViewZ : register(c7);
-float4 Eye : register(c8);            // the eye in the world, show (0 all, 1 bloom, 2 haze, 3 night, 4 spill)
+float4 Eye : register(c8);            // the eye in the world, show (0 all, 1 bloom, 2 haze, 3 night, 4 spill,
+                                      // 5 point lights)
 float4 Light : register(c9);          // bloom, spill, halos in the haze, the haze's own light by night
 float4 Tint : register(c10);          // the colour grade's tint (rgb, day and night mixed), its amount
 float4 Grade : register(c11);         // saturation, contrast, vignette, exposure
 float4 Mist : register(c12);          // drifting mist amount, its size (yards), its speed, seconds
 float4 Screen : register(c13);        // 1 / width, 1 / height, width / height, highlights' soft shoulder
+// Point lights (street lamps, by now only the panel's test light): how many, their strength, their glow in the air.
+// Each: where it is in view space (x, y, z) and how far it reaches (yards); its colour.
+static const int kLights = 8;
+float4 Lights : register(c14);        // count, strength on surfaces, glow in the air, (by day) how much they show
+float4 LightAt[kLights * 2] : register(c15);
 
 static const float3 kLuma = float3(0.2126, 0.7152, 0.0722);
 static const float kSky = 50000.0;
@@ -91,6 +97,63 @@ float4 Up(float2 uv : TEXCOORD0) : COLOR
     tent += Sample(WideS, uv - t) + Sample(WideS, uv + t) + Sample(WideS, uv + float2(t.x, -t.y)) +
             Sample(WideS, uv + float2(-t.x, t.y));
     return float4(Sample(LevelS, uv) + tent / 16.0 * Texel.z, 1.0);
+}
+
+float3 ViewRay(float2 uv)
+{
+    return float3((uv.x * 2.0 - 1.0) / Projection.x, (1.0 - uv.y * 2.0) / Projection.y, 1.0);
+}
+
+// The surface's normal in view space, from the depth (the smaller step each way, so an edge does not count).
+float3 Normal(float2 uv, float z)
+{
+    float2 px = Screen.xy * 1.5;
+    float3 p = ViewRay(uv) * z;
+    float3 r = ViewRay(uv + float2(px.x, 0)) * Distance(uv + float2(px.x, 0)) - p;
+    float3 l = p - ViewRay(uv - float2(px.x, 0)) * Distance(uv - float2(px.x, 0));
+    float3 d = ViewRay(uv + float2(0, px.y)) * Distance(uv + float2(0, px.y)) - p;
+    float3 u = p - ViewRay(uv - float2(0, px.y)) * Distance(uv - float2(0, px.y));
+    float3 dx = abs(r.z) < abs(l.z) ? r : l;
+    float3 dy = abs(d.z) < abs(u.z) ? d : u;
+    float3 n = normalize(cross(dy, dx));
+    return dot(n, -p) < 0.0 ? -n : n;
+}
+
+// The point lights: on the surface (by distance and how it faces each), and in the air along the view ray (the
+// light scattered toward the eye: the integral of 1 / distance squared along the ray, closed form).
+void PointLights(float2 uv, float z, bool sky, float3 albedo, out float3 onSurface, out float3 inAir)
+{
+    onSurface = 0.0;
+    inAir = 0.0;
+    float3 ray = ViewRay(uv);
+    float3 p = ray * z;
+    float3 v = normalize(ray);
+    float s = sky ? 300.0 : length(p);
+    float3 n = sky ? float3(0, 0, -1) : Normal(uv, z);
+    [unroll]
+    for (int i = 0; i < kLights; i++)
+    {
+        if (i < Lights.x)
+        {
+            float3 at = LightAt[i * 2].xyz;
+            float reach = max(LightAt[i * 2].w, 0.5);
+            float3 colour = LightAt[i * 2 + 1].rgb;
+            if (!sky)
+            {
+                float3 toLight = at - p;
+                float d = length(toLight);
+                float fall = saturate(1.0 - (d / reach) * (d / reach));
+                fall *= fall;
+                float facing = saturate(dot(n, toLight / max(d, 1e-3)) * 0.85 + 0.15);
+                onSurface += colour * albedo * fall * facing / (1.0 + d * d * 0.04);
+            }
+            float tc = dot(at, v);
+            float h = sqrt(max(dot(at, at) - tc * tc, 0.04));
+            float scatter = (atan((s - tc) / h) - atan(-tc / h)) / h;
+            float near = saturate(1.0 - h / reach);
+            inAir += colour * scatter * near * near;
+        }
+    }
 }
 
 float3 ToWorld(float3 v)
@@ -173,6 +236,17 @@ float4 Final(float2 uv : TEXCOORD0) : COLOR
     float3 halos = wide * haze * Light.z * (0.4 + 0.6 * night) * 4.0;
     colour += halos;
 
+    // The point lights: brighter by night (by day they show by Lights.w).
+    float3 lit = 0.0, glow = 0.0;
+    if (Lights.x > 0.5)
+    {
+        PointLights(uv, z, sky, scene * 1.6 + 0.04, lit, glow);
+        float shown = lerp(Lights.w, 1.0, night);
+        lit *= Lights.y * shown;
+        glow *= Lights.z * shown * (0.3 + haze * 2.0) * 0.15;
+        colour += lit + glow;
+    }
+
     // Bloom.
     colour += bloom * Light.x;
 
@@ -184,7 +258,9 @@ float4 Final(float2 uv : TEXCOORD0) : COLOR
             return float4(lerp(0.0, hazeLight, haze) + halos, 1.0);
         if (Eye.w < 3.5)
             return float4(lerp(float3(1, 1, 1), float3(0.1, 0.15, 0.4), night * (1.0 - keep)), 1.0);
-        return float4(spill, 1.0);
+        if (Eye.w < 4.5)
+            return float4(spill, 1.0);
+        return float4(lit + glow, 1.0);
     }
 
     // The colour grade: exposure, the tint (keeping brightness), saturation, contrast, a soft shoulder for the

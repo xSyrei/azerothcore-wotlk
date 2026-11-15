@@ -491,8 +491,13 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
     in the game's haze colour (or an own one), dimmer by night.
   - **Colour grade**: a day tint and a night tint (mixed by the night), saturation, contrast, exposure, a soft
     shoulder for the highlights the light added, a vignette.
+  - **Point lights** (up to 8 a frame): each lights the surfaces within its reach (normals from the depth, by
+    distance and facing) and glows in the air along the view ray (the closed-form integral of 1 / distance squared:
+    a volumetric halo), brighter by night. Street lamps become lights once a capture beside one shows their draw
+    (the capture now writes every vertex constant that changed, where the models' bones are, and each managed
+    texture's fingerprint); the panel's test light stands ahead of the camera meanwhile.
   Every part is a slider in the panel's Atmosphere section; *Show* draws one part alone (bloom, haze, the night's
-  darkening, the spill). Its settings' keys are `atmosphere_*` in `Emberforge.ini`.
+  darkening, the spill, the point lights). Its settings' keys are `atmosphere_*` and `light*` in `Emberforge.ini`.
 - The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's
   `d3dcompiler_47.dll` under Wine (any 64-bit copy, e.g. an Electron app's: Wine's own compiler cannot build shader
   model 3): `D3DCOMPILER=/path/to/d3dcompiler_47.dll sh build.sh`. Players need no compiler.

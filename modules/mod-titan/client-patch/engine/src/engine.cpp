@@ -38,7 +38,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.15"
+#define EMBERFORGE_ENGINE_VERSION "0.16"
 
 namespace
 {
@@ -207,6 +207,11 @@ namespace
         float dayTint[3] = {1.0f, 0.95f, 0.86f}, nightTint[3] = {0.72f, 0.84f, 1.0f};
         float gradeTint = 0.35f, gradeSaturation = 1.1f, contrast = 1.06f, vignette = 0.25f, exposure = 1.0f,
               shoulder = 0.82f;
+        // Point lights (street lamps once the engine knows them; the test light ahead of the camera): how strongly
+        // they light the surfaces about them and glow in the air, how far they reach, how much they show by day.
+        bool lights = true, testLight = false;
+        float lightStrength = 1.4f, lightGlow = 0.8f, lightReach = 12.0f, lightsByDay = 0.15f;
+        float lightColour[3] = {1.0f, 0.7f, 0.38f};
 
         struct Entry
         {
@@ -253,7 +258,10 @@ namespace
                 {"atmosphere_night_tint_b", &nightTint[2]}, {"atmosphere_tint", &gradeTint},
                 {"atmosphere_saturation", &gradeSaturation}, {"atmosphere_contrast", &contrast},
                 {"atmosphere_vignette", &vignette}, {"atmosphere_exposure", &exposure},
-                {"atmosphere_shoulder", &shoulder},
+                {"atmosphere_shoulder", &shoulder}, {"lights", nullptr, &lights},
+                {"light_strength", &lightStrength}, {"light_glow", &lightGlow}, {"light_reach", &lightReach},
+                {"lights_by_day", &lightsByDay}, {"light_colour_r", &lightColour[0]},
+                {"light_colour_g", &lightColour[1]}, {"light_colour_b", &lightColour[2]},
             };
             for (const Entry &e : entries)
                 f(e);
@@ -308,7 +316,8 @@ namespace
     constexpr int kVertexConstants = 256, kPixelConstants = 32, kRenderStates = 256, kStages = 8;
     constexpr int kSamplers = 16, kSamplerStates = 14;
     constexpr DWORD kPassStages = 5;                          // the stages an engine pass binds (and puts back)
-    constexpr UINT kPassConstants = 14;                       // the pixel constants it sets (c0-c13)
+    constexpr UINT kPassConstants = 31;                       // the pixel constants it sets (c0-c30)
+    constexpr int kLights = 8;                                // point lights a frame (src/atmosphere.hlsl)
     constexpr UINT kWaterConstants = 12, kWaterConstantCount = 16;   // the water shader's c12-c27 (src/water.hlsl)
     // Render states an engine pass turns off (and puts back after).
     const D3DRENDERSTATETYPE kPassStates[] = {
@@ -1312,6 +1321,32 @@ namespace
             };
             if (!m_cameraSeen)                                   // a sane projection for the rays' lengths
                 constants[4][0] = constants[4][1] = 1.0f;
+            // The point lights, in view space: the test light ahead of the camera, low (where the path is).
+            int count = 0;
+            auto add = [&](const float at[3], float reach) {
+                if (count >= kLights)
+                    return;
+                float *row = constants[15 + count * 2];
+                row[0] = at[0];
+                row[1] = at[1];
+                row[2] = at[2];
+                row[3] = reach;
+                float *colour = constants[16 + count * 2];
+                colour[0] = s.lightColour[0];
+                colour[1] = s.lightColour[1];
+                colour[2] = s.lightColour[2];
+                colour[3] = 0.0f;
+                ++count;
+            };
+            if (s.lights && s.testLight)
+            {
+                const float ahead[3] = {0.0f, -1.2f, 9.0f};
+                add(ahead, s.lightReach);
+            }
+            constants[14][0] = static_cast<float>(count);
+            constants[14][1] = s.lightStrength;
+            constants[14][2] = s.lightGlow;
+            constants[14][3] = s.lightsByDay;
             real->SetPixelShaderConstantF(0, constants[0], kPassConstants);
             Bind(0, m_scene, false);
             Bind(1, m_distance, false);
@@ -1520,8 +1555,10 @@ namespace
                 {
                     D3DSURFACE_DESC desc = {};
                     static_cast<IDirect3DTexture9 *>(tex)->GetLevelDesc(0, &desc);
-                    fprintf(f, " t%d=%p:%ux%u:fmt%u%s", stage, static_cast<void *>(tex), desc.Width, desc.Height,
-                            static_cast<unsigned>(desc.Format), (desc.Usage & D3DUSAGE_RENDERTARGET) ? ":rt" : "");
+                    fprintf(f, " t%d=%p:%ux%u:fmt%u%s:fp%08x", stage, static_cast<void *>(tex), desc.Width,
+                            desc.Height, static_cast<unsigned>(desc.Format),
+                            (desc.Usage & D3DUSAGE_RENDERTARGET) ? ":rt" : "",
+                            Fingerprint(static_cast<IDirect3DTexture9 *>(tex)));
                 }
                 else
                 {
@@ -1537,6 +1574,19 @@ namespace
                     fprintf(f, "%s %.4g,%.4g,%.4g,%.4g", i ? " |" : "", m_vsc[i][0], m_vsc[i][1], m_vsc[i][2],
                             m_vsc[i][3]);
                 fputc('\n', f);
+                // Every other constant that changed since the last draw written (the models' bones live there).
+                bool any = false;
+                for (int i = 16; i < kVertexConstants; ++i)
+                {
+                    if (memcmp(m_vsc[i], m_vscWritten[i], sizeof(m_vsc[i])) == 0)
+                        continue;
+                    fprintf(f, "%s c%d=%.5g,%.5g,%.5g,%.5g", any ? "" : "  vc+:", i, m_vsc[i][0], m_vsc[i][1],
+                            m_vsc[i][2], m_vsc[i][3]);
+                    memcpy(m_vscWritten[i], m_vsc[i], sizeof(m_vsc[i]));
+                    any = true;
+                }
+                if (any)
+                    fputc('\n', f);
             }
             else
             {
@@ -1560,10 +1610,34 @@ namespace
             }
         }
 
+        // A texture's fingerprint for a capture: a hash of its smallest level, read where the texture is
+        // readable (the managed ones; 0 otherwise). Kept per texture.
+        uint32_t Fingerprint(IDirect3DTexture9 *texture)
+        {
+            auto found = m_fingerprints.find(texture);
+            if (found != m_fingerprints.end())
+                return found->second;
+            uint32_t hash = 0;
+            DWORD levels = texture->GetLevelCount();
+            D3DSURFACE_DESC desc = {};
+            D3DLOCKED_RECT locked = {};
+            if (levels && SUCCEEDED(texture->GetLevelDesc(levels - 1, &desc)) && desc.Pool == D3DPOOL_MANAGED &&
+                SUCCEEDED(texture->LockRect(levels - 1, &locked, nullptr, D3DLOCK_READONLY | D3DLOCK_NOSYSLOCK)))
+            {
+                bool blocks = desc.Format == D3DFMT_DXT1 || desc.Format == D3DFMT_DXT3 || desc.Format == D3DFMT_DXT5;
+                UINT rows = blocks ? (desc.Height + 3) / 4 : desc.Height;
+                hash = Fnv(locked.pBits, static_cast<size_t>(locked.Pitch) * rows) ^ (desc.Width << 16) ^ desc.Height;
+                texture->UnlockRect(levels - 1);
+            }
+            m_fingerprints[texture] = hash;
+            return hash;
+        }
+
         void EndFrame()
         {
             if (m_capture == Capture::Recording)
             {
+                m_fingerprints.clear();
                 Write("present after %u draws (%u water, %u target changes, %u depth clears, %u scenes, %u state "
                         "blocks)", m_frame.draws, m_frame.waterDraws, m_frame.targetChanges, m_frame.depthClears,
                         m_frame.scenes, m_frame.stateBlocks);
@@ -1585,6 +1659,7 @@ namespace
                     if (back)
                         back->Release();
                     m_capture = Capture::Recording;
+                    memset(m_vscWritten, 0, sizeof(m_vscWritten));
                 }
                 else
                 {
@@ -1752,7 +1827,7 @@ namespace
             ImGui::SameLine();
             ImGui::SetNextItemWidth(150);
             if (ImGui::Combo("Show", &show, "Everything\0Bloom alone\0Haze alone\0Night (blue: darkened)\0"
-                                             "Lights' spill alone\0"))
+                                             "Lights' spill alone\0Point lights alone\0"))
                 s.show = static_cast<float>(show);
             ImGui::SeparatorText("Day and night");
             ImGui::Text("The game's haze brightness now: %.3f; night %.0f%%", m_hazeBrightness, m_night * 100.0f);
@@ -1776,6 +1851,17 @@ namespace
             ImGui::SliderFloat("Glow reach", &s.bloomReach, 0.3f, 1.5f);
             ImGui::SliderFloat("Lights on the paths", &s.spill, 0.0f, 3.0f);
             ImGui::SliderFloat("Lights' halos in the haze", &s.halos, 0.0f, 3.0f);
+            ImGui::SeparatorText("Point lights (street lamps)");
+            ImGui::TextWrapped("Street lamps are found once a capture beside one shows their draw; the test light "
+                               "stands ahead of the camera to judge the look.");
+            ImGui::Checkbox("Point lights", &s.lights);
+            ImGui::SameLine();
+            ImGui::Checkbox("Test light ahead", &s.testLight);
+            ImGui::ColorEdit3("Lamp colour", s.lightColour, ImGuiColorEditFlags_NoInputs);
+            ImGui::SliderFloat("Light on surfaces", &s.lightStrength, 0.0f, 5.0f);
+            ImGui::SliderFloat("Glow in the air", &s.lightGlow, 0.0f, 5.0f);
+            ImGui::SliderFloat("Reach", &s.lightReach, 2.0f, 40.0f, "%.0f yards");
+            ImGui::SliderFloat("Shown by day", &s.lightsByDay, 0.0f, 1.0f);
             ImGui::SeparatorText("Haze");
             float game[3] = {((m_worldFog >> 16) & 0xFF) / 255.0f, ((m_worldFog >> 8) & 0xFF) / 255.0f,
                              (m_worldFog & 0xFF) / 255.0f};
@@ -1867,6 +1953,8 @@ namespace
         std::unordered_map<void *, std::vector<DWORD>> m_code;
         bool m_waterDumped = false, m_waterVersionLogged = false;
         float m_vsc[kVertexConstants][4] = {};
+        float m_vscWritten[kVertexConstants][4] = {};        // a capture's: the constants as last written
+        std::unordered_map<void *, uint32_t> m_fingerprints;
         float m_psc[kPixelConstants][4] = {};
         D3DVIEWPORT9 m_viewport = {};
         DWORD m_fvf = 0;
