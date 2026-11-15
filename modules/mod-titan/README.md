@@ -763,6 +763,9 @@ replaced mod-autobalance):
   Heals between players of different levels go by their health the same way.
 - **Easier the lower the Hero**: at level 10 (and below) creatures have half their health (the Hero's damage doubled)
   and deal 75% of their damage, evenly up to the intended difficulty at level 60. Heroics are level 60: as intended.
+- **Twice the health** throughout (`HEALTH_PASS` 2): on top of the above, every scaled creature has double its
+  health (the damage Heroes deal halved, the health they see doubled): level 10 creatures have their whole health,
+  level 60 ones twice it.
 - **Experience** for a kill is each member's own: what `Acore::XP::Gain` gives for the creature at their level, split
   evenly over the group's members in range (the core's, nothing for a creature gray to them, is replaced). Prestige's
   bonus and experience auras apply.
