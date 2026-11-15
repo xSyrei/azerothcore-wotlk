@@ -581,9 +581,9 @@ Epic, Rare and Uncommon runes beside the Legendary Rune (`src/rune_tiers.cpp`), 
   open it. The Legendary Rune in the centre (clicked: its own panel), 5 Epic sockets on the inner ring, 10 Rare on the
   outer (each held rune shows its ability's icon), the Uncommons by ability on the right under the selected rune's
   words (Release asks first); the Legendary selected shows its build slot by slot. A window over the world (clicks
-  around it reach the game): dragged to move, the corner grip sizes it (kept per character). An offer opens it on 3
-  cards (each says what taking it does: the socket it fills, the ability slot it takes, a Resonance it completes); a
-  full set of sockets asks which one to replace; Skip (asks first, `SKIP`) throws the offer away. Tests:
+  around it reach the game): dragged to move, the corner grip sizes it (kept per character). An offer shows on its own in the
+  middle of the screen (`EmberforgeRuneOffer`, the Halo shut; again from the Halo's offers button): 3 cards (each says what taking it does: the socket it fills, the ability slot it takes, a Resonance it completes); a
+  full set of sockets opens the Halo to ask which one to replace; Skip (asks first, `SKIP`) throws the offer away. Tests:
   `AddOns/tests/halo_test.lua`.
 - **Uncommon effects**: Rapid (cast time -10%), Critical (critical strikes +20%) and Provoking (threat +50%) are spell
   modifiers named after spell 91170 (family 99, so the core matches it to nothing; `titan_rune_tiers_mods` matches

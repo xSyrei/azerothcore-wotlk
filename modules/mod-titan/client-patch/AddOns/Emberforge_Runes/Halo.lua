@@ -401,21 +401,45 @@ list:SetScript("OnMouseWheel", function(_, delta)
     Refresh()
 end)
 
--- The offer: three cards over the dimmed Halo -------------------------------------------------------------------------
+-- The offer: three cards in a window of their own, in the middle of the screen over the world (the Halo need not be
+-- open; it opens only to choose a socket to replace). Its size follows the Halo's.
 
 local CARD_W, CARD_H, CARD_GAP = 240, 360, 28
-local offer = CreateFrame("Frame", nil, stage)
-offer:SetAllPoints()
-offer:SetFrameLevel(stage:GetFrameLevel() + 20)
+local offer = CreateFrame("Frame", "EmberforgeRuneOffer", UIParent)
+offer:SetWidth(860)
+offer:SetHeight(600)
+offer:SetPoint("CENTER", UIParent, "CENTER", 0, 20)
+offer:SetFrameStrata("FULLSCREEN_DIALOG")
 offer:EnableMouse(true)
+offer:SetMovable(true)
+offer:SetClampedToScreen(true)
+offer:RegisterForDrag("LeftButton")
+offer:SetScript("OnDragStart", function(self) self:StartMoving() end)
+offer:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+offer:SetScript("OnShow", function(self)
+    self:SetScale(math.max(SCALE_MIN, math.min(SCALE_MAX, EmberforgeRunesDB and EmberforgeRunesDB.haloScale
+        or DefaultScale())))
+end)
 offer:Hide()
-offer.bg = offer:CreateTexture(nil, "BACKGROUND")
-offer.bg:SetAllPoints()
-offer.bg:SetTexture(0.015, 0.012, 0.02, 0.95)
-offer.light = Tex(offer, "Soft", 900, "BORDER")
-offer.light:SetPoint("CENTER", offer, "TOP", 0, -330)
+tinsert(UISpecialFrames, "EmberforgeRuneOffer")        -- Escape closes it (the offer keeps)
+-- No box: a soft dark pool behind the words and cards so they read over any ground, a warm light in it.
+offer.shade = Tex(offer, "Soft", 1100, "BACKGROUND")
+offer.shade:SetPoint("CENTER", offer, "CENTER", 0, 10)
+Tint(offer.shade, { 0, 0, 0 }, 0.85)
+offer.light = Tex(offer, "Soft", 820, "BORDER")
+offer.light:SetPoint("CENTER", offer, "TOP", 0, -300)
 offer.light:SetBlendMode("ADD")
-Tint(offer.light, { 0.55, 0.36, 0.16 }, 0.22)
+Tint(offer.light, { 0.55, 0.36, 0.16 }, 0.18)
+offer.close = CreateFrame("Button", nil, offer)
+offer.close:SetWidth(32)
+offer.close:SetHeight(32)
+offer.close:SetPoint("TOPRIGHT", -40, -36)
+offer.close.text = Text(offer.close, CINZEL, 18, COLOR.gold, "CENTER", 32)
+offer.close.text:SetPoint("CENTER")
+offer.close.text:SetText("X")
+offer.close:SetScript("OnClick", function() offer:Hide() end)
+offer.note = Text(offer, SANS, 14, { 1, 0.55, 0.45 }, "CENTER", 700)
+offer.note:SetPoint("TOP", offer, "TOP", 0, -526)
 offer.eyebrow = Text(offer, CINZEL, 12, COLOR.gold, "CENTER", 600)
 offer.eyebrow:SetPoint("TOP", 0, -46)
 offer.title = Text(offer, CINZEL, 30, COLOR.ink, "CENTER", 600)
@@ -706,7 +730,7 @@ function Fate(info, socketed, uncommons)
 end
 
 function Refresh()
-    if not frame:IsShown() then
+    if not frame:IsShown() and not offer:IsShown() then
         return
     end
     local socketed, uncommons = Held()
@@ -890,12 +914,16 @@ function Pick(choice, socket)
         if RuneCount(socketed, info.rarity) >= state.sockets[info.rarity] then
             view.replace = { rarity = info.rarity, choice = choice, name = info.name }
             offer:Hide()
+            if not frame:IsShown() then
+                frame:Show()
+            end
             Refresh()
             return
         end
     end
     Send(("PICK,%d,%d"):format(current.seq, choice))
     note:SetText("")
+    offer.note:SetText("")
     if info.rarity == "uncommon" then
         view.sel = { kind = "ability", ability = info.ability }
     end
@@ -921,11 +949,11 @@ end)
 -- Closing lets go of a socket choice (the offer keeps).
 frame:SetScript("OnHide", function()
     view.replace = nil
-    offer:Hide()
 end)
 
 -- Messages ----------------------------------------------------------------------------------------------------------
 
+-- The Halo (and the offer over it, if asked and one waits); OfferAlone: the offer by itself in the middle.
 local function Open(showOffer)
     if EmberforgeLegendaryRunes and EmberforgeLegendaryRunes:IsShown() then
         EmberforgeLegendaryRunes:Hide()
@@ -966,11 +994,23 @@ local function OnMessage(message)
         staging.loaded = true
         state = staging
         staging = nil
+        if view.offerWaiting and #state.offers > 0 then
+            view.offerWaiting = nil
+            offer:Show()
+        end
         Refresh()
     elseif kind == "O" then
-        Open(true)
+        -- A new offer: its cards alone in the middle of the screen (once the state is in).
+        if state.loaded and #state.offers > 0 then
+            offer:Show()
+            Refresh()
+        else
+            view.offerWaiting = true
+            Send("STATE")
+        end
     elseif kind == "E" then
         note:SetText(message:sub(3))
+        offer.note:SetText(message:sub(3))
     end
 end
 
@@ -992,7 +1032,7 @@ local function Toggle()
     if frame:IsShown() then
         frame:Hide()
     else
-        Open(#state.offers > 0)
+        Open(false)                                     -- the offers wait behind the "N RUNE OFFERS" button
     end
 end
 local runeButton = EmberforgeRunes_Button

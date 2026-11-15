@@ -145,7 +145,7 @@ debug.detail.action:Click()
 StaticPopupDialogs.EMBERFORGE_RUNE_RELEASE.OnAccept(nil, popup.data)
 check(lastSent() == "EFRT REL,2001", "a Rare is released alone")
 
--- An offer: O opens the Halo on it; an Uncommon taken at once.
+-- An offer: O shows its cards alone in the middle of the screen (the Halo stays shut); an Uncommon taken at once.
 debug.frame:Hide()
 server("S,30,5,10,10")
 server("T,1001:1:0.1002:2:0.1003:3:0.1004:4:0.1005:5:0")
@@ -153,9 +153,10 @@ server(("Q,7,30,%d.2002.1006"):format(RAPID_FIREBALL + 1))
 server("Z")
 server("O")
 local offer = debug.offer
-check(debug.frame.shown and offer.shown and offer.cards[1].name.text == "Aggressive Fireball"
+check(not debug.frame.shown and offer.shown and offer:GetName() == "EmberforgeRuneOffer"
+    and offer.cards[1].name.text == "Aggressive Fireball"
     and offer.cards[2].rarity.text == "RARE RUNE" and offer.cards[3].rarity.text == "EPIC RUNE",
-    "an offer opens the Halo on its three runes")
+    "an offer shows its three runes on their own")
 check(offer.cards[1].fate.text == "Takes ability slot 1 of 10"
     and offer.cards[2].fate.text == "Fills Rare socket 1 of 10"
     and offer.cards[3].fate.text:find("Replaces one of your 5 epic runes"), "each card says what taking it does")
@@ -170,8 +171,8 @@ check(lastSent() == "EFRT PICK,7,1", "an Uncommon is taken at once")
 -- An Epic with every Epic socket full: a socket to replace is chosen first.
 offer:Show()
 offer.cards[3]:Click()
-check(view.replace and not offer.shown and debug.banner.text:find("Choose a socket"),
-    "a full set of Epic sockets asks which one to replace")
+check(view.replace and not offer.shown and debug.frame.shown and debug.banner.text:find("Choose a socket"),
+    "a full set of Epic sockets opens the Halo to ask which one to replace")
 sockets.epic[4]:Click()
 check(lastSent() == "EFRT PICK,7,3,4" and not view.replace, "the chosen socket goes with the pick")
 
