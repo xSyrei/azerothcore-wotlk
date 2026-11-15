@@ -46,7 +46,7 @@
 // - easier the lower the Hero: at level 10 creatures have half their health (the Hero's damage doubled) and deal
 //   75% of their damage, evenly up to the intended difficulty at the level cap (heroics: always);
 // - and twice the health throughout (HEALTH_PASS): the damage the Hero deals halved, the health they see doubled;
-//   their damage 10% more (DAMAGE_PASS);
+//   their damage 65% more (DAMAGE_PASS); bosses' health 4.5 times again (BOSS_HEALTH_PASS);
 // - experience for kills as if the creature were at their level: the core's (none for a creature gray to them) is
 //   replaced by Acore::XP::Gain's at that level, split evenly over the group's members in range.
 namespace
@@ -57,7 +57,9 @@ namespace
     // Every scaled creature's health on top of all that (Heroes melted them at the intended difficulty).
     constexpr float HEALTH_PASS = 2.0f;
     // And their damage on top of all that.
-    constexpr float DAMAGE_PASS = 1.1f;
+    constexpr float DAMAGE_PASS = 1.65f;
+    // Bosses' health on top of that again (+350%).
+    constexpr float BOSS_HEALTH_PASS = 4.5f;
     constexpr uint8 HEALTH_PROXY_CLASS = CLASS_WARRIOR;         // players' health by level: a warrior creature's
     constexpr uint8 HIGHEST_STATS_LEVEL = 83;
     constexpr uint8 BOSS_LEVELS = 2;            // bosses over the group's lowest level
@@ -100,6 +102,12 @@ namespace
     float HealthFactor(uint8 level)
     {
         return (EASE_HEALTH + (1.0f - EASE_HEALTH) * Progress(level)) * HEALTH_PASS;
+    }
+
+    // A creature's health factor for a player at that level: bosses BOSS_HEALTH_PASS more.
+    float HealthFactorOf(Creature const* creature, uint8 level)
+    {
+        return HealthFactor(level) * (creature->IsDungeonBoss() ? BOSS_HEALTH_PASS : 1.0f);
     }
 
     float DamageFactor(uint8 level)
@@ -304,7 +312,7 @@ namespace
                 float own = Health(enemy->GetLevel(), info->unit_class, info->expansion);
                 float there = Health(at, info->unit_class, info->expansion);
                 float scale = there > 0.0f ? own / there : 1.0f;
-                return scale / HealthFactor(player->GetLevel());
+                return scale / HealthFactorOf(enemy, player->GetLevel());
             }
 
         if (Creature* enemy = EnemyOf(attacker))
@@ -335,7 +343,7 @@ namespace
         uint8 at = LevelFor(creature, viewer->GetLevel(), TargetLevel(creature->GetMap()));
         float own = Health(creature->GetLevel(), info->unit_class, info->expansion);
         float there = Health(at, info->unit_class, info->expansion);
-        float factor = own > 0.0f ? there / own * HealthFactor(viewer->GetLevel()) : 1.0f;
+        float factor = own > 0.0f ? there / own * HealthFactorOf(creature, viewer->GetLevel()) : 1.0f;
         return { at, factor };
     }
 
@@ -614,8 +622,9 @@ public:
             return true;
         CreatureTemplate const* info = creature->GetCreatureTemplate();
         uint8 seen = LevelFor(creature, player->GetLevel(), TargetLevel(map));
-        handler->PSendSysMessage("{}: template levels {}-{}, now {}, to you {}{}.", creature->GetName(), info->minlevel,
-            info->maxlevel, creature->GetLevel(), seen, creature->IsDungeonBoss() ? " (a boss)" : "");
+        handler->PSendSysMessage("{}: template levels {}-{}, now {}, to you {}{}; its health x{:.2f}.",
+            creature->GetName(), info->minlevel, info->maxlevel, creature->GetLevel(), seen,
+            creature->IsDungeonBoss() ? " (a boss)" : "", HealthFactorOf(creature, player->GetLevel()));
         handler->PSendSysMessage("Your damage to it x{:.3f}; its melee to you x{:.3f} (its damage modifier capped "
             "x{:.2f}).", DamageScale(creature, player), DamageScale(player, creature) * ModifierCap(creature),
             ModifierCap(creature));

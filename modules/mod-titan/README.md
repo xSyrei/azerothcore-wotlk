@@ -766,8 +766,9 @@ replaced mod-autobalance):
 - **Twice the health** throughout (`HEALTH_PASS` 2): on top of the above, every scaled creature has double its
   health (the damage Heroes deal halved, the health they see doubled): level 10 creatures have their whole health,
   level 60 ones twice it.
-- **10% more damage** throughout (`DAMAGE_PASS` 1.1): every scaled creature's damage to Heroes, and boss mechanics
-  between players.
+- **65% more damage** throughout (`DAMAGE_PASS` 1.65): every scaled creature's damage to Heroes, and boss
+  mechanics between players.
+- **Bosses: 4.5 times the health again** (`BOSS_HEALTH_PASS`, +350%): a level 60 boss has 9 times its health.
 - **`.dungeonscale`** (GM): what the scaling does here: the creatures' level, whether you count (GMs do not:
   entering in GM mode leaves the creatures at their own levels), and for the creature selected its levels (template,
   now, to you) and the factors on your damage to it and its to you.
