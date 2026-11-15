@@ -89,6 +89,9 @@ services:
       AC_DUNGEON_FINDER_CAST_DESERTER: "0"
       # No resurrection sickness (Emberforge): it starts above the level cap.
       AC_DEATH_SICKNESS_LEVEL: "100"
+      # No limit on new instances an hour ("Too many instances"): the core lets one in while the count is under this,
+      # so 0 would lock every instance; a number never reached does it.
+      AC_ACCOUNT_INSTANCES_PER_HOUR: "1000000"
       # Testers on GM accounts can be whispered and befriended like anyone ("Player not found" otherwise: GMs start
       # with whispers off, and GM characters cannot be added as friends).
       AC_GM_WHISPERING_TO: "1"
