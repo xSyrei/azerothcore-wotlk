@@ -472,28 +472,27 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   log. Without a readable depth (anti-aliasing on, or no `INTZ`) the water is drawn by the
   engine's shader blended, with the sky alone in it. Everything the copy pass changes is put back from the engine's
   own record of the game's state (vertex declaration, stream 0, samplers and render states included).
-- **Atmosphere** (`src/atmosphere.hlsl`; off by default for now, to be reworked: *Engine atmosphere* in the panel
-  turns it on): once the world is drawn (the first draw into the back buffer with the depth
-  test off after world draws: the interface), the engine copies the scene and its distances again and draws over it:
-  the sky around the sun (and a soft disc) at half size, that light smeared toward the sun (light shafts streaming
-  past roofs, trees, mountains), and over the whole world height fog by the true distance (thicker below the eye,
-  drifting in wisps), lit toward the sun and where the shafts cross it. The interface is drawn after, untouched. The
-  camera comes from the terrain's and buildings' vertex shaders (view in c0-c3, projection in c4-c7). The rays come
-  from the sun or moon as the sky draws them: each a blended, textured quad in the sky pass (fixed function, depth
-  range at 1), its view transform's translation where it stands in view space (the sun's texture is the larger; the
-  body above the horizon wins). The game skips a body's quad while it is off screen, so each is remembered in the
-  world by its texture (turned out of view space by the sky dome's rotation) for ten minutes: the light keeps its
-  direction whichever way the camera turns. A frame with no terrain or buildings drawn (looking up) takes the camera
-  from the sky dome's rotation and the last position. The lighting's direction (the models' c12, which does not
-  match the drawn sun) is
-  the fallback, and its colour (c13) colours the light; *Flip the sun* turns it around. The body only sets the
-  light's direction: the whole world is lit by it. Surfaces (normals from the depth) facing it brighten in its colour
-  and those turned away darken, each first checked for something in the way toward the sun through the depth (soft
-  shadows); and along every view ray 16 points of air are checked the same way, so sunlit air glows and air in a
-  shadow does not (shafts and shadow streaks from whatever angle the sun stands at, behind the camera too). The fog's
-  colour is taken only from opaque fogged draws (the sky dome): the game sets it black or grey for blended ones.
-  Every part
-  is a slider in the panel's Atmosphere section.
+- **Atmosphere** (`src/atmosphere.hlsl`, on by default): once the world is drawn (the first draw into the back
+  buffer with the depth test off after world draws: the interface), the engine copies the scene and its distances
+  and draws over the world; the interface is drawn after, untouched. Nothing follows the sun or the moon: every
+  pixel is treated alike, so the look is the same whichever way the camera turns.
+  - **Night** comes from the brightness of the game's haze colour (taken from opaque fogged draws: the sky dome; the
+    game sets it by zone and hour), day above *Day above*, full night below *Full night below*, eased over a couple
+    of seconds (or set by hand). By night the dark gets darker and colder (*Night's darkness*, colour loss, blue);
+    what is brighter than *Lights kept* (lamps, windows, fire, spells) keeps its light.
+  - **Bloom**: what shines past a soft threshold (lower by night; the sky counts less) at half the screen, averaged
+    down to a 32nd (13 taps each) and back up (each level plus the smaller one spread over it); added over the
+    world.
+  - **The lights' spill**: the three widest levels fall on the ground and walls about each light, in their colour
+    (*Lights on the paths*): lamps light the road about them. They also glow through the haze (*halos*): the
+    volumetric light.
+  - **Haze** by distance (past its start) and, the camera known (the terrain's and buildings' vertex shaders: view in
+    c0-c3, projection in c4-c7; the sky dome's rotation on frames without them), by height and in drifting wisps;
+    in the game's haze colour (or an own one), dimmer by night.
+  - **Colour grade**: a day tint and a night tint (mixed by the night), saturation, contrast, exposure, a soft
+    shoulder for the highlights the light added, a vignette.
+  Every part is a slider in the panel's Atmosphere section; *Show* draws one part alone (bloom, haze, the night's
+  darkening, the spill). Its settings' keys are `atmosphere_*` in `Emberforge.ini`.
 - The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's
   `d3dcompiler_47.dll` under Wine (any 64-bit copy, e.g. an Electron app's: Wine's own compiler cannot build shader
   model 3): `D3DCOMPILER=/path/to/d3dcompiler_47.dll sh build.sh`. Players need no compiler.

@@ -38,7 +38,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.14"
+#define EMBERFORGE_ENGINE_VERSION "0.15"
 
 namespace
 {
@@ -184,18 +184,29 @@ namespace
         float skyBrightness = 2.2f, sparkle = 0.397f, sparkleSize = 0.093f;
         float sunAzimuth = 6.2134f, sunHeight = 0.4712f;
         float shading = 1.0f, refraction = 3.0f, opacity = 0.85f;
-        // The atmosphere: light shafts from the sun and fog lit by it.
-        // Off for now (it is to be reworked): the water stays. Its saved key is new, so an older Emberforge.ini
-        // that saved it on does not turn it back on.
-        bool atmosphere = false, atmosphereShow = false, sunFlip = false;
-        float shaftIntensity = 0.8f, shaftLength = 0.97f, skyThreshold = 0.55f, sunDisc = 0.3f, shaftScatter = 1.0f;
-        // Subtle: haze in the distance and low down, the colours nearby kept (a thick veil made the world bland).
-        float fogDensity = 0.15f, fogStart = 40.0f, fogFalloff = 0.05f, fogBelow = 0.0f, fogMost = 0.35f;
-        float sunGlow = 0.8f, mist = 0.35f, mistSize = 25.0f, mistSpeed = 1.0f;
-        // The sun lighting the world: surfaces facing it, and the air it reaches.
-        float sunLight = 0.6f, airLight = 0.5f, airDistance = 120.0f;
-        bool fogOwn = false;                                   // the fog's colour: the game's (by zone and hour) or own
-        float fogColour[3] = {0.55f, 0.62f, 0.7f};
+        // The atmosphere: the whole world's light, haze and colour (src/atmosphere.hlsl), alike in every direction
+        // (nothing follows the sun or the moon). Its keys are new (atmosphere_*), so an older Emberforge.ini's
+        // light-shaft settings are left behind.
+        bool atmosphere = true, nightAuto = true, hazeOwn = false;
+        float show = 0.0f;                                     // 0 all, 1 bloom, 2 haze, 3 night, 4 spill
+        // Bloom: what shines brighter than the threshold (lower by night, so lamps and windows stand out).
+        float bloom = 0.9f, bloomThreshold = 0.78f, bloomNightThreshold = 0.32f, bloomKnee = 0.2f;
+        float bloomSky = 0.12f, bloomColour = 1.25f, bloomReach = 0.9f;
+        // Night: by the brightness of the game's haze colour (set by zone and hour): day above nightFrom, full night
+        // below nightTo. The dark gets darker and colder; what is brighter than keepTo keeps its light.
+        float nightForce = 0.0f, nightFrom = 0.32f, nightTo = 0.12f, nightDark = 0.55f, keepFrom = 0.3f,
+              keepTo = 0.7f, nightDesaturate = 0.55f;
+        float nightBlue[3] = {0.62f, 0.76f, 1.0f};
+        // The lights by night: their spill on the ground and walls around them, their halos in the haze.
+        float spill = 0.9f, halos = 0.6f, hazeNightLight = 0.45f;
+        // Haze: subtle by day (colours nearby kept), in the game's colour.
+        float hazeDensity = 0.12f, hazeStart = 30.0f, hazeFalloff = 0.03f, hazeMost = 0.55f, hazeBelow = 0.0f;
+        float hazeColour[3] = {0.55f, 0.62f, 0.7f};
+        float mist = 0.3f, mistSize = 25.0f, mistSpeed = 1.0f;
+        // The colour grade: a warm day, a cool night.
+        float dayTint[3] = {1.0f, 0.95f, 0.86f}, nightTint[3] = {0.72f, 0.84f, 1.0f};
+        float gradeTint = 0.35f, gradeSaturation = 1.1f, contrast = 1.06f, vignette = 0.25f, exposure = 1.0f,
+              shoulder = 0.82f;
 
         struct Entry
         {
@@ -219,14 +230,30 @@ namespace
                 {"reflect_distortion", &distortion}, {"sky_brightness", &skyBrightness}, {"sparkle", &sparkle},
                 {"sparkle_size", &sparkleSize}, {"sun_azimuth", &sunAzimuth}, {"sun_height", &sunHeight},
                 {"wave_shading", &shading}, {"refraction", &refraction},
-                {"opacity", &opacity}, {"atmosphere_rework", nullptr, &atmosphere}, {"sun_flip", nullptr, &sunFlip},
-                {"shaft_intensity", &shaftIntensity}, {"shaft_length", &shaftLength},
-                {"sky_threshold", &skyThreshold}, {"sun_disc", &sunDisc}, {"shaft_scatter", &shaftScatter},
-                {"fog_density", &fogDensity}, {"fog_start", &fogStart}, {"fog_falloff", &fogFalloff},
-                {"fog_below", &fogBelow}, {"fog_most", &fogMost}, {"sun_glow", &sunGlow}, {"mist", &mist},
-                {"mist_size", &mistSize}, {"mist_speed", &mistSpeed}, {"fog_own", nullptr, &fogOwn},
-                {"sun_light", &sunLight}, {"air_light", &airLight}, {"air_distance", &airDistance},
-                {"fog_colour_r", &fogColour[0]}, {"fog_colour_g", &fogColour[1]}, {"fog_colour_b", &fogColour[2]},
+                {"opacity", &opacity}, {"atmosphere_global", nullptr, &atmosphere},
+                {"atmosphere_bloom", &bloom}, {"atmosphere_bloom_threshold", &bloomThreshold},
+                {"atmosphere_bloom_night_threshold", &bloomNightThreshold}, {"atmosphere_bloom_knee", &bloomKnee},
+                {"atmosphere_bloom_sky", &bloomSky}, {"atmosphere_bloom_colour", &bloomColour},
+                {"atmosphere_bloom_reach", &bloomReach}, {"atmosphere_night_auto", nullptr, &nightAuto},
+                {"atmosphere_night_force", &nightForce}, {"atmosphere_night_from", &nightFrom},
+                {"atmosphere_night_to", &nightTo}, {"atmosphere_night_dark", &nightDark},
+                {"atmosphere_keep_from", &keepFrom}, {"atmosphere_keep_to", &keepTo},
+                {"atmosphere_night_desaturate", &nightDesaturate}, {"atmosphere_night_blue_r", &nightBlue[0]},
+                {"atmosphere_night_blue_g", &nightBlue[1]}, {"atmosphere_night_blue_b", &nightBlue[2]},
+                {"atmosphere_spill", &spill}, {"atmosphere_halos", &halos},
+                {"atmosphere_haze_night_light", &hazeNightLight}, {"atmosphere_haze_density", &hazeDensity},
+                {"atmosphere_haze_start", &hazeStart}, {"atmosphere_haze_falloff", &hazeFalloff},
+                {"atmosphere_haze_most", &hazeMost}, {"atmosphere_haze_below", &hazeBelow},
+                {"atmosphere_haze_own", nullptr, &hazeOwn}, {"atmosphere_haze_r", &hazeColour[0]},
+                {"atmosphere_haze_g", &hazeColour[1]}, {"atmosphere_haze_b", &hazeColour[2]},
+                {"atmosphere_mist", &mist}, {"atmosphere_mist_size", &mistSize},
+                {"atmosphere_mist_speed", &mistSpeed}, {"atmosphere_day_tint_r", &dayTint[0]},
+                {"atmosphere_day_tint_g", &dayTint[1]}, {"atmosphere_day_tint_b", &dayTint[2]},
+                {"atmosphere_night_tint_r", &nightTint[0]}, {"atmosphere_night_tint_g", &nightTint[1]},
+                {"atmosphere_night_tint_b", &nightTint[2]}, {"atmosphere_tint", &gradeTint},
+                {"atmosphere_saturation", &gradeSaturation}, {"atmosphere_contrast", &contrast},
+                {"atmosphere_vignette", &vignette}, {"atmosphere_exposure", &exposure},
+                {"atmosphere_shoulder", &shoulder},
             };
             for (const Entry &e : entries)
                 f(e);
@@ -338,7 +365,7 @@ namespace
             ReleaseTargets();
             if (m_waterPs)
                 m_waterPs->Release();
-            for (IDirect3DPixelShader9 *shader : {m_distancePs, m_skyPs, m_shaftsPs, m_compositePs, m_scatterPs})
+            for (IDirect3DPixelShader9 *shader : {m_distancePs, m_brightPs, m_downPs, m_upPs, m_finalPs})
                 if (shader)
                     shader->Release();
             ShutdownPanel();
@@ -741,14 +768,14 @@ namespace
                 m_waterPs = nullptr;
             if (FAILED(real->CreatePixelShader(kDistancePixelShader, &m_distancePs)))
                 m_distancePs = nullptr;
-            bool sky = SUCCEEDED(real->CreatePixelShader(kAtmosphereSkyPixelShader, &m_skyPs));
-            bool shafts = SUCCEEDED(real->CreatePixelShader(kAtmosphereShaftsPixelShader, &m_shaftsPs));
-            bool composite = SUCCEEDED(real->CreatePixelShader(kAtmosphereCompositePixelShader, &m_compositePs));
-            bool scatter = SUCCEEDED(real->CreatePixelShader(kAtmosphereScatterPixelShader, &m_scatterPs));
-            if (!sky || !shafts || !composite || !scatter)
-                m_skyPs = m_shaftsPs = m_compositePs = m_scatterPs = nullptr;
+            bool bright = SUCCEEDED(real->CreatePixelShader(kAtmosphereBrightPixelShader, &m_brightPs));
+            bool down = SUCCEEDED(real->CreatePixelShader(kAtmosphereDownPixelShader, &m_downPs));
+            bool up = SUCCEEDED(real->CreatePixelShader(kAtmosphereUpPixelShader, &m_upPs));
+            bool finished = SUCCEEDED(real->CreatePixelShader(kAtmosphereFinalPixelShader, &m_finalPs));
+            if (!bright || !down || !up || !finished)
+                m_brightPs = m_downPs = m_upPs = m_finalPs = nullptr;
             Log("engine shaders: water %s, distance %s, atmosphere %s", m_waterPs ? "ok" : "failed",
-                m_distancePs ? "ok" : "failed", m_compositePs ? "ok" : "failed");
+                m_distancePs ? "ok" : "failed", m_finalPs ? "ok" : "failed");
         }
 
         // The readable depth buffer (in place of the automatic one), the scene's copy and the distances: the size of
@@ -769,14 +796,24 @@ namespace
             if (FAILED(real->CreateTexture(desc.Width, desc.Height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_R32F,
                                            D3DPOOL_DEFAULT, &m_distance, nullptr)))
                 m_distance = nullptr;
-            // The atmosphere's half-size targets (sky light, shafts, scatter): half floats, or 8 bits where not.
-            for (IDirect3DTexture9 *&half : m_half)
+            // The light's levels (a half, a quarter... a 32nd of the screen), down and back up: half floats, or 8
+            // bits where not.
+            for (int level = 0; level < kLevels; ++level)
             {
-                if (FAILED(real->CreateTexture(desc.Width / 2, desc.Height / 2, 1, D3DUSAGE_RENDERTARGET,
-                                               D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT, &half, nullptr)) &&
-                    FAILED(real->CreateTexture(desc.Width / 2, desc.Height / 2, 1, D3DUSAGE_RENDERTARGET,
-                                               D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &half, nullptr)))
-                    half = nullptr;
+                m_levelWidth[level] = std::max(1u, desc.Width >> (level + 1));
+                m_levelHeight[level] = std::max(1u, desc.Height >> (level + 1));
+                for (IDirect3DTexture9 **texture : {&m_down[level], &m_up[level]})
+                {
+                    if (texture == &m_up[level] && level == kLevels - 1)
+                        continue;                            // the smallest has no way up into it
+                    if (FAILED(real->CreateTexture(m_levelWidth[level], m_levelHeight[level], 1,
+                                                   D3DUSAGE_RENDERTARGET, D3DFMT_A16B16G16R16F, D3DPOOL_DEFAULT,
+                                                   texture, nullptr)) &&
+                        FAILED(real->CreateTexture(m_levelWidth[level], m_levelHeight[level], 1,
+                                                   D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, texture,
+                                                   nullptr)))
+                        *texture = nullptr;
+                }
             }
             bool intz = false;
             IDirect3D9 *d3d = nullptr;
@@ -814,12 +851,19 @@ namespace
                 m_intzSurface->Release();
                 m_intzSurface = nullptr;
             }
-            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance, &m_half[0], &m_half[1], &m_half[2]})
+            for (IDirect3DTexture9 **texture : {&m_intz, &m_scene, &m_distance})
             {
                 if (*texture)
                     (*texture)->Release();
                 *texture = nullptr;
             }
+            for (int level = 0; level < kLevels; ++level)
+                for (IDirect3DTexture9 **texture : {&m_down[level], &m_up[level]})
+                {
+                    if (*texture)
+                        (*texture)->Release();
+                    *texture = nullptr;
+                }
         }
 
         // ---- The water ----
@@ -1069,10 +1113,9 @@ namespace
 
         // ---- The atmosphere ----
 
-        // The camera and the sun, from the game's vertex shader constants as each draw goes by. The terrain's and
-        // the buildings' shaders hold the view in c0-c3 (rows: a world point times them) and the projection in c4-c7
-        // (infinite: (0, 0, 1, 1) and (0, 0, -near, 0)); the models' shaders hold the projection transposed in c2-c5
-        // and the sun's light in c12 (the direction it travels) and c13 (its colour).
+        // The camera, from the game's vertex shader constants as each draw goes by: the terrain's and the
+        // buildings' shaders hold the view in c0-c3 (rows: a world point times them) and the projection in c4-c7
+        // (infinite: (0, 0, 1, 1) and (0, 0, -near, 0)). Only for the haze's height: the rest needs no camera.
         void WatchConstants()
         {
             const float (*c)[4] = m_vsc;
@@ -1089,85 +1132,20 @@ namespace
                 m_cameraProjection[2] = -c[7][2];
                 m_cameraSeen = m_cameraEver = true;
             }
-            else if (near0(c[4][2], 1.0f) && c[4][3] < 0.0f && near0(c[5][2], 1.0f) && near0(c[5][3], 0.0f) &&
-                     unit(c[12]))
-            {
-                for (int i = 0; i < 3; ++i)
-                {
-                    m_sunDirection[i] = -c[12][i];
-                    m_sunColour[i] = std::fmax(0.0f, std::fmin(c[13][i], 2.0f));
-                }
-                m_sunSeen = true;
-            }
         }
 
-        // The sky pass (fixed function, the depth range at 1). Its dome is drawn with the camera's rotation (and no
-        // translation): kept, for frames that draw no terrain or buildings (looking up, or at water and models only).
-        // The sun and the moon are each a textured, blended quad (2 triangles) placed by its view transform, whose
-        // translation is where it stands in view space (its rotation only turns the quad toward the eye). Each body
-        // is remembered in the world by its texture: the game does not draw it while it is off screen, and the light
-        // must not turn then (the sun moves slowly). The sun's texture is the larger.
+        // The sky pass (fixed function, the depth range at 1): its dome is drawn with the camera's rotation (and no
+        // translation), kept for frames that draw no terrain or buildings (looking up, or at water and models only).
         void WatchSky(UINT count)
         {
-            if (m_viewport.MinZ < 0.999f)
+            if (m_viewport.MinZ < 0.999f || count <= 100 || m_rs[D3DRS_ALPHABLENDENABLE])
                 return;
-            if (count > 100 && !m_rs[D3DRS_ALPHABLENDENABLE])
-            {
-                for (int i = 0; i < 3; ++i)
-                    for (int j = 0; j < 3; ++j)
-                        m_skyRotation[i][j] = (&m_view._11)[i * 4 + j];
-                m_skyProjection[0] = m_projection._11;
-                m_skyProjection[1] = m_projection._22;
-                m_skySeen = true;
-                return;
-            }
-            if (count != 2 || !m_rs[D3DRS_ALPHABLENDENABLE] || !m_tex[0] || m_tex[0]->GetType() != D3DRTYPE_TEXTURE)
-                return;
-            float t[3] = {m_view._41, m_view._42, m_view._43};
-            float length = std::sqrt(t[0] * t[0] + t[1] * t[1] + t[2] * t[2]);
-            if (length < 1.0f || !m_skySeen)
-                return;
-            // Out of view space by the sky dome's rotation (this frame's camera).
-            float world[3];
             for (int i = 0; i < 3; ++i)
-                world[i] = (m_skyRotation[i][0] * t[0] + m_skyRotation[i][1] * t[1] + m_skyRotation[i][2] * t[2]) /
-                           length;
-            D3DSURFACE_DESC desc = {};
-            static_cast<IDirect3DTexture9 *>(m_tex[0])->GetLevelDesc(0, &desc);
-            Body *slot = nullptr;
-            for (Body &body : m_body)
-                if (body.texture == m_tex[0])
-                    slot = &body;
-            if (!slot)
-            {
-                slot = &m_body[0];                           // a new one takes the longest unseen
-                for (Body &body : m_body)
-                    if (body.seen < slot->seen)
-                        slot = &body;
-            }
-            slot->texture = m_tex[0];
-            slot->size = desc.Width;
-            slot->seen = Seconds();
-            memcpy(slot->world, world, sizeof(world));
-            m_bodyDrawn = true;
-        }
-
-        // Toward the sun or the moon in the world: the body above the horizon (the sun, the larger, when both are),
-        // as last drawn in the last ten minutes. False if none.
-        bool CelestialDirection(float out[3]) const
-        {
-            const Body *best = nullptr;
-            double now = Seconds();
-            for (const Body &body : m_body)
-            {
-                if (!body.texture || now - body.seen > 600.0 || body.world[2] < -0.05f)
-                    continue;
-                if (!best || body.size > best->size)
-                    best = &body;
-            }
-            if (best)
-                memcpy(out, best->world, sizeof(best->world));
-            return best != nullptr;
+                for (int j = 0; j < 3; ++j)
+                    m_skyRotation[i][j] = (&m_view._11)[i * 4 + j];
+            m_skyProjection[0] = m_projection._11;
+            m_skyProjection[1] = m_projection._22;
+            m_skySeen = true;
         }
 
         // A frame with no terrain or buildings drawn: the camera from the sky dome's rotation and the last position.
@@ -1209,7 +1187,8 @@ namespace
                 m_atmosphereDone = true;
                 if (!m_cameraSeen)
                     m_cameraSeen = CameraFromSky();
-                if (m_settings.atmosphere && m_compositePs && m_cameraSeen && m_half[0] && m_half[1] && m_half[2])
+                UpdateNight();
+                if (m_settings.atmosphere && m_finalPs && LevelsReady())
                     Atmosphere();
                 return;
             }
@@ -1234,73 +1213,111 @@ namespace
                 m_worldFog = m_rs[D3DRS_FOGCOLOR];
         }
 
+        bool LevelsReady() const
+        {
+            for (int level = 0; level < kLevels; ++level)
+                if (!m_down[level] || (level < kLevels - 1 && !m_up[level]))
+                    return false;
+            return true;
+        }
+
+        // How far into the night it is, from the brightness of the game's haze colour (the game sets it by zone and
+        // hour, the same whichever way the camera turns), eased over a couple of seconds.
+        void UpdateNight()
+        {
+            const Settings &s = m_settings;
+            double now = Seconds();
+            float dt = m_nightTime > 0.0 ? static_cast<float>(std::fmin(now - m_nightTime, 1.0)) : 1.0f;
+            m_nightTime = now;
+            DWORD fog = m_worldFog;
+            float r = ((fog >> 16) & 0xFF) / 255.0f, g = ((fog >> 8) & 0xFF) / 255.0f, b = (fog & 0xFF) / 255.0f;
+            m_hazeBrightness = 0.2126f * r + 0.7152f * g + 0.0722f * b;
+            float target = s.nightForce;
+            if (s.nightAuto && !m_worldFog)
+                target = 0.0f;                                   // no haze seen yet (the login screen): day
+            else if (s.nightAuto)
+            {
+                float span = std::fmax(s.nightFrom - s.nightTo, 0.01f);
+                float t = std::fmin(1.0f, std::fmax(0.0f, (s.nightFrom - m_hazeBrightness) / span));
+                target = t * t * (3.0f - 2.0f * t);
+            }
+            m_night += (target - m_night) * std::fmin(1.0f, dt * 1.5f);
+        }
+
         void Atmosphere()
         {
             const Settings &s = m_settings;
-            if (!CopyScene(m_cameraProjection[2], m_worldMinZ, m_worldMaxZ))
+            // The distances need the near plane: the camera's, the last seen, or the game's usual.
+            float nearPlane = m_cameraEver ? m_cameraProjection[2] : 0.2f;
+            if (!CopyScene(nearPlane, m_worldMinZ, m_worldMaxZ))
                 return;
+            const float night = m_night;
+            PassState();
+            // The light in the scene, at half the screen.
+            float threshold = s.bloomThreshold + (s.bloomNightThreshold - s.bloomThreshold) * night;
+            float bright[2][4] = {
+                {1.0f / m_width, 1.0f / m_height, threshold, std::fmax(s.bloomKnee, 0.01f)},
+                {s.bloomSky, s.bloomColour, 0.0f, 0.0f},
+            };
+            real->SetPixelShaderConstantF(0, bright[0], 2);
+            Bind(0, m_scene, true);
+            Bind(1, m_distance, false);
+            DrawInto(m_down[0], m_brightPs, m_levelWidth[0], m_levelHeight[0]);
+            // Down the levels.
+            for (int level = 1; level < kLevels; ++level)
+            {
+                float texel[4] = {1.0f / m_levelWidth[level - 1], 1.0f / m_levelHeight[level - 1], 0.0f, 0.0f};
+                real->SetPixelShaderConstantF(0, texel, 1);
+                Bind(2, m_down[level - 1], true);
+                DrawInto(m_down[level], m_downPs, m_levelWidth[level], m_levelHeight[level]);
+            }
+            // And back up: each level plus the smaller one spread over it.
+            for (int level = kLevels - 2; level >= 0; --level)
+            {
+                IDirect3DTexture9 *smaller = level == kLevels - 2 ? m_down[level + 1] : m_up[level + 1];
+                float texel[4] = {1.0f / m_levelWidth[level + 1], 1.0f / m_levelHeight[level + 1], s.bloomReach,
+                                  0.0f};
+                real->SetPixelShaderConstantF(0, texel, 1);
+                Bind(2, m_down[level], true);
+                Bind(3, smaller, true);
+                DrawInto(m_up[level], m_upPs, m_levelWidth[level], m_levelHeight[level]);
+            }
+            // Over the screen.
             const float (*view)[4] = m_camera;
-            float sun[3] = {m_sunDirection[0], m_sunDirection[1], m_sunDirection[2]};
-            m_fromSky = CelestialDirection(sun);
-            if (!m_fromSky && !m_sunSeen)
-            {
-                sun[0] = 0.5f;                                   // no model drawn: a sun high in the south-west
-                sun[1] = -0.5f;
-                sun[2] = 0.7f;
-            }
-            if (s.sunFlip)
-                for (float &v : sun)
-                    v = -v;
-            // The sun on screen: its direction in view space, projected.
-            float vx = sun[0] * view[0][0] + sun[1] * view[1][0] + sun[2] * view[2][0];
-            float vy = sun[0] * view[0][1] + sun[1] * view[1][1] + sun[2] * view[2][1];
-            float vz = sun[0] * view[0][2] + sun[1] * view[1][2] + sun[2] * view[2][2];
-            float u = 0.5f, v = -1.0f, shown = 0.0f;
-            if (vz > 0.01f)
-            {
-                u = 0.5f + 0.5f * m_cameraProjection[0] * vx / vz;
-                v = 0.5f - 0.5f * m_cameraProjection[1] * vy / vz;
-                float off = std::fmax(std::fmax(-u, u - 1.0f), std::fmax(-v, v - 1.0f));   // past the screen's edge
-                shown = std::fmin(1.0f, vz * 5.0f) * std::fmax(0.0f, 1.0f - off / 0.6f);
-            }
-            shown *= std::fmax(0.0f, std::fmin(1.0f, sun[2] * 6.0f + 0.3f));   // none once the sun is down
-            DWORD fog = m_worldFog;
             float eye[3];
             for (int i = 0; i < 3; ++i)
                 eye[i] = -(view[i][0] * view[3][0] + view[i][1] * view[3][1] + view[i][2] * view[3][2]);
+            DWORD fog = m_worldFog;
+            float tint[3];
+            for (int i = 0; i < 3; ++i)
+                tint[i] = s.dayTint[i] + (s.nightTint[i] - s.dayTint[i]) * night;
             float seconds = static_cast<float>(std::fmod(Seconds() - m_epoch, 3600.0));
             float constants[kPassConstants][4] = {
-                {u, v, shown, 0.0f},
-                {m_sunColour[0], m_sunColour[1], m_sunColour[2], s.shaftIntensity},
-                {s.fogOwn ? s.fogColour[0] : ((fog >> 16) & 0xFF) / 255.0f,
-                 s.fogOwn ? s.fogColour[1] : ((fog >> 8) & 0xFF) / 255.0f,
-                 s.fogOwn ? s.fogColour[2] : (fog & 0xFF) / 255.0f, s.fogDensity},
-                {s.fogStart, s.fogFalloff, s.fogMost, s.sunGlow},
-                {s.shaftLength, s.skyThreshold, s.shaftScatter, s.sunDisc},
-                {m_cameraProjection[0], m_cameraProjection[1], m_cameraProjection[2], s.atmosphereShow ? 1.0f : 0.0f},
+                {night, s.nightDark, s.keepFrom, std::fmax(s.keepTo, s.keepFrom + 0.01f)},
+                {s.nightDesaturate, s.nightBlue[0], s.nightBlue[1], s.nightBlue[2]},
+                {s.hazeOwn ? s.hazeColour[0] : ((fog >> 16) & 0xFF) / 255.0f,
+                 s.hazeOwn ? s.hazeColour[1] : ((fog >> 8) & 0xFF) / 255.0f,
+                 s.hazeOwn ? s.hazeColour[2] : (fog & 0xFF) / 255.0f, s.hazeDensity},
+                {s.hazeStart, s.hazeFalloff, s.hazeMost, s.hazeBelow},
+                {m_cameraProjection[0], m_cameraProjection[1], nearPlane, m_cameraSeen ? 1.0f : 0.0f},
                 {view[0][0], view[0][1], view[0][2], 0.0f},
                 {view[1][0], view[1][1], view[1][2], 0.0f},
                 {view[2][0], view[2][1], view[2][2], 0.0f},
-                {eye[0], eye[1], eye[2], s.fogBelow},
-                {sun[0], sun[1], sun[2], seconds},
-                {s.mist, s.mistSize, s.mistSpeed, 1.0f / m_height},
-                {vx, vy, vz, 1.0f},
-                {s.sunLight, s.airLight, s.airDistance, 1.0f / m_width},
+                {eye[0], eye[1], eye[2], s.show},
+                {s.bloom, s.spill, s.halos, s.hazeNightLight},
+                {tint[0], tint[1], tint[2], s.gradeTint},
+                {s.gradeSaturation, s.contrast, s.vignette, s.exposure},
+                {s.mist, s.mistSize, s.mistSpeed, seconds},
+                {1.0f / m_width, 1.0f / m_height, static_cast<float>(m_width) / m_height, s.shoulder},
             };
-            if (!m_sunSeen)
-                constants[1][0] = constants[1][1] = constants[1][2] = 0.8f;
-            PassState();
+            if (!m_cameraSeen)                                   // a sane projection for the rays' lengths
+                constants[4][0] = constants[4][1] = 1.0f;
             real->SetPixelShaderConstantF(0, constants[0], kPassConstants);
-            Bind(0, m_scene, true);
+            Bind(0, m_scene, false);
             Bind(1, m_distance, false);
-            DrawInto(m_half[0], m_skyPs, m_width / 2, m_height / 2);
-            Bind(2, m_half[0], true);
-            DrawInto(m_half[1], m_shaftsPs, m_width / 2, m_height / 2);
-            Bind(2, nullptr, false);
-            DrawInto(m_half[2], m_scatterPs, m_width / 2, m_height / 2);
-            Bind(3, m_half[1], true);
-            Bind(4, m_half[2], true);
-            DrawInto(nullptr, m_compositePs, m_width, m_height);
+            Bind(2, m_up[0], true);
+            Bind(3, m_up[2], true);
+            DrawInto(nullptr, m_finalPs, m_width, m_height);
             RestoreAfterPass();
             ++m_frame.atmosphere;
         }
@@ -1582,25 +1599,20 @@ namespace
                 m_atmosphereWhy = "off";
             else if (m_last.atmosphere)
                 m_atmosphereWhy = "drawn";
-            else if (!m_compositePs)
+            else if (!m_finalPs)
                 m_atmosphereWhy = "not drawn: its shaders failed";
-            else if (!m_half[0] || !m_half[1] || !m_half[2])
+            else if (!LevelsReady())
                 m_atmosphereWhy = "not drawn: its targets failed";
             else if (!m_worldDrawn)
                 m_atmosphereWhy = "not drawn: no world seen (depth not the engine's?)";
             else if (!m_atmosphereDone)
                 m_atmosphereWhy = "not drawn: the interface never started";
-            else if (!m_cameraSeen)
-                m_atmosphereWhy = "not drawn: camera not found";
             else
                 m_atmosphereWhy = "not drawn: the scene copy failed";
-            m_sunSeenLast = m_sunSeen;
             m_frame = Counters();
             m_waterPrepared = false;
-            m_worldDrawn = m_atmosphereDone = m_cameraSeen = m_sunSeen = false;
-            m_fromSkyLast = m_fromSky;
-            m_fromSky = false;
-            m_skySeen = m_bodyDrawn = false;
+            m_worldDrawn = m_atmosphereDone = m_cameraSeen = false;
+            m_skySeen = false;
         }
 
         // ---- The panel (Home) ----
@@ -1692,10 +1704,8 @@ namespace
             ImGui::Text("Water draws: %u (%u drawn by the engine%s)", m_last.waterDraws, m_last.waterReplaced,
                         m_last.waterReplaced && !m_waterCopied ? ", no depth: plain" : "");
             ImGui::Text("Readable depth: %s", m_intz ? "yes" : "no");
-            ImGui::Text("Atmosphere: %s; camera %s; rays from %s", m_atmosphereWhy,
-                        m_cameraSeenLast ? "found" : "not found",
-                        m_fromSkyLast ? "the sun/moon in the sky"
-                                      : (m_sunSeenLast ? "the light's direction" : "a guess"));
+            ImGui::Text("Atmosphere: %s; camera %s (the haze's height)", m_atmosphereWhy,
+                        m_cameraSeenLast ? "found" : "not found");
             WaterPanel();
             AtmospherePanel();
             if (ImGui::CollapsingHeader("Diagnostics"))
@@ -1738,40 +1748,64 @@ namespace
                 return;
             ImGui::PushItemWidth(220);
             ImGui::Checkbox("Engine atmosphere", &s.atmosphere);
+            int show = static_cast<int>(s.show + 0.5f);
             ImGui::SameLine();
-            ImGui::Checkbox("Show its light alone", &s.atmosphereShow);
-            ImGui::SameLine();
-            ImGui::Checkbox("Flip the sun", &s.sunFlip);
-            ImGui::SeparatorText("Sunlight");
-            ImGui::SliderFloat("Sunlight on the world", &s.sunLight, 0.0f, 2.0f);
-            ImGui::SliderFloat("Sunlight in the air", &s.airLight, 0.0f, 3.0f);
-            ImGui::SliderFloat("Air lit out to", &s.airDistance, 20.0f, 400.0f, "%.0f yards");
-            ImGui::SeparatorText("Light shafts");
-            ImGui::SliderFloat("Shaft intensity", &s.shaftIntensity, 0.0f, 3.0f);
-            ImGui::SliderFloat("Shaft length", &s.shaftLength, 0.85f, 1.0f, "%.3f");
-            ImGui::SliderFloat("Sky brightness threshold", &s.skyThreshold, 0.0f, 1.0f);
-            ImGui::SliderFloat("Sun disc size", &s.sunDisc, 0.0f, 1.0f);
-            ImGui::SliderFloat("Shafts in the fog", &s.shaftScatter, 0.0f, 3.0f);
-            ImGui::SeparatorText("Fog");
+            ImGui::SetNextItemWidth(150);
+            if (ImGui::Combo("Show", &show, "Everything\0Bloom alone\0Haze alone\0Night (blue: darkened)\0"
+                                             "Lights' spill alone\0"))
+                s.show = static_cast<float>(show);
+            ImGui::SeparatorText("Day and night");
+            ImGui::Text("The game's haze brightness now: %.3f; night %.0f%%", m_hazeBrightness, m_night * 100.0f);
+            ImGui::Checkbox("Night by the haze's brightness", &s.nightAuto);
+            if (!s.nightAuto)
+                ImGui::SliderFloat("Night (by hand)", &s.nightForce, 0.0f, 1.0f);
+            ImGui::SliderFloat("Day above", &s.nightFrom, 0.0f, 1.0f, "%.3f");
+            ImGui::SliderFloat("Full night below", &s.nightTo, 0.0f, 1.0f, "%.3f");
+            ImGui::SliderFloat("Night's darkness", &s.nightDark, 0.05f, 1.0f, "%.2f (1: none)");
+            ImGui::SliderFloat("Lights kept from", &s.keepFrom, 0.0f, 1.0f);
+            ImGui::SliderFloat("Lights kept fully at", &s.keepTo, 0.0f, 1.0f);
+            ImGui::SliderFloat("Night's colour loss", &s.nightDesaturate, 0.0f, 1.0f);
+            ImGui::ColorEdit3("Night's blue", s.nightBlue, ImGuiColorEditFlags_NoInputs);
+            ImGui::SeparatorText("Lights and bloom");
+            ImGui::SliderFloat("Bloom", &s.bloom, 0.0f, 3.0f);
+            ImGui::SliderFloat("Bloom threshold by day", &s.bloomThreshold, 0.0f, 1.0f);
+            ImGui::SliderFloat("Bloom threshold by night", &s.bloomNightThreshold, 0.0f, 1.0f);
+            ImGui::SliderFloat("Threshold softness", &s.bloomKnee, 0.01f, 0.5f);
+            ImGui::SliderFloat("Sky's bloom", &s.bloomSky, 0.0f, 1.0f);
+            ImGui::SliderFloat("Glow colour", &s.bloomColour, 0.0f, 2.0f);
+            ImGui::SliderFloat("Glow reach", &s.bloomReach, 0.3f, 1.5f);
+            ImGui::SliderFloat("Lights on the paths", &s.spill, 0.0f, 3.0f);
+            ImGui::SliderFloat("Lights' halos in the haze", &s.halos, 0.0f, 3.0f);
+            ImGui::SeparatorText("Haze");
             float game[3] = {((m_worldFog >> 16) & 0xFF) / 255.0f, ((m_worldFog >> 8) & 0xFF) / 255.0f,
                              (m_worldFog & 0xFF) / 255.0f};
-            ImGui::ColorEdit3("The game's fog colour now", game, ImGuiColorEditFlags_NoInputs |
+            ImGui::ColorEdit3("The game's haze colour now", game, ImGuiColorEditFlags_NoInputs |
                               ImGuiColorEditFlags_NoPicker);
-            ImGui::Checkbox("Own fog colour", &s.fogOwn);
-            if (s.fogOwn)
+            ImGui::Checkbox("Own haze colour", &s.hazeOwn);
+            if (s.hazeOwn)
             {
                 ImGui::SameLine();
-                ImGui::ColorEdit3("##fogcolour", s.fogColour, ImGuiColorEditFlags_NoInputs);
+                ImGui::ColorEdit3("##hazecolour", s.hazeColour, ImGuiColorEditFlags_NoInputs);
             }
-            ImGui::SliderFloat("Fog density", &s.fogDensity, 0.0f, 3.0f, "%.2f per 100 yards");
-            ImGui::SliderFloat("Fog start", &s.fogStart, 0.0f, 200.0f, "%.0f yards");
-            ImGui::SliderFloat("Fog most", &s.fogMost, 0.0f, 1.0f);
-            ImGui::SliderFloat("Height falloff", &s.fogFalloff, 0.0f, 0.2f, "%.3f per yard");
-            ImGui::SliderFloat("Thickest below the eye", &s.fogBelow, -50.0f, 100.0f, "%.0f yards");
-            ImGui::SliderFloat("Sun glow in the fog", &s.sunGlow, 0.0f, 3.0f);
+            ImGui::SliderFloat("Haze density", &s.hazeDensity, 0.0f, 2.0f, "%.2f per 100 yards");
+            ImGui::SliderFloat("Haze start", &s.hazeStart, 0.0f, 200.0f, "%.0f yards");
+            ImGui::SliderFloat("Haze most", &s.hazeMost, 0.0f, 1.0f);
+            ImGui::SliderFloat("Height falloff", &s.hazeFalloff, 0.0f, 0.2f, "%.3f per yard");
+            ImGui::SliderFloat("Thickest below the eye", &s.hazeBelow, -50.0f, 100.0f, "%.0f yards");
+            ImGui::SliderFloat("Haze's light by night", &s.hazeNightLight, 0.0f, 1.0f);
             ImGui::SliderFloat("Drifting mist", &s.mist, 0.0f, 1.0f);
             ImGui::SliderFloat("Mist size", &s.mistSize, 2.0f, 100.0f, "%.0f yards");
             ImGui::SliderFloat("Mist speed", &s.mistSpeed, 0.0f, 5.0f);
+            ImGui::SeparatorText("Colour");
+            ImGui::ColorEdit3("Day tint", s.dayTint, ImGuiColorEditFlags_NoInputs);
+            ImGui::SameLine();
+            ImGui::ColorEdit3("Night tint", s.nightTint, ImGuiColorEditFlags_NoInputs);
+            ImGui::SliderFloat("Tint amount", &s.gradeTint, 0.0f, 1.0f);
+            ImGui::SliderFloat("Saturation", &s.gradeSaturation, 0.0f, 2.0f);
+            ImGui::SliderFloat("Contrast", &s.contrast, 0.5f, 1.5f);
+            ImGui::SliderFloat("Exposure", &s.exposure, 0.5f, 2.0f);
+            ImGui::SliderFloat("Highlights roll off from", &s.shoulder, 0.5f, 1.0f);
+            ImGui::SliderFloat("Vignette", &s.vignette, 0.0f, 1.0f);
             ImGui::PopItemWidth();
         }
 
@@ -1853,28 +1887,21 @@ namespace
         UINT m_width = 0, m_height = 0;
         bool m_waterPrepared = false, m_waterCopied = false, m_waterLogged = false;
         double m_epoch = Seconds();
-        IDirect3DPixelShader9 *m_skyPs = nullptr, *m_shaftsPs = nullptr, *m_compositePs = nullptr;
-        IDirect3DPixelShader9 *m_scatterPs = nullptr;
-        IDirect3DTexture9 *m_half[3] = {};
+        IDirect3DPixelShader9 *m_brightPs = nullptr, *m_downPs = nullptr, *m_upPs = nullptr, *m_finalPs = nullptr;
+        static constexpr int kLevels = 5;                    // the light's levels: a half of the screen to a 32nd
+        IDirect3DTexture9 *m_down[kLevels] = {}, *m_up[kLevels] = {};
+        UINT m_levelWidth[kLevels] = {}, m_levelHeight[kLevels] = {};
+        float m_night = 0.0f, m_hazeBrightness = 0.0f;
+        double m_nightTime = 0.0;
         UINT m_rt0Width = 0, m_rt0Height = 0;
-        bool m_worldDrawn = false, m_atmosphereDone = false, m_cameraSeen = false, m_sunSeen = false;
-        bool m_cameraSeenLast = false, m_sunSeenLast = false;
+        bool m_worldDrawn = false, m_atmosphereDone = false, m_cameraSeen = false;
+        bool m_cameraSeenLast = false;
         const char *m_atmosphereWhy = "not drawn yet";
-        struct Body
-        {
-            IDirect3DBaseTexture9 *texture;                  // which body (only compared, no reference kept)
-            UINT size;
-            float world[3];                                  // toward it in the world, as last drawn
-            double seen;
-        };
-        Body m_body[4] = {};
-        bool m_skySeen = false, m_bodyDrawn = false, m_cameraEver = false;
+        bool m_skySeen = false, m_cameraEver = false;
         float m_skyRotation[3][3] = {}, m_skyProjection[2] = {};
-        bool m_fromSky = false, m_fromSkyLast = false;
         float m_worldMinZ = 0.0f, m_worldMaxZ = 1.0f;
         DWORD m_worldFog = 0;
-        float m_camera[4][4] = {}, m_cameraProjection[3] = {};
-        float m_sunDirection[3] = {0.0f, 0.0f, 1.0f}, m_sunColour[3] = {1.0f, 1.0f, 1.0f};
+        float m_camera[4][4] = {}, m_cameraProjection[3] = {1.0f, 1.0f, 0.2f};
 
         Counters m_frame, m_last;
         Capture m_capture = Capture::Idle;

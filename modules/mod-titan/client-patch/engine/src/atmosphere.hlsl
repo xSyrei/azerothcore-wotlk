@@ -1,38 +1,39 @@
-// Emberforge Engine atmosphere: the sun (or moon) lighting the whole world and the air, drawn over the world once it
-// is done (just before the game draws its interface). Where the body stands in the sky only sets the light's
-// direction: every surface facing it is lit, every one turned away or in a shadow is not, and the air glows where the
-// light reaches it. Four passes:
-//  Sky:       at half the screen, the sky's light around the sun (the far plane, brighter than a threshold, fading
-//             away from the sun: only there do rays come from) plus a soft sun disc.
-//  Shafts:    at half the screen, that light smeared toward the sun: it streams past roofs, trees and mountains.
-//  Scatter:   at half the screen, along each view ray, how much of the air sees the sun (16 points, each checked for
-//             something in the way toward the sun through the depth), and whether the surface itself does.
-//  Composite: over the whole screen, the surfaces lit by the sun by how they face it (normals from the depth) and
-//             whether they see it, fog by the true distance and height (thicker low, drifting in wisps), lit by the
-//             sun toward it and by the shafts through it, and the shafts themselves.
-// The sun's direction and colour, and the camera, come from the game's own vertex shader constants (engine.cpp).
+// Emberforge Engine atmosphere: the whole world's light, haze and colour, drawn over the world once it is done (just
+// before the game draws its interface). Nothing here follows the sun or the moon: every pixel is treated alike, so
+// the look is the same whichever way the camera turns. Its inputs are the scene as drawn, its distances, and the
+// game's own haze colour (set by zone and hour), which also says how far into the night it is (engine.cpp).
+//  Bright: at half the screen, the light in the scene: what shines brighter than a threshold (the sky counts less:
+//          it is not a lamp). By night the threshold drops, so lamps, torches and windows stand out.
+//  Down:   each smaller level (a quarter, an eighth... down to a 32nd), a 13-tap soft average of the one above.
+//  Up:     back up, each level plus the smaller one spread over it: light that reaches further the smaller it went.
+//  Final:  over the whole screen: night (the dark darker and cooler, what is lit kept), the lights' spill on the
+//          ground and walls around them, haze by distance and height in the haze colour with the lights glowing
+//          through it, bloom, and a colour grade (day and night tints, saturation, contrast, vignette).
 
-sampler2D SceneS : register(s0);      // the world as drawn
+sampler2D SceneS : register(s0);      // the world as drawn (Bright, Final)
 sampler2D DistanceS : register(s1);   // the eye's distance (view z) in yards, 100000 for the sky
-sampler2D SkyS : register(s2);        // Sky's output (Shafts reads it)
-sampler2D ShaftS : register(s3);      // Shafts' output (Composite reads it)
-sampler2D ScatterS : register(s4);    // Scatter's output: the lit share of the air, the surface's sight of the sun
+sampler2D LevelS : register(s2);      // Down: the level above; Up: this level's own; Final: the bloom
+sampler2D WideS : register(s3);       // Up: the smaller level, spread; Final: the wide light (the spill, the halos)
 
-float4 Sun : register(c0);           // the sun on screen (uv), how much of it shows (0-1)
-float4 SunColour : register(c1);     // its colour, the shafts' intensity
-float4 Fog : register(c2);           // fog colour, density (per 100 yards)
-float4 FogShape : register(c3);      // start (yards), height falloff (per yard), most cover, sun glow in the fog
-float4 Shafts : register(c4);        // decay per sample, sky threshold, shafts in the fog, sun disc size
-float4 Projection : register(c5);    // x scale, y scale, near plane, show the light alone (0/1)
-float4 ViewX : register(c6);         // the view's rows (world x, y, z), to turn view directions into the world
-float4 ViewY : register(c7);
-float4 ViewZ : register(c8);
-float4 Eye : register(c9);           // the eye in the world, how far below it the fog is thickest (yards)
-float4 ToSun : register(c10);        // toward the sun in the world, seconds
-float4 Mist : register(c11);         // drifting mist amount, its size (yards), its speed, 1 / the screen's height
-float4 SunView : register(c12);      // toward the sun in view space, the light's strength (by day 1, by night less)
-float4 Light : register(c13);        // sunlight on surfaces, sunlight in the air, how far the air is lit (yards),
-                                     // 1 / the screen's width
+// Bright, Down, Up.
+float4 Texel : register(c0);          // the source's texel (x, y), threshold, knee
+float4 BrightShape : register(c1);    // how much the sky counts, how much light colour is kept (saturation)
+
+// Final.
+float4 Night : register(c0);          // how much it is night (0-1), the dark's brightness by night, keep from, keep to
+float4 NightLook : register(c1);      // the dark's loss of colour by night, the night's blue (rgb)
+float4 Haze : register(c2);           // haze colour (rgb), density (per 100 yards)
+float4 HazeShape : register(c3);      // start (yards), height falloff (per yard), most cover, thickest below the eye
+float4 Projection : register(c4);     // x scale, y scale, near plane, the camera known (0/1)
+float4 ViewX : register(c5);          // the view's rows (world x, y, z), to turn view directions into the world
+float4 ViewY : register(c6);
+float4 ViewZ : register(c7);
+float4 Eye : register(c8);            // the eye in the world, show (0 all, 1 bloom, 2 haze, 3 night, 4 spill)
+float4 Light : register(c9);          // bloom, spill, halos in the haze, the haze's own light by night
+float4 Tint : register(c10);          // the colour grade's tint (rgb, day and night mixed), its amount
+float4 Grade : register(c11);         // saturation, contrast, vignette, exposure
+float4 Mist : register(c12);          // drifting mist amount, its size (yards), its speed, seconds
+float4 Screen : register(c13);        // 1 / width, 1 / height, width / height, highlights' soft shoulder
 
 static const float3 kLuma = float3(0.2126, 0.7152, 0.0722);
 static const float kSky = 50000.0;
@@ -42,110 +43,59 @@ float Distance(float2 uv)
     return tex2Dlod(DistanceS, float4(uv, 0, 0)).r;
 }
 
-// The view ray through a pixel (view space, z = 1).
-float3 ViewRay(float2 uv)
+float3 Sample(sampler2D s, float2 uv)
 {
-    return float3((uv.x * 2.0 - 1.0) / Projection.x, (1.0 - uv.y * 2.0) / Projection.y, 1.0);
+    return tex2Dlod(s, float4(uv, 0, 0)).rgb;
+}
+
+// A 13-tap soft average around uv (the source's texels): wide, and without the flicker of a plain 2x2.
+float3 Soft13(sampler2D s, float2 uv, float2 t)
+{
+    float3 a = Sample(s, uv + t * float2(-2, -2)), b = Sample(s, uv + t * float2(0, -2));
+    float3 c = Sample(s, uv + t * float2(2, -2)), d = Sample(s, uv + t * float2(-1, -1));
+    float3 e = Sample(s, uv + t * float2(1, -1)), f = Sample(s, uv + t * float2(-2, 0));
+    float3 g = Sample(s, uv), h = Sample(s, uv + t * float2(2, 0));
+    float3 i = Sample(s, uv + t * float2(-1, 1)), j = Sample(s, uv + t * float2(1, 1));
+    float3 k = Sample(s, uv + t * float2(-2, 2)), l = Sample(s, uv + t * float2(0, 2));
+    float3 m = Sample(s, uv + t * float2(2, 2));
+    return (d + e + i + j) * 0.125 + (a + c + k + m) * 0.03125 + (b + f + h + l) * 0.0625 + g * 0.125;
+}
+
+float4 Bright(float2 uv : TEXCOORD0) : COLOR
+{
+    float3 colour = Soft13(SceneS, uv, Texel.xy);
+    float sky = Distance(uv) >= kSky ? BrightShape.x : 1.0;
+    // A soft threshold: nothing below threshold - knee, all of it above threshold + knee.
+    float l = dot(colour, kLuma);
+    float soft = clamp(l - Texel.z + Texel.w, 0.0, 2.0 * Texel.w);
+    soft = soft * soft / (4.0 * Texel.w + 1e-4);
+    float kept = max(soft, l - Texel.z) / max(l, 1e-4);
+    float3 light = colour * kept * sky;
+    // The light's colour a little richer (a lamp's glow is warmer than the white of its flame).
+    light = lerp(dot(light, kLuma).xxx, light, BrightShape.y);
+    return float4(light, 1.0);
+}
+
+float4 Down(float2 uv : TEXCOORD0) : COLOR
+{
+    return float4(Soft13(LevelS, uv, Texel.xy), 1.0);
+}
+
+float4 Up(float2 uv : TEXCOORD0) : COLOR
+{
+    // The smaller level spread with a 3x3 tent over this one.
+    float2 t = Texel.xy;
+    float3 tent = Sample(WideS, uv) * 4.0;
+    tent += (Sample(WideS, uv + float2(-t.x, 0)) + Sample(WideS, uv + float2(t.x, 0)) +
+             Sample(WideS, uv + float2(0, -t.y)) + Sample(WideS, uv + float2(0, t.y))) * 2.0;
+    tent += Sample(WideS, uv - t) + Sample(WideS, uv + t) + Sample(WideS, uv + float2(t.x, -t.y)) +
+            Sample(WideS, uv + float2(-t.x, t.y));
+    return float4(Sample(LevelS, uv) + tent / 16.0 * Texel.z, 1.0);
 }
 
 float3 ToWorld(float3 v)
 {
     return float3(dot(ViewX.xyz, v), dot(ViewY.xyz, v), dot(ViewZ.xyz, v));
-}
-
-float4 Sky(float2 uv : TEXCOORD0) : COLOR
-{
-    if (Distance(uv) < kSky)
-        return 0.0;
-    float3 colour = tex2Dlod(SceneS, float4(uv, 0, 0)).rgb;
-    float bright = smoothstep(Shafts.y, 1.0, dot(colour, kLuma));
-    // The sun's disc, where the game's own may be faint, and the sky glowing around it.
-    float3 dir = normalize(ToWorld(ViewRay(uv)));
-    float toward = saturate(dot(dir, ToSun.xyz));
-    float disc = pow(toward, lerp(4000.0, 200.0, Shafts.w));
-    return float4(colour * bright * pow(toward, 12.0) + SunColour.rgb * disc * 2.0, 1.0);
-}
-
-float4 ShaftsPass(float2 uv : TEXCOORD0) : COLOR
-{
-    if (Sun.z < 0.01)
-        return 0.0;
-    const int samples = 48;
-    float2 step = (Sun.xy - uv) / samples;
-    float2 at = uv;
-    float decay = 1.0, weight = 0.0;
-    float3 sum = 0.0;
-    [unroll]
-    for (int i = 0; i < samples; i++)
-    {
-        at += step;
-        sum += tex2Dlod(SkyS, float4(at, 0, 0)).rgb * decay;
-        weight += decay;
-        decay *= Shafts.x;
-    }
-    // The light along the way, averaged (nearer samples count more: the shaft fades away from the sun).
-    return float4(sum / weight * 2.0 * Sun.z, 1.0);
-}
-
-float2 ToScreen(float3 v)
-{
-    return float2(0.5 + 0.5 * Projection.x * v.x / v.z, 0.5 - 0.5 * Projection.y * v.y / v.z);
-}
-
-// Whether a point (view space) sees the sun: a few steps toward it, growing, each checked against the depth there.
-float SeesSun(float3 p, float start)
-{
-    float seen = 1.0;
-    float dist = start;
-    [unroll]
-    for (int j = 0; j < 6; j++)
-    {
-        float3 q = p + SunView.xyz * dist;
-        float2 quv = ToScreen(q);
-        if (q.z > Projection.z && all(quv > 0.0) && all(quv < 1.0))
-        {
-            float surface = Distance(quv);
-            // Behind something (not far behind: that is a gap behind a thin object, not a wall).
-            float behind = q.z - surface;
-            if (behind > 0.15 && behind < 4.0 + dist)
-                seen = 0.0;
-        }
-        dist *= 2.1;
-    }
-    return seen;
-}
-
-float4 Scatter(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
-{
-    float z = Distance(uv);
-    float3 ray = ViewRay(uv);
-    float far = min(z, Light.z);
-    // Interleaved noise for each pixel's starting point: 16 steps look like 64 once blurred by the half size.
-    float jitter = frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
-    float lit = 0.0;
-    [loop]
-    for (int i = 0; i < 16; i++)
-    {
-        float t = far * (i + jitter) / 16.0;
-        lit += SeesSun(ray * t, 0.6);
-    }
-    float surface = z < kSky ? SeesSun(ray * z, 0.3) : 1.0;
-    return float4(lit / 16.0, surface, 0.0, 1.0);
-}
-
-// The surface's normal in view space, from the depth (the smaller step each way, so an edge does not count).
-float3 Normal(float2 uv, float z)
-{
-    float2 px = float2(Light.w, Mist.w) * 1.5;
-    float3 p = ViewRay(uv) * z;
-    float3 r = ViewRay(uv + float2(px.x, 0)) * Distance(uv + float2(px.x, 0)) - p;
-    float3 l = p - ViewRay(uv - float2(px.x, 0)) * Distance(uv - float2(px.x, 0));
-    float3 d = ViewRay(uv + float2(0, px.y)) * Distance(uv + float2(0, px.y)) - p;
-    float3 u = p - ViewRay(uv - float2(0, px.y)) * Distance(uv - float2(0, px.y));
-    float3 dx = abs(r.z) < abs(l.z) ? r : l;
-    float3 dy = abs(d.z) < abs(u.z) ? d : u;
-    float3 n = normalize(cross(dy, dx));
-    return dot(n, -p) < 0.0 ? -n : n;
 }
 
 // Smooth 3D value noise, three octaves: the mist's wisps.
@@ -172,60 +122,83 @@ float Wisps(float3 p)
     return Noise(p) * 0.55 + Noise(p * 2.03 + 7.1) * 0.3 + Noise(p * 4.1 + 13.7) * 0.15;
 }
 
-float4 Composite(float2 uv : TEXCOORD0) : COLOR
+// How much haze lies between the eye and a pixel: by distance (past its start) and, the camera known, by height
+// (thicker low down), drifting in wisps.
+float HazeAmount(float2 uv, float z, bool sky)
 {
-    float3 colour = tex2Dlod(SceneS, float4(uv, 0, 0)).rgb;
+    float3 ray = float3((uv.x * 2.0 - 1.0) / Projection.x, (1.0 - uv.y * 2.0) / Projection.y, 1.0);
+    float r = sky ? 1500.0 : length(ray) * z;
+    float through = max(r - HazeShape.x, 0.0);
+    float base = Haze.w * 0.01;
+    float depth = base * through;
+    float wisp = 1.0;
+    if (Projection.w > 0.5)
+    {
+        float3 dir = normalize(ToWorld(ray));
+        float falloff = max(HazeShape.y, 1e-4);
+        base *= exp(-falloff * HazeShape.w);
+        float dz = dir.z * falloff;
+        depth = abs(dz) > 1e-4 ? base * (1.0 - exp(-dz * through)) / dz : base * through;
+        float3 p = Eye.xyz + dir * min(r, 300.0);
+        float3 drift = float3(0.6, 0.2, 0.05) * Mist.w * Mist.z;
+        wisp = 1.0 + (Wisps(p / max(Mist.y, 1.0) + drift) - 0.5) * 2.4 * Mist.x * smoothstep(8.0, 40.0, r);
+    }
+    return saturate((1.0 - exp(-depth * wisp)) * HazeShape.z);
+}
+
+float4 Final(float2 uv : TEXCOORD0) : COLOR
+{
+    float3 scene = Sample(SceneS, uv);
     float z = Distance(uv);
     bool sky = z >= kSky;
-    float3 ray = ViewRay(uv);
-    float3 dir = normalize(ToWorld(ray));
-    // How far the ray goes through the air: to the surface, or (the sky) far enough to haze the horizon.
-    float r = sky ? 1500.0 : length(ray) * z;
-    float through = max(r - FogShape.x, 0.0);
+    float3 bloom = Sample(LevelS, uv) / 5.0;          // five levels summed
+    float3 wide = Sample(WideS, uv) / 3.0;            // the three widest
+    float night = Night.x;
 
-    // Height fog: density D * exp(-falloff * (height - (eye - offset))) integrated along the ray.
-    float falloff = max(FogShape.y, 1e-4);
-    float base = Fog.w * 0.01 * exp(-falloff * Eye.w);
-    float dz = dir.z * falloff;
-    float depth = abs(dz) > 1e-4 ? base * (1.0 - exp(-dz * through)) / dz : base * through;
-    // Drifting mist: the fog thins and thickens between 0.4 and 1.6 times, by where the ray ends (not right at the
-    // eye: there it reads as smudges on the screen).
-    float3 p = Eye.xyz + dir * min(r, 300.0);
-    float3 drift = float3(0.6, 0.2, 0.05) * ToSun.w * Mist.z;
-    float wisp = 1.0 + (Wisps(p / max(Mist.y, 1.0) + drift) - 0.5) * 2.4 * Mist.x * smoothstep(8.0, 40.0, r);
-    float fog = saturate((1.0 - exp(-depth * wisp)) * FogShape.z);
+    // Night: the dark parts darker and colder; what is lit (lamps, windows, fire, spells) keeps its light.
+    float l = dot(scene, kLuma);
+    float keep = smoothstep(Night.z, Night.w, l);
+    float3 colour = scene * lerp(lerp(1.0, Night.y, night), 1.0, keep);
+    float grey = dot(colour, kLuma);
+    colour = lerp(colour, grey * NightLook.yzw, night * NightLook.x * (1.0 - keep));
 
-    float4 scatter = tex2Dlod(ScatterS, float4(uv, 0, 0));
+    // The lights' spill: the wide light falls on the ground and walls about each light, in their own colour.
+    float3 spill = sky ? 0.0 : wide * (0.25 + scene * 2.0) * Light.y * (0.35 + 0.65 * night);
+    colour += spill;
 
-    // The surfaces lit by the sun: brighter and in its colour where they face it and see it, darker turned away or
-    // in a shadow. The sky is the light's source, not lit.
-    float3 sunTint = SunColour.rgb / max(dot(SunColour.rgb, kLuma), 0.05);
-    if (!sky)
+    // Haze: the game's haze colour (dimmer by night), and the lights glowing through it.
+    float haze = HazeAmount(uv, z, sky);
+    float3 hazeLight = Haze.rgb * lerp(1.0, Light.w, night);
+    colour = lerp(colour, hazeLight, haze);
+    float3 halos = wide * haze * Light.z * (0.4 + 0.6 * night) * 4.0;
+    colour += halos;
+
+    // Bloom.
+    colour += bloom * Light.x;
+
+    if (Eye.w > 0.5)
     {
-        float3 n = Normal(uv, z);
-        float facing = saturate(dot(n, SunView.xyz));
-        float direct = facing * scatter.g;
-        float strength = Light.x * SunView.w;
-        colour *= 1.0 + strength * (direct * 1.1 - 0.35);
-        colour *= lerp(1.0, sunTint, saturate(strength * direct * 0.5));
+        if (Eye.w < 1.5)
+            return float4(bloom * Light.x, 1.0);
+        if (Eye.w < 2.5)
+            return float4(lerp(0.0, hazeLight, haze) + halos, 1.0);
+        if (Eye.w < 3.5)
+            return float4(lerp(float3(1, 1, 1), float3(0.1, 0.15, 0.4), night * (1.0 - keep)), 1.0);
+        return float4(spill, 1.0);
     }
 
-    // The fog's light: its own colour, and the sun's where it reaches the air (more toward the sun: light scatters
-    // forward), brighter close around the sun and where the screen's shafts cross it.
-    float toward = saturate(dot(dir, ToSun.xyz));
-    float cosine = dot(dir, ToSun.xyz);
-    float g = 0.55;
-    float phase = (1.0 - g * g) / pow(1.0 + g * g - 2.0 * g * cosine, 1.5) * (1.0 - g) * (1.0 - g) / (1.0 + g);
-    // Close around the sun (a wide glow washed the whole view in its colour).
-    float glow = (pow(toward, 48.0) * 0.35 + pow(toward, 400.0)) * FogShape.w * saturate(ToSun.z * 5.0 + 0.5);
-    float3 shafts = tex2Dlod(ShaftS, float4(uv, 0, 0)).rgb;
-    float air = Light.y * SunView.w * scatter.r * (0.2 + phase);
-    float3 fogLight = Fog.rgb + SunColour.rgb * (glow + air) + shafts * Shafts.z;
-    // Lit air shows even where the fog is thin (a sunbeam through clear air).
-    colour += SunColour.rgb * air * 0.08 * (1.0 - fog);
-    if (Projection.w > 0.5)
-        return float4(shafts * SunColour.a + fogLight * fog, 1.0);
-    colour = lerp(colour, fogLight, fog);
-    colour += shafts * SunColour.a * (sky ? 0.15 : 1.0);
+    // The colour grade: exposure, the tint (keeping brightness), saturation, contrast, a soft shoulder for the
+    // highlights the light added, the vignette.
+    colour *= Grade.w;
+    float3 tinted = colour * Tint.rgb / max(dot(Tint.rgb, kLuma), 0.05);
+    colour = lerp(colour, tinted, Tint.a);
+    grey = dot(colour, kLuma);
+    colour = max(lerp(grey.xxx, colour, Grade.x), 0.0);
+    colour = max((colour - 0.5) * Grade.y + 0.5, 0.0);
+    float shoulder = Screen.w;
+    float3 over = max(colour - shoulder, 0.0);
+    colour = min(colour, shoulder) + over / (1.0 + over / max(1.0 - shoulder, 1e-3));
+    float2 c = (uv - 0.5) * float2(Screen.z, 1.0);
+    colour *= 1.0 - Grade.z * smoothstep(0.35, 1.1, length(c));
     return float4(colour, 1.0);
 }
