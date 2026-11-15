@@ -420,8 +420,7 @@ offer:SetScript("OnShow", function(self)
     self:SetScale(math.max(SCALE_MIN, math.min(SCALE_MAX, EmberforgeRunesDB and EmberforgeRunesDB.haloScale
         or DefaultScale())))
 end)
-offer:Hide()
-tinsert(UISpecialFrames, "EmberforgeRuneOffer")        -- Escape closes it (the offer keeps)
+offer:Hide()                                            -- no close: a rune is taken or the offer skipped
 -- No box: a soft dark pool behind the words and cards so they read over any ground, a warm light in it.
 offer.shade = Tex(offer, "Soft", 1100, "BACKGROUND")
 offer.shade:SetPoint("CENTER", offer, "CENTER", 0, 10)
@@ -430,14 +429,6 @@ offer.light = Tex(offer, "Soft", 820, "BORDER")
 offer.light:SetPoint("CENTER", offer, "TOP", 0, -300)
 offer.light:SetBlendMode("ADD")
 Tint(offer.light, { 0.55, 0.36, 0.16 }, 0.18)
-offer.close = CreateFrame("Button", nil, offer)
-offer.close:SetWidth(32)
-offer.close:SetHeight(32)
-offer.close:SetPoint("TOPRIGHT", -40, -36)
-offer.close.text = Text(offer.close, CINZEL, 18, COLOR.gold, "CENTER", 32)
-offer.close.text:SetPoint("CENTER")
-offer.close.text:SetText("X")
-offer.close:SetScript("OnClick", function() offer:Hide() end)
 offer.note = Text(offer, SANS, 14, { 1, 0.55, 0.45 }, "CENTER", 700)
 offer.note:SetPoint("TOP", offer, "TOP", 0, -526)
 offer.eyebrow = Text(offer, CINZEL, 12, COLOR.gold, "CENTER", 600)
@@ -515,44 +506,46 @@ for i = 1, 3 do
     offer.cards[i] = card
 end
 
--- Below the cards: skip (asks first), the pager, decide later.
-offer.skip = Pill(offer, "SKIP OFFER", 160, { 0.85, 0.48, 0.42 })
-offer.skip:SetPoint("TOP", offer, "TOP", -300, -548)
-offer.later = Pill(offer, "DECIDE LATER", 160, COLOR.muted)
-offer.later:SetPoint("TOP", offer, "TOP", 300, -548)
+-- Below the cards, in the middle: Skip, asking again on the button itself (a second click within 4 sec). Beside
+-- the cards: the arrows between waiting offers.
+local SKIP_TEXT, SKIP_SURE, SKIP_WINDOW = "SKIP OFFER", "CLICK AGAIN TO SKIP", 4
+offer.skip = Pill(offer, SKIP_TEXT, 220, { 0.85, 0.48, 0.42 })
+offer.skip:SetPoint("TOP", offer, "TOP", 0, -548)
 offer.prev = Pill(offer, "<", 40)
-offer.prev:SetPoint("TOP", offer, "TOP", -80, -548)
+offer.prev:SetPoint("CENTER", offer, "TOP", -420, -338)
 offer.next = Pill(offer, ">", 40)
-offer.next:SetPoint("TOP", offer, "TOP", 80, -548)
-offer.page = Text(offer, CINZEL, 13, COLOR.gold, "CENTER", 100)
-offer.page:SetPoint("TOP", offer, "TOP", 0, -557)
-offer.skip:SetScript("OnClick", function()
+offer.next:SetPoint("CENTER", offer, "TOP", 420, -338)
+local function Disarm()
+    offer.skip.armed = nil
+    offer.skip.text:SetText(SKIP_TEXT)
+    offer.skip.bg:SetTexture(0.08, 0.06, 0.04, 0.9)
+end
+offer.skip:SetScript("OnClick", function(self)
     local current = state.offers[view.offer]
-    if current and StaticPopup_Show then
-        local popup = StaticPopup_Show("EMBERFORGE_RUNE_SKIP", current.level)
-        if popup then
-            popup.data = current.seq
-        end
+    if not current then
+        return
+    end
+    if self.armed and GetTime() - self.armed <= SKIP_WINDOW then
+        Disarm()
+        Send("SKIP," .. current.seq)
+        return
+    end
+    self.armed = GetTime()
+    self.text:SetText(SKIP_SURE)
+    self.bg:SetTexture(0.35, 0.08, 0.05, 0.95)
+end)
+offer:SetScript("OnUpdate", function()
+    if offer.skip.armed and GetTime() - offer.skip.armed > SKIP_WINDOW then
+        Disarm()
     end
 end)
-if StaticPopupDialogs then
-    StaticPopupDialogs.EMBERFORGE_RUNE_SKIP = {
-        text = "Skip the level %d rune offer?\nIts three runes are gone for good.",
-        button1 = ACCEPT or "Accept", button2 = CANCEL or "Cancel",
-        OnAccept = function(_, seq) Send("SKIP," .. seq) end,
-        timeout = 0, whileDead = true, hideOnEscape = true,
-    }
-end
-offer.later:SetScript("OnClick", function()
-    offer:Hide()
-    view.replace = nil
-    Refresh()
-end)
 offer.prev:SetScript("OnClick", function()
+    Disarm()
     view.offer = view.offer - 1
     Refresh()
 end)
 offer.next:SetScript("OnClick", function()
+    Disarm()
     view.offer = view.offer + 1
     Refresh()
 end)
@@ -850,8 +843,8 @@ function Refresh()
     view.offer = math.max(1, math.min(view.offer, #state.offers))
     local current = state.offers[view.offer]
     if current and offer:IsShown() then
-        offer.eyebrow:SetText(("LEVEL %d REWARD"):format(current.level))
-        offer.page:SetText(("%d / %d"):format(view.offer, #state.offers))
+        offer.eyebrow:SetText(("LEVEL %d REWARD"):format(current.level) .. (#state.offers > 1
+            and ("  ·  %d OF %d"):format(view.offer, #state.offers) or ""))
         for i, card in ipairs(offer.cards) do
             local info = Info(current.runes[i])
             card.rune = current.runes[i]
@@ -878,11 +871,9 @@ function Refresh()
         if #state.offers > 1 then
             offer.prev:Show()
             offer.next:Show()
-            offer.page:Show()
         else
             offer.prev:Hide()
             offer.next:Hide()
-            offer.page:Hide()
         end
     end
     if view.replace then
@@ -948,7 +939,13 @@ end)
 
 -- Closing lets go of a socket choice (the offer keeps).
 frame:SetScript("OnHide", function()
-    view.replace = nil
+    if view.replace then                                -- no socket chosen: the offer comes back
+        view.replace = nil
+        if #state.offers > 0 then
+            offer:Show()
+            Refresh()
+        end
+    end
 end)
 
 -- Messages ----------------------------------------------------------------------------------------------------------

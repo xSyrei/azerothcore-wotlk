@@ -75,6 +75,7 @@ function GetActionInfo() end
 function GetTime() return 100 end
 function IsShiftKeyDown() return false end
 tinsert = table.insert
+function tContains(list, value) for _, v in ipairs(list) do if v == value then return true end end end
 ACCEPT, CANCEL = "Accept", "Cancel"
 local popup
 function StaticPopup_Show(name, a) popup = { name = name, a = a } return popup end
@@ -160,11 +161,14 @@ check(not debug.frame.shown and offer.shown and offer:GetName() == "EmberforgeRu
 check(offer.cards[1].fate.text == "Takes ability slot 1 of 10"
     and offer.cards[2].fate.text == "Fills Rare socket 1 of 10"
     and offer.cards[3].fate.text:find("Replaces one of your 5 epic runes"), "each card says what taking it does")
-check(offer.page.text == "1 / 1" and not offer.prev.shown, "one offer: no pager")
+check(offer.eyebrow.text == "LEVEL 30 REWARD" and not offer.prev.shown, "one offer: no pager")
+check(not offer.close and not offer.later and not tContains(UISpecialFrames, "EmberforgeRuneOffer"),
+    "the offer can't be put off: no X, no Decide Later, no Escape")
+local before = #sent
 offer.skip:Click()
-check(popup and popup.name == "EMBERFORGE_RUNE_SKIP" and popup.a == 30, "skipping asks first")
-StaticPopupDialogs.EMBERFORGE_RUNE_SKIP.OnAccept(nil, popup.data)
-check(lastSent() == "EFRT SKIP,7", "a skipped offer goes to the server")
+check(#sent == before and offer.skip.text.text == "CLICK AGAIN TO SKIP", "skipping asks first, on the button")
+offer.skip:Click()
+check(lastSent() == "EFRT SKIP,7" and offer.skip.text.text == "SKIP OFFER", "a second click skips the offer")
 offer.cards[1]:Click()
 check(lastSent() == "EFRT PICK,7,1", "an Uncommon is taken at once")
 
@@ -173,6 +177,9 @@ offer:Show()
 offer.cards[3]:Click()
 check(view.replace and not offer.shown and debug.frame.shown and debug.banner.text:find("Choose a socket"),
     "a full set of Epic sockets opens the Halo to ask which one to replace")
+debug.frame:Hide()
+check(not view.replace and offer.shown, "closing the Halo without a socket brings the offer back")
+offer.cards[3]:Click()
 sockets.epic[4]:Click()
 check(lastSent() == "EFRT PICK,7,3,4" and not view.replace, "the chosen socket goes with the pick")
 
