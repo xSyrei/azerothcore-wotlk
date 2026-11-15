@@ -14,7 +14,7 @@ all three on every Hero at login (hero_resources.cpp).
 
 Roles (90603-90606), chosen in the Classless window (wildcard.cpp): a buff each, changing the threat the Hero causes
 (all schools): Melee and Ranged -50%, Tank +200%, Healer unchanged. Tank also takes 5% less damage (all schools) and
-has 5% more armor.
+has 5% more armor. Ranged and Healer have 110% spell haste (cast times 52% shorter).
 
 Prestigious (90607): the buff of a prestige run, until level 60 (prestige.cpp).
 """
@@ -23,6 +23,10 @@ EFFECT_APPLY_AURA = 6
 AURA_DUMMY, AURA_MOD_THREAT = 4, 10
 AURA_MOD_DAMAGE_PERCENT_TAKEN, AURA_MOD_RESISTANCE_PCT = 87, 101
 AURA_REDUCE_PUSHBACK = 149
+AURA_HASTE_SPELLS = 216
+# The casters' (Ranged, Healer) baseline spell haste: cast times 1 / 2.1 of the usual (52% shorter: a 3 sec Fireball
+# casts in 1.4 sec). Hard casts were too slow to play with while leveling.
+CASTER_HASTE_PCT = 110
 # Being hit while casting delays a cast or shortens a channel by 10% of the usual (Heroes are pulled from far off
 # and hit often: the full pushback left casters unable to finish a spell).
 PUSHBACK_REDUCED_PCT = 90
@@ -111,14 +115,17 @@ ROLES = [
     (90605, 'Healer', 'Spell_Holy_FlashHeal', 0),
     (90606, 'Tank', 'Ability_Warrior_DefensiveStance', 200),
 ]
-# The Tank's more: 5% less damage taken, 5% more armor.
+# The Tank's more: 5% less damage taken, 5% more armor. The casters' (Ranged, Healer): spell haste.
 TANK_EXTRA = (aura(AURA_MOD_DAMAGE_PERCENT_TAKEN, -5, ALL_SCHOOLS),
               aura(AURA_MOD_RESISTANCE_PCT, 5, SCHOOL_MASK_NORMAL))
+CASTER_EXTRA = (aura(AURA_HASTE_SPELLS, CASTER_HASTE_PCT, 0),)
+EXTRAS = {'Tank': (TANK_EXTRA, ' Damage taken reduced by 5%, armor increased by 5%.'),
+          'Ranged': (CASTER_EXTRA, f' Spell haste increased by {CASTER_HASTE_PCT}%.'),
+          'Healer': (CASTER_EXTRA, f' Spell haste increased by {CASTER_HASTE_PCT}%.')}
 SPELLS += [role(spell_id, name, icon, threat,
                 (f'Threat caused {"reduced" if threat < 0 else "increased"} by {abs(threat)}%.' if threat
-                 else 'Threat caused unchanged.')
-                + (' Damage taken reduced by 5%, armor increased by 5%.' if name == 'Tank' else ''),
-                TANK_EXTRA if name == 'Tank' else ())
+                 else 'Threat caused unchanged.') + EXTRAS.get(name, ((), ''))[1],
+                EXTRAS.get(name, ((), ''))[0])
            for spell_id, name, icon, threat in ROLES]
 
 # Prestigious (90607): during a prestige run, until level 60 (prestige.cpp, which grants the bonus itself: every

@@ -680,6 +680,10 @@ It also cuts the pushback of being hit while casting to 10% of the usual (90602:
 delayed by 0.05 sec a hit instead of 0.5, a channel loses 2.5% of its time instead of 25%. Heroes are pulled from far
 off and hit often; the full pushback left casters unable to finish a spell.
 
+The role chosen in the Classless window puts on its own buff (90603-90606, `client-patch/patch_player.py`): threat
+-50% (Melee, Ranged), unchanged (Healer) or +200% (Tank, with 5% less damage taken and 5% more armor). The casters,
+Ranged and Healer, also have 110% spell haste: cast times are 1 / 2.1 of the usual (a 3 sec Fireball casts in 1.4).
+
 ## Dungeon Journal
 `/journal` or `/dj` (the `Emberforge_Journal` addon, `client-patch/AddOns/`; server side `src/journal.cpp`, addon
 whispers with prefix `EFDJ`), laid out as Cataclysm's: a home page per expansion (its name the title, Dungeons and
