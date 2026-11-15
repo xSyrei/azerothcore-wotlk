@@ -1109,6 +1109,27 @@ local ROW_H, ROWS = 96, 5
 local browser = Group(800, 500, 1180, 640)
 browser.speed = 0.25                                    -- it fades out quickly when a rune is chosen
 browser:EnableMouseWheel(true)
+-- Its panel: the world dimmed behind the list (a dark fill, a soft shadow past its edges, a thin arcane border).
+browser.shadow = Shade(browser, 1500, 900, 0.75)
+browser.shadow:SetPoint("CENTER")
+browser.panel = browser:CreateTexture(nil, "BACKGROUND")
+browser.panel:SetTexture(0.03, 0.022, 0.055, 0.9)
+browser.panel:SetPoint("TOPLEFT", browser, "TOPLEFT", -28, 8)
+browser.panel:SetPoint("BOTTOMRIGHT", browser, "BOTTOMRIGHT", 28, -24)
+browser.edges = {}
+for i, side in ipairs({ { "TOPLEFT", "TOPRIGHT", 0, 1 }, { "BOTTOMLEFT", "BOTTOMRIGHT", 0, 1 },
+    { "TOPLEFT", "BOTTOMLEFT", 1, 0 }, { "TOPRIGHT", "BOTTOMRIGHT", 1, 0 } }) do
+    local edge = browser:CreateTexture(nil, "BORDER")
+    edge:SetTexture(art.arcane.rgb[1], art.arcane.rgb[2], art.arcane.rgb[3], 0.35)
+    edge:SetPoint(side[1], browser.panel, side[1])
+    edge:SetPoint(side[2], browser.panel, side[2])
+    if side[3] == 1 then
+        edge:SetWidth(1)
+    else
+        edge:SetHeight(1)
+    end
+    browser.edges[i] = edge
+end
 local browse = { query = "", role = nil, usable = false, offset = 0, list = {} }
 
 local search = CreateFrame("EditBox", nil, browser)
