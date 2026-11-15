@@ -496,8 +496,11 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
     a volumetric halo), brighter by night. Street lamps become lights once a capture beside one shows their draw
     (the capture now writes every vertex constant that changed, where the models' bones are, and each managed
     texture's fingerprint); the panel's test light stands ahead of the camera meanwhile.
-  Every part is a slider in the panel's Atmosphere section; *Show* draws one part alone (bloom, haze, the night's
-  darkening, the spill, the point lights). Its settings' keys are `atmosphere_*` and `light*` in `Emberforge.ini`.
+  - **Ambient occlusion**: 12 points on a turning spiral within a radius (yards) around each surface point, from
+    the depth and its normal: corners, doorways, the ground under eaves and along walls darken (less by night).
+  - **By day**: warm highlights and cool shadows, and the haze a little brighter (sunlit air).
+  Every part is a slider in the panel's Atmosphere section; *Compare* leaves the left half of the screen untouched;
+  *Show* draws one part alone (bloom, haze, the night's darkening, the spill, the point lights, the occlusion). Its settings' keys are `atmosphere_*` and `light*` in `Emberforge.ini`.
 - The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's
   `d3dcompiler_47.dll` under Wine (any 64-bit copy, e.g. an Electron app's: Wine's own compiler cannot build shader
   model 3): `D3DCOMPILER=/path/to/d3dcompiler_47.dll sh build.sh`. Players need no compiler.

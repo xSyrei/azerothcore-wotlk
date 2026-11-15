@@ -38,7 +38,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.16"
+#define EMBERFORGE_ENGINE_VERSION "0.17"
 
 namespace
 {
@@ -190,7 +190,7 @@ namespace
         bool atmosphere = true, nightAuto = true, hazeOwn = false;
         float show = 0.0f;                                     // 0 all, 1 bloom, 2 haze, 3 night, 4 spill
         // Bloom: what shines brighter than the threshold (lower by night, so lamps and windows stand out).
-        float bloom = 0.9f, bloomThreshold = 0.78f, bloomNightThreshold = 0.32f, bloomKnee = 0.2f;
+        float bloom = 1.0f, bloomThreshold = 0.7f, bloomNightThreshold = 0.32f, bloomKnee = 0.2f;
         float bloomSky = 0.12f, bloomColour = 1.25f, bloomReach = 0.9f;
         // Night: by the brightness of the game's haze colour (set by zone and hour): day above nightFrom, full night
         // below nightTo. The dark gets darker and colder; what is brighter than keepTo keeps its light.
@@ -200,18 +200,22 @@ namespace
         // The lights by night: their spill on the ground and walls around them, their halos in the haze.
         float spill = 0.9f, halos = 0.6f, hazeNightLight = 0.45f;
         // Haze: subtle by day (colours nearby kept), in the game's colour.
-        float hazeDensity = 0.12f, hazeStart = 30.0f, hazeFalloff = 0.03f, hazeMost = 0.55f, hazeBelow = 0.0f;
+        float hazeDensity = 0.25f, hazeStart = 20.0f, hazeFalloff = 0.03f, hazeMost = 0.6f, hazeBelow = 0.0f;
         float hazeColour[3] = {0.55f, 0.62f, 0.7f};
         float mist = 0.3f, mistSize = 25.0f, mistSpeed = 1.0f;
         // The colour grade: a warm day, a cool night.
         float dayTint[3] = {1.0f, 0.95f, 0.86f}, nightTint[3] = {0.72f, 0.84f, 1.0f};
-        float gradeTint = 0.35f, gradeSaturation = 1.1f, contrast = 1.06f, vignette = 0.25f, exposure = 1.0f,
+        float gradeTint = 0.35f, gradeSaturation = 1.15f, contrast = 1.1f, vignette = 0.25f, exposure = 1.0f,
               shoulder = 0.82f;
         // Point lights (street lamps once the engine knows them; the test light ahead of the camera): how strongly
         // they light the surfaces about them and glow in the air, how far they reach, how much they show by day.
         bool lights = true, testLight = false;
         float lightStrength = 1.4f, lightGlow = 0.8f, lightReach = 12.0f, lightsByDay = 0.15f;
         float lightColour[3] = {1.0f, 0.7f, 0.38f};
+        // Ambient occlusion (soft contact shadows from the depth); by day warm highlights, cool shadows, and the air
+        // a little brighter (sunlit).
+        bool compare = false;
+        float ao = 0.65f, aoRadius = 2.5f, aoNight = 0.4f, warmth = 0.08f, coolness = 0.08f, dayAir = 0.15f;
 
         struct Entry
         {
@@ -262,6 +266,9 @@ namespace
                 {"light_strength", &lightStrength}, {"light_glow", &lightGlow}, {"light_reach", &lightReach},
                 {"lights_by_day", &lightsByDay}, {"light_colour_r", &lightColour[0]},
                 {"light_colour_g", &lightColour[1]}, {"light_colour_b", &lightColour[2]},
+                {"atmosphere_ao", &ao}, {"atmosphere_ao_radius", &aoRadius}, {"atmosphere_ao_night", &aoNight},
+                {"atmosphere_warmth", &warmth}, {"atmosphere_coolness", &coolness},
+                {"atmosphere_day_air", &dayAir},
             };
             for (const Entry &e : entries)
                 f(e);
@@ -313,10 +320,10 @@ namespace
 
     // ---- The device the game gets ----
 
-    constexpr int kVertexConstants = 256, kPixelConstants = 32, kRenderStates = 256, kStages = 8;
+    constexpr int kVertexConstants = 256, kPixelConstants = 64, kRenderStates = 256, kStages = 8;
     constexpr int kSamplers = 16, kSamplerStates = 14;
     constexpr DWORD kPassStages = 5;                          // the stages an engine pass binds (and puts back)
-    constexpr UINT kPassConstants = 31;                       // the pixel constants it sets (c0-c30)
+    constexpr UINT kPassConstants = 33;                       // the pixel constants it sets (c0-c32)
     constexpr int kLights = 8;                                // point lights a frame (src/atmosphere.hlsl)
     constexpr UINT kWaterConstants = 12, kWaterConstantCount = 16;   // the water shader's c12-c27 (src/water.hlsl)
     // Render states an engine pass turns off (and puts back after).
@@ -1347,6 +1354,14 @@ namespace
             constants[14][1] = s.lightStrength;
             constants[14][2] = s.lightGlow;
             constants[14][3] = s.lightsByDay;
+            constants[31][0] = s.ao;
+            constants[31][1] = std::fmax(s.aoRadius, 0.25f);
+            constants[31][2] = s.aoNight;
+            constants[31][3] = s.compare ? 1.0f : 0.0f;
+            constants[32][0] = s.warmth;
+            constants[32][1] = s.coolness;
+            constants[32][2] = s.dayAir;
+            constants[32][3] = 0.0f;
             real->SetPixelShaderConstantF(0, constants[0], kPassConstants);
             Bind(0, m_scene, false);
             Bind(1, m_distance, false);
@@ -1827,8 +1842,10 @@ namespace
             ImGui::SameLine();
             ImGui::SetNextItemWidth(150);
             if (ImGui::Combo("Show", &show, "Everything\0Bloom alone\0Haze alone\0Night (blue: darkened)\0"
-                                             "Lights' spill alone\0Point lights alone\0"))
+                                             "Lights' spill alone\0Point lights alone\0"
+                                             "Ambient occlusion alone\0"))
                 s.show = static_cast<float>(show);
+            ImGui::Checkbox("Compare: the left half untouched", &s.compare);
             ImGui::SeparatorText("Day and night");
             ImGui::Text("The game's haze brightness now: %.3f; night %.0f%%", m_hazeBrightness, m_night * 100.0f);
             ImGui::Checkbox("Night by the haze's brightness", &s.nightAuto);
@@ -1882,6 +1899,13 @@ namespace
             ImGui::SliderFloat("Drifting mist", &s.mist, 0.0f, 1.0f);
             ImGui::SliderFloat("Mist size", &s.mistSize, 2.0f, 100.0f, "%.0f yards");
             ImGui::SliderFloat("Mist speed", &s.mistSpeed, 0.0f, 5.0f);
+            ImGui::SeparatorText("Shading");
+            ImGui::SliderFloat("Ambient occlusion", &s.ao, 0.0f, 1.5f);
+            ImGui::SliderFloat("Its radius", &s.aoRadius, 0.5f, 8.0f, "%.1f yards");
+            ImGui::SliderFloat("Its share by night", &s.aoNight, 0.0f, 1.0f);
+            ImGui::SliderFloat("Warm highlights by day", &s.warmth, 0.0f, 0.3f);
+            ImGui::SliderFloat("Cool shadows by day", &s.coolness, 0.0f, 0.3f);
+            ImGui::SliderFloat("Sunlit air by day", &s.dayAir, 0.0f, 1.0f);
             ImGui::SeparatorText("Colour");
             ImGui::ColorEdit3("Day tint", s.dayTint, ImGuiColorEditFlags_NoInputs);
             ImGui::SameLine();

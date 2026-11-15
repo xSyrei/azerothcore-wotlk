@@ -29,7 +29,7 @@ float4 ViewX : register(c5);          // the view's rows (world x, y, z), to tur
 float4 ViewY : register(c6);
 float4 ViewZ : register(c7);
 float4 Eye : register(c8);            // the eye in the world, show (0 all, 1 bloom, 2 haze, 3 night, 4 spill,
-                                      // 5 point lights)
+                                      // 5 point lights, 6 ambient occlusion)
 float4 Light : register(c9);          // bloom, spill, halos in the haze, the haze's own light by night
 float4 Tint : register(c10);          // the colour grade's tint (rgb, day and night mixed), its amount
 float4 Grade : register(c11);         // saturation, contrast, vignette, exposure
@@ -40,6 +40,9 @@ float4 Screen : register(c13);        // 1 / width, 1 / height, width / height, 
 static const int kLights = 8;
 float4 Lights : register(c14);        // count, strength on surfaces, glow in the air, (by day) how much they show
 float4 LightAt[kLights * 2] : register(c15);
+float4 Shade : register(c31);         // ambient occlusion: strength, radius (yards), how much by night, compare (0/1)
+float4 Split : register(c32);         // by day: warmth of the highlights, coolness of the shadows, daylight's own
+                                      // brightening of the air, (spare)
 
 static const float3 kLuma = float3(0.2126, 0.7152, 0.0722);
 static const float kSky = 50000.0;
@@ -117,6 +120,33 @@ float3 Normal(float2 uv, float z)
     float3 dy = abs(d.z) < abs(u.z) ? d : u;
     float3 n = normalize(cross(dy, dx));
     return dot(n, -p) < 0.0 ? -n : n;
+}
+
+// Ambient occlusion: how much of the open air around a surface point is closed off by what is next to it (12
+// points on a turning spiral within the radius, from the depth). Corners, doorways, the ground under eaves and walls
+// darken; open ground does not.
+float Occlusion(float2 uv, float z, float2 pixel)
+{
+    float3 p = ViewRay(uv) * z;
+    float3 n = Normal(uv, z);
+    float radius = Shade.y;
+    // The radius on screen at this distance (in uv), never under a few pixels or over a fifth of the screen.
+    float2 span = clamp(radius * Projection.xy * 0.5 / z, Screen.xy * 3.0, 0.2);
+    float turn = frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715)))) * 6.2831853;
+    float closed = 0.0;
+    [unroll]
+    for (int i = 0; i < 12; i++)
+    {
+        float t = (i + 0.5) / 12.0;
+        float a = turn + i * 2.3999632;                   // the golden angle
+        float2 at = uv + float2(cos(a), sin(a)) * span * t;
+        float3 q = ViewRay(at) * Distance(at);
+        float3 d = q - p;
+        float l = length(d);
+        float range = saturate(1.0 - l / radius);
+        closed += saturate(dot(n, d / max(l, 1e-3)) - 0.15) * range;
+    }
+    return saturate(1.0 - closed / 12.0 * 2.2);
 }
 
 // The point lights: on the surface (by distance and how it faces each), and in the air along the view ray (the
@@ -209,9 +239,12 @@ float HazeAmount(float2 uv, float z, bool sky)
     return saturate((1.0 - exp(-depth * wisp)) * HazeShape.z);
 }
 
-float4 Final(float2 uv : TEXCOORD0) : COLOR
+float4 Final(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
 {
     float3 scene = Sample(SceneS, uv);
+    // Compare: the left half untouched.
+    if (Shade.w > 0.5 && uv.x < 0.5)
+        return float4(scene, 1.0);
     float z = Distance(uv);
     bool sky = z >= kSky;
     float3 bloom = Sample(LevelS, uv) / 5.0;          // five levels summed
@@ -225,13 +258,22 @@ float4 Final(float2 uv : TEXCOORD0) : COLOR
     float grey = dot(colour, kLuma);
     colour = lerp(colour, grey * NightLook.yzw, night * NightLook.x * (1.0 - keep));
 
+    // Ambient occlusion (by night less: little ambient light is left to block).
+    float ao = 1.0;
+    if (!sky && Shade.x > 0.0 && z < 300.0)
+    {
+        ao = Occlusion(uv, z, pixel);
+        ao = lerp(1.0, ao, Shade.x * lerp(1.0, Shade.z, night) * (1.0 - keep));
+        colour *= ao;
+    }
+
     // The lights' spill: the wide light falls on the ground and walls about each light, in their own colour.
     float3 spill = sky ? 0.0 : wide * (0.25 + scene * 2.0) * Light.y * (0.35 + 0.65 * night);
     colour += spill;
 
     // Haze: the game's haze colour (dimmer by night), and the lights glowing through it.
     float haze = HazeAmount(uv, z, sky);
-    float3 hazeLight = Haze.rgb * lerp(1.0, Light.w, night);
+    float3 hazeLight = Haze.rgb * lerp(1.0 + Split.z, Light.w, night);
     colour = lerp(colour, hazeLight, haze);
     float3 halos = wide * haze * Light.z * (0.4 + 0.6 * night) * 4.0;
     colour += halos;
@@ -260,12 +302,20 @@ float4 Final(float2 uv : TEXCOORD0) : COLOR
             return float4(lerp(float3(1, 1, 1), float3(0.1, 0.15, 0.4), night * (1.0 - keep)), 1.0);
         if (Eye.w < 4.5)
             return float4(spill, 1.0);
-        return float4(lit + glow, 1.0);
+        if (Eye.w < 5.5)
+            return float4(lit + glow, 1.0);
+        return float4(ao.xxx, 1.0);
     }
 
     // The colour grade: exposure, the tint (keeping brightness), saturation, contrast, a soft shoulder for the
     // highlights the light added, the vignette.
     colour *= Grade.w;
+    // By day: warm highlights, cool shadows (the light of a sunny afternoon).
+    float day = 1.0 - night;
+    float bright = saturate(dot(colour, kLuma) * 1.4);
+    float3 warm = float3(1.0 + Split.x, 1.0 + Split.x * 0.35, 1.0 - Split.x * 0.6);
+    float3 cool = float3(1.0 - Split.y * 0.5, 1.0 - Split.y * 0.1, 1.0 + Split.y);
+    colour *= lerp(1.0, lerp(cool, warm, smoothstep(0.15, 0.75, bright)), day);
     float3 tinted = colour * Tint.rgb / max(dot(Tint.rgb, kLuma), 0.05);
     colour = lerp(colour, tinted, Tint.a);
     grey = dot(colour, kLuma);
