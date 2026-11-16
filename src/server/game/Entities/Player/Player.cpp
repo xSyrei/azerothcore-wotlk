@@ -7848,17 +7848,13 @@ void Player::_ApplyAllLevelScaleItemMods(bool apply)
 
 void Player::_ApplyAmmoBonuses()
 {
-    // check ammo
+    // check ammo (none: the scripts may still give ammo damage, proto then null)
     uint32 ammo_id = GetUInt32Value(PLAYER_AMMO_ID);
-    if (!ammo_id)
-        return;
 
-    float currentAmmoDPS;
+    float currentAmmoDPS = 0.0f;
 
-    ItemTemplate const* ammo_proto = sObjectMgr->GetItemTemplate(ammo_id);
-    if (!ammo_proto || ammo_proto->Class != ITEM_CLASS_PROJECTILE || !CheckAmmoCompatibility(ammo_proto))
-        currentAmmoDPS = 0.0f;
-    else
+    ItemTemplate const* ammo_proto = ammo_id ? sObjectMgr->GetItemTemplate(ammo_id) : nullptr;
+    if (ammo_proto && ammo_proto->Class == ITEM_CLASS_PROJECTILE && CheckAmmoCompatibility(ammo_proto))
         currentAmmoDPS = (ammo_proto->Damage[0].DamageMin + ammo_proto->Damage[0].DamageMax) / 2;
 
     sScriptMgr->OnPlayerApplyAmmoBonuses(this, ammo_proto, currentAmmoDPS);

@@ -24,7 +24,7 @@
 #include "Player.h"
 #include "ScriptMgr.h"
 
-// Classless Hero: every weapon and armor type, a weapon in each hand, and a ranged weapon with ammo.
+// Classless Hero: every weapon and armor type, a weapon in each hand, and a ranged weapon that needs no ammo.
 //
 // Each proficiency is a spell (it tells the client what may be equipped) plus, for weapons and
 // armor, a skill (the server's check). Many of these skills are invalid for the Hero's hidden base
@@ -85,7 +85,7 @@ namespace
         { 2092, 1 },        // a second Worn Dagger, for two daggers
         { 35, 1 },          // Bent Staff
         { 2362, 1 },        // Worn Wooden Shield
-        { 2504, 1 },        // Worn Shortbow (its arrows come by themselves, EnsureAmmo)
+        { 2504, 1 },        // Worn Shortbow (it needs no arrows, EnsureAmmo)
     };
 
     bool IsHero(Player const* player)
@@ -134,11 +134,13 @@ std::vector<std::pair<uint32, uint32>> HeroEquipment::StarterBagKit()
     return kit;
 }
 
-// Ammo comes by itself: a Hero with a bow, crossbow or gun has the arrows or bullets of their level in the ammo slot
-// (one, given when missing: InfiniteAmmo.Enabled, set in docker-compose.yml, never spends it). Better ammo the Hero
-// put there stays.
+// No ammo: a Hero's bow, crossbow or gun shoots without arrows or bullets (Requires No Ammo, Thori'dal's passive,
+// honored by the server and the client), and its shots add the damage of the arrows or bullets of their level, as if
+// they were in the ammo slot (OnPlayerApplyAmmoBonuses). Ammo the Hero still carries is removed.
 namespace
 {
+    constexpr uint32 SPELL_REQUIRES_NO_AMMO = 46699;
+
     struct AmmoTier
     {
         uint8 Level;
@@ -154,39 +156,50 @@ namespace
         { 55, 28053, 28060 },   // Wicked Arrow, Impact Shot
     };
 
-    void EnsureAmmo(Player* player)
+    // The damage per second of the level's arrows (bow, crossbow) or bullets (gun); 0 without such a weapon.
+    float LevelAmmoDps(Player const* player)
     {
         Item* ranged = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED);
-        if (!ranged)
-            return;
+        if (!ranged || ranged->IsBroken())
+            return 0.0f;
         uint32 subClass = ranged->GetTemplate()->SubClass;
         bool arrows = subClass == ITEM_SUBCLASS_WEAPON_BOW || subClass == ITEM_SUBCLASS_WEAPON_CROSSBOW;
         if (!arrows && subClass != ITEM_SUBCLASS_WEAPON_GUN)
-            return;
+            return 0.0f;
 
         uint32 ammo = 0;
         for (AmmoTier const& tier : AMMO_TIERS)
             if (tier.Level <= player->GetLevel())
                 ammo = arrows ? tier.Arrow : tier.Bullet;
-        ItemTemplate const* wanted = sObjectMgr->GetItemTemplate(ammo);
-        if (!wanted)
-            return;
+        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(ammo);
+        if (!proto)
+            return 0.0f;
+        return (proto->Damage[0].DamageMin + proto->Damage[0].DamageMax) / 2;
+    }
 
-        // The Hero's own, when it fits the weapon and is at least as good.
-        uint32 current = player->GetUInt32Value(PLAYER_AMMO_ID);
-        ItemTemplate const* own = current ? sObjectMgr->GetItemTemplate(current) : nullptr;
-        if (own && own->SubClass == wanted->SubClass && own->ItemLevel >= wanted->ItemLevel
-            && player->HasItemCount(current))
-            return;
+    void EnsureAmmo(Player* player)
+    {
+        if (!player->HasAura(SPELL_REQUIRES_NO_AMMO))
+            player->AddAura(SPELL_REQUIRES_NO_AMMO, player);
 
-        if (!player->HasItemCount(ammo))
-        {
-            ItemPosCountVec dest;
-            if (player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, ammo, 1) != EQUIP_ERR_OK)
-                return;
-            player->StoreNewItem(dest, ammo, true);
-        }
-        player->SetAmmo(ammo);
+        // The ammo slot emptied and the arrows and bullets taken away: they no longer do anything.
+        if (player->GetUInt32Value(PLAYER_AMMO_ID))
+            player->RemoveAmmo();
+        std::vector<uint32> ammo;
+        for (uint8 slot = INVENTORY_SLOT_ITEM_START; slot < INVENTORY_SLOT_ITEM_END; ++slot)
+            if (Item* item = player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
+                if (item->GetTemplate()->Class == ITEM_CLASS_PROJECTILE)
+                    ammo.push_back(item->GetEntry());
+        for (uint8 bagSlot = INVENTORY_SLOT_BAG_START; bagSlot < INVENTORY_SLOT_BAG_END; ++bagSlot)
+            if (Bag* bag = player->GetBagByPos(bagSlot))
+                for (uint32 slot = 0; slot < bag->GetBagSize(); ++slot)
+                    if (Item* item = bag->GetItemByPos(slot))
+                        if (item->GetTemplate()->Class == ITEM_CLASS_PROJECTILE)
+                            ammo.push_back(item->GetEntry());
+        for (uint32 entry : ammo)
+            player->DestroyItemCount(entry, player->GetItemCount(entry), true);
+
+        player->_ApplyAmmoBonuses();
     }
 }
 
@@ -279,8 +292,15 @@ public:
         PLAYERHOOK_ON_FIRST_LOGIN,
         PLAYERHOOK_ON_LEVEL_CHANGED,
         PLAYERHOOK_CHECK_ITEM_IN_SLOT_AT_LOAD_INVENTORY,
-        PLAYERHOOK_ON_EQUIP
+        PLAYERHOOK_ON_EQUIP,
+        PLAYERHOOK_ON_APPLY_AMMO_BONUSES
     }) { }
+
+    void OnPlayerApplyAmmoBonuses(Player* player, ItemTemplate const* /*proto*/, float& currentAmmoDPS) override
+    {
+        if (IsHero(player))
+            currentAmmoDPS = LevelAmmoDps(player);
+    }
 
     void OnPlayerEquip(Player* player, Item* item, uint8 /*bag*/, uint8 slot, bool /*update*/) override
     {
