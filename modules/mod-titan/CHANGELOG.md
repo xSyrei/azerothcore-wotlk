@@ -2,7 +2,15 @@
 
 Player-facing changes to Emberforge, newest first. Each entry is also posted as a patch note on the website.
 
-## 2026-11-16: Bug fixes
+## 2026-11-16: Legendary Rune balance and bug fixes
+
+### Legendary Runes balance
+
+- Rune of Echoing Thunder: Thunder Echo deals 40% more damage (42% of Shield Slam's damage, up from 30%).
+- Rune of the Unbroken Onslaught: the wake deals 60% more damage (96% of a weapon swing, up from 60%; its bleed and
+  Aftershock grow with it).
+- Rune of Fel Commandment and Rune of the Threefold Grave are temporarily removed while their designs are reworked
+  (both were far too strong). If you had one bound, it is released when you log in: choose another in the rune panel.
 
 ### Combat and classes
 
