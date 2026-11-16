@@ -38,7 +38,7 @@
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.20"
+#define EMBERFORGE_ENGINE_VERSION "0.21"
 
 namespace
 {
@@ -187,7 +187,9 @@ namespace
         // The atmosphere: the whole world's light, haze and colour (src/atmosphere.hlsl), alike in every direction
         // (nothing follows the sun or the moon). Its keys are new (atmosphere_*), so an older Emberforge.ini's
         // light-shaft settings are left behind.
-        bool atmosphere = true, nightAuto = true, hazeOwn = false;
+        // Off for now (issues left to fix); its key is new, so an Emberforge.ini that saved it on does not turn it
+        // back on. The panel still can, to test it.
+        bool atmosphere = false, nightAuto = true, hazeOwn = false;
         float show = 0.0f;                                     // 0 all, 1 bloom, 2 haze, 3 night, 4 spill
         // Bloom: what shines brighter than the threshold (lower by night, so lamps and windows stand out).
         float bloom = 1.0f, bloomThreshold = 0.7f, bloomNightThreshold = 0.32f, bloomKnee = 0.2f;
@@ -250,7 +252,7 @@ namespace
                 {"reflect_distortion", &distortion}, {"sky_brightness", &skyBrightness}, {"sparkle", &sparkle},
                 {"sparkle_size", &sparkleSize}, {"sun_azimuth", &sunAzimuth}, {"sun_height", &sunHeight},
                 {"wave_shading", &shading}, {"refraction", &refraction},
-                {"opacity", &opacity}, {"atmosphere_global", nullptr, &atmosphere},
+                {"opacity", &opacity}, {"atmosphere_paused", nullptr, &atmosphere},
                 {"atmosphere_bloom", &bloom}, {"atmosphere_bloom_threshold", &bloomThreshold},
                 {"atmosphere_bloom_night_threshold", &bloomNightThreshold}, {"atmosphere_bloom_knee", &bloomKnee},
                 {"atmosphere_bloom_sky", &bloomSky}, {"atmosphere_bloom_colour", &bloomColour},
