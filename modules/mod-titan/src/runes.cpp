@@ -668,7 +668,7 @@ namespace
     // Runes taken out while their design is looked at again (too strong once online): never offered nor bound, and a
     // Hero who had one bound has it released at login, free to choose another. Their auras stay in the catalog, so
     // Apply still takes them off.
-    constexpr uint8 RETIRED_RUNES[] = { RUNE_FEL_COMMANDMENT, RUNE_THREEFOLD_GRAVE };
+    constexpr uint8 RETIRED_RUNES[] = { RUNE_FEL_COMMANDMENT, RUNE_THREEFOLD_GRAVE, RUNE_UNBROKEN_ONSLAUGHT };
 
     bool IsRetired(uint8 id)
     {

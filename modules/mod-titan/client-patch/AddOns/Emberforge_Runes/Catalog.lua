@@ -353,6 +353,7 @@ EmberforgeRunesCatalog = {
     },
     { id = 28,
       name = "Rune of the Unbroken Onslaught",
+      retired = true,
       role = "Melee DPS (Mortal Strike or Bloodthirst)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_UnbrokenOnslaught",

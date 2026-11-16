@@ -475,7 +475,8 @@ local count = #tooltipLines
 GameTooltip:SetUnitBuff("player", 2)
 check(#tooltipLines == count, "another aura's tooltip is left alone")
 
--- Retired runes (Fel Commandment and the Threefold Grave, being reworked) are not listed in Browse all.
+-- Retired runes (Fel Commandment, the Threefold Grave and the Unbroken Onslaught, being reworked) are not listed in
+-- Browse all.
 for _, rune in ipairs(retired) do
     rune.retired = true
 end
@@ -490,7 +491,7 @@ for _, rune in ipairs(debug.browse.list) do
         hidden = false
     end
 end
-check(#retired == 2 and hidden and #debug.browse.list == 11 and debug.browser.count.text == "11 runes",
+check(#retired == 3 and hidden and #debug.browse.list == 10 and debug.browser.count.text == "10 runes",
     "retired runes are not listed, nor counted")
 
 print(failures == 0 and "All checks passed" or (failures .. " check(s) failed"))

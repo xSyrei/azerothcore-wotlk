@@ -22,8 +22,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   and a real Phantom Assassin: your shadowy double steps out of the shadows behind your target, strikes and vanishes.
 - Uncommon, Rare and Epic runes are turned off for now: only the Legendary Runes are in play. Runes you already hold
   are kept for when they return.
-- Rune of Fel Commandment and Rune of the Threefold Grave are temporarily removed while their designs are reworked
-  (both were far too strong). If you had one bound, it is released when you log in: choose another in the rune panel.
+- Rune of Fel Commandment, Rune of the Threefold Grave and Rune of the Unbroken Onslaught are temporarily removed
+  while their designs are reworked. If you had one bound, it is released when you log in: choose another in the rune panel.
 - Rune debuffs show their real kind: Bloodletting, Open Wound and Ghostfang are Bleeds, Grave Pestilence is a
   Disease, the rest are Magic. They all showed as Poisons before, and counted as slows.
 
