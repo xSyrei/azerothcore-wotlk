@@ -15,6 +15,7 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Death Knight abilities dim when you run out of runes.
 - Holy Light and Seal of Righteousness can be picked again, and they stay after you log out.
 - Shattered Sun: each player's shards are their own and no longer replace another player's.
+- Warrior stances can be left: cast the stance you are in again (its buff is hidden, so there was no way out).
 
 ### Pets
 
@@ -34,13 +35,17 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Food and drink vendors only show what you can use at your level. Burning Crusade and Wrath vendors also sell the
   standard bread and water.
 
+### Wildcard
+
+- Talents that work with a resource (Energy, Rage, mana, combo points, a pet's Focus) are only rolled for Heroes who
+  use it: no more Energy talents on a caster.
+- Travel Form, Aquatic Form and Flight Form are no longer rolled.
+- Buffs, auras and totems for one kind of fighting now count for the roles they serve: Devotion Aura is no longer
+  rolled for a Ranged Hero.
+
 ### Interface
 
 - The Talents button opens the Talents list.
-
-### Still under investigation
-
-- Legendary Rune window errors.
-- Battle Stance can't be left once it's on.
-- Throw Glaive is put on the action bar at login and after a prestige.
-- Wildcard sometimes rolls talents or abilities your build gets nothing from.
+- The spellbook keeps working after learning abilities or swapping Legendary Runes (the rune addon kept refreshing
+  it, which left its buttons unusable).
+- Throw is no longer put on your action bar at every login and prestige.
