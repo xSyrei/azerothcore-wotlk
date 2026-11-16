@@ -67,6 +67,10 @@
 //   O (open the window: a new offer)   E,<text> (an error)
 namespace
 {
+    // The Uncommon, Rare and Epic runes are off for now (only the Legendary Runes play): no offers, no effects, the
+    // window's requests ignored. What Heroes hold stays saved, as it was, for when they come back (true).
+    constexpr bool TIERS_ENABLED = false;
+
     constexpr char const* PREFIX = "EFRT";
     constexpr uint8 EPIC_SOCKETS = 5;
     constexpr uint8 RARE_SOCKETS = 10;
@@ -691,7 +695,7 @@ namespace RuneTiers
 
     bool GrantOffer(Player* player, uint8 level)
     {
-        if (!MakeOffer(player, level))
+        if (!TIERS_ENABLED || !MakeOffer(player, level))
             return false;
         Say(player, "the runes stir: a choice awaits you.");
         SendState(player);
@@ -732,16 +736,17 @@ public:
         std::string const prefix = std::string(PREFIX) + '\t';
         if (language != LANG_ADDON || receiver != player || msg.compare(0, prefix.size(), prefix) != 0)
             return true;
-        if (Wildcard::IsHero(player))
+        if (TIERS_ENABLED && Wildcard::IsHero(player))
             OnMessage(player, std::string_view(msg).substr(prefix.size()));
         return false;
     }
 
     // The runes, and any offers owed (levels reached before the runes existed, or while away); the window's state a
     // few seconds in (a request sent while loading can be lost).
+    // Off (TIERS_ENABLED): nothing loaded, so no rune is held: no effects, no offers.
     void OnPlayerLogin(Player* player) override
     {
-        if (!Wildcard::IsHero(player))
+        if (!TIERS_ENABLED || !Wildcard::IsHero(player))
             return;
         Load(player);
         bool owed = CatchUp(player) > 0;
@@ -794,7 +799,7 @@ public:
 
     void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
     {
-        if (!Wildcard::IsHero(player) || !CatchUp(player))
+        if (!TIERS_ENABLED || !Wildcard::IsHero(player) || !CatchUp(player))
             return;
         SendState(player);
         Send(player, "O");

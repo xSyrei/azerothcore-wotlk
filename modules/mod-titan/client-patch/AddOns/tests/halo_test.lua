@@ -83,6 +83,7 @@ DEFAULT_CHAT_FRAME = { AddMessage = function() end }
 function geterrorhandler() return function() end end
 function seterrorhandler() end
 
+EmberforgeHalo_ForceEnabled = true      -- the tiers are off in game (Halo.lua, ENABLED); the window is still tested
 for _, file in ipairs({ "Loader.lua", "Catalog.lua", "Art.lua", "Emberforge_Runes.lua", "Tiers.lua", "Halo.lua" }) do
     dofile(DIR .. file)
 end

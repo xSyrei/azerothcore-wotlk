@@ -1033,6 +1033,10 @@ events:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
     end
 end)
 
+-- The Uncommon, Rare and Epic runes are off for now (src/rune_tiers.cpp, TIERS_ENABLED): the rune button and
+-- /runes keep the Legendary panel, and nothing leads here. EmberforgeHalo_ForceEnabled: the tests'.
+local ENABLED = EmberforgeHalo_ForceEnabled or false
+
 -- The rune button and /runes open the Halo; the Legendary's own panel is a click on the medallion away.
 local function Toggle()
     if frame:IsShown() then
@@ -1042,7 +1046,7 @@ local function Toggle()
     end
 end
 local runeButton = EmberforgeRunes_Button
-if runeButton and runeButton.GetScript then
+if ENABLED and runeButton and runeButton.GetScript then
     local legendaryClick = runeButton:GetScript("OnClick")
     runeButton:SetScript("OnClick", function(self, button)
         local dragging = self.dragged and GetTime and GetTime() - self.dragged < 0.2
@@ -1053,7 +1057,7 @@ if runeButton and runeButton.GetScript then
         Toggle()
     end)
 end
-if SlashCmdList then
+if ENABLED and SlashCmdList then
     SlashCmdList["EMBERFORGERUNES"] = Toggle
 end
 
@@ -1066,4 +1070,4 @@ EmberforgeHalo_Debug = { frame = frame, legend = legend, sockets = sockets, deta
     listTitle = listTitle, ringLabels = ringLabels, Info = Info, Open = Open, build = build }
 EmberforgeHalo_Refresh = function() Refresh() end
 -- The Legendary panel's way here (once a first build is complete).
-EmberforgeHalo_Open = function() Open(false) end
+EmberforgeHalo_Open = ENABLED and function() Open(false) end or nil
