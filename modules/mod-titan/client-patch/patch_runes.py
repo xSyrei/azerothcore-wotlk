@@ -626,6 +626,7 @@ MIND_FLAY, SHADOW_BOLT, HOLY_SHOCK_DAMAGE = 15407, 686, 25912
 VISUAL_FROST_NOVA, VISUAL_BLAST_WAVE, VISUAL_HOLY_NOVA, VISUAL_MIND_BLAST = 17, 963, 3643, 3057
 VISUAL_SHADOW_BOLT, VISUAL_HOLY_SHOCK, VISUAL_HOLY_SHOCK_HEAL, VISUAL_BEACON = 64, 128, 135, 11876
 NO_FAMILY = {'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0}
+SPELL_ATTR3_DOT_STACKING = 0x80          # stacks separately for each caster
 SCRIPTED = {'AttributesEx3': SPELL_ATTR3_IGNORE_CASTER_MODIFIERS}
 
 
@@ -657,9 +658,12 @@ def strike(spell_id, name, icon, school, visual=0, text='', key=None, modifiers=
 
 
 def harmful(spell_id, name, icon, text, duration, effect, school, key=None):
-    """An aura on an enemy: effect (an aura() dict), its tick set by the script for damage over time."""
+    """An aura on an enemy: effect (an aura() dict), its tick set by the script for damage over time. Each Hero's
+    own (stacks separately for each caster): the same aura of two Heroes on one enemy replaced the first's (a
+    second Shattered Sun player's Sunshards took the first's)."""
     spell = {'id': spell_id, 'copy': CRIPPLING_POISON, 'name': name, 'icon': icon, 'description': text,
-             'tooltip': text, 'set': {**HARMFUL, 'DurationIndex': duration, 'SchoolMask': school, **SCRIPTED},
+             'tooltip': text, 'set': {**HARMFUL, 'DurationIndex': duration, 'SchoolMask': school, **SCRIPTED,
+                                      'AttributesEx3': SPELL_ATTR3_IGNORE_CASTER_MODIFIERS | SPELL_ATTR3_DOT_STACKING},
              'effects': {1: {**effect, 'TargetA': TARGET_UNIT_TARGET_ENEMY}}, 'clear': [2, 3]}
     if key:
         spell['visual'] = key
