@@ -220,6 +220,8 @@ namespace
         SPELL_VANISHING_ACT             = 90985,
         SPELL_MARKED_FOR_MURDER         = 90986,
         SPELL_PHANTOM_RUSH              = 90987,    // Energy regenerating twice as fast, 4 sec
+        SPELL_PHANTOM_FORM              = 90988,    // on the phantom: Shadow Dance's wisps, a shadow at its feet
+        SPELL_PHANTOM_VANISH            = 90989,    // the phantom arriving and leaving: Vanish's puff
         SPELL_BLADE_MODIFIER_FIRST      = 91120,    // + slot * 3 + choice
 
         SPELL_RUNE_WILD_HUNT            = 91130,
@@ -556,6 +558,9 @@ namespace
     constexpr uint32 NPC_RUNE_FELGUARD = 910120;
     constexpr uint32 NPC_RUNE_FEL_IMP = 910121;
     constexpr uint32 NPC_HOLLOW_ECHO = 910122;
+    constexpr uint32 NPC_PHANTOM_ASSASSIN = 910124;
+    constexpr uint32 PHANTOM_LINGER_MS = 900;                   // after its blow, then it vanishes
+    constexpr float PHANTOM_BEHIND = 1.5f;                      // yards past the victim, away from the Hero
     constexpr uint32 NPC_SPECTRAL_BEAST = 910123;
     // SummonProperties 61: category ally, type guardian. A pet-category row (67) would make a controllable guardian
     // that takes the pet slot from the Hero's own demon.
@@ -2637,10 +2642,31 @@ namespace
             amount *= OPEN_WOUND;
         ObjectGuid target = victim->GetGUID();
         Position at = victim->GetPosition();
-        player->m_Events.AddEventAtOffset([player, target, at, amount]()
+        // The phantom itself: the Hero's shadowy double, out of a puff behind the victim (away from the Hero), its
+        // blow when the strike lands, gone again a moment after (npc_titan_rune_phantom_assassin).
+        ObjectGuid ghostGuid;
+        float angle = player->GetAngle(victim);
+        Position behind(victim->GetPositionX() + PHANTOM_BEHIND * std::cos(angle),
+            victim->GetPositionY() + PHANTOM_BEHIND * std::sin(angle), victim->GetPositionZ(), angle + float(M_PI));
+        if (TempSummon* ghost = player->GetMap()->SummonCreature(NPC_PHANTOM_ASSASSIN, behind,
+            sSummonPropertiesStore.LookupEntry(SUMMON_PROPERTIES_GUARDIAN), delay + PHANTOM_LINGER_MS, player))
         {
-            if (player->IsInWorld() && player->IsAlive() && player->HasAura(SPELL_RUNE_SPECTRAL_BLADE))
-                Phantom(player, target, at, amount);
+            ghost->SetFacingToObject(victim);
+            ghostGuid = ghost->GetGUID();
+        }
+        player->m_Events.AddEventAtOffset([player, target, at, amount, ghostGuid]()
+        {
+            if (!player->IsInWorld() || !player->IsAlive() || !player->HasAura(SPELL_RUNE_SPECTRAL_BLADE))
+                return;
+            if (Creature* ghost = ghostGuid ? ObjectAccessor::GetCreature(*player, ghostGuid) : nullptr)
+            {
+                if (Unit* victim = ObjectAccessor::GetUnit(*player, target))
+                    ghost->SetFacingToObject(victim);
+                ghost->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                ghost->m_Events.AddEventAtOffset([ghost]() { ghost->CastSpell(ghost, SPELL_PHANTOM_VANISH, true); },
+                    Milliseconds(PHANTOM_LINGER_MS - 200));
+            }
+            Phantom(player, target, at, amount);
         }, Milliseconds(delay));
     }
 
@@ -3713,6 +3739,33 @@ class spell_titan_rune_dot : public AuraScript
     }
 };
 
+// The Spectral Blade's phantom (910124): the Hero's double, in Shadow Dance's purple wisps and a shadow, out of a
+// Vanish puff behind the victim; QueuePhantom makes it strike and leave. It holds the Hero's weapons.
+struct npc_titan_rune_phantom_assassin : public ScriptedAI
+{
+    npc_titan_rune_phantom_assassin(Creature* creature) : ScriptedAI(creature) { }
+
+    void IsSummonedBy(WorldObject* summoner) override
+    {
+        Player* owner = summoner ? summoner->ToPlayer() : nullptr;
+        if (!owner)
+            return;
+        owner->CastSpell(me, SPELL_CLONE_ME, true);
+        for (uint8 i = 0; i < 3; ++i)
+        {
+            uint8 slot = i == 0 ? EQUIPMENT_SLOT_MAINHAND : i == 1 ? EQUIPMENT_SLOT_OFFHAND : EQUIPMENT_SLOT_RANGED;
+            Item* item = owner->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+            me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID + i, item ? item->GetEntry() : 0);
+        }
+        me->AddAura(SPELL_PHANTOM_FORM, me);
+        me->CastSpell(me, SPELL_PHANTOM_VANISH, true);
+        me->SetReactState(REACT_PASSIVE);
+    }
+
+    void AttackStart(Unit* /*who*/) override { }
+    void UpdateAI(uint32 /*diff*/) override { }
+};
+
 // A Hollow Echo (910122): the Hero's look, hollowed, following them; for 10 sec (15 with Lasting Echoes) a weaker
 // Mind Flay on the Hero's target (else the one it was called for, else the nearest), 40 yards; quiet during a
 // barrage. Last Word: a last, stronger attack as it fades. Fervor: stronger while the Hero channels Mind Flay.
@@ -4357,6 +4410,7 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_mind_blast);
     RegisterSpellScript(spell_titan_rune_shattered_sun);
     RegisterCreatureAI(npc_titan_rune_hollow_echo);
+    RegisterCreatureAI(npc_titan_rune_phantom_assassin);
     RegisterCreatureAI(npc_titan_rune_felguard);
     RegisterCreatureAI(npc_titan_rune_fel_imp);
     RegisterSpellScript(spell_titan_rune_eviscerate);

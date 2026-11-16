@@ -5,7 +5,9 @@ SET @FELGUARD := 910120;
 SET @IMP := 910121;
 SET @HOLLOW_ECHO := 910122;
 SET @SPECTRAL_BEAST := 910123;
-DELETE FROM `creature_template` WHERE `entry` IN (@FELGUARD, @IMP, @HOLLOW_ECHO, @SPECTRAL_BEAST);
+SET @PHANTOM_ASSASSIN := 910124;
+DELETE FROM `creature_template` WHERE `entry` IN (@FELGUARD, @IMP, @HOLLOW_ECHO, @SPECTRAL_BEAST,
+    @PHANTOM_ASSASSIN);
 INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
     `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
     `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
@@ -25,15 +27,20 @@ INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entr
     0, 'npc_titan_rune_hollow_echo', 0),
 (@SPECTRAL_BEAST, 0, 0, 0, 0, 0, 'Spectral Beast', 'Wild Hunt', NULL, 0, 1, 80, 0, 35, 0, 1.2, 1.6, 1, 1, 20,
     0, 0, 1, 2000, 2000, 1, 1, 1, 33554434, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0,
-    0, 'npc_titan_rune_spectral_beast', 0);
+    0, 'npc_titan_rune_spectral_beast', 0),
+(@PHANTOM_ASSASSIN, 0, 0, 0, 0, 0, 'Phantom Assassin', 'Spectral Blade', NULL, 0, 1, 80, 0, 35, 0, 1, 1.14286, 1, 1,
+    20, 0, 0, 1, 2000, 2000, 1, 1, 4, 33554434, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1,
+    0, 0, 'npc_titan_rune_phantom_assassin', 0);
 
-DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@FELGUARD, @IMP, @HOLLOW_ECHO, @SPECTRAL_BEAST);
+DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@FELGUARD, @IMP, @HOLLOW_ECHO, @SPECTRAL_BEAST,
+    @PHANTOM_ASSASSIN);
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES
 (@FELGUARD, 0, 14255, 1, 1, 0),
 (@IMP, 0, 4449, 1, 1, 0),
 (@HOLLOW_ECHO, 0, 11686, 1, 1, 0),
-(@SPECTRAL_BEAST, 0, 903, 1, 1, 0);
+(@SPECTRAL_BEAST, 0, 903, 1, 1, 0),
+(@PHANTOM_ASSASSIN, 0, 11686, 1, 1, 0);
 
 -- The rune's aura grants Fel Command from its procs; Throw Glaive fires the volley.
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_fel_commandment',

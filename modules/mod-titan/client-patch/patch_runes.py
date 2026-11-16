@@ -839,12 +839,16 @@ BLADE_ICON = 'Ability_Rune_SpectralBlade'
 HUNT_ICON = 'Ability_Rune_WildHunt'
 AURA_MOD_INCREASE_SPEED = 31
 VISUAL_GHOSTLY_STRIKE, VISUAL_GHOST, VISUAL_KILL_COMMAND, VISUAL_DASH = 4159, 886, 8138, 2276
+VISUAL_VANISH = 255                         # Vanish: its puff of smoke (the cast kit)
 SPELLS += [
     buff(90980, 'Rune of the Spectral Blade', BLADE_ICON,
          'Eviscerate calls a phantom assassin behind its victim: a moment later it strikes for 200% of '
          'Eviscerate\'s damage, and your Energy regenerates 100% faster for 4 sec.', DURATION_INFINITE,
          {1: aura(AURA_DUMMY, 1, 0)}),
-    {**strike(90981, 'Phantom Strike', 'Ability_Rogue_Eviscerate', SHADOW, VISUAL_GHOSTLY_STRIKE)},
+    {**strike(90981, 'Phantom Strike', 'Ability_Rogue_Eviscerate', SHADOW, VISUAL_GHOSTLY_STRIKE),
+     'visual': 'PhantomStrikeLook'},
+    shown(90988, 'Phantom Form', BLADE_ICON, '', DURATION_INFINITE, key='PhantomForm'),
+    look(90989, 'Phantom Vanish', BLADE_ICON, VISUAL_VANISH),
     dot(90983, 'Open Wound', 'Ability_Rogue_Eviscerate', PHYSICAL, DURATION_4S, 'Bleeding every second.'),
     strike(90984, 'Open Wound', 'Ability_Rogue_Eviscerate', PHYSICAL),
     {**buff(90985, 'Vanishing Act', 'Ability_Rogue_Sprint', 'Movement speed increased by 30%.', DURATION_3S,
@@ -1030,23 +1034,8 @@ def flames(spots, alpha=0.9, flicker=0.32):
 WHITE_HOT, ICE_GLINT = (1.0, 0.93, 0.75), (0.65, 0.88, 1.0)
 EFFECTS.update({
     'Thunderfield': thunderfield('WAR_Thunderfield', 7157, 16.0),
-    'ThunderfieldMarch': thunderfield('WAR_ThunderfieldMarch', 7158, 6.0),
     # A Thunder Echo landing: a bolt from the sky and a ring of sparks at the feet.
-    'ThunderEchoHit': burst('WAR_ThunderEchoHit', 7166, (
-        ('lightning_bolt_4x4', {'spots': ((0.0, 0.0, 2.3, 4.6, 0.0),), 'sheet': (4, 4), 'flip': 0.7,
-                                'max_size': 1024, 'tint': (0.8, 0.92, 1.0), 'alpha': 1.0, 'pulse': 0}),
-        ('sonic_impact_white_sheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 3.0, 0.0),), 'sheet': (4, 2),
-                                      'flip': 0.6, 'tint': PALE_BLUE, 'alpha': 0.95, 'pulse': 0}),
-    ), 700),
     # Shield Slam's burst about its target (Reverberating Impact, Focused Peal): a ring rushing out and bolts.
-    'ThunderBurst': burst('WAR_ThunderBurst', 7167, (
-        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 2.0, 0.0),), 'tint': PALE_BLUE, 'alpha': 0.9,
-                               'scale': [(0.0, 0.3), (0.6, 5.5), (1.0, 6.5)], 'pulse': 0}),
-        ('Lightning_Circular_01', {'flat': True, 'spots': ((0.0, 0.0, 0.14, 9.0, 0.0),), 'tint': STORM_BLUE,
-                                   'alpha': 0.9, 'scale': [(0.0, 0.2), (0.5, 1.0), (1.0, 1.1)], 'pulse': 0}),
-        ('lightning_bolt_4x4', {'spots': ring(2.5, 3, 1.4, 3.0), 'sheet': (4, 4), 'flip': 0.8,
-                                'max_size': 1024, 'tint': (0.8, 0.92, 1.0), 'alpha': 1.0, 'pulse': 0}),
-    )),
     # The Weapon Wake: crossed blade cuts glowing red on the ground, a soft red glow under them.
     # The wake on the ground: a burning red fissure. A hot glow under it, the wake's own glowing blade gashes
     # (build_wake_art.py), a crack tearing open over and over across it, and embers rising off it.
@@ -1086,44 +1075,28 @@ EFFECTS.update({
         ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 1.5, 0.0),), 'tint': SLASH_RED,
                                'alpha': 0.8, 'scale': [(0.0, 0.4), (1.0, 3.5)], 'pulse': 0}),
     ), 600),
-    # A Sunshard: a fire burning in the enemy: two flames licking up out of a rolling knot of fire.
-    'SunshardGlow': looping('MAGE_SunshardGlow', 7170, (
-        ('sun_fireburst_4x4', {'spots': ((0.0, 0.0, 0.0, 1.5, 0.0),), 'sheet': (4, 4), 'flip': 0.9,
-                               'tint': (1.0, 0.72, 0.42), 'alpha': 0.85, 'pulse': 0}),
-        *flames(((0.1, 0.22, 0.45, 1.9, 0.0), (0.0, -0.2, 0.4, 1.6, 0.0))),
-    )),
-    # A fracture: frost cracks the shard: an icy glint, the sun bursting out in flame, a ring of fire rushing out.
-    'SunFracture': burst('MAGE_SunFracture', 7171, (
-        ('sun_star', {'spots': ((0.0, 0.0, 1.0, 2.4, 0.0),), 'tint': ICE_GLINT, 'alpha': 0.7, 'pulse': 0,
-                      'scale': [(0.0, 0.2), (0.12, 1.3), (0.4, 0.5), (1.0, 0.0)]}),
-        ('spritesheet_4', {'spots': ((0.0, 0.0, 1.0, 3.0, 0.0),), 'sheet': (2, 2), 'flip': 0.3,
-                           'tint': ICE_GLINT, 'alpha': 0.9, 'pulse': 0}),
-        ('sun_fireburst_4x4', {'spots': ring(0.8, 4, 1.0, 3.4), 'sheet': (4, 4), 'tint': WHITE_HOT, 'alpha': 1.0,
-                               'pulse': 0}),
-        *flames(ring(1.6, 6, 0.8, 1.8)),
-        ('sun_ring', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 7.0, 0.0),), 'tint': SUN_ORANGE, 'alpha': 0.9,
-                      'pulse': 0, 'scale': [(0.0, 0.15), (0.45, 1.0), (1.0, 1.15)]}),
-    ), 550),
-    # A collapse: the sun drawn in to a point, then bursting: a corona flaring out, flame and a ring of fire.
-    'SunCollapse': burst('MAGE_SunCollapse', 7172, (
-        ('sun_ring', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 6.0, 0.0),), 'tint': SUN_ORANGE, 'alpha': 0.9,
-                      'pulse': 0, 'scale': [(0.0, 1.0), (0.25, 0.05), (0.3, 0.05), (0.7, 1.4), (1.0, 1.6)]}),
-        ('sun_fireburst_4x4', {'spots': ((0.0, 0.0, 1.2, 4.5, 0.0), (0.4, 0.3, 1.6, 3.2, 140.0)), 'sheet': (4, 4),
-                               'tint': WHITE_HOT, 'alpha': 1.0, 'pulse': 0,
-                               'scale': [(0.0, 0.2), (0.3, 0.3), (0.45, 1.1), (1.0, 1.3)]}),
-        *flames(ring(2.2, 8, 1.0, 2.2), 1.0),
-    ), 750),
-    # Scalding Ground: still, cracked earth glowing with heat, flames standing up across it and flaring between.
-    'ScaldingGround': looping('MAGE_ScaldingGround', 7164, (
-        ('Circle_Cracks_02', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 12.0, 0.0),), 'tint': SUN_ORANGE,
-                              'alpha': 0.85, 'pulse': 2.4}),
-        *flames(ring(2.0, 5, 0.8, 1.8, 15.0) + ring(4.4, 9, 1.0, 2.2)),
-        ('sun_fireburst_4x4', {'spots': upright(ring(3.3, 6, 0.45, 1.0, 30.0)), 'sheet': (4, 4), 'flip': 0.8,
-                               'tint': (1.0, 0.62, 0.3), 'alpha': 0.8, 'pulse': 0}),
-    )),
 })
 
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_WORLD = 3, 4, 5, 14
+KIT_LEFT_HAND, KIT_RIGHT_HAND = 6, 7
+# Blizzard effect models (SpellVisualEffectName ids, the ones their own spells use) for the runes' looks: Echoing
+# Thunder's, the Shattered Sun's and the Spectral Blade's are the game's own, not our sheets.
+FX_LIGHTNING_CLOUD_LOW = 3792       # Spells\\LightningStorm_CloudLow_State: a small storm cloud overhead
+FX_LIGHTNING_HAND = 88              # Spells\\Lightning_PreCast_Low_Hand: lightning crackling in the hands
+FX_LIGHTNING_BOLT_IMPACT = 281      # Spells\\LightningBolt_Impact_Chest
+FX_LIGHTNING_SHIELD_IMPACT = 173    # Spells\\LightningShield_Impact_Base: sparks at the feet
+FX_THUNDERCLAP = 349                # Spells\\ThunderClap_Cast_Base: Thunder Clap's ring of dust and thunder
+FX_THUNDERSTORM = 4405              # spells\\shaman_thunder: Thunderstorm's blue shockwave
+FX_LIVING_BOMB_STATE = 4048         # spells\\mage_livingbomb_state: Living Bomb's burning bomb on the target
+FX_LIVING_BOMB_AREA = 4049          # spells\\mage_livingbomb_area: Living Bomb's explosion
+FX_ICE_LANCE_IMPACT = 3075          # spells\\ice_lance_impact: shards of ice
+FX_FIRE_NOVA = 714                  # Spells\\FireNova_Area: Blast Wave's ring of fire
+FX_FIRE_UBER_IMPACT = 220           # Spells\\Fire_ImpactDD_Uber_Chest: Pyroblast's sized fire hit
+FX_FLAMESTRIKE_GROUND = 420         # Spells\\Flamestrike_Impact_Base: Flamestrike's burning ground
+FX_SHADOW_DANCE = 4585              # spells\\shadowdance_state: Shadow Dance's purple wisps about the body
+FX_SHADOW_BASE = 1703               # Spells\\Shadow_Precast_Med_Base: a pool of shadow at the feet
+FX_SHADOW_HIGH_IMPACT = 624         # Spells\\Shadow_ImpactDD_High_Chest: a heavy shadow hit
+FX_SHADOWSTEPS = 4185               # spells\\shadowsteps_fx: Shadowstep's smoke
 VISUALS = {
     'SanctifiedParagon': {'copy': 32, 'id': 16759, 'clear': ('precast', 'cast', 'impact'), 'kits': {
         'state': (15708, {KIT_BASE: 'SanctifiedParagon', KIT_CHEST: 'SanctifiedParagonEmbers',
@@ -1136,8 +1109,11 @@ VISUALS = {
         'persistent': (15710, {KIT_WORLD: 'HallowedFootsteps', 'procs': False})}},
     'Thunderfield': {'copy': 9735, 'id': 16763, 'clear': ('precast', 'state', 'area'), 'kits': {
         'persistent': (15712, {KIT_WORLD: 'Thunderfield', 'procs': False})}},
+    # Thunder Clap's charge: a small storm cloud over the Hero, lightning in their hands.
     'ThunderfieldMarch': {'copy': 32, 'id': 16764, 'clear': ('precast', 'cast', 'impact'), 'kits': {
-        'state': (15713, {KIT_BASE: 'ThunderfieldMarch', 'sound': None, 'procs': False})}},
+        'state': (15713, {KIT_HEAD: FX_LIGHTNING_CLOUD_LOW, KIT_LEFT_HAND: FX_LIGHTNING_HAND,
+                          KIT_RIGHT_HAND: FX_LIGHTNING_HAND, KIT_BASE: 0, KIT_CHEST: 0, 'sound': None,
+                          'procs': False})}},
 }
 # The five runes': their grounds (the persistent world slot; March of the Dead's on the Hero), and Blizzard looks cut
 # to the part we want (a state only, an impact only).
@@ -1152,8 +1128,9 @@ VISUALS.update({
         'state': (15717, {KIT_BASE: 'GraveBloodMarch', 'sound': None, 'procs': False})}},
     'OnslaughtWake': {'copy': 9735, 'id': 16769, 'clear': ('precast', 'state', 'area'), 'kits': {
         'persistent': (15718, {KIT_WORLD: 'OnslaughtWake', 'procs': False})}},
-    'ScaldingGround': {'copy': 9735, 'id': 16770, 'clear': ('precast', 'state', 'area'), 'kits': {
-        'persistent': (15719, {KIT_WORLD: 'ScaldingGround', 'procs': False})}},
+    # Flamestrike's burning ground.
+    'ScaldingGround': {'copy': 9735, 'id': 16770, 'clear': ('precast', 'cast', 'state', 'area'), 'kits': {
+        'persistent': (15719, {KIT_BASE: FX_FLAMESTRIKE_GROUND, KIT_WORLD: 0, 'procs': False})}},
     # Icy Touch's, Plague Strike's and Blood Boil's hits without their casts on the Hero; Cleave's hit.
     'GraveRimeHit': {'copy': 11152, 'id': 16772, 'clear': ('precast', 'cast'), 'kits': {}},
     'GraveBlightHit': {'copy': 11624, 'id': 16773, 'clear': ('precast', 'cast', 'state'), 'kits': {}},
@@ -1161,23 +1138,33 @@ VISUALS.update({
     'WakeHit': {'copy': 219, 'id': 16775, 'clear': ('precast', 'cast'), 'kits': {
         'impact': (15723, {KIT_CHEST: 'WakeSlash'})}},
     # The new hits and bursts (one-shot looks in an impact kit).
-    'ThunderEchoHitLook': {'copy': 145, 'id': 16784, 'clear': ('precast', 'cast'), 'kits': {
-        'impact': (15721, {KIT_BASE: 'ThunderEchoHit'})}},
-    'ThunderBurstLook': {'copy': 7449, 'id': 16785, 'clear': ('precast', 'cast'), 'kits': {
-        'impact': (15722, {KIT_BASE: 'ThunderBurst'})}},
+    # A Thunder Echo's hit: Lightning Bolt's impact, sparks at the feet. Its burst: Thunder Clap's ring and
+    # Thunderstorm's shockwave about Shield Slam's target.
+    'ThunderEchoHitLook': {'copy': 145, 'id': 16784, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15721, {KIT_CHEST: FX_LIGHTNING_BOLT_IMPACT, KIT_BASE: FX_LIGHTNING_SHIELD_IMPACT})}},
+    'ThunderBurstLook': {'copy': 7449, 'id': 16785, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15722, {KIT_BASE: FX_THUNDERCLAP, KIT_WORLD: FX_THUNDERSTORM, KIT_CHEST: 0})}},
     'WakeAftershockLook': {'copy': 145, 'id': 16786, 'clear': ('precast', 'cast'), 'kits': {
         'impact': (15724, {KIT_BASE: 'WakeAftershock'})}},
+    # The shards shattering: Living Bomb's explosion with Ice Lance's shards. Second Sunrise: Blast Wave's ring
+    # of fire and a great fire hit.
     'SunFractureLook': {'copy': 17, 'id': 16787, 'clear': ('precast', 'cast', 'state'), 'kits': {
-        'impact': (15726, {KIT_BASE: 'SunFracture'})}},
+        'impact': (15726, {KIT_WORLD: FX_LIVING_BOMB_AREA, KIT_CHEST: FX_ICE_LANCE_IMPACT, KIT_BASE: 0})}},
     'SunCollapseLook': {'copy': 963, 'id': 16788, 'clear': ('precast', 'cast', 'state'), 'kits': {
-        'impact': (15727, {KIT_BASE: 'SunCollapse'})}},
+        'impact': (15727, {KIT_WORLD: FX_FIRE_NOVA, KIT_CHEST: FX_FIRE_UBER_IMPACT, KIT_BASE: 0})}},
     # States: Power Infusion's glow on the vow, Hand of Freedom's on its afterimage, the NPC Shadowform on a Hollow
     # Echo, Living Bomb's on a Sunshard, Deep Freeze's on a Broken Core.
     'DawnVow': {'copy': 7553, 'id': 16779, 'clear': ('precast', 'cast', 'impact'), 'kits': {}},
     'DawnAfterimage': {'copy': 4050, 'id': 16780, 'clear': ('precast', 'cast', 'impact'), 'kits': {}},
     'HollowEcho': {'copy': 3619, 'id': 16781, 'clear': ('precast', 'cast', 'impact'), 'kits': {}},
     'Sunshard': {'copy': 32, 'id': 16782, 'clear': ('precast', 'cast', 'impact'), 'kits': {
-        'state': (15725, {KIT_CHEST: 'SunshardGlow', 'sound': None, 'procs': False})}},
+        'state': (15725, {KIT_BASE: FX_LIVING_BOMB_STATE, KIT_CHEST: 0, 'sound': None, 'procs': False})}},
+    # The Spectral Blade's phantom: Shadow Dance's purple wisps and a pool of shadow on the Hero's double; its blow:
+    # a heavy shadow hit and Shadowstep's smoke.
+    'PhantomForm': {'copy': 32, 'id': 16789, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15728, {KIT_CHEST: FX_SHADOW_DANCE, KIT_BASE: FX_SHADOW_BASE, 'sound': None, 'procs': False})}},
+    'PhantomStrikeLook': {'copy': 4159, 'id': 16790, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15729, {KIT_CHEST: FX_SHADOW_HIGH_IMPACT, KIT_BASE: FX_SHADOWSTEPS})}},
     'BrokenCore': {'copy': 9963, 'id': 16783, 'clear': ('precast', 'cast', 'impact'), 'kits': {}},
 })
 
