@@ -1034,47 +1034,6 @@ def flames(spots, alpha=0.9, flicker=0.32):
 WHITE_HOT, ICE_GLINT = (1.0, 0.93, 0.75), (0.65, 0.88, 1.0)
 EFFECTS.update({
     'Thunderfield': thunderfield('WAR_Thunderfield', 7157, 16.0),
-    # A Thunder Echo landing: a bolt from the sky and a ring of sparks at the feet.
-    # Shield Slam's burst about its target (Reverberating Impact, Focused Peal): a ring rushing out and bolts.
-    # The Weapon Wake: crossed blade cuts glowing red on the ground, a soft red glow under them.
-    # The wake on the ground: a burning red fissure. A hot glow under it, the wake's own glowing blade gashes
-    # (build_wake_art.py), a crack tearing open over and over across it, and embers rising off it.
-    'OnslaughtWake': looping('WAR_OnslaughtWake', 7163, (
-        ('preparation_circle_a', {'flat': True, 'spots': ((0.0, 0.0, 0.05, 4.4, 0.0),), 'tint': (0.9, 0.05, 0.02),
-                                  'alpha': 0.7, 'pulse': 1.4}),
-        ('../WAR_UnbrokenOnslaught/wake_gash', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 4.2, 0.0),),
-                                                'tint': (1.0, 0.22, 0.1), 'alpha': 1.0, 'pulse': 0}),
-        ('souls_ground_crack_m_sheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 4.4, 0.0),),
-                                        'sheet': (2, 8), 'flip': 1.2, 'tint': (1.0, 0.12, 0.05), 'alpha': 1.0,
-                                        'pulse': 0}),
-        ('fire_wisps_2x2', {'spots': ((0.6, 0.8, 0.2, 0.7, 0.0), (-0.9, -0.4, 0.3, 0.6, 0.0),
-                                      (0.2, -1.1, 0.1, 0.8, 0.0), (-0.4, 1.2, 0.2, 0.6, 0.0)),
-                            'sheet': (2, 2), 'flip': 0.8, 'tint': (1.0, 0.36, 0.12), 'alpha': 0.9,
-                            'rise': (2.2, 1.2), 'pulse': 1.2}),
-    )),
-    # Ripping the wake open, on each enemy along it: a great crossed slash, a burst of steel shards, a hot flash,
-    # a spray of blood, and a red shockwave and burst on the ground under it.
-    'WakeSlash': burst('WAR_WakeSlash', 7168, (
-        ('new_cleave_a_1_sheet', {'spots': ((0.0, 0.0, 0.3, 5.4, 20.0), (0.0, 0.0, 0.5, 4.8, -50.0)), 'sheet': (4, 2),
-                                  'flip': 0.45, 'tint': (1.0, 0.5, 0.35), 'alpha': 1.0, 'pulse': 0}),
-        ('spritesheet_4', {'spots': ((0.0, 0.0, 0.5, 3.4, 0.0),), 'sheet': (2, 2), 'flip': 0.5,
-                           'tint': (1.0, 0.6, 0.5), 'alpha': 1.0, 'pulse': 0}),
-        ('impact_new_1_a_new_sheet', {'spots': ((0.0, 0.0, 0.4, 3.6, 0.0),), 'sheet': (3, 2), 'flip': 0.4,
-                                      'tint': SLASH_RED, 'alpha': 1.0, 'pulse': 0}),
-        ('new_blood_1_sheet', {'spots': ((0.0, 0.0, 0.6, 2.8, 0.0),), 'sheet': (4, 4), 'flip': 0.55, 'alpha': 1.0,
-                               'pulse': 0, 'blend': 2}),
-        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 1.0, 0.0),), 'tint': SLASH_RED,
-                               'alpha': 1.0, 'scale': [(0.0, 0.5), (1.0, 5.5)], 'pulse': 0}),
-        ('sonic_impact_white_sheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 4.4, 0.0),), 'sheet': (4, 2),
-                                      'flip': 0.5, 'tint': EMBER, 'alpha': 1.0, 'pulse': 0}),
-    ), 700),
-    # Aftershock: the ground jolting where the wake was.
-    'WakeAftershock': burst('WAR_WakeAftershock', 7169, (
-        ('sonic_impact_white_sheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 3.6, 0.0),), 'sheet': (4, 2),
-                                      'flip': 0.5, 'tint': EMBER, 'alpha': 1.0, 'pulse': 0}),
-        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 1.5, 0.0),), 'tint': SLASH_RED,
-                               'alpha': 0.8, 'scale': [(0.0, 0.4), (1.0, 3.5)], 'pulse': 0}),
-    ), 600),
 })
 
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_WORLD = 3, 4, 5, 14
@@ -1097,6 +1056,11 @@ FX_SHADOW_DANCE = 4585              # spells\\shadowdance_state: Shadow Dance's 
 FX_SHADOW_BASE = 1703               # Spells\\Shadow_Precast_Med_Base: a pool of shadow at the feet
 FX_SHADOW_HIGH_IMPACT = 624         # Spells\\Shadow_ImpactDD_High_Chest: a heavy shadow hit
 FX_SHADOWSTEPS = 4185               # spells\\shadowsteps_fx: Shadowstep's smoke
+FX_GROUND_RUPTURE = 3696            # spells\\ground_rupture: the ground torn open
+FX_CLEAVE_IMPACT = 458              # Spells\\Cleave_Impact_Chest: Cleave's hit
+FX_CLEAVE_ARC = 1643                # Spells\\Cleave_Cast_Base: Cleave's swing, a slash across the ground
+FX_SHOCKWAVE_IMPACT = 4057          # spells\\warrior_shockwave_impact: Shockwave's hit at the feet
+FX_SLAM_IMPACT = 1034               # Spells\\Slam_Impact_Chest: Slam's hit
 VISUALS = {
     'SanctifiedParagon': {'copy': 32, 'id': 16759, 'clear': ('precast', 'cast', 'impact'), 'kits': {
         'state': (15708, {KIT_BASE: 'SanctifiedParagon', KIT_CHEST: 'SanctifiedParagonEmbers',
@@ -1126,8 +1090,10 @@ VISUALS.update({
         'persistent': (15716, {KIT_WORLD: 'GraveBloodCircle', 'procs': False})}},
     'GraveBloodMarch': {'copy': 32, 'id': 16768, 'clear': ('precast', 'cast', 'impact'), 'kits': {
         'state': (15717, {KIT_BASE: 'GraveBloodMarch', 'sound': None, 'procs': False})}},
-    'OnslaughtWake': {'copy': 9735, 'id': 16769, 'clear': ('precast', 'state', 'area'), 'kits': {
-        'persistent': (15718, {KIT_WORLD: 'OnslaughtWake', 'procs': False})}},
+    # The Weapon Wake: the ground torn open along it. Its rip, on each enemy: Cleave's hit and swing. Aftershock:
+    # Shockwave's hit and Slam's.
+    'OnslaughtWake': {'copy': 9735, 'id': 16769, 'clear': ('precast', 'cast', 'state', 'area'), 'kits': {
+        'persistent': (15718, {KIT_BASE: FX_GROUND_RUPTURE, KIT_WORLD: 0, 'procs': False})}},
     # Flamestrike's burning ground.
     'ScaldingGround': {'copy': 9735, 'id': 16770, 'clear': ('precast', 'cast', 'state', 'area'), 'kits': {
         'persistent': (15719, {KIT_BASE: FX_FLAMESTRIKE_GROUND, KIT_WORLD: 0, 'procs': False})}},
@@ -1136,7 +1102,7 @@ VISUALS.update({
     'GraveBlightHit': {'copy': 11624, 'id': 16773, 'clear': ('precast', 'cast', 'state'), 'kits': {}},
     'GraveGoreHit': {'copy': 11117, 'id': 16774, 'clear': ('precast', 'cast'), 'kits': {}},
     'WakeHit': {'copy': 219, 'id': 16775, 'clear': ('precast', 'cast'), 'kits': {
-        'impact': (15723, {KIT_CHEST: 'WakeSlash'})}},
+        'impact': (15723, {KIT_CHEST: FX_CLEAVE_IMPACT, KIT_BASE: FX_CLEAVE_ARC})}},
     # The new hits and bursts (one-shot looks in an impact kit).
     # A Thunder Echo's hit: Lightning Bolt's impact, sparks at the feet. Its burst: Thunder Clap's ring and
     # Thunderstorm's shockwave about Shield Slam's target.
@@ -1144,8 +1110,8 @@ VISUALS.update({
         'impact': (15721, {KIT_CHEST: FX_LIGHTNING_BOLT_IMPACT, KIT_BASE: FX_LIGHTNING_SHIELD_IMPACT})}},
     'ThunderBurstLook': {'copy': 7449, 'id': 16785, 'clear': ('precast', 'cast', 'state'), 'kits': {
         'impact': (15722, {KIT_BASE: FX_THUNDERCLAP, KIT_WORLD: FX_THUNDERSTORM, KIT_CHEST: 0})}},
-    'WakeAftershockLook': {'copy': 145, 'id': 16786, 'clear': ('precast', 'cast'), 'kits': {
-        'impact': (15724, {KIT_BASE: 'WakeAftershock'})}},
+    'WakeAftershockLook': {'copy': 145, 'id': 16786, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15724, {KIT_BASE: FX_SHOCKWAVE_IMPACT, KIT_CHEST: FX_SLAM_IMPACT})}},
     # The shards shattering: Living Bomb's explosion with Ice Lance's shards. Second Sunrise: Blast Wave's ring
     # of fire and a great fire hit.
     'SunFractureLook': {'copy': 17, 'id': 16787, 'clear': ('precast', 'cast', 'state'), 'kits': {
