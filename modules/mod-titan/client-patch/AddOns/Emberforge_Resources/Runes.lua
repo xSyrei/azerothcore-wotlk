@@ -97,10 +97,44 @@ GameTooltip:HookScript("OnTooltipSetSpell", function(tooltip)
     end
 end)
 
+-- Each rune's type and whether it is ready, as one string: what the buttons were last updated for.
+local function RuneState()
+    local state = ""
+    for rune = 1, 6 do
+        local _, _, runeReady = GetRuneCooldown(rune)
+        state = state .. (GetRuneType(rune) or 0) .. (runeReady and "r" or "-")
+    end
+    return state
+end
+
+local lastState
+local function UpdateIfChanged()
+    local state = RuneState()
+    if state ~= lastState then
+        lastState = state
+        UpdateAll()
+    end
+end
+
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("RUNE_POWER_UPDATE")
 frame:RegisterEvent("RUNE_TYPE_UPDATE")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
-frame:SetScript("OnEvent", UpdateAll)
+frame:SetScript("OnEvent", function()
+    lastState = RuneState()
+    UpdateAll()
+end)
+
+-- A Hero's runes come from the server (SMSG_RESYNC_RUNES), which fires no rune event: the state is watched instead,
+-- a few times a second, and the buttons updated when a rune is spent or comes back.
+local POLL = 0.1
+local elapsed = 0
+frame:SetScript("OnUpdate", function(_, delta)
+    elapsed = elapsed + delta
+    if elapsed >= POLL then
+        elapsed = 0
+        UpdateIfChanged()
+    end
+end)
 
 EmberforgeRunes = { RunesReady = RunesReady, UpdateAll = UpdateAll }
