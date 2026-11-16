@@ -1,9 +1,10 @@
 -- The Legendary Runes the server builds (src/runes.cpp numbers them; each from its own design doc). The first draft's
 -- twenty placeholder runes are gone. Modifiers: 3 per slot, in slot order; keywords: words the panel's search also
--- finds a rune by.
+-- finds a rune by. retired: taken out while its design is reworked (src/runes.cpp, RETIRED_RUNES): not listed.
 EmberforgeRunesCatalog = {
     { id = 21,
       name = "Rune of Fel Commandment",
+      retired = true,
       role = "Hybrid (Havoc, Demonology)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_FelCommandment",
@@ -173,7 +174,7 @@ EmberforgeRunesCatalog = {
       builtFrom = "Thunder Clap",
       spentWith = "Shield Slam",
       resource = "Thunder Charge",
-      core = "Thunder Clap charges you with thunder for 8 sec. Your next Shield Slam releases a Thunder Echo: 30% " ..
+      core = "Thunder Clap charges you with thunder for 8 sec. Your next Shield Slam releases a Thunder Echo: 42% " ..
           "of its damage as Nature damage to up to 5 enemies within 6 yards of its target. Needs a shield.",
       loop = "Thunder Clap, then Shield Slam. Every time.",
       mods = {
@@ -292,6 +293,7 @@ EmberforgeRunesCatalog = {
     },
     { id = 27,
       name = "Rune of the Threefold Grave",
+      retired = true,
       role = "Melee DPS or Tank (Icy Touch, Plague Strike, Blood Strike)",
       roles = { "DAMAGER", "TANK" },
       icon = "Ability_Rune_ThreefoldGrave",
@@ -345,7 +347,7 @@ EmberforgeRunesCatalog = {
       spentWith = "Any other melee ability",
       resource = "None: your Weapon Wake",
       core = "Mortal Strike or Bloodthirst cuts a Weapon Wake through its target for 6 sec. Your next other melee " ..
-          "ability rips it open: 60% of a weapon swing to every enemy in it (up to 6), its first target 25% more.",
+          "ability rips it open: 96% of a weapon swing to every enemy in it (up to 6), its first target 25% more.",
       loop = "Mortal Strike, then anything else: every strike lands twice.",
       mods = {
         { name = "Executioner's Cut",

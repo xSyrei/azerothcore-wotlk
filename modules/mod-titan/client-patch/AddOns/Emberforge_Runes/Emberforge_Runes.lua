@@ -1310,7 +1310,7 @@ local function Filtered()
                 break
             end
         end
-        if match and (not browse.role or HasRole(rune, browse.role))
+        if match and not rune.retired and (not browse.role or HasRole(rune, browse.role))
             and (not browse.usable or Standing(rune) == "ok") then
             local named = query ~= "" and rune.name:lower():find(query, 1, true) and 0 or 1
             found[#found + 1] = { rune = rune, rank = named * 1000 + (Standing(rune) == "ok" and 0 or 100) + order }
@@ -1386,8 +1386,14 @@ Fill = function()
         chip.on = chip.role == "usable" and browse.usable or (chip.role ~= "usable" and chip.role == browse.role)
         PillArt(chip)
     end
-    browser.count:SetText(#browse.list == #catalog and (#catalog .. " runes")
-        or (#browse.list .. " of " .. #catalog .. " runes"))
+    local total = 0
+    for _, rune in ipairs(catalog) do
+        if not rune.retired then
+            total = total + 1
+        end
+    end
+    browser.count:SetText(#browse.list == total and (total .. " runes")
+        or (#browse.list .. " of " .. total .. " runes"))
     empty.text:SetText("No rune matches your search.")
     Fade(empty, #browse.list == 0)
     local span = ROWS * ROW_H - 8
@@ -2532,7 +2538,7 @@ end
 -- The runes the unbound button turns through: every one with an icon, in the catalog's order.
 local cycle = {}
 for _, rune in ipairs(catalog) do
-    if rune.icon then
+    if rune.icon and not rune.retired then
         cycle[#cycle + 1] = rune.icon
     end
 end

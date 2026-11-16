@@ -142,6 +142,14 @@ SlashCmdList["EMBERFORGERUNES"]()
 check(chat[1] and chat[1]:find("did not load") and chat[2] and chat[2]:find("Emberforge_Runes.lua:12", 1, true)
     and sent[#sent][2] == "STATE", "before the panel loads, /runes reports its load error and asks for the state")
 dofile(DIR .. "Catalog.lua")
+-- The panel's mechanics are checked on every rune, retired ones too (their hiding is checked at the end).
+local retired = {}
+for _, rune in ipairs(EmberforgeRunesCatalog) do
+    if rune.retired then
+        retired[#retired + 1] = rune
+        rune.retired = nil
+    end
+end
 dofile(DIR .. "Art.lua")
 dofile(DIR .. "Emberforge_Runes.lua")
 local frame = EmberforgeLegendaryRunes
@@ -466,6 +474,24 @@ check(tooltipLines[#tooltipLines] == "57 damage every second.", "a damage over t
 local count = #tooltipLines
 GameTooltip:SetUnitBuff("player", 2)
 check(#tooltipLines == count, "another aura's tooltip is left alone")
+
+-- Retired runes (Fel Commandment and the Threefold Grave, being reworked) are not listed in Browse all.
+for _, rune in ipairs(retired) do
+    rune.retired = true
+end
+EmberforgeRunes_Open()
+debug.browseAsk.pill:Click()
+run(0.7)
+search.text = ""
+search.scripts.OnTextChanged(search)
+local hidden = true
+for _, rune in ipairs(debug.browse.list) do
+    if rune.retired then
+        hidden = false
+    end
+end
+check(#retired == 2 and hidden and #debug.browse.list == 11 and debug.browser.count.text == "11 runes",
+    "retired runes are not listed, nor counted")
 
 print(failures == 0 and "All checks passed" or (failures .. " check(s) failed"))
 os.exit(failures == 0 and 0 or 1)

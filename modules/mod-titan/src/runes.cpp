@@ -334,11 +334,11 @@ namespace
     };
 
     // Echoing Thunder's tuning: Thunder Clap charges the Hero for 8 sec (20 with Lingering Charge); the next Shield
-    // Slam releases the echo: 30% of its damage before mitigation to each enemy within 6 yards of its target (up to
+    // Slam releases the echo: 42% of its damage before mitigation to each enemy within 6 yards of its target (up to
     // 5).
     constexpr int32 CHARGE_MS = 8000, LINGERING_CHARGE_MS = 20000;
     constexpr uint8 DOUBLE_CHARGES = 2;
-    constexpr float ECHO_SHARE = 0.3f, ECHO_RADIUS = 6.0f, DISTANT_RADIUS = 10.0f, FOCUSED_ECHO = 1.6f;
+    constexpr float ECHO_SHARE = 0.42f, ECHO_RADIUS = 6.0f, DISTANT_RADIUS = 10.0f, FOCUSED_ECHO = 1.6f;
     constexpr std::size_t ECHO_TARGETS = 5;
     constexpr float COMMANDING_THREAT = 1.0f;                           // twice the threat
     constexpr float SHELTERING_PCT = 3.0f, SHELTERING_CAP_PCT = 15.0f;  // of maximum health, an enemy hit
@@ -417,10 +417,10 @@ namespace
         MOD_RELENTLESS, MOD_BATTLEFIELD_CLAIM, MOD_SECOND_WIND,
     };
 
-    // Unbroken Onslaught's tuning: the wake's attack is 60% of a normalized main-hand swing to each enemy along it
+    // Unbroken Onslaught's tuning: the wake's attack is 96% of a normalized main-hand swing to each enemy along it
     // (up to 6), its primary target 25% more (50% with Executioner's Cut).
     constexpr uint32 WAKE_MS = 6000, CLAIM_MS = 10000, WAKE_DELAY_MS = 600, AFTERSHOCK_MS = 1500;
-    constexpr float WAKE_SHARE = 0.6f, WAKE_PRIMARY = 1.25f, EXECUTIONER_PRIMARY = 1.5f, AFTERSHOCK_SHARE = 0.5f;
+    constexpr float WAKE_SHARE = 0.96f, WAKE_PRIMARY = 1.25f, EXECUTIONER_PRIMARY = 1.5f, AFTERSHOCK_SHARE = 0.5f;
     constexpr float WAKE_HALF_LENGTH = 4.0f, WAKE_HALF_WIDTH = 1.5f, CUT_HALF_WIDTH = 1.0f;
     constexpr float CRESCENT_RADIUS = 8.0f, CRESCENT_ARC = float(M_PI) / 2.0f;     // each side of the facing
     constexpr float RAKE_BEHIND = 2.0f, RAKE_BEYOND = 14.0f;
@@ -651,6 +651,16 @@ namespace
               { { SPELL_KILL_COMMAND, SPELL_BESTIAL_WRATH } }, SPELL_RUNE_WILD_HUNT, SPELL_HUNT_MODIFIER_FIRST },
         };
         return runes;
+    }
+
+    // Runes taken out while their design is looked at again (too strong once online): never offered nor bound, and a
+    // Hero who had one bound has it released at login, free to choose another. Their auras stay in the catalog, so
+    // Apply still takes them off.
+    constexpr uint8 RETIRED_RUNES[] = { RUNE_FEL_COMMANDMENT, RUNE_THREEFOLD_GRAVE };
+
+    bool IsRetired(uint8 id)
+    {
+        return std::find(std::begin(RETIRED_RUNES), std::end(RETIRED_RUNES), id) != std::end(RETIRED_RUNES);
     }
 
     RuneDef const* FindRune(uint8 id)
@@ -1402,7 +1412,7 @@ namespace
         }
     }
 
-    // Shield Slam while charged: the echo bursts about its target, 30% of the slam's damage before mitigation to
+    // Shield Slam while charged: the echo bursts about its target, 42% of the slam's damage before mitigation to
     // each enemy within 6 yards (10 with Distant Rumble; the target alone, 60% more, with Focused Peal), up to 5.
     void ThunderEcho(Player* player, Unit* target, int32 slamDamage)
     {
@@ -1955,7 +1965,7 @@ namespace
         player->RemoveDynObject(SPELL_WAKE_GROUND);
     }
 
-    // The wake's attack: 60% of a normalized swing to each enemy along it (up to 6), its primary target more;
+    // The wake's attack: 96% of a normalized swing to each enemy along it (up to 6), its primary target more;
     // Bloodletting: a bleed of 30% of the hit every second for 4 sec, refreshed; Second Wind: 1% of
     // the Hero's health back for each enemy hit.
     void WakeStrike(Player* player, Shape const& shape, ObjectGuid primary, float share)
@@ -2789,6 +2799,22 @@ namespace
         }
     }
 
+    // A retired rune bound to any specialization is let go (its modifiers with it), and the Hero told.
+    void ReleaseRetired(Player* player)
+    {
+        State& state = StateOf(player);
+        for (uint8 spec = 0; spec < MAX_SPECS; ++spec)
+        {
+            Choice& choice = state.Choices[spec];
+            if (!choice.Rune || !IsRetired(choice.Rune))
+                continue;
+            choice = Choice();
+            Save(player, spec);
+            ChatHandler(player->GetSession()).PSendSysMessage("|cffa335eeLegendary Rune:|r your rune is temporarily "
+                "unavailable while its design is reworked, and has been released: choose another in the rune panel.");
+        }
+    }
+
     // ---- The panel ---------------------------------------------------------------------------------------------
 
     bool Prompt(Player* player)
@@ -2804,7 +2830,7 @@ namespace
         // Suggested: runes the Hero meets, their role's first (a Tank or Healer sees a hybrid only in Browse all).
         std::vector<RuneDef const*> offers;
         for (RuneDef const& rune : Catalog())
-            if (Missing(player, rune.Requires) == "-"
+            if (!IsRetired(rune.Id) && Missing(player, rune.Requires) == "-"
                 && (role == Wildcard::ROLE_NONE || rune.Roles & Wildcard::RoleMask(Wildcard::Role(role))))
                 offers.push_back(&rune);
         if (offers.size() > MAX_OFFERS)
@@ -2848,6 +2874,8 @@ namespace
             return Refuse(player, "This specialization is empty until you prestige in it.");
         if (!rune)
             return Refuse(player, "That rune is not available yet.");
+        if (IsRetired(runeId))
+            return Refuse(player, "That rune is temporarily unavailable while its design is reworked.");
         if (Missing(player, rune->Requires) != "-" && !anyway)
             return Refuse(player, "You lack an ability this rune needs.");
         choice = Choice();
@@ -3889,6 +3917,7 @@ public:
         Load(player);
         if (!Wildcard::IsHero(player))
             return;
+        ReleaseRetired(player);
         Apply(player);
         ObjectGuid guid = player->GetGUID();
         player->m_Events.AddEventAtOffset([player, guid]()

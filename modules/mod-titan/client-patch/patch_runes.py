@@ -465,7 +465,7 @@ THUNDER = 'WAR_EchoingThunder'
 STORM_BLUE, PALE_BLUE = (0.45, 0.7, 1.0), (0.75, 0.88, 1.0)
 SPELLS += [
     buff(90770, 'Rune of Echoing Thunder', THUNDER_ICON,
-         'Thunder Clap charges you with thunder. Your next Shield Slam releases a Thunder Echo: 30% of its damage '
+         'Thunder Clap charges you with thunder. Your next Shield Slam releases a Thunder Echo: 42% of its damage '
          'to up to 5 enemies within 6 yards of its target.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {
@@ -712,7 +712,7 @@ def shown(spell_id, name, icon, text, duration, key=None, effects=None):
 
 ONSLAUGHT_RUNE = buff(90860, 'Rune of the Unbroken Onslaught', ONSLAUGHT_ICON,
                       'Mortal Strike and Bloodthirst cut a Weapon Wake through their target for 6 sec. Your next '
-                      'other melee ability rips it open: 60% of a weapon swing to every enemy in it, its first '
+                      'other melee ability rips it open: 96% of a weapon swing to every enemy in it, its first '
                       'target 25% more.',
                       DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)})
 # Its procs: every melee ability that hits; the script picks the ones that reopen the wake.
