@@ -20,7 +20,9 @@
 #include "ScriptMgr.h"
 #include "Spell.h"
 #include "SpellAuraEffects.h"
+#include "SpellAuras.h"
 #include "SpellInfo.h"
+#include "SpellScript.h"
 #include <array>
 
 namespace
@@ -74,7 +76,27 @@ public:
     }
 };
 
+// Honor Among Thieves (51698, 51700, 51701; with the core's spell_rog_honor_among_thieves): a party member's critical
+// strike awards the rogue a combo point. A Hero's own critical strikes do not: a Hero crits with every class's spells,
+// so their own crits filled the combo points by themselves.
+class spell_titan_honor_among_thieves : public AuraScript
+{
+    PrepareAuraScript(spell_titan_honor_among_thieves);
+
+    bool PartyOnly(ProcEventInfo& /*eventInfo*/)
+    {
+        Unit* caster = GetCaster();
+        return !caster || GetTarget() != caster || caster->getClass() != CLASS_PALADIN;
+    }
+
+    void Register() override
+    {
+        DoCheckProc += AuraCheckProcFn(spell_titan_honor_among_thieves::PartyOnly);
+    }
+};
+
 void AddSC_combo_points()
 {
     new titan_combo_point_refund();
+    RegisterSpellScript(spell_titan_honor_among_thieves);
 }
