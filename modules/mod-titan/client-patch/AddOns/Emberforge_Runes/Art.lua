@@ -573,8 +573,8 @@ EmberforgeRunesArt = {
                         "nearby party member for 5 ticks' worth. One shield at a time.",
                 "The aura's damage generates 50% more threat. Needs Sanctified " ..
                         "Condemnation.",
-                "An enemy hit by 3 ticks in a row is slowed by 15% while it stays in " ..
-                        "the aura. Needs Sanctified Condemnation.",
+                "An enemy hit by 3 ticks in a row has its movement speed reduced by 15% " ..
+                        "while it stays in the aura. Needs Sanctified Condemnation.",
                 "The aura costs 0.75% of your base mana a second instead of 1%, but its " ..
                         "damage, healing and shields are 10% lower.",
             },
@@ -625,7 +625,7 @@ EmberforgeRunesArt = {
                         "target, which arcs as usual.",
                 "Each Chain Lightning hit arcs to 1 more enemy for 20% of that hit.",
                 "Each arc shields you for 1% of your maximum health for 8 sec, stacking " ..
-                        "up to 10%.",
+                        "up to 10% of your maximum health.",
                 "Arcs from a critical Lightning Bolt or retaliation deal 50% more " ..
                         "damage.",
             },
@@ -670,9 +670,10 @@ EmberforgeRunesArt = {
                         "damage instead of 42%.",
                 "Thunder Echo hits enemies within 10 yards of Shield Slam's target " ..
                         "instead of 6.",
-                "Enemies hit by Thunder Echo are slowed by 30% for 3 sec.",
-                "Thunder Echo shields you for 3% of your maximum health per enemy hit " ..
-                        "(up to 15%) for 6 sec.",
+                "Enemies hit by Thunder Echo have their movement speed reduced by 30% " ..
+                        "for 3 sec.",
+                "Thunder Echo shields you for 3% of your maximum health per enemy hit, " ..
+                        "up to 15% of your maximum health, for 6 sec.",
                 "Thunder Echo grants you 2 Rage for each enemy it hits.",
                 "Each enemy Thunder Echo hits takes 1 sec off Thunder Clap's cooldown.",
             },
@@ -712,12 +713,13 @@ EmberforgeRunesArt = {
                 "The extra jump heals 2 allies instead of 1, for 25% of Chain Heal's " ..
                         "first heal each (instead of 40%).",
                 "The extra jump heals 40% more on an ally below half health: 56% of " ..
-                        "Chain Heal's first heal.",
+                        "Chain Heal's first heal instead of 40%.",
                 "The extra jump heals for 48% of Chain Heal's first heal instead of " ..
                         "40%.",
                 "Each Earth Shield heal also heals the most injured ally near its " ..
                         "wearer for half as much.",
-                "Chain Heal heals your Earth Shield wearer for 40% more instead of 20%.",
+                "Chain Heal heals your Earth Shield wearer for 40% more healing instead " ..
+                        "of 20% more.",
                 "Chain Heal on your Earth Shield wearer restores 1 Earth Shield charge.",
                 "The extra jump also shields its ally for 20% of the jump's heal for 4 " ..
                         "sec.",
@@ -760,11 +762,11 @@ EmberforgeRunesArt = {
             texts = {
                 "Wandering Mist reaches allies up to 30 yards from your Soothing Mist " ..
                         "target instead of 20.",
-                "Each Soothing Mist tick sends Wandering Mist to 2 allies for 15% of " ..
-                        "the tick each, instead of 25% to one.",
+                "Each Soothing Mist tick sends Wandering Mist to 2 allies, healing 15% " ..
+                        "of the tick's healing each, instead of 25% to one.",
                 "Wandering Mist also shields its ally for 10% of its heal.",
                 "Enveloping Mist also wraps your most injured nearby ally in a Lesser " ..
-                        "Enveloping Mist, 30% as strong.",
+                        "Enveloping Mist that heals 30% as much.",
                 "Vivify also heals your most injured nearby ally for 30% of its heal.",
                 "Soothing Mist heals 15% more on a target with your Enveloping Mist.",
                 "Soothing Mist costs 25% less mana.",
@@ -850,21 +852,21 @@ EmberforgeRunesArt = {
             },
             texts = {
                 "A narrow cleft through your target: the wake's first target takes 50% " ..
-                        "more instead of 25%.",
+                        "more damage instead of 25% more.",
                 "The wake is a crescent 8 yards wide in front of you, instead of a line " ..
                         "through your target.",
                 "The wake reaches 14 yards past your target, hitting the enemies behind " ..
                         "it.",
                 "The wake rips open twice: once for each of your next two melee " ..
                         "abilities, 96% of a weapon swing each time.",
-                "Enemies the wake hits bleed for 30% of the hit every second for 4 sec " ..
-                        "(120% of it in all).",
-                "1.5 sec after the wake rips open, it strikes again for half: 48% of a " ..
-                        "weapon swing.",
+                "Enemies the wake hits bleed for 30% of the wake's damage every second " ..
+                        "for 4 sec (120% of its damage in all).",
+                "1.5 sec after the wake rips open, it strikes again for half its " ..
+                        "damage: 48% of a weapon swing.",
                 "Your wake moves with its first target, instead of staying where it was " ..
                         "cut.",
-                "Enemies the wake hits are claimed for 8 sec: slowed by 30% and taking " ..
-                        "10% more damage from you.",
+                "Enemies the wake hits are claimed for 8 sec: their movement speed is " ..
+                        "reduced by 30% and they take 10% more damage from you.",
                 "Each enemy the wake hits heals you for 1% of your maximum health.",
             },
             slots = {
@@ -901,14 +903,15 @@ EmberforgeRunesArt = {
             },
             texts = {
                 "Each Dawn Echo also strikes (or heals) up to 5 others within 8 yards " ..
-                        "for 40% of the echo.",
-                "Dawn Echoes are 40% stronger: 70% of the strike or heal instead of " ..
-                        "50%.",
+                        "for 40% of the echo's damage or healing.",
+                "Dawn Echoes deal 40% more damage and healing: 70% of the strike's " ..
+                        "damage or the heal instead of 50%.",
                 "Every Dawn Echo both strikes the enemy and heals your most injured " ..
-                        "ally, for 35% of the original each.",
-                "Each Dawn Echo consecrates the ground for 4 sec: 25% of the echo every " ..
-                        "second to enemies within 8 yards.",
-                "Holy Shock sends 2 Dawn Echoes; the second is half as strong.",
+                        "ally, each for 35% of the original's damage or healing.",
+                "Each Dawn Echo consecrates the ground for 4 sec, dealing 25% of the " ..
+                        "echo's damage every second to enemies within 8 yards.",
+                "Holy Shock sends 2 Dawn Echoes; the second deals half the damage or " ..
+                        "healing.",
                 "Judgement sends a Dawn Echo too.",
                 "Your damaging Dawn Echoes heal you for 20% of their damage.",
                 "Each Dawn Echo takes 0.5 sec off Crusader Strike's and Holy Shock's " ..
@@ -954,12 +957,12 @@ EmberforgeRunesArt = {
                 "Your Hollow Echoes last 15 sec instead of 10.",
                 "When a Hollow Echo fades, it strikes its target for 3 Mind Flay ticks " ..
                         "at once.",
-                "Mind Blast's barrage lands all at once and deals 20% more: 72% of a " ..
-                        "Mind Flay tick per bolt.",
+                "Mind Blast's barrage lands all at once and deals 20% more damage: 72% " ..
+                        "of a Mind Flay tick's damage per bolt.",
                 "Your echoes spread out over enemies with your Shadow Word: Pain on " ..
                         "them, your target first.",
                 "Instead of bolts, each echo screams through up to 5 enemies on the way " ..
-                        "to your target, 90% of a Mind Flay tick each.",
+                        "to your target, dealing 90% of a Mind Flay tick's damage to each.",
                 "Your Hollow Echoes deal 25% more damage while you channel Mind Flay.",
                 "Your Hollow Echoes heal you for 10% of the damage they deal.",
                 "Mind Blast's cooldown is 0.5 sec shorter for each echo it commands.",
@@ -1002,13 +1005,14 @@ EmberforgeRunesArt = {
                         "8 yards of their target.",
                 "An enemy can hold up to 8 Sunshards instead of 5.",
                 "The burst hits enemies within 12 yards instead of 8.",
-                "The burst leaves burning ground for 4 sec: 15% of the burst every " ..
-                        "second to enemies within 6 yards.",
+                "The burst leaves burning ground for 4 sec, dealing 15% of the burst's " ..
+                        "damage every second to enemies within 6 yards.",
                 "The burst also shatters the Sunshards in other enemies within 10 " ..
-                        "yards, at half strength.",
+                        "yards, for half the damage.",
                 "The burst deals 40% more damage to the frost spell's target.",
                 "2 sec after the burst, it flares again for 40% of its damage.",
-                "Enemies hit by the burst are slowed by 40% for 3 sec.",
+                "Enemies hit by the burst have their movement speed reduced by 40% for " ..
+                        "3 sec.",
             },
             slots = {
                 "Formation",
@@ -1044,7 +1048,7 @@ EmberforgeRunesArt = {
                 "Mark",
             },
             texts = {
-                "The phantom strikes 40% harder: 280% of Eviscerate's damage.",
+                "The phantom deals 40% more damage: 280% of Eviscerate's damage.",
                 "The phantom strikes 3 times, 0.2 sec apart, for 230% of Eviscerate's " ..
                         "damage in all.",
                 "The phantom also strikes up to 3 other enemies within 8 yards for 100% " ..
@@ -1098,8 +1102,8 @@ EmberforgeRunesArt = {
                         "yards for 30% of your pet's attack.",
                 "Each bite makes its target bleed for 15% of your pet's attack every " ..
                         "second for 4 sec. Refreshed, never stacked.",
-                "Each Kill Command during Bestial Wrath makes it last 2 sec longer, up " ..
-                        "to 10 sec more.",
+                "Each Kill Command during Bestial Wrath makes Bestial Wrath last 2 sec " ..
+                        "longer, up to 10 sec longer.",
                 "Your Spectral Beasts switch to whatever enemy you target.",
                 "When its prey dies, a Spectral Beast hunts on: your target, else the " ..
                         "nearest enemy.",
