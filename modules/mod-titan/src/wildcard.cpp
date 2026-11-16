@@ -265,10 +265,11 @@ namespace
     constexpr char const* TAME_BEAST = "Tame Beast";
     constexpr char const* TAME_BEAST_COMPANIONS[] = { "Call Pet", "Dismiss Pet", "Revive Pet", "Mend Pet", "Feed Pet" };
     // Call Pet and Dismiss Pet come from a quest, not a trainer, so they are not Wildcard abilities (found by name
-    // above): taught with Tame Beast (TamerSpells) and gone with it.
+    // above): taught with Tame Beast (TamerSpells) and gone with it. Revive Pet too, from level 1 (its trainer's
+    // level is 30, which left a Hero below it with no way to bring a dead pet back).
     constexpr uint32 SPELL_TAME_BEAST = 1515;
     constexpr uint32 SPELL_COLD_BLOOD = 14177;     // "your next offensive ability": every class's (GlobalReach)
-    constexpr uint32 TAMER_SPELLS[] = { 883, 2641 };       // Call Pet, Dismiss Pet
+    constexpr uint32 TAMER_SPELLS[] = { 883, 2641, 982 }; // Call Pet, Dismiss Pet, Revive Pet
 
     // Group versions of a buff: learned with the buff once the Hero's level reaches them (the rank-ups give them, as a
     // trainer would), never rolled on their own, and gone with it.
@@ -792,7 +793,25 @@ namespace
             what, spellId, name ? name : "?");
     }
 
-    // Call Pet and Dismiss Pet for a Hero with Tame Beast.
+    // A tamed pet put away when Tame Beast went (RemoveAbility: not in a slot) comes back as the current pet once the
+    // Hero has Tame Beast again: else Call Pet found no pet and Tame Beast refused another ("too many pets"), with
+    // the stable full nothing could be done.
+    void RestoreUnslottedPet(Player* player)
+    {
+        PetStable* stable = player->GetPetStable();
+        if (!stable || stable->CurrentPet || player->GetPetGUID())
+            return;
+        auto pet = std::find_if(stable->UnslottedPets.begin(), stable->UnslottedPets.end(),
+            [](PetStable::PetInfo const& info) { return info.Type == HUNTER_PET; });
+        if (pet == stable->UnslottedPets.end())
+            return;
+        CharacterDatabase.Execute("UPDATE `character_pet` SET `slot` = {} WHERE `id` = {} AND `owner` = {}",
+            uint32(PET_SAVE_AS_CURRENT), pet->PetNumber, player->GetGUID().GetCounter());
+        stable->CurrentPet = std::move(*pet);
+        stable->UnslottedPets.erase(pet);
+    }
+
+    // Call Pet, Dismiss Pet and Revive Pet for a Hero with Tame Beast.
     void TamerSpells(Player* player)
     {
         if (!player->HasSpell(SPELL_TAME_BEAST))
@@ -800,6 +819,7 @@ namespace
         for (uint32 spellId : TAMER_SPELLS)
             if (!player->HasSpell(spellId))
                 player->learnSpell(spellId);
+        RestoreUnslottedPet(player);
     }
 
     // Every ability the Hero knows: every rank its level allows, learned (as a trainer teaches them, each one), from
