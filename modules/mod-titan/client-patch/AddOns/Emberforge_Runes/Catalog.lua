@@ -63,44 +63,47 @@ EmberforgeRunesCatalog = {
       mods = {
         {
           name = "Boundless Sanctity",
-          text = "Radius increases to 12 yards, but damage, healing and absorption are reduced by 25%.",
+          text = "The aura reaches 12 yards instead of 8, but its damage, healing and shields are 25% " ..
+              "lower.",
         },
         {
           name = "Hallowed Footsteps",
-          text = "Aura radius becomes 4 yards. Moving leaves trails lasting 2 sec; they share the aura's ticks " ..
-              "and never strike an enemy twice.",
+          text = "The aura shrinks to 4 yards, but moving leaves sanctified footsteps for 2 sec that tick " ..
+              "like the aura. An enemy is hit once a tick, however many it stands in.",
         },
         {
           name = "Seat of the Paragon",
-          text = "After standing still for 3 sec, the aura's output increases by 10%. Moving removes the bonus.",
+          text = "Standing still for 3 sec raises the aura's damage, healing and shields by 10% until you " ..
+              "move.",
         },
         {
           name = "Sanctified Condemnation",
-          text = "Damage. Consecutive ticks increase that enemy's damage taken from your Consecration by 2%, up " ..
-              "to 10%. Stacks expire after 2 sec outside the aura.",
+          text = "Damage: each tick on an enemy raises its damage taken from your aura by 2%, up to 10%. " ..
+              "Lost 2 sec after it leaves the aura.",
         },
         {
           name = "Merciful Ground",
-          text = "Healing. Consecration no longer damages enemies: each pulse heals the single most injured party " ..
-              "member within range.",
+          text = "Healing: the aura no longer deals damage. Each second it heals your most injured party " ..
+              "member in range.",
         },
         {
           name = "Shelter of the Paragon",
-          text = "Protection. Consecration no longer damages enemies: every 5 sec it shields one nearby party " ..
-              "member. Only one shield from your aura at a time.",
+          text = "Protection: the aura no longer deals damage. Every 5 sec it shields a nearby party " ..
+              "member for 5 ticks' worth. One shield at a time.",
         },
         {
           name = "Bastion of Faith",
-          text = "The aura generates 50% more threat. Only with Sanctified Condemnation.",
+          text = "The aura's damage generates 50% more threat. Needs Sanctified Condemnation.",
         },
         {
           name = "Weight of the Unworthy",
-          text = "After 3 consecutive damaging ticks, an enemy is slowed by 15% until it leaves the aura. Only " ..
-              "with Sanctified Condemnation.",
+          text = "An enemy hit by 3 ticks in a row is slowed by 15% while it stays in the aura. Needs " ..
+              "Sanctified Condemnation.",
         },
         {
           name = "Measured Devotion",
-          text = "Reduces the aura's mana cost by 25%, but reduces its output by 10%.",
+          text = "The aura costs 0.75% of your base mana a second instead of 1%, but its damage, healing " ..
+              "and shields are 10% lower.",
         },
       },
       builds = {
@@ -137,23 +140,26 @@ EmberforgeRunesCatalog = {
       loop = "Cast Lightning Bolt. The storm does the rest.",
       mods = {
         { name = "Forked Tempest",
-          text = "Lightning Bolt arcs to 3 enemies." },
+          text = "Lightning Bolt arcs to 3 enemies instead of 2, for 30% of its damage each." },
         { name = "Closed Circuit",
-          text = "Lightning Bolt's arc strikes its own target again for 60% instead." },
+          text = "Lightning Bolt no longer arcs: it strikes its own target again for 60% of its damage." },
         { name = "Faraday Field",
-          text = "Arcs reach 15 yards and deal 10% more." },
+          text = "Arcs reach enemies 15 yards away instead of 10, and deal 10% more damage." },
         { name = "Live Wire",
-          text = "Lightning Shield's retaliations arc to 2 enemies." },
+          text = "Lightning Shield's retaliations arc to 2 enemies instead of 1, for 50% of the " ..
+              "retaliation each." },
         { name = "Storm Within",
-          text = "Lightning Shield strikes the nearest enemy within 8 yards every 3 sec in combat." },
+          text = "In combat, Lightning Shield strikes the nearest enemy within 8 yards every 3 sec on its " ..
+              "own." },
         { name = "Distant Conductor",
-          text = "Lightning Bolt also fires a Lightning Shield retaliation at its target." },
+          text = "Lightning Bolt also fires a Lightning Shield retaliation at its target, which arcs as " ..
+              "usual." },
         { name = "Chain Surge",
-          text = "Each Chain Lightning hit arcs to 1 more enemy for 20% of it." },
+          text = "Each Chain Lightning hit arcs to 1 more enemy for 20% of that hit." },
         { name = "Static Ward",
-          text = "Each arc shields you for 1% of your maximum health, up to 10%, for 8 sec." },
+          text = "Each arc shields you for 1% of your maximum health for 8 sec, stacking up to 10%." },
         { name = "Overcharge",
-          text = "Arcs from a critical strike deal 50% more." },
+          text = "Arcs from a critical Lightning Bolt or retaliation deal 50% more damage." },
       },
       builds = {
         { name = "The Thunderhead", mods = { "Closed Circuit", "Distant Conductor", "Overcharge" },
@@ -179,21 +185,23 @@ EmberforgeRunesCatalog = {
       loop = "Thunder Clap, then Shield Slam. Every time.",
       mods = {
         { name = "Double Charge",
-          text = "The charge holds 2 Thunder Echoes." },
+          text = "Thunder Clap's charge holds 2 Thunder Echoes: your next 2 Shield Slams each release one." },
         { name = "Lingering Charge",
-          text = "The charge lasts 20 sec." },
+          text = "Thunder Clap's charge lasts 20 sec instead of 8." },
         { name = "Commanding Thunder",
-          text = "Thunder Echo generates twice the threat." },
+          text = "Thunder Echo generates twice the threat of its damage." },
         { name = "Focused Peal",
-          text = "Thunder Echo strikes only Shield Slam's target, for 60% more." },
+          text = "Thunder Echo hits only Shield Slam's target, for 67% of Shield Slam's damage instead of " ..
+              "42%." },
         { name = "Distant Rumble",
-          text = "Thunder Echo reaches 10 yards around the target." },
+          text = "Thunder Echo hits enemies within 10 yards of Shield Slam's target instead of 6." },
         { name = "Deafening Impact",
           text = "Enemies hit by Thunder Echo are slowed by 30% for 3 sec." },
         { name = "Sheltering Reverberation",
-          text = "Thunder Echo shields you for 3% of your maximum health per enemy hit (up to 15%) for 6 sec." },
+          text = "Thunder Echo shields you for 3% of your maximum health per enemy hit (up to 15%) for 6 " ..
+              "sec." },
         { name = "Battle Rhythm",
-          text = "Thunder Echo grants 2 rage per enemy hit." },
+          text = "Thunder Echo grants you 2 Rage for each enemy it hits." },
         { name = "Rolling Thunder",
           text = "Each enemy Thunder Echo hits takes 1 sec off Thunder Clap's cooldown." },
       },
@@ -221,23 +229,26 @@ EmberforgeRunesCatalog = {
       loop = "Cast Chain Heal: it always reaches one more ally.",
       mods = {
         { name = "Split Tributary",
-          text = "The extra jump heals 2 allies, 25% each." },
+          text = "The extra jump heals 2 allies instead of 1, for 25% of Chain Heal's first heal each " ..
+              "(instead of 40%)." },
         { name = "Deep Current",
-          text = "The extra jump heals 40% more an ally below half health." },
+          text = "The extra jump heals 40% more on an ally below half health: 56% of Chain Heal's first " ..
+              "heal." },
         { name = "Concentrated Current",
-          text = "The extra jump heals 20% more." },
+          text = "The extra jump heals for 48% of Chain Heal's first heal instead of 40%." },
         { name = "Flowing Waters",
-          text = "Earth Shield's heals also heal the most injured ally near its wearer for half as much." },
+          text = "Each Earth Shield heal also heals the most injured ally near its wearer for half as " ..
+              "much." },
         { name = "Bedrock",
           text = "Chain Heal heals your Earth Shield wearer for 40% more instead of 20%." },
         { name = "Renewed Shield",
-          text = "Chain Heal on your Earth Shield wearer restores a charge." },
+          text = "Chain Heal on your Earth Shield wearer restores 1 Earth Shield charge." },
         { name = "Tidal Shelter",
-          text = "The extra jump also shields its ally for 20% of the heal for 4 sec." },
+          text = "The extra jump also shields its ally for 20% of the jump's heal for 4 sec." },
         { name = "Renewing Current",
-          text = "The extra jump also heals its ally for 20% more over 4 sec." },
+          text = "The extra jump also heals its ally for 20% of the jump's heal over 4 sec." },
         { name = "Long Reach",
-          text = "The extra jump reaches 20 yards." },
+          text = "The extra jump can reach an ally 20 yards away instead of 12.5." },
       },
       builds = {
         { name = "The Flood", mods = { "Split Tributary", "Flowing Waters", "Renewing Current" },
@@ -264,21 +275,24 @@ EmberforgeRunesCatalog = {
       loop = "Channel Soothing Mist on the one who needs it most; the mist finds the next.",
       mods = {
         { name = "Flowing Currents",
-          text = "Wandering Mist reaches 30 yards." },
+          text = "Wandering Mist reaches allies up to 30 yards from your Soothing Mist target instead of " ..
+              "20." },
         { name = "Drifting Mist",
-          text = "Wandering Mist heals 2 allies, 15% each." },
+          text = "Each Soothing Mist tick sends Wandering Mist to 2 allies for 15% of the tick each, " ..
+              "instead of 25% to one." },
         { name = "Jade Shelter",
-          text = "Wandering Mist also shields its ally for 10% of the heal." },
+          text = "Wandering Mist also shields its ally for 10% of its heal." },
         { name = "Comforting Veil",
-          text = "Enveloping Mist also wraps your most injured ally nearby in a lesser one, 30% as strong." },
+          text = "Enveloping Mist also wraps your most injured nearby ally in a Lesser Enveloping Mist, " ..
+              "30% as strong." },
         { name = "Vivacious Flow",
-          text = "Vivify also heals your most injured ally nearby for 30% of it." },
+          text = "Vivify also heals your most injured nearby ally for 30% of its heal." },
         { name = "Peaceful Focus",
           text = "Soothing Mist heals 15% more on a target with your Enveloping Mist." },
         { name = "Effortless Breathing",
           text = "Soothing Mist costs 25% less mana." },
         { name = "Lingering Mist",
-          text = "When your channel ends, its target is healed for 2 more ticks over 4 sec." },
+          text = "When your Soothing Mist ends, its target is healed for 2 more ticks over 4 sec." },
         { name = "Deep Breath",
           text = "Each Wandering Mist restores 0.3% of your maximum mana." },
       },
@@ -351,19 +365,23 @@ EmberforgeRunesCatalog = {
       loop = "Mortal Strike, then anything else: every strike lands twice.",
       mods = {
         { name = "Executioner's Cut",
-          text = "A narrow cleft through your target: its first target takes 50% more instead of 25%." },
+          text = "A narrow cleft through your target: the wake's first target takes 50% more instead of " ..
+              "25%." },
         { name = "Whirling Steel",
-          text = "A broad crescent in front of you, 8 yards, for cleaving nearby enemies." },
+          text = "The wake is a crescent 8 yards wide in front of you, instead of a line through your " ..
+              "target." },
         { name = "Raking Passage",
-          text = "A longer slash, reaching 14 yards past your target to the enemies behind it." },
+          text = "The wake reaches 14 yards past your target, hitting the enemies behind it." },
         { name = "Overpowering Echo",
-          text = "The wake rips open twice: your next two melee abilities each rip it." },
+          text = "The wake rips open twice: once for each of your next two melee abilities, 96% of a " ..
+              "weapon swing each time." },
         { name = "Bloodletting",
-          text = "Enemies the wake hits bleed for 30% of it every second for 4 sec." },
+          text = "Enemies the wake hits bleed for 30% of the hit every second for 4 sec (120% of it in " ..
+              "all)." },
         { name = "Aftershock",
-          text = "The wake strikes again 1.5 sec later at half strength." },
+          text = "1.5 sec after the wake rips open, it strikes again for half: 48% of a weapon swing." },
         { name = "Relentless",
-          text = "Your wake follows its first target." },
+          text = "Your wake moves with its first target, instead of staying where it was cut." },
         { name = "Battlefield Claim",
           text = "Enemies the wake hits are claimed for 8 sec: slowed by 30% and taking 10% more damage " ..
               "from you." },
@@ -395,23 +413,26 @@ EmberforgeRunesCatalog = {
       loop = "Use Crusader Strike and Holy Shock on cooldown: every one lands twice.",
       mods = {
         { name = "Sunburst",
-          text = "Each echo also splashes up to 5 others within 8 yards for 40% of it." },
+          text = "Each Dawn Echo also strikes (or heals) up to 5 others within 8 yards for 40% of the " ..
+              "echo." },
         { name = "Focused Dawn",
-          text = "Your echoes are 40% stronger." },
+          text = "Dawn Echoes are 40% stronger: 70% of the strike or heal instead of 50%." },
         { name = "Communion",
-          text = "Every echo both strikes and heals, at 35% each." },
+          text = "Every Dawn Echo both strikes the enemy and heals your most injured ally, for 35% of the " ..
+              "original each." },
         { name = "Sacred Ground",
-          text = "Each echo leaves consecrated ground for 4 sec, a quarter of it each second." },
+          text = "Each Dawn Echo consecrates the ground for 4 sec: 25% of the echo every second to enemies " ..
+              "within 8 yards." },
         { name = "Steadfast",
-          text = "Holy Shock echoes twice; the second at half strength." },
+          text = "Holy Shock sends 2 Dawn Echoes; the second is half as strong." },
         { name = "Judgment's Echo",
           text = "Judgement sends a Dawn Echo too." },
         { name = "Dawn's Mercy",
-          text = "Your damaging echoes heal you for 20% of their damage." },
+          text = "Your damaging Dawn Echoes heal you for 20% of their damage." },
         { name = "Swift Dawn",
-          text = "Each echo takes 0.5 sec off Crusader Strike and Holy Shock's cooldowns." },
+          text = "Each Dawn Echo takes 0.5 sec off Crusader Strike's and Holy Shock's cooldowns." },
         { name = "Radiant Ward",
-          text = "Your healing echoes also shield their target for 25% of the heal for 8 sec." },
+          text = "Your healing Dawn Echoes also shield their target for 25% of the heal for 8 sec." },
       },
       builds = {
         { name = "The Dawnblade", mods = { "Focused Dawn", "Judgment's Echo", "Swift Dawn" },
@@ -438,23 +459,26 @@ EmberforgeRunesCatalog = {
       loop = "Flay to gather your echoes, then Mind Blast to unleash them.",
       mods = {
         { name = "Gathering",
-          text = "You can have 4 Hollow Echoes." },
+          text = "You can have 4 Hollow Echoes at once instead of 3." },
         { name = "Lasting Echoes",
-          text = "Your echoes last 15 sec." },
+          text = "Your Hollow Echoes last 15 sec instead of 10." },
         { name = "Last Word",
-          text = "An echo fading away strikes its target for three ticks at once." },
+          text = "When a Hollow Echo fades, it strikes its target for 3 Mind Flay ticks at once." },
         { name = "Unison",
-          text = "The barrage lands all together and deals 20% more." },
+          text = "Mind Blast's barrage lands all at once and deals 20% more: 72% of a Mind Flay tick per " ..
+              "bolt." },
         { name = "Dissonance",
-          text = "Your echoes turn on separate enemies with your Shadow Word: Pain, your target first." },
+          text = "Your echoes spread out over enemies with your Shadow Word: Pain on them, your target " ..
+              "first." },
         { name = "Accusation",
-          text = "The barrage becomes a scream from each echo through up to 5 enemies on the way." },
+          text = "Instead of bolts, each echo screams through up to 5 enemies on the way to your target, " ..
+              "90% of a Mind Flay tick each." },
         { name = "Fervor",
-          text = "Your echoes deal 25% more while you channel Mind Flay." },
+          text = "Your Hollow Echoes deal 25% more damage while you channel Mind Flay." },
         { name = "Shadow Mend",
-          text = "Your echoes heal you for 10% of the damage they deal." },
+          text = "Your Hollow Echoes heal you for 10% of the damage they deal." },
         { name = "Swift Command",
-          text = "Mind Blast comes back 0.5 sec sooner for each echo it commands." },
+          text = "Mind Blast's cooldown is 0.5 sec shorter for each echo it commands." },
       },
       builds = {
         { name = "The Choir", mods = { "Gathering", "Unison", "Swift Command" },
@@ -480,21 +504,24 @@ EmberforgeRunesCatalog = {
       loop = "Fire, fire, fire, then frost: the more shards you build, the bigger the burst.",
       mods = {
         { name = "Wildfire",
-          text = "Fireball and Pyroblast embed 2 shards." },
+          text = "Fireball and Pyroblast embed 2 Sunshards instead of 1." },
         { name = "Spreading Sun",
-          text = "Fireball and Pyroblast also embed a shard in 2 enemies near their target." },
+          text = "Fireball and Pyroblast also embed a Sunshard in up to 2 enemies within 8 yards of their " ..
+              "target." },
         { name = "Heavy Sun",
-          text = "Your target can hold up to 8 shards." },
+          text = "An enemy can hold up to 8 Sunshards instead of 5." },
         { name = "Wide Burst",
-          text = "The burst reaches 12 yards." },
+          text = "The burst hits enemies within 12 yards instead of 8." },
         { name = "Scalding Ground",
-          text = "The burst leaves burning ground for 4 sec, 15% of it each second." },
+          text = "The burst leaves burning ground for 4 sec: 15% of the burst every second to enemies " ..
+              "within 6 yards." },
         { name = "Chain Reaction",
-          text = "Shards in other enemies within 10 yards shatter too, at half strength." },
+          text = "The burst also shatters the Sunshards in other enemies within 10 yards, at half " ..
+              "strength." },
         { name = "Implosion",
-          text = "The burst deals 40% more to your target." },
+          text = "The burst deals 40% more damage to the frost spell's target." },
         { name = "Second Sunrise",
-          text = "The burst flares again 2 sec later for 40% of it." },
+          text = "2 sec after the burst, it flares again for 40% of its damage." },
         { name = "Frozen Core",
           text = "Enemies hit by the burst are slowed by 40% for 3 sec." },
       },
@@ -517,30 +544,33 @@ EmberforgeRunesCatalog = {
       builtFrom = "Your combo points",
       spentWith = "Eviscerate",
       resource = "Phantom strikes",
-      core = "Eviscerate calls a phantom assassin behind its victim. A moment later it strikes for half of " ..
-          "Eviscerate's damage again. The phantom cannot critically strike and triggers nothing, poisons included. " ..
-          "More combo points, a bigger Eviscerate, a bigger phantom.",
+      core = "Eviscerate calls a phantom assassin behind its victim. 0.6 sec later it strikes for 200% of " ..
+          "Eviscerate's damage, and your Energy regenerates 100% faster for 4 sec. The phantom cannot " ..
+          "critically strike and triggers nothing, poisons included. More combo points, a bigger " ..
+          "Eviscerate, a bigger phantom.",
       loop = "Build combo points, then Eviscerate: your blow, then the phantom's.",
       mods = {
         { name = "Executioner",
-          text = "The phantom strikes 40% harder." },
+          text = "The phantom strikes 40% harder: 280% of Eviscerate's damage." },
         { name = "Thousand Cuts",
-          text = "The phantom strikes 3 times in quick succession, 15% more in all." },
+          text = "The phantom strikes 3 times, 0.2 sec apart, for 230% of Eviscerate's damage in all." },
         { name = "Shadow Cleave",
-          text = "The phantom also strikes up to 3 enemies within 8 yards for half." },
+          text = "The phantom also strikes up to 3 other enemies within 8 yards for 100% of Eviscerate's " ..
+              "damage each." },
         { name = "Quick Death",
-          text = "The phantom strikes almost at once." },
+          text = "The phantom strikes 0.1 sec after Eviscerate instead of 0.6." },
         { name = "Patient Killer",
-          text = "The phantom waits 2 sec, and strikes 40% harder." },
+          text = "The phantom waits 2 sec, then strikes for 280% of Eviscerate's damage." },
         { name = "Open Wound",
-          text = "The phantom leaves a bleed instead: 20% more over 4 sec, refreshed, never stacked." },
+          text = "The phantom leaves a bleed instead: 240% of Eviscerate's damage over 4 sec. Refreshed, " ..
+              "never stacked." },
         { name = "Death Follows",
           text = "If its victim dies first, the phantom strikes the nearest enemy within 10 yards." },
         { name = "Vanishing Act",
           text = "When the phantom strikes, your movement speed rises by 30% for 3 sec." },
         { name = "Marked for Murder",
-          text = "The phantom marks its victim: your next Sinister Strike, Backstab or Hemorrhage on it deals 30% " ..
-              "more." },
+          text = "The phantom marks its victim for 10 sec: your next Sinister Strike, Backstab or " ..
+              "Hemorrhage on it deals 30% more." },
       },
       builds = {
         { name = "The Headsman", mods = { "Executioner", "Patient Killer", "Marked for Murder" },
@@ -568,23 +598,25 @@ EmberforgeRunesCatalog = {
       loop = "Kill Command whenever it is ready; Bestial Wrath to unleash the whole pack, Kill Command every 5 sec.",
       mods = {
         { name = "Alpha Predator",
-          text = "The beast's bites deal 30% more." },
+          text = "Spectral Beasts bite for 78% of your pet's attack instead of 60%." },
         { name = "Pack Ravager",
-          text = "Its bites also strike 2 enemies within 5 yards for half." },
+          text = "Each Spectral Beast bite also hits up to 2 other enemies within 5 yards for 30% of your " ..
+              "pet's attack." },
         { name = "Ghostfang",
-          text = "Its bites leave a bleed of a quarter of a bite every second for 4 sec, refreshed, never stacked." },
+          text = "Each bite makes its target bleed for 15% of your pet's attack every second for 4 sec. " ..
+              "Refreshed, never stacked." },
         { name = "Unending Wrath",
           text = "Each Kill Command during Bestial Wrath makes it last 2 sec longer, up to 10 sec more." },
         { name = "Hunter's Command",
-          text = "The beast turns to whatever enemy you target." },
+          text = "Your Spectral Beasts switch to whatever enemy you target." },
         { name = "Blood Scent",
-          text = "Its prey dead, the beast hunts on: your target, else the nearest enemy." },
+          text = "When its prey dies, a Spectral Beast hunts on: your target, else the nearest enemy." },
         { name = "Final Pounce",
-          text = "As the beast fades, it pounces: a bite at 200%." },
+          text = "As a Spectral Beast fades, it pounces for 120% of your pet's attack." },
         { name = "Frenzied Farewell",
-          text = "As the beast fades, it bites 4 times in a flurry, 60% each." },
+          text = "As a Spectral Beast fades, it bites 4 times in a flurry, 36% of your pet's attack each." },
         { name = "Parting Howl",
-          text = "As the beast fades, your pet deals 30% more damage for 6 sec." },
+          text = "As a Spectral Beast fades, your pet deals 30% more damage for 6 sec." },
       },
       builds = {
         { name = "The Alpha", mods = { "Alpha Predator", "Unending Wrath", "Final Pounce" },
