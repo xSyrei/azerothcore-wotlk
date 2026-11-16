@@ -796,6 +796,34 @@ namespace
             what, spellId, name ? name : "?");
     }
 
+    // The Paladin's own skill lines (Holy, Protection, Retribution) teach their spells at every login to whoever has
+    // the skill (Player::learnSkillRewardedSpells: Holy Light and Seal of Righteousness, as temporary spells); a Hero
+    // created before hero_cleanup.sql kept them, and Wildcard then counted those spells as known and ranked them up.
+    // Learning one of the Paladin's spells gives its skill, so it happens again in play: Seal of Righteousness picked,
+    // Holy Light came as a temporary spell, which the core takes for known (Player::_addSpell does nothing for it), so
+    // Holy Light could no longer be picked and went at the next login. Only the temporary ones go, at login and
+    // before every learn (UpgradeRanks): a Hero's own, rolled Holy Light stays.
+    void DropSkillLineSpells(Player* player)
+    {
+        static constexpr std::array<uint32, 3> PALADIN_SKILLS = { 184, 267, 594 };
+        std::vector<uint32> temporary;
+        for (auto const& [spellId, spell] : player->GetSpellMap())
+        {
+            if (spell->State != PLAYERSPELL_TEMPORARY)
+                continue;
+            auto bounds = sSpellMgr->GetSkillLineAbilityMapBounds(spellId);
+            for (auto itr = bounds.first; itr != bounds.second; ++itr)
+                if (std::find(PALADIN_SKILLS.begin(), PALADIN_SKILLS.end(), itr->second->SkillLine)
+                    != PALADIN_SKILLS.end())
+                {
+                    temporary.push_back(spellId);
+                    break;
+                }
+        }
+        for (uint32 spellId : temporary)
+            player->removeSpell(spellId, SPEC_MASK_ALL, true);
+    }
+
     // A tamed pet put away when Tame Beast went (RemoveAbility: not in a slot) comes back as the current pet once the
     // Hero has Tame Beast again: else Call Pet found no pet and Tame Beast refused another ("too many pets"), with
     // the stable full nothing could be done.
@@ -829,6 +857,7 @@ namespace
     // the lowest one missing; nothing pending is left. Run after every level, login and learn.
     void UpgradeRanks(Player* player)
     {
+        DropSkillLineSpells(player);
         TamerSpells(player);
         for (Ability const& ability : Abilities())
         {
@@ -903,31 +932,6 @@ namespace
             return true;
         TalentEntry const* required = sTalentStore.LookupEntry(talentInfo->DependsOn);
         return required && TalentRank(player, required) > talentInfo->DependsOnRank;
-    }
-
-    // The Paladin's own skill lines (Holy, Protection, Retribution) teach their spells at every login to whoever has
-    // the skill (Player::learnSkillRewardedSpells: Holy Light and Seal of Righteousness, as temporary spells); a Hero
-    // created before hero_cleanup.sql kept them, and Wildcard then counted those spells as known and ranked them up.
-    // Only the temporary ones go: a Hero's own, rolled Holy Light stays.
-    void DropSkillLineSpells(Player* player)
-    {
-        static constexpr std::array<uint32, 3> PALADIN_SKILLS = { 184, 267, 594 };
-        std::vector<uint32> temporary;
-        for (auto const& [spellId, spell] : player->GetSpellMap())
-        {
-            if (spell->State != PLAYERSPELL_TEMPORARY)
-                continue;
-            auto bounds = sSpellMgr->GetSkillLineAbilityMapBounds(spellId);
-            for (auto itr = bounds.first; itr != bounds.second; ++itr)
-                if (std::find(PALADIN_SKILLS.begin(), PALADIN_SKILLS.end(), itr->second->SkillLine)
-                    != PALADIN_SKILLS.end())
-                {
-                    temporary.push_back(spellId);
-                    break;
-                }
-        }
-        for (uint32 spellId : temporary)
-            player->removeSpell(spellId, SPEC_MASK_ALL, true);
     }
 
     // A talent known at two ranks (an older rank left by the rank-up before this fix): only the higher stays.
@@ -1916,6 +1920,7 @@ namespace Wildcard
     {
         // Every rank up to the best the level allows (not the best alone: a reroll left Heroes at rank 1), then
         // every other ability checked for ranks still pending.
+        DropSkillLineSpells(player);
         int32 best = BestRank(player, ability);
         for (int32 i = 0; i <= best; ++i)
             if (!player->HasSpell(ability.Ranks[i].SpellId))
