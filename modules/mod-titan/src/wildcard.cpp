@@ -18,6 +18,7 @@
 #include "wildcard.h"
 #include "specs.h"
 #include "global_talents.h"
+#include "resource_talents.h"
 #include "Chat.h"
 #include "DBCStores.h"
 #include "DatabaseEnv.h"
@@ -129,6 +130,8 @@ namespace
         "Runeforging", "Rune of Cinderglacier", "Rune of Razorice", "Rune of Spellbreaking",
         "Rune of Spellshattering", "Rune of Lichbane", "Rune of Swordbreaking", "Rune of Swordshattering",
         "Rune of the Fallen Crusader", "Rune of the Nerubian Carapace", "Rune of the Stoneskin Gargoyle",
+        // Travel forms: movement only, nothing a build gets stronger from (every Hero rides from level 1).
+        "Travel Form", "Aquatic Form", "Flight Form", "Swift Flight Form",
         // Others.
         "Ritual of Refreshment", "Divine Intervention", "Lesser Heal", "Disarm Trap", "Create Firestone",
     };
@@ -369,6 +372,26 @@ namespace
         { "Cat Form", TAG_MELEE }, { "Moonkin Form", TAG_RANGED }, { "Tree of Life", TAG_HEALER },
         { "Shadowform", TAG_RANGED }, { "Conjure Food", TAG_RANGED }, { "Conjure Water", TAG_RANGED },
         { "Conjure Refreshment", TAG_RANGED },
+        // Buffs, auras and totems for one kind of fighting: their spells deal no damage and heal no one, so they
+        // had no role and suited every Hero (Devotion Aura for a Ranged one).
+        { "Devotion Aura", TAG_TANK | TAG_MELEE }, { "Retribution Aura", TAG_TANK | TAG_MELEE },
+        { "Concentration Aura", TAG_HEALER | TAG_RANGED }, { "Blessing of Might", TAG_MELEE | TAG_TANK },
+        { "Blessing of Wisdom", TAG_HEALER | TAG_RANGED }, { "Seal of Wisdom", TAG_HEALER | TAG_RANGED },
+        { "Battle Shout", TAG_MELEE | TAG_TANK }, { "Commanding Shout", TAG_TANK | TAG_MELEE },
+        { "Horn of Winter", TAG_MELEE | TAG_TANK }, { "Trueshot Aura", TAG_MELEE },
+        { "Aspect of the Hawk", TAG_MELEE }, { "Aspect of the Monkey", TAG_MELEE | TAG_TANK },
+        { "Aspect of the Viper", TAG_MELEE }, { "Thorns", TAG_TANK },
+        { "Stoneskin Totem", TAG_TANK | TAG_MELEE }, { "Strength of Earth Totem", TAG_MELEE | TAG_TANK },
+        { "Windfury Totem", TAG_MELEE | TAG_TANK }, { "Grace of Air Totem", TAG_MELEE },
+        { "Mana Spring Totem", TAG_HEALER | TAG_RANGED }, { "Wrath of Air Totem", TAG_RANGED | TAG_HEALER },
+        { "Flametongue Totem", TAG_RANGED | TAG_HEALER }, { "Totem of Wrath", TAG_RANGED },
+        { "Rockbiter Weapon", TAG_MELEE | TAG_TANK }, { "Windfury Weapon", TAG_MELEE },
+        { "Frostbrand Weapon", TAG_MELEE }, { "Earthliving Weapon", TAG_HEALER },
+        { "Water Shield", TAG_HEALER | TAG_RANGED }, { "Arcane Intellect", TAG_RANGED | TAG_HEALER },
+        { "Arcane Brilliance", TAG_RANGED | TAG_HEALER }, { "Divine Spirit", TAG_HEALER | TAG_RANGED },
+        { "Inner Fire", TAG_HEALER | TAG_RANGED }, { "Frost Armor", TAG_RANGED }, { "Ice Armor", TAG_RANGED },
+        { "Mage Armor", TAG_RANGED | TAG_HEALER }, { "Molten Armor", TAG_RANGED },
+        { "Demon Skin", TAG_RANGED }, { "Demon Armor", TAG_RANGED }, { "Fel Armor", TAG_RANGED },
     };
 
     // What a spell does, as role tags: its damage (melee or ranged physical: Melee; magic: Ranged), heals and
@@ -1019,7 +1042,11 @@ namespace
                 knownNames.insert(FirstRankName(ability.Ranks.front().SpellId));
                 if (ability.ClassId)
                     knownClasses |= 1 << (ability.ClassId - 1);
+                if (ability.ComboGroup >= 0 || known->HasEffect(SPELL_EFFECT_ADD_COMBO_POINTS))
+                    knownPowers |= ResourceTalents::COMBO_POINTS;
             }
+        if (player->HasSpell(SPELL_TAME_BEAST))
+            knownPowers |= ResourceTalents::PET_FOCUS;
 
         // Relevant: for a known ability (3: that ability's own; 2: a scripted talent of a class the Hero has an
         // ability of). Generic (1): stats and the like suiting the role, or teaching an ability that does.
@@ -1049,6 +1076,11 @@ namespace
                 return 0;
             for (auto const& [scriptedName, powers] : SCRIPTED_RESOURCE_TALENTS)
                 if (name == scriptedName && !(powers & knownPowers))
+                    return 0;
+            // The resources its words name (Energy, Rage, mana, combo points, a pet's Focus: resource_talents.h,
+            // for the dummies and procs whose data names none): the Hero uses one of them.
+            for (ResourceTalents::Entry const& entry : ResourceTalents::ENTRIES)
+                if (entry.SpellId == talentInfo->RankID[0] && !(entry.Uses & knownPowers))
                     return 0;
 
             for (TalentFor const& scripted : SCRIPTED_TALENTS)
