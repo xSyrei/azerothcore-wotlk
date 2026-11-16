@@ -135,6 +135,20 @@ namespace Wildcard
     // Specializations (specs.cpp): learning without the chat lines, the catch-up of what the level is owed, a talent
     // roll that may not give one talent, a capstone roll, and one talent's ranks taken away.
     void SetQuiet(bool on);
+
+    // A specialization change (specs.cpp): the buffs, pet and totems of abilities both specializations know stay;
+    // the rest go. BeginSpecChange before the abilities are swapped (it returns the Hero's own buffs, which
+    // unlearning removes), EndSpecChange after (the buffs still known put back, the summons no longer known gone).
+    struct KeptAura
+    {
+        uint32 SpellId;
+        int32 Duration;
+        int32 MaxDuration;
+        uint8 Charges;
+        uint8 Stacks;
+    };
+    std::vector<KeptAura> BeginSpecChange(Player* player);
+    void EndSpecChange(Player* player, std::vector<KeptAura> const& auras);
     void CatchUpNow(Player* player);
     void LearnQuiet(Player* player, Ability const& ability);
     bool GrantTalentExcept(Player* player, uint32 talentId, bool reveal);

@@ -462,8 +462,10 @@ namespace
             target.Granted = target.Picks = target.Capstone = 0;
         }
         player->SendActionButtons(2);                     // the client's bars cleared while the spells change
+        std::vector<Wildcard::KeptAura> kept = Wildcard::BeginSpecChange(player);
         PutBack(player, target);
         PutBackActions(player, target);
+        Wildcard::EndSpecChange(player, kept);            // shared buffs, pet and totems stay; the rest go
         data->Active = index;
         player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_ACTIVE, index);
         SaveSpec(player, index, target);

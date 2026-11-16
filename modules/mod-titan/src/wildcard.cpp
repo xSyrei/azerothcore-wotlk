@@ -26,9 +26,11 @@
 #include "Player.h"
 #include "Random.h"
 #include "ScriptMgr.h"
+#include "SpellAuras.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
 #include "StringFormat.h"
+#include "Totem.h"
 #include "Trainer.h"
 #include "World.h"
 #include "WorldSession.h"
@@ -779,6 +781,7 @@ namespace
 
     // Set while a specialization is put back (specs.cpp): no chat line for each ability and talent.
     bool quiet = false;
+    bool keepSummons = false;   // a specialization change: Unlearn leaves the pet (EndSpecChange decides)
     // A talent the next talent roll may not give (a reroll's: it gives another).
     uint32 excludedTalent = 0;
 
@@ -2174,7 +2177,7 @@ namespace Wildcard
 
         // The pet it summoned goes too: a demon or ghoul from these spells, or a tamed beast once Call Pet is gone
         // (Tame Beast's companion). It stays in the stable.
-        if (Pet* pet = player->GetPet())
+        if (Pet* pet = keepSummons ? nullptr : player->GetPet())
             if (gone.count(pet->GetUInt32Value(UNIT_CREATED_BY_SPELL))
                 || (pet->getPetType() == HUNTER_PET && !player->HasSpell(SPELL_CALL_PET)))
                 player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
@@ -2226,6 +2229,87 @@ namespace Wildcard
     void SetQuiet(bool on)
     {
         quiet = on;
+    }
+
+    namespace
+    {
+        // Every spell of the abilities the Hero knows, and what they trigger (Raise Dead's ghoul, a totem's spell).
+        std::unordered_set<uint32> KnownCasts(Player* player)
+        {
+            std::unordered_set<uint32> known;
+            for (Ability const& ability : Abilities())
+            {
+                if (KnownRank(player, ability) < 0)
+                    continue;
+                for (Rank const& rank : ability.Ranks)
+                {
+                    known.insert(rank.SpellId);
+                    if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(rank.SpellId))
+                        for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+                            if (effect.TriggerSpell)
+                                known.insert(effect.TriggerSpell);
+                }
+            }
+            return known;
+        }
+    }
+
+    std::vector<KeptAura> BeginSpecChange(Player* player)
+    {
+        keepSummons = true;
+        std::unordered_set<uint32> known = KnownCasts(player);
+        std::vector<KeptAura> kept;
+        for (auto const& [spellId, application] : player->GetAppliedAuras())
+        {
+            Aura const* aura = application->GetBase();
+            if (aura->GetCasterGUID() != player->GetGUID() || aura->IsPassive() || !application->IsPositive()
+                || !(known.count(spellId) || player->HasSpell(spellId)))
+                continue;
+            kept.push_back({ spellId, aura->GetDuration(), aura->GetMaxDuration(), aura->GetCharges(),
+                aura->GetStackAmount() });
+        }
+        return kept;
+    }
+
+    void EndSpecChange(Player* player, std::vector<KeptAura> const& auras)
+    {
+        keepSummons = false;
+        std::unordered_set<uint32> known = KnownCasts(player);
+        auto stillKnown = [&](uint32 spellId)
+        {
+            return spellId && (known.count(spellId) || player->HasSpell(spellId));
+        };
+
+        for (KeptAura const& kept : auras)
+        {
+            if (!stillKnown(kept.SpellId) || player->HasAura(kept.SpellId))
+                continue;
+            if (Aura* aura = player->AddAura(kept.SpellId, player))
+            {
+                aura->SetMaxDuration(kept.MaxDuration);
+                aura->SetDuration(kept.Duration);
+                if (kept.Charges)
+                    aura->SetCharges(kept.Charges);
+                if (kept.Stacks > 1)
+                    aura->SetStackAmount(kept.Stacks);
+            }
+        }
+
+        // The pet: a tamed beast while Call Pet is known, another while the spell that summoned it is.
+        if (Pet* pet = player->GetPet())
+        {
+            bool keep = pet->getPetType() == HUNTER_PET ? player->HasSpell(SPELL_CALL_PET)
+                : stillKnown(pet->GetUInt32Value(UNIT_CREATED_BY_SPELL));
+            if (!keep)
+                player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
+        }
+
+        // Totems while the spell that put them down is known.
+        for (uint8 slot = SUMMON_SLOT_TOTEM_FIRE; slot < MAX_TOTEM_SLOT; ++slot)
+            if (ObjectGuid guid = player->m_SummonSlot[slot])
+                if (Creature* totem = player->GetMap()->GetCreature(guid))
+                    if (totem->IsTotem() && !stillKnown(totem->GetUInt32Value(UNIT_CREATED_BY_SPELL)))
+                        totem->ToTotem()->UnSummon();
     }
 
     void CatchUpNow(Player* player)
