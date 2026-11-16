@@ -12,6 +12,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   - Overpowering Echo (redesigned): the wake rips open twice, once for each of your next two melee abilities.
   - Battlefield Claim (redesigned): enemies the wake hits are claimed for 8 sec, slowed by 30% and taking 10% more
     damage from you.
+  - New look for the Weapon Wake: a burning red fissure on the ground, and a flashier rip (a crossed slash, steel
+    shards, blood and a shockwave).
 - Rune of Fel Commandment and Rune of the Threefold Grave are temporarily removed while their designs are reworked
   (both were far too strong). If you had one bound, it is released when you log in: choose another in the rune panel.
 - Rune debuffs show their real kind: Bloodletting, Open Wound and Ghostfang are Bleeds, Grave Pestilence is a

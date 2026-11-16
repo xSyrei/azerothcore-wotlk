@@ -1043,20 +1043,37 @@ EFFECTS.update({
                                 'max_size': 1024, 'tint': (0.8, 0.92, 1.0), 'alpha': 1.0, 'pulse': 0}),
     )),
     # The Weapon Wake: crossed blade cuts glowing red on the ground, a soft red glow under them.
+    # The wake on the ground: a burning red fissure. A hot glow under it, the wake's own glowing blade gashes
+    # (build_wake_art.py), a crack tearing open over and over across it, and embers rising off it.
     'OnslaughtWake': looping('WAR_OnslaughtWake', 7163, (
-        ('preparation_circle_a', {'flat': True, 'spots': ((0.0, 0.0, 0.06, 3.6, 0.0),), 'tint': (0.8, 0.05, 0.03),
-                                  'alpha': 0.6, 'pulse': 1.2}),
-        ('DaggerSlashSpriteSheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 4.6, 35.0), (0.0, 0.0, 0.12, 4.0, -55.0),
-                                                            (0.0, 0.0, 0.14, 3.4, 100.0)),
-                                    'sheet': (4, 4), 'tint': (1.0, 0.4, 0.3), 'alpha': 1.0, 'pulse': 0.9}),
+        ('preparation_circle_a', {'flat': True, 'spots': ((0.0, 0.0, 0.05, 4.4, 0.0),), 'tint': (0.9, 0.05, 0.02),
+                                  'alpha': 0.7, 'pulse': 1.4}),
+        ('../WAR_UnbrokenOnslaught/wake_gash', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 4.2, 0.0),),
+                                                'tint': (1.0, 0.22, 0.1), 'alpha': 1.0, 'pulse': 0}),
+        ('souls_ground_crack_m_sheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 4.4, 0.0),),
+                                        'sheet': (2, 8), 'flip': 1.2, 'tint': (1.0, 0.12, 0.05), 'alpha': 1.0,
+                                        'pulse': 0}),
+        ('fire_wisps_2x2', {'spots': ((0.6, 0.8, 0.2, 0.7, 0.0), (-0.9, -0.4, 0.3, 0.6, 0.0),
+                                      (0.2, -1.1, 0.1, 0.8, 0.0), (-0.4, 1.2, 0.2, 0.6, 0.0)),
+                            'sheet': (2, 2), 'flip': 0.8, 'tint': (1.0, 0.36, 0.12), 'alpha': 0.9,
+                            'rise': (2.2, 1.2), 'pulse': 1.2}),
     )),
-    # Reopening the wake: red slashes and sparks on each enemy along it.
+    # Ripping the wake open, on each enemy along it: a great crossed slash, a burst of steel shards, a hot flash,
+    # a spray of blood, and a red shockwave and burst on the ground under it.
     'WakeSlash': burst('WAR_WakeSlash', 7168, (
-        ('new_cleave_a_1_sheet', {'spots': ((0.0, 0.0, 0.0, 3.6, 20.0), (0.0, 0.0, 0.2, 3.0, -40.0)), 'sheet': (4, 2),
-                                  'flip': 0.45, 'alpha': 1.0, 'pulse': 0, 'blend': 2}),
-        ('impact_new_1_a_new_sheet', {'spots': ((0.0, 0.0, 0.1, 2.6, 0.0),), 'sheet': (3, 2), 'flip': 0.4,
+        ('new_cleave_a_1_sheet', {'spots': ((0.0, 0.0, 0.3, 5.4, 20.0), (0.0, 0.0, 0.5, 4.8, -50.0)), 'sheet': (4, 2),
+                                  'flip': 0.45, 'tint': (1.0, 0.5, 0.35), 'alpha': 1.0, 'pulse': 0}),
+        ('spritesheet_4', {'spots': ((0.0, 0.0, 0.5, 3.4, 0.0),), 'sheet': (2, 2), 'flip': 0.5,
+                           'tint': (1.0, 0.6, 0.5), 'alpha': 1.0, 'pulse': 0}),
+        ('impact_new_1_a_new_sheet', {'spots': ((0.0, 0.0, 0.4, 3.6, 0.0),), 'sheet': (3, 2), 'flip': 0.4,
                                       'tint': SLASH_RED, 'alpha': 1.0, 'pulse': 0}),
-    ), 600),
+        ('new_blood_1_sheet', {'spots': ((0.0, 0.0, 0.6, 2.8, 0.0),), 'sheet': (4, 4), 'flip': 0.55, 'alpha': 1.0,
+                               'pulse': 0, 'blend': 2}),
+        ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.08, 1.0, 0.0),), 'tint': SLASH_RED,
+                               'alpha': 1.0, 'scale': [(0.0, 0.5), (1.0, 5.5)], 'pulse': 0}),
+        ('sonic_impact_white_sheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 4.4, 0.0),), 'sheet': (4, 2),
+                                      'flip': 0.5, 'tint': EMBER, 'alpha': 1.0, 'pulse': 0}),
+    ), 700),
     # Aftershock: the ground jolting where the wake was.
     'WakeAftershock': burst('WAR_WakeAftershock', 7169, (
         ('sonic_impact_white_sheet', {'flat': True, 'spots': ((0.0, 0.0, 0.1, 3.6, 0.0),), 'sheet': (4, 2),
