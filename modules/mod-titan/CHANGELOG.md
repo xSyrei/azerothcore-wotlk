@@ -4,6 +4,20 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-16: Legendary Rune balance and bug fixes
 
+### Five new Legendary Runes
+
+- Rune of Arcane Mind (Arcane Blast and Arcane Missiles): Arcane Blast builds Arcane Insight. At 4, your next Arcane
+  Missiles is free and fires 5 Insight missiles with it, each 40% of a missile's damage.
+- Rune of the Splintered Crown (Frostbolt): every Frostbolt that hits forms an Icicle above you; a second later it
+  strikes the same enemy for 30% of the Frostbolt's damage. Up to 5 wait at once.
+- Rune of Phoenix Wake (Pyroblast and Fire Blast): Pyroblast leaves a Phoenix Ember on its target. Fire Blast on it
+  wakes a phoenix that strikes it for 50% of the Pyroblast's damage, then flies back to you through your enemies.
+- Rune of Astral Horizon (Arcane Barrage): Arcane Barrage sets an Arcane Orb loose (every 12 sec at most). For 6
+  sec it drifts on and fires a bolt every second for 20% of the Barrage's damage.
+- Rune of Guiding Light (Prayer of Mending, healers): Prayer of Mending places a Guiding Star that heals its bearer
+  every 2 sec for 12 sec; Flash Heal or Greater Heal on another ally sends it there.
+- Each has three slots of three options, like the others.
+
 ### Legendary Runes balance
 
 - Rune of Echoing Thunder: Thunder Echo deals 40% more damage (42% of Shield Slam's damage, up from 30%).

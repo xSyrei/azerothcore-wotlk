@@ -171,10 +171,11 @@ local function ById(id)
         end
     end
 end
-check(#EmberforgeRunesCatalog == 13 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
+check(#EmberforgeRunesCatalog == 18 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
     and ById(22).name == "Rune of the Sanctified Paragon" and ById(23).name == "Rune of the Stormbound Conduit"
     and ById(24).name == "Rune of Echoing Thunder" and ById(25).name == "Rune of the Wellspring"
-    and ById(26).name == "Rune of the Wandering Mist", "the catalog holds only the runes the server builds")
+    and ById(26).name == "Rune of the Wandering Mist" and ById(34).name == "Rune of Arcane Mind"
+    and ById(38).name == "Rune of Guiding Light", "the catalog holds only the runes the server builds")
 for _, rune in ipairs(EmberforgeRunesCatalog) do
     check(EmberforgeRunesArt.runes[rune.id] and EmberforgeRunesArt.runes[rune.id].built, "built: " .. rune.name)
 end
@@ -246,22 +247,22 @@ local function listed()
     end
     return table.concat(ids, ",")
 end
-check(view.mode == "browse" and view.phase == "browse" and debug.browser.target == 1 and #browse.list == 13
-    and rows[1].shown and rows[5].shown and debug.browser.count.text == "13 runes",
+check(view.mode == "browse" and view.phase == "browse" and debug.browser.target == 1 and #browse.list == 18
+    and rows[1].shown and rows[5].shown and debug.browser.count.text == "18 runes",
     "Browse all lists every rune, five rows at a time")
 check(rows[1].rune.id == 21 and rows[1].status.text == "Usable now" and rows[2].status.text == "Coming soon",
     "the usable rune comes first; each row says where it stands")
 debug.browser.scripts.OnMouseWheel(debug.browser, -1)
 check(browse.offset == 1 and rows[1].rune == browse.list[2], "the mouse wheel scrolls the list")
 debug.browser.scripts.OnMouseWheel(debug.browser, -20)
-check(browse.offset == 8, "it stops at the end")
+check(browse.offset == 13, "it stops at the end")
 local search = debug.search
 search.text = "lightning"
 search.scripts.OnTextChanged(search)
 check(browse.offset == 0 and rows[1].rune.id == 23 and not search.hint.shown, "the search finds a rune by its name")
 search.text = "warlock glaive"
 search.scripts.OnTextChanged(search)
-check(listed() == "21" and debug.browser.count.text == "1 of 13 runes", "and by the abilities it uses")
+check(listed() == "21" and debug.browser.count.text == "1 of 18 runes", "and by the abilities it uses")
 search.text = "soothing heal"
 search.scripts.OnTextChanged(search)
 check(listed() == "26", "every word must match: Soothing Mist's healing rune")
@@ -271,13 +272,19 @@ check(listed() == "32", "by keyword: the rogue's rune")
 search.text = "kill command"
 search.scripts.OnTextChanged(search)
 check(listed() == "33", "by ability: Kill Command's rune")
+search.text = "prayer of mending"
+search.scripts.OnTextChanged(search)
+check(listed() == "38", "by ability: Prayer of Mending's rune")
+search.text = "icicle"
+search.scripts.OnTextChanged(search)
+check(listed() == "35", "by what it makes: the Icicles' rune")
 search.text = "xyzzy"
 search.scripts.OnTextChanged(search)
 check(#browse.list == 0 and not rows[1].shown and debug.empty.target == 1
     and debug.empty.text.text:find("No rune matches"), "nothing found says so")
 search.text = ""
 search.scripts.OnTextChanged(search)
-check(search.hint.shown and #browse.list == 13, "an empty search lists every rune again")
+check(search.hint.shown and #browse.list == 18, "an empty search lists every rune again")
 debug.chips[3]:Click()
 local healers = true
 for _, rune in ipairs(browse.list) do
@@ -491,7 +498,7 @@ for _, rune in ipairs(debug.browse.list) do
         hidden = false
     end
 end
-check(#retired == 3 and hidden and #debug.browse.list == 10 and debug.browser.count.text == "10 runes",
+check(#retired == 3 and hidden and #debug.browse.list == 15 and debug.browser.count.text == "15 runes",
     "retired runes are not listed, nor counted")
 
 print(failures == 0 and "All checks passed" or (failures .. " check(s) failed"))

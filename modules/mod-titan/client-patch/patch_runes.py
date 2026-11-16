@@ -95,7 +95,16 @@ The five after them (their own concept docs), each with its markers 20 on from i
   strikes 91171-91177, heal 91178, Grasping Mind 91179, Phoenix 91180, Quick Recovery 91181, Alpha 91182, Hunter's
   Leap 91183, Earthen Grip 91184;
 - the Wild Hunt, 91130: the Spectral Beast's look 91131, Spectral Bite 91132, Ghostfang 91133 and its tick 91134,
-  Parting Howl (on the Hero's pet) 91135, Final Pounce 91136; modifiers' markers 91150-91158.
+  Parting Howl (on the Hero's pet) 91135, Final Pounce 91136; modifiers' markers 91150-91158;
+- five from their own dossiers, each one's markers 10 on from its first: Arcane Mind 91200 (Insight 91201, Insight
+  Missile 91202, Arcane Echo 91203-91204, Mind Unbound 91205, Mental Reserves 91206, Unbound Mind's missile 91207),
+  the Splintered Crown 91220 (Icicle 91221, the crown 91222, Splinter Volley 91223, Frost Wound 91224-91225, Winter's
+  Grasp 91226, Cold Front 91227, Ice Splinter 91228), Phoenix Wake 91240 (Ember 91241, flight 91242, the phoenix's
+  aura 91243, Scorched Earth 91244-91245, Clinging Embers 91246-91247, Rebirth 91248 and its look 91259, Ashen Flock
+  91249), Astral Horizon 91260 (the Orb's aura 91261, Orb Bolt 91262, Wandering Star 91263, Prismatic Lance 91264,
+  Supernova 91265 and its look 91269, Astral Remnant 91266-91267), Guiding Light 91280 (the star 91281, its pulse
+  91282 and arrival 91283, its flight's look 91284, Sheltering Light 91285, Gentle Passage 91286, Afterglow 91287,
+  Parting Grace 91288-91289).
 """
 
 import math
@@ -1203,7 +1212,190 @@ SPELLS.append({**buff(91170, 'Runes of Enhancement', BLADE_ICON, '', DURATION_IN
 SPELLS[-1]['set'] = {**SPELLS[-1]['set'], 'SpellFamilyName': 99, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0,
                      'SpellFamilyFlags2': 0}
 
-RUNE_AURAS = {90700, 90730, 90750, 90770, 90790, 90810, 90830, 90860, 90890, 90920, 90950, 90980, 91130}
+# ---- Five more (their own dossiers): Arcane Mind 91200, the Splintered Crown 91220, Phoenix Wake 91240, Astral
+# Horizon 91260, Guiding Light 91280; each one's markers 10 on from its first (+ slot * 3 + choice).
+MIND_ICON, CROWN_ICON = 'Ability_Rune_ArcaneMind', 'Ability_Rune_SplinteredCrown'
+PHOENIX_ICON, HORIZON_ICON, GUIDING_ICON = 'Ability_Rune_PhoenixWake', 'Ability_Rune_AstralHorizon', \
+    'Ability_Rune_GuidingLight'
+AURA_ADD_PCT_MODIFIER, SPELLMOD_CASTING_TIME, SPELLMOD_COST = 108, 10, 14
+MAGE_FAMILY = 3
+ARCANE_BLAST_FLAG, FROSTBOLT_FLAG, PYROBLAST_FLAG = 0x20000000, 0x20, 0x400000
+DURATION_5S, DURATION_8S, DURATION_12S, DURATION_15S = 28, 31, 29, 8
+VISUAL_ARCANE_MISSILE, VISUAL_ICE_LANCE, VISUAL_FIRE_BLAST = 268, 7906, 143
+VISUAL_ARCANE_BARRAGE, VISUAL_ARCANE_HIT, VISUAL_PRAYER_JUMP = 9947, 13635, 9425
+FX_ICE_CROWN = 54                       # Spells\\Ice_Precast_Uber_Head: Frostbolt's ice about the head
+FX_MAGIC_HAND = 272                     # Spells\\Magic_PreCast_Hand: arcane light in the hands
+FX_ARCANE_POWER_CHEST = 2122            # spells\\arcanepower_state_chest: Arcane Power's swirl
+FX_ARCANE_EXPLOSION_BASE = 734          # Spells\\ArcaneExplosion_Base: Arcane Explosion's ring
+FX_HOLY_LIGHT_HEAD = 244                # Spells\\HolyLight_Low_Head: holy light about the head
+FX_HOLY_HIGH_IMPACT = 125               # Spells\\Holy_ImpactDD_High_Chest
+
+
+def missile(spell_id, name, icon, school, visual, speed):
+    """A strike that flies (its amount set by the script)."""
+    spell = strike(spell_id, name, icon, school, visual)
+    spell['set'] = {**spell['set'], 'Speed': speed, 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
+    return spell
+
+
+def quickening(spell_id, name, icon, text, duration, flag, pct, stacks=0, charges=0):
+    """A mage spell's cast time cut by pct% (a family 3 spell modifier: the engine makes the client honour it)."""
+    spell = buff(spell_id, name, icon, text, duration,
+                 {1: {**aura(AURA_ADD_PCT_MODIFIER, -pct, SPELLMOD_CASTING_TIME), 'Mask': flag}}, stacks=stacks)
+    spell['set'] = {**spell['set'], 'SpellFamilyName': MAGE_FAMILY, 'ProcCharges': charges}
+    return spell
+
+
+SPELLS += [
+    # Arcane Mind.
+    buff(91200, 'Rune of Arcane Mind', MIND_ICON,
+         'Arcane Blast grants Arcane Insight. At 4, your next Arcane Missiles spends it all: free, and each missile '
+         'is joined by an Insight missile.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    buff(91201, 'Arcane Insight', 'Spell_Arcane_MindMastery',
+         'At 4 or more, your next Arcane Missiles spends all your Insight: it costs no mana and each missile is '
+         'joined by an Insight missile.', DURATION_15S, {1: aura(AURA_DUMMY, 1, 0)}, stacks=6),
+    missile(91202, 'Insight Missile', 'Spell_Nature_StarFall', ARCANE, VISUAL_ARCANE_MISSILE, 24.0),
+    dot(91203, 'Arcane Echo', 'Spell_Arcane_StarFire', ARCANE, DURATION_6S, 'Arcane damage every second.'),
+    strike(91204, 'Arcane Echo', 'Spell_Arcane_StarFire', ARCANE),
+    shown(91205, 'Mind Unbound', 'Spell_Arcane_MindMastery',
+          'Your next Arcane Missiles spends your Arcane Insight.', DURATION_15S, key='MindUnbound'),
+    {**buff(91206, 'Mental Reserves', 'Spell_Shadow_ManaBurn', 'Arcane Blast costs 20% less mana.', DURATION_4S,
+            {1: {**aura(AURA_ADD_PCT_MODIFIER, -20, SPELLMOD_COST), 'Mask': ARCANE_BLAST_FLAG}})},
+    {**missile(91207, 'Arcane Missiles', 'Spell_Nature_StarFall', ARCANE, VISUAL_ARCANE_MISSILE, 24.0)},
+    # The Splintered Crown.
+    buff(91220, 'Rune of the Splintered Crown', CROWN_ICON,
+         'A Frostbolt that hits forms an Icicle above you: 1 sec later it strikes the same enemy for 30% of the '
+         'Frostbolt\'s damage. Up to 5 wait at once.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    missile(91221, 'Icicle', 'Spell_Frost_IceShard', FROST, VISUAL_ICE_LANCE, 30.0),
+    shown(91222, 'Splintered Crown', CROWN_ICON, 'Icicles waiting to strike.', DURATION_INFINITE, key='FrostCrown'),
+    quickening(91223, 'Splinter Volley', 'Spell_Frost_FrostBolt02', 'Your next Frostbolt casts 10% faster.',
+               DURATION_5S, FROSTBOLT_FLAG, 10, charges=1),
+    dot(91224, 'Frost Wound', 'Spell_Frost_IceStorm', FROST, DURATION_6S, 'Frost damage every second.'),
+    strike(91225, 'Frost Wound', 'Spell_Frost_IceStorm', FROST),
+    harmful(91226, "Winter's Grasp", 'Spell_Frost_FrostShock', 'Movement speed reduced by 25%.', DURATION_3S,
+            aura(AURA_MOD_DECREASE_SPEED, -25, 0), FROST),
+    quickening(91227, 'Cold Front', 'Spell_Frost_ColdHearted', 'Your next Frostbolt is instant.', DURATION_5S,
+               FROSTBOLT_FLAG, 100, charges=1),
+    missile(91228, 'Ice Splinter', 'Spell_Frost_IceShard', FROST, VISUAL_ICE_LANCE, 36.0),
+    # Phoenix Wake.
+    buff(91240, 'Rune of Phoenix Wake', PHOENIX_ICON,
+         'Pyroblast leaves a Phoenix Ember on its target for 8 sec. Fire Blast on it calls a phoenix out of it, '
+         'flying back to you through your enemies.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    harmful(91241, 'Phoenix Ember', 'Spell_Fire_Burnout', 'A phoenix sleeps in this ember. Fire Blast wakes it.',
+            DURATION_8S, aura(AURA_DUMMY, 1, 0), FIRE, key='Sunshard'),
+    strike(91242, 'Phoenix Flight', 'Spell_Fire_Burnout', FIRE, VISUAL_FIRE_BLAST),
+    {**shown(91243, 'Phoenix', PHOENIX_ICON, '', DURATION_INFINITE,
+             effects={1: aura(AURA_MOD_THREAT, -100, ALL_SCHOOLS)}),
+     'set': {**HIDDEN, 'DurationIndex': DURATION_INFINITE}},
+    ground(91244, 'Scorched Earth', 'Spell_Fire_Fire', 'ScaldingGround', DURATION_4S),
+    strike(91245, 'Scorched Earth', 'Spell_Fire_Fire', FIRE),
+    dot(91246, 'Clinging Embers', 'Spell_Fire_Immolation', FIRE, DURATION_6S, 'Fire damage every second.'),
+    strike(91247, 'Clinging Embers', 'Spell_Fire_Immolation', FIRE),
+    strike(91248, 'Rebirth', 'Spell_Fire_SelfDestruct', FIRE),
+    quickening(91249, 'Ashen Flock', 'Spell_Fire_Burnout', 'Your next Pyroblast casts 5% faster a stack.',
+               DURATION_6S, PYROBLAST_FLAG, 5, stacks=3),
+    look(91259, 'Rebirth', 'Spell_Fire_SelfDestruct', 0),
+    # Astral Horizon.
+    buff(91260, 'Rune of Astral Horizon', HORIZON_ICON,
+         'Arcane Barrage also sets an Arcane Orb loose, at most once every 12 sec: for 6 sec it drifts on and fires '
+         'a bolt every second for 20% of the Barrage\'s damage.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {**shown(91261, 'Arcane Orb', HORIZON_ICON, '', DURATION_INFINITE,
+             effects={1: aura(AURA_MOD_THREAT, -100, ALL_SCHOOLS)}),
+     'set': {**HIDDEN, 'DurationIndex': DURATION_INFINITE}},
+    missile(91262, 'Orb Bolt', 'Spell_Arcane_Arcane04', ARCANE, VISUAL_ARCANE_BARRAGE, 22.0),
+    strike(91263, 'Wandering Star', 'Spell_Arcane_Arcane04', ARCANE, VISUAL_ARCANE_HIT),
+    missile(91264, 'Prismatic Lance', 'Spell_Arcane_PrismaticCloak', ARCANE, VISUAL_ARCANE_BARRAGE, 45.0),
+    strike(91265, 'Supernova', 'Spell_Arcane_Blast', ARCANE, VISUAL_ARCANE_HIT),
+    ground(91266, 'Astral Remnant', 'Spell_Arcane_Arcane04', 'AstralRemnant', DURATION_6S),
+    strike(91267, 'Astral Remnant', 'Spell_Arcane_Arcane04', ARCANE),
+    look(91269, 'Supernova', 'Spell_Arcane_Blast', 0),
+    # Guiding Light.
+    buff(91280, 'Rune of Guiding Light', GUIDING_ICON,
+         'Prayer of Mending places a Guiding Star on its target instead: for 12 sec it heals its bearer every 2 sec. '
+         'Flash Heal or Greater Heal on another ally moves it there.', DURATION_INFINITE,
+         {1: aura(AURA_DUMMY, 1, 0)}),
+    {**shown(91281, 'Guiding Star', GUIDING_ICON, 'Healed every 2 sec by a Guiding Star.', DURATION_12S,
+             key='GuidingStar'),
+     'set': {**SHOWN, 'DurationIndex': DURATION_12S}},
+    heal(91282, 'Guiding Star', GUIDING_ICON, 'The star\'s light.'),
+    {**heal(91283, 'Guiding Star', GUIDING_ICON, 'The star arrives.'),
+     'set': {**HEAL_SET, 'SchoolMask': HOLY, 'AttributesEx2': 0, 'SpellVisual': VISUAL_HOLY_SHOCK_HEAL}},
+    look(91284, 'Guiding Star', GUIDING_ICON, VISUAL_PRAYER_JUMP, target=TARGET_UNIT_TARGET_ANY),
+    absorb(91285, 'Sheltering Light', 'Spell_Holy_PowerWordShield', DURATION_6S),
+    heal(91286, 'Gentle Passage', 'Spell_Holy_FlashHeal', 'The star passes by.'),
+    periodic_heal(91287, 'Afterglow', 'Spell_Holy_Renew', 'Healing every second.', DURATION_8S),
+    absorb(91288, 'Parting Grace', 'Spell_Holy_DivineSpirit', DURATION_6S),
+    {**buff(91289, 'Parting Grace', 'Spell_Holy_DivineSpirit', 'Movement speed increased by 30%.', DURATION_3S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_3S, 'SpellVisual': VISUAL_DASH}},
+]
+# Their Arcane Echo's, Frost Wound's and Clinging Embers' ticks, their strikes: no crits of their own.
+for _spell in SPELLS:
+    if _spell['id'] in (91204, 91225, 91245, 91247, 91263, 91267):
+        _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
+# The crown shows how many Icicles wait (up to 5).
+next(spell for spell in SPELLS if spell['id'] == 91222)['set']['StackAmount'] = 5
+# Unbound Mind's missiles strike critically as Arcane Missiles' own do.
+next(spell for spell in SPELLS if spell['id'] == 91207)['set']['AttributesEx2'] = 0
+# Mental Reserves: a mage spell's modifier (its family's).
+next(spell for spell in SPELLS if spell['id'] == 91206)['set']['SpellFamilyName'] = MAGE_FAMILY
+
+NEW_MODIFIERS = [
+    (91210, MIND_ICON, [('Accelerated Thought', 'Expanding Intellect', 'Patient Calculation'),
+                        ('Focused Intention', 'Fractured Thought', 'Lingering Equation'),
+                        ('Unbound Mind', 'Mental Reserves', 'Overclocked Intellect')]),
+    (91230, CROWN_ICON, [('Glacial Spear', 'Splinter Volley', 'Shatterglass'),
+                         ('Impaling Ice', 'Seeking Splinters', 'Frozen Focus'),
+                         ('Frost Wound', "Winter's Grasp", 'Cold Front')]),
+    (91250, PHOENIX_ICON, [('Sun Talon', 'Broadwing', 'Ashen Flock'),
+                           ('Homeward Flame', 'Death Spiral', 'Wild Flight'),
+                           ('Scorched Earth', 'Clinging Embers', 'Rebirth')]),
+    (91270, HORIZON_ICON, [('Wandering Star', 'Event Horizon', 'Satellite'),
+                           ('Astral Focus', 'Constellation', 'Prismatic Lance'),
+                           ('Supernova', 'Dying Light', 'Astral Remnant')]),
+    (91290, GUIDING_ICON, [('Steady Light', 'Shared Light', 'Sheltering Light'),
+                           ('Gentle Passage', 'Guardian Star', 'Seeking Light'),
+                           ('Final Benediction', 'Afterglow', 'Parting Grace')]),
+]
+SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
+                hidden=True)
+           for first, icon, modifiers in NEW_MODIFIERS
+           for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
+ICONS += [MIND_ICON, CROWN_ICON, PHOENIX_ICON, HORIZON_ICON, GUIDING_ICON, 'Spell_Arcane_MindMastery',
+          'Spell_Nature_StarFall', 'Spell_Arcane_StarFire', 'Spell_Shadow_ManaBurn', 'Spell_Frost_IceShard',
+          'Spell_Frost_FrostBolt02', 'Spell_Frost_IceStorm', 'Spell_Frost_FrostShock', 'Spell_Frost_ColdHearted',
+          'Spell_Fire_Burnout', 'Spell_Fire_Fire', 'Spell_Fire_Immolation', 'Spell_Fire_SelfDestruct',
+          'Spell_Arcane_Arcane04', 'Spell_Arcane_PrismaticCloak', 'Spell_Arcane_Blast',
+          'Spell_Holy_PowerWordShield', 'Spell_Holy_FlashHeal', 'Spell_Holy_Renew', 'Spell_Holy_DivineSpirit']
+
+VISUALS.update({
+    # Insight full: Arcane Power's swirl and arcane light in the hands.
+    'MindUnbound': {'copy': 32, 'id': 16791, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15730, {KIT_CHEST: FX_ARCANE_POWER_CHEST, KIT_LEFT_HAND: FX_MAGIC_HAND,
+                          KIT_RIGHT_HAND: FX_MAGIC_HAND, KIT_BASE: 0, 'sound': None, 'procs': False})}},
+    # Icicles waiting: Frostbolt's ice about the head (the crown).
+    'FrostCrown': {'copy': 32, 'id': 16792, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15731, {KIT_HEAD: FX_ICE_CROWN, KIT_CHEST: 0, KIT_BASE: 0, 'sound': None, 'procs': False})}},
+    # The Orb's remnant: Arcane Explosion's ring, lingering.
+    'AstralRemnant': {'copy': 9735, 'id': 16793, 'clear': ('precast', 'cast', 'state', 'area'), 'kits': {
+        'persistent': (15732, {KIT_BASE: FX_ARCANE_EXPLOSION_BASE, KIT_WORLD: 0, 'procs': False})}},
+    # The Guiding Star on its bearer: holy light about the head.
+    'GuidingStar': {'copy': 32, 'id': 16794, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15733, {KIT_HEAD: FX_HOLY_LIGHT_HEAD, KIT_CHEST: 0, KIT_BASE: 0, 'sound': None,
+                          'procs': False})}},
+    # Rebirth and Supernova: Living Bomb's explosion with a great fire hit; Arcane Explosion's ring.
+    'RebirthLook': {'copy': 963, 'id': 16795, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15734, {KIT_WORLD: FX_LIVING_BOMB_AREA, KIT_CHEST: FX_FIRE_UBER_IMPACT, KIT_BASE: 0})}},
+    'SupernovaLook': {'copy': 965, 'id': 16796, 'clear': ('precast', 'state'), 'kits': {
+        'cast': (15735, {KIT_BASE: FX_ARCANE_EXPLOSION_BASE, KIT_LEFT_HAND: 0, KIT_RIGHT_HAND: 0})}},
+})
+for _spell in SPELLS:
+    _key = {91259: 'RebirthLook', 91269: 'SupernovaLook'}.get(_spell['id'])
+    if _key:
+        _spell['visual'] = _key
+
+RUNE_AURAS = {90700, 90730, 90750, 90770, 90790, 90810, 90830, 90860, 90890, 90920, 90950, 90980, 91130, 91200, 91220,
+              91240, 91260, 91280}
 for _spell in SPELLS:
     if _spell['id'] in RUNE_AURAS:
         _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}

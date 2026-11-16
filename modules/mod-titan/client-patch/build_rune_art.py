@@ -118,6 +118,26 @@ RUNES = [
      'Kill Command and Bestial Wrath unleash spectral copies of your pet.',
      'Kill Command, Bestial Wrath and your pet',
      'M4 18l3-9 3 3 2-6 2 6 3-3 3 9Z'),
+    (34, (120, 150, 255), 'Arcane · Arcane Mind',
+     'Arcane Blast builds Insight; Arcane Missiles spends it in a volley.',
+     'Arcane Blast and Arcane Missiles',
+     'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12ZM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z'),
+    (35, (130, 205, 255), 'Frost · Splintered Crown',
+     'Frostbolt forms Icicles that strike on their own.',
+     'Frostbolt',
+     'M4 20 14 10M14 10l6-6-2 7-4-1ZM8 4l2 5M16 16l4 2'),
+    (36, (255, 140, 60), 'Fire · Phoenix Wake',
+     'Pyroblast leaves an Ember; Fire Blast wakes a phoenix that flies back to you.',
+     'Pyroblast and Fire Blast',
+     'M3 10c4 0 6 2 9 6 3-4 5-6 9-6-2 4-5 8-9 10-4-2-7-6-9-10ZM12 4v5'),
+    (37, (205, 120, 255), 'Arcane · Astral Horizon',
+     'Arcane Barrage sets an Arcane Orb loose that fires on its own.',
+     'Arcane Barrage',
+     'M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0M2 15c6-5 14-9 20-5'),
+    (38, (255, 205, 110), 'Holy · Guiding Light',
+     'Prayer of Mending places a healing star you move with your heals.',
+     'Prayer of Mending, Flash Heal and Greater Heal',
+     'M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5Z'),
 ]
 
 # The runes the panel builds (their build view: the medallion, the slots, the options): the mockup's words for them.
@@ -639,6 +659,226 @@ BUILT = {
             'M4 18 12 4l8 14',
             'M5 19 9 15M9 19l4-4M13 19l4-4',
             'M6 9h4l5-4v14l-5-4H6Z',
+        ],
+    },
+    34: {
+        'core': '**Arcane Blast** grants **Insight**. At 4, your next **Arcane Missiles** is free and fires 5 Insight '
+            'missiles with it, **40%** of a missile each.',
+        'slots': ['Invocation', 'Manifestation', 'Adaptation'],
+        'asks': ['How Insight builds', 'How the volley strikes', 'How you cast it'],
+        'texts': [
+            'Every third Arcane Blast that hits grants 2 Insight instead of 1.',
+            'Arcane Explosion grants Insight too: 2 if it hits 3 or more enemies, else 1. Once a cast.',
+            'Insight stacks to 6 instead of 4. Spending 5 or 6 makes the Insight missiles deal 15% more damage for '
+            'each one above 4.',
+            "Insight missiles deal 40% more damage to their target: 56% of an Arcane Missile's damage.",
+            'Each Insight missile also hits up to 2 other enemies within 8 yards of its target for 35% of its damage.',
+            'The Insight missiles leave Arcane Echo on their target: 30% of their damage again, over 6 sec. A new '
+            'Echo keeps what is left of the last.',
+            'An empowered Arcane Missiles does not channel: its missiles fly from you on their own, one every 0.5 '
+            'sec, so you can move and keep casting.',
+            'When an empowered Arcane Missiles completes, you regain 3% of your maximum mana and Arcane Blast costs '
+            '20% less mana for 4 sec.',
+            'The Insight missiles all fly as the channel starts, 0.15 sec apart, and deal 20% more damage: 48% of an '
+            "Arcane Missile's damage.",
+        ],
+        'abilities': [
+            'Accelerate',
+            'Expand',
+            'Patience',
+            'Focus',
+            'Fracture',
+            'Echo',
+            'Unbound',
+            'Reserves',
+            'Overclock',
+        ],
+        'icons': [
+            'M13 2 4 14h7l-1 8 9-12h-7Z',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12h.01',
+            'M5 4h14M5 20h14M7 4c0 5 10 11 10 16M17 4c0 5-10 11-10 16',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+            'M12 3v6M12 15v6M3 12h6M15 12h6M6 6l3 3M15 15l3 3',
+            'M3 12h4l3-7 4 14 3-7h4',
+            'M4 18l6-6-6-6M12 18h8',
+            'M6 4h12v4l-4 4 4 4v4H6v-4l4-4-4-4Z',
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+        ],
+    },
+    35: {
+        'core': 'Each **Frostbolt** that hits forms an **Icicle** above you: 1 sec later it strikes the same enemy '
+            "for **30%** of the Frostbolt's damage.",
+        'slots': ['Formation', 'Flight', 'Aftermath'],
+        'asks': ['What the Icicle is', 'Where it flies', 'What it leaves behind'],
+        'texts': [
+            "Icicles deal 40% more damage: 42% of the Frostbolt's damage.",
+            "Each Icicle breaks into 3 shards, 0.2 sec apart, each 40% of an Icicle's damage (120% in all). The last "
+            'one makes your next Frostbolt cast 10% faster.',
+            'Each Icicle also hits up to 4 other enemies within 6 yards of its target for half its damage.',
+            'Icicles and their shards pierce up to 3 enemies within 15 yards behind their target, for 40% of their '
+            'damage.',
+            'As an Icicle lands, a splinter flies on to another enemy within 10 yards for 30% of its damage; with '
+            'none near, it strikes the same enemy for 15%.',
+            'Every third Frostbolt that hits makes an Icicle that deals 60% more damage (its shards too).',
+            "Every third Icicle attack wounds its target: 80% of an Icicle's damage over 6 sec. A shattered Icicle "
+            'counts once.',
+            'Icicles slow their targets by 25% for 3 sec, and deal 15% more damage to an enemy they slowed already.',
+            'Every third Icicle attack makes your next Frostbolt within 5 sec instant. A shattered Icicle counts once.',
+        ],
+        'abilities': [
+            'Spear',
+            'Splinter',
+            'Shatter',
+            'Impale',
+            'Seek',
+            'Focus',
+            'Wound',
+            'Grasp',
+            'Front',
+        ],
+        'icons': [
+            'M4 20 20 4M14 4h6v6',
+            'M6 18 18 6M4 12l4-4M12 20l4-4',
+            'M12 2v20M2 12h20M5 5l14 14M19 5 5 19',
+            'M2 12h20M16 7l5 5-5 5',
+            'M4 18c4-10 12-10 16-12M16 4l4 2-2 4',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4',
+            'M3 17c3-3 6-3 9 0s6 3 9 0M3 11c3-3 6-3 9 0s6 3 9 0',
+        ],
+    },
+    36: {
+        'core': '**Pyroblast** leaves an **Ember**; **Fire Blast** on it wakes a **phoenix**: **50%** of the '
+            "Pyroblast's damage, then it flies back to you through your enemies.",
+        'slots': ['Phoenix', 'Flight', 'Wake'],
+        'asks': ['What wakes in the Ember', 'How it flies home', 'What it leaves behind'],
+        'texts': [
+            "The phoenix strikes the Ember's target for 50% more: 75% of the Pyroblast's damage.",
+            "The phoenix's path is 6 yards wide instead of 3, and enemies in it take 30% of the Pyroblast's damage "
+            'instead of 25%.',
+            'Three phoenixes fly back instead, each with a third of the damage. Each that reaches you makes your next '
+            'Pyroblast cast 5% faster, up to 15%, for 6 sec.',
+            "The phoenix flies twice as fast, 40 yards a second. When it reaches you, Fire Blast's cooldown is 2 sec "
+            'shorter.',
+            "The phoenix first circles the Ember's target for 2 sec, then strikes it again for 25% of the Pyroblast's "
+            'damage before flying back.',
+            "Before flying back, the phoenix swoops through up to 2 other enemies within 10 yards of the Ember's "
+            "target, striking each for 25% of the Pyroblast's damage.",
+            "The phoenix leaves a trail of fire for 4 sec: up to 5 enemies on it burn for 6% of the Pyroblast's "
+            "damage every second. Trails don't stack.",
+            'Enemies the phoenix strikes burn for 25% more of that hit over 6 sec. A new burn keeps what is left of '
+            'the last.',
+            "When the phoenix reaches you, it bursts for 35% of the Pyroblast's damage to up to 5 enemies within 6 "
+            'yards of you. A flock bursts once.',
+        ],
+        'abilities': [
+            'Talon',
+            'Broadwing',
+            'Flock',
+            'Homeward',
+            'Spiral',
+            'Wild',
+            'Scorch',
+            'Embers',
+            'Rebirth',
+        ],
+        'icons': [
+            'M4 4l6 6M10 4v6H4M20 20l-6-6M14 20v-6h6',
+            'M2 12c5-6 15-6 20 0M2 12c5 6 15 6 20 0',
+            'M4 18l4-6 4 6 4-6 4 6',
+            'M4 12h14M14 7l5 5-5 5',
+            'M12 12m-8 0a8 8 0 1 0 16 0M12 12m-4 0a4 4 0 1 0 8 0',
+            'M4 18c4-10 6-10 8-4s4 6 8-6',
+            'M3 20h18M6 20c0-5 3-6 3-10M12 20c0-6 3-7 3-12M18 20c0-4 2-5 2-8',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3',
+        ],
+    },
+    37: {
+        'core': '**Arcane Barrage** sets an **Arcane Orb** loose (every 12 sec at most): for 6 sec it fires a bolt a '
+            "second for **20%** of the Barrage's damage.",
+        'slots': ['Orbit', 'Discharge', 'Ending'],
+        'asks': ['Where the Orb goes', 'How it fires', 'How it ends'],
+        'texts': [
+            "Each enemy the Orb passes through takes a bolt's damage, once (up to 5).",
+            "The Orb flies to its target's position and stays there. Its bolts deal 20% more damage to enemies within "
+            '5 yards of it.',
+            'The Orb circles you, 4 yards out, and its bolts reach 12 yards instead of 10.',
+            "Bolts deal 40% more damage to the Orb's target: 28% of the Barrage's damage.",
+            'Each bolt also strikes up to 2 other enemies in range for half its damage.',
+            'Each bolt becomes a lance that also pierces up to 3 enemies behind its target, for 60% of its damage.',
+            "When the Orb's 6 sec end, it explodes for 80% of the Barrage's damage (4 bolts) to up to 5 enemies "
+            'within 8 yards.',
+            "When the Orb's 6 sec end, it fires 3 last bolts at your target (else its own), each for 40% of the "
+            "Barrage's damage.",
+            "When the Orb's 6 sec end, it leaves a field 6 yards wide for 6 sec: every 2 sec, a bolt's damage to up "
+            'to 5 enemies in it.',
+        ],
+        'abilities': [
+            'Wander',
+            'Horizon',
+            'Satellite',
+            'Focus',
+            'Constellation',
+            'Lance',
+            'Supernova',
+            'Dying',
+            'Remnant',
+        ],
+        'icons': [
+            'M4 18 20 6M14 6h6v6',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12h.01',
+            'M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M12 3a9 9 0 0 1 9 9',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+            'M5 5h.01M19 5h.01M12 12h.01M5 19h.01M19 19h.01M5 5l7 7 7-7M5 19l7-7 7 7',
+            'M2 12h20M16 7l5 5-5 5',
+            'M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3',
+            'M12 4v12M8 12l4 4 4-4M6 20h12',
+            'M3 17c3-3 6-3 9 0s6 3 9 0M12 4v8',
+        ],
+    },
+    38: {
+        'core': '**Prayer of Mending** places a **Guiding Star**: every 2 sec it heals its bearer for half a Prayer '
+            'of Mending. **Flash Heal** or **Greater Heal** moves it.',
+        'slots': ['Radiance', 'Guidance', 'Farewell'],
+        'asks': ['How the star heals', 'How it travels', 'How it says farewell'],
+        'texts': [
+            'The star heals its bearer for 50% more: 75% of a Prayer of Mending every 2 sec.',
+            'Each pulse also heals the most injured other ally within 10 yards of the bearer for 75% of it.',
+            "Instead of healing on arrival, the star shields its new bearer for twice a pulse's healing, for 6 sec. A "
+            'new shield replaces the last.',
+            'As it travels, the star heals up to 3 injured allies along its way for half a pulse each.',
+            'Only Greater Heal moves the star. Each pulse on the same bearer heals 10% more than the last, up to 30%; '
+            'moving the star starts over.',
+            'Every third pulse also heals the most injured ally within 15 yards of the bearer for a pulse. If the '
+            'bearer dies, the star moves on to that ally.',
+            "When the star's 12 sec end, it heals its bearer for 2.5 pulses at once.",
+            "When the star's 12 sec end, it leaves Afterglow on its bearer: 3.25 pulses of healing over 8 sec.",
+            "When the star's 12 sec end, it shields its bearer for 2 pulses (6 sec), and they move 30% faster for 3 "
+            'sec.',
+        ],
+        'abilities': [
+            'Steady',
+            'Shared',
+            'Shelter',
+            'Passage',
+            'Guardian',
+            'Seeking',
+            'Benediction',
+            'Afterglow',
+            'Grace',
+        ],
+        'icons': [
+            'M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5Z',
+            'M8 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0M16 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0',
+            'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6Z',
+            'M4 18c4-10 12-10 16-12M16 4l4 2-2 4',
+            'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6ZM12 8v8M8 12h8',
+            'M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0M21 21l-5-5',
+            'M12 4v16M4 12h16',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M4 12h14M14 7l5 5-5 5',
         ],
     },
 }

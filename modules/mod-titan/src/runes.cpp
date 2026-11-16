@@ -57,7 +57,8 @@
 // Resonance), a 25th, the Rune of the Wellspring (slots Wellspring, Current, Undertow) and a 26th, the Rune of the
 // Wandering Mist (slots Mistflow, Technique, Mistweaver's Approach), each its own doc, then five more, each its own
 // doc too: 27 the Threefold Grave, 28 the Unbroken Onslaught, 29 the Dawnbound Crusader, 30 the Hollow Congregation,
-// 31 the Shattered Sun; then 32 the Spectral Blade (its doc: Phantom Edge) and 33 the Wild Hunt. Built: all thirteen.
+// 31 the Shattered Sun; then 32 the Spectral Blade (its doc: Phantom Edge) and 33 the Wild Hunt; then five from their
+// own dossiers: 34 Arcane Mind, 35 the Splintered Crown, 36 Phoenix Wake, 37 Astral Horizon, 38 Guiding Light.
 //
 // - Unlocked at level 5: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
@@ -101,6 +102,11 @@ namespace
     constexpr uint8 RUNE_SHATTERED_SUN = 31;
     constexpr uint8 RUNE_SPECTRAL_BLADE = 32;      // its doc: Phantom Edge
     constexpr uint8 RUNE_WILD_HUNT = 33;
+    constexpr uint8 RUNE_ARCANE_MIND = 34;          // its own dossier, and the four after it
+    constexpr uint8 RUNE_SPLINTERED_CROWN = 35;
+    constexpr uint8 RUNE_PHOENIX_WAKE = 36;
+    constexpr uint8 RUNE_ASTRAL_HORIZON = 37;
+    constexpr uint8 RUNE_GUIDING_LIGHT = 38;
 
     enum Spells : uint32
     {
@@ -233,12 +239,77 @@ namespace
         SPELL_FINAL_POUNCE              = 91136,
         SPELL_HUNT_MODIFIER_FIRST       = 91150,    // + slot * 3 + choice
 
+        SPELL_RUNE_ARCANE_MIND          = 91200,
+        SPELL_ARCANE_INSIGHT            = 91201,
+        SPELL_INSIGHT_MISSILE           = 91202,
+        SPELL_ARCANE_ECHO               = 91203,
+        SPELL_ARCANE_ECHO_TICK          = 91204,
+        SPELL_MIND_UNBOUND              = 91205,    // Insight 4 or more: its look
+        SPELL_MENTAL_RESERVES           = 91206,
+        SPELL_UNBOUND_MISSILE           = 91207,    // Unbound Mind: an Arcane Missile without its channel
+        SPELL_MIND_MODIFIER_FIRST       = 91210,    // + slot * 3 + choice
+
+        SPELL_RUNE_SPLINTERED_CROWN     = 91220,
+        SPELL_ICICLE                    = 91221,
+        SPELL_FROST_CROWN               = 91222,    // on the Hero: a stack an Icicle waiting
+        SPELL_SPLINTER_QUICKENING       = 91223,
+        SPELL_FROST_WOUND               = 91224,
+        SPELL_FROST_WOUND_TICK          = 91225,
+        SPELL_WINTERS_GRASP             = 91226,
+        SPELL_COLD_FRONT                = 91227,
+        SPELL_ICE_SPLINTER              = 91228,    // a fragment, a pierce, a seeking shard
+        SPELL_CROWN_MODIFIER_FIRST      = 91230,    // + slot * 3 + choice
+
+        SPELL_RUNE_PHOENIX_WAKE         = 91240,
+        SPELL_PHOENIX_EMBER             = 91241,
+        SPELL_PHOENIX_FLIGHT            = 91242,
+        SPELL_PHOENIX_FORM              = 91243,    // on the phoenix: no threat
+        SPELL_SCORCHED_EARTH            = 91244,
+        SPELL_SCORCHED_EARTH_TICK       = 91245,
+        SPELL_CLINGING_EMBERS           = 91246,
+        SPELL_CLINGING_EMBERS_TICK      = 91247,
+        SPELL_REBIRTH                   = 91248,
+        SPELL_ASHEN_FLOCK               = 91249,
+        SPELL_PHOENIX_MODIFIER_FIRST    = 91250,    // + slot * 3 + choice
+        SPELL_REBIRTH_LOOK              = 91259,
+
+        SPELL_RUNE_ASTRAL_HORIZON       = 91260,
+        SPELL_ORB_FORM                  = 91261,    // on the Orb: no threat
+        SPELL_ORB_BOLT                  = 91262,
+        SPELL_WANDERING_STAR            = 91263,
+        SPELL_PRISMATIC_LANCE           = 91264,
+        SPELL_SUPERNOVA                 = 91265,
+        SPELL_ASTRAL_REMNANT            = 91266,
+        SPELL_ASTRAL_REMNANT_TICK       = 91267,
+        SPELL_SUPERNOVA_LOOK            = 91269,
+        SPELL_HORIZON_MODIFIER_FIRST    = 91270,    // + slot * 3 + choice
+
+        SPELL_RUNE_GUIDING_LIGHT        = 91280,
+        SPELL_GUIDING_STAR              = 91281,
+        SPELL_STAR_PULSE                = 91282,
+        SPELL_STAR_ARRIVAL              = 91283,
+        SPELL_STAR_FLIGHT               = 91284,    // its look on the way, from one bearer to the next
+        SPELL_SHELTERING_LIGHT          = 91285,
+        SPELL_GENTLE_PASSAGE            = 91286,
+        SPELL_AFTERGLOW                 = 91287,
+        SPELL_PARTING_GRACE             = 91288,
+        SPELL_PARTING_GRACE_SPEED       = 91289,
+        SPELL_GUIDING_MODIFIER_FIRST    = 91290,    // + slot * 3 + choice
+
         SPELL_EVISCERATE            = 2098,         // first ranks
         SPELL_SINISTER_STRIKE       = 1752,
         SPELL_BACKSTAB              = 53,
         SPELL_HEMORRHAGE            = 16511,
         SPELL_KILL_COMMAND          = 34026,
         SPELL_BESTIAL_WRATH         = 19574,
+        SPELL_ARCANE_BLAST          = 30451,        // first ranks
+        SPELL_ARCANE_MISSILES       = 5143,
+        SPELL_ARCANE_EXPLOSION      = 1449,
+        SPELL_ARCANE_BARRAGE        = 44425,
+        SPELL_PRAYER_OF_MENDING     = 33076,
+        SPELL_PRAYER_OF_MENDING_HEAL = 33110,
+        SPELL_FLASH_HEAL            = 2061,
+        SPELL_GREATER_HEAL          = 2060,
 
         SPELL_ICY_TOUCH             = 45477,        // first ranks
         SPELL_PLAGUE_STRIKE         = 45462,
@@ -533,6 +604,109 @@ namespace
     constexpr int32 GHOSTFANG_MS = 4000;
     constexpr std::size_t RAVAGER_TARGETS = 2;
 
+    // Arcane Mind's modifiers: slot (0 Invocation, 1 Manifestation, 2 Adaptation) x 3 + choice.
+    enum MindModifier : uint8
+    {
+        MOD_ACCELERATED_THOUGHT, MOD_EXPANDING_INTELLECT, MOD_PATIENT_CALCULATION,
+        MOD_FOCUSED_INTENTION, MOD_FRACTURED_THOUGHT, MOD_LINGERING_EQUATION,
+        MOD_UNBOUND_MIND, MOD_MENTAL_RESERVES, MOD_OVERCLOCKED_INTELLECT,
+    };
+
+    // Arcane Mind's tuning: Arcane Blast grants Insight (15 sec), up to 4; at 4 or more Arcane Missiles spends it:
+    // free, and 5 Insight missiles fly with it, each 40% of one of its own (the dossier's 20% made worth having).
+    constexpr uint8 INSIGHT_THRESHOLD = 4, MAX_INSIGHT = 4, PATIENT_INSIGHT = 6, ACCELERATED_EVERY = 3;
+    constexpr uint32 INSIGHT_MISSILES = 5, UNBOUND_SPACING_MS = 500, OVERCLOCK_SPACING_MS = 150;
+    constexpr float INSIGHT_SHARE = 0.4f, PATIENT_STEP = 0.15f, FOCUSED_INTENTION = 1.4f, OVERCLOCKED = 1.2f;
+    constexpr float FRACTURED_SHARE = 0.35f, FRACTURED_RADIUS = 8.0f, ARCANE_ECHO_SHARE = 0.3f;
+    constexpr float RESERVES_MANA_PCT = 3.0f;
+    constexpr int32 ARCANE_ECHO_MS = 6000;
+    constexpr std::size_t FRACTURED_TARGETS = 2, EXPANDING_ENEMIES = 3;
+
+    // The Splintered Crown's modifiers: slot (0 Formation, 1 Flight, 2 Aftermath) x 3 + choice.
+    enum CrownModifier : uint8
+    {
+        MOD_GLACIAL_SPEAR, MOD_SPLINTER_VOLLEY, MOD_SHATTERGLASS,
+        MOD_IMPALING_ICE, MOD_SEEKING_SPLINTERS, MOD_FROZEN_FOCUS,
+        MOD_FROST_WOUND, MOD_WINTERS_GRASP, MOD_COLD_FRONT,
+    };
+
+    // The Splintered Crown's tuning: a direct Frostbolt hit forms an Icicle (5 waiting at most), loosed 1 sec later
+    // at the same victim for 30% of the Frostbolt's damage. Its options keep the dossier's ratios to an Icicle.
+    constexpr uint8 MAX_ICICLES = 5, FROZEN_FOCUS_EVERY = 3, AFTERMATH_EVERY = 3;
+    constexpr uint32 ICICLE_DELAY_MS = 1000, SPLINTERS = 3, SPLINTER_SPACING_MS = 200;
+    constexpr float ICICLE_SHARE = 0.3f, GLACIAL_SPEAR = 1.4f, SPLINTER_SHARE = 0.4f, SHATTERGLASS_SHARE = 0.5f;
+    constexpr float FROZEN_FOCUS = 1.6f, IMPALE_SHARE = 0.4f, SEEKING_SHARE = 0.3f, SEEKING_SELF_SHARE = 0.15f;
+    constexpr float FROST_WOUND_SHARE = 0.8f, WINTERS_GRASP = 1.15f;
+    constexpr float ICICLE_RANGE = 45.0f, ICICLE_SPEED = 30.0f, SHATTERGLASS_RADIUS = 6.0f, SEEKING_RANGE = 10.0f;
+    constexpr float IMPALE_REACH = 15.0f, IMPALE_HALF_WIDTH = 2.0f;
+    constexpr int32 FROST_WOUND_MS = 6000, WINTERS_GRASP_MS = 3000;
+    constexpr std::size_t SHATTERGLASS_TARGETS = 4, IMPALE_TARGETS = 3;
+
+    // Phoenix Wake's modifiers: slot (0 Phoenix, 1 Flight, 2 Wake) x 3 + choice.
+    enum PhoenixModifier : uint8
+    {
+        MOD_SUN_TALON, MOD_BROADWING, MOD_ASHEN_FLOCK,
+        MOD_HOMEWARD_FLAME, MOD_DEATH_SPIRAL, MOD_WILD_FLIGHT,
+        MOD_SCORCHED_EARTH, MOD_CLINGING_EMBERS, MOD_REBIRTH,
+    };
+
+    // Phoenix Wake's tuning: the Ember holds its Pyroblast's damage (8 sec); the phoenix hits its host for 50% of it
+    // and up to 4 enemies it crosses (3 yards wide) for 25%, flying back to the Hero at 20 yards a second.
+    constexpr int32 EMBER_MS = 8000, CLINGING_MS = 6000;
+    constexpr uint32 PHOENIX_MAX_MS = 8000, SPIRAL_MS = 2000, REPATH_MS = 300, HOMEWARD_MS = 2000;
+    constexpr uint32 SCORCH_MS = 4000, SCORCH_TICK_MS = 1000, FLOCK_BIRDS = 3;
+    constexpr float PHOENIX_HOST = 0.5f, PHOENIX_CROSS = 0.25f, SUN_TALON = 1.5f, BROADWING_CROSS = 0.3f;
+    constexpr float SPIRAL_SHARE = 0.25f, CLINGING_SHARE = 0.25f, REBIRTH_SHARE = 0.35f, SCORCH_SHARE = 0.06f;
+    constexpr float PHOENIX_HALF_WIDTH = 1.5f, BROADWING_HALF_WIDTH = 3.0f;
+    constexpr float PHOENIX_SPEED = 20.0f, HOMEWARD_SPEED = 40.0f, PHOENIX_HEIGHT = 2.0f;
+    constexpr float FLOCK_SPREAD = 2.0f, FLOCK_SCALE = 0.6f, SPIRAL_RADIUS = 3.0f;
+    constexpr float WILD_FLIGHT_RANGE = 10.0f, VISIT_REACH = 2.0f, ARRIVE_REACH = 2.5f, REBIRTH_RADIUS = 6.0f;
+    constexpr float SCORCH_SPACING = 4.0f, SCORCH_HALF_WIDTH = 1.5f, SCORCH_REACH = 60.0f;
+    constexpr std::size_t CROSS_TARGETS = 4, WILD_FLIGHT_VISITS = 2, REBIRTH_TARGETS = 5, SCORCH_TARGETS = 5;
+
+    // Astral Horizon's modifiers: slot (0 Orbit, 1 Discharge, 2 Ending) x 3 + choice.
+    enum HorizonModifier : uint8
+    {
+        MOD_WANDERING_STAR, MOD_EVENT_HORIZON, MOD_SATELLITE,
+        MOD_ASTRAL_FOCUS, MOD_CONSTELLATION, MOD_PRISMATIC_LANCE,
+        MOD_SUPERNOVA, MOD_DYING_LIGHT, MOD_ASTRAL_REMNANT,
+    };
+
+    // Astral Horizon's tuning: Arcane Barrage sets the Orb loose at most once every 12 sec; 6 sec, 6 yards a
+    // second, a bolt a second at its victim within 10 yards for 20% of the Barrage's damage.
+    constexpr uint32 ORB_COOLDOWN_MS = 12000, ORB_MS = 6000, ORB_BOLT_MS = 1000, ORB_LINGER_MS = 1000;
+    constexpr uint32 REMNANT_MS = 6000, REMNANT_TICK_MS = 2000, DYING_BOLTS = 3, DYING_SPACING_MS = 250;
+    constexpr float ORB_BOLT_SHARE = 0.2f, ORB_SPEED = 6.0f, ORB_RANGE = 10.0f, ORB_HEIGHT = 1.5f, ORB_START = 1.5f;
+    constexpr float EVENT_HORIZON = 1.2f, EVENT_RADIUS = 5.0f, ASTRAL_FOCUS = 1.4f;
+    constexpr float SATELLITE_RANGE = 12.0f, SATELLITE_RADIUS = 4.0f, SATELLITE_SPEED = 12.0f;
+    constexpr float SATELLITE_TURN = 1.5f, SATELLITE_LEAD = 0.5f;          // radians a second; ahead of its place
+    constexpr float CONSTELLATION_SHARE = 0.5f, LANCE_SHARE = 0.6f, LANCE_REACH = 10.0f, LANCE_HALF_WIDTH = 1.5f;
+    constexpr float WANDERING_HALF_WIDTH = 2.0f, SUPERNOVA_BOLTS = 4.0f, SUPERNOVA_RADIUS = 8.0f, DYING_SHARE = 2.0f;
+    constexpr float REMNANT_RADIUS = 6.0f;
+    constexpr std::size_t CONSTELLATION_TARGETS = 2, LANCE_TARGETS = 3, WANDERING_TARGETS = 5;
+    constexpr std::size_t SUPERNOVA_TARGETS = 5, REMNANT_TARGETS = 5;
+
+    // Guiding Light's modifiers: slot (0 Radiance, 1 Guidance, 2 Farewell) x 3 + choice.
+    enum GuidingModifier : uint8
+    {
+        MOD_STEADY_LIGHT, MOD_SHARED_LIGHT, MOD_SHELTERING_LIGHT,
+        MOD_GENTLE_PASSAGE, MOD_GUARDIAN_STAR, MOD_SEEKING_LIGHT,
+        MOD_FINAL_BENEDICTION, MOD_AFTERGLOW, MOD_PARTING_GRACE,
+    };
+
+    // Guiding Light's tuning: the star lasts 12 sec and heals its bearer every 2 sec for half a Prayer of Mending;
+    // it arrives with 75% of one (moved at most once every 3 sec, 0.5 sec on the way). Its options keep the
+    // dossier's ratios to a pulse.
+    constexpr uint32 STAR_MS = 12000, STAR_PULSE_MS = 2000, STAR_MOVE_MS = 3000, STAR_TRAVEL_MS = 500;
+    constexpr int32 AFTERGLOW_MS = 8000;
+    constexpr float STAR_PULSE_SHARE = 0.5f, ARRIVAL_SHARE = 1.5f, STEADY_LIGHT = 1.5f, SHARED_SHARE = 0.75f;
+    constexpr float SHELTER_SHARE = 2.0f, PASSAGE_SHARE = 0.5f, GUARDIAN_STEP = 0.1f, BENEDICTION_SHARE = 2.5f;
+    constexpr float AFTERGLOW_SHARE = 3.25f, GRACE_SHARE = 2.0f;
+    constexpr float STAR_RANGE = 40.0f, SHARED_RANGE = 10.0f, SEEKING_STAR_RANGE = 15.0f, PASSAGE_HALF_WIDTH = 3.0f;
+    constexpr uint8 GUARDIAN_STEPS = 3;
+    constexpr uint32 SEEKING_EVERY = 3;
+    constexpr std::size_t PASSAGE_ALLIES = 3;
+
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
     constexpr float PARAGON_POWER = 0.15f;                      // spell power in a tick: 6% of it a second
@@ -562,6 +736,8 @@ namespace
     constexpr uint32 PHANTOM_LINGER_MS = 900;                   // after its blow, then it vanishes
     constexpr float PHANTOM_BEHIND = 1.5f;                      // yards past the victim, away from the Hero
     constexpr uint32 NPC_SPECTRAL_BEAST = 910123;
+    constexpr uint32 NPC_RUNE_PHOENIX = 910125;
+    constexpr uint32 NPC_RUNE_ARCANE_ORB = 910126;
     // SummonProperties 61: category ally, type guardian. A pet-category row (67) would make a controllable guardian
     // that takes the pet slot from the Hero's own demon.
     constexpr uint32 SUMMON_PROPERTIES_GUARDIAN = 61;
@@ -661,6 +837,23 @@ namespace
             { RUNE_WILD_HUNT,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_KILL_COMMAND, SPELL_BESTIAL_WRATH } }, SPELL_RUNE_WILD_HUNT, SPELL_HUNT_MODIFIER_FIRST },
+            // Ranged DPS: Arcane Blast builds the Insight, Arcane Missiles spends it.
+            { RUNE_ARCANE_MIND, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_ARCANE_BLAST }, { SPELL_ARCANE_MISSILES } }, SPELL_RUNE_ARCANE_MIND,
+              SPELL_MIND_MODIFIER_FIRST },
+            // Ranged DPS: Frostbolt's Icicles.
+            { RUNE_SPLINTERED_CROWN, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_FROSTBOLT } }, SPELL_RUNE_SPLINTERED_CROWN, SPELL_CROWN_MODIFIER_FIRST },
+            // Ranged DPS: Pyroblast leaves the Ember, Fire Blast wakes the phoenix.
+            { RUNE_PHOENIX_WAKE, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_PYROBLAST }, { SPELL_FIRE_BLAST } }, SPELL_RUNE_PHOENIX_WAKE, SPELL_PHOENIX_MODIFIER_FIRST },
+            // Ranged DPS: Arcane Barrage sets the Orb loose.
+            { RUNE_ASTRAL_HORIZON, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_ARCANE_BARRAGE } }, SPELL_RUNE_ASTRAL_HORIZON, SPELL_HORIZON_MODIFIER_FIRST },
+            // Healers: Prayer of Mending places the star, Flash Heal or Greater Heal moves it.
+            { RUNE_GUIDING_LIGHT, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
+              { { SPELL_PRAYER_OF_MENDING }, { SPELL_FLASH_HEAL, SPELL_GREATER_HEAL } }, SPELL_RUNE_GUIDING_LIGHT,
+              SPELL_GUIDING_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -710,6 +903,10 @@ namespace
             return { { SPELL_KILL_COMMAND }, { SPELL_BESTIAL_WRATH } };
         if (rune == RUNE_SPECTRAL_BLADE && modifier == MOD_MARKED_FOR_MURDER)
             return { { SPELL_SINISTER_STRIKE, SPELL_BACKSTAB, SPELL_HEMORRHAGE } };
+        if (rune == RUNE_ARCANE_MIND && modifier == MOD_EXPANDING_INTELLECT)
+            return { { SPELL_ARCANE_EXPLOSION } };
+        if (rune == RUNE_GUIDING_LIGHT && modifier == MOD_GUARDIAN_STAR)
+            return { { SPELL_GREATER_HEAL } };
         if (rune != RUNE_FEL_COMMANDMENT)
             return {};
         if (modifier == MOD_DREADFIRE_DISCIPLINE)
@@ -724,6 +921,23 @@ namespace
     {
         uint8 Rune = 0;
         std::array<uint8, SLOTS> Mods = {};         // 1 to 3; 0 none yet
+    };
+
+    // A phoenix of Phoenix Wake on its way back to the Hero.
+    struct Flight
+    {
+        ObjectGuid Bird, Host;
+        uint32 Release = 0;                 // the release it belongs to (a flock's birds share one)
+        float Share = 1.0f;                 // of the flight's hits (Ashen Flock: a third each)
+        float Pyro = 0.0f;                  // the Pyroblast damage the Ember held
+        float Cross = 0.0f;                 // a crossed or visited enemy's hit, before Share
+        float HalfWidth = 0.0f, Speed = 0.0f;
+        std::set<ObjectGuid> Hit;           // each enemy once
+        std::size_t Crossed = 0;
+        std::vector<ObjectGuid> Visits;     // Wild Flight: the enemies still to visit
+        uint32 SpiralUntil = 0;             // Death Spiral: circling its host until (game ms)
+        uint32 Born = 0, Repath = 0;
+        Position Last, LastTrail;
     };
 
     struct State
@@ -800,6 +1014,38 @@ namespace
         std::vector<ObjectGuid> SpectralBeasts;
         uint32 WrathTimer = 0;
         int32 WrathAdded = 0;                       // Unending Wrath's, this Bestial Wrath
+
+        // Arcane Mind.
+        uint8 BlastCount = 0;                       // Accelerated Thought: Arcane Blasts since the last extra
+        bool MindChannel = false;                   // an empowered Arcane Missiles channelling (Mental Reserves)
+
+        // The Splintered Crown.
+        uint8 Icicles = 0, FrostboltHits = 0, IcicleAttacks = 0;
+
+        // Phoenix Wake.
+        ObjectGuid EmberHost;
+        float EmberPyro = 0.0f;
+        uint32 Releases = 0, ArrivedRelease = 0;
+        std::vector<Flight> Flights;
+        std::vector<std::pair<Position, uint32>> Scorch;    // Scorched Earth's patches: where, when
+        uint32 ScorchMap = 0, ScorchTimer = 0;
+        float ScorchTick = 0.0f;
+
+        // Astral Horizon.
+        ObjectGuid Orb, OrbVictim;
+        uint32 OrbReadyAt = 0, OrbUntil = 0, OrbTimer = 0, OrbRepath = 0;
+        float OrbBolt = 0.0f, OrbAngle = 0.0f;
+        Position OrbLast;
+        std::set<ObjectGuid> OrbCrossed;            // Wandering Star: each enemy once
+        Position RemnantAt;                         // Astral Remnant (RemnantUntil 0: none)
+        uint32 RemnantMap = 0, RemnantUntil = 0, RemnantTimer = 0;
+        float RemnantTick = 0.0f;
+
+        // Guiding Light.
+        ObjectGuid StarBearer;
+        uint32 StarUntil = 0, StarPulseTimer = 0, StarMovedAt = 0, StarArriveAt = 0, StarPulses = 0;
+        uint8 StarFocus = 0;                        // Guardian Star: pulses in a row on its bearer
+        bool StarTravelling = false;
 
     };
 
@@ -989,6 +1235,7 @@ namespace
 
     void ClearLegends(Player* player);
     void DismissBeast(Player* player);
+    void ClearNewest(Player* player);
 
     // Stacks, the Felguard and the imps gone (death, prestige, a spec or modifier change).
     void ClearCombat(Player* player)
@@ -1745,6 +1992,9 @@ namespace
             case SPELL_HOLLOW_FLAY: return SPELL_HOLLOW_FLAY_TICK;
             case SPELL_OPEN_WOUND: return SPELL_OPEN_WOUND_TICK;
             case SPELL_GHOSTFANG: return SPELL_GHOSTFANG_TICK;
+            case SPELL_ARCANE_ECHO: return SPELL_ARCANE_ECHO_TICK;
+            case SPELL_FROST_WOUND: return SPELL_FROST_WOUND_TICK;
+            case SPELL_CLINGING_EMBERS: return SPELL_CLINGING_EMBERS_TICK;
             default: return 0;
         }
     }
@@ -2527,6 +2777,7 @@ namespace
         state.ScaldUntil = 0;
         player->RemoveDynObject(SPELL_SCALDING_GROUND);
         DismissBeast(player);
+        ClearNewest(player);
     }
 
     // At each login and rune change: what earlier drafts taught or left on the Hero, gone.
@@ -2780,6 +3031,1158 @@ namespace
             return;
         state.WrathTimer = 0;
         Unleash(player, WRATH_BEAST_MS);
+    }
+
+    // ---- Shared by the five newest ----------------------------------------------------------------------------
+
+    // The highest rank of the spell the Hero knows (0 none).
+    uint32 KnownRank(Player* player, uint32 firstRank)
+    {
+        uint32 known = 0;
+        for (uint32 id = firstRank; id; id = sSpellMgr->GetNextSpellInChain(id))
+            if (player->HasSpell(id))
+                known = id;
+        return known;
+    }
+
+    // A spell's direct damage on the target as the Hero would deal it (their power and bonuses; no crit).
+    float DirectDamage(Player* player, Unit* target, uint32 spellId)
+    {
+        SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId);
+        if (!info)
+            return 0.0f;
+        int32 base = std::max(0, info->Effects[EFFECT_0].CalcValue(player));
+        return float(player->SpellDamageBonusDone(target, info, uint32(base), SPELL_DIRECT_DAMAGE, EFFECT_0));
+    }
+
+    // What a rune damage over time of the Hero's still holds on the target.
+    float DotLeft(Player* player, Unit* target, uint32 spellId)
+    {
+        Aura* aura = target->GetAura(spellId, player->GetGUID());
+        auto tick = dotTicks.find({ target->GetGUID(), spellId, player->GetGUID() });
+        return aura && tick != dotTicks.end() ? float(tick->second) * float(aura->GetDuration() / 1000) : 0.0f;
+    }
+
+    // A damage over time of fresh over ms (a tick a second): what is left of one already there is kept, up to twice
+    // a fresh one; its tick timer runs on.
+    void AddDot(Player* player, Unit* target, uint32 spellId, float fresh, int32 ms)
+    {
+        float total = std::min(DotLeft(player, target, spellId) + fresh, 2.0f * fresh);
+        int32 tick = std::max<int32>(1, int32(total / float(std::max(1, ms / 1000))));
+        Lasting(player, target, spellId, ms, &tick);
+    }
+
+    void Strike(Player* player, Unit* target, uint32 spellId, float amount)
+    {
+        int32 points = std::max<int32>(1, int32(amount));
+        player->CastCustomSpell(target, spellId, &points, nullptr, nullptr, true);
+    }
+
+    // A summon of the rune's that only flies where it is told: the Hero's side, passive, out of reach.
+    TempSummon* SummonFlier(Player* player, uint32 entry, Position const& at, uint32 ms, uint32 form)
+    {
+        TempSummon* flier = player->GetMap()->SummonCreature(entry, at, nullptr, ms, player);
+        if (!flier)
+            return nullptr;
+        flier->SetFaction(player->GetFaction());
+        flier->SetReactState(REACT_PASSIVE);
+        flier->SetCanFly(true);
+        flier->SetDisableGravity(true);
+        flier->AddAura(form, flier);
+        return flier;
+    }
+
+    void Dismiss(Player* player, ObjectGuid guid)
+    {
+        if (Creature* creature = guid ? ObjectAccessor::GetCreature(*player, guid) : nullptr)
+            if (TempSummon* summon = creature->ToTempSummon())
+                summon->UnSummon();
+    }
+
+    // ---- Arcane Mind -------------------------------------------------------------------------------------------
+
+    bool HasMindMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_MIND_MODIFIER_FIRST, modifier);
+    }
+
+    uint8 Insight(Player* player)
+    {
+        Aura* aura = player->GetAura(SPELL_ARCANE_INSIGHT);
+        return aura ? aura->GetStackAmount() : 0;
+    }
+
+    // Insight gained: up to 4 (6 with Patient Calculation), 15 sec, renewed; at 4 or more Mind Unbound shows it.
+    void GainInsight(Player* player, uint8 count)
+    {
+        uint8 most = HasMindMarker(player, MOD_PATIENT_CALCULATION) ? PATIENT_INSIGHT : MAX_INSIGHT;
+        uint8 have = Insight(player);
+        Aura* aura = player->GetAura(SPELL_ARCANE_INSIGHT);
+        if (!aura)
+            aura = player->AddAura(SPELL_ARCANE_INSIGHT, player);
+        if (!aura)
+            return;
+        aura->SetStackAmount(std::min<uint8>(most, have + count));
+        aura->RefreshDuration();
+        if (aura->GetStackAmount() < INSIGHT_THRESHOLD)
+            return;
+        Aura* unbound = player->GetAura(SPELL_MIND_UNBOUND);
+        if (!unbound)
+            unbound = player->AddAura(SPELL_MIND_UNBOUND, player);
+        if (unbound)
+            unbound->RefreshDuration();
+    }
+
+    // A direct Arcane Blast hit: 1 Insight (Accelerated Thought: every third, 2).
+    void BlastInsight(Player* player)
+    {
+        uint8 count = 1;
+        State& state = StateOf(player);
+        if (HasMindMarker(player, MOD_ACCELERATED_THOUGHT) && ++state.BlastCount >= ACCELERATED_EVERY)
+        {
+            state.BlastCount = 0;
+            ++count;
+        }
+        GainInsight(player, count);
+    }
+
+    // Arcane Missiles' own missile and how many it fires (a rank's).
+    uint32 MissileOf(SpellInfo const* missiles)
+    {
+        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            if (missiles->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_TRIGGER_SPELL)
+                return missiles->Effects[i].TriggerSpell;
+        return 0;
+    }
+
+    uint32 MissileCount(SpellInfo const* missiles)
+    {
+        for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            if (missiles->Effects[i].ApplyAuraName == SPELL_AURA_PERIODIC_TRIGGER_SPELL
+                && missiles->Effects[i].Amplitude > 0)
+                return uint32(std::max<int32>(1, missiles->GetDuration() / int32(missiles->Effects[i].Amplitude)));
+        return INSIGHT_MISSILES;
+    }
+
+    struct InsightVolley
+    {
+        ObjectGuid Primary;
+        uint32 Missile = 0;
+        float Bonus = 1.0f;                 // Patient Calculation, Overclocked Intellect
+        bool Channelled = true;             // the missiles fly while Arcane Missiles channels
+        float Echo = 0.0f;                  // Lingering Equation: the volley's damage so far
+        float EchoCarry = -1.0f;            // what was left of an Arcane Echo already there (at the first missile)
+    };
+
+    // One Insight missile: 40% of one of Arcane Missiles' own (Focused Intention: 40% more); Fractured Thought: 2
+    // more enemies within 8 yards for 35% of it; Lingering Equation: the volley's Arcane Echo grows.
+    void FireInsight(Player* player, std::shared_ptr<InsightVolley> volley)
+    {
+        if (!player->IsInWorld() || !player->IsAlive())
+            return;
+        if (volley->Channelled)
+        {
+            Spell* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
+            if (!channel || channel->GetSpellInfo()->GetFirstRankSpell()->Id != SPELL_ARCANE_MISSILES)
+                return;                     // interrupted: the rest of the volley is lost
+        }
+        Unit* target = ObjectAccessor::GetUnit(*player, volley->Primary);
+        if (!Valid(player, target))
+            return;
+        float missile = DirectDamage(player, target, volley->Missile) * INSIGHT_SHARE * volley->Bonus;
+        float hit = missile * (HasMindMarker(player, MOD_FOCUSED_INTENTION) ? FOCUSED_INTENTION : 1.0f);
+        Strike(player, target, SPELL_INSIGHT_MISSILE, hit);
+        if (HasMindMarker(player, MOD_FRACTURED_THOUGHT))
+        {
+            std::size_t count = FRACTURED_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, target, FRACTURED_RADIUS))
+                if (enemy != target && count)
+                {
+                    Strike(player, enemy, SPELL_INSIGHT_MISSILE, missile * FRACTURED_SHARE);
+                    --count;
+                }
+        }
+        if (!HasMindMarker(player, MOD_LINGERING_EQUATION))
+            return;
+        if (volley->EchoCarry < 0.0f)
+            volley->EchoCarry = DotLeft(player, target, SPELL_ARCANE_ECHO);
+        volley->Echo += hit;
+        float fresh = volley->Echo * ARCANE_ECHO_SHARE;
+        float total = std::min(volley->EchoCarry + fresh, 2.0f * fresh);
+        int32 tick = std::max<int32>(1, int32(total / float(ARCANE_ECHO_MS / 1000)));
+        Lasting(player, target, SPELL_ARCANE_ECHO, ARCANE_ECHO_MS, &tick);
+    }
+
+    // Mental Reserves: 3% of maximum mana back, Arcane Blast 20% cheaper for 4 sec.
+    void MindReserves(Player* player)
+    {
+        player->EnergizeBySpell(player, SPELL_MENTAL_RESERVES,
+            uint32(player->GetMaxPower(POWER_MANA) * RESERVES_MANA_PCT / 100.0f), POWER_MANA);
+        player->RemoveAurasDueToSpell(SPELL_MENTAL_RESERVES);
+        player->AddAura(SPELL_MENTAL_RESERVES, player);
+    }
+
+    // Arcane Missiles at 4 Insight or more spends it all: its Insight volley, 5 missiles, flies with the channel
+    // (Overclocked Intellect: all as it starts; Unbound Mind: no channel, every missile on its own, 0.5 sec apart).
+    // The mana comes back after the cast (spell_titan_rune_arcane_missiles).
+    void Empower(Player* player, Unit* target, SpellInfo const* missiles)
+    {
+        uint8 spent = Insight(player);
+        player->RemoveAurasDueToSpell(SPELL_ARCANE_INSIGHT);
+        player->RemoveAurasDueToSpell(SPELL_MIND_UNBOUND);
+        auto volley = std::make_shared<InsightVolley>();
+        volley->Primary = target->GetGUID();
+        volley->Missile = MissileOf(missiles);
+        if (HasMindMarker(player, MOD_PATIENT_CALCULATION) && spent > INSIGHT_THRESHOLD)
+            volley->Bonus += PATIENT_STEP * float(spent - INSIGHT_THRESHOLD);
+        bool unbound = HasMindMarker(player, MOD_UNBOUND_MIND);
+        bool overclocked = HasMindMarker(player, MOD_OVERCLOCKED_INTELLECT);
+        if (overclocked)
+            volley->Bonus *= OVERCLOCKED;
+        volley->Channelled = !unbound && !overclocked;
+        StateOf(player).MindChannel = !unbound;
+        uint32 duration = uint32(std::max(1000, missiles->GetDuration()));
+        for (uint32 i = 0; i < INSIGHT_MISSILES; ++i)
+        {
+            uint32 at = unbound ? i * UNBOUND_SPACING_MS : overclocked ? i * OVERCLOCK_SPACING_MS
+                : duration * (2 * i + 1) / (2 * INSIGHT_MISSILES);
+            player->m_Events.AddEventAtOffset([player, volley]() { FireInsight(player, volley); }, Milliseconds(at));
+        }
+        if (!unbound)
+            return;
+        // Its own missiles (the rank's only fly at a channel's target): as much as they would deal.
+        uint32 missile = volley->Missile, count = MissileCount(missiles);
+        ObjectGuid victim = volley->Primary;
+        for (uint32 i = 0; i < count && missile; ++i)
+            player->m_Events.AddEventAtOffset([player, victim, missile]()
+            {
+                Unit* at = ObjectAccessor::GetUnit(*player, victim);
+                if (player->IsInWorld() && player->IsAlive() && Valid(player, at))
+                    Strike(player, at, SPELL_UNBOUND_MISSILE, DirectDamage(player, at, missile));
+            }, Milliseconds(i * UNBOUND_SPACING_MS));
+        if (HasMindMarker(player, MOD_MENTAL_RESERVES))
+            player->m_Events.AddEventAtOffset([player]()
+            {
+                if (player->IsInWorld() && player->IsAlive())
+                    MindReserves(player);
+            }, Milliseconds(std::max(count, INSIGHT_MISSILES) * UNBOUND_SPACING_MS));
+    }
+
+    // ---- The Splintered Crown ----------------------------------------------------------------------------------
+
+    bool HasCrownMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_CROWN_MODIFIER_FIRST, modifier);
+    }
+
+    // The crown over the Hero: one stack an Icicle waiting.
+    void ShowCrown(Player* player)
+    {
+        uint8 waiting = StateOf(player).Icicles;
+        if (!waiting)
+        {
+            player->RemoveAurasDueToSpell(SPELL_FROST_CROWN);
+            return;
+        }
+        Aura* aura = player->GetAura(SPELL_FROST_CROWN);
+        if (!aura)
+            aura = player->AddAura(SPELL_FROST_CROWN, player);
+        if (aura)
+            aura->SetStackAmount(waiting);
+    }
+
+    // One Icicle attack made (a fragmented volley counts once): every third, Frost Wound's wound on its victim (80%
+    // of an Icicle over 6 sec) or Cold Front's instant Frostbolt.
+    void IcicleAttacked(Player* player, Unit* victim, float icicle)
+    {
+        State& state = StateOf(player);
+        if (++state.IcicleAttacks < AFTERMATH_EVERY)
+            return;
+        state.IcicleAttacks = 0;
+        if (HasCrownMarker(player, MOD_FROST_WOUND) && Valid(player, victim))
+            AddDot(player, victim, SPELL_FROST_WOUND, icicle * FROST_WOUND_SHARE, FROST_WOUND_MS);
+        if (HasCrownMarker(player, MOD_COLD_FRONT))
+        {
+            player->RemoveAurasDueToSpell(SPELL_COLD_FRONT);
+            player->AddAura(SPELL_COLD_FRONT, player);
+        }
+    }
+
+    // An Icicle's (or a fragment's) hit: Winter's Grasp 15% more on an enemy it slowed already, and slows; Impaling
+    // Ice pierces up to 3 enemies within 15 yards behind the victim (40%); Seeking Splinters sends a shard on as it
+    // lands (30% to another enemy within 10 yards, else 15% to the victim).
+    void IcicleHit(Player* player, Unit* victim, float amount, uint32 spellId)
+    {
+        bool grasp = HasCrownMarker(player, MOD_WINTERS_GRASP);
+        auto graspOf = [player, grasp](Unit* enemy)
+        {
+            return grasp && enemy->HasAura(SPELL_WINTERS_GRASP, player->GetGUID()) ? WINTERS_GRASP : 1.0f;
+        };
+        Strike(player, victim, spellId, amount * graspOf(victim));
+        std::vector<Unit*> struck = { victim };
+        if (HasCrownMarker(player, MOD_IMPALING_ICE))
+        {
+            Shape line;
+            line.From = victim->GetPosition();
+            line.To = Toward(line.From, player->GetAngle(victim), IMPALE_REACH);
+            line.HalfWidth = IMPALE_HALF_WIDTH;
+            std::size_t count = IMPALE_TARGETS;
+            for (Unit* enemy : EnemiesIn(player, line, IMPALE_TARGETS + 1))
+                if (enemy != victim && count)
+                {
+                    Strike(player, enemy, SPELL_ICE_SPLINTER, amount * IMPALE_SHARE * graspOf(enemy));
+                    struck.push_back(enemy);
+                    --count;
+                }
+        }
+        if (grasp)
+            for (Unit* enemy : struck)
+                if (enemy->IsAlive())
+                    Lasting(player, enemy, SPELL_WINTERS_GRASP, WINTERS_GRASP_MS);
+        if (!HasCrownMarker(player, MOD_SEEKING_SPLINTERS))
+            return;
+        uint32 flight = uint32(player->GetExactDist(victim) / ICICLE_SPEED * 1000.0f);
+        ObjectGuid guid = victim->GetGUID();
+        player->m_Events.AddEventAtOffset([player, guid, amount]()
+        {
+            Unit* from = ObjectAccessor::GetUnit(*player, guid);
+            if (!player->IsInWorld() || !player->IsAlive() || !from || !from->IsInMap(player))
+                return;
+            for (Unit* enemy : EnemiesAround(player, from, SEEKING_RANGE))
+                if (enemy != from)
+                {
+                    Strike(player, enemy, SPELL_ICE_SPLINTER, amount * SEEKING_SHARE);
+                    return;
+                }
+            if (Valid(player, from))
+                Strike(player, from, SPELL_ICE_SPLINTER, amount * SEEKING_SELF_SHARE);
+        }, Milliseconds(flight));
+    }
+
+    // An Icicle loosed at its victim (gone or out of reach: it melts). Splinter Volley: 3 fragments 0.2 sec apart,
+    // 40% of an Icicle each, the last making the next Frostbolt 10% faster. Shatterglass: half of it to up to 4
+    // others within 6 yards.
+    void LoosenIcicle(Player* player, ObjectGuid victimGuid, float icicle)
+    {
+        State& state = StateOf(player);
+        if (state.Icicles)
+            --state.Icicles;
+        ShowCrown(player);
+        Unit* victim = ObjectAccessor::GetUnit(*player, victimGuid);
+        if (!player->IsAlive() || !Valid(player, victim) || !player->IsWithinDistInMap(victim, ICICLE_RANGE))
+            return;
+        if (HasCrownMarker(player, MOD_SPLINTER_VOLLEY))
+        {
+            for (uint32 i = 0; i < SPLINTERS; ++i)
+                player->m_Events.AddEventAtOffset([player, victimGuid, icicle, i]()
+                {
+                    Unit* target = ObjectAccessor::GetUnit(*player, victimGuid);
+                    if (!player->IsInWorld() || !player->IsAlive() || !Valid(player, target))
+                        return;
+                    IcicleHit(player, target, icicle * SPLINTER_SHARE, SPELL_ICE_SPLINTER);
+                    if (i + 1 < SPLINTERS)
+                        return;
+                    player->RemoveAurasDueToSpell(SPELL_SPLINTER_QUICKENING);
+                    player->AddAura(SPELL_SPLINTER_QUICKENING, player);
+                }, Milliseconds(i * SPLINTER_SPACING_MS));
+            IcicleAttacked(player, victim, icicle);
+            return;
+        }
+        IcicleHit(player, victim, icicle, SPELL_ICICLE);
+        if (HasCrownMarker(player, MOD_SHATTERGLASS))
+        {
+            std::size_t count = SHATTERGLASS_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, victim, SHATTERGLASS_RADIUS))
+                if (enemy != victim && count)
+                {
+                    Strike(player, enemy, SPELL_ICE_SPLINTER, icicle * SHATTERGLASS_SHARE);
+                    --count;
+                }
+        }
+        IcicleAttacked(player, victim, icicle);
+    }
+
+    // A direct Frostbolt hit forms an Icicle (5 waiting at most): 30% of the Frostbolt's damage (Glacial Spear 40%
+    // more; Frozen Focus: every third Frostbolt's, 60% more), loosed 1 sec later at the same victim.
+    void FormIcicle(Player* player, Unit* victim, float frostbolt)
+    {
+        State& state = StateOf(player);
+        bool focused = false;
+        if (HasCrownMarker(player, MOD_FROZEN_FOCUS) && ++state.FrostboltHits >= FROZEN_FOCUS_EVERY)
+        {
+            state.FrostboltHits = 0;
+            focused = true;
+        }
+        if (state.Icicles >= MAX_ICICLES || frostbolt <= 0.0f)
+            return;
+        ++state.Icicles;
+        ShowCrown(player);
+        float icicle = frostbolt * ICICLE_SHARE * (HasCrownMarker(player, MOD_GLACIAL_SPEAR) ? GLACIAL_SPEAR : 1.0f)
+            * (focused ? FROZEN_FOCUS : 1.0f);
+        ObjectGuid guid = victim->GetGUID();
+        player->m_Events.AddEventAtOffset([player, guid, icicle]()
+        {
+            if (player->IsInWorld())
+                LoosenIcicle(player, guid, icicle);
+        }, Milliseconds(ICICLE_DELAY_MS));
+    }
+
+    // ---- Phoenix Wake ------------------------------------------------------------------------------------------
+
+    bool HasPhoenixMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_PHOENIX_MODIFIER_FIRST, modifier);
+    }
+
+    // A direct Pyroblast hit leaves the Ember (one: a new Pyroblast moves it), holding the hit's damage.
+    void PlaceEmber(Player* player, Unit* target, float pyroblast)
+    {
+        State& state = StateOf(player);
+        if (state.EmberHost && state.EmberHost != target->GetGUID())
+            if (Unit* old = ObjectAccessor::GetUnit(*player, state.EmberHost))
+                old->RemoveAurasDueToSpell(SPELL_PHOENIX_EMBER, player->GetGUID());
+        state.EmberHost = target->GetGUID();
+        state.EmberPyro = pyroblast;
+        Lasting(player, target, SPELL_PHOENIX_EMBER, EMBER_MS);
+    }
+
+    // A flight hit (Clinging Embers: 25% more of it over 6 sec).
+    void FlightHit(Player* player, Unit* enemy, float amount)
+    {
+        Strike(player, enemy, SPELL_PHOENIX_FLIGHT, amount);
+        if (HasPhoenixMarker(player, MOD_CLINGING_EMBERS) && enemy->IsAlive())
+            AddDot(player, enemy, SPELL_CLINGING_EMBERS, amount * CLINGING_SHARE, CLINGING_MS);
+    }
+
+    // Fire Blast on the Ember's host: the phoenix out of it. Its host takes 50% of the Pyroblast's damage (Sun
+    // Talon: 75%); it flies back to the Hero at 20 yards a second (Homeward Flame: 40) and burns up to 4 enemies it
+    // crosses for 25% (Broadwing: 30%, a wider path). Ashen Flock: 3 birds, a third each. Death Spiral: it circles
+    // the host 2 sec first; Wild Flight: it visits up to 2 enemies within 10 yards of the host first.
+    void ReleasePhoenix(Player* player, Unit* host, float pyroblast)
+    {
+        State& state = StateOf(player);
+        uint32 release = ++state.Releases;
+        FlightHit(player, host, pyroblast * PHOENIX_HOST
+            * (HasPhoenixMarker(player, MOD_SUN_TALON) ? SUN_TALON : 1.0f));
+        bool flock = HasPhoenixMarker(player, MOD_ASHEN_FLOCK);
+        bool broad = HasPhoenixMarker(player, MOD_BROADWING);
+        std::vector<ObjectGuid> visits;
+        if (HasPhoenixMarker(player, MOD_WILD_FLIGHT))
+            for (Unit* enemy : EnemiesAround(player, host, WILD_FLIGHT_RANGE))
+                if (enemy != host && visits.size() < WILD_FLIGHT_VISITS)
+                    visits.push_back(enemy->GetGUID());
+        if (HasPhoenixMarker(player, MOD_SCORCHED_EARTH))
+        {
+            state.ScorchTick = pyroblast * SCORCH_SHARE;
+            state.ScorchMap = player->GetMapId();
+        }
+        uint32 birds = flock ? FLOCK_BIRDS : 1;
+        float facing = host->GetAngle(player);
+        uint32 now = Now();
+        for (uint32 i = 0; i < birds; ++i)
+        {
+            float side = birds > 1 ? (float(i) - 1.0f) * FLOCK_SPREAD : 0.0f;
+            Position at = Toward(host->GetPosition(), facing + float(M_PI) / 2.0f, side);
+            at.m_positionZ = host->GetPositionZ() + PHOENIX_HEIGHT;
+            at.SetOrientation(facing);
+            TempSummon* bird = SummonFlier(player, NPC_RUNE_PHOENIX, at, PHOENIX_MAX_MS, SPELL_PHOENIX_FORM);
+            if (!bird)
+                continue;
+            if (flock)
+                bird->SetObjectScale(bird->GetObjectScale() * FLOCK_SCALE);
+            Flight flight;
+            flight.Bird = bird->GetGUID();
+            flight.Host = host->GetGUID();
+            flight.Release = release;
+            flight.Share = 1.0f / float(birds);
+            flight.Pyro = pyroblast;
+            flight.Cross = pyroblast * (broad ? BROADWING_CROSS : PHOENIX_CROSS);
+            flight.HalfWidth = broad ? BROADWING_HALF_WIDTH : PHOENIX_HALF_WIDTH;
+            flight.Speed = HasPhoenixMarker(player, MOD_HOMEWARD_FLAME) ? HOMEWARD_SPEED : PHOENIX_SPEED;
+            flight.Hit.insert(host->GetGUID());
+            flight.Visits = visits;
+            flight.Born = now;
+            flight.Last = at;
+            flight.LastTrail = at;
+            if (HasPhoenixMarker(player, MOD_DEATH_SPIRAL))
+            {
+                flight.SpiralUntil = now + SPIRAL_MS;
+                bird->GetMotionMaster()->MoveCirclePath(host->GetPositionX(), host->GetPositionY(), at.GetPositionZ(),
+                    SPIRAL_RADIUS, true, 8, FORCED_MOVEMENT_NONE, flight.Speed);
+            }
+            state.Flights.push_back(flight);
+        }
+    }
+
+    // A phoenix reaching the Hero. Ashen Flock: each bird, the next Pyroblast 5% faster (up to 15%, 6 sec). Once a
+    // release (a flock's birds share it): Homeward Flame, Fire Blast 2 sec closer; Rebirth, a burst of 35% of the
+    // Pyroblast's damage to up to 5 enemies within 6 yards of the Hero.
+    void PhoenixHome(Player* player, Flight const& flight)
+    {
+        State& state = StateOf(player);
+        if (HasPhoenixMarker(player, MOD_ASHEN_FLOCK))
+        {
+            if (Aura* flock = player->GetAura(SPELL_ASHEN_FLOCK))
+            {
+                flock->ModStackAmount(1);
+                flock->RefreshDuration();
+            }
+            else
+                player->AddAura(SPELL_ASHEN_FLOCK, player);
+        }
+        if (state.ArrivedRelease == flight.Release)
+            return;
+        state.ArrivedRelease = flight.Release;
+        if (HasPhoenixMarker(player, MOD_HOMEWARD_FLAME))
+            if (uint32 rank = KnownRank(player, SPELL_FIRE_BLAST); rank && player->GetSpellCooldownDelay(rank))
+                player->ModifySpellCooldown(rank, -int32(std::min<uint32>(HOMEWARD_MS,
+                    player->GetSpellCooldownDelay(rank))));
+        if (!HasPhoenixMarker(player, MOD_REBIRTH))
+            return;
+        player->CastSpell(player, SPELL_REBIRTH_LOOK, true);
+        for (Unit* enemy : EnemiesIn(player, Circle(player->GetPosition(), REBIRTH_RADIUS), REBIRTH_TARGETS))
+            Strike(player, enemy, SPELL_REBIRTH, flight.Pyro * REBIRTH_SHARE);
+    }
+
+    // Scorched Earth's trail: a tick a second (6% of the Pyroblast's damage) to up to 5 enemies on it, once however
+    // many patches they stand on.
+    void ScorchTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        uint32 now = Now();
+        state.Scorch.erase(std::remove_if(state.Scorch.begin(), state.Scorch.end(),
+            [now](std::pair<Position, uint32> const& patch) { return now - patch.second >= SCORCH_MS; }),
+            state.Scorch.end());
+        if (state.Scorch.empty() || player->GetMapId() != state.ScorchMap)
+        {
+            state.Scorch.clear();
+            state.ScorchTimer = 0;
+            return;
+        }
+        state.ScorchTimer += diff;
+        if (state.ScorchTimer < SCORCH_TICK_MS)
+            return;
+        state.ScorchTimer = 0;
+        std::size_t burnt = 0;
+        for (Unit* enemy : EnemiesAround(player, player, SCORCH_REACH))
+        {
+            if (burnt >= SCORCH_TARGETS)
+                break;
+            float reach = SCORCH_HALF_WIDTH + enemy->GetCombatReach() * 0.5f;
+            if (std::any_of(state.Scorch.begin(), state.Scorch.end(), [enemy, reach](auto const& patch)
+                {
+                    return enemy->GetExactDist2d(&patch.first) <= reach;
+                }))
+            {
+                Strike(player, enemy, SPELL_SCORCHED_EARTH_TICK, state.ScorchTick);
+                ++burnt;
+            }
+        }
+    }
+
+    // The phoenixes in flight: each burns what it crosses since the last update, then circles, visits or flies home
+    // (its course renewed every 0.3 sec: the Hero moves).
+    void FlightTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        uint32 now = Now();
+        bool scorch = HasPhoenixMarker(player, MOD_SCORCHED_EARTH);
+        for (auto itr = state.Flights.begin(); itr != state.Flights.end();)
+        {
+            Flight& flight = *itr;
+            Creature* bird = ObjectAccessor::GetCreature(*player, flight.Bird);
+            if (!bird || !bird->IsAlive() || !player->IsAlive() || !bird->IsInMap(player)
+                || now - flight.Born >= PHOENIX_MAX_MS)
+            {
+                Dismiss(player, flight.Bird);
+                itr = state.Flights.erase(itr);
+                continue;
+            }
+            Position here = bird->GetPosition();
+            Shape path;
+            path.From = flight.Last;
+            path.To = here;
+            path.HalfWidth = flight.HalfWidth;
+            for (Unit* enemy : EnemiesIn(player, path, CROSS_TARGETS + 2))
+                if (flight.Crossed < CROSS_TARGETS && flight.Hit.insert(enemy->GetGUID()).second)
+                {
+                    FlightHit(player, enemy, flight.Cross * flight.Share);
+                    ++flight.Crossed;
+                }
+            if (scorch && here.GetExactDist2d(&flight.LastTrail) >= SCORCH_SPACING)
+            {
+                Position ground = here;
+                float z = ground.GetPositionZ();
+                player->UpdateGroundPositionZ(ground.GetPositionX(), ground.GetPositionY(), z);
+                ground.m_positionZ = z;
+                state.Scorch.emplace_back(ground, now);
+                player->CastSpell(ground.GetPositionX(), ground.GetPositionY(), z, SPELL_SCORCHED_EARTH, true);
+                flight.LastTrail = here;
+            }
+            flight.Last = here;
+            if (flight.SpiralUntil)
+            {
+                if (now < flight.SpiralUntil)
+                {
+                    ++itr;
+                    continue;
+                }
+                flight.SpiralUntil = 0;
+                flight.Repath = 0;
+                if (Unit* host = ObjectAccessor::GetUnit(*player, flight.Host); Valid(player, host))
+                    Strike(player, host, SPELL_PHOENIX_FLIGHT, flight.Pyro * SPIRAL_SHARE * flight.Share);
+            }
+            Unit* to = player;
+            if (!flight.Visits.empty())
+            {
+                Unit* next = ObjectAccessor::GetUnit(*player, flight.Visits.front());
+                if (!Valid(player, next))
+                {
+                    flight.Visits.erase(flight.Visits.begin());
+                    flight.Repath = 0;
+                    ++itr;
+                    continue;
+                }
+                if (bird->GetExactDist2d(next) <= VISIT_REACH)
+                {
+                    if (flight.Hit.insert(next->GetGUID()).second)
+                        FlightHit(player, next, flight.Cross * flight.Share);
+                    flight.Visits.erase(flight.Visits.begin());
+                    flight.Repath = 0;
+                    ++itr;
+                    continue;
+                }
+                to = next;
+            }
+            else if (bird->GetExactDist2d(player) <= ARRIVE_REACH)
+            {
+                PhoenixHome(player, flight);
+                Dismiss(player, flight.Bird);
+                itr = state.Flights.erase(itr);
+                continue;
+            }
+            if (flight.Repath <= diff)
+            {
+                Position goal = to->GetPosition();
+                goal.m_positionZ += PHOENIX_HEIGHT;
+                bird->GetMotionMaster()->MovePoint(0, goal, FORCED_MOVEMENT_NONE, flight.Speed, false);
+                flight.Repath = REPATH_MS;
+            }
+            else
+                flight.Repath -= diff;
+            ++itr;
+        }
+        ScorchTick(player, diff);
+    }
+
+    void DismissPhoenixes(Player* player)
+    {
+        State& state = StateOf(player);
+        for (Flight const& flight : state.Flights)
+            Dismiss(player, flight.Bird);
+        state.Flights.clear();
+        state.Scorch.clear();
+        player->RemoveDynObject(SPELL_SCORCHED_EARTH);
+        if (state.EmberHost)
+            if (Unit* host = ObjectAccessor::GetUnit(*player, state.EmberHost))
+                host->RemoveAurasDueToSpell(SPELL_PHOENIX_EMBER, player->GetGUID());
+        state.EmberHost.Clear();
+    }
+
+    // ---- Astral Horizon ----------------------------------------------------------------------------------------
+
+    bool HasHorizonMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_HORIZON_MODIFIER_FIRST, modifier);
+    }
+
+    Creature* LiveOrb(Player* player)
+    {
+        State& state = StateOf(player);
+        Creature* orb = state.Orb ? ObjectAccessor::GetCreature(*player, state.Orb) : nullptr;
+        return orb && orb->IsAlive() && orb->IsInMap(player) ? orb : nullptr;
+    }
+
+    void DismissOrb(Player* player)
+    {
+        State& state = StateOf(player);
+        Dismiss(player, state.Orb);
+        state.Orb.Clear();
+    }
+
+    // The Orb's bolt (or lance) at an enemy, from the Orb, the Hero's: Event Horizon 20% more within 5 yards of it,
+    // Astral Focus 40% more on its victim.
+    void OrbStrike(Player* player, Creature* orb, Unit* enemy, float share, uint32 spellId)
+    {
+        State& state = StateOf(player);
+        float amount = state.OrbBolt * share;
+        if (HasHorizonMarker(player, MOD_EVENT_HORIZON) && orb->GetExactDist2d(enemy) <= EVENT_RADIUS)
+            amount *= EVENT_HORIZON;
+        if (HasHorizonMarker(player, MOD_ASTRAL_FOCUS) && enemy->GetGUID() == state.OrbVictim)
+            amount *= ASTRAL_FOCUS;
+        int32 points = std::max<int32>(1, int32(amount));
+        orb->CastCustomSpell(enemy, spellId, &points, nullptr, nullptr, true, nullptr, nullptr, player->GetGUID());
+    }
+
+    // Arcane Barrage sets the Orb loose (at most once every 12 sec; a new one replaces it, no ending): 6 sec, a bolt
+    // a second for 20% of the Barrage's damage. Its course: on through its victim at 6 yards a second; Event
+    // Horizon, to the victim's place and there it stays; Satellite, about the Hero (OrbTick).
+    void LaunchOrb(Player* player, Unit* victim, float barrage)
+    {
+        State& state = StateOf(player);
+        uint32 now = Now();
+        if (now < state.OrbReadyAt || barrage <= 0.0f)
+            return;
+        state.OrbReadyAt = now + ORB_COOLDOWN_MS;
+        DismissOrb(player);
+        float angle = player->GetAngle(victim);
+        Position at = Toward(player->GetPosition(), angle, ORB_START);
+        at.m_positionZ = player->GetPositionZ() + ORB_HEIGHT;
+        at.SetOrientation(angle);
+        TempSummon* orb = SummonFlier(player, NPC_RUNE_ARCANE_ORB, at, ORB_MS + ORB_LINGER_MS, SPELL_ORB_FORM);
+        if (!orb)
+            return;
+        state.Orb = orb->GetGUID();
+        state.OrbVictim = victim->GetGUID();
+        state.OrbUntil = now + ORB_MS;
+        state.OrbTimer = 0;
+        state.OrbRepath = 0;
+        state.OrbBolt = barrage * ORB_BOLT_SHARE;
+        state.OrbLast = at;
+        state.OrbCrossed.clear();
+        state.OrbAngle = player->GetAngle(&at);
+        if (HasHorizonMarker(player, MOD_SATELLITE))
+            return;
+        Position to = HasHorizonMarker(player, MOD_EVENT_HORIZON) ? victim->GetPosition()
+            : Toward(at, angle, ORB_SPEED * float(ORB_MS) / 1000.0f);
+        to.m_positionZ = HasHorizonMarker(player, MOD_EVENT_HORIZON) ? victim->GetPositionZ() + ORB_HEIGHT
+            : at.GetPositionZ();
+        orb->GetMotionMaster()->MovePoint(0, to, FORCED_MOVEMENT_NONE, ORB_SPEED, false);
+    }
+
+    // A bolt a second at its victim within 10 yards of the Orb (Satellite: 12), else the nearest enemy there.
+    // Constellation: 2 more enemies in range for half. Prismatic Lance: a lance through up to 3 enemies behind its
+    // target, 60% each.
+    void OrbVolley(Player* player, Creature* orb)
+    {
+        State& state = StateOf(player);
+        float range = HasHorizonMarker(player, MOD_SATELLITE) ? SATELLITE_RANGE : ORB_RANGE;
+        std::vector<Unit*> near = EnemiesAround(player, orb, range);
+        Unit* victim = ObjectAccessor::GetUnit(*player, state.OrbVictim);
+        Unit* target = std::find(near.begin(), near.end(), victim) != near.end() ? victim
+            : near.empty() ? nullptr : near.front();
+        if (!target)
+            return;
+        if (HasHorizonMarker(player, MOD_PRISMATIC_LANCE))
+        {
+            OrbStrike(player, orb, target, 1.0f, SPELL_PRISMATIC_LANCE);
+            Shape line;
+            line.From = target->GetPosition();
+            line.To = Toward(line.From, orb->GetAngle(target), LANCE_REACH);
+            line.HalfWidth = LANCE_HALF_WIDTH;
+            std::size_t count = LANCE_TARGETS;
+            for (Unit* enemy : EnemiesIn(player, line, LANCE_TARGETS + 1))
+                if (enemy != target && count)
+                {
+                    OrbStrike(player, orb, enemy, LANCE_SHARE, SPELL_PRISMATIC_LANCE);
+                    --count;
+                }
+        }
+        else
+            OrbStrike(player, orb, target, 1.0f, SPELL_ORB_BOLT);
+        if (!HasHorizonMarker(player, MOD_CONSTELLATION))
+            return;
+        std::size_t count = CONSTELLATION_TARGETS;
+        for (Unit* enemy : near)
+            if (enemy != target && count)
+            {
+                OrbStrike(player, orb, enemy, CONSTELLATION_SHARE, SPELL_ORB_BOLT);
+                --count;
+            }
+    }
+
+    // The Orb's natural end. Supernova: 4 bolts' damage to up to 5 enemies within 8 yards; Dying Light: 3 bolts at
+    // the Hero's target (else its victim), twice a bolt each; Astral Remnant: a field of 6 yards for 6 sec, a bolt's
+    // damage every 2 sec to up to 5 enemies.
+    void OrbEnding(Player* player, Creature* orb)
+    {
+        State& state = StateOf(player);
+        Position at = orb->GetPosition();
+        if (HasHorizonMarker(player, MOD_SUPERNOVA))
+        {
+            orb->CastSpell(orb, SPELL_SUPERNOVA_LOOK, true);
+            for (Unit* enemy : EnemiesIn(player, Circle(at, SUPERNOVA_RADIUS), SUPERNOVA_TARGETS))
+                OrbStrike(player, orb, enemy, SUPERNOVA_BOLTS, SPELL_SUPERNOVA);
+        }
+        if (HasHorizonMarker(player, MOD_DYING_LIGHT))
+        {
+            Unit* target = player->GetSelectedUnit();
+            if (!Valid(player, target))
+                target = ObjectAccessor::GetUnit(*player, state.OrbVictim);
+            if (Valid(player, target))
+            {
+                ObjectGuid orbGuid = orb->GetGUID(), targetGuid = target->GetGUID();
+                for (uint32 i = 0; i < DYING_BOLTS; ++i)
+                    player->m_Events.AddEventAtOffset([player, orbGuid, targetGuid]()
+                    {
+                        Creature* from = ObjectAccessor::GetCreature(*player, orbGuid);
+                        Unit* to = ObjectAccessor::GetUnit(*player, targetGuid);
+                        if (player->IsInWorld() && from && Valid(player, to))
+                            OrbStrike(player, from, to, DYING_SHARE, SPELL_ORB_BOLT);
+                    }, Milliseconds(i * DYING_SPACING_MS));
+            }
+        }
+        if (HasHorizonMarker(player, MOD_ASTRAL_REMNANT))
+        {
+            float z = at.GetPositionZ();
+            player->UpdateGroundPositionZ(at.GetPositionX(), at.GetPositionY(), z);
+            at.m_positionZ = z;
+            state.RemnantAt = at;
+            state.RemnantMap = player->GetMapId();
+            state.RemnantUntil = Now() + REMNANT_MS;
+            state.RemnantTimer = 0;
+            state.RemnantTick = state.OrbBolt;
+            PlaceDecals(player, SPELL_ASTRAL_REMNANT, { at });
+        }
+    }
+
+    void RemnantTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        if (!state.RemnantUntil)
+            return;
+        if (Now() >= state.RemnantUntil || player->GetMapId() != state.RemnantMap)
+        {
+            state.RemnantUntil = 0;
+            player->RemoveDynObject(SPELL_ASTRAL_REMNANT);
+            return;
+        }
+        state.RemnantTimer += diff;
+        if (state.RemnantTimer < REMNANT_TICK_MS)
+            return;
+        state.RemnantTimer = 0;
+        for (Unit* enemy : EnemiesIn(player, Circle(state.RemnantAt, REMNANT_RADIUS), REMNANT_TARGETS))
+            Strike(player, enemy, SPELL_ASTRAL_REMNANT_TICK, state.RemnantTick);
+    }
+
+    // The Orb out: Satellite keeps it circling the Hero 4 yards out; Wandering Star burns each enemy it passes
+    // through once (a bolt's damage, up to 5); a bolt a second; its natural end after 6 sec (it lingers a moment
+    // for Dying Light's bolts).
+    void OrbTick(Player* player, uint32 diff)
+    {
+        RemnantTick(player, diff);
+        State& state = StateOf(player);
+        if (!state.Orb)
+            return;
+        Creature* orb = LiveOrb(player);
+        if (!orb || !player->IsAlive())
+        {
+            DismissOrb(player);
+            return;
+        }
+        Position here = orb->GetPosition();
+        if (HasHorizonMarker(player, MOD_SATELLITE))
+        {
+            state.OrbAngle = Position::NormalizeOrientation(state.OrbAngle + SATELLITE_TURN * float(diff) / 1000.0f);
+            if (state.OrbRepath <= diff)
+            {
+                Position to = Toward(player->GetPosition(), state.OrbAngle + SATELLITE_LEAD, SATELLITE_RADIUS);
+                to.m_positionZ = player->GetPositionZ() + ORB_HEIGHT;
+                orb->GetMotionMaster()->MovePoint(0, to, FORCED_MOVEMENT_NONE, SATELLITE_SPEED, false);
+                state.OrbRepath = REPATH_MS;
+            }
+            else
+                state.OrbRepath -= diff;
+        }
+        if (HasHorizonMarker(player, MOD_WANDERING_STAR))
+        {
+            Shape path;
+            path.From = state.OrbLast;
+            path.To = here;
+            path.HalfWidth = WANDERING_HALF_WIDTH;
+            for (Unit* enemy : EnemiesIn(player, path, WANDERING_TARGETS))
+                if (state.OrbCrossed.size() < WANDERING_TARGETS && state.OrbCrossed.insert(enemy->GetGUID()).second)
+                    OrbStrike(player, orb, enemy, 1.0f, SPELL_WANDERING_STAR);
+        }
+        state.OrbLast = here;
+        state.OrbTimer += diff;
+        if (state.OrbTimer >= ORB_BOLT_MS)
+        {
+            state.OrbTimer -= ORB_BOLT_MS;
+            OrbVolley(player, orb);
+        }
+        if (Now() < state.OrbUntil)
+            return;
+        OrbEnding(player, orb);
+        orb->GetMotionMaster()->Clear();
+        orb->DespawnOrUnsummon(Milliseconds(ORB_LINGER_MS));
+        state.Orb.Clear();
+    }
+
+    // ---- Guiding Light -----------------------------------------------------------------------------------------
+
+    bool HasGuidingMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_GUIDING_MODIFIER_FIRST, modifier);
+    }
+
+    // A Prayer of Mending heal of the Hero's on the ally (their rank's, their healing power and bonuses).
+    float PrayerHeal(Player* player, Unit* ally)
+    {
+        uint32 rank = KnownRank(player, SPELL_PRAYER_OF_MENDING);
+        SpellInfo const* prayer = sSpellMgr->GetSpellInfo(rank ? rank : SPELL_PRAYER_OF_MENDING);
+        SpellInfo const* heal = sSpellMgr->GetSpellInfo(SPELL_PRAYER_OF_MENDING_HEAL);
+        if (!prayer || !heal)
+            return 0.0f;
+        int32 base = std::max(0, prayer->Effects[EFFECT_0].CalcValue(player));
+        return float(player->SpellHealingBonusDone(ally, heal, uint32(base), HEAL, EFFECT_0));
+    }
+
+    // A pulse's heal on the bearer: half a Prayer of Mending (Steady Light: 75%).
+    float StarPulse(Player* player, Unit* bearer)
+    {
+        return PrayerHeal(player, bearer) * STAR_PULSE_SHARE
+            * (HasGuidingMarker(player, MOD_STEADY_LIGHT) ? STEADY_LIGHT : 1.0f);
+    }
+
+    // A bearer: the Hero or one of their party or raid, alive, within 40 yards.
+    bool CanBear(Player* player, Unit* ally)
+    {
+        if (!ally || !ally->IsAlive() || !ally->IsInMap(player) || !player->IsWithinDistInMap(ally, STAR_RANGE))
+            return false;
+        Player* other = ally->ToPlayer();
+        return ally == player || (other && player->IsInSameRaidWith(other));
+    }
+
+    // The Hero's allies within range of a unit, most injured first (by share of health).
+    std::vector<Unit*> InjuredNear(Player* player, Unit* center, float range)
+    {
+        std::vector<Unit*> allies;
+        for (Unit* ally : MostInjured(player, STAR_RANGE + range))
+            if (ally->IsWithinDistInMap(center, range))
+                allies.push_back(ally);
+        return allies;
+    }
+
+    void Mend(Player* player, Unit* ally, uint32 spellId, float amount)
+    {
+        int32 points = std::max<int32>(1, int32(amount));
+        player->CastCustomSpell(ally, spellId, &points, nullptr, nullptr, true);
+    }
+
+    void ClearStar(Player* player)
+    {
+        State& state = StateOf(player);
+        if (Unit* bearer = state.StarBearer ? ObjectAccessor::GetUnit(*player, state.StarBearer) : nullptr)
+            bearer->RemoveAurasDueToSpell(SPELL_GUIDING_STAR, player->GetGUID());
+        state.StarBearer.Clear();
+        state.StarUntil = 0;
+        state.StarTravelling = false;
+    }
+
+    // The star's aura on its bearer for what is left of its 12 sec.
+    void WearStar(Player* player, Unit* bearer)
+    {
+        State& state = StateOf(player);
+        int32 left = int32(state.StarUntil - std::min(state.StarUntil, Now()));
+        bearer->RemoveAurasDueToSpell(SPELL_GUIDING_STAR, player->GetGUID());
+        if (Aura* aura = player->AddAura(SPELL_GUIDING_STAR, bearer))
+        {
+            aura->SetMaxDuration(STAR_MS);
+            aura->SetDuration(std::max(1, left));
+        }
+    }
+
+    // Prayer of Mending: the star on its target, 12 sec (a new one replaces it, no farewell).
+    void PlaceStar(Player* player, Unit* ally)
+    {
+        ClearStar(player);
+        State& state = StateOf(player);
+        state.StarBearer = ally->GetGUID();
+        state.StarUntil = Now() + STAR_MS;
+        state.StarPulseTimer = 0;
+        state.StarFocus = 0;
+        state.StarPulses = 0;
+        state.StarMovedAt = 0;
+        WearStar(player, ally);
+        if (ally != player)
+            player->CastSpell(ally, SPELL_STAR_FLIGHT, true);
+    }
+
+    // The star leaves its bearer for another (0.5 sec on the way; its lifetime runs on). Gentle Passage: up to 3
+    // injured allies along the way healed for half a pulse, once.
+    void MoveStar(Player* player, Unit* from, Unit* to)
+    {
+        State& state = StateOf(player);
+        if (from)
+        {
+            from->RemoveAurasDueToSpell(SPELL_GUIDING_STAR, player->GetGUID());
+            from->CastSpell(to, SPELL_STAR_FLIGHT, true);
+        }
+        if (from && HasGuidingMarker(player, MOD_GENTLE_PASSAGE))
+        {
+            float half = StarPulse(player, to) * PASSAGE_SHARE;
+            std::size_t count = PASSAGE_ALLIES;
+            for (Unit* ally : MostInjured(player, STAR_RANGE))
+                if (count && ally != from && ally != to && !ally->IsFullHealth()
+                    && SegmentDist(ally->GetPosition(), from->GetPosition(), to->GetPosition()) <= PASSAGE_HALF_WIDTH)
+                {
+                    Mend(player, ally, SPELL_GENTLE_PASSAGE, half);
+                    --count;
+                }
+        }
+        state.StarBearer = to->GetGUID();
+        state.StarTravelling = true;
+        state.StarArriveAt = Now() + STAR_TRAVEL_MS;
+        state.StarMovedAt = Now();
+        state.StarFocus = 0;
+    }
+
+    // Its arrival: 75% of a Prayer of Mending (Sheltering Light: an absorb of a pulse twice over, 6 sec, renewed).
+    void StarArrive(Player* player, Unit* bearer)
+    {
+        State& state = StateOf(player);
+        state.StarTravelling = false;
+        state.StarPulseTimer = 0;
+        WearStar(player, bearer);
+        float pulse = StarPulse(player, bearer);
+        if (HasGuidingMarker(player, MOD_SHELTERING_LIGHT))
+        {
+            int32 shield = std::max<int32>(1, int32(pulse * SHELTER_SHARE));
+            bearer->RemoveAurasDueToSpell(SPELL_SHELTERING_LIGHT, player->GetGUID());
+            Report(player, SPELL_SHELTERING_LIGHT, 'A', shield);
+            player->CastCustomSpell(bearer, SPELL_SHELTERING_LIGHT, &shield, nullptr, nullptr, true);
+        }
+        else
+            Mend(player, bearer, SPELL_STAR_ARRIVAL, pulse * ARRIVAL_SHARE);
+    }
+
+    // Flash Heal or Greater Heal on another ally (Guardian Star: Greater Heal only) moves the star there, at most
+    // once every 3 sec.
+    void RedirectStar(Player* player, Unit* ally, bool greater)
+    {
+        State& state = StateOf(player);
+        if (!state.StarBearer || state.StarTravelling || ally->GetGUID() == state.StarBearer || !CanBear(player, ally))
+            return;
+        if (HasGuidingMarker(player, MOD_GUARDIAN_STAR) && !greater)
+            return;
+        if (state.StarMovedAt && Now() - state.StarMovedAt < STAR_MOVE_MS)
+            return;
+        MoveStar(player, ObjectAccessor::GetUnit(*player, state.StarBearer), ally);
+    }
+
+    // Its natural end on its bearer. Final Benediction: a heal of 2.5 pulses; Afterglow: 3.25 pulses over 8 sec;
+    // Parting Grace: an absorb of 2 pulses (6 sec) and 30% speed (3 sec).
+    void StarFarewell(Player* player, Unit* bearer)
+    {
+        float pulse = StarPulse(player, bearer);
+        if (HasGuidingMarker(player, MOD_FINAL_BENEDICTION))
+            Mend(player, bearer, SPELL_STAR_PULSE, pulse * BENEDICTION_SHARE);
+        if (HasGuidingMarker(player, MOD_AFTERGLOW))
+        {
+            int32 tick = std::max<int32>(1, int32(pulse * AFTERGLOW_SHARE / float(AFTERGLOW_MS / 1000)));
+            bearer->RemoveAurasDueToSpell(SPELL_AFTERGLOW, player->GetGUID());
+            Report(player, SPELL_AFTERGLOW, 'H', tick);
+            player->CastCustomSpell(bearer, SPELL_AFTERGLOW, &tick, nullptr, nullptr, true);
+        }
+        if (HasGuidingMarker(player, MOD_PARTING_GRACE))
+        {
+            int32 shield = std::max<int32>(1, int32(pulse * GRACE_SHARE));
+            bearer->RemoveAurasDueToSpell(SPELL_PARTING_GRACE, player->GetGUID());
+            Report(player, SPELL_PARTING_GRACE, 'A', shield);
+            player->CastCustomSpell(bearer, SPELL_PARTING_GRACE, &shield, nullptr, nullptr, true);
+            player->AddAura(SPELL_PARTING_GRACE_SPEED, bearer);
+        }
+    }
+
+    // A pulse every 2 sec on its bearer while within reach (out of reach: paused). Guardian Star: 10% more a pulse
+    // in a row on one bearer, up to 30%. Shared Light: the most injured other ally within 10 yards of the bearer
+    // healed for 75% of it. Seeking Light: every third, the lowest ally within 15 yards for a pulse; a fallen
+    // bearer's star moves on to them (else it fades).
+    void StarTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        if (!state.StarBearer)
+            return;
+        uint32 now = Now();
+        Unit* bearer = ObjectAccessor::GetUnit(*player, state.StarBearer);
+        if (state.StarTravelling)
+        {
+            if (now < state.StarArriveAt)
+                return;
+            if (!bearer || !bearer->IsAlive() || !bearer->IsInMap(player))
+            {
+                ClearStar(player);
+                return;
+            }
+            StarArrive(player, bearer);
+        }
+        if (now >= state.StarUntil)
+        {
+            if (CanBear(player, bearer))
+                StarFarewell(player, bearer);
+            ClearStar(player);
+            return;
+        }
+        if (!bearer || !bearer->IsAlive() || !bearer->IsInMap(player))
+        {
+            if (bearer && bearer->IsInMap(player) && HasGuidingMarker(player, MOD_SEEKING_LIGHT))
+                for (Unit* ally : InjuredNear(player, bearer, SEEKING_STAR_RANGE))
+                    if (ally != bearer && CanBear(player, ally))
+                    {
+                        MoveStar(player, nullptr, ally);
+                        player->CastSpell(ally, SPELL_STAR_FLIGHT, true);
+                        return;
+                    }
+            ClearStar(player);
+            return;
+        }
+        state.StarPulseTimer += diff;
+        if (state.StarPulseTimer < STAR_PULSE_MS)
+            return;
+        state.StarPulseTimer -= STAR_PULSE_MS;
+        if (!CanBear(player, bearer))
+            return;
+        float pulse = StarPulse(player, bearer);
+        float heal = pulse;
+        if (HasGuidingMarker(player, MOD_GUARDIAN_STAR))
+        {
+            heal *= 1.0f + GUARDIAN_STEP * float(state.StarFocus);
+            state.StarFocus = std::min<uint8>(GUARDIAN_STEPS, state.StarFocus + 1);
+        }
+        Mend(player, bearer, SPELL_STAR_PULSE, heal);
+        if (HasGuidingMarker(player, MOD_SHARED_LIGHT))
+            for (Unit* ally : InjuredNear(player, bearer, SHARED_RANGE))
+                if (ally != bearer && !ally->IsFullHealth())
+                {
+                    Mend(player, ally, SPELL_STAR_PULSE, heal * SHARED_SHARE);
+                    break;
+                }
+        if (HasGuidingMarker(player, MOD_SEEKING_LIGHT) && ++state.StarPulses % SEEKING_EVERY == 0)
+        {
+            std::vector<Unit*> allies = InjuredNear(player, bearer, SEEKING_STAR_RANGE);
+            if (!allies.empty())
+                Mend(player, allies.front(), SPELL_STAR_PULSE, pulse);
+        }
+    }
+
+    // Everything the five newest left out (death, a rune or spec change, logout).
+    void ClearNewest(Player* player)
+    {
+        State& state = StateOf(player);
+        for (uint32 spell : { SPELL_ARCANE_INSIGHT, SPELL_MIND_UNBOUND, SPELL_MENTAL_RESERVES, SPELL_FROST_CROWN,
+                              SPELL_SPLINTER_QUICKENING, SPELL_COLD_FRONT, SPELL_ASHEN_FLOCK })
+            player->RemoveAurasDueToSpell(spell);
+        state.Icicles = 0;
+        state.IcicleAttacks = 0;
+        state.FrostboltHits = 0;
+        state.BlastCount = 0;
+        state.MindChannel = false;
+        DismissPhoenixes(player);
+        DismissOrb(player);
+        state.RemnantUntil = 0;
+        player->RemoveDynObject(SPELL_ASTRAL_REMNANT);
+        ClearStar(player);
     }
 
     // ---- The rune's auras ------------------------------------------------------------------------------------
@@ -4068,6 +5471,12 @@ public:
             SunTick(player, diff);
         if (player->HasAura(SPELL_RUNE_WILD_HUNT))
             WrathTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_PHOENIX_WAKE) || !StateOf(player).Flights.empty())
+            FlightTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_ASTRAL_HORIZON) || StateOf(player).Orb)
+            OrbTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_GUIDING_LIGHT))
+            StarTick(player, diff);
         if (!player->HasAura(SPELL_RUNE_FEL_COMMANDMENT))
             return;
         State& state = StateOf(player);
@@ -4146,6 +5555,267 @@ public:
             if (HasMarker(player, MOD_DEMONIC_ASCENSION))
                 Gain(player, MAX_STACKS);
     }
+};
+
+// Arcane Blast (every rank) with Arcane Mind: a direct hit grants Insight.
+class spell_titan_rune_arcane_blast : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_arcane_blast);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (player && GetHitUnit() && player->HasAura(SPELL_RUNE_ARCANE_MIND))
+            BlastInsight(player);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_arcane_blast::Hit);
+    }
+};
+
+// Arcane Explosion (every rank) with Arcane Mind and Expanding Intellect: 2 Insight on 3 enemies or more, else 1,
+// once a cast.
+class spell_titan_rune_arcane_explosion : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_arcane_explosion);
+
+    void Hit()
+    {
+        if (GetHitUnit())
+            ++_hits;
+    }
+
+    void Done()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || !_hits || !player->HasAura(SPELL_RUNE_ARCANE_MIND)
+            || !HasMindMarker(player, MOD_EXPANDING_INTELLECT))
+            return;
+        GainInsight(player, _hits >= EXPANDING_ENEMIES ? 2 : 1);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_arcane_explosion::Hit);
+        AfterCast += SpellCastFn(spell_titan_rune_arcane_explosion::Done);
+    }
+
+    uint32 _hits = 0;
+};
+
+// Arcane Missiles (every rank) with Arcane Mind at 4 Insight or more: empowered (free, its Insight volley). Unbound
+// Mind: no channel (its auras prevented; the missiles fly on their own).
+class spell_titan_rune_arcane_missiles : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_arcane_missiles);
+
+    void Cast()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetExplTargetUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_ARCANE_MIND) || Insight(player) < INSIGHT_THRESHOLD)
+            return;
+        _empowered = true;
+        _unbound = HasMindMarker(player, MOD_UNBOUND_MIND);
+        Empower(player, target, GetSpellInfo());
+    }
+
+    // Both its auras (the dummy on the target, the missiles' on the Hero): without them the channel ends at once.
+    void NoChannel(SpellMissInfo /*missInfo*/)
+    {
+        if (_unbound)
+            PreventHitAura();
+    }
+
+    void Refund()
+    {
+        if (!_empowered)
+            return;
+        if (Player* player = GetCaster()->ToPlayer())
+            if (int32 cost = GetSpell()->GetPowerCost(); cost > 0)
+                player->ModifyPower(POWER_MANA, cost);
+    }
+
+    void Register() override
+    {
+        OnCast += SpellCastFn(spell_titan_rune_arcane_missiles::Cast);
+        BeforeHit += BeforeSpellHitFn(spell_titan_rune_arcane_missiles::NoChannel);
+        AfterCast += SpellCastFn(spell_titan_rune_arcane_missiles::Refund);
+    }
+
+    bool _empowered = false;
+    bool _unbound = false;
+};
+
+// Arcane Missiles' channel (every rank) with Mental Reserves: an empowered one completed.
+class spell_titan_rune_arcane_missiles_channel : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_arcane_missiles_channel);
+
+    void Gone(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (!player || !StateOf(player).MindChannel)
+            return;
+        StateOf(player).MindChannel = false;
+        if (GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_EXPIRE
+            && player->HasAura(SPELL_RUNE_ARCANE_MIND) && HasMindMarker(player, MOD_MENTAL_RESERVES))
+            MindReserves(player);
+    }
+
+    void Register() override
+    {
+        AfterEffectRemove += AuraEffectRemoveFn(spell_titan_rune_arcane_missiles_channel::Gone, EFFECT_1,
+            SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
+// Frostbolt (every rank) with the Splintered Crown: a direct hit forms an Icicle.
+class spell_titan_rune_frostbolt_icicle : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_frostbolt_icicle);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_SPLINTERED_CROWN))
+            FormIcicle(player, target, float(GetHitDamage()));
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_frostbolt_icicle::Hit);
+    }
+};
+
+// Pyroblast (every rank) with Phoenix Wake: a direct hit leaves the Ember; the cast spends Ashen Flock's haste.
+class spell_titan_rune_pyroblast_ember : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_pyroblast_ember);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && target->IsAlive() && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_PHOENIX_WAKE))
+            PlaceEmber(player, target, float(GetHitDamage()));
+    }
+
+    void Spent()
+    {
+        if (Player* player = GetCaster()->ToPlayer())
+            player->RemoveAurasDueToSpell(SPELL_ASHEN_FLOCK);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_pyroblast_ember::Hit);
+        AfterCast += SpellCastFn(spell_titan_rune_pyroblast_ember::Spent);
+    }
+};
+
+// Fire Blast (every rank) with Phoenix Wake, on the Ember's host: the phoenix.
+class spell_titan_rune_fire_blast_phoenix : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_fire_blast_phoenix);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_PHOENIX_WAKE))
+            return;
+        State& state = StateOf(player);
+        if (target->GetGUID() != state.EmberHost || !target->HasAura(SPELL_PHOENIX_EMBER, player->GetGUID()))
+            return;
+        target->RemoveAurasDueToSpell(SPELL_PHOENIX_EMBER, player->GetGUID());
+        state.EmberHost.Clear();
+        ReleasePhoenix(player, target, state.EmberPyro);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_fire_blast_phoenix::Hit);
+    }
+};
+
+// Arcane Barrage (every rank) with Astral Horizon: the Orb.
+class spell_titan_rune_arcane_barrage : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_arcane_barrage);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && player->HasAura(SPELL_RUNE_ASTRAL_HORIZON))
+            LaunchOrb(player, target, float(std::max(0, GetHitDamage())));
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_arcane_barrage::Hit);
+    }
+};
+
+// Prayer of Mending (every rank) with Guiding Light: the Guiding Star in place of its prayer (its effects trigger
+// the prayer's aura and its jump: neither happens).
+class spell_titan_rune_prayer_of_mending : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_prayer_of_mending);
+
+    void Star(SpellEffIndex effIndex)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* ally = GetHitUnit();
+        if (!player || !ally || !player->HasAura(SPELL_RUNE_GUIDING_LIGHT))
+            return;
+        PreventHitDefaultEffect(effIndex);
+        if (effIndex == EFFECT_0 && CanBear(player, ally))
+            PlaceStar(player, ally);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_prayer_of_mending::Star, EFFECT_0,
+            SPELL_EFFECT_TRIGGER_SPELL_WITH_VALUE);
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_prayer_of_mending::Star, EFFECT_1,
+            SPELL_EFFECT_TRIGGER_SPELL);
+    }
+};
+
+// Flash Heal and Greater Heal (every rank) with Guiding Light: the star moves to their target.
+class spell_titan_rune_guiding_heal : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_guiding_heal);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* ally = GetHitUnit();
+        if (player && ally && player->HasAura(SPELL_RUNE_GUIDING_LIGHT))
+            RedirectStar(player, ally, GetSpellInfo()->GetFirstRankSpell()->Id == SPELL_GREATER_HEAL);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_guiding_heal::Hit);
+    }
+};
+
+// The phoenix (910125) and the Arcane Orb (910126): they fly where the Hero's rune sends them (FlightTick,
+// OrbTick), nothing else.
+struct npc_titan_rune_flier : public ScriptedAI
+{
+    npc_titan_rune_flier(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() override { }
+    void AttackStart(Unit* /*who*/) override { }
+    void MoveInLineOfSight(Unit* /*who*/) override { }
+    void UpdateAI(uint32 /*diff*/) override { }
 };
 
 // Eviscerate (every rank) with the Spectral Blade: its phantom.
@@ -4417,7 +6087,18 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_marked_strike);
     RegisterSpellScript(spell_titan_rune_kill_command);
     RegisterSpellScript(spell_titan_rune_bestial_wrath);
+    RegisterSpellScript(spell_titan_rune_arcane_blast);
+    RegisterSpellScript(spell_titan_rune_arcane_explosion);
+    RegisterSpellScript(spell_titan_rune_arcane_missiles);
+    RegisterSpellScript(spell_titan_rune_arcane_missiles_channel);
+    RegisterSpellScript(spell_titan_rune_frostbolt_icicle);
+    RegisterSpellScript(spell_titan_rune_pyroblast_ember);
+    RegisterSpellScript(spell_titan_rune_fire_blast_phoenix);
+    RegisterSpellScript(spell_titan_rune_arcane_barrage);
+    RegisterSpellScript(spell_titan_rune_prayer_of_mending);
+    RegisterSpellScript(spell_titan_rune_guiding_heal);
     RegisterCreatureAI(npc_titan_rune_spectral_beast);
+    RegisterCreatureAI(npc_titan_rune_flier);
     new titan_runes_player();
     new titan_runes_unit();
 }

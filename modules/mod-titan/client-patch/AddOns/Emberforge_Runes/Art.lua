@@ -77,6 +77,12 @@ EmberforgeRunesArt = {
             u = 0.6904,
             v = 0.9844,
         },
+        ChooseDischarge = {
+            w = 478,
+            h = 84,
+            u = 0.7002,
+            v = 0.9844,
+        },
         ChooseEarth = {
             w = 398,
             h = 84,
@@ -89,16 +95,34 @@ EmberforgeRunesArt = {
             u = 0.5615,
             v = 0.9844,
         },
+        ChooseEnding = {
+            w = 422,
+            h = 84,
+            u = 0.6182,
+            v = 0.9844,
+        },
         ChooseExecutionStyle = {
             w = 588,
             h = 84,
             u = 0.8613,
             v = 0.9844,
         },
+        ChooseFarewell = {
+            w = 453,
+            h = 84,
+            u = 0.6641,
+            v = 0.9844,
+        },
         ChooseFinalAttack = {
             w = 522,
             h = 84,
             u = 0.7646,
+            v = 0.9844,
+        },
+        ChooseFlight = {
+            w = 408,
+            h = 84,
+            u = 0.5977,
             v = 0.9844,
         },
         ChooseFollowThrough = {
@@ -123,6 +147,12 @@ EmberforgeRunesArt = {
             w = 516,
             h = 84,
             u = 0.7559,
+            v = 0.9844,
+        },
+        ChooseGuidance = {
+            w = 464,
+            h = 84,
+            u = 0.6797,
             v = 0.9844,
         },
         ChooseInvocation = {
@@ -155,6 +185,18 @@ EmberforgeRunesArt = {
             u = 0.6738,
             v = 0.9844,
         },
+        ChooseOrbit = {
+            w = 393,
+            h = 84,
+            u = 0.5762,
+            v = 0.9844,
+        },
+        ChoosePhoenix = {
+            w = 439,
+            h = 84,
+            u = 0.6436,
+            v = 0.9844,
+        },
         ChoosePresence = {
             w = 455,
             h = 84,
@@ -165,6 +207,12 @@ EmberforgeRunesArt = {
             w = 430,
             h = 84,
             u = 0.6299,
+            v = 0.9844,
+        },
+        ChooseRadiance = {
+            w = 459,
+            h = 84,
+            u = 0.6729,
             v = 0.9844,
         },
         ChooseResonance = {
@@ -311,6 +359,12 @@ EmberforgeRunesArt = {
             u = 0.75,
             v = 0.875,
         },
+        SlotDischarge = {
+            w = 102,
+            h = 28,
+            u = 0.7969,
+            v = 0.875,
+        },
         SlotEarth = {
             w = 63,
             h = 28,
@@ -323,16 +377,34 @@ EmberforgeRunesArt = {
             u = 0.8438,
             v = 0.875,
         },
+        SlotEnding = {
+            w = 74,
+            h = 28,
+            u = 0.5781,
+            v = 0.875,
+        },
         SlotExecutionStyle = {
             w = 152,
             h = 28,
             u = 0.5938,
             v = 0.875,
         },
+        SlotFarewell = {
+            w = 92,
+            h = 28,
+            u = 0.7188,
+            v = 0.875,
+        },
         SlotFinalAttack = {
             w = 122,
             h = 28,
             u = 0.9531,
+            v = 0.875,
+        },
+        SlotFlight = {
+            w = 68,
+            h = 28,
+            u = 0.5312,
             v = 0.875,
         },
         SlotFollowThrough = {
@@ -357,6 +429,12 @@ EmberforgeRunesArt = {
             w = 121,
             h = 28,
             u = 0.9453,
+            v = 0.875,
+        },
+        SlotGuidance = {
+            w = 93,
+            h = 28,
+            u = 0.7266,
             v = 0.875,
         },
         SlotInvocation = {
@@ -389,6 +467,18 @@ EmberforgeRunesArt = {
             u = 0.7266,
             v = 0.875,
         },
+        SlotOrbit = {
+            w = 60,
+            h = 28,
+            u = 0.9375,
+            v = 0.875,
+        },
+        SlotPhoenix = {
+            w = 84,
+            h = 28,
+            u = 0.6562,
+            v = 0.875,
+        },
         SlotPresence = {
             w = 91,
             h = 28,
@@ -399,6 +489,12 @@ EmberforgeRunesArt = {
             w = 80,
             h = 28,
             u = 0.625,
+            v = 0.875,
+        },
+        SlotRadiance = {
+            w = 92,
+            h = 28,
+            u = 0.7188,
             v = 0.875,
         },
         SlotResonance = {
@@ -1116,6 +1212,274 @@ EmberforgeRunesArt = {
                 "Spectral Beast",
                 "The Wrath",
                 "Final Attack",
+            },
+        },
+        [34] = {
+            rgb = { 0.471, 0.588, 1 },
+            hot = { 0.816, 0.855, 1 },
+            ink = { 0.949, 0.957, 1 },
+            muted = { 0.694, 0.729, 0.918 },
+            hue = { 0.604, 0.737, 1 },
+            inner = { 0.906, 0.925, 1 },
+            built = true,
+            core = "**Arcane Blast** grants **Insight**. At 4, your next **Arcane " ..
+                    "Missiles** is free and fires 5 Insight missiles with it, **40%** of a " ..
+                    "missile each.",
+            asks = {
+                "How Insight builds",
+                "How the volley strikes",
+                "How you cast it",
+            },
+            abilities = {
+                "Accelerate",
+                "Expand",
+                "Patience",
+                "Focus",
+                "Fracture",
+                "Echo",
+                "Unbound",
+                "Reserves",
+                "Overclock",
+            },
+            texts = {
+                "Every third Arcane Blast that hits grants 2 Insight instead of 1.",
+                "Arcane Explosion grants Insight too: 2 if it hits 3 or more enemies, " ..
+                        "else 1. Once a cast.",
+                "Insight stacks to 6 instead of 4. Spending 5 or 6 makes the Insight " ..
+                        "missiles deal 15% more damage for each one above 4.",
+                "Insight missiles deal 40% more damage to their target: 56% of an " ..
+                        "Arcane Missile's damage.",
+                "Each Insight missile also hits up to 2 other enemies within 8 yards of " ..
+                        "its target for 35% of its damage.",
+                "The Insight missiles leave Arcane Echo on their target: 30% of their " ..
+                        "damage again, over 6 sec. A new Echo keeps what is left of the last.",
+                "An empowered Arcane Missiles does not channel: its missiles fly from " ..
+                        "you on their own, one every 0.5 sec, so you can move and keep casting.",
+                "When an empowered Arcane Missiles completes, you regain 3% of your " ..
+                        "maximum mana and Arcane Blast costs 20% less mana for 4 sec.",
+                "The Insight missiles all fly as the channel starts, 0.15 sec apart, " ..
+                        "and deal 20% more damage: 48% of an Arcane Missile's damage.",
+            },
+            slots = {
+                "Invocation",
+                "Manifestation",
+                "Adaptation",
+            },
+        },
+        [35] = {
+            rgb = { 0.51, 0.804, 1 },
+            hot = { 0.827, 0.933, 1 },
+            ink = { 0.949, 0.98, 1 },
+            muted = { 0.71, 0.816, 0.918 },
+            hue = { 0.651, 0.98, 1 },
+            inner = { 0.91, 0.965, 1 },
+            built = true,
+            core = "Each **Frostbolt** that hits forms an **Icicle** above you: 1 sec " ..
+                    "later it strikes the same enemy for **30%** of the Frostbolt's damage.",
+            asks = {
+                "What the Icicle is",
+                "Where it flies",
+                "What it leaves behind",
+            },
+            abilities = {
+                "Spear",
+                "Splinter",
+                "Shatter",
+                "Impale",
+                "Seek",
+                "Focus",
+                "Wound",
+                "Grasp",
+                "Front",
+            },
+            texts = {
+                "Icicles deal 40% more damage: 42% of the Frostbolt's damage.",
+                "Each Icicle breaks into 3 shards, 0.2 sec apart, each 40% of an " ..
+                        "Icicle's damage (120% in all). The last one makes your next Frostbolt " ..
+                        "cast 10% faster.",
+                "Each Icicle also hits up to 4 other enemies within 6 yards of its " ..
+                        "target for half its damage.",
+                "Icicles and their shards pierce up to 3 enemies within 15 yards behind " ..
+                        "their target, for 40% of their damage.",
+                "As an Icicle lands, a splinter flies on to another enemy within 10 " ..
+                        "yards for 30% of its damage; with none near, it strikes the same enemy " ..
+                        "for 15%.",
+                "Every third Frostbolt that hits makes an Icicle that deals 60% more " ..
+                        "damage (its shards too).",
+                "Every third Icicle attack wounds its target: 80% of an Icicle's damage " ..
+                        "over 6 sec. A shattered Icicle counts once.",
+                "Icicles slow their targets by 25% for 3 sec, and deal 15% more damage " ..
+                        "to an enemy they slowed already.",
+                "Every third Icicle attack makes your next Frostbolt within 5 sec " ..
+                        "instant. A shattered Icicle counts once.",
+            },
+            slots = {
+                "Formation",
+                "Flight",
+                "Aftermath",
+            },
+        },
+        [36] = {
+            rgb = { 1, 0.549, 0.235 },
+            hot = { 1, 0.843, 0.733 },
+            ink = { 1, 0.957, 0.925 },
+            muted = { 0.906, 0.714, 0.612 },
+            hue = { 1, 0.694, 0.341 },
+            inner = { 1, 0.918, 0.863 },
+            built = true,
+            core = "**Pyroblast** leaves an **Ember**; **Fire Blast** on it wakes a " ..
+                    "**phoenix**: **50%** of the Pyroblast's damage, then it flies back to " ..
+                    "you through your enemies.",
+            asks = {
+                "What wakes in the Ember",
+                "How it flies home",
+                "What it leaves behind",
+            },
+            abilities = {
+                "Talon",
+                "Broadwing",
+                "Flock",
+                "Homeward",
+                "Spiral",
+                "Wild",
+                "Scorch",
+                "Embers",
+                "Rebirth",
+            },
+            texts = {
+                "The phoenix strikes the Ember's target for 50% more: 75% of the " ..
+                        "Pyroblast's damage.",
+                "The phoenix's path is 6 yards wide instead of 3, and enemies in it " ..
+                        "take 30% of the Pyroblast's damage instead of 25%.",
+                "Three phoenixes fly back instead, each with a third of the damage. " ..
+                        "Each that reaches you makes your next Pyroblast cast 5% faster, up to " ..
+                        "15%, for 6 sec.",
+                "The phoenix flies twice as fast, 40 yards a second. When it reaches " ..
+                        "you, Fire Blast's cooldown is 2 sec shorter.",
+                "The phoenix first circles the Ember's target for 2 sec, then strikes " ..
+                        "it again for 25% of the Pyroblast's damage before flying back.",
+                "Before flying back, the phoenix swoops through up to 2 other enemies " ..
+                        "within 10 yards of the Ember's target, striking each for 25% of the " ..
+                        "Pyroblast's damage.",
+                "The phoenix leaves a trail of fire for 4 sec: up to 5 enemies on it " ..
+                        "burn for 6% of the Pyroblast's damage every second. Trails don't " ..
+                        "stack.",
+                "Enemies the phoenix strikes burn for 25% more of that hit over 6 sec. " ..
+                        "A new burn keeps what is left of the last.",
+                "When the phoenix reaches you, it bursts for 35% of the Pyroblast's " ..
+                        "damage to up to 5 enemies within 6 yards of you. A flock bursts once.",
+            },
+            slots = {
+                "Phoenix",
+                "Flight",
+                "Wake",
+            },
+        },
+        [37] = {
+            rgb = { 0.804, 0.471, 1 },
+            hot = { 0.933, 0.816, 1 },
+            ink = { 0.98, 0.949, 1 },
+            muted = { 0.827, 0.682, 0.918 },
+            hue = { 0.98, 0.604, 1 },
+            inner = { 0.965, 0.906, 1 },
+            built = true,
+            core = "**Arcane Barrage** sets an **Arcane Orb** loose (every 12 sec at " ..
+                    "most): for 6 sec it fires a bolt a second for **20%** of the Barrage's " ..
+                    "damage.",
+            asks = {
+                "Where the Orb goes",
+                "How it fires",
+                "How it ends",
+            },
+            abilities = {
+                "Wander",
+                "Horizon",
+                "Satellite",
+                "Focus",
+                "Constellation",
+                "Lance",
+                "Supernova",
+                "Dying",
+                "Remnant",
+            },
+            texts = {
+                "Each enemy the Orb passes through takes a bolt's damage, once (up to " ..
+                        "5).",
+                "The Orb flies to its target's position and stays there. Its bolts deal " ..
+                        "20% more damage to enemies within 5 yards of it.",
+                "The Orb circles you, 4 yards out, and its bolts reach 12 yards instead " ..
+                        "of 10.",
+                "Bolts deal 40% more damage to the Orb's target: 28% of the Barrage's " ..
+                        "damage.",
+                "Each bolt also strikes up to 2 other enemies in range for half its " ..
+                        "damage.",
+                "Each bolt becomes a lance that also pierces up to 3 enemies behind its " ..
+                        "target, for 60% of its damage.",
+                "When the Orb's 6 sec end, it explodes for 80% of the Barrage's damage " ..
+                        "(4 bolts) to up to 5 enemies within 8 yards.",
+                "When the Orb's 6 sec end, it fires 3 last bolts at your target (else " ..
+                        "its own), each for 40% of the Barrage's damage.",
+                "When the Orb's 6 sec end, it leaves a field 6 yards wide for 6 sec: " ..
+                        "every 2 sec, a bolt's damage to up to 5 enemies in it.",
+            },
+            slots = {
+                "Orbit",
+                "Discharge",
+                "Ending",
+            },
+        },
+        [38] = {
+            rgb = { 1, 0.804, 0.431 },
+            hot = { 1, 0.933, 0.8 },
+            ink = { 1, 0.98, 0.941 },
+            muted = { 0.906, 0.816, 0.69 },
+            hue = { 1, 0.98, 0.561 },
+            inner = { 1, 0.965, 0.898 },
+            built = true,
+            core = "**Prayer of Mending** places a **Guiding Star**: every 2 sec it heals " ..
+                    "its bearer for half a Prayer of Mending. **Flash Heal** or **Greater " ..
+                    "Heal** moves it.",
+            asks = {
+                "How the star heals",
+                "How it travels",
+                "How it says farewell",
+            },
+            abilities = {
+                "Steady",
+                "Shared",
+                "Shelter",
+                "Passage",
+                "Guardian",
+                "Seeking",
+                "Benediction",
+                "Afterglow",
+                "Grace",
+            },
+            texts = {
+                "The star heals its bearer for 50% more: 75% of a Prayer of Mending " ..
+                        "every 2 sec.",
+                "Each pulse also heals the most injured other ally within 10 yards of " ..
+                        "the bearer for 75% of it.",
+                "Instead of healing on arrival, the star shields its new bearer for " ..
+                        "twice a pulse's healing, for 6 sec. A new shield replaces the last.",
+                "As it travels, the star heals up to 3 injured allies along its way for " ..
+                        "half a pulse each.",
+                "Only Greater Heal moves the star. Each pulse on the same bearer heals " ..
+                        "10% more than the last, up to 30%; moving the star starts over.",
+                "Every third pulse also heals the most injured ally within 15 yards of " ..
+                        "the bearer for a pulse. If the bearer dies, the star moves on to that " ..
+                        "ally.",
+                "When the star's 12 sec end, it heals its bearer for 2.5 pulses at " ..
+                        "once.",
+                "When the star's 12 sec end, it leaves Afterglow on its bearer: 3.25 " ..
+                        "pulses of healing over 8 sec.",
+                "When the star's 12 sec end, it shields its bearer for 2 pulses (6 " ..
+                        "sec), and they move 30% faster for 3 sec.",
+            },
+            slots = {
+                "Radiance",
+                "Guidance",
+                "Farewell",
             },
         },
     },

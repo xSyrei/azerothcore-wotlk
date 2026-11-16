@@ -633,4 +633,248 @@ EmberforgeRunesCatalog = {
           text = "The beast follows your lead." },
       },
     },
+    { id = 34,
+      name = "Rune of Arcane Mind",
+      role = "Ranged DPS (Mage, Arcane)",
+      roles = { "DAMAGER" },
+      icon = "Ability_Rune_ArcaneMind",
+      keywords = "mage arcane blast missiles insight channel mana burst volley",
+      slots = { "Invocation", "Manifestation", "Adaptation" },
+      builtFrom = "Arcane Blast",
+      spentWith = "Arcane Missiles",
+      resource = "Arcane Insight, up to 4",
+      core = "Arcane Blast grants 1 Arcane Insight (15 sec, renewed by each one; up to 4). At 4, your next Arcane " ..
+          "Missiles spends it all: it costs no mana and fires 5 Insight missiles with it, each dealing 40% of an " ..
+          "Arcane Missile's damage. Interrupting the channel loses the rest of the volley.",
+      loop = "Arcane Blast until Insight reaches 4, then Arcane Missiles.",
+      mods = {
+        { name = "Accelerated Thought",
+          text = "Every third Arcane Blast that hits grants 2 Insight instead of 1." },
+        { name = "Expanding Intellect",
+          text = "Arcane Explosion grants Insight too: 2 if it hits 3 or more enemies, else 1. Once a cast." },
+        { name = "Patient Calculation",
+          text = "Insight stacks to 6 instead of 4. Spending 5 or 6 makes the Insight missiles deal 15% more damage " ..
+              "for each one above 4." },
+        { name = "Focused Intention",
+          text = "Insight missiles deal 40% more damage to their target: 56% of an Arcane Missile's damage." },
+        { name = "Fractured Thought",
+          text = "Each Insight missile also hits up to 2 other enemies within 8 yards of its target for 35% of its " ..
+              "damage." },
+        { name = "Lingering Equation",
+          text = "The Insight missiles leave Arcane Echo on their target: 30% of their damage again, over 6 sec. A " ..
+              "new Echo keeps what is left of the last." },
+        { name = "Unbound Mind",
+          text = "An empowered Arcane Missiles does not channel: its missiles fly from you on their own, one every " ..
+              "0.5 sec, so you can move and keep casting." },
+        { name = "Mental Reserves",
+          text = "When an empowered Arcane Missiles completes, you regain 3% of your maximum mana and Arcane Blast " ..
+              "costs 20% less mana for 4 sec." },
+        { name = "Overclocked Intellect",
+          text = "The Insight missiles all fly as the channel starts, 0.15 sec apart, and deal 20% more damage: 48% " ..
+              "of an Arcane Missile's damage." },
+      },
+      builds = {
+        { name = "The Focus", mods = { "Accelerated Thought", "Focused Intention", "Unbound Mind" },
+          text = "Quick Insight, a heavy volley, cast on the move." },
+        { name = "The Storm", mods = { "Expanding Intellect", "Fractured Thought", "Mental Reserves" },
+          text = "Build on packs, spread the volley." },
+        { name = "The Patient", mods = { "Patient Calculation", "Lingering Equation", "Overclocked Intellect" },
+          text = "Bank Insight, spend it in one burst." },
+      },
+    },
+    { id = 35,
+      name = "Rune of the Splintered Crown",
+      role = "Ranged DPS (Mage, Frost)",
+      roles = { "DAMAGER" },
+      icon = "Ability_Rune_SplinteredCrown",
+      keywords = "mage frost frostbolt icicle ice shard pierce slow instant crown",
+      slots = { "Formation", "Flight", "Aftermath" },
+      builtFrom = "Frostbolt",
+      spentWith = "The Icicles fire on their own",
+      resource = "Icicles, up to 5 waiting",
+      core = "A Frostbolt that hits forms an Icicle in the crown above you: 1 sec later it flies at the same enemy " ..
+          "for 30% of that Frostbolt's damage. Up to 5 wait at once; an Icicle whose target dies melts.",
+      loop = "Frostbolt; the Icicles strike on their own while you keep casting or move.",
+      mods = {
+        { name = "Glacial Spear",
+          text = "Icicles deal 40% more damage: 42% of the Frostbolt's damage." },
+        { name = "Splinter Volley",
+          text = "Each Icicle breaks into 3 shards, 0.2 sec apart, each 40% of an Icicle's damage (120% in all). " ..
+              "The last one makes your next Frostbolt cast 10% faster." },
+        { name = "Shatterglass",
+          text = "Each Icicle also hits up to 4 other enemies within 6 yards of its target for half its damage." },
+        { name = "Impaling Ice",
+          text = "Icicles and their shards pierce up to 3 enemies within 15 yards behind their target, for 40% of " ..
+              "their damage." },
+        { name = "Seeking Splinters",
+          text = "As an Icicle lands, a splinter flies on to another enemy within 10 yards for 30% of its damage; " ..
+              "with none near, it strikes the same enemy for 15%." },
+        { name = "Frozen Focus",
+          text = "Every third Frostbolt that hits makes an Icicle that deals 60% more damage (its shards too)." },
+        { name = "Frost Wound",
+          text = "Every third Icicle attack wounds its target: 80% of an Icicle's damage over 6 sec. A shattered " ..
+              "Icicle counts once." },
+        { name = "Winter's Grasp",
+          text = "Icicles slow their targets by 25% for 3 sec, and deal 15% more damage to an enemy they slowed " ..
+              "already." },
+        { name = "Cold Front",
+          text = "Every third Icicle attack makes your next Frostbolt within 5 sec instant. A shattered Icicle " ..
+              "counts once." },
+      },
+      builds = {
+        { name = "The Spear", mods = { "Glacial Spear", "Impaling Ice", "Frost Wound" },
+          text = "Heavy Icicles through a line." },
+        { name = "The Storm", mods = { "Splinter Volley", "Seeking Splinters", "Winter's Grasp" },
+          text = "Shards everywhere, everyone slowed." },
+        { name = "The Glass", mods = { "Shatterglass", "Frozen Focus", "Cold Front" },
+          text = "Big bursts, Frostbolts on the move." },
+      },
+    },
+    { id = 36,
+      name = "Rune of Phoenix Wake",
+      role = "Ranged DPS (Mage, Fire)",
+      roles = { "DAMAGER" },
+      icon = "Ability_Rune_PhoenixWake",
+      keywords = "mage fire pyroblast fire blast phoenix ember bird burn trail flock",
+      slots = { "Phoenix", "Flight", "Wake" },
+      builtFrom = "Pyroblast",
+      spentWith = "Fire Blast",
+      resource = "A Phoenix Ember, 8 sec",
+      core = "Pyroblast leaves a Phoenix Ember on its target for 8 sec (one at a time: a new Pyroblast moves it). " ..
+          "Fire Blast on that target wakes the phoenix: it strikes the target for 50% of that Pyroblast's damage, " ..
+          "then flies back to you at 20 yards a second, burning up to 4 enemies in its path for 25% each.",
+      loop = "Pyroblast, then Fire Blast the same target; stand so the phoenix's way back crosses your enemies.",
+      mods = {
+        { name = "Sun Talon",
+          text = "The phoenix strikes the Ember's target for 50% more: 75% of the Pyroblast's damage." },
+        { name = "Broadwing",
+          text = "The phoenix's path is 6 yards wide instead of 3, and enemies in it take 30% of the Pyroblast's " ..
+              "damage instead of 25%." },
+        { name = "Ashen Flock",
+          text = "Three phoenixes fly back instead, each with a third of the damage. Each that reaches you makes " ..
+              "your next Pyroblast cast 5% faster, up to 15%, for 6 sec." },
+        { name = "Homeward Flame",
+          text = "The phoenix flies twice as fast, 40 yards a second. When it reaches you, Fire Blast's cooldown is " ..
+              "2 sec shorter." },
+        { name = "Death Spiral",
+          text = "The phoenix first circles the Ember's target for 2 sec, then strikes it again for 25% of the " ..
+              "Pyroblast's damage before flying back." },
+        { name = "Wild Flight",
+          text = "Before flying back, the phoenix swoops through up to 2 other enemies within 10 yards of the " ..
+              "Ember's target, striking each for 25% of the Pyroblast's damage." },
+        { name = "Scorched Earth",
+          text = "The phoenix leaves a trail of fire for 4 sec: up to 5 enemies on it burn for 6% of the " ..
+              "Pyroblast's damage every second. Trails don't stack." },
+        { name = "Clinging Embers",
+          text = "Enemies the phoenix strikes burn for 25% more of that hit over 6 sec. A new burn keeps what is " ..
+              "left of the last." },
+        { name = "Rebirth",
+          text = "When the phoenix reaches you, it bursts for 35% of the Pyroblast's damage to up to 5 enemies " ..
+              "within 6 yards of you. A flock bursts once." },
+      },
+      builds = {
+        { name = "The Sun", mods = { "Sun Talon", "Homeward Flame", "Scorched Earth" },
+          text = "Fast, hard, a road of fire." },
+        { name = "The Pyre", mods = { "Broadwing", "Death Spiral", "Clinging Embers" },
+          text = "Wide burns that linger." },
+        { name = "The Flock", mods = { "Ashen Flock", "Wild Flight", "Rebirth" },
+          text = "Three birds, everywhere at once." },
+      },
+    },
+    { id = 37,
+      name = "Rune of Astral Horizon",
+      role = "Ranged DPS (Mage, Arcane)",
+      roles = { "DAMAGER" },
+      icon = "Ability_Rune_AstralHorizon",
+      keywords = "mage arcane barrage orb star bolt cleave pierce explosion field",
+      slots = { "Orbit", "Discharge", "Ending" },
+      builtFrom = "Arcane Barrage",
+      spentWith = "The Orb fires on its own",
+      resource = "One Arcane Orb, 6 sec",
+      core = "Arcane Barrage also sets an Arcane Orb loose, at most once every 12 sec. For 6 sec it drifts on " ..
+          "through its target at 6 yards a second, firing a bolt every second at that target (else the nearest " ..
+          "enemy) within 10 yards of it, for 20% of the Barrage's damage. A new Orb replaces the last.",
+      loop = "Arcane Barrage whenever the Orb is ready; fight around its path while it fires.",
+      mods = {
+        { name = "Wandering Star",
+          text = "Each enemy the Orb passes through takes a bolt's damage, once (up to 5)." },
+        { name = "Event Horizon",
+          text = "The Orb flies to its target's position and stays there. Its bolts deal 20% more damage to enemies " ..
+              "within 5 yards of it." },
+        { name = "Satellite",
+          text = "The Orb circles you, 4 yards out, and its bolts reach 12 yards instead of 10." },
+        { name = "Astral Focus",
+          text = "Bolts deal 40% more damage to the Orb's target: 28% of the Barrage's damage." },
+        { name = "Constellation",
+          text = "Each bolt also strikes up to 2 other enemies in range for half its damage." },
+        { name = "Prismatic Lance",
+          text = "Each bolt becomes a lance that also pierces up to 3 enemies behind its target, for 60% of its " ..
+              "damage." },
+        { name = "Supernova",
+          text = "When the Orb's 6 sec end, it explodes for 80% of the Barrage's damage (4 bolts) to up to 5 " ..
+              "enemies within 8 yards." },
+        { name = "Dying Light",
+          text = "When the Orb's 6 sec end, it fires 3 last bolts at your target (else its own), each for 40% of " ..
+              "the Barrage's damage." },
+        { name = "Astral Remnant",
+          text = "When the Orb's 6 sec end, it leaves a field 6 yards wide for 6 sec: every 2 sec, a bolt's damage " ..
+              "to up to 5 enemies in it." },
+      },
+      builds = {
+        { name = "The Comet", mods = { "Wandering Star", "Astral Focus", "Supernova" },
+          text = "Through the pack, then a nova." },
+        { name = "The Star", mods = { "Event Horizon", "Constellation", "Dying Light" },
+          text = "A fixed star raining bolts." },
+        { name = "The Moon", mods = { "Satellite", "Prismatic Lance", "Astral Remnant" },
+          text = "At your side, lancing the line." },
+      },
+    },
+    { id = 38,
+      name = "Rune of Guiding Light",
+      role = "Healer (Priest)",
+      roles = { "HEALER" },
+      icon = "Ability_Rune_GuidingLight",
+      keywords = "priest holy heal healer prayer of mending flash heal greater heal star shield",
+      slots = { "Radiance", "Guidance", "Farewell" },
+      builtFrom = "Prayer of Mending",
+      spentWith = "Flash Heal, Greater Heal",
+      resource = "One Guiding Star, 12 sec",
+      core = "Prayer of Mending places a Guiding Star on its target instead, for 12 sec: every 2 sec it heals its " ..
+          "bearer for a pulse, half a Prayer of Mending. Flash Heal or Greater Heal on another party member moves " ..
+          "the star there (at most once every 3 sec), healing them on arrival for 75% of a Prayer of Mending.",
+      loop = "Prayer of Mending on whoever takes the most damage; Flash Heal or Greater Heal to send the star where " ..
+          "it is needed.",
+      mods = {
+        { name = "Steady Light",
+          text = "The star heals its bearer for 50% more: 75% of a Prayer of Mending every 2 sec." },
+        { name = "Shared Light",
+          text = "Each pulse also heals the most injured other ally within 10 yards of the bearer for 75% of it." },
+        { name = "Sheltering Light",
+          text = "Instead of healing on arrival, the star shields its new bearer for twice a pulse's healing, for 6 " ..
+              "sec. A new shield replaces the last." },
+        { name = "Gentle Passage",
+          text = "As it travels, the star heals up to 3 injured allies along its way for half a pulse each." },
+        { name = "Guardian Star",
+          text = "Only Greater Heal moves the star. Each pulse on the same bearer heals 10% more than the last, up " ..
+              "to 30%; moving the star starts over." },
+        { name = "Seeking Light",
+          text = "Every third pulse also heals the most injured ally within 15 yards of the bearer for a pulse. If " ..
+              "the bearer dies, the star moves on to that ally." },
+        { name = "Final Benediction",
+          text = "When the star's 12 sec end, it heals its bearer for 2.5 pulses at once." },
+        { name = "Afterglow",
+          text = "When the star's 12 sec end, it leaves Afterglow on its bearer: 3.25 pulses of healing over 8 sec." },
+        { name = "Parting Grace",
+          text = "When the star's 12 sec end, it shields its bearer for 2 pulses (6 sec), and they move 30% faster " ..
+              "for 3 sec." },
+      },
+      builds = {
+        { name = "The Beacon", mods = { "Steady Light", "Gentle Passage", "Final Benediction" },
+          text = "One bearer held in the light." },
+        { name = "The Guardian", mods = { "Shared Light", "Guardian Star", "Afterglow" },
+          text = "A steady star that heals the group." },
+        { name = "The Seeker", mods = { "Sheltering Light", "Seeking Light", "Parting Grace" },
+          text = "Shields where they are needed." },
+      },
+    },
 }

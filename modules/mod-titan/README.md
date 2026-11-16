@@ -556,6 +556,23 @@ utility or a tradeoff) take one pick each, from three.
   most), Hunter's Command (turns to the Hero's target), Blood Scent (hunts on after a kill); and on a beast's natural
   end Final Pounce (a bite at 200%), Frenzied Farewell (4 bites at 60%) or Parting Howl (the pet 30% stronger for 6
   sec, 91135).
+- **Five from their own dossiers** (runes 34 to 38; spells 91200 to 91298, each rune's markers 10 on from its
+  first). Their numbers are shares of the ability that drives them (the dossiers' % spell power, kept in ratio);
+  `.agents/plans/new-lres/` has the redesign notes.
+  - **Arcane Mind** (34; Ranged; Arcane Blast and Arcane Missiles): Arcane Blast grants Arcane Insight (91201, up to
+    4); at 4 Arcane Missiles spends it, free, with 5 Insight missiles (91202) at 40% of one of its own. Unbound Mind
+    drops the channel (its auras prevented; our own missiles, 91207, every 0.5 sec).
+  - **The Splintered Crown** (35; Ranged; Frostbolt): a Frostbolt hit forms an Icicle (the crown 91222 counts them,
+    5 at most), loosed 1 sec later for 30% of its damage (91221; shards and pierces 91228). Cold Front and Splinter
+    Volley are family-3 cast-time modifiers (91227, 91223).
+  - **Phoenix Wake** (36; Ranged; Pyroblast and Fire Blast): Pyroblast's Ember (91241) holds its damage; Fire Blast
+    on its host calls the phoenix (910125, Kael'thas's): 50% to the host, then it flies back to the Hero (FlightTick)
+    and burns what it crosses.
+  - **Astral Horizon** (37; Ranged; Arcane Barrage): Barrage sets the Arcane Orb loose (910126, Malygos's Power
+    Spark; once every 12 sec): 6 sec, a bolt a second (91262, cast by the Orb, the Hero's) for 20% of the Barrage.
+  - **Guiding Light** (38; Healer; Prayer of Mending, Flash Heal or Greater Heal): Prayer of Mending places the
+    Guiding Star (91281) instead of its prayer: a pulse every 2 sec (half a Prayer of Mending); Flash Heal or
+    Greater Heal on another ally moves it (0.5 sec on the way, at most once every 3 sec).
 - A Hero's buff on their own pet or summon lands whatever its level (`hero_resources.cpp`): the core drops a positive
   aura's target more than 10 levels below the spell ("Target is too low level": Bestial Wrath, level 40).
 - Scripts in `titan_runes.sql`; spells 90750-91158 (`patch_runes.py`); their looks from the curated VFX library

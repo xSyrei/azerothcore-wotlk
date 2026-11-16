@@ -1,4 +1,4 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-91158: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-91298: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
@@ -248,3 +248,83 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (90981, 0, 0, 0, 0, 'Spectral Blade - Phantom Strike'),
 (91132, 0, 0, 0, 0, 'Wild Hunt - Spectral Bite'),
 (91136, 0, 0, 0, 0, 'Wild Hunt - Final Pounce');
+
+-- Five more (their own dossiers): Arcane Mind, the Splintered Crown, Phoenix Wake, Astral Horizon, Guiding Light.
+-- Phoenix Wake's phoenix (Kael'thas's) and Astral Horizon's Arcane Orb (Malygos's Power Spark): they fly where the
+-- rune sends them, out of reach.
+SET @RUNE_PHOENIX := 910125;
+SET @RUNE_ARCANE_ORB := 910126;
+DELETE FROM `creature_template` WHERE `entry` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB);
+INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
+    `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
+    `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
+    `dmgschool`, `DamageModifier`, `BaseAttackTime`, `RangeAttackTime`, `BaseVariance`, `RangeVariance`,
+    `unit_class`, `unit_flags`, `unit_flags2`, `dynamicflags`, `family`, `type`, `type_flags`, `lootid`,
+    `pickpocketloot`, `skinloot`, `PetSpellDataId`, `VehicleId`, `mingold`, `maxgold`, `AIName`, `MovementType`,
+    `HoverHeight`, `HealthModifier`, `ManaModifier`, `ArmorModifier`, `ExperienceModifier`, `RacialLeader`,
+    `movementId`, `RegenHealth`, `CreatureImmunitiesId`, `flags_extra`, `ScriptName`, `VerifiedBuild`) VALUES
+(@RUNE_PHOENIX, 0, 0, 0, 0, 0, 'Phoenix', 'Phoenix Wake', NULL, 0, 1, 80, 0, 35, 0, 1, 1.14286, 1, 3, 20, 0, 2, 1,
+    2000, 2000, 1, 1, 1, 33554434, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0,
+    'npc_titan_rune_flier', 0),
+(@RUNE_ARCANE_ORB, 0, 0, 0, 0, 0, 'Arcane Orb', 'Astral Horizon', NULL, 0, 1, 80, 0, 35, 0, 1, 1.14286, 1, 1, 20,
+    0, 6, 1, 2000, 2000, 1, 1, 8, 33554434, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0,
+    0, 'npc_titan_rune_flier', 0);
+
+DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB);
+INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
+    `VerifiedBuild`) VALUES
+(@RUNE_PHOENIX, 0, 18987, 1, 1, 0),
+(@RUNE_ARCANE_ORB, 0, 26753, 0.5, 1, 0);
+
+-- Arcane Blast and Arcane Explosion grant Insight, Arcane Missiles spends it (its channel's end: Mental Reserves);
+-- Frostbolt forms the Icicles; Pyroblast leaves the Ember, Fire Blast wakes the phoenix; Arcane Barrage sets the
+-- Orb loose; Prayer of Mending places the Guiding Star, Flash Heal and Greater Heal move it (every rank).
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_arcane_blast',
+    'spell_titan_rune_arcane_explosion', 'spell_titan_rune_arcane_missiles', 'spell_titan_rune_arcane_missiles_channel',
+    'spell_titan_rune_frostbolt_icicle', 'spell_titan_rune_pyroblast_ember', 'spell_titan_rune_fire_blast_phoenix',
+    'spell_titan_rune_arcane_barrage', 'spell_titan_rune_prayer_of_mending', 'spell_titan_rune_guiding_heal');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(-30451, 'spell_titan_rune_arcane_blast'),
+(-1449, 'spell_titan_rune_arcane_explosion'),
+(-5143, 'spell_titan_rune_arcane_missiles'),
+(-5143, 'spell_titan_rune_arcane_missiles_channel'),
+(-116, 'spell_titan_rune_frostbolt_icicle'),
+(-11366, 'spell_titan_rune_pyroblast_ember'),
+(-2136, 'spell_titan_rune_fire_blast_phoenix'),
+(-44425, 'spell_titan_rune_arcane_barrage'),
+(-33076, 'spell_titan_rune_prayer_of_mending'),
+(-2061, 'spell_titan_rune_guiding_heal'),
+(-2060, 'spell_titan_rune_guiding_heal');
+
+-- Their damage over time: Arcane Echo, Frost Wound, Clinging Embers.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (91203, 91224, 91246) AND `ScriptName` = 'spell_titan_rune_dot';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(91203, 'spell_titan_rune_dot'),
+(91224, 'spell_titan_rune_dot'),
+(91246, 'spell_titan_rune_dot');
+
+-- Their strikes, heals and absorbs are shares of the Hero's own hits and heals: no bonuses of their own.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (91202, 91204, 91207, 91221, 91225, 91228, 91242, 91245, 91247, 91248,
+    91262, 91263, 91264, 91265, 91267, 91282, 91283, 91285, 91286, 91287, 91288);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(91202, 0, 0, 0, 0, 'Arcane Mind - Insight Missile'),
+(91204, 0, 0, 0, 0, 'Arcane Mind - Arcane Echo tick'),
+(91207, 0, 0, 0, 0, 'Arcane Mind - Unbound Mind missile'),
+(91221, 0, 0, 0, 0, 'Splintered Crown - Icicle'),
+(91225, 0, 0, 0, 0, 'Splintered Crown - Frost Wound tick'),
+(91228, 0, 0, 0, 0, 'Splintered Crown - Ice Splinter'),
+(91242, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Flight'),
+(91245, 0, 0, 0, 0, 'Phoenix Wake - Scorched Earth tick'),
+(91247, 0, 0, 0, 0, 'Phoenix Wake - Clinging Embers tick'),
+(91248, 0, 0, 0, 0, 'Phoenix Wake - Rebirth'),
+(91262, 0, 0, 0, 0, 'Astral Horizon - Orb Bolt'),
+(91263, 0, 0, 0, 0, 'Astral Horizon - Wandering Star'),
+(91264, 0, 0, 0, 0, 'Astral Horizon - Prismatic Lance'),
+(91265, 0, 0, 0, 0, 'Astral Horizon - Supernova'),
+(91267, 0, 0, 0, 0, 'Astral Horizon - Astral Remnant tick'),
+(91282, 0, 0, 0, 0, 'Guiding Light - Guiding Star'),
+(91283, 0, 0, 0, 0, 'Guiding Light - arrival'),
+(91285, 0, 0, 0, 0, 'Guiding Light - Sheltering Light'),
+(91286, 0, 0, 0, 0, 'Guiding Light - Gentle Passage'),
+(91287, 0, 0, 0, 0, 'Guiding Light - Afterglow'),
+(91288, 0, 0, 0, 0, 'Guiding Light - Parting Grace');
