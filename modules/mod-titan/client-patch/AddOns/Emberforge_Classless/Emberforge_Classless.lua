@@ -2750,7 +2750,14 @@ end
 
 -- The game's Talents button (and its key) opens this window: a Hero's talents are rolled, not spent in the game's own
 -- talent frame. The button shows from level 1 (the game hides it below 10) and stays pressed while the window is open.
-ToggleTalentFrame = EmberforgeClassless_Toggle
+ToggleTalentFrame = function()
+    -- The Talents button and key open it on the Talents list (not the last one open).
+    if not frame:IsShown() then
+        view.list = TALENTS
+        view.listOffset = 0
+    end
+    EmberforgeClassless_Toggle()
+end
 local function TalentButton()
     if not TalentMicroButton then
         return
