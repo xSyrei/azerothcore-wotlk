@@ -17,6 +17,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Rune of the Spectral Blade: the phantom strikes for 200% of Eviscerate's damage (up from 50%), and each phantom
   strike makes your Energy regenerate 100% faster for 4 sec (Phantom Rush).
 - Every Legendary Rune option now says exactly what it does, with its numbers.
+- New looks for Echoing Thunder, the Shattered Sun and the Spectral Blade, made from the game's own spell effects:
+  a storm cloud over a charged warrior, Living Bomb's burning Sunshards and explosion, Flamestrike's burning ground,
+  and a real Phantom Assassin: your shadowy double steps out of the shadows behind your target, strikes and vanishes.
 - Uncommon, Rare and Epic runes are turned off for now: only the Legendary Runes are in play. Runes you already hold
   are kept for when they return.
 - Rune of Fel Commandment and Rune of the Threefold Grave are temporarily removed while their designs are reworked
