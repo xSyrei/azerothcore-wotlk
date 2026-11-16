@@ -2381,20 +2381,47 @@ if hooksecurefunc and ActionButton_Update then
 end
 EmberforgeRunes_UpdateGlow = UpdateGlow
 
--- The spellbook: Consecration's icon the Paragon's while that rune is bound.
+-- The spellbook: Consecration's icon the Paragon's while that rune is bound. Only the icon texture is touched, never
+-- the spellbook's own update (SpellBookFrame_Update): run from here on every aura change, it rebuilt the open book's
+-- buttons over and over (learning, swapping runes) and tainted them, so they could no longer be hovered or clicked.
+local function BookIcon(button, state)
+    local slot = SpellBook_GetSpellID and SpellBook_GetSpellID(button:GetID())
+    local icon = _G[button:GetName() .. "IconTexture"]
+    if not slot or not icon or (SpellBookFrame and SpellBookFrame.bookType ~= BOOKTYPE_SPELL) then
+        return
+    end
+    local name = BookSpellName(slot, BOOKTYPE_SPELL)
+    if name and name == state.consecration then
+        local texture = state.paragon and PARAGON_ICON or (GetSpellTexture and GetSpellTexture(slot, BOOKTYPE_SPELL))
+        if texture then
+            icon:SetTexture(texture)
+        end
+    end
+end
+
 if SpellButton_UpdateButton and hooksecurefunc then
     hooksecurefunc("SpellButton_UpdateButton", function(button)
-        local slot = SpellBook_GetSpellID and SpellBook_GetSpellID(button:GetID())
-        local icon = _G[button:GetName() .. "IconTexture"]
-        if not slot or not icon or (SpellBookFrame and SpellBookFrame.bookType ~= BOOKTYPE_SPELL) then
-            return
-        end
-        local name = BookSpellName(slot, BOOKTYPE_SPELL)
-        local state = State()
-        if name and name == state.consecration and state.paragon then
-            icon:SetTexture(PARAGON_ICON)
-        end
+        BookIcon(button, State())
     end)
+end
+
+-- The open book's icons again when the Paragon comes or goes (not on every aura change).
+local bookParagon
+local function UpdateBookIcons()
+    local state = State()
+    if state.paragon == bookParagon then
+        return
+    end
+    bookParagon = state.paragon
+    if not (SpellBookFrame and SpellBookFrame:IsShown()) then
+        return
+    end
+    for index = 1, SPELLS_PER_PAGE or 12 do
+        local button = _G["SpellButton" .. index]
+        if button and button:IsShown() then
+            BookIcon(button, state)
+        end
+    end
 end
 
 local events = CreateFrame("Frame")
@@ -2420,9 +2447,7 @@ events:SetScript("OnEvent", function(_, event, prefix, message, channel, sender)
     elseif event == "UNIT_AURA" then
         if prefix == "player" then
             UpdateGlow()
-            if SpellBookFrame and SpellBookFrame:IsShown() and SpellBookFrame_Update then
-                SpellBookFrame_Update()
-            end
+            UpdateBookIcons()
         end
     else
         UpdateGlow()
