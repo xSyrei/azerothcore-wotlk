@@ -337,12 +337,37 @@ def move_speed(export, key, planted):
     return float(max(travel) / (planted * duration / 1000))
 
 
-def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None, replace=None, move_speeds=None):
+def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None, replace=None, move_speeds=None,
+            scale=1.0, center=False, spin=0.0):
     """texture_name: use the textures of that already converted model instead of writing its own.
-    replace: {animation id: sources} replacing (or adding) entries of ANIMATIONS; move_speeds: their move speeds."""
+    replace: {animation id: sources} replacing (or adding) entries of ANIMATIONS; move_speeds: their move speeds.
+    scale: the whole model (mesh, pivots, bone movements) made that much larger or smaller; center: the middle of
+    its mesh moved to the origin (a missile flies along its middle; an effect a kit attaches sits on its point);
+    spin: its Stand turns it once about its up axis every spin seconds (its root bones'; retail's own spin is often
+    texture scrolling, which a glTF has not)."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     export = Export(export_dir)
+    if scale != 1.0:
+        export.positions = export.positions * scale
+        export.pivots = export.pivots * scale
+        for _, channels in export.animations.values():
+            for track, (times, values) in channels.items():
+                if track[1] == 'translation':
+                    channels[track] = (times, values * scale)
+    if center:
+        middle = (export.positions.min(axis=0) + export.positions.max(axis=0)) / 2.0
+        export.positions = export.positions - middle
+        export.pivots = export.pivots - middle
+    if spin and (0, 0) in export.animations:
+        period = int(spin * 1000)
+        _, channels = export.animations[(0, 0)]
+        times = np.linspace(0, period, 9).astype(np.int64)
+        turns = np.array([[0.0, 0.0, np.sin(a / 2), np.cos(a / 2)] for a in np.linspace(0, 2 * np.pi, 9)])
+        for bone, parent in enumerate(export.parents):
+            if parent < 0:
+                channels[(bone, 'rotation')] = (times, turns)
+        export.animations[(0, 0)] = (period, channels)
     meta = json.loads(Path(json_path).read_text())
     texture_files = [Path(t['fileNameInternal']).stem for t in meta['textures']]
     bone_count = len(export.names)

@@ -250,8 +250,8 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91136, 0, 0, 0, 0, 'Wild Hunt - Final Pounce');
 
 -- Five more (their own dossiers): Arcane Mind, the Splintered Crown, Phoenix Wake, Astral Horizon, Guiding Light.
--- Phoenix Wake's phoenix (Kael'thas's) and Astral Horizon's Arcane Orb (Malygos's Power Spark): they fly where the
--- rune sends them, out of reach.
+-- Phoenix Wake's phoenix and Astral Horizon's Arcane Orb: invisible creatures wearing retail's Phoenix Flames bird
+-- and Arcane Orb (their auras' looks, client-patch/patch_runes.py); they fly where the rune sends them, out of reach.
 SET @RUNE_PHOENIX := 910125;
 SET @RUNE_ARCANE_ORB := 910126;
 DELETE FROM `creature_template` WHERE `entry` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB);
@@ -273,8 +273,8 @@ INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entr
 DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB);
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES
-(@RUNE_PHOENIX, 0, 18987, 1, 1, 0),
-(@RUNE_ARCANE_ORB, 0, 26753, 0.5, 1, 0);
+(@RUNE_PHOENIX, 0, 11686, 1, 1, 0),
+(@RUNE_ARCANE_ORB, 0, 11686, 1, 1, 0);
 
 -- Arcane Blast and Arcane Explosion grant Insight, Arcane Missiles spends it (its channel's end: Mental Reserves);
 -- Frostbolt forms the Icicles; Pyroblast leaves the Ember, Fire Blast wakes the phoenix; Arcane Barrage sets the

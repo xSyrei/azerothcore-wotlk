@@ -1,0 +1,1184 @@
+{
+	"asset": {
+		"version": "2.0",
+		"generator": "wow.export v0.2.21 win-x64 [01a1b2f4-1a35-7000-9849-075ee4fa5b50]"
+	},
+	"nodes": [
+		{
+			"name": "mage_arcaneorb_missile_fallback",
+			"children": [
+				1,
+				22,
+				23,
+				24,
+				25,
+				26,
+				27,
+				28
+			]
+		},
+		{
+			"name": "mage_arcaneorb_missile_fallback_skeleton",
+			"children": [
+				2,
+				4,
+				6,
+				8,
+				14,
+				16,
+				18,
+				20
+			]
+		},
+		{
+			"name": "bone_0_p",
+			"translation": [
+				-0.05258508026599884,
+				0.15644574165344238,
+				0.07204636186361313
+			],
+			"children": [
+				3
+			]
+		},
+		{
+			"name": "bone_0"
+		},
+		{
+			"name": "bone_1_p",
+			"translation": [
+				0,
+				0.14509540796279907,
+				0
+			],
+			"children": [
+				5
+			]
+		},
+		{
+			"name": "bone_1"
+		},
+		{
+			"name": "bone_2_p",
+			"translation": [
+				0,
+				0.14509540796279907,
+				0
+			],
+			"children": [
+				7
+			]
+		},
+		{
+			"name": "bone_2"
+		},
+		{
+			"name": "bone_3_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				9
+			]
+		},
+		{
+			"name": "bone_3",
+			"children": [
+				10,
+				12
+			]
+		},
+		{
+			"name": "bone_4_p",
+			"translation": [
+				0,
+				-0.11887529492378235,
+				0
+			],
+			"children": [
+				11
+			]
+		},
+		{
+			"name": "bone_4"
+		},
+		{
+			"name": "bone_5_p",
+			"translation": [
+				0,
+				-0.11887529492378235,
+				0
+			],
+			"children": [
+				13
+			]
+		},
+		{
+			"name": "bone_5"
+		},
+		{
+			"name": "bone_6_p",
+			"translation": [
+				0,
+				0.10965219885110855,
+				0
+			],
+			"children": [
+				15
+			]
+		},
+		{
+			"name": "bone_6"
+		},
+		{
+			"name": "bone_7_p",
+			"translation": [
+				0,
+				0.10965219885110855,
+				0
+			],
+			"children": [
+				17
+			]
+		},
+		{
+			"name": "bone_7"
+		},
+		{
+			"name": "bone_8_p",
+			"translation": [
+				0,
+				0,
+				0.0062241023406386375
+			],
+			"children": [
+				19
+			]
+		},
+		{
+			"name": "bone_8"
+		},
+		{
+			"name": "bone_9_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				21
+			]
+		},
+		{
+			"name": "bone_9"
+		},
+		{
+			"name": "mage_arcaneorb_missile_fallback_Geoset0",
+			"mesh": 0,
+			"skin": 0
+		},
+		{
+			"name": "mage_arcaneorb_missile_fallback_Geoset1",
+			"mesh": 1,
+			"skin": 0
+		},
+		{
+			"name": "mage_arcaneorb_missile_fallback_Geoset2",
+			"mesh": 2,
+			"skin": 0
+		},
+		{
+			"name": "mage_arcaneorb_missile_fallback_Geoset3",
+			"mesh": 3,
+			"skin": 0
+		},
+		{
+			"name": "mage_arcaneorb_missile_fallback_Geoset4",
+			"mesh": 4,
+			"skin": 0
+		},
+		{
+			"name": "mage_arcaneorb_missile_fallback_Geoset5",
+			"mesh": 5,
+			"skin": 0
+		},
+		{
+			"name": "mage_arcaneorb_missile_fallback_Geoset6",
+			"mesh": 6,
+			"skin": 0
+		}
+	],
+	"scenes": [
+		{
+			"name": "mage_arcaneorb_missile_fallback_Scene",
+			"nodes": [
+				0
+			]
+		}
+	],
+	"buffers": [
+		{
+			"byteLength": 34096,
+			"uri": "mage_arcaneorb_missile_fallback.bin"
+		},
+		{
+			"uri": "mage_arcaneorb_missile_fallback_anim127-0.bin",
+			"byteLength": 200
+		},
+		{
+			"uri": "mage_arcaneorb_missile_fallback_anim1-0.bin",
+			"byteLength": 40
+		}
+	],
+	"bufferViews": [
+		{
+			"buffer": 0,
+			"byteLength": 7104,
+			"byteOffset": 0,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 7104,
+			"byteOffset": 7104,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 2368,
+			"byteOffset": 14208,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 2368,
+			"byteOffset": 16576,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 640,
+			"byteOffset": 18944
+		},
+		{
+			"buffer": 1,
+			"byteLength": 20,
+			"byteOffset": 0,
+			"name": "ROT_TIMESTAMPS_4_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 80,
+			"byteOffset": 20,
+			"name": "ROT_VALUES_4_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 20,
+			"byteOffset": 100,
+			"name": "ROT_TIMESTAMPS_5_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 80,
+			"byteOffset": 120,
+			"name": "ROT_VALUES_5_0"
+		},
+		{
+			"buffer": 2,
+			"byteLength": 4,
+			"byteOffset": 0,
+			"name": "ROT_TIMESTAMPS_6_2"
+		},
+		{
+			"buffer": 2,
+			"byteLength": 16,
+			"byteOffset": 4,
+			"name": "ROT_VALUES_6_2"
+		},
+		{
+			"buffer": 2,
+			"byteLength": 4,
+			"byteOffset": 20,
+			"name": "ROT_TIMESTAMPS_7_2"
+		},
+		{
+			"buffer": 2,
+			"byteLength": 16,
+			"byteOffset": 24,
+			"name": "ROT_VALUES_7_2"
+		},
+		{
+			"buffer": 0,
+			"byteLength": 4736,
+			"byteOffset": 19584,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 4736,
+			"byteOffset": 24320,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 2160,
+			"byteOffset": 29056,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 972,
+			"byteOffset": 31216,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 972,
+			"byteOffset": 32188,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 456,
+			"byteOffset": 33160,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 456,
+			"byteOffset": 33616,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 12,
+			"byteOffset": 34072,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 12,
+			"byteOffset": 34084,
+			"target": 34963
+		}
+	],
+	"accessors": [
+		{
+			"name": "POSITION",
+			"bufferView": 0,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 592,
+			"type": "VEC3",
+			"min": [
+				-4.701779365539551,
+				-1.609958291053772,
+				-4.71973991394043
+			],
+			"max": [
+				4.701780319213867,
+				1.9891153573989868,
+				4.71973991394043
+			]
+		},
+		{
+			"name": "NORMAL",
+			"bufferView": 1,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 592,
+			"type": "VEC3",
+			"min": [
+				-0.00005382499148254283,
+				-0.9374269247055054,
+				-0.9999926090240479
+			],
+			"max": [
+				1,
+				0.9999827742576599,
+				0.9999940991401672
+			]
+		},
+		{
+			"name": "JOINTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 592,
+			"type": "VEC4",
+			"bufferView": 2,
+			"min": [
+				0,
+				0,
+				0,
+				0
+			],
+			"max": [
+				5,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "WEIGHTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 592,
+			"normalized": true,
+			"type": "VEC4",
+			"bufferView": 3,
+			"min": [
+				255,
+				0,
+				0,
+				0
+			],
+			"max": [
+				255,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "INV_BIND_MATRICES",
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 10,
+			"type": "MAT4",
+			"bufferView": 4,
+			"min": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				-0.15644574165344238,
+				-0.07204636186361313,
+				1
+			],
+			"max": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0.05258508026599884,
+				0.11887529492378235,
+				0,
+				1
+			]
+		},
+		{
+			"name": "ROT_TIMESTAMPS_4_0",
+			"bufferView": 5,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				0.3
+			],
+			"count": 5
+		},
+		{
+			"name": "ROT_VALUES_4_0",
+			"bufferView": 6,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0,
+				0,
+				-0.000030517578125,
+				-0.999969482421875
+			],
+			"max": [
+				0.087188720703125,
+				0.9962158203125,
+				0,
+				1
+			],
+			"count": 5
+		},
+		{
+			"name": "ROT_TIMESTAMPS_5_0",
+			"bufferView": 7,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				0.3
+			],
+			"count": 5
+		},
+		{
+			"name": "ROT_VALUES_5_0",
+			"bufferView": 8,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0,
+				0,
+				-0.000030517578125,
+				-0.999969482421875
+			],
+			"max": [
+				0.087188720703125,
+				0.9962158203125,
+				0,
+				1
+			],
+			"count": 5
+		},
+		{
+			"name": "ROT_TIMESTAMPS_6_2",
+			"bufferView": 9,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				0.266
+			],
+			"count": 1
+		},
+		{
+			"name": "ROT_VALUES_6_2",
+			"bufferView": 10,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0,
+				0,
+				0,
+				1
+			],
+			"max": [
+				0,
+				0,
+				0,
+				1
+			],
+			"count": 1
+		},
+		{
+			"name": "ROT_TIMESTAMPS_7_2",
+			"bufferView": 11,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				0.266
+			],
+			"count": 1
+		},
+		{
+			"name": "ROT_VALUES_7_2",
+			"bufferView": 12,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0,
+				0,
+				0,
+				1
+			],
+			"max": [
+				0,
+				0,
+				0,
+				1
+			],
+			"count": 1
+		},
+		{
+			"name": "TEXCOORD_0",
+			"bufferView": 13,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 592,
+			"type": "VEC2",
+			"min": [
+				-0.9995006322860718,
+				0
+			],
+			"max": [
+				1,
+				2.5015006065368652
+			]
+		},
+		{
+			"name": "TEXCOORD_1",
+			"bufferView": 14,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 592,
+			"type": "VEC2",
+			"min": [
+				-6.556510925292969e-7,
+				-0.008403420448303223
+			],
+			"max": [
+				1.2152563333511353,
+				2.991596221923828
+			]
+		},
+		{
+			"bufferView": 15,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 1080,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 16,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 486,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 17,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 486,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 18,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 228,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 19,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 228,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 20,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 6,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 21,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 6,
+			"type": "SCALAR"
+		}
+	],
+	"meshes": [
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 13,
+						"TEXCOORD_1": 14
+					},
+					"indices": 15,
+					"mode": 4,
+					"material": 0
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 13,
+						"TEXCOORD_1": 14
+					},
+					"indices": 16,
+					"mode": 4,
+					"material": 2
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 13,
+						"TEXCOORD_1": 14
+					},
+					"indices": 17,
+					"mode": 4,
+					"material": 4
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 13,
+						"TEXCOORD_1": 14
+					},
+					"indices": 18,
+					"mode": 4,
+					"material": 5
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 13,
+						"TEXCOORD_1": 14
+					},
+					"indices": 19,
+					"mode": 4,
+					"material": 5
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 13,
+						"TEXCOORD_1": 14
+					},
+					"indices": 20,
+					"mode": 4,
+					"material": 9
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 13,
+						"TEXCOORD_1": 14
+					},
+					"indices": 21,
+					"mode": 4,
+					"material": 11
+				}
+			]
+		}
+	],
+	"scene": 0,
+	"skins": [
+		{
+			"name": "mage_arcaneorb_missile_fallback_Armature",
+			"joints": [
+				3,
+				5,
+				7,
+				9,
+				11,
+				13,
+				15,
+				17,
+				19,
+				21
+			],
+			"inverseBindMatrices": 4,
+			"skeleton": 0
+		}
+	],
+	"animations": [
+		{
+			"samplers": [
+				{
+					"input": 5,
+					"interpolation": "LINEAR",
+					"output": 6
+				},
+				{
+					"input": 7,
+					"interpolation": "LINEAR",
+					"output": 8
+				}
+			],
+			"channels": [
+				{
+					"sampler": 0,
+					"target": {
+						"node": 11,
+						"path": "rotation"
+					}
+				},
+				{
+					"sampler": 1,
+					"target": {
+						"node": 13,
+						"path": "rotation"
+					}
+				}
+			],
+			"name": "Birth (ID 127 variation 0)"
+		},
+		{
+			"samplers": [],
+			"channels": [],
+			"name": "Stand (ID 0 variation 0)"
+		},
+		{
+			"samplers": [
+				{
+					"input": 9,
+					"interpolation": "LINEAR",
+					"output": 10
+				},
+				{
+					"input": 11,
+					"interpolation": "LINEAR",
+					"output": 12
+				}
+			],
+			"channels": [
+				{
+					"sampler": 0,
+					"target": {
+						"node": 15,
+						"path": "rotation"
+					}
+				},
+				{
+					"sampler": 1,
+					"target": {
+						"node": 17,
+						"path": "rotation"
+					}
+				}
+			],
+			"name": "Death (ID 1 variation 0)"
+		}
+	],
+	"images": [
+		{
+			"uri": "electric_liquid_blue_a.png"
+		},
+		{
+			"uri": "electric_liquid_blue_a_slide.png"
+		},
+		{
+			"uri": "electric_liquid_blue_a_double.png"
+		},
+		{
+			"uri": "t_vfx_border_circle.png"
+		},
+		{
+			"uri": "electric_liquid_purple.png"
+		},
+		{
+			"uri": "starfield03.png"
+		},
+		{
+			"uri": "smoke_puffy_mask_blendadd.png"
+		},
+		{
+			"uri": "electric_liquid_red_aa.png"
+		},
+		{
+			"uri": "t_vfx_flar_blur_64.png"
+		},
+		{
+			"uri": "aurarune5.png"
+		},
+		{
+			"uri": "electric_liquid_purple_a_doublealpha.png"
+		},
+		{
+			"uri": "aurarune5_blue.png"
+		},
+		{
+			"uri": "electric_liquid_pink_a_doublealpha.png"
+		}
+	],
+	"textures": [
+		{
+			"source": 0
+		},
+		{
+			"source": 1
+		},
+		{
+			"source": 2
+		},
+		{
+			"source": 3
+		},
+		{
+			"source": 4
+		},
+		{
+			"source": 5
+		},
+		{
+			"source": 6
+		},
+		{
+			"source": 7
+		},
+		{
+			"source": 8
+		},
+		{
+			"source": 9
+		},
+		{
+			"source": 10
+		},
+		{
+			"source": 11
+		},
+		{
+			"source": 12
+		}
+	],
+	"materials": [
+		{
+			"name": "electric_liquid_blue_a",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 0
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "electric_liquid_blue_a_slide",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 1
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "electric_liquid_blue_a_double",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 2
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "t_vfx_border_circle",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 3
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "electric_liquid_purple",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 4
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "starfield03",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 5
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "smoke_puffy_mask_blendadd",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 6
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "electric_liquid_red_aa",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 7
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "t_vfx_flar_blur_64",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 8
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "aurarune5",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 9
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "electric_liquid_purple_a_doublealpha",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 10
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "aurarune5_blue",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 11
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "electric_liquid_pink_a_doublealpha",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 12
+				},
+				"metallicFactor": 0
+			}
+		}
+	]
+}

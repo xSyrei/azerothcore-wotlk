@@ -1389,6 +1389,33 @@ VISUALS.update({
     'SupernovaLook': {'copy': 965, 'id': 16796, 'clear': ('precast', 'state'), 'kits': {
         'cast': (15735, {KIT_BASE: FX_ARCANE_EXPLOSION_BASE, KIT_LEFT_HAND: 0, KIT_RIGHT_HAND: 0})}},
 })
+# Retail's own (wow.export glTF, their bone animation kept; spell_effects.retail_effect): Icicle Mastery's icicle as
+# the Icicles' missile, Arcane Orb's orb on the Orb, Phoenix Flames' phoenix on the phoenix (both on an invisible
+# creature: the look follows it, the phoenix facing where it flies).
+VISUAL_MISSILE_MODEL = 8                # SpellVisual's missile model column
+EFFECTS.update({
+    'IcicleMissile': {'model': 'MAGE_Icicle', 'effect': 7157, 'shape': 'retail', 'textures': (),
+                      'options': {'export': 'MAGE_Icicle/cfx_mage_iciclemastery_launchedmissile.gltf',
+                                  'alpha': ('icetexture_mage',), 'scale': 1.4, 'center': True}},
+    'ArcaneOrbRetail': {'model': 'MAGE_ArcaneOrb', 'effect': 7158, 'shape': 'retail', 'textures': (),
+                        'options': {'export': 'MAGE_ArcaneOrb/mage_arcaneorb_missile_fallback.gltf', 'scale': 0.25,
+                                    'center': True, 'spin': 3.0}},
+    'PhoenixRetail': {'model': 'MAGE_PhoenixFlames', 'effect': 7159, 'shape': 'retail', 'textures': (),
+                      'options': {'export': 'MAGE_PhoenixFlames/7fx_mage_phoenixsflames_missile.gltf', 'scale': 0.5,
+                                  'center': True}},
+})
+VISUALS.update({
+    'IcicleBolt': {'copy': VISUAL_ICE_LANCE, 'id': 16797, 'clear': ('precast', 'cast'),
+                   'set': {VISUAL_MISSILE_MODEL: 'IcicleMissile'}, 'kits': {}},
+    'ArcaneOrbForm': {'copy': 32, 'id': 16798, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15736, {KIT_BASE: 'ArcaneOrbRetail', KIT_CHEST: 0, 'sound': None, 'procs': False})}},
+    'PhoenixForm': {'copy': 32, 'id': 16799, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15737, {KIT_BASE: 'PhoenixRetail', KIT_CHEST: 0, 'sound': None, 'procs': False})}},
+})
+for _spell in SPELLS:
+    _key = {91221: 'IcicleBolt', 91228: 'IcicleBolt', 91243: 'PhoenixForm', 91261: 'ArcaneOrbForm'}.get(_spell['id'])
+    if _key:
+        _spell['visual'] = _key
 for _spell in SPELLS:
     _key = {91259: 'RebirthLook', 91269: 'SupernovaLook'}.get(_spell['id'])
     if _key:

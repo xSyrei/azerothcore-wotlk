@@ -5806,8 +5806,8 @@ class spell_titan_rune_guiding_heal : public SpellScript
     }
 };
 
-// The phoenix (910125) and the Arcane Orb (910126): they fly where the Hero's rune sends them (FlightTick,
-// OrbTick), nothing else.
+// The phoenix (910125) and the Arcane Orb (910126), retail's looks on invisible bodies: they fly where the Hero's
+// rune sends them (FlightTick, OrbTick), nothing else.
 struct npc_titan_rune_flier : public ScriptedAI
 {
     npc_titan_rune_flier(Creature* creature) : ScriptedAI(creature) { }

@@ -566,10 +566,10 @@ utility or a tradeoff) take one pick each, from three.
     5 at most), loosed 1 sec later for 30% of its damage (91221; shards and pierces 91228). Cold Front and Splinter
     Volley are family-3 cast-time modifiers (91227, 91223).
   - **Phoenix Wake** (36; Ranged; Pyroblast and Fire Blast): Pyroblast's Ember (91241) holds its damage; Fire Blast
-    on its host calls the phoenix (910125, Kael'thas's): 50% to the host, then it flies back to the Hero (FlightTick)
-    and burns what it crosses.
-  - **Astral Horizon** (37; Ranged; Arcane Barrage): Barrage sets the Arcane Orb loose (910126, Malygos's Power
-    Spark; once every 12 sec): 6 sec, a bolt a second (91262, cast by the Orb, the Hero's) for 20% of the Barrage.
+    on its host calls the phoenix (910125, retail's Phoenix Flames bird): 50% to the host, then it flies back to
+    the Hero (FlightTick) and burns what it crosses.
+  - **Astral Horizon** (37; Ranged; Arcane Barrage): Barrage sets the Arcane Orb loose (910126, retail's Arcane
+    Orb; once every 12 sec): 6 sec, a bolt a second (91262, cast by the Orb, the Hero's) for 20% of the Barrage.
   - **Guiding Light** (38; Healer; Prayer of Mending, Flash Heal or Greater Heal): Prayer of Mending places the
     Guiding Star (91281) instead of its prayer: a pulse every 2 sec (half a Prayer of Mending); Flash Heal or
     Greater Heal on another ally moves it (0.5 sec on the way, at most once every 3 sec).

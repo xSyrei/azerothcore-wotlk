@@ -17,6 +17,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Rune of Guiding Light (Prayer of Mending, healers): Prayer of Mending places a Guiding Star that heals its bearer
   every 2 sec for 12 sec; Flash Heal or Greater Heal on another ally sends it there.
 - Each has three slots of three options, like the others.
+- Their looks: modern WoW's Icicles for the Splintered Crown, the Arcane Orb for Astral Horizon, and the Phoenix
+  Flames phoenix that flies back to you.
 
 ### Legendary Runes balance
 
