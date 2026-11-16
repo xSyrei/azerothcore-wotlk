@@ -11,6 +11,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   Aftershock grow with it).
 - Rune of Fel Commandment and Rune of the Threefold Grave are temporarily removed while their designs are reworked
   (both were far too strong). If you had one bound, it is released when you log in: choose another in the rune panel.
+- Rune debuffs show their real kind: Bloodletting, Open Wound and Ghostfang are Bleeds, Grave Pestilence is a
+  Disease, the rest are Magic. They all showed as Poisons before, and counted as slows.
 
 ### Combat and classes
 
