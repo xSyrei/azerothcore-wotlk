@@ -284,6 +284,10 @@ public:
     static constexpr std::array<uint32, 9> THUNDER_CLAP = { 6343, 8198, 8204, 8205, 11580, 11581, 25264, 47501,
         47502 };
     static constexpr uint32 THUNDER_CLAP_RAGE = 100;            // in tenths
+    // Sinister Strike (every rank a Hero learns) costs 30 Energy, not 45.
+    static constexpr std::array<uint32, 12> SINISTER_STRIKE = { 1752, 1757, 1758, 1759, 1760, 8621, 11293, 11294,
+        26861, 26862, 48637, 48638 };
+    static constexpr uint32 SINISTER_STRIKE_ENERGY = 30;
     static constexpr uint32 HEARTHSTONE = 8690;
     static constexpr uint32 HEARTHSTONE_COOLDOWN_MS = 5 * MINUTE * IN_MILLISECONDS;
 
@@ -315,10 +319,12 @@ public:
         if (spellInfo->PowerType == POWER_RUNIC_POWER)
             spellInfo->PowerType = POWER_RAGE;
 
-        // Thunder Clap (every rank) costs 10 Rage, not 20; the Hearthstone cools down in 5 minutes, not 30. The client
-        // patch does the same (patch_spells.py, hero_tuning).
+        // Thunder Clap (every rank) costs 10 Rage, not 20; Sinister Strike 30 Energy, not 45; the Hearthstone cools
+        // down in 5 minutes, not 30. The client patch does the same (patch_spells.py, hero_tuning).
         if (std::find(THUNDER_CLAP.begin(), THUNDER_CLAP.end(), spellInfo->Id) != THUNDER_CLAP.end())
             spellInfo->ManaCost = THUNDER_CLAP_RAGE;
+        if (std::find(SINISTER_STRIKE.begin(), SINISTER_STRIKE.end(), spellInfo->Id) != SINISTER_STRIKE.end())
+            spellInfo->ManaCost = SINISTER_STRIKE_ENERGY;
         if (spellInfo->Id == HEARTHSTONE)
             spellInfo->CategoryRecoveryTime = HEARTHSTONE_COOLDOWN_MS;
 

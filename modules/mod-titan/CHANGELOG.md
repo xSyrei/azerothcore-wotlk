@@ -27,6 +27,7 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 ### Combat and classes
 
 - Energy regenerates 25% faster.
+- Sinister Strike costs 30 Energy, down from 45.
 
 - Enemy casters keep casting after an interrupt. A kicked caster used to run into melee and stay there; it now goes
   back to range once its spells are usable again (dungeons and the open world).

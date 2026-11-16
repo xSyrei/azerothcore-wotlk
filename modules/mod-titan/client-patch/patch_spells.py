@@ -1387,13 +1387,15 @@ def rune_usability(spells):
 
 
 THUNDER_CLAP = (6343, 8198, 8204, 8205, 11580, 11581, 25264, 47501, 47502)
+SINISTER_STRIKE = (1752, 1757, 1758, 1759, 1760, 8621, 11293, 11294, 26861, 26862, 48637, 48638)
 HEARTHSTONE = 8690
 
 
 def hero_tuning(spells):
-    """Thunder Clap (every rank) costs 10 Rage, not 20; the Hearthstone cools down in 5 minutes, not 30. The server
-    does the same (hero_resources.cpp, titan_runic_power_to_rage)."""
+    """Thunder Clap (every rank) costs 10 Rage, not 20; Sinister Strike 30 Energy, not 45; the Hearthstone cools down
+    in 5 minutes, not 30. The server does the same (hero_resources.cpp, titan_runic_power_to_rage)."""
     for spell_id, changes in [(rank, {'ManaCost': 100}) for rank in THUNDER_CLAP] + \
+            [(rank, {'ManaCost': 30}) for rank in SINISTER_STRIKE] + \
             [(HEARTHSTONE, {'CategoryRecoveryTime': 5 * 60 * 1000})]:
         row = list(spells.rows[spell_id])
         for name, value in changes.items():
