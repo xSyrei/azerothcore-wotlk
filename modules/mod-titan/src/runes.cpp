@@ -219,6 +219,7 @@ namespace
         SPELL_OPEN_WOUND_TICK           = 90984,
         SPELL_VANISHING_ACT             = 90985,
         SPELL_MARKED_FOR_MURDER         = 90986,
+        SPELL_PHANTOM_RUSH              = 90987,    // Energy regenerating twice as fast, 4 sec
         SPELL_BLADE_MODIFIER_FIRST      = 91120,    // + slot * 3 + choice
 
         SPELL_RUNE_WILD_HUNT            = 91130,
@@ -497,9 +498,11 @@ namespace
         MOD_DEATH_FOLLOWS, MOD_VANISHING_ACT, MOD_MARKED_FOR_MURDER,
     };
 
-    // The Spectral Blade's tuning: Eviscerate's phantom strikes for half of its damage, 0.6 sec later; it cannot crit
-    // and triggers nothing (a spell of its own).
-    constexpr float PHANTOM_SHARE = 0.5f, EXECUTIONER = 1.4f, THOUSAND_CUTS = 1.15f, CLEAVE_SHARE = 0.5f;
+    // The Spectral Blade's tuning: Eviscerate's phantom strikes for twice its damage, 0.6 sec later; it cannot crit
+    // and triggers nothing (a spell of its own). Each phantom's strike: Phantom Rush, Energy regenerating twice as
+    // fast for 4 sec (its own spell data).
+    constexpr uint32 PHANTOM_RUSH_MS = 4000;
+    constexpr float PHANTOM_SHARE = 2.0f, EXECUTIONER = 1.4f, THOUSAND_CUTS = 1.15f, CLEAVE_SHARE = 0.5f;
     constexpr float PATIENT_KILLER = 1.4f, OPEN_WOUND = 1.2f, MARKED_BONUS = 1.3f;
     constexpr float CLEAVE_RADIUS = 8.0f, FOLLOW_RANGE = 10.0f;
     constexpr uint32 PHANTOM_DELAY_MS = 600, QUICK_DEATH_MS = 100, PATIENT_KILLER_MS = 2000, CUT_SPACING_MS = 200;
@@ -2608,13 +2611,14 @@ namespace
                 if (enemy != victim && count++ < CLEAVE_TARGETS)
                     PhantomBlow(player, enemy, amount * CLEAVE_SHARE);
         }
+        Lasting(player, player, SPELL_PHANTOM_RUSH, PHANTOM_RUSH_MS);
         if (HasBladeMarker(player, MOD_VANISHING_ACT))
             Lasting(player, player, SPELL_VANISHING_ACT, VANISHING_ACT_MS);
         if (HasBladeMarker(player, MOD_MARKED_FOR_MURDER))
             Lasting(player, victim, SPELL_MARKED_FOR_MURDER, MARKED_MS);
     }
 
-    // Eviscerate's hit: the phantom, half of it, 0.6 sec later (0.1 with Quick Death; 2 sec and 40% more with
+    // Eviscerate's hit: the phantom, twice it, 0.6 sec later (0.1 with Quick Death; 2 sec and 40% more with
     // Patient Killer; 20% more as Open Wound's bleed).
     void QueuePhantom(Player* player, Unit* victim, float damage)
     {

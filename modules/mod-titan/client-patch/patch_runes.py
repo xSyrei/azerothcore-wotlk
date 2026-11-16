@@ -147,6 +147,7 @@ HOLY = 0x2
 EFFECT_HEAL, EFFECT_PERSISTENT_AREA_AURA = 10, 27
 AURA_SCHOOL_ABSORB, AURA_MOD_DECREASE_SPEED, AURA_PERIODIC_DUMMY = 69, 33, 226
 AURA_MOD_DAMAGE_FROM_CASTER = 271           # more damage taken from the aura's caster, %
+AURA_MOD_POWER_REGEN_PERCENT, POWER_ENERGY = 110, 3     # % faster regeneration of a power
 AURA_MOD_HEALING_DONE_PERCENT = 136
 TARGET_UNIT_TARGET_ALLY, TARGET_DEST_CASTER, TARGET_UNIT_DEST_AREA_ENEMY = 21, 18, 16
 # The script lays its grounds where it chooses (CastSpell at x, y, z): at the caster (18) would put every one at the
@@ -840,14 +841,18 @@ AURA_MOD_INCREASE_SPEED = 31
 VISUAL_GHOSTLY_STRIKE, VISUAL_GHOST, VISUAL_KILL_COMMAND, VISUAL_DASH = 4159, 886, 8138, 2276
 SPELLS += [
     buff(90980, 'Rune of the Spectral Blade', BLADE_ICON,
-         'Eviscerate calls a phantom assassin behind its victim: a moment later it strikes for half of '
-         'Eviscerate\'s damage again.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'Eviscerate calls a phantom assassin behind its victim: a moment later it strikes for 200% of '
+         'Eviscerate\'s damage, and your Energy regenerates 100% faster for 4 sec.', DURATION_INFINITE,
+         {1: aura(AURA_DUMMY, 1, 0)}),
     {**strike(90981, 'Phantom Strike', 'Ability_Rogue_Eviscerate', SHADOW, VISUAL_GHOSTLY_STRIKE)},
     dot(90983, 'Open Wound', 'Ability_Rogue_Eviscerate', PHYSICAL, DURATION_4S, 'Bleeding every second.'),
     strike(90984, 'Open Wound', 'Ability_Rogue_Eviscerate', PHYSICAL),
     {**buff(90985, 'Vanishing Act', 'Ability_Rogue_Sprint', 'Movement speed increased by 30%.', DURATION_3S,
             {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_3S, 'SpellVisual': VISUAL_DASH}},
+    {**buff(90987, 'Phantom Rush', 'Ability_Rogue_Eviscerate', 'Energy regeneration increased by 100%.',
+            DURATION_4S, {1: aura(AURA_MOD_POWER_REGEN_PERCENT, 100, POWER_ENERGY)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_4S}},
     harmful(90986, 'Marked for Murder', 'Ability_Rogue_FindWeakness',
             'Your next Sinister Strike, Backstab or Hemorrhage deals 30% more to this target.', DURATION_10S,
             aura(AURA_DUMMY, 1, 0), SHADOW),
