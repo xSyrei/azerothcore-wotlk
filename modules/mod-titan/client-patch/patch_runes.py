@@ -146,6 +146,7 @@ POWER_WORD_SHIELD = 17
 HOLY = 0x2
 EFFECT_HEAL, EFFECT_PERSISTENT_AREA_AURA = 10, 27
 AURA_SCHOOL_ABSORB, AURA_MOD_DECREASE_SPEED, AURA_PERIODIC_DUMMY = 69, 33, 226
+AURA_MOD_DAMAGE_FROM_CASTER = 271           # more damage taken from the aura's caster, %
 AURA_MOD_HEALING_DONE_PERCENT = 136
 TARGET_UNIT_TARGET_ALLY, TARGET_DEST_CASTER, TARGET_UNIT_DEST_AREA_ENEMY = 21, 18, 16
 # The script lays its grounds where it chooses (CastSpell at x, y, z): at the caster (18) would put every one at the
@@ -670,17 +671,19 @@ def harmful(spell_id, name, icon, text, duration, effect, school, key=None):
              'tooltip': text, 'set': {**HARMFUL, 'DurationIndex': duration, 'SchoolMask': school, **SCRIPTED,
                                       'AttributesEx3': SPELL_ATTR3_IGNORE_CASTER_MODIFIERS | SPELL_ATTR3_DOT_STACKING},
              'effects': {1: {**effect, 'TargetA': TARGET_UNIT_TARGET_ENEMY}}, 'clear': [2, 3]}
-    if school == PHYSICAL:      # a Bleed: no dispel type, the bleed mechanic (shown so, and bleed effects count it)
-        spell['set'].update({'Dispel': DISPEL_NONE, 'SpellMechanic': MECHANIC_BLEED})
     if key:
         spell['visual'] = key
     return spell
 
 
 def dot(spell_id, name, icon, school, duration, text):
-    """Damage over time: a periodic dummy each second, its damage the script's own spell (spell_titan_rune_dot)."""
-    return harmful(spell_id, name, icon, text, duration,
-                   {**aura(AURA_PERIODIC_DUMMY, 1, 0), 'Amplitude': 1000}, school)
+    """Damage over time: a periodic dummy each second, its damage the script's own spell (spell_titan_rune_dot).
+    Physical damage over time is a Bleed: no dispel type, the bleed mechanic (shown so, and bleed effects count it)."""
+    spell = harmful(spell_id, name, icon, text, duration, {**aura(AURA_PERIODIC_DUMMY, 1, 0), 'Amplitude': 1000},
+                    school)
+    if school == PHYSICAL:
+        spell['set'].update({'Dispel': DISPEL_NONE, 'SpellMechanic': MECHANIC_BLEED})
+    return spell
 
 
 def ground(spell_id, name, icon, key, duration):
@@ -757,6 +760,14 @@ SPELLS += [
     strike(90864, 'Aftershock', 'Ability_Warrior_Shockwave', PHYSICAL, VISUAL_THUNDER_HIT, modifiers=True),
     {**heal(90865, 'Second Wind', 'Ability_Warrior_Cleave', 'The onslaught carries you on.'),
      'set': {**HEAL_SET, 'SchoolMask': PHYSICAL, 'AttributesEx2': 0, 'SpellVisual': 0}},
+    # Battlefield Claim: slowed, and more damage taken from the Hero (the aura counts the caster's damage only).
+    {**(claim := harmful(90866, 'Battlefield Claim', 'Ability_Warrior_Rampage',
+                         'Movement speed reduced by 30%. Taking 10% more damage from the Hero who claimed you.',
+                         DURATION_8S, aura(AURA_MOD_DECREASE_SPEED, -30, 0), PHYSICAL)),
+     'set': {**claim['set'], 'Dispel': DISPEL_NONE},
+     'effects': {**claim['effects'],
+                 2: {**aura(AURA_MOD_DAMAGE_FROM_CASTER, 10, 0), 'TargetA': TARGET_UNIT_TARGET_ENEMY}},
+     'clear': [3]},
 
     buff(90890, 'Rune of the Dawnbound Crusader', DAWN_ICON,
          'Crusader Strike and Holy Shock send a Dawn Echo a moment later: half of their damage again, or half of '

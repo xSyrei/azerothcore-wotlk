@@ -179,6 +179,7 @@ namespace
         SPELL_WAKE_GROUND               = 90863,    // the wake on the ground
         SPELL_WAKE_AFTERSHOCK           = 90864,
         SPELL_SECOND_WIND               = 90865,
+        SPELL_BATTLEFIELD_CLAIM         = 90866,    // Battlefield Claim's mark: slowed, more damage from the Hero
         SPELL_ONSLAUGHT_MODIFIER_FIRST  = 90880,    // + slot * 3 + choice
 
         SPELL_RUNE_DAWNBOUND_CRUSADER   = 90890,
@@ -418,8 +419,11 @@ namespace
     };
 
     // Unbroken Onslaught's tuning: the wake's attack is 96% of a normalized main-hand swing to each enemy along it
-    // (up to 6), its primary target 25% more (50% with Executioner's Cut).
-    constexpr uint32 WAKE_MS = 6000, CLAIM_MS = 10000, WAKE_DELAY_MS = 600, AFTERSHOCK_MS = 1500;
+    // (up to 6), its primary target 25% more (50% with Executioner's Cut). Overpowering Echo: the wake rips open
+    // twice (the next two melee abilities). Battlefield Claim: enemies it hits are marked 8 sec (slowed 30%, 10% more
+    // damage from the Hero: the mark's own spell data).
+    constexpr uint32 WAKE_MS = 6000, WAKE_DELAY_MS = 600, AFTERSHOCK_MS = 1500, RIP_GAP_MS = 300;
+    constexpr uint8 ECHO_RIPS = 2;
     constexpr float WAKE_SHARE = 0.96f, WAKE_PRIMARY = 1.25f, EXECUTIONER_PRIMARY = 1.5f, AFTERSHOCK_SHARE = 0.5f;
     constexpr float WAKE_HALF_LENGTH = 4.0f, WAKE_HALF_WIDTH = 1.5f, CUT_HALF_WIDTH = 1.0f;
     constexpr float CRESCENT_RADIUS = 8.0f, CRESCENT_ARC = float(M_PI) / 2.0f;     // each side of the facing
@@ -761,6 +765,8 @@ namespace
         Position WakeFrom, WakeTo;
         float WakeFacing = 0.0f, WakeHalfWidth = 0.0f;
         uint32 WakeUntil = 0, WakeCreator = 0, WakeTimer = 0;
+        uint8 WakeRips = 0;                 // rips the wake has left (2 with Overpowering Echo)
+        uint32 WakeRippedAt = 0;            // the last rip: one ability hitting several enemies rips once
         ObjectGuid WakePrimary;
         Position WakeOffset;                        // Relentless: from its target, as cut
 
@@ -1967,7 +1973,7 @@ namespace
 
     // The wake's attack: 96% of a normalized swing to each enemy along it (up to 6), its primary target more;
     // Bloodletting: a bleed of 30% of the hit every second for 4 sec, refreshed; Second Wind: 1% of
-    // the Hero's health back for each enemy hit.
+    // the Hero's health back for each enemy hit; Battlefield Claim: each enemy hit marked.
     void WakeStrike(Player* player, Shape const& shape, ObjectGuid primary, float share)
     {
         if (!player->IsInWorld() || !player->IsAlive())
@@ -1975,6 +1981,7 @@ namespace
         float swing = float(player->CalculateDamage(BASE_ATTACK, true, true));
         float bonus = HasOnslaughtMarker(player, MOD_EXECUTIONERS_CUT) ? EXECUTIONER_PRIMARY : WAKE_PRIMARY;
         bool bleed = HasOnslaughtMarker(player, MOD_BLOODLETTING);
+        bool claim = HasOnslaughtMarker(player, MOD_BATTLEFIELD_CLAIM);
         std::vector<Unit*> enemies = EnemiesIn(player, shape, WAKE_TARGETS);
         if (HasOnslaughtMarker(player, MOD_SECOND_WIND) && !enemies.empty())
         {
@@ -1988,6 +1995,8 @@ namespace
             int32 damage = std::max<int32>(1, int32(amount));
             player->CastCustomSpell(enemy, share < 1.0f ? SPELL_WAKE_AFTERSHOCK : SPELL_WEAPON_WAKE, &damage,
                 nullptr, nullptr, true);
+            if (claim && enemy->IsAlive())
+                player->CastSpell(enemy, SPELL_BATTLEFIELD_CLAIM, true);
             if (!bleed || !enemy->IsAlive())
                 continue;
             int32 tick = std::max<int32>(1, int32(damage * BLEED_SHARE));
@@ -1995,11 +2004,15 @@ namespace
         }
     }
 
-    // The next different melee ability (on any enemy) reopens the wake, once: its attack along the wake a moment
-    // later (at once with Overpowering Echo), Aftershock a second impact there 1.5 sec on at half.
+    // The next different melee ability (on any enemy) reopens the wake: its attack along the wake a moment later,
+    // Aftershock a second impact there 1.5 sec on at half. Once (twice with Overpowering Echo: the wake stays for the
+    // next ability); an ability striking several enemies rips it once.
     void ReopenWake(Player* player)
     {
         State& state = StateOf(player);
+        if (state.WakeRippedAt && Now() - state.WakeRippedAt < RIP_GAP_MS)
+            return;
+        state.WakeRippedAt = Now();
         Shape shape;
         shape.Cone = state.WakeCrescent;
         shape.From = state.WakeFrom;
@@ -2009,8 +2022,11 @@ namespace
         shape.Radius = CRESCENT_RADIUS;
         shape.Arc = CRESCENT_ARC;
         ObjectGuid primary = state.WakePrimary;
-        EndWake(player);
-        uint32 delay = HasOnslaughtMarker(player, MOD_OVERPOWERING_ECHO) ? 0 : WAKE_DELAY_MS;
+        if (state.WakeRips > 1)
+            --state.WakeRips;
+        else
+            EndWake(player);
+        uint32 delay = WAKE_DELAY_MS;
         if (!delay)
             WakeStrike(player, shape, primary, 1.0f);
         else
@@ -2023,8 +2039,8 @@ namespace
             }, Milliseconds(delay + AFTERSHOCK_MS));
     }
 
-    // Mortal Strike or Bloodthirst: a new wake through the target (the last one gone), 6 sec (10 with Battlefield
-    // Claim), fixed where it was cut (following the target with Relentless).
+    // Mortal Strike or Bloodthirst: a new wake through the target (the last one gone), 6 sec, fixed where it was cut
+    // (following the target with Relentless).
     void CutWake(Player* player, Unit* target, uint32 creator)
     {
         State& state = StateOf(player);
@@ -2039,7 +2055,9 @@ namespace
         state.WakeCreator = creator;
         state.WakePrimary = target->GetGUID();
         state.WakeOffset = target->GetPosition();
-        state.WakeUntil = Now() + (HasOnslaughtMarker(player, MOD_BATTLEFIELD_CLAIM) ? CLAIM_MS : WAKE_MS);
+        state.WakeUntil = Now() + WAKE_MS;
+        state.WakeRips = HasOnslaughtMarker(player, MOD_OVERPOWERING_ECHO) ? ECHO_RIPS : 1;
+        state.WakeRippedAt = 0;
         PlaceDecals(player, SPELL_WAKE_GROUND, shape.Points(2.5f));
     }
 

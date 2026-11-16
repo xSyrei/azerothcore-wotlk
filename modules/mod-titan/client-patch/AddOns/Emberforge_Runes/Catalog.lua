@@ -357,7 +357,7 @@ EmberforgeRunesCatalog = {
         { name = "Raking Passage",
           text = "A longer slash, reaching 14 yards past your target to the enemies behind it." },
         { name = "Overpowering Echo",
-          text = "The wake rips open at once." },
+          text = "The wake rips open twice: your next two melee abilities each rip it." },
         { name = "Bloodletting",
           text = "Enemies the wake hits bleed for 30% of it every second for 4 sec." },
         { name = "Aftershock",
@@ -365,7 +365,8 @@ EmberforgeRunesCatalog = {
         { name = "Relentless",
           text = "Your wake follows its first target." },
         { name = "Battlefield Claim",
-          text = "Your wake lasts 10 sec." },
+          text = "Enemies the wake hits are claimed for 8 sec: slowed by 30% and taking 10% more damage " ..
+              "from you." },
         { name = "Second Wind",
           text = "Each enemy the wake hits heals you for 1% of your maximum health." },
       },
