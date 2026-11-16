@@ -37,7 +37,7 @@ FIRST_ICON_ID = 4400            # SpellIcon.dbc ends at 4375
 
 # Spell.dbc columns (3.3.5a, as AzerothCore's SpellEntry / spell_dbc), by name. Effects are 1-3.
 FIELDS = {
-    'Category': 1, 'Attributes': 4, 'AttributesEx': 5, 'AttributesEx2': 6, 'AttributesEx3': 7,
+    'Category': 1, 'Dispel': 2, 'SpellMechanic': 3, 'Attributes': 4, 'AttributesEx': 5, 'AttributesEx2': 6, 'AttributesEx3': 7,
     'AttributesEx4': 8, 'AttributesEx5': 9, 'AttributesEx6': 10, 'AttributesEx7': 11, 'Stances': 12, 'StancesNot': 14,
     'CastingTimeIndex': 28, 'RecoveryTime': 29, 'CategoryRecoveryTime': 30, 'InterruptFlags': 31,
     'AuraInterruptFlags': 32, 'ChannelInterruptFlags': 33, 'MaxLevel': 37, 'BaseLevel': 38,

@@ -230,8 +230,13 @@ SPELLS += [buff(90710 + slot * 3 + choice, name, RUNE_ICON, '', DURATION_INFINIT
            for slot, names in enumerate(MODIFIERS) for choice, name in enumerate(names)]
 
 # The Rune of the Sanctified Paragon (90730 on; runes.cpp's Sanctified Paragon section).
+# A debuff's kind (Spell.dbc Dispel, Mechanic): Magic, not the Crippling Poison it is copied from (every rune debuff
+# showed as a poison); the physical damage over time a Bleed instead (harmful).
+DISPEL_NONE, DISPEL_MAGIC, DISPEL_DISEASE = 0, 1, 3
+MECHANIC_BLEED = 15
 HARMFUL = {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
-           'RangeIndex': RANGE_VISION, 'SpellVisual': 0, 'ProcFlags': 0, 'ProcChance': 101}
+           'RangeIndex': RANGE_VISION, 'SpellVisual': 0, 'ProcFlags': 0, 'ProcChance': 101,
+           'Dispel': DISPEL_MAGIC, 'SpellMechanic': 0}
 SPELLS += [
     buff(90730, 'Rune of the Sanctified Paragon', PARAGON_ICON,
          'Consecration becomes Sanctified Paragon: an aura that follows you, sanctifying the ground within 8 yards at '
@@ -665,6 +670,8 @@ def harmful(spell_id, name, icon, text, duration, effect, school, key=None):
              'tooltip': text, 'set': {**HARMFUL, 'DurationIndex': duration, 'SchoolMask': school, **SCRIPTED,
                                       'AttributesEx3': SPELL_ATTR3_IGNORE_CASTER_MODIFIERS | SPELL_ATTR3_DOT_STACKING},
              'effects': {1: {**effect, 'TargetA': TARGET_UNIT_TARGET_ENEMY}}, 'clear': [2, 3]}
+    if school == PHYSICAL:      # a Bleed: no dispel type, the bleed mechanic (shown so, and bleed effects count it)
+        spell['set'].update({'Dispel': DISPEL_NONE, 'SpellMechanic': MECHANIC_BLEED})
     if key:
         spell['visual'] = key
     return spell
@@ -879,6 +886,8 @@ LEGEND_MODIFIERS = [
 ]
 next(spell for spell in SPELLS if spell['id'] == 90923)['set']['Speed'] = 20.0
 next(spell for spell in SPELLS if spell['id'] == 90951)['set']['StackAmount'] = 8
+# Grave Pestilence is a disease.
+next(spell for spell in SPELLS if spell['id'] == 90841)['set']['Dispel'] = DISPEL_DISEASE
 # Bloodletting's tick is a bleed: armor never reduces it (Unit::IsDamageReducedByArmor).
 next(spell for spell in SPELLS if spell['id'] == 90833)['effects'][1]['Mechanic'] = 15
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
