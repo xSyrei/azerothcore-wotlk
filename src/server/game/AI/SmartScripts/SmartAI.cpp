@@ -596,6 +596,21 @@ void SmartAI::UpdateAI(uint32 diff)
     if (!hasVictim)
         return;
 
+    // A caster sent to melee by an interrupt, a silence or a lack of power goes back to range once its main spell
+    // can be cast again (nothing else restores it before the creature resets).
+    if (_mainSpellLockedOut && !_currentRangeMode && !me->IsMovementPreventedByCasting())
+    {
+        SpellInfo const* mainSpell = sSpellMgr->GetSpellInfo(_mainSpellId);
+        if (!mainSpell)
+            _mainSpellLockedOut = false;
+        else if (!IsMainSpellPrevented(mainSpell))
+        {
+            _mainSpellLockedOut = false;
+            SetMainSpell(_mainSpellId);
+            SetCurrentRangeMode(true, _attackDistance);
+        }
+    }
+
     if (mCanAutoAttack)
     {
         UpdateMeleeStance();
@@ -892,6 +907,7 @@ void SmartAI::JustReachedHome()
             me->GetMotionMaster()->MoveWaypoint(me->GetWaypointPath(), true);
     }
 
+    _mainSpellLockedOut = false;
     if (_mainSpellId)
     {
         SetMainSpell(_mainSpellId);
@@ -1442,6 +1458,7 @@ void SmartAI::OnSpellFailed(SpellInfo const* spell)
         {
             SetCombatMovement(true, false);
             SetCurrentRangeMode(false, 0.f);
+            _mainSpellLockedOut = true;
         }
     }
 }

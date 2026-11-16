@@ -283,6 +283,7 @@ private:
     float _attackDistance;
     float _pendingDistancing;
     uint32 _mainSpellId;
+    bool _mainSpellLockedOut = false; // melee mode set by OnSpellFailed (interrupt, silence, no power)
 };
 
 class SmartGameObjectAI : public GameObjectAI
