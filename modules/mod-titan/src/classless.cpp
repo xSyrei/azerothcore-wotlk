@@ -20,9 +20,11 @@
 #include "specs.h"
 #include "Chat.h"
 #include "DBCStores.h"
+#include "GameTime.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "SpellAuraDefines.h"
+#include "SpellAuras.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
 #include "StringConvert.h"
@@ -31,6 +33,7 @@
 #include <algorithm>
 #include <map>
 #include <string>
+#include <unordered_map>
 
 // Server side of the Classless window (client addon: client-patch/AddOns/Emberforge_Classless).
 //
@@ -268,6 +271,26 @@ namespace
     // Leaves a stance, presence or form the player is in. The game keeps a warrior in a stance (their forms are
     // not toggleable: SpellShapeshiftForm.dbc) and a death knight in a presence; a Hero need not stay in either:
     // the Classless addon asks for it when one is cast again while it is up, or its buff is right-clicked.
+    // When each Hero's stance, presence or form aura was put up (ms), and which aura: a warrior's stances show no buff,
+    // so the addon asks to leave one whenever it is cast (it cannot tell whether the Hero was in it); the ask that
+    // follows the cast entering it finds the aura just made and is ignored. Casting the stance the Hero is in only
+    // refreshes the aura (the same one), which keeps its time.
+    struct FormTime
+    {
+        Aura const* FormAura = nullptr;
+        uint64 AppliedMs = 0;
+    };
+    std::unordered_map<ObjectGuid, FormTime> formTimes;
+    constexpr uint64 JUST_ENTERED_MS = 400;
+
+    bool JustEntered(Player* player, uint32 spellId)
+    {
+        auto itr = formTimes.find(player->GetGUID());
+        Aura const* aura = player->GetAura(spellId);
+        return aura && itr != formTimes.end() && itr->second.FormAura == aura
+            && GameTime::GetGameTimeMS().count() - itr->second.AppliedMs < JUST_ENTERED_MS;
+    }
+
     void CancelForm(Player* player, uint32 spellId)
     {
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
@@ -279,6 +302,8 @@ namespace
         if (!presence && !spellInfo->HasAura(SPELL_AURA_MOD_SHAPESHIFT) && !spellInfo->HasAura(SPELL_AURA_MOD_STEALTH))
             return;
 
+        if (JustEntered(player, spellId))
+            return;
         player->RemoveOwnedAura(spellId, ObjectGuid::Empty, 0, AURA_REMOVE_BY_CANCEL);
     }
 }
@@ -387,7 +412,28 @@ public:
     }
 };
 
+// Notes when a Hero's stance, presence or form aura is made (not when it is refreshed): CancelForm's JustEntered.
+class titan_classless_forms : public UnitScript
+{
+public:
+    titan_classless_forms() : UnitScript("titan_classless_forms", true, { UNITHOOK_ON_AURA_APPLY }) { }
+
+    void OnAuraApply(Unit* unit, Aura* aura) override
+    {
+        Player* player = unit->ToPlayer();
+        if (!player || !aura || aura->GetCasterGUID() != player->GetGUID()
+            || !aura->GetSpellInfo()->HasAura(SPELL_AURA_MOD_SHAPESHIFT) || !Wildcard::IsHero(player))
+            return;
+        FormTime& time = formTimes[player->GetGUID()];
+        if (time.FormAura == aura)
+            return;
+        time.FormAura = aura;
+        time.AppliedMs = GameTime::GetGameTimeMS().count();
+    }
+};
+
 void AddSC_classless()
 {
     new titan_classless();
+    new titan_classless_forms();
 }

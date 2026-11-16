@@ -525,16 +525,17 @@ check(TalentMicroButton.buttonState == "PUSHED" and TalentMicroButton.shown, "th
 
 -- Leaving a stance: casting it again while it is up (action button, spellbook, stance bar), or right-clicking its
 -- buff, asks the server; another class's forms too (the Paladin client's stance bar never lists them).
-auras = { { "Battle Stance", 2457 }, { "Arcane Intellect", 1459 }, { "Cat Form", 768 } }
+-- A warrior's stance has no buff (its aura is hidden): casting one always asks, and the server decides whether the
+-- Hero was already in it.
+auras = { { "Arcane Intellect", 1459 }, { "Arcane Intellect", 1459 }, { "Cat Form", 768 } }
 forms = { { "Battle Stance", true }, { "Defensive Stance", false } }
 before = #sent
 local buff = NewWidget()
 buff.unit, buff.id = "player", 2
 hooks.BuffButton_OnClick(buff)
 check(#sent == before, "an ordinary buff is left to the game")
-buff.id = 1
-hooks.BuffButton_OnClick(buff)
-check(lastSent() == "CANCEL,2457", "right-clicking the stance's buff asks to leave it")
+hooks.CastSpellByName("Battle Stance")
+check(lastSent() == "CANCEL,2457", "casting a stance (no buff to find) asks the server to leave it")
 hooks.CancelUnitBuff("player", 3)
 check(lastSent() == "CANCEL,768", "cancelling a form's buff asks to leave it")
 before = #sent
@@ -547,9 +548,8 @@ function GetActionInfo(slot) return unpack(actions[slot] or {}) end
 SPELLS[768], SPELLS[71] = SPELLS[768] or "Cat Form", SPELLS[71] or "Defensive Stance"
 hooks.UseAction(5)
 check(lastSent() == "CANCEL,768", "pressing an action button of the form it is in leaves it")
-before = #sent
 hooks.UseAction(6)
-check(#sent == before, "pressing another stance's button is the game's")
+check(lastSent() == "CANCEL,71", "pressing another stance's button asks too (the server sees it just entered)")
 hooks.CastSpellByName("Battle Stance()")
 check(lastSent() == "CANCEL,2457", "casting the stance by name while in it leaves it")
 

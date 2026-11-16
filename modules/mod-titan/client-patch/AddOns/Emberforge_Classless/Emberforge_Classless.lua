@@ -2798,8 +2798,17 @@ local TOGGLES = {
 
 -- Asks to leave the form of that name when the player is in it: every buff of the name (Tree of Life's form and
 -- its passive aura share it; the server keeps the passive).
+-- A warrior's stances have no buff to find (their auras are hidden), and this client cannot tell which stance a
+-- Hero is in: casting one always asks to leave it. The server ignores the ask when that cast just entered the
+-- stance (classless.cpp, JustEntered), so it leaves only a stance the Hero was already in.
+local STANCES = { ["Battle Stance"] = 2457, ["Defensive Stance"] = 71, ["Berserker Stance"] = 2458 }
+
 local function LeaveForm(name)
     if not name or not TOGGLES[name] then
+        return
+    end
+    if STANCES[name] then
+        Send("CANCEL," .. STANCES[name])
         return
     end
     for index = 1, 40 do
