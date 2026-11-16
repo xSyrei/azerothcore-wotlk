@@ -33,6 +33,7 @@ void AddSC_cards();
 void AddSC_specs();
 void AddSC_dungeon_rewards();
 void AddSC_dungeon_scaling();
+void AddSC_dungeon_loot();
 void AddSC_runes();
 void AddSC_pets();
 void AddSC_starter_zones();
@@ -60,6 +61,7 @@ void Addmod_titanScripts()
     AddSC_specs();
     AddSC_dungeon_rewards();
     AddSC_dungeon_scaling();
+    AddSC_dungeon_loot();
     AddSC_runes();
     AddSC_pets();
     AddSC_starter_zones();
