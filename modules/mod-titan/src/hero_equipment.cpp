@@ -17,12 +17,15 @@
 
 #include "hero_equipment.h"
 #include "DatabaseEnv.h"
+#include "DBCStores.h"
 #include "Bag.h"
 #include "Item.h"
 #include "Mail.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "ScriptMgr.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 
 // Classless Hero: every weapon and armor type, a weapon in each hand, and a ranged weapon that needs no ammo.
 //
@@ -93,6 +96,27 @@ namespace
         return player->getClass() == CLASS_PALADIN;
     }
 
+    // The spells a skill teaches (Thrown: Throw), added before the skill is set again, as the core adds them while a
+    // character loads: without a "learned" packet. These skills are set again at every login and level change (they
+    // belong to no Paladin, so the core drops them while loading), and the core taught Throw in play then: the client
+    // put the new spell on the action bars, at every login and prestige.
+    void AddSkillSpellsQuietly(Player* player, uint16 skillId)
+    {
+        for (SkillLineAbilityEntry const* ability : GetSkillLineAbilitiesBySkillLine(skillId))
+        {
+            if (ability->AcquireMethod != SKILL_LINE_ABILITY_LEARNED_ON_SKILL_LEARN
+                && ability->AcquireMethod != SKILL_LINE_ABILITY_LEARNED_ON_SKILL_VALUE)
+                continue;
+            if (ability->MinSkillLineRank > 1 || player->HasSpell(ability->Spell)
+                || (ability->RaceMask && !(ability->RaceMask & player->getRaceMask()))
+                || (ability->ClassMask && !(ability->ClassMask & player->getClassMask())))
+                continue;
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(ability->Spell);
+            if (spellInfo && !spellInfo->IsPassive())
+                player->addSpell(ability->Spell, SPEC_MASK_ALL, true, true, true);
+        }
+    }
+
     void EnsureProficiencies(Player* player)
     {
         if (!player->HasSpell(SPELL_DUAL_WIELD))
@@ -110,7 +134,10 @@ namespace
             uint16 value = proficiency.Weapon ? weaponMax : 1;
             if (player->GetPureSkillValue(proficiency.SkillId) != value
                 || player->GetPureMaxSkillValue(proficiency.SkillId) != value)
+            {
+                AddSkillSpellsQuietly(player, proficiency.SkillId);
                 player->SetSkill(proficiency.SkillId, 0, value, value);
+            }
         }
     }
 
