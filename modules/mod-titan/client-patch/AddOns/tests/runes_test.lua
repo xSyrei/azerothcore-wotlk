@@ -482,20 +482,25 @@ local count = #tooltipLines
 GameTooltip:SetUnitBuff("player", 2)
 check(#tooltipLines == count, "another aura's tooltip is left alone")
 
--- The second Legendary Rune (Rune II): from level 30, its own bind and modifiers; the first rune's left alone.
+-- The second Legendary Rune (Rune II): from level 30, its own bind and modifiers; the first rune's left alone. The
+-- medallion is split between them (Rune I left, Rune II right): a click on a half shows that rune.
 frame:Hide()
 server("S,29,5,1,21,1,3,1,21.23,0,0,0,0,0,30")
 EmberforgeRunes_Open()
 run(1)
-local bar = debug.slotBar
-check(bar.target == 1 and bar.pills[1].on and not bar.pills[2].on, "the panel shows Rune I, with Rune II beside it")
-bar.pills[2]:Click()
+local bar, medal = debug.slotBar, debug.medal
+check(view.mode == "build" and medal.hits[1].shown and medal.hits[2].shown and medal.half.shown
+    and medal.core.texture:find("Core21") and medal.half.texture:find("Soft"),
+    "the build's medallion is split: Rune I's half, and Rune II's empty one")
+check(bar.target == 0, "the small split medallion stays away while the medallion itself splits")
+medal.hits[2]:Click()
 run(0.7)
-check(view.slot == 2 and view.mode == "locked"
-    and debug.head.subtitle.text == "Your second Legendary Rune unlocks at level 30.", "below 30, Rune II says when")
-bar.pills[1]:Click()
+check(view.slot == 2 and view.mode == "locked" and bar.target == 1
+    and debug.head.subtitle.text == "Your second Legendary Rune unlocks at level 30.",
+    "a click on its right half shows Rune II, which says when it unlocks; the small split medallion shows")
+bar.hits[1]:Click()
 run(0.7)
-check(view.slot == 1 and view.mode == "build", "Rune I is the first rune's build")
+check(view.slot == 1 and view.mode == "build", "a click on the small one's left half: back to Rune I's build")
 frame:Hide()
 server("S,30,5,1,21,1,3,1,21.23.24,1,0,0,0,0,30")
 check(frame:IsShown() and view.slot == 2 and view.mode == "offers", "at 30 the panel opens on Rune II's choices")

@@ -7,7 +7,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 ### A second Legendary Rune
 
 - From level 30, every specialization gets a second Legendary Rune, at full power with its own three options. The
-  rune panel's Rune I / Rune II switch (top left) shows either one; the panel opens on Rune II when you reach 30.
+  rune panel's medallion is split between your two runes: click a half to see that rune. The panel opens on your
+  second rune when you reach 30.
 - The two runes can't be the same rune. `.unbindrune 1` or `.unbindrune 2` lets go of one; `.unbindrune` of both.
 
 ### Five new Legendary Runes

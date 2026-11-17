@@ -554,7 +554,7 @@ local function Note(text)
     Fade(note, true)
 end
 
-local Refresh, Enter, StartIntro, AskBind
+local Refresh, Enter, StartIntro, AskBind, HalfCore
 
 -- Unbound: "Not seeing what you're looking for?" and Browse all; browsing, the pages.
 local browseAsk = Group(800, 805, 700, 80)
@@ -724,13 +724,25 @@ for q = 1, 3 do
         "SegGold"), line = Tex(layers.medal, "OVERLAY", "SegLine") }
 end
 medal.core = Tex(layers.medal, "ARTWORK")
+-- Both runes: the medallion split down the middle, Rune I's half on the left and Rune II's on the right; a click on
+-- a half shows that rune (SwitchSlot, below).
+medal.half = Tex(layers.medal, "ARTWORK")
+medal.hits = {}
+for n = 1, 2 do
+    local hit = CreateFrame("Button", nil, layers.ui)
+    hit:Hide()
+    medal.hits[n] = hit
+end
 medal.sparks = {}
 for k = 1, 6 do
     medal.sparks[k] = Tex(layers.medal, "OVERLAY", nil, "ADD")
 end
 local function HideMedal()
-    for _, texture in ipairs({ medal.halo, medal.ring, medal.dash, medal.core }) do
+    for _, texture in ipairs({ medal.halo, medal.ring, medal.dash, medal.core, medal.half }) do
         texture:Hide()
+    end
+    for _, hit in ipairs(medal.hits) do
+        hit:Hide()
     end
     for _, piece in ipairs(medal.pieces) do
         piece.glow:Hide()
@@ -742,6 +754,27 @@ local function HideMedal()
     end
 end
 HideMedal()
+
+-- Half of rune slot n's core art (left half for Rune I, right for Rune II) at a stage point: the slot shown full and
+-- bright, the other dimmed; an empty or locked slot a dark half.
+HalfCore = function(texture, n, x, y, width, height)
+    local id = state.slots[n].rune
+    if id ~= 0 then
+        texture:SetTexture(ART .. "Core" .. id)
+        texture:SetVertexColor(1, 1, 1)
+    else
+        texture:SetTexture(ART .. "Soft")
+        texture:SetVertexColor(0.16, 0.13, 0.22)
+    end
+    texture:SetTexCoord(n == 1 and 0 or 0.5, n == 1 and 0.5 or 1, 0, 1)
+    local current = view.slot == n
+    texture:SetAlpha(current and 1 or 0.5)
+    if texture.SetDesaturated then
+        texture:SetDesaturated(not current)
+    end
+    At(texture, x, y, width, height)
+    texture:Show()
+end
 
 local function DrawMedal()
     local m = view.medal
@@ -789,8 +822,26 @@ local function DrawMedal()
         medal.ring:Hide()
         medal.dash:Hide()
     end
-    At(medal.core, x, y, SEG_SPAN)
-    medal.core:Show()
+    if not view.preview and view.phase == "build" and state.level >= state.base then
+        for n, texture in ipairs({ medal.core, medal.half }) do
+            HalfCore(texture, n, x + (n == 1 and -1 or 1) * SEG_SPAN / 4, y, SEG_SPAN / 2, SEG_SPAN)
+            At(medal.hits[n], x + (n == 1 and -1 or 1) * SEG_SPAN / 4, y, SEG_SPAN / 2, SEG_SPAN)
+            medal.hits[n]:Show()
+        end
+    else
+        medal.core:SetTexCoord(0, 1, 0, 1)
+        medal.core:SetAlpha(1)
+        medal.core:SetVertexColor(1, 1, 1)
+        if medal.core.SetDesaturated then
+            medal.core:SetDesaturated(false)
+        end
+        At(medal.core, x, y, SEG_SPAN)
+        medal.core:Show()
+        medal.half:Hide()
+        for _, hit in ipairs(medal.hits) do
+            hit:Hide()
+        end
+    end
     for k, spark in ipairs(medal.sparks) do
         local angle = now * 0.8 + (k - 1) * math.pi / 3
         local radius = MED_R * 1.18
@@ -975,35 +1026,77 @@ local function HideAll(instant)
     end
 end
 
--- Rune I and Rune II: which of the specialization's two runes the panel shows (top left; Rune II from its level).
-local slotBar = Group(330, 96, 380, 46)
-slotBar.pills = {}
-for n = 1, 2 do
-    local pill = Pill(slotBar, n == 1 and "Rune I" or "Rune II", function()
-        if view.busy or view.slot == n then
-            return
-        end
-        HideCards()
-        ClearParticles()
-        HideMedal()
-        view.medal, view.chosen, view.pending, view.preview, view.previewFrom = nil, nil, nil, nil, nil
-        view.active = nil
-        UseSlot(n)
-        view.mode = nil
-        Enter()
-    end)
-    pill.label:SetFont(CINZEL, 14)
-    PillText(pill, n == 1 and "Rune I" or "Rune II")
-    In(pill, slotBar, (n - 1.5) * 150, 0)
-    slotBar.pills[n] = pill
+-- Which of the specialization's two runes the panel shows: the medallion split in half (Rune I left, Rune II right),
+-- a click on a half shows that rune. In the build it is the medallion itself; elsewhere a small one, top left.
+local function SwitchSlot(n)
+    if view.busy or view.slot == n then
+        return
+    end
+    HideCards()
+    ClearParticles()
+    HideMedal()
+    view.medal, view.chosen, view.pending, view.preview, view.previewFrom = nil, nil, nil, nil, nil
+    view.active = nil
+    UseSlot(n)
+    view.mode = nil
+    Enter()
 end
 
-local function ShowSlotBar()
-    for n, pill in ipairs(slotBar.pills) do
-        pill.on = view.slot == n
-        PillArt(pill)
+local function SlotTooltip(owner, n)
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    local id = state.slots[n].rune
+    local rune = id ~= 0 and RuneById(id)
+    GameTooltip:AddLine(n == 1 and "Rune I" or "Rune II", GOLDEN[1], GOLDEN[2], GOLDEN[3])
+    if n == 2 and state.level < state.second then
+        GameTooltip:AddLine("Unlocks at level " .. state.second .. ".", 0.8, 0.8, 0.8, true)
+    elseif rune then
+        GameTooltip:AddLine(rune.name, 1, 1, 1, true)
+    else
+        GameTooltip:AddLine("None yet: choose one.", 1, 0.82, 0.4, true)
     end
-    Fade(slotBar, state.level >= state.base)
+    if view.slot ~= n then
+        GameTooltip:AddLine("Click to see this rune.", 0.8, 0.8, 0.8, true)
+    end
+    GameTooltip:Show()
+end
+
+local BADGE = 120                                       -- the small split medallion, across
+local slotBar = Group(250, 110, BADGE + 20, BADGE + 20)
+slotBar.ring = Tex(slotBar, "BORDER", "RingGold")
+In(slotBar.ring, slotBar, 0, 0, BADGE + 16)
+slotBar.halves, slotBar.hits = {}, {}
+for n = 1, 2 do
+    slotBar.halves[n] = Tex(slotBar, "ARTWORK")
+    local hit = CreateFrame("Button", nil, slotBar)
+    In(hit, slotBar, (n == 1 and -1 or 1) * BADGE / 4, 0, BADGE / 2, BADGE)
+    hit:SetScript("OnClick", function() SwitchSlot(n) end)
+    hit:SetScript("OnEnter", function(self) SlotTooltip(self, n) end)
+    hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    slotBar.hits[n] = hit
+end
+for n = 1, 2 do
+    local hit = medal.hits[n]
+    hit:SetScript("OnClick", function() SwitchSlot(n) end)
+    hit:SetScript("OnEnter", function(self) SlotTooltip(self, n) end)
+    hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
+end
+
+-- The small one: shown while the panel is open past its unlock and the shown slot is not its build (the medallion
+-- then splits itself).
+local function ShowSlotBar()
+    for n, texture in ipairs(slotBar.halves) do
+        local id = state.slots[n].rune
+        texture:SetTexture(id ~= 0 and ART .. "Core" .. id or ART .. "Soft")
+        texture:SetVertexColor(id ~= 0 and 1 or 0.16, id ~= 0 and 1 or 0.13, id ~= 0 and 1 or 0.22)
+        texture:SetTexCoord(n == 1 and 0 or 0.5, n == 1 and 0.5 or 1, 0, 1)
+        texture:SetAlpha(view.slot == n and 1 or 0.5)
+        if texture.SetDesaturated then
+            texture:SetDesaturated(view.slot ~= n)
+        end
+        In(texture, slotBar, (n == 1 and -1 or 1) * BADGE / 4, 0, BADGE / 2, BADGE)
+    end
+    local build = state.rune ~= 0 and view.mode ~= "browse"
+    Fade(slotBar, state.level >= state.base and not build)
 end
 
 -- Offers or a page of every rune: the cards rise into place (the mockup's intro).
@@ -1416,6 +1509,9 @@ local function FillRow(row, rune)
     local standing, missing = Standing(rune)
     if state.rune == rune.id then
         row.status:SetText("Bound to this specialization")
+        row.status:SetTextColor(GOLDEN[1], GOLDEN[2], GOLDEN[3])
+    elseif state.slots[view.slot == 1 and 2 or 1].rune == rune.id then
+        row.status:SetText("Your other Legendary Rune")
         row.status:SetTextColor(GOLDEN[1], GOLDEN[2], GOLDEN[3])
     elseif standing == "missing" then
         row.status:SetText("Needs " .. missing)
@@ -2799,7 +2895,7 @@ EmberforgeRunes_Debug = { cards = cards, hits = hits, options = options, slots =
     previews = previews, previewBar = previewBar,
     browseAsk = browseAsk, pager = pager, choose = choose, done = done, buildHead = buildHead, empty = empty,
     browser = browser, search = search, chips = chips, rows = rows, browse = browse,
-    closer = closer, Step = Step, medal = medal, slotBar = slotBar }
+    closer = closer, Step = Step, medal = medal, slotBar = slotBar, SwitchSlot = SwitchSlot }
 
 -- Loaded to the end (Loader.lua's /runes stands aside).
 EmberforgeRunes_Loaded = true

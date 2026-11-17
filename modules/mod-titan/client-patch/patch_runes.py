@@ -1398,7 +1398,7 @@ VISUALS.update({
 # creature: the look follows it, the phoenix facing where it flies).
 VISUAL_MISSILE_MODEL, VISUAL_MISSILE_SOUND, VISUAL_MISSILE_CAST_OFFSET = 8, 11, 26     # SpellVisual's columns
 VISUAL_MISSILE_MOTION = 21
-FROZEN_ORB_BOLT, ICE_LANCE_MISSILE_SOUND, ICICLE_DROP = 15082, 3256, 6.0
+FROZEN_ORB_BOLT, ICE_LANCE_MISSILE_SOUND, ICICLE_DROP = 15082, 3256, 3.0
 EFFECTS.update({
     # The icicle as a missile: exported_model's (the Fel Barrage ball's path, which flies; a missile built by the
     # creature converter showed nothing), from its glTF's mesh (gltf_to_wowexport.py) and a sidecar written for it.
@@ -1418,12 +1418,13 @@ EFFECTS.update({
                                   'center': True}},
 })
 VISUALS.update({
-    # The Icicles: Fel Barrage's bolt (Frozen Orb's visual, flying straight), from 6 yards above the Hero down to
-    # their target, Ice Lance's sound and shards where they land.
+    # The Icicles: Fel Barrage's bolt (Frozen Orb's visual, flying straight), from just above the Hero's head (3
+    # yards up, straight over them) down to their target, Ice Lance's sound and shards where they land.
     'IcicleBolt': {'copy': FROZEN_ORB_BOLT, 'id': 16797,
                    'clear': ('precast', 'cast', 'impact', 'state', 'statedone', 'area'),
                    'set': {VISUAL_MISSILE_MODEL: 'IcicleMissile', VISUAL_MISSILE_SOUND: ICE_LANCE_MISSILE_SOUND,
-                           VISUAL_MISSILE_MOTION: 0, VISUAL_MISSILE_CAST_OFFSET + 2: ICICLE_DROP}, 'kits': {
+                           VISUAL_MISSILE_MOTION: 0, VISUAL_MISSILE_CAST_OFFSET: 0.0,
+                           VISUAL_MISSILE_CAST_OFFSET + 1: 0.0, VISUAL_MISSILE_CAST_OFFSET + 2: ICICLE_DROP}, 'kits': {
                        'impact': (15738, {KIT_CHEST: FX_ICE_LANCE_IMPACT, 'sound': None})}},
     'ArcaneOrbForm': {'copy': 32, 'id': 16798, 'clear': ('precast', 'cast', 'impact'), 'kits': {
         'state': (15736, {KIT_BASE: 'ArcaneOrbRetail', KIT_CHEST: 0, 'sound': None, 'procs': False})}},

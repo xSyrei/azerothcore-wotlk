@@ -449,8 +449,9 @@ utility or a tradeoff) take one pick each, from three.
 - **Two runes per specialization**, each with its own three modifiers and at full power: **Rune I** from level 5
   (`titan_runes`, db-characters), **Rune II** from level 30 (`titan_runes_second`). Each is chosen once: only a
   prestige clears them (chosen again from levels 5 and 30). The two cannot be the same rune. Modifiers change freely
-  out of combat. A new specialization picks its own. The panel's Rune I / Rune II switch (top left) picks which one
-  it shows; it opens by itself on whichever open slot is empty (Rune II at level 30). Both runes' scripts run side
+  out of combat. A new specialization picks its own. The panel's medallion is split down the middle, Rune I's half
+  on the left and Rune II's on the right (a small one top left outside the build): a click on a half shows that
+  rune; it opens by itself on whichever open slot is empty (Rune II at level 30). Both runes' scripts run side
   by side: each rune's aura and markers are its own spells.
 - **Every rune is one trigger and one payoff** (all but the Sanctified Paragon, simplified together): nothing to
   stand in, no marks or vows to keep up, effects follow the Hero or the target; each rune is worth about 15-20% of its

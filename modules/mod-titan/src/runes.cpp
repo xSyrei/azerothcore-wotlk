@@ -4332,7 +4332,8 @@ namespace
         }
     }
 
-    // A retired rune bound in any specialization is let go (its modifiers with it), and the Hero told.
+    // A retired rune bound in any specialization is let go (its modifiers with it), and the Hero told; so is a second
+    // rune that is the same as the first.
     void ReleaseRetired(Player* player)
     {
         State& state = StateOf(player);
@@ -4348,6 +4349,17 @@ namespace
                     "temporarily unavailable while its design is reworked, and has been released: choose another in "
                     "the rune panel.");
             }
+        // The same rune in both slots (never allowed): the second is let go.
+        for (uint8 spec = 0; spec < MAX_SPECS; ++spec)
+        {
+            Choice& second = state.Choices[spec][1];
+            if (!second.Rune || second.Rune != state.Choices[spec][0].Rune)
+                continue;
+            second = Choice();
+            Save(player, spec, 1);
+            ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeLegendary Rune:|r your two runes were the "
+                "same rune; your second has been released: choose another in the rune panel.");
+        }
     }
 
     // ---- The panel ---------------------------------------------------------------------------------------------
