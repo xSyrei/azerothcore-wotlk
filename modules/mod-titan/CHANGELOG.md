@@ -18,6 +18,11 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   guard absorbed (up to 250% of your attack power more).
 - Each has three slots of three options, like the others.
 
+### Fixes
+
+- Hunter abilities and Auto Shot work again with a bow, gun or crossbow: they failed with "no ammo". The arrows or
+  bullets of your level now sit in your ammo slot (a stack in your bags) and never run out.
+
 ### Two more Legendary Runes
 
 - Rune of the Duelist (Sinister Strike, Melee): Sinister Strike becomes Sabre Slash (its own icon and slash; your

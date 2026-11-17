@@ -48,8 +48,10 @@ shortened it (`Player.cpp`, `AddSpellAndCategoryCooldowns`). At first login a He
 in the bags: a Battleworn Claymore, two Shortswords and two Worn Daggers (all one-hand, to dual wield either), a Bent Staff, a Worn Wooden Shield,
 a Worn Shortbow. Ammo comes by itself: with a bow, crossbow or gun, the arrows or bullets of the Hero's level are put
 in the ammo slot (Rough, Sharp, Razor, Jagged and Wicked Arrows; Light, Heavy and Solid Shot, Accurate Slugs, Impact
-Shot: levels 1, 10, 25, 40, 55) at login, level-up and when a ranged weapon goes on, and never run out
-(`InfiniteAmmo.Enabled`, docker-compose.yml). Better ammo the Hero put there stays.
+Shot: levels 1, 10, 25, 40, 55) with a stack of them in the bags, at login, level-up, when a ranged weapon goes on and
+every few seconds, and never run out (`InfiniteAmmo.Enabled`, docker-compose.yml; topped up if it runs low). Other
+arrows and bullets are taken away. It is real ammo: the client checks the ammo slot before a shot leaves (Requires No
+Ammo, Thori'dal's aura, only the server honors).
 
 **No reagents**: class abilities need no reagents, tools or totems (Rune of Portals, Soul Shards, Ankh, a Fire
 Totem...), on the server (`hero_resources.cpp`) and in the client patch (`patch_spells.py`, `drop_class_reagents`).
