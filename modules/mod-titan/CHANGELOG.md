@@ -11,14 +11,15 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Rune of the Splintered Crown (Frostbolt): every Frostbolt that hits forms an Icicle above you; a second later it
   strikes the same enemy for 30% of the Frostbolt's damage. Up to 5 wait at once.
 - Rune of Phoenix Wake (Pyroblast and Fire Blast): Pyroblast leaves a Phoenix Ember on its target. Fire Blast on it
-  wakes a phoenix that strikes it for 50% of the Pyroblast's damage, then flies back to you through your enemies.
+  calls a phoenix that dives from above you onto it, burning the enemies under its path, and strikes it for 50% of
+  the Pyroblast's damage.
 - Rune of Astral Horizon (Arcane Barrage): Arcane Barrage sets an Arcane Orb loose (every 12 sec at most). For 6
   sec it drifts on and fires a bolt every second for 20% of the Barrage's damage.
 - Rune of Guiding Light (Prayer of Mending, healers): Prayer of Mending places a Guiding Star that heals its bearer
   every 2 sec for 12 sec; Flash Heal or Greater Heal on another ally sends it there.
 - Each has three slots of three options, like the others.
 - Their looks: modern WoW's Icicles for the Splintered Crown, the Arcane Orb for Astral Horizon, and the Phoenix
-  Flames phoenix that flies back to you.
+  Flames phoenix. The Icicles and the phoenix both launch from above you down to their target.
 
 ### Legendary Runes balance
 

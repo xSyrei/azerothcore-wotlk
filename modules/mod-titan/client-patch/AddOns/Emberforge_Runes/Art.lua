@@ -1327,12 +1327,12 @@ EmberforgeRunesArt = {
             hue = { 1, 0.694, 0.341 },
             inner = { 1, 0.918, 0.863 },
             built = true,
-            core = "**Pyroblast** leaves an **Ember**; **Fire Blast** on it wakes a " ..
-                    "**phoenix**: **50%** of the Pyroblast's damage, then it flies back to " ..
-                    "you through your enemies.",
+            core = "**Pyroblast** leaves an **Ember**; **Fire Blast** on it calls a " ..
+                    "**phoenix** diving from above you onto it: **50%** of the Pyroblast's " ..
+                    "damage.",
             asks = {
                 "What wakes in the Ember",
-                "How it flies home",
+                "How it flies",
                 "What it leaves behind",
             },
             abilities = {
@@ -1351,14 +1351,14 @@ EmberforgeRunesArt = {
                         "Pyroblast's damage.",
                 "The phoenix's path is 6 yards wide instead of 3, and enemies in it " ..
                         "take 30% of the Pyroblast's damage instead of 25%.",
-                "Three phoenixes fly back instead, each with a third of the damage. " ..
-                        "Each that reaches you makes your next Pyroblast cast 5% faster, up to " ..
+                "Three phoenixes dive instead, each with a third of the damage. Each " ..
+                        "one whose flight ends makes your next Pyroblast cast 5% faster, up to " ..
                         "15%, for 6 sec.",
-                "The phoenix flies twice as fast, 40 yards a second. When it reaches " ..
-                        "you, Fire Blast's cooldown is 2 sec shorter.",
-                "The phoenix first circles the Ember's target for 2 sec, then strikes " ..
-                        "it again for 25% of the Pyroblast's damage before flying back.",
-                "Before flying back, the phoenix swoops through up to 2 other enemies " ..
+                "The phoenix dives twice as fast, 40 yards a second. When its flight " ..
+                        "ends, Fire Blast's cooldown is 2 sec shorter.",
+                "After its strike, the phoenix circles the Ember's target for 2 sec, " ..
+                        "then strikes it again for 25% of the Pyroblast's damage.",
+                "After its strike, the phoenix swoops through up to 2 other enemies " ..
                         "within 10 yards of the Ember's target, striking each for 25% of the " ..
                         "Pyroblast's damage.",
                 "The phoenix leaves a trail of fire for 4 sec: up to 5 enemies on it " ..
@@ -1366,8 +1366,8 @@ EmberforgeRunesArt = {
                         "stack.",
                 "Enemies the phoenix strikes burn for 25% more of that hit over 6 sec. " ..
                         "A new burn keeps what is left of the last.",
-                "When the phoenix reaches you, it bursts for 35% of the Pyroblast's " ..
-                        "damage to up to 5 enemies within 6 yards of you. A flock bursts once.",
+                "When the phoenix's flight ends, it bursts for 35% of the Pyroblast's " ..
+                        "damage to up to 5 enemies within 6 yards of it. A flock bursts once.",
             },
             slots = {
                 "Phoenix",

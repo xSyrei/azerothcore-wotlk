@@ -741,9 +741,10 @@ EmberforgeRunesCatalog = {
       spentWith = "Fire Blast",
       resource = "A Phoenix Ember, 8 sec",
       core = "Pyroblast leaves a Phoenix Ember on its target for 8 sec (one at a time: a new Pyroblast moves it). " ..
-          "Fire Blast on that target wakes the phoenix: it strikes the target for 50% of that Pyroblast's damage, " ..
-          "then flies back to you at 20 yards a second, burning up to 4 enemies in its path for 25% each.",
-      loop = "Pyroblast, then Fire Blast the same target; stand so the phoenix's way back crosses your enemies.",
+          "Fire Blast on that target calls the phoenix: it dives from the sky above you onto the target at 20 yards " ..
+          "a second, burning up to 4 enemies under its path for 25% of that Pyroblast's damage each, and strikes " ..
+          "the target for 50%.",
+      loop = "Pyroblast, then Fire Blast the same target; the phoenix burns the enemies between you and it.",
       mods = {
         { name = "Sun Talon",
           text = "The phoenix strikes the Ember's target for 50% more: 75% of the Pyroblast's damage." },
@@ -751,17 +752,17 @@ EmberforgeRunesCatalog = {
           text = "The phoenix's path is 6 yards wide instead of 3, and enemies in it take 30% of the Pyroblast's " ..
               "damage instead of 25%." },
         { name = "Ashen Flock",
-          text = "Three phoenixes fly back instead, each with a third of the damage. Each that reaches you makes " ..
+          text = "Three phoenixes dive instead, each with a third of the damage. Each one whose flight ends makes " ..
               "your next Pyroblast cast 5% faster, up to 15%, for 6 sec." },
         { name = "Homeward Flame",
-          text = "The phoenix flies twice as fast, 40 yards a second. When it reaches you, Fire Blast's cooldown is " ..
-              "2 sec shorter." },
+          text = "The phoenix dives twice as fast, 40 yards a second. When its flight ends, Fire Blast's cooldown " ..
+              "is 2 sec shorter." },
         { name = "Death Spiral",
-          text = "The phoenix first circles the Ember's target for 2 sec, then strikes it again for 25% of the " ..
-              "Pyroblast's damage before flying back." },
+          text = "After its strike, the phoenix circles the Ember's target for 2 sec, then strikes it again for 25% " ..
+              "of the Pyroblast's damage." },
         { name = "Wild Flight",
-          text = "Before flying back, the phoenix swoops through up to 2 other enemies within 10 yards of the " ..
-              "Ember's target, striking each for 25% of the Pyroblast's damage." },
+          text = "After its strike, the phoenix swoops through up to 2 other enemies within 10 yards of the Ember's " ..
+              "target, striking each for 25% of the Pyroblast's damage." },
         { name = "Scorched Earth",
           text = "The phoenix leaves a trail of fire for 4 sec: up to 5 enemies on it burn for 6% of the " ..
               "Pyroblast's damage every second. Trails don't stack." },
@@ -769,8 +770,8 @@ EmberforgeRunesCatalog = {
           text = "Enemies the phoenix strikes burn for 25% more of that hit over 6 sec. A new burn keeps what is " ..
               "left of the last." },
         { name = "Rebirth",
-          text = "When the phoenix reaches you, it bursts for 35% of the Pyroblast's damage to up to 5 enemies " ..
-              "within 6 yards of you. A flock bursts once." },
+          text = "When the phoenix's flight ends, it bursts for 35% of the Pyroblast's damage to up to 5 enemies " ..
+              "within 6 yards of it. A flock bursts once." },
       },
       builds = {
         { name = "The Sun", mods = { "Sun Talon", "Homeward Flame", "Scorched Earth" },

@@ -650,8 +650,9 @@ namespace
         MOD_SCORCHED_EARTH, MOD_CLINGING_EMBERS, MOD_REBIRTH,
     };
 
-    // Phoenix Wake's tuning: the Ember holds its Pyroblast's damage (8 sec); the phoenix hits its host for 50% of it
-    // and up to 4 enemies it crosses (3 yards wide) for 25%, flying back to the Hero at 20 yards a second.
+    // Phoenix Wake's tuning: the Ember holds its Pyroblast's damage (8 sec); the phoenix dives from 8 yards above
+    // the Hero onto the host at 20 yards a second, burning up to 4 enemies under its path (3 yards wide) for 25%,
+    // and strikes the host for 50%.
     constexpr int32 EMBER_MS = 8000, CLINGING_MS = 6000;
     constexpr uint32 PHOENIX_MAX_MS = 8000, SPIRAL_MS = 2000, REPATH_MS = 300, HOMEWARD_MS = 2000;
     constexpr uint32 SCORCH_MS = 4000, SCORCH_TICK_MS = 1000, FLOCK_BIRDS = 3;
@@ -660,7 +661,8 @@ namespace
     constexpr float PHOENIX_HALF_WIDTH = 1.5f, BROADWING_HALF_WIDTH = 3.0f;
     constexpr float PHOENIX_SPEED = 20.0f, HOMEWARD_SPEED = 40.0f, PHOENIX_HEIGHT = 2.0f;
     constexpr float FLOCK_SPREAD = 2.0f, FLOCK_SCALE = 0.6f, SPIRAL_RADIUS = 3.0f;
-    constexpr float WILD_FLIGHT_RANGE = 10.0f, VISIT_REACH = 2.0f, ARRIVE_REACH = 2.5f, REBIRTH_RADIUS = 6.0f;
+    constexpr float WILD_FLIGHT_RANGE = 10.0f, VISIT_REACH = 2.0f, STRIKE_REACH = 3.0f, REBIRTH_RADIUS = 6.0f;
+    constexpr float PHOENIX_DROP = 8.0f, PHOENIX_BEHIND = 2.0f;     // where it appears: above, behind the Hero
     constexpr float SCORCH_SPACING = 4.0f, SCORCH_HALF_WIDTH = 1.5f, SCORCH_REACH = 60.0f;
     constexpr std::size_t CROSS_TARGETS = 4, WILD_FLIGHT_VISITS = 2, REBIRTH_TARGETS = 5, SCORCH_TARGETS = 5;
 
@@ -923,7 +925,7 @@ namespace
         std::array<uint8, SLOTS> Mods = {};         // 1 to 3; 0 none yet
     };
 
-    // A phoenix of Phoenix Wake on its way back to the Hero.
+    // A phoenix of Phoenix Wake, diving from above the Hero onto the Ember's host.
     struct Flight
     {
         ObjectGuid Bird, Host;
@@ -935,6 +937,7 @@ namespace
         std::set<ObjectGuid> Hit;           // each enemy once
         std::size_t Crossed = 0;
         std::vector<ObjectGuid> Visits;     // Wild Flight: the enemies still to visit
+        bool Struck = false;                // it has dived onto its host and struck it
         uint32 SpiralUntil = 0;             // Death Spiral: circling its host until (game ms)
         uint32 Born = 0, Repath = 0;
         Position Last, LastTrail;
@@ -3454,36 +3457,31 @@ namespace
             AddDot(player, enemy, SPELL_CLINGING_EMBERS, amount * CLINGING_SHARE, CLINGING_MS);
     }
 
-    // Fire Blast on the Ember's host: the phoenix out of it. Its host takes 50% of the Pyroblast's damage (Sun
-    // Talon: 75%); it flies back to the Hero at 20 yards a second (Homeward Flame: 40) and burns up to 4 enemies it
-    // crosses for 25% (Broadwing: 30%, a wider path). Ashen Flock: 3 birds, a third each. Death Spiral: it circles
-    // the host 2 sec first; Wild Flight: it visits up to 2 enemies within 10 yards of the host first.
+    // Fire Blast on the Ember's host calls the phoenix: it dives from high above the Hero onto the host at 20 yards
+    // a second (Homeward Flame: 40), burning up to 4 enemies under its path for 25% of the Pyroblast's damage
+    // (Broadwing: 30%, a wider path), and strikes the host for 50% (Sun Talon: 75%). Ashen Flock: 3 birds, a third
+    // each. Then Death Spiral circles the host 2 sec and strikes it again; Wild Flight swoops through up to 2 enemies
+    // within 10 yards of it (FlightTick).
     void ReleasePhoenix(Player* player, Unit* host, float pyroblast)
     {
         State& state = StateOf(player);
         uint32 release = ++state.Releases;
-        FlightHit(player, host, pyroblast * PHOENIX_HOST
-            * (HasPhoenixMarker(player, MOD_SUN_TALON) ? SUN_TALON : 1.0f));
         bool flock = HasPhoenixMarker(player, MOD_ASHEN_FLOCK);
         bool broad = HasPhoenixMarker(player, MOD_BROADWING);
-        std::vector<ObjectGuid> visits;
-        if (HasPhoenixMarker(player, MOD_WILD_FLIGHT))
-            for (Unit* enemy : EnemiesAround(player, host, WILD_FLIGHT_RANGE))
-                if (enemy != host && visits.size() < WILD_FLIGHT_VISITS)
-                    visits.push_back(enemy->GetGUID());
         if (HasPhoenixMarker(player, MOD_SCORCHED_EARTH))
         {
             state.ScorchTick = pyroblast * SCORCH_SHARE;
             state.ScorchMap = player->GetMapId();
         }
         uint32 birds = flock ? FLOCK_BIRDS : 1;
-        float facing = host->GetAngle(player);
+        float facing = player->GetAngle(host);
         uint32 now = Now();
         for (uint32 i = 0; i < birds; ++i)
         {
             float side = birds > 1 ? (float(i) - 1.0f) * FLOCK_SPREAD : 0.0f;
-            Position at = Toward(host->GetPosition(), facing + float(M_PI) / 2.0f, side);
-            at.m_positionZ = host->GetPositionZ() + PHOENIX_HEIGHT;
+            Position at = Toward(player->GetPosition(), facing + float(M_PI) / 2.0f, side);
+            at = Toward(at, facing + float(M_PI), PHOENIX_BEHIND);
+            at.m_positionZ = player->GetPositionZ() + PHOENIX_DROP;
             at.SetOrientation(facing);
             TempSummon* bird = SummonFlier(player, NPC_RUNE_PHOENIX, at, PHOENIX_MAX_MS, SPELL_PHOENIX_FORM);
             if (!bird)
@@ -3499,25 +3497,17 @@ namespace
             flight.Cross = pyroblast * (broad ? BROADWING_CROSS : PHOENIX_CROSS);
             flight.HalfWidth = broad ? BROADWING_HALF_WIDTH : PHOENIX_HALF_WIDTH;
             flight.Speed = HasPhoenixMarker(player, MOD_HOMEWARD_FLAME) ? HOMEWARD_SPEED : PHOENIX_SPEED;
-            flight.Hit.insert(host->GetGUID());
-            flight.Visits = visits;
             flight.Born = now;
             flight.Last = at;
             flight.LastTrail = at;
-            if (HasPhoenixMarker(player, MOD_DEATH_SPIRAL))
-            {
-                flight.SpiralUntil = now + SPIRAL_MS;
-                bird->GetMotionMaster()->MoveCirclePath(host->GetPositionX(), host->GetPositionY(), at.GetPositionZ(),
-                    SPIRAL_RADIUS, true, 8, FORCED_MOVEMENT_NONE, flight.Speed);
-            }
             state.Flights.push_back(flight);
         }
     }
 
-    // A phoenix reaching the Hero. Ashen Flock: each bird, the next Pyroblast 5% faster (up to 15%, 6 sec). Once a
+    // A phoenix's flight over. Ashen Flock: each bird, the next Pyroblast 5% faster (up to 15%, 6 sec). Once a
     // release (a flock's birds share it): Homeward Flame, Fire Blast 2 sec closer; Rebirth, a burst of 35% of the
-    // Pyroblast's damage to up to 5 enemies within 6 yards of the Hero.
-    void PhoenixHome(Player* player, Flight const& flight)
+    // Pyroblast's damage to up to 5 enemies within 6 yards of where it ends.
+    void PhoenixLands(Player* player, Flight const& flight, Position const& at)
     {
         State& state = StateOf(player);
         if (HasPhoenixMarker(player, MOD_ASHEN_FLOCK))
@@ -3539,8 +3529,10 @@ namespace
                     player->GetSpellCooldownDelay(rank))));
         if (!HasPhoenixMarker(player, MOD_REBIRTH))
             return;
-        player->CastSpell(player, SPELL_REBIRTH_LOOK, true);
-        for (Unit* enemy : EnemiesIn(player, Circle(player->GetPosition(), REBIRTH_RADIUS), REBIRTH_TARGETS))
+        std::vector<Unit*> enemies = EnemiesIn(player, Circle(at, REBIRTH_RADIUS), REBIRTH_TARGETS);
+        if (!enemies.empty())
+            enemies.front()->CastSpell(enemies.front(), SPELL_REBIRTH_LOOK, true);
+        for (Unit* enemy : enemies)
             Strike(player, enemy, SPELL_REBIRTH, flight.Pyro * REBIRTH_SHARE);
     }
 
@@ -3580,8 +3572,9 @@ namespace
         }
     }
 
-    // The phoenixes in flight: each burns what it crosses since the last update, then circles, visits or flies home
-    // (its course renewed every 0.3 sec: the Hero moves).
+    // The phoenixes in flight: each burns what it passes over since the last update; dives onto its host (its
+    // course renewed every 0.3 sec: the host moves) and strikes it; then circles it, then visits; then its flight
+    // ends where it is.
     void FlightTick(Player* player, uint32 diff)
     {
         State& state = StateOf(player);
@@ -3604,23 +3597,57 @@ namespace
             path.To = here;
             path.HalfWidth = flight.HalfWidth;
             for (Unit* enemy : EnemiesIn(player, path, CROSS_TARGETS + 2))
-                if (flight.Crossed < CROSS_TARGETS && flight.Hit.insert(enemy->GetGUID()).second)
+                if (enemy->GetGUID() != flight.Host && flight.Crossed < CROSS_TARGETS
+                    && flight.Hit.insert(enemy->GetGUID()).second)
                 {
                     FlightHit(player, enemy, flight.Cross * flight.Share);
                     ++flight.Crossed;
                 }
             if (scorch && here.GetExactDist2d(&flight.LastTrail) >= SCORCH_SPACING)
             {
-                Position ground = here;
-                float z = ground.GetPositionZ();
-                player->UpdateGroundPositionZ(ground.GetPositionX(), ground.GetPositionY(), z);
-                ground.m_positionZ = z;
+                float z = here.GetPositionZ();
+                player->UpdateGroundPositionZ(here.GetPositionX(), here.GetPositionY(), z);
+                Position ground(here.GetPositionX(), here.GetPositionY(), z);
                 state.Scorch.emplace_back(ground, now);
                 player->CastSpell(ground.GetPositionX(), ground.GetPositionY(), z, SPELL_SCORCHED_EARTH, true);
                 flight.LastTrail = here;
             }
             flight.Last = here;
-            if (flight.SpiralUntil)
+            Unit* host = ObjectAccessor::GetUnit(*player, flight.Host);
+            Unit* to = nullptr;
+            if (!flight.Struck)
+            {
+                if (!Valid(player, host))
+                {
+                    PhoenixLands(player, flight, here);
+                    Dismiss(player, flight.Bird);
+                    itr = state.Flights.erase(itr);
+                    continue;
+                }
+                if (bird->GetExactDist(host) <= STRIKE_REACH)
+                {
+                    flight.Struck = true;
+                    flight.Repath = 0;
+                    flight.Hit.insert(host->GetGUID());
+                    FlightHit(player, host, flight.Pyro * PHOENIX_HOST * flight.Share
+                        * (HasPhoenixMarker(player, MOD_SUN_TALON) ? SUN_TALON : 1.0f));
+                    if (HasPhoenixMarker(player, MOD_DEATH_SPIRAL))
+                    {
+                        flight.SpiralUntil = now + SPIRAL_MS;
+                        bird->GetMotionMaster()->MoveCirclePath(host->GetPositionX(), host->GetPositionY(),
+                            host->GetPositionZ() + PHOENIX_HEIGHT, SPIRAL_RADIUS, true, 8, FORCED_MOVEMENT_NONE,
+                            flight.Speed);
+                    }
+                    else if (HasPhoenixMarker(player, MOD_WILD_FLIGHT))
+                        for (Unit* enemy : EnemiesAround(player, host, WILD_FLIGHT_RANGE))
+                            if (enemy != host && flight.Visits.size() < WILD_FLIGHT_VISITS)
+                                flight.Visits.push_back(enemy->GetGUID());
+                    ++itr;
+                    continue;
+                }
+                to = host;
+            }
+            else if (flight.SpiralUntil)
             {
                 if (now < flight.SpiralUntil)
                 {
@@ -3628,12 +3655,10 @@ namespace
                     continue;
                 }
                 flight.SpiralUntil = 0;
-                flight.Repath = 0;
-                if (Unit* host = ObjectAccessor::GetUnit(*player, flight.Host); Valid(player, host))
+                if (Valid(player, host))
                     Strike(player, host, SPELL_PHOENIX_FLIGHT, flight.Pyro * SPIRAL_SHARE * flight.Share);
             }
-            Unit* to = player;
-            if (!flight.Visits.empty())
+            else if (!flight.Visits.empty())
             {
                 Unit* next = ObjectAccessor::GetUnit(*player, flight.Visits.front());
                 if (!Valid(player, next))
@@ -3654,9 +3679,9 @@ namespace
                 }
                 to = next;
             }
-            else if (bird->GetExactDist2d(player) <= ARRIVE_REACH)
+            if (!to)
             {
-                PhoenixHome(player, flight);
+                PhoenixLands(player, flight, here);
                 Dismiss(player, flight.Bird);
                 itr = state.Flights.erase(itr);
                 continue;

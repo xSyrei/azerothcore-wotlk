@@ -1279,14 +1279,15 @@ SPELLS += [
     missile(91228, 'Ice Splinter', 'Spell_Frost_IceShard', FROST, VISUAL_ICE_LANCE, 36.0),
     # Phoenix Wake.
     buff(91240, 'Rune of Phoenix Wake', PHOENIX_ICON,
-         'Pyroblast leaves a Phoenix Ember on its target for 8 sec. Fire Blast on it calls a phoenix out of it, '
-         'flying back to you through your enemies.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'Pyroblast leaves a Phoenix Ember on its target for 8 sec. Fire Blast on it calls a phoenix diving from '
+         'above you onto it, through your enemies.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     harmful(91241, 'Phoenix Ember', 'Spell_Fire_Burnout', 'A phoenix sleeps in this ember. Fire Blast wakes it.',
             DURATION_8S, aura(AURA_DUMMY, 1, 0), FIRE, key='Sunshard'),
     strike(91242, 'Phoenix Flight', 'Spell_Fire_Burnout', FIRE, VISUAL_FIRE_BLAST),
+    # The phoenix's and the Orb's looks are their auras' states: shown auras (a hidden one's state is not drawn).
     {**shown(91243, 'Phoenix', PHOENIX_ICON, '', DURATION_INFINITE,
              effects={1: aura(AURA_MOD_THREAT, -100, ALL_SCHOOLS)}),
-     'set': {**HIDDEN, 'DurationIndex': DURATION_INFINITE}},
+     'set': {**SHOWN, 'DurationIndex': DURATION_INFINITE}},
     ground(91244, 'Scorched Earth', 'Spell_Fire_Fire', 'ScaldingGround', DURATION_4S),
     strike(91245, 'Scorched Earth', 'Spell_Fire_Fire', FIRE),
     dot(91246, 'Clinging Embers', 'Spell_Fire_Immolation', FIRE, DURATION_6S, 'Fire damage every second.'),
@@ -1301,7 +1302,7 @@ SPELLS += [
          'a bolt every second for 20% of the Barrage\'s damage.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {**shown(91261, 'Arcane Orb', HORIZON_ICON, '', DURATION_INFINITE,
              effects={1: aura(AURA_MOD_THREAT, -100, ALL_SCHOOLS)}),
-     'set': {**HIDDEN, 'DurationIndex': DURATION_INFINITE}},
+     'set': {**SHOWN, 'DurationIndex': DURATION_INFINITE}},
     missile(91262, 'Orb Bolt', 'Spell_Arcane_Arcane04', ARCANE, VISUAL_ARCANE_BARRAGE, 22.0),
     strike(91263, 'Wandering Star', 'Spell_Arcane_Arcane04', ARCANE, VISUAL_ARCANE_HIT),
     missile(91264, 'Prismatic Lance', 'Spell_Arcane_PrismaticCloak', ARCANE, VISUAL_ARCANE_BARRAGE, 45.0),
@@ -1392,7 +1393,9 @@ VISUALS.update({
 # Retail's own (wow.export glTF, their bone animation kept; spell_effects.retail_effect): Icicle Mastery's icicle as
 # the Icicles' missile, Arcane Orb's orb on the Orb, Phoenix Flames' phoenix on the phoenix (both on an invisible
 # creature: the look follows it, the phoenix facing where it flies).
-VISUAL_MISSILE_MODEL = 8                # SpellVisual's missile model column
+VISUAL_MISSILE_MODEL, VISUAL_MISSILE_SOUND, VISUAL_MISSILE_CAST_OFFSET = 8, 11, 26     # SpellVisual's columns
+VISUAL_MISSILE_MOTION = 21
+FROZEN_ORB_BOLT, ICE_LANCE_MISSILE_SOUND, ICICLE_DROP = 15082, 3256, 6.0
 EFFECTS.update({
     'IcicleMissile': {'model': 'MAGE_Icicle', 'effect': 7157, 'shape': 'retail', 'textures': (),
                       'options': {'export': 'MAGE_Icicle/cfx_mage_iciclemastery_launchedmissile.gltf',
@@ -1405,8 +1408,13 @@ EFFECTS.update({
                                   'center': True}},
 })
 VISUALS.update({
-    'IcicleBolt': {'copy': VISUAL_ICE_LANCE, 'id': 16797, 'clear': ('precast', 'cast'),
-                   'set': {VISUAL_MISSILE_MODEL: 'IcicleMissile'}, 'kits': {}},
+    # The Icicles: Fel Barrage's bolt (Frozen Orb's visual, flying straight), from 6 yards above the Hero down to
+    # their target, Ice Lance's sound and shards where they land.
+    'IcicleBolt': {'copy': FROZEN_ORB_BOLT, 'id': 16797,
+                   'clear': ('precast', 'cast', 'impact', 'state', 'statedone', 'area'),
+                   'set': {VISUAL_MISSILE_MODEL: 'IcicleMissile', VISUAL_MISSILE_SOUND: ICE_LANCE_MISSILE_SOUND,
+                           VISUAL_MISSILE_MOTION: 0, VISUAL_MISSILE_CAST_OFFSET + 2: ICICLE_DROP}, 'kits': {
+                       'impact': (15738, {KIT_CHEST: FX_ICE_LANCE_IMPACT, 'sound': None})}},
     'ArcaneOrbForm': {'copy': 32, 'id': 16798, 'clear': ('precast', 'cast', 'impact'), 'kits': {
         'state': (15736, {KIT_BASE: 'ArcaneOrbRetail', KIT_CHEST: 0, 'sound': None, 'procs': False})}},
     'PhoenixForm': {'copy': 32, 'id': 16799, 'clear': ('precast', 'cast', 'impact'), 'kits': {
