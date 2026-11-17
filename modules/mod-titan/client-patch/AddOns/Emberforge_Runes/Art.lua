@@ -161,10 +161,22 @@ EmberforgeRunesArt = {
             u = 0.5977,
             v = 0.9844,
         },
+        ChooseFlintlock = {
+            w = 475,
+            h = 84,
+            u = 0.6963,
+            v = 0.9844,
+        },
         ChooseFollowThrough = {
             w = 596,
             h = 84,
             u = 0.873,
+            v = 0.9844,
+        },
+        ChooseFootwork = {
+            w = 476,
+            h = 84,
+            u = 0.6973,
             v = 0.9844,
         },
         ChooseFormation = {
@@ -275,6 +287,12 @@ EmberforgeRunesArt = {
             u = 0.7148,
             v = 0.9844,
         },
+        ChooseSabre = {
+            w = 392,
+            h = 84,
+            u = 0.5742,
+            v = 0.9844,
+        },
         ChooseSermon = {
             w = 427,
             h = 84,
@@ -293,6 +311,12 @@ EmberforgeRunesArt = {
             u = 0.6377,
             v = 0.9844,
         },
+        ChooseShield = {
+            w = 408,
+            h = 84,
+            u = 0.5977,
+            v = 0.9844,
+        },
         ChooseSpectralBeast = {
             w = 562,
             h = 84,
@@ -303,6 +327,12 @@ EmberforgeRunesArt = {
             w = 413,
             h = 84,
             u = 0.6055,
+            v = 0.9844,
+        },
+        ChooseStorm = {
+            w = 404,
+            h = 84,
+            u = 0.5918,
             v = 0.9844,
         },
         ChooseSunfall = {
@@ -327,6 +357,12 @@ EmberforgeRunesArt = {
             w = 481,
             h = 84,
             u = 0.7051,
+            v = 0.9844,
+        },
+        ChooseThunderlash = {
+            w = 530,
+            h = 84,
+            u = 0.7764,
             v = 0.9844,
         },
         ChooseTiming = {
@@ -497,10 +533,22 @@ EmberforgeRunesArt = {
             u = 0.5312,
             v = 0.875,
         },
+        SlotFlintlock = {
+            w = 96,
+            h = 28,
+            u = 0.75,
+            v = 0.875,
+        },
         SlotFollowThrough = {
             w = 156,
             h = 28,
             u = 0.6094,
+            v = 0.875,
+        },
+        SlotFootwork = {
+            w = 98,
+            h = 28,
+            u = 0.7656,
             v = 0.875,
         },
         SlotFormation = {
@@ -611,6 +659,12 @@ EmberforgeRunesArt = {
             u = 0.8203,
             v = 0.875,
         },
+        SlotSabre = {
+            w = 62,
+            h = 28,
+            u = 0.9688,
+            v = 0.875,
+        },
         SlotSermon = {
             w = 78,
             h = 28,
@@ -629,6 +683,12 @@ EmberforgeRunesArt = {
             u = 0.6406,
             v = 0.875,
         },
+        SlotShield = {
+            w = 69,
+            h = 28,
+            u = 0.5391,
+            v = 0.875,
+        },
         SlotSpectralBeast = {
             w = 142,
             h = 28,
@@ -639,6 +699,12 @@ EmberforgeRunesArt = {
             w = 71,
             h = 28,
             u = 0.5547,
+            v = 0.875,
+        },
+        SlotStorm = {
+            w = 65,
+            h = 28,
+            u = 0.5078,
             v = 0.875,
         },
         SlotSunfall = {
@@ -663,6 +729,12 @@ EmberforgeRunesArt = {
             w = 104,
             h = 28,
             u = 0.8125,
+            v = 0.875,
+        },
+        SlotThunderlash = {
+            w = 128,
+            h = 28,
+            u = 1,
             v = 0.875,
         },
         SlotTiming = {
@@ -1742,6 +1814,107 @@ EmberforgeRunesArt = {
                 "Guard",
                 "Answer",
                 "Resolve",
+            },
+        },
+        [42] = {
+            rgb = { 0.902, 0.725, 0.373 },
+            hot = { 0.965, 0.902, 0.78 },
+            ink = { 0.988, 0.973, 0.937 },
+            muted = { 0.867, 0.784, 0.667 },
+            hue = { 1, 0.89, 0.494 },
+            inner = { 0.98, 0.949, 0.886 },
+            built = true,
+            core = "Every second **Sinister Strike** readies **Opening Shot**: fire " ..
+                    "**Flintlock Shot** for **60%** of your attack power and a combo point.",
+            asks = {
+                "How the blade cuts",
+                "How the shot flies",
+                "What you do after",
+            },
+            abilities = {
+                "Cut",
+                "Sweep",
+                "Serrate",
+                "Ball",
+                "Scatter",
+                "Pierce",
+                "Advance",
+                "Disengage",
+                "Press",
+            },
+            texts = {
+                "Sinister Strike deals 25% more damage.",
+                "Sinister Strike also hits up to 3 other enemies within 5 yards of its " ..
+                        "target for half its damage.",
+                "Sinister Strike makes its target bleed for 40% more of its damage over " ..
+                        "6 sec. A new bleed keeps what is left of the last.",
+                "Flintlock Shot deals 60% more damage: 96% of your attack power.",
+                "Flintlock Shot spreads in a cone: up to 4 other enemies in front of " ..
+                        "you, as far as 10 yards past its target, take 75% of its damage.",
+                "Flintlock Shot pierces up to 3 enemies within 15 yards behind its " ..
+                        "target, for 80% of its damage.",
+                "After firing, you move 40% faster for 3 sec, and your next Sinister " ..
+                        "Strike on that enemy within 5 sec deals 30% more damage.",
+                "After firing, you move 40% faster for 3 sec, and your next Flintlock " ..
+                        "Shot within 8 sec gives 10 Energy back.",
+                "After firing, your next Sinister Strike within 5 sec strikes again a " ..
+                        "moment later for half its damage.",
+            },
+            slots = {
+                "Sabre",
+                "Flintlock",
+                "Footwork",
+            },
+        },
+        [43] = {
+            rgb = { 0.353, 0.784, 1 },
+            hot = { 0.773, 0.925, 1 },
+            ink = { 0.933, 0.98, 1 },
+            muted = { 0.647, 0.808, 0.918 },
+            hue = { 0.475, 0.957, 1 },
+            inner = { 0.882, 0.961, 1 },
+            built = true,
+            core = "**Stormstrike** raises the **Stormfront** (25% of your attack power " ..
+                    "every 2 sec); **Lava Lash** becomes **Thunderlash**; your strikes " ..
+                    "discharge **Lightning Shield**.",
+            asks = {
+                "How the storm strikes",
+                "How Thunderlash lands",
+                "How the shield fights",
+            },
+            abilities = {
+                "Eye",
+                "Forked",
+                "Rolling",
+                "Head",
+                "Chain",
+                "White-Hot",
+                "Overcharge",
+                "Ride",
+                "Ground",
+            },
+            texts = {
+                "The Stormfront deals 120% more damage while only one enemy is in it.",
+                "The Stormfront strikes up to 8 enemies within 12 yards.",
+                "The Stormfront strikes every second instead of every 2, each strike " ..
+                        "70% of its damage.",
+                "Thunderlash doesn't arc: 120% of your attack power to its target " ..
+                        "instead.",
+                "Thunderlash arcs to 4 enemies instead of 2, each for 30% of your " ..
+                        "attack power.",
+                "Thunderlash burns its target for 100% of your attack power over 6 sec " ..
+                        "instead of its Nature hit; its arcs stay. A new burn keeps what is " ..
+                        "left of the last.",
+                "The rune's Lightning Shield discharges deal 50% more damage.",
+                "Each of the rune's discharges makes you move 30% faster for 3 sec and " ..
+                        "brings Lava Lash back 1 sec sooner.",
+                "Each of the rune's discharges also strikes up to 3 other enemies " ..
+                        "within 8 yards of its target for half its damage.",
+            },
+            slots = {
+                "Storm",
+                "Thunderlash",
+                "Shield",
             },
         },
     },

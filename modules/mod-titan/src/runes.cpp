@@ -116,6 +116,8 @@ namespace
     constexpr uint8 RUNE_ELUNES_GUARDIAN = 39;      // its own dossier, and the two after it
     constexpr uint8 RUNE_ASTRAL_CONVERGENCE = 40;
     constexpr uint8 RUNE_URSOCS_CHAMPION = 41;
+    constexpr uint8 RUNE_DUELIST = 42;              // its own dossier, and the Stormreaver's
+    constexpr uint8 RUNE_STORMREAVER = 43;
 
     enum Spells : uint32
     {
@@ -341,6 +343,32 @@ namespace
         SPELL_URSOC_MODIFIER_FIRST      = 91350,    // + slot * 3 + choice
         SPELL_URSOC_ROAR_LOOK           = 91359,
         SPELL_COLLISION_LOOK            = 91360,    // Astral Rupture: the collision's look, its damage over time
+
+        // The Duelist (91380 on) and the Stormreaver (91400 on); their markers 10 on from each rune.
+        SPELL_RUNE_DUELIST              = 91380,
+        SPELL_OPENING_SHOT              = 91381,    // Flintlock Shot ready (8 sec)
+        SPELL_FLINTLOCK_SHOT            = 91382,    // the action the rune teaches
+        SPELL_FLINTLOCK_DAMAGE          = 91383,
+        SPELL_SERRATED_EDGE             = 91384,    // its bleed; 91385 the tick
+        SPELL_SERRATED_EDGE_TICK        = 91385,
+        SPELL_ADVANCE                   = 91386,    // speed
+        SPELL_DISENGAGING_SHOT          = 91387,    // speed
+        SPELL_DISENGAGING_DISCOUNT      = 91388,    // the next Flintlock Shot 10 Energy cheaper
+        SPELL_PRESS_THE_ADVANTAGE       = 91389,    // the next Sinister Strike strikes twice
+        SPELL_DUELIST_MODIFIER_FIRST    = 91390,    // + slot * 3 + choice
+        SPELL_SABRE_STRIKE              = 91399,    // Sweeping Steel's and Press the Advantage's hits
+        SPELL_RUNE_STORMREAVER          = 91400,
+        SPELL_STORMFRONT                = 91401,
+        SPELL_STORMFRONT_PULSE          = 91402,
+        SPELL_THUNDERLASH               = 91403,
+        SPELL_THUNDERLASH_ARC           = 91404,
+        SPELL_WHITE_HOT_BURN            = 91405,    // its tick 91406
+        SPELL_WHITE_HOT_TICK            = 91406,
+        SPELL_STORM_DISCHARGE           = 91407,
+        SPELL_RIDE_THE_LIGHTNING        = 91408,
+        SPELL_STORMREAVER_MODIFIER_FIRST = 91410,   // + slot * 3 + choice
+        SPELL_STORMSTRIKE               = 17364,
+        SPELL_LAVA_LASH                 = 60103,
 
         SPELL_EVISCERATE            = 2098,         // first ranks
         SPELL_SINISTER_STRIKE       = 1752,
@@ -827,6 +855,51 @@ namespace
     constexpr uint8 UNBROKEN_BLOWS = 3;
     constexpr std::size_t URSOC_TARGETS = 5, ROAR_TARGETS = 10;
 
+    // The Duelist's modifiers: slot (0 Sabre, 1 Flintlock, 2 Footwork) x 3 + choice.
+    enum DuelistModifier : uint8
+    {
+        MOD_DEEP_CUT, MOD_SWEEPING_STEEL, MOD_SERRATED_EDGE,
+        MOD_HEAVY_BALL, MOD_SCATTERSHOT, MOD_PIERCING_ROUND,
+        MOD_ADVANCE, MOD_DISENGAGING_SHOT, MOD_PRESS_THE_ADVANTAGE,
+    };
+
+    // The Duelist's tuning: every second direct Sinister Strike hit readies Opening Shot (8 sec, one held); Flintlock
+    // Shot spends it (20 Energy, 6 sec cooldown, 20 yards): 60% of attack power and a combo point (the dossier's
+    // every third and 35%, made worth holding a button for).
+    constexpr uint8 OPENING_EVERY = 2;
+    constexpr int32 OPENING_MS = 8000, SERRATED_MS = 6000, FOOTWORK_MS = 5000, DISCOUNT_MS = 8000;
+    constexpr uint32 PRESS_DELAY_MS = 300;
+    constexpr int32 DISENGAGING_REFUND = 10;
+    constexpr float FLINTLOCK_AP = 0.6f, HEAVY_BALL = 1.6f, SCATTER_SHARE = 0.75f, PIERCING_SHARE = 0.8f;
+    constexpr float DEEP_CUT = 1.25f, SWEEPING_SHARE = 0.5f, SERRATED_SHARE = 0.4f, ADVANCE_BONUS = 1.3f;
+    constexpr float PRESS_SHARE = 0.5f;
+    constexpr float SWEEPING_RADIUS = 5.0f, SCATTER_REACH = 10.0f, SCATTER_ARC = float(M_PI) / 4.0f;
+    constexpr float PIERCING_REACH = 15.0f, PIERCING_HALF_WIDTH = 2.0f;
+    constexpr std::size_t SWEEPING_TARGETS = 3, SCATTER_TARGETS = 4, PIERCING_TARGETS = 3;
+
+    // The Stormreaver's modifiers: slot (0 Storm, 1 Thunderlash, 2 Lightning Shield) x 3 + choice.
+    enum StormreaverModifier : uint8
+    {
+        MOD_EYE_OF_THE_TEMPEST, MOD_FORKED_CATACLYSM, MOD_STORM_ROLLING,
+        MOD_THUNDERHEAD, MOD_CHAINBREAKER, MOD_WHITE_HOT_CONDUCTOR,
+        MOD_OVERCHARGED_CORE, MOD_RIDE_THE_LIGHTNING, MOD_VIOLENT_GROUNDING,
+    };
+
+    // The Stormreaver's tuning: Stormstrike raises the Stormfront (6 sec, refreshed): a pulse every 2 sec, 25% of
+    // attack power as Nature to up to 5 enemies within 8 yards. Lava Lash in it is Thunderlash (60% to its target,
+    // arcs of 30% to 2 more within 8); melee abilities discharge Lightning Shield at their target once a second (the
+    // shield keeps its charges meanwhile): its rank's damage, a third of spell power and 20% of attack power. The
+    // dossier's 15%, 40% and 20%, raised.
+    constexpr int32 STORMFRONT_MS = 6000, WHITE_HOT_MS = 6000, RIDE_MS = 3000;
+    constexpr uint32 STORM_PULSE_MS = 2000, ROLLING_PULSE_MS = 1000, DISCHARGE_EVERY_MS = 1000;
+    constexpr int32 RIDE_COOLDOWN_MS = 1000;
+    constexpr float STORM_PULSE_AP = 0.25f, EYE_OF_THE_TEMPEST = 2.2f, ROLLING_SHARE = 0.7f;
+    constexpr float THUNDERLASH_AP = 0.6f, THUNDERHEAD_AP = 1.2f, ARC_AP = 0.3f, WHITE_HOT_AP = 1.0f;
+    constexpr float DISCHARGE_SP = 0.33f, DISCHARGE_AP = 0.2f, OVERCHARGED = 1.5f, GROUNDING_SHARE = 0.5f;
+    constexpr float STORM_RADIUS = 8.0f, FORKED_RADIUS = 12.0f, THUNDERLASH_RANGE = 8.0f, GROUNDING_RADIUS = 8.0f;
+    constexpr std::size_t STORM_TARGETS = 5, FORKED_TARGETS = 8, THUNDERLASH_ARCS = 2, CHAINBREAKER_ARCS = 4;
+    constexpr std::size_t GROUNDING_TARGETS = 3;
+
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
     constexpr float PARAGON_POWER = 0.15f;                      // spell power in a tick: 6% of it a second
@@ -985,6 +1058,13 @@ namespace
             { RUNE_URSOCS_CHAMPION, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_BEAR_FORM, SPELL_DIRE_BEAR_FORM }, { SPELL_BARKSKIN }, { SPELL_MAUL } },
               SPELL_RUNE_URSOCS_CHAMPION, SPELL_URSOC_MODIFIER_FIRST },
+            // Melee DPS: Sinister Strike readies the flintlock (the rune teaches Flintlock Shot).
+            { RUNE_DUELIST, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
+              { { SPELL_SINISTER_STRIKE } }, SPELL_RUNE_DUELIST, SPELL_DUELIST_MODIFIER_FIRST },
+            // Melee DPS: Stormstrike raises the storm, Lava Lash and Lightning Shield strike through it.
+            { RUNE_STORMREAVER, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
+              { { SPELL_STORMSTRIKE }, { SPELL_LAVA_LASH }, { SPELL_LIGHTNING_SHIELD } }, SPELL_RUNE_STORMREAVER,
+              SPELL_STORMREAVER_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -1200,6 +1280,14 @@ namespace
         uint8 GuardBlows = 0;                       // Unbroken's blows from this guard
         bool GuardTravelled = false;
         Position GuardFrom;
+
+        // The Duelist: direct Sinister Strike hits toward Opening Shot; Advance's enemy and how long it holds.
+        uint8 SabreHits = 0;
+        ObjectGuid AdvanceOn;
+        uint32 AdvanceUntil = 0;
+
+        // The Stormreaver: the Stormfront's pulse timer; the last discharge.
+        uint32 StormfrontTimer = 0, LastDischarge = 0;
 
     };
 
@@ -4828,6 +4916,271 @@ namespace
         EndGuard(player);
     }
 
+
+    // ---- The Duelist ------------------------------------------------------------------------------------------
+
+    bool HasDuelistMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_DUELIST_MODIFIER_FIRST, modifier);
+    }
+
+    // A timed buff on the Hero (an earlier one replaced).
+    void RenewFor(Player* player, uint32 spellId, int32 ms)
+    {
+        player->RemoveAurasDueToSpell(spellId);
+        if (Aura* aura = player->AddAura(spellId, player))
+        {
+            aura->SetMaxDuration(ms);
+            aura->SetDuration(ms);
+        }
+    }
+
+    // A Sinister Strike's hit on its target, before it lands: Deep Cut 25% more; Advance's enemy within 5 sec 30%.
+    float SabreBonus(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        float bonus = HasDuelistMarker(player, MOD_DEEP_CUT) ? DEEP_CUT : 1.0f;
+        if (state.AdvanceUntil > Now() && target->GetGUID() == state.AdvanceOn)
+        {
+            bonus *= ADVANCE_BONUS;
+            state.AdvanceUntil = 0;
+        }
+        return bonus;
+    }
+
+    // A Sinister Strike that hit (damage, its target's): every second readies Opening Shot; Sweeping Steel: half to
+    // up to 3 more within 5 yards; Serrated Edge: 40% more over 6 sec; Press the Advantage's second strike (half).
+    void SabreSlash(Player* player, Unit* target, float damage)
+    {
+        State& state = StateOf(player);
+        if (++state.SabreHits >= OPENING_EVERY)
+        {
+            state.SabreHits = 0;
+            RenewFor(player, SPELL_OPENING_SHOT, OPENING_MS);
+            Trace(player, "Opening Shot ready");
+        }
+        if (HasDuelistMarker(player, MOD_SWEEPING_STEEL))
+        {
+            std::size_t count = SWEEPING_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, target, SWEEPING_RADIUS))
+                if (enemy != target && count)
+                {
+                    Strike(player, enemy, SPELL_SABRE_STRIKE, damage * SWEEPING_SHARE);
+                    --count;
+                }
+        }
+        if (HasDuelistMarker(player, MOD_SERRATED_EDGE) && target->IsAlive())
+            AddDot(player, target, SPELL_SERRATED_EDGE, damage * SERRATED_SHARE, SERRATED_MS);
+        if (player->HasAura(SPELL_PRESS_THE_ADVANTAGE))
+        {
+            player->RemoveAurasDueToSpell(SPELL_PRESS_THE_ADVANTAGE);
+            ObjectGuid guid = target->GetGUID();
+            float second = damage * PRESS_SHARE;
+            player->m_Events.AddEventAtOffset([player, guid, second]()
+            {
+                Unit* at = ObjectAccessor::GetUnit(*player, guid);
+                if (player->IsInWorld() && player->IsAlive() && Valid(player, at))
+                    Strike(player, at, SPELL_SABRE_STRIKE, second);
+            }, Milliseconds(PRESS_DELAY_MS));
+        }
+    }
+
+    // Flintlock Shot on its target: 60% of attack power (Heavy Ball 60% more) and a combo point; Scattershot: a
+    // 10-yard cone, up to 4 more for 75%; Piercing Round: up to 3 within 15 yards behind it for 80%. Then the
+    // footwork: Advance (speed, the next Sinister Strike on it 30% more), Disengaging Shot (speed, the next shot 10
+    // Energy back), Press the Advantage (the next Sinister Strike twice).
+    void FireFlintlock(Player* player, Unit* target)
+    {
+        player->RemoveAurasDueToSpell(SPELL_OPENING_SHOT);
+        if (player->HasAura(SPELL_DISENGAGING_DISCOUNT))
+        {
+            player->RemoveAurasDueToSpell(SPELL_DISENGAGING_DISCOUNT);
+            player->ModifyPower(POWER_ENERGY, DISENGAGING_REFUND);
+        }
+        float shot = player->GetTotalAttackPowerValue(BASE_ATTACK) * FLINTLOCK_AP
+            * (HasDuelistMarker(player, MOD_HEAVY_BALL) ? HEAVY_BALL : 1.0f);
+        Strike(player, target, SPELL_FLINTLOCK_DAMAGE, shot);
+        Trace(player, Acore::StringFormat("Flintlock Shot for {}", int32(shot)));
+        if (HasDuelistMarker(player, MOD_SCATTERSHOT))
+        {
+            Shape cone;
+            cone.Cone = true;
+            cone.From = player->GetPosition();
+            cone.Facing = player->GetAbsoluteAngle(target);
+            cone.Radius = SCATTER_REACH + player->GetExactDist2d(target);
+            cone.Arc = SCATTER_ARC;
+            std::size_t count = SCATTER_TARGETS;
+            for (Unit* enemy : EnemiesIn(player, cone, SCATTER_TARGETS + 1))
+                if (enemy != target && count)
+                {
+                    Strike(player, enemy, SPELL_FLINTLOCK_DAMAGE, shot * SCATTER_SHARE);
+                    --count;
+                }
+        }
+        else if (HasDuelistMarker(player, MOD_PIERCING_ROUND))
+        {
+            Shape line;
+            line.From = target->GetPosition();
+            line.To = Toward(line.From, player->GetAbsoluteAngle(target), PIERCING_REACH);
+            line.HalfWidth = PIERCING_HALF_WIDTH;
+            std::size_t count = PIERCING_TARGETS;
+            for (Unit* enemy : EnemiesIn(player, line, PIERCING_TARGETS + 1))
+                if (enemy != target && count)
+                {
+                    Strike(player, enemy, SPELL_FLINTLOCK_DAMAGE, shot * PIERCING_SHARE);
+                    --count;
+                }
+        }
+        if (target->IsAlive())
+            player->AddComboPoints(target, 1);
+        State& state = StateOf(player);
+        if (HasDuelistMarker(player, MOD_ADVANCE))
+        {
+            Renew(player, SPELL_ADVANCE);
+            state.AdvanceOn = target->GetGUID();
+            state.AdvanceUntil = Now() + FOOTWORK_MS;
+        }
+        else if (HasDuelistMarker(player, MOD_DISENGAGING_SHOT))
+        {
+            Renew(player, SPELL_DISENGAGING_SHOT);
+            RenewFor(player, SPELL_DISENGAGING_DISCOUNT, DISCOUNT_MS);
+        }
+        else if (HasDuelistMarker(player, MOD_PRESS_THE_ADVANTAGE))
+            RenewFor(player, SPELL_PRESS_THE_ADVANTAGE, FOOTWORK_MS);
+    }
+
+    // The Duelist teaches Flintlock Shot while it is bound (not saved: learnt again at each Apply).
+    void TeachFlintlock(Player* player, bool bound)
+    {
+        if (bound && !player->HasSpell(SPELL_FLINTLOCK_SHOT))
+            player->learnSpell(SPELL_FLINTLOCK_SHOT, true);
+        else if (!bound && player->HasSpell(SPELL_FLINTLOCK_SHOT))
+            player->removeSpell(SPELL_FLINTLOCK_SHOT, SPEC_MASK_ALL, false);
+    }
+
+    // ---- The Stormreaver --------------------------------------------------------------------------------------
+
+    bool HasStormreaverMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_STORMREAVER_MODIFIER_FIRST, modifier);
+    }
+
+    // Stormstrike: the Stormfront for 6 sec (a refresh keeps its pulse timer).
+    void RaiseStormfront(Player* player)
+    {
+        if (Aura* storm = player->GetAura(SPELL_STORMFRONT, player->GetGUID()))
+        {
+            storm->SetMaxDuration(STORMFRONT_MS);
+            storm->SetDuration(STORMFRONT_MS);
+            return;
+        }
+        StateOf(player).StormfrontTimer = 0;
+        RenewFor(player, SPELL_STORMFRONT, STORMFRONT_MS);
+    }
+
+    // A pulse: 25% of attack power to up to 5 enemies within 8 yards (Forked Cataclysm 8 within 12; Rolling Thunder
+    // 70% each, every second; Eye of the Tempest: 120% more on a lone enemy).
+    void StormfrontTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        if (!player->HasAura(SPELL_STORMFRONT, player->GetGUID()))
+        {
+            state.StormfrontTimer = 0;
+            return;
+        }
+        bool rolling = HasStormreaverMarker(player, MOD_STORM_ROLLING);
+        uint32 every = rolling ? ROLLING_PULSE_MS : STORM_PULSE_MS;
+        state.StormfrontTimer += diff;
+        if (state.StormfrontTimer < every)
+            return;
+        state.StormfrontTimer -= every;
+        bool forked = HasStormreaverMarker(player, MOD_FORKED_CATACLYSM);
+        std::vector<Unit*> struck = EnemiesIn(player, Circle(player->GetPosition(),
+            forked ? FORKED_RADIUS : STORM_RADIUS), forked ? FORKED_TARGETS : STORM_TARGETS);
+        float pulse = player->GetTotalAttackPowerValue(BASE_ATTACK) * STORM_PULSE_AP * (rolling ? ROLLING_SHARE : 1.0f);
+        if (struck.size() == 1 && HasStormreaverMarker(player, MOD_EYE_OF_THE_TEMPEST))
+            pulse *= EYE_OF_THE_TEMPEST;
+        for (Unit* enemy : struck)
+            Strike(player, enemy, SPELL_STORMFRONT_PULSE, pulse);
+    }
+
+    // An arc of the rune's lightning from one enemy to another (Chain Lightning's bolt between them).
+    void StormArc(Player* player, Unit* from, Unit* to, uint32 spellId, float amount)
+    {
+        from->CastSpell(to, SPELL_STORMBOUND_ARC_VISUAL, true);
+        Strike(player, to, spellId, amount);
+    }
+
+    // Lava Lash in the Stormfront: Thunderlash. 60% of attack power to its target (Thunderhead 120%, no arcs;
+    // White-Hot Conductor a burn of 100% over 6 sec instead), arcs of 30% to 2 more within 8 yards (Chainbreaker 4).
+    void Thunderlash(Player* player, Unit* target)
+    {
+        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
+        bool thunderhead = HasStormreaverMarker(player, MOD_THUNDERHEAD);
+        if (HasStormreaverMarker(player, MOD_WHITE_HOT_CONDUCTOR))
+            AddDot(player, target, SPELL_WHITE_HOT_BURN, ap * WHITE_HOT_AP, WHITE_HOT_MS);
+        else
+            Strike(player, target, SPELL_THUNDERLASH, ap * (thunderhead ? THUNDERHEAD_AP : THUNDERLASH_AP));
+        if (thunderhead)
+            return;
+        std::size_t count = HasStormreaverMarker(player, MOD_CHAINBREAKER) ? CHAINBREAKER_ARCS : THUNDERLASH_ARCS;
+        for (Unit* enemy : EnemiesAround(player, target, THUNDERLASH_RANGE))
+            if (enemy != target && count)
+            {
+                StormArc(player, target, enemy, SPELL_THUNDERLASH_ARC, ap * ARC_AP);
+                --count;
+            }
+    }
+
+    // A melee ability's hit in the Stormfront, with Lightning Shield up: a discharge at its target, once a second
+    // (no charge): the shield's rank's damage, a third of spell power and 20% of attack power (Overcharged Core 50%
+    // more; Violent Grounding: half to up to 3 more within 8 yards; Ride the Lightning: 30% speed for 3 sec and Lava
+    // Lash 1 sec sooner).
+    void StormDischarge(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        AuraEffect* shield = Shield(player);
+        if (!shield || !player->HasAura(SPELL_STORMFRONT, player->GetGUID()) || Now() - state.LastDischarge
+            < DISCHARGE_EVERY_MS)
+            return;
+        state.LastDischarge = Now();
+        SpellInfo const* info = sSpellMgr->GetSpellInfo(sSpellMgr->GetSpellWithRank(SPELL_LIGHTNING_SHIELD_DAMAGE,
+            shield->GetSpellInfo()->GetRank()));
+        float discharge = float(info ? info->Effects[EFFECT_0].CalcValue(player) : 0)
+            + float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_NATURE)) * DISCHARGE_SP
+            + player->GetTotalAttackPowerValue(BASE_ATTACK) * DISCHARGE_AP;
+        if (HasStormreaverMarker(player, MOD_OVERCHARGED_CORE))
+            discharge *= OVERCHARGED;
+        Strike(player, target, SPELL_STORM_DISCHARGE, discharge);
+        Trace(player, Acore::StringFormat("Lightning Shield discharges for {}", int32(discharge)));
+        if (HasStormreaverMarker(player, MOD_VIOLENT_GROUNDING))
+        {
+            std::size_t count = GROUNDING_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, target, GROUNDING_RADIUS))
+                if (enemy != target && count)
+                {
+                    StormArc(player, target, enemy, SPELL_STORM_DISCHARGE, discharge * GROUNDING_SHARE);
+                    --count;
+                }
+        }
+        else if (HasStormreaverMarker(player, MOD_RIDE_THE_LIGHTNING))
+        {
+            RenewFor(player, SPELL_RIDE_THE_LIGHTNING, RIDE_MS);
+            player->ModifySpellCooldown(SPELL_LAVA_LASH, -RIDE_COOLDOWN_MS);
+        }
+    }
+
+    void ClearDuelists(Player* player)
+    {
+        State& state = StateOf(player);
+        state.SabreHits = 0;
+        state.AdvanceUntil = 0;
+        state.StormfrontTimer = 0;
+        for (uint32 spell : { SPELL_OPENING_SHOT, SPELL_ADVANCE, SPELL_DISENGAGING_SHOT, SPELL_DISENGAGING_DISCOUNT,
+                              SPELL_PRESS_THE_ADVANTAGE, SPELL_STORMFRONT, SPELL_RIDE_THE_LIGHTNING })
+            player->RemoveAurasDueToSpell(spell);
+    }
+
     // Everything the five newest left out (death, a rune or spec change, logout).
     void ClearNewest(Player* player)
     {
@@ -4846,6 +5199,7 @@ namespace
         player->RemoveDynObject(SPELL_ASTRAL_REMNANT);
         ClearStar(player);
         ClearDruids(player);
+        ClearDuelists(player);
     }
 
     // ---- The rune's auras ------------------------------------------------------------------------------------
@@ -4874,7 +5228,7 @@ namespace
     {
         for (uint32 spell : RuneAuras())
             player->RemoveAurasDueToSpell(spell);
-        bool any = false, paragon = false;
+        bool any = false, paragon = false, duelist = false;
         for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
         {
             Choice const& choice = ActiveChoice(player, runeSlot);
@@ -4883,6 +5237,7 @@ namespace
                 continue;
             any = true;
             paragon |= rune->Id == RUNE_SANCTIFIED_PARAGON;
+            duelist |= rune->Id == RUNE_DUELIST;
             player->AddAura(rune->Aura, player);
             for (uint8 slot = 0; slot < SLOTS; ++slot)
                 if (uint8 pick = choice.Mods[slot])
@@ -4892,6 +5247,7 @@ namespace
             ClearCombat(player);
         if (!paragon)
             player->RemoveAurasDueToSpell(SPELL_SANCTIFIED_PARAGON);
+        TeachFlintlock(player, duelist);
         ApplyLegend(player, 0);
     }
 
@@ -5365,7 +5721,19 @@ class spell_titan_rune_lightning_shield : public AuraScript
 {
     PrepareAuraScript(spell_titan_rune_lightning_shield);
 
-    void Register() override { }
+    // The Stormreaver's Stormfront: the shield keeps the charge its proc took.
+    void Keep(ProcEventInfo& /*eventInfo*/)
+    {
+        Unit* caster = GetCaster();
+        if (caster && caster == GetTarget() && caster->HasAura(SPELL_RUNE_STORMREAVER)
+            && caster->HasAura(SPELL_STORMFRONT, caster->GetGUID()))
+            GetAura()->ModCharges(1);
+    }
+
+    void Register() override
+    {
+        OnProc += AuraProcFn(spell_titan_rune_lightning_shield::Keep);
+    }
 };
 
 // A Lightning Shield retaliation (its damage, every rank, and the rune's own 90754) with the Stormbound Conduit:
@@ -6219,6 +6587,8 @@ public:
             EventideTick(player, diff);
         if (StateOf(player).GuardShield)
             GuardTick(player);
+        if (player->HasAura(SPELL_RUNE_STORMREAVER) || StateOf(player).StormfrontTimer)
+            StormfrontTick(player, diff);
         if (!player->HasAura(SPELL_RUNE_FEL_COMMANDMENT))
             return;
         State& state = StateOf(player);
@@ -6658,6 +7028,120 @@ class spell_titan_rune_maul : public SpellScript
     }
 };
 
+// Sinister Strike (every rank) with the Duelist: Sabre Slash (its bonuses as it lands, then the rune's part).
+class spell_titan_rune_sinister_strike : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_sinister_strike);
+
+    void Bonus()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_DUELIST))
+            SetHitDamage(int32(GetHitDamage() * SabreBonus(player, target)));
+    }
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_DUELIST))
+            SabreSlash(player, target, float(GetHitDamage()));
+    }
+
+    void Register() override
+    {
+        OnHit += SpellHitFn(spell_titan_rune_sinister_strike::Bonus);
+        AfterHit += SpellHitFn(spell_titan_rune_sinister_strike::Hit);
+    }
+};
+
+// Flintlock Shot (the Duelist's action): the shot.
+class spell_titan_rune_flintlock_shot : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_flintlock_shot);
+
+    SpellCastResult Ready()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        return player && player->HasAura(SPELL_RUNE_DUELIST) && player->HasAura(SPELL_OPENING_SHOT)
+            ? SPELL_CAST_OK : SPELL_FAILED_CASTER_AURASTATE;
+    }
+
+    void Fire(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (Unit* target = GetHitUnit(); player && target)
+            FireFlintlock(player, target);
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_flintlock_shot::Ready);
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_flintlock_shot::Fire, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// Stormstrike with the Stormreaver: the Stormfront.
+class spell_titan_rune_stormstrike : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_stormstrike);
+
+    void Storm()
+    {
+        if (Player* player = GetCaster()->ToPlayer(); player && player->HasAura(SPELL_RUNE_STORMREAVER))
+            RaiseStormfront(player);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_rune_stormstrike::Storm);
+    }
+};
+
+// Lava Lash in the Stormreaver's Stormfront: Thunderlash.
+class spell_titan_rune_lava_lash : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_lava_lash);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && player->HasAura(SPELL_RUNE_STORMREAVER)
+            && player->HasAura(SPELL_STORMFRONT, player->GetGUID()))
+            Thunderlash(player, target);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_lava_lash::Hit);
+    }
+};
+
+// The Stormreaver's aura: a melee ability's hit (not the rune's own) discharges Lightning Shield at its target.
+class spell_titan_rune_stormreaver : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_stormreaver);
+
+    bool CheckProc(ProcEventInfo& eventInfo)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        SpellInfo const* spell = eventInfo.GetSpellInfo();
+        Unit* struck = eventInfo.GetActionTarget();
+        if (!player || !spell || !struck || struck == player || spell->DmgClass != SPELL_DAMAGE_CLASS_MELEE
+            || (spell->Id >= SPELL_RUNE_DUELIST && spell->Id <= SPELL_STORMREAVER_MODIFIER_FIRST + 9))
+            return false;
+        StormDischarge(player, struck);
+        return false;
+    }
+
+    void Register() override
+    {
+        DoCheckProc += AuraCheckProcFn(spell_titan_rune_stormreaver::CheckProc);
+    }
+};
+
 // Eviscerate (every rank) with the Spectral Blade: its phantom.
 class spell_titan_rune_eviscerate : public SpellScript
 {
@@ -6941,6 +7425,11 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_wrath);
     RegisterSpellScript(spell_titan_rune_barkskin);
     RegisterSpellScript(spell_titan_rune_maul);
+    RegisterSpellScript(spell_titan_rune_sinister_strike);
+    RegisterSpellScript(spell_titan_rune_flintlock_shot);
+    RegisterSpellScript(spell_titan_rune_stormstrike);
+    RegisterSpellScript(spell_titan_rune_lava_lash);
+    RegisterSpellScript(spell_titan_rune_stormreaver);
     RegisterCreatureAI(npc_titan_rune_spectral_beast);
     RegisterCreatureAI(npc_titan_rune_flier);
     new titan_runes_player();

@@ -1,4 +1,4 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-91360: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-91418: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
@@ -358,3 +358,40 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91341, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Guard'),
 (91342, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Blow'),
 (91346, 0, 0, 0, 0, 'Ursoc''s Champion - Enduring Champion');
+
+-- The Duelist (Sinister Strike readies Opening Shot; the rune teaches Flintlock Shot) and the Stormreaver
+-- (Stormstrike raises the Stormfront; Lava Lash in it is Thunderlash; its aura's procs discharge Lightning Shield).
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_sinister_strike',
+    'spell_titan_rune_flintlock_shot', 'spell_titan_rune_stormstrike', 'spell_titan_rune_lava_lash',
+    'spell_titan_rune_stormreaver');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(-1752, 'spell_titan_rune_sinister_strike'),
+(91382, 'spell_titan_rune_flintlock_shot'),
+(17364, 'spell_titan_rune_stormstrike'),
+(60103, 'spell_titan_rune_lava_lash'),
+(91400, 'spell_titan_rune_stormreaver');
+
+-- Their damage over time: Serrated Edge, White-Hot Conductor.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (91384, 91405) AND `ScriptName` = 'spell_titan_rune_dot';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(91384, 'spell_titan_rune_dot'),
+(91405, 'spell_titan_rune_dot');
+
+-- The Stormreaver's procs: every melee ability that hits.
+DELETE FROM `spell_proc` WHERE `SpellId` = 91400;
+INSERT INTO `spell_proc` (`SpellId`, `SchoolMask`, `SpellFamilyName`, `SpellFamilyMask0`, `SpellFamilyMask1`,
+    `SpellFamilyMask2`, `ProcFlags`, `SpellTypeMask`, `SpellPhaseMask`, `HitMask`, `AttributesMask`,
+    `DisableEffectsMask`, `ProcsPerMinute`, `Chance`, `Cooldown`, `Charges`) VALUES
+(91400, 0, 0, 0, 0, 0, 16, 1, 2, 1027, 0, 0, 0, 100, 0, 0);
+
+-- Their strikes are shares of the Hero's attack power and hits: no bonuses of their own.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (91383, 91385, 91399, 91402, 91403, 91404, 91406, 91407);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(91383, 0, 0, 0, 0, 'Duelist - Flintlock Shot'),
+(91385, 0, 0, 0, 0, 'Duelist - Serrated Edge tick'),
+(91399, 0, 0, 0, 0, 'Duelist - Sabre Slash'),
+(91402, 0, 0, 0, 0, 'Stormreaver - Stormfront pulse'),
+(91403, 0, 0, 0, 0, 'Stormreaver - Thunderlash'),
+(91404, 0, 0, 0, 0, 'Stormreaver - Thunderlash arc'),
+(91406, 0, 0, 0, 0, 'Stormreaver - White-Hot Conductor tick'),
+(91407, 0, 0, 0, 0, 'Stormreaver - Lightning Shield discharge');

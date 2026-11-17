@@ -1549,8 +1549,87 @@ ICONS += [ELUNE_ICON, CONVERGENCE_ICON, URSOC_ICON, 'Ability_Hunter_Pet_Owl', 'S
           'Ability_Druid_Maul', 'Spell_Nature_StoneClawTotem', 'Ability_Druid_ChallangingRoar',
           'Ability_Druid_DemoralizingRoar']
 
+# ---- The Duelist 91380 and the Stormreaver 91400 (their own dossiers); each one's markers 10 on from its first.
+DUELIST_ICON, STORMREAVER_ICON = 'Ability_Rune_Duelist', 'Ability_Rune_Stormreaver'
+VISUAL_GUNSHOT, VISUAL_SINISTER_STRIKE, VISUAL_THUNDERSTORM, VISUAL_LIGHTNING_BOLT = 8113, 253, 11302, 173
+RANGE_20, GCD_CATEGORY = 3, 133
+FLINTLOCK = action(91382, 'Flintlock Shot', 'INV_Weapon_Rifle_01',
+                   'Fire a conjured flintlock at an enemy within 20 yards: 60% of your attack power as Physical '
+                   'damage and 1 combo point. Needs Opening Shot (every second Sinister Strike).', 6000,
+                   target=TARGET_UNIT_TARGET_ENEMY, range_index=RANGE_20)
+FLINTLOCK['set'] = {**FLINTLOCK['set'], 'PowerType': POWER_ENERGY, 'ManaCost': 20,
+                    'StartRecoveryCategory': GCD_CATEGORY, 'StartRecoveryTime': 1000, 'CasterAuraSpell': 91381}
+FLINTLOCK['tooltip'] = FLINTLOCK['description']
+FLINTLOCK['unset'] = {'Attributes': 0x10000}      # Evasion's "not while shapeshifted": usable in stealth or a form
+SPELLS += [
+    # The Duelist.
+    buff(91380, 'Rune of the Duelist', DUELIST_ICON,
+         'Every second Sinister Strike that hits readies Opening Shot: your Flintlock Shot, 60% of your attack power '
+         'and a combo point.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {**buff(91381, 'Opening Shot', 'INV_Weapon_Rifle_01', 'Flintlock Shot is ready.', DURATION_8S,
+            {1: aura(AURA_DUMMY, 1, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_8S}},
+    FLINTLOCK,
+    {**strike(91383, 'Flintlock Shot', 'INV_Weapon_Rifle_01', PHYSICAL, VISUAL_GUNSHOT)},
+    dot(91384, 'Serrated Edge', 'Ability_Rogue_Rupture', PHYSICAL, DURATION_6S, 'Bleeding every second.'),
+    strike(91385, 'Serrated Edge', 'Ability_Rogue_Rupture', PHYSICAL),
+    {**buff(91386, 'Advance', 'Ability_Rogue_Sprint', 'Movement speed increased by 40%.', DURATION_3S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 40, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
+    {**buff(91387, 'Disengaging Shot', 'Ability_Hunter_RunningShot', 'Movement speed increased by 40%.', DURATION_3S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 40, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
+    {**buff(91388, 'Disengaging Shot', 'INV_Weapon_Rifle_01', 'Your next Flintlock Shot gives 10 Energy back.',
+            DURATION_8S, {1: aura(AURA_DUMMY, 1, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_8S}},
+    {**buff(91389, 'Press the Advantage', 'Ability_Rogue_SinisterCalling', 'Your next Sinister Strike strikes twice.',
+            DURATION_5S, {1: aura(AURA_DUMMY, 1, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_5S}},
+    strike(91399, 'Sabre Slash', 'Ability_Rogue_SinisterCalling', PHYSICAL, VISUAL_SINISTER_STRIKE),
+    # The Stormreaver.
+    buff(91400, 'Rune of the Stormreaver', STORMREAVER_ICON,
+         'Stormstrike raises the Stormfront for 6 sec: every 2 sec, 25% of your attack power as Nature damage to up '
+         'to 5 enemies within 8 yards. In it, Lava Lash becomes Thunderlash and your melee abilities discharge '
+         'Lightning Shield.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {**buff(91401, 'Stormfront', 'Spell_Shaman_ThunderStorm',
+            'A storm strikes the enemies around you. Lava Lash is Thunderlash; your melee abilities discharge '
+            'Lightning Shield, which keeps its charges.', DURATION_6S, {1: aura(AURA_DUMMY, 1, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_6S, 'SpellVisual': VISUAL_THUNDERSTORM}},
+    strike(91402, 'Stormfront', 'Spell_Shaman_ThunderStorm', NATURE, VISUAL_LIGHTNING_BOLT),
+    strike(91403, 'Thunderlash', 'Ability_Shaman_LavaLash', NATURE, VISUAL_THUNDER_HIT),
+    strike(91404, 'Thunderlash', 'Spell_Nature_ChainLightning', NATURE, VISUAL_THUNDER_HIT),
+    dot(91405, 'White-Hot Conductor', 'Spell_Fire_Immolation', FIRE, DURATION_6S, 'Fire damage every second.'),
+    strike(91406, 'White-Hot Conductor', 'Spell_Fire_Immolation', FIRE),
+    strike(91407, 'Lightning Shield', 'Spell_Nature_LightningShield', NATURE, VISUAL_THUNDER_HIT),
+    {**buff(91408, 'Ride the Lightning', 'Spell_Nature_Lightning', 'Movement speed increased by 30%.', DURATION_3S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
+]
+for _spell in SPELLS:
+    if _spell['id'] == 91383:
+        _spell['set'] = {**_spell['set'], 'Speed': 60.0}
+    if _spell['id'] in (91383, 91385, 91399, 91402, 91403, 91404, 91406, 91407):
+        _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
+# Its procs: every melee ability that hits; the script discharges the shield (once a second).
+for _spell in SPELLS:
+    if _spell['id'] == 91400:
+        _spell['set'] = {**_spell['set'], 'ProcFlags': PROC_DONE_MELEE_SPELL, 'ProcChance': 101}
+SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
+                hidden=True)
+           for first, icon, modifiers in (
+               (91390, DUELIST_ICON, [('Deep Cut', 'Sweeping Steel', 'Serrated Edge'),
+                                      ('Heavy Ball', 'Scattershot', 'Piercing Round'),
+                                      ('Advance', 'Disengaging Shot', 'Press the Advantage')]),
+               (91410, STORMREAVER_ICON, [('Eye of the Tempest', 'Forked Cataclysm', 'Rolling Thunder'),
+                                          ('Thunderhead', 'Chainbreaker', 'White-Hot Conductor'),
+                                          ('Overcharged Core', 'Ride the Lightning', 'Violent Grounding')]))
+           for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
+ICONS += [DUELIST_ICON, STORMREAVER_ICON, 'INV_Weapon_Rifle_01', 'Ability_Rogue_Rupture', 'Ability_Hunter_RunningShot',
+          'Ability_Rogue_SinisterCalling', 'Spell_Shaman_ThunderStorm', 'Ability_Shaman_LavaLash',
+          'Spell_Fire_Immolation', 'Spell_Nature_LightningShield', 'Spell_Nature_Lightning']
+
 RUNE_AURAS = {90700, 90730, 90750, 90770, 90790, 90810, 90830, 90860, 90890, 90920, 90950, 90980, 91130, 91200, 91220,
-              91240, 91260, 91280, 91300, 91320, 91340}
+              91240, 91260, 91280, 91300, 91320, 91340, 91380, 91400}
 for _spell in SPELLS:
     if _spell['id'] in RUNE_AURAS:
         _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}

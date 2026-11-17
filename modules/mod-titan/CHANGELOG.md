@@ -18,6 +18,16 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   guard absorbed (up to 250% of your attack power more).
 - Each has three slots of three options, like the others.
 
+### Two more Legendary Runes
+
+- Rune of the Duelist (Sinister Strike, Melee): every second Sinister Strike that hits readies Opening Shot. The
+  rune teaches Flintlock Shot (20 Energy, 6 sec cooldown, 20 yards): a conjured pistol shot for 60% of your attack
+  power and a combo point, no ranged weapon needed.
+- Rune of the Stormreaver (Stormstrike, Lava Lash and Lightning Shield, Melee): Stormstrike raises a Stormfront
+  around you for 6 sec that strikes up to 5 enemies every 2 sec for 25% of your attack power. In it, Lava Lash
+  becomes Thunderlash (60% of your attack power more, arcing to 2 more enemies), and your melee abilities discharge
+  Lightning Shield once a second without using its charges.
+
 ### Rune of Astral Horizon
 
 - The Orb flies to its target much faster, then slows to a drift once it reaches an enemy (whatever the options).

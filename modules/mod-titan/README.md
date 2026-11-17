@@ -590,11 +590,18 @@ utility or a tradeoff) take one pick each, from three.
   - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
     30% of maximum health, 6 sec; Barkskin's cooldown 30 sec shorter, each Maul in Bear Form 3 sec more); Maul
     releases it (91342, a 10-yard cone): 75% AP plus all it absorbed (that part at most 250% AP).
+  - **Duelist** (42; Melee; Sinister Strike): every second direct hit readies Opening Shot (91381, 8 sec); the rune
+    teaches Flintlock Shot (91382, learnt at each Apply, not saved; it needs Opening Shot): 60% AP (91383) and a
+    combo point.
+  - **Stormreaver** (43; Melee; Stormstrike, Lava Lash, Lightning Shield): Stormstrike's Stormfront (91401, 6 sec,
+    a pulse 91402 every 2 sec, 25% AP); Lava Lash in it adds Thunderlash (91403, 60% AP; arcs 91404); the rune's
+    aura procs on melee abilities (spell_proc) and discharges Lightning Shield (91407) once a second, the shield
+    keeping its charges (its aura script's OnProc).
   - `.runedebug` (anyone) tells the Splintered Crown's and Phoenix Wake's steps in chat (Icicle formed and loosed,
     the Ember placed, Fire Blast on its host, the phoenix summoned, its strike, why it went), to find where one stops.
 - A Hero's buff on their own pet or summon lands whatever its level (`hero_resources.cpp`): the core drops a positive
   aura's target more than 10 levels below the spell ("Target is too low level": Bestial Wrath, level 40).
-- Scripts in `titan_runes.sql`; spells 90750-91360 (`patch_runes.py`); their looks from the curated VFX library
+- Scripts in `titan_runes.sql`; spells 90750-91418 (`patch_runes.py`); their looks from the curated VFX library
   (`client-patch/spells/RUNE_VFX`).
 
 ## Runes of Enhancement

@@ -150,6 +150,14 @@ RUNES = [
      'Barkskin in Bear Form raises a guard; Maul answers with what it took.',
      'Bear Form, Barkskin and Maul',
      'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6ZM9 10h.01M15 10h.01'),
+    (42, (230, 185, 95), 'Physical · Duelist',
+     'Sinister Strike readies a conjured flintlock: Flintlock Shot.',
+     'Sinister Strike',
+     'M4 20 16 8M14 6l4 4M18 4l2 2M6 12h6l2-2'),
+    (43, (90, 200, 255), 'Nature · Stormreaver',
+     'Stormstrike tears open a storm; Lava Lash and Lightning Shield strike through it.',
+     'Stormstrike, Lava Lash and Lightning Shield',
+     'M13 2 4 14h7l-1 8 9-12h-7Z'),
 ]
 
 # The runes the panel builds (their build view: the medallion, the slots, the options): the mockup's words for them.
@@ -1016,6 +1024,90 @@ BUILT = {
             'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6ZM12 8v8M8 12h8',
             'M6 9h4l5-4v14l-5-4H6Z',
             'M12 2v20M2 12h20',
+        ],
+    },
+    42: {
+        'core': 'Every second **Sinister Strike** readies **Opening Shot**: fire **Flintlock Shot** for **60%** of '
+            'your attack power and a combo point.',
+        'slots': ['Sabre', 'Flintlock', 'Footwork'],
+        'asks': ['How the blade cuts', 'How the shot flies', 'What you do after'],
+        'texts': [
+            'Sinister Strike deals 25% more damage.',
+            'Sinister Strike also hits up to 3 other enemies within 5 yards of its target for half its damage.',
+            'Sinister Strike makes its target bleed for 40% more of its damage over 6 sec. A new bleed keeps what is '
+            'left of the last.',
+            'Flintlock Shot deals 60% more damage: 96% of your attack power.',
+            'Flintlock Shot spreads in a cone: up to 4 other enemies in front of you, as far as 10 yards past its '
+            'target, take 75% of its damage.',
+            'Flintlock Shot pierces up to 3 enemies within 15 yards behind its target, for 80% of its damage.',
+            'After firing, you move 40% faster for 3 sec, and your next Sinister Strike on that enemy within 5 sec '
+            'deals 30% more damage.',
+            'After firing, you move 40% faster for 3 sec, and your next Flintlock Shot within 8 sec gives 10 Energy '
+            'back.',
+            'After firing, your next Sinister Strike within 5 sec strikes again a moment later for half its damage.',
+        ],
+        'abilities': [
+            'Cut',
+            'Sweep',
+            'Serrate',
+            'Ball',
+            'Scatter',
+            'Pierce',
+            'Advance',
+            'Disengage',
+            'Press',
+        ],
+        'icons': [
+            'M4 20 20 4M14 4h6v6',
+            'M2 12c5-6 15-6 20 0M2 12c5 6 15 6 20 0',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0',
+            'M4 12 20 4M4 12l16 0M4 12l16 8',
+            'M2 12h20M16 7l5 5-5 5',
+            'M4 12h14M14 7l5 5-5 5',
+            'M20 12H6M10 7l-5 5 5 5',
+            'M5 19 9 15M9 19l4-4M13 19l4-4',
+        ],
+    },
+    43: {
+        'core': '**Stormstrike** raises the **Stormfront** (25% of your attack power every 2 sec); **Lava Lash** '
+            'becomes **Thunderlash**; your strikes discharge **Lightning Shield**.',
+        'slots': ['Storm', 'Thunderlash', 'Shield'],
+        'asks': ['How the storm strikes', 'How Thunderlash lands', 'How the shield fights'],
+        'texts': [
+            'The Stormfront deals 120% more damage while only one enemy is in it.',
+            'The Stormfront strikes up to 8 enemies within 12 yards.',
+            'The Stormfront strikes every second instead of every 2, each strike 70% of its damage.',
+            "Thunderlash doesn't arc: 120% of your attack power to its target instead.",
+            'Thunderlash arcs to 4 enemies instead of 2, each for 30% of your attack power.',
+            'Thunderlash burns its target for 100% of your attack power over 6 sec instead of its Nature hit; its '
+            'arcs stay. A new burn keeps what is left of the last.',
+            "The rune's Lightning Shield discharges deal 50% more damage.",
+            "Each of the rune's discharges makes you move 30% faster for 3 sec and brings Lava Lash back 1 sec sooner.",
+            "Each of the rune's discharges also strikes up to 3 other enemies within 8 yards of its target for half "
+            'its damage.',
+        ],
+        'abilities': [
+            'Eye',
+            'Forked',
+            'Rolling',
+            'Head',
+            'Chain',
+            'White-Hot',
+            'Overcharge',
+            'Ride',
+            'Ground',
+        ],
+        'icons': [
+            'M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0M11 11h.01',
+            'M5 5l3 3M16 16l3 3M12 2v4M12 18v4',
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+            'M13 2 4 14h7l-1 8 9-12h-7Z',
+            'M5 5h.01M19 5h.01M12 12h.01M5 19h.01M19 19h.01M5 5l7 7 7-7M5 19l7-7 7 7',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6Z',
+            'M4 12h14M14 7l5 5-5 5',
+            'M3 20h18M12 4v12M8 12l4 4 4-4',
         ],
     },
 }

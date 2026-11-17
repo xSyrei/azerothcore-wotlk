@@ -171,12 +171,13 @@ local function ById(id)
         end
     end
 end
-check(#EmberforgeRunesCatalog == 21 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
+check(#EmberforgeRunesCatalog == 23 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
     and ById(22).name == "Rune of the Sanctified Paragon" and ById(23).name == "Rune of the Stormbound Conduit"
     and ById(24).name == "Rune of Echoing Thunder" and ById(25).name == "Rune of the Wellspring"
     and ById(26).name == "Rune of the Wandering Mist" and ById(34).name == "Rune of Arcane Mind"
     and ById(38).name == "Rune of Guiding Light" and ById(39).name == "Rune of Elune's Guardian"
-    and ById(41).name == "Rune of Ursoc's Champion", "the catalog holds only the runes the server builds")
+    and ById(41).name == "Rune of Ursoc's Champion" and ById(42).name == "Rune of the Duelist"
+    and ById(43).name == "Rune of the Stormreaver", "the catalog holds only the runes the server builds")
 for _, rune in ipairs(EmberforgeRunesCatalog) do
     check(EmberforgeRunesArt.runes[rune.id] and EmberforgeRunesArt.runes[rune.id].built, "built: " .. rune.name)
 end
@@ -248,28 +249,28 @@ local function listed()
     end
     return table.concat(ids, ",")
 end
-check(view.mode == "browse" and view.phase == "browse" and debug.browser.target == 1 and #browse.list == 21
-    and rows[1].shown and rows[5].shown and debug.browser.count.text == "21 runes",
+check(view.mode == "browse" and view.phase == "browse" and debug.browser.target == 1 and #browse.list == 23
+    and rows[1].shown and rows[5].shown and debug.browser.count.text == "23 runes",
     "Browse all lists every rune, five rows at a time")
 check(rows[1].rune.id == 21 and rows[1].status.text == "Usable now" and rows[2].status.text == "Coming soon",
     "the usable rune comes first; each row says where it stands")
 debug.browser.scripts.OnMouseWheel(debug.browser, -1)
 check(browse.offset == 1 and rows[1].rune == browse.list[2], "the mouse wheel scrolls the list")
 debug.browser.scripts.OnMouseWheel(debug.browser, -20)
-check(browse.offset == 16, "it stops at the end")
+check(browse.offset == 18, "it stops at the end")
 local search = debug.search
 search.text = "lightning"
 search.scripts.OnTextChanged(search)
 check(browse.offset == 0 and rows[1].rune.id == 23 and not search.hint.shown, "the search finds a rune by its name")
 search.text = "warlock glaive"
 search.scripts.OnTextChanged(search)
-check(listed() == "21" and debug.browser.count.text == "1 of 21 runes", "and by the abilities it uses")
+check(listed() == "21" and debug.browser.count.text == "1 of 23 runes", "and by the abilities it uses")
 search.text = "soothing heal"
 search.scripts.OnTextChanged(search)
 check(listed() == "26", "every word must match: Soothing Mist's healing rune")
 search.text = "rogue"
 search.scripts.OnTextChanged(search)
-check(listed() == "32", "by keyword: the rogue's rune")
+check(listed() == "32,42", "by keyword: the rogues' runes")
 search.text = "kill command"
 search.scripts.OnTextChanged(search)
 check(listed() == "33", "by ability: Kill Command's rune")
@@ -285,7 +286,7 @@ check(#browse.list == 0 and not rows[1].shown and debug.empty.target == 1
     and debug.empty.text.text:find("No rune matches"), "nothing found says so")
 search.text = ""
 search.scripts.OnTextChanged(search)
-check(search.hint.shown and #browse.list == 21, "an empty search lists every rune again")
+check(search.hint.shown and #browse.list == 23, "an empty search lists every rune again")
 debug.chips[3]:Click()
 local healers = true
 for _, rune in ipairs(browse.list) do
@@ -541,7 +542,7 @@ for _, rune in ipairs(debug.browse.list) do
         hidden = false
     end
 end
-check(#retired == 3 and hidden and #debug.browse.list == 18 and debug.browser.count.text == "18 runes",
+check(#retired == 3 and hidden and #debug.browse.list == 20 and debug.browser.count.text == "20 runes",
     "retired runes are not listed, nor counted")
 
 print(failures == 0 and "All checks passed" or (failures .. " check(s) failed"))

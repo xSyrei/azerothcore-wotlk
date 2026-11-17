@@ -48,6 +48,7 @@ FIELDS = {
     'SpellFamilyName': 208, 'SpellFamilyFlags0': 209, 'SpellFamilyFlags1': 210, 'SpellFamilyFlags2': 211,
     'MaxAffectedTargets': 212, 'DmgClass': 213, 'Speed': 47, 'ProcFlags': 34, 'ProcChance': 35, 'ProcCharges': 36, 'StackAmount': 49,
     'SchoolMask': 225, 'RuneCostID': 226,
+    'CasterAuraSpell': 24,
 }
 EFFECT_FIELDS = {       # name: (first column, is float); effect n is first column + n - 1
     'Effect': (71, False), 'DieSides': (74, False), 'RealPointsPerLevel': (77, True), 'BasePoints': (80, False),

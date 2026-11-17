@@ -1019,4 +1019,101 @@ EmberforgeRunesCatalog = {
           text = "Charge in, break the line." },
       },
     },
+    { id = 42,
+      name = "Rune of the Duelist",
+      role = "Melee DPS (Rogue, Combat)",
+      roles = { "DAMAGER" },
+      icon = "Ability_Rune_Duelist",
+      keywords = "rogue combat sinister strike sabre flintlock pistol gun shot combo point energy",
+      slots = { "Sabre", "Flintlock", "Footwork" },
+      builtFrom = "Sinister Strike",
+      spentWith = "Flintlock Shot (the rune teaches it)",
+      resource = "Opening Shot, one held",
+      core = "Every second Sinister Strike that hits readies Opening Shot for 8 sec (one held). It lets you fire " ..
+          "Flintlock Shot, which the rune teaches: 20 Energy, 6 sec cooldown, at an enemy within 20 yards for 60% " ..
+          "of your attack power as Physical damage and 1 combo point. The flintlock is conjured: no ranged weapon " ..
+          "needed.",
+      loop = "Sinister Strike, Sinister Strike, Flintlock Shot; finishers as usual.",
+      mods = {
+        { name = "Deep Cut",
+          text = "Sinister Strike deals 25% more damage." },
+        { name = "Sweeping Steel",
+          text = "Sinister Strike also hits up to 3 other enemies within 5 yards of its target for half its damage." },
+        { name = "Serrated Edge",
+          text = "Sinister Strike makes its target bleed for 40% more of its damage over 6 sec. A new bleed keeps " ..
+              "what is left of the last." },
+        { name = "Heavy Ball",
+          text = "Flintlock Shot deals 60% more damage: 96% of your attack power." },
+        { name = "Scattershot",
+          text = "Flintlock Shot spreads in a cone: up to 4 other enemies in front of you, as far as 10 yards past " ..
+              "its target, take 75% of its damage." },
+        { name = "Piercing Round",
+          text = "Flintlock Shot pierces up to 3 enemies within 15 yards behind its target, for 80% of its damage." },
+        { name = "Advance",
+          text = "After firing, you move 40% faster for 3 sec, and your next Sinister Strike on that enemy within 5 " ..
+              "sec deals 30% more damage." },
+        { name = "Disengaging Shot",
+          text = "After firing, you move 40% faster for 3 sec, and your next Flintlock Shot within 8 sec gives 10 " ..
+              "Energy back." },
+        { name = "Press the Advantage",
+          text = "After firing, your next Sinister Strike within 5 sec strikes again a moment later for half its " ..
+              "damage." },
+      },
+      builds = {
+        { name = "The Gunslinger", mods = { "Deep Cut", "Heavy Ball", "Advance" },
+          text = "One enemy, hard and fast." },
+        { name = "The Buccaneer", mods = { "Sweeping Steel", "Scattershot", "Disengaging Shot" },
+          text = "Steel and shot for packs." },
+        { name = "The Fencer", mods = { "Serrated Edge", "Piercing Round", "Press the Advantage" },
+          text = "Bleeds and follow-ups." },
+      },
+    },
+    { id = 43,
+      name = "Rune of the Stormreaver",
+      role = "Melee DPS (Shaman, Enhancement)",
+      roles = { "DAMAGER" },
+      icon = "Ability_Rune_Stormreaver",
+      keywords = "shaman enhancement stormstrike lava lash lightning shield storm thunder nature melee",
+      slots = { "Storm", "Thunderlash", "Shield" },
+      builtFrom = "Stormstrike",
+      spentWith = "Lava Lash and your melee abilities",
+      resource = "Stormfront, 6 sec",
+      core = "Stormstrike raises the Stormfront around you for 6 sec (Stormstrike again refreshes it): every 2 sec " ..
+          "it strikes up to 5 enemies within 8 yards for 25% of your attack power as Nature damage. In it, Lava " ..
+          "Lash becomes Thunderlash: 60% of your attack power more to its target, and arcs of 30% to 2 more enemies " ..
+          "within 8 yards. Your melee abilities discharge Lightning Shield at their target, once a second: its own " ..
+          "damage, a third of your spell power and 20% of your attack power, and the shield keeps its charges.",
+      loop = "Stormstrike to keep the storm up, Lava Lash in it, and strike to discharge the shield.",
+      mods = {
+        { name = "Eye of the Tempest",
+          text = "The Stormfront deals 120% more damage while only one enemy is in it." },
+        { name = "Forked Cataclysm",
+          text = "The Stormfront strikes up to 8 enemies within 12 yards." },
+        { name = "Rolling Thunder",
+          text = "The Stormfront strikes every second instead of every 2, each strike 70% of its damage." },
+        { name = "Thunderhead",
+          text = "Thunderlash doesn't arc: 120% of your attack power to its target instead." },
+        { name = "Chainbreaker",
+          text = "Thunderlash arcs to 4 enemies instead of 2, each for 30% of your attack power." },
+        { name = "White-Hot Conductor",
+          text = "Thunderlash burns its target for 100% of your attack power over 6 sec instead of its Nature hit; " ..
+              "its arcs stay. A new burn keeps what is left of the last." },
+        { name = "Overcharged Core",
+          text = "The rune's Lightning Shield discharges deal 50% more damage." },
+        { name = "Ride the Lightning",
+          text = "Each of the rune's discharges makes you move 30% faster for 3 sec and brings Lava Lash back 1 sec " ..
+              "sooner." },
+        { name = "Violent Grounding",
+          text = "Each of the rune's discharges also strikes up to 3 other enemies within 8 yards of its target for " ..
+              "half its damage." },
+      },
+      builds = {
+        { name = "The Tempest", mods = { "Eye of the Tempest", "Thunderhead", "Overcharged Core" },
+          text = "Focused pressure." },
+        { name = "The Cataclysm", mods = { "Forked Cataclysm", "Chainbreaker", "Violent Grounding" },
+          text = "Lightning on the pack." },
+        { name = "The Rider", mods = { "Rolling Thunder", "White-Hot Conductor", "Ride the Lightning" },
+          text = "Mobile pressure." },
+      },
+    },
 }
