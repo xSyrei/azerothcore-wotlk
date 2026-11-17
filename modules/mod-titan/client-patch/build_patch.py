@@ -168,6 +168,7 @@ def main():
             for _, ranks in patch_spells.patch_talents.ranked(tree, first_rank) for spell_id in ranks}
         monk |= {spell_id for first, chain in patch_spells.RANK_CHAINS.items() if first in monk for spell_id in chain}
         own = {spell['id']: 'MONK' if spell['id'] in monk else 'DEMONHUNTER' for spell in patch_spells.SPELLS}
+        own.update(patch_spells.patch_runes.SPELL_CLASSES)         # the abilities runes teach, their class's
         spell_classes_lua = spell_classes.build(dbc_dir, own)
         entries.append(('Interface\\FrameXML\\EmberforgeSpellClasses.lua', spell_classes_lua.encode()))
 

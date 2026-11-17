@@ -1024,40 +1024,41 @@ EmberforgeRunesCatalog = {
       role = "Melee DPS (Rogue, Combat)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_Duelist",
-      keywords = "rogue combat sinister strike sabre flintlock pistol gun shot combo point energy",
-      slots = { "Sabre", "Flintlock", "Footwork" },
-      builtFrom = "Sinister Strike",
-      spentWith = "Flintlock Shot (the rune teaches it)",
+      keywords = "rogue combat sinister strike sabre slash pistol shot broadside gun explosion combo point energy",
+      slots = { "Sabre", "Pistol", "Footwork" },
+      builtFrom = "Sabre Slash (Sinister Strike)",
+      spentWith = "Pistol Shot and Broadside (the rune teaches them)",
       resource = "Opening Shot, one held",
-      core = "Every second Sinister Strike that hits readies Opening Shot for 8 sec (one held). It lets you fire " ..
-          "Flintlock Shot, which the rune teaches: 20 Energy, 6 sec cooldown, at an enemy within 20 yards for 60% " ..
-          "of your attack power as Physical damage and 1 combo point. The flintlock is conjured: no ranged weapon " ..
-          "needed.",
-      loop = "Sinister Strike, Sinister Strike, Flintlock Shot; finishers as usual.",
+      core = "Sinister Strike becomes Sabre Slash: its damage and combo point, a sabre's look. Every second Sabre " ..
+          "Slash that hits readies Opening Shot for 8 sec (one held), for Pistol Shot: 20 Energy, 6 sec cooldown, " ..
+          "an enemy within 20 yards, 60% of your attack power as Physical damage and 1 combo point. Broadside, a " ..
+          "finishing move (35 Energy, 20 sec cooldown): three pistol blasts, each 30% of your attack power per " ..
+          "combo point to its target and up to 7 enemies within 8 yards. The rune teaches all three; the pistol is " ..
+          "conjured.",
+      loop = "Sabre Slash twice, Pistol Shot; Broadside at five combo points.",
       mods = {
         { name = "Deep Cut",
-          text = "Sinister Strike deals 25% more damage." },
+          text = "Sabre Slash deals 25% more damage." },
         { name = "Sweeping Steel",
-          text = "Sinister Strike also hits up to 3 other enemies within 5 yards of its target for half its damage." },
+          text = "Sabre Slash also hits up to 3 other enemies within 5 yards of its target for half its damage." },
         { name = "Serrated Edge",
-          text = "Sinister Strike makes its target bleed for 40% more of its damage over 6 sec. A new bleed keeps " ..
-              "what is left of the last." },
+          text = "Sabre Slash makes its target bleed for 40% more of its damage over 6 sec. A new bleed keeps what " ..
+              "is left of the last." },
         { name = "Heavy Ball",
-          text = "Flintlock Shot deals 60% more damage: 96% of your attack power." },
+          text = "Pistol Shot deals 60% more damage: 96% of your attack power." },
         { name = "Scattershot",
-          text = "Flintlock Shot spreads in a cone: up to 4 other enemies in front of you, as far as 10 yards past " ..
-              "its target, take 75% of its damage." },
+          text = "Pistol Shot spreads in a cone: up to 4 other enemies in front of you, as far as 10 yards past its " ..
+              "target, take 75% of its damage." },
         { name = "Piercing Round",
-          text = "Flintlock Shot pierces up to 3 enemies within 15 yards behind its target, for 80% of its damage." },
+          text = "Pistol Shot pierces up to 3 enemies within 15 yards behind its target, for 80% of its damage." },
         { name = "Advance",
-          text = "After firing, you move 40% faster for 3 sec, and your next Sinister Strike on that enemy within 5 " ..
-              "sec deals 30% more damage." },
+          text = "After firing, you move 40% faster for 3 sec, and your next Sabre Slash on that enemy within 5 sec " ..
+              "deals 30% more damage." },
         { name = "Disengaging Shot",
-          text = "After firing, you move 40% faster for 3 sec, and your next Flintlock Shot within 8 sec gives 10 " ..
+          text = "After firing, you move 40% faster for 3 sec, and your next Pistol Shot within 8 sec gives 10 " ..
               "Energy back." },
         { name = "Press the Advantage",
-          text = "After firing, your next Sinister Strike within 5 sec strikes again a moment later for half its " ..
-              "damage." },
+          text = "After firing, your next Sabre Slash within 5 sec strikes again a moment later for half its damage." },
       },
       builds = {
         { name = "The Gunslinger", mods = { "Deep Cut", "Heavy Ball", "Advance" },

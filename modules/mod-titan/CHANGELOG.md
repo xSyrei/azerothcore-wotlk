@@ -20,9 +20,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ### Two more Legendary Runes
 
-- Rune of the Duelist (Sinister Strike, Melee): every second Sinister Strike that hits readies Opening Shot. The
-  rune teaches Flintlock Shot (20 Energy, 6 sec cooldown, 20 yards): a conjured pistol shot for 60% of your attack
-  power and a combo point, no ranged weapon needed.
+- Rune of the Duelist (Sinister Strike, Melee): Sinister Strike becomes Sabre Slash (its own icon and slash; your
+  Sinister Strike buttons change to it). Every second Sabre Slash that hits readies Opening Shot for Pistol Shot (20
+  Energy, 6 sec cooldown, 20 yards): a conjured pistol shot for 60% of your attack power and a combo point, no ranged
+  weapon needed. Broadside, a finishing move (35 Energy, 20 sec cooldown): three exploding pistol blasts, each 30%
+  of your attack power per combo point to the target and up to 7 enemies around it. All three are in the Rogue tab
+  of your spellbook.
 - Rune of the Stormreaver (Stormstrike, Lava Lash and Lightning Shield, Melee): Stormstrike raises a Stormfront
   around you for 6 sec that strikes up to 5 enemies every 2 sec for 25% of your attack power. In it, Lava Lash
   becomes Thunderlash (60% of your attack power more, arcing to 2 more enemies), and your melee abilities discharge

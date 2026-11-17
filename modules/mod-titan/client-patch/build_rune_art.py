@@ -151,7 +151,7 @@ RUNES = [
      'Bear Form, Barkskin and Maul',
      'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6ZM9 10h.01M15 10h.01'),
     (42, (230, 185, 95), 'Physical · Duelist',
-     'Sinister Strike readies a conjured flintlock: Flintlock Shot.',
+     'Sabre Slash, Pistol Shot and Broadside: steel, shot and explosions.',
      'Sinister Strike',
      'M4 20 16 8M14 6l4 4M18 4l2 2M6 12h6l2-2'),
     (43, (90, 200, 255), 'Nature · Stormreaver',
@@ -1027,24 +1027,23 @@ BUILT = {
         ],
     },
     42: {
-        'core': 'Every second **Sinister Strike** readies **Opening Shot**: fire **Flintlock Shot** for **60%** of '
-            'your attack power and a combo point.',
-        'slots': ['Sabre', 'Flintlock', 'Footwork'],
+        'core': '**Sabre Slash** readies **Opening Shot**: **Pistol Shot** for **60%** of your attack power; '
+            '**Broadside** spends combo points in pistol blasts.',
+        'slots': ['Sabre', 'Pistol', 'Footwork'],
         'asks': ['How the blade cuts', 'How the shot flies', 'What you do after'],
         'texts': [
-            'Sinister Strike deals 25% more damage.',
-            'Sinister Strike also hits up to 3 other enemies within 5 yards of its target for half its damage.',
-            'Sinister Strike makes its target bleed for 40% more of its damage over 6 sec. A new bleed keeps what is '
-            'left of the last.',
-            'Flintlock Shot deals 60% more damage: 96% of your attack power.',
-            'Flintlock Shot spreads in a cone: up to 4 other enemies in front of you, as far as 10 yards past its '
+            'Sabre Slash deals 25% more damage.',
+            'Sabre Slash also hits up to 3 other enemies within 5 yards of its target for half its damage.',
+            'Sabre Slash makes its target bleed for 40% more of its damage over 6 sec. A new bleed keeps what is left '
+            'of the last.',
+            'Pistol Shot deals 60% more damage: 96% of your attack power.',
+            'Pistol Shot spreads in a cone: up to 4 other enemies in front of you, as far as 10 yards past its '
             'target, take 75% of its damage.',
-            'Flintlock Shot pierces up to 3 enemies within 15 yards behind its target, for 80% of its damage.',
-            'After firing, you move 40% faster for 3 sec, and your next Sinister Strike on that enemy within 5 sec '
-            'deals 30% more damage.',
-            'After firing, you move 40% faster for 3 sec, and your next Flintlock Shot within 8 sec gives 10 Energy '
-            'back.',
-            'After firing, your next Sinister Strike within 5 sec strikes again a moment later for half its damage.',
+            'Pistol Shot pierces up to 3 enemies within 15 yards behind its target, for 80% of its damage.',
+            'After firing, you move 40% faster for 3 sec, and your next Sabre Slash on that enemy within 5 sec deals '
+            '30% more damage.',
+            'After firing, you move 40% faster for 3 sec, and your next Pistol Shot within 8 sec gives 10 Energy back.',
+            'After firing, your next Sabre Slash within 5 sec strikes again a moment later for half its damage.',
         ],
         'abilities': [
             'Cut',

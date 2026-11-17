@@ -359,14 +359,15 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91342, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Blow'),
 (91346, 0, 0, 0, 0, 'Ursoc''s Champion - Enduring Champion');
 
--- The Duelist (Sinister Strike readies Opening Shot; the rune teaches Flintlock Shot) and the Stormreaver
+-- The Duelist (Sinister Strike readies Opening Shot; the rune teaches Pistol Shot) and the Stormreaver
 -- (Stormstrike raises the Stormfront; Lava Lash in it is Thunderlash; its aura's procs discharge Lightning Shield).
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_sinister_strike',
-    'spell_titan_rune_flintlock_shot', 'spell_titan_rune_stormstrike', 'spell_titan_rune_lava_lash',
+    'spell_titan_rune_flintlock_shot', 'spell_titan_rune_pistol_shot', 'spell_titan_rune_stormstrike',
+    'spell_titan_rune_lava_lash',
     'spell_titan_rune_stormreaver');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-1752, 'spell_titan_rune_sinister_strike'),
-(91382, 'spell_titan_rune_flintlock_shot'),
+(91382, 'spell_titan_rune_pistol_shot'),
 (17364, 'spell_titan_rune_stormstrike'),
 (60103, 'spell_titan_rune_lava_lash'),
 (91400, 'spell_titan_rune_stormreaver');
@@ -387,7 +388,7 @@ INSERT INTO `spell_proc` (`SpellId`, `SchoolMask`, `SpellFamilyName`, `SpellFami
 -- Their strikes are shares of the Hero's attack power and hits: no bonuses of their own.
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (91383, 91385, 91399, 91402, 91403, 91404, 91406, 91407);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
-(91383, 0, 0, 0, 0, 'Duelist - Flintlock Shot'),
+(91383, 0, 0, 0, 0, 'Duelist - Pistol Shot'),
 (91385, 0, 0, 0, 0, 'Duelist - Serrated Edge tick'),
 (91399, 0, 0, 0, 0, 'Duelist - Sabre Slash'),
 (91402, 0, 0, 0, 0, 'Stormreaver - Stormfront pulse'),
@@ -395,3 +396,13 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91404, 0, 0, 0, 0, 'Stormreaver - Thunderlash arc'),
 (91406, 0, 0, 0, 0, 'Stormreaver - White-Hot Conductor tick'),
 (91407, 0, 0, 0, 0, 'Stormreaver - Lightning Shield discharge');
+
+-- The Duelist's Sabre Slash (its Sinister Strike) and Broadside (its finishing move).
+DELETE FROM `spell_script_names` WHERE `spell_id` = 91370 AND `ScriptName` = 'spell_titan_rune_sinister_strike';
+DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_titan_rune_broadside';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(91370, 'spell_titan_rune_sinister_strike'),
+(91371, 'spell_titan_rune_broadside');
+DELETE FROM `spell_bonus_data` WHERE `entry` = 91372;
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(91372, 0, 0, 0, 0, 'Duelist - Broadside blast');

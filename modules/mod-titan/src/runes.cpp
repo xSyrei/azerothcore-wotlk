@@ -344,16 +344,21 @@ namespace
         SPELL_URSOC_ROAR_LOOK           = 91359,
         SPELL_COLLISION_LOOK            = 91360,    // Astral Rupture: the collision's look, its damage over time
 
-        // The Duelist (91380 on) and the Stormreaver (91400 on); their markers 10 on from each rune.
+        // The Duelist (91370 on: its taught abilities first) and the Stormreaver (91400 on); their markers 10 on
+        // from each rune.
+        SPELL_SABRE_SLASH               = 91370,    // Sinister Strike while the Duelist is bound
+        SPELL_BROADSIDE                 = 91371,    // the finisher it teaches
+        SPELL_BROADSIDE_BLAST           = 91372,
+        SPELL_BROADSIDE_LOOK            = 91373,    // the last blast's great explosion, on its target
         SPELL_RUNE_DUELIST              = 91380,
-        SPELL_OPENING_SHOT              = 91381,    // Flintlock Shot ready (8 sec)
-        SPELL_FLINTLOCK_SHOT            = 91382,    // the action the rune teaches
-        SPELL_FLINTLOCK_DAMAGE          = 91383,
+        SPELL_OPENING_SHOT              = 91381,    // Pistol Shot ready (8 sec)
+        SPELL_PISTOL_SHOT            = 91382,    // the action the rune teaches
+        SPELL_PISTOL_DAMAGE          = 91383,
         SPELL_SERRATED_EDGE             = 91384,    // its bleed; 91385 the tick
         SPELL_SERRATED_EDGE_TICK        = 91385,
         SPELL_ADVANCE                   = 91386,    // speed
         SPELL_DISENGAGING_SHOT          = 91387,    // speed
-        SPELL_DISENGAGING_DISCOUNT      = 91388,    // the next Flintlock Shot 10 Energy cheaper
+        SPELL_DISENGAGING_DISCOUNT      = 91388,    // the next Pistol Shot 10 Energy cheaper
         SPELL_PRESS_THE_ADVANTAGE       = 91389,    // the next Sinister Strike strikes twice
         SPELL_DUELIST_MODIFIER_FIRST    = 91390,    // + slot * 3 + choice
         SPELL_SABRE_STRIKE              = 91399,    // Sweeping Steel's and Press the Advantage's hits
@@ -855,7 +860,7 @@ namespace
     constexpr uint8 UNBROKEN_BLOWS = 3;
     constexpr std::size_t URSOC_TARGETS = 5, ROAR_TARGETS = 10;
 
-    // The Duelist's modifiers: slot (0 Sabre, 1 Flintlock, 2 Footwork) x 3 + choice.
+    // The Duelist's modifiers: slot (0 Sabre, 1 Pistol, 2 Footwork) x 3 + choice.
     enum DuelistModifier : uint8
     {
         MOD_DEEP_CUT, MOD_SWEEPING_STEEL, MOD_SERRATED_EDGE,
@@ -863,19 +868,24 @@ namespace
         MOD_ADVANCE, MOD_DISENGAGING_SHOT, MOD_PRESS_THE_ADVANTAGE,
     };
 
-    // The Duelist's tuning: every second direct Sinister Strike hit readies Opening Shot (8 sec, one held); Flintlock
-    // Shot spends it (20 Energy, 6 sec cooldown, 20 yards): 60% of attack power and a combo point (the dossier's
-    // every third and 35%, made worth holding a button for).
+    // The Duelist's tuning: every second direct Sabre Slash hit readies Opening Shot (8 sec, one held); Pistol Shot
+    // spends it (20 Energy, 6 sec cooldown, 20 yards): 60% of attack power and a combo point (the dossier's every
+    // third and 35%, made worth holding a button for).
     constexpr uint8 OPENING_EVERY = 2;
     constexpr int32 OPENING_MS = 8000, SERRATED_MS = 6000, FOOTWORK_MS = 5000, DISCOUNT_MS = 8000;
     constexpr uint32 PRESS_DELAY_MS = 300;
     constexpr int32 DISENGAGING_REFUND = 10;
-    constexpr float FLINTLOCK_AP = 0.6f, HEAVY_BALL = 1.6f, SCATTER_SHARE = 0.75f, PIERCING_SHARE = 0.8f;
+    constexpr float PISTOL_AP = 0.6f, HEAVY_BALL = 1.6f, SCATTER_SHARE = 0.75f, PIERCING_SHARE = 0.8f;
     constexpr float DEEP_CUT = 1.25f, SWEEPING_SHARE = 0.5f, SERRATED_SHARE = 0.4f, ADVANCE_BONUS = 1.3f;
     constexpr float PRESS_SHARE = 0.5f;
     constexpr float SWEEPING_RADIUS = 5.0f, SCATTER_REACH = 10.0f, SCATTER_ARC = float(M_PI) / 4.0f;
     constexpr float PIERCING_REACH = 15.0f, PIERCING_HALF_WIDTH = 2.0f;
     constexpr std::size_t SWEEPING_TARGETS = 3, SCATTER_TARGETS = 4, PIERCING_TARGETS = 3;
+    // Broadside (35 Energy, 20 sec, a finishing move): 3 pistol blasts 0.25 sec apart, each 30% of attack power
+    // per combo point to its target and up to 7 more within 8 yards.
+    constexpr uint32 BROADSIDE_BLASTS = 3, BROADSIDE_SPACING_MS = 250;
+    constexpr float BROADSIDE_AP = 0.3f, BROADSIDE_RADIUS = 8.0f;
+    constexpr std::size_t BROADSIDE_TARGETS = 8;
 
     // The Stormreaver's modifiers: slot (0 Storm, 1 Thunderlash, 2 Lightning Shield) x 3 + choice.
     enum StormreaverModifier : uint8
@@ -1058,7 +1068,7 @@ namespace
             { RUNE_URSOCS_CHAMPION, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_BEAR_FORM, SPELL_DIRE_BEAR_FORM }, { SPELL_BARKSKIN }, { SPELL_MAUL } },
               SPELL_RUNE_URSOCS_CHAMPION, SPELL_URSOC_MODIFIER_FIRST },
-            // Melee DPS: Sinister Strike readies the flintlock (the rune teaches Flintlock Shot).
+            // Melee DPS: Sinister Strike readies the pistol (the rune teaches Pistol Shot).
             { RUNE_DUELIST, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_SINISTER_STRIKE } }, SPELL_RUNE_DUELIST, SPELL_DUELIST_MODIFIER_FIRST },
             // Melee DPS: Stormstrike raises the storm, Lava Lash and Lightning Shield strike through it.
@@ -4985,11 +4995,11 @@ namespace
         }
     }
 
-    // Flintlock Shot on its target: 60% of attack power (Heavy Ball 60% more) and a combo point; Scattershot: a
+    // Pistol Shot on its target: 60% of attack power (Heavy Ball 60% more) and a combo point; Scattershot: a
     // 10-yard cone, up to 4 more for 75%; Piercing Round: up to 3 within 15 yards behind it for 80%. Then the
     // footwork: Advance (speed, the next Sinister Strike on it 30% more), Disengaging Shot (speed, the next shot 10
     // Energy back), Press the Advantage (the next Sinister Strike twice).
-    void FireFlintlock(Player* player, Unit* target)
+    void FirePistol(Player* player, Unit* target)
     {
         player->RemoveAurasDueToSpell(SPELL_OPENING_SHOT);
         if (player->HasAura(SPELL_DISENGAGING_DISCOUNT))
@@ -4997,10 +5007,10 @@ namespace
             player->RemoveAurasDueToSpell(SPELL_DISENGAGING_DISCOUNT);
             player->ModifyPower(POWER_ENERGY, DISENGAGING_REFUND);
         }
-        float shot = player->GetTotalAttackPowerValue(BASE_ATTACK) * FLINTLOCK_AP
+        float shot = player->GetTotalAttackPowerValue(BASE_ATTACK) * PISTOL_AP
             * (HasDuelistMarker(player, MOD_HEAVY_BALL) ? HEAVY_BALL : 1.0f);
-        Strike(player, target, SPELL_FLINTLOCK_DAMAGE, shot);
-        Trace(player, Acore::StringFormat("Flintlock Shot for {}", int32(shot)));
+        Strike(player, target, SPELL_PISTOL_DAMAGE, shot);
+        Trace(player, Acore::StringFormat("Pistol Shot for {}", int32(shot)));
         if (HasDuelistMarker(player, MOD_SCATTERSHOT))
         {
             Shape cone;
@@ -5013,7 +5023,7 @@ namespace
             for (Unit* enemy : EnemiesIn(player, cone, SCATTER_TARGETS + 1))
                 if (enemy != target && count)
                 {
-                    Strike(player, enemy, SPELL_FLINTLOCK_DAMAGE, shot * SCATTER_SHARE);
+                    Strike(player, enemy, SPELL_PISTOL_DAMAGE, shot * SCATTER_SHARE);
                     --count;
                 }
         }
@@ -5027,7 +5037,7 @@ namespace
             for (Unit* enemy : EnemiesIn(player, line, PIERCING_TARGETS + 1))
                 if (enemy != target && count)
                 {
-                    Strike(player, enemy, SPELL_FLINTLOCK_DAMAGE, shot * PIERCING_SHARE);
+                    Strike(player, enemy, SPELL_PISTOL_DAMAGE, shot * PIERCING_SHARE);
                     --count;
                 }
         }
@@ -5049,13 +5059,82 @@ namespace
             RenewFor(player, SPELL_PRESS_THE_ADVANTAGE, FOOTWORK_MS);
     }
 
-    // The Duelist teaches Flintlock Shot while it is bound (not saved: learnt again at each Apply).
-    void TeachFlintlock(Player* player, bool bound)
+    // The highest rank of Sinister Strike the Hero knows: Sabre Slash's (rank 1's copy) bonus on top of its own.
+    int32 SabreRankBonus(Player* player)
     {
-        if (bound && !player->HasSpell(SPELL_FLINTLOCK_SHOT))
-            player->learnSpell(SPELL_FLINTLOCK_SHOT, true);
-        else if (!bound && player->HasSpell(SPELL_FLINTLOCK_SHOT))
-            player->removeSpell(SPELL_FLINTLOCK_SHOT, SPEC_MASK_ALL, false);
+        SpellInfo const* first = sSpellMgr->GetSpellInfo(SPELL_SINISTER_STRIKE);
+        if (!first)
+            return 0;
+        int32 base = first->Effects[EFFECT_0].CalcValue(player);
+        for (SpellInfo const* rank = first->GetLastRankSpell(); rank; rank = rank->GetPrevRankSpell())
+            if (player->HasSpell(rank->Id))
+                return std::max(0, rank->Effects[EFFECT_0].CalcValue(player) - base);
+        return 0;
+    }
+
+    // Broadside: 3 blasts at its target (30% of attack power per combo point to it and up to 7 within 8 yards each),
+    // the last a great explosion.
+    void FireBroadside(Player* player, Unit* target, uint8 points)
+    {
+        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * BROADSIDE_AP * float(points);
+        Trace(player, Acore::StringFormat("Broadside: {} combo points, {} a blast", points, int32(blast)));
+        ObjectGuid guid = target->GetGUID();
+        for (uint32 i = 0; i < BROADSIDE_BLASTS; ++i)
+            player->m_Events.AddEventAtOffset([player, guid, blast, i]()
+            {
+                Unit* at = ObjectAccessor::GetUnit(*player, guid);
+                if (!player->IsInWorld() || !player->IsAlive() || !at || !at->IsInMap(player))
+                    return;
+                std::vector<Unit*> struck;
+                if (Valid(player, at))
+                    struck.push_back(at);
+                for (Unit* enemy : EnemiesAround(player, at, BROADSIDE_RADIUS))
+                    if (enemy != at && struck.size() < BROADSIDE_TARGETS)
+                        struck.push_back(enemy);
+                for (Unit* enemy : struck)
+                    Strike(player, enemy, SPELL_BROADSIDE_BLAST, blast);
+                if (i + 1 == BROADSIDE_BLASTS)
+                    at->CastSpell(at, SPELL_BROADSIDE_LOOK, true);
+            }, Milliseconds(i * BROADSIDE_SPACING_MS));
+    }
+
+    // The Duelist teaches Sabre Slash, Pistol Shot and Broadside while it is bound (Sinister Strike's buttons become
+    // Sabre Slash's); unbound, they go and Sabre Slash's buttons are Sinister Strike's again.
+    void TeachDuelist(Player* player, bool bound)
+    {
+        for (uint32 spellId : { SPELL_SABRE_SLASH, SPELL_PISTOL_SHOT, SPELL_BROADSIDE })
+            if (bound && !player->HasSpell(spellId))
+                player->learnSpell(spellId);
+        uint32 sinister = 0;
+        if (SpellInfo const* first = sSpellMgr->GetSpellInfo(SPELL_SINISTER_STRIKE))
+            for (SpellInfo const* rank = first->GetLastRankSpell(); rank && !sinister; rank = rank->GetPrevRankSpell())
+                if (player->HasSpell(rank->Id))
+                    sinister = rank->Id;
+        bool swapped = false;
+        for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
+        {
+            ActionButton const* action = player->GetActionButton(button);
+            if (!action || action->GetType() != ACTION_BUTTON_SPELL)
+                continue;
+            uint32 spellId = action->GetAction();
+            SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId);
+            if (bound && info && info->GetFirstRankSpell()->Id == SPELL_SINISTER_STRIKE)
+            {
+                player->addActionButton(button, SPELL_SABRE_SLASH, ACTION_BUTTON_SPELL);
+                swapped = true;
+            }
+            else if (!bound && spellId == SPELL_SABRE_SLASH && sinister)
+            {
+                player->addActionButton(button, sinister, ACTION_BUTTON_SPELL);
+                swapped = true;
+            }
+        }
+        if (!bound)
+            for (uint32 spellId : { SPELL_SABRE_SLASH, SPELL_PISTOL_SHOT, SPELL_BROADSIDE })
+                if (player->HasSpell(spellId))
+                    player->removeSpell(spellId, SPEC_MASK_ALL, false);
+        if (swapped)
+            player->SendActionButtons(1);
     }
 
     // ---- The Stormreaver --------------------------------------------------------------------------------------
@@ -5247,7 +5326,7 @@ namespace
             ClearCombat(player);
         if (!paragon)
             player->RemoveAurasDueToSpell(SPELL_SANCTIFIED_PARAGON);
-        TeachFlintlock(player, duelist);
+        TeachDuelist(player, duelist);
         ApplyLegend(player, 0);
     }
 
@@ -7028,7 +7107,8 @@ class spell_titan_rune_maul : public SpellScript
     }
 };
 
-// Sinister Strike (every rank) with the Duelist: Sabre Slash (its bonuses as it lands, then the rune's part).
+// Sabre Slash (the Duelist's Sinister Strike: its known rank's bonus) and Sinister Strike (every rank) with the
+// Duelist: the rune's bonuses as it lands, then the rune's part.
 class spell_titan_rune_sinister_strike : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_sinister_strike);
@@ -7037,8 +7117,14 @@ class spell_titan_rune_sinister_strike : public SpellScript
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_DUELIST))
-            SetHitDamage(int32(GetHitDamage() * SabreBonus(player, target)));
+        if (!player || !target || GetHitDamage() <= 0)
+            return;
+        int32 damage = GetHitDamage();
+        if (GetSpellInfo()->Id == SPELL_SABRE_SLASH)
+            damage += SabreRankBonus(player);
+        if (player->HasAura(SPELL_RUNE_DUELIST))
+            damage = int32(damage * SabreBonus(player, target));
+        SetHitDamage(damage);
     }
 
     void Hit()
@@ -7056,10 +7142,10 @@ class spell_titan_rune_sinister_strike : public SpellScript
     }
 };
 
-// Flintlock Shot (the Duelist's action): the shot.
-class spell_titan_rune_flintlock_shot : public SpellScript
+// Pistol Shot (the Duelist's action): the shot.
+class spell_titan_rune_pistol_shot : public SpellScript
 {
-    PrepareSpellScript(spell_titan_rune_flintlock_shot);
+    PrepareSpellScript(spell_titan_rune_pistol_shot);
 
     SpellCastResult Ready()
     {
@@ -7072,13 +7158,41 @@ class spell_titan_rune_flintlock_shot : public SpellScript
     {
         Player* player = GetCaster()->ToPlayer();
         if (Unit* target = GetHitUnit(); player && target)
-            FireFlintlock(player, target);
+            FirePistol(player, target);
     }
 
     void Register() override
     {
-        OnCheckCast += SpellCheckCastFn(spell_titan_rune_flintlock_shot::Ready);
-        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_flintlock_shot::Fire, EFFECT_0, SPELL_EFFECT_DUMMY);
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_pistol_shot::Ready);
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_pistol_shot::Fire, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// Broadside (the Duelist's finishing move): the blasts, by the combo points it spends.
+class spell_titan_rune_broadside : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_broadside);
+
+    SpellCastResult Bound()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        return player && player->HasAura(SPELL_RUNE_DUELIST) ? SPELL_CAST_OK : SPELL_FAILED_DONT_REPORT;
+    }
+
+    void Fire(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target)
+            return;
+        if (uint8 points = player->GetComboPoints(target))
+            FireBroadside(player, target, points);
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_broadside::Bound);
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_broadside::Fire, EFFECT_0, SPELL_EFFECT_DUMMY);
     }
 };
 
@@ -7130,7 +7244,7 @@ class spell_titan_rune_stormreaver : public AuraScript
         SpellInfo const* spell = eventInfo.GetSpellInfo();
         Unit* struck = eventInfo.GetActionTarget();
         if (!player || !spell || !struck || struck == player || spell->DmgClass != SPELL_DAMAGE_CLASS_MELEE
-            || (spell->Id >= SPELL_RUNE_DUELIST && spell->Id <= SPELL_STORMREAVER_MODIFIER_FIRST + 9))
+            || (spell->Id >= SPELL_BROADSIDE && spell->Id <= SPELL_STORMREAVER_MODIFIER_FIRST + 9))
             return false;
         StormDischarge(player, struck);
         return false;
@@ -7426,7 +7540,8 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_barkskin);
     RegisterSpellScript(spell_titan_rune_maul);
     RegisterSpellScript(spell_titan_rune_sinister_strike);
-    RegisterSpellScript(spell_titan_rune_flintlock_shot);
+    RegisterSpellScript(spell_titan_rune_pistol_shot);
+    RegisterSpellScript(spell_titan_rune_broadside);
     RegisterSpellScript(spell_titan_rune_stormstrike);
     RegisterSpellScript(spell_titan_rune_lava_lash);
     RegisterSpellScript(spell_titan_rune_stormreaver);

@@ -1551,26 +1551,68 @@ ICONS += [ELUNE_ICON, CONVERGENCE_ICON, URSOC_ICON, 'Ability_Hunter_Pet_Owl', 'S
 
 # ---- The Duelist 91380 and the Stormreaver 91400 (their own dossiers); each one's markers 10 on from its first.
 DUELIST_ICON, STORMREAVER_ICON = 'Ability_Rune_Duelist', 'Ability_Rune_Stormreaver'
+ROGUE_FAMILY = 8
+SPELL_ATTR1_FINISHING_MOVE_DAMAGE = 0x00100000      # a finishing move: needs combo points and spends them
+# The spellbook tab of the abilities a rune teaches (build_patch.py: our spells are the Demon Hunter's otherwise).
+SPELL_CLASSES = {91370: 'ROGUE', 91371: 'ROGUE', 91382: 'ROGUE'}
+# Sabre Slash's hit: retail's (cfx_rogue_sabreslash_impact: particles only, its two textures here) as cards: a hot
+# red streak slashed across the target twice, crossing, and the gold three-pointed flash, swelling and gone.
+EFFECTS.update({
+    'SabreSlashImpact': {'model': 'ROGUE_SabreSlashImpact', 'effect': 7170, 'shape': 'mist',
+                         'textures': ('ROGUE_SabreSlash/weaponimpact_streak_hotred',
+                                      'ROGUE_SabreSlash/weaponimpact_trihit_gold'),
+                         'options': {'duration': 450, 'fade': (0, 300), 'layers': (
+                             {'texture': 0, 'alpha': 1.0, 'pulse': 0,
+                              'spots': ((0.3, 0.0, 0.1, 2.2, 35.0), (0.3, 0.0, -0.1, 1.8, -25.0)),
+                              'scale': [(0.0, 0.5), (0.4, 1.3), (1.0, 1.5)]},
+                             {'texture': 1, 'alpha': 1.0, 'pulse': 0, 'spots': ((0.35, 0.0, 0.0, 1.4, 0.0),),
+                              'scale': [(0.0, 0.3), (0.3, 1.2), (1.0, 1.4)]})}},
+})
+VISUALS.update({
+    'SabreSlashHit': {'copy': 253, 'id': 16801, 'clear': ('state', 'statedone', 'area'), 'kits': {
+        'impact': (15740, {KIT_CHEST: 'SabreSlashImpact', 'sound': None})}},
+})
 VISUAL_GUNSHOT, VISUAL_SINISTER_STRIKE, VISUAL_THUNDERSTORM, VISUAL_LIGHTNING_BOLT = 8113, 253, 11302, 173
 RANGE_20, GCD_CATEGORY = 3, 133
-FLINTLOCK = action(91382, 'Flintlock Shot', 'INV_Weapon_Rifle_01',
-                   'Fire a conjured flintlock at an enemy within 20 yards: 60% of your attack power as Physical '
-                   'damage and 1 combo point. Needs Opening Shot (every second Sinister Strike).', 6000,
+PISTOL_SHOT = action(91382, 'Pistol Shot', 'INV_Weapon_Rifle_01',
+                   'Fire a conjured pistol at an enemy within 20 yards: 60% of your attack power as Physical damage '
+                   'and 1 combo point. Needs Opening Shot (every second Sabre Slash).', 6000,
                    target=TARGET_UNIT_TARGET_ENEMY, range_index=RANGE_20)
-FLINTLOCK['set'] = {**FLINTLOCK['set'], 'PowerType': POWER_ENERGY, 'ManaCost': 20,
+PISTOL_SHOT['set'] = {**PISTOL_SHOT['set'], 'PowerType': POWER_ENERGY, 'ManaCost': 20,
                     'StartRecoveryCategory': GCD_CATEGORY, 'StartRecoveryTime': 1000, 'CasterAuraSpell': 91381}
-FLINTLOCK['tooltip'] = FLINTLOCK['description']
-FLINTLOCK['unset'] = {'Attributes': 0x10000}      # Evasion's "not while shapeshifted": usable in stealth or a form
+PISTOL_SHOT['tooltip'] = PISTOL_SHOT['description']
+PISTOL_SHOT['unset'] = {'Attributes': 0x10000}      # Evasion's "not while shapeshifted": usable in stealth or a form
+BROADSIDE = action(91371, 'Broadside', 'INV_Weapon_Rifle_01',
+                   'Finishing move: three pistol blasts explode on an enemy within 20 yards, each dealing 30% of your '
+                   'attack power per combo point as Fire damage to it and up to 7 other enemies within 8 yards.',
+                   20000, target=TARGET_UNIT_TARGET_ENEMY, range_index=RANGE_20)
+BROADSIDE['set'] = {**BROADSIDE['set'], 'PowerType': POWER_ENERGY, 'ManaCost': 35,
+                    'StartRecoveryCategory': GCD_CATEGORY, 'StartRecoveryTime': 1000,
+                    'AttributesEx': SPELL_ATTR1_FINISHING_MOVE_DAMAGE}
+BROADSIDE['tooltip'] = BROADSIDE['description']
+BROADSIDE['unset'] = {'Attributes': 0x10000}
+VISUAL_EXPLOSIVE_SHOT, VISUAL_SAPPER_CHARGE, SINISTER_STRIKE = 11828, 2899, 1752
 SPELLS += [
+    # The Duelist: Sabre Slash (Sinister Strike's first rank, its own look; the server adds the known rank's bonus),
+    # Broadside and its blasts.
+    {'id': 91370, 'copy': SINISTER_STRIKE, 'name': 'Sabre Slash', 'icon': 'Ability_Rogue_SabreSlash',
+     'description': 'A sabre slash: your Sinister Strike\'s damage and 1 combo point. Every second hit readies '
+                    'Opening Shot.',
+     'tooltip': '', 'visual': 'SabreSlashHit', 'set': {'SpellFamilyName': ROGUE_FAMILY}},
+    BROADSIDE,
+    {**strike(91372, 'Broadside', 'INV_Weapon_Rifle_01', FIRE, VISUAL_EXPLOSIVE_SHOT), 'set': {
+        **strike(91372, '', '', FIRE, VISUAL_EXPLOSIVE_SHOT)['set'], 'Speed': 40.0}},
+    look(91373, 'Broadside', 'INV_Weapon_Rifle_01', VISUAL_SAPPER_CHARGE),
     # The Duelist.
     buff(91380, 'Rune of the Duelist', DUELIST_ICON,
-         'Every second Sinister Strike that hits readies Opening Shot: your Flintlock Shot, 60% of your attack power '
-         'and a combo point.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
-    {**buff(91381, 'Opening Shot', 'INV_Weapon_Rifle_01', 'Flintlock Shot is ready.', DURATION_8S,
+         'Sinister Strike becomes Sabre Slash. Every second Sabre Slash that hits readies Opening Shot: your Pistol '
+         'Shot, 60% of your attack power and a combo point. Broadside spends combo points in pistol blasts.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {**buff(91381, 'Opening Shot', 'INV_Weapon_Rifle_01', 'Pistol Shot is ready.', DURATION_8S,
             {1: aura(AURA_DUMMY, 1, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_8S}},
-    FLINTLOCK,
-    {**strike(91383, 'Flintlock Shot', 'INV_Weapon_Rifle_01', PHYSICAL, VISUAL_GUNSHOT)},
+    PISTOL_SHOT,
+    {**strike(91383, 'Pistol Shot', 'INV_Weapon_Rifle_01', PHYSICAL, VISUAL_GUNSHOT)},
     dot(91384, 'Serrated Edge', 'Ability_Rogue_Rupture', PHYSICAL, DURATION_6S, 'Bleeding every second.'),
     strike(91385, 'Serrated Edge', 'Ability_Rogue_Rupture', PHYSICAL),
     {**buff(91386, 'Advance', 'Ability_Rogue_Sprint', 'Movement speed increased by 40%.', DURATION_3S,
@@ -1579,13 +1621,13 @@ SPELLS += [
     {**buff(91387, 'Disengaging Shot', 'Ability_Hunter_RunningShot', 'Movement speed increased by 40%.', DURATION_3S,
             {1: aura(AURA_MOD_INCREASE_SPEED, 40, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
-    {**buff(91388, 'Disengaging Shot', 'INV_Weapon_Rifle_01', 'Your next Flintlock Shot gives 10 Energy back.',
+    {**buff(91388, 'Disengaging Shot', 'INV_Weapon_Rifle_01', 'Your next Pistol Shot gives 10 Energy back.',
             DURATION_8S, {1: aura(AURA_DUMMY, 1, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_8S}},
-    {**buff(91389, 'Press the Advantage', 'Ability_Rogue_SinisterCalling', 'Your next Sinister Strike strikes twice.',
+    {**buff(91389, 'Press the Advantage', 'Ability_Rogue_SabreSlash', 'Your next Sabre Slash strikes twice.',
             DURATION_5S, {1: aura(AURA_DUMMY, 1, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_5S}},
-    strike(91399, 'Sabre Slash', 'Ability_Rogue_SinisterCalling', PHYSICAL, VISUAL_SINISTER_STRIKE),
+    {**strike(91399, 'Sabre Slash', 'Ability_Rogue_SabreSlash', PHYSICAL), 'visual': 'SabreSlashHit'},
     # The Stormreaver.
     buff(91400, 'Rune of the Stormreaver', STORMREAVER_ICON,
          'Stormstrike raises the Stormfront for 6 sec: every 2 sec, 25% of your attack power as Nature damage to up '
@@ -1608,7 +1650,7 @@ SPELLS += [
 for _spell in SPELLS:
     if _spell['id'] == 91383:
         _spell['set'] = {**_spell['set'], 'Speed': 60.0}
-    if _spell['id'] in (91383, 91385, 91399, 91402, 91403, 91404, 91406, 91407):
+    if _spell['id'] in (91372, 91383, 91385, 91399, 91402, 91403, 91404, 91406, 91407):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
 # Its procs: every melee ability that hits; the script discharges the shield (once a second).
 for _spell in SPELLS:
@@ -1624,7 +1666,8 @@ SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1
                                           ('Thunderhead', 'Chainbreaker', 'White-Hot Conductor'),
                                           ('Overcharged Core', 'Ride the Lightning', 'Violent Grounding')]))
            for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
-ICONS += [DUELIST_ICON, STORMREAVER_ICON, 'INV_Weapon_Rifle_01', 'Ability_Rogue_Rupture', 'Ability_Hunter_RunningShot',
+ICONS += ['Ability_Rogue_SabreSlash', DUELIST_ICON, STORMREAVER_ICON, 'INV_Weapon_Rifle_01', 'Ability_Rogue_Rupture',
+          'Ability_Hunter_RunningShot',
           'Ability_Rogue_SinisterCalling', 'Spell_Shaman_ThunderStorm', 'Ability_Shaman_LavaLash',
           'Spell_Fire_Immolation', 'Spell_Nature_LightningShield', 'Spell_Nature_Lightning']
 

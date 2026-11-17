@@ -161,12 +161,6 @@ EmberforgeRunesArt = {
             u = 0.5977,
             v = 0.9844,
         },
-        ChooseFlintlock = {
-            w = 475,
-            h = 84,
-            u = 0.6963,
-            v = 0.9844,
-        },
         ChooseFollowThrough = {
             w = 596,
             h = 84,
@@ -255,6 +249,12 @@ EmberforgeRunesArt = {
             w = 439,
             h = 84,
             u = 0.6436,
+            v = 0.9844,
+        },
+        ChoosePistol = {
+            w = 405,
+            h = 84,
+            u = 0.5938,
             v = 0.9844,
         },
         ChoosePresence = {
@@ -533,12 +533,6 @@ EmberforgeRunesArt = {
             u = 0.5312,
             v = 0.875,
         },
-        SlotFlintlock = {
-            w = 96,
-            h = 28,
-            u = 0.75,
-            v = 0.875,
-        },
         SlotFollowThrough = {
             w = 156,
             h = 28,
@@ -627,6 +621,12 @@ EmberforgeRunesArt = {
             w = 84,
             h = 28,
             u = 0.6562,
+            v = 0.875,
+        },
+        SlotPistol = {
+            w = 66,
+            h = 28,
+            u = 0.5156,
             v = 0.875,
         },
         SlotPresence = {
@@ -1824,8 +1824,9 @@ EmberforgeRunesArt = {
             hue = { 1, 0.89, 0.494 },
             inner = { 0.98, 0.949, 0.886 },
             built = true,
-            core = "Every second **Sinister Strike** readies **Opening Shot**: fire " ..
-                    "**Flintlock Shot** for **60%** of your attack power and a combo point.",
+            core = "**Sabre Slash** readies **Opening Shot**: **Pistol Shot** for **60%** " ..
+                    "of your attack power; **Broadside** spends combo points in pistol " ..
+                    "blasts.",
             asks = {
                 "How the blade cuts",
                 "How the shot flies",
@@ -1843,26 +1844,26 @@ EmberforgeRunesArt = {
                 "Press",
             },
             texts = {
-                "Sinister Strike deals 25% more damage.",
-                "Sinister Strike also hits up to 3 other enemies within 5 yards of its " ..
+                "Sabre Slash deals 25% more damage.",
+                "Sabre Slash also hits up to 3 other enemies within 5 yards of its " ..
                         "target for half its damage.",
-                "Sinister Strike makes its target bleed for 40% more of its damage over " ..
-                        "6 sec. A new bleed keeps what is left of the last.",
-                "Flintlock Shot deals 60% more damage: 96% of your attack power.",
-                "Flintlock Shot spreads in a cone: up to 4 other enemies in front of " ..
-                        "you, as far as 10 yards past its target, take 75% of its damage.",
-                "Flintlock Shot pierces up to 3 enemies within 15 yards behind its " ..
-                        "target, for 80% of its damage.",
-                "After firing, you move 40% faster for 3 sec, and your next Sinister " ..
-                        "Strike on that enemy within 5 sec deals 30% more damage.",
-                "After firing, you move 40% faster for 3 sec, and your next Flintlock " ..
-                        "Shot within 8 sec gives 10 Energy back.",
-                "After firing, your next Sinister Strike within 5 sec strikes again a " ..
+                "Sabre Slash makes its target bleed for 40% more of its damage over 6 " ..
+                        "sec. A new bleed keeps what is left of the last.",
+                "Pistol Shot deals 60% more damage: 96% of your attack power.",
+                "Pistol Shot spreads in a cone: up to 4 other enemies in front of you, " ..
+                        "as far as 10 yards past its target, take 75% of its damage.",
+                "Pistol Shot pierces up to 3 enemies within 15 yards behind its target, " ..
+                        "for 80% of its damage.",
+                "After firing, you move 40% faster for 3 sec, and your next Sabre Slash " ..
+                        "on that enemy within 5 sec deals 30% more damage.",
+                "After firing, you move 40% faster for 3 sec, and your next Pistol Shot " ..
+                        "within 8 sec gives 10 Energy back.",
+                "After firing, your next Sabre Slash within 5 sec strikes again a " ..
                         "moment later for half its damage.",
             },
             slots = {
                 "Sabre",
-                "Flintlock",
+                "Pistol",
                 "Footwork",
             },
         },
