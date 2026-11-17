@@ -1504,21 +1504,22 @@ SPELLS += [
     look(91360, 'Astral Rupture', 'Ability_Druid_Eclipse', VISUAL_LUNAR_ECLIPSE),
     # Ursoc's Champion.
     buff(91340, "Rune of Ursoc's Champion", URSOC_ICON,
-         'Barkskin in Bear Form adds Ursoc\'s Guard: an absorb of 15% of your maximum health for 4 sec. Maul in it '
-         'releases a blow of 25% of your attack power and half of what it absorbed.', DURATION_INFINITE,
+         'Barkskin in Bear Form adds Ursoc\'s Guard: an absorb of 30% of your maximum health for 6 sec, and comes '
+         'back 30 sec sooner. Maul in it releases a blow of 75% of your attack power and all it absorbed.',
+         DURATION_INFINITE,
          {1: aura(AURA_DUMMY, 1, 0)}),
-    absorb(91341, "Ursoc's Guard", URSOC_ICON, DURATION_4S),
+    absorb(91341, "Ursoc's Guard", URSOC_ICON, DURATION_6S),
     {**strike(91342, "Ursoc's Blow", 'Ability_Druid_Maul', PHYSICAL), 'visual': 'WakeAftershockLook'},
     look(91343, "Ursoc's Blow", URSOC_ICON, VISUAL_SHOCKWAVE),
-    {**buff(91344, 'Lasting Stand', 'Spell_Nature_StoneClawTotem', 'Healing received increased by 10%.', DURATION_6S,
-            {1: aura(AURA_MOD_HEALING_PCT, 10, ALL_SCHOOLS)}),
+    {**buff(91344, 'Lasting Stand', 'Spell_Nature_StoneClawTotem', 'Healing received increased by 25%.', DURATION_10S,
+            {1: aura(AURA_MOD_HEALING_PCT, 25, ALL_SCHOOLS)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_10S}},
+    {**buff(91345, 'Moving Mountain', 'Ability_Druid_Dash', 'Movement speed increased by 40%.', DURATION_6S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 40, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_6S}},
-    {**buff(91345, 'Moving Mountain', 'Ability_Druid_Dash', 'Movement speed increased by 30%.', DURATION_6S,
-            {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}),
-     'set': {**SHOWN, 'DurationIndex': DURATION_6S}},
-    absorb(91346, 'Enduring Champion', URSOC_ICON, DURATION_4S),
-    harmful(91347, "Challenger's Roar", 'Ability_Druid_ChallangingRoar', 'Damage done reduced by 10%.', DURATION_4S,
-            aura(AURA_MOD_DAMAGE_PERCENT_DONE, -10, ALL_SCHOOLS), PHYSICAL),
+    absorb(91346, 'Enduring Champion', URSOC_ICON, DURATION_8S),
+    harmful(91347, "Challenger's Roar", 'Ability_Druid_ChallangingRoar', 'Damage done reduced by 20%.', DURATION_6S,
+            aura(AURA_MOD_DAMAGE_PERCENT_DONE, -20, ALL_SCHOOLS), PHYSICAL),
     look(91359, "Mountain's Roar", 'Ability_Druid_DemoralizingRoar', VISUAL_DEMORALIZING_ROAR),
 ]
 for _spell in SPELLS:

@@ -813,16 +813,19 @@ namespace
         MOD_ENDURING_CHAMPION, MOD_CHALLENGERS_ROAR, MOD_UNBROKEN,
     };
 
-    // Ursoc's Champion's tuning: Barkskin in Bear Form adds Ursoc's Guard (4 sec, an absorb of 15% of maximum
-    // health); Maul in it releases a blow of 25% of attack power plus half of what the guard absorbed (that part at
-    // most 50% of attack power) in a 10-yard cone in front (up to 5).
-    constexpr int32 GUARD_MS = 4000, LASTING_STAND_MS = 6000, ENDURING_MS = 4000, CHALLENGERS_MS = 4000;
-    constexpr float GUARD_PCT = 15.0f, ANCIENT_HIDE_PCT = 20.0f, MOUNTAIN_PCT = 3.0f, MOUNTAIN_TRAVEL = 5.0f;
-    constexpr float URSOC_AP = 0.25f, ABSORBED_SHARE = 0.5f, ABSORBED_MOST_AP = 0.5f, URSOCS_BITE = 1.4f;
+    // Ursoc's Champion's tuning: Barkskin in Bear Form adds Ursoc's Guard (6 sec, an absorb of 30% of maximum
+    // health) and comes back 30 sec sooner; each Maul in Bear Form takes 3 sec more off it. Maul in the guard
+    // releases a blow of 75% of attack power plus all the guard absorbed (that part at most 250% of attack power)
+    // in a 10-yard cone in front (up to 5).
+    constexpr int32 GUARD_MS = 6000, LASTING_STAND_MS = 10000, ENDURING_MS = 8000, CHALLENGERS_MS = 6000;
+    constexpr int32 BARKSKIN_SOONER_MS = 30000, MAUL_SOONER_MS = 3000;
+    constexpr float GUARD_PCT = 30.0f, ANCIENT_HIDE_PCT = 45.0f, MOUNTAIN_PCT = 10.0f, MOUNTAIN_TRAVEL = 5.0f;
+    constexpr float URSOC_AP = 0.75f, ABSORBED_SHARE = 1.0f, ABSORBED_MOST_AP = 2.5f, URSOCS_BITE = 2.0f;
     constexpr float URSOC_REACH = 10.0f, URSOC_ARC = float(M_PI) / 3.0f, ROAR_ARC = float(M_PI) / 2.0f;
-    constexpr float EARTHBREAKER_REACH = 20.0f, EARTHBREAKER_HALF_WIDTH = 2.0f, EARTHBREAKER_FAR = 1.25f;
-    constexpr float ENDURING_SHARE = 0.5f, CHALLENGERS_THREAT = 0.5f;
-    constexpr std::size_t URSOC_TARGETS = 5, ROAR_TARGETS = 8;
+    constexpr float EARTHBREAKER_REACH = 25.0f, EARTHBREAKER_HALF_WIDTH = 2.5f, EARTHBREAKER_FAR = 1.5f;
+    constexpr float ENDURING_SHARE = 1.0f, CHALLENGERS_THREAT = 1.0f;
+    constexpr uint8 UNBROKEN_BLOWS = 3;
+    constexpr std::size_t URSOC_TARGETS = 5, ROAR_TARGETS = 10;
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
@@ -1194,7 +1197,8 @@ namespace
 
         // Ursoc's Champion.
         int32 GuardShield = 0;                      // the guard's absorb as raised (0: none up)
-        bool GuardReleased = false, GuardTravelled = false;
+        uint8 GuardBlows = 0;                       // Unbroken's blows from this guard
+        bool GuardTravelled = false;
         Position GuardFrom;
 
     };
@@ -4666,13 +4670,13 @@ namespace
     {
         State& state = StateOf(player);
         state.GuardShield = 0;
-        state.GuardReleased = false;
+        state.GuardBlows = 0;
         for (uint32 spell : { SPELL_URSOCS_GUARD, SPELL_LASTING_STAND, SPELL_MOVING_MOUNTAIN })
             player->RemoveAurasDueToSpell(spell);
     }
 
-    // Barkskin in Bear Form: Ursoc's Guard, an absorb of 15% of maximum health (Ancient Hide 20%) for 4 sec (Lasting
-    // Stand 6, healing taken 10% more meanwhile; Moving Mountain 30% speed meanwhile).
+    // Barkskin in Bear Form: Ursoc's Guard, an absorb of 30% of maximum health (Ancient Hide 45%) for 6 sec (Lasting
+    // Stand 10, healing taken 25% more meanwhile; Moving Mountain 40% speed meanwhile); Barkskin back 30 sec sooner.
     void RaiseGuard(Player* player)
     {
         State& state = StateOf(player);
@@ -4688,7 +4692,7 @@ namespace
             guard->SetDuration(ms);
         }
         state.GuardShield = shield;
-        state.GuardReleased = false;
+        state.GuardBlows = 0;
         state.GuardFrom = player->GetPosition();
         state.GuardTravelled = false;
         uint32 extra = HasUrsocMarker(player, MOD_LASTING_STAND) ? SPELL_LASTING_STAND
@@ -4701,16 +4705,16 @@ namespace
             }
     }
 
-    // Maul in the guard: the blow (25% of attack power and half of what the guard absorbed, that part at most 50% of
-    // attack power; Unbroken: the 25% only, the guard kept) in a 10-yard cone in front (up to 5; Ursoc's Bite: Maul's
-    // victim only, 40% more; Mountain's Roar: 180 degrees, up to 8; Earthbreaker: a 20-yard line, 25% more past 10).
-    // Enduring Champion: half the guard left over stays as a shield 4 sec. Challenger's Roar: the struck deal 10%
-    // less for 4 sec, and the blow's threat is 50% more.
+    // Maul in the guard: the blow (75% of attack power and all the guard absorbed, that part at most 250% of attack
+    // power; Unbroken: the 75% only, the guard kept, 3 blows a guard) in a 10-yard cone in front (up to 5; Ursoc's
+    // Bite: Maul's victim only, double; Mountain's Roar: 180 degrees, up to 10; Earthbreaker: a 25-yard line, 50%
+    // more past 10). Enduring Champion: all the guard left over stays as a shield 8 sec. Challenger's Roar: the
+    // struck deal 20% less for 6 sec, and the blow's threat is doubled.
     void Release(Player* player, Unit* victim)
     {
         State& state = StateOf(player);
         AuraEffect* guard = GuardEffect(player);
-        if (!guard || state.GuardReleased)
+        if (!guard || state.GuardBlows >= UNBROKEN_BLOWS)
             return;
         float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
         int32 left = std::max(0, guard->GetAmount());
@@ -4762,7 +4766,7 @@ namespace
         }
         if (unbroken)
         {
-            state.GuardReleased = true;             // the guard stays; one blow a guard
+            ++state.GuardBlows;                     // the guard stays; 3 blows a guard
             return;
         }
         if (HasUrsocMarker(player, MOD_ENDURING_CHAMPION) && left > 0)
@@ -4771,11 +4775,17 @@ namespace
             player->RemoveAurasDueToSpell(SPELL_ENDURING_CHAMPION);
             Report(player, SPELL_ENDURING_CHAMPION, 'A', kept);
             player->CastCustomSpell(player, SPELL_ENDURING_CHAMPION, &kept, nullptr, nullptr, true);
+            if (Aura* shield = player->GetAura(SPELL_ENDURING_CHAMPION, player->GetGUID()))
+            {
+                shield->SetMaxDuration(ENDURING_MS);
+                shield->SetDuration(ENDURING_MS);
+            }
         }
         EndGuard(player);
     }
 
-    // The guard out: it ends with Bear Form; Moving Mountain's 5 yards travelled add 3% of maximum health to it, once.
+    // The guard out: it ends with Bear Form; Moving Mountain's 5 yards travelled add 10% of maximum health to it,
+    // once.
     void GuardTick(Player* player)
     {
         State& state = StateOf(player);
@@ -6606,7 +6616,7 @@ class spell_titan_rune_wrath : public SpellScript
     }
 };
 
-// Barkskin in Bear Form with Ursoc's Champion: Ursoc's Guard.
+// Barkskin in Bear Form with Ursoc's Champion: Ursoc's Guard, and Barkskin back 30 sec sooner.
 class spell_titan_rune_barkskin : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_barkskin);
@@ -6614,8 +6624,10 @@ class spell_titan_rune_barkskin : public SpellScript
     void Cast()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (player && player->HasAura(SPELL_RUNE_URSOCS_CHAMPION) && InBearForm(player))
-            RaiseGuard(player);
+        if (!player || !player->HasAura(SPELL_RUNE_URSOCS_CHAMPION) || !InBearForm(player))
+            return;
+        RaiseGuard(player);
+        player->ModifySpellCooldown(SPELL_BARKSKIN, -BARKSKIN_SOONER_MS);
     }
 
     void Register() override
@@ -6624,7 +6636,7 @@ class spell_titan_rune_barkskin : public SpellScript
     }
 };
 
-// Maul (every rank) in Ursoc's Guard: the blow.
+// Maul (every rank) with Ursoc's Champion: the blow in Ursoc's Guard; in Bear Form, Barkskin 3 sec sooner.
 class spell_titan_rune_maul : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_maul);
@@ -6632,8 +6644,11 @@ class spell_titan_rune_maul : public SpellScript
     void Hit()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (player && player->HasAura(SPELL_RUNE_URSOCS_CHAMPION))
-            Release(player, GetHitUnit());
+        if (!player || !player->HasAura(SPELL_RUNE_URSOCS_CHAMPION))
+            return;
+        Release(player, GetHitUnit());
+        if (InBearForm(player))
+            player->ModifySpellCooldown(SPELL_BARKSKIN, -MAUL_SOONER_MS);
     }
 
     void Register() override

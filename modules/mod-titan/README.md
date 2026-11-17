@@ -588,7 +588,8 @@ utility or a tradeoff) take one pick each, from three.
   - **Astral Convergence** (40; Ranged; Wrath and Starfire): Wrath's Sunlight (91321), Starfire's collision (91323,
     40%) and Moonlight (91322), Wrath's flare (91324, 35%); 5 enemies marked at most.
   - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
-    15% of maximum health, 4 sec); Maul releases it (91342, a 10-yard cone): 25% AP plus half of what it absorbed.
+    30% of maximum health, 6 sec; Barkskin's cooldown 30 sec shorter, each Maul in Bear Form 3 sec more); Maul
+    releases it (91342, a 10-yard cone): 75% AP plus all it absorbed (that part at most 250% AP).
   - `.runedebug` (anyone) tells the Splintered Crown's and Phoenix Wake's steps in chat (Icicle formed and loosed,
     the Ember placed, Fire Blast on its host, the phoenix summoned, its strike, why it went), to find where one stops.
 - A Hero's buff on their own pet or summon lands whatever its level (`hero_resources.cpp`): the core drops a positive

@@ -979,23 +979,21 @@ BUILT = {
         ],
     },
     41: {
-        'core': "**Barkskin** in Bear Form raises **Ursoc's Guard** (15% of your health); **Maul** releases it: "
-            '**25%** of your attack power and half of what it absorbed.',
+        'core': "**Barkskin** in Bear Form raises **Ursoc's Guard** (30% of your health); **Maul** releases it: "
+            '**75%** of your attack power plus all it absorbed.',
         'slots': ['Guard', 'Answer', 'Resolve'],
         'asks': ['How the guard holds', 'How you answer', 'What it leaves behind'],
         'texts': [
-            "The guard absorbs 20% of your maximum health instead of 15%. The blow's absorbed part stays at most 50% "
-            'of your attack power.',
-            'The guard lasts 6 sec instead of 4, and you receive 10% more healing meanwhile.',
-            'You move 30% faster while the guard holds. Once you have moved 5 yards, it absorbs 3% of your maximum '
+            'The guard absorbs 45% of your maximum health instead of 30%.',
+            'The guard lasts 10 sec instead of 6, and you receive 25% more healing meanwhile.',
+            'You move 40% faster while the guard holds. Once you have moved 5 yards, it absorbs 10% of your maximum '
             'health more (once a guard).',
-            "The blow strikes only Maul's target, for 40% more damage.",
-            'The blow strikes in a half circle in front of you, up to 8 enemies.',
-            'The blow runs 20 yards ahead of you in a line (up to 5 enemies); those past 10 yards take 25% more.',
-            'Half of what the guard had left stays with you as a shield for 4 sec after the blow.',
-            'Enemies struck deal 10% less damage for 4 sec, and the blow causes 50% more threat.',
-            'Maul releases only the 25% of your attack power, and the guard stays up for the rest of its time. One '
-            'blow a guard.',
+            "The blow strikes only Maul's target, for double damage.",
+            'The blow strikes in a half circle in front of you, up to 10 enemies.',
+            'The blow runs 25 yards ahead of you in a line (up to 5 enemies); those past 10 yards take 50% more.',
+            'All the guard had left stays with you as a shield for 8 sec after the blow.',
+            'Enemies struck deal 20% less damage for 6 sec, and the blow causes double threat.',
+            'Maul releases 75% of your attack power and the guard stays up: up to 3 blows a guard.',
         ],
         'abilities': [
             'Hide',

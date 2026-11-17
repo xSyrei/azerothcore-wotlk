@@ -11,8 +11,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Rune of Astral Convergence (Wrath and Starfire, Ranged): Wrath leaves Sunlight on its target. Starfire on it
   collides for 40% of its damage and leaves Moonlight; your next Wrath on that flares for 35% of its damage.
 - Rune of Ursoc's Champion (Bear Form, Barkskin and Maul, Tank): Barkskin in Bear Form raises Ursoc's Guard, an
-  absorb of 15% of your maximum health for 4 sec. Maul releases it as a blow in front of you: 25% of your attack
-  power plus half of what the guard absorbed.
+  absorb of 30% of your maximum health for 6 sec, and comes back 30 sec sooner; each Maul in Bear Form brings it
+  back 3 sec sooner still. Maul releases the guard as a blow in front of you: 75% of your attack power plus all the
+  guard absorbed (up to 250% of your attack power more).
 - Each has three slots of three options, like the others.
 
 ### Rune of Astral Horizon

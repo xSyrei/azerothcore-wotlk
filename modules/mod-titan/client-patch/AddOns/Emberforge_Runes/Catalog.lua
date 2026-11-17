@@ -983,34 +983,32 @@ EmberforgeRunesCatalog = {
       builtFrom = "Barkskin, in Bear Form",
       spentWith = "Maul",
       resource = "Ursoc's Guard, 4 sec",
-      core = "Barkskin in Bear Form also raises Ursoc's Guard for 4 sec: an absorb of 15% of your maximum health. " ..
-          "Maul in it releases a blow in a 10-yard cone in front of you (up to 5 enemies): 25% of your attack " ..
-          "power, plus half of what the guard absorbed (that part at most 50% of your attack power). Leaving Bear " ..
-          "Form ends the guard.",
+      core = "Barkskin in Bear Form also raises Ursoc's Guard for 6 sec, an absorb of 30% of your maximum health, " ..
+          "and comes back 30 sec sooner. Maul in it releases a blow in a 10-yard cone in front of you (up to 5 " ..
+          "enemies): 75% of your attack power plus all the guard absorbed (that part at most 250% of your attack " ..
+          "power). Each Maul in Bear Form brings Barkskin back 3 sec sooner. Leaving Bear Form ends the guard.",
       loop = "Barkskin before the hits come, Maul once the guard has taken them.",
       mods = {
         { name = "Ancient Hide",
-          text = "The guard absorbs 20% of your maximum health instead of 15%. The blow's absorbed part stays at " ..
-              "most 50% of your attack power." },
+          text = "The guard absorbs 45% of your maximum health instead of 30%." },
         { name = "Lasting Stand",
-          text = "The guard lasts 6 sec instead of 4, and you receive 10% more healing meanwhile." },
+          text = "The guard lasts 10 sec instead of 6, and you receive 25% more healing meanwhile." },
         { name = "Moving Mountain",
-          text = "You move 30% faster while the guard holds. Once you have moved 5 yards, it absorbs 3% of your " ..
+          text = "You move 40% faster while the guard holds. Once you have moved 5 yards, it absorbs 10% of your " ..
               "maximum health more (once a guard)." },
         { name = "Ursoc's Bite",
-          text = "The blow strikes only Maul's target, for 40% more damage." },
+          text = "The blow strikes only Maul's target, for double damage." },
         { name = "Mountain's Roar",
-          text = "The blow strikes in a half circle in front of you, up to 8 enemies." },
+          text = "The blow strikes in a half circle in front of you, up to 10 enemies." },
         { name = "Earthbreaker",
-          text = "The blow runs 20 yards ahead of you in a line (up to 5 enemies); those past 10 yards take 25% " ..
+          text = "The blow runs 25 yards ahead of you in a line (up to 5 enemies); those past 10 yards take 50% " ..
               "more." },
         { name = "Enduring Champion",
-          text = "Half of what the guard had left stays with you as a shield for 4 sec after the blow." },
+          text = "All the guard had left stays with you as a shield for 8 sec after the blow." },
         { name = "Challenger's Roar",
-          text = "Enemies struck deal 10% less damage for 4 sec, and the blow causes 50% more threat." },
+          text = "Enemies struck deal 20% less damage for 6 sec, and the blow causes double threat." },
         { name = "Unbroken",
-          text = "Maul releases only the 25% of your attack power, and the guard stays up for the rest of its time. " ..
-              "One blow a guard." },
+          text = "Maul releases 75% of your attack power and the guard stays up: up to 3 blows a guard." },
       },
       builds = {
         { name = "The Bulwark", mods = { "Ancient Hide", "Ursoc's Bite", "Enduring Champion" },
