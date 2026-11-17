@@ -781,7 +781,7 @@ namespace
     constexpr uint32 OWL_DELAY_MS = 1000, SWIFT_DELAY_MS = 100, VIGIL_DELAY_MS = 3000, WATCHFUL_SPACING_MS = 1000;
     constexpr uint32 WATCHFUL_ATTACKS = 3, PURSUIT_SECOND_MS = 1000;
     constexpr float OWL_SHARE = 0.3f, MOONPIERCER = 1.4f, SILVER_WINGS_SHARE = 0.5f, WATCHFUL_SHARE = 0.4f;
-    constexpr float PATIENT_VIGIL = 1.3f, PURSUIT_SHARE = 0.2f, LUNAR_WOUND_SHARE = 0.3f, TWILIGHT_HUNT = 1.25f;
+    constexpr float PATIENT_VIGIL = 1.3f, PURSUIT_SHARE = 0.2f, LUNAR_WOUND_SHARE = 1.0f, TWILIGHT_HUNT = 1.25f;
     constexpr float SILVER_WINGS_RADIUS = 6.0f, PURSUIT_RANGE = 15.0f;
     constexpr int32 LUNAR_WOUND_MS = 6000, TWILIGHT_HUNT_MS = 5000;
     constexpr std::size_t SILVER_WINGS_TARGETS = 4;
@@ -795,13 +795,13 @@ namespace
     };
 
     // Astral Convergence's tuning: Wrath leaves Sunlight (8 sec); Starfire on it collides for 40% of the
-    // Starfire's damage and leaves Moonlight (8 sec); Wrath on Moonlight flares for 35% of the Wrath's damage (the
-    // dossier's 40% and 20% spell power, as shares of the two spells), ending the sequence. 5 enemies marked at most.
+    // Starfire's damage and leaves Moonlight (8 sec); Wrath on Moonlight flares for 80% of the Wrath's damage (Wrath
+    // being the small spell), ending the sequence. 5 enemies marked at most.
     constexpr int32 MARK_MS = 8000, LONG_TWILIGHT_MS = 12000, RUPTURE_MS = 6000;
     constexpr uint32 EVENTIDE_MS = 4000, EVENTIDE_TICK_MS = 1000, TWILIGHT_STEP_MS = 2000;
-    constexpr float COLLISION_SHARE = 0.4f, FLARE_SHARE = 0.35f, PERFECT_ALIGNMENT = 1.4f, CONVERGING_SHARE = 0.5f;
+    constexpr float COLLISION_SHARE = 0.4f, FLARE_SHARE = 0.8f, PERFECT_ALIGNMENT = 1.4f, CONVERGING_SHARE = 0.5f;
     constexpr float RUPTURE_SHARE = 1.5f, TWILIGHT_STEP = 0.05f, TWILIGHT_MOST = 0.2f, CROSSED_SHARE = 0.35f;
-    constexpr float SOLAR_RETURN = 1.6f, EVENTIDE_SHARE = 0.5f;
+    constexpr float SOLAR_RETURN = 1.6f, EVENTIDE_SHARE = 0.25f;
     constexpr float CONVERGING_RADIUS = 6.0f, CROSSED_RANGE = 12.0f, EVENTIDE_RADIUS = 6.0f;
     constexpr std::size_t MAX_MARKED = 5, CONVERGING_TARGETS = 4, CROSSED_TARGETS = 3, EVENTIDE_TARGETS = 5;
 
@@ -4418,7 +4418,7 @@ namespace
     }
 
     // One owl strike from the sky on its victim (Silver Wings: half of it to up to 4 others within 6 yards; Lunar
-    // Wound: 30% more of it over 6 sec; Twilight Hunt: the victim marked for the next Wrath).
+    // Wound: as much again over 6 sec; Twilight Hunt: the victim marked for the next Wrath).
     void OwlStrike(Player* player, Unit* victim, float amount, bool first)
     {
         Strike(player, victim, SPELL_OWL_DIVE, amount);
@@ -5841,16 +5841,17 @@ class spell_titan_rune_dot : public AuraScript
 {
     PrepareAuraScript(spell_titan_rune_dot);
 
-    void Tick(AuraEffect const* /*aurEff*/)
+    void Tick(AuraEffect const* aurEff)
     {
         Unit* caster = GetCaster();
         Unit* target = GetTarget();
         if (!caster || !target || !target->IsAlive())
             return;
+        // The tick the script keeps; else the one the aura was cast with (never nothing).
         auto tick = dotTicks.find({ target->GetGUID(), GetId(), caster->GetGUID() });
-        if (tick == dotTicks.end())
-            return;
-        int32 damage = tick->second;
+        int32 damage = std::max(1, tick != dotTicks.end() ? tick->second : aurEff->GetAmount());
+        if (Player* player = caster->ToPlayer())
+            Trace(player, Acore::StringFormat("{} ticks for {}", GetSpellInfo()->SpellName[0], damage));
         caster->CastCustomSpell(target, DotDamageSpell(GetId()), &damage, nullptr, nullptr, true);
     }
 

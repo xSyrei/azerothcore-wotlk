@@ -9,7 +9,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Rune of Elune's Guardian (Starfire, Ranged): every Starfire that hits calls a lunar owl. A second later it dives
   on the same enemy for 30% of the Starfire's damage. Up to 3 wait at once.
 - Rune of Astral Convergence (Wrath and Starfire, Ranged): Wrath leaves Sunlight on its target. Starfire on it
-  collides for 40% of its damage and leaves Moonlight; your next Wrath on that flares for 35% of its damage.
+  collides for 40% of its damage and leaves Moonlight; your next Wrath on that flares for 80% of its damage.
+- Elune's Guardian's Lunar Wound now deals damage: as much again as the owl's strike, over 6 sec. The runes'
+  debuffs (Lunar Wound, Sunlight, Moonlight and the rest) can no longer miss or be resisted.
 - Rune of Ursoc's Champion (Bear Form, Barkskin and Maul, Tank): Barkskin in Bear Form raises Ursoc's Guard, an
   absorb of 30% of your maximum health for 6 sec, and comes back 30 sec sooner; each Maul in Bear Form brings it
   back 3 sec sooner still. Maul releases the guard as a blow in front of you: 75% of your attack power plus all the

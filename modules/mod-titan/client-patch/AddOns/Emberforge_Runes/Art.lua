@@ -1631,8 +1631,8 @@ EmberforgeRunesArt = {
                 "If its target dies first, the owl dives on the nearest enemy within 15 " ..
                         "yards instead. Each owl also strikes again 1 sec later for 20% of its " ..
                         "damage.",
-                "An owl's strike wounds its target for 30% more of its damage over 6 " ..
-                        "sec. A new wound keeps what is left of the last.",
+                "An owl's strike wounds its target for as much again over 6 sec. A new " ..
+                        "wound keeps what is left of the last.",
                 "Every third owl makes your next Starfire within 5 sec instant, and you " ..
                         "move 20% faster for 5 sec.",
                 "An owl's target takes 25% more damage from your next Wrath within 5 " ..
@@ -1654,7 +1654,7 @@ EmberforgeRunesArt = {
             built = true,
             core = "**Wrath** leaves **Sunlight**; **Starfire** on it collides for **40%** " ..
                     "of its damage and leaves **Moonlight**; **Wrath** on that flares for " ..
-                    "**35%**.",
+                    "**80%**.",
             asks = {
                 "How the energies collide",
                 "How the marks align",
@@ -1682,11 +1682,11 @@ EmberforgeRunesArt = {
                 "A collision also strikes up to 3 other enemies within 12 yards that " ..
                         "carry your Moonlight, for 35% of its damage. Their marks stay.",
                 "Each flare makes your next Wrath or Starfire within 5 sec instant.",
-                "The flare deals 60% more damage: 56% of the Wrath's damage.",
+                "The flare deals 60% more damage: 128% of the Wrath's damage.",
                 "Each flare makes your next Starfire within 5 sec cast 20% faster and " ..
                         "cost 20% less mana.",
-                "Each flare leaves a field 6 yards wide for 4 sec: every second, half " ..
-                        "the flare's damage to up to 5 enemies in it.",
+                "Each flare leaves a field 6 yards wide for 4 sec: every second, a " ..
+                        "quarter of the flare's damage to up to 5 enemies in it.",
             },
             slots = {
                 "Collision",

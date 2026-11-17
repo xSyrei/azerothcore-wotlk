@@ -586,7 +586,7 @@ utility or a tradeoff) take one pick each, from three.
   - **Elune's Guardian** (39; Ranged; Starfire): a Starfire hit calls a lunar owl (91301, 3 waiting at most) that
     dives 1 sec later for 30% of its damage (91302; Lunar Wound 91303).
   - **Astral Convergence** (40; Ranged; Wrath and Starfire): Wrath's Sunlight (91321), Starfire's collision (91323,
-    40%) and Moonlight (91322), Wrath's flare (91324, 35%); 5 enemies marked at most.
+    40%) and Moonlight (91322), Wrath's flare (91324, 80%); 5 enemies marked at most.
   - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
     30% of maximum health, 6 sec; Barkskin's cooldown 30 sec shorter, each Maul in Bear Form 3 sec more); Maul
     releases it (91342, a 10-yard cone): 75% AP plus all it absorbed (that part at most 250% AP).

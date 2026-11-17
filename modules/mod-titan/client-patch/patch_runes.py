@@ -679,7 +679,10 @@ def harmful(spell_id, name, icon, text, duration, effect, school, key=None):
     second Shattered Sun player's Sunshards took the first's)."""
     spell = {'id': spell_id, 'copy': CRIPPLING_POISON, 'name': name, 'icon': icon, 'description': text,
              'tooltip': text, 'set': {**HARMFUL, 'DurationIndex': duration, 'SchoolMask': school, **SCRIPTED,
-                                      'AttributesEx3': SPELL_ATTR3_IGNORE_CASTER_MODIFIERS | SPELL_ATTR3_DOT_STACKING},
+                                      'AttributesEx3': SPELL_ATTR3_IGNORE_CASTER_MODIFIERS | SPELL_ATTR3_DOT_STACKING
+                                      | SPELL_ATTR3_ALWAYS_HIT,      # a rune's own debuff never misses
+                                      'AttributesEx4': SPELL_ATTR4_NO_PARTIAL_IMMUNITY
+                                      | SPELL_ATTR4_CANNOT_BE_RESISTED},
              'effects': {1: {**effect, 'TargetA': TARGET_UNIT_TARGET_ENEMY}}, 'clear': [2, 3]}
     if key:
         spell['visual'] = key
@@ -1485,7 +1488,7 @@ SPELLS += [
     # Astral Convergence.
     buff(91320, 'Rune of Astral Convergence', CONVERGENCE_ICON,
          'Wrath leaves Sunlight; Starfire on it collides for 40% of its damage and leaves Moonlight; Wrath on that '
-         'flares for 35% of its damage.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'flares for 80% of its damage.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     harmful(91321, 'Sunlight', 'Ability_Druid_EclipseOrange', 'Your Starfire on this target collides with it.',
             DURATION_8S, aura(AURA_DUMMY, 1, 0), NATURE),
     harmful(91322, 'Moonlight', 'Ability_Druid_Eclipse', 'Your Wrath on this target flares.', DURATION_8S,

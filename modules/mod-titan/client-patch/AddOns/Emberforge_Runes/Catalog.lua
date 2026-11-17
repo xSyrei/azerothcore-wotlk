@@ -910,8 +910,8 @@ EmberforgeRunesCatalog = {
           text = "If its target dies first, the owl dives on the nearest enemy within 15 yards instead. Each owl " ..
               "also strikes again 1 sec later for 20% of its damage." },
         { name = "Lunar Wound",
-          text = "An owl's strike wounds its target for 30% more of its damage over 6 sec. A new wound keeps what " ..
-              "is left of the last." },
+          text = "An owl's strike wounds its target for as much again over 6 sec. A new wound keeps what is left of " ..
+              "the last." },
         { name = "Guiding Wings",
           text = "Every third owl makes your next Starfire within 5 sec instant, and you move 20% faster for 5 sec." },
         { name = "Twilight Hunt",
@@ -937,7 +937,7 @@ EmberforgeRunesCatalog = {
       spentWith = "Starfire, then Wrath",
       resource = "Sunlight and Moonlight, 5 enemies",
       core = "Wrath leaves Sunlight on its target for 8 sec. Starfire on it collides with it for 40% of that " ..
-          "Starfire's damage, and leaves Moonlight for 8 sec. Your next Wrath on it flares for 35% of that Wrath's " ..
+          "Starfire's damage, and leaves Moonlight for 8 sec. Your next Wrath on it flares for 80% of that Wrath's " ..
           "damage and ends the sequence (it leaves no new Sunlight). Up to 5 enemies carry your marks.",
       loop = "Wrath, Starfire, Wrath on the same enemy; again.",
       mods = {
@@ -957,12 +957,12 @@ EmberforgeRunesCatalog = {
         { name = "Steady Orbit",
           text = "Each flare makes your next Wrath or Starfire within 5 sec instant." },
         { name = "Solar Return",
-          text = "The flare deals 60% more damage: 56% of the Wrath's damage." },
+          text = "The flare deals 60% more damage: 128% of the Wrath's damage." },
         { name = "Lunar Dominance",
           text = "Each flare makes your next Starfire within 5 sec cast 20% faster and cost 20% less mana." },
         { name = "Eventide",
-          text = "Each flare leaves a field 6 yards wide for 4 sec: every second, half the flare's damage to up to " ..
-              "5 enemies in it." },
+          text = "Each flare leaves a field 6 yards wide for 4 sec: every second, a quarter of the flare's damage " ..
+              "to up to 5 enemies in it." },
       },
       builds = {
         { name = "The Eclipse", mods = { "Perfect Alignment", "Long Twilight", "Solar Return" },
