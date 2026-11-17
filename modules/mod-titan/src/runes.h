@@ -18,20 +18,22 @@
 #ifndef MOD_TITAN_RUNES_H
 #define MOD_TITAN_RUNES_H
 
+#include "Define.h"
+
 class Player;
 class Unit;
 
-// Legendary Runes (runes.cpp): one rune per specialization, chosen from level 5, kept until a prestige or
-// .unbindrune; its three modifiers change freely out of combat.
+// Legendary Runes (runes.cpp): two runes per specialization (the first from level 5, the second from level 30),
+// kept until a prestige or .unbindrune; each one's three modifiers change freely out of combat.
 namespace LegendaryRunes
 {
     // The active specialization changed: its rune's auras on, the last one's (stacks, summons) gone.
     void OnSpecChanged(Player* player);
     // A prestige: every specialization's rune is cleared, to be chosen again from level 5.
     void OnPrestige(Player* player);
-    // The active specialization's rune let go of (modifiers too, its auras and actions gone), the panel opened to
-    // bind another. false: it had none.
-    bool Unbind(Player* player);
+    // The active specialization's runes let go of (which: 1 the first, 2 the second, 0 both; modifiers too, their
+    // auras and actions gone), the panel opened to bind again. false: none was bound.
+    bool Unbind(Player* player, uint8 which);
     // .runedebug: the newest runes' steps (Icicles, the Ember, the phoenix) told to the Hero in chat, or no more.
     // true: now on.
     bool ToggleDebug(Player* player);

@@ -306,7 +306,7 @@ check(popup and popup.name == "EMBERFORGE_RUNE_BIND_MISSING"
     and popup.b == "Throw Glaive, and Summon Imp or Summon Voidwalker",
     "a rune missing abilities warns, naming them, before it can be bound")
 StaticPopupDialogs.EMBERFORGE_RUNE_BIND_MISSING.OnAccept(nil, 21)
-check(lastSent() == "PICK,21,1", "binding it anyway says so to the server")
+check(lastSent() == "PICK,21,1,1", "binding it anyway says so to the server")
 view.pending = nil
 server("R,21,-")
 
@@ -330,7 +330,7 @@ rows[1].choose:Click()
 check(popup and popup.name == "EMBERFORGE_RUNE_BIND" and popup.a == "Rune of Fel Commandment",
     "choosing asks to confirm the bind")
 StaticPopupDialogs.EMBERFORGE_RUNE_BIND.OnAccept(nil, 21)
-check(lastSent() == "PICK,21", "accepting sends PICK,21")
+check(lastSent() == "PICK,21,0,1", "accepting sends PICK,21 for the first rune")
 server("N,21,1,3,686+29722")
 server("S,10,10,1,21,0,0,0,21,0")
 check(view.phase == "arrive" and debug.browser.target == 0 and debug.cards[1].rune.id == 21,
@@ -352,7 +352,7 @@ check(#sent == before and debug.note.text.text:find("needs Shadow Bolt or Incine
 
 -- A pick streams into its slot, and the next slot asks.
 options[1]:Click()
-check(lastSent() == "MOD,1,1", "picking Infernal Pact sends MOD,1,1")
+check(lastSent() == "MOD,1,1,1", "picking Infernal Pact sends MOD,1,1 for the first rune")
 run(0.6)
 check(view.picks[1] == 1 and view.active == 2 and debug.slots[1].pick.text == "Infernal Pact",
     "the slot takes it; Manifestation is next")
@@ -481,6 +481,43 @@ check(tooltipLines[#tooltipLines] == "57 damage every second.", "a damage over t
 local count = #tooltipLines
 GameTooltip:SetUnitBuff("player", 2)
 check(#tooltipLines == count, "another aura's tooltip is left alone")
+
+-- The second Legendary Rune (Rune II): from level 30, its own bind and modifiers; the first rune's left alone.
+frame:Hide()
+server("S,29,5,1,21,1,3,1,21.23,0,0,0,0,0,30")
+EmberforgeRunes_Open()
+run(1)
+local bar = debug.slotBar
+check(bar.target == 1 and bar.pills[1].on and not bar.pills[2].on, "the panel shows Rune I, with Rune II beside it")
+bar.pills[2]:Click()
+run(0.7)
+check(view.slot == 2 and view.mode == "locked"
+    and debug.head.subtitle.text == "Your second Legendary Rune unlocks at level 30.", "below 30, Rune II says when")
+bar.pills[1]:Click()
+run(0.7)
+check(view.slot == 1 and view.mode == "build", "Rune I is the first rune's build")
+frame:Hide()
+server("S,30,5,1,21,1,3,1,21.23.24,1,0,0,0,0,30")
+check(frame:IsShown() and view.slot == 2 and view.mode == "offers", "at 30 the panel opens on Rune II's choices")
+run(1.6)
+local offered = {}
+for _, card in ipairs(debug.cards) do
+    if card.rune then
+        offered[#offered + 1] = card.rune.id
+    end
+end
+check(table.concat(offered, ",") == "23,24", "Rune II is not offered the rune Rune I holds")
+StaticPopupDialogs.EMBERFORGE_RUNE_BIND.OnAccept(nil, 23)
+check(lastSent() == "PICK,23,0,2", "binding Rune II says so to the server")
+server("S,30,5,1,21,1,3,1,21.23.24,0,23,0,0,0,30")
+run(6)
+check(view.slot == 2 and view.phase == "build", "Rune II bound: its build")
+debug.options[2]:Click()
+check(lastSent() == "MOD,1,2,2", "Rune II's modifiers are its own")
+run(0.6)
+check(EmberforgeRunes_Button.glow.on == false, "both runes bound: the rune button stops glowing")
+frame:Hide()
+view.slot = 1
 
 -- Retired runes (Fel Commandment, the Threefold Grave and the Unbroken Onslaught, being reworked) are not listed in
 -- Browse all.

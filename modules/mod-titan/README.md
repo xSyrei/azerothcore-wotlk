@@ -446,8 +446,12 @@ utility or a tradeoff) take one pick each, from three.
   slots, and each slot's three options rise in (a done slot can be chosen again). Its art is baked from the mockup's
   own drawing code by `client-patch/build_rune_art.py` (`rune_art/bake.js` in headless Chromium: `Art/`, `Art.lua`);
   its fonts are Cinzel and Alegreya Sans (`Fonts/`, SIL Open Font License).
-- **One rune per specialization**, chosen once: only a prestige clears them (`titan_runes`, db-characters; chosen
-  again from level 5). Modifiers change freely out of combat. A new specialization picks its own.
+- **Two runes per specialization**, each with its own three modifiers and at full power: **Rune I** from level 5
+  (`titan_runes`, db-characters), **Rune II** from level 30 (`titan_runes_second`). Each is chosen once: only a
+  prestige clears them (chosen again from levels 5 and 30). The two cannot be the same rune. Modifiers change freely
+  out of combat. A new specialization picks its own. The panel's Rune I / Rune II switch (top left) picks which one
+  it shows; it opens by itself on whichever open slot is empty (Rune II at level 30). Both runes' scripts run side
+  by side: each rune's aura and markers are its own spells.
 - **Every rune is one trigger and one payoff** (all but the Sanctified Paragon, simplified together): nothing to
   stand in, no marks or vows to keep up, effects follow the Hero or the target; each rune is worth about 15-20% of its
   role's output on one target, AoE on top. Every modifier is one plain sentence. Numbers live in `runes.cpp`.
@@ -507,8 +511,9 @@ utility or a tradeoff) take one pick each, from three.
   Vivacious Flow (Vivify: 30% to that ally), Peaceful Focus (Soothing Mist 15% more with Enveloping Mist); Effortless
   Breathing (25% less mana), Lingering Mist (the channel's end: 2 ticks over 4 sec, 90813), Deep Breath (0.3% mana
   per Wandering Mist).
-- **Changing a rune:** `.unbindrune` (any player, out of combat; a GM's with a Hero selected does it for them) lets
-  go of the active specialization's rune and its modifiers and opens the panel to bind another.
+- **Changing a rune:** `.unbindrune [1|2]` (any player, out of combat; a GM's with a Hero selected does it for them)
+  lets go of the active specialization's runes (1 the first, 2 the second, none given both) and their modifiers and
+  opens the panel to bind again.
 - **The Rune of the Threefold Grave** (rune 27; Melee DPS or Tank; any of Icy Touch, Plague Strike, Blood Strike).
   Each lays its Grave beneath its target for 8 sec, one of each: a **Frozen Grave** (Frost, 30% slow), a **Plagued
   Grave** (Shadow), a **Crimson Grave**; a Grave's tick each second is level x 2 + 6% of attack power to every enemy

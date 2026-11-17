@@ -45,8 +45,9 @@ using namespace Acore::ChatCommands;
 //   ready (0: ready). Tells a server-side rune problem from a client-side one: runes the server has ready that the
 //   game still refuses are the client's.
 // - .runedebug (anyone): the newest runes' steps told in chat, on or off (finding why one does nothing).
-// - .unbindrune (anyone): lets go of the active specialization's Legendary Rune and its modifiers, and opens the
-//   rune panel to bind another (out of combat). A GM's with a Hero selected does it for them.
+// - .unbindrune [1|2] (anyone): lets go of the active specialization's Legendary Runes (1 the first, 2 the second,
+//   none given both) and their modifiers, and opens the rune panel to bind again (out of combat). A GM's with a
+//   Hero selected does it for them.
 // - .runeoffer [level]: offers the selected Hero (or you) a choice of 3 Runes of Enhancement now, as the level
 //   offers do (level: the one the offer shows; the Hero's own without one).
 // - .daytime [hour]: your own client's time of day (0-23), for looking at the lighting, water and fog at any hour;
@@ -149,8 +150,13 @@ public:
         return true;
     }
 
-    static bool HandleUnbindRune(ChatHandler* handler)
+    static bool HandleUnbindRune(ChatHandler* handler, Optional<uint8> which)
     {
+        if (which && *which > 2)
+        {
+            handler->SendErrorMessage(".unbindrune [1|2]: the first rune, the second, or both (none given).", false);
+            return false;
+        }
         Player* player = handler->GetSession()->GetPlayer();
         Player* target = player;
         if (handler->GetSession()->GetSecurity() >= SEC_GAMEMASTER)
@@ -166,9 +172,9 @@ public:
             handler->SendErrorMessage("A rune can't be unbound in combat.", false);
             return false;
         }
-        if (!LegendaryRunes::Unbind(target))
+        if (!LegendaryRunes::Unbind(target, which.value_or(0)))
         {
-            handler->SendErrorMessage("This specialization has no Legendary Rune bound.", false);
+            handler->SendErrorMessage("This specialization has no such Legendary Rune bound.", false);
             return false;
         }
         if (target != player)

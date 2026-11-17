@@ -48,10 +48,36 @@ local art = EmberforgeRunesArt or { runes = {}, labels = {}, card = { u = 1, v =
     option = { u = 1, v = 1, margin = 24 }, pill = { u = 1, v = 1, margin = 20, width = 106 }, num = { span = 80 },
     arcane = { rgb = { 0.73, 0.55, 1 }, hot = { 0.92, 0.84, 1 }, ink = { 0.95, 0.9, 1 }, muted = { 0.8, 0.72, 0.9 } } }
 
+-- Two runes a specialization (slots: the first from base, the second from second); rune, mods, unlock and offers
+-- are the slot the panel shows (view.slot), copied from slots by UseSlot.
 local state = { level = UnitLevel and UnitLevel("player") or 1, unlock = 5, spec = 1, rune = 0, mods = { 0, 0, 0 },
-    offers = {}, prompt = false, built = {}, needs = {}, error = nil, loaded = false }
+    offers = {}, prompt = false, built = {}, needs = {}, error = nil, loaded = false, base = 5, second = 30,
+    allOffers = {}, slots = { { rune = 0, mods = { 0, 0, 0 } }, { rune = 0, mods = { 0, 0, 0 } } } }
 -- mode: locked, offers, browse or build; phase: the mockup's (intro, offer, erupt, condense, split, build).
-local view = { mode = nil, phase = nil, page = 1, prompted = {}, now = 0, t0 = 0, picks = { 0, 0, 0 } }
+local view = { mode = nil, phase = nil, page = 1, prompted = {}, now = 0, t0 = 0, picks = { 0, 0, 0 }, slot = 1 }
+
+local MAX_OFFERS = 3
+
+-- The panel shows rune slot n: its rune, modifiers, unlock level and suggestions (the other slot's rune left out).
+local function UseSlot(n)
+    view.slot = n
+    local slot = state.slots[n]
+    state.rune = slot.rune
+    state.mods = { slot.mods[1], slot.mods[2], slot.mods[3] }
+    state.unlock = n == 2 and state.second or state.base
+    local other = state.slots[n == 1 and 2 or 1].rune
+    state.offers = {}
+    for _, id in ipairs(state.allOffers) do
+        if id ~= other and #state.offers < MAX_OFFERS then
+            state.offers[#state.offers + 1] = id
+        end
+    end
+end
+
+-- Either slot's rune (the button, the glows).
+local function Bound(id)
+    return state.slots[1].rune == id or state.slots[2].rune == id and state.level >= state.second
+end
 
 local function Send(message)
     SendAddonMessage(PREFIX, message, "WHISPER", UnitName("player"))
@@ -949,6 +975,37 @@ local function HideAll(instant)
     end
 end
 
+-- Rune I and Rune II: which of the specialization's two runes the panel shows (top left; Rune II from its level).
+local slotBar = Group(330, 96, 380, 46)
+slotBar.pills = {}
+for n = 1, 2 do
+    local pill = Pill(slotBar, n == 1 and "Rune I" or "Rune II", function()
+        if view.busy or view.slot == n then
+            return
+        end
+        HideCards()
+        ClearParticles()
+        HideMedal()
+        view.medal, view.chosen, view.pending, view.preview, view.previewFrom = nil, nil, nil, nil, nil
+        view.active = nil
+        UseSlot(n)
+        view.mode = nil
+        Enter()
+    end)
+    pill.label:SetFont(CINZEL, 14)
+    PillText(pill, n == 1 and "Rune I" or "Rune II")
+    In(pill, slotBar, (n - 1.5) * 150, 0)
+    slotBar.pills[n] = pill
+end
+
+local function ShowSlotBar()
+    for n, pill in ipairs(slotBar.pills) do
+        pill.on = view.slot == n
+        PillArt(pill)
+    end
+    Fade(slotBar, state.level >= state.base)
+end
+
 -- Offers or a page of every rune: the cards rise into place (the mockup's intro).
 function StartIntro()
     UseTheme(nil)
@@ -1002,7 +1059,7 @@ StaticPopupDialogs["EMBERFORGE_RUNE_BIND"] = {
     button2 = CANCEL or "Cancel",
     OnAccept = function(_, data)
         view.pending = data
-        Send("PICK," .. data)
+        Send("PICK," .. data .. ",0," .. view.slot)
     end,
     timeout = 0,
     whileDead = true,
@@ -1024,7 +1081,7 @@ StaticPopupDialogs["EMBERFORGE_RUNE_BIND_MISSING"] = {
     end,
     OnAccept = function(_, data)
         view.pending = data
-        Send("PICK," .. data .. ",1")
+        Send("PICK," .. data .. ",1," .. view.slot)
     end,
     timeout = 0,
     whileDead = true,
@@ -1033,6 +1090,9 @@ StaticPopupDialogs["EMBERFORGE_RUNE_BIND_MISSING"] = {
 
 -- Why a rune cannot be bound now (nil: it can).
 local function BindRefusal(rune)
+    if state.slots[view.slot == 1 and 2 or 1].rune == rune.id then
+        return "This rune is already your other Legendary Rune."
+    end
     if state.rune ~= 0 then
         return state.rune == rune.id and "This rune is bound to your specialization."
             or "Your specialization's rune is bound until your next prestige."
@@ -1661,7 +1721,7 @@ local function Enhance(option)
     local slot, choice = option.slot, option.choice
     view.busy = true
     if not view.preview then
-        Send("MOD," .. slot .. "," .. choice)
+        Send("MOD," .. slot .. "," .. choice .. "," .. view.slot)
     end
     local fx, fy = choose.x + option.dx, choose.y + 68
     local place = SLOT_POS[slot]
@@ -1753,13 +1813,15 @@ end
 function Enter()
     HideAll()
     Fade(closer, true)
+    ShowSlotBar()
     if state.level < state.unlock then
         view.mode = "locked"
         UseTheme(nil)
         HideCards()
         view.medal = nil
         HideMedal()
-        head.subtitle:SetText("Legendary Runes unlock at level " .. state.unlock .. ".")
+        head.subtitle:SetText(view.slot == 2 and "Your second Legendary Rune unlocks at level " .. state.unlock
+            .. "." or "Legendary Runes unlock at level " .. state.unlock .. ".")
         Fade(head, true)
         view.phase = nil
         return
@@ -2163,17 +2225,32 @@ local function OnMessage(message)
     local parts = Split(message, ",")
     local kind = parts[1]
     if kind == "S" then
-        state.level, state.unlock, state.spec = tonumber(parts[2]) or 1, tonumber(parts[3]) or 10, tonumber(parts[4])
+        state.level, state.base, state.spec = tonumber(parts[2]) or 1, tonumber(parts[3]) or 10, tonumber(parts[4])
             or 1
-        state.rune = tonumber(parts[5]) or 0
-        state.mods = { tonumber(parts[6]) or 0, tonumber(parts[7]) or 0, tonumber(parts[8]) or 0 }
-        state.offers = {}
+        state.second = tonumber(parts[15]) or 30
+        state.slots[1] = { rune = tonumber(parts[5]) or 0,
+            mods = { tonumber(parts[6]) or 0, tonumber(parts[7]) or 0, tonumber(parts[8]) or 0 } }
+        state.slots[2] = { rune = tonumber(parts[11]) or 0,
+            mods = { tonumber(parts[12]) or 0, tonumber(parts[13]) or 0, tonumber(parts[14]) or 0 } }
+        state.allOffers = {}
         if parts[9] and parts[9] ~= "-" then
             for _, id in ipairs(Split(parts[9], ".")) do
-                state.offers[#state.offers + 1] = tonumber(id)
+                state.allOffers[#state.allOffers + 1] = tonumber(id)
             end
         end
         state.prompt = parts[10] == "1"
+        -- An open, empty slot asked for: the panel shows it (the first first).
+        local open
+        for n = 1, 2 do
+            if not open and state.slots[n].rune == 0 and state.level >= (n == 2 and state.second or state.base) then
+                open = n
+            end
+        end
+        local key = state.spec .. ":" .. (open or 0)
+        if state.prompt and open and not view.prompted[key] and not frame:IsShown() then
+            view.slot = open
+        end
+        UseSlot(view.slot)
         state.loaded = true
         if EmberforgeRunes_UpdateRuneButton then
             EmberforgeRunes_UpdateRuneButton()  -- first: nothing below may keep the button hidden
@@ -2182,8 +2259,8 @@ local function OnMessage(message)
             pcall(EmberforgeRunes_UpdateGlow)   -- the changed abilities' icons follow the bound rune
         end
         -- Unlocked and unbound: the panel opens by itself, once a session for each specialization.
-        if state.prompt and not view.prompted[state.spec] then
-            view.prompted[state.spec] = true
+        if state.prompt and open and not view.prompted[key] then
+            view.prompted[key] = true
             Open()
         end
         Refresh()
@@ -2306,7 +2383,7 @@ end
 local function State()
     return { glaive = GetSpellInfo(THROW_GLAIVE), consecration = GetSpellInfo(CONSECRATION),
              armed = Stacks() >= 5, meta = Buff(METAMORPHOSIS) ~= nil,
-             paragon = state.rune == SANCTIFIED_PARAGON and (state.level or 0) >= (state.unlock or 5) }
+             paragon = Bound(SANCTIFIED_PARAGON) and (state.level or 0) >= (state.base or 5) }
 end
 
 local function Overlay(button)
@@ -2546,12 +2623,13 @@ local CYCLE_SECONDS, FADE_SECONDS = 2.5, 0.6
 
 -- Shown from the unlock level; its icon the bound rune's, else turning (OnUpdate).
 local function UpdateRuneButton()
-    if not state.loaded or state.level < state.unlock then
+    if not state.loaded or state.level < state.base then
         runeButton:Hide()
         return
     end
     runeButton:Show()
-    local rune = state.rune ~= 0 and RuneById(state.rune)
+    local first = state.slots[1].rune
+    local rune = first ~= 0 and RuneById(first)
     if rune then
         RoundIcon(runeButton.icon, rune.icon)
         runeButton.icon:SetAlpha(1)
@@ -2562,7 +2640,8 @@ local function UpdateRuneButton()
         RoundIcon(runeButton.icon, cycle[runeButton.turning.index])
         runeButton.icon:SetAlpha(1)
     end
-    runeButton.glow.on = state.rune == 0
+    -- Glowing while a slot that is open has no rune.
+    runeButton.glow.on = first == 0 or state.level >= state.second and state.slots[2].rune == 0
     runeButton.glow:SetShown(runeButton.glow.on)
 end
 if not runeButton.glow.SetShown then
@@ -2608,15 +2687,23 @@ runeButton:SetScript("OnEnter", function(self)
         return
     end
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-    local rune = state.rune ~= 0 and RuneById(state.rune)
-    GameTooltip:AddLine(rune and rune.name or "Legendary Runes", GOLDEN[1], GOLDEN[2], GOLDEN[3])
-    if state.level < state.unlock then
-        GameTooltip:AddLine("Unlocks at level " .. state.unlock .. ".", 0.8, 0.8, 0.8, true)
-    elseif state.rune == 0 then
-        GameTooltip:AddLine("Your specialization has no rune yet: choose one.", 1, 0.82, 0.4, true)
+    GameTooltip:AddLine("Legendary Runes", GOLDEN[1], GOLDEN[2], GOLDEN[3])
+    if state.level < state.base then
+        GameTooltip:AddLine("Unlocks at level " .. state.base .. ".", 0.8, 0.8, 0.8, true)
     else
-        GameTooltip:AddLine("Your specialization's Legendary Rune. Click to see or change its modifiers.", 1, 1, 1,
-            true)
+        for n = 1, 2 do
+            local id = state.slots[n].rune
+            local rune = id ~= 0 and RuneById(id)
+            local label = n == 1 and "Rune I: " or "Rune II: "
+            if n == 2 and state.level < state.second then
+                GameTooltip:AddLine(label .. "unlocks at level " .. state.second .. ".", 0.8, 0.8, 0.8, true)
+            elseif rune then
+                GameTooltip:AddLine(label .. rune.name, 1, 1, 1, true)
+            else
+                GameTooltip:AddLine(label .. "none yet: choose one.", 1, 0.82, 0.4, true)
+            end
+        end
+        GameTooltip:AddLine("Click to see your runes or change their modifiers.", 0.8, 0.8, 0.8, true)
     end
     GameTooltip:AddLine("Drag to move it anywhere; shift-right-click to put it back.", 0.6, 0.6, 0.6, true)
     GameTooltip:Show()
@@ -2712,7 +2799,7 @@ EmberforgeRunes_Debug = { cards = cards, hits = hits, options = options, slots =
     previews = previews, previewBar = previewBar,
     browseAsk = browseAsk, pager = pager, choose = choose, done = done, buildHead = buildHead, empty = empty,
     browser = browser, search = search, chips = chips, rows = rows, browse = browse,
-    closer = closer, Step = Step, medal = medal }
+    closer = closer, Step = Step, medal = medal, slotBar = slotBar }
 
 -- Loaded to the end (Loader.lua's /runes stands aside).
 EmberforgeRunes_Loaded = true

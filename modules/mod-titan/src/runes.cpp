@@ -64,9 +64,10 @@
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
 //   under Browse all (one missing a required ability says so; it can still be bound after a warning naming what it
 //   lacks), each with a Preview of its build that binds nothing.
-// - One rune per specialization (titan_runes, db-characters), chosen once: a prestige clears it, or .unbindrune
-//   (titan_commands.cpp) lets go of the active one to bind another. Modifiers
-//   change freely out of combat.
+// - Two runes per specialization, each with its own three modifiers: the first from level 5 (titan_runes,
+//   db-characters), the second from level 30 at full power (titan_runes_second). Each is chosen once: a prestige
+//   clears both, or .unbindrune (titan_commands.cpp) lets go of the active spec's (one or both) to bind again.
+//   Modifiers change freely out of combat.
 // - The rune works through auras: its own while it is the active spec's (90700 Fel Commandment, 90730 the
 //   Sanctified Paragon, 90750 the Stormbound Conduit, 90770 Echoing Thunder, 90790 the Wellspring, 90810 the
 //   Wandering Mist, 90830 / 90860 / 90890 / 90920 / 90950 the five after, 90980 the Spectral Blade, 91130 the
@@ -74,9 +75,11 @@
 //   (90710 / 90740 / 90760 / 90780 / 90800 / 90820, and 20 on from each of the five's first, + slot * 3 + choice);
 //   scripts look for them.
 //
-// Protocol (fields by ','; the client sends STATE, PICK,<rune>[,1], MOD,<slot 1-3>,<choice 1-3>; PICK's 1: warned
-// of the abilities the rune needs and lacks, the Hero binds it anyway):
-//   S,<level>,<unlock level>,<spec>,<rune>,<m1>,<m2>,<m3>,<offers a.b.c or ->,<prompt 0/1>
+// Protocol (fields by ','; the client sends STATE, PICK,<rune>,<anyway 0/1>,<rune slot 1-2>, MOD,<slot 1-3>,
+// <choice 1-3>,<rune slot 1-2>; anyway 1: warned of the abilities the rune needs and lacks, the Hero binds it anyway;
+// no rune slot: the first):
+//   S,<level>,<unlock level>,<spec>,<rune>,<m1>,<m2>,<m3>,<offers a.b.c or ->,<prompt 0/1>,<second rune>,<m1>,<m2>,
+//     <m3>,<second unlock level>      (offers: up to 4, the panel leaving out the other slot's rune)
 //   R,<rune>,<missing>      an implemented rune and the abilities it lacks (groups by '/', one of by '+'; '-' none)
 //   N,<rune>,<slot>,<choice>,<missing>      a modifier with needs of its own
 //   E,<text>   O (open the panel)
@@ -84,6 +87,8 @@ namespace
 {
     constexpr char const* PREFIX = "EFRN";
     constexpr uint8 UNLOCK_LEVEL = 5;
+    constexpr uint8 RUNE_SLOTS = 2;                 // two Legendary Runes a specialization, each with its modifiers
+    constexpr uint8 SECOND_UNLOCK_LEVEL = 30;       // the second, at full power
     constexpr uint8 MAX_SPECS = 4;
     constexpr uint8 SLOTS = 3;
     constexpr uint8 CHOICES = 3;
@@ -945,7 +950,7 @@ namespace
 
     struct State
     {
-        std::array<Choice, MAX_SPECS> Choices;
+        std::array<std::array<Choice, RUNE_SLOTS>, MAX_SPECS> Choices;     // [spec][rune slot]
         uint32 LastDemonStack = 0;                  // game ms
         uint32 BondTimer = 0;
         int32 ShatterBudget = 0;
@@ -1062,9 +1067,10 @@ namespace
         return states[player->GetGUID().GetCounter()];
     }
 
-    Choice& ActiveChoice(Player* player)
+    // The active specialization's rune in a slot (0 the first, 1 the second).
+    Choice& ActiveChoice(Player* player, uint8 slot = 0)
     {
-        return StateOf(player).Choices[Specs::ActiveSpec(player)];
+        return StateOf(player).Choices[Specs::ActiveSpec(player)][slot];
     }
 
     // The spell or any of its ranks.
@@ -4255,33 +4261,50 @@ namespace
         return auras;
     }
 
-    // The active spec's rune and modifiers as auras (none below UNLOCK_LEVEL).
+    // The level a rune slot opens at.
+    uint8 SlotUnlock(uint8 runeSlot)
+    {
+        return runeSlot ? SECOND_UNLOCK_LEVEL : UNLOCK_LEVEL;
+    }
+
+    // The active spec's runes and their modifiers as auras (the first from UNLOCK_LEVEL, the second from
+    // SECOND_UNLOCK_LEVEL). Each rune's markers are its own spells: both runes' sit side by side.
     void Apply(Player* player)
     {
         for (uint32 spell : RuneAuras())
             player->RemoveAurasDueToSpell(spell);
-        Choice const& choice = ActiveChoice(player);
-        RuneDef const* rune = FindRune(choice.Rune);
-        if (player->GetLevel() < UNLOCK_LEVEL || !rune)
+        bool any = false, paragon = false;
+        for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
         {
-            ClearCombat(player);
-            ApplyLegend(player, 0);
-            return;
+            Choice const& choice = ActiveChoice(player, runeSlot);
+            RuneDef const* rune = FindRune(choice.Rune);
+            if (!rune || player->GetLevel() < SlotUnlock(runeSlot))
+                continue;
+            any = true;
+            paragon |= rune->Id == RUNE_SANCTIFIED_PARAGON;
+            player->AddAura(rune->Aura, player);
+            for (uint8 slot = 0; slot < SLOTS; ++slot)
+                if (uint8 pick = choice.Mods[slot])
+                    player->AddAura(rune->MarkerFirst + slot * CHOICES + pick - 1, player);
         }
-        if (rune->Id != RUNE_SANCTIFIED_PARAGON)
+        if (!any)
+            ClearCombat(player);
+        if (!paragon)
             player->RemoveAurasDueToSpell(SPELL_SANCTIFIED_PARAGON);
-        player->AddAura(rune->Aura, player);
-        for (uint8 slot = 0; slot < SLOTS; ++slot)
-            if (uint8 pick = choice.Mods[slot])
-                player->AddAura(rune->MarkerFirst + slot * CHOICES + pick - 1, player);
-        ApplyLegend(player, rune->Id);
+        ApplyLegend(player, 0);
     }
 
-    void Save(Player* player, uint8 spec)
+    // titan_runes holds each specialization's first rune, titan_runes_second its second (db-characters).
+    char const* RuneTable(uint8 runeSlot)
     {
-        Choice const& choice = StateOf(player).Choices[spec];
-        CharacterDatabase.Execute(Acore::StringFormat("REPLACE INTO `titan_runes` (`guid`, `spec`, `rune`, "
-            "`invocation`, `manifestation`, `adaptation`) VALUES ({}, {}, {}, {}, {}, {})",
+        return runeSlot ? "titan_runes_second" : "titan_runes";
+    }
+
+    void Save(Player* player, uint8 spec, uint8 runeSlot = 0)
+    {
+        Choice const& choice = StateOf(player).Choices[spec][runeSlot];
+        CharacterDatabase.Execute(Acore::StringFormat("REPLACE INTO `{}` (`guid`, `spec`, `rune`, "
+            "`invocation`, `manifestation`, `adaptation`) VALUES ({}, {}, {}, {}, {}, {})", RuneTable(runeSlot),
             player->GetGUID().GetCounter(), spec, choice.Rune, choice.Mods[0], choice.Mods[1], choice.Mods[2]));
     }
 
@@ -4289,16 +4312,19 @@ namespace
     {
         State& state = StateOf(player);
         state = State();
-        if (QueryResult result = CharacterDatabase.Query("SELECT `spec`, `rune`, `invocation`, `manifestation`, "
-            "`adaptation` FROM `titan_runes` WHERE `guid` = {}", player->GetGUID().GetCounter()))
+        for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
         {
+            QueryResult result = CharacterDatabase.Query("SELECT `spec`, `rune`, `invocation`, `manifestation`, "
+                "`adaptation` FROM `{}` WHERE `guid` = {}", RuneTable(runeSlot), player->GetGUID().GetCounter());
+            if (!result)
+                continue;
             do
             {
                 Field* fields = result->Fetch();
                 uint8 spec = fields[0].Get<uint8>();
                 if (spec >= MAX_SPECS)
                     continue;
-                Choice& choice = state.Choices[spec];
+                Choice& choice = state.Choices[spec][runeSlot];
                 choice.Rune = fields[1].Get<uint8>();
                 for (uint8 slot = 0; slot < SLOTS; ++slot)
                     choice.Mods[slot] = std::min<uint8>(fields[2 + slot].Get<uint8>(), CHOICES);
@@ -4306,33 +4332,41 @@ namespace
         }
     }
 
-    // A retired rune bound to any specialization is let go (its modifiers with it), and the Hero told.
+    // A retired rune bound in any specialization is let go (its modifiers with it), and the Hero told.
     void ReleaseRetired(Player* player)
     {
         State& state = StateOf(player);
         for (uint8 spec = 0; spec < MAX_SPECS; ++spec)
-        {
-            Choice& choice = state.Choices[spec];
-            if (!choice.Rune || !IsRetired(choice.Rune))
-                continue;
-            choice = Choice();
-            Save(player, spec);
-            ChatHandler(player->GetSession()).PSendSysMessage("|cffa335eeLegendary Rune:|r your rune is temporarily "
-                "unavailable while its design is reworked, and has been released: choose another in the rune panel.");
-        }
+            for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
+            {
+                Choice& choice = state.Choices[spec][runeSlot];
+                if (!choice.Rune || !IsRetired(choice.Rune))
+                    continue;
+                choice = Choice();
+                Save(player, spec, runeSlot);
+                ChatHandler(player->GetSession()).PSendSysMessage("|cffa335eeLegendary Rune:|r your rune is "
+                    "temporarily unavailable while its design is reworked, and has been released: choose another in "
+                    "the rune panel.");
+            }
     }
 
     // ---- The panel ---------------------------------------------------------------------------------------------
 
+    // A slot open and empty: the panel opens by itself.
     bool Prompt(Player* player)
     {
-        return Wildcard::IsHero(player) && player->GetLevel() >= UNLOCK_LEVEL && !ActiveChoice(player).Rune
-            && !Specs::IsDormant(player);
+        if (!Wildcard::IsHero(player) || Specs::IsDormant(player))
+            return false;
+        for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
+            if (player->GetLevel() >= SlotUnlock(runeSlot) && !ActiveChoice(player, runeSlot).Rune)
+                return true;
+        return false;
     }
 
     void SendState(Player* player)
     {
         Choice const& choice = ActiveChoice(player);
+        Choice const& second = ActiveChoice(player, 1);
         uint8 role = Wildcard::GetRole(player);
         // Suggested: runes the Hero meets, their role's first (a Tank or Healer sees a hybrid only in Browse all).
         std::vector<RuneDef const*> offers;
@@ -4340,8 +4374,8 @@ namespace
             if (!IsRetired(rune.Id) && Missing(player, rune.Requires) == "-"
                 && (role == Wildcard::ROLE_NONE || rune.Roles & Wildcard::RoleMask(Wildcard::Role(role))))
                 offers.push_back(&rune);
-        if (offers.size() > MAX_OFFERS)
-            offers.resize(MAX_OFFERS);
+        if (offers.size() > MAX_OFFERS + 1)
+            offers.resize(MAX_OFFERS + 1);              // one more: the panel leaves out the other slot's rune
         std::string offerList;
         for (RuneDef const* rune : offers)
             offerList += (offerList.empty() ? "" : ".") + std::to_string(rune->Id);
@@ -4358,9 +4392,10 @@ namespace
                             Missing(player, needs)));
                 }
         }
-        Send(player, Acore::StringFormat("S,{},{},{},{},{},{},{},{},{}", player->GetLevel(), UNLOCK_LEVEL,
-            Specs::ActiveSpec(player) + 1, choice.Rune, choice.Mods[0], choice.Mods[1], choice.Mods[2],
-            offerList.empty() ? "-" : offerList, Prompt(player) ? 1 : 0));
+        Send(player, Acore::StringFormat("S,{},{},{},{},{},{},{},{},{},{},{},{},{},{}", player->GetLevel(),
+            UNLOCK_LEVEL, Specs::ActiveSpec(player) + 1, choice.Rune, choice.Mods[0], choice.Mods[1], choice.Mods[2],
+            offerList.empty() ? "-" : offerList, Prompt(player) ? 1 : 0, second.Rune, second.Mods[0], second.Mods[1],
+            second.Mods[2], SECOND_UNLOCK_LEVEL));
     }
 
     void Refuse(Player* player, std::string const& why)
@@ -4369,14 +4404,19 @@ namespace
         ChatHandler(player->GetSession()).PSendSysMessage("|cffa335eeLegendary Rune:|r {}", why);
     }
 
-    void OnPick(Player* player, uint8 runeId, bool anyway)
+    void OnPick(Player* player, uint8 runeId, bool anyway, uint8 runeSlot)
     {
-        Choice& choice = ActiveChoice(player);
+        if (runeSlot >= RUNE_SLOTS)
+            return;
+        Choice& choice = ActiveChoice(player, runeSlot);
         RuneDef const* rune = FindRune(runeId);
-        if (player->GetLevel() < UNLOCK_LEVEL)
-            return Refuse(player, Acore::StringFormat("Legendary Runes unlock at level {}.", UNLOCK_LEVEL));
+        if (player->GetLevel() < SlotUnlock(runeSlot))
+            return Refuse(player, runeSlot ? Acore::StringFormat("The second Legendary Rune unlocks at level {}.",
+                SECOND_UNLOCK_LEVEL) : Acore::StringFormat("Legendary Runes unlock at level {}.", UNLOCK_LEVEL));
         if (choice.Rune)
-            return Refuse(player, "This specialization already has its rune: .unbindrune lets go of it.");
+            return Refuse(player, "This rune slot is already bound: .unbindrune lets go of it.");
+        if (ActiveChoice(player, runeSlot ? 0 : 1).Rune == runeId)
+            return Refuse(player, "That rune is already your other Legendary Rune.");
         if (Specs::IsDormant(player))
             return Refuse(player, "This specialization is empty until you prestige in it.");
         if (!rune)
@@ -4387,16 +4427,18 @@ namespace
             return Refuse(player, "You lack an ability this rune needs.");
         choice = Choice();
         choice.Rune = runeId;
-        Save(player, Specs::ActiveSpec(player));
+        Save(player, Specs::ActiveSpec(player), runeSlot);
         Apply(player);
         ChatHandler(player->GetSession()).PSendSysMessage("|cffa335eeLegendary Rune:|r bound to this "
             "specialization until your next prestige. Choose its modifiers in the rune panel.");
         SendState(player);
     }
 
-    void OnModifier(Player* player, uint8 slot, uint8 pick)
+    void OnModifier(Player* player, uint8 slot, uint8 pick, uint8 runeSlot)
     {
-        Choice& choice = ActiveChoice(player);
+        if (runeSlot >= RUNE_SLOTS)
+            return;
+        Choice& choice = ActiveChoice(player, runeSlot);
         if (!choice.Rune || slot < 1 || slot > SLOTS || pick < 1 || pick > CHOICES)
             return;
         if (player->IsInCombat())
@@ -4422,7 +4464,7 @@ namespace
         if (choice.Mods[slot - 1] == pick)
             return SendState(player);
         choice.Mods[slot - 1] = pick;
-        Save(player, Specs::ActiveSpec(player));
+        Save(player, Specs::ActiveSpec(player), runeSlot);
         ClearCombat(player);
         Apply(player);
         SendState(player);
@@ -4448,9 +4490,9 @@ namespace
         if (parts[0] == "STATE")
             SendState(player);
         else if (parts[0] == "PICK")
-            OnPick(player, uint8(number(1)), number(2) == 1);
+            OnPick(player, uint8(number(1)), number(2) == 1, uint8(std::max<uint32>(number(3), 1) - 1));
         else if (parts[0] == "MOD")
-            OnModifier(player, uint8(number(1)), uint8(number(2)));
+            OnModifier(player, uint8(number(1)), uint8(number(2)), uint8(std::max<uint32>(number(3), 1) - 1));
     }
 }
 
@@ -4465,13 +4507,20 @@ namespace LegendaryRunes
             Send(player, "O");
     }
 
-    bool Unbind(Player* player)
+    bool Unbind(Player* player, uint8 which)
     {
-        Choice& choice = ActiveChoice(player);
-        if (!choice.Rune)
+        bool any = false;
+        for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
+        {
+            Choice& choice = ActiveChoice(player, runeSlot);
+            if (!choice.Rune || (which && which != runeSlot + 1))
+                continue;
+            choice = Choice();
+            Save(player, Specs::ActiveSpec(player), runeSlot);
+            any = true;
+        }
+        if (!any)
             return false;
-        choice = Choice();
-        Save(player, Specs::ActiveSpec(player));
         ClearCombat(player);
         Apply(player);
         ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeLegendary Rune:|r unbound. Choose another in the "
@@ -4483,8 +4532,9 @@ namespace LegendaryRunes
 
     void OnPrestige(Player* player)
     {
-        CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_runes` WHERE `guid` = {}",
-            player->GetGUID().GetCounter()));
+        for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
+            CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `{}` WHERE `guid` = {}", RuneTable(runeSlot),
+                player->GetGUID().GetCounter()));
         State& state = StateOf(player);
         state.Choices = {};
         ClearCombat(player);
@@ -5476,8 +5526,9 @@ public:
 
     void OnPlayerDelete(ObjectGuid guid, uint32 /*accountId*/) override
     {
-        CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_runes` WHERE `guid` = {}",
-            guid.GetCounter()));
+        for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
+            CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `{}` WHERE `guid` = {}", RuneTable(runeSlot),
+                guid.GetCounter()));
     }
 
     // Every level: the panel's state (its level); at UNLOCK_LEVEL the panel opens while the active spec has no rune.
@@ -5487,7 +5538,14 @@ public:
             return;
         Apply(player);
         SendState(player);
-        if (oldLevel < UNLOCK_LEVEL && player->GetLevel() >= UNLOCK_LEVEL && Prompt(player))
+        // A slot opening: the panel opens (the second at level 30, with a word of it).
+        bool opened = false;
+        for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
+            opened |= oldLevel < SlotUnlock(runeSlot) && player->GetLevel() >= SlotUnlock(runeSlot);
+        if (oldLevel < SECOND_UNLOCK_LEVEL && player->GetLevel() >= SECOND_UNLOCK_LEVEL)
+            ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeLegendary Rune:|r your second Legendary "
+                "Rune is unlocked. Choose it in the rune panel (Rune II).");
+        if (opened && Prompt(player))
             Send(player, "O");
         // Again once the level's other work (Wildcard's rolls, the spec's rebuild) has run.
         ObjectGuid guid = player->GetGUID();
@@ -5516,11 +5574,14 @@ public:
         {
             watch.WatchTimer = 0;
             if (player->IsAlive() && Wildcard::IsHero(player) && player->GetLevel() >= UNLOCK_LEVEL)
-                if (RuneDef const* bound = FindRune(ActiveChoice(player).Rune); bound && !player->HasAura(bound->Aura))
-                {
-                    Apply(player);
-                    SendState(player);
-                }
+                for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
+                    if (RuneDef const* bound = FindRune(ActiveChoice(player, runeSlot).Rune); bound
+                        && player->GetLevel() >= SlotUnlock(runeSlot) && !player->HasAura(bound->Aura))
+                    {
+                        Apply(player);
+                        SendState(player);
+                        break;
+                    }
         }
         if (player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
             StormPulse(player, diff);
