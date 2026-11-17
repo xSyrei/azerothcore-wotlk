@@ -792,34 +792,37 @@ EmberforgeRunesCatalog = {
       builtFrom = "Arcane Barrage",
       spentWith = "The Orb fires on its own",
       resource = "One Arcane Orb, 6 sec",
-      core = "Arcane Barrage also sets an Arcane Orb loose, at most once every 12 sec. For 6 sec it drifts on " ..
-          "through its target at 6 yards a second, firing a bolt every second at that target (else the nearest " ..
-          "enemy) within 10 yards of it, for 20% of the Barrage's damage. A new Orb replaces the last.",
+      core = "Arcane Barrage also sets an Arcane Orb loose, at most once every 12 sec. It flies at your target " ..
+          "until it reaches an enemy, then drifts on slowly; for 6 sec it fires a bolt every second at that target " ..
+          "(else the nearest enemy) within 10 yards of it, for 20% of the Barrage's damage. A new Orb replaces the " ..
+          "last.",
       loop = "Arcane Barrage whenever the Orb is ready; fight around its path while it fires.",
       mods = {
         { name = "Wandering Star",
-          text = "Each enemy the Orb passes through takes a bolt's damage, once (up to 5)." },
+          text = "Each enemy the Orb passes through takes two bolts' damage (40% of the Barrage's damage), once (up " ..
+              "to 5)." },
         { name = "Event Horizon",
-          text = "The Orb flies to its target's position and stays there. Its bolts deal 20% more damage to enemies " ..
+          text = "The Orb flies to its target's position and stays there. Its bolts deal 50% more damage to enemies " ..
               "within 5 yards of it." },
         { name = "Satellite",
-          text = "The Orb circles you, 4 yards out, and its bolts reach 12 yards instead of 10." },
+          text = "The Orb circles you, 4 yards out, for 8 sec instead of 6, and its bolts reach 15 yards instead of " ..
+              "10." },
         { name = "Astral Focus",
-          text = "Bolts deal 40% more damage to the Orb's target: 28% of the Barrage's damage." },
+          text = "Bolts deal 60% more damage to the Orb's target: 32% of the Barrage's damage." },
         { name = "Constellation",
-          text = "Each bolt also strikes up to 2 other enemies in range for half its damage." },
+          text = "Each bolt also strikes up to 2 other enemies in range for 75% of its damage." },
         { name = "Prismatic Lance",
-          text = "Each bolt becomes a lance that also pierces up to 3 enemies behind its target, for 60% of its " ..
+          text = "Each bolt becomes a lance that also pierces up to 3 enemies behind its target, for 80% of its " ..
               "damage." },
         { name = "Supernova",
-          text = "When the Orb's 6 sec end, it explodes for 80% of the Barrage's damage (4 bolts) to up to 5 " ..
+          text = "When the Orb's time ends, it explodes for 120% of the Barrage's damage (6 bolts) to up to 5 " ..
               "enemies within 8 yards." },
         { name = "Dying Light",
-          text = "When the Orb's 6 sec end, it fires 3 last bolts at your target (else its own), each for 40% of " ..
+          text = "When the Orb's time ends, it fires 3 last bolts at your target (else its own), each for 60% of " ..
               "the Barrage's damage." },
         { name = "Astral Remnant",
-          text = "When the Orb's 6 sec end, it leaves a field 6 yards wide for 6 sec: every 2 sec, a bolt's damage " ..
-              "to up to 5 enemies in it." },
+          text = "When the Orb's time ends, it leaves a field 6 yards wide for 6 sec: every second, a bolt's damage " ..
+              "to up to 5 enemies in it (120% of the Barrage's damage in all)." },
       },
       builds = {
         { name = "The Comet", mods = { "Wandering Star", "Astral Focus", "Supernova" },
@@ -876,6 +879,146 @@ EmberforgeRunesCatalog = {
           text = "A steady star that heals the group." },
         { name = "The Seeker", mods = { "Sheltering Light", "Seeking Light", "Parting Grace" },
           text = "Shields where they are needed." },
+      },
+    },
+    { id = 39,
+      name = "Rune of Elune's Guardian",
+      role = "Ranged DPS (Druid, Balance)",
+      roles = { "DAMAGER" },
+      icon = "Ability_Rune_ElunesGuardian",
+      keywords = "druid balance moonkin starfire wrath owl moon lunar arcane",
+      slots = { "Guardian", "Descent", "Blessing" },
+      builtFrom = "Starfire",
+      spentWith = "The owls dive on their own",
+      resource = "Lunar owls, up to 3 waiting",
+      core = "A Starfire that hits calls a lunar owl: 1 sec later it dives on the same enemy from the sky for 30% " ..
+          "of that Starfire's damage. Up to 3 wait at once; an owl whose target dies fades.",
+      loop = "Starfire; the owls dive on their own while you keep casting.",
+      mods = {
+        { name = "Moonpiercer",
+          text = "Owls deal 40% more damage to their target: 42% of the Starfire's damage." },
+        { name = "Silver Wings",
+          text = "Each dive also hits up to 4 other enemies within 6 yards for half its damage." },
+        { name = "Watchful Flight",
+          text = "Each owl strikes 3 times, 1 sec apart, for 40% of its damage each (120% in all). The last strike " ..
+              "makes your next Starfire cost 20% less mana." },
+        { name = "Swift Judgment",
+          text = "Owls dive 0.1 sec after Starfire instead of 1. Each dive makes your next Starfire cast 10% faster." },
+        { name = "Patient Vigil",
+          text = "Owls wait 3 sec, then dive for 30% more damage." },
+        { name = "Moonlit Pursuit",
+          text = "If its target dies first, the owl dives on the nearest enemy within 15 yards instead. Each owl " ..
+              "also strikes again 1 sec later for 20% of its damage." },
+        { name = "Lunar Wound",
+          text = "An owl's strike wounds its target for 30% more of its damage over 6 sec. A new wound keeps what " ..
+              "is left of the last." },
+        { name = "Guiding Wings",
+          text = "Every third owl makes your next Starfire within 5 sec instant, and you move 20% faster for 5 sec." },
+        { name = "Twilight Hunt",
+          text = "An owl's target takes 25% more damage from your next Wrath within 5 sec." },
+      },
+      builds = {
+        { name = "The Hunter", mods = { "Moonpiercer", "Swift Judgment", "Lunar Wound" },
+          text = "Quick owls, deep wounds." },
+        { name = "The Flock", mods = { "Silver Wings", "Patient Vigil", "Guiding Wings" },
+          text = "Big dives on packs, on the move." },
+        { name = "The Watcher", mods = { "Watchful Flight", "Moonlit Pursuit", "Twilight Hunt" },
+          text = "Many strikes, and Wrath to follow." },
+      },
+    },
+    { id = 40,
+      name = "Rune of Astral Convergence",
+      role = "Ranged DPS (Druid, Balance)",
+      roles = { "DAMAGER" },
+      icon = "Ability_Rune_AstralConvergence",
+      keywords = "druid balance moonkin wrath starfire sun moon eclipse sunlight moonlight",
+      slots = { "Collision", "Alignment", "Flare" },
+      builtFrom = "Wrath",
+      spentWith = "Starfire, then Wrath",
+      resource = "Sunlight and Moonlight, 5 enemies",
+      core = "Wrath leaves Sunlight on its target for 8 sec. Starfire on it collides with it for 40% of that " ..
+          "Starfire's damage, and leaves Moonlight for 8 sec. Your next Wrath on it flares for 35% of that Wrath's " ..
+          "damage and ends the sequence (it leaves no new Sunlight). Up to 5 enemies carry your marks.",
+      loop = "Wrath, Starfire, Wrath on the same enemy; again.",
+      mods = {
+        { name = "Perfect Alignment",
+          text = "The collision deals 40% more damage: 56% of the Starfire's damage." },
+        { name = "Converging Skies",
+          text = "The collision also hits up to 4 other enemies within 6 yards for half its damage." },
+        { name = "Astral Rupture",
+          text = "Instead of a hit, the collision ruptures its target for 150% of its damage over 6 sec. A new " ..
+              "rupture keeps what is left of the last." },
+        { name = "Long Twilight",
+          text = "Your marks last 12 sec instead of 8. Each 2 sec Sunlight was on its target adds 5% to the " ..
+              "collision, up to 20%." },
+        { name = "Crossed Horizons",
+          text = "A collision also strikes up to 3 other enemies within 12 yards that carry your Moonlight, for 35% " ..
+              "of its damage. Their marks stay." },
+        { name = "Steady Orbit",
+          text = "Each flare makes your next Wrath or Starfire within 5 sec instant." },
+        { name = "Solar Return",
+          text = "The flare deals 60% more damage: 56% of the Wrath's damage." },
+        { name = "Lunar Dominance",
+          text = "Each flare makes your next Starfire within 5 sec cast 20% faster and cost 20% less mana." },
+        { name = "Eventide",
+          text = "Each flare leaves a field 6 yards wide for 4 sec: every second, half the flare's damage to up to " ..
+              "5 enemies in it." },
+      },
+      builds = {
+        { name = "The Eclipse", mods = { "Perfect Alignment", "Long Twilight", "Solar Return" },
+          text = "Patient, heavy hits." },
+        { name = "The Constellation", mods = { "Converging Skies", "Crossed Horizons", "Lunar Dominance" },
+          text = "Marks across the pack." },
+        { name = "The Wanderer", mods = { "Astral Rupture", "Steady Orbit", "Eventide" },
+          text = "Burns and fields, on the move." },
+      },
+    },
+    { id = 41,
+      name = "Rune of Ursoc's Champion",
+      role = "Tank (Druid, Guardian)",
+      roles = { "TANK" },
+      icon = "Ability_Rune_UrsocsChampion",
+      keywords = "druid guardian bear tank barkskin maul shield absorb ursoc",
+      slots = { "Guard", "Answer", "Resolve" },
+      builtFrom = "Barkskin, in Bear Form",
+      spentWith = "Maul",
+      resource = "Ursoc's Guard, 4 sec",
+      core = "Barkskin in Bear Form also raises Ursoc's Guard for 4 sec: an absorb of 15% of your maximum health. " ..
+          "Maul in it releases a blow in a 10-yard cone in front of you (up to 5 enemies): 25% of your attack " ..
+          "power, plus half of what the guard absorbed (that part at most 50% of your attack power). Leaving Bear " ..
+          "Form ends the guard.",
+      loop = "Barkskin before the hits come, Maul once the guard has taken them.",
+      mods = {
+        { name = "Ancient Hide",
+          text = "The guard absorbs 20% of your maximum health instead of 15%. The blow's absorbed part stays at " ..
+              "most 50% of your attack power." },
+        { name = "Lasting Stand",
+          text = "The guard lasts 6 sec instead of 4, and you receive 10% more healing meanwhile." },
+        { name = "Moving Mountain",
+          text = "You move 30% faster while the guard holds. Once you have moved 5 yards, it absorbs 3% of your " ..
+              "maximum health more (once a guard)." },
+        { name = "Ursoc's Bite",
+          text = "The blow strikes only Maul's target, for 40% more damage." },
+        { name = "Mountain's Roar",
+          text = "The blow strikes in a half circle in front of you, up to 8 enemies." },
+        { name = "Earthbreaker",
+          text = "The blow runs 20 yards ahead of you in a line (up to 5 enemies); those past 10 yards take 25% " ..
+              "more." },
+        { name = "Enduring Champion",
+          text = "Half of what the guard had left stays with you as a shield for 4 sec after the blow." },
+        { name = "Challenger's Roar",
+          text = "Enemies struck deal 10% less damage for 4 sec, and the blow causes 50% more threat." },
+        { name = "Unbroken",
+          text = "Maul releases only the 25% of your attack power, and the guard stays up for the rest of its time. " ..
+              "One blow a guard." },
+      },
+      builds = {
+        { name = "The Bulwark", mods = { "Ancient Hide", "Ursoc's Bite", "Enduring Champion" },
+          text = "A deep guard, a hard bite." },
+        { name = "The Warden", mods = { "Lasting Stand", "Mountain's Roar", "Challenger's Roar" },
+          text = "Hold the pack, weaken it." },
+        { name = "The Avalanche", mods = { "Moving Mountain", "Earthbreaker", "Unbroken" },
+          text = "Charge in, break the line." },
       },
     },
 }

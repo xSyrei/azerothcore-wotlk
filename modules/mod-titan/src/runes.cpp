@@ -58,7 +58,8 @@
 // Wandering Mist (slots Mistflow, Technique, Mistweaver's Approach), each its own doc, then five more, each its own
 // doc too: 27 the Threefold Grave, 28 the Unbroken Onslaught, 29 the Dawnbound Crusader, 30 the Hollow Congregation,
 // 31 the Shattered Sun; then 32 the Spectral Blade (its doc: Phantom Edge) and 33 the Wild Hunt; then five from their
-// own dossiers: 34 Arcane Mind, 35 the Splintered Crown, 36 Phoenix Wake, 37 Astral Horizon, 38 Guiding Light.
+// own dossiers: 34 Arcane Mind, 35 the Splintered Crown, 36 Phoenix Wake, 37 Astral Horizon, 38 Guiding Light; and
+// three druid runes: 39 Elune's Guardian, 40 Astral Convergence, 41 Ursoc's Champion.
 //
 // - Unlocked at level 5: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
 //   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
@@ -112,6 +113,9 @@ namespace
     constexpr uint8 RUNE_PHOENIX_WAKE = 36;
     constexpr uint8 RUNE_ASTRAL_HORIZON = 37;
     constexpr uint8 RUNE_GUIDING_LIGHT = 38;
+    constexpr uint8 RUNE_ELUNES_GUARDIAN = 39;      // its own dossier, and the two after it
+    constexpr uint8 RUNE_ASTRAL_CONVERGENCE = 40;
+    constexpr uint8 RUNE_URSOCS_CHAMPION = 41;
 
     enum Spells : uint32
     {
@@ -302,6 +306,42 @@ namespace
         SPELL_PARTING_GRACE_SPEED       = 91289,
         SPELL_GUIDING_MODIFIER_FIRST    = 91290,    // + slot * 3 + choice
 
+        SPELL_RUNE_ELUNES_GUARDIAN      = 91300,
+        SPELL_OWL_DIVE                  = 91301,
+        SPELL_LUNAR_WOUND               = 91302,
+        SPELL_LUNAR_WOUND_TICK          = 91303,
+        SPELL_SWIFT_JUDGMENT            = 91304,    // the next Starfire 10% faster
+        SPELL_WATCHFUL_FLIGHT           = 91305,    // the next Starfire 20% cheaper
+        SPELL_GUIDING_WINGS             = 91306,    // the next Starfire instant
+        SPELL_GUIDING_WINGS_SPEED       = 91307,
+        SPELL_TWILIGHT_HUNT             = 91308,    // on the owl's victim: the next Wrath 25% more
+        SPELL_OWL_MODIFIER_FIRST        = 91310,    // + slot * 3 + choice
+
+        SPELL_RUNE_ASTRAL_CONVERGENCE   = 91320,
+        SPELL_SUNLIGHT                  = 91321,
+        SPELL_MOONLIGHT                 = 91322,
+        SPELL_LUNAR_COLLISION           = 91323,
+        SPELL_SOLAR_FLARE               = 91324,
+        SPELL_ASTRAL_RUPTURE            = 91325,
+        SPELL_ASTRAL_RUPTURE_TICK       = 91326,
+        SPELL_STEADY_ORBIT              = 91327,    // the next Wrath or Starfire instant
+        SPELL_LUNAR_DOMINANCE           = 91328,    // the next Starfire 20% faster and cheaper
+        SPELL_EVENTIDE                  = 91329,
+        SPELL_CONVERGENCE_MODIFIER_FIRST = 91330,   // + slot * 3 + choice
+        SPELL_EVENTIDE_TICK             = 91339,
+
+        SPELL_RUNE_URSOCS_CHAMPION      = 91340,
+        SPELL_URSOCS_GUARD              = 91341,
+        SPELL_URSOC_BLOW                = 91342,
+        SPELL_URSOC_BLOW_LOOK           = 91343,
+        SPELL_LASTING_STAND             = 91344,
+        SPELL_MOVING_MOUNTAIN           = 91345,
+        SPELL_ENDURING_CHAMPION         = 91346,
+        SPELL_CHALLENGERS_ROAR          = 91347,
+        SPELL_URSOC_MODIFIER_FIRST      = 91350,    // + slot * 3 + choice
+        SPELL_URSOC_ROAR_LOOK           = 91359,
+        SPELL_COLLISION_LOOK            = 91360,    // Astral Rupture: the collision's look, its damage over time
+
         SPELL_EVISCERATE            = 2098,         // first ranks
         SPELL_SINISTER_STRIKE       = 1752,
         SPELL_BACKSTAB              = 53,
@@ -316,6 +356,12 @@ namespace
         SPELL_PRAYER_OF_MENDING_HEAL = 33110,
         SPELL_FLASH_HEAL            = 2061,
         SPELL_GREATER_HEAL          = 2060,
+        SPELL_STARFIRE              = 2912,         // first ranks
+        SPELL_WRATH                 = 5176,
+        SPELL_BARKSKIN              = 22812,
+        SPELL_MAUL                  = 6807,
+        SPELL_BEAR_FORM             = 5487,
+        SPELL_DIRE_BEAR_FORM        = 9634,
 
         SPELL_ICY_TOUCH             = 45477,        // first ranks
         SPELL_PLAGUE_STRIKE         = 45462,
@@ -680,15 +726,22 @@ namespace
         MOD_SUPERNOVA, MOD_DYING_LIGHT, MOD_ASTRAL_REMNANT,
     };
 
-    // Astral Horizon's tuning: Arcane Barrage sets the Orb loose at most once every 12 sec; 6 sec, 6 yards a
-    // second, a bolt a second at its victim within 10 yards for 20% of the Barrage's damage.
-    constexpr uint32 ORB_COOLDOWN_MS = 12000, ORB_MS = 6000, ORB_BOLT_MS = 1000, ORB_LINGER_MS = 1000;
-    constexpr uint32 REMNANT_MS = 6000, REMNANT_TICK_MS = 2000, DYING_BOLTS = 3, DYING_SPACING_MS = 250;
-    constexpr float ORB_BOLT_SHARE = 0.2f, ORB_SPEED = 6.0f, ORB_RANGE = 10.0f, ORB_HEIGHT = 1.5f, ORB_START = 1.5f;
-    constexpr float EVENT_HORIZON = 1.2f, EVENT_RADIUS = 5.0f, ASTRAL_FOCUS = 1.4f;
-    constexpr float SATELLITE_RANGE = 12.0f;
-    constexpr float CONSTELLATION_SHARE = 0.5f, LANCE_SHARE = 0.6f, LANCE_REACH = 10.0f, LANCE_HALF_WIDTH = 1.5f;
-    constexpr float WANDERING_HALF_WIDTH = 2.0f, SUPERNOVA_BOLTS = 4.0f, SUPERNOVA_RADIUS = 8.0f, DYING_SHARE = 2.0f;
+    // Astral Horizon's tuning: Arcane Barrage sets the Orb loose at most once every 12 sec, for 6 sec (Satellite 8):
+    // it flies at 20 yards a second until it first reaches an enemy, then drifts at 1.5; a bolt a second at its
+    // victim within 10 yards for 20% of the Barrage's damage. Its options (the second pass: the weak ones raised):
+    // Wandering Star 2 bolts an enemy passed, Event Horizon 50% more, Satellite 15 yards and 8 sec, Astral Focus 60%
+    // more, Constellation 75%, Prismatic Lance 80%, Supernova 6 bolts, Dying Light 3 of 60%, Astral Remnant a bolt
+    // a second.
+    constexpr uint32 ORB_COOLDOWN_MS = 12000, ORB_MS = 6000, SATELLITE_MS = 8000, ORB_BOLT_MS = 1000;
+    constexpr uint32 ORB_LINGER_MS = 1000;
+    constexpr uint32 REMNANT_MS = 6000, REMNANT_TICK_MS = 1000, DYING_BOLTS = 3, DYING_SPACING_MS = 250;
+    constexpr float ORB_BOLT_SHARE = 0.2f, ORB_FAST = 20.0f, ORB_SLOW = 1.5f, ORB_RANGE = 10.0f, ORB_START = 1.5f;
+    constexpr float ORB_HEIGHT = 0.5f;                  // over the ground (its look floats a yard higher still)
+    constexpr float ORB_CONTACT = 3.0f;                 // an enemy this close: it has reached them, it slows
+    constexpr float EVENT_HORIZON = 1.5f, EVENT_RADIUS = 5.0f, ASTRAL_FOCUS = 1.6f, WANDERING_SHARE = 2.0f;
+    constexpr float SATELLITE_RANGE = 15.0f;
+    constexpr float CONSTELLATION_SHARE = 0.75f, LANCE_SHARE = 0.8f, LANCE_REACH = 10.0f, LANCE_HALF_WIDTH = 1.5f;
+    constexpr float WANDERING_HALF_WIDTH = 2.0f, SUPERNOVA_BOLTS = 6.0f, SUPERNOVA_RADIUS = 8.0f, DYING_SHARE = 3.0f;
     constexpr float REMNANT_RADIUS = 6.0f;
     constexpr std::size_t CONSTELLATION_TARGETS = 2, LANCE_TARGETS = 3, WANDERING_TARGETS = 5;
     constexpr std::size_t SUPERNOVA_TARGETS = 5, REMNANT_TARGETS = 5;
@@ -713,6 +766,63 @@ namespace
     constexpr uint8 GUARDIAN_STEPS = 3;
     constexpr uint32 SEEKING_EVERY = 3;
     constexpr std::size_t PASSAGE_ALLIES = 3;
+
+    // Elune's Guardian's modifiers: slot (0 Guardian, 1 Descent, 2 Blessing) x 3 + choice.
+    enum OwlModifier : uint8
+    {
+        MOD_MOONPIERCER, MOD_SILVER_WINGS, MOD_WATCHFUL_FLIGHT,
+        MOD_SWIFT_JUDGMENT, MOD_PATIENT_VIGIL, MOD_MOONLIT_PURSUIT,
+        MOD_LUNAR_WOUND, MOD_GUIDING_WINGS, MOD_TWILIGHT_HUNT,
+    };
+
+    // Elune's Guardian's tuning: a direct Starfire hit calls a lunar owl (3 waiting at most) that dives 1 sec later
+    // for 30% of that Starfire's damage (the dossier's 30% spell power: Starfire's own share of it).
+    constexpr uint8 MAX_OWLS = 3, GUIDING_EVERY = 3;
+    constexpr uint32 OWL_DELAY_MS = 1000, SWIFT_DELAY_MS = 100, VIGIL_DELAY_MS = 3000, WATCHFUL_SPACING_MS = 1000;
+    constexpr uint32 WATCHFUL_ATTACKS = 3, PURSUIT_SECOND_MS = 1000;
+    constexpr float OWL_SHARE = 0.3f, MOONPIERCER = 1.4f, SILVER_WINGS_SHARE = 0.5f, WATCHFUL_SHARE = 0.4f;
+    constexpr float PATIENT_VIGIL = 1.3f, PURSUIT_SHARE = 0.2f, LUNAR_WOUND_SHARE = 0.3f, TWILIGHT_HUNT = 1.25f;
+    constexpr float SILVER_WINGS_RADIUS = 6.0f, PURSUIT_RANGE = 15.0f;
+    constexpr int32 LUNAR_WOUND_MS = 6000, TWILIGHT_HUNT_MS = 5000;
+    constexpr std::size_t SILVER_WINGS_TARGETS = 4;
+
+    // Astral Convergence's modifiers: slot (0 Collision, 1 Alignment, 2 Flare) x 3 + choice.
+    enum ConvergenceModifier : uint8
+    {
+        MOD_PERFECT_ALIGNMENT, MOD_CONVERGING_SKIES, MOD_ASTRAL_RUPTURE,
+        MOD_LONG_TWILIGHT, MOD_CROSSED_HORIZONS, MOD_STEADY_ORBIT,
+        MOD_SOLAR_RETURN, MOD_LUNAR_DOMINANCE, MOD_EVENTIDE,
+    };
+
+    // Astral Convergence's tuning: Wrath leaves Sunlight (8 sec); Starfire on it collides for 40% of the
+    // Starfire's damage and leaves Moonlight (8 sec); Wrath on Moonlight flares for 35% of the Wrath's damage (the
+    // dossier's 40% and 20% spell power, as shares of the two spells), ending the sequence. 5 enemies marked at most.
+    constexpr int32 MARK_MS = 8000, LONG_TWILIGHT_MS = 12000, RUPTURE_MS = 6000;
+    constexpr uint32 EVENTIDE_MS = 4000, EVENTIDE_TICK_MS = 1000, TWILIGHT_STEP_MS = 2000;
+    constexpr float COLLISION_SHARE = 0.4f, FLARE_SHARE = 0.35f, PERFECT_ALIGNMENT = 1.4f, CONVERGING_SHARE = 0.5f;
+    constexpr float RUPTURE_SHARE = 1.5f, TWILIGHT_STEP = 0.05f, TWILIGHT_MOST = 0.2f, CROSSED_SHARE = 0.35f;
+    constexpr float SOLAR_RETURN = 1.6f, EVENTIDE_SHARE = 0.5f;
+    constexpr float CONVERGING_RADIUS = 6.0f, CROSSED_RANGE = 12.0f, EVENTIDE_RADIUS = 6.0f;
+    constexpr std::size_t MAX_MARKED = 5, CONVERGING_TARGETS = 4, CROSSED_TARGETS = 3, EVENTIDE_TARGETS = 5;
+
+    // Ursoc's Champion's modifiers: slot (0 Guard, 1 Answer, 2 Resolve) x 3 + choice.
+    enum UrsocModifier : uint8
+    {
+        MOD_ANCIENT_HIDE, MOD_LASTING_STAND, MOD_MOVING_MOUNTAIN,
+        MOD_URSOCS_BITE, MOD_MOUNTAINS_ROAR, MOD_EARTHBREAKER,
+        MOD_ENDURING_CHAMPION, MOD_CHALLENGERS_ROAR, MOD_UNBROKEN,
+    };
+
+    // Ursoc's Champion's tuning: Barkskin in Bear Form adds Ursoc's Guard (4 sec, an absorb of 15% of maximum
+    // health); Maul in it releases a blow of 25% of attack power plus half of what the guard absorbed (that part at
+    // most 50% of attack power) in a 10-yard cone in front (up to 5).
+    constexpr int32 GUARD_MS = 4000, LASTING_STAND_MS = 6000, ENDURING_MS = 4000, CHALLENGERS_MS = 4000;
+    constexpr float GUARD_PCT = 15.0f, ANCIENT_HIDE_PCT = 20.0f, MOUNTAIN_PCT = 3.0f, MOUNTAIN_TRAVEL = 5.0f;
+    constexpr float URSOC_AP = 0.25f, ABSORBED_SHARE = 0.5f, ABSORBED_MOST_AP = 0.5f, URSOCS_BITE = 1.4f;
+    constexpr float URSOC_REACH = 10.0f, URSOC_ARC = float(M_PI) / 3.0f, ROAR_ARC = float(M_PI) / 2.0f;
+    constexpr float EARTHBREAKER_REACH = 20.0f, EARTHBREAKER_HALF_WIDTH = 2.0f, EARTHBREAKER_FAR = 1.25f;
+    constexpr float ENDURING_SHARE = 0.5f, CHALLENGERS_THREAT = 0.5f;
+    constexpr std::size_t URSOC_TARGETS = 5, ROAR_TARGETS = 8;
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
@@ -861,6 +971,17 @@ namespace
             { RUNE_GUIDING_LIGHT, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
               { { SPELL_PRAYER_OF_MENDING }, { SPELL_FLASH_HEAL, SPELL_GREATER_HEAL } }, SPELL_RUNE_GUIDING_LIGHT,
               SPELL_GUIDING_MODIFIER_FIRST },
+            // Ranged DPS: Starfire calls the owls.
+            { RUNE_ELUNES_GUARDIAN, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_STARFIRE } }, SPELL_RUNE_ELUNES_GUARDIAN, SPELL_OWL_MODIFIER_FIRST },
+            // Ranged DPS: Wrath and Starfire in turn.
+            { RUNE_ASTRAL_CONVERGENCE, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_WRATH }, { SPELL_STARFIRE } }, SPELL_RUNE_ASTRAL_CONVERGENCE,
+              SPELL_CONVERGENCE_MODIFIER_FIRST },
+            // Tanks: Barkskin in Bear Form raises the guard, Maul releases it.
+            { RUNE_URSOCS_CHAMPION, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
+              { { SPELL_BEAR_FORM, SPELL_DIRE_BEAR_FORM }, { SPELL_BARKSKIN }, { SPELL_MAUL } },
+              SPELL_RUNE_URSOCS_CHAMPION, SPELL_URSOC_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -914,6 +1035,8 @@ namespace
             return { { SPELL_ARCANE_EXPLOSION } };
         if (rune == RUNE_GUIDING_LIGHT && modifier == MOD_GUARDIAN_STAR)
             return { { SPELL_GREATER_HEAL } };
+        if (rune == RUNE_ELUNES_GUARDIAN && modifier == MOD_TWILIGHT_HUNT)
+            return { { SPELL_WRATH } };
         if (rune != RUNE_FEL_COMMANDMENT)
             return {};
         if (modifier == MOD_DREADFIRE_DISCIPLINE)
@@ -1046,6 +1169,8 @@ namespace
         uint32 OrbReadyAt = 0, OrbUntil = 0, OrbTimer = 0;
         float OrbBolt = 0.0f;
         bool OrbSatellite = false;                  // Satellite: the Hero wears it (SPELL_ORB_SATELLITE)
+        bool OrbSlowed = false;                     // it has reached its first enemy: a drift from then on
+        float OrbHeading = 0.0f;
         Position OrbLast;
         std::set<ObjectGuid> OrbCrossed;            // Wandering Star: each enemy once
         Position RemnantAt;                         // Astral Remnant (RemnantUntil 0: none)
@@ -1057,6 +1182,20 @@ namespace
         uint32 StarUntil = 0, StarPulseTimer = 0, StarMovedAt = 0, StarArriveAt = 0, StarPulses = 0;
         uint8 StarFocus = 0;                        // Guardian Star: pulses in a row on its bearer
         bool StarTravelling = false;
+
+        // Elune's Guardian.
+        uint8 Owls = 0, OwlCount = 0;               // owls waiting to dive; owls since Guiding Wings' last
+
+        // Astral Convergence.
+        std::vector<ObjectGuid> Marked;             // enemies in the Hero's Sunlight or Moonlight, oldest first
+        Position EventideAt;                        // Eventide's field (EventideUntil 0: none)
+        uint32 EventideMap = 0, EventideUntil = 0, EventideTimer = 0;
+        float EventideTick = 0.0f;
+
+        // Ursoc's Champion.
+        int32 GuardShield = 0;                      // the guard's absorb as raised (0: none up)
+        bool GuardReleased = false, GuardTravelled = false;
+        Position GuardFrom;
 
     };
 
@@ -2007,6 +2146,8 @@ namespace
             case SPELL_ARCANE_ECHO: return SPELL_ARCANE_ECHO_TICK;
             case SPELL_FROST_WOUND: return SPELL_FROST_WOUND_TICK;
             case SPELL_CLINGING_EMBERS: return SPELL_CLINGING_EMBERS_TICK;
+            case SPELL_LUNAR_WOUND: return SPELL_LUNAR_WOUND_TICK;
+            case SPELL_ASTRAL_RUPTURE: return SPELL_ASTRAL_RUPTURE_TICK;
             default: return 0;
         }
     }
@@ -3788,6 +3929,15 @@ namespace
         orb->CastCustomSpell(enemy, spellId, &points, nullptr, nullptr, true, nullptr, nullptr, player->GetGUID());
     }
 
+    // The Orb's course to a point, its height kept over the ground there.
+    void OrbFly(Player* player, Creature* orb, Position to, float speed)
+    {
+        float z = to.GetPositionZ();
+        player->UpdateGroundPositionZ(to.GetPositionX(), to.GetPositionY(), z);
+        to.m_positionZ = z + ORB_HEIGHT;
+        orb->GetMotionMaster()->MovePoint(0, to, FORCED_MOVEMENT_NONE, speed, false);
+    }
+
     // Arcane Barrage sets the Orb loose (at most once every 12 sec; a new one replaces it, no ending): 6 sec, a bolt
     // a second for 20% of the Barrage's damage. Its course: on through its victim at 6 yards a second; Event
     // Horizon, to the victim's place and there it stays. Satellite: no creature; the Hero wears it, circling them
@@ -3808,10 +3958,11 @@ namespace
         if (HasHorizonMarker(player, MOD_SATELLITE))
         {
             state.OrbSatellite = true;
+            state.OrbUntil = now + SATELLITE_MS;
             if (Aura* aura = player->AddAura(SPELL_ORB_SATELLITE, player))
             {
-                aura->SetMaxDuration(int32(ORB_MS));
-                aura->SetDuration(int32(ORB_MS));
+                aura->SetMaxDuration(int32(SATELLITE_MS));
+                aura->SetDuration(int32(SATELLITE_MS));
             }
             return;
         }
@@ -3824,11 +3975,11 @@ namespace
             return;
         state.Orb = orb->GetGUID();
         state.OrbLast = at;
+        state.OrbHeading = angle;
+        state.OrbSlowed = false;
         Position to = HasHorizonMarker(player, MOD_EVENT_HORIZON) ? victim->GetPosition()
-            : Toward(at, angle, ORB_SPEED * float(ORB_MS) / 1000.0f);
-        to.m_positionZ = HasHorizonMarker(player, MOD_EVENT_HORIZON) ? victim->GetPositionZ() + ORB_HEIGHT
-            : at.GetPositionZ();
-        orb->GetMotionMaster()->MovePoint(0, to, FORCED_MOVEMENT_NONE, ORB_SPEED, false);
+            : Toward(at, angle, ORB_FAST * float(ORB_MS) / 1000.0f);
+        OrbFly(player, orb, to, ORB_FAST);
     }
 
     // A bolt a second at its victim within 10 yards of the Orb (Satellite: 12), else the nearest enemy there.
@@ -3951,6 +4102,26 @@ namespace
             return;
         }
         Position here = orb->GetPosition();
+        // Reaching its first enemy (Event Horizon: its place), it slows to a drift (Event Horizon: it stays).
+        if (Creature* creature = orb->ToCreature(); creature && !state.OrbSlowed)
+        {
+            bool horizon = HasHorizonMarker(player, MOD_EVENT_HORIZON);
+            Unit* victim = ObjectAccessor::GetUnit(*player, state.OrbVictim);
+            bool reached = !EnemiesAround(player, creature, ORB_CONTACT).empty()
+                || (horizon && victim && creature->GetExactDist2d(victim) <= ORB_CONTACT);
+            if (reached)
+            {
+                state.OrbSlowed = true;
+                if (horizon)
+                    creature->GetMotionMaster()->Clear();
+                else
+                {
+                    float left = float(state.OrbUntil - std::min(state.OrbUntil, Now())) / 1000.0f;
+                    OrbFly(player, creature, Toward(here, state.OrbHeading, std::max(1.0f, ORB_SLOW * left)),
+                        ORB_SLOW);
+                }
+            }
+        }
         if (!state.OrbSatellite && HasHorizonMarker(player, MOD_WANDERING_STAR))
         {
             Shape path;
@@ -3959,7 +4130,7 @@ namespace
             path.HalfWidth = WANDERING_HALF_WIDTH;
             for (Unit* enemy : EnemiesIn(player, path, WANDERING_TARGETS))
                 if (state.OrbCrossed.size() < WANDERING_TARGETS && state.OrbCrossed.insert(enemy->GetGUID()).second)
-                    OrbStrike(player, orb, enemy, 1.0f, SPELL_WANDERING_STAR);
+                    OrbStrike(player, orb, enemy, WANDERING_SHARE, SPELL_WANDERING_STAR);
         }
         state.OrbLast = here;
         state.OrbTimer += diff;
@@ -4228,6 +4399,425 @@ namespace
         }
     }
 
+    // ---- Elune's Guardian --------------------------------------------------------------------------------------
+
+    bool HasOwlMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_OWL_MODIFIER_FIRST, modifier);
+    }
+
+    // A fresh buff on the Hero (an earlier one replaced).
+    void Renew(Player* player, uint32 spellId)
+    {
+        player->RemoveAurasDueToSpell(spellId);
+        player->AddAura(spellId, player);
+    }
+
+    // One owl strike from the sky on its victim (Silver Wings: half of it to up to 4 others within 6 yards; Lunar
+    // Wound: 30% more of it over 6 sec; Twilight Hunt: the victim marked for the next Wrath).
+    void OwlStrike(Player* player, Unit* victim, float amount, bool first)
+    {
+        Strike(player, victim, SPELL_OWL_DIVE, amount);
+        if (HasOwlMarker(player, MOD_SILVER_WINGS) && first)
+        {
+            std::size_t count = SILVER_WINGS_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, victim, SILVER_WINGS_RADIUS))
+                if (enemy != victim && count)
+                {
+                    Strike(player, enemy, SPELL_OWL_DIVE, amount * SILVER_WINGS_SHARE);
+                    --count;
+                }
+        }
+        if (!victim->IsAlive())
+            return;
+        if (HasOwlMarker(player, MOD_LUNAR_WOUND))
+            AddDot(player, victim, SPELL_LUNAR_WOUND, amount * LUNAR_WOUND_SHARE, LUNAR_WOUND_MS);
+        if (HasOwlMarker(player, MOD_TWILIGHT_HUNT))
+            Lasting(player, victim, SPELL_TWILIGHT_HUNT, TWILIGHT_HUNT_MS);
+    }
+
+    // An owl's dive (its victim gone: Moonlit Pursuit takes the nearest enemy within 15 yards, else it fades).
+    // Watchful Flight: 3 strikes 1 sec apart, 40% each, the last making the next Starfire 20% cheaper. Moonlit
+    // Pursuit: a second strike 1 sec later for 20%. Swift Judgment: each dive, the next Starfire 10% faster. Guiding
+    // Wings: every third owl, the next Starfire instant and 20% speed.
+    void OwlDive(Player* player, ObjectGuid victimGuid, float owl)
+    {
+        State& state = StateOf(player);
+        if (state.Owls)
+            --state.Owls;
+        Unit* victim = ObjectAccessor::GetUnit(*player, victimGuid);
+        if (!player->IsAlive())
+            return;
+        if (!Valid(player, victim))
+        {
+            if (!HasOwlMarker(player, MOD_MOONLIT_PURSUIT) || !victim || !victim->IsInMap(player))
+                return;
+            std::vector<Unit*> near = EnemiesAround(player, victim, PURSUIT_RANGE);
+            if (near.empty())
+                return;
+            victim = near.front();
+            victimGuid = victim->GetGUID();
+        }
+        else if (HasOwlMarker(player, MOD_MOONPIERCER))
+            owl *= MOONPIERCER;
+        if (HasOwlMarker(player, MOD_WATCHFUL_FLIGHT))
+            for (uint32 i = 0; i < WATCHFUL_ATTACKS; ++i)
+                player->m_Events.AddEventAtOffset([player, victimGuid, owl, i]()
+                {
+                    Unit* target = ObjectAccessor::GetUnit(*player, victimGuid);
+                    if (!player->IsInWorld() || !player->IsAlive() || !Valid(player, target))
+                        return;
+                    OwlStrike(player, target, owl * WATCHFUL_SHARE, i == 0);
+                    if (i + 1 == WATCHFUL_ATTACKS)
+                        Renew(player, SPELL_WATCHFUL_FLIGHT);
+                }, Milliseconds(i * WATCHFUL_SPACING_MS));
+        else
+            OwlStrike(player, victim, owl, true);
+        if (HasOwlMarker(player, MOD_MOONLIT_PURSUIT))
+            player->m_Events.AddEventAtOffset([player, victimGuid, owl]()
+            {
+                Unit* target = ObjectAccessor::GetUnit(*player, victimGuid);
+                if (player->IsInWorld() && player->IsAlive() && Valid(player, target))
+                    Strike(player, target, SPELL_OWL_DIVE, owl * PURSUIT_SHARE);
+            }, Milliseconds(PURSUIT_SECOND_MS));
+        if (HasOwlMarker(player, MOD_SWIFT_JUDGMENT))
+            Renew(player, SPELL_SWIFT_JUDGMENT);
+        if (HasOwlMarker(player, MOD_GUIDING_WINGS) && ++state.OwlCount >= GUIDING_EVERY)
+        {
+            state.OwlCount = 0;
+            Renew(player, SPELL_GUIDING_WINGS);
+            Renew(player, SPELL_GUIDING_WINGS_SPEED);
+        }
+    }
+
+    // A direct Starfire hit calls an owl (3 waiting at most): 30% of the Starfire's damage, diving 1 sec later
+    // (Swift Judgment 0.1; Patient Vigil 3, 30% more).
+    void CallOwl(Player* player, Unit* victim, float starfire)
+    {
+        State& state = StateOf(player);
+        if (state.Owls >= MAX_OWLS || starfire <= 0.0f)
+            return;
+        ++state.Owls;
+        float owl = starfire * OWL_SHARE * (HasOwlMarker(player, MOD_PATIENT_VIGIL) ? PATIENT_VIGIL : 1.0f);
+        uint32 delay = HasOwlMarker(player, MOD_SWIFT_JUDGMENT) ? SWIFT_DELAY_MS
+            : HasOwlMarker(player, MOD_PATIENT_VIGIL) ? VIGIL_DELAY_MS : OWL_DELAY_MS;
+        ObjectGuid guid = victim->GetGUID();
+        player->m_Events.AddEventAtOffset([player, guid, owl]()
+        {
+            if (player->IsInWorld())
+                OwlDive(player, guid, owl);
+        }, Milliseconds(delay));
+    }
+
+    // ---- Astral Convergence ------------------------------------------------------------------------------------
+
+    bool HasConvergenceMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_CONVERGENCE_MODIFIER_FIRST, modifier);
+    }
+
+    int32 MarkMs(Player* player)
+    {
+        return HasConvergenceMarker(player, MOD_LONG_TWILIGHT) ? LONG_TWILIGHT_MS : MARK_MS;
+    }
+
+    // A mark of the Hero's on an enemy (5 enemies marked at most: the longest marked loses theirs).
+    void Mark(Player* player, Unit* enemy, uint32 spellId)
+    {
+        State& state = StateOf(player);
+        std::vector<ObjectGuid>& marked = state.Marked;
+        marked.erase(std::remove_if(marked.begin(), marked.end(), [player](ObjectGuid guid)
+        {
+            Unit* unit = ObjectAccessor::GetUnit(*player, guid);
+            return !unit || (!unit->HasAura(SPELL_SUNLIGHT, player->GetGUID())
+                && !unit->HasAura(SPELL_MOONLIGHT, player->GetGUID()));
+        }), marked.end());
+        marked.erase(std::remove(marked.begin(), marked.end(), enemy->GetGUID()), marked.end());
+        if (marked.size() >= MAX_MARKED)
+        {
+            if (Unit* oldest = ObjectAccessor::GetUnit(*player, marked.front()))
+            {
+                oldest->RemoveAurasDueToSpell(SPELL_SUNLIGHT, player->GetGUID());
+                oldest->RemoveAurasDueToSpell(SPELL_MOONLIGHT, player->GetGUID());
+            }
+            marked.erase(marked.begin());
+        }
+        marked.push_back(enemy->GetGUID());
+        Lasting(player, enemy, spellId, MarkMs(player));
+    }
+
+    // Wrath: on Moonlight, the flare (35% of the Wrath's damage; Solar Return 60% more) ends the sequence; else it
+    // leaves Sunlight.
+    void ConvergenceWrath(Player* player, Unit* enemy, float wrath)
+    {
+        if (!enemy->HasAura(SPELL_MOONLIGHT, player->GetGUID()))
+        {
+            if (enemy->IsAlive())
+                Mark(player, enemy, SPELL_SUNLIGHT);
+            return;
+        }
+        enemy->RemoveAurasDueToSpell(SPELL_MOONLIGHT, player->GetGUID());
+        float flare = wrath * FLARE_SHARE * (HasConvergenceMarker(player, MOD_SOLAR_RETURN) ? SOLAR_RETURN : 1.0f);
+        Strike(player, enemy, SPELL_SOLAR_FLARE, flare);
+        if (HasConvergenceMarker(player, MOD_LUNAR_DOMINANCE))
+            Renew(player, SPELL_LUNAR_DOMINANCE);
+        if (HasConvergenceMarker(player, MOD_STEADY_ORBIT))
+            Renew(player, SPELL_STEADY_ORBIT);
+        if (HasConvergenceMarker(player, MOD_EVENTIDE))
+        {
+            State& state = StateOf(player);
+            Position at = enemy->GetPosition();
+            state.EventideAt = at;
+            state.EventideMap = player->GetMapId();
+            state.EventideUntil = Now() + EVENTIDE_MS;
+            state.EventideTimer = 0;
+            state.EventideTick = flare * EVENTIDE_SHARE;
+            PlaceDecals(player, SPELL_EVENTIDE, { at });
+        }
+    }
+
+    // Starfire on Sunlight: the collision (40% of the Starfire's damage; Perfect Alignment 40% more; Long Twilight
+    // 5% more for each 2 sec the Sunlight was on, up to 20%), then Moonlight. Converging Skies: half to up to 4 more
+    // within 6 yards; Astral Rupture: 150% of it over 6 sec instead; Crossed Horizons: 35% to up to 3 enemies within
+    // 12 yards in the Hero's Moonlight.
+    void ConvergenceStarfire(Player* player, Unit* enemy, float starfire)
+    {
+        Aura* sunlight = enemy->GetAura(SPELL_SUNLIGHT, player->GetGUID());
+        if (!sunlight)
+            return;
+        float bonus = 1.0f;
+        if (HasConvergenceMarker(player, MOD_LONG_TWILIGHT))
+        {
+            int32 held = sunlight->GetMaxDuration() - sunlight->GetDuration();
+            bonus += std::min(TWILIGHT_MOST, TWILIGHT_STEP * float(held / int32(TWILIGHT_STEP_MS)));
+        }
+        enemy->RemoveAurasDueToSpell(SPELL_SUNLIGHT, player->GetGUID());
+        float collision = starfire * COLLISION_SHARE * bonus
+            * (HasConvergenceMarker(player, MOD_PERFECT_ALIGNMENT) ? PERFECT_ALIGNMENT : 1.0f);
+        std::vector<Unit*> crossed;
+        if (HasConvergenceMarker(player, MOD_CROSSED_HORIZONS))
+            for (Unit* other : EnemiesAround(player, enemy, CROSSED_RANGE))
+                if (other != enemy && crossed.size() < CROSSED_TARGETS
+                    && other->HasAura(SPELL_MOONLIGHT, player->GetGUID()))
+                    crossed.push_back(other);
+        if (HasConvergenceMarker(player, MOD_ASTRAL_RUPTURE))
+        {
+            enemy->CastSpell(enemy, SPELL_COLLISION_LOOK, true);
+            AddDot(player, enemy, SPELL_ASTRAL_RUPTURE, collision * RUPTURE_SHARE, RUPTURE_MS);
+        }
+        else
+            Strike(player, enemy, SPELL_LUNAR_COLLISION, collision);
+        if (HasConvergenceMarker(player, MOD_CONVERGING_SKIES))
+        {
+            std::size_t count = CONVERGING_TARGETS;
+            for (Unit* other : EnemiesAround(player, enemy, CONVERGING_RADIUS))
+                if (other != enemy && count)
+                {
+                    Strike(player, other, SPELL_LUNAR_COLLISION, collision * CONVERGING_SHARE);
+                    --count;
+                }
+        }
+        for (Unit* other : crossed)
+            Strike(player, other, SPELL_LUNAR_COLLISION, collision * CROSSED_SHARE);
+        if (enemy->IsAlive())
+            Mark(player, enemy, SPELL_MOONLIGHT);
+    }
+
+    // Eventide's field: half the flare every second to up to 5 enemies within 6 yards, 4 sec.
+    void EventideTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        if (!state.EventideUntil)
+            return;
+        if (Now() >= state.EventideUntil || player->GetMapId() != state.EventideMap)
+        {
+            state.EventideUntil = 0;
+            player->RemoveDynObject(SPELL_EVENTIDE);
+            return;
+        }
+        state.EventideTimer += diff;
+        if (state.EventideTimer < EVENTIDE_TICK_MS)
+            return;
+        state.EventideTimer = 0;
+        for (Unit* enemy : EnemiesIn(player, Circle(state.EventideAt, EVENTIDE_RADIUS), EVENTIDE_TARGETS))
+            Strike(player, enemy, SPELL_EVENTIDE_TICK, state.EventideTick);
+    }
+
+    // ---- Ursoc's Champion --------------------------------------------------------------------------------------
+
+    bool HasUrsocMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_URSOC_MODIFIER_FIRST, modifier);
+    }
+
+    bool InBearForm(Player* player)
+    {
+        ShapeshiftForm form = player->GetShapeshiftForm();
+        return form == FORM_BEAR || form == FORM_DIREBEAR;
+    }
+
+    AuraEffect* GuardEffect(Player* player)
+    {
+        Aura* guard = player->GetAura(SPELL_URSOCS_GUARD, player->GetGUID());
+        return guard ? guard->GetEffect(EFFECT_0) : nullptr;
+    }
+
+    void EndGuard(Player* player)
+    {
+        State& state = StateOf(player);
+        state.GuardShield = 0;
+        state.GuardReleased = false;
+        for (uint32 spell : { SPELL_URSOCS_GUARD, SPELL_LASTING_STAND, SPELL_MOVING_MOUNTAIN })
+            player->RemoveAurasDueToSpell(spell);
+    }
+
+    // Barkskin in Bear Form: Ursoc's Guard, an absorb of 15% of maximum health (Ancient Hide 20%) for 4 sec (Lasting
+    // Stand 6, healing taken 10% more meanwhile; Moving Mountain 30% speed meanwhile).
+    void RaiseGuard(Player* player)
+    {
+        State& state = StateOf(player);
+        EndGuard(player);
+        int32 shield = std::max<int32>(1, int32(player->GetMaxHealth()
+            * (HasUrsocMarker(player, MOD_ANCIENT_HIDE) ? ANCIENT_HIDE_PCT : GUARD_PCT) / 100.0f));
+        int32 ms = HasUrsocMarker(player, MOD_LASTING_STAND) ? LASTING_STAND_MS : GUARD_MS;
+        Report(player, SPELL_URSOCS_GUARD, 'A', shield);
+        player->CastCustomSpell(player, SPELL_URSOCS_GUARD, &shield, nullptr, nullptr, true);
+        if (Aura* guard = player->GetAura(SPELL_URSOCS_GUARD, player->GetGUID()))
+        {
+            guard->SetMaxDuration(ms);
+            guard->SetDuration(ms);
+        }
+        state.GuardShield = shield;
+        state.GuardReleased = false;
+        state.GuardFrom = player->GetPosition();
+        state.GuardTravelled = false;
+        uint32 extra = HasUrsocMarker(player, MOD_LASTING_STAND) ? SPELL_LASTING_STAND
+            : HasUrsocMarker(player, MOD_MOVING_MOUNTAIN) ? SPELL_MOVING_MOUNTAIN : 0;
+        if (extra)
+            if (Aura* aura = player->AddAura(extra, player))
+            {
+                aura->SetMaxDuration(ms);
+                aura->SetDuration(ms);
+            }
+    }
+
+    // Maul in the guard: the blow (25% of attack power and half of what the guard absorbed, that part at most 50% of
+    // attack power; Unbroken: the 25% only, the guard kept) in a 10-yard cone in front (up to 5; Ursoc's Bite: Maul's
+    // victim only, 40% more; Mountain's Roar: 180 degrees, up to 8; Earthbreaker: a 20-yard line, 25% more past 10).
+    // Enduring Champion: half the guard left over stays as a shield 4 sec. Challenger's Roar: the struck deal 10%
+    // less for 4 sec, and the blow's threat is 50% more.
+    void Release(Player* player, Unit* victim)
+    {
+        State& state = StateOf(player);
+        AuraEffect* guard = GuardEffect(player);
+        if (!guard || state.GuardReleased)
+            return;
+        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
+        int32 left = std::max(0, guard->GetAmount());
+        float absorbed = float(std::max(0, state.GuardShield - left));
+        bool unbroken = HasUrsocMarker(player, MOD_UNBROKEN);
+        float blow = ap * URSOC_AP + (unbroken ? 0.0f : std::min(absorbed * ABSORBED_SHARE, ap * ABSORBED_MOST_AP));
+        std::vector<Unit*> struck;
+        if (HasUrsocMarker(player, MOD_URSOCS_BITE))
+        {
+            if (Valid(player, victim))
+                struck.push_back(victim);
+            blow *= URSOCS_BITE;
+        }
+        else if (HasUrsocMarker(player, MOD_EARTHBREAKER))
+        {
+            Shape line;
+            line.From = player->GetPosition();
+            line.To = Toward(line.From, player->GetOrientation(), EARTHBREAKER_REACH);
+            line.HalfWidth = EARTHBREAKER_HALF_WIDTH;
+            struck = EnemiesIn(player, line, URSOC_TARGETS);
+        }
+        else
+        {
+            bool roar = HasUrsocMarker(player, MOD_MOUNTAINS_ROAR);
+            Shape cone;
+            cone.Cone = true;
+            cone.From = player->GetPosition();
+            cone.Facing = player->GetOrientation();
+            cone.Radius = URSOC_REACH;
+            cone.Arc = roar ? ROAR_ARC : URSOC_ARC;
+            struck = EnemiesIn(player, cone, roar ? ROAR_TARGETS : URSOC_TARGETS);
+        }
+        player->CastSpell(player, HasUrsocMarker(player, MOD_MOUNTAINS_ROAR) ? SPELL_URSOC_ROAR_LOOK
+            : SPELL_URSOC_BLOW_LOOK, true);
+        bool challenge = HasUrsocMarker(player, MOD_CHALLENGERS_ROAR);
+        for (Unit* enemy : struck)
+        {
+            float amount = blow;
+            if (HasUrsocMarker(player, MOD_EARTHBREAKER) && player->GetExactDist2d(enemy) > URSOC_REACH)
+                amount *= EARTHBREAKER_FAR;
+            Strike(player, enemy, SPELL_URSOC_BLOW, amount);
+            if (!enemy->IsAlive())
+                continue;
+            if (challenge)
+            {
+                Lasting(player, enemy, SPELL_CHALLENGERS_ROAR, CHALLENGERS_MS);
+                enemy->GetThreatMgr().AddThreat(player, amount * CHALLENGERS_THREAT);
+            }
+        }
+        if (unbroken)
+        {
+            state.GuardReleased = true;             // the guard stays; one blow a guard
+            return;
+        }
+        if (HasUrsocMarker(player, MOD_ENDURING_CHAMPION) && left > 0)
+        {
+            int32 kept = std::max<int32>(1, int32(float(left) * ENDURING_SHARE));
+            player->RemoveAurasDueToSpell(SPELL_ENDURING_CHAMPION);
+            Report(player, SPELL_ENDURING_CHAMPION, 'A', kept);
+            player->CastCustomSpell(player, SPELL_ENDURING_CHAMPION, &kept, nullptr, nullptr, true);
+        }
+        EndGuard(player);
+    }
+
+    // The guard out: it ends with Bear Form; Moving Mountain's 5 yards travelled add 3% of maximum health to it, once.
+    void GuardTick(Player* player)
+    {
+        State& state = StateOf(player);
+        if (!state.GuardShield)
+            return;
+        AuraEffect* guard = GuardEffect(player);
+        if (!guard || !InBearForm(player))
+        {
+            EndGuard(player);
+            return;
+        }
+        if (HasUrsocMarker(player, MOD_MOVING_MOUNTAIN) && !state.GuardTravelled
+            && player->GetExactDist2d(&state.GuardFrom) >= MOUNTAIN_TRAVEL)
+        {
+            state.GuardTravelled = true;
+            int32 more = int32(player->GetMaxHealth() * MOUNTAIN_PCT / 100.0f);
+            guard->ChangeAmount(guard->GetAmount() + more);
+            state.GuardShield += more;
+        }
+    }
+
+    void ClearDruids(Player* player)
+    {
+        State& state = StateOf(player);
+        state.Owls = 0;
+        state.OwlCount = 0;
+        for (uint32 spell : { SPELL_SWIFT_JUDGMENT, SPELL_WATCHFUL_FLIGHT, SPELL_GUIDING_WINGS,
+                              SPELL_GUIDING_WINGS_SPEED, SPELL_STEADY_ORBIT, SPELL_LUNAR_DOMINANCE,
+                              SPELL_ENDURING_CHAMPION })
+            player->RemoveAurasDueToSpell(spell);
+        for (ObjectGuid guid : state.Marked)
+            if (Unit* unit = ObjectAccessor::GetUnit(*player, guid))
+            {
+                unit->RemoveAurasDueToSpell(SPELL_SUNLIGHT, player->GetGUID());
+                unit->RemoveAurasDueToSpell(SPELL_MOONLIGHT, player->GetGUID());
+            }
+        state.Marked.clear();
+        state.EventideUntil = 0;
+        player->RemoveDynObject(SPELL_EVENTIDE);
+        EndGuard(player);
+    }
+
     // Everything the five newest left out (death, a rune or spec change, logout).
     void ClearNewest(Player* player)
     {
@@ -4245,6 +4835,7 @@ namespace
         state.RemnantUntil = 0;
         player->RemoveDynObject(SPELL_ASTRAL_REMNANT);
         ClearStar(player);
+        ClearDruids(player);
     }
 
     // ---- The rune's auras ------------------------------------------------------------------------------------
@@ -5613,6 +6204,10 @@ public:
             OrbTick(player, diff);
         if (player->HasAura(SPELL_RUNE_GUIDING_LIGHT))
             StarTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE) || StateOf(player).EventideUntil)
+            EventideTick(player, diff);
+        if (StateOf(player).GuardShield)
+            GuardTick(player);
         if (!player->HasAura(SPELL_RUNE_FEL_COMMANDMENT))
             return;
         State& state = StateOf(player);
@@ -5957,6 +6552,96 @@ struct npc_titan_rune_flier : public ScriptedAI
     void UpdateAI(uint32 /*diff*/) override { }
 };
 
+// Starfire (every rank): Elune's Guardian's owl, Astral Convergence's collision (direct hits).
+class spell_titan_rune_starfire : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_starfire);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || GetHitDamage() <= 0)
+            return;
+        if (player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN))
+            CallOwl(player, target, float(GetHitDamage()));
+        if (player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE))
+            ConvergenceStarfire(player, target, float(GetHitDamage()));
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_starfire::Hit);
+    }
+};
+
+// Wrath (every rank): Twilight Hunt's 25% more on an owl's marked victim (the mark spent); Astral Convergence's
+// Sunlight or flare.
+class spell_titan_rune_wrath : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_wrath);
+
+    void Hunted()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || !target->HasAura(SPELL_TWILIGHT_HUNT, player->GetGUID()))
+            return;
+        target->RemoveAurasDueToSpell(SPELL_TWILIGHT_HUNT, player->GetGUID());
+        SetHitDamage(int32(GetHitDamage() * TWILIGHT_HUNT));
+    }
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE))
+            ConvergenceWrath(player, target, float(GetHitDamage()));
+    }
+
+    void Register() override
+    {
+        OnHit += SpellHitFn(spell_titan_rune_wrath::Hunted);
+        AfterHit += SpellHitFn(spell_titan_rune_wrath::Hit);
+    }
+};
+
+// Barkskin in Bear Form with Ursoc's Champion: Ursoc's Guard.
+class spell_titan_rune_barkskin : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_barkskin);
+
+    void Cast()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (player && player->HasAura(SPELL_RUNE_URSOCS_CHAMPION) && InBearForm(player))
+            RaiseGuard(player);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_rune_barkskin::Cast);
+    }
+};
+
+// Maul (every rank) in Ursoc's Guard: the blow.
+class spell_titan_rune_maul : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_maul);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (player && player->HasAura(SPELL_RUNE_URSOCS_CHAMPION))
+            Release(player, GetHitUnit());
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_maul::Hit);
+    }
+};
+
 // Eviscerate (every rank) with the Spectral Blade: its phantom.
 class spell_titan_rune_eviscerate : public SpellScript
 {
@@ -6236,6 +6921,10 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_arcane_barrage);
     RegisterSpellScript(spell_titan_rune_prayer_of_mending);
     RegisterSpellScript(spell_titan_rune_guiding_heal);
+    RegisterSpellScript(spell_titan_rune_starfire);
+    RegisterSpellScript(spell_titan_rune_wrath);
+    RegisterSpellScript(spell_titan_rune_barkskin);
+    RegisterSpellScript(spell_titan_rune_maul);
     RegisterCreatureAI(npc_titan_rune_spectral_beast);
     RegisterCreatureAI(npc_titan_rune_flier);
     new titan_runes_player();

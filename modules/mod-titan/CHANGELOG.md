@@ -4,6 +4,32 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-16: Legendary Rune balance and bug fixes
 
+### Three new Legendary Runes
+
+- Rune of Elune's Guardian (Starfire, Ranged): every Starfire that hits calls a lunar owl. A second later it dives
+  on the same enemy for 30% of the Starfire's damage. Up to 3 wait at once.
+- Rune of Astral Convergence (Wrath and Starfire, Ranged): Wrath leaves Sunlight on its target. Starfire on it
+  collides for 40% of its damage and leaves Moonlight; your next Wrath on that flares for 35% of its damage.
+- Rune of Ursoc's Champion (Bear Form, Barkskin and Maul, Tank): Barkskin in Bear Form raises Ursoc's Guard, an
+  absorb of 15% of your maximum health for 4 sec. Maul releases it as a blow in front of you: 25% of your attack
+  power plus half of what the guard absorbed.
+- Each has three slots of three options, like the others.
+
+### Rune of Astral Horizon
+
+- The Orb flies to its target much faster, then slows to a drift once it reaches an enemy (whatever the options).
+- It hovers above the ground instead of sinking into it, and looks 25% bigger.
+- Stronger options:
+  - Wandering Star: the enemies it passes through take 2 bolts' damage, up from 1.
+  - Event Horizon: bolts deal 50% more, up from 20%.
+  - Satellite: lasts 8 sec (up from 6) and reaches 15 yards (up from 12).
+  - Astral Focus: bolts on the Orb's target deal 60% more, up from 40%.
+  - Constellation: 75% of the bolt to the others, up from 50%.
+  - Prismatic Lance: 80% of the bolt, up from 60%.
+  - Supernova: 6 bolts' damage, up from 4.
+  - Dying Light: 3 bolts' damage each, up from 2.
+  - Astral Remnant: strikes every second, up from every 2.
+
 ### A second Legendary Rune
 
 - From level 30, every specialization gets a second Legendary Rune, at full power with its own three options. The

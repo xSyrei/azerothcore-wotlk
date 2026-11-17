@@ -1,4 +1,4 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-91298: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-91360: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
@@ -328,3 +328,33 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91286, 0, 0, 0, 0, 'Guiding Light - Gentle Passage'),
 (91287, 0, 0, 0, 0, 'Guiding Light - Afterglow'),
 (91288, 0, 0, 0, 0, 'Guiding Light - Parting Grace');
+
+-- Three druid runes (their own dossiers): Elune's Guardian (Starfire calls the owls), Astral Convergence (Wrath and
+-- Starfire in turn; Wrath also spends Twilight Hunt's mark), Ursoc's Champion (Barkskin raises the guard, Maul
+-- releases it), every rank.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_starfire', 'spell_titan_rune_wrath',
+    'spell_titan_rune_barkskin', 'spell_titan_rune_maul');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(-2912, 'spell_titan_rune_starfire'),
+(-5176, 'spell_titan_rune_wrath'),
+(22812, 'spell_titan_rune_barkskin'),
+(-6807, 'spell_titan_rune_maul');
+
+-- Their damage over time: Lunar Wound, Astral Rupture.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(91302, 'spell_titan_rune_dot'),
+(91325, 'spell_titan_rune_dot');
+
+-- Their strikes and shields are shares of the Hero's own hits, health and attack power: no bonuses of their own.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (91301, 91303, 91323, 91324, 91326, 91339, 91341, 91342, 91346);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(91301, 0, 0, 0, 0, 'Elune''s Guardian - Lunar Owl'),
+(91303, 0, 0, 0, 0, 'Elune''s Guardian - Lunar Wound tick'),
+(91323, 0, 0, 0, 0, 'Astral Convergence - Lunar Collision'),
+(91324, 0, 0, 0, 0, 'Astral Convergence - Solar Flare'),
+(91326, 0, 0, 0, 0, 'Astral Convergence - Astral Rupture tick'),
+(91339, 0, 0, 0, 0, 'Astral Convergence - Eventide'),
+(91341, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Guard'),
+(91342, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Blow'),
+(91346, 0, 0, 0, 0, 'Ursoc''s Champion - Enduring Champion');

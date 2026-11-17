@@ -35,6 +35,18 @@ EmberforgeRunesArt = {
             u = 0.709,
             v = 0.9844,
         },
+        ChooseAlignment = {
+            w = 484,
+            h = 84,
+            u = 0.709,
+            v = 0.9844,
+        },
+        ChooseAnswer = {
+            w = 425,
+            h = 84,
+            u = 0.623,
+            v = 0.9844,
+        },
         ChooseApproach = {
             w = 466,
             h = 84,
@@ -47,6 +59,12 @@ EmberforgeRunesArt = {
             u = 0.5498,
             v = 0.9844,
         },
+        ChooseBlessing = {
+            w = 446,
+            h = 84,
+            u = 0.6533,
+            v = 0.9844,
+        },
         ChooseBurialGrounds = {
             w = 580,
             h = 84,
@@ -57,6 +75,12 @@ EmberforgeRunesArt = {
             w = 424,
             h = 84,
             u = 0.6211,
+            v = 0.9844,
+        },
+        ChooseCollision = {
+            w = 469,
+            h = 84,
+            u = 0.6875,
             v = 0.9844,
         },
         ChooseCommand = {
@@ -75,6 +99,12 @@ EmberforgeRunesArt = {
             w = 471,
             h = 84,
             u = 0.6904,
+            v = 0.9844,
+        },
+        ChooseDescent = {
+            w = 439,
+            h = 84,
+            u = 0.6436,
             v = 0.9844,
         },
         ChooseDischarge = {
@@ -119,6 +149,12 @@ EmberforgeRunesArt = {
             u = 0.7646,
             v = 0.9844,
         },
+        ChooseFlare = {
+            w = 391,
+            h = 84,
+            u = 0.5732,
+            v = 0.9844,
+        },
         ChooseFlight = {
             w = 408,
             h = 84,
@@ -147,6 +183,18 @@ EmberforgeRunesArt = {
             w = 516,
             h = 84,
             u = 0.7559,
+            v = 0.9844,
+        },
+        ChooseGuard = {
+            w = 407,
+            h = 84,
+            u = 0.5967,
+            v = 0.9844,
+        },
+        ChooseGuardian = {
+            w = 465,
+            h = 84,
+            u = 0.6816,
             v = 0.9844,
         },
         ChooseGuidance = {
@@ -213,6 +261,12 @@ EmberforgeRunesArt = {
             w = 459,
             h = 84,
             u = 0.6729,
+            v = 0.9844,
+        },
+        ChooseResolve = {
+            w = 432,
+            h = 84,
+            u = 0.6328,
             v = 0.9844,
         },
         ChooseResonance = {
@@ -317,6 +371,18 @@ EmberforgeRunesArt = {
             u = 0.8203,
             v = 0.875,
         },
+        SlotAlignment = {
+            w = 104,
+            h = 28,
+            u = 0.8125,
+            v = 0.875,
+        },
+        SlotAnswer = {
+            w = 78,
+            h = 28,
+            u = 0.6094,
+            v = 0.875,
+        },
         SlotApproach = {
             w = 96,
             h = 28,
@@ -329,6 +395,12 @@ EmberforgeRunesArt = {
             u = 0.8125,
             v = 0.875,
         },
+        SlotBlessing = {
+            w = 87,
+            h = 28,
+            u = 0.6797,
+            v = 0.875,
+        },
         SlotBurialGrounds = {
             w = 150,
             h = 28,
@@ -339,6 +411,12 @@ EmberforgeRunesArt = {
             w = 75,
             h = 28,
             u = 0.5859,
+            v = 0.875,
+        },
+        SlotCollision = {
+            w = 95,
+            h = 28,
+            u = 0.7422,
             v = 0.875,
         },
         SlotCommand = {
@@ -357,6 +435,12 @@ EmberforgeRunesArt = {
             w = 96,
             h = 28,
             u = 0.75,
+            v = 0.875,
+        },
+        SlotDescent = {
+            w = 82,
+            h = 28,
+            u = 0.6406,
             v = 0.875,
         },
         SlotDischarge = {
@@ -401,6 +485,12 @@ EmberforgeRunesArt = {
             u = 0.9531,
             v = 0.875,
         },
+        SlotFlare = {
+            w = 60,
+            h = 28,
+            u = 0.9375,
+            v = 0.875,
+        },
         SlotFlight = {
             w = 68,
             h = 28,
@@ -429,6 +519,18 @@ EmberforgeRunesArt = {
             w = 121,
             h = 28,
             u = 0.9453,
+            v = 0.875,
+        },
+        SlotGuard = {
+            w = 66,
+            h = 28,
+            u = 0.5156,
+            v = 0.875,
+        },
+        SlotGuardian = {
+            w = 95,
+            h = 28,
+            u = 0.7422,
             v = 0.875,
         },
         SlotGuidance = {
@@ -495,6 +597,12 @@ EmberforgeRunesArt = {
             w = 92,
             h = 28,
             u = 0.7188,
+            v = 0.875,
+        },
+        SlotResolve = {
+            w = 80,
+            h = 28,
+            u = 0.625,
             v = 0.875,
         },
         SlotResonance = {
@@ -1384,8 +1492,8 @@ EmberforgeRunesArt = {
             inner = { 0.965, 0.906, 1 },
             built = true,
             core = "**Arcane Barrage** sets an **Arcane Orb** loose (every 12 sec at " ..
-                    "most): for 6 sec it fires a bolt a second for **20%** of the Barrage's " ..
-                    "damage.",
+                    "most): it flies to your enemies and for 6 sec fires a bolt a second " ..
+                    "for **20%** of the Barrage's damage.",
             asks = {
                 "Where the Orb goes",
                 "How it fires",
@@ -1403,24 +1511,25 @@ EmberforgeRunesArt = {
                 "Remnant",
             },
             texts = {
-                "Each enemy the Orb passes through takes a bolt's damage, once (up to " ..
-                        "5).",
+                "Each enemy the Orb passes through takes two bolts' damage (40% of the " ..
+                        "Barrage's damage), once (up to 5).",
                 "The Orb flies to its target's position and stays there. Its bolts deal " ..
-                        "20% more damage to enemies within 5 yards of it.",
-                "The Orb circles you, 4 yards out, and its bolts reach 12 yards instead " ..
-                        "of 10.",
-                "Bolts deal 40% more damage to the Orb's target: 28% of the Barrage's " ..
+                        "50% more damage to enemies within 5 yards of it.",
+                "The Orb circles you, 4 yards out, for 8 sec instead of 6, and its " ..
+                        "bolts reach 15 yards instead of 10.",
+                "Bolts deal 60% more damage to the Orb's target: 32% of the Barrage's " ..
                         "damage.",
-                "Each bolt also strikes up to 2 other enemies in range for half its " ..
+                "Each bolt also strikes up to 2 other enemies in range for 75% of its " ..
                         "damage.",
                 "Each bolt becomes a lance that also pierces up to 3 enemies behind its " ..
-                        "target, for 60% of its damage.",
-                "When the Orb's 6 sec end, it explodes for 80% of the Barrage's damage " ..
-                        "(4 bolts) to up to 5 enemies within 8 yards.",
-                "When the Orb's 6 sec end, it fires 3 last bolts at your target (else " ..
-                        "its own), each for 40% of the Barrage's damage.",
-                "When the Orb's 6 sec end, it leaves a field 6 yards wide for 6 sec: " ..
-                        "every 2 sec, a bolt's damage to up to 5 enemies in it.",
+                        "target, for 80% of its damage.",
+                "When the Orb's time ends, it explodes for 120% of the Barrage's damage " ..
+                        "(6 bolts) to up to 5 enemies within 8 yards.",
+                "When the Orb's time ends, it fires 3 last bolts at your target (else " ..
+                        "its own), each for 60% of the Barrage's damage.",
+                "When the Orb's time ends, it leaves a field 6 yards wide for 6 sec: " ..
+                        "every second, a bolt's damage to up to 5 enemies in it (120% of the " ..
+                        "Barrage's damage in all).",
             },
             slots = {
                 "Orbit",
@@ -1480,6 +1589,160 @@ EmberforgeRunesArt = {
                 "Radiance",
                 "Guidance",
                 "Farewell",
+            },
+        },
+        [39] = {
+            rgb = { 0.588, 0.627, 1 },
+            hot = { 0.855, 0.871, 1 },
+            ink = { 0.957, 0.965, 1 },
+            muted = { 0.741, 0.745, 0.918 },
+            hue = { 0.737, 0.78, 1 },
+            inner = { 0.925, 0.933, 1 },
+            built = true,
+            core = "Each **Starfire** that hits calls a **lunar owl**: 1 sec later it " ..
+                    "dives on the same enemy for **30%** of the Starfire's damage.",
+            asks = {
+                "What the owl is",
+                "When it dives",
+                "What it leaves behind",
+            },
+            abilities = {
+                "Pierce",
+                "Wings",
+                "Watch",
+                "Swift",
+                "Vigil",
+                "Pursuit",
+                "Wound",
+                "Guide",
+                "Hunt",
+            },
+            texts = {
+                "Owls deal 40% more damage to their target: 42% of the Starfire's " ..
+                        "damage.",
+                "Each dive also hits up to 4 other enemies within 6 yards for half its " ..
+                        "damage.",
+                "Each owl strikes 3 times, 1 sec apart, for 40% of its damage each " ..
+                        "(120% in all). The last strike makes your next Starfire cost 20% less " ..
+                        "mana.",
+                "Owls dive 0.1 sec after Starfire instead of 1. Each dive makes your " ..
+                        "next Starfire cast 10% faster.",
+                "Owls wait 3 sec, then dive for 30% more damage.",
+                "If its target dies first, the owl dives on the nearest enemy within 15 " ..
+                        "yards instead. Each owl also strikes again 1 sec later for 20% of its " ..
+                        "damage.",
+                "An owl's strike wounds its target for 30% more of its damage over 6 " ..
+                        "sec. A new wound keeps what is left of the last.",
+                "Every third owl makes your next Starfire within 5 sec instant, and you " ..
+                        "move 20% faster for 5 sec.",
+                "An owl's target takes 25% more damage from your next Wrath within 5 " ..
+                        "sec.",
+            },
+            slots = {
+                "Guardian",
+                "Descent",
+                "Blessing",
+            },
+        },
+        [40] = {
+            rgb = { 1, 0.667, 0.353 },
+            hot = { 1, 0.882, 0.773 },
+            ink = { 1, 0.965, 0.933 },
+            muted = { 0.906, 0.761, 0.659 },
+            hue = { 1, 0.824, 0.475 },
+            inner = { 1, 0.941, 0.882 },
+            built = true,
+            core = "**Wrath** leaves **Sunlight**; **Starfire** on it collides for **40%** " ..
+                    "of its damage and leaves **Moonlight**; **Wrath** on that flares for " ..
+                    "**35%**.",
+            asks = {
+                "How the energies collide",
+                "How the marks align",
+                "How the sequence ends",
+            },
+            abilities = {
+                "Align",
+                "Skies",
+                "Rupture",
+                "Twilight",
+                "Crossed",
+                "Orbit",
+                "Return",
+                "Dominance",
+                "Eventide",
+            },
+            texts = {
+                "The collision deals 40% more damage: 56% of the Starfire's damage.",
+                "The collision also hits up to 4 other enemies within 6 yards for half " ..
+                        "its damage.",
+                "Instead of a hit, the collision ruptures its target for 150% of its " ..
+                        "damage over 6 sec. A new rupture keeps what is left of the last.",
+                "Your marks last 12 sec instead of 8. Each 2 sec Sunlight was on its " ..
+                        "target adds 5% to the collision, up to 20%.",
+                "A collision also strikes up to 3 other enemies within 12 yards that " ..
+                        "carry your Moonlight, for 35% of its damage. Their marks stay.",
+                "Each flare makes your next Wrath or Starfire within 5 sec instant.",
+                "The flare deals 60% more damage: 56% of the Wrath's damage.",
+                "Each flare makes your next Starfire within 5 sec cast 20% faster and " ..
+                        "cost 20% less mana.",
+                "Each flare leaves a field 6 yards wide for 4 sec: every second, half " ..
+                        "the flare's damage to up to 5 enemies in it.",
+            },
+            slots = {
+                "Collision",
+                "Alignment",
+                "Flare",
+            },
+        },
+        [41] = {
+            rgb = { 0.902, 0.706, 0.353 },
+            hot = { 0.965, 0.898, 0.773 },
+            ink = { 0.988, 0.973, 0.933 },
+            muted = { 0.867, 0.776, 0.659 },
+            hue = { 1, 0.871, 0.475 },
+            inner = { 0.98, 0.949, 0.882 },
+            built = true,
+            core = "**Barkskin** in Bear Form raises **Ursoc's Guard** (15% of your " ..
+                    "health); **Maul** releases it: **25%** of your attack power and half " ..
+                    "of what it absorbed.",
+            asks = {
+                "How the guard holds",
+                "How you answer",
+                "What it leaves behind",
+            },
+            abilities = {
+                "Hide",
+                "Stand",
+                "Mountain",
+                "Bite",
+                "Roar",
+                "Break",
+                "Endure",
+                "Challenge",
+                "Unbroken",
+            },
+            texts = {
+                "The guard absorbs 20% of your maximum health instead of 15%. The " ..
+                        "blow's absorbed part stays at most 50% of your attack power.",
+                "The guard lasts 6 sec instead of 4, and you receive 10% more healing " ..
+                        "meanwhile.",
+                "You move 30% faster while the guard holds. Once you have moved 5 " ..
+                        "yards, it absorbs 3% of your maximum health more (once a guard).",
+                "The blow strikes only Maul's target, for 40% more damage.",
+                "The blow strikes in a half circle in front of you, up to 8 enemies.",
+                "The blow runs 20 yards ahead of you in a line (up to 5 enemies); those " ..
+                        "past 10 yards take 25% more.",
+                "Half of what the guard had left stays with you as a shield for 4 sec " ..
+                        "after the blow.",
+                "Enemies struck deal 10% less damage for 4 sec, and the blow causes 50% " ..
+                        "more threat.",
+                "Maul releases only the 25% of your attack power, and the guard stays " ..
+                        "up for the rest of its time. One blow a guard.",
+            },
+            slots = {
+                "Guard",
+                "Answer",
+                "Resolve",
             },
         },
     },

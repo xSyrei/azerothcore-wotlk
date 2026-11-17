@@ -138,6 +138,18 @@ RUNES = [
      'Prayer of Mending places a healing star you move with your heals.',
      'Prayer of Mending, Flash Heal and Greater Heal',
      'M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5Z'),
+    (39, (150, 160, 255), "Arcane · Elune's Guardian",
+     'Starfire calls lunar owls that dive on your enemies.',
+     'Starfire',
+     'M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9ZM9 11h.01M15 11h.01'),
+    (40, (255, 170, 90), 'Nature & Arcane · Convergence',
+     'Wrath and Starfire in turn: Sunlight, a collision, Moonlight, a flare.',
+     'Wrath and Starfire',
+     'M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0M12 2v3M12 19v3M2 12h3M19 12h3'),
+    (41, (230, 180, 90), "Physical · Ursoc's Champion",
+     'Barkskin in Bear Form raises a guard; Maul answers with what it took.',
+     'Bear Form, Barkskin and Maul',
+     'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6ZM9 10h.01M15 10h.01'),
 ]
 
 # The runes the panel builds (their build view: the medallion, the slots, the options): the mockup's words for them.
@@ -796,24 +808,24 @@ BUILT = {
         ],
     },
     37: {
-        'core': '**Arcane Barrage** sets an **Arcane Orb** loose (every 12 sec at most): for 6 sec it fires a bolt a '
-            "second for **20%** of the Barrage's damage.",
+        'core': '**Arcane Barrage** sets an **Arcane Orb** loose (every 12 sec at most): it flies to your enemies and '
+            "for 6 sec fires a bolt a second for **20%** of the Barrage's damage.",
         'slots': ['Orbit', 'Discharge', 'Ending'],
         'asks': ['Where the Orb goes', 'How it fires', 'How it ends'],
         'texts': [
-            "Each enemy the Orb passes through takes a bolt's damage, once (up to 5).",
-            "The Orb flies to its target's position and stays there. Its bolts deal 20% more damage to enemies within "
+            "Each enemy the Orb passes through takes two bolts' damage (40% of the Barrage's damage), once (up to 5).",
+            "The Orb flies to its target's position and stays there. Its bolts deal 50% more damage to enemies within "
             '5 yards of it.',
-            'The Orb circles you, 4 yards out, and its bolts reach 12 yards instead of 10.',
-            "Bolts deal 40% more damage to the Orb's target: 28% of the Barrage's damage.",
-            'Each bolt also strikes up to 2 other enemies in range for half its damage.',
-            'Each bolt becomes a lance that also pierces up to 3 enemies behind its target, for 60% of its damage.',
-            "When the Orb's 6 sec end, it explodes for 80% of the Barrage's damage (4 bolts) to up to 5 enemies "
+            'The Orb circles you, 4 yards out, for 8 sec instead of 6, and its bolts reach 15 yards instead of 10.',
+            "Bolts deal 60% more damage to the Orb's target: 32% of the Barrage's damage.",
+            'Each bolt also strikes up to 2 other enemies in range for 75% of its damage.',
+            'Each bolt becomes a lance that also pierces up to 3 enemies behind its target, for 80% of its damage.',
+            "When the Orb's time ends, it explodes for 120% of the Barrage's damage (6 bolts) to up to 5 enemies "
             'within 8 yards.',
-            "When the Orb's 6 sec end, it fires 3 last bolts at your target (else its own), each for 40% of the "
+            "When the Orb's time ends, it fires 3 last bolts at your target (else its own), each for 60% of the "
             "Barrage's damage.",
-            "When the Orb's 6 sec end, it leaves a field 6 yards wide for 6 sec: every 2 sec, a bolt's damage to up "
-            'to 5 enemies in it.',
+            "When the Orb's time ends, it leaves a field 6 yards wide for 6 sec: every second, a bolt's damage to up "
+            "to 5 enemies in it (120% of the Barrage's damage in all).",
         ],
         'abilities': [
             'Wander',
@@ -879,6 +891,133 @@ BUILT = {
             'M12 4v16M4 12h16',
             'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
             'M4 12h14M14 7l5 5-5 5',
+        ],
+    },
+    39: {
+        'core': 'Each **Starfire** that hits calls a **lunar owl**: 1 sec later it dives on the same enemy for '
+            "**30%** of the Starfire's damage.",
+        'slots': ['Guardian', 'Descent', 'Blessing'],
+        'asks': ['What the owl is', 'When it dives', 'What it leaves behind'],
+        'texts': [
+            "Owls deal 40% more damage to their target: 42% of the Starfire's damage.",
+            'Each dive also hits up to 4 other enemies within 6 yards for half its damage.',
+            'Each owl strikes 3 times, 1 sec apart, for 40% of its damage each (120% in all). The last strike makes '
+            'your next Starfire cost 20% less mana.',
+            'Owls dive 0.1 sec after Starfire instead of 1. Each dive makes your next Starfire cast 10% faster.',
+            'Owls wait 3 sec, then dive for 30% more damage.',
+            'If its target dies first, the owl dives on the nearest enemy within 15 yards instead. Each owl also '
+            'strikes again 1 sec later for 20% of its damage.',
+            "An owl's strike wounds its target for 30% more of its damage over 6 sec. A new wound keeps what is left "
+            'of the last.',
+            'Every third owl makes your next Starfire within 5 sec instant, and you move 20% faster for 5 sec.',
+            "An owl's target takes 25% more damage from your next Wrath within 5 sec.",
+        ],
+        'abilities': [
+            'Pierce',
+            'Wings',
+            'Watch',
+            'Swift',
+            'Vigil',
+            'Pursuit',
+            'Wound',
+            'Guide',
+            'Hunt',
+        ],
+        'icons': [
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+            'M2 12c5-6 15-6 20 0M2 12c5 6 15 6 20 0',
+            'M5 19 9 15M9 19l4-4M13 19l4-4',
+            'M13 2 4 14h7l-1 8 9-12h-7Z',
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+            'M4 18c4-10 12-10 16-12M16 4l4 2-2 4',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M4 12h14M14 7l5 5-5 5',
+            'M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0M21 21l-5-5',
+        ],
+    },
+    40: {
+        'core': '**Wrath** leaves **Sunlight**; **Starfire** on it collides for **40%** of its damage and leaves '
+            '**Moonlight**; **Wrath** on that flares for **35%**.',
+        'slots': ['Collision', 'Alignment', 'Flare'],
+        'asks': ['How the energies collide', 'How the marks align', 'How the sequence ends'],
+        'texts': [
+            "The collision deals 40% more damage: 56% of the Starfire's damage.",
+            'The collision also hits up to 4 other enemies within 6 yards for half its damage.',
+            'Instead of a hit, the collision ruptures its target for 150% of its damage over 6 sec. A new rupture '
+            'keeps what is left of the last.',
+            'Your marks last 12 sec instead of 8. Each 2 sec Sunlight was on its target adds 5% to the collision, up '
+            'to 20%.',
+            'A collision also strikes up to 3 other enemies within 12 yards that carry your Moonlight, for 35% of its '
+            'damage. Their marks stay.',
+            'Each flare makes your next Wrath or Starfire within 5 sec instant.',
+            "The flare deals 60% more damage: 56% of the Wrath's damage.",
+            'Each flare makes your next Starfire within 5 sec cast 20% faster and cost 20% less mana.',
+            "Each flare leaves a field 6 yards wide for 4 sec: every second, half the flare's damage to up to 5 "
+            'enemies in it.',
+        ],
+        'abilities': [
+            'Align',
+            'Skies',
+            'Rupture',
+            'Twilight',
+            'Crossed',
+            'Orbit',
+            'Return',
+            'Dominance',
+            'Eventide',
+        ],
+        'icons': [
+            'M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3',
+            'M5 5h.01M19 5h.01M12 12h.01M5 19h.01M19 19h.01M5 5l7 7 7-7M5 19l7-7 7 7',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+            'M2 12h20M16 7l5 5-5 5',
+            'M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M12 3a9 9 0 0 1 9 9',
+            'M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0M12 2v3M12 19v3M2 12h3M19 12h3',
+            'M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z',
+            'M3 17c3-3 6-3 9 0s6 3 9 0M12 4v8',
+        ],
+    },
+    41: {
+        'core': "**Barkskin** in Bear Form raises **Ursoc's Guard** (15% of your health); **Maul** releases it: "
+            '**25%** of your attack power and half of what it absorbed.',
+        'slots': ['Guard', 'Answer', 'Resolve'],
+        'asks': ['How the guard holds', 'How you answer', 'What it leaves behind'],
+        'texts': [
+            "The guard absorbs 20% of your maximum health instead of 15%. The blow's absorbed part stays at most 50% "
+            'of your attack power.',
+            'The guard lasts 6 sec instead of 4, and you receive 10% more healing meanwhile.',
+            'You move 30% faster while the guard holds. Once you have moved 5 yards, it absorbs 3% of your maximum '
+            'health more (once a guard).',
+            "The blow strikes only Maul's target, for 40% more damage.",
+            'The blow strikes in a half circle in front of you, up to 8 enemies.',
+            'The blow runs 20 yards ahead of you in a line (up to 5 enemies); those past 10 yards take 25% more.',
+            'Half of what the guard had left stays with you as a shield for 4 sec after the blow.',
+            'Enemies struck deal 10% less damage for 4 sec, and the blow causes 50% more threat.',
+            'Maul releases only the 25% of your attack power, and the guard stays up for the rest of its time. One '
+            'blow a guard.',
+        ],
+        'abilities': [
+            'Hide',
+            'Stand',
+            'Mountain',
+            'Bite',
+            'Roar',
+            'Break',
+            'Endure',
+            'Challenge',
+            'Unbroken',
+        ],
+        'icons': [
+            'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6Z',
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+            'M4 12h14M14 7l5 5-5 5',
+            'M4 4l6 6M10 4v6H4M20 20l-6-6M14 20v-6h6',
+            'M2 12c5-6 15-6 20 0M2 12c5 6 15 6 20 0',
+            'M3 20h18M6 20 12 4l6 16',
+            'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6ZM12 8v8M8 12h8',
+            'M6 9h4l5-4v14l-5-4H6Z',
+            'M12 2v20M2 12h20',
         ],
     },
 }

@@ -1298,8 +1298,9 @@ SPELLS += [
     look(91259, 'Rebirth', 'Spell_Fire_SelfDestruct', 0),
     # Astral Horizon.
     buff(91260, 'Rune of Astral Horizon', HORIZON_ICON,
-         'Arcane Barrage also sets an Arcane Orb loose, at most once every 12 sec: for 6 sec it drifts on and fires '
-         'a bolt every second for 20% of the Barrage\'s damage.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'Arcane Barrage also sets an Arcane Orb loose, at most once every 12 sec: it flies to your enemies, then '
+         'for 6 sec fires a bolt every second for 20% of the Barrage\'s damage.', DURATION_INFINITE,
+         {1: aura(AURA_DUMMY, 1, 0)}),
     {**shown(91261, 'Arcane Orb', HORIZON_ICON, '', DURATION_INFINITE,
              effects={1: aura(AURA_MOD_THREAT, -100, ALL_SCHOOLS)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_INFINITE}},
@@ -1406,13 +1407,13 @@ EFFECTS.update({
                       'options': {'export': 'MAGE_IcicleObj', 'base': 'mage_icicle', 'size': 1.3, 'center': True,
                                   'two_sided': True}},
     'ArcaneOrbRetail': {'model': 'MAGE_ArcaneOrb', 'effect': 7158, 'shape': 'retail', 'textures': (),
-                        'options': {'export': 'MAGE_ArcaneOrb/mage_arcaneorb_missile_fallback.gltf', 'scale': 0.35,
-                                    'center': True, 'spin': 3.0}},
+                        'options': {'export': 'MAGE_ArcaneOrb/mage_arcaneorb_missile_fallback.gltf', 'scale': 0.44,
+                                    'center': True, 'spin': 3.0, 'lift': 1.2}},
     # Satellite's Orb: the same, circling whatever wears it 4 yards out (a turn every 4 sec), drawn by the client
     # itself (a creature steered around the Hero by the server stuttered).
     'ArcaneOrbSatellite': {'model': 'MAGE_ArcaneOrbSatellite', 'effect': 7160, 'shape': 'retail', 'textures': (),
                            'options': {'export': 'MAGE_ArcaneOrb/mage_arcaneorb_missile_fallback.gltf',
-                                       'scale': 0.3, 'center': True, 'spin': 4.0, 'orbit': 4.0}},
+                                       'scale': 0.375, 'center': True, 'spin': 4.0, 'orbit': 4.0}},
     'PhoenixRetail': {'model': 'MAGE_PhoenixFlames', 'effect': 7159, 'shape': 'retail', 'textures': (),
                       'options': {'export': 'MAGE_PhoenixFlames/7fx_mage_phoenixsflames_missile.gltf', 'scale': 0.5,
                                   'center': True}},
@@ -1443,8 +1444,109 @@ for _spell in SPELLS:
     if _key:
         _spell['visual'] = _key
 
+# ---- Three druid runes (their own dossiers): Elune's Guardian 91300, Astral Convergence 91320, Ursoc's Champion
+# 91340; each one's markers 10 on from its first (+ slot * 3 + choice).
+ELUNE_ICON, CONVERGENCE_ICON = 'Ability_Rune_ElunesGuardian', 'Ability_Rune_AstralConvergence'
+URSOC_ICON = 'Ability_Rune_UrsocsChampion'
+DRUID_FAMILY = 7
+WRATH_FLAG, STARFIRE_FLAG = 0x1, 0x4
+AURA_MOD_HEALING_PCT = 118                  # healing taken, %
+VISUAL_STARFALL_STAR, VISUAL_LUNAR_ECLIPSE, VISUAL_SOLAR_ECLIPSE = 11040, 11567, 12705
+VISUAL_DEMORALIZING_ROAR = 3949
+
+
+def druid_mod(spell_id, name, icon, text, duration, flag, mods, charges=0):
+    """A druid spell's modifiers (family 7: the engine makes the client honour a Hero's): mods, (op, pct) pairs."""
+    effects = {n + 1: {**aura(AURA_ADD_PCT_MODIFIER, -pct, op), 'Mask': flag} for n, (op, pct) in enumerate(mods)}
+    spell = buff(spell_id, name, icon, text, duration, effects)
+    spell['set'] = {**spell['set'], 'SpellFamilyName': DRUID_FAMILY, 'ProcCharges': charges}
+    return spell
+
+
+SPELLS += [
+    # Elune's Guardian.
+    buff(91300, "Rune of Elune's Guardian", ELUNE_ICON,
+         'A Starfire that hits calls a lunar owl: 1 sec later it dives on the same enemy for 30% of the Starfire\'s '
+         'damage. Up to 3 wait at once.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    strike(91301, 'Lunar Owl', 'Ability_Hunter_Pet_Owl', ARCANE, VISUAL_STARFALL_STAR),
+    dot(91302, 'Lunar Wound', 'Spell_Nature_Moonglow', ARCANE, DURATION_6S, 'Arcane damage every second.'),
+    strike(91303, 'Lunar Wound', 'Spell_Nature_Moonglow', ARCANE),
+    druid_mod(91304, 'Swift Judgment', ELUNE_ICON, 'Your next Starfire casts 10% faster.', DURATION_5S,
+              STARFIRE_FLAG, [(SPELLMOD_CASTING_TIME, 10)], charges=1),
+    druid_mod(91305, 'Watchful Flight', ELUNE_ICON, 'Your next Starfire costs 20% less mana.', DURATION_5S,
+              STARFIRE_FLAG, [(SPELLMOD_COST, 20)], charges=1),
+    druid_mod(91306, 'Guiding Wings', ELUNE_ICON, 'Your next Starfire is instant.', DURATION_5S, STARFIRE_FLAG,
+              [(SPELLMOD_CASTING_TIME, 100)], charges=1),
+    {**buff(91307, 'Guiding Wings', 'Ability_Druid_Dash', 'Movement speed increased by 20%.', DURATION_5S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 20, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_5S}},
+    harmful(91308, 'Twilight Hunt', 'Ability_Druid_TwilightsWrath',
+            'Your next Wrath on this target deals 25% more damage.', DURATION_5S, aura(AURA_DUMMY, 1, 0), ARCANE),
+    # Astral Convergence.
+    buff(91320, 'Rune of Astral Convergence', CONVERGENCE_ICON,
+         'Wrath leaves Sunlight; Starfire on it collides for 40% of its damage and leaves Moonlight; Wrath on that '
+         'flares for 35% of its damage.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    harmful(91321, 'Sunlight', 'Ability_Druid_EclipseOrange', 'Your Starfire on this target collides with it.',
+            DURATION_8S, aura(AURA_DUMMY, 1, 0), NATURE),
+    harmful(91322, 'Moonlight', 'Ability_Druid_Eclipse', 'Your Wrath on this target flares.', DURATION_8S,
+            aura(AURA_DUMMY, 1, 0), ARCANE),
+    strike(91323, 'Lunar Collision', 'Ability_Druid_Eclipse', ARCANE, VISUAL_LUNAR_ECLIPSE),
+    strike(91324, 'Solar Flare', 'Ability_Druid_EclipseOrange', NATURE, VISUAL_SOLAR_ECLIPSE),
+    dot(91325, 'Astral Rupture', 'Ability_Druid_Eclipse', ARCANE, DURATION_6S, 'Arcane damage every second.'),
+    strike(91326, 'Astral Rupture', 'Ability_Druid_Eclipse', ARCANE),
+    druid_mod(91327, 'Steady Orbit', CONVERGENCE_ICON, 'Your next Wrath or Starfire is instant.', DURATION_5S,
+              WRATH_FLAG | STARFIRE_FLAG, [(SPELLMOD_CASTING_TIME, 100)], charges=1),
+    druid_mod(91328, 'Lunar Dominance', CONVERGENCE_ICON,
+              'Your next Starfire casts 20% faster and costs 20% less mana.', DURATION_5S, STARFIRE_FLAG,
+              [(SPELLMOD_CASTING_TIME, 20), (SPELLMOD_COST, 20)], charges=1),
+    ground(91329, 'Eventide', 'Spell_Arcane_StarFire', 'AstralRemnant', DURATION_4S),
+    strike(91339, 'Eventide', 'Spell_Arcane_StarFire', ARCANE),
+    look(91360, 'Astral Rupture', 'Ability_Druid_Eclipse', VISUAL_LUNAR_ECLIPSE),
+    # Ursoc's Champion.
+    buff(91340, "Rune of Ursoc's Champion", URSOC_ICON,
+         'Barkskin in Bear Form adds Ursoc\'s Guard: an absorb of 15% of your maximum health for 4 sec. Maul in it '
+         'releases a blow of 25% of your attack power and half of what it absorbed.', DURATION_INFINITE,
+         {1: aura(AURA_DUMMY, 1, 0)}),
+    absorb(91341, "Ursoc's Guard", URSOC_ICON, DURATION_4S),
+    {**strike(91342, "Ursoc's Blow", 'Ability_Druid_Maul', PHYSICAL), 'visual': 'WakeAftershockLook'},
+    look(91343, "Ursoc's Blow", URSOC_ICON, VISUAL_SHOCKWAVE),
+    {**buff(91344, 'Lasting Stand', 'Spell_Nature_StoneClawTotem', 'Healing received increased by 10%.', DURATION_6S,
+            {1: aura(AURA_MOD_HEALING_PCT, 10, ALL_SCHOOLS)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_6S}},
+    {**buff(91345, 'Moving Mountain', 'Ability_Druid_Dash', 'Movement speed increased by 30%.', DURATION_6S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_6S}},
+    absorb(91346, 'Enduring Champion', URSOC_ICON, DURATION_4S),
+    harmful(91347, "Challenger's Roar", 'Ability_Druid_ChallangingRoar', 'Damage done reduced by 10%.', DURATION_4S,
+            aura(AURA_MOD_DAMAGE_PERCENT_DONE, -10, ALL_SCHOOLS), PHYSICAL),
+    look(91359, "Mountain's Roar", 'Ability_Druid_DemoralizingRoar', VISUAL_DEMORALIZING_ROAR),
+]
+for _spell in SPELLS:
+    if _spell['id'] in (91301, 91303, 91323, 91324, 91326, 91339, 91342):
+        _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
+
+DRUID_MODIFIERS = [
+    (91310, ELUNE_ICON, [('Moonpiercer', 'Silver Wings', 'Watchful Flight'),
+                         ('Swift Judgment', 'Patient Vigil', 'Moonlit Pursuit'),
+                         ('Lunar Wound', 'Guiding Wings', 'Twilight Hunt')]),
+    (91330, CONVERGENCE_ICON, [('Perfect Alignment', 'Converging Skies', 'Astral Rupture'),
+                               ('Long Twilight', 'Crossed Horizons', 'Steady Orbit'),
+                               ('Solar Return', 'Lunar Dominance', 'Eventide')]),
+    (91350, URSOC_ICON, [('Ancient Hide', 'Lasting Stand', 'Moving Mountain'),
+                         ("Ursoc's Bite", "Mountain's Roar", 'Earthbreaker'),
+                         ('Enduring Champion', "Challenger's Roar", 'Unbroken')]),
+]
+SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
+                hidden=True)
+           for first, icon, modifiers in DRUID_MODIFIERS
+           for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
+ICONS += [ELUNE_ICON, CONVERGENCE_ICON, URSOC_ICON, 'Ability_Hunter_Pet_Owl', 'Spell_Nature_Moonglow',
+          'Ability_Druid_Dash', 'Ability_Druid_TwilightsWrath', 'Ability_Druid_EclipseOrange', 'Ability_Druid_Eclipse',
+          'Ability_Druid_Maul', 'Spell_Nature_StoneClawTotem', 'Ability_Druid_ChallangingRoar',
+          'Ability_Druid_DemoralizingRoar']
+
 RUNE_AURAS = {90700, 90730, 90750, 90770, 90790, 90810, 90830, 90860, 90890, 90920, 90950, 90980, 91130, 91200, 91220,
-              91240, 91260, 91280}
+              91240, 91260, 91280, 91300, 91320, 91340}
 for _spell in SPELLS:
     if _spell['id'] in RUNE_AURAS:
         _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}

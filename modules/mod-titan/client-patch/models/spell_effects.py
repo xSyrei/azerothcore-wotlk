@@ -1195,12 +1195,13 @@ def recolor(image, tint, brightness=1.0):
 
 
 def retail_effect(out_dir, name, client_dir, export, tint=None, brightness=1.0, meshes=None, alpha=(), scale=1.0,
-                  center=False, spin=0.0, orbit=0.0):
+                  center=False, spin=0.0, orbit=0.0, lift=0.0):
     """A retail spell effect from a wow.export glTF (export: the .gltf; its textures beside it), its meshes and their
     bone animation (swings, spins, growing) carried over by creature_gltf_to_m2: every mesh drawn additive, unlit,
     both faces, in its texture recolored to tint (recolor; None: its own colors). alpha: the materials (by name) drawn
     alpha-blended instead (solid shapes: an icicle's ice); scale: its size (1: retail's); center: its middle at the
-    origin; spin: seconds a turn about its up axis (0: as exported); orbit: yards out from the axis it turns about.
+    origin; spin: seconds a turn about its up axis (0: as exported); orbit: yards out from the axis it turns about;
+    lift: yards it is raised.
     meshes: the glTF meshes to draw (None: all).
     The export has no wow.export meta data, so its texture units are made here (one per mesh, its material's
     texture); texture scrolling and layer fades are not in a glTF and are left out. Writes <name>.m2,
@@ -1232,7 +1233,8 @@ def retail_effect(out_dir, name, client_dir, export, tint=None, brightness=1.0, 
                 'collisionBox': {'min': [0, 0, 0], 'max': [0, 0, 0]}, 'collisionSphereRadius': 0}
         (tmp / 'meta.json').write_text(json.dumps(meta))
         return creature_gltf_to_m2.convert(tmp, tmp / 'meta.json', name, out_dir, client_dir, scale=scale,
-                                           center=center, spin=spin, orbit=orbit)
+                                           center=center, spin=spin, orbit=orbit,
+                                           lift=lift)
 
 def exported_model(*args, export, base, size=None, scale=1.0, center=False, offset=(0.0, 0.0, 0.0), turn=0.0,
                    trail_height=0.3, lifetime=0.4, duration=1000, fade=None, two_sided=False, max_texture=None,

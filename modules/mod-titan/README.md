@@ -581,11 +581,19 @@ utility or a tradeoff) take one pick each, from three.
   - **Guiding Light** (38; Healer; Prayer of Mending, Flash Heal or Greater Heal): Prayer of Mending places the
     Guiding Star (91281) instead of its prayer: a pulse every 2 sec (half a Prayer of Mending); Flash Heal or
     Greater Heal on another ally moves it (0.5 sec on the way, at most once every 3 sec).
+  - Astral Horizon's Orb flies at 20 yards a second until an enemy is within 3 yards, then drifts at 1.5 (Event
+    Horizon: stops), always 0.5 yard over the ground (`OrbFly`).
+  - **Elune's Guardian** (39; Ranged; Starfire): a Starfire hit calls a lunar owl (91301, 3 waiting at most) that
+    dives 1 sec later for 30% of its damage (91302; Lunar Wound 91303).
+  - **Astral Convergence** (40; Ranged; Wrath and Starfire): Wrath's Sunlight (91321), Starfire's collision (91323,
+    40%) and Moonlight (91322), Wrath's flare (91324, 35%); 5 enemies marked at most.
+  - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
+    15% of maximum health, 4 sec); Maul releases it (91342, a 10-yard cone): 25% AP plus half of what it absorbed.
   - `.runedebug` (anyone) tells the Splintered Crown's and Phoenix Wake's steps in chat (Icicle formed and loosed,
     the Ember placed, Fire Blast on its host, the phoenix summoned, its strike, why it went), to find where one stops.
 - A Hero's buff on their own pet or summon lands whatever its level (`hero_resources.cpp`): the core drops a positive
   aura's target more than 10 levels below the spell ("Target is too low level": Bestial Wrath, level 40).
-- Scripts in `titan_runes.sql`; spells 90750-91158 (`patch_runes.py`); their looks from the curated VFX library
+- Scripts in `titan_runes.sql`; spells 90750-91360 (`patch_runes.py`); their looks from the curated VFX library
   (`client-patch/spells/RUNE_VFX`).
 
 ## Runes of Enhancement
