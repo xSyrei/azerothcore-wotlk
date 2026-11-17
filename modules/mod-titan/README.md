@@ -570,9 +570,13 @@ utility or a tradeoff) take one pick each, from three.
     the host (FlightTick), burning what it passes over, and strikes it for 50%.
   - **Astral Horizon** (37; Ranged; Arcane Barrage): Barrage sets the Arcane Orb loose (910126, retail's Arcane
     Orb; once every 12 sec): 6 sec, a bolt a second (91262, cast by the Orb, the Hero's) for 20% of the Barrage.
+    Satellite: no creature; the Hero wears the Orb circling them (91268, its look turning 4 yards out, the client's
+    own animation) and its bolts fly from them.
   - **Guiding Light** (38; Healer; Prayer of Mending, Flash Heal or Greater Heal): Prayer of Mending places the
     Guiding Star (91281) instead of its prayer: a pulse every 2 sec (half a Prayer of Mending); Flash Heal or
     Greater Heal on another ally moves it (0.5 sec on the way, at most once every 3 sec).
+  - `.runedebug` (anyone) tells the Splintered Crown's and Phoenix Wake's steps in chat (Icicle formed and loosed,
+    the Ember placed, Fire Blast on its host, the phoenix summoned, its strike, why it went), to find where one stops.
 - A Hero's buff on their own pet or summon lands whatever its level (`hero_resources.cpp`): the core drops a positive
   aura's target more than 10 levels below the spell ("Target is too low level": Bestial Wrath, level 40).
 - Scripts in `titan_runes.sql`; spells 90750-91158 (`patch_runes.py`); their looks from the curated VFX library

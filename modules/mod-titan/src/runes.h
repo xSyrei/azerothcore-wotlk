@@ -32,6 +32,9 @@ namespace LegendaryRunes
     // The active specialization's rune let go of (modifiers too, its auras and actions gone), the panel opened to
     // bind another. false: it had none.
     bool Unbind(Player* player);
+    // .runedebug: the newest runes' steps (Icicles, the Ember, the phoenix) told to the Hero in chat, or no more.
+    // true: now on.
+    bool ToggleDebug(Player* player);
     // Fel Rift (Fel Commandment): the enemy Fel Rush carries the Hero to, for 3 sec after a volley; else nullptr.
     Unit* FelRiftTarget(Player* player);
 }

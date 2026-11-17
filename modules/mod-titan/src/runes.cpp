@@ -281,6 +281,7 @@ namespace
         SPELL_SUPERNOVA                 = 91265,
         SPELL_ASTRAL_REMNANT            = 91266,
         SPELL_ASTRAL_REMNANT_TICK       = 91267,
+        SPELL_ORB_SATELLITE             = 91268,    // Satellite: the Orb circling the Hero (its look)
         SPELL_SUPERNOVA_LOOK            = 91269,
         SPELL_HORIZON_MODIFIER_FIRST    = 91270,    // + slot * 3 + choice
 
@@ -680,8 +681,7 @@ namespace
     constexpr uint32 REMNANT_MS = 6000, REMNANT_TICK_MS = 2000, DYING_BOLTS = 3, DYING_SPACING_MS = 250;
     constexpr float ORB_BOLT_SHARE = 0.2f, ORB_SPEED = 6.0f, ORB_RANGE = 10.0f, ORB_HEIGHT = 1.5f, ORB_START = 1.5f;
     constexpr float EVENT_HORIZON = 1.2f, EVENT_RADIUS = 5.0f, ASTRAL_FOCUS = 1.4f;
-    constexpr float SATELLITE_RANGE = 12.0f, SATELLITE_RADIUS = 4.0f, SATELLITE_SPEED = 12.0f;
-    constexpr float SATELLITE_TURN = 1.5f, SATELLITE_LEAD = 0.5f;          // radians a second; ahead of its place
+    constexpr float SATELLITE_RANGE = 12.0f;
     constexpr float CONSTELLATION_SHARE = 0.5f, LANCE_SHARE = 0.6f, LANCE_REACH = 10.0f, LANCE_HALF_WIDTH = 1.5f;
     constexpr float WANDERING_HALF_WIDTH = 2.0f, SUPERNOVA_BOLTS = 4.0f, SUPERNOVA_RADIUS = 8.0f, DYING_SHARE = 2.0f;
     constexpr float REMNANT_RADIUS = 6.0f;
@@ -1018,6 +1018,8 @@ namespace
         uint32 WrathTimer = 0;
         int32 WrathAdded = 0;                       // Unending Wrath's, this Bestial Wrath
 
+        bool Debug = false;                         // .runedebug: the newest runes' steps told in chat
+
         // Arcane Mind.
         uint8 BlastCount = 0;                       // Accelerated Thought: Arcane Blasts since the last extra
         bool MindChannel = false;                   // an empowered Arcane Missiles channelling (Mental Reserves)
@@ -1036,8 +1038,9 @@ namespace
 
         // Astral Horizon.
         ObjectGuid Orb, OrbVictim;
-        uint32 OrbReadyAt = 0, OrbUntil = 0, OrbTimer = 0, OrbRepath = 0;
-        float OrbBolt = 0.0f, OrbAngle = 0.0f;
+        uint32 OrbReadyAt = 0, OrbUntil = 0, OrbTimer = 0;
+        float OrbBolt = 0.0f;
+        bool OrbSatellite = false;                  // Satellite: the Hero wears it (SPELL_ORB_SATELLITE)
         Position OrbLast;
         std::set<ObjectGuid> OrbCrossed;            // Wandering Star: each enemy once
         Position RemnantAt;                         // Astral Remnant (RemnantUntil 0: none)
@@ -3038,6 +3041,13 @@ namespace
 
     // ---- Shared by the five newest ----------------------------------------------------------------------------
 
+    // .runedebug: a step of the newest runes, told to the Hero in chat.
+    void Trace(Player* player, std::string const& text)
+    {
+        if (StateOf(player).Debug)
+            ChatHandler(player->GetSession()).SendSysMessage("|cff88ccff[rune]|r " + text);
+    }
+
     // The highest rank of the spell the Hero knows (0 none).
     uint32 KnownRank(Player* player, uint32 firstRank)
     {
@@ -3373,7 +3383,11 @@ namespace
         ShowCrown(player);
         Unit* victim = ObjectAccessor::GetUnit(*player, victimGuid);
         if (!player->IsAlive() || !Valid(player, victim) || !player->IsWithinDistInMap(victim, ICICLE_RANGE))
+        {
+            Trace(player, "Icicle melted: its target is gone or out of reach");
             return;
+        }
+        Trace(player, Acore::StringFormat("Icicle loosed at {} for {}", victim->GetName(), icicle));
         if (HasCrownMarker(player, MOD_SPLINTER_VOLLEY))
         {
             for (uint32 i = 0; i < SPLINTERS; ++i)
@@ -3417,8 +3431,14 @@ namespace
             focused = true;
         }
         if (state.Icicles >= MAX_ICICLES || frostbolt <= 0.0f)
+        {
+            Trace(player, Acore::StringFormat("Frostbolt hit for {}: no Icicle ({} waiting)", frostbolt,
+                state.Icicles));
             return;
+        }
         ++state.Icicles;
+        Trace(player, Acore::StringFormat("Frostbolt hit for {}: Icicle formed ({} waiting)", frostbolt,
+            state.Icicles));
         ShowCrown(player);
         float icicle = frostbolt * ICICLE_SHARE * (HasCrownMarker(player, MOD_GLACIAL_SPEAR) ? GLACIAL_SPEAR : 1.0f)
             * (focused ? FROZEN_FOCUS : 1.0f);
@@ -3447,6 +3467,8 @@ namespace
         state.EmberHost = target->GetGUID();
         state.EmberPyro = pyroblast;
         Lasting(player, target, SPELL_PHOENIX_EMBER, EMBER_MS);
+        Trace(player, Acore::StringFormat("Pyroblast hit {} for {}: Ember placed (on it: {})", target->GetName(),
+            pyroblast, target->HasAura(SPELL_PHOENIX_EMBER, player->GetGUID()) ? "yes" : "NO"));
     }
 
     // A flight hit (Clinging Embers: 25% more of it over 6 sec).
@@ -3484,6 +3506,9 @@ namespace
             at.m_positionZ = player->GetPositionZ() + PHOENIX_DROP;
             at.SetOrientation(facing);
             TempSummon* bird = SummonFlier(player, NPC_RUNE_PHOENIX, at, PHOENIX_MAX_MS, SPELL_PHOENIX_FORM);
+            Trace(player, bird ? Acore::StringFormat("phoenix summoned {:.1f} yards from you, its look {}",
+                player->GetExactDist(bird), bird->HasAura(SPELL_PHOENIX_FORM) ? "on" : "MISSING")
+                : std::string("phoenix: the summon FAILED"));
             if (!bird)
                 continue;
             if (flock)
@@ -3587,6 +3612,8 @@ namespace
             if (!bird || !bird->IsAlive() || !player->IsAlive() || !bird->IsInMap(player)
                 || now - flight.Born >= PHOENIX_MAX_MS)
             {
+                Trace(player, !bird ? "phoenix gone (not found)" : now - flight.Born >= PHOENIX_MAX_MS
+                    ? "phoenix gone (its 8 sec are up)" : "phoenix gone (dead, or another map)");
                 Dismiss(player, flight.Bird);
                 itr = state.Flights.erase(itr);
                 continue;
@@ -3626,6 +3653,7 @@ namespace
                 }
                 if (bird->GetExactDist(host) <= STRIKE_REACH)
                 {
+                    Trace(player, Acore::StringFormat("phoenix struck {}", host->GetName()));
                     flight.Struck = true;
                     flight.Repath = 0;
                     flight.Hit.insert(host->GetGUID());
@@ -3721,9 +3749,12 @@ namespace
         return Marked(unit, SPELL_HORIZON_MODIFIER_FIRST, modifier);
     }
 
-    Creature* LiveOrb(Player* player)
+    // Where the Orb's bolts fly from: the Orb, or (Satellite) the Hero it circles; nullptr: none out.
+    Unit* OrbSource(Player* player)
     {
         State& state = StateOf(player);
+        if (state.OrbSatellite)
+            return player;
         Creature* orb = state.Orb ? ObjectAccessor::GetCreature(*player, state.Orb) : nullptr;
         return orb && orb->IsAlive() && orb->IsInMap(player) ? orb : nullptr;
     }
@@ -3733,11 +3764,13 @@ namespace
         State& state = StateOf(player);
         Dismiss(player, state.Orb);
         state.Orb.Clear();
+        state.OrbSatellite = false;
+        player->RemoveAurasDueToSpell(SPELL_ORB_SATELLITE);
     }
 
     // The Orb's bolt (or lance) at an enemy, from the Orb, the Hero's: Event Horizon 20% more within 5 yards of it,
     // Astral Focus 40% more on its victim.
-    void OrbStrike(Player* player, Creature* orb, Unit* enemy, float share, uint32 spellId)
+    void OrbStrike(Player* player, Unit* orb, Unit* enemy, float share, uint32 spellId)
     {
         State& state = StateOf(player);
         float amount = state.OrbBolt * share;
@@ -3751,7 +3784,8 @@ namespace
 
     // Arcane Barrage sets the Orb loose (at most once every 12 sec; a new one replaces it, no ending): 6 sec, a bolt
     // a second for 20% of the Barrage's damage. Its course: on through its victim at 6 yards a second; Event
-    // Horizon, to the victim's place and there it stays; Satellite, about the Hero (OrbTick).
+    // Horizon, to the victim's place and there it stays. Satellite: no creature; the Hero wears it, circling them
+    // (its aura's look, drawn by the client), and its bolts fly from them.
     void LaunchOrb(Player* player, Unit* victim, float barrage)
     {
         State& state = StateOf(player);
@@ -3760,6 +3794,21 @@ namespace
             return;
         state.OrbReadyAt = now + ORB_COOLDOWN_MS;
         DismissOrb(player);
+        state.OrbVictim = victim->GetGUID();
+        state.OrbUntil = now + ORB_MS;
+        state.OrbTimer = 0;
+        state.OrbBolt = barrage * ORB_BOLT_SHARE;
+        state.OrbCrossed.clear();
+        if (HasHorizonMarker(player, MOD_SATELLITE))
+        {
+            state.OrbSatellite = true;
+            if (Aura* aura = player->AddAura(SPELL_ORB_SATELLITE, player))
+            {
+                aura->SetMaxDuration(int32(ORB_MS));
+                aura->SetDuration(int32(ORB_MS));
+            }
+            return;
+        }
         float angle = player->GetAngle(victim);
         Position at = Toward(player->GetPosition(), angle, ORB_START);
         at.m_positionZ = player->GetPositionZ() + ORB_HEIGHT;
@@ -3768,16 +3817,7 @@ namespace
         if (!orb)
             return;
         state.Orb = orb->GetGUID();
-        state.OrbVictim = victim->GetGUID();
-        state.OrbUntil = now + ORB_MS;
-        state.OrbTimer = 0;
-        state.OrbRepath = 0;
-        state.OrbBolt = barrage * ORB_BOLT_SHARE;
         state.OrbLast = at;
-        state.OrbCrossed.clear();
-        state.OrbAngle = player->GetAngle(&at);
-        if (HasHorizonMarker(player, MOD_SATELLITE))
-            return;
         Position to = HasHorizonMarker(player, MOD_EVENT_HORIZON) ? victim->GetPosition()
             : Toward(at, angle, ORB_SPEED * float(ORB_MS) / 1000.0f);
         to.m_positionZ = HasHorizonMarker(player, MOD_EVENT_HORIZON) ? victim->GetPositionZ() + ORB_HEIGHT
@@ -3788,7 +3828,7 @@ namespace
     // A bolt a second at its victim within 10 yards of the Orb (Satellite: 12), else the nearest enemy there.
     // Constellation: 2 more enemies in range for half. Prismatic Lance: a lance through up to 3 enemies behind its
     // target, 60% each.
-    void OrbVolley(Player* player, Creature* orb)
+    void OrbVolley(Player* player, Unit* orb)
     {
         State& state = StateOf(player);
         float range = HasHorizonMarker(player, MOD_SATELLITE) ? SATELLITE_RANGE : ORB_RANGE;
@@ -3829,7 +3869,7 @@ namespace
     // The Orb's natural end. Supernova: 4 bolts' damage to up to 5 enemies within 8 yards; Dying Light: 3 bolts at
     // the Hero's target (else its victim), twice a bolt each; Astral Remnant: a field of 6 yards for 6 sec, a bolt's
     // damage every 2 sec to up to 5 enemies.
-    void OrbEnding(Player* player, Creature* orb)
+    void OrbEnding(Player* player, Unit* orb)
     {
         State& state = StateOf(player);
         Position at = orb->GetPosition();
@@ -3850,7 +3890,7 @@ namespace
                 for (uint32 i = 0; i < DYING_BOLTS; ++i)
                     player->m_Events.AddEventAtOffset([player, orbGuid, targetGuid]()
                     {
-                        Creature* from = ObjectAccessor::GetCreature(*player, orbGuid);
+                        Unit* from = ObjectAccessor::GetUnit(*player, orbGuid);
                         Unit* to = ObjectAccessor::GetUnit(*player, targetGuid);
                         if (player->IsInWorld() && from && Valid(player, to))
                             OrbStrike(player, from, to, DYING_SHARE, SPELL_ORB_BOLT);
@@ -3890,36 +3930,22 @@ namespace
             Strike(player, enemy, SPELL_ASTRAL_REMNANT_TICK, state.RemnantTick);
     }
 
-    // The Orb out: Satellite keeps it circling the Hero 4 yards out; Wandering Star burns each enemy it passes
-    // through once (a bolt's damage, up to 5); a bolt a second; its natural end after 6 sec (it lingers a moment
-    // for Dying Light's bolts).
+    // The Orb out: Wandering Star burns each enemy it passes through once (a bolt's damage, up to 5); a bolt a
+    // second; its natural end after 6 sec (it lingers a moment for Dying Light's bolts).
     void OrbTick(Player* player, uint32 diff)
     {
         RemnantTick(player, diff);
         State& state = StateOf(player);
-        if (!state.Orb)
+        if (!state.Orb && !state.OrbSatellite)
             return;
-        Creature* orb = LiveOrb(player);
+        Unit* orb = OrbSource(player);
         if (!orb || !player->IsAlive())
         {
             DismissOrb(player);
             return;
         }
         Position here = orb->GetPosition();
-        if (HasHorizonMarker(player, MOD_SATELLITE))
-        {
-            state.OrbAngle = Position::NormalizeOrientation(state.OrbAngle + SATELLITE_TURN * float(diff) / 1000.0f);
-            if (state.OrbRepath <= diff)
-            {
-                Position to = Toward(player->GetPosition(), state.OrbAngle + SATELLITE_LEAD, SATELLITE_RADIUS);
-                to.m_positionZ = player->GetPositionZ() + ORB_HEIGHT;
-                orb->GetMotionMaster()->MovePoint(0, to, FORCED_MOVEMENT_NONE, SATELLITE_SPEED, false);
-                state.OrbRepath = REPATH_MS;
-            }
-            else
-                state.OrbRepath -= diff;
-        }
-        if (HasHorizonMarker(player, MOD_WANDERING_STAR))
+        if (!state.OrbSatellite && HasHorizonMarker(player, MOD_WANDERING_STAR))
         {
             Shape path;
             path.From = state.OrbLast;
@@ -3939,9 +3965,14 @@ namespace
         if (Now() < state.OrbUntil)
             return;
         OrbEnding(player, orb);
-        orb->GetMotionMaster()->Clear();
-        orb->DespawnOrUnsummon(Milliseconds(ORB_LINGER_MS));
-        state.Orb.Clear();
+        if (Creature* creature = orb->ToCreature())
+        {
+            creature->GetMotionMaster()->Clear();
+            creature->DespawnOrUnsummon(Milliseconds(ORB_LINGER_MS));
+            state.Orb.Clear();
+        }
+        else
+            DismissOrb(player);
     }
 
     // ---- Guiding Light -----------------------------------------------------------------------------------------
@@ -4458,6 +4489,13 @@ namespace LegendaryRunes
         state.Choices = {};
         ClearCombat(player);
         Apply(player);
+    }
+
+    bool ToggleDebug(Player* player)
+    {
+        bool& debug = StateOf(player).Debug;
+        debug = !debug;
+        return debug;
     }
 
     Unit* FelRiftTarget(Player* player)
@@ -5498,7 +5536,7 @@ public:
             WrathTick(player, diff);
         if (player->HasAura(SPELL_RUNE_PHOENIX_WAKE) || !StateOf(player).Flights.empty())
             FlightTick(player, diff);
-        if (player->HasAura(SPELL_RUNE_ASTRAL_HORIZON) || StateOf(player).Orb)
+        if (player->HasAura(SPELL_RUNE_ASTRAL_HORIZON) || StateOf(player).Orb || StateOf(player).OrbSatellite)
             OrbTick(player, diff);
         if (player->HasAura(SPELL_RUNE_GUIDING_LIGHT))
             StarTick(player, diff);
@@ -5754,6 +5792,9 @@ class spell_titan_rune_fire_blast_phoenix : public SpellScript
         if (!player || !target || !player->HasAura(SPELL_RUNE_PHOENIX_WAKE))
             return;
         State& state = StateOf(player);
+        Trace(player, Acore::StringFormat("Fire Blast on {}: the Ember's host {}, its Ember {}", target->GetName(),
+            target->GetGUID() == state.EmberHost ? "yes" : "no",
+            target->HasAura(SPELL_PHOENIX_EMBER, player->GetGUID()) ? "on it" : "not on it"));
         if (target->GetGUID() != state.EmberHost || !target->HasAura(SPELL_PHOENIX_EMBER, player->GetGUID()))
             return;
         target->RemoveAurasDueToSpell(SPELL_PHOENIX_EMBER, player->GetGUID());

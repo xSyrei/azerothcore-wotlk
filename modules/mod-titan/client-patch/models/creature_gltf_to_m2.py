@@ -338,13 +338,14 @@ def move_speed(export, key, planted):
 
 
 def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None, replace=None, move_speeds=None,
-            scale=1.0, center=False, spin=0.0):
+            scale=1.0, center=False, spin=0.0, orbit=0.0):
     """texture_name: use the textures of that already converted model instead of writing its own.
     replace: {animation id: sources} replacing (or adding) entries of ANIMATIONS; move_speeds: their move speeds.
     scale: the whole model (mesh, pivots, bone movements) made that much larger or smaller; center: the middle of
     its mesh moved to the origin (a missile flies along its middle; an effect a kit attaches sits on its point);
     spin: its Stand turns it once about its up axis every spin seconds (its root bones'; retail's own spin is often
-    texture scrolling, which a glTF has not)."""
+    texture scrolling, which a glTF has not); orbit: its mesh moved that many yards out (+X) first, so the spin
+    carries it around the origin (a satellite circling whatever wears it)."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     export = Export(export_dir)
@@ -359,6 +360,12 @@ def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None,
         middle = (export.positions.min(axis=0) + export.positions.max(axis=0)) / 2.0
         export.positions = export.positions - middle
         export.pivots = export.pivots - middle
+    if orbit:
+        roots = [bone for bone, parent in enumerate(export.parents) if parent < 0]
+        export.positions = export.positions + np.array([orbit, 0.0, 0.0])
+        for bone in range(len(export.pivots)):
+            if bone not in roots:
+                export.pivots[bone] = export.pivots[bone] + np.array([orbit, 0.0, 0.0])
     if spin and (0, 0) in export.animations:
         period = int(spin * 1000)
         _, channels = export.animations[(0, 0)]

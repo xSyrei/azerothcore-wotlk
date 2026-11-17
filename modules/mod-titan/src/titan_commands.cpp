@@ -44,6 +44,7 @@ using namespace Acore::ChatCommands;
 // - .runes: the selected player's (or your) runes as the server sees them: each one's type and how long until it is
 //   ready (0: ready). Tells a server-side rune problem from a client-side one: runes the server has ready that the
 //   game still refuses are the client's.
+// - .runedebug (anyone): the newest runes' steps told in chat, on or off (finding why one does nothing).
 // - .unbindrune (anyone): lets go of the active specialization's Legendary Rune and its modifiers, and opens the
 //   rune panel to bind another (out of combat). A GM's with a Hero selected does it for them.
 // - .runeoffer [level]: offers the selected Hero (or you) a choice of 3 Runes of Enhancement now, as the level
@@ -66,6 +67,7 @@ public:
             { "daytime", HandleDaytime, SEC_GAMEMASTER, Console::No },
             { "runeoffer", HandleRuneOffer, SEC_GAMEMASTER, Console::No },
             { "unbindrune", HandleUnbindRune, SEC_PLAYER, Console::No },
+            { "runedebug", HandleRuneDebug, SEC_PLAYER, Console::No },
         };
         return commandTable;
     }
@@ -171,6 +173,15 @@ public:
         }
         if (target != player)
             handler->PSendSysMessage("{}'s rune is unbound.", target->GetName());
+        return true;
+    }
+
+    static bool HandleRuneDebug(ChatHandler* handler)
+    {
+        Player* player = handler->GetSession()->GetPlayer();
+        handler->SendSysMessage(LegendaryRunes::ToggleDebug(player)
+            ? "Rune debug on: the Splintered Crown's and Phoenix Wake's steps show here. .runedebug again to stop."
+            : "Rune debug off.");
         return true;
     }
 

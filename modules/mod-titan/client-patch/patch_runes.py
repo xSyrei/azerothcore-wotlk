@@ -1309,6 +1309,9 @@ SPELLS += [
     strike(91265, 'Supernova', 'Spell_Arcane_Blast', ARCANE, VISUAL_ARCANE_HIT),
     ground(91266, 'Astral Remnant', 'Spell_Arcane_Arcane04', 'AstralRemnant', DURATION_6S),
     strike(91267, 'Astral Remnant', 'Spell_Arcane_Arcane04', ARCANE),
+    {**buff(91268, 'Arcane Orb', HORIZON_ICON, 'An Arcane Orb circles you, firing at your enemies.', DURATION_6S,
+            {1: aura(AURA_DUMMY, 1, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_6S}},
     look(91269, 'Supernova', 'Spell_Arcane_Blast', 0),
     # Guiding Light.
     buff(91280, 'Rune of Guiding Light', GUIDING_ICON,
@@ -1397,12 +1400,19 @@ VISUAL_MISSILE_MODEL, VISUAL_MISSILE_SOUND, VISUAL_MISSILE_CAST_OFFSET = 8, 11, 
 VISUAL_MISSILE_MOTION = 21
 FROZEN_ORB_BOLT, ICE_LANCE_MISSILE_SOUND, ICICLE_DROP = 15082, 3256, 6.0
 EFFECTS.update({
-    'IcicleMissile': {'model': 'MAGE_Icicle', 'effect': 7157, 'shape': 'retail', 'textures': (),
-                      'options': {'export': 'MAGE_Icicle/cfx_mage_iciclemastery_launchedmissile.gltf',
-                                  'alpha': ('icetexture_mage',), 'scale': 1.4, 'center': True}},
+    # The icicle as a missile: exported_model's (the Fel Barrage ball's path, which flies; a missile built by the
+    # creature converter showed nothing), from its glTF's mesh (gltf_to_wowexport.py) and a sidecar written for it.
+    'IcicleMissile': {'model': 'MAGE_Icicle', 'effect': 7157, 'shape': 'missile', 'textures': (),
+                      'options': {'export': 'MAGE_IcicleObj', 'base': 'mage_icicle', 'size': 1.3, 'center': True,
+                                  'two_sided': True}},
     'ArcaneOrbRetail': {'model': 'MAGE_ArcaneOrb', 'effect': 7158, 'shape': 'retail', 'textures': (),
-                        'options': {'export': 'MAGE_ArcaneOrb/mage_arcaneorb_missile_fallback.gltf', 'scale': 0.25,
+                        'options': {'export': 'MAGE_ArcaneOrb/mage_arcaneorb_missile_fallback.gltf', 'scale': 0.35,
                                     'center': True, 'spin': 3.0}},
+    # Satellite's Orb: the same, circling whatever wears it 4 yards out (a turn every 4 sec), drawn by the client
+    # itself (a creature steered around the Hero by the server stuttered).
+    'ArcaneOrbSatellite': {'model': 'MAGE_ArcaneOrbSatellite', 'effect': 7160, 'shape': 'retail', 'textures': (),
+                           'options': {'export': 'MAGE_ArcaneOrb/mage_arcaneorb_missile_fallback.gltf',
+                                       'scale': 0.3, 'center': True, 'spin': 4.0, 'orbit': 4.0}},
     'PhoenixRetail': {'model': 'MAGE_PhoenixFlames', 'effect': 7159, 'shape': 'retail', 'textures': (),
                       'options': {'export': 'MAGE_PhoenixFlames/7fx_mage_phoenixsflames_missile.gltf', 'scale': 0.5,
                                   'center': True}},
@@ -1417,11 +1427,14 @@ VISUALS.update({
                        'impact': (15738, {KIT_CHEST: FX_ICE_LANCE_IMPACT, 'sound': None})}},
     'ArcaneOrbForm': {'copy': 32, 'id': 16798, 'clear': ('precast', 'cast', 'impact'), 'kits': {
         'state': (15736, {KIT_BASE: 'ArcaneOrbRetail', KIT_CHEST: 0, 'sound': None, 'procs': False})}},
+    'SatelliteForm': {'copy': 32, 'id': 16800, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15739, {KIT_CHEST: 'ArcaneOrbSatellite', KIT_BASE: 0, 'sound': None, 'procs': False})}},
     'PhoenixForm': {'copy': 32, 'id': 16799, 'clear': ('precast', 'cast', 'impact'), 'kits': {
         'state': (15737, {KIT_BASE: 'PhoenixRetail', KIT_CHEST: 0, 'sound': None, 'procs': False})}},
 })
 for _spell in SPELLS:
-    _key = {91221: 'IcicleBolt', 91228: 'IcicleBolt', 91243: 'PhoenixForm', 91261: 'ArcaneOrbForm'}.get(_spell['id'])
+    _key = {91221: 'IcicleBolt', 91228: 'IcicleBolt', 91243: 'PhoenixForm', 91261: 'ArcaneOrbForm',
+            91268: 'SatelliteForm'}.get(_spell['id'])
     if _key:
         _spell['visual'] = _key
 for _spell in SPELLS:

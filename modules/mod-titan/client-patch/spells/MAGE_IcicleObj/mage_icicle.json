@@ -1,0 +1,107 @@
+{
+ "textures": [
+  {
+   "fileNameExternal": "icetexture_mage.png",
+   "flags": 0
+  }
+ ],
+ "materials": [
+  {
+   "flags": 5,
+   "blendingMode": 2
+  }
+ ],
+ "textureCombos": [
+  0
+ ],
+ "colors": [
+  {
+   "color": {
+    "globalSeq": 65535,
+    "interpolation": 0,
+    "timestamps": [
+     [
+      0
+     ]
+    ],
+    "values": [
+     [
+      [
+       1,
+       1,
+       1
+      ]
+     ]
+    ],
+    "timestampOffsets": null,
+    "valueOffsets": null
+   },
+   "alpha": {
+    "globalSeq": 65535,
+    "interpolation": 0,
+    "timestamps": [
+     [
+      0
+     ]
+    ],
+    "values": [
+     [
+      32767
+     ]
+    ],
+    "timestampOffsets": null,
+    "valueOffsets": null
+   }
+  }
+ ],
+ "textureWeights": [
+  {
+   "globalSeq": 65535,
+   "interpolation": 0,
+   "timestamps": [
+    [
+     0
+    ]
+   ],
+   "values": [
+    [
+     32767
+    ]
+   ],
+   "timestampOffsets": null,
+   "valueOffsets": null
+  }
+ ],
+ "transparencyLookup": [
+  0
+ ],
+ "textureTransforms": [],
+ "textureTransformsLookup": [
+  65535
+ ],
+ "skin": {
+  "subMeshes": [
+   {
+    "vertexStart": 0,
+    "vertexCount": 42,
+    "centerPosition": [
+     0.12341071665287018,
+     0.010129101574420929,
+     1.0373000800609589
+    ],
+    "sortRadius": 0.8826368749141693
+   }
+  ],
+  "textureUnits": [
+   {
+    "priority": 0,
+    "skinSectionIndex": 0,
+    "colorIndex": 0,
+    "materialIndex": 0,
+    "textureComboIndex": 0,
+    "textureWeightComboIndex": 0,
+    "textureTransformComboIndex": 0
+   }
+  ]
+ }
+}
