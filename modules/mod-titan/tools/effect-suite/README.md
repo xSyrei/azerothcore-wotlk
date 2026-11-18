@@ -34,6 +34,33 @@ back when hit and shows damage numbers. Cameras: Side, Behind Hero, Dummy, Top; 
 timeline plays, pauses, loops, scrubs and slows down (0.1× to 2×); every change replays the effect to where it was
 (the run is deterministic, stepped at 120 Hz). Work autosaves in the browser; *Save* keeps an effect in *My effects*.
 
+## The game's own models
+
+`assets/` holds models from the 3.3.5a client, made by `build_assets.py` (JSON the Suite's engine, `game.js`, plays:
+skinned bone animation with billboarded bones, the game's blend modes and render flags, color, transparency and
+texture animation, particle emitters and ribbons). When `assets/manifest.json` lists them:
+
+- **human**: the Hero is a Human male (HumanMale, with the baked look of an NPC, display extra 8177, and its hair),
+  playing ReadySpellDirected while casting, SpellCastDirected as the spell leaves, and Stand. Its hand, chest and head
+  attachments are the anchors.
+- **dummy**: the training dummy (Creature\Object\WoodenDummy, display 28047), its chest and head the targets'.
+- **fx_\***: spell effect models, used by **Game model** layers (anchored like any layer; one fired on the projectile
+  rides it, facing where it flies, so the path sliders shape a real missile's flight).
+- **templates.json**: the game's spells (Arcane Blast, Frostbolt, Fireball, Lightning Bolt, Chain Lightning) in the
+  Library's *Game spells*: their SpellVisual kits as layers (precast in the hands, cast, missile, impact on the
+  dummy, lingering over its head) and Chain Lightning's arc as a beam.
+
+To make them: extract the files with `tools/extract/EmberforgeExtract.exe` and `patterns/effect-suite.txt` (each model
+brings its skins, .anim files and textures), then
+
+```sh
+python3 build_assets.py <EmberforgeExtract folder> assets --dbc <a folder with Spell.dbc, SpellVisual*.dbc,
+    SpellVisualEffectName.dbc, SpellChainEffects.dbc>
+```
+
+The Suite fetches `assets/`, so open it through a web server (`python3 -m http.server` in this folder), the launcher
+or the published page; opened as a file it keeps its stand-ins.
+
 ## Next
 
 1. An exporter (`client-patch/`): billboard and ground layers to the `mist` builder's cards

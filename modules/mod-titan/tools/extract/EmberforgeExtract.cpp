@@ -11,6 +11,9 @@
 // line; built-in ones without a file) is written under EmberforgeExtract\ next to where it is run, at its own path,
 // the newest version winning. A manifest of what was written goes with it.
 //
+// A model brings what it needs with it: every .m2 written (3.3.5a's MD20) is read for its skins (<name>00.skin...),
+// its animation files (<name>*.anim) and the textures it names, and those are extracted too (and theirs, in turn).
+//
 // The same files are then packed into zips small enough to upload (EmberforgeExtract-part1.zip..., 24 MB each unless
 // named), in the patterns' order: what is needed first (the Dungeon Journal's tables and art) is in part 1.
 
@@ -242,6 +245,36 @@ static std::vector<fs::path> Archives(fs::path const& folder, bool updates)
     return result;
 }
 
+static uint32_t U32(std::vector<char> const& d, std::size_t o)
+{
+    return o + 4 <= d.size() ? uint32_t(uint8_t(d[o])) | uint32_t(uint8_t(d[o + 1])) << 8
+        | uint32_t(uint8_t(d[o + 2])) << 16 | uint32_t(uint8_t(d[o + 3])) << 24 : 0;
+}
+
+// What a 3.3.5a model (MD20) needs: its skins, its .anim files and the textures it names (type 0: a file).
+static std::vector<std::string> ModelNeeds(fs::path const& path, std::string const& name)
+{
+    std::vector<std::string> needs;
+    std::ifstream in(path, std::ios::binary);
+    std::vector<char> d((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    if (d.size() < 0x60 || std::string(d.data(), 4) != "MD20")
+        return needs;
+    std::string base = name.substr(0, name.size() - 3);    // without ".m2"
+    uint32_t views = U32(d, 0x44);
+    for (uint32_t v = 0; v < std::max<uint32_t>(1, std::min<uint32_t>(views, 4)); ++v)
+        needs.push_back(base + "0" + std::to_string(v) + ".skin");
+    needs.push_back(base + "*.anim");
+    uint32_t count = U32(d, 0x50), offset = U32(d, 0x54);
+    for (uint32_t i = 0; i < count && i < 256; ++i)
+    {
+        std::size_t t = offset + i * 16;
+        uint32_t type = U32(d, t), length = U32(d, t + 8), at = U32(d, t + 12);
+        if (type == 0 && length > 1 && at + length <= d.size())
+            needs.push_back(std::string(d.data() + at, length - 1));
+    }
+    return needs;
+}
+
 static bool Write(HANDLE archive, std::string const& name, fs::path const& out)
 {
     HANDLE file = nullptr;
@@ -300,51 +333,75 @@ int main(int argc, char** argv)
     std::vector<Extracted> extracted;
     fs::create_directories(outRoot);
 
-    for (fs::path const& folder : folders)
+    // One pass over every archive for the patterns from `first` on (later passes: what the models found need).
+    auto extract = [&](std::size_t first)
     {
-        std::vector<fs::path> updates = Archives(folder, true);
-        // The highest ranked first (the newest patch, the later expansion): its copy of a file wins.
-        std::vector<fs::path> bases = Archives(folder, false);
-        std::reverse(bases.begin(), bases.end());
-        for (fs::path const& base : bases)
+        for (fs::path const& folder : folders)
         {
-            HANDLE archive = nullptr;
-            if (!SFileOpenArchive(base.string().c_str(), 0, STREAM_FLAG_READ_ONLY, &archive))
+            std::vector<fs::path> updates = Archives(folder, true);
+            // The highest ranked first (the newest patch, the later expansion): its copy of a file wins.
+            std::vector<fs::path> bases = Archives(folder, false);
+            std::reverse(bases.begin(), bases.end());
+            for (fs::path const& base : bases)
             {
-                std::printf("Could not open %s\n", base.string().c_str());
-                continue;
-            }
-            for (fs::path const& update : updates)
-                SFileOpenPatchArchive(archive, update.string().c_str(), nullptr, 0);
-
-            unsigned count = 0;
-            for (std::size_t priority = 0; priority < patterns.size(); ++priority)
-            {
-                std::string const& pattern = patterns[priority];
-                SFILE_FIND_DATA found;
-                HANDLE find = SFileFindFirstFile(archive, pattern.c_str(), &found, nullptr);
-                if (!find)
-                    continue;
-                do
+                HANDLE archive = nullptr;
+                if (!SFileOpenArchive(base.string().c_str(), 0, STREAM_FLAG_READ_ONLY, &archive))
                 {
-                    std::string name = found.cFileName;
-                    std::string key = Lower(name);
-                    if (written.count(key))
+                    std::printf("Could not open %s\n", base.string().c_str());
+                    continue;
+                }
+                for (fs::path const& update : updates)
+                    SFileOpenPatchArchive(archive, update.string().c_str(), nullptr, 0);
+
+                unsigned count = 0;
+                for (std::size_t priority = first; priority < patterns.size(); ++priority)
+                {
+                    std::string const& pattern = patterns[priority];
+                    SFILE_FIND_DATA found;
+                    HANDLE find = SFileFindFirstFile(archive, pattern.c_str(), &found, nullptr);
+                    if (!find)
                         continue;
-                    std::string relative = name;
-                    std::replace(relative.begin(), relative.end(), '\\', '/');
-                    if (Write(archive, name, outRoot / fs::path(relative)))
+                    do
                     {
-                        written[key] = base.filename().string();
-                        extracted.push_back({ name, outRoot / fs::path(relative), priority });
-                        ++count;
-                    }
-                } while (SFileFindNextFile(find, &found));
-                SFileFindClose(find);
+                        std::string name = found.cFileName;
+                        std::string key = Lower(name);
+                        if (written.count(key))
+                            continue;
+                        std::string relative = name;
+                        std::replace(relative.begin(), relative.end(), '\\', '/');
+                        if (Write(archive, name, outRoot / fs::path(relative)))
+                        {
+                            written[key] = base.filename().string();
+                            extracted.push_back({ name, outRoot / fs::path(relative), priority });
+                            ++count;
+                        }
+                    } while (SFileFindNextFile(find, &found));
+                    SFileFindClose(find);
+                }
+                std::printf("%-40s %u files\n", base.filename().string().c_str(), count);
+                SFileCloseArchive(archive);
             }
-            std::printf("%-40s %u files\n", base.filename().string().c_str(), count);
-            SFileCloseArchive(archive);
         }
+    };
+    std::size_t done = 0, first = 0;
+    for (int round = 0; round < 4 && first < patterns.size(); ++round)
+    {
+        extract(first);
+        first = patterns.size();
+        // What the models just written need, not yet written: the next pass's patterns.
+        std::set<std::string> asked;
+        for (std::size_t i = done; i < extracted.size(); ++i)
+        {
+            std::string name = extracted[i].name;
+            if (Lower(fs::path(name).extension().string()) != ".m2")
+                continue;
+            for (std::string const& need : ModelNeeds(extracted[i].path, name))
+                if (!written.count(Lower(need)) && asked.insert(Lower(need)).second)
+                    patterns.push_back(need);
+        }
+        done = extracted.size();
+        if (first < patterns.size())
+            std::printf("\nThe models need %zu more files: extracting them.\n", patterns.size() - first);
     }
     // The zips, in the patterns' order; the manifest says which part holds each file.
     std::stable_sort(extracted.begin(), extracted.end(), [](Extracted const& a, Extracted const& b) {
@@ -369,7 +426,7 @@ int main(int argc, char** argv)
         }
         parts.Close();
         std::printf("\nWrote %zu files to %s\nand packed them into %u zips: EmberforgeExtract-part1.zip...\n"
-            "Send part 1 first (the Dungeon Journal's files), then the others one by one.\n", extracted.size(),
+            "Send them one by one, part 1 first (it holds what the list asks for first).\n", extracted.size(),
             outRoot.string().c_str(), parts.Parts());
     }
     return 0;

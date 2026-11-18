@@ -225,6 +225,7 @@ kbd { font: 11px var(--font-mono); border: 1px solid var(--line); border-bottom-
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="game.js"></script>
 <script>
 'use strict';
 /* =====================================================================================================================
@@ -496,6 +497,7 @@ const dummyBody = new THREE.Group(); dummy.add(dummyBody);
 const STAGE = { distance: 12, side: 0, strafe: 0, strafeSpeed: 1.2, showPath: true, numbers: true };
 const ANCHORS = {
   'caster.base': 'Hero: feet', 'caster.chest': 'Hero: chest', 'caster.head': 'Hero: above head', 'caster.hand': 'Hero: casting hand',
+  'caster.lefthand': 'Hero: left hand', 'caster.righthand': 'Hero: right hand',
   'target.base': 'Dummy: feet', 'target.chest': 'Dummy: chest', 'target.head': 'Dummy: above head',
   'impact': 'Where the projectile lands', 'projectile': 'The projectile',
 };
@@ -503,13 +505,68 @@ const sim = { t: 0, hitWobble: 0, hitVel: 0, armRaise: 0 };
 function dummyPosAt(t, out) {
   return out.set(STAGE.distance, 0, STAGE.side + Math.sin(t * STAGE.strafeSpeed) * STAGE.strafe);
 }
+/* The game's own models (assets/, made by build_assets.py from the client's files): the Human and the training dummy
+   stand in for the mannequins, and the spell templates and their effect models come from the game's spell visuals. */
+const GAME = { hero: null, dummy: null, templates: [], fx: [], heroWrap: new THREE.Group(), dummyWrap: new THREE.Group(),
+  lastHit: -10 };
+scene.add(GAME.heroWrap, GAME.dummyWrap);
+const worldFx = new THREE.Group(); scene.add(worldFx);
+async function loadGame() {
+  let manifest = { models: [], templates: false }, templates = [];
+  try { const r = await fetch('assets/manifest.json'); if (r.ok) manifest = await r.json(); } catch (e) { /* no game assets */ }
+  if (manifest.templates) try { templates = await (await fetch('assets/templates.json')).json(); } catch (e) { /* none */ }
+  await GameEngine.load('assets/', manifest.models);
+  const A = GameEngine.assets;
+  GAME.fx = manifest.models.filter((n) => n.startsWith('fx_') && A[n]);
+  GAME.templates = templates;
+  if (A.human) { GAME.hero = new GameEngine.GameModel(A.human, { world: worldFx }); GAME.heroWrap.add(GAME.hero.root); hero.visible = false; }
+  if (A.dummy) {
+    GAME.dummy = new GameEngine.GameModel(A.dummy, { world: worldFx }); GAME.dummyWrap.add(GAME.dummy.root);
+    GAME.dummyWrap.rotation.y = Math.PI; dummy.visible = false;
+  }
+  renderLeft(); renderInspector(); changed();
+}
+const ATT = new THREE.Vector3();
+function modelAnchor(model, slot, out, up = 0) {
+  for (const id of GameEngine.SLOT_ATTACH[slot]) if (model.attachment(id, ATT)) return out.copy(ATT).setY(ATT.y + up);
+  return null;
+}
+// What the Human plays: ReadySpellDirected while casting, SpellCastDirected as the spell leaves, then Stand.
+function heroAnimAt(t) {
+  const cast = castPoseTime(), h = GAME.hero;
+  if (t < cast && h.hasSeq(51)) return [51, t * 1000, true];
+  if (t >= cast && t < cast + 0.9 && h.hasSeq(53)) return [53, (t - cast) * 1000, false];
+  return [0, t * 1000, true];
+}
+function dummyAnimAt(t) {
+  const since = t - GAME.lastHit;
+  if (since >= 0 && since < 0.8 && GAME.dummy.hasSeq(9)) return [9, since * 1000, false];
+  return [0, t * 1000, true];
+}
+// The game actors' poses at time t (their attachments are the anchors).
+function poseActors(t) {
+  if (GAME.hero) { const [id, ms, loop] = heroAnimAt(t); GAME.hero.poseAt(id, ms, camera, loop); }
+  if (GAME.dummy) { dummyPosAt(t, GAME.dummyWrap.position); const [id, ms, loop] = dummyAnimAt(t); GAME.dummy.poseAt(id, ms, camera, loop); }
+}
 // Where an anchor is at time t (the Hero's hand follows the cast pose).
 function anchorAt(name, t, out) {
+  const h = GAME.hero, d = GAME.dummy;
+  if (h) {
+    if (name === 'caster.hand' || name === 'caster.righthand') { if (modelAnchor(h, 'righthand', out)) return out; }
+    else if (name === 'caster.lefthand') { if (modelAnchor(h, 'lefthand', out)) return out; }
+    else if (name === 'caster.chest') { if (modelAnchor(h, 'chest', out)) return out; }
+    else if (name === 'caster.head') { if (modelAnchor(h, 'head', out, 0.45)) return out; }
+  }
+  if (d) {
+    if (name === 'target.chest') { if (modelAnchor(d, 'chest', out)) return out; }
+    else if (name === 'target.head') { if (modelAnchor(d, 'head', out, 0.45)) return out; }
+  }
   switch (name) {
+    case 'caster.lefthand': return out.set(0.1, 1.05, -0.45);
     case 'caster.base': return out.set(0, 0.05, 0);
     case 'caster.chest': return out.set(0.15, 1.25, 0);
     case 'caster.head': return out.set(0, 2.35, 0);
-    case 'caster.hand': {
+    case 'caster.hand': case 'caster.righthand': {
       const raise = armRaiseAt(t);
       return out.set(0.62 * Math.sin(raise), 1.5 - 0.64 * Math.cos(raise), 0.4);
     }
@@ -524,7 +581,10 @@ function armRaiseAt(t) {
   const k = t < 0 ? 0 : t < cast ? t / cast : t < cast + 0.5 ? 1 - (t - cast) / 0.5 * 0.4 : Math.max(0, 0.6 - (t - cast - 0.5) * 1.2);
   return Math.PI * 0.5 * clamp(Math.sin(Math.min(1, k) * Math.PI / 2), 0, 1) + 0.05;
 }
-function castPoseTime() { const p = state.spec.projectile; return p && p.enabled ? Math.max(0.12, p.launchAt) : 0.25; }
+function castPoseTime() {
+  if (state.spec.castTime) return state.spec.castTime;
+  const p = state.spec.projectile; return p && p.enabled ? Math.max(0.12, p.launchAt) : 0.25;
+}
 
 /* -------------------------------------------------------------------------------------------------- the effects --- */
 const NEW_LAYER = {
@@ -543,6 +603,8 @@ const NEW_LAYER = {
     life: 1.2, texture: 'lightning', blend: 'add', color: '#9fd8ff', color2: '#ffffff', opacity: 1, fadeIn: 0.05,
     fadeOut: 0.3, width: 0.8, tile: 4, scroll: 6, fps: 24, flicker: 0.4 },
 };
+NEW_LAYER.model = { type: 'model', name: 'Game model', trigger: 'impact', anchor: 'target.chest', delay: 0, life: 1.5,
+  model: '', scale: 1, speed: 1, opacity: 1, turn: 0 };
 const NEW_PROJECTILE = { enabled: false, launchAt: 0.3, count: 1, stagger: 0.1, from: 'caster.hand', fromOffset: [0.3, 0, 0],
   to: 'target.chest', toOffset: [0, 0, 0], speed: 24, ease: 'linear', arc: 0, side: 0, peak: 0.5, fan: 0,
   alternate: false, spiralRadius: 0, spiralTurns: 3, wobble: 0, wobbleFreq: 1.2, homing: true,
@@ -649,6 +711,41 @@ const PRESETS = [
 ];
 function presetEffect(p) { return Object.assign(NEW_EFFECT(), p.make()); }
 
+/* A game spell as an effect: its kits' models as layers (precast in the hands while casting, cast as it leaves,
+   impact on the dummy, lingering ones over its head), its missile riding the projectile (whose path sliders then
+   shape a real Fireball's flight) and Chain Lightning's arc as a beam. */
+const TEMPLATE_SWATCH = { 'Arcane Blast': ['#f0c8ff', '#7a3dff'], Frostbolt: ['#d8f4ff', '#2f7bff'], Fireball: ['#ffd27a', '#ff3d00'],
+  'Lightning Bolt': ['#e6f6ff', '#3d8bff'], 'Chain Lightning': ['#e6f6ff', '#1a5fd1'] };
+const CASTER_SLOT = { lefthand: 'caster.lefthand', righthand: 'caster.righthand', head: 'caster.head', chest: 'caster.chest',
+  base: 'caster.base', breath: 'caster.head', world: 'caster.base' };
+const TARGET_SLOT = { lefthand: 'target.chest', righthand: 'target.chest', head: 'target.head', chest: 'target.chest',
+  base: 'target.base', breath: 'target.head', world: 'target.base' };
+function templateEffect(t) {
+  const cast = t.precast ? 1.5 : 0.25, layers = [], textures = {};
+  const short = (n) => n.replace(/^fx_/, '').replace(/_/g, ' ');
+  const kit = (k, trigger, slots, delay, life, label) => {
+    if (!k) return;
+    for (const [slot, model] of Object.entries(k.slots)) {
+      layers.push(layer('model', { name: `${label}: ${short(model)}`, trigger, anchor: slots[slot], delay, life, model }));
+    }
+    if (k.beam) {
+      textures.chain = { data: k.beam.texture, cols: 1, rows: 1 };
+      layers.push(layer('beam', { name: `${label}: arc`, trigger, anchor: 'caster.righthand', anchorEnd: 'target.chest',
+        delay, life: 0.45, texture: 'chain', color: '#ffffff', color2: '#ffffff', width: 0.9, tile: 1.5, scroll: 0, fps: 0, flicker: 0.35 }));
+    }
+  };
+  kit(t.precast, 'cast', CASTER_SLOT, 0, cast, 'Precast');
+  kit(t.cast, 'cast', CASTER_SLOT, cast, 0.9, 'Cast');
+  if (t.missile) layers.push(layer('model', { name: `Missile: ${short(t.missile)}`, trigger: 'projectile', anchor: 'projectile', model: t.missile }));
+  kit(t.impact, 'impact', TARGET_SLOT, 0, 1.6, 'Impact');
+  kit(t.state, 'impact', TARGET_SLOT, 0, 3, 'Lingering');
+  const spec = Object.assign(NEW_EFFECT(), { name: t.name, castTime: cast, impactAt: cast + 0.05, layers, textures });
+  spec.projectile = t.missile
+    ? projectile({ speed: t.speed || 24, launchAt: cast, from: 'caster.righthand', fromOffset: [0, 0, 0], to: 'target.chest' }, { enabled: false })
+    : deepCopy(NEW_PROJECTILE);
+  return spec;
+}
+
 /* ----------------------------------------------------------------------------------------------------- runtime --- */
 const PLANE = new THREE.PlaneGeometry(1, 1);
 const blendOf = (b) => (b === 'normal' ? THREE.NormalBlending : THREE.AdditiveBlending);
@@ -696,6 +793,7 @@ class LayerRun {
   }
   ensure(n, make) { while (this.objects.length < n) { const o = make(); runtime.add(o); this.objects.push(o); } }
   dispose() {
+    if (this.gm) { this.gm.dispose(); runtime.remove(this.holder); this.gm = null; }
     for (const o of this.objects) { runtime.remove(o); if (o.material) { if (o.material.userData.own) o.material.map.dispose(); o.material.dispose(); } }
     for (const p of this.parts) { runtime.remove(p.s); p.s.material.dispose(); }
     this.objects = []; this.parts = []; this.done = true;
@@ -706,10 +804,30 @@ class LayerRun {
     const ended = this.flight ? this.flight.arrived : local > this.life;
     const f = this.flight ? clamp(local / 0.15, 0, 1) : clamp(local / this.life, 0, 1);
     this.anchor(t, this.anchorPos);
+    if (l.type === 'model') return this.stepModel(t, dt, local, ended);
     if (l.type === 'particles') this.stepParticles(t, dt, local, ended);
     else if (ended) { this.dispose(); return; }
     else if (l.type === 'sprite' || l.type === 'ground') this.stepCards(t, local, f);
     else if (l.type === 'beam') this.stepBeam(t, local, f);
+  }
+  // A game model (an effect of the client's): placed at its anchor (facing the projectile's way, or the way its
+  // actor faces), its sequence playing; when its time is up it stops emitting and goes once its particles are gone.
+  stepModel(t, dt, local, ended) {
+    const l = this.l, data = GameEngine.assets[l.model];
+    if (!data) { if (ended) this.dispose(); return; }
+    if (!this.gm) {
+      this.gm = new GameEngine.GameModel(data, { world: runtime, scale: l.scale || 1 });
+      this.gm.speed = l.speed || 1; this.holder = new THREE.Group(); this.holder.add(this.gm.root); runtime.add(this.holder);
+      this.endAt = null;
+    }
+    this.holder.position.copy(this.anchorPos);
+    const turn = (l.turn || 0) * Math.PI / 180;
+    if (this.flight && this.flight.vel.lengthSq() > 1e-6) this.holder.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), this.flight.vel.clone().normalize());
+    else this.holder.rotation.set(0, (l.anchor.startsWith('target') || l.anchor === 'impact' ? Math.PI : 0) + turn, 0);
+    if (ended && this.endAt === null) { this.endAt = local; this.gm.emitting = false; }
+    const fade = this.endAt === null ? clamp(local / 0.08, 0, 1) : clamp(1 - (local - this.endAt) / 0.25, 0, 1);
+    this.gm.update(dt, camera, (l.opacity ?? 1) * fade);
+    if (this.endAt !== null && ((fade <= 0 && !this.gm.alive) || local - this.endAt > 4)) this.dispose();
   }
   stepCards(t, local, f) {
     const l = this.l, n = Math.max(1, l.count | 0), ground = l.type === 'ground';
@@ -914,7 +1032,7 @@ const STEP = 1 / 120;
 function resetRun() {
   run.runs.forEach((r) => r.dispose()); run.flights.forEach((f) => f.dispose());
   run.runs = []; run.flights = []; run.impacts = []; run.hits = []; run.fired = false; run.impactFired = false;
-  sim.t = 0; sim.hitWobble = 0; sim.hitVel = 0;
+  sim.t = 0; sim.hitWobble = 0; sim.hitVel = 0; GAME.lastHit = -10;
   overlay.querySelectorAll('.dmg').forEach((e) => e.remove());
 }
 function visibleLayers(trigger) { return state.spec.layers.filter((l) => l.enabled !== false && l.trigger === trigger); }
@@ -934,7 +1052,7 @@ function onImpact(flight, t) {
   const at = flight ? flight.pos.clone() : anchorAt('target.chest', t, new THREE.Vector3());
   for (const l of visibleLayers('impact')) run.runs.push(new LayerRun(l, t, { at, index: flight ? flight.idx : 0 }));
   run.impacts.push(t);
-  sim.hitVel += 2.6;
+  sim.hitVel += 2.6; GAME.lastHit = t;
   run.hits.push({ t, at: at.clone(), amount: 900 + Math.floor(seeded(Math.floor(t * 1000) + 3)() * 900),
     crit: seeded(Math.floor(t * 777) + 1)() < 0.3, el: null });
 }
@@ -943,6 +1061,7 @@ function stepRun(dt) {
   const t = sim.t;
   const p = state.spec.projectile;
   if (!(p && p.enabled) && !run.impactFired && t >= (state.spec.impactAt || 0)) { run.impactFired = true; onImpact(null, t); }
+  poseActors(t);
   run.flights.forEach((f) => f.step(t, dt));
   for (const r of run.runs) if (!r.done) r.step(t, dt);
   run.runs = run.runs.filter((r) => !r.done);
@@ -956,10 +1075,19 @@ function simulateTo(target) {
   while (sim.t + STEP <= target + 1e-9) stepRun(STEP);
   placeActors();
 }
+let lastDraw = performance.now();
 function placeActors() {
   dummyPosAt(sim.t, dummy.position);
   dummyBody.rotation.z = -clamp(sim.hitWobble, -0.5, 0.5) * 0.35;
   heroArm.rotation.z = armRaiseAt(sim.t);
+  poseActors(sim.t);
+  const now = performance.now(), dt = Math.min(0.1, (now - lastDraw) / 1000); lastDraw = now;
+  if (GAME.hero) GAME.hero.draw(dt, camera);
+  if (GAME.dummy) {
+    // A dummy without a wound animation rocks back on its base instead.
+    if (!GAME.dummy.hasSeq(9)) GAME.dummyWrap.rotation.z = clamp(sim.hitWobble, -0.5, 0.5) * 0.35;
+    GAME.dummy.draw(dt, camera);
+  }
 }
 // How long the whole effect runs (the scrubber's length): cast layers, every flight, its impact and the tail.
 function effectDuration() {
@@ -1038,7 +1166,7 @@ function edit(fn) {
 
 /* --------------------------------------------------------------------------------------------- left: layers ----- */
 const TRIGGERS = { cast: 'On cast', projectile: 'On the projectile', impact: 'On impact' };
-const TYPE_LABEL = { sprite: 'Billboard', ground: 'Ground', particles: 'Particles', beam: 'Beam' };
+const TYPE_LABEL = { sprite: 'Billboard', ground: 'Ground', particles: 'Particles', beam: 'Beam', model: 'Game model' };
 function renderLeft() {
   $('tabLayers').setAttribute('aria-selected', state.tab === 'layers');
   $('tabLibrary').setAttribute('aria-selected', state.tab === 'library');
@@ -1067,6 +1195,7 @@ function renderLeft() {
     b.onclick = () => edit(() => {
       const trig = state.sel.kind === 'layer' ? (spec.layers.find((x) => x.id === state.sel.id) || {}).trigger : null;
       const l = layer(type, trig && type !== 'beam' ? { trigger: trig, anchor: trig === 'projectile' ? 'projectile' : trig === 'impact' ? 'impact' : 'caster.hand' } : {});
+      if (type === 'model') l.model = GAME.fx[0] || '';
       spec.layers.push(l); state.sel = { kind: 'layer', id: l.id }; renderLeft(); renderInspector();
     });
     menu.append(b);
@@ -1097,6 +1226,16 @@ function renderLibrary(body) {
   const blank = document.createElement('button'); blank.className = 'btn'; blank.style.width = '100%'; blank.textContent = 'New blank effect';
   blank.onclick = () => { setSpec(NEW_EFFECT()); state.tab = 'layers'; renderLeft(); };
   body.append(blank);
+  const g = document.createElement('div'); g.className = 'lib-group'; g.textContent = 'Game spells'; body.append(g);
+  if (!GAME.templates.length) {
+    const e = document.createElement('div'); e.className = 'hint';
+    e.textContent = "The game's own spells (Arcane Blast, Frostbolt, Fireball, Lightning Bolt, Chain Lightning) appear here once their models are extracted (tools/extract, patterns/effect-suite.txt) and built (build_assets.py).";
+    body.append(e);
+  }
+  for (const t of GAME.templates) {
+    body.append(presetEl(t.name, `The game's ${t.name}: its precast, cast${t.missile ? ', missile' : ''} and impact, at ${t.speed || 'instant'}${t.speed ? ' yd/s' : ''}.`,
+      TEMPLATE_SWATCH[t.name] || ['#ffffff', '#666666'], () => { setSpec(templateEffect(t)); state.tab = 'layers'; renderLeft(); }));
+  }
   let group = null;
   for (const p of PRESETS) {
     if (p.group !== group) { group = p.group; const h = document.createElement('div'); h.className = 'lib-group'; h.textContent = group; body.append(h); }
@@ -1179,6 +1318,13 @@ const LAYER_FIELDS = {
     F('Flicker', 'flicker', 'range', { min: 0, max: 1, step: 0.01 }),
   ],
 };
+LAYER_FIELDS.model = [
+  F('Model', 'model', 'select', { options: () => (GAME.fx.length ? GAME.fx : ['']).map((n) => [n, n ? n.replace(/^fx_/, '') : 'No game models yet']) }),
+  F('Size', 'scale', 'range', { min: 0.1, max: 6, step: 0.05, unit: '×' }),
+  F('Speed', 'speed', 'range', { min: 0.1, max: 3, step: 0.05, unit: '×', hint: 'its animation and particles' }),
+  F('Opacity', 'opacity', 'range', { min: 0, max: 1, step: 0.01 }),
+  F('Turn', 'turn', 'range', { min: -180, max: 180, step: 1, unit: '°', hide: (l) => l.trigger === 'projectile' }),
+];
 const PROJECTILE_FIELDS = [
   { group: 'Flight' },
   F('Launch at', 'launchAt', 'range', { min: 0, max: 3, step: 0.01, unit: 's' }),
@@ -1215,7 +1361,8 @@ function renderInspector() {
     const l = spec.layers.find((x) => x.id === sel.id);
     if (!l) return select({ kind: 'effect' });
     $('inspTitle').textContent = `${TYPE_LABEL[l.type]} layer`;
-    const fields = [{ group: 'Timing' }, ...LAYER_FIELDS.common, { group: 'Look' }, ...LAYER_FIELDS.look, { group: TYPE_LABEL[l.type] }, ...LAYER_FIELDS[l.type]];
+    const look = l.type === 'model' ? [] : [{ group: 'Look' }, ...LAYER_FIELDS.look];
+    const fields = [{ group: 'Timing' }, ...LAYER_FIELDS.common, ...look, { group: TYPE_LABEL[l.type] }, ...LAYER_FIELDS[l.type]];
     buildFields(box, l, fields, () => { fixAnchor(l); renderLeft(); });
     const actions = document.createElement('div'); actions.style.cssText = 'display:flex;gap:6px;margin-top:14px;flex-wrap:wrap';
     const dup = document.createElement('button'); dup.className = 'btn small'; dup.textContent = 'Duplicate';
@@ -1236,6 +1383,7 @@ function renderInspector() {
     buildFields(box, spec, [
       { group: 'Effect' }, F('Name', 'name', 'text'),
       F('Impact at', 'impactAt', 'range', { min: 0, max: 4, step: 0.01, unit: 's', hint: 'when impact layers fire without a projectile' }),
+      F('Cast time', 'castTime', 'range', { min: 0, max: 4, step: 0.05, unit: 's', hint: "the Hero's casting pose before the spell leaves (0: until the projectile launches)" }),
       F('Tail', 'tail', 'range', { min: 0, max: 3, step: 0.05, unit: 's', hint: 'time after the last layer before a loop restarts' }),
     ], () => { $('effectName').value = spec.name; });
     buildFields(box, STAGE, [
@@ -1490,6 +1638,7 @@ document.addEventListener('keydown', (e) => {
   state.history = [];
   setCam('side'); resize();
   requestAnimationFrame(frame);
+  loadGame();
 })();
 </script>
 </body>
