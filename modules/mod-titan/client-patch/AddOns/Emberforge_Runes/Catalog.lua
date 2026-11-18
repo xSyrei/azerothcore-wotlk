@@ -1137,6 +1137,19 @@ EmberforgeRunesCatalog = {
           "75% of your attack power as Fire damage to up to 8 enemies within 8 yards, each left with half a Cinder " ..
           "Wound.",
       loop = "Rake or Rip, Fire Blast to ignite; Flame Shock, then Claw or Swipe.",
+      -- What the rune adds to each spell it reaches into: a line on that spell's tooltip while it is bound.
+      spells = {
+        ["Fire Blast"] = "Usable in Cat Form. On an enemy bleeding from your own Rake or Rip, ignites Cinder " ..
+            "Wound: 150% of your attack power plus 100% of your spell power as Fire damage over 6 sec.",
+        ["Flame Shock"] = "Usable in Cat Form. Kindles your next Claw or Swipe within 10 sec: Claw becomes " ..
+            "Blazing Strike, Swipe becomes Fiery Explosion.",
+        ["Claw"] = "Kindled (after Flame Shock): becomes Blazing Strike, its hit again on a second enemy within 5 " ..
+            "yards, and both bleed for 100% of your attack power over 6 sec. Fire Blast ignites that bleed too.",
+        ["Swipe (Cat)"] = "Kindled (after Flame Shock): becomes Fiery Explosion, 75% of your attack power as " ..
+            "Fire damage to up to 8 enemies within 8 yards, each left with half a Cinder Wound.",
+        ["Rake"] = "Your bleed lets Fire Blast ignite Cinder Wound on this enemy.",
+        ["Rip"] = "Your bleed lets Fire Blast ignite Cinder Wound on this enemy.",
+      },
       mods = {
         { name = "Searing Wound",
           text = "Cinder Wound deals 35% more damage." },
@@ -1192,6 +1205,19 @@ EmberforgeRunesCatalog = {
           "Glacial Burst, 75% of your attack power as Frost damage to up to 8 enemies within 8 yards, each slowed " ..
           "50% for 4 sec and its Frozen Prey shattered.",
       loop = "Icy Touch, then Shred or Mangle to shatter; Frost Shock, then Claw or Swipe.",
+      spells = {
+        ["Icy Touch"] = "Usable in Cat Form. Lays Frozen Prey on the enemy for 6 sec; your next Shred or Mangle " ..
+            "on it shatters it for 150% of your attack power as Frost damage.",
+        ["Frost Shock"] = "Usable in Cat Form. Chills your next Claw or Swipe within 10 sec: Claw becomes " ..
+            "Frostfang Strike, Swipe becomes Glacial Burst.",
+        ["Claw"] = "Frostbitten (after Frost Shock): becomes Frostfang Strike, its hit again on a second enemy " ..
+            "within 5 yards, and both frostbitten for 100% of your attack power over 6 sec and 30% slower.",
+        ["Swipe (Cat)"] = "Frostbitten (after Frost Shock): becomes Glacial Burst, 75% of your attack power as " ..
+            "Frost damage to up to 8 enemies within 8 yards, each slowed 50% for 4 sec and its Frozen Prey " ..
+            "shattered.",
+        ["Shred"] = "Shatters your Frozen Prey on this enemy for 150% of your attack power as Frost damage.",
+        ["Mangle (Cat)"] = "Shatters your Frozen Prey on this enemy for 150% of your attack power as Frost damage.",
+      },
       mods = {
         { name = "Whitefang",
           text = "The shatter deals 40% more damage." },

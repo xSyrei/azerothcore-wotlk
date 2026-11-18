@@ -79,6 +79,30 @@ local function Bound(id)
     return state.slots[1].rune == id or state.slots[2].rune == id and state.level >= state.second
 end
 
+-- A spell's tooltip with a bound rune that reaches into it (the rune's spells: Fire Blast, Flame Shock and Claw for
+-- Ember's Wrath): the rune's name and what it adds, in the rune's gold.
+local function AddRuneNotes(tooltip)
+    local name = tooltip:GetSpell()
+    if not name then
+        return
+    end
+    local added = false
+    for _, rune in ipairs(catalog) do
+        local note = rune.spells and rune.spells[name]
+        if note and Bound(rune.id) then
+            tooltip:AddLine(rune.name, EMBER[1], EMBER[2], EMBER[3], true)
+            tooltip:AddLine(note, GOLDEN[1], GOLDEN[2], GOLDEN[3], true)
+            added = true
+        end
+    end
+    if added then
+        tooltip:Show()
+    end
+end
+if GameTooltip and GameTooltip.HookScript then
+    GameTooltip:HookScript("OnTooltipSetSpell", AddRuneNotes)
+end
+
 local function Send(message)
     SendAddonMessage(PREFIX, message, "WHISPER", UnitName("player"))
 end

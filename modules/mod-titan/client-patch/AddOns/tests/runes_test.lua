@@ -83,6 +83,10 @@ function GameTooltip:SetUnitBuff() end
 function GameTooltip:SetUnitDebuff() end
 function GameTooltip:SetUnitAura() end
 function GameTooltip:AddLine(text) tooltipLines[#tooltipLines + 1] = text end
+function GameTooltip:HookScript(name, fn) self.scripts[name] = fn end
+function GameTooltip:Show() end
+local tooltipSpell
+function GameTooltip:GetSpell() return tooltipSpell end
 function hooksecurefunc(target, method, hook)
     if type(target) ~= "table" then
         return
@@ -545,6 +549,23 @@ for _, rune in ipairs(debug.browse.list) do
 end
 check(#retired == 3 and hidden and #debug.browse.list == 22 and debug.browser.count.text == "22 runes",
     "retired runes are not listed, nor counted")
+
+-- A bound rune's line on the spells it reaches into: Flame Shock with Ember's Wrath, Frost Shock with Whitefang.
+local function SpellTooltip(name)
+    tooltipLines, tooltipSpell = {}, name
+    GameTooltip.scripts.OnTooltipSetSpell(GameTooltip)
+    return table.concat(tooltipLines, " | ")
+end
+server("S,40,10,1,44,1,1,1,-,0,45,1,1,1,30")
+check(SpellTooltip("Flame Shock"):find("Rune of Ember's Wrath") and SpellTooltip("Flame Shock"):find("Blazing Strike"),
+    "Flame Shock's tooltip tells what Ember's Wrath adds")
+check(SpellTooltip("Frost Shock"):find("Rune of Whitefang") and SpellTooltip("Frost Shock"):find("Glacial Burst"),
+    "Frost Shock's tooltip tells what Whitefang adds")
+local claw = SpellTooltip("Claw")
+check(claw:find("Blazing Strike") and claw:find("Frostfang Strike"), "Claw tells both runes' strikes")
+check(SpellTooltip("Fireball") == "", "a spell no bound rune reaches into gets no line")
+server("S,40,10,1,44,1,1,1,-,0,0,0,0,0,30")
+check(SpellTooltip("Frost Shock") == "", "Whitefang unbound: Frost Shock gets no line")
 
 print(failures == 0 and "All checks passed" or (failures .. " check(s) failed"))
 os.exit(failures == 0 and 0 or 1)
