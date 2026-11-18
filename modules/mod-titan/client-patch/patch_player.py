@@ -14,7 +14,7 @@ all three on every Hero at login (hero_resources.cpp).
 
 Roles (90603-90606), chosen in the Classless window (wildcard.cpp): a buff each, changing the threat the Hero causes
 (all schools): Melee and Ranged -50%, Tank +200%, Healer unchanged. Tank also takes 5% less damage (all schools) and
-has 5% more armor. Ranged and Healer have 110% spell haste (cast times 52% shorter).
+has 5% more armor. Ranged and Healer have 60% spell haste (cast times 37.5% shorter).
 
 Prestigious (90607): the buff of a prestige run, until level 60 (prestige.cpp).
 """
@@ -24,9 +24,9 @@ AURA_DUMMY, AURA_MOD_THREAT = 4, 10
 AURA_MOD_DAMAGE_PERCENT_TAKEN, AURA_MOD_RESISTANCE_PCT = 87, 101
 AURA_REDUCE_PUSHBACK = 149
 AURA_HASTE_SPELLS = 216
-# The casters' (Ranged, Healer) baseline spell haste: cast times 1 / 2.1 of the usual (52% shorter: a 3 sec Fireball
-# casts in 1.4 sec). Hard casts were too slow to play with while leveling.
-CASTER_HASTE_PCT = 110
+# The casters' (Ranged, Healer) baseline spell haste: cast times 1 / 1.6 of the usual (37.5% shorter: a 3 sec Fireball
+# casts in 1.9 sec). Hard casts were too slow to play with while leveling (110% at first: too fast).
+CASTER_HASTE_PCT = 60
 # Being hit while casting delays a cast or shortens a channel by 10% of the usual (Heroes are pulled from far off
 # and hit often: the full pushback left casters unable to finish a spell).
 PUSHBACK_REDUCED_PCT = 90

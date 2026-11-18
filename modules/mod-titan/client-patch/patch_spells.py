@@ -1325,12 +1325,12 @@ MANA, MANA_COLUMNS = 0, (42, 43, 204)              # PowerType; ManaCost, ManaCo
 
 
 def mana_share(cost):
-    """30% of a mana cost, rounded half up (as the server's ManaShare, src/hero_resources.cpp)."""
-    return (cost * 3 + 5) // 10
+    """35% of a mana cost, rounded half up (as the server's ManaShare, src/hero_resources.cpp)."""
+    return (cost * 35 + 50) // 100
 
 
 def reduce_mana_costs(spells):
-    """Every mana cost at 30% of the game's: the server cuts its copy at load (hero_resources.cpp), our own spells'
+    """Every mana cost at 35% of the game's: the server cuts its copy at load (hero_resources.cpp), our own spells'
     spell_dbc rows included, so this runs after write_sql (their rows there keep the full cost)."""
     reduced = 0
     for key, row in spells.rows.items():

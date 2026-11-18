@@ -25,6 +25,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Broadside fires cannonballs: each blast lobs one at every enemy it hits, bursting in rings of fire with smoke,
   sparks and a scorch on the ground, and a cannon's boom.
 
+### Caster balance
+
+- Ranged and Healer's spell haste is 60% (was 110%): cast times are 37.5% shorter than usual instead of 52% (a 3 sec
+  Fireball casts in 1.9 sec).
+- Mana costs are a little higher: 35% of the usual (was 30%).
+
 ### Fixes
 
 - The training dummies in the starting zones can no longer be pushed around by knockbacks.

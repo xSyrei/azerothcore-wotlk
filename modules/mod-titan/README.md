@@ -729,7 +729,7 @@ off and hit often; the full pushback left casters unable to finish a spell.
 
 The role chosen in the Classless window puts on its own buff (90603-90606, `client-patch/patch_player.py`): threat
 -50% (Melee, Ranged), unchanged (Healer) or +200% (Tank, with 5% less damage taken and 5% more armor). The casters,
-Ranged and Healer, also have 110% spell haste: cast times are 1 / 2.1 of the usual (a 3 sec Fireball casts in 1.4).
+Ranged and Healer, also have 60% spell haste: cast times are 1 / 1.6 of the usual (a 3 sec Fireball casts in 1.9).
 
 ## Dungeon Journal
 `/journal` or `/dj` (the `Emberforge_Journal` addon, `client-patch/AddOns/`; server side `src/journal.cpp`, addon

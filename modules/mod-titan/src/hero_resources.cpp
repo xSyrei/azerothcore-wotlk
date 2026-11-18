@@ -233,10 +233,10 @@ private:
 // Emberforge has no Runic Power: every spell costing it costs Rage (the same tenths), and every effect giving, taking
 // or raising it does so to Rage, as the client patch does (client-patch/patch_spells.py, convert_runic_power). Runes
 // give Rage instead too (a core change in Spell::TakeRunePower).
-// A mana cost's share kept: 30%, rounded half up (as patch_spells.py's reduce_mana_costs).
+// A mana cost's share kept: 35%, rounded half up (as patch_spells.py's reduce_mana_costs).
 static uint32 ManaShare(uint32 cost)
 {
-    return (cost * 3 + 5) / 10;
+    return (cost * 35 + 50) / 100;
 }
 
 class titan_runic_power_to_rage : public GlobalScript
@@ -328,7 +328,7 @@ public:
         if (spellInfo->Id == HEARTHSTONE)
             spellInfo->CategoryRecoveryTime = HEARTHSTONE_COOLDOWN_MS;
 
-        // Mana costs are 30% of the game's (spells needing mana cost too much for a Hero of every class's spells),
+        // Mana costs are 35% of the game's (spells needing mana cost too much for a Hero of every class's spells),
         // rounded to the nearest; the client patch cuts its copy the same way (patch_spells.py, reduce_mana_costs).
         if (spellInfo->PowerType == POWER_MANA)
         {
