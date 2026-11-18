@@ -1,5 +1,22 @@
 {
  "models": [
+  "dummy",
+  "fx_ArcaneExplosion_Impact_Chest",
+  "fx_ChainLightning_Impact_Chest",
+  "fx_Fire_Cast_Hand",
+  "fx_Fire_Precast_Hand",
+  "fx_Fireball_Missile_Low",
+  "fx_Frostbolt",
+  "fx_Ice_ImpactDD_Med_Chest",
+  "fx_Ice_Precast_Low_Hand",
+  "fx_Ice_Precast_Uber_Head",
+  "fx_LightningBolt_Impact_Chest",
+  "fx_LightningBolt_Missile",
+  "fx_Lightning_Cast_Hand",
+  "fx_Lightning_PreCast_Low_Hand",
+  "fx_Magic_Cast_Hand",
+  "fx_Magic_PreCast_Hand",
+  "fx_MoltenBlast_Impact_Chest",
   "human"
  ],
  "templates": true

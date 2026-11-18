@@ -526,7 +526,7 @@ async function loadGame() {
   }
   renderLeft(); renderInspector(); changed();
 }
-const ATT = new THREE.Vector3();
+const ATT = new THREE.Vector3(), FRONT = new THREE.Vector3(-0.3, 0, 0);
 function modelAnchor(model, slot, out, up = 0) {
   for (const id of GameEngine.SLOT_ATTACH[slot]) if (model.attachment(id, ATT)) return out.copy(ATT).setY(ATT.y + up);
   return null;
@@ -571,7 +571,7 @@ function anchorAt(name, t, out) {
       return out.set(0.62 * Math.sin(raise), 1.5 - 0.64 * Math.cos(raise), 0.4);
     }
     case 'target.base': return dummyPosAt(t, out).setY(0.05);
-    case 'target.chest': return dummyPosAt(t, out).setY(1.32);
+    case 'target.chest': return dummyPosAt(t, out).setY(1.32).add(FRONT);   // its front, toward the Hero
     case 'target.head': return dummyPosAt(t, out).setY(2.3);
     default: return out.set(0, 1.2, 0);
   }

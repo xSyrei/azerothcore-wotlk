@@ -72,6 +72,8 @@ class M2:
     """A 3.3.5a model (MD20, version 264) and what its tracks read from its .anim files."""
 
     def __init__(self, client, name):
+        if name.lower().endswith(('.mdx', '.mdl')):
+            name = name[:-4] + '.m2'        # the spell tables' old names for the same files
         self.client, self.name = client, name
         self.d = client.read(name)
         if not self.d or self.d[:4] != b'MD20':
