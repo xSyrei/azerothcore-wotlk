@@ -5705,21 +5705,25 @@ namespace
         return unit->HasAura(SPELL_RUNE_WHITEFANG) ? DISPLAY_ICE_CAT : 0;
     }
 
-    // A Hero in Cat Form takes the look of the rune now bound, or the usual cat's back. Only the cat's own looks are
-    // replaced: a transform (a costume, a polymorph) on top stays.
-    void RefreshCatLook(Unit* unit)
+    // A Hero in Cat Form takes the look of the rune now bound, or the usual cat's back. A transform (a costume, a
+    // polymorph) on top stays. Set again a moment later too: nothing else in the same update overrides it.
+    void SetCatLook(Unit* unit)
     {
-        if (unit->GetShapeshiftForm() != FORM_CAT)
-            return;
-        uint32 usual = unit->GetModelForForm(FORM_CAT, SPELL_CAT_FORM);
-        uint32 shown = unit->GetDisplayId();
-        if (shown != usual && shown != DISPLAY_FLAME_CAT && shown != DISPLAY_ICE_CAT)
+        if (unit->GetShapeshiftForm() != FORM_CAT || unit->HasAuraType(SPELL_AURA_TRANSFORM))
             return;
         uint32 look = CatLook(unit);
         if (!look)
-            look = usual;
-        if (look && look != shown)
+            look = unit->GetModelForForm(FORM_CAT, SPELL_CAT_FORM);
+        if (look && look != unit->GetDisplayId())
             unit->SetDisplayId(look, unit->GetObjectScale());
+        if (Player* player = unit->ToPlayer())
+            Trace(player, "Cat look " + std::to_string(look) + ", showing " + std::to_string(unit->GetDisplayId()));
+    }
+
+    void RefreshCatLook(Unit* unit)
+    {
+        SetCatLook(unit);
+        unit->m_Events.AddEventAtOffset([unit]() { SetCatLook(unit); }, 100ms);
     }
 
     // A spell a Cat may cast with its rune (Fire Blast, Flame Shock: Ember's Wrath; Frost Shock: Whitefang): its "not
