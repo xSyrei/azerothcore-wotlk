@@ -1,0 +1,58 @@
+{
+ "glow": {
+  "cols": 1,
+  "rows": 1
+ },
+ "flare": {
+  "cols": 1,
+  "rows": 1
+ },
+ "spark": {
+  "cols": 1,
+  "rows": 1
+ },
+ "ring": {
+  "cols": 1,
+  "rows": 1
+ },
+ "shockwave": {
+  "cols": 1,
+  "rows": 1
+ },
+ "streak": {
+  "cols": 1,
+  "rows": 1
+ },
+ "slash": {
+  "cols": 1,
+  "rows": 1
+ },
+ "star": {
+  "cols": 1,
+  "rows": 1
+ },
+ "swirl": {
+  "cols": 1,
+  "rows": 1
+ },
+ "rune": {
+  "cols": 1,
+  "rows": 1
+ },
+ "smoke": {
+  "cols": 4,
+  "rows": 4
+ },
+ "fire": {
+  "cols": 4,
+  "rows": 4
+ },
+ "lightning": {
+  "cols": 1,
+  "rows": 4
+ },
+ "beam": {
+  "cols": 1,
+  "rows": 1
+ }
+}

@@ -229,7 +229,7 @@ const GameEngine = (() => {
       this.posed(camera);
     }
     posed(camera) {
-      this.root.updateMatrixWorld(true);
+      this.root.updateWorldMatrix(true, true);       // its parents too: placed this step, not drawn yet
       const inv = new THREE.Matrix4().copy(this.root.matrixWorld).invert();
       this.pose(camera.position.clone().applyMatrix4(inv));
     }

@@ -1555,22 +1555,19 @@ ROGUE_FAMILY = 8
 SPELL_ATTR1_FINISHING_MOVE_DAMAGE = 0x00100000      # a finishing move: needs combo points and spends them
 # The spellbook tab of the abilities a rune teaches (build_patch.py: our spells are the Demon Hunter's otherwise).
 SPELL_CLASSES = {91370: 'ROGUE', 91371: 'ROGUE', 91382: 'ROGUE'}
-# Sabre Slash's hit: retail's (cfx_rogue_sabreslash_impact: particles only, its two textures here) as cards: a hot
-# red streak slashed across the target twice, crossing, and the gold three-pointed flash, swelling and gone.
+# Sabre Slash's hit: designed in the Emberforge Effect Suite (spells/ROGUE_SabreSlash/Sabre_Slash.json, built by
+# models/suite_effect.py): a gold slash flashing across the target, a spray of sparks through it, a soft glow; and
+# retail's Sabre Slash sound (sounds/spell_ro_saberslash_cast_01).
 EFFECTS.update({
-    'SabreSlashImpact': {'model': 'ROGUE_SabreSlashImpact', 'effect': 7170, 'shape': 'mist',
-                         'textures': ('ROGUE_SabreSlash/weaponimpact_streak_hotred',
-                                      'ROGUE_SabreSlash/weaponimpact_trihit_gold'),
-                         'options': {'duration': 450, 'fade': (0, 300), 'layers': (
-                             {'texture': 0, 'alpha': 1.0, 'pulse': 0,
-                              'spots': ((0.3, 0.0, 0.1, 2.2, 35.0), (0.3, 0.0, -0.1, 1.8, -25.0)),
-                              'scale': [(0.0, 0.5), (0.4, 1.3), (1.0, 1.5)]},
-                             {'texture': 1, 'alpha': 1.0, 'pulse': 0, 'spots': ((0.35, 0.0, 0.0, 1.4, 0.0),),
-                              'scale': [(0.0, 0.3), (0.3, 1.2), (1.0, 1.4)]})}},
+    'SabreSlashImpact': {'model': 'ROGUE_SabreSlashImpact', 'effect': 7170, 'shape': 'suite', 'textures': (),
+                         'options': {'spec': 'ROGUE_SabreSlash/Sabre_Slash.json'}},
 })
+SOUNDS = {
+    'SabreSlash': {'id': 18136, 'copy': 3091, 'files': ['spell_ro_saberslash_cast_01']},
+}
 VISUALS.update({
     'SabreSlashHit': {'copy': 253, 'id': 16801, 'clear': ('state', 'statedone', 'area'), 'kits': {
-        'impact': (15740, {KIT_CHEST: 'SabreSlashImpact', 'sound': None})}},
+        'impact': (15740, {KIT_CHEST: 'SabreSlashImpact', 'sound': 'SabreSlash'})}},
 })
 VISUAL_GUNSHOT, VISUAL_SINISTER_STRIKE, VISUAL_THUNDERSTORM, VISUAL_LIGHTNING_BOLT = 8113, 253, 11302, 173
 RANGE_20, GCD_CATEGORY = 3, 133

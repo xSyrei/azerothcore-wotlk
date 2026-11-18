@@ -102,10 +102,21 @@ whole game behind it:
 In the client a game model's key is its client path (`Spells\Fireball_Missile_Low.m2`); the web Suite's `fx_<name>`
 keys still open (found under `Spells\`).
 
+## Into the game
+
+`client-patch/models/suite_effect.py` turns a saved or exported effect (.json) into a game model for a spell visual's
+impact kit at the target's chest: Billboards become camera-facing cards (size, colors, fades and flipbook over their
+time, their turn), Particles a real particle emitter (burst or stream, aim and cone, speeds, gravity, drag, life,
+sizes, colors), Casts light a model light (the client may ignore it). Put the .json under `client-patch/spells/` and
+point an EFFECTS entry at it (`'shape': 'suite', 'textures': (), 'options': {'spec': '<folder>/<name>.json'}`, as
+Sabre Slash's in `patch_runes.py`); its own textures travel inside it, the built-in ones come from
+`client-patch/spells/suite/` (exported from the Suite). A sound goes into `client-patch/sounds/` as a 16-bit WAV and
+into SOUNDS, named by the kit's `'sound'`. Layers on other triggers or anchors, and Scene light, are left out (it says
+which).
+
 ## Next
 
-1. An exporter (`client-patch/`): billboard and ground layers to the `mist` builder's cards
-   (`models/spell_effects.py`), particles to M2 particle emitters, a projectile's path to a SpellMissileMotion script
-   (3.3.5's scripted missile paths), and the layers to SpellVisual kits (precast, cast, missile, impact).
+1. The exporter's rest: cast and projectile layers, ground decals and other anchors (one model per kit slot), a
+   projectile's path to a SpellMissileMotion script (3.3.5's scripted missile paths), and the kits themselves.
 2. An in-game lab: reserved effect slots the engine DLL reloads from the Data folder, and a `.vfx` command to play one
    on a target, so a change shows in the game without restarting it.

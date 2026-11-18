@@ -45,6 +45,7 @@ import retarget_character  # noqa: E402
 import spell_classes  # noqa: E402
 import patch_spells  # noqa: E402
 import spell_effects  # noqa: E402
+import suite_effect  # noqa: E402
 import wowexport_to_m2  # noqa: E402
 
 # (wow.export folder, exported model name, Emberforge model name, client folder)
@@ -115,9 +116,12 @@ def main():
                     'beam': spell_effects.beam, 'burst': spell_effects.ground_burst,
                     'zone': spell_effects.ground_zone, 'missile': spell_effects.exported_model,
                     'model': spell_effects.exported_model, 'mist': spell_effects.mist,
-                    'spun': spell_effects.spun_model, 'retail': spell_effects.retail_effect}[shape]
+                    'spun': spell_effects.spun_model, 'retail': spell_effects.retail_effect,
+                    'suite': suite_effect.suite_effect}[shape]
             textures = [HERE / 'spells' / f'{t}.png' if t else None for t in spec.get('textures', (spec['model'],))]
             options = dict(spec.get('options', {}))
+            if 'spec' in options:                       # an Effect Suite design (spells/<folder>/<name>.json)
+                options['spec'] = HERE / 'spells' / options['spec']
             if 'export' in options:
                 exports = options['export']
                 options['export'] = ([HERE / 'spells' / e for e in exports] if isinstance(exports, (list, tuple))

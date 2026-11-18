@@ -993,6 +993,7 @@ VISUALS.update(patch_monk.VISUALS)
 EFFECTS.update(patch_runes.EFFECTS)
 VISUALS.update(patch_runes.VISUALS)
 SOUNDS.update(patch_monk.SOUNDS)
+SOUNDS.update(patch_runes.SOUNDS)
 CHAIN_EFFECTS = dict(patch_monk.CHAIN_EFFECTS)      # beams: id, the Blizzard beam copied, our texture, changes
 
 
