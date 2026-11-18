@@ -20,6 +20,7 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ### Fixes
 
+- The training dummies in the starting zones can no longer be pushed around by knockbacks.
 - Hunter abilities and Auto Shot work again with a bow, gun or crossbow: they failed with "no ammo". The arrows or
   bullets of your level now sit in your ammo slot (a stack in your bags) and never run out.
 

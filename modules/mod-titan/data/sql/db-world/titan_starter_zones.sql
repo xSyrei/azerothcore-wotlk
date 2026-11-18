@@ -3,7 +3,8 @@
 -- ahead of the Hero's first step. The positions follow the start points (their height theirs): move one in game
 -- (.npc move) if it stands in the ground.
 -- The dummy (910130, src/starter_zones.cpp): the Expert's Training Dummy's look and flags, never damaged, its
--- level matching whoever engages it (a level 1 Hero does not miss a level 60 dummy).
+-- level matching whoever engages it (a level 1 Hero does not miss a level 60 dummy), never knocked back
+-- (flags_extra: 0x40000 and IMMUNITY_KNOCKBACK, 0x40000000).
 SET @SILAS := 910110;
 SET @KEEPER := 910100;
 SET @DUMMY := 910130;
@@ -19,7 +20,7 @@ INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entr
     `HoverHeight`, `HealthModifier`, `ManaModifier`, `ArmorModifier`, `ExperienceModifier`, `RacialLeader`,
     `movementId`, `RegenHealth`, `CreatureImmunitiesId`, `flags_extra`, `ScriptName`, `VerifiedBuild`) VALUES
 (@DUMMY, 0, 0, 0, 0, 0, 'Training Dummy', 'Emberforge', '', 0, 1, 1, 0, 7, 0, 1, 1, 1, 1, 20, 0, 0, 1, 2000,
-    2000, 1, 1, 1, 131072, 2048, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 262144,
+    2000, 1, 1, 1, 131072, 2048, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1074003968,
     'npc_titan_training_dummy', 0);
 
 DELETE FROM `creature_template_model` WHERE `CreatureID` = @DUMMY;
