@@ -5693,6 +5693,35 @@ namespace
         Trace(player, fire ? "Fiery Explosion" : "Glacial Burst");
     }
 
+    // The Cat with a cat rune bound: the Flame Cat (Ember's Wrath) or the Ice Cat (Whitefang), displays 90207 and 90208
+    // (client-patch/patch_creatures.py); none for the usual cat.
+    constexpr uint32 DISPLAY_FLAME_CAT = 90207;
+    constexpr uint32 DISPLAY_ICE_CAT = 90208;
+
+    uint32 CatLook(Unit* unit)
+    {
+        if (unit->HasAura(SPELL_RUNE_EMBERS_WRATH))
+            return DISPLAY_FLAME_CAT;
+        return unit->HasAura(SPELL_RUNE_WHITEFANG) ? DISPLAY_ICE_CAT : 0;
+    }
+
+    // A Hero in Cat Form takes the look of the rune now bound, or the usual cat's back. Only the cat's own looks are
+    // replaced: a transform (a costume, a polymorph) on top stays.
+    void RefreshCatLook(Unit* unit)
+    {
+        if (unit->GetShapeshiftForm() != FORM_CAT)
+            return;
+        uint32 usual = unit->GetModelForForm(FORM_CAT, SPELL_CAT_FORM);
+        uint32 shown = unit->GetDisplayId();
+        if (shown != usual && shown != DISPLAY_FLAME_CAT && shown != DISPLAY_ICE_CAT)
+            return;
+        uint32 look = CatLook(unit);
+        if (!look)
+            look = usual;
+        if (look && look != shown)
+            unit->SetDisplayId(look, unit->GetObjectScale());
+    }
+
     // A spell a Cat may cast with its rune (Fire Blast, Flame Shock: Ember's Wrath; Frost Shock: Whitefang): its "not
     // while shapeshifted" rule is gone from both copies so the client lets it be tried; here it holds for anyone in
     // a form but a Cat with the rune (a stance never had it).
@@ -5818,6 +5847,7 @@ namespace
         TeachDuelist(player, duelist);
         RetireCatCopy(player, SPELL_CAT_FIRE_BLAST, SPELL_FIRE_BLAST);
         RetireCatCopy(player, SPELL_CAT_ICY_TOUCH, SPELL_ICY_TOUCH);
+        RefreshCatLook(player);
         ApplyLegend(player, 0);
     }
 
@@ -7726,6 +7756,23 @@ class spell_titan_rune_embers_fire_blast : public SpellScript
     }
 };
 
+// Cat Form with Ember's Wrath or Whitefang bound: the Flame Cat or the Ice Cat, once the form has set its own look.
+class spell_titan_rune_cat_form : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_cat_form);
+
+    void Look(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        RefreshCatLook(GetTarget());
+    }
+
+    void Register() override
+    {
+        AfterEffectApply += AuraEffectApplyFn(spell_titan_rune_cat_form::Look, EFFECT_0, SPELL_AURA_MOD_SHAPESHIFT,
+            AURA_EFFECT_HANDLE_REAL);
+    }
+};
+
 // Flame Shock and Frost Shock (every rank): in Cat Form with their rune (Ember's Wrath, Whitefang), and the next Claw
 // or Swipe empowered: Kindled, Frostbitten.
 class spell_titan_rune_cat_shock : public SpellScript
@@ -8249,6 +8296,7 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_cat_strike);
     RegisterSpellScript(spell_titan_rune_ferocious_bite);
     RegisterSpellScript(spell_titan_rune_cat_swipe);
+    RegisterSpellScript(spell_titan_rune_cat_form);
     RegisterCreatureAI(npc_titan_rune_spectral_beast);
     RegisterCreatureAI(npc_titan_rune_flier);
     new titan_runes_player();

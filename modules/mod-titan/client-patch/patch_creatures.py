@@ -37,8 +37,12 @@ CREATURES = [
     # Chi-Ji, the Red Crane (Invoke Chi-Ji's guardian, creature 90311), copying the phoenix's sounds (model 2384,
     # display 19682), at 80%.
     (90205, 3505, 'Creature\\ChiJi\\ChiJi.mdx', 2384, 19682, 0.8, 2, (-1.34, -0.51, 0.0, 1.47, 0.51, 3.23)),
+    # The Flame Cat and the Ice Cat (a Hero's Cat Form with Ember's Wrath or Whitefang, runes.cpp), copying the Night
+    # Elf Cat Form's sounds (model 1231, display 892), at 80%.
+    (90207, 3507, 'Creature\\FlameCat\\FlameCat.mdx', 1231, 892, 0.8, 2, (-2.67, -1.03, -0.16, 1.33, 1.03, 1.72)),
+    (90208, 3508, 'Creature\\FlameCat\\IceCat.mdx', 1231, 892, 0.8, 2, (-2.67, -1.03, -0.16, 1.33, 1.03, 1.72)),
 ]
-OTHER_GENDER = {90201: 90202, 90202: 90201, 90203: 90204, 90204: 90203, 90205: 0}
+OTHER_GENDER = {90201: 90202, 90202: 90201, 90203: 90204, 90204: 90203, 90205: 0, 90207: 0, 90208: 0}
 BOUNDING_RADIUS = 0.6
 COMBAT_REACH = 2.0
 EXTRA_FIELDS = 21

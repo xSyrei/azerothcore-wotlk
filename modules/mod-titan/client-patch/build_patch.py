@@ -59,6 +59,9 @@ MODELS = [
 # their Blade Dance variants (the dance in every stance and movement animation; the base form's textures)
 BLADE_DANCE = {'replace': creature_gltf_to_m2.BLADE_DANCE_EVERYWHERE,
                'move_speeds': creature_gltf_to_m2.BLADE_DANCE_SPEEDS}
+# A cat's own animations (3.3.5a has them too: the Cat Form plays them), and its stealth, rest and emotes.
+CAT_ANIMATIONS = {anim: [(anim, 0)] for anim in (9, 50, 55, 60, 61, 69, 96, 97, 98, 99, 100, 101, 118, 119, 120,
+                                                 143, 170, 171, 172, 173, 174, 175, 187, 223, 225)}
 CREATURES = [
     ('models/demonhunter_meta/male', 'DHMetaMale', 'Creature\\DemonHunterMeta', {}),
     ('models/demonhunter_meta/female', 'DHMetaFemale', 'Creature\\DemonHunterMeta', {}),
@@ -68,6 +71,11 @@ CREATURES = [
      dict(BLADE_DANCE, texture_name='DHMetaFemale')),
     # Chi-Ji, the Red Crane (Invoke Chi-Ji's guardian); its meta data written by hand (see the file)
     ('models/chiji', 'ChiJi', 'Creature\\ChiJi', {'meta': 'monk_chiji_low.json'}),
+    # The Flame Cat and the Ice Cat, the Cat Form of a Hero bound to Ember's Wrath or Whitefang (retail's Archdruid
+    # of the Flame; the Ice Cat its blue skin): their cat animations, meta data written by hand
+    ('models/flamecat', 'FlameCat', 'Creature\\FlameCat', {'meta': 'flamecat.json', 'replace': CAT_ANIMATIONS}),
+    ('models/flamecat', 'IceCat', 'Creature\\FlameCat',
+     {'meta': 'flamecat.json', 'replace': CAT_ANIMATIONS, 'texture_dir': 'models/flamecat/ice'}),
 ]
 # (retail glTF folder, Blizzard's 3.3.5a model, client path): character models given the Demon Hunter's
 # animations (models/retarget_character.py)
@@ -103,6 +111,8 @@ def main():
         for source, name, folder, options in CREATURES:
             options = dict(options)
             meta = HERE / source / options.pop('meta', 'Metamorphosis.json')
+            if 'texture_dir' in options:
+                options['texture_dir'] = HERE / options['texture_dir']
             files = creature_gltf_to_m2.convert(HERE / source, meta, name, tmp / name, folder, **options)
             for f in files:
                 entries.append((f'{folder}\\{f}', (tmp / name / f).read_bytes()))

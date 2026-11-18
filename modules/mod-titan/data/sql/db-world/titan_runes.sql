@@ -414,7 +414,7 @@ DELETE FROM `spell_dbc` WHERE `ID` IN (91420, 91440);
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_cat_fire_blast',
     'spell_titan_rune_cat_icy_touch', 'spell_titan_rune_embers_fire_blast', 'spell_titan_rune_whitefang_icy_touch',
     'spell_titan_rune_cat_strike', 'spell_titan_rune_ferocious_bite', 'spell_titan_rune_cat_swipe',
-    'spell_titan_rune_cat_shock');
+    'spell_titan_rune_cat_shock', 'spell_titan_rune_cat_form');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-2136, 'spell_titan_rune_embers_fire_blast'),
 (-45477, 'spell_titan_rune_whitefang_icy_touch'),
@@ -425,7 +425,8 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-33876, 'spell_titan_rune_cat_strike'),
 (-5221, 'spell_titan_rune_cat_strike'),
 (-22568, 'spell_titan_rune_ferocious_bite'),
-(62078, 'spell_titan_rune_cat_swipe');
+(62078, 'spell_titan_rune_cat_swipe'),
+(768, 'spell_titan_rune_cat_form');
 
 -- Their damage over time: Cinder Wound (and its spread), Winter Wound, Blazing Bleed, Frostbite.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91421, 91423, 91444, 91465, 91470)

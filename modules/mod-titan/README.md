@@ -618,6 +618,10 @@ utility or a tradeoff) take one pick each, from three.
     Hero's bleed for the ignition) or Fiery Explosion (91467, 75% AP to 8 within 8 yards, half a Cinder Wound each);
     Frostfang Strike (91469; Frostbite 91470 and its slow 91472) or Glacial Burst (91473, 75% AP, a 50% slow, every
     Frozen Prey shattered).
+  - Looks: a Hero in Cat Form with Ember's Wrath shows the Flame Cat (display 90207), with Whitefang the Ice Cat
+    (90208), both from the Archdruid of the Flame model (`client-patch/models/flamecat`, the Ice Cat on the blue
+    textures in `ice/`). `spell_titan_rune_cat_form` (768) sets it once the form has, and a rune change in Cat Form
+    swaps it (`RefreshCatLook`); a transform on top is left alone.
   - `.runedebug` (anyone) tells the Splintered Crown's and Phoenix Wake's steps in chat (Icicle formed and loosed,
     the Ember placed, Fire Blast on its host, the phoenix summoned, its strike, why it went), to find where one stops.
 - A Hero's buff on their own pet or summon lands whatever its level (`hero_resources.cpp`): the core drops a positive

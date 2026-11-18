@@ -39,6 +39,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   with half a Cinder Wound). Frost Shock: Claw becomes Frostfang Strike (a second enemy, both frostbitten and
   slowed); Swipe becomes Glacial Burst (Frost damage to up to 8 enemies, slowed 50%, every Frozen Prey among them
   shattered).
+- With either rune bound, your Cat Form takes a new look: a Flame Cat wreathed in fire (Ember's Wrath) or an Ice
+  Cat with frost wisps (Whitefang).
 - Each has three slots of three options, like the others.
 
 ### Caster balance

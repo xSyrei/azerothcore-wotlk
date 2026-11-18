@@ -338,8 +338,9 @@ def move_speed(export, key, planted):
 
 
 def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None, replace=None, move_speeds=None,
-            scale=1.0, center=False, spin=0.0, orbit=0.0, lift=0.0):
-    """texture_name: use the textures of that already converted model instead of writing its own.
+            scale=1.0, center=False, spin=0.0, orbit=0.0, lift=0.0, texture_dir=None):
+    """texture_name: use the textures of that already converted model instead of writing its own; texture_dir:
+    the folder its textures come from (the export's textures/ by default: another skin of the same model).
     replace: {animation id: sources} replacing (or adding) entries of ANIMATIONS; move_speeds: their move speeds.
     scale: the whole model (mesh, pivots, bone movements) made that much larger or smaller; center: the middle of
     its mesh moved to the origin (a missile flies along its middle; an effect a kit attaches sits on its point);
@@ -396,7 +397,7 @@ def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None,
     used_textures = sorted({u[1] for u in units}, key=lambda t: texture_files.index(t))
     if texture_name is None:
         for texture in used_textures:
-            with Image.open(Path(export_dir) / 'textures' / f'{texture}.png') as image:
+            with Image.open(Path(texture_dir or Path(export_dir) / 'textures') / f'{texture}.png') as image:
                 (out_dir / f'{name}_{texture}.blp').write_bytes(blp.encode(image))
     texture_paths = [f'{client_dir}\\{texture_name or name}_{t}.blp' for t in used_textures]
 
