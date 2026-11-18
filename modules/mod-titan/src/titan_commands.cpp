@@ -52,6 +52,9 @@ using namespace Acore::ChatCommands;
 //   offers do (level: the one the offer shows; the Hero's own without one).
 // - .daytime [hour]: your own client's time of day (0-23), for looking at the lighting, water and fog at any hour;
 //   no one else's changes, and the clock runs on from there. Without an hour: back to the real time.
+// - .ees (Administrators only): opens the Emberforge Effect Suite on your own computer. The server sends opcode 0x51B,
+//   which the client's Emberforge Engine (d3d9.dll) answers by starting the launcher's Suite window: every spell visual
+//   and effect model of the game, effects kept in <install>\Emberforge\Effects.
 class titan_commandscript : public CommandScript
 {
 public:
@@ -69,6 +72,7 @@ public:
             { "runeoffer", HandleRuneOffer, SEC_GAMEMASTER, Console::No },
             { "unbindrune", HandleUnbindRune, SEC_PLAYER, Console::No },
             { "runedebug", HandleRuneDebug, SEC_PLAYER, Console::No },
+            { "ees", HandleEffectSuite, SEC_ADMINISTRATOR, Console::No },
         };
         return commandTable;
     }
@@ -250,6 +254,24 @@ public:
             handler->PSendSysMessage("Your time of day: {}:00 (only yours). .daytime puts it back.", *hour);
         else
             handler->SendSysMessage("Your time of day is the real time again.");
+        return true;
+    }
+
+    // The client-to-server opcode the Emberforge Engine listens on for the Suite (the client itself never handles it).
+    static constexpr uint16 SMSG_EMBERFORGE_EFFECT_SUITE = 0x51B;
+
+    static bool HandleEffectSuite(ChatHandler* handler)
+    {
+        WorldSession* session = handler->GetSession();
+        if (session->GetSecurity() < SEC_ADMINISTRATOR)
+        {
+            handler->SendErrorMessage("The Effect Suite is for Administrators.");
+            return false;
+        }
+        WorldPacket data(SMSG_EMBERFORGE_EFFECT_SUITE, 0);
+        session->SendPacket(&data);
+        handler->SendSysMessage("Opening the Emberforge Effect Suite (it needs the Emberforge Engine: Lighting on in the "
+            "launcher).");
         return true;
     }
 

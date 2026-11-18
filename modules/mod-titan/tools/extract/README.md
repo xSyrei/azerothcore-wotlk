@@ -37,6 +37,14 @@ brought.
 Only English (`enUS`) text is read: a client with several languages installed (`deDE`, `frFR`...) would
 otherwise mix them. A third argument picks another language, e.g. `- enGB`.
 
+## EmberforgeArchive
+
+`EmberforgeArchive.exe "<install>\Data" [locale]` opens the client's archives once, in the order above
+(`Archives.h`, shared with EmberforgeExtract), and answers requests on its standard input, one a line: `R <path>`
+gives the file's size on a line and then its bytes (`-1` when no archive has it), `F <pattern>` the matching names, a
+line each, then an empty line. It prints `READY <archives>` when it is open. The launcher ships it (`bin/`) for the
+Effect Suite (`.ees`), which reads the game's models and tables through it.
+
 ## Building it
 
 On Linux with MinGW (`g++-mingw-w64-x86-64-posix`): build StormLib as a static library with a Windows toolchain
@@ -47,4 +55,5 @@ x86_64-w64-mingw32-g++-posix -std=c++17 -O2 -DSTORMLIB_NO_AUTO_LINK -I<StormLib>
     <build>/libStormLib.a -o EmberforgeExtract.exe -static -lwininet
 ```
 
-The committed `EmberforgeExtract.exe` was built so from StormLib at 116135c.
+The same for `EmberforgeArchive.cpp`. The committed `EmberforgeExtract.exe` and `EmberforgeArchive.exe` were built so
+from StormLib at 116135c.

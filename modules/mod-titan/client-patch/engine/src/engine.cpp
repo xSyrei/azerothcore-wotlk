@@ -35,10 +35,14 @@
 #include "known_shaders.h"
 #include "shaders.h"
 #include "spellmods.h"
+namespace Suite
+{
+    void Tick();
+}
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.21"
+#define EMBERFORGE_ENGINE_VERSION "0.22"
 
 namespace
 {
@@ -704,6 +708,7 @@ namespace
                                           const RGNDATA *dirty) override
         {
             SpellMods::Tick();
+            Suite::Tick();
             if (!m_presentedByDevice)
             {
                 m_presentedByDevice = true;
@@ -2135,6 +2140,7 @@ namespace
                                           DWORD flags) override
         {
             SpellMods::Tick();
+            Suite::Tick();
             if (!m_logged)
             {
                 m_logged = true;
@@ -2235,6 +2241,10 @@ namespace
 // ---- Spell modifiers by class family (a classless Hero's talents in the client's costs and cooldowns) ----
 
 #include "spellmods.cpp"
+
+// ---- The Emberforge Effect Suite (.ees: the launcher's Suite window) ----
+
+#include "suite.cpp"
 
 // ---- Loaded ----
 

@@ -101,6 +101,7 @@ button { cursor: pointer; }
 .lib-group { font: 600 11px var(--font-display); color: var(--muted); letter-spacing: 0.09em; text-transform: uppercase;
   margin: 10px 4px 6px; }
 .lib-group:first-child { margin-top: 2px; }
+.lib-search { width: 100%; margin: 8px 0 4px; }
 .preset { display: grid; grid-template-columns: 34px 1fr; gap: 8px; align-items: center; width: 100%; text-align: left;
   background: none; border: 1px solid transparent; border-radius: 8px; padding: 6px; }
 .preset:hover { background: var(--panel-2); border-color: var(--line); }
@@ -226,6 +227,7 @@ kbd { font: 11px var(--font-mono); border: 1px solid var(--line); border-bottom-
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script src="game.js"></script>
+<script src="gamedata.js"></script>
 <script>
 'use strict';
 /* =====================================================================================================================
@@ -511,7 +513,43 @@ const GAME = { hero: null, dummy: null, templates: [], fx: [], heroWrap: new THR
   lastHit: -10 };
 scene.add(GAME.heroWrap, GAME.dummyWrap);
 const worldFx = new THREE.Group(); scene.add(worldFx);
+/* In the client (.ees, the launcher's Suite window), window.ees reads the game's own archives: every spell and every
+   effect model is there, built on demand (gamedata.js), and effects are files in <install>\\Emberforge\\Effects. */
+const LIVE = window.ees || null;
+const LIVE_TEMPLATES = [30451, 116, 133, 403, 421];       // Arcane Blast, Frostbolt, Fireball, Lightning Bolt, Chain Lightning
+const SPELL_ANIMS = [0, 158, 159];
+// A model's key: a client path in the client; fx_<name> in the web Suite (an old key is found under Spells\).
+const modelPath = (key) => (key.includes('\\') ? key : `Spells\\${key.replace(/^fx_/, '')}.m2`);
+const modelName = (key) => key.split('\\').pop().replace(/\.m2$/i, '').replace(/^fx_/, '').replace(/_/g, ' ');
+GAME.loading = new Map();
+// The model of a layer: there when built; in the client, built now (null until then, the layer starts once it is).
+GAME.need = (key) => {
+  if (!key) return null;
+  if (GameEngine.assets[key]) return GameEngine.assets[key];
+  if (!LIVE || !GAME.lib || GAME.loading.has(key)) return null;
+  GAME.loading.set(key, GAME.lib.model(modelPath(key), { sequences: SPELL_ANIMS }).then((data) => {
+    if (!data) { toast(`${modelName(key)}: not in the client`); return; }
+    GameEngine.assets[key] = data;
+    if (state.spec.layers.some((l) => l.model === key)) changed();
+  }));
+  return null;
+};
+async function loadLive() {
+  const client = { read: async (p) => { const b = await LIVE.read(p); return b ? b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) : null; } };
+  const lib = GAME.lib = new GameData.Library(client);
+  const [human, dummyData, effects, spells] = await Promise.all([lib.human(), lib.dummy(), lib.effects(), lib.spells()]);
+  if (human) GameEngine.assets.human = human;
+  if (dummyData) GameEngine.assets.dummy = dummyData;
+  GAME.fx = effects.map((e) => e.path).sort((a, b) => modelName(a).localeCompare(modelName(b)));
+  GAME.spells = spells;
+  GAME.templates = (await Promise.all(LIVE_TEMPLATES.map((id) => lib.template(id)))).filter(Boolean);
+  GAME.mine = await LIVE.effects.list();
+}
 async function loadGame() {
+  if (LIVE) {
+    try { await loadLive(); } catch (e) { console.error(e); toast('Could not read the game: ' + e.message); }
+    return placeCast();
+  }
   let manifest = { models: [], templates: false }, templates = [];
   try { const r = await fetch('assets/manifest.json'); if (r.ok) manifest = await r.json(); } catch (e) { /* no game assets */ }
   if (manifest.templates) try { templates = await (await fetch('assets/templates.json')).json(); } catch (e) { /* none */ }
@@ -519,6 +557,10 @@ async function loadGame() {
   const A = GameEngine.assets;
   GAME.fx = manifest.models.filter((n) => n.startsWith('fx_') && A[n]);
   GAME.templates = templates;
+  placeCast();
+}
+function placeCast() {
+  const A = GameEngine.assets;
   if (A.human) { GAME.hero = new GameEngine.GameModel(A.human, { world: worldFx }); GAME.heroWrap.add(GAME.hero.root); hero.visible = false; }
   if (A.dummy) {
     GAME.dummy = new GameEngine.GameModel(A.dummy, { world: worldFx }); GAME.dummyWrap.add(GAME.dummy.root);
@@ -722,7 +764,7 @@ const TARGET_SLOT = { lefthand: 'target.chest', righthand: 'target.chest', head:
   base: 'target.base', breath: 'target.head', world: 'target.base' };
 function templateEffect(t) {
   const cast = t.precast ? 1.5 : 0.25, layers = [], textures = {};
-  const short = (n) => n.replace(/^fx_/, '').replace(/_/g, ' ');
+  const short = modelName;
   const kit = (k, trigger, slots, delay, life, label) => {
     if (!k) return;
     for (const [slot, model] of Object.entries(k.slots)) {
@@ -813,7 +855,7 @@ class LayerRun {
   // A game model (an effect of the client's): placed at its anchor (facing the projectile's way, or the way its
   // actor faces), its sequence playing; when its time is up it stops emitting and goes once its particles are gone.
   stepModel(t, dt, local, ended) {
-    const l = this.l, data = GameEngine.assets[l.model];
+    const l = this.l, data = GAME.need(l.model);
     if (!data) { if (ended) this.dispose(); return; }
     if (!this.gm) {
       this.gm = new GameEngine.GameModel(data, { world: runtime, scale: l.scale || 1 });
@@ -1221,13 +1263,64 @@ function fixAnchor(l) {
 }
 function select(sel) { state.sel = sel; renderLeft(); renderInspector(); }
 
+// A game model as a layer: where it goes is read from its name (missiles ride the projectile, impacts land on the dummy).
+function modelLayer(path) {
+  const n = path.toLowerCase(), spec = state.spec;
+  const trigger = /missile/.test(n) ? 'projectile' : /impact|_state|aura/.test(n) ? 'impact' : 'cast';
+  const anchor = trigger === 'projectile' ? 'projectile' : trigger === 'impact' ? 'impact' : /hand/.test(n) ? 'caster.righthand' : 'caster.chest';
+  const l = layer('model', { name: modelName(path), trigger, anchor, model: path });
+  edit(() => { spec.layers.push(l); state.sel = { kind: 'layer', id: l.id }; });
+  if (trigger === 'projectile' && !spec.projectile.enabled) toast('Turn the projectile on to see a missile');
+  state.tab = 'layers'; renderLeft(); renderInspector();
+}
+async function openSpell(id) {
+  toast('Reading the spell…');
+  try {
+    const t = await GAME.lib.template(id);
+    const any = t && (t.missile || ['precast', 'cast', 'impact', 'state'].some((k) => t[k] && (Object.keys(t[k].slots).length || t[k].beam)));
+    if (!any) return toast(`${t ? t.name : 'That spell'} has no effect models`);
+    setSpec(templateEffect(t)); state.tab = 'layers'; renderLeft();
+  } catch (e) { toast('Could not read it: ' + e.message); }
+}
+// The client's library: any spell (its visual as a template) and any effect model, searched by name or id.
+function renderLiveSearch(body) {
+  const box = document.createElement('input'); box.type = 'search'; box.className = 'lib-search'; box.placeholder = 'Search every spell and effect model';
+  box.value = state.query || ''; box.setAttribute('aria-label', 'Search the game');
+  const out = document.createElement('div');
+  const draw = () => {
+    out.innerHTML = '';
+    const q = (state.query = box.value.trim()).toLowerCase();
+    if (q.length < 2) {
+      const h = document.createElement('div'); h.className = 'hint';
+      h.textContent = `${GAME.spells ? GAME.spells.length.toLocaleString() : 0} spells and ${GAME.fx.length.toLocaleString()} effect models in your client. Type a name (Pyroblast, Holy_Nova) or a spell id.`;
+      return out.append(h);
+    }
+    const id = /^\d+$/.test(q) ? Number(q) : 0, seen = new Set(), spells = [];
+    for (const s of GAME.spells || []) {
+      if (spells.length >= 40) break;
+      if (!(id ? s.id === id : s.name.toLowerCase().includes(q))) continue;
+      const key = s.name + '|' + s.visual; if (seen.has(key)) continue; seen.add(key); spells.push(s);
+    }
+    const models = id ? [] : GAME.fx.filter((p) => p.toLowerCase().includes(q)).slice(0, 60);
+    const g1 = document.createElement('div'); g1.className = 'lib-group'; g1.textContent = `Spells (${spells.length}${spells.length >= 40 ? '+' : ''})`; out.append(g1);
+    for (const s of spells) out.append(presetEl(s.name, `Spell ${s.id}${s.rank ? ', ' + s.rank : ''}: its visual as an effect`, ['#ffd9a0', '#a8481c'], () => openSpell(s.id)));
+    const g2 = document.createElement('div'); g2.className = 'lib-group'; g2.textContent = `Effect models (${models.length}${models.length >= 60 ? '+' : ''})`; out.append(g2);
+    for (const p of models) out.append(presetEl(modelName(p), p + ' (adds it as a layer)', ['#c9e6ff', '#2a5f9e'], () => modelLayer(p)));
+  };
+  let timer = null;
+  box.oninput = () => { clearTimeout(timer); timer = setTimeout(draw, 150); };
+  body.append(box, out); draw();
+}
 function renderLibrary(body) {
-  const mine = store.get('efs.library', []);
+  const mine = LIVE ? (GAME.mine || []) : store.get('efs.library', []);
   const blank = document.createElement('button'); blank.className = 'btn'; blank.style.width = '100%'; blank.textContent = 'New blank effect';
   blank.onclick = () => { setSpec(NEW_EFFECT()); state.tab = 'layers'; renderLeft(); };
   body.append(blank);
+  if (LIVE) renderLiveSearch(body);
   const g = document.createElement('div'); g.className = 'lib-group'; g.textContent = 'Game spells'; body.append(g);
-  if (!GAME.templates.length) {
+  if (!GAME.templates.length && LIVE) {
+    const e = document.createElement('div'); e.className = 'hint'; e.textContent = 'Reading the game…'; body.append(e);
+  } else if (!GAME.templates.length) {
     const e = document.createElement('div'); e.className = 'hint';
     e.textContent = "The game's own spells (Arcane Blast, Frostbolt, Fireball, Lightning Bolt, Chain Lightning) appear here once their models are extracted (tools/extract, patterns/effect-suite.txt) and built (build_assets.py).";
     body.append(e);
@@ -1242,8 +1335,24 @@ function renderLibrary(body) {
     body.append(presetEl(p.make().name, p.desc, p.swatch, () => { setSpec(presetEffect(p)); state.tab = 'layers'; renderLeft(); }));
   }
   const h = document.createElement('div'); h.className = 'lib-group'; h.textContent = 'My effects'; body.append(h);
-  if (!mine.length) { const e = document.createElement('div'); e.className = 'hint'; e.textContent = 'Effects you save appear here. They stay in this browser.'; body.append(e); }
-  mine.forEach((spec, i) => {
+  if (LIVE) {
+    const f = document.createElement('button'); f.className = 'btn small ghost'; f.textContent = 'Open the Effects folder';
+    f.onclick = () => LIVE.effects.openFolder(); body.append(f);
+  }
+  if (!mine.length) { const e = document.createElement('div'); e.className = 'hint'; e.textContent = LIVE ? 'Effects you save appear here (Emberforge\\Effects in your install folder).' : 'Effects you save appear here. They stay in this browser.'; body.append(e); }
+  if (LIVE) mine.forEach((m) => {
+    const el = presetEl(m.name, `Saved ${new Date(m.modified).toLocaleString()}`, ['#ffb070', '#5a2a10'], async () => {
+      try { const spec = JSON.parse(await LIVE.effects.load(m.file)); setSpec(readSpec(spec)); state.tab = 'layers'; renderLeft(); }
+      catch (e) { toast('Could not read it: ' + e.message); }
+    });
+    const del = document.createElement('button'); del.className = 'btn small ghost danger'; del.textContent = 'Delete';
+    del.onclick = async (ev) => {
+      ev.stopPropagation(); if (!confirm(`Delete "${m.name}"?`)) return;
+      await LIVE.effects.remove(m.file); GAME.mine = await LIVE.effects.list(); renderLeft();
+    };
+    el.append(del); el.style.gridTemplateColumns = '34px 1fr auto'; body.append(el);
+  });
+  else mine.forEach((spec, i) => {
     const el = presetEl(spec.name, `${spec.layers.length} layers${spec.projectile.enabled ? ', projectile' : ''}`,
       [spec.layers[0] ? spec.layers[0].color : '#888', spec.layers[0] ? spec.layers[0].color2 : '#444'], () => { setSpec(deepCopy(spec)); state.tab = 'layers'; renderLeft(); });
     const del = document.createElement('button'); del.className = 'btn small ghost danger'; del.textContent = 'Delete';
@@ -1319,7 +1428,8 @@ const LAYER_FIELDS = {
   ],
 };
 LAYER_FIELDS.model = [
-  F('Model', 'model', 'select', { options: () => (GAME.fx.length ? GAME.fx : ['']).map((n) => [n, n ? n.replace(/^fx_/, '') : 'No game models yet']) }),
+  F('Model', 'model', 'select', { hide: () => !!LIVE, options: () => (GAME.fx.length ? GAME.fx : ['']).map((n) => [n, n ? n.replace(/^fx_/, '') : 'No game models yet']) }),
+  F('Model', 'model', 'model', { hide: () => !LIVE, hint: 'any effect model of the client: type to search' }),
   F('Size', 'scale', 'range', { min: 0.1, max: 6, step: 0.05, unit: '×' }),
   F('Speed', 'speed', 'range', { min: 0.1, max: 3, step: 0.05, unit: '×', hint: 'its animation and particles' }),
   F('Opacity', 'opacity', 'range', { min: 0, max: 1, step: 0.01 }),
@@ -1427,6 +1537,15 @@ function buildFields(box, obj, fields, after, afterPath, stage = false) {
       const s = document.createElement('select'); s.id = id;
       for (const [v, t] of fd.options(obj)) { const o = document.createElement('option'); o.value = v; o.textContent = t; s.append(o); }
       s.value = val; s.onchange = () => commit(s.value, true); ctl.append(s);
+    } else if (fd.kind === 'model') {          // the client's effect models, searched by name (as many as it has)
+      const t = document.createElement('input'); t.type = 'text'; t.id = id; t.value = val ?? ''; t.setAttribute('list', 'eesModels');
+      t.onchange = () => { const v = t.value.trim(); if (v) commit(GAME.fx.find((p) => p.toLowerCase() === v.toLowerCase()) || v, true); };
+      if (!$('eesModels')) {
+        const dl = document.createElement('datalist'); dl.id = 'eesModels';
+        for (const p of GAME.fx) { const o = document.createElement('option'); o.value = p; o.label = modelName(p); dl.append(o); }
+        document.body.append(dl);
+      }
+      ctl.append(t);
     } else if (fd.kind === 'text') {
       const t = document.createElement('input'); t.type = 'text'; t.id = id; t.value = val ?? ''; t.oninput = () => commit(t.value); ctl.append(t);
     } else if (fd.kind === 'color') {
@@ -1572,7 +1691,16 @@ function toast(text) {
   const t = document.createElement('div'); t.className = 'toast'; t.textContent = text; document.body.append(t);
   setTimeout(() => t.remove(), 1800);
 }
+// An imported or loaded spec, with today's defaults under it.
+function readSpec(spec) {
+  if (!spec || spec.format !== 'emberforge-effect') throw new Error('not an Emberforge effect spec');
+  return Object.assign(NEW_EFFECT(), spec, { projectile: Object.assign(deepCopy(NEW_PROJECTILE), spec.projectile || {}) });
+}
 $('exportBtn').onclick = () => {
+  if (LIVE) {
+    return LIVE.effects.export(state.spec.name || 'effect', JSON.stringify(state.spec, null, 2))
+      .then((path) => path && toast('Exported to ' + path), (e) => toast('Could not export: ' + e.message));
+  }
   const json = JSON.stringify(state.spec, null, 2);
   openModal('Export effect', '<p class="hint">The effect as a spec file. Copy it, or save it as a .json file, to keep it or to bring it into the Emberforge client patch.</p><textarea id="exportText" readonly></textarea>', [
     ['Copy', () => { const ta = $('exportText'); (navigator.clipboard ? navigator.clipboard.writeText(json) : Promise.reject()).then(() => toast('Copied'), () => { ta.focus(); ta.select(); toast('Selected: press Ctrl+C'); }); }],
@@ -1581,12 +1709,17 @@ $('exportBtn').onclick = () => {
   $('exportText').value = json;
 };
 $('importBtn').onclick = () => {
+  if (LIVE) {
+    return LIVE.effects.import().then((text) => {
+      if (!text) return;
+      const spec = readSpec(JSON.parse(text)); setSpec(spec); toast('Imported ' + spec.name);
+    }).catch((e) => toast('Could not read it: ' + e.message));
+  }
   openModal('Import effect', '<p class="hint">Paste an effect spec, or open a .json file.</p><textarea id="importText" placeholder="{ &quot;format&quot;: &quot;emberforge-effect&quot;, ... }"></textarea>', [
     ['Import', () => {
       try {
-        const spec = JSON.parse($('importText').value);
-        if (spec.format !== 'emberforge-effect') throw new Error('not an Emberforge effect spec');
-        setSpec(Object.assign(NEW_EFFECT(), spec, { projectile: Object.assign(deepCopy(NEW_PROJECTILE), spec.projectile || {}) }));
+        const spec = readSpec(JSON.parse($('importText').value));
+        setSpec(spec);
         closeModal(); toast('Imported ' + spec.name);
       } catch (e) { toast('Could not read it: ' + e.message); }
     }],
@@ -1598,6 +1731,11 @@ $('importBtn').onclick = () => {
   ]);
 };
 $('saveBtn').onclick = () => {
+  if (LIVE) {
+    return LIVE.effects.save(state.spec.name || 'effect', JSON.stringify(state.spec, null, 2)).then(async (path) => {
+      toast('Saved to ' + path); GAME.mine = await LIVE.effects.list(); if (state.tab === 'library') renderLeft();
+    }, (e) => toast('Could not save: ' + e.message));
+  }
   const list = store.get('efs.library', []);
   const i = list.findIndex((s) => s.name === state.spec.name);
   if (i >= 0) list[i] = deepCopy(state.spec); else list.push(deepCopy(state.spec));

@@ -34,5 +34,5 @@ i686-w64-mingw32-g++ -std=c++17 -O2 -s -shared -static -static-libgcc -static-li
     -o ../dist/Emberforge-d3d9.dll src/engine.cpp \
     $I/imgui.cpp $I/imgui_draw.cpp $I/imgui_tables.cpp $I/imgui_widgets.cpp \
     $I/backends/imgui_impl_dx9.cpp $I/backends/imgui_impl_win32.cpp \
-    -luser32 -lgdi32 -ldwmapi -luuid -Wl,--kill-at
+    -luser32 -lshell32 -lgdi32 -ldwmapi -luuid -Wl,--kill-at
 echo "Wrote $(cd ../dist && pwd)/Emberforge-d3d9.dll"

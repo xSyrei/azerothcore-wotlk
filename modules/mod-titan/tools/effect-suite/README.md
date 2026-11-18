@@ -1,8 +1,8 @@
 # Emberforge Effect Suite
 
 A spell effect engine for designing Emberforge's visual effects: a stage with a Hero stand-in and a training dummy, a
-live preview, and a timeline. Open `index.html` in a browser (it loads three.js from jsDelivr); it is one file, ready
-to become a tab of the launcher (`titan-launcher`).
+live preview, and a timeline. Open `index.html` in a browser (it loads three.js from jsDelivr), or in the game with
+`.ees` (below).
 
 ## What an effect is
 
@@ -60,6 +60,29 @@ python3 build_assets.py <EmberforgeExtract folder> assets --dbc <a folder with S
 
 The Suite fetches `assets/`, so open it through a web server (`python3 -m http.server` in this folder), the launcher
 or the published page; opened as a file it keeps its stand-ins.
+
+## In the game: .ees
+
+`.ees` (Administrator accounts only, `titan_commands.cpp`) opens the Suite on the staff member's own computer with the
+whole game behind it:
+
+1. The server sends opcode 0x51B (a client-to-server opcode the client never handles). The Emberforge Engine
+   (`client-patch/engine/src/suite.cpp`, the launcher's d3d9.dll: Lighting on) listens for it, as for the spell
+   modifiers' 0x51A, and runs the launcher named in `<install>\Emberforge\launcher.path` (the launcher writes it at
+   each start) with `--ees`.
+2. The launcher (`titan-launcher/ees.js`, one launcher at a time: a running one gets the request) opens its Suite
+   window: this page (`npm run sync-ees` copies it to `renderer/ees/`, three.js vendored) with `window.ees`.
+3. `window.ees.read` reads any file of the client through `EmberforgeArchive.exe` (`tools/extract/`, StormLib, the
+   archives opened as the game opens them), and `gamedata.js` turns the client's own files into what the engine
+   plays, as `build_assets.py` does: models (M2, skins, .anim files, BLP textures), the spell tables, the Human and
+   the dummy. So the Library searches every spell (its SpellVisual kits as a template: precast, cast, missile,
+   impact, Chain Lightning's arc) and every effect model of SpellVisualEffectName (added as a layer, built when
+   used), and a layer's Model field takes any of them.
+4. Save, Import and Export use `<install>\Emberforge\Effects\`: Save writes `<name>.json` there (My effects lists
+   that folder), Export writes `Exports\<name>.json` and shows it, Import opens a file from there.
+
+In the client a game model's key is its client path (`Spells\Fireball_Missile_Low.m2`); the web Suite's `fx_<name>`
+keys still open (found under `Spells\`).
 
 ## Next
 

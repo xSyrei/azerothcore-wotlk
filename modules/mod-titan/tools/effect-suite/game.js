@@ -10,6 +10,7 @@
    ===================================================================================================================== */
 const GameEngine = (() => {
   const b64 = (s, Type) => {
+    if (typeof s !== 'string') return s instanceof Type ? s : new Type(s.buffer || s);   // built in the page
     const bin = atob(s), bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     return new Type(bytes.buffer);
@@ -70,6 +71,15 @@ const GameEngine = (() => {
 
   const textureCache = new Map();
   function loadTexture(entry) {
+    if (entry && entry.image) {                 // decoded in the page (gamedata.js): a canvas
+      if (!entry.tex) {
+        const tex = entry.tex = new THREE.CanvasTexture(entry.image);
+        tex.encoding = THREE.sRGBEncoding; tex.flipY = false;
+        tex.wrapS = entry.flags & 1 ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+        tex.wrapT = entry.flags & 2 ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+      }
+      return entry.tex;
+    }
     if (!entry || !entry.png) return null;
     if (textureCache.has(entry.png)) return textureCache.get(entry.png);
     const tex = new THREE.TextureLoader().load(entry.png);
