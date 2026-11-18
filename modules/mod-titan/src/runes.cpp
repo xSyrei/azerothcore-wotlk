@@ -406,6 +406,25 @@ namespace
         SPELL_FROZEN_TRAIL_TICK         = 91460,
         SPELL_FROZEN_TRAIL_SLOW         = 91461,
         SPELL_FANG_COLD_BLOOD           = 91462,    // the next Ferocious Bite on the victim 20% more
+        // The shocks' empowered next strike: Flame Shock's Kindled (Claw: Blazing Strike; Swipe: Fiery Explosion),
+        // Frost Shock's Frostbitten (Claw: Frostfang Strike; Swipe: Glacial Burst).
+        SPELL_KINDLED                   = 91463,
+        SPELL_BLAZING_STRIKE            = 91464,
+        SPELL_BLAZING_BLEED             = 91465,    // its tick 91466
+        SPELL_BLAZING_BLEED_TICK        = 91466,
+        SPELL_FIERY_EXPLOSION           = 91467,
+        SPELL_FROSTBITTEN               = 91468,
+        SPELL_FROSTFANG_STRIKE          = 91469,
+        SPELL_FROSTBITE                 = 91470,    // its tick 91471
+        SPELL_FROSTBITE_TICK            = 91471,
+        SPELL_FROSTBITE_SLOW            = 91472,
+        SPELL_GLACIAL_BURST             = 91473,
+        SPELL_GLACIAL_SLOW              = 91474,
+        SPELL_FIERY_EXPLOSION_LOOK      = 91475,
+        SPELL_GLACIAL_BURST_LOOK        = 91476,
+        SPELL_FLAME_SHOCK               = 8050,     // first ranks
+        SPELL_FROST_SHOCK               = 8056,
+        SPELL_CLAW                      = 1082,
         SPELL_CAT_FORM                  = 768,
         SPELL_RAKE                      = 1822,     // first ranks
         SPELL_RIP                       = 1079,
@@ -990,6 +1009,16 @@ namespace
     constexpr float ICEFANG_REACH = 8.0f, ICEFANG_ARC = float(M_PI) / 4.0f, PACK_FROST_RADIUS = 8.0f;
     constexpr float SNOWBLIND_RADIUS = 6.0f, FROZEN_TRAIL_RADIUS = 6.0f;
     constexpr std::size_t ICEFANG_TARGETS = 4, PACK_FROST_TARGETS = 2, FROZEN_TRAIL_TARGETS = 5;
+
+    // The shocks' empowered strikes (both runes): Flame Shock or Frost Shock (in Cat Form too) empowers the next Claw
+    // or Swipe within 10 sec. Claw: a second enemy within 5 yards takes its hit again (Fire or Frost), and both
+    // bleed (100% of attack power over 6 sec: a bleed Fire Blast ignites) or are frostbitten (100% over 6 sec, 30%
+    // slower). Swipe: 75% of attack power to up to 8 enemies within 8 yards, each burning (half a Cinder Wound) or
+    // slowed 50% for 4 sec, a Frozen Prey on any of them shattered.
+    constexpr int32 EMPOWER_MS = 10000, CLAW_DOT_MS = 6000, FROSTBITE_SLOW_MS = 6000, GLACIAL_SLOW_MS = 4000;
+    constexpr float CLAW_SECOND_SHARE = 1.0f, CLAW_DOT_AP = 1.0f, NOVA_AP = 0.75f, FIERY_WOUND_SHARE = 0.5f;
+    constexpr float CLAW_SECOND_RADIUS = 5.0f, NOVA_RADIUS = 8.0f;
+    constexpr std::size_t NOVA_TARGETS = 8;
 
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
@@ -2352,6 +2381,8 @@ namespace
             case SPELL_CINDER_WOUND: return SPELL_CINDER_WOUND_TICK;
             case SPELL_CINDER_WOUND_SPREAD: return SPELL_CINDER_WOUND_TICK;
             case SPELL_WINTER_WOUND: return SPELL_WINTER_WOUND_TICK;
+            case SPELL_BLAZING_BLEED: return SPELL_BLAZING_BLEED_TICK;
+            case SPELL_FROSTBITE: return SPELL_FROSTBITE_TICK;
             default: return 0;
         }
     }
@@ -5385,7 +5416,8 @@ namespace
         {
             Aura const* aura = application->GetBase();
             uint32 first = FirstRank(aura->GetSpellInfo());
-            if (aura->GetCasterGUID() == player->GetGUID() && (first == SPELL_RAKE || first == SPELL_RIP))
+            if (aura->GetCasterGUID() == player->GetGUID()
+                && (first == SPELL_RAKE || first == SPELL_RIP || first == SPELL_BLAZING_BLEED))
                 return true;
         }
         return false;
@@ -5611,6 +5643,70 @@ namespace
         return FANG_COLD_BLOOD;
     }
 
+    // Kindled or Frostbitten Claw (its hit, damage): a second enemy within 5 yards takes it again as Fire or Frost,
+    // and both bleed (Blazing Strike) or are frostbitten and slowed (Frostfang Strike).
+    void EmpoweredClaw(Player* player, Unit* target, float damage, bool fire)
+    {
+        player->RemoveAurasDueToSpell(fire ? SPELL_KINDLED : SPELL_FROSTBITTEN);
+        std::vector<Unit*> struck { target };
+        for (Unit* enemy : EnemiesAround(player, target, CLAW_SECOND_RADIUS))
+            if (enemy != target)
+            {
+                Strike(player, enemy, fire ? SPELL_BLAZING_STRIKE : SPELL_FROSTFANG_STRIKE, damage * CLAW_SECOND_SHARE);
+                struck.push_back(enemy);
+                break;
+            }
+        float dot = player->GetTotalAttackPowerValue(BASE_ATTACK) * CLAW_DOT_AP;
+        for (Unit* enemy : struck)
+        {
+            if (!enemy->IsAlive())
+                continue;
+            AddDot(player, enemy, fire ? SPELL_BLAZING_BLEED : SPELL_FROSTBITE, dot, CLAW_DOT_MS);
+            if (!fire)
+                Lasting(player, enemy, SPELL_FROSTBITE_SLOW, FROSTBITE_SLOW_MS);
+        }
+        Trace(player, fire ? "Blazing Strike" : "Frostfang Strike");
+    }
+
+    // Kindled or Frostbitten Swipe: 75% of attack power to up to 8 enemies within 8 yards; Fiery Explosion leaves half
+    // a Cinder Wound on each, Glacial Burst slows them 50% and shatters every Frozen Prey among them.
+    void EmpoweredSwipe(Player* player, bool fire)
+    {
+        player->RemoveAurasDueToSpell(fire ? SPELL_KINDLED : SPELL_FROSTBITTEN);
+        player->CastSpell(player, fire ? SPELL_FIERY_EXPLOSION_LOOK : SPELL_GLACIAL_BURST_LOOK, true);
+        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * NOVA_AP;
+        float wound = CinderFresh(player) * FIERY_WOUND_SHARE;
+        for (Unit* enemy : EnemiesIn(player, Circle(player->GetPosition(), NOVA_RADIUS), NOVA_TARGETS))
+        {
+            Strike(player, enemy, fire ? SPELL_FIERY_EXPLOSION : SPELL_GLACIAL_BURST, blast);
+            if (!enemy->IsAlive())
+                continue;
+            if (fire)
+                AddDot(player, enemy, SPELL_CINDER_WOUND_SPREAD, wound, CinderMs(player));
+            else
+            {
+                Lasting(player, enemy, SPELL_GLACIAL_SLOW, GLACIAL_SLOW_MS);
+                if (player->HasAura(SPELL_RUNE_WHITEFANG))
+                    Shatter(player, enemy);
+            }
+        }
+        Trace(player, fire ? "Fiery Explosion" : "Glacial Burst");
+    }
+
+    // A spell a Cat may cast with its rune (Fire Blast, Flame Shock: Ember's Wrath; Frost Shock: Whitefang): its "not
+    // while shapeshifted" rule is gone from both copies so the client lets it be tried; here it holds for anyone in
+    // a form but a Cat with the rune (a stance never had it).
+    SpellCastResult CatFormGate(Unit* caster, uint32 runeAura)
+    {
+        ShapeshiftForm form = caster->GetShapeshiftForm();
+        if (form == FORM_NONE)
+            return SPELL_CAST_OK;
+        SpellShapeshiftFormEntry const* shape = sSpellShapeshiftFormStore.LookupEntry(form);
+        if (shape && (shape->flags1 & SHAPESHIFT_FLAG_STANCE))
+            return SPELL_CAST_OK;
+        return form == FORM_CAT && caster->HasAura(runeAura) ? SPELL_CAST_OK : SPELL_FAILED_NOT_SHAPESHIFT;
+    }
+
     // The Cat Form copies the runes first taught (Fire Blast 91420, Icy Touch 91440) are gone: a Hero who learned one
     // forgets it, its buttons the real spell's (its highest known rank) or empty.
     void RetireCatCopy(Player* player, uint32 copy, uint32 firstRank)
@@ -5643,6 +5739,8 @@ namespace
         state.PreyOn.Clear();
         state.ColdBloodOn.Clear();
         state.PursuitDiscount = false;
+        player->RemoveAurasDueToSpell(SPELL_KINDLED);
+        player->RemoveAurasDueToSpell(SPELL_FROSTBITTEN);
         for (uint32 spell : { SPELL_OPENING_SHOT, SPELL_ADVANCE, SPELL_DISENGAGING_SHOT, SPELL_DISENGAGING_DISCOUNT,
                               SPELL_PRESS_THE_ADVANTAGE, SPELL_STORMFRONT, SPELL_RIDE_THE_LIGHTNING, SPELL_FLAMEBOUND,
                               SPELL_FLAMEBOUND_DISCOUNT, SPELL_PURSUING_CHILL, SPELL_SNOWBLIND,
@@ -7602,15 +7700,7 @@ class spell_titan_rune_embers_fire_blast : public SpellScript
 
     SpellCastResult Check()
     {
-        Unit* caster = GetCaster();
-        ShapeshiftForm form = caster->GetShapeshiftForm();
-        if (form == FORM_NONE)
-            return SPELL_CAST_OK;
-        SpellShapeshiftFormEntry const* shape = sSpellShapeshiftFormStore.LookupEntry(form);
-        if (shape && (shape->flags1 & SHAPESHIFT_FLAG_STANCE))
-            return SPELL_CAST_OK;                   // a stance, as before
-        bool emberCat = form == FORM_CAT && caster->HasAura(SPELL_RUNE_EMBERS_WRATH);
-        return emberCat ? SPELL_CAST_OK : SPELL_FAILED_NOT_SHAPESHIFT;
+        return CatFormGate(GetCaster(), SPELL_RUNE_EMBERS_WRATH);
     }
 
     void Damage()
@@ -7636,6 +7726,37 @@ class spell_titan_rune_embers_fire_blast : public SpellScript
     }
 };
 
+// Flame Shock and Frost Shock (every rank): in Cat Form with their rune (Ember's Wrath, Whitefang), and the next Claw
+// or Swipe empowered: Kindled, Frostbitten.
+class spell_titan_rune_cat_shock : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_cat_shock);
+
+    bool Fire() { return FirstRank(GetSpellInfo()) == SPELL_FLAME_SHOCK; }
+
+    SpellCastResult Check()
+    {
+        return CatFormGate(GetCaster(), Fire() ? SPELL_RUNE_EMBERS_WRATH : SPELL_RUNE_WHITEFANG);
+    }
+
+    void Empower()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || !GetHitUnit())
+            return;
+        if (Fire() && player->HasAura(SPELL_RUNE_EMBERS_WRATH))
+            RenewFor(player, SPELL_KINDLED, EMPOWER_MS);
+        else if (!Fire() && player->HasAura(SPELL_RUNE_WHITEFANG))
+            RenewFor(player, SPELL_FROSTBITTEN, EMPOWER_MS);
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_cat_shock::Check);
+        AfterHit += SpellHitFn(spell_titan_rune_cat_shock::Empower);
+    }
+};
+
 // Icy Touch (every rank) and Whitefang: Frozen Prey on its victim (its Frost rune and Frost Fever as ever).
 class spell_titan_rune_whitefang_icy_touch : public SpellScript
 {
@@ -7654,8 +7775,9 @@ class spell_titan_rune_whitefang_icy_touch : public SpellScript
     }
 };
 
-// Fire Blast's ranks (the player's): no "not while shapeshifted" rule at load (Ember's Wrath's script keeps it for
-// everyone but a Cat with the rune), as the client patch does (patch_spells.py, RUNE_FREED).
+// Fire Blast's, Flame Shock's and Frost Shock's ranks (the player's): no "not while shapeshifted" rule at load (the
+// runes' scripts keep it for everyone but a Cat with the rune: CatFormGate), as the client patch does
+// (patch_spells.py, RUNE_FREED).
 class titan_runes_load : public GlobalScript
 {
 public:
@@ -7663,15 +7785,17 @@ public:
 
     void OnLoadSpellCustomAttr(SpellInfo* spellInfo) override
     {
-        static constexpr std::array<uint32, 11> FIRE_BLAST_RANKS = { 2136, 2137, 2138, 8412, 8413, 10197, 10199,
-            27078, 27079, 42872, 42873 };
-        if (std::find(FIRE_BLAST_RANKS.begin(), FIRE_BLAST_RANKS.end(), spellInfo->Id) != FIRE_BLAST_RANKS.end())
+        static constexpr std::array<uint32, 27> FREED = { 2136, 2137, 2138, 8412, 8413, 10197, 10199, 27078, 27079,
+            42872, 42873,                                                               // Fire Blast
+            8050, 8052, 8053, 10447, 10448, 29228, 25457, 49232, 49233,                 // Flame Shock
+            8056, 8058, 10472, 10473, 25464, 49235, 49236 };                            // Frost Shock
+        if (std::find(FREED.begin(), FREED.end(), spellInfo->Id) != FREED.end())
             spellInfo->Attributes &= ~SPELL_ATTR0_NOT_SHAPESHIFTED;
     }
 };
 
-// Rake, Mangle (Cat) and Shred (every rank): Whitefang's shatter (Shred, Mangle), Ember's Wrath's Blazing Rake
-// (Rake) and Flamebound's Energy back (Rake, Mangle).
+// Rake, Mangle (Cat), Shred and Claw (every rank): Whitefang's shatter (Shred, Mangle), Ember's Wrath's Blazing Rake
+// (Rake), Flamebound's Energy back (Rake, Mangle) and the shocks' empowered Claw.
 class spell_titan_rune_cat_strike : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_cat_strike);
@@ -7694,6 +7818,13 @@ class spell_titan_rune_cat_strike : public SpellScript
         if (!player || !target || GetHitDamage() <= 0)
             return;
         uint32 first = FirstRank(GetSpellInfo());
+        if (first == SPELL_CLAW)
+        {
+            if (player->HasAura(SPELL_KINDLED))
+                EmpoweredClaw(player, target, float(GetHitDamage()), true);
+            else if (player->HasAura(SPELL_FROSTBITTEN))
+                EmpoweredClaw(player, target, float(GetHitDamage()), false);
+        }
         if ((first == SPELL_SHRED || first == SPELL_MANGLE_CAT) && player->HasAura(SPELL_RUNE_WHITEFANG))
             Shatter(player, target);
         if (first == SPELL_RAKE && player->HasAura(SPELL_RUNE_EMBERS_WRATH)
@@ -7738,7 +7869,7 @@ class spell_titan_rune_ferocious_bite : public SpellScript
     }
 };
 
-// Swipe (Cat) with Ember's Wrath's Cinder Swipe: the wound spreads.
+// Swipe (Cat): the shocks' empowered Swipe; Ember's Wrath's Cinder Swipe (the wound spreads).
 class spell_titan_rune_cat_swipe : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_cat_swipe);
@@ -7746,7 +7877,13 @@ class spell_titan_rune_cat_swipe : public SpellScript
     void Spread()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (player && player->HasAura(SPELL_RUNE_EMBERS_WRATH) && HasEmbersMarker(player, MOD_CINDER_SWIPE))
+        if (!player)
+            return;
+        if (player->HasAura(SPELL_KINDLED))
+            EmpoweredSwipe(player, true);
+        else if (player->HasAura(SPELL_FROSTBITTEN))
+            EmpoweredSwipe(player, false);
+        if (player->HasAura(SPELL_RUNE_EMBERS_WRATH) && HasEmbersMarker(player, MOD_CINDER_SWIPE))
             CinderSwipe(player);
     }
 
@@ -8107,6 +8244,7 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_stormreaver);
     RegisterSpellScript(spell_titan_rune_embers_fire_blast);
     RegisterSpellScript(spell_titan_rune_whitefang_icy_touch);
+    RegisterSpellScript(spell_titan_rune_cat_shock);
     new titan_runes_load();
     RegisterSpellScript(spell_titan_rune_cat_strike);
     RegisterSpellScript(spell_titan_rune_ferocious_bite);

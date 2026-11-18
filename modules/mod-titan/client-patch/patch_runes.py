@@ -1735,6 +1735,37 @@ SPELLS += [
             {1: aura(AURA_DUMMY, 1, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_5S}},
 ]
+# The shocks' empowered strikes: Flame Shock's Kindled (Blazing Strike, its bleed; Fiery Explosion, a Fire Nova),
+# Frost Shock's Frostbitten (Frostfang Strike, Frostbite and its slow; Glacial Burst, a Frost Nova, and its slow).
+VISUAL_FROST_SHOCK, VISUAL_FIRE_NOVA, VISUAL_FROST_NOVA = 144, 14908, 17
+SPELLS += [
+    {**buff(91463, 'Kindled', 'Spell_Fire_FlameShock',
+            'Your next Claw is a Blazing Strike; your next Swipe a Fiery Explosion.', DURATION_10S,
+            {1: aura(AURA_DUMMY, 1, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_10S}},
+    strike(91464, 'Blazing Strike', 'Spell_Fire_FlameShock', FIRE, VISUAL_FIRE_BLAST),
+    dot(91465, 'Blazing Bleed', 'Ability_Druid_Rake', PHYSICAL, DURATION_6S, 'Bleeding every second.'),
+    strike(91466, 'Blazing Bleed', 'Ability_Druid_Rake', PHYSICAL),
+    strike(91467, 'Fiery Explosion', 'Spell_Fire_SealOfFire', FIRE, VISUAL_SCORCH),
+    {**buff(91468, 'Frostbitten', 'Spell_Frost_FrostShock',
+            'Your next Claw is a Frostfang Strike; your next Swipe a Glacial Burst.', DURATION_10S,
+            {1: aura(AURA_DUMMY, 1, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_10S}},
+    strike(91469, 'Frostfang Strike', 'Spell_Frost_FrostShock', FROST, VISUAL_FROST_SHOCK),
+    dot(91470, 'Frostbite', 'Spell_Frost_FrostArmor', FROST, DURATION_6S, 'Frost damage every second.'),
+    strike(91471, 'Frostbite', 'Spell_Frost_FrostArmor', FROST),
+    harmful(91472, 'Frostbite', 'Spell_Frost_FrostArmor', 'Movement slowed by 30%.', DURATION_6S,
+            aura(AURA_MOD_DECREASE_SPEED, -30, 0), FROST),
+    strike(91473, 'Glacial Burst', 'Spell_Frost_FrostNova', FROST, VISUAL_ICE_LANCE),
+    harmful(91474, 'Glacial Burst', 'Spell_Frost_FrostNova', 'Movement slowed by 50%.', DURATION_4S,
+            aura(AURA_MOD_DECREASE_SPEED, -50, 0), FROST),
+    look(91475, 'Fiery Explosion', 'Spell_Fire_SealOfFire', VISUAL_FIRE_NOVA),
+    look(91476, 'Glacial Burst', 'Spell_Frost_FrostNova', VISUAL_FROST_NOVA),
+]
+for _spell in SPELLS:
+    if _spell['id'] in (91464, 91466, 91467, 91469, 91471, 91473):
+        _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
+ICONS += ['Spell_Fire_FlameShock', 'Spell_Fire_SealOfFire', 'Spell_Frost_FrostArmor', 'Ability_Druid_Rake']
 # Frozen Trail's patch: Frost Trap's frost on the ground.
 _trail = ground(91449, 'Frozen Trail', 'Spell_Frost_FrostNova', None, DURATION_4S)
 _trail.pop('visual')

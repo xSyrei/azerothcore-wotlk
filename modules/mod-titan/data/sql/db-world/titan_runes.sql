@@ -1,4 +1,4 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-91462: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-91476: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
@@ -413,25 +413,33 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 DELETE FROM `spell_dbc` WHERE `ID` IN (91420, 91440);
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_cat_fire_blast',
     'spell_titan_rune_cat_icy_touch', 'spell_titan_rune_embers_fire_blast', 'spell_titan_rune_whitefang_icy_touch',
-    'spell_titan_rune_cat_strike', 'spell_titan_rune_ferocious_bite', 'spell_titan_rune_cat_swipe');
+    'spell_titan_rune_cat_strike', 'spell_titan_rune_ferocious_bite', 'spell_titan_rune_cat_swipe',
+    'spell_titan_rune_cat_shock');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-2136, 'spell_titan_rune_embers_fire_blast'),
 (-45477, 'spell_titan_rune_whitefang_icy_touch'),
+(-8050, 'spell_titan_rune_cat_shock'),
+(-8056, 'spell_titan_rune_cat_shock'),
 (-1822, 'spell_titan_rune_cat_strike'),
+(-1082, 'spell_titan_rune_cat_strike'),
 (-33876, 'spell_titan_rune_cat_strike'),
 (-5221, 'spell_titan_rune_cat_strike'),
 (-22568, 'spell_titan_rune_ferocious_bite'),
 (62078, 'spell_titan_rune_cat_swipe');
 
--- Their damage over time: Cinder Wound (and its spread), Winter Wound.
-DELETE FROM `spell_script_names` WHERE `spell_id` IN (91421, 91423, 91444) AND `ScriptName` = 'spell_titan_rune_dot';
+-- Their damage over time: Cinder Wound (and its spread), Winter Wound, Blazing Bleed, Frostbite.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (91421, 91423, 91444, 91465, 91470)
+    AND `ScriptName` = 'spell_titan_rune_dot';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (91421, 'spell_titan_rune_dot'),
 (91423, 'spell_titan_rune_dot'),
-(91444, 'spell_titan_rune_dot');
+(91444, 'spell_titan_rune_dot'),
+(91465, 'spell_titan_rune_dot'),
+(91470, 'spell_titan_rune_dot');
 
 -- Their strikes are shares of the Hero's power: no bonuses of their own.
-DELETE FROM `spell_bonus_data` WHERE `entry` IN (91420, 91422, 91424, 91425, 91426, 91440, 91443, 91445, 91460);
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (91420, 91422, 91424, 91425, 91426, 91440, 91443, 91445, 91460, 91464,
+    91466, 91467, 91469, 91471, 91473);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91422, 0, 0, 0, 0, 'Ember''s Wrath - Cinder Wound tick'),
 (91424, 0, 0, 0, 0, 'Ember''s Wrath - Wild Embers'),
@@ -439,4 +447,10 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91426, 0, 0, 0, 0, 'Ember''s Wrath - Molten Bite'),
 (91443, 0, 0, 0, 0, 'Whitefang - Shatter'),
 (91445, 0, 0, 0, 0, 'Whitefang - Winter Wound tick'),
-(91460, 0, 0, 0, 0, 'Whitefang - Frozen Trail');
+(91460, 0, 0, 0, 0, 'Whitefang - Frozen Trail'),
+(91464, 0, 0, 0, 0, 'Ember''s Wrath - Blazing Strike'),
+(91466, 0, 0, 0, 0, 'Ember''s Wrath - Blazing Bleed tick'),
+(91467, 0, 0, 0, 0, 'Ember''s Wrath - Fiery Explosion'),
+(91469, 0, 0, 0, 0, 'Whitefang - Frostfang Strike'),
+(91471, 0, 0, 0, 0, 'Whitefang - Frostbite tick'),
+(91473, 0, 0, 0, 0, 'Whitefang - Glacial Burst');

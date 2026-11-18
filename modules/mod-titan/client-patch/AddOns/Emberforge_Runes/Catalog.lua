@@ -1123,7 +1123,7 @@ EmberforgeRunesCatalog = {
       roles = { "DAMAGER" },
       icon = "Ability_Rune_EmbersWrath",
       keywords = "druid feral cat form fire blast rake rip ferocious bite swipe mangle cinder wound burn bleed " ..
-          "fire mage energy",
+          "fire mage energy flame shock claw blazing strike fiery explosion shaman",
       slots = { "Ignition", "Claws", "Instinct" },
       builtFrom = "Rake or Rip",
       spentWith = "Fire Blast, in Cat Form too",
@@ -1131,8 +1131,12 @@ EmberforgeRunesCatalog = {
       core = "Your Fire Blast works in Cat Form, at its own mana cost and cooldown. On an enemy bleeding from " ..
           "your own Rake or Rip it ignites Cinder Wound: 150% of your attack power plus 100% of your spell power " ..
           "as Fire damage over 6 sec, a tick every 2 sec. The bleed stays; a new wound keeps what is left of the " ..
-          "last, up to twice a fresh one.",
-      loop = "Rake or Rip, Fire Blast to ignite, then your feral rotation.",
+          "last, up to twice a fresh one. Flame Shock (in Cat Form too) kindles your next Claw or Swipe within 10 " ..
+          "sec: Claw becomes Blazing Strike, its hit again on a second enemy within 5 yards and both bleeding for " ..
+          "100% of your attack power over 6 sec (Fire Blast ignites that bleed too); Swipe becomes Fiery Explosion, " ..
+          "75% of your attack power as Fire damage to up to 8 enemies within 8 yards, each left with half a Cinder " ..
+          "Wound.",
+      loop = "Rake or Rip, Fire Blast to ignite; Flame Shock, then Claw or Swipe.",
       mods = {
         { name = "Searing Wound",
           text = "Cinder Wound deals 35% more damage." },
@@ -1175,15 +1179,19 @@ EmberforgeRunesCatalog = {
       roles = { "DAMAGER" },
       icon = "Ability_Rune_Whitefang",
       keywords = "druid feral cat form icy touch shred mangle ferocious bite frost frozen prey shatter death " ..
-          "knight energy",
+          "knight energy frost shock claw frostfang glacial burst shaman",
       slots = { "Shatter", "Hunt", "Instinct" },
       builtFrom = "Icy Touch, in Cat Form too",
       spentWith = "Shred or Mangle",
       resource = "Frozen Prey, 6 sec",
       core = "Your Icy Touch, in Cat Form or not (its Frost rune, damage and Frost Fever as ever), lays Frozen " ..
           "Prey on the enemy for 6 sec; your next Shred or Mangle on it shatters it for 150% of your attack power " ..
-          "as Frost damage. One mark at a time, one shatter a strike.",
-      loop = "Icy Touch, then Shred or Mangle to shatter; bite or spread as you chose.",
+          "as Frost damage. One mark at a time, one shatter a strike. Frost Shock (in Cat Form too) chills your " ..
+          "next Claw or Swipe within 10 sec: Claw becomes Frostfang Strike, its hit again on a second enemy within " ..
+          "5 yards and both frostbitten for 100% of your attack power over 6 sec and 30% slower; Swipe becomes " ..
+          "Glacial Burst, 75% of your attack power as Frost damage to up to 8 enemies within 8 yards, each slowed " ..
+          "50% for 4 sec and its Frozen Prey shattered.",
+      loop = "Icy Touch, then Shred or Mangle to shatter; Frost Shock, then Claw or Swipe.",
       mods = {
         { name = "Whitefang",
           text = "The shatter deals 40% more damage." },

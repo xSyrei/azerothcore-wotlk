@@ -1368,7 +1368,8 @@ SPELL_ATTR0_NOT_SHAPESHIFTED = 0x00010000
 RUNE_FREED = {('Revenge', SPELLFAMILY_WARRIOR): CASTER_AURA_STATE, ('Execute', SPELLFAMILY_WARRIOR): TARGET_AURA_STATE,
               ('Hammer of Wrath', 10): TARGET_AURA_STATE, ('Deep Freeze', 3): TARGET_AURA_STATE,
               ('Ambush', 8): None,
-              ('Fire Blast', 3): 'form'}       # Ember's Wrath: in Cat Form (src/runes.cpp, titan_runes_load)
+              ('Fire Blast', 3): 'form', ('Flame Shock', 11): 'form',     # Ember's Wrath: in Cat Form
+              ('Frost Shock', 11): 'form'}                                # Whitefang (src/runes.cpp, CatFormGate)
 
 
 def rune_usability(spells):

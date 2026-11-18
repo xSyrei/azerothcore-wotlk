@@ -33,6 +33,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Rune of Whitefang (Cat Form, Icy Touch, Shred or Mangle, Melee): your own Icy Touch, in Cat Form too (its Frost
   rune and Frost Fever as ever), lays Frozen Prey; your next Shred or Mangle on that enemy shatters it for 150% of
   your attack power as Frost damage.
+- Flame Shock (Ember's Wrath) and Frost Shock (Whitefang) work in Cat Form too, and empower your next Claw or Swipe
+  within 10 sec. Flame Shock: Claw becomes Blazing Strike (its hit again on a second enemy, and both bleed: a bleed
+  Fire Blast ignites); Swipe becomes Fiery Explosion (Fire damage to up to 8 enemies around you, each left burning
+  with half a Cinder Wound). Frost Shock: Claw becomes Frostfang Strike (a second enemy, both frostbitten and
+  slowed); Swipe becomes Glacial Burst (Frost damage to up to 8 enemies, slowed 50%, every Frozen Prey among them
+  shattered).
 - Each has three slots of three options, like the others.
 
 ### Caster balance
