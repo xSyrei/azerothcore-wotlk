@@ -159,11 +159,11 @@ RUNES = [
      'Stormstrike, Lava Lash and Lightning Shield',
      'M13 2 4 14h7l-1 8 9-12h-7Z'),
     (44, (255, 125, 55), "Fire · Ember's Wrath",
-     'Fire Blast in Cat Form ignites your bleeds into Cinder Wounds.',
+     'Your Fire Blast, in Cat Form too, ignites your bleeds into Cinder Wounds.',
      'Cat Form, Fire Blast, Rake or Rip',
      'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11ZM9 15l2-3 2 3'),
     (45, (140, 210, 245), 'Frost · Whitefang',
-     'Icy Touch in Cat Form marks the prey; Shred or Mangle shatters it.',
+     'Your Icy Touch, in Cat Form too, marks the prey; Shred or Mangle shatters it.',
      'Cat Form, Icy Touch, Shred or Mangle',
      'M12 2v20M4 6l16 12M20 6 4 18M9 3l3 3 3-3M9 21l3-3 3 3'),
 ]
@@ -1118,17 +1118,17 @@ BUILT = {
         ],
     },
     44: {
-        'core': '**Fire Blast** in Cat Form ignites your **Rake** or **Rip** victim: **Cinder Wound**, 30% of your '
-            'attack power plus 30% of your spell power over 6 sec.',
+        'core': 'Your **Fire Blast**, in Cat Form too, ignites your **Rake** or **Rip** victim: **Cinder Wound**, '
+            '150% of your attack power plus 100% of your spell power over 6 sec.',
         'slots': ['Ignition', 'Claws', 'Instinct'],
         'asks': ['How the wound burns', 'What your claws add', 'What the hunt gives'],
         'texts': [
             'Cinder Wound deals 35% more damage.',
-            'Each ignition also burns up to 4 other enemies within 6 yards of its victim for 10% of your attack power '
-            'plus 10% of your spell power as Fire damage.',
+            'Each ignition also burns up to 4 other enemies within 6 yards of its victim for 40% of your attack power '
+            'plus 30% of your spell power as Fire damage.',
             'Cinder Wound lasts 10 sec and deals 30% more damage over that time.',
-            'Rake on your Cinder Wound victim also deals 15% of your attack power as Fire damage, once every 3 sec.',
-            'Ferocious Bite on your Cinder Wound victim also deals 5% of your attack power per combo point spent as '
+            'Rake on your Cinder Wound victim also deals 60% of your attack power as Fire damage, once every 3 sec.',
+            'Ferocious Bite on your Cinder Wound victim also deals 25% of your attack power per combo point spent as '
             'Fire damage.',
             'Swipe spreads Cinder Wound, at half its damage, to up to 3 bleeding enemies within its reach. Spread '
             "wounds don't spread again.",
@@ -1162,8 +1162,8 @@ BUILT = {
         ],
     },
     45: {
-        'core': '**Icy Touch** in Cat Form lays **Frozen Prey**; your next **Shred** or **Mangle** shatters it for '
-            '30% of your attack power as Frost damage.',
+        'core': 'Your **Icy Touch**, in Cat Form too, lays **Frozen Prey**; your next **Shred** or **Mangle** '
+            'shatters it for 150% of your attack power as Frost damage.',
         'slots': ['Shatter', 'Hunt', 'Instinct'],
         'asks': ['How the prey shatters', 'How you mark the hunt', 'What the shatter leaves'],
         'texts': [
@@ -1178,7 +1178,7 @@ BUILT = {
             "marks don't spread again.",
             'Shattering makes your next Ferocious Bite on that enemy within 5 sec deal 20% more damage.',
             'Shattering slows enemies within 6 yards by 30% for 3 sec and raises your dodge chance by 15% for 3 sec.',
-            'Shattering leaves a 6-yard patch of frost for 4 sec: up to 5 enemies in it move 30% slower and take 5% '
+            'Shattering leaves a 6-yard patch of frost for 4 sec: up to 5 enemies in it move 30% slower and take 20% '
             'of your attack power as Frost damage every second.',
         ],
         'abilities': [

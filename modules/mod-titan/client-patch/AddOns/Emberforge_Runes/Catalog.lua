@@ -1126,26 +1126,26 @@ EmberforgeRunesCatalog = {
           "fire mage energy",
       slots = { "Ignition", "Claws", "Instinct" },
       builtFrom = "Rake or Rip",
-      spentWith = "Fire Blast in Cat Form (the rune teaches it)",
+      spentWith = "Fire Blast, in Cat Form too",
       resource = "Cinder Wound, 6 sec",
-      core = "Fire Blast is usable in Cat Form for 30 Energy (6 sec cooldown), with your Fire Blast's damage: " ..
-          "the rune teaches it and puts it on your Cat Form bar. On an enemy bleeding from your own Rake or Rip it " ..
-          "ignites Cinder Wound: 30% of your attack power plus 30% of your spell power as Fire damage over 6 sec, a " ..
-          "tick every 2 sec. The bleed stays; a new wound keeps what is left of the last, up to twice a fresh one.",
+      core = "Your Fire Blast works in Cat Form, at its own mana cost and cooldown. On an enemy bleeding from " ..
+          "your own Rake or Rip it ignites Cinder Wound: 150% of your attack power plus 100% of your spell power " ..
+          "as Fire damage over 6 sec, a tick every 2 sec. The bleed stays; a new wound keeps what is left of the " ..
+          "last, up to twice a fresh one.",
       loop = "Rake or Rip, Fire Blast to ignite, then your feral rotation.",
       mods = {
         { name = "Searing Wound",
           text = "Cinder Wound deals 35% more damage." },
         { name = "Wild Embers",
-          text = "Each ignition also burns up to 4 other enemies within 6 yards of its victim for 10% of " ..
-              "your attack power plus 10% of your spell power as Fire damage." },
+          text = "Each ignition also burns up to 4 other enemies within 6 yards of its victim for 40% of " ..
+              "your attack power plus 30% of your spell power as Fire damage." },
         { name = "Smoldering Flesh",
           text = "Cinder Wound lasts 10 sec and deals 30% more damage over that time." },
         { name = "Blazing Rake",
-          text = "Rake on your Cinder Wound victim also deals 15% of your attack power as Fire damage, " ..
+          text = "Rake on your Cinder Wound victim also deals 60% of your attack power as Fire damage, " ..
               "once every 3 sec." },
         { name = "Molten Bite",
-          text = "Ferocious Bite on your Cinder Wound victim also deals 5% of your attack power per combo " ..
+          text = "Ferocious Bite on your Cinder Wound victim also deals 25% of your attack power per combo " ..
               "point spent as Fire damage." },
         { name = "Cinder Swipe",
           text = "Swipe spreads Cinder Wound, at half its damage, to up to 3 bleeding enemies within its " ..
@@ -1177,13 +1177,12 @@ EmberforgeRunesCatalog = {
       keywords = "druid feral cat form icy touch shred mangle ferocious bite frost frozen prey shatter death " ..
           "knight energy",
       slots = { "Shatter", "Hunt", "Instinct" },
-      builtFrom = "Icy Touch in Cat Form (the rune teaches it)",
+      builtFrom = "Icy Touch, in Cat Form too",
       spentWith = "Shred or Mangle",
       resource = "Frozen Prey, 6 sec",
-      core = "Icy Touch is usable in Cat Form for 25 Energy and no runes, with its damage and Frost Fever: " ..
-          "the rune teaches it and puts it on your Cat Form bar. It lays Frozen Prey on the enemy for 6 sec; your " ..
-          "next Shred or Mangle on it shatters it for 30% of your attack power as Frost damage. One mark at a time, " ..
-          "one shatter a strike.",
+      core = "Your Icy Touch, in Cat Form or not (its Frost rune, damage and Frost Fever as ever), lays Frozen " ..
+          "Prey on the enemy for 6 sec; your next Shred or Mangle on it shatters it for 150% of your attack power " ..
+          "as Frost damage. One mark at a time, one shatter a strike.",
       loop = "Icy Touch, then Shred or Mangle to shatter; bite or spread as you chose.",
       mods = {
         { name = "Whitefang",
@@ -1210,7 +1209,7 @@ EmberforgeRunesCatalog = {
               "by 15% for 3 sec." },
         { name = "Frozen Trail",
           text = "Shattering leaves a 6-yard patch of frost for 4 sec: up to 5 enemies in it move 30% " ..
-              "slower and take 5% of your attack power as Frost damage every second." },
+              "slower and take 20% of your attack power as Frost damage every second." },
       },
       builds = {
         { name = "The Whitefang", mods = { "Whitefang", "Long Winter", "Cold Blood" },

@@ -1974,9 +1974,9 @@ EmberforgeRunesArt = {
             hue = { 1, 0.627, 0.322 },
             inner = { 1, 0.91, 0.859 },
             built = true,
-            core = "**Fire Blast** in Cat Form ignites your **Rake** or **Rip** victim: " ..
-                    "**Cinder Wound**, 30% of your attack power plus 30% of your spell " ..
-                    "power over 6 sec.",
+            core = "Your **Fire Blast**, in Cat Form too, ignites your **Rake** or **Rip** " ..
+                    "victim: **Cinder Wound**, 150% of your attack power plus 100% of your " ..
+                    "spell power over 6 sec.",
             asks = {
                 "How the wound burns",
                 "What your claws add",
@@ -1996,12 +1996,12 @@ EmberforgeRunesArt = {
             texts = {
                 "Cinder Wound deals 35% more damage.",
                 "Each ignition also burns up to 4 other enemies within 6 yards of its " ..
-                        "victim for 10% of your attack power plus 10% of your spell power as " ..
+                        "victim for 40% of your attack power plus 30% of your spell power as " ..
                         "Fire damage.",
                 "Cinder Wound lasts 10 sec and deals 30% more damage over that time.",
-                "Rake on your Cinder Wound victim also deals 15% of your attack power " ..
+                "Rake on your Cinder Wound victim also deals 60% of your attack power " ..
                         "as Fire damage, once every 3 sec.",
-                "Ferocious Bite on your Cinder Wound victim also deals 5% of your " ..
+                "Ferocious Bite on your Cinder Wound victim also deals 25% of your " ..
                         "attack power per combo point spent as Fire damage.",
                 "Swipe spreads Cinder Wound, at half its damage, to up to 3 bleeding " ..
                         "enemies within its reach. Spread wounds don't spread again.",
@@ -2026,8 +2026,9 @@ EmberforgeRunesArt = {
             hue = { 0.694, 1, 1 },
             inner = { 0.918, 0.969, 0.992 },
             built = true,
-            core = "**Icy Touch** in Cat Form lays **Frozen Prey**; your next **Shred** or " ..
-                    "**Mangle** shatters it for 30% of your attack power as Frost damage.",
+            core = "Your **Icy Touch**, in Cat Form too, lays **Frozen Prey**; your next " ..
+                    "**Shred** or **Mangle** shatters it for 150% of your attack power as " ..
+                    "Frost damage.",
             asks = {
                 "How the prey shatters",
                 "How you mark the hunt",
@@ -2061,8 +2062,8 @@ EmberforgeRunesArt = {
                 "Shattering slows enemies within 6 yards by 30% for 3 sec and raises " ..
                         "your dodge chance by 15% for 3 sec.",
                 "Shattering leaves a 6-yard patch of frost for 4 sec: up to 5 enemies " ..
-                        "in it move 30% slower and take 5% of your attack power as Frost damage " ..
-                        "every second.",
+                        "in it move 30% slower and take 20% of your attack power as Frost " ..
+                        "damage every second.",
             },
             slots = {
                 "Shatter",

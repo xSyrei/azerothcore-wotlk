@@ -1364,14 +1364,16 @@ def free_warrior_stances(spells):
 # Runes of Enhancement's usability (src/rune_effects.cpp): what a rune lifts the client must not refuse first. The
 # server's copy loses the same rules and checks them itself, for everyone without the rune.
 CASTER_AURA_STATE, TARGET_AURA_STATE, SPELL_ATTR0_ONLY_STEALTHED = 20, 21, 0x00020000
+SPELL_ATTR0_NOT_SHAPESHIFTED = 0x00010000
 RUNE_FREED = {('Revenge', SPELLFAMILY_WARRIOR): CASTER_AURA_STATE, ('Execute', SPELLFAMILY_WARRIOR): TARGET_AURA_STATE,
               ('Hammer of Wrath', 10): TARGET_AURA_STATE, ('Deep Freeze', 3): TARGET_AURA_STATE,
-              ('Ambush', 8): None}
+              ('Ambush', 8): None,
+              ('Fire Blast', 3): 'form'}       # Ember's Wrath: in Cat Form (src/runes.cpp, titan_runes_load)
 
 
 def rune_usability(spells):
     """Revenge without a block or dodge, Execute and Hammer of Wrath above 20% health, Deep Freeze on a target not
-    frozen, Ambush out of Stealth: allowed here (the server says no without the rune)."""
+    frozen, Ambush out of Stealth, Fire Blast in a form: allowed here (the server says no without the rune)."""
     freed = 0
     for key, row in spells.rows.items():
         name = spells.string(row[NAME])
@@ -1381,6 +1383,8 @@ def rune_usability(spells):
         row = list(row)
         if RUNE_FREED[rule] is None:
             row[FIELDS['Attributes']] &= ~SPELL_ATTR0_ONLY_STEALTHED
+        elif RUNE_FREED[rule] == 'form':
+            row[FIELDS['Attributes']] &= ~SPELL_ATTR0_NOT_SHAPESHIFTED
         else:
             row[RUNE_FREED[rule]] = 0
         spells.rows[key] = tuple(row)

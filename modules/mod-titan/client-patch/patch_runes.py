@@ -1554,7 +1554,7 @@ DUELIST_ICON, STORMREAVER_ICON = 'Ability_Rune_Duelist', 'Ability_Rune_Stormreav
 ROGUE_FAMILY = 8
 SPELL_ATTR1_FINISHING_MOVE_DAMAGE = 0x00100000      # a finishing move: needs combo points and spends them
 # The spellbook tab of the abilities a rune teaches (build_patch.py: our spells are the Demon Hunter's otherwise).
-SPELL_CLASSES = {91370: 'ROGUE', 91371: 'ROGUE', 91382: 'ROGUE', 91420: 'DRUID', 91440: 'DRUID'}
+SPELL_CLASSES = {91370: 'ROGUE', 91371: 'ROGUE', 91382: 'ROGUE'}
 # Sabre Slash's hit: designed in the Emberforge Effect Suite (spells/ROGUE_SabreSlash/Sabre_Slash.json, built by
 # models/suite_effect.py): a gold slash flashing across the target, a spray of sparks through it, a soft glow; and
 # retail's Sabre Slash sound (sounds/spell_ro_saberslash_cast_01).
@@ -1685,22 +1685,14 @@ ICONS += ['Ability_Rogue_SabreSlash', PISTOL_ICON, DUELIST_ICON, STORMREAVER_ICO
           'Ability_Rogue_SinisterCalling', 'Spell_Shaman_ThunderStorm', 'Ability_Shaman_LavaLash',
           'Spell_Fire_Immolation', 'Spell_Nature_LightningShield', 'Spell_Nature_Lightning']
 
-# ---- Ember's Wrath 91430 and Whitefang 91450 (their own dossiers): the Cat Form spell each teaches 10 before it,
-# its markers 1 on. Fire Blast and Icy Touch in Cat Form are rank 1's copies (the server deals the known rank's
-# damage), for Energy and on their own cooldowns (not the Mage's or Death Knight's), usable in a form.
+# ---- Ember's Wrath 91430 and Whitefang 91450 (their own dossiers), their markers 1 on. The Hero's own Fire Blast
+# and Icy Touch work in Cat Form at their own costs (Fire Blast's form rule: patch_spells.RUNE_FREED, the server
+# keeping it for everyone but a Cat with the rune); 91420 and 91440, the Cat Form copies they first taught, are gone.
 EMBERS_ICON, WHITEFANG_ICON = 'Ability_Rune_EmbersWrath', 'Ability_Rune_Whitefang'
-FIRE_BLAST, ICY_TOUCH = 2136, 45477
 VISUAL_FIRE_BLAST, VISUAL_SCORCH, VISUAL_ICE_LANCE, VISUAL_FROST_TRAP = 143, 945, 7906, 3759
 AURA_MOD_DODGE_PERCENT = 49
 _SPEED = {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}
 SPELLS += [
-    {'id': 91420, 'copy': FIRE_BLAST, 'name': 'Fire Blast', 'icon': 'Spell_Fire_Fireball',
-     'description': 'Blasts an enemy with fire in Cat Form, as your Fire Blast does. On your own Rake or Rip victim, '
-                    'it ignites the wound: Cinder Wound. Rune of Ember\'s Wrath.',
-     'tooltip': '', 'unset': {'Attributes': 0x10000},
-     'set': {'PowerType': POWER_ENERGY, 'ManaCost': 30, 'ManaCostPercentage': 0, 'Category': 0,
-             'CategoryRecoveryTime': 0, 'RecoveryTime': 6000, 'StartRecoveryCategory': GCD_CATEGORY,
-             'StartRecoveryTime': 1000}},
     {**dot(91421, 'Cinder Wound', 'Spell_Fire_Incinerate', FIRE, DURATION_10S, 'Fire damage every 2 sec.')},
     strike(91422, 'Cinder Wound', 'Spell_Fire_Incinerate', FIRE),
     {**dot(91423, 'Cinder Wound', 'Spell_Fire_Incinerate', FIRE, DURATION_10S, 'Fire damage every 2 sec.')},
@@ -1713,16 +1705,9 @@ SPELLS += [
             DURATION_5S, {1: aura(AURA_DUMMY, 1, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_5S}},
     buff(91430, "Rune of Ember's Wrath", EMBERS_ICON,
-         'Fire Blast is usable in Cat Form. On your Rake or Rip victim it ignites Cinder Wound: 30% of your attack '
-         'power plus 30% of your spell power as Fire damage over 6 sec.', DURATION_INFINITE,
+         'Your Fire Blast works in Cat Form. On your Rake or Rip victim it ignites Cinder Wound: 150% of your attack '
+         'power plus 100% of your spell power as Fire damage over 6 sec.', DURATION_INFINITE,
          {1: aura(AURA_DUMMY, 1, 0)}),
-    {'id': 91440, 'copy': ICY_TOUCH, 'name': 'Icy Touch', 'icon': 'Spell_DeathKnight_IceTouch',
-     'description': 'Chills an enemy in Cat Form, as your Icy Touch does (Frost Fever too), for Energy instead of '
-                    'runes. It lays Frozen Prey: your next Shred or Mangle shatters it. Rune of Whitefang.',
-     'tooltip': '',
-     'set': {'PowerType': POWER_ENERGY, 'ManaCost': 25, 'ManaCostPercentage': 0, 'RuneCostID': 0, 'Category': 0,
-             'CategoryRecoveryTime': 0, 'RecoveryTime': 0, 'StartRecoveryCategory': GCD_CATEGORY,
-             'StartRecoveryTime': 1000}},
     harmful(91441, 'Frozen Prey', 'Spell_Frost_FrostShock', 'Marked: the next Shred or Mangle shatters it.',
             DURATION_10S, aura(AURA_DUMMY, 1, 0), FROST),
     harmful(91442, 'Frozen Prey', 'Spell_Frost_FrostShock', 'Marked: the next Shred or Mangle shatters it.',
@@ -1740,8 +1725,8 @@ SPELLS += [
             {1: aura(AURA_MOD_DODGE_PERCENT, 15, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
     buff(91450, 'Rune of Whitefang', WHITEFANG_ICON,
-         'Icy Touch is usable in Cat Form for 25 Energy and lays Frozen Prey: your next Shred or Mangle on the victim '
-         'shatters it for 30% of your attack power as Frost damage.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'Your Icy Touch, in Cat Form too, lays Frozen Prey: your next Shred or Mangle on the victim shatters it for '
+         '150% of your attack power as Frost damage.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     strike(91460, 'Frozen Trail', 'Spell_Frost_FrostNova', FROST),
     harmful(91461, 'Frozen Trail', 'Spell_Frost_FrostNova', 'Movement slowed by 30%.', DURATION_2S,
             aura(AURA_MOD_DECREASE_SPEED, -30, 0), FROST),

@@ -601,15 +601,17 @@ utility or a tradeoff) take one pick each, from three.
     a pulse 91402 every 2 sec, 25% AP); Lava Lash in it adds Thunderlash (91403, 60% AP; arcs 91404); the rune's
     aura procs on melee abilities (spell_proc) and discharges Lightning Shield (91407) once a second, the shield
     keeping its charges (its aura script's OnProc).
-  - **Ember's Wrath** (44; Melee; Cat Form, Fire Blast, Rake or Rip): the rune teaches Fire Blast in Cat Form (91420,
-    rank 1's copy for 30 Energy, its own 6 sec cooldown; the server deals the known rank's damage; on the first free
-    Cat Form button when learned); on the Hero's own Rake or Rip victim it ignites Cinder Wound (91421, 30% AP + 30%
-    SP over 6 sec, a tick 91422 every 2 sec: rune damage over time now ticks at its aura's period). Rake, Mangle,
+  - **Ember's Wrath** (44; Melee; Cat Form, Fire Blast, Rake or Rip): the Hero's own Fire Blast (every rank, its
+    mana and cooldown) works in Cat Form: its "not while shapeshifted" rule is gone from both copies of the spell
+    (patch_spells.RUNE_FREED, runes.cpp titan_runes_load) and `spell_titan_rune_embers_fire_blast` keeps it for
+    everyone but a Cat with the rune. On the Hero's own Rake or Rip victim it ignites Cinder Wound (91421, 150% AP +
+    100% SP over 6 sec, a tick 91422 every 2 sec: rune damage over time ticks at its aura's period). Rake, Mangle,
     Shred, Ferocious Bite and Swipe (Cat) carry its and Whitefang's modifiers (`spell_titan_rune_cat_strike`,
     `_ferocious_bite`, `_cat_swipe`).
-  - **Whitefang** (45; Melee; Cat Form, Icy Touch, Shred or Mangle): the rune teaches Icy Touch in Cat Form (91440,
-    rank 1's copy for 25 Energy and no runes, Frost Fever kept); it lays Frozen Prey (91441, one at a time), which
-    the next direct Shred or Mangle shatters (91443, 30% AP Frost). Both Cat Form spells in the Druid tab.
+  - **Whitefang** (45; Melee; Cat Form, Icy Touch, Shred or Mangle): the Hero's own Icy Touch (its Frost rune; no
+    form rule to lift) lays Frozen Prey (91441, one at a time), which the next direct Shred or Mangle shatters (91443,
+    150% AP Frost). The Cat Form copies both runes first taught (91420, 91440) are retired: a Hero's buttons for them
+    become the real spells.
   - `.runedebug` (anyone) tells the Splintered Crown's and Phoenix Wake's steps in chat (Icicle formed and loosed,
     the Ember placed, Fire Blast on its host, the phoenix summoned, its strike, why it went), to find where one stops.
 - A Hero's buff on their own pet or summon lands whatever its level (`hero_resources.cpp`): the core drops a positive

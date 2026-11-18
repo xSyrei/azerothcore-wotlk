@@ -119,7 +119,6 @@ namespace
     constexpr uint8 RUNE_DUELIST = 42;              // its own dossier, and the Stormreaver's
     constexpr uint8 RUNE_STORMREAVER = 43;
     constexpr uint8 RUNE_EMBERS_WRATH = 44;         // its own dossier, and Whitefang's
-    constexpr uint8 CAT_BAR_FIRST = 72;             // the Cat Form bar's first button (its bonus bar)
     constexpr uint8 RUNE_WHITEFANG = 45;
 
     enum Spells : uint32
@@ -378,8 +377,9 @@ namespace
         SPELL_STORMSTRIKE               = 17364,
         SPELL_LAVA_LASH                 = 60103,
 
-        // Ember's Wrath (91420 on: the Cat Form Fire Blast it teaches first) and Whitefang (91440 on: its Cat Form
-        // Icy Touch first); their markers 11 on from each first.
+        // Ember's Wrath (91420 on) and Whitefang (91440 on); their markers 11 on from each first. 91420 and 91440,
+        // the Cat Form copies of Fire Blast and Icy Touch they first taught, are retired: the Hero's own spells work
+        // in Cat Form now, at their own costs.
         SPELL_CAT_FIRE_BLAST            = 91420,
         SPELL_CINDER_WOUND              = 91421,    // its tick 91422, every 2 sec
         SPELL_CINDER_WOUND_TICK         = 91422,
@@ -957,14 +957,15 @@ namespace
         MOD_FLAMEBOUND, MOD_PATIENT_PREDATOR, MOD_ASHEN_PURSUIT,
     };
 
-    // Ember's Wrath's tuning (the dossier's prototype values): Fire Blast in Cat Form (30 Energy, 6 sec) ignites the
-    // Hero's Rake or Rip victim: Cinder Wound, 30% of attack power plus 30% of spell power over 6 sec, a tick every
-    // 2 sec (a new one keeps what is left of the last, up to twice a fresh one).
+    // Ember's Wrath's tuning: the Hero's own Fire Blast (its mana and cooldown), usable in Cat Form, ignites their
+    // Rake or Rip victim: Cinder Wound, 150% of attack power plus 100% of spell power over 6 sec, a tick every 2 sec
+    // (a new one keeps what is left of the last, up to twice a fresh one). The dossier's 30% and 30% (and its other
+    // shares, five times or so over) made the rune 2-5% of a feral's damage.
     constexpr int32 CINDER_MS = 6000, SMOLDERING_MS = 10000, FLAMEBOUND_MS = 3000, FLAMEBOUND_DISCOUNT_MS = 5000;
     constexpr uint32 ASHEN_MS = 6000, BLAZING_RAKE_MS = 3000;
     constexpr int32 FLAMEBOUND_REFUND = 10;
-    constexpr float CINDER_AP = 0.3f, CINDER_SP = 0.3f, SEARING_WOUND = 1.35f, SMOLDERING_FLESH = 1.3f;
-    constexpr float WILD_EMBERS_AP = 0.1f, WILD_EMBERS_SP = 0.1f, BLAZING_RAKE_AP = 0.15f, MOLTEN_BITE_AP = 0.05f;
+    constexpr float CINDER_AP = 1.5f, CINDER_SP = 1.0f, SEARING_WOUND = 1.35f, SMOLDERING_FLESH = 1.3f;
+    constexpr float WILD_EMBERS_AP = 0.4f, WILD_EMBERS_SP = 0.3f, BLAZING_RAKE_AP = 0.6f, MOLTEN_BITE_AP = 0.25f;
     constexpr float CINDER_SWIPE_SHARE = 0.5f, ASHEN_PURSUIT = 1.2f, PATIENT_PREDATOR = 2.0f;
     constexpr float WILD_EMBERS_RADIUS = 6.0f, CINDER_SWIPE_RADIUS = 8.0f;
     constexpr std::size_t WILD_EMBERS_TARGETS = 4, CINDER_SWIPE_TARGETS = 3;
@@ -977,14 +978,15 @@ namespace
         MOD_FANG_COLD_BLOOD, MOD_SNOWBLIND, MOD_FROZEN_TRAIL,
     };
 
-    // Whitefang's tuning (the dossier's prototype values): Icy Touch in Cat Form (25 Energy, no runes) lays Frozen
-    // Prey for 6 sec; the next Shred or Mangle on the victim shatters it for 30% of attack power as Frost damage.
+    // Whitefang's tuning: the Hero's own Icy Touch (its Frost rune), in Cat Form or not, lays Frozen Prey for 6 sec;
+    // the next Shred or Mangle on the victim shatters it for 150% of attack power as Frost damage (the dossier's
+    // 30%, and Frozen Trail's 5% a second, made the rune 2-5% of a feral's damage).
     constexpr int32 PREY_MS = 6000, LONG_WINTER_MS = 10000, WINTER_WOUND_MS = 6000, PURSUING_MS = 3000;
     constexpr int32 PACK_FROST_MS = 6000, FANG_COLD_BLOOD_MS = 5000, SNOWBLIND_MS = 3000, TRAIL_SLOW_MS = 1500;
     constexpr uint32 LONG_WINTER_AFTER_MS = 3000, FROZEN_TRAIL_TICKS = 4, FROZEN_TRAIL_TICK_MS = 1000;
     constexpr int32 PURSUING_REFUND = 10;
-    constexpr float SHATTER_AP = 0.3f, WHITEFANG_BONUS = 1.4f, ICEFANG_SHARE = 0.5f, WINTER_WOUND_SHARE = 1.5f;
-    constexpr float LONG_WINTER_BONUS = 1.2f, PACK_FROST_SHARE = 0.6f, FANG_COLD_BLOOD = 1.2f, FROZEN_TRAIL_AP = 0.05f;
+    constexpr float SHATTER_AP = 1.5f, WHITEFANG_BONUS = 1.4f, ICEFANG_SHARE = 0.5f, WINTER_WOUND_SHARE = 1.5f;
+    constexpr float LONG_WINTER_BONUS = 1.2f, PACK_FROST_SHARE = 0.6f, FANG_COLD_BLOOD = 1.2f, FROZEN_TRAIL_AP = 0.2f;
     constexpr float ICEFANG_REACH = 8.0f, ICEFANG_ARC = float(M_PI) / 4.0f, PACK_FROST_RADIUS = 8.0f;
     constexpr float SNOWBLIND_RADIUS = 6.0f, FROZEN_TRAIL_RADIUS = 6.0f;
     constexpr std::size_t ICEFANG_TARGETS = 4, PACK_FROST_TARGETS = 2, FROZEN_TRAIL_TARGETS = 5;
@@ -5438,7 +5440,7 @@ namespace
         return ASHEN_PURSUIT;
     }
 
-    // Fire Blast in Cat Form landed: it ignites the Hero's Rake or Rip victim (Wild Embers: the flames leap to up to
+    // Fire Blast landed: it ignites the Hero's Rake or Rip victim (Wild Embers: the flames leap to up to
     // 4 more within 6 yards); Flamebound: speed, and the next Rake or Mangle 10 Energy back.
     void CatFireBlast(Player* player, Unit* target)
     {
@@ -5487,7 +5489,7 @@ namespace
             }
     }
 
-    // Icy Touch in Cat Form landed: Frozen Prey on its victim (one primary mark: an earlier one goes); Pursuing
+    // Icy Touch landed: Frozen Prey on its victim (one primary mark: an earlier one goes); Pursuing
     // Chill: speed, and the shattering Shred or Mangle in its time 10 Energy back.
     void CatIcyTouch(Player* player, Unit* target)
     {
@@ -5508,7 +5510,7 @@ namespace
     }
 
     // Frozen Trail: a 6-yard patch of frost where the prey shattered, for 4 sec: each second up to 5 enemies in it
-    // take 5% of attack power as Frost damage and move 30% slower.
+    // take 20% of attack power as Frost damage and move 30% slower.
     void LayFrozenTrail(Player* player, Unit* target)
     {
         Position at = target->GetPosition();
@@ -5527,7 +5529,7 @@ namespace
             }, Milliseconds(i * FROZEN_TRAIL_TICK_MS));
     }
 
-    // A direct Shred or Mangle on a marked victim shatters the mark: 30% of attack power as Frost damage (Whitefang
+    // A direct Shred or Mangle on a marked victim shatters the mark: 150% of attack power as Frost damage (Whitefang
     // 40% more; Long Winter 20% more for a mark at least 3 sec old; a Pack Frost mark 60%), or Winter Wound's 150%
     // over 6 sec; Icefang Spray: half to up to 4 in an 8-yard cone. Then the primary's Pack Frost marks and the
     // instincts: Cold Blood, Snowblind, Frozen Trail.
@@ -5598,7 +5600,7 @@ namespace
     }
 
     // Ferocious Bite on the Hero's own victim: Cold Blood's 20% (it is spent); Molten Bite on a Cinder Wound victim:
-    // 5% of attack power per combo point as Fire damage more.
+    // 25% of attack power per combo point as Fire damage more.
     float BiteBonus(Player* player, Unit* target)
     {
         State& state = StateOf(player);
@@ -5609,39 +5611,24 @@ namespace
         return FANG_COLD_BLOOD;
     }
 
-    // The rune teaches its Cat Form spell while bound (on the first free button of the Cat Form bar when it is
-    // new); unbound, the spell and its buttons go.
-    void TeachCatSpell(Player* player, uint32 spellId, bool bound)
+    // The Cat Form copies the runes first taught (Fire Blast 91420, Icy Touch 91440) are gone: a Hero who learned one
+    // forgets it, its buttons the real spell's (its highest known rank) or empty.
+    void RetireCatCopy(Player* player, uint32 copy, uint32 firstRank)
     {
-        bool changed = false;
-        if (bound && !player->HasSpell(spellId))
-        {
-            player->learnSpell(spellId);
-            bool placed = false;
-            for (uint8 button = 0; button < MAX_ACTION_BUTTONS && !placed; ++button)
-                if (ActionButton const* action = player->GetActionButton(button);
-                    action && action->GetType() == ACTION_BUTTON_SPELL && action->GetAction() == spellId)
-                    placed = true;
-            for (uint8 button = CAT_BAR_FIRST; button < CAT_BAR_FIRST + 12 && !placed; ++button)
-                if (!player->GetActionButton(button))
-                {
-                    player->addActionButton(button, spellId, ACTION_BUTTON_SPELL);
-                    placed = changed = true;
-                }
-        }
-        else if (!bound && player->HasSpell(spellId))
-        {
-            for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
-                if (ActionButton const* action = player->GetActionButton(button);
-                    action && action->GetType() == ACTION_BUTTON_SPELL && action->GetAction() == spellId)
-                {
+        if (!player->HasSpell(copy))
+            return;
+        uint32 real = KnownRank(player, firstRank);
+        for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
+            if (ActionButton const* action = player->GetActionButton(button);
+                action && action->GetType() == ACTION_BUTTON_SPELL && action->GetAction() == copy)
+            {
+                if (real)
+                    player->addActionButton(button, real, ACTION_BUTTON_SPELL);
+                else
                     player->removeActionButton(button);
-                    changed = true;
-                }
-            player->removeSpell(spellId, SPEC_MASK_ALL, false);
-        }
-        if (changed)
-            player->SendActionButtons(1);
+            }
+        player->removeSpell(copy, SPEC_MASK_ALL, false);
+        player->SendActionButtons(1);
     }
 
     void ClearDuelists(Player* player)
@@ -5711,7 +5698,7 @@ namespace
     {
         for (uint32 spell : RuneAuras())
             player->RemoveAurasDueToSpell(spell);
-        bool any = false, paragon = false, duelist = false, embers = false, whitefang = false;
+        bool any = false, paragon = false, duelist = false;
         for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
         {
             Choice const& choice = ActiveChoice(player, runeSlot);
@@ -5721,8 +5708,6 @@ namespace
             any = true;
             paragon |= rune->Id == RUNE_SANCTIFIED_PARAGON;
             duelist |= rune->Id == RUNE_DUELIST;
-            embers |= rune->Id == RUNE_EMBERS_WRATH;
-            whitefang |= rune->Id == RUNE_WHITEFANG;
             player->AddAura(rune->Aura, player);
             for (uint8 slot = 0; slot < SLOTS; ++slot)
                 if (uint8 pick = choice.Mods[slot])
@@ -5733,8 +5718,8 @@ namespace
         if (!paragon)
             player->RemoveAurasDueToSpell(SPELL_SANCTIFIED_PARAGON);
         TeachDuelist(player, duelist);
-        TeachCatSpell(player, SPELL_CAT_FIRE_BLAST, embers);
-        TeachCatSpell(player, SPELL_CAT_ICY_TOUCH, whitefang);
+        RetireCatCopy(player, SPELL_CAT_FIRE_BLAST, SPELL_FIRE_BLAST);
+        RetireCatCopy(player, SPELL_CAT_ICY_TOUCH, SPELL_ICY_TOUCH);
         ApplyLegend(player, 0);
     }
 
@@ -7608,84 +7593,80 @@ class spell_titan_rune_broadside : public SpellScript
     }
 };
 
-// Fire Blast in Cat Form (Ember's Wrath): the Fire Blast rank the Hero knows (this copy is rank 1's), Ashen Pursuit,
-// then the ignition.
-class spell_titan_rune_cat_fire_blast : public SpellScript
+// Fire Blast (every rank) and Ember's Wrath: in Cat Form with the rune (its own mana and cooldown; anyone else, in a
+// form, refused as the client used to: the rule is gone from both copies of the spell so the client lets it be
+// tried), Ashen Pursuit, then the ignition.
+class spell_titan_rune_embers_fire_blast : public SpellScript
 {
-    PrepareSpellScript(spell_titan_rune_cat_fire_blast);
+    PrepareSpellScript(spell_titan_rune_embers_fire_blast);
 
     SpellCastResult Check()
     {
-        Player* player = GetCaster()->ToPlayer();
-        if (!player || !player->HasAura(SPELL_RUNE_EMBERS_WRATH))
-            return SPELL_FAILED_DONT_REPORT;
-        return player->GetShapeshiftForm() == FORM_CAT ? SPELL_CAST_OK : SPELL_FAILED_ONLY_SHAPESHIFT;
+        Unit* caster = GetCaster();
+        ShapeshiftForm form = caster->GetShapeshiftForm();
+        if (form == FORM_NONE)
+            return SPELL_CAST_OK;
+        SpellShapeshiftFormEntry const* shape = sSpellShapeshiftFormStore.LookupEntry(form);
+        if (shape && (shape->flags1 & SHAPESHIFT_FLAG_STANCE))
+            return SPELL_CAST_OK;                   // a stance, as before
+        bool emberCat = form == FORM_CAT && caster->HasAura(SPELL_RUNE_EMBERS_WRATH);
+        return emberCat ? SPELL_CAST_OK : SPELL_FAILED_NOT_SHAPESHIFT;
     }
 
     void Damage()
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (!player || !target || GetHitDamage() <= 0)
-            return;
-        float own = DirectDamage(player, target, SPELL_CAT_FIRE_BLAST);
-        float known = DirectDamage(player, target, KnownRank(player, SPELL_FIRE_BLAST) ?: SPELL_FIRE_BLAST);
-        float scale = own > 0.0f ? known / own : 1.0f;
-        SetHitDamage(std::max(1, int32(GetHitDamage() * scale * AshenBonus(player, target))));
+        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_EMBERS_WRATH))
+            SetHitDamage(std::max(1, int32(GetHitDamage() * AshenBonus(player, target))));
     }
 
     void Ignite()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (Unit* target = GetHitUnit(); player && target)
+        if (Unit* target = GetHitUnit(); player && target && player->HasAura(SPELL_RUNE_EMBERS_WRATH))
             CatFireBlast(player, target);
     }
 
     void Register() override
     {
-        OnCheckCast += SpellCheckCastFn(spell_titan_rune_cat_fire_blast::Check);
-        OnHit += SpellHitFn(spell_titan_rune_cat_fire_blast::Damage);
-        AfterHit += SpellHitFn(spell_titan_rune_cat_fire_blast::Ignite);
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_embers_fire_blast::Check);
+        OnHit += SpellHitFn(spell_titan_rune_embers_fire_blast::Damage);
+        AfterHit += SpellHitFn(spell_titan_rune_embers_fire_blast::Ignite);
     }
 };
 
-// Icy Touch in Cat Form (Whitefang): the Icy Touch rank the Hero knows (this copy is rank 1's), then Frozen Prey.
-class spell_titan_rune_cat_icy_touch : public SpellScript
+// Icy Touch (every rank) and Whitefang: Frozen Prey on its victim (its Frost rune and Frost Fever as ever).
+class spell_titan_rune_whitefang_icy_touch : public SpellScript
 {
-    PrepareSpellScript(spell_titan_rune_cat_icy_touch);
-
-    SpellCastResult Check()
-    {
-        Player* player = GetCaster()->ToPlayer();
-        if (!player || !player->HasAura(SPELL_RUNE_WHITEFANG))
-            return SPELL_FAILED_DONT_REPORT;
-        return player->GetShapeshiftForm() == FORM_CAT ? SPELL_CAST_OK : SPELL_FAILED_ONLY_SHAPESHIFT;
-    }
-
-    void Damage()
-    {
-        Player* player = GetCaster()->ToPlayer();
-        Unit* target = GetHitUnit();
-        if (!player || !target || GetHitDamage() <= 0)
-            return;
-        float own = DirectDamage(player, target, SPELL_CAT_ICY_TOUCH);
-        float known = DirectDamage(player, target, KnownRank(player, SPELL_ICY_TOUCH) ?: SPELL_ICY_TOUCH);
-        if (own > 0.0f)
-            SetHitDamage(std::max(1, int32(GetHitDamage() * known / own)));
-    }
+    PrepareSpellScript(spell_titan_rune_whitefang_icy_touch);
 
     void Mark()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (Unit* target = GetHitUnit(); player && target && target->IsAlive())
+        if (Unit* target = GetHitUnit(); player && target && target->IsAlive() && player->HasAura(SPELL_RUNE_WHITEFANG))
             CatIcyTouch(player, target);
     }
 
     void Register() override
     {
-        OnCheckCast += SpellCheckCastFn(spell_titan_rune_cat_icy_touch::Check);
-        OnHit += SpellHitFn(spell_titan_rune_cat_icy_touch::Damage);
-        AfterHit += SpellHitFn(spell_titan_rune_cat_icy_touch::Mark);
+        AfterHit += SpellHitFn(spell_titan_rune_whitefang_icy_touch::Mark);
+    }
+};
+
+// Fire Blast's ranks (the player's): no "not while shapeshifted" rule at load (Ember's Wrath's script keeps it for
+// everyone but a Cat with the rune), as the client patch does (patch_spells.py, RUNE_FREED).
+class titan_runes_load : public GlobalScript
+{
+public:
+    titan_runes_load() : GlobalScript("titan_runes_load", { GLOBALHOOK_ON_LOAD_SPELL_CUSTOM_ATTR }) { }
+
+    void OnLoadSpellCustomAttr(SpellInfo* spellInfo) override
+    {
+        static constexpr std::array<uint32, 11> FIRE_BLAST_RANKS = { 2136, 2137, 2138, 8412, 8413, 10197, 10199,
+            27078, 27079, 42872, 42873 };
+        if (std::find(FIRE_BLAST_RANKS.begin(), FIRE_BLAST_RANKS.end(), spellInfo->Id) != FIRE_BLAST_RANKS.end())
+            spellInfo->Attributes &= ~SPELL_ATTR0_NOT_SHAPESHIFTED;
     }
 };
 
@@ -8124,8 +8105,9 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_stormstrike);
     RegisterSpellScript(spell_titan_rune_lava_lash);
     RegisterSpellScript(spell_titan_rune_stormreaver);
-    RegisterSpellScript(spell_titan_rune_cat_fire_blast);
-    RegisterSpellScript(spell_titan_rune_cat_icy_touch);
+    RegisterSpellScript(spell_titan_rune_embers_fire_blast);
+    RegisterSpellScript(spell_titan_rune_whitefang_icy_touch);
+    new titan_runes_load();
     RegisterSpellScript(spell_titan_rune_cat_strike);
     RegisterSpellScript(spell_titan_rune_ferocious_bite);
     RegisterSpellScript(spell_titan_rune_cat_swipe);
