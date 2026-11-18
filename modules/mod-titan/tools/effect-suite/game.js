@@ -106,6 +106,7 @@ const GameEngine = (() => {
       this.data = data; this.world = world;
       this.root = new THREE.Group(); this.root.rotation.x = -Math.PI / 2; this.root.scale.setScalar(scale);
       this.time = 0; this.globalTime = 0; this.seqSlot = 0; this.loop = true; this.speed = 1;
+      this.brightness = 1;        // the Suite's Brightness: every batch, particle and ribbon color times this
       this.playSeq(seq);
       this.vertexCount = data.vertexCount;
       this.basePos = b64(data.pos, Float32Array); this.baseNrm = b64(data.nrm, Float32Array);
@@ -196,7 +197,7 @@ const GameEngine = (() => {
         let a = opacity, rgb = [1, 1, 1];
         if (b.color >= 0 && d.colors[b.color]) { rgb = trackValue(d.colors[b.color].rgb, s, ms, g, gl, rgb); a *= trackValue(d.colors[b.color].a, s, ms, g, gl, 1); }
         if (b.alpha >= 0 && d.alphas[b.alpha]) a *= trackValue(d.alphas[b.alpha], s, ms, g, gl, 1);
-        m.color.setRGB(rgb[0], rgb[1], rgb[2]); m.opacity = clamp(a, 0, 1);
+        const k = this.brightness; m.color.setRGB(rgb[0] * k, rgb[1] * k, rgb[2] * k); m.opacity = clamp(a, 0, 1);
         if (b.blend <= 1) m.transparent = a < 0.999;
         m.visible = a > 0.003;
         if (b.uvanim >= 0 && m.map && d.uvanims[b.uvanim]) {
@@ -371,7 +372,8 @@ const GameEngine = (() => {
         const cx = cell % cols, cy = Math.floor(cell / cols), u0 = cx / cols, u1 = (cx + 1) / cols, v0 = cy / rows, v1 = (cy + 1) / rows;
         this.uv.set([u0, v1, u1, v1, u1, v0, u0, v0], i * 8);
         const al = clamp(a * opacity, 0, 1);
-        for (let k = 0; k < 4; k++) this.col.set([rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, al], i * 16 + k * 4);
+        const br = this.model.brightness / 255;
+        for (let k = 0; k < 4; k++) this.col.set([rgb[0] * br, rgb[1] * br, rgb[2] * br, al], i * 16 + k * 4);
       }
       this.geo.setDrawRange(0, n * 6);
       this.geo.attributes.position.needsUpdate = true; this.geo.attributes.uv.needsUpdate = true; this.geo.attributes.color.needsUpdate = true;
@@ -412,7 +414,7 @@ const GameEngine = (() => {
       for (const e of this.edges) { e.age += dt; e.p.y -= (r.gravity || 0) * dt * e.age * k; }
       const life = r.edgeLife || 0.5;
       while (this.edges.length && (this.edges[0].age > life || this.edges.length > MAX_EDGES)) this.edges.shift();
-      const n = this.edges.length, rgb = this.value('rgb', [1, 1, 1]), a = this.value('a', 1);
+      const n = this.edges.length, rgb = this.value('rgb', [1, 1, 1]).map((x) => x * md.brightness), a = this.value('a', 1);
       for (let i = 0; i < n; i++) {
         const e = this.edges[i], f = i / Math.max(1, n - 1);
         this.pos.set([e.p.x + e.up.x * e.above, e.p.y + e.up.y * e.above, e.p.z + e.up.z * e.above,

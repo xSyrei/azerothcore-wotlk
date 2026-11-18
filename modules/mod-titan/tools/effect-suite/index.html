@@ -85,6 +85,10 @@ button { cursor: pointer; }
 .hud { position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; flex-wrap: wrap; pointer-events: auto; }
 .hud .btn { background: #18151bcc; backdrop-filter: blur(4px); }
 .hud-right { left: auto; right: 10px; }
+.hud-tools { top: auto; bottom: 10px; align-items: center; }
+.hud-tools .sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 2px; }
+.field .ctl.wrap { flex-wrap: wrap; }
+.field .ctl.wrap > input[type="text"] { flex: 1 1 100%; }
 .dmg { position: absolute; font: 700 18px var(--font-display); color: #ffd16a; text-shadow: 0 2px 0 #000, 0 0 6px #000;
   transform: translate(-50%, -50%); white-space: nowrap; }
 .dmg.crit { font-size: 26px; color: #ff9b3d; }
@@ -203,6 +207,18 @@ kbd { font: 11px var(--font-mono); border: 1px solid var(--line); border-bottom-
     <div class="hud hud-right">
       <button class="btn small" id="pathBtn" aria-pressed="true" title="Show the projectile's path">Path</button>
       <button class="btn small" id="dmgBtn" aria-pressed="true" title="Damage numbers on hit">Numbers</button>
+      <button class="btn small" id="soundBtn" aria-pressed="true" title="Play the effect's sounds">Sound</button>
+    </div>
+    <div class="hud hud-tools" role="toolbar" aria-label="Placement tools">
+      <button class="btn small" data-giz="translate" title="Move the selected layer (W)">Move</button>
+      <button class="btn small" data-giz="rotate" title="Rotate it (E)">Rotate</button>
+      <button class="btn small" data-giz="scale" title="Scale it (R)">Scale</button>
+      <span class="sep"></span>
+      <button class="btn small" id="spaceBtn" title="Handles along the stage's axes or the layer's own (Q)">World</button>
+      <button class="btn small" id="snapBtn" aria-pressed="false" title="Snap: 0.25 yd, 15°, 0.1× (S)">Snap</button>
+      <button class="btn small" id="gizmoBtn" aria-pressed="true" title="Show the handles (G)">Handles</button>
+      <button class="btn small" id="focusBtn" title="Center the view on it (F)">Focus</button>
+      <button class="btn small" id="resetXfBtn" title="Put its offset, rotation and scale back">Reset</button>
     </div>
   </section>
 
@@ -226,6 +242,7 @@ kbd { font: 11px var(--font-mono); border: 1px solid var(--line); border-bottom-
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
 <script src="game.js"></script>
 <script src="gamedata.js"></script>
 <script>
@@ -443,6 +460,7 @@ const view = $('view'), overlay = $('overlay');
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: false });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
 renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.LinearToneMapping;          // its exposure is the stage's Exposure
 view.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0d0b10);
@@ -451,12 +469,32 @@ const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 400);
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.12; controls.maxPolarAngle = Math.PI * 0.495;
 
-scene.add(new THREE.HemisphereLight(0xbfb6c8, 0x1a1410, 0.7));
+const hemi = new THREE.HemisphereLight(0xbfb6c8, 0x1a1410, 0.7); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffe2c4, 0.8); sun.position.set(-8, 18, 10); scene.add(sun);
+// The lights effects cast (a layer's or a projectile's "Casts light"): a fixed pool, so no shader is rebuilt mid-cast.
+const LIGHT_POOL = Array.from({ length: 8 }, () => {
+  const light = new THREE.PointLight(0xffffff, 0, 6, 2); scene.add(light); return { light, owner: null };
+});
+function releaseLight(owner) {
+  const e = LIGHT_POOL.find((x) => x.owner === owner); if (e) { e.owner = null; e.light.intensity = 0; }
+  owner._light = null;
+}
+function releaseAllLights() { LIGHT_POOL.forEach((e) => { if (e.owner) e.owner._light = null; e.owner = null; e.light.intensity = 0; }); }
+// cfg: { glow, lightColor, lightIntensity, lightRange, lightFlicker }; level: the owner's fade times its brightness.
+function glowLight(owner, cfg, color, pos, level, rand) {
+  if (!cfg || !cfg.glow || level <= 0.001) { if (owner._light) releaseLight(owner); return; }
+  if (!owner._light) {
+    const e = LIGHT_POOL.find((x) => !x.owner); if (!e) return;
+    e.owner = owner; owner._light = e.light;
+  }
+  const L = owner._light, flick = cfg.lightFlicker ? 1 - cfg.lightFlicker * rand() : 1;
+  L.color.set(cfg.lightColor || color || '#ffffff'); L.distance = cfg.lightRange ?? 6;
+  L.intensity = (cfg.lightIntensity ?? 2) * level * flick * (STAGE.effectLights ?? 1); L.position.copy(pos);
+}
 
 // The floor: a yard grid, a stronger line every 5 yards.
 (function floor() {
-  const ground = new THREE.Mesh(new THREE.CircleGeometry(80, 64), new THREE.MeshStandardMaterial({ color: 0x050407, roughness: 1 }));
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(80, 64), new THREE.MeshStandardMaterial({ color: 0x15111a, roughness: 1 }));
   ground.rotation.x = -Math.PI / 2; scene.add(ground);
   const g1 = new THREE.GridHelper(120, 120, 0x1c1820, 0x1c1820); g1.position.y = 0.005; scene.add(g1);
   const g5 = new THREE.GridHelper(120, 24, 0x3a3140, 0x3a3140); g5.position.y = 0.006; scene.add(g5);
@@ -496,7 +534,29 @@ const dummyBody = new THREE.Group(); dummy.add(dummyBody);
   const t3 = add(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 16), red, -0.34, 1.32, 0); t3.rotation.z = Math.PI / 2;
 })();
 
-const STAGE = { distance: 12, side: 0, strafe: 0, strafeSpeed: 1.2, showPath: true, numbers: true };
+const STAGE = { distance: 12, side: 0, strafe: 0, strafeSpeed: 1.2, showPath: true, numbers: true,
+  preset: 'studio', ambient: 0.7, sunLight: 0.8, sunYaw: 129, sunHeight: 55, exposure: 1, sky: '#0d0b10', effectLights: 1,
+  sound: true, volume: 0.8 };
+// The stage's lighting moods (Effect & stage: Lighting): how an effect reads in daylight, at night, in a dungeon.
+const LIGHT_PRESETS = {
+  studio: { label: 'Studio', ambient: 0.7, sunLight: 0.8, sunYaw: 129, sunHeight: 55, exposure: 1, sky: '#0d0b10' },
+  day: { label: 'Daylight', ambient: 1.0, sunLight: 1.3, sunYaw: 140, sunHeight: 62, exposure: 1, sky: '#26303e' },
+  dusk: { label: 'Dusk', ambient: 0.45, sunLight: 0.75, sunYaw: 200, sunHeight: 10, exposure: 1.05, sky: '#2a1416' },
+  night: { label: 'Night', ambient: 0.16, sunLight: 0.15, sunYaw: 60, sunHeight: 40, exposure: 1.1, sky: '#05070d' },
+  dungeon: { label: 'Dungeon', ambient: 0.25, sunLight: 0, sunYaw: 129, sunHeight: 55, exposure: 1.15, sky: '#080607' },
+};
+Object.assign(STAGE, store.get('efs.stage', {}));
+function applyStage() {
+  hemi.intensity = STAGE.ambient; sun.intensity = STAGE.sunLight;
+  const yaw = STAGE.sunYaw * Math.PI / 180, h = STAGE.sunHeight * Math.PI / 180;
+  sun.position.set(Math.cos(yaw) * Math.cos(h) * 22, Math.sin(h) * 22, Math.sin(yaw) * Math.cos(h) * 22);
+  renderer.toneMappingExposure = STAGE.exposure;
+  scene.background.set(STAGE.sky); scene.fog.color.set(STAGE.sky);
+  store.set('efs.stage', STAGE);
+}
+// How much the stage's light a layer takes (its Scene light): 1 in the studio, less at night, more by day.
+function sceneLevel() { return clamp((STAGE.ambient * 0.6 + STAGE.sunLight * 0.5) / 0.82, 0, 2); }
+function lightFactor(l) { return (l.brightness ?? 1) * lerp(1, sceneLevel(), l.influence ?? 0); }
 const ANCHORS = {
   'caster.base': 'Hero: feet', 'caster.chest': 'Hero: chest', 'caster.head': 'Hero: above head', 'caster.hand': 'Hero: casting hand',
   'caster.lefthand': 'Hero: left hand', 'caster.righthand': 'Hero: right hand',
@@ -537,7 +597,8 @@ GAME.need = (key) => {
 async function loadLive() {
   const client = { read: async (p) => { const b = await LIVE.read(p); return b ? b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) : null; } };
   const lib = GAME.lib = new GameData.Library(client);
-  const [human, dummyData, effects, spells] = await Promise.all([lib.human(), lib.dummy(), lib.effects(), lib.spells()]);
+  const [human, dummyData, effects, spells, sounds] = await Promise.all([lib.human(), lib.dummy(), lib.effects(), lib.spells(), lib.sounds()]);
+  GAME.sounds = sounds;
   if (human) GameEngine.assets.human = human;
   if (dummyData) GameEngine.assets.dummy = dummyData;
   GAME.fx = effects.map((e) => e.path).sort((a, b) => modelName(a).localeCompare(modelName(b)));
@@ -647,13 +708,32 @@ const NEW_LAYER = {
 };
 NEW_LAYER.model = { type: 'model', name: 'Game model', trigger: 'impact', anchor: 'target.chest', delay: 0, life: 1.5,
   model: '', scale: 1, speed: 1, opacity: 1, turn: 0 };
+// A sound: the game's (in the client), a built-in one, or your own file (kept in the spec, like your textures).
+NEW_LAYER.sound = { type: 'sound', name: 'Sound', trigger: 'impact', anchor: 'impact', delay: 0, life: 1.2,
+  sound: 'synth:boom', volume: 1, pitch: 1, pitchVary: 0.05, loop: false, positional: true, range: 40 };
+// Every layer's light and placement (older specs get these as they load).
+const LAYER_COMMON = { brightness: 1, influence: 0, glow: false, lightColor: '', lightIntensity: 2, lightRange: 6,
+  lightFlicker: 0, offset: [0, 0, 0], orient: [0, 0, 0], scale: 1, space: 'stage', offsetEnd: [0, 0, 0] };
+for (const k of Object.keys(NEW_LAYER)) NEW_LAYER[k] = Object.assign(deepCopy(LAYER_COMMON), NEW_LAYER[k]);
 const NEW_PROJECTILE = { enabled: false, launchAt: 0.3, count: 1, stagger: 0.1, from: 'caster.hand', fromOffset: [0.3, 0, 0],
   to: 'target.chest', toOffset: [0, 0, 0], speed: 24, ease: 'linear', arc: 0, side: 0, peak: 0.5, fan: 0,
   alternate: false, spiralRadius: 0, spiralTurns: 3, wobble: 0, wobbleFreq: 1.2, homing: true,
   trail: { enabled: true, texture: 'beam', color: '#ffb35c', color2: '#ff3d00', width: 0.35, length: 0.3, opacity: 0.9,
-    blend: 'add' } };
+    blend: 'add', brightness: 1 },
+  sound: { launch: '', flight: '', impact: '', volume: 1, pitch: 1, pitchVary: 0.05, range: 40 },
+  light: { glow: false, lightColor: '', lightIntensity: 3, lightRange: 8, lightFlicker: 0.15 } };
+const NEW_TRANSFORM = { offset: [0, 0, 0], rotation: [0, 0, 0], scale: 1 };
 const NEW_EFFECT = () => ({ format: 'emberforge-effect', version: 1, name: 'New effect', impactAt: 0.5, tail: 0.6,
-  projectile: deepCopy(NEW_PROJECTILE), layers: [], textures: {} });
+  projectile: deepCopy(NEW_PROJECTILE), layers: [], textures: {}, sounds: {}, transform: deepCopy(NEW_TRANSFORM) });
+// A spec with today's fields under what it has (an older spec, an import, a template).
+function normalizeSpec(spec) {
+  const p = spec.projectile = Object.assign(deepCopy(NEW_PROJECTILE), spec.projectile || {});
+  for (const k of ['trail', 'sound', 'light']) p[k] = Object.assign(deepCopy(NEW_PROJECTILE[k]), p[k] || {});
+  spec.transform = Object.assign(deepCopy(NEW_TRANSFORM), spec.transform || {});
+  spec.sounds = spec.sounds || {}; spec.textures = spec.textures || {};
+  spec.layers = spec.layers.map((l) => Object.assign(deepCopy(NEW_LAYER[l.type] || LAYER_COMMON), l));
+  return spec;
+}
 
 function layer(type, props) { return Object.assign(deepCopy(NEW_LAYER[type]), { id: uid() }, props); }
 function projectile(props, trail) {
@@ -781,12 +861,157 @@ function templateEffect(t) {
   if (t.missile) layers.push(layer('model', { name: `Missile: ${short(t.missile)}`, trigger: 'projectile', anchor: 'projectile', model: t.missile }));
   kit(t.impact, 'impact', TARGET_SLOT, 0, 1.6, 'Impact');
   kit(t.state, 'impact', TARGET_SLOT, 0, 3, 'Lingering');
+  // The kits' sounds (SpellVisualKit's SoundEntries): the precast's and a lingering state's loop for their time.
+  const sound = (k, trigger, delay, life, loop, label) => {
+    if (k && k.sound) layers.push(layer('sound', { name: `${label} sound`, trigger, anchor: trigger === 'impact' ? 'impact' : 'caster.hand',
+      delay, life, loop, sound: 'game:' + k.sound }));
+  };
+  sound(t.precast, 'cast', 0, cast, true, 'Precast'); sound(t.cast, 'cast', cast, 1.2, false, 'Cast');
+  sound(t.impact, 'impact', 0, 1.6, false, 'Impact'); sound(t.state, 'impact', 0, 3, true, 'Lingering');
   const spec = Object.assign(NEW_EFFECT(), { name: t.name, castTime: cast, impactAt: cast + 0.05, layers, textures });
   spec.projectile = t.missile
     ? projectile({ speed: t.speed || 24, launchAt: cast, from: 'caster.righthand', fromOffset: [0, 0, 0], to: 'target.chest' }, { enabled: false })
     : deepCopy(NEW_PROJECTILE);
-  return spec;
+  if (t.missileSound) spec.projectile.sound.flight = 'game:' + t.missileSound;      // SpellVisual's missile loop
+  return normalizeSpec(spec);
 }
+
+/* ------------------------------------------------------------------------------------------------------ sound --- */
+/* Sounds play only while the effect plays (not while scrubbing): SFX.live is on for the frame's own steps. In 3D they
+   are heard from where they are (the camera listens); a loop stops when its layer ends or its projectile lands. */
+const SFX = { listener: null, buffers: new Map(), active: new Set(), live: false };
+const SYNTH = { whoosh: 'Whoosh (loop)', fireloop: 'Fire crackle (loop)', hum: 'Arcane hum (loop)', charge: 'Charge up',
+  boom: 'Explosion', zap: 'Lightning zap', crack: 'Thunder crack', chime: 'Holy chime', frost: 'Frost shatter', thud: 'Impact thud' };
+function audioCtx() {
+  if (!SFX.listener) { SFX.listener = new THREE.AudioListener(); camera.add(SFX.listener); }
+  return SFX.listener.context;
+}
+for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => { const c = audioCtx(); if (c.state === 'suspended') c.resume(); });
+// The built-in sounds, made here (no files): loops are crossfaded end into start so they repeat without a seam.
+function synth(name, ctx) {
+  const LEN = { whoosh: 2, fireloop: 2, hum: 2, charge: 1.2, boom: 1.6, zap: 0.5, crack: 1.4, chime: 1.8, frost: 1, thud: 0.5 };
+  const loop = /whoosh|fireloop|hum/.test(name), sr = ctx.sampleRate, fade = loop ? Math.floor(sr * 0.08) : 0;
+  const n = Math.floor(sr * (LEN[name] || 1)) + fade, d = new Float32Array(n), r = seeded(hashStr(name));
+  let a = 0, b = 0, c = 0, ph = 0, pop = 0;
+  const TAU = Math.PI * 2;
+  for (let i = 0; i < n; i++) {
+    const t = i / sr, u = t / (LEN[name] || 1), w = r() * 2 - 1;
+    let v = 0;
+    switch (name) {
+      case 'whoosh': a += (w - a) * (0.05 + 0.03 * Math.sin(TAU * u)); b += (a - b) * 0.35; v = (a - b) * 7 * (0.65 + 0.35 * Math.sin(TAU * u * 2)); break;
+      case 'fireloop':
+        a += (w - a) * 0.12; if (r() < 0.0012) pop = 0.5 + r() * 0.5; pop *= 0.994;
+        v = a * 1.2 * (0.8 + 0.2 * Math.sin(TAU * u * 3)) + pop * (r() * 2 - 1); break;
+      case 'hum': v = (Math.sin(TAU * 110 * t) * 0.5 + Math.sin(TAU * 220.5 * t) * 0.3 + Math.sin(TAU * 331 * t) * 0.15) * (0.75 + 0.25 * Math.sin(TAU * 4 * t)) + w * 0.03; break;
+      case 'charge': { const f = 150 * Math.pow(4, u); ph += TAU * f / sr; a += (w - a) * 0.2; v = (Math.sin(ph) * 0.6 + Math.sin(ph * 2.01) * 0.25 + a * 0.4) * u * Math.min(1, (1 - u) * 20); break; }
+      case 'boom': { const f = 35 + 60 * Math.exp(-t * 6); ph += TAU * f / sr; a += (w - a) * (0.02 + 0.3 * Math.exp(-t * 18)); v = Math.sin(ph) * Math.exp(-t * 3.5) * 0.9 + a * 2.2 * Math.exp(-t * 2.6); break; }
+      case 'zap': { const f = 200 + 1600 * Math.exp(-t * 14) * (1 + 0.3 * w); ph += TAU * f / sr; v = (Math.sign(Math.sin(ph)) * 0.35 + w * 0.6) * Math.exp(-t * 9); break; }
+      case 'crack': a += (w - a) * 0.03; v = w * Math.exp(-t * 14) * 0.9 + a * 3 * Math.exp(-t * 1.8) * (0.7 + 0.3 * Math.sin(TAU * 7 * t)); break;
+      case 'chime': v = [[880, 2.2], [1320, 2.8], [1760, 3.4], [2640, 4.5]].reduce((s2, [f, k], j) => s2 + Math.sin(TAU * f * t * (1 + 0.002 * Math.sin(TAU * 5 * t))) * Math.exp(-t * k) / (j + 1.5), 0) * Math.min(1, t * 200); break;
+      case 'frost': a = w - b; b = w; v = a * 0.5 * Math.exp(-t * 8) + (Math.sin(TAU * 2400 * t) * Math.exp(-t * 7) + Math.sin(TAU * 3170 * t) * Math.exp(-t * 9)) * 0.3 + (r() < 0.002 ? w : 0) * Math.exp(-t * 3); break;
+      case 'thud': { ph += TAU * (55 + 40 * Math.exp(-t * 30)) / sr; c += (w - c) * 0.1; v = Math.sin(ph) * Math.exp(-t * 11) + c * 1.5 * Math.exp(-t * 25); break; }
+    }
+    d[i] = v;
+  }
+  let len = n;
+  if (fade) { len = n - fade; for (let i = 0; i < fade; i++) { const k = i / fade; d[i] = d[i] * k + d[len + i] * (1 - k); } }
+  let peak = 0; for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(d[i]));
+  const buf = ctx.createBuffer(1, len, sr), out = buf.getChannelData(0), g = peak > 0 ? 0.8 / peak : 0;
+  for (let i = 0; i < len; i++) out[i] = d[i] * g;
+  return buf;
+}
+// A sound key: synth:<name>, file:<your sound's name> (spec.sounds), game:<SoundEntries id> (in the client).
+function soundBuffers(key) {
+  if (SFX.buffers.has(key)) return SFX.buffers.get(key);
+  const ctx = audioCtx();
+  const decode = async (bytes) => { try { return await ctx.decodeAudioData(bytes); } catch (e) { return null; } };
+  const job = (async () => {
+    if (key.startsWith('synth:')) return SYNTH[key.slice(6)] ? { buffers: [synth(key.slice(6), ctx)], volume: 1 } : null;
+    if (key.startsWith('file:')) {
+      const own = (state.spec.sounds || {})[key.slice(5)]; if (!own) return null;
+      const b = await decode(await (await fetch(own.data)).arrayBuffer());
+      return b ? { buffers: [b], volume: 1 } : null;
+    }
+    if (key.startsWith('game:') && GAME.lib) {
+      const e = await GAME.lib.sound(Number(key.slice(5))); if (!e) return null;
+      const buffers = (await Promise.all(e.files.map(async (f) => {
+        const b = await LIVE.read(f); return b ? decode(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)) : null;
+      }))).filter(Boolean);
+      return buffers.length ? { buffers, volume: e.volume } : null;
+    }
+    return null;
+  })();
+  SFX.buffers.set(key, job);
+  return job;
+}
+function soundLabel(key) {
+  if (!key) return 'None';
+  if (key.startsWith('synth:')) return SYNTH[key.slice(6)] || key;
+  if (key.startsWith('file:')) return key.slice(5);
+  if (key.startsWith('game:')) { const e = (GAME.sounds || []).find((x) => x.id === Number(key.slice(5))); return e ? e.name : `Game sound ${key.slice(5)}`; }
+  return key;
+}
+// Plays a sound; pos (a Vector3) makes it 3D. Returns a handle for moveSound / stopSound.
+function playSound(key, { volume = 1, pitch = 1, pitchVary = 0, loop = false, pos = null, range = 40, offset = 0, rand = Math.random } = {}) {
+  if (!key || !STAGE.sound) return null;
+  const h = { audio: null, obj: null, stopped: false, pos: pos ? pos.clone() : null };
+  SFX.active.add(h);
+  const pick = rand(), vary = rand() * 2 - 1;
+  soundBuffers(key).then((s) => {
+    if (h.stopped || !s) { SFX.active.delete(h); return; }
+    const buf = s.buffers[Math.floor(pick * s.buffers.length)], L = SFX.listener;
+    const a = h.pos ? new THREE.PositionalAudio(L) : new THREE.Audio(L);
+    a.setBuffer(buf); a.setLoop(loop); a.setVolume(volume * s.volume * STAGE.volume);
+    a.setPlaybackRate(Math.max(0.05, pitch * (1 + vary * pitchVary)));
+    if (h.pos) {
+      a.setDistanceModel('linear'); a.setRefDistance(1); a.setMaxDistance(Math.max(2, range)); a.setRolloffFactor(1);
+      h.obj = new THREE.Object3D(); h.obj.position.copy(h.pos); h.obj.add(a); scene.add(h.obj);
+    }
+    a.offset = loop ? offset % buf.duration : 0;
+    const ended = a.onEnded.bind(a);
+    a.onEnded = () => { ended(); if (!loop) finishSound(h); };
+    a.play(); h.audio = a;
+  });
+  return h;
+}
+function moveSound(h, pos) { if (!h) return; if (h.obj) h.obj.position.copy(pos); else if (h.pos) h.pos.copy(pos); }
+function finishSound(h) { SFX.active.delete(h); if (h.obj) { scene.remove(h.obj); h.obj = null; } }
+function stopSound(h, fade = 0.08) {
+  if (!h || h.stopped) return;
+  h.stopped = true;
+  const a = h.audio;
+  if (a && a.isPlaying) {
+    a.gain.gain.setTargetAtTime(0, a.context.currentTime, fade / 3);
+    setTimeout(() => { try { a.stop(); } catch (e) { /* already stopped */ } finishSound(h); }, fade * 1000 + 60);
+  } else finishSound(h);
+}
+function stopAllSounds() { [...SFX.active].forEach((h) => stopSound(h, 0.05)); }
+function addSound(done) {
+  const input = document.createElement('input'); input.type = 'file'; input.accept = 'audio/*,.wav,.mp3,.ogg';
+  input.onchange = () => {
+    const file = input.files[0]; if (!file) return;
+    if (file.size > 4 * 1024 * 1024) return toast('Keep sounds under 4 MB (they are saved inside the effect)');
+    const reader = new FileReader();
+    reader.onload = () => {
+      const name = file.name.replace(/\.[^.]+$/, '').replace(/[^\w-]/g, '_').slice(0, 40) || 'sound';
+      state.spec.sounds = state.spec.sounds || {}; state.spec.sounds[name] = { data: reader.result };
+      SFX.buffers.delete('file:' + name); done(name); toast(`Added ${name}`);
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+/* --------------------------------------------------------------------------------------------------- placement --- */
+/* A layer sits at its anchor, moved by the whole effect's offset and its own offset (in the stage's axes: X toward the
+   dummy, Y up, Z to the Hero's right; or the projectile's flight), turned by the effect's and its own rotation
+   (degrees: X roll, Y turn, Z tilt) and sized by both scales. */
+const D2R = Math.PI / 180;
+const EUL = new THREE.Euler();
+const degQuat = (r, out) => out.setFromEuler(EUL.set((r || [0, 0, 0])[0] * D2R, (r || [0, 0, 0])[1] * D2R, (r || [0, 0, 0])[2] * D2R, 'YZX'));
+const quatDeg = (q) => { EUL.setFromQuaternion(q, 'YZX'); return [EUL.x, EUL.y, EUL.z].map((x) => Math.round(x / D2R * 100) / 100); };
+const XF = () => state.spec.transform || NEW_TRANSFORM;
+const X_AXIS = new THREE.Vector3(1, 0, 0);
 
 /* ----------------------------------------------------------------------------------------------------- runtime --- */
 const PLANE = new THREE.PlaneGeometry(1, 1);
@@ -806,7 +1031,7 @@ function fadeAt(l, f) {
   if (fo > 0 && f > 1 - fo) a = Math.min(a, (1 - f) / fo);
   return clamp(a, 0, 1);
 }
-function tint(m, l, f) { colA.set(l.color); colB.set(l.color2 || l.color); m.color.copy(colA).lerp(colB, clamp(f, 0, 1)); }
+function tint(m, l, f) { colA.set(l.color); colB.set(l.color2 || l.color); m.color.copy(colA).lerp(colB, clamp(f, 0, 1)).multiplyScalar(lightFactor(l)); }
 function frameAt(l, local, f) {
   const info = textureInfo(l.texture), count = info.cols * info.rows;
   if (count <= 1) return 0;
@@ -833,8 +1058,26 @@ class LayerRun {
     if (this.l.anchor === 'impact' && this.opts.at) return out.copy(this.opts.at);
     return anchorAt(this.l.anchor, t, out);
   }
+  // The frame its offset is in: the effect's rotation, then the flight's direction when it follows the projectile.
+  frame(out) {
+    degQuat(XF().rotation, out);
+    if (this.l.space === 'motion' && this.flight && this.flight.vel.lengthSq() > 1e-6) {
+      out.multiply(new THREE.Quaternion().setFromUnitVectors(X_AXIS, this.flight.vel.clone().normalize()));
+    }
+    return out;
+  }
+  place(out) {
+    const q = this.frame(new THREE.Quaternion());
+    return out.copy(this.anchorPos).add(new THREE.Vector3(...(XF().offset || [0, 0, 0])))
+      .add(new THREE.Vector3(...(this.l.offset || [0, 0, 0])).applyQuaternion(q));
+  }
+  orient(out) { return this.frame(out).multiply(degQuat(this.l.orient, new THREE.Quaternion())); }
+  get sizeK() { return (this.l.scale ?? 1) * (XF().scale ?? 1); }
   ensure(n, make) { while (this.objects.length < n) { const o = make(); runtime.add(o); this.objects.push(o); } }
   dispose() {
+    if (this._light) releaseLight(this);
+    if (this.snd && this.l.loop) stopSound(this.snd, 0.15);
+    this.snd = null;
     if (this.gm) { this.gm.dispose(); runtime.remove(this.holder); this.gm = null; }
     for (const o of this.objects) { runtime.remove(o); if (o.material) { if (o.material.userData.own) o.material.map.dispose(); o.material.dispose(); } }
     for (const p of this.parts) { runtime.remove(p.s); p.s.material.dispose(); }
@@ -846,6 +1089,11 @@ class LayerRun {
     const ended = this.flight ? this.flight.arrived : local > this.life;
     const f = this.flight ? clamp(local / 0.15, 0, 1) : clamp(local / this.life, 0, 1);
     this.anchor(t, this.anchorPos);
+    if (l.type === 'sound') return this.stepSound(t, local, ended);
+    if (l.type !== 'particles' || !ended) {
+      const fade = this.flight ? f : fadeAt(l, f);
+      glowLight(this, l, l.color, this.place(tmpA), (ended ? 0 : fade) * (l.opacity ?? 1) * (l.brightness ?? 1), this.rand);
+    } else if (this._light) releaseLight(this);
     if (l.type === 'model') return this.stepModel(t, dt, local, ended);
     if (l.type === 'particles') this.stepParticles(t, dt, local, ended);
     else if (ended) { this.dispose(); return; }
@@ -854,6 +1102,18 @@ class LayerRun {
   }
   // A game model (an effect of the client's): placed at its anchor (facing the projectile's way, or the way its
   // actor faces), its sequence playing; when its time is up it stops emitting and goes once its particles are gone.
+  // A sound: started as the effect plays through its start (a loop also when playback resumes inside it), heard
+  // from its place; a loop stops at its end.
+  stepSound(t, local, ended) {
+    const l = this.l, pos = this.place(new THREE.Vector3());
+    if (!this.snd && !this.played && SFX.live && !ended && (l.loop || local < 0.12)) {
+      this.snd = playSound(l.sound, { volume: l.volume ?? 1, pitch: l.pitch ?? 1, pitchVary: l.pitchVary ?? 0, loop: !!l.loop,
+        pos: l.positional === false ? null : pos, range: l.range ?? 40, offset: local, rand: this.rand });
+      this.played = !l.loop;
+    }
+    if (this.snd) moveSound(this.snd, pos);
+    if (ended) this.dispose();
+  }
   stepModel(t, dt, local, ended) {
     const l = this.l, data = GAME.need(l.model);
     if (!data) { if (ended) this.dispose(); return; }
@@ -862,10 +1122,13 @@ class LayerRun {
       this.gm.speed = l.speed || 1; this.holder = new THREE.Group(); this.holder.add(this.gm.root); runtime.add(this.holder);
       this.endAt = null;
     }
-    this.holder.position.copy(this.anchorPos);
+    this.place(this.holder.position);
     const turn = (l.turn || 0) * Math.PI / 180;
     if (this.flight && this.flight.vel.lengthSq() > 1e-6) this.holder.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), this.flight.vel.clone().normalize());
     else this.holder.rotation.set(0, (l.anchor.startsWith('target') || l.anchor === 'impact' ? Math.PI : 0) + turn, 0);
+    // The facing, under the effect's rotation, then the layer's own.
+    this.holder.quaternion.premultiply(degQuat(XF().rotation, new THREE.Quaternion())).multiply(degQuat(l.orient, new THREE.Quaternion()));
+    this.gm.root.scale.setScalar(this.sizeK); this.gm.brightness = lightFactor(l);
     if (ended && this.endAt === null) { this.endAt = local; this.gm.emitting = false; }
     const fade = this.endAt === null ? clamp(local / 0.08, 0, 1) : clamp(1 - (local - this.endAt) / 0.25, 0, 1);
     this.gm.update(dt, camera, (l.opacity ?? 1) * fade);
@@ -877,22 +1140,26 @@ class LayerRun {
       if (!ground) return new THREE.Sprite(spriteMaterial(l));
       const m = new THREE.Mesh(PLANE, new THREE.MeshBasicMaterial({ map: frameTexture(l.texture, 0), transparent: true,
         depthWrite: false, blending: blendOf(l.blend), side: THREE.DoubleSide, fog: false }));
-      m.rotation.x = -Math.PI / 2; return m;
+      return m;
     });
     const fade = this.flight ? f : fadeAt(l, f), grow = this.flight ? 0 : f;
-    const size = lerp(l.sizeStart, l.sizeEnd, 1 - Math.pow(1 - grow, 2));
+    const size = lerp(l.sizeStart, l.sizeEnd, 1 - Math.pow(1 - grow, 2)) * this.sizeK;
+    const base = this.place(new THREE.Vector3()), q = this.orient(new THREE.Quaternion()), spread = new THREE.Vector3();
+    const flat = new THREE.Quaternion().setFromAxisAngle(X_AXIS, -Math.PI / 2), spinQ = new THREE.Quaternion();
     const frame = frameAt(l, local, f), info = textureInfo(l.texture);
     let motionAngle = 0;
     if (!ground && l.alignToMotion && this.flight) motionAngle = screenAngle(this.flight.pos, this.flight.vel);
     for (let i = 0; i < n; i++) {
       const o = this.objects[i]; o.visible = true;
       const a = (i / n) * Math.PI * 2 + (l.orbit || 0) * Math.PI / 180 * local;
-      o.position.copy(this.anchorPos).add(tmpA.set(...(l.offset || [0, 0, 0])));
-      if (l.radius) o.position.x += Math.cos(a) * l.radius, o.position.z += Math.sin(a) * l.radius;
-      if (ground) o.position.y = 0.02 + (l.offset ? l.offset[1] : 0) + i * 0.002; else o.position.y += (l.rise || 0) * f;
+      // Copies spread in a ring and rise, in the layer's own turned frame.
+      spread.set(Math.cos(a) * (l.radius || 0) * this.sizeK, ground ? 0 : (l.rise || 0) * f, Math.sin(a) * (l.radius || 0) * this.sizeK).applyQuaternion(q);
+      o.position.copy(base).add(spread);
+      if (ground) o.position.y = 0.02 + (l.offset ? l.offset[1] : 0) + (XF().offset || [0, 0, 0])[1] + spread.y + i * 0.002;
       const rot = ((l.rotation || 0) + (l.spin || 0) * local) * Math.PI / 180 + motionAngle;
       const ratio = (l.stretch || 1) * (info.aspect || 1);
-      if (ground) { o.scale.set(size * ratio, size, 1); o.rotation.z = rot; } else { o.scale.set(size * ratio, size, 1); o.material.rotation = rot; }
+      if (ground) { o.scale.set(size * ratio, size, 1); o.quaternion.copy(q).multiply(flat).multiply(spinQ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), rot)); }
+      else { o.scale.set(size * ratio, size, 1); o.material.rotation = rot; }
       o.material.map = frameTexture(l.texture, frame + i * 3);
       o.material.opacity = (l.opacity ?? 1) * fade; tint(o.material, l, f);
     }
@@ -905,7 +1172,9 @@ class LayerRun {
         blending: blendOf(l.blend), side: THREE.DoubleSide, fog: false }));
       m.material.userData.own = true; return m;
     });
-    const o = this.objects[0], a = this.anchorPos, b = anchorAt(l.anchorEnd || 'target.chest', t, tmpB);
+    const o = this.objects[0], a = this.place(tmpA), b = anchorAt(l.anchorEnd || 'target.chest', t, tmpB)
+      .add(new THREE.Vector3(...(XF().offset || [0, 0, 0])))
+      .add(new THREE.Vector3(...(l.offsetEnd || [0, 0, 0])).applyQuaternion(degQuat(XF().rotation, new THREE.Quaternion())));
     const axis = tmpC.subVectors(b, a), len = axis.length(); if (len < 0.01) { o.visible = false; return; }
     axis.normalize(); o.visible = true;
     const mid = tmpD.addVectors(a, b).multiplyScalar(0.5);
@@ -913,7 +1182,7 @@ class LayerRun {
     const normal = toCam.sub(axis.clone().multiplyScalar(toCam.dot(axis))).normalize();
     const side = new THREE.Vector3().crossVectors(normal, axis).normalize();
     o.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(axis, side, normal));
-    o.position.copy(mid); o.scale.set(len, l.width || 0.6, 1);
+    o.position.copy(mid); o.scale.set(len, (l.width || 0.6) * this.sizeK, 1);
     const info = textureInfo(l.texture), rows = info.rows || 1;
     const map = o.material.map; map.repeat.set(len / Math.max(0.1, (l.width || 0.6) * (l.tile || 1)) / (info.aspect || 1) * 4, 1 / rows);
     const frame = Math.floor(local * (l.fps || 0)) % rows;
@@ -938,7 +1207,7 @@ class LayerRun {
       p.v.y += (l.gravity || 0) * dt; p.v.multiplyScalar(Math.max(0, 1 - (l.drag || 0) * dt)); p.p.addScaledVector(p.v, dt);
       if (p.p.y < 0.03 && (l.gravity || 0) < 0) { p.p.y = 0.03; p.v.y *= -0.3; p.v.x *= 0.6; p.v.z *= 0.6; }
       const f = p.age / p.life, s = p.s;
-      s.position.copy(p.p); const size = lerp(l.sizeStart, l.sizeEnd, f) * p.k; s.scale.set(size, size, 1);
+      s.position.copy(p.p); const size = lerp(l.sizeStart, l.sizeEnd, f) * p.k * this.sizeK; s.scale.set(size, size, 1);
       s.material.opacity = (l.opacity ?? 1) * fadeAt(l, f); tint(s.material, l, f);
       s.material.rotation = p.rot + (l.spin || 0) * Math.PI / 180 * p.age;
       if (frames > 1) s.material.map = frameTexture(l.texture, frames > 1 && l.fps ? p.frame + Math.floor(p.age * l.fps) : Math.floor(f * frames));
@@ -961,9 +1230,13 @@ class LayerRun {
       case 'ring': { const a = r() * Math.PI * 2; dir.set(Math.cos(a), 0.05 + r() * 0.1, Math.sin(a)); break; }
       default: cone(UP, 180);
     }
-    const speed = lerp(l.speedMin || 0, l.speedMax || 0, r());
-    const pos = this.anchorPos.clone().add(new THREE.Vector3(...(l.offset || [0, 0, 0])));
-    if (l.emitRadius) { const a = r() * Math.PI * 2, rr = Math.sqrt(r()) * l.emitRadius; pos.x += Math.cos(a) * rr; pos.z += Math.sin(a) * rr; pos.y += (r() - 0.5) * l.emitRadius * 0.3; }
+    const speed = lerp(l.speedMin || 0, l.speedMax || 0, r()), q = this.orient(new THREE.Quaternion());
+    dir.applyQuaternion(q);                         // the layer's rotation aims its emission
+    const pos = this.place(new THREE.Vector3());
+    if (l.emitRadius) {
+      const a = r() * Math.PI * 2, rr = Math.sqrt(r()) * l.emitRadius * this.sizeK;
+      pos.add(new THREE.Vector3(Math.cos(a) * rr, (r() - 0.5) * l.emitRadius * this.sizeK * 0.3, Math.sin(a) * rr).applyQuaternion(q));
+    }
     const v = dir.multiplyScalar(speed);
     if (vel && l.inherit) v.addScaledVector(vel, l.inherit);
     const s = new THREE.Sprite(spriteMaterial(l)); runtime.add(s);
@@ -1018,7 +1291,12 @@ class Flight {
   step(t, dt) {
     const p = this.p;
     if (t < this.launch) return;
-    if (!this.started) { this.started = true; startPoint(p, t, this.S); endPoint(p, t, this.E); }
+    if (!this.started) { this.started = true; startPoint(p, t, this.S); endPoint(p, t, this.E); this.rand = seeded(this.idx * 977 + 5); }
+    const snd = p.sound || {}, opts = { volume: snd.volume ?? 1, pitch: snd.pitch ?? 1, pitchVary: snd.pitchVary ?? 0, range: snd.range ?? 40, rand: this.rand };
+    if (!this.launchPlayed) {
+      if (SFX.live && snd.launch && t - this.launch < 0.12) playSound(snd.launch, { ...opts, pos: this.S });
+      if (SFX.live || t - this.launch >= 0.12) this.launchPlayed = true;
+    }
     if (!this.arrived) {
       if (p.homing) endPoint(p, t, this.E);
       const len = Math.max(0.5, pathLength(p, this.S, this.E, this.idx));
@@ -1026,8 +1304,17 @@ class Flight {
       const prev = this.pos.clone();
       pathPoint(p, (EASES[p.ease] || EASES.linear)(this.s), this.S, this.E, this.idx, this.pos);
       if (dt > 0 && this.s > 0) this.vel.subVectors(this.pos, prev).divideScalar(dt);
-      if (this.s >= 1) { this.arrived = true; this.arrivedAt = t; onImpact(this, t); }
+      if (snd.flight && !this.loopSnd && SFX.live && this.s < 1) this.loopSnd = playSound(snd.flight, { ...opts, loop: true, pos: this.pos, offset: t - this.launch });
+      if (this.loopSnd) moveSound(this.loopSnd, this.pos);
+      if (this.s >= 1) {
+        this.arrived = true; this.arrivedAt = t;
+        if (this.loopSnd) { stopSound(this.loopSnd, 0.12); this.loopSnd = null; }
+        if (SFX.live && snd.impact) playSound(snd.impact, { ...opts, pos: this.pos });
+        onImpact(this, t);
+      }
     }
+    const lt = p.light || {}, tr = p.trail || {};
+    glowLight(this, lt, tr.color, this.pos, this.arrived ? 0 : (tr.brightness ?? 1), this.rand);
     this.stepTrail(t);
   }
   stepTrail(t) {
@@ -1039,9 +1326,9 @@ class Flight {
       const geo = new THREE.BufferGeometry();
       const m = new THREE.ShaderMaterial({
         uniforms: { map: { value: textureInfo(tr.texture).base }, c1: { value: new THREE.Color(tr.color) },
-          c2: { value: new THREE.Color(tr.color2 || tr.color) }, op: { value: tr.opacity ?? 1 } },
+          c2: { value: new THREE.Color(tr.color2 || tr.color) }, op: { value: tr.opacity ?? 1 }, br: { value: tr.brightness ?? 1 } },
         vertexShader: 'attribute float a; varying float va; varying vec2 vu; void main(){ va=a; vu=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-        fragmentShader: 'uniform sampler2D map; uniform vec3 c1; uniform vec3 c2; uniform float op; varying float va; varying vec2 vu; void main(){ vec4 tx=texture2D(map, vec2(vu.x, vu.y)); vec3 c=mix(c2,c1,va); gl_FragColor=vec4(c*tx.rgb, tx.a*va*op); }',
+        fragmentShader: 'uniform sampler2D map; uniform vec3 c1; uniform vec3 c2; uniform float op; uniform float br; varying float va; varying vec2 vu; void main(){ vec4 tx=texture2D(map, vec2(vu.x, vu.y)); vec3 c=mix(c2,c1,va)*br; gl_FragColor=vec4(c*tx.rgb, tx.a*va*op); }',
         transparent: true, depthWrite: false, blending: blendOf(tr.blend), side: THREE.DoubleSide,
       });
       this.trailMesh = new THREE.Mesh(geo, m); this.trailMesh.frustumCulled = false; runtime.add(this.trailMesh);
@@ -1065,7 +1352,11 @@ class Flight {
     geo.setAttribute('a', new THREE.BufferAttribute(al, 1)); geo.setIndex(idx);
   }
   get finished() { return this.arrived && this.trail.length < 2; }
-  dispose() { if (this.trailMesh) { runtime.remove(this.trailMesh); this.trailMesh.geometry.dispose(); this.trailMesh.material.dispose(); } }
+  dispose() {
+    if (this.loopSnd) { stopSound(this.loopSnd, 0.08); this.loopSnd = null; }
+    if (this._light) releaseLight(this);
+    if (this.trailMesh) { runtime.remove(this.trailMesh); this.trailMesh.geometry.dispose(); this.trailMesh.material.dispose(); }
+  }
 }
 
 /* The effect run: a deterministic simulation stepped at 120 Hz from its start (scrubbing replays it). */
@@ -1073,6 +1364,7 @@ const run = { runs: [], flights: [], impacts: [], hits: [], fired: false };
 const STEP = 1 / 120;
 function resetRun() {
   run.runs.forEach((r) => r.dispose()); run.flights.forEach((f) => f.dispose());
+  stopAllSounds(); releaseAllLights();
   run.runs = []; run.flights = []; run.impacts = []; run.hits = []; run.fired = false; run.impactFired = false;
   sim.t = 0; sim.hitWobble = 0; sim.hitVel = 0; GAME.lastHit = -10;
   overlay.querySelectorAll('.dmg').forEach((e) => e.remove());
@@ -1172,7 +1464,7 @@ const state = { spec: null, sel: { kind: 'effect' }, playing: true, speed: 1, lo
 
 function setSpec(spec, { keepSel = false, record = true } = {}) {
   if (record && state.spec) pushHistory();
-  state.spec = spec;
+  state.spec = normalizeSpec(spec);
   spec.layers.forEach((l) => { if (!l.id) l.id = uid(); });
   if (!keepSel) state.sel = { kind: 'effect' };
   texCache.forEach((info, name) => { if (!TEXTURES[name]) texCache.delete(name); });
@@ -1208,7 +1500,7 @@ function edit(fn) {
 
 /* --------------------------------------------------------------------------------------------- left: layers ----- */
 const TRIGGERS = { cast: 'On cast', projectile: 'On the projectile', impact: 'On impact' };
-const TYPE_LABEL = { sprite: 'Billboard', ground: 'Ground', particles: 'Particles', beam: 'Beam', model: 'Game model' };
+const TYPE_LABEL = { sprite: 'Billboard', ground: 'Ground', particles: 'Particles', beam: 'Beam', model: 'Game model', sound: 'Sound' };
 function renderLeft() {
   $('tabLayers').setAttribute('aria-selected', state.tab === 'layers');
   $('tabLibrary').setAttribute('aria-selected', state.tab === 'library');
@@ -1273,6 +1565,19 @@ function modelLayer(path) {
   if (trigger === 'projectile' && !spec.projectile.enabled) toast('Turn the projectile on to see a missile');
   state.tab = 'layers'; renderLeft(); renderInspector();
 }
+// A sound as a layer, where its name says it goes: a missile's loop flies with the projectile.
+function soundLayer(key, name) {
+  const n = name.toLowerCase(), spec = state.spec;
+  if (/missile/.test(n)) {
+    edit(() => { spec.projectile.sound.flight = key; if (!spec.projectile.enabled) spec.projectile.enabled = true; });
+    toast("Set as the projectile's in-flight sound"); state.tab = 'layers'; select({ kind: 'projectile' }); return;
+  }
+  const impact = /impact|hit/.test(n), precast = /precast|channel|loop/.test(n);
+  const l = layer('sound', { name, sound: key, trigger: impact ? 'impact' : 'cast', anchor: impact ? 'impact' : 'caster.hand',
+    loop: precast, life: precast ? castPoseTime() : 1.5, delay: !impact && !precast && /cast/.test(n) ? castPoseTime() : 0 });
+  edit(() => { spec.layers.push(l); state.sel = { kind: 'layer', id: l.id }; });
+  state.tab = 'layers'; renderLeft(); renderInspector();
+}
 async function openSpell(id) {
   toast('Reading the spell…');
   try {
@@ -1302,10 +1607,18 @@ function renderLiveSearch(body) {
       const key = s.name + '|' + s.visual; if (seen.has(key)) continue; seen.add(key); spells.push(s);
     }
     const models = id ? [] : GAME.fx.filter((p) => p.toLowerCase().includes(q)).slice(0, 60);
+    const sounds = id ? [] : (GAME.sounds || []).filter((e) => e.name.toLowerCase().includes(q)).slice(0, 40);
     const g1 = document.createElement('div'); g1.className = 'lib-group'; g1.textContent = `Spells (${spells.length}${spells.length >= 40 ? '+' : ''})`; out.append(g1);
     for (const s of spells) out.append(presetEl(s.name, `Spell ${s.id}${s.rank ? ', ' + s.rank : ''}: its visual as an effect`, ['#ffd9a0', '#a8481c'], () => openSpell(s.id)));
     const g2 = document.createElement('div'); g2.className = 'lib-group'; g2.textContent = `Effect models (${models.length}${models.length >= 60 ? '+' : ''})`; out.append(g2);
     for (const p of models) out.append(presetEl(modelName(p), p + ' (adds it as a layer)', ['#c9e6ff', '#2a5f9e'], () => modelLayer(p)));
+    const g3 = document.createElement('div'); g3.className = 'lib-group'; g3.textContent = `Sounds (${sounds.length}${sounds.length >= 40 ? '+' : ''})`; out.append(g3);
+    for (const e of sounds) {
+      const el = presetEl(e.name, `${e.files.length} file${e.files.length > 1 ? 's' : ''}: ${e.files[0].split('\\').pop()}`, ['#d6ffd0', '#2f7a3a'], () => soundLayer('game:' + e.id, e.name));
+      const hear = document.createElement('button'); hear.className = 'btn small ghost'; hear.textContent = '▶'; hear.title = 'Hear it';
+      hear.onclick = (ev) => { ev.stopPropagation(); audioCtx().resume(); playSound('game:' + e.id); };
+      el.append(hear); el.style.gridTemplateColumns = '34px 1fr auto'; out.append(el);
+    }
   };
   let timer = null;
   box.oninput = () => { clearTimeout(timer); timer = setTimeout(draw, 150); };
@@ -1393,7 +1706,7 @@ const LAYER_FIELDS = {
     F('Rotation', 'rotation', 'range', { min: -180, max: 180, step: 1, unit: '°' }), F('Spin', 'spin', 'range', { min: -1080, max: 1080, step: 5, unit: '°/s' }),
     F('Copies', 'count', 'range', { min: 1, max: 24, step: 1 }), F('Spread', 'radius', 'range', { min: 0, max: 8, step: 0.05, unit: 'yd' }),
     F('Orbit', 'orbit', 'range', { min: -720, max: 720, step: 5, unit: '°/s' }), F('Rise', 'rise', 'range', { min: -5, max: 10, step: 0.05, unit: 'yd' }),
-    F('Offset', 'offset', 'vec3'), F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }),
+    F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }),
     F('Play once', 'flipOnce', 'toggle', { hint: 'flipbook plays once over its time' }),
     F('Face motion', 'alignToMotion', 'toggle', { hide: (l) => l.trigger !== 'projectile', hint: 'turns with the projectile' }),
   ],
@@ -1403,7 +1716,7 @@ const LAYER_FIELDS = {
     F('Rotation', 'rotation', 'range', { min: -180, max: 180, step: 1, unit: '°' }), F('Spin', 'spin', 'range', { min: -720, max: 720, step: 5, unit: '°/s' }),
     F('Copies', 'count', 'range', { min: 1, max: 24, step: 1 }), F('Spread', 'radius', 'range', { min: 0, max: 10, step: 0.05, unit: 'yd' }),
     F('Orbit', 'orbit', 'range', { min: -720, max: 720, step: 5, unit: '°/s' }),
-    F('Offset', 'offset', 'vec3'), F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }), F('Play once', 'flipOnce', 'toggle'),
+    F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }), F('Play once', 'flipOnce', 'toggle'),
   ],
   particles: [
     F('Emit', 'mode', 'select', { options: () => [['burst', 'One burst'], ['stream', 'A stream']] }),
@@ -1418,7 +1731,6 @@ const LAYER_FIELDS = {
     F('Emit area', 'emitRadius', 'range', { min: 0, max: 8, step: 0.05, unit: 'yd' }),
     F('Inherit', 'inherit', 'range', { min: -1, max: 1, step: 0.05, hide: (l) => l.trigger !== 'projectile', hint: "of the projectile's speed" }),
     F('Spin', 'spin', 'range', { min: -720, max: 720, step: 5, unit: '°/s' }), F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }),
-    F('Offset', 'offset', 'vec3'),
   ],
   beam: [
     F('Ends at', 'anchorEnd', 'select', { options: () => ANCHOR_OPTS(false, false) }),
@@ -1430,10 +1742,36 @@ const LAYER_FIELDS = {
 LAYER_FIELDS.model = [
   F('Model', 'model', 'select', { hide: () => !!LIVE, options: () => (GAME.fx.length ? GAME.fx : ['']).map((n) => [n, n ? n.replace(/^fx_/, '') : 'No game models yet']) }),
   F('Model', 'model', 'model', { hide: () => !LIVE, hint: 'any effect model of the client: type to search' }),
-  F('Size', 'scale', 'range', { min: 0.1, max: 6, step: 0.05, unit: '×' }),
   F('Speed', 'speed', 'range', { min: 0.1, max: 3, step: 0.05, unit: '×', hint: 'its animation and particles' }),
   F('Opacity', 'opacity', 'range', { min: 0, max: 1, step: 0.01 }),
   F('Turn', 'turn', 'range', { min: -180, max: 180, step: 1, unit: '°', hide: (l) => l.trigger === 'projectile' }),
+];
+LAYER_FIELDS.sound = [
+  F('Sound', 'sound', 'sound'),
+  F('Volume', 'volume', 'range', { min: 0, max: 2, step: 0.01 }),
+  F('Pitch', 'pitch', 'range', { min: 0.25, max: 3, step: 0.01, unit: '×' }),
+  F('Pitch vary', 'pitchVary', 'range', { min: 0, max: 0.5, step: 0.01, hint: 'each play a little higher or lower' }),
+  F('Loop', 'loop', 'toggle', { hint: 'plays for its whole time (on the projectile: until it lands)' }),
+  F('3D', 'positional', 'toggle', { hint: 'heard from where it is' }),
+  F('Range', 'range', 'range', { min: 5, max: 100, step: 1, unit: 'yd', hide: (l) => l.positional === false }),
+];
+const noLight = (l) => !l.glow;
+LAYER_FIELDS.lighting = [
+  F('Brightness', 'brightness', 'range', { min: 0, max: 5, step: 0.05, unit: '×' }),
+  F('Scene light', 'influence', 'range', { min: 0, max: 1, step: 0.01, hint: "how much the stage's lighting shades it (0: it glows on its own)" }),
+  F('Casts light', 'glow', 'toggle', { hint: 'lights the Hero, the dummy and the ground' }),
+  F('Light color', 'lightColor', 'color', { hide: noLight, fallback: (l) => l.color || '#ffffff' }),
+  F('Intensity', 'lightIntensity', 'range', { min: 0, max: 20, step: 0.1, hide: noLight }),
+  F('Reach', 'lightRange', 'range', { min: 0.5, max: 40, step: 0.5, unit: 'yd', hide: noLight }),
+  F('Flicker', 'lightFlicker', 'range', { min: 0, max: 1, step: 0.01, hide: noLight }),
+];
+LAYER_FIELDS.placement = [
+  F('Offset', 'offset', 'vec3'),
+  F('Rotation', 'orient', 'vec3', { deg: true, hide: (l) => l.type === 'sound' || l.type === 'beam' }),
+  F('Scale', 'scale', 'range', { min: 0.05, max: 10, step: 0.05, unit: '×', hide: (l) => l.type === 'sound' }),
+  F('Follows', 'space', 'select', { hide: (l) => l.trigger !== 'projectile',
+    options: () => [['stage', 'The stage (X toward the dummy)'], ['motion', "The projectile's flight (X forward)"]] }),
+  F('End offset', 'offsetEnd', 'vec3', { hide: (l) => l.type !== 'beam' }),
 ];
 const PROJECTILE_FIELDS = [
   { group: 'Flight' },
@@ -1460,6 +1798,19 @@ const PROJECTILE_FIELDS = [
   F('Width', 'trail.width', 'range', { min: 0.02, max: 3, step: 0.01, unit: 'yd' }), F('Length', 'trail.length', 'range', { min: 0.02, max: 2, step: 0.01, unit: 's' }),
   F('Opacity', 'trail.opacity', 'range', { min: 0, max: 1, step: 0.01 }),
   F('Blend', 'trail.blend', 'select', { options: () => [['add', 'Additive'], ['normal', 'Normal']] }),
+  { group: 'Sound', hint: 'Launch plays where it leaves, In flight loops along with it until it lands, Impact where it lands.' },
+  F('Launch', 'sound.launch', 'sound'), F('In flight', 'sound.flight', 'sound'), F('Impact', 'sound.impact', 'sound'),
+  F('Volume', 'sound.volume', 'range', { min: 0, max: 2, step: 0.01 }),
+  F('Pitch', 'sound.pitch', 'range', { min: 0.25, max: 3, step: 0.01, unit: '×' }),
+  F('Pitch vary', 'sound.pitchVary', 'range', { min: 0, max: 0.5, step: 0.01 }),
+  F('Range', 'sound.range', 'range', { min: 5, max: 100, step: 1, unit: 'yd' }),
+  { group: 'Lighting' },
+  F('Trail brightness', 'trail.brightness', 'range', { min: 0, max: 5, step: 0.05, unit: '×' }),
+  F('Casts light', 'light.glow', 'toggle', { hint: 'a light flies with it' }),
+  F('Light color', 'light.lightColor', 'color', { hide: (p) => !p.light.glow, fallback: (p) => p.trail.color }),
+  F('Intensity', 'light.lightIntensity', 'range', { min: 0, max: 20, step: 0.1, hide: (p) => !p.light.glow }),
+  F('Reach', 'light.lightRange', 'range', { min: 0.5, max: 40, step: 0.5, unit: 'yd', hide: (p) => !p.light.glow }),
+  F('Flicker', 'light.lightFlicker', 'range', { min: 0, max: 1, step: 0.01, hide: (p) => !p.light.glow }),
 ];
 const getPath = (o, k) => k.split('.').reduce((a, b) => (a == null ? a : a[b]), o);
 function setPath(o, k, v) { const ks = k.split('.'), last = ks.pop(); ks.reduce((a, b) => a[b], o)[last] = v; }
@@ -1471,8 +1822,10 @@ function renderInspector() {
     const l = spec.layers.find((x) => x.id === sel.id);
     if (!l) return select({ kind: 'effect' });
     $('inspTitle').textContent = `${TYPE_LABEL[l.type]} layer`;
-    const look = l.type === 'model' ? [] : [{ group: 'Look' }, ...LAYER_FIELDS.look];
-    const fields = [{ group: 'Timing' }, ...LAYER_FIELDS.common, ...look, { group: TYPE_LABEL[l.type] }, ...LAYER_FIELDS[l.type]];
+    const look = l.type === 'model' || l.type === 'sound' ? [] : [{ group: 'Look' }, ...LAYER_FIELDS.look];
+    const lighting = l.type === 'sound' ? [] : [{ group: 'Lighting' }, ...LAYER_FIELDS.lighting];
+    const fields = [{ group: 'Timing' }, ...LAYER_FIELDS.common, ...look, { group: TYPE_LABEL[l.type] }, ...LAYER_FIELDS[l.type],
+      ...lighting, { group: 'Placement', hint: 'Or drag the handles on the stage (W move, E rotate, R scale).' }, ...LAYER_FIELDS.placement];
     buildFields(box, l, fields, () => { fixAnchor(l); renderLeft(); });
     const actions = document.createElement('div'); actions.style.cssText = 'display:flex;gap:6px;margin-top:14px;flex-wrap:wrap';
     const dup = document.createElement('button'); dup.className = 'btn small'; dup.textContent = 'Duplicate';
@@ -1495,6 +1848,9 @@ function renderInspector() {
       F('Impact at', 'impactAt', 'range', { min: 0, max: 4, step: 0.01, unit: 's', hint: 'when impact layers fire without a projectile' }),
       F('Cast time', 'castTime', 'range', { min: 0, max: 4, step: 0.05, unit: 's', hint: "the Hero's casting pose before the spell leaves (0: until the projectile launches)" }),
       F('Tail', 'tail', 'range', { min: 0, max: 3, step: 0.05, unit: 's', hint: 'time after the last layer before a loop restarts' }),
+      { group: 'Whole effect', hint: "Moves, turns and sizes every layer at once (the projectile's path stays). The handles on the stage do it too." },
+      F('Offset', 'transform.offset', 'vec3'), F('Rotation', 'transform.rotation', 'vec3', { deg: true }),
+      F('Scale', 'transform.scale', 'range', { min: 0.1, max: 5, step: 0.05, unit: '×' }),
     ], () => { $('effectName').value = spec.name; });
     buildFields(box, STAGE, [
       { group: 'Stage', hint: 'Where the training dummy stands, and whether it moves.' },
@@ -1502,9 +1858,27 @@ function renderInspector() {
       F('Offset', 'side', 'range', { min: -15, max: 15, step: 0.5, unit: 'yd' }),
       F('Strafe', 'strafe', 'range', { min: 0, max: 8, step: 0.1, unit: 'yd', hint: 'the dummy slides side to side' }),
       F('Strafe speed', 'strafeSpeed', 'range', { min: 0.2, max: 4, step: 0.05 }),
-    ], null, null, true);
+      { group: 'Lighting', hint: "The stage's light, to see how an effect reads by day, at night or underground (not saved in the effect)." },
+      F('Mood', 'preset', 'select', { options: () => [...Object.entries(LIGHT_PRESETS).map(([k, v]) => [k, v.label]), ['custom', 'Custom']] }),
+      F('Ambient', 'ambient', 'range', { min: 0, max: 2, step: 0.01 }),
+      F('Sun', 'sunLight', 'range', { min: 0, max: 3, step: 0.01 }),
+      F('Sun turn', 'sunYaw', 'range', { min: 0, max: 360, step: 1, unit: '°' }),
+      F('Sun height', 'sunHeight', 'range', { min: 2, max: 90, step: 1, unit: '°' }),
+      F('Exposure', 'exposure', 'range', { min: 0.2, max: 3, step: 0.01 }),
+      F('Sky', 'sky', 'color'),
+      F('Effect lights', 'effectLights', 'range', { min: 0, max: 3, step: 0.05, unit: '×', hint: "every layer's and projectile's Casts light" }),
+      { group: 'Sound' },
+      F('Sound', 'sound', 'toggle'), F('Volume', 'volume', 'range', { min: 0, max: 1.5, step: 0.01 }),
+    ], () => {
+      const mood = LIGHT_PRESETS[STAGE.preset];
+      if (mood && STAGE.preset !== STAGE.applied) { const { label, ...v } = mood; Object.assign(STAGE, v); STAGE.applied = STAGE.preset; setTimeout(renderInspector); }
+      else if (mood && ['ambient', 'sunLight', 'sunYaw', 'sunHeight', 'exposure', 'sky'].some((k) => STAGE[k] !== mood[k])) { STAGE.preset = STAGE.applied = 'custom'; }
+      applyStage(); $('soundBtn').setAttribute('aria-pressed', STAGE.sound);
+    }, null, true);
     const keys = document.createElement('div'); keys.className = 'hint'; keys.style.marginTop = '14px';
-    keys.innerHTML = '<kbd>C</kbd> cast &nbsp; <kbd>Space</kbd> play / pause &nbsp; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo &nbsp; <kbd>Del</kbd> delete layer. Drag the view to orbit, scroll to zoom.';
+    keys.innerHTML = '<kbd>C</kbd> cast &nbsp; <kbd>Space</kbd> play / pause &nbsp; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo &nbsp; <kbd>Del</kbd> delete layer. Drag the view to orbit, scroll to zoom.<br>' +
+      '<kbd>W</kbd> move &nbsp; <kbd>E</kbd> rotate &nbsp; <kbd>R</kbd> scale &nbsp; <kbd>Q</kbd> world / local &nbsp; <kbd>S</kbd> snap &nbsp; <kbd>G</kbd> handles &nbsp; <kbd>F</kbd> focus &nbsp; ' +
+      'arrows, <kbd>PgUp</kbd> / <kbd>PgDn</kbd> nudge (<kbd>Shift</kbd>: more).';
     box.append(keys);
   }
 }
@@ -1546,10 +1920,38 @@ function buildFields(box, obj, fields, after, afterPath, stage = false) {
         document.body.append(dl);
       }
       ctl.append(t);
+    } else if (fd.kind === 'sound') {          // built-in, your own, or (in the client) any of the game's
+      ctl.classList.add('wrap');
+      const sel = document.createElement('select'); sel.id = id;
+      const opt = (v, t, parent) => { const o = document.createElement('option'); o.value = v; o.textContent = t; parent.append(o); };
+      opt('', 'None', sel);
+      const built = document.createElement('optgroup'); built.label = 'Built in'; sel.append(built);
+      for (const [k, t] of Object.entries(SYNTH)) opt('synth:' + k, t, built);
+      const own = Object.keys(state.spec.sounds || {});
+      if (own.length) { const g = document.createElement('optgroup'); g.label = 'Your sounds'; own.forEach((n) => opt('file:' + n, n, g)); sel.append(g); }
+      if (val && val.startsWith('game:')) { const g = document.createElement('optgroup'); g.label = 'The game'; opt(val, soundLabel(val), g); sel.append(g); }
+      sel.value = val || ''; sel.style.flex = '1'; sel.onchange = () => commit(sel.value, true);
+      const play = document.createElement('button'); play.className = 'btn small'; play.textContent = '▶'; play.title = 'Hear it';
+      play.setAttribute('aria-label', `Hear ${fd.label}`);
+      play.onclick = () => { audioCtx().resume(); playSound(getPath(obj, fd.key), { volume: obj.volume ?? 1, pitch: obj.pitch ?? 1 }); };
+      const up = document.createElement('button'); up.className = 'btn small'; up.textContent = '+'; up.title = 'Add your own sound (WAV, MP3, OGG)';
+      up.setAttribute('aria-label', 'Add your own sound'); up.onclick = () => addSound((name) => commit('file:' + name, true));
+      ctl.append(sel, play, up);
+      if (LIVE && GAME.sounds) {
+        const find = document.createElement('input'); find.type = 'text'; find.placeholder = 'Find a game sound…';
+        find.setAttribute('list', 'eesSounds'); find.setAttribute('aria-label', `Find a game sound for ${fd.label}`);
+        find.onchange = () => { const m = /#(\d+)$/.exec(find.value.trim()); if (m) commit('game:' + m[1], true); };
+        if (!$('eesSounds')) {
+          const dl = document.createElement('datalist'); dl.id = 'eesSounds';
+          for (const e of GAME.sounds) { const o = document.createElement('option'); o.value = `${e.name} #${e.id}`; dl.append(o); }
+          document.body.append(dl);
+        }
+        ctl.append(find);
+      }
     } else if (fd.kind === 'text') {
       const t = document.createElement('input'); t.type = 'text'; t.id = id; t.value = val ?? ''; t.oninput = () => commit(t.value); ctl.append(t);
     } else if (fd.kind === 'color') {
-      const c = document.createElement('input'); c.type = 'color'; c.id = id; c.value = val || '#ffffff'; c.oninput = () => commit(c.value);
+      const c = document.createElement('input'); c.type = 'color'; c.id = id; c.value = val || (fd.fallback ? fd.fallback(obj) : '#ffffff'); c.oninput = () => commit(c.value);
       const code = document.createElement('span'); code.className = 'chip'; code.textContent = val; c.addEventListener('input', () => (code.textContent = c.value));
       ctl.append(c, code);
     } else if (fd.kind === 'toggle') {
@@ -1559,8 +1961,9 @@ function buildFields(box, obj, fields, after, afterPath, stage = false) {
     } else if (fd.kind === 'vec3') {
       const v = document.createElement('div'); v.className = 'vec';
       ['x', 'y', 'z'].forEach((axis, i) => {
-        const n = document.createElement('input'); n.type = 'number'; n.step = 0.05; n.value = (val || [0, 0, 0])[i];
-        n.setAttribute('aria-label', `${fd.label} ${axis}`); n.title = ['forward (toward the dummy)', 'up', 'right'][i];
+        const n = document.createElement('input'); n.type = 'number'; n.step = fd.deg ? 1 : 0.05; n.value = (val || [0, 0, 0])[i];
+        n.setAttribute('aria-label', `${fd.label} ${axis}`);
+        n.title = fd.deg ? ['roll (around forward)', 'turn (around up)', 'tilt (around right)'][i] : ['forward (toward the dummy)', 'up', 'right'][i];
         if (i === 0) n.id = id;
         n.onchange = () => { const arr = [...(getPath(obj, fd.key) || [0, 0, 0])]; arr[i] = parseFloat(n.value) || 0; commit(arr); };
         v.append(n);
@@ -1642,6 +2045,114 @@ function updateOverlay() {
   }
 }
 
+/* ------------------------------------------------------------------------------------------- placement tools ----- */
+/* The handles (three.js TransformControls) move, turn and size what is selected: a layer (its offset, rotation,
+   scale), the projectile (where it leaves) or, with Effect & stage selected, the whole effect. They sit where it is at
+   the current moment; what they change is written into its fields. */
+const gizmoProxy = new THREE.Object3D(); scene.add(gizmoProxy);
+const gizmo = new THREE.TransformControls(camera, renderer.domElement); gizmo.setSize(0.85); scene.add(gizmo);
+const GIZ = { mode: 'translate', space: 'world', snap: false, show: true, drag: null, pending: false };
+gizmo.addEventListener('dragging-changed', (e) => { controls.enabled = !e.value; });
+gizmo.addEventListener('mouseDown', () => {
+  const tgt = gizmoTarget(); if (!tgt) return;
+  pushHistory();
+  GIZ.drag = { tgt, pos: gizmoProxy.position.clone(), q: gizmoProxy.quaternion.clone(), s: gizmoProxy.scale.x, vals: deepCopy(tgt.read()) };
+});
+gizmo.addEventListener('objectChange', () => { if (GIZ.drag) { GIZ.drag.tgt.write(GIZ.drag); GIZ.pending = true; } });
+gizmo.addEventListener('mouseUp', () => { if (!GIZ.drag) return; GIZ.drag = null; changed(); renderInspector(); });
+const sizeOf = (o) => Math.cbrt(Math.abs(o.x * o.y * o.z)) || 1;
+// What the handles hold now: { pos, quat, scale, modes, read(), write(drag) } or null.
+function gizmoTarget() {
+  const spec = state.spec, sel = state.sel, g = XF();
+  const Rg = degQuat(g.rotation, new THREE.Quaternion());
+  if (sel.kind === 'layer') {
+    const l = spec.layers.find((x) => x.id === sel.id); if (!l) return null;
+    const r = run.runs.find((x) => x.l === l && sim.t >= x.start);
+    const F = r ? r.frame(new THREE.Quaternion()) : Rg.clone();
+    let anchor;
+    if (r) anchor = r.anchorPos.clone();
+    else anchor = anchorAt(l.anchor === 'impact' ? 'target.chest' : l.anchor === 'projectile' ? 'caster.hand' : l.anchor, sim.t, new THREE.Vector3());
+    anchor.add(new THREE.Vector3(...(g.offset || [0, 0, 0])));
+    const only = l.type === 'sound' || l.type === 'beam' ? ['translate'] : null;
+    return {
+      pos: anchor.clone().add(new THREE.Vector3(...l.offset).applyQuaternion(F)),
+      quat: F.clone().multiply(degQuat(l.orient, new THREE.Quaternion())), scale: l.scale ?? 1, only,
+      read: () => ({ offset: [...l.offset], orient: [...l.orient], scale: l.scale ?? 1 }),
+      write: (d) => {
+        if (GIZ.mode === 'translate') {
+          const delta = gizmoProxy.position.clone().sub(d.pos).applyQuaternion(F.clone().invert());
+          l.offset = d.vals.offset.map((v, i) => Math.round((v + delta.getComponent(i)) * 1000) / 1000);
+        } else if (GIZ.mode === 'rotate') l.orient = quatDeg(F.clone().invert().multiply(gizmoProxy.quaternion));
+        else l.scale = Math.round(clamp(d.vals.scale * sizeOf(gizmoProxy.scale) / d.s, 0.02, 20) * 1000) / 1000;
+      },
+    };
+  }
+  if (sel.kind === 'projectile') {
+    const p = spec.projectile; if (!p.enabled) return null;
+    return { pos: startPoint(p, p.launchAt || 0, new THREE.Vector3()), quat: new THREE.Quaternion(), scale: 1, only: ['translate'],
+      read: () => ({ fromOffset: [...(p.fromOffset || [0, 0, 0])] }),
+      write: (d) => {
+        const delta = gizmoProxy.position.clone().sub(d.pos);
+        p.fromOffset = d.vals.fromOffset.map((v, i) => Math.round((v + delta.getComponent(i)) * 1000) / 1000);
+      } };
+  }
+  const center = anchorAt('caster.chest', sim.t, new THREE.Vector3()).add(new THREE.Vector3(...(g.offset || [0, 0, 0])));
+  return { pos: center, quat: Rg, scale: g.scale ?? 1, only: null,
+    read: () => ({ offset: [...g.offset], rotation: [...g.rotation], scale: g.scale ?? 1 }),
+    write: (d) => {
+      if (GIZ.mode === 'translate') { const delta = gizmoProxy.position.clone().sub(d.pos); g.offset = d.vals.offset.map((v, i) => Math.round((v + delta.getComponent(i)) * 1000) / 1000); }
+      else if (GIZ.mode === 'rotate') g.rotation = quatDeg(gizmoProxy.quaternion);
+      else g.scale = Math.round(clamp(d.vals.scale * sizeOf(gizmoProxy.scale) / d.s, 0.05, 20) * 1000) / 1000;
+    } };
+}
+function syncGizmo() {
+  if (GIZ.drag) return;
+  const tgt = GIZ.show ? gizmoTarget() : null;
+  if (!tgt) { if (gizmo.object) gizmo.detach(); return; }
+  if (gizmo.object !== gizmoProxy) gizmo.attach(gizmoProxy);
+  gizmoProxy.position.copy(tgt.pos); gizmoProxy.quaternion.copy(tgt.quat); gizmoProxy.scale.setScalar(tgt.scale);
+  const mode = tgt.only && !tgt.only.includes(GIZ.mode) ? tgt.only[0] : GIZ.mode;
+  if (gizmo.mode !== mode) gizmo.setMode(mode);
+  gizmo.setSpace(GIZ.space);
+  gizmo.setTranslationSnap(GIZ.snap ? 0.25 : null); gizmo.setRotationSnap(GIZ.snap ? 15 * D2R : null); gizmo.setScaleSnap(GIZ.snap ? 0.1 : null);
+}
+function setGizmoMode(mode) {
+  GIZ.mode = mode;
+  document.querySelectorAll('[data-giz]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.giz === mode));
+}
+function toggleSpace() { GIZ.space = GIZ.space === 'world' ? 'local' : 'world'; $('spaceBtn').textContent = GIZ.space === 'world' ? 'World' : 'Local'; }
+function toggleSnap() { GIZ.snap = !GIZ.snap; $('snapBtn').setAttribute('aria-pressed', GIZ.snap); }
+function toggleHandles() { GIZ.show = !GIZ.show; $('gizmoBtn').setAttribute('aria-pressed', GIZ.show); }
+function focusSelected() {
+  const tgt = gizmoTarget(); if (!tgt) return;
+  const shift = tgt.pos.clone().sub(controls.target); controls.target.add(shift); camera.position.add(shift); controls.update();
+}
+function resetPlacement() {
+  const sel = state.sel, spec = state.spec;
+  edit(() => {
+    if (sel.kind === 'layer') { const l = spec.layers.find((x) => x.id === sel.id); if (l) Object.assign(l, { offset: [0, 0, 0], orient: [0, 0, 0], scale: 1, offsetEnd: [0, 0, 0] }); }
+    else if (sel.kind === 'projectile') spec.projectile.fromOffset = [0, 0, 0];
+    else spec.transform = deepCopy(NEW_TRANSFORM);
+  });
+  renderInspector(); toast('Placement reset');
+}
+// Arrow keys (forward / back, left / right) and PgUp / PgDn (up / down) nudge it along the stage's axes.
+function nudge(axis, sign, big) {
+  const step = (GIZ.snap ? 0.25 : 0.1) * (big ? 5 : 1) * sign, sel = state.sel, spec = state.spec;
+  edit(() => {
+    let arr;
+    if (sel.kind === 'layer') { const l = spec.layers.find((x) => x.id === sel.id); if (!l) return; arr = l.offset = [...l.offset]; }
+    else if (sel.kind === 'projectile') arr = spec.projectile.fromOffset = [...(spec.projectile.fromOffset || [0, 0, 0])];
+    else arr = spec.transform.offset = [...spec.transform.offset];
+    arr[axis] = Math.round((arr[axis] + step) * 1000) / 1000;
+  });
+  renderInspector();
+}
+setGizmoMode('translate');
+document.querySelectorAll('[data-giz]').forEach((b) => (b.onclick = () => setGizmoMode(b.dataset.giz)));
+$('spaceBtn').onclick = toggleSpace; $('snapBtn').onclick = toggleSnap; $('gizmoBtn').onclick = toggleHandles;
+$('focusBtn').onclick = focusSelected; $('resetXfBtn').onclick = resetPlacement;
+
 /* --------------------------------------------------------------------------------------------- the loop -------- */
 function setCam(name) {
   const d = STAGE.distance, s = STAGE.side;
@@ -1657,15 +2168,19 @@ new ResizeObserver(resize).observe(view);
 let last = performance.now();
 function frame(now) {
   const real = Math.min(0.1, (now - last) / 1000); last = now;
+  if (GIZ.pending) { GIZ.pending = false; changed(); }
   if (state.playing) {
     let budget = real * state.speed;
+    SFX.live = state.speed >= 0.5;                // slow motion plays silent
     while (budget >= STEP) { stepRun(STEP); budget -= STEP; }
     if (budget > 0) stepRun(budget);
+    SFX.live = false;
     if (sim.t >= state.duration) {
       if (state.loop) simulateTo(0); else { state.playing = false; sim.t = state.duration; }
     }
     placeActors();
   }
+  syncGizmo();
   controls.update();
   renderer.render(scene, camera);
   updateOverlay(); updateClock();
@@ -1694,7 +2209,7 @@ function toast(text) {
 // An imported or loaded spec, with today's defaults under it.
 function readSpec(spec) {
   if (!spec || spec.format !== 'emberforge-effect') throw new Error('not an Emberforge effect spec');
-  return Object.assign(NEW_EFFECT(), spec, { projectile: Object.assign(deepCopy(NEW_PROJECTILE), spec.projectile || {}) });
+  return normalizeSpec(Object.assign(NEW_EFFECT(), spec));
 }
 $('exportBtn').onclick = () => {
   if (LIVE) {
@@ -1752,6 +2267,11 @@ $('scrub').oninput = () => { state.playing = false; simulateTo(parseFloat($('scr
 $('undoBtn').onclick = undo;
 $('pathBtn').onclick = () => { STAGE.showPath = !STAGE.showPath; $('pathBtn').setAttribute('aria-pressed', STAGE.showPath); rebuildPath(); };
 $('dmgBtn').onclick = () => { STAGE.numbers = !STAGE.numbers; $('dmgBtn').setAttribute('aria-pressed', STAGE.numbers); };
+$('soundBtn').onclick = () => {
+  STAGE.sound = !STAGE.sound; $('soundBtn').setAttribute('aria-pressed', STAGE.sound); applyStage();
+  if (!STAGE.sound) stopAllSounds();
+  if (state.sel.kind === 'effect') renderInspector();
+};
 $('effectName').oninput = () => edit(() => (state.spec.name = $('effectName').value));
 $('tabLayers').onclick = () => { state.tab = 'layers'; renderLeft(); };
 $('tabLibrary').onclick = () => { state.tab = 'library'; renderLeft(); };
@@ -1760,8 +2280,22 @@ document.addEventListener('keydown', (e) => {
   const typing = /input|select|textarea/i.test(e.target.tagName);
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); undo(); return; }
   if (typing || modalEl) return;
+  const k = e.key.toLowerCase();
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (e.key === ' ') { e.preventDefault(); $('playBtn').click(); }
-  else if (e.key.toLowerCase() === 'c') $('castBtn').click();
+  else if (k === 'c') $('castBtn').click();
+  else if (k === 'w') setGizmoMode('translate');
+  else if (k === 'e') setGizmoMode('rotate');
+  else if (k === 'r') setGizmoMode('scale');
+  else if (k === 'q') toggleSpace();
+  else if (k === 's') toggleSnap();
+  else if (k === 'g') toggleHandles();
+  else if (k === 'f') focusSelected();
+  else if (e.key.startsWith('Arrow') || e.key === 'PageUp' || e.key === 'PageDown') {
+    e.preventDefault();
+    const [axis, sign] = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowRight: [2, 1], ArrowLeft: [2, -1], PageUp: [1, 1], PageDown: [1, -1] }[e.key];
+    nudge(axis, sign, e.shiftKey);
+  }
   else if ((e.key === 'Delete' || e.key === 'Backspace') && state.sel.kind === 'layer') {
     edit(() => { state.spec.layers = state.spec.layers.filter((l) => l.id !== state.sel.id); state.sel = { kind: 'effect' }; renderLeft(); renderInspector(); });
   }
@@ -1774,6 +2308,7 @@ document.addEventListener('keydown', (e) => {
   if (saved && saved.format === 'emberforge-effect') spec = Object.assign(NEW_EFFECT(), saved, { projectile: Object.assign(deepCopy(NEW_PROJECTILE), saved.projectile || {}) });
   setSpec(spec || presetEffect(PRESETS[1]), { record: false });
   state.history = [];
+  applyStage(); $('soundBtn').setAttribute('aria-pressed', STAGE.sound);
   setCam('side'); resize();
   requestAnimationFrame(frame);
   loadGame();

@@ -27,6 +27,24 @@ An effect spec (`"format": "emberforge-effect"`, exported as JSON) has:
   smoke, fire and lightning flipbooks, a beam band) tinted by the layer's color, plus any PNG added in the texture
   picker (kept in the spec, with its flipbook columns and rows).
 
+## Sound, light and placement
+
+- **Sound**: a Sound layer plays on cast, on the projectile (a loop flies with it until it lands) or on impact, in
+  3D from its place, with volume, pitch and a little variation each play. The projectile has its own Launch, In
+  flight and Impact sounds. Sounds are built in (whoosh, fire crackle, arcane hum, charge, explosion, zap, thunder
+  crack, chime, frost shatter, thud), your own files (kept inside the effect, under 4 MB each), or in the client any of
+  the game's (SoundEntries: the Library searches them, and a spell's template brings its kits' sounds and its missile
+  loop). They play while the effect plays, not while scrubbing or below half speed; the Sound button mutes them.
+- **Lighting**: every layer has Brightness, Scene light (how much the stage's light shades it: 0 glows on its own)
+  and Casts light (a point light with color, intensity, reach and flicker that lights the Hero, the dummy and the
+  ground); the projectile has Trail brightness and its own light. Effect & stage sets the stage's mood (Studio,
+  Daylight, Dusk, Night, Dungeon) or its ambient, sun, sun angle, exposure and sky, and scales every effect light.
+- **Placement**: every layer has an Offset (X toward the dummy, Y up, Z right; or the projectile's flight), a Rotation
+  (degrees: roll, turn, tilt) and a Scale; Effect & stage's Whole effect moves, turns and sizes all layers at once.
+  The handles on the stage do the same by dragging (W move, E rotate, R scale, Q world or local axes, S snap to
+  0.25 yd / 15° / 0.1×, G hide, F focus, Reset), on the selected layer, the projectile's launch point or the whole
+  effect; the arrow keys and PgUp / PgDn nudge it (Shift: five times as far).
+
 ## The stage
 
 The dummy stands *Distance* yards ahead of the Hero (offset to the side, strafing if set, to test homing). It rocks

@@ -293,13 +293,26 @@ const GameData = (() => {
             if (img && img.toDataURL) beam = { texture: img.toDataURL() };
           }
         }
-        const anim = k[2] === 0xFFFFFFFF ? null : k[2];
-        return Object.keys(slots).length || beam || anim !== null ? { slots, beam, anim } : null;
+        const anim = k[2] === 0xFFFFFFFF ? null : k[2], sound = k[15] || null;     // SoundEntries
+        return Object.keys(slots).length || beam || anim !== null || sound ? { slots, beam, anim, sound } : null;
       };
       return { spell: spellId, name: spell.str(r[136]), speed: spell.float(r[47]),
         precast: await kitOf(v[1]), cast: await kitOf(v[2]), impact: (await kitOf(v[3])) || (await kitOf(v[15])),
-        state: await kitOf(v[4]), missile: v[8] ? model(v[8]) : null };
+        state: await kitOf(v[4]), missile: v[8] ? model(v[8]) : null, missileSound: v[11] || null };
     }
+    // Every sound of SoundEntries with files: { id, name, files: [client paths], volume }.
+    async sounds() {
+      if (this._sounds) return this._sounds;
+      const t = await this.table('SoundEntries.dbc'), out = [];
+      if (t) for (const [id, r] of t.rows) {
+        const dir = t.str(r[23]), files = [];
+        for (let k = 3; k < 13; k++) { const f = r[k] && t.str(r[k]); if (f) files.push(dir ? `${dir}\\${f}` : f); }
+        if (files.length) out.push({ id, name: t.str(r[2]) || files[0], files, volume: t.float(r[24]) || 1 });
+      }
+      out.sort((a, b) => a.name.localeCompare(b.name));
+      return (this._sounds = out);
+    }
+    async sound(id) { return (await this.sounds()).find((x) => x.id === id) || null; }
     // The Human (HumanMale with NPC display extra 8177's look and hair) and the training dummy (WoodenDummy).
     async human() {
       let hair = 1;
