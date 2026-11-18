@@ -1586,7 +1586,8 @@ VISUALS.update({
 })
 VISUAL_GUNSHOT, VISUAL_SINISTER_STRIKE, VISUAL_THUNDERSTORM, VISUAL_LIGHTNING_BOLT = 8113, 253, 11302, 173
 RANGE_20, GCD_CATEGORY = 3, 133
-PISTOL_SHOT = action(91382, 'Pistol Shot', 'INV_Weapon_Rifle_01',
+PISTOL_ICON = 'Ability_Rogue_PistolShot'
+PISTOL_SHOT = action(91382, 'Pistol Shot', PISTOL_ICON,
                    'Fire a conjured pistol at an enemy within 20 yards: 60% of your attack power as Physical damage '
                    'and 1 combo point. Needs Opening Shot (every second Sabre Slash).', 6000,
                    target=TARGET_UNIT_TARGET_ENEMY, range_index=RANGE_20)
@@ -1620,11 +1621,11 @@ SPELLS += [
          'Sinister Strike becomes Sabre Slash. Every second Sabre Slash that hits readies Opening Shot: your Pistol '
          'Shot, 60% of your attack power and a combo point. Broadside spends combo points in pistol blasts.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
-    {**buff(91381, 'Opening Shot', 'INV_Weapon_Rifle_01', 'Pistol Shot is ready.', DURATION_8S,
+    {**buff(91381, 'Opening Shot', PISTOL_ICON, 'Pistol Shot is ready.', DURATION_8S,
             {1: aura(AURA_DUMMY, 1, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_8S}},
     PISTOL_SHOT,
-    {**strike(91383, 'Pistol Shot', 'INV_Weapon_Rifle_01', PHYSICAL, VISUAL_GUNSHOT)},
+    {**strike(91383, 'Pistol Shot', PISTOL_ICON, PHYSICAL, VISUAL_GUNSHOT)},
     dot(91384, 'Serrated Edge', 'Ability_Rogue_Rupture', PHYSICAL, DURATION_6S, 'Bleeding every second.'),
     strike(91385, 'Serrated Edge', 'Ability_Rogue_Rupture', PHYSICAL),
     {**buff(91386, 'Advance', 'Ability_Rogue_Sprint', 'Movement speed increased by 40%.', DURATION_3S,
@@ -1633,7 +1634,7 @@ SPELLS += [
     {**buff(91387, 'Disengaging Shot', 'Ability_Hunter_RunningShot', 'Movement speed increased by 40%.', DURATION_3S,
             {1: aura(AURA_MOD_INCREASE_SPEED, 40, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
-    {**buff(91388, 'Disengaging Shot', 'INV_Weapon_Rifle_01', 'Your next Pistol Shot gives 10 Energy back.',
+    {**buff(91388, 'Disengaging Shot', PISTOL_ICON, 'Your next Pistol Shot gives 10 Energy back.',
             DURATION_8S, {1: aura(AURA_DUMMY, 1, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_8S}},
     {**buff(91389, 'Press the Advantage', 'Ability_Rogue_SabreSlash', 'Your next Sabre Slash strikes twice.',
@@ -1678,7 +1679,7 @@ SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1
                                           ('Thunderhead', 'Chainbreaker', 'White-Hot Conductor'),
                                           ('Overcharged Core', 'Ride the Lightning', 'Violent Grounding')]))
            for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
-ICONS += ['Ability_Rogue_SabreSlash', DUELIST_ICON, STORMREAVER_ICON, 'INV_Weapon_Rifle_01', 'Ability_Rogue_Rupture',
+ICONS += ['Ability_Rogue_SabreSlash', PISTOL_ICON, DUELIST_ICON, STORMREAVER_ICON, 'INV_Weapon_Rifle_01', 'Ability_Rogue_Rupture',
           'Ability_Hunter_RunningShot',
           'Ability_Rogue_SinisterCalling', 'Spell_Shaman_ThunderStorm', 'Ability_Shaman_LavaLash',
           'Spell_Fire_Immolation', 'Spell_Nature_LightningShield', 'Spell_Nature_Lightning']
