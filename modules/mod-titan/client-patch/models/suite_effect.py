@@ -40,6 +40,7 @@ SLOTS = {'chest': ({'target.chest', 'impact'}, ('sprite', 'particles')),
          'base': ({'target.base'}, ('ground', 'sprite', 'particles'))}
 SAMPLES = 12                    # keys over a layer's time (its size, colors and fades)
 PARTICLE_FLAGS = 0x40029        # as Blizzard's impact sparks (Ice_ImpactDD_Med_Chest)
+PARTICLE_XY_QUAD = 0x1000       # Lock to position: quads across the emitter's aim, not facing the camera
 EMITTER_PLANE = 1
 INTERP_NONE, INTERP_LINEAR = 0, 1
 
@@ -225,6 +226,7 @@ def suite_effect(out_dir, name, client_dir, spec, slot='chest'):
 
         if layer['type'] in ('sprite', 'ground'):
             flat = layer['type'] == 'ground'
+            locked = not flat and bool(layer.get('lock'))     # Lock to position: turned as placed, not billboarded
             aspect = (image.width / columns) / (image.height / rows)
             ratio = (layer.get('stretch', 1) or 1) * aspect
             roll = math.radians(layer.get('rotation', 0) or 0)
@@ -241,10 +243,16 @@ def suite_effect(out_dir, name, client_dir, spec, slot='chest'):
                     for z, v in ((-0.5, 1.0 / rows), (0.5, 0.0)):
                         yy = y * math.cos(roll) - z * math.sin(roll)        # Y screen right, Z up: counterclockwise
                         zz = y * math.sin(roll) + z * math.cos(roll)
-                        at = (pivot[0] + yy, pivot[1] + zz, pivot[2] + copy * 0.002) if flat else (
-                            pivot[0], pivot[1] + yy, pivot[2] + zz)
+                        if locked:                          # the stage's card (right +Z, up +Y) under the layer's turn
+                            d = _to_model(_rotate(q, (0.0, zz, yy)))
+                            at = tuple(pivot[i] + d[i] for i in range(3))
+                            normal = _to_model(_rotate(q, (-1.0, 0.0, 0.0)))
+                        elif flat:
+                            at, normal = (pivot[0] + yy, pivot[1] + zz, pivot[2] + copy * 0.002), (0.0, 0.0, 1.0)
+                        else:
+                            at, normal = (pivot[0], pivot[1] + yy, pivot[2] + zz), (1.0, 0.0, 0.0)
                         vertices += struct.pack('<3f4B4B3f2f2f', *at, 255, 0, 0, 0, bone, 0, 0, 0,
-                                                *((0.0, 0.0, 1.0) if flat else (1.0, 0.0, 0.0)), u, v, 0.0, 0.0)
+                                                *normal, u, v, 0.0, 0.0)
                 triangles += [first, first + 1, first + 2, first + 2, first + 1, first + 3]
 
                 def size_at(f):
@@ -265,7 +273,7 @@ def suite_effect(out_dir, name, client_dir, spec, slot='chest'):
                     pairs_s = keyed(start, life, lambda f: f)
                     spinning = track(blob, INTERP_LINEAR, [([t for t, _ in pairs_s], [
                         tuple(comp_quat(c) for c in _z_turn(layer['spin'] * life * (v or 0.0))) for _, v in pairs_s])], '4h')
-                bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | (0 if flat else BONE_BILLBOARD), 0, 0, 0, 0)
+                bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | (0 if flat or locked else BONE_BILLBOARD), 0, 0, 0, 0)
                 bones += moving + spinning + scaling + struct.pack('<3f', *pivot)
                 bone_count += 1
                 reach = max(layer.get('sizeStart', 1), layer.get('sizeEnd', 1)) * k * max(1.0, ratio)
@@ -338,7 +346,8 @@ def suite_effect(out_dir, name, client_dir, spec, slot='chest'):
             frames = columns * rows
             fades = [0.0, 0.5, 1.0] if not (layer.get('fadeIn') or layer.get('fadeOut')) else sorted(
                 {0.0, 1.0, layer.get('fadeIn', 0) or 0.0, 1 - (layer.get('fadeOut', 0) or 0.0)})
-            emitter = struct.pack('<iI3fHH', -1, PARTICLE_FLAGS, *origin, bone, tex_index)
+            flags = PARTICLE_FLAGS | (PARTICLE_XY_QUAD if layer.get('lock') else 0)
+            emitter = struct.pack('<iI3fHH', -1, flags, *origin, bone, tex_index)
             emitter += struct.pack('<4I', 0, 0, 0, 0)
             emitter += struct.pack('<BBhBBhHH', 4 if blend == BLEND_ADD else 2, EMITTER_PLANE, 0, 0, 0, 0, rows, columns)
             assert len(emitter) == 0x34

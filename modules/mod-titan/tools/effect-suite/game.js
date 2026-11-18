@@ -213,6 +213,13 @@ const GameEngine = (() => {
       out.set(a.pos[0], a.pos[1], a.pos[2]).applyMatrix4(this.boneMats[a.bone] || new THREE.Matrix4());
       return out.applyMatrix4(this.root.matrixWorld);
     }
+    // An attachment's whole frame in the world (the first of ids it has), for a model held there: a weapon in a hand.
+    attachmentMatrix(ids, out) {
+      const a = this.data.attachments.find((x) => ids.includes(x.id));
+      if (!a) return null;
+      out.makeTranslation(a.pos[0], a.pos[1], a.pos[2]).premultiply(this.boneMats[a.bone] || new THREE.Matrix4());
+      return out.premultiply(this.root.matrixWorld);
+    }
     // dt seconds; camera: the scene's; opacity: a fade the caller applies (birth, death).
     update(dt, camera, opacity = 1) {
       this.time += dt * 1000 * this.speed; this.globalTime += dt * 1000 * this.speed;

@@ -576,7 +576,26 @@ const worldFx = new THREE.Group(); scene.add(worldFx);
 /* In the client (.ees, the launcher's Suite window), window.ees reads the game's own archives: every spell and every
    effect model is there, built on demand (gamedata.js), and effects are files in <install>\\Emberforge\\Effects. */
 const LIVE = window.ees || null;
-const LIVE_TEMPLATES = [30451, 116, 133, 403, 421];       // Arcane Blast, Frostbolt, Fireball, Lightning Bolt, Chain Lightning
+/* The game's spells offered as templates, by group: each group's style sets the caster's pose (a spellcast, a melee
+   attack, a bow or gun shot) and look (Cat or Bear Form for the feral ones). */
+const TEMPLATE_GROUPS = [
+  { group: 'Game spells', style: 'spell', ids: [30451, 116, 133, 403, 421] },
+  { group: 'Feral: Cat', style: 'melee', morph: 'cat',       // Claw, Shred, Rake, Rip, Mangle, Ferocious Bite, Swipe,
+    ids: [1082, 5221, 1822, 1079, 33876, 22568, 62078, 9005, 6785, 5217, 50334, 768] },  // Pounce, Ravage, Tiger's Fury...
+  { group: 'Feral: Bear', style: 'melee', morph: 'bear', ids: [6807, 779, 33878, 5487] },  // Maul, Swipe, Mangle, Bear Form
+  { group: 'Hunter', style: 'bow', shots: true,              // Arcane, Steady, Multi-, Aimed, Serpent Sting, Explosive...
+    ids: [3044, 56641, 2643, 19434, 1978, 53301, 53209, 53351, 5116, 19503, 34490, 3034, 60192] },
+];
+// The caster's looks: the Human, or a creature display (CreatureDisplayInfo) of the client.
+const MORPHS = { human: { label: 'Human' }, cat: { label: 'Cat Form', display: 892 },
+  flamecat: { label: "Flame Cat (Ember's Wrath)", display: 90207 }, icecat: { label: 'Ice Cat (Whitefang)', display: 90208 },
+  bear: { label: 'Bear Form', display: 2281 } };
+// What the Human holds (an item of Item.dbc): a bow in the left hand, a gun in the right; ammo for a plain shot.
+const WEAPONS = { none: { label: 'Nothing' }, bow: { label: 'Bow', item: 2504, attach: [2], ammo: ['ArrowFlight_01', 'ArrowFireFlight_01'] },
+  crossbow: { label: 'Crossbow', item: 19361, attach: [2], ammo: ['ArrowFlight_01', 'ArrowFireFlight_01'] },
+  gun: { label: 'Gun', item: 2508, attach: [1], ammo: ['BulletFlight_01'] } };
+const POSES = { spell: 'Spellcast', melee: 'Melee attack', bow: 'Bow shot', gun: 'Gun shot' };
+const NEW_CASTER = { morph: 'human', weapon: 'none', pose: 'spell', anim: 0 };
 const SPELL_ANIMS = [0, 158, 159];
 // A model's key: a client path in the client; fx_<name> in the web Suite (an old key is found under Spells\).
 const modelPath = (key) => (key.includes('\\') ? key : `Spells\\${key.replace(/^fx_/, '')}.m2`);
@@ -603,7 +622,17 @@ async function loadLive() {
   if (dummyData) GameEngine.assets.dummy = dummyData;
   GAME.fx = effects.map((e) => e.path).sort((a, b) => modelName(a).localeCompare(modelName(b)));
   GAME.spells = spells;
-  GAME.templates = (await Promise.all(LIVE_TEMPLATES.map((id) => lib.template(id)))).filter(Boolean);
+  const groups = await Promise.all(TEMPLATE_GROUPS.map(async (g) => (await Promise.all(g.ids.map((id) => lib.template(id))))
+    .filter(Boolean).map((t) => Object.assign(t, { group: g.group, style: g.style, morph: g.morph, shot: !!g.shots }))));
+  GAME.templates = groups.flat();
+  // A plain shot's ammo in flight (the bow's arrow, the gun's bullet), the first the client has.
+  GAME.ammo = {};
+  for (const [k, w] of Object.entries(WEAPONS)) {
+    for (const name of w.ammo || []) {
+      const path = `Item\\ObjectComponents\\Ammo\\${name}.m2`;
+      if (await LIVE.read(path)) { GAME.ammo[k] = path; break; }
+    }
+  }
   GAME.mine = await LIVE.effects.list();
 }
 async function loadGame() {
@@ -622,7 +651,9 @@ async function loadGame() {
 }
 function placeCast() {
   const A = GameEngine.assets;
-  if (A.human) { GAME.hero = new GameEngine.GameModel(A.human, { world: worldFx }); GAME.heroWrap.add(GAME.hero.root); hero.visible = false; }
+  if (A.human) { GAME.hero = new GameEngine.GameModel(A.human, { world: worldFx }); GAME.heroWrap.add(GAME.hero.root); hero.visible = false; GAME.heroKey = 'human'; }
+  GAME.casters = { human: GAME.hero };
+  applyCaster();
   if (A.dummy) {
     GAME.dummy = new GameEngine.GameModel(A.dummy, { world: worldFx }); GAME.dummyWrap.add(GAME.dummy.root);
     GAME.dummyWrap.rotation.y = Math.PI; dummy.visible = false;
@@ -634,12 +665,74 @@ function modelAnchor(model, slot, out, up = 0) {
   for (const id of GameEngine.SLOT_ATTACH[slot]) if (model.attachment(id, ATT)) return out.copy(ATT).setY(ATT.y + up);
   return null;
 }
-// What the Human plays: ReadySpellDirected while casting, SpellCastDirected as the spell leaves, then Stand.
+// What the caster plays. A spellcast: ReadySpellDirected while casting, SpellCastDirected as the spell leaves, then
+// Stand. A melee attack: ready, then the attack (the template's own, as Claw's DruidCatClaw) from the cast time. A bow
+// or gun shot: ReadyBow / ReadyRifle, then AttackBow / AttackRifle as it fires.
+const ATTACKS = { melee: [[26, 25, 0], [17, 16, 18]], bow: [[29, 0], [46, 161]], gun: [[48, 0], [49]] };
 function heroAnimAt(t) {
-  const cast = castPoseTime(), h = GAME.hero;
+  const cast = castPoseTime(), h = GAME.hero, c = (state.spec && state.spec.caster) || NEW_CASTER;
+  const pick = (ids) => ids.find((id) => id != null && h.hasSeq(id));
+  if (ATTACKS[c.pose]) {
+    const [readies, attacks] = ATTACKS[c.pose], ready = pick(readies) ?? 0, attack = pick([+c.anim || null, ...attacks]);
+    const dur = attack != null ? (h.data.seqs.find((x) => x.id === attack).dur || 800) / 1000 : 0;
+    if (attack != null && t >= cast && t < cast + dur) return [attack, (t - cast) * 1000, false];
+    return [ready, t * 1000, true];
+  }
   if (t < cast && h.hasSeq(51)) return [51, t * 1000, true];
   if (t >= cast && t < cast + 0.9 && h.hasSeq(53)) return [53, (t - cast) * 1000, false];
   return [0, t * 1000, true];
+}
+// The caster's look and weapon (the effect's Caster settings): a morph's model built once and kept; the weapon rides
+// its hand. Only the Human holds one.
+let casterToken = 0;
+async function casterModel(morph) {
+  if (morph === 'human' || !MORPHS[morph]) return GameEngine.assets.human ? { data: GameEngine.assets.human, scale: 1 } : null;
+  if (LIVE && GAME.lib) return GAME.lib.creature(MORPHS[morph].display, GameData.HERO_SEQS);
+  const a = GameEngine.assets['morph_' + morph];
+  return a ? { data: a, scale: a.displayScale || 1 } : null;
+}
+async function applyCaster() {
+  if (!GAME.casters || !state.spec) return;
+  const c = state.spec.caster || NEW_CASTER, token = ++casterToken;
+  if (GAME.heroKey !== c.morph) {
+    let gm = GAME.casters[c.morph];
+    if (gm === undefined) {
+      const got = await casterModel(c.morph);
+      if (token !== casterToken) return;
+      gm = GAME.casters[c.morph] = got ? new GameEngine.GameModel(got.data, { world: worldFx, scale: got.scale }) : null;
+      if (!gm) toast(`${(MORPHS[c.morph] || { label: c.morph }).label}: not in the game's files`);
+    }
+    if (gm) {
+      if (GAME.hero) GAME.heroWrap.remove(GAME.hero.root);
+      GAME.hero = gm; GAME.heroWrap.add(gm.root); GAME.heroKey = c.morph; hero.visible = false;
+    }
+  }
+  const weapon = GAME.heroKey === 'human' ? c.weapon : 'none';
+  if (GAME.weaponKey !== weapon) {
+    if (GAME.weapon) { scene.remove(GAME.weapon.root); GAME.weapon = null; }
+    GAME.weaponKey = weapon;
+    const w = WEAPONS[weapon];
+    if (w && w.item) {
+      GAME.weapons = GAME.weapons || {};
+      if (GAME.weapons[weapon] === undefined) {
+        const data = LIVE && GAME.lib ? await GAME.lib.weapon(w.item) : GameEngine.assets['weapon_' + weapon];
+        if (token !== casterToken) return;
+        GAME.weapons[weapon] = data ? new GameEngine.GameModel(data, { world: worldFx }) : null;
+        if (!data) toast(`${w.label}: not in the game's files`);
+      }
+      const gm = GAME.weapons[weapon];
+      if (gm) { gm.root.matrixAutoUpdate = false; gm.attach = w.attach; scene.add(gm.root); GAME.weapon = gm; }
+    }
+  }
+  changed();
+  if (state.sel.kind === 'effect') renderInspector();
+}
+const WEAPON_AT = new THREE.Matrix4();
+function poseWeapon() {
+  const w = GAME.weapon;
+  if (!w || !GAME.hero) return;
+  if (!GAME.hero.attachmentMatrix(w.attach, WEAPON_AT)) { w.root.visible = false; return; }
+  w.root.visible = true; w.root.matrix.copy(WEAPON_AT); w.poseAt(0, 0, camera);
 }
 function dummyAnimAt(t) {
   const since = t - GAME.lastHit;
@@ -648,7 +741,7 @@ function dummyAnimAt(t) {
 }
 // The game actors' poses at time t (their attachments are the anchors).
 function poseActors(t) {
-  if (GAME.hero) { const [id, ms, loop] = heroAnimAt(t); GAME.hero.poseAt(id, ms, camera, loop); }
+  if (GAME.hero) { const [id, ms, loop] = heroAnimAt(t); GAME.hero.poseAt(id, ms, camera, loop); poseWeapon(); }
   if (GAME.dummy) { dummyPosAt(t, GAME.dummyWrap.position); const [id, ms, loop] = dummyAnimAt(t); GAME.dummy.poseAt(id, ms, camera, loop); }
 }
 // Where an anchor is at time t (the Hero's hand follows the cast pose).
@@ -694,14 +787,15 @@ const NEW_LAYER = {
   sprite: { type: 'sprite', name: 'Billboard', trigger: 'impact', anchor: 'impact', delay: 0, life: 0.6, texture: 'glow',
     blend: 'add', color: '#ffb35c', color2: '#ff5a1f', opacity: 1, fadeIn: 0.05, fadeOut: 0.6, count: 1, radius: 0,
     sizeStart: 0.5, sizeEnd: 3, stretch: 1, rotation: 0, spin: 0, orbit: 0, rise: 0, offset: [0, 0, 0], fps: 16,
-    flipOnce: false, alignToMotion: false },
+    flipOnce: false, alignToMotion: false, lock: false },
   ground: { type: 'ground', name: 'Ground decal', trigger: 'impact', anchor: 'target.base', delay: 0, life: 1.2, texture: 'ring',
     blend: 'add', color: '#ffb35c', color2: '#ff5a1f', opacity: 1, fadeIn: 0.05, fadeOut: 0.6, count: 1, radius: 0,
     sizeStart: 0.5, sizeEnd: 7, stretch: 1, rotation: 0, spin: 0, orbit: 0, offset: [0, 0, 0], fps: 16, flipOnce: false },
   particles: { type: 'particles', name: 'Particles', trigger: 'impact', anchor: 'impact', delay: 0, life: 0.3, texture: 'spark',
     blend: 'add', color: '#ffd38a', color2: '#ff4d1a', opacity: 1, fadeIn: 0, fadeOut: 0.7, mode: 'burst', count: 30,
     rate: 40, shape: 'sphere', spread: 60, speedMin: 3, speedMax: 8, gravity: -9, drag: 1.5, partLifeMin: 0.4,
-    partLifeMax: 0.9, sizeStart: 0.35, sizeEnd: 0.05, emitRadius: 0.15, inherit: 0, spin: 0, fps: 16, offset: [0, 0, 0] },
+    partLifeMax: 0.9, sizeStart: 0.35, sizeEnd: 0.05, emitRadius: 0.15, inherit: 0, spin: 0, fps: 16, offset: [0, 0, 0],
+    lock: false },
   beam: { type: 'beam', name: 'Beam', trigger: 'cast', anchor: 'caster.hand', anchorEnd: 'target.chest', delay: 0.2,
     life: 1.2, texture: 'lightning', blend: 'add', color: '#9fd8ff', color2: '#ffffff', opacity: 1, fadeIn: 0.05,
     fadeOut: 0.3, width: 0.8, tile: 4, scroll: 6, fps: 24, flicker: 0.4 },
@@ -730,6 +824,7 @@ function normalizeSpec(spec) {
   const p = spec.projectile = Object.assign(deepCopy(NEW_PROJECTILE), spec.projectile || {});
   for (const k of ['trail', 'sound', 'light']) p[k] = Object.assign(deepCopy(NEW_PROJECTILE[k]), p[k] || {});
   spec.transform = Object.assign(deepCopy(NEW_TRANSFORM), spec.transform || {});
+  spec.caster = Object.assign(deepCopy(NEW_CASTER), spec.caster || {});
   spec.sounds = spec.sounds || {}; spec.textures = spec.textures || {};
   spec.layers = spec.layers.map((l) => Object.assign(deepCopy(NEW_LAYER[l.type] || LAYER_COMMON), l));
   return spec;
@@ -838,11 +933,14 @@ function presetEffect(p) { return Object.assign(NEW_EFFECT(), p.make()); }
    shape a real Fireball's flight) and Chain Lightning's arc as a beam. */
 const TEMPLATE_SWATCH = { 'Arcane Blast': ['#f0c8ff', '#7a3dff'], Frostbolt: ['#d8f4ff', '#2f7bff'], Fireball: ['#ffd27a', '#ff3d00'],
   'Lightning Bolt': ['#e6f6ff', '#3d8bff'], 'Chain Lightning': ['#e6f6ff', '#1a5fd1'] };
+const STYLE_SWATCH = { melee: ['#ffb070', '#a83a12'], bow: ['#d8f0a0', '#3d7a2a'], gun: ['#e0d6c0', '#6a5a40'] };
 const CASTER_SLOT = { lefthand: 'caster.lefthand', righthand: 'caster.righthand', head: 'caster.head', chest: 'caster.chest',
   base: 'caster.base', breath: 'caster.head', world: 'caster.base' };
 const TARGET_SLOT = { lefthand: 'target.chest', righthand: 'target.chest', head: 'target.head', chest: 'target.chest',
   base: 'target.base', breath: 'target.head', world: 'target.base' };
 function templateEffect(t) {
+  const style = t.style || 'spell', melee = style === 'melee', shot = style === 'bow' || style === 'gun';
+  if (melee || shot) return attackEffect(t, style);
   const cast = t.precast ? 1.5 : 0.25, layers = [], textures = {};
   const short = modelName;
   const kit = (k, trigger, slots, delay, life, label) => {
@@ -873,6 +971,41 @@ function templateEffect(t) {
     ? projectile({ speed: t.speed || 24, launchAt: cast, from: 'caster.righthand', fromOffset: [0, 0, 0], to: 'target.chest' }, { enabled: false })
     : deepCopy(NEW_PROJECTILE);
   if (t.missileSound) spec.projectile.sound.flight = 'game:' + t.missileSound;      // SpellVisual's missile loop
+  return normalizeSpec(spec);
+}
+
+/* A melee ability (a Cat's Claw, a Bear's Maul) or a hunter's shot as an effect: the caster in its look and pose
+   (the ability's own attack animation), the dummy close for melee, the shot's ammo and missile riding the projectile
+   from the bow's (left) or gun's (right) hand, and the kits' models where they play. */
+function attackEffect(t, style) {
+  const melee = style === 'melee', hand = style === 'gun' ? 'caster.righthand' : 'caster.lefthand';
+  const cast = melee ? 0.15 : 0.55, hit = melee ? 0.45 : 0, layers = [], short = modelName;
+  const kitAnim = [t.cast, t.precast, t.impact].map((k) => k && k.anim).find((a) => a != null) || 0;
+  const kit = (k, trigger, slots, delay, life, label) => {
+    if (!k) return;
+    for (const [slot, model] of Object.entries(k.slots)) {
+      layers.push(layer('model', { name: `${label}: ${short(model)}`, trigger, anchor: slots[slot], delay, life, model }));
+    }
+  };
+  kit(t.precast, 'cast', CASTER_SLOT, 0, cast, 'Precast');
+  kit(t.cast, 'cast', CASTER_SLOT, melee ? cast : cast, 0.9, 'Cast');
+  const ammo = !melee && GAME.ammo && GAME.ammo[style];
+  if (ammo) layers.push(layer('model', { name: `Ammo: ${short(ammo)}`, trigger: 'projectile', anchor: 'projectile', model: ammo }));
+  if (t.missile) layers.push(layer('model', { name: `Missile: ${short(t.missile)}`, trigger: 'projectile', anchor: 'projectile', model: t.missile }));
+  kit(t.impact, 'impact', TARGET_SLOT, 0, 1.6, 'Impact');
+  kit(t.state, 'impact', TARGET_SLOT, 0, 3, 'Lingering');
+  const sound = (k, trigger, delay, life, loop, label) => {
+    if (k && k.sound) layers.push(layer('sound', { name: `${label} sound`, trigger, anchor: trigger === 'impact' ? 'impact' : 'caster.hand',
+      delay, life, loop, sound: 'game:' + k.sound }));
+  };
+  sound(t.precast, 'cast', 0, cast, true, 'Precast'); sound(t.cast, 'cast', cast, 1.2, false, 'Cast');
+  sound(t.impact, 'impact', 0, 1.6, false, 'Impact'); sound(t.state, 'impact', 0, 3, true, 'Lingering');
+  const spec = Object.assign(NEW_EFFECT(), { name: t.name, castTime: cast, impactAt: melee ? hit : cast + 0.05, layers, textures: {},
+    caster: { morph: t.morph || 'human', weapon: melee ? 'none' : style, pose: style, anim: kitAnim } });
+  spec.projectile = melee ? deepCopy(NEW_PROJECTILE)
+    : projectile({ speed: t.speed || 40, launchAt: cast, from: hand, fromOffset: [0, 0, 0], to: 'target.chest' }, { enabled: false });
+  if (t.missileSound) spec.projectile.sound.flight = 'game:' + t.missileSound;
+  STAGE.distance = melee ? 3 : Math.max(STAGE.distance, 15);
   return normalizeSpec(spec);
 }
 
@@ -1017,6 +1150,7 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const PLANE = new THREE.PlaneGeometry(1, 1);
 const blendOf = (b) => (b === 'normal' ? THREE.NormalBlending : THREE.AdditiveBlending);
 const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3(), tmpD = new THREE.Vector3();
+const tmpQ = new THREE.Quaternion();
 const colA = new THREE.Color(), colB = new THREE.Color();
 const runtime = new THREE.Group(); scene.add(runtime);
 
@@ -1024,6 +1158,14 @@ function spriteMaterial(l) {
   return new THREE.SpriteMaterial({ map: frameTexture(l.texture, 0), color: 0xffffff, transparent: true, depthWrite: false,
     blending: blendOf(l.blend), fog: false });
 }
+// A card that keeps its own turn (a locked billboard or particle, a ground decal): a plane, seen from both sides.
+function cardMaterial(l) {
+  return new THREE.MeshBasicMaterial({ map: frameTexture(l.texture, 0), color: 0xffffff, transparent: true, depthWrite: false,
+    blending: blendOf(l.blend), side: THREE.DoubleSide, fog: false });
+}
+// A locked billboard at Rotation 0 stands upright across the caster's line (its face toward the Hero, the stage's -X).
+const FACE_CASTER = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
 function fadeAt(l, f) {
   const fi = l.fadeIn || 0, fo = l.fadeOut || 0;
   let a = 1;
@@ -1135,20 +1277,15 @@ class LayerRun {
     if (this.endAt !== null && ((fade <= 0 && !this.gm.alive) || local - this.endAt > 4)) this.dispose();
   }
   stepCards(t, local, f) {
-    const l = this.l, n = Math.max(1, l.count | 0), ground = l.type === 'ground';
-    this.ensure(n, () => {
-      if (!ground) return new THREE.Sprite(spriteMaterial(l));
-      const m = new THREE.Mesh(PLANE, new THREE.MeshBasicMaterial({ map: frameTexture(l.texture, 0), transparent: true,
-        depthWrite: false, blending: blendOf(l.blend), side: THREE.DoubleSide, fog: false }));
-      return m;
-    });
+    const l = this.l, n = Math.max(1, l.count | 0), ground = l.type === 'ground', locked = !ground && !!l.lock;
+    this.ensure(n, () => (ground || locked ? new THREE.Mesh(PLANE, cardMaterial(l)) : new THREE.Sprite(spriteMaterial(l))));
     const fade = this.flight ? f : fadeAt(l, f), grow = this.flight ? 0 : f;
     const size = lerp(l.sizeStart, l.sizeEnd, 1 - Math.pow(1 - grow, 2)) * this.sizeK;
     const base = this.place(new THREE.Vector3()), q = this.orient(new THREE.Quaternion()), spread = new THREE.Vector3();
     const flat = new THREE.Quaternion().setFromAxisAngle(X_AXIS, -Math.PI / 2), spinQ = new THREE.Quaternion();
     const frame = frameAt(l, local, f), info = textureInfo(l.texture);
     let motionAngle = 0;
-    if (!ground && l.alignToMotion && this.flight) motionAngle = screenAngle(this.flight.pos, this.flight.vel);
+    if (!ground && !locked && l.alignToMotion && this.flight) motionAngle = screenAngle(this.flight.pos, this.flight.vel);
     for (let i = 0; i < n; i++) {
       const o = this.objects[i]; o.visible = true;
       const a = (i / n) * Math.PI * 2 + (l.orbit || 0) * Math.PI / 180 * local;
@@ -1159,6 +1296,7 @@ class LayerRun {
       const rot = ((l.rotation || 0) + (l.spin || 0) * local) * Math.PI / 180 + motionAngle;
       const ratio = (l.stretch || 1) * (info.aspect || 1);
       if (ground) { o.scale.set(size * ratio, size, 1); o.quaternion.copy(q).multiply(flat).multiply(spinQ.setFromAxisAngle(new THREE.Vector3(0, 0, 1), rot)); }
+      else if (locked) { o.scale.set(size * ratio, size, 1); o.quaternion.copy(q).multiply(FACE_CASTER).multiply(spinQ.setFromAxisAngle(Z_AXIS, rot)); }
       else { o.scale.set(size * ratio, size, 1); o.material.rotation = rot; }
       o.material.map = frameTexture(l.texture, frame + i * 3);
       o.material.opacity = (l.opacity ?? 1) * fade; tint(o.material, l, f);
@@ -1209,7 +1347,8 @@ class LayerRun {
       const f = p.age / p.life, s = p.s;
       s.position.copy(p.p); const size = lerp(l.sizeStart, l.sizeEnd, f) * p.k * this.sizeK; s.scale.set(size, size, 1);
       s.material.opacity = (l.opacity ?? 1) * fadeAt(l, f); tint(s.material, l, f);
-      s.material.rotation = p.rot + (l.spin || 0) * Math.PI / 180 * p.age;
+      const roll = p.rot + (l.spin || 0) * Math.PI / 180 * p.age;
+      if (p.face) s.quaternion.copy(p.face).multiply(tmpQ.setFromAxisAngle(Z_AXIS, roll)); else s.material.rotation = roll;
       if (frames > 1) s.material.map = frameTexture(l.texture, frames > 1 && l.fps ? p.frame + Math.floor(p.age * l.fps) : Math.floor(f * frames));
     }
   }
@@ -1237,12 +1376,20 @@ class LayerRun {
       const a = r() * Math.PI * 2, rr = Math.sqrt(r()) * l.emitRadius * this.sizeK;
       pos.add(new THREE.Vector3(Math.cos(a) * rr, (r() - 0.5) * l.emitRadius * this.sizeK * 0.3, Math.sin(a) * rr).applyQuaternion(q));
     }
+    // Locked: the card's face along the way the layer sends (as the game's XY-quad particles of the emitter's aim).
+    let face = null;
+    if (l.lock) {
+      const aim = { down: new THREE.Vector3(0, -1, 0), forward: fwd.clone(),
+        back: vel && vel.lengthSq() > 0.01 ? vel.clone().normalize().negate() : fwd.clone().negate() }[l.shape] || UP.clone();
+      if (l.shape !== 'back') aim.applyQuaternion(q);
+      face = new THREE.Quaternion().setFromUnitVectors(Z_AXIS, aim.normalize());
+    }
     const v = dir.multiplyScalar(speed);
     if (vel && l.inherit) v.addScaledVector(vel, l.inherit);
-    const s = new THREE.Sprite(spriteMaterial(l)); runtime.add(s);
+    const s = face ? new THREE.Mesh(PLANE, cardMaterial(l)) : new THREE.Sprite(spriteMaterial(l)); runtime.add(s);
     const info = textureInfo(l.texture);
     this.parts.push({ p: pos, v, s, age: 0, life: lerp(l.partLifeMin || 0.3, l.partLifeMax || 0.6, r()), k: 0.7 + r() * 0.6,
-      rot: r() * Math.PI * 2, frame: Math.floor(r() * info.cols * info.rows) });
+      rot: r() * Math.PI * 2, frame: Math.floor(r() * info.cols * info.rows), face });
   }
 }
 
@@ -1417,6 +1564,7 @@ function placeActors() {
   poseActors(sim.t);
   const now = performance.now(), dt = Math.min(0.1, (now - lastDraw) / 1000); lastDraw = now;
   if (GAME.hero) GAME.hero.draw(dt, camera);
+  if (GAME.weapon && GAME.weapon.root.visible) GAME.weapon.draw(dt, camera);
   if (GAME.dummy) {
     // A dummy without a wound animation rocks back on its base instead.
     if (!GAME.dummy.hasSeq(9)) GAME.dummyWrap.rotation.z = clamp(sim.hitWobble, -0.5, 0.5) * 0.35;
@@ -1471,6 +1619,7 @@ function setSpec(spec, { keepSel = false, record = true } = {}) {
   changed({ restart: true });
   renderLeft(); renderInspector();
   $('effectName').value = spec.name;
+  applyCaster();
 }
 let historyTimer = null;
 function pushHistory() {
@@ -1630,7 +1779,8 @@ function renderLibrary(body) {
   blank.onclick = () => { setSpec(NEW_EFFECT()); state.tab = 'layers'; renderLeft(); };
   body.append(blank);
   if (LIVE) renderLiveSearch(body);
-  const g = document.createElement('div'); g.className = 'lib-group'; g.textContent = 'Game spells'; body.append(g);
+  const g = document.createElement('div'); g.className = 'lib-group'; g.textContent = 'Game spells';
+  if (!GAME.templates.length) body.append(g);
   if (!GAME.templates.length && LIVE) {
     const e = document.createElement('div'); e.className = 'hint'; e.textContent = 'Reading the game…'; body.append(e);
   } else if (!GAME.templates.length) {
@@ -1638,9 +1788,12 @@ function renderLibrary(body) {
     e.textContent = "The game's own spells (Arcane Blast, Frostbolt, Fireball, Lightning Bolt, Chain Lightning) appear here once their models are extracted (tools/extract, patterns/effect-suite.txt) and built (build_assets.py).";
     body.append(e);
   }
+  let shown = null;
   for (const t of GAME.templates) {
+    const group = t.group || 'Game spells';
+    if (group !== shown) { shown = group; const h = document.createElement('div'); h.className = 'lib-group'; h.textContent = group; body.append(h); }
     body.append(presetEl(t.name, `The game's ${t.name}: its precast, cast${t.missile ? ', missile' : ''} and impact, at ${t.speed || 'instant'}${t.speed ? ' yd/s' : ''}.`,
-      TEMPLATE_SWATCH[t.name] || ['#ffffff', '#666666'], () => { setSpec(templateEffect(t)); state.tab = 'layers'; renderLeft(); }));
+      TEMPLATE_SWATCH[t.name] || STYLE_SWATCH[t.style] || ['#ffffff', '#666666'], () => { setSpec(templateEffect(t)); state.tab = 'layers'; renderLeft(); }));
   }
   let group = null;
   for (const p of PRESETS) {
@@ -1708,7 +1861,8 @@ const LAYER_FIELDS = {
     F('Orbit', 'orbit', 'range', { min: -720, max: 720, step: 5, unit: '°/s' }), F('Rise', 'rise', 'range', { min: -5, max: 10, step: 0.05, unit: 'yd' }),
     F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }),
     F('Play once', 'flipOnce', 'toggle', { hint: 'flipbook plays once over its time' }),
-    F('Face motion', 'alignToMotion', 'toggle', { hide: (l) => l.trigger !== 'projectile', hint: 'turns with the projectile' }),
+    F('Face motion', 'alignToMotion', 'toggle', { hide: (l) => l.trigger !== 'projectile' || l.lock, hint: 'turns with the projectile' }),
+    F('Lock to position', 'lock', 'toggle', { hint: "stays turned as placed (Placement: Rotation; at 0 it faces the caster), not toward the camera" }),
   ],
   ground: [
     F('Size start', 'sizeStart', 'range', { min: 0, max: 30, step: 0.05, unit: 'yd' }), F('Size end', 'sizeEnd', 'range', { min: 0, max: 30, step: 0.05, unit: 'yd' }),
@@ -1731,6 +1885,7 @@ const LAYER_FIELDS = {
     F('Emit area', 'emitRadius', 'range', { min: 0, max: 8, step: 0.05, unit: 'yd' }),
     F('Inherit', 'inherit', 'range', { min: -1, max: 1, step: 0.05, hide: (l) => l.trigger !== 'projectile', hint: "of the projectile's speed" }),
     F('Spin', 'spin', 'range', { min: -720, max: 720, step: 5, unit: '°/s' }), F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }),
+    F('Lock to position', 'lock', 'toggle', { hint: 'each particle lies across the way it is sent (Direction, turned by Rotation), not toward the camera' }),
   ],
   beam: [
     F('Ends at', 'anchorEnd', 'select', { options: () => ANCHOR_OPTS(false, false) }),
@@ -1852,6 +2007,14 @@ function renderInspector() {
       F('Offset', 'transform.offset', 'vec3'), F('Rotation', 'transform.rotation', 'vec3', { deg: true }),
       F('Scale', 'transform.scale', 'range', { min: 0.1, max: 5, step: 0.05, unit: '×' }),
     ], () => { $('effectName').value = spec.name; });
+    buildFields(box, spec, [
+      { group: 'Caster', hint: "Who casts it: the Human or a form (Cat, Flame Cat, Ice Cat, Bear), what the Human holds, and the pose (with the attack it plays). Saved with the effect." },
+      F('Look', 'caster.morph', 'select', { options: () => Object.entries(MORPHS).map(([k, m]) => [k, m.label]) }),
+      F('Holds', 'caster.weapon', 'select', { hide: (o) => o.caster.morph !== 'human', options: () => Object.entries(WEAPONS).map(([k, w]) => [k, w.label]) }),
+      F('Pose', 'caster.pose', 'select', { options: () => Object.entries(POSES) }),
+      F('Attack', 'caster.anim', 'select', { hide: (o) => o.caster.pose === 'spell', options: attackOptions,
+        hint: 'the animation it plays at the cast time' }),
+    ], () => applyCaster());
     buildFields(box, STAGE, [
       { group: 'Stage', hint: 'Where the training dummy stands, and whether it moves.' },
       F('Distance', 'distance', 'range', { min: 3, max: 40, step: 0.5, unit: 'yd' }),
@@ -1881,6 +2044,15 @@ function renderInspector() {
       'arrows, <kbd>PgUp</kbd> / <kbd>PgDn</kbd> nudge (<kbd>Shift</kbd>: more).';
     box.append(keys);
   }
+}
+// The attacks the caster's model has, for the Attack list (Automatic: the pose's usual one).
+const ANIM_NAMES = { 16: 'Unarmed', 17: 'One-hand', 18: 'Two-hand', 46: 'Bow shot', 49: 'Rifle shot', 55: 'Battle roar',
+  57: 'Special one-hand', 58: 'Special two-hand', 118: 'Special unarmed', 161: 'Bow release', 170: 'Pounce', 171: 'Rip',
+  172: 'Rake', 173: 'Ravage', 174: 'Claw', 176: 'Bear swipe', 177: 'Bear bite', 178: 'Maul', 179: 'Bash' };
+function attackOptions() {
+  const h = GAME.hero, out = [[0, 'Automatic']];
+  for (const [id, name] of Object.entries(ANIM_NAMES)) if (h && h.hasSeq(+id)) out.push([+id, name]);
+  return out;
 }
 function buildFields(box, obj, fields, after, afterPath, stage = false) {
   for (const fd of fields) {

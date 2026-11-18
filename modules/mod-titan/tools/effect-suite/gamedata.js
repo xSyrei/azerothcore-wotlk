@@ -251,6 +251,10 @@ const GameData = (() => {
   }
 
   /* ------------------------------------------------------------------------------------------------- library ----- */
+  // What a caster may play: stand, the spell poses, melee and its readies, the bow's and rifle's, the cat's and bear's
+  // attacks (DruidCatPounce 170 to DruidBearBash 179), a battle roar.
+  const HERO_SEQS = [0, 9, 16, 17, 18, 25, 26, 29, 46, 48, 49, 51, 53, 55, 57, 58, 118, 160, 161,
+    170, 171, 172, 173, 174, 176, 177, 178, 179];
   const KIT_SLOTS = { 3: 'head', 4: 'chest', 5: 'base', 6: 'lefthand', 7: 'righthand', 8: 'breath', 14: 'world' };
   class Library {
     constructor(client) { this.client = client; this.tables = {}; this.models = new Map(); }
@@ -318,9 +322,28 @@ const GameData = (() => {
       let hair = 1;
       const g = await this.table('CharHairGeosets.dbc');
       if (g) for (const r of g.rows.values()) if (r[1] === 1 && r[2] === 0 && r[3] === 15) hair = r[4] || 1;
-      return this.model('Character\\Human\\Male\\HumanMale.m2', { sequences: [0, 51, 53, 9, 26], textureSize: 512,
+      return this.model('Character\\Human\\Male\\HumanMale.m2', { sequences: HERO_SEQS, textureSize: 512,
         geosets: [0, hair, 101, 201, 301, 401, 501, 702, 902, 1002, 1301],
         replaceable: { 1: 'Textures\\BakedNpcTextures\\CreatureDisplayExtra-08177.blp', 6: 'Character\\Human\\Hair02_00.blp' } });
+    }
+    // A creature display (CreatureDisplayInfo) as a model: its CreatureModelData model, its skins (TextureVariation:
+    // replaceable 11-13, beside the model) and its scale. { data, scale } or null.
+    async creature(displayId, sequences = [0]) {
+      const [cdi, cmd] = await Promise.all([this.table('CreatureDisplayInfo.dbc'), this.table('CreatureModelData.dbc')]);
+      const r = cdi && cdi.rows.get(displayId), m = r && cmd && cmd.rows.get(r[1]);
+      if (!m) return null;
+      const path = normalizePath(cmd.str(m[2])), dir = path.slice(0, path.lastIndexOf('\\') + 1), replaceable = {};
+      [6, 7, 8].forEach((c, i) => { const skin = r[c] && cdi.str(r[c]); if (skin) replaceable[11 + i] = dir + skin + '.blp'; });
+      const data = await this.model(path, { sequences, textureSize: 512, replaceable });
+      return data && { data, scale: cdi.float(r[4]) || 1 };
+    }
+    // A weapon (an item id of Item.dbc): its ItemDisplayInfo model and skin (replaceable 2), in ObjectComponents\Weapon.
+    async weapon(itemId) {
+      const [item, idi] = await Promise.all([this.table('Item.dbc'), this.table('ItemDisplayInfo.dbc')]);
+      const r = item && item.rows.get(itemId), d = r && idi && idi.rows.get(r[5]);
+      if (!d || !d[1]) return null;
+      const dir = 'Item\\ObjectComponents\\Weapon\\', skin = d[3] ? idi.str(d[3]) : '';
+      return this.model(dir + idi.str(d[1]), { sequences: [0], textureSize: 256, replaceable: skin ? { 2: dir + skin + '.blp' } : {} });
     }
     dummy() {
       return this.model('Creature\\Object\\WoodenDummy.m2', { sequences: [0, 9, 10], textureSize: 512, replaceable: { 11: 'Creature\\Object\\WoodenDummy.blp' } });
@@ -337,6 +360,6 @@ const GameData = (() => {
     return this.models.get(key);
   };
 
-  return { dbc, blp, buildModel: buildModelFromOptions, Library, normalizePath };
+  return { dbc, blp, buildModel: buildModelFromOptions, Library, normalizePath, HERO_SEQS };
 })();
 if (typeof module !== 'undefined') module.exports = GameData;

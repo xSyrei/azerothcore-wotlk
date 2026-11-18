@@ -13,9 +13,12 @@ An effect spec (`"format": "emberforge-effect"`, exported as JSON) has:
   time). Each is anchored to the Hero (feet, chest, above the head, casting hand), the dummy (feet, chest, above the
   head), the impact point or the projectile.
   - **Billboard**: camera-facing cards (copies in a ring, orbit, spin, rise, stretch, flipbook, facing the motion).
+    **Lock to position** keeps one turned as placed instead: at Rotation 0 it stands upright across the caster's line,
+    its face toward the Hero; Placement's Rotation (or the E handle) turns it, and the camera no longer does.
   - **Ground**: flat decals on the floor (rings, sigils, scorch marks).
   - **Particles**: a burst or a stream (direction, cone, speed, gravity, drag, life, size, inherit the projectile's
-    speed).
+    speed). **Lock to position** lays each particle across the way the layer sends them (its Direction turned by
+    Rotation: Up lies flat, Toward the dummy faces the caster) instead of facing the camera.
   - **Beam**: a textured band between two anchors (tiling, scroll, flicker).
   Every layer has a texture, blend (additive or normal), a color that fades to a second, opacity with fade in and out,
   a delay and how long it lasts.
@@ -44,6 +47,28 @@ An effect spec (`"format": "emberforge-effect"`, exported as JSON) has:
   The handles on the stage do the same by dragging (W move, E rotate, R scale, Q world or local axes, S snap to
   0.25 yd / 15° / 0.1×, G hide, F focus, Reset), on the selected layer, the projectile's launch point or the whole
   effect; the arrow keys and PgUp / PgDn nudge it (Shift: five times as far).
+
+## The caster
+
+Effect & stage's **Caster** (saved with the effect) sets who casts it:
+
+- **Look**: the Human, Cat Form (display 892), the Flame Cat (90207, Ember's Wrath), the Ice Cat (90208, Whitefang)
+  or Bear Form (2281). In the client each is read from the game (CreatureDisplayInfo, its model and skins); the
+  Flame and Ice Cat come with the Emberforge patch. Anchors (chest, head, hands, feet) follow the form's own
+  attachment points.
+- **Holds** (the Human only): a bow or crossbow in the left hand, a gun in the right (an item's ItemDisplayInfo model).
+- **Pose** and **Attack**: a spellcast (the casting pose until the cast time, then the release), a melee attack (ready,
+  then the attack from the cast time), a bow shot (ReadyBow, AttackBow as it fires) or a gun shot (ReadyRifle,
+  AttackRifle). Attack picks the animation (Automatic, or any the form has: Claw, Rake, Rip, Pounce, Ravage, Maul,
+  Bear swipe, the weapon swings and shots).
+
+The Library's **Feral: Cat** (Claw, Shred, Rake, Rip, Mangle, Ferocious Bite, Swipe, Pounce, Ravage, Tiger's Fury,
+Berserk, Cat Form), **Feral: Bear** (Maul, Swipe, Mangle, Bear Form) and **Hunter** (Arcane, Steady, Multi-, Aimed,
+Explosive, Chimera, Kill, Concussive, Scatter and Silencing Shot, Serpent and Viper Sting, Freezing Arrow) templates set
+it for you: a feral one puts the Cat or Bear in the ability's own attack (Claw's DruidCatClaw) with the dummy 3 yd
+away, a hunter one gives the Human a bow, its shot riding the projectile from the bow hand with the arrow (the
+client's ammo model, when it has one) and the spell's missile. Switch Holds to a gun for the same shot from a gun.
+Morphs and weapons come from the client's files: in the browser Suite (no client) the Human stays.
 
 ## The stage
 
@@ -107,8 +132,9 @@ keys still open (found under `Spells\`).
 `client-patch/models/suite_effect.py` turns a saved or exported effect (.json) into game models for a spell visual's
 impact kit: slot 'chest' (the layers at the target's chest or the impact point) and slot 'base' (those at its feet:
 Ground layers lie on the ground there; Broadside's has one of each). Ground layers are flat cards (turn and spin), Billboards become camera-facing cards (size, colors, fades and flipbook over their
-time, their turn), Particles a real particle emitter (burst or stream, aim and cone, speeds, gravity, drag, life,
-sizes, colors), Casts light a model light (the client may ignore it). Put the .json under `client-patch/spells/` and
+time, their turn; locked ones keep the layer's turn and are not billboarded), Particles a real particle emitter (locked:
+XY-quad particles, flag 0x1000), with its burst or stream, aim and cone, speeds, gravity, drag, life,
+sizes and colors, Casts light a model light (the client may ignore it). Put the .json under `client-patch/spells/` and
 point an EFFECTS entry at it (`'shape': 'suite', 'textures': (), 'options': {'spec': '<folder>/<name>.json'}`, as
 Sabre Slash's in `patch_runes.py`); its own textures travel inside it, the built-in ones come from
 `client-patch/spells/suite/` (exported from the Suite). A sound goes into `client-patch/sounds/` as a 16-bit WAV (its layer's
