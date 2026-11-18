@@ -25,6 +25,17 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Broadside fires cannonballs: each blast lobs one at every enemy it hits, bursting in rings of fire with smoke,
   sparks and a scorch on the ground, and a cannon's boom.
 
+### Two feral Legendary Runes
+
+- Rune of Ember's Wrath (Cat Form, Fire Blast, Rake or Rip, Melee): Fire Blast becomes usable in Cat Form for 30
+  Energy (6 sec cooldown), with your Fire Blast's damage; the rune puts it on your Cat Form bar. On an enemy bleeding
+  from your own Rake or Rip it ignites Cinder Wound: 30% of your attack power plus 30% of your spell power as Fire
+  damage over 6 sec.
+- Rune of Whitefang (Cat Form, Icy Touch, Shred or Mangle, Melee): Icy Touch becomes usable in Cat Form for 25 Energy
+  and no runes, Frost Fever and all. It lays Frozen Prey; your next Shred or Mangle on that enemy shatters it for 30%
+  of your attack power as Frost damage.
+- Each has three slots of three options, like the others.
+
 ### Caster balance
 
 - Ranged and Healer's spell haste is 60% (was 110%): cast times are 37.5% shorter than usual instead of 52% (a 3 sec

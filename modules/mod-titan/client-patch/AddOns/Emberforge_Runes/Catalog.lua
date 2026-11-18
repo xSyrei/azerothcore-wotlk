@@ -1117,4 +1117,108 @@ EmberforgeRunesCatalog = {
           text = "Mobile pressure." },
       },
     },
+    { id = 44,
+      name = "Rune of Ember's Wrath",
+      role = "Melee DPS (Druid, Feral)",
+      roles = { "DAMAGER" },
+      icon = "Ability_Rune_EmbersWrath",
+      keywords = "druid feral cat form fire blast rake rip ferocious bite swipe mangle cinder wound burn bleed " ..
+          "fire mage energy",
+      slots = { "Ignition", "Claws", "Instinct" },
+      builtFrom = "Rake or Rip",
+      spentWith = "Fire Blast in Cat Form (the rune teaches it)",
+      resource = "Cinder Wound, 6 sec",
+      core = "Fire Blast is usable in Cat Form for 30 Energy (6 sec cooldown), with your Fire Blast's damage: " ..
+          "the rune teaches it and puts it on your Cat Form bar. On an enemy bleeding from your own Rake or Rip it " ..
+          "ignites Cinder Wound: 30% of your attack power plus 30% of your spell power as Fire damage over 6 sec, a " ..
+          "tick every 2 sec. The bleed stays; a new wound keeps what is left of the last, up to twice a fresh one.",
+      loop = "Rake or Rip, Fire Blast to ignite, then your feral rotation.",
+      mods = {
+        { name = "Searing Wound",
+          text = "Cinder Wound deals 35% more damage." },
+        { name = "Wild Embers",
+          text = "Each ignition also burns up to 4 other enemies within 6 yards of its victim for 10% of " ..
+              "your attack power plus 10% of your spell power as Fire damage." },
+        { name = "Smoldering Flesh",
+          text = "Cinder Wound lasts 10 sec and deals 30% more damage over that time." },
+        { name = "Blazing Rake",
+          text = "Rake on your Cinder Wound victim also deals 15% of your attack power as Fire damage, " ..
+              "once every 3 sec." },
+        { name = "Molten Bite",
+          text = "Ferocious Bite on your Cinder Wound victim also deals 5% of your attack power per combo " ..
+              "point spent as Fire damage." },
+        { name = "Cinder Swipe",
+          text = "Swipe spreads Cinder Wound, at half its damage, to up to 3 bleeding enemies within its " ..
+              "reach. Spread wounds don't spread again." },
+        { name = "Flamebound",
+          text = "Fire Blast makes you move 30% faster for 3 sec, and your next Rake or Mangle within 5 " ..
+              "sec gives 10 Energy back." },
+        { name = "Patient Predator",
+          text = "Cinder Wound's last tick deals twice its damage. A new wound keeps its tick timer " ..
+              "running." },
+        { name = "Ashen Pursuit",
+          text = "Your first Fire Blast on each new enemy deals 20% more damage, once every 6 sec; that " ..
+              "enemy dying resets the wait." },
+      },
+      builds = {
+        { name = "The Searing Claw", mods = { "Searing Wound", "Blazing Rake", "Flamebound" },
+          text = "A focused burn." },
+        { name = "The Wildfire", mods = { "Wild Embers", "Molten Bite", "Patient Predator" },
+          text = "Ignite, leap and bite." },
+        { name = "The Smoulder", mods = { "Smoldering Flesh", "Cinder Swipe", "Ashen Pursuit" },
+          text = "Fire through the pack." },
+      },
+    },
+    { id = 45,
+      name = "Rune of Whitefang",
+      role = "Melee DPS (Druid, Feral)",
+      roles = { "DAMAGER" },
+      icon = "Ability_Rune_Whitefang",
+      keywords = "druid feral cat form icy touch shred mangle ferocious bite frost frozen prey shatter death " ..
+          "knight energy",
+      slots = { "Shatter", "Hunt", "Instinct" },
+      builtFrom = "Icy Touch in Cat Form (the rune teaches it)",
+      spentWith = "Shred or Mangle",
+      resource = "Frozen Prey, 6 sec",
+      core = "Icy Touch is usable in Cat Form for 25 Energy and no runes, with its damage and Frost Fever: " ..
+          "the rune teaches it and puts it on your Cat Form bar. It lays Frozen Prey on the enemy for 6 sec; your " ..
+          "next Shred or Mangle on it shatters it for 30% of your attack power as Frost damage. One mark at a time, " ..
+          "one shatter a strike.",
+      loop = "Icy Touch, then Shred or Mangle to shatter; bite or spread as you chose.",
+      mods = {
+        { name = "Whitefang",
+          text = "The shatter deals 40% more damage." },
+        { name = "Icefang Spray",
+          text = "The shatter also hits up to 4 enemies in an 8-yard cone in front of you for half its " ..
+              "damage." },
+        { name = "Winter Wound",
+          text = "Instead of its hit, the shatter leaves 150% of its damage as Frost damage over 6 sec. A " ..
+              "new wound keeps what is left of the last." },
+        { name = "Long Winter",
+          text = "Frozen Prey lasts 10 sec; shattered after at least 3 sec, it deals 20% more damage." },
+        { name = "Pursuing Chill",
+          text = "Laying Frozen Prey makes you move 30% faster for 3 sec; the Shred or Mangle that " ..
+              "shatters it in that time gives 10 Energy back." },
+        { name = "Pack Frost",
+          text = "Shattering lays a 60%-strength Frozen Prey on up to 2 other enemies within 8 yards for " ..
+              "6 sec. Those marks don't spread again." },
+        { name = "Cold Blood",
+          text = "Shattering makes your next Ferocious Bite on that enemy within 5 sec deal 20% more " ..
+              "damage." },
+        { name = "Snowblind",
+          text = "Shattering slows enemies within 6 yards by 30% for 3 sec and raises your dodge chance " ..
+              "by 15% for 3 sec." },
+        { name = "Frozen Trail",
+          text = "Shattering leaves a 6-yard patch of frost for 4 sec: up to 5 enemies in it move 30% " ..
+              "slower and take 5% of your attack power as Frost damage every second." },
+      },
+      builds = {
+        { name = "The Whitefang", mods = { "Whitefang", "Long Winter", "Cold Blood" },
+          text = "One deep bite." },
+        { name = "The Icefang", mods = { "Icefang Spray", "Pursuing Chill", "Snowblind" },
+          text = "Chase and spray." },
+        { name = "The Winter Pack", mods = { "Winter Wound", "Pack Frost", "Frozen Trail" },
+          text = "Frost on the pack." },
+      },
+    },
 }

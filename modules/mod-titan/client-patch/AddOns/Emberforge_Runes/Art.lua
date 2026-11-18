@@ -77,6 +77,12 @@ EmberforgeRunesArt = {
             u = 0.6211,
             v = 0.9844,
         },
+        ChooseClaws = {
+            w = 399,
+            h = 84,
+            u = 0.585,
+            v = 0.9844,
+        },
         ChooseCollision = {
             w = 469,
             h = 84,
@@ -207,6 +213,24 @@ EmberforgeRunesArt = {
             w = 464,
             h = 84,
             u = 0.6797,
+            v = 0.9844,
+        },
+        ChooseHunt = {
+            w = 386,
+            h = 84,
+            u = 0.5654,
+            v = 0.9844,
+        },
+        ChooseIgnition = {
+            w = 448,
+            h = 84,
+            u = 0.6562,
+            v = 0.9844,
+        },
+        ChooseInstinct = {
+            w = 447,
+            h = 84,
+            u = 0.6553,
             v = 0.9844,
         },
         ChooseInvocation = {
@@ -449,6 +473,12 @@ EmberforgeRunesArt = {
             u = 0.5859,
             v = 0.875,
         },
+        SlotClaws = {
+            w = 64,
+            h = 28,
+            u = 1,
+            v = 0.875,
+        },
         SlotCollision = {
             w = 95,
             h = 28,
@@ -579,6 +609,24 @@ EmberforgeRunesArt = {
             w = 93,
             h = 28,
             u = 0.7266,
+            v = 0.875,
+        },
+        SlotHunt = {
+            w = 57,
+            h = 28,
+            u = 0.8906,
+            v = 0.875,
+        },
+        SlotIgnition = {
+            w = 87,
+            h = 28,
+            u = 0.6797,
+            v = 0.875,
+        },
+        SlotInstinct = {
+            w = 86,
+            h = 28,
+            u = 0.6719,
             v = 0.875,
         },
         SlotInvocation = {
@@ -1916,6 +1964,110 @@ EmberforgeRunesArt = {
                 "Storm",
                 "Thunderlash",
                 "Shield",
+            },
+        },
+        [44] = {
+            rgb = { 1, 0.49, 0.216 },
+            hot = { 1, 0.824, 0.725 },
+            ink = { 1, 0.949, 0.922 },
+            muted = { 0.906, 0.69, 0.604 },
+            hue = { 1, 0.627, 0.322 },
+            inner = { 1, 0.91, 0.859 },
+            built = true,
+            core = "**Fire Blast** in Cat Form ignites your **Rake** or **Rip** victim: " ..
+                    "**Cinder Wound**, 30% of your attack power plus 30% of your spell " ..
+                    "power over 6 sec.",
+            asks = {
+                "How the wound burns",
+                "What your claws add",
+                "What the hunt gives",
+            },
+            abilities = {
+                "Sear",
+                "Embers",
+                "Smolder",
+                "Rake",
+                "Bite",
+                "Swipe",
+                "Bound",
+                "Patience",
+                "Pursuit",
+            },
+            texts = {
+                "Cinder Wound deals 35% more damage.",
+                "Each ignition also burns up to 4 other enemies within 6 yards of its " ..
+                        "victim for 10% of your attack power plus 10% of your spell power as " ..
+                        "Fire damage.",
+                "Cinder Wound lasts 10 sec and deals 30% more damage over that time.",
+                "Rake on your Cinder Wound victim also deals 15% of your attack power " ..
+                        "as Fire damage, once every 3 sec.",
+                "Ferocious Bite on your Cinder Wound victim also deals 5% of your " ..
+                        "attack power per combo point spent as Fire damage.",
+                "Swipe spreads Cinder Wound, at half its damage, to up to 3 bleeding " ..
+                        "enemies within its reach. Spread wounds don't spread again.",
+                "Fire Blast makes you move 30% faster for 3 sec, and your next Rake or " ..
+                        "Mangle within 5 sec gives 10 Energy back.",
+                "Cinder Wound's last tick deals twice its damage. A new wound keeps its " ..
+                        "tick timer running.",
+                "Your first Fire Blast on each new enemy deals 20% more damage, once " ..
+                        "every 6 sec; that enemy dying resets the wait.",
+            },
+            slots = {
+                "Ignition",
+                "Claws",
+                "Instinct",
+            },
+        },
+        [45] = {
+            rgb = { 0.549, 0.824, 0.961 },
+            hot = { 0.843, 0.937, 0.988 },
+            ink = { 0.957, 0.98, 0.996 },
+            muted = { 0.725, 0.824, 0.902 },
+            hue = { 0.694, 1, 1 },
+            inner = { 0.918, 0.969, 0.992 },
+            built = true,
+            core = "**Icy Touch** in Cat Form lays **Frozen Prey**; your next **Shred** or " ..
+                    "**Mangle** shatters it for 30% of your attack power as Frost damage.",
+            asks = {
+                "How the prey shatters",
+                "How you mark the hunt",
+                "What the shatter leaves",
+            },
+            abilities = {
+                "Fang",
+                "Spray",
+                "Wound",
+                "Winter",
+                "Chase",
+                "Pack",
+                "Blood",
+                "Snow",
+                "Trail",
+            },
+            texts = {
+                "The shatter deals 40% more damage.",
+                "The shatter also hits up to 4 enemies in an 8-yard cone in front of " ..
+                        "you for half its damage.",
+                "Instead of its hit, the shatter leaves 150% of its damage as Frost " ..
+                        "damage over 6 sec. A new wound keeps what is left of the last.",
+                "Frozen Prey lasts 10 sec; shattered after at least 3 sec, it deals 20% " ..
+                        "more damage.",
+                "Laying Frozen Prey makes you move 30% faster for 3 sec; the Shred or " ..
+                        "Mangle that shatters it in that time gives 10 Energy back.",
+                "Shattering lays a 60%-strength Frozen Prey on up to 2 other enemies " ..
+                        "within 8 yards for 6 sec. Those marks don't spread again.",
+                "Shattering makes your next Ferocious Bite on that enemy within 5 sec " ..
+                        "deal 20% more damage.",
+                "Shattering slows enemies within 6 yards by 30% for 3 sec and raises " ..
+                        "your dodge chance by 15% for 3 sec.",
+                "Shattering leaves a 6-yard patch of frost for 4 sec: up to 5 enemies " ..
+                        "in it move 30% slower and take 5% of your attack power as Frost damage " ..
+                        "every second.",
+            },
+            slots = {
+                "Shatter",
+                "Hunt",
+                "Instinct",
             },
         },
     },

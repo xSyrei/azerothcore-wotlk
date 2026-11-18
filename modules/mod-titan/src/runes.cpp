@@ -118,6 +118,9 @@ namespace
     constexpr uint8 RUNE_URSOCS_CHAMPION = 41;
     constexpr uint8 RUNE_DUELIST = 42;              // its own dossier, and the Stormreaver's
     constexpr uint8 RUNE_STORMREAVER = 43;
+    constexpr uint8 RUNE_EMBERS_WRATH = 44;         // its own dossier, and Whitefang's
+    constexpr uint8 CAT_BAR_FIRST = 72;             // the Cat Form bar's first button (its bonus bar)
+    constexpr uint8 RUNE_WHITEFANG = 45;
 
     enum Spells : uint32
     {
@@ -374,6 +377,42 @@ namespace
         SPELL_STORMREAVER_MODIFIER_FIRST = 91410,   // + slot * 3 + choice
         SPELL_STORMSTRIKE               = 17364,
         SPELL_LAVA_LASH                 = 60103,
+
+        // Ember's Wrath (91420 on: the Cat Form Fire Blast it teaches first) and Whitefang (91440 on: its Cat Form
+        // Icy Touch first); their markers 11 on from each first.
+        SPELL_CAT_FIRE_BLAST            = 91420,
+        SPELL_CINDER_WOUND              = 91421,    // its tick 91422, every 2 sec
+        SPELL_CINDER_WOUND_TICK         = 91422,
+        SPELL_CINDER_WOUND_SPREAD       = 91423,    // Cinder Swipe's: half a wound, never spread again
+        SPELL_WILD_EMBERS               = 91424,
+        SPELL_BLAZING_RAKE              = 91425,
+        SPELL_MOLTEN_BITE               = 91426,
+        SPELL_FLAMEBOUND                = 91427,    // speed
+        SPELL_FLAMEBOUND_DISCOUNT       = 91428,    // the next Rake or Mangle 10 Energy back
+        SPELL_RUNE_EMBERS_WRATH         = 91430,
+        SPELL_EMBERS_MODIFIER_FIRST     = 91431,    // + slot * 3 + choice
+        SPELL_CAT_ICY_TOUCH             = 91440,
+        SPELL_FROZEN_PREY               = 91441,    // the primary mark
+        SPELL_FROZEN_PREY_PACK          = 91442,    // Pack Frost's: 60% and never spread again
+        SPELL_FANG_SHATTER              = 91443,
+        SPELL_WINTER_WOUND              = 91444,    // its tick 91445
+        SPELL_WINTER_WOUND_TICK         = 91445,
+        SPELL_PURSUING_CHILL            = 91446,    // speed
+        SPELL_SNOWBLIND_SLOW            = 91447,
+        SPELL_SNOWBLIND                 = 91448,    // dodge
+        SPELL_FROZEN_TRAIL              = 91449,    // the patch's look
+        SPELL_RUNE_WHITEFANG            = 91450,
+        SPELL_WHITEFANG_MODIFIER_FIRST  = 91451,    // + slot * 3 + choice
+        SPELL_FROZEN_TRAIL_TICK         = 91460,
+        SPELL_FROZEN_TRAIL_SLOW         = 91461,
+        SPELL_FANG_COLD_BLOOD           = 91462,    // the next Ferocious Bite on the victim 20% more
+        SPELL_CAT_FORM                  = 768,
+        SPELL_RAKE                      = 1822,     // first ranks
+        SPELL_RIP                       = 1079,
+        SPELL_FEROCIOUS_BITE            = 22568,
+        SPELL_MANGLE_CAT                = 33876,
+        SPELL_SHRED                     = 5221,
+        SPELL_SWIPE_CAT                 = 62078,
 
         SPELL_EVISCERATE            = 2098,         // first ranks
         SPELL_SINISTER_STRIKE       = 1752,
@@ -910,6 +949,46 @@ namespace
     constexpr std::size_t STORM_TARGETS = 5, FORKED_TARGETS = 8, THUNDERLASH_ARCS = 2, CHAINBREAKER_ARCS = 4;
     constexpr std::size_t GROUNDING_TARGETS = 3;
 
+    // Ember's Wrath's modifiers: slot (0 Ignition, 1 Claws, 2 Instinct) x 3 + choice.
+    enum EmbersModifier : uint8
+    {
+        MOD_SEARING_WOUND, MOD_WILD_EMBERS, MOD_SMOLDERING_FLESH,
+        MOD_BLAZING_RAKE, MOD_MOLTEN_BITE, MOD_CINDER_SWIPE,
+        MOD_FLAMEBOUND, MOD_PATIENT_PREDATOR, MOD_ASHEN_PURSUIT,
+    };
+
+    // Ember's Wrath's tuning (the dossier's prototype values): Fire Blast in Cat Form (30 Energy, 6 sec) ignites the
+    // Hero's Rake or Rip victim: Cinder Wound, 30% of attack power plus 30% of spell power over 6 sec, a tick every
+    // 2 sec (a new one keeps what is left of the last, up to twice a fresh one).
+    constexpr int32 CINDER_MS = 6000, SMOLDERING_MS = 10000, FLAMEBOUND_MS = 3000, FLAMEBOUND_DISCOUNT_MS = 5000;
+    constexpr uint32 ASHEN_MS = 6000, BLAZING_RAKE_MS = 3000;
+    constexpr int32 FLAMEBOUND_REFUND = 10;
+    constexpr float CINDER_AP = 0.3f, CINDER_SP = 0.3f, SEARING_WOUND = 1.35f, SMOLDERING_FLESH = 1.3f;
+    constexpr float WILD_EMBERS_AP = 0.1f, WILD_EMBERS_SP = 0.1f, BLAZING_RAKE_AP = 0.15f, MOLTEN_BITE_AP = 0.05f;
+    constexpr float CINDER_SWIPE_SHARE = 0.5f, ASHEN_PURSUIT = 1.2f, PATIENT_PREDATOR = 2.0f;
+    constexpr float WILD_EMBERS_RADIUS = 6.0f, CINDER_SWIPE_RADIUS = 8.0f;
+    constexpr std::size_t WILD_EMBERS_TARGETS = 4, CINDER_SWIPE_TARGETS = 3;
+
+    // Whitefang's modifiers: slot (0 Shatter, 1 Hunt, 2 Instinct) x 3 + choice.
+    enum WhitefangModifier : uint8
+    {
+        MOD_WHITEFANG, MOD_ICEFANG_SPRAY, MOD_WINTER_WOUND,
+        MOD_LONG_WINTER, MOD_PURSUING_CHILL, MOD_PACK_FROST,
+        MOD_FANG_COLD_BLOOD, MOD_SNOWBLIND, MOD_FROZEN_TRAIL,
+    };
+
+    // Whitefang's tuning (the dossier's prototype values): Icy Touch in Cat Form (25 Energy, no runes) lays Frozen
+    // Prey for 6 sec; the next Shred or Mangle on the victim shatters it for 30% of attack power as Frost damage.
+    constexpr int32 PREY_MS = 6000, LONG_WINTER_MS = 10000, WINTER_WOUND_MS = 6000, PURSUING_MS = 3000;
+    constexpr int32 PACK_FROST_MS = 6000, FANG_COLD_BLOOD_MS = 5000, SNOWBLIND_MS = 3000, TRAIL_SLOW_MS = 1500;
+    constexpr uint32 LONG_WINTER_AFTER_MS = 3000, FROZEN_TRAIL_TICKS = 4, FROZEN_TRAIL_TICK_MS = 1000;
+    constexpr int32 PURSUING_REFUND = 10;
+    constexpr float SHATTER_AP = 0.3f, WHITEFANG_BONUS = 1.4f, ICEFANG_SHARE = 0.5f, WINTER_WOUND_SHARE = 1.5f;
+    constexpr float LONG_WINTER_BONUS = 1.2f, PACK_FROST_SHARE = 0.6f, FANG_COLD_BLOOD = 1.2f, FROZEN_TRAIL_AP = 0.05f;
+    constexpr float ICEFANG_REACH = 8.0f, ICEFANG_ARC = float(M_PI) / 4.0f, PACK_FROST_RADIUS = 8.0f;
+    constexpr float SNOWBLIND_RADIUS = 6.0f, FROZEN_TRAIL_RADIUS = 6.0f;
+    constexpr std::size_t ICEFANG_TARGETS = 4, PACK_FROST_TARGETS = 2, FROZEN_TRAIL_TARGETS = 5;
+
     // The Sanctified Paragon's tuning (the revised balance draft's initial values).
     constexpr float PARAGON_SHARE = 0.4f;                       // of a Consecration tick, a second
     constexpr float PARAGON_POWER = 0.15f;                      // spell power in a tick: 6% of it a second
@@ -1075,6 +1154,14 @@ namespace
             { RUNE_STORMREAVER, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_STORMSTRIKE }, { SPELL_LAVA_LASH }, { SPELL_LIGHTNING_SHIELD } }, SPELL_RUNE_STORMREAVER,
               SPELL_STORMREAVER_MODIFIER_FIRST },
+            // Melee DPS: Fire Blast in Cat Form ignites the Hero's Rake or Rip (the rune teaches it).
+            { RUNE_EMBERS_WRATH, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
+              { { SPELL_CAT_FORM }, { SPELL_FIRE_BLAST }, { SPELL_RAKE, SPELL_RIP } }, SPELL_RUNE_EMBERS_WRATH,
+              SPELL_EMBERS_MODIFIER_FIRST },
+            // Melee DPS: Icy Touch in Cat Form marks the prey, Shred or Mangle shatters it (the rune teaches it).
+            { RUNE_WHITEFANG, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
+              { { SPELL_CAT_FORM }, { SPELL_ICY_TOUCH }, { SPELL_SHRED, SPELL_MANGLE_CAT } }, SPELL_RUNE_WHITEFANG,
+              SPELL_WHITEFANG_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -1298,6 +1385,16 @@ namespace
 
         // The Stormreaver: the Stormfront's pulse timer; the last discharge.
         uint32 StormfrontTimer = 0, LastDischarge = 0;
+
+        // Ember's Wrath: Blazing Rake's next extra hit; Ashen Pursuit's next bonus, its last victim and every one.
+        uint32 BlazingRakeAt = 0, AshenReadyAt = 0;
+        ObjectGuid AshenLast;
+        std::vector<ObjectGuid> AshenSeen;
+
+        // Whitefang: the primary mark (on whom, since when); Pursuing Chill's discount waiting; Cold Blood's victim.
+        ObjectGuid PreyOn, ColdBloodOn;
+        uint32 PreyAt = 0;
+        bool PursuitDiscount = false;
 
     };
 
@@ -2250,6 +2347,9 @@ namespace
             case SPELL_CLINGING_EMBERS: return SPELL_CLINGING_EMBERS_TICK;
             case SPELL_LUNAR_WOUND: return SPELL_LUNAR_WOUND_TICK;
             case SPELL_ASTRAL_RUPTURE: return SPELL_ASTRAL_RUPTURE_TICK;
+            case SPELL_CINDER_WOUND: return SPELL_CINDER_WOUND_TICK;
+            case SPELL_CINDER_WOUND_SPREAD: return SPELL_CINDER_WOUND_TICK;
+            case SPELL_WINTER_WOUND: return SPELL_WINTER_WOUND_TICK;
             default: return 0;
         }
     }
@@ -3317,20 +3417,29 @@ namespace
         return float(player->SpellDamageBonusDone(target, info, uint32(base), SPELL_DIRECT_DAMAGE, EFFECT_0));
     }
 
+    // How often a rune damage over time ticks (its aura's period: a second unless it says otherwise).
+    int32 DotPeriod(uint32 spellId)
+    {
+        SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId);
+        int32 period = info ? info->Effects[EFFECT_0].Amplitude : 0;
+        return period > 0 ? period : 1000;
+    }
+
     // What a rune damage over time of the Hero's still holds on the target.
     float DotLeft(Player* player, Unit* target, uint32 spellId)
     {
         Aura* aura = target->GetAura(spellId, player->GetGUID());
         auto tick = dotTicks.find({ target->GetGUID(), spellId, player->GetGUID() });
-        return aura && tick != dotTicks.end() ? float(tick->second) * float(aura->GetDuration() / 1000) : 0.0f;
+        return aura && tick != dotTicks.end()
+            ? float(tick->second) * float(aura->GetDuration() / DotPeriod(spellId)) : 0.0f;
     }
 
-    // A damage over time of fresh over ms (a tick a second): what is left of one already there is kept, up to twice
-    // a fresh one; its tick timer runs on.
+    // A damage over time of fresh over ms (a tick each period): what is left of one already there is kept, up to
+    // twice a fresh one; its tick timer runs on.
     void AddDot(Player* player, Unit* target, uint32 spellId, float fresh, int32 ms)
     {
         float total = std::min(DotLeft(player, target, spellId) + fresh, 2.0f * fresh);
-        int32 tick = std::max<int32>(1, int32(total / float(std::max(1, ms / 1000))));
+        int32 tick = std::max<int32>(1, int32(total / float(std::max(1, ms / DotPeriod(spellId)))));
         Lasting(player, target, spellId, ms, &tick);
     }
 
@@ -5249,15 +5358,310 @@ namespace
         }
     }
 
+    // ---- Ember's Wrath and Whitefang ---------------------------------------------------------------------
+
+    bool HasEmbersMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_EMBERS_MODIFIER_FIRST, modifier);
+    }
+
+    bool HasWhitefangMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_WHITEFANG_MODIFIER_FIRST, modifier);
+    }
+
+    // The first rank of a spell (itself when it has no ranks).
+    uint32 FirstRank(SpellInfo const* info)
+    {
+        return info ? info->GetFirstRankSpell()->Id : 0;
+    }
+
+    // The target bleeds from the Hero's own Rake or Rip.
+    bool HasOwnRakeOrRip(Player* player, Unit* target)
+    {
+        for (auto const& [id, application] : target->GetAppliedAuras())
+        {
+            Aura const* aura = application->GetBase();
+            uint32 first = FirstRank(aura->GetSpellInfo());
+            if (aura->GetCasterGUID() == player->GetGUID() && (first == SPELL_RAKE || first == SPELL_RIP))
+                return true;
+        }
+        return false;
+    }
+
+    bool HasCinderWound(Player* player, Unit* target)
+    {
+        return target->HasAura(SPELL_CINDER_WOUND, player->GetGUID())
+            || target->HasAura(SPELL_CINDER_WOUND_SPREAD, player->GetGUID());
+    }
+
+    // A fresh Cinder Wound's whole damage: 30% of attack power plus 30% of spell power (Searing Wound 35% more,
+    // Smoldering Flesh 30% more over 10 sec).
+    float CinderFresh(Player* player)
+    {
+        float fresh = player->GetTotalAttackPowerValue(BASE_ATTACK) * CINDER_AP
+            + float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE)) * CINDER_SP;
+        if (HasEmbersMarker(player, MOD_SEARING_WOUND))
+            fresh *= SEARING_WOUND;
+        else if (HasEmbersMarker(player, MOD_SMOLDERING_FLESH))
+            fresh *= SMOLDERING_FLESH;
+        return fresh;
+    }
+
+    int32 CinderMs(Player* player)
+    {
+        return HasEmbersMarker(player, MOD_SMOLDERING_FLESH) ? SMOLDERING_MS : CINDER_MS;
+    }
+
+    // Ashen Pursuit: the first Fire Blast on a new victim, once every 6 sec (its last victim's death resets that).
+    float AshenBonus(Player* player, Unit* target)
+    {
+        if (!HasEmbersMarker(player, MOD_ASHEN_PURSUIT))
+            return 1.0f;
+        State& state = StateOf(player);
+        if (state.AshenLast)
+        {
+            Unit* last = ObjectAccessor::GetUnit(*player, state.AshenLast);
+            if (!last || !last->IsAlive())
+                state.AshenReadyAt = 0;
+        }
+        ObjectGuid guid = target->GetGUID();
+        if (std::find(state.AshenSeen.begin(), state.AshenSeen.end(), guid) != state.AshenSeen.end()
+            || Now() < state.AshenReadyAt)
+            return 1.0f;
+        state.AshenSeen.push_back(guid);
+        if (state.AshenSeen.size() > 64)
+            state.AshenSeen.erase(state.AshenSeen.begin());
+        state.AshenLast = guid;
+        state.AshenReadyAt = Now() + ASHEN_MS;
+        Trace(player, "Ashen Pursuit: a new victim");
+        return ASHEN_PURSUIT;
+    }
+
+    // Fire Blast in Cat Form landed: it ignites the Hero's Rake or Rip victim (Wild Embers: the flames leap to up to
+    // 4 more within 6 yards); Flamebound: speed, and the next Rake or Mangle 10 Energy back.
+    void CatFireBlast(Player* player, Unit* target)
+    {
+        if (HasEmbersMarker(player, MOD_FLAMEBOUND))
+        {
+            RenewFor(player, SPELL_FLAMEBOUND, FLAMEBOUND_MS);
+            RenewFor(player, SPELL_FLAMEBOUND_DISCOUNT, FLAMEBOUND_DISCOUNT_MS);
+        }
+        if (!target->IsAlive() || !HasOwnRakeOrRip(player, target))
+            return;
+        float fresh = CinderFresh(player);
+        AddDot(player, target, SPELL_CINDER_WOUND, fresh, CinderMs(player));
+        Trace(player, Acore::StringFormat("Cinder Wound: {} over {} sec", int32(fresh), CinderMs(player) / 1000));
+        if (HasEmbersMarker(player, MOD_WILD_EMBERS))
+        {
+            float leap = player->GetTotalAttackPowerValue(BASE_ATTACK) * WILD_EMBERS_AP
+                + float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE)) * WILD_EMBERS_SP;
+            std::size_t count = WILD_EMBERS_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, target, WILD_EMBERS_RADIUS))
+                if (enemy != target && count)
+                {
+                    Strike(player, enemy, SPELL_WILD_EMBERS, leap);
+                    --count;
+                }
+        }
+    }
+
+    // Swipe in Cat Form with Cinder Swipe: a Cinder Wound in its reach spreads, half as strong, to up to 3 bleeding
+    // enemies there (spread wounds never spread again).
+    void CinderSwipe(Player* player)
+    {
+        std::vector<Unit*> around = EnemiesAround(player, player, CINDER_SWIPE_RADIUS);
+        if (std::none_of(around.begin(), around.end(), [player](Unit* enemy)
+            {
+                return enemy->HasAura(SPELL_CINDER_WOUND, player->GetGUID());
+            }))
+            return;
+        float fresh = CinderFresh(player) * CINDER_SWIPE_SHARE;
+        std::size_t count = CINDER_SWIPE_TARGETS;
+        for (Unit* enemy : around)
+            if (count && !enemy->HasAura(SPELL_CINDER_WOUND, player->GetGUID())
+                && enemy->HasAuraWithMechanic(1ULL << MECHANIC_BLEED))
+            {
+                AddDot(player, enemy, SPELL_CINDER_WOUND_SPREAD, fresh, CinderMs(player));
+                --count;
+            }
+    }
+
+    // Icy Touch in Cat Form landed: Frozen Prey on its victim (one primary mark: an earlier one goes); Pursuing
+    // Chill: speed, and the shattering Shred or Mangle in its time 10 Energy back.
+    void CatIcyTouch(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        if (state.PreyOn && state.PreyOn != target->GetGUID())
+            if (Unit* earlier = ObjectAccessor::GetUnit(*player, state.PreyOn))
+                earlier->RemoveAurasDueToSpell(SPELL_FROZEN_PREY, player->GetGUID());
+        int32 ms = HasWhitefangMarker(player, MOD_LONG_WINTER) ? LONG_WINTER_MS : PREY_MS;
+        Lasting(player, target, SPELL_FROZEN_PREY, ms);
+        state.PreyOn = target->GetGUID();
+        state.PreyAt = Now();
+        Trace(player, "Frozen Prey laid");
+        if (HasWhitefangMarker(player, MOD_PURSUING_CHILL))
+        {
+            RenewFor(player, SPELL_PURSUING_CHILL, PURSUING_MS);
+            state.PursuitDiscount = true;
+        }
+    }
+
+    // Frozen Trail: a 6-yard patch of frost where the prey shattered, for 4 sec: each second up to 5 enemies in it
+    // take 5% of attack power as Frost damage and move 30% slower.
+    void LayFrozenTrail(Player* player, Unit* target)
+    {
+        Position at = target->GetPosition();
+        PlaceDecals(player, SPELL_FROZEN_TRAIL, { at });
+        float tick = player->GetTotalAttackPowerValue(BASE_ATTACK) * FROZEN_TRAIL_AP;
+        for (uint32 i = 1; i <= FROZEN_TRAIL_TICKS; ++i)
+            player->m_Events.AddEventAtOffset([player, at, tick]()
+            {
+                if (!player->IsInWorld() || !player->IsAlive())
+                    return;
+                for (Unit* enemy : EnemiesIn(player, Circle(at, FROZEN_TRAIL_RADIUS), FROZEN_TRAIL_TARGETS))
+                {
+                    Strike(player, enemy, SPELL_FROZEN_TRAIL_TICK, tick);
+                    Lasting(player, enemy, SPELL_FROZEN_TRAIL_SLOW, TRAIL_SLOW_MS);
+                }
+            }, Milliseconds(i * FROZEN_TRAIL_TICK_MS));
+    }
+
+    // A direct Shred or Mangle on a marked victim shatters the mark: 30% of attack power as Frost damage (Whitefang
+    // 40% more; Long Winter 20% more for a mark at least 3 sec old; a Pack Frost mark 60%), or Winter Wound's 150%
+    // over 6 sec; Icefang Spray: half to up to 4 in an 8-yard cone. Then the primary's Pack Frost marks and the
+    // instincts: Cold Blood, Snowblind, Frozen Trail.
+    void Shatter(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        bool primary = target->HasAura(SPELL_FROZEN_PREY, player->GetGUID());
+        bool pack = !primary && target->HasAura(SPELL_FROZEN_PREY_PACK, player->GetGUID());
+        if (!primary && !pack)
+            return;
+        target->RemoveAurasDueToSpell(primary ? SPELL_FROZEN_PREY : SPELL_FROZEN_PREY_PACK, player->GetGUID());
+        if (state.PursuitDiscount && player->HasAura(SPELL_PURSUING_CHILL))
+            player->ModifyPower(POWER_ENERGY, PURSUING_REFUND);
+        state.PursuitDiscount = false;
+        float damage = player->GetTotalAttackPowerValue(BASE_ATTACK) * SHATTER_AP;
+        if (HasWhitefangMarker(player, MOD_WHITEFANG))
+            damage *= WHITEFANG_BONUS;
+        if (primary && HasWhitefangMarker(player, MOD_LONG_WINTER) && Now() - state.PreyAt >= LONG_WINTER_AFTER_MS)
+            damage *= LONG_WINTER_BONUS;
+        if (pack)
+            damage *= PACK_FROST_SHARE;
+        if (primary)
+            state.PreyOn.Clear();
+        Trace(player, Acore::StringFormat("Shatter for {}", int32(damage)));
+        if (HasWhitefangMarker(player, MOD_WINTER_WOUND))
+            AddDot(player, target, SPELL_WINTER_WOUND, damage * WINTER_WOUND_SHARE, WINTER_WOUND_MS);
+        else
+            Strike(player, target, SPELL_FANG_SHATTER, damage);
+        if (HasWhitefangMarker(player, MOD_ICEFANG_SPRAY))
+        {
+            Shape cone;
+            cone.Cone = true;
+            cone.From = player->GetPosition();
+            cone.Facing = player->GetAbsoluteAngle(target);
+            cone.Radius = ICEFANG_REACH + player->GetExactDist2d(target);
+            cone.Arc = ICEFANG_ARC;
+            std::size_t count = ICEFANG_TARGETS;
+            for (Unit* enemy : EnemiesIn(player, cone, ICEFANG_TARGETS + 1))
+                if (enemy != target && count)
+                {
+                    Strike(player, enemy, SPELL_FANG_SHATTER, damage * ICEFANG_SHARE);
+                    --count;
+                }
+        }
+        if (primary && HasWhitefangMarker(player, MOD_PACK_FROST))
+        {
+            std::size_t count = PACK_FROST_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, target, PACK_FROST_RADIUS))
+                if (enemy != target && count)
+                {
+                    Lasting(player, enemy, SPELL_FROZEN_PREY_PACK, PACK_FROST_MS);
+                    --count;
+                }
+        }
+        if (HasWhitefangMarker(player, MOD_FANG_COLD_BLOOD))
+        {
+            RenewFor(player, SPELL_FANG_COLD_BLOOD, FANG_COLD_BLOOD_MS);
+            state.ColdBloodOn = target->GetGUID();
+        }
+        else if (HasWhitefangMarker(player, MOD_SNOWBLIND))
+        {
+            for (Unit* enemy : EnemiesAround(player, target, SNOWBLIND_RADIUS))
+                Lasting(player, enemy, SPELL_SNOWBLIND_SLOW, SNOWBLIND_MS);
+            RenewFor(player, SPELL_SNOWBLIND, SNOWBLIND_MS);
+        }
+        else if (HasWhitefangMarker(player, MOD_FROZEN_TRAIL))
+            LayFrozenTrail(player, target);
+    }
+
+    // Ferocious Bite on the Hero's own victim: Cold Blood's 20% (it is spent); Molten Bite on a Cinder Wound victim:
+    // 5% of attack power per combo point as Fire damage more.
+    float BiteBonus(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        if (!player->HasAura(SPELL_FANG_COLD_BLOOD) || state.ColdBloodOn != target->GetGUID())
+            return 1.0f;
+        player->RemoveAurasDueToSpell(SPELL_FANG_COLD_BLOOD);
+        state.ColdBloodOn.Clear();
+        return FANG_COLD_BLOOD;
+    }
+
+    // The rune teaches its Cat Form spell while bound (on the first free button of the Cat Form bar when it is
+    // new); unbound, the spell and its buttons go.
+    void TeachCatSpell(Player* player, uint32 spellId, bool bound)
+    {
+        bool changed = false;
+        if (bound && !player->HasSpell(spellId))
+        {
+            player->learnSpell(spellId);
+            bool placed = false;
+            for (uint8 button = 0; button < MAX_ACTION_BUTTONS && !placed; ++button)
+                if (ActionButton const* action = player->GetActionButton(button);
+                    action && action->GetType() == ACTION_BUTTON_SPELL && action->GetAction() == spellId)
+                    placed = true;
+            for (uint8 button = CAT_BAR_FIRST; button < CAT_BAR_FIRST + 12 && !placed; ++button)
+                if (!player->GetActionButton(button))
+                {
+                    player->addActionButton(button, spellId, ACTION_BUTTON_SPELL);
+                    placed = changed = true;
+                }
+        }
+        else if (!bound && player->HasSpell(spellId))
+        {
+            for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
+                if (ActionButton const* action = player->GetActionButton(button);
+                    action && action->GetType() == ACTION_BUTTON_SPELL && action->GetAction() == spellId)
+                {
+                    player->removeActionButton(button);
+                    changed = true;
+                }
+            player->removeSpell(spellId, SPEC_MASK_ALL, false);
+        }
+        if (changed)
+            player->SendActionButtons(1);
+    }
+
     void ClearDuelists(Player* player)
     {
         State& state = StateOf(player);
         state.SabreHits = 0;
         state.AdvanceUntil = 0;
         state.StormfrontTimer = 0;
+        state.BlazingRakeAt = state.AshenReadyAt = state.PreyAt = 0;
+        state.AshenLast.Clear();
+        state.AshenSeen.clear();
+        state.PreyOn.Clear();
+        state.ColdBloodOn.Clear();
+        state.PursuitDiscount = false;
         for (uint32 spell : { SPELL_OPENING_SHOT, SPELL_ADVANCE, SPELL_DISENGAGING_SHOT, SPELL_DISENGAGING_DISCOUNT,
-                              SPELL_PRESS_THE_ADVANTAGE, SPELL_STORMFRONT, SPELL_RIDE_THE_LIGHTNING })
+                              SPELL_PRESS_THE_ADVANTAGE, SPELL_STORMFRONT, SPELL_RIDE_THE_LIGHTNING, SPELL_FLAMEBOUND,
+                              SPELL_FLAMEBOUND_DISCOUNT, SPELL_PURSUING_CHILL, SPELL_SNOWBLIND,
+                              SPELL_FANG_COLD_BLOOD })
             player->RemoveAurasDueToSpell(spell);
+        player->RemoveDynObject(SPELL_FROZEN_TRAIL);
     }
 
     // Everything the five newest left out (death, a rune or spec change, logout).
@@ -5307,7 +5711,7 @@ namespace
     {
         for (uint32 spell : RuneAuras())
             player->RemoveAurasDueToSpell(spell);
-        bool any = false, paragon = false, duelist = false;
+        bool any = false, paragon = false, duelist = false, embers = false, whitefang = false;
         for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
         {
             Choice const& choice = ActiveChoice(player, runeSlot);
@@ -5317,6 +5721,8 @@ namespace
             any = true;
             paragon |= rune->Id == RUNE_SANCTIFIED_PARAGON;
             duelist |= rune->Id == RUNE_DUELIST;
+            embers |= rune->Id == RUNE_EMBERS_WRATH;
+            whitefang |= rune->Id == RUNE_WHITEFANG;
             player->AddAura(rune->Aura, player);
             for (uint8 slot = 0; slot < SLOTS; ++slot)
                 if (uint8 pick = choice.Mods[slot])
@@ -5327,6 +5733,8 @@ namespace
         if (!paragon)
             player->RemoveAurasDueToSpell(SPELL_SANCTIFIED_PARAGON);
         TeachDuelist(player, duelist);
+        TeachCatSpell(player, SPELL_CAT_FIRE_BLAST, embers);
+        TeachCatSpell(player, SPELL_CAT_ICY_TOUCH, whitefang);
         ApplyLegend(player, 0);
     }
 
@@ -6297,6 +6705,10 @@ class spell_titan_rune_dot : public AuraScript
         // The tick the script keeps; else the one the aura was cast with (never nothing).
         auto tick = dotTicks.find({ target->GetGUID(), GetId(), caster->GetGUID() });
         int32 damage = std::max(1, tick != dotTicks.end() ? tick->second : aurEff->GetAmount());
+        // Patient Predator: a Cinder Wound's last tick, twice its damage.
+        if ((GetId() == SPELL_CINDER_WOUND || GetId() == SPELL_CINDER_WOUND_SPREAD)
+            && HasEmbersMarker(caster, MOD_PATIENT_PREDATOR) && GetAura()->GetDuration() < aurEff->GetAmplitude())
+            damage = int32(damage * PATIENT_PREDATOR);
         if (Player* player = caster->ToPlayer())
             Trace(player, Acore::StringFormat("{} ticks for {}", GetSpellInfo()->SpellName[0], damage));
         caster->CastCustomSpell(target, DotDamageSpell(GetId()), &damage, nullptr, nullptr, true);
@@ -7196,6 +7608,173 @@ class spell_titan_rune_broadside : public SpellScript
     }
 };
 
+// Fire Blast in Cat Form (Ember's Wrath): the Fire Blast rank the Hero knows (this copy is rank 1's), Ashen Pursuit,
+// then the ignition.
+class spell_titan_rune_cat_fire_blast : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_cat_fire_blast);
+
+    SpellCastResult Check()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || !player->HasAura(SPELL_RUNE_EMBERS_WRATH))
+            return SPELL_FAILED_DONT_REPORT;
+        return player->GetShapeshiftForm() == FORM_CAT ? SPELL_CAST_OK : SPELL_FAILED_ONLY_SHAPESHIFT;
+    }
+
+    void Damage()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || GetHitDamage() <= 0)
+            return;
+        float own = DirectDamage(player, target, SPELL_CAT_FIRE_BLAST);
+        float known = DirectDamage(player, target, KnownRank(player, SPELL_FIRE_BLAST) ?: SPELL_FIRE_BLAST);
+        float scale = own > 0.0f ? known / own : 1.0f;
+        SetHitDamage(std::max(1, int32(GetHitDamage() * scale * AshenBonus(player, target))));
+    }
+
+    void Ignite()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (Unit* target = GetHitUnit(); player && target)
+            CatFireBlast(player, target);
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_cat_fire_blast::Check);
+        OnHit += SpellHitFn(spell_titan_rune_cat_fire_blast::Damage);
+        AfterHit += SpellHitFn(spell_titan_rune_cat_fire_blast::Ignite);
+    }
+};
+
+// Icy Touch in Cat Form (Whitefang): the Icy Touch rank the Hero knows (this copy is rank 1's), then Frozen Prey.
+class spell_titan_rune_cat_icy_touch : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_cat_icy_touch);
+
+    SpellCastResult Check()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || !player->HasAura(SPELL_RUNE_WHITEFANG))
+            return SPELL_FAILED_DONT_REPORT;
+        return player->GetShapeshiftForm() == FORM_CAT ? SPELL_CAST_OK : SPELL_FAILED_ONLY_SHAPESHIFT;
+    }
+
+    void Damage()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || GetHitDamage() <= 0)
+            return;
+        float own = DirectDamage(player, target, SPELL_CAT_ICY_TOUCH);
+        float known = DirectDamage(player, target, KnownRank(player, SPELL_ICY_TOUCH) ?: SPELL_ICY_TOUCH);
+        if (own > 0.0f)
+            SetHitDamage(std::max(1, int32(GetHitDamage() * known / own)));
+    }
+
+    void Mark()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (Unit* target = GetHitUnit(); player && target && target->IsAlive())
+            CatIcyTouch(player, target);
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_cat_icy_touch::Check);
+        OnHit += SpellHitFn(spell_titan_rune_cat_icy_touch::Damage);
+        AfterHit += SpellHitFn(spell_titan_rune_cat_icy_touch::Mark);
+    }
+};
+
+// Rake, Mangle (Cat) and Shred (every rank): Whitefang's shatter (Shred, Mangle), Ember's Wrath's Blazing Rake
+// (Rake) and Flamebound's Energy back (Rake, Mangle).
+class spell_titan_rune_cat_strike : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_cat_strike);
+
+    void Refund()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        uint32 first = FirstRank(GetSpellInfo());
+        if (player && (first == SPELL_RAKE || first == SPELL_MANGLE_CAT) && player->HasAura(SPELL_FLAMEBOUND_DISCOUNT))
+        {
+            player->RemoveAurasDueToSpell(SPELL_FLAMEBOUND_DISCOUNT);
+            player->ModifyPower(POWER_ENERGY, FLAMEBOUND_REFUND);
+        }
+    }
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || GetHitDamage() <= 0)
+            return;
+        uint32 first = FirstRank(GetSpellInfo());
+        if ((first == SPELL_SHRED || first == SPELL_MANGLE_CAT) && player->HasAura(SPELL_RUNE_WHITEFANG))
+            Shatter(player, target);
+        if (first == SPELL_RAKE && player->HasAura(SPELL_RUNE_EMBERS_WRATH)
+            && HasEmbersMarker(player, MOD_BLAZING_RAKE) && HasCinderWound(player, target)
+            && Now() >= StateOf(player).BlazingRakeAt)
+        {
+            StateOf(player).BlazingRakeAt = Now() + BLAZING_RAKE_MS;
+            Strike(player, target, SPELL_BLAZING_RAKE, player->GetTotalAttackPowerValue(BASE_ATTACK) * BLAZING_RAKE_AP);
+        }
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_rune_cat_strike::Refund);
+        AfterHit += SpellHitFn(spell_titan_rune_cat_strike::Hit);
+    }
+};
+
+// Ferocious Bite (every rank): Whitefang's Cold Blood, Ember's Wrath's Molten Bite.
+class spell_titan_rune_ferocious_bite : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_ferocious_bite);
+
+    void Bonus()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || GetHitDamage() <= 0)
+            return;
+        if (player->HasAura(SPELL_RUNE_WHITEFANG))
+            SetHitDamage(int32(GetHitDamage() * BiteBonus(player, target)));
+        if (player->HasAura(SPELL_RUNE_EMBERS_WRATH) && HasEmbersMarker(player, MOD_MOLTEN_BITE)
+            && HasCinderWound(player, target))
+            if (uint8 points = player->GetComboPoints(target))
+                Strike(player, target, SPELL_MOLTEN_BITE,
+                    player->GetTotalAttackPowerValue(BASE_ATTACK) * MOLTEN_BITE_AP * float(points));
+    }
+
+    void Register() override
+    {
+        OnHit += SpellHitFn(spell_titan_rune_ferocious_bite::Bonus);
+    }
+};
+
+// Swipe (Cat) with Ember's Wrath's Cinder Swipe: the wound spreads.
+class spell_titan_rune_cat_swipe : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_cat_swipe);
+
+    void Spread()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (player && player->HasAura(SPELL_RUNE_EMBERS_WRATH) && HasEmbersMarker(player, MOD_CINDER_SWIPE))
+            CinderSwipe(player);
+    }
+
+    void Register() override
+    {
+        AfterCast += SpellCastFn(spell_titan_rune_cat_swipe::Spread);
+    }
+};
+
 // Stormstrike with the Stormreaver: the Stormfront.
 class spell_titan_rune_stormstrike : public SpellScript
 {
@@ -7545,6 +8124,11 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_stormstrike);
     RegisterSpellScript(spell_titan_rune_lava_lash);
     RegisterSpellScript(spell_titan_rune_stormreaver);
+    RegisterSpellScript(spell_titan_rune_cat_fire_blast);
+    RegisterSpellScript(spell_titan_rune_cat_icy_touch);
+    RegisterSpellScript(spell_titan_rune_cat_strike);
+    RegisterSpellScript(spell_titan_rune_ferocious_bite);
+    RegisterSpellScript(spell_titan_rune_cat_swipe);
     RegisterCreatureAI(npc_titan_rune_spectral_beast);
     RegisterCreatureAI(npc_titan_rune_flier);
     new titan_runes_player();

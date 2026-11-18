@@ -1,4 +1,4 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-91418: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-91462: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
@@ -406,3 +406,39 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 DELETE FROM `spell_bonus_data` WHERE `entry` = 91372;
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91372, 0, 0, 0, 0, 'Duelist - Broadside blast');
+
+-- Ember's Wrath (Fire Blast in Cat Form ignites the Hero's Rake or Rip: Cinder Wound) and Whitefang (Icy Touch in
+-- Cat Form lays Frozen Prey; Shred or Mangle shatters it): the Cat Form spells they teach and the feral abilities
+-- they reach into.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_cat_fire_blast',
+    'spell_titan_rune_cat_icy_touch', 'spell_titan_rune_cat_strike', 'spell_titan_rune_ferocious_bite',
+    'spell_titan_rune_cat_swipe');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(91420, 'spell_titan_rune_cat_fire_blast'),
+(91440, 'spell_titan_rune_cat_icy_touch'),
+(-1822, 'spell_titan_rune_cat_strike'),
+(-33876, 'spell_titan_rune_cat_strike'),
+(-5221, 'spell_titan_rune_cat_strike'),
+(-22568, 'spell_titan_rune_ferocious_bite'),
+(62078, 'spell_titan_rune_cat_swipe');
+
+-- Their damage over time: Cinder Wound (and its spread), Winter Wound.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (91421, 91423, 91444) AND `ScriptName` = 'spell_titan_rune_dot';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(91421, 'spell_titan_rune_dot'),
+(91423, 'spell_titan_rune_dot'),
+(91444, 'spell_titan_rune_dot');
+
+-- The Cat Form copies scale as the spells they copy (the server deals the known rank's share); the rest are shares
+-- of the Hero's power: no bonuses of their own.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (91420, 91422, 91424, 91425, 91426, 91440, 91443, 91445, 91460);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(91420, 0.204, 0, 0, 0, 'Ember''s Wrath - Fire Blast in Cat Form'),
+(91422, 0, 0, 0, 0, 'Ember''s Wrath - Cinder Wound tick'),
+(91424, 0, 0, 0, 0, 'Ember''s Wrath - Wild Embers'),
+(91425, 0, 0, 0, 0, 'Ember''s Wrath - Blazing Rake'),
+(91426, 0, 0, 0, 0, 'Ember''s Wrath - Molten Bite'),
+(91440, 0, 0, 0.1, 0, 'Whitefang - Icy Touch in Cat Form'),
+(91443, 0, 0, 0, 0, 'Whitefang - Shatter'),
+(91445, 0, 0, 0, 0, 'Whitefang - Winter Wound tick'),
+(91460, 0, 0, 0, 0, 'Whitefang - Frozen Trail');

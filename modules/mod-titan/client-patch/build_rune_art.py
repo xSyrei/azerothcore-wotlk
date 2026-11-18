@@ -158,6 +158,14 @@ RUNES = [
      'Stormstrike tears open a storm; Lava Lash and Lightning Shield strike through it.',
      'Stormstrike, Lava Lash and Lightning Shield',
      'M13 2 4 14h7l-1 8 9-12h-7Z'),
+    (44, (255, 125, 55), "Fire · Ember's Wrath",
+     'Fire Blast in Cat Form ignites your bleeds into Cinder Wounds.',
+     'Cat Form, Fire Blast, Rake or Rip',
+     'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11ZM9 15l2-3 2 3'),
+    (45, (140, 210, 245), 'Frost · Whitefang',
+     'Icy Touch in Cat Form marks the prey; Shred or Mangle shatters it.',
+     'Cat Form, Icy Touch, Shred or Mangle',
+     'M12 2v20M4 6l16 12M20 6 4 18M9 3l3 3 3-3M9 21l3-3 3 3'),
 ]
 
 # The runes the panel builds (their build view: the medallion, the slots, the options): the mockup's words for them.
@@ -1107,6 +1115,93 @@ BUILT = {
             'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6Z',
             'M4 12h14M14 7l5 5-5 5',
             'M3 20h18M12 4v12M8 12l4 4 4-4',
+        ],
+    },
+    44: {
+        'core': '**Fire Blast** in Cat Form ignites your **Rake** or **Rip** victim: **Cinder Wound**, 30% of your '
+            'attack power plus 30% of your spell power over 6 sec.',
+        'slots': ['Ignition', 'Claws', 'Instinct'],
+        'asks': ['How the wound burns', 'What your claws add', 'What the hunt gives'],
+        'texts': [
+            'Cinder Wound deals 35% more damage.',
+            'Each ignition also burns up to 4 other enemies within 6 yards of its victim for 10% of your attack power '
+            'plus 10% of your spell power as Fire damage.',
+            'Cinder Wound lasts 10 sec and deals 30% more damage over that time.',
+            'Rake on your Cinder Wound victim also deals 15% of your attack power as Fire damage, once every 3 sec.',
+            'Ferocious Bite on your Cinder Wound victim also deals 5% of your attack power per combo point spent as '
+            'Fire damage.',
+            'Swipe spreads Cinder Wound, at half its damage, to up to 3 bleeding enemies within its reach. Spread '
+            "wounds don't spread again.",
+            'Fire Blast makes you move 30% faster for 3 sec, and your next Rake or Mangle within 5 sec gives 10 '
+            'Energy back.',
+            "Cinder Wound's last tick deals twice its damage. A new wound keeps its tick timer running.",
+            'Your first Fire Blast on each new enemy deals 20% more damage, once every 6 sec; that enemy dying resets '
+            'the wait.',
+        ],
+        'abilities': [
+            'Sear',
+            'Embers',
+            'Smolder',
+            'Rake',
+            'Bite',
+            'Swipe',
+            'Bound',
+            'Patience',
+            'Pursuit',
+        ],
+        'icons': [
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0M4 4l3 3M20 4l-3 3M4 20l3-3M20 20l-3-3',
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+            'M5 19 9 15M9 19l4-4M13 19l4-4',
+            'M4 14c4-6 12-6 16 0M8 14v3M12 14v4M16 14v3',
+            'M2 12c5-6 15-6 20 0M2 12c5 6 15 6 20 0',
+            'M4 12h14M14 7l5 5-5 5',
+            'M12 3v9l5 5M12 21a9 9 0 1 0 0-18',
+            'M2 12h20M16 7l5 5-5 5',
+        ],
+    },
+    45: {
+        'core': '**Icy Touch** in Cat Form lays **Frozen Prey**; your next **Shred** or **Mangle** shatters it for '
+            '30% of your attack power as Frost damage.',
+        'slots': ['Shatter', 'Hunt', 'Instinct'],
+        'asks': ['How the prey shatters', 'How you mark the hunt', 'What the shatter leaves'],
+        'texts': [
+            'The shatter deals 40% more damage.',
+            'The shatter also hits up to 4 enemies in an 8-yard cone in front of you for half its damage.',
+            'Instead of its hit, the shatter leaves 150% of its damage as Frost damage over 6 sec. A new wound keeps '
+            'what is left of the last.',
+            'Frozen Prey lasts 10 sec; shattered after at least 3 sec, it deals 20% more damage.',
+            'Laying Frozen Prey makes you move 30% faster for 3 sec; the Shred or Mangle that shatters it in that '
+            'time gives 10 Energy back.',
+            'Shattering lays a 60%-strength Frozen Prey on up to 2 other enemies within 8 yards for 6 sec. Those '
+            "marks don't spread again.",
+            'Shattering makes your next Ferocious Bite on that enemy within 5 sec deal 20% more damage.',
+            'Shattering slows enemies within 6 yards by 30% for 3 sec and raises your dodge chance by 15% for 3 sec.',
+            'Shattering leaves a 6-yard patch of frost for 4 sec: up to 5 enemies in it move 30% slower and take 5% '
+            'of your attack power as Frost damage every second.',
+        ],
+        'abilities': [
+            'Fang',
+            'Spray',
+            'Wound',
+            'Winter',
+            'Chase',
+            'Pack',
+            'Blood',
+            'Snow',
+            'Trail',
+        ],
+        'icons': [
+            'M8 3l4 18 4-18',
+            'M4 20 12 12M12 12l8-8M12 12l8 2M12 12l2 8',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+            'M4 12h14M14 7l5 5-5 5',
+            'M6 12h.01M12 6h.01M18 12h.01M12 18h.01M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11ZM12 10v5',
+            'M12 2v20M4 6l16 12M20 6 4 18',
+            'M5 19 9 15M9 19l4-4M13 19l4-4',
         ],
     },
 }
