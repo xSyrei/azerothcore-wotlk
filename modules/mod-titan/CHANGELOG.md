@@ -18,10 +18,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   guard absorbed (up to 250% of your attack power more).
 - Each has three slots of three options, like the others.
 
-### Sabre Slash looks and sounds new
+### The Duelist looks and sounds new
 
 - Sabre Slash's hit is new: a gold slash flashing across the target, a spray of sparks through it and a soft glow,
   with its own slash sound. The first effect made in the Emberforge Effect Suite.
+- Broadside fires cannonballs: each blast lobs one at every enemy it hits, bursting in rings of fire with smoke,
+  sparks and a scorch on the ground, and a cannon's boom.
 
 ### Fixes
 

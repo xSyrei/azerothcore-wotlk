@@ -1564,8 +1564,23 @@ EFFECTS.update({
 })
 SOUNDS = {
     'SabreSlash': {'id': 18136, 'copy': 3091, 'files': ['spell_ro_saberslash_cast_01']},
+    # Explosive Shot's impact entry (13590) with the Suite design's explosion (its volume 0.77 and pitch 1.2 baked in).
+    'BroadsideBlast': {'id': 18137, 'copy': 13590, 'files': ['fx_grenade_explosion01']},
 }
+# Broadside's blasts: a cannonball lobbed at each enemy (Blizzard's catapult ball missile at 0.35 and its arcing
+# missile motion, as their cannons fire it), bursting as designed in the Effect Suite
+# (spells/ROGUE_Broadside/Broadside_Impact.json): fire rings and a scorch on the ground, smoke, sparks and debris.
+CANNONBALL_MISSILE, CANNON_LOB = 3778, 701
+EFFECTS.update({
+    'BroadsideImpact': {'model': 'ROGUE_BroadsideImpact', 'effect': 7171, 'shape': 'suite', 'textures': (),
+                        'options': {'spec': 'ROGUE_Broadside/Broadside_Impact.json', 'slot': 'chest'}},
+    'BroadsideGround': {'model': 'ROGUE_BroadsideGround', 'effect': 7172, 'shape': 'suite', 'textures': (),
+                        'options': {'spec': 'ROGUE_Broadside/Broadside_Impact.json', 'slot': 'base'}},
+})
 VISUALS.update({
+    'BroadsideBlast': {'copy': 11828, 'id': 16802, 'set': {VISUAL_MISSILE_MODEL: CANNONBALL_MISSILE,
+                                                         VISUAL_MISSILE_MOTION: CANNON_LOB}, 'kits': {
+        'impact': (15741, {KIT_CHEST: 'BroadsideImpact', KIT_BASE: 'BroadsideGround', 'sound': 'BroadsideBlast'})}},
     'SabreSlashHit': {'copy': 253, 'id': 16801, 'clear': ('state', 'statedone', 'area'), 'kits': {
         'impact': (15740, {KIT_CHEST: 'SabreSlashImpact', 'sound': 'SabreSlash'})}},
 })
@@ -1597,8 +1612,8 @@ SPELLS += [
                     'Opening Shot.',
      'tooltip': '', 'visual': 'SabreSlashHit', 'set': {'SpellFamilyName': ROGUE_FAMILY}},
     BROADSIDE,
-    {**strike(91372, 'Broadside', 'INV_Weapon_Rifle_01', FIRE, VISUAL_EXPLOSIVE_SHOT), 'set': {
-        **strike(91372, '', '', FIRE, VISUAL_EXPLOSIVE_SHOT)['set'], 'Speed': 40.0}},
+    {**strike(91372, 'Broadside', 'INV_Weapon_Rifle_01', FIRE, VISUAL_EXPLOSIVE_SHOT), 'visual': 'BroadsideBlast',
+     'set': {**strike(91372, '', '', FIRE, VISUAL_EXPLOSIVE_SHOT)['set'], 'Speed': 30.0}},
     look(91373, 'Broadside', 'INV_Weapon_Rifle_01', VISUAL_SAPPER_CHARGE),
     # The Duelist.
     buff(91380, 'Rune of the Duelist', DUELIST_ICON,

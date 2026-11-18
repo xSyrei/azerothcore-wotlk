@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Effects designed in the Emberforge Effect Suite (tools/effect-suite) as 3.3.5a models (M2 264).
 
-suite_effect() turns the impact layers of a Suite spec (its Export/Save .json) anchored at the target's chest into one
-model for a spell visual kit's chest slot (KIT_CHEST), played once from the moment it lands:
+suite_effect() turns the impact layers of a Suite spec (its Export/Save .json) into one model for a spell visual kit's
+slot, played once from the moment it lands: slot 'chest' (KIT_CHEST) takes the layers at the target's chest or the
+impact point, slot 'base' (KIT_BASE) those at its feet (ground decals lie on the ground there):
 
+- a Ground layer is a card lying on the ground, its turn and spin about the vertical;
 - a Billboard layer is a camera-facing card per copy, on its own bone: its size over its time (the Suite's ease out),
   its colors and fades in its color track, its flipbook frame by frame in its texture transform, its turn in the card;
 - a Particles layer is a real particle emitter (a plane emitter on a bone turned to the layer's direction): its burst
@@ -13,7 +15,7 @@ model for a spell visual kit's chest slot (KIT_CHEST), played once from the mome
 
 Model space: X forward (toward the caster, the target's facing), Y left, Z up; the Suite's stage is X toward the dummy,
 Y up, Z to the Hero's right, and its target.chest anchor 0.3 yd in front of the chest, so a stage point (x, y, z) from
-the chest is (0.3 - x, z, y) here. Layers on other anchors or triggers are skipped with a note. Textures are the spec's
+the chest is (0.3 - x, z, y) here (from the feet: (-x, z, y); a decal's height is from the ground). Layers on other anchors or triggers are skipped with a note. Textures are the spec's
 own (data URIs) or the Suite's built-in ones (spells/suite, exported from the Suite).
 """
 
@@ -34,7 +36,8 @@ from wowexport_to_m2 import SEQUENCE_IN_MODEL, Blob, empty_track, track
 BUILTIN = Path(__file__).resolve().parent.parent / 'spells' / 'suite'
 FIXED = 0x7FFF
 FRONT = 0.3
-CHEST = {'target.chest', 'impact'}
+SLOTS = {'chest': ({'target.chest', 'impact'}, ('sprite', 'particles')),
+         'base': ({'target.base'}, ('ground', 'sprite', 'particles'))}
 SAMPLES = 12                    # keys over a layer's time (its size, colors and fades)
 PARTICLE_FLAGS = 0x40029        # as Blizzard's impact sparks (Ice_ImpactDD_Med_Chest)
 EMITTER_PLANE = 1
@@ -114,9 +117,14 @@ def _blp(image, most=1024):
     return blp.encode(image)
 
 
-def suite_effect(out_dir, name, client_dir, spec):
+def _z_turn(degrees):
+    a = math.radians(degrees) / 2
+    return (0.0, 0.0, math.sin(a), math.cos(a))
+
+
+def suite_effect(out_dir, name, client_dir, spec, slot='chest'):
     """spec: the Suite's .json (a path). Writes <name>.m2, <name>00.skin and its BLPs into out_dir; returns their
-    names. Called as an EFFECTS entry's builder (shape 'suite', options {'spec': ...})."""
+    names. Called as an EFFECTS entry's builder (shape 'suite', options {'spec': ..., 'slot': 'chest' or 'base'})."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     data = json.loads(Path(spec).read_text())
@@ -124,18 +132,19 @@ def suite_effect(out_dir, name, client_dir, spec):
     turn_all = _euler_yzx(xf.get('rotation') or (0, 0, 0))
     shift_all, size_all = xf.get('offset') or (0, 0, 0), xf.get('scale', 1) or 1
 
+    anchors, kinds = SLOTS[slot]
     layers = []
     for layer in data['layers']:
-        if layer.get('enabled') is False:
+        if layer.get('enabled') is False or layer['type'] == 'sound':
             continue
         kind = layer['type']
-        if layer.get('trigger') != 'impact' or layer.get('anchor') not in CHEST or kind not in ('sprite', 'particles'):
-            print(f'  {name}: "{layer.get("name")}" ({kind}, {layer.get("trigger")}, {layer.get("anchor")}) left out: '
-                  'only impact billboards and particles at the chest are exported')
+        if layer.get('trigger') != 'impact' or layer.get('anchor') not in anchors or kind not in kinds:
+            print(f'  {name} ({slot}): "{layer.get("name")}" ({kind}, {layer.get("trigger")}, {layer.get("anchor")}) '
+                  f'left out: this model takes the impact {", ".join(kinds)} at {", ".join(sorted(anchors))}')
             continue
         layers.append(layer)
     if not layers:
-        raise ValueError(f'{spec}: no impact billboards or particles at the chest')
+        raise ValueError(f'{spec}: no impact layers for the {slot}')
 
     def place(layer):
         """The layer's origin in model space, from the chest attachment."""
@@ -143,7 +152,9 @@ def suite_effect(out_dir, name, client_dir, spec):
         offset = _rotate(turn, layer.get('offset') or (0, 0, 0))
         stage = tuple(shift_all[i] + offset[i] for i in range(3))
         x, y, z = _to_model(stage)
-        return (x + FRONT, y, z)
+        if layer['type'] == 'ground':               # on the ground: its height is the offset's
+            return (x, y, 0.02 + stage[1])
+        return (x + (FRONT if slot == 'chest' else 0.0), y, z)
 
     def orient(layer):
         return _qmul(turn_all, _euler_yzx(layer.get('orient') or (0, 0, 0)))
@@ -163,10 +174,10 @@ def suite_effect(out_dir, name, client_dir, spec):
             textures[layer['texture']] = _texture(data, layer['texture'])
             texture_names.append(layer['texture'])
     files, particle_only = [], {layer['texture'] for layer in layers if layer['type'] == 'particles'} - {
-        layer['texture'] for layer in layers if layer['type'] == 'sprite'}
+        layer['texture'] for layer in layers if layer['type'] != 'particles'}
     for index, tex in enumerate(texture_names):
         image, columns, rows = textures[tex]
-        most = 256 if tex in particle_only else min(1024, 256 * max(columns, rows, 2))     # 256 px a cell
+        most = 256 if tex in particle_only or columns * rows == 1 else min(1024, 256 * max(columns, rows))  # a cell
         (out_dir / f'{name}_{index}.blp').write_bytes(_blp(image, most))
         files.append(f'{name}_{index}.blp')
 
@@ -212,7 +223,8 @@ def suite_effect(out_dir, name, client_dir, spec):
         image, columns, rows = textures[layer['texture']]
         origin, q = place(layer), orient(layer)
 
-        if layer['type'] == 'sprite':
+        if layer['type'] in ('sprite', 'ground'):
+            flat = layer['type'] == 'ground'
             aspect = (image.width / columns) / (image.height / rows)
             ratio = (layer.get('stretch', 1) or 1) * aspect
             roll = math.radians(layer.get('rotation', 0) or 0)
@@ -229,8 +241,10 @@ def suite_effect(out_dir, name, client_dir, spec):
                     for z, v in ((-0.5, 1.0 / rows), (0.5, 0.0)):
                         yy = y * math.cos(roll) - z * math.sin(roll)        # Y screen right, Z up: counterclockwise
                         zz = y * math.sin(roll) + z * math.cos(roll)
-                        vertices += struct.pack('<3f4B4B3f2f2f', pivot[0], pivot[1] + yy, pivot[2] + zz, 255, 0, 0, 0,
-                                                bone, 0, 0, 0, 1.0, 0.0, 0.0, u, v, 0.0, 0.0)
+                        at = (pivot[0] + yy, pivot[1] + zz, pivot[2] + copy * 0.002) if flat else (
+                            pivot[0], pivot[1] + yy, pivot[2] + zz)
+                        vertices += struct.pack('<3f4B4B3f2f2f', *at, 255, 0, 0, 0, bone, 0, 0, 0,
+                                                *((0.0, 0.0, 1.0) if flat else (1.0, 0.0, 0.0)), u, v, 0.0, 0.0)
                 triangles += [first, first + 1, first + 2, first + 2, first + 1, first + 3]
 
                 def size_at(f):
@@ -239,15 +253,20 @@ def suite_effect(out_dir, name, client_dir, spec):
                 pairs = keyed(start, life, size_at)
                 scaling = track(blob, INTERP_LINEAR, [([t for t, _ in pairs],
                                                        [(0.0,) * 3 if v is None else (float(v),) * 3 for _, v in pairs])], '3f')
-                rise = layer.get('rise', 0) or 0
+                rise = 0 if flat else layer.get('rise', 0) or 0
                 moving = empty_track()
                 if rise:
                     up = _to_model(_rotate(q, (0.0, rise * k, 0.0)))
                     pairs_r = keyed(start, life, lambda f: f)
                     moving = track(blob, INTERP_LINEAR, [([t for t, _ in pairs_r],
                                                           [tuple(up[i] * (v or 0.0) for i in range(3)) for _, v in pairs_r])], '3f')
-                bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | BONE_BILLBOARD, 0, 0, 0, 0)
-                bones += moving + empty_track() + scaling + struct.pack('<3f', *pivot)
+                spinning = empty_track()
+                if flat and layer.get('spin'):              # degrees a second about the vertical, over its time
+                    pairs_s = keyed(start, life, lambda f: f)
+                    spinning = track(blob, INTERP_LINEAR, [([t for t, _ in pairs_s], [
+                        tuple(comp_quat(c) for c in _z_turn(layer['spin'] * life * (v or 0.0))) for _, v in pairs_s])], '4h')
+                bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED | (0 if flat else BONE_BILLBOARD), 0, 0, 0, 0)
+                bones += moving + spinning + scaling + struct.pack('<3f', *pivot)
                 bone_count += 1
                 reach = max(layer.get('sizeStart', 1), layer.get('sizeEnd', 1)) * k * max(1.0, ratio)
                 stretch_box(pivot, reach + abs(rise))

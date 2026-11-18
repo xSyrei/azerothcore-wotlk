@@ -104,19 +104,22 @@ keys still open (found under `Spells\`).
 
 ## Into the game
 
-`client-patch/models/suite_effect.py` turns a saved or exported effect (.json) into a game model for a spell visual's
-impact kit at the target's chest: Billboards become camera-facing cards (size, colors, fades and flipbook over their
+`client-patch/models/suite_effect.py` turns a saved or exported effect (.json) into game models for a spell visual's
+impact kit: slot 'chest' (the layers at the target's chest or the impact point) and slot 'base' (those at its feet:
+Ground layers lie on the ground there; Broadside's has one of each). Ground layers are flat cards (turn and spin), Billboards become camera-facing cards (size, colors, fades and flipbook over their
 time, their turn), Particles a real particle emitter (burst or stream, aim and cone, speeds, gravity, drag, life,
 sizes, colors), Casts light a model light (the client may ignore it). Put the .json under `client-patch/spells/` and
 point an EFFECTS entry at it (`'shape': 'suite', 'textures': (), 'options': {'spec': '<folder>/<name>.json'}`, as
 Sabre Slash's in `patch_runes.py`); its own textures travel inside it, the built-in ones come from
-`client-patch/spells/suite/` (exported from the Suite). A sound goes into `client-patch/sounds/` as a 16-bit WAV and
-into SOUNDS, named by the kit's `'sound'`. Layers on other triggers or anchors, and Scene light, are left out (it says
+`client-patch/spells/suite/` (exported from the Suite). A sound goes into `client-patch/sounds/` as a 16-bit WAV (its layer's
+volume and pitch baked in with ffmpeg: the game plays an entry as it is) and into SOUNDS, named by the kit's `'sound'`. Layers on other triggers or anchors, and Scene light, are left out (it says
 which).
 
 ## Next
 
-1. The exporter's rest: cast and projectile layers, ground decals and other anchors (one model per kit slot), a
+1. Importing models (glTF, OBJ, M2) into the Suite, as layers and as the projectile (in the client, the game's own
+   are there already: Broadside's cannonball is `world\\generic\\human\\passive doodads\\catapultruins\\catapultball01`).
+2. The exporter's rest: cast and projectile layers, the head and hands, a
    projectile's path to a SpellMissileMotion script (3.3.5's scripted missile paths), and the kits themselves.
 2. An in-game lab: reserved effect slots the engine DLL reloads from the Data folder, and a `.vfx` command to play one
    on a target, so a change shows in the game without restarting it.
