@@ -1,0 +1,1496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Emberforge Effect Suite</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a forge workbench. Library and layers on the left, the stage (Hero, training dummy) in the middle with the
+   timeline under it, the inspector on the right. One deliberately dark look: effects read on dark. */
+:root {
+  --bg: #100e12;
+  --panel: #18151b;
+  --panel-2: #201c24;
+  --line: #2f2934;
+  --text: #ece5dc;
+  --muted: #998f97;
+  --ember: #ff8a3d;
+  --ember-soft: #ff8a3d22;
+  --ember-ink: #1a0d04;
+  --good: #7fd18b;
+  --danger: #ff6b6b;
+  --font-display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text); font: 13px/1.45 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 10px;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+
+.app {
+  height: 100%; display: grid; gap: 8px;
+  grid-template-columns: 250px minmax(0, 1fr) 310px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "top top top" "left view right" "left time right";
+}
+.top { grid-area: top; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.brand { font: 700 17px/1 var(--font-display); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.brand b { color: var(--ember); font-weight: 700; }
+.effect-name {
+  background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 5px 8px;
+  font: 600 15px var(--font-display); min-width: 0; width: 240px; max-width: 100%;
+}
+.effect-name:hover, .effect-name:focus { border-color: var(--line); background: var(--panel); }
+.spacer { flex: 1; }
+.btn {
+  border: 1px solid var(--line); background: var(--panel-2); border-radius: 6px; padding: 6px 11px;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.btn:hover { border-color: #4a4150; }
+.btn.primary { background: var(--ember); border-color: var(--ember); color: var(--ember-ink); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.small { padding: 3px 8px; font-size: 12px; }
+.btn.ghost { background: transparent; }
+.btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+.btn[aria-pressed="true"] { border-color: var(--ember); color: var(--ember); background: var(--ember-soft); }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column; }
+.left { grid-area: left; }
+.right { grid-area: right; }
+.panel-head { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.panel-title { font: 600 12px var(--font-display); letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+.tabs { display: flex; gap: 2px; }
+.tab { background: none; border: none; padding: 4px 8px; border-radius: 5px; color: var(--muted);
+  font: 600 12px var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; }
+.tab[aria-selected="true"] { color: var(--text); background: var(--panel-2); }
+.scroll { overflow-y: auto; min-height: 0; flex: 1; padding: 8px; }
+
+.view { grid-area: view; position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--line);
+  background: #0b0a0d; min-height: 260px; }
+.view canvas { display: block; width: 100%; height: 100%; }
+.overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.hud { position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; flex-wrap: wrap; pointer-events: auto; }
+.hud .btn { background: #18151bcc; backdrop-filter: blur(4px); }
+.hud-right { left: auto; right: 10px; }
+.dmg { position: absolute; font: 700 18px var(--font-display); color: #ffd16a; text-shadow: 0 2px 0 #000, 0 0 6px #000;
+  transform: translate(-50%, -50%); white-space: nowrap; }
+.dmg.crit { font-size: 26px; color: #ff9b3d; }
+.dist-label { position: absolute; font: 500 11px var(--font-mono); color: var(--muted); transform: translate(-50%, -50%);
+  background: #100e12aa; padding: 1px 6px; border-radius: 4px; }
+
+.time { grid-area: time; display: flex; flex-direction: row; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; }
+.time input[type="range"] { flex: 1; min-width: 140px; }
+.clock { font: 500 12px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); min-width: 92px; }
+.marks { position: relative; flex-basis: 100%; height: 6px; }
+.mark { position: absolute; top: 0; width: 2px; height: 6px; background: var(--ember); border-radius: 1px; }
+
+/* library */
+.lib-group { font: 600 11px var(--font-display); color: var(--muted); letter-spacing: 0.09em; text-transform: uppercase;
+  margin: 10px 4px 6px; }
+.lib-group:first-child { margin-top: 2px; }
+.preset { display: grid; grid-template-columns: 34px 1fr; gap: 8px; align-items: center; width: 100%; text-align: left;
+  background: none; border: 1px solid transparent; border-radius: 8px; padding: 6px; }
+.preset:hover { background: var(--panel-2); border-color: var(--line); }
+.preset .sw { width: 34px; height: 34px; border-radius: 7px; }
+.preset .nm { font-weight: 600; }
+.preset .ds { color: var(--muted); font-size: 12px; line-height: 1.3; }
+
+/* layers */
+.row { display: flex; align-items: center; gap: 6px; padding: 6px 7px; border-radius: 7px; border: 1px solid transparent;
+  cursor: pointer; }
+.row:hover { background: var(--panel-2); }
+.row.sel { border-color: var(--ember); background: var(--ember-soft); }
+.row .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip { font: 500 10px var(--font-mono); padding: 1px 5px; border-radius: 4px; background: var(--panel-2);
+  border: 1px solid var(--line); color: var(--muted); text-transform: uppercase; }
+.eye { background: none; border: none; padding: 2px 4px; color: var(--muted); font-size: 13px; }
+.eye.off { opacity: 0.35; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.section-label { font: 600 11px var(--font-display); color: var(--muted); letter-spacing: 0.09em; text-transform: uppercase;
+  margin: 12px 4px 4px; display: flex; align-items: center; gap: 6px; }
+.add-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 8px; }
+
+/* inspector */
+.field { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; align-items: center; padding: 4px 2px; }
+.field > label { color: var(--muted); font-size: 12px; }
+.field .ctl { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.field input[type="range"] { flex: 1; min-width: 0; accent-color: var(--ember); }
+.field input[type="number"], .field input[type="text"], .field select {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px; min-width: 0; }
+.field input[type="number"] { width: 62px; font: 12px var(--font-mono); font-variant-numeric: tabular-nums; }
+.field input[type="text"], .field select { width: 100%; }
+.field input[type="color"] { width: 34px; height: 24px; padding: 0; border: 1px solid var(--line); border-radius: 5px;
+  background: none; }
+.vec { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; width: 100%; }
+.vec input { width: 100% !important; }
+.group-title { font: 600 12px var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ember);
+  margin: 14px 2px 4px; padding-top: 10px; border-top: 1px solid var(--line); }
+.group-title:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+.hint { color: var(--muted); font-size: 12px; margin: 2px 2px 6px; }
+.texgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 4px; width: 100%; }
+.tex { aspect-ratio: 1; border-radius: 5px; border: 1px solid var(--line); background: #000 center / contain no-repeat;
+  padding: 0; }
+.tex[aria-pressed="true"] { border-color: var(--ember); box-shadow: 0 0 0 1px var(--ember); }
+
+.modal-back { position: fixed; inset: 0; background: #000a; display: flex; align-items: center; justify-content: center;
+  padding: 16px; z-index: 20; }
+.modal { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; width: min(640px, 100%);
+  max-height: 90%; display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+.modal h2 { margin: 0; font: 600 16px var(--font-display); }
+.modal textarea { width: 100%; min-height: 260px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  font: 12px/1.4 var(--font-mono); padding: 8px; resize: vertical; }
+.modal .actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--panel-2);
+  border: 1px solid var(--line); padding: 7px 14px; border-radius: 8px; z-index: 30; }
+kbd { font: 11px var(--font-mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+  padding: 0 4px; color: var(--muted); }
+
+@media (max-width: 900px) {
+  html, body { height: auto; }
+  .app { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto;
+    grid-template-areas: "top" "view" "time" "right" "left"; }
+  .view { height: 56vh; }
+  .panel { max-height: 70vh; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">Emberforge <b>Effect Suite</b></div>
+    <input class="effect-name" id="effectName" aria-label="Effect name" value="">
+    <div class="spacer"></div>
+    <button class="btn" id="undoBtn" title="Undo (Ctrl+Z)">Undo</button>
+    <button class="btn" id="saveBtn" title="Save to My effects">Save</button>
+    <button class="btn" id="importBtn">Import</button>
+    <button class="btn" id="exportBtn">Export</button>
+    <button class="btn primary" id="castBtn" title="Cast at the dummy (C)">Cast ▶</button>
+  </header>
+
+  <aside class="panel left">
+    <div class="panel-head">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tabLayers" aria-selected="true">Layers</button>
+        <button class="tab" role="tab" id="tabLibrary" aria-selected="false">Library</button>
+      </div>
+    </div>
+    <div class="scroll" id="leftBody"></div>
+  </aside>
+
+  <section class="view" id="view">
+    <div class="overlay" id="overlay"></div>
+    <div class="hud">
+      <button class="btn small" data-cam="side">Side</button>
+      <button class="btn small" data-cam="behind">Behind Hero</button>
+      <button class="btn small" data-cam="dummy">Dummy</button>
+      <button class="btn small" data-cam="top">Top</button>
+    </div>
+    <div class="hud hud-right">
+      <button class="btn small" id="pathBtn" aria-pressed="true" title="Show the projectile's path">Path</button>
+      <button class="btn small" id="dmgBtn" aria-pressed="true" title="Damage numbers on hit">Numbers</button>
+    </div>
+  </section>
+
+  <section class="panel time" aria-label="Timeline">
+    <button class="btn small" id="playBtn" title="Play / pause (Space)">Pause</button>
+    <button class="btn small" id="loopBtn" aria-pressed="true" title="Cast again when it ends">Loop</button>
+    <select id="speedSel" class="btn small" aria-label="Playback speed">
+      <option value="0.1">0.1×</option><option value="0.25">0.25×</option><option value="0.5">0.5×</option>
+      <option value="1" selected>1×</option><option value="2">2×</option>
+    </select>
+    <input type="range" id="scrub" min="0" max="1" step="0.001" value="0" aria-label="Time">
+    <span class="clock" id="clock">0.00 / 0.00 s</span>
+    <div class="marks" id="marks"></div>
+  </section>
+
+  <aside class="panel right">
+    <div class="panel-head"><span class="panel-title" id="inspTitle">Inspector</span></div>
+    <div class="scroll" id="inspector"></div>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+'use strict';
+/* =====================================================================================================================
+   Emberforge Effect Suite: a spell effect engine for designing Emberforge's visual effects against a training dummy.
+   Units are yards (the game's). The Hero stands at the origin facing +X (their right is +Z); the dummy stands
+   STAGE.distance yards ahead. An effect is a JSON spec (see NEW_EFFECT): layers fired on cast, carried by the
+   projectile, or fired where it lands (impact), and a projectile with a shaped path.
+   ===================================================================================================================== */
+
+const $ = (id) => document.getElementById(id);
+const UP = new THREE.Vector3(0, 1, 0);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const uid = () => Math.random().toString(36).slice(2, 9);
+const deepCopy = (o) => JSON.parse(JSON.stringify(o));
+const store = {
+  get(key, fallback) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } },
+  set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage off: fine */ } },
+};
+
+function seeded(seed) {
+  let s = (seed >>> 0) || 1;
+  return () => { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return ((s >>> 0) % 1000003) / 1000003; };
+}
+function hashStr(str) { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+/* ----------------------------------------------------------------------------------------------------- textures --- */
+// Built-in textures, drawn white (the layer's color tints them). cols x rows: a flipbook.
+const TEXTURES = {};
+function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+function radial(ctx, x, y, r, stops) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  for (const [o, a] of stops) g.addColorStop(o, `rgba(255,255,255,${a})`);
+  ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+}
+function noise2(seed) {
+  const r = seeded(seed), n = 16, grid = [];
+  for (let i = 0; i < n * n; i++) grid.push(r());
+  const at = (x, y) => grid[((y % n + n) % n) * n + ((x % n + n) % n)];
+  return (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const sx = xf * xf * (3 - 2 * xf), sy = yf * yf * (3 - 2 * yf);
+    return lerp(lerp(at(xi, yi), at(xi + 1, yi), sx), lerp(at(xi, yi + 1), at(xi + 1, yi + 1), sx), sy);
+  };
+}
+function fbm(n, x, y) { return n(x, y) * 0.55 + n(x * 2.1, y * 2.1) * 0.3 + n(x * 4.3, y * 4.3) * 0.15; }
+function defTex(name, label, cols, rows, draw, w = 256, h = 256) { TEXTURES[name] = { label, cols, rows, draw, w, h }; }
+
+defTex('glow', 'Soft glow', 1, 1, (c) => radial(c, 128, 128, 128, [[0, 1], [0.25, 0.55], [0.6, 0.12], [1, 0]]));
+defTex('flare', 'Flare', 1, 1, (c) => {
+  radial(c, 128, 128, 70, [[0, 1], [0.3, 0.5], [1, 0]]);
+  c.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 4; i++) {
+    c.save(); c.translate(128, 128); c.rotate(i * Math.PI / 4);
+    const g = c.createLinearGradient(-128, 0, 128, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, `rgba(255,255,255,${i % 2 ? 0.45 : 0.9})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = g; c.fillRect(-128, i % 2 ? -1.5 : -3, 256, i % 2 ? 3 : 6); c.restore();
+  }
+});
+defTex('spark', 'Spark', 1, 1, (c) => {
+  radial(c, 64, 64, 64, [[0, 1], [0.12, 0.9], [0.3, 0.2], [1, 0]]);
+}, 128, 128);
+defTex('ring', 'Ring', 1, 1, (c) => {
+  const g = c.createRadialGradient(128, 128, 0, 128, 128, 128);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.62, 'rgba(255,255,255,0)');
+  g.addColorStop(0.82, 'rgba(255,255,255,1)'); g.addColorStop(0.9, 'rgba(255,255,255,0.6)');
+  g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, 256, 256);
+});
+defTex('shockwave', 'Shockwave', 1, 1, (c) => {
+  const g = c.createRadialGradient(128, 128, 0, 128, 128, 128);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.55, 'rgba(255,255,255,0.08)');
+  g.addColorStop(0.86, 'rgba(255,255,255,0.9)'); g.addColorStop(0.94, 'rgba(255,255,255,0.3)');
+  g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, 256, 256);
+});
+defTex('streak', 'Streak', 1, 1, (c) => {
+  c.save(); c.translate(128, 32); c.scale(1, 0.18);
+  radial(c, 0, 0, 128, [[0, 1], [0.35, 0.6], [1, 0]]); c.restore();
+}, 256, 64);
+defTex('slash', 'Slash', 1, 1, (c) => {
+  c.lineCap = 'round';
+  for (let i = 0; i < 26; i++) {
+    const t = i / 25; c.strokeStyle = `rgba(255,255,255,${0.06 + 0.5 * Math.sin(Math.PI * t)})`;
+    c.lineWidth = 2 + 22 * Math.sin(Math.PI * t);
+    c.beginPath(); c.arc(128, 210, 150, Math.PI * (1.18 + 0.64 * t) - 0.02, Math.PI * (1.18 + 0.64 * t) + 0.04); c.stroke();
+  }
+});
+defTex('star', 'Star', 1, 1, (c) => {
+  c.save(); c.translate(128, 128); c.shadowColor = '#fff'; c.shadowBlur = 24; c.fillStyle = '#fff'; c.beginPath();
+  for (let i = 0; i < 10; i++) { const r = i % 2 ? 34 : 100, a = -Math.PI / 2 + i * Math.PI / 5; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+  c.closePath(); c.fill(); c.restore();
+});
+defTex('swirl', 'Swirl', 1, 1, (c) => {
+  c.translate(128, 128);
+  for (let arm = 0; arm < 3; arm++) {
+    for (let i = 0; i < 90; i++) {
+      const t = i / 89, a = arm * 2 * Math.PI / 3 + t * 4.2, r = 10 + t * 110;
+      c.fillStyle = `rgba(255,255,255,${(1 - t) * 0.5})`; c.beginPath(); c.arc(Math.cos(a) * r, Math.sin(a) * r, 3 + (1 - t) * 9, 0, 7); c.fill();
+    }
+  }
+  radial(c, 0, 0, 60, [[0, 0.9], [1, 0]]);
+});
+defTex('rune', 'Rune circle', 1, 1, (c) => {
+  c.translate(128, 128); c.strokeStyle = '#fff'; c.shadowColor = '#fff'; c.shadowBlur = 8;
+  c.lineWidth = 4; c.beginPath(); c.arc(0, 0, 118, 0, 7); c.stroke();
+  c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 96, 0, 7); c.stroke(); c.beginPath(); c.arc(0, 0, 50, 0, 7); c.stroke();
+  for (let i = 0; i < 24; i++) {
+    c.save(); c.rotate(i * Math.PI / 12); c.fillStyle = '#fff';
+    if (i % 3 === 0) c.fillRect(-3, -114, 6, 14); else c.fillRect(-1.5, -110, 3, 7); c.restore();
+  }
+  c.beginPath();
+  for (let i = 0; i <= 6; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / 6 * 2; c.lineTo(Math.cos(a) * 92, Math.sin(a) * 92); }
+  c.stroke();
+});
+defTex('smoke', 'Smoke (flipbook)', 4, 4, (c) => {
+  const n = noise2(7);
+  const img = c.createImageData(512, 512);
+  for (let f = 0; f < 16; f++) {
+    const cx = (f % 4) * 128, cy = Math.floor(f / 4) * 128, grow = 0.55 + f / 15 * 0.45, fade = 1 - f / 18;
+    for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
+      const dx = (x - 64) / 64, dy = (y - 64) / 64, d = Math.sqrt(dx * dx + dy * dy) / grow;
+      const v = fbm(n, x / 22 + f * 0.35, y / 22 - f * 0.2);
+      const a = clamp((1 - d) * 1.6, 0, 1) * clamp(v * 1.7 - 0.35, 0, 1) * fade;
+      const i = ((cy + y) * 512 + cx + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = 255; img.data[i + 3] = a * 255;
+    }
+  }
+  c.putImageData(img, 0, 0);
+}, 512, 512);
+defTex('fire', 'Fire (flipbook)', 4, 4, (c) => {
+  const n = noise2(3);
+  const img = c.createImageData(512, 512);
+  for (let f = 0; f < 16; f++) {
+    const cx = (f % 4) * 128, cy = Math.floor(f / 4) * 128;
+    for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
+      const u = (x - 64) / 64, v = y / 128;
+      const width = 0.15 + 0.75 * Math.pow(v, 0.7);
+      const flick = fbm(n, x / 18, y / 14 + f * 0.9) - 0.5;
+      const body = clamp(1 - Math.abs(u + flick * 0.5 * (1 - v)) / width, 0, 1) * clamp((v - 0.05) * 3, 0, 1);
+      const a = clamp(body * 1.4 * (0.6 + flick * 1.2), 0, 1) * clamp((1 - v) * 6, 0, 1);
+      const i = ((cy + y) * 512 + cx + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = 255; img.data[i + 3] = a * 255;
+    }
+  }
+  c.putImageData(img, 0, 0);
+}, 512, 512);
+defTex('lightning', 'Lightning (flipbook)', 1, 4, (c) => {
+  const r = seeded(11);
+  for (let f = 0; f < 4; f++) {
+    const top = f * 64;
+    c.strokeStyle = '#fff'; c.shadowColor = '#fff'; c.shadowBlur = 12; c.lineJoin = 'round';
+    for (let pass = 0; pass < 2; pass++) {
+      c.lineWidth = pass ? 2 : 5; c.globalAlpha = pass ? 1 : 0.6; c.beginPath(); c.moveTo(0, top + 32);
+      for (let x = 16; x <= 512; x += 16) c.lineTo(x, top + 32 + (r() - 0.5) * 40); c.stroke();
+    }
+    c.globalAlpha = 0.5; c.lineWidth = 1.5; c.beginPath();
+    let x = r() * 300, y = top + 32; c.moveTo(x, y);
+    for (let i = 0; i < 8; i++) { x += 14; y += (r() - 0.5) * 22; c.lineTo(x, y); } c.stroke(); c.globalAlpha = 1;
+  }
+}, 512, 256);
+defTex('beam', 'Beam band', 1, 1, (c) => {
+  const g = c.createLinearGradient(0, 0, 0, 64);
+  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.35, 'rgba(255,255,255,0.5)');
+  g.addColorStop(0.5, 'rgba(255,255,255,1)'); g.addColorStop(0.65, 'rgba(255,255,255,0.5)');
+  g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(0, 0, 256, 64);
+  const n = noise2(5); c.globalCompositeOperation = 'destination-out';
+  for (let x = 0; x < 256; x += 2) for (let y = 0; y < 64; y += 2) {
+    const v = fbm(n, x / 20, y / 10); if (v < 0.42) { c.fillStyle = `rgba(0,0,0,${(0.42 - v) * 1.6})`; c.fillRect(x, y, 2, 2); }
+  }
+}, 256, 64);
+
+const texCache = new Map();       // name -> { base, frames: [], cols, rows, aspect, url }
+function textureInfo(name) {
+  if (texCache.has(name)) return texCache.get(name);
+  const custom = state.spec && state.spec.textures && state.spec.textures[name];
+  const def = TEXTURES[name] || (!custom && TEXTURES.glow);
+  let info;
+  if (def) {
+    const c = canvas(def.w, def.h); def.draw(c.getContext('2d'));
+    const base = new THREE.CanvasTexture(c);
+    info = { base, cols: def.cols, rows: def.rows, aspect: (def.w / def.cols) / (def.h / def.rows), url: c.toDataURL(), frames: [] };
+  } else {
+    const img = new Image(); const base = new THREE.Texture(img);
+    info = { base, cols: custom.cols || 1, rows: custom.rows || 1, aspect: 1, url: custom.data, frames: [] };
+    img.onload = () => {
+      info.aspect = (img.width / info.cols) / (img.height / info.rows);
+      base.needsUpdate = true; info.frames.forEach((f) => (f.needsUpdate = true)); state.dirty = true;
+    };
+    img.src = custom.data;
+  }
+  info.base.encoding = THREE.sRGBEncoding;
+  texCache.set(name, info);
+  return info;
+}
+// One texture per flipbook cell (shared by every sprite that shows it).
+function frameTexture(name, frame) {
+  const info = textureInfo(name), count = info.cols * info.rows;
+  if (count <= 1) return info.base;
+  const f = ((frame % count) + count) % count;
+  if (!info.frames[f]) {
+    const t = info.base.clone(); t.needsUpdate = true;
+    t.repeat.set(1 / info.cols, 1 / info.rows);
+    t.offset.set((f % info.cols) / info.cols, 1 - (Math.floor(f / info.cols) + 1) / info.rows);
+    info.frames[f] = t;
+  }
+  return info.frames[f];
+}
+function textureNames() { return [...Object.keys(TEXTURES), ...Object.keys(state.spec.textures || {})]; }
+function textureLabel(name) { return (TEXTURES[name] && TEXTURES[name].label) || name; }
+
+/* ---------------------------------------------------------------------------------------------------- the stage --- */
+const view = $('view'), overlay = $('overlay');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: false });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.outputEncoding = THREE.sRGBEncoding;
+view.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0b10);
+scene.fog = new THREE.Fog(0x0d0b10, 40, 95);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 400);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.12; controls.maxPolarAngle = Math.PI * 0.495;
+
+scene.add(new THREE.HemisphereLight(0xbfb6c8, 0x1a1410, 0.7));
+const sun = new THREE.DirectionalLight(0xffe2c4, 0.8); sun.position.set(-8, 18, 10); scene.add(sun);
+
+// The floor: a yard grid, a stronger line every 5 yards.
+(function floor() {
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(80, 64), new THREE.MeshStandardMaterial({ color: 0x050407, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; scene.add(ground);
+  const g1 = new THREE.GridHelper(120, 120, 0x1c1820, 0x1c1820); g1.position.y = 0.005; scene.add(g1);
+  const g5 = new THREE.GridHelper(120, 24, 0x3a3140, 0x3a3140); g5.position.y = 0.006; scene.add(g5);
+})();
+
+const mat = (color, rough = 0.8) => new THREE.MeshStandardMaterial({ color, roughness: rough });
+// The Hero stand-in: a plain mannequin facing +X, right arm raised to cast.
+const hero = new THREE.Group(); scene.add(hero);
+const heroArm = new THREE.Group();
+(function buildHero() {
+  const cloth = mat(0x5a4f66), skin = mat(0xc9a68a), trim = mat(0xff8a3d, 0.5);
+  const add = (geo, m, x, y, z, parent = hero) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); parent.add(o); return o; };
+  add(new THREE.CylinderGeometry(0.17, 0.2, 0.85, 12), cloth, 0, 0.45, 0.13);
+  add(new THREE.CylinderGeometry(0.17, 0.2, 0.85, 12), cloth, 0, 0.45, -0.13);
+  add(new THREE.CylinderGeometry(0.34, 0.27, 0.7, 14), cloth, 0, 1.2, 0);
+  add(new THREE.CylinderGeometry(0.36, 0.36, 0.08, 14), trim, 0, 0.88, 0);
+  add(new THREE.SphereGeometry(0.2, 16, 12), skin, 0, 1.78, 0);
+  add(new THREE.CylinderGeometry(0.08, 0.07, 0.62, 8), cloth, 0, 1.25, -0.42).rotation.x = 0.15;
+  heroArm.position.set(0, 1.5, 0.4); hero.add(heroArm);
+  const upper = add(new THREE.CylinderGeometry(0.08, 0.07, 0.62, 8), cloth, 0, -0.3, 0, heroArm);
+  upper.userData.hand = true;
+  add(new THREE.SphereGeometry(0.08, 10, 8), skin, 0, -0.64, 0, heroArm);
+})();
+// The training dummy: a post, a straw body with a painted target, a sack head and a crossbar.
+const dummy = new THREE.Group(); scene.add(dummy);
+const dummyBody = new THREE.Group(); dummy.add(dummyBody);
+(function buildDummy() {
+  const wood = mat(0x6b4a2e), straw = mat(0xb8955a), sack = mat(0xcbb48c), red = mat(0xb4372f, 0.6);
+  const add = (geo, m, x, y, z, parent = dummyBody) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); parent.add(o); return o; };
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.12, 16), wood); base.position.y = 0.06; dummy.add(base);
+  add(new THREE.CylinderGeometry(0.07, 0.07, 1.0, 8), wood, 0, 0.6, 0);
+  add(new THREE.CylinderGeometry(0.34, 0.3, 0.85, 14), straw, 0, 1.3, 0);
+  add(new THREE.SphereGeometry(0.22, 14, 10), sack, 0, 1.92, 0);
+  add(new THREE.BoxGeometry(0.1, 0.1, 1.3), wood, 0, 1.52, 0);
+  const t1 = add(new THREE.CylinderGeometry(0.22, 0.22, 0.02, 20), red, -0.33, 1.32, 0); t1.rotation.z = Math.PI / 2;
+  const t2 = add(new THREE.CylinderGeometry(0.12, 0.12, 0.03, 20), sack, -0.335, 1.32, 0); t2.rotation.z = Math.PI / 2;
+  const t3 = add(new THREE.CylinderGeometry(0.05, 0.05, 0.04, 16), red, -0.34, 1.32, 0); t3.rotation.z = Math.PI / 2;
+})();
+
+const STAGE = { distance: 12, side: 0, strafe: 0, strafeSpeed: 1.2, showPath: true, numbers: true };
+const ANCHORS = {
+  'caster.base': 'Hero: feet', 'caster.chest': 'Hero: chest', 'caster.head': 'Hero: above head', 'caster.hand': 'Hero: casting hand',
+  'target.base': 'Dummy: feet', 'target.chest': 'Dummy: chest', 'target.head': 'Dummy: above head',
+  'impact': 'Where the projectile lands', 'projectile': 'The projectile',
+};
+const sim = { t: 0, hitWobble: 0, hitVel: 0, armRaise: 0 };
+function dummyPosAt(t, out) {
+  return out.set(STAGE.distance, 0, STAGE.side + Math.sin(t * STAGE.strafeSpeed) * STAGE.strafe);
+}
+// Where an anchor is at time t (the Hero's hand follows the cast pose).
+function anchorAt(name, t, out) {
+  switch (name) {
+    case 'caster.base': return out.set(0, 0.05, 0);
+    case 'caster.chest': return out.set(0.15, 1.25, 0);
+    case 'caster.head': return out.set(0, 2.35, 0);
+    case 'caster.hand': {
+      const raise = armRaiseAt(t);
+      return out.set(0.62 * Math.sin(raise), 1.5 - 0.64 * Math.cos(raise), 0.4);
+    }
+    case 'target.base': return dummyPosAt(t, out).setY(0.05);
+    case 'target.chest': return dummyPosAt(t, out).setY(1.32);
+    case 'target.head': return dummyPosAt(t, out).setY(2.3);
+    default: return out.set(0, 1.2, 0);
+  }
+}
+function armRaiseAt(t) {
+  const cast = state.spec ? castPoseTime() : 0;
+  const k = t < 0 ? 0 : t < cast ? t / cast : t < cast + 0.5 ? 1 - (t - cast) / 0.5 * 0.4 : Math.max(0, 0.6 - (t - cast - 0.5) * 1.2);
+  return Math.PI * 0.5 * clamp(Math.sin(Math.min(1, k) * Math.PI / 2), 0, 1) + 0.05;
+}
+function castPoseTime() { const p = state.spec.projectile; return p && p.enabled ? Math.max(0.12, p.launchAt) : 0.25; }
+
+/* -------------------------------------------------------------------------------------------------- the effects --- */
+const NEW_LAYER = {
+  sprite: { type: 'sprite', name: 'Billboard', trigger: 'impact', anchor: 'impact', delay: 0, life: 0.6, texture: 'glow',
+    blend: 'add', color: '#ffb35c', color2: '#ff5a1f', opacity: 1, fadeIn: 0.05, fadeOut: 0.6, count: 1, radius: 0,
+    sizeStart: 0.5, sizeEnd: 3, stretch: 1, rotation: 0, spin: 0, orbit: 0, rise: 0, offset: [0, 0, 0], fps: 16,
+    flipOnce: false, alignToMotion: false },
+  ground: { type: 'ground', name: 'Ground decal', trigger: 'impact', anchor: 'target.base', delay: 0, life: 1.2, texture: 'ring',
+    blend: 'add', color: '#ffb35c', color2: '#ff5a1f', opacity: 1, fadeIn: 0.05, fadeOut: 0.6, count: 1, radius: 0,
+    sizeStart: 0.5, sizeEnd: 7, stretch: 1, rotation: 0, spin: 0, orbit: 0, offset: [0, 0, 0], fps: 16, flipOnce: false },
+  particles: { type: 'particles', name: 'Particles', trigger: 'impact', anchor: 'impact', delay: 0, life: 0.3, texture: 'spark',
+    blend: 'add', color: '#ffd38a', color2: '#ff4d1a', opacity: 1, fadeIn: 0, fadeOut: 0.7, mode: 'burst', count: 30,
+    rate: 40, shape: 'sphere', spread: 60, speedMin: 3, speedMax: 8, gravity: -9, drag: 1.5, partLifeMin: 0.4,
+    partLifeMax: 0.9, sizeStart: 0.35, sizeEnd: 0.05, emitRadius: 0.15, inherit: 0, spin: 0, fps: 16, offset: [0, 0, 0] },
+  beam: { type: 'beam', name: 'Beam', trigger: 'cast', anchor: 'caster.hand', anchorEnd: 'target.chest', delay: 0.2,
+    life: 1.2, texture: 'lightning', blend: 'add', color: '#9fd8ff', color2: '#ffffff', opacity: 1, fadeIn: 0.05,
+    fadeOut: 0.3, width: 0.8, tile: 4, scroll: 6, fps: 24, flicker: 0.4 },
+};
+const NEW_PROJECTILE = { enabled: false, launchAt: 0.3, count: 1, stagger: 0.1, from: 'caster.hand', fromOffset: [0.3, 0, 0],
+  to: 'target.chest', toOffset: [0, 0, 0], speed: 24, ease: 'linear', arc: 0, side: 0, peak: 0.5, fan: 0,
+  alternate: false, spiralRadius: 0, spiralTurns: 3, wobble: 0, wobbleFreq: 1.2, homing: true,
+  trail: { enabled: true, texture: 'beam', color: '#ffb35c', color2: '#ff3d00', width: 0.35, length: 0.3, opacity: 0.9,
+    blend: 'add' } };
+const NEW_EFFECT = () => ({ format: 'emberforge-effect', version: 1, name: 'New effect', impactAt: 0.5, tail: 0.6,
+  projectile: deepCopy(NEW_PROJECTILE), layers: [], textures: {} });
+
+function layer(type, props) { return Object.assign(deepCopy(NEW_LAYER[type]), { id: uid() }, props); }
+function projectile(props, trail) {
+  const p = Object.assign(deepCopy(NEW_PROJECTILE), { enabled: true }, props);
+  if (trail) Object.assign(p.trail, trail);
+  return p;
+}
+
+/* Presets: complete effects to start from. */
+const PRESETS = [
+  { group: 'Projectiles', swatch: ['#ffb35c', '#ff3d00'], desc: 'A bolt of fire, embers in its wake, bursting on the dummy.',
+    make: () => ({ name: 'Fire Bolt', projectile: projectile({ speed: 26, arc: 0.6 }, { color: '#ffb35c', color2: '#ff3d00' }), layers: [
+      layer('sprite', { name: 'Core glow', trigger: 'projectile', anchor: 'projectile', sizeStart: 1.1, sizeEnd: 1.1, color: '#ffb35c', color2: '#ff6a1f' }),
+      layer('sprite', { name: 'Flame', trigger: 'projectile', anchor: 'projectile', texture: 'fire', sizeStart: 1.2, sizeEnd: 1.2, stretch: 1, fps: 24, alignToMotion: true, rotation: 90, color: '#ffcf7a', color2: '#ff5a1f' }),
+      layer('particles', { name: 'Embers', trigger: 'projectile', anchor: 'projectile', mode: 'stream', rate: 45, shape: 'back', spread: 35, speedMin: 0.5, speedMax: 2, gravity: 1.5, sizeStart: 0.18, sizeEnd: 0.02, partLifeMin: 0.3, partLifeMax: 0.6 }),
+      layer('sprite', { name: 'Flash', sizeStart: 0.8, sizeEnd: 4.5, life: 0.35, texture: 'flare', color: '#fff2c4', color2: '#ff8a3d', spin: 90 }),
+      layer('sprite', { name: 'Flames', count: 6, radius: 0.7, texture: 'fire', sizeStart: 1.4, sizeEnd: 1.8, life: 0.7, rise: 0.8, fps: 20, flipOnce: true, color: '#ffcf7a', color2: '#ff3d00' }),
+      layer('particles', { name: 'Sparks', count: 36 }),
+      layer('ground', { name: 'Scorch', texture: 'smoke', blend: 'normal', color: '#1a0f08', color2: '#000000', opacity: 0.8, sizeStart: 2.2, sizeEnd: 2.6, life: 2.4, fadeOut: 0.5, fps: 0 }),
+    ] }) },
+  { group: 'Projectiles', swatch: ['#c49bff', '#5b2bff'], desc: 'Arcs up and off to the side, then curves into the target.',
+    make: () => ({ name: 'Arcane Sidearc', projectile: projectile({ speed: 18, arc: 3.5, side: 6, peak: 0.42, ease: 'smooth' }, { color: '#d9c2ff', color2: '#6a3dff', width: 0.45, length: 0.45 }), layers: [
+      layer('sprite', { name: 'Orb', trigger: 'projectile', anchor: 'projectile', texture: 'glow', sizeStart: 1.3, sizeEnd: 1.3, color: '#d9c2ff', color2: '#8a5bff' }),
+      layer('sprite', { name: 'Swirl', trigger: 'projectile', anchor: 'projectile', texture: 'swirl', sizeStart: 1.1, sizeEnd: 1.1, spin: 540, color: '#b48cff', color2: '#b48cff' }),
+      layer('sprite', { name: 'Burst', texture: 'star', sizeStart: 0.6, sizeEnd: 3.4, life: 0.45, spin: 120, color: '#efe2ff', color2: '#7a4dff' }),
+      layer('ground', { name: 'Arcane ring', texture: 'ring', anchor: 'target.base', sizeStart: 0.6, sizeEnd: 6, life: 0.6, color: '#b48cff', color2: '#5b2bff' }),
+      layer('particles', { name: 'Motes', count: 24, shape: 'up', spread: 70, speedMin: 1.5, speedMax: 4, gravity: 0.5, color: '#e6d6ff', color2: '#6a3dff', partLifeMax: 1.1 }),
+    ] }) },
+  { group: 'Projectiles', swatch: ['#8ef0c6', '#1f9d6a'], desc: 'Two bolts that spiral around each other, mirrored left and right.',
+    make: () => ({ name: 'Twin Serpents', projectile: projectile({ count: 2, stagger: 0, alternate: true, side: 2.5, arc: 1.5, spiralRadius: 0.6, spiralTurns: 3, speed: 20 }, { color: '#aaffd8', color2: '#0f7a50', width: 0.3, length: 0.5 }), layers: [
+      layer('sprite', { name: 'Head', trigger: 'projectile', anchor: 'projectile', sizeStart: 0.9, sizeEnd: 0.9, color: '#c8ffe6', color2: '#2fd18f' }),
+      layer('sprite', { name: 'Venom splash', texture: 'flare', sizeStart: 0.6, sizeEnd: 3, life: 0.4, color: '#c8ffe6', color2: '#1f9d6a' }),
+      layer('particles', { name: 'Drops', count: 26, color: '#aaffd8', color2: '#0f7a50', gravity: -12 }),
+    ] }) },
+  { group: 'Projectiles', swatch: ['#ffe08a', '#ff5a1f'], desc: 'A bomb lobbed high that lands with an explosion and a shockwave.',
+    make: () => ({ name: 'Lobbed Bomb', projectile: projectile({ speed: 14, arc: 8, peak: 0.5, homing: false, to: 'target.base' }, { color: '#ffe0a8', color2: '#5a3a20', width: 0.2, length: 0.6, opacity: 0.6 }), layers: [
+      layer('sprite', { name: 'Bomb', trigger: 'projectile', anchor: 'projectile', texture: 'spark', sizeStart: 0.7, sizeEnd: 0.7, spin: 360, color: '#ffe08a', color2: '#ff8a3d' }),
+      layer('sprite', { name: 'Fireball', texture: 'fire', count: 8, radius: 1.2, sizeStart: 2, sizeEnd: 3, life: 0.8, rise: 1.4, fps: 20, flipOnce: true, offset: [0, 0.5, 0], color: '#ffe08a', color2: '#ff3d00' }),
+      layer('sprite', { name: 'Flash', texture: 'flare', sizeStart: 2, sizeEnd: 9, life: 0.3, color: '#ffffff', color2: '#ffb35c' }),
+      layer('ground', { name: 'Shockwave', texture: 'shockwave', anchor: 'impact', sizeStart: 1, sizeEnd: 14, life: 0.55, color: '#ffd8a0', color2: '#ff6a1f' }),
+      layer('sprite', { name: 'Smoke', texture: 'smoke', blend: 'normal', count: 6, radius: 1.4, sizeStart: 2.4, sizeEnd: 4, life: 1.8, rise: 2, delay: 0.1, fps: 9, flipOnce: true, color: '#3a332e', color2: '#1a1714', opacity: 0.85 }),
+      layer('particles', { name: 'Debris', count: 50, shape: 'up', spread: 55, speedMin: 5, speedMax: 12, gravity: -16, color: '#ffd38a', color2: '#ff3d00', partLifeMax: 1.2 }),
+    ] }) },
+  { group: 'Projectiles', swatch: ['#bfe8ff', '#3d8bff'], desc: 'Five shards fanned out, fired one after another.',
+    make: () => ({ name: 'Frost Volley', projectile: projectile({ count: 5, stagger: 0.08, fan: 1.6, arc: 1.2, speed: 30 }, { color: '#e6f6ff', color2: '#3d8bff', width: 0.22, length: 0.25 }), layers: [
+      layer('sprite', { name: 'Shard', trigger: 'projectile', anchor: 'projectile', texture: 'streak', stretch: 1, sizeStart: 0.45, sizeEnd: 0.45, alignToMotion: true, color: '#ffffff', color2: '#9fd8ff' }),
+      layer('sprite', { name: 'Shatter', texture: 'star', sizeStart: 0.5, sizeEnd: 2.2, life: 0.3, color: '#ffffff', color2: '#3d8bff' }),
+      layer('particles', { name: 'Ice', count: 14, gravity: -14, color: '#e6f6ff', color2: '#3d8bff', sizeStart: 0.22 }),
+    ] }) },
+  { group: 'Projectiles', swatch: ['#ffd27a', '#ff7a1a'], desc: 'Three exploding pistol shots, 0.25 s apart.',
+    make: () => ({ name: 'Broadside', projectile: projectile({ count: 3, stagger: 0.25, speed: 55, launchAt: 0.2, from: 'caster.hand' }, { color: '#fff1c4', color2: '#ff8a3d', width: 0.12, length: 0.12 }), layers: [
+      layer('sprite', { name: 'Muzzle flash', trigger: 'cast', anchor: 'caster.hand', delay: 0.2, life: 0.12, texture: 'flare', sizeStart: 1.4, sizeEnd: 0.4, offset: [0.35, 0, 0], color: '#fff1c4', color2: '#ff8a3d' }),
+      layer('sprite', { name: 'Ball', trigger: 'projectile', anchor: 'projectile', texture: 'spark', sizeStart: 0.35, sizeEnd: 0.35, color: '#fff6dc', color2: '#ffffff' }),
+      layer('sprite', { name: 'Explosion', texture: 'fire', count: 5, radius: 0.6, sizeStart: 1.4, sizeEnd: 2.2, life: 0.55, rise: 0.8, fps: 24, flipOnce: true, color: '#ffe08a', color2: '#ff3d00' }),
+      layer('sprite', { name: 'Flash', texture: 'flare', sizeStart: 1, sizeEnd: 5, life: 0.22, color: '#ffffff', color2: '#ffb35c' }),
+      layer('particles', { name: 'Shrapnel', count: 30, speedMin: 5, speedMax: 11, color: '#ffe08a', color2: '#ff3d00' }),
+    ] }) },
+  { group: 'Projectiles', swatch: ['#ff9be0', '#a6007a'], desc: 'A missile corkscrewing toward the target.',
+    make: () => ({ name: 'Spiral Missile', projectile: projectile({ speed: 16, spiralRadius: 0.9, spiralTurns: 4, arc: 0.8 }, { color: '#ffc4ef', color2: '#a6007a', width: 0.28, length: 0.6 }), layers: [
+      layer('sprite', { name: 'Missile', trigger: 'projectile', anchor: 'projectile', sizeStart: 0.9, sizeEnd: 0.9, color: '#ffd6f4', color2: '#ff4fc8' }),
+      layer('sprite', { name: 'Pop', texture: 'flare', sizeStart: 0.5, sizeEnd: 3, life: 0.35, spin: 180, color: '#ffffff', color2: '#ff4fc8' }),
+    ] }) },
+  { group: 'Beams and strikes', swatch: ['#d8f1ff', '#3d8bff'], desc: 'A crackling beam from the hand into the dummy.',
+    make: () => ({ name: 'Lightning Lash', impactAt: 0.25, projectile: deepCopy(NEW_PROJECTILE), layers: [
+      layer('beam', { name: 'Bolt', delay: 0.2, life: 0.9, color: '#d8f1ff', color2: '#7fc0ff' }),
+      layer('beam', { name: 'Glow band', delay: 0.2, life: 0.9, texture: 'beam', width: 1.4, tile: 1, scroll: 2, flicker: 0.2, color: '#3d8bff', color2: '#3d8bff', opacity: 0.6 }),
+      layer('sprite', { name: 'Hand spark', trigger: 'cast', anchor: 'caster.hand', delay: 0.15, life: 1, texture: 'flare', sizeStart: 0.8, sizeEnd: 1.1, spin: 300, color: '#e6f6ff', color2: '#3d8bff' }),
+      layer('particles', { name: 'Arcs', anchor: 'target.chest', mode: 'stream', rate: 50, life: 0.9, spread: 180, speedMin: 2, speedMax: 6, gravity: -6, color: '#e6f6ff', color2: '#3d8bff' }),
+    ] }) },
+  { group: 'Beams and strikes', swatch: ['#fff1c4', '#ff2e1f'], desc: 'Two hot streaks slashed across the target and a gold flash.',
+    make: () => ({ name: 'Sabre Slash', impactAt: 0.15, projectile: deepCopy(NEW_PROJECTILE), layers: [
+      layer('sprite', { name: 'Streak 1', anchor: 'target.chest', texture: 'streak', stretch: 1, rotation: 35, sizeStart: 0.4, sizeEnd: 0.75, life: 0.35, offset: [-0.4, 0.1, 0], color: '#fff1c4', color2: '#ff2e1f' }),
+      layer('sprite', { name: 'Streak 2', anchor: 'target.chest', texture: 'streak', stretch: 1, rotation: -25, sizeStart: 0.35, sizeEnd: 0.65, life: 0.35, delay: 0.06, offset: [-0.4, -0.1, 0], color: '#fff1c4', color2: '#ff2e1f' }),
+      layer('sprite', { name: 'Gold flash', anchor: 'target.chest', texture: 'star', sizeStart: 0.4, sizeEnd: 1.6, life: 0.3, offset: [-0.45, 0, 0], color: '#ffe08a', color2: '#ffb000' }),
+      layer('particles', { name: 'Sparks', anchor: 'target.chest', count: 14, shape: 'forward', spread: 70, speedMin: 3, speedMax: 7, gravity: -10, sizeStart: 0.15 }),
+    ] }) },
+  { group: 'Areas and auras', swatch: ['#fff3c4', '#ffb000'], desc: 'Holy light bursts out from the Hero in a ring.',
+    make: () => ({ name: 'Holy Nova', impactAt: 0.1, projectile: deepCopy(NEW_PROJECTILE), layers: [
+      layer('ground', { name: 'Ring', trigger: 'cast', anchor: 'caster.base', texture: 'shockwave', sizeStart: 1, sizeEnd: 20, life: 0.7, color: '#fff3c4', color2: '#ffb000' }),
+      layer('ground', { name: 'Sigil', trigger: 'cast', anchor: 'caster.base', texture: 'rune', sizeStart: 3, sizeEnd: 4, life: 1, spin: 60, color: '#ffe08a', color2: '#ffb000' }),
+      layer('sprite', { name: 'Flash', trigger: 'cast', anchor: 'caster.chest', texture: 'flare', sizeStart: 1, sizeEnd: 6, life: 0.4, color: '#ffffff', color2: '#ffd36a' }),
+      layer('particles', { name: 'Motes', trigger: 'cast', anchor: 'caster.base', count: 60, shape: 'ring', speedMin: 6, speedMax: 9, gravity: 1, drag: 0.5, color: '#fff3c4', color2: '#ffb000' }),
+    ] }) },
+  { group: 'Areas and auras', swatch: ['#b07aff', '#2a0a4a'], desc: 'A turning shadow sigil under the dummy, smoke rising.',
+    make: () => ({ name: 'Shadow Sigil', impactAt: 0.1, projectile: deepCopy(NEW_PROJECTILE), layers: [
+      layer('ground', { name: 'Sigil', anchor: 'target.base', texture: 'rune', sizeStart: 5, sizeEnd: 5.5, life: 3, spin: 30, fadeIn: 0.1, fadeOut: 0.25, color: '#b07aff', color2: '#7a2dff' }),
+      layer('ground', { name: 'Inner', anchor: 'target.base', texture: 'swirl', sizeStart: 3.5, sizeEnd: 3.5, life: 3, spin: -70, opacity: 0.7, fadeIn: 0.1, fadeOut: 0.25, color: '#6a2dff', color2: '#2a0a4a' }),
+      layer('particles', { name: 'Smoke', anchor: 'target.base', mode: 'stream', rate: 12, life: 2.6, texture: 'smoke', blend: 'normal', shape: 'up', spread: 15, speedMin: 0.8, speedMax: 1.4, gravity: 0.3, emitRadius: 1.8, sizeStart: 1, sizeEnd: 2.4, partLifeMin: 1.2, partLifeMax: 1.8, color: '#2a1840', color2: '#0d0614', opacity: 0.8 }),
+    ] }) },
+  { group: 'Areas and auras', swatch: ['#9fd8ff', '#1a5fd1'], desc: 'Lightning orbiting the Hero, a charge-up before the cast.',
+    make: () => ({ name: 'Storm Charge', impactAt: 1.2, projectile: deepCopy(NEW_PROJECTILE), layers: [
+      layer('sprite', { name: 'Orbiting sparks', trigger: 'cast', anchor: 'caster.chest', count: 3, radius: 1, orbit: 360, texture: 'flare', sizeStart: 0.6, sizeEnd: 0.9, life: 1.2, spin: 200, color: '#e6f6ff', color2: '#3d8bff' }),
+      layer('sprite', { name: 'Body glow', trigger: 'cast', anchor: 'caster.chest', texture: 'glow', sizeStart: 2, sizeEnd: 3, life: 1.2, opacity: 0.5, color: '#9fd8ff', color2: '#1a5fd1' }),
+      layer('beam', { name: 'Strike', trigger: 'impact', anchor: 'target.head', anchorEnd: 'target.base', delay: 0, life: 0.3, width: 1.2, color: '#ffffff', color2: '#9fd8ff', offsetUp: 0 }),
+      layer('ground', { name: 'Scorch ring', anchor: 'target.base', texture: 'shockwave', sizeStart: 0.5, sizeEnd: 6, life: 0.5, color: '#9fd8ff', color2: '#1a5fd1' }),
+    ] }) },
+];
+function presetEffect(p) { return Object.assign(NEW_EFFECT(), p.make()); }
+
+/* ----------------------------------------------------------------------------------------------------- runtime --- */
+const PLANE = new THREE.PlaneGeometry(1, 1);
+const blendOf = (b) => (b === 'normal' ? THREE.NormalBlending : THREE.AdditiveBlending);
+const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3(), tmpD = new THREE.Vector3();
+const colA = new THREE.Color(), colB = new THREE.Color();
+const runtime = new THREE.Group(); scene.add(runtime);
+
+function spriteMaterial(l) {
+  return new THREE.SpriteMaterial({ map: frameTexture(l.texture, 0), color: 0xffffff, transparent: true, depthWrite: false,
+    blending: blendOf(l.blend), fog: false });
+}
+function fadeAt(l, f) {
+  const fi = l.fadeIn || 0, fo = l.fadeOut || 0;
+  let a = 1;
+  if (fi > 0 && f < fi) a = f / fi;
+  if (fo > 0 && f > 1 - fo) a = Math.min(a, (1 - f) / fo);
+  return clamp(a, 0, 1);
+}
+function tint(m, l, f) { colA.set(l.color); colB.set(l.color2 || l.color); m.color.copy(colA).lerp(colB, clamp(f, 0, 1)); }
+function frameAt(l, local, f) {
+  const info = textureInfo(l.texture), count = info.cols * info.rows;
+  if (count <= 1) return 0;
+  if (l.flipOnce) return Math.min(count - 1, Math.floor(f * count));
+  return Math.floor(local * (l.fps || 0));
+}
+// The angle on screen a direction has at a point (for sprites that face their motion).
+function screenAngle(p, dir) {
+  tmpC.copy(p).project(camera); tmpD.copy(p).add(dir).project(camera);
+  return Math.atan2((tmpD.y - tmpC.y) * view.clientHeight, (tmpD.x - tmpC.x) * view.clientWidth);
+}
+
+/* A layer, fired: its objects follow its anchor from start to end (seconds of effect time). */
+class LayerRun {
+  constructor(l, start, opts) {
+    this.l = l; this.start = start + (l.delay || 0); this.opts = opts; this.objects = []; this.parts = [];
+    this.rand = seeded(hashStr(l.id) ^ Math.floor(start * 1000) ^ (opts.index || 0) * 7919);
+    this.done = false; this.emitted = 0; this.anchorPos = new THREE.Vector3(); this.prevAnchor = null;
+    this.flight = opts.projectile || null;
+  }
+  get life() { return this.flight ? Infinity : Math.max(0.02, this.l.life || 0.02); }
+  anchor(t, out) {
+    if (this.l.anchor === 'projectile' && this.flight) return out.copy(this.flight.pos);
+    if (this.l.anchor === 'impact' && this.opts.at) return out.copy(this.opts.at);
+    return anchorAt(this.l.anchor, t, out);
+  }
+  ensure(n, make) { while (this.objects.length < n) { const o = make(); runtime.add(o); this.objects.push(o); } }
+  dispose() {
+    for (const o of this.objects) { runtime.remove(o); if (o.material) { if (o.material.userData.own) o.material.map.dispose(); o.material.dispose(); } }
+    for (const p of this.parts) { runtime.remove(p.s); p.s.material.dispose(); }
+    this.objects = []; this.parts = []; this.done = true;
+  }
+  step(t, dt) {
+    const l = this.l, local = t - this.start;
+    if (local < 0) { this.objects.forEach((o) => (o.visible = false)); return; }
+    const ended = this.flight ? this.flight.arrived : local > this.life;
+    const f = this.flight ? clamp(local / 0.15, 0, 1) : clamp(local / this.life, 0, 1);
+    this.anchor(t, this.anchorPos);
+    if (l.type === 'particles') this.stepParticles(t, dt, local, ended);
+    else if (ended) { this.dispose(); return; }
+    else if (l.type === 'sprite' || l.type === 'ground') this.stepCards(t, local, f);
+    else if (l.type === 'beam') this.stepBeam(t, local, f);
+  }
+  stepCards(t, local, f) {
+    const l = this.l, n = Math.max(1, l.count | 0), ground = l.type === 'ground';
+    this.ensure(n, () => {
+      if (!ground) return new THREE.Sprite(spriteMaterial(l));
+      const m = new THREE.Mesh(PLANE, new THREE.MeshBasicMaterial({ map: frameTexture(l.texture, 0), transparent: true,
+        depthWrite: false, blending: blendOf(l.blend), side: THREE.DoubleSide, fog: false }));
+      m.rotation.x = -Math.PI / 2; return m;
+    });
+    const fade = this.flight ? f : fadeAt(l, f), grow = this.flight ? 0 : f;
+    const size = lerp(l.sizeStart, l.sizeEnd, 1 - Math.pow(1 - grow, 2));
+    const frame = frameAt(l, local, f), info = textureInfo(l.texture);
+    let motionAngle = 0;
+    if (!ground && l.alignToMotion && this.flight) motionAngle = screenAngle(this.flight.pos, this.flight.vel);
+    for (let i = 0; i < n; i++) {
+      const o = this.objects[i]; o.visible = true;
+      const a = (i / n) * Math.PI * 2 + (l.orbit || 0) * Math.PI / 180 * local;
+      o.position.copy(this.anchorPos).add(tmpA.set(...(l.offset || [0, 0, 0])));
+      if (l.radius) o.position.x += Math.cos(a) * l.radius, o.position.z += Math.sin(a) * l.radius;
+      if (ground) o.position.y = 0.02 + (l.offset ? l.offset[1] : 0) + i * 0.002; else o.position.y += (l.rise || 0) * f;
+      const rot = ((l.rotation || 0) + (l.spin || 0) * local) * Math.PI / 180 + motionAngle;
+      const ratio = (l.stretch || 1) * (info.aspect || 1);
+      if (ground) { o.scale.set(size * ratio, size, 1); o.rotation.z = rot; } else { o.scale.set(size * ratio, size, 1); o.material.rotation = rot; }
+      o.material.map = frameTexture(l.texture, frame + i * 3);
+      o.material.opacity = (l.opacity ?? 1) * fade; tint(o.material, l, f);
+    }
+  }
+  stepBeam(t, local, f) {
+    const l = this.l;
+    this.ensure(1, () => {
+      const map = textureInfo(l.texture).base.clone(); map.needsUpdate = true; map.wrapS = THREE.RepeatWrapping;
+      const m = new THREE.Mesh(PLANE, new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false,
+        blending: blendOf(l.blend), side: THREE.DoubleSide, fog: false }));
+      m.material.userData.own = true; return m;
+    });
+    const o = this.objects[0], a = this.anchorPos, b = anchorAt(l.anchorEnd || 'target.chest', t, tmpB);
+    const axis = tmpC.subVectors(b, a), len = axis.length(); if (len < 0.01) { o.visible = false; return; }
+    axis.normalize(); o.visible = true;
+    const mid = tmpD.addVectors(a, b).multiplyScalar(0.5);
+    const toCam = new THREE.Vector3().subVectors(camera.position, mid);
+    const normal = toCam.sub(axis.clone().multiplyScalar(toCam.dot(axis))).normalize();
+    const side = new THREE.Vector3().crossVectors(normal, axis).normalize();
+    o.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(axis, side, normal));
+    o.position.copy(mid); o.scale.set(len, l.width || 0.6, 1);
+    const info = textureInfo(l.texture), rows = info.rows || 1;
+    const map = o.material.map; map.repeat.set(len / Math.max(0.1, (l.width || 0.6) * (l.tile || 1)) / (info.aspect || 1) * 4, 1 / rows);
+    const frame = Math.floor(local * (l.fps || 0)) % rows;
+    map.offset.set(-(l.scroll || 0) * local * 0.25, 1 - (frame + 1) / rows);
+    const flick = l.flicker ? 1 - l.flicker * this.rand() : 1;
+    o.material.opacity = (l.opacity ?? 1) * fadeAt(l, f) * flick; tint(o.material, l, f);
+  }
+  stepParticles(t, dt, local, ended) {
+    const l = this.l, r = this.rand;
+    if (!ended) {
+      let want = 0;
+      if (l.mode === 'burst') want = this.emitted === 0 ? l.count | 0 : 0;
+      else { this.acc = (this.acc || 0) + dt * (l.rate || 0); want = Math.floor(this.acc); this.acc -= want; }
+      const vel = this.flight ? this.flight.vel : null;
+      for (let i = 0; i < want && this.parts.length < 500; i++) this.emit(t, vel);
+      this.emitted += want || (l.mode === 'burst' ? 1 : 0);
+    } else if (!this.parts.length) { this.dispose(); return; }
+    const info = textureInfo(l.texture), frames = info.cols * info.rows;
+    for (let i = this.parts.length - 1; i >= 0; i--) {
+      const p = this.parts[i]; p.age += dt;
+      if (p.age >= p.life) { runtime.remove(p.s); p.s.material.dispose(); this.parts.splice(i, 1); continue; }
+      p.v.y += (l.gravity || 0) * dt; p.v.multiplyScalar(Math.max(0, 1 - (l.drag || 0) * dt)); p.p.addScaledVector(p.v, dt);
+      if (p.p.y < 0.03 && (l.gravity || 0) < 0) { p.p.y = 0.03; p.v.y *= -0.3; p.v.x *= 0.6; p.v.z *= 0.6; }
+      const f = p.age / p.life, s = p.s;
+      s.position.copy(p.p); const size = lerp(l.sizeStart, l.sizeEnd, f) * p.k; s.scale.set(size, size, 1);
+      s.material.opacity = (l.opacity ?? 1) * fadeAt(l, f); tint(s.material, l, f);
+      s.material.rotation = p.rot + (l.spin || 0) * Math.PI / 180 * p.age;
+      if (frames > 1) s.material.map = frameTexture(l.texture, frames > 1 && l.fps ? p.frame + Math.floor(p.age * l.fps) : Math.floor(f * frames));
+    }
+  }
+  emit(t, vel) {
+    const l = this.l, r = this.rand, dir = new THREE.Vector3();
+    const cone = (axis, deg) => {
+      const th = deg * Math.PI / 180, cos = 1 - r() * (1 - Math.cos(th)), sin = Math.sqrt(1 - cos * cos), ph = r() * Math.PI * 2;
+      const u = Math.abs(axis.y) < 0.9 ? new THREE.Vector3().crossVectors(axis, UP).normalize() : new THREE.Vector3(1, 0, 0);
+      const v = new THREE.Vector3().crossVectors(axis, u);
+      return dir.copy(axis).multiplyScalar(cos).addScaledVector(u, Math.cos(ph) * sin).addScaledVector(v, Math.sin(ph) * sin);
+    };
+    const fwd = anchorAt('target.chest', t, tmpA).sub(anchorAt('caster.chest', t, tmpB)).normalize();
+    switch (l.shape) {
+      case 'up': cone(UP, l.spread || 30); break;
+      case 'down': cone(new THREE.Vector3(0, -1, 0), l.spread || 30); break;
+      case 'forward': cone(fwd.clone(), l.spread || 30); break;
+      case 'back': cone(vel && vel.lengthSq() > 0.01 ? vel.clone().normalize().negate() : fwd.clone().negate(), l.spread || 30); break;
+      case 'ring': { const a = r() * Math.PI * 2; dir.set(Math.cos(a), 0.05 + r() * 0.1, Math.sin(a)); break; }
+      default: cone(UP, 180);
+    }
+    const speed = lerp(l.speedMin || 0, l.speedMax || 0, r());
+    const pos = this.anchorPos.clone().add(new THREE.Vector3(...(l.offset || [0, 0, 0])));
+    if (l.emitRadius) { const a = r() * Math.PI * 2, rr = Math.sqrt(r()) * l.emitRadius; pos.x += Math.cos(a) * rr; pos.z += Math.sin(a) * rr; pos.y += (r() - 0.5) * l.emitRadius * 0.3; }
+    const v = dir.multiplyScalar(speed);
+    if (vel && l.inherit) v.addScaledVector(vel, l.inherit);
+    const s = new THREE.Sprite(spriteMaterial(l)); runtime.add(s);
+    const info = textureInfo(l.texture);
+    this.parts.push({ p: pos, v, s, age: 0, life: lerp(l.partLifeMin || 0.3, l.partLifeMax || 0.6, r()), k: 0.7 + r() * 0.6,
+      rot: r() * Math.PI * 2, frame: Math.floor(r() * info.cols * info.rows) });
+  }
+}
+
+/* A projectile in flight along its shaped path. */
+const EASES = { linear: (s) => s, accelerate: (s) => s * s, decelerate: (s) => 1 - (1 - s) * (1 - s), smooth: (s) => s * s * (3 - 2 * s) };
+function pathPoint(p, u, S, E, idx, out) {
+  const n = Math.max(1, p.count | 0);
+  const fwd = tmpA.subVectors(E, S); const len = fwd.length() || 1; fwd.divideScalar(len);
+  const right = tmpB.crossVectors(fwd, UP); if (right.lengthSq() < 1e-6) right.set(0, 0, 1); right.normalize();
+  const up = tmpC.crossVectors(right, fwd).normalize();
+  let side = (p.side || 0) + (n > 1 ? (p.fan || 0) * (idx - (n - 1) / 2) : 0);
+  if (p.alternate && idx % 2 === 1) side = -side;
+  const peak = clamp(p.peak ?? 0.5, 0.05, 0.95);
+  const w = u < peak ? 0.5 * u / peak : 0.5 + 0.5 * (u - peak) / (1 - peak);
+  const bump = Math.sin(Math.PI * w), env = Math.sin(Math.PI * u);
+  out.copy(S).lerp(E, u).addScaledVector(up, (p.arc || 0) * bump).addScaledVector(right, side * bump);
+  if (p.spiralRadius > 0) {
+    const th = (p.spiralTurns || 0) * 2 * Math.PI * u + idx * 2 * Math.PI / n;
+    out.addScaledVector(right, Math.cos(th) * p.spiralRadius * env).addScaledVector(up, Math.sin(th) * p.spiralRadius * env);
+  }
+  if (p.wobble > 0) {
+    const k = u * len * (p.wobbleFreq || 1);
+    out.addScaledVector(right, Math.sin(k + idx) * p.wobble * 0.6 * env).addScaledVector(up, Math.cos(k * 1.3 + idx * 2) * p.wobble * 0.6 * env);
+  }
+  return out;
+}
+function pathLength(p, S, E, idx) {
+  let len = 0; const a = new THREE.Vector3(), b = new THREE.Vector3();
+  pathPoint(p, 0, S, E, idx, a);
+  for (let i = 1; i <= 32; i++) { pathPoint(p, i / 32, S, E, idx, b); len += a.distanceTo(b); a.copy(b); }
+  return len;
+}
+function endPoint(p, t, out) { return anchorAt(p.to, t, out).add(tmpD.set(...(p.toOffset || [0, 0, 0]))); }
+function startPoint(p, t, out) {
+  anchorAt(p.from, t, out);
+  const o = p.fromOffset || [0, 0, 0];
+  return out.add(tmpD.set(o[0], o[1], o[2]));
+}
+
+class Flight {
+  constructor(p, idx, launch) {
+    this.p = p; this.idx = idx; this.launch = launch; this.s = 0; this.arrived = false; this.arrivedAt = 0;
+    this.pos = new THREE.Vector3(); this.vel = new THREE.Vector3(); this.S = new THREE.Vector3(); this.E = new THREE.Vector3();
+    this.trail = []; this.trailMesh = null; this.started = false;
+  }
+  step(t, dt) {
+    const p = this.p;
+    if (t < this.launch) return;
+    if (!this.started) { this.started = true; startPoint(p, t, this.S); endPoint(p, t, this.E); }
+    if (!this.arrived) {
+      if (p.homing) endPoint(p, t, this.E);
+      const len = Math.max(0.5, pathLength(p, this.S, this.E, this.idx));
+      this.s = Math.min(1, this.s + dt * (p.speed || 20) / len);
+      const prev = this.pos.clone();
+      pathPoint(p, (EASES[p.ease] || EASES.linear)(this.s), this.S, this.E, this.idx, this.pos);
+      if (dt > 0 && this.s > 0) this.vel.subVectors(this.pos, prev).divideScalar(dt);
+      if (this.s >= 1) { this.arrived = true; this.arrivedAt = t; onImpact(this, t); }
+    }
+    this.stepTrail(t);
+  }
+  stepTrail(t) {
+    const tr = this.p.trail;
+    if (!tr || !tr.enabled) return;
+    if (!this.arrived) this.trail.push({ p: this.pos.clone(), t });
+    while (this.trail.length && t - this.trail[0].t > (tr.length || 0.3)) this.trail.shift();
+    if (!this.trailMesh) {
+      const geo = new THREE.BufferGeometry();
+      const m = new THREE.ShaderMaterial({
+        uniforms: { map: { value: textureInfo(tr.texture).base }, c1: { value: new THREE.Color(tr.color) },
+          c2: { value: new THREE.Color(tr.color2 || tr.color) }, op: { value: tr.opacity ?? 1 } },
+        vertexShader: 'attribute float a; varying float va; varying vec2 vu; void main(){ va=a; vu=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+        fragmentShader: 'uniform sampler2D map; uniform vec3 c1; uniform vec3 c2; uniform float op; varying float va; varying vec2 vu; void main(){ vec4 tx=texture2D(map, vec2(vu.x, vu.y)); vec3 c=mix(c2,c1,va); gl_FragColor=vec4(c*tx.rgb, tx.a*va*op); }',
+        transparent: true, depthWrite: false, blending: blendOf(tr.blend), side: THREE.DoubleSide,
+      });
+      this.trailMesh = new THREE.Mesh(geo, m); this.trailMesh.frustumCulled = false; runtime.add(this.trailMesh);
+    }
+    const pts = this.trail, n = pts.length, geo = this.trailMesh.geometry;
+    if (n < 2) { this.trailMesh.visible = false; return; }
+    this.trailMesh.visible = true;
+    const pos = new Float32Array(n * 6), uv = new Float32Array(n * 4), al = new Float32Array(n * 2), idx = [];
+    const camDir = new THREE.Vector3();
+    for (let i = 0; i < n; i++) {
+      const a = pts[Math.max(0, i - 1)].p, b = pts[Math.min(n - 1, i + 1)].p, c = pts[i].p;
+      const tan = tmpA.subVectors(b, a).normalize();
+      camDir.subVectors(camera.position, c).normalize();
+      const side = tmpB.crossVectors(tan, camDir).normalize().multiplyScalar((tr.width || 0.3) * 0.5 * (0.25 + 0.75 * i / (n - 1)));
+      pos.set([c.x + side.x, c.y + side.y, c.z + side.z, c.x - side.x, c.y - side.y, c.z - side.z], i * 6);
+      uv.set([i / (n - 1), 0, i / (n - 1), 1], i * 4);
+      const k = Math.pow(i / (n - 1), 1.3); al.set([k, k], i * 2);
+      if (i < n - 1) idx.push(i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2);
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    geo.setAttribute('a', new THREE.BufferAttribute(al, 1)); geo.setIndex(idx);
+  }
+  get finished() { return this.arrived && this.trail.length < 2; }
+  dispose() { if (this.trailMesh) { runtime.remove(this.trailMesh); this.trailMesh.geometry.dispose(); this.trailMesh.material.dispose(); } }
+}
+
+/* The effect run: a deterministic simulation stepped at 120 Hz from its start (scrubbing replays it). */
+const run = { runs: [], flights: [], impacts: [], hits: [], fired: false };
+const STEP = 1 / 120;
+function resetRun() {
+  run.runs.forEach((r) => r.dispose()); run.flights.forEach((f) => f.dispose());
+  run.runs = []; run.flights = []; run.impacts = []; run.hits = []; run.fired = false; run.impactFired = false;
+  sim.t = 0; sim.hitWobble = 0; sim.hitVel = 0;
+  overlay.querySelectorAll('.dmg').forEach((e) => e.remove());
+}
+function visibleLayers(trigger) { return state.spec.layers.filter((l) => l.enabled !== false && l.trigger === trigger); }
+function fireStart() {
+  const spec = state.spec;
+  for (const l of visibleLayers('cast')) run.runs.push(new LayerRun(l, 0, {}));
+  const p = spec.projectile;
+  if (p && p.enabled) {
+    for (let i = 0; i < Math.max(1, p.count | 0); i++) {
+      const f = new Flight(p, i, (p.launchAt || 0) + i * (p.stagger || 0));
+      run.flights.push(f);
+      for (const l of visibleLayers('projectile')) run.runs.push(new LayerRun(l, f.launch, { projectile: f, index: i }));
+    }
+  }
+}
+function onImpact(flight, t) {
+  const at = flight ? flight.pos.clone() : anchorAt('target.chest', t, new THREE.Vector3());
+  for (const l of visibleLayers('impact')) run.runs.push(new LayerRun(l, t, { at, index: flight ? flight.idx : 0 }));
+  run.impacts.push(t);
+  sim.hitVel += 2.6;
+  run.hits.push({ t, at: at.clone(), amount: 900 + Math.floor(seeded(Math.floor(t * 1000) + 3)() * 900),
+    crit: seeded(Math.floor(t * 777) + 1)() < 0.3, el: null });
+}
+function stepRun(dt) {
+  if (!run.fired) { run.fired = true; fireStart(); }
+  const t = sim.t;
+  const p = state.spec.projectile;
+  if (!(p && p.enabled) && !run.impactFired && t >= (state.spec.impactAt || 0)) { run.impactFired = true; onImpact(null, t); }
+  run.flights.forEach((f) => f.step(t, dt));
+  for (const r of run.runs) if (!r.done) r.step(t, dt);
+  run.runs = run.runs.filter((r) => !r.done);
+  // The dummy rocks back on its base when hit (a damped spring).
+  sim.hitVel += (-sim.hitWobble * 60 - sim.hitVel * 7) * dt; sim.hitWobble += sim.hitVel * dt;
+  sim.t += dt;
+}
+function simulateTo(target) {
+  resetRun();
+  state.dirty = true;
+  while (sim.t + STEP <= target + 1e-9) stepRun(STEP);
+  placeActors();
+}
+function placeActors() {
+  dummyPosAt(sim.t, dummy.position);
+  dummyBody.rotation.z = -clamp(sim.hitWobble, -0.5, 0.5) * 0.35;
+  heroArm.rotation.z = armRaiseAt(sim.t);
+}
+// How long the whole effect runs (the scrubber's length): cast layers, every flight, its impact and the tail.
+function effectDuration() {
+  const spec = state.spec; let end = 0;
+  for (const l of visibleLayers('cast')) end = Math.max(end, (l.delay || 0) + (l.life || 0));
+  const p = spec.projectile; let impactAt = spec.impactAt || 0;
+  if (p && p.enabled) {
+    const S = startPoint(p, 0, new THREE.Vector3()), E = endPoint(p, 0, new THREE.Vector3());
+    let last = 0;
+    for (let i = 0; i < Math.max(1, p.count | 0); i++) last = Math.max(last, (p.launchAt || 0) + i * (p.stagger || 0) + pathLength(p, S, E, i) / (p.speed || 20) * 1.15);
+    impactAt = last;
+  }
+  let impactEnd = impactAt;
+  for (const l of visibleLayers('impact')) impactEnd = Math.max(impactEnd, impactAt + (l.delay || 0) + (l.life || 0));
+  for (const l of visibleLayers('impact').filter((x) => x.type === 'particles')) impactEnd = Math.max(impactEnd, impactAt + (l.life || 0) + (l.partLifeMax || 0));
+  return Math.max(0.5, end, impactEnd) + (spec.tail ?? 0.6);
+}
+
+/* Path preview: every projectile's path from the Hero's hand at launch to the dummy. */
+const pathGroup = new THREE.Group(); scene.add(pathGroup);
+function rebuildPath() {
+  pathGroup.children.forEach((c) => { c.geometry.dispose(); c.material.dispose(); }); pathGroup.clear();
+  const p = state.spec.projectile;
+  if (!STAGE.showPath || !p || !p.enabled) return;
+  const t = p.launchAt || 0;
+  for (let i = 0; i < Math.max(1, p.count | 0); i++) {
+    const S = startPoint(p, t, new THREE.Vector3()), E = endPoint(p, t, new THREE.Vector3()), pts = [];
+    for (let k = 0; k <= 64; k++) pts.push(pathPoint(p, k / 64, S, E, i, new THREE.Vector3()));
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineDashedMaterial({ color: 0xff8a3d, dashSize: 0.35, gapSize: 0.25, transparent: true, opacity: 0.75 }));
+    line.computeLineDistances(); pathGroup.add(line);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff8a3d }));
+    dot.position.copy(pathPoint(p, clamp(p.peak ?? 0.5, 0.05, 0.95), S, E, i, new THREE.Vector3())); pathGroup.add(dot);
+  }
+}
+
+/* ---------------------------------------------------------------------------------------------------- state ------ */
+const state = { spec: null, sel: { kind: 'effect' }, playing: true, speed: 1, loop: true, duration: 2, tab: 'layers',
+  history: [], dirty: true, restartAt: 0 };
+
+function setSpec(spec, { keepSel = false, record = true } = {}) {
+  if (record && state.spec) pushHistory();
+  state.spec = spec;
+  spec.layers.forEach((l) => { if (!l.id) l.id = uid(); });
+  if (!keepSel) state.sel = { kind: 'effect' };
+  texCache.forEach((info, name) => { if (!TEXTURES[name]) texCache.delete(name); });
+  changed({ restart: true });
+  renderLeft(); renderInspector();
+  $('effectName').value = spec.name;
+}
+let historyTimer = null;
+function pushHistory() {
+  state.history.push(JSON.stringify(state.spec));
+  if (state.history.length > 80) state.history.shift();
+}
+function undo() {
+  const last = state.history.pop(); if (!last) return toast('Nothing to undo');
+  setSpec(JSON.parse(last), { keepSel: true, record: false });
+}
+// Something in the spec changed: the run is replayed to where it was, the path redrawn, the work autosaved.
+function changed({ restart = false } = {}) {
+  state.duration = effectDuration();
+  $('scrub').max = state.duration.toFixed(3);
+  const t = restart ? 0 : Math.min(sim.t, state.duration);
+  simulateTo(t);
+  rebuildPath();
+  renderMarks();
+  store.set('efs.current', state.spec);
+}
+let editTimer = null;
+function edit(fn) {
+  if (!editTimer) pushHistory();
+  clearTimeout(editTimer); editTimer = setTimeout(() => (editTimer = null), 600);
+  fn(); changed();
+}
+
+/* --------------------------------------------------------------------------------------------- left: layers ----- */
+const TRIGGERS = { cast: 'On cast', projectile: 'On the projectile', impact: 'On impact' };
+const TYPE_LABEL = { sprite: 'Billboard', ground: 'Ground', particles: 'Particles', beam: 'Beam' };
+function renderLeft() {
+  $('tabLayers').setAttribute('aria-selected', state.tab === 'layers');
+  $('tabLibrary').setAttribute('aria-selected', state.tab === 'library');
+  const body = $('leftBody'); body.innerHTML = '';
+  if (state.tab === 'library') return renderLibrary(body);
+  const spec = state.spec;
+  body.append(rowEl({ label: 'Effect & stage', chip: 'setup', sel: state.sel.kind === 'effect', onClick: () => select({ kind: 'effect' }) }));
+  const p = spec.projectile;
+  body.append(rowEl({ label: 'Projectile', chip: p.enabled ? `${p.count}×` : 'off', sel: state.sel.kind === 'projectile',
+    eye: p.enabled, onEye: () => edit(() => { p.enabled = !p.enabled; renderLeft(); renderInspector(); }), onClick: () => select({ kind: 'projectile' }) }));
+  for (const trig of Object.keys(TRIGGERS)) {
+    const list = spec.layers.filter((l) => l.trigger === trig);
+    const head = document.createElement('div'); head.className = 'section-label'; head.textContent = TRIGGERS[trig];
+    if (trig === 'projectile' && !p.enabled) head.textContent += ' (projectile off)';
+    body.append(head);
+    for (const l of list) {
+      body.append(rowEl({ label: l.name, chip: TYPE_LABEL[l.type], color: l.color, sel: state.sel.kind === 'layer' && state.sel.id === l.id,
+        eye: l.enabled !== false, onEye: () => edit(() => { l.enabled = l.enabled === false; renderLeft(); }),
+        onClick: () => select({ kind: 'layer', id: l.id }) }));
+    }
+  }
+  const add = document.createElement('div'); add.className = 'section-label'; add.textContent = 'Add a layer'; body.append(add);
+  const menu = document.createElement('div'); menu.className = 'add-menu';
+  for (const type of Object.keys(NEW_LAYER)) {
+    const b = document.createElement('button'); b.className = 'btn small'; b.textContent = '+ ' + TYPE_LABEL[type];
+    b.onclick = () => edit(() => {
+      const trig = state.sel.kind === 'layer' ? (spec.layers.find((x) => x.id === state.sel.id) || {}).trigger : null;
+      const l = layer(type, trig && type !== 'beam' ? { trigger: trig, anchor: trig === 'projectile' ? 'projectile' : trig === 'impact' ? 'impact' : 'caster.hand' } : {});
+      spec.layers.push(l); state.sel = { kind: 'layer', id: l.id }; renderLeft(); renderInspector();
+    });
+    menu.append(b);
+  }
+  body.append(menu);
+}
+function rowEl({ label, chip, color, sel, eye, onEye, onClick }) {
+  const r = document.createElement('div'); r.className = 'row' + (sel ? ' sel' : ''); r.tabIndex = 0;
+  if (color) { const d = document.createElement('span'); d.className = 'dot'; d.style.background = color; r.append(d); }
+  const n = document.createElement('span'); n.className = 'nm'; n.textContent = label; r.append(n);
+  if (chip) { const c = document.createElement('span'); c.className = 'chip'; c.textContent = chip; r.append(c); }
+  if (onEye) {
+    const e = document.createElement('button'); e.className = 'eye' + (eye ? '' : ' off'); e.textContent = '◉';
+    e.title = eye ? 'Hide' : 'Show'; e.onclick = (ev) => { ev.stopPropagation(); onEye(); }; r.append(e);
+  }
+  r.onclick = onClick; r.onkeydown = (ev) => { if (ev.key === 'Enter') onClick(); };
+  return r;
+}
+// A layer's anchor kept to what its trigger offers (the projectile only rides it; impact points only exist on impact).
+function fixAnchor(l) {
+  if (l.trigger === 'projectile' && l.type !== 'beam') l.anchor = 'projectile';
+  else if (l.anchor === 'projectile' || (l.anchor === 'impact' && l.trigger !== 'impact')) l.anchor = l.trigger === 'impact' ? 'impact' : 'caster.hand';
+}
+function select(sel) { state.sel = sel; renderLeft(); renderInspector(); }
+
+function renderLibrary(body) {
+  const mine = store.get('efs.library', []);
+  const blank = document.createElement('button'); blank.className = 'btn'; blank.style.width = '100%'; blank.textContent = 'New blank effect';
+  blank.onclick = () => { setSpec(NEW_EFFECT()); state.tab = 'layers'; renderLeft(); };
+  body.append(blank);
+  let group = null;
+  for (const p of PRESETS) {
+    if (p.group !== group) { group = p.group; const h = document.createElement('div'); h.className = 'lib-group'; h.textContent = group; body.append(h); }
+    body.append(presetEl(p.make().name, p.desc, p.swatch, () => { setSpec(presetEffect(p)); state.tab = 'layers'; renderLeft(); }));
+  }
+  const h = document.createElement('div'); h.className = 'lib-group'; h.textContent = 'My effects'; body.append(h);
+  if (!mine.length) { const e = document.createElement('div'); e.className = 'hint'; e.textContent = 'Effects you save appear here. They stay in this browser.'; body.append(e); }
+  mine.forEach((spec, i) => {
+    const el = presetEl(spec.name, `${spec.layers.length} layers${spec.projectile.enabled ? ', projectile' : ''}`,
+      [spec.layers[0] ? spec.layers[0].color : '#888', spec.layers[0] ? spec.layers[0].color2 : '#444'], () => { setSpec(deepCopy(spec)); state.tab = 'layers'; renderLeft(); });
+    const del = document.createElement('button'); del.className = 'btn small ghost danger'; del.textContent = 'Delete';
+    del.onclick = (ev) => { ev.stopPropagation(); const list = store.get('efs.library', []); list.splice(i, 1); store.set('efs.library', list); renderLeft(); };
+    el.append(del); el.style.gridTemplateColumns = '34px 1fr auto';
+    body.append(el);
+  });
+}
+function presetEl(name, desc, swatch, onClick) {
+  const b = document.createElement('button'); b.className = 'preset';
+  const sw = document.createElement('span'); sw.className = 'sw';
+  sw.style.background = `radial-gradient(circle at 40% 40%, ${swatch[0]}, ${swatch[1]} 70%, #000 100%)`;
+  const t = document.createElement('span'); t.innerHTML = '<div class="nm"></div><div class="ds"></div>';
+  t.querySelector('.nm').textContent = name; t.querySelector('.ds').textContent = desc;
+  b.append(sw, t); b.onclick = onClick; return b;
+}
+
+/* --------------------------------------------------------------------------------------------- inspector -------- */
+const ANCHOR_OPTS = (allowProjectile, allowImpact) => Object.entries(ANCHORS)
+  .filter(([k]) => (k !== 'projectile' || allowProjectile) && (k !== 'impact' || allowImpact));
+function F(label, key, kind, opts = {}) { return { label, key, kind, ...opts }; }
+const LAYER_FIELDS = {
+  common: [
+    F('Name', 'name', 'text'), F('Fires', 'trigger', 'select', { options: () => Object.entries(TRIGGERS) }),
+    F('Anchor', 'anchor', 'select', { options: (l) => ANCHOR_OPTS(l.trigger === 'projectile', l.trigger === 'impact') }),
+    F('Delay', 'delay', 'range', { min: 0, max: 3, step: 0.01, unit: 's' }),
+    F('Lasts', 'life', 'range', { min: 0.05, max: 6, step: 0.01, unit: 's', hide: (l) => l.trigger === 'projectile' }),
+  ],
+  look: [
+    F('Texture', 'texture', 'texture'), F('Blend', 'blend', 'select', { options: () => [['add', 'Additive (glows)'], ['normal', 'Normal (smoke, shadow)']] }),
+    F('Color', 'color', 'color'), F('Fades to', 'color2', 'color'), F('Opacity', 'opacity', 'range', { min: 0, max: 1, step: 0.01 }),
+    F('Fade in', 'fadeIn', 'range', { min: 0, max: 1, step: 0.01, hint: 'share of its time' }),
+    F('Fade out', 'fadeOut', 'range', { min: 0, max: 1, step: 0.01 }),
+  ],
+  sprite: [
+    F('Size start', 'sizeStart', 'range', { min: 0, max: 15, step: 0.05, unit: 'yd' }), F('Size end', 'sizeEnd', 'range', { min: 0, max: 15, step: 0.05, unit: 'yd' }),
+    F('Stretch', 'stretch', 'range', { min: 0.1, max: 8, step: 0.05, unit: '×' }),
+    F('Rotation', 'rotation', 'range', { min: -180, max: 180, step: 1, unit: '°' }), F('Spin', 'spin', 'range', { min: -1080, max: 1080, step: 5, unit: '°/s' }),
+    F('Copies', 'count', 'range', { min: 1, max: 24, step: 1 }), F('Spread', 'radius', 'range', { min: 0, max: 8, step: 0.05, unit: 'yd' }),
+    F('Orbit', 'orbit', 'range', { min: -720, max: 720, step: 5, unit: '°/s' }), F('Rise', 'rise', 'range', { min: -5, max: 10, step: 0.05, unit: 'yd' }),
+    F('Offset', 'offset', 'vec3'), F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }),
+    F('Play once', 'flipOnce', 'toggle', { hint: 'flipbook plays once over its time' }),
+    F('Face motion', 'alignToMotion', 'toggle', { hide: (l) => l.trigger !== 'projectile', hint: 'turns with the projectile' }),
+  ],
+  ground: [
+    F('Size start', 'sizeStart', 'range', { min: 0, max: 30, step: 0.05, unit: 'yd' }), F('Size end', 'sizeEnd', 'range', { min: 0, max: 30, step: 0.05, unit: 'yd' }),
+    F('Stretch', 'stretch', 'range', { min: 0.1, max: 8, step: 0.05, unit: '×' }),
+    F('Rotation', 'rotation', 'range', { min: -180, max: 180, step: 1, unit: '°' }), F('Spin', 'spin', 'range', { min: -720, max: 720, step: 5, unit: '°/s' }),
+    F('Copies', 'count', 'range', { min: 1, max: 24, step: 1 }), F('Spread', 'radius', 'range', { min: 0, max: 10, step: 0.05, unit: 'yd' }),
+    F('Orbit', 'orbit', 'range', { min: -720, max: 720, step: 5, unit: '°/s' }),
+    F('Offset', 'offset', 'vec3'), F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }), F('Play once', 'flipOnce', 'toggle'),
+  ],
+  particles: [
+    F('Emit', 'mode', 'select', { options: () => [['burst', 'One burst'], ['stream', 'A stream']] }),
+    F('Count', 'count', 'range', { min: 1, max: 300, step: 1, hide: (l) => l.mode !== 'burst' }),
+    F('Rate', 'rate', 'range', { min: 1, max: 300, step: 1, unit: '/s', hide: (l) => l.mode !== 'stream' }),
+    F('Direction', 'shape', 'select', { options: () => [['sphere', 'Every way'], ['up', 'Up (cone)'], ['down', 'Down (cone)'], ['forward', 'Toward the dummy'], ['back', 'Behind the projectile'], ['ring', 'Out in a ring']] }),
+    F('Cone', 'spread', 'range', { min: 0, max: 180, step: 1, unit: '°' }),
+    F('Speed min', 'speedMin', 'range', { min: 0, max: 30, step: 0.1, unit: 'yd/s' }), F('Speed max', 'speedMax', 'range', { min: 0, max: 30, step: 0.1, unit: 'yd/s' }),
+    F('Gravity', 'gravity', 'range', { min: -30, max: 10, step: 0.1, unit: 'yd/s²' }), F('Drag', 'drag', 'range', { min: 0, max: 6, step: 0.05 }),
+    F('Life min', 'partLifeMin', 'range', { min: 0.05, max: 4, step: 0.01, unit: 's' }), F('Life max', 'partLifeMax', 'range', { min: 0.05, max: 4, step: 0.01, unit: 's' }),
+    F('Size start', 'sizeStart', 'range', { min: 0, max: 5, step: 0.01, unit: 'yd' }), F('Size end', 'sizeEnd', 'range', { min: 0, max: 5, step: 0.01, unit: 'yd' }),
+    F('Emit area', 'emitRadius', 'range', { min: 0, max: 8, step: 0.05, unit: 'yd' }),
+    F('Inherit', 'inherit', 'range', { min: -1, max: 1, step: 0.05, hide: (l) => l.trigger !== 'projectile', hint: "of the projectile's speed" }),
+    F('Spin', 'spin', 'range', { min: -720, max: 720, step: 5, unit: '°/s' }), F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }),
+    F('Offset', 'offset', 'vec3'),
+  ],
+  beam: [
+    F('Ends at', 'anchorEnd', 'select', { options: () => ANCHOR_OPTS(false, false) }),
+    F('Width', 'width', 'range', { min: 0.05, max: 4, step: 0.05, unit: 'yd' }), F('Tiling', 'tile', 'range', { min: 0.2, max: 12, step: 0.1 }),
+    F('Scroll', 'scroll', 'range', { min: -20, max: 20, step: 0.1 }), F('Flipbook', 'fps', 'range', { min: 0, max: 60, step: 1, unit: 'fps' }),
+    F('Flicker', 'flicker', 'range', { min: 0, max: 1, step: 0.01 }),
+  ],
+};
+const PROJECTILE_FIELDS = [
+  { group: 'Flight' },
+  F('Launch at', 'launchAt', 'range', { min: 0, max: 3, step: 0.01, unit: 's' }),
+  F('From', 'from', 'select', { options: () => ANCHOR_OPTS(false, false) }), F('From offset', 'fromOffset', 'vec3'),
+  F('To', 'to', 'select', { options: () => ANCHOR_OPTS(false, false) }), F('To offset', 'toOffset', 'vec3'),
+  F('Speed', 'speed', 'range', { min: 2, max: 80, step: 0.5, unit: 'yd/s' }),
+  F('Easing', 'ease', 'select', { options: () => [['linear', 'Steady'], ['accelerate', 'Speeds up'], ['decelerate', 'Slows down'], ['smooth', 'Slow, fast, slow']] }),
+  F('Homing', 'homing', 'toggle', { hint: 'follows a moving dummy' }),
+  { group: 'Path', hint: 'Arc lifts the path; Side swings it right (+) or left (−); Peak sets where along the way the bend is widest. The orange dashes show it.' },
+  F('Arc', 'arc', 'range', { min: -6, max: 20, step: 0.1, unit: 'yd' }),
+  F('Side', 'side', 'range', { min: -15, max: 15, step: 0.1, unit: 'yd' }),
+  F('Peak', 'peak', 'range', { min: 0.05, max: 0.95, step: 0.01 }),
+  F('Spiral', 'spiralRadius', 'range', { min: 0, max: 3, step: 0.05, unit: 'yd' }),
+  F('Spiral turns', 'spiralTurns', 'range', { min: 0, max: 12, step: 0.1 }),
+  F('Wobble', 'wobble', 'range', { min: 0, max: 3, step: 0.05, unit: 'yd' }), F('Wobble rate', 'wobbleFreq', 'range', { min: 0.1, max: 4, step: 0.05 }),
+  { group: 'Volley' },
+  F('Projectiles', 'count', 'range', { min: 1, max: 12, step: 1 }), F('Between shots', 'stagger', 'range', { min: 0, max: 1, step: 0.01, unit: 's' }),
+  F('Fan', 'fan', 'range', { min: 0, max: 6, step: 0.05, unit: 'yd', hint: 'side spacing between shots' }),
+  F('Mirror', 'alternate', 'toggle', { hint: 'every other shot swings to the other side' }),
+  { group: 'Trail' },
+  F('Trail', 'trail.enabled', 'toggle'), F('Texture', 'trail.texture', 'texture'),
+  F('Head color', 'trail.color', 'color'), F('Tail color', 'trail.color2', 'color'),
+  F('Width', 'trail.width', 'range', { min: 0.02, max: 3, step: 0.01, unit: 'yd' }), F('Length', 'trail.length', 'range', { min: 0.02, max: 2, step: 0.01, unit: 's' }),
+  F('Opacity', 'trail.opacity', 'range', { min: 0, max: 1, step: 0.01 }),
+  F('Blend', 'trail.blend', 'select', { options: () => [['add', 'Additive'], ['normal', 'Normal']] }),
+];
+const getPath = (o, k) => k.split('.').reduce((a, b) => (a == null ? a : a[b]), o);
+function setPath(o, k, v) { const ks = k.split('.'), last = ks.pop(); ks.reduce((a, b) => a[b], o)[last] = v; }
+
+function renderInspector() {
+  const box = $('inspector'); box.innerHTML = '';
+  const spec = state.spec, sel = state.sel;
+  if (sel.kind === 'layer') {
+    const l = spec.layers.find((x) => x.id === sel.id);
+    if (!l) return select({ kind: 'effect' });
+    $('inspTitle').textContent = `${TYPE_LABEL[l.type]} layer`;
+    const fields = [{ group: 'Timing' }, ...LAYER_FIELDS.common, { group: 'Look' }, ...LAYER_FIELDS.look, { group: TYPE_LABEL[l.type] }, ...LAYER_FIELDS[l.type]];
+    buildFields(box, l, fields, () => { fixAnchor(l); renderLeft(); });
+    const actions = document.createElement('div'); actions.style.cssText = 'display:flex;gap:6px;margin-top:14px;flex-wrap:wrap';
+    const dup = document.createElement('button'); dup.className = 'btn small'; dup.textContent = 'Duplicate';
+    dup.onclick = () => edit(() => { const c = deepCopy(l); c.id = uid(); c.name += ' copy'; spec.layers.splice(spec.layers.indexOf(l) + 1, 0, c); state.sel = { kind: 'layer', id: c.id }; renderLeft(); renderInspector(); });
+    const del = document.createElement('button'); del.className = 'btn small danger'; del.textContent = 'Delete layer';
+    del.onclick = () => edit(() => { spec.layers.splice(spec.layers.indexOf(l), 1); state.sel = { kind: 'effect' }; renderLeft(); renderInspector(); });
+    actions.append(dup, del); box.append(actions);
+  } else if (sel.kind === 'projectile') {
+    $('inspTitle').textContent = 'Projectile';
+    const p = spec.projectile;
+    const on = document.createElement('div'); on.className = 'hint';
+    on.textContent = p.enabled ? 'Layers set to fire "On the projectile" ride along with it; "On impact" layers fire where each one lands.'
+      : 'The projectile is off: impact layers fire at the time set on the effect.';
+    box.append(on);
+    buildFields(box, p, [F('Enabled', 'enabled', 'toggle'), ...PROJECTILE_FIELDS], () => renderLeft(), () => rebuildPath());
+  } else {
+    $('inspTitle').textContent = 'Effect & stage';
+    buildFields(box, spec, [
+      { group: 'Effect' }, F('Name', 'name', 'text'),
+      F('Impact at', 'impactAt', 'range', { min: 0, max: 4, step: 0.01, unit: 's', hint: 'when impact layers fire without a projectile' }),
+      F('Tail', 'tail', 'range', { min: 0, max: 3, step: 0.05, unit: 's', hint: 'time after the last layer before a loop restarts' }),
+    ], () => { $('effectName').value = spec.name; });
+    buildFields(box, STAGE, [
+      { group: 'Stage', hint: 'Where the training dummy stands, and whether it moves.' },
+      F('Distance', 'distance', 'range', { min: 3, max: 40, step: 0.5, unit: 'yd' }),
+      F('Offset', 'side', 'range', { min: -15, max: 15, step: 0.5, unit: 'yd' }),
+      F('Strafe', 'strafe', 'range', { min: 0, max: 8, step: 0.1, unit: 'yd', hint: 'the dummy slides side to side' }),
+      F('Strafe speed', 'strafeSpeed', 'range', { min: 0.2, max: 4, step: 0.05 }),
+    ], null, null, true);
+    const keys = document.createElement('div'); keys.className = 'hint'; keys.style.marginTop = '14px';
+    keys.innerHTML = '<kbd>C</kbd> cast &nbsp; <kbd>Space</kbd> play / pause &nbsp; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo &nbsp; <kbd>Del</kbd> delete layer. Drag the view to orbit, scroll to zoom.';
+    box.append(keys);
+  }
+}
+function buildFields(box, obj, fields, after, afterPath, stage = false) {
+  for (const fd of fields) {
+    if (fd.group) {
+      const g = document.createElement('div'); g.className = 'group-title'; g.textContent = fd.group; box.append(g);
+      if (fd.hint) { const h = document.createElement('div'); h.className = 'hint'; h.textContent = fd.hint; box.append(h); }
+      continue;
+    }
+    if (fd.hide && fd.hide(obj)) continue;
+    const row = document.createElement('div'); row.className = 'field';
+    const id = 'f_' + (stage ? 'stage_' : '') + fd.key.replace('.', '_');
+    const lab = document.createElement('label'); lab.textContent = fd.label; lab.htmlFor = id; if (fd.hint) lab.title = fd.hint;
+    const ctl = document.createElement('div'); ctl.className = 'ctl';
+    const val = getPath(obj, fd.key);
+    const commit = (v, rerender) => {
+      const apply = () => { setPath(obj, fd.key, v); if (after) after(); if (afterPath) afterPath(); if (rerender) renderInspector(); };
+      if (stage) { apply(); changed(); } else edit(apply);
+    };
+    if (fd.kind === 'range') {
+      const r = document.createElement('input'); r.type = 'range'; r.min = fd.min; r.max = fd.max; r.step = fd.step; r.value = val ?? 0; r.id = id;
+      const n = document.createElement('input'); n.type = 'number'; n.min = fd.min; n.max = fd.max; n.step = fd.step; n.value = val ?? 0;
+      n.setAttribute('aria-label', fd.label + (fd.unit ? ` (${fd.unit})` : ''));
+      r.oninput = () => { n.value = r.value; commit(parseFloat(r.value)); };
+      n.onchange = () => { const v = parseFloat(n.value); if (!isNaN(v)) { r.value = v; commit(v); } };
+      ctl.append(r, n);
+      if (fd.unit) { const u = document.createElement('span'); u.className = 'chip'; u.textContent = fd.unit; ctl.append(u); }
+    } else if (fd.kind === 'select') {
+      const s = document.createElement('select'); s.id = id;
+      for (const [v, t] of fd.options(obj)) { const o = document.createElement('option'); o.value = v; o.textContent = t; s.append(o); }
+      s.value = val; s.onchange = () => commit(s.value, true); ctl.append(s);
+    } else if (fd.kind === 'text') {
+      const t = document.createElement('input'); t.type = 'text'; t.id = id; t.value = val ?? ''; t.oninput = () => commit(t.value); ctl.append(t);
+    } else if (fd.kind === 'color') {
+      const c = document.createElement('input'); c.type = 'color'; c.id = id; c.value = val || '#ffffff'; c.oninput = () => commit(c.value);
+      const code = document.createElement('span'); code.className = 'chip'; code.textContent = val; c.addEventListener('input', () => (code.textContent = c.value));
+      ctl.append(c, code);
+    } else if (fd.kind === 'toggle') {
+      const b = document.createElement('button'); b.className = 'btn small'; b.id = id; b.setAttribute('aria-pressed', !!val);
+      b.textContent = val ? 'On' : 'Off'; b.onclick = () => commit(!val, true); ctl.append(b);
+      if (fd.hint) { const h = document.createElement('span'); h.className = 'hint'; h.style.margin = 0; h.textContent = fd.hint; ctl.append(h); }
+    } else if (fd.kind === 'vec3') {
+      const v = document.createElement('div'); v.className = 'vec';
+      ['x', 'y', 'z'].forEach((axis, i) => {
+        const n = document.createElement('input'); n.type = 'number'; n.step = 0.05; n.value = (val || [0, 0, 0])[i];
+        n.setAttribute('aria-label', `${fd.label} ${axis}`); n.title = ['forward (toward the dummy)', 'up', 'right'][i];
+        if (i === 0) n.id = id;
+        n.onchange = () => { const arr = [...(getPath(obj, fd.key) || [0, 0, 0])]; arr[i] = parseFloat(n.value) || 0; commit(arr); };
+        v.append(n);
+      });
+      ctl.append(v);
+    } else if (fd.kind === 'texture') {
+      const g = document.createElement('div'); g.className = 'texgrid';
+      for (const name of textureNames()) {
+        const b = document.createElement('button'); b.className = 'tex'; b.title = textureLabel(name);
+        b.setAttribute('aria-label', textureLabel(name)); b.setAttribute('aria-pressed', name === val);
+        b.style.backgroundImage = `url(${textureInfo(name).url})`;
+        b.onclick = () => commit(name, true); g.append(b);
+      }
+      const up = document.createElement('button'); up.className = 'tex'; up.textContent = '+'; up.title = 'Add your own texture (PNG)';
+      up.setAttribute('aria-label', 'Add your own texture'); up.style.fontSize = '18px';
+      up.onclick = () => addTexture((name) => commit(name, true)); g.append(up);
+      ctl.append(g);
+    }
+    row.append(lab, ctl); box.append(row);
+  }
+}
+function addTexture(done) {
+  const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/png,image/jpeg,image/webp';
+  input.onchange = () => {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      openModal('Add a texture', `<p class="hint">${file.name.replace(/[<>&]/g, '')}. If it is a flipbook, say how many cells across and down.</p>
+        <div class="field"><label for="texCols">Columns</label><div class="ctl"><input type="number" id="texCols" value="1" min="1" max="16"></div></div>
+        <div class="field"><label for="texRows">Rows</label><div class="ctl"><input type="number" id="texRows" value="1" min="1" max="16"></div></div>`,
+        [['Add texture', () => {
+          const name = file.name.replace(/\.[^.]+$/, '').replace(/[^\w-]/g, '_').slice(0, 40) || 'texture';
+          state.spec.textures = state.spec.textures || {};
+          state.spec.textures[name] = { data: reader.result, cols: +$('texCols').value || 1, rows: +$('texRows').value || 1 };
+          texCache.delete(name); closeModal(); done(name); toast(`Added ${name}`);
+        }]]);
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+/* ------------------------------------------------------------------------------------------------ timeline ------ */
+function renderMarks() {
+  const marks = $('marks'); marks.innerHTML = '';
+  const probe = run.impacts.slice();
+  const p = state.spec.projectile;
+  if (p && p.enabled) {
+    const S = startPoint(p, 0, new THREE.Vector3()), E = endPoint(p, 0, new THREE.Vector3());
+    for (let i = 0; i < Math.max(1, p.count | 0); i++) probe.push((p.launchAt || 0) + i * (p.stagger || 0) + pathLength(p, S, E, i) / (p.speed || 20));
+  } else probe.push(state.spec.impactAt || 0);
+  for (const t of new Set(probe.map((x) => x.toFixed(2)))) {
+    const m = document.createElement('div'); m.className = 'mark'; m.style.left = `calc(${(t / state.duration) * 100}% - 1px)`;
+    m.title = `Impact at ${t} s`; marks.append(m);
+  }
+}
+function updateClock() {
+  $('clock').textContent = `${sim.t.toFixed(2)} / ${state.duration.toFixed(2)} s`;
+  $('scrub').value = sim.t;
+  $('playBtn').textContent = state.playing ? 'Pause' : 'Play';
+}
+
+/* --------------------------------------------------------------------------------------------- overlay text ----- */
+const distLabel = document.createElement('div'); distLabel.className = 'dist-label'; overlay.append(distLabel);
+function toScreen(p) {
+  const v = p.clone().project(camera);
+  return { x: (v.x * 0.5 + 0.5) * view.clientWidth, y: (-v.y * 0.5 + 0.5) * view.clientHeight, front: v.z < 1 };
+}
+function updateOverlay() {
+  const mid = toScreen(new THREE.Vector3(STAGE.distance / 2, 0, STAGE.side / 2));
+  distLabel.style.left = mid.x + 'px'; distLabel.style.top = mid.y + 'px'; distLabel.textContent = `${STAGE.distance} yd`;
+  distLabel.hidden = !mid.front;
+  for (const h of run.hits) {
+    const age = sim.t - h.t;
+    if (!STAGE.numbers || age > 1.2 || age < 0) { if (h.el) { h.el.remove(); h.el = null; } continue; }
+    if (!h.el) { h.el = document.createElement('div'); h.el.className = 'dmg' + (h.crit ? ' crit' : ''); h.el.textContent = (h.crit ? '' : '') + h.amount.toLocaleString() + (h.crit ? '!' : ''); overlay.append(h.el); }
+    const s = toScreen(anchorAt('target.head', h.t, new THREE.Vector3()).add(new THREE.Vector3(0, age * 1.4, (h.amount % 3 - 1) * 0.4)));
+    h.el.style.left = s.x + 'px'; h.el.style.top = s.y + 'px'; h.el.style.opacity = String(clamp(1.6 - age * 1.4, 0, 1));
+  }
+}
+
+/* --------------------------------------------------------------------------------------------- the loop -------- */
+function setCam(name) {
+  const d = STAGE.distance, s = STAGE.side;
+  const c = { side: [[d / 2, 6, 15 + s / 2], [d / 2, 1.2, s / 2]], behind: [[-5.5, 3.6, 2.5], [d, 1.3, s]],
+    dummy: [[d - 4.5, 2.6, s + 4.5], [d, 1.3, s]], top: [[d / 2, 24, s / 2 + 0.01], [d / 2, 0, s / 2]] }[name];
+  camera.position.set(...c[0]); controls.target.set(...c[1]); controls.update();
+}
+function resize() {
+  const w = view.clientWidth, h = view.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(view);
+let last = performance.now();
+function frame(now) {
+  const real = Math.min(0.1, (now - last) / 1000); last = now;
+  if (state.playing) {
+    let budget = real * state.speed;
+    while (budget >= STEP) { stepRun(STEP); budget -= STEP; }
+    if (budget > 0) stepRun(budget);
+    if (sim.t >= state.duration) {
+      if (state.loop) simulateTo(0); else { state.playing = false; sim.t = state.duration; }
+    }
+    placeActors();
+  }
+  controls.update();
+  renderer.render(scene, camera);
+  updateOverlay(); updateClock();
+  requestAnimationFrame(frame);
+}
+
+/* --------------------------------------------------------------------------------------------- import/export --- */
+let modalEl = null;
+function openModal(title, html, actions) {
+  closeModal();
+  modalEl = document.createElement('div'); modalEl.className = 'modal-back';
+  modalEl.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="${title}"><h2></h2><div class="mbody"></div><div class="actions"></div></div>`;
+  modalEl.querySelector('h2').textContent = title; modalEl.querySelector('.mbody').innerHTML = html;
+  const acts = modalEl.querySelector('.actions');
+  for (const [label, fn] of [...actions, ['Close', closeModal]]) {
+    const b = document.createElement('button'); b.className = 'btn' + (label === actions[0]?.[0] ? ' primary' : ''); b.textContent = label; b.onclick = fn; acts.append(b);
+  }
+  modalEl.onclick = (e) => { if (e.target === modalEl) closeModal(); };
+  document.body.append(modalEl);
+}
+function closeModal() { if (modalEl) { modalEl.remove(); modalEl = null; } }
+function toast(text) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = text; document.body.append(t);
+  setTimeout(() => t.remove(), 1800);
+}
+$('exportBtn').onclick = () => {
+  const json = JSON.stringify(state.spec, null, 2);
+  openModal('Export effect', '<p class="hint">The effect as a spec file. Copy it, or save it as a .json file, to keep it or to bring it into the Emberforge client patch.</p><textarea id="exportText" readonly></textarea>', [
+    ['Copy', () => { const ta = $('exportText'); (navigator.clipboard ? navigator.clipboard.writeText(json) : Promise.reject()).then(() => toast('Copied'), () => { ta.focus(); ta.select(); toast('Selected: press Ctrl+C'); }); }],
+    ['Save .json', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' })); a.download = (state.spec.name || 'effect').replace(/[^\w-]+/g, '_') + '.json'; a.click(); }],
+  ]);
+  $('exportText').value = json;
+};
+$('importBtn').onclick = () => {
+  openModal('Import effect', '<p class="hint">Paste an effect spec, or open a .json file.</p><textarea id="importText" placeholder="{ &quot;format&quot;: &quot;emberforge-effect&quot;, ... }"></textarea>', [
+    ['Import', () => {
+      try {
+        const spec = JSON.parse($('importText').value);
+        if (spec.format !== 'emberforge-effect') throw new Error('not an Emberforge effect spec');
+        setSpec(Object.assign(NEW_EFFECT(), spec, { projectile: Object.assign(deepCopy(NEW_PROJECTILE), spec.projectile || {}) }));
+        closeModal(); toast('Imported ' + spec.name);
+      } catch (e) { toast('Could not read it: ' + e.message); }
+    }],
+    ['Open file', () => {
+      const input = document.createElement('input'); input.type = 'file'; input.accept = '.json,application/json';
+      input.onchange = () => { const r = new FileReader(); r.onload = () => ($('importText').value = r.result); r.readAsText(input.files[0]); };
+      input.click();
+    }],
+  ]);
+};
+$('saveBtn').onclick = () => {
+  const list = store.get('efs.library', []);
+  const i = list.findIndex((s) => s.name === state.spec.name);
+  if (i >= 0) list[i] = deepCopy(state.spec); else list.push(deepCopy(state.spec));
+  store.set('efs.library', list); toast(`Saved "${state.spec.name}" to My effects`);
+  if (state.tab === 'library') renderLeft();
+};
+
+/* --------------------------------------------------------------------------------------------- controls -------- */
+$('castBtn').onclick = () => { state.playing = true; simulateTo(0); };
+$('playBtn').onclick = () => { state.playing = !state.playing; if (state.playing && sim.t >= state.duration) simulateTo(0); };
+$('loopBtn').onclick = () => { state.loop = !state.loop; $('loopBtn').setAttribute('aria-pressed', state.loop); };
+$('speedSel').onchange = () => (state.speed = parseFloat($('speedSel').value));
+$('scrub').oninput = () => { state.playing = false; simulateTo(parseFloat($('scrub').value)); };
+$('undoBtn').onclick = undo;
+$('pathBtn').onclick = () => { STAGE.showPath = !STAGE.showPath; $('pathBtn').setAttribute('aria-pressed', STAGE.showPath); rebuildPath(); };
+$('dmgBtn').onclick = () => { STAGE.numbers = !STAGE.numbers; $('dmgBtn').setAttribute('aria-pressed', STAGE.numbers); };
+$('effectName').oninput = () => edit(() => (state.spec.name = $('effectName').value));
+$('tabLayers').onclick = () => { state.tab = 'layers'; renderLeft(); };
+$('tabLibrary').onclick = () => { state.tab = 'library'; renderLeft(); };
+document.querySelectorAll('[data-cam]').forEach((b) => (b.onclick = () => setCam(b.dataset.cam)));
+document.addEventListener('keydown', (e) => {
+  const typing = /input|select|textarea/i.test(e.target.tagName);
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !typing) { e.preventDefault(); undo(); return; }
+  if (typing || modalEl) return;
+  if (e.key === ' ') { e.preventDefault(); $('playBtn').click(); }
+  else if (e.key.toLowerCase() === 'c') $('castBtn').click();
+  else if ((e.key === 'Delete' || e.key === 'Backspace') && state.sel.kind === 'layer') {
+    edit(() => { state.spec.layers = state.spec.layers.filter((l) => l.id !== state.sel.id); state.sel = { kind: 'effect' }; renderLeft(); renderInspector(); });
+  }
+});
+
+/* --------------------------------------------------------------------------------------------- start ----------- */
+(function start() {
+  const saved = store.get('efs.current', null);
+  let spec = null;
+  if (saved && saved.format === 'emberforge-effect') spec = Object.assign(NEW_EFFECT(), saved, { projectile: Object.assign(deepCopy(NEW_PROJECTILE), saved.projectile || {}) });
+  setSpec(spec || presetEffect(PRESETS[1]), { record: false });
+  state.history = [];
+  setCam('side'); resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
