@@ -301,7 +301,17 @@ int main(int argc, char** argv)
         std::printf("Usage: EmberforgeExtract.exe \"C:\\...\\Data\" [patterns.txt] [locale]\n");
         return 1;
     }
-    fs::path data = argv[1];
+    // A path ending in a backslash before its closing quote ("...\\Data\\") reaches us with a stray quote.
+    std::string dataArg = argv[1];
+    while (!dataArg.empty() && (dataArg.back() == '"' || dataArg.back() == '\\' || dataArg.back() == '/'))
+        dataArg.pop_back();
+    fs::path data = dataArg;
+    if (!fs::is_directory(data))
+    {
+        std::printf("ERROR: \"%s\" is not a folder. Give the client's Data folder (the one holding common.MPQ).\n",
+            data.string().c_str());
+        return 1;
+    }
     std::vector<std::string> patterns;
     if (argc > 3)
         g_locale = Lower(argv[3]);
@@ -309,9 +319,18 @@ int main(int argc, char** argv)
     if (argc > 2 && std::string(argv[2]) != "-")
     {
         std::ifstream list(argv[2]);
+        if (!list)
+        {
+            std::printf("ERROR: could not open the list \"%s\". Is the repository up to date (git pull)?\n", argv[2]);
+            return 1;
+        }
         for (std::string line; std::getline(list, line);)
         {
             line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+            while (!line.empty() && (line.back() == ' ' || line.back() == '\t'))
+                line.pop_back();
+            if (line.size() >= 3 && uint8_t(line[0]) == 0xEF && uint8_t(line[1]) == 0xBB && uint8_t(line[2]) == 0xBF)
+                line.erase(0, 3);   // a UTF-8 mark at the start of the file
             if (!line.empty() && line[0] != '#')
                 patterns.push_back(line);
         }
@@ -326,7 +345,17 @@ int main(int argc, char** argv)
         if (entry.is_directory() && Lower(entry.path().filename().string()) == g_locale)
             folders.push_back(entry.path());
     folders.push_back(data);
-    std::printf("Language: %s\n", g_locale.c_str());
+    std::printf("Language: %s\n%zu patterns to look for\n", g_locale.c_str(), patterns.size());
+    std::size_t archiveCount = 0;
+    for (fs::path const& folder : folders)
+        archiveCount += Archives(folder, false).size();
+    if (!archiveCount)
+    {
+        std::printf("ERROR: no .MPQ archives in %s (or its %s folder). Give the client's Data folder.\n",
+            data.string().c_str(), g_locale.c_str());
+        return 1;
+    }
+    std::printf("%zu archives found\n", archiveCount);
 
     fs::path outRoot = fs::current_path() / "EmberforgeExtract";
     std::map<std::string, std::string> written;    // lowercase path -> archive it came from
@@ -357,6 +386,22 @@ int main(int argc, char** argv)
                 for (std::size_t priority = first; priority < patterns.size(); ++priority)
                 {
                     std::string const& pattern = patterns[priority];
+                    // An exact name is opened directly: an archive's file list may leave it out.
+                    if (pattern.find_first_of("*?") == std::string::npos)
+                    {
+                        std::string key = Lower(pattern);
+                        if (written.count(key) || !SFileHasFile(archive, pattern.c_str()))
+                            continue;
+                        std::string relative = pattern;
+                        std::replace(relative.begin(), relative.end(), '\\', '/');
+                        if (Write(archive, pattern, outRoot / fs::path(relative)))
+                        {
+                            written[key] = base.filename().string();
+                            extracted.push_back({ pattern, outRoot / fs::path(relative), priority });
+                            ++count;
+                        }
+                        continue;
+                    }
                     SFILE_FIND_DATA found;
                     HANDLE find = SFileFindFirstFile(archive, pattern.c_str(), &found, nullptr);
                     if (!find)
@@ -384,19 +429,33 @@ int main(int argc, char** argv)
         }
     };
     std::size_t done = 0, first = 0;
+    std::size_t asked = patterns.size();
     for (int round = 0; round < 4 && first < patterns.size(); ++round)
     {
         extract(first);
+        if (round == 0)
+        {
+            // What the list asked for that no archive has (a wrong name, or another client's file).
+            std::set<std::size_t> hit;
+            for (Extracted const& e : extracted)
+                hit.insert(e.priority);
+            std::size_t missing = 0;
+            for (std::size_t i = 0; i < asked; ++i)
+                if (!hit.count(i) && missing++ < 30)
+                    std::printf("  not found: %s\n", patterns[i].c_str());
+            if (missing)
+                std::printf("%zu of the list's %zu patterns matched nothing.\n", missing, asked);
+        }
         first = patterns.size();
         // What the models just written need, not yet written: the next pass's patterns.
-        std::set<std::string> asked;
+        std::set<std::string> needs;
         for (std::size_t i = done; i < extracted.size(); ++i)
         {
             std::string name = extracted[i].name;
             if (Lower(fs::path(name).extension().string()) != ".m2")
                 continue;
             for (std::string const& need : ModelNeeds(extracted[i].path, name))
-                if (!written.count(Lower(need)) && asked.insert(Lower(need)).second)
+                if (!written.count(Lower(need)) && needs.insert(Lower(need)).second)
                     patterns.push_back(need);
         }
         done = extracted.size();
@@ -413,6 +472,11 @@ int main(int argc, char** argv)
         std::string old = Lower(entry.path().filename().string());
         if (old.rfind("emberforgeextract-part", 0) == 0 && entry.path().extension() == ".zip")
             fs::remove(entry.path());
+    }
+    if (extracted.empty())
+    {
+        std::printf("\nNothing was found: no file matched the list. Send this window's text to see why.\n");
+        return 1;
     }
     std::ofstream manifest(zips / "manifest.txt");
     {
