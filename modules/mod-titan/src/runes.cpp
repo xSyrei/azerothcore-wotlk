@@ -3067,7 +3067,10 @@ namespace
     {
         Position at = host->GetPosition();
         float radius = HasSunMarker(player, MOD_WIDE_BURST) ? WIDE_RADIUS : FRACTURE_RADIUS;
-        host->CastSpell(host, SPELL_FRACTURE_LOOK, true);
+        if (host->IsAlive())
+            host->CastSpell(host, SPELL_FRACTURE_LOOK, true);
+        else                                        // a host the frost spell killed: the burst shows on its body
+            player->CastSpell(host, SPELL_FRACTURE_LOOK, true);
         for (Unit* enemy : EnemiesIn(player, Circle(at, radius), FRACTURE_TARGETS))
         {
             float share = enemy == host && HasSunMarker(player, MOD_IMPLOSION) ? IMPLOSION : 1.0f;
@@ -3103,9 +3106,11 @@ namespace
 
     // A frost spell on a host: every shard in it shatters, 25% of the spell's damage each (the Hero's floor at
     // least). Chain Reaction: shards in other enemies within 10 yards shatter too, at half (once, no further chain).
-    void Shatter(Player* player, Unit* host, float frost, bool chained = false)
+    // held: the shards the host held as the spell struck (a killing blow takes them with its auras before the spell's
+    // after-hit: they still shatter).
+    void Shatter(Player* player, Unit* host, float frost, bool chained = false, uint8 held = 0)
     {
-        uint8 shards = Shards(player, host);
+        uint8 shards = std::max(Shards(player, host), held);
         if (!shards)
             return;
         host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
@@ -6739,8 +6744,17 @@ class spell_titan_rune_shattered_sun : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_shattered_sun);
 
-    // A frost spell shatters the target's shards; a fire spell embeds one (Wildfire: Fireball and Pyroblast two;
-    // Spreading Sun: they also embed one in 2 more enemies within 8 yards).
+    // The target's shards as the spell strikes, before its damage (a killing blow removes them with its auras).
+    void Count(SpellMissInfo /*missInfo*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        _held = player && target ? Shards(player, target) : 0;
+    }
+
+    // A frost spell shatters the target's shards (those it held as it struck too, if the spell killed it); a fire
+    // spell embeds one (Wildfire: Fireball and Pyroblast two; Spreading Sun: they also embed one in 2 more enemies
+    // within 8 yards).
     void Strike()
     {
         Player* player = GetCaster()->ToPlayer();
@@ -6751,7 +6765,7 @@ class spell_titan_rune_shattered_sun : public SpellScript
         if (first == SPELL_FROSTBOLT || first == SPELL_ICE_LANCE || first == SPELL_FROST_NOVA
             || first == SPELL_CONE_OF_COLD)
         {
-            Shatter(player, target, float(std::max(0, GetHitDamage())));
+            Shatter(player, target, float(std::max(0, GetHitDamage())), false, _held);
             return;
         }
         if (!target->IsAlive())
@@ -6771,8 +6785,12 @@ class spell_titan_rune_shattered_sun : public SpellScript
 
     void Register() override
     {
+        BeforeHit += BeforeSpellHitFn(spell_titan_rune_shattered_sun::Count);
         AfterHit += SpellHitFn(spell_titan_rune_shattered_sun::Strike);
     }
+
+private:
+    uint8 _held = 0;
 };
 
 // The runes' damage over time (Grave Pestilence, Bloodletting, Hollow Flay): each second its kept tick, dealt as

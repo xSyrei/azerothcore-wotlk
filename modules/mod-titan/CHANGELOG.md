@@ -18,6 +18,17 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Heroes playing with ElvUI see all their resources: Rage and Energy bars and the six runes under ElvUI's player
   frame, in ElvUI's look (move them with /moveui, "Hero Resources"), and their combo points on ElvUI's target
   frame combo bar.
+- ElvUI's config (/ec) has an Emberforge page: the Hero Resources bars (width, heights, spacing, text and its size,
+  which resources show), the target frame's combo bar (detach it to move it on its own), and combo points on the
+  target's nameplate. Move frames opens ElvUI's movers.
+
+### Fixes
+
+- Combo points no longer vanish a few seconds after an enemy dodges. A dodge readied Overpower by granting a combo
+  point and then cleared all of them; it now readies Overpower on its own, and Overpower no longer spends combo
+  points.
+- Rune of the Shattered Sun: a Frostbolt (or any frost spell) that kills a target holding Sunshards still shatters
+  them.
 
 ## 2026-11-16: Legendary Rune balance and bug fixes
 
