@@ -67,6 +67,11 @@ EmberforgeCombo = {}
 
 local known = {}
 EmberforgeResources = { known = known, POWER_RUNES = 5, BARS = { { power = 1, token = "RAGE" }, { power = 3, token = "ENERGY" } } }
+local pluginCallback
+function LibStub() return { RegisterPlugin = function(_, _, callback) pluginCallback = callback end } end
+E.db = { unitframe = { units = { target = { combobar = { enable = true, detachFromFrame = false } } } },
+    nameplates = { units = { TARGET = { comboPoints = { enable = false, yOffset = 0 } } } } }
+function E:ToggleMoveMode() self.moving = true end
 dofile(DIR .. "ElvUI.lua")
 local listener
 for _, f in ipairs(frames) do if f.events.PLAYER_ENTERING_WORLD then listener = f end end
@@ -79,7 +84,7 @@ check(holder and E.mover == "EmberforgeResourcesMover", "the bars sit on an ElvU
 check(holder.width == 240, "as wide as ElvUI's player frame")
 local shown = {}
 for _, f in ipairs(frames) do if f.min == 0 and f.max == 100 and f.shown then shown[#shown + 1] = f end end
-check(#shown == 1 and shown[1].value == 80 and shown[1].text.text == 80, "Energy shown with its value, Rage hidden")
+check(#shown == 1 and shown[1].value == 80 and shown[1].text.text == "80", "Energy shown with its value, Rage hidden")
 -- Rage known, runes known: Rage, Energy and the six runes; rune 1 half back
 known[1], known[5] = true, true
 listener.scripts.OnUpdate(listener, 0.2)
@@ -103,6 +108,41 @@ check(target.ComboPoints.shown and lit == 3, "3 combo points lit")
 heroPoints = 0
 EmberforgeCombo.OnChange(0)
 check(not target.ComboPoints.shown, "none: the bar hides (Auto Hide)")
+
+-- The settings: no Energy, percent text, a fixed width, taller bars
+EmberforgeResourcesDB.elvui.energy = false
+EmberforgeResourcesDB.elvui.rage = true
+power[1] = 25
+EmberforgeResourcesDB.elvui.textFormat = "percent"
+EmberforgeResourcesDB.elvui.width = 300
+EmberforgeResourcesDB.elvui.barHeight = 20
+listener.scripts.OnUpdate(listener, 0.2)
+local rageBar
+for _, f in ipairs(frames) do if f.shown and f.value == 25 then rageBar = f end end
+check(rageBar and rageBar.text.text == "25%" and rageBar.width == 300 and rageBar.height == 20,
+    "Rage as a percent, 300 wide, 20 high")
+local energyShown = false
+for _, f in ipairs(frames) do if f.shown and f.value == 80 then energyShown = true end end
+check(not energyShown, "Energy turned off")
+EmberforgeResourcesDB.elvui.enable = false
+listener.scripts.OnUpdate(listener, 0.2)
+check(not holder.shown, "the bars turned off")
+
+-- ElvUI's config: the Emberforge page
+E.Options = { args = {} }
+check(pluginCallback ~= nil, "registered as an ElvUI plugin")
+pluginCallback()
+local page = E.Options.args.emberforge
+check(page and page.args.resources and page.args.combo and page.args.nameplates, "the Emberforge page: three sections")
+page.args.combo.args.detachFromFrame.set(nil, true)
+check(E.db.unitframe.units.target.combobar.detachFromFrame == true, "Detach from frame sets ElvUI's combo bar")
+page.args.nameplates.args.enable.set(nil, true)
+check(E.db.nameplates.units.TARGET.comboPoints.enable == true, "nameplate combo points switched on")
+page.args.resources.args.barHeight.set(nil, 16)
+check(EmberforgeResourcesDB.elvui.barHeight == 16 and page.args.resources.args.barHeight.get() == 16,
+    "bar height kept per character")
+page.args.move.func()
+check(E.moving, "Move frames opens ElvUI's movers")
 
 print(failures == 0 and "All checks passed" or (failures .. " check(s) failed"))
 os.exit(failures == 0 and 0 or 1)
