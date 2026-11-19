@@ -395,7 +395,8 @@ const GameEngine = (() => {
         const q = this.parts[i], f = q.age / q.life;
         const s = fblock(p.scale, f, [1, 1]), rgb = fblock(p.color, f, [255, 255, 255]), a = fblock(p.alpha, f, 1);
         const sx = s[0] * q.k * scaleK, sy = s[1] * q.ky * scaleK;        // the game's scale is the half-size
-        if (p.headTail === 1 && q.vel.lengthSq() > 1e-6) {       // a tail: stretched along its motion
+        // A tail, or a streak (flag 0x40000, as Blizzard's sparks): stretched along its motion.
+        if ((p.headTail === 1 || p.flags & 0x40000) && q.vel.lengthSq() > 1e-6) {
           U.copy(q.vel).normalize().multiplyScalar(Math.max(sy, q.vel.length() * (p.tailLength || 0.1) * 0.5));
           R.crossVectors(U, camF).normalize().multiplyScalar(sx);
         } else {
