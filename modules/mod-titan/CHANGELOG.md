@@ -22,6 +22,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   which resources show), the target frame's combo bar (detach it to move it on its own), and combo points on the
   target's nameplate. Move frames opens ElvUI's movers.
 
+### Talent glyphs
+
+- A talent's glyph is now part of the talent: knowing Vigor gives Glyph of Vigor's 10 extra maximum Energy, Aimed
+  Shot has Glyph of Aimed Shot's shorter cooldown, and so on for 75 talents of every class. Their tooltips say so.
+  Glyphs that trade something away (Insect Swarm, Avenger's Shield, Blast Wave, Thunderstorm, Typhoon) are left out.
+
 ### Fixes
 
 - Combo points no longer vanish a few seconds after an enemy dodges. A dodge readied Overpower by granting a combo

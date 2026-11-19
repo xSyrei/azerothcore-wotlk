@@ -14,7 +14,9 @@ Heroes use **every class resource**: mana, rage, energy and runes, with combo po
 on any target. `src/hero_resources.cpp` turns these on through AzerothCore's classless hooks
 (`OnPlayerHasActivePowerType`, and `OnPlayerIsClass` for ability mechanics only). Starting zone
 and stats still follow the real base class. The `Emberforge_Resources` addon (in
-`client-patch/AddOns/`) shows the extra bars in game and colors Heroes ember orange. With ElvUI (which hides the
+`client-patch/AddOns/`) shows the extra bars in game and colors Heroes ember orange. A talent's glyph is part of the
+talent (`src/talent_glyphs.cpp`: its effect, a hidden passive, rides on a Hero who knows any rank; the tooltip says so,
+`patch_spells.bake_talent_glyphs`): a Hero, a Paladin to the game, could inscribe no other class's glyphs. With ElvUI (which hides the
 player frame they hang from) its `ElvUI.lua` shows them, ElvUI-styled, under ElvUF_Player on a mover ("Hero
 Resources"), and lights ElvUI's target combo bar with the Hero's combo points (its Rogue/Druid check overridden).
 

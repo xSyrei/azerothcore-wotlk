@@ -1410,6 +1410,116 @@ def overpower_reactive(spells):
         spells.rows[key] = tuple(row)
 
 
+# Talent glyphs baked into their talents (src/talent_glyphs.cpp gives a Hero who knows the talent its glyph's effect):
+# each rank's tooltip ends with the glyph's line. First rank -> (glyph effect, every rank). Generated from Spell.dbc,
+# Talent.dbc and TalentTab.dbc: every inscribable glyph named after a talent of its own class, less those that trade
+# something away (Insect Swarm, Avenger's Shield, Blast Wave, Thunderstorm, Typhoon).
+TALENT_GLYPHS = {
+    13750: (56808, [13750]),   # Adrenaline Rush
+    19434: (56824, [19434]),   # Aimed Shot
+    44425: (63092, [44425]),   # Arcane Barrage
+    12042: (56381, [12042]),   # Arcane Power
+    53563: (63218, [53563]),   # Beacon of Light
+    50334: (62969, [50334]),   # Berserk
+    19574: (56830, [19574]),   # Bestial Wrath
+    13877: (56818, [13877]),   # Blade Flurry
+    46924: (63324, [46924]),   # Bladestorm
+    23881: (58369, [23881]),   # Bloodthirst
+    49222: (58673, [49222]),   # Bone Shield
+    50796: (63304, [50796]),   # Chaos Bolt
+    53209: (63065, [53209]),   # Chimera Shot
+    34861: (55675, [34861]),   # Circle of Healing
+    17962: (56235, [17962]),   # Conflagrate
+    49158: (59307, [49158]),   # Corpse Explosion
+    35395: (54927, [35395]),   # Crusader Strike
+    49028: (63330, [49028]),   # Dancing Rune Weapon
+    44572: (63090, [44572]),   # Deep Freeze
+    20243: (58388, [20243]),   # Devastate
+    47585: (63229, [47585]),   # Dispersion
+    53385: (63220, [53385]),   # Divine Storm
+    974: (63279, [974]),   # Earth Shield
+    16166: (55452, [16166]),   # Elemental Mastery
+    53301: (63066, [53301]),   # Explosive Shot
+    51533: (63271, [51533]),   # Feral Spirit
+    49143: (58647, [49143]),   # Frost Strike
+    14278: (56814, [14278]),   # Ghostly Strike
+    53595: (63219, [53595]),   # Hammer of the Righteous
+    48181: (63302, [48181]),   # Haunt
+    55050: (58616, [55050]),   # Heart Strike
+    16511: (56807, [16511]),   # Hemorrhage
+    20473: (63224, [20473]),   # Holy Shock
+    49184: (63335, [49184]),   # Howling Blast
+    51662: (63249, [51662]),   # Hunger For Blood
+    49203: (63331, [49203]),   # Hungering Cold
+    11426: (63095, [11426]),   # Ice Barrier
+    12472: (56374, [12472]),   # Icy Veins
+    51690: (63252, [51690]),   # Killing Spree
+    12975: (58376, [12975]),   # Last Stand
+    60103: (55444, [60103]),   # Lava Lash
+    724: (55673, [724]),   # Lightwell
+    44457: (63091, [44457]),   # Living Bomb
+    59672: (63303, [59672]),   # Metamorphosis
+    15407: (55687, [15407]),   # Mind Flay
+    12294: (58368, [12294]),   # Mortal Strike
+    1329: (63268, [1329]),   # Mutilate
+    33206: (63248, [33206]),   # Pain Suppression
+    47540: (63235, [47540]),   # Penance
+    14185: (56819, [14185]),   # Preparation
+    61295: (63273, [61295]),   # Riptide
+    48982: (59327, [48982]),   # Rune Tap
+    19503: (63069, [19503]),   # Scatter Shot
+    20375: (54925, [20375]),   # Seal of Command
+    51713: (63253, [51713]),   # Shadow Dance
+    17877: (56229, [17877]),   # Shadowburn
+    46968: (63325, [46968]),   # Shockwave
+    63108: (56216, [63108]),   # Siphon Life
+    19028: (63312, [19028]),   # Soul Link
+    20711: (55685, [20711]),   # Spirit of Redemption
+    31785: (54924, [31785, 33776]),   # Spiritual Attunement
+    48505: (54828, [48505]),   # Starfall
+    17364: (55446, [17364]),   # Stormstrike
+    61336: (65243, [61336]),   # Survival Instincts
+    12328: (58384, [12328]),   # Sweeping Strikes
+    18562: (54824, [18562]),   # Swiftmend
+    30706: (63280, [30706]),   # Totem of Wrath
+    19506: (56842, [19506]),   # Trueshot Aura
+    51271: (58635, [51271]),   # Unbreakable Armor
+    49194: (63332, [49194]),   # Unholy Blight
+    30108: (56233, [30108]),   # Unstable Affliction
+    55233: (58676, [55233]),   # Vampiric Blood
+    14983: (56805, [14983]),   # Vigor
+    48438: (62970, [48438]),   # Wild Growth
+    19386: (56848, [19386]),   # Wyvern Sting
+}
+GLYPH_COLOR = '|cff71d5ff'
+
+
+def bake_talent_glyphs(spells):
+    """Each talent rank's description gains its glyph's: 'Glyph of Vigor: Vigor grants an additional 10 maximum
+    energy.' The glyph's own tokens ($s1, ${$m1/-1000}, $d) are pointed at the glyph's spell ($56805s1), the talent's
+    tooltip being the one that shows them."""
+    baked = 0
+    for glyph, ranks in TALENT_GLYPHS.values():
+        source = spells.rows.get(glyph)
+        if not source:
+            continue
+        text = re.sub(r'\$(?![0-9{])([smdotax])(\d?)', lambda m: f'${glyph}{m.group(1)}{m.group(2)}',
+                      spells.string(source[DESCRIPTION]))
+        line = f'{GLYPH_COLOR}{spells.string(source[NAME])}:|r {text}'
+        for rank in ranks:
+            row = spells.rows.get(rank)
+            if not row:
+                continue
+            row = list(row)
+            current = spells.string(row[DESCRIPTION])
+            if line in current:
+                continue
+            row[DESCRIPTION] = spells.add_string(f'{current}\n\n{line}' if current else line)
+            spells.rows[rank] = tuple(row)
+            baked += 1
+    return baked
+
+
 THUNDER_CLAP = (6343, 8198, 8204, 8205, 11580, 11581, 25264, 47501, 47502)
 SINISTER_STRIKE = (1752, 1757, 1758, 1759, 1760, 8621, 11293, 11294, 26861, 26862, 48637, 48638)
 HEARTHSTONE = 8690
@@ -1590,6 +1700,7 @@ def main():
     rune_usability(spells)
     hero_tuning(spells)
     overpower_reactive(spells)
+    bake_talent_glyphs(spells)
     # unholy_presence_gcd is no longer run: the Emberforge engine applies every class's spell modifiers on the
     # client (engine/src/spellmods.cpp), Unholy Presence's 0.5 sec off the Death Knight's global cooldown included.
     write_finishers(spells)
