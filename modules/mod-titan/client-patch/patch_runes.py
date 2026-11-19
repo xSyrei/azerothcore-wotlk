@@ -1766,6 +1766,37 @@ for _spell in SPELLS:
     if _spell['id'] in (91464, 91466, 91467, 91469, 91471, 91473):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
 ICONS += ['Spell_Fire_FlameShock', 'Spell_Fire_SealOfFire', 'Spell_Frost_FrostArmor', 'Ability_Druid_Rake']
+# The empowered Swipes' looks, designed in the Emberforge Effect Suite (spells/DRUID_CatSwipe: Swipe (Fire Cat),
+# Swipe (Frost Cat)): their flames and bits on each enemy Fiery Explosion or Glacial Burst hits (slot 'chest'), and
+# their sparks at the cat's own feet with the impact sound (slot 'caster', on the look the cat casts on itself). The
+# Swipe's own arc (SwipeCaster) plays as ever; its tint in the Suite is a Game model layer, not carried yet.
+EFFECTS.update({
+    'FieryExplosionImpact': {'model': 'DRUID_FieryExplosionImpact', 'effect': 7173, 'shape': 'suite', 'textures': (),
+                             'options': {'spec': 'DRUID_CatSwipe/Swipe_Fire_Cat.json'}},
+    'GlacialBurstImpact': {'model': 'DRUID_GlacialBurstImpact', 'effect': 7174, 'shape': 'suite', 'textures': (),
+                           'options': {'spec': 'DRUID_CatSwipe/Swipe_Frost_Cat.json'}},
+    'FieryExplosionCaster': {'model': 'DRUID_FieryExplosionCaster', 'effect': 7175, 'shape': 'suite', 'textures': (),
+                             'options': {'spec': 'DRUID_CatSwipe/Swipe_Fire_Cat.json', 'slot': 'caster'}},
+    'GlacialBurstCaster': {'model': 'DRUID_GlacialBurstCaster', 'effect': 7176, 'shape': 'suite', 'textures': (),
+                           'options': {'spec': 'DRUID_CatSwipe/Swipe_Frost_Cat.json', 'slot': 'caster'}},
+})
+SWIPE_IMPACT_SOUND = 3134                      # the Suite effects' impact sound (SoundEntries)
+_LOOK_CLEAR = ('precast', 'cast', 'state', 'statedone', 'area')
+VISUALS.update({
+    'FieryExplosionHit': {'copy': 253, 'id': 16803, 'clear': _LOOK_CLEAR, 'kits': {
+        'impact': (15742, {KIT_CHEST: 'FieryExplosionImpact', 'sound': None})}},
+    'GlacialBurstHit': {'copy': 253, 'id': 16804, 'clear': _LOOK_CLEAR, 'kits': {
+        'impact': (15743, {KIT_CHEST: 'GlacialBurstImpact', 'sound': None})}},
+    'FieryExplosionCast': {'copy': 253, 'id': 16805, 'clear': _LOOK_CLEAR, 'kits': {
+        'impact': (15744, {KIT_BASE: 'FieryExplosionCaster', KIT_CHEST: 0, 'sound': SWIPE_IMPACT_SOUND})}},
+    'GlacialBurstCast': {'copy': 253, 'id': 16806, 'clear': _LOOK_CLEAR, 'kits': {
+        'impact': (15745, {KIT_BASE: 'GlacialBurstCaster', KIT_CHEST: 0, 'sound': SWIPE_IMPACT_SOUND})}},
+})
+for _spell in SPELLS:
+    _look = {91467: 'FieryExplosionHit', 91473: 'GlacialBurstHit', 91475: 'FieryExplosionCast',
+             91476: 'GlacialBurstCast'}.get(_spell['id'])
+    if _look:
+        _spell['visual'] = _look
 # Frozen Trail's patch: Frost Trap's frost on the ground.
 _trail = ground(91449, 'Frozen Trail', 'Spell_Frost_FrostNova', None, DURATION_4S)
 _trail.pop('visual')

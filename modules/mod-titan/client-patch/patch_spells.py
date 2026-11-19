@@ -1101,7 +1101,7 @@ def build_visuals(source, out):
                     kit[KIT_PROC_PARAMS.start:KIT_PROC_PARAMS.stop] = [0] * len(KIT_PROC_PARAMS)
                     continue
                 if where == 'sound':
-                    kit[KIT_SOUND] = SOUNDS[effect]['id'] if effect else 0
+                    kit[KIT_SOUND] = SOUNDS[effect]['id'] if isinstance(effect, str) else (effect or 0)  # or a game id
                     continue
                 if where == 'beam':     # a beam to the channel's target: character effect 0, its chain effect
                     chain = CHAIN_EFFECTS[effect]['id'] if isinstance(effect, str) else effect

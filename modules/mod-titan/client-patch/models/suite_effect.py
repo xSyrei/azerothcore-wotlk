@@ -37,7 +37,10 @@ BUILTIN = Path(__file__).resolve().parent.parent / 'spells' / 'suite'
 FIXED = 0x7FFF
 FRONT = 0.3
 SLOTS = {'chest': ({'target.chest', 'impact'}, ('sprite', 'particles')),
-         'base': ({'target.base'}, ('ground', 'sprite', 'particles'))}
+         'base': ({'target.base'}, ('ground', 'sprite', 'particles')),
+         # On the caster's own feet (a look the caster casts on itself, as the cat's empowered Swipe): its layers
+         # at the Hero's feet, fired on cast too (their delay counted from the effect's Impact at).
+         'caster': ({'caster.base'}, ('ground', 'sprite', 'particles'))}
 SAMPLES = 12                    # keys over a layer's time (its size, colors and fades)
 PARTICLE_FLAGS = 0x40029        # as Blizzard's impact sparks (Ice_ImpactDD_Med_Chest)
 PARTICLE_XY_QUAD = 0x1000       # Lock to position: quads across the emitter's aim, not facing the camera
@@ -65,7 +68,12 @@ def _rotate(q, v):
     return (x, y, z)
 
 
+_ON_CASTER = [False]           # the model being written goes on the caster (it faces the stage's +X), not the target
+
+
 def _to_model(v):
+    if _ON_CASTER[0]:
+        return (v[0], -v[2], v[1])
     return (-v[0], v[2], v[1])
 
 
@@ -124,6 +132,14 @@ def _z_turn(degrees):
 
 
 def suite_effect(out_dir, name, client_dir, spec, slot='chest'):
+    _ON_CASTER[0] = slot == 'caster'
+    try:
+        return _suite_effect(out_dir, name, client_dir, spec, slot)
+    finally:
+        _ON_CASTER[0] = False
+
+
+def _suite_effect(out_dir, name, client_dir, spec, slot):
     """spec: the Suite's .json (a path). Writes <name>.m2, <name>00.skin and its BLPs into out_dir; returns their
     names. Called as an EFFECTS entry's builder (shape 'suite', options {'spec': ..., 'slot': 'chest' or 'base'})."""
     out_dir = Path(out_dir)
@@ -139,10 +155,13 @@ def suite_effect(out_dir, name, client_dir, spec, slot='chest'):
         if layer.get('enabled') is False or layer['type'] == 'sound':
             continue
         kind = layer['type']
-        if layer.get('trigger') != 'impact' or layer.get('anchor') not in anchors or kind not in kinds:
+        triggers = ('impact', 'cast') if slot == 'caster' else ('impact',)
+        if layer.get('trigger') not in triggers or layer.get('anchor') not in anchors or kind not in kinds:
             print(f'  {name} ({slot}): "{layer.get("name")}" ({kind}, {layer.get("trigger")}, {layer.get("anchor")}) '
                   f'left out: this model takes the impact {", ".join(kinds)} at {", ".join(sorted(anchors))}')
             continue
+        if layer.get('trigger') == 'cast':                  # the look is cast at the hit: time from Impact at
+            layer = {**layer, 'delay': max(0.0, (layer.get('delay') or 0) - (data.get('impactAt') or 0))}
         layers.append(layer)
     if not layers:
         raise ValueError(f'{spec}: no impact layers for the {slot}')

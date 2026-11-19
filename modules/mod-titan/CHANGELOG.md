@@ -39,6 +39,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   with half a Cinder Wound). Frost Shock: Claw becomes Frostfang Strike (a second enemy, both frostbitten and
   slowed); Swipe becomes Glacial Burst (Frost damage to up to 8 enemies, slowed 50%, every Frozen Prey among them
   shattered).
+- Fiery Explosion and Glacial Burst look new: flames (or frost) burst on every enemy the empowered Swipe hits, and
+  sparks fly from the cat, with an impact sound.
 - The spells these runes reach into say so on their tooltips: Flame Shock, Fire Blast, Claw, Swipe, Rake and Rip
   with Ember's Wrath bound; Frost Shock, Icy Touch, Claw, Swipe, Shred and Mangle with Whitefang.
 - With either rune bound, your Cat Form takes a new look: a Flame Cat wreathed in fire (Ember's Wrath) or an Ice
