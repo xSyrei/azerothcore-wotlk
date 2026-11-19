@@ -12482,7 +12482,13 @@ void Unit::ProcSkillsAndReactives(bool isVictim, Unit* target, uint32 procFlag, 
                 {
                     if (IsClass(CLASS_WARRIOR, CLASS_CONTEXT_ABILITY_REACTIVE))
                     {
-                        AddComboPoints(target, 1);
+                        // Emberforge: a player's Overpower is readied by an aura state (6, unused by the game; the
+                        // spell asks for it, mod-titan), not a combo point: their combo points are their own, built
+                        // by their combo abilities, and no longer cleared when the chance to Overpower passes.
+                        if (IsPlayer())
+                            ModifyAuraState(AuraStateType(6), true);
+                        else
+                            AddComboPoints(target, 1);
                         StartReactiveTimer(REACTIVE_OVERPOWER);
                     }
                 }
@@ -13019,7 +13025,7 @@ void Unit::ClearAllReactives()
     if (IsClass(CLASS_HUNTER, CLASS_CONTEXT_ABILITY_REACTIVE) && HasAuraState(AURA_STATE_HUNTER_PARRY))
         ModifyAuraState(AURA_STATE_HUNTER_PARRY, false);
     if (IsClass(CLASS_WARRIOR, CLASS_CONTEXT_ABILITY_REACTIVE) && IsPlayer())
-        ClearComboPoints();
+        ModifyAuraState(AuraStateType(6), false);   // Emberforge: Overpower's aura state, not the combo points
 }
 
 void Unit::UpdateReactives(uint32 p_time)
@@ -13048,7 +13054,11 @@ void Unit::UpdateReactives(uint32 p_time)
                 case REACTIVE_OVERPOWER:
                     if (IsClass(CLASS_WARRIOR, CLASS_CONTEXT_ABILITY_REACTIVE))
                     {
-                        ClearComboPoints();
+                        // Emberforge: a player's Overpower chance passes (its aura state); the combo points stay
+                        if (IsPlayer())
+                            ModifyAuraState(AuraStateType(6), false);
+                        else
+                            ClearComboPoints();
                     }
                     break;
                 case REACTIVE_WOLVERINE_BITE:

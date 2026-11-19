@@ -14,7 +14,6 @@ EmberforgeComboFinishers = {
     ["Life Burst"] = true,
     ["Lock Jaw"] = true,
     ["Maim"] = true,
-    ["Overpower"] = true,
     ["Relentless Strikes"] = true,
     ["Revealed Flaw"] = true,
     ["Rip"] = true,
@@ -27,7 +26,6 @@ EmberforgeComboFinishers = {
     ["Spirit Bomb"] = true,
     ["Stomp"] = true,
     ["Test Finishing"] = true,
-    ["Test Overpower"] = true,
     ["Test Rip"] = true,
     ["Wolverine Bite"] = true,
 }

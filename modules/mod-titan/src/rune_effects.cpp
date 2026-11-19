@@ -80,6 +80,10 @@ namespace
         RUNE_TIGERS_CLAW, RUNE_BLACKOUT_COMBO, RUNE_MISTWEAVERS_GRACE, RUNE_WHIRLING_CRANE,
     };
 
+    // Overpower's chance after a dodge, for players (the core's Unit::ProcDamageAndSpell): a game aura state it leaves
+    // unused, in place of the combo point it gave before.
+    constexpr AuraStateType AURA_STATE_OVERPOWER = AuraStateType(6);
+
     // First ranks.
     enum Spells : uint32
     {
@@ -459,6 +463,12 @@ public:
         {
             case SPELL_REVENGE:
                 spellInfo->CasterAuraState = 0;
+                break;
+            // Overpower is readied by the target's dodge as an aura state (6, the core's Unit::ProcDamageAndSpell
+            // for players), not a combo point: no longer a finishing move, so it needs and spends none.
+            case SPELL_OVERPOWER:
+                spellInfo->AttributesEx &= ~(SPELL_ATTR1_FINISHING_MOVE_DAMAGE | SPELL_ATTR1_FINISHING_MOVE_DURATION);
+                spellInfo->CasterAuraState = AURA_STATE_OVERPOWER;
                 break;
             case SPELL_EXECUTE:
             case SPELL_HAMMER_OF_WRATH:
@@ -1241,8 +1251,22 @@ public:
     }
 };
 
+// Overpower spends its chance (the aura state the dodge gave), as it spent the combo point before.
+class titan_overpower_spend : public PlayerScript
+{
+public:
+    titan_overpower_spend() : PlayerScript("titan_overpower_spend", { PLAYERHOOK_ON_SPELL_CAST }) { }
+
+    void OnPlayerSpellCast(Player* player, Spell* spell, bool /*skipCheck*/) override
+    {
+        if (First(spell->GetSpellInfo()->Id) == SPELL_OVERPOWER)
+            player->ModifyAuraState(AURA_STATE_OVERPOWER, false);
+    }
+};
+
 void AddSC_rune_effects()
 {
+    new titan_overpower_spend();
     new titan_rune_effects_checks();
     new titan_rune_effects_load();
     new titan_rune_effects_unit();
