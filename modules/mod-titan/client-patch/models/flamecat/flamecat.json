@@ -1,5 +1,5 @@
 {
-  "comment": "Written by hand (the export came without wow.export's meta data): geoset 0, the body, on flamecat_5152294 (opaque); geosets 1-15, the flame wisps, on flamecat_5152295 (alpha blended, unlit, two-sided). The Ice Cat (IceCat) is the same model with the blue textures in ice/.",
+  "comment": "Written by hand (the export came without wow.export's meta data): geoset 0, the body, on flamecat_5152294 (opaque); geosets 1-15, the flame wisps (additive, unlit, two-sided), two layers of flamecat_5152295 as Kil'jaeden's fire: its soft glow bars on UV set 1 as the mask, its flame strips on UV set 2 scrolling up (scroll: texture heights a second). The Ice Cat (IceCat) is the same model with the blue textures in ice/.",
   "textures": [
     {
       "fileNameInternal": "creature/flamecat/flamecat_5152294.blp"
@@ -36,105 +36,315 @@
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 2,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 3,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 4,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 5,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 6,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 7,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 8,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 9,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 10,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 11,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 12,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 13,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 14,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       },
       {
         "skinSectionIndex": 15,
         "textureComboIndex": 1,
         "textureCount": 1,
         "materialIndex": 1,
-        "priority": 1
+        "priority": 1,
+        "layers": [
+          {
+            "texture": 1,
+            "uvSet": 0
+          },
+          {
+            "texture": 1,
+            "uvSet": 1,
+            "scroll": [
+              0,
+              0.6
+            ]
+          }
+        ]
       }
     ]
   },

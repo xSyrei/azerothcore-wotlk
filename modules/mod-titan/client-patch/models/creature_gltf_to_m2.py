@@ -31,6 +31,7 @@ from wowexport_to_m2 import Blob
 
 M2_VERSION = 264
 NONE16 = 0xFFFF
+TEXTURE_WRAP_XY = 0x3                   # M2Texture flags: wrap X and Y (a scrolling texture)
 SEQUENCE_IN_MODEL = 0x20
 # Blizzard's sequence flags by animation, as on its character models: 0x1 plays once (without it the client
 # treats a sequence as a loop, and running replaces it), 0x2 also holds the last frame (Death).
@@ -386,15 +387,29 @@ def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None,
     if bone_count > 255:
         raise ValueError(f'{bone_count} bones: M2 vertices index at most 256')
 
-    # Texture units: first texture of each; a scrolling fel layer keeps its tattoo mask on UV set 2.
+    # Texture units: each is one or more layers (texture, UV set, scroll). By default its first texture on UV set 1
+    # (a scrolling fel layer keeps its tattoo mask on UV set 2); the meta's own 'layers' (each {'texture': index of
+    # textures, 'uvSet': 0 or 1, 'scroll': [u, v]}) make a two-texture batch as Blizzard's: Kil'jaeden's fire, a
+    # scrolling texture under a still mask, each layer on its own UV set. A 'scroll' is texture widths a second.
     units = []
     for unit in meta['skin']['textureUnits']:
         combo = meta['textureCombos'][unit['textureComboIndex']:unit['textureComboIndex'] + unit['textureCount']]
-        texture, uv_set = texture_files[combo[0]], 0
-        if 'scrollfx' in texture and len(combo) > 1:
-            texture, uv_set = texture_files[combo[1]], 1
-        units.append((unit['skinSectionIndex'], texture, unit['materialIndex'], uv_set, unit['priority']))
-    used_textures = sorted({u[1] for u in units}, key=lambda t: texture_files.index(t))
+        if 'layers' in unit:
+            layers = tuple((texture_files[layer['texture']], layer.get('uvSet', 0), tuple(layer.get('scroll') or ()))
+                           for layer in unit['layers'])
+        else:
+            texture, uv_set = texture_files[combo[0]], 0
+            if 'scrollfx' in texture and len(combo) > 1:
+                texture, uv_set = texture_files[combo[1]], 1
+            layers = ((texture, unit.get('uvSet', uv_set), tuple(unit.get('scroll') or ())),)
+        if len(layers) > 2 or [uv for _, uv, _ in layers] not in ([0], [1], [0, 1]):
+            raise ValueError(f'texture unit {unit}: one layer, or two on UV sets 1 then 2')
+        units.append((unit['skinSectionIndex'], layers, unit['materialIndex'], unit['priority']))
+    used_textures = sorted({t for u in units for t, _, _ in u[1]}, key=lambda t: texture_files.index(t))
+    # Scrolling layers: their textures wrap, and each distinct scroll is a texture transform looping on its own global
+    # sequence (one whole texture width or height a loop).
+    scrolls = sorted({sc for u in units for _, _, sc in u[1] if sc})
+    wrapping = {t for u in units for t, _, sc in u[1] if sc}
     if texture_name is None:
         for texture in used_textures:
             with Image.open(Path(texture_dir or Path(export_dir) / 'textures') / f'{texture}.png') as image:
@@ -556,19 +571,50 @@ def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None,
     vertices_ref = blob.add(vertex_data, len(positions))
 
     texture_data = b''
-    for path in texture_paths:
+    for path, texture in zip(texture_paths, used_textures):
         ref = blob.add(path.encode() + b'\0', len(path) + 1)
-        texture_data += struct.pack('<II2I', 0, 0, *ref)
+        texture_data += struct.pack('<II2I', 0, TEXTURE_WRAP_XY if texture in wrapping else 0, *ref)
     textures_ref = blob.add(texture_data, len(texture_paths))
     weights_ref = blob.add(struct.pack('<HH2I2I', 0, NONE16, *blob.array('II', [blob.array('I', [0])]),
                                        *blob.array('II', [blob.array('h', [0x7FFF])])), 1)
     replaceable_ref = blob.array('h', [-1])
     materials_ref = blob.array('HH', [(m['flags'], m['blendingMode']) for m in meta['materials']])
     combos_ref = blob.array('H', bone_combos)
-    texture_lookup_ref = blob.array('H', list(range(len(texture_paths))))
-    uv_lookup_ref = blob.array('h', [0, 1])                # texture coordinate combos: UV set 1, UV set 2
-    transparency_lookup_ref = blob.array('H', [0])
-    transform_lookup_ref = blob.array('H', [NONE16])
+    # Lookups: a batch names the first of as many consecutive entries as it has layers.
+    texture_lookup, transform_lookup, unit_combos = list(range(len(texture_paths))), [NONE16], {}
+    for _, layers, _, _ in units:
+        textures = [used_textures.index(t) for t, _, _ in layers]
+        transforms = [scrolls.index(sc) if sc else NONE16 for _, _, sc in layers]
+        if len(layers) == 1:
+            texture_at = textures[0]
+            transform_at = transform_lookup.index(transforms[0]) if transforms[0] in transform_lookup else None
+            if transform_at is None:
+                transform_at = len(transform_lookup)
+                transform_lookup.append(transforms[0])
+        else:
+            texture_at, transform_at = len(texture_lookup), len(transform_lookup)
+            texture_lookup += textures
+            transform_lookup += transforms
+        unit_combos[layers] = (texture_at, transform_at)
+    texture_lookup_ref = blob.array('H', texture_lookup)
+    uv_lookup_ref = blob.array('h', [0, 1])                # texture coordinate combos: UV set 1, UV set 2 (and both)
+    transparency_lookup_ref = blob.array('H', [0, 0])      # one or two layers at full weight
+    transform_lookup_ref = blob.array('H', transform_lookup)
+    periods, transform_data = [], b''
+    for index, (su, sv) in enumerate(scrolls):
+        period = int(round(1000 / max(abs(su), abs(sv))))
+        periods.append(period)
+        moved = (float(su) * period / 1000, float(sv) * period / 1000, 0.0)
+
+        def global_track(fmt, values, times=(0, period)):
+            stamps = blob.array('II', [blob.array('I', list(times))])
+            keys = blob.array('II', [blob.array(fmt, values)])
+            return struct.pack('<Hh2I2I', 1, index, *stamps, *keys)
+        transform_data += global_track('3f', [(0.0, 0.0, 0.0), moved])
+        transform_data += global_track('4f', [(0.0, 0.0, 0.0, 1.0)], (0,))
+        transform_data += global_track('3f', [(1.0, 1.0, 1.0)], (0,))
+    transforms_ref = blob.add(transform_data, len(scrolls)) if scrolls else (0, 0)
+    globals_ref = blob.array('I', periods) if periods else (0, 0)
 
     attachment_data = b''
     attachment_ids = []
@@ -591,12 +637,12 @@ def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None,
     collision_hi = meta['collisionBox']['max']
     header = struct.pack('<4sI', b'MD20', M2_VERSION)
     header += struct.pack('<2I', *name_ref) + struct.pack('<I', 0)          # name, global flags
-    header += struct.pack('<2I', 0, 0)                                      # global sequences
+    header += struct.pack('<2I', *globals_ref)                              # global sequences
     header += struct.pack('<2I', *sequences_ref) + struct.pack('<2I', *lookup_ref)
     header += struct.pack('<2I', *bones_ref) + struct.pack('<2I', *key_lookup_ref)
     header += struct.pack('<2I', *vertices_ref) + struct.pack('<I', 1)      # vertices, skin profiles
     header += struct.pack('<2I', 0, 0) + struct.pack('<2I', *textures_ref)  # colors, textures
-    header += struct.pack('<2I', *weights_ref) + struct.pack('<2I', 0, 0)   # weights, texture transforms
+    header += struct.pack('<2I', *weights_ref) + struct.pack('<2I', *transforms_ref)  # weights, transforms
     header += struct.pack('<2I', *replaceable_ref) + struct.pack('<2I', *materials_ref)
     header += struct.pack('<2I', *combos_ref) + struct.pack('<2I', *texture_lookup_ref)
     header += struct.pack('<2I', *uv_lookup_ref) + struct.pack('<2I', *transparency_lookup_ref)
@@ -620,11 +666,12 @@ def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None,
     sections_ref = skin.add(b''.join(section_records), len(section_records))
     batch_data = b''
     batch_count = 0
-    for section, texture, material, uv_set, priority in sorted(units, key=lambda u: meta['materials'][u[2]]
-                                                               ['blendingMode'] not in (0, 1)):
+    for section, layers, material, priority in sorted(
+            units, key=lambda u: meta['materials'][u[2]]['blendingMode'] not in (0, 1)):
+        texture_at, transform_at = unit_combos[layers]
         for part in mesh_sections.get(section, []):
-            batch_data += struct.pack('<Bb11H', 16, priority, 0, part, part, NONE16, material, 0, 1,
-                                      used_textures.index(texture), uv_set, 0, 0)
+            batch_data += struct.pack('<Bb11H', 16, priority, 0, part, part, NONE16, material, 0, len(layers),
+                                      texture_at, layers[0][1], 0, transform_at)
             batch_count += 1
     batches_ref = skin.add(batch_data, batch_count)
     skin.data[:48] = struct.pack('<4s2I2I2I2I2II', b'SKIN', *lookup_ref, *tris_ref, *props_ref, *sections_ref,
