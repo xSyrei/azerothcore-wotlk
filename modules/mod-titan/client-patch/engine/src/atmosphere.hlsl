@@ -242,45 +242,72 @@ float HazeAmount(float2 uv, float z, bool sky)
     return saturate((1.0 - exp(-depth * wisp)) * HazeShape.z);
 }
 
-// The scene's lamps, in 64-pixel cells, two passes over the same 8 x 8 points: Emit, the light of all that shines
-// past the threshold in the cell (as an average); Where, where in the cell that light is (its brightness-weighted
-// centre on screen) and how far: the nearest surface within a wider window about the cell (a lamp's glass is drawn
-// without depth, so its own pixels hold what is behind it; its frame and post are the nearest). Texel: the screen's
-// pixel (x, y), the threshold, its softness. A cell of sky alone does not emit.
-float LampWeight(float3 c)
+// The scene's lamps, in 64-pixel cells. Every pixel of a cell is read (32 x 32 filtered taps, each the average of
+// 2 x 2 pixels): a sparse grid missed a small lamp or caught it as the camera moved, so its light flickered.
+// A lamp is what is past the threshold AND stands out from what is about it (the mean of the 3 x 3 cells around):
+// a roof or a wall lit by the moon or by a lamp is about as bright as its surroundings and lights nothing itself.
+// A cell's light fades out near the screen's edges (a lamp turning out of view goes softly, it does not pop).
+// Emit: the cell's light (rgb) and the mean brightness about it (a); Where: where in the cell that light is (its
+// brightness-weighted centre on screen) and how far (the nearest surface right about its light: a lamp's glass is
+// drawn without depth, so its own pixels hold what is behind it; its frame and post are the nearest). Texel: the
+// screen's pixel (x, y), the threshold, its softness.
+float LampWeight(float3 c, float mean)
 {
-    return smoothstep(Texel.z - Texel.w, Texel.z + Texel.w, dot(c, kLuma));
+    float l = dot(c, kLuma);
+    return smoothstep(Texel.z - Texel.w, Texel.z + Texel.w, l) * smoothstep(1.6, 3.0, l / (mean + 0.04));
+}
+
+float2 LampTap(float2 uv, int x, int y)
+{
+    return uv + Texel.xy * (float2(x, y) * 2.0 - 30.0);
+}
+
+float EdgeFade(float2 uv)
+{
+    float2 e = min(uv, 1.0 - uv);
+    return smoothstep(0.0, 0.1, min(e.x, e.y));
 }
 
 float4 Emit(float2 uv : TEXCOORD0) : COLOR
 {
-    float3 sum = 0.0;
-    [unroll]
-    for (int y = 0; y < 8; y++)
+    float mean = 0.0;
+    [loop]
+    for (int my = 0; my < 16; my++)
     {
-        [unroll]
-        for (int x = 0; x < 8; x++)
+        [loop]
+        for (int mx = 0; mx < 16; mx++)
+            mean += dot(Sample(SceneS, uv + Texel.xy * (float2(mx, my) * 12.0 - 90.0)), kLuma);
+    }
+    mean /= 256.0;
+    float3 sum = 0.0;
+    [loop]
+    for (int y = 0; y < 32; y++)
+    {
+        [loop]
+        for (int x = 0; x < 32; x++)
         {
-            float3 c = Sample(SceneS, uv + Texel.xy * (float2(x, y) * 8.0 - 28.0));
-            sum += c * LampWeight(c);
+            float3 c = Sample(SceneS, LampTap(uv, x, y));
+            sum += c * LampWeight(c, mean);
         }
     }
-    return float4(sum / 64.0, 1.0);
+    return float4(sum / 1024.0 * EdgeFade(uv), mean);
 }
 
 float4 Where(float2 uv : TEXCOORD0) : COLOR
 {
+    float mean = tex2Dlod(LevelS, float4(uv, 0, 0)).a;
     float2 centre = 0.0;
     float weight = 0.0, nearest = kSky;
     [loop]
-    for (int y = 0; y < 8; y++)
+    for (int y = 0; y < 32; y++)
     {
         [loop]
-        for (int x = 0; x < 8; x++)
+        for (int x = 0; x < 32; x++)
         {
-            float2 at = uv + Texel.xy * (float2(x, y) * 8.0 - 28.0);
-            float w = LampWeight(Sample(SceneS, at));
-            if (w > 0.0)
+            float2 at = LampTap(uv, x, y);
+            float w = LampWeight(Sample(SceneS, at), mean);
+            [branch]
+            if (w > 0.01)
             {
                 centre += at * w;
                 weight += w;
@@ -297,14 +324,15 @@ float4 Where(float2 uv : TEXCOORD0) : COLOR
             }
         }
     }
-    if (weight < 1e-3 || nearest >= kSky)
+    if (weight < 0.05 || nearest >= kSky)
         return 0.0;
     return float4(centre / weight, nearest, 1.0);
 }
 
-// Gather: at a quarter of the screen, the light each surface point takes from every lamp cell within 6 cells of it
-// (none skipped: a lamp is often one cell), by distance (within Texel.w yards) and by how the surface faces it.
-// Texel here: the cells' size (x, y), the gain, the reach.
+// Gather: at a quarter of the screen, the light each surface point takes from the lamp cells about it (within 6
+// cells; each faded by how far it is on screen, so a lamp does not pop in or out as the camera moves), by distance
+// (within Texel.w yards) and by how the surface faces it; summed with a soft limit, so many lamps together, or one
+// near, never blind. Texel here: the cells' size (x, y), the gain, the reach.
 float4 Gather(float2 uv : TEXCOORD0) : COLOR
 {
     float z = Distance(uv);
@@ -325,19 +353,21 @@ float4 Gather(float2 uv : TEXCOORD0) : COLOR
             float4 where = tex2Dlod(WideS, float4(at, 0, 0));
             if (where.w > 0.5)
             {
-                // The cell's light by how far the lamp is: a lamp covers fewer pixels further off, its light
-                // does not weaken for it.
-                float3 e = tex2Dlod(LevelS, float4(at, 0, 0)).rgb * clamp(where.z * where.z / 225.0, 0.1, 16.0);
+                float onScreen = smoothstep(6.0, 4.0, length((where.xy - uv) / Texel.xy));
+                // The cell's light by how far the lamp is: a lamp covers fewer pixels further off (made up for
+                // within limits: a far bright speck is not a floodlight).
+                float3 e = tex2Dlod(LevelS, float4(at, 0, 0)).rgb * clamp(where.z * where.z / 225.0, 0.25, 4.0);
                 float3 q = ViewRay(where.xy) * where.z;
                 float3 toLamp = q - p;
                 float d = length(toLamp);
                 float fall = saturate(1.0 - (d / reach) * (d / reach));
                 float facing = saturate(dot(n, toLamp / max(d, 1e-3)) * 0.8 + 0.2);
-                light += e * fall * fall * facing / (1.0 + d * d * 0.12);
+                light += e * fall * fall * facing * onScreen / (1.0 + d * d * 0.12);
             }
         }
     }
-    return float4(light * Texel.z, 1.0);
+    light *= Texel.z;
+    return float4(light / (1.0 + dot(light, kLuma)), 1.0);
 }
 
 float4 Final(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
@@ -370,7 +400,9 @@ float4 Final(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
     }
 
     // The lights' spill: the wide light falls on the ground and walls about each light, in their own colour.
-    float3 spill = sky ? 0.0 : wide * (0.25 + scene * 2.0) * Light.y * (0.35 + 0.65 * night);
+    // What already shines (a lit window, a moonlit roof) takes little more: no glare where the light already is.
+    float lift = 1.0 - 0.6 * keep;
+    float3 spill = sky ? 0.0 : wide * (0.2 + scene) * Light.y * (0.35 + 0.65 * night) * lift;
     colour += spill;
 
     // Haze: the game's haze colour (dimmer by night), and the lights glowing through it.
@@ -385,7 +417,7 @@ float4 Final(float2 uv : TEXCOORD0, float2 pixel : VPOS) : COLOR
     float3 lamps = 0.0;
     if (!sky && Glow.z > 0.5)
     {
-        lamps = Sample(GatherS, uv) * (scene * 1.6 + 0.04) * Glow.x * lerp(Glow.y, 1.0, night);
+        lamps = Sample(GatherS, uv) * (scene * 1.6 + 0.04) * Glow.x * lerp(Glow.y, 1.0, night) * lift;
         colour += lamps;
     }
 

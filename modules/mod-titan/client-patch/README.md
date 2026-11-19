@@ -447,6 +447,9 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   (targets, depth, blend and depth states, shader fingerprints, textures, viewport, the first 16 vertex shader
   constants or the fixed-function matrices; the water's pixel constants) to `Emberforge_capture.txt`.
   `Emberforge.log` notes start-up, the engine's resources and the first water draw.
+- Every engine pass draws with its own `vs_3_0` pass-through vertex shader (clip-space quad): Direct3D 9 defines
+  `ps_3_0` only beside `vs_3_0`, and only NVIDIA's driver also ran it after fixed-function, pre-transformed vertices;
+  on AMD and Intel the passes (the water's depth copy included) drew nothing or garbage before engine 0.23.
 - What a capture showed (1920x1080, Stormwind): 4 shadow cascades first (2048² targets), then the world straight into
   the back buffer, its depth range 0-0.94 (the sky at 1, drawn by fixed function), the water (pixel shader `f04dff60`,
   Blizzard's: cube maps in s0/s1, blended, no depth write), particles, and the UI from the first draw with the depth
@@ -504,19 +507,26 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
   - **By day**: the night's mood, milder (*Day's shade*: the shade darker and cool, what the sun lights kept
     bright); warm highlights and cool shadows, and the haze a little brighter (sunlit air). The day's and the
     night's settings are mixed by the night amount.
-  - **The scene's lamps**: everything that shines on screen past a threshold (lower by night: lamps, windows, fire,
-    spells), in 64-pixel cells: its light (Emit), and where it is (Where: its brightness-weighted centre, and the
-    nearest surface right about the glowing pixels, 6, 16 and 32 pixels out: a lamp's glass is drawn without depth,
-    so its own pixels hold what is behind it; its frame and post are the nearest). At a quarter of the screen each
-    surface point gathers the light of every cell within 6 of it (none skipped), by distance within a reach and by
-    how it faces each, a lamp's light scaled by its distance squared (one far off covers fewer pixels, its light is
-    the same): lamps light the street, walls and people about them. Lamps off screen do not. The ambient occlusion
-    and the gather use the same pattern at every pixel (a per-pixel turn showed as diagonal lines).
+  - **The scene's lamps**: what shines on screen past a threshold (lower by night: lamps, windows, fire, spells) AND
+    stands out from what is about it (2.5 times the mean of the 3 x 3 cells around it): a roof or wall lit by the
+    moon or by a lamp is about as bright as its surroundings and lights nothing itself (it did: lit roofs glared
+    blue). In 64-pixel cells, every pixel read (32 x 32 filtered taps: a sparse grid caught a small lamp or missed it
+    as the camera moved, and its light flickered): its light (Emit, faded out near the screen's edges), and where it
+    is (Where: its brightness-weighted centre, and the nearest surface right about the glowing pixels, 6, 16 and 32
+    pixels out: a lamp's glass is drawn without depth, so its own pixels hold what is behind it; its frame and post
+    are the nearest). At a quarter of the screen each surface point gathers the light of the cells within 6 of it,
+    each faded by its distance on screen (no lamp pops in or out at the window's edge), by distance within a reach
+    and by how it faces each, a lamp's light scaled by its distance squared within 0.25-4 (one far off covers fewer
+    pixels; a far bright speck is no floodlight), summed under a soft limit (many lamps together, or one near, never
+    blind). What already shines takes little more of the lamps' and the spill's light. The ambient occlusion and
+    the gather use the same pattern at every pixel (a per-pixel turn showed as diagonal lines). The calmer defaults
+    (engine 0.23) have new keys, so a saved `Emberforge.ini` does not bring back the old glare.
   Every part is a slider in the panel's Atmosphere section; *Compare* leaves the left half of the screen untouched;
   *Show* draws one part alone (bloom, haze, the night's darkening, the spill, the point lights, the occlusion). Its settings' keys are `atmosphere_*` and `light*` in `Emberforge.ini`.
 - The shaders are compiled ahead (`src/shaders.h`, committed) by `tools/compile_shaders.sh` with Microsoft's
   `d3dcompiler_47.dll` under Wine (any 64-bit copy, e.g. an Electron app's: Wine's own compiler cannot build shader
-  model 3): `D3DCOMPILER=/path/to/d3dcompiler_47.dll sh build.sh`. Players need no compiler.
+  model 3): `D3DCOMPILER=/path/to/d3dcompiler_47.dll sh build.sh`. Players need no compiler. Wine 9 needs
+  `$XDG_RUNTIME_DIR` (`/run/user/<uid>`) to exist; without it every Wine program aborts (`free(): invalid pointer`).
 - Tested under Wine (Linux players run it so) with a scene shaped like the game's (pure device, automatic D24X8 depth,
   depth range 0-0.94, the water shader from `hd/`, a wall behind the water): the wall is mirrored and bent by the
   waves, the floor shows through, the draws after the water are unchanged, and a device reset keeps it working.

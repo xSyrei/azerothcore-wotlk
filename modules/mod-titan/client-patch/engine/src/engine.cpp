@@ -42,7 +42,7 @@ namespace Suite
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.22"
+#define EMBERFORGE_ENGINE_VERSION "0.23"
 
 namespace
 {
@@ -196,7 +196,7 @@ namespace
         bool atmosphere = false, nightAuto = true, hazeOwn = false;
         float show = 0.0f;                                     // 0 all, 1 bloom, 2 haze, 3 night, 4 spill
         // Bloom: what shines brighter than the threshold (lower by night, so lamps and windows stand out).
-        float bloom = 1.0f, bloomThreshold = 0.7f, bloomNightThreshold = 0.32f, bloomKnee = 0.2f;
+        float bloom = 1.0f, bloomThreshold = 0.7f, bloomNightThreshold = 0.42f, bloomKnee = 0.2f;
         float bloomSky = 0.12f, bloomColour = 1.25f, bloomReach = 0.9f;
         // Night: by the brightness of the game's haze colour (set by zone and hour): day above nightFrom, full night
         // below nightTo. The dark gets darker and colder; what is brighter than keepTo keeps its light.
@@ -207,12 +207,14 @@ namespace
         float dayDark = 0.7f, dayKeepFrom = 0.32f, dayKeepTo = 0.78f, dayDesaturate = 0.12f;
         float dayShade[3] = {0.86f, 0.93f, 1.06f};
         // The scene's own lamps (everything that shines on screen: lamps, windows, fire, spells) lighting what is
-        // about them in 3D: past a threshold (lower by night), within a reach, cells apart on screen.
+        // about them in 3D: past a threshold (lower by night) and standing out from what is about them, within a
+        // reach. Its keys, the spill's and the night bloom's were renamed when they were calmed (engine 0.23), so
+        // an Emberforge.ini that saved the old, glaring values does not bring them back.
         bool lamps = true;
-        float lampStrength = 1.2f, lampReach = 10.0f, lampStep = 1.0f, lampThreshold = 0.92f,
-              lampNightThreshold = 0.45f;
+        float lampStrength = 1.0f, lampReach = 10.0f, lampStep = 1.0f, lampThreshold = 0.92f,
+              lampNightThreshold = 0.6f;
         // The lights by night: their spill on the ground and walls around them, their halos in the haze.
-        float spill = 0.9f, halos = 0.6f, hazeNightLight = 0.45f;
+        float spill = 0.6f, halos = 0.6f, hazeNightLight = 0.45f;
         // Haze: subtle by day (colours nearby kept), in the game's colour.
         float hazeDensity = 0.25f, hazeStart = 20.0f, hazeFalloff = 0.03f, hazeMost = 0.6f, hazeBelow = 0.0f;
         // By day its own: thick, starting close, the air lit (the night's above; mixed by the night amount).
@@ -258,7 +260,7 @@ namespace
                 {"wave_shading", &shading}, {"refraction", &refraction},
                 {"opacity", &opacity}, {"atmosphere_paused", nullptr, &atmosphere},
                 {"atmosphere_bloom", &bloom}, {"atmosphere_bloom_threshold", &bloomThreshold},
-                {"atmosphere_bloom_night_threshold", &bloomNightThreshold}, {"atmosphere_bloom_knee", &bloomKnee},
+                {"atmosphere_bloom_threshold_night", &bloomNightThreshold}, {"atmosphere_bloom_knee", &bloomKnee},
                 {"atmosphere_bloom_sky", &bloomSky}, {"atmosphere_bloom_colour", &bloomColour},
                 {"atmosphere_bloom_reach", &bloomReach}, {"atmosphere_night_auto", nullptr, &nightAuto},
                 {"atmosphere_night_force", &nightForce}, {"atmosphere_night_from", &nightFrom},
@@ -270,9 +272,10 @@ namespace
                 {"atmosphere_day_keep_to", &dayKeepTo}, {"atmosphere_day_desaturate", &dayDesaturate},
                 {"atmosphere_day_shade_r", &dayShade[0]}, {"atmosphere_day_shade_g", &dayShade[1]},
                 {"atmosphere_day_shade_b", &dayShade[2]}, {"lamps", nullptr, &lamps},
-                {"lamp_strength", &lampStrength}, {"lamp_reach", &lampReach}, {"lamp_step", &lampStep},
-                {"lamp_threshold", &lampThreshold}, {"lamp_night_threshold", &lampNightThreshold},
-                {"atmosphere_spill", &spill}, {"atmosphere_halos", &halos},
+                {"atmosphere_lamp_strength", &lampStrength}, {"lamp_reach", &lampReach}, {"lamp_step", &lampStep},
+                {"atmosphere_lamp_threshold", &lampThreshold},
+                {"atmosphere_lamp_threshold_night", &lampNightThreshold}, {"atmosphere_spill_light", &spill},
+                {"atmosphere_halos", &halos},
                 {"atmosphere_haze_night_light", &hazeNightLight}, {"atmosphere_haze_density", &hazeDensity},
                 {"atmosphere_haze_start", &hazeStart}, {"atmosphere_haze_falloff", &hazeFalloff},
                 {"atmosphere_haze_most", &hazeMost}, {"atmosphere_haze_below", &hazeBelow},
@@ -412,6 +415,8 @@ namespace
                                                   m_wherePs, m_gatherPs})
                 if (shader)
                     shader->Release();
+            if (m_passVs)
+                m_passVs->Release();
             ShutdownPanel();
             if (g_device == this)
                 g_device = nullptr;
@@ -809,6 +814,22 @@ namespace
 
         void CreateShaders()
         {
+            // The engine's passes draw with ps_3_0, which Direct3D 9 defines only beside a vs_3_0 vertex shader.
+            // NVIDIA's driver also runs it after the fixed-function pipeline (pre-transformed vertices); AMD's and
+            // Intel's do not (nothing, or garbage, was drawn), so every pass has this vertex shader: the position
+            // (already in clip space) and the texture coordinate passed through.
+            static const DWORD kPassVertexShader[] = {
+                0xFFFE0300,                                  // vs_3_0
+                0x0200001F, 0x80000000, 0x900F0000,          // dcl_position v0
+                0x0200001F, 0x80000005, 0x900F0001,          // dcl_texcoord v1
+                0x0200001F, 0x80000000, 0xE00F0000,          // dcl_position o0
+                0x0200001F, 0x80000005, 0xE00F0001,          // dcl_texcoord o1
+                0x02000001, 0xE00F0000, 0x90E40000,          // mov o0, v0
+                0x02000001, 0xE00F0001, 0x90E40001,          // mov o1, v1
+                0x0000FFFF,                                  // end
+            };
+            if (FAILED(real->CreateVertexShader(kPassVertexShader, &m_passVs)))
+                m_passVs = nullptr;
             if (FAILED(real->CreatePixelShader(kWaterPixelShader, &m_waterPs)))
                 m_waterPs = nullptr;
             if (FAILED(real->CreatePixelShader(kDistancePixelShader, &m_distancePs)))
@@ -823,8 +844,17 @@ namespace
                 m_emitPs = m_wherePs = m_gatherPs = nullptr;
             if (!bright || !down || !up || !finished)
                 m_brightPs = m_downPs = m_upPs = m_finalPs = nullptr;
-            Log("engine shaders: water %s, distance %s, atmosphere %s", m_waterPs ? "ok" : "failed",
-                m_distancePs ? "ok" : "failed", m_finalPs ? "ok" : "failed");
+            if (!m_passVs)                                   // no pass can draw without it
+                for (IDirect3DPixelShader9 **shader : {&m_distancePs, &m_brightPs, &m_downPs, &m_upPs, &m_finalPs,
+                                                       &m_emitPs, &m_wherePs, &m_gatherPs})
+                    if (*shader)
+                    {
+                        (*shader)->Release();
+                        *shader = nullptr;
+                    }
+            Log("engine shaders: water %s, distance %s, atmosphere %s, passes' vertex shader %s",
+                m_waterPs ? "ok" : "failed", m_distancePs ? "ok" : "failed", m_finalPs ? "ok" : "failed",
+                m_passVs ? "ok" : "failed");
         }
 
         // The readable depth buffer (in place of the automatic one), the scene's copy and the distances: the size of
@@ -1067,9 +1097,9 @@ namespace
             {
                 real->SetRenderTarget(0, distance);
                 real->SetDepthStencilSurface(nullptr);
-                real->SetVertexShader(nullptr);
+                real->SetVertexShader(m_passVs);
                 real->SetPixelShader(m_distancePs);
-                real->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
+                real->SetFVF(D3DFVF_XYZW | D3DFVF_TEX1);
                 real->SetTexture(0, m_intz);
                 real->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
                 real->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
@@ -1095,11 +1125,12 @@ namespace
 
         void DrawFullScreen(UINT width, UINT height)
         {
-            // Pixel centres on texel centres (Direct3D 9's half-pixel offset).
-            float w = static_cast<float>(width) - 0.5f, h = static_cast<float>(height) - 0.5f;
+            // In clip space, moved half a pixel up and left: pixel centres on texel centres (Direct3D 9's
+            // half-pixel offset).
+            float x = 1.0f / static_cast<float>(width), y = 1.0f / static_cast<float>(height);
             const float quad[4][6] = {
-                {-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f}, {w, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f},
-                {-0.5f, h, 0.0f, 1.0f, 0.0f, 1.0f}, {w, h, 0.0f, 1.0f, 1.0f, 1.0f},
+                {-1.0f - x, 1.0f + y, 0.0f, 1.0f, 0.0f, 0.0f}, {1.0f - x, 1.0f + y, 0.0f, 1.0f, 1.0f, 0.0f},
+                {-1.0f - x, -1.0f + y, 0.0f, 1.0f, 0.0f, 1.0f}, {1.0f - x, -1.0f + y, 0.0f, 1.0f, 1.0f, 1.0f},
             };
             real->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP, 2, quad, sizeof(quad[0]));
         }
@@ -1148,8 +1179,8 @@ namespace
         void PassState()
         {
             real->SetDepthStencilSurface(nullptr);
-            real->SetVertexShader(nullptr);
-            real->SetFVF(D3DFVF_XYZRHW | D3DFVF_TEX1);
+            real->SetVertexShader(m_passVs);
+            real->SetFVF(D3DFVF_XYZW | D3DFVF_TEX1);
             for (D3DRENDERSTATETYPE state : kPassStates)
                 real->SetRenderState(state, FALSE);
             real->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
@@ -1423,9 +1454,10 @@ namespace
                 float threshold = s.lampThreshold + (s.lampNightThreshold - s.lampThreshold) * night;
                 float emit[4] = {1.0f / m_width, 1.0f / m_height, threshold, 0.12f};
                 real->SetPixelShaderConstantF(0, emit, 1);
-                Bind(0, m_scene, false);
+                Bind(0, m_scene, true);                      // filtered: each tap the average of 2 x 2 pixels
                 Bind(1, m_distance, false);
                 DrawInto(m_emit, m_emitPs, m_emitWidth, m_emitHeight);
+                Bind(2, m_emit, false);                      // Where reads each cell's mean brightness
                 DrawInto(m_where, m_wherePs, m_emitWidth, m_emitHeight);
                 float gather[4] = {1.0f / m_emitWidth, 1.0f / m_emitHeight, kLampGain, std::fmax(s.lampReach, 1.0f)};
                 real->SetPixelShaderConstantF(0, gather, 1);
@@ -2093,6 +2125,7 @@ namespace
         double m_epoch = Seconds();
         IDirect3DPixelShader9 *m_brightPs = nullptr, *m_downPs = nullptr, *m_upPs = nullptr, *m_finalPs = nullptr;
         IDirect3DPixelShader9 *m_emitPs = nullptr, *m_wherePs = nullptr, *m_gatherPs = nullptr;
+        IDirect3DVertexShader9 *m_passVs = nullptr;           // every pass's (CreateShaders)
         IDirect3DTexture9 *m_emit = nullptr, *m_where = nullptr, *m_gather = nullptr;
         UINT m_emitWidth = 1, m_emitHeight = 1;
         static constexpr int kLevels = 5;                    // the light's levels: a half of the screen to a 32nd

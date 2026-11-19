@@ -22,6 +22,13 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   which resources show), the target frame's combo bar (detach it to move it on its own), and combo points on the
   target's nameplate. Move frames opens ElvUI's movers.
 
+### Graphics engine
+
+- The engine now works on AMD and Intel graphics cards, not only NVIDIA: its passes drew nothing, or garbage, there.
+- The scene's lamps are calmer and steady: they no longer flicker or jump as the camera moves, a roof or wall lit by
+  the moon or a lamp no longer glows as if it were a lamp itself, and lamps light their surroundings more softly
+  (never blinding, however many or near). Lamps leaving the screen fade out instead of popping.
+
 ### Talent glyphs
 
 - A talent's glyph is now part of the talent: knowing Vigor gives Glyph of Vigor's 10 extra maximum Energy, Aimed
