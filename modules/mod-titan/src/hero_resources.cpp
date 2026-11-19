@@ -22,6 +22,7 @@
 #include "SpellInfo.h"
 #include "SpellMgr.h"
 #include "Unit.h"
+#include "World.h"
 #include "WorldPacket.h"
 #include <algorithm>
 #include <array>
@@ -524,6 +525,134 @@ public:
     }
 };
 
+// A Hero's spell above their level: Wildcard gives many abilities' first rank from level 1 (wildcard.cpp,
+// LEVEL_ONE_ABILITIES; talent abilities from their tier's level), with the numbers of the rank's own level: Greater
+// Heal's first rank (a level-40 spell) healed a level-10 Hero's party for about 900. Below the spell's level its damage
+// and healing are (level + 2) / (spell level + 2) of it (a class's spell power grows about so with level: Lesser Heal
+// at 1, Heal at 16, Greater Heal at 40): a level-10 Hero's Greater Heal heals 29%, a level-30's 76%. A spell past the
+// level cap (a Burning Crusade or Wrath rank: Shield of Righteousness, 75) counts as at the cap. Blizzard's class
+// spells only (the runes' and items' are the Hero's own already); the Death Knight's have their own curve
+// (titan_dk_low_level).
+class titan_hero_low_level_spells : public UnitScript
+{
+public:
+    titan_hero_low_level_spells() : UnitScript("titan_hero_low_level_spells", true, {
+        UNITHOOK_MODIFY_SPELL_DAMAGE_TAKEN,
+        UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK,
+        UNITHOOK_MODIFY_HEAL_RECEIVED
+    }) { }
+
+    static constexpr uint32 FIRST_CUSTOM_SPELL = 90000;    // Emberforge's own spells start here
+    static constexpr float LEVEL_OFFSET = 2.0f;
+
+    static float Share(Unit* caster, SpellInfo const* spellInfo)
+    {
+        Player* player = caster ? caster->ToPlayer() : nullptr;
+        if (!player || !spellInfo || spellInfo->Id >= FIRST_CUSTOM_SPELL || !hero_resources::IsHero(player))
+            return 1.0f;
+        if (spellInfo->SpellFamilyName == SPELLFAMILY_GENERIC || spellInfo->SpellFamilyName == SPELLFAMILY_DEATHKNIGHT
+            || spellInfo->SpellFamilyName == SPELLFAMILY_POTION)
+            return 1.0f;
+        uint32 cap = sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL);
+        uint32 spellLevel = std::min(std::max(spellInfo->SpellLevel, spellInfo->BaseLevel), cap);
+        uint32 level = player->GetLevel();
+        if (spellLevel <= level)
+            return 1.0f;
+        return (float(level) + LEVEL_OFFSET) / (float(spellLevel) + LEVEL_OFFSET);
+    }
+
+    template <typename T>
+    static void Apply(T& amount, float share)
+    {
+        if (share < 1.0f && amount > 0)
+            amount = std::max<T>(1, T(float(amount) * share + 0.5f));
+    }
+
+    void ModifySpellDamageTaken(Unit* /*target*/, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
+    {
+        Apply(damage, Share(attacker, spellInfo));
+    }
+
+    void ModifyPeriodicDamageAurasTick(Unit* /*target*/, Unit* attacker, uint32& damage, SpellInfo const* spellInfo)
+        override
+    {
+        // Heals over time come through here too, and again through ModifyHealReceived: scaled there only.
+        if (spellInfo && (spellInfo->HasAura(SPELL_AURA_PERIODIC_HEAL)
+            || spellInfo->HasAura(SPELL_AURA_OBS_MOD_HEALTH)))
+            return;
+        Apply(damage, Share(attacker, spellInfo));
+    }
+
+    // The core passes the healer first for a direct heal (Unit::HealBySpell) and second for a heal over time: the
+    // caster is whichever of the two knows the spell (or both, a heal on oneself).
+    void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
+    {
+        if (!spellInfo)
+            return;
+        auto knows = [spellInfo](Unit* unit)
+        {
+            Player* player = unit ? unit->ToPlayer() : nullptr;
+            return player && player->HasSpell(spellInfo->Id);
+        };
+        Unit* caster = nullptr;
+        if (target == healer)
+            caster = target;
+        else if (knows(target) != knows(healer))
+            caster = knows(target) ? target : healer;
+        if (caster)
+            Apply(heal, Share(caster, spellInfo));
+    }
+};
+
+// A Hero's racials of a class the game keeps them from: Heroes are Paladins to the game (wildcard.h, HERO_CLASS), and
+// no Orc nor Night Elf Paladin was ever meant to be, so Blood Fury (Warriors', Hunters', Rogues', Shamans', Warlocks'
+// only) and Elusiveness never came. A Hero gets the one that suits every role (Blood Fury: the Shaman's, attack power
+// and spell power) at login and on a level change.
+class titan_hero_racials : public PlayerScript
+{
+public:
+    titan_hero_racials() : PlayerScript("titan_hero_racials", {
+        PLAYERHOOK_ON_LOGIN,
+        PLAYERHOOK_ON_LEVEL_CHANGED
+    }) { }
+
+    struct Racial
+    {
+        uint8 Race;
+        std::array<uint32, 3> Versions;                 // any of them known: nothing to do
+        uint32 Teach;
+    };
+
+    static constexpr std::array<Racial, 2> RACIALS = { {
+        { RACE_ORC, { 20572, 33697, 33702 }, 33697 },   // Blood Fury
+        { RACE_NIGHTELF, { 21009, 0, 0 }, 21009 },      // Elusiveness
+    } };
+
+    static void Teach(Player* player)
+    {
+        if (!hero_resources::IsHero(player))
+            return;
+        for (Racial const& racial : RACIALS)
+        {
+            if (player->getRace() != racial.Race)
+                continue;
+            if (std::none_of(racial.Versions.begin(), racial.Versions.end(),
+                    [player](uint32 spell) { return spell && player->HasSpell(spell); }))
+                player->learnSpell(racial.Teach);
+        }
+    }
+
+    void OnPlayerLogin(Player* player) override
+    {
+        Teach(player);
+    }
+
+    void OnPlayerLevelChanged(Player* player, uint8 /*oldLevel*/) override
+    {
+        Teach(player);
+    }
+};
+
 void AddSC_hero_resources()
 {
     new hero_resources();
@@ -533,4 +662,6 @@ void AddSC_hero_resources()
     new titan_dk_low_level();
     new titan_hero_damage_tuning();
     new titan_hero_low_level_buffs();
+    new titan_hero_low_level_spells();
+    new titan_hero_racials();
 }
