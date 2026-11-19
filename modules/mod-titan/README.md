@@ -14,7 +14,9 @@ Heroes use **every class resource**: mana, rage, energy and runes, with combo po
 on any target. `src/hero_resources.cpp` turns these on through AzerothCore's classless hooks
 (`OnPlayerHasActivePowerType`, and `OnPlayerIsClass` for ability mechanics only). Starting zone
 and stats still follow the real base class. The `Emberforge_Resources` addon (in
-`client-patch/AddOns/`) shows the extra bars in game and colors Heroes ember orange.
+`client-patch/AddOns/`) shows the extra bars in game and colors Heroes ember orange. With ElvUI (which hides the
+player frame they hang from) its `ElvUI.lua` shows them, ElvUI-styled, under ElvUF_Player on a mover ("Hero
+Resources"), and lights ElvUI's target combo bar with the Hero's combo points (its Rogue/Druid check overridden).
 
 Heroes **equip anything**: every weapon type (one- and two-handed, daggers, fist weapons, staves,
 polearms, bows, guns, crossbows, thrown, wands), every armor type (cloth, leather, mail, plate,

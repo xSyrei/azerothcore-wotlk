@@ -61,6 +61,9 @@ local function SetPoints(points)
         ComboFrame_Update()
     end
     UpdateButtons()
+    if EmberforgeCombo.OnChange then                -- ElvUI.lua: ElvUI's target combo bar
+        EmberforgeCombo.OnChange(points)
+    end
 end
 
 local frame = CreateFrame("Frame")

@@ -13,6 +13,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   in that slot carries over to the new modifier in its place.
 - The Fencer build is now The Quickdraw: Serrated Edge, Rapid Shots and Quick Reload.
 
+### ElvUI
+
+- Heroes playing with ElvUI see all their resources: Rage and Energy bars and the six runes under ElvUI's player
+  frame, in ElvUI's look (move them with /moveui, "Hero Resources"), and their combo points on ElvUI's target
+  frame combo bar.
+
 ## 2026-11-16: Legendary Rune balance and bug fixes
 
 ### Three new Legendary Runes

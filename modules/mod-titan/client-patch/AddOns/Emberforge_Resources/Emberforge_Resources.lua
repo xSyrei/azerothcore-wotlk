@@ -88,6 +88,8 @@ if CharacterAmmoSlot then
 end
 
 local known = {} -- power types used by abilities in the spellbook
+-- Shared with ElvUI.lua (the Hero's bars on ElvUI's player frame): which resources the Hero uses.
+EmberforgeResources = { known = known, POWER_RUNES = POWER_RUNES, BARS = BARS }
 
 local container = CreateFrame("Frame", "EmberforgeResourcesFrame", PlayerFrame)
 container:SetPoint("TOPLEFT", PlayerFrameManaBar, "BOTTOMLEFT", 0, -6)

@@ -1,7 +1,8 @@
 ## Interface: 30300
 ## Title: Emberforge Resources
-## Notes: Resource bars, ammo slot and class color for the classless Hero; Rage in place of Runic Power; item levels on tooltips; a Cataclysm-style stat panel; rune spells dimmed while their runes are not ready; combo points for the Hero.
+## Notes: Resource bars, ammo slot and class color for the classless Hero; Rage in place of Runic Power; item levels on tooltips; a Cataclysm-style stat panel; rune spells dimmed while their runes are not ready; combo points for the Hero; with ElvUI, the Hero's resources on its unit frames.
 ## Author: Project Emberforge
+## OptionalDeps: ElvUI
 ## SavedVariablesPerCharacter: EmberforgeResourcesDB
 Emberforge_Resources.lua
 Box.lua
@@ -12,3 +13,4 @@ Runes.lua
 ComboFinishers.lua
 Combo.lua
 WorldChat.lua
+ElvUI.lua
