@@ -3312,6 +3312,20 @@ ServerConfigs const qualityToSellValueConfig[MAX_ITEM_QUALITY] =
     RATE_SELLVALUE_ITEM_HEIRLOOM,                               // ITEM_QUALITY_HEIRLOOM
 };
 
+void ObjectMgr::AddItemTemplates(std::vector<ItemTemplate> const& templates)
+{
+    uint32 max = _itemTemplateStoreFast.empty() ? 0 : uint32(_itemTemplateStoreFast.size() - 1);
+    for (ItemTemplate const& itemTemplate : templates)
+        if (_itemTemplateStore.emplace(itemTemplate.ItemId, itemTemplate).second)
+            max = std::max(max, itemTemplate.ItemId);
+
+    // The fast lookup holds pointers into the store: a rehash keeps them (its nodes do not move), only new ones are
+    // added.
+    _itemTemplateStoreFast.resize(max + 1, nullptr);
+    for (ItemTemplate const& itemTemplate : templates)
+        _itemTemplateStoreFast[itemTemplate.ItemId] = &_itemTemplateStore[itemTemplate.ItemId];
+}
+
 void ObjectMgr::LoadItemTemplates()
 {
     uint32 oldMSTime = getMSTime();

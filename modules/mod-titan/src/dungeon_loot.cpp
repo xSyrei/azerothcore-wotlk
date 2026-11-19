@@ -15,24 +15,32 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "dungeon_gear.h"
 #include "scaled_gear.h"
+#include "DBCStores.h"
 #include "Item.h"
 #include "ItemEnchantmentMgr.h"
+#include "Log.h"
 #include "LootMgr.h"
 #include "Map.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "Random.h"
 #include "ScriptMgr.h"
+#include <algorithm>
+#include <cmath>
 #include <unordered_map>
 #include <vector>
 
 // Dungeon drops at the party's level. Dungeons scale their creatures to the lowest player's level
-// (dungeon_scaling.cpp), but their loot kept the dungeon's own level: gear the Heroes could not wear for many levels.
-// A piece of a dungeon's creature or chest loot that asks for a higher level than that is swapped for a Leveling
-// Scaled piece (scaled_gear.h, the Smoldering Adventurer's Cache's pool) of the same slot and armor or weapon type at
-// that level, with a random suffix as its template gives. A piece with no such match (a relic, a thrown weapon, a
-// shirt) stays as it is.
+// (dungeon_scaling.cpp), and their loot follows:
+// - a dungeon's own items (Dungeon Scaled gear: tools/scaling/dungeon_gear.py lists them, dungeon_gear.h) drop as
+//   their copy at that level, up or down: the same item, its stats, armor, weapon damage and block scaled from its
+//   own item level to the new one. The copies are made at start-up (one per item and level, 1-60);
+// - any other piece (the world's random greens) that asks for a higher level than that is swapped for a Leveling
+//   Scaled piece (scaled_gear.h, the Smoldering Adventurer's Cache's pool) of the same slot and armor or weapon type
+//   at that level, with a random suffix as its template gives. A piece with no such match (a relic, a thrown weapon,
+//   a shirt) stays as it is.
 namespace
 {
     // What a piece is, for the match: the slot (a robe is a chest) and, for armor, its type; for a weapon, its kind
@@ -80,6 +88,79 @@ namespace
         return pool;
     }
 
+    // Dungeon Scaled gear: each listed item's index (its copies' entries).
+    std::unordered_map<uint32, uint32> const& DungeonIndex()
+    {
+        static std::unordered_map<uint32, uint32> const index = []
+        {
+            std::unordered_map<uint32, uint32> items;
+            for (uint32 i = 0; i < std::size(DungeonGear::ITEMS); ++i)
+                items.emplace(DungeonGear::ITEMS[i], i);
+            return items;
+        }();
+        return index;
+    }
+
+    // The level an item is made for: its required level, or (none) its item level's.
+    uint32 NativeLevel(ItemTemplate const* proto)
+    {
+        if (proto->RequiredLevel)
+            return proto->RequiredLevel;
+        return std::max<int32>(1, int32(proto->ItemLevel) - 5);
+    }
+
+    // A quality's stat budget at an item level (RandPropPoints.dbc, the head and chest's: every slot's is the same
+    // share of it).
+    float Budget(uint32 itemLevel, uint32 quality)
+    {
+        RandomPropertiesPointsEntry const* points = sRandomPropertiesPointsStore.LookupEntry(itemLevel);
+        if (!points)
+            return 0.0f;
+        switch (quality)
+        {
+            case ITEM_QUALITY_EPIC: return float(points->EpicPropertiesPoints[0]);
+            case ITEM_QUALITY_RARE: return float(points->RarePropertiesPoints[0]);
+            default: return float(points->UncommonPropertiesPoints[0]);
+        }
+    }
+
+    int32 Scaled(int32 value, float ratio)
+    {
+        if (!value)
+            return 0;
+        int32 scaled = int32(std::lround(value * ratio));
+        return value > 0 ? std::max(1, scaled) : std::min(-1, scaled);
+    }
+
+    // An item's copy for a level: required level that level, item level as far above it as the item's own, stats by
+    // the stat budget's ratio, armor, damage and block by the item level's (as tools/squish/squish.py does).
+    ItemTemplate DungeonCopy(ItemTemplate const& proto, uint32 entry, uint32 level)
+    {
+        ItemTemplate copy = proto;
+        uint32 native = NativeLevel(&proto);
+        uint32 itemLevel = uint32(std::max<int32>(1, int32(level) + int32(proto.ItemLevel) - int32(native)));
+        float levelRatio = proto.ItemLevel ? float(itemLevel) / float(proto.ItemLevel) : 1.0f;
+        float own = Budget(proto.ItemLevel, proto.Quality);
+        float statRatio = own > 0.0f ? Budget(itemLevel, proto.Quality) / own : levelRatio;
+        if (statRatio <= 0.0f)
+            statRatio = levelRatio;
+        copy.ItemId = entry;
+        copy.ItemLevel = itemLevel;
+        copy.RequiredLevel = level;
+        for (uint32 i = 0; i < MAX_ITEM_PROTO_STATS; ++i)
+            copy.ItemStat[i].ItemStatValue = Scaled(proto.ItemStat[i].ItemStatValue, statRatio);
+        for (uint32 i = 0; i < MAX_ITEM_PROTO_DAMAGES; ++i)
+        {
+            copy.Damage[i].DamageMin = proto.Damage[i].DamageMin * levelRatio;
+            copy.Damage[i].DamageMax = proto.Damage[i].DamageMax * levelRatio;
+        }
+        copy.Armor = uint32(std::max<int32>(0, Scaled(int32(proto.Armor), levelRatio)));
+        copy.Block = uint32(std::max<int32>(0, Scaled(int32(proto.Block), statRatio)));
+        copy.SellPrice = uint32(std::lround(proto.SellPrice * statRatio));
+        copy.BuyPrice = int32(std::lround(proto.BuyPrice * statRatio));
+        return copy;
+    }
+
     // The level the dungeon is at: its lowest player's (game masters aside), as dungeon_scaling.cpp scales it.
     uint8 PartyLevel(Map* map, Player const* owner)
     {
@@ -110,7 +191,23 @@ public:
         for (LootItem& item : loot->items)
         {
             ItemTemplate const* proto = sObjectMgr->GetItemTemplate(item.itemid);
-            if (!proto || proto->RequiredLevel <= level)
+            if (!proto)
+                continue;
+            // A dungeon's own item: its copy at the party's level (itself at its own).
+            auto own = DungeonIndex().find(item.itemid);
+            if (own != DungeonIndex().end())
+            {
+                uint32 entry = DungeonGear::FIRST + own->second * DungeonGear::LEVELS +
+                    std::clamp<uint32>(level, 1, DungeonGear::LEVELS) - 1;
+                if (NativeLevel(proto) != level && sObjectMgr->GetItemTemplate(entry))
+                {
+                    item.itemid = entry;
+                    item.randomPropertyId = Item::GenerateItemRandomPropertyId(entry);
+                    item.randomSuffix = GenerateEnchSuffixFactor(entry);
+                }
+                continue;
+            }
+            if (proto->RequiredLevel <= level)
                 continue;
             uint32 kind = Kind(proto);
             auto pieces = kind ? Pool().find(kind) : Pool().end();
@@ -127,7 +224,36 @@ public:
     }
 };
 
+// Dungeon Scaled gear's copies, made once the item templates are loaded (before any player's items are).
+class titan_dungeon_gear : public WorldScript
+{
+public:
+    titan_dungeon_gear() : WorldScript("titan_dungeon_gear", { WORLDHOOK_ON_BEFORE_WORLD_INITIALIZED }) { }
+
+    void OnBeforeWorldInitialized() override
+    {
+        std::vector<ItemTemplate> copies;
+        copies.reserve(std::size(DungeonGear::ITEMS) * DungeonGear::LEVELS);
+        uint32 missing = 0;
+        for (uint32 i = 0; i < std::size(DungeonGear::ITEMS); ++i)
+        {
+            ItemTemplate const* proto = sObjectMgr->GetItemTemplate(DungeonGear::ITEMS[i]);
+            if (!proto)
+            {
+                ++missing;
+                continue;
+            }
+            for (uint32 level = 1; level <= DungeonGear::LEVELS; ++level)
+                copies.push_back(DungeonCopy(*proto, DungeonGear::FIRST + i * DungeonGear::LEVELS + level - 1, level));
+        }
+        sObjectMgr->AddItemTemplates(copies);
+        LOG_INFO("module", "mod-titan: {} Dungeon Scaled items ({} copies; {} not in item_template)",
+            std::size(DungeonGear::ITEMS) - missing, copies.size(), missing);
+    }
+};
+
 void AddSC_dungeon_loot()
 {
     new titan_dungeon_loot();
+    new titan_dungeon_gear();
 }

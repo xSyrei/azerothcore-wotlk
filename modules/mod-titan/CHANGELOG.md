@@ -22,6 +22,13 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   which resources show), the target frame's combo bar (detach it to move it on its own), and combo points on the
   target's nameplate. Move frames opens ElvUI's movers.
 
+### Dungeon loot
+
+- Dungeons drop **their own items at your level** again: a dungeon's blues and epics (Vendetta, Butcher's Cleaver...)
+  drop as that same item made for the party's level (its lowest Hero's), up or down, its stats, armor and damage
+  scaled to it. Only the world's random greens that also drop in dungeons still become Ember gear. Bonuses an item
+  gives through an effect (spell power, hit, procs) keep their amounts.
+
 ### Graphics engine
 
 - The engine now works on AMD and Intel graphics cards, not only NVIDIA: its passes drew nothing, or garbage, there.

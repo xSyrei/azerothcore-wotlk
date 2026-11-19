@@ -785,6 +785,8 @@ public:
     ItemTemplate const* GetItemTemplate(uint32 entry);
     [[nodiscard]] ItemTemplateContainer const* GetItemTemplateStore() const { return &_itemTemplateStore; }
     [[nodiscard]] std::vector<ItemTemplate*> const* GetItemTemplateStoreFast() const { return &_itemTemplateStoreFast; }
+    // Item templates made at run time (a module's, after LoadItemTemplates); an entry already known is left alone.
+    void AddItemTemplates(std::vector<ItemTemplate> const& templates);
 
     uint32 GetModelForTotem(SummonSlot totemSlot, Races race) const;
 

@@ -84,6 +84,12 @@ def main():
 
     # The Smoldering Adventurer's Cache's Leveling Scaled pool (tools/scaling/scaled_gear.py)
     scaled = [tuple(row) for row in json.loads((HERE / 'scaled_gear.json').read_text())['items']]
+    # Dungeon Scaled gear (tools/scaling/dungeon_gear.py): each dungeon item's copies for levels 1-60, made by the
+    # server at start-up, look as the item does.
+    dungeon = json.loads((HERE / 'dungeon_gear.json').read_text())
+    for _, index, *look in dungeon['items']:
+        for level in range(1, dungeon['levels'] + 1):
+            scaled.append((dungeon['first'] + index * dungeon['levels'] + level - 1, *look))
     items = Dbc(source / 'Item.dbc', ITEM_FIELDS)
     for row in ITEMS + scaled:
         items.rows[row[0]] = tuple(v & 0xFFFFFFFF for v in row)
