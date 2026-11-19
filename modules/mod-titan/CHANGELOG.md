@@ -39,6 +39,7 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   with half a Cinder Wound). Frost Shock: Claw becomes Frostfang Strike (a second enemy, both frostbitten and
   slowed); Swipe becomes Glacial Burst (Frost damage to up to 8 enemies, slowed 50%, every Frozen Prey among them
   shattered).
+- Blazing Bleed burns: flames stream from the bleeding enemy for as long as it lasts.
 - Fiery Explosion and Glacial Burst look new: flames (or frost) burst on every enemy the empowered Swipe hits, and
   sparks fly from the cat, with an impact sound.
 - The spells these runes reach into say so on their tooltips: Flame Shock, Fire Blast, Claw, Swipe, Rake and Rip

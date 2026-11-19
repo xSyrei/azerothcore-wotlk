@@ -1780,6 +1780,14 @@ EFFECTS.update({
     'GlacialBurstCaster': {'model': 'DRUID_GlacialBurstCaster', 'effect': 7176, 'shape': 'suite', 'textures': (),
                            'options': {'spec': 'DRUID_CatSwipe/Swipe_Frost_Cat.json', 'slot': 'caster'}},
 })
+# Blazing Bleed's look (spells/DRUID_CatSwipe/Blazing_Bleed.json): flames streaming from the bleeding enemy's
+# chest, looping for as long as the bleed lasts (its state kit).
+EFFECTS['BlazingBleedState'] = {
+    'model': 'DRUID_BlazingBleedState', 'effect': 7177, 'shape': 'suite', 'textures': (),
+    'options': {'spec': 'DRUID_CatSwipe/Blazing_Bleed.json', 'loop': True}}
+VISUALS['BlazingBleedBurn'] = {
+    'copy': 253, 'id': 16807, 'clear': ('precast', 'cast', 'impact', 'statedone', 'area'),
+    'kits': {'state': (15746, {KIT_CHEST: 'BlazingBleedState', 'sound': None, 'procs': False})}}
 SWIPE_IMPACT_SOUND = 3134                      # the Suite effects' impact sound (SoundEntries)
 _LOOK_CLEAR = ('precast', 'cast', 'state', 'statedone', 'area')
 VISUALS.update({
@@ -1793,8 +1801,8 @@ VISUALS.update({
         'impact': (15745, {KIT_BASE: 'GlacialBurstCaster', KIT_CHEST: 0, 'sound': SWIPE_IMPACT_SOUND})}},
 })
 for _spell in SPELLS:
-    _look = {91467: 'FieryExplosionHit', 91473: 'GlacialBurstHit', 91475: 'FieryExplosionCast',
-             91476: 'GlacialBurstCast'}.get(_spell['id'])
+    _look = {91465: 'BlazingBleedBurn', 91467: 'FieryExplosionHit', 91473: 'GlacialBurstHit',
+             91475: 'FieryExplosionCast', 91476: 'GlacialBurstCast'}.get(_spell['id'])
     if _look:
         _spell['visual'] = _look
 # Frozen Trail's patch: Frost Trap's frost on the ground.

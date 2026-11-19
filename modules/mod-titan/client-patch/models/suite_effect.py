@@ -131,15 +131,15 @@ def _z_turn(degrees):
     return (0.0, 0.0, math.sin(a), math.cos(a))
 
 
-def suite_effect(out_dir, name, client_dir, spec, slot='chest'):
+def suite_effect(out_dir, name, client_dir, spec, slot='chest', loop=False):
     _ON_CASTER[0] = slot == 'caster'
     try:
-        return _suite_effect(out_dir, name, client_dir, spec, slot)
+        return _suite_effect(out_dir, name, client_dir, spec, slot, loop)
     finally:
         _ON_CASTER[0] = False
 
 
-def _suite_effect(out_dir, name, client_dir, spec, slot):
+def _suite_effect(out_dir, name, client_dir, spec, slot, loop):
     """spec: the Suite's .json (a path). Writes <name>.m2, <name>00.skin and its BLPs into out_dir; returns their
     names. Called as an EFFECTS entry's builder (shape 'suite', options {'spec': ..., 'slot': 'chest' or 'base'})."""
     out_dir = Path(out_dir)
@@ -179,10 +179,13 @@ def _suite_effect(out_dir, name, client_dir, spec, slot):
     def orient(layer):
         return _qmul(turn_all, _euler_yzx(layer.get('orient') or (0, 0, 0)))
 
+    if loop:                                        # a loop starts with its first layer: no wait at each turn
+        first = min(layer.get('delay', 0) or 0 for layer in layers)
+        layers = [{**layer, 'delay': (layer.get('delay', 0) or 0) - first} for layer in layers]
     duration = 0.0
     for layer in layers:
         end = layer.get('delay', 0) + layer.get('life', 0.5)
-        if layer['type'] == 'particles':
+        if layer['type'] == 'particles' and not loop:   # a looping state model keeps emitting: no tail to wait
             end += layer.get('partLifeMax', 0.6)
         duration = max(duration, end)
     duration_ms = int(math.ceil(duration * 1000)) + 50
