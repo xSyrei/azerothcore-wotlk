@@ -1596,8 +1596,14 @@ PISTOL_SHOT['set'] = {**PISTOL_SHOT['set'], 'PowerType': POWER_ENERGY, 'ManaCost
 PISTOL_SHOT['tooltip'] = PISTOL_SHOT['description']
 PISTOL_SHOT['unset'] = {'Attributes': 0x10000}      # Evasion's "not while shapeshifted": usable in stealth or a form
 BROADSIDE = action(91371, 'Broadside', 'INV_Weapon_Rifle_01',
-                   'Finishing move: three pistol blasts explode on an enemy within 20 yards, each dealing 30% of your '
-                   'attack power per combo point as Fire damage to it and up to 7 other enemies within 8 yards.',
+                   'Finishing move: three pistol blasts explode on an enemy within 20 yards, each dealing Fire damage '
+                   '(30% of your attack power, plus 5% per combo point) to it and up to 7 other enemies within 8 '
+                   'yards. A blast deals:\r\n'
+                   '   1 point  : ${$AP*35/100} damage\r\n'
+                   '   2 points: ${$AP*40/100} damage\r\n'
+                   '   3 points: ${$AP*45/100} damage\r\n'
+                   '   4 points: ${$AP*50/100} damage\r\n'
+                   '   5 points: ${$AP*55/100} damage',
                    20000, target=TARGET_UNIT_TARGET_ENEMY, range_index=RANGE_20)
 BROADSIDE['set'] = {**BROADSIDE['set'], 'PowerType': POWER_ENERGY, 'ManaCost': 35,
                     'StartRecoveryCategory': GCD_CATEGORY, 'StartRecoveryTime': 1000,

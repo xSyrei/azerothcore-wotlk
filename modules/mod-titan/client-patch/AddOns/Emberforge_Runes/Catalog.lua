@@ -1032,8 +1032,8 @@ EmberforgeRunesCatalog = {
       core = "Sinister Strike becomes Sabre Slash: its damage and combo point, a sabre's look. Every second Sabre " ..
           "Slash that hits readies Opening Shot for 8 sec (one held), for Pistol Shot: 20 Energy, 6 sec cooldown, " ..
           "an enemy within 20 yards, 60% of your attack power as Physical damage and 1 combo point. Broadside, a " ..
-          "finishing move (35 Energy, 20 sec cooldown): three pistol blasts, each 30% of your attack power per " ..
-          "combo point to its target and up to 7 enemies within 8 yards. The rune teaches all three; the pistol is " ..
+          "finishing move (35 Energy, 20 sec cooldown): three pistol blasts, each 30% of your attack power plus 5% " ..
+          "per combo point (55% at five) to its target and up to 7 enemies within 8 yards. The rune teaches all three; the pistol is " ..
           "conjured.",
       loop = "Sabre Slash twice, Pistol Shot; Broadside at five combo points.",
       mods = {

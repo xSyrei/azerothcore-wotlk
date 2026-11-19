@@ -424,7 +424,8 @@ public:
 };
 
 // A Hero's damage tuning by ability (players' reports): Soul Cleave 25% less, Blade Dance (its strikes) 15% less, every
-// Feral Combat ability 25% more, every Rogue ability 30% more. Direct damage and ticks; by first rank, so every rank.
+// Feral Combat ability 25% more, every Rogue ability 30% more, Flamestrike 15% more (its blast and its burning
+// ground). Direct damage and ticks; by first rank, so every rank.
 class titan_hero_damage_tuning : public UnitScript
 {
 public:
@@ -443,6 +444,8 @@ public:
     static constexpr float RISING_SUN_KICK_SHARE = 0.8f, DEMON_HUNTER_STRIKE_SHARE = 0.75f;
     static constexpr float DEATH_AND_DECAY_SHARE = 0.85f;
     static constexpr float FERAL_SHARE = 1.25f, ROGUE_SHARE = 1.3f;
+    static constexpr uint32 FLAMESTRIKE = 2120;
+    static constexpr float FLAMESTRIKE_SHARE = 1.15f;
 
     static bool IsFeral(SpellInfo const* spellInfo)
     {
@@ -467,6 +470,8 @@ public:
             return DEMON_HUNTER_STRIKE_SHARE;
         if (first->Id == DEATH_AND_DECAY || first->Id == DEATH_AND_DECAY_DAMAGE)
             return DEATH_AND_DECAY_SHARE;
+        if (first->Id == FLAMESTRIKE)
+            return FLAMESTRIKE_SHARE;
         if (std::find(BLADE_DANCE.begin(), BLADE_DANCE.end(), first->Id) != BLADE_DANCE.end())
             return BLADE_DANCE_SHARE;
         if (spellInfo->SpellFamilyName == SPELLFAMILY_ROGUE)

@@ -940,9 +940,9 @@ namespace
     constexpr uint32 FULL_BROADSIDE_BLASTS = 4;
     constexpr int32 RELOAD_MS_PER_POINT = 1000;
     // Broadside (35 Energy, 20 sec, a finishing move): 3 pistol blasts 0.25 sec apart, each 30% of attack power
-    // per combo point to its target and up to 7 more within 8 yards.
+    // plus 5% a combo point to its target and up to 7 more within 8 yards (its tooltip shows each point's).
     constexpr uint32 BROADSIDE_BLASTS = 3, BROADSIDE_SPACING_MS = 250;
-    constexpr float BROADSIDE_AP = 0.3f, BROADSIDE_RADIUS = 8.0f;
+    constexpr float BROADSIDE_AP = 0.3f, BROADSIDE_AP_PER_POINT = 0.05f, BROADSIDE_RADIUS = 8.0f;
     constexpr std::size_t BROADSIDE_TARGETS = 8;
 
     // The Stormreaver's modifiers: slot (0 Storm, 1 Thunderlash, 2 Lightning Shield) x 3 + choice.
@@ -5187,11 +5187,12 @@ namespace
         return 0;
     }
 
-    // Broadside: 3 blasts at its target (30% of attack power per combo point to it and up to 7 within 8 yards each),
+    // Broadside: 3 blasts at its target (30% of attack power plus 5% a combo point, to it and up to 7 within 8 yards
+    // each),
     // the last a great explosion.
     void FireBroadside(Player* player, Unit* target, uint8 points)
     {
-        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * BROADSIDE_AP * float(points)
+        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * (BROADSIDE_AP + BROADSIDE_AP_PER_POINT * points)
             * (HasDuelistMarker(player, MOD_HEAVY_CANNONADE) ? HEAVY_CANNONADE : 1.0f);
         uint32 blasts = HasDuelistMarker(player, MOD_FULL_BROADSIDE) ? FULL_BROADSIDE_BLASTS : BROADSIDE_BLASTS;
         Trace(player, Acore::StringFormat("Broadside: {} combo points, {} a blast", points, int32(blast)));

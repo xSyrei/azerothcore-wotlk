@@ -26,8 +26,24 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 - Dungeons drop **their own items at your level** again: a dungeon's blues and epics (Vendetta, Butcher's Cleaver...)
   drop as that same item made for the party's level (its lowest Hero's), up or down, its stats, armor and damage
-  scaled to it. Only the world's random greens that also drop in dungeons still become Ember gear. Bonuses an item
+  scaled to it. They are 15 item levels above what that level's gear is (a level 20's dungeon piece: item level
+  40). Only the world's random greens that also drop in dungeons still become Ember gear. Bonuses an item
   gives through an effect (spell power, hit, procs) keep their amounts.
+
+### Dungeon bosses
+
+- Bosses no longer take less damage from Heroes: their extra health (4.5 times) is gone, and they show their real
+  health.
+- Every dungeon boss kill gives 75% of your level's experience, whichever boss: some gave a level's worth, others
+  barely a trash pack's. Optional bosses count too.
+- Bosses (and what they summon) deal 30% more damage to tanks and 15% less to everyone else. A boss mechanic one
+  player deals to those around them (a pulse from a tank's debuff) always deals the reduced amount.
+
+### Tuning
+
+- Rune of the Duelist: Broadside's blasts now deal 30% of your attack power plus 5% per combo point each (55% at
+  five, was 150%). Its tooltip shows each combo point's exact damage.
+- Flamestrike deals 15% more damage (its blast and its burning ground).
 
 ### Graphics engine
 

@@ -28,6 +28,7 @@
 #include "ScriptMgr.h"
 #include "SpellInfo.h"
 #include "World.h"
+#include "wildcard.h"
 #include <algorithm>
 
 // Dungeon scaling, Dragonflight's way: every 5-player dungeon is fought at every Hero's own level.
@@ -46,7 +47,9 @@
 // - easier the lower the Hero: at level 10 creatures have half their health (the Hero's damage doubled) and deal
 //   75% of their damage, evenly up to the intended difficulty at the level cap (heroics: always);
 // - and twice the health throughout (HEALTH_PASS): the damage the Hero deals halved, the health they see doubled;
-//   their damage 65% more (DAMAGE_PASS); bosses' health 4.5 times again (BOSS_HEALTH_PASS);
+//   their damage 65% more (DAMAGE_PASS); a boss's (and what it summons') damage 30% more on a tank, 15% less on
+//   anyone else (BOSS_DAMAGE_TANK, BOSS_DAMAGE_OTHERS: a boss mechanic a player deals to those around them, a
+//   tank's included, the latter);
 // - experience for kills as if the creature were at their level: the core's (none for a creature gray to them) is
 //   replaced by Acore::XP::Gain's at that level, split evenly over the group's members in range.
 namespace
@@ -58,8 +61,11 @@ namespace
     constexpr float HEALTH_PASS = 2.0f;
     // And their damage on top of all that.
     constexpr float DAMAGE_PASS = 1.65f;
-    // Bosses' health on top of that again (+350%).
-    constexpr float BOSS_HEALTH_PASS = 4.5f;
+    // A boss's damage on a Hero by their role: a tank's more, everyone else's less.
+    constexpr float BOSS_DAMAGE_TANK = 1.3f;
+    constexpr float BOSS_DAMAGE_OTHERS = 0.85f;
+    // A boss kill's experience: this share of the Hero's level, for every member alike.
+    constexpr float BOSS_EXPERIENCE_SHARE = 0.75f;
     constexpr uint8 HEALTH_PROXY_CLASS = CLASS_WARRIOR;         // players' health by level: a warrior creature's
     constexpr uint8 HIGHEST_STATS_LEVEL = 83;
     constexpr uint8 BOSS_LEVELS = 2;            // bosses over the group's lowest level
@@ -104,10 +110,45 @@ namespace
         return (EASE_HEALTH + (1.0f - EASE_HEALTH) * Progress(level)) * HEALTH_PASS;
     }
 
-    // A creature's health factor for a player at that level: bosses BOSS_HEALTH_PASS more.
-    float HealthFactorOf(Creature const* creature, uint8 level)
+    // A creature's health factor for a player at that level (bosses alike: no health of their own on top).
+    float HealthFactorOf(Creature const* /*creature*/, uint8 level)
     {
-        return HealthFactor(level) * (creature->IsDungeonBoss() ? BOSS_HEALTH_PASS : 1.0f);
+        return HealthFactor(level);
+    }
+
+    // A dungeon boss: flagged so (an encounter of the dungeon's, instance_encounters), a boss by rank, or one by its
+    // script (boss_*: the optional bosses no encounter names, Rhahk'Zor's kin).
+    bool IsBoss(Creature const* creature)
+    {
+        if (!creature)
+            return false;
+        if (creature->IsDungeonBoss() || creature->GetCreatureTemplate()->rank == CREATURE_ELITE_WORLDBOSS)
+            return true;
+        std::string script = creature->GetScriptName();
+        return script.rfind("boss_", 0) == 0;
+    }
+
+    // A boss, or what a boss summoned (its void zones, its adds' triggers).
+    bool FromBoss(Creature const* creature)
+    {
+        if (IsBoss(creature))
+            return true;
+        if (!creature || !creature->IsSummon())
+            return false;
+        Unit* summoner = creature->ToTempSummon()->GetSummonerUnit();
+        return summoner && IsBoss(summoner->ToCreature());
+    }
+
+    // A boss's damage on a player (or their pet) by the player's role: a tank (the player themself) takes
+    // BOSS_DAMAGE_TANK, anyone else BOSS_DAMAGE_OTHERS.
+    float BossRoleScale(Unit* target, Unit* attacker)
+    {
+        Creature* enemy = attacker ? attacker->ToCreature() : nullptr;
+        if (!enemy || enemy->IsControlledByPlayer() || enemy->IsPet() || !FromBoss(enemy) || !target
+            || !target->GetCharmerOrOwnerPlayerOrPlayerItself())
+            return 1.0f;
+        Player* player = target->ToPlayer();
+        return player && Wildcard::GetRole(player) == Wildcard::ROLE_TANK ? BOSS_DAMAGE_TANK : BOSS_DAMAGE_OTHERS;
     }
 
     float DamageFactor(uint8 level)
@@ -239,21 +280,25 @@ namespace
     }
 
     // A boss mechanic a player deals to another (a spell they don't know: Krystallus' Shatter, cast by each stoned
-    // player on those around them): from the dungeon's level to the one hit's, as a creature's spell, and the ease.
+    // player on those around them; a pulse from a tank's debuff): from the dungeon's level to the one hit's, as a
+    // creature's spell, and the ease; and always BOSS_DAMAGE_OTHERS, never a tank's (a pulse from the tank would
+    // otherwise shred those about them).
     float MechanicScale(Unit* target, Unit* attacker, SpellInfo const* spellInfo)
     {
         Player* caster = attacker ? attacker->ToPlayer() : nullptr;
         Player* hit = PlayerOf(target);
         if (!caster || !hit || !spellInfo || target == attacker || !IsScaled(caster->GetMap())
-            || caster->HasSpell(spellInfo->Id) || spellInfo->HasAura(SPELL_AURA_PERIODIC_DAMAGE_PERCENT))
+            || caster->HasSpell(spellInfo->Id))
             return 1.0f;
+        if (spellInfo->HasAura(SPELL_AURA_PERIODIC_DAMAGE_PERCENT))
+            return BOSS_DAMAGE_OTHERS;
         uint8 native = DungeonLevel(caster->GetMap());
         if (!native || native <= hit->GetLevel())
-            return 1.0f;
+            return BOSS_DAMAGE_OTHERS;
         uint8 expansion = Info(caster->GetMap())->expansion;
         float own = Damage(native, HEALTH_PROXY_CLASS, expansion);
         float now = Damage(hit->GetLevel(), HEALTH_PROXY_CLASS, expansion);
-        return own > 0.0f && now > 0.0f ? now / own * DamageFactor(hit->GetLevel()) : 1.0f;
+        return (own > 0.0f && now > 0.0f ? now / own * DamageFactor(hit->GetLevel()) : 1.0f) * BOSS_DAMAGE_OTHERS;
     }
 
     // A dungeon creature's damage (melee and spells) with its DamageModifier capped (MAX_DAMAGE_MODIFIER).
@@ -424,7 +469,11 @@ namespace
         {
             if (!member->IsAlive() || member->GetLevel() >= MaxLevel())
                 continue;
-            uint32 xp = KillExperience(member, creature, target, group ? alive : 1, groupRate);
+            // A boss: BOSS_EXPERIENCE_SHARE of the member's level, whatever the boss (their own experience rates
+            // differ wildly: some gave a level's worth, some a trash pack's).
+            uint32 xp = IsBoss(creature)
+                ? uint32(float(member->GetUInt32Value(PLAYER_NEXT_LEVEL_XP)) * BOSS_EXPERIENCE_SHARE)
+                : KillExperience(member, creature, target, group ? alive : 1, groupRate);
             if (!xp)
                 continue;
             granting = true;
@@ -482,20 +531,20 @@ public:
 
     void ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage) override
     {
-        Scale(damage, DamageScale(target, attacker) * ModifierCap(attacker));
+        Scale(damage, DamageScale(target, attacker) * ModifierCap(attacker) * BossRoleScale(target, attacker));
     }
 
     void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
     {
         Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false) * ModifierCap(attacker)
-            * MechanicScale(target, attacker, spellInfo));
+            * MechanicScale(target, attacker, spellInfo) * BossRoleScale(target, attacker));
     }
 
     void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage,
         SpellInfo const* spellInfo) override
     {
         Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false) * ModifierCap(attacker)
-            * MechanicScale(target, attacker, spellInfo));
+            * MechanicScale(target, attacker, spellInfo) * BossRoleScale(target, attacker));
     }
 
     // A heal between players of different levels: by their health at each level.

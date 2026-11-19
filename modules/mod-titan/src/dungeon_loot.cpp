@@ -35,14 +35,19 @@
 // Dungeon drops at the party's level. Dungeons scale their creatures to the lowest player's level
 // (dungeon_scaling.cpp), and their loot follows:
 // - a dungeon's own items (Dungeon Scaled gear: tools/scaling/dungeon_gear.py lists them, dungeon_gear.h) drop as
-//   their copy at that level, up or down: the same item, its stats, armor, weapon damage and block scaled from its
-//   own item level to the new one. The copies are made at start-up (one per item and level, 1-60);
+//   their copy at that level, up or down (at its own level too): the same item at the level's item level
+//   (LEVEL_ITEM_LEVEL over it, a green's there, as Leveling Scaled gear's) plus DUNGEON_ITEM_LEVELS, its stats,
+//   armor, weapon damage and block scaled from its own item level to that one. The copies are made at start-up
+//   (one per item and level, 1-60);
 // - any other piece (the world's random greens) that asks for a higher level than that is swapped for a Leveling
 //   Scaled piece (scaled_gear.h, the Smoldering Adventurer's Cache's pool) of the same slot and armor or weapon type
 //   at that level, with a random suffix as its template gives. A piece with no such match (a relic, a thrown weapon,
 //   a shirt) stays as it is.
 namespace
 {
+    constexpr int32 LEVEL_ITEM_LEVEL = 5;           // a level's own item level over it (tools/scaling/scaled_gear.py)
+    constexpr int32 DUNGEON_ITEM_LEVELS = 15;       // what a dungeon's own item is worth over that
+
     // What a piece is, for the match: the slot (a robe is a chest) and, for armor, its type; for a weapon, its kind
     // (a crossbow is a bow). Cloaks, necks, rings, trinkets and off-hands match whatever their type. 0: no match.
     uint32 Kind(ItemTemplate const* proto)
@@ -101,14 +106,6 @@ namespace
         return index;
     }
 
-    // The level an item is made for: its required level, or (none) its item level's.
-    uint32 NativeLevel(ItemTemplate const* proto)
-    {
-        if (proto->RequiredLevel)
-            return proto->RequiredLevel;
-        return std::max<int32>(1, int32(proto->ItemLevel) - 5);
-    }
-
     // A quality's stat budget at an item level (RandPropPoints.dbc, the head and chest's: every slot's is the same
     // share of it).
     float Budget(uint32 itemLevel, uint32 quality)
@@ -132,13 +129,12 @@ namespace
         return value > 0 ? std::max(1, scaled) : std::min(-1, scaled);
     }
 
-    // An item's copy for a level: required level that level, item level as far above it as the item's own, stats by
-    // the stat budget's ratio, armor, damage and block by the item level's (as tools/squish/squish.py does).
+    // An item's copy for a level: required level that level, item level the level's plus DUNGEON_ITEM_LEVELS, stats
+    // and block by the stat budget's ratio, armor and damage by the item level's (as tools/squish/squish.py does).
     ItemTemplate DungeonCopy(ItemTemplate const& proto, uint32 entry, uint32 level)
     {
         ItemTemplate copy = proto;
-        uint32 native = NativeLevel(&proto);
-        uint32 itemLevel = uint32(std::max<int32>(1, int32(level) + int32(proto.ItemLevel) - int32(native)));
+        uint32 itemLevel = uint32(int32(level) + LEVEL_ITEM_LEVEL + DUNGEON_ITEM_LEVELS);
         float levelRatio = proto.ItemLevel ? float(itemLevel) / float(proto.ItemLevel) : 1.0f;
         float own = Budget(proto.ItemLevel, proto.Quality);
         float statRatio = own > 0.0f ? Budget(itemLevel, proto.Quality) / own : levelRatio;
@@ -193,13 +189,13 @@ public:
             ItemTemplate const* proto = sObjectMgr->GetItemTemplate(item.itemid);
             if (!proto)
                 continue;
-            // A dungeon's own item: its copy at the party's level (itself at its own).
+            // A dungeon's own item: its copy at the party's level.
             auto own = DungeonIndex().find(item.itemid);
             if (own != DungeonIndex().end())
             {
                 uint32 entry = DungeonGear::FIRST + own->second * DungeonGear::LEVELS +
                     std::clamp<uint32>(level, 1, DungeonGear::LEVELS) - 1;
-                if (NativeLevel(proto) != level && sObjectMgr->GetItemTemplate(entry))
+                if (sObjectMgr->GetItemTemplate(entry))
                 {
                     item.itemid = entry;
                     item.randomPropertyId = Item::GenerateItemRandomPropertyId(entry);
