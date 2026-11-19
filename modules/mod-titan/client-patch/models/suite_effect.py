@@ -337,7 +337,8 @@ def _suite_effect(out_dir, name, client_dir, spec, slot, loop):
             n = math.sqrt(sum(c * c for c in aim)) or 1.0
             aim = tuple(c / n for c in aim)
             cone = math.pi if layer.get('shape', 'sphere') == 'sphere' else (
-                math.pi / 2 if layer.get('shape') == 'ring' else math.radians(layer.get('spread', 30) or 30))
+                math.pi / 2 if layer.get('shape') == 'ring' else math.radians(
+                    30 if layer.get('spread') is None else layer['spread']))      # 0: straight along the aim
             bone = bone_count
             rotation = track(blob, INTERP_NONE, [([0], [tuple(comp_quat(c) for c in _z_to(aim))])], '4h')
             bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, 0, 0, 0, 0)
@@ -348,6 +349,14 @@ def _suite_effect(out_dir, name, client_dir, spec, slot, loop):
             vary = (hi_s - lo_s) / 2 / speed if speed else 0.0
             lo_l, hi_l = layer.get('partLifeMin', 0.4), layer.get('partLifeMax', 0.9)
             p_life = (lo_l + hi_l) / 2
+            # The Suite slows its particles by Drag each second; the game's emitters do not. Over a particle's mean
+            # life the same ground is covered: its speed the drag's average, its gravity what drag lets it reach.
+            gravity = layer.get('gravity', 0) or 0
+            drag = layer.get('drag', 0) or 0
+            if drag > 0 and p_life > 0:
+                dt = drag * p_life
+                speed *= (1 - math.exp(-dt)) / dt
+                gravity = 2 * (gravity / drag) * (p_life - (1 - math.exp(-dt)) / drag) / (p_life * p_life)
             s, e = int(round(start * 1000)), int(round((start + life) * 1000))
             if layer.get('mode', 'burst') == 'burst':
                 burst_ms = 40
@@ -373,7 +382,7 @@ def _suite_effect(out_dir, name, client_dir, spec, slot, loop):
             emitter += struct.pack('<4I', 0, 0, 0, 0)
             emitter += struct.pack('<BBhBBhHH', 4 if blend == BLEND_ADD else 2, EMITTER_PLANE, 0, 0, 0, 0, rows, columns)
             assert len(emitter) == 0x34
-            emitter += ft(speed) + ft(vary) + ft(cone) + ft(math.pi) + ft(-(layer.get('gravity', 0) or 0)) + ft(p_life)
+            emitter += ft(speed) + ft(vary) + ft(cone) + ft(math.pi) + ft(-gravity) + ft(p_life)
             emitter += struct.pack('<f', (hi_l - lo_l) / 2 / p_life if p_life else 0.0)
             emitter += track(blob, INTERP_NONE, [rate_keys], 'f') + struct.pack('<f', 0.0)
             emitter += ft(area) + ft(area) + ft(0.0)
@@ -385,7 +394,7 @@ def _suite_effect(out_dir, name, client_dir, spec, slot, loop):
             emitter += (fblock('H', [0.0, 1.0], [0, frames - 1]) if frames > 1 else struct.pack('<4I', 0, 0, 0, 0))
             emitter += struct.pack('<4I', 0, 0, 0, 0)
             emitter += struct.pack('<5f', 0.1, 10.0, 1.0, 1.0, 1.0)                  # tail length, twinkle as Blizzard's
-            emitter += struct.pack('<6f', 1.0, layer.get('drag', 0) or 0.0, 0.0, math.pi,
+            emitter += struct.pack('<6f', 1.0, 0.0, 0.0, math.pi,
                                    math.radians(layer.get('spin', 0) or 0), 0.0)
             emitter += struct.pack('<14f', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2.5, 0.7, 7.0, 0.9)
             emitter += struct.pack('<2I', 0, 0)
