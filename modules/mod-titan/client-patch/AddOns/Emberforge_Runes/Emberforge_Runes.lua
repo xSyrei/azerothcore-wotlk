@@ -702,12 +702,9 @@ for index = 1, 3 do
     option.bg:SetPoint("TOPLEFT", -margin, margin)
     option.bg:SetPoint("BOTTOMRIGHT", margin, -margin)
     option.bg:SetTexCoord(0, art.option.u, 0, art.option.v)
-    option.icon = Tex(option, "ARTWORK")
-    option.icon:SetWidth(44)
-    option.icon:SetHeight(44)
-    option.icon:SetPoint("TOPLEFT", 22, -20)
-    option.name = Text(option, CINZEL, 19, { 1, 1, 1 }, "LEFT", 240)
-    option.name:SetPoint("LEFT", option, "TOPLEFT", 78, -42)
+    -- The name alone heads the card (no small icon beside it).
+    option.name = Text(option, CINZEL, 19, { 1, 1, 1 }, "LEFT", 296)
+    option.name:SetPoint("LEFT", option, "TOPLEFT", 22, -42)
     option.ability = Text(option, SANS_MEDIUM, 13, { 1, 1, 1 }, "LEFT", 296)
     option.ability:SetPoint("TOPLEFT", 22, -72)
     option.text = Text(option, SANS, 16, { 1, 1, 1 }, "LEFT", 296)
@@ -1741,8 +1738,6 @@ local function ShowOptions(slot)
         end
         option.text:SetText(entry.texts and entry.texts[number] or (mod and mod.text) or "")
         option.text:SetTextColor(theme.muted[1], theme.muted[2], theme.muted[3])
-        option.icon:SetTexture(ART .. "Icon" .. runeId .. "_" .. number)
-        option.icon:SetDesaturated(missing ~= nil)
         option.shown, option.inAt, option.leaving = 0, view.now + 0.08 + (index - 1) * 0.11, nil
         option:Enable()
     end

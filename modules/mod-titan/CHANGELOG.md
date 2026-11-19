@@ -44,6 +44,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - Rune of the Duelist: Broadside's blasts now deal 30% of your attack power plus 5% per combo point each (55% at
   five, was 150%). Its tooltip shows each combo point's exact damage.
 - Flamestrike deals 15% more damage (its blast and its burning ground).
+- Every Feral ability (Cat and Bear: Shred, Mangle, Rake, Rip, Ferocious Bite, Swipe, Maul, Lacerate...) deals 50%
+  more damage, on top of its earlier 25%.
 - Spells a Hero has below their level (Greater Heal, Mind Blast, Consecration, Stormstrike and every other ability
   Wildcard gives from level 1) are scaled to the Hero's level: (level + 2) / (spell level + 2) of their damage and
   healing. A level 10 Hero's Greater Heal (a level 40 spell) heals 29% of its tooltip, a level 30's 76%; from the
@@ -51,6 +53,7 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ### Fixes
 
+- The Legendary Rune window's modifier cards show only the modifier's name, without the small icon beside it.
 - Orc Heroes have Blood Fury (attack power and spell power), and Night Elf Heroes Elusiveness: the game kept them
   from both, since it treats Heroes as Paladins.
 

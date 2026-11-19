@@ -425,8 +425,8 @@ public:
 };
 
 // A Hero's damage tuning by ability (players' reports): Soul Cleave 25% less, Blade Dance (its strikes) 15% less, every
-// Feral Combat ability 25% more, every Rogue ability 30% more, Flamestrike 15% more (its blast and its burning
-// ground). Direct damage and ticks; by first rank, so every rank.
+// Feral Combat ability 87.5% more (25%, then 50% on top), every Rogue ability 30% more, Flamestrike 15% more (its
+// blast and its burning ground). Direct damage and ticks; by first rank, so every rank.
 class titan_hero_damage_tuning : public UnitScript
 {
 public:
@@ -444,7 +444,7 @@ public:
     static constexpr uint32 DEATH_AND_DECAY = 43265, DEATH_AND_DECAY_DAMAGE = 52212;
     static constexpr float RISING_SUN_KICK_SHARE = 0.8f, DEMON_HUNTER_STRIKE_SHARE = 0.75f;
     static constexpr float DEATH_AND_DECAY_SHARE = 0.85f;
-    static constexpr float FERAL_SHARE = 1.25f, ROGUE_SHARE = 1.3f;
+    static constexpr float FERAL_SHARE = 1.25f * 1.5f, ROGUE_SHARE = 1.3f;
     static constexpr uint32 FLAMESTRIKE = 2120;
     static constexpr float FLAMESTRIKE_SHARE = 1.15f;
 
