@@ -25,6 +25,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 ### Graphics engine
 
 - The engine now works on AMD and Intel graphics cards, not only NVIDIA: its passes drew nothing, or garbage, there.
+- The engine turns the game's anti-aliasing (Multisampling) off: with it on, the water and the atmosphere could not
+  run (the engine cannot read a multisampled depth buffer). The engine panel (Home) can keep it, without them.
 - The scene's lamps are calmer and steady: they no longer flicker or jump as the camera moves, a roof or wall lit by
   the moon or a lamp no longer glows as if it were a lamp itself, and lamps light their surroundings more softly
   (never blinding, however many or near). Lamps leaving the screen fade out instead of popping.

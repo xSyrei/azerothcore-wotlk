@@ -450,6 +450,10 @@ textures, shader constants, viewport, transforms), starting from Direct3D's defa
 - Every engine pass draws with its own `vs_3_0` pass-through vertex shader (clip-space quad): Direct3D 9 defines
   `ps_3_0` only beside `vs_3_0`, and only NVIDIA's driver also ran it after fixed-function, pre-transformed vertices;
   on AMD and Intel the passes (the water's depth copy included) drew nothing or garbage before engine 0.23.
+- The game's multisampling (Video options, `gxMultisample`) is turned off as its device is made or reset: a
+  multisampled depth buffer cannot be read in Direct3D 9, so with it on (8x is common on AMD cards) the water's
+  depth and the whole atmosphere were off (`readable depth off (anti-aliasing)` in `Emberforge.log`). The panel's
+  *Keep the game's anti-aliasing* (`keep_antialiasing` in `Emberforge.ini`) keeps it, without those effects.
 - What a capture showed (1920x1080, Stormwind): 4 shadow cascades first (2048² targets), then the world straight into
   the back buffer, its depth range 0-0.94 (the sky at 1, drawn by fixed function), the water (pixel shader `f04dff60`,
   Blizzard's: cube maps in s0/s1, blended, no depth write), particles, and the UI from the first draw with the depth

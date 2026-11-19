@@ -42,7 +42,7 @@ namespace Suite
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define EMBERFORGE_ENGINE_VERSION "0.23"
+#define EMBERFORGE_ENGINE_VERSION "0.24"
 
 namespace
 {
@@ -234,6 +234,9 @@ namespace
         // Ambient occlusion (soft contact shadows from the depth); by day warm highlights, cool shadows, and the air
         // a little brighter (sunlit).
         bool compare = false;
+        // The game's anti-aliasing (multisampling) kept: its depth then cannot be read, and the water and the
+        // atmosphere cannot run. Off by default: the engine draws without it (see PlainSamples).
+        bool keepAntialiasing = false;
         float ao = 0.65f, aoRadius = 2.5f, aoNight = 0.4f, warmth = 0.08f, coolness = 0.08f, dayAir = 0.35f;
 
         struct Entry
@@ -297,7 +300,7 @@ namespace
                 {"light_colour_g", &lightColour[1]}, {"light_colour_b", &lightColour[2]},
                 {"atmosphere_ao", &ao}, {"atmosphere_ao_radius", &aoRadius}, {"atmosphere_ao_night", &aoNight},
                 {"atmosphere_warmth", &warmth}, {"atmosphere_coolness", &coolness},
-                {"atmosphere_day_air", &dayAir},
+                {"atmosphere_day_air", &dayAir}, {"keep_antialiasing", nullptr, &keepAntialiasing},
             };
             for (const Entry &e : entries)
                 f(e);
@@ -346,6 +349,23 @@ namespace
             return true;
         }
     };
+
+    // The game's multisampling turned off before its device is made or reset (unless the panel keeps it): a
+    // multisampled depth buffer cannot be read in Direct3D 9, so with it on (8x is common on AMD cards) the water's
+    // depth and the whole atmosphere were off ("readable depth off (anti-aliasing)" in Emberforge.log).
+    void PlainSamples(D3DPRESENT_PARAMETERS *params)
+    {
+        if (!params || params->MultiSampleType == D3DMULTISAMPLE_NONE)
+            return;
+        Settings settings;
+        settings.Load();
+        if (settings.keepAntialiasing)
+            return;
+        Log("the game's anti-aliasing (%u samples) turned off: the engine reads the depth",
+            static_cast<unsigned>(params->MultiSampleType));
+        params->MultiSampleType = D3DMULTISAMPLE_NONE;
+        params->MultiSampleQuality = 0;
+    }
 
     // ---- The device the game gets ----
 
@@ -740,6 +760,7 @@ namespace
             if (m_panelReady)
                 ImGui_ImplDX9_InvalidateDeviceObjects();
             ReleaseTargets();                            // a reset fails while video-memory resources live
+            PlainSamples(params);
             HRESULT hr = real->Reset(params);
             if (m_panelReady && SUCCEEDED(hr))
                 ImGui_ImplDX9_CreateDeviceObjects();
@@ -1897,7 +1918,9 @@ namespace
             ImGui::Text("Draws: %u in %u scenes", m_last.draws, m_last.scenes);
             ImGui::Text("Water draws: %u (%u drawn by the engine%s)", m_last.waterDraws, m_last.waterReplaced,
                         m_last.waterReplaced && !m_waterCopied ? ", no depth: plain" : "");
-            ImGui::Text("Readable depth: %s", m_intz ? "yes" : "no");
+            ImGui::Text("Readable depth: %s", m_intz ? "yes" : "no (Emberforge.log says why)");
+            ImGui::Checkbox("Keep the game's anti-aliasing (no water depth or atmosphere; Save, then restart)",
+                            &m_settings.keepAntialiasing);
             ImGui::Text("Atmosphere: %s; camera %s (the haze's height)", m_atmosphereWhy,
                         m_cameraSeenLast ? "found" : "not found");
             WaterPanel();
@@ -2252,6 +2275,7 @@ namespace
         HRESULT STDMETHODCALLTYPE CreateDevice(UINT adapter, D3DDEVTYPE type, HWND focus, DWORD behavior,
                                                D3DPRESENT_PARAMETERS *params, IDirect3DDevice9 **device) override
         {
+            PlainSamples(params);
             HRESULT hr = real->CreateDevice(adapter, type, focus, behavior, params, device);
             if (SUCCEEDED(hr) && device && *device)
             {
