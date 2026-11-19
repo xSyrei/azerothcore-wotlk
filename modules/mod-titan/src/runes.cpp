@@ -6768,10 +6768,9 @@ class spell_titan_rune_shattered_sun : public SpellScript
             Shatter(player, target, float(std::max(0, GetHitDamage())), false, _held);
             return;
         }
-        if (!target->IsAlive())
-            return;
         bool big = first == SPELL_FIREBALL || first == SPELL_PYROBLAST;
-        Embed(player, target, big && HasSunMarker(player, MOD_WILDFIRE) ? 2 : 1);
+        if (target->IsAlive())                      // a killing blow embeds nothing in the body, but still spreads
+            Embed(player, target, big && HasSunMarker(player, MOD_WILDFIRE) ? 2 : 1);
         if (!big || !HasSunMarker(player, MOD_SPREADING_SUN))
             return;
         std::size_t count = SPREAD;

@@ -29,6 +29,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   points.
 - Rune of the Shattered Sun: a Frostbolt (or any frost spell) that kills a target holding Sunshards still shatters
   them.
+- Rune of the Shattered Sun, Spreading Sun: a Fireball or Pyroblast that kills its target still spreads Sunshards to
+  2 enemies nearby.
 
 ## 2026-11-16: Legendary Rune balance and bug fixes
 
