@@ -2,6 +2,17 @@
 
 Player-facing changes to Emberforge, newest first. Each entry is also posted as a patch note on the website.
 
+## 2026-11-19: The Duelist's Cannon-Fire
+
+- Rune of the Duelist: **Rapid Shots** replaces Piercing Round. Each combo point your finishing moves spend has a
+  10% chance to reset Pistol Shot's cooldown and ready Opening Shot; your next Pistol Shot within 10 sec then grants
+  50 Energy instead of costing it.
+- The third slot, Footwork, is now **Cannon-Fire**, with Broadside modifiers: Heavy Cannonade (Broadside's blasts
+  deal 40% more damage), Full Broadside (a fourth blast) and Quick Reload (each combo point your finishing moves
+  spend takes 1 sec off Broadside's cooldown). Advance, Disengaging Shot and Press the Advantage are gone; a choice
+  in that slot carries over to the new modifier in its place.
+- The Fencer build is now The Quickdraw: Serrated Edge, Rapid Shots and Quick Reload.
+
 ## 2026-11-16: Legendary Rune balance and bug fixes
 
 ### Three new Legendary Runes

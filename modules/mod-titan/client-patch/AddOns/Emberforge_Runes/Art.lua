@@ -71,6 +71,12 @@ EmberforgeRunesArt = {
             u = 0.8496,
             v = 0.9844,
         },
+        ChooseCannonFire = {
+            w = 522,
+            h = 84,
+            u = 0.7646,
+            v = 0.9844,
+        },
         ChooseCharge = {
             w = 424,
             h = 84,
@@ -171,12 +177,6 @@ EmberforgeRunesArt = {
             w = 596,
             h = 84,
             u = 0.873,
-            v = 0.9844,
-        },
-        ChooseFootwork = {
-            w = 476,
-            h = 84,
-            u = 0.6973,
             v = 0.9844,
         },
         ChooseFormation = {
@@ -467,6 +467,12 @@ EmberforgeRunesArt = {
             u = 0.5859,
             v = 0.875,
         },
+        SlotCannonFire = {
+            w = 120,
+            h = 28,
+            u = 0.9375,
+            v = 0.875,
+        },
         SlotCharge = {
             w = 75,
             h = 28,
@@ -567,12 +573,6 @@ EmberforgeRunesArt = {
             w = 156,
             h = 28,
             u = 0.6094,
-            v = 0.875,
-        },
-        SlotFootwork = {
-            w = 98,
-            h = 28,
-            u = 0.7656,
             v = 0.875,
         },
         SlotFormation = {
@@ -1878,7 +1878,7 @@ EmberforgeRunesArt = {
             asks = {
                 "How the blade cuts",
                 "How the shot flies",
-                "What you do after",
+                "How the cannons fire",
             },
             abilities = {
                 "Cut",
@@ -1886,10 +1886,10 @@ EmberforgeRunesArt = {
                 "Serrate",
                 "Ball",
                 "Scatter",
-                "Pierce",
-                "Advance",
-                "Disengage",
-                "Press",
+                "Rapid",
+                "Cannonade",
+                "Full",
+                "Reload",
             },
             texts = {
                 "Sabre Slash deals 25% more damage.",
@@ -1900,19 +1900,18 @@ EmberforgeRunesArt = {
                 "Pistol Shot deals 60% more damage: 96% of your attack power.",
                 "Pistol Shot spreads in a cone: up to 4 other enemies in front of you, " ..
                         "as far as 10 yards past its target, take 75% of its damage.",
-                "Pistol Shot pierces up to 3 enemies within 15 yards behind its target, " ..
-                        "for 80% of its damage.",
-                "After firing, you move 40% faster for 3 sec, and your next Sabre Slash " ..
-                        "on that enemy within 5 sec deals 30% more damage.",
-                "After firing, you move 40% faster for 3 sec, and your next Pistol Shot " ..
-                        "within 8 sec gives 10 Energy back.",
-                "After firing, your next Sabre Slash within 5 sec strikes again a " ..
-                        "moment later for half its damage.",
+                "Each combo point your finishing moves spend has a 10% chance to reset " ..
+                        "Pistol Shot's cooldown and ready Opening Shot; your next Pistol Shot " ..
+                        "within 10 sec then grants 50 Energy instead of costing it.",
+                "Broadside's blasts deal 40% more damage.",
+                "Broadside fires a fourth blast.",
+                "Each combo point your finishing moves spend takes 1 sec off " ..
+                        "Broadside's cooldown.",
             },
             slots = {
                 "Sabre",
                 "Pistol",
-                "Footwork",
+                "Cannon-Fire",
             },
         },
         [43] = {

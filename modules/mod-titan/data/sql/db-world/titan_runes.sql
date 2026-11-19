@@ -407,6 +407,10 @@ DELETE FROM `spell_bonus_data` WHERE `entry` = 91372;
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91372, 0, 0, 0, 0, 'Duelist - Broadside blast');
 
+-- The Duelist's Footwork modifiers (Advance, Disengaging Shot, Press the Advantage) gave way to Cannon-Fire;
+-- 91386 is Rapid Shots now, 91387-91389 retired.
+DELETE FROM `spell_dbc` WHERE `ID` IN (91387, 91388, 91389);
+
 -- Ember's Wrath (the Hero's Fire Blast, in Cat Form too, ignites their Rake or Rip: Cinder Wound) and Whitefang
 -- (their Icy Touch lays Frozen Prey; Shred or Mangle shatters it): the spells they reach into. The Cat Form copies
 -- they first taught (91420, 91440) are gone.

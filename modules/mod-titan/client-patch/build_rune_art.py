@@ -1037,8 +1037,8 @@ BUILT = {
     42: {
         'core': '**Sabre Slash** readies **Opening Shot**: **Pistol Shot** for **60%** of your attack power; '
             '**Broadside** spends combo points in pistol blasts.',
-        'slots': ['Sabre', 'Pistol', 'Footwork'],
-        'asks': ['How the blade cuts', 'How the shot flies', 'What you do after'],
+        'slots': ['Sabre', 'Pistol', 'Cannon-Fire'],
+        'asks': ['How the blade cuts', 'How the shot flies', 'How the cannons fire'],
         'texts': [
             'Sabre Slash deals 25% more damage.',
             'Sabre Slash also hits up to 3 other enemies within 5 yards of its target for half its damage.',
@@ -1047,11 +1047,11 @@ BUILT = {
             'Pistol Shot deals 60% more damage: 96% of your attack power.',
             'Pistol Shot spreads in a cone: up to 4 other enemies in front of you, as far as 10 yards past its '
             'target, take 75% of its damage.',
-            'Pistol Shot pierces up to 3 enemies within 15 yards behind its target, for 80% of its damage.',
-            'After firing, you move 40% faster for 3 sec, and your next Sabre Slash on that enemy within 5 sec deals '
-            '30% more damage.',
-            'After firing, you move 40% faster for 3 sec, and your next Pistol Shot within 8 sec gives 10 Energy back.',
-            'After firing, your next Sabre Slash within 5 sec strikes again a moment later for half its damage.',
+            'Each combo point your finishing moves spend has a 10% chance to reset Pistol Shot\'s cooldown and ready '
+            'Opening Shot; your next Pistol Shot within 10 sec then grants 50 Energy instead of costing it.',
+            'Broadside\'s blasts deal 40% more damage.',
+            'Broadside fires a fourth blast.',
+            'Each combo point your finishing moves spend takes 1 sec off Broadside\'s cooldown.',
         ],
         'abilities': [
             'Cut',
@@ -1059,10 +1059,10 @@ BUILT = {
             'Serrate',
             'Ball',
             'Scatter',
-            'Pierce',
-            'Advance',
-            'Disengage',
-            'Press',
+            'Rapid',
+            'Cannonade',
+            'Full',
+            'Reload',
         ],
         'icons': [
             'M4 20 20 4M14 4h6v6',
@@ -1070,10 +1070,10 @@ BUILT = {
             'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
             'M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0',
             'M4 12 20 4M4 12l16 0M4 12l16 8',
-            'M2 12h20M16 7l5 5-5 5',
-            'M4 12h14M14 7l5 5-5 5',
-            'M20 12H6M10 7l-5 5 5 5',
-            'M5 19 9 15M9 19l4-4M13 19l4-4',
+            'M3 12h6M3 7h9M3 17h9M15 12l6 0M18 9l3 3-3 3',
+            'M7 9h10a4 4 0 0 1 0 8H7a4 4 0 0 1 0-8ZM17 13h4M5 17l-2 4M11 17l-2 4',
+            'M4 6h4M10 6h4M16 6h4M4 12h4M10 12h4M16 12h4',
+            'M20 12a8 8 0 1 1-3-6.2M20 4v5h-5',
         ],
     },
     43: {

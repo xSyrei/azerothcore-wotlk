@@ -597,6 +597,11 @@ utility or a tradeoff) take one pick each, from three.
     (91382; it needs Opening Shot, 91381, every second Sabre Slash hit): 60% AP (91383) and a combo point; and
     Broadside (91371, a finishing move): 3 blasts (91372) of 30% AP per combo point. All three in the Rogue tab
     (patch_runes.SPELL_CLASSES).
+    Its slots: Sabre, Pistol, Cannon-Fire. Rapid Shots (Pistol) and Quick Reload (Cannon-Fire) act on every finishing
+    move that spends combo points (`titan_runes_duelist_finisher`, a moment after the cast): each point a 10% chance
+    to reset Pistol Shot, ready Opening Shot and grant Rapid Shots (91386, 10 sec: the next shot gives its 20 Energy
+    back and 50 more); 1 sec off Broadside's cooldown a point. Heavy Cannonade: blasts 40% more; Full Broadside: a
+    fourth blast. Footwork's Advance, Disengaging Shot and Press the Advantage (91387-91389) are retired.
   - **Stormreaver** (43; Melee; Stormstrike, Lava Lash, Lightning Shield): Stormstrike's Stormfront (91401, 6 sec,
     a pulse 91402 every 2 sec, 25% AP); Lava Lash in it adds Thunderlash (91403, 60% AP; arcs 91404); the rune's
     aura procs on melee abilities (spell_proc) and discharges Lightning Shield (91407) once a second, the shield

@@ -1628,18 +1628,10 @@ SPELLS += [
     {**strike(91383, 'Pistol Shot', PISTOL_ICON, PHYSICAL, VISUAL_GUNSHOT)},
     dot(91384, 'Serrated Edge', 'Ability_Rogue_Rupture', PHYSICAL, DURATION_6S, 'Bleeding every second.'),
     strike(91385, 'Serrated Edge', 'Ability_Rogue_Rupture', PHYSICAL),
-    {**buff(91386, 'Advance', 'Ability_Rogue_Sprint', 'Movement speed increased by 40%.', DURATION_3S,
-            {1: aura(AURA_MOD_INCREASE_SPEED, 40, 0)}),
-     'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
-    {**buff(91387, 'Disengaging Shot', 'Ability_Hunter_RunningShot', 'Movement speed increased by 40%.', DURATION_3S,
-            {1: aura(AURA_MOD_INCREASE_SPEED, 40, 0)}),
-     'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
-    {**buff(91388, 'Disengaging Shot', PISTOL_ICON, 'Your next Pistol Shot gives 10 Energy back.',
-            DURATION_8S, {1: aura(AURA_DUMMY, 1, 0)}),
-     'set': {**SHOWN, 'DurationIndex': DURATION_8S}},
-    {**buff(91389, 'Press the Advantage', 'Ability_Rogue_SabreSlash', 'Your next Sabre Slash strikes twice.',
-            DURATION_5S, {1: aura(AURA_DUMMY, 1, 0)}),
-     'set': {**SHOWN, 'DurationIndex': DURATION_5S}},
+    # Rapid Shots (91386; Advance, Disengaging Shot and Press the Advantage, 91386-91389, retired with Footwork).
+    {**buff(91386, 'Rapid Shots', PISTOL_ICON, 'Your next Pistol Shot grants 50 Energy instead of costing it.',
+            DURATION_10S, {1: aura(AURA_DUMMY, 1, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_10S}},
     {**strike(91399, 'Sabre Slash', 'Ability_Rogue_SabreSlash', PHYSICAL), 'visual': 'SabreSlashHit'},
     # The Stormreaver.
     buff(91400, 'Rune of the Stormreaver', STORMREAVER_ICON,
@@ -1673,8 +1665,8 @@ SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1
                 hidden=True)
            for first, icon, modifiers in (
                (91390, DUELIST_ICON, [('Deep Cut', 'Sweeping Steel', 'Serrated Edge'),
-                                      ('Heavy Ball', 'Scattershot', 'Piercing Round'),
-                                      ('Advance', 'Disengaging Shot', 'Press the Advantage')]),
+                                      ('Heavy Ball', 'Scattershot', 'Rapid Shots'),
+                                      ('Heavy Cannonade', 'Full Broadside', 'Quick Reload')]),
                (91410, STORMREAVER_ICON, [('Eye of the Tempest', 'Forked Cataclysm', 'Rolling Thunder'),
                                           ('Thunderhead', 'Chainbreaker', 'White-Hot Conductor'),
                                           ('Overcharged Core', 'Ride the Lightning', 'Violent Grounding')]))

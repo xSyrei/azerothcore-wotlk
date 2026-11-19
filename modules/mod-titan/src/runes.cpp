@@ -358,10 +358,7 @@ namespace
         SPELL_PISTOL_DAMAGE          = 91383,
         SPELL_SERRATED_EDGE             = 91384,    // its bleed; 91385 the tick
         SPELL_SERRATED_EDGE_TICK        = 91385,
-        SPELL_ADVANCE                   = 91386,    // speed
-        SPELL_DISENGAGING_SHOT          = 91387,    // speed
-        SPELL_DISENGAGING_DISCOUNT      = 91388,    // the next Pistol Shot 10 Energy cheaper
-        SPELL_PRESS_THE_ADVANTAGE       = 91389,    // the next Sinister Strike strikes twice
+        SPELL_RAPID_SHOTS               = 91386,    // the next Pistol Shot grants Energy (91387-91389 retired)
         SPELL_DUELIST_MODIFIER_FIRST    = 91390,    // + slot * 3 + choice
         SPELL_SABRE_STRIKE              = 91399,    // Sweeping Steel's and Press the Advantage's hits
         SPELL_RUNE_STORMREAVER          = 91400,
@@ -918,27 +915,30 @@ namespace
     constexpr uint8 UNBROKEN_BLOWS = 3;
     constexpr std::size_t URSOC_TARGETS = 5, ROAR_TARGETS = 10;
 
-    // The Duelist's modifiers: slot (0 Sabre, 1 Pistol, 2 Footwork) x 3 + choice.
+    // The Duelist's modifiers: slot (0 Sabre, 1 Pistol, 2 Cannon-Fire) x 3 + choice.
     enum DuelistModifier : uint8
     {
         MOD_DEEP_CUT, MOD_SWEEPING_STEEL, MOD_SERRATED_EDGE,
-        MOD_HEAVY_BALL, MOD_SCATTERSHOT, MOD_PIERCING_ROUND,
-        MOD_ADVANCE, MOD_DISENGAGING_SHOT, MOD_PRESS_THE_ADVANTAGE,
+        MOD_HEAVY_BALL, MOD_SCATTERSHOT, MOD_RAPID_SHOTS,
+        MOD_HEAVY_CANNONADE, MOD_FULL_BROADSIDE, MOD_QUICK_RELOAD,
     };
 
     // The Duelist's tuning: every second direct Sabre Slash hit readies Opening Shot (8 sec, one held); Pistol Shot
     // spends it (20 Energy, 6 sec cooldown, 20 yards): 60% of attack power and a combo point (the dossier's every
     // third and 35%, made worth holding a button for).
     constexpr uint8 OPENING_EVERY = 2;
-    constexpr int32 OPENING_MS = 8000, SERRATED_MS = 6000, FOOTWORK_MS = 5000, DISCOUNT_MS = 8000;
-    constexpr uint32 PRESS_DELAY_MS = 300;
-    constexpr int32 DISENGAGING_REFUND = 10;
-    constexpr float PISTOL_AP = 0.6f, HEAVY_BALL = 1.6f, SCATTER_SHARE = 0.75f, PIERCING_SHARE = 0.8f;
-    constexpr float DEEP_CUT = 1.25f, SWEEPING_SHARE = 0.5f, SERRATED_SHARE = 0.4f, ADVANCE_BONUS = 1.3f;
-    constexpr float PRESS_SHARE = 0.5f;
+    constexpr int32 OPENING_MS = 8000, SERRATED_MS = 6000;
+    constexpr float PISTOL_AP = 0.6f, HEAVY_BALL = 1.6f, SCATTER_SHARE = 0.75f;
+    constexpr float DEEP_CUT = 1.25f, SWEEPING_SHARE = 0.5f, SERRATED_SHARE = 0.4f;
     constexpr float SWEEPING_RADIUS = 5.0f, SCATTER_REACH = 10.0f, SCATTER_ARC = float(M_PI) / 4.0f;
-    constexpr float PIERCING_REACH = 15.0f, PIERCING_HALF_WIDTH = 2.0f;
-    constexpr std::size_t SWEEPING_TARGETS = 3, SCATTER_TARGETS = 4, PIERCING_TARGETS = 3;
+    constexpr std::size_t SWEEPING_TARGETS = 3, SCATTER_TARGETS = 4;
+    // Rapid Shots: each combo point a finishing move spends, a 10% chance to reset Pistol Shot (Opening Shot ready);
+    // the next Pistol Shot within 10 sec grants 50 Energy instead of its 20. Cannon-Fire: Heavy Cannonade 40% more a
+    // blast, Full Broadside a fourth blast, Quick Reload 1 sec off Broadside's cooldown a combo point spent.
+    constexpr int32 RAPID_CHANCE_PER_POINT = 10, RAPID_MS = 10000, PISTOL_COST = 20, RAPID_ENERGY = 50;
+    constexpr float HEAVY_CANNONADE = 1.4f;
+    constexpr uint32 FULL_BROADSIDE_BLASTS = 4;
+    constexpr int32 RELOAD_MS_PER_POINT = 1000;
     // Broadside (35 Energy, 20 sec, a finishing move): 3 pistol blasts 0.25 sec apart, each 30% of attack power
     // per combo point to its target and up to 7 more within 8 yards.
     constexpr uint32 BROADSIDE_BLASTS = 3, BROADSIDE_SPACING_MS = 250;
@@ -1409,10 +1409,8 @@ namespace
         bool GuardTravelled = false;
         Position GuardFrom;
 
-        // The Duelist: direct Sinister Strike hits toward Opening Shot; Advance's enemy and how long it holds.
+        // The Duelist: direct Sinister Strike hits toward Opening Shot.
         uint8 SabreHits = 0;
-        ObjectGuid AdvanceOn;
-        uint32 AdvanceUntil = 0;
 
         // The Stormreaver: the Stormfront's pulse timer; the last discharge.
         uint32 StormfrontTimer = 0, LastDischarge = 0;
@@ -5087,21 +5085,14 @@ namespace
         }
     }
 
-    // A Sinister Strike's hit on its target, before it lands: Deep Cut 25% more; Advance's enemy within 5 sec 30%.
-    float SabreBonus(Player* player, Unit* target)
+    // A Sinister Strike's hit on its target, before it lands: Deep Cut 25% more.
+    float SabreBonus(Player* player, Unit* /*target*/)
     {
-        State& state = StateOf(player);
-        float bonus = HasDuelistMarker(player, MOD_DEEP_CUT) ? DEEP_CUT : 1.0f;
-        if (state.AdvanceUntil > Now() && target->GetGUID() == state.AdvanceOn)
-        {
-            bonus *= ADVANCE_BONUS;
-            state.AdvanceUntil = 0;
-        }
-        return bonus;
+        return HasDuelistMarker(player, MOD_DEEP_CUT) ? DEEP_CUT : 1.0f;
     }
 
     // A Sinister Strike that hit (damage, its target's): every second readies Opening Shot; Sweeping Steel: half to
-    // up to 3 more within 5 yards; Serrated Edge: 40% more over 6 sec; Press the Advantage's second strike (half).
+    // up to 3 more within 5 yards; Serrated Edge: 40% more over 6 sec.
     void SabreSlash(Player* player, Unit* target, float damage)
     {
         State& state = StateOf(player);
@@ -5123,31 +5114,17 @@ namespace
         }
         if (HasDuelistMarker(player, MOD_SERRATED_EDGE) && target->IsAlive())
             AddDot(player, target, SPELL_SERRATED_EDGE, damage * SERRATED_SHARE, SERRATED_MS);
-        if (player->HasAura(SPELL_PRESS_THE_ADVANTAGE))
-        {
-            player->RemoveAurasDueToSpell(SPELL_PRESS_THE_ADVANTAGE);
-            ObjectGuid guid = target->GetGUID();
-            float second = damage * PRESS_SHARE;
-            player->m_Events.AddEventAtOffset([player, guid, second]()
-            {
-                Unit* at = ObjectAccessor::GetUnit(*player, guid);
-                if (player->IsInWorld() && player->IsAlive() && Valid(player, at))
-                    Strike(player, at, SPELL_SABRE_STRIKE, second);
-            }, Milliseconds(PRESS_DELAY_MS));
-        }
     }
 
     // Pistol Shot on its target: 60% of attack power (Heavy Ball 60% more) and a combo point; Scattershot: a
-    // 10-yard cone, up to 4 more for 75%; Piercing Round: up to 3 within 15 yards behind it for 80%. Then the
-    // footwork: Advance (speed, the next Sinister Strike on it 30% more), Disengaging Shot (speed, the next shot 10
-    // Energy back), Press the Advantage (the next Sinister Strike twice).
+    // 10-yard cone, up to 4 more for 75%. Rapid Shots' shot gives its cost back and 50 Energy more.
     void FirePistol(Player* player, Unit* target)
     {
         player->RemoveAurasDueToSpell(SPELL_OPENING_SHOT);
-        if (player->HasAura(SPELL_DISENGAGING_DISCOUNT))
+        if (player->HasAura(SPELL_RAPID_SHOTS))
         {
-            player->RemoveAurasDueToSpell(SPELL_DISENGAGING_DISCOUNT);
-            player->ModifyPower(POWER_ENERGY, DISENGAGING_REFUND);
+            player->RemoveAurasDueToSpell(SPELL_RAPID_SHOTS);
+            player->ModifyPower(POWER_ENERGY, PISTOL_COST + RAPID_ENERGY);
         }
         float shot = player->GetTotalAttackPowerValue(BASE_ATTACK) * PISTOL_AP
             * (HasDuelistMarker(player, MOD_HEAVY_BALL) ? HEAVY_BALL : 1.0f);
@@ -5169,36 +5146,27 @@ namespace
                     --count;
                 }
         }
-        else if (HasDuelistMarker(player, MOD_PIERCING_ROUND))
-        {
-            Shape line;
-            line.From = target->GetPosition();
-            line.To = Toward(line.From, player->GetAbsoluteAngle(target), PIERCING_REACH);
-            line.HalfWidth = PIERCING_HALF_WIDTH;
-            std::size_t count = PIERCING_TARGETS;
-            for (Unit* enemy : EnemiesIn(player, line, PIERCING_TARGETS + 1))
-                if (enemy != target && count)
-                {
-                    Strike(player, enemy, SPELL_PISTOL_DAMAGE, shot * PIERCING_SHARE);
-                    --count;
-                }
-        }
         if (target->IsAlive())
             player->AddComboPoints(target, 1);
-        State& state = StateOf(player);
-        if (HasDuelistMarker(player, MOD_ADVANCE))
-        {
-            Renew(player, SPELL_ADVANCE);
-            state.AdvanceOn = target->GetGUID();
-            state.AdvanceUntil = Now() + FOOTWORK_MS;
-        }
-        else if (HasDuelistMarker(player, MOD_DISENGAGING_SHOT))
-        {
-            Renew(player, SPELL_DISENGAGING_SHOT);
-            RenewFor(player, SPELL_DISENGAGING_DISCOUNT, DISCOUNT_MS);
-        }
-        else if (HasDuelistMarker(player, MOD_PRESS_THE_ADVANTAGE))
-            RenewFor(player, SPELL_PRESS_THE_ADVANTAGE, FOOTWORK_MS);
+    }
+
+    // A finishing move spent combo points (the Duelist's): Rapid Shots, each point a 10% chance to reset Pistol Shot
+    // and ready Opening Shot, its shot then granting Energy; Quick Reload, a second off Broadside's cooldown a point.
+    void DuelistFinisher(Player* player, uint8 points)
+    {
+        if (HasDuelistMarker(player, MOD_QUICK_RELOAD))
+            player->ModifySpellCooldown(SPELL_BROADSIDE, -RELOAD_MS_PER_POINT * int32(points));
+        if (!HasDuelistMarker(player, MOD_RAPID_SHOTS))
+            return;
+        for (uint8 i = 0; i < points; ++i)
+            if (roll_chance_i(RAPID_CHANCE_PER_POINT))
+            {
+                player->RemoveSpellCooldown(SPELL_PISTOL_SHOT, true);
+                RenewFor(player, SPELL_OPENING_SHOT, OPENING_MS);
+                RenewFor(player, SPELL_RAPID_SHOTS, RAPID_MS);
+                Trace(player, "Rapid Shots: Pistol Shot reset");
+                return;
+            }
     }
 
     // The highest rank of Sinister Strike the Hero knows: Sabre Slash's (rank 1's copy) bonus on top of its own.
@@ -5218,11 +5186,13 @@ namespace
     // the last a great explosion.
     void FireBroadside(Player* player, Unit* target, uint8 points)
     {
-        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * BROADSIDE_AP * float(points);
+        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * BROADSIDE_AP * float(points)
+            * (HasDuelistMarker(player, MOD_HEAVY_CANNONADE) ? HEAVY_CANNONADE : 1.0f);
+        uint32 blasts = HasDuelistMarker(player, MOD_FULL_BROADSIDE) ? FULL_BROADSIDE_BLASTS : BROADSIDE_BLASTS;
         Trace(player, Acore::StringFormat("Broadside: {} combo points, {} a blast", points, int32(blast)));
         ObjectGuid guid = target->GetGUID();
-        for (uint32 i = 0; i < BROADSIDE_BLASTS; ++i)
-            player->m_Events.AddEventAtOffset([player, guid, blast, i]()
+        for (uint32 i = 0; i < blasts; ++i)
+            player->m_Events.AddEventAtOffset([player, guid, blast, i, blasts]()
             {
                 Unit* at = ObjectAccessor::GetUnit(*player, guid);
                 if (!player->IsInWorld() || !player->IsAlive() || !at || !at->IsInMap(player))
@@ -5235,7 +5205,7 @@ namespace
                         struck.push_back(enemy);
                 for (Unit* enemy : struck)
                     Strike(player, enemy, SPELL_BROADSIDE_BLAST, blast);
-                if (i + 1 == BROADSIDE_BLASTS)
+                if (i + 1 == blasts)
                     at->CastSpell(at, SPELL_BROADSIDE_LOOK, true);
             }, Milliseconds(i * BROADSIDE_SPACING_MS));
     }
@@ -5764,7 +5734,6 @@ namespace
     {
         State& state = StateOf(player);
         state.SabreHits = 0;
-        state.AdvanceUntil = 0;
         state.StormfrontTimer = 0;
         state.BlazingRakeAt = state.AshenReadyAt = state.PreyAt = 0;
         state.AshenLast.Clear();
@@ -5774,9 +5743,8 @@ namespace
         state.PursuitDiscount = false;
         player->RemoveAurasDueToSpell(SPELL_KINDLED);
         player->RemoveAurasDueToSpell(SPELL_FROSTBITTEN);
-        for (uint32 spell : { SPELL_OPENING_SHOT, SPELL_ADVANCE, SPELL_DISENGAGING_SHOT, SPELL_DISENGAGING_DISCOUNT,
-                              SPELL_PRESS_THE_ADVANTAGE, SPELL_STORMFRONT, SPELL_RIDE_THE_LIGHTNING, SPELL_FLAMEBOUND,
-                              SPELL_FLAMEBOUND_DISCOUNT, SPELL_PURSUING_CHILL, SPELL_SNOWBLIND,
+        for (uint32 spell : { SPELL_OPENING_SHOT, SPELL_RAPID_SHOTS, SPELL_STORMFRONT, SPELL_RIDE_THE_LIGHTNING,
+                              SPELL_FLAMEBOUND, SPELL_FLAMEBOUND_DISCOUNT, SPELL_PURSUING_CHILL, SPELL_SNOWBLIND,
                               SPELL_FANG_COLD_BLOOD })
             player->RemoveAurasDueToSpell(spell);
         player->RemoveDynObject(SPELL_FROZEN_TRAIL);
@@ -7829,6 +7797,29 @@ class spell_titan_rune_whitefang_icy_touch : public SpellScript
 // Fire Blast's, Flame Shock's and Frost Shock's ranks (the player's): no "not while shapeshifted" rule at load (the
 // runes' scripts keep it for everyone but a Cat with the rune: CatFormGate), as the client patch does
 // (patch_spells.py, RUNE_FREED).
+// The Duelist's finishing moves (any spending combo points, as the game's Eviscerate or the rune's Broadside): their
+// points are counted as the cast starts, the effects (a cooldown reset or shortened) a moment after it, past the
+// cooldown the cast itself starts.
+class titan_runes_duelist_finisher : public PlayerScript
+{
+public:
+    titan_runes_duelist_finisher() : PlayerScript("titan_runes_duelist_finisher", { PLAYERHOOK_ON_SPELL_CAST }) { }
+
+    void OnPlayerSpellCast(Player* player, Spell* spell, bool /*skipCheck*/) override
+    {
+        if (spell->IsTriggered() || !spell->GetSpellInfo()->NeedsComboPoints() || !player->HasAura(SPELL_RUNE_DUELIST))
+            return;
+        uint8 points = player->GetComboPoints();
+        if (!points)
+            return;
+        player->m_Events.AddEventAtOffset([player, points]()
+        {
+            if (player->IsInWorld() && player->HasAura(SPELL_RUNE_DUELIST))
+                DuelistFinisher(player, points);
+        }, 1ms);
+    }
+};
+
 class titan_runes_load : public GlobalScript
 {
 public:
@@ -8297,6 +8288,7 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_whitefang_icy_touch);
     RegisterSpellScript(spell_titan_rune_cat_shock);
     new titan_runes_load();
+    new titan_runes_duelist_finisher();
     RegisterSpellScript(spell_titan_rune_cat_strike);
     RegisterSpellScript(spell_titan_rune_ferocious_bite);
     RegisterSpellScript(spell_titan_rune_cat_swipe);
