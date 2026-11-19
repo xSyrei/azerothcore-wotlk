@@ -107,6 +107,7 @@ const GameEngine = (() => {
       this.root = new THREE.Group(); this.root.rotation.x = -Math.PI / 2; this.root.scale.setScalar(scale);
       this.time = 0; this.globalTime = 0; this.seqSlot = 0; this.loop = true; this.speed = 1;
       this.brightness = 1;        // the Suite's Brightness: every batch, particle and ribbon color times this
+      this.tint = [1, 1, 1];      // the Suite's Tint: the same, per channel
       this.playSeq(seq);
       this.vertexCount = data.vertexCount;
       this.basePos = b64(data.pos, Float32Array); this.baseNrm = b64(data.nrm, Float32Array);
@@ -117,6 +118,7 @@ const GameEngine = (() => {
       this.nrmAttr = new THREE.BufferAttribute(new Float32Array(this.baseNrm), 3);
       this.geo.setAttribute('position', this.posAttr); this.geo.setAttribute('normal', this.nrmAttr);
       this.geo.setAttribute('uv', new THREE.BufferAttribute(b64(data.uv, Float32Array), 2));
+      if (data.uv2) this.geo.setAttribute('uv2', new THREE.BufferAttribute(b64(data.uv2, Float32Array), 2));
       this.geo.setIndex(new THREE.BufferAttribute(b64(data.index, Uint32Array), 1));
       this.batches = [];
       const sorted = data.batches.map((b, i) => ({ b, i })).sort((x, y) => (x.b.blend > 1) - (y.b.blend > 1) || x.b.prio - y.b.prio || x.b.layer - y.b.layer);
@@ -130,6 +132,17 @@ const GameEngine = (() => {
         m.side = b.flags & 4 ? THREE.DoubleSide : THREE.FrontSide;
         applyBlend(m, b.blend); if (b.flags & 16) m.depthWrite = false;
         if (b.flags & 2) m.fog = false;
+        // A two-texture batch (Kil'jaeden's fire: a scrolling texture under a mask): the second rides the aoMap slot,
+        // which reads the second UV set, and multiplies the first's color and alpha.
+        const second = b.tex2 >= 0 && data.uv2 ? loadTexture(data.textures[b.tex2]) : null;
+        if (second) {
+          m.aoMap = b.uvanim2 >= 0 ? Object.assign(second.clone(), { needsUpdate: true, wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping }) : second;
+          m.onBeforeCompile = (sh) => {
+            sh.fragmentShader = sh.fragmentShader.replace('#include <aomap_fragment>',
+              'vec4 second = texture2D( aoMap, vUv2 ); reflectedLight.indirectDiffuse *= second.rgb; diffuseColor.a *= second.a;');
+          };
+          m.customProgramCacheKey = () => 'two-texture';
+        }
         m.userData.batch = b; this.batches.push(m);
       });
       this.mesh = new THREE.Mesh(this.geo, this.batches);
@@ -197,12 +210,17 @@ const GameEngine = (() => {
         let a = opacity, rgb = [1, 1, 1];
         if (b.color >= 0 && d.colors[b.color]) { rgb = trackValue(d.colors[b.color].rgb, s, ms, g, gl, rgb); a *= trackValue(d.colors[b.color].a, s, ms, g, gl, 1); }
         if (b.alpha >= 0 && d.alphas[b.alpha]) a *= trackValue(d.alphas[b.alpha], s, ms, g, gl, 1);
-        const k = this.brightness; m.color.setRGB(rgb[0] * k, rgb[1] * k, rgb[2] * k); m.opacity = clamp(a, 0, 1);
+        const k = this.brightness, c = this.tint;
+        m.color.setRGB(rgb[0] * k * c[0], rgb[1] * k * c[1], rgb[2] * k * c[2]); m.opacity = clamp(a, 0, 1);
         if (b.blend <= 1) m.transparent = a < 0.999;
         m.visible = a > 0.003;
         if (b.uvanim >= 0 && m.map && d.uvanims[b.uvanim]) {
           const t = trackValue(d.uvanims[b.uvanim].t, s, ms, g, gl, [0, 0, 0]);
           m.map.offset.set(t[0], t[1]);
+        }
+        if (b.uvanim2 >= 0 && m.aoMap && d.uvanims[b.uvanim2]) {
+          const t = trackValue(d.uvanims[b.uvanim2].t, s, ms, g, gl, [0, 0, 0]);
+          m.aoMap.offset.set(t[0], t[1]);
         }
       }
     }
@@ -246,6 +264,23 @@ const GameEngine = (() => {
       for (const r of this.ribbons) r.update(dt, camera, opacity);
     }
     hasSeq(id) { return this.data.seqs.some((s) => s.id === id); }
+    // One of its textures (by index) drawn as another THREE texture (null: its own again), on every batch, emitter
+    // and ribbon that uses it; a scrolling batch gets its own repeating copy.
+    retexture(index, tex) {
+      const own = loadTexture(this.data.textures[index]);
+      const pick = (b, scroll) => {
+        const t = tex || own || white();
+        if (!scroll) return t;
+        const c = t.clone(); c.needsUpdate = true; c.wrapS = c.wrapT = THREE.RepeatWrapping; return c;
+      };
+      for (const m of this.batches) {
+        const b = m.userData.batch;
+        if (b.tex === index) { m.map = pick(b, b.uvanim >= 0); m.needsUpdate = true; }
+        if (b.tex2 === index && m.aoMap) { m.aoMap = pick(b, b.uvanim2 >= 0); m.needsUpdate = true; }
+      }
+      for (const e of this.emitters) if (e.p.tex === index) e.mesh.material.uniforms.map.value = tex || own || white();
+      for (const r of this.ribbons) if (r.r.tex === index) r.mesh.material.uniforms.map.value = tex || own || white();
+    }
     get alive() { return this.emitters.some((e) => e.alive) || this.ribbons.some((r) => r.alive); }
     dispose() {
       this.root.parent && this.root.parent.remove(this.root);
@@ -379,8 +414,8 @@ const GameEngine = (() => {
         const cx = cell % cols, cy = Math.floor(cell / cols), u0 = cx / cols, u1 = (cx + 1) / cols, v0 = cy / rows, v1 = (cy + 1) / rows;
         this.uv.set([u0, v1, u1, v1, u1, v0, u0, v0], i * 8);
         const al = clamp(a * opacity, 0, 1);
-        const br = this.model.brightness / 255;
-        for (let k = 0; k < 4; k++) this.col.set([rgb[0] * br, rgb[1] * br, rgb[2] * br, al], i * 16 + k * 4);
+        const br = this.model.brightness / 255, tn = this.model.tint;
+        for (let k = 0; k < 4; k++) this.col.set([rgb[0] * br * tn[0], rgb[1] * br * tn[1], rgb[2] * br * tn[2], al], i * 16 + k * 4);
       }
       this.geo.setDrawRange(0, n * 6);
       this.geo.attributes.position.needsUpdate = true; this.geo.attributes.uv.needsUpdate = true; this.geo.attributes.color.needsUpdate = true;
@@ -421,7 +456,7 @@ const GameEngine = (() => {
       for (const e of this.edges) { e.age += dt; e.p.y -= (r.gravity || 0) * dt * e.age * k; }
       const life = r.edgeLife || 0.5;
       while (this.edges.length && (this.edges[0].age > life || this.edges.length > MAX_EDGES)) this.edges.shift();
-      const n = this.edges.length, rgb = this.value('rgb', [1, 1, 1]).map((x) => x * md.brightness), a = this.value('a', 1);
+      const n = this.edges.length, rgb = this.value('rgb', [1, 1, 1]).map((x, c) => x * md.brightness * md.tint[c]), a = this.value('a', 1);
       for (let i = 0; i < n; i++) {
         const e = this.edges[i], f = i / Math.max(1, n - 1);
         this.pos.set([e.p.x + e.up.x * e.above, e.p.y + e.up.y * e.above, e.p.z + e.up.z * e.above,

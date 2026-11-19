@@ -172,12 +172,13 @@ const GameData = (() => {
 
     // Vertices.
     const [vc, vo] = R.arr(0x3C);
-    const pos = new Float32Array(vc * 3), nrm = new Float32Array(vc * 3), uv = new Float32Array(vc * 2), bones4 = new Uint8Array(vc * 4), weights4 = new Uint8Array(vc * 4);
+    const pos = new Float32Array(vc * 3), nrm = new Float32Array(vc * 3), uv = new Float32Array(vc * 2), uv2 = new Float32Array(vc * 2), bones4 = new Uint8Array(vc * 4), weights4 = new Uint8Array(vc * 4);
     for (let i = 0; i < vc; i++) {
       const o = vo + i * 48;
       for (let k = 0; k < 3; k++) { pos[i * 3 + k] = d.getFloat32(o + k * 4, true); nrm[i * 3 + k] = d.getFloat32(o + 20 + k * 4, true); }
       for (let k = 0; k < 4; k++) { weights4[i * 4 + k] = d.getUint8(o + 12 + k); bones4[i * 4 + k] = d.getUint8(o + 16 + k); }
       uv[i * 2] = d.getFloat32(o + 32, true); uv[i * 2 + 1] = d.getFloat32(o + 36, true);
+      uv2[i * 2] = d.getFloat32(o + 40, true); uv2[i * 2 + 1] = d.getFloat32(o + 44, true);
     }
     const skinBuf = await client.read(base + '00.skin');
     if (!skinBuf) throw new Error(`${base}00.skin: not in the client`);
@@ -187,17 +188,24 @@ const GameData = (() => {
     for (let i = 0; i < sn; i++) { const o = so + i * 48; subs.push({ id: s.getUint16(o, true), istart: s.getUint16(o + 8, true) + (s.getUint16(o + 2, true) << 16), icount: s.getUint16(o + 10, true) }); }
     const mats = []; { const [n, o] = R.arr(0x70); for (let i = 0; i < n; i++) mats.push([d.getUint16(o + i * 4, true), d.getUint16(o + i * 4 + 2, true)]); }
     const lookup16 = (off, signed) => { const [n, o] = R.arr(off), a = []; for (let i = 0; i < n; i++) a.push(signed ? d.getInt16(o + i * 2, true) : d.getUint16(o + i * 2, true)); return a; };
-    const texLookup = lookup16(0x80), transLookup = lookup16(0x90), uvLookup = lookup16(0x98, true);
+    const texLookup = lookup16(0x80), coordLookup = lookup16(0x88), transLookup = lookup16(0x90), uvLookup = lookup16(0x98, true);
     const index = [], batches = [];
     for (let i = 0; i < bn; i++) {
       const o = bo + i * 24, prio = s.getInt8(o + 1), section = s.getUint16(o + 4, true), color = s.getUint16(o + 8, true), mat = s.getUint16(o + 10, true);
       const layer = s.getUint16(o + 12, true), combo = s.getUint16(o + 16, true), weight = s.getUint16(o + 20, true), transform = s.getUint16(o + 22, true);
+      const coords = coordLookup[s.getUint16(o + 18, true)] || 0;          // 1: the batch reads the second UV set
       const sub = subs[section]; if (!sub || (geosets && !geosets.has(sub.id))) continue;
       const start = index.length;
-      for (let t = sub.istart; t < sub.istart + sub.icount; t++) index.push(s.getUint16(lo + s.getUint16(ino + t * 2, true) * 2, true));
+      for (let t = sub.istart; t < sub.istart + sub.icount; t++) {
+        const v = s.getUint16(lo + s.getUint16(ino + t * 2, true) * 2, true);
+        index.push(v);
+        if (coords === 1) { uv[v * 2] = uv2[v * 2]; uv[v * 2 + 1] = uv2[v * 2 + 1]; }   // its own vertices' UVs
+      }
       const [rflags, blend] = mats[mat] || [0, 0];
+      const two = s.getUint16(o + 14, true) > 1;          // a second texture, on the second UV set, multiplied in
       batches.push({ start, count: sub.icount, tex: texLookup[combo] ?? 0, blend, flags: rflags, prio, layer, geoset: sub.id,
-        color: color === 0xFFFF ? -1 : color, alpha: transLookup[weight] ?? -1, uvanim: uvLookup[transform] ?? -1 });
+        color: color === 0xFFFF ? -1 : color, alpha: transLookup[weight] ?? -1, uvanim: uvLookup[transform] ?? -1,
+        tex2: two ? texLookup[combo + 1] ?? -1 : -1, uvanim2: two ? uvLookup[transform + 1] ?? -1 : -1 });
     }
 
     // Bones, attachments, colors, transparencies, texture animations.
@@ -236,7 +244,7 @@ const GameData = (() => {
       } }
     const bounds = []; for (let k = 0; k < 6; k++) bounds.push(d.getFloat32(0xA0 + k * 4, true));
     return { name: path.split('\\').pop().replace(/\.m2$/i, ''), path, seqs: seqIndex.map((i) => ({ id: seqs[i].id, dur: seqs[i].dur })), gloops, bounds,
-      vertexCount: vc, pos, nrm, uv, bones4, weights4, index: new Uint32Array(index), batches, textures, bones, attachments, colors, alphas, uvanims, particles, ribbons };
+      vertexCount: vc, pos, nrm, uv, uv2, bones4, weights4, index: new Uint32Array(index), batches, textures, bones, attachments, colors, alphas, uvanims, particles, ribbons };
   }
   // A texture no larger than most (the engine draws it; the client's own sizes are fine for a preview).
   function shrink(img, most) {

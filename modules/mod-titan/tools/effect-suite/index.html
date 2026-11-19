@@ -599,12 +599,13 @@ const NEW_CASTER = { morph: 'human', weapon: 'none', pose: 'spell', anim: 0 };
 const SPELL_ANIMS = [0, 158, 159];
 // A model's key: a client path in the client; fx_<name> in the web Suite (an old key is found under Spells\).
 const modelPath = (key) => (key.includes('\\') ? key : `Spells\\${key.replace(/^fx_/, '')}.m2`);
-const modelName = (key) => key.split('\\').pop().replace(/\.m2$/i, '').replace(/^fx_/, '').replace(/_/g, ' ');
+const modelName = (key) => key.replace(/^import:/, '').split('\\').pop().replace(/\.m2$/i, '').replace(/^fx_/, '').replace(/_/g, ' ');
 GAME.loading = new Map();
 // The model of a layer: there when built; in the client, built now (null until then, the layer starts once it is).
 GAME.need = (key) => {
   if (!key) return null;
   if (GameEngine.assets[key]) return GameEngine.assets[key];
+  if (key.startsWith('import:')) return needImported(key);
   if (!LIVE || !GAME.lib || GAME.loading.has(key)) return null;
   GAME.loading.set(key, GAME.lib.model(modelPath(key), { sequences: SPELL_ANIMS }).then((data) => {
     if (!data) { toast(`${modelName(key)}: not in the client`); return; }
@@ -613,9 +614,47 @@ GAME.need = (key) => {
   }));
   return null;
 };
+/* Models imported from your computer (Library: Import a model): an M2 with its .skin (its .anim files and
+   textures too, when they are not the game's), kept in the spec (spec.models) as files and built here; a texture
+   it names that you did not add is read from the game in the client. */
+function needImported(key) {
+  const entry = state.spec && state.spec.models && state.spec.models[key.slice(7)];
+  if (!entry || GAME.loading.has(key)) return null;
+  const files = new Map(Object.entries(entry.files).map(([n, uri]) => [n.toLowerCase(), uri]));
+  const client = { read: async (p) => {
+    const uri = files.get(p.split('\\').pop().toLowerCase());
+    if (uri) { const r = await fetch(uri); return r.arrayBuffer(); }
+    return LIVE ? GAME.lib.client.read(p) : null;
+  } };
+  GAME.loading.set(key, GameData.buildModel(client, entry.path, { sequences: SPELL_ANIMS.concat(GameData.HERO_SEQS),
+    textureSize: 512 }).then((data) => {
+    GameEngine.assets[key] = data;
+    if (state.spec.layers.some((l) => l.model === key)) changed();
+  }).catch((e) => toast(`${entry.path}: ${e.message}`)));
+  return null;
+}
+function importModel() {
+  const input = document.createElement('input'); input.type = 'file'; input.multiple = true;
+  input.accept = '.m2,.skin,.anim,.blp,.png';
+  input.onchange = async () => {
+    const chosen = [...input.files], m2 = chosen.find((f) => /\.m2$/i.test(f.name));
+    if (!m2) return toast('Choose the model (.m2) with its .skin file');
+    if (!chosen.some((f) => /00\.skin$/i.test(f.name))) return toast(`Add ${m2.name.replace(/\.m2$/i, '00.skin')} too`);
+    const total = chosen.reduce((n, f) => n + f.size, 0);
+    if (total > 6 * 1024 * 1024) return toast('Too large to keep in an effect (6 MB at most)');
+    const files = {};
+    for (const f of chosen) files[f.name] = await new Promise((done) => { const r = new FileReader(); r.onload = () => done(r.result); r.readAsDataURL(f); });
+    const name = m2.name.replace(/\.m2$/i, '').replace(/[^\w-]/g, '_').slice(0, 40) || 'model';
+    edit(() => { state.spec.models = state.spec.models || {}; state.spec.models[name] = { path: `Imported\\${m2.name}`, files }; });
+    modelLayer('import:' + name);
+    toast(`Imported ${name}`);
+  };
+  input.click();
+}
 async function loadLive() {
   const client = { read: async (p) => { const b = await LIVE.read(p); return b ? b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) : null; } };
   const lib = GAME.lib = new GameData.Library(client);
+  lib.client = client;
   const [human, dummyData, effects, spells, sounds] = await Promise.all([lib.human(), lib.dummy(), lib.effects(), lib.spells(), lib.sounds()]);
   GAME.sounds = sounds;
   if (human) GameEngine.assets.human = human;
@@ -801,7 +840,7 @@ const NEW_LAYER = {
     fadeOut: 0.3, width: 0.8, tile: 4, scroll: 6, fps: 24, flicker: 0.4 },
 };
 NEW_LAYER.model = { type: 'model', name: 'Game model', trigger: 'impact', anchor: 'target.chest', delay: 0, life: 1.5,
-  model: '', scale: 1, speed: 1, opacity: 1, turn: 0 };
+  model: '', scale: 1, speed: 1, opacity: 1, turn: 0, tint: '#ffffff', retex: {} };
 // A sound: the game's (in the client), a built-in one, or your own file (kept in the spec, like your textures).
 NEW_LAYER.sound = { type: 'sound', name: 'Sound', trigger: 'impact', anchor: 'impact', delay: 0, life: 1.2,
   sound: 'synth:boom', volume: 1, pitch: 1, pitchVary: 0.05, loop: false, positional: true, range: 40 };
@@ -825,7 +864,7 @@ function normalizeSpec(spec) {
   for (const k of ['trail', 'sound', 'light']) p[k] = Object.assign(deepCopy(NEW_PROJECTILE[k]), p[k] || {});
   spec.transform = Object.assign(deepCopy(NEW_TRANSFORM), spec.transform || {});
   spec.caster = Object.assign(deepCopy(NEW_CASTER), spec.caster || {});
-  spec.sounds = spec.sounds || {}; spec.textures = spec.textures || {};
+  spec.sounds = spec.sounds || {}; spec.textures = spec.textures || {}; spec.models = spec.models || {};
   spec.layers = spec.layers.map((l) => Object.assign(deepCopy(NEW_LAYER[l.type] || LAYER_COMMON), l));
   return spec;
 }
@@ -1166,6 +1205,11 @@ function cardMaterial(l) {
 // A locked billboard at Rotation 0 stands upright across the caster's line (its face toward the Hero, the stage's -X).
 const FACE_CASTER = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
+// A Suite texture (built-in or your own) on a game model: the model's UVs read it unflipped.
+function modelTexture(name) {
+  const t = textureInfo(name).base.clone(); t.flipY = false; t.encoding = THREE.sRGBEncoding; t.needsUpdate = true;
+  return t;
+}
 function fadeAt(l, f) {
   const fi = l.fadeIn || 0, fo = l.fadeOut || 0;
   let a = 1;
@@ -1261,6 +1305,7 @@ class LayerRun {
     if (!data) { if (ended) this.dispose(); return; }
     if (!this.gm) {
       this.gm = new GameEngine.GameModel(data, { world: runtime, scale: l.scale || 1 });
+      for (const [index, name] of Object.entries(l.retex || {})) if (name) this.gm.retexture(+index, modelTexture(name));
       this.gm.speed = l.speed || 1; this.holder = new THREE.Group(); this.holder.add(this.gm.root); runtime.add(this.holder);
       this.endAt = null;
     }
@@ -1271,6 +1316,7 @@ class LayerRun {
     // The facing, under the effect's rotation, then the layer's own.
     this.holder.quaternion.premultiply(degQuat(XF().rotation, new THREE.Quaternion())).multiply(degQuat(l.orient, new THREE.Quaternion()));
     this.gm.root.scale.setScalar(this.sizeK); this.gm.brightness = lightFactor(l);
+    colA.set(l.tint || '#ffffff'); this.gm.tint = [colA.r, colA.g, colA.b];
     if (ended && this.endAt === null) { this.endAt = local; this.gm.emitting = false; }
     const fade = this.endAt === null ? clamp(local / 0.08, 0, 1) : clamp(1 - (local - this.endAt) / 0.25, 0, 1);
     this.gm.update(dt, camera, (l.opacity ?? 1) * fade);
@@ -1761,6 +1807,18 @@ function renderLiveSearch(body) {
     for (const s of spells) out.append(presetEl(s.name, `Spell ${s.id}${s.rank ? ', ' + s.rank : ''}: its visual as an effect`, ['#ffd9a0', '#a8481c'], () => openSpell(s.id)));
     const g2 = document.createElement('div'); g2.className = 'lib-group'; g2.textContent = `Effect models (${models.length}${models.length >= 60 ? '+' : ''})`; out.append(g2);
     for (const p of models) out.append(presetEl(modelName(p), p + ' (adds it as a layer)', ['#c9e6ff', '#2a5f9e'], () => modelLayer(p)));
+    // Every model in the client's archives (creatures, items, doodads, spells), found by file name.
+    const g4 = document.createElement('div'); g4.className = 'lib-group'; g4.textContent = 'All models in the game (searching…)';
+    const all = document.createElement('div'); out.append(g4, all);
+    if (!id && LIVE.find) {
+      const asked = q;
+      LIVE.find(`*${q.replace(/[*?]/g, '')}*.m2`).then((found) => {
+        if (asked !== state.query.toLowerCase()) return;
+        const list = (found || []).filter((p) => /\.m2$/i.test(p)).slice(0, 80);
+        g4.textContent = `All models in the game (${list.length}${list.length >= 80 ? '+' : ''})`;
+        for (const p of list) all.append(presetEl(modelName(p), p + ' (adds it as a layer)', ['#e8dcc8', '#6a5432'], () => modelLayer(p)));
+      }).catch(() => { g4.textContent = 'All models in the game (could not search)'; });
+    } else g4.remove();
     const g3 = document.createElement('div'); g3.className = 'lib-group'; g3.textContent = `Sounds (${sounds.length}${sounds.length >= 40 ? '+' : ''})`; out.append(g3);
     for (const e of sounds) {
       const el = presetEl(e.name, `${e.files.length} file${e.files.length > 1 ? 's' : ''}: ${e.files[0].split('\\').pop()}`, ['#d6ffd0', '#2f7a3a'], () => soundLayer('game:' + e.id, e.name));
@@ -1777,7 +1835,10 @@ function renderLibrary(body) {
   const mine = LIVE ? (GAME.mine || []) : store.get('efs.library', []);
   const blank = document.createElement('button'); blank.className = 'btn'; blank.style.width = '100%'; blank.textContent = 'New blank effect';
   blank.onclick = () => { setSpec(NEW_EFFECT()); state.tab = 'layers'; renderLeft(); };
-  body.append(blank);
+  const imp = document.createElement('button'); imp.className = 'btn'; imp.style.cssText = 'width:100%;margin-top:6px';
+  imp.textContent = 'Import a model (M2)'; imp.title = 'An .m2 with its .skin (and its .anim files and textures, if they are not the game\'s): added as a Game model layer';
+  imp.onclick = importModel;
+  body.append(blank, imp);
   if (LIVE) renderLiveSearch(body);
   const g = document.createElement('div'); g.className = 'lib-group'; g.textContent = 'Game spells';
   if (!GAME.templates.length) body.append(g);
@@ -1900,6 +1961,8 @@ LAYER_FIELDS.model = [
   F('Speed', 'speed', 'range', { min: 0.1, max: 3, step: 0.05, unit: '×', hint: 'its animation and particles' }),
   F('Opacity', 'opacity', 'range', { min: 0, max: 1, step: 0.01 }),
   F('Turn', 'turn', 'range', { min: -180, max: 180, step: 1, unit: '°', hide: (l) => l.trigger === 'projectile' }),
+  F('Tint', 'tint', 'color', { hint: 'multiplies every color of the model, its particles and ribbons (white: as it is)' }),
+  F('Textures', 'retex', 'modeltex', { hint: 'each texture of the model: keep it, or draw it as one of yours' }),
 ];
 LAYER_FIELDS.sound = [
   F('Sound', 'sound', 'sound'),
@@ -2141,6 +2204,28 @@ function buildFields(box, obj, fields, after, afterPath, stage = false) {
         v.append(n);
       });
       ctl.append(v);
+    } else if (fd.kind === 'modeltex') {        // a game model's textures, each kept or replaced
+      ctl.classList.add('wrap');
+      const data = GAME.need(obj.model);
+      if (!data) { const h = document.createElement('span'); h.className = 'hint'; h.textContent = 'Loading the model…'; ctl.append(h); }
+      (data ? data.textures : []).forEach((t, index) => {
+        const line = document.createElement('div'); line.style.cssText = 'display:grid;gap:3px;width:100%;margin-bottom:4px';
+        const label = document.createElement('span'); label.className = 'chip';
+        label.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%';
+        label.textContent = t.name || (t.type ? `replaceable ${t.type}` : `texture ${index + 1}`);
+        const pick = document.createElement('select'); pick.setAttribute('aria-label', `Texture ${index + 1}`);
+        pick.style.width = '100%';
+        for (const [v, txt] of [['', 'Its own'], ...textureNames().map((n) => [n, textureLabel(n)]), ['+', 'Add your own…']]) {
+          const o = document.createElement('option'); o.value = v; o.textContent = txt; pick.append(o);
+        }
+        pick.value = (val && val[index]) || '';
+        pick.onchange = () => {
+          const set = (name) => commit(Object.assign({}, val || {}, { [index]: name }), true);
+          if (pick.value === '+') addTexture(set); else set(pick.value);
+        };
+        line.append(label, pick); ctl.append(line);
+      });
+      if (!data && obj.model) setTimeout(() => state.sel.kind === 'layer' && GAME.need(obj.model) && renderInspector(), 800);
     } else if (fd.kind === 'texture') {
       const g = document.createElement('div'); g.className = 'texgrid';
       for (const name of textureNames()) {

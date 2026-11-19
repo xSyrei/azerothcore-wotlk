@@ -48,6 +48,20 @@ An effect spec (`"format": "emberforge-effect"`, exported as JSON) has:
   0.25 yd / 15° / 0.1×, G hide, F focus, Reset), on the selected layer, the projectile's launch point or the whole
   effect; the arrow keys and PgUp / PgDn nudge it (Shift: five times as far).
 
+## Game models: search, import and edit
+
+- **Search**: in the client the Library's search lists, besides spells and effect models, **every model in the game's
+  archives** by file name (creatures, items, doodads, spells: `EmberforgeArchive.exe`'s file search), each added as a
+  Game model layer.
+- **Import**: *Import a model (M2)* takes an `.m2` with its `00.skin` (and its `.anim` files and textures when they
+  are not the game's; a texture it names that you did not add is read from the game). The files are kept in the
+  effect (`models`, 6 MB at most) and the model is added as a Game model layer (`import:<name>`).
+- **Edit**: a Game model layer has a **Tint** (multiplies every color of the model, its particles and ribbons) and
+  **Textures**: each of the model's textures kept, or drawn as any of the Suite's textures or one of your own PNGs.
+  Two-texture batches (a scrolling texture under a mask, as Kil'jaeden's fire or the Flame Cat's wisps) draw both.
+
+Imported and edited models are previews: the exporter (Into the game) does not carry Game model layers yet.
+
 ## The caster
 
 Effect & stage's **Caster** (saved with the effect) sets who casts it:
