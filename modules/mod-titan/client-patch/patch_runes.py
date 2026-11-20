@@ -1846,6 +1846,7 @@ for _spell in SPELLS:
 COMMUNION_ICON, WORLDWARDEN_ICON, COVENANT_ICON = ('Ability_Rune_RedCommunion', 'Ability_Rune_PrimalWorldwarden',
                                                    'Ability_Rune_BlackCovenant')
 TAUNT = 355
+LASH_ICON, SIPHON_ICON = 'Ability_Covenant_Lash', 'Ability_Covenant_SoulSiphon'
 DRAIN_LIFE = 689
 RANGE_10, RANGE_30 = 7, 4
 DURATION_30MIN, DURATION_30S = 30, 9
@@ -1865,6 +1866,9 @@ def tank_action(spell_id, name, icon, text, cooldown, gcd=False, cast=1, target=
     if gcd:
         spell['set'].update({'StartRecoveryCategory': GCD_CATEGORY, 'StartRecoveryTime': 1500})
     spell['tooltip'] = ''
+    # Usable in any form or stance (the template's "not while shapeshifted" kept a tank in Defensive Stance or Bear
+    # Form from casting them at all; Bind: Voidwalker refuses a form itself, on the server).
+    spell['unset'] = {'Attributes': 0x10000}
     return spell
 
 
@@ -1913,10 +1917,10 @@ SPELLS += [
          'draws a magma line to it.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     # Black Covenant: Bind Guardian, Covenant Armor and its pact, Covenant Lash, Soul Siphon, its ward and slow,
     # Dark Intercession.
-    tank_action(91520, 'Bind Guardian', COVENANT_ICON,
-                'Merges your Voidwalker into Covenant Armor until you cast this again: armor from items 400% higher, '
+    tank_action(91520, 'Bind: Voidwalker', 'Spell_Shadow_SummonVoidWalker',
+                'Binds a Voidwalker to you as Covenant Armor until you cast this again: armor from items 400% higher, '
                 '15% more maximum health, 200% more threat, 6% less damage taken. Searing Pain becomes Covenant Lash '
-                'and Drain Life Soul Siphon. Needs your Voidwalker.', 10000, cast=CAST_2S),
+                'and Drain Life Soul Siphon.', 10000, cast=CAST_2S),
     {**buff(91521, 'Covenant Armor', COVENANT_ICON,
             'Armor from items, maximum health and threat increased; damage taken reduced.', DURATION_INFINITE,
             {1: aura(AURA_MOD_BASE_RESISTANCE_PCT, 400, 1), 2: aura(AURA_MOD_INCREASE_HEALTH_PERCENT, 15, 0),
@@ -1925,21 +1929,22 @@ SPELLS += [
     buff(91522, 'Covenant Pact', COVENANT_ICON, '', DURATION_INFINITE,
          {1: aura(AURA_MOD_THREAT, 200, ALL_SCHOOLS), 2: aura(AURA_MOD_DAMAGE_PERCENT_TAKEN, 0, MAGIC_SCHOOLS)},
          hidden=True),
-    tank_action(91523, 'Covenant Lash', 'Spell_Fire_SoulBurn',
-                'An instant lash: 45% of your spell power as Shadowflame damage, with 100% more threat.', 0,
+    tank_action(91523, 'Covenant Lash', LASH_ICON,
+                'An instant lash: 100% of your spell power as Shadowflame damage, with 100% more threat.', 0,
                 gcd=True, target=TARGET_UNIT_TARGET_ENEMY, range_index=RANGE_10),
-    strike(91524, 'Covenant Lash', 'Spell_Fire_SoulBurn', SHADOWFLAME, VISUAL_SHADOW_BOLT_HIT),
-    {'id': 91525, 'copy': DRAIN_LIFE, 'name': 'Soul Siphon', 'icon': 'Spell_Shadow_LifeDrain02',
+    strike(91524, 'Covenant Lash', LASH_ICON, SHADOWFLAME, VISUAL_SHADOW_BOLT_HIT),
+    {'id': 91525, 'copy': DRAIN_LIFE, 'name': 'Soul Siphon', 'icon': SIPHON_ICON,
      'description': 'Channels for 3 sec, moving at 70% speed: each second 25% of your spell power as Shadow damage '
                     'and a heal of 1.5% of your maximum health.', 'tooltip': '',
-     'set': {**NO_FAMILY, 'DurationIndex': DURATION_3S, 'RangeIndex': RANGE_20, 'RecoveryTime': 8000,
+     'set': {**NO_FAMILY, 'DurationIndex': DURATION_3S, 'RangeIndex': RANGE_20, 'RecoveryTime': 15000,
              'ManaCost': 0, 'ManaCostPercentage': 6, 'ChannelInterruptFlags': 0,
              'AttributesEx5': SPELL_ATTR5_ALLOW_ACTION_DURING_CHANNEL, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 0},
+     'unset': {'Attributes': 0x10000},
      'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_PERIODIC_DUMMY, 'Amplitude': 1000, 'BasePoints': 0,
                      'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0}},
      'clear': [2, 3]},
-    strike(91526, 'Soul Siphon', 'Spell_Shadow_LifeDrain02', SHADOW),
-    heal(91527, 'Soul Siphon', 'Spell_Shadow_LifeDrain02', ''),
+    strike(91526, 'Soul Siphon', SIPHON_ICON, SHADOW),
+    heal(91527, 'Soul Siphon', SIPHON_ICON, ''),
     absorb(91528, 'Siphoning Ward', 'Spell_Shadow_LifeDrain02', DURATION_3S),
     tank_action(91529, 'Dark Intercession', 'Spell_Shadow_AntiShadow',
                 '15% less damage taken for 6 sec; Covenant Lash also strikes up to 4 enemies within 6 yards of its '
@@ -1970,8 +1975,10 @@ SPELLS.append(_magma)
 for _spell in SPELLS:
     if _spell['id'] in (91481, 91483, 91504, 91506, 91524, 91526):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
-    if _spell['id'] == 91523:       # 3% of base mana, on the global cooldown
-        _spell['set'] = {**_spell['set'], 'PowerType': 0, 'ManaCostPercentage': 3}
+    if _spell['id'] == 91523:       # 8% of base mana, on the global cooldown
+        _spell['set'] = {**_spell['set'], 'PowerType': 0, 'ManaCostPercentage': 8}
+    if _spell['id'] == 91521:       # bound: Shadowform's look in the Voidwalker's purple
+        _spell['visual'] = 'CovenantBound'
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
            for first, icon, modifiers in (
@@ -1982,7 +1989,7 @@ SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1
                                           ('Deepstone Heart', 'Wide Communion', 'Striding Heart'),
                                           ('Resonant Strikes', 'Molten Causeway', 'Stoneblood Lash')]),
                (91531, COVENANT_ICON, [('Voidforged Plate', 'Nether Insulation', 'Hungry Covenant'),
-                                       ('Deep Extraction', 'Siphoning Ward', 'Unfettered Drain'),
+                                       ('Deep Extraction', 'Ravenous Siphon', 'Lashing Rhythm'),
                                        ('Guardian Manifest', "Legion's Rebuke", 'Frequent Petition')]))
            for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
 for _spell in SPELLS:
@@ -1991,4 +1998,15 @@ for _spell in SPELLS:
 ICONS += [COMMUNION_ICON, WORLDWARDEN_ICON, COVENANT_ICON, 'Spell_DeathKnight_BloodBoil',
           'Spell_DeathKnight_DeathStrike', 'Spell_Shadow_ShadowWordPain', 'Spell_DeathKnight_BloodPlague',
           'Spell_Nature_StoneClawTotem', 'Spell_Nature_EarthShock', 'Spell_Nature_EarthBindTotem',
-          'Spell_Fire_SoulBurn', 'Spell_Shadow_LifeDrain02', 'Spell_Shadow_AntiShadow', 'Spell_Nature_Reincarnation']
+          'Spell_Fire_SoulBurn', 'Spell_Shadow_LifeDrain02', 'Spell_Shadow_AntiShadow', 'Spell_Nature_Reincarnation',
+          LASH_ICON, SIPHON_ICON, 'Spell_Shadow_SummonVoidWalker']
+# The spellbook's class tabs for what the Tank Collection teaches (the default for our own spells is the Demon
+# Hunter's): the Worldheart's Shaman, Sanguine Recall Death Knight, the Covenant's Warlock, Challenge Warrior.
+SPELL_CLASSES.update({91482: 'DEATHKNIGHT', 91500: 'SHAMAN', 91501: 'SHAMAN', 91520: 'WARLOCK', 91523: 'WARLOCK',
+                      91525: 'WARLOCK', 91529: 'WARLOCK', 91542: 'WARRIOR'})
+# Covenant Armor's look: Shadowform's (its darkening character effect and the shadow at the feet) tinted the
+# Voidwalker's purple, with Shadow Dance's purple wisps about the body.
+COVENANT_TINT = 0x6A5010A0                      # ARGB: Shadowform's own is 0x4A1C0108, near-black red
+KIT_TINT = 21                                   # the kit's first character effect's first parameter: its colour
+VISUALS['CovenantBound'] = {'copy': 3619, 'id': 16808, 'kits': {
+    'state': (15747, {KIT_TINT: COVENANT_TINT, KIT_CHEST: FX_SHADOW_DANCE})}}

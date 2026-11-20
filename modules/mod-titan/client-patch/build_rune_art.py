@@ -1258,22 +1258,22 @@ BUILT.update({
         'icons': [],
     },
     48: {
-        'core': '**Bind Guardian** merges your Voidwalker into Covenant Armor; **Covenant Lash** and **Soul Siphon** '
-            'replace Searing Pain and Drain Life; **Dark Intercession** guards you.',
+        'core': '**Bind: Voidwalker** binds a Voidwalker to you as Covenant Armor; **Covenant Lash** and **Soul '
+            'Siphon** replace Searing Pain and Drain Life; **Dark Intercession** guards you.',
         'slots': ['Covenant Armor', 'Siphon', 'Intercession'],
         'asks': ['What the armor holds', 'What the siphon draws', 'How the guardian intercedes'],
         'texts': [
             'Covenant Armor raises your armor from items by 500%.',
             'While bound, magic damage taken is reduced by a further 8%.',
             'Covenant Lash gives back 1% of your base mana, once every 2 sec.',
-            'Soul Siphon heals 2% of your maximum health a tick.',
-            'Each Soul Siphon tick adds an absorb of 1% of your maximum health for 3 sec, up to 3%.',
-            'Soul Siphon at full speed, from 30 yards, for 30% of your spell power a tick.',
+            'Soul Siphon heals 2.5% of your maximum health a tick.',
+            'Soul Siphon deals 40% of your spell power a tick.',
+            "Each Covenant Lash takes 1 sec off Soul Siphon's cooldown.",
             'Dark Intercession reduces damage taken by 22%.',
             'During Intercession, Covenant Lash hits up to 7 more enemies for 75% of its damage.',
             "Dark Intercession's cooldown is 24 sec, and it heals you for 2% of your maximum health.",
         ],
-        'abilities': ['Plate', 'Nether', 'Hunger', 'Deep', 'Ward', 'Unfettered', 'Manifest', 'Legion', 'Petition'],
+        'abilities': ['Plate', 'Nether', 'Hunger', 'Deep', 'Ravenous', 'Rhythm', 'Manifest', 'Legion', 'Petition'],
         'icons': [],
     },
 })

@@ -66,7 +66,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 ### Tank Legendary Runes
 
 Three new Legendary Runes for tanks, from the Tank Collection. Each also stops NPC attacks from critically striking
-you and teaches Challenge, a free 30-yard taunt (8 sec cooldown, off the global cooldown).
+you; Red Communion and the Primal Worldwarden also teach Challenge, a free 30-yard taunt (8 sec cooldown, off the
+global cooldown).
 
 - **Rune of Red Communion** (Blood Boil): Blood Boil links up to 5 enemies it hits to you for 10 sec. Blood Strike on
   a linked enemy heals you (1.5% of your maximum health, more for each other link) and pulses Shadow damage to the
@@ -77,12 +78,17 @@ you and teaches Challenge, a free 30-yard taunt (8 sec cooldown, off the global 
   burst around the totem, Frost Shock a slow that weakens enemies; Stormstrike repeats your last command, Lava Lash
   draws a magma line to the totem, and Place Worldheart anchors it. Modifiers: Earthen Command, Flame Dominion,
   Winter Command; Deepstone Heart, Wide Communion, Striding Heart; Resonant Strikes, Molten Causeway, Stoneblood Lash.
-- **Rune of the Black Covenant** (Summon Voidwalker and Searing Pain): Bind Guardian merges your Voidwalker into
-  Covenant Armor (more armor, health and threat, less damage taken). While bound, Searing Pain becomes Covenant Lash
-  (an instant Shadowflame lash with extra threat) and Drain Life becomes Soul Siphon (a channel you can move in that
-  heals you). Dark Intercession is your defensive, and your Curses of Weakness and Tongues weaken their victims' hits
-  on you. Modifiers: Voidforged Plate, Nether Insulation, Hungry Covenant; Deep Extraction, Siphoning Ward,
-  Unfettered Drain; Guardian Manifest, Legion's Rebuke, Frequent Petition.
+- **Rune of the Black Covenant** (Summon Voidwalker and Searing Pain): Summon Voidwalker becomes **Bind:
+  Voidwalker**, which binds a Voidwalker to you as Covenant Armor (more armor, health and threat, less damage taken,
+  and a Voidwalker's purple shadow about you). While bound, Searing Pain becomes **Covenant Lash** (an instant lash
+  for 100% of your spell power as Shadowflame damage, with extra threat; 8% of base mana) and, if you know Drain Life,
+  Drain Life becomes **Soul Siphon** (a channel you can move in that heals you; 15 sec cooldown). Dark Intercession is
+  your defensive, and your Curses of Weakness and Tongues weaken their victims' hits on you. Your taunt comes from
+  Wildcard. Modifiers: Voidforged Plate, Nether Insulation, Hungry Covenant; Deep Extraction (more Siphon healing),
+  Ravenous Siphon (more Siphon damage), Lashing Rhythm (each Covenant Lash takes 1 sec off Soul Siphon); Guardian
+  Manifest, Legion's Rebuke, Frequent Petition.
+- The Worldheart Totem and Place Worldheart are in the Shaman tab of the spellbook, Sanguine Recall in the Death
+  Knight's, the Black Covenant's abilities in the Warlock's.
 
 ### Graphics engine
 

@@ -632,8 +632,8 @@ utility or a tradeoff) take one pick each, from three.
     textures in `ice/`). `spell_titan_rune_cat_form` (768) sets it once the form has, and a rune change in Cat Form
     swaps it (`RefreshCatLook`); a transform on top is left alone.
   - **The Tank Collection** (their compendium; `src/tank_runes.cpp`, Rank I values: the server has no rune ranks).
-    Each teaches Challenge (91542: a free 30-yard taunt off the global cooldown, 8 sec) and wears Tank Foundation
-    (91543: NPC attacks never critically strike) while bound.
+    Each wears Tank Foundation (91543: NPC attacks never critically strike) while bound; Red Communion and the
+    Primal Worldwarden also teach Challenge (91542: a free 30-yard taunt off the global cooldown, 8 sec).
     - **Red Communion** (46; Tank; Blood Boil): Blood Boil links up to 5 enemies (Crimson Link 91480, 10 sec; the
       selected enemy first, the oldest other link replaced). An original Blood Strike on a link heals 1.5% of maximum
       health + 0.15% a further link (2.1% cap; 91485) and pulses 20% AP Shadow to the others (91481), once every 2
@@ -647,13 +647,18 @@ utility or a tradeoff) take one pick each, from three.
       the strongest). Stormstrike repeats the last command (10 sec) at 60%, once every 6 sec; Lava Lash lays a
       magma line to the totem (91507 looks, 91506 ticks: 10% AP to 5 enemies within 1.5 yards, 4 sec). Place
       Worldheart (91501, taught) anchors it at the target within 20 yards for 6 sec.
-    - **Black Covenant** (48; Tank; Summon Voidwalker, Searing Pain): Bind Guardian (91520, taught; 2 sec cast)
-      dismisses the Voidwalker into Covenant Armor (91521: base armor +400%, +15% health, 6% less damage; 91522:
-      +200% threat), health share kept; cast again, or a pet summoned, unbinds. While bound Searing Pain's buttons
-      are Covenant Lash (91523: 45% SP Shadowflame 91524, its threat doubled) and Drain Life's Soul Siphon (91525:
-      3 sec channel while moving at 70%, 25% SP and 1.5% health a tick). Dark Intercession (91529, taught; 91540
-      15% less damage, the Lash's cleave). The Hero's Curses of Weakness and Tongues cut their victims' Physical and
-      magic damage to them by 6%.
+    - **Black Covenant** (48; Tank; Summon Voidwalker, Searing Pain): Summon Voidwalker's buttons become Bind:
+      Voidwalker's (91520, taught; 2 sec cast), which binds a Voidwalker as Covenant Armor (a pet out is
+      dismissed; 91521: base armor +400%, +15% health, 6% less damage, Shadowform's look tinted purple with Shadow
+      Dance's wisps, visual 16808 / kit 15747; 91522: +200% threat), health share kept; cast again, or a pet
+      summoned, unbinds. While bound Searing Pain's buttons are Covenant Lash (91523: 8% of base mana, 100% SP
+      Shadowflame 91524, its threat doubled; Lashing Rhythm: 1 sec off Soul Siphon a Lash) and, for a Hero who knows
+      Drain Life, Drain Life's Soul Siphon (91525: 3 sec channel while moving at 70%, 15 sec, 25% SP (Ravenous 40%)
+      and 1.5% health (Deep Extraction 2.5%) a tick). Dark Intercession (91529, taught; 91540 15% less damage, the
+      Lash's cleave). The Hero's Curses of Weakness and Tongues cut their victims' Physical and magic damage to them
+      by 6%. No Challenge: its Hero's taunt comes from Wildcard.
+    - Spellbook tabs: Sanguine Recall the Death Knight's, the Worldheart's two the Shaman's, the Covenant's the
+      Warlock's, Challenge the Warrior's (`patch_runes.SPELL_CLASSES`).
   - `.runedebug` (anyone) tells the Splintered Crown's and Phoenix Wake's steps in chat (Icicle formed and loosed,
     the Ember placed, Fire Blast on its host, the phoenix summoned, its strike, why it went), to find where one stops.
 - A Hero's buff on their own pet or summon lands whatever its level (`hero_resources.cpp`): the core drops a positive

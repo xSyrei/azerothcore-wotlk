@@ -62,20 +62,23 @@
 //   Command (45% slow and 9% less, the echo 27% and 5.4%); Deepstone Heart (11%), Wide Communion (12 yards, Flame 8
 //   targets, Frost 8), Striding Heart (5 sec, 25% speed for 3 sec after); Resonant Strikes (an echo every 4 sec),
 //   Molten Causeway (16%, 2.5 yards each side), Stoneblood Lash (Lava Lash heals 1.5%, once every 4 sec).
-// - Black Covenant (48): Bind Guardian (taught; 2 sec cast, 10 sec) merges the Hero's Voidwalker into Covenant Armor
-//   until cast again: armor from items 400% more, 15% more maximum health (its share kept), 200% more threat, 6% less
-//   damage taken; a pet summoned meanwhile ends it. While bound, Searing Pain's buttons are Covenant Lash (instant,
-//   10 yards, 3% of base mana: 45% of spell power as Shadowflame, 100% more threat) and Drain Life's Soul Siphon (a
-//   3 sec channel at 70% speed, 6% of base mana, 8 sec: each second 25% of spell power as Shadow damage and 1.5% of
-//   maximum health back). Dark Intercession (taught; 30 sec, free, off the global cooldown): 15% less damage taken
-//   for 6 sec, Covenant Lash meanwhile hitting up to 4 more enemies within 6 yards of its victim for 50%. The Hero's
+// - Black Covenant (48): Summon Voidwalker's buttons become Bind: Voidwalker's (taught; 2 sec cast, 10 sec), which
+//   binds a Voidwalker to the Hero as Covenant Armor until cast again (a Voidwalker out is dismissed into it; any pet
+//   summoned meanwhile ends it): armor from items 400% more, 15% more maximum health (its share kept), 200% more
+//   threat, 6% less damage taken, Shadowform's look in purple. While bound, Searing Pain's buttons are Covenant Lash
+//   (instant, 10 yards, 8% of base mana: 100% of spell power as Shadowflame, 100% more threat) and, for a Hero who
+//   knows Drain Life, Drain Life's are Soul Siphon (a 3 sec channel at 70% speed, 6% of base mana, 15 sec: each
+//   second 25% of spell power as Shadow damage and 1.5% of maximum health back). Dark Intercession (taught; 30 sec,
+//   free, off the global cooldown): 15% less damage taken for 6 sec, Covenant Lash meanwhile hitting up to 4 more
+//   enemies within 6 yards of its victim for 50%. The Hero's
 //   Curse of Weakness has its victim deal 6% less Physical damage to them, Curse of Tongues 6% less magic damage.
 //   Modifiers: Voidforged Plate (500%), Nether Insulation (8% less magic damage taken), Hungry Covenant (Lash: 1%
-//   of base mana back, once every 2 sec); Deep Extraction (2%), Siphoning Ward (each tick an absorb of 1%, up to 3%,
-//   3 sec), Unfettered Drain (full speed, 30 yards, 30%); Guardian Manifest (22%), Legion's Rebuke (7 more, 75%),
-//   Frequent Petition (24 sec, and a 2% heal).
-// - The foundation, while any of them is bound: NPC attacks never critically strike the Hero, and Challenge (taught;
-//   a free 30-yard taunt off the global cooldown, 8 sec).
+//   of base mana back, once every 2 sec); Deep Extraction (Siphon heals 2.5%), Ravenous Siphon (40% of spell power a
+//   tick), Lashing Rhythm (each Covenant Lash 1 sec off Soul Siphon's cooldown); Guardian Manifest (22%), Legion's
+//   Rebuke (7 more, 75%), Frequent Petition (24 sec, and a 2% heal).
+// - The foundation, while any of them is bound: NPC attacks never critically strike the Hero; Red Communion and the
+//   Primal Worldwarden also teach Challenge (a free 30-yard taunt off the global cooldown, 8 sec). The Black
+//   Covenant's Hero gets their taunt from Wildcard.
 namespace
 {
     using namespace TankRunes;
@@ -88,9 +91,9 @@ namespace
         SPELL_STORMSTRIKE           = 17364,
         SPELL_LAVA_LASH             = 60103,
         SPELL_DRAIN_LIFE            = 689,
+        SPELL_SUMMON_VOIDWALKER     = 697,
         SPELL_CURSE_OF_WEAKNESS     = 702,
         SPELL_CURSE_OF_TONGUES      = 1714,
-        NPC_VOIDWALKER              = 1860,
 
         SPELL_CRIMSON_LINK          = 91480,
         SPELL_COMMUNION_PULSE       = 91481,
@@ -118,7 +121,6 @@ namespace
         SPELL_SOUL_SIPHON           = 91525,
         SPELL_SIPHON_STRIKE         = 91526,
         SPELL_SIPHON_HEAL           = 91527,
-        SPELL_SIPHONING_WARD        = 91528,
         SPELL_DARK_INTERCESSION     = 91529,
         SPELL_INTERCESSION          = 91540,
         SPELL_SIPHON_SLOW           = 91541,
@@ -146,7 +148,7 @@ namespace
     enum CovenantModifier : uint8
     {
         MOD_VOIDFORGED_PLATE, MOD_NETHER_INSULATION, MOD_HUNGRY_COVENANT,
-        MOD_DEEP_EXTRACTION, MOD_SIPHONING_WARD, MOD_UNFETTERED_DRAIN,
+        MOD_DEEP_EXTRACTION, MOD_RAVENOUS_SIPHON, MOD_LASHING_RHYTHM,
         MOD_GUARDIAN_MANIFEST, MOD_LEGIONS_REBUKE, MOD_FREQUENT_PETITION,
     };
 
@@ -187,14 +189,12 @@ namespace
 
     // Black Covenant's numbers.
     constexpr int32 ARMOR_PCT = 400, VOIDFORGED_PCT = 500, PACT_THREAT = 200, INSULATION_PCT = 8;
-    constexpr float LASH_SP = 0.45f, LASH_CLEAVE_RANGE = 6.0f, LASH_CLEAVE = 0.5f, REBUKE_CLEAVE = 0.75f;
+    constexpr float LASH_SP = 1.0f, LASH_CLEAVE_RANGE = 6.0f, LASH_CLEAVE = 0.5f, REBUKE_CLEAVE = 0.75f;
     constexpr uint32 LASH_CLEAVE_TARGETS = 4, REBUKE_TARGETS = 7;
     constexpr float HUNGRY_MANA_PCT = 1.0f;
     constexpr uint32 HUNGRY_EVERY_MS = 2000;
-    constexpr float SIPHON_SP = 0.25f, UNFETTERED_SP = 0.3f, SIPHON_HEAL = 1.5f, DEEP_HEAL = 2.0f;
-    constexpr float SIPHON_RANGE = 20.0f;
-    constexpr float WARD_TICK_PCT = 1.0f, WARD_CAP_PCT = 3.0f;
-    constexpr int32 WARD_MS = 3000;
+    constexpr float SIPHON_SP = 0.25f, RAVENOUS_SP = 0.4f, SIPHON_HEAL = 1.5f, DEEP_HEAL = 2.5f;
+    constexpr int32 RHYTHM_MS = 1000;           // Lashing Rhythm: off Soul Siphon's cooldown a Lash
     constexpr int32 INTERCESSION_PCT = 15, MANIFEST_PCT = 22, INTERCESSION_MS = 6000;
     constexpr int32 PETITION_CUT_MS = 6000;     // 30 to 24 sec
     constexpr float PETITION_HEAL = 2.0f;
@@ -782,7 +782,30 @@ namespace
         return known;
     }
 
-    // Searing Pain's and Drain Life's buttons become Covenant Lash's and Soul Siphon's (bound), or back.
+    // Summon Voidwalker's buttons become Bind: Voidwalker's while the rune is bound, or back.
+    void SwapSummon(Player* player, bool rune)
+    {
+        bool swapped = false;
+        for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
+        {
+            ActionButton const* action = player->GetActionButton(button);
+            if (!action || action->GetType() != ACTION_BUTTON_SPELL)
+                continue;
+            uint32 spellId = action->GetAction();
+            if (rune && spellId == SPELL_SUMMON_VOIDWALKER)
+                player->addActionButton(button, SPELL_BIND_GUARDIAN, ACTION_BUTTON_SPELL);
+            else if (!rune && spellId == SPELL_BIND_GUARDIAN && player->HasSpell(SPELL_SUMMON_VOIDWALKER))
+                player->addActionButton(button, SPELL_SUMMON_VOIDWALKER, ACTION_BUTTON_SPELL);
+            else
+                continue;
+            swapped = true;
+        }
+        if (swapped)
+            player->SendActionButtons(1);
+    }
+
+    // Searing Pain's and Drain Life's buttons become Covenant Lash's and Soul Siphon's (bound; Soul Siphon only for
+    // a Hero who knows Drain Life), or back.
     void SwapButtons(Player* player, bool bound)
     {
         uint32 searing = KnownRank(player, SPELL_SEARING_PAIN), drain = KnownRank(player, SPELL_DRAIN_LIFE);
@@ -796,7 +819,7 @@ namespace
             uint32 to = 0;
             if (bound && FirstRank(spellId) == SPELL_SEARING_PAIN)
                 to = SPELL_COVENANT_LASH;
-            else if (bound && FirstRank(spellId) == SPELL_DRAIN_LIFE)
+            else if (bound && FirstRank(spellId) == SPELL_DRAIN_LIFE && player->HasSpell(SPELL_SOUL_SIPHON))
                 to = SPELL_SOUL_SIPHON;
             else if (!bound && spellId == SPELL_COVENANT_LASH)
                 to = searing;
@@ -842,18 +865,17 @@ namespace
             Unbind(player);
             return;
         }
-        Pet* pet = player->GetPet();
-        if (!pet || !pet->IsAlive() || pet->GetEntry() != NPC_VOIDWALKER)
-        {
-            ChatHandler(player->GetSession()).SendSysMessage("Bind Guardian needs your living Voidwalker.");
-            return;
-        }
-        if (player->GetShapeshiftForm() != FORM_NONE)
+        // A major tank form (Bear, Dire Bear, Metamorphosis) and the armor never go together; a stance is no form.
+        ShapeshiftForm form = player->GetShapeshiftForm();
+        if (form == FORM_BEAR || form == FORM_DIREBEAR || form == FORM_METAMORPHOSIS)
         {
             ChatHandler(player->GetSession()).SendSysMessage("Covenant Armor cannot be worn with another form.");
             return;
         }
-        player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
+        // The Voidwalker comes from the void into the armor; a pet already out (the Hero's Voidwalker or another)
+        // is dismissed.
+        if (Pet* pet = player->GetPet())
+            player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
         KeepHealthShare(player, [player]()
         {
             int32 armor = Covenant(player, MOD_VOIDFORGED_PLATE) ? VOIDFORGED_PCT : ARMOR_PCT;
@@ -862,9 +884,10 @@ namespace
             int32 magic = Covenant(player, MOD_NETHER_INSULATION) ? -INSULATION_PCT : 0;
             player->CastCustomSpell(player, SPELL_COVENANT_PACT, &threat, &magic, nullptr, true);
         });
-        for (uint32 spellId : { SPELL_COVENANT_LASH, SPELL_SOUL_SIPHON })
-            if (!player->HasSpell(spellId))
-                player->learnSpell(spellId);
+        if (!player->HasSpell(SPELL_COVENANT_LASH))
+            player->learnSpell(SPELL_COVENANT_LASH);
+        if (KnownRank(player, SPELL_DRAIN_LIFE) && !player->HasSpell(SPELL_SOUL_SIPHON))
+            player->learnSpell(SPELL_SOUL_SIPHON);
         SwapButtons(player, true);
         StateOf(player).Bound = true;
     }
@@ -895,6 +918,8 @@ namespace
             for (Unit* enemy : enemies)
                 hit(enemy, damage * (rebuke ? REBUKE_CLEAVE : LASH_CLEAVE));
         }
+        if (Covenant(player, MOD_LASHING_RHYTHM))
+            player->ModifySpellCooldown(SPELL_SOUL_SIPHON, -RHYTHM_MS);
         TankState& state = StateOf(player);
         if (Covenant(player, MOD_HUNGRY_COVENANT) && Now() - state.LastHungry >= HUNGRY_EVERY_MS)
         {
@@ -903,24 +928,15 @@ namespace
         }
     }
 
-    // A Soul Siphon tick on its victim: damage, and (it dealt damage) the heal and Siphoning Ward.
+    // A Soul Siphon tick on its victim: damage, and (it dealt damage) the heal.
     void SiphonTick(Player* player, Unit* victim)
     {
         if (!victim->IsAlive() || victim->IsImmunedToDamage(SPELL_SCHOOL_MASK_SHADOW))
             return;
-        bool unfettered = Covenant(player, MOD_UNFETTERED_DRAIN);
-        Strike(player, victim, SPELL_SIPHON_STRIKE,
-            SpellPower(player, SPELL_SCHOOL_MASK_SHADOW) * (unfettered ? UNFETTERED_SP : SIPHON_SP));
+        Strike(player, victim, SPELL_SIPHON_STRIKE, SpellPower(player, SPELL_SCHOOL_MASK_SHADOW)
+            * (Covenant(player, MOD_RAVENOUS_SIPHON) ? RAVENOUS_SP : SIPHON_SP));
         int32 heal = PctOfHealth(player, Covenant(player, MOD_DEEP_EXTRACTION) ? DEEP_HEAL : SIPHON_HEAL);
         player->CastCustomSpell(player, SPELL_SIPHON_HEAL, &heal, nullptr, nullptr, true);
-        if (Covenant(player, MOD_SIPHONING_WARD))
-        {
-            int32 have = 0;
-            if (AuraEffect* ward = player->GetAuraEffect(SPELL_SIPHONING_WARD, EFFECT_0, player->GetGUID()))
-                have = ward->GetAmount();
-            int32 amount = std::min(have + PctOfHealth(player, WARD_TICK_PCT), PctOfHealth(player, WARD_CAP_PCT));
-            Shield(player, SPELL_SIPHONING_WARD, amount, WARD_MS, false);
-        }
     }
 
     void Intercession(Player* player)
@@ -1001,7 +1017,7 @@ namespace TankRunes
         bool worldwarden = player->HasAura(SPELL_RUNE_PRIMAL_WORLDWARDEN);
         bool covenant = player->HasAura(SPELL_RUNE_BLACK_COVENANT);
         bool any = communion || worldwarden || covenant;
-        Teach(player, SPELL_CHALLENGE, any);
+        Teach(player, SPELL_CHALLENGE, communion || worldwarden);
         if (any && !player->HasAura(SPELL_TANK_FOUNDATION))
             player->AddAura(SPELL_TANK_FOUNDATION, player);
         else if (!any)
@@ -1014,8 +1030,12 @@ namespace TankRunes
         Teach(player, SPELL_PLACE_WORLDHEART, worldwarden);
         if (!worldwarden)
             DismissTotem(player);
+        if (!covenant)
+            SwapSummon(player, false);
         Teach(player, SPELL_BIND_GUARDIAN, covenant);
         Teach(player, SPELL_DARK_INTERCESSION, covenant);
+        if (covenant)
+            SwapSummon(player, true);
         if (!covenant && (Bound(player) || player->HasSpell(SPELL_COVENANT_LASH)))
             Unbind(player);
     }
@@ -1117,7 +1137,7 @@ class spell_titan_tank_lava_lash : public SpellScript
     }
 };
 
-// The collection's taught actions: Sanguine Recall, Worldheart Totem, Place Worldheart, Bind Guardian, Covenant
+// The collection's taught actions: Sanguine Recall, Worldheart Totem, Place Worldheart, Bind: Voidwalker, Covenant
 // Lash and Dark Intercession.
 class spell_titan_tank_action : public SpellScript
 {
@@ -1162,7 +1182,7 @@ class spell_titan_tank_action : public SpellScript
     }
 };
 
-// Soul Siphon's channel: its ticks, and the Hero slowed to 70% while it lasts (not with Unfettered Drain).
+// Soul Siphon's channel: its ticks, and the Hero slowed to 70% while it lasts.
 class spell_titan_tank_siphon : public AuraScript
 {
     PrepareAuraScript(spell_titan_tank_siphon);
@@ -1177,8 +1197,7 @@ class spell_titan_tank_siphon : public AuraScript
     void Apply(AuraEffect const* /*effect*/, AuraEffectHandleModes /*mode*/)
     {
         if (Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr)
-            if (!Covenant(player, MOD_UNFETTERED_DRAIN))
-                player->CastSpell(player, SPELL_SIPHON_SLOW, true);
+            player->CastSpell(player, SPELL_SIPHON_SLOW, true);
     }
 
     void Remove(AuraEffect const* /*effect*/, AuraEffectHandleModes /*mode*/)
@@ -1197,7 +1216,7 @@ class spell_titan_tank_siphon : public AuraScript
     }
 };
 
-// Soul Siphon's range: 20 yards, 30 with Unfettered Drain (the spell's own).
+// Soul Siphon only while bound.
 class spell_titan_tank_siphon_cast : public SpellScript
 {
     PrepareSpellScript(spell_titan_tank_siphon_cast);
@@ -1205,11 +1224,8 @@ class spell_titan_tank_siphon_cast : public SpellScript
     SpellCastResult Check()
     {
         Player* player = GetCaster()->ToPlayer();
-        Unit* target = GetExplTargetUnit();
         if (!player || !Bound(player))
             return SPELL_FAILED_NOT_READY;
-        if (target && !Covenant(player, MOD_UNFETTERED_DRAIN) && !player->IsWithinDistInMap(target, SIPHON_RANGE))
-            return SPELL_FAILED_OUT_OF_RANGE;
         return SPELL_CAST_OK;
     }
 

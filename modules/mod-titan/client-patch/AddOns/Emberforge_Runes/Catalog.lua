@@ -1373,25 +1373,27 @@ EmberforgeRunesCatalog = {
       role = "Tank (Warlock; Death Knight, Blood)",
       roles = { "TANK" },
       icon = "Ability_Rune_BlackCovenant",
-      keywords = "warlock voidwalker searing pain drain life covenant armor bind guardian shadowflame soul " ..
+      keywords = "warlock voidwalker searing pain drain life covenant armor bind voidwalker shadowflame soul " ..
           "siphon intercession curse of weakness curse of tongues demon tank",
       slots = { "Covenant Armor", "Siphon", "Intercession" },
-      builtFrom = "Bind Guardian (your Voidwalker)",
+      builtFrom = "Bind: Voidwalker (in Summon Voidwalker's place)",
       spentWith = "Covenant Lash, Soul Siphon and Dark Intercession",
       resource = "Covenant Armor, until unbound",
-      core = "Bind Guardian (the rune teaches it; 2 sec cast, 10 sec) merges your Voidwalker into Covenant " ..
-          "Armor until you cast it again: armor from items 400% higher, 15% more maximum health, 200% more " ..
-          "threat, 6% less damage taken. While bound, Searing Pain becomes Covenant Lash (instant, 10 yards, 3% " ..
-          "of base mana: 45% of your spell power as Shadowflame damage, 100% more threat) and Drain Life becomes " ..
-          "Soul Siphon (a 3 sec channel at 70% speed, 6% of base mana, 8 sec: each second 25% of your spell power " ..
-          "as Shadow damage and 1.5% of your maximum health back). Dark Intercession (the rune teaches it; 30 " ..
-          "sec): 15% less damage taken for 6 sec, Covenant Lash meanwhile also hitting up to 4 enemies within 6 " ..
-          "yards for 50%. Your Curse of Weakness has its victim deal 6% less Physical damage to you, Curse of " ..
-          "Tongues 6% less magic damage. NPC attacks never critically strike you, and you learn Challenge.",
-      loop = "Summon and bind your Voidwalker; Covenant Lash for threat, Soul Siphon to recover; Intercession " ..
-          "before a big hit.",
+      core = "Summon Voidwalker becomes Bind: Voidwalker (2 sec cast, 10 sec): a Voidwalker binds to you as " ..
+          "Covenant Armor until you cast it again: armor from items 400% higher, 15% more maximum health, 200% " ..
+          "more threat, 6% less damage taken, and a Voidwalker's purple shadow about you. While bound, Searing " ..
+          "Pain becomes Covenant Lash (instant, 10 yards, 8% of base mana: 100% of your spell power as " ..
+          "Shadowflame damage, 100% more threat) and, if you know Drain Life, Drain Life becomes Soul Siphon (a 3 " ..
+          "sec channel at 70% speed, 6% of base mana, 15 sec cooldown: each second 25% of your spell power as " ..
+          "Shadow damage and 1.5% of your maximum health back). Dark Intercession (the rune teaches it; 30 sec): " ..
+          "15% less damage taken for 6 sec, Covenant Lash meanwhile also hitting up to 4 enemies within 6 yards " ..
+          "for 50%. Your Curse of Weakness has its victim deal 6% less Physical damage to you, Curse of Tongues 6% " ..
+          "less magic damage. NPC attacks never critically strike you.",
+      loop = "Bind your Voidwalker; Covenant Lash for threat, Soul Siphon to recover; Intercession before a " ..
+          "big hit.",
       spells = {
-        ["Searing Pain"] = "While bound: Covenant Lash, an instant 10-yard lash for 45% of your spell power as " ..
+        ["Summon Voidwalker"] = "Becomes Bind: Voidwalker: a Voidwalker binds to you as Covenant Armor.",
+        ["Searing Pain"] = "While bound: Covenant Lash, an instant 10-yard lash for 100% of your spell power as " ..
             "Shadowflame damage with 100% more threat.",
         ["Drain Life"] = "While bound: Soul Siphon, a 3 sec channel you can move in (70% speed): 25% of your " ..
             "spell power and 1.5% of your maximum health back each second.",
@@ -1406,11 +1408,11 @@ EmberforgeRunesCatalog = {
         { name = "Hungry Covenant",
           text = "Covenant Lash gives back 1% of your base mana, once every 2 sec." },
         { name = "Deep Extraction",
-          text = "Soul Siphon heals 2% of your maximum health a tick." },
-        { name = "Siphoning Ward",
-          text = "Each Soul Siphon tick adds an absorb of 1% of your maximum health for 3 sec, up to 3%." },
-        { name = "Unfettered Drain",
-          text = "Soul Siphon at full speed, from 30 yards, for 30% of your spell power a tick." },
+          text = "Soul Siphon heals 2.5% of your maximum health a tick." },
+        { name = "Ravenous Siphon",
+          text = "Soul Siphon deals 40% of your spell power a tick." },
+        { name = "Lashing Rhythm",
+          text = "Each Covenant Lash takes 1 sec off Soul Siphon's cooldown." },
         { name = "Guardian Manifest",
           text = "Dark Intercession reduces damage taken by 22%." },
         { name = "Legion's Rebuke",
@@ -1419,12 +1421,13 @@ EmberforgeRunesCatalog = {
           text = "Dark Intercession's cooldown is 24 sec, and it heals you for 2% of your maximum health." },
       },
       builds = {
-        { name = "Physical Pact", mods = { "Voidforged Plate", "Siphoning Ward", "Guardian Manifest" },
-          text = "Armor, Siphon wards, a stronger defensive." },
-        { name = "Magic Endurance", mods = { "Nether Insulation", "Deep Extraction", "Frequent Petition" },
-          text = "Magic mitigation, larger drains, frequent recovery." },
-        { name = "Mobile Pack Tank", mods = { "Hungry Covenant", "Unfettered Drain", "Legion's Rebuke" },
-          text = "Mana back, full-speed draining, a wide Intercession cleave." },
+        { name = "Physical Pact", mods = { "Voidforged Plate", "Deep Extraction", "Guardian Manifest" },
+          text = "Armor, deep drains, a stronger defensive." },
+        { name = "Magic Endurance", mods = { "Nether Insulation", "Ravenous Siphon", "Frequent Petition" },
+          text = "Magic mitigation, hungrier drains, frequent recovery." },
+        { name = "Lashing Pack Tank", mods = { "Hungry Covenant", "Lashing Rhythm", "Legion's Rebuke" },
+          text = "Lash after lash, Siphon kept ready, a wide Intercession cleave." },
       },
     },
+
 }
