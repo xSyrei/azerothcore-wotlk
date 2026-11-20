@@ -1034,8 +1034,10 @@ class spell_titan_tank_blood_boil : public SpellScript
 
     void Register() override
     {
+        // Blood Boil's damage picks enemies about a point at the caster (TARGET_UNIT_DEST_AREA_ENEMY, 16), not
+        // about the caster itself: a handler on the source's area never ran.
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_tank_blood_boil::Link, EFFECT_0,
-            TARGET_UNIT_SRC_AREA_ENEMY);
+            TARGET_UNIT_DEST_AREA_ENEMY);
     }
 };
 
