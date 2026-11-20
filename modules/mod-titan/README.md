@@ -631,11 +631,34 @@ utility or a tradeoff) take one pick each, from three.
     (90208), both from the Archdruid of the Flame model (`client-patch/models/flamecat`, the Ice Cat on the blue
     textures in `ice/`). `spell_titan_rune_cat_form` (768) sets it once the form has, and a rune change in Cat Form
     swaps it (`RefreshCatLook`); a transform on top is left alone.
+  - **The Tank Collection** (their compendium; `src/tank_runes.cpp`, Rank I values: the server has no rune ranks).
+    Each teaches Challenge (91542: a free 30-yard taunt off the global cooldown, 8 sec) and wears Tank Foundation
+    (91543: NPC attacks never critically strike) while bound.
+    - **Red Communion** (46; Tank; Blood Boil): Blood Boil links up to 5 enemies (Crimson Link 91480, 10 sec; the
+      selected enemy first, the oldest other link replaced). An original Blood Strike on a link heals 1.5% of maximum
+      health + 0.15% a further link (2.1% cap; 91485) and pulses 20% AP Shadow to the others (91481), once every 2
+      sec. Sanguine Recall (91482, taught; 18 sec): 30% AP to each link in range (91483), an absorb of 3% + 0.5% a
+      further link (5% cap; 91484, 5 sec). Shared Weakness 91486, Arterial Echo 91487 (its unpaid damage carried,
+      200% cap).
+    - **Primal Worldwarden** (47; Tank; Earth, Flame or Frost Shock): Worldheart Totem (91500, taught; creature
+      910125, follows 4 yards behind, teleported back past 30) gives Worldguard (91502: +200% threat, 8% less damage)
+      while a shield is on. Original Shocks command it: Earth an absorb (91503, the larger kept), Flame 25% AP to 5
+      enemies within 8 yards of it (91504), Frost a 35% slow (91505) and 6% less damage to the Hero (kept server-side,
+      the strongest). Stormstrike repeats the last command (10 sec) at 60%, once every 6 sec; Lava Lash lays a
+      magma line to the totem (91507 looks, 91506 ticks: 10% AP to 5 enemies within 1.5 yards, 4 sec). Place
+      Worldheart (91501, taught) anchors it at the target within 20 yards for 6 sec.
+    - **Black Covenant** (48; Tank; Summon Voidwalker, Searing Pain): Bind Guardian (91520, taught; 2 sec cast)
+      dismisses the Voidwalker into Covenant Armor (91521: base armor +400%, +15% health, 6% less damage; 91522:
+      +200% threat), health share kept; cast again, or a pet summoned, unbinds. While bound Searing Pain's buttons
+      are Covenant Lash (91523: 45% SP Shadowflame 91524, its threat doubled) and Drain Life's Soul Siphon (91525:
+      3 sec channel while moving at 70%, 25% SP and 1.5% health a tick). Dark Intercession (91529, taught; 91540
+      15% less damage, the Lash's cleave). The Hero's Curses of Weakness and Tongues cut their victims' Physical and
+      magic damage to them by 6%.
   - `.runedebug` (anyone) tells the Splintered Crown's and Phoenix Wake's steps in chat (Icicle formed and loosed,
     the Ember placed, Fire Blast on its host, the phoenix summoned, its strike, why it went), to find where one stops.
 - A Hero's buff on their own pet or summon lands whatever its level (`hero_resources.cpp`): the core drops a positive
   aura's target more than 10 levels below the spell ("Target is too low level": Bestial Wrath, level 40).
-- Scripts in `titan_runes.sql`; spells 90750-91476 (`patch_runes.py`); their looks from the curated VFX library
+- Scripts in `titan_runes.sql`; spells 90750-91543 (`patch_runes.py`); their looks from the curated VFX library
   (`client-patch/spells/RUNE_VFX`).
 
 ## Runes of Enhancement

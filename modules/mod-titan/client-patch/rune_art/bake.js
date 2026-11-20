@@ -302,9 +302,7 @@ async function main() {
                 put('Num' + kind[0].toUpperCase() + kind.slice(1) + name, num(theme, kind, job.num.scale, job.num.size));
             }
         }
-        for (const r of job.runes) {
-            (r.icons || []).forEach((d, i) => put('Icon' + r.id + '_' + (i + 1), icon(r.theme, d, job.icon)));
-        }
+        // The option cards show the modifier's name alone: no small icons are baked (r.icons is kept for the mockup).
         for (const [name, colour] of Object.entries(job.sprites)) put(name, sprite(colour, 64));
         put('Soft', soft(128));
         put('SegGold', segGold(job.seg)); put('SegLine', segLine(job.seg)); put('SegGlow', segGlow(job.seg));

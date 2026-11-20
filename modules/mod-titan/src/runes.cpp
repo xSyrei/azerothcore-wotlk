@@ -16,6 +16,7 @@
  */
 
 #include "runes.h"
+#include "tank_runes.h"
 #include "specs.h"
 #include "wildcard.h"
 #include "CellImpl.h"
@@ -120,6 +121,9 @@ namespace
     constexpr uint8 RUNE_STORMREAVER = 43;
     constexpr uint8 RUNE_EMBERS_WRATH = 44;         // its own dossier, and Whitefang's
     constexpr uint8 RUNE_WHITEFANG = 45;
+    constexpr uint8 RUNE_RED_COMMUNION = 46;        // the Tank Collection's (src/tank_runes.cpp)
+    constexpr uint8 RUNE_PRIMAL_WORLDWARDEN = 47;
+    constexpr uint8 RUNE_BLACK_COVENANT = 48;
 
     enum Spells : uint32
     {
@@ -1193,6 +1197,17 @@ namespace
             { RUNE_WHITEFANG, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_CAT_FORM }, { SPELL_ICY_TOUCH }, { SPELL_SHRED, SPELL_MANGLE_CAT } }, SPELL_RUNE_WHITEFANG,
               SPELL_WHITEFANG_MODIFIER_FIRST },
+            // The Tank Collection (src/tank_runes.cpp): Blood Boil links the pack; a Shock commands the totem; the
+            // Voidwalker and Searing Pain make the covenant.
+            { RUNE_RED_COMMUNION, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
+              { { TankRunes::SPELL_BLOOD_BOIL } }, TankRunes::SPELL_RUNE_RED_COMMUNION,
+              TankRunes::SPELL_COMMUNION_MODIFIER_FIRST },
+            { RUNE_PRIMAL_WORLDWARDEN, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
+              { { TankRunes::SPELL_EARTH_SHOCK, SPELL_FLAME_SHOCK, SPELL_FROST_SHOCK } },
+              TankRunes::SPELL_RUNE_PRIMAL_WORLDWARDEN, TankRunes::SPELL_WORLDWARDEN_MODIFIER_FIRST },
+            { RUNE_BLACK_COVENANT, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
+              { { SPELL_SUMMON_VOIDWALKER }, { TankRunes::SPELL_SEARING_PAIN } },
+              TankRunes::SPELL_RUNE_BLACK_COVENANT, TankRunes::SPELL_COVENANT_MODIFIER_FIRST },
         };
         return runes;
     }
@@ -5823,6 +5838,7 @@ namespace
         if (!paragon)
             player->RemoveAurasDueToSpell(SPELL_SANCTIFIED_PARAGON);
         TeachDuelist(player, duelist);
+        TankRunes::Apply(player);
         RetireCatCopy(player, SPELL_CAT_FIRE_BLAST, SPELL_FIRE_BLAST);
         RetireCatCopy(player, SPELL_CAT_ICY_TOUCH, SPELL_ICY_TOUCH);
         RefreshCatLook(player);

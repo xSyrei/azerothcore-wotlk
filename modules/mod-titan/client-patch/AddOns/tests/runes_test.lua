@@ -175,14 +175,16 @@ local function ById(id)
         end
     end
 end
-check(#EmberforgeRunesCatalog == 25 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
+check(#EmberforgeRunesCatalog == 28 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
     and ById(22).name == "Rune of the Sanctified Paragon" and ById(23).name == "Rune of the Stormbound Conduit"
     and ById(24).name == "Rune of Echoing Thunder" and ById(25).name == "Rune of the Wellspring"
     and ById(26).name == "Rune of the Wandering Mist" and ById(34).name == "Rune of Arcane Mind"
     and ById(38).name == "Rune of Guiding Light" and ById(39).name == "Rune of Elune's Guardian"
     and ById(41).name == "Rune of Ursoc's Champion" and ById(42).name == "Rune of the Duelist"
     and ById(43).name == "Rune of the Stormreaver" and ById(44).name == "Rune of Ember's Wrath"
-    and ById(45).name == "Rune of Whitefang", "the catalog holds only the runes the server builds")
+    and ById(45).name == "Rune of Whitefang" and ById(46).name == "Rune of Red Communion"
+    and ById(47).name == "Rune of the Primal Worldwarden" and ById(48).name == "Rune of the Black Covenant",
+    "the catalog holds only the runes the server builds")
 for _, rune in ipairs(EmberforgeRunesCatalog) do
     check(EmberforgeRunesArt.runes[rune.id] and EmberforgeRunesArt.runes[rune.id].built, "built: " .. rune.name)
 end
@@ -254,22 +256,22 @@ local function listed()
     end
     return table.concat(ids, ",")
 end
-check(view.mode == "browse" and view.phase == "browse" and debug.browser.target == 1 and #browse.list == 25
-    and rows[1].shown and rows[5].shown and debug.browser.count.text == "25 runes",
+check(view.mode == "browse" and view.phase == "browse" and debug.browser.target == 1 and #browse.list == 28
+    and rows[1].shown and rows[5].shown and debug.browser.count.text == "28 runes",
     "Browse all lists every rune, five rows at a time")
 check(rows[1].rune.id == 21 and rows[1].status.text == "Usable now" and rows[2].status.text == "Coming soon",
     "the usable rune comes first; each row says where it stands")
 debug.browser.scripts.OnMouseWheel(debug.browser, -1)
 check(browse.offset == 1 and rows[1].rune == browse.list[2], "the mouse wheel scrolls the list")
-debug.browser.scripts.OnMouseWheel(debug.browser, -20)
-check(browse.offset == 20, "it stops at the end")
+debug.browser.scripts.OnMouseWheel(debug.browser, -30)
+check(browse.offset == 23, "it stops at the end")
 local search = debug.search
 search.text = "lightning"
 search.scripts.OnTextChanged(search)
 check(browse.offset == 0 and rows[1].rune.id == 23 and not search.hint.shown, "the search finds a rune by its name")
 search.text = "warlock glaive"
 search.scripts.OnTextChanged(search)
-check(listed() == "21" and debug.browser.count.text == "1 of 25 runes", "and by the abilities it uses")
+check(listed() == "21" and debug.browser.count.text == "1 of 28 runes", "and by the abilities it uses")
 search.text = "soothing heal"
 search.scripts.OnTextChanged(search)
 check(listed() == "26", "every word must match: Soothing Mist's healing rune")
@@ -291,7 +293,7 @@ check(#browse.list == 0 and not rows[1].shown and debug.empty.target == 1
     and debug.empty.text.text:find("No rune matches"), "nothing found says so")
 search.text = ""
 search.scripts.OnTextChanged(search)
-check(search.hint.shown and #browse.list == 25, "an empty search lists every rune again")
+check(search.hint.shown and #browse.list == 28, "an empty search lists every rune again")
 debug.chips[3]:Click()
 local healers = true
 for _, rune in ipairs(browse.list) do
@@ -547,7 +549,7 @@ for _, rune in ipairs(debug.browse.list) do
         hidden = false
     end
 end
-check(#retired == 3 and hidden and #debug.browse.list == 22 and debug.browser.count.text == "22 runes",
+check(#retired == 3 and hidden and #debug.browse.list == 25 and debug.browser.count.text == "25 runes",
     "retired runes are not listed, nor counted")
 
 -- A bound rune's line on the spells it reaches into: Flame Shock with Ember's Wrath, Frost Shock with Whitefang.

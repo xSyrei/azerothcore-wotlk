@@ -1033,8 +1033,8 @@ EmberforgeRunesCatalog = {
           "Slash that hits readies Opening Shot for 8 sec (one held), for Pistol Shot: 20 Energy, 6 sec cooldown, " ..
           "an enemy within 20 yards, 60% of your attack power as Physical damage and 1 combo point. Broadside, a " ..
           "finishing move (35 Energy, 20 sec cooldown): three pistol blasts, each 30% of your attack power plus 5% " ..
-          "per combo point (55% at five) to its target and up to 7 enemies within 8 yards. The rune teaches all three; the pistol is " ..
-          "conjured.",
+          "per combo point (55% at five) to its target and up to 7 enemies within 8 yards. The rune teaches all " ..
+          "three; the pistol is conjured.",
       loop = "Sabre Slash twice, Pistol Shot; Broadside at five combo points.",
       mods = {
         { name = "Deep Cut",
@@ -1251,6 +1251,180 @@ EmberforgeRunesCatalog = {
           text = "Chase and spray." },
         { name = "The Winter Pack", mods = { "Winter Wound", "Pack Frost", "Frozen Trail" },
           text = "Frost on the pack." },
+      },
+    },
+    { id = 46,
+      name = "Rune of Red Communion",
+      role = "Tank (Death Knight, Blood; Warlock, Affliction)",
+      roles = { "TANK" },
+      icon = "Ability_Rune_RedCommunion",
+      keywords = "death knight blood boil blood strike link tether crimson communion sanguine recall absorb " ..
+          "shadow warlock affliction tank heal",
+      slots = { "Communion", "Reclamation", "Recall" },
+      builtFrom = "Blood Boil (Crimson Communion)",
+      spentWith = "Blood Strike and Sanguine Recall (the rune teaches it)",
+      resource = "Crimson Links, 5 at once",
+      core = "Blood Boil becomes Crimson Communion: as ever, and it links up to 5 enemies it hits to you for 10 " ..
+          "sec (your selected enemy first, then the nearest). Your Blood Strike on a linked enemy heals you for " ..
+          "1.5% of your maximum health plus 0.15% for each other link within 20 yards (2.1% at most) and pulses " ..
+          "20% of your attack power as Shadow damage to each other link, once every 2 sec. Sanguine Recall (18 " ..
+          "sec, free, off the global cooldown): each link within 20 yards takes 30% of your attack power as Shadow " ..
+          "damage, and you gain an absorb of 3% of your maximum health plus 0.5% for each further link (5% at " ..
+          "most) for 5 sec. As every Tank Collection rune: NPC attacks never critically strike you, and you learn " ..
+          "Challenge (a free 30-yard taunt, 8 sec).",
+      loop = "Blood Boil to link the pull; Blood Strike a linked enemy; Sanguine Recall before a big hit.",
+      spells = {
+        ["Blood Boil"] = "Crimson Communion: links up to 5 enemies it hits to you for 10 sec.",
+        ["Blood Strike"] = "On a linked enemy: heals you for 1.5% of your maximum health (more for each other link) " ..
+            "and pulses 20% of your attack power as Shadow damage to the other links, once every 2 sec.",
+      },
+      mods = {
+        { name = "Sovereign Bond",
+          text = "Your selected linked enemy deals 8% less damage to you while within 20 yards." },
+        { name = "Bloodbound Court",
+          text = "Up to 8 enemies are linked. The heal and the absorb keep their caps." },
+        { name = "Long Veins",
+          text = "Links last 15 sec and reach 30 yards." },
+        { name = "Crimson Feast",
+          text = "Blood Reclamation heals 2% of your maximum health, 2.6% at most." },
+        { name = "Arterial Echo",
+          text = "Blood Strike also leaves 35% of your attack power as Shadow damage over 4 sec on its linked " ..
+              "victim. A refresh keeps what is unpaid." },
+        { name = "Shared Weakness",
+          text = "Communion pulses make their enemies deal 8% less magic damage to you for 4 sec." },
+        { name = "Coagulated Throne",
+          text = "Sanguine Recall's absorb starts at 5% of your maximum health, 7% at most." },
+        { name = "Rapid Recall",
+          text = "Sanguine Recall's cooldown is 14 sec." },
+        { name = "Blood for Blood",
+          text = "Sanguine Recall also heals you for 2% of your maximum health and deals 45% of your attack " ..
+              "power to each link." },
+      },
+      builds = {
+        { name = "Boss Anchor", mods = { "Sovereign Bond", "Crimson Feast", "Coagulated Throne" },
+          text = "One enemy held, steady recovery, a large shield." },
+        { name = "Distributed Suppression", mods = { "Bloodbound Court", "Shared Weakness", "Rapid Recall" },
+          text = "More links, magic suppressed, frequent recalls." },
+        { name = "Mobile Recovery", mods = { "Long Veins", "Arterial Echo", "Blood for Blood" },
+          text = "Long links, damage over time, healing on Recall." },
+      },
+    },
+    { id = 47,
+      name = "Rune of the Primal Worldwarden",
+      role = "Tank (Shaman, Enhancement; Druid, Guardian)",
+      roles = { "TANK" },
+      icon = "Ability_Rune_PrimalWorldwarden",
+      keywords = "shaman enhancement earth shock flame shock frost shock stormstrike lava lash magma totem " ..
+          "worldheart shield druid guardian tank",
+      slots = { "Shockcraft", "Worldheart", "Enhancement" },
+      builtFrom = "Earth, Flame or Frost Shock",
+      spentWith = "Stormstrike and Lava Lash (Magma Lash)",
+      resource = "The Worldheart Totem's last command, 10 sec",
+      core = "Worldheart Totem (the rune teaches it; 6 sec): a totem follows 4 yards behind you for 30 min. With " ..
+          "a shield on, it gives you Worldguard: 8% less damage taken and 200% more threat. Your Shocks command " ..
+          "it: Earth Shock an absorb of 3% of your maximum health for 4 sec; Flame Shock 25% of your attack power " ..
+          "as Fire damage to up to 5 enemies within 8 yards of it; Frost Shock slows up to 5 there by 35% and has " ..
+          "them deal 6% less damage to you for 4 sec. Stormstrike repeats your last command at 60%, once every 6 " ..
+          "sec. Lava Lash becomes Magma Lash: a magma line from you to the totem for 4 sec, 10% of your attack " ..
+          "power as Fire damage each second to up to 5 enemies on it. Place Worldheart (8 sec) anchors the totem " ..
+          "at your target within 20 yards for 6 sec. NPC attacks never critically strike you, and you learn " ..
+          "Challenge.",
+      loop = "Worldheart Totem and a shield; a Shock for the command you need; Stormstrike to repeat it.",
+      spells = {
+        ["Earth Shock"] = "Commands the Worldheart: an absorb of 3% of your maximum health for 4 sec.",
+        ["Flame Shock"] = "Commands the Worldheart: 25% of your attack power as Fire damage to up to 5 enemies " ..
+            "within 8 yards of it.",
+        ["Frost Shock"] = "Commands the Worldheart: up to 5 enemies within 8 yards of it slowed 35% and dealing " ..
+            "6% less damage to you for 4 sec.",
+        ["Stormstrike"] = "Repeats your last Shock command at 60% strength, once every 6 sec.",
+        ["Lava Lash"] = "Magma Lash (with the Worldheart out): a magma line from you to the totem for 4 sec.",
+      },
+      mods = {
+        { name = "Earthen Command",
+          text = "Earth Shock's command absorbs 5% of your maximum health; its echo 3%." },
+        { name = "Flame Dominion",
+          text = "Flame's command deals 40% of your attack power; its echo 24%." },
+        { name = "Winter Command",
+          text = "Frost's command slows by 45% and reduces damage by 9%; its echo 27% and 5.4%." },
+        { name = "Deepstone Heart",
+          text = "Worldguard reduces damage taken by 11%. A shield is still needed." },
+        { name = "Wide Communion",
+          text = "Flame and Frost commands reach 12 yards and up to 8 enemies; echoes too." },
+        { name = "Striding Heart",
+          text = "Place Worldheart's cooldown is 5 sec, and placing it makes you move 25% faster for 3 sec." },
+        { name = "Resonant Strikes",
+          text = "Stormstrike's command echo can come every 4 sec." },
+        { name = "Molten Causeway",
+          text = "Magma Lash's line deals 16% of your attack power a tick and is 5 yards wide." },
+        { name = "Stoneblood Lash",
+          text = "Lava Lash also heals you for 1.5% of your maximum health, once every 4 sec." },
+      },
+      builds = {
+        { name = "Earth Bulwark", mods = { "Earthen Command", "Deepstone Heart", "Resonant Strikes" },
+          text = "Reliable absorbs, constant mitigation, frequent Earth echoes." },
+        { name = "Elemental Pack", mods = { "Flame Dominion", "Wide Communion", "Molten Causeway" },
+          text = "Large Fire bursts and wider fissures." },
+        { name = "Winter Pursuit", mods = { "Winter Command", "Striding Heart", "Stoneblood Lash" },
+          text = "Enemies held back, a quick totem, melee healing." },
+      },
+    },
+    { id = 48,
+      name = "Rune of the Black Covenant",
+      role = "Tank (Warlock; Death Knight, Blood)",
+      roles = { "TANK" },
+      icon = "Ability_Rune_BlackCovenant",
+      keywords = "warlock voidwalker searing pain drain life covenant armor bind guardian shadowflame soul " ..
+          "siphon intercession curse of weakness curse of tongues demon tank",
+      slots = { "Covenant Armor", "Siphon", "Intercession" },
+      builtFrom = "Bind Guardian (your Voidwalker)",
+      spentWith = "Covenant Lash, Soul Siphon and Dark Intercession",
+      resource = "Covenant Armor, until unbound",
+      core = "Bind Guardian (the rune teaches it; 2 sec cast, 10 sec) merges your Voidwalker into Covenant " ..
+          "Armor until you cast it again: armor from items 400% higher, 15% more maximum health, 200% more " ..
+          "threat, 6% less damage taken. While bound, Searing Pain becomes Covenant Lash (instant, 10 yards, 3% " ..
+          "of base mana: 45% of your spell power as Shadowflame damage, 100% more threat) and Drain Life becomes " ..
+          "Soul Siphon (a 3 sec channel at 70% speed, 6% of base mana, 8 sec: each second 25% of your spell power " ..
+          "as Shadow damage and 1.5% of your maximum health back). Dark Intercession (the rune teaches it; 30 " ..
+          "sec): 15% less damage taken for 6 sec, Covenant Lash meanwhile also hitting up to 4 enemies within 6 " ..
+          "yards for 50%. Your Curse of Weakness has its victim deal 6% less Physical damage to you, Curse of " ..
+          "Tongues 6% less magic damage. NPC attacks never critically strike you, and you learn Challenge.",
+      loop = "Summon and bind your Voidwalker; Covenant Lash for threat, Soul Siphon to recover; Intercession " ..
+          "before a big hit.",
+      spells = {
+        ["Searing Pain"] = "While bound: Covenant Lash, an instant 10-yard lash for 45% of your spell power as " ..
+            "Shadowflame damage with 100% more threat.",
+        ["Drain Life"] = "While bound: Soul Siphon, a 3 sec channel you can move in (70% speed): 25% of your " ..
+            "spell power and 1.5% of your maximum health back each second.",
+        ["Curse of Weakness"] = "Its victim deals 6% less Physical damage to you.",
+        ["Curse of Tongues"] = "Its victim deals 6% less magic damage to you.",
+      },
+      mods = {
+        { name = "Voidforged Plate",
+          text = "Covenant Armor raises your armor from items by 500%." },
+        { name = "Nether Insulation",
+          text = "While bound, magic damage taken is reduced by a further 8%." },
+        { name = "Hungry Covenant",
+          text = "Covenant Lash gives back 1% of your base mana, once every 2 sec." },
+        { name = "Deep Extraction",
+          text = "Soul Siphon heals 2% of your maximum health a tick." },
+        { name = "Siphoning Ward",
+          text = "Each Soul Siphon tick adds an absorb of 1% of your maximum health for 3 sec, up to 3%." },
+        { name = "Unfettered Drain",
+          text = "Soul Siphon at full speed, from 30 yards, for 30% of your spell power a tick." },
+        { name = "Guardian Manifest",
+          text = "Dark Intercession reduces damage taken by 22%." },
+        { name = "Legion's Rebuke",
+          text = "During Intercession, Covenant Lash hits up to 7 more enemies for 75% of its damage." },
+        { name = "Frequent Petition",
+          text = "Dark Intercession's cooldown is 24 sec, and it heals you for 2% of your maximum health." },
+      },
+      builds = {
+        { name = "Physical Pact", mods = { "Voidforged Plate", "Siphoning Ward", "Guardian Manifest" },
+          text = "Armor, Siphon wards, a stronger defensive." },
+        { name = "Magic Endurance", mods = { "Nether Insulation", "Deep Extraction", "Frequent Petition" },
+          text = "Magic mitigation, larger drains, frequent recovery." },
+        { name = "Mobile Pack Tank", mods = { "Hungry Covenant", "Unfettered Drain", "Legion's Rebuke" },
+          text = "Mana back, full-speed draining, a wide Intercession cleave." },
       },
     },
 }

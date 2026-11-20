@@ -166,6 +166,18 @@ RUNES = [
      'Your Icy Touch, in Cat Form too, marks the prey; Shred or Mangle shatters it.',
      'Cat Form, Icy Touch, Shred or Mangle',
      'M12 2v20M4 6l16 12M20 6 4 18M9 3l3 3 3-3M9 21l3-3 3 3'),
+    (46, (225, 60, 70), 'Shadow · Red Communion',
+     'Blood Boil links the pack to you; Blood Strike and Sanguine Recall take their blood back.',
+     'Blood Boil and Blood Strike',
+     'M12 3c3 5 6 8 6 11a6 6 0 0 1-12 0c0-3 3-6 6-11ZM4 20h16'),
+    (47, (215, 165, 75), 'Nature · Primal Worldwarden',
+     'A Worldheart Totem follows you; your Shocks command it, Stormstrike echoes them.',
+     'Earth, Flame or Frost Shock',
+     'M8 21h8M9 21V5h6v16M7 5h10M10 9h4M10 13h4'),
+    (48, (170, 110, 240), 'Shadowflame · Black Covenant',
+     'Your Voidwalker becomes Covenant Armor; Covenant Lash and Soul Siphon hold the line.',
+     'Summon Voidwalker and Searing Pain',
+     'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6ZM12 8v8M8 12h8'),
 ]
 
 # The runes the panel builds (their build view: the medallion, the slots, the options): the mockup's words for them.
@@ -1205,6 +1217,66 @@ BUILT = {
         ],
     },
 }
+
+BUILT.update({
+    46: {
+        'core': '**Blood Boil** links up to 5 enemies to you; **Blood Strike** on a link heals you and pulses to '
+            'the rest; **Sanguine Recall** strikes every link and shields you.',
+        'slots': ['Communion', 'Reclamation', 'Recall'],
+        'asks': ['How the links hold', 'What Blood Strike takes back', 'What the Recall gives'],
+        'texts': [
+            'Your selected linked enemy deals 8% less damage to you while within 20 yards.',
+            'Up to 8 enemies are linked. The heal and the absorb keep their caps.',
+            'Links last 15 sec and reach 30 yards.',
+            'Blood Reclamation heals 2% of your maximum health, 2.6% at most.',
+            'Blood Strike also leaves 35% of your attack power as Shadow damage over 4 sec on its linked victim.',
+            'Communion pulses make their enemies deal 8% less magic damage to you for 4 sec.',
+            "Sanguine Recall's absorb starts at 5% of your maximum health, 7% at most.",
+            "Sanguine Recall's cooldown is 14 sec.",
+            'Sanguine Recall also heals you for 2% of your maximum health and deals 45% of your attack power.',
+        ],
+        'abilities': ['Bond', 'Court', 'Veins', 'Feast', 'Echo', 'Weakness', 'Throne', 'Rapid', 'Blood'],
+        'icons': [],
+    },
+    47: {
+        'core': 'The **Worldheart Totem** follows you; your **Shocks** command it, **Stormstrike** echoes the last '
+            'command and **Lava Lash** draws a magma line to it.',
+        'slots': ['Shockcraft', 'Worldheart', 'Enhancement'],
+        'asks': ['Which command grows', 'What the totem gives', 'What your strikes add'],
+        'texts': [
+            "Earth Shock's command absorbs 5% of your maximum health; its echo 3%.",
+            "Flame's command deals 40% of your attack power; its echo 24%.",
+            "Frost's command slows by 45% and reduces damage by 9%; its echo 27% and 5.4%.",
+            'Worldguard reduces damage taken by 11%. A shield is still needed.',
+            'Flame and Frost commands reach 12 yards and up to 8 enemies; echoes too.',
+            "Place Worldheart's cooldown is 5 sec, and placing it makes you move 25% faster for 3 sec.",
+            "Stormstrike's command echo can come every 4 sec.",
+            "Magma Lash's line deals 16% of your attack power a tick and is 5 yards wide.",
+            'Lava Lash also heals you for 1.5% of your maximum health, once every 4 sec.',
+        ],
+        'abilities': ['Earth', 'Flame', 'Winter', 'Deepstone', 'Wide', 'Striding', 'Resonant', 'Molten', 'Stone'],
+        'icons': [],
+    },
+    48: {
+        'core': '**Bind Guardian** merges your Voidwalker into Covenant Armor; **Covenant Lash** and **Soul Siphon** '
+            'replace Searing Pain and Drain Life; **Dark Intercession** guards you.',
+        'slots': ['Covenant Armor', 'Siphon', 'Intercession'],
+        'asks': ['What the armor holds', 'What the siphon draws', 'How the guardian intercedes'],
+        'texts': [
+            'Covenant Armor raises your armor from items by 500%.',
+            'While bound, magic damage taken is reduced by a further 8%.',
+            'Covenant Lash gives back 1% of your base mana, once every 2 sec.',
+            'Soul Siphon heals 2% of your maximum health a tick.',
+            'Each Soul Siphon tick adds an absorb of 1% of your maximum health for 3 sec, up to 3%.',
+            'Soul Siphon at full speed, from 30 yards, for 30% of your spell power a tick.',
+            'Dark Intercession reduces damage taken by 22%.',
+            'During Intercession, Covenant Lash hits up to 7 more enemies for 75% of its damage.',
+            "Dark Intercession's cooldown is 24 sec, and it heals you for 2% of your maximum health.",
+        ],
+        'abilities': ['Plate', 'Nether', 'Hunger', 'Deep', 'Ward', 'Unfettered', 'Manifest', 'Legion', 'Petition'],
+        'icons': [],
+    },
+})
 
 # Sizes. The card (300 x 440 points) at CARD_SCALE pixels a point fills the top-left of a 512 square; the medallion's
 # pieces span 260 points in a SEG square; the option card (340 x 172) and its glow, the pill and the slot disc.

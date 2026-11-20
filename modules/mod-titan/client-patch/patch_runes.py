@@ -1840,3 +1840,155 @@ for _spell in SPELLS:
             90954: 'SunFractureLook', 90956: 'SunCollapseLook'}.get(_spell['id'])
     if _key:
         _spell['visual'] = _key
+
+# ---- The Tank Collection (its own compendium): Red Communion 91490, Primal Worldwarden 91510, Black Covenant 91530,
+# their markers 1 on; the collection's Tank Foundation 91543 (NPC attacks never critically strike) and Challenge 91542.
+COMMUNION_ICON, WORLDWARDEN_ICON, COVENANT_ICON = ('Ability_Rune_RedCommunion', 'Ability_Rune_PrimalWorldwarden',
+                                                   'Ability_Rune_BlackCovenant')
+TAUNT = 355
+DRAIN_LIFE = 689
+RANGE_10, RANGE_30 = 7, 4
+DURATION_30MIN, DURATION_30S = 30, 9
+CAST_2S = 5
+AURA_MOD_INCREASE_HEALTH_PERCENT, AURA_MOD_BASE_RESISTANCE_PCT = 133, 142
+AURA_MOD_ATTACKER_SPELL_CRIT, AURA_MOD_ATTACKER_MELEE_CRIT, AURA_MOD_ATTACKER_RANGED_CRIT = 179, 187, 188
+SPELL_ATTR5_ALLOW_ACTION_DURING_CHANNEL = 0x1
+SHADOWFLAME = SHADOW | FIRE
+MAGIC_SCHOOLS = 0x7E
+EFFECT_APPLY_AURA = 6
+VISUAL_SHADOW_BOLT_HIT, VISUAL_BLOOD_BOIL = 64, 13005
+
+
+def tank_action(spell_id, name, icon, text, cooldown, gcd=False, cast=1, target=TARGET_UNIT_CASTER, range_index=1):
+    spell = action(spell_id, name, icon, text, cooldown, target, range_index)
+    spell['set'] = {**spell['set'], 'CastingTimeIndex': cast}
+    if gcd:
+        spell['set'].update({'StartRecoveryCategory': GCD_CATEGORY, 'StartRecoveryTime': 1500})
+    spell['tooltip'] = ''
+    return spell
+
+
+SPELLS += [
+    # Red Communion: the link, its pulse, Sanguine Recall and its blow, ward and heal, Shared Weakness, Arterial Echo.
+    harmful(91480, 'Crimson Link', 'Spell_DeathKnight_BloodBoil', 'Linked by blood.', DURATION_15S,
+            aura(AURA_DUMMY, 1, 0), SHADOW),
+    strike(91481, 'Communion Pulse', 'Spell_DeathKnight_BloodBoil', SHADOW, VISUAL_SHADOW_BOLT_HIT),
+    tank_action(91482, 'Sanguine Recall', COMMUNION_ICON,
+                'Each enemy linked to you within 20 yards takes 30% of your attack power as Shadow damage, and you '
+                'gain an absorb of 3% of your maximum health plus 0.5% for each further enemy, up to 5%, for 5 sec. '
+                'Needs a linked enemy in range.', 18000),
+    strike(91483, 'Sanguine Recall', COMMUNION_ICON, SHADOW, VISUAL_SHADOW_BOLT_HIT),
+    absorb(91484, 'Sanguine Ward', COMMUNION_ICON, DURATION_5S),
+    heal(91485, 'Blood Reclamation', 'Spell_DeathKnight_DeathStrike', ''),
+    harmful(91486, 'Shared Weakness', 'Spell_Shadow_ShadowWordPain', 'Magic damage dealt to the warden reduced.',
+            DURATION_4S, aura(AURA_DUMMY, 1, 0), SHADOW),
+    harmful(91487, 'Arterial Echo', 'Spell_DeathKnight_BloodPlague', 'Shadow damage every second.', DURATION_4S,
+            {**aura(AURA_PERIODIC_DAMAGE, 0, 0), 'Amplitude': 1000}, SHADOW),
+    buff(91490, 'Rune of Red Communion', COMMUNION_ICON,
+         'Blood Boil links up to 5 enemies to you; Blood Strike on a linked enemy heals you and pulses to the rest.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    # Primal Worldwarden: the totem and its anchor, Worldguard, the three commands, Magma Lash, Striding Heart and
+    # Stoneblood Lash.
+    tank_action(91500, 'Worldheart Totem', WORLDWARDEN_ICON,
+                'Summons the Worldheart Totem for 30 min: it follows 4 yards behind you. With a shield on, it gives '
+                'you Worldguard: 8% less damage taken and 200% more threat. Your Earth, Flame and Frost Shocks '
+                'command it.', 6000, gcd=True),
+    tank_action(91501, 'Place Worldheart', 'Spell_Nature_StoneClawTotem',
+                'Moves the Worldheart Totem to your target, or to you, within 20 yards and anchors it there for 6 '
+                'sec.', 8000),
+    {**buff(91502, 'Worldguard', WORLDWARDEN_ICON, 'Damage taken reduced; threat increased.', DURATION_INFINITE,
+            {1: aura(AURA_MOD_THREAT, 200, ALL_SCHOOLS), 2: aura(AURA_MOD_DAMAGE_PERCENT_TAKEN, -8, ALL_SCHOOLS)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_INFINITE}},
+    absorb(91503, 'Earthen Command', 'Spell_Nature_EarthShock', DURATION_4S),
+    strike(91504, 'Flame Command', 'Spell_Fire_FlameShock', FIRE, VISUAL_FIRE_NOVA),
+    harmful(91505, 'Frost Command', 'Spell_Frost_FrostShock', 'Movement slowed; damage to the warden reduced.',
+            DURATION_4S, aura(AURA_MOD_DECREASE_SPEED, -35, 0), FROST),
+    strike(91506, 'Magma Lash', 'Ability_Shaman_LavaLash', FIRE, VISUAL_SCORCH),
+    {**buff(91508, 'Striding Heart', 'Spell_Nature_EarthBindTotem', 'Movement speed increased by 25%.', DURATION_3S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 25, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
+    heal(91509, 'Stoneblood Lash', 'Ability_Shaman_LavaLash', ''),
+    buff(91510, 'Rune of the Primal Worldwarden', WORLDWARDEN_ICON,
+         'The Worldheart Totem follows you; your Shocks command it, Stormstrike echoes the last command and Lava Lash '
+         'draws a magma line to it.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    # Black Covenant: Bind Guardian, Covenant Armor and its pact, Covenant Lash, Soul Siphon, its ward and slow,
+    # Dark Intercession.
+    tank_action(91520, 'Bind Guardian', COVENANT_ICON,
+                'Merges your Voidwalker into Covenant Armor until you cast this again: armor from items 400% higher, '
+                '15% more maximum health, 200% more threat, 6% less damage taken. Searing Pain becomes Covenant Lash '
+                'and Drain Life Soul Siphon. Needs your Voidwalker.', 10000, cast=CAST_2S),
+    {**buff(91521, 'Covenant Armor', COVENANT_ICON,
+            'Armor from items, maximum health and threat increased; damage taken reduced.', DURATION_INFINITE,
+            {1: aura(AURA_MOD_BASE_RESISTANCE_PCT, 400, 1), 2: aura(AURA_MOD_INCREASE_HEALTH_PERCENT, 15, 0),
+             3: aura(AURA_MOD_DAMAGE_PERCENT_TAKEN, -6, ALL_SCHOOLS)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_INFINITE}},
+    buff(91522, 'Covenant Pact', COVENANT_ICON, '', DURATION_INFINITE,
+         {1: aura(AURA_MOD_THREAT, 200, ALL_SCHOOLS), 2: aura(AURA_MOD_DAMAGE_PERCENT_TAKEN, 0, MAGIC_SCHOOLS)},
+         hidden=True),
+    tank_action(91523, 'Covenant Lash', 'Spell_Fire_SoulBurn',
+                'An instant lash: 45% of your spell power as Shadowflame damage, with 100% more threat.', 0,
+                gcd=True, target=TARGET_UNIT_TARGET_ENEMY, range_index=RANGE_10),
+    strike(91524, 'Covenant Lash', 'Spell_Fire_SoulBurn', SHADOWFLAME, VISUAL_SHADOW_BOLT_HIT),
+    {'id': 91525, 'copy': DRAIN_LIFE, 'name': 'Soul Siphon', 'icon': 'Spell_Shadow_LifeDrain02',
+     'description': 'Channels for 3 sec, moving at 70% speed: each second 25% of your spell power as Shadow damage '
+                    'and a heal of 1.5% of your maximum health.', 'tooltip': '',
+     'set': {**NO_FAMILY, 'DurationIndex': DURATION_3S, 'RangeIndex': RANGE_20, 'RecoveryTime': 8000,
+             'ManaCost': 0, 'ManaCostPercentage': 6, 'ChannelInterruptFlags': 0,
+             'AttributesEx5': SPELL_ATTR5_ALLOW_ACTION_DURING_CHANNEL, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 0},
+     'effects': {1: {'Effect': EFFECT_APPLY_AURA, 'Aura': AURA_PERIODIC_DUMMY, 'Amplitude': 1000, 'BasePoints': 0,
+                     'DieSides': 1, 'RealPointsPerLevel': 0.0, 'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0}},
+     'clear': [2, 3]},
+    strike(91526, 'Soul Siphon', 'Spell_Shadow_LifeDrain02', SHADOW),
+    heal(91527, 'Soul Siphon', 'Spell_Shadow_LifeDrain02', ''),
+    absorb(91528, 'Siphoning Ward', 'Spell_Shadow_LifeDrain02', DURATION_3S),
+    tank_action(91529, 'Dark Intercession', 'Spell_Shadow_AntiShadow',
+                '15% less damage taken for 6 sec; Covenant Lash also strikes up to 4 enemies within 6 yards of its '
+                'victim for 50% of its damage.', 30000),
+    buff(91530, 'Rune of the Black Covenant', COVENANT_ICON,
+         'Bind Guardian merges your Voidwalker into Covenant Armor; Covenant Lash and Soul Siphon replace Searing '
+         'Pain and Drain Life while bound.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {**buff(91540, 'Dark Intercession', 'Spell_Shadow_AntiShadow', 'Damage taken reduced.', DURATION_6S,
+            {1: aura(AURA_MOD_DAMAGE_PERCENT_TAKEN, -15, ALL_SCHOOLS)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_6S}},
+    buff(91541, 'Soul Siphon', 'Spell_Shadow_LifeDrain02', '', DURATION_3S,
+         {1: aura(AURA_MOD_DECREASE_SPEED, -30, 0)}, hidden=True),
+    # The collection's foundation: Challenge (a free 30-yard taunt, off the global cooldown, 8 sec) and the passive.
+    {'id': 91542, 'copy': TAUNT, 'name': 'Challenge', 'icon': 'Spell_Nature_Reincarnation',
+     'description': 'Taunts an enemy within 30 yards to attack you for 3 sec.', 'tooltip': '',
+     'set': {**NO_FAMILY, 'Stances': 0, 'StancesNot': 0, 'RangeIndex': RANGE_30, 'RecoveryTime': 8000,
+             'ManaCost': 0, 'PowerType': 0, 'StartRecoveryCategory': 0, 'StartRecoveryTime': 0,
+             'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 0}},
+    buff(91543, 'Tank Foundation', COVENANT_ICON, '', DURATION_INFINITE,
+         {1: aura(AURA_MOD_ATTACKER_MELEE_CRIT, -100, 0), 2: aura(AURA_MOD_ATTACKER_RANGED_CRIT, -100, 0),
+          3: aura(AURA_MOD_ATTACKER_SPELL_CRIT, -100, ALL_SCHOOLS)}, hidden=True),
+]
+# The Worldheart's magma line: Flamestrike's burning ground, laid along it by the script.
+_magma = ground(91507, 'Magma Lash', 'Ability_Shaman_LavaLash', None, DURATION_4S)
+_magma.pop('visual')
+_magma['set']['SpellVisual'] = FX_FLAMESTRIKE_GROUND
+SPELLS.append(_magma)
+for _spell in SPELLS:
+    if _spell['id'] in (91481, 91483, 91504, 91506, 91524, 91526):
+        _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
+    if _spell['id'] == 91523:       # 3% of base mana, on the global cooldown
+        _spell['set'] = {**_spell['set'], 'PowerType': 0, 'ManaCostPercentage': 3}
+SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
+                hidden=True)
+           for first, icon, modifiers in (
+               (91491, COMMUNION_ICON, [('Sovereign Bond', 'Bloodbound Court', 'Long Veins'),
+                                        ('Crimson Feast', 'Arterial Echo', 'Shared Weakness'),
+                                        ('Coagulated Throne', 'Rapid Recall', 'Blood for Blood')]),
+               (91511, WORLDWARDEN_ICON, [('Earthen Command', 'Flame Dominion', 'Winter Command'),
+                                          ('Deepstone Heart', 'Wide Communion', 'Striding Heart'),
+                                          ('Resonant Strikes', 'Molten Causeway', 'Stoneblood Lash')]),
+               (91531, COVENANT_ICON, [('Voidforged Plate', 'Nether Insulation', 'Hungry Covenant'),
+                                       ('Deep Extraction', 'Siphoning Ward', 'Unfettered Drain'),
+                                       ('Guardian Manifest', "Legion's Rebuke", 'Frequent Petition')]))
+           for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
+for _spell in SPELLS:
+    if _spell['id'] in (91490, 91510, 91530):
+        _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}
+ICONS += [COMMUNION_ICON, WORLDWARDEN_ICON, COVENANT_ICON, 'Spell_DeathKnight_BloodBoil',
+          'Spell_DeathKnight_DeathStrike', 'Spell_Shadow_ShadowWordPain', 'Spell_DeathKnight_BloodPlague',
+          'Spell_Nature_StoneClawTotem', 'Spell_Nature_EarthShock', 'Spell_Nature_EarthBindTotem',
+          'Spell_Fire_SoulBurn', 'Spell_Shadow_LifeDrain02', 'Spell_Shadow_AntiShadow', 'Spell_Nature_Reincarnation']

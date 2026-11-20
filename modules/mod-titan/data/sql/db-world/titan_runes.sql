@@ -1,4 +1,4 @@
--- Legendary Runes (src/runes.cpp; the spells 90700-91476: client-patch/patch_runes.py, in
+-- Legendary Runes (src/runes.cpp; the spells 90700-91543: client-patch/patch_runes.py, in
 -- titan_demon_hunter_spells.sql). The Rune of Fel Commandment's Felguard and Fel Summons' imp, its scripts and
 -- its proc.
 SET @FELGUARD := 910120;
@@ -459,3 +459,46 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91469, 0, 0, 0, 0, 'Whitefang - Frostfang Strike'),
 (91471, 0, 0, 0, 0, 'Whitefang - Frostbite tick'),
 (91473, 0, 0, 0, 0, 'Whitefang - Glacial Burst');
+
+-- The Tank Collection (src/tank_runes.cpp): the Worldheart Totem (Primal Worldwarden's: an earth totem, larger,
+-- following its Hero, out of reach), and the scripts on Blood Boil, Blood Strike, the Shocks, Stormstrike, Lava Lash,
+-- the taught actions and Soul Siphon.
+SET @WORLDHEART := 910125;
+DELETE FROM `creature_template` WHERE `entry` = @WORLDHEART;
+INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
+    `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
+    `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
+    `dmgschool`, `DamageModifier`, `BaseAttackTime`, `RangeAttackTime`, `BaseVariance`, `RangeVariance`,
+    `unit_class`, `unit_flags`, `unit_flags2`, `dynamicflags`, `family`, `type`, `type_flags`, `lootid`,
+    `pickpocketloot`, `skinloot`, `PetSpellDataId`, `VehicleId`, `mingold`, `maxgold`, `AIName`, `MovementType`,
+    `HoverHeight`, `HealthModifier`, `ManaModifier`, `ArmorModifier`, `ExperienceModifier`, `RacialLeader`,
+    `movementId`, `RegenHealth`, `CreatureImmunitiesId`, `flags_extra`, `ScriptName`, `VerifiedBuild`) VALUES
+(@WORLDHEART, 0, 0, 0, 0, 0, 'Worldheart Totem', 'Primal Worldwarden', NULL, 0, 1, 80, 0, 35, 0, 1, 1.6, 1, 1, 20,
+    0, 0, 1, 2000, 2000, 1, 1, 1, 33554434, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0,
+    0, '', 0);
+
+DELETE FROM `creature_template_model` WHERE `CreatureID` = @WORLDHEART;
+INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
+    `VerifiedBuild`) VALUES
+(@WORLDHEART, 0, 4588, 1.6, 1, 0);
+
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_tank_blood_boil',
+    'spell_titan_tank_blood_strike', 'spell_titan_tank_shock', 'spell_titan_tank_stormstrike',
+    'spell_titan_tank_lava_lash', 'spell_titan_tank_action', 'spell_titan_tank_siphon',
+    'spell_titan_tank_siphon_cast');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(-48721, 'spell_titan_tank_blood_boil'),
+(-45902, 'spell_titan_tank_blood_strike'),
+(-8042, 'spell_titan_tank_shock'),
+(-8050, 'spell_titan_tank_shock'),
+(-8056, 'spell_titan_tank_shock'),
+(17364, 'spell_titan_tank_stormstrike'),
+(60103, 'spell_titan_tank_lava_lash'),
+(91482, 'spell_titan_tank_action'),
+(91500, 'spell_titan_tank_action'),
+(91501, 'spell_titan_tank_action'),
+(91520, 'spell_titan_tank_action'),
+(91523, 'spell_titan_tank_action'),
+(91529, 'spell_titan_tank_action'),
+(91525, 'spell_titan_tank_siphon'),
+(91525, 'spell_titan_tank_siphon_cast');

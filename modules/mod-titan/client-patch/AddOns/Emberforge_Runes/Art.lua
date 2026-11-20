@@ -101,6 +101,12 @@ EmberforgeRunesArt = {
             u = 0.6816,
             v = 0.9844,
         },
+        ChooseCommunion = {
+            w = 504,
+            h = 84,
+            u = 0.7383,
+            v = 0.9844,
+        },
         ChooseCongregation = {
             w = 554,
             h = 84,
@@ -111,6 +117,12 @@ EmberforgeRunesArt = {
             w = 471,
             h = 84,
             u = 0.6904,
+            v = 0.9844,
+        },
+        ChooseCovenantArmor = {
+            w = 598,
+            h = 84,
+            u = 0.876,
             v = 0.9844,
         },
         ChooseDescent = {
@@ -141,6 +153,12 @@ EmberforgeRunesArt = {
             w = 422,
             h = 84,
             u = 0.6182,
+            v = 0.9844,
+        },
+        ChooseEnhancement = {
+            w = 538,
+            h = 84,
+            u = 0.7881,
             v = 0.9844,
         },
         ChooseExecutionStyle = {
@@ -233,6 +251,12 @@ EmberforgeRunesArt = {
             u = 0.6553,
             v = 0.9844,
         },
+        ChooseIntercession = {
+            w = 527,
+            h = 84,
+            u = 0.7725,
+            v = 0.9844,
+        },
         ChooseInvocation = {
             w = 499,
             h = 84,
@@ -299,6 +323,18 @@ EmberforgeRunesArt = {
             u = 0.6729,
             v = 0.9844,
         },
+        ChooseRecall = {
+            w = 414,
+            h = 84,
+            u = 0.6064,
+            v = 0.9844,
+        },
+        ChooseReclamation = {
+            w = 525,
+            h = 84,
+            u = 0.7695,
+            v = 0.9844,
+        },
         ChooseResolve = {
             w = 432,
             h = 84,
@@ -339,6 +375,18 @@ EmberforgeRunesArt = {
             w = 408,
             h = 84,
             u = 0.5977,
+            v = 0.9844,
+        },
+        ChooseShockcraft = {
+            w = 506,
+            h = 84,
+            u = 0.7412,
+            v = 0.9844,
+        },
+        ChooseSiphon = {
+            w = 416,
+            h = 84,
+            u = 0.6094,
             v = 0.9844,
         },
         ChooseSpectralBeast = {
@@ -405,6 +453,12 @@ EmberforgeRunesArt = {
             w = 381,
             h = 84,
             u = 0.5586,
+            v = 0.9844,
+        },
+        ChooseWorldheart = {
+            w = 513,
+            h = 84,
+            u = 0.752,
             v = 0.9844,
         },
         DoneEyebrow = {
@@ -497,6 +551,12 @@ EmberforgeRunesArt = {
             u = 0.7344,
             v = 0.875,
         },
+        SlotCommunion = {
+            w = 112,
+            h = 28,
+            u = 0.875,
+            v = 0.875,
+        },
         SlotCongregation = {
             w = 135,
             h = 28,
@@ -507,6 +567,12 @@ EmberforgeRunesArt = {
             w = 96,
             h = 28,
             u = 0.75,
+            v = 0.875,
+        },
+        SlotCovenantArmor = {
+            w = 157,
+            h = 28,
+            u = 0.6133,
             v = 0.875,
         },
         SlotDescent = {
@@ -537,6 +603,12 @@ EmberforgeRunesArt = {
             w = 74,
             h = 28,
             u = 0.5781,
+            v = 0.875,
+        },
+        SlotEnhancement = {
+            w = 130,
+            h = 28,
+            u = 0.5078,
             v = 0.875,
         },
         SlotExecutionStyle = {
@@ -629,6 +701,12 @@ EmberforgeRunesArt = {
             u = 0.6719,
             v = 0.875,
         },
+        SlotIntercession = {
+            w = 126,
+            h = 28,
+            u = 0.9844,
+            v = 0.875,
+        },
         SlotInvocation = {
             w = 110,
             h = 28,
@@ -695,6 +773,18 @@ EmberforgeRunesArt = {
             u = 0.7188,
             v = 0.875,
         },
+        SlotRecall = {
+            w = 69,
+            h = 28,
+            u = 0.5391,
+            v = 0.875,
+        },
+        SlotReclamation = {
+            w = 122,
+            h = 28,
+            u = 0.9531,
+            v = 0.875,
+        },
         SlotResolve = {
             w = 80,
             h = 28,
@@ -735,6 +825,18 @@ EmberforgeRunesArt = {
             w = 69,
             h = 28,
             u = 0.5391,
+            v = 0.875,
+        },
+        SlotShockcraft = {
+            w = 113,
+            h = 28,
+            u = 0.8828,
+            v = 0.875,
+        },
+        SlotSiphon = {
+            w = 73,
+            h = 28,
+            u = 0.5703,
             v = 0.875,
         },
         SlotSpectralBeast = {
@@ -801,6 +903,12 @@ EmberforgeRunesArt = {
             w = 57,
             h = 28,
             u = 0.8906,
+            v = 0.875,
+        },
+        SlotWorldheart = {
+            w = 119,
+            h = 28,
+            u = 0.9297,
             v = 0.875,
         },
         Title = {
@@ -2068,6 +2176,152 @@ EmberforgeRunesArt = {
                 "Shatter",
                 "Hunt",
                 "Instinct",
+            },
+        },
+        [46] = {
+            rgb = { 0.882, 0.235, 0.275 },
+            hot = { 0.957, 0.733, 0.745 },
+            ink = { 0.988, 0.925, 0.925 },
+            muted = { 0.859, 0.588, 0.627 },
+            hue = { 1, 0.341, 0.384 },
+            inner = { 0.98, 0.863, 0.871 },
+            built = true,
+            core = "**Blood Boil** links up to 5 enemies to you; **Blood Strike** on a " ..
+                    "link heals you and pulses to the rest; **Sanguine Recall** strikes " ..
+                    "every link and shields you.",
+            asks = {
+                "How the links hold",
+                "What Blood Strike takes back",
+                "What the Recall gives",
+            },
+            abilities = {
+                "Bond",
+                "Court",
+                "Veins",
+                "Feast",
+                "Echo",
+                "Weakness",
+                "Throne",
+                "Rapid",
+                "Blood",
+            },
+            texts = {
+                "Your selected linked enemy deals 8% less damage to you while within 20 " ..
+                        "yards.",
+                "Up to 8 enemies are linked. The heal and the absorb keep their caps.",
+                "Links last 15 sec and reach 30 yards.",
+                "Blood Reclamation heals 2% of your maximum health, 2.6% at most.",
+                "Blood Strike also leaves 35% of your attack power as Shadow damage " ..
+                        "over 4 sec on its linked victim.",
+                "Communion pulses make their enemies deal 8% less magic damage to you " ..
+                        "for 4 sec.",
+                "Sanguine Recall's absorb starts at 5% of your maximum health, 7% at " ..
+                        "most.",
+                "Sanguine Recall's cooldown is 14 sec.",
+                "Sanguine Recall also heals you for 2% of your maximum health and deals " ..
+                        "45% of your attack power.",
+            },
+            slots = {
+                "Communion",
+                "Reclamation",
+                "Recall",
+            },
+        },
+        [47] = {
+            rgb = { 0.843, 0.647, 0.294 },
+            hot = { 0.945, 0.878, 0.753 },
+            ink = { 0.984, 0.965, 0.929 },
+            muted = { 0.843, 0.753, 0.635 },
+            hue = { 1, 0.804, 0.408 },
+            inner = { 0.973, 0.937, 0.875 },
+            built = true,
+            core = "The **Worldheart Totem** follows you; your **Shocks** command it, " ..
+                    "**Stormstrike** echoes the last command and **Lava Lash** draws a " ..
+                    "magma line to it.",
+            asks = {
+                "Which command grows",
+                "What the totem gives",
+                "What your strikes add",
+            },
+            abilities = {
+                "Earth",
+                "Flame",
+                "Winter",
+                "Deepstone",
+                "Wide",
+                "Striding",
+                "Resonant",
+                "Molten",
+                "Stone",
+            },
+            texts = {
+                "Earth Shock's command absorbs 5% of your maximum health; its echo 3%.",
+                "Flame's command deals 40% of your attack power; its echo 24%.",
+                "Frost's command slows by 45% and reduces damage by 9%; its echo 27% " ..
+                        "and 5.4%.",
+                "Worldguard reduces damage taken by 11%. A shield is still needed.",
+                "Flame and Frost commands reach 12 yards and up to 8 enemies; echoes " ..
+                        "too.",
+                "Place Worldheart's cooldown is 5 sec, and placing it makes you move " ..
+                        "25% faster for 3 sec.",
+                "Stormstrike's command echo can come every 4 sec.",
+                "Magma Lash's line deals 16% of your attack power a tick and is 5 yards " ..
+                        "wide.",
+                "Lava Lash also heals you for 1.5% of your maximum health, once every 4 " ..
+                        "sec.",
+            },
+            slots = {
+                "Shockcraft",
+                "Worldheart",
+                "Enhancement",
+            },
+        },
+        [48] = {
+            rgb = { 0.667, 0.431, 0.941 },
+            hot = { 0.882, 0.8, 0.98 },
+            ink = { 0.965, 0.941, 0.996 },
+            muted = { 0.773, 0.667, 0.894 },
+            hue = { 0.824, 0.561, 1 },
+            inner = { 0.941, 0.898, 0.988 },
+            built = true,
+            core = "**Bind Guardian** merges your Voidwalker into Covenant Armor; " ..
+                    "**Covenant Lash** and **Soul Siphon** replace Searing Pain and Drain " ..
+                    "Life; **Dark Intercession** guards you.",
+            asks = {
+                "What the armor holds",
+                "What the siphon draws",
+                "How the guardian intercedes",
+            },
+            abilities = {
+                "Plate",
+                "Nether",
+                "Hunger",
+                "Deep",
+                "Ward",
+                "Unfettered",
+                "Manifest",
+                "Legion",
+                "Petition",
+            },
+            texts = {
+                "Covenant Armor raises your armor from items by 500%.",
+                "While bound, magic damage taken is reduced by a further 8%.",
+                "Covenant Lash gives back 1% of your base mana, once every 2 sec.",
+                "Soul Siphon heals 2% of your maximum health a tick.",
+                "Each Soul Siphon tick adds an absorb of 1% of your maximum health for " ..
+                        "3 sec, up to 3%.",
+                "Soul Siphon at full speed, from 30 yards, for 30% of your spell power " ..
+                        "a tick.",
+                "Dark Intercession reduces damage taken by 22%.",
+                "During Intercession, Covenant Lash hits up to 7 more enemies for 75% " ..
+                        "of its damage.",
+                "Dark Intercession's cooldown is 24 sec, and it heals you for 2% of " ..
+                        "your maximum health.",
+            },
+            slots = {
+                "Covenant Armor",
+                "Siphon",
+                "Intercession",
             },
         },
     },
