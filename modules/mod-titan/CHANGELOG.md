@@ -53,6 +53,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ### Fixes
 
+- Smoldering Adventurer's Caches fill your hands for your role: a Tank gets a one-hand weapon and a shield, a Melee
+  Hero a weapon in each hand (none in the off hand without dual wielding), a Ranged Hero an off-hand book, a Healer
+  a book or a shield. Tanks rarely got shields (off-hand weapons and two-handers scored as well) and Melee Heroes
+  often did.
+- Riding needs no level past 60: Artisan Riding and Cold Weather Flying, epic flying mounts and every other mount or
+  riding item that asked for 68 to 80 now ask for 60 (their riding skill still applies).
 - The Legendary Rune window's modifier cards show only the modifier's name, without the small icon beside it.
 - Orc Heroes have Blood Fury (attack power and spell power), and Night Elf Heroes Elusiveness: the game kept them
   from both, since it treats Heroes as Paladins.

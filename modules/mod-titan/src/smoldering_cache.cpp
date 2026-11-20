@@ -46,6 +46,10 @@
 //   defense; no role a bit of everything);
 // - armor is one of the role's two types, whichever scores best: Tank plate or mail, Melee leather or mail, Ranged
 //   cloth or mail, Healer leather or plate (no role: any);
+// - the hands by role (OffHandSuitsRole): a Tank holds a one-hand weapon and a shield, a Melee Hero a weapon in each
+//   hand (none in the off hand without dual wielding), a Ranged Hero an off-hand book, a Healer a book or a shield
+//   (no role: anything). Their scores alone gave Melee Heroes shields (a Champion suffix's strength) and Tanks
+//   off-hand weapons and two-handers, which leave no off hand;
 // - one of the picks within 10% of the best is given.
 //
 // Gear from a cache is soulbound. Gear a Hero gets (loot, quest rewards, purchases, caches) goes on by itself when its
@@ -230,6 +234,25 @@ namespace
         }
     }
 
+    // What a role holds in its off hand (InventoryType), and whether its main hand is one-handed only.
+    bool OffHandSuitsRole(Player* player, Wildcard::Role role, uint8 type)
+    {
+        bool weapon = type == INVTYPE_WEAPON || type == INVTYPE_WEAPONOFFHAND;
+        switch (role)
+        {
+            case Wildcard::ROLE_TANK:
+                return type == INVTYPE_SHIELD;
+            case Wildcard::ROLE_MELEE:
+                return weapon && player->CanDualWield();
+            case Wildcard::ROLE_RANGED:
+                return type == INVTYPE_HOLDABLE;
+            case Wildcard::ROLE_HEALER:
+                return type == INVTYPE_HOLDABLE || type == INVTYPE_SHIELD;
+            default:
+                return true;
+        }
+    }
+
     // The Hero's gear slots from the lowest item level piece up (empty: 0; ties in random order); the off hand only
     // when free to hold one.
     std::vector<GearSlot const*> SlotsByLevel(Player* player)
@@ -273,6 +296,9 @@ namespace
             static constexpr GearSlot ONE_HAND = { EQUIPMENT_SLOT_MAINHAND, "main hand",
                 { INVTYPE_WEAPON, INVTYPE_WEAPONMAINHAND } };
             static constexpr GearSlot TWO_HAND = { EQUIPMENT_SLOT_MAINHAND, "main hand", { INVTYPE_2HWEAPON } };
+            // A Tank's is one-handed (its shield goes beside it).
+            if (Wildcard::GetRole(player) == Wildcard::ROLE_TANK)
+                return PickGearOf(player, ONE_HAND);
             bool oneHand = roll_chance_i(50);
             if (std::optional<Pick> pick = PickGearOf(player, oneHand ? ONE_HAND : TWO_HAND))
                 return pick;
@@ -292,6 +318,8 @@ namespace
         {
             if (!type)
                 break;
+            if (gear.Slot == EQUIPMENT_SLOT_OFFHAND && !OffHandSuitsRole(player, role, type))
+                continue;
             auto itr = Pool().find(type);
             if (itr == Pool().end())
                 continue;
