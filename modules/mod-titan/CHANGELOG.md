@@ -61,7 +61,7 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   riding item that asked for 68 to 80 now ask for 60 (their riding skill still applies).
 - Dungeon bosses always drop at least one piece of gear (their own items first). World gear that would become an
   Ember piece in a dungeon does so far less often (30% of the time; otherwise it does not drop).
-- Bosses deal another 200% more damage to tanks (230% more in all).
+- Bosses deal 2.25 times their damage to tanks (125% more; it was 30% more).
 - Rune of Red Communion: Blood Boil costs 20 Rage and has a 6 sec cooldown instead of its Blood rune.
 - Rune of the Black Covenant: Voidforged Plate now gives 2,500 armor at level 60 (a share of it at lower levels) on
   top of Covenant Armor, instead of raising its armor from items to 500%.
