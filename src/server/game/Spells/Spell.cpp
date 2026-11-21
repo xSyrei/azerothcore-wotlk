@@ -5589,6 +5589,14 @@ void Spell::TakeAmmo()
     }
 }
 
+// Project Emberforge: a spell whose runes the player does not pay (Blood Boil, every rank, while the Rune of Red
+// Communion's aura 91490 is on: mod-titan's tank_runes.cpp charges Rage and a cooldown instead).
+bool Spell::RunesWaived(Player const* player) const
+{
+    constexpr uint32 BLOOD_BOIL = 48721, RED_COMMUNION = 91490;
+    return player && m_spellInfo->GetFirstRankSpell()->Id == BLOOD_BOIL && player->HasAura(RED_COMMUNION);
+}
+
 SpellCastResult Spell::CheckRuneCost(uint32 RuneCostID)
 {
     Unit* unitCaster = m_caster->ToUnit();
@@ -5609,6 +5617,11 @@ SpellCastResult Spell::CheckRuneCost(uint32 RuneCostID)
     }
 
     if (!player->IsClass(CLASS_DEATH_KNIGHT, CLASS_CONTEXT_ABILITY))
+        return SPELL_CAST_OK;
+
+    // Project Emberforge: Blood Boil with the Rune of Red Communion costs Rage and has a cooldown instead
+    // (mod-titan, tank_runes.cpp).
+    if (RunesWaived(player))
         return SPELL_CAST_OK;
 
     SpellRuneCostEntry const* src = sSpellRuneCostStore.LookupEntry(RuneCostID);
@@ -5656,6 +5669,9 @@ void Spell::TakeRunePower(bool didHit)
         return;
 
     if (!unitCaster->IsPlayer() || !unitCaster->IsClass(CLASS_DEATH_KNIGHT, CLASS_CONTEXT_ABILITY))
+        return;
+
+    if (RunesWaived(unitCaster->ToPlayer()))
         return;
 
     SpellRuneCostEntry const* runeCostData = sSpellRuneCostStore.LookupEntry(m_spellInfo->RuneCostID);

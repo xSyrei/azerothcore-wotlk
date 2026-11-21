@@ -47,7 +47,7 @@
 // - easier the lower the Hero: at level 10 creatures have half their health (the Hero's damage doubled) and deal
 //   75% of their damage, evenly up to the intended difficulty at the level cap (heroics: always);
 // - and twice the health throughout (HEALTH_PASS): the damage the Hero deals halved, the health they see doubled;
-//   their damage 65% more (DAMAGE_PASS); a boss's (and what it summons') damage 30% more on a tank, 15% less on
+//   their damage 65% more (DAMAGE_PASS); a boss's (and what it summons') damage 230% more on a tank, 15% less on
 //   anyone else (BOSS_DAMAGE_TANK, BOSS_DAMAGE_OTHERS: a boss mechanic a player deals to those around them, a
 //   tank's included, the latter);
 // - experience for kills as if the creature were at their level: the core's (none for a creature gray to them) is
@@ -61,8 +61,8 @@ namespace
     constexpr float HEALTH_PASS = 2.0f;
     // And their damage on top of all that.
     constexpr float DAMAGE_PASS = 1.65f;
-    // A boss's damage on a Hero by their role: a tank's more, everyone else's less.
-    constexpr float BOSS_DAMAGE_TANK = 1.3f;
+    // A boss's damage on a Hero by their role: a tank's more (+30%, then +200% more), everyone else's less.
+    constexpr float BOSS_DAMAGE_TANK = 3.3f;
     constexpr float BOSS_DAMAGE_OTHERS = 0.85f;
     // A boss kill's experience: this share of the Hero's level, for every member alike.
     constexpr float BOSS_EXPERIENCE_SHARE = 0.75f;

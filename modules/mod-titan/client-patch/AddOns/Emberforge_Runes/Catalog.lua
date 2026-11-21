@@ -1264,7 +1264,8 @@ EmberforgeRunesCatalog = {
       builtFrom = "Blood Boil (Crimson Communion)",
       spentWith = "Blood Strike and Sanguine Recall (the rune teaches it)",
       resource = "Crimson Links, 5 at once",
-      core = "Blood Boil becomes Crimson Communion: as ever, and it links up to 5 enemies it hits to you for 10 " ..
+      core = "Blood Boil becomes Crimson Communion (20 Rage, 6 sec cooldown, no rune): as ever, and it links up " ..
+          "to 5 enemies it hits to you for 10 " ..
           "sec (your selected enemy first, then the nearest). Your Blood Strike on a linked enemy heals you for " ..
           "1.5% of your maximum health plus 0.15% for each other link within 20 yards (2.1% at most) and pulses " ..
           "20% of your attack power as Shadow damage to each other link, once every 2 sec. Sanguine Recall (18 " ..
@@ -1274,7 +1275,8 @@ EmberforgeRunesCatalog = {
           "Challenge (a free 30-yard taunt, 8 sec).",
       loop = "Blood Boil to link the pull; Blood Strike a linked enemy; Sanguine Recall before a big hit.",
       spells = {
-        ["Blood Boil"] = "Crimson Communion: links up to 5 enemies it hits to you for 10 sec.",
+        ["Blood Boil"] = "Crimson Communion: links up to 5 enemies it hits to you for 10 sec. Costs 20 Rage and " ..
+            "has a 6 sec cooldown instead of its Blood rune.",
         ["Blood Strike"] = "On a linked enemy: heals you for 1.5% of your maximum health (more for each other link) " ..
             "and pulses 20% of your attack power as Shadow damage to the other links, once every 2 sec.",
       },
@@ -1402,7 +1404,7 @@ EmberforgeRunesCatalog = {
       },
       mods = {
         { name = "Voidforged Plate",
-          text = "Covenant Armor raises your armor from items by 500%." },
+          text = "Covenant Armor also gives 2,500 armor at level 60 (a share of it at lower levels)." },
         { name = "Nether Insulation",
           text = "While bound, magic damage taken is reduced by a further 8%." },
         { name = "Hungry Covenant",

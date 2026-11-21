@@ -486,6 +486,7 @@ public:
     SpellCastResult CheckRange(bool strict);
     SpellCastResult CheckPower();
     SpellCastResult CheckRuneCost(uint32 RuneCostID);
+    [[nodiscard]] bool RunesWaived(Player const* player) const;
     SpellCastResult CheckCasterAuras(bool preventionOnly) const;
 
     int32 CalculateSpellDamage(uint8 i, Unit const* target) const { return m_caster->CalculateSpellDamage(target, m_spellInfo, i, &m_spellValue->EffectBasePoints[i]); }

@@ -2304,7 +2304,8 @@ EmberforgeRunesArt = {
                 "Petition",
             },
             texts = {
-                "Covenant Armor raises your armor from items by 500%.",
+                "Covenant Armor also gives 2,500 armor at level 60 (a share of it at " ..
+                        "lower levels).",
                 "While bound, magic damage taken is reduced by a further 8%.",
                 "Covenant Lash gives back 1% of your base mana, once every 2 sec.",
                 "Soul Siphon heals 2.5% of your maximum health a tick.",

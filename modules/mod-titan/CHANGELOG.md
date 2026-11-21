@@ -59,6 +59,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   often did.
 - Riding needs no level past 60: Artisan Riding and Cold Weather Flying, epic flying mounts and every other mount or
   riding item that asked for 68 to 80 now ask for 60 (their riding skill still applies).
+- Dungeon bosses always drop at least one piece of gear (their own items first). World gear that would become an
+  Ember piece in a dungeon does so far less often (30% of the time; otherwise it does not drop).
+- Bosses deal another 200% more damage to tanks (230% more in all).
+- Rune of Red Communion: Blood Boil costs 20 Rage and has a 6 sec cooldown instead of its Blood rune.
+- Rune of the Black Covenant: Voidforged Plate now gives 2,500 armor at level 60 (a share of it at lower levels) on
+  top of Covenant Armor, instead of raising its armor from items to 500%.
 - Blood Boil no longer needs Icy Touch or Plague Strike to be offered by Wildcard.
 - You can heal (and buff) groupmates of the other faction in dungeons and raids: inside an instance, a mixed group
   wears its leader's faction, so the game sees friends. Outside you are your own faction again.

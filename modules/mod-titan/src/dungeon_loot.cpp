@@ -22,7 +22,9 @@
 #include "ItemEnchantmentMgr.h"
 #include "Log.h"
 #include "LootMgr.h"
+#include "Creature.h"
 #include "Map.h"
+#include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Player.h"
 #include "Random.h"
@@ -41,8 +43,10 @@
 //   (one per item and level, 1-60);
 // - any other piece (the world's random greens) that asks for a higher level than that is swapped for a Leveling
 //   Scaled piece (scaled_gear.h, the Smoldering Adventurer's Cache's pool) of the same slot and armor or weapon type
-//   at that level, with a random suffix as its template gives. A piece with no such match (a relic, a thrown weapon,
-//   a shirt) stays as it is.
+//   at that level (EMBER_CHANCE of the time; else it is taken out), with a random suffix as its template gives. A
+//   piece with no such match (a relic, a thrown weapon, a shirt) stays as it is;
+// - every boss gives at least one piece of gear: with none in its loot, its own table is rolled again (its dungeon's
+//   items first) until one comes, then made as above.
 namespace
 {
     constexpr int32 LEVEL_ITEM_LEVEL = 5;           // a level's own item level over it (tools/scaling/scaled_gear.py)
@@ -157,6 +161,68 @@ namespace
         return copy;
     }
 
+    // A world piece above the party's level becomes Leveling Scaled gear this share of the time; else it is taken
+    // out (they came from every dungeon pack). A boss's guaranteed piece always does.
+    constexpr int32 EMBER_CHANCE = 30;
+    constexpr uint32 BOSS_ROLLS = 30;               // tries at a boss's table for a piece of gear
+
+    // Gear: weapons and armor that go on, uncommon to epic.
+    bool IsGear(uint32 itemId)
+    {
+        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(itemId);
+        return proto && (proto->Class == ITEM_CLASS_WEAPON || proto->Class == ITEM_CLASS_ARMOR)
+            && proto->InventoryType != INVTYPE_NON_EQUIP && proto->Quality >= ITEM_QUALITY_UNCOMMON
+            && proto->Quality <= ITEM_QUALITY_EPIC;
+    }
+
+    // A dungeon boss (as dungeon_scaling.cpp counts them): an encounter's, a boss by rank, or one by its script.
+    bool IsBoss(Creature const* creature)
+    {
+        if (!creature)
+            return false;
+        if (creature->IsDungeonBoss() || creature->GetCreatureTemplate()->rank == CREATURE_ELITE_WORLDBOSS)
+            return true;
+        return creature->GetScriptName().rfind("boss_", 0) == 0;
+    }
+
+    void Renew(LootItem& item, uint32 entry)
+    {
+        item.itemid = entry;
+        item.randomPropertyId = Item::GenerateItemRandomPropertyId(entry);
+        item.randomSuffix = GenerateEnchSuffixFactor(entry);
+    }
+
+    // A piece for the party's level: a dungeon's own item its copy; a world piece above that level Leveling Scaled
+    // gear, EMBER_CHANCE of the time (always: keep). False: take it out.
+    bool Convert(LootItem& item, uint8 level, bool keep)
+    {
+        ItemTemplate const* proto = sObjectMgr->GetItemTemplate(item.itemid);
+        if (!proto)
+            return true;
+        auto own = DungeonIndex().find(item.itemid);
+        if (own != DungeonIndex().end())
+        {
+            uint32 entry = DungeonGear::FIRST + own->second * DungeonGear::LEVELS +
+                std::clamp<uint32>(level, 1, DungeonGear::LEVELS) - 1;
+            if (sObjectMgr->GetItemTemplate(entry))
+                Renew(item, entry);
+            return true;
+        }
+        if (proto->RequiredLevel <= level)
+            return true;
+        uint32 kind = Kind(proto);
+        auto pieces = kind ? Pool().find(kind) : Pool().end();
+        if (pieces == Pool().end() || pieces->second.empty())
+            return true;
+        if (!keep && !roll_chance_i(EMBER_CHANCE))
+            return false;
+        ScaledGear::Item const* scaled = pieces->second[urand(0, uint32(pieces->second.size()) - 1)];
+        uint32 entry = ScaledGear::Entry(*scaled, level);
+        if (sObjectMgr->GetItemTemplate(entry))
+            Renew(item, entry);
+        return true;
+    }
+
     // The level the dungeon is at: its lowest player's (game masters aside), as dungeon_scaling.cpp scales it.
     uint8 PartyLevel(Map* map, Player const* owner)
     {
@@ -174,8 +240,8 @@ class titan_dungeon_loot : public MiscScript
 public:
     titan_dungeon_loot() : MiscScript("titan_dungeon_loot", { MISCHOOK_ON_AFTER_LOOT_TEMPLATE_PROCESS }) { }
 
-    void OnAfterLootTemplateProcess(Loot* loot, LootTemplate const* /*tab*/, LootStore const& store, Player* lootOwner,
-        bool /*personal*/, bool /*noEmptyError*/, uint16 /*lootMode*/) override
+    void OnAfterLootTemplateProcess(Loot* loot, LootTemplate const* tab, LootStore const& store, Player* lootOwner,
+        bool /*personal*/, bool /*noEmptyError*/, uint16 lootMode) override
     {
         if (!loot || !lootOwner || (&store != &LootTemplates_Creature && &store != &LootTemplates_Gameobject))
             return;
@@ -184,38 +250,40 @@ public:
             return;
 
         uint8 level = PartyLevel(map, lootOwner);
-        for (LootItem& item : loot->items)
+        // Each piece made Dungeon Scaled, Leveling Scaled (EMBER_CHANCE of the time), or taken out.
+        for (std::size_t i = 0; i < loot->items.size();)
         {
-            ItemTemplate const* proto = sObjectMgr->GetItemTemplate(item.itemid);
-            if (!proto)
-                continue;
-            // A dungeon's own item: its copy at the party's level.
-            auto own = DungeonIndex().find(item.itemid);
-            if (own != DungeonIndex().end())
+            if (Convert(loot->items[i], level, false))
             {
-                uint32 entry = DungeonGear::FIRST + own->second * DungeonGear::LEVELS +
-                    std::clamp<uint32>(level, 1, DungeonGear::LEVELS) - 1;
-                if (sObjectMgr->GetItemTemplate(entry))
-                {
-                    item.itemid = entry;
-                    item.randomPropertyId = Item::GenerateItemRandomPropertyId(entry);
-                    item.randomSuffix = GenerateEnchSuffixFactor(entry);
-                }
+                ++i;
                 continue;
             }
-            if (proto->RequiredLevel <= level)
+            loot->items.erase(loot->items.begin() + i);
+            if (loot->unlootedCount)
+                --loot->unlootedCount;
+        }
+
+        // A boss always gives a piece: its own table rolled again (its dungeon's items first) until one comes.
+        Creature* boss = &store == &LootTemplates_Creature
+            ? ObjectAccessor::GetCreature(*lootOwner, loot->sourceWorldObjectGUID) : nullptr;
+        if (!tab || !IsBoss(boss) || std::any_of(loot->items.begin(), loot->items.end(),
+                [](LootItem const& item) { return IsGear(item.itemid); }))
+            return;
+        for (uint32 attempt = 0; attempt < BOSS_ROLLS; ++attempt)
+        {
+            Loot roll;
+            tab->Process(roll, store, lootMode, lootOwner);
+            uint32 pick = 0;
+            for (LootItem const& item : roll.items)
+                if (IsGear(item.itemid) && (!pick || DungeonIndex().count(item.itemid)))
+                    pick = item.itemid;
+            if (!pick)
                 continue;
-            uint32 kind = Kind(proto);
-            auto pieces = kind ? Pool().find(kind) : Pool().end();
-            if (pieces == Pool().end() || pieces->second.empty())
-                continue;
-            ScaledGear::Item const* scaled = pieces->second[urand(0, uint32(pieces->second.size()) - 1)];
-            uint32 entry = ScaledGear::Entry(*scaled, level);
-            if (!sObjectMgr->GetItemTemplate(entry))
-                continue;
-            item.itemid = entry;
-            item.randomPropertyId = Item::GenerateItemRandomPropertyId(entry);
-            item.randomSuffix = GenerateEnchSuffixFactor(entry);
+            loot->AddItem(LootStoreItem(pick, 0, 100.0f, false, LOOT_MODE_DEFAULT, 0, 1, 1));
+            for (LootItem& item : loot->items)
+                if (item.itemid == pick)
+                    Convert(item, level, true);
+            return;
         }
     }
 };

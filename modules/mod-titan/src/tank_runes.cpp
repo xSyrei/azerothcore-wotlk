@@ -72,10 +72,11 @@
 //   free, off the global cooldown): 15% less damage taken for 6 sec, Covenant Lash meanwhile hitting up to 4 more
 //   enemies within 6 yards of its victim for 50%. The Hero's
 //   Curse of Weakness has its victim deal 6% less Physical damage to them, Curse of Tongues 6% less magic damage.
-//   Modifiers: Voidforged Plate (500%), Nether Insulation (8% less magic damage taken), Hungry Covenant (Lash: 1%
-//   of base mana back, once every 2 sec); Deep Extraction (Siphon heals 2.5%), Ravenous Siphon (40% of spell power a
-//   tick), Lashing Rhythm (each Covenant Lash 1 sec off Soul Siphon's cooldown); Guardian Manifest (22%), Legion's
-//   Rebuke (7 more, 75%), Frequent Petition (24 sec, and a 2% heal).
+//   Modifiers: Voidforged Plate (2500 more armor at level 60, a level's share below), Nether Insulation (8% less
+//   magic damage taken), Hungry Covenant (Lash: 1% of base mana back, once every 2 sec); Deep Extraction (Siphon
+//   heals 2.5%), Ravenous Siphon (40% of spell power a tick), Lashing Rhythm (each Covenant Lash 1 sec off Soul
+//   Siphon's cooldown); Guardian Manifest (22%), Legion's Rebuke (7 more, 75%), Frequent Petition (24 sec, and a 2%
+//   heal).
 // - The foundation, while any of them is bound: NPC attacks never critically strike the Hero; Red Communion and the
 //   Primal Worldwarden also teach Challenge (a free 30-yard taunt off the global cooldown, 8 sec). The Black
 //   Covenant's Hero gets their taunt from Wildcard.
@@ -152,7 +153,9 @@ namespace
         MOD_GUARDIAN_MANIFEST, MOD_LEGIONS_REBUKE, MOD_FREQUENT_PETITION,
     };
 
-    // Red Communion's numbers.
+    // Red Communion's numbers. Blood Boil: Rage and a cooldown instead of its rune.
+    constexpr int32 BLOOD_BOIL_RAGE = 20;
+    constexpr uint32 BLOOD_BOIL_COOLDOWN_MS = 6000;
     constexpr uint32 LINKS = 5, COURT_LINKS = 8;
     constexpr int32 LINK_MS = 10000, LONG_LINK_MS = 15000;
     constexpr float LINK_RANGE = 20.0f, LONG_LINK_RANGE = 30.0f;
@@ -188,13 +191,16 @@ namespace
     constexpr uint32 STONEBLOOD_EVERY_MS = 4000;
 
     // Black Covenant's numbers.
-    constexpr int32 ARMOR_PCT = 400, VOIDFORGED_PCT = 500, PACT_THREAT = 200, INSULATION_PCT = 8;
+    constexpr int32 ARMOR_PCT = 400, PACT_THREAT = 200, INSULATION_PCT = 8;
+    // Voidforged Plate: this much armor on top at the level cap, a share of it below (level / 60).
+    constexpr int32 VOIDFORGED_ARMOR = 2500;
     constexpr float LASH_SP = 1.0f, LASH_CLEAVE_RANGE = 6.0f, LASH_CLEAVE = 0.5f, REBUKE_CLEAVE = 0.75f;
     constexpr uint32 LASH_CLEAVE_TARGETS = 4, REBUKE_TARGETS = 7;
     constexpr float HUNGRY_MANA_PCT = 1.0f;
     constexpr uint32 HUNGRY_EVERY_MS = 2000;
     constexpr float SIPHON_SP = 0.25f, RAVENOUS_SP = 0.4f, SIPHON_HEAL = 1.5f, DEEP_HEAL = 2.5f;
     constexpr int32 RHYTHM_MS = 1000;           // Lashing Rhythm: off Soul Siphon's cooldown a Lash
+    constexpr uint32 VOIDFORGED_LEVEL = 60;     // Voidforged Plate's full armor at this level
     constexpr int32 INTERCESSION_PCT = 15, MANIFEST_PCT = 22, INTERCESSION_MS = 6000;
     constexpr int32 PETITION_CUT_MS = 6000;     // 30 to 24 sec
     constexpr float PETITION_HEAL = 2.0f;
@@ -844,6 +850,17 @@ namespace
         player->SetHealth(std::max<uint32>(1, player->CountPctFromMaxHealth(int32(share))));
     }
 
+    // The pact: its threat, Nether Insulation's magic reduction and Voidforged Plate's armor (by the Hero's level).
+    void Pact(Player* player)
+    {
+        player->RemoveAurasDueToSpell(SPELL_COVENANT_PACT);
+        int32 threat = PACT_THREAT;
+        int32 magic = Covenant(player, MOD_NETHER_INSULATION) ? -INSULATION_PCT : 0;
+        int32 level = int32(std::min<uint32>(player->GetLevel(), VOIDFORGED_LEVEL));
+        int32 armor = Covenant(player, MOD_VOIDFORGED_PLATE) ? VOIDFORGED_ARMOR * level / int32(VOIDFORGED_LEVEL) : 0;
+        player->CastCustomSpell(player, SPELL_COVENANT_PACT, &threat, &magic, &armor, true);
+    }
+
     void Unbind(Player* player)
     {
         KeepHealthShare(player, [player]()
@@ -878,11 +895,9 @@ namespace
             player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
         KeepHealthShare(player, [player]()
         {
-            int32 armor = Covenant(player, MOD_VOIDFORGED_PLATE) ? VOIDFORGED_PCT : ARMOR_PCT;
+            int32 armor = ARMOR_PCT;
             player->CastCustomSpell(player, SPELL_COVENANT_ARMOR, &armor, nullptr, nullptr, true);
-            int32 threat = PACT_THREAT;
-            int32 magic = Covenant(player, MOD_NETHER_INSULATION) ? -INSULATION_PCT : 0;
-            player->CastCustomSpell(player, SPELL_COVENANT_PACT, &threat, &magic, nullptr, true);
+            Pact(player);
         });
         if (!player->HasSpell(SPELL_COVENANT_LASH))
             player->learnSpell(SPELL_COVENANT_LASH);
@@ -1038,13 +1053,34 @@ namespace TankRunes
             SwapSummon(player, true);
         if (!covenant && (Bound(player) || player->HasSpell(SPELL_COVENANT_LASH)))
             Unbind(player);
+        else if (covenant && Bound(player))
+            Pact(player);                   // a level or a modifier changed: the pact's numbers again
     }
 }
 
-// Blood Boil (every rank) with Red Communion: the enemies it hits are linked.
+// Blood Boil (every rank) with Red Communion: the enemies it hits are linked; it costs BLOOD_BOIL_RAGE Rage and has a
+// BLOOD_BOIL_COOLDOWN_MS cooldown instead of its Blood rune (the core waives the rune: Spell::RunesWaived).
 class spell_titan_tank_blood_boil : public SpellScript
 {
     PrepareSpellScript(spell_titan_tank_blood_boil);
+
+    SpellCastResult Check()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (player && player->HasAura(SPELL_RUNE_RED_COMMUNION)
+            && player->GetPower(POWER_RAGE) < BLOOD_BOIL_RAGE * 10)
+            return SPELL_FAILED_NO_POWER;
+        return SPELL_CAST_OK;
+    }
+
+    void Paid()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || !player->HasAura(SPELL_RUNE_RED_COMMUNION))
+            return;
+        player->ModifyPower(POWER_RAGE, -BLOOD_BOIL_RAGE * 10);
+        player->AddSpellCooldown(GetSpellInfo()->Id, 0, BLOOD_BOIL_COOLDOWN_MS, true);
+    }
 
     void Link(std::list<WorldObject*>& targets)
     {
@@ -1058,6 +1094,8 @@ class spell_titan_tank_blood_boil : public SpellScript
         // about the caster itself: a handler on the source's area never ran.
         OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_tank_blood_boil::Link, EFFECT_0,
             TARGET_UNIT_DEST_AREA_ENEMY);
+        OnCheckCast += SpellCheckCastFn(spell_titan_tank_blood_boil::Check);
+        AfterCast += SpellCastFn(spell_titan_tank_blood_boil::Paid);
     }
 };
 
