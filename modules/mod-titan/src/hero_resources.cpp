@@ -583,24 +583,12 @@ public:
         Apply(damage, Share(attacker, spellInfo));
     }
 
-    // The core passes the healer first for a direct heal (Unit::HealBySpell) and second for a heal over time: the
-    // caster is whichever of the two knows the spell (or both, a heal on oneself).
-    void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
+    // The heal's caster: the core passes (target, healer) for direct heals and heals over time alike (Unit.cpp,
+    // HealBySpell, once passed them the other way round).
+    void ModifyHealReceived(Unit* /*target*/, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
     {
-        if (!spellInfo)
-            return;
-        auto knows = [spellInfo](Unit* unit)
-        {
-            Player* player = unit ? unit->ToPlayer() : nullptr;
-            return player && player->HasSpell(spellInfo->Id);
-        };
-        Unit* caster = nullptr;
-        if (target == healer)
-            caster = target;
-        else if (knows(target) != knows(healer))
-            caster = knows(target) ? target : healer;
-        if (caster)
-            Apply(heal, Share(caster, spellInfo));
+        if (spellInfo && healer)
+            Apply(heal, Share(healer, spellInfo));
     }
 };
 

@@ -104,6 +104,8 @@ services:
       AC_INFINITE_AMMO_ENABLED: "1"
       # Energy regenerates 25% faster (players only: every player is a Hero).
       AC_RATE_ENERGY: "1.25"
+      # Creatures notice players from 30% less far (aggro radius x0.7: the game's was felt too wide).
+      AC_RATE_CREATURE_AGGRO: "0.7"
     ports:
       - ${DOCKER_WORLD_EXTERNAL_PORT:-8085}:8085
       - ${DOCKER_SOAP_EXTERNAL_PORT:-7878}:7878

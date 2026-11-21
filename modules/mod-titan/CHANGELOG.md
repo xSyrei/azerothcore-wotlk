@@ -59,6 +59,13 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   often did.
 - Riding needs no level past 60: Artisan Riding and Cold Weather Flying, epic flying mounts and every other mount or
   riding item that asked for 68 to 80 now ask for 60 (their riding skill still applies).
+- Blood Boil no longer needs Icy Touch or Plague Strike to be offered by Wildcard.
+- You can heal (and buff) groupmates of the other faction in dungeons and raids: inside an instance, a mixed group
+  wears its leader's faction, so the game sees friends. Outside you are your own faction again.
+- Healing between Heroes of different levels in a dungeon works the right way round: a heal on a higher-level Hero
+  is made larger for their bigger health, not smaller (the game handed every direct heal's healer and target the
+  wrong way round to the scaling).
+- Creatures notice you from 30% less far.
 - The Legendary Rune window's modifier cards show only the modifier's name, without the small icon beside it.
 - Orc Heroes have Blood Fury (attack power and spell power), and Night Elf Heroes Elusiveness: the game kept them
   from both, since it treats Heroes as Paladins.

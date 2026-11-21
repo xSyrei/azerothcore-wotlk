@@ -333,7 +333,7 @@ namespace
     constexpr char const* SHADOW_WORD_PAIN[] = { "Shadow Word: Pain" };
     constexpr NeedsPet PAIRED_ABILITIES[] = {
         { "Conflagrate", IMMOLATES }, { "Ice Lance", FROST_CHILLS }, { "Deep Freeze", FROST_CHILLS },
-        { "Obliterate", DISEASES }, { "Scourge Strike", DISEASES }, { "Blood Boil", DISEASES },
+        { "Obliterate", DISEASES }, { "Scourge Strike", DISEASES },
         { "Pestilence", DISEASES }, { "Heart Strike", DISEASES }, { "Swiftmend", HEALS_OVER_TIME },
         { "Lava Burst", FLAME_SHOCK }, { "Envenom", POISONS }, { "Haunt", CORRUPTIONS },
         { "Mind Flay", SHADOW_WORD_PAIN },
