@@ -127,6 +127,7 @@ namespace
         SPELL_SIPHON_SLOW           = 91541,
         SPELL_CHALLENGE             = 91542,
         SPELL_TANK_FOUNDATION       = 91543,
+        SPELL_COMMUNION_BOIL        = 91544,
 
         NPC_WORLDHEART_TOTEM        = 910125,
     };
@@ -810,6 +811,30 @@ namespace
             player->SendActionButtons(1);
     }
 
+    // Blood Boil's buttons become Red Communion's Blood Boil (Rage, not a rune: the client checks the rune itself),
+    // or back to the rank the Hero knows.
+    void SwapBoil(Player* player, bool communion)
+    {
+        uint32 known = KnownRank(player, SPELL_BLOOD_BOIL);
+        bool swapped = false;
+        for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
+        {
+            ActionButton const* action = player->GetActionButton(button);
+            if (!action || action->GetType() != ACTION_BUTTON_SPELL)
+                continue;
+            uint32 spellId = action->GetAction();
+            if (communion && FirstRank(spellId) == SPELL_BLOOD_BOIL)
+                player->addActionButton(button, SPELL_COMMUNION_BOIL, ACTION_BUTTON_SPELL);
+            else if (!communion && spellId == SPELL_COMMUNION_BOIL && known)
+                player->addActionButton(button, known, ACTION_BUTTON_SPELL);
+            else
+                continue;
+            swapped = true;
+        }
+        if (swapped)
+            player->SendActionButtons(1);
+    }
+
     // Searing Pain's and Drain Life's buttons become Covenant Lash's and Soul Siphon's (bound; Soul Siphon only for
     // a Hero who knows Drain Life), or back.
     void SwapButtons(Player* player, bool bound)
@@ -1038,6 +1063,12 @@ namespace TankRunes
         else if (!any)
             player->RemoveAurasDueToSpell(SPELL_TANK_FOUNDATION);
         Teach(player, SPELL_SANGUINE_RECALL, communion);
+        bool boil = communion && KnownRank(player, SPELL_BLOOD_BOIL);
+        if (!boil)
+            SwapBoil(player, false);
+        Teach(player, SPELL_COMMUNION_BOIL, boil);
+        if (boil)
+            SwapBoil(player, true);
         if (!communion)
             for (Unit* link : LiveLinks(player))
                 link->RemoveAurasDueToSpell(SPELL_CRIMSON_LINK, player->GetGUID());
@@ -1058,8 +1089,10 @@ namespace TankRunes
     }
 }
 
-// Blood Boil (every rank) with Red Communion: the enemies it hits are linked; it costs BLOOD_BOIL_RAGE Rage and has a
-// BLOOD_BOIL_COOLDOWN_MS cooldown instead of its Blood rune (the core waives the rune: Spell::RunesWaived).
+// Blood Boil (every rank) with Red Communion: the enemies it hits are linked. Cast through Red Communion's own Blood
+// Boil (SPELL_COMMUNION_BOIL, which pays its Rage and cooldown); cast directly (a macro), it costs BLOOD_BOIL_RAGE
+// Rage and has a BLOOD_BOIL_COOLDOWN_MS cooldown instead of its Blood rune (the core waives the rune:
+// Spell::RunesWaived).
 class spell_titan_tank_blood_boil : public SpellScript
 {
     PrepareSpellScript(spell_titan_tank_blood_boil);
@@ -1067,7 +1100,7 @@ class spell_titan_tank_blood_boil : public SpellScript
     SpellCastResult Check()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (player && player->HasAura(SPELL_RUNE_RED_COMMUNION)
+        if (player && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_RED_COMMUNION)
             && player->GetPower(POWER_RAGE) < BLOOD_BOIL_RAGE * 10)
             return SPELL_FAILED_NO_POWER;
         return SPELL_CAST_OK;
@@ -1076,7 +1109,7 @@ class spell_titan_tank_blood_boil : public SpellScript
     void Paid()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (!player || !player->HasAura(SPELL_RUNE_RED_COMMUNION))
+        if (!player || GetSpell()->IsTriggered() || !player->HasAura(SPELL_RUNE_RED_COMMUNION))
             return;
         player->ModifyPower(POWER_RAGE, -BLOOD_BOIL_RAGE * 10);
         player->AddSpellCooldown(GetSpellInfo()->Id, 0, BLOOD_BOIL_COOLDOWN_MS, true);
@@ -1190,6 +1223,8 @@ class spell_titan_tank_action : public SpellScript
             return SPELL_FAILED_NO_VALID_TARGETS;
         if (GetSpellInfo()->Id == SPELL_COVENANT_LASH && !Bound(player))
             return SPELL_FAILED_NOT_READY;
+        if (GetSpellInfo()->Id == SPELL_COMMUNION_BOIL && !KnownRank(player, SPELL_BLOOD_BOIL))
+            return SPELL_FAILED_NOT_READY;
         return SPELL_CAST_OK;
     }
 
@@ -1205,6 +1240,11 @@ class spell_titan_tank_action : public SpellScript
             case SPELL_PLACE_WORLDHEART: PlaceTotem(player); break;
             case SPELL_BIND_GUARDIAN: Bind(player); break;
             case SPELL_DARK_INTERCESSION: Intercession(player); break;
+            case SPELL_COMMUNION_BOIL:      // the Hero's Blood Boil, already paid for
+                if (uint32 rank = KnownRank(player, SPELL_BLOOD_BOIL))
+                    player->CastSpell(player, rank, TriggerCastFlags(TRIGGERED_IGNORE_GCD
+                        | TRIGGERED_IGNORE_CAST_IN_PROGRESS | TRIGGERED_IGNORE_POWER_AND_REAGENT_COST));
+                break;
             case SPELL_COVENANT_LASH:
                 if (Unit* target = GetHitUnit())
                     Lash(player, target);

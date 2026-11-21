@@ -500,5 +500,6 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (91520, 'spell_titan_tank_action'),
 (91523, 'spell_titan_tank_action'),
 (91529, 'spell_titan_tank_action'),
+(91544, 'spell_titan_tank_action'),
 (91525, 'spell_titan_tank_siphon'),
 (91525, 'spell_titan_tank_siphon_cast');

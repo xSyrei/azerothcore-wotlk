@@ -639,7 +639,8 @@ utility or a tradeoff) take one pick each, from three.
       health + 0.15% a further link (2.1% cap; 91485) and pulses 20% AP Shadow to the others (91481), once every 2
       sec. Sanguine Recall (91482, taught; 18 sec): 30% AP to each link in range (91483), an absorb of 3% + 0.5% a
       further link (5% cap; 91484, 5 sec). Shared Weakness 91486, Arterial Echo 91487 (its unpaid damage carried,
-      200% cap).
+      200% cap). Blood Boil (91544, taught; its buttons swapped): 20 Rage, 6 sec, casting the Hero's own rank of
+      Blood Boil paid for (the client checks a Blood rune itself, so the real one would say "Not enough runes").
     - **Primal Worldwarden** (47; Tank; Earth, Flame or Frost Shock): Worldheart Totem (91500, taught; creature
       910125, follows 4 yards behind, teleported back past 30) gives Worldguard (91502: +200% threat, 8% less damage)
       while a shield is on. Original Shocks command it: Earth an absorb (91503, the larger kept), Flame 25% AP to 5

@@ -1888,6 +1888,11 @@ SPELLS += [
             DURATION_4S, aura(AURA_DUMMY, 1, 0), SHADOW),
     harmful(91487, 'Arterial Echo', 'Spell_DeathKnight_BloodPlague', 'Shadow damage every second.', DURATION_4S,
             {**aura(AURA_PERIODIC_DAMAGE, 0, 0), 'Amplitude': 1000}, SHADOW),
+    # Blood Boil while bound: the client checks a Blood rune itself ("Not enough runes") whatever the server
+    # waives, so the rune puts this in its place: Rage and a cooldown, the script casting the Hero's Blood Boil.
+    tank_action(91544, 'Blood Boil', 'Spell_DeathKnight_BloodBoil',
+                'Boils the blood of all enemies within 10 yards (your Blood Boil), linking up to 5 of them to you. '
+                'Costs Rage instead of a Blood rune.', 6000, gcd=True),
     buff(91490, 'Rune of Red Communion', COMMUNION_ICON,
          'Blood Boil links up to 5 enemies to you; Blood Strike on a linked enemy heals you and pulses to the rest.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
@@ -1976,6 +1981,8 @@ SPELLS.append(_magma)
 for _spell in SPELLS:
     if _spell['id'] in (91481, 91483, 91504, 91506, 91524, 91526):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
+    if _spell['id'] == 91544:       # 20 Rage (tenths)
+        _spell['set'] = {**_spell['set'], 'PowerType': 1, 'ManaCost': 200}
     if _spell['id'] == 91523:       # 8% of base mana, on the global cooldown
         _spell['set'] = {**_spell['set'], 'PowerType': 0, 'ManaCostPercentage': 8}
     if _spell['id'] == 91521:       # bound: Shadowform's look in the Voidwalker's purple
@@ -2003,8 +2010,8 @@ ICONS += [COMMUNION_ICON, WORLDWARDEN_ICON, COVENANT_ICON, 'Spell_DeathKnight_Bl
           LASH_ICON, SIPHON_ICON, 'Spell_Shadow_SummonVoidWalker']
 # The spellbook's class tabs for what the Tank Collection teaches (the default for our own spells is the Demon
 # Hunter's): the Worldheart's Shaman, Sanguine Recall Death Knight, the Covenant's Warlock, Challenge Warrior.
-SPELL_CLASSES.update({91482: 'DEATHKNIGHT', 91500: 'SHAMAN', 91501: 'SHAMAN', 91520: 'WARLOCK', 91523: 'WARLOCK',
-                      91525: 'WARLOCK', 91529: 'WARLOCK', 91542: 'WARRIOR'})
+SPELL_CLASSES.update({91482: 'DEATHKNIGHT', 91544: 'DEATHKNIGHT', 91500: 'SHAMAN', 91501: 'SHAMAN',
+                      91520: 'WARLOCK', 91523: 'WARLOCK', 91525: 'WARLOCK', 91529: 'WARLOCK', 91542: 'WARRIOR'})
 # Covenant Armor's look: Shadowform's (its darkening character effect and the shadow at the feet) tinted the
 # Voidwalker's purple, with Shadow Dance's purple wisps about the body.
 COVENANT_TINT = 0x6A5010A0                      # ARGB: Shadowform's own is 0x4A1C0108, near-black red
