@@ -6,6 +6,17 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ### Legendary Rune panel
 
+- **A new look**, from the redesign's mockups:
+  - **Recommended for you**: up to three runes as gold-ringed medallions, each with its name, roles, what it does and
+    **Preview rune**; **Browse all runes** below.
+  - **Browse legendary runes**: a search by name, ability or keyword, **All / Damage / Healing / Tank**, a **Usable
+    now** switch, and every rune in a list with where it stands (Usable now, Requires ..., Your cards bring ...),
+    **Preview** and **Choose** (or **Learn Available**).
+  - **The rune's build**: its medallion with its three slots around it (a slot opens once the one before has its
+    modifier), **Choose your ...** and the slot's three modifiers. Click one to select it, then **Confirm modifier**.
+    A preview ends with **Choose this rune**, and the modifiers you tried come with it.
+- Fixed: **tooltips stopped working** after the rune panel had been open (until a /reload). The panel now has its
+  own tooltip and its own questions, and leaves the game's alone.
 - Legendary Runes can be seen and bound **from level 1** (/runes or the rune button). The panel only opens by itself
   from level 5, while you haven't chosen one.
 - Fixed: the rune panel's Lua error ("attempt to index global 'alone'") every frame while it was open.
@@ -45,8 +56,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - An ability that needs a form, stance or pet you don't have yet waits until you do.
 - Each specialization keeps its own cards, and they stay when you prestige.
 - The card editor's new look: each slot shows its card's icon and name and the level it comes at, its Golden Card a
-  gold badge on the icon's corner with its level and name beneath; the lists show rarity as gems and the unlock level beside each card, with scroll bars, and sort by
-  rarity or by level.
+  gold badge on the icon's corner with its level and name beneath; the lists show rarity as gems and the unlock level
+  beside each card, with scroll bars, and sort by rarity or by level.
 - **Search by what a card does**: the search bar (the editor's and the Cards tab's) looks through each card's text
   too. Every word you type must be in it, in any order: "% spell haste", "shadow damage", "stun", "heal over time". Put
   a phrase in quotes to find it exactly.

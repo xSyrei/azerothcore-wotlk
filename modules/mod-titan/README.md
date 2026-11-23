@@ -454,20 +454,21 @@ none is bound) (`src/runes.cpp`; the design: the
 "Emberforge Legendary Runes" doc). A rune is a loop: a builder makes a resource, a spender cashes it in with an
 empowered effect; three modifier slots (Invocation: how you build; Manifestation: what the spender does; Adaptation:
 utility or a tradeoff) take one pick each, from three.
-- **The panel** (`Emberforge_Runes`, `/runes`; addon whispers with prefix `EFRN`, protocol in both files) opens by
-  itself at level 5, and at login while the active specialization has no rune: up to three runes suggested from
-  the Hero's abilities and role, and Browse all for every rune, three a page (one not built yet shakes and says so).
-  Each card shows the roles it serves (the LFG role icons under its LEGENDARY: damage, healing, tanking) and, for a
-  rune with its build words, a **Preview** button: the medallion, slots and options as if bound, any slot open and
-  picks tried there only (nothing sent), then Back or Choose this rune. Binding asks first; a rune missing a required
-  ability can still be bound after a large warning naming what it lacks (`PICK,<rune>,1`). The stage takes no clicks
-  itself (only its cards and buttons), so the camera still turns behind it, as it does behind a Wildcard roll. It is the "Legendary Rune Panel" mockup over the game world: the
-  chosen card erupts and the rest burn away, it condenses into the rune's medallion, which breaks into the three
-  slots, and each slot's three options rise in (a done slot can be chosen again). Its art is baked from the mockup's
-  own drawing code by `client-patch/build_rune_art.py` (`rune_art/bake.js` in headless Chromium: `Art/`, `Art.lua`);
-  its fonts are Cinzel and Alegreya Sans (`Fonts/`, SIL Open Font License).
+- **The panel** (`Emberforge_Runes`, `/runes`; addon whispers with prefix `EFRN`, protocol in both files) is the
+  redesign's three mockups over the dimmed world (a 1600 x 900 stage): **Recommended for you** (up to three suggested
+  runes, each a gold-ringed medallion with name, roles, its loop and Preview rune; Browse all runes), **Browse
+  legendary runes** (a search over names, abilities and keywords, All / Damage / Healing / Tank, Usable now, a
+  four-row list with Preview and Choose) and **the build** (the medallion with its three slot nodes, a slot opening
+  once the one before has its modifier; "Choose your <slot>", three modifiers with radio marks; select, then Confirm
+  modifier, which sends `MOD`). A preview tries picks locally and ends with Choose this rune (its picks sent once
+  bound). Binding asks first; a rune missing a required ability can still be bound after a warning naming what it
+  lacks (`PICK,<rune>,1`). Its tooltip (`EmberforgeRunesTip`) and questions are its own: the game's tooltip and popups
+  are never moved (moving GameTooltip broke tooltips until a reload). Its pieces are `Art/Ui*.tga`
+  (`client-patch/build_rune_ui.py`); its fonts Marcellus (titles, names, buttons), Cinzel (eyebrows, slot names) and
+  Alegreya Sans (`Fonts/`, SIL Open Font License). The runes' words are `Catalog.lua` and `Art.lua`
+  (`client-patch/build_rune_art.py`, which also bakes the first design's card and medallion art, no longer drawn).
 - **While the panel is open the rest of the UI is hidden** (UIParent hidden, the panel on WorldFrame at the UI's
-  scale; the tooltip and the bind questions lifted along). It opens out of combat only (asked in combat, after it);
+  scale). It opens out of combat only (asked in combat, after it);
   combat starting closes it, and so does the UI coming back (Escape, Alt+Z). With no suggestion it opens on the search.
   **Suggestions count the slotted Skill Cards** (`Specs::SlottedCards`): a rune they complete is suggested after the
   usable ones and says what the cards bring (`R`'s third field). **Unlearn** (`UNBIND`) frees a bound rune before

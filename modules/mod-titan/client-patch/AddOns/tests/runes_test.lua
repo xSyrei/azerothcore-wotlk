@@ -223,31 +223,41 @@ local fel = EmberforgeRunesArt.runes[21]
 check(fel.built and fel.asks[2] == "What your Chaos Bolt Volley does" and #fel.texts == 9,
     "Art.lua has Fel Commandment's questions and option words")
 
--- Below level 10: nothing opens; /runes says when.
+-- The panel's own tooltip and questions: the game's tooltip is never moved (moving it broke tooltips until a reload).
+local tooltipParent = GameTooltip:GetParent()
+local ask = debug.ask
+local function Accept()
+    check(ask:IsShown(), "a question is asked")
+    ask.yes:Click()
+end
+
+-- Below the unlock level: nothing opens; /runes says when.
 server("R,21,-")
 server("S,8,10,1,0,0,0,0,-,0")
-check(not frame:IsShown(), "below level 10 the panel stays closed")
+check(not frame:IsShown(), "below the unlock level the panel stays closed")
 SlashCmdList.EMBERFORGERUNES()
-check(frame:IsShown() and view.mode == "locked" and debug.head.subtitle.text == "Legendary Runes unlock at level 10.",
+check(frame:IsShown() and view.mode == "locked" and debug.locked.subtitle.text == "Legendary Runes unlock at level 10.",
     "/runes shows when the runes unlock")
 check(lastSent() == "STATE", "opening asks the server for the state")
 frame:Hide()
 
--- Level 10, no rune: the panel opens by itself once, the suggested cards rising in.
+-- Unlocked, no rune: the panel opens by itself once, on Recommended for you.
 server("S,10,10,1,0,0,0,0,21,1")
-check(frame:IsShown() and view.mode == "offers" and view.phase == "intro", "unlocked with no rune: the offers open")
-run(1.6)
-check(view.phase == "offer" and debug.cards[1].rune and debug.cards[1].rune.id == 21 and not debug.cards[2].rune,
-    "one card: the rune the Hero's abilities fit, settled")
-check(debug.browseAsk.target == 1, "Browse all is offered")
+local offers = debug.offers
+check(frame:IsShown() and view.mode == "offers" and offers.target == 1 and offers.title.text == "Recommended for you",
+    "unlocked with no rune: Recommended for you")
+check(offers.cards[1].hit.rune.id == 21 and offers.cards[1].name.text == "Fel Commandment"
+    and not offers.cards[2].name.shown and offers.cards[1].preview.label.text == "Preview rune",
+    "one medallion: the rune the Hero's abilities fit, its name without 'Rune of', and Preview rune")
+check(offers.cards[1].role.label.text == "DAMAGE" and offers.cards[1].desc.text ~= "", "its role and what it does")
+check(GameTooltip:GetParent() == tooltipParent, "the game's tooltip stays where it is")
 frame:Hide()
 server("S,10,10,1,0,0,0,0,21,1")
 check(not frame:IsShown(), "it opens by itself only once a session")
 
--- Browse all: every rune in one list, searched and filtered.
+-- Browse legendary runes: every rune in one list, searched and filtered.
 EmberforgeRunes_Open()
-debug.browseAsk.pill:Click()
-run(0.7)
+offers.browse:Click()
 local rows, browse = debug.rows, debug.browse
 local function listed()
     local ids = {}
@@ -256,45 +266,35 @@ local function listed()
     end
     return table.concat(ids, ",")
 end
-check(view.mode == "browse" and view.phase == "browse" and debug.browser.target == 1 and #browse.list == 28
-    and rows[1].shown and rows[5].shown and debug.browser.count.text == "28 runes",
-    "Browse all lists every rune, five rows at a time")
+check(view.mode == "browse" and debug.browser.target == 1 and #browse.list == 28 and rows[1].shown and rows[4].shown
+    and debug.browser.count.text == "28 runes", "Browse lists every rune, four rows at a time")
 check(rows[1].rune.id == 21 and rows[1].status.text == "Usable now" and rows[2].status.text == "Coming soon",
     "the usable rune comes first; each row says where it stands")
+check(rows[1].choose.label.text == "Choose" and rows[1].choose.look == "primary" and rows[2].choose.look ~= "primary",
+    "Choose is lit on a usable rune only")
 debug.browser.scripts.OnMouseWheel(debug.browser, -1)
 check(browse.offset == 1 and rows[1].rune == browse.list[2], "the mouse wheel scrolls the list")
 debug.browser.scripts.OnMouseWheel(debug.browser, -30)
-check(browse.offset == 23, "it stops at the end")
+check(browse.offset == 24, "it stops at the end")
 local search = debug.search
+for query, expected in pairs({ ["warlock glaive"] = "21", ["soothing heal"] = "26", ["rogue"] = "32,42",
+    ["kill command"] = "33", ["prayer of mending"] = "38", ["icicle"] = "35" }) do
+    search.text = query
+    search.scripts.OnTextChanged(search)
+    check(listed() == expected, "the search finds '" .. query .. "'")
+end
 search.text = "lightning"
 search.scripts.OnTextChanged(search)
 check(browse.offset == 0 and rows[1].rune.id == 23 and not search.hint.shown, "the search finds a rune by its name")
-search.text = "warlock glaive"
-search.scripts.OnTextChanged(search)
-check(listed() == "21" and debug.browser.count.text == "1 of 28 runes", "and by the abilities it uses")
-search.text = "soothing heal"
-search.scripts.OnTextChanged(search)
-check(listed() == "26", "every word must match: Soothing Mist's healing rune")
-search.text = "rogue"
-search.scripts.OnTextChanged(search)
-check(listed() == "32,42", "by keyword: the rogues' runes")
-search.text = "kill command"
-search.scripts.OnTextChanged(search)
-check(listed() == "33", "by ability: Kill Command's rune")
-search.text = "prayer of mending"
-search.scripts.OnTextChanged(search)
-check(listed() == "38", "by ability: Prayer of Mending's rune")
-search.text = "icicle"
-search.scripts.OnTextChanged(search)
-check(listed() == "35", "by what it makes: the Icicles' rune")
 search.text = "xyzzy"
 search.scripts.OnTextChanged(search)
-check(#browse.list == 0 and not rows[1].shown and debug.empty.target == 1
-    and debug.empty.text.text:find("No rune matches"), "nothing found says so")
+check(#browse.list == 0 and not rows[1].shown and debug.browser.empty.text:find("No rune matches"),
+    "nothing found says so")
 search.text = ""
 search.scripts.OnTextChanged(search)
 check(search.hint.shown and #browse.list == 28, "an empty search lists every rune again")
-debug.chips[3]:Click()
+local chips = debug.chips
+chips[3]:Click()
 local healers = true
 for _, rune in ipairs(browse.list) do
     local heals = false
@@ -303,18 +303,18 @@ for _, rune in ipairs(browse.list) do
     end
     healers = healers and heals
 end
-check(healers and #browse.list >= 3 and debug.chips[3].on and not debug.chips[1].on, "the Healing filter")
-debug.chips[1]:Click()
-debug.chips[5]:Click()
-check(listed() == "21" and debug.chips[5].on, "Usable now: only the runes nothing is missing for")
-debug.chips[5]:Click()
+check(healers and #browse.list >= 3 and chips[3].on and not chips[1].on, "the Healing filter")
+chips[1]:Click()
+check(chips[1].on and #browse.list == 28, "All clears it")
+debug.toggle:Click()
+check(listed() == "21" and browse.usable, "Usable now: only the runes nothing is missing for")
+debug.toggle:Click()
 server("R,21,90111/688+697")
-check(rows[1].status.text:find("Needs Throw Glaive"), "a rune missing abilities says what it needs")
+check(rows[1].status.text:find("Requires Throw Glaive"), "a rune missing abilities says what it requires")
 rows[1].choose:Click()
-check(popup and popup.name == "EMBERFORGE_RUNE_BIND_MISSING"
-    and popup.b == "Throw Glaive, and Summon Imp or Summon Voidwalker",
+check(ask.title.text == "Warning" and ask.text.text:find("Throw Glaive, and Summon Imp or Summon Voidwalker", 1, true),
     "a rune missing abilities warns, naming them, before it can be bound")
-StaticPopupDialogs.EMBERFORGE_RUNE_BIND_MISSING.OnAccept(nil, 21)
+Accept()
 check(lastSent() == "PICK,21,1,1", "binding it anyway says so to the server")
 view.pending = nil
 server("R,21,-")
@@ -323,95 +323,89 @@ server("R,21,-")
 search.text = "fel"
 search.scripts.OnTextChanged(search)
 rows[1].preview:Click()
-check(view.mode == "preview" and view.phase == "build" and debug.options[1].name.text == "Infernal Pact",
-    "previewing shows its medallion and first options")
+local build = debug.build
+check(view.mode == "preview" and build.target == 1 and build.title.text == "Fel Commandment"
+    and build.options[1].name.text == "Infernal Pact" and build.heading.text == "Choose your Invocation",
+    "previewing shows its medallion, the first slot and its modifiers")
+check(build.nodes[1].status.text == "Choosing" and build.nodes[2].lock.shown and build.nodes[3].lock.shown,
+    "slot 1 is being chosen, the others locked")
 local sentBefore = #sent
-debug.options[2]:Click()
-run(0.7)
-check(#sent == sentBefore and view.picks[1] == 2, "a pick in the preview is tried, not sent")
-debug.previewBar.back:Click()
-run(0.7)
-check(view.mode == "browse" and view.phase == "browse" and not view.preview and browse.query == "fel"
-    and rows[1].rune.id == 21, "Back returns to the list, its search kept")
+build.options[2]:Click()
+check(build.picked.shown and build.pickedText.text == "Demonic Ascension selected" and build.options[2].check.shown,
+    "a modifier clicked is selected")
+check(build.right.label.text == "Confirm modifier" and build.right.enabled, "and can be confirmed")
+build.right:Click()
+check(#sent == sentBefore and view.picks[1] == 2 and view.active == 2 and not build.nodes[2].lock.shown,
+    "confirmed in a preview: tried here, not sent; the next slot opens")
+check(build.right.label.text == "Choose this rune", "with nothing pending, the preview offers to choose the rune")
+build.left:Click()
+check(view.mode == "browse" and not view.preview and browse.query == "fel" and rows[1].rune.id == 21,
+    "Back to all runes returns to the list, its search kept")
 
--- Binding asks first; the server's bind fades the list and the chosen rune's card comes in and erupts.
+-- Binding asks first; once the server binds it, its build.
 rows[1].choose:Click()
-check(popup and popup.name == "EMBERFORGE_RUNE_BIND" and popup.a == "Rune of Fel Commandment",
-    "choosing asks to confirm the bind")
-StaticPopupDialogs.EMBERFORGE_RUNE_BIND.OnAccept(nil, 21)
+check(ask.title.text == "Bind Fel Commandment?", "choosing asks to confirm the bind")
+Accept()
 check(lastSent() == "PICK,21,0,1", "accepting sends PICK,21 for the first rune")
 server("N,21,1,3,686+29722")
 server("S,10,10,1,21,0,0,0,21,0")
-check(view.phase == "arrive" and debug.browser.target == 0 and debug.cards[1].rune.id == 21,
-    "bound: the list fades away and the chosen rune's card comes in")
-run(0.7)
-check(view.phase == "erupt" and view.chosen == 1, "then it erupts")
-run(3.7)
-check(view.medal ~= nil and view.phase == "split", "the card condenses into the medallion, which splits")
-run(1.6)
-check(view.phase == "build" and view.active == 1 and debug.choose.target == 1, "the slots, and the first choice")
-local options = debug.options
+check(view.mode == "build" and build.target == 1 and view.active == 1, "bound: its build, the first slot to choose")
+local options = build.options
 check(options[1].name.text == "Infernal Pact" and options[1].text.text:find("twice as often")
-    and options[1].ability.text == "YOUR DEMON", "the options in the mockup's words")
-check(options[3].missing and options[3].ability.text:find("NEEDS SHADOW BOLT OR INCINERATE"),
-    "Dreadfire Discipline, missing Shadow Bolt or Incinerate, says so")
+    and options[1].ability.text == "Y O U R  D E M O N", "the modifiers in the mockup's words")
+check(options[3].missing and options[3].ability.text:find("N E E D S"), "Dreadfire Discipline, missing an ability")
 local before = #sent
 options[3]:Click()
-check(#sent == before and debug.note.text.text:find("needs Shadow Bolt or Incinerate"), "a greyed option sends nothing")
-
--- A pick streams into its slot, and the next slot asks.
+check(#sent == before and debug.chrome.note.text:find("needs Shadow Bolt or Incinerate"),
+    "a modifier missing its ability says so and sends nothing")
 options[1]:Click()
-check(lastSent() == "MOD,1,1,1", "picking Infernal Pact sends MOD,1,1 for the first rune")
-run(0.6)
-check(view.picks[1] == 1 and view.active == 2 and debug.slots[1].pick.text == "Infernal Pact",
-    "the slot takes it; Manifestation is next")
+build.right:Click()
+check(lastSent() == "MOD,1,1,1" and view.picks[1] == 1 and view.active == 2
+    and build.nodes[1].status.text == "Infernal Pact", "Confirm modifier sends MOD,1,1; Manifestation is next")
 server("S,10,10,1,21,1,0,0,21,0")
 options[3]:Click()
-run(0.6)
+build.right:Click()
 server("S,10,10,1,21,1,3,0,21,0")
 options[2]:Click()
-run(0.6)
+build.right:Click()
 server("S,10,10,1,21,1,3,2,21,0")
-check(view.active == nil and debug.done.target == 1 and debug.done.name.text == "The Legion's Master",
-    "the three picks of a doc build: complete, named")
-check(debug.done.hint.text == "Click on a modifier to change it", "the done view says a modifier can be changed")
+check(view.active == nil and build.heading.text == "The Legion's Master" and build.summary.shown
+    and build.right.label.text == "Close", "the three picks of a doc build: complete, named")
+check(build.ask.text == "Click a slot to change its modifier.", "the done build says a slot can be changed")
 
 -- A done slot can be chosen again.
-debug.slots[2]:Click()
-check(view.active == 2 and debug.choose.target == 1 and options[3].picked, "a done slot opens its choices again")
+build.nodes[2]:Click()
+check(view.active == 2 and options[3].check.shown and not build.right.enabled,
+    "a done slot opens its modifiers again, its pick checked")
 server("E,Modifiers can't be changed in combat.")
-check(debug.note.text.text:find("in combat"), "a refusal shows in the note")
+check(debug.chrome.note.text:find("in combat"), "a refusal shows in the note")
 
--- Reopened, bound: the medallion straight away.
+-- Reopened, bound: the build straight away.
 frame:Hide()
 EmberforgeRunes_Open()
-check(view.mode == "build" and view.phase == "build" and view.medal.split == 1, "reopened: the build, no eruption")
-check(debug.slots[1].small.texture:find("SlotInvocation$") and debug.choose.labels[1].texture:find("ChooseInvocation$"),
-    "Fel Commandment's slots carry the doc's names")
+check(view.mode == "build" and build.target == 1 and build.nodes[1].label.text == "I N V O C A T I O N",
+    "reopened: the build, its slots named")
 frame:Hide()
 
 -- Another specialization bound to the Sanctified Paragon: its slots carry its own names.
 server("R,22,-")
 server("S,10,10,2,22,0,0,0,22,0")
 EmberforgeRunes_Open()
-run(0.2)
-check(view.mode == "build" and debug.slots[1].small.texture:find("SlotPresence$")
-    and debug.slots[3].small.texture:find("SlotCovenant$"), "the Sanctified Paragon's slots: Presence, Covenant")
-check(debug.choose.labels[1].texture:find("ChoosePresence$") and debug.options[1].name.text == "Boundless Sanctity",
+check(view.mode == "build" and build.nodes[1].label.text == "P R E S E N C E"
+    and build.nodes[3].label.text == "C O V E N A N T", "the Sanctified Paragon's slots: Presence, Covenant")
+check(build.heading.text == "Choose your Presence" and options[1].name.text == "Boundless Sanctity",
     "choosing its Presence: Boundless Sanctity first")
 frame:Hide()
 
--- The Stormbound Conduit: slot names with a space find their labels (baked without it).
+-- The Stormbound Conduit.
 server("R,23,-")
 server("S,10,10,3,23,0,0,0,23,0")
 EmberforgeRunes_Open()
-run(0.2)
-check(view.mode == "build" and debug.slots[2].small.texture:find("SlotLightningShield$")
-    and debug.slots[3].small.texture:find("SlotSurge$"), "the Stormbound Conduit's slots: Lightning Shield...")
-check(debug.choose.labels[1].texture:find("ChooseArcs$")
-    and debug.options[1].name.text == "Forked Tempest", "choosing its Arcs: Forked Tempest first")
+check(build.nodes[2].label.text == "L I G H T N I N G  S H I E L D" and options[1].name.text == "Forked Tempest",
+    "the Stormbound Conduit's slots and modifiers")
 frame:Hide()
 server("S,10,10,1,21,1,3,1,21,0")
+check(GameTooltip:GetParent() == tooltipParent, "after all that, the game's tooltip is still where it was")
 
 -- The glow: Throw Glaive on button 3 glows at 5 Fel Command, with the Felguard mark in Metamorphosis.
 actions[3] = 90111
@@ -491,56 +485,47 @@ local count = #tooltipLines
 GameTooltip:SetUnitBuff("player", 2)
 check(#tooltipLines == count, "another aura's tooltip is left alone")
 
--- The second Legendary Rune (Rune II): from level 30, its own bind and modifiers; the first rune's left alone. The
--- medallion is split between them (Rune I left, Rune II right): a click on a half shows that rune.
+-- The second Legendary Rune (Rune II): from level 30, its own bind and modifiers; Rune I and Rune II switch the
+-- panel between them.
 frame:Hide()
 server("S,29,5,1,21,1,3,1,21.23,0,0,0,0,0,30")
 EmberforgeRunes_Open()
-run(1)
-local bar, medal = debug.slotBar, debug.medal
-check(view.mode == "build" and medal.hits[1].shown and medal.hits[2].shown and medal.half.shown
-    and medal.core.texture:find("Core21") and medal.half.texture:find("Soft"),
-    "the build's medallion is split: Rune I's half, and Rune II's empty one")
-check(bar.target == 0, "the small split medallion stays away while the medallion itself splits")
-medal.hits[2]:Click()
-run(0.7)
-check(view.slot == 2 and view.mode == "locked" and bar.target == 1
-    and debug.head.subtitle.text == "Your second Legendary Rune unlocks at level 30.",
-    "a click on its right half shows Rune II, which says when it unlocks; the small split medallion shows")
-bar.hits[1]:Click()
-run(0.7)
-check(view.slot == 1 and view.mode == "build", "a click on the small one's left half: back to Rune I's build")
+local tabs = debug.chrome.runeTabs
+check(view.mode == "build" and not tabs[1].shown, "below 30 there is one rune: no Rune I / Rune II")
 frame:Hide()
 server("S,30,5,1,21,1,3,1,21.23.24,1,0,0,0,0,30")
-check(frame:IsShown() and view.slot == 2 and view.mode == "offers", "at 30 the panel opens on Rune II's choices")
-run(1.6)
+check(frame:IsShown() and view.slot == 2 and view.mode == "offers" and tabs[2].on and tabs[1].shown,
+    "at 30 the panel opens on Rune II's suggestions")
 local offered = {}
-for _, card in ipairs(debug.cards) do
-    if card.rune then
-        offered[#offered + 1] = card.rune.id
+for _, card in ipairs(debug.offers.cards) do
+    if card.name.shown then
+        offered[#offered + 1] = card.hit.rune.id
     end
 end
 check(table.concat(offered, ",") == "23,24", "Rune II is not offered the rune Rune I holds")
-StaticPopupDialogs.EMBERFORGE_RUNE_BIND.OnAccept(nil, 23)
+debug.offers.cards[1].preview:Click()
+debug.build.right:Click()
+Accept()
 check(lastSent() == "PICK,23,0,2", "binding Rune II says so to the server")
 server("S,30,5,1,21,1,3,1,21.23.24,0,23,0,0,0,30")
-run(6)
-check(view.slot == 2 and view.phase == "build", "Rune II bound: its build")
-debug.options[2]:Click()
+check(view.slot == 2 and view.mode == "build", "Rune II bound: its build")
+debug.build.options[2]:Click()
+debug.build.right:Click()
 check(lastSent() == "MOD,1,2,2", "Rune II's modifiers are its own")
-run(0.6)
 check(EmberforgeRunes_Button.glow.on == false, "both runes bound: the rune button stops glowing")
+tabs[1]:Click()
+check(view.slot == 1 and view.mode == "build" and debug.build.title.text == "Fel Commandment", "Rune I again")
 frame:Hide()
 view.slot = 1
 
--- Retired runes (Fel Commandment, the Threefold Grave and the Unbroken Onslaught, being reworked) are not listed in
--- Browse all.
+-- Retired runes (Fel Commandment, the Threefold Grave and the Unbroken Onslaught, being reworked) are not listed.
 for _, rune in ipairs(retired) do
     rune.retired = true
 end
+server("S,10,5,1,0,0,0,0,24,0")
 EmberforgeRunes_Open()
-debug.browseAsk.pill:Click()
-run(0.7)
+debug.offers.browse:Click()
+local search = debug.search
 search.text = ""
 search.scripts.OnTextChanged(search)
 local hidden = true
@@ -551,6 +536,7 @@ for _, rune in ipairs(debug.browse.list) do
 end
 check(#retired == 3 and hidden and #debug.browse.list == 25 and debug.browser.count.text == "25 runes",
     "retired runes are not listed, nor counted")
+frame:Hide()
 
 -- A bound rune's line on the spells it reaches into: Flame Shock with Ember's Wrath, Frost Shock with Whitefang.
 local function SpellTooltip(name)
@@ -580,8 +566,8 @@ server("R,22,686,-,0")
 server("R,24,697,697,1")
 server("S,5,5,1,0,0,0,0,-,0,0,0,0,0,30")
 EmberforgeRunes_Open()
-run(0.7)
 check(frame:IsShown() and view.mode == "browse", "no suggestions: the panel opens on the search")
+local search = debug.search
 local function RowOf(id)
     search.text = ById(id).name
     search.scripts.OnTextChanged(search)
@@ -594,35 +580,36 @@ end
 local cardsRow = RowOf(22)
 check(cardsRow and cardsRow.status.text == "Your cards bring Shadow Bolt", "a rune the slotted cards complete says so")
 local learnRow = RowOf(24)
-check(learnRow and learnRow.learn and learnRow.choose.label.text == "Learn Available" and learnRow.choose:IsShown(),
+check(learnRow and learnRow.learn and learnRow.choose.label.text == "Learn Available" and learnRow.choose.enabled,
     "none usable: Learn Available where the abilities can be had")
 learnRow.choose:Click()
 check(lastSent() == "PLAN,24", "Learn Available asks the server for its plan")
 server("L,24,686,697,2136,3:0:697")
-check(popup and popup.name == "EMBERFORGE_RUNE_LEARN" and popup.a:find("Learn now: |cffffffffShadow Bolt", 1, true)
-    and popup.a:find("Slot its Skill Card: |cffffffffFire Blast|r (slot III)", 1, true)
-    and popup.a:find("This replaces:", 1, true) and popup.a:find("Summon Voidwalker leaves your kit", 1, true)
-    and popup.a:find("Summon Voidwalker's Skill Card leaves slot III", 1, true),
+local text = debug.ask.text.text
+check(debug.ask.title.text == "Learn Available: Echoing Thunder"
+    and text:find("Learn now: |cffffffffShadow Bolt", 1, true)
+    and text:find("Slot its Skill Card: |cffffffffFire Blast|r (slot III)", 1, true)
+    and text:find("This replaces:", 1, true) and text:find("Summon Voidwalker leaves your kit", 1, true)
+    and text:find("Summon Voidwalker's Skill Card leaves slot III", 1, true),
     "the plan names what it learns, slots, and replaces")
-StaticPopupDialogs.EMBERFORGE_RUNE_LEARN.OnAccept(nil, 24)
+Accept()
 check(lastSent() == "APPLY,24", "proceeding applies it")
 search.text = ""
 search.scripts.OnTextChanged(search)
 -- Bound before level 8: Unlearn; at 8 it is gone.
 frame:Hide()
-server("S,6,5,1,21,0,0,0,-,0,0,0,0,0,30")
+server("S,6,5,1,24,0,0,0,-,0,0,0,0,0,30")
 EmberforgeRunes_Open()
-run(0.7)
-check(debug.unlearnBar.target == 1, "bound before level 8: Unlearn shows")
-debug.unlearnBar.pill:Click()
-check(popup and popup.name == "EMBERFORGE_RUNE_UNBIND" and popup.a == "Rune of Fel Commandment", "Unlearn asks first")
-StaticPopupDialogs.EMBERFORGE_RUNE_UNBIND.OnAccept(nil, 1)
+local build = debug.build
+check(build.left.shown and build.left.label.text == "Unlearn rune", "bound before level 8: Unlearn shows")
+build.left:Click()
+check(debug.ask.title.text == "Unlearn Echoing Thunder?", "Unlearn asks first")
+Accept()
 check(lastSent() == "UNBIND,1", "and unlearns it")
 frame:Hide()
-server("S,8,5,1,21,0,0,0,-,0,0,0,0,0,30")
+server("S,8,5,1,24,0,0,0,-,0,0,0,0,0,30")
 EmberforgeRunes_Open()
-run(0.7)
-check(debug.unlearnBar.target == 0, "from level 8 it stays")
+check(not build.left.shown, "from level 8 it stays")
 -- The frame's own update runs (it closes the panel when the UI comes back).
 frame.scripts.OnUpdate(frame, 0.02)
 check(frame:IsShown(), "the panel's update runs")
