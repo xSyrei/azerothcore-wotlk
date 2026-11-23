@@ -4,6 +4,11 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Fixes
+
+- **Phoenix Wake's phoenix** was a totem: it now flies as the phoenix again. (The Primal Worldwarden's totem had taken
+  its place.)
+
 ### Commands
 
 - **.emberspark** works for everyone: on its own it shows your account's Emberspark; with an amount it adds that much

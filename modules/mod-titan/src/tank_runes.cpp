@@ -129,7 +129,7 @@ namespace
         SPELL_TANK_FOUNDATION       = 91543,
         SPELL_COMMUNION_BOIL        = 91544,
 
-        NPC_WORLDHEART_TOTEM        = 910125,
+        NPC_WORLDHEART_TOTEM        = 910127,
     };
 
     // The modifiers: slot x 3 + choice.

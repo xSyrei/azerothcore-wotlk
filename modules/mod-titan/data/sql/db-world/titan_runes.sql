@@ -505,7 +505,7 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 -- The Tank Collection (src/tank_runes.cpp): the Worldheart Totem (Primal Worldwarden's: an earth totem, larger,
 -- following its Hero, out of reach), and the scripts on Blood Boil, Blood Strike, the Shocks, Stormstrike, Lava Lash,
 -- the taught actions and Soul Siphon.
-SET @WORLDHEART := 910125;
+SET @WORLDHEART := 910127;
 DELETE FROM `creature_template` WHERE `entry` = @WORLDHEART;
 INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
     `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
