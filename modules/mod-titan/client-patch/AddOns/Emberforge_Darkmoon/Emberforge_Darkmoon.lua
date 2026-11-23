@@ -2724,8 +2724,8 @@ local function RefreshCards()
 end
 
 -- Edit Cards: a specialization's eight slots over the account's cards -------------------------------------------
--- The slots are a strip of small cards: each slot's card (its frame, icon and rarity gems, the level it comes at on
--- its parchment) with its Golden Card beside it, a card's back where a place is empty. Below, the cards owned:
+-- The slots are a strip: each slot's numeral, the level its card comes at, the card's icon (in its rarity's color)
+-- and name, and along its foot its Golden Card (a + where a place is empty). Below, the cards owned:
 -- Abilities (Skill Cards) and Talents (Talent Cards) side by side under one search bar, by rarity or by unlock level;
 -- the Golden tab lists the Golden Cards. A click on a card slots it in the chosen slot (its card, or on Golden its
 -- Golden Card), then the next empty slot is chosen; a click on a slot chooses it, a right-click empties it.
@@ -2784,12 +2784,28 @@ local function BuildEditor()
             card and card.kind or 0, card and card.id or 0), "WHISPER", UnitName("player"))
     end
 
-    -- The strip: eight slots, each a small card with its Golden Card beside it.
+    -- The strip: eight slots, each its numeral and the level its card comes at, the card's icon and name, and along
+    -- its foot the Golden Card.
     local STRIP_TOP, STRIP_H = 32, 140
     local strip = Panel(editorPage, "PanelGold", 0, STRIP_TOP, PAGE_WIDTH, STRIP_H)
     local SLOT_W = (PAGE_WIDTH - 16) / CARD_SLOTS
-    local CARD_W, CARD_H, GOLD_W, GOLD_H = 56, 112, 40, 80
+    local ICON = 44
     local editSlots = {}
+    -- A small dark pill holding a line of text.
+    local function Pill(parent, size)
+        local pill = CreateFrame("Frame", nil, parent)
+        pill:SetHeight(size + 7)
+        Slice9(pill, "Solid", 7)
+        Tint(pill, 0.06, 0.04, 0.02, 0.92)
+        pill.text = Text(pill, size, GOLD_HI, BODY_FONT)
+        pill.text:SetPoint("CENTER", 0, 0)
+        function pill:Set(text)
+            self.text:SetText(text or "")
+            self:SetWidth((self.text:GetStringWidth() or 20) + 12)
+            Shown(self, text ~= nil and text ~= "")
+        end
+        return pill
+    end
     for index = 1, CARD_SLOTS do
         local slot = CreateFrame("Button", nil, strip)
         slot:SetWidth(SLOT_W - 6)
@@ -2797,27 +2813,53 @@ local function BuildEditor()
         slot:SetPoint("TOPLEFT", 8 + (index - 1) * SLOT_W + 3, -6)
         slot:RegisterForClicks("LeftButtonUp", "RightButtonUp")
         Slice9(slot, "Solid", 8)
-        -- Its numeral over the Golden Card (the card itself fills the slot's height).
-        slot.number = Text(slot, 13, MUTED, DISPLAY_FONT)
-        slot.number:SetPoint("TOP", slot, "TOPLEFT", 8 + CARD_W - 4 + GOLD_W / 2, -8)
+        slot.number = Text(slot, 14, MUTED, DISPLAY_FONT)
+        slot.number:SetPoint("TOPLEFT", 8, -5)
         slot.number:SetText(ROMAN_SLOTS[index])
-        slot.card = CardFace(slot, CARD_W, CARD_H)
-        slot.card:SetPoint("BOTTOMLEFT", 8, 6)
-        slot.card:EnableMouse(false)
-        slot.goldCard = CardFace(slot, GOLD_W, GOLD_H)
-        slot.goldCard:SetPoint("BOTTOMLEFT", slot.card, "BOTTOMRIGHT", -4, 0)
-        slot.goldCard:EnableMouse(false)
-        -- The level each comes at, on its parchment (the card's own lines are too small to read at this size).
-        slot.when = Text(slot.card.content, 9, { 0.1, 0.05, 0.02 }, BODY_FONT)
-        slot.when:SetShadowOffset(0, 0)
-        slot.when:SetPoint("CENTER", slot.card, "TOPLEFT", CARD_W / 2, -CARD_H * 0.79)
-        slot.goldenWhen = Text(slot.goldCard.content, 8, { 0.1, 0.05, 0.02 }, BODY_FONT)
-        slot.goldenWhen:SetShadowOffset(0, 0)
-        slot.goldenWhen:SetPoint("CENTER", slot.goldCard, "TOPLEFT", GOLD_W / 2, -GOLD_H * 0.79)
-        slot.empty = Text(slot, 9, MUTED, BODY_FONT, "OUTLINE")
-        slot.empty:SetPoint("CENTER", slot.card, "CENTER", 0, 0)
-        slot.goldenEmpty = Text(slot, 8, { 0.75, 0.62, 0.3 }, BODY_FONT, "OUTLINE")
-        slot.goldenEmpty:SetPoint("CENTER", slot.goldCard, "CENTER", 0, 0)
+        slot.level = Pill(slot, 10)
+        slot.level:SetPoint("TOPRIGHT", -5, -5)
+        slot.when = slot.level.text
+        -- The card: its icon in a rim of its rarity's color (a dark well with a + when empty), its name below.
+        slot.rim = slot:CreateTexture(nil, "BORDER")
+        slot.rim:SetWidth(ICON + 4)
+        slot.rim:SetHeight(ICON + 4)
+        slot.rim:SetPoint("TOP", 0, -24)
+        slot.well = slot:CreateTexture(nil, "ARTWORK")
+        slot.well:SetTexture(0.03, 0.02, 0.01, 0.95)
+        slot.well:SetPoint("TOPLEFT", slot.rim, "TOPLEFT", 2, -2)
+        slot.well:SetPoint("BOTTOMRIGHT", slot.rim, "BOTTOMRIGHT", -2, 2)
+        slot.icon = slot:CreateTexture(nil, "OVERLAY")
+        slot.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+        slot.icon:SetAllPoints(slot.well)
+        slot.plus = Text(slot, 24, MUTED, BODY_FONT)
+        slot.plus:SetPoint("CENTER", slot.well, "CENTER", 1, 0)
+        slot.plus:SetText("+")
+        slot.name = Text(slot, 10, GOLD_HI, BODY_FONT)
+        slot.name:SetPoint("TOP", slot.rim, "BOTTOM", 0, -4)
+        slot.name:SetWidth(SLOT_W - 16)
+        slot.name:SetHeight(26)
+        slot.name:SetJustifyH("CENTER")
+        slot.name:SetJustifyV("TOP")
+        slot.empty = slot.name
+        -- The Golden Card: a gold band along the foot, its icon and the level it comes at.
+        slot.goldRow = CreateFrame("Frame", nil, slot)
+        slot.goldRow:SetHeight(22)
+        slot.goldRow:SetPoint("BOTTOMLEFT", 5, 5)
+        slot.goldRow:SetPoint("BOTTOMRIGHT", -5, 5)
+        Slice9(slot.goldRow, "Solid", 7)
+        slot.goldRim = slot.goldRow:CreateTexture(nil, "BORDER")
+        slot.goldRim:SetTexture(GOLDEN_RGB[1], GOLDEN_RGB[2], GOLDEN_RGB[3], 1)
+        slot.goldRim:SetWidth(18)
+        slot.goldRim:SetHeight(18)
+        slot.goldRim:SetPoint("LEFT", 3, 0)
+        slot.golden = slot.goldRow:CreateTexture(nil, "ARTWORK")
+        slot.golden:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+        slot.golden:SetPoint("TOPLEFT", slot.goldRim, "TOPLEFT", 1, -1)
+        slot.golden:SetPoint("BOTTOMRIGHT", slot.goldRim, "BOTTOMRIGHT", -1, 1)
+        slot.goldenText = Text(slot.goldRow, 10, GOLDEN_RGB, BODY_FONT)
+        slot.goldenText:SetPoint("CENTER", 9, 0)
+        slot.goldenWhen = slot.goldenText
+        slot.goldenEmpty = slot.goldenText
         local hover = slot:CreateTexture(nil, "HIGHLIGHT")
         hover:SetTexture(ART .. "Glow")
         hover:SetBlendMode("ADD")
@@ -3111,24 +3153,6 @@ local function BuildEditor()
         return shown, owned
     end
 
-    -- A slot's small card: the card with the level it comes at, or the back of one, faded, for an empty place.
-    local function ShowSmallCard(face, label, empty, card, golden, when, editing)
-        if card then
-            face:SetCard(card, golden, false)
-            for _, text in ipairs({ face.name, face.rarity, face.kind, face.note }) do
-                text:Hide()
-            end
-            label:SetText(when and ("LV " .. when) or "")
-            empty:SetText("")
-        else
-            face:SetBack(0, golden)
-            label:SetText("")
-            empty:SetText(golden and "Golden" or "Empty")
-        end
-        face:SetAlpha(card and (editing and 1 or 0.7) or (editing and 0.42 or 0.22))
-        empty:SetAlpha(editing and 1 or 0.5)
-    end
-
     function editor.Refresh()
         local mine = mySpecs[view.spec]
         local locked = cardsLocked[view.spec]
@@ -3149,18 +3173,41 @@ local function BuildEditor()
             slot.number:SetTextColor(unpack(chosen and GOLD_HI or MUTED))
             local card = Slotting.Card(view.spec, index, false)
             local golden = Slotting.Card(view.spec, index, true)
-            ShowSmallCard(slot.card, slot.when, slot.empty, card, false,
-                card and schedule[card.kind .. "." .. card.id], not edit.golden)
-            ShowSmallCard(slot.goldCard, slot.goldenWhen, slot.goldenEmpty, golden, true,
-                golden and schedule[golden.kind .. "." .. golden.id], edit.golden)
-            -- The chosen place glows.
-            local glowing = chosen and (edit.golden and slot.goldCard or slot.card)
-            for _, face in ipairs({ slot.card, slot.goldCard }) do
-                Shown(face.glow, face == glowing)
+            local when = card and schedule[card.kind .. "." .. card.id]
+            local goldWhen = golden and schedule[golden.kind .. "." .. golden.id]
+            -- The card (bright while the Cards tab edits it).
+            local rim = card and RARITY_RGB[card.rarity] or { 0.35, 0.27, 0.17 }
+            slot.rim:SetTexture(rim[1], rim[2], rim[3], 1)
+            Shown(slot.icon, card ~= nil)
+            Shown(slot.plus, card == nil)
+            if card then
+                slot.icon:SetTexture(CardIcon(card))
+                slot.name:SetText(CardName(card))
+                slot.name:SetTextColor(unpack(NAME_RGB[card.rarity]))
+            else
+                slot.name:SetText("Empty")
+                slot.name:SetTextColor(unpack(MUTED))
             end
-            if glowing then
-                glowing.glow:SetVertexColor(1, 0.55, 0.2, 0.8)
+            slot.level:Set(when and ("Lv " .. when))
+            local cardAlpha = edit.golden and 0.55 or 1
+            for _, region in ipairs({ slot.rim, slot.well, slot.icon, slot.plus, slot.name, slot.level }) do
+                region:SetAlpha(cardAlpha)
             end
+            -- The Golden Card (bright while the Golden tab edits it).
+            Shown(slot.goldRim, golden ~= nil)
+            Shown(slot.golden, golden ~= nil)
+            if golden then
+                slot.golden:SetTexture(CardIcon(golden))
+                slot.goldenText:SetText(goldWhen and ("Lv " .. goldWhen) or "Golden")
+                slot.goldenText:SetTextColor(unpack(GOLDEN_RGB))
+            else
+                slot.goldenText:SetText("+ Golden")
+                slot.goldenText:SetTextColor(0.62, 0.5, 0.26)
+            end
+            local editingGold = edit.golden and chosen
+            Tint(slot.goldRow, editingGold and 0.55 or 0.22, editingGold and 0.4 or 0.15, editingGold and 0.08 or 0.04,
+                edit.golden and 0.95 or 0.6)
+            slot.goldRow:SetAlpha(edit.golden and 1 or 0.7)
         end
         local filtered = false
         for key, button in pairs(filterButtons) do
