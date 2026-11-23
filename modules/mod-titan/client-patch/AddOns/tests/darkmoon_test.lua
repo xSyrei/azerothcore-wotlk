@@ -312,7 +312,8 @@ e.lists[0].rows[2]:Click()
 at = t.slotting.Schedule(1)
 check(sentSpec() == "SLOT,0,2,0,0,5" and at["0.5"] == 21, "one unlocked at 20 comes on the ability roll at 21")
 check(e.slots[1].when.text == "LV 9" and e.slots[2].when.text == "LV 11" and e.slots[1].goldenWhen.text == "LV 16"
-    and e.slots[3].when.text == "LV 21" and e.slots[4].empty.text == "Empty", "each slot's small cards show the level they come at")
+    and e.slots[3].when.text == "LV 21" and e.slots[4].empty.text == "Empty",
+    "each slot's small cards show the level they come at")
 e.slots[2]:Click()
 check(sentSpec() == "SLOT,0,1,0,0,0" and t.specCards[1][2][0] == nil and e.state.slot == 2,
     "a click on a slot empties it and chooses it")
