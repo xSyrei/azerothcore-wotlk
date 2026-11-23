@@ -110,7 +110,9 @@ How a Hero progresses (`src/wildcard.cpp`): random, steered so a build takes sha
   Melee, Ranged takes Ranged, Healer takes Healer and Ranged, Tank takes Tank and Melee. An ability whose data shows
   none of those takes a role from what it spends and whose it is (`FallbackRoles`: Rage, runes, the Warrior's and
   Death Knight's Melee and Tank; Energy and the Rogue's Melee; Focus and the Hunter's Ranged; a heal on oneself
-  Healer and Ranged); the casters' buffs and utility suit every role. With no role, or nothing left that suits,
+  Healer and Ranged); the casters' buffs and utility suit every role. A Healer's rolls lean to healing
+  (`HEALER_HEALING_PCT`, 70%): that share of the ability rolls is drawn from the heals, and of the talent rolls from
+  the healing talents (healing stats, all healing, improving a known heal), while there are any. With no role, or nothing left that suits,
   anything goes. Tome of Selection picks are free.
 - **Ability rolls are steered** (`GrantRandom`): one pet family (once a Hero summons a hunter pet, a demon or a
   ghoul, the other families' summons stay out); the kit (before level 8) first gets 2 abilities doing the role's

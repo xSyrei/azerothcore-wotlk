@@ -360,6 +360,8 @@ namespace
 
     constexpr uint8 TAG_MELEE = RoleMask(ROLE_MELEE), TAG_RANGED = RoleMask(ROLE_RANGED);
     constexpr uint8 TAG_HEALER = RoleMask(ROLE_HEALER), TAG_TANK = RoleMask(ROLE_TANK);
+    // A Healer's rolls: this share of them (abilities and talents) is a heal's, the rest anything a Healer takes.
+    constexpr uint32 HEALER_HEALING_PCT = 70;
 
     // Roles tagged by hand where the spell data says too little (forms and stances, scripted spells). They replace
     // what the data says.
@@ -1265,6 +1267,45 @@ namespace
             }
             else if (kind == 1)
                 generic.emplace_back(talentInfo, top);
+        }
+
+        // A Healer: most talent rolls a healing one (healing stats, all healing, or improving a heal the Hero knows).
+        if (GetRole(player) == ROLE_HEALER && urand(1, 100) <= HEALER_HEALING_PCT)
+        {
+            std::vector<SpellInfo const*> knownHeals;
+            for (SpellInfo const* known : knownSpells)
+                if (SpellRoles(known) & TAG_HEALER)
+                    knownHeals.push_back(known);
+            auto healing = [&](TalentEntry const* talentInfo)
+            {
+                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(talentInfo->RankID[0]);
+                if (!spellInfo)
+                    return false;
+                if (StatTalentRoles(spellInfo) & TAG_HEALER)
+                    return true;
+                for (SpellInfo const* heal : knownHeals)
+                {
+                    if (GlobalReach(spellInfo->Id, heal) == 1)
+                        return true;
+                    for (SpellEffectInfo const& effect : spellInfo->GetEffects())
+                        if (effect.SpellClassMask
+                            && heal->IsAffected(spellInfo->SpellFamilyName, effect.SpellClassMask))
+                            return true;
+                }
+                return false;
+            };
+            std::vector<std::pair<TalentEntry const*, uint8>> heals;
+            for (auto const* pool : { &candidates, &generic })
+                for (auto const& entry : *pool)
+                    if (healing(entry.first))
+                        heals.push_back(entry);
+            if (!heals.empty())
+            {
+                auto [talentInfo, currentRank] = heals[urand(0, uint32(heals.size() - 1))];
+                LOG_DEBUG("module", "Wildcard: {} rolled talent {} (healer's healing, {} of them)", player->GetName(),
+                    FirstRankName(talentInfo->RankID[0]), heals.size());
+                return LearnTalentRank(player, talentInfo, currentRank, reveal, rollLevel);
+            }
         }
 
         // A bear tank's own (Survival of the Fittest, Natural Reaction): with Bear Form known, 30% of the rolls go to
@@ -2326,6 +2367,9 @@ namespace Wildcard
                 reason = why;
             }
         };
+        // A Healer: most rolls a heal.
+        if (GetRole(player) == ROLE_HEALER && urand(1, 100) <= HEALER_HEALING_PCT)
+            narrow([](Ability const* ability) { return (ability->Roles & TAG_HEALER) != 0; }, "healer's heal");
         if (player->GetLevel() < LOCK_LEVEL)
             if (uint8 need = KitNeed(player, facts))
                 narrow([need](Ability const* ability) { return (ability->Roles & need) != 0; }, "kit floor");

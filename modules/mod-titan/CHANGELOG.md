@@ -10,6 +10,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   Demoralizing Shout and the like (Rage, Warrior) go to Melee and Tank; the Rogue's and anything spending Energy to
   Melee; Desperate Prayer and other heals on yourself to Healer and Ranged. Buffs and utility of the casters still
   suit everyone.
+- **Healers roll heals**: 7 rolls in 10 of a Healer's are a healing ability (while any is left to learn) and 7 talent
+  rolls in 10 a healing talent (healing stats, all healing, or one improving a heal you know); the rest are anything
+  a Healer takes, as before.
 - **Hunters are Ranged**: the Hunter's shots, stings, aspects, traps and cooldowns (Rapid Fire, Readiness,
   Concussive Shot...) and ranged attack power talents roll for the **Ranged** role, not Melee. The Hunter's melee
   strikes (Raptor Strike, Mongoose Bite, Wing Clip, Counterattack) stay Melee.
