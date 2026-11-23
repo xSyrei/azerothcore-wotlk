@@ -1344,6 +1344,32 @@ def reduce_mana_costs(spells):
     return reduced
 
 
+SPELL_ATTR0_NOT_SHAPESHIFTED, SPELL_ATTR2_ALLOW_WHILE_NOT_SHAPESHIFTED = 0x10000, 0x80000
+ENERGY, SPELLFAMILY_DRUID = 3, 7
+FORM_CAT_MASK, FORM_BEARS_MASK = 1 << 0, (1 << 4) | (1 << 7)          # Cat Form; Bear and Dire Bear Form
+OWN_SPELLS = range(90000, 92000)                                      # Emberforge's (the Monk's, the Demon Hunter's...)
+
+
+def physical_forms(spells):
+    """A Hero in Cat Form uses any class's Energy abilities (a Rogue's, a Monk's), in Bear or Dire Bear Form any
+    class's Rage abilities (a Warrior's, a Death Knight's: Runic Power is Rage, convert_runic_power). Those the game
+    keeps out of every form ("not while shapeshifted") are allowed in that form too, and still out of it; the others
+    already work in a form. The server does the same to its copy (hero_resources.cpp, PhysicalForms)."""
+    allowed = 0
+    for key, row in spells.rows.items():
+        family, power = row[FIELDS['SpellFamilyName']], row[FIELDS['PowerType']]
+        if ((family in NON_CLASS_FAMILIES and key not in OWN_SPELLS) or family == SPELLFAMILY_DRUID
+                or row[FIELDS['Attributes']] & SPELL_ATTR0_PASSIVE
+                or not row[FIELDS['Attributes']] & SPELL_ATTR0_NOT_SHAPESHIFTED or power not in (RAGE, ENERGY)):
+            continue
+        row = list(row)
+        row[STANCES_COLUMNS[0]] |= FORM_CAT_MASK if power == ENERGY else FORM_BEARS_MASK
+        row[FIELDS['AttributesEx2']] |= SPELL_ATTR2_ALLOW_WHILE_NOT_SHAPESHIFTED
+        spells.rows[key] = tuple(row)
+        allowed += 1
+    return allowed
+
+
 def free_warrior_stances(spells):
     """A Hero uses a Warrior's abilities in any stance (or none): Battle Stance's Charge, Berserker Stance's
     Whirlwind... The passives keep theirs (a stance's own passive applies only in it). The server does the same to
@@ -1697,6 +1723,7 @@ def main():
     write_rune_costs(source, runes)
     reagents = drop_class_reagents(spells)
     stances = free_warrior_stances(spells)
+    forms = physical_forms(spells)
     rune_usability(spells)
     hero_tuning(spells)
     overpower_reactive(spells)
@@ -1711,7 +1738,7 @@ def main():
     spells.save(out / 'Spell.dbc')
     print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power turned into Rage in {renamed} spells, '
           f'rune costs left to the server in {len(runes)}, '
-          f'reagents dropped from {reagents}, stances freed in {stances}, '
+          f'reagents dropped from {reagents}, stances freed in {stances}, usable in Cat or Bear Form {forms}, '
           f'mana costs cut in {mana}) '
           f'and {out / "SpellIcon.dbc"}')
     if sql:

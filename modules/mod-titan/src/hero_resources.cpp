@@ -292,6 +292,26 @@ public:
     static constexpr uint32 HEARTHSTONE = 8690;
     static constexpr uint32 HEARTHSTONE_COOLDOWN_MS = 5 * MINUTE * IN_MILLISECONDS;
 
+    // A Hero in Cat Form uses any class's Energy abilities (a Rogue's, a Monk's), in Bear or Dire Bear Form any class's
+    // Rage abilities (a Warrior's, a Death Knight's, Runic Power being Rage): those the game keeps out of every form
+    // ("not while shapeshifted") are allowed in that form too, and still out of it. The client patch does the same
+    // (patch_spells.py, physical_forms).
+    static void PhysicalForms(SpellInfo* spellInfo)
+    {
+        constexpr uint32 OWN_FIRST = 90000, OWN_END = 92000;            // Emberforge's own (the Monk's, the DH's...)
+        bool own = spellInfo->Id >= OWN_FIRST && spellInfo->Id < OWN_END;
+        if ((!IsClassFamily(spellInfo->SpellFamilyName) && !own) || spellInfo->SpellFamilyName == SPELLFAMILY_DRUID
+            || spellInfo->IsPassive() || !spellInfo->HasAttribute(SPELL_ATTR0_NOT_SHAPESHIFTED))
+            return;
+        if (spellInfo->PowerType == POWER_ENERGY)
+            spellInfo->Stances |= 1 << (FORM_CAT - 1);
+        else if (spellInfo->PowerType == POWER_RAGE)
+            spellInfo->Stances |= (1 << (FORM_BEAR - 1)) | (1 << (FORM_DIREBEAR - 1));
+        else
+            return;
+        spellInfo->AttributesEx2 |= SPELL_ATTR2_ALLOW_WHILE_NOT_SHAPESHIFTED;
+    }
+
     void OnLoadSpellCustomAttr(SpellInfo* spellInfo) override
     {
         if (IsClassFamily(spellInfo->SpellFamilyName))
@@ -319,6 +339,8 @@ public:
 
         if (spellInfo->PowerType == POWER_RUNIC_POWER)
             spellInfo->PowerType = POWER_RAGE;
+
+        PhysicalForms(spellInfo);
 
         // Thunder Clap (every rank) costs 10 Rage, not 20; Sinister Strike 30 Energy, not 45; the Hearthstone cools
         // down in 5 minutes, not 30. The client patch does the same (patch_spells.py, hero_tuning).

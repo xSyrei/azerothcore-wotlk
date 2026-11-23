@@ -4,6 +4,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Cat and Bear Form
+
+- In **Cat Form** you can use your **Energy** abilities from every class (a Rogue's Sinister Strike, a Monk's
+  strikes...), and in **Bear** or **Dire Bear Form** your **Rage** abilities (a Warrior's Heroic Strike and Execute, a
+  Death Knight's). They still work out of form, as before.
+
 ### Wildcard rolls
 
 - Abilities whose spell shows no damage, healing or threat no longer go to every role: Execute, Bloodrage,

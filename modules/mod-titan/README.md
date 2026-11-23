@@ -213,6 +213,10 @@ client (`convert_runic_power` in `client-patch/patch_spells.py`) and the server 
 `src/hero_resources.cpp`), and every text that named it says Rage. Death Knight abilities and the Demon Hunter's
 (Fury before) build and spend Rage, the Warrior's pool. The Demon Hunter's damage is Shadow (Chaos, every school,
 before): it grows with Shadow spell power and Shadow damage bonuses.
+In **Cat Form** a Hero uses any class's Energy abilities, in **Bear** and **Dire Bear Form** any class's Rage
+abilities (a Warrior's, a Death Knight's): those the game keeps out of every form ("not while shapeshifted") get the
+form in their Stances and stay usable out of form (`SPELL_ATTR2_ALLOW_WHILE_NOT_SHAPESHIFTED`), on the client
+(`physical_forms` in `client-patch/patch_spells.py`) and the server (`PhysicalForms` in `src/hero_resources.cpp`).
 
 | Spell | Ability | Level | Notes |
 |---|---|---|---|
