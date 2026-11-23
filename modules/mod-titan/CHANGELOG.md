@@ -4,6 +4,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Commands
+
+- **.emberspark** works for everyone: on its own it shows your account's Emberspark; with an amount it adds that much
+  to your own account. Only GMs can use it on another player. (**.unbindrune** already worked for everyone, on
+  yourself.)
+
 ### Extended Options: Arcane Mind, Phoenix Wake, Astral Horizon, Guiding Light
 
 - Four more Legendary Runes get their **Extended Options**: five choices in each slot. Your current picks keep their

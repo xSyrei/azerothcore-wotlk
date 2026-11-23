@@ -39,8 +39,8 @@ using namespace Acore::ChatCommands;
 //   a talent rank as a talent (plain .learn cannot give a Hero talents). Requirements, role and level are ignored.
 // - .spellids [on|off]: shows the spell id on every spell tooltip (Classless window, spellbook, action bars, talents,
 //   buffs), for .learnability. Kept per character; the Emberforge_Classless addon draws it.
-// - .emberspark [amount]: adds amount Emberspark to the selected player's (or your) account; without one, shows the
-//   balance.
+// - .emberspark [amount] (anyone): adds amount Emberspark to your account; without one, shows the balance. A GM's
+//   acts on the selected player's account (else their own).
 // - .runes: the selected player's (or your) runes as the server sees them: each one's type and how long until it is
 //   ready (0: ready). Tells a server-side rune problem from a client-side one: runes the server has ready that the
 //   game still refuses are the client's.
@@ -66,7 +66,7 @@ public:
         {
             { "learnability", HandleLearnAbility, SEC_GAMEMASTER, Console::No },
             { "spellids", HandleSpellIds, SEC_GAMEMASTER, Console::No },
-            { "emberspark", HandleEmberspark, SEC_GAMEMASTER, Console::No },
+            { "emberspark", HandleEmberspark, SEC_PLAYER, Console::No },
             { "runes", HandleRunes, SEC_GAMEMASTER, Console::No },
             { "daytime", HandleDaytime, SEC_GAMEMASTER, Console::No },
             { "runeoffer", HandleRuneOffer, SEC_GAMEMASTER, Console::No },
@@ -127,7 +127,9 @@ public:
 
     static bool HandleEmberspark(ChatHandler* handler, Optional<uint32> amount)
     {
-        Player* target = handler->getSelectedPlayerOrSelf();
+        // A player's own account; a GM's, the selected player's.
+        Player* target = handler->GetSession()->GetSecurity() >= SEC_GAMEMASTER
+            ? handler->getSelectedPlayerOrSelf() : handler->GetSession()->GetPlayer();
         if (!target)
         {
             handler->SendErrorMessage(LANG_NO_CHAR_SELECTED);
@@ -136,7 +138,8 @@ public:
 
         if (amount && *amount)
         {
-            Emberspark::Add(target->GetSession()->GetAccountId(), *amount, "gm");
+            bool gm = handler->GetSession()->GetSecurity() >= SEC_GAMEMASTER;
+            Emberspark::Add(target->GetSession()->GetAccountId(), *amount, gm ? "gm" : "command");
             handler->PSendSysMessage("Added {} Emberspark to {}'s account.", Emberspark::Format(*amount),
                 target->GetName());
             return true;

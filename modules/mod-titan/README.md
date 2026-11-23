@@ -187,8 +187,9 @@ talking to it in addon whispers (prefix `EFCL`, protocol in both files).
 **GM commands** (`src/titan_commands.cpp`, GM accounts):
 - `.spellids [on|off]`: shows the spell id on every spell tooltip (the Classless window's abilities and talent
   ranks, the spellbook, action bars, buffs; the talent frame shows its talent id). Kept per character.
-- `.emberspark [amount]`: adds Emberspark to the selected player's (or your) account; without an amount, shows its
-  balance (see Emberspark).
+- `.emberspark [amount]` (anyone): adds Emberspark to your own account; without an amount, shows its balance (see
+  Emberspark). A GM's acts on the selected player's account (else their own); a player's, only on their own (logged
+  as `command`).
 - `.daytime [hour]`: your own client's time of day, 0-23 (only yours; the clock runs on from there), to look at the
   lighting, water and fog at any hour. Without an hour: back to the real time.
 - `.runes`: the selected Hero's (or your) runes as the server sees them, each one's type and time until ready. If
