@@ -803,6 +803,27 @@ namespace Specs
         return cards;
     }
 
+    std::vector<std::pair<uint8, uint32>> CardPlaces(Player* player)
+    {
+        std::vector<std::pair<uint8, uint32>> places;
+        if (Loadouts* data = Loaded(player))
+            for (auto const& slot : data->Specs[data->Active].Cards)
+                places.emplace_back(slot[0].Kind, slot[0].Id);
+        return places;
+    }
+
+    bool CanSlotCards(Player* player)
+    {
+        Loadouts* data = Loaded(player);
+        return data && !CardsLocked(player, *data, data->Active);
+    }
+
+    void PutCard(Player* player, uint8 slot, uint8 kind, uint32 id)
+    {
+        if (Loadouts* data = Loaded(player))
+            SlotCardIn(player, data->Active, slot, 0, kind, id);
+    }
+
     uint8 ActiveSpec(Player* player)
     {
         return uint8(std::min<uint32>(player->GetPlayerSetting(SETTING_SOURCE, SETTING_ACTIVE).value, MAX_SPECS - 1));

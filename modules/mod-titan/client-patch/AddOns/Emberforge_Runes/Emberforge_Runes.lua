@@ -16,12 +16,15 @@
 --
 -- The server (mod-titan, src/runes.cpp) talks in addon whispers to the player, prefix EFRN:
 --   from server   S,<level>,<unlock level>,<spec>,<rune>,<m1>,<m2>,<m3>,<offers a.b.c or ->,<prompt 0|1>
---                 R,<rune>,<missing>   (a rune the server builds; missing: groups by '/', one of by '+'; '-' none)
+--                 R,<rune>,<missing>,<missing with cards>,<learn available 0|1>   (a rune the server builds; missing:
+--                   groups by '/', one of by '+'; '-' none; with cards: what the slotted Skill Cards won't bring)
+--                 L,<rune>,<learn>,<replaced>,<slot>,<card replaced>   Learn Available's plan (asked: PLAN)
 --                 N,<rune>,<slot>,<choice>,<missing>   (a modifier's own needs)
 --                 E,<text>   O (open the panel)
 --                 V,<spell>,<kind>,<amount>   (a rune aura's amount: A absorb, H healing a second, D damage a
 --                 second, S slow %; the client only knows its Spell.dbc base, so the tooltips add it)
---   to server     STATE   PICK,<rune>[,1]   MOD,<slot 1-3>,<choice 1-3>
+--   to server     STATE   PICK,<rune>[,1]   MOD,<slot 1-3>,<choice 1-3>   UNBIND,<rune slot> (before level 8)
+--                 PLAN,<rune> / APPLY,<rune> (Learn Available: what it would do / do it)
 --                 (PICK's 1: the Hero was warned of the abilities it lacks and binds it anyway)
 
 local PREFIX = "EFRN"
@@ -162,11 +165,15 @@ local function RuneById(id)
 end
 
 -- A rune's standing for this Hero: "ok", "missing" (with what), or "soon" (the server does not build it yet).
+-- "cards": the abilities it lacks come with the specialization's slotted Skill Cards.
 local function Standing(rune)
     if not state.built[rune.id] then
         return "soon"
     end
     local missing = MissingText(state.built[rune.id])
+    if missing and state.withCards and not MissingText(state.withCards[rune.id]) then
+        return "cards", missing
+    end
     return missing and "missing" or "ok", missing
 end
 
@@ -214,7 +221,9 @@ end
 
 -- The stage ------------------------------------------------------------------------------------------------------
 
-local frame = CreateFrame("Frame", "EmberforgeLegendaryRunes", UIParent)
+-- On the world frame, not the UI's: the panel hides the rest of the UI while it is open (UIParent hidden), as the
+-- game's own Alt+Z does; it takes the UI's scale, so it looks as it did on it.
+local frame = CreateFrame("Frame", "EmberforgeLegendaryRunes", WorldFrame or UIParent)
 frame:SetAllPoints(UIParent)
 frame:SetFrameStrata("HIGH")                         -- under the bind question (DIALOG)
 frame:EnableMouse(false)                             -- clicks off the cards and buttons reach the world
@@ -229,6 +238,9 @@ stage:SetHeight(H)
 stage:SetPoint("CENTER")
 
 local function Fit()
+    if frame:GetParent() ~= UIParent and UIParent.GetScale then
+        frame:SetScale(UIParent:GetScale() or 1)
+    end
     local width, height = UIParent:GetWidth(), UIParent:GetHeight()
     local scale = math.min(width / W, height / H)
     if scale and scale > 0 then
@@ -610,6 +622,19 @@ closer.pill.label:SetFont(CINZEL, 14)
 PillText(closer.pill, "Close")
 In(closer.pill, closer, 0, 0)
 closer.x = W - 330 - closer.pill.width / 2
+
+-- Bound, before level 8: Unlearn (bottom left of the build).
+local unlearnBar = Group(270, 840, 360, 60)
+unlearnBar.pill = Pill(unlearnBar, "Unlearn rune", function()
+    local rune = RuneById(state.rune)
+    if rune then
+        local dialog = StaticPopup_Show("EMBERFORGE_RUNE_UNBIND", rune.name)
+        if dialog then
+            dialog.data = view.slot
+        end
+    end
+end)
+In(unlearnBar.pill, unlearnBar, 0, 0)
 
 -- Previewing: Back to the cards and Choose (unbound, a rune the server builds).
 local previewBar = Group(800, 805, 900, 80)
@@ -994,6 +1019,9 @@ local function DrawCard(card)
     if preview and preview.on then
         preview:SetAlpha(clamp(card.a * fade))
     end
+    if card.status:IsShown() then
+        card.status:SetAlpha(clamp(card.a * fade))
+    end
     local pulse = 0.35 + 0.25 * math.sin(view.now * 2.2 + card.index) + card.glow * 1.2 + (card.hover and 0.4 or 0)
     card.emblem:SetVertexColor(glow[1], glow[2], glow[3])
     card.emblem:SetAlpha(clamp(card.a * clamp(pulse, 0, 1.4) * 0.9 * fade))
@@ -1151,6 +1179,15 @@ function StartIntro()
         At(hit, card.homeX, CARD_Y)
         hit.rune = rune
         hit:Show()
+        -- One the slotted Skill Cards will complete: what they bring.
+        local standing, missing = Standing(rune)
+        if standing == "cards" then
+            At(card.status, card.homeX, CARD_Y + CH / 2 + 64)
+            card.status:SetText("Your cards bring " .. missing)
+            card.status:SetTextColor(0.95, 0.8, 0.4)
+            card.status:SetAlpha(0)
+            card.status:Show()
+        end
     end
     view.phase, view.t0 = "intro", view.now
     view.offersKey = table.concat(state.offers, ".")
@@ -1168,7 +1205,8 @@ end
 
 -- Binding a rune is for good (until a prestige): asked first; the eruption starts when the server binds it.
 StaticPopupDialogs["EMBERFORGE_RUNE_BIND"] = {
-    text = "Bind %s to this specialization?\n\nOnly a prestige can change it. Its modifiers stay free to change.",
+    text = "Bind %s to this specialization?\n\nUntil level 8 you can unlearn it in this panel; after that only a "
+        .. "prestige can change it. Its modifiers stay free to change.",
     button1 = ACCEPT or "Accept",
     button2 = CANCEL or "Cancel",
     OnAccept = function(_, data)
@@ -1202,6 +1240,84 @@ StaticPopupDialogs["EMBERFORGE_RUNE_BIND_MISSING"] = {
     hideOnEscape = true,
 }
 
+-- No rune usable now (Learn Available is offered then).
+function EmberforgeRunes_NoneUsable()
+    for _, rune in ipairs(catalog) do
+        if not rune.retired and Standing(rune) == "ok" then
+            return false
+        end
+    end
+    return true
+end
+
+-- Learn Available's plan (L), asked before anything changes: what is learned, what is slotted, and, in red, what each
+-- replaces.
+StaticPopupDialogs["EMBERFORGE_RUNE_LEARN"] = {
+    text = "%s",
+    button1 = "Proceed",
+    button2 = CANCEL or "Cancel",
+    OnAccept = function(_, data)
+        Send("APPLY," .. data)
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+local SLOT_NUMERALS = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII" }
+function EmberforgeRunes_AskLearn(parts)
+    local rune = RuneById(tonumber(parts[2]) or 0)
+    if not rune then
+        return
+    end
+    local function Name(id)
+        return GetSpellInfo(tonumber(id) or 0) or ("spell " .. tostring(id))
+    end
+    local lines, warnings = {}, {}
+    local learn, replaced = Split(parts[3] or "-", "."), Split(parts[4] or "-", ".")
+    if parts[3] and parts[3] ~= "-" then
+        for index, id in ipairs(learn) do
+            lines[#lines + 1] = "Learn now: |cffffffff" .. Name(id) .. "|r"
+            if replaced[index] and replaced[index] ~= "0" then
+                warnings[#warnings + 1] = Name(replaced[index]) .. " leaves your kit"
+            end
+        end
+    end
+    if parts[5] and parts[5] ~= "-" then
+        local places = Split(parts[6] or "-", ".")
+        for index, id in ipairs(Split(parts[5], ".")) do
+            local slot, kind, old = (places[index] or ""):match("^(%d+):(%d*):?(%d*)$")
+            local numeral = SLOT_NUMERALS[tonumber(slot) or 0] or "?"
+            lines[#lines + 1] = "Slot its Skill Card: |cffffffff" .. Name(id) .. "|r (slot " .. numeral .. ")"
+            if old and old ~= "" then
+                warnings[#warnings + 1] = (kind == "0" and (Name(old) .. "'s Skill Card") or "A Talent Card")
+                    .. " leaves slot " .. numeral
+            end
+        end
+    end
+    local text = "Learn Available: " .. rune.name .. "\n\n" .. table.concat(lines, "\n")
+    if #warnings > 0 then
+        text = text .. "\n\n|cffff3b30This replaces:|r\n" .. table.concat(warnings, "\n")
+    end
+    text = text .. "\n\nProceed?"
+    local dialog = StaticPopup_Show("EMBERFORGE_RUNE_LEARN", text)
+    if dialog then
+        dialog.data = rune.id
+    end
+end
+
+-- Unlearning the bound rune: before level 8, asked first.
+StaticPopupDialogs["EMBERFORGE_RUNE_UNBIND"] = {
+    text = "Unlearn %s?\n\nIts modifiers go with it. You can choose any rune again until level 8.",
+    button1 = "Unlearn",
+    button2 = CANCEL or "Cancel",
+    OnAccept = function(_, data)
+        Send("UNBIND," .. data)
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+
 -- Why a rune cannot be bound now (nil: it can).
 local function BindRefusal(rune)
     if state.slots[view.slot == 1 and 2 or 1].rune == rune.id then
@@ -1227,7 +1343,7 @@ AskBind = function(rune)
     end
     local standing, missing = Standing(rune)
     local dialog
-    if standing == "missing" then
+    if standing == "missing" or standing == "cards" then
         dialog = StaticPopup_Show("EMBERFORGE_RUNE_BIND_MISSING", rune.name, missing)
     else
         dialog = StaticPopup_Show("EMBERFORGE_RUNE_BIND", rune.name)
@@ -1402,8 +1518,11 @@ for index = 1, ROWS do
     row.preview.label:SetFont(CINZEL, 13)
     PillText(row.preview, "Preview")
     row.choose = Pill(row, "Choose", function(self)
-        if self:GetParent().rune then
-            AskBind(self:GetParent().rune)
+        local parent = self:GetParent()
+        if parent.rune and parent.learn then
+            Send("PLAN," .. parent.rune.id)
+        elseif parent.rune then
+            AskBind(parent.rune)
         end
     end)
     row.choose.label:SetFont(CINZEL, 13)
@@ -1534,6 +1653,9 @@ local function FillRow(row, rune)
     elseif state.slots[view.slot == 1 and 2 or 1].rune == rune.id then
         row.status:SetText("Your other Legendary Rune")
         row.status:SetTextColor(GOLDEN[1], GOLDEN[2], GOLDEN[3])
+    elseif standing == "cards" then
+        row.status:SetText("Your cards bring " .. missing)
+        row.status:SetTextColor(0.95, 0.8, 0.4)
     elseif standing == "missing" then
         row.status:SetText("Needs " .. missing)
         row.status:SetTextColor(1, 0.45, 0.4)
@@ -1544,7 +1666,10 @@ local function FillRow(row, rune)
         row.status:SetText("Usable now")
         row.status:SetTextColor(0.55, 1, 0.55)
     end
-    if BindRefusal(rune) == nil then
+    -- None usable: a rune whose abilities can be learned or slotted offers Learn Available instead of Choose.
+    row.learn = EmberforgeRunes_NoneUsable() and state.learnable and state.learnable[rune.id] and state.rune == 0
+    PillText(row.choose, row.learn and "Learn Available" or "Choose")
+    if row.learn or BindRefusal(rune) == nil then
         row.choose:Show()
     else
         row.choose:Hide()
@@ -1794,6 +1919,7 @@ local function OpenBuild()
     for _, slot in ipairs(slots) do
         Fade(slot, true)
     end
+    Fade(unlearnBar, not view.preview and state.rune ~= 0 and state.level < 8)
     ShowBuild()
 end
 
@@ -1951,7 +2077,7 @@ function Enter()
         view.mode = "offers"
     end
     head.subtitle:SetText(view.mode == "browse" and "Every Legendary Rune: search by name, ability or keyword"
-        or "Choices based off of your current abilities")
+        or "Choices based off of your abilities and the Skill Cards you have slotted")
     browseAsk.text:SetText("Not seeing what you're looking for?")
     if view.mode == "browse" then
         ShowBrowser()
@@ -2285,15 +2411,64 @@ local function Step(dt)
 end
 
 frame:SetScript("OnUpdate", function(_, elapsed)
+    -- The UI shown again (Escape, Alt+Z): the panel closes.
+    if alone.hid and UIParent:IsShown() then
+        frame:Hide()
+        return
+    end
     Step(math.min(0.05, elapsed))
 end)
 
+-- The rest of the UI hidden while the panel is open: UIParent, and with it everything but this panel. The tooltip
+-- and the bind questions come along (lifted onto the world frame at the UI's scale). Escape or Alt+Z shows the UI
+-- again, and that closes the panel.
+-- (One table: the file is near the 200 locals a Lua function may have.)
+local alone = { lifted = {}, hid = false, openAfterCombat = false }
+function alone.Hide()
+    if not (WorldFrame and UIParent:IsShown()) then
+        return
+    end
+    local list = { GameTooltip }
+    for index = 1, 4 do
+        list[#list + 1] = _G["StaticPopup" .. index]
+    end
+    for _, other in ipairs(list) do
+        if other and other.SetParent then
+            alone.lifted[#alone.lifted + 1] = { frame = other, scale = other:GetScale() or 1 }
+            other:SetParent(WorldFrame)
+            other:SetScale((UIParent:GetScale() or 1) * (other:GetScale() or 1))
+        end
+    end
+    UIParent:Hide()
+    alone.hid = true
+end
+function alone.Show()
+    if not alone.hid then
+        return
+    end
+    alone.hid = false
+    for _, entry in ipairs(alone.lifted) do
+        entry.frame:SetParent(UIParent)
+        entry.frame:SetScale(entry.scale)
+    end
+    alone.lifted = {}
+    if not UIParent:IsShown() then
+        UIParent:Show()
+    end
+end
+-- Out of combat only: asked for in combat, it opens once the fight is over; a fight starting closes it.
+function alone.InCombat()
+    return (UnitAffectingCombat and UnitAffectingCombat("player")) or (InCombatLockdown and InCombatLockdown())
+end
+
 frame:SetScript("OnShow", function()
     Fit()
+    alone.Hide()
     state.error = nil
     Send("STATE")
 end)
 frame:SetScript("OnHide", function()
+    alone.Show()
     HideAll(true)
     HideCards()
     ClearParticles()
@@ -2303,18 +2478,42 @@ frame:SetScript("OnHide", function()
     rays:Hide()
     timers = {}
 end)
-frame:RegisterEvent("DISPLAY_SIZE_CHANGED")
-frame:RegisterEvent("UI_SCALE_CHANGED")
-frame:SetScript("OnEvent", Fit)
-
 local function Open()
     if frame:IsShown() then
         return
     end
-    view.mode = nil
+    if alone.InCombat() then
+        alone.openAfterCombat = true
+        if DEFAULT_CHAT_FRAME then
+            DEFAULT_CHAT_FRAME:AddMessage("|cffa335eeLegendary Runes:|r the rune panel opens once you leave combat.")
+        end
+        return
+    end
+    -- Nothing to suggest: straight to the search.
+    view.mode = (state.rune == 0 and #state.offers == 0 and state.level >= state.unlock) and "browse" or nil
     frame:Show()
     Enter()
 end
+
+frame:RegisterEvent("DISPLAY_SIZE_CHANGED")
+frame:RegisterEvent("UI_SCALE_CHANGED")
+frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+frame:SetScript("OnEvent", function(_, event)
+    if event == "PLAYER_REGEN_DISABLED" then
+        if frame:IsShown() then
+            frame:Hide()
+            alone.openAfterCombat = true
+        end
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        if alone.openAfterCombat then
+            alone.openAfterCombat = false
+            Open()
+        end
+    else
+        Fit()
+    end
+end)
 
 SLASH_EMBERFORGERUNES1 = "/runes"
 SLASH_EMBERFORGERUNES2 = "/rune"
@@ -2380,7 +2579,12 @@ local function OnMessage(message)
         end
         Refresh()
     elseif kind == "R" then
-        state.built[tonumber(parts[2]) or 0] = parts[3] or "-"
+        local id = tonumber(parts[2]) or 0
+        state.built[id] = parts[3] or "-"
+        state.withCards = state.withCards or {}
+        state.learnable = state.learnable or {}
+        state.withCards[id] = parts[4] or parts[3] or "-"
+        state.learnable[id] = parts[5] == "1"
         if frame:IsShown() and view.phase == "browse" then
             Fill()
         end
@@ -2396,6 +2600,8 @@ local function OnMessage(message)
                 ShowBuild()
             end
         end
+    elseif kind == "L" then
+        EmberforgeRunes_AskLearn(parts)
     elseif kind == "O" then
         Open()
     elseif kind == "V" then
@@ -2914,7 +3120,8 @@ EmberforgeRunes_Debug = { cards = cards, hits = hits, options = options, slots =
     previews = previews, previewBar = previewBar,
     browseAsk = browseAsk, pager = pager, choose = choose, done = done, buildHead = buildHead, empty = empty,
     browser = browser, search = search, chips = chips, rows = rows, browse = browse,
-    closer = closer, Step = Step, medal = medal, slotBar = slotBar, SwitchSlot = SwitchSlot }
+    closer = closer, Step = Step, medal = medal, slotBar = slotBar, SwitchSlot = SwitchSlot,
+    unlearnBar = unlearnBar }
 
 -- Loaded to the end (Loader.lua's /runes stands aside).
 EmberforgeRunes_Loaded = true

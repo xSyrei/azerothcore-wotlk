@@ -62,7 +62,8 @@
 //   too, 5 a week an account.
 // - Eyes of Unlearning, the character's: one for every level from 8 to 60, four at the milestones (8, 10, 20 ... 60),
 //   claimed in the window; past that bought there, two at a time, only at 60, on the climbing price. A prestige lets
-//   the levels be claimed again and starts the price over. (Spending them comes with the Specializations.)
+//   the levels be claimed again and starts the price over; the Eyes owed and not claimed before it are kept (banked)
+//   and come with the next claim. (Spending them comes with the Specializations.)
 //
 // Addon whispers with prefix EFDM (protocol in Emberforge_Darkmoon.lua).
 namespace
@@ -79,6 +80,7 @@ namespace
     constexpr uint32 SETTING_EYES_BOUGHT = 6;   // every Eye bought, ever
     constexpr uint32 SETTING_ABILITIES_REROLLED = 7;
     constexpr uint32 SETTING_TALENTS_REROLLED = 8;
+    constexpr uint32 SETTING_EYES_BANKED = 9;   // leveling Eyes owed but not claimed before a prestige: claimable after
     constexpr uint32 SETTING_SOURCE_NONE = UINT32_MAX;     // a fixed price (Golden Pack, a card), nothing counted
 
     constexpr uint32 ITEM_SKILL_PACK = 910010;
@@ -511,18 +513,30 @@ namespace
         return uint8(std::max<uint32>(Setting(player, SETTING_EYES_CLAIMED), EYE_FIRST_LEVEL - 1));
     }
 
+    // The leveling Eyes owed and not claimed: from the levels past the last claim, and those banked at a prestige.
+    uint32 UnclaimedLevelEyes(Player* player)
+    {
+        uint32 eyes = 0;
+        for (uint8 level = EyesClaimed(player) + 1; level <= std::min<uint8>(player->GetLevel(), EYE_LAST_LEVEL);
+            ++level)
+            eyes += LevelEyes(level);
+        return eyes;
+    }
+
     // E,<Eyes>,<claimed through level>,<level>,<Eye price>,<Eyes a purchase>,<can buy 0|1>,<Eyes bought>,
-    //   <abilities rerolled>,<talents rerolled>,<first level>,<last level>,<milestone Eyes>,<milestone.milestone...>
+    //   <abilities rerolled>,<talents rerolled>,<first level>,<last level>,<milestone Eyes>,<milestone.milestone...>,
+    //   <banked Eyes>
     void SendEyes(Player* player)
     {
         std::string milestones;
         for (uint8 level : EYE_MILESTONES)
             milestones += (milestones.empty() ? "" : ".") + std::to_string(level);
-        SendAddon(player, Acore::StringFormat("E,{},{},{},{},{},{},{},{},{},{},{},{},{}", Setting(player, SETTING_EYES),
+        SendAddon(player, Acore::StringFormat("E,{},{},{},{},{},{},{},{},{},{},{},{},{},{}",
+            Setting(player, SETTING_EYES),
             EyesClaimed(player), player->GetLevel(), Price(Setting(player, SETTING_EYE_PURCHASES)), EYES_PER_PURCHASE,
             CanBuyEyes(player) ? 1 : 0, Setting(player, SETTING_EYES_BOUGHT),
             Setting(player, SETTING_ABILITIES_REROLLED), Setting(player, SETTING_TALENTS_REROLLED), EYE_FIRST_LEVEL,
-            EYE_LAST_LEVEL, MILESTONE_EYES, milestones));
+            EYE_LAST_LEVEL, MILESTONE_EYES, milestones, Setting(player, SETTING_EYES_BANKED)));
     }
 
     // S,<Emberspark>,<Skill Pack>,<Talent Pack>,<Golden Pack>,<gold packs left>,<gold price, copper>,<duplicates>,
@@ -752,18 +766,17 @@ namespace
             [entry](Player* online) { GiveItems(online, entry, 1); });
     }
 
-    // The leveling Eyes owed up to the player's level, claimed all at once.
+    // The leveling Eyes owed up to the player's level, and those banked at a prestige, claimed all at once.
     void ClaimEyes(Player* player)
     {
-        uint8 claimed = EyesClaimed(player);
         uint8 through = std::min<uint8>(player->GetLevel(), EYE_LAST_LEVEL);
-        uint32 eyes = 0;
-        for (uint8 level = claimed + 1; level <= through; ++level)
-            eyes += LevelEyes(level);
+        uint32 eyes = UnclaimedLevelEyes(player) + Setting(player, SETTING_EYES_BANKED);
         if (eyes)
         {
             player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_EYES, Setting(player, SETTING_EYES) + eyes);
-            player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_EYES_CLAIMED, through);
+            player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_EYES_BANKED, 0);
+            if (through > EyesClaimed(player))
+                player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_EYES_CLAIMED, through);
             ChatHandler(player->GetSession()).PSendSysMessage("|cffa335eeDarkmoon:|r {} Eye{} of Unlearning claimed.",
                 eyes, eyes == 1 ? "" : "s");
         }
@@ -857,6 +870,15 @@ namespace Cards
 
     void ResetPrices(Player* player)
     {
+        // The leveling Eyes not claimed yet are kept (the levels start over): the next claim gives them.
+        if (uint32 owed = UnclaimedLevelEyes(player))
+        {
+            player->UpdatePlayerSetting(SETTING_SOURCE, SETTING_EYES_BANKED, Setting(player, SETTING_EYES_BANKED)
+                + owed);
+            ChatHandler(player->GetSession()).PSendSysMessage("|cffa335eeDarkmoon:|r your {} unclaimed Eye{} of "
+                "Unlearning {} kept: claim {} at Silas Darkmoon.", owed, owed == 1 ? "" : "s",
+                owed == 1 ? "is" : "are", owed == 1 ? "it" : "them");
+        }
         for (uint32 setting : { SETTING_SKILL_PACKS, SETTING_TALENT_PACKS, SETTING_CARDS, SETTING_EYES_CLAIMED,
             SETTING_EYE_PURCHASES })
             player->UpdatePlayerSetting(SETTING_SOURCE, setting, 0);

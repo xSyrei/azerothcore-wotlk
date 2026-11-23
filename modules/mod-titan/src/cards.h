@@ -25,7 +25,8 @@ class Player;
 // Skill and Talent Cards (cards.cpp): an account's collection, its packs and Silas Darkmoon's shop.
 namespace Cards
 {
-    // A prestige: the shop's prices start over (they climb with every purchase).
+    // A prestige (called at the old level): the shop's prices start over (they climb with every purchase), and the
+    // leveling Eyes not claimed yet are banked for the next claim.
     void ResetPrices(Player* player);
     // Eyes of Unlearning: spends one (false: none left); counts a reroll (talent: a Talent's, else an ability's).
     bool SpendEye(Player* player, bool talent);

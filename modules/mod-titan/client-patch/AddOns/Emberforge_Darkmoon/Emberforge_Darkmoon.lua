@@ -11,7 +11,8 @@
 --   from server   S,<Emberspark>,<Skill Pack>,<Talent Pack>,<Golden Pack>,<gold packs left>,<gold price, copper>,
 --                   <duplicates>,<a pack every>,<a Golden Pack every>,<card price by rarity x4>
 --                 E,<Eyes>,<claimed through level>,<level>,<Eye price>,<Eyes a purchase>,<can buy 0|1>,<Eyes bought>,
---                   <abilities rerolled>,<talents rerolled>,<first level>,<last level>,<milestone Eyes>,<m.m.m...>
+--                   <abilities rerolled>,<talents rerolled>,<first level>,<last level>,<milestone Eyes>,<m.m.m...>,
+--                   <banked: unclaimed before a prestige, claimed with the rest>
 --                 K0 / K,<kind>.<id>.<spell>.<rarity>.<owned>.<max>.<golden owned>.<unlock level>.<roles>.<school>;...
 --                   / KE   the catalog (roles: Wildcard RoleMask bits, 0 every role; school: a Skill Card's mask)
 --                 U,<kind>.<id>.<owned>.<golden owned>;...   owned changes
@@ -776,37 +777,61 @@ for index = 1, 4 do
     stat.label:SetJustifyH("LEFT")
     svStats[index] = stat
 end
+-- The card slots: a heading with the lock's tag and Edit Cards, then eight sockets: each card's icon in its rarity's
+-- color, its Golden Card a gold badge in the corner, the level it comes at beneath.
 local slotLabel = Text(specView, 10, MUTED, BODY_FONT)
-slotLabel:SetPoint("TOPLEFT", 26, -204)
+slotLabel:SetPoint("TOPLEFT", 26, -202)
 slotLabel:SetText("CARD SLOTS")
+local slotTag = CreateFrame("Frame", nil, specView)
+slotTag:SetHeight(15)
+slotTag:SetPoint("LEFT", slotLabel, "RIGHT", 8, 0)
+Slice9(slotTag, "Solid", 6)
+slotTag.text = Text(slotTag, 8, GREEN, BODY_FONT)
+slotTag.text:SetPoint("CENTER", 0, 0)
 -- The card editor (Edit Cards, below): its entry points, and its widgets for the tests.
 local editor = {}
-specView.editCards = Button(specView, 104, 20, "Edit Cards", function() editor.Show() end, "ButtonHot", 11)
-specView.editCards:SetPoint("LEFT", slotLabel, "RIGHT", 12, 0)
--- The spec's eight slots: the card's icon in each, its Golden Card's small at the corner.
+specView.editCards = Button(specView, 96, 19, "Edit Cards", function() editor.Show() end, "Button", 10)
+specView.editCards:SetPoint("LEFT", slotTag, "RIGHT", 10, 0)
 specView.slots = {}
+local SOCKET, SOCKET_STEP = 38, 46
 for index = 1, CARD_SLOTS do
     local slot = CreateFrame("Button", nil, specView)
-    slot:SetWidth(35)
-    slot:SetHeight(48)
-    slot:SetPoint("TOPLEFT", 26 + (index - 1) * 44, -219)
-    slot.art = slot:CreateTexture(nil, "BACKGROUND")
-    slot.art:SetTexture(ART .. "Slot")
-    slot.art:SetAllPoints()
-    slot.icon = slot:CreateTexture(nil, "ARTWORK")
-    slot.icon:SetWidth(27)
-    slot.icon:SetHeight(27)
-    slot.icon:SetPoint("CENTER", 0, 2)
+    slot:SetWidth(SOCKET)
+    slot:SetHeight(SOCKET + 14)
+    slot:SetPoint("TOPLEFT", 26 + (index - 1) * SOCKET_STEP, -220)
+    slot.rim = slot:CreateTexture(nil, "BORDER")
+    slot.rim:SetWidth(SOCKET)
+    slot.rim:SetHeight(SOCKET)
+    slot.rim:SetPoint("TOP", 0, 0)
+    slot.well = slot:CreateTexture(nil, "ARTWORK")
+    slot.well:SetTexture(0.04, 0.03, 0.02, 0.95)
+    slot.well:SetPoint("TOPLEFT", slot.rim, "TOPLEFT", 2, -2)
+    slot.well:SetPoint("BOTTOMRIGHT", slot.rim, "BOTTOMRIGHT", -2, 2)
+    slot.icon = slot:CreateTexture(nil, "OVERLAY")
     slot.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-    slot.golden = slot:CreateTexture(nil, "OVERLAY")
-    slot.golden:SetWidth(17)
-    slot.golden:SetHeight(17)
-    slot.golden:SetPoint("BOTTOMRIGHT", 4, -2)
+    slot.icon:SetAllPoints(slot.well)
+    slot.numeral = Text(slot, 11, { 0.42, 0.34, 0.24 }, DISPLAY_FONT)
+    slot.numeral:SetPoint("CENTER", slot.well, "CENTER", 0, 0)
+    slot.numeral:SetText(ROMAN_SLOTS[index])
+    slot.badge = CreateFrame("Frame", nil, slot)
+    slot.badge:SetWidth(17)
+    slot.badge:SetHeight(17)
+    slot.badge:SetPoint("BOTTOMRIGHT", slot.rim, "BOTTOMRIGHT", 3, -3)
+    slot.badge:SetFrameLevel(slot:GetFrameLevel() + 2)
+    slot.goldenRim = slot.badge:CreateTexture(nil, "BORDER")
+    slot.goldenRim:SetTexture(GOLDEN_RGB[1], GOLDEN_RGB[2], GOLDEN_RGB[3], 1)
+    slot.goldenRim:SetAllPoints()
+    slot.golden = slot.badge:CreateTexture(nil, "ARTWORK")
     slot.golden:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-    slot.goldenRim = slot:CreateTexture(nil, "BORDER")
-    slot.goldenRim:SetTexture(1, 0.84, 0.3, 1)
-    slot.goldenRim:SetPoint("TOPLEFT", slot.golden, "TOPLEFT", -1, 1)
-    slot.goldenRim:SetPoint("BOTTOMRIGHT", slot.golden, "BOTTOMRIGHT", 1, -1)
+    slot.golden:SetPoint("TOPLEFT", 1, -1)
+    slot.golden:SetPoint("BOTTOMRIGHT", -1, 1)
+    slot.level = Text(slot, 9, MUTED, BODY_FONT)
+    slot.level:SetPoint("BOTTOM", 0, 0)
+    local hover = slot:CreateTexture(nil, "HIGHLIGHT")
+    hover:SetTexture(ART .. "Glow")
+    hover:SetBlendMode("ADD")
+    hover:SetVertexColor(1, 0.6, 0.25, 0.3)
+    hover:SetAllPoints(slot.rim)
     slot:SetScript("OnEnter", function(self) Slotting.Tooltip(self, view.spec, index) end)
     slot:SetScript("OnLeave", function() GameTooltip:Hide() end)
     slot:SetScript("OnClick", function() editor.Show(index) end)
@@ -1019,22 +1044,31 @@ local function RefreshSpecs()
         stat.value:SetText(stats[index][1])
         stat.label:SetText(stats[index][2])
     end
+    local locked = cardsLocked[view.spec]
     specView.editCards:SetEnabled(owned)
-    specView.editCards:SetLabel(cardsLocked[view.spec] and "View Cards" or "Edit Cards")
-    slotLabel:SetText(cardsLocked[view.spec] and "CARD SLOTS  -  LOCKED" or "CARD SLOTS")
+    specView.editCards:SetLabel(locked and "View Cards" or "Edit Cards")
+    slotTag.text:SetText(locked and "LOCKED" or "OPEN UNTIL LEVEL " .. LOCK_LEVEL)
+    slotTag.text:SetTextColor(unpack(locked and { 1, 0.62, 0.5 } or GREEN))
+    Tint(slotTag, locked and 0.35 or 0.06, locked and 0.06 or 0.2, locked and 0.04 or 0.06, 0.9)
+    slotTag:SetWidth((slotTag.text:GetStringWidth() or 40) + 12)
+    local schedule = Slotting.Schedule(view.spec)
     for index, slot in ipairs(specView.slots) do
         local card = Slotting.Card(view.spec, index, false)
         local golden = Slotting.Card(view.spec, index, true)
+        local rim = card and RARITY_RGB[card.rarity] or { 0.3, 0.23, 0.15 }
+        slot.rim:SetTexture(rim[1], rim[2], rim[3], 1)
         Shown(slot.icon, card ~= nil)
+        Shown(slot.numeral, card == nil)
         if card then
             slot.icon:SetTexture(CardIcon(card))
         end
-        Shown(slot.golden, golden ~= nil)
-        Shown(slot.goldenRim, golden ~= nil)
+        Shown(slot.badge, golden ~= nil)
         if golden then
             slot.golden:SetTexture(CardIcon(golden))
         end
-        slot.art:SetAlpha(owned and 1 or 0.5)
+        local when = card and schedule[card.kind .. "." .. card.id]
+        slot.level:SetText(when and ("Lv " .. when) or "")
+        slot:SetAlpha(owned and 1 or 0.5)
     end
     if not owned then
         local price = mine and mine.price or 0
@@ -1057,6 +1091,8 @@ local function RefreshSpecs()
     for level = eyes.claimed + 1, math.min(eyes.level, eyes.last) do
         ready = ready + LevelEyes(level)
     end
+    -- Eyes left unclaimed before a prestige wait here too (the server banks them).
+    ready = ready + (eyes.banked or 0)
     eyes.ready = ready
     local reached, claimedTo = At(eyes.level), At(eyes.claimed)
     fill:SetWidth(math.max(0.01, reached))
@@ -1109,7 +1145,8 @@ local function RefreshSpecs()
         claimedEyes = claimedEyes + LevelEyes(level)
     end
     trackSum:SetText(string.format("Level %d  -  %d of %d Eyes claimed", eyes.level, claimedEyes, total)
-        .. (open and "  -  the shop is open" or ""))
+        .. ((eyes.banked or 0) > 0 and string.format("  -  |cff8dff8a%d kept from before your prestige|r",
+        eyes.banked) or open and "  -  the shop is open" or ""))
     claimButton:SetEnabled(ready > 0)
     claimButton:SetLabel(ready > 0 and ("Claim " .. ready .. (ready == 1 and " Eye" or " Eyes")) or "Nothing to claim")
 
@@ -3475,6 +3512,7 @@ local function OnServerMessage(message)
         if f[13] and f[13] ~= "" then
             eyes.milestones = Numbers(f[13])
         end
+        eyes.banked = tonumber(f[14]) or 0
         Refresh()
     elseif kind == "K0" then
         wipe(catalog)

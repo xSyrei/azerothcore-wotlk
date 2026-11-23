@@ -465,6 +465,15 @@ utility or a tradeoff) take one pick each, from three.
   slots, and each slot's three options rise in (a done slot can be chosen again). Its art is baked from the mockup's
   own drawing code by `client-patch/build_rune_art.py` (`rune_art/bake.js` in headless Chromium: `Art/`, `Art.lua`);
   its fonts are Cinzel and Alegreya Sans (`Fonts/`, SIL Open Font License).
+- **While the panel is open the rest of the UI is hidden** (UIParent hidden, the panel on WorldFrame at the UI's
+  scale; the tooltip and the bind questions lifted along). It opens out of combat only (asked in combat, after it);
+  combat starting closes it, and so does the UI coming back (Escape, Alt+Z). With no suggestion it opens on the search.
+  **Suggestions count the slotted Skill Cards** (`Specs::SlottedCards`): a rune they complete is suggested after the
+  usable ones and says what the cards bring (`R`'s third field). **Unlearn** (`UNBIND`) frees a bound rune before
+  level 8. **Learn Available** (`PLAN` / `APPLY`, the plan in `L`): while no rune is usable, a rune whose missing
+  abilities can each be learned now (a kit pick, else in place of a kit ability the rune does not need) or have their
+  owned Skill Card slotted (an empty slot, else in place of a card the rune does not need) offers it; the plan is
+  shown before anything changes, what it replaces in red. It works until level 8 (abilities and cards lock).
 - **Two runes per specialization**, each with its own three modifiers and at full power: **Rune I** from level 5
   (`titan_runes`, db-characters), **Rune II** from level 30 (`titan_runes_second`). Each is chosen once: only a
   prestige clears them (chosen again from levels 5 and 30). The two cannot be the same rune. Modifiers change freely
@@ -744,7 +753,7 @@ forever, for every character on it (`titan_cards` in the auth database, `data/sq
 - **Eyes of Unlearning** are the character's (its settings, `mod-titan-darkmoon`): one for every level from 8 to 60, four
   at the milestones (8, 10, 20, 30, 40, 50, 60), 74 in all, claimed in the window; past that two at a time for
   Emberspark, at level 60 only, on the climbing price (100, 125 ...). A prestige lets the levels be claimed again and
-  starts the price over. Spending them (rerolling an ability, a talent or a card just opened) comes with the
+  starts the price over; the Eyes owed and not claimed before it are banked (setting 9) and come with the next claim. Spending them (rerolling an ability, a talent or a card just opened) comes with the
   Specializations.
 - **Silas Darkmoon** (creature 910110, "Cards & Specializations", beside the Keeper of the Ember;
   `data/sql/db-world/titan_darkmoon.sql`) opens the **Darkmoon window** (the `Emberforge_Darkmoon` addon, prefix `EFDM`;

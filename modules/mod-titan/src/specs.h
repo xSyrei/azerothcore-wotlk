@@ -40,6 +40,14 @@ namespace Specs
     // to), as (kind 0 a Skill Card by first rank | 1 a Talent Card by talent, id), slot by slot, each slot's card
     // before its Golden Card. Empty until the specializations have loaded.
     std::vector<std::pair<uint8, uint32>> SlottedCards(Player* player);
+    // The active specialization's card slots, each slot's card (not its Golden Card) as (kind, id); id 0 empty.
+    // Empty until the specializations have loaded.
+    std::vector<std::pair<uint8, uint32>> CardPlaces(Player* player);
+    // The active specialization's cards can change (loaded, not locked).
+    bool CanSlotCards(Player* player);
+    // A card into the active specialization's slot (its card's place), as the Darkmoon window does it: the account
+    // must own it; slotted elsewhere already, it moves. The windows are told.
+    void PutCard(Player* player, uint8 slot, uint8 kind, uint32 id);
 }
 
 #endif

@@ -4,6 +4,28 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Legendary Rune panel
+
+- The rune panel **hides the rest of the interface** while it is open, and opens only out of combat (asked for in a
+  fight, it opens when the fight ends; a fight starting closes it). Escape or Alt+Z closes it.
+- With nothing to suggest, it opens straight to the **search**.
+- Its suggestions count the **Skill Cards you have slotted** too: a rune your cards will complete is suggested, and
+  says "Your cards bring ..." for what they will give you.
+- **Unlearn** a bound rune in the panel **until level 8**, and choose another.
+- **Learn Available**: while none of the runes is usable, a rune whose abilities you can get shows Learn Available.
+  It learns each ability you can learn now with your kit picks, and slots the Skill Card of each you can't yet. Before
+  anything changes it lists what it will do and, in red, what it replaces (an ability in your kit, a card in a slot).
+  It works until level 8, when your abilities and cards lock.
+
+### Eyes of Unlearning
+
+- **Leveling Eyes you hadn't claimed are kept when you prestige**: claim them at Silas Darkmoon afterwards, with the
+  new ones. (Eyes lost to a prestige before this patch can't be restored.)
+- The Specializations page shows its card slots as an even row: each card's icon in its rarity's color, its Golden
+  Card in the corner, and the level it comes at beneath.
+
+### Card slots
+
 - Each specialization has **8 card slots**. A slot holds one of your cards (a Skill or Talent Card) and one Golden
   Card.
 - On Silas Darkmoon's Specializations page, **Edit Cards** opens the card editor: your 8 slots above every card you

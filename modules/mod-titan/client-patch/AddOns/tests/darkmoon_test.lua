@@ -162,6 +162,11 @@ check(t.eyes.ready == 0 and not t.chip:IsShown() and not t.claimButton.enabled, 
 server("E,6,24,60,100,2,1,0,4,2,8,60,4,8.10.20.30.40.50.60")
 check(t.eyes.ready == 36 + 4 * 3, "at 60: every level from 25 owed, milestones four each")
 check(t.buyEyes.enabled, "at 60 the Eyes can be bought")
+-- A prestige with Eyes unclaimed: the server banks them (the last field), and they are claimed with the rest.
+server("E,6,7,1,100,2,0,0,4,2,8,60,4,8.10.20.30.40.50.60,52")
+check(t.eyes.ready == 52 and t.claimButton.enabled and t.claimButton.label.text == "Claim 52 Eyes",
+    "after a prestige the Eyes left unclaimed can still be claimed")
+server("E,6,24,60,100,2,1,0,4,2,8,60,4,8.10.20.30.40.50.60,0")
 t.buyEyes:Click()
 check(lastSent() == "EYES", "Buy asks the server")
 
@@ -268,7 +273,8 @@ specs("C,1,0,")
 specs("PE")
 t.tabs[1]:Click()
 check(t.specSlots[1].icon:IsShown() and t.specSlots[1].icon.texture == "Interface\\Icons\\Spell_27243"
-    and t.specSlots[1].golden:IsShown() and not t.specSlots[2].icon:IsShown(),
+    and t.specSlots[1].badge:IsShown() and not t.specSlots[2].icon:IsShown() and not t.specSlots[2].badge:IsShown()
+    and t.specSlots[2].numeral:IsShown() and t.specSlots[1].level.text == "Lv 9",
     "the spec's slots show its card and its Golden Card")
 check(t.editCards.enabled and t.editCards.label.text == "Edit Cards", "Edit Cards, where the coming-soon line was")
 t.editCards:Click()

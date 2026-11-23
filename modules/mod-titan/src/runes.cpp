@@ -16,6 +16,7 @@
  */
 
 #include "runes.h"
+#include "cards.h"
 #include "tank_runes.h"
 #include "specs.h"
 #include "wildcard.h"
@@ -77,12 +78,23 @@
 //   (90710 / 90740 / 90760 / 90780 / 90800 / 90820, and 20 on from each of the five's first, + slot * 3 + choice);
 //   scripts look for them.
 //
+// - Before Wildcard::LOCK_LEVEL (8) a bound rune can be unlearned in the panel (UNBIND), out of combat, and the
+//   panel's suggestions count the abilities the Hero's slotted Skill Cards (specs.cpp) will bring. While none of the
+//   runes is usable, Learn Available gets a rune's abilities: each one learnable now with a kit pick (or in place of
+//   a kit ability the rune does not need), else its Skill Card slotted (in an empty slot, or in place of a card the
+//   rune does not need); PLAN asks what it would do (L), APPLY does it.
+//
 // Protocol (fields by ','; the client sends STATE, PICK,<rune>,<anyway 0/1>,<rune slot 1-2>, MOD,<slot 1-3>,
-// <choice 1-3>,<rune slot 1-2>; anyway 1: warned of the abilities the rune needs and lacks, the Hero binds it anyway;
-// no rune slot: the first):
+// <choice 1-3>,<rune slot 1-2>, UNBIND,<rune slot 1-2>, PLAN,<rune>, APPLY,<rune>; anyway 1: warned of the
+// abilities the rune needs and lacks, the Hero binds it anyway; no rune slot: the first):
 //   S,<level>,<unlock level>,<spec>,<rune>,<m1>,<m2>,<m3>,<offers a.b.c or ->,<prompt 0/1>,<second rune>,<m1>,<m2>,
 //     <m3>,<second unlock level>      (offers: up to 4, the panel leaving out the other slot's rune)
-//   R,<rune>,<missing>      an implemented rune and the abilities it lacks (groups by '/', one of by '+'; '-' none)
+//   R,<rune>,<missing>,<missing with cards>,<learn available 0/1>      an implemented rune, the abilities it lacks
+//     (groups by '/', one of by '+'; '-' none), those the slotted Skill Cards will not bring either, and whether
+//     Learn Available can get them
+//   L,<rune>,<learn>,<replaced>,<slot>,<card replaced>      Learn Available's plan: abilities (first ranks, by '.';
+//     '-' none) learned now and the kit abilities each replaces (0: a pick), cards slotted and the slot each takes
+//     (<slot>:<kind>.<id> replaced, or <slot>:- an empty one)
 //   N,<rune>,<slot>,<choice>,<missing>      a modifier with needs of its own
 //   E,<text>   O (open the panel)
 namespace
@@ -1464,13 +1476,35 @@ namespace
         return false;
     }
 
-    // The groups the player meets none of, as the protocol writes them ('-' when none).
-    std::string Missing(Player* player, std::vector<std::vector<uint32>> const& groups)
+    // Every rank of the abilities the active specialization's slotted Skill Cards will bring.
+    std::set<uint32> SlottedSpells(Player* player)
+    {
+        std::set<uint32> spells;
+        for (auto const& [kind, id] : Specs::SlottedCards(player))
+            if (Wildcard::Ability const* ability = kind == 0 ? Wildcard::FindAbility(id) : nullptr)
+                for (Wildcard::Rank const& rank : ability->Ranks)
+                    spells.insert(rank.SpellId);
+        return spells;
+    }
+
+    bool InChain(std::set<uint32> const& spells, uint32 firstRank)
+    {
+        for (uint32 id = firstRank; id; id = sSpellMgr->GetNextSpellInChain(id))
+            if (spells.contains(id))
+                return true;
+        return false;
+    }
+
+    // The groups the player meets none of, as the protocol writes them ('-' when none); with slotted, the abilities
+    // the slotted cards will bring count as met.
+    std::string Missing(Player* player, std::vector<std::vector<uint32>> const& groups,
+        std::set<uint32> const* slotted = nullptr)
     {
         std::string out;
         for (std::vector<uint32> const& group : groups)
         {
-            if (std::any_of(group.begin(), group.end(), [player](uint32 id) { return Knows(player, id); }))
+            if (std::any_of(group.begin(), group.end(), [player, slotted](uint32 id)
+                { return Knows(player, id) || (slotted && InChain(*slotted, id)); }))
                 continue;
             std::string ids;
             for (uint32 id : group)
@@ -5913,6 +5947,215 @@ namespace
         }
     }
 
+    // ---- Learn Available ---------------------------------------------------------------------------------------
+
+    // What Learn Available would do for a rune: each ability learned now and the kit ability it replaces (none: a
+    // pick), each card slotted and the slot it takes (the card it replaces: id 0 an empty slot); or why it can't.
+    struct Plan
+    {
+        struct Learned
+        {
+            Wildcard::Ability const* Ability;
+            Wildcard::Ability const* Replaces;
+        };
+        struct Slotted
+        {
+            Wildcard::Ability const* Ability;
+            uint8 Slot;
+            std::pair<uint8, uint32> Replaces;
+        };
+        std::vector<Learned> Learn;
+        std::vector<Slotted> Slot;
+        std::string Refusal;
+    };
+
+    std::string AbilityName(Wildcard::Ability const& ability)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(ability.Ranks.front().SpellId);
+        return spellInfo && spellInfo->SpellName[LOCALE_enUS] ? spellInfo->SpellName[LOCALE_enUS] : "an ability";
+    }
+
+    // Learnable now as a kit ability: offered, its level reached, allowed for the Hero, and what it needs known (or
+    // in the plan already).
+    bool LearnableNow(Player* player, Wildcard::Ability const& ability, std::set<uint32> const& planned)
+    {
+        if (!ability.Offered || ability.Banned || ability.Capstone || ability.Companion || ability.Ranks.empty()
+            || ability.Ranks.front().Level > player->GetLevel() || Wildcard::KnownRank(player, ability) >= 0
+            || !Wildcard::FitsPlayer(player, ability) || Wildcard::PetConflict(player, ability))
+            return false;
+        return std::all_of(ability.Requires.begin(), ability.Requires.end(), [&](std::vector<uint32> const& givers)
+        {
+            return std::any_of(givers.begin(), givers.end(), [&](uint32 id)
+                { return Knows(player, id) || planned.contains(id); });
+        });
+    }
+
+    Plan MakePlan(Player* player, RuneDef const& rune)
+    {
+        Plan plan;
+        if (!Wildcard::IsHero(player) || Specs::IsDormant(player))
+        {
+            plan.Refusal = "This specialization is empty until you prestige in it.";
+            return plan;
+        }
+        if (!Wildcard::IsKitLocked(player) && Specs::CardPlaces(player).empty())
+        {
+            plan.Refusal = "Your specializations are still loading. Try again in a moment.";
+            return plan;
+        }
+        if (Wildcard::IsKitLocked(player) || !Specs::CanSlotCards(player))
+        {
+            plan.Refusal = Acore::StringFormat("Learn Available works until level {}: your abilities and cards lock "
+                "then.", Wildcard::LOCK_LEVEL);
+            return plan;
+        }
+        std::set<uint32> slotted = SlottedSpells(player);
+        // Kept: every ability the rune names, and what the planned ones need.
+        std::set<uint32> keep, planned;
+        for (std::vector<uint32> const& group : rune.Requires)
+            keep.insert(group.begin(), group.end());
+        uint32 kit = Wildcard::KitAbilities(player);
+        uint32 picks = kit < Wildcard::KIT_SIZE ? std::min(Wildcard::GetPicks(player), Wildcard::KIT_SIZE - kit) : 0;
+        std::vector<std::pair<uint8, uint32>> places = Specs::CardPlaces(player);
+        std::set<uint32> replacedKit;
+        auto kept = [&](Wildcard::Ability const& ability)
+        {
+            return keep.contains(ability.Ranks.front().SpellId) || planned.contains(ability.Ranks.front().SpellId);
+        };
+        for (std::vector<uint32> const& group : rune.Requires)
+        {
+            if (std::any_of(group.begin(), group.end(), [&](uint32 id)
+                { return Knows(player, id) || InChain(slotted, id) || planned.contains(id); }))
+                continue;
+            // Learned now: a pick, else in place of a kit ability the rune does not need.
+            Wildcard::Ability const* learn = nullptr;
+            for (uint32 id : group)
+                if (Wildcard::Ability const* ability = Wildcard::FindAbility(id))
+                    if (LearnableNow(player, *ability, planned))
+                    {
+                        learn = ability;
+                        break;
+                    }
+            if (learn)
+            {
+                Wildcard::Ability const* replaces = nullptr;
+                if (picks)
+                    --picks;
+                else
+                {
+                    for (Wildcard::Ability const& ability : Wildcard::Abilities())
+                        if (ability.Offered && !ability.Capstone && !ability.Companion
+                            && Wildcard::KnownRank(player, ability) >= 0 && !kept(ability)
+                            && !replacedKit.contains(ability.Ranks.front().SpellId))
+                            replaces = &ability;
+                    if (!replaces)
+                    {
+                        plan.Refusal = "Your kit has no room: every ability in it is one this rune needs.";
+                        return plan;
+                    }
+                    replacedKit.insert(replaces->Ranks.front().SpellId);
+                }
+                planned.insert(learn->Ranks.front().SpellId);
+                plan.Learn.push_back({ learn, replaces });
+                continue;
+            }
+            // Its Skill Card slotted: in an empty slot, else in place of a card the rune does not need.
+            Wildcard::Ability const* card = nullptr;
+            for (uint32 id : group)
+                if (Wildcard::Ability const* ability = Wildcard::FindAbility(id))
+                    if (ability->Offered && Cards::Owns(player, 0, ability->Ranks.front().SpellId, false))
+                    {
+                        card = ability;
+                        break;
+                    }
+            if (!card)
+            {
+                Wildcard::Ability const* first = Wildcard::FindAbility(group.front());
+                plan.Refusal = Acore::StringFormat("You can't learn {} yet and don't have its Skill Card.",
+                    first ? AbilityName(*first) : "an ability it needs");
+                return plan;
+            }
+            int32 place = -1;
+            for (uint8 slot = 0; slot < places.size() && place < 0; ++slot)
+                if (!places[slot].second)
+                    place = slot;
+            for (int32 slot = int32(places.size()) - 1; slot >= 0 && place < 0; --slot)
+            {
+                auto [kind, id] = places[slot];
+                Wildcard::Ability const* ability = kind == 0 ? Wildcard::FindAbility(id) : nullptr;
+                if (id && id != uint32(-1) && (!ability || !kept(*ability)))
+                    place = slot;
+            }
+            if (place < 0)
+            {
+                plan.Refusal = "Your card slots have no room: every card in them is one this rune needs.";
+                return plan;
+            }
+            planned.insert(card->Ranks.front().SpellId);
+            plan.Slot.push_back({ card, uint8(place), places[place] });
+            places[place] = { 0, uint32(-1) };      // taken
+        }
+        if (plan.Learn.empty() && plan.Slot.empty())
+            plan.Refusal = "There is nothing to learn: your abilities and cards already bring what it needs.";
+        return plan;
+    }
+
+    std::string Ids(std::vector<uint32> const& ids)
+    {
+        std::string out;
+        for (uint32 id : ids)
+            out += (out.empty() ? "" : ".") + std::to_string(id);
+        return out.empty() ? "-" : out;
+    }
+
+    void SendPlan(Player* player, RuneDef const& rune, Plan const& plan)
+    {
+        std::vector<uint32> learn, replaced;
+        for (Plan::Learned const& entry : plan.Learn)
+        {
+            learn.push_back(entry.Ability->Ranks.front().SpellId);
+            replaced.push_back(entry.Replaces ? entry.Replaces->Ranks.front().SpellId : 0);
+        }
+        std::string slots, cards;
+        for (Plan::Slotted const& entry : plan.Slot)
+        {
+            slots += (slots.empty() ? "" : ".") + std::to_string(entry.Ability->Ranks.front().SpellId);
+            cards += (cards.empty() ? "" : ".") + (entry.Replaces.second ? Acore::StringFormat("{}:{}:{}",
+                entry.Slot + 1, entry.Replaces.first, entry.Replaces.second) : Acore::StringFormat("{}:-",
+                entry.Slot + 1));
+        }
+        Send(player, Acore::StringFormat("L,{},{},{},{},{}", rune.Id, Ids(learn), Ids(replaced),
+            slots.empty() ? "-" : slots, cards.empty() ? "-" : cards));
+    }
+
+    void ApplyPlan(Player* player, Plan const& plan)
+    {
+        ChatHandler handler(player->GetSession());
+        for (Plan::Learned const& entry : plan.Learn)
+        {
+            if (entry.Replaces)
+            {
+                Wildcard::Unlearn(player, *entry.Replaces);
+                handler.PSendSysMessage("|cffa335eeLearn Available:|r {} replaces {} in your kit.",
+                    AbilityName(*entry.Ability), AbilityName(*entry.Replaces));
+            }
+            else
+            {
+                Wildcard::SetPicks(player, Wildcard::GetPicks(player) ? Wildcard::GetPicks(player) - 1 : 0);
+                handler.PSendSysMessage("|cffa335eeLearn Available:|r {} learned.", AbilityName(*entry.Ability));
+            }
+            Wildcard::Learn(player, *entry.Ability, "picked");
+        }
+        for (Plan::Slotted const& entry : plan.Slot)
+        {
+            Specs::PutCard(player, entry.Slot, 0, entry.Ability->Ranks.front().SpellId);
+            handler.PSendSysMessage("|cffa335eeLearn Available:|r {}'s Skill Card slotted: it comes at level {}.",
+                AbilityName(*entry.Ability), Wildcard::AbilityUnlockLevel(*entry.Ability));
+        }
+        Classless::SendKnown(player);
+        Classless::SendState(player);
+    }
+
     // ---- The panel ---------------------------------------------------------------------------------------------
 
     // A slot open and empty: the panel opens by itself.
@@ -5931,12 +6174,20 @@ namespace
         Choice const& choice = ActiveChoice(player);
         Choice const& second = ActiveChoice(player, 1);
         uint8 role = Wildcard::GetRole(player);
-        // Suggested: runes the Hero meets, their role's first (a Tank or Healer sees a hybrid only in Browse all).
-        std::vector<RuneDef const*> offers;
+        // Suggested: runes the Hero meets, their role's first (a Tank or Healer sees a hybrid only in Browse all);
+        // then those the slotted Skill Cards will complete.
+        std::set<uint32> slotted = SlottedSpells(player);
+        std::vector<RuneDef const*> offers, withCards;
         for (RuneDef const& rune : Catalog())
-            if (!IsRetired(rune.Id) && Missing(player, rune.Requires) == "-"
+            if (!IsRetired(rune.Id)
                 && (role == Wildcard::ROLE_NONE || rune.Roles & Wildcard::RoleMask(Wildcard::Role(role))))
-                offers.push_back(&rune);
+            {
+                if (Missing(player, rune.Requires) == "-")
+                    offers.push_back(&rune);
+                else if (Missing(player, rune.Requires, &slotted) == "-")
+                    withCards.push_back(&rune);
+            }
+        offers.insert(offers.end(), withCards.begin(), withCards.end());
         if (offers.size() > MAX_OFFERS + 1)
             offers.resize(MAX_OFFERS + 1);              // one more: the panel leaves out the other slot's rune
         std::string offerList;
@@ -5945,7 +6196,10 @@ namespace
 
         for (RuneDef const& rune : Catalog())
         {
-            Send(player, Acore::StringFormat("R,{},{}", rune.Id, Missing(player, rune.Requires)));
+            std::string missing = Missing(player, rune.Requires);
+            bool learnable = missing != "-" && MakePlan(player, rune).Refusal.empty();
+            Send(player, Acore::StringFormat("R,{},{},{},{}", rune.Id, missing, Missing(player, rune.Requires,
+                &slotted), learnable ? 1 : 0));
             for (uint8 slot = 0; slot < SLOTS; ++slot)
                 for (uint8 pick = 0; pick < CHOICES; ++pick)
                 {
@@ -5992,8 +6246,11 @@ namespace
         choice.Rune = runeId;
         Save(player, Specs::ActiveSpec(player), runeSlot);
         Apply(player);
-        ChatHandler(player->GetSession()).PSendSysMessage("|cffa335eeLegendary Rune:|r bound to this "
-            "specialization until your next prestige. Choose its modifiers in the rune panel.");
+        ChatHandler(player->GetSession()).PSendSysMessage(player->GetLevel() < Wildcard::LOCK_LEVEL
+            ? Acore::StringFormat("|cffa335eeLegendary Rune:|r bound to this specialization. Until level {} you can "
+                "unlearn it in the rune panel; then it stays until your next prestige.", Wildcard::LOCK_LEVEL)
+            : std::string("|cffa335eeLegendary Rune:|r bound to this specialization until your next prestige. Choose "
+                "its modifiers in the rune panel."));
         SendState(player);
     }
 
@@ -6033,6 +6290,19 @@ namespace
         SendState(player);
     }
 
+    // Unlearned in the panel: only before the kit locks (Wildcard::LOCK_LEVEL), out of combat.
+    void OnUnbind(Player* player, uint8 which)
+    {
+        if (player->GetLevel() >= Wildcard::LOCK_LEVEL)
+            return Refuse(player, Acore::StringFormat("Runes can be unlearned until level {}; now only a prestige "
+                "frees them.", Wildcard::LOCK_LEVEL));
+        if (player->IsInCombat())
+            return Refuse(player, "Not in combat.");
+        if (which < 1 || which > RUNE_SLOTS || !ActiveChoice(player, which - 1).Rune)
+            return;
+        LegendaryRunes::Unbind(player, which);
+    }
+
     void OnMessage(Player* player, std::string_view message)
     {
         std::vector<std::string_view> parts;
@@ -6056,6 +6326,23 @@ namespace
             OnPick(player, uint8(number(1)), number(2) == 1, uint8(std::max<uint32>(number(3), 1) - 1));
         else if (parts[0] == "MOD")
             OnModifier(player, uint8(number(1)), uint8(number(2)), uint8(std::max<uint32>(number(3), 1) - 1));
+        else if (parts[0] == "UNBIND")
+            OnUnbind(player, uint8(std::max<uint32>(number(1), 1)));
+        else if (parts[0] == "PLAN" || parts[0] == "APPLY")
+        {
+            RuneDef const* rune = FindRune(uint8(number(1)));
+            if (!rune || IsRetired(rune->Id))
+                return;
+            if (player->IsInCombat())
+                return Refuse(player, "Not in combat.");
+            Plan plan = MakePlan(player, *rune);
+            if (!plan.Refusal.empty())
+                return Refuse(player, plan.Refusal);
+            if (parts[0] == "PLAN")
+                return SendPlan(player, *rune, plan);
+            ApplyPlan(player, plan);
+            SendState(player);
+        }
     }
 }
 

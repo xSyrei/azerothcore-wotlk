@@ -569,5 +569,73 @@ check(SpellTooltip("Fireball") == "", "a spell no bound rune reaches into gets n
 server("S,40,10,1,44,1,1,1,-,0,0,0,0,0,30")
 check(SpellTooltip("Frost Shock") == "", "Whitefang unbound: Frost Shock gets no line")
 
+-- Nothing usable: the panel opens on the search; a rune the slotted Skill Cards complete says so; Learn Available
+-- (PLAN) on a rune whose abilities can be learned or slotted, its plan asked before anything changes (L), then APPLY.
+frame:Hide()
+SPELLS[2136] = "Fire Blast"
+for _, rune in ipairs(EmberforgeRunesCatalog) do
+    server("R," .. rune.id .. ",686,686,0")
+end
+server("R,22,686,-,0")
+server("R,24,697,697,1")
+server("S,5,5,1,0,0,0,0,-,0,0,0,0,0,30")
+EmberforgeRunes_Open()
+run(0.7)
+check(frame:IsShown() and view.mode == "browse", "no suggestions: the panel opens on the search")
+local function RowOf(id)
+    search.text = ById(id).name
+    search.scripts.OnTextChanged(search)
+    for _, row in ipairs(debug.rows) do
+        if row.rune and row.rune.id == id then
+            return row
+        end
+    end
+end
+local cardsRow = RowOf(22)
+check(cardsRow and cardsRow.status.text == "Your cards bring Shadow Bolt", "a rune the slotted cards complete says so")
+local learnRow = RowOf(24)
+check(learnRow and learnRow.learn and learnRow.choose.label.text == "Learn Available" and learnRow.choose:IsShown(),
+    "none usable: Learn Available where the abilities can be had")
+learnRow.choose:Click()
+check(lastSent() == "PLAN,24", "Learn Available asks the server for its plan")
+server("L,24,686,697,2136,3:0:697")
+check(popup and popup.name == "EMBERFORGE_RUNE_LEARN" and popup.a:find("Learn now: |cffffffffShadow Bolt", 1, true)
+    and popup.a:find("Slot its Skill Card: |cffffffffFire Blast|r (slot III)", 1, true)
+    and popup.a:find("This replaces:", 1, true) and popup.a:find("Summon Voidwalker leaves your kit", 1, true)
+    and popup.a:find("Summon Voidwalker's Skill Card leaves slot III", 1, true),
+    "the plan names what it learns, slots, and replaces")
+StaticPopupDialogs.EMBERFORGE_RUNE_LEARN.OnAccept(nil, 24)
+check(lastSent() == "APPLY,24", "proceeding applies it")
+search.text = ""
+search.scripts.OnTextChanged(search)
+-- Bound before level 8: Unlearn; at 8 it is gone.
+frame:Hide()
+server("S,6,5,1,21,0,0,0,-,0,0,0,0,0,30")
+EmberforgeRunes_Open()
+run(0.7)
+check(debug.unlearnBar.target == 1, "bound before level 8: Unlearn shows")
+debug.unlearnBar.pill:Click()
+check(popup and popup.name == "EMBERFORGE_RUNE_UNBIND" and popup.a == "Rune of Fel Commandment", "Unlearn asks first")
+StaticPopupDialogs.EMBERFORGE_RUNE_UNBIND.OnAccept(nil, 1)
+check(lastSent() == "UNBIND,1", "and unlearns it")
+frame:Hide()
+server("S,8,5,1,21,0,0,0,-,0,0,0,0,0,30")
+EmberforgeRunes_Open()
+run(0.7)
+check(debug.unlearnBar.target == 0, "from level 8 it stays")
+-- In combat it waits: it opens once the fight is over; a fight starting closes it.
+frame:Hide()
+local fighting = true
+function UnitAffectingCombat() return fighting end
+EmberforgeRunes_Open()
+check(not frame:IsShown(), "in combat the panel waits")
+fighting = false
+frame.scripts.OnEvent(frame, "PLAYER_REGEN_ENABLED")
+check(frame:IsShown(), "and opens when the fight is over")
+fighting = true
+frame.scripts.OnEvent(frame, "PLAYER_REGEN_DISABLED")
+check(not frame:IsShown(), "a fight starting closes it")
+fighting = false
+
 print(failures == 0 and "All checks passed" or (failures .. " check(s) failed"))
 os.exit(failures == 0 and 0 or 1)
