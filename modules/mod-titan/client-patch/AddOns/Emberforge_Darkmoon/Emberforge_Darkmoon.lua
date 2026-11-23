@@ -12,7 +12,8 @@
 --                   <duplicates>,<a pack every>,<a Golden Pack every>,<card price by rarity x4>
 --                 E,<Eyes>,<claimed through level>,<level>,<Eye price>,<Eyes a purchase>,<can buy 0|1>,<Eyes bought>,
 --                   <abilities rerolled>,<talents rerolled>,<first level>,<last level>,<milestone Eyes>,<m.m.m...>
---                 K0 / K,<kind>.<id>.<spell>.<rarity>.<owned>.<max>.<golden owned>;... / KE   the catalog
+--                 K0 / K,<kind>.<id>.<spell>.<rarity>.<owned>.<max>.<golden owned>.<unlock level>.<roles>.<school>;...
+--                   / KE   the catalog (roles: Wildcard RoleMask bits, 0 every role; school: a Skill Card's mask)
 --                 U,<kind>.<id>.<owned>.<golden owned>;...   owned changes
 --                 R,<pack>,<kind>.<id>.<spell>.<rarity>.<new 0|1>.<refund>;...   a pack opened
 --                 M,<pack>,<count> ... ME   several packs opened at once (their R between)
@@ -20,7 +21,7 @@
 --   to server     LIST, BUY,<pack>,<0 Emberspark|1 gold>, CARD,<kind>,<id>, OPEN,<pack>,<count>, CLAIM, EYES
 -- Card slots go through src/specs.cpp (prefix EFSP): C,<spec>,<locked 0|1>,<slot>.<golden>.<kind>.<id>;... from the
 -- server, SLOT,<spec>,<slot>,<golden 0|1>,<kind>,<id> (id 0: empty it) to it. The catalog's cards end with their
--- unlock level (K: ...<golden owned>.<unlock>): slotted, a card comes on the first roll of its kind from then.
+-- unlock level (K: ...<golden owned>.<unlock>...): slotted, a card comes on the first roll of its kind from then.
 -- Packs: 0 Skill, 1 Talent, 2 Golden Skill, 3 Golden Talent. Kinds: 0 Skill Card, 1 Talent Card.
 -- Rarities: 0 Common, 1 Rare, 2 Epic, 3 Legendary.
 
@@ -383,6 +384,82 @@ function Slotting.Tooltip(owner, spec, slot, note)
     end
     GameTooltip:AddLine(note or "Click to see your cards.", 0.85, 0.64, 0.42)
     GameTooltip:Show()
+end
+
+-- Keyword search -----------------------------------------------------------------------------------------------------
+
+-- A card matches a search when every word of it (and every "quoted phrase") is in its name or its tooltip: "% spell
+-- haste" finds "Increases your spell haste by 5%", "shadow damage" any card dealing or raising Shadow damage. The
+-- client has no call for a spell's description: its tooltip is read once (a hidden tooltip) and kept, every card's
+-- in the background once the catalog is in (Search.Warm), so typing never waits on it.
+local Search = { cache = {} }
+do
+    local scanner = CreateFrame("GameTooltip", "EmberforgeDarkmoonScanner", nil, "GameTooltipTemplate")
+    function Search.describe(spell)
+        scanner:SetOwner(UIParent, "ANCHOR_NONE")
+        scanner:ClearLines()
+        scanner:SetHyperlink("spell:" .. spell)
+        local lines = {}
+        for line = 1, scanner:NumLines() or 0 do
+            for _, side in ipairs({ "Left", "Right" }) do
+                local region = _G["EmberforgeDarkmoonScannerText" .. side .. line]
+                local text = region and region:GetText()
+                if text and text ~= "" then
+                    lines[#lines + 1] = text
+                end
+            end
+        end
+        scanner:Hide()
+        return table.concat(lines, " ")
+    end
+
+    -- The card's name and tooltip, lowercased, without color codes.
+    function Search.Text(card)
+        local text = Search.cache[card.spell]
+        if not text then
+            text = string.lower(CardName(card) .. " " .. (Search.describe(card.spell) or ""))
+            text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+            Search.cache[card.spell] = text
+        end
+        return text
+    end
+
+    function Search.Matches(card, query)
+        if not query or query == "" then
+            return true
+        end
+        local text = Search.Text(card)
+        for phrase in query:gmatch('"([^"]+)"') do
+            if not text:find(phrase, 1, true) then
+                return false
+            end
+        end
+        for word in (query:gsub('"[^"]*"', " ")):gmatch("%S+") do
+            if not text:find(word, 1, true) then
+                return false
+            end
+        end
+        return true
+    end
+
+    -- Reads every card's tooltip, a few a frame.
+    local warm, nextCard = CreateFrame("Frame"), 1
+    warm:Hide()
+    warm:SetScript("OnUpdate", function(self)
+        for _ = 1, 25 do
+            local card = catalog[nextCard]
+            if not card then
+                self:Hide()
+                return
+            end
+            Search.Text(card)
+            nextCard = nextCard + 1
+        end
+    end)
+    function Search.Warm()
+        nextCard = 1
+        warm:Show()
+    end
 end
 
 -- The window ---------------------------------------------------------------------------------------------------------
@@ -2507,7 +2584,7 @@ search:SetTextColor(unpack(GOLD_HI))
 Slice9(search, "Button", 8)
 local searchHint = Text(search, 11, { 0.5, 0.42, 0.32 }, BODY_FONT)
 searchHint:SetPoint("LEFT", 8, 0)
-searchHint:SetText("Search cards")
+searchHint:SetText("Search names and effects")
 search:SetScript("OnTextChanged", function(self)
     view.search, view.offset = string.lower(self:GetText() or ""), 0
     Shown(searchHint, (self:GetText() or "") == "")
@@ -2581,7 +2658,7 @@ local function Matches(card)
     if view.ownedOnly and owned < 1 then
         return false
     end
-    return view.search == "" or string.find(string.lower(CardName(card)), view.search, 1, true) ~= nil
+    return Search.Matches(card, view.search)
 end
 
 local function RefreshCards()
@@ -2657,7 +2734,7 @@ end
 local function BuildEditor()
     local editorPage = pages[4]
     local EDIT_ROWS, ROW_H = 9, 25
-    local edit = { slot = 1, golden = false, search = "", sort = "rarity", offsets = { [0] = 0, 0 } }
+    local edit = { slot = 1, golden = false, search = "", sort = "rarity", offsets = { [0] = 0, 0 }, filters = {} }
     local editorBack = Button(editorPage, 80, 24, "< Back", function() ShowTab(1) end, "Button", 12)
     editorBack:SetPoint("TOPLEFT", 0, 0)
     local editorTitle = Text(editorPage, 16, GOLD_HI, DISPLAY_FONT)
@@ -2688,7 +2765,9 @@ local function BuildEditor()
     Slice9(editSearch, "Button", 8)
     local editSearchHint = Text(editSearch, 11, { 0.5, 0.42, 0.32 }, BODY_FONT)
     editSearchHint:SetPoint("LEFT", 10, 0)
-    editSearchHint:SetText("Search abilities and talents")
+    editSearchHint:SetText("Search names and effects")
+    Tooltip(editSearch, "Search", "Every word you type must be in the card's name or text: \"% spell haste\", \"shadow "
+        .. "damage\", \"stun\", \"heal over\". Put a phrase in quotes to find it exactly.")
     editSearch:SetScript("OnTextChanged", function(self)
         edit.search = string.lower(self:GetText() or "")
         edit.offsets[0], edit.offsets[1] = 0, 0
@@ -2762,12 +2841,78 @@ local function BuildEditor()
         editSlots[index] = slot
     end
 
-    -- Under the strip: what a click does, and the sort.
+    -- Under the strip: the filters, each a menu (Role and School for the Skill Cards, Rarity for both lists), and
+    -- the sort.
     local HINT_TOP = STRIP_TOP + STRIP_H + 6
-    local editHint = Text(editorPage, 10, MUTED, BODY_FONT)
-    editHint:SetPoint("TOPLEFT", 4, -HINT_TOP - 3)
-    editHint:SetWidth(PAGE_WIDTH - 190)
-    editHint:SetJustifyH("LEFT")
+    local FILTERS = {
+        { key = "role", label = "Role", width = 118, note = "Skill Cards by what they do.", options = {
+            { label = "All" }, { value = 2, label = "Melee" }, { value = 4, label = "Ranged" },
+            { value = 8, label = "Healer" }, { value = 16, label = "Tank" }, { value = 0, label = "Utility" } } },
+        { key = "school", label = "School", width = 128, note = "Skill Cards by their magic school.", options = {
+            { label = "All" }, { value = 1, label = "Physical" }, { value = 2, label = "Holy" },
+            { value = 4, label = "Fire" }, { value = 8, label = "Nature" }, { value = 16, label = "Frost" },
+            { value = 32, label = "Shadow" }, { value = 64, label = "Arcane" } } },
+        { key = "rarity", label = "Rarity", width = 128, note = "Skill and Talent Cards.", options = {
+            { label = "All" }, { value = 0, label = "Common" }, { value = 1, label = "Rare" },
+            { value = 2, label = "Epic" }, { value = 3, label = "Legendary" } } },
+    }
+    -- One menu, opened under the filter clicked.
+    local menu = CreateFrame("Frame", nil, editorPage)
+    menu:SetFrameStrata("FULLSCREEN_DIALOG")
+    menu:EnableMouse(true)
+    Slice9(menu, "Panel", 12)
+    menu:Hide()
+    menu.items = {}
+    local function OpenMenu(owner, filter)
+        if menu:IsShown() and menu.owner == owner then
+            menu:Hide()
+            return
+        end
+        menu.owner = owner
+        menu:ClearAllPoints()
+        menu:SetPoint("TOPLEFT", owner, "BOTTOMLEFT", 0, -2)
+        menu:SetWidth(owner:GetWidth())
+        menu:SetHeight(#filter.options * 20 + 12)
+        for index, option in ipairs(filter.options) do
+            local item = menu.items[index]
+            if not item then
+                item = Button(menu, 10, 19, "", function(self)
+                    edit.filters[self.filter.key] = self.option.value
+                    edit.offsets[0], edit.offsets[1] = 0, 0
+                    menu:Hide()
+                    Refresh()
+                end, "Button", 10)
+                item:SetPoint("TOPLEFT", 6, -6 - (index - 1) * 20)
+                menu.items[index] = item
+            end
+            item.filter, item.option = filter, option
+            item:SetWidth(owner:GetWidth() - 12)
+            item:SetLabel(option.label)
+            item:SetOn(edit.filters[filter.key] == option.value)
+            item:Show()
+        end
+        for index = #filter.options + 1, #menu.items do
+            menu.items[index]:Hide()
+        end
+        menu:Show()
+    end
+    local filterButtons = {}
+    local filterX = 0
+    for _, filter in ipairs(FILTERS) do
+        local button = Button(editorPage, filter.width, 18, "", function(self) OpenMenu(self, filter) end,
+            "Button", 10)
+        button:SetPoint("TOPLEFT", filterX, -HINT_TOP)
+        filterX = filterX + filter.width + 6
+        Tooltip(button, filter.label, filter.note)
+        button.filter = filter
+        filterButtons[filter.key] = button
+    end
+    local clearFilters = Button(editorPage, 56, 18, "Clear", function()
+        wipe(edit.filters)
+        menu:Hide()
+        Refresh()
+    end, "Button", 10)
+    clearFilters:SetPoint("TOPLEFT", filterX, -HINT_TOP)
     local sortChips = {}
     for _, sort in ipairs({ "level", "rarity" }) do
         sortChips[sort] = Button(editorPage, 62, 18, sort == "level" and "Level" or "Rarity", function()
@@ -2918,13 +3063,39 @@ local function BuildEditor()
         lists[kind] = list
     end
 
+    -- The flag set in a mask (no bit library in the tests' Lua).
+    local function HasFlag(mask, flag)
+        return math.floor((mask or 0) / flag) % 2 == 1
+    end
+
+    -- The filters a card passes: Role and School for Skill Cards, Rarity for both.
+    local function Passes(card)
+        local filters = edit.filters
+        if filters.rarity and card.rarity ~= filters.rarity then
+            return false
+        end
+        if card.kind == 0 then
+            if filters.role and (filters.role == 0 and (card.roles or 0) ~= 0
+                or filters.role ~= 0 and not HasFlag(card.roles, filters.role)) then
+                return false
+            end
+            if filters.school and not HasFlag(card.school, filters.school) then
+                return false
+            end
+        end
+        return true
+    end
+
+    -- The cards of a list: owned (Golden ones on Golden), through the filters and the search; and how many owned.
     local function EditorCards(kind)
-        local shown = {}
+        local shown, owned = {}, 0
         for _, card in ipairs(catalog) do
             local have = edit.golden and card.golden or card.owned
-            if card.kind == kind and have > 0 and (edit.search == ""
-                or string.find(string.lower(CardName(card)), edit.search, 1, true) ~= nil) then
-                shown[#shown + 1] = card
+            if card.kind == kind and have > 0 then
+                owned = owned + 1
+                if Passes(card) and Search.Matches(card, edit.search) then
+                    shown[#shown + 1] = card
+                end
             end
         end
         table.sort(shown, function(a, b)
@@ -2936,7 +3107,7 @@ local function BuildEditor()
             end
             return CardName(a) < CardName(b)
         end)
-        return shown
+        return shown, owned
     end
 
     -- A slot's small card: the card with the level it comes at, or the back of one, faded, for an empty place.
@@ -2990,26 +3161,34 @@ local function BuildEditor()
                 glowing.glow:SetVertexColor(1, 0.55, 0.2, 0.8)
             end
         end
-        editHint:SetText(locked and ("|cffff8066Locked:|r cards lock at level " .. LOCK_LEVEL .. " and open again "
-            .. "when you prestige. Each comes at the level on its card.")
-            or edit.golden and ("Click a Golden Card to put it beside slot " .. ROMAN_SLOTS[edit.slot] .. "'s card. "
-            .. "Click a slot to take its Golden Card out.")
-            or ("Click a card to put it in slot " .. ROMAN_SLOTS[edit.slot] .. ". Click a slot to empty it. Each card "
-            .. "comes at the level on it."))
+        local filtered = false
+        for key, button in pairs(filterButtons) do
+            local value, label = edit.filters[key], "All"
+            for _, option in ipairs(button.filter.options) do
+                if option.value == value then
+                    label = option.label
+                end
+            end
+            button:SetLabel(button.filter.label .. ":  " .. label)
+            button:SetOn(value ~= nil)
+            filtered = filtered or value ~= nil
+        end
+        clearFilters:SetEnabled(filtered)
         for kind, list in pairs(lists) do
-            local shown = EditorCards(kind)
+            local shown, owned = EditorCards(kind)
             local last = math.max(0, #shown - EDIT_ROWS)
             edit.offsets[kind] = math.min(edit.offsets[kind], last)
             local offset = edit.offsets[kind]
-            list.count:SetText(#shown == 0 and "" or (#shown .. (#shown == 1 and " card" or " cards")))
+            list.count:SetText(#shown == owned and (owned .. (owned == 1 and " card" or " cards"))
+                or (#shown .. " of " .. owned))
             list.bar.updating = true
             list.bar:SetMinMaxValues(0, math.max(1, last))
             list.bar:SetValue(offset)
             list.bar.updating = false
             Shown(list.bar, last > 0)
             local kindName = kind == 1 and "Talent" or "Skill"
-            list.empty:SetText(not catalogLoaded and "Loading your collection..." or edit.search ~= ""
-                and "No cards match your search." or edit.golden and ("No Golden " .. kindName
+            list.empty:SetText(not catalogLoaded and "Loading your collection..." or owned > 0
+                and "No cards match your search and filters." or edit.golden and ("No Golden " .. kindName
                 .. " Cards yet. Golden Packs hold them.") or ("No " .. kindName
                 .. " Cards yet. Open packs on the Packs tab, or buy cards on the Cards tab."))
             Shown(list.empty, #shown == 0)
@@ -3063,6 +3242,7 @@ local function BuildEditor()
     end
 
     editor.slots, editor.lists, editor.tabs, editor.sort = editSlots, lists, editorTabs, sortChips
+    editor.filters, editor.menu, editor.clear = filterButtons, menu, clearFilters
     editor.search, editor.state = editSearch, edit
 end
 BuildEditor()
@@ -3240,12 +3420,13 @@ local function OnServerMessage(message)
         for _, item in ipairs(Split(body, ";")) do
             local n = Numbers(item)
             local card = { kind = n[1], id = n[2], spell = n[3], rarity = n[4], owned = n[5], max = n[6],
-                golden = n[7], unlock = n[8] or 1 }
+                golden = n[7], unlock = n[8] or 1, roles = n[9] or 0, school = n[10] or 0 }
             catalog[#catalog + 1] = card
             byKey[card.kind .. "." .. card.id] = card
         end
     elseif kind == "KE" then
         catalogLoaded = true
+        Search.Warm()
         Refresh()
     elseif kind == "U" then
         for _, item in ipairs(Split(body, ";")) do
@@ -3374,4 +3555,4 @@ EmberforgeDarkmoon_State = { state = state, eyes = eyes, catalog = catalog, view
     revealCards = revealCards, resultItems = resultItems, gems = gems,
     pages = pages, claimButton = claimButton, buyEyes = buyEyes, mass = function() return mass end, chip = chip,
     doneButton = doneButton, editCards = specView.editCards, specSlots = specView.slots, editor = editor,
-    specCards = specCards, mySpecs = mySpecs, cardsLocked = cardsLocked, slotting = Slotting }
+    specCards = specCards, mySpecs = mySpecs, cardsLocked = cardsLocked, slotting = Slotting, keywords = Search }

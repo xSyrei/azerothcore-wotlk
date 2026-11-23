@@ -257,7 +257,7 @@ end
 -- The catalog again, with unlock levels (a Skill Card's 9 at the earliest): Skill Cards at 9, 9, 20 and 30, a
 -- Talent Card at 15.
 server("K0")
-server("K,0.133.133.0.1.1.0.9;0.27243.27243.3.1.1.0.9;0.5.5.1.1.1.0.20;0.6.6.0.0.1.0.30")
+server("K,0.133.133.0.1.1.0.9.4.4;0.27243.27243.3.1.1.0.9.2.32;0.5.5.1.1.1.0.20.0.1;0.6.6.0.0.1.0.30.2.1")
 server("K,1.2300.90200.1.1.1.1.15")
 server("KE")
 specs("P,0,3,1")
@@ -300,8 +300,56 @@ e.sort.rarity:Click()
 e.search:SetText("133")
 e.search.scripts.OnTextChanged(e.search)
 check(#rows(0) == 1 and #rows(1) == 0 and e.lists[1].empty:IsShown(), "one search bar filters both lists")
-e.search:SetText("")
-e.search.scripts.OnTextChanged(e.search)
+-- Keywords: every word in the card's name or tooltip.
+local descriptions = { [133] = "Hurls a fiery ball that causes 14 Fire damage.",
+    [27243] = "Increases your spell haste by 5% and your Shadow damage by 10%.", [5] = "Stuns the target.",
+    [90200] = "Increases your melee haste by 3%." }
+wipe(t.keywords.cache)
+t.keywords.describe = function(spell) return descriptions[spell] or "" end
+local function find(query)
+    e.search:SetText(query)
+    e.search.scripts.OnTextChanged(e.search)
+    return rows(0), rows(1)
+end
+-- (The test's cards are all named "Spell <id>": no query here uses the word.)
+local found, foundTalents = find("% shadow")
+check(#found == 1 and found[1] == "Spell 27243" and #foundTalents == 0, "a search finds words in the card's text")
+found, foundTalents = find("haste")
+check(#found == 1 and #foundTalents == 1, "one search over both lists")
+found = find("fire damage")
+check(#found == 1 and found[1] == "Spell 133", "the words need not be side by side")
+found = find('"shadow damage"')
+check(#found == 1 and found[1] == "Spell 27243" and #find('"fire ball"') == 0, "a quoted phrase is found exactly")
+check(e.lists[0].count.text == "0 of 3" and e.lists[0].empty:IsShown(), "nothing found: the count and a line say so")
+find("")
+-- Filters: Role and School for Skill Cards, Rarity for both.
+e.filters.role:Click()
+check(e.menu:IsShown(), "a filter opens its menu")
+local function pick(label)
+    for _, item in ipairs(e.menu.items) do
+        if item:IsShown() and item.label.text == label then
+            item:Click()
+            return
+        end
+    end
+end
+pick("Melee")
+check(#rows(0) == 1 and rows(0)[1] == "Spell 27243" and #rows(1) == 1, "Role: the Skill Cards tagged for it")
+check(e.filters.role.label.text == "Role:  Melee" and e.filters.role.on and e.clear.enabled,
+    "the filter says what it is set to")
+e.filters.role:Click()
+pick("Utility")
+check(#rows(0) == 1 and rows(0)[1] == "Spell 5", "Utility: the cards for every role")
+e.clear:Click()
+e.filters.school:Click()
+pick("Fire")
+check(#rows(0) == 1 and rows(0)[1] == "Spell 133", "School: the Skill Cards of it")
+e.clear:Click()
+e.filters.rarity:Click()
+pick("Rare")
+check(#rows(0) == 1 and rows(0)[1] == "Spell 5" and #rows(1) == 1, "Rarity: both lists")
+e.clear:Click()
+check(#rows(0) == 3 and not e.clear.enabled, "Clear shows everything again")
 e.lists[0].rows[3]:Click()
 check(sentSpec() == "SLOT,0,1,0,0,133", "a click slots the card in the chosen slot")
 check(e.state.slot == 3, "then the next empty slot is chosen")

@@ -161,6 +161,7 @@ namespace
         uint8 MaxCount;     // copies to complete it: 1 (a Talent Card is the talent at its top rank)
         uint8 Roles;        // Wildcard RoleMask bits; 0: every role
         uint8 Unlock;       // the level it can come at, slotted (Wildcard::AbilityUnlockLevel, TalentUnlockLevel)
+        uint32 School;      // a Skill Card's spell school mask (the window's filter); 0 for a Talent Card
     };
 
     struct Catalog
@@ -338,8 +339,9 @@ namespace
             for (uint32 first : order)
             {
                 Wildcard::Ability const& ability = *byFirst[first];
+                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(first);
                 add({ KIND_SKILL, first, first, SkillRarity(ability), 1, ability.Roles,
-                    Wildcard::AbilityUnlockLevel(ability) });
+                    Wildcard::AbilityUnlockLevel(ability), spellInfo ? spellInfo->SchoolMask : 0u });
                 skillNames.insert(std::string(FirstRankName(ability)));
             }
             for (uint32 i = 0; i < sTalentStore.GetNumRows(); ++i)
@@ -358,7 +360,7 @@ namespace
                     if (rank)
                         topRank = rank;
                 add({ KIND_TALENT, talent->TalentID, topRank, TalentRarity(talent), 1, 0,
-                    Wildcard::TalentUnlockLevel(talent) });
+                    Wildcard::TalentUnlockLevel(talent), 0 });
             }
             return built;
         }();
@@ -478,14 +480,14 @@ namespace
     }
 
     // The whole catalog with what the account owns: K0, K,<kind>.<id>.<spell>.<rarity>.<owned>.<max>.<golden>.<unlock
-    // level>;... KE
+    // level>.<roles (Wildcard RoleMask bits, 0 every role)>.<school mask>;... KE
     void SendCatalog(Player* player, Collection const& collection)
     {
         std::vector<std::string> items;
         for (Card const& card : GetCatalog().cards)
-            items.push_back(Acore::StringFormat("{}.{}.{}.{}.{}.{}.{}.{}", card.Kind, card.Id, card.SpellId,
+            items.push_back(Acore::StringFormat("{}.{}.{}.{}.{}.{}.{}.{}.{}.{}", card.Kind, card.Id, card.SpellId,
                 card.Rarity, Owned(collection, card.Kind, card.Id), card.MaxCount, Owned(collection, card.Kind + 2,
-                card.Id), card.Unlock));
+                card.Id), card.Unlock, card.Roles, card.School));
         SendAddon(player, "K0");
         SendBatched(player, "K,", items);
         SendAddon(player, "KE");

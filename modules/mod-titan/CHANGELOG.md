@@ -22,6 +22,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - The card editor's new look: your slots are a row of small cards (the card, its Golden Card beside it, and the level
   each comes at), the lists show rarity as gems and the unlock level beside each card, with scroll bars, and sort by
   rarity or by level.
+- **Search by what a card does**: the search bar (the editor's and the Cards tab's) looks through each card's text
+  too. Every word you type must be in it, in any order: "% spell haste", "shadow damage", "stun", "heal over time". Put
+  a phrase in quotes to find it exactly.
+- **Filters** in the card editor: Skill Cards by **Role** (Melee, Ranged, Healer, Tank, or Utility for those every role
+  uses) and by **School** (Physical, Holy, Fire, Nature, Frost, Shadow, Arcane), and both lists by **Rarity**. The
+  lists count what is shown ("37 of 443").
 
 ## 2026-11-19: The Duelist's Cannon-Fire
 

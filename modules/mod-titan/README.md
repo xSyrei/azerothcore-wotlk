@@ -753,7 +753,10 @@ forever, for every character on it (`titan_cards` in the auth database, `data/sq
     for sale. **Edit Cards** opens the card editor: the 8 slots over the cards the account owns, Abilities (Skill
     Cards) and Talents (Talent Cards) side by side under one search bar, and a Golden tab with the Golden Cards. Click
     a card to put it in the chosen slot (the next empty one is chosen after), click a slot to empty it. Each card
-    shows its unlock level, each slot the level its card is expected at; locked, the editor only shows them.
+    shows its unlock level, each slot the level its card is expected at; locked, the editor only shows them. Filters:
+    Role and School (Skill Cards; the catalog sends each card's role tags and school mask), Rarity (both lists).
+    Searches (here and on the Cards tab) match every word against the card's name and tooltip text, read once by a
+    hidden tooltip and cached (the client has no call for a spell's description); "quoted" phrases match exactly.
   - **Packs**: the duplicate tallies; the packs in the bags, opened here (the pack rips open and its five cards turn
     over; "Open all" opens up to 50 at once and lists the new cards) or from the bags; Skill and Talent Packs for
     Emberspark, at prices that climb with each purchase (1,000, 1,250, 1,500 ... 20,000, then 2,500 more each) and
