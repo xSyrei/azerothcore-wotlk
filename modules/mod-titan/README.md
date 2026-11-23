@@ -428,6 +428,11 @@ Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon wind
   (`data/sql/db-characters/titan_spec_actions.sql`).
 - **Names and icons**: click a spec's icon in the Specs tab (or right-click, Rename / icon): a name and any of the
   macro icons.
+- **Card slots**: each spec has 8, each holding one card of the account's collection (a Skill or Talent Card) and one
+  Golden Card besides (`titan_spec_cards`, `data/sql/db-characters/titan_spec_cards.sql`). The server takes only cards
+  the account owns (`Cards::Owns`); a card is in one place of a spec at a time (slotted again, it moves). They stay
+  through a prestige. Edited in the Darkmoon window (Specializations, Edit Cards); addon messages `SLOT` and `C`
+  (`src/specs.cpp`). For now they are a loadout only: they do not yet steer the level-up rolls.
 - **Rerolls**: right-click one of your spells or talents, Reroll: an Eye of Unlearning for another ability the Hero can
   learn (a capstone for another capstone), or the talent for another talent. Before the kit locks (level 8) an
   ability is **unlearned for free** instead (Unlearn): its pick comes back, to pick another.
@@ -720,7 +725,7 @@ around (Hot Streak, The Art of War, Sudden Death...), the rest by their tree row
 The lists are in `src/cards.cpp`; a talent that is a Skill Card already is no Talent Card). The versions of one ability are one card: a talent's (Mangle (Cat) and (Bear)), a form's (Swipe), a
 faction's (Bloodlust and Heroism). A card opened is the **account's**
 forever, for every character on it (`titan_cards` in the auth database, `data/sql/db-auth/titan_cards.sql`;
-`src/cards.cpp`). Slotting cards into Specializations, loadouts the level-up rolls follow, comes next.
+`src/cards.cpp`). Cards are slotted into Specializations' card slots (see Specializations).
 - **Packs** (items: Skill Card Pack 910010, Talent Card Pack 910011, Golden Skill Card Pack 910012, Golden Talent
   Card Pack 910013) hold 5 cards of their kind: a rarity rolled for each (Common 70%, Rare 24%, Epic 5%, Legendary 1%),
   then a card of it, 3 times in 4 one suiting the Hero's role. Golden Packs hold Golden Cards only, one the account has
@@ -736,8 +741,10 @@ forever, for every character on it (`titan_cards` in the auth database, `data/sq
 - **Silas Darkmoon** (creature 910110, "Cards & Specializations", beside the Keeper of the Ember;
   `data/sql/db-world/titan_darkmoon.sql`) opens the **Darkmoon window** (the `Emberforge_Darkmoon` addon, prefix `EFDM`;
   `/darkmoon` opens it anywhere to look):
-  - **Specializations**, the first page: the loadouts (Specialization I, the others to come), the Eyes' leveling track
-    and the Eyes for sale.
+  - **Specializations**, the first page: the loadouts with their 8 card slots, the Eyes' leveling track and the Eyes
+    for sale. **Edit Cards** opens the card editor: the 8 slots over the cards the account owns, Abilities (Skill
+    Cards) and Talents (Talent Cards) side by side under one search bar, and a Golden tab with the Golden Cards. Click
+    a card to put it in the chosen slot (the next empty one is chosen after), right-click a slot to empty it.
   - **Packs**: the duplicate tallies; the packs in the bags, opened here (the pack rips open and its five cards turn
     over; "Open all" opens up to 50 at once and lists the new cards) or from the bags; Skill and Talent Packs for
     Emberspark, at prices that climb with each purchase (1,000, 1,250, 1,500 ... 20,000, then 2,500 more each) and

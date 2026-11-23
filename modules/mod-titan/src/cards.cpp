@@ -48,8 +48,8 @@
 
 // Skill and Talent Cards: every Wildcard ability is a Skill Card, every talent a Talent Card (the talent at its top
 // rank: one card, bought or opened, and it is complete), each of a rarity. A card, once opened, is the account's
-// forever (auth database: titan_cards), for every character on it; slotting cards into Specializations (loadouts the
-// level-up rolls follow) comes next.
+// forever (auth database: titan_cards), for every character on it, and slotted into its Specializations' card slots
+// (specs.cpp).
 //
 // - Packs (items in the bags, opened there or from the window): a Skill Pack or Talent Pack holds 5 cards of its kind,
 //   a Golden Skill or Golden Talent Pack 5 Golden ones. Each card's rarity is rolled (Common 70%, Rare 24%, Epic 5%,
@@ -833,6 +833,19 @@ namespace Cards
     void SendEyes(Player* player)
     {
         ::SendEyes(player);
+    }
+
+    bool IsLoaded(Player* player)
+    {
+        return Loaded(player) != nullptr;
+    }
+
+    bool Owns(Player* player, uint8 kind, uint32 id, bool golden)
+    {
+        Collection* collection = Loaded(player);
+        if (!collection || kind > KIND_TALENT || !GetCatalog().byId.contains({ kind, id }))
+            return false;
+        return Owned(*collection, kind + (golden ? 2 : 0), id) > 0;
     }
 
     void ResetPrices(Player* player)

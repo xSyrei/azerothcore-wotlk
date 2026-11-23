@@ -52,12 +52,17 @@
 // - Locks: a locked ability or talent is never rerolled; a locked specialization's none are. Nothing locked can be
 //   prestiged: the Hero unlocks first. A prestige starts the active specialization over; the others keep their builds
 //   (names, icons and the bought ones stay).
+// - Card slots (titan_spec_cards): each specialization has CARD_SLOTS, each holding a card of the account's collection
+//   (cards.cpp: a Skill or Talent Card) and a Golden Card besides. A card is in one place of a specialization at a
+//   time: slotted again, it moves. Slotted cards stay through a prestige.
 //
 // Addon whispers, prefix EFSP, to and from the Classless and Darkmoon windows:
 //   from server   P,<active>,<eyes>   S,<spec>,<owned>,<locked>,<used>,<price>,<icon>,<name>   (each of the four)
+//                 C,<spec>,<slot>.<golden 0|1>.<kind>.<id>;...   the slotted cards (the client clears them on P)
 //                 L0 / L,<kind>.<id>;...   the active spec's locks (kind: 0 ability by first rank, 1 talent)   PE
 //   to server     LIST, ACTIVATE,<spec>, LOCK,<spec>,<0|1>, NAME,<spec>,<name>, ICON,<spec>,<icon>, BUY,<spec>,
-//                 LOCKENTRY,<kind>,<id>,<0|1>, REROLL,<kind>,<id>, UNLEARN,<ability> (free, before the kit locks)
+//                 LOCKENTRY,<kind>,<id>,<0|1>, REROLL,<kind>,<id>, UNLEARN,<ability> (free, before the kit locks),
+//                 SLOT,<spec>,<slot>,<golden 0|1>,<kind>,<id> (id 0: the slot emptied)
 namespace
 {
     constexpr char const* PREFIX = "EFSP";
@@ -72,6 +77,7 @@ namespace
     constexpr std::array<uint32, MAX_SPECS> PRICES = { 0, 0, 25000, 50000 };
     constexpr std::array<char const*, MAX_SPECS> NUMERALS = { "I", "II", "III", "IV" };
     constexpr std::size_t MAX_NAME = 24, MAX_ICON = 64;
+    constexpr uint8 CARD_SLOTS = 8;
 
     enum EntryKind : uint8
     {
@@ -85,6 +91,13 @@ namespace
         bool Locked = false;
     };
 
+    // A slotted card: kind 0 a Skill Card (its first rank), 1 a Talent Card (its talent); Id 0 an empty place.
+    struct SlotCard
+    {
+        uint8 Kind = 0;
+        uint32 Id = 0;
+    };
+
     struct Spec
     {
         std::string Name;
@@ -95,11 +108,12 @@ namespace
         uint32 Granted = 0, Picks = 0, Capstone = 0;            // Wildcard's counts, while inactive
         std::map<std::pair<uint8, uint32>, Entry> Entries;      // inactive: all it holds; active: its locks
         std::map<uint8, std::pair<uint32, uint8>> Actions;      // inactive: its action bars (button: action, type)
+        std::array<std::array<SlotCard, 2>, CARD_SLOTS> Cards;  // [slot][0 the card, 1 the Golden Card]
     };
 
     struct Loadouts
     {
-        uint8 Pending = 3;
+        uint8 Pending = 4;
         uint8 Active = 0;
         std::array<Spec, MAX_SPECS> Specs;
     };
@@ -161,6 +175,21 @@ namespace
             Spec const& spec = data->Specs[i];
             SendAddon(player, Acore::StringFormat("S,{},{},{},{},{},{},{}", i, spec.Owned ? 1 : 0, spec.Locked ? 1 : 0,
                 spec.Used || i == data->Active ? 1 : 0, spec.Owned ? 0 : PRICES[i], spec.Icon, spec.Name));
+            std::string head = Acore::StringFormat("C,{},", i), payload = head;
+            for (uint8 slot = 0; slot < CARD_SLOTS; ++slot)
+                for (uint8 golden = 0; golden < 2; ++golden)
+                    if (SlotCard const& card = spec.Cards[slot][golden]; card.Id)
+                    {
+                        std::string item = Acore::StringFormat("{}.{}.{}.{}", slot, golden, card.Kind, card.Id);
+                        if (payload.size() > head.size() && payload.size() + item.size() + 1 > MAX_PAYLOAD)
+                        {
+                            SendAddon(player, payload);
+                            payload = head;
+                        }
+                        payload += (payload.size() > head.size() ? ";" : "") + item;
+                    }
+            if (payload.size() > head.size())
+                SendAddon(player, payload);
         }
         for (auto const& [key, entry] : data->Specs[data->Active].Entries)
             if (entry.Locked)
@@ -214,6 +243,21 @@ namespace
         for (auto const& [button, action] : spec.Actions)
             trans->Append(Acore::StringFormat("INSERT INTO `titan_spec_actions` (`guid`, `spec`, `button`, `action`, "
                 "`type`) VALUES ({}, {}, {}, {}, {})", guid, index, button, action.first, action.second));
+        CharacterDatabase.CommitTransaction(trans);
+    }
+
+    void SaveCards(Player* player, uint8 index, Spec const& spec)
+    {
+        uint32 guid = player->GetGUID().GetCounter();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        trans->Append(Acore::StringFormat("DELETE FROM `titan_spec_cards` WHERE `guid` = {} AND `spec` = {}", guid,
+            index));
+        for (uint8 slot = 0; slot < CARD_SLOTS; ++slot)
+            for (uint8 golden = 0; golden < 2; ++golden)
+                if (SlotCard const& card = spec.Cards[slot][golden]; card.Id)
+                    trans->Append(Acore::StringFormat("INSERT INTO `titan_spec_cards` (`guid`, `spec`, `slot`, "
+                        "`golden`, `kind`, `card_id`) VALUES ({}, {}, {}, {}, {}, {})", guid, index, slot, golden,
+                        card.Kind, card.Id));
         CharacterDatabase.CommitTransaction(trans);
     }
 
@@ -301,6 +345,25 @@ namespace
                         continue;
                     itr->second.Specs[index].Actions[fields[1].Get<uint8>()] = { fields[2].Get<uint32>(),
                         fields[3].Get<uint8>() };
+                } while (result->NextRow());
+            --itr->second.Pending;
+        }));
+        queries.AddCallback(CharacterDatabase.AsyncQuery(Acore::StringFormat("SELECT `spec`, `slot`, `golden`, "
+            "`kind`, `card_id` FROM `titan_spec_cards` WHERE `guid` = {}", guid.GetCounter()))
+            .WithCallback([guid](QueryResult result)
+        {
+            auto itr = loadouts.find(guid);
+            if (itr == loadouts.end())
+                return;
+            if (result)
+                do
+                {
+                    Field* fields = result->Fetch();
+                    uint8 index = fields[0].Get<uint8>(), slot = fields[1].Get<uint8>();
+                    uint8 golden = fields[2].Get<uint8>(), kind = fields[3].Get<uint8>();
+                    if (index >= MAX_SPECS || slot >= CARD_SLOTS || golden > 1 || kind > ENTRY_TALENT)
+                        continue;
+                    itr->second.Specs[index].Cards[slot][golden] = { kind, fields[4].Get<uint32>() };
                 } while (result->NextRow());
             --itr->second.Pending;
         }));
@@ -619,6 +682,42 @@ namespace
         Send(player);
     }
 
+    // A card into a specialization's slot (id 0: the place emptied). It must be the account's (its Golden copy for
+    // the Golden place); already elsewhere in that specialization, it moves here.
+    void SlotCardIn(Player* player, uint8 index, uint8 slot, uint8 golden, uint8 kind, uint32 id)
+    {
+        Loadouts* data = Loaded(player);
+        ChatHandler handler(player->GetSession());
+        if (!data || index >= MAX_SPECS || slot >= CARD_SLOTS || golden > 1 || kind > ENTRY_TALENT)
+            return;
+        Spec& spec = data->Specs[index];
+        if (!spec.Owned)
+        {
+            handler.PSendSysMessage("Buy {} from Silas Darkmoon first.", spec.Name);
+            return;
+        }
+        if (id)
+        {
+            if (!Cards::IsLoaded(player))
+            {
+                handler.SendSysMessage("Your card collection is still loading. Try again.");
+                return;
+            }
+            if (!Cards::Owns(player, kind, id, golden == 1))
+            {
+                handler.SendSysMessage(golden ? "You don't have that Golden Card." : "You don't have that card.");
+                return;
+            }
+            for (auto& places : spec.Cards)
+                for (SlotCard& place : places)
+                    if (place.Id == id && place.Kind == kind)
+                        place = SlotCard();
+        }
+        spec.Cards[slot][golden] = { kind, id };
+        SaveCards(player, index, spec);
+        Send(player);
+    }
+
     void Buy(Player* player, uint8 index)
     {
         Loadouts* data = Loaded(player);
@@ -724,6 +823,8 @@ public:
             guid.GetCounter()));
         CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_spec_actions` WHERE `guid` = {}",
             guid.GetCounter()));
+        CharacterDatabase.Execute(Acore::StringFormat("DELETE FROM `titan_spec_cards` WHERE `guid` = {}",
+            guid.GetCounter()));
     }
 
     bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg,
@@ -775,6 +876,9 @@ public:
             Reroll(player, uint8(std::min<uint32>(spec, 2)), number(2));
         else if (command == "UNLEARN" && parts.size() == 2)
             UnlearnFree(player, spec);
+        else if (command == "SLOT" && parts.size() == 6 && number(5) != UINT32_MAX)
+            SlotCardIn(player, uint8(std::min<uint32>(spec, MAX_SPECS)), uint8(std::min<uint32>(number(2), 255)),
+                uint8(std::min<uint32>(number(3), 2)), uint8(std::min<uint32>(number(4), 2)), number(5));
         return false;
     }
 };

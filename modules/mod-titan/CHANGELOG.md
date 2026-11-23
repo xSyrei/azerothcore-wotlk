@@ -2,6 +2,17 @@
 
 Player-facing changes to Emberforge, newest first. Each entry is also posted as a patch note on the website.
 
+## 2026-11-23: Card slots
+
+- Each specialization has **8 card slots**. A slot holds one of your cards (a Skill or Talent Card) and one Golden
+  Card.
+- On Silas Darkmoon's Specializations page, **Edit Cards** opens the card editor: your 8 slots above every card you
+  own, with Abilities and Talents side by side and one search bar for both. The Golden tab shows your Golden Cards.
+- Click a card to put it in the chosen slot; the next empty slot is chosen for you. Right-click a slot to empty it. A
+  card is in one slot at a time: slot it again and it moves.
+- Each specialization keeps its own cards, and they stay when you prestige. Slotted cards don't change your level-up
+  rolls yet.
+
 ## 2026-11-19: The Duelist's Cannon-Fire
 
 - Rune of the Duelist: **Rapid Shots** replaces Piercing Round. Each combo point your finishing moves spend has a

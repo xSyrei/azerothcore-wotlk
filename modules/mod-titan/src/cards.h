@@ -34,6 +34,11 @@ namespace Cards
     bool BesideSilas(Player* player);
     // Sends the Eyes' state to the Darkmoon window.
     void SendEyes(Player* player);
+    // The account's collection has loaded (it loads at login).
+    bool IsLoaded(Player* player);
+    // The account owns the card (kind 0 a Skill Card by its first rank, 1 a Talent Card by its talent), its Golden
+    // copy when golden; false for a card not in the catalog.
+    bool Owns(Player* player, uint8 kind, uint32 id, bool golden);
 }
 
 #endif

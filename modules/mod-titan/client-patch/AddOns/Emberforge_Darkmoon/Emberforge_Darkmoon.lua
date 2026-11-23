@@ -1,6 +1,7 @@
 -- Emberforge Darkmoon: Silas Darkmoon's window (opened by talking to him), Darkmoon Cards.
---   Specializations: the Hero's loadouts, and the Eyes of Unlearning: claimed one a level from 8 to 60 (four at the
---     milestones) on the leveling track, bought at 60.
+--   Specializations: the Hero's loadouts, with their 8 card slots (Edit Cards: the editor, slotting the account's
+--     cards and Golden Cards), and the Eyes of Unlearning: claimed one a level from 8 to 60 (four at the milestones)
+--     on the leveling track, bought at 60.
 --   Packs: how close the account is to its free packs; Skill, Talent, Golden Skill and Golden Talent Packs, opened
 --     here (the reveal, or "Open all": the new cards in one list) or from the bags, and bought for Emberspark (Skill
 --     Packs for gold too, a few a week).
@@ -17,6 +18,8 @@
 --                 M,<pack>,<count> ... ME   several packs opened at once (their R between)
 --                 B,<kind>.<id>.<spell>.<rarity>   a card bought      O   open the window
 --   to server     LIST, BUY,<pack>,<0 Emberspark|1 gold>, CARD,<kind>,<id>, OPEN,<pack>,<count>, CLAIM, EYES
+-- Card slots go through src/specs.cpp (prefix EFSP): C,<spec>,<slot>.<golden>.<kind>.<id>;... from the server,
+-- SLOT,<spec>,<slot>,<golden 0|1>,<kind>,<id> (id 0: empty it) to it.
 -- Packs: 0 Skill, 1 Talent, 2 Golden Skill, 3 Golden Talent. Kinds: 0 Skill Card, 1 Talent Card.
 -- Rarities: 0 Common, 1 Rare, 2 Epic, 3 Legendary.
 
@@ -59,6 +62,9 @@ local ROMAN = { "I", "II", "III", "IV" }
 -- The Hero's specializations, from the server (src/specs.cpp, prefix EFSP): index 1-4 here, 0-3 there.
 local SPEC_PREFIX = "EFSP"
 local mySpecs = { active = 1 }
+-- The slotted cards (src/specs.cpp, C): specCards[spec][slot][0 the card | 1 the Golden Card] = catalog key.
+local CARD_SLOTS = 8
+local specCards = {}
 local CARDS_PER_PAGE, GRID_COLUMNS = 14, 7
 
 local state = { spark = 0, prices = { [0] = 0, 0, 0, 0 }, goldLeft = 0, goldPrice = 750000, duplicates = 0,
@@ -277,6 +283,62 @@ local function Tooltip(region, title, text, note)
         GameTooltip:Show()
     end)
     region:SetScript("OnLeave", function() GameTooltip:Hide() end)
+end
+
+-- Card slots ---------------------------------------------------------------------------------------------------------
+
+-- The catalog card in a spec's slot (golden: its Golden place), or nil.
+local Slotting = {}
+function Slotting.Card(spec, slot, golden)
+    local places = specCards[spec] and specCards[spec][slot]
+    local key = places and places[golden and 1 or 0]
+    return key and byKey[key], key
+end
+
+function Slotting.Count(spec)
+    local count = 0
+    for slot = 1, CARD_SLOTS do
+        for golden = 0, 1 do
+            if specCards[spec] and specCards[spec][slot] and specCards[spec][slot][golden] then
+                count = count + 1
+            end
+        end
+    end
+    return count
+end
+
+-- Where a card sits in a spec: its slot and whether in the Golden place, or nil.
+function Slotting.Of(spec, card)
+    local key = card.kind .. "." .. card.id
+    for slot = 1, CARD_SLOTS do
+        local places = specCards[spec] and specCards[spec][slot]
+        if places then
+            for golden = 0, 1 do
+                if places[golden] == key then
+                    return slot, golden == 1
+                end
+            end
+        end
+    end
+end
+
+function Slotting.Tooltip(owner, spec, slot, note)
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("Card Slot " .. slot, 1, 0.91, 0.64)
+    for golden = 0, 1 do
+        local card, key = Slotting.Card(spec, slot, golden == 1)
+        local label = golden == 1 and "Golden: " or "Card: "
+        if card then
+            local rgb = golden == 1 and GOLDEN_RGB or NAME_RGB[card.rarity]
+            GameTooltip:AddLine(label .. CardName(card), rgb[1], rgb[2], rgb[3])
+        elseif key then
+            GameTooltip:AddLine(label .. "loading...", 0.6, 0.55, 0.5)
+        else
+            GameTooltip:AddLine(label .. "empty", 0.6, 0.55, 0.5)
+        end
+    end
+    GameTooltip:AddLine(note or "Click to edit your cards.", 0.85, 0.64, 0.42)
+    GameTooltip:Show()
 end
 
 -- The window ---------------------------------------------------------------------------------------------------------
@@ -520,6 +582,14 @@ for index, label in ipairs({ "Specializations", "Packs", "Cards" }) do
     page:Hide()
     pages[index] = page
 end
+-- The card editor: a page of the Specializations tab (no tab of its own), opened by Edit Cards.
+do
+    local page = CreateFrame("Frame", nil, frame)
+    page:SetPoint("TOPLEFT", 22, -129)
+    page:SetPoint("BOTTOMRIGHT", -22, 25)
+    page:Hide()
+    pages[4] = page
+end
 local PAGE_WIDTH, PAGE_HEIGHT = WIDTH - 44, HEIGHT - 154
 local Refresh
 
@@ -587,13 +657,39 @@ for index = 1, 4 do
 end
 local slotLabel = Text(specView, 10, MUTED, BODY_FONT)
 slotLabel:SetPoint("TOPLEFT", 26, -204)
-slotLabel:SetText("CARD SLOTS  -  LOADOUTS ARE COMING NEXT")
-for index = 1, 8 do
-    local slot = specView:CreateTexture(nil, "ARTWORK")
-    slot:SetTexture(ART .. "Slot")
+slotLabel:SetText("CARD SLOTS")
+-- The card editor (Edit Cards, below): its entry points, and its widgets for the tests.
+local editor = {}
+specView.editCards = Button(specView, 104, 20, "Edit Cards", function() editor.Show() end, "ButtonHot", 11)
+specView.editCards:SetPoint("LEFT", slotLabel, "RIGHT", 12, 0)
+-- The spec's eight slots: the card's icon in each, its Golden Card's small at the corner.
+specView.slots = {}
+for index = 1, CARD_SLOTS do
+    local slot = CreateFrame("Button", nil, specView)
     slot:SetWidth(35)
     slot:SetHeight(48)
     slot:SetPoint("TOPLEFT", 26 + (index - 1) * 44, -219)
+    slot.art = slot:CreateTexture(nil, "BACKGROUND")
+    slot.art:SetTexture(ART .. "Slot")
+    slot.art:SetAllPoints()
+    slot.icon = slot:CreateTexture(nil, "ARTWORK")
+    slot.icon:SetWidth(27)
+    slot.icon:SetHeight(27)
+    slot.icon:SetPoint("CENTER", 0, 2)
+    slot.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    slot.golden = slot:CreateTexture(nil, "OVERLAY")
+    slot.golden:SetWidth(17)
+    slot.golden:SetHeight(17)
+    slot.golden:SetPoint("BOTTOMRIGHT", 4, -2)
+    slot.golden:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    slot.goldenRim = slot:CreateTexture(nil, "BORDER")
+    slot.goldenRim:SetTexture(1, 0.84, 0.3, 1)
+    slot.goldenRim:SetPoint("TOPLEFT", slot.golden, "TOPLEFT", -1, 1)
+    slot.goldenRim:SetPoint("BOTTOMRIGHT", slot.golden, "BOTTOMRIGHT", 1, -1)
+    slot:SetScript("OnEnter", function(self) Slotting.Tooltip(self, view.spec, index) end)
+    slot:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    slot:SetScript("OnClick", function() editor.Show(index) end)
+    specView.slots[index] = slot
 end
 local svButton = Button(specView, 190, 28, "", function(self)
     local spec = mySpecs[view.spec]
@@ -795,12 +891,27 @@ local function RefreshSpecs()
         .. "unlock it." or ""))
     local stats = owned and { { Thousands(eyes.bought), "Eyes bought" },
         { Thousands(eyes.abilities), "Abilities rerolled" }, { Thousands(eyes.talents), "Talents rerolled" },
-        { "0", "Cards slotted" } }
+        { tostring(Slotting.Count(view.spec)), "Cards slotted" } }
         or { { "-", "Eyes bought" }, { "-", "Abilities rerolled" }, { "-", "Talents rerolled" },
         { "-", "Cards slotted" } }
     for index, stat in ipairs(svStats) do
         stat.value:SetText(stats[index][1])
         stat.label:SetText(stats[index][2])
+    end
+    specView.editCards:SetEnabled(owned)
+    for index, slot in ipairs(specView.slots) do
+        local card = Slotting.Card(view.spec, index, false)
+        local golden = Slotting.Card(view.spec, index, true)
+        Shown(slot.icon, card ~= nil)
+        if card then
+            slot.icon:SetTexture(CardIcon(card))
+        end
+        Shown(slot.golden, golden ~= nil)
+        Shown(slot.goldenRim, golden ~= nil)
+        if golden then
+            slot.golden:SetTexture(CardIcon(golden))
+        end
+        slot.art:SetAlpha(owned and 1 or 0.5)
     end
     if not owned then
         local price = mine and mine.price or 0
@@ -2489,6 +2600,297 @@ local function RefreshCards()
     end
 end
 
+-- Edit Cards: a specialization's eight slots over the account's cards -------------------------------------------
+-- Cards: the Skill and Talent Cards owned, each list on its own side, one search bar over both; Golden: the Golden
+-- Cards. A click on a card slots it in the chosen slot (its card, or on Golden its Golden Card: a slot holds both),
+-- then the next empty slot is chosen; right-click a slot to empty it.
+
+-- Built in a function of its own: its locals would pass the 200 a function may have, counted with the file's.
+local function BuildEditor()
+    local editorPage = pages[4]
+    local EDIT_ROWS, ROW_H = 11, 26
+    local edit = { slot = 1, golden = false, search = "", offsets = { [0] = 0, 0 } }
+    local editorBack = Button(editorPage, 90, 24, "< Back", function() ShowTab(1) end, "Button", 12)
+    editorBack:SetPoint("TOPLEFT", 0, 0)
+    local editorTitle = Text(editorPage, 16, GOLD_HI, DISPLAY_FONT)
+    editorTitle:SetPoint("LEFT", editorBack, "RIGHT", 14, 0)
+    local editorTabs = {}
+    for golden, label in pairs({ [0] = "Cards", [1] = "Golden" }) do
+        editorTabs[golden] = Button(editorPage, 92, 24, label, function()
+            edit.golden = golden == 1
+            edit.offsets[0], edit.offsets[1] = 0, 0
+            Refresh()
+        end, "Button", 12)
+    end
+    local editSearch = CreateFrame("EditBox", nil, editorPage)
+    editSearch:SetWidth(190)
+    editSearch:SetHeight(24)
+    editSearch:SetPoint("TOPRIGHT", 0, 0)
+    editSearch:SetAutoFocus(false)
+    editSearch:SetFont(BODY_FONT, 11)
+    editSearch:SetTextInsets(8, 8, 0, 0)
+    editSearch:SetTextColor(unpack(GOLD_HI))
+    Slice9(editSearch, "Button", 8)
+    local editSearchHint = Text(editSearch, 11, { 0.5, 0.42, 0.32 }, BODY_FONT)
+    editSearchHint:SetPoint("LEFT", 8, 0)
+    editSearchHint:SetText("Search abilities and talents")
+    editSearch:SetScript("OnTextChanged", function(self)
+        edit.search = string.lower(self:GetText() or "")
+        edit.offsets[0], edit.offsets[1] = 0, 0
+        Shown(editSearchHint, (self:GetText() or "") == "")
+        Refresh()
+    end)
+    editSearch:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    editSearch:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+    editorTabs[1]:SetPoint("RIGHT", editSearch, "LEFT", -14, 0)
+    editorTabs[0]:SetPoint("RIGHT", editorTabs[1], "LEFT", -6, 0)
+
+    local function SendSlot(slot, golden, card)
+        SendAddonMessage(SPEC_PREFIX, string.format("SLOT,%d,%d,%d,%d,%d", view.spec - 1, slot - 1, golden and 1 or 0,
+            card and card.kind or 0, card and card.id or 0), "WHISPER", UnitName("player"))
+    end
+
+    -- The eight slots: the card large, the Golden Card beside it; the chosen one lit.
+    local SLOT_W = 104
+    local SLOT_GAP = (PAGE_WIDTH - CARD_SLOTS * SLOT_W) / (CARD_SLOTS - 1)
+    local editSlots = {}
+    for index = 1, CARD_SLOTS do
+        local slot = CreateFrame("Button", nil, editorPage)
+        slot:SetWidth(SLOT_W)
+        slot:SetHeight(84)
+        slot:SetPoint("TOPLEFT", (index - 1) * (SLOT_W + SLOT_GAP), -34)
+        slot:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+        slot.number = Text(slot, 11, MUTED, DISPLAY_FONT)
+        slot.number:SetPoint("TOPLEFT", 8, -6)
+        slot.number:SetText(index)
+        local function Socket(size, x, rgb)
+            local rim = slot:CreateTexture(nil, "BORDER")
+            rim:SetTexture(rgb[1], rgb[2], rgb[3], 0.85)
+            rim:SetWidth(size + 4)
+            rim:SetHeight(size + 4)
+            rim:SetPoint("TOPLEFT", x - 2, -20)
+            local well = slot:CreateTexture(nil, "ARTWORK")
+            well:SetTexture(0.04, 0.03, 0.02, 1)
+            well:SetPoint("TOPLEFT", rim, "TOPLEFT", 2, -2)
+            well:SetPoint("BOTTOMRIGHT", rim, "BOTTOMRIGHT", -2, 2)
+            local icon = slot:CreateTexture(nil, "OVERLAY")
+            icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+            icon:SetAllPoints(well)
+            return icon, rim
+        end
+        slot.icon, slot.rim = Socket(40, 10, { 0.55, 0.42, 0.25 })
+        slot.golden, slot.goldenRim = Socket(30, 62, GOLDEN_RGB)
+        slot.name = Text(slot, 9, GOLD_HI, BODY_FONT)
+        slot.name:SetPoint("BOTTOM", 0, 7)
+        slot.name:SetWidth(SLOT_W - 10)
+        slot.name:SetHeight(12)
+        slot:SetScript("OnClick", function(self, button)
+            local places = specCards[view.spec] and specCards[view.spec][index]
+            if button == "RightButton" and places and places[edit.golden and 1 or 0] then
+                SendSlot(index, edit.golden, nil)
+                places[edit.golden and 1 or 0] = nil
+            end
+            edit.slot = index
+            Refresh()
+        end)
+        slot:SetScript("OnEnter", function(self)
+            Slotting.Tooltip(self, view.spec, index, "Click to choose this slot. Right-click to empty it.")
+        end)
+        slot:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        editSlots[index] = slot
+    end
+    local editHint = Text(editorPage, 10, MUTED, BODY_FONT)
+    editHint:SetPoint("TOPLEFT", 0, -124)
+
+    -- The two lists: Abilities (Skill Cards) and Talents (Talent Cards).
+    local LIST_W = (PAGE_WIDTH - 14) / 2
+    local LIST_TOP = 142
+    local lists = {}
+    for kind, label in pairs({ [0] = "ABILITIES", [1] = "TALENTS" }) do
+        local list = Panel(editorPage, "Panel", kind * (LIST_W + 14), LIST_TOP, LIST_W, PAGE_HEIGHT - LIST_TOP)
+        list.heading = Heading(list, label, 12, 10)
+        list.count = Text(list, 10, MUTED, BODY_FONT)
+        list.count:SetPoint("TOPRIGHT", -14, -14)
+        list.empty = Text(list, 11, MUTED, BODY_FONT)
+        list.empty:SetPoint("TOP", 0, -70)
+        list.empty:SetWidth(LIST_W - 40)
+        list.rows = {}
+        for index = 1, EDIT_ROWS do
+            local row = CreateFrame("Button", nil, list)
+            row:SetWidth(LIST_W - 20)
+            row:SetHeight(ROW_H - 2)
+            row:SetPoint("TOPLEFT", 10, -34 - (index - 1) * ROW_H)
+            row.icon = row:CreateTexture(nil, "ARTWORK")
+            row.icon:SetWidth(22)
+            row.icon:SetHeight(22)
+            row.icon:SetPoint("LEFT", 2, 0)
+            row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+            row.name = Text(row, 12, GOLD_HI, BODY_FONT)
+            row.name:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
+            row.name:SetWidth(LIST_W - 160)
+            row.name:SetJustifyH("LEFT")
+            row.note = Text(row, 10, MUTED, BODY_FONT)
+            row.note:SetPoint("RIGHT", -6, 0)
+            local hover = row:CreateTexture(nil, "HIGHLIGHT")
+            hover:SetTexture(ART .. "Glow")
+            hover:SetBlendMode("ADD")
+            hover:SetVertexColor(1, 0.6, 0.25, 0.25)
+            hover:SetAllPoints()
+            row:SetScript("OnEnter", function(self)
+                if self.entry then
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetHyperlink("spell:" .. self.entry.spell)
+                    GameTooltip:AddLine("Click to slot it in slot " .. edit.slot .. ".", 0.85, 0.64, 0.42)
+                    GameTooltip:Show()
+                end
+            end)
+            row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            row:SetScript("OnClick", function(self)
+                if not self.entry then
+                    return
+                end
+                local slot = edit.slot
+                SendSlot(slot, edit.golden, self.entry)
+                -- Optimistically here too, so the next empty slot is chosen at once (the server's C confirms it).
+                local key = self.entry.kind .. "." .. self.entry.id
+                specCards[view.spec] = specCards[view.spec] or {}
+                for other = 1, CARD_SLOTS do
+                    local places = specCards[view.spec][other]
+                    for golden = 0, 1 do
+                        if places and places[golden] == key then
+                            places[golden] = nil
+                        end
+                    end
+                end
+                specCards[view.spec][slot] = specCards[view.spec][slot] or {}
+                specCards[view.spec][slot][edit.golden and 1 or 0] = key
+                for step = 1, CARD_SLOTS - 1 do
+                    local following = (slot - 1 + step) % CARD_SLOTS + 1
+                    local places = specCards[view.spec][following]
+                    if not (places and places[edit.golden and 1 or 0]) then
+                        edit.slot = following
+                        break
+                    end
+                end
+                Refresh()
+            end)
+            list.rows[index] = row
+        end
+        list:EnableMouseWheel(true)
+        list:SetScript("OnMouseWheel", function(_, direction)
+            edit.offsets[kind] = math.max(0, edit.offsets[kind] - direction * 3)
+            Refresh()
+        end)
+        lists[kind] = list
+    end
+
+    local function EditorCards(kind)
+        local shown = {}
+        for _, card in ipairs(catalog) do
+            local have = edit.golden and card.golden or card.owned
+            if card.kind == kind and have > 0 and (edit.search == ""
+                or string.find(string.lower(CardName(card)), edit.search, 1, true) ~= nil) then
+                shown[#shown + 1] = card
+            end
+        end
+        table.sort(shown, function(a, b)
+            if a.rarity ~= b.rarity then
+                return a.rarity > b.rarity
+            end
+            return CardName(a) < CardName(b)
+        end)
+        return shown
+    end
+
+    function editor.Refresh()
+        local mine = mySpecs[view.spec]
+        editorTitle:SetText("EDIT CARDS  -  " .. string.upper(mine and mine.name or SPECS[view.spec].name))
+        editorTabs[0]:SetOn(not edit.golden)
+        editorTabs[1]:SetOn(edit.golden)
+        for index, slot in ipairs(editSlots) do
+            local chosen = index == edit.slot
+            if slot.chosen ~= chosen or not slot.slices then
+                slot.chosen = chosen
+                Slice9(slot, chosen and "ButtonRed" or "Button", 10)
+            end
+            local card = Slotting.Card(view.spec, index, false)
+            local golden = Slotting.Card(view.spec, index, true)
+            Shown(slot.icon, card ~= nil)
+            if card then
+                slot.icon:SetTexture(CardIcon(card))
+            end
+            Shown(slot.golden, golden ~= nil)
+            if golden then
+                slot.golden:SetTexture(CardIcon(golden))
+            end
+            -- The place being edited stands out; the other dims.
+            slot.rim:SetAlpha(edit.golden and 0.45 or 1)
+            slot.goldenRim:SetAlpha(edit.golden and 1 or 0.45)
+            local shown = edit.golden and golden or card
+            slot.name:SetText(shown and CardName(shown) or (edit.golden and "No Golden Card" or "Empty"))
+            local rgb = shown and (edit.golden and GOLDEN_RGB or NAME_RGB[shown.rarity]) or MUTED
+            slot.name:SetTextColor(rgb[1], rgb[2], rgb[3])
+        end
+        editHint:SetText(edit.golden and ("Click a Golden Card to put it in slot " .. edit.slot .. " beside its card. "
+            .. "Right-click a slot to take its Golden Card out.") or ("Click a card to put it in slot " .. edit.slot
+            .. ". Right-click a slot to empty it. A slot also holds a Golden Card: see the Golden tab."))
+        for kind, list in pairs(lists) do
+            local shown = EditorCards(kind)
+            local last = math.max(0, #shown - EDIT_ROWS)
+            edit.offsets[kind] = math.min(edit.offsets[kind], last)
+            local offset = edit.offsets[kind]
+            list.count:SetText(#shown == 0 and "" or #shown <= EDIT_ROWS and (#shown .. (#shown == 1 and " card"
+                or " cards")) or string.format("%d-%d of %d", offset + 1, math.min(#shown, offset + EDIT_ROWS),
+                #shown))
+            local kindName = kind == 1 and "Talent" or "Skill"
+            list.empty:SetText(not catalogLoaded and "Loading your collection..." or edit.search ~= ""
+                and "No cards match your search." or edit.golden and ("No Golden " .. kindName
+                .. " Cards yet. Golden Packs hold them.") or ("No " .. kindName
+                .. " Cards yet. Open packs on the Packs tab, or buy cards on the Cards tab."))
+            Shown(list.empty, #shown == 0)
+            for index, row in ipairs(list.rows) do
+                local card = shown[offset + index]
+                row.entry = card
+                Shown(row, card ~= nil)
+                if card then
+                    row.icon:SetTexture(CardIcon(card))
+                    row.name:SetText(CardName(card))
+                    local rgb = edit.golden and GOLDEN_RGB or NAME_RGB[card.rarity]
+                    row.name:SetTextColor(rgb[1], rgb[2], rgb[3])
+                    local slot, inGolden = Slotting.Of(view.spec, card)
+                    if slot then
+                        row.note:SetText("|cff8dff8aSlot " .. slot .. (inGolden and " (Golden)" or "") .. "|r")
+                    else
+                        row.note:SetText((edit.golden and "Golden " or "") .. RARITY_NAMES[card.rarity])
+                    end
+                end
+            end
+        end
+    end
+
+    -- Opens the editor on the spec shown (the slot chosen: the given one, else the first empty).
+    function editor.Show(slot)
+        local mine = mySpecs[view.spec]
+        if not (mine and mine.owned or view.spec <= 2) then
+            return
+        end
+        if not slot then
+            slot = 1
+            for index = CARD_SLOTS, 1, -1 do
+                if not Slotting.Card(view.spec, index, edit.golden) then
+                    slot = index
+                end
+            end
+        end
+        edit.slot = slot
+        ShowTab(4)
+    end
+
+    editor.slots, editor.lists, editor.tabs = editSlots, lists, editorTabs
+    editor.search, editor.state = editSearch, edit
+end
+BuildEditor()
+
 -- Buying a card: a dialog over the page.
 local modal = CreateFrame("Frame", nil, frame)
 modal:SetPoint("TOPLEFT", 12, -12)
@@ -2559,13 +2961,19 @@ function Refresh()
     if pages[3]:IsShown() then
         RefreshCards()
     end
+    if pages[4]:IsShown() then
+        editor.Refresh()
+    end
 end
 
 function ShowTab(index)
     view.tab = index
     for other, page in ipairs(pages) do
         Shown(page, other == index)
-        tabs[other]:SetOn(other == index)
+        if tabs[other] then
+            -- The card editor belongs to Specializations.
+            tabs[other]:SetOn(other == index or (index == 4 and other == 1))
+        end
     end
     modal:Hide()
     Refresh()
@@ -2741,6 +3149,7 @@ events:SetScript("OnEvent", function(_, event, prefix, message, _, sender)
         elseif prefix == SPEC_PREFIX and sender == UnitName("player") then
             local kind, body = message:match("^([^,]+),?(.*)$")
             if kind == "P" then
+                wipe(specCards)
                 mySpecs.active = (tonumber(body:match("^(%d+)")) or 0) + 1
                 mySpecs.capped = body:match("^%d+,%d+,(%d)") == "1"
             elseif kind == "S" then
@@ -2749,6 +3158,19 @@ events:SetScript("OnEvent", function(_, event, prefix, message, _, sender)
                 if index then
                     mySpecs[tonumber(index) + 1] = { owned = owned == "1", locked = locked == "1",
                         price = tonumber(price) or 0, name = name }
+                end
+            elseif kind == "C" then
+                local spec, items = body:match("^(%d+),(.*)$")
+                spec = spec and tonumber(spec) + 1
+                if spec then
+                    specCards[spec] = specCards[spec] or {}
+                    for _, item in ipairs(Split(items, ";")) do
+                        local n = Numbers(item)
+                        if n[4] and n[4] > 0 and n[1] < CARD_SLOTS then
+                            specCards[spec][n[1] + 1] = specCards[spec][n[1] + 1] or {}
+                            specCards[spec][n[1] + 1][n[2] == 1 and 1 or 0] = n[3] .. "." .. n[4]
+                        end
+                    end
                 end
             elseif kind == "PE" and frame:IsShown() then
                 Refresh()
@@ -2773,4 +3195,5 @@ EmberforgeDarkmoon_State = { state = state, eyes = eyes, catalog = catalog, view
     stage = stage, results = results, modal = modal, cells = cells, packWidgets = packWidgets, tabs = tabs,
     revealCards = revealCards, resultItems = resultItems, gems = gems,
     pages = pages, claimButton = claimButton, buyEyes = buyEyes, mass = function() return mass end, chip = chip,
-    doneButton = doneButton }
+    doneButton = doneButton, editCards = specView.editCards, specSlots = specView.slots, editor = editor,
+    specCards = specCards, mySpecs = mySpecs }
