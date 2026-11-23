@@ -752,8 +752,9 @@ forever, for every character on it (`titan_cards` in the auth database, `data/sq
   - **Specializations**, the first page: the loadouts with their 8 card slots, the Eyes' leveling track and the Eyes
     for sale. **Edit Cards** opens the card editor: the 8 slots over the cards the account owns, Abilities (Skill
     Cards) and Talents (Talent Cards) side by side under one search bar, and a Golden tab with the Golden Cards. Click
-    a card to put it in the chosen slot (the next empty one is chosen after), click a slot to empty it. Each card
-    shows its unlock level, each slot the level its card is expected at; locked, the editor only shows them. Filters:
+    a card to put it in the chosen slot (the next empty one is chosen after); click a slot to choose it, right-click
+    it to empty it. Each card shows its unlock level, each slot the level its card is expected at; locked, the editor
+    only shows them. Filters:
     Role and School (Skill Cards; the catalog sends each card's role tags and school mask), Rarity (both lists).
     Searches (here and on the Cards tab) match every word against the card's name and tooltip text, read once by a
     hidden tooltip and cached (the client has no call for a spell's description); "quoted" phrases match exactly.

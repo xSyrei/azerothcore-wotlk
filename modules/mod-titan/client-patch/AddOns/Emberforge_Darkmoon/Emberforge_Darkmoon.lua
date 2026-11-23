@@ -2728,7 +2728,7 @@ end
 -- its parchment) with its Golden Card beside it, a card's back where a place is empty. Below, the cards owned:
 -- Abilities (Skill Cards) and Talents (Talent Cards) side by side under one search bar, by rarity or by unlock level;
 -- the Golden tab lists the Golden Cards. A click on a card slots it in the chosen slot (its card, or on Golden its
--- Golden Card), then the next empty slot is chosen; a click on a slot empties it.
+-- Golden Card), then the next empty slot is chosen; a click on a slot chooses it, a right-click empties it.
 
 -- Built in a function of its own: its locals would pass the 200 a function may have, counted with the file's.
 local function BuildEditor()
@@ -2823,10 +2823,11 @@ local function BuildEditor()
         hover:SetBlendMode("ADD")
         hover:SetVertexColor(1, 0.6, 0.25, 0.2)
         hover:SetAllPoints()
-        -- A click on a slot empties what the tab shows there (its card, or on Golden its Golden Card), and chooses it.
-        slot:SetScript("OnClick", function()
+        -- A left click chooses the slot to fill; a right click also empties what the tab shows there (its card, or on
+        -- Golden its Golden Card).
+        slot:SetScript("OnClick", function(_, button)
             local places = specCards[view.spec] and specCards[view.spec][index]
-            if not cardsLocked[view.spec] and places and places[edit.golden and 1 or 0] then
+            if button == "RightButton" and not cardsLocked[view.spec] and places and places[edit.golden and 1 or 0] then
                 SendSlot(index, edit.golden, nil)
                 places[edit.golden and 1 or 0] = nil
             end
@@ -2835,7 +2836,7 @@ local function BuildEditor()
         end)
         slot:SetScript("OnEnter", function(self)
             Slotting.Tooltip(self, view.spec, index, not cardsLocked[view.spec]
-                and "Click to empty it, then pick a card for it.")
+                and "Click to choose it, then pick a card for it. Right-click to empty it.")
         end)
         slot:SetScript("OnLeave", function() GameTooltip:Hide() end)
         editSlots[index] = slot

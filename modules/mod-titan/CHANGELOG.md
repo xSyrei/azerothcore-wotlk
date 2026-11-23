@@ -8,8 +8,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   Card.
 - On Silas Darkmoon's Specializations page, **Edit Cards** opens the card editor: your 8 slots above every card you
   own, with Abilities and Talents side by side and one search bar for both. The Golden tab shows your Golden Cards.
-- Click a card to put it in the chosen slot; the next empty slot is chosen for you. Click a slot to empty it. A card
-  is in one slot at a time: slot it again and it moves.
+- Click a slot to choose it, then click a card to put it there; the next empty slot is chosen for you. Right-click a
+  slot to empty it. A card is in one slot at a time: slot it again and it moves.
 - **Your slotted cards are your level-ups.** Every card shows the level it unlocks at. Each level-up that gives an
   ability (levels 9, 11, 13...) gives your next slotted Skill Card unlocked by then instead of a random one, and each
   one that gives a talent (8, 10, 12...) your next Talent Card. Several unlocked at once come one after another: three

@@ -362,13 +362,15 @@ check(sentSpec() == "SLOT,0,2,0,0,5" and at["0.5"] == 21, "one unlocked at 20 co
 check(e.slots[1].when.text == "LV 9" and e.slots[2].when.text == "LV 11" and e.slots[1].goldenWhen.text == "LV 16"
     and e.slots[3].when.text == "LV 21" and e.slots[4].empty.text == "Empty",
     "each slot's small cards show the level they come at")
+local before = #sent
 e.slots[2]:Click()
-check(sentSpec() == "SLOT,0,1,0,0,0" and t.specCards[1][2][0] == nil and e.state.slot == 2,
-    "a click on a slot empties it and chooses it")
+check(#sent == before and t.specCards[1][2][0] == "0.133" and e.state.slot == 2, "a click on a slot chooses it")
+e.slots[2].scripts.OnClick(e.slots[2], "RightButton")
+check(sentSpec() == "SLOT,0,1,0,0,0" and t.specCards[1][2][0] == nil, "a right-click empties it")
 e.tabs[1]:Click()
 check(e.state.golden and #rows(0) == 0 and #rows(1) == 1, "Golden: the Golden Cards owned")
-e.slots[1]:Click()
-check(sentSpec() == "SLOT,0,0,1,0,0", "on Golden a click empties the slot's Golden Card")
+e.slots[1].scripts.OnClick(e.slots[1], "RightButton")
+check(sentSpec() == "SLOT,0,0,1,0,0", "on Golden a right-click empties the slot's Golden Card")
 e.lists[1].rows[1]:Click()
 check(sentSpec() == "SLOT,0,0,1,1,2300", "a Golden Card goes in the slot's Golden place")
 
@@ -379,9 +381,9 @@ specs("C,1,0,")
 specs("PE")
 check(t.cardsLocked[1] and t.specCards[1][2][0] == "0.133" and t.specCards[1][1] == nil,
     "the server's slots replace the window's, locked")
-local before = #sent
+before = #sent
 e.tabs[0]:Click()
-e.slots[2]:Click()
+e.slots[2].scripts.OnClick(e.slots[2], "RightButton")
 e.lists[0].rows[1]:Click()
 check(#sent == before and t.specCards[1][2][0] == "0.133", "locked: clicks change nothing")
 check(e.lists[0].rows[1].alpha == 0.5, "the cards not slotted are dimmed")
