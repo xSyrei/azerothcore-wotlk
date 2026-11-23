@@ -623,6 +623,9 @@ server("S,8,5,1,21,0,0,0,-,0,0,0,0,0,30")
 EmberforgeRunes_Open()
 run(0.7)
 check(debug.unlearnBar.target == 0, "from level 8 it stays")
+-- The frame's own update runs (it closes the panel when the UI comes back).
+frame.scripts.OnUpdate(frame, 0.02)
+check(frame:IsShown(), "the panel's update runs")
 -- In combat it waits: it opens once the fight is over; a fight starting closes it.
 frame:Hide()
 local fighting = true

@@ -449,7 +449,8 @@ Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon wind
   by it); the other specs keep their builds (names, icons and the ones bought stay).
 
 ## Legendary Runes
-From level 5 a Hero binds a **Legendary Rune** to each specialization (`src/runes.cpp`; the design: the
+From level 1 a Hero binds a **Legendary Rune** to each specialization (the panel opens by itself from level 5 while
+none is bound) (`src/runes.cpp`; the design: the
 "Emberforge Legendary Runes" doc). A rune is a loop: a builder makes a resource, a spender cashes it in with an
 empowered effect; three modifier slots (Invocation: how you build; Manifestation: what the spender does; Adaptation:
 utility or a tradeoff) take one pick each, from three.

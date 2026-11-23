@@ -6,6 +6,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ### Legendary Rune panel
 
+- Legendary Runes can be seen and bound **from level 1** (/runes or the rune button). The panel only opens by itself
+  from level 5, while you haven't chosen one.
+- Fixed: the rune panel's Lua error ("attempt to index global 'alone'") every frame while it was open.
 - The rune panel **hides the rest of the interface** while it is open, and opens only out of combat (asked for in a
   fight, it opens when the fight ends; a fight starting closes it). Escape or Alt+Z closes it.
 - With nothing to suggest, it opens straight to the **search**.

@@ -1,7 +1,8 @@
 -- Emberforge Runes: the Legendary Rune panel, as the "Legendary Rune Panel" mockup draws it: no window, one 16:9
 -- stage over the game world (1600 x 900 points, scaled to the screen), its artwork, light and particles.
 --
--- Unbound (level 5 on): "Legendary Runic Enhancements", up to three rune cards the server suggests for the Hero's
+-- Unbound (from level 1; it opens by itself from 5): "Legendary Runic Enhancements", up to three rune cards the
+-- server suggests for the Hero's
 -- abilities, and Browse all (every rune in one list: a search over names, abilities and keywords, role and "usable now"
 -- filters, scrolled with the mouse wheel). Choosing one asks first (a rune is bound until a prestige), then the
 -- chosen card erupts, the others fade away, it condenses into the rune's medallion, the medallion breaks
@@ -53,8 +54,8 @@ local art = EmberforgeRunesArt or { runes = {}, labels = {}, card = { u = 1, v =
 
 -- Two runes a specialization (slots: the first from base, the second from second); rune, mods, unlock and offers
 -- are the slot the panel shows (view.slot), copied from slots by UseSlot.
-local state = { level = UnitLevel and UnitLevel("player") or 1, unlock = 5, spec = 1, rune = 0, mods = { 0, 0, 0 },
-    offers = {}, prompt = false, built = {}, needs = {}, error = nil, loaded = false, base = 5, second = 30,
+local state = { level = UnitLevel and UnitLevel("player") or 1, unlock = 1, spec = 1, rune = 0, mods = { 0, 0, 0 },
+    offers = {}, prompt = false, built = {}, needs = {}, error = nil, loaded = false, base = 1, second = 30,
     allOffers = {}, slots = { { rune = 0, mods = { 0, 0, 0 } }, { rune = 0, mods = { 0, 0, 0 } } } }
 -- mode: locked, offers, browse or build; phase: the mockup's (intro, offer, erupt, condense, split, build).
 local view = { mode = nil, phase = nil, page = 1, prompted = {}, now = 0, t0 = 0, picks = { 0, 0, 0 }, slot = 1 }
@@ -2410,14 +2411,6 @@ local function Step(dt)
     end
 end
 
-frame:SetScript("OnUpdate", function(_, elapsed)
-    -- The UI shown again (Escape, Alt+Z): the panel closes.
-    if alone.hid and UIParent:IsShown() then
-        frame:Hide()
-        return
-    end
-    Step(math.min(0.05, elapsed))
-end)
 
 -- The rest of the UI hidden while the panel is open: UIParent, and with it everything but this panel. The tooltip
 -- and the bind questions come along (lifted onto the world frame at the UI's scale). Escape or Alt+Z shows the UI
@@ -2460,6 +2453,15 @@ end
 function alone.InCombat()
     return (UnitAffectingCombat and UnitAffectingCombat("player")) or (InCombatLockdown and InCombatLockdown())
 end
+
+frame:SetScript("OnUpdate", function(_, elapsed)
+    -- The UI shown again (Escape, Alt+Z): the panel closes.
+    if alone.hid and UIParent:IsShown() then
+        frame:Hide()
+        return
+    end
+    Step(math.min(0.05, elapsed))
+end)
 
 frame:SetScript("OnShow", function()
     Fit()

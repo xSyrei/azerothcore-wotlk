@@ -63,11 +63,12 @@
 // own dossiers: 34 Arcane Mind, 35 the Splintered Crown, 36 Phoenix Wake, 37 Astral Horizon, 38 Guiding Light; and
 // three druid runes: 39 Elune's Guardian, 40 Astral Convergence, 41 Ursoc's Champion.
 //
-// - Unlocked at level 5: the panel (the Emberforge_Runes addon, addon whispers with prefix EFRN) opens by itself
-//   while the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
+// - Unlocked from level 1 (UNLOCK_LEVEL): /runes and the rune button open the panel (the Emberforge_Runes addon,
+//   addon whispers with prefix EFRN) and a rune can be bound; from level 5 (PROMPT_LEVEL) it opens by itself while
+//   the active specialization has no rune, suggesting up to 3 the Hero's abilities can use, with every rune
 //   under Browse all (one missing a required ability says so; it can still be bound after a warning naming what it
 //   lacks), each with a Preview of its build that binds nothing.
-// - Two runes per specialization, each with its own three modifiers: the first from level 5 (titan_runes,
+// - Two runes per specialization, each with its own three modifiers: the first from level 1 (titan_runes,
 //   db-characters), the second from level 30 at full power (titan_runes_second). Each is chosen once: a prestige
 //   clears both, or .unbindrune (titan_commands.cpp) lets go of the active spec's (one or both) to bind again.
 //   Modifiers change freely out of combat.
@@ -100,7 +101,8 @@
 namespace
 {
     constexpr char const* PREFIX = "EFRN";
-    constexpr uint8 UNLOCK_LEVEL = 5;
+    constexpr uint8 UNLOCK_LEVEL = 1;               // a rune can be seen and bound from the start
+    constexpr uint8 PROMPT_LEVEL = 5;               // the panel opens by itself from here while Rune I is unbound
     constexpr uint8 RUNE_SLOTS = 2;                 // two Legendary Runes a specialization, each with its modifiers
     constexpr uint8 SECOND_UNLOCK_LEVEL = 30;       // the second, at full power
     constexpr uint8 MAX_SPECS = 4;
@@ -6158,13 +6160,20 @@ namespace
 
     // ---- The panel ---------------------------------------------------------------------------------------------
 
+    // The level a rune slot's panel opens by itself at, while it is empty: Rune I's from PROMPT_LEVEL (bound earlier
+    // from the panel itself), Rune II's when it unlocks.
+    uint8 PromptLevel(uint8 runeSlot)
+    {
+        return runeSlot ? SECOND_UNLOCK_LEVEL : PROMPT_LEVEL;
+    }
+
     // A slot open and empty: the panel opens by itself.
     bool Prompt(Player* player)
     {
         if (!Wildcard::IsHero(player) || Specs::IsDormant(player))
             return false;
         for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
-            if (player->GetLevel() >= SlotUnlock(runeSlot) && !ActiveChoice(player, runeSlot).Rune)
+            if (player->GetLevel() >= PromptLevel(runeSlot) && !ActiveChoice(player, runeSlot).Rune)
                 return true;
         return false;
     }
@@ -7410,7 +7419,7 @@ public:
                 guid.GetCounter()));
     }
 
-    // Every level: the panel's state (its level); at UNLOCK_LEVEL the panel opens while the active spec has no rune.
+    // Every level: the panel's state (its level); at PROMPT_LEVEL the panel opens while the active spec has no rune.
     void OnPlayerLevelChanged(Player* player, uint8 oldLevel) override
     {
         if (!Wildcard::IsHero(player))
@@ -7420,7 +7429,7 @@ public:
         // A slot opening: the panel opens (the second at level 30, with a word of it).
         bool opened = false;
         for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
-            opened |= oldLevel < SlotUnlock(runeSlot) && player->GetLevel() >= SlotUnlock(runeSlot);
+            opened |= oldLevel < PromptLevel(runeSlot) && player->GetLevel() >= PromptLevel(runeSlot);
         if (oldLevel < SECOND_UNLOCK_LEVEL && player->GetLevel() >= SECOND_UNLOCK_LEVEL)
             ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeLegendary Rune:|r your second Legendary "
                 "Rune is unlocked. Choose it in the rune panel (Rune II).");
