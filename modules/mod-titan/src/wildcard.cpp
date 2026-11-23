@@ -197,7 +197,7 @@ namespace
         "Hungering Cold", "Unbreakable Armor", "Frost Strike", "Howling Blast", "Corpse Explosion", "Ghoul Frenzy",
         "Anti-Magic Zone", "Bone Shield", "Scourge Strike", "Summon Gargoyle",
         // Druid
-        "Insect Swarm", "Moonkin Form", "Typhoon", "Force of Nature", "Starfall", "Survival Instincts", "Feral Charge",
+        "Insect Swarm", "Moonkin Form", "Typhoon", "Force of Nature", "Starfall", "Feral Charge",
         "Mangle", "Berserk", "Nature's Swiftness", "Swiftmend", "Tree of Life", "Wild Growth",
         // Hunter
         "Intimidation", "Bestial Wrath", "Beast Mastery", "Aimed Shot", "Readiness", "Trueshot Aura", "Silencing Shot",
@@ -219,7 +219,7 @@ namespace
         "Ghostly Strike", "Preparation", "Hemorrhage", "Premeditation", "Shadowstep", "Shadow Dance",
         // Shaman
         "Elemental Mastery", "Totem of Wrath", "Thunderstorm", "Feral Spirit", "Riptide", "Earth Shield",
-        "Tidal Force", "Mana Tide Totem", "Shamanistic Rage", "Lava Lash",
+        "Tidal Force", "Mana Tide Totem", "Shamanistic Rage", "Lava Lash", "Cleanse Spirit",
         // Warlock
         "Curse of Exhaustion", "Dark Pact", "Unstable Affliction", "Haunt", "Soul Link", "Fel Domination",
         "Demonic Empowerment", "Summon Felguard", "Metamorphosis", "Shadowburn", "Conflagrate", "Shadowfury",
@@ -333,12 +333,17 @@ namespace
     constexpr char const* POISONS[] = { "Deadly Poison" };
     constexpr char const* CORRUPTIONS[] = { "Corruption", "Unstable Affliction" };
     constexpr char const* SHADOW_WORD_PAIN[] = { "Shadow Word: Pain" };
+    // Fire Nova bursts from the shaman's fire totem: none down, it does nothing.
+    constexpr char const* FIRE_TOTEMS[] = { "Searing Totem", "Magma Totem", "Flametongue Totem", "Fire Elemental Totem",
+        "Totem of Wrath", "Frost Resistance Totem" };
+    // Savage Roar is a Cat Form finisher (its data names no form: the client patch freed the stances).
+    constexpr char const* CAT_FORM[] = { "Cat Form" };
     constexpr NeedsPet PAIRED_ABILITIES[] = {
         { "Conflagrate", IMMOLATES }, { "Ice Lance", FROST_CHILLS }, { "Deep Freeze", FROST_CHILLS },
         { "Obliterate", DISEASES }, { "Scourge Strike", DISEASES },
         { "Pestilence", DISEASES }, { "Heart Strike", DISEASES }, { "Swiftmend", HEALS_OVER_TIME },
         { "Lava Burst", FLAME_SHOCK }, { "Envenom", POISONS }, { "Haunt", CORRUPTIONS },
-        { "Mind Flay", SHADOW_WORD_PAIN },
+        { "Mind Flay", SHADOW_WORD_PAIN }, { "Fire Nova", FIRE_TOTEMS }, { "Savage Roar", CAT_FORM },
     };
 
     // A pet targeted by a class's ability: that class's pets.
@@ -373,7 +378,7 @@ namespace
         { "Battle Stance", TAG_MELEE | TAG_TANK }, { "Berserker Stance", TAG_MELEE },
         { "Cat Form", TAG_MELEE }, { "Moonkin Form", TAG_RANGED }, { "Tree of Life", TAG_HEALER },
         { "Shadowform", TAG_RANGED }, { "Conjure Food", TAG_RANGED }, { "Conjure Water", TAG_RANGED },
-        { "Conjure Refreshment", TAG_RANGED },
+        { "Conjure Refreshment", TAG_RANGED }, { "Cleanse Spirit", TAG_HEALER },
         // Buffs, auras and totems for one kind of fighting: their spells deal no damage and heal no one, so they
         // had no role and suited every Hero (Devotion Aura for a Ranged one).
         { "Devotion Aura", TAG_TANK | TAG_MELEE }, { "Retribution Aura", TAG_TANK | TAG_MELEE },
@@ -468,6 +473,45 @@ namespace
             }
         }
         return roles;
+    }
+
+    // An ability whose data shows no damage, heal or threat (Execute's script, Rapid Fire's haste, Bloodrage's Rage,
+    // Readiness, a shout) still belongs to a kind of fighting, or it went to every role, a Healer's Execute: Melee and
+    // Tank for what spends Rage, runes or Runic Power and the Warrior's and Death Knight's; Melee for what spends
+    // Energy or Focus, the Rogue's and Hunter's, and weapon attacks; Healer and Ranged for a heal on oneself (Desperate
+    // Prayer). The rest (the casters' buffs and utility) stays for everyone.
+    uint8 FallbackRoles(uint8 classId, SpellInfo const* spellInfo)
+    {
+        switch (spellInfo->PowerType)
+        {
+            case POWER_RAGE:
+            case POWER_RUNIC_POWER:
+                return TAG_MELEE | TAG_TANK;
+            case POWER_ENERGY:
+            case POWER_FOCUS:
+                return TAG_MELEE;
+            default:
+                break;
+        }
+        if (spellInfo->RuneCostID)
+            return TAG_MELEE | TAG_TANK;
+        switch (classId)
+        {
+            case CLASS_WARRIOR:
+            case CLASS_DEATH_KNIGHT:
+                return TAG_MELEE | TAG_TANK;
+            case CLASS_ROGUE:
+            case CLASS_HUNTER:
+                return TAG_MELEE;
+            default:
+                break;
+        }
+        if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED)
+            return TAG_MELEE;
+        if (spellInfo->HasEffect(SPELL_EFFECT_HEAL) || spellInfo->HasEffect(SPELL_EFFECT_HEAL_PCT)
+            || spellInfo->HasEffect(SPELL_EFFECT_HEAL_MAX_HEALTH) || spellInfo->HasAura(SPELL_AURA_PERIODIC_HEAL))
+            return TAG_HEALER | TAG_RANGED;
+        return 0;
     }
 
     // A talent whose words reach every spell of a kind (global_talents.h): -1 when it is not one, else whether its
@@ -1018,6 +1062,35 @@ namespace
         { "Vulnerability", { "Spirit Bomb" } }, { "Fel Flame Fortification", { "Immolation Aura" } },
     };
 
+    // Other classes' scripted talents (their data names no ability: a dummy, a proc the core scripts) with what they
+    // need, any one of: without it they did nothing (Improved Hamstring without Hamstring, Shatter without a frost
+    // spell, Spirit Bond without a pet). They were "for their class": any of its abilities let them roll.
+    constexpr char const* NEED_HAMSTRING[] = { "Hamstring" };
+    constexpr char const* NEED_KICK[] = { "Kick" };
+    constexpr char const* NEED_BLOOD_STRIKE[] = { "Blood Strike" };
+    constexpr char const* NEED_STEALTH[] = { "Stealth" };
+    constexpr char const* NEED_HUNTER_PET[] = { "Tame Beast" };
+    constexpr char const* NEED_FERAL_FORM[] = { "Cat Form", "Bear Form", "Dire Bear Form" };
+    constexpr char const* NEED_DEFENSIVE_STANCE[] = { "Defensive Stance" };
+    constexpr char const* NEED_FROST_SPELL[] = { "Frostbolt", "Ice Lance", "Frost Nova", "Cone of Cold", "Blizzard",
+        "Frostfire Bolt", "Deep Freeze", "Frost Shock", "Icy Touch", "Howling Blast" };
+    constexpr char const* NEED_FIRE_SPELL[] = { "Fireball", "Fire Blast", "Scorch", "Flamestrike", "Pyroblast",
+        "Living Bomb", "Blast Wave", "Dragon's Breath", "Frostfire Bolt", "Flame Shock", "Lava Burst", "Immolate",
+        "Incinerate", "Soul Fire", "Searing Pain", "Conflagrate", "Chaos Bolt", "Rain of Fire", "Hellfire" };
+    constexpr char const* NEED_SHAMAN_HEAL[] = { "Healing Wave", "Lesser Healing Wave", "Chain Heal", "Riptide" };
+    struct TalentNeeds
+    {
+        char const* Talent;
+        std::span<char const* const> Abilities;
+    };
+    constexpr TalentNeeds TALENT_NEEDS[] = {
+        { "Improved Hamstring", NEED_HAMSTRING }, { "Improved Kick", NEED_KICK }, { "Desolation", NEED_BLOOD_STRIKE },
+        { "Master of Deception", NEED_STEALTH }, { "Master of Subtlety", NEED_STEALTH },
+        { "Spirit Bond", NEED_HUNTER_PET }, { "Feral Swiftness", NEED_FERAL_FORM },
+        { "Survival Instincts", NEED_FERAL_FORM }, { "Tactical Mastery", NEED_DEFENSIVE_STANCE },
+        { "Shatter", NEED_FROST_SPELL }, { "Ignite", NEED_FIRE_SPELL }, { "Ancestral Healing", NEED_SHAMAN_HEAL },
+    };
+
     // How much likelier a talent improving an ability the Hero knows is than one only for a class they have an
     // ability of (a scripted talent of another kind): reports had the Demon Hunter's barely ever rolling, lost
     // among every class's.
@@ -1093,6 +1166,10 @@ namespace
                             return 3;
                     return 0;
                 }
+            for (TalentNeeds const& needs : TALENT_NEEDS)
+                if (name == needs.Talent)
+                    return std::any_of(needs.Abilities.begin(), needs.Abilities.end(),
+                        [&](char const* ability) { return knownNames.count(ability) != 0; }) ? 3 : 0;
 
             // A talent for every spell of a kind ("all means all"): for a Hero knowing any of that kind.
             if (GlobalReach(spellInfo->Id, spellInfo) >= 0)
@@ -1128,6 +1205,28 @@ namespace
 
             if (uint8 roles = StatTalentRoles(spellInfo))
                 return SuitsRole(player, roles) ? 1 : 0;
+
+            // A proc the core scripts on certain spells (spell_proc): only for a Hero who knows one of them, by their
+            // class family's flags, else by their school (Ignite's fire, Shatter's frost).
+            if (SpellProcEntry const* proc = sSpellMgr->GetSpellProcEntry(spellInfo->Id))
+            {
+                if (proc->SpellFamilyMask)
+                {
+                    for (SpellInfo const* known : knownSpells)
+                        if (known->IsAffected(proc->SpellFamilyName, proc->SpellFamilyMask))
+                            return 3;
+                    return 0;
+                }
+                if (proc->SchoolMask)
+                {
+                    for (SpellInfo const* known : knownSpells)
+                        if ((known->SchoolMask & proc->SchoolMask) && (known->HasEffect(SPELL_EFFECT_SCHOOL_DAMAGE)
+                            || known->HasAura(SPELL_AURA_PERIODIC_DAMAGE)
+                            || known->HasEffect(SPELL_EFFECT_HEALTH_LEECH)))
+                            return 3;
+                    return 0;
+                }
+            }
 
             // Scripted (a dummy): for its class's abilities.
             return (tabInfo->ClassMask & knownClasses) ? 2 : 0;
@@ -1864,6 +1963,8 @@ namespace Wildcard
                 for (RoleAbility const& tagged : ROLE_ABILITIES)
                     if (hasName(ability, tagged.Name))
                         ability.Roles = tagged.Roles;
+                if (!ability.Roles)
+                    ability.Roles = FallbackRoles(ability.ClassId, spellInfo);
                 // The Demon Hunter's Vengeance is a tank's: its damage serves a tank too.
                 if (ability.SkillLine == SKILL_VENGEANCE && ability.Roles)
                     ability.Roles |= TAG_TANK;

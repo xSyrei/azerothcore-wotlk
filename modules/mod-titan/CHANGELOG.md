@@ -4,6 +4,19 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Wildcard rolls
+
+- Abilities whose spell shows no damage, healing or threat no longer go to every role: Execute, Bloodrage,
+  Demoralizing Shout and the like (Rage, Warrior) go to Melee and Tank; Rapid Fire, Readiness, Concussive Shot (the
+  Hunter's), the Rogue's and anything spending Energy or Focus to Melee; Desperate Prayer and other heals on yourself
+  to Healer and Ranged. Buffs and utility of the casters still suit everyone.
+- Talents that improve one ability need it: Improved Hamstring (Hamstring), Improved Kick (Kick), Desolation (Blood
+  Strike), Master of Deception and Master of Subtlety (Stealth), Spirit Bond (a pet), Feral Swiftness and Survival
+  Instincts (Cat or Bear Form), Tactical Mastery (Defensive Stance), Shatter (a frost spell), Ignite (a fire spell),
+  Ancestral Healing (a shaman heal). Talents the game triggers only from certain spells need one of those spells.
+- Fire Nova needs a fire totem, and Savage Roar needs Cat Form.
+- Survival Instincts is a talent (a Talent Card), and Cleanse Spirit an ability (a Skill Card, for Healers).
+
 ### Legendary Rune panel
 
 - **A new look**, from the redesign's mockups:
