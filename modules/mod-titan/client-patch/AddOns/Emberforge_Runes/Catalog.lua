@@ -638,14 +638,18 @@ EmberforgeRunesCatalog = {
       role = "Ranged DPS (Mage, Arcane)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_ArcaneMind",
-      keywords = "mage arcane blast missiles insight channel mana burst volley",
+      keywords = "mage arcane blast missiles insight channel mana burst volley lightning bolt starfire frostbolt " ..
+          "explosion evocation barrage",
       slots = { "Invocation", "Manifestation", "Adaptation" },
       builtFrom = "Arcane Blast",
       spentWith = "Arcane Missiles",
       resource = "Arcane Insight, up to 4",
       core = "Arcane Blast grants 1 Arcane Insight (15 sec, renewed by each one; up to 4). At 4, your next Arcane " ..
           "Missiles spends it all: it costs no mana and fires 5 Insight missiles with it, each dealing 40% of an " ..
-          "Arcane Missile's damage. Interrupting the channel loses the rest of the volley.",
+          "Arcane Missile's damage. Interrupting the channel loses the rest of the volley. Arcane Barrage spends " ..
+          "up to 2 Insight: 15% more damage for each, and one other enemy within 8 yards hit for 30% of it for " ..
+          "each. Finishing an empowered Arcane Missiles makes your next Arcane Blast within 6 sec instant. " ..
+          "Lightning Bolt: a hit grants 1 Insight, once every 8 sec.",
       loop = "Arcane Blast until Insight reaches 4, then Arcane Missiles.",
       mods = {
         { name = "Accelerated Thought",
@@ -655,6 +659,12 @@ EmberforgeRunesCatalog = {
         { name = "Patient Calculation",
           text = "Insight stacks to 6 instead of 4. Spending 5 or 6 makes the Insight missiles deal 15% more damage " ..
               "for each one above 4." },
+        { name = "Storm Conduit",
+          text = "A Lightning Bolt hit on an enemy your Arcane Blast hit in the last 15 sec makes your next " ..
+              "Insight volley deal 20% more damage (8 sec)." },
+        { name = "Starfall Equation",
+          text = "A Starfire hit grants 1 Insight, once every 8 sec, and makes your next Arcane Blast within 6 sec " ..
+              "deal 10% more damage." },
         { name = "Focused Intention",
           text = "Insight missiles deal 40% more damage to their target: 56% of an Arcane Missile's damage." },
         { name = "Fractured Thought",
@@ -663,6 +673,12 @@ EmberforgeRunesCatalog = {
         { name = "Lingering Equation",
           text = "The Insight missiles leave Arcane Echo on their target: 30% of their damage again, over 6 sec. A " ..
               "new Echo keeps what is left of the last." },
+        { name = "Missile Shards",
+          text = "A Frostbolt hit readies your next empowered Arcane Missiles (within 15 sec): its first Insight " ..
+              "missile also hits 2 other enemies within 8 yards for half its damage." },
+        { name = "Arcane Charge",
+          text = "Arcane Explosion within 6 sec of finishing an empowered Arcane Missiles bursts for 25% of your " ..
+              "spell power on up to 5 enemies within 8 yards." },
         { name = "Unbound Mind",
           text = "An empowered Arcane Missiles does not channel: its missiles fly from you on their own, one every " ..
               "0.5 sec, so you can move and keep casting." },
@@ -672,6 +688,12 @@ EmberforgeRunesCatalog = {
         { name = "Overclocked Intellect",
           text = "The Insight missiles all fly as the channel starts, 0.15 sec apart, and deal 20% more damage: 48% " ..
               "of an Arcane Missile's damage." },
+        { name = "Evocative Mind",
+          text = "Evocation begun within 30 sec of an empowered Arcane Missiles restores 2% of your maximum mana " ..
+              "more, once every 30 sec." },
+        { name = "Shocking Clarity",
+          text = "Finishing an empowered Arcane Missiles while your Lightning Shield is up sends a bolt of 25% of " ..
+              "your spell power as Nature damage at its target." },
       },
       builds = {
         { name = "The Focus", mods = { "Accelerated Thought", "Focused Intention", "Unbound Mind" },
@@ -735,7 +757,8 @@ EmberforgeRunesCatalog = {
       role = "Ranged DPS (Mage, Fire)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_PhoenixWake",
-      keywords = "mage fire pyroblast fire blast phoenix ember bird burn trail flock",
+      keywords = "mage fire pyroblast fire blast phoenix ember bird burn trail flock flame shock lava burst " ..
+          "flamestrike scorch fire ward",
       slots = { "Phoenix", "Flight", "Wake" },
       builtFrom = "Pyroblast",
       spentWith = "Fire Blast",
@@ -743,17 +766,25 @@ EmberforgeRunesCatalog = {
       core = "Pyroblast leaves a Phoenix Ember on its target for 8 sec (one at a time: a new Pyroblast moves it). " ..
           "Fire Blast on that target calls the phoenix: it dives from the sky above you onto the target at 20 yards " ..
           "a second, burning up to 4 enemies under its path for 25% of that Pyroblast's damage each, and strikes " ..
-          "the target for 50%.",
+          "the target for 55% and burns it for 30% of your spell power over 6 sec (Phoenix Burn). Pyroblast deals " ..
+          "15% more to a target with your Phoenix Burn. Flame Shock: crossing your Flame Shock target, the " ..
+          "phoenix erupts for 20% of your spell power on up to 3 enemies within 6 yards (once a phoenix).",
       loop = "Pyroblast, then Fire Blast the same target; the phoenix burns the enemies between you and it.",
       mods = {
         { name = "Sun Talon",
-          text = "The phoenix strikes the Ember's target for 50% more: 75% of the Pyroblast's damage." },
+          text = "The phoenix strikes the Ember's target for 50% more: 82% of the Pyroblast's damage." },
         { name = "Broadwing",
           text = "The phoenix's path is 6 yards wide instead of 3, and enemies in it take 30% of the Pyroblast's " ..
               "damage instead of 25%." },
         { name = "Ashen Flock",
           text = "Three phoenixes dive instead, each with a third of the damage. Each one whose flight ends makes " ..
               "your next Pyroblast cast 5% faster, up to 15%, for 6 sec." },
+        { name = "Flamekeeper",
+          text = "Releasing the phoenix on your Flame Shock target also deals 20% of your spell power as Fire " ..
+              "damage to it." },
+        { name = "Lava Flock",
+          text = "A Lava Burst hit on the Ember's target adds one more bird to that phoenix, dealing 30% of its " ..
+              "damage (one for each Ember)." },
         { name = "Homeward Flame",
           text = "The phoenix dives twice as fast, 40 yards a second. When its flight ends, Fire Blast's cooldown " ..
               "is 2 sec shorter." },
@@ -763,6 +794,12 @@ EmberforgeRunesCatalog = {
         { name = "Wild Flight",
           text = "After its strike, the phoenix swoops through up to 2 other enemies within 10 yards of the Ember's " ..
               "target, striking each for 25% of the Pyroblast's damage." },
+        { name = "Blazing Path",
+          text = "The first time a phoenix flies through your Flamestrike, it deals 20% of your spell power as " ..
+              "Fire damage to up to 4 enemies in it." },
+        { name = "Hot Pursuit",
+          text = "A Scorch hit on the Ember's target makes your next phoenix strike its target for 25% more damage " ..
+              "(8 sec)." },
         { name = "Scorched Earth",
           text = "The phoenix leaves a trail of fire for 4 sec: up to 5 enemies on it burn for 6% of the " ..
               "Pyroblast's damage every second. Trails don't stack." },
@@ -772,6 +809,12 @@ EmberforgeRunesCatalog = {
         { name = "Rebirth",
           text = "When the phoenix's flight ends, it bursts for 35% of the Pyroblast's damage to up to 5 enemies " ..
               "within 6 yards of it. A flock bursts once." },
+        { name = "Wildfire Return",
+          text = "When the phoenix's flight ends, your Flame Shock on its target lasts 2 sec longer, up to 6 sec " ..
+              "for each cast." },
+        { name = "Emberguard",
+          text = "When the phoenix's flight ends while your Fire Ward is up, you gain an absorb of 40% of your " ..
+              "spell power for 6 sec, once every 12 sec." },
       },
       builds = {
         { name = "The Sun", mods = { "Sun Talon", "Homeward Flame", "Scorched Earth" },
@@ -787,15 +830,19 @@ EmberforgeRunesCatalog = {
       role = "Ranged DPS (Mage, Arcane)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_AstralHorizon",
-      keywords = "mage arcane barrage orb star bolt cleave pierce explosion field",
+      keywords = "mage arcane barrage orb star bolt cleave pierce explosion field arcane blast arcane explosion " ..
+          "starfire lightning bolt moonfire frost nova arcane shot evocation shield",
       slots = { "Orbit", "Discharge", "Ending" },
       builtFrom = "Arcane Barrage",
       spentWith = "The Orb fires on its own",
       resource = "One Arcane Orb, 6 sec",
       core = "Arcane Barrage also sets an Arcane Orb loose, at most once every 12 sec. It flies at your target " ..
           "until it reaches an enemy, then drifts on slowly; for 6 sec it fires a bolt every second at that target " ..
-          "(else the nearest enemy) within 10 yards of it, for 20% of the Barrage's damage. A new Orb replaces the " ..
-          "last.",
+          "(else the nearest enemy) within 10 yards of it, for 20% of the Barrage's damage. As it is set loose it " ..
+          "strikes your target for two bolts. A new Orb replaces the last. Arcane Blast on the Orb's target makes " ..
+          "its next bolt deal 35% more. Arcane Explosion within 8 yards of the Orb pulses for a bolt on up to 5 " ..
+          "enemies near it, once every 4 sec. Starfire on the Orb's target makes its next bolt also hit one other " ..
+          "enemy within 8 yards for half.",
       loop = "Arcane Barrage whenever the Orb is ready; fight around its path while it fires.",
       mods = {
         { name = "Wandering Star",
@@ -807,6 +854,12 @@ EmberforgeRunesCatalog = {
         { name = "Satellite",
           text = "The Orb circles you, 4 yards out, for 8 sec instead of 6, and its bolts reach 15 yards instead of " ..
               "10." },
+        { name = "Orbital Lightning",
+          text = "A Lightning Bolt hit on the Orb's target commands an extra bolt of Nature damage, once every 4 " ..
+              "sec." },
+        { name = "Starward Satellite",
+          text = "The Orb's bolts deal 20% more damage to your Moonfire target, and extend that Moonfire by 1 sec " ..
+              "(up to 4 sec for each cast), once every 2 sec." },
         { name = "Astral Focus",
           text = "Bolts deal 60% more damage to the Orb's target: 32% of the Barrage's damage." },
         { name = "Constellation",
@@ -814,6 +867,12 @@ EmberforgeRunesCatalog = {
         { name = "Prismatic Lance",
           text = "Each bolt becomes a lance that also pierces up to 3 enemies behind its target, for 80% of its " ..
               "damage." },
+        { name = "Shattering Orbit",
+          text = "A bolt on your Frost Nova target also strikes one other enemy in your Frost Nova within 8 yards " ..
+              "for half its damage." },
+        { name = "Distant Spark",
+          text = "An Arcane Shot hit on the Orb's target makes its next bolt within 5 sec also pierce one more " ..
+              "enemy within 8 yards for half its damage." },
         { name = "Supernova",
           text = "When the Orb's time ends, it explodes for 120% of the Barrage's damage (6 bolts) to up to 5 " ..
               "enemies within 8 yards." },
@@ -823,6 +882,11 @@ EmberforgeRunesCatalog = {
         { name = "Astral Remnant",
           text = "When the Orb's time ends, it leaves a field 6 yards wide for 6 sec: every second, a bolt's damage " ..
               "to up to 5 enemies in it (120% of the Barrage's damage in all)." },
+        { name = "Evoked Remnant",
+          text = "Finishing Evocation while the Orb is out makes it last 2 sec longer, once for each Orb." },
+        { name = "Astral Shelter",
+          text = "Setting the Orb loose while your Power Word: Shield is on you grants an absorb of 25% of your " ..
+              "spell power for 6 sec, once every 12 sec." },
       },
       builds = {
         { name = "The Comet", mods = { "Wandering Star", "Astral Focus", "Supernova" },
@@ -838,14 +902,19 @@ EmberforgeRunesCatalog = {
       role = "Healer (Priest)",
       roles = { "HEALER" },
       icon = "Ability_Rune_GuidingLight",
-      keywords = "priest holy heal healer prayer of mending flash heal greater heal star shield",
+      keywords = "priest holy heal healer prayer of mending flash heal greater heal star shield renew earth shield " ..
+          "rejuvenation chain heal holy shock riptide",
       slots = { "Radiance", "Guidance", "Farewell" },
       builtFrom = "Prayer of Mending",
       spentWith = "Flash Heal, Greater Heal",
       resource = "One Guiding Star, 12 sec",
       core = "Prayer of Mending places a Guiding Star on its target instead, for 12 sec: every 2 sec it heals its " ..
           "bearer for a pulse, half a Prayer of Mending. Flash Heal or Greater Heal on another party member moves " ..
-          "the star there (at most once every 3 sec), healing them on arrival for 75% of a Prayer of Mending.",
+          "the star there (at most once every 3 sec), healing them on arrival for a full Prayer of Mending (two " ..
+          "pulses). Renew: the star leaving your Renew target leaves a trail healing it for 15% of your spell power " ..
+          "every 2 sec for 6 sec. Greater Heal: moving the star shields its new bearer for 30% of your spell power " ..
+          "(6 sec). Earth Shield: arriving on your Earth Shield target, the star also heals one injured ally within " ..
+          "10 yards for 30% of your spell power.",
       loop = "Prayer of Mending on whoever takes the most damage; Flash Heal or Greater Heal to send the star where " ..
           "it is needed.",
       mods = {
@@ -856,6 +925,12 @@ EmberforgeRunesCatalog = {
         { name = "Sheltering Light",
           text = "Instead of healing on arrival, the star shields its new bearer for twice a pulse's healing, for 6 " ..
               "sec. A new shield replaces the last." },
+        { name = "Earthen Star",
+          text = "Each pulse on your Earth Shield target also heals one injured ally within 10 yards for 25% of " ..
+              "your spell power. No Earth Shield charge is used." },
+        { name = "Moonlit Star",
+          text = "Each pulse on your Rejuvenation target makes that Rejuvenation last 1 sec longer, up to 4 sec " ..
+              "for each cast." },
         { name = "Gentle Passage",
           text = "As it travels, the star heals up to 3 injured allies along its way for half a pulse each." },
         { name = "Guardian Star",
@@ -864,6 +939,12 @@ EmberforgeRunesCatalog = {
         { name = "Seeking Light",
           text = "Every third pulse also heals the most injured ally within 15 yards of the bearer for a pulse. If " ..
               "the bearer dies, the star moves on to that ally." },
+        { name = "Chain Guidance",
+          text = "Your Chain Heal on another ally moves the star there, with its arrival heal (at most once every " ..
+              "3 sec)." },
+        { name = "Holy Passage",
+          text = "Your Holy Shock on another ally moves the star there, with its arrival heal (at most once every " ..
+              "3 sec)." },
         { name = "Final Benediction",
           text = "When the star's 12 sec end, it heals its bearer for 2.5 pulses at once." },
         { name = "Afterglow",
@@ -871,6 +952,11 @@ EmberforgeRunesCatalog = {
         { name = "Parting Grace",
           text = "When the star's 12 sec end, it shields its bearer for 2 pulses (6 sec), and they move 30% faster " ..
               "for 3 sec." },
+        { name = "Tidal Farewell",
+          text = "When the star fades, if its bearer has your Riptide, it heals them for 60% of your spell power." },
+        { name = "Renewed Farewell",
+          text = "When the star fades, your Renew on its bearer lasts 4 sec longer (up to 6 sec for each cast), " ..
+              "and they are healed for 30% of your spell power." },
       },
       builds = {
         { name = "The Beacon", mods = { "Steady Light", "Gentle Passage", "Final Benediction" },

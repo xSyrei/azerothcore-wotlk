@@ -632,10 +632,33 @@ utility or a tradeoff) take one pick each, from three.
     first in each slot, so saved picks keep their meaning), new spells 91615-91618 (Flame Eclipse, Frozen Eclipse,
     Insect Renewal, Astral Ward). Always-on interactions: a collision on the Hero's Moonfire target hits one more
     within 8 yd for 40%; a flare extends their Insect Swarm 2 sec (6 sec an application, from
-    `GetMaxDuration - CalcMaxDuration`); Lightning Bolt (`spell_titan_rune_convergence_hit`, with Frostbolt for
-    Frozen Eclipse) spends Moonlight for a 75% flare, no Sunlight, 6 sec a target. Astral Rupture: a flare deals the
+    `GetMaxDuration - CalcMaxDuration`, `ExtendAura`); Lightning Bolt (`spell_titan_rune_extended_hit`, with
+    Frostbolt for Frozen Eclipse) spends Moonlight for a 75% flare, no Sunlight, 6 sec a target. Astral Rupture: a flare deals the
     rupture's next tick at once and shortens it a tick. Steady Orbit stays "instant" (the dossier's "castable while
     moving and 15% faster": the client has no cast-while-moving aura).
+  - **Extended Options, Arcane Mind, Phoenix Wake, Astral Horizon, Guiding Light**: markers 91670 (Mind), 91620
+    (Phoenix), 91645 (Horizon), 91695 (Guiding), each + slot * 5 + choice (their first nine blocks retired), and
+    their new spells after them (25 ids a rune). The rule: cores take the document's numbers where they raise
+    ours (Phoenix host 55%, Guiding arrival two pulses, Horizon's two-bolt launch; Arcane Mind's 40% missiles stay
+    above its 30%); the nine first options keep their tuning; the interactions and new options follow the
+    document, a "% spell power" through `RunePower` (spell power, never less than the core spell's known rank's
+    average; the school's damage bonuses), or as a share of the rune's own pulse or bolt where it has one.
+    The other abilities reach them through `spell_titan_rune_extended_hit` (Lightning Bolt, Frostbolt, Lava Burst,
+    Scorch, Arcane Shot, Chain Heal, Holy Shock) and `spell_titan_rune_evocation`; Starfire, Arcane Blast, Arcane
+    Explosion, Arcane Barrage and Pyroblast through their rune scripts. "Castable while moving" is instant (Mind
+    Flow 91685, the next Arcane Blast).
+    - Arcane Mind: Barrage spends up to 2 Insight (15% more each, one enemy within 8 yd each for 30%); an
+      empowered channel completed (`MindComplete`) grants Mind Flow; Lightning Bolt Insight (8 sec apart). Storm
+      Conduit 91686, Starfall Equation 91687, Missile Shards, Arcane Charge 91688, Evocative Mind, Shocking
+      Clarity 91689.
+    - Phoenix Wake: Phoenix Burn 91635-91636 (once a release), Pyroblast 15% more on it, Flame Shock eruption
+      91637 (once a phoenix). Flamekeeper 91638, Lava Flock (a fourth/second bird at 30%), Blazing Path 91639 (the
+      Flamestrike's dynamic object), Hot Pursuit 91640, Wildfire Return, Emberguard 91641.
+    - Astral Horizon: the launch 91660 (2 bolts), Arcane Blast's 35% empower, Arcane Explosion's pulse 91661,
+      Starfire's split. Orbital Lightning 91662, Starward Satellite, Shattering Orbit, Distant Spark, Evoked Remnant
+      (its summon lives 2 sec longer to allow it), Astral Shelter 91663.
+    - Guiding Light: the Renew trail 91710 (every 2 sec), Greater Heal's ward 91711, Earth Shield arrival heal.
+      Earthen Star, Moonlit Star, Chain Guidance, Holy Passage, Tidal Farewell, Renewed Farewell.
   - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
     30% of maximum health, 6 sec; Barkskin's cooldown 30 sec shorter, each Maul in Bear Form 3 sec more); Maul
     releases it (91342, a 10-yard cone): 75% AP plus all it absorbed (that part at most 250% AP).

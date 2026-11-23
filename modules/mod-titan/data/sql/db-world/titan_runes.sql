@@ -340,12 +340,43 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (22812, 'spell_titan_rune_barkskin'),
 (-6807, 'spell_titan_rune_maul');
 
--- Astral Convergence's other spells, every rank: Lightning Bolt spends Moonlight for a lesser flare; Frostbolt on
--- Sunlight (Frozen Eclipse).
-DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_titan_rune_convergence_hit';
+-- The Extended Options' other abilities, every rank: Lightning Bolt, Frostbolt, Lava Burst, Scorch, Arcane Shot,
+-- Chain Heal and Holy Shock (their hits and heals, to the runes that answer them); Evocation (Arcane Mind, Astral
+-- Horizon). The first, Astral Convergence's, was spell_titan_rune_convergence_hit.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_convergence_hit',
+    'spell_titan_rune_extended_hit', 'spell_titan_rune_evocation');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(-403, 'spell_titan_rune_convergence_hit'),
-(-116, 'spell_titan_rune_convergence_hit');
+(-403, 'spell_titan_rune_extended_hit'),
+(-116, 'spell_titan_rune_extended_hit'),
+(-51505, 'spell_titan_rune_extended_hit'),
+(-2948, 'spell_titan_rune_extended_hit'),
+(-3044, 'spell_titan_rune_extended_hit'),
+(-1064, 'spell_titan_rune_extended_hit'),
+(-20473, 'spell_titan_rune_extended_hit'),
+(12051, 'spell_titan_rune_evocation');
+
+-- Phoenix Burn, Phoenix Wake's damage over time.
+DELETE FROM `spell_script_names` WHERE `spell_id` = 91635 AND `ScriptName` = 'spell_titan_rune_dot';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(91635, 'spell_titan_rune_dot');
+
+-- The Extended Options' strikes, heals and shields: shares of the Hero's power and hits, no bonuses of their own.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 91641, 91660, 91661, 91662, 91663,
+    91688, 91689, 91710, 91711);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(91636, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Burn tick'),
+(91637, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Eruption'),
+(91638, 0, 0, 0, 0, 'Phoenix Wake - Flamekeeper'),
+(91639, 0, 0, 0, 0, 'Phoenix Wake - Blazing Path'),
+(91641, 0, 0, 0, 0, 'Phoenix Wake - Emberguard'),
+(91660, 0, 0, 0, 0, 'Astral Horizon - Arcane Orb launch'),
+(91661, 0, 0, 0, 0, 'Astral Horizon - Orb Pulse'),
+(91662, 0, 0, 0, 0, 'Astral Horizon - Orbital Lightning'),
+(91663, 0, 0, 0, 0, 'Astral Horizon - Astral Shelter'),
+(91688, 0, 0, 0, 0, 'Arcane Mind - Arcane Charge'),
+(91689, 0, 0, 0, 0, 'Arcane Mind - Shocking Clarity'),
+(91710, 0, 0, 0, 0, 'Guiding Light - Guiding Trail'),
+(91711, 0, 0, 0, 0, 'Guiding Light - Guiding Ward');
 
 -- Their damage over time: Lunar Wound, Astral Rupture.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';

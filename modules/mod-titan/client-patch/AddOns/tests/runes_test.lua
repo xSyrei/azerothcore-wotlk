@@ -231,13 +231,25 @@ check(#convergence.mods == 15 and #convergenceArt.texts == 15 and #convergenceAr
     and convergence.mods[1].name == "Perfect Alignment" and convergence.mods[4].name == "Flame Eclipse"
     and convergence.mods[6].name == "Long Twilight" and convergence.mods[11].name == "Solar Return"
     and convergence.mods[15].name == "Astral Ward", "Astral Convergence: its 15 Extended Options, by slot")
-for _, build in ipairs(convergence.builds) do
-    for _, mod in ipairs(build.mods) do
-        local found = false
-        for _, option in ipairs(convergence.mods) do
-            found = found or option.name == mod
+-- Every rune with its Extended Options: 15 options and words for each, the old three first in each slot, and its
+-- builds naming real options.
+for id, firsts in pairs({ [34] = { "Accelerated Thought", "Focused Intention", "Unbound Mind" },
+    [36] = { "Sun Talon", "Homeward Flame", "Scorched Earth" },
+    [37] = { "Wandering Star", "Astral Focus", "Supernova" },
+    [38] = { "Steady Light", "Gentle Passage", "Final Benediction" },
+    [40] = { "Perfect Alignment", "Long Twilight", "Solar Return" } }) do
+    local rune, entry = ById(id), EmberforgeRunesArt.runes[id]
+    check(#rune.mods == 15 and #entry.texts == 15 and #entry.abilities == 15 and rune.mods[1].name == firsts[1]
+        and rune.mods[6].name == firsts[2] and rune.mods[11].name == firsts[3],
+        rune.name .. ": its 15 Extended Options, by slot")
+    for _, build in ipairs(rune.builds) do
+        for _, mod in ipairs(build.mods) do
+            local found = false
+            for _, option in ipairs(rune.mods) do
+                found = found or option.name == mod
+            end
+            check(found, rune.name .. ": build " .. build.name .. " names a real modifier (" .. mod .. ")")
         end
-        check(found, "Astral Convergence: build " .. build.name .. " names a real modifier (" .. mod .. ")")
     end
 end
 local paragon = EmberforgeRunesArt.runes[22]

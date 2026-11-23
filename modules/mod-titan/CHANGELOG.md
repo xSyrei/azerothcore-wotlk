@@ -4,6 +4,41 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Extended Options: Arcane Mind, Phoenix Wake, Astral Horizon, Guiding Light
+
+- Four more Legendary Runes get their **Extended Options**: five choices in each slot. Your current picks keep their
+  meaning.
+- **Arcane Mind**
+  - **Arcane Barrage** spends up to 2 Insight: 15% more damage for each, and one other enemy within 8 yards hit for
+    30% of it for each.
+  - Finishing an empowered **Arcane Missiles** makes your next **Arcane Blast** within 6 sec instant.
+  - **Lightning Bolt** grants 1 Insight, once every 8 sec.
+  - New choices: **Storm Conduit** (Lightning Bolt), **Starfall Equation** (Starfire), **Missile Shards**
+    (Frostbolt), **Arcane Charge** (Arcane Explosion), **Evocative Mind** (Evocation), **Shocking Clarity**
+    (Lightning Shield).
+- **Phoenix Wake**
+  - The phoenix strikes its target for **55%** of the Pyroblast's damage (was 50%) and burns it for 30% of your
+    spell power over 6 sec (**Phoenix Burn**). Pyroblast deals 15% more to a target with your Phoenix Burn.
+  - **Flame Shock**: crossing your Flame Shock target, the phoenix erupts for 20% of your spell power on up to 3
+    enemies.
+  - New choices: **Flamekeeper** (Flame Shock), **Lava Flock** (Lava Burst), **Blazing Path** (Flamestrike), **Hot
+    Pursuit** (Scorch), **Wildfire Return** (Flame Shock), **Emberguard** (Fire Ward).
+- **Astral Horizon**
+  - The Orb strikes your target for **two bolts** as it is set loose.
+  - **Arcane Blast** on the Orb's target makes its next bolt deal 35% more; **Arcane Explosion** near the Orb pulses
+    for a bolt on up to 5 enemies (once every 4 sec); **Starfire** on its target makes the next bolt hit one more
+    enemy for half.
+  - New choices: **Orbital Lightning** (Lightning Bolt), **Starward Satellite** (Moonfire), **Shattering Orbit**
+    (Frost Nova), **Distant Spark** (Arcane Shot), **Evoked Remnant** (Evocation), **Astral Shelter** (Power Word:
+    Shield).
+- **Guiding Light**
+  - The star now heals for a full Prayer of Mending (two pulses) when it arrives (was 75%).
+  - **Renew**: leaving your Renew target, the star leaves a trail healing it every 2 sec for 6 sec. **Greater
+    Heal**: moving the star shields its new bearer. **Earth Shield**: arriving on your Earth Shield target, the star
+    also heals one injured ally nearby.
+  - New choices: **Earthen Star** (Earth Shield), **Moonlit Star** (Rejuvenation), **Chain Guidance** (Chain Heal),
+    **Holy Passage** (Holy Shock), **Tidal Farewell** (Riptide), **Renewed Farewell** (Renew).
+
 ### Astral Convergence: Extended Options
 
 - **Astral Convergence** is the first Legendary Rune with its **Extended Options**: each of its three slots now has

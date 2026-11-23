@@ -1221,6 +1221,7 @@ MIND_ICON, CROWN_ICON = 'Ability_Rune_ArcaneMind', 'Ability_Rune_SplinteredCrown
 PHOENIX_ICON, HORIZON_ICON, GUIDING_ICON = 'Ability_Rune_PhoenixWake', 'Ability_Rune_AstralHorizon', \
     'Ability_Rune_GuidingLight'
 AURA_ADD_PCT_MODIFIER, SPELLMOD_CASTING_TIME, SPELLMOD_COST = 108, 10, 14
+SPELLMOD_DAMAGE = 0
 MAGE_FAMILY = 3
 ARCANE_BLAST_FLAG, FROSTBOLT_FLAG, PYROBLAST_FLAG = 0x20000000, 0x20, 0x400000
 DURATION_5S, DURATION_8S, DURATION_12S, DURATION_15S = 28, 31, 29, 8
@@ -1349,21 +1350,9 @@ next(spell for spell in SPELLS if spell['id'] == 91207)['set']['AttributesEx2'] 
 next(spell for spell in SPELLS if spell['id'] == 91206)['set']['SpellFamilyName'] = MAGE_FAMILY
 
 NEW_MODIFIERS = [
-    (91210, MIND_ICON, [('Accelerated Thought', 'Expanding Intellect', 'Patient Calculation'),
-                        ('Focused Intention', 'Fractured Thought', 'Lingering Equation'),
-                        ('Unbound Mind', 'Mental Reserves', 'Overclocked Intellect')]),
     (91230, CROWN_ICON, [('Glacial Spear', 'Splinter Volley', 'Shatterglass'),
                          ('Impaling Ice', 'Seeking Splinters', 'Frozen Focus'),
                          ('Frost Wound', "Winter's Grasp", 'Cold Front')]),
-    (91250, PHOENIX_ICON, [('Sun Talon', 'Broadwing', 'Ashen Flock'),
-                           ('Homeward Flame', 'Death Spiral', 'Wild Flight'),
-                           ('Scorched Earth', 'Clinging Embers', 'Rebirth')]),
-    (91270, HORIZON_ICON, [('Wandering Star', 'Event Horizon', 'Satellite'),
-                           ('Astral Focus', 'Constellation', 'Prismatic Lance'),
-                           ('Supernova', 'Dying Light', 'Astral Remnant')]),
-    (91290, GUIDING_ICON, [('Steady Light', 'Shared Light', 'Sheltering Light'),
-                           ('Gentle Passage', 'Guardian Star', 'Seeking Light'),
-                           ('Final Benediction', 'Afterglow', 'Parting Grace')]),
 ]
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
@@ -2024,6 +2013,23 @@ EXTENDED_MODIFIERS = [
                                 'Frozen Eclipse'),
                                ('Long Twilight', 'Crossed Horizons', 'Steady Orbit', 'Tidal Flare', 'Twin Moons'),
                                ('Solar Return', 'Lunar Dominance', 'Eventide', 'Insect Renewal', 'Astral Ward')]),
+    (91620, PHOENIX_ICON, [('Sun Talon', 'Broadwing', 'Ashen Flock', 'Flamekeeper', 'Lava Flock'),
+                           ('Homeward Flame', 'Death Spiral', 'Wild Flight', 'Blazing Path', 'Hot Pursuit'),
+                           ('Scorched Earth', 'Clinging Embers', 'Rebirth', 'Wildfire Return', 'Emberguard')]),
+    (91645, HORIZON_ICON, [('Wandering Star', 'Event Horizon', 'Satellite', 'Orbital Lightning',
+                            'Starward Satellite'),
+                           ('Astral Focus', 'Constellation', 'Prismatic Lance', 'Shattering Orbit', 'Distant Spark'),
+                           ('Supernova', 'Dying Light', 'Astral Remnant', 'Evoked Remnant', 'Astral Shelter')]),
+    (91670, MIND_ICON, [('Accelerated Thought', 'Expanding Intellect', 'Patient Calculation', 'Storm Conduit',
+                         'Starfall Equation'),
+                        ('Focused Intention', 'Fractured Thought', 'Lingering Equation', 'Missile Shards',
+                         'Arcane Charge'),
+                        ('Unbound Mind', 'Mental Reserves', 'Overclocked Intellect', 'Evocative Mind',
+                         'Shocking Clarity')]),
+    (91695, GUIDING_ICON, [('Steady Light', 'Shared Light', 'Sheltering Light', 'Earthen Star', 'Moonlit Star'),
+                           ('Gentle Passage', 'Guardian Star', 'Seeking Light', 'Chain Guidance', 'Holy Passage'),
+                           ('Final Benediction', 'Afterglow', 'Parting Grace', 'Tidal Farewell',
+                            'Renewed Farewell')]),
 ]
 SPELLS += [buff(first + slot * 5 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
@@ -2037,8 +2043,40 @@ SPELLS += [
     druid_mod(91617, 'Insect Renewal', 'Spell_Nature_InsectSwarm', 'Your next Wrath casts 15% faster.', DURATION_5S,
               WRATH_FLAG, [(SPELLMOD_CASTING_TIME, 15)], charges=1),
     absorb(91618, 'Astral Ward', 'Spell_Nature_StoneClawTotem', DURATION_6S),
+    # Phoenix Wake.
+    dot(91635, 'Phoenix Burn', 'Spell_Fire_Fire', FIRE, DURATION_6S, 'Fire damage every second.'),
+    strike(91636, 'Phoenix Burn', 'Spell_Fire_Fire', FIRE),
+    strike(91637, 'Phoenix Eruption', 'Spell_Fire_SelfDestruct', FIRE, VISUAL_FIRE_NOVA),
+    strike(91638, 'Flamekeeper', 'Spell_Fire_FlameShock', FIRE, VISUAL_FIRE_BLAST),
+    strike(91639, 'Blazing Path', 'Spell_Fire_SelfDestruct', FIRE, VISUAL_FIRE_BLAST),
+    buff(91640, 'Hot Pursuit', 'Spell_Fire_SoulBurn', "Your next phoenix's strike on its host deals 25% more damage.",
+         DURATION_8S, {1: aura(AURA_DUMMY, 1, 0)}),
+    absorb(91641, 'Emberguard', 'Spell_Fire_FireArmor', DURATION_6S),
+    # Astral Horizon.
+    strike(91660, 'Arcane Orb', 'Spell_Arcane_Arcane04', ARCANE, VISUAL_ARCANE_HIT),
+    strike(91661, 'Orb Pulse', 'Spell_Nature_WispSplode', ARCANE, VISUAL_ARCANE_HIT),
+    strike(91662, 'Orbital Lightning', 'Spell_Nature_Lightning', NATURE, VISUAL_LIGHTNING_BOLT),
+    absorb(91663, 'Astral Shelter', 'Spell_Holy_PowerWordShield', DURATION_6S),
+    # Arcane Mind.
+    quickening(91685, 'Mind Flow', MIND_ICON, 'Your next Arcane Blast is instant.', DURATION_6S, ARCANE_BLAST_FLAG,
+               100, charges=1),
+    buff(91686, 'Storm Conduit', 'Spell_Nature_Lightning', 'Your next Insight volley deals 20% more damage.',
+         DURATION_8S, {1: aura(AURA_DUMMY, 1, 0)}),
+    buff(91687, 'Starfall Equation', 'Spell_Arcane_StarFire', 'Your next Arcane Blast deals 10% more damage.',
+         DURATION_6S, {1: {**aura(AURA_ADD_PCT_MODIFIER, 10, SPELLMOD_DAMAGE), 'Mask': ARCANE_BLAST_FLAG}}),
+    strike(91688, 'Arcane Charge', 'Spell_Nature_WispSplode', ARCANE, VISUAL_ARCANE_HIT),
+    strike(91689, 'Shocking Clarity', 'Spell_Nature_LightningShield', NATURE, VISUAL_LIGHTNING_BOLT),
+    # Guiding Light.
+    periodic_heal(91710, 'Guiding Trail', 'Spell_Holy_Renew', 'Healing every 2 sec.', DURATION_6S),
+    absorb(91711, 'Guiding Ward', 'Spell_Holy_PowerWordShield', DURATION_6S),
 ]
 for _spell in SPELLS:
-    if _spell['id'] == 91615:
+    if _spell['id'] in (91615, 91636, 91637, 91638, 91639, 91660, 91661, 91662, 91688, 91689):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
-ICONS += ['Spell_Nature_InsectSwarm']
+    if _spell['id'] == 91687:
+        _spell['set'] = {**_spell['set'], 'SpellFamilyName': MAGE_FAMILY, 'ProcCharges': 1}
+    if _spell['id'] == 91710:
+        _spell['effects'][1]['Amplitude'] = 2000
+        _spell['tooltip'] = 'Healing every 2 sec.'
+ICONS += ['Spell_Nature_InsectSwarm', 'Spell_Fire_SoulBurn', 'Spell_Fire_FireArmor', 'Spell_Arcane_Arcane04',
+          'Spell_Nature_WispSplode', 'Spell_Nature_Lightning', 'Spell_Nature_LightningShield']

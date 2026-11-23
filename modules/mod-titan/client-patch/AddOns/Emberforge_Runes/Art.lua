@@ -677,12 +677,18 @@ EmberforgeRunesArt = {
                 "Accelerate",
                 "Expand",
                 "Patience",
+                "Lightning Bolt",
+                "Starfire",
                 "Focus",
                 "Fracture",
                 "Echo",
+                "Frostbolt",
+                "Arcane Explosion",
                 "Unbound",
                 "Reserves",
                 "Overclock",
+                "Evocation",
+                "Lightning Shield",
             },
             texts = {
                 "Every third Arcane Blast that hits grants 2 Insight instead of 1.",
@@ -690,18 +696,33 @@ EmberforgeRunesArt = {
                         "else 1. Once a cast.",
                 "Insight stacks to 6 instead of 4. Spending 5 or 6 makes the Insight " ..
                         "missiles deal 15% more damage for each one above 4.",
+                "A Lightning Bolt hit on an enemy your Arcane Blast hit in the last 15 " ..
+                        "sec makes your next Insight volley deal 20% more damage (8 sec).",
+                "A Starfire hit grants 1 Insight, once every 8 sec, and makes your next " ..
+                        "Arcane Blast within 6 sec deal 10% more damage.",
                 "Insight missiles deal 40% more damage to their target: 56% of an " ..
                         "Arcane Missile's damage.",
                 "Each Insight missile also hits up to 2 other enemies within 8 yards of " ..
                         "its target for 35% of its damage.",
                 "The Insight missiles leave Arcane Echo on their target: 30% of their " ..
                         "damage again, over 6 sec. A new Echo keeps what is left of the last.",
+                "A Frostbolt hit readies your next empowered Arcane Missiles (within 15 " ..
+                        "sec): its first Insight missile also hits 2 other enemies within 8 " ..
+                        "yards for half its damage.",
+                "Arcane Explosion within 6 sec of finishing an empowered Arcane " ..
+                        "Missiles bursts for 25% of your spell power on up to 5 enemies within " ..
+                        "8 yards.",
                 "An empowered Arcane Missiles does not channel: its missiles fly from " ..
                         "you on their own, one every 0.5 sec, so you can move and keep casting.",
                 "When an empowered Arcane Missiles completes, you regain 3% of your " ..
                         "maximum mana and Arcane Blast costs 20% less mana for 4 sec.",
                 "The Insight missiles all fly as the channel starts, 0.15 sec apart, " ..
                         "and deal 20% more damage: 48% of an Arcane Missile's damage.",
+                "Evocation begun within 30 sec of an empowered Arcane Missiles restores " ..
+                        "2% of your maximum mana more, once every 30 sec.",
+                "Finishing an empowered Arcane Missiles while your Lightning Shield is " ..
+                        "up sends a bolt of 25% of your spell power as Nature damage at its " ..
+                        "target.",
             },
             slots = {
                 "Invocation",
@@ -771,8 +792,8 @@ EmberforgeRunesArt = {
             inner = { 1, 0.918, 0.863 },
             built = true,
             core = "**Pyroblast** leaves an **Ember**; **Fire Blast** on it calls a " ..
-                    "**phoenix** diving from above you onto it: **50%** of the Pyroblast's " ..
-                    "damage.",
+                    "**phoenix** diving from above you onto it: **55%** of the Pyroblast's " ..
+                    "damage, and it burns.",
             asks = {
                 "What wakes in the Ember",
                 "How it flies",
@@ -782,21 +803,31 @@ EmberforgeRunesArt = {
                 "Talon",
                 "Broadwing",
                 "Flock",
+                "Flame Shock",
+                "Lava Burst",
                 "Homeward",
                 "Spiral",
                 "Wild",
+                "Flamestrike",
+                "Scorch",
                 "Scorch",
                 "Embers",
                 "Rebirth",
+                "Flame Shock",
+                "Fire Ward",
             },
             texts = {
-                "The phoenix strikes the Ember's target for 50% more: 75% of the " ..
+                "The phoenix strikes the Ember's target for 50% more: 82% of the " ..
                         "Pyroblast's damage.",
                 "The phoenix's path is 6 yards wide instead of 3, and enemies in it " ..
                         "take 30% of the Pyroblast's damage instead of 25%.",
                 "Three phoenixes dive instead, each with a third of the damage. Each " ..
                         "one whose flight ends makes your next Pyroblast cast 5% faster, up to " ..
                         "15%, for 6 sec.",
+                "Releasing the phoenix on your Flame Shock target also deals 20% of " ..
+                        "your spell power as Fire damage to it.",
+                "A Lava Burst hit on the Ember's target adds one more bird to that " ..
+                        "phoenix, dealing 30% of its damage (one for each Ember).",
                 "The phoenix dives twice as fast, 40 yards a second. When its flight " ..
                         "ends, Fire Blast's cooldown is 2 sec shorter.",
                 "After its strike, the phoenix circles the Ember's target for 2 sec, " ..
@@ -804,6 +835,10 @@ EmberforgeRunesArt = {
                 "After its strike, the phoenix swoops through up to 2 other enemies " ..
                         "within 10 yards of the Ember's target, striking each for 25% of the " ..
                         "Pyroblast's damage.",
+                "The first time a phoenix flies through your Flamestrike, it deals 20% " ..
+                        "of your spell power as Fire damage to up to 4 enemies in it.",
+                "A Scorch hit on the Ember's target makes your next phoenix strike its " ..
+                        "target for 25% more damage (8 sec).",
                 "The phoenix leaves a trail of fire for 4 sec: up to 5 enemies on it " ..
                         "burn for 6% of the Pyroblast's damage every second. Trails don't " ..
                         "stack.",
@@ -811,6 +846,10 @@ EmberforgeRunesArt = {
                         "A new burn keeps what is left of the last.",
                 "When the phoenix's flight ends, it bursts for 35% of the Pyroblast's " ..
                         "damage to up to 5 enemies within 6 yards of it. A flock bursts once.",
+                "When the phoenix's flight ends, your Flame Shock on its target lasts 2 " ..
+                        "sec longer, up to 6 sec for each cast.",
+                "When the phoenix's flight ends while your Fire Ward is up, you gain an " ..
+                        "absorb of 40% of your spell power for 6 sec, once every 12 sec.",
             },
             slots = {
                 "Phoenix",
@@ -827,8 +866,8 @@ EmberforgeRunesArt = {
             inner = { 0.965, 0.906, 1 },
             built = true,
             core = "**Arcane Barrage** sets an **Arcane Orb** loose (every 12 sec at " ..
-                    "most): it flies to your enemies and for 6 sec fires a bolt a second " ..
-                    "for **20%** of the Barrage's damage.",
+                    "most): it flies to your enemies, strikes for **2 bolts**, then for 6 " ..
+                    "sec fires a bolt a second for **20%** of the Barrage's damage.",
             asks = {
                 "Where the Orb goes",
                 "How it fires",
@@ -838,12 +877,18 @@ EmberforgeRunesArt = {
                 "Wander",
                 "Horizon",
                 "Satellite",
+                "Lightning Bolt",
+                "Moonfire",
                 "Focus",
                 "Constellation",
                 "Lance",
+                "Frost Nova",
+                "Arcane Shot",
                 "Supernova",
                 "Dying",
                 "Remnant",
+                "Evocation",
+                "Power Word: Shield",
             },
             texts = {
                 "Each enemy the Orb passes through takes two bolts' damage (40% of the " ..
@@ -852,12 +897,21 @@ EmberforgeRunesArt = {
                         "50% more damage to enemies within 5 yards of it.",
                 "The Orb circles you, 4 yards out, for 8 sec instead of 6, and its " ..
                         "bolts reach 15 yards instead of 10.",
+                "A Lightning Bolt hit on the Orb's target commands an extra bolt of " ..
+                        "Nature damage, once every 4 sec.",
+                "The Orb's bolts deal 20% more damage to your Moonfire target, and " ..
+                        "extend that Moonfire by 1 sec (up to 4 sec for each cast), once every " ..
+                        "2 sec.",
                 "Bolts deal 60% more damage to the Orb's target: 32% of the Barrage's " ..
                         "damage.",
                 "Each bolt also strikes up to 2 other enemies in range for 75% of its " ..
                         "damage.",
                 "Each bolt becomes a lance that also pierces up to 3 enemies behind its " ..
                         "target, for 80% of its damage.",
+                "A bolt on your Frost Nova target also strikes one other enemy in your " ..
+                        "Frost Nova within 8 yards for half its damage.",
+                "An Arcane Shot hit on the Orb's target makes its next bolt within 5 " ..
+                        "sec also pierce one more enemy within 8 yards for half its damage.",
                 "When the Orb's time ends, it explodes for 120% of the Barrage's damage " ..
                         "(6 bolts) to up to 5 enemies within 8 yards.",
                 "When the Orb's time ends, it fires 3 last bolts at your target (else " ..
@@ -865,6 +919,10 @@ EmberforgeRunesArt = {
                 "When the Orb's time ends, it leaves a field 6 yards wide for 6 sec: " ..
                         "every second, a bolt's damage to up to 5 enemies in it (120% of the " ..
                         "Barrage's damage in all).",
+                "Finishing Evocation while the Orb is out makes it last 2 sec longer, " ..
+                        "once for each Orb.",
+                "Setting the Orb loose while your Power Word: Shield is on you grants " ..
+                        "an absorb of 25% of your spell power for 6 sec, once every 12 sec.",
             },
             slots = {
                 "Orbit",
@@ -892,12 +950,18 @@ EmberforgeRunesArt = {
                 "Steady",
                 "Shared",
                 "Shelter",
+                "Earth Shield",
+                "Rejuvenation",
                 "Passage",
                 "Guardian",
                 "Seeking",
+                "Chain Heal",
+                "Holy Shock",
                 "Benediction",
                 "Afterglow",
                 "Grace",
+                "Riptide",
+                "Renew",
             },
             texts = {
                 "The star heals its bearer for 50% more: 75% of a Prayer of Mending " ..
@@ -906,6 +970,11 @@ EmberforgeRunesArt = {
                         "the bearer for 75% of it.",
                 "Instead of healing on arrival, the star shields its new bearer for " ..
                         "twice a pulse's healing, for 6 sec. A new shield replaces the last.",
+                "Each pulse on your Earth Shield target also heals one injured ally " ..
+                        "within 10 yards for 25% of your spell power. No Earth Shield charge is " ..
+                        "used.",
+                "Each pulse on your Rejuvenation target makes that Rejuvenation last 1 " ..
+                        "sec longer, up to 4 sec for each cast.",
                 "As it travels, the star heals up to 3 injured allies along its way for " ..
                         "half a pulse each.",
                 "Only Greater Heal moves the star. Each pulse on the same bearer heals " ..
@@ -913,12 +982,21 @@ EmberforgeRunesArt = {
                 "Every third pulse also heals the most injured ally within 15 yards of " ..
                         "the bearer for a pulse. If the bearer dies, the star moves on to that " ..
                         "ally.",
+                "Your Chain Heal on another ally moves the star there, with its arrival " ..
+                        "heal (at most once every 3 sec).",
+                "Your Holy Shock on another ally moves the star there, with its arrival " ..
+                        "heal (at most once every 3 sec).",
                 "When the star's 12 sec end, it heals its bearer for 2.5 pulses at " ..
                         "once.",
                 "When the star's 12 sec end, it leaves Afterglow on its bearer: 3.25 " ..
                         "pulses of healing over 8 sec.",
                 "When the star's 12 sec end, it shields its bearer for 2 pulses (6 " ..
                         "sec), and they move 30% faster for 3 sec.",
+                "When the star fades, if its bearer has your Riptide, it heals them for " ..
+                        "60% of your spell power.",
+                "When the star fades, your Renew on its bearer lasts 4 sec longer (up " ..
+                        "to 6 sec for each cast), and they are healed for 30% of your spell " ..
+                        "power.",
             },
             slots = {
                 "Radiance",

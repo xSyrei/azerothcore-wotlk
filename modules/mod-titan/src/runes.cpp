@@ -279,7 +279,7 @@ namespace
         SPELL_MIND_UNBOUND              = 91205,    // Insight 4 or more: its look
         SPELL_MENTAL_RESERVES           = 91206,
         SPELL_UNBOUND_MISSILE           = 91207,    // Unbound Mind: an Arcane Missile without its channel
-        SPELL_MIND_MODIFIER_FIRST       = 91210,    // + slot * 3 + choice
+        // 91210-91218: its first 9 markers, retired (the Extended Options' block, below)
 
         SPELL_RUNE_SPLINTERED_CROWN     = 91220,
         SPELL_ICICLE                    = 91221,
@@ -302,7 +302,7 @@ namespace
         SPELL_CLINGING_EMBERS_TICK      = 91247,
         SPELL_REBIRTH                   = 91248,
         SPELL_ASHEN_FLOCK               = 91249,
-        SPELL_PHOENIX_MODIFIER_FIRST    = 91250,    // + slot * 3 + choice
+        // 91250-91258: its first 9 markers, retired (the Extended Options' block, below)
         SPELL_REBIRTH_LOOK              = 91259,
 
         SPELL_RUNE_ASTRAL_HORIZON       = 91260,
@@ -315,7 +315,7 @@ namespace
         SPELL_ASTRAL_REMNANT_TICK       = 91267,
         SPELL_ORB_SATELLITE             = 91268,    // Satellite: the Orb circling the Hero (its look)
         SPELL_SUPERNOVA_LOOK            = 91269,
-        SPELL_HORIZON_MODIFIER_FIRST    = 91270,    // + slot * 3 + choice
+        // 91270-91278: its first 9 markers, retired (the Extended Options' block, below)
 
         SPELL_RUNE_GUIDING_LIGHT        = 91280,
         SPELL_GUIDING_STAR              = 91281,
@@ -327,7 +327,7 @@ namespace
         SPELL_AFTERGLOW                 = 91287,
         SPELL_PARTING_GRACE             = 91288,
         SPELL_PARTING_GRACE_SPEED       = 91289,
-        SPELL_GUIDING_MODIFIER_FIRST    = 91290,    // + slot * 3 + choice
+        // 91290-91298: its first 9 markers, retired (the Extended Options' block, below)
 
         SPELL_RUNE_ELUNES_GUARDIAN      = 91300,
         SPELL_OWL_DIVE                  = 91301,
@@ -364,12 +364,35 @@ namespace
         SPELL_URSOC_ROAR_LOOK           = 91359,
         SPELL_COLLISION_LOOK            = 91360,    // Astral Rupture: the collision's look, its damage over time
 
-        // The Extended Options (91600 on, 20 a rune: 15 markers, + slot * 5 + choice; then its new spells).
+        // The Extended Options (91600 on: 15 markers a rune, + slot * 5 + choice; then its new spells; Astral
+        // Convergence 20 ids, the others 25).
         SPELL_CONVERGENCE_MODIFIER_FIRST = 91600,
         SPELL_FLAME_ECLIPSE             = 91615,    // Flame Eclipse's Fire damage
         SPELL_FROZEN_ECLIPSE            = 91616,    // the next Lunar Collision 25% more
         SPELL_INSECT_RENEWAL            = 91617,    // the next Wrath 15% faster
         SPELL_ASTRAL_WARD               = 91618,    // the absorb
+        SPELL_PHOENIX_MODIFIER_FIRST    = 91620,
+        SPELL_PHOENIX_BURN              = 91635,    // its tick 91636
+        SPELL_PHOENIX_BURN_TICK         = 91636,
+        SPELL_PHOENIX_ERUPTION          = 91637,    // crossing the Hero's Flame Shock target
+        SPELL_FLAMEKEEPER               = 91638,
+        SPELL_BLAZING_PATH              = 91639,
+        SPELL_HOT_PURSUIT               = 91640,    // the next phoenix's host hit 25% more
+        SPELL_EMBERGUARD                = 91641,    // the absorb
+        SPELL_HORIZON_MODIFIER_FIRST    = 91645,
+        SPELL_ORB_LAUNCH                = 91660,    // the Orb's hit as it is set loose
+        SPELL_ORB_PULSE                 = 91661,    // Arcane Explosion near it
+        SPELL_ORBITAL_LIGHTNING         = 91662,
+        SPELL_ASTRAL_SHELTER            = 91663,    // the absorb
+        SPELL_MIND_MODIFIER_FIRST       = 91670,
+        SPELL_MIND_FLOW                 = 91685,    // after an empowered channel: the next Arcane Blast instant
+        SPELL_STORM_CONDUIT_CHARGE      = 91686,    // the next Insight volley 20% more
+        SPELL_STARFALL_EQUATION         = 91687,    // the next Arcane Blast 10% more
+        SPELL_ARCANE_CHARGE             = 91688,
+        SPELL_SHOCKING_CLARITY          = 91689,
+        SPELL_GUIDING_MODIFIER_FIRST    = 91695,
+        SPELL_GUIDING_TRAIL             = 91710,    // the heal over time the star leaves on a Renew target
+        SPELL_GUIDING_WARD              = 91711,    // Greater Heal's redirect: the absorb
 
         // The Duelist (91370 on: its taught abilities first) and the Stormreaver (91400 on); their markers 10 on
         // from each rune.
@@ -474,6 +497,15 @@ namespace
         SPELL_BARKSKIN              = 22812,
         SPELL_MOONFIRE              = 8921,
         SPELL_INSECT_SWARM          = 5570,
+        SPELL_REJUVENATION          = 774,
+        SPELL_EVOCATION             = 12051,
+        SPELL_FIRE_WARD             = 543,
+        SPELL_FLAMESTRIKE           = 2120,
+        SPELL_LAVA_BURST            = 51505,
+        SPELL_ARCANE_SHOT           = 3044,
+        SPELL_POWER_WORD_SHIELD     = 17,
+        SPELL_RENEW                 = 139,
+        SPELL_RIPTIDE               = 61295,
         SPELL_MAUL                  = 6807,
         SPELL_BEAR_FORM             = 5487,
         SPELL_DIRE_BEAR_FORM        = 9634,
@@ -771,12 +803,14 @@ namespace
     constexpr int32 GHOSTFANG_MS = 4000;
     constexpr std::size_t RAVAGER_TARGETS = 2;
 
-    // Arcane Mind's modifiers: slot (0 Invocation, 1 Manifestation, 2 Adaptation) x 3 + choice.
+    // Arcane Mind's modifiers (its Extended Options): slot (0 Invocation, 1 Manifestation, 2 Adaptation) x 5 +
+    // choice; each slot's first three are the ones it had.
     enum MindModifier : uint8
     {
-        MOD_ACCELERATED_THOUGHT, MOD_EXPANDING_INTELLECT, MOD_PATIENT_CALCULATION,
-        MOD_FOCUSED_INTENTION, MOD_FRACTURED_THOUGHT, MOD_LINGERING_EQUATION,
-        MOD_UNBOUND_MIND, MOD_MENTAL_RESERVES, MOD_OVERCLOCKED_INTELLECT,
+        MOD_ACCELERATED_THOUGHT, MOD_EXPANDING_INTELLECT, MOD_PATIENT_CALCULATION, MOD_STORM_CONDUIT,
+        MOD_STARFALL_EQUATION,
+        MOD_FOCUSED_INTENTION, MOD_FRACTURED_THOUGHT, MOD_LINGERING_EQUATION, MOD_MISSILE_SHARDS, MOD_ARCANE_CHARGE,
+        MOD_UNBOUND_MIND, MOD_MENTAL_RESERVES, MOD_OVERCLOCKED_INTELLECT, MOD_EVOCATIVE_MIND, MOD_SHOCKING_CLARITY,
     };
 
     // Arcane Mind's tuning: Arcane Blast grants Insight (15 sec), up to 4; at 4 or more Arcane Missiles spends it:
@@ -788,6 +822,22 @@ namespace
     constexpr float RESERVES_MANA_PCT = 3.0f;
     constexpr int32 ARCANE_ECHO_MS = 6000;
     constexpr std::size_t FRACTURED_TARGETS = 2, EXPANDING_ENEMIES = 3;
+    // Its interactions: Arcane Barrage spends up to 2 Insight, 15% more each and an enemy within 8 yards each for
+    // 30% of its hit; an empowered channel completed makes the next Arcane Blast instant (6 sec); a Lightning Bolt
+    // hit grants Insight (8 sec apart). New options: Storm Conduit 20% more (a Lightning Bolt on an enemy the Hero's
+    // Arcane Blast hit in the last 15 sec), Starfall Equation (Starfire: Insight 8 sec apart, the next Arcane Blast
+    // 10% more), Missile Shards (a Frostbolt in the 15 sec before: the first missile hits 2 more within 8 yards for
+    // half), Arcane Charge (Arcane Explosion within 6 sec of an empowered channel: 25% of spell power to 5 within 8
+    // yards), Evocative Mind (Evocation within 30 sec of one: 2% of maximum mana, 30 sec apart), Shocking Clarity
+    // (with Lightning Shield: a 25%-of-spell-power Nature bolt at its target).
+    constexpr uint8 BARRAGE_INSIGHT = 2;
+    constexpr uint32 BOLT_INSIGHT_EVERY_MS = 8000, STARFALL_EVERY_MS = 8000, BLASTED_MS = 15000;
+    constexpr uint32 SHARDS_READY_MS = 15000, ARCANE_CHARGE_MS = 6000, EVOCATIVE_AFTER_MS = 30000;
+    constexpr uint32 EVOCATIVE_EVERY_MS = 30000;
+    constexpr float BARRAGE_STEP = 0.15f, BARRAGE_SPLASH = 0.3f, BARRAGE_RANGE = 8.0f, STORM_CONDUIT = 1.2f;
+    constexpr float SHARDS_SHARE = 0.5f, SHARDS_RADIUS = 8.0f, ARCANE_CHARGE_POWER = 0.25f;
+    constexpr float ARCANE_CHARGE_RADIUS = 8.0f, EVOCATIVE_MANA_PCT = 2.0f, CLARITY_POWER = 0.25f;
+    constexpr std::size_t SHARDS_TARGETS = 2, ARCANE_CHARGE_TARGETS = 5;
 
     // The Splintered Crown's modifiers: slot (0 Formation, 1 Flight, 2 Aftermath) x 3 + choice.
     enum CrownModifier : uint8
@@ -809,21 +859,22 @@ namespace
     constexpr int32 FROST_WOUND_MS = 6000, WINTERS_GRASP_MS = 3000;
     constexpr std::size_t SHATTERGLASS_TARGETS = 4, IMPALE_TARGETS = 3;
 
-    // Phoenix Wake's modifiers: slot (0 Phoenix, 1 Flight, 2 Wake) x 3 + choice.
+    // Phoenix Wake's modifiers (its Extended Options): slot (0 Phoenix, 1 Flight, 2 Wake) x 5 + choice; each
+    // slot's first three are the ones it had.
     enum PhoenixModifier : uint8
     {
-        MOD_SUN_TALON, MOD_BROADWING, MOD_ASHEN_FLOCK,
-        MOD_HOMEWARD_FLAME, MOD_DEATH_SPIRAL, MOD_WILD_FLIGHT,
-        MOD_SCORCHED_EARTH, MOD_CLINGING_EMBERS, MOD_REBIRTH,
+        MOD_SUN_TALON, MOD_BROADWING, MOD_ASHEN_FLOCK, MOD_FLAMEKEEPER, MOD_LAVA_FLOCK,
+        MOD_HOMEWARD_FLAME, MOD_DEATH_SPIRAL, MOD_WILD_FLIGHT, MOD_BLAZING_PATH, MOD_HOT_PURSUIT,
+        MOD_SCORCHED_EARTH, MOD_CLINGING_EMBERS, MOD_REBIRTH, MOD_WILDFIRE_RETURN, MOD_EMBERGUARD,
     };
 
     // Phoenix Wake's tuning: the Ember holds its Pyroblast's damage (8 sec); the phoenix dives from 8 yards above
     // the Hero onto the host at 20 yards a second, burning up to 4 enemies under its path (3 yards wide) for 25%,
-    // and strikes the host for 50%.
+    // and strikes the host for 55% (the Extended Options' 55% to the 25%).
     constexpr int32 EMBER_MS = 8000, CLINGING_MS = 6000;
     constexpr uint32 PHOENIX_MAX_MS = 8000, SPIRAL_MS = 2000, REPATH_MS = 300, HOMEWARD_MS = 2000;
     constexpr uint32 SCORCH_MS = 4000, SCORCH_TICK_MS = 1000, FLOCK_BIRDS = 3;
-    constexpr float PHOENIX_HOST = 0.5f, PHOENIX_CROSS = 0.25f, SUN_TALON = 1.5f, BROADWING_CROSS = 0.3f;
+    constexpr float PHOENIX_HOST = 0.55f, PHOENIX_CROSS = 0.25f, SUN_TALON = 1.5f, BROADWING_CROSS = 0.3f;
     constexpr float SPIRAL_SHARE = 0.25f, CLINGING_SHARE = 0.25f, REBIRTH_SHARE = 0.35f, SCORCH_SHARE = 0.06f;
     constexpr float PHOENIX_HALF_WIDTH = 1.5f, BROADWING_HALF_WIDTH = 3.0f;
     constexpr float PHOENIX_SPEED = 20.0f, HOMEWARD_SPEED = 40.0f, PHOENIX_HEIGHT = 2.0f;
@@ -832,13 +883,26 @@ namespace
     constexpr float PHOENIX_DROP = 8.0f, PHOENIX_BEHIND = 2.0f;     // where it appears: above, behind the Hero
     constexpr float SCORCH_SPACING = 4.0f, SCORCH_HALF_WIDTH = 1.5f, SCORCH_REACH = 60.0f;
     constexpr std::size_t CROSS_TARGETS = 4, WILD_FLIGHT_VISITS = 2, REBIRTH_TARGETS = 5, SCORCH_TARGETS = 5;
+    // Its interactions: the phoenix burns its host for 30% of spell power over 6 sec (Phoenix Burn); a direct
+    // Pyroblast on a Phoenix Burn target 15% more; crossing the Hero's Flame Shock target erupts for 20% of spell
+    // power to up to 3 within 6 yards (once a phoenix). New options: Flamekeeper 20% on a Flame Shock host, Lava
+    // Flock a bird of 30% more (Lava Burst on the host, one an Ember), Blazing Path 20% to up to 4 in the Hero's
+    // Flamestrike (once a phoenix), Hot Pursuit 25% more (Scorch on the host, 8 sec), Wildfire Return Flame Shock 2
+    // sec longer (6 sec an application), Emberguard an absorb of 40% (in Fire Ward, 12 sec apart).
+    constexpr int32 PHOENIX_BURN_MS = 6000, WILDFIRE_EXTEND_MS = 2000, WILDFIRE_MOST_MS = 6000;
+    constexpr uint32 EMBERGUARD_EVERY_MS = 12000;
+    constexpr float PHOENIX_BURN_POWER = 0.3f, BURNING_PYROBLAST = 1.15f, ERUPTION_POWER = 0.2f;
+    constexpr float ERUPTION_RADIUS = 6.0f, FLAMEKEEPER_POWER = 0.2f, LAVA_FLOCK_SHARE = 0.3f;
+    constexpr float BLAZING_PATH_POWER = 0.2f, HOT_PURSUIT = 1.25f, EMBERGUARD_POWER = 0.4f;
+    constexpr std::size_t ERUPTION_TARGETS = 3, BLAZING_PATH_TARGETS = 4;
 
-    // Astral Horizon's modifiers: slot (0 Orbit, 1 Discharge, 2 Ending) x 3 + choice.
+    // Astral Horizon's modifiers (its Extended Options): slot (0 Orbit, 1 Discharge, 2 Ending) x 5 + choice; each
+    // slot's first three are the ones it had.
     enum HorizonModifier : uint8
     {
-        MOD_WANDERING_STAR, MOD_EVENT_HORIZON, MOD_SATELLITE,
-        MOD_ASTRAL_FOCUS, MOD_CONSTELLATION, MOD_PRISMATIC_LANCE,
-        MOD_SUPERNOVA, MOD_DYING_LIGHT, MOD_ASTRAL_REMNANT,
+        MOD_WANDERING_STAR, MOD_EVENT_HORIZON, MOD_SATELLITE, MOD_ORBITAL_LIGHTNING, MOD_STARWARD_SATELLITE,
+        MOD_ASTRAL_FOCUS, MOD_CONSTELLATION, MOD_PRISMATIC_LANCE, MOD_SHATTERING_ORBIT, MOD_DISTANT_SPARK,
+        MOD_SUPERNOVA, MOD_DYING_LIGHT, MOD_ASTRAL_REMNANT, MOD_EVOKED_REMNANT, MOD_ASTRAL_SHELTER,
     };
 
     // Astral Horizon's tuning: Arcane Barrage sets the Orb loose at most once every 12 sec, for 6 sec (Satellite 8):
@@ -860,27 +924,55 @@ namespace
     constexpr float REMNANT_RADIUS = 6.0f;
     constexpr std::size_t CONSTELLATION_TARGETS = 2, LANCE_TARGETS = 3, WANDERING_TARGETS = 5;
     constexpr std::size_t SUPERNOVA_TARGETS = 5, REMNANT_TARGETS = 5;
+    // The Extended Options: the Orb strikes its victim for two bolts as it is set loose (40% to a bolt's 20%). Its
+    // interactions: Arcane Blast on its victim, the next bolt 35% more; Arcane Explosion within 8 yards of it, a
+    // bolt's worth to up to 5 within 8 yards of it (4 sec apart); Starfire on its victim, the next bolt also at one
+    // more within 8 yards for half. New options: Orbital Lightning (Lightning Bolt on its victim: a Nature bolt, 4
+    // sec apart), Starward Satellite (on the Hero's Moonfire target 20% more, the Moonfire 1 sec longer, 4 sec an
+    // application, 2 sec apart), Shattering Orbit (a bolt on their Frost Nova target: one more in it within 8 yards
+    // for half), Distant Spark (Arcane Shot on its victim: the next bolt in 5 sec pierces one more for half),
+    // Evoked Remnant (Evocation completed: 2 sec longer, once an Orb), Astral Shelter (set loose in their Power
+    // Word: Shield: an absorb of 25% of spell power, 12 sec apart).
+    constexpr uint32 ORB_PULSE_EVERY_MS = 4000, ORBITAL_LIGHTNING_EVERY_MS = 4000, STARWARD_EVERY_MS = 2000;
+    constexpr uint32 DISTANT_SPARK_MS = 5000, EVOKED_MS = 2000, SHELTER_EVERY_MS = 12000;
+    constexpr int32 STARWARD_EXTEND_MS = 1000, STARWARD_MOST_MS = 4000;
+    constexpr float ORB_LAUNCH_SHARE = 2.0f, BLAST_EMPOWER = 1.35f, ORB_PULSE_RANGE = 8.0f, ORB_SPLIT = 0.5f;
+    constexpr float SPLIT_RANGE = 8.0f, STARWARD = 1.2f, SHATTERING_SHARE = 0.5f, SHELTER_POWER = 0.25f;
+    constexpr std::size_t ORB_PULSE_TARGETS = 5;
 
-    // Guiding Light's modifiers: slot (0 Radiance, 1 Guidance, 2 Farewell) x 3 + choice.
+    // Guiding Light's modifiers (its Extended Options): slot (0 Radiance, 1 Guidance, 2 Farewell) x 5 + choice;
+    // each slot's first three are the ones it had.
     enum GuidingModifier : uint8
     {
-        MOD_STEADY_LIGHT, MOD_SHARED_LIGHT, MOD_SHELTERING_LIGHT,
-        MOD_GENTLE_PASSAGE, MOD_GUARDIAN_STAR, MOD_SEEKING_LIGHT,
-        MOD_FINAL_BENEDICTION, MOD_AFTERGLOW, MOD_PARTING_GRACE,
+        MOD_STEADY_LIGHT, MOD_SHARED_LIGHT, MOD_SHELTERING_LIGHT, MOD_EARTHEN_STAR, MOD_MOONLIT_STAR,
+        MOD_GENTLE_PASSAGE, MOD_GUARDIAN_STAR, MOD_SEEKING_LIGHT, MOD_CHAIN_GUIDANCE, MOD_HOLY_PASSAGE,
+        MOD_FINAL_BENEDICTION, MOD_AFTERGLOW, MOD_PARTING_GRACE, MOD_TIDAL_FAREWELL, MOD_RENEWED_FAREWELL,
     };
 
     // Guiding Light's tuning: the star lasts 12 sec and heals its bearer every 2 sec for half a Prayer of Mending;
-    // it arrives with 75% of one (moved at most once every 3 sec, 0.5 sec on the way). Its options keep the
-    // dossier's ratios to a pulse.
+    // it arrives with a whole one, twice a pulse (the Extended Options' 80% to the 40%; moved at most once every 3
+    // sec, 0.5 sec on the way). Its options keep the dossier's ratios to a pulse.
     constexpr uint32 STAR_MS = 12000, STAR_PULSE_MS = 2000, STAR_MOVE_MS = 3000, STAR_TRAVEL_MS = 500;
     constexpr int32 AFTERGLOW_MS = 8000;
-    constexpr float STAR_PULSE_SHARE = 0.5f, ARRIVAL_SHARE = 1.5f, STEADY_LIGHT = 1.5f, SHARED_SHARE = 0.75f;
+    constexpr float STAR_PULSE_SHARE = 0.5f, ARRIVAL_SHARE = 2.0f, STEADY_LIGHT = 1.5f, SHARED_SHARE = 0.75f;
     constexpr float SHELTER_SHARE = 2.0f, PASSAGE_SHARE = 0.5f, GUARDIAN_STEP = 0.1f, BENEDICTION_SHARE = 2.5f;
     constexpr float AFTERGLOW_SHARE = 3.25f, GRACE_SHARE = 2.0f;
     constexpr float STAR_RANGE = 40.0f, SHARED_RANGE = 10.0f, SEEKING_STAR_RANGE = 15.0f, PASSAGE_HALF_WIDTH = 3.0f;
     constexpr uint8 GUARDIAN_STEPS = 3;
     constexpr uint32 SEEKING_EVERY = 3;
     constexpr std::size_t PASSAGE_ALLIES = 3;
+    // Its interactions (a pulse is 40% of spell power): the star leaving the Hero's Renew target leaves a trail of
+    // 15% every 2 sec for 6 sec; Greater Heal's redirect, an absorb of 30% on the new bearer (6 sec); arriving on
+    // their Earth Shield bearer, 30% to one injured ally within 10 yards. New options: Earthen Star (each pulse on
+    // the Earth Shield bearer, 25% to one injured ally within 10 yards), Moonlit Star (each pulse on their
+    // Rejuvenation bearer: 1 sec longer, 4 sec an application), Chain Guidance (a Chain Heal on another ally moves
+    // it), Holy Passage (Holy Shock on another ally moves it), Tidal Farewell (their Riptide on the bearer: 60%),
+    // Renewed Farewell (their Renew on the bearer 4 sec longer, 6 sec an application, and 30%).
+    constexpr int32 MOONLIT_EXTEND_MS = 1000, MOONLIT_MOST_MS = 4000, RENEWED_EXTEND_MS = 4000;
+    constexpr int32 RENEWED_MOST_MS = 6000;
+    constexpr float TRAIL_SHARE = 0.375f, GUIDING_WARD_SHARE = 0.75f, EARTH_ARRIVAL_SHARE = 0.75f;
+    constexpr float EARTHEN_SHARE = 0.625f, TIDAL_FAREWELL_SHARE = 1.5f, RENEWED_FAREWELL_SHARE = 0.75f;
+    constexpr float EARTH_RANGE = 10.0f;
 
     // Elune's Guardian's modifiers: slot (0 Guardian, 1 Descent, 2 Blessing) x 3 + choice.
     enum OwlModifier : uint8
@@ -1187,20 +1279,22 @@ namespace
             // Ranged DPS: Arcane Blast builds the Insight, Arcane Missiles spends it.
             { RUNE_ARCANE_MIND, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_ARCANE_BLAST }, { SPELL_ARCANE_MISSILES } }, SPELL_RUNE_ARCANE_MIND,
-              SPELL_MIND_MODIFIER_FIRST },
+              SPELL_MIND_MODIFIER_FIRST, MAX_CHOICES },
             // Ranged DPS: Frostbolt's Icicles.
             { RUNE_SPLINTERED_CROWN, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_FROSTBOLT } }, SPELL_RUNE_SPLINTERED_CROWN, SPELL_CROWN_MODIFIER_FIRST },
             // Ranged DPS: Pyroblast leaves the Ember, Fire Blast wakes the phoenix.
             { RUNE_PHOENIX_WAKE, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_PYROBLAST }, { SPELL_FIRE_BLAST } }, SPELL_RUNE_PHOENIX_WAKE, SPELL_PHOENIX_MODIFIER_FIRST },
+              { { SPELL_PYROBLAST }, { SPELL_FIRE_BLAST } }, SPELL_RUNE_PHOENIX_WAKE,
+              SPELL_PHOENIX_MODIFIER_FIRST, MAX_CHOICES },
             // Ranged DPS: Arcane Barrage sets the Orb loose.
             { RUNE_ASTRAL_HORIZON, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_ARCANE_BARRAGE } }, SPELL_RUNE_ASTRAL_HORIZON, SPELL_HORIZON_MODIFIER_FIRST },
+              { { SPELL_ARCANE_BARRAGE } }, SPELL_RUNE_ASTRAL_HORIZON,
+              SPELL_HORIZON_MODIFIER_FIRST, MAX_CHOICES },
             // Healers: Prayer of Mending places the star, Flash Heal or Greater Heal moves it.
             { RUNE_GUIDING_LIGHT, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
               { { SPELL_PRAYER_OF_MENDING }, { SPELL_FLASH_HEAL, SPELL_GREATER_HEAL } }, SPELL_RUNE_GUIDING_LIGHT,
-              SPELL_GUIDING_MODIFIER_FIRST },
+              SPELL_GUIDING_MODIFIER_FIRST, MAX_CHOICES },
             // Ranged DPS: Starfire calls the owls.
             { RUNE_ELUNES_GUARDIAN, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_STARFIRE } }, SPELL_RUNE_ELUNES_GUARDIAN, SPELL_OWL_MODIFIER_FIRST },
@@ -1294,6 +1388,49 @@ namespace
             return { { SPELL_GREATER_HEAL } };
         if (rune == RUNE_ELUNES_GUARDIAN && modifier == MOD_TWILIGHT_HUNT)
             return { { SPELL_WRATH } };
+        if (rune == RUNE_ARCANE_MIND)
+            switch (modifier)
+            {
+                case MOD_STORM_CONDUIT: return { { SPELL_LIGHTNING_BOLT } };
+                case MOD_STARFALL_EQUATION: return { { SPELL_STARFIRE } };
+                case MOD_MISSILE_SHARDS: return { { SPELL_FROSTBOLT } };
+                case MOD_ARCANE_CHARGE: return { { SPELL_ARCANE_EXPLOSION } };
+                case MOD_EVOCATIVE_MIND: return { { SPELL_EVOCATION } };
+                case MOD_SHOCKING_CLARITY: return { { SPELL_LIGHTNING_SHIELD } };
+                default: break;
+            }
+        if (rune == RUNE_PHOENIX_WAKE)
+            switch (modifier)
+            {
+                case MOD_FLAMEKEEPER: case MOD_WILDFIRE_RETURN: return { { SPELL_FLAME_SHOCK } };
+                case MOD_LAVA_FLOCK: return { { SPELL_LAVA_BURST } };
+                case MOD_BLAZING_PATH: return { { SPELL_FLAMESTRIKE } };
+                case MOD_HOT_PURSUIT: return { { SPELL_SCORCH } };
+                case MOD_EMBERGUARD: return { { SPELL_FIRE_WARD } };
+                default: return {};
+            }
+        if (rune == RUNE_ASTRAL_HORIZON)
+            switch (modifier)
+            {
+                case MOD_ORBITAL_LIGHTNING: return { { SPELL_LIGHTNING_BOLT } };
+                case MOD_STARWARD_SATELLITE: return { { SPELL_MOONFIRE } };
+                case MOD_SHATTERING_ORBIT: return { { SPELL_FROST_NOVA } };
+                case MOD_DISTANT_SPARK: return { { SPELL_ARCANE_SHOT } };
+                case MOD_EVOKED_REMNANT: return { { SPELL_EVOCATION } };
+                case MOD_ASTRAL_SHELTER: return { { SPELL_POWER_WORD_SHIELD } };
+                default: return {};
+            }
+        if (rune == RUNE_GUIDING_LIGHT)
+            switch (modifier)
+            {
+                case MOD_EARTHEN_STAR: return { { SPELL_EARTH_SHIELD } };
+                case MOD_MOONLIT_STAR: return { { SPELL_REJUVENATION } };
+                case MOD_CHAIN_GUIDANCE: return { { SPELL_CHAIN_HEAL } };
+                case MOD_HOLY_PASSAGE: return { { SPELL_HOLY_SHOCK } };
+                case MOD_TIDAL_FAREWELL: return { { SPELL_RIPTIDE } };
+                case MOD_RENEWED_FAREWELL: return { { SPELL_RENEW } };
+                default: break;
+            }
         if (rune == RUNE_ASTRAL_CONVERGENCE)
             switch (modifier)
             {
@@ -1334,6 +1471,7 @@ namespace
         std::size_t Crossed = 0;
         std::vector<ObjectGuid> Visits;     // Wild Flight: the enemies still to visit
         bool Struck = false;                // it has dived onto its host and struck it
+        bool Erupted = false, Blazed = false;   // its Flame Shock eruption, its Blazing Path: spent
         uint32 SpiralUntil = 0;             // Death Spiral: circling its host until (game ms)
         uint32 Born = 0, Repath = 0;
         Position Last, LastTrail;
@@ -1419,6 +1557,9 @@ namespace
         // Arcane Mind.
         uint8 BlastCount = 0;                       // Accelerated Thought: Arcane Blasts since the last extra
         bool MindChannel = false;                   // an empowered Arcane Missiles channelling (Mental Reserves)
+        ObjectGuid MindTarget;                      // the empowered channel's target
+        std::map<ObjectGuid, uint32> Blasted;       // Storm Conduit: enemies the Hero's Arcane Blast hit (game ms)
+        uint32 BoltInsightAt = 0, StarfallAt = 0, ShardsAt = 0, EmpoweredAt = 0, EvocativeAt = 0;   // game ms
 
         // The Splintered Crown.
         uint8 Icicles = 0, FrostboltHits = 0, IcicleAttacks = 0;
@@ -1431,6 +1572,8 @@ namespace
         std::vector<std::pair<Position, uint32>> Scorch;    // Scorched Earth's patches: where, when
         uint32 ScorchMap = 0, ScorchTimer = 0;
         float ScorchTick = 0.0f;
+        ObjectGuid LavaFlockOn;                     // Lava Flock: the Ember host a Lava Burst hit (one an Ember)
+        uint32 BurnRelease = 0, EmberguardAt = 0;   // the release whose host burns; game ms
 
         // Astral Horizon.
         ObjectGuid Orb, OrbVictim;
@@ -1444,6 +1587,9 @@ namespace
         Position RemnantAt;                         // Astral Remnant (RemnantUntil 0: none)
         uint32 RemnantMap = 0, RemnantUntil = 0, RemnantTimer = 0;
         float RemnantTick = 0.0f;
+        float OrbEmpower = 1.0f;                    // Arcane Blast on its victim: the next bolt 35% more
+        bool OrbSplit = false, OrbEvoked = false;   // Starfire's split bolt waiting; Evoked Remnant spent
+        uint32 SparkUntil = 0, OrbPulseAt = 0, OrbLightningAt = 0, StarwardAt = 0, ShelterAt = 0;  // game ms
 
         // Guiding Light.
         ObjectGuid StarBearer;
@@ -2458,6 +2604,7 @@ namespace
             case SPELL_CLINGING_EMBERS: return SPELL_CLINGING_EMBERS_TICK;
             case SPELL_LUNAR_WOUND: return SPELL_LUNAR_WOUND_TICK;
             case SPELL_ASTRAL_RUPTURE: return SPELL_ASTRAL_RUPTURE_TICK;
+            case SPELL_PHOENIX_BURN: return SPELL_PHOENIX_BURN_TICK;
             case SPELL_CINDER_WOUND: return SPELL_CINDER_WOUND_TICK;
             case SPELL_CINDER_WOUND_SPREAD: return SPELL_CINDER_WOUND_TICK;
             case SPELL_WINTER_WOUND: return SPELL_WINTER_WOUND_TICK;
@@ -3535,6 +3682,51 @@ namespace
         return float(player->SpellDamageBonusDone(target, info, uint32(base), SPELL_DIRECT_DAMAGE, EFFECT_0));
     }
 
+    // The Hero's spell power of a school for a rune's own hits, never less than the average damage of their known
+    // rank of floorSpell (so a Hero with little gear still deals something); withBonuses, their damage done bonuses
+    // of the school too (the rune's strikes ignore their modifiers).
+    float RunePower(Player* player, SpellSchoolMask school, uint32 floorSpell, bool withBonuses = true)
+    {
+        float floor = 0.0f;
+        if (SpellInfo const* rank = sSpellMgr->GetSpellInfo(KnownRank(player, floorSpell)))
+            floor = float(rank->Effects[EFFECT_0].BasePoints) + float(rank->Effects[EFFECT_0].DieSides + 1) / 2.0f;
+        float power = std::max(float(player->SpellBaseDamageBonusDone(school)), floor);
+        return withBonuses
+            ? power * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, school) : power;
+    }
+
+    // An aura ms longer, at most `most` over its application's own duration (a new cast starts again).
+    void ExtendAura(Aura* aura, int32 ms, int32 most)
+    {
+        int32 more = std::min(ms, most - (aura->GetMaxDuration() - aura->CalcMaxDuration()));
+        if (more <= 0)
+            return;
+        aura->SetMaxDuration(aura->GetMaxDuration() + more);
+        aura->SetDuration(aura->GetDuration() + more);
+    }
+
+    // An absorb of the Hero's on the unit (an earlier one replaced).
+    void Ward(Player* player, Unit* unit, uint32 spellId, float amount)
+    {
+        int32 points = std::max<int32>(1, int32(amount));
+        unit->RemoveAurasDueToSpell(spellId, player->GetGUID());
+        Report(player, spellId, 'A', points);
+        player->CastCustomSpell(unit, spellId, &points, nullptr, nullptr, true);
+    }
+
+    // A fresh buff on the Hero (an earlier one replaced).
+    void Renew(Player* player, uint32 spellId)
+    {
+        player->RemoveAurasDueToSpell(spellId);
+        player->AddAura(spellId, player);
+    }
+
+    // Since a moment (game ms; 0 never): at least ms ago.
+    bool Ready(uint32 at, uint32 ms)
+    {
+        return !at || Now() - at >= ms;
+    }
+
     // How often a rune damage over time ticks (its aura's period: a second unless it says otherwise).
     int32 DotPeriod(uint32 spellId)
     {
@@ -3661,6 +3853,7 @@ namespace
         bool Channelled = true;             // the missiles fly while Arcane Missiles channels
         float Echo = 0.0f;                  // Lingering Equation: the volley's damage so far
         float EchoCarry = -1.0f;            // what was left of an Arcane Echo already there (at the first missile)
+        bool Shards = false;                // Missile Shards: the first missile still to split
     };
 
     // One Insight missile: 40% of one of Arcane Missiles' own (Focused Intention: 40% more); Fractured Thought: 2
@@ -3681,6 +3874,17 @@ namespace
         float missile = DirectDamage(player, target, volley->Missile) * INSIGHT_SHARE * volley->Bonus;
         float hit = missile * (HasMindMarker(player, MOD_FOCUSED_INTENTION) ? FOCUSED_INTENTION : 1.0f);
         Strike(player, target, SPELL_INSIGHT_MISSILE, hit);
+        if (volley->Shards)
+        {
+            volley->Shards = false;
+            std::size_t count = SHARDS_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, target, SHARDS_RADIUS))
+                if (enemy != target && count)
+                {
+                    Strike(player, enemy, SPELL_INSIGHT_MISSILE, hit * SHARDS_SHARE);
+                    --count;
+                }
+        }
         if (HasMindMarker(player, MOD_FRACTURED_THOUGHT))
         {
             std::size_t count = FRACTURED_TARGETS;
@@ -3711,6 +3915,106 @@ namespace
         player->AddAura(SPELL_MENTAL_RESERVES, player);
     }
 
+    // An empowered Arcane Missiles completed: the next Arcane Blast instant (6 sec); Mental Reserves; Shocking
+    // Clarity (in Lightning Shield) a Nature bolt at its target.
+    void MindComplete(Player* player)
+    {
+        State& state = StateOf(player);
+        state.EmpoweredAt = Now();
+        Renew(player, SPELL_MIND_FLOW);
+        if (HasMindMarker(player, MOD_MENTAL_RESERVES))
+            MindReserves(player);
+        Unit* target = ObjectAccessor::GetUnit(*player, state.MindTarget);
+        if (HasMindMarker(player, MOD_SHOCKING_CLARITY) && Valid(player, target)
+            && player->GetAuraOfRankedSpell(SPELL_LIGHTNING_SHIELD, player->GetGUID()))
+            Strike(player, target, SPELL_SHOCKING_CLARITY,
+                RunePower(player, SPELL_SCHOOL_MASK_NATURE, SPELL_ARCANE_BLAST) * CLARITY_POWER);
+    }
+
+    // Insight spent, count of it (its look gone below 4).
+    void SpendInsight(Player* player, uint8 count)
+    {
+        Aura* aura = player->GetAura(SPELL_ARCANE_INSIGHT);
+        if (!aura)
+            return;
+        if (aura->GetStackAmount() <= count)
+            player->RemoveAurasDueToSpell(SPELL_ARCANE_INSIGHT);
+        else
+            aura->SetStackAmount(aura->GetStackAmount() - count);
+        if (Insight(player) < INSIGHT_THRESHOLD)
+            player->RemoveAurasDueToSpell(SPELL_MIND_UNBOUND);
+    }
+
+    // A direct Arcane Blast hit on an enemy: Storm Conduit's mark (15 sec).
+    void MindBlasted(Player* player, Unit* enemy)
+    {
+        std::map<ObjectGuid, uint32>& blasted = StateOf(player).Blasted;
+        for (auto it = blasted.begin(); it != blasted.end();)
+            it = Now() - it->second >= BLASTED_MS ? blasted.erase(it) : std::next(it);
+        blasted[enemy->GetGUID()] = Now();
+    }
+
+    // A direct Lightning Bolt hit: Insight (8 sec apart); Storm Conduit, on an enemy the Hero's Arcane Blast hit,
+    // the next Insight volley 20% more.
+    void MindBolt(Player* player, Unit* enemy)
+    {
+        State& state = StateOf(player);
+        if (Ready(state.BoltInsightAt, BOLT_INSIGHT_EVERY_MS))
+        {
+            state.BoltInsightAt = Now();
+            GainInsight(player, 1);
+        }
+        auto blasted = state.Blasted.find(enemy->GetGUID());
+        if (HasMindMarker(player, MOD_STORM_CONDUIT) && blasted != state.Blasted.end()
+            && Now() - blasted->second < BLASTED_MS)
+            Renew(player, SPELL_STORM_CONDUIT_CHARGE);
+    }
+
+    // Starfall Equation: a direct Starfire hit, Insight and the next Arcane Blast 10% more (8 sec apart).
+    void MindStarfire(Player* player)
+    {
+        State& state = StateOf(player);
+        if (!HasMindMarker(player, MOD_STARFALL_EQUATION) || !Ready(state.StarfallAt, STARFALL_EVERY_MS))
+            return;
+        state.StarfallAt = Now();
+        GainInsight(player, 1);
+        Renew(player, SPELL_STARFALL_EQUATION);
+    }
+
+    // Missile Shards: a direct Frostbolt hit readies the next empowered channel's split (15 sec).
+    void MindFrostbolt(Player* player)
+    {
+        if (HasMindMarker(player, MOD_MISSILE_SHARDS))
+            StateOf(player).ShardsAt = Now();
+    }
+
+    // Arcane Charge: Arcane Explosion within 6 sec of an empowered channel bursts for 25% of spell power on up to
+    // 5 enemies within 8 yards (once a channel).
+    void MindExplosion(Player* player)
+    {
+        State& state = StateOf(player);
+        if (!HasMindMarker(player, MOD_ARCANE_CHARGE) || !state.EmpoweredAt
+            || Now() - state.EmpoweredAt > ARCANE_CHARGE_MS)
+            return;
+        state.EmpoweredAt = 0;
+        float burst = RunePower(player, SPELL_SCHOOL_MASK_ARCANE, SPELL_ARCANE_BLAST) * ARCANE_CHARGE_POWER;
+        for (Unit* enemy : EnemiesIn(player, Circle(player->GetPosition(), ARCANE_CHARGE_RADIUS),
+            ARCANE_CHARGE_TARGETS))
+            Strike(player, enemy, SPELL_ARCANE_CHARGE, burst);
+    }
+
+    // Evocative Mind: Evocation begun within 30 sec of an empowered channel, 2% of maximum mana (30 sec apart).
+    void MindEvocation(Player* player)
+    {
+        State& state = StateOf(player);
+        if (!HasMindMarker(player, MOD_EVOCATIVE_MIND) || !state.EmpoweredAt
+            || Now() - state.EmpoweredAt > EVOCATIVE_AFTER_MS || !Ready(state.EvocativeAt, EVOCATIVE_EVERY_MS))
+            return;
+        state.EvocativeAt = Now();
+        player->EnergizeBySpell(player, SPELL_EVOCATION,
+            uint32(player->GetMaxPower(POWER_MANA) * EVOCATIVE_MANA_PCT / 100.0f), POWER_MANA);
+    }
+
     // Arcane Missiles at 4 Insight or more spends it all: its Insight volley, 5 missiles, flies with the channel
     // (Overclocked Intellect: all as it starts; Unbound Mind: no channel, every missile on its own, 0.5 sec apart).
     // The mana comes back after the cast (spell_titan_rune_arcane_missiles).
@@ -3724,6 +4028,18 @@ namespace
         volley->Missile = MissileOf(missiles);
         if (HasMindMarker(player, MOD_PATIENT_CALCULATION) && spent > INSIGHT_THRESHOLD)
             volley->Bonus += PATIENT_STEP * float(spent - INSIGHT_THRESHOLD);
+        if (player->HasAura(SPELL_STORM_CONDUIT_CHARGE))
+        {
+            player->RemoveAurasDueToSpell(SPELL_STORM_CONDUIT_CHARGE);
+            volley->Bonus *= STORM_CONDUIT;
+        }
+        State& state = StateOf(player);
+        state.MindTarget = target->GetGUID();
+        if (HasMindMarker(player, MOD_MISSILE_SHARDS) && state.ShardsAt && Now() - state.ShardsAt <= SHARDS_READY_MS)
+        {
+            state.ShardsAt = 0;
+            volley->Shards = true;
+        }
         bool unbound = HasMindMarker(player, MOD_UNBOUND_MIND);
         bool overclocked = HasMindMarker(player, MOD_OVERCLOCKED_INTELLECT);
         if (overclocked)
@@ -3749,12 +4065,11 @@ namespace
                 if (player->IsInWorld() && player->IsAlive() && Valid(player, at))
                     Strike(player, at, SPELL_UNBOUND_MISSILE, DirectDamage(player, at, missile));
             }, Milliseconds(i * UNBOUND_SPACING_MS));
-        if (HasMindMarker(player, MOD_MENTAL_RESERVES))
-            player->m_Events.AddEventAtOffset([player]()
-            {
-                if (player->IsInWorld() && player->IsAlive())
-                    MindReserves(player);
-            }, Milliseconds(std::max(count, INSIGHT_MISSILES) * UNBOUND_SPACING_MS));
+        player->m_Events.AddEventAtOffset([player]()
+        {
+            if (player->IsInWorld() && player->IsAlive() && player->HasAura(SPELL_RUNE_ARCANE_MIND))
+                MindComplete(player);
+        }, Milliseconds(std::max(count, INSIGHT_MISSILES) * UNBOUND_SPACING_MS));
     }
 
     // ---- The Splintered Crown ----------------------------------------------------------------------------------
@@ -3942,9 +4257,43 @@ namespace
                 old->RemoveAurasDueToSpell(SPELL_PHOENIX_EMBER, player->GetGUID());
         state.EmberHost = target->GetGUID();
         state.EmberPyro = pyroblast;
+        state.LavaFlockOn.Clear();
         Lasting(player, target, SPELL_PHOENIX_EMBER, EMBER_MS);
         Trace(player, Acore::StringFormat("Pyroblast hit {} for {}: Ember placed (on it: {})", target->GetName(),
             pyroblast, target->HasAura(SPELL_PHOENIX_EMBER, player->GetGUID()) ? "yes" : "NO"));
+    }
+
+    // Lava Flock (Lava Burst) and Hot Pursuit (Scorch): a direct hit on the Ember's host.
+    void PhoenixStrike(Player* player, Unit* enemy, uint32 firstRank)
+    {
+        State& state = StateOf(player);
+        if (enemy->GetGUID() != state.EmberHost || !enemy->HasAura(SPELL_PHOENIX_EMBER, player->GetGUID()))
+            return;
+        if (firstRank == SPELL_LAVA_BURST && HasPhoenixMarker(player, MOD_LAVA_FLOCK))
+            state.LavaFlockOn = enemy->GetGUID();
+        if (firstRank == SPELL_SCORCH && HasPhoenixMarker(player, MOD_HOT_PURSUIT))
+            Renew(player, SPELL_HOT_PURSUIT);
+    }
+
+    // Crossing the Hero's Flame Shock target: an eruption of 20% of their spell power on up to 3 enemies within 6
+    // yards of it (once a phoenix).
+    void PhoenixErupt(Player* player, Flight& flight, Unit* enemy)
+    {
+        if (flight.Erupted || !enemy->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
+            return;
+        flight.Erupted = true;
+        float burst = RunePower(player, SPELL_SCHOOL_MASK_FIRE, SPELL_PYROBLAST) * ERUPTION_POWER;
+        for (Unit* other : EnemiesIn(player, Circle(enemy->GetPosition(), ERUPTION_RADIUS), ERUPTION_TARGETS))
+            Strike(player, other, SPELL_PHOENIX_ERUPTION, burst);
+    }
+
+    // The Hero's Flamestrike out (any rank; nullptr none).
+    DynamicObject* FlamestrikeArea(Player* player)
+    {
+        for (uint32 id = SPELL_FLAMESTRIKE; id; id = sSpellMgr->GetNextSpellInChain(id))
+            if (DynamicObject* area = player->GetDynObject(id))
+                return area;
+        return nullptr;
     }
 
     // A flight hit (Clinging Embers: 25% more of it over 6 sec).
@@ -3971,12 +4320,23 @@ namespace
             state.ScorchTick = pyroblast * SCORCH_SHARE;
             state.ScorchMap = player->GetMapId();
         }
+        // Flamekeeper: on the Hero's Flame Shock host, 20% of their spell power as it is released.
+        if (HasPhoenixMarker(player, MOD_FLAMEKEEPER)
+            && host->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
+            Strike(player, host, SPELL_FLAMEKEEPER,
+                RunePower(player, SPELL_SCHOOL_MASK_FIRE, SPELL_PYROBLAST) * FLAMEKEEPER_POWER);
+        // Lava Flock: a Lava Burst hit this Ember's host, one bird more for 30%.
+        bool lava = HasPhoenixMarker(player, MOD_LAVA_FLOCK) && state.LavaFlockOn == host->GetGUID();
+        state.LavaFlockOn.Clear();
         uint32 birds = flock ? FLOCK_BIRDS : 1;
+        uint32 total = birds + (lava ? 1 : 0);
         float facing = player->GetAngle(host);
         uint32 now = Now();
-        for (uint32 i = 0; i < birds; ++i)
+        for (uint32 i = 0; i < total; ++i)
         {
-            float side = birds > 1 ? (float(i) - 1.0f) * FLOCK_SPREAD : 0.0f;
+            bool extra = i >= birds;
+            float side = extra ? FLOCK_SPREAD * float(birds > 1 ? 2 : 1)
+                : birds > 1 ? (float(i) - 1.0f) * FLOCK_SPREAD : 0.0f;
             Position at = Toward(player->GetPosition(), facing + float(M_PI) / 2.0f, side);
             at = Toward(at, facing + float(M_PI), PHOENIX_BEHIND);
             at.m_positionZ = player->GetPositionZ() + PHOENIX_DROP;
@@ -3987,13 +4347,13 @@ namespace
                 : std::string("phoenix: the summon FAILED"));
             if (!bird)
                 continue;
-            if (flock)
+            if (flock || extra)
                 bird->SetObjectScale(bird->GetObjectScale() * FLOCK_SCALE);
             Flight flight;
             flight.Bird = bird->GetGUID();
             flight.Host = host->GetGUID();
             flight.Release = release;
-            flight.Share = 1.0f / float(birds);
+            flight.Share = extra ? LAVA_FLOCK_SHARE : 1.0f / float(birds);
             flight.Pyro = pyroblast;
             flight.Cross = pyroblast * (broad ? BROADWING_CROSS : PHOENIX_CROSS);
             flight.HalfWidth = broad ? BROADWING_HALF_WIDTH : PHOENIX_HALF_WIDTH;
@@ -4024,6 +4384,19 @@ namespace
         if (state.ArrivedRelease == flight.Release)
             return;
         state.ArrivedRelease = flight.Release;
+        // Wildfire Return: Flame Shock on its host 2 sec longer (6 sec an application); Emberguard: in Fire Ward,
+        // an absorb of 40% of spell power (12 sec apart).
+        Unit* host = ObjectAccessor::GetUnit(*player, flight.Host);
+        if (HasPhoenixMarker(player, MOD_WILDFIRE_RETURN) && host)
+            if (Aura* shock = host->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
+                ExtendAura(shock, WILDFIRE_EXTEND_MS, WILDFIRE_MOST_MS);
+        if (HasPhoenixMarker(player, MOD_EMBERGUARD) && Ready(state.EmberguardAt, EMBERGUARD_EVERY_MS)
+            && player->GetAuraOfRankedSpell(SPELL_FIRE_WARD, player->GetGUID()))
+        {
+            state.EmberguardAt = Now();
+            Ward(player, player, SPELL_EMBERGUARD,
+                RunePower(player, SPELL_SCHOOL_MASK_FIRE, SPELL_PYROBLAST, false) * EMBERGUARD_POWER);
+        }
         if (HasPhoenixMarker(player, MOD_HOMEWARD_FLAME))
             if (uint32 rank = KnownRank(player, SPELL_FIRE_BLAST); rank && player->GetSpellCooldownDelay(rank))
                 player->ModifySpellCooldown(rank, -int32(std::min<uint32>(HOMEWARD_MS,
@@ -4104,7 +4477,18 @@ namespace
                     && flight.Hit.insert(enemy->GetGUID()).second)
                 {
                     FlightHit(player, enemy, flight.Cross * flight.Share);
+                    PhoenixErupt(player, flight, enemy);
                     ++flight.Crossed;
+                }
+            if (!flight.Blazed && HasPhoenixMarker(player, MOD_BLAZING_PATH))
+                if (DynamicObject* area = FlamestrikeArea(player);
+                    area && area->GetExactDist2d(&here) <= area->GetRadius())
+                {
+                    flight.Blazed = true;
+                    float blaze = RunePower(player, SPELL_SCHOOL_MASK_FIRE, SPELL_PYROBLAST) * BLAZING_PATH_POWER;
+                    for (Unit* enemy : EnemiesIn(player, Circle(area->GetPosition(), area->GetRadius()),
+                        BLAZING_PATH_TARGETS))
+                        Strike(player, enemy, SPELL_BLAZING_PATH, blaze);
                 }
             if (scorch && here.GetExactDist2d(&flight.LastTrail) >= SCORCH_SPACING)
             {
@@ -4133,8 +4517,21 @@ namespace
                     flight.Struck = true;
                     flight.Repath = 0;
                     flight.Hit.insert(host->GetGUID());
-                    FlightHit(player, host, flight.Pyro * PHOENIX_HOST * flight.Share
-                        * (HasPhoenixMarker(player, MOD_SUN_TALON) ? SUN_TALON : 1.0f));
+                    float bonus = HasPhoenixMarker(player, MOD_SUN_TALON) ? SUN_TALON : 1.0f;
+                    if (player->HasAura(SPELL_HOT_PURSUIT))
+                    {
+                        player->RemoveAurasDueToSpell(SPELL_HOT_PURSUIT);
+                        bonus *= HOT_PURSUIT;
+                    }
+                    FlightHit(player, host, flight.Pyro * PHOENIX_HOST * flight.Share * bonus);
+                    // Phoenix Burn: 30% of spell power over 6 sec on its host (once a release).
+                    if (state.BurnRelease != flight.Release && host->IsAlive())
+                    {
+                        state.BurnRelease = flight.Release;
+                        AddDot(player, host, SPELL_PHOENIX_BURN,
+                            RunePower(player, SPELL_SCHOOL_MASK_FIRE, SPELL_PYROBLAST) * PHOENIX_BURN_POWER,
+                            PHOENIX_BURN_MS);
+                    }
                     if (HasPhoenixMarker(player, MOD_DEATH_SPIRAL))
                     {
                         flight.SpiralUntil = now + SPIRAL_MS;
@@ -4175,7 +4572,10 @@ namespace
                 if (bird->GetExactDist2d(next) <= VISIT_REACH)
                 {
                     if (flight.Hit.insert(next->GetGUID()).second)
+                    {
                         FlightHit(player, next, flight.Cross * flight.Share);
+                        PhoenixErupt(player, flight, next);
+                    }
                     flight.Visits.erase(flight.Visits.begin());
                     flight.Repath = 0;
                     ++itr;
@@ -4254,8 +4654,107 @@ namespace
             amount *= EVENT_HORIZON;
         if (HasHorizonMarker(player, MOD_ASTRAL_FOCUS) && enemy->GetGUID() == state.OrbVictim)
             amount *= ASTRAL_FOCUS;
+        // Starward Satellite: on the Hero's Moonfire target 20% more, and the Moonfire 1 sec longer (4 sec an
+        // application, 2 sec apart).
+        if (HasHorizonMarker(player, MOD_STARWARD_SATELLITE))
+            if (Aura* moonfire = enemy->GetAuraOfRankedSpell(SPELL_MOONFIRE, player->GetGUID()))
+            {
+                amount *= STARWARD;
+                if (Ready(state.StarwardAt, STARWARD_EVERY_MS))
+                {
+                    state.StarwardAt = Now();
+                    ExtendAura(moonfire, STARWARD_EXTEND_MS, STARWARD_MOST_MS);
+                }
+            }
         int32 points = std::max<int32>(1, int32(amount));
         orb->CastCustomSpell(enemy, spellId, &points, nullptr, nullptr, true, nullptr, nullptr, player->GetGUID());
+    }
+
+    // The Orb set loose: two bolts at its victim; Astral Shelter, in the Hero's Power Word: Shield, an absorb of
+    // 25% of their spell power (12 sec apart).
+    void OrbLaunched(Player* player, Unit* from, Unit* victim)
+    {
+        State& state = StateOf(player);
+        OrbStrike(player, from, victim, ORB_LAUNCH_SHARE, SPELL_ORB_LAUNCH);
+        if (HasHorizonMarker(player, MOD_ASTRAL_SHELTER) && Ready(state.ShelterAt, SHELTER_EVERY_MS)
+            && player->GetAuraOfRankedSpell(SPELL_POWER_WORD_SHIELD, player->GetGUID()))
+        {
+            state.ShelterAt = Now();
+            Ward(player, player, SPELL_ASTRAL_SHELTER,
+                RunePower(player, SPELL_SCHOOL_MASK_ARCANE, SPELL_ARCANE_BARRAGE, false) * SHELTER_POWER);
+        }
+    }
+
+    // The Orb's victim, while it is out (nullptr: none, or another enemy).
+    Unit* OrbVictimHit(Player* player, Unit* enemy)
+    {
+        State& state = StateOf(player);
+        return OrbSource(player) && enemy->GetGUID() == state.OrbVictim ? OrbSource(player) : nullptr;
+    }
+
+    // Arcane Blast on the Orb's victim: its next bolt 35% more.
+    void HorizonBlast(Player* player, Unit* enemy)
+    {
+        if (OrbVictimHit(player, enemy))
+            StateOf(player).OrbEmpower = BLAST_EMPOWER;
+    }
+
+    // Starfire on the Orb's victim: its next bolt also at one more enemy within 8 yards for half.
+    void HorizonStarfire(Player* player, Unit* enemy)
+    {
+        if (OrbVictimHit(player, enemy))
+            StateOf(player).OrbSplit = true;
+    }
+
+    // Orbital Lightning (Lightning Bolt) and Distant Spark (Arcane Shot) on the Orb's victim.
+    void HorizonStrike(Player* player, Unit* enemy, uint32 firstRank)
+    {
+        Unit* orb = OrbVictimHit(player, enemy);
+        if (!orb)
+            return;
+        State& state = StateOf(player);
+        if (firstRank == SPELL_LIGHTNING_BOLT && HasHorizonMarker(player, MOD_ORBITAL_LIGHTNING)
+            && Ready(state.OrbLightningAt, ORBITAL_LIGHTNING_EVERY_MS))
+        {
+            state.OrbLightningAt = Now();
+            OrbStrike(player, orb, enemy, 1.0f, SPELL_ORBITAL_LIGHTNING);
+        }
+        if (firstRank == SPELL_ARCANE_SHOT && HasHorizonMarker(player, MOD_DISTANT_SPARK))
+            state.SparkUntil = Now() + DISTANT_SPARK_MS;
+    }
+
+    // Arcane Explosion within 8 yards of the Orb: a bolt's worth to up to 5 enemies within 8 yards of it (4 sec
+    // apart).
+    void HorizonExplosion(Player* player)
+    {
+        State& state = StateOf(player);
+        Unit* orb = OrbSource(player);
+        if (!orb || !Ready(state.OrbPulseAt, ORB_PULSE_EVERY_MS)
+            || (orb != player && !player->IsWithinDist(orb, ORB_PULSE_RANGE)))
+            return;
+        state.OrbPulseAt = Now();
+        std::size_t count = ORB_PULSE_TARGETS;
+        for (Unit* enemy : EnemiesAround(player, orb, ORB_PULSE_RANGE))
+            if (count)
+            {
+                OrbStrike(player, orb, enemy, 1.0f, SPELL_ORB_PULSE);
+                --count;
+            }
+    }
+
+    // Evoked Remnant: Evocation completed while the Orb is out, 2 sec longer (once an Orb).
+    void HorizonEvocation(Player* player)
+    {
+        State& state = StateOf(player);
+        if (!HasHorizonMarker(player, MOD_EVOKED_REMNANT) || !OrbSource(player) || state.OrbEvoked)
+            return;
+        state.OrbEvoked = true;
+        state.OrbUntil += EVOKED_MS;
+        if (Aura* satellite = player->GetAura(SPELL_ORB_SATELLITE))
+        {
+            satellite->SetMaxDuration(satellite->GetMaxDuration() + int32(EVOKED_MS));
+            satellite->SetDuration(satellite->GetDuration() + int32(EVOKED_MS));
+        }
     }
 
     // The Orb's course to a point, its height kept over the ground there.
@@ -4284,6 +4783,9 @@ namespace
         state.OrbTimer = 0;
         state.OrbBolt = barrage * ORB_BOLT_SHARE;
         state.OrbCrossed.clear();
+        state.OrbEmpower = 1.0f;
+        state.OrbSplit = state.OrbEvoked = false;
+        state.SparkUntil = 0;
         if (HasHorizonMarker(player, MOD_SATELLITE))
         {
             state.OrbSatellite = true;
@@ -4293,16 +4795,19 @@ namespace
                 aura->SetMaxDuration(int32(SATELLITE_MS));
                 aura->SetDuration(int32(SATELLITE_MS));
             }
+            OrbLaunched(player, player, victim);
             return;
         }
         float angle = player->GetAngle(victim);
         Position at = Toward(player->GetPosition(), angle, ORB_START);
         at.m_positionZ = player->GetPositionZ() + ORB_HEIGHT;
         at.SetOrientation(angle);
-        TempSummon* orb = SummonFlier(player, NPC_RUNE_ARCANE_ORB, at, ORB_MS + ORB_LINGER_MS, SPELL_ORB_FORM);
+        TempSummon* orb = SummonFlier(player, NPC_RUNE_ARCANE_ORB, at, ORB_MS + EVOKED_MS + ORB_LINGER_MS,
+            SPELL_ORB_FORM);
         if (!orb)
             return;
         state.Orb = orb->GetGUID();
+        OrbLaunched(player, orb, victim);
         state.OrbLast = at;
         state.OrbHeading = angle;
         state.OrbSlowed = false;
@@ -4324,9 +4829,12 @@ namespace
             : near.empty() ? nullptr : near.front();
         if (!target)
             return;
+        // Arcane Blast's empowering (35% more), spent on this bolt.
+        float first = state.OrbEmpower;
+        state.OrbEmpower = 1.0f;
         if (HasHorizonMarker(player, MOD_PRISMATIC_LANCE))
         {
-            OrbStrike(player, orb, target, 1.0f, SPELL_PRISMATIC_LANCE);
+            OrbStrike(player, orb, target, first, SPELL_PRISMATIC_LANCE);
             Shape line;
             line.From = target->GetPosition();
             line.To = Toward(line.From, orb->GetAngle(target), LANCE_REACH);
@@ -4340,7 +4848,26 @@ namespace
                 }
         }
         else
-            OrbStrike(player, orb, target, 1.0f, SPELL_ORB_BOLT);
+            OrbStrike(player, orb, target, first, SPELL_ORB_BOLT);
+        // Starfire's split and Distant Spark's pierce (5 sec): one more enemy within 8 yards for half, each.
+        uint32 extra = (state.OrbSplit ? 1 : 0) + (state.SparkUntil && Now() < state.SparkUntil ? 1 : 0);
+        state.OrbSplit = false;
+        state.SparkUntil = 0;
+        for (Unit* enemy : EnemiesAround(player, target, SPLIT_RANGE))
+            if (enemy != target && extra)
+            {
+                OrbStrike(player, orb, enemy, ORB_SPLIT, SPELL_ORB_BOLT);
+                --extra;
+            }
+        // Shattering Orbit: on the Hero's Frost Nova target, one more in their Frost Nova within 8 yards for half.
+        if (HasHorizonMarker(player, MOD_SHATTERING_ORBIT)
+            && target->GetAuraOfRankedSpell(SPELL_FROST_NOVA, player->GetGUID()))
+            for (Unit* enemy : EnemiesAround(player, target, SPLIT_RANGE))
+                if (enemy != target && enemy->GetAuraOfRankedSpell(SPELL_FROST_NOVA, player->GetGUID()))
+                {
+                    OrbStrike(player, orb, enemy, SHATTERING_SHARE, SPELL_ORB_BOLT);
+                    break;
+                }
         if (!HasHorizonMarker(player, MOD_CONSTELLATION))
             return;
         std::size_t count = CONSTELLATION_TARGETS;
@@ -4580,6 +5107,14 @@ namespace
         {
             from->RemoveAurasDueToSpell(SPELL_GUIDING_STAR, player->GetGUID());
             from->CastSpell(to, SPELL_STAR_FLIGHT, true);
+            // Leaving the Hero's Renew target: a trail, 15% of spell power every 2 sec for 6 sec (renewed).
+            if (from->IsAlive() && from->GetAuraOfRankedSpell(SPELL_RENEW, player->GetGUID()))
+            {
+                int32 tick = std::max<int32>(1, int32(StarPulse(player, from) * TRAIL_SHARE));
+                from->RemoveAurasDueToSpell(SPELL_GUIDING_TRAIL, player->GetGUID());
+                Report(player, SPELL_GUIDING_TRAIL, 'H', tick);
+                player->CastCustomSpell(from, SPELL_GUIDING_TRAIL, &tick, nullptr, nullptr, true);
+            }
         }
         if (from && HasGuidingMarker(player, MOD_GENTLE_PASSAGE))
         {
@@ -4617,6 +5152,14 @@ namespace
         }
         else
             Mend(player, bearer, SPELL_STAR_ARRIVAL, pulse * ARRIVAL_SHARE);
+        // On the Hero's Earth Shield bearer: 30% of spell power to one injured ally within 10 yards (no charge).
+        if (bearer->GetAuraOfRankedSpell(SPELL_EARTH_SHIELD, player->GetGUID()))
+            for (Unit* ally : InjuredNear(player, bearer, EARTH_RANGE))
+                if (ally != bearer && !ally->IsFullHealth())
+                {
+                    Mend(player, ally, SPELL_STAR_PULSE, pulse * EARTH_ARRIVAL_SHARE);
+                    break;
+                }
     }
 
     // Flash Heal or Greater Heal on another ally (Guardian Star: Greater Heal only) moves the star there, at most
@@ -4631,6 +5174,17 @@ namespace
         if (state.StarMovedAt && Now() - state.StarMovedAt < STAR_MOVE_MS)
             return;
         MoveStar(player, ObjectAccessor::GetUnit(*player, state.StarBearer), ally);
+        // Greater Heal's redirect: an absorb of 30% of spell power on the new bearer (6 sec).
+        if (greater)
+            Ward(player, ally, SPELL_GUIDING_WARD, StarPulse(player, ally) * GUIDING_WARD_SHARE);
+    }
+
+    // Chain Guidance (Chain Heal) and Holy Passage (Holy Shock): their heal on another ally moves the star.
+    void GuidingHeal(Player* player, Unit* ally, uint32 firstRank)
+    {
+        if ((firstRank == SPELL_CHAIN_HEAL && HasGuidingMarker(player, MOD_CHAIN_GUIDANCE))
+            || (firstRank == SPELL_HOLY_SHOCK && HasGuidingMarker(player, MOD_HOLY_PASSAGE)))
+            RedirectStar(player, ally, false);
     }
 
     // Its natural end on its bearer. Final Benediction: a heal of 2.5 pulses; Afterglow: 3.25 pulses over 8 sec;
@@ -4655,6 +5209,17 @@ namespace
             player->CastCustomSpell(bearer, SPELL_PARTING_GRACE, &shield, nullptr, nullptr, true);
             player->AddAura(SPELL_PARTING_GRACE_SPEED, bearer);
         }
+        // Tidal Farewell: the Hero's Riptide on the bearer, 60% of spell power. Renewed Farewell: their Renew 4 sec
+        // longer (6 sec an application), and 30%.
+        if (HasGuidingMarker(player, MOD_TIDAL_FAREWELL)
+            && bearer->GetAuraOfRankedSpell(SPELL_RIPTIDE, player->GetGUID()))
+            Mend(player, bearer, SPELL_STAR_PULSE, pulse * TIDAL_FAREWELL_SHARE);
+        if (HasGuidingMarker(player, MOD_RENEWED_FAREWELL))
+            if (Aura* renew = bearer->GetAuraOfRankedSpell(SPELL_RENEW, player->GetGUID()))
+            {
+                ExtendAura(renew, RENEWED_EXTEND_MS, RENEWED_MOST_MS);
+                Mend(player, bearer, SPELL_STAR_PULSE, pulse * RENEWED_FAREWELL_SHARE);
+            }
     }
 
     // A pulse every 2 sec on its bearer while within reach (out of reach: paused). Guardian Star: 10% more a pulse
@@ -4713,6 +5278,19 @@ namespace
             state.StarFocus = std::min<uint8>(GUARDIAN_STEPS, state.StarFocus + 1);
         }
         Mend(player, bearer, SPELL_STAR_PULSE, heal);
+        // Earthen Star: on the Hero's Earth Shield bearer, 25% of spell power to one injured ally within 10 yards.
+        if (HasGuidingMarker(player, MOD_EARTHEN_STAR)
+            && bearer->GetAuraOfRankedSpell(SPELL_EARTH_SHIELD, player->GetGUID()))
+            for (Unit* ally : InjuredNear(player, bearer, EARTH_RANGE))
+                if (ally != bearer && !ally->IsFullHealth())
+                {
+                    Mend(player, ally, SPELL_STAR_PULSE, pulse * EARTHEN_SHARE);
+                    break;
+                }
+        // Moonlit Star: their Rejuvenation on the bearer 1 sec longer (4 sec an application).
+        if (HasGuidingMarker(player, MOD_MOONLIT_STAR))
+            if (Aura* rejuvenation = bearer->GetAuraOfRankedSpell(SPELL_REJUVENATION, player->GetGUID()))
+                ExtendAura(rejuvenation, MOONLIT_EXTEND_MS, MOONLIT_MOST_MS);
         if (HasGuidingMarker(player, MOD_SHARED_LIGHT))
             for (Unit* ally : InjuredNear(player, bearer, SHARED_RANGE))
                 if (ally != bearer && !ally->IsFullHealth())
@@ -4733,13 +5311,6 @@ namespace
     bool HasOwlMarker(Unit* unit, uint8 modifier)
     {
         return Marked(unit, SPELL_OWL_MODIFIER_FIRST, modifier);
-    }
-
-    // A fresh buff on the Hero (an earlier one replaced).
-    void Renew(Player* player, uint32 spellId)
-    {
-        player->RemoveAurasDueToSpell(spellId);
-        player->AddAura(spellId, player);
     }
 
     // One owl strike from the sky on its victim (Silver Wings: half of it to up to 4 others within 6 yards; Lunar
@@ -4845,17 +5416,10 @@ namespace
         return Marked(unit, SPELL_CONVERGENCE_MODIFIER_FIRST, modifier);
     }
 
-    // The Hero's spell power of a school, never less than their Starfire's own average damage (so a Hero with
-    // little gear still collides and flares); withBonuses, their damage done bonuses of the school too (the rune's
-    // strikes ignore their modifiers).
+    // The Hero's spell power of a school, never less than their Starfire's own average damage.
     float ConvergencePower(Player* player, SpellSchoolMask school, bool withBonuses = true)
     {
-        float floor = 0.0f;
-        if (SpellInfo const* rank = sSpellMgr->GetSpellInfo(KnownRank(player, SPELL_STARFIRE)))
-            floor = float(rank->Effects[EFFECT_0].BasePoints) + float(rank->Effects[EFFECT_0].DieSides + 1) / 2.0f;
-        float power = std::max(float(player->SpellBaseDamageBonusDone(school)), floor);
-        return withBonuses
-            ? power * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, school) : power;
+        return RunePower(player, school, SPELL_STARFIRE, withBonuses);
     }
 
     // The nearest other enemy within range of the target (but, with fresh, not one already in the spell of the
@@ -4932,13 +5496,7 @@ namespace
                 Strike(player, other, SPELL_SOLAR_FLARE, flare * TIDAL_SHARE);
         if (Aura* swarm = enemy->GetAuraOfRankedSpell(SPELL_INSECT_SWARM, player->GetGUID()))
         {
-            int32 more = std::min(SWARM_EXTEND_MS,
-                SWARM_EXTEND_MOST_MS - (swarm->GetMaxDuration() - swarm->CalcMaxDuration()));
-            if (more > 0)
-            {
-                swarm->SetMaxDuration(swarm->GetMaxDuration() + more);
-                swarm->SetDuration(swarm->GetDuration() + more);
-            }
+            ExtendAura(swarm, SWARM_EXTEND_MS, SWARM_EXTEND_MOST_MS);
             if (HasConvergenceMarker(player, MOD_INSECT_RENEWAL))
                 Renew(player, SPELL_INSECT_RENEWAL);
         }
@@ -4963,11 +5521,8 @@ namespace
             && (!state.AstralWardAt || Now() - state.AstralWardAt >= ASTRAL_WARD_EVERY_MS))
         {
             state.AstralWardAt = Now();
-            int32 ward = std::max<int32>(1, int32(ConvergencePower(player, SPELL_SCHOOL_MASK_NATURE, false)
-                * ASTRAL_WARD_POWER));
-            player->RemoveAurasDueToSpell(SPELL_ASTRAL_WARD);
-            Report(player, SPELL_ASTRAL_WARD, 'A', ward);
-            player->CastCustomSpell(player, SPELL_ASTRAL_WARD, &ward, nullptr, nullptr, true);
+            Ward(player, player, SPELL_ASTRAL_WARD,
+                ConvergencePower(player, SPELL_SCHOOL_MASK_NATURE, false) * ASTRAL_WARD_POWER);
         }
     }
 
@@ -5972,7 +6527,8 @@ namespace
     {
         State& state = StateOf(player);
         for (uint32 spell : { SPELL_ARCANE_INSIGHT, SPELL_MIND_UNBOUND, SPELL_MENTAL_RESERVES, SPELL_FROST_CROWN,
-                              SPELL_SPLINTER_QUICKENING, SPELL_COLD_FRONT, SPELL_ASHEN_FLOCK })
+                              SPELL_SPLINTER_QUICKENING, SPELL_COLD_FRONT, SPELL_ASHEN_FLOCK, SPELL_MIND_FLOW,
+                              SPELL_STORM_CONDUIT_CHARGE, SPELL_STARFALL_EQUATION, SPELL_HOT_PURSUIT })
             player->RemoveAurasDueToSpell(spell);
         state.Icicles = 0;
         state.IcicleAttacks = 0;
@@ -7736,7 +8292,8 @@ public:
     }
 };
 
-// Arcane Blast (every rank) with Arcane Mind: a direct hit grants Insight.
+// Arcane Blast (every rank): Arcane Mind's Insight (and Storm Conduit's mark); Astral Horizon, the Orb's victim
+// empowers its next bolt.
 class spell_titan_rune_arcane_blast : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_arcane_blast);
@@ -7744,8 +8301,16 @@ class spell_titan_rune_arcane_blast : public SpellScript
     void Hit()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (player && GetHitUnit() && player->HasAura(SPELL_RUNE_ARCANE_MIND))
+        Unit* target = GetHitUnit();
+        if (!player || !target)
+            return;
+        if (player->HasAura(SPELL_RUNE_ARCANE_MIND))
+        {
             BlastInsight(player);
+            MindBlasted(player, target);
+        }
+        if (player->HasAura(SPELL_RUNE_ASTRAL_HORIZON) && GetHitDamage() > 0)
+            HorizonBlast(player, target);
     }
 
     void Register() override
@@ -7754,8 +8319,8 @@ class spell_titan_rune_arcane_blast : public SpellScript
     }
 };
 
-// Arcane Explosion (every rank) with Arcane Mind and Expanding Intellect: 2 Insight on 3 enemies or more, else 1,
-// once a cast.
+// Arcane Explosion (every rank): Arcane Mind's Expanding Intellect (2 Insight on 3 enemies or more, else 1, once a
+// cast) and Arcane Charge; Astral Horizon, the Orb's pulse.
 class spell_titan_rune_arcane_explosion : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_arcane_explosion);
@@ -7769,10 +8334,15 @@ class spell_titan_rune_arcane_explosion : public SpellScript
     void Done()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (!player || !_hits || !player->HasAura(SPELL_RUNE_ARCANE_MIND)
-            || !HasMindMarker(player, MOD_EXPANDING_INTELLECT))
+        if (!player)
             return;
-        GainInsight(player, _hits >= EXPANDING_ENEMIES ? 2 : 1);
+        if (player->HasAura(SPELL_RUNE_ASTRAL_HORIZON))
+            HorizonExplosion(player);
+        if (!player->HasAura(SPELL_RUNE_ARCANE_MIND))
+            return;
+        MindExplosion(player);
+        if (_hits && HasMindMarker(player, MOD_EXPANDING_INTELLECT))
+            GainInsight(player, _hits >= EXPANDING_ENEMIES ? 2 : 1);
     }
 
     void Register() override
@@ -7828,7 +8398,7 @@ class spell_titan_rune_arcane_missiles : public SpellScript
     bool _unbound = false;
 };
 
-// Arcane Missiles' channel (every rank) with Mental Reserves: an empowered one completed.
+// Arcane Missiles' channel (every rank) with Arcane Mind: an empowered one completed.
 class spell_titan_rune_arcane_missiles_channel : public AuraScript
 {
     PrepareAuraScript(spell_titan_rune_arcane_missiles_channel);
@@ -7839,9 +8409,8 @@ class spell_titan_rune_arcane_missiles_channel : public AuraScript
         if (!player || !StateOf(player).MindChannel)
             return;
         StateOf(player).MindChannel = false;
-        if (GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_EXPIRE
-            && player->HasAura(SPELL_RUNE_ARCANE_MIND) && HasMindMarker(player, MOD_MENTAL_RESERVES))
-            MindReserves(player);
+        if (GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_EXPIRE && player->HasAura(SPELL_RUNE_ARCANE_MIND))
+            MindComplete(player);
     }
 
     void Register() override
@@ -7875,6 +8444,16 @@ class spell_titan_rune_pyroblast_ember : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_pyroblast_ember);
 
+    // Its direct hit on the Hero's Phoenix Burn target: 15% more.
+    void Burning()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_PHOENIX_WAKE)
+            && target->HasAura(SPELL_PHOENIX_BURN, player->GetGUID()))
+            SetHitDamage(int32(float(GetHitDamage()) * BURNING_PYROBLAST));
+    }
+
     void Hit()
     {
         Player* player = GetCaster()->ToPlayer();
@@ -7891,6 +8470,7 @@ class spell_titan_rune_pyroblast_ember : public SpellScript
 
     void Register() override
     {
+        OnHit += SpellHitFn(spell_titan_rune_pyroblast_ember::Burning);
         AfterHit += SpellHitFn(spell_titan_rune_pyroblast_ember::Hit);
         AfterCast += SpellCastFn(spell_titan_rune_pyroblast_ember::Spent);
     }
@@ -7924,23 +8504,48 @@ class spell_titan_rune_fire_blast_phoenix : public SpellScript
     }
 };
 
-// Arcane Barrage (every rank) with Astral Horizon: the Orb.
+// Arcane Barrage (every rank): Astral Horizon's Orb; Arcane Mind spends up to 2 Insight, 15% more each and an
+// enemy within 8 yards each for 30% of the hit.
 class spell_titan_rune_arcane_barrage : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_arcane_barrage);
+
+    void Spend()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (!player || !GetHitUnit() || GetHitDamage() <= 0 || !player->HasAura(SPELL_RUNE_ARCANE_MIND))
+            return;
+        _spent = std::min<uint8>(BARRAGE_INSIGHT, Insight(player));
+        if (!_spent)
+            return;
+        SpendInsight(player, _spent);
+        SetHitDamage(int32(float(GetHitDamage()) * (1.0f + BARRAGE_STEP * float(_spent))));
+    }
 
     void Hit()
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (player && target && player->HasAura(SPELL_RUNE_ASTRAL_HORIZON))
+        if (!player || !target)
+            return;
+        if (player->HasAura(SPELL_RUNE_ASTRAL_HORIZON))
             LaunchOrb(player, target, float(std::max(0, GetHitDamage())));
+        uint8 count = _spent;
+        for (Unit* enemy : EnemiesAround(player, target, BARRAGE_RANGE))
+            if (enemy != target && count)
+            {
+                Strike(player, enemy, SPELL_INSIGHT_MISSILE, float(GetHitDamage()) * BARRAGE_SPLASH);
+                --count;
+            }
     }
 
     void Register() override
     {
+        OnHit += SpellHitFn(spell_titan_rune_arcane_barrage::Spend);
         AfterHit += SpellHitFn(spell_titan_rune_arcane_barrage::Hit);
     }
+
+    uint8 _spent = 0;
 };
 
 // Prayer of Mending (every rank) with Guiding Light: the Guiding Star in place of its prayer (its effects trigger
@@ -8000,7 +8605,8 @@ struct npc_titan_rune_flier : public ScriptedAI
     void UpdateAI(uint32 /*diff*/) override { }
 };
 
-// Starfire (every rank): Elune's Guardian's owl, Astral Convergence's collision (direct hits).
+// Starfire (every rank, direct hits): Elune's Guardian's owl, Astral Convergence's collision, Arcane Mind's
+// Starfall Equation, Astral Horizon's split bolt.
 class spell_titan_rune_starfire : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_starfire);
@@ -8015,6 +8621,10 @@ class spell_titan_rune_starfire : public SpellScript
             CallOwl(player, target, float(GetHitDamage()));
         if (player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE))
             ConvergenceStarfire(player, target);
+        if (player->HasAura(SPELL_RUNE_ARCANE_MIND))
+            MindStarfire(player);
+        if (player->HasAura(SPELL_RUNE_ASTRAL_HORIZON))
+            HorizonStarfire(player, target);
     }
 
     void Register() override
@@ -8054,27 +8664,94 @@ class spell_titan_rune_wrath : public SpellScript
     }
 };
 
-// Astral Convergence's other spells (every rank, direct hits): Lightning Bolt spends Moonlight for a lesser flare;
-// Frostbolt on Sunlight, Frozen Eclipse.
-class spell_titan_rune_convergence_hit : public SpellScript
+// The Extended Options' other abilities (every rank): their direct hits and heals, to the runes that answer them.
+// Lightning Bolt (Astral Convergence's lesser flare; Arcane Mind's Insight, Storm Conduit; Astral Horizon's
+// Orbital Lightning), Frostbolt (Frozen Eclipse, Missile Shards), Lava Burst and Scorch (Phoenix Wake's Lava Flock,
+// Hot Pursuit), Arcane Shot (Distant Spark), Chain Heal and Holy Shock on an ally (Guiding Light's Chain Guidance,
+// Holy Passage).
+class spell_titan_rune_extended_hit : public SpellScript
 {
-    PrepareSpellScript(spell_titan_rune_convergence_hit);
+    PrepareSpellScript(spell_titan_rune_extended_hit);
 
     void Hit()
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (!player || !target || GetHitDamage() <= 0 || !player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE))
+        if (!player || !target)
             return;
-        if (GetSpellInfo()->IsRankOf(sSpellMgr->GetSpellInfo(SPELL_LIGHTNING_BOLT)))
-            ConvergenceBolt(player, target);
-        else
-            ConvergenceFrostbolt(player, target);
+        uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        if (first == SPELL_CHAIN_HEAL || first == SPELL_HOLY_SHOCK)
+        {
+            if (target != player && player->IsFriendlyTo(target) && player->HasAura(SPELL_RUNE_GUIDING_LIGHT))
+                GuidingHeal(player, target, first);
+            return;
+        }
+        if (GetHitDamage() <= 0)
+            return;
+        bool convergence = player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE);
+        bool mind = player->HasAura(SPELL_RUNE_ARCANE_MIND);
+        bool horizon = player->HasAura(SPELL_RUNE_ASTRAL_HORIZON);
+        switch (first)
+        {
+            case SPELL_LIGHTNING_BOLT:
+                if (convergence)
+                    ConvergenceBolt(player, target);
+                if (mind)
+                    MindBolt(player, target);
+                if (horizon)
+                    HorizonStrike(player, target, first);
+                break;
+            case SPELL_FROSTBOLT:
+                if (convergence)
+                    ConvergenceFrostbolt(player, target);
+                if (mind)
+                    MindFrostbolt(player);
+                break;
+            case SPELL_LAVA_BURST:
+            case SPELL_SCORCH:
+                if (player->HasAura(SPELL_RUNE_PHOENIX_WAKE))
+                    PhoenixStrike(player, target, first);
+                break;
+            case SPELL_ARCANE_SHOT:
+                if (horizon)
+                    HorizonStrike(player, target, first);
+                break;
+            default:
+                break;
+        }
     }
 
     void Register() override
     {
-        AfterHit += SpellHitFn(spell_titan_rune_convergence_hit::Hit);
+        AfterHit += SpellHitFn(spell_titan_rune_extended_hit::Hit);
+    }
+};
+
+// Evocation (Arcane Mind's Evocative Mind as it begins; Astral Horizon's Evoked Remnant as it completes).
+class spell_titan_rune_evocation : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_evocation);
+
+    void Begun(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Player* player = GetTarget()->ToPlayer(); player && player->HasAura(SPELL_RUNE_ARCANE_MIND))
+            MindEvocation(player);
+    }
+
+    void Done(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Player* player = GetTarget()->ToPlayer();
+        if (player && GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_EXPIRE
+            && player->HasAura(SPELL_RUNE_ASTRAL_HORIZON))
+            HorizonEvocation(player);
+    }
+
+    void Register() override
+    {
+        AfterEffectApply += AuraEffectApplyFn(spell_titan_rune_evocation::Begun, EFFECT_0, SPELL_AURA_ANY,
+            AURA_EFFECT_HANDLE_REAL);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_titan_rune_evocation::Done, EFFECT_0, SPELL_AURA_ANY,
+            AURA_EFFECT_HANDLE_REAL);
     }
 };
 
@@ -8791,7 +9468,8 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_guiding_heal);
     RegisterSpellScript(spell_titan_rune_starfire);
     RegisterSpellScript(spell_titan_rune_wrath);
-    RegisterSpellScript(spell_titan_rune_convergence_hit);
+    RegisterSpellScript(spell_titan_rune_extended_hit);
+    RegisterSpellScript(spell_titan_rune_evocation);
     RegisterSpellScript(spell_titan_rune_barkskin);
     RegisterSpellScript(spell_titan_rune_maul);
     RegisterSpellScript(spell_titan_rune_sinister_strike);

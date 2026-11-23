@@ -714,38 +714,62 @@ BUILT = {
             'Arcane Explosion grants Insight too: 2 if it hits 3 or more enemies, else 1. Once a cast.',
             'Insight stacks to 6 instead of 4. Spending 5 or 6 makes the Insight missiles deal 15% more damage for '
             'each one above 4.',
+            'A Lightning Bolt hit on an enemy your Arcane Blast hit in the last 15 sec makes your next Insight volley '
+            'deal 20% more damage (8 sec).',
+            'A Starfire hit grants 1 Insight, once every 8 sec, and makes your next Arcane Blast within 6 sec deal '
+            '10% more damage.',
             "Insight missiles deal 40% more damage to their target: 56% of an Arcane Missile's damage.",
             'Each Insight missile also hits up to 2 other enemies within 8 yards of its target for 35% of its damage.',
             'The Insight missiles leave Arcane Echo on their target: 30% of their damage again, over 6 sec. A new '
             'Echo keeps what is left of the last.',
+            'A Frostbolt hit readies your next empowered Arcane Missiles (within 15 sec): its first Insight missile '
+            'also hits 2 other enemies within 8 yards for half its damage.',
+            'Arcane Explosion within 6 sec of finishing an empowered Arcane Missiles bursts for 25% of your spell '
+            'power on up to 5 enemies within 8 yards.',
             'An empowered Arcane Missiles does not channel: its missiles fly from you on their own, one every 0.5 '
             'sec, so you can move and keep casting.',
             'When an empowered Arcane Missiles completes, you regain 3% of your maximum mana and Arcane Blast costs '
             '20% less mana for 4 sec.',
             'The Insight missiles all fly as the channel starts, 0.15 sec apart, and deal 20% more damage: 48% of an '
             "Arcane Missile's damage.",
+            'Evocation begun within 30 sec of an empowered Arcane Missiles restores 2% of your maximum mana more, '
+            'once every 30 sec.',
+            'Finishing an empowered Arcane Missiles while your Lightning Shield is up sends a bolt of 25% of your '
+            'spell power as Nature damage at its target.',
         ],
         'abilities': [
             'Accelerate',
             'Expand',
             'Patience',
+            'Lightning Bolt',
+            'Starfire',
             'Focus',
             'Fracture',
             'Echo',
+            'Frostbolt',
+            'Arcane Explosion',
             'Unbound',
             'Reserves',
             'Overclock',
+            'Evocation',
+            'Lightning Shield',
         ],
         'icons': [
             'M13 2 4 14h7l-1 8 9-12h-7Z',
             'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12h.01',
             'M5 4h14M5 20h14M7 4c0 5 10 11 10 16M17 4c0 5-10 11-10 16',
+            'M13 2 4 14h7l-1 8 9-12h-7Z',
+            'M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z',
             'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
             'M12 3v6M12 15v6M3 12h6M15 12h6M6 6l3 3M15 15l3 3',
             'M3 12h4l3-7 4 14 3-7h4',
+            'M12 2v20M4 7l16 10M20 7 4 17',
+            'M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0-18 0M12 12h.01',
             'M4 18l6-6-6-6M12 18h8',
             'M6 4h12v4l-4 4 4 4v4H6v-4l4-4-4-4Z',
             'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+            'M3 12c3-6 15-6 18 0M3 12c3 6 15 6 18 0M12 9v6',
+            'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6ZM13 7l-3 5h4l-3 5',
         ],
     },
     35: {
@@ -793,54 +817,78 @@ BUILT = {
     },
     36: {
         'core': '**Pyroblast** leaves an **Ember**; **Fire Blast** on it calls a **phoenix** diving from above you '
-            "onto it: **50%** of the Pyroblast's damage.",
+            "onto it: **55%** of the Pyroblast's damage, and it burns.",
         'slots': ['Phoenix', 'Flight', 'Wake'],
         'asks': ['What wakes in the Ember', 'How it flies', 'What it leaves behind'],
         'texts': [
-            "The phoenix strikes the Ember's target for 50% more: 75% of the Pyroblast's damage.",
+            "The phoenix strikes the Ember's target for 50% more: 82% of the Pyroblast's damage.",
             "The phoenix's path is 6 yards wide instead of 3, and enemies in it take 30% of the Pyroblast's damage "
             'instead of 25%.',
             'Three phoenixes dive instead, each with a third of the damage. Each one whose flight ends makes your '
             'next Pyroblast cast 5% faster, up to 15%, for 6 sec.',
+            'Releasing the phoenix on your Flame Shock target also deals 20% of your spell power as Fire damage to '
+            'it.',
+            "A Lava Burst hit on the Ember's target adds one more bird to that phoenix, dealing 30% of its damage "
+            "(one for each Ember).",
             "The phoenix dives twice as fast, 40 yards a second. When its flight ends, Fire Blast's cooldown is 2 sec "
             'shorter.',
             "After its strike, the phoenix circles the Ember's target for 2 sec, then strikes it again for 25% of the "
             "Pyroblast's damage.",
             "After its strike, the phoenix swoops through up to 2 other enemies within 10 yards of the Ember's "
             "target, striking each for 25% of the Pyroblast's damage.",
+            'The first time a phoenix flies through your Flamestrike, it deals 20% of your spell power as Fire damage '
+            'to up to 4 enemies in it.',
+            "A Scorch hit on the Ember's target makes your next phoenix strike its target for 25% more damage (8 "
+            "sec).",
             "The phoenix leaves a trail of fire for 4 sec: up to 5 enemies on it burn for 6% of the Pyroblast's "
             "damage every second. Trails don't stack.",
             'Enemies the phoenix strikes burn for 25% more of that hit over 6 sec. A new burn keeps what is left of '
             'the last.',
             "When the phoenix's flight ends, it bursts for 35% of the Pyroblast's damage to up to 5 enemies within 6 "
             'yards of it. A flock bursts once.',
+            "When the phoenix's flight ends, your Flame Shock on its target lasts 2 sec longer, up to 6 sec for each "
+            "cast.",
+            "When the phoenix's flight ends while your Fire Ward is up, you gain an absorb of 40% of your spell power "
+            "for 6 sec, once every 12 sec.",
         ],
         'abilities': [
             'Talon',
             'Broadwing',
             'Flock',
+            'Flame Shock',
+            'Lava Burst',
             'Homeward',
             'Spiral',
             'Wild',
+            'Flamestrike',
+            'Scorch',
             'Scorch',
             'Embers',
             'Rebirth',
+            'Flame Shock',
+            'Fire Ward',
         ],
         'icons': [
             'M4 4l6 6M10 4v6H4M20 20l-6-6M14 20v-6h6',
             'M2 12c5-6 15-6 20 0M2 12c5 6 15 6 20 0',
             'M4 18l4-6 4 6 4-6 4 6',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11ZM12 21v-6',
+            'M4 18c4-6 12-6 16 0M8 10l4-6 4 6',
             'M4 12h14M14 7l5 5-5 5',
             'M12 12m-8 0a8 8 0 1 0 16 0M12 12m-4 0a4 4 0 1 0 8 0',
             'M4 18c4-10 6-10 8-4s4 6 8-6',
+            'M3 20h18M7 20l3-8 4 4 3-8',
+            'M4 12h14M14 7l5 5-5 5M4 6h6',
             'M3 20h18M6 20c0-5 3-6 3-10M12 20c0-6 3-7 3-12M18 20c0-4 2-5 2-8',
             'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
             'M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3',
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+            'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6Z',
         ],
     },
     37: {
-        'core': '**Arcane Barrage** sets an **Arcane Orb** loose (every 12 sec at most): it flies to your enemies and '
-            "for 6 sec fires a bolt a second for **20%** of the Barrage's damage.",
+        'core': '**Arcane Barrage** sets an **Arcane Orb** loose (every 12 sec at most): it flies to your enemies, '
+            "strikes for **2 bolts**, then for 6 sec fires a bolt a second for **20%** of the Barrage's damage.",
         'slots': ['Orbit', 'Discharge', 'Ending'],
         'asks': ['Where the Orb goes', 'How it fires', 'How it ends'],
         'texts': [
@@ -848,37 +896,59 @@ BUILT = {
             "The Orb flies to its target's position and stays there. Its bolts deal 50% more damage to enemies within "
             '5 yards of it.',
             'The Orb circles you, 4 yards out, for 8 sec instead of 6, and its bolts reach 15 yards instead of 10.',
+            "A Lightning Bolt hit on the Orb's target commands an extra bolt of Nature damage, once every 4 sec.",
+            "The Orb's bolts deal 20% more damage to your Moonfire target, and extend that Moonfire by 1 sec (up to 4 "
+            "sec for each cast), once every 2 sec.",
             "Bolts deal 60% more damage to the Orb's target: 32% of the Barrage's damage.",
             'Each bolt also strikes up to 2 other enemies in range for 75% of its damage.',
             'Each bolt becomes a lance that also pierces up to 3 enemies behind its target, for 80% of its damage.',
+            'A bolt on your Frost Nova target also strikes one other enemy in your Frost Nova within 8 yards for half '
+            'its damage.',
+            "An Arcane Shot hit on the Orb's target makes its next bolt within 5 sec also pierce one more enemy "
+            "within 8 yards for half its damage.",
             "When the Orb's time ends, it explodes for 120% of the Barrage's damage (6 bolts) to up to 5 enemies "
             'within 8 yards.',
             "When the Orb's time ends, it fires 3 last bolts at your target (else its own), each for 60% of the "
             "Barrage's damage.",
             "When the Orb's time ends, it leaves a field 6 yards wide for 6 sec: every second, a bolt's damage to up "
             "to 5 enemies in it (120% of the Barrage's damage in all).",
+            'Finishing Evocation while the Orb is out makes it last 2 sec longer, once for each Orb.',
+            'Setting the Orb loose while your Power Word: Shield is on you grants an absorb of 25% of your spell '
+            'power for 6 sec, once every 12 sec.',
         ],
         'abilities': [
             'Wander',
             'Horizon',
             'Satellite',
+            'Lightning Bolt',
+            'Moonfire',
             'Focus',
             'Constellation',
             'Lance',
+            'Frost Nova',
+            'Arcane Shot',
             'Supernova',
             'Dying',
             'Remnant',
+            'Evocation',
+            'Power Word: Shield',
         ],
         'icons': [
             'M4 18 20 6M14 6h6v6',
             'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12h.01',
             'M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M12 3a9 9 0 0 1 9 9',
+            'M13 2 4 14h7l-1 8 9-12h-7Z',
+            'M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z',
             'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
             'M5 5h.01M19 5h.01M12 12h.01M5 19h.01M19 19h.01M5 5l7 7 7-7M5 19l7-7 7 7',
             'M2 12h20M16 7l5 5-5 5',
+            'M12 2v20M4 7l16 10M20 7 4 17',
+            'M2 12h20M16 7l5 5-5 5M6 7v10',
             'M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3',
             'M12 4v12M8 12l4 4 4-4M6 20h12',
             'M3 17c3-3 6-3 9 0s6 3 9 0M12 4v8',
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+            'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6Z',
         ],
     },
     38: {
@@ -891,37 +961,58 @@ BUILT = {
             'Each pulse also heals the most injured other ally within 10 yards of the bearer for 75% of it.',
             "Instead of healing on arrival, the star shields its new bearer for twice a pulse's healing, for 6 sec. A "
             'new shield replaces the last.',
+            'Each pulse on your Earth Shield target also heals one injured ally within 10 yards for 25% of your spell '
+            'power. No Earth Shield charge is used.',
+            'Each pulse on your Rejuvenation target makes that Rejuvenation last 1 sec longer, up to 4 sec for each '
+            'cast.',
             'As it travels, the star heals up to 3 injured allies along its way for half a pulse each.',
             'Only Greater Heal moves the star. Each pulse on the same bearer heals 10% more than the last, up to 30%; '
             'moving the star starts over.',
             'Every third pulse also heals the most injured ally within 15 yards of the bearer for a pulse. If the '
             'bearer dies, the star moves on to that ally.',
+            'Your Chain Heal on another ally moves the star there, with its arrival heal (at most once every 3 sec).',
+            'Your Holy Shock on another ally moves the star there, with its arrival heal (at most once every 3 sec).',
             "When the star's 12 sec end, it heals its bearer for 2.5 pulses at once.",
             "When the star's 12 sec end, it leaves Afterglow on its bearer: 3.25 pulses of healing over 8 sec.",
             "When the star's 12 sec end, it shields its bearer for 2 pulses (6 sec), and they move 30% faster for 3 "
             'sec.',
+            'When the star fades, if its bearer has your Riptide, it heals them for 60% of your spell power.',
+            'When the star fades, your Renew on its bearer lasts 4 sec longer (up to 6 sec for each cast), and they '
+            'are healed for 30% of your spell power.',
         ],
         'abilities': [
             'Steady',
             'Shared',
             'Shelter',
+            'Earth Shield',
+            'Rejuvenation',
             'Passage',
             'Guardian',
             'Seeking',
+            'Chain Heal',
+            'Holy Shock',
             'Benediction',
             'Afterglow',
             'Grace',
+            'Riptide',
+            'Renew',
         ],
         'icons': [
             'M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5Z',
             'M8 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0M16 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0',
             'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6Z',
+            'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6ZM12 8v8M8 12h8',
+            'M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z',
             'M4 18c4-10 12-10 16-12M16 4l4 2-2 4',
             'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6ZM12 8v8M8 12h8',
             'M11 11m-7 0a7 7 0 1 0 14 0a7 7 0 1 0-14 0M21 21l-5-5',
+            'M5 12h4l2-4 2 8 2-4h4',
+            'M13 2 4 14h7l-1 8 9-12h-7Z',
             'M12 4v16M4 12h16',
             'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
             'M4 12h14M14 7l5 5-5 5',
+            'M3 17c3-3 6-3 9 0s6 3 9 0M12 4v8',
+            'M20 12a8 8 0 1 1-3-6.2M20 4v5h-5',
         ],
     },
     39: {
