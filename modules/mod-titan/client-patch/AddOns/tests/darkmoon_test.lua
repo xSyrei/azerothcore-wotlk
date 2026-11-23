@@ -359,11 +359,13 @@ check(at["0.27243"] == 9 and at["0.133"] == 11 and at["1.2300"] == 16,
 e.lists[0].rows[2]:Click()
 at = t.slotting.Schedule(1)
 check(sentSpec() == "SLOT,0,2,0,0,5" and at["0.5"] == 21, "one unlocked at 20 comes on the ability roll at 21")
-check(e.slots[1].when.text == "Lv 9" and e.slots[2].when.text == "Lv 11" and e.slots[1].goldenWhen.text == "Lv 16"
-    and e.slots[3].when.text == "Lv 21", "each slot shows the level its card and its Golden Card come at")
+check(e.slots[1].when.text == "Lv 9" and e.slots[2].when.text == "Lv 11"
+    and e.slots[1].goldenText.text == "Lv 16  -  Spell 90200" and e.slots[3].when.text == "Lv 21",
+    "each slot shows the level its card and its Golden Card come at")
 check(e.slots[1].name.text == "Spell 27243" and e.slots[4].name.text == "Empty" and e.slots[4].plus:IsShown()
-    and e.slots[4].goldenText.text == "+ Golden" and not e.slots[4].level:IsShown(),
-    "and the card's name, or an empty place")
+    and not e.slots[4].level:IsShown(), "and the card's name, or an empty place")
+check(e.slots[1].badge:IsShown() and not e.slots[4].badge:IsShown() and e.slots[4].goldenText.text == "",
+    "the Golden Card's badge; an empty one hidden on the Cards tab")
 local before = #sent
 e.slots[2]:Click()
 check(#sent == before and t.specCards[1][2][0] == "0.133" and e.state.slot == 2, "a click on a slot chooses it")
@@ -371,6 +373,8 @@ e.slots[2].scripts.OnClick(e.slots[2], "RightButton")
 check(sentSpec() == "SLOT,0,1,0,0,0" and t.specCards[1][2][0] == nil, "a right-click empties it")
 e.tabs[1]:Click()
 check(e.state.golden and #rows(0) == 0 and #rows(1) == 1, "Golden: the Golden Cards owned")
+check(e.slots[4].badge:IsShown() and e.slots[4].goldPlus:IsShown() and e.slots[4].goldenText.text == "+ Golden Card",
+    "and there the empty Golden places show")
 e.slots[1].scripts.OnClick(e.slots[1], "RightButton")
 check(sentSpec() == "SLOT,0,0,1,0,0", "on Golden a right-click empties the slot's Golden Card")
 e.lists[1].rows[1]:Click()

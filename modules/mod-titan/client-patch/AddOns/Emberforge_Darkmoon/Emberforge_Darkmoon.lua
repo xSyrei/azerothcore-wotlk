@@ -2725,7 +2725,7 @@ end
 
 -- Edit Cards: a specialization's eight slots over the account's cards -------------------------------------------
 -- The slots are a strip: each slot's numeral, the level its card comes at, the card's icon (in its rarity's color)
--- and name, and along its foot its Golden Card (a + where a place is empty). Below, the cards owned:
+-- and name, its Golden Card a gold badge on the icon's corner (its level and name beneath). Below, the cards owned:
 -- Abilities (Skill Cards) and Talents (Talent Cards) side by side under one search bar, by rarity or by unlock level;
 -- the Golden tab lists the Golden Cards. A click on a card slots it in the chosen slot (its card, or on Golden its
 -- Golden Card), then the next empty slot is chosen; a click on a slot chooses it, a right-click empties it.
@@ -2835,29 +2835,41 @@ local function BuildEditor()
         slot.plus:SetPoint("CENTER", slot.well, "CENTER", 1, 0)
         slot.plus:SetText("+")
         slot.name = Text(slot, 10, GOLD_HI, BODY_FONT)
-        slot.name:SetPoint("TOP", slot.rim, "BOTTOM", 0, -4)
+        slot.name:SetPoint("TOP", slot.rim, "BOTTOM", 0, -7)
         slot.name:SetWidth(SLOT_W - 16)
-        slot.name:SetHeight(26)
+        slot.name:SetHeight(24)
         slot.name:SetJustifyH("CENTER")
         slot.name:SetJustifyV("TOP")
         slot.empty = slot.name
-        -- The Golden Card: a gold band along the foot, its icon and the level it comes at.
-        slot.goldRow = CreateFrame("Frame", nil, slot)
-        slot.goldRow:SetHeight(22)
-        slot.goldRow:SetPoint("BOTTOMLEFT", 5, 5)
-        slot.goldRow:SetPoint("BOTTOMRIGHT", -5, 5)
-        Slice9(slot.goldRow, "Solid", 7)
-        slot.goldRim = slot.goldRow:CreateTexture(nil, "BORDER")
-        slot.goldRim:SetTexture(GOLDEN_RGB[1], GOLDEN_RGB[2], GOLDEN_RGB[3], 1)
-        slot.goldRim:SetWidth(18)
-        slot.goldRim:SetHeight(18)
-        slot.goldRim:SetPoint("LEFT", 3, 0)
-        slot.golden = slot.goldRow:CreateTexture(nil, "ARTWORK")
+        -- The Golden Card: a gold badge set in the icon's corner (its icon in a gold rim, a glow about it), and a gold
+        -- line under the name: the level it comes at and its name.
+        slot.badge = CreateFrame("Frame", nil, slot)
+        slot.badge:SetWidth(26)
+        slot.badge:SetHeight(26)
+        slot.badge:SetPoint("CENTER", slot.rim, "BOTTOMRIGHT", -2, 9)
+        slot.badge:SetFrameLevel(slot:GetFrameLevel() + 3)
+        slot.badgeGlow = slot.badge:CreateTexture(nil, "BACKGROUND")
+        slot.badgeGlow:SetTexture(ART .. "Glow")
+        slot.badgeGlow:SetBlendMode("ADD")
+        slot.badgeGlow:SetVertexColor(GOLDEN_RGB[1], GOLDEN_RGB[2], GOLDEN_RGB[3], 0.9)
+        slot.badgeGlow:SetPoint("TOPLEFT", -12, 12)
+        slot.badgeGlow:SetPoint("BOTTOMRIGHT", 12, -12)
+        slot.goldRim = slot.badge:CreateTexture(nil, "BORDER")
+        slot.goldRim:SetAllPoints()
+        slot.goldWell = slot.badge:CreateTexture(nil, "ARTWORK")
+        slot.goldWell:SetTexture(0.06, 0.04, 0.01, 1)
+        slot.goldWell:SetPoint("TOPLEFT", 2, -2)
+        slot.goldWell:SetPoint("BOTTOMRIGHT", -2, 2)
+        slot.golden = slot.badge:CreateTexture(nil, "OVERLAY")
         slot.golden:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-        slot.golden:SetPoint("TOPLEFT", slot.goldRim, "TOPLEFT", 1, -1)
-        slot.golden:SetPoint("BOTTOMRIGHT", slot.goldRim, "BOTTOMRIGHT", -1, 1)
-        slot.goldenText = Text(slot.goldRow, 10, GOLDEN_RGB, BODY_FONT)
-        slot.goldenText:SetPoint("CENTER", 9, 0)
+        slot.golden:SetAllPoints(slot.goldWell)
+        slot.goldPlus = Text(slot.badge, 14, GOLDEN_RGB, BODY_FONT)
+        slot.goldPlus:SetPoint("CENTER", 1, 0)
+        slot.goldPlus:SetText("+")
+        slot.goldenText = Text(slot, 9, GOLDEN_RGB, BODY_FONT)
+        slot.goldenText:SetPoint("BOTTOM", 0, 7)
+        slot.goldenText:SetWidth(SLOT_W - 16)
+        slot.goldenText:SetHeight(11)
         slot.goldenWhen = slot.goldenText
         slot.goldenEmpty = slot.goldenText
         local hover = slot:CreateTexture(nil, "HIGHLIGHT")
@@ -3193,21 +3205,25 @@ local function BuildEditor()
             for _, region in ipairs({ slot.rim, slot.well, slot.icon, slot.plus, slot.name, slot.level }) do
                 region:SetAlpha(cardAlpha)
             end
-            -- The Golden Card (bright while the Golden tab edits it).
-            Shown(slot.goldRim, golden ~= nil)
+            -- The Golden Card (bright while the Golden tab edits it); an empty place only shows on the Golden tab.
+            Shown(slot.badge, golden ~= nil or edit.golden)
             Shown(slot.golden, golden ~= nil)
+            Shown(slot.goldPlus, golden == nil)
+            Shown(slot.badgeGlow, golden ~= nil)
+            local editingGold = edit.golden and chosen
             if golden then
                 slot.golden:SetTexture(CardIcon(golden))
-                slot.goldenText:SetText(goldWhen and ("Lv " .. goldWhen) or "Golden")
+                slot.goldRim:SetTexture(GOLDEN_RGB[1], GOLDEN_RGB[2], GOLDEN_RGB[3], 1)
+                slot.goldenText:SetText((goldWhen and ("Lv " .. goldWhen .. "  -  ") or "") .. CardName(golden))
                 slot.goldenText:SetTextColor(unpack(GOLDEN_RGB))
             else
-                slot.goldenText:SetText("+ Golden")
-                slot.goldenText:SetTextColor(0.62, 0.5, 0.26)
+                slot.goldRim:SetTexture(0.55, 0.42, 0.14, editingGold and 1 or 0.7)
+                slot.goldenText:SetText(edit.golden and "+ Golden Card" or "")
+                slot.goldenText:SetTextColor(0.7, 0.56, 0.25)
             end
-            local editingGold = edit.golden and chosen
-            Tint(slot.goldRow, editingGold and 0.55 or 0.22, editingGold and 0.4 or 0.15, editingGold and 0.08 or 0.04,
-                edit.golden and 0.95 or 0.6)
-            slot.goldRow:SetAlpha(edit.golden and 1 or 0.7)
+            slot.badge:SetAlpha(edit.golden and 1 or 0.85)
+            slot.badgeGlow:SetAlpha(editingGold and 1 or 0.45)
+            slot.goldenText:SetAlpha(edit.golden and 1 or 0.8)
         end
         local filtered = false
         for key, button in pairs(filterButtons) do
