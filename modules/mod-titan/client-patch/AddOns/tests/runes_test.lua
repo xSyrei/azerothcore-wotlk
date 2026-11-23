@@ -66,6 +66,15 @@ function Widget:GetFrameLevel() return self.level or 1 end
 function Widget:GetParent() return self.parent end
 function Widget:Click() self.scripts.OnClick(self, "LeftButton") end
 
+-- Words wrap by their font's size and their width (about 0.45 of the size a letter, lines 1.1 of it).
+function Widget:SetFont(_, size) self.fontSize = size end
+function Widget:SetWidth(width) self.width = width end
+function Widget:SetHeight(height) self.height = height end
+function Widget:GetStringHeight()
+    local size = self.fontSize or 12
+    local perLine = math.max(1, math.floor((self.width or 300) / (size * 0.45)))
+    return math.ceil(#(self.text or "") / perLine) * size * 1.1
+end
 UIParent = NewWidget("UIParent")
 UIParent.width, UIParent.height = 1600, 900
 local frames = {}
@@ -403,6 +412,36 @@ server("S,10,10,3,23,0,0,0,23,0")
 EmberforgeRunes_Open()
 check(build.nodes[2].label.text == "L I G H T N I N G  S H I E L D" and options[1].name.text == "Forked Tempest",
     "the Stormbound Conduit's slots and modifiers")
+frame:Hide()
+
+-- Long words are never cut off: the Duelist's Rapid Shots (its longest) makes every column taller, down to above the
+-- buttons, its words smaller only if they must; a long loop takes two lines in Browse.
+server("R,42,-")
+server("S,10,10,1,0,0,0,0,42,0")
+EmberforgeRunes_Open()
+debug.offers.cards[1].preview:Click()
+options[1]:Click()
+debug.build.right:Click()
+check(view.active == 2 and #options[3].text.text > 190, "the Pistol slot: Rapid Shots' long words")
+local heights = {}
+for index, option in ipairs(options) do
+    heights[index] = option.height
+end
+local longest = 0
+for _, option in ipairs(options) do
+    longest = math.max(longest, option.text:GetStringHeight())
+end
+check(heights[1] == heights[2] and heights[2] == heights[3] and heights[1] > 160 and heights[1] >= 84 + longest
+    and heights[1] <= 830 - 628, "every modifier column grows to its longest words, and stays above the buttons")
+frame:Hide()
+server("S,10,10,1,0,0,0,0,-,0")
+EmberforgeRunes_Open()
+search.text = "guiding light"
+search.scripts.OnTextChanged(search)
+check(rows[1].rune.id == 38 and rows[1].desc.fontSize == 20 and rows[1].desc:GetStringHeight() <= 48,
+    "the longest loop fits in two lines of a row")
+search.text = ""
+search.scripts.OnTextChanged(search)
 frame:Hide()
 server("S,10,10,1,21,1,3,1,21,0")
 check(GameTooltip:GetParent() == tooltipParent, "after all that, the game's tooltip is still where it was")

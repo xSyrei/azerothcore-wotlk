@@ -15,6 +15,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   - **The rune's build**: its medallion with its three slots around it (a slot opens once the one before has its
     modifier), **Choose your ...** and the slot's three modifiers. Click one to select it, then **Confirm modifier**.
     A preview ends with **Choose this rune**, and the modifiers you tried come with it.
+- Fixed: long words in the rune panel were cut off: a modifier's description ran past its column (the columns now
+  grow to the longest, their words a little smaller when they must), and Browse cut each rune's description to one
+  line with "..." (now two lines).
 - Fixed: **tooltips stopped working** after the rune panel had been open (until a /reload). The panel now has its
   own tooltip and its own questions, and leaves the game's alone.
 - Legendary Runes can be seen and bound **from level 1** (/runes or the rune button). The panel only opens by itself

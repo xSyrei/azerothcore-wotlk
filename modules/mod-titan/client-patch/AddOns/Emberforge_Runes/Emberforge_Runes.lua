@@ -591,7 +591,7 @@ chrome.close:SetScript("OnClick", function() frame:Hide() end)
 chrome.close:SetScript("OnEnter", function(self) self.x:SetVertexColor(1, 0.95, 0.75) end)
 chrome.close:SetScript("OnLeave", function(self) self.x:SetVertexColor(GOLD[1], GOLD[2], GOLD[3]) end)
 chrome.note = Text(chrome, SANS_MEDIUM, 19, AMBER, "CENTER", 1100)
-At(chrome.note, W / 2, 808)
+At(chrome.note, W / 2, 20)                          -- above everything: no column or row can cover it
 chrome.runeTabs = {}
 
 local function Note(text)
@@ -879,13 +879,13 @@ for index = 1, ROWS do
     end
     row.medal = Medal(row, 112)
     At(row.medal, 172, y)
-    row.name = Text(row, SERIF, 32, CREAM, "LEFT", 560)
-    row.name:SetPoint("TOPLEFT", stage, "TOPLEFT", 250, -(y - 52))
-    row.role = Text(row, SANS_MEDIUM, 22, VIOLET, "LEFT", 560)
-    row.role:SetPoint("TOPLEFT", stage, "TOPLEFT", 252, -(y - 12))
-    row.desc = Text(row, SANS, 22, CREAM, "LEFT", 560)
-    row.desc:SetPoint("TOPLEFT", stage, "TOPLEFT", 252, -(y + 16))
-    row.desc:SetHeight(26)
+    -- Its name, roles, and what it does in up to two lines (never cut off: smaller words when longer).
+    row.name = Text(row, SERIF, 30, CREAM, "LEFT", 580)
+    row.name:SetPoint("TOPLEFT", stage, "TOPLEFT", 250, -(y - 58))
+    row.role = Text(row, SANS_MEDIUM, 20, VIOLET, "LEFT", 580)
+    row.role:SetPoint("TOPLEFT", stage, "TOPLEFT", 252, -(y - 22))
+    row.desc = Text(row, SANS, 20, CREAM, "LEFT", 584)
+    row.desc:SetPoint("TOPLEFT", stage, "TOPLEFT", 252, -(y + 2))
     row.bar = Tex(row, "ARTWORK")
     row.bar:SetTexture(1, 1, 1)
     row.bar:SetVertexColor(GOLD[1], GOLD[2], GOLD[3], 0.6)
@@ -1042,7 +1042,11 @@ local function FillRow(row, rune)
         words[#words + 1] = ROLE_WORDS[role]
     end
     row.role:SetText(table.concat(words, " / "))
+    row.desc:SetFont(SANS, 20)
     row.desc:SetText(rune.loop or "")
+    if (row.desc:GetStringHeight() or 0) > 48 then
+        row.desc:SetFont(SANS, 17)
+    end
     local standing, missing = Standing(rune)
     local status, color
     if state.rune == rune.id then
@@ -1200,9 +1204,14 @@ At(build.heading, W / 2, 550)
 build.ask = Text(build, SANS, 21, MUTED, "CENTER", 1100)
 At(build.ask, W / 2, 594)
 build.options = {}
+-- The modifiers' columns hang from OPTIONS_TOP and grow down to their longest words (down to OPTIONS_BOTTOM, above the
+-- buttons; past that their words get smaller): long words are never cut off or run past the lines.
+local OPTIONS_TOP, OPTIONS_BOTTOM, OPTION_HEAD = 628, 830, 84
 for index, x in ipairs({ 340, 800, 1260 }) do
     local option = CreateFrame("Button", nil, build)
-    At(option, x, 708, 440, 160)
+    option:SetPoint("TOP", stage, "TOPLEFT", x, -OPTIONS_TOP)
+    option:SetWidth(440)
+    option:SetHeight(160)
     option.top = Tex(option, "ARTWORK", "UiLine")
     option.top:SetPoint("TOP", option, "TOP", 0, 2)
     option.top:SetWidth(440)
@@ -1229,8 +1238,8 @@ for index, x in ipairs({ 340, 800, 1260 }) do
     option.name:SetPoint("TOPLEFT", 64, -24)
     option.ability = Text(option, SANS_MEDIUM, 16, BLUE, "LEFT", 370)
     option.ability:SetPoint("TOPLEFT", 66, -60)
-    option.text = Text(option, SANS, 20, MUTED, "LEFT", 360)
-    option.text:SetPoint("TOPLEFT", 66, -86)
+    option.text = Text(option, SANS, 20, MUTED, "LEFT", 364)
+    option.text:SetPoint("TOPLEFT", 66, -OPTION_HEAD)
     option.text:SetJustifyV("TOP")
     option.choice = index
     option:SetScript("OnEnter", function(self)
@@ -1371,6 +1380,23 @@ local function DrawOptions(runeId)
         end
         option.name:SetTextColor(unpack(missing and { 0.6, 0.58, 0.62 } or CREAM))
         option:Show()
+    end
+    -- Every column as tall as the longest words, smaller words when they would not fit.
+    local room = OPTIONS_BOTTOM - OPTIONS_TOP - OPTION_HEAD - 14
+    local tallest = 0
+    for _, size in ipairs({ 20, 18, 17, 16 }) do
+        tallest = 0
+        for _, option in ipairs(build.options) do
+            option.text:SetFont(SANS, size)
+            tallest = math.max(tallest, option.text:GetStringHeight() or 0)
+        end
+        build.textSize = size
+        if tallest <= room then
+            break
+        end
+    end
+    for _, option in ipairs(build.options) do
+        option:SetHeight(math.max(160, OPTION_HEAD + tallest + 14))
     end
     build.summary:Hide()
 end
