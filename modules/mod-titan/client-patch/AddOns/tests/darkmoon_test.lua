@@ -288,9 +288,15 @@ end
 local skills, talents = rows(0), rows(1)
 check(#skills == 3 and skills[1] == "Spell 27243" and #talents == 1 and talents[1] == "Spell 90200",
     "abilities and talents in their own lists: only the cards owned, rarest first")
-check(e.lists[0].rows[1].note.text:find("Slot 1") and e.lists[0].rows[1].note.text:find("level 9"),
+check(e.lists[0].rows[1].note.text == "Slot I  -  Lv 9" and e.lists[0].rows[1].accent:IsShown(),
     "a slotted card says its slot and the level it comes at")
-check(e.lists[0].rows[3].note.text:find("Unlocks at 9") ~= nil, "the others their unlock level")
+check(e.lists[0].rows[3].note.text == "Lv 9" and not e.lists[0].rows[3].accent:IsShown(),
+    "the others their unlock level")
+check(e.lists[0].rows[1].gems[4]:IsShown() and not e.lists[0].rows[3].gems[2]:IsShown(),
+    "a gem for each step of rarity")
+e.sort.level:Click()
+check(e.state.sort == "level" and e.lists[0].rows[3].name.text == "Spell 5", "sorted by unlock level")
+e.sort.rarity:Click()
 e.search:SetText("133")
 e.search.scripts.OnTextChanged(e.search)
 check(#rows(0) == 1 and #rows(1) == 0 and e.lists[1].empty:IsShown(), "one search bar filters both lists")
@@ -305,7 +311,8 @@ check(at["0.27243"] == 9 and at["0.133"] == 11 and at["1.2300"] == 16,
 e.lists[0].rows[2]:Click()
 at = t.slotting.Schedule(1)
 check(sentSpec() == "SLOT,0,2,0,0,5" and at["0.5"] == 21, "one unlocked at 20 comes on the ability roll at 21")
-check(e.slots[1].when.text == "Lv 9" and e.slots[2].when.text == "Lv 11", "each slot shows the level of its card")
+check(e.slots[1].when.text == "LV 9" and e.slots[2].when.text == "LV 11" and e.slots[1].goldenWhen.text == "LV 16"
+    and e.slots[3].when.text == "LV 21" and e.slots[4].empty.text == "Empty", "each slot's small cards show the level they come at")
 e.slots[2]:Click()
 check(sentSpec() == "SLOT,0,1,0,0,0" and t.specCards[1][2][0] == nil and e.state.slot == 2,
     "a click on a slot empties it and chooses it")
@@ -328,7 +335,7 @@ e.tabs[0]:Click()
 e.slots[2]:Click()
 e.lists[0].rows[1]:Click()
 check(#sent == before and t.specCards[1][2][0] == "0.133", "locked: clicks change nothing")
-check(e.lists[0].rows[1].alpha == 0.55, "the cards not slotted are dimmed")
+check(e.lists[0].rows[1].alpha == 0.5, "the cards not slotted are dimmed")
 t.tabs[1]:Click()
 check(t.pages[1]:IsShown() and not t.pages[4]:IsShown(), "Specializations again")
 check(t.editCards.label.text == "View Cards", "a locked spec's button views its cards")

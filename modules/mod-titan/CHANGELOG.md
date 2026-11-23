@@ -19,6 +19,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   yet stays open until the prestige that builds it.
 - An ability that needs a form, stance or pet you don't have yet waits until you do.
 - Each specialization keeps its own cards, and they stay when you prestige.
+- The card editor's new look: your slots are a row of small cards (the card, its Golden Card beside it, and the level
+  each comes at), the lists show rarity as gems and the unlock level beside each card, with scroll bars, and sort by
+  rarity or by level.
 
 ## 2026-11-19: The Duelist's Cannon-Fire
 

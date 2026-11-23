@@ -65,6 +65,7 @@ local SPEC_PREFIX = "EFSP"
 local mySpecs = { active = 1 }
 -- The slotted cards (src/specs.cpp, C): specCards[spec][slot][0 the card | 1 the Golden Card] = catalog key.
 local CARD_SLOTS = 8
+local ROMAN_SLOTS = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII" }
 local specCards = {}
 local cardsLocked = {}          -- [spec] = true: its cards locked (at level 8, until a prestige)
 local LOCK_LEVEL = 8
@@ -2646,38 +2647,47 @@ local function RefreshCards()
 end
 
 -- Edit Cards: a specialization's eight slots over the account's cards -------------------------------------------
--- Cards: the Skill and Talent Cards owned, each list on its own side, one search bar over both; Golden: the Golden
--- Cards. A click on a card slots it in the chosen slot (its card, or on Golden its Golden Card: a slot holds both),
--- then the next empty slot is chosen; right-click a slot to empty it.
+-- The slots are a strip of small cards: each slot's card (its frame, icon and rarity gems, the level it comes at on
+-- its parchment) with its Golden Card beside it, a card's back where a place is empty. Below, the cards owned:
+-- Abilities (Skill Cards) and Talents (Talent Cards) side by side under one search bar, by rarity or by unlock level;
+-- the Golden tab lists the Golden Cards. A click on a card slots it in the chosen slot (its card, or on Golden its
+-- Golden Card), then the next empty slot is chosen; a click on a slot empties it.
 
 -- Built in a function of its own: its locals would pass the 200 a function may have, counted with the file's.
 local function BuildEditor()
     local editorPage = pages[4]
-    local EDIT_ROWS, ROW_H = 11, 26
-    local edit = { slot = 1, golden = false, search = "", offsets = { [0] = 0, 0 } }
-    local editorBack = Button(editorPage, 90, 24, "< Back", function() ShowTab(1) end, "Button", 12)
+    local EDIT_ROWS, ROW_H = 9, 25
+    local edit = { slot = 1, golden = false, search = "", sort = "rarity", offsets = { [0] = 0, 0 } }
+    local editorBack = Button(editorPage, 80, 24, "< Back", function() ShowTab(1) end, "Button", 12)
     editorBack:SetPoint("TOPLEFT", 0, 0)
     local editorTitle = Text(editorPage, 16, GOLD_HI, DISPLAY_FONT)
-    editorTitle:SetPoint("LEFT", editorBack, "RIGHT", 14, 0)
+    editorTitle:SetPoint("LEFT", editorBack, "RIGHT", 14, 1)
+    -- Open until level 8, or locked: a tag after the title.
+    local editorTag = CreateFrame("Frame", nil, editorPage)
+    editorTag:SetHeight(18)
+    editorTag:SetPoint("LEFT", editorTitle, "RIGHT", 12, -1)
+    Slice9(editorTag, "Solid", 8)
+    editorTag.text = Text(editorTag, 9, GOLD_HI, BODY_FONT)
+    editorTag.text:SetPoint("CENTER", 0, 0)
     local editorTabs = {}
     for golden, label in pairs({ [0] = "Cards", [1] = "Golden" }) do
-        editorTabs[golden] = Button(editorPage, 92, 24, label, function()
+        editorTabs[golden] = Button(editorPage, 84, 24, label, function()
             edit.golden = golden == 1
             edit.offsets[0], edit.offsets[1] = 0, 0
             Refresh()
         end, "Button", 12)
     end
     local editSearch = CreateFrame("EditBox", nil, editorPage)
-    editSearch:SetWidth(190)
+    editSearch:SetWidth(200)
     editSearch:SetHeight(24)
     editSearch:SetPoint("TOPRIGHT", 0, 0)
     editSearch:SetAutoFocus(false)
     editSearch:SetFont(BODY_FONT, 11)
-    editSearch:SetTextInsets(8, 8, 0, 0)
+    editSearch:SetTextInsets(10, 8, 0, 0)
     editSearch:SetTextColor(unpack(GOLD_HI))
     Slice9(editSearch, "Button", 8)
     local editSearchHint = Text(editSearch, 11, { 0.5, 0.42, 0.32 }, BODY_FONT)
-    editSearchHint:SetPoint("LEFT", 8, 0)
+    editSearchHint:SetPoint("LEFT", 10, 0)
     editSearchHint:SetText("Search abilities and talents")
     editSearch:SetScript("OnTextChanged", function(self)
         edit.search = string.lower(self:GetText() or "")
@@ -2687,7 +2697,7 @@ local function BuildEditor()
     end)
     editSearch:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     editSearch:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
-    editorTabs[1]:SetPoint("RIGHT", editSearch, "LEFT", -14, 0)
+    editorTabs[1]:SetPoint("RIGHT", editSearch, "LEFT", -12, 0)
     editorTabs[0]:SetPoint("RIGHT", editorTabs[1], "LEFT", -6, 0)
 
     local function SendSlot(slot, golden, card)
@@ -2695,42 +2705,45 @@ local function BuildEditor()
             card and card.kind or 0, card and card.id or 0), "WHISPER", UnitName("player"))
     end
 
-    -- The eight slots: the card large, the Golden Card beside it; the chosen one lit.
-    local SLOT_W = 104
-    local SLOT_GAP = (PAGE_WIDTH - CARD_SLOTS * SLOT_W) / (CARD_SLOTS - 1)
+    -- The strip: eight slots, each a small card with its Golden Card beside it.
+    local STRIP_TOP, STRIP_H = 32, 140
+    local strip = Panel(editorPage, "PanelGold", 0, STRIP_TOP, PAGE_WIDTH, STRIP_H)
+    local SLOT_W = (PAGE_WIDTH - 16) / CARD_SLOTS
+    local CARD_W, CARD_H, GOLD_W, GOLD_H = 56, 112, 40, 80
     local editSlots = {}
     for index = 1, CARD_SLOTS do
-        local slot = CreateFrame("Button", nil, editorPage)
-        slot:SetWidth(SLOT_W)
-        slot:SetHeight(84)
-        slot:SetPoint("TOPLEFT", (index - 1) * (SLOT_W + SLOT_GAP), -34)
+        local slot = CreateFrame("Button", nil, strip)
+        slot:SetWidth(SLOT_W - 6)
+        slot:SetHeight(STRIP_H - 12)
+        slot:SetPoint("TOPLEFT", 8 + (index - 1) * SLOT_W + 3, -6)
         slot:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-        slot.number = Text(slot, 11, MUTED, DISPLAY_FONT)
-        slot.number:SetPoint("TOPLEFT", 8, -6)
-        slot.number:SetText(index)
-        local function Socket(size, x, rgb)
-            local rim = slot:CreateTexture(nil, "BORDER")
-            rim:SetTexture(rgb[1], rgb[2], rgb[3], 0.85)
-            rim:SetWidth(size + 4)
-            rim:SetHeight(size + 4)
-            rim:SetPoint("TOPLEFT", x - 2, -20)
-            local well = slot:CreateTexture(nil, "ARTWORK")
-            well:SetTexture(0.04, 0.03, 0.02, 1)
-            well:SetPoint("TOPLEFT", rim, "TOPLEFT", 2, -2)
-            well:SetPoint("BOTTOMRIGHT", rim, "BOTTOMRIGHT", -2, 2)
-            local icon = slot:CreateTexture(nil, "OVERLAY")
-            icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
-            icon:SetAllPoints(well)
-            return icon, rim
-        end
-        slot.icon, slot.rim = Socket(40, 10, { 0.55, 0.42, 0.25 })
-        slot.golden, slot.goldenRim = Socket(30, 62, GOLDEN_RGB)
-        slot.when = Text(slot, 9, { 0.55, 1, 0.54 }, BODY_FONT)
-        slot.when:SetPoint("TOPRIGHT", -8, -6)
-        slot.name = Text(slot, 9, GOLD_HI, BODY_FONT)
-        slot.name:SetPoint("BOTTOM", 0, 7)
-        slot.name:SetWidth(SLOT_W - 10)
-        slot.name:SetHeight(12)
+        Slice9(slot, "Solid", 8)
+        -- Its numeral over the Golden Card (the card itself fills the slot's height).
+        slot.number = Text(slot, 13, MUTED, DISPLAY_FONT)
+        slot.number:SetPoint("TOP", slot, "TOPLEFT", 8 + CARD_W - 4 + GOLD_W / 2, -8)
+        slot.number:SetText(ROMAN_SLOTS[index])
+        slot.card = CardFace(slot, CARD_W, CARD_H)
+        slot.card:SetPoint("BOTTOMLEFT", 8, 6)
+        slot.card:EnableMouse(false)
+        slot.goldCard = CardFace(slot, GOLD_W, GOLD_H)
+        slot.goldCard:SetPoint("BOTTOMLEFT", slot.card, "BOTTOMRIGHT", -4, 0)
+        slot.goldCard:EnableMouse(false)
+        -- The level each comes at, on its parchment (the card's own lines are too small to read at this size).
+        slot.when = Text(slot.card.content, 9, { 0.1, 0.05, 0.02 }, BODY_FONT)
+        slot.when:SetShadowOffset(0, 0)
+        slot.when:SetPoint("CENTER", slot.card, "TOPLEFT", CARD_W / 2, -CARD_H * 0.79)
+        slot.goldenWhen = Text(slot.goldCard.content, 8, { 0.1, 0.05, 0.02 }, BODY_FONT)
+        slot.goldenWhen:SetShadowOffset(0, 0)
+        slot.goldenWhen:SetPoint("CENTER", slot.goldCard, "TOPLEFT", GOLD_W / 2, -GOLD_H * 0.79)
+        slot.empty = Text(slot, 9, MUTED, BODY_FONT, "OUTLINE")
+        slot.empty:SetPoint("CENTER", slot.card, "CENTER", 0, 0)
+        slot.goldenEmpty = Text(slot, 8, { 0.75, 0.62, 0.3 }, BODY_FONT, "OUTLINE")
+        slot.goldenEmpty:SetPoint("CENTER", slot.goldCard, "CENTER", 0, 0)
+        local hover = slot:CreateTexture(nil, "HIGHLIGHT")
+        hover:SetTexture(ART .. "Glow")
+        hover:SetBlendMode("ADD")
+        hover:SetVertexColor(1, 0.6, 0.25, 0.2)
+        hover:SetAllPoints()
         -- A click on a slot empties what the tab shows there (its card, or on Golden its Golden Card), and chooses it.
         slot:SetScript("OnClick", function()
             local places = specCards[view.spec] and specCards[view.spec][index]
@@ -2748,42 +2761,86 @@ local function BuildEditor()
         slot:SetScript("OnLeave", function() GameTooltip:Hide() end)
         editSlots[index] = slot
     end
-    local editHint = Text(editorPage, 10, MUTED, BODY_FONT)
-    editHint:SetPoint("TOPLEFT", 0, -124)
 
-    -- The two lists: Abilities (Skill Cards) and Talents (Talent Cards).
+    -- Under the strip: what a click does, and the sort.
+    local HINT_TOP = STRIP_TOP + STRIP_H + 6
+    local editHint = Text(editorPage, 10, MUTED, BODY_FONT)
+    editHint:SetPoint("TOPLEFT", 4, -HINT_TOP - 3)
+    editHint:SetWidth(PAGE_WIDTH - 190)
+    editHint:SetJustifyH("LEFT")
+    local sortChips = {}
+    for _, sort in ipairs({ "level", "rarity" }) do
+        sortChips[sort] = Button(editorPage, 62, 18, sort == "level" and "Level" or "Rarity", function()
+            edit.sort = sort
+            edit.offsets[0], edit.offsets[1] = 0, 0
+            Refresh()
+        end, "Button", 10)
+    end
+    sortChips.level:SetPoint("TOPRIGHT", 0, -HINT_TOP)
+    sortChips.rarity:SetPoint("RIGHT", sortChips.level, "LEFT", -4, 0)
+    local sortLabel = Text(editorPage, 10, MUTED, BODY_FONT)
+    sortLabel:SetPoint("RIGHT", sortChips.rarity, "LEFT", -6, 0)
+    sortLabel:SetText("Sort by")
+
+    -- The two lists: Abilities (Skill Cards) and Talents (Talent Cards), each with its scroll bar.
     local LIST_W = (PAGE_WIDTH - 14) / 2
-    local LIST_TOP = 142
+    local LIST_TOP = HINT_TOP + 23
+    local ROW_W = LIST_W - 34
     local lists = {}
     for kind, label in pairs({ [0] = "ABILITIES", [1] = "TALENTS" }) do
         local list = Panel(editorPage, "Panel", kind * (LIST_W + 14), LIST_TOP, LIST_W, PAGE_HEIGHT - LIST_TOP)
-        list.heading = Heading(list, label, 12, 10)
+        list.heading = Heading(list, label, 12, 8)
         list.count = Text(list, 10, MUTED, BODY_FONT)
-        list.count:SetPoint("TOPRIGHT", -14, -14)
+        list.count:SetPoint("TOPRIGHT", -16, -12)
         list.empty = Text(list, 11, MUTED, BODY_FONT)
-        list.empty:SetPoint("TOP", 0, -70)
-        list.empty:SetWidth(LIST_W - 40)
+        list.empty:SetPoint("TOP", 0, -80)
+        list.empty:SetWidth(LIST_W - 60)
         list.rows = {}
         for index = 1, EDIT_ROWS do
             local row = CreateFrame("Button", nil, list)
-            row:SetWidth(LIST_W - 20)
+            row:SetWidth(ROW_W)
             row:SetHeight(ROW_H - 2)
-            row:SetPoint("TOPLEFT", 10, -34 - (index - 1) * ROW_H)
+            row:SetPoint("TOPLEFT", 10, -30 - (index - 1) * ROW_H)
+            row.stripe = row:CreateTexture(nil, "BACKGROUND")
+            row.stripe:SetTexture(1, 0.82, 0.55, index % 2 == 0 and 0.045 or 0.015)
+            row.stripe:SetAllPoints()
+            row.accent = row:CreateTexture(nil, "BORDER")
+            row.accent:SetTexture(0.55, 1, 0.54, 0.9)
+            row.accent:SetWidth(3)
+            row.accent:SetPoint("TOPLEFT", 0, 0)
+            row.accent:SetPoint("BOTTOMLEFT", 0, 0)
+            row.rim = row:CreateTexture(nil, "BORDER")
+            row.rim:SetWidth(22)
+            row.rim:SetHeight(22)
+            row.rim:SetPoint("LEFT", 7, 0)
             row.icon = row:CreateTexture(nil, "ARTWORK")
-            row.icon:SetWidth(22)
-            row.icon:SetHeight(22)
-            row.icon:SetPoint("LEFT", 2, 0)
+            row.icon:SetPoint("TOPLEFT", row.rim, "TOPLEFT", 1, -1)
+            row.icon:SetPoint("BOTTOMRIGHT", row.rim, "BOTTOMRIGHT", -1, 1)
             row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
             row.name = Text(row, 12, GOLD_HI, BODY_FONT)
-            row.name:SetPoint("LEFT", row.icon, "RIGHT", 8, 0)
-            row.name:SetWidth(LIST_W - 160)
+            row.name:SetPoint("LEFT", row.rim, "RIGHT", 8, 0)
+            row.name:SetWidth(ROW_W - 170)
+            row.name:SetHeight(14)
             row.name:SetJustifyH("LEFT")
-            row.note = Text(row, 10, MUTED, BODY_FONT)
-            row.note:SetPoint("RIGHT", -6, 0)
+            -- On the right: a pill with the unlock level (green, with its slot, once slotted), the rarity's gems.
+            row.pill = CreateFrame("Frame", nil, row)
+            row.pill:SetHeight(18)
+            row.pill:SetPoint("RIGHT", -4, 0)
+            Slice9(row.pill, "Solid", 8)
+            row.note = Text(row.pill, 10, GOLD_HI, BODY_FONT)
+            row.note:SetPoint("CENTER", 0, 0)
+            row.gems = {}
+            for gem = 1, 4 do
+                local texture = row:CreateTexture(nil, "ARTWORK")
+                texture:SetTexture(ART .. "Diamond")
+                texture:SetWidth(9)
+                texture:SetHeight(9)
+                row.gems[gem] = texture
+            end
             local hover = row:CreateTexture(nil, "HIGHLIGHT")
             hover:SetTexture(ART .. "Glow")
             hover:SetBlendMode("ADD")
-            hover:SetVertexColor(1, 0.6, 0.25, 0.25)
+            hover:SetVertexColor(1, 0.6, 0.25, 0.22)
             hover:SetAllPoints()
             row:SetScript("OnEnter", function(self)
                 if self.entry then
@@ -2826,10 +2883,33 @@ local function BuildEditor()
                         break
                     end
                 end
+                PlaySound("igMainMenuOptionCheckBoxOn")
                 Refresh()
             end)
             list.rows[index] = row
         end
+        -- The scroll bar: a groove and a gold thumb, dragged or wheeled.
+        local bar = CreateFrame("Slider", nil, list)
+        bar:SetOrientation("VERTICAL")
+        bar:SetWidth(8)
+        bar:SetPoint("TOPRIGHT", -10, -32)
+        bar:SetPoint("BOTTOMRIGHT", -10, 12)
+        bar:SetValueStep(1)
+        local groove = bar:CreateTexture(nil, "BACKGROUND")
+        groove:SetTexture(0.02, 0.01, 0.005, 0.75)
+        groove:SetAllPoints()
+        local thumb = bar:CreateTexture(nil, "OVERLAY")
+        thumb:SetTexture(0.85, 0.63, 0.29, 0.95)
+        thumb:SetWidth(8)
+        thumb:SetHeight(36)
+        bar:SetThumbTexture(thumb)
+        bar:SetScript("OnValueChanged", function(self, value)
+            if not self.updating then
+                edit.offsets[kind] = math.floor((value or 0) + 0.5)
+                Refresh()
+            end
+        end)
+        list.bar = bar
         list:EnableMouseWheel(true)
         list:SetScript("OnMouseWheel", function(_, direction)
             edit.offsets[kind] = math.max(0, edit.offsets[kind] - direction * 3)
@@ -2848,6 +2928,9 @@ local function BuildEditor()
             end
         end
         table.sort(shown, function(a, b)
+            if edit.sort == "level" and (a.unlock or 1) ~= (b.unlock or 1) then
+                return (a.unlock or 1) < (b.unlock or 1)
+            end
             if a.rarity ~= b.rarity then
                 return a.rarity > b.rarity
             end
@@ -2856,53 +2939,74 @@ local function BuildEditor()
         return shown
     end
 
+    -- A slot's small card: the card with the level it comes at, or the back of one, faded, for an empty place.
+    local function ShowSmallCard(face, label, empty, card, golden, when, editing)
+        if card then
+            face:SetCard(card, golden, false)
+            for _, text in ipairs({ face.name, face.rarity, face.kind, face.note }) do
+                text:Hide()
+            end
+            label:SetText(when and ("LV " .. when) or "")
+            empty:SetText("")
+        else
+            face:SetBack(0, golden)
+            label:SetText("")
+            empty:SetText(golden and "Golden" or "Empty")
+        end
+        face:SetAlpha(card and (editing and 1 or 0.7) or (editing and 0.42 or 0.22))
+        empty:SetAlpha(editing and 1 or 0.5)
+    end
+
     function editor.Refresh()
         local mine = mySpecs[view.spec]
+        local locked = cardsLocked[view.spec]
         editorTitle:SetText("EDIT CARDS  -  " .. string.upper(mine and mine.name or SPECS[view.spec].name))
+        editorTag.text:SetText(locked and "LOCKED" or ("OPEN UNTIL LEVEL " .. LOCK_LEVEL))
+        editorTag.text:SetTextColor(unpack(locked and { 1, 0.62, 0.5 } or GREEN))
+        Tint(editorTag, locked and 0.35 or 0.06, locked and 0.06 or 0.2, locked and 0.04 or 0.06, 0.9)
+        editorTag:SetWidth((editorTag.text:GetStringWidth() or 60) + 16)
         editorTabs[0]:SetOn(not edit.golden)
         editorTabs[1]:SetOn(edit.golden)
+        sortChips.level:SetOn(edit.sort == "level")
+        sortChips.rarity:SetOn(edit.sort == "rarity")
         local schedule = Slotting.Schedule(view.spec)
-        local locked = cardsLocked[view.spec]
         for index, slot in ipairs(editSlots) do
-            local chosen = index == edit.slot
-            if slot.chosen ~= chosen or not slot.slices then
-                slot.chosen = chosen
-                Slice9(slot, chosen and "ButtonRed" or "Button", 10)
-            end
+            local chosen = index == edit.slot and not locked
+            Tint(slot, chosen and 0.5 or 0.04, chosen and 0.13 or 0.025, chosen and 0.05 or 0.015, chosen and 0.75
+                or 0.55)
+            slot.number:SetTextColor(unpack(chosen and GOLD_HI or MUTED))
             local card = Slotting.Card(view.spec, index, false)
             local golden = Slotting.Card(view.spec, index, true)
-            Shown(slot.icon, card ~= nil)
-            if card then
-                slot.icon:SetTexture(CardIcon(card))
+            ShowSmallCard(slot.card, slot.when, slot.empty, card, false,
+                card and schedule[card.kind .. "." .. card.id], not edit.golden)
+            ShowSmallCard(slot.goldCard, slot.goldenWhen, slot.goldenEmpty, golden, true,
+                golden and schedule[golden.kind .. "." .. golden.id], edit.golden)
+            -- The chosen place glows.
+            local glowing = chosen and (edit.golden and slot.goldCard or slot.card)
+            for _, face in ipairs({ slot.card, slot.goldCard }) do
+                Shown(face.glow, face == glowing)
             end
-            Shown(slot.golden, golden ~= nil)
-            if golden then
-                slot.golden:SetTexture(CardIcon(golden))
+            if glowing then
+                glowing.glow:SetVertexColor(1, 0.55, 0.2, 0.8)
             end
-            -- The place being edited stands out; the other dims.
-            slot.rim:SetAlpha(edit.golden and 0.45 or 1)
-            slot.goldenRim:SetAlpha(edit.golden and 1 or 0.45)
-            local shown = edit.golden and golden or card
-            local when = shown and schedule[shown.kind .. "." .. shown.id]
-            slot.when:SetText(when and ("Lv " .. when) or "")
-            slot.name:SetText(shown and CardName(shown) or (edit.golden and "No Golden Card" or "Empty"))
-            local rgb = shown and (edit.golden and GOLDEN_RGB or NAME_RGB[shown.rarity]) or MUTED
-            slot.name:SetTextColor(rgb[1], rgb[2], rgb[3])
         end
-        editHint:SetText(locked and ("|cffff8066Locked:|r cards lock at level " .. LOCK_LEVEL .. ". They open again "
-            .. "when you prestige. Each card comes at the level shown on its slot.")
-            or edit.golden and ("Click a Golden Card to put it in slot " .. edit.slot .. " beside its card. Click a "
-            .. "slot to take its Golden Card out. Cards lock at level " .. LOCK_LEVEL .. ".")
-            or ("Click a card to put it in slot " .. edit.slot .. ". Click a slot to empty it. Each card comes at the "
-            .. "level on its slot. Cards lock at level " .. LOCK_LEVEL .. "."))
+        editHint:SetText(locked and ("|cffff8066Locked:|r cards lock at level " .. LOCK_LEVEL .. " and open again "
+            .. "when you prestige. Each comes at the level on its card.")
+            or edit.golden and ("Click a Golden Card to put it beside slot " .. ROMAN_SLOTS[edit.slot] .. "'s card. "
+            .. "Click a slot to take its Golden Card out.")
+            or ("Click a card to put it in slot " .. ROMAN_SLOTS[edit.slot] .. ". Click a slot to empty it. Each card "
+            .. "comes at the level on it."))
         for kind, list in pairs(lists) do
             local shown = EditorCards(kind)
             local last = math.max(0, #shown - EDIT_ROWS)
             edit.offsets[kind] = math.min(edit.offsets[kind], last)
             local offset = edit.offsets[kind]
-            list.count:SetText(#shown == 0 and "" or #shown <= EDIT_ROWS and (#shown .. (#shown == 1 and " card"
-                or " cards")) or string.format("%d-%d of %d", offset + 1, math.min(#shown, offset + EDIT_ROWS),
-                #shown))
+            list.count:SetText(#shown == 0 and "" or (#shown .. (#shown == 1 and " card" or " cards")))
+            list.bar.updating = true
+            list.bar:SetMinMaxValues(0, math.max(1, last))
+            list.bar:SetValue(offset)
+            list.bar.updating = false
+            Shown(list.bar, last > 0)
             local kindName = kind == 1 and "Talent" or "Skill"
             list.empty:SetText(not catalogLoaded and "Loading your collection..." or edit.search ~= ""
                 and "No cards match your search." or edit.golden and ("No Golden " .. kindName
@@ -2914,20 +3018,27 @@ local function BuildEditor()
                 row.entry = card
                 Shown(row, card ~= nil)
                 if card then
-                    row.icon:SetTexture(CardIcon(card))
-                    row.name:SetText(CardName(card))
                     local rgb = edit.golden and GOLDEN_RGB or NAME_RGB[card.rarity]
+                    local rim = edit.golden and GOLDEN_RGB or RARITY_RGB[card.rarity]
+                    row.icon:SetTexture(CardIcon(card))
+                    row.rim:SetTexture(rim[1], rim[2], rim[3], 0.9)
+                    row.name:SetText(CardName(card))
                     row.name:SetTextColor(rgb[1], rgb[2], rgb[3])
-                    local slot, inGolden = Slotting.Of(view.spec, card)
-                    if slot then
-                        local when = schedule[card.kind .. "." .. card.id]
-                        row.note:SetText("|cff8dff8aSlot " .. slot .. (inGolden and " (Golden)" or "")
-                            .. (when and (" - level " .. when) or "") .. "|r")
-                    else
-                        row.note:SetText("Unlocks at " .. (card.unlock or 1) .. "  -  " .. (edit.golden and "Golden "
-                            or "") .. RARITY_NAMES[card.rarity])
+                    local slot = Slotting.Of(view.spec, card)
+                    local when = slot and schedule[card.kind .. "." .. card.id]
+                    row.note:SetText(slot and ("Slot " .. ROMAN_SLOTS[slot] .. (when and ("  -  Lv " .. when) or ""))
+                        or ("Lv " .. (card.unlock or 1)))
+                    row.note:SetTextColor(unpack(slot and { 0.75, 1, 0.72 } or GOLD_HI))
+                    Tint(row.pill, slot and 0.07 or 0.09, slot and 0.24 or 0.06, slot and 0.06 or 0.03, 0.95)
+                    row.pill:SetWidth((row.note:GetStringWidth() or 30) + 16)
+                    Shown(row.accent, slot ~= nil)
+                    for gem, texture in ipairs(row.gems) do
+                        Shown(texture, gem <= card.rarity + 1)
+                        texture:ClearAllPoints()
+                        texture:SetPoint("RIGHT", row.pill, "LEFT", -6 - (card.rarity + 1 - gem) * 10, 0)
+                        texture:SetVertexColor(rim[1], rim[2], rim[3])
                     end
-                    row:SetAlpha(locked and not slot and 0.55 or 1)
+                    row:SetAlpha(locked and not slot and 0.5 or 1)
                 end
             end
         end
@@ -2951,7 +3062,7 @@ local function BuildEditor()
         ShowTab(4)
     end
 
-    editor.slots, editor.lists, editor.tabs = editSlots, lists, editorTabs
+    editor.slots, editor.lists, editor.tabs, editor.sort = editSlots, lists, editorTabs, sortChips
     editor.search, editor.state = editSearch, edit
 end
 BuildEditor()
