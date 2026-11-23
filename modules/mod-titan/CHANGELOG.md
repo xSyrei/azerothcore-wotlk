@@ -7,9 +7,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 ### Wildcard rolls
 
 - Abilities whose spell shows no damage, healing or threat no longer go to every role: Execute, Bloodrage,
-  Demoralizing Shout and the like (Rage, Warrior) go to Melee and Tank; Rapid Fire, Readiness, Concussive Shot (the
-  Hunter's), the Rogue's and anything spending Energy or Focus to Melee; Desperate Prayer and other heals on yourself
-  to Healer and Ranged. Buffs and utility of the casters still suit everyone.
+  Demoralizing Shout and the like (Rage, Warrior) go to Melee and Tank; the Rogue's and anything spending Energy to
+  Melee; Desperate Prayer and other heals on yourself to Healer and Ranged. Buffs and utility of the casters still
+  suit everyone.
+- **Hunters are Ranged**: the Hunter's shots, stings, aspects, traps and cooldowns (Rapid Fire, Readiness,
+  Concussive Shot...) and ranged attack power talents roll for the **Ranged** role, not Melee. The Hunter's melee
+  strikes (Raptor Strike, Mongoose Bite, Wing Clip, Counterattack) stay Melee.
 - Talents that improve one ability need it: Improved Hamstring (Hamstring), Improved Kick (Kick), Desolation (Blood
   Strike), Master of Deception and Master of Subtlety (Stealth), Spirit Bond (a pet), Feral Swiftness and Survival
   Instincts (Cat or Bear Form), Tactical Mastery (Defensive Stance), Shatter (a frost spell), Ignite (a fire spell),

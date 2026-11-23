@@ -385,9 +385,9 @@ namespace
         { "Concentration Aura", TAG_HEALER | TAG_RANGED }, { "Blessing of Might", TAG_MELEE | TAG_TANK },
         { "Blessing of Wisdom", TAG_HEALER | TAG_RANGED }, { "Seal of Wisdom", TAG_HEALER | TAG_RANGED },
         { "Battle Shout", TAG_MELEE | TAG_TANK }, { "Commanding Shout", TAG_TANK | TAG_MELEE },
-        { "Horn of Winter", TAG_MELEE | TAG_TANK }, { "Trueshot Aura", TAG_MELEE },
-        { "Aspect of the Hawk", TAG_MELEE }, { "Aspect of the Monkey", TAG_MELEE | TAG_TANK },
-        { "Aspect of the Viper", TAG_MELEE }, { "Thorns", TAG_TANK },
+        { "Horn of Winter", TAG_MELEE | TAG_TANK }, { "Trueshot Aura", TAG_RANGED },
+        { "Aspect of the Hawk", TAG_RANGED }, { "Aspect of the Monkey", TAG_MELEE | TAG_TANK },
+        { "Aspect of the Viper", TAG_RANGED }, { "Thorns", TAG_TANK },
         { "Stoneskin Totem", TAG_TANK | TAG_MELEE }, { "Strength of Earth Totem", TAG_MELEE | TAG_TANK },
         { "Windfury Totem", TAG_MELEE | TAG_TANK }, { "Grace of Air Totem", TAG_MELEE },
         { "Mana Spring Totem", TAG_HEALER | TAG_RANGED }, { "Wrath of Air Totem", TAG_RANGED | TAG_HEALER },
@@ -401,14 +401,13 @@ namespace
         { "Demon Skin", TAG_RANGED }, { "Demon Armor", TAG_RANGED }, { "Fel Armor", TAG_RANGED },
     };
 
-    // What a spell does, as role tags: its damage (melee or ranged physical: Melee; magic: Ranged), heals and
-    // shields on others (Healer), taunts and threat (Tank); spells it triggers count too.
+    // What a spell does, as role tags: its damage (melee: Melee; ranged, a bow's or a gun's as a spell's: Ranged),
+    // heals and shields on others (Healer), taunts and threat (Tank); spells it triggers count too.
     uint8 SpellRoles(SpellInfo const* spellInfo, uint8 depth = 0)
     {
         uint8 roles = 0;
-        bool physical = spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE
-            || spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED;
-        uint8 damage = physical ? TAG_MELEE : TAG_RANGED;
+        uint8 damage = spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE ? TAG_MELEE : TAG_RANGED;
+        uint8 weapon = spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED ? TAG_RANGED : TAG_MELEE;
         for (SpellEffectInfo const& effect : spellInfo->GetEffects())
         {
             bool onOthers = effect.TargetA.GetTarget() != TARGET_UNIT_CASTER;
@@ -422,7 +421,7 @@ namespace
                 case SPELL_EFFECT_WEAPON_DAMAGE_NOSCHOOL:
                 case SPELL_EFFECT_NORMALIZED_WEAPON_DMG:
                 case SPELL_EFFECT_WEAPON_PERCENT_DAMAGE:
-                    roles |= TAG_MELEE;
+                    roles |= weapon;
                     break;
                 case SPELL_EFFECT_HEAL:
                 case SPELL_EFFECT_HEAL_PCT:
@@ -478,8 +477,9 @@ namespace
     // An ability whose data shows no damage, heal or threat (Execute's script, Rapid Fire's haste, Bloodrage's Rage,
     // Readiness, a shout) still belongs to a kind of fighting, or it went to every role, a Healer's Execute: Melee and
     // Tank for what spends Rage, runes or Runic Power and the Warrior's and Death Knight's; Melee for what spends
-    // Energy or Focus, the Rogue's and Hunter's, and weapon attacks; Healer and Ranged for a heal on oneself (Desperate
-    // Prayer). The rest (the casters' buffs and utility) stays for everyone.
+    // Energy, the Rogue's and melee attacks; Ranged for the Hunter's (theirs is the bow: Rapid Fire, Readiness,
+    // Concussive Shot, traps), what spends Focus and ranged attacks; Healer and Ranged for a heal on oneself
+    // (Desperate Prayer). The rest (the casters' buffs and utility) stays for everyone.
     uint8 FallbackRoles(uint8 classId, SpellInfo const* spellInfo)
     {
         switch (spellInfo->PowerType)
@@ -488,8 +488,9 @@ namespace
             case POWER_RUNIC_POWER:
                 return TAG_MELEE | TAG_TANK;
             case POWER_ENERGY:
-            case POWER_FOCUS:
                 return TAG_MELEE;
+            case POWER_FOCUS:
+                return TAG_RANGED;
             default:
                 break;
         }
@@ -501,13 +502,16 @@ namespace
             case CLASS_DEATH_KNIGHT:
                 return TAG_MELEE | TAG_TANK;
             case CLASS_ROGUE:
-            case CLASS_HUNTER:
                 return TAG_MELEE;
+            case CLASS_HUNTER:
+                return TAG_RANGED;
             default:
                 break;
         }
-        if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE || spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED)
+        if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE)
             return TAG_MELEE;
+        if (spellInfo->DmgClass == SPELL_DAMAGE_CLASS_RANGED)
+            return TAG_RANGED;
         if (spellInfo->HasEffect(SPELL_EFFECT_HEAL) || spellInfo->HasEffect(SPELL_EFFECT_HEAL_PCT)
             || spellInfo->HasEffect(SPELL_EFFECT_HEAL_MAX_HEALTH) || spellInfo->HasAura(SPELL_AURA_PERIODIC_HEAL))
             return TAG_HEALER | TAG_RANGED;
@@ -667,12 +671,16 @@ namespace
                 case SPELL_AURA_MOD_WEAPON_CRIT_PERCENT:
                 case SPELL_AURA_MOD_HIT_CHANCE:
                 case SPELL_AURA_MOD_ATTACK_POWER_PCT:
-                case SPELL_AURA_MOD_RANGED_ATTACK_POWER_PCT:
                 case SPELL_AURA_MOD_MELEE_HASTE:
                 case SPELL_AURA_MOD_EXPERTISE:
                 case SPELL_AURA_MOD_ATTACK_POWER_OF_STAT_PERCENT:
-                case SPELL_AURA_MOD_RANGED_ATTACK_POWER_OF_STAT_PERCENT:
                     roles |= TAG_MELEE | TAG_TANK;
+                    break;
+                // A bow's or a gun's: the Hunter's, a Ranged Hero's.
+                case SPELL_AURA_MOD_RANGED_ATTACK_POWER_PCT:
+                case SPELL_AURA_MOD_RANGED_ATTACK_POWER_OF_STAT_PERCENT:
+                case SPELL_AURA_MOD_RANGED_HASTE:
+                    roles |= TAG_RANGED;
                     break;
                 case SPELL_AURA_MOD_RESISTANCE_PCT:
                 case SPELL_AURA_MOD_BASE_RESISTANCE_PCT:
@@ -2621,8 +2629,8 @@ namespace Wildcard
     {
         static constexpr std::array<uint8, MAX_ROLES> ACCEPTS = {
             0xFF,                       // none: everything
-            TAG_MELEE,                  // Melee: melee and physical ranged
-            TAG_RANGED,                 // Ranged: magic damage
+            TAG_MELEE,                  // Melee: melee
+            TAG_RANGED,                 // Ranged: magic damage, and bows and guns (the Hunter's)
             TAG_HEALER | TAG_RANGED,    // Healer: heals, and magic damage to level with
             TAG_TANK | TAG_MELEE,       // Tank: tanking and melee
         };

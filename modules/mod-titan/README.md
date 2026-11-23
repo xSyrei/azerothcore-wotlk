@@ -104,12 +104,14 @@ How a Hero progresses (`src/wildcard.cpp`): random, steered so a build takes sha
   talent rank (Tank: Dancing Rune Weapon, Howling Blast, Hammer of the Righteous, Shockwave, Summon Gargoyle, Spirit
   Bomb; Healer: Wild Growth, Invoke Chi-Ji, Beacon of Light, Penance, Guardian Spirit, Riptide; Ranged and Melee:
   the rest, Howling Blast and Summon Gargoyle Melee's too). No other roll or pick gives one.
-- **Rolls follow the role**: abilities are tagged by what they do (melee or ranged physical damage: Melee; magic
-  damage: Ranged; heals and shields on others: Healer; taunts and threat: Tank; `ROLE_ABILITIES` by hand for forms,
+- **Rolls follow the role**: abilities are tagged by what they do (melee damage: Melee; magic damage, and a bow's or
+  gun's: Ranged; heals and shields on others: Healer; taunts and threat: Tank; `ROLE_ABILITIES` by hand for forms,
   stances and scripted spells), and a level-up or kit roll only gives one suiting the Hero's role: Melee takes
-  Melee, Ranged takes Ranged, Healer takes Healer and Ranged, Tank takes Tank and Melee. Untagged abilities (buffs,
-  utility, crowd control) suit every role; with no role, or nothing left that suits, anything goes. Tome of
-  Selection picks are free.
+  Melee, Ranged takes Ranged, Healer takes Healer and Ranged, Tank takes Tank and Melee. An ability whose data shows
+  none of those takes a role from what it spends and whose it is (`FallbackRoles`: Rage, runes, the Warrior's and
+  Death Knight's Melee and Tank; Energy and the Rogue's Melee; Focus and the Hunter's Ranged; a heal on oneself
+  Healer and Ranged); the casters' buffs and utility suit every role. With no role, or nothing left that suits,
+  anything goes. Tome of Selection picks are free.
 - **Ability rolls are steered** (`GrantRandom`): one pet family (once a Hero summons a hunter pet, a demon or a
   ghoul, the other families' summons stay out); the kit (before level 8) first gets 2 abilities doing the role's
   work (Healer: heals; Tank: a threat ability, then a melee one; no role: damage); after 2 rolls in a row gave a
