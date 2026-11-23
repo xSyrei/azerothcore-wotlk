@@ -8,10 +8,17 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   Card.
 - On Silas Darkmoon's Specializations page, **Edit Cards** opens the card editor: your 8 slots above every card you
   own, with Abilities and Talents side by side and one search bar for both. The Golden tab shows your Golden Cards.
-- Click a card to put it in the chosen slot; the next empty slot is chosen for you. Right-click a slot to empty it. A
-  card is in one slot at a time: slot it again and it moves.
-- Each specialization keeps its own cards, and they stay when you prestige. Slotted cards don't change your level-up
-  rolls yet.
+- Click a card to put it in the chosen slot; the next empty slot is chosen for you. Click a slot to empty it. A card
+  is in one slot at a time: slot it again and it moves.
+- **Your slotted cards are your level-ups.** Every card shows the level it unlocks at. Each level-up that gives an
+  ability (levels 9, 11, 13...) gives your next slotted Skill Card unlocked by then instead of a random one, and each
+  one that gives a talent (8, 10, 12...) your next Talent Card. Several unlocked at once come one after another: three
+  Skill Cards unlocked at 9 arrive at 9, 11 and 13. Golden Cards count too. Each slot shows the level its card comes
+  at.
+- Cards **lock at level 8**: from then they can't be swapped until you prestige. A specialization you haven't built
+  yet stays open until the prestige that builds it.
+- An ability that needs a form, stance or pet you don't have yet waits until you do.
+- Each specialization keeps its own cards, and they stay when you prestige.
 
 ## 2026-11-19: The Duelist's Cannon-Fire
 

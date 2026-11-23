@@ -54,11 +54,15 @@
 //   (names, icons and the bought ones stay).
 // - Card slots (titan_spec_cards): each specialization has CARD_SLOTS, each holding a card of the account's collection
 //   (cards.cpp: a Skill or Talent Card) and a Golden Card besides. A card is in one place of a specialization at a
-//   time: slotted again, it moves. Slotted cards stay through a prestige.
+//   time: slotted again, it moves. Slotted cards stay through a prestige. The level-up rolls follow them (wildcard.cpp:
+//   each ability roll gives the next slotted Skill Card unlocked by then, each talent roll the next Talent Card). They
+//   lock with the kit (Wildcard::LOCK_LEVEL) in a built specialization: the active one until a prestige takes it back
+//   to level 1, an inactive one built already for good; one never built stays open until the prestige that builds it.
 //
 // Addon whispers, prefix EFSP, to and from the Classless and Darkmoon windows:
 //   from server   P,<active>,<eyes>   S,<spec>,<owned>,<locked>,<used>,<price>,<icon>,<name>   (each of the four)
-//                 C,<spec>,<slot>.<golden 0|1>.<kind>.<id>;...   the slotted cards (the client clears them on P)
+//                 C,<spec>,<locked 0|1>,<slot>.<golden 0|1>.<kind>.<id>;...   the slotted cards, and whether they are
+//                   locked (one line at least for each spec; the client clears them on P)
 //                 L0 / L,<kind>.<id>;...   the active spec's locks (kind: 0 ability by first rank, 1 talent)   PE
 //   to server     LIST, ACTIVATE,<spec>, LOCK,<spec>,<0|1>, NAME,<spec>,<name>, ICON,<spec>,<icon>, BUY,<spec>,
 //                 LOCKENTRY,<kind>,<id>,<0|1>, REROLL,<kind>,<id>, UNLEARN,<ability> (free, before the kit locks),
@@ -119,6 +123,7 @@ namespace
     };
 
     std::unordered_map<ObjectGuid, Loadouts> loadouts;
+    std::unordered_map<ObjectGuid, uint8> building;     // a spec being put back (Activate): its rolls follow its cards
 
     Loadouts* Loaded(Player* player)
     {
@@ -162,6 +167,13 @@ namespace
         player->SendDirectMessage(&data);
     }
 
+    // A built specialization's cards lock with the kit: the active one's at LOCK_LEVEL (open again after a prestige),
+    // an inactive one's once built.
+    bool CardsLocked(Player* player, Loadouts const& data, uint8 index)
+    {
+        return data.Specs[index].Used && (index != data.Active || Wildcard::IsKitLocked(player));
+    }
+
     void Send(Player* player)
     {
         Loadouts* data = Loaded(player);
@@ -175,7 +187,8 @@ namespace
             Spec const& spec = data->Specs[i];
             SendAddon(player, Acore::StringFormat("S,{},{},{},{},{},{},{}", i, spec.Owned ? 1 : 0, spec.Locked ? 1 : 0,
                 spec.Used || i == data->Active ? 1 : 0, spec.Owned ? 0 : PRICES[i], spec.Icon, spec.Name));
-            std::string head = Acore::StringFormat("C,{},", i), payload = head;
+            std::string head = Acore::StringFormat("C,{},{},", i, CardsLocked(player, *data, i) ? 1 : 0);
+            std::string payload = head;
             for (uint8 slot = 0; slot < CARD_SLOTS; ++slot)
                 for (uint8 golden = 0; golden < 2; ++golden)
                     if (SlotCard const& card = spec.Cards[slot][golden]; card.Id)
@@ -188,8 +201,7 @@ namespace
                         }
                         payload += (payload.size() > head.size() ? ";" : "") + item;
                     }
-            if (payload.size() > head.size())
-                SendAddon(player, payload);
+            SendAddon(player, payload);
         }
         for (auto const& [key, entry] : data->Specs[data->Active].Entries)
             if (entry.Locked)
@@ -526,7 +538,9 @@ namespace
         }
         player->SendActionButtons(2);                     // the client's bars cleared while the spells change
         std::vector<Wildcard::KeptAura> kept = Wildcard::BeginSpecChange(player);
+        building[player->GetGUID()] = index;
         PutBack(player, target);
+        building.erase(player->GetGUID());
         PutBackActions(player, target);
         Wildcard::EndSpecChange(player, kept);            // shared buffs, pet and totems stay; the rest go
         data->Active = index;
@@ -696,6 +710,13 @@ namespace
             handler.PSendSysMessage("Buy {} from Silas Darkmoon first.", spec.Name);
             return;
         }
+        if (CardsLocked(player, *data, index))
+        {
+            handler.PSendSysMessage("{}'s cards are locked: they lock at level {}. Prestige to change them.", spec.Name,
+                Wildcard::LOCK_LEVEL);
+            Send(player);
+            return;
+        }
         if (id)
         {
             if (!Cards::IsLoaded(player))
@@ -767,6 +788,21 @@ namespace Specs
         return player->GetPlayerSetting(SETTING_SOURCE, SETTING_DORMANT).value != 0;
     }
 
+    std::vector<std::pair<uint8, uint32>> SlottedCards(Player* player)
+    {
+        std::vector<std::pair<uint8, uint32>> cards;
+        Loadouts* data = Loaded(player);
+        if (!data)
+            return cards;
+        auto itr = building.find(player->GetGUID());
+        Spec const& spec = data->Specs[itr != building.end() ? itr->second : data->Active];
+        for (auto const& places : spec.Cards)
+            for (SlotCard const& card : places)
+                if (card.Id)
+                    cards.emplace_back(card.Kind, card.Id);
+        return cards;
+    }
+
     uint8 ActiveSpec(Player* player)
     {
         return uint8(std::min<uint32>(player->GetPlayerSetting(SETTING_SOURCE, SETTING_ACTIVE).value, MAX_SPECS - 1));
@@ -801,6 +837,7 @@ public:
         PLAYERHOOK_ON_LOGIN,
         PLAYERHOOK_ON_LOGOUT,
         PLAYERHOOK_ON_DELETE,
+        PLAYERHOOK_ON_LEVEL_CHANGED,
         PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT
     }) { }
 
@@ -813,6 +850,14 @@ public:
     void OnPlayerLogout(Player* player) override
     {
         loadouts.erase(player->GetGUID());
+        building.erase(player->GetGUID());
+    }
+
+    // The cards lock at LOCK_LEVEL (and open again when a prestige takes the Hero back below it): the windows told.
+    void OnPlayerLevelChanged(Player* player, uint8 oldLevel) override
+    {
+        if ((oldLevel < Wildcard::LOCK_LEVEL) != (player->GetLevel() < Wildcard::LOCK_LEVEL) && Loaded(player))
+            Send(player);
     }
 
     void OnPlayerDelete(ObjectGuid guid, uint32 /*accountId*/) override

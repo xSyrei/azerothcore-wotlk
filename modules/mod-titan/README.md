@@ -432,7 +432,15 @@ Emberspark) and IV (50,000) are bought from Silas Darkmoon, in the Darkmoon wind
   Golden Card besides (`titan_spec_cards`, `data/sql/db-characters/titan_spec_cards.sql`). The server takes only cards
   the account owns (`Cards::Owns`); a card is in one place of a spec at a time (slotted again, it moves). They stay
   through a prestige. Edited in the Darkmoon window (Specializations, Edit Cards); addon messages `SLOT` and `C`
-  (`src/specs.cpp`). For now they are a loadout only: they do not yet steer the level-up rolls.
+  (`src/specs.cpp`). **They steer the level-up rolls** (`src/wildcard.cpp`, `CatchUp`): each ability roll (odd levels
+  from 9) gives the spec's next slotted Skill Card unlocked by then, each talent roll (even levels from 8) its next
+  Talent Card at its top rank, the lowest unlock level first and slot order among equals (a slot's card before its
+  Golden Card), so three unlocked at 9 come at 9, 11 and 13; with none unlocked, the roll is random. Unlock levels
+  (`Wildcard::AbilityUnlockLevel`, `TalentUnlockLevel`, sent with the catalog): an ability's first rank's level, 9 at
+  the earliest; a talent's tier (10, 15, 20...), 8 at the earliest. A card the Hero cannot learn yet (its form,
+  stance or pet unknown) or knows already is passed over. **They lock at level 8** (`Wildcard::LOCK_LEVEL`) in a built
+  spec: the active one until a prestige takes it below 8, an inactive one built already for good; one never built
+  stays open until the prestige that builds it.
 - **Rerolls**: right-click one of your spells or talents, Reroll: an Eye of Unlearning for another ability the Hero can
   learn (a capstone for another capstone), or the talent for another talent. Before the kit locks (level 8) an
   ability is **unlearned for free** instead (Unlearn): its pick comes back, to pick another.
@@ -744,7 +752,8 @@ forever, for every character on it (`titan_cards` in the auth database, `data/sq
   - **Specializations**, the first page: the loadouts with their 8 card slots, the Eyes' leveling track and the Eyes
     for sale. **Edit Cards** opens the card editor: the 8 slots over the cards the account owns, Abilities (Skill
     Cards) and Talents (Talent Cards) side by side under one search bar, and a Golden tab with the Golden Cards. Click
-    a card to put it in the chosen slot (the next empty one is chosen after), right-click a slot to empty it.
+    a card to put it in the chosen slot (the next empty one is chosen after), click a slot to empty it. Each card
+    shows its unlock level, each slot the level its card is expected at; locked, the editor only shows them.
   - **Packs**: the duplicate tallies; the packs in the bags, opened here (the pack rips open and its five cards turn
     over; "Open all" opens up to 50 at once and lists the new cards) or from the bags; Skill and Talent Packs for
     Emberspark, at prices that climb with each purchase (1,000, 1,250, 1,500 ... 20,000, then 2,500 more each) and

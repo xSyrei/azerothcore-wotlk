@@ -241,7 +241,8 @@ check(t.pages[3]:IsShown() and t.cells[1]:IsShown() and t.cells[1].entry.rarity 
 t.cells[2]:Click()
 check(t.modal:IsShown(), "a card not owned opens the buy dialog")
 
--- Card slots: Edit Cards, the two lists, one search over both, Golden, slotting and emptying.
+-- Card slots: Edit Cards, the two lists, one search over both, Golden, slotting and emptying, the levels the cards
+-- come at, and the lock at level 8.
 t.modal:Hide()
 local function specs(message)
     events.scripts.OnEvent(events, "CHAT_MSG_ADDON", "EFSP", message, "WHISPER", "Tester")
@@ -253,11 +254,17 @@ local function sentSpec()
         end
     end
 end
-server("U,0.133.1.0;1.2300.2.1")
+-- The catalog again, with unlock levels (a Skill Card's 9 at the earliest): Skill Cards at 9, 9, 20 and 30, a
+-- Talent Card at 15.
+server("K0")
+server("K,0.133.133.0.1.1.0.9;0.27243.27243.3.1.1.0.9;0.5.5.1.1.1.0.20;0.6.6.0.0.1.0.30")
+server("K,1.2300.90200.1.1.1.1.15")
+server("KE")
 specs("P,0,3,1")
 specs("S,0,1,0,1,0,,Specialization I")
-specs("C,0,0.0.0.27243;0.1.1.2300")
+specs("C,0,0,0.0.0.27243;0.1.1.2300")
 specs("S,1,1,0,0,0,,Specialization II")
+specs("C,1,0,")
 specs("PE")
 t.tabs[1]:Click()
 check(t.specSlots[1].icon:IsShown() and t.specSlots[1].icon.texture == "Interface\\Icons\\Spell_27243"
@@ -279,35 +286,52 @@ local function rows(kind)
     return names
 end
 local skills, talents = rows(0), rows(1)
-check(#skills == 2 and skills[1] == "Spell 27243" and skills[2] == "Spell 133" and #talents == 1
-    and talents[1] == "Spell 90200", "abilities and talents in their own lists: the cards owned, rarest first")
-check(e.lists[0].rows[1].note.text:find("Slot 1") ~= nil, "a slotted card says where it is")
+check(#skills == 3 and skills[1] == "Spell 27243" and #talents == 1 and talents[1] == "Spell 90200",
+    "abilities and talents in their own lists: only the cards owned, rarest first")
+check(e.lists[0].rows[1].note.text:find("Slot 1") and e.lists[0].rows[1].note.text:find("level 9"),
+    "a slotted card says its slot and the level it comes at")
+check(e.lists[0].rows[3].note.text:find("Unlocks at 9") ~= nil, "the others their unlock level")
 e.search:SetText("133")
 e.search.scripts.OnTextChanged(e.search)
 check(#rows(0) == 1 and #rows(1) == 0 and e.lists[1].empty:IsShown(), "one search bar filters both lists")
 e.search:SetText("")
 e.search.scripts.OnTextChanged(e.search)
-e.lists[0].rows[2]:Click()
+e.lists[0].rows[3]:Click()
 check(sentSpec() == "SLOT,0,1,0,0,133", "a click slots the card in the chosen slot")
 check(e.state.slot == 3, "then the next empty slot is chosen")
-e.lists[0].rows[1]:Click()
-check(sentSpec() == "SLOT,0,2,0,0,27243" and t.specCards[1][1][0] == nil, "a card slotted again moves")
+local at = t.slotting.Schedule(1)
+check(at["0.27243"] == 9 and at["0.133"] == 11 and at["1.2300"] == 16,
+    "two abilities unlocked at 9 come at 9 and 11; the talent on the first talent roll from 15")
+e.lists[0].rows[2]:Click()
+at = t.slotting.Schedule(1)
+check(sentSpec() == "SLOT,0,2,0,0,5" and at["0.5"] == 21, "one unlocked at 20 comes on the ability roll at 21")
+check(e.slots[1].when.text == "Lv 9" and e.slots[2].when.text == "Lv 11", "each slot shows the level of its card")
+e.slots[2]:Click()
+check(sentSpec() == "SLOT,0,1,0,0,0" and t.specCards[1][2][0] == nil and e.state.slot == 2,
+    "a click on a slot empties it and chooses it")
 e.tabs[1]:Click()
 check(e.state.golden and #rows(0) == 0 and #rows(1) == 1, "Golden: the Golden Cards owned")
-e.slots[4]:Click()
+e.slots[1]:Click()
+check(sentSpec() == "SLOT,0,0,1,0,0", "on Golden a click empties the slot's Golden Card")
 e.lists[1].rows[1]:Click()
-check(sentSpec() == "SLOT,0,3,1,1,2300", "a Golden Card goes in the slot's Golden place")
-e.slots[4].scripts.OnClick(e.slots[4], "RightButton")
-check(sentSpec() == "SLOT,0,3,1,0,0", "right-click empties the slot's Golden place")
+check(sentSpec() == "SLOT,0,0,1,1,2300", "a Golden Card goes in the slot's Golden place")
+
+-- Level 8: the server locks them.
 specs("P,0,3,1")
-specs("C,0,1.0.0.133")
+specs("C,0,1,1.0.0.133")
+specs("C,1,0,")
 specs("PE")
-check(t.specCards[1][2][0] == "0.133" and t.specCards[1][1] == nil, "the server's slots replace the window's")
+check(t.cardsLocked[1] and t.specCards[1][2][0] == "0.133" and t.specCards[1][1] == nil,
+    "the server's slots replace the window's, locked")
+local before = #sent
 e.tabs[0]:Click()
-t.editor.slots[1]:Click()
-check(e.slots[2].name.text == "Spell 133" and e.slots[1].name.text == "Empty", "each slot names its card")
+e.slots[2]:Click()
+e.lists[0].rows[1]:Click()
+check(#sent == before and t.specCards[1][2][0] == "0.133", "locked: clicks change nothing")
+check(e.lists[0].rows[1].alpha == 0.55, "the cards not slotted are dimmed")
 t.tabs[1]:Click()
 check(t.pages[1]:IsShown() and not t.pages[4]:IsShown(), "Specializations again")
+check(t.editCards.label.text == "View Cards", "a locked spec's button views its cards")
 
 print(failures == 0 and "all passed" or (failures .. " failed"))
 os.exit(failures == 0 and 0 or 1)

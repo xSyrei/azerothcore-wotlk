@@ -48,7 +48,9 @@
 //   the Tome of Selection clears them for KIT_SIZE picks in the Classless window (item_titan_tomes.cpp).
 //   At LOCK_LEVEL the kit locks: unspent picks are filled at random and both tomes vanish.
 // - From FIRST_ROLL_LEVEL the level-up rolls alternate: a random talent rank at 8, a random ability
-//   at 9, a talent at 10, an ability at 11, and so on. Abilities come from every class trainer's list
+//   at 9, a talent at 10, an ability at 11, and so on. A card slotted in the specialization (specs.cpp) takes a
+//   roll's place once unlocked (AbilityUnlockLevel, TalentUnlockLevel): the next ability roll for a Skill Card, the
+//   next talent roll for a Talent Card, the earliest unlocked first. Abilities come from every class trainer's list
 //   (all 10 classes); talents from any class's trees (tier and prerequisite rules do not apply). The
 //   talent UI cannot spend points on a Hero.
 // - The role (Melee, Ranged, Healer, Tank: Classless window) puts on a buff changing the threat caused, and steers
@@ -1249,6 +1251,16 @@ namespace Wildcard
                 level ? level : player->GetLevel());
         return true;
     }
+
+    uint8 AbilityUnlockLevel(Ability const& ability)
+    {
+        return std::max<uint8>(ability.Ranks.front().Level, FIRST_ROLL_LEVEL + 1);
+    }
+
+    uint8 TalentUnlockLevel(TalentEntry const* talentInfo)
+    {
+        return uint8(std::max<uint32>(TALENT_TIER_LEVEL + TALENT_TIER_LEVELS * talentInfo->Row, FIRST_ROLL_LEVEL));
+    }
 }
 
 namespace
@@ -1301,6 +1313,51 @@ namespace
         return ability;
     }
 
+    // Card slots (specs.cpp): a roll gives the specialization's next slotted card instead of a random one, the earliest
+    // unlock level first (slot order among equals): a Skill Card for an ability roll, a Talent Card for a talent roll.
+    // A card the Hero cannot learn yet (its form, stance or pet not known) waits for a later roll.
+    Ability const* GrantSlottedAbility(Player* player, uint8 rollLevel)
+    {
+        Ability const* chosen = nullptr;
+        uint8 chosenLevel = 0;
+        for (auto const& [kind, id] : Specs::SlottedCards(player))
+            if (Ability const* ability = kind == 0 ? FindAbility(id) : nullptr;
+                ability && !ability->Capstone && CanLearn(player, *ability))
+                if (uint8 unlock = AbilityUnlockLevel(*ability); unlock <= rollLevel
+                    && (!chosen || unlock < chosenLevel))
+                {
+                    chosen = ability;
+                    chosenLevel = unlock;
+                }
+        if (chosen)
+        {
+            LOG_DEBUG("module", "Wildcard: {} got slotted ability {} at level {}", player->GetName(),
+                FirstRankName(chosen->Ranks.front().SpellId), rollLevel);
+            Learn(player, *chosen, "slotted card");
+        }
+        return chosen;
+    }
+
+    bool GrantSlottedTalent(Player* player, bool reveal, uint8 rollLevel)
+    {
+        TalentEntry const* chosen = nullptr;
+        uint8 chosenLevel = 0;
+        for (auto const& [kind, id] : Specs::SlottedCards(player))
+            if (TalentEntry const* talentInfo = kind == 1 ? sTalentStore.LookupEntry(id) : nullptr;
+                talentInfo && talentInfo->RankID[0] && !TalentAbility(id) && !TalentRank(player, talentInfo))
+                if (uint8 unlock = TalentUnlockLevel(talentInfo); unlock <= rollLevel
+                    && (!chosen || unlock < chosenLevel))
+                {
+                    chosen = talentInfo;
+                    chosenLevel = unlock;
+                }
+        if (!chosen)
+            return false;
+        LOG_DEBUG("module", "Wildcard: {} got slotted talent {} at level {}", player->GetName(),
+            FirstRankName(chosen->RankID[0]), rollLevel);
+        return LearnTalentRank(player, chosen, TopRank(chosen), reveal, rollLevel);
+    }
+
     // Grants what the player's level is owed. Level-ups (levelUp) play a spin in the Classless window
     // for each ability and talent; catching up at login does not.
     void CatchUp(Player* player, bool grantAbilities, bool levelUp)
@@ -1339,12 +1396,14 @@ namespace
             while (granted < owed)
             {
                 bool kit = granted < KIT_SIZE;
-                Ability const* ability = GrantRandom(player, kit ? "kit ability" : "new ability");
+                // The roll's level: the odd ones from FIRST_ROLL_LEVEL + 1, one each.
+                uint8 rollLevel = kit ? 0 : uint8(FIRST_ROLL_LEVEL + 1 + 2 * (granted - KIT_SIZE));
+                Ability const* ability = kit ? nullptr : GrantSlottedAbility(player, rollLevel);
+                if (!ability)
+                    ability = GrantRandom(player, kit ? "kit ability" : "new ability");
                 if (!ability)
                     break;
 
-                // The roll's level: the odd ones from FIRST_ROLL_LEVEL + 1, one each.
-                uint8 rollLevel = uint8(FIRST_ROLL_LEVEL + 1 + 2 * (granted - KIT_SIZE));
                 ++granted;
                 if (!kit && levelUp)
                     Classless::Reveal(player, *ability, std::min(rollLevel, level));
@@ -1370,9 +1429,13 @@ namespace
         uint32 owedTalents = level >= FIRST_ROLL_LEVEL ? (lastTalentLevel - FIRST_ROLL_LEVEL) / 2 + 1 : 0;
         bool talentsChanged = UpgradeTalents(player);
         // The roll's level: the even ones from FIRST_ROLL_LEVEL, one each.
-        for (uint32 spent = RolledTalents(player); spent < owedTalents
-            && GrantTalent(player, levelUp, uint8(std::min<uint32>(FIRST_ROLL_LEVEL + 2 * spent, level))); ++spent)
+        for (uint32 spent = RolledTalents(player); spent < owedTalents; ++spent)
+        {
+            uint8 rollLevel = uint8(std::min<uint32>(FIRST_ROLL_LEVEL + 2 * spent, level));
+            if (!GrantSlottedTalent(player, levelUp, rollLevel) && !GrantTalent(player, levelUp, rollLevel))
+                break;
             talentsChanged = true;
+        }
 
         if (talentsChanged)
             player->InitTalentForLevel();

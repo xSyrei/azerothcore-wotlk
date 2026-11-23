@@ -34,6 +34,7 @@ namespace Wildcard
     constexpr uint8 LOCK_LEVEL = 8;                 // the kit locks here and the tomes vanish (7: their last level)
     constexpr uint8 FIRST_ROLL_LEVEL = 8;           // level-up rolls alternate from here: a talent rank on even
                                                     // levels (8, 10...), an ability on odd ones (9, 11...)
+    constexpr uint32 TALENT_TIER_LEVEL = 10, TALENT_TIER_LEVELS = 5;   // a talent tier's level: 10, 15, 20...
     constexpr uint8 CAPSTONE_LEVEL = 60;            // its roll is a capstone ability instead of a talent rank, and
                                                     // capstones are rolled there only
     constexpr uint32 TOME_OF_RANDOMIZATION = 910003;
@@ -131,6 +132,13 @@ namespace Wildcard
     // Classless window spins for it.
     // level: the level the roll is for (0: the player's).
     bool LearnTalentRank(Player* player, TalentEntry const* talentInfo, uint8 rank, bool reveal, uint8 level = 0);
+
+    // Card slots (specs.cpp): the level a slotted card can come at. A Skill Card: its ability's first rank's level,
+    // the first ability roll (FIRST_ROLL_LEVEL + 1) at the earliest. A Talent Card: its tier's (10, 15, 20...),
+    // FIRST_ROLL_LEVEL at the earliest. Each roll from there gives the next slotted card of its kind instead of a
+    // random one.
+    uint8 AbilityUnlockLevel(Ability const& ability);
+    uint8 TalentUnlockLevel(TalentEntry const* talentInfo);
 
     // Specializations (specs.cpp): learning without the chat lines, the catch-up of what the level is owed, a talent
     // roll that may not give one talent, a capstone roll, and one talent's ranks taken away.

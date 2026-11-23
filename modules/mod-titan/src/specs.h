@@ -19,6 +19,8 @@
 #define MOD_TITAN_SPECS_H
 
 #include "Define.h"
+#include <utility>
+#include <vector>
 
 class Player;
 
@@ -34,6 +36,10 @@ namespace Specs
     bool IsDormant(Player* player);
     // The active specialization's index (0 to 3).
     uint8 ActiveSpec(Player* player);
+    // The cards slotted in the specialization the level-up rolls are for (the active one, or the one being switched
+    // to), as (kind 0 a Skill Card by first rank | 1 a Talent Card by talent, id), slot by slot, each slot's card
+    // before its Golden Card. Empty until the specializations have loaded.
+    std::vector<std::pair<uint8, uint32>> SlottedCards(Player* player);
 }
 
 #endif

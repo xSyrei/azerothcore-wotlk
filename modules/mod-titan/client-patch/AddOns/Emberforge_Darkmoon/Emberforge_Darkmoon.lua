@@ -18,8 +18,9 @@
 --                 M,<pack>,<count> ... ME   several packs opened at once (their R between)
 --                 B,<kind>.<id>.<spell>.<rarity>   a card bought      O   open the window
 --   to server     LIST, BUY,<pack>,<0 Emberspark|1 gold>, CARD,<kind>,<id>, OPEN,<pack>,<count>, CLAIM, EYES
--- Card slots go through src/specs.cpp (prefix EFSP): C,<spec>,<slot>.<golden>.<kind>.<id>;... from the server,
--- SLOT,<spec>,<slot>,<golden 0|1>,<kind>,<id> (id 0: empty it) to it.
+-- Card slots go through src/specs.cpp (prefix EFSP): C,<spec>,<locked 0|1>,<slot>.<golden>.<kind>.<id>;... from the
+-- server, SLOT,<spec>,<slot>,<golden 0|1>,<kind>,<id> (id 0: empty it) to it. The catalog's cards end with their
+-- unlock level (K: ...<golden owned>.<unlock>): slotted, a card comes on the first roll of its kind from then.
 -- Packs: 0 Skill, 1 Talent, 2 Golden Skill, 3 Golden Talent. Kinds: 0 Skill Card, 1 Talent Card.
 -- Rarities: 0 Common, 1 Rare, 2 Epic, 3 Legendary.
 
@@ -65,6 +66,8 @@ local mySpecs = { active = 1 }
 -- The slotted cards (src/specs.cpp, C): specCards[spec][slot][0 the card | 1 the Golden Card] = catalog key.
 local CARD_SLOTS = 8
 local specCards = {}
+local cardsLocked = {}          -- [spec] = true: its cards locked (at level 8, until a prestige)
+local LOCK_LEVEL = 8
 local CARDS_PER_PAGE, GRID_COLUMNS = 14, 7
 
 local state = { spark = 0, prices = { [0] = 0, 0, 0, 0 }, goldLeft = 0, goldPrice = 750000, duplicates = 0,
@@ -322,6 +325,40 @@ function Slotting.Of(spec, card)
     end
 end
 
+-- The level each slotted card is expected at, as the server gives them (src/wildcard.cpp): ability rolls on odd levels
+-- from 9 to 59, talent rolls on even ones from 8 to 58; each roll the slotted card of its kind unlocked by then with
+-- the lowest unlock level (slot order among equals), the card before its slot's Golden Card. Expected only: a card the
+-- Hero knows already, or whose form or pet they lack, waits or is skipped. Keys: "<kind>.<id>" -> level.
+function Slotting.Schedule(spec)
+    local at = {}
+    for kind = 0, 1 do
+        local queue = {}
+        for slot = 1, CARD_SLOTS do
+            for golden = 0, 1 do
+                local card = Slotting.Card(spec, slot, golden == 1)
+                if card and card.kind == kind then
+                    queue[#queue + 1] = card
+                end
+            end
+        end
+        local level, last = kind == 0 and 9 or 8, kind == 0 and 59 or 58
+        while #queue > 0 and level <= last do
+            local pick
+            for index, card in ipairs(queue) do
+                if (card.unlock or 0) <= level and (not pick or (card.unlock or 0) < (queue[pick].unlock or 0)) then
+                    pick = index
+                end
+            end
+            if pick then
+                at[queue[pick].kind .. "." .. queue[pick].id] = level
+                table.remove(queue, pick)
+            end
+            level = level + 2
+        end
+    end
+    return at
+end
+
 function Slotting.Tooltip(owner, spec, slot, note)
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
     GameTooltip:AddLine("Card Slot " .. slot, 1, 0.91, 0.64)
@@ -330,14 +367,20 @@ function Slotting.Tooltip(owner, spec, slot, note)
         local label = golden == 1 and "Golden: " or "Card: "
         if card then
             local rgb = golden == 1 and GOLDEN_RGB or NAME_RGB[card.rarity]
-            GameTooltip:AddLine(label .. CardName(card), rgb[1], rgb[2], rgb[3])
+            local when = Slotting.Schedule(spec)[key]
+            GameTooltip:AddDoubleLine(label .. CardName(card), when and ("level " .. when) or "",
+                rgb[1], rgb[2], rgb[3], 0.8, 1, 0.75)
         elseif key then
             GameTooltip:AddLine(label .. "loading...", 0.6, 0.55, 0.5)
         else
             GameTooltip:AddLine(label .. "empty", 0.6, 0.55, 0.5)
         end
     end
-    GameTooltip:AddLine(note or "Click to edit your cards.", 0.85, 0.64, 0.42)
+    if cardsLocked[spec] then
+        GameTooltip:AddLine("Locked: cards lock at level " .. LOCK_LEVEL .. ". Prestige to change them.", 1, 0.5,
+            0.4, true)
+    end
+    GameTooltip:AddLine(note or "Click to see your cards.", 0.85, 0.64, 0.42)
     GameTooltip:Show()
 end
 
@@ -899,6 +942,8 @@ local function RefreshSpecs()
         stat.label:SetText(stats[index][2])
     end
     specView.editCards:SetEnabled(owned)
+    specView.editCards:SetLabel(cardsLocked[view.spec] and "View Cards" or "Edit Cards")
+    slotLabel:SetText(cardsLocked[view.spec] and "CARD SLOTS  -  LOCKED" or "CARD SLOTS")
     for index, slot in ipairs(specView.slots) do
         local card = Slotting.Card(view.spec, index, false)
         local golden = Slotting.Card(view.spec, index, true)
@@ -2680,13 +2725,16 @@ local function BuildEditor()
         end
         slot.icon, slot.rim = Socket(40, 10, { 0.55, 0.42, 0.25 })
         slot.golden, slot.goldenRim = Socket(30, 62, GOLDEN_RGB)
+        slot.when = Text(slot, 9, { 0.55, 1, 0.54 }, BODY_FONT)
+        slot.when:SetPoint("TOPRIGHT", -8, -6)
         slot.name = Text(slot, 9, GOLD_HI, BODY_FONT)
         slot.name:SetPoint("BOTTOM", 0, 7)
         slot.name:SetWidth(SLOT_W - 10)
         slot.name:SetHeight(12)
-        slot:SetScript("OnClick", function(self, button)
+        -- A click on a slot empties what the tab shows there (its card, or on Golden its Golden Card), and chooses it.
+        slot:SetScript("OnClick", function()
             local places = specCards[view.spec] and specCards[view.spec][index]
-            if button == "RightButton" and places and places[edit.golden and 1 or 0] then
+            if not cardsLocked[view.spec] and places and places[edit.golden and 1 or 0] then
                 SendSlot(index, edit.golden, nil)
                 places[edit.golden and 1 or 0] = nil
             end
@@ -2694,7 +2742,8 @@ local function BuildEditor()
             Refresh()
         end)
         slot:SetScript("OnEnter", function(self)
-            Slotting.Tooltip(self, view.spec, index, "Click to choose this slot. Right-click to empty it.")
+            Slotting.Tooltip(self, view.spec, index, not cardsLocked[view.spec]
+                and "Click to empty it, then pick a card for it.")
         end)
         slot:SetScript("OnLeave", function() GameTooltip:Hide() end)
         editSlots[index] = slot
@@ -2740,13 +2789,18 @@ local function BuildEditor()
                 if self.entry then
                     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
                     GameTooltip:SetHyperlink("spell:" .. self.entry.spell)
-                    GameTooltip:AddLine("Click to slot it in slot " .. edit.slot .. ".", 0.85, 0.64, 0.42)
+                    GameTooltip:AddLine("Unlocks at level " .. (self.entry.unlock or 1) .. ": slotted, it comes on "
+                        .. (self.entry.kind == 1 and "a talent roll" or "an ability roll") .. " from then.", 0.8, 1,
+                        0.75, true)
+                    if not cardsLocked[view.spec] then
+                        GameTooltip:AddLine("Click to slot it in slot " .. edit.slot .. ".", 0.85, 0.64, 0.42)
+                    end
                     GameTooltip:Show()
                 end
             end)
             row:SetScript("OnLeave", function() GameTooltip:Hide() end)
             row:SetScript("OnClick", function(self)
-                if not self.entry then
+                if not self.entry or cardsLocked[view.spec] then
                     return
                 end
                 local slot = edit.slot
@@ -2807,6 +2861,8 @@ local function BuildEditor()
         editorTitle:SetText("EDIT CARDS  -  " .. string.upper(mine and mine.name or SPECS[view.spec].name))
         editorTabs[0]:SetOn(not edit.golden)
         editorTabs[1]:SetOn(edit.golden)
+        local schedule = Slotting.Schedule(view.spec)
+        local locked = cardsLocked[view.spec]
         for index, slot in ipairs(editSlots) do
             local chosen = index == edit.slot
             if slot.chosen ~= chosen or not slot.slices then
@@ -2827,13 +2883,18 @@ local function BuildEditor()
             slot.rim:SetAlpha(edit.golden and 0.45 or 1)
             slot.goldenRim:SetAlpha(edit.golden and 1 or 0.45)
             local shown = edit.golden and golden or card
+            local when = shown and schedule[shown.kind .. "." .. shown.id]
+            slot.when:SetText(when and ("Lv " .. when) or "")
             slot.name:SetText(shown and CardName(shown) or (edit.golden and "No Golden Card" or "Empty"))
             local rgb = shown and (edit.golden and GOLDEN_RGB or NAME_RGB[shown.rarity]) or MUTED
             slot.name:SetTextColor(rgb[1], rgb[2], rgb[3])
         end
-        editHint:SetText(edit.golden and ("Click a Golden Card to put it in slot " .. edit.slot .. " beside its card. "
-            .. "Right-click a slot to take its Golden Card out.") or ("Click a card to put it in slot " .. edit.slot
-            .. ". Right-click a slot to empty it. A slot also holds a Golden Card: see the Golden tab."))
+        editHint:SetText(locked and ("|cffff8066Locked:|r cards lock at level " .. LOCK_LEVEL .. ". They open again "
+            .. "when you prestige. Each card comes at the level shown on its slot.")
+            or edit.golden and ("Click a Golden Card to put it in slot " .. edit.slot .. " beside its card. Click a "
+            .. "slot to take its Golden Card out. Cards lock at level " .. LOCK_LEVEL .. ".")
+            or ("Click a card to put it in slot " .. edit.slot .. ". Click a slot to empty it. Each card comes at the "
+            .. "level on its slot. Cards lock at level " .. LOCK_LEVEL .. "."))
         for kind, list in pairs(lists) do
             local shown = EditorCards(kind)
             local last = math.max(0, #shown - EDIT_ROWS)
@@ -2859,10 +2920,14 @@ local function BuildEditor()
                     row.name:SetTextColor(rgb[1], rgb[2], rgb[3])
                     local slot, inGolden = Slotting.Of(view.spec, card)
                     if slot then
-                        row.note:SetText("|cff8dff8aSlot " .. slot .. (inGolden and " (Golden)" or "") .. "|r")
+                        local when = schedule[card.kind .. "." .. card.id]
+                        row.note:SetText("|cff8dff8aSlot " .. slot .. (inGolden and " (Golden)" or "")
+                            .. (when and (" - level " .. when) or "") .. "|r")
                     else
-                        row.note:SetText((edit.golden and "Golden " or "") .. RARITY_NAMES[card.rarity])
+                        row.note:SetText("Unlocks at " .. (card.unlock or 1) .. "  -  " .. (edit.golden and "Golden "
+                            or "") .. RARITY_NAMES[card.rarity])
                     end
+                    row:SetAlpha(locked and not slot and 0.55 or 1)
                 end
             end
         end
@@ -3064,7 +3129,7 @@ local function OnServerMessage(message)
         for _, item in ipairs(Split(body, ";")) do
             local n = Numbers(item)
             local card = { kind = n[1], id = n[2], spell = n[3], rarity = n[4], owned = n[5], max = n[6],
-                golden = n[7] }
+                golden = n[7], unlock = n[8] or 1 }
             catalog[#catalog + 1] = card
             byKey[card.kind .. "." .. card.id] = card
         end
@@ -3150,6 +3215,7 @@ events:SetScript("OnEvent", function(_, event, prefix, message, _, sender)
             local kind, body = message:match("^([^,]+),?(.*)$")
             if kind == "P" then
                 wipe(specCards)
+                wipe(cardsLocked)
                 mySpecs.active = (tonumber(body:match("^(%d+)")) or 0) + 1
                 mySpecs.capped = body:match("^%d+,%d+,(%d)") == "1"
             elseif kind == "S" then
@@ -3160,9 +3226,10 @@ events:SetScript("OnEvent", function(_, event, prefix, message, _, sender)
                         price = tonumber(price) or 0, name = name }
                 end
             elseif kind == "C" then
-                local spec, items = body:match("^(%d+),(.*)$")
+                local spec, locked, items = body:match("^(%d+),(%d),(.*)$")
                 spec = spec and tonumber(spec) + 1
                 if spec then
+                    cardsLocked[spec] = locked == "1"
                     specCards[spec] = specCards[spec] or {}
                     for _, item in ipairs(Split(items, ";")) do
                         local n = Numbers(item)
@@ -3196,4 +3263,4 @@ EmberforgeDarkmoon_State = { state = state, eyes = eyes, catalog = catalog, view
     revealCards = revealCards, resultItems = resultItems, gems = gems,
     pages = pages, claimButton = claimButton, buyEyes = buyEyes, mass = function() return mass end, chip = chip,
     doneButton = doneButton, editCards = specView.editCards, specSlots = specView.slots, editor = editor,
-    specCards = specCards, mySpecs = mySpecs }
+    specCards = specCards, mySpecs = mySpecs, cardsLocked = cardsLocked, slotting = Slotting }
