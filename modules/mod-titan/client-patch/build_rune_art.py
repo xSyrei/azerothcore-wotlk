@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Build the Emberforge_Runes addon's art and its Art.lua, from the "Legendary Rune Panel" mockup.
+"""Build the Emberforge_Runes addon's Art.lua (each rune's colours and words) and the pieces of the first design's art
+still drawn (KEPT: the Soft glow; the rune button's ring), from the "Legendary Rune Panel" mockup. The redesigned
+panel's own pieces are build_rune_ui.py's (Art/Ui*.tga); the bake below still paints the first design's cards,
+medallions and labels, but only KEPT is written.
 
 The mockup draws everything on a canvas; rune_art/bake.js runs its own drawing code (paintCard, the medallion, the
 glows, its lettering) in headless Chromium, one PNG a piece, and this script brings each to a power-of-two size (the
@@ -1315,6 +1318,10 @@ for _name in dict.fromkeys(['Invocation', 'Manifestation', 'Adaptation']
 SMALL = 64
 
 
+# The baked pieces still drawn (the panel's and the rune button's glow); the rest of the first design is not written.
+KEPT = {'Soft'}
+
+
 def pow2(n):
     return 1 << max(0, math.ceil(math.log2(n)))
 
@@ -1429,6 +1436,8 @@ def main():
                 shares[name] = size
         labels = {}
         for png in sorted((work / 'png').glob('*.png')):
+            if png.stem not in KEPT:
+                continue
             with Image.open(png) as image:
                 u, v = save(image.convert('RGBA'), png.stem)
             if png.stem in shares:

@@ -466,7 +466,8 @@ utility or a tradeoff) take one pick each, from three.
   are never moved (moving GameTooltip broke tooltips until a reload). Its pieces are `Art/Ui*.tga`
   (`client-patch/build_rune_ui.py`); its fonts Marcellus (titles, names, buttons), Cinzel (eyebrows, slot names) and
   Alegreya Sans (`Fonts/`, SIL Open Font License). The runes' words are `Catalog.lua` and `Art.lua`
-  (`client-patch/build_rune_art.py`, which also bakes the first design's card and medallion art, no longer drawn).
+  (`client-patch/build_rune_art.py`; of the first design's baked art it writes only what is still drawn: the
+  Soft glow and the rune button's ring).
 - **While the panel is open the rest of the UI is hidden** (UIParent hidden, the panel on WorldFrame at the UI's
   scale). It opens out of combat only (asked in combat, after it);
   combat starting closes it, and so does the UI coming back (Escape, Alt+Z). With no suggestion it opens on the search.
