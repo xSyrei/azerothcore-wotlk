@@ -434,6 +434,30 @@ end
 check(heights[1] == heights[2] and heights[2] == heights[3] and heights[1] > 160 and heights[1] >= 84 + longest
     and heights[1] <= 830 - 628, "every modifier column grows to its longest words, and stays above the buttons")
 frame:Hide()
+
+-- A rune with its Extended Options (15 modifiers: 5 a slot): five choices in two rows (3, then 2), numbered by fives.
+local extended = ById(34)
+local nine = extended.mods
+extended.mods = {}
+for number = 1, 15 do
+    extended.mods[number] = { name = "Option " .. number, text = string.rep("words ", 10) }
+end
+server("R,34,-")
+server("S,10,10,1,0,0,0,0,34,0")
+EmberforgeRunes_Open()
+debug.offers.cards[1].preview:Click()
+local shownCount = 0
+for _, option in ipairs(options) do
+    shownCount = shownCount + (option.shown and 1 or 0)
+end
+check(shownCount == 5 and options[5].name.text == "Option 5" and debug.build.layout.head == 66,
+    "15 modifiers: five choices, the compact layout")
+options[1]:Click()
+debug.build.right:Click()
+check(view.active == 2 and options[1].name.text == "Option 6" and options[5].name.text == "Option 10",
+    "slot 2 shows its own five (6 to 10)")
+extended.mods = nine
+frame:Hide()
 server("S,10,10,1,0,0,0,0,-,0")
 EmberforgeRunes_Open()
 search.text = "guiding light"

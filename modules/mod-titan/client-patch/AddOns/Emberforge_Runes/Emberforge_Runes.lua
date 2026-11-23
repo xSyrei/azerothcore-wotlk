@@ -51,6 +51,7 @@ local state = { level = UnitLevel and UnitLevel("player") or 1, unlock = 1, spec
 local view = { mode = nil, phase = nil, page = 1, prompted = {}, now = 0, t0 = 0, picks = { 0, 0, 0 }, slot = 1 }
 
 local MAX_OFFERS = 3
+local MAX_CHOICES = 5                                   -- a slot's modifiers, with a rune's Extended Options (else 3)
 
 -- The panel shows rune slot n: its rune, modifiers, unlock level and suggestions (the other slot's rune left out).
 local function UseSlot(n)
@@ -1139,36 +1140,50 @@ end
 -- modifier; a done build can change any.
 
 local build = View()
-local NODES = { { 498, 258 }, { 1102, 258 }, { 800, 410 } }
-local MEDAL_X, MEDAL_Y, MEDAL_SIZE = 800, 280, 188
+-- Two layouts: a rune with 3 choices a slot (one row of modifiers), and one with its Extended Options' 5 (a smaller
+-- medallion, its slots higher, the modifiers in two rows: 3, then 2).
+local BUILD_LAYOUTS = {
+    [3] = { medal = { 800, 280, 188 }, nodes = { { 498, 258 }, { 1102, 258 }, { 800, 410 } }, label = 54, status = 82,
+        heading = 550, headingSize = 40, ask = 594, top = 628, head = 84, nameSize = 27,
+        columns = { { 340, 800, 1260 } } },
+    [5] = { medal = { 800, 238, 150 }, nodes = { { 560, 222 }, { 1040, 222 }, { 800, 338 } }, label = 46, status = 70,
+        heading = 452, headingSize = 34, ask = 490, top = 516, head = 66, nameSize = 24,
+        columns = { { 340, 800, 1260 }, { 570, 1030 } } },
+}
+local OPTIONS_BOTTOM = 830                          -- the modifiers end above the buttons
 build.eyebrow = Eyebrow(build, 52, "Legendary Rune")
 build.title = Text(build, SERIF, 46, CREAM)
 At(build.title, W / 2, 104)
 build.subtitle = Text(build, SANS, 21, MUTED, "CENTER", 1150)
 At(build.subtitle, W / 2, 158)
-build.medal = Medal(build, MEDAL_SIZE)
-At(build.medal, MEDAL_X, MEDAL_Y)
--- The lines from each slot to the medallion: dots along the way (the client draws no lines).
+build.medal = Medal(build, 188)
+-- The lines from each slot to the medallion, one set a layout: dots along the way (the client draws no lines).
 build.lines = {}
-for slot, node in ipairs(NODES) do
-    local dots = {}
-    local dx, dy = MEDAL_X - node[1], MEDAL_Y - node[2]
-    local length = math.sqrt(dx * dx + dy * dy)
-    local from, to = 36, length - MEDAL_SIZE / 2 - 4
-    local count = math.floor((to - from) / 3)
-    for index = 0, count do
-        local k = (from + (to - from) * index / count) / length
-        local dot = Tex(build, "BORDER")
-        dot:SetTexture(1, 1, 1)
-        At(dot, node[1] + dx * k, node[2] + dy * k, 2, 2)
-        dots[#dots + 1] = dot
+for per, layout in pairs(BUILD_LAYOUTS) do
+    build.lines[per] = {}
+    local mx, my, size = layout.medal[1], layout.medal[2], layout.medal[3]
+    for slot, node in ipairs(layout.nodes) do
+        local dots = {}
+        local dx, dy = mx - node[1], my - node[2]
+        local length = math.sqrt(dx * dx + dy * dy)
+        local from, to = 36, length - size / 2 - 4
+        local count = math.max(1, math.floor((to - from) / 3))
+        for index = 0, count do
+            local k = (from + (to - from) * index / count) / length
+            local dot = Tex(build, "BORDER")
+            dot:SetTexture(1, 1, 1)
+            At(dot, node[1] + dx * k, node[2] + dy * k, 2, 2)
+            dot:Hide()
+            dots[#dots + 1] = dot
+        end
+        build.lines[per][slot] = dots
     end
-    build.lines[slot] = dots
 end
 build.nodes = {}
-for slot, node in ipairs(NODES) do
+for slot = 1, 3 do
     local button = CreateFrame("Button", nil, build)
-    At(button, node[1], node[2], 66, 66)
+    button:SetWidth(66)
+    button:SetHeight(66)
     button.fill = Tex(button, "BACKGROUND", "UiDisc")
     button.fill:SetAllPoints()
     button.fill:SetVertexColor(0.04, 0.04, 0.08, 0.9)
@@ -1182,12 +1197,9 @@ for slot, node in ipairs(NODES) do
     button.number:SetPoint("CENTER", 0, 1)
     button.number:SetText(slot)
     button.label = Text(build, CINZEL, 17, GOLD)
-    At(button.label, node[1], node[2] + 54)
     button.status = Text(build, SANS_ITALIC, 22, CREAM, "CENTER", 300)
-    At(button.status, node[1], node[2] + 82)
     button.lock = Tex(build, "ARTWORK")
     button.lock:SetTexture("Interface\\LFGFrame\\UI-LFG-ICON-LOCK")
-    At(button.lock, node[1], node[2] + 82, 22, 22)
     button.slot = slot
     button:SetScript("OnClick", function(self)
         if self.open then
@@ -1200,16 +1212,12 @@ for slot, node in ipairs(NODES) do
     build.nodes[slot] = button
 end
 build.heading = Text(build, SERIF, 40, CREAM)
-At(build.heading, W / 2, 550)
 build.ask = Text(build, SANS, 21, MUTED, "CENTER", 1100)
-At(build.ask, W / 2, 594)
+-- The modifiers: up to 5 (the Extended Options'), each a column that grows down to its longest words (its row's
+-- columns as tall as the tallest; past OPTIONS_BOTTOM their words get smaller): never cut off or past the lines.
 build.options = {}
--- The modifiers' columns hang from OPTIONS_TOP and grow down to their longest words (down to OPTIONS_BOTTOM, above the
--- buttons; past that their words get smaller): long words are never cut off or run past the lines.
-local OPTIONS_TOP, OPTIONS_BOTTOM, OPTION_HEAD = 628, 830, 84
-for index, x in ipairs({ 340, 800, 1260 }) do
+for index = 1, MAX_CHOICES do
     local option = CreateFrame("Button", nil, build)
-    option:SetPoint("TOP", stage, "TOPLEFT", x, -OPTIONS_TOP)
     option:SetWidth(440)
     option:SetHeight(160)
     option.top = Tex(option, "ARTWORK", "UiLine")
@@ -1226,7 +1234,6 @@ for index, x in ipairs({ 340, 800, 1260 }) do
     option.glow:SetHeight(40)
     option.glow:SetVertexColor(GOLD[1], GOLD[2], GOLD[3])
     option.radio = Tex(option, "ARTWORK", "UiRingThin")
-    option.radio:SetPoint("TOPLEFT", 14, -24)
     option.radio:SetWidth(32)
     option.radio:SetHeight(32)
     option.check = Tex(option, "OVERLAY", "UiCheck")
@@ -1235,11 +1242,8 @@ for index, x in ipairs({ 340, 800, 1260 }) do
     option.check:SetHeight(20)
     option.check:SetVertexColor(GOLD[1], GOLD[2], GOLD[3])
     option.name = Text(option, SERIF, 27, CREAM, "LEFT", 370)
-    option.name:SetPoint("TOPLEFT", 64, -24)
     option.ability = Text(option, SANS_MEDIUM, 16, BLUE, "LEFT", 370)
-    option.ability:SetPoint("TOPLEFT", 66, -60)
     option.text = Text(option, SANS, 20, MUTED, "LEFT", 364)
-    option.text:SetPoint("TOPLEFT", 66, -OPTION_HEAD)
     option.text:SetJustifyV("TOP")
     option.choice = index
     option:SetScript("OnEnter", function(self)
@@ -1252,6 +1256,58 @@ for index, x in ipairs({ 340, 800, 1260 }) do
     end)
     build.options[index] = option
 end
+
+-- A rune's choices a slot: its Extended Options' 5 (15 modifiers), else 3.
+local function PerSlot(rune)
+    return rune and rune.mods and #rune.mods >= 15 and 5 or 3
+end
+
+-- The medallion, the slots, the heading and the modifiers' inner places, as the layout for per choices has them.
+local function PlaceBuild(per)
+    local layout = BUILD_LAYOUTS[per] or BUILD_LAYOUTS[3]
+    build.layout = layout
+    local mx, my, size = layout.medal[1], layout.medal[2], layout.medal[3]
+    At(build.medal, mx, my, size, size)
+    build.medal.glow:SetWidth(size * 1.7)
+    build.medal.glow:SetHeight(size * 1.7)
+    build.medal.icon:SetWidth(size * 0.81)
+    build.medal.icon:SetHeight(size * 0.81)
+    for each, lines in pairs(build.lines) do
+        for _, dots in ipairs(lines) do
+            for _, dot in ipairs(dots) do
+                if each == per then
+                    dot:Show()
+                else
+                    dot:Hide()
+                end
+            end
+        end
+    end
+    for slot, node in ipairs(build.nodes) do
+        local x, y = layout.nodes[slot][1], layout.nodes[slot][2]
+        At(node, x, y)
+        At(node.label, x, y + layout.label)
+        At(node.status, x, y + layout.status)
+        At(node.lock, x, y + layout.status, 22, 22)
+    end
+    build.heading:SetFont(SERIF, layout.headingSize)
+    At(build.heading, W / 2, layout.heading)
+    At(build.ask, W / 2, layout.ask)
+    for _, option in ipairs(build.options) do
+        local head = layout.head
+        option.radio:ClearAllPoints()
+        option.radio:SetPoint("TOPLEFT", 14, -(head - 60))
+        option.name:SetFont(SERIF, layout.nameSize)
+        option.name:ClearAllPoints()
+        option.name:SetPoint("TOPLEFT", 64, -(head - 60))
+        option.ability:ClearAllPoints()
+        option.ability:SetPoint("TOPLEFT", 66, -(head - 24))
+        option.text:ClearAllPoints()
+        option.text:SetPoint("TOPLEFT", 66, -head)
+    end
+end
+PlaceBuild(3)
+
 build.summary = Text(build, SANS, 22, MUTED, "CENTER", 1200)
 At(build.summary, W / 2, 672)
 build.left = Pill(build, 280, 52, "Back to all runes", "navy")
@@ -1288,7 +1344,7 @@ local function BuildName(rune)
     for _, named in ipairs(rune.builds or {}) do
         local match = true
         for slot = 1, 3 do
-            local mod = rune.mods[(slot - 1) * 3 + view.picks[slot]]
+            local mod = rune.mods[(slot - 1) * PerSlot(rune) + view.picks[slot]]
             match = match and mod and mod.name == named.mods[slot]
         end
         if match then
@@ -1316,7 +1372,7 @@ local function DrawNodes(runeId)
         local active = view.active == slot
         node.open = SlotOpen(slot)
         node.label:SetText(Spaced(names[slot] or SLOT_NAMES[slot]))
-        local mod = pick > 0 and rune and rune.mods[(slot - 1) * 3 + pick]
+        local mod = pick > 0 and rune and rune.mods[(slot - 1) * PerSlot(rune) + pick]
         if active then
             node.status:SetText("Choosing")
             node.status:SetFont(SANS_ITALIC, 22)
@@ -1340,9 +1396,11 @@ local function DrawNodes(runeId)
         node.glow:SetVertexColor(0.6, 0.75, 1)
         node.glow:SetAlpha(active and 0.5 or 0)
         node.label:SetTextColor(GOLD[1], GOLD[2], GOLD[3], (node.open or pick > 0) and 1 or 0.6)
-        for _, dot in ipairs(build.lines[slot]) do
-            dot:SetVertexColor(active and 0.7 or 0.6, active and 0.82 or 0.6, active and 1 or 0.66,
-                active and 0.85 or 0.4)
+        for _, lines in pairs(build.lines) do
+            for _, dot in ipairs(lines[slot]) do
+                dot:SetVertexColor(active and 0.7 or 0.6, active and 0.82 or 0.6, active and 1 or 0.66,
+                    active and 0.85 or 0.4)
+            end
         end
     end
 end
@@ -1353,50 +1411,79 @@ local function DrawOptions(runeId)
     local entry = art.runes[runeId] or {}
     local slot = view.active
     local names = SlotNames(runeId)
+    local per = PerSlot(rune)
+    local layout = build.layout
     build.heading:SetText("Choose your " .. (names[slot] or SLOT_NAMES[slot]))
     build.ask:SetText((entry.asks and entry.asks[slot] and (entry.asks[slot] .. ".  ") or "")
         .. "Select one modifier for this slot.")
     for index, option in ipairs(build.options) do
-        local number = (slot - 1) * 3 + index
-        local mod = rune and rune.mods[number]
-        local missing = MissingText(state.needs[runeId .. "." .. slot .. "." .. index])
-        option.slot, option.missing = slot, missing
-        option.picked = view.picks[slot] == index
-        option.selected = view.selected == index or (not view.selected and option.picked)
-        option.name:SetText(mod and mod.name or "")
-        option.ability:SetText(missing and Spaced("Needs " .. missing) or Spaced(entry.abilities
-            and entry.abilities[number] or ""))
-        option.ability:SetTextColor(unpack(missing and RED or BLUE))
-        option.text:SetText(entry.texts and entry.texts[number] or (mod and mod.text) or "")
-        local line = option.selected and GOLD or { 0.7, 0.7, 0.75 }
-        option.top:SetVertexColor(line[1], line[2], line[3], option.selected and 1 or 0.5)
-        option.bottom:SetVertexColor(line[1], line[2], line[3], option.selected and 1 or 0.5)
-        option.glow:SetAlpha(option.selected and 0.55 or 0)
-        option.radio:SetVertexColor(unpack(option.selected and GOLD or { 0.8, 0.8, 0.85 }))
-        if option.selected then
-            option.check:Show()
+        local number = (slot - 1) * per + index
+        local mod = index <= per and rune and rune.mods[number]
+        if not mod then
+            option:Hide()
         else
-            option.check:Hide()
+            local missing = MissingText(state.needs[runeId .. "." .. slot .. "." .. index])
+            option.slot, option.missing = slot, missing
+            option.picked = view.picks[slot] == index
+            option.selected = view.selected == index or (not view.selected and option.picked)
+            option.name:SetText(mod.name or "")
+            option.ability:SetText(missing and Spaced("Needs " .. missing) or Spaced(entry.abilities
+                and entry.abilities[number] or ""))
+            option.ability:SetTextColor(unpack(missing and RED or BLUE))
+            option.text:SetText(entry.texts and entry.texts[number] or mod.text or "")
+            local line = option.selected and GOLD or { 0.7, 0.7, 0.75 }
+            option.top:SetVertexColor(line[1], line[2], line[3], option.selected and 1 or 0.5)
+            option.bottom:SetVertexColor(line[1], line[2], line[3], option.selected and 1 or 0.5)
+            option.glow:SetAlpha(option.selected and 0.55 or 0)
+            option.radio:SetVertexColor(unpack(option.selected and GOLD or { 0.8, 0.8, 0.85 }))
+            if option.selected then
+                option.check:Show()
+            else
+                option.check:Hide()
+            end
+            option.name:SetTextColor(unpack(missing and { 0.6, 0.58, 0.62 } or CREAM))
+            option:Show()
         end
-        option.name:SetTextColor(unpack(missing and { 0.6, 0.58, 0.62 } or CREAM))
-        option:Show()
     end
-    -- Every column as tall as the longest words, smaller words when they would not fit.
-    local room = OPTIONS_BOTTOM - OPTIONS_TOP - OPTION_HEAD - 14
-    local tallest = 0
-    for _, size in ipairs({ 20, 18, 17, 16 }) do
-        tallest = 0
-        for _, option in ipairs(build.options) do
-            option.text:SetFont(SANS, size)
-            tallest = math.max(tallest, option.text:GetStringHeight() or 0)
+    -- The rows (3 choices: one; 5: 3 then 2), each as tall as its longest words; smaller words when the rows would
+    -- reach the buttons.
+    local rows, first = {}, 1
+    for _, columns in ipairs(layout.columns) do
+        local row = {}
+        for column = 1, #columns do
+            if first <= per then
+                row[#row + 1] = { option = build.options[first], x = columns[column] }
+                first = first + 1
+            end
+        end
+        rows[#rows + 1] = row
+    end
+    local room = OPTIONS_BOTTOM - layout.top
+    local tallest = {}
+    for _, size in ipairs({ 20, 18, 17, 16, 15 }) do
+        local total = 0
+        for r, row in ipairs(rows) do
+            tallest[r] = 0
+            for _, place in ipairs(row) do
+                place.option.text:SetFont(SANS, size)
+                tallest[r] = math.max(tallest[r], place.option.text:GetStringHeight() or 0)
+            end
+            total = total + layout.head + tallest[r] + 14 + (r > 1 and 10 or 0)
         end
         build.textSize = size
-        if tallest <= room then
+        if total <= room then
             break
         end
     end
-    for _, option in ipairs(build.options) do
-        option:SetHeight(math.max(160, OPTION_HEAD + tallest + 14))
+    local y = layout.top
+    for r, row in ipairs(rows) do
+        local height = math.max(#rows > 1 and 110 or 160, layout.head + tallest[r] + 14)
+        for _, place in ipairs(row) do
+            place.option:ClearAllPoints()
+            place.option:SetPoint("TOP", stage, "TOPLEFT", place.x, -y)
+            place.option:SetHeight(height)
+        end
+        y = y + height + 10
     end
     build.summary:Hide()
 end
@@ -1416,6 +1503,7 @@ ShowBuild = function()
     end
     build.title:SetText(ShortName(rune))
     build.subtitle:SetText(Plain((art.runes[runeId] or {}).core or rune.loop or ""))
+    PlaceBuild(PerSlot(rune))
     build.medal:SetRune(rune)
     DrawNodes(runeId)
     if view.active then
@@ -1428,7 +1516,7 @@ ShowBuild = function()
         build.ask:SetText("Click a slot to change its modifier.")
         local names, picks = SlotNames(runeId), {}
         for slot = 1, 3 do
-            local mod = rune.mods[(slot - 1) * 3 + (view.picks[slot] or 0)]
+            local mod = rune.mods[(slot - 1) * PerSlot(rune) + (view.picks[slot] or 0)]
             picks[#picks + 1] = (names[slot] or SLOT_NAMES[slot]) .. ": |cfffff2e0" .. (mod and mod.name or "-")
                 .. "|r"
         end
@@ -1446,7 +1534,7 @@ ShowBuild = function()
         build.left:Hide()
     end
     local selected = view.active and view.selected
-    local mod = selected and rune.mods[(view.active - 1) * 3 + selected]
+    local mod = selected and rune.mods[(view.active - 1) * PerSlot(rune) + selected]
     if mod then
         build.pickedText:SetText(mod.name .. " selected")
         build.picked:Show()

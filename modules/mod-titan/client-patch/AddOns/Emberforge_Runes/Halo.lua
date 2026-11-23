@@ -670,7 +670,8 @@ function ShowBuild(legendary)
     local chosen = 0
     for i, row in ipairs(build) do
         local pick = picks[i] or 0
-        local mod = legendary and pick > 0 and legendary.mods and legendary.mods[(i - 1) * 3 + pick]
+        local per = legendary and legendary.mods and #legendary.mods >= 15 and 5 or 3     -- its Extended Options: 5
+        local mod = legendary and pick > 0 and legendary.mods and legendary.mods[(i - 1) * per + pick]
         if mod then
             chosen = chosen + 1
         end

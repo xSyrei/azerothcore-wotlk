@@ -107,7 +107,8 @@ namespace
     constexpr uint8 SECOND_UNLOCK_LEVEL = 30;       // the second, at full power
     constexpr uint8 MAX_SPECS = 4;
     constexpr uint8 SLOTS = 3;
-    constexpr uint8 CHOICES = 3;
+    constexpr uint8 CHOICES = 3;                    // a slot's choices, unless its rune says more (RuneDef::Choices)
+    constexpr uint8 MAX_CHOICES = 5;                // the Extended Options' (5 a slot, as each rune is extended)
     constexpr uint8 MAX_OFFERS = 3;
 
     constexpr uint8 RUNE_FEL_COMMANDMENT = 21;      // the doc's order: the 20 class runes, then the hybrid
@@ -1105,7 +1106,8 @@ namespace
         uint8 Roles;
         std::vector<std::vector<uint32>> Requires;
         uint32 Aura;                // worn while it is the active spec's rune
-        uint32 MarkerFirst;         // its modifiers' markers: + slot * 3 + choice
+        uint32 MarkerFirst;         // its modifiers' markers: + slot * Choices + choice
+        uint8 Choices = CHOICES;    // a slot's choices: 3, or 5 once the rune has its Extended Options
     };
 
     std::vector<RuneDef> const& Catalog()
@@ -1248,7 +1250,8 @@ namespace
     // a demon to summon; Closed Circuit: Chain Lightning).
     std::vector<std::vector<uint32>> ModifierNeeds(uint8 rune, uint8 slot, uint8 choice)
     {
-        uint8 modifier = slot * CHOICES + choice;
+        RuneDef const* def = FindRune(rune);
+        uint8 modifier = slot * (def ? def->Choices : CHOICES) + choice;
         if (rune == RUNE_STORMBOUND_CONDUIT && modifier == MOD_CHAIN_SURGE)
             return { { SPELL_CHAIN_LIGHTNING } };
         if (rune == RUNE_STORMBOUND_CONDUIT
@@ -5836,7 +5839,7 @@ namespace
         for (RuneDef const& rune : Catalog())
         {
             auras.push_back(rune.Aura);
-            for (uint32 i = 0; i < SLOTS * CHOICES; ++i)
+            for (uint32 i = 0; i < uint32(SLOTS * rune.Choices); ++i)
                 auras.push_back(rune.MarkerFirst + i);
         }
         return auras;
@@ -5866,8 +5869,8 @@ namespace
             duelist |= rune->Id == RUNE_DUELIST;
             player->AddAura(rune->Aura, player);
             for (uint8 slot = 0; slot < SLOTS; ++slot)
-                if (uint8 pick = choice.Mods[slot])
-                    player->AddAura(rune->MarkerFirst + slot * CHOICES + pick - 1, player);
+                if (uint8 pick = choice.Mods[slot]; pick && pick <= rune->Choices)
+                    player->AddAura(rune->MarkerFirst + slot * rune->Choices + pick - 1, player);
         }
         if (!any)
             ClearCombat(player);
@@ -5914,7 +5917,7 @@ namespace
                 Choice& choice = state.Choices[spec][runeSlot];
                 choice.Rune = fields[1].Get<uint8>();
                 for (uint8 slot = 0; slot < SLOTS; ++slot)
-                    choice.Mods[slot] = std::min<uint8>(fields[2 + slot].Get<uint8>(), CHOICES);
+                    choice.Mods[slot] = std::min<uint8>(fields[2 + slot].Get<uint8>(), MAX_CHOICES);
             } while (result->NextRow());
         }
     }
@@ -6210,7 +6213,7 @@ namespace
             Send(player, Acore::StringFormat("R,{},{},{},{}", rune.Id, missing, Missing(player, rune.Requires,
                 &slotted), learnable ? 1 : 0));
             for (uint8 slot = 0; slot < SLOTS; ++slot)
-                for (uint8 pick = 0; pick < CHOICES; ++pick)
+                for (uint8 pick = 0; pick < rune.Choices; ++pick)
                 {
                     std::vector<std::vector<uint32>> needs = ModifierNeeds(rune.Id, slot, pick);
                     if (!needs.empty())
@@ -6268,7 +6271,8 @@ namespace
         if (runeSlot >= RUNE_SLOTS)
             return;
         Choice& choice = ActiveChoice(player, runeSlot);
-        if (!choice.Rune || slot < 1 || slot > SLOTS || pick < 1 || pick > CHOICES)
+        RuneDef const* bound = FindRune(choice.Rune);
+        if (!bound || slot < 1 || slot > SLOTS || pick < 1 || pick > bound->Choices)
             return;
         if (player->IsInCombat())
             return Refuse(player, "Modifiers can't be changed in combat.");
