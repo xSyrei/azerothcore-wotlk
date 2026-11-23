@@ -340,14 +340,23 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (22812, 'spell_titan_rune_barkskin'),
 (-6807, 'spell_titan_rune_maul');
 
+-- Astral Convergence's other spells, every rank: Lightning Bolt spends Moonlight for a lesser flare; Frostbolt on
+-- Sunlight (Frozen Eclipse).
+DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_titan_rune_convergence_hit';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(-403, 'spell_titan_rune_convergence_hit'),
+(-116, 'spell_titan_rune_convergence_hit');
+
 -- Their damage over time: Lunar Wound, Astral Rupture.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (91302, 'spell_titan_rune_dot'),
 (91325, 'spell_titan_rune_dot');
 
--- Their strikes and shields are shares of the Hero's own hits, health and attack power: no bonuses of their own.
-DELETE FROM `spell_bonus_data` WHERE `entry` IN (91301, 91303, 91323, 91324, 91326, 91339, 91341, 91342, 91346);
+-- Their strikes and shields are shares of the Hero's own hits, health, attack and spell power: no bonuses of their
+-- own.
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (91301, 91303, 91323, 91324, 91326, 91339, 91341, 91342, 91346, 91615,
+    91618);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91301, 0, 0, 0, 0, 'Elune''s Guardian - Lunar Owl'),
 (91303, 0, 0, 0, 0, 'Elune''s Guardian - Lunar Wound tick'),
@@ -355,6 +364,8 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91324, 0, 0, 0, 0, 'Astral Convergence - Solar Flare'),
 (91326, 0, 0, 0, 0, 'Astral Convergence - Astral Rupture tick'),
 (91339, 0, 0, 0, 0, 'Astral Convergence - Eventide'),
+(91615, 0, 0, 0, 0, 'Astral Convergence - Flame Eclipse'),
+(91618, 0, 0, 0, 0, 'Astral Convergence - Astral Ward'),
 (91341, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Guard'),
 (91342, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Blow'),
 (91346, 0, 0, 0, 0, 'Ursoc''s Champion - Enduring Champion');

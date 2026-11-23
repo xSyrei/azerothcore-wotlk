@@ -350,8 +350,7 @@ namespace
         SPELL_STEADY_ORBIT              = 91327,    // the next Wrath or Starfire instant
         SPELL_LUNAR_DOMINANCE           = 91328,    // the next Starfire 20% faster and cheaper
         SPELL_EVENTIDE                  = 91329,
-        SPELL_CONVERGENCE_MODIFIER_FIRST = 91330,   // + slot * 3 + choice
-        SPELL_EVENTIDE_TICK             = 91339,
+        SPELL_EVENTIDE_TICK             = 91339,    // (91330-91338: its first 9 markers, retired)
 
         SPELL_RUNE_URSOCS_CHAMPION      = 91340,
         SPELL_URSOCS_GUARD              = 91341,
@@ -364,6 +363,13 @@ namespace
         SPELL_URSOC_MODIFIER_FIRST      = 91350,    // + slot * 3 + choice
         SPELL_URSOC_ROAR_LOOK           = 91359,
         SPELL_COLLISION_LOOK            = 91360,    // Astral Rupture: the collision's look, its damage over time
+
+        // The Extended Options (91600 on, 20 a rune: 15 markers, + slot * 5 + choice; then its new spells).
+        SPELL_CONVERGENCE_MODIFIER_FIRST = 91600,
+        SPELL_FLAME_ECLIPSE             = 91615,    // Flame Eclipse's Fire damage
+        SPELL_FROZEN_ECLIPSE            = 91616,    // the next Lunar Collision 25% more
+        SPELL_INSECT_RENEWAL            = 91617,    // the next Wrath 15% faster
+        SPELL_ASTRAL_WARD               = 91618,    // the absorb
 
         // The Duelist (91370 on: its taught abilities first) and the Stormreaver (91400 on); their markers 10 on
         // from each rune.
@@ -466,6 +472,8 @@ namespace
         SPELL_STARFIRE              = 2912,         // first ranks
         SPELL_WRATH                 = 5176,
         SPELL_BARKSKIN              = 22812,
+        SPELL_MOONFIRE              = 8921,
+        SPELL_INSECT_SWARM          = 5570,
         SPELL_MAUL                  = 6807,
         SPELL_BEAR_FORM             = 5487,
         SPELL_DIRE_BEAR_FORM        = 9634,
@@ -893,23 +901,29 @@ namespace
     constexpr int32 LUNAR_WOUND_MS = 6000, TWILIGHT_HUNT_MS = 5000;
     constexpr std::size_t SILVER_WINGS_TARGETS = 4;
 
-    // Astral Convergence's modifiers: slot (0 Collision, 1 Alignment, 2 Flare) x 3 + choice.
+    // Astral Convergence's modifiers (its Extended Options): slot (0 Collision, 1 Alignment, 2 Flare) x 5 + choice;
+    // each slot's first three are the ones it had, so earlier picks keep their meaning.
     enum ConvergenceModifier : uint8
     {
-        MOD_PERFECT_ALIGNMENT, MOD_CONVERGING_SKIES, MOD_ASTRAL_RUPTURE,
-        MOD_LONG_TWILIGHT, MOD_CROSSED_HORIZONS, MOD_STEADY_ORBIT,
-        MOD_SOLAR_RETURN, MOD_LUNAR_DOMINANCE, MOD_EVENTIDE,
+        MOD_PERFECT_ALIGNMENT, MOD_CONVERGING_SKIES, MOD_ASTRAL_RUPTURE, MOD_FLAME_ECLIPSE, MOD_FROZEN_ECLIPSE,
+        MOD_LONG_TWILIGHT, MOD_CROSSED_HORIZONS, MOD_STEADY_ORBIT, MOD_TIDAL_FLARE, MOD_TWIN_MOONS,
+        MOD_SOLAR_RETURN, MOD_LUNAR_DOMINANCE, MOD_EVENTIDE, MOD_INSECT_RENEWAL, MOD_ASTRAL_WARD,
     };
 
-    // Astral Convergence's tuning: Wrath leaves Sunlight (8 sec); Starfire on it collides for 40% of the
-    // Starfire's damage and leaves Moonlight (8 sec); Wrath on Moonlight flares for 80% of the Wrath's damage (Wrath
-    // being the small spell), ending the sequence. 5 enemies marked at most.
+    // Astral Convergence's tuning: Wrath leaves Sunlight (8 sec); Starfire on it collides for 80% of the Hero's
+    // Arcane spell power and leaves Moonlight (8 sec); Wrath on Moonlight flares for 40% of their Nature spell power
+    // and leaves fresh Sunlight. 5 enemies marked at most. Its interactions: a collision on the Hero's Moonfire
+    // target hits one more within 8 yards for 40% of it; a flare extends their Insect Swarm 2 sec (6 sec at most an
+    // application); a Lightning Bolt spends Moonlight for a flare of 75%, no Sunlight after (6 sec a target).
     constexpr int32 MARK_MS = 8000, LONG_TWILIGHT_MS = 12000, RUPTURE_MS = 6000;
-    constexpr uint32 EVENTIDE_MS = 4000, EVENTIDE_TICK_MS = 1000, TWILIGHT_STEP_MS = 2000;
-    constexpr float COLLISION_SHARE = 0.4f, FLARE_SHARE = 0.8f, PERFECT_ALIGNMENT = 1.4f, CONVERGING_SHARE = 0.5f;
+    constexpr int32 SWARM_EXTEND_MS = 2000, SWARM_EXTEND_MOST_MS = 6000;
+    constexpr uint32 EVENTIDE_MS = 4000, EVENTIDE_TICK_MS = 1000, TWILIGHT_STEP_MS = 2000, BOLT_FLARE_EVERY_MS = 6000;
+    constexpr uint32 TWIN_MOONS_EVERY_MS = 8000, ASTRAL_WARD_EVERY_MS = 12000;
+    constexpr float COLLISION_POWER = 0.8f, FLARE_POWER = 0.4f, PERFECT_ALIGNMENT = 1.4f, CONVERGING_SHARE = 0.5f;
     constexpr float RUPTURE_SHARE = 1.5f, TWILIGHT_STEP = 0.05f, TWILIGHT_MOST = 0.2f, CROSSED_SHARE = 0.35f;
-    constexpr float SOLAR_RETURN = 1.6f, EVENTIDE_SHARE = 0.25f;
-    constexpr float CONVERGING_RADIUS = 6.0f, CROSSED_RANGE = 12.0f, EVENTIDE_RADIUS = 6.0f;
+    constexpr float SOLAR_RETURN = 1.6f, EVENTIDE_POWER = 0.1f, MOONFIRE_SHARE = 0.4f, BOLT_FLARE = 0.75f;
+    constexpr float FLAME_ECLIPSE_POWER = 0.25f, FROZEN_ECLIPSE = 1.25f, TIDAL_SHARE = 0.5f, ASTRAL_WARD_POWER = 0.4f;
+    constexpr float CONVERGING_RADIUS = 6.0f, CROSSED_RANGE = 12.0f, EVENTIDE_RADIUS = 6.0f, ECHO_RANGE = 8.0f;
     constexpr std::size_t MAX_MARKED = 5, CONVERGING_TARGETS = 4, CROSSED_TARGETS = 3, EVENTIDE_TARGETS = 5;
 
     // Ursoc's Champion's modifiers: slot (0 Guard, 1 Answer, 2 Resolve) x 3 + choice.
@@ -1193,7 +1207,7 @@ namespace
             // Ranged DPS: Wrath and Starfire in turn.
             { RUNE_ASTRAL_CONVERGENCE, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_WRATH }, { SPELL_STARFIRE } }, SPELL_RUNE_ASTRAL_CONVERGENCE,
-              SPELL_CONVERGENCE_MODIFIER_FIRST },
+              SPELL_CONVERGENCE_MODIFIER_FIRST, MAX_CHOICES },
             // Tanks: Barkskin in Bear Form raises the guard, Maul releases it.
             { RUNE_URSOCS_CHAMPION, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_BEAR_FORM, SPELL_DIRE_BEAR_FORM }, { SPELL_BARKSKIN }, { SPELL_MAUL } },
@@ -1280,6 +1294,17 @@ namespace
             return { { SPELL_GREATER_HEAL } };
         if (rune == RUNE_ELUNES_GUARDIAN && modifier == MOD_TWILIGHT_HUNT)
             return { { SPELL_WRATH } };
+        if (rune == RUNE_ASTRAL_CONVERGENCE)
+            switch (modifier)
+            {
+                case MOD_FLAME_ECLIPSE: return { { SPELL_FLAME_SHOCK } };
+                case MOD_FROZEN_ECLIPSE: return { { SPELL_FROSTBOLT } };
+                case MOD_TIDAL_FLARE: return { { SPELL_LIGHTNING_BOLT } };
+                case MOD_TWIN_MOONS: return { { SPELL_MOONFIRE } };
+                case MOD_INSECT_RENEWAL: return { { SPELL_INSECT_SWARM } };
+                case MOD_ASTRAL_WARD: return { { SPELL_BARKSKIN } };
+                default: return {};
+            }
         if (rune != RUNE_FEL_COMMANDMENT)
             return {};
         if (modifier == MOD_DREADFIRE_DISCIPLINE)
@@ -1434,6 +1459,9 @@ namespace
         Position EventideAt;                        // Eventide's field (EventideUntil 0: none)
         uint32 EventideMap = 0, EventideUntil = 0, EventideTimer = 0;
         float EventideTick = 0.0f;
+        std::map<ObjectGuid, uint32> BoltFlares;    // a Lightning Bolt's last flare on each enemy (game ms)
+        std::set<ObjectGuid> FrozenSunlight;        // Frozen Eclipse: Sunlight a Frostbolt has empowered from
+        uint32 TwinMoonsAt = 0, AstralWardAt = 0;   // game ms
 
         // Ursoc's Champion.
         int32 GuardShield = 0;                      // the guard's absorb as raised (0: none up)
@@ -4817,12 +4845,36 @@ namespace
         return Marked(unit, SPELL_CONVERGENCE_MODIFIER_FIRST, modifier);
     }
 
+    // The Hero's spell power of a school, never less than their Starfire's own average damage (so a Hero with
+    // little gear still collides and flares); withBonuses, their damage done bonuses of the school too (the rune's
+    // strikes ignore their modifiers).
+    float ConvergencePower(Player* player, SpellSchoolMask school, bool withBonuses = true)
+    {
+        float floor = 0.0f;
+        if (SpellInfo const* rank = sSpellMgr->GetSpellInfo(KnownRank(player, SPELL_STARFIRE)))
+            floor = float(rank->Effects[EFFECT_0].BasePoints) + float(rank->Effects[EFFECT_0].DieSides + 1) / 2.0f;
+        float power = std::max(float(player->SpellBaseDamageBonusDone(school)), floor);
+        return withBonuses
+            ? power * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, school) : power;
+    }
+
+    // The nearest other enemy within range of the target (but, with fresh, not one already in the spell of the
+    // Hero's; nullptr none).
+    Unit* OtherEnemy(Player* player, Unit* target, float range, uint32 fresh = 0)
+    {
+        for (Unit* other : EnemiesAround(player, target, range))
+            if (other != target && (!fresh || !other->GetAuraOfRankedSpell(fresh, player->GetGUID())))
+                return other;
+        return nullptr;
+    }
+
     int32 MarkMs(Player* player)
     {
         return HasConvergenceMarker(player, MOD_LONG_TWILIGHT) ? LONG_TWILIGHT_MS : MARK_MS;
     }
 
-    // A mark of the Hero's on an enemy (5 enemies marked at most: the longest marked loses theirs).
+    // A mark of the Hero's on an enemy (5 enemies marked at most: the longest marked loses theirs). Fresh Sunlight
+    // may be empowered by a Frostbolt again.
     void Mark(Player* player, Unit* enemy, uint32 spellId)
     {
         State& state = StateOf(player);
@@ -4844,44 +4896,121 @@ namespace
             marked.erase(marked.begin());
         }
         marked.push_back(enemy->GetGUID());
+        if (spellId == SPELL_SUNLIGHT)
+            state.FrozenSunlight.erase(enemy->GetGUID());
         Lasting(player, enemy, spellId, MarkMs(player));
     }
 
-    // Wrath: on Moonlight, the flare (35% of the Wrath's damage; Solar Return 60% more) ends the sequence; else it
-    // leaves Sunlight.
-    void ConvergenceWrath(Player* player, Unit* enemy, float wrath)
+    // Astral Rupture's next tick on the enemy, now: its damage dealt and its time a tick shorter (no tick added).
+    void AdvanceRupture(Player* player, Unit* enemy)
     {
-        if (!enemy->HasAura(SPELL_MOONLIGHT, player->GetGUID()))
-        {
-            if (enemy->IsAlive())
-                Mark(player, enemy, SPELL_SUNLIGHT);
+        Aura* rupture = enemy->GetAura(SPELL_ASTRAL_RUPTURE, player->GetGUID());
+        auto tick = dotTicks.find({ enemy->GetGUID(), SPELL_ASTRAL_RUPTURE, player->GetGUID() });
+        if (!rupture || tick == dotTicks.end())
             return;
-        }
+        int32 damage = std::max(1, tick->second);
+        int32 period = DotPeriod(SPELL_ASTRAL_RUPTURE);
+        player->CastCustomSpell(enemy, SPELL_ASTRAL_RUPTURE_TICK, &damage, nullptr, nullptr, true);
+        if (rupture->GetDuration() <= period)
+            enemy->RemoveAurasDueToSpell(SPELL_ASTRAL_RUPTURE, player->GetGUID());
+        else
+            rupture->SetDuration(rupture->GetDuration() - period);
+    }
+
+    // The flare on an enemy in the Hero's Moonlight (the mark spent): 40% of their Nature spell power (Solar Return
+    // 60% more; scale: a Lightning Bolt's 75%), ending the sequence. Their Insect Swarm there 2 sec longer (6 sec an
+    // application at most); Astral Rupture's next tick now; Tidal Flare (a bolt's): half to one more within 8 yards.
+    void SolarFlare(Player* player, Unit* enemy, float scale, bool bolt)
+    {
         enemy->RemoveAurasDueToSpell(SPELL_MOONLIGHT, player->GetGUID());
-        float flare = wrath * FLARE_SHARE * (HasConvergenceMarker(player, MOD_SOLAR_RETURN) ? SOLAR_RETURN : 1.0f);
+        float flare = ConvergencePower(player, SPELL_SCHOOL_MASK_NATURE) * FLARE_POWER * scale
+            * (HasConvergenceMarker(player, MOD_SOLAR_RETURN) ? SOLAR_RETURN : 1.0f);
         Strike(player, enemy, SPELL_SOLAR_FLARE, flare);
+        Trace(player, Acore::StringFormat("Solar Flare for {}", int32(flare)));
+        if (bolt && HasConvergenceMarker(player, MOD_TIDAL_FLARE))
+            if (Unit* other = OtherEnemy(player, enemy, ECHO_RANGE))
+                Strike(player, other, SPELL_SOLAR_FLARE, flare * TIDAL_SHARE);
+        if (Aura* swarm = enemy->GetAuraOfRankedSpell(SPELL_INSECT_SWARM, player->GetGUID()))
+        {
+            int32 more = std::min(SWARM_EXTEND_MS,
+                SWARM_EXTEND_MOST_MS - (swarm->GetMaxDuration() - swarm->CalcMaxDuration()));
+            if (more > 0)
+            {
+                swarm->SetMaxDuration(swarm->GetMaxDuration() + more);
+                swarm->SetDuration(swarm->GetDuration() + more);
+            }
+            if (HasConvergenceMarker(player, MOD_INSECT_RENEWAL))
+                Renew(player, SPELL_INSECT_RENEWAL);
+        }
+        AdvanceRupture(player, enemy);
         if (HasConvergenceMarker(player, MOD_LUNAR_DOMINANCE))
             Renew(player, SPELL_LUNAR_DOMINANCE);
         if (HasConvergenceMarker(player, MOD_STEADY_ORBIT))
             Renew(player, SPELL_STEADY_ORBIT);
+        State& state = StateOf(player);
         if (HasConvergenceMarker(player, MOD_EVENTIDE))
         {
-            State& state = StateOf(player);
             Position at = enemy->GetPosition();
             state.EventideAt = at;
             state.EventideMap = player->GetMapId();
             state.EventideUntil = Now() + EVENTIDE_MS;
             state.EventideTimer = 0;
-            state.EventideTick = flare * EVENTIDE_SHARE;
+            state.EventideTick = ConvergencePower(player, SPELL_SCHOOL_MASK_ARCANE) * EVENTIDE_POWER;
             PlaceDecals(player, SPELL_EVENTIDE, { at });
+        }
+        // Astral Ward: in Barkskin, an absorb of 40% of their spell power (12 sec apart).
+        if (HasConvergenceMarker(player, MOD_ASTRAL_WARD) && player->HasAura(SPELL_BARKSKIN)
+            && (!state.AstralWardAt || Now() - state.AstralWardAt >= ASTRAL_WARD_EVERY_MS))
+        {
+            state.AstralWardAt = Now();
+            int32 ward = std::max<int32>(1, int32(ConvergencePower(player, SPELL_SCHOOL_MASK_NATURE, false)
+                * ASTRAL_WARD_POWER));
+            player->RemoveAurasDueToSpell(SPELL_ASTRAL_WARD);
+            Report(player, SPELL_ASTRAL_WARD, 'A', ward);
+            player->CastCustomSpell(player, SPELL_ASTRAL_WARD, &ward, nullptr, nullptr, true);
         }
     }
 
-    // Starfire on Sunlight: the collision (40% of the Starfire's damage; Perfect Alignment 40% more; Long Twilight
-    // 5% more for each 2 sec the Sunlight was on, up to 20%), then Moonlight. Converging Skies: half to up to 4 more
-    // within 6 yards; Astral Rupture: 150% of it over 6 sec instead; Crossed Horizons: 35% to up to 3 enemies within
-    // 12 yards in the Hero's Moonlight.
-    void ConvergenceStarfire(Player* player, Unit* enemy, float starfire)
+    // Wrath: on Moonlight, the flare; then (or else) it leaves Sunlight.
+    void ConvergenceWrath(Player* player, Unit* enemy)
+    {
+        if (enemy->HasAura(SPELL_MOONLIGHT, player->GetGUID()))
+            SolarFlare(player, enemy, 1.0f, false);
+        if (enemy->IsAlive())
+            Mark(player, enemy, SPELL_SUNLIGHT);
+    }
+
+    // A Lightning Bolt's direct hit on Moonlight: a flare of 75%, no Sunlight after (6 sec apart on each enemy).
+    void ConvergenceBolt(Player* player, Unit* enemy)
+    {
+        if (!enemy->HasAura(SPELL_MOONLIGHT, player->GetGUID()))
+            return;
+        std::map<ObjectGuid, uint32>& flares = StateOf(player).BoltFlares;
+        for (auto it = flares.begin(); it != flares.end();)
+            it = Now() - it->second >= BOLT_FLARE_EVERY_MS ? flares.erase(it) : std::next(it);
+        if (flares.contains(enemy->GetGUID()))
+            return;
+        flares[enemy->GetGUID()] = Now();
+        SolarFlare(player, enemy, BOLT_FLARE, true);
+    }
+
+    // Frozen Eclipse: a Frostbolt's direct hit on the Hero's Sunlight empowers the next collision (once a Sunlight).
+    void ConvergenceFrostbolt(Player* player, Unit* enemy)
+    {
+        State& state = StateOf(player);
+        if (!HasConvergenceMarker(player, MOD_FROZEN_ECLIPSE) || !enemy->HasAura(SPELL_SUNLIGHT, player->GetGUID())
+            || !state.FrozenSunlight.insert(enemy->GetGUID()).second)
+            return;
+        Renew(player, SPELL_FROZEN_ECLIPSE);
+    }
+
+    // Starfire on Sunlight: the collision (80% of the Hero's Arcane spell power; Perfect Alignment 40% more; Long
+    // Twilight 5% more for each 2 sec the Sunlight was on, up to 20%; Frozen Eclipse 25% more, spent), then
+    // Moonlight. Converging Skies: half to up to 4 more within 6 yards; Astral Rupture: 150% of it over 6 sec
+    // instead; Crossed Horizons: 35% to up to 3 enemies within 12 yards in the Hero's Moonlight. On their Moonfire
+    // target: 40% to one more within 8 yards, and Twin Moons spreads the Moonfire there (8 sec apart); on their
+    // Flame Shock target, Flame Eclipse adds 25% of their Fire spell power.
+    void ConvergenceStarfire(Player* player, Unit* enemy)
     {
         Aura* sunlight = enemy->GetAura(SPELL_SUNLIGHT, player->GetGUID());
         if (!sunlight)
@@ -4893,8 +5022,14 @@ namespace
             bonus += std::min(TWILIGHT_MOST, TWILIGHT_STEP * float(held / int32(TWILIGHT_STEP_MS)));
         }
         enemy->RemoveAurasDueToSpell(SPELL_SUNLIGHT, player->GetGUID());
-        float collision = starfire * COLLISION_SHARE * bonus
+        if (player->HasAura(SPELL_FROZEN_ECLIPSE))
+        {
+            player->RemoveAurasDueToSpell(SPELL_FROZEN_ECLIPSE);
+            bonus *= FROZEN_ECLIPSE;
+        }
+        float collision = ConvergencePower(player, SPELL_SCHOOL_MASK_ARCANE) * COLLISION_POWER * bonus
             * (HasConvergenceMarker(player, MOD_PERFECT_ALIGNMENT) ? PERFECT_ALIGNMENT : 1.0f);
+        Trace(player, Acore::StringFormat("Lunar Collision for {}", int32(collision)));
         std::vector<Unit*> crossed;
         if (HasConvergenceMarker(player, MOD_CROSSED_HORIZONS))
             for (Unit* other : EnemiesAround(player, enemy, CROSSED_RANGE))
@@ -4920,11 +5055,30 @@ namespace
         }
         for (Unit* other : crossed)
             Strike(player, other, SPELL_LUNAR_COLLISION, collision * CROSSED_SHARE);
+        if (Aura* moonfire = enemy->GetAuraOfRankedSpell(SPELL_MOONFIRE, player->GetGUID()))
+        {
+            if (Unit* other = OtherEnemy(player, enemy, ECHO_RANGE))
+                Strike(player, other, SPELL_LUNAR_COLLISION, collision * MOONFIRE_SHARE);
+            State& state = StateOf(player);
+            if (HasConvergenceMarker(player, MOD_TWIN_MOONS)
+                && (!state.TwinMoonsAt || Now() - state.TwinMoonsAt >= TWIN_MOONS_EVERY_MS))
+                if (Unit* other = OtherEnemy(player, enemy, ECHO_RANGE, SPELL_MOONFIRE))
+                    if (Aura* spread = player->AddAura(moonfire->GetId(), other))
+                    {
+                        state.TwinMoonsAt = Now();
+                        spread->SetMaxDuration(moonfire->GetDuration());
+                        spread->SetDuration(moonfire->GetDuration());
+                    }
+        }
+        if (HasConvergenceMarker(player, MOD_FLAME_ECLIPSE)
+            && enemy->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
+            Strike(player, enemy, SPELL_FLAME_ECLIPSE,
+                ConvergencePower(player, SPELL_SCHOOL_MASK_FIRE) * FLAME_ECLIPSE_POWER);
         if (enemy->IsAlive())
             Mark(player, enemy, SPELL_MOONLIGHT);
     }
 
-    // Eventide's field: half the flare every second to up to 5 enemies within 6 yards, 4 sec.
+    // Eventide's field: 10% of the Hero's Arcane spell power every second to up to 5 enemies within 6 yards, 4 sec.
     void EventideTick(Player* player, uint32 diff)
     {
         State& state = StateOf(player);
@@ -5111,7 +5265,8 @@ namespace
         state.OwlCount = 0;
         for (uint32 spell : { SPELL_SWIFT_JUDGMENT, SPELL_WATCHFUL_FLIGHT, SPELL_GUIDING_WINGS,
                               SPELL_GUIDING_WINGS_SPEED, SPELL_STEADY_ORBIT, SPELL_LUNAR_DOMINANCE,
-                              SPELL_ENDURING_CHAMPION })
+                              SPELL_ENDURING_CHAMPION, SPELL_FROZEN_ECLIPSE, SPELL_INSECT_RENEWAL,
+                              SPELL_ASTRAL_WARD })
             player->RemoveAurasDueToSpell(spell);
         for (ObjectGuid guid : state.Marked)
             if (Unit* unit = ObjectAccessor::GetUnit(*player, guid))
@@ -5120,6 +5275,8 @@ namespace
                 unit->RemoveAurasDueToSpell(SPELL_MOONLIGHT, player->GetGUID());
             }
         state.Marked.clear();
+        state.BoltFlares.clear();
+        state.FrozenSunlight.clear();
         state.EventideUntil = 0;
         player->RemoveDynObject(SPELL_EVENTIDE);
         EndGuard(player);
@@ -7857,7 +8014,7 @@ class spell_titan_rune_starfire : public SpellScript
         if (player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN))
             CallOwl(player, target, float(GetHitDamage()));
         if (player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE))
-            ConvergenceStarfire(player, target, float(GetHitDamage()));
+            ConvergenceStarfire(player, target);
     }
 
     void Register() override
@@ -7887,13 +8044,37 @@ class spell_titan_rune_wrath : public SpellScript
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
         if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE))
-            ConvergenceWrath(player, target, float(GetHitDamage()));
+            ConvergenceWrath(player, target);
     }
 
     void Register() override
     {
         OnHit += SpellHitFn(spell_titan_rune_wrath::Hunted);
         AfterHit += SpellHitFn(spell_titan_rune_wrath::Hit);
+    }
+};
+
+// Astral Convergence's other spells (every rank, direct hits): Lightning Bolt spends Moonlight for a lesser flare;
+// Frostbolt on Sunlight, Frozen Eclipse.
+class spell_titan_rune_convergence_hit : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_convergence_hit);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || GetHitDamage() <= 0 || !player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE))
+            return;
+        if (GetSpellInfo()->IsRankOf(sSpellMgr->GetSpellInfo(SPELL_LIGHTNING_BOLT)))
+            ConvergenceBolt(player, target);
+        else
+            ConvergenceFrostbolt(player, target);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_convergence_hit::Hit);
     }
 };
 
@@ -8610,6 +8791,7 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_guiding_heal);
     RegisterSpellScript(spell_titan_rune_starfire);
     RegisterSpellScript(spell_titan_rune_wrath);
+    RegisterSpellScript(spell_titan_rune_convergence_hit);
     RegisterSpellScript(spell_titan_rune_barkskin);
     RegisterSpellScript(spell_titan_rune_maul);
     RegisterSpellScript(spell_titan_rune_sinister_strike);

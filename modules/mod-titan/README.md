@@ -625,7 +625,17 @@ utility or a tradeoff) take one pick each, from three.
   - **Elune's Guardian** (39; Ranged; Starfire): a Starfire hit calls a lunar owl (91301, 3 waiting at most) that
     dives 1 sec later for 30% of its damage (91302; Lunar Wound 91303).
   - **Astral Convergence** (40; Ranged; Wrath and Starfire): Wrath's Sunlight (91321), Starfire's collision (91323,
-    40%) and Moonlight (91322), Wrath's flare (91324, 80%); 5 enemies marked at most.
+    80% of Arcane spell power) and Moonlight (91322), Wrath's flare (91324, 40% of Nature spell power) and fresh
+    Sunlight; 5 enemies marked at most. The spell power is never less than the known Starfire rank's average damage
+    (`ConvergencePower`), with the school's damage done bonuses. The first rune with its **Extended Options**: 5
+    choices a slot (`RuneDef::Choices`), markers 91600 + slot * 5 + choice (91330-91338 retired; the old three stay
+    first in each slot, so saved picks keep their meaning), new spells 91615-91618 (Flame Eclipse, Frozen Eclipse,
+    Insect Renewal, Astral Ward). Always-on interactions: a collision on the Hero's Moonfire target hits one more
+    within 8 yd for 40%; a flare extends their Insect Swarm 2 sec (6 sec an application, from
+    `GetMaxDuration - CalcMaxDuration`); Lightning Bolt (`spell_titan_rune_convergence_hit`, with Frostbolt for
+    Frozen Eclipse) spends Moonlight for a 75% flare, no Sunlight, 6 sec a target. Astral Rupture: a flare deals the
+    rupture's next tick at once and shortens it a tick. Steady Orbit stays "instant" (the dossier's "castable while
+    moving and 15% faster": the client has no cast-while-moving aura).
   - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
     30% of maximum health, 6 sec; Barkskin's cooldown 30 sec shorter, each Maul in Bear Form 3 sec more); Maul
     releases it (91342, a 10-yard cone): 75% AP plus all it absorbed (that part at most 250% AP).

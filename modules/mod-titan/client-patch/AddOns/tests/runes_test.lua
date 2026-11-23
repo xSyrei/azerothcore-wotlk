@@ -225,6 +225,21 @@ check(thunder.built and thunder.slots[3] == "Resonance" and #thunder.texts == 9
 local storm = EmberforgeRunesArt.runes[23]
 check(storm.built and storm.slots[2] == "Lightning Shield" and #storm.texts == 9 and #ById(23).mods == 9,
     "Art.lua has the Stormbound Conduit's slots (Arcs, Lightning Shield, Surge) and its words")
+-- Astral Convergence, the first rune with its Extended Options: 15 options (5 a slot), the old three first in each.
+local convergence, convergenceArt = ById(40), EmberforgeRunesArt.runes[40]
+check(#convergence.mods == 15 and #convergenceArt.texts == 15 and #convergenceArt.abilities == 15
+    and convergence.mods[1].name == "Perfect Alignment" and convergence.mods[4].name == "Flame Eclipse"
+    and convergence.mods[6].name == "Long Twilight" and convergence.mods[11].name == "Solar Return"
+    and convergence.mods[15].name == "Astral Ward", "Astral Convergence: its 15 Extended Options, by slot")
+for _, build in ipairs(convergence.builds) do
+    for _, mod in ipairs(build.mods) do
+        local found = false
+        for _, option in ipairs(convergence.mods) do
+            found = found or option.name == mod
+        end
+        check(found, "Astral Convergence: build " .. build.name .. " names a real modifier (" .. mod .. ")")
+    end
+end
 local paragon = EmberforgeRunesArt.runes[22]
 check(paragon.built and paragon.slots[1] == "Presence" and paragon.slots[3] == "Covenant" and #paragon.texts == 9,
     "Art.lua has the Sanctified Paragon's slots (Presence, Manifestation, Covenant) and its words")

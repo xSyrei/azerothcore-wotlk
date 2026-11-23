@@ -4,6 +4,27 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Astral Convergence: Extended Options
+
+- **Astral Convergence** is the first Legendary Rune with its **Extended Options**: each of its three slots now has
+  **five** choices (two rows in the build view). Your current picks keep their meaning.
+- **Its core now scales with spell power**: the collision deals **80% of your Arcane spell power** and the flare
+  **40% of your Nature spell power** (never less than your Starfire's own damage while your gear is light). The flare
+  now leaves **fresh Sunlight**, so the cycle keeps going.
+- **Ability interactions** (always on, with the ability):
+  - **Moonfire**: a collision on your Moonfire target also hits one other enemy within 8 yards for 40%.
+  - **Insect Swarm**: each flare on its target extends it by 2 sec, up to 6 sec per cast.
+  - **Lightning Bolt**: on Moonlight, it flares for 75% without leaving Sunlight, once every 6 sec per enemy.
+- **New choices**:
+  - Collision: **Flame Eclipse** (Flame Shock: a collision on your Flame Shock target adds 25% of your Fire spell
+    power) and **Frozen Eclipse** (Frostbolt: a hit on your Sunlight target makes the next collision 25% stronger).
+  - Alignment: **Tidal Flare** (Lightning Bolt: its flare also hits one other enemy for half) and **Twin Moons**
+    (Moonfire: a collision spreads your Moonfire to one other enemy within 8 yards, once every 8 sec).
+  - Flare: **Insect Renewal** (Insect Swarm: the next Wrath casts 15% faster) and **Astral Ward** (Barkskin: a flare
+    while it is up shields you for 40% of your spell power, once every 12 sec).
+- **Astral Rupture**: a flare on the rupture's target deals its next tick at once. **Eventide** now deals 10% of
+  your spell power each second.
+
 ### Cat and Bear Form
 
 - In **Cat Form** you can use your **Energy** abilities from every class (a Rogue's Sinister Strike, a Monk's

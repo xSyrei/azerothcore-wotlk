@@ -931,23 +931,33 @@ EmberforgeRunesCatalog = {
       role = "Ranged DPS (Druid, Balance)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_AstralConvergence",
-      keywords = "druid balance moonkin wrath starfire sun moon eclipse sunlight moonlight",
+      keywords = "druid balance moonkin wrath starfire sun moon eclipse sunlight moonlight moonfire insect swarm " ..
+          "lightning bolt flame shock frostbolt barkskin",
       slots = { "Collision", "Alignment", "Flare" },
       builtFrom = "Wrath",
       spentWith = "Starfire, then Wrath",
       resource = "Sunlight and Moonlight, 5 enemies",
-      core = "Wrath leaves Sunlight on its target for 8 sec. Starfire on it collides with it for 40% of that " ..
-          "Starfire's damage, and leaves Moonlight for 8 sec. Your next Wrath on it flares for 80% of that Wrath's " ..
-          "damage and ends the sequence (it leaves no new Sunlight). Up to 5 enemies carry your marks.",
-      loop = "Wrath, Starfire, Wrath on the same enemy; again.",
+      core = "Wrath leaves Sunlight on its target for 8 sec. Starfire on it collides with it for 80% of your " ..
+          "Arcane spell power, and leaves Moonlight for 8 sec. Your next Wrath on it flares for 40% of your Nature " ..
+          "spell power and leaves fresh Sunlight. Up to 5 enemies carry your marks. Moonfire: a collision on your " ..
+          "Moonfire target also hits one other enemy within 8 yards for 40% of it. Insect Swarm: each flare on its " ..
+          "target extends it by 2 sec, up to 6 sec per cast. Lightning Bolt: on Moonlight, it flares for 75% " ..
+          "without leaving Sunlight, once every 6 sec per enemy.",
+      loop = "Wrath, Starfire, Wrath on the same enemy: the last Wrath starts it again.",
       mods = {
         { name = "Perfect Alignment",
-          text = "The collision deals 40% more damage: 56% of the Starfire's damage." },
+          text = "The collision deals 40% more damage: 112% of your Arcane spell power." },
         { name = "Converging Skies",
           text = "The collision also hits up to 4 other enemies within 6 yards for half its damage." },
         { name = "Astral Rupture",
           text = "Instead of a hit, the collision ruptures its target for 150% of its damage over 6 sec. A new " ..
-              "rupture keeps what is left of the last." },
+              "rupture keeps what is left of the last. A flare on it deals its next tick at once, without adding " ..
+              "a tick." },
+        { name = "Flame Eclipse",
+          text = "A collision on your Flame Shock target also deals 25% of your Fire spell power as Fire damage." },
+        { name = "Frozen Eclipse",
+          text = "A Frostbolt hit on your Sunlight target makes your next collision deal 25% more damage, once " ..
+              "per Sunlight." },
         { name = "Long Twilight",
           text = "Your marks last 12 sec instead of 8. Each 2 sec Sunlight was on its target adds 5% to the " ..
               "collision, up to 20%." },
@@ -956,13 +966,23 @@ EmberforgeRunesCatalog = {
               "of its damage. Their marks stay." },
         { name = "Steady Orbit",
           text = "Each flare makes your next Wrath or Starfire within 5 sec instant." },
+        { name = "Tidal Flare",
+          text = "A flare from your Lightning Bolt also hits one other enemy within 8 yards for half its damage." },
+        { name = "Twin Moons",
+          text = "A collision on your Moonfire target spreads that Moonfire, for what is left of it, to one other " ..
+              "enemy within 8 yards, once every 8 sec." },
         { name = "Solar Return",
-          text = "The flare deals 60% more damage: 128% of the Wrath's damage." },
+          text = "The flare deals 60% more damage: 64% of your Nature spell power." },
         { name = "Lunar Dominance",
           text = "Each flare makes your next Starfire within 5 sec cast 20% faster and cost 20% less mana." },
         { name = "Eventide",
-          text = "Each flare leaves a field 6 yards wide for 4 sec: every second, a quarter of the flare's damage " ..
+          text = "Each flare leaves a field 6 yards wide for 4 sec: every second, 10% of your Arcane spell power " ..
               "to up to 5 enemies in it." },
+        { name = "Insect Renewal",
+          text = "A flare on your Insect Swarm target makes your next Wrath within 5 sec cast 15% faster." },
+        { name = "Astral Ward",
+          text = "A flare while Barkskin is up shields you for 40% of your spell power for 6 sec, once every " ..
+              "12 sec." },
       },
       builds = {
         { name = "The Eclipse", mods = { "Perfect Alignment", "Long Twilight", "Solar Return" },
@@ -971,6 +991,8 @@ EmberforgeRunesCatalog = {
           text = "Marks across the pack." },
         { name = "The Wanderer", mods = { "Astral Rupture", "Steady Orbit", "Eventide" },
           text = "Burns and fields, on the move." },
+        { name = "The Swarm", mods = { "Astral Rupture", "Twin Moons", "Insect Renewal" },
+          text = "Moonfire and Insect Swarm kept alive." },
       },
     },
     { id = 41,

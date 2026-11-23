@@ -1448,7 +1448,8 @@ for _spell in SPELLS:
         _spell['visual'] = _key
 
 # ---- Three druid runes (their own dossiers): Elune's Guardian 91300, Astral Convergence 91320, Ursoc's Champion
-# 91340; each one's markers 10 on from its first (+ slot * 3 + choice).
+# 91340; each one's markers 10 on from its first (+ slot * 3 + choice). Astral Convergence's are the Extended Options'
+# (91600 on, below); 91330-91338, its first nine, are retired.
 ELUNE_ICON, CONVERGENCE_ICON = 'Ability_Rune_ElunesGuardian', 'Ability_Rune_AstralConvergence'
 URSOC_ICON = 'Ability_Rune_UrsocsChampion'
 DRUID_FAMILY = 7
@@ -1487,8 +1488,8 @@ SPELLS += [
             'Your next Wrath on this target deals 25% more damage.', DURATION_5S, aura(AURA_DUMMY, 1, 0), ARCANE),
     # Astral Convergence.
     buff(91320, 'Rune of Astral Convergence', CONVERGENCE_ICON,
-         'Wrath leaves Sunlight; Starfire on it collides for 40% of its damage and leaves Moonlight; Wrath on that '
-         'flares for 80% of its damage.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'Wrath leaves Sunlight; Starfire on it collides for 80% of your spell power and leaves Moonlight; Wrath on '
+         'that flares for 40% and leaves Sunlight again.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     harmful(91321, 'Sunlight', 'Ability_Druid_EclipseOrange', 'Your Starfire on this target collides with it.',
             DURATION_8S, aura(AURA_DUMMY, 1, 0), NATURE),
     harmful(91322, 'Moonlight', 'Ability_Druid_Eclipse', 'Your Wrath on this target flares.', DURATION_8S,
@@ -1533,9 +1534,6 @@ DRUID_MODIFIERS = [
     (91310, ELUNE_ICON, [('Moonpiercer', 'Silver Wings', 'Watchful Flight'),
                          ('Swift Judgment', 'Patient Vigil', 'Moonlit Pursuit'),
                          ('Lunar Wound', 'Guiding Wings', 'Twilight Hunt')]),
-    (91330, CONVERGENCE_ICON, [('Perfect Alignment', 'Converging Skies', 'Astral Rupture'),
-                               ('Long Twilight', 'Crossed Horizons', 'Steady Orbit'),
-                               ('Solar Return', 'Lunar Dominance', 'Eventide')]),
     (91350, URSOC_ICON, [('Ancient Hide', 'Lasting Stand', 'Moving Mountain'),
                          ("Ursoc's Bite", "Mountain's Roar", 'Earthbreaker'),
                          ('Enduring Champion', "Challenger's Roar", 'Unbroken')]),
@@ -2018,3 +2016,29 @@ COVENANT_TINT = 0x6A5010A0                      # ARGB: Shadowform's own is 0x4A
 KIT_TINT = 21                                   # the kit's first character effect's first parameter: its colour
 VISUALS['CovenantBound'] = {'copy': 3619, 'id': 16808, 'kits': {
     'state': (15747, {KIT_TINT: COVENANT_TINT, KIT_CHEST: FX_SHADOW_DANCE})}}
+
+# ---- The Extended Options (5 choices a slot): 20 ids a rune from 91600, its 15 markers (+ slot * 5 + choice) and
+# then its new spells.
+EXTENDED_MODIFIERS = [
+    (91600, CONVERGENCE_ICON, [('Perfect Alignment', 'Converging Skies', 'Astral Rupture', 'Flame Eclipse',
+                                'Frozen Eclipse'),
+                               ('Long Twilight', 'Crossed Horizons', 'Steady Orbit', 'Tidal Flare', 'Twin Moons'),
+                               ('Solar Return', 'Lunar Dominance', 'Eventide', 'Insect Renewal', 'Astral Ward')]),
+]
+SPELLS += [buff(first + slot * 5 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
+                hidden=True)
+           for first, icon, modifiers in EXTENDED_MODIFIERS
+           for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
+SPELLS += [
+    # Astral Convergence.
+    strike(91615, 'Flame Eclipse', 'Spell_Fire_FlameShock', FIRE, VISUAL_FIRE_BLAST),
+    buff(91616, 'Frozen Eclipse', 'Spell_Frost_FrostBolt02', 'Your next Lunar Collision deals 25% more damage.',
+         DURATION_12S, {1: aura(AURA_DUMMY, 1, 0)}),
+    druid_mod(91617, 'Insect Renewal', 'Spell_Nature_InsectSwarm', 'Your next Wrath casts 15% faster.', DURATION_5S,
+              WRATH_FLAG, [(SPELLMOD_CASTING_TIME, 15)], charges=1),
+    absorb(91618, 'Astral Ward', 'Spell_Nature_StoneClawTotem', DURATION_6S),
+]
+for _spell in SPELLS:
+    if _spell['id'] == 91615:
+        _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
+ICONS += ['Spell_Nature_InsectSwarm']

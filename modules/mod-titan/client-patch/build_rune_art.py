@@ -967,46 +967,66 @@ BUILT = {
         ],
     },
     40: {
-        'core': '**Wrath** leaves **Sunlight**; **Starfire** on it collides for **40%** of its damage and leaves '
-            '**Moonlight**; **Wrath** on that flares for **80%**.',
+        'core': '**Wrath** leaves **Sunlight**; **Starfire** on it collides for **80%** of your spell power and '
+            'leaves **Moonlight**; **Wrath** on that flares for **40%** and leaves Sunlight again.',
         'slots': ['Collision', 'Alignment', 'Flare'],
         'asks': ['How the energies collide', 'How the marks align', 'How the sequence ends'],
         'texts': [
-            "The collision deals 40% more damage: 56% of the Starfire's damage.",
+            'The collision deals 40% more damage: 112% of your Arcane spell power.',
             'The collision also hits up to 4 other enemies within 6 yards for half its damage.',
             'Instead of a hit, the collision ruptures its target for 150% of its damage over 6 sec. A new rupture '
-            'keeps what is left of the last.',
+            'keeps what is left of the last. A flare on it deals its next tick at once, without adding a tick.',
+            'A collision on your Flame Shock target also deals 25% of your Fire spell power as Fire damage.',
+            'A Frostbolt hit on your Sunlight target makes your next collision deal 25% more damage, once per '
+            'Sunlight.',
             'Your marks last 12 sec instead of 8. Each 2 sec Sunlight was on its target adds 5% to the collision, up '
             'to 20%.',
             'A collision also strikes up to 3 other enemies within 12 yards that carry your Moonlight, for 35% of its '
             'damage. Their marks stay.',
             'Each flare makes your next Wrath or Starfire within 5 sec instant.',
-            "The flare deals 60% more damage: 128% of the Wrath's damage.",
+            'A flare from your Lightning Bolt also hits one other enemy within 8 yards for half its damage.',
+            'A collision on your Moonfire target spreads that Moonfire, for what is left of it, to one other enemy '
+            'within 8 yards, once every 8 sec.',
+            'The flare deals 60% more damage: 64% of your Nature spell power.',
             'Each flare makes your next Starfire within 5 sec cast 20% faster and cost 20% less mana.',
-            "Each flare leaves a field 6 yards wide for 4 sec: every second, a quarter of the flare's damage to up to "
+            'Each flare leaves a field 6 yards wide for 4 sec: every second, 10% of your Arcane spell power to up to '
             '5 enemies in it.',
+            'A flare on your Insect Swarm target makes your next Wrath within 5 sec cast 15% faster.',
+            'A flare while Barkskin is up shields you for 40% of your spell power for 6 sec, once every 12 sec.',
         ],
         'abilities': [
             'Align',
             'Skies',
             'Rupture',
+            'Flame Shock',
+            'Frostbolt',
             'Twilight',
             'Crossed',
             'Orbit',
+            'Lightning Bolt',
+            'Moonfire',
             'Return',
             'Dominance',
             'Eventide',
+            'Insect Swarm',
+            'Barkskin',
         ],
         'icons': [
             'M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3',
             'M5 5h.01M19 5h.01M12 12h.01M5 19h.01M19 19h.01M5 5l7 7 7-7M5 19l7-7 7 7',
             'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11ZM12 21v-6',
+            'M12 2v20M4 7l16 10M20 7 4 17',
             'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
             'M2 12h20M16 7l5 5-5 5',
             'M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0M12 3a9 9 0 0 1 9 9',
+            'M13 2 4 14h7l-1 8 9-12h-7Z',
+            'M9 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9ZM18 4a4 4 0 1 0 2 6',
             'M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0-8 0M12 2v3M12 19v3M2 12h3M19 12h3',
             'M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z',
             'M3 17c3-3 6-3 9 0s6 3 9 0M12 4v8',
+            'M6 8h.01M12 5h.01M18 8h.01M8 14h.01M16 14h.01M12 19h.01',
+            'M12 3 4 6v6c0 5 4 8 8 9 4-1 8-4 8-9V6Z',
         ],
     },
     41: {
