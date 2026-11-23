@@ -197,13 +197,14 @@ check(#EmberforgeRunesCatalog == 28 and EmberforgeRunesCatalog[1].id == 21 and n
 for _, rune in ipairs(EmberforgeRunesCatalog) do
     check(EmberforgeRunesArt.runes[rune.id] and EmberforgeRunesArt.runes[rune.id].built, "built: " .. rune.name)
 end
--- The five after them: each built, with its three slots, nine options and three builds.
+-- The five after them: each built, with its three slots, nine options (15 extended) and three builds.
 for id, name in pairs({ [27] = "Rune of the Threefold Grave", [28] = "Rune of the Unbroken Onslaught",
     [29] = "Rune of the Dawnbound Crusader", [30] = "Rune of the Hollow Congregation",
     [31] = "Rune of the Shattered Sun", [32] = "Rune of the Spectral Blade", [33] = "Rune of the Wild Hunt" }) do
     local entry, rune = EmberforgeRunesArt.runes[id], ById(id)
-    check(rune.name == name and entry.built and #entry.slots == 3 and #entry.texts == 9 and #rune.mods == 9
-        and #rune.builds == 3, "built with its words: " .. name)
+    local options = #rune.mods == 15 and 15 or 9          -- 15: its Extended Options
+    check(rune.name == name and entry.built and #entry.slots == 3 and #entry.texts == options
+        and (#rune.mods == 9 or #rune.mods == 15) and #rune.builds == 3, "built with its words: " .. name)
     for _, build in ipairs(rune.builds) do
         for _, mod in ipairs(build.mods) do
             local found = false
@@ -237,7 +238,10 @@ for id, firsts in pairs({ [34] = { "Accelerated Thought", "Focused Intention", "
     [36] = { "Sun Talon", "Homeward Flame", "Scorched Earth" },
     [37] = { "Wandering Star", "Astral Focus", "Supernova" },
     [38] = { "Steady Light", "Gentle Passage", "Final Benediction" },
-    [40] = { "Perfect Alignment", "Long Twilight", "Solar Return" } }) do
+    [40] = { "Perfect Alignment", "Long Twilight", "Solar Return" },
+    [30] = { "Following Shadows", "Unison", "Last Word" },
+    [32] = { "Executioner", "Fatal Opening", "Death Follows" },
+    [39] = { "Moonpiercer", "Swift Judgment", "Lunar Wound" } }) do
     local rune, entry = ById(id), EmberforgeRunesArt.runes[id]
     check(#rune.mods == 15 and #entry.texts == 15 and #entry.abilities == 15 and rune.mods[1].name == firsts[1]
         and rune.mods[6].name == firsts[2] and rune.mods[11].name == firsts[3],

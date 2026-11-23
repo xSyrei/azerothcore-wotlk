@@ -4,6 +4,34 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Extended Options: Spectral Blade, Elune's Guardian, Hollow Congregation
+
+- Three more Legendary Runes get their **Extended Options**: five choices in each slot.
+- **Spectral Blade**
+  - **Backstab** marks its target for 6 sec: your phantom spends the mark for 25% more damage (**Marked for Murder**
+    now raises that to 40%). After the phantom strikes, your next **Sinister Strike** costs 10 less Energy. On your
+    **Shadow Word: Pain** target, the phantom leaves Phantom Wound.
+  - Quick Death is now **Fatal Opening** (it also makes your next builder 10 Energy cheaper); Patient Killer is now
+    **Perfect Ambush**.
+  - New choices: **Frost Phantom** (Icy Touch), **Flame Phantom** (Flame Shock), **Marked Execution** (Hunter's
+    Mark), **Corrupted Blade** (Corruption), **Restoring Phantom** (Renew), **Bleeding Follow-Through** (Rend).
+- **Elune's Guardian**
+  - Owls dive for **37.5%** of the Starfire's damage (was 30%) and lay **Moonlit Prey**: your **Wrath** on it calls
+    the owl back for a Nature strike. Dives extend your **Moonfire**, and deal 20% more to your **Hunter's Mark**
+    target.
+  - Watchful Flight is now **Lunar Flock**. **Twilight Hunt** now comes from the return strike.
+  - New choices: **Sentinel of the Hunt**, **Frostfeather**, **Lunar Guidance** (replaces Moonlit Pursuit: if you had
+    it, choose again), **Command the Hunt**, **Sun and Moon**, **Hunter's Pursuit**, **Winter's Blessing**.
+- **Hollow Congregation** (redesigned)
+  - Echoes deal 5% more for each of your damage over time effects on their target (up to 5). A barrage ending on
+    your **Shadow Word: Pain** target leaves a patch; one bolt of each barrage also strikes another of your
+    **Corruption** targets.
+  - New first slot (where the echoes stand): **Following Shadows**, **Haunted Ground**, **Possession**, **Plague
+    Sermon**, **Moonlit Congregation**. New third slot: **Last Word**, **Procession**, **Silent Witness**, **Feeding
+    the Void**, **Renewed Witness**. The middle slot gains **Devouring Command** and **Frostbound Sermon**.
+  - Gathering, Lasting Echoes, Fervor, Shadow Mend and Swift Command are gone: **your first and third picks for this
+    rune are cleared**, choose again.
+
 ### Fixes
 
 - **Phoenix Wake's phoenix** was a totem: it now flies as the phoenix again. (The Primal Worldwarden's totem had taken

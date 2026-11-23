@@ -660,6 +660,26 @@ utility or a tradeoff) take one pick each, from three.
       (its summon lives 2 sec longer to allow it), Astral Shelter 91663.
     - Guiding Light: the Renew trail 91710 (every 2 sec), Greater Heal's ward 91711, Earth Shield arrival heal.
       Earthen Star, Moonlit Star, Chain Guidance, Holy Passage, Tidal Farewell, Renewed Farewell.
+  - **Extended Options, Spectral Blade, Elune's Guardian, Hollow Congregation**: markers 91720 (Blade), 91745
+    (Elune), 91770 (Hollow), new spells after each block (Blade 91735-91744, Elune 91760-91764, Hollow 91785-91788;
+    Renewed Witness reuses Shadow Mend's heal 90926). Picks whose options left are cleared once by
+    `db-characters/titan_runes_zz_extended_reset.sql` (Hollow's Congregation and Command slots; Elune's Moonlit
+    Pursuit). The helpers they share with the later sections are declared before the Hollow section.
+    - Spectral Blade: Backstab marks (6 sec; `spell_titan_rune_marked_strike` now only marks), the phantom spends it
+      for 25% (Marked for Murder 40%); after the phantom, Phantom Opening 91742 (Sinister Strike -10 Energy) and,
+      with Fatal Opening (was Quick Death), 91743 (builders -10: Sinister Strike, Backstab, Hemorrhage, Ghostly
+      Strike); Phantom Wound 91735 on a Shadow Word: Pain target (`PhantomAftermath`). Patient Killer is Perfect
+      Ambush.
+    - Elune's Guardian: owls 37.5% of the Starfire (was 30%); the first strike lays Moonlit Prey 91760, which a
+      Wrath spends for the return strike 91761 (`OwlReturn`; Twilight Hunt now from it); Moonfire 2 sec longer;
+      Hunter's Mark 20% more. Watchful Flight is Lunar Flock; Moonlit Pursuit gave way to Lunar Guidance. Sentinel
+      (`SentinelAttack`, a generation number ends the last), Frostfeather (`Feathers`: an enemy's owls and bursts),
+      Command the Hunt and Hunter's Pursuit (`OwlShot`), Winter's Blessing (Moonfrost 91763, `OwlFrostboltDamage`).
+    - Hollow Congregation (a redesign): 5% more an echo tick for each distinct damage over time of the Hero's on its
+      target (5 at most); Shadow Word: Pain patch 91785-91786 at a barrage's end (`BarrageDone`), Corruption split on
+      the first bolt (`HollowBolt`). Gathering, Lasting Echoes, Fervor, Shadow Mend and Swift Command are gone; Last
+      Word moved to Command. Haunted Ground stays put (50 yards), Possession follows its target (one an enemy: the
+      echo AI's GetGUID); Devouring Command and Frostbound Sermon (`HollowStrike`).
   - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
     30% of maximum health, 6 sec; Barkskin's cooldown 30 sec shorter, each Maul in Bear Form 3 sec more); Maul
     releases it (91342, a 10-yard cone): 75% AP plus all it absorbed (that part at most 250% AP).

@@ -238,8 +238,8 @@ namespace
         SPELL_HOLLOW_BOLT               = 90923,
         SPELL_HOLLOW_SCREAM             = 90924,
         SPELL_HOLLOW_LAST_WORD          = 90925,
-        SPELL_HOLLOW_MEND               = 90926,    // Shadow Mend's heal
-        SPELL_HOLLOW_MODIFIER_FIRST     = 90940,    // + slot * 3 + choice
+        SPELL_HOLLOW_MEND               = 90926,    // Renewed Witness's heal (Shadow Mend's, retired)
+        // 90940-90948: its first 9 markers, retired (the Extended Options' block, below)
 
         SPELL_RUNE_SHATTERED_SUN        = 90950,
         SPELL_SUNSHARD                  = 90951,
@@ -260,7 +260,7 @@ namespace
         SPELL_PHANTOM_RUSH              = 90987,    // Energy regenerating twice as fast, 4 sec
         SPELL_PHANTOM_FORM              = 90988,    // on the phantom: Shadow Dance's wisps, a shadow at its feet
         SPELL_PHANTOM_VANISH            = 90989,    // the phantom arriving and leaving: Vanish's puff
-        SPELL_BLADE_MODIFIER_FIRST      = 91120,    // + slot * 3 + choice
+        // 91120-91128: its first 9 markers, retired (the Extended Options' block, below)
 
         SPELL_RUNE_WILD_HUNT            = 91130,
         SPELL_SPECTRAL_BEAST            = 91131,    // on the beast: its look, no threat
@@ -338,7 +338,7 @@ namespace
         SPELL_GUIDING_WINGS             = 91306,    // the next Starfire instant
         SPELL_GUIDING_WINGS_SPEED       = 91307,
         SPELL_TWILIGHT_HUNT             = 91308,    // on the owl's victim: the next Wrath 25% more
-        SPELL_OWL_MODIFIER_FIRST        = 91310,    // + slot * 3 + choice
+        // 91310-91318: its first 9 markers, retired (the Extended Options' block, below)
 
         SPELL_RUNE_ASTRAL_CONVERGENCE   = 91320,
         SPELL_SUNLIGHT                  = 91321,
@@ -393,6 +393,28 @@ namespace
         SPELL_GUIDING_MODIFIER_FIRST    = 91695,
         SPELL_GUIDING_TRAIL             = 91710,    // the heal over time the star leaves on a Renew target
         SPELL_GUIDING_WARD              = 91711,    // Greater Heal's redirect: the absorb
+        SPELL_BLADE_MODIFIER_FIRST      = 91720,
+        SPELL_PHANTOM_WOUND             = 91735,    // its tick 91736
+        SPELL_PHANTOM_WOUND_TICK        = 91736,
+        SPELL_FROST_PHANTOM             = 91737,
+        SPELL_FLAME_PHANTOM             = 91738,
+        SPELL_CORRUPTED_BLADE           = 91739,    // its tick 91740
+        SPELL_CORRUPTED_BLADE_TICK      = 91740,
+        SPELL_RESTORING_PHANTOM         = 91741,
+        SPELL_PHANTOM_OPENING           = 91742,    // the next Sinister Strike 10 Energy cheaper
+        SPELL_FATAL_OPENING             = 91743,    // the next builder 10 Energy cheaper
+        SPELL_BLEEDING_FOLLOW           = 91744,    // the next Sinister Strike 20% more
+        SPELL_OWL_MODIFIER_FIRST        = 91745,
+        SPELL_MOONLIT_PREY              = 91760,
+        SPELL_OWL_RETURN                = 91761,
+        SPELL_FROSTFEATHER              = 91762,    // the dive's Frost half, and the burst
+        SPELL_MOONFROST                 = 91763,
+        SPELL_EXPOSED_PREY              = 91764,
+        SPELL_HOLLOW_MODIFIER_FIRST     = 91770,
+        SPELL_HOLLOW_PATCH              = 91785,    // its tick 91786
+        SPELL_HOLLOW_PATCH_TICK         = 91786,
+        SPELL_MOONLIT_CONGREGATION      = 91787,
+        SPELL_DEVOURING_COMMAND         = 91788,
 
         // The Duelist (91370 on: its taught abilities first) and the Stormreaver (91400 on); their markers 10 on
         // from each rune.
@@ -506,6 +528,13 @@ namespace
         SPELL_POWER_WORD_SHIELD     = 17,
         SPELL_RENEW                 = 139,
         SPELL_RIPTIDE               = 61295,
+        SPELL_HUNTERS_MARK          = 1130,
+        SPELL_CORRUPTION            = 172,
+        SPELL_REND                  = 772,
+        SPELL_FROST_FEVER           = 55095,
+        SPELL_AIMED_SHOT            = 19434,
+        SPELL_STEADY_SHOT           = 56641,
+        SPELL_DRAIN_SOUL            = 1120,
         SPELL_MAUL                  = 6807,
         SPELL_BEAR_FORM             = 5487,
         SPELL_DIRE_BEAR_FORM        = 9634,
@@ -724,24 +753,42 @@ namespace
     constexpr int32 SWIFT_DAWN_MS = 500, RADIANT_MS = 8000;
     constexpr std::size_t DAWN_TARGETS = 5;
 
-    // The Hollow Congregation's modifiers: slot (0 Congregation, 1 Sermon, 2 Command) x 3 + choice.
+    // The Hollow Congregation's modifiers (its Extended Options, a redesign): slot (0 Congregation, 1 Sermon, 2
+    // Command) x 5 + choice. The Sermon's first three are the ones it had; the other two slots are new (their picks
+    // reset: titan_runes_zz_extended_reset.sql).
     enum HollowModifier : uint8
     {
-        MOD_GATHERING, MOD_LASTING_ECHOES, MOD_LAST_WORD,
-        MOD_UNISON, MOD_DISSONANCE, MOD_ACCUSATION,
-        MOD_FERVOR, MOD_SHADOW_MEND, MOD_SWIFT_COMMAND,
+        MOD_FOLLOWING_SHADOWS, MOD_HAUNTED_GROUND, MOD_POSSESSION, MOD_PLAGUE_SERMON, MOD_MOONLIT_CONGREGATION,
+        MOD_UNISON, MOD_DISSONANCE, MOD_ACCUSATION, MOD_DEVOURING_COMMAND, MOD_FROSTBOUND_SERMON,
+        MOD_LAST_WORD, MOD_PROCESSION, MOD_SILENT_WITNESS, MOD_FEEDING_THE_VOID, MOD_RENEWED_WITNESS,
     };
 
     // The Hollow Congregation's tuning: an echo's channel ticks for 40% of the Hero's Mind Flay tick; a barrage is 3
     // bolts each, 0.4 sec apart, 60% of a tick each.
-    constexpr uint32 HOLLOW_ECHO_MS = 10000, LASTING_ECHO_MS = 15000, BARRAGE_SPACING_MS = 400;
-    constexpr std::size_t MAX_HOLLOW_ECHOES = 3, GATHERING_ECHOES = 4;
+    constexpr uint32 HOLLOW_ECHO_MS = 10000, BARRAGE_SPACING_MS = 400;
+    constexpr std::size_t MAX_HOLLOW_ECHOES = 3;
     constexpr uint32 BARRAGE_BOLTS = 3;
     constexpr float HOLLOW_SHARE = 0.4f, BARRAGE_SHARE = 0.6f, UNISON_BARRAGE = 1.2f, SCREAM_SHARE = 1.5f;
     constexpr float HOLLOW_RANGE = 40.0f, SCREAM_WIDTH = 2.0f;
-    constexpr float LAST_WORD_TICKS = 3.0f, FERVOR = 1.25f, MEND_SHARE = 0.1f, FLAY_CHANNEL_TICKS = 3.0f;
-    constexpr int32 SWIFT_COMMAND_MS = 500;
+    constexpr float LAST_WORD_TICKS = 3.0f;
     constexpr std::size_t SCREAM_TARGETS = 5;
+    // The Extended Options: each distinct damage over time of the Hero's on an echo's target, 5% more (5 at most).
+    // Its interactions: a barrage ending on their Shadow Word: Pain target leaves a patch, 10% of spell power a
+    // second to up to 3 enemies for 3 sec (renewed); one barrage bolt of each echo also strikes another of their
+    // Corruption targets within 8 yards for half. New options: Following Shadows 15% more (the echoes follow the
+    // Hero), Haunted Ground 20% more and 10 yards farther (they stay), Possession 20% more (they follow their target,
+    // one an enemy), Plague Sermon (barrage bolts on their Corruption target 20% more), Moonlit Congregation (a
+    // channel on their Moonfire target: 10% of spell power as Arcane), Devouring Command (Shadow Bolt: an echo to its
+    // target, a 30% hit, 8 sec apart), Frostbound Sermon (Frostbolt on an echo's target: its next barrage strikes one
+    // more within 8 yards for half), Procession (Mind Blast: the echoes beside its target, the first bolt 30% more),
+    // Silent Witness (the Hero moving: 25% more), Feeding the Void (their Drain Soul on the target: 20% more),
+    // Renewed Witness (a barrage done in their Renew: 30% of spell power healed, 8 sec apart).
+    constexpr uint32 PATCH_MS = 3000, PATCH_TICK_MS = 1000, DEVOURING_EVERY_MS = 8000, WITNESS_EVERY_MS = 8000;
+    constexpr float DOT_STEP = 0.05f, PATCH_POWER = 0.1f, CORRUPTION_SHARE = 0.5f, SPLIT_RANGE_HOLLOW = 8.0f;
+    constexpr float FOLLOWING = 1.15f, HAUNTED = 1.2f, HAUNTED_RANGE = 10.0f, POSSESSION = 1.2f, PLAGUE_SERMON = 1.2f;
+    constexpr float MOONLIT_POWER = 0.1f, DEVOURING_POWER = 0.3f, FROSTBOUND_SHARE = 0.5f, PROCESSION = 1.3f;
+    constexpr float SILENT_WITNESS = 1.25f, FEEDING = 1.2f, WITNESS_POWER = 0.3f, PATCH_RADIUS = 6.0f;
+    constexpr std::size_t MAX_DOTS = 5, PATCH_TARGETS = 3;
 
     // The Shattered Sun's modifiers: slot (0 Formation, 1 Fracture, 2 Collapse) x 3 + choice.
     enum SunModifier : uint8
@@ -762,12 +809,14 @@ namespace
     constexpr float IMPLOSION = 1.4f, SCALDING_RADIUS = 6.0f, SCALDING_SHARE = 0.15f, SUNRISE_SHARE = 0.4f;
     constexpr uint32 SCALDING_MS = 4000, SUNRISE_DELAY_MS = 2000;
 
-    // The Spectral Blade's modifiers: slot (0 Execution Style, 1 Timing, 2 Aftermath) x 3 + choice.
+    // The Spectral Blade's modifiers (its Extended Options): slot (0 Execution Style, 1 Timing, 2 Aftermath) x 5 +
+    // choice; each slot's first three are the ones it had (Quick Death is Fatal Opening now, Patient Killer Perfect
+    // Ambush; Marked for Murder raises the Backstab mark).
     enum BladeModifier : uint8
     {
-        MOD_EXECUTIONER, MOD_THOUSAND_CUTS, MOD_SHADOW_CLEAVE,
-        MOD_QUICK_DEATH, MOD_PATIENT_KILLER, MOD_OPEN_WOUND,
-        MOD_DEATH_FOLLOWS, MOD_VANISHING_ACT, MOD_MARKED_FOR_MURDER,
+        MOD_EXECUTIONER, MOD_THOUSAND_CUTS, MOD_SHADOW_CLEAVE, MOD_FROST_PHANTOM, MOD_FLAME_PHANTOM,
+        MOD_FATAL_OPENING, MOD_PERFECT_AMBUSH, MOD_OPEN_WOUND, MOD_MARKED_EXECUTION, MOD_CORRUPTED_BLADE,
+        MOD_DEATH_FOLLOWS, MOD_VANISHING_ACT, MOD_MARKED_FOR_MURDER, MOD_RESTORING_PHANTOM, MOD_BLEEDING_FOLLOW,
     };
 
     // The Spectral Blade's tuning: Eviscerate's phantom strikes for twice its damage, 0.6 sec later; it cannot crit
@@ -775,12 +824,25 @@ namespace
     // fast for 4 sec (its own spell data).
     constexpr uint32 PHANTOM_RUSH_MS = 4000;
     constexpr float PHANTOM_SHARE = 2.0f, EXECUTIONER = 1.4f, THOUSAND_CUTS = 1.15f, CLEAVE_SHARE = 0.5f;
-    constexpr float PATIENT_KILLER = 1.4f, OPEN_WOUND = 1.2f, MARKED_BONUS = 1.3f;
+    constexpr float PATIENT_KILLER = 1.4f, OPEN_WOUND = 1.2f;
     constexpr float CLEAVE_RADIUS = 8.0f, FOLLOW_RANGE = 10.0f;
     constexpr uint32 PHANTOM_DELAY_MS = 600, QUICK_DEATH_MS = 100, PATIENT_KILLER_MS = 2000, CUT_SPACING_MS = 200;
     constexpr uint32 CUTS = 3;
-    constexpr int32 OPEN_WOUND_MS = 4000, OPEN_WOUND_TICKS = 4, VANISHING_ACT_MS = 3000, MARKED_MS = 10000;
+    constexpr int32 OPEN_WOUND_MS = 4000, OPEN_WOUND_TICKS = 4, VANISHING_ACT_MS = 3000;
     constexpr std::size_t CLEAVE_TARGETS = 3;
+    // Its interactions: a Backstab hit marks its target for 6 sec, the phantom spending it for 25% more (Marked for
+    // Murder 40%); the phantom's hit makes the next Sinister Strike 10 Energy cheaper (6 sec); on the Hero's Shadow
+    // Word: Pain target, Phantom Wound: 20% of it over 6 sec. New options: Frost Phantom (their Frost Fever target:
+    // 20% of attack power as Frost), Flame Phantom (their Flame Shock target: 20% of spell power as Fire), Fatal
+    // Opening also the next builder 10 Energy cheaper, Marked Execution (their Hunter's Mark target: one more within
+    // 8 yards for half), Corrupted Blade (their Corruption target: 25% of it as Shadow over 6 sec), Restoring Phantom
+    // (in their Renew: 30% of spell power healed, 10 sec apart), Bleeding Follow-Through (their Rend target: the
+    // next Sinister Strike 20% more, 6 sec).
+    constexpr int32 BACKSTAB_MARK_MS = 6000, PHANTOM_DOT_MS = 6000;
+    constexpr uint32 RESTORING_EVERY_MS = 10000;
+    constexpr float BACKSTAB_MARK = 1.25f, MARKED_FOR_MURDER = 1.4f, PHANTOM_WOUND_SHARE = 0.2f, FROST_PHANTOM = 0.2f;
+    constexpr float FLAME_PHANTOM = 0.2f, MARKED_EXECUTION = 0.5f, MARKED_EXECUTION_RANGE = 8.0f;
+    constexpr float CORRUPTED_SHARE = 0.25f, RESTORING_POWER = 0.3f;
 
     // The Wild Hunt's modifiers: slot (0 Spectral Beast, 1 Hunting Behavior, 2 Final Attack) x 3 + choice.
     enum HuntModifier : uint8
@@ -974,24 +1036,46 @@ namespace
     constexpr float EARTHEN_SHARE = 0.625f, TIDAL_FAREWELL_SHARE = 1.5f, RENEWED_FAREWELL_SHARE = 0.75f;
     constexpr float EARTH_RANGE = 10.0f;
 
-    // Elune's Guardian's modifiers: slot (0 Guardian, 1 Descent, 2 Blessing) x 3 + choice.
+    // Elune's Guardian's modifiers (its Extended Options): slot (0 Guardian, 1 Descent, 2 Blessing) x 5 + choice;
+    // each slot's first three are the ones it had (Watchful Flight is Lunar Flock now; Moonlit Pursuit gave way to
+    // Lunar Guidance, its picks reset; Twilight Hunt comes from the return strike).
     enum OwlModifier : uint8
     {
-        MOD_MOONPIERCER, MOD_SILVER_WINGS, MOD_WATCHFUL_FLIGHT,
-        MOD_SWIFT_JUDGMENT, MOD_PATIENT_VIGIL, MOD_MOONLIT_PURSUIT,
-        MOD_LUNAR_WOUND, MOD_GUIDING_WINGS, MOD_TWILIGHT_HUNT,
+        MOD_MOONPIERCER, MOD_SILVER_WINGS, MOD_LUNAR_FLOCK, MOD_SENTINEL, MOD_FROSTFEATHER,
+        MOD_SWIFT_JUDGMENT, MOD_PATIENT_VIGIL, MOD_LUNAR_GUIDANCE, MOD_COMMAND_THE_HUNT, MOD_SUN_AND_MOON,
+        MOD_LUNAR_WOUND, MOD_GUIDING_WINGS, MOD_TWILIGHT_HUNT, MOD_HUNTERS_PURSUIT, MOD_WINTERS_BLESSING,
     };
 
     // Elune's Guardian's tuning: a direct Starfire hit calls a lunar owl (3 waiting at most) that dives 1 sec later
-    // for 30% of that Starfire's damage (the dossier's 30% spell power: Starfire's own share of it).
+    // for 37.5% of that Starfire's damage (the Extended Options' 37.5% spell power, 25% over the first 30%).
     constexpr uint8 MAX_OWLS = 3, GUIDING_EVERY = 3;
     constexpr uint32 OWL_DELAY_MS = 1000, SWIFT_DELAY_MS = 100, VIGIL_DELAY_MS = 3000, WATCHFUL_SPACING_MS = 1000;
-    constexpr uint32 WATCHFUL_ATTACKS = 3, PURSUIT_SECOND_MS = 1000;
-    constexpr float OWL_SHARE = 0.3f, MOONPIERCER = 1.4f, SILVER_WINGS_SHARE = 0.5f, WATCHFUL_SHARE = 0.4f;
-    constexpr float PATIENT_VIGIL = 1.3f, PURSUIT_SHARE = 0.2f, LUNAR_WOUND_SHARE = 1.0f, TWILIGHT_HUNT = 1.25f;
-    constexpr float SILVER_WINGS_RADIUS = 6.0f, PURSUIT_RANGE = 15.0f;
+    constexpr uint32 WATCHFUL_ATTACKS = 3;
+    constexpr float OWL_SHARE = 0.375f, MOONPIERCER = 1.4f, SILVER_WINGS_SHARE = 0.5f, WATCHFUL_SHARE = 0.4f;
+    constexpr float PATIENT_VIGIL = 1.3f, LUNAR_WOUND_SHARE = 1.0f, TWILIGHT_HUNT = 1.25f;
+    constexpr float SILVER_WINGS_RADIUS = 6.0f;
     constexpr int32 LUNAR_WOUND_MS = 6000, TWILIGHT_HUNT_MS = 5000;
     constexpr std::size_t SILVER_WINGS_TARGETS = 4;
+    // Its interactions: the dive leaves Moonlit Prey (8 sec); a direct Wrath on it calls the owl back through it,
+    // 20% of spell power as Nature (the return strike); a dive on the Hero's Moonfire target, the Moonfire 2 sec
+    // longer (6 sec an application); on their Hunter's Mark target, 20% more, and the return strike also at one more
+    // within 8 yards for half. New options: Sentinel of the Hunt (an owl on their Hunter's Mark target at once, at 3
+    // and at 6 sec, 45% each, a new one replacing it), Frostfeather (half the dive as Frost; a Frostbolt on an owl's
+    // victim before it dives, a burst of 25% of spell power on it and 2 more within 6 yards), Lunar Guidance (on
+    // their Moonfire target 15% more, 4 sec longer, 8 at most), Command the Hunt (Arcane Shot or Aimed Shot on the
+    // marked target with an owl out: 25% of spell power, 6 sec apart), Sun and Moon (the return strike also 15% to
+    // up to 4 within 6 yards), Hunter's Pursuit (an owl on the marked target lays Exposed Prey, 4 sec apart; Arcane,
+    // Aimed or Steady Shot spends it for 25% of spell power), Winter's Blessing (a dive on their Frostbolt's slow
+    // lays Moonfrost: the next Frostbolt there 20% more, and their Moonfire 2 sec longer).
+    constexpr int32 MOONLIT_PREY_MS = 8000, OWL_MOONFIRE_MS = 2000, OWL_MOONFIRE_MOST_MS = 6000, GUIDANCE_MS = 4000;
+    constexpr int32 GUIDANCE_MOST_MS = 8000, EXPOSED_MS = 6000, MOONFROST_MS = 6000;
+    constexpr uint32 SENTINEL_EVERY_MS = 3000, SENTINEL_ATTACKS = 3, COMMAND_EVERY_MS = 6000;
+    constexpr uint32 EXPOSED_EVERY_MS = 4000;
+    constexpr float RETURN_POWER = 0.2f, MARKED_OWL = 1.2f, RETURN_SPLIT = 0.5f, RETURN_RANGE = 8.0f;
+    constexpr float SENTINEL_SHARE = 0.45f, FEATHER_POWER = 0.25f, FEATHER_RADIUS = 6.0f, GUIDANCE = 1.15f;
+    constexpr float COMMAND_POWER = 0.25f, SUN_AND_MOON_POWER = 0.15f, SUN_AND_MOON_RADIUS = 6.0f;
+    constexpr float EXPOSED_POWER = 0.25f, MOONFROST = 1.2f, MARK_SEARCH = 60.0f;
+    constexpr std::size_t FEATHER_TARGETS = 2, SUN_AND_MOON_TARGETS = 4;
 
     // Astral Convergence's modifiers (its Extended Options): slot (0 Collision, 1 Alignment, 2 Flare) x 5 + choice;
     // each slot's first three are the ones it had, so earlier picks keep their meaning.
@@ -1263,7 +1347,7 @@ namespace
             // Ranged DPS: Mind Flay leaves the echoes, Mind Blast commands them.
             { RUNE_HOLLOW_CONGREGATION, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_MIND_FLAY }, { SPELL_MIND_BLAST } }, SPELL_RUNE_HOLLOW_CONGREGATION,
-              SPELL_HOLLOW_MODIFIER_FIRST },
+              SPELL_HOLLOW_MODIFIER_FIRST, MAX_CHOICES },
             // Ranged DPS: a fire spell embeds and collapses, a frost spell fractures.
             { RUNE_SHATTERED_SUN, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_FIREBALL, SPELL_PYROBLAST, SPELL_FIRE_BLAST, SPELL_SCORCH },
@@ -1271,7 +1355,7 @@ namespace
               SPELL_SUN_MODIFIER_FIRST },
             // Melee DPS: Eviscerate's phantom.
             { RUNE_SPECTRAL_BLADE, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
-              { { SPELL_EVISCERATE } }, SPELL_RUNE_SPECTRAL_BLADE, SPELL_BLADE_MODIFIER_FIRST },
+              { { SPELL_EVISCERATE } }, SPELL_RUNE_SPECTRAL_BLADE, SPELL_BLADE_MODIFIER_FIRST, MAX_CHOICES },
             // DPS: Kill Command or Bestial Wrath (a pet's) unleashes the beasts.
             { RUNE_WILD_HUNT,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
@@ -1297,7 +1381,7 @@ namespace
               SPELL_GUIDING_MODIFIER_FIRST, MAX_CHOICES },
             // Ranged DPS: Starfire calls the owls.
             { RUNE_ELUNES_GUARDIAN, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_STARFIRE } }, SPELL_RUNE_ELUNES_GUARDIAN, SPELL_OWL_MODIFIER_FIRST },
+              { { SPELL_STARFIRE } }, SPELL_RUNE_ELUNES_GUARDIAN, SPELL_OWL_MODIFIER_FIRST, MAX_CHOICES },
             // Ranged DPS: Wrath and Starfire in turn.
             { RUNE_ASTRAL_CONVERGENCE, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_WRATH }, { SPELL_STARFIRE } }, SPELL_RUNE_ASTRAL_CONVERGENCE,
@@ -1380,8 +1464,6 @@ namespace
             return { { SPELL_SHADOW_WORD_PAIN } };
         if (rune == RUNE_WILD_HUNT && modifier == MOD_UNENDING_WRATH)
             return { { SPELL_KILL_COMMAND }, { SPELL_BESTIAL_WRATH } };
-        if (rune == RUNE_SPECTRAL_BLADE && modifier == MOD_MARKED_FOR_MURDER)
-            return { { SPELL_SINISTER_STRIKE, SPELL_BACKSTAB, SPELL_HEMORRHAGE } };
         if (rune == RUNE_ARCANE_MIND && modifier == MOD_EXPANDING_INTELLECT)
             return { { SPELL_ARCANE_EXPLOSION } };
         if (rune == RUNE_GUIDING_LIGHT && modifier == MOD_GUARDIAN_STAR)
@@ -1418,6 +1500,42 @@ namespace
                 case MOD_DISTANT_SPARK: return { { SPELL_ARCANE_SHOT } };
                 case MOD_EVOKED_REMNANT: return { { SPELL_EVOCATION } };
                 case MOD_ASTRAL_SHELTER: return { { SPELL_POWER_WORD_SHIELD } };
+                default: return {};
+            }
+        if (rune == RUNE_SPECTRAL_BLADE)
+            switch (modifier)
+            {
+                case MOD_FROST_PHANTOM: return { { SPELL_ICY_TOUCH } };
+                case MOD_FLAME_PHANTOM: return { { SPELL_FLAME_SHOCK } };
+                case MOD_MARKED_EXECUTION: return { { SPELL_HUNTERS_MARK } };
+                case MOD_CORRUPTED_BLADE: return { { SPELL_CORRUPTION } };
+                case MOD_RESTORING_PHANTOM: return { { SPELL_RENEW } };
+                case MOD_BLEEDING_FOLLOW: return { { SPELL_REND }, { SPELL_SINISTER_STRIKE } };
+                case MOD_MARKED_FOR_MURDER: return { { SPELL_BACKSTAB } };
+                default: return {};
+            }
+        if (rune == RUNE_ELUNES_GUARDIAN)
+            switch (modifier)
+            {
+                case MOD_SENTINEL: return { { SPELL_HUNTERS_MARK } };
+                case MOD_FROSTFEATHER: case MOD_WINTERS_BLESSING: return { { SPELL_FROSTBOLT } };
+                case MOD_LUNAR_GUIDANCE: return { { SPELL_MOONFIRE } };
+                case MOD_COMMAND_THE_HUNT: return { { SPELL_HUNTERS_MARK }, { SPELL_ARCANE_SHOT, SPELL_AIMED_SHOT } };
+                case MOD_SUN_AND_MOON: case MOD_TWILIGHT_HUNT: return { { SPELL_WRATH } };
+                case MOD_HUNTERS_PURSUIT:
+                    return { { SPELL_HUNTERS_MARK }, { SPELL_ARCANE_SHOT, SPELL_AIMED_SHOT, SPELL_STEADY_SHOT } };
+                default: return {};
+            }
+        if (rune == RUNE_HOLLOW_CONGREGATION)
+            switch (modifier)
+            {
+                case MOD_PLAGUE_SERMON: return { { SPELL_CORRUPTION } };
+                case MOD_MOONLIT_CONGREGATION: return { { SPELL_MOONFIRE } };
+                case MOD_DISSONANCE: return { { SPELL_SHADOW_WORD_PAIN } };
+                case MOD_DEVOURING_COMMAND: return { { SPELL_SHADOW_BOLT } };
+                case MOD_FROSTBOUND_SERMON: return { { SPELL_FROSTBOLT } };
+                case MOD_FEEDING_THE_VOID: return { { SPELL_DRAIN_SOUL } };
+                case MOD_RENEWED_WITNESS: return { { SPELL_RENEW } };
                 default: return {};
             }
         if (rune == RUNE_GUIDING_LIGHT)
@@ -1554,6 +1672,13 @@ namespace
 
         bool Debug = false;                         // .runedebug: the newest runes' steps told in chat
 
+        // The Spectral Blade, the Hollow Congregation's Extended Options.
+        uint32 RestoringAt = 0, DevouringAt = 0, WitnessAt = 0;     // game ms
+        std::set<ObjectGuid> Frostbound;            // Frostbound Sermon: echoes whose next barrage splits
+        Position PatchAt;                           // the Shadow Word: Pain patch (PatchUntil 0: none)
+        uint32 PatchMap = 0, PatchUntil = 0, PatchTimer = 0;
+        float PatchTick = 0.0f;
+
         // Arcane Mind.
         uint8 BlastCount = 0;                       // Accelerated Thought: Arcane Blasts since the last extra
         bool MindChannel = false;                   // an empowered Arcane Missiles channelling (Mental Reserves)
@@ -1599,6 +1724,9 @@ namespace
 
         // Elune's Guardian.
         uint8 Owls = 0, OwlCount = 0;               // owls waiting to dive; owls since Guiding Wings' last
+        uint32 SentinelGen = 0, SentinelUntil = 0;  // the Sentinel out (a new one's number ends the last); game ms
+        std::map<ObjectGuid, std::pair<uint8, uint8>> Feathers;    // Frostfeather: an enemy's owls to dive, bursts
+        uint32 CommandAt = 0, ExposedAt = 0;        // game ms
 
         // Astral Convergence.
         std::vector<ObjectGuid> Marked;             // enemies in the Hero's Sunlight or Moonlight, oldest first
@@ -2605,6 +2733,8 @@ namespace
             case SPELL_LUNAR_WOUND: return SPELL_LUNAR_WOUND_TICK;
             case SPELL_ASTRAL_RUPTURE: return SPELL_ASTRAL_RUPTURE_TICK;
             case SPELL_PHOENIX_BURN: return SPELL_PHOENIX_BURN_TICK;
+            case SPELL_PHANTOM_WOUND: return SPELL_PHANTOM_WOUND_TICK;
+            case SPELL_CORRUPTED_BLADE: return SPELL_CORRUPTED_BLADE_TICK;
             case SPELL_CINDER_WOUND: return SPELL_CINDER_WOUND_TICK;
             case SPELL_CINDER_WOUND_SPREAD: return SPELL_CINDER_WOUND_TICK;
             case SPELL_WINTER_WOUND: return SPELL_WINTER_WOUND_TICK;
@@ -3113,6 +3243,13 @@ namespace
                 player->CastCustomSpell(enemy, SPELL_DAWN_ECHO_DAMAGE, &tick, nullptr, nullptr, true);
     }
 
+    // Defined further on (the runes' shared helpers).
+    float RunePower(Player* player, SpellSchoolMask school, uint32 floorSpell, bool withBonuses = true);
+    bool Ready(uint32 at, uint32 ms);
+    void Renew(Player* player, uint32 spellId);
+    void Strike(Player* player, Unit* target, uint32 spellId, float amount);
+    void AddDot(Player* player, Unit* target, uint32 spellId, float fresh, int32 ms);
+
     // ---- The Hollow Congregation -------------------------------------------------------------------------------
 
     bool HasHollowMarker(Unit* unit, uint8 modifier)
@@ -3157,20 +3294,28 @@ namespace
         StateOf(player).HollowEchoes.clear();
     }
 
-    // Mind Flay: a Hollow Echo beside the Hero, following them, 10 sec (15 with Lasting Echoes); a fourth (fifth
-    // with Gathering) replaces the oldest.
+    // Mind Flay: a Hollow Echo beside the Hero, 10 sec; a fourth replaces the oldest (Possession: one an enemy, a
+    // new one on the same enemy replacing its echo).
     void CallEcho(Player* player, Unit* target)
     {
         State& state = StateOf(player);
         std::vector<Creature*> echoes = LiveEchoes(player);
-        std::size_t most = HasHollowMarker(player, MOD_GATHERING) ? GATHERING_ECHOES : MAX_HOLLOW_ECHOES;
-        if (echoes.size() >= most)
+        if (HasHollowMarker(player, MOD_POSSESSION) && target)
+            for (Creature* echo : echoes)
+                if (echo->IsAIEnabled && echo->AI()->GetGUID(0) == target->GetGUID())
+                    if (TempSummon* summon = echo->ToTempSummon())
+                    {
+                        summon->UnSummon();
+                        echoes = LiveEchoes(player);
+                        break;
+                    }
+        if (echoes.size() >= MAX_HOLLOW_ECHOES)
             if (TempSummon* oldest = echoes.front()->ToTempSummon())
             {
                 oldest->UnSummon();
                 state.HollowEchoes.erase(state.HollowEchoes.begin());
             }
-        uint32 ms = HasHollowMarker(player, MOD_LASTING_ECHOES) ? LASTING_ECHO_MS : HOLLOW_ECHO_MS;
+        uint32 ms = HOLLOW_ECHO_MS;
         Position pos = player->GetNearPosition(1.5f, frand(0.0f, 2.0f * float(M_PI)));
         TempSummon* echo = player->GetMap()->SummonCreature(NPC_HOLLOW_ECHO, pos,
             sSummonPropertiesStore.LookupEntry(SUMMON_PROPERTIES_GUARDIAN), ms, player);
@@ -3181,10 +3326,112 @@ namespace
             echo->AI()->SetGUID(target ? target->GetGUID() : ObjectGuid::Empty, 0);
     }
 
+    // A barrage bolt of an echo's: Plague Sermon 20% more on the Hero's Corruption target; its first (with
+    // Procession 30% more) also strikes another of their Corruption targets within 8 yards for half; Frostbound
+    // Sermon, each also one more enemy within 8 yards for half.
+    void HollowBolt(Creature* echo, Player* hero, Unit* at, int32 bolt, bool first, bool frostbound)
+    {
+        ObjectGuid me = hero->GetGUID();
+        float amount = float(bolt);
+        if (first && HasHollowMarker(hero, MOD_PROCESSION))
+            amount *= PROCESSION;
+        auto corrupted = [me](Unit* unit) { return unit->GetAuraOfRankedSpell(SPELL_CORRUPTION, me) != nullptr; };
+        int32 points = std::max<int32>(1, int32(amount
+            * (HasHollowMarker(hero, MOD_PLAGUE_SERMON) && corrupted(at) ? PLAGUE_SERMON : 1.0f)));
+        echo->CastCustomSpell(at, SPELL_HOLLOW_BOLT, &points, nullptr, nullptr, true);
+        int32 half = std::max<int32>(1, int32(amount * CORRUPTION_SHARE));
+        if (first)
+            for (Unit* other : EnemiesAround(hero, at, SPLIT_RANGE_HOLLOW))
+                if (other != at && corrupted(other))
+                {
+                    echo->CastCustomSpell(other, SPELL_HOLLOW_BOLT, &half, nullptr, nullptr, true);
+                    break;
+                }
+        if (frostbound)
+            for (Unit* other : EnemiesAround(hero, at, SPLIT_RANGE_HOLLOW))
+                if (other != at)
+                {
+                    int32 split = std::max<int32>(1, int32(amount * FROSTBOUND_SHARE));
+                    echo->CastCustomSpell(other, SPELL_HOLLOW_BOLT, &split, nullptr, nullptr, true);
+                    break;
+                }
+    }
+
+    // A barrage over on its victim: on the Hero's Shadow Word: Pain target, a patch (3 sec, renewed); Renewed
+    // Witness, in their Renew, 30% of spell power healed (8 sec apart).
+    void BarrageDone(Player* player, Unit* victim)
+    {
+        State& state = StateOf(player);
+        if (victim && victim->GetAuraOfRankedSpell(SPELL_SHADOW_WORD_PAIN, player->GetGUID()))
+        {
+            float z = victim->GetPositionZ();
+            player->UpdateGroundPositionZ(victim->GetPositionX(), victim->GetPositionY(), z);
+            state.PatchAt = Position(victim->GetPositionX(), victim->GetPositionY(), z);
+            state.PatchMap = player->GetMapId();
+            state.PatchUntil = Now() + PATCH_MS;
+            state.PatchTimer = 0;
+            state.PatchTick = RunePower(player, SPELL_SCHOOL_MASK_SHADOW, SPELL_MIND_BLAST) * PATCH_POWER;
+            player->RemoveDynObject(SPELL_HOLLOW_PATCH);
+            PlaceDecals(player, SPELL_HOLLOW_PATCH, { state.PatchAt });
+        }
+        if (HasHollowMarker(player, MOD_RENEWED_WITNESS) && Ready(state.WitnessAt, WITNESS_EVERY_MS)
+            && player->GetAuraOfRankedSpell(SPELL_RENEW, player->GetGUID()))
+        {
+            state.WitnessAt = Now();
+            int32 heal = std::max<int32>(1, int32(RunePower(player, SPELL_SCHOOL_MASK_SHADOW, SPELL_MIND_BLAST, false)
+                * WITNESS_POWER));
+            Report(player, SPELL_HOLLOW_MEND, 'H', heal);
+            player->CastCustomSpell(player, SPELL_HOLLOW_MEND, &heal, nullptr, nullptr, true);
+        }
+    }
+
+    // The Shadow Word: Pain patch: 10% of spell power a second to up to 3 enemies in it.
+    void HollowPatchTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        if (Now() >= state.PatchUntil || player->GetMapId() != state.PatchMap)
+        {
+            state.PatchUntil = 0;
+            player->RemoveDynObject(SPELL_HOLLOW_PATCH);
+            return;
+        }
+        state.PatchTimer += diff;
+        if (state.PatchTimer < PATCH_TICK_MS)
+            return;
+        state.PatchTimer = 0;
+        for (Unit* enemy : EnemiesIn(player, Circle(state.PatchAt, PATCH_RADIUS), PATCH_TARGETS))
+            Strike(player, enemy, SPELL_HOLLOW_PATCH_TICK, state.PatchTick);
+    }
+
+    // Devouring Command: a direct Shadow Bolt turns an echo on its target, a hit of 30% of spell power (8 sec
+    // apart; no barrage). Frostbound Sermon: a direct Frostbolt on an echo's target, its next barrage splits.
+    void HollowStrike(Player* player, Unit* enemy, uint32 firstRank)
+    {
+        State& state = StateOf(player);
+        std::vector<Creature*> echoes = LiveEchoes(player);
+        if (echoes.empty())
+            return;
+        if (firstRank == SPELL_SHADOW_BOLT && HasHollowMarker(player, MOD_DEVOURING_COMMAND)
+            && Ready(state.DevouringAt, DEVOURING_EVERY_MS))
+        {
+            state.DevouringAt = Now();
+            Creature* echo = echoes.front();
+            if (echo->IsAIEnabled)
+                echo->AI()->SetGUID(enemy->GetGUID(), 0);
+            int32 hit = std::max<int32>(1, int32(RunePower(player, SPELL_SCHOOL_MASK_SHADOW, SPELL_MIND_BLAST)
+                * DEVOURING_POWER));
+            echo->CastCustomSpell(enemy, SPELL_DEVOURING_COMMAND, &hit, nullptr, nullptr, true);
+        }
+        if (firstRank == SPELL_FROSTBOLT && HasHollowMarker(player, MOD_FROSTBOUND_SERMON))
+            for (Creature* echo : echoes)
+                if (echo->IsAIEnabled && echo->AI()->GetGUID(0) == enemy->GetGUID())
+                    state.Frostbound.insert(echo->GetGUID());
+    }
+
     // Mind Blast's command: every echo turns on its target (Dissonance: each on another enemy with the Hero's
     // Shadow Word: Pain, the target first), in a barrage of 3 bolts (Unison: together, 20% more) or a piercing
-    // scream along the way (Accusation); then their channels resume on it. Swift Command: Mind Blast 0.5 sec sooner
-    // for each.
+    // scream along the way (Accusation); then their channels resume on it. Procession: the echoes beside its target
+    // first.
     void CommandEchoes(Player* player, Unit* target)
     {
         std::vector<Creature*> echoes = LiveEchoes(player);
@@ -3216,6 +3463,12 @@ namespace
             Unit* victim = i < victims.size() ? victims[i] : target;
             ObjectGuid victimGuid = victim->GetGUID();
             echo->InterruptNonMeleeSpells(false);
+            if (HasHollowMarker(player, MOD_PROCESSION))
+            {
+                Position beside = victim->GetNearPosition(2.0f, frand(0.0f, 2.0f * float(M_PI)));
+                echo->NearTeleportTo(beside.GetPositionX(), beside.GetPositionY(), beside.GetPositionZ(),
+                    echo->GetAngle(victim));
+            }
             if (echo->IsAIEnabled)
             {
                 echo->AI()->SetGUID(victimGuid, 0);
@@ -3236,21 +3489,23 @@ namespace
                     line.HalfWidth = SCREAM_WIDTH;
                     for (Unit* enemy : EnemiesIn(hero, line, SCREAM_TARGETS))
                         echo->CastCustomSpell(enemy, SPELL_HOLLOW_SCREAM, &scream, nullptr, nullptr, true);
+                    BarrageDone(hero, at);
                 }, Milliseconds(unison ? 0 : 150 * i));
                 continue;
             }
+            bool frostbound = player->IsInWorld() && StateOf(player).Frostbound.erase(echo->GetGUID()) > 0;
             for (uint32 b = 0; b < BARRAGE_BOLTS; ++b)
-                echo->m_Events.AddEventAtOffset([echo, victimGuid, bolt]()
+                echo->m_Events.AddEventAtOffset([echo, owner, victimGuid, bolt, b, frostbound]()
                 {
+                    Player* hero = ObjectAccessor::GetPlayer(*echo, owner);
                     Unit* at = ObjectAccessor::GetUnit(*echo, victimGuid);
-                    if (at && at->IsAlive())
-                        echo->CastCustomSpell(at, SPELL_HOLLOW_BOLT, &bolt, nullptr, nullptr, true);
+                    if (!hero || !at || !at->IsAlive())
+                        return;
+                    HollowBolt(echo, hero, at, bolt, b == 0, frostbound);
+                    if (b + 1 == BARRAGE_BOLTS)
+                        BarrageDone(hero, at);
                 }, Milliseconds(b * BARRAGE_SPACING_MS + (unison ? 0 : 150 * i)));
         }
-        if (HasHollowMarker(player, MOD_SWIFT_COMMAND))
-            for (uint32 id = SPELL_MIND_BLAST; id; id = sSpellMgr->GetNextSpellInChain(id))
-                if (player->HasSpell(id))
-                    player->ModifySpellCooldown(id, -SWIFT_COMMAND_MS * int32(echoes.size()));
     }
 
     // ---- The Shattered Sun ---------------------------------------------------------------------------------------
@@ -3390,6 +3645,11 @@ namespace
         state.SacredUntil = 0;
         player->RemoveDynObject(SPELL_SACRED_GROUND);
         DismissEchoes(player);
+        state.Frostbound.clear();
+        state.PatchUntil = 0;
+        player->RemoveDynObject(SPELL_HOLLOW_PATCH);
+        for (uint32 spell : { SPELL_PHANTOM_OPENING, SPELL_FATAL_OPENING, SPELL_BLEEDING_FOLLOW })
+            player->RemoveAurasDueToSpell(spell);
         for (ObjectGuid guid : state.Shards)
             if (Unit* host = ObjectAccessor::GetUnit(*player, guid))
                 host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
@@ -3440,6 +3700,49 @@ namespace
             player->CastCustomSpell(enemy, SPELL_PHANTOM_STRIKE, &points, nullptr, nullptr, true);
     }
 
+    // After the phantom's hit: the next Sinister Strike 10 Energy cheaper (Fatal Opening: the next builder too);
+    // on the Hero's Shadow Word: Pain target, Phantom Wound; Frost Phantom, Flame Phantom, Marked Execution,
+    // Corrupted Blade, Restoring Phantom, Bleeding Follow-Through on theirs.
+    void PhantomAftermath(Player* player, Unit* victim, float amount)
+    {
+        ObjectGuid me = player->GetGUID();
+        if (Knows(player, SPELL_SINISTER_STRIKE))
+            Renew(player, SPELL_PHANTOM_OPENING);
+        if (HasBladeMarker(player, MOD_FATAL_OPENING))
+            Renew(player, SPELL_FATAL_OPENING);
+        if (victim->IsAlive() && victim->GetAuraOfRankedSpell(SPELL_SHADOW_WORD_PAIN, me))
+            AddDot(player, victim, SPELL_PHANTOM_WOUND, amount * PHANTOM_WOUND_SHARE, PHANTOM_DOT_MS);
+        if (HasBladeMarker(player, MOD_FROST_PHANTOM) && victim->HasAura(SPELL_FROST_FEVER, me))
+            Strike(player, victim, SPELL_FROST_PHANTOM, player->GetTotalAttackPowerValue(BASE_ATTACK) * FROST_PHANTOM
+                * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE,
+                    SPELL_SCHOOL_MASK_FROST));
+        if (HasBladeMarker(player, MOD_FLAME_PHANTOM) && victim->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
+            Strike(player, victim, SPELL_FLAME_PHANTOM,
+                RunePower(player, SPELL_SCHOOL_MASK_FIRE, SPELL_EVISCERATE) * FLAME_PHANTOM);
+        if (HasBladeMarker(player, MOD_MARKED_EXECUTION) && victim->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, me))
+            for (Unit* enemy : EnemiesAround(player, victim, MARKED_EXECUTION_RANGE))
+                if (enemy != victim)
+                {
+                    PhantomBlow(player, enemy, amount * MARKED_EXECUTION);
+                    break;
+                }
+        if (HasBladeMarker(player, MOD_CORRUPTED_BLADE) && victim->IsAlive()
+            && victim->GetAuraOfRankedSpell(SPELL_CORRUPTION, me))
+            AddDot(player, victim, SPELL_CORRUPTED_BLADE, amount * CORRUPTED_SHARE, PHANTOM_DOT_MS);
+        State& state = StateOf(player);
+        if (HasBladeMarker(player, MOD_RESTORING_PHANTOM) && Ready(state.RestoringAt, RESTORING_EVERY_MS)
+            && player->GetAuraOfRankedSpell(SPELL_RENEW, me))
+        {
+            state.RestoringAt = Now();
+            int32 heal = std::max<int32>(1, int32(RunePower(player, SPELL_SCHOOL_MASK_HOLY, SPELL_EVISCERATE, false)
+                * RESTORING_POWER));
+            Report(player, SPELL_RESTORING_PHANTOM, 'H', heal);
+            player->CastCustomSpell(player, SPELL_RESTORING_PHANTOM, &heal, nullptr, nullptr, true);
+        }
+        if (HasBladeMarker(player, MOD_BLEEDING_FOLLOW) && victim->GetAuraOfRankedSpell(SPELL_REND, me))
+            Renew(player, SPELL_BLEEDING_FOLLOW);
+    }
+
     // The phantom arriving: on its victim (Death Follows: the nearest enemy within 10 yards if it died first, once),
     // all of it at once (Executioner 40% more), in 3 quick cuts (Thousand Cuts, 15% more; one bleed with Open Wound)
     // or with up to 3 more enemies within 8 yards at half (Shadow Cleave). Then the aftermath.
@@ -3461,6 +3764,12 @@ namespace
             }
             if (!victim)
                 return;
+        }
+        // The Backstab mark, spent: 25% more (Marked for Murder: 40%).
+        if (victim->HasAura(SPELL_MARKED_FOR_MURDER, player->GetGUID()))
+        {
+            victim->RemoveAurasDueToSpell(SPELL_MARKED_FOR_MURDER, player->GetGUID());
+            amount *= HasBladeMarker(player, MOD_MARKED_FOR_MURDER) ? MARKED_FOR_MURDER : BACKSTAB_MARK;
         }
         if (HasBladeMarker(player, MOD_EXECUTIONER))
             PhantomBlow(player, victim, amount * EXECUTIONER);
@@ -3490,8 +3799,7 @@ namespace
         Lasting(player, player, SPELL_PHANTOM_RUSH, PHANTOM_RUSH_MS);
         if (HasBladeMarker(player, MOD_VANISHING_ACT))
             Lasting(player, player, SPELL_VANISHING_ACT, VANISHING_ACT_MS);
-        if (HasBladeMarker(player, MOD_MARKED_FOR_MURDER))
-            Lasting(player, victim, SPELL_MARKED_FOR_MURDER, MARKED_MS);
+        PhantomAftermath(player, victim, amount);
     }
 
     // Eviscerate's hit: the phantom, twice it, 0.6 sec later (0.1 with Quick Death; 2 sec and 40% more with
@@ -3502,9 +3810,9 @@ namespace
             return;
         float amount = damage * PHANTOM_SHARE;
         uint32 delay = PHANTOM_DELAY_MS;
-        if (HasBladeMarker(player, MOD_QUICK_DEATH))
+        if (HasBladeMarker(player, MOD_FATAL_OPENING))
             delay = QUICK_DEATH_MS;
-        else if (HasBladeMarker(player, MOD_PATIENT_KILLER))
+        else if (HasBladeMarker(player, MOD_PERFECT_AMBUSH))
         {
             delay = PATIENT_KILLER_MS;
             amount *= PATIENT_KILLER;
@@ -3685,7 +3993,7 @@ namespace
     // The Hero's spell power of a school for a rune's own hits, never less than the average damage of their known
     // rank of floorSpell (so a Hero with little gear still deals something); withBonuses, their damage done bonuses
     // of the school too (the rune's strikes ignore their modifiers).
-    float RunePower(Player* player, SpellSchoolMask school, uint32 floorSpell, bool withBonuses = true)
+    float RunePower(Player* player, SpellSchoolMask school, uint32 floorSpell, bool withBonuses)
     {
         float floor = 0.0f;
         if (SpellInfo const* rank = sSpellMgr->GetSpellInfo(KnownRank(player, floorSpell)))
@@ -5313,11 +5621,43 @@ namespace
         return Marked(unit, SPELL_OWL_MODIFIER_FIRST, modifier);
     }
 
-    // One owl strike from the sky on its victim (Silver Wings: half of it to up to 4 others within 6 yards; Lunar
-    // Wound: as much again over 6 sec; Twilight Hunt: the victim marked for the next Wrath).
+    // The enemy with the Hero's Hunter's Mark (nullptr: none near).
+    Unit* MarkedEnemy(Player* player)
+    {
+        for (Unit* enemy : EnemiesAround(player, player, MARK_SEARCH))
+            if (enemy->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, player->GetGUID()))
+                return enemy;
+        return nullptr;
+    }
+
+    // The Hero's Moonfire on the unit, ms longer (at most `most` an application).
+    void OwlMoonfire(Player* player, Unit* unit, int32 ms, int32 most)
+    {
+        if (Aura* moonfire = unit->GetAuraOfRankedSpell(SPELL_MOONFIRE, player->GetGUID()))
+            ExtendAura(moonfire, ms, most);
+    }
+
+    // One owl strike from the sky on its victim. Its first (a summon's): on the Hero's Hunter's Mark target 20% more,
+    // on their Moonfire target (Lunar Guidance) 15% more; Frostfeather, half of it as Frost; then Moonlit Prey, their
+    // Moonfire longer, Winter's Blessing's Moonfrost. Silver Wings: half of it to up to 4 others within 6 yards; Lunar
+    // Wound: as much again over 6 sec; Hunter's Pursuit: Exposed Prey on the marked target.
     void OwlStrike(Player* player, Unit* victim, float amount, bool first)
     {
-        Strike(player, victim, SPELL_OWL_DIVE, amount);
+        ObjectGuid me = player->GetGUID();
+        bool marked = victim->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, me) != nullptr;
+        bool moonfire = victim->GetAuraOfRankedSpell(SPELL_MOONFIRE, me) != nullptr;
+        bool guidance = HasOwlMarker(player, MOD_LUNAR_GUIDANCE);
+        if (first && marked)
+            amount *= MARKED_OWL;
+        if (first && moonfire && guidance)
+            amount *= GUIDANCE;
+        if (first && HasOwlMarker(player, MOD_FROSTFEATHER))
+        {
+            Strike(player, victim, SPELL_OWL_DIVE, amount / 2.0f);
+            Strike(player, victim, SPELL_FROSTFEATHER, amount / 2.0f);
+        }
+        else
+            Strike(player, victim, SPELL_OWL_DIVE, amount);
         if (HasOwlMarker(player, MOD_SILVER_WINGS) && first)
         {
             std::size_t count = SILVER_WINGS_TARGETS;
@@ -5330,37 +5670,62 @@ namespace
         }
         if (!victim->IsAlive())
             return;
+        State& state = StateOf(player);
+        if (first)
+        {
+            Lasting(player, victim, SPELL_MOONLIT_PREY, MOONLIT_PREY_MS);
+            if (moonfire)
+                OwlMoonfire(player, victim, guidance ? GUIDANCE_MS : OWL_MOONFIRE_MS,
+                    guidance ? GUIDANCE_MOST_MS : OWL_MOONFIRE_MOST_MS);
+            if (HasOwlMarker(player, MOD_WINTERS_BLESSING) && victim->GetAuraOfRankedSpell(SPELL_FROSTBOLT, me))
+                Lasting(player, victim, SPELL_MOONFROST, MOONFROST_MS);
+        }
         if (HasOwlMarker(player, MOD_LUNAR_WOUND))
             AddDot(player, victim, SPELL_LUNAR_WOUND, amount * LUNAR_WOUND_SHARE, LUNAR_WOUND_MS);
-        if (HasOwlMarker(player, MOD_TWILIGHT_HUNT))
-            Lasting(player, victim, SPELL_TWILIGHT_HUNT, TWILIGHT_HUNT_MS);
+        if (HasOwlMarker(player, MOD_HUNTERS_PURSUIT) && marked && Ready(state.ExposedAt, EXPOSED_EVERY_MS))
+        {
+            state.ExposedAt = Now();
+            Lasting(player, victim, SPELL_EXPOSED_PREY, EXPOSED_MS);
+        }
     }
 
-    // An owl's dive (its victim gone: Moonlit Pursuit takes the nearest enemy within 15 yards, else it fades).
-    // Watchful Flight: 3 strikes 1 sec apart, 40% each, the last making the next Starfire 20% cheaper. Moonlit
-    // Pursuit: a second strike 1 sec later for 20%. Swift Judgment: each dive, the next Starfire 10% faster. Guiding
-    // Wings: every third owl, the next Starfire instant and 20% speed.
+    // A summon's own effects as it strikes: Swift Judgment, the next Starfire 10% faster; Guiding Wings, every
+    // third owl, the next Starfire instant and 20% speed.
+    void OwlSummoned(Player* player)
+    {
+        State& state = StateOf(player);
+        if (HasOwlMarker(player, MOD_SWIFT_JUDGMENT))
+            Renew(player, SPELL_SWIFT_JUDGMENT);
+        if (HasOwlMarker(player, MOD_GUIDING_WINGS) && ++state.OwlCount >= GUIDING_EVERY)
+        {
+            state.OwlCount = 0;
+            Renew(player, SPELL_GUIDING_WINGS);
+            Renew(player, SPELL_GUIDING_WINGS_SPEED);
+        }
+    }
+
+    // An owl's dive on its victim (gone: it fades). Lunar Flock: 3 strikes 1 sec apart, 40% each, the last making
+    // the next Starfire 20% cheaper; Moonpiercer 40% more on its own victim.
     void OwlDive(Player* player, ObjectGuid victimGuid, float owl)
     {
         State& state = StateOf(player);
         if (state.Owls)
             --state.Owls;
-        Unit* victim = ObjectAccessor::GetUnit(*player, victimGuid);
-        if (!player->IsAlive())
-            return;
-        if (!Valid(player, victim))
+        auto feathers = state.Feathers.find(victimGuid);
+        if (feathers != state.Feathers.end())
         {
-            if (!HasOwlMarker(player, MOD_MOONLIT_PURSUIT) || !victim || !victim->IsInMap(player))
-                return;
-            std::vector<Unit*> near = EnemiesAround(player, victim, PURSUIT_RANGE);
-            if (near.empty())
-                return;
-            victim = near.front();
-            victimGuid = victim->GetGUID();
+            if (feathers->second.first)
+                --feathers->second.first;
+            feathers->second.second = std::min(feathers->second.second, feathers->second.first);
+            if (!feathers->second.first)
+                state.Feathers.erase(feathers);
         }
-        else if (HasOwlMarker(player, MOD_MOONPIERCER))
+        Unit* victim = ObjectAccessor::GetUnit(*player, victimGuid);
+        if (!player->IsAlive() || !Valid(player, victim))
+            return;
+        if (HasOwlMarker(player, MOD_MOONPIERCER))
             owl *= MOONPIERCER;
-        if (HasOwlMarker(player, MOD_WATCHFUL_FLIGHT))
+        if (HasOwlMarker(player, MOD_LUNAR_FLOCK))
             for (uint32 i = 0; i < WATCHFUL_ATTACKS; ++i)
                 player->m_Events.AddEventAtOffset([player, victimGuid, owl, i]()
                 {
@@ -5373,32 +5738,49 @@ namespace
                 }, Milliseconds(i * WATCHFUL_SPACING_MS));
         else
             OwlStrike(player, victim, owl, true);
-        if (HasOwlMarker(player, MOD_MOONLIT_PURSUIT))
-            player->m_Events.AddEventAtOffset([player, victimGuid, owl]()
-            {
-                Unit* target = ObjectAccessor::GetUnit(*player, victimGuid);
-                if (player->IsInWorld() && player->IsAlive() && Valid(player, target))
-                    Strike(player, target, SPELL_OWL_DIVE, owl * PURSUIT_SHARE);
-            }, Milliseconds(PURSUIT_SECOND_MS));
-        if (HasOwlMarker(player, MOD_SWIFT_JUDGMENT))
-            Renew(player, SPELL_SWIFT_JUDGMENT);
-        if (HasOwlMarker(player, MOD_GUIDING_WINGS) && ++state.OwlCount >= GUIDING_EVERY)
-        {
-            state.OwlCount = 0;
-            Renew(player, SPELL_GUIDING_WINGS);
-            Renew(player, SPELL_GUIDING_WINGS_SPEED);
-        }
+        OwlSummoned(player);
     }
 
-    // A direct Starfire hit calls an owl (3 waiting at most): 30% of the Starfire's damage, diving 1 sec later
-    // (Swift Judgment 0.1; Patient Vigil 3, 30% more).
+    // Sentinel of the Hunt: its attack (of 3) on whoever wears the Hero's Hunter's Mark now; a newer Sentinel ends it.
+    void SentinelAttack(Player* player, uint32 gen, float owl, uint32 attack)
+    {
+        State& state = StateOf(player);
+        if (!player->IsInWorld() || !player->IsAlive() || state.SentinelGen != gen)
+            return;
+        if (Unit* marked = MarkedEnemy(player))
+            OwlStrike(player, marked, owl * SENTINEL_SHARE, attack == 0);
+        if (attack + 1 >= SENTINEL_ATTACKS)
+        {
+            state.SentinelUntil = 0;
+            return;
+        }
+        player->m_Events.AddEventAtOffset([player, gen, owl, attack]()
+        {
+            SentinelAttack(player, gen, owl, attack + 1);
+        }, Milliseconds(SENTINEL_EVERY_MS));
+    }
+
+    // A direct Starfire hit calls an owl (3 waiting at most): 37.5% of the Starfire's damage, diving 1 sec later
+    // (Swift Judgment 0.1; Patient Vigil 3, 30% more). Sentinel of the Hunt, with a Hunter's Mark of the Hero's out:
+    // the Sentinel instead, at once.
     void CallOwl(Player* player, Unit* victim, float starfire)
     {
         State& state = StateOf(player);
-        if (state.Owls >= MAX_OWLS || starfire <= 0.0f)
+        if (starfire <= 0.0f)
+            return;
+        float owl = starfire * OWL_SHARE * (HasOwlMarker(player, MOD_PATIENT_VIGIL) ? PATIENT_VIGIL : 1.0f);
+        if (HasOwlMarker(player, MOD_SENTINEL) && MarkedEnemy(player))
+        {
+            uint32 gen = ++state.SentinelGen;
+            state.SentinelUntil = Now() + SENTINEL_EVERY_MS * SENTINEL_ATTACKS;
+            OwlSummoned(player);
+            SentinelAttack(player, gen, owl, 0);
+            return;
+        }
+        if (state.Owls >= MAX_OWLS)
             return;
         ++state.Owls;
-        float owl = starfire * OWL_SHARE * (HasOwlMarker(player, MOD_PATIENT_VIGIL) ? PATIENT_VIGIL : 1.0f);
+        ++state.Feathers[victim->GetGUID()].first;
         uint32 delay = HasOwlMarker(player, MOD_SWIFT_JUDGMENT) ? SWIFT_DELAY_MS
             : HasOwlMarker(player, MOD_PATIENT_VIGIL) ? VIGIL_DELAY_MS : OWL_DELAY_MS;
         ObjectGuid guid = victim->GetGUID();
@@ -5407,6 +5789,95 @@ namespace
             if (player->IsInWorld())
                 OwlDive(player, guid, owl);
         }, Milliseconds(delay));
+    }
+
+    // A direct Wrath on the Hero's Moonlit Prey: the owl's return strike, 20% of their spell power as Nature (on
+    // their Hunter's Mark target, also one more within 8 yards for half; Sun and Moon, 15% to up to 4 within 6
+    // yards); Twilight Hunt, the next Wrath there 25% more.
+    void OwlReturn(Player* player, Unit* enemy)
+    {
+        ObjectGuid me = player->GetGUID();
+        if (!enemy->HasAura(SPELL_MOONLIT_PREY, me))
+            return;
+        enemy->RemoveAurasDueToSpell(SPELL_MOONLIT_PREY, me);
+        float strike = RunePower(player, SPELL_SCHOOL_MASK_NATURE, SPELL_STARFIRE) * RETURN_POWER;
+        Strike(player, enemy, SPELL_OWL_RETURN, strike);
+        if (enemy->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, me))
+            for (Unit* other : EnemiesAround(player, enemy, RETURN_RANGE))
+                if (other != enemy)
+                {
+                    Strike(player, other, SPELL_OWL_RETURN, strike * RETURN_SPLIT);
+                    break;
+                }
+        if (HasOwlMarker(player, MOD_SUN_AND_MOON))
+        {
+            float sun = RunePower(player, SPELL_SCHOOL_MASK_NATURE, SPELL_STARFIRE) * SUN_AND_MOON_POWER;
+            std::size_t count = SUN_AND_MOON_TARGETS;
+            for (Unit* other : EnemiesAround(player, enemy, SUN_AND_MOON_RADIUS))
+                if (other != enemy && count)
+                {
+                    Strike(player, other, SPELL_OWL_RETURN, sun);
+                    --count;
+                }
+        }
+        if (HasOwlMarker(player, MOD_TWILIGHT_HUNT) && enemy->IsAlive())
+            Lasting(player, enemy, SPELL_TWILIGHT_HUNT, TWILIGHT_HUNT_MS);
+    }
+
+    // Arcane Shot, Aimed Shot or Steady Shot hitting: Command the Hunt (Arcane or Aimed Shot on the marked target,
+    // an owl or the Sentinel out: 25% of spell power, 6 sec apart); Hunter's Pursuit's Exposed Prey spent.
+    void OwlShot(Player* player, Unit* enemy, uint32 firstRank)
+    {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        float power = RunePower(player, SPELL_SCHOOL_MASK_ARCANE, SPELL_STARFIRE);
+        if (firstRank != SPELL_STEADY_SHOT && HasOwlMarker(player, MOD_COMMAND_THE_HUNT)
+            && enemy->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, me) && (state.Owls || Now() < state.SentinelUntil)
+            && Ready(state.CommandAt, COMMAND_EVERY_MS))
+        {
+            state.CommandAt = Now();
+            Strike(player, enemy, SPELL_OWL_DIVE, power * COMMAND_POWER);
+        }
+        if (enemy->HasAura(SPELL_EXPOSED_PREY, me))
+        {
+            enemy->RemoveAurasDueToSpell(SPELL_EXPOSED_PREY, me);
+            Strike(player, enemy, SPELL_OWL_DIVE, power * EXPOSED_POWER);
+        }
+    }
+
+    // A direct Frostbolt hit: Frostfeather's burst on an owl's victim before it dives (one a summon); Winter's
+    // Blessing's Moonfrost spent: the Moonfire there 2 sec longer (its Frostbolt 20% more: OwlFrostboltDamage).
+    void OwlFrostbolt(Player* player, Unit* enemy)
+    {
+        State& state = StateOf(player);
+        auto feathers = state.Feathers.find(enemy->GetGUID());
+        if (HasOwlMarker(player, MOD_FROSTFEATHER) && feathers != state.Feathers.end()
+            && feathers->second.second < feathers->second.first)
+        {
+            ++feathers->second.second;
+            float burst = RunePower(player, SPELL_SCHOOL_MASK_FROST, SPELL_STARFIRE) * FEATHER_POWER;
+            Strike(player, enemy, SPELL_FROSTFEATHER, burst);
+            std::size_t count = FEATHER_TARGETS;
+            for (Unit* other : EnemiesAround(player, enemy, FEATHER_RADIUS))
+                if (other != enemy && count)
+                {
+                    Strike(player, other, SPELL_FROSTFEATHER, burst);
+                    --count;
+                }
+        }
+    }
+
+    // Winter's Blessing: a Frostbolt on the Hero's Moonfrost spends it, 20% more, their Moonfire there 2 sec
+    // longer. The bolt's damage, as it hits.
+    float OwlFrostboltDamage(Player* player, Unit* enemy, float damage)
+    {
+        ObjectGuid me = player->GetGUID();
+        if (!enemy->HasAura(SPELL_MOONFROST, me))
+            return damage;
+        enemy->RemoveAurasDueToSpell(SPELL_MOONFROST, me);
+        bool guidance = HasOwlMarker(player, MOD_LUNAR_GUIDANCE);
+        OwlMoonfire(player, enemy, OWL_MOONFIRE_MS, guidance ? GUIDANCE_MOST_MS : OWL_MOONFIRE_MOST_MS);
+        return damage * MOONFROST;
     }
 
     // ---- Astral Convergence ------------------------------------------------------------------------------------
@@ -5818,6 +6289,9 @@ namespace
         State& state = StateOf(player);
         state.Owls = 0;
         state.OwlCount = 0;
+        ++state.SentinelGen;                        // ends a Sentinel's attacks
+        state.SentinelUntil = 0;
+        state.Feathers.clear();
         for (uint32 spell : { SPELL_SWIFT_JUDGMENT, SPELL_WATCHFUL_FLIGHT, SPELL_GUIDING_WINGS,
                               SPELL_GUIDING_WINGS_SPEED, SPELL_STEADY_ORBIT, SPELL_LUNAR_DOMINANCE,
                               SPELL_ENDURING_CHAMPION, SPELL_FROZEN_ECLIPSE, SPELL_INSECT_RENEWAL,
@@ -7887,10 +8361,11 @@ struct npc_titan_rune_phantom_assassin : public ScriptedAI
     void UpdateAI(uint32 /*diff*/) override { }
 };
 
-// A Hollow Echo (910122): the Hero's look, hollowed, following them; for 10 sec (15 with Lasting Echoes) a weaker
-// Mind Flay on the Hero's target (else the one it was called for, else the nearest), 40 yards; quiet during a
-// barrage. Last Word: a last, stronger attack as it fades. Fervor: stronger while the Hero channels Mind Flay.
-// Shadow Mend: each channel heals the Hero for 10% of its damage.
+// A Hollow Echo (910122): the Hero's look, hollowed, following them (Haunted Ground: where it was called; Possession:
+// its target); for 10 sec a weaker Mind Flay on the Hero's target (else the one it was called for, else the
+// nearest), 40 yards (Haunted Ground 50); quiet during a barrage. 5% more for each damage over time of the Hero's on
+// its target (5 at most); Following Shadows, Haunted Ground, Possession, Silent Witness, Feeding the Void more;
+// Moonlit Congregation an Arcane strike on their Moonfire target. Last Word: a last, stronger attack as it fades.
 struct npc_titan_rune_hollow_echo : public ScriptedAI
 {
     npc_titan_rune_hollow_echo(Creature* creature) : ScriptedAI(creature) { }
@@ -7904,14 +8379,14 @@ struct npc_titan_rune_hollow_echo : public ScriptedAI
         owner->CastSpell(me, SPELL_CLONE_ME, true);
         me->AddAura(SPELL_HOLLOW_ECHO, me);
         me->SetReactState(REACT_PASSIVE);
-        me->GetMotionMaster()->MoveFollow(owner, 2.5f, frand(1.5f, 4.8f));
+        if (!HasHollowMarker(owner, MOD_HAUNTED_GROUND) && !HasHollowMarker(owner, MOD_POSSESSION))
+            me->GetMotionMaster()->MoveFollow(owner, 2.5f, frand(1.5f, 4.8f));
         scheduler.Schedule(200ms, [this](TaskContext channel)
         {
             Channel();
             channel.Repeat(500ms);
         });
-        uint32 ms = HasHollowMarker(owner, MOD_LASTING_ECHOES) ? LASTING_ECHO_MS : HOLLOW_ECHO_MS;
-        scheduler.Schedule(Milliseconds(ms - 400), [this](TaskContext)
+        scheduler.Schedule(Milliseconds(HOLLOW_ECHO_MS - 400), [this](TaskContext)
         {
             Player* hero = Owner();
             Unit* target = Target(hero);
@@ -7925,6 +8400,11 @@ struct npc_titan_rune_hollow_echo : public ScriptedAI
     void SetGUID(ObjectGuid const& guid, int32 /*id*/) override
     {
         _target = guid;
+    }
+
+    ObjectGuid GetGUID(int32 /*id*/) const override
+    {
+        return _target;
     }
 
     void SetData(uint32 /*id*/, uint32 value) override
@@ -7951,9 +8431,10 @@ private:
     {
         if (!hero)
             return nullptr;
+        float range = HOLLOW_RANGE + (HasHollowMarker(hero, MOD_HAUNTED_GROUND) ? HAUNTED_RANGE : 0.0f);
         auto fits = [&](Unit* unit)
         {
-            return Valid(hero, unit) && me->IsWithinDistInMap(unit, HOLLOW_RANGE) && me->IsWithinLOSInMap(unit);
+            return Valid(hero, unit) && me->IsWithinDistInMap(unit, range) && me->IsWithinLOSInMap(unit);
         };
         if (Unit* chosen = hero->GetSelectedUnit(); Now() >= _quietUntil && fits(chosen))
         {
@@ -7962,7 +8443,7 @@ private:
         }
         if (Unit* unit = _target ? ObjectAccessor::GetUnit(*me, _target) : nullptr; fits(unit))
             return unit;
-        for (Unit* enemy : EnemiesAround(hero, me, HOLLOW_RANGE))
+        for (Unit* enemy : EnemiesAround(hero, me, range))
             if (fits(enemy))
             {
                 _target = enemy->GetGUID();
@@ -7979,26 +8460,54 @@ private:
         Unit* target = Target(hero);
         if (!target)
             return;
-        float tick = FlayTick(hero) * HOLLOW_SHARE;
-        if (HasHollowMarker(hero, MOD_FERVOR))
-            if (Spell* flay = hero->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
-                flay && flay->m_spellInfo->GetFirstRankSpell()->Id == SPELL_MIND_FLAY)
-                tick *= FERVOR;
+        // Possession: it follows its target.
+        if (HasHollowMarker(hero, MOD_POSSESSION) && _following != target->GetGUID())
+        {
+            _following = target->GetGUID();
+            me->GetMotionMaster()->MoveFollow(target, 2.5f, frand(0.0f, 2.0f * float(M_PI)));
+        }
+        float tick = FlayTick(hero) * HOLLOW_SHARE * (1.0f + DOT_STEP * float(DotsOn(hero, target)));
+        if (HasHollowMarker(hero, MOD_FOLLOWING_SHADOWS))
+            tick *= FOLLOWING;
+        if (HasHollowMarker(hero, MOD_HAUNTED_GROUND))
+            tick *= HAUNTED;
+        if (HasHollowMarker(hero, MOD_POSSESSION))
+            tick *= POSSESSION;
+        if (HasHollowMarker(hero, MOD_SILENT_WITNESS) && hero->isMoving())
+            tick *= SILENT_WITNESS;
+        if (HasHollowMarker(hero, MOD_FEEDING_THE_VOID))
+            if (Spell* drain = hero->GetCurrentSpell(CURRENT_CHANNELED_SPELL); drain
+                && drain->m_spellInfo->GetFirstRankSpell()->Id == SPELL_DRAIN_SOUL
+                && drain->m_targets.GetUnitTargetGUID() == target->GetGUID())
+                tick *= FEEDING;
         int32 damage = std::max<int32>(1, int32(tick));
         me->SetFacingToObject(target);
         SetDotTick(me, target, SPELL_HOLLOW_FLAY, damage);
         Report(hero, SPELL_HOLLOW_FLAY, 'D', damage);
         me->CastCustomSpell(target, SPELL_HOLLOW_FLAY, &damage, nullptr, nullptr, true);
-        if (!HasHollowMarker(hero, MOD_SHADOW_MEND))
-            return;
-        SpellInfo const* flay = sSpellMgr->GetSpellInfo(SPELL_HOLLOW_FLAY);
-        float ticks = flay && flay->GetMaxDuration() > 0 ? flay->GetMaxDuration() / 1000.0f : FLAY_CHANNEL_TICKS;
-        int32 mend = std::max<int32>(1, int32(damage * ticks * MEND_SHARE));
-        hero->CastCustomSpell(hero, SPELL_HOLLOW_MEND, &mend, nullptr, nullptr, true);
+        if (HasHollowMarker(hero, MOD_MOONLIT_CONGREGATION) && Ready(_moonlitAt, 2000)
+            && target->GetAuraOfRankedSpell(SPELL_MOONFIRE, hero->GetGUID()))
+        {
+            _moonlitAt = Now();
+            int32 arcane = std::max<int32>(1, int32(RunePower(hero, SPELL_SCHOOL_MASK_ARCANE, SPELL_MIND_BLAST)
+                * MOONLIT_POWER));
+            me->CastCustomSpell(target, SPELL_MOONLIT_CONGREGATION, &arcane, nullptr, nullptr, true);
+        }
     }
 
-    ObjectGuid _owner, _target;
-    uint32 _quietUntil = 0;
+    // The distinct damage over time spells of the Hero's on the unit (5 at most).
+    static std::size_t DotsOn(Player* hero, Unit* unit)
+    {
+        std::set<uint32> dots;
+        for (AuraType type : { SPELL_AURA_PERIODIC_DAMAGE, SPELL_AURA_PERIODIC_LEECH })
+            for (AuraEffect const* effect : unit->GetAuraEffectsByType(type))
+                if (effect->GetCasterGUID() == hero->GetGUID())
+                    dots.insert(effect->GetId());
+        return std::min(dots.size(), MAX_DOTS);
+    }
+
+    ObjectGuid _owner, _target, _following;
+    uint32 _quietUntil = 0, _moonlitAt = 0;
 };
 
 // The rune's Felguard (910120): 8 sec at the Hero's side, on the Hero's target (the next when it dies). Felstorm as
@@ -8208,6 +8717,8 @@ public:
             StarTick(player, diff);
         if (player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE) || StateOf(player).EventideUntil)
             EventideTick(player, diff);
+        if (StateOf(player).PatchUntil)
+            HollowPatchTick(player, diff);
         if (StateOf(player).GuardShield)
             GuardTick(player);
         if (player->HasAura(SPELL_RUNE_STORMREAVER) || StateOf(player).StormfrontTimer)
@@ -8633,8 +9144,8 @@ class spell_titan_rune_starfire : public SpellScript
     }
 };
 
-// Wrath (every rank): Twilight Hunt's 25% more on an owl's marked victim (the mark spent); Astral Convergence's
-// Sunlight or flare.
+// Wrath (every rank): Twilight Hunt's 25% more on its marked target (the mark spent); Elune's Guardian's return
+// strike on Moonlit Prey; Astral Convergence's Sunlight or flare.
 class spell_titan_rune_wrath : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_wrath);
@@ -8653,7 +9164,11 @@ class spell_titan_rune_wrath : public SpellScript
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE))
+        if (!player || !target || GetHitDamage() <= 0)
+            return;
+        if (player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN))
+            OwlReturn(player, target);
+        if (player->HasAura(SPELL_RUNE_ASTRAL_CONVERGENCE))
             ConvergenceWrath(player, target);
     }
 
@@ -8666,9 +9181,10 @@ class spell_titan_rune_wrath : public SpellScript
 
 // The Extended Options' other abilities (every rank): their direct hits and heals, to the runes that answer them.
 // Lightning Bolt (Astral Convergence's lesser flare; Arcane Mind's Insight, Storm Conduit; Astral Horizon's
-// Orbital Lightning), Frostbolt (Frozen Eclipse, Missile Shards), Lava Burst and Scorch (Phoenix Wake's Lava Flock,
-// Hot Pursuit), Arcane Shot (Distant Spark), Chain Heal and Holy Shock on an ally (Guiding Light's Chain Guidance,
-// Holy Passage).
+// Orbital Lightning), Frostbolt (Frozen Eclipse, Missile Shards, Frostfeather, Winter's Blessing, Frostbound Sermon),
+// Shadow Bolt (Devouring Command), Lava Burst and Scorch (Phoenix Wake's Lava Flock, Hot Pursuit), Arcane Shot,
+// Aimed Shot and Steady Shot (Distant Spark, Command the Hunt, Hunter's Pursuit), Chain Heal and Holy Shock on an
+// ally (Guiding Light's Chain Guidance, Holy Passage).
 class spell_titan_rune_extended_hit : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_extended_hit);
@@ -8706,6 +9222,19 @@ class spell_titan_rune_extended_hit : public SpellScript
                     ConvergenceFrostbolt(player, target);
                 if (mind)
                     MindFrostbolt(player);
+                if (player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN))
+                    OwlFrostbolt(player, target);
+                if (player->HasAura(SPELL_RUNE_HOLLOW_CONGREGATION))
+                    HollowStrike(player, target, first);
+                break;
+            case SPELL_SHADOW_BOLT:
+                if (player->HasAura(SPELL_RUNE_HOLLOW_CONGREGATION))
+                    HollowStrike(player, target, first);
+                break;
+            case SPELL_AIMED_SHOT:
+            case SPELL_STEADY_SHOT:
+                if (player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN))
+                    OwlShot(player, target, first);
                 break;
             case SPELL_LAVA_BURST:
             case SPELL_SCORCH:
@@ -8715,14 +9244,27 @@ class spell_titan_rune_extended_hit : public SpellScript
             case SPELL_ARCANE_SHOT:
                 if (horizon)
                     HorizonStrike(player, target, first);
+                if (player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN))
+                    OwlShot(player, target, first);
                 break;
             default:
                 break;
         }
     }
 
+    // Winter's Blessing: a Frostbolt on Moonfrost, 20% more.
+    void Damage()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN)
+            && GetSpellInfo()->GetFirstRankSpell()->Id == SPELL_FROSTBOLT)
+            SetHitDamage(int32(OwlFrostboltDamage(player, target, float(GetHitDamage()))));
+    }
+
     void Register() override
     {
+        OnHit += SpellHitFn(spell_titan_rune_extended_hit::Damage);
         AfterHit += SpellHitFn(spell_titan_rune_extended_hit::Hit);
     }
 };
@@ -9206,25 +9748,24 @@ class spell_titan_rune_eviscerate : public SpellScript
     }
 };
 
-// Sinister Strike, Backstab and Hemorrhage (every rank) on a target Marked for Murder by the Hero: 30% more, and the
-// mark is spent.
+// Backstab (every rank; the script still on Sinister Strike and Hemorrhage, which no longer mark) with the
+// Spectral Blade: its hit marks the target for 6 sec, for the phantom.
 class spell_titan_rune_marked_strike : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_marked_strike);
 
-    void Strike()
+    void Mark()
     {
-        Unit* caster = GetCaster();
+        Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (!caster || !target || !target->HasAura(SPELL_MARKED_FOR_MURDER, caster->GetGUID()))
-            return;
-        SetHitDamage(int32(GetHitDamage() * MARKED_BONUS));
-        target->RemoveAurasDueToSpell(SPELL_MARKED_FOR_MURDER, caster->GetGUID());
+        if (player && target && target->IsAlive() && GetHitDamage() > 0
+            && GetSpellInfo()->GetFirstRankSpell()->Id == SPELL_BACKSTAB && player->HasAura(SPELL_RUNE_SPECTRAL_BLADE))
+            Lasting(player, target, SPELL_MARKED_FOR_MURDER, BACKSTAB_MARK_MS);
     }
 
     void Register() override
     {
-        OnHit += SpellHitFn(spell_titan_rune_marked_strike::Strike);
+        AfterHit += SpellHitFn(spell_titan_rune_marked_strike::Mark);
     }
 };
 

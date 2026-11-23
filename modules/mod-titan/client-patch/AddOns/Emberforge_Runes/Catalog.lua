@@ -453,22 +453,33 @@ EmberforgeRunesCatalog = {
       role = "Ranged DPS (Mind Flay, Mind Blast)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_HollowCongregation",
-      keywords = "priest shadow mind flay echoes spirits",
+      keywords = "priest shadow mind flay echoes spirits corruption moonfire shadow bolt frostbolt drain soul renew " ..
+          "dot patch",
       slots = { "Congregation", "Sermon", "Command" },
       builtFrom = "Mind Flay",
       spentWith = "Mind Blast",
       resource = "Hollow Echoes, up to 3",
       core = "Mind Flay calls a Hollow Echo to your side for 10 sec (3 at most): it follows you and channels a " ..
-          "weaker Mind Flay on your target (40% of a tick). Mind Blast turns every echo on its target in a barrage " ..
-          "of 3 bolts, 60% of a tick each.",
+          "weaker Mind Flay on your target (40% of a tick), 5% more for each of your damage over time effects on " ..
+          "that target (up to 5). Mind Blast turns every echo on its target in a barrage of 3 bolts, 60% of a tick " ..
+          "each. Shadow Word: Pain: a barrage ending on your Pain target leaves a patch dealing 10% of your spell " ..
+          "power each second to up to 3 enemies for 3 sec. Corruption: the first bolt of each barrage also strikes " ..
+          "another enemy with your Corruption within 8 yards for half.",
       loop = "Flay to gather your echoes, then Mind Blast to unleash them.",
       mods = {
-        { name = "Gathering",
-          text = "You can have 4 Hollow Echoes at once instead of 3." },
-        { name = "Lasting Echoes",
-          text = "Your Hollow Echoes last 15 sec instead of 10." },
-        { name = "Last Word",
-          text = "When a Hollow Echo fades, it strikes its target for 3 Mind Flay ticks at once." },
+        { name = "Following Shadows",
+          text = "Your echoes follow you, and their Mind Flay deals 15% more damage." },
+        { name = "Haunted Ground",
+          text = "Your echoes stay where they were called, reach 10 yards farther (50 yards), and their Mind Flay " ..
+              "deals 20% more damage." },
+        { name = "Possession",
+          text = "Your echoes follow their target, and their Mind Flay deals 20% more damage. One echo for each " ..
+              "enemy: a new one on the same enemy replaces it." },
+        { name = "Plague Sermon",
+          text = "Barrage bolts deal 20% more damage to your Corruption target." },
+        { name = "Moonlit Congregation",
+          text = "An echo's Mind Flay on your Moonfire target also deals 10% of your spell power as Arcane damage, " ..
+              "once every 2 sec for each echo." },
         { name = "Unison",
           text = "Mind Blast's barrage lands all at once and deals 20% more damage: 72% of a Mind Flay " ..
               "tick's damage per bolt." },
@@ -478,19 +489,31 @@ EmberforgeRunesCatalog = {
         { name = "Accusation",
           text = "Instead of bolts, each echo screams through up to 5 enemies on the way to your target, " ..
               "dealing 90% of a Mind Flay tick's damage to each." },
-        { name = "Fervor",
-          text = "Your Hollow Echoes deal 25% more damage while you channel Mind Flay." },
-        { name = "Shadow Mend",
-          text = "Your Hollow Echoes heal you for 10% of the damage they deal." },
-        { name = "Swift Command",
-          text = "Mind Blast's cooldown is 0.5 sec shorter for each echo it commands." },
+        { name = "Devouring Command",
+          text = "A Shadow Bolt hit turns one echo on its target with a Shadow hit of 30% of your spell power, once " ..
+              "every 8 sec. No barrage." },
+        { name = "Frostbound Sermon",
+          text = "A Frostbolt hit on an echo's target makes that echo's next barrage also strike one other enemy " ..
+              "within 8 yards with each bolt, for half." },
+        { name = "Last Word",
+          text = "When a Hollow Echo fades, it strikes its target for 3 Mind Flay ticks at once." },
+        { name = "Procession",
+          text = "Mind Blast moves your echoes beside its target, and the first bolt of each barrage deals 30% more " ..
+              "damage." },
+        { name = "Silent Witness",
+          text = "While you move, your echoes' Mind Flay deals 25% more damage." },
+        { name = "Feeding the Void",
+          text = "While you channel Drain Soul on an echo's target, that echo's Mind Flay deals 20% more damage." },
+        { name = "Renewed Witness",
+          text = "A barrage completed while your Renew is on you heals you for 30% of your spell power, once every " ..
+              "8 sec." },
       },
       builds = {
-        { name = "The Choir", mods = { "Gathering", "Unison", "Swift Command" },
-          text = "Four echoes, one voice, again and again." },
-        { name = "The Plague of Whispers", mods = { "Lasting Echoes", "Dissonance", "Shadow Mend" },
+        { name = "The Choir", mods = { "Following Shadows", "Unison", "Procession" },
+          text = "Your congregation at your side, one voice." },
+        { name = "The Plague of Whispers", mods = { "Possession", "Dissonance", "Silent Witness" },
           text = "Spread your echoes over every enemy you have cursed." },
-        { name = "The Last Rites", mods = { "Last Word", "Accusation", "Fervor" },
+        { name = "The Last Rites", mods = { "Haunted Ground", "Accusation", "Last Word" },
           text = "Line them up and scream them down." },
       },
     },
@@ -544,15 +567,18 @@ EmberforgeRunesCatalog = {
       role = "Melee DPS (Rogue)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_SpectralBlade",
-      keywords = "rogue phantom shadow assassin finisher combo points eviscerate bleed physical",
+      keywords = "rogue phantom shadow assassin finisher combo points eviscerate bleed physical backstab sinister " ..
+          "strike shadow word pain icy touch flame shock hunters mark corruption renew rend",
       slots = { "Execution Style", "Timing", "Aftermath" },
       builtFrom = "Your combo points",
       spentWith = "Eviscerate",
       resource = "Phantom strikes",
       core = "Eviscerate calls a phantom assassin behind its victim. 0.6 sec later it strikes for 200% of " ..
-          "Eviscerate's damage, and your Energy regenerates 100% faster for 4 sec. The phantom cannot " ..
-          "critically strike and triggers nothing, poisons included. More combo points, a bigger " ..
-          "Eviscerate, a bigger phantom.",
+          "Eviscerate's damage, and your Energy regenerates 100% faster for 4 sec. The phantom cannot critically " ..
+          "strike and triggers nothing, poisons included. More combo points, a bigger Eviscerate, a bigger phantom. " ..
+          "Backstab marks its target for 6 sec: the phantom spends the mark for 25% more damage. After the phantom " ..
+          "strikes, your next Sinister Strike within 6 sec costs 10 less Energy. Shadow Word: Pain: the phantom on " ..
+          "your Pain target leaves Phantom Wound, 20% of its damage over 6 sec.",
       loop = "Build combo points, then Eviscerate: your blow, then the phantom's.",
       mods = {
         { name = "Executioner",
@@ -562,25 +588,40 @@ EmberforgeRunesCatalog = {
         { name = "Shadow Cleave",
           text = "The phantom also strikes up to 3 other enemies within 8 yards for 100% of Eviscerate's " ..
               "damage each." },
-        { name = "Quick Death",
-          text = "The phantom strikes 0.1 sec after Eviscerate instead of 0.6." },
-        { name = "Patient Killer",
+        { name = "Frost Phantom",
+          text = "The phantom on your Frost Fever target also deals 20% of your attack power as Frost damage." },
+        { name = "Flame Phantom",
+          text = "The phantom on your Flame Shock target also deals 20% of your spell power as Fire damage." },
+        { name = "Fatal Opening",
+          text = "The phantom strikes 0.1 sec after Eviscerate instead of 0.6, and your next Sinister Strike, " ..
+              "Backstab, Hemorrhage or Ghostly Strike within 6 sec costs 10 less Energy." },
+        { name = "Perfect Ambush",
           text = "The phantom waits 2 sec, then strikes for 280% of Eviscerate's damage." },
         { name = "Open Wound",
           text = "The phantom leaves a bleed instead: 240% of Eviscerate's damage over 4 sec. Refreshed, " ..
               "never stacked." },
+        { name = "Marked Execution",
+          text = "The phantom on your Hunter's Mark target also strikes one other enemy within 8 yards for half its " ..
+              "damage." },
+        { name = "Corrupted Blade",
+          text = "The phantom on your Corruption target leaves 25% of its damage as Shadow damage over 6 sec." },
         { name = "Death Follows",
           text = "If its victim dies first, the phantom strikes the nearest enemy within 10 yards." },
         { name = "Vanishing Act",
           text = "When the phantom strikes, your movement speed rises by 30% for 3 sec." },
         { name = "Marked for Murder",
-          text = "The phantom marks its victim for 10 sec: your next Sinister Strike, Backstab or " ..
-              "Hemorrhage on it deals 30% more." },
+          text = "Your Backstab's mark makes the phantom deal 40% more damage instead of 25%." },
+        { name = "Restoring Phantom",
+          text = "The phantom's strike while your Renew is on you heals you for 30% of your spell power, once every " ..
+              "10 sec." },
+        { name = "Bleeding Follow-Through",
+          text = "The phantom's strike on your Rend target makes your next Sinister Strike within 6 sec deal 20% " ..
+              "more damage." },
       },
       builds = {
-        { name = "The Headsman", mods = { "Executioner", "Patient Killer", "Marked for Murder" },
+        { name = "The Headsman", mods = { "Executioner", "Perfect Ambush", "Marked for Murder" },
           text = "One victim, one huge blow." },
-        { name = "The Shadow Dance", mods = { "Shadow Cleave", "Quick Death", "Death Follows" },
+        { name = "The Shadow Dance", mods = { "Shadow Cleave", "Fatal Opening", "Death Follows" },
           text = "Cut through a whole pack." },
         { name = "The Bleeding Edge", mods = { "Thousand Cuts", "Open Wound", "Vanishing Act" },
           text = "Bleed them and slip away." },
@@ -972,43 +1013,68 @@ EmberforgeRunesCatalog = {
       role = "Ranged DPS (Druid, Balance)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_ElunesGuardian",
-      keywords = "druid balance moonkin starfire wrath owl moon lunar arcane",
+      keywords = "druid balance moonkin starfire wrath owl moon lunar arcane wrath moonfire hunters mark frostbolt " ..
+          "arcane shot aimed shot steady shot prey sentinel",
       slots = { "Guardian", "Descent", "Blessing" },
       builtFrom = "Starfire",
       spentWith = "The owls dive on their own",
       resource = "Lunar owls, up to 3 waiting",
-      core = "A Starfire that hits calls a lunar owl: 1 sec later it dives on the same enemy from the sky for 30% " ..
-          "of that Starfire's damage. Up to 3 wait at once; an owl whose target dies fades.",
-      loop = "Starfire; the owls dive on their own while you keep casting.",
+      core = "A Starfire that hits calls a lunar owl: 1 sec later it dives on the same enemy from the sky for 37.5% " ..
+          "of that Starfire's damage and lays Moonlit Prey for 8 sec. Up to 3 wait at once; an owl whose target " ..
+          "dies fades. Wrath: your Wrath on Moonlit Prey calls the owl back through it for 20% of your spell power " ..
+          "as Nature damage. Moonfire: a dive on your Moonfire target extends it by 2 sec, up to 6 sec for each " ..
+          "cast. Hunter's Mark: owls deal 20% more to your marked target, and the return strike also hits one other " ..
+          "enemy within 8 yards for half.",
+      loop = "Starfire; the owls dive on their own. Wrath their prey to call them back.",
       mods = {
         { name = "Moonpiercer",
-          text = "Owls deal 40% more damage to their target: 42% of the Starfire's damage." },
+          text = "Owls deal 40% more damage to their target: 52.5% of the Starfire's damage." },
         { name = "Silver Wings",
           text = "Each dive also hits up to 4 other enemies within 6 yards for half its damage." },
-        { name = "Watchful Flight",
-          text = "Each owl strikes 3 times, 1 sec apart, for 40% of its damage each (120% in all). The last strike " ..
-              "makes your next Starfire cost 20% less mana." },
+        { name = "Lunar Flock",
+          text = "Each owl strikes 3 times, 1 sec apart, for 40% of its damage each (120% in all), laying Moonlit " ..
+              "Prey once. The last strike makes your next Starfire cost 20% less mana." },
+        { name = "Sentinel of the Hunt",
+          text = "With your Hunter's Mark on an enemy, Starfire calls a Sentinel instead: it strikes your marked " ..
+              "target at once, after 3 sec and after 6 sec, for 45% of an owl's damage each, following your mark. A " ..
+              "new Starfire replaces it." },
+        { name = "Frostfeather",
+          text = "Half of each owl's dive is Frost damage. A Frostbolt hit on an owl's target before it dives " ..
+              "bursts for 25% of your spell power on it and up to 2 other enemies within 6 yards, once for each " ..
+              "owl." },
         { name = "Swift Judgment",
           text = "Owls dive 0.1 sec after Starfire instead of 1. Each dive makes your next Starfire cast 10% faster." },
         { name = "Patient Vigil",
           text = "Owls wait 3 sec, then dive for 30% more damage." },
-        { name = "Moonlit Pursuit",
-          text = "If its target dies first, the owl dives on the nearest enemy within 15 yards instead. Each owl " ..
-              "also strikes again 1 sec later for 20% of its damage." },
+        { name = "Lunar Guidance",
+          text = "Owls deal 15% more damage to your Moonfire target and extend that Moonfire by 4 sec instead of 2, " ..
+              "up to 8 sec for each cast." },
+        { name = "Command the Hunt",
+          text = "Your Arcane Shot or Aimed Shot on your Hunter's Mark target, while an owl or Sentinel is out, " ..
+              "commands it to strike that target for 25% of your spell power, once every 6 sec." },
+        { name = "Sun and Moon",
+          text = "The return strike also deals 15% of your spell power as Nature damage to up to 4 other enemies " ..
+              "within 6 yards." },
         { name = "Lunar Wound",
           text = "An owl's strike wounds its target for as much again over 6 sec. A new wound keeps what is left of " ..
               "the last." },
         { name = "Guiding Wings",
           text = "Every third owl makes your next Starfire within 5 sec instant, and you move 20% faster for 5 sec." },
         { name = "Twilight Hunt",
-          text = "An owl's target takes 25% more damage from your next Wrath within 5 sec." },
+          text = "The return strike makes your next Wrath on that target within 5 sec deal 25% more damage." },
+        { name = "Hunter's Pursuit",
+          text = "An owl or Sentinel striking your Hunter's Mark target lays Exposed Prey (6 sec, once every 4 " ..
+              "sec): your next Arcane Shot, Aimed Shot or Steady Shot on it deals 25% of your spell power more." },
+        { name = "Winter's Blessing",
+          text = "An owl diving on a target slowed by your Frostbolt lays Moonfrost (6 sec): your next Frostbolt on " ..
+              "it deals 20% more damage and extends your Moonfire there by 2 sec." },
       },
       builds = {
         { name = "The Hunter", mods = { "Moonpiercer", "Swift Judgment", "Lunar Wound" },
           text = "Quick owls, deep wounds." },
         { name = "The Flock", mods = { "Silver Wings", "Patient Vigil", "Guiding Wings" },
           text = "Big dives on packs, on the move." },
-        { name = "The Watcher", mods = { "Watchful Flight", "Moonlit Pursuit", "Twilight Hunt" },
+        { name = "The Watcher", mods = { "Lunar Flock", "Sun and Moon", "Twilight Hunt" },
           text = "Many strikes, and Wrath to follow." },
       },
     },

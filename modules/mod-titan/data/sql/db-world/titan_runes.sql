@@ -353,16 +353,21 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-3044, 'spell_titan_rune_extended_hit'),
 (-1064, 'spell_titan_rune_extended_hit'),
 (-20473, 'spell_titan_rune_extended_hit'),
+(-686, 'spell_titan_rune_extended_hit'),
+(-19434, 'spell_titan_rune_extended_hit'),
+(-56641, 'spell_titan_rune_extended_hit'),
 (12051, 'spell_titan_rune_evocation');
 
--- Phoenix Burn, Phoenix Wake's damage over time.
-DELETE FROM `spell_script_names` WHERE `spell_id` = 91635 AND `ScriptName` = 'spell_titan_rune_dot';
+-- The Extended Options' damage over time: Phoenix Burn, Phantom Wound, Corrupted Blade.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (91635, 91735, 91739) AND `ScriptName` = 'spell_titan_rune_dot';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(91635, 'spell_titan_rune_dot');
+(91635, 'spell_titan_rune_dot'),
+(91735, 'spell_titan_rune_dot'),
+(91739, 'spell_titan_rune_dot');
 
 -- The Extended Options' strikes, heals and shields: shares of the Hero's power and hits, no bonuses of their own.
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 91641, 91660, 91661, 91662, 91663,
-    91688, 91689, 91710, 91711);
+    91688, 91689, 91710, 91711, 91736, 91737, 91738, 91740, 91741, 91761, 91762, 91786, 91787, 91788);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91636, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Burn tick'),
 (91637, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Eruption'),
@@ -376,7 +381,17 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91688, 0, 0, 0, 0, 'Arcane Mind - Arcane Charge'),
 (91689, 0, 0, 0, 0, 'Arcane Mind - Shocking Clarity'),
 (91710, 0, 0, 0, 0, 'Guiding Light - Guiding Trail'),
-(91711, 0, 0, 0, 0, 'Guiding Light - Guiding Ward');
+(91711, 0, 0, 0, 0, 'Guiding Light - Guiding Ward'),
+(91736, 0, 0, 0, 0, 'Spectral Blade - Phantom Wound tick'),
+(91737, 0, 0, 0, 0, 'Spectral Blade - Frost Phantom'),
+(91738, 0, 0, 0, 0, 'Spectral Blade - Flame Phantom'),
+(91740, 0, 0, 0, 0, 'Spectral Blade - Corrupted Blade tick'),
+(91741, 0, 0, 0, 0, 'Spectral Blade - Restoring Phantom'),
+(91761, 0, 0, 0, 0, 'Elune''s Guardian - Owl''s Return'),
+(91762, 0, 0, 0, 0, 'Elune''s Guardian - Frostfeather'),
+(91786, 0, 0, 0, 0, 'Hollow Congregation - Hollow Patch tick'),
+(91787, 0, 0, 0, 0, 'Hollow Congregation - Moonlit Congregation'),
+(91788, 0, 0, 0, 0, 'Hollow Congregation - Devouring Command');
 
 -- Their damage over time: Lunar Wound, Astral Rupture.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';

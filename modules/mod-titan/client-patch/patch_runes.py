@@ -828,7 +828,7 @@ SPELLS += [
      'copy': SHADOW_BOLT},
     strike(90924, 'Accusation', 'Spell_Shadow_PsychicScream', SHADOW, VISUAL_MIND_BLAST),
     strike(90925, 'Last Word', 'Spell_Shadow_DemonicFortitude', SHADOW, VISUAL_MIND_BLAST),
-    {**heal(90926, 'Shadow Mend', 'Spell_Shadow_SiphonMana', 'Your Hollow Echoes mend you.'),
+    {**heal(90926, 'Renewed Witness', 'Spell_Shadow_SiphonMana', 'Your Hollow Echoes mend you.'),
      'set': {**HEAL_SET, 'SchoolMask': SHADOW, 'AttributesEx2': 0, 'SpellVisual': 0}},
 
     buff(90950, 'Rune of the Shattered Sun', SUN_ICON,
@@ -870,7 +870,7 @@ SPELLS += [
             DURATION_4S, {1: aura(AURA_MOD_POWER_REGEN_PERCENT, 100, POWER_ENERGY)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_4S}},
     harmful(90986, 'Marked for Murder', 'Ability_Rogue_FindWeakness',
-            'Your next Sinister Strike, Backstab or Hemorrhage deals 30% more to this target.', DURATION_10S,
+            'Your next phantom on this target deals more damage.', DURATION_10S,
             aura(AURA_DUMMY, 1, 0), SHADOW),
 
     buff(91130, 'Rune of the Wild Hunt', HUNT_ICON,
@@ -903,15 +903,9 @@ LEGEND_MODIFIERS = [
     (90910, DAWN_ICON, [('Sunburst', 'Focused Dawn', 'Communion'),
                         ('Sacred Ground', 'Steadfast', "Judgment's Echo"),
                         ("Dawn's Mercy", 'Swift Dawn', 'Radiant Ward')]),
-    (90940, HOLLOW_ICON, [('Gathering', 'Lasting Echoes', 'Last Word'),
-                          ('Unison', 'Dissonance', 'Accusation'),
-                          ('Fervor', 'Shadow Mend', 'Swift Command')]),
     (90970, SUN_ICON, [('Wildfire', 'Spreading Sun', 'Heavy Sun'),
                        ('Wide Burst', 'Scalding Ground', 'Chain Reaction'),
                        ('Implosion', 'Second Sunrise', 'Frozen Core')]),
-    (91120, BLADE_ICON, [('Executioner', 'Thousand Cuts', 'Shadow Cleave'),
-                         ('Quick Death', 'Patient Killer', 'Open Wound'),
-                         ('Death Follows', 'Vanishing Act', 'Marked for Murder')]),
     (91150, HUNT_ICON, [('Alpha Predator', 'Pack Ravager', 'Ghostfang'),
                         ('Unending Wrath', "Hunter's Command", 'Blood Scent'),
                         ('Final Pounce', 'Frenzied Farewell', 'Parting Howl')]),
@@ -1466,7 +1460,7 @@ SPELLS += [
     strike(91303, 'Lunar Wound', 'Spell_Nature_Moonglow', ARCANE),
     druid_mod(91304, 'Swift Judgment', ELUNE_ICON, 'Your next Starfire casts 10% faster.', DURATION_5S,
               STARFIRE_FLAG, [(SPELLMOD_CASTING_TIME, 10)], charges=1),
-    druid_mod(91305, 'Watchful Flight', ELUNE_ICON, 'Your next Starfire costs 20% less mana.', DURATION_5S,
+    druid_mod(91305, 'Lunar Flock', ELUNE_ICON, 'Your next Starfire costs 20% less mana.', DURATION_5S,
               STARFIRE_FLAG, [(SPELLMOD_COST, 20)], charges=1),
     druid_mod(91306, 'Guiding Wings', ELUNE_ICON, 'Your next Starfire is instant.', DURATION_5S, STARFIRE_FLAG,
               [(SPELLMOD_CASTING_TIME, 100)], charges=1),
@@ -1520,9 +1514,6 @@ for _spell in SPELLS:
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
 
 DRUID_MODIFIERS = [
-    (91310, ELUNE_ICON, [('Moonpiercer', 'Silver Wings', 'Watchful Flight'),
-                         ('Swift Judgment', 'Patient Vigil', 'Moonlit Pursuit'),
-                         ('Lunar Wound', 'Guiding Wings', 'Twilight Hunt')]),
     (91350, URSOC_ICON, [('Ancient Hide', 'Lasting Stand', 'Moving Mountain'),
                          ("Ursoc's Bite", "Mountain's Roar", 'Earthbreaker'),
                          ('Enduring Champion', "Challenger's Roar", 'Unbroken')]),
@@ -2006,6 +1997,18 @@ KIT_TINT = 21                                   # the kit's first character effe
 VISUALS['CovenantBound'] = {'copy': 3619, 'id': 16808, 'kits': {
     'state': (15747, {KIT_TINT: COVENANT_TINT, KIT_CHEST: FX_SHADOW_DANCE})}}
 
+AURA_ADD_FLAT_MODIFIER = 107
+SINISTER_STRIKE_FLAG = 0x2
+BUILDER_FLAGS = 0x2 | 0x4 | 0x2000000 | 0x4000000    # Sinister Strike, Backstab, Hemorrhage, Ghostly Strike
+
+
+def family_mod(spell_id, name, icon, text, duration, family, flag, aura_type, op, value):
+    """A spell modifier of a class's (its family: the engine makes the client honour a Hero's), one charge."""
+    spell = buff(spell_id, name, icon, text, duration, {1: {**aura(aura_type, value, op), 'Mask': flag}})
+    spell['set'] = {**spell['set'], 'SpellFamilyName': family, 'ProcCharges': 1}
+    return spell
+
+
 # ---- The Extended Options (5 choices a slot): 20 ids a rune from 91600, its 15 markers (+ slot * 5 + choice) and
 # then its new spells.
 EXTENDED_MODIFIERS = [
@@ -2030,6 +2033,17 @@ EXTENDED_MODIFIERS = [
                            ('Gentle Passage', 'Guardian Star', 'Seeking Light', 'Chain Guidance', 'Holy Passage'),
                            ('Final Benediction', 'Afterglow', 'Parting Grace', 'Tidal Farewell',
                             'Renewed Farewell')]),
+    (91720, BLADE_ICON, [('Executioner', 'Thousand Cuts', 'Shadow Cleave', 'Frost Phantom', 'Flame Phantom'),
+                         ('Fatal Opening', 'Perfect Ambush', 'Open Wound', 'Marked Execution', 'Corrupted Blade'),
+                         ('Death Follows', 'Vanishing Act', 'Marked for Murder', 'Restoring Phantom',
+                          'Bleeding Follow-Through')]),
+    (91745, ELUNE_ICON, [('Moonpiercer', 'Silver Wings', 'Lunar Flock', 'Sentinel of the Hunt', 'Frostfeather'),
+                         ('Swift Judgment', 'Patient Vigil', 'Lunar Guidance', 'Command the Hunt', 'Sun and Moon'),
+                         ('Lunar Wound', 'Guiding Wings', 'Twilight Hunt', "Hunter's Pursuit", "Winter's Blessing")]),
+    (91770, HOLLOW_ICON, [('Following Shadows', 'Haunted Ground', 'Possession', 'Plague Sermon',
+                           'Moonlit Congregation'),
+                          ('Unison', 'Dissonance', 'Accusation', 'Devouring Command', 'Frostbound Sermon'),
+                          ('Last Word', 'Procession', 'Silent Witness', 'Feeding the Void', 'Renewed Witness')]),
 ]
 SPELLS += [buff(first + slot * 5 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
@@ -2069,9 +2083,39 @@ SPELLS += [
     # Guiding Light.
     periodic_heal(91710, 'Guiding Trail', 'Spell_Holy_Renew', 'Healing every 2 sec.', DURATION_6S),
     absorb(91711, 'Guiding Ward', 'Spell_Holy_PowerWordShield', DURATION_6S),
+    # The Spectral Blade.
+    dot(91735, 'Phantom Wound', 'Ability_Rogue_FindWeakness', SHADOW, DURATION_6S, 'Shadow damage every second.'),
+    strike(91736, 'Phantom Wound', 'Ability_Rogue_FindWeakness', SHADOW),
+    strike(91737, 'Frost Phantom', 'Spell_DeathKnight_IceTouch', FROST, VISUAL_ICE_LANCE),
+    strike(91738, 'Flame Phantom', 'Spell_Fire_FlameShock', FIRE, VISUAL_FIRE_BLAST),
+    dot(91739, 'Corrupted Blade', 'Spell_Shadow_AbominationExplosion', SHADOW, DURATION_6S,
+        'Shadow damage every second.'),
+    strike(91740, 'Corrupted Blade', 'Spell_Shadow_AbominationExplosion', SHADOW),
+    heal(91741, 'Restoring Phantom', 'Spell_Holy_Renew', 'The phantom restores you.'),
+    family_mod(91742, 'Phantom Opening', BLADE_ICON, 'Your next Sinister Strike costs 10 less Energy.', DURATION_6S,
+               ROGUE_FAMILY, SINISTER_STRIKE_FLAG, AURA_ADD_FLAT_MODIFIER, SPELLMOD_COST, -10),
+    family_mod(91743, 'Fatal Opening', BLADE_ICON, 'Your next combo point builder costs 10 less Energy.',
+               DURATION_6S, ROGUE_FAMILY, BUILDER_FLAGS, AURA_ADD_FLAT_MODIFIER, SPELLMOD_COST, -10),
+    family_mod(91744, 'Bleeding Follow-Through', 'Ability_Gouge', 'Your next Sinister Strike deals 20% more damage.',
+               DURATION_6S, ROGUE_FAMILY, SINISTER_STRIKE_FLAG, AURA_ADD_PCT_MODIFIER, SPELLMOD_DAMAGE, 20),
+    # Elune's Guardian.
+    harmful(91760, 'Moonlit Prey', 'Spell_Nature_Moonglow', 'Your Wrath on this target calls the owl back.',
+            DURATION_8S, aura(AURA_DUMMY, 1, 0), ARCANE),
+    strike(91761, "Owl's Return", 'Ability_Hunter_Pet_Owl', NATURE, VISUAL_SOLAR_ECLIPSE),
+    strike(91762, 'Frostfeather', 'Spell_Frost_FrostBolt02', FROST, VISUAL_ICE_LANCE),
+    harmful(91763, 'Moonfrost', 'Spell_Frost_ChillingBlast', 'Your next Frostbolt on this target deals 20% more.',
+            DURATION_6S, aura(AURA_DUMMY, 1, 0), FROST),
+    harmful(91764, 'Exposed Prey', 'Ability_Hunter_SniperShot', 'Your next shot on this target spends it.',
+            DURATION_6S, aura(AURA_DUMMY, 1, 0), ARCANE),
+    # The Hollow Congregation.
+    ground(91785, 'Hollow Patch', 'Spell_Shadow_ShadowWordPain', 'GraveDiseasedPatch', DURATION_3S),
+    strike(91786, 'Hollow Patch', 'Spell_Shadow_ShadowWordPain', SHADOW),
+    strike(91787, 'Moonlit Congregation', 'Spell_Nature_StarFall', ARCANE, VISUAL_ARCANE_HIT),
+    strike(91788, 'Devouring Command', 'Spell_Shadow_ShadowBolt', SHADOW, VISUAL_SHADOW_BOLT),
 ]
 for _spell in SPELLS:
-    if _spell['id'] in (91615, 91636, 91637, 91638, 91639, 91660, 91661, 91662, 91688, 91689):
+    if _spell['id'] in (91615, 91636, 91637, 91638, 91639, 91660, 91661, 91662, 91688, 91689, 91736, 91737, 91738,
+                        91740, 91761, 91762, 91786, 91787, 91788):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
     if _spell['id'] == 91687:
         _spell['set'] = {**_spell['set'], 'SpellFamilyName': MAGE_FAMILY, 'ProcCharges': 1}
@@ -2079,4 +2123,8 @@ for _spell in SPELLS:
         _spell['effects'][1]['Amplitude'] = 2000
         _spell['tooltip'] = 'Healing every 2 sec.'
 ICONS += ['Spell_Nature_InsectSwarm', 'Spell_Fire_SoulBurn', 'Spell_Fire_FireArmor', 'Spell_Arcane_Arcane04',
-          'Spell_Nature_WispSplode', 'Spell_Nature_Lightning', 'Spell_Nature_LightningShield']
+          'Spell_Nature_WispSplode', 'Spell_Nature_Lightning', 'Spell_Nature_LightningShield',
+          'Spell_Shadow_AbominationExplosion', 'Spell_Frost_ChillingBlast', 'Ability_Hunter_SniperShot',
+          'Ability_Gouge', 'Spell_Shadow_ShadowWordPain', 'Spell_Shadow_ShadowBolt', 'Spell_Nature_StarFall',
+          'Spell_DeathKnight_IceTouch', 'Spell_Fire_FlameShock', 'Spell_Holy_Renew', 'Ability_Rogue_FindWeakness',
+          'Spell_Nature_Moonglow', 'Ability_Hunter_Pet_Owl', 'Spell_Frost_FrostBolt02']

@@ -472,39 +472,60 @@ EmberforgeRunesArt = {
             hue = { 0.824, 0.561, 1 },
             inner = { 0.941, 0.898, 0.984 },
             built = true,
-            core = "**Mind Flay** calls a **Hollow Echo** to your side; it follows you and " ..
-                    "flays your target. **Mind Blast** turns every echo on its target in a " ..
-                    "barrage.",
+            core = "**Mind Flay** calls a **Hollow Echo** to your side; it flays your " ..
+                    "target, stronger for each of your damage over time effects there. " ..
+                    "**Mind Blast** turns every echo on its target in a barrage.",
             asks = {
-                "How many echoes you keep",
+                "Where your echoes stand",
                 "How they answer Mind Blast",
                 "What else they give",
             },
             abilities = {
-                "4 echoes",
-                "15 sec",
-                "Fade",
+                "Follow",
+                "Haunt",
+                "Possess",
+                "Corruption",
+                "Moonfire",
                 "Together",
                 "Spread",
                 "Line",
-                "Fervor",
-                "Self-heal",
-                "Cooldown",
+                "Shadow Bolt",
+                "Frostbolt",
+                "Fade",
+                "Procession",
+                "Witness",
+                "Drain Soul",
+                "Renew",
             },
             texts = {
-                "You can have 4 Hollow Echoes at once instead of 3.",
-                "Your Hollow Echoes last 15 sec instead of 10.",
-                "When a Hollow Echo fades, it strikes its target for 3 Mind Flay ticks " ..
-                        "at once.",
+                "Your echoes follow you, and their Mind Flay deals 15% more damage.",
+                "Your echoes stay where they were called, reach 10 yards farther (50 " ..
+                        "yards), and their Mind Flay deals 20% more damage.",
+                "Your echoes follow their target, and their Mind Flay deals 20% more " ..
+                        "damage. One echo for each enemy: a new one on the same enemy replaces " ..
+                        "it.",
+                "Barrage bolts deal 20% more damage to your Corruption target.",
+                "An echo's Mind Flay on your Moonfire target also deals 10% of your " ..
+                        "spell power as Arcane damage, once every 2 sec for each echo.",
                 "Mind Blast's barrage lands all at once and deals 20% more damage: 72% " ..
                         "of a Mind Flay tick's damage per bolt.",
                 "Your echoes spread out over enemies with your Shadow Word: Pain on " ..
                         "them, your target first.",
                 "Instead of bolts, each echo screams through up to 5 enemies on the way " ..
                         "to your target, dealing 90% of a Mind Flay tick's damage to each.",
-                "Your Hollow Echoes deal 25% more damage while you channel Mind Flay.",
-                "Your Hollow Echoes heal you for 10% of the damage they deal.",
-                "Mind Blast's cooldown is 0.5 sec shorter for each echo it commands.",
+                "A Shadow Bolt hit turns one echo on its target with a Shadow hit of " ..
+                        "30% of your spell power, once every 8 sec. No barrage.",
+                "A Frostbolt hit on an echo's target makes that echo's next barrage " ..
+                        "also strike one other enemy within 8 yards with each bolt, for half.",
+                "When a Hollow Echo fades, it strikes its target for 3 Mind Flay ticks " ..
+                        "at once.",
+                "Mind Blast moves your echoes beside its target, and the first bolt of " ..
+                        "each barrage deals 30% more damage.",
+                "While you move, your echoes' Mind Flay deals 25% more damage.",
+                "While you channel Drain Soul on an echo's target, that echo's Mind " ..
+                        "Flay deals 20% more damage.",
+                "A barrage completed while your Renew is on you heals you for 30% of " ..
+                        "your spell power, once every 8 sec.",
             },
             slots = {
                 "Congregation",
@@ -579,12 +600,18 @@ EmberforgeRunesArt = {
                 "Execute",
                 "Cuts",
                 "Cleave",
-                "Instant",
-                "2 sec",
+                "Icy Touch",
+                "Flame Shock",
+                "Fatal",
+                "Ambush",
                 "Bleed",
+                "Hunter's Mark",
+                "Corruption",
                 "Follow",
                 "Speed",
-                "Mark",
+                "Backstab",
+                "Renew",
+                "Rend",
             },
             texts = {
                 "The phantom deals 40% more damage: 280% of Eviscerate's damage.",
@@ -592,15 +619,29 @@ EmberforgeRunesArt = {
                         "damage in all.",
                 "The phantom also strikes up to 3 other enemies within 8 yards for 100% " ..
                         "of Eviscerate's damage each.",
-                "The phantom strikes 0.1 sec after Eviscerate instead of 0.6.",
+                "The phantom on your Frost Fever target also deals 20% of your attack " ..
+                        "power as Frost damage.",
+                "The phantom on your Flame Shock target also deals 20% of your spell " ..
+                        "power as Fire damage.",
+                "The phantom strikes 0.1 sec after Eviscerate instead of 0.6, and your " ..
+                        "next Sinister Strike, Backstab, Hemorrhage or Ghostly Strike within 6 " ..
+                        "sec costs 10 less Energy.",
                 "The phantom waits 2 sec, then strikes for 280% of Eviscerate's damage.",
                 "The phantom leaves a bleed instead: 240% of Eviscerate's damage over 4 " ..
                         "sec. Refreshed, never stacked.",
+                "The phantom on your Hunter's Mark target also strikes one other enemy " ..
+                        "within 8 yards for half its damage.",
+                "The phantom on your Corruption target leaves 25% of its damage as " ..
+                        "Shadow damage over 6 sec.",
                 "If its victim dies first, the phantom strikes the nearest enemy within " ..
                         "10 yards.",
                 "When the phantom strikes, your movement speed rises by 30% for 3 sec.",
-                "The phantom marks its victim for 10 sec: your next Sinister Strike, " ..
-                        "Backstab or Hemorrhage on it deals 30% more.",
+                "Your Backstab's mark makes the phantom deal 40% more damage instead of " ..
+                        "25%.",
+                "The phantom's strike while your Renew is on you heals you for 30% of " ..
+                        "your spell power, once every 10 sec.",
+                "The phantom's strike on your Rend target makes your next Sinister " ..
+                        "Strike within 6 sec deal 20% more damage.",
             },
             slots = {
                 "Execution Style",
@@ -1013,7 +1054,8 @@ EmberforgeRunesArt = {
             inner = { 0.925, 0.933, 1 },
             built = true,
             core = "Each **Starfire** that hits calls a **lunar owl**: 1 sec later it " ..
-                    "dives on the same enemy for **30%** of the Starfire's damage.",
+                    "dives on the same enemy for **37.5%** of the Starfire's damage; " ..
+                    "**Wrath** on its prey calls it back.",
             asks = {
                 "What the owl is",
                 "When it dives",
@@ -1022,34 +1064,57 @@ EmberforgeRunesArt = {
             abilities = {
                 "Pierce",
                 "Wings",
-                "Watch",
+                "Flock",
+                "Hunter's Mark",
+                "Frostbolt",
                 "Swift",
                 "Vigil",
-                "Pursuit",
+                "Moonfire",
+                "Arcane Shot",
+                "Wrath",
                 "Wound",
                 "Guide",
-                "Hunt",
+                "Wrath",
+                "Hunter's Mark",
+                "Frostbolt",
             },
             texts = {
-                "Owls deal 40% more damage to their target: 42% of the Starfire's " ..
+                "Owls deal 40% more damage to their target: 52.5% of the Starfire's " ..
                         "damage.",
                 "Each dive also hits up to 4 other enemies within 6 yards for half its " ..
                         "damage.",
                 "Each owl strikes 3 times, 1 sec apart, for 40% of its damage each " ..
-                        "(120% in all). The last strike makes your next Starfire cost 20% less " ..
-                        "mana.",
+                        "(120% in all), laying Moonlit Prey once. The last strike makes your " ..
+                        "next Starfire cost 20% less mana.",
+                "With your Hunter's Mark on an enemy, Starfire calls a Sentinel " ..
+                        "instead: it strikes your marked target at once, after 3 sec and after " ..
+                        "6 sec, for 45% of an owl's damage each, following your mark. A new " ..
+                        "Starfire replaces it.",
+                "Half of each owl's dive is Frost damage. A Frostbolt hit on an owl's " ..
+                        "target before it dives bursts for 25% of your spell power on it and up " ..
+                        "to 2 other enemies within 6 yards, once for each owl.",
                 "Owls dive 0.1 sec after Starfire instead of 1. Each dive makes your " ..
                         "next Starfire cast 10% faster.",
                 "Owls wait 3 sec, then dive for 30% more damage.",
-                "If its target dies first, the owl dives on the nearest enemy within 15 " ..
-                        "yards instead. Each owl also strikes again 1 sec later for 20% of its " ..
-                        "damage.",
+                "Owls deal 15% more damage to your Moonfire target and extend that " ..
+                        "Moonfire by 4 sec instead of 2, up to 8 sec for each cast.",
+                "Your Arcane Shot or Aimed Shot on your Hunter's Mark target, while an " ..
+                        "owl or Sentinel is out, commands it to strike that target for 25% of " ..
+                        "your spell power, once every 6 sec.",
+                "The return strike also deals 15% of your spell power as Nature damage " ..
+                        "to up to 4 other enemies within 6 yards.",
                 "An owl's strike wounds its target for as much again over 6 sec. A new " ..
                         "wound keeps what is left of the last.",
                 "Every third owl makes your next Starfire within 5 sec instant, and you " ..
                         "move 20% faster for 5 sec.",
-                "An owl's target takes 25% more damage from your next Wrath within 5 " ..
-                        "sec.",
+                "The return strike makes your next Wrath on that target within 5 sec " ..
+                        "deal 25% more damage.",
+                "An owl or Sentinel striking your Hunter's Mark target lays Exposed " ..
+                        "Prey (6 sec, once every 4 sec): your next Arcane Shot, Aimed Shot or " ..
+                        "Steady Shot on it deals 25% of your spell power more.",
+                "An owl diving on a target slowed by your Frostbolt lays Moonfrost (6 " ..
+                        "sec): your next Frostbolt on it deals 20% more damage and extends your " ..
+                        "Moonfire there by 2 sec.",
             },
             slots = {
                 "Guardian",
