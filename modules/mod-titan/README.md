@@ -786,7 +786,8 @@ utility or a tradeoff) take one pick each, from three.
       Worldheart (91501, taught) anchors it at the target within 20 yards for 6 sec.
     - **Black Covenant** (48; Tank; Summon Voidwalker, Searing Pain): Summon Voidwalker's buttons become Bind:
       Voidwalker's (91520, taught; 2 sec cast), which binds a Voidwalker as Covenant Armor (a pet out is
-      dismissed; 91521: base armor +400%, +15% health, 6% less damage, Shadowform's look tinted purple with Shadow
+      dismissed; 91521: +50% armor (a flat amount the script keeps at half the armor before percentages, so it
+      never multiplies other bonuses), +15% health, 6% less damage, Shadowform's look tinted purple with Shadow
       Dance's wisps, visual 16808 / kit 15747; 91522: +200% threat), health share kept; cast again, or a pet
       summoned, unbinds. While bound Searing Pain's buttons are Covenant Lash (91523: 8% of base mana, 100% SP
       Shadowflame 91524, its threat doubled; Lashing Rhythm: 1 sec off Soul Siphon a Lash) and, for a Hero who knows

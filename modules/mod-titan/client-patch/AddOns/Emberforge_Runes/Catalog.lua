@@ -1754,15 +1754,15 @@ EmberforgeRunesCatalog = {
       spentWith = "Covenant Lash, Soul Siphon and Dark Intercession",
       resource = "Covenant Armor, until unbound",
       core = "Summon Voidwalker becomes Bind: Voidwalker (2 sec cast, 10 sec): a Voidwalker binds to you as " ..
-          "Covenant Armor until you cast it again: armor from items 400% higher, 15% more maximum health, 200% more " ..
-          "threat, 6% less damage taken, and a Voidwalker's purple shadow about you. While bound, Searing Pain " ..
-          "becomes Covenant Lash (instant, 10 yards, 8% of base mana: 100% of your spell power as Shadowflame " ..
-          "damage, 100% more threat) and, if you know Drain Life, Drain Life becomes Soul Siphon (a 3 sec channel " ..
-          "at 70% speed, 6% of base mana, 15 sec cooldown: each second 25% of your spell power as Shadow damage and " ..
-          "1.5% of your maximum health back). Shadow Ward becomes Dark Intercession (30 sec): 15% less damage taken " ..
-          "for 6 sec, Covenant Lash meanwhile also hitting up to 4 enemies within 6 yards for 50%. Your Curse of " ..
-          "Weakness has its victim deal 6% less Physical damage to you, Curse of Tongues 6% less magic damage. NPC " ..
-          "attacks never critically strike you.",
+          "Covenant Armor until you cast it again: 50% more armor (added to your other armor bonuses, never " ..
+          "multiplying them), 15% more maximum health, 200% more threat, 6% less damage taken, and a Voidwalker's " ..
+          "purple shadow about you. While bound, Searing Pain becomes Covenant Lash (instant, 10 yards, 8% of base " ..
+          "mana: 100% of your spell power as Shadowflame damage, 100% more threat) and, if you know Drain Life, " ..
+          "Drain Life becomes Soul Siphon (a 3 sec channel at 70% speed, 6% of base mana, 15 sec cooldown: each " ..
+          "second 25% of your spell power as Shadow damage and 1.5% of your maximum health back). Shadow Ward " ..
+          "becomes Dark Intercession (30 sec): 15% less damage taken for 6 sec, Covenant Lash meanwhile also " ..
+          "hitting up to 4 enemies within 6 yards for 50%. Your Curse of Weakness has its victim deal 6% less " ..
+          "Physical damage to you, Curse of Tongues 6% less magic damage. NPC attacks never critically strike you.",
       loop = "Bind your Voidwalker; Covenant Lash for threat, Soul Siphon to recover; Intercession before a " ..
           "big hit.",
       spells = {

@@ -65,7 +65,7 @@
 //   Molten Causeway (16%, 2.5 yards each side), Stoneblood Lash (Lava Lash heals 1.5%, once every 4 sec).
 // - Black Covenant (48): Summon Voidwalker's buttons become Bind: Voidwalker's (taught; 2 sec cast, 10 sec), which
 //   binds a Voidwalker to the Hero as Covenant Armor until cast again (a Voidwalker out is dismissed into it; any pet
-//   summoned meanwhile ends it): armor from items 400% more, 15% more maximum health (its share kept), 200% more
+//   summoned meanwhile ends it): 50% more armor (see ARMOR_SHARE), 15% more maximum health (its share kept), 200% more
 //   threat, 6% less damage taken, Shadowform's look in purple. While bound, Searing Pain's buttons are Covenant Lash
 //   (instant, 10 yards, 8% of base mana: 100% of spell power as Shadowflame, 100% more threat) and, for a Hero who
 //   knows Drain Life, Drain Life's are Soul Siphon (a 3 sec channel at 70% speed, 6% of base mana, 15 sec: each
@@ -251,7 +251,11 @@ namespace
     constexpr float RENEWAL_SP = 0.3f, RENEWAL_CAP_PCT = 2.0f, CONSECRATION_REACH = 8.0f;
 
     // Black Covenant's numbers.
-    constexpr int32 ARMOR_PCT = 400, PACT_THREAT = 200, INSULATION_PCT = 8;
+    constexpr int32 PACT_THREAT = 200, INSULATION_PCT = 8;
+    // Covenant Armor: 50% more armor, of the Hero's armor before any percentage (items, Agility, flat bonuses; not
+    // Voidforged Plate's): a flat amount added after every percentage, so it adds to them rather than multiplying.
+    constexpr float ARMOR_SHARE = 0.5f;
+    constexpr uint32 ARMOR_EVERY_MS = 500;          // kept up to date as the Hero's armor changes
     // Voidforged Plate: this much armor on top at the level cap, a share of it below (level / 60).
     constexpr int32 VOIDFORGED_ARMOR = 2500;
     constexpr float LASH_SP = 1.0f, LASH_CLEAVE_RANGE = 6.0f, LASH_CLEAVE = 0.5f, REBUKE_CLEAVE = 0.75f;
@@ -312,6 +316,7 @@ namespace
         uint32 EarthCommandAt = 0, ElementsAt = 0, ConsecratedAt = 0, CommunionAt = 0, CommunionUntil = 0;
         uint32 RenewalAt = 0;                   // game ms
         uint32 PactAt = 0, VoidJudgmentAt = 0, BloodIntercessionAt = 0;
+        uint32 ArmorTimer = 0;
         bool BloodstoneSpent = false;           // Bloodstone Command: once an Earth command
         bool Bound = false;             // Covenant Armor on (its own aura is the truth; this ends it once)
     };
@@ -1137,6 +1142,24 @@ namespace
         player->CastCustomSpell(player, SPELL_COVENANT_PACT, &threat, &magic, &armor, true);
     }
 
+    // Covenant Armor's flat armor: 50% of the Hero's armor before percentages (without its own and Voidforged
+    // Plate's), divided by the percentage the core multiplies flat armor by, so it lands as exactly that much.
+    void CovenantArmor(Player* player)
+    {
+        AuraEffect* effect = player->GetAuraEffect(SPELL_COVENANT_ARMOR, EFFECT_0, player->GetGUID());
+        float total = player->GetPctModifierValue(UNIT_MOD_ARMOR, TOTAL_PCT);
+        if (!effect || total <= 0.0f)
+            return;
+        float ours = float(effect->GetAmount());
+        if (AuraEffect const* plate = player->GetAuraEffect(SPELL_COVENANT_PACT, EFFECT_2, player->GetGUID()))
+            ours += float(plate->GetAmount());
+        float base = player->GetFlatModifierValue(UNIT_MOD_ARMOR, BASE_VALUE) + player->GetStat(STAT_AGILITY) * 2.0f
+            + player->GetFlatModifierValue(UNIT_MOD_ARMOR, TOTAL_VALUE) - ours;
+        int32 amount = std::max<int32>(0, int32(base * ARMOR_SHARE / total));
+        if (std::abs(amount - effect->GetAmount()) > 1)
+            effect->ChangeAmount(amount);
+    }
+
     void Unbind(Player* player)
     {
         KeepHealthShare(player, [player]()
@@ -1171,9 +1194,10 @@ namespace
             player->RemovePet(pet, PET_SAVE_NOT_IN_SLOT);
         KeepHealthShare(player, [player]()
         {
-            int32 armor = ARMOR_PCT;
+            int32 armor = 0;
             player->CastCustomSpell(player, SPELL_COVENANT_ARMOR, &armor, nullptr, nullptr, true);
             Pact(player);
+            CovenantArmor(player);
         });
         if (!player->HasSpell(SPELL_COVENANT_LASH))
             player->learnSpell(SPELL_COVENANT_LASH);
@@ -1672,6 +1696,11 @@ public:
         WorldwardenTick(player, diff);
         if (itr->second.Bound && (!Bound(player) || player->GetPet()))
             Unbind(player);
+        else if (itr->second.Bound && (itr->second.ArmorTimer += diff) >= ARMOR_EVERY_MS)
+        {
+            itr->second.ArmorTimer = 0;
+            CovenantArmor(player);
+        }
     }
 
     void OnPlayerLogout(Player* player) override

@@ -4,6 +4,11 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Black Covenant
+
+- **Covenant Armor** now gives **50% more armor** (was 400% more armor from items). It is added on top of your other
+  armor bonuses, never multiplying them, and follows your armor as it changes.
+
 ### Fixes
 
 - The rune build's description no longer runs under the rune's medallion: it stays on one line (a little smaller

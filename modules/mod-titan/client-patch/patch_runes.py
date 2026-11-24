@@ -1869,12 +1869,12 @@ SPELLS += [
     # Black Covenant: Bind Guardian, Covenant Armor and its pact, Covenant Lash, Soul Siphon, its ward and slow,
     # Dark Intercession.
     tank_action(91520, 'Bind: Voidwalker', 'Spell_Shadow_SummonVoidWalker',
-                'Binds a Voidwalker to you as Covenant Armor until you cast this again: armor from items 400% higher, '
+                'Binds a Voidwalker to you as Covenant Armor until you cast this again: 50% more armor, '
                 '15% more maximum health, 200% more threat, 6% less damage taken. Searing Pain becomes Covenant Lash '
                 'and Drain Life Soul Siphon.', 10000, cast=CAST_2S),
     {**buff(91521, 'Covenant Armor', COVENANT_ICON,
-            'Armor from items, maximum health and threat increased; damage taken reduced.', DURATION_INFINITE,
-            {1: aura(AURA_MOD_BASE_RESISTANCE_PCT, 400, 1), 2: aura(AURA_MOD_INCREASE_HEALTH_PERCENT, 15, 0),
+            'Armor, maximum health and threat increased; damage taken reduced.', DURATION_INFINITE,
+            {1: aura(AURA_MOD_RESISTANCE, 0, 1),          # 50% of the Hero's armor, flat (the script's amount) 2: aura(AURA_MOD_INCREASE_HEALTH_PERCENT, 15, 0),
              3: aura(AURA_MOD_DAMAGE_PERCENT_TAKEN, -6, ALL_SCHOOLS)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_INFINITE}},
     buff(91522, 'Covenant Pact', COVENANT_ICON, '', DURATION_INFINITE,
