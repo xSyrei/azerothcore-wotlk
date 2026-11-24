@@ -705,6 +705,14 @@ utility or a tradeoff) take one pick each, from three.
       `GuardTick` at the guard's end); Mangle's mark 91910, Swipe, Earth Shock's Earthen Fury 91913, Thunder Clap and
       Earth Shield's heal through `UrsocAbility` (the extended hit script). Ancient Hide, Lasting Stand, Moving
       Mountain, Ursoc's Bite, Mountain's Roar, Earthbreaker, Enduring Champion, Challenger's Roar and Unbroken are gone.
+  - **Extended Options, the updated compendium's (Sanctified Paragon, Stormreaver, Red Communion, Primal
+    Worldwarden)**: 91920-91999 being full, the blocks go on at 93000 (Red Communion 93000, Primal Worldwarden 93025,
+    Sanctified Paragon 93050, Stormreaver 93075; 25 ids a rune); "our own spells" now end at 94000
+    (`patch_spells.OWN_SPELLS`, `hero_resources.cpp` OWN_END). The tank runes' markers move with them
+    (`tank_runes.h`); their other abilities reach them through `spell_titan_tank_extended`, their needs are in
+    runes.cpp's ModifierNeeds by number. The Paragon's interactions and options: `ParagonJudgment`,
+    `ParagonHolyShock`, `ParagonRighteous`, `ParagonAbility`; Bastion of Faith and Weight of the Unworthy need a
+    damaging Manifestation (Condemnation or Radiant Judgment). The Stormreaver's: `StormAbility`.
   - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
     30% of maximum health, 6 sec; Barkskin's cooldown 30 sec shorter, each Maul in Bear Form 3 sec more); Maul
     releases it (91342, a 10-yard cone): 75% AP plus all it absorbed (that part at most 250% AP).

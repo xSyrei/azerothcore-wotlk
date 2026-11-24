@@ -164,7 +164,7 @@ namespace
         SPELL_SHELTER_OF_THE_PARAGON    = 90737,
         SPELL_SEAT_OF_THE_PARAGON       = 90738,
         SPELL_HALLOWED_FOOTSTEPS        = 90739,
-        SPELL_PARAGON_MODIFIER_FIRST    = 90740,    // + slot * 3 + choice
+        // 90740-90748: its first 9 markers, retired (the Extended Options' block, 93050)
         SPELL_PARAGON_AWAKEN            = 90749,    // its look as it turns on (a shockwave and a flash)
 
         SPELL_RUNE_STORMBOUND_CONDUIT   = 90750,
@@ -449,6 +449,20 @@ namespace
         SPELL_SHIELDING_ROOTS           = 91917,
         SPELL_URSOCS_CHALLENGE          = 91918,
         SPELL_URSOC_NATURE              = 91919,    // the impact's Nature half
+        // The Extended Options continue at 93000 (91920 on is full): 25 ids a rune, Red Communion 93000 and the
+        // Primal Worldwarden 93025 (tank_runes.cpp), the Sanctified Paragon 93050, the Stormreaver 93075.
+        SPELL_PARAGON_MODIFIER_FIRST    = 93050,
+        SPELL_PARAGON_JUDGMENT          = 93065,    // Judgment in the aura: a share of its tick
+        SPELL_PARAGON_MEND              = 93066,    // Holy Shock's second heal, Healing Light's Flash Heal
+        SPELL_DAWNWARD                  = 93067,
+        SPELL_RIGHTEOUS_WARD            = 93068,    // Shield of Righteousness in the aura: the absorb
+        SPELL_STORMREAVER_MODIFIER_FIRST = 93075,
+        SPELL_STORM_SURGE               = 93090,    // Earth Shock's: the next pulse 20% more
+        SPELL_FROZEN_FRONT              = 93091,    // its look; its tick 93092
+        SPELL_FROZEN_FRONT_TICK         = 93092,
+        SPELL_STORMHAMMER               = 93093,
+        SPELL_WARSTORM                  = 93094,
+        SPELL_STATIC_STRIKE             = 93095,    // the next discharge strikes twice
         SPELL_BURNING_RAKE              = 91865,    // the next Burning Claws 30% more
         SPELL_HOLLOW_PATCH              = 91785,    // its tick 91786
         SPELL_HOLLOW_PATCH_TICK         = 91786,
@@ -479,7 +493,7 @@ namespace
         SPELL_WHITE_HOT_TICK            = 91406,
         SPELL_STORM_DISCHARGE           = 91407,
         SPELL_RIDE_THE_LIGHTNING        = 91408,
-        SPELL_STORMREAVER_MODIFIER_FIRST = 91410,   // + slot * 3 + choice
+        // 91410-91418: its first 9 markers, retired (the Extended Options' block, 93075)
         SPELL_STORMSTRIKE               = 17364,
         SPELL_LAVA_LASH                 = 60103,
 
@@ -577,6 +591,12 @@ namespace
         SPELL_MANGLE_BEAR           = 33878,
         SPELL_SWIPE_BEAR            = 779,
         SPELL_LIFEBLOOM             = 33763,
+        SPELL_CHARGE                = 100,
+        SPELL_DEATH_COIL_DK         = 47541,
+        SPELL_DEATH_COIL_WARLOCK    = 6789,
+        SPELL_DIVINE_SHIELD         = 642,
+        SPELL_SHIELD_OF_RIGHTEOUSNESS = 53600,
+        SPELL_HOLY_SHOCK_HEAL       = 25914,
         SPELL_BLIZZARD              = 10,
         SPELL_MAUL                  = 6807,
         SPELL_BEAR_FORM             = 5487,
@@ -644,12 +664,30 @@ namespace
     };
 
     // The Sanctified Paragon's modifiers: slot (0 Presence, 1 Manifestation, 2 Covenant) x 3 + choice.
+    // (Its Extended Options: slot x 5 + choice, the first three of each the ones it had.)
     enum ParagonModifier : uint8
     {
-        MOD_BOUNDLESS_SANCTITY, MOD_HALLOWED_FOOTSTEPS, MOD_SEAT_OF_THE_PARAGON,
-        MOD_SANCTIFIED_CONDEMNATION, MOD_MERCIFUL_GROUND, MOD_SHELTER_OF_THE_PARAGON,
-        MOD_BASTION_OF_FAITH, MOD_WEIGHT_OF_THE_UNWORTHY, MOD_MEASURED_DEVOTION,
+        MOD_BOUNDLESS_SANCTITY, MOD_HALLOWED_FOOTSTEPS, MOD_SEAT_OF_THE_PARAGON, MOD_CONSECRATED_CHARGE,
+        MOD_SANCTUARY_MARCH,
+        MOD_SANCTIFIED_CONDEMNATION, MOD_MERCIFUL_GROUND, MOD_SHELTER_OF_THE_PARAGON, MOD_RADIANT_JUDGMENT,
+        MOD_HEALING_LIGHT,
+        MOD_BASTION_OF_FAITH, MOD_WEIGHT_OF_THE_UNWORTHY, MOD_MEASURED_DEVOTION, MOD_DAWNWARD, MOD_PARAGONS_AEGIS,
     };
+
+    // The Sanctified Paragon's Extended Options. Its interactions: Judgment on an enemy in the aura, 50% of a tick
+    // more (6 sec apart; Radiant Judgment 100%); a Holy Shock heal on an injured ally in it, 15% of it to another
+    // within 8 yards (8 sec apart); Shield of Righteousness on an enemy in it, an absorb of 3% of maximum health for
+    // 4 sec (8 sec apart; Paragon's Aegis 4%). Consecrated Charge: after Charge, 4 yards more for 4 sec and the next
+    // tick 15% more (12 sec apart); Sanctuary March: Divine Shield, 3 ticks free (60 sec apart); Healing Light: the
+    // lowest ally healed for 45% of a tick a second, a Flash Heal on them 30% more (8 sec apart); Dawnward: Holy
+    // Shock's second heal also shields for 20% of it (4 sec).
+    constexpr uint32 PARAGON_JUDGMENT_EVERY_MS = 6000, PARAGON_SHOCK_EVERY_MS = 8000, RIGHTEOUS_EVERY_MS = 8000;
+    constexpr uint32 CHARGE_EVERY_MS = 12000, PARAGON_CHARGE_MS = 4000, MARCH_EVERY_MS = 60000, LIGHT_EVERY_MS = 8000;
+    constexpr uint32 DAWNWARD_EVERY_MS = 8000;
+    constexpr uint8 MARCH_TICKS = 3;
+    constexpr float PARAGON_JUDGMENT = 0.5f, RADIANT_JUDGMENT = 1.0f, PARAGON_SHOCK_SHARE = 0.15f;
+    constexpr float PARAGON_SHOCK_RANGE = 8.0f, RIGHTEOUS_PCT = 3.0f, AEGIS_PCT = 4.0f, CHARGE_RADIUS = 4.0f;
+    constexpr float CHARGE_TICK = 1.15f, HEALING_LIGHT_SHARE = 0.75f, LIGHT_FLASH = 0.3f, DAWNWARD_SHARE = 0.2f;
 
     // The Stormbound Conduit's modifiers: slot (0 Arcs, 1 Lightning Shield, 2 Surge) x 3 + choice.
     enum StormModifier : uint8
@@ -1215,12 +1253,29 @@ namespace
     constexpr std::size_t BROADSIDE_TARGETS = 8;
 
     // The Stormreaver's modifiers: slot (0 Storm, 1 Thunderlash, 2 Lightning Shield) x 3 + choice.
+    // (Its Extended Options: slot x 5 + choice, the first three of each the ones it had.)
     enum StormreaverModifier : uint8
     {
-        MOD_EYE_OF_THE_TEMPEST, MOD_FORKED_CATACLYSM, MOD_STORM_ROLLING,
-        MOD_THUNDERHEAD, MOD_CHAINBREAKER, MOD_WHITE_HOT_CONDUCTOR,
-        MOD_OVERCHARGED_CORE, MOD_RIDE_THE_LIGHTNING, MOD_VIOLENT_GROUNDING,
+        MOD_EYE_OF_THE_TEMPEST, MOD_FORKED_CATACLYSM, MOD_STORM_ROLLING, MOD_STORMHUNTER, MOD_FROZEN_FRONT,
+        MOD_THUNDERHEAD, MOD_CHAINBREAKER, MOD_WHITE_HOT_CONDUCTOR, MOD_STORMHAMMER, MOD_FLAME_CONDUCTOR,
+        MOD_OVERCHARGED_CORE, MOD_RIDE_THE_LIGHTNING, MOD_VIOLENT_GROUNDING, MOD_STATIC_STRIKE, MOD_WARSTORM,
     };
+
+    // The Stormreaver's Extended Options. Its interactions: Earth Shock in the Stormfront, the next pulse 20% more (6
+    // sec); Thunderlash on the Hero's Flame Shock target, the Flame Shock 2 sec longer (6 sec an application). New
+    // options: Stormhunter (their Hunter's Mark target: 35% more and one more within 8 yards for 40%), Frozen Front
+    // (Frost Shock in it: a frost trail, 10% of attack power a second to up to 3 for 4 sec, 8 sec apart),
+    // Stormhammer (Shield Slam in it: 30% of attack power as Nature to its target and one more, 6 sec apart), Flame
+    // Conductor (Thunderlash spreads their Flame Shock to one more within 8 yards, 10 sec apart), Static Strike
+    // (Lightning Bolt in it: the next discharge in 6 sec strikes again for 40%), Warstorm (Thunder Clap in it: 25%
+    // of attack power as Nature to up to 5 within 8 yards, 8 sec apart).
+    constexpr int32 STORM_FS_EXTEND_MS = 2000, STORM_FS_MOST_MS = 6000;
+    constexpr uint32 FROZEN_FRONT_EVERY_MS = 8000, FROZEN_FRONT_TICKS = 4, STORMHAMMER_EVERY_MS = 6000;
+    constexpr uint32 FLAME_CONDUCTOR_EVERY_MS = 10000, WARSTORM_EVERY_MS = 8000;
+    constexpr float STORM_SURGE = 1.2f, STORMHUNTER = 1.35f, STORMHUNTER_SHARE = 0.4f, FROZEN_FRONT_AP = 0.1f;
+    constexpr float FROZEN_FRONT_RADIUS = 4.0f, STORMHAMMER_AP = 0.3f, STATIC_SHARE = 0.4f, WARSTORM_AP = 0.25f;
+    constexpr float STORM_ECHO_RANGE = 8.0f;
+    constexpr std::size_t FROZEN_FRONT_TARGETS = 3, WARSTORM_TARGETS = 5;
 
     // The Stormreaver's tuning: Stormstrike raises the Stormfront (6 sec, refreshed): a pulse every 2 sec, 25% of
     // attack power as Nature to up to 5 enemies within 8 yards. Lava Lash in it is Thunderlash (60% to its target,
@@ -1383,7 +1438,7 @@ namespace
             { RUNE_SANCTIFIED_PARAGON,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)
                   | Wildcard::RoleMask(Wildcard::ROLE_HEALER) | Wildcard::RoleMask(Wildcard::ROLE_TANK)),
-              { { SPELL_CONSECRATION } }, SPELL_RUNE_SANCTIFIED_PARAGON, SPELL_PARAGON_MODIFIER_FIRST },
+              { { SPELL_CONSECRATION } }, SPELL_RUNE_SANCTIFIED_PARAGON, SPELL_PARAGON_MODIFIER_FIRST, MAX_CHOICES },
             // DPS only: Lightning Bolt makes the connections, Lightning Shield's retaliations (and Chain Lightning,
             // if known) arc through them.
             { RUNE_STORMBOUND_CONDUIT,
@@ -1466,7 +1521,7 @@ namespace
             // Melee DPS: Stormstrike raises the storm, Lava Lash and Lightning Shield strike through it.
             { RUNE_STORMREAVER, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_STORMSTRIKE }, { SPELL_LAVA_LASH }, { SPELL_LIGHTNING_SHIELD } }, SPELL_RUNE_STORMREAVER,
-              SPELL_STORMREAVER_MODIFIER_FIRST },
+              SPELL_STORMREAVER_MODIFIER_FIRST, MAX_CHOICES },
             // Melee DPS: Fire Blast in Cat Form ignites the Hero's Rake or Rip (the rune teaches it).
             { RUNE_EMBERS_WRATH, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_CAT_FORM }, { SPELL_FIRE_BLAST }, { SPELL_RAKE, SPELL_RIP } }, SPELL_RUNE_EMBERS_WRATH,
@@ -1479,10 +1534,10 @@ namespace
             // Voidwalker and Searing Pain make the covenant.
             { RUNE_RED_COMMUNION, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { TankRunes::SPELL_BLOOD_BOIL } }, TankRunes::SPELL_RUNE_RED_COMMUNION,
-              TankRunes::SPELL_COMMUNION_MODIFIER_FIRST },
+              TankRunes::SPELL_COMMUNION_MODIFIER_FIRST, MAX_CHOICES },
             { RUNE_PRIMAL_WORLDWARDEN, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { TankRunes::SPELL_EARTH_SHOCK, SPELL_FLAME_SHOCK, SPELL_FROST_SHOCK } },
-              TankRunes::SPELL_RUNE_PRIMAL_WORLDWARDEN, TankRunes::SPELL_WORLDWARDEN_MODIFIER_FIRST },
+              TankRunes::SPELL_RUNE_PRIMAL_WORLDWARDEN, TankRunes::SPELL_WORLDWARDEN_MODIFIER_FIRST, MAX_CHOICES },
             { RUNE_BLACK_COVENANT, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_SUMMON_VOIDWALKER }, { TankRunes::SPELL_SEARING_PAIN } },
               TankRunes::SPELL_RUNE_BLACK_COVENANT, TankRunes::SPELL_COVENANT_MODIFIER_FIRST },
@@ -1570,6 +1625,59 @@ namespace
                 case MOD_DISTANT_SPARK: return { { SPELL_ARCANE_SHOT } };
                 case MOD_EVOKED_REMNANT: return { { SPELL_EVOCATION } };
                 case MOD_ASTRAL_SHELTER: return { { SPELL_POWER_WORD_SHIELD } };
+                default: return {};
+            }
+        // The Tank Collection's (tank_runes.cpp's enums, by number: slot x 5 + choice).
+        if (rune == RUNE_RED_COMMUNION)
+            switch (modifier)
+            {
+                case 3: return { { SPELL_CORRUPTION } };                   // Corrupt Communion
+                case 4: return { { SPELL_MANGLE_BEAR } };                  // Thorned Communion
+                case 8: return { { SPELL_REND } };                         // Rending Communion
+                case 9: return { { SPELL_EARTH_SHIELD } };                 // Earthbound Blood
+                case 13: return { { SPELL_DEATH_COIL_DK, SPELL_DEATH_COIL_WARLOCK } };    // Death's Recall
+                case 14: return { { SPELL_HOLY_SHOCK } };                  // Holy Communion
+                default: return {};
+            }
+        if (rune == RUNE_PRIMAL_WORLDWARDEN)
+            switch (modifier)
+            {
+                case 0: return { { TankRunes::SPELL_EARTH_SHOCK } };       // Earthen Command
+                case 3: return { { TankRunes::SPELL_EARTH_SHOCK }, { SPELL_BLOOD_STRIKE } };     // Bloodstone
+                case 1: return { { SPELL_FLAME_SHOCK } };                  // Flame Dominion
+                case 2: return { { SPELL_FROST_SHOCK } };                  // Winter Command
+                case 4: return { { SPELL_JUDGEMENT_OF_LIGHT, SPELL_JUDGEMENT_OF_WISDOM, SPELL_JUDGEMENT_OF_JUSTICE } };
+                case 8: return { { SPELL_CONSECRATION } };                 // Consecrated Heart
+                case 9: return { { SPELL_EARTH_SHIELD } };                 // Earthen Communion
+                case 10: return { { SPELL_STORMSTRIKE } };                 // Resonant Strikes
+                case 11: case 12: return { { SPELL_LAVA_LASH } };          // Molten Causeway, Stoneblood Lash
+                case 13: return { { SPELL_THUNDER_CLAP } };                // Thunderheart
+                case 14: return { { SPELL_DEATH_COIL_DK, SPELL_DEATH_COIL_WARLOCK } };    // Runic Renewal
+                default: return {};
+            }
+        if (rune == RUNE_SANCTIFIED_PARAGON)
+            switch (modifier)
+            {
+                case MOD_CONSECRATED_CHARGE: return { { SPELL_CHARGE } };
+                case MOD_SANCTUARY_MARCH: return { { SPELL_DIVINE_SHIELD } };
+                case MOD_RADIANT_JUDGMENT:
+                    return { { SPELL_JUDGEMENT_OF_LIGHT, SPELL_JUDGEMENT_OF_WISDOM, SPELL_JUDGEMENT_OF_JUSTICE } };
+                case MOD_HEALING_LIGHT: return { { SPELL_FLASH_HEAL } };
+                case MOD_DAWNWARD: return { { SPELL_HOLY_SHOCK } };
+                case MOD_PARAGONS_AEGIS: return { { SPELL_SHIELD_OF_RIGHTEOUSNESS } };
+                default: return {};
+            }
+        if (rune == RUNE_STORMREAVER)
+            switch (modifier)
+            {
+                case MOD_STORMHUNTER: return { { SPELL_HUNTERS_MARK } };
+                case MOD_FROZEN_FRONT: return { { SPELL_FROST_SHOCK } };
+                case MOD_STORMHAMMER: return { { SPELL_SHIELD_SLAM } };
+                case MOD_FLAME_CONDUCTOR: return { { SPELL_FLAME_SHOCK } };
+                case MOD_OVERCHARGED_CORE: case MOD_RIDE_THE_LIGHTNING: case MOD_VIOLENT_GROUNDING:
+                    return { { SPELL_LIGHTNING_SHIELD } };
+                case MOD_STATIC_STRIKE: return { { SPELL_LIGHTNING_BOLT } };
+                case MOD_WARSTORM: return { { SPELL_THUNDER_CLAP } };
                 default: return {};
             }
         if (rune == RUNE_URSOCS_CHAMPION)
@@ -1744,6 +1852,12 @@ namespace
         Position LastPosition;
         bool HasLastPosition = false;
         uint32 StillSince = 0;                      // game ms
+        float ParagonOutput = 0.0f;                 // the aura's last tick (before its target's mitigation)
+        uint8 FreeTicks = 0;                        // Sanctuary March: ticks without upkeep
+        bool ChargeTick = false;                    // Consecrated Charge: the next tick 15% more
+        ObjectGuid LightAlly;                       // Healing Light's last ally
+        uint32 ParagonJudgmentAt = 0, ParagonShockAt = 0, DawnwardAt = 0, RighteousAt = 0, ChargeUntil = 0;
+        uint32 ConsecratedChargeAt = 0, MarchAt = 0, LightFlashAt = 0;     // game ms
         uint32 LastShelter = 0;
         ObjectGuid Sheltered;                                       // the one ally holding its shield
         std::vector<std::pair<Position, uint32>> Trail;             // footsteps: where, when
@@ -1889,6 +2003,7 @@ namespace
 
         // The Stormreaver: the Stormfront's pulse timer; the last discharge.
         uint32 StormfrontTimer = 0, LastDischarge = 0;
+        uint32 FlameConductorAt = 0, FrozenFrontAt = 0, StormhammerAt = 0, WarstormAt = 0;     // game ms
 
         // Ember's Wrath: Blazing Rake's next extra hit; Ashen Pursuit's next bonus, its last victim and every one.
         uint32 BlazingRakeAt = 0, AshenReadyAt = 0;
@@ -2220,6 +2335,16 @@ namespace
                 SummonDemon(player, primary, false);
     }
 
+    // Defined further on (the runes' shared helpers).
+    uint32 Now();
+    float RunePower(Player* player, SpellSchoolMask school, uint32 floorSpell, bool withBonuses = true);
+    bool Ready(uint32 at, uint32 ms);
+    void Renew(Player* player, uint32 spellId);
+    void Strike(Player* player, Unit* target, uint32 spellId, float amount);
+    void AddDot(Player* player, Unit* target, uint32 spellId, float fresh, int32 ms);
+    void Mend(Player* player, Unit* ally, uint32 spellId, float amount);
+    void Ward(Player* player, Unit* unit, uint32 spellId, float amount);
+
     // ---- The Sanctified Paragon -------------------------------------------------------------------------------
 
     // The Hero's best Consecration rank they know, else 0.
@@ -2289,6 +2414,95 @@ namespace
         return allies;
     }
 
+    // The aura's reach: 8 yards (Boundless Sanctity 12, Hallowed Footsteps 4); Consecrated Charge 4 more a while.
+    float ParagonRadius(Player* player)
+    {
+        float radius = HasParagonMarker(player, MOD_BOUNDLESS_SANCTITY) ? BOUNDLESS_RADIUS
+            : HasParagonMarker(player, MOD_HALLOWED_FOOTSTEPS) ? FOOTSTEPS_RADIUS : PARAGON_RADIUS;
+        return radius + (Now() < StateOf(player).ChargeUntil ? CHARGE_RADIUS : 0.0f);
+    }
+
+    // The aura on, and the unit within it.
+    bool InParagon(Player* player, Unit* unit)
+    {
+        return player->HasAura(SPELL_SANCTIFIED_PARAGON) && unit
+            && player->IsWithinDistInMap(unit, ParagonRadius(player));
+    }
+
+    // Judgment on an enemy in the aura: a Holy hit of half a tick (Radiant Judgment a whole one; Bastion of Faith 50%
+    // more threat), 6 sec apart.
+    void ParagonJudgment(Player* player, Unit* enemy)
+    {
+        State& state = StateOf(player);
+        if (!InParagon(player, enemy) || !Ready(state.ParagonJudgmentAt, PARAGON_JUDGMENT_EVERY_MS))
+            return;
+        state.ParagonJudgmentAt = Now();
+        float hit = state.ParagonOutput
+            * (HasParagonMarker(player, MOD_RADIANT_JUDGMENT) ? RADIANT_JUDGMENT : PARAGON_JUDGMENT);
+        Strike(player, enemy, SPELL_PARAGON_JUDGMENT, hit);
+        if (HasParagonMarker(player, MOD_BASTION_OF_FAITH) && enemy->IsAlive() && enemy->CanHaveThreatList())
+            enemy->AddThreat(player, hit * BASTION_THREAT, SPELL_SCHOOL_MASK_HOLY);
+    }
+
+    // A Holy Shock heal on an injured ally in the aura: 15% of it to another injured ally within 8 yards (8 sec
+    // apart); Dawnward, that one also shielded for 20% of it (4 sec, 8 sec apart).
+    void ParagonHolyShock(Player* player, Unit* ally, float heal)
+    {
+        State& state = StateOf(player);
+        if (!InParagon(player, ally) || heal <= 0.0f || !Ready(state.ParagonShockAt, PARAGON_SHOCK_EVERY_MS))
+            return;
+        for (Unit* other : MostInjured(player, STAR_RANGE))
+            if (other != ally && !other->IsFullHealth() && other->IsWithinDistInMap(ally, PARAGON_SHOCK_RANGE))
+            {
+                state.ParagonShockAt = Now();
+                float second = heal * PARAGON_SHOCK_SHARE;
+                Mend(player, other, SPELL_PARAGON_MEND, second);
+                if (HasParagonMarker(player, MOD_DAWNWARD) && Ready(state.DawnwardAt, DAWNWARD_EVERY_MS))
+                {
+                    state.DawnwardAt = Now();
+                    Ward(player, other, SPELL_DAWNWARD, second * DAWNWARD_SHARE);
+                }
+                return;
+            }
+    }
+
+    // Shield of Righteousness on an enemy in the aura: an absorb of 3% of maximum health (Paragon's Aegis 4%), 4 sec,
+    // 8 sec apart.
+    void ParagonRighteous(Player* player, Unit* enemy)
+    {
+        State& state = StateOf(player);
+        if (!InParagon(player, enemy) || !Ready(state.RighteousAt, RIGHTEOUS_EVERY_MS))
+            return;
+        state.RighteousAt = Now();
+        Ward(player, player, SPELL_RIGHTEOUS_WARD, float(player->CountPctFromMaxHealth(
+            int32(HasParagonMarker(player, MOD_PARAGONS_AEGIS) ? AEGIS_PCT : RIGHTEOUS_PCT))));
+    }
+
+    // Consecrated Charge (Charge), Sanctuary March (Divine Shield), Healing Light (Flash Heal on the ally it heals).
+    void ParagonAbility(Player* player, Unit* target, uint32 firstRank, float heal)
+    {
+        State& state = StateOf(player);
+        if (firstRank == SPELL_CHARGE && HasParagonMarker(player, MOD_CONSECRATED_CHARGE)
+            && Ready(state.ConsecratedChargeAt, CHARGE_EVERY_MS))
+        {
+            state.ConsecratedChargeAt = Now();
+            state.ChargeUntil = Now() + PARAGON_CHARGE_MS;
+            state.ChargeTick = true;
+        }
+        if (firstRank == SPELL_DIVINE_SHIELD && HasParagonMarker(player, MOD_SANCTUARY_MARCH)
+            && player->HasAura(SPELL_SANCTIFIED_PARAGON) && Ready(state.MarchAt, MARCH_EVERY_MS))
+        {
+            state.MarchAt = Now();
+            state.FreeTicks = MARCH_TICKS;
+        }
+        if (firstRank == SPELL_FLASH_HEAL && HasParagonMarker(player, MOD_HEALING_LIGHT) && target && heal > 0.0f
+            && target->GetGUID() == state.LightAlly && Ready(state.LightFlashAt, LIGHT_EVERY_MS))
+        {
+            state.LightFlashAt = Now();
+            Mend(player, target, SPELL_PARAGON_MEND, heal * LIGHT_FLASH);
+        }
+    }
+
     // A second of the aura (90731's tick), the revised balance draft's: its upkeep (1% of base mana, 0.75% with
     // Measured Devotion; the aura ends when it cannot be paid), then one pulse at 40% of a Consecration tick, through
     // the Manifestation picked: damage to each enemy within 8 yards (12 with Boundless Sanctity, 4 and the
@@ -2306,16 +2520,21 @@ namespace
         bool devotion = HasParagonMarker(player, MOD_MEASURED_DEVOTION);
         int32 upkeep = std::max<int32>(1, int32(player->GetCreateMana() * UPKEEP_PCT / 100.0f
             * (devotion ? DEVOTION_UPKEEP : 1.0f)));
-        if (player->GetPower(POWER_MANA) < upkeep)
+        if (state.FreeTicks)
+            --state.FreeTicks;                      // Sanctuary March
+        else
         {
-            ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeSanctified Paragon:|r out of mana.");
-            return false;
+            if (player->GetPower(POWER_MANA) < upkeep)
+            {
+                ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeSanctified Paragon:|r out of mana.");
+                return false;
+            }
+            player->ModifyPower(POWER_MANA, -upkeep);
         }
-        player->ModifyPower(POWER_MANA, -upkeep);
 
         bool boundless = HasParagonMarker(player, MOD_BOUNDLESS_SANCTITY);
         bool footsteps = HasParagonMarker(player, MOD_HALLOWED_FOOTSTEPS);
-        float radius = boundless ? BOUNDLESS_RADIUS : footsteps ? FOOTSTEPS_RADIUS : PARAGON_RADIUS;
+        float radius = ParagonRadius(player);
 
         // Moving or still (Seat of the Paragon, Hallowed Footsteps).
         Position here = player->GetPosition();
@@ -2342,15 +2561,25 @@ namespace
 
         float output = ParagonTick(player) * PARAGON_SHARE * (boundless ? BOUNDLESS_OUTPUT : 1.0f)
             * (seated ? SEAT_OUTPUT : 1.0f) * (devotion ? DEVOTION_OUTPUT : 1.0f);
+        state.ParagonOutput = output;
+        if (state.ChargeTick)
+        {
+            state.ChargeTick = false;
+            output *= CHARGE_TICK;
+        }
 
-        // Merciful Ground: no damage; the single most injured party member within range healed.
-        if (HasParagonMarker(player, MOD_MERCIFUL_GROUND))
+        // Merciful Ground (Healing Light: 75% of it): no damage; the single most injured party member within range
+        // healed.
+        bool light = HasParagonMarker(player, MOD_HEALING_LIGHT);
+        if (HasParagonMarker(player, MOD_MERCIFUL_GROUND) || light)
         {
             for (Unit* ally : MostInjured(player, radius))
                 if (!ally->IsFullHealth())
                 {
-                    int32 heal = std::max<int32>(1, int32(ParagonSupport(player, output, false) * MERCIFUL_SHARE));
+                    int32 heal = std::max<int32>(1, int32(ParagonSupport(player, output, false)
+                        * (light ? HEALING_LIGHT_SHARE : MERCIFUL_SHARE)));
                     player->CastCustomSpell(ally, SPELL_MERCIFUL_GROUND, &heal, nullptr, nullptr, true);
+                    state.LightAlly = ally->GetGUID();
                     break;
                 }
             return true;
@@ -2389,8 +2618,8 @@ namespace
                         enemies.push_back(enemy);
 
         bool condemnation = HasParagonMarker(player, MOD_SANCTIFIED_CONDEMNATION);
-        bool weight = condemnation && HasParagonMarker(player, MOD_WEIGHT_OF_THE_UNWORTHY);
-        bool bastion = condemnation && HasParagonMarker(player, MOD_BASTION_OF_FAITH);
+        bool weight = HasParagonMarker(player, MOD_WEIGHT_OF_THE_UNWORTHY);
+        bool bastion = HasParagonMarker(player, MOD_BASTION_OF_FAITH);
         std::unordered_map<ObjectGuid, uint8> weighed;
         for (Unit* enemy : enemies)
         {
@@ -3385,13 +3614,6 @@ namespace
             for (Unit* enemy : EnemiesIn(player, patch, DAWN_TARGETS))
                 player->CastCustomSpell(enemy, SPELL_DAWN_ECHO_DAMAGE, &tick, nullptr, nullptr, true);
     }
-
-    // Defined further on (the runes' shared helpers).
-    float RunePower(Player* player, SpellSchoolMask school, uint32 floorSpell, bool withBonuses = true);
-    bool Ready(uint32 at, uint32 ms);
-    void Renew(Player* player, uint32 spellId);
-    void Strike(Player* player, Unit* target, uint32 spellId, float amount);
-    void AddDot(Player* player, Unit* target, uint32 spellId, float fresh, int32 ms);
 
     // ---- The Hollow Congregation -------------------------------------------------------------------------------
 
@@ -6902,8 +7124,24 @@ namespace
         float pulse = player->GetTotalAttackPowerValue(BASE_ATTACK) * STORM_PULSE_AP * (rolling ? ROLLING_SHARE : 1.0f);
         if (struck.size() == 1 && HasStormreaverMarker(player, MOD_EYE_OF_THE_TEMPEST))
             pulse *= EYE_OF_THE_TEMPEST;
+        if (player->HasAura(SPELL_STORM_SURGE))
+        {
+            player->RemoveAurasDueToSpell(SPELL_STORM_SURGE);
+            pulse *= STORM_SURGE;
+        }
+        bool hunter = HasStormreaverMarker(player, MOD_STORMHUNTER);
         for (Unit* enemy : struck)
-            Strike(player, enemy, SPELL_STORMFRONT_PULSE, pulse);
+        {
+            bool marked = hunter && enemy->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, player->GetGUID());
+            Strike(player, enemy, SPELL_STORMFRONT_PULSE, pulse * (marked ? STORMHUNTER : 1.0f));
+            if (marked)
+                for (Unit* other : EnemiesAround(player, enemy, STORM_ECHO_RANGE))
+                    if (other != enemy)
+                    {
+                        Strike(player, other, SPELL_STORMFRONT_PULSE, pulse * STORMHUNTER_SHARE);
+                        break;
+                    }
+        }
     }
 
     // An arc of the rune's lightning from one enemy to another (Chain Lightning's bolt between them).
@@ -6918,6 +7156,25 @@ namespace
     void Thunderlash(Player* player, Unit* target)
     {
         float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
+        // On the Hero's Flame Shock target: 2 sec longer (6 sec an application); Flame Conductor spreads it.
+        if (Aura* shock = target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
+        {
+            ExtendAura(shock, STORM_FS_EXTEND_MS, STORM_FS_MOST_MS);
+            State& state = StateOf(player);
+            if (HasStormreaverMarker(player, MOD_FLAME_CONDUCTOR)
+                && Ready(state.FlameConductorAt, FLAME_CONDUCTOR_EVERY_MS))
+                for (Unit* other : EnemiesAround(player, target, STORM_ECHO_RANGE))
+                    if (other != target && !other->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
+                    {
+                        if (Aura* spread = player->AddAura(shock->GetId(), other))
+                        {
+                            state.FlameConductorAt = Now();
+                            spread->SetMaxDuration(shock->GetDuration());
+                            spread->SetDuration(shock->GetDuration());
+                        }
+                        break;
+                    }
+        }
         bool thunderhead = HasStormreaverMarker(player, MOD_THUNDERHEAD);
         if (HasStormreaverMarker(player, MOD_WHITE_HOT_CONDUCTOR))
             AddDot(player, target, SPELL_WHITE_HOT_BURN, ap * WHITE_HOT_AP, WHITE_HOT_MS);
@@ -6955,6 +7212,11 @@ namespace
             discharge *= OVERCHARGED;
         Strike(player, target, SPELL_STORM_DISCHARGE, discharge);
         Trace(player, Acore::StringFormat("Lightning Shield discharges for {}", int32(discharge)));
+        if (player->HasAura(SPELL_STATIC_STRIKE))
+        {
+            player->RemoveAurasDueToSpell(SPELL_STATIC_STRIKE);
+            Strike(player, target, SPELL_STORM_DISCHARGE, discharge * STATIC_SHARE);
+        }
         if (HasStormreaverMarker(player, MOD_VIOLENT_GROUNDING))
         {
             std::size_t count = GROUNDING_TARGETS;
@@ -6969,6 +7231,57 @@ namespace
         {
             RenewFor(player, SPELL_RIDE_THE_LIGHTNING, RIDE_MS);
             player->ModifySpellCooldown(SPELL_LAVA_LASH, -RIDE_COOLDOWN_MS);
+        }
+    }
+
+    // The Stormreaver's other abilities in the Stormfront: Earth Shock (the next pulse 20% more), Frozen Front (Frost
+    // Shock), Stormhammer (Shield Slam), Static Strike (Lightning Bolt), Warstorm (Thunder Clap).
+    void StormAbility(Player* player, Unit* target, uint32 firstRank)
+    {
+        if (!player->HasAura(SPELL_STORMFRONT, player->GetGUID()))
+            return;
+        State& state = StateOf(player);
+        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
+        if (firstRank == TankRunes::SPELL_EARTH_SHOCK)
+            Renew(player, SPELL_STORM_SURGE);
+        if (firstRank == SPELL_FROST_SHOCK && target && HasStormreaverMarker(player, MOD_FROZEN_FRONT)
+            && Ready(state.FrozenFrontAt, FROZEN_FRONT_EVERY_MS))
+        {
+            state.FrozenFrontAt = Now();
+            Position at = target->GetPosition();
+            PlaceDecals(player, SPELL_FROZEN_FRONT, { at });
+            float tick = ap * FROZEN_FRONT_AP * SchoolBonus(player, SPELL_SCHOOL_MASK_FROST);
+            for (uint32 i = 1; i <= FROZEN_FRONT_TICKS; ++i)
+                player->m_Events.AddEventAtOffset([player, at, tick]()
+                {
+                    if (!player->IsInWorld() || !player->IsAlive())
+                        return;
+                    for (Unit* enemy : EnemiesIn(player, Circle(at, FROZEN_FRONT_RADIUS), FROZEN_FRONT_TARGETS))
+                        Strike(player, enemy, SPELL_FROZEN_FRONT_TICK, tick);
+                }, Milliseconds(i * 1000));
+        }
+        if (firstRank == SPELL_SHIELD_SLAM && target && HasStormreaverMarker(player, MOD_STORMHAMMER)
+            && Ready(state.StormhammerAt, STORMHAMMER_EVERY_MS))
+        {
+            state.StormhammerAt = Now();
+            float arc = ap * STORMHAMMER_AP * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
+            Strike(player, target, SPELL_STORMHAMMER, arc);
+            for (Unit* other : EnemiesAround(player, target, STORM_ECHO_RANGE))
+                if (other != target)
+                {
+                    StormArc(player, target, other, SPELL_STORMHAMMER, arc);
+                    break;
+                }
+        }
+        if (firstRank == SPELL_LIGHTNING_BOLT && HasStormreaverMarker(player, MOD_STATIC_STRIKE))
+            Renew(player, SPELL_STATIC_STRIKE);
+        if (firstRank == SPELL_THUNDER_CLAP && HasStormreaverMarker(player, MOD_WARSTORM)
+            && Ready(state.WarstormAt, WARSTORM_EVERY_MS))
+        {
+            state.WarstormAt = Now();
+            float hit = ap * WARSTORM_AP * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
+            for (Unit* enemy : EnemiesIn(player, Circle(player->GetPosition(), STORM_ECHO_RANGE), WARSTORM_TARGETS))
+                Strike(player, enemy, SPELL_WARSTORM, hit);
         }
     }
 
@@ -7473,6 +7786,7 @@ namespace
         player->RemoveAurasDueToSpell(SPELL_FROSTBITTEN);
         for (uint32 spell : { SPELL_OPENING_SHOT, SPELL_LOADED_STEEL, SPELL_LOADED_POWDER, SPELL_MARKED_SHOT,
                               SPELL_ARCANE_POWDER, SPELL_DEAD_AIM, SPELL_CUT_AND_RUN, SPELL_STORMFRONT,
+                              SPELL_STORM_SURGE, SPELL_STATIC_STRIKE,
                               SPELL_RIDE_THE_LIGHTNING,
                               SPELL_FLAMEBOUND, SPELL_FLAMEBOUND_DISCOUNT, SPELL_BURNING_RAKE,
                               SPELL_PURSUING_CHILL, SPELL_SNOWBLIND,
@@ -7952,20 +8266,25 @@ namespace
             return Refuse(player, "Modifiers can't be changed in combat.");
         if (Missing(player, ModifierNeeds(choice.Rune, slot - 1, pick - 1)) != "-")
             return Refuse(player, "You lack an ability this modifier needs.");
-        // The Sanctified Paragon: Bastion of Faith and Weight of the Unworthy work on its damage only (Sanctified
-        // Condemnation); another Manifestation lets go of either.
+        // The Sanctified Paragon: Bastion of Faith and Weight of the Unworthy work on its damage only (a damaging
+        // Manifestation: Sanctified Condemnation or Radiant Judgment); another Manifestation lets go of either.
         if (choice.Rune == RUNE_SANCTIFIED_PARAGON)
         {
-            uint8 condemnation = MOD_SANCTIFIED_CONDEMNATION % CHOICES + 1;
-            auto damageOnly = [](uint8 covenant) { return covenant == MOD_BASTION_OF_FAITH % CHOICES + 1
-                || covenant == MOD_WEIGHT_OF_THE_UNWORTHY % CHOICES + 1; };
-            if (slot == 3 && damageOnly(pick) && choice.Mods[1] != condemnation)
-                return Refuse(player, "That modifier needs Sanctified Condemnation as your Manifestation.");
-            if (slot == 2 && pick != condemnation && damageOnly(choice.Mods[2]))
+            auto damaging = [](uint8 manifestation)
+            {
+                return manifestation == MOD_SANCTIFIED_CONDEMNATION % MAX_CHOICES + 1
+                    || manifestation == MOD_RADIANT_JUDGMENT % MAX_CHOICES + 1;
+            };
+            auto damageOnly = [](uint8 covenant) { return covenant == MOD_BASTION_OF_FAITH % MAX_CHOICES + 1
+                || covenant == MOD_WEIGHT_OF_THE_UNWORTHY % MAX_CHOICES + 1; };
+            if (slot == 3 && damageOnly(pick) && !damaging(choice.Mods[1]))
+                return Refuse(player, "That modifier needs a damaging Manifestation (Sanctified Condemnation or "
+                    "Radiant Judgment).");
+            if (slot == 2 && !damaging(pick) && damageOnly(choice.Mods[2]))
             {
                 choice.Mods[2] = 0;
                 ChatHandler(player->GetSession()).SendSysMessage("|cffa335eeLegendary Rune:|r your Covenant needs "
-                    "Sanctified Condemnation: choose it again.");
+                    "a damaging Manifestation: choose it again.");
             }
         }
         if (choice.Mods[slot - 1] == pick)
@@ -9695,6 +10014,22 @@ class spell_titan_rune_extended_hit : public SpellScript
             && (first == SPELL_MANGLE_BEAR || first == SPELL_SWIPE_BEAR || first == TankRunes::SPELL_EARTH_SHOCK
                 || first == SPELL_THUNDER_CLAP || (first == SPELL_EARTH_SHIELD_HEAL && target == player)))
             UrsocAbility(player, target, first);
+        if (player->HasAura(SPELL_RUNE_SANCTIFIED_PARAGON))
+        {
+            if (first == SPELL_CHARGE || first == SPELL_DIVINE_SHIELD || first == SPELL_FLASH_HEAL)
+                ParagonAbility(player, target, first, float(GetHitHeal()));
+            if (first == SPELL_HOLY_SHOCK_HEAL)
+                ParagonHolyShock(player, target, float(GetHitHeal()));
+            if (GetHitDamage() > 0 && (first == SPELL_JUDGEMENT_OF_LIGHT || first == SPELL_JUDGEMENT_OF_WISDOM
+                || first == SPELL_JUDGEMENT_OF_JUSTICE))
+                ParagonJudgment(player, target);
+            if (GetHitDamage() > 0 && first == SPELL_SHIELD_OF_RIGHTEOUSNESS)
+                ParagonRighteous(player, target);
+        }
+        if (player->HasAura(SPELL_RUNE_STORMREAVER) && player->IsValidAttackTarget(target)
+            && (first == TankRunes::SPELL_EARTH_SHOCK || first == SPELL_FROST_SHOCK || first == SPELL_SHIELD_SLAM
+                || first == SPELL_LIGHTNING_BOLT || first == SPELL_THUNDER_CLAP))
+            StormAbility(player, target, first);
         if (first == SPELL_CHAIN_HEAL || first == SPELL_HOLY_SHOCK)
         {
             if (target != player && player->IsFriendlyTo(target) && player->HasAura(SPELL_RUNE_GUIDING_LIGHT))

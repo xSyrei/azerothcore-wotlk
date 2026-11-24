@@ -4,6 +4,30 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Extended Options: Sanctified Paragon, Stormreaver, Red Communion, Primal Worldwarden
+
+- Four more Legendary Runes get their **Extended Options** (from the updated compendium): five choices in each slot.
+  Your current picks keep their meaning.
+- **Sanctified Paragon**
+  - **Judgment** on an enemy in the aura adds half a tick of Holy damage; **Holy Shock** healing an ally in it heals
+    another nearby; **Shield of Righteousness** on an enemy in it shields you.
+  - New choices: **Consecrated Charge** (Charge), **Sanctuary March** (Divine Shield), **Radiant Judgment**
+    (Judgment), **Healing Light** (Flash Heal), **Dawnward** (Holy Shock), **Paragon's Aegis** (Shield of
+    Righteousness). Bastion of Faith and Weight of the Unworthy now work with any damaging Manifestation.
+- **Stormreaver**
+  - **Earth Shock** in the Stormfront makes its next pulse stronger; Thunderlash on your **Flame Shock** target makes
+    it last longer.
+  - New choices: **Stormhunter** (Hunter's Mark), **Frozen Front** (Frost Shock), **Stormhammer** (Shield Slam),
+    **Flame Conductor** (Flame Shock), **Static Strike** (Lightning Bolt), **Warstorm** (Thunder Clap).
+- **Red Communion**
+  - Blood Strike on a linked enemy with your **Corruption** makes it last longer.
+  - New choices: **Corrupt Communion** (Corruption), **Thorned Communion** (Mangle), **Rending Communion** (Rend),
+    **Earthbound Blood** (Earth Shield), **Death's Recall** (Death Coil), **Holy Communion** (Holy Shock).
+- **Primal Worldwarden**
+  - New choices: **Bloodstone Command** (Blood Strike), **Judgment of the Elements** (Judgment), **Consecrated Heart**
+    (Consecration), **Earthen Communion** (Earth Shield), **Thunderheart** (Thunder Clap), **Runic Renewal** (Death
+    Coil).
+
 ### Extended Options: Whitefang, Ursoc's Champion
 
 - Two more Legendary Runes are **redesigned** with their Extended Options: five choices in each slot. **Your picks

@@ -130,21 +130,43 @@ namespace
         SPELL_COMMUNION_BOIL        = 91544,
 
         NPC_WORLDHEART_TOTEM        = 910127,
+
+        // The Extended Options (runes.cpp: the markers' blocks, 25 ids a rune).
+        SPELL_CORRUPTION            = 172,
+        SPELL_MANGLE_BEAR           = 33878,
+        SPELL_REND                  = 772,
+        SPELL_DEATH_COIL_DK         = 47541,
+        SPELL_DEATH_COIL_WARLOCK    = 6789,
+        SPELL_HOLY_SHOCK_HEAL       = 25914,
+        SPELL_EARTH_SHIELD          = 974,
+        SPELL_EARTH_SHIELD_HEAL     = 379,
+        SPELL_JUDGEMENT_OF_LIGHT    = 20271,
+        SPELL_JUDGEMENT_OF_WISDOM   = 53408,
+        SPELL_JUDGEMENT_OF_JUSTICE  = 53407,
+        SPELL_CONSECRATION          = 26573,
+        SPELL_THUNDER_CLAP          = 6343,
+        SPELL_RENDING_COMMUNION     = 93015,
+        SPELL_EARTHBOUND_BLOOD      = 93016,
+        SPELL_HOLY_COMMUNION        = 93017,
+        SPELL_BLOODSTONE_COMMAND    = 93040,
+        SPELL_CONSECRATED_HEART     = 93041,
+        SPELL_RUNIC_RENEWAL         = 93042,
     };
 
-    // The modifiers: slot x 3 + choice.
+    // The modifiers: slot x 3 + choice (Red Communion's and the Primal Worldwarden's Extended Options: x 5, their
+    // first three of each slot the ones they had; runes.cpp's ModifierNeeds names their abilities).
     enum CommunionModifier : uint8
     {
-        MOD_SOVEREIGN_BOND, MOD_BLOODBOUND_COURT, MOD_LONG_VEINS,
-        MOD_CRIMSON_FEAST, MOD_ARTERIAL_ECHO, MOD_SHARED_WEAKNESS,
-        MOD_COAGULATED_THRONE, MOD_RAPID_RECALL, MOD_BLOOD_FOR_BLOOD,
+        MOD_SOVEREIGN_BOND, MOD_BLOODBOUND_COURT, MOD_LONG_VEINS, MOD_CORRUPT_COMMUNION, MOD_THORNED_COMMUNION,
+        MOD_CRIMSON_FEAST, MOD_ARTERIAL_ECHO, MOD_SHARED_WEAKNESS, MOD_RENDING_COMMUNION, MOD_EARTHBOUND_BLOOD,
+        MOD_COAGULATED_THRONE, MOD_RAPID_RECALL, MOD_BLOOD_FOR_BLOOD, MOD_DEATHS_RECALL, MOD_HOLY_COMMUNION,
     };
 
     enum WorldwardenModifier : uint8
     {
-        MOD_EARTHEN_COMMAND, MOD_FLAME_DOMINION, MOD_WINTER_COMMAND,
-        MOD_DEEPSTONE_HEART, MOD_WIDE_COMMUNION, MOD_STRIDING_HEART,
-        MOD_RESONANT_STRIKES, MOD_MOLTEN_CAUSEWAY, MOD_STONEBLOOD_LASH,
+        MOD_EARTHEN_COMMAND, MOD_FLAME_DOMINION, MOD_WINTER_COMMAND, MOD_BLOODSTONE_COMMAND, MOD_JUDGMENT_ELEMENTS,
+        MOD_DEEPSTONE_HEART, MOD_WIDE_COMMUNION, MOD_STRIDING_HEART, MOD_CONSECRATED_HEART, MOD_EARTHEN_COMMUNION,
+        MOD_RESONANT_STRIKES, MOD_MOLTEN_CAUSEWAY, MOD_STONEBLOOD_LASH, MOD_THUNDERHEART, MOD_RUNIC_RENEWAL,
     };
 
     enum CovenantModifier : uint8
@@ -171,6 +193,16 @@ namespace
     constexpr int32 WEAKNESS_MS = 4000, ARTERIAL_MS = 4000;
     constexpr float ARTERIAL_AP = 0.35f, ARTERIAL_CARRY_CAP = 2.0f;
     constexpr int32 ARTERIAL_TICKS = 4;
+    // Its Extended Options: Blood Strike on a linked enemy with the Hero's Corruption, 1 sec longer (4 sec an
+    // application, 2 sec apart); Corrupt Communion (Corruption on 2 it links, 12 sec apart), Thorned Communion
+    // (Mangle reclaims too), Rending Communion (their Rend target: 25% of attack power), Earthbound Blood (in their
+    // Earth Shield: 1% absorb, 6 sec apart), Death's Recall (Death Coil: Recall 2 sec sooner, 8 sec apart), Holy
+    // Communion (their Holy Shock on themselves with a link: 2% absorb, 10 sec apart).
+    constexpr int32 CORRUPTION_EXTEND_MS = 1000, CORRUPTION_MOST_MS = 4000, COMMUNION_WARD_MS = 4000;
+    constexpr uint32 CORRUPTION_EVERY_MS = 2000, CORRUPT_COMMUNION_EVERY_MS = 12000, EARTHBOUND_EVERY_MS = 6000;
+    constexpr uint32 DEATHS_RECALL_EVERY_MS = 8000, HOLY_COMMUNION_EVERY_MS = 10000, CORRUPT_TARGETS = 2;
+    constexpr int32 DEATHS_RECALL_MS = 2000;
+    constexpr float RENDING_AP = 0.25f, EARTHBOUND_PCT = 1.0f, HOLY_COMMUNION_PCT = 2.0f;
 
     // Primal Worldwarden's numbers.
     constexpr uint32 TOTEM_MS = 30 * MINUTE * IN_MILLISECONDS;
@@ -190,6 +222,16 @@ namespace
     constexpr uint32 MAGMA_TARGETS = 5, MAGMA_TICKS = 4;
     constexpr float STONEBLOOD_PCT = 1.5f;
     constexpr uint32 STONEBLOOD_EVERY_MS = 4000;
+    // Its Extended Options: Bloodstone Command (Blood Strike within 6 sec of an Earth command: 2% absorb, once a
+    // command), Judgment of the Elements and Thunderheart (the latest command again at half, 8 sec apart),
+    // Consecrated Heart (in their Consecration with Worldguard: 2% absorb, 8 sec apart), Earthen Communion (their
+    // Earth Shield healing them with Worldguard: the next command 20% stronger, 8 sec apart), Runic Renewal (Death
+    // Coil with Worldguard: 30% of spell power healed, at most 2% of health, 8 sec apart).
+    constexpr uint32 BLOODSTONE_WINDOW_MS = 6000, ELEMENTS_EVERY_MS = 8000, CONSECRATED_EVERY_MS = 8000;
+    constexpr uint32 COMMUNION_EVERY_MS = 8000, COMMUNION_WINDOW_MS = 6000, RENEWAL_EVERY_MS = 8000;
+    constexpr int32 PRIMAL_WARD_MS = 4000;
+    constexpr float ELEMENTS_SHARE = 0.5f, BLOODSTONE_PCT = 2.0f, CONSECRATED_PCT = 2.0f, EARTHEN_COMMUNION = 1.2f;
+    constexpr float RENEWAL_SP = 0.3f, RENEWAL_CAP_PCT = 2.0f, CONSECRATION_REACH = 8.0f;
 
     // Black Covenant's numbers.
     constexpr int32 ARMOR_PCT = 400, PACT_THREAT = 200, INSULATION_PCT = 8;
@@ -237,6 +279,10 @@ namespace
         uint32 FollowTimer = 0;
         std::unordered_map<ObjectGuid, FrostHold> Frost;     // the enemies' reduced damage to the Hero
         uint32 LastHungry = 0;
+        uint32 CorruptionAt = 0, CorruptCommunionAt = 0, EarthboundAt = 0, DeathsRecallAt = 0, HolyCommunionAt = 0;
+        uint32 EarthCommandAt = 0, ElementsAt = 0, ConsecratedAt = 0, CommunionAt = 0, CommunionUntil = 0;
+        uint32 RenewalAt = 0;                   // game ms
+        bool BloodstoneSpent = false;           // Bloodstone Command: once an Earth command
         bool Bound = false;             // Covenant Armor on (its own aura is the truth; this ends it once)
     };
 
@@ -363,6 +409,31 @@ namespace
         return float(player->SpellBaseDamageBonusDone(school));
     }
 
+    // Since a moment (game ms; 0 never): at least ms ago.
+    bool Ready(uint32 at, uint32 ms)
+    {
+        return !at || Now() - at >= ms;
+    }
+
+    // The chain's aura (any rank) the caster put on the unit (nullptr none).
+    Aura* RankAura(Unit* unit, uint32 firstRank, ObjectGuid caster)
+    {
+        for (SpellInfo const* rank = sSpellMgr->GetSpellInfo(firstRank); rank; rank = rank->GetNextRankSpell())
+            if (Aura* aura = unit->GetAura(rank->Id, caster))
+                return aura;
+        return nullptr;
+    }
+
+    // The highest rank of the chain the Hero knows (0 none).
+    uint32 KnownRank(Player* player, uint32 firstRank)
+    {
+        uint32 known = 0;
+        for (SpellInfo const* rank = sSpellMgr->GetSpellInfo(firstRank); rank; rank = rank->GetNextRankSpell())
+            if (player->HasSpell(rank->Id))
+                known = rank->Id;
+        return known;
+    }
+
     // ---- Red Communion ------------------------------------------------------------------------------------------
 
     float LinkRange(Player* player)
@@ -442,6 +513,20 @@ namespace
             if (!known)
                 state.Links.push_back({ unit->GetGUID(), Now() });
         }
+        // Corrupt Communion: the Hero's Corruption on up to 2 it links (its damage over time only), 12 sec apart.
+        if (Communion(player, MOD_CORRUPT_COMMUNION) && Ready(state.CorruptCommunionAt, CORRUPT_COMMUNION_EVERY_MS))
+            if (uint32 corruption = KnownRank(player, SPELL_CORRUPTION))
+            {
+                uint32 count = 0;
+                for (Unit* unit : order)
+                    if (count < CORRUPT_TARGETS && unit->IsAlive())
+                    {
+                        player->AddAura(corruption, unit);
+                        ++count;
+                    }
+                if (count)
+                    state.CorruptCommunionAt = Now();
+            }
     }
 
     // Arterial Echo on the victim: 35% of attack power over 4 sec, a refresh keeping what is unpaid (up to 200% of a
@@ -459,17 +544,22 @@ namespace
         Timed(player, victim, SPELL_ARTERIAL_ECHO, ARTERIAL_MS, std::max(1, int32(total / ARTERIAL_TICKS)));
     }
 
-    // An original Blood Strike hit on a linked enemy: the reclamation and the pulse (once every 2 sec), Arterial Echo.
-    void BloodStrike(Player* player, Unit* victim)
+    // The reclamation and the pulse (once every 2 sec): Blood Strike's, Thorned Communion's Mangle. Rending
+    // Communion on the Hero's Rend target; Earthbound Blood in their Earth Shield.
+    void Reclaim(Player* player, Unit* victim)
     {
-        if (!player->HasAura(SPELL_RUNE_RED_COMMUNION) || !IsLinked(player, victim))
-            return;
-        if (Communion(player, MOD_ARTERIAL_ECHO))
-            ArterialEcho(player, victim);
         TankState& state = StateOf(player);
         if (Now() - state.LastReclaim < RECLAIM_EVERY_MS)
             return;
         state.LastReclaim = Now();
+        if (Communion(player, MOD_RENDING_COMMUNION) && HasRankAura(victim, SPELL_REND, player->GetGUID()))
+            Strike(player, victim, SPELL_RENDING_COMMUNION, AttackPower(player) * RENDING_AP);
+        if (Communion(player, MOD_EARTHBOUND_BLOOD) && Ready(state.EarthboundAt, EARTHBOUND_EVERY_MS)
+            && HasRankAura(player, SPELL_EARTH_SHIELD, player->GetGUID()))
+        {
+            state.EarthboundAt = Now();
+            Shield(player, SPELL_EARTHBOUND_BLOOD, PctOfHealth(player, EARTHBOUND_PCT), COMMUNION_WARD_MS, false);
+        }
         std::vector<Unit*> others = LinksInRange(player, victim);
         bool feast = Communion(player, MOD_CRIMSON_FEAST);
         float pct = std::min((feast ? FEAST_PCT : RECLAIM_PCT) + RECLAIM_PER_LINK * float(others.size()),
@@ -482,6 +572,30 @@ namespace
             if (Communion(player, MOD_SHARED_WEAKNESS))
                 Timed(player, other, SPELL_SHARED_WEAKNESS, WEAKNESS_MS);
         }
+    }
+
+    // An original Blood Strike hit on a linked enemy: Arterial Echo; the Hero's Corruption there 1 sec longer (4 sec
+    // an application, 2 sec apart); the reclamation.
+    void BloodStrike(Player* player, Unit* victim)
+    {
+        if (!player->HasAura(SPELL_RUNE_RED_COMMUNION) || !IsLinked(player, victim))
+            return;
+        if (Communion(player, MOD_ARTERIAL_ECHO))
+            ArterialEcho(player, victim);
+        TankState& state = StateOf(player);
+        if (Aura* corruption = RankAura(victim, SPELL_CORRUPTION, player->GetGUID());
+            corruption && Ready(state.CorruptionAt, CORRUPTION_EVERY_MS))
+        {
+            int32 more = std::min(CORRUPTION_EXTEND_MS,
+                CORRUPTION_MOST_MS - (corruption->GetMaxDuration() - corruption->CalcMaxDuration()));
+            if (more > 0)
+            {
+                state.CorruptionAt = Now();
+                corruption->SetMaxDuration(corruption->GetMaxDuration() + more);
+                corruption->SetDuration(corruption->GetDuration() + more);
+            }
+        }
+        Reclaim(player, victim);
     }
 
     // Sanguine Recall: each link in range struck, the absorb; Blood for Blood's heal.
@@ -592,6 +706,17 @@ namespace
         Creature* totem = Totem(player);
         if (!totem)
             return;
+        TankState& communion = StateOf(player);
+        if (!echo && communion.CommunionUntil && Now() < communion.CommunionUntil)
+        {
+            communion.CommunionUntil = 0;
+            share *= EARTHEN_COMMUNION;                 // Earthen Communion
+        }
+        if (!echo && command == 1)
+        {
+            communion.EarthCommandAt = Now();
+            communion.BloodstoneSpent = false;
+        }
         bool wide = Worldwarden(player, MOD_WIDE_COMMUNION);
         float radius = wide ? WIDE_RADIUS : COMMAND_RADIUS;
         uint32 cap = wide ? WIDE_TARGETS : COMMAND_TARGETS;
@@ -723,6 +848,8 @@ namespace
     }
 
     // Every update: the totem's leash and anchor, Worldguard by the shield, the magma line's ticks.
+    void ConsecratedHeart(Player* player);
+
     void WorldwardenTick(Player* player, uint32 diff)
     {
         TankState& state = StateOf(player);
@@ -761,6 +888,8 @@ namespace
                 }
             }
         }
+        if (totem && player->HasAura(SPELL_RUNE_PRIMAL_WORLDWARDEN))
+            ConsecratedHeart(player);
         if (state.MagmaTicks)
         {
             state.MagmaTimer += diff;
@@ -772,21 +901,88 @@ namespace
         }
     }
 
+    // The Primal Worldwarden's and Red Communion's other abilities (their Extended Options): Blood Strike
+    // (Bloodstone Command), Judgment (Judgment of the Elements), Thunder Clap (Thunderheart), Death Coil (Runic
+    // Renewal, Death's Recall), Earth Shield's heal (Earthen Communion), Mangle (Thorned Communion), Holy Shock's heal
+    // (Holy Communion).
+    void TankAbility(Player* player, Unit* target, uint32 firstRank)
+    {
+        TankState& state = StateOf(player);
+        bool warden = player->HasAura(SPELL_RUNE_PRIMAL_WORLDWARDEN);
+        bool communion = player->HasAura(SPELL_RUNE_RED_COMMUNION);
+        bool guard = player->HasAura(SPELL_WORLDGUARD);
+        if (warden && firstRank == SPELL_BLOOD_STRIKE && Worldwarden(player, MOD_BLOODSTONE_COMMAND)
+            && state.EarthCommandAt && Now() - state.EarthCommandAt <= BLOODSTONE_WINDOW_MS && !state.BloodstoneSpent)
+        {
+            state.BloodstoneSpent = true;
+            Shield(player, SPELL_BLOODSTONE_COMMAND, PctOfHealth(player, BLOODSTONE_PCT), PRIMAL_WARD_MS, false);
+        }
+        bool judgment = firstRank == SPELL_JUDGEMENT_OF_LIGHT || firstRank == SPELL_JUDGEMENT_OF_WISDOM
+            || firstRank == SPELL_JUDGEMENT_OF_JUSTICE;
+        if (warden && ((judgment && Worldwarden(player, MOD_JUDGMENT_ELEMENTS))
+            || (firstRank == SPELL_THUNDER_CLAP && Worldwarden(player, MOD_THUNDERHEART)))
+            && state.Command && Now() - state.CommandAt <= COMMAND_MEMORY_MS
+            && Ready(state.ElementsAt, ELEMENTS_EVERY_MS))
+        {
+            state.ElementsAt = Now();
+            Command(player, state.Command, ELEMENTS_SHARE, true);
+        }
+        bool deathCoil = firstRank == SPELL_DEATH_COIL_DK || firstRank == SPELL_DEATH_COIL_WARLOCK;
+        if (warden && deathCoil && guard && Worldwarden(player, MOD_RUNIC_RENEWAL)
+            && Ready(state.RenewalAt, RENEWAL_EVERY_MS))
+        {
+            state.RenewalAt = Now();
+            float power = float(player->SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_ALL));
+            int32 heal = std::max<int32>(1, int32(std::min(power * RENEWAL_SP,
+                float(PctOfHealth(player, RENEWAL_CAP_PCT)))));
+            player->CastCustomSpell(player, SPELL_RUNIC_RENEWAL, &heal, nullptr, nullptr, true);
+        }
+        if (warden && firstRank == SPELL_EARTH_SHIELD_HEAL && target == player && guard
+            && Worldwarden(player, MOD_EARTHEN_COMMUNION) && Ready(state.CommunionAt, COMMUNION_EVERY_MS))
+        {
+            state.CommunionAt = Now();
+            state.CommunionUntil = Now() + COMMUNION_WINDOW_MS;
+        }
+        if (!communion)
+            return;
+        if (firstRank == SPELL_MANGLE_BEAR && Communion(player, MOD_THORNED_COMMUNION) && IsLinked(player, target))
+            Reclaim(player, target);
+        if (deathCoil && Communion(player, MOD_DEATHS_RECALL) && IsLinked(player, target)
+            && Ready(state.DeathsRecallAt, DEATHS_RECALL_EVERY_MS))
+        {
+            state.DeathsRecallAt = Now();
+            player->ModifySpellCooldown(SPELL_SANGUINE_RECALL, -DEATHS_RECALL_MS);
+        }
+        if (firstRank == SPELL_HOLY_SHOCK_HEAL && target == player && Communion(player, MOD_HOLY_COMMUNION)
+            && !LiveLinks(player).empty() && Ready(state.HolyCommunionAt, HOLY_COMMUNION_EVERY_MS))
+        {
+            state.HolyCommunionAt = Now();
+            Shield(player, SPELL_HOLY_COMMUNION, PctOfHealth(player, HOLY_COMMUNION_PCT), COMMUNION_WARD_MS, false);
+        }
+    }
+
+    // Consecrated Heart: in the Hero's Consecration with Worldguard, a 2% absorb (8 sec apart).
+    void ConsecratedHeart(Player* player)
+    {
+        TankState& state = StateOf(player);
+        if (!Worldwarden(player, MOD_CONSECRATED_HEART) || !player->HasAura(SPELL_WORLDGUARD)
+            || !Ready(state.ConsecratedAt, CONSECRATED_EVERY_MS))
+            return;
+        for (SpellInfo const* rank = sSpellMgr->GetSpellInfo(SPELL_CONSECRATION); rank; rank = rank->GetNextRankSpell())
+            if (DynamicObject* ground = player->GetDynObject(rank->Id); ground
+                && player->GetExactDist2d(ground) <= std::max(ground->GetRadius(), CONSECRATION_REACH))
+            {
+                state.ConsecratedAt = Now();
+                Shield(player, SPELL_CONSECRATED_HEART, PctOfHealth(player, CONSECRATED_PCT), PRIMAL_WARD_MS, false);
+                return;
+            }
+    }
+
     // ---- Black Covenant -----------------------------------------------------------------------------------------
 
     bool Bound(Player* player)
     {
         return player->HasAura(SPELL_COVENANT_ARMOR);
-    }
-
-    // The known rank of a chain (0 none).
-    uint32 KnownRank(Player* player, uint32 firstRank)
-    {
-        uint32 known = 0;
-        for (SpellInfo const* rank = sSpellMgr->GetSpellInfo(firstRank); rank; rank = rank->GetNextRankSpell())
-            if (player->HasSpell(rank->Id))
-                known = rank->Id;
-        return known;
     }
 
     // Summon Voidwalker's buttons become Bind: Voidwalker's while the rune is bound, or back.
@@ -1142,12 +1338,39 @@ class spell_titan_tank_blood_strike : public SpellScript
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
         if (player && target && !GetSpell()->IsTriggered() && target->IsAlive())
+        {
             BloodStrike(player, target);
+            TankAbility(player, target, SPELL_BLOOD_STRIKE);
+        }
     }
 
     void Register() override
     {
         AfterHit += SpellHitFn(spell_titan_tank_blood_strike::Hit);
+    }
+};
+
+// The tank runes' other abilities (every rank; their Extended Options): Mangle (Bear), Death Coil, Holy Shock's
+// heal, Earth Shield's heal, the Judgements, Thunder Clap.
+class spell_titan_tank_extended : public SpellScript
+{
+    PrepareSpellScript(spell_titan_tank_extended);
+
+    void Hit()
+    {
+        Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr;
+        Unit* target = GetHitUnit();
+        if (!player || !target)
+            return;
+        uint32 first = FirstRank(GetSpellInfo()->Id);
+        if (GetSpell()->IsTriggered() && first != SPELL_EARTH_SHIELD_HEAL && first != SPELL_HOLY_SHOCK_HEAL)
+            return;
+        TankAbility(player, target, first);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_tank_extended::Hit);
     }
 };
 
@@ -1388,6 +1611,7 @@ void AddSC_tank_runes()
 {
     RegisterSpellScript(spell_titan_tank_blood_boil);
     RegisterSpellScript(spell_titan_tank_blood_strike);
+    RegisterSpellScript(spell_titan_tank_extended);
     RegisterSpellScript(spell_titan_tank_shock);
     RegisterSpellScript(spell_titan_tank_stormstrike);
     RegisterSpellScript(spell_titan_tank_lava_lash);

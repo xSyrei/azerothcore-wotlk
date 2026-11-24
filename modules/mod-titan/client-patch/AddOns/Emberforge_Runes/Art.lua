@@ -89,12 +89,18 @@ EmberforgeRunesArt = {
                 "Radius",
                 "Footsteps",
                 "Standing still",
+                "Charge",
+                "Divine Shield",
                 "Condemnation",
                 "Healing",
                 "Shields",
+                "Judgment",
+                "Flash Heal",
                 "Threat",
                 "Slow",
                 "Mana",
+                "Holy Shock",
+                "Shield of Righteousness",
             },
             texts = {
                 "The aura reaches 12 yards instead of 8, but its damage, healing and " ..
@@ -104,18 +110,32 @@ EmberforgeRunesArt = {
                         "however many it stands in.",
                 "Standing still for 3 sec raises the aura's damage, healing and shields " ..
                         "by 10% until you move.",
+                "After Charge, the aura reaches 4 yards farther for 4 sec and its next " ..
+                        "tick is 15% stronger, once every 12 sec.",
+                "Divine Shield while the aura is on makes its next 3 seconds cost no " ..
+                        "mana, once every 60 sec.",
                 "Damage: each tick on an enemy raises its damage taken from your aura " ..
                         "by 2%, up to 10%. Lost 2 sec after it leaves the aura.",
                 "Healing: the aura no longer deals damage. Each second it heals your " ..
                         "most injured party member in range.",
                 "Protection: the aura no longer deals damage. Every 5 sec it shields a " ..
                         "nearby party member for 5 ticks' worth. One shield at a time.",
-                "The aura's damage generates 50% more threat. Needs Sanctified " ..
-                        "Condemnation.",
+                "Damage: Judgment's bonus in the aura is a whole tick instead of half. " ..
+                        "The aura keeps dealing damage.",
+                "Healing: the aura no longer deals damage; each second it heals your " ..
+                        "most injured party member in range for 45% of a tick, and your Flash " ..
+                        "Heal on that ally heals 30% more, once every 8 sec.",
+                "The aura's damage generates 50% more threat. Needs a damaging " ..
+                        "Manifestation (Sanctified Condemnation or Radiant Judgment).",
                 "An enemy hit by 3 ticks in a row has its movement speed reduced by 15% " ..
-                        "while it stays in the aura. Needs Sanctified Condemnation.",
+                        "while it stays in the aura. Needs a damaging Manifestation (Sanctified " ..
+                        "Condemnation or Radiant Judgment).",
                 "The aura costs 0.75% of your base mana a second instead of 1%, but its " ..
                         "damage, healing and shields are 10% lower.",
+                "Holy Shock's second heal also shields its ally for 20% of that heal " ..
+                        "for 4 sec, once every 8 sec.",
+                "Shield of Righteousness's shield in the aura is 4% of your maximum " ..
+                        "health instead of 3%.",
             },
             slots = {
                 "Presence",
@@ -1362,18 +1382,29 @@ EmberforgeRunesArt = {
                 "Eye",
                 "Forked",
                 "Rolling",
+                "Hunter's Mark",
+                "Frost Shock",
                 "Head",
                 "Chain",
                 "White-Hot",
+                "Shield Slam",
+                "Flame Shock",
                 "Overcharge",
                 "Ride",
                 "Ground",
+                "Lightning Bolt",
+                "Thunder Clap",
             },
             texts = {
                 "The Stormfront deals 120% more damage while only one enemy is in it.",
                 "The Stormfront strikes up to 8 enemies within 12 yards.",
                 "The Stormfront strikes every second instead of every 2, each strike " ..
                         "70% of its damage.",
+                "Stormfront pulses deal 35% more to your Hunter's Mark target and also " ..
+                        "strike one other enemy within 8 yards for 40%.",
+                "Frost Shock in the Stormfront leaves a frost trail under its target " ..
+                        "for 4 sec: 10% of your attack power as Frost damage each second to up " ..
+                        "to 3 enemies, once every 8 sec.",
                 "Thunderlash doesn't arc: 120% of your attack power to its target " ..
                         "instead.",
                 "Thunderlash arcs to 4 enemies instead of 2, each for 30% of your " ..
@@ -1381,11 +1412,20 @@ EmberforgeRunesArt = {
                 "Thunderlash burns its target for 100% of your attack power over 6 sec " ..
                         "instead of its Nature hit; its arcs stay. A new burn keeps what is " ..
                         "left of the last.",
+                "Shield Slam in the Stormfront sends an arc of 30% of your attack power " ..
+                        "as Nature damage to its target and one other enemy within 8 yards, " ..
+                        "once every 6 sec.",
+                "Thunderlash on your Flame Shock target spreads it to one other enemy " ..
+                        "within 8 yards for what is left of it, once every 10 sec.",
                 "The rune's Lightning Shield discharges deal 50% more damage.",
                 "Each of the rune's discharges makes you move 30% faster for 3 sec and " ..
                         "brings Lava Lash back 1 sec sooner.",
                 "Each of the rune's discharges also strikes up to 3 other enemies " ..
                         "within 8 yards of its target for half its damage.",
+                "Lightning Bolt in the Stormfront makes your next discharge within 6 " ..
+                        "sec strike again for 40% of its damage.",
+                "Thunder Clap in the Stormfront also deals 25% of your attack power as " ..
+                        "Nature damage to up to 5 enemies within 8 yards, once every 8 sec.",
             },
             slots = {
                 "Storm",
@@ -1545,28 +1585,46 @@ EmberforgeRunesArt = {
                 "Bond",
                 "Court",
                 "Veins",
+                "Corruption",
+                "Mangle",
                 "Feast",
                 "Echo",
                 "Weakness",
+                "Rend",
+                "Earth Shield",
                 "Throne",
                 "Rapid",
                 "Blood",
+                "Death Coil",
+                "Holy Shock",
             },
             texts = {
                 "Your selected linked enemy deals 8% less damage to you while within 20 " ..
                         "yards.",
                 "Up to 8 enemies are linked. The heal and the absorb keep their caps.",
                 "Links last 15 sec and reach 30 yards.",
+                "Crimson Communion also lays your Corruption on up to 2 enemies it " ..
+                        "links, once every 12 sec.",
+                "Mangle on a linked enemy also reclaims blood and pulses, as Blood " ..
+                        "Strike does (sharing its 2 sec).",
                 "Blood Reclamation heals 2% of your maximum health, 2.6% at most.",
                 "Blood Strike also leaves 35% of your attack power as Shadow damage " ..
                         "over 4 sec on its linked victim.",
                 "Communion pulses make their enemies deal 8% less magic damage to you " ..
                         "for 4 sec.",
+                "A reclaiming Blood Strike on your Rend target also deals 25% of your " ..
+                        "attack power as Physical damage.",
+                "Reclaiming while your Earth Shield is on you also shields you for 1% " ..
+                        "of your maximum health for 4 sec, once every 6 sec.",
                 "Sanguine Recall's absorb starts at 5% of your maximum health, 7% at " ..
                         "most.",
                 "Sanguine Recall's cooldown is 14 sec.",
                 "Sanguine Recall also heals you for 2% of your maximum health and deals " ..
                         "45% of your attack power.",
+                "Death Coil on a linked enemy brings Sanguine Recall back 2 sec sooner, " ..
+                        "once every 8 sec.",
+                "Holy Shock healing you while you have a link shields you for 2% of " ..
+                        "your maximum health for 4 sec, once every 10 sec.",
             },
             slots = {
                 "Communion",
@@ -1594,28 +1652,46 @@ EmberforgeRunesArt = {
                 "Earth",
                 "Flame",
                 "Winter",
+                "Blood Strike",
+                "Judgment",
                 "Deepstone",
                 "Wide",
                 "Striding",
+                "Consecration",
+                "Earth Shield",
                 "Resonant",
                 "Molten",
                 "Stone",
+                "Thunder Clap",
+                "Death Coil",
             },
             texts = {
                 "Earth Shock's command absorbs 5% of your maximum health; its echo 3%.",
                 "Flame's command deals 40% of your attack power; its echo 24%.",
                 "Frost's command slows by 45% and reduces damage by 9%; its echo 27% " ..
                         "and 5.4%.",
+                "Blood Strike within 6 sec of an Earth command shields you for 2% of " ..
+                        "your maximum health for 4 sec, once for each command.",
+                "Judgment repeats your last Shock command (within 10 sec) at half " ..
+                        "strength, once every 8 sec.",
                 "Worldguard reduces damage taken by 11%. A shield is still needed.",
                 "Flame and Frost commands reach 12 yards and up to 8 enemies; echoes " ..
                         "too.",
                 "Place Worldheart's cooldown is 5 sec, and placing it makes you move " ..
                         "25% faster for 3 sec.",
+                "Standing in your Consecration with Worldguard up shields you for 2% of " ..
+                        "your maximum health for 4 sec, once every 8 sec.",
+                "Your Earth Shield healing you with Worldguard up makes your next Shock " ..
+                        "command within 6 sec 20% stronger, once every 8 sec.",
                 "Stormstrike's command echo can come every 4 sec.",
                 "Magma Lash's line deals 16% of your attack power a tick and is 5 yards " ..
                         "wide.",
                 "Lava Lash also heals you for 1.5% of your maximum health, once every 4 " ..
                         "sec.",
+                "Thunder Clap repeats your last Shock command (within 10 sec) at half " ..
+                        "strength, once every 8 sec.",
+                "Death Coil with Worldguard up heals you for 30% of your spell power, " ..
+                        "at most 2% of your maximum health, once every 8 sec.",
             },
             slots = {
                 "Shockcraft",

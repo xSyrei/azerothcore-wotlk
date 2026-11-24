@@ -32,9 +32,9 @@ namespace TankRunes
         SPELL_EARTH_SHOCK                   = 8042,
         SPELL_SEARING_PAIN                  = 5676,
         SPELL_RUNE_RED_COMMUNION            = 91490,
-        SPELL_COMMUNION_MODIFIER_FIRST      = 91491,    // + slot * 3 + choice
+        SPELL_COMMUNION_MODIFIER_FIRST      = 93000,    // + slot * 5 + choice (91491-91499 retired)
         SPELL_RUNE_PRIMAL_WORLDWARDEN       = 91510,
-        SPELL_WORLDWARDEN_MODIFIER_FIRST    = 91511,
+        SPELL_WORLDWARDEN_MODIFIER_FIRST    = 93025,    // + slot * 5 + choice (91511-91519 retired)
         SPELL_RUNE_BLACK_COVENANT           = 91530,
         SPELL_COVENANT_MODIFIER_FIRST       = 91531,
     };

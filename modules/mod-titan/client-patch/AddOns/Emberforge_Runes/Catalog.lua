@@ -51,14 +51,18 @@ EmberforgeRunesCatalog = {
       role = "Any (Consecration)",
       roles = { "DAMAGER", "HEALER", "TANK" },
       icon = "Ability_Rune_SanctifiedParagon",
-      keywords = "paladin holy consecration ground light aura",
+      keywords = "paladin holy consecration ground light aura judgment holy shock shield of righteousness charge " ..
+          "divine shield flash heal",
       slots = { "Presence", "Manifestation", "Covenant" },
       builtFrom = "Consecration",
       spentWith = "Consecration (on and off)",
       resource = "Mana (1% of base a second)",
       core = "Consecration becomes a toggleable aura that follows you within 8 yards, dealing Holy damage every " ..
-          "second at 40% of your normal Consecration damage. While active, it consumes 1% of your base mana " ..
-          "each second and ends if you cannot pay it. It replaces your normal Consecration.",
+          "second at 40% of your normal Consecration damage. While active, it consumes 1% of your base mana each " ..
+          "second and ends if you cannot pay it. It replaces your normal Consecration. Judgment on an enemy in the " ..
+          "aura adds half a tick of Holy damage, once every 6 sec. Holy Shock healing an injured ally in it heals " ..
+          "another injured ally within 8 yards for 15% as much, once every 8 sec. Shield of Righteousness on an " ..
+          "enemy in it shields you for 3% of your maximum health for 4 sec, once every 8 sec.",
       loop = "Choose what your sanctuary does: damage, healing or protection, each at the aura's reduced rate.",
       mods = {
         {
@@ -76,6 +80,11 @@ EmberforgeRunesCatalog = {
           text = "Standing still for 3 sec raises the aura's damage, healing and shields by 10% until you " ..
               "move.",
         },
+        { name = "Consecrated Charge",
+          text = "After Charge, the aura reaches 4 yards farther for 4 sec and its next tick is 15% stronger, once " ..
+              "every 12 sec." },
+        { name = "Sanctuary March",
+          text = "Divine Shield while the aura is on makes its next 3 seconds cost no mana, once every 60 sec." },
         {
           name = "Sanctified Condemnation",
           text = "Damage: each tick on an enemy raises its damage taken from your aura by 2%, up to 10%. " ..
@@ -91,20 +100,31 @@ EmberforgeRunesCatalog = {
           text = "Protection: the aura no longer deals damage. Every 5 sec it shields a nearby party " ..
               "member for 5 ticks' worth. One shield at a time.",
         },
+        { name = "Radiant Judgment",
+          text = "Damage: Judgment's bonus in the aura is a whole tick instead of half. The aura keeps dealing " ..
+              "damage." },
+        { name = "Healing Light",
+          text = "Healing: the aura no longer deals damage; each second it heals your most injured party member in " ..
+              "range for 45% of a tick, and your Flash Heal on that ally heals 30% more, once every 8 sec." },
         {
           name = "Bastion of Faith",
-          text = "The aura's damage generates 50% more threat. Needs Sanctified Condemnation.",
+          text = "The aura's damage generates 50% more threat. Needs a damaging Manifestation (Sanctified " ..
+              "Condemnation or Radiant Judgment).",
         },
         {
           name = "Weight of the Unworthy",
           text = "An enemy hit by 3 ticks in a row has its movement speed reduced by 15% while it stays in " ..
-              "the aura. Needs Sanctified Condemnation.",
+              "the aura. Needs a damaging Manifestation (Sanctified Condemnation or Radiant Judgment).",
         },
         {
           name = "Measured Devotion",
           text = "The aura costs 0.75% of your base mana a second instead of 1%, but its damage, healing " ..
               "and shields are 10% lower.",
         },
+        { name = "Dawnward",
+          text = "Holy Shock's second heal also shields its ally for 20% of that heal for 4 sec, once every 8 sec." },
+        { name = "Paragon's Aegis",
+          text = "Shield of Righteousness's shield in the aura is 4% of your maximum health instead of 3%." },
       },
       builds = {
         {
@@ -1302,7 +1322,8 @@ EmberforgeRunesCatalog = {
       role = "Melee DPS (Shaman, Enhancement)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_Stormreaver",
-      keywords = "shaman enhancement stormstrike lava lash lightning shield storm thunder nature melee",
+      keywords = "shaman enhancement stormstrike lava lash lightning shield storm thunder nature melee earth shock " ..
+          "flame shock hunters mark frost shock shield slam lightning bolt thunder clap",
       slots = { "Storm", "Thunderlash", "Shield" },
       builtFrom = "Stormstrike",
       spentWith = "Lava Lash and your melee abilities",
@@ -1311,7 +1332,9 @@ EmberforgeRunesCatalog = {
           "it strikes up to 5 enemies within 8 yards for 25% of your attack power as Nature damage. In it, Lava " ..
           "Lash becomes Thunderlash: 60% of your attack power more to its target, and arcs of 30% to 2 more enemies " ..
           "within 8 yards. Your melee abilities discharge Lightning Shield at their target, once a second: its own " ..
-          "damage, a third of your spell power and 20% of your attack power, and the shield keeps its charges.",
+          "damage, a third of your spell power and 20% of your attack power, and the shield keeps its charges. " ..
+          "Earth Shock in the Stormfront makes its next pulse deal 20% more. Thunderlash on your Flame Shock target " ..
+          "makes the Flame Shock last 2 sec longer (up to 6 sec for each cast).",
       loop = "Stormstrike to keep the storm up, Lava Lash in it, and strike to discharge the shield.",
       mods = {
         { name = "Eye of the Tempest",
@@ -1320,6 +1343,12 @@ EmberforgeRunesCatalog = {
           text = "The Stormfront strikes up to 8 enemies within 12 yards." },
         { name = "Rolling Thunder",
           text = "The Stormfront strikes every second instead of every 2, each strike 70% of its damage." },
+        { name = "Stormhunter",
+          text = "Stormfront pulses deal 35% more to your Hunter's Mark target and also strike one other enemy " ..
+              "within 8 yards for 40%." },
+        { name = "Frozen Front",
+          text = "Frost Shock in the Stormfront leaves a frost trail under its target for 4 sec: 10% of your attack " ..
+              "power as Frost damage each second to up to 3 enemies, once every 8 sec." },
         { name = "Thunderhead",
           text = "Thunderlash doesn't arc: 120% of your attack power to its target instead." },
         { name = "Chainbreaker",
@@ -1327,6 +1356,12 @@ EmberforgeRunesCatalog = {
         { name = "White-Hot Conductor",
           text = "Thunderlash burns its target for 100% of your attack power over 6 sec instead of its Nature hit; " ..
               "its arcs stay. A new burn keeps what is left of the last." },
+        { name = "Stormhammer",
+          text = "Shield Slam in the Stormfront sends an arc of 30% of your attack power as Nature damage to its " ..
+              "target and one other enemy within 8 yards, once every 6 sec." },
+        { name = "Flame Conductor",
+          text = "Thunderlash on your Flame Shock target spreads it to one other enemy within 8 yards for what is " ..
+              "left of it, once every 10 sec." },
         { name = "Overcharged Core",
           text = "The rune's Lightning Shield discharges deal 50% more damage." },
         { name = "Ride the Lightning",
@@ -1335,6 +1370,12 @@ EmberforgeRunesCatalog = {
         { name = "Violent Grounding",
           text = "Each of the rune's discharges also strikes up to 3 other enemies within 8 yards of its target for " ..
               "half its damage." },
+        { name = "Static Strike",
+          text = "Lightning Bolt in the Stormfront makes your next discharge within 6 sec strike again for 40% of " ..
+              "its damage." },
+        { name = "Warstorm",
+          text = "Thunder Clap in the Stormfront also deals 25% of your attack power as Nature damage to up to 5 " ..
+              "enemies within 8 yards, once every 8 sec." },
       },
       builds = {
         { name = "The Tempest", mods = { "Eye of the Tempest", "Thunderhead", "Overcharged Core" },
@@ -1516,21 +1557,21 @@ EmberforgeRunesCatalog = {
       role = "Tank (Death Knight, Blood; Warlock, Affliction)",
       roles = { "TANK" },
       icon = "Ability_Rune_RedCommunion",
-      keywords = "death knight blood boil blood strike link tether crimson communion sanguine recall absorb " ..
-          "shadow warlock affliction tank heal",
+      keywords = "death knight blood boil blood strike link tether crimson communion sanguine recall absorb shadow " ..
+          "warlock affliction tank heal corruption mangle rend earth shield death coil holy shock",
       slots = { "Communion", "Reclamation", "Recall" },
       builtFrom = "Blood Boil (Crimson Communion)",
       spentWith = "Blood Strike and Sanguine Recall (the rune teaches it)",
       resource = "Crimson Links, 5 at once",
-      core = "Blood Boil becomes Crimson Communion (20 Rage, 6 sec cooldown, no rune): as ever, and it links up " ..
-          "to 5 enemies it hits to you for 10 " ..
-          "sec (your selected enemy first, then the nearest). Your Blood Strike on a linked enemy heals you for " ..
-          "1.5% of your maximum health plus 0.15% for each other link within 20 yards (2.1% at most) and pulses " ..
-          "20% of your attack power as Shadow damage to each other link, once every 2 sec. Sanguine Recall (18 " ..
-          "sec, free, off the global cooldown): each link within 20 yards takes 30% of your attack power as Shadow " ..
-          "damage, and you gain an absorb of 3% of your maximum health plus 0.5% for each further link (5% at " ..
-          "most) for 5 sec. As every Tank Collection rune: NPC attacks never critically strike you, and you learn " ..
-          "Challenge (a free 30-yard taunt, 8 sec).",
+      core = "Blood Boil becomes Crimson Communion (20 Rage, 6 sec cooldown, no rune): as ever, and it links up to " ..
+          "5 enemies it hits to you for 10 sec (your selected enemy first, then the nearest). Your Blood Strike on " ..
+          "a linked enemy heals you for 1.5% of your maximum health plus 0.15% for each other link within 20 yards " ..
+          "(2.1% at most) and pulses 20% of your attack power as Shadow damage to each other link, once every 2 " ..
+          "sec. Sanguine Recall (18 sec, free, off the global cooldown): each link within 20 yards takes 30% of " ..
+          "your attack power as Shadow damage, and you gain an absorb of 3% of your maximum health plus 0.5% for " ..
+          "each further link (5% at most) for 5 sec. As every Tank Collection rune: NPC attacks never critically " ..
+          "strike you, and you learn Challenge (a free 30-yard taunt, 8 sec). Corruption: Blood Strike on a linked " ..
+          "enemy with your Corruption makes it last 1 sec longer (up to 4 sec for each cast), once every 2 sec.",
       loop = "Blood Boil to link the pull; Blood Strike a linked enemy; Sanguine Recall before a big hit.",
       spells = {
         ["Blood Boil"] = "Crimson Communion: links up to 5 enemies it hits to you for 10 sec. Costs 20 Rage and " ..
@@ -1545,6 +1586,11 @@ EmberforgeRunesCatalog = {
           text = "Up to 8 enemies are linked. The heal and the absorb keep their caps." },
         { name = "Long Veins",
           text = "Links last 15 sec and reach 30 yards." },
+        { name = "Corrupt Communion",
+          text = "Crimson Communion also lays your Corruption on up to 2 enemies it links, once every 12 sec." },
+        { name = "Thorned Communion",
+          text = "Mangle on a linked enemy also reclaims blood and pulses, as Blood Strike does (sharing its 2 " ..
+              "sec)." },
         { name = "Crimson Feast",
           text = "Blood Reclamation heals 2% of your maximum health, 2.6% at most." },
         { name = "Arterial Echo",
@@ -1552,6 +1598,12 @@ EmberforgeRunesCatalog = {
               "victim. A refresh keeps what is unpaid." },
         { name = "Shared Weakness",
           text = "Communion pulses make their enemies deal 8% less magic damage to you for 4 sec." },
+        { name = "Rending Communion",
+          text = "A reclaiming Blood Strike on your Rend target also deals 25% of your attack power as Physical " ..
+              "damage." },
+        { name = "Earthbound Blood",
+          text = "Reclaiming while your Earth Shield is on you also shields you for 1% of your maximum health for 4 " ..
+              "sec, once every 6 sec." },
         { name = "Coagulated Throne",
           text = "Sanguine Recall's absorb starts at 5% of your maximum health, 7% at most." },
         { name = "Rapid Recall",
@@ -1559,6 +1611,11 @@ EmberforgeRunesCatalog = {
         { name = "Blood for Blood",
           text = "Sanguine Recall also heals you for 2% of your maximum health and deals 45% of your attack " ..
               "power to each link." },
+        { name = "Death's Recall",
+          text = "Death Coil on a linked enemy brings Sanguine Recall back 2 sec sooner, once every 8 sec." },
+        { name = "Holy Communion",
+          text = "Holy Shock healing you while you have a link shields you for 2% of your maximum health for 4 sec, " ..
+              "once every 10 sec." },
       },
       builds = {
         { name = "Boss Anchor", mods = { "Sovereign Bond", "Crimson Feast", "Coagulated Throne" },
@@ -1575,7 +1632,8 @@ EmberforgeRunesCatalog = {
       roles = { "TANK" },
       icon = "Ability_Rune_PrimalWorldwarden",
       keywords = "shaman enhancement earth shock flame shock frost shock stormstrike lava lash magma totem " ..
-          "worldheart shield druid guardian tank",
+          "worldheart shield druid guardian tank blood strike judgment consecration earth shield thunder clap death " ..
+          "coil",
       slots = { "Shockcraft", "Worldheart", "Enhancement" },
       builtFrom = "Earth, Flame or Frost Shock",
       spentWith = "Stormstrike and Lava Lash (Magma Lash)",
@@ -1606,18 +1664,34 @@ EmberforgeRunesCatalog = {
           text = "Flame's command deals 40% of your attack power; its echo 24%." },
         { name = "Winter Command",
           text = "Frost's command slows by 45% and reduces damage by 9%; its echo 27% and 5.4%." },
+        { name = "Bloodstone Command",
+          text = "Blood Strike within 6 sec of an Earth command shields you for 2% of your maximum health for 4 " ..
+              "sec, once for each command." },
+        { name = "Judgment of the Elements",
+          text = "Judgment repeats your last Shock command (within 10 sec) at half strength, once every 8 sec." },
         { name = "Deepstone Heart",
           text = "Worldguard reduces damage taken by 11%. A shield is still needed." },
         { name = "Wide Communion",
           text = "Flame and Frost commands reach 12 yards and up to 8 enemies; echoes too." },
         { name = "Striding Heart",
           text = "Place Worldheart's cooldown is 5 sec, and placing it makes you move 25% faster for 3 sec." },
+        { name = "Consecrated Heart",
+          text = "Standing in your Consecration with Worldguard up shields you for 2% of your maximum health for 4 " ..
+              "sec, once every 8 sec." },
+        { name = "Earthen Communion",
+          text = "Your Earth Shield healing you with Worldguard up makes your next Shock command within 6 sec 20% " ..
+              "stronger, once every 8 sec." },
         { name = "Resonant Strikes",
           text = "Stormstrike's command echo can come every 4 sec." },
         { name = "Molten Causeway",
           text = "Magma Lash's line deals 16% of your attack power a tick and is 5 yards wide." },
         { name = "Stoneblood Lash",
           text = "Lava Lash also heals you for 1.5% of your maximum health, once every 4 sec." },
+        { name = "Thunderheart",
+          text = "Thunder Clap repeats your last Shock command (within 10 sec) at half strength, once every 8 sec." },
+        { name = "Runic Renewal",
+          text = "Death Coil with Worldguard up heals you for 30% of your spell power, at most 2% of your maximum " ..
+              "health, once every 8 sec." },
       },
       builds = {
         { name = "Earth Bulwark", mods = { "Earthen Command", "Deepstone Heart", "Resonant Strikes" },

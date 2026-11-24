@@ -298,7 +298,7 @@ public:
     // (patch_spells.py, physical_forms).
     static void PhysicalForms(SpellInfo* spellInfo)
     {
-        constexpr uint32 OWN_FIRST = 90000, OWN_END = 92000;            // Emberforge's own (the Monk's, the DH's...)
+        constexpr uint32 OWN_FIRST = 90000, OWN_END = 94000;            // Emberforge's own (the Monk's, the DH's...)
         bool own = spellInfo->Id >= OWN_FIRST && spellInfo->Id < OWN_END;
         if ((!IsClassFamily(spellInfo->SpellFamilyName) && !own) || spellInfo->SpellFamilyName == SPELLFAMILY_DRUID
             || spellInfo->IsPassive() || !spellInfo->HasAttribute(SPELL_ATTR0_NOT_SHAPESHIFTED))

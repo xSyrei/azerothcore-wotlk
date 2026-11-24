@@ -330,9 +330,7 @@ PARAGON_MODIFIERS = [
     ('Sanctified Condemnation', 'Merciful Ground', 'Shelter of the Paragon'),
     ('Bastion of Faith', 'Weight of the Unworthy', 'Measured Devotion'),
 ]
-SPELLS += [buff(90740 + slot * 3 + choice, name, PARAGON_ICON, '', DURATION_INFINITE,
-                {1: aura(AURA_DUMMY, 1, 0)}, hidden=True)
-           for slot, names in enumerate(PARAGON_MODIFIERS) for choice, name in enumerate(names)]
+# Its markers: the Extended Options' block (93050, below); 90740-90748 retired.
 
 # Its look (patch_spells.EFFECTS / VISUALS): a storm of Holy light about the Hero, from two retail Remorseless Winter
 # exports (spells/PAL_SanctifiedParagon, wow.export glTFs; every texture made gray so the tint is the color):
@@ -1639,13 +1637,7 @@ for _spell in SPELLS:
 for _spell in SPELLS:
     if _spell['id'] == 91400:
         _spell['set'] = {**_spell['set'], 'ProcFlags': PROC_DONE_MELEE_SPELL, 'ProcChance': 101}
-SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
-                hidden=True)
-           for first, icon, modifiers in (
-               (91410, STORMREAVER_ICON, [('Eye of the Tempest', 'Forked Cataclysm', 'Rolling Thunder'),
-                                          ('Thunderhead', 'Chainbreaker', 'White-Hot Conductor'),
-                                          ('Overcharged Core', 'Ride the Lightning', 'Violent Grounding')]),)
-           for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
+# The Stormreaver's markers: the Extended Options' block (93075, below); 91410-91418 retired.
 ICONS += ['Ability_Rogue_SabreSlash', PISTOL_ICON, DUELIST_ICON, STORMREAVER_ICON, 'INV_Weapon_Rifle_01',
           'Ability_Rogue_Rupture',
           'Ability_Hunter_RunningShot',
@@ -1949,15 +1941,9 @@ for _spell in SPELLS:
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
            for first, icon, modifiers in (
-               (91491, COMMUNION_ICON, [('Sovereign Bond', 'Bloodbound Court', 'Long Veins'),
-                                        ('Crimson Feast', 'Arterial Echo', 'Shared Weakness'),
-                                        ('Coagulated Throne', 'Rapid Recall', 'Blood for Blood')]),
-               (91511, WORLDWARDEN_ICON, [('Earthen Command', 'Flame Dominion', 'Winter Command'),
-                                          ('Deepstone Heart', 'Wide Communion', 'Striding Heart'),
-                                          ('Resonant Strikes', 'Molten Causeway', 'Stoneblood Lash')]),
                (91531, COVENANT_ICON, [('Voidforged Plate', 'Nether Insulation', 'Hungry Covenant'),
                                        ('Deep Extraction', 'Ravenous Siphon', 'Lashing Rhythm'),
-                                       ('Guardian Manifest', "Legion's Rebuke", 'Frequent Petition')]))
+                                       ('Guardian Manifest', "Legion's Rebuke", 'Frequent Petition')]),)
            for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
 for _spell in SPELLS:
     if _spell['id'] in (91490, 91510, 91530):
@@ -2034,6 +2020,30 @@ EXTENDED_MODIFIERS = [
     (91895, URSOC_ICON, [('Crushing Champion', 'Packbreaker', 'Unbroken Champion', 'Stoneguard', 'Thunderbear'),
                          ('Long Guard', 'Earthen Hide', "Ursoc's Challenge", 'Rending Maul', 'Earthshock Roar'),
                          ('Defiant Roar', 'Restoring Force', "Bear's Momentum", 'Lifebloom Hide', 'Shielding Roots')]),
+    (93000, COMMUNION_ICON, [('Sovereign Bond', 'Bloodbound Court', 'Long Veins', 'Corrupt Communion',
+                              'Thorned Communion'),
+                             ('Crimson Feast', 'Arterial Echo', 'Shared Weakness', 'Rending Communion',
+                              'Earthbound Blood'),
+                             ('Coagulated Throne', 'Rapid Recall', 'Blood for Blood', "Death's Recall",
+                              'Holy Communion')]),
+    (93025, WORLDWARDEN_ICON, [('Earthen Command', 'Flame Dominion', 'Winter Command', 'Bloodstone Command',
+                                'Judgment of the Elements'),
+                               ('Deepstone Heart', 'Wide Communion', 'Striding Heart', 'Consecrated Heart',
+                                'Earthen Communion'),
+                               ('Resonant Strikes', 'Molten Causeway', 'Stoneblood Lash', 'Thunderheart',
+                                'Runic Renewal')]),
+    (93050, PARAGON_ICON, [('Boundless Sanctity', 'Hallowed Footsteps', 'Seat of the Paragon', 'Consecrated Charge',
+                            'Sanctuary March'),
+                           ('Sanctified Condemnation', 'Merciful Ground', 'Shelter of the Paragon', 'Radiant Judgment',
+                            'Healing Light'),
+                           ('Bastion of Faith', 'Weight of the Unworthy', 'Measured Devotion', 'Dawnward',
+                            "Paragon's Aegis")]),
+    (93075, STORMREAVER_ICON, [('Eye of the Tempest', 'Forked Cataclysm', 'Rolling Thunder', 'Stormhunter',
+                                'Frozen Front'),
+                               ('Thunderhead', 'Chainbreaker', 'White-Hot Conductor', 'Stormhammer',
+                                'Flame Conductor'),
+                               ('Overcharged Core', 'Ride the Lightning', 'Violent Grounding', 'Static Strike',
+                                'Warstorm')]),
     (91845, EMBERS_ICON, [('Cinderclaw', 'Wildfire Claws', 'Living Flame', 'Flame Shock Claws', 'Frozen Embers'),
                           ('Ember Rush', 'Smoldering Bite', 'Firestorm Pounce', 'Phoenix Claws', 'Wildfire Swipe'),
                           ('Ashen Renewal', 'Flame-Tipped Claws', 'Phoenix Scar', 'Healing Flame', 'Burning Rake')]),
@@ -2165,7 +2175,32 @@ SPELLS += [
     harmful(91918, "Ursoc's Challenge", 'Ability_Druid_ChallangingRoar', 'Damage done reduced by 15%.', DURATION_3S,
             aura(AURA_MOD_DAMAGE_PERCENT_DONE, -15, ALL_SCHOOLS), PHYSICAL),
     strike(91919, "Ursoc's Impact", URSOC_ICON, NATURE),
+    # Red Communion.
+    strike(93015, 'Rending Communion', 'Ability_Gouge', PHYSICAL),
+    absorb(93016, 'Earthbound Blood', 'Spell_Nature_SkinofEarth', DURATION_4S),
+    absorb(93017, 'Holy Communion', 'Spell_Holy_SearingLight', DURATION_4S),
+    # The Primal Worldwarden.
+    absorb(93040, 'Bloodstone Command', 'Spell_Deathknight_BloodPresence', DURATION_4S),
+    absorb(93041, 'Consecrated Heart', 'Spell_Holy_InnerFire', DURATION_4S),
+    heal(93042, 'Runic Renewal', 'Spell_Shadow_DeathCoil', 'The Worldheart renews you.'),
+    # The Sanctified Paragon.
+    strike(93065, 'Sanctified Judgment', 'Spell_Holy_RighteousFury', HOLY, VISUAL_HOLY_SHOCK),
+    heal(93066, "Paragon's Mend", 'Spell_Holy_SearingLight', 'The aura mends you.'),
+    absorb(93067, 'Dawnward', 'Spell_Holy_PowerWordShield', DURATION_4S),
+    absorb(93068, 'Righteous Ward', 'Ability_Paladin_ShieldofVengeance', DURATION_4S),
+    # The Stormreaver.
+    buff(93090, 'Storm Surge', 'Spell_Nature_EarthShock', 'Your next Stormfront pulse deals 20% more damage.',
+         DURATION_6S, {1: aura(AURA_DUMMY, 1, 0)}),
+    ground(93091, 'Frozen Front', 'Spell_Frost_FrostShock', 'GraveFrozenLine', DURATION_4S),
+    strike(93092, 'Frozen Front', 'Spell_Frost_FrostShock', FROST),
+    strike(93093, 'Stormhammer', 'Spell_Nature_Lightning', NATURE, VISUAL_LIGHTNING_BOLT),
+    strike(93094, 'Warstorm', 'Spell_Nature_ThunderClap', NATURE, VISUAL_THUNDER_HIT),
+    buff(93095, 'Static Strike', 'Spell_Nature_LightningShield', 'Your next discharge strikes twice.', DURATION_6S,
+         {1: aura(AURA_DUMMY, 1, 0)}),
 ]
+for _spell in SPELLS:
+    if _spell['id'] in (93015, 93065, 93092, 93093, 93094):
+        _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
 for _spell in SPELLS:
     if _spell['id'] in (91885, 91886, 91912, 91914, 91919):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
@@ -2188,4 +2223,7 @@ ICONS += ['Spell_Nature_InsectSwarm', 'Spell_Fire_SoulBurn', 'Spell_Fire_FireArm
           'Spell_Frost_FrostShock', 'Ability_Rogue_Sprint', 'Spell_Arcane_StarFire', 'Spell_Fire_Incinerate',
           'Spell_Fire_Burnout', 'Spell_Fire_SelfDestruct', 'Spell_Nature_Rejuvenation', 'Ability_Druid_Disembowel',
           PISTOL_ICON, 'Ability_Druid_Mangle2', 'Ability_Druid_Maul', 'Spell_Nature_EarthShock',
-          'Spell_Nature_ThunderClap', 'Ability_Druid_ChallangingRoar', 'Spell_Frost_ArcticWinds']
+          'Spell_Nature_ThunderClap', 'Ability_Druid_ChallangingRoar', 'Spell_Frost_ArcticWinds',
+          'Spell_Nature_SkinofEarth', 'Spell_Holy_SearingLight', 'Spell_Deathknight_BloodPresence',
+          'Spell_Holy_InnerFire', 'Spell_Shadow_DeathCoil', 'Spell_Holy_RighteousFury',
+          'Ability_Paladin_ShieldofVengeance']

@@ -1347,7 +1347,7 @@ def reduce_mana_costs(spells):
 SPELL_ATTR0_NOT_SHAPESHIFTED, SPELL_ATTR2_ALLOW_WHILE_NOT_SHAPESHIFTED = 0x10000, 0x80000
 ENERGY, SPELLFAMILY_DRUID = 3, 7
 FORM_CAT_MASK, FORM_BEARS_MASK = 1 << 0, (1 << 4) | (1 << 7)          # Cat Form; Bear and Dire Bear Form
-OWN_SPELLS = range(90000, 92000)                                      # Emberforge's (the Monk's, the Demon Hunter's...)
+OWN_SPELLS = range(90000, 94000)                                      # Emberforge's (the Monk's, the Demon Hunter's...)
 
 
 def physical_forms(spells):

@@ -246,7 +246,11 @@ for id, firsts in pairs({ [34] = { "Accelerated Thought", "Focused Intention", "
     [42] = { "Heavy Caliber", "Powder and Steel", "Quick Draw" },
     [44] = { "Cinderclaw", "Ember Rush", "Ashen Renewal" },
     [41] = { "Crushing Champion", "Long Guard", "Defiant Roar" },
-    [45] = { "Predator's Fang", "Frozen Wound", "Swift Hunt" } }) do
+    [45] = { "Predator's Fang", "Frozen Wound", "Swift Hunt" },
+    [22] = { "Boundless Sanctity", "Sanctified Condemnation", "Bastion of Faith" },
+    [43] = { "Eye of the Tempest", "Thunderhead", "Overcharged Core" },
+    [46] = { "Sovereign Bond", "Crimson Feast", "Coagulated Throne" },
+    [47] = { "Earthen Command", "Deepstone Heart", "Resonant Strikes" } }) do
     local rune, entry = ById(id), EmberforgeRunesArt.runes[id]
     check(#rune.mods == 15 and #entry.texts == 15 and #entry.abilities == 15 and rune.mods[1].name == firsts[1]
         and rune.mods[6].name == firsts[2] and rune.mods[11].name == firsts[3],
@@ -262,7 +266,7 @@ for id, firsts in pairs({ [34] = { "Accelerated Thought", "Focused Intention", "
     end
 end
 local paragon = EmberforgeRunesArt.runes[22]
-check(paragon.built and paragon.slots[1] == "Presence" and paragon.slots[3] == "Covenant" and #paragon.texts == 9,
+check(paragon.built and paragon.slots[1] == "Presence" and paragon.slots[3] == "Covenant" and #paragon.texts == 15,
     "Art.lua has the Sanctified Paragon's slots (Presence, Manifestation, Covenant) and its words")
 local fel = EmberforgeRunesArt.runes[21]
 check(fel.built and fel.asks[2] == "What your Chaos Bolt Volley does" and #fel.texts == 9,
@@ -450,26 +454,40 @@ check(build.nodes[2].label.text == "L I G H T N I N G  S H I E L D" and options[
     "the Stormbound Conduit's slots and modifiers")
 frame:Hide()
 
--- Long words are never cut off: the Stormreaver's White-Hot Conductor (its longest) makes every column taller, down to
--- above the buttons, its words smaller only if they must; a long loop takes two lines in Browse.
-server("R,43,-")
-server("S,10,10,1,0,0,0,0,43,0")
-EmberforgeRunes_Open()
-debug.offers.cards[1].preview:Click()
-options[1]:Click()
-debug.build.right:Click()
-check(view.active == 2 and #options[3].text.text > 150, "the Thunderlash slot: White-Hot Conductor's long words")
-local heights = {}
-for index, option in ipairs(options) do
-    heights[index] = option.height
+-- Long words are never cut off: a three-choice rune's longest second-slot words make every column taller, down to above
+-- the buttons, its words smaller only if they must. (The rune with the longest such words among those still with three
+-- choices; none left once every rune has its Extended Options.)
+local three, threeLength = nil, 0
+for _, rune in ipairs(EmberforgeRunesCatalog) do
+    local entry = EmberforgeRunesArt.runes[rune.id]
+    if #rune.mods == 9 and entry and entry.texts and #entry.texts == 9 then
+        for index = 4, 6 do
+            if #entry.texts[index] > threeLength then
+                three, threeLength = rune.id, #entry.texts[index]
+            end
+        end
+    end
 end
-local longest = 0
-for _, option in ipairs(options) do
-    longest = math.max(longest, option.text:GetStringHeight())
+if three then
+    server("R," .. three .. ",-")
+    server("S,10,10,1,0,0,0,0," .. three .. ",0")
+    EmberforgeRunes_Open()
+    debug.offers.cards[1].preview:Click()
+    options[1]:Click()
+    debug.build.right:Click()
+    check(view.active == 2, "a three-choice rune's second slot")
+    local heights = {}
+    for index, option in ipairs(options) do
+        heights[index] = option.height
+    end
+    local longest = 0
+    for _, option in ipairs(options) do
+        longest = math.max(longest, option.text:GetStringHeight())
+    end
+    check(heights[1] == heights[2] and heights[2] == heights[3] and heights[1] >= 84 + longest
+        and heights[1] <= 830 - 628, "every modifier column grows to its longest words, and stays above the buttons")
+    frame:Hide()
 end
-check(heights[1] == heights[2] and heights[2] == heights[3] and heights[1] > 160 and heights[1] >= 84 + longest
-    and heights[1] <= 830 - 628, "every modifier column grows to its longest words, and stays above the buttons")
-frame:Hide()
 
 -- A rune with its Extended Options (15 modifiers: 5 a slot): five choices in two rows (3, then 2), numbered by fives.
 local extended = ById(34)

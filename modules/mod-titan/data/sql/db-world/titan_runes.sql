@@ -365,6 +365,16 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-8042, 'spell_titan_rune_extended_hit'),
 (-6343, 'spell_titan_rune_extended_hit'),
 (379, 'spell_titan_rune_extended_hit'),
+(-100, 'spell_titan_rune_extended_hit'),
+(642, 'spell_titan_rune_extended_hit'),
+(-2061, 'spell_titan_rune_extended_hit'),
+(-25914, 'spell_titan_rune_extended_hit'),
+(20271, 'spell_titan_rune_extended_hit'),
+(53408, 'spell_titan_rune_extended_hit'),
+(53407, 'spell_titan_rune_extended_hit'),
+(-53600, 'spell_titan_rune_extended_hit'),
+(-8056, 'spell_titan_rune_extended_hit'),
+(-23922, 'spell_titan_rune_extended_hit'),
 (12051, 'spell_titan_rune_evocation');
 
 -- Blizzard's damage (every rank's) with the Splintered Crown: Hailstorm's victims.
@@ -388,7 +398,8 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 -- The Extended Options' strikes, heals and shields: shares of the Hero's power and hits, no bonuses of their own.
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 91641, 91660, 91661, 91662, 91663,
     91688, 91689, 91710, 91711, 91736, 91737, 91738, 91740, 91741, 91761, 91762, 91786, 91787, 91788, 91837, 91838,
-    91840, 91842, 91860, 91861, 91862, 91863, 91864, 91885, 91886, 91889, 91912, 91914, 91916, 91917, 91919);
+    91840, 91842, 91860, 91861, 91862, 91863, 91864, 91885, 91886, 91889, 91912, 91914, 91916, 91917, 91919, 93015,
+    93016, 93017, 93040, 93041, 93042, 93065, 93066, 93067, 93068, 93092, 93093, 93094);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91636, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Burn tick'),
 (91637, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Eruption'),
@@ -429,7 +440,20 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91914, 0, 0, 0, 0, 'Ursoc''s Champion - Thunderbear'),
 (91916, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Mend'),
 (91917, 0, 0, 0, 0, 'Ursoc''s Champion - Shielding Roots'),
-(91919, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Impact (Nature)');
+(91919, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Impact (Nature)'),
+(93015, 0, 0, 0, 0, 'Red Communion - Rending Communion'),
+(93016, 0, 0, 0, 0, 'Red Communion - Earthbound Blood'),
+(93017, 0, 0, 0, 0, 'Red Communion - Holy Communion'),
+(93040, 0, 0, 0, 0, 'Primal Worldwarden - Bloodstone Command'),
+(93041, 0, 0, 0, 0, 'Primal Worldwarden - Consecrated Heart'),
+(93042, 0, 0, 0, 0, 'Primal Worldwarden - Runic Renewal'),
+(93065, 0, 0, 0, 0, 'Sanctified Paragon - Judgment in the aura'),
+(93066, 0, 0, 0, 0, 'Sanctified Paragon - Paragon''s Mend'),
+(93067, 0, 0, 0, 0, 'Sanctified Paragon - Dawnward'),
+(93068, 0, 0, 0, 0, 'Sanctified Paragon - Righteous Ward'),
+(93092, 0, 0, 0, 0, 'Stormreaver - Frozen Front tick'),
+(93093, 0, 0, 0, 0, 'Stormreaver - Stormhammer'),
+(93094, 0, 0, 0, 0, 'Stormreaver - Warstorm');
 
 -- Their damage over time: Lunar Wound, Astral Rupture.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';
@@ -598,3 +622,17 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (91544, 'spell_titan_tank_action'),
 (91525, 'spell_titan_tank_siphon'),
 (91525, 'spell_titan_tank_siphon_cast');
+
+-- The tank runes' Extended Options: their other abilities (Mangle (Bear), Death Coil, Holy Shock's heal, Earth
+-- Shield's heal, the Judgements, Thunder Clap), every rank.
+DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_titan_tank_extended';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(-33878, 'spell_titan_tank_extended'),
+(-47541, 'spell_titan_tank_extended'),
+(-6789, 'spell_titan_tank_extended'),
+(-25914, 'spell_titan_tank_extended'),
+(379, 'spell_titan_tank_extended'),
+(20271, 'spell_titan_tank_extended'),
+(53408, 'spell_titan_tank_extended'),
+(53407, 'spell_titan_tank_extended'),
+(-6343, 'spell_titan_tank_extended');
