@@ -6,6 +6,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ### Black Covenant
 
+- **Bind: Voidwalker** needs **Summon Voidwalker**: only a Hero who knows it gets Bind: Voidwalker (in its place on
+  your bars), and forgetting it unbinds you.
 - **Covenant Armor** now gives **50% more armor** (was 400% more armor from items). It is added on top of your other
   armor bonuses, never multiplying them, and follows your armor as it changes.
 

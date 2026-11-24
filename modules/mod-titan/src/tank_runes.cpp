@@ -1045,28 +1045,6 @@ namespace
         return player->HasAura(SPELL_COVENANT_ARMOR);
     }
 
-    // Summon Voidwalker's buttons become Bind: Voidwalker's while the rune is bound, or back.
-    void SwapSummon(Player* player, bool rune)
-    {
-        bool swapped = false;
-        for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
-        {
-            ActionButton const* action = player->GetActionButton(button);
-            if (!action || action->GetType() != ACTION_BUTTON_SPELL)
-                continue;
-            uint32 spellId = action->GetAction();
-            if (rune && spellId == SPELL_SUMMON_VOIDWALKER)
-                player->addActionButton(button, SPELL_BIND_GUARDIAN, ACTION_BUTTON_SPELL);
-            else if (!rune && spellId == SPELL_BIND_GUARDIAN && player->HasSpell(SPELL_SUMMON_VOIDWALKER))
-                player->addActionButton(button, SPELL_SUMMON_VOIDWALKER, ACTION_BUTTON_SPELL);
-            else
-                continue;
-            swapped = true;
-        }
-        if (swapped)
-            player->SendActionButtons(1);
-    }
-
     // Blood Boil's buttons become Red Communion's Blood Boil (Rage, not a rune: the client checks the rune itself),
     // or back to the rank the Hero knows.
     void SwapBoil(Player* player, bool communion)
@@ -1378,7 +1356,8 @@ namespace TankRunes
     {
         return std::find(TAUNTS.begin(), TAUNTS.end(), firstRank) != TAUNTS.end()
             || firstRank == SPELL_DEATH_STRIKE || firstRank == SPELL_STONESKIN_TOTEM
-            || firstRank == SPELL_TOTEMIC_RECALL || firstRank == SPELL_SHADOW_WARD;
+            || firstRank == SPELL_TOTEMIC_RECALL || firstRank == SPELL_SHADOW_WARD
+            || firstRank == SPELL_SUMMON_VOIDWALKER;
     }
 
     void Apply(Player* player)
@@ -1406,13 +1385,11 @@ namespace TankRunes
         LegendaryRunes::ReplaceAbility(player, SPELL_PLACE_WORLDHEART, { SPELL_TOTEMIC_RECALL }, worldwarden);
         if (!worldwarden || !player->HasSpell(SPELL_WORLDHEART_TOTEM))
             DismissTotem(player);
-        if (!covenant)
-            SwapSummon(player, false);
-        Teach(player, SPELL_BIND_GUARDIAN, covenant);
+        // Bind: Voidwalker only for a Hero who knows Summon Voidwalker (its buttons become it); without it, unbound.
+        LegendaryRunes::ReplaceAbility(player, SPELL_BIND_GUARDIAN, { SPELL_SUMMON_VOIDWALKER }, covenant);
         LegendaryRunes::ReplaceAbility(player, SPELL_DARK_INTERCESSION, { SPELL_SHADOW_WARD }, covenant);
-        if (covenant)
-            SwapSummon(player, true);
-        if (!covenant && (Bound(player) || player->HasSpell(SPELL_COVENANT_LASH)))
+        bool binding = covenant && player->HasSpell(SPELL_BIND_GUARDIAN);
+        if (!binding && (Bound(player) || player->HasSpell(SPELL_COVENANT_LASH)))
             Unbind(player);
         else if (covenant && Bound(player))
             Pact(player);                   // a level or a modifier changed: the pact's numbers again
@@ -1582,6 +1559,8 @@ class spell_titan_tank_action : public SpellScript
         if (GetSpellInfo()->Id == SPELL_SANGUINE_RECALL && LinksInRange(player, nullptr).empty())
             return SPELL_FAILED_NO_VALID_TARGETS;
         if (GetSpellInfo()->Id == SPELL_COVENANT_LASH && !Bound(player))
+            return SPELL_FAILED_NOT_READY;
+        if (GetSpellInfo()->Id == SPELL_BIND_GUARDIAN && !player->HasSpell(SPELL_SUMMON_VOIDWALKER))
             return SPELL_FAILED_NOT_READY;
         if (GetSpellInfo()->Id == SPELL_COMMUNION_BOIL && !KnownRank(player, SPELL_BLOOD_BOIL))
             return SPELL_FAILED_NOT_READY;

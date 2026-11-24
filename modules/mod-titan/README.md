@@ -719,7 +719,8 @@ utility or a tradeoff) take one pick each, from three.
     (`titan_runes_player`). Sabre Slash for Sinister Strike, Pistol Shot for Arcane Shot, Broadside for Rapid Fire;
     Sanguine Recall for Death Strike, the Worldheart Totem for Stoneskin Totem (also the Worldwarden's need), Place
     Worldheart for Totemic Recall, Dark Intercession for Shadow Ward, Challenge for a taunt (Taunt, Growl, Dark
-    Command, Righteous Defense). Bind: Voidwalker, Covenant Lash, Soul Siphon and Crimson Communion swap as before.
+    Command, Righteous Defense), Bind: Voidwalker for Summon Voidwalker (forgotten: unbound, and it fails without
+    it). Covenant Lash, Soul Siphon and Crimson Communion swap as before.
   - **Extended Options, Black Covenant, Wandering Mist, Wild Hunt**: markers 93100 (Covenant; 91531-91539 retired),
     93125 (Mist; 90820-90828 retired), 93150 (Hunt; 91150-91158 retired). Picks whose options left or moved are
     cleared once by `titan_runes_zz_extended_reset4.sql`. Black Covenant: Blood Pact and Earthen Pact through
