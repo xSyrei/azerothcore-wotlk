@@ -217,7 +217,8 @@ for id, name in pairs({ [27] = "Rune of the Threefold Grave", [28] = "Rune of th
 end
 for _, id in ipairs({ 25, 26 }) do
     local entry = EmberforgeRunesArt.runes[id]
-    check(entry.built and #entry.texts == 9 and #ById(id).mods == 9
+    local options = #ById(id).mods == 15 and 15 or 9        -- 15: its Extended Options
+    check(entry.built and #entry.texts == options and (#ById(id).mods == 9 or #ById(id).mods == 15)
         and ById(id).roles[1] == "HEALER", "a healer's rune with its words: rune " .. id)
 end
 local thunder = EmberforgeRunesArt.runes[24]
@@ -250,7 +251,10 @@ for id, firsts in pairs({ [34] = { "Accelerated Thought", "Focused Intention", "
     [22] = { "Boundless Sanctity", "Sanctified Condemnation", "Bastion of Faith" },
     [43] = { "Eye of the Tempest", "Thunderhead", "Overcharged Core" },
     [46] = { "Sovereign Bond", "Crimson Feast", "Coagulated Throne" },
-    [47] = { "Earthen Command", "Deepstone Heart", "Resonant Strikes" } }) do
+    [47] = { "Earthen Command", "Deepstone Heart", "Resonant Strikes" },
+    [48] = { "Voidforged Plate", "Deep Extraction", "Guardian Manifest" },
+    [26] = { "Flowing Currents", "Comforting Veil", "Effortless Breathing" },
+    [33] = { "Alpha Predator", "Fixed Prey", "Final Pounce" } }) do
     local rune, entry = ById(id), EmberforgeRunesArt.runes[id]
     check(#rune.mods == 15 and #entry.texts == 15 and #entry.abilities == 15 and rune.mods[1].name == firsts[1]
         and rune.mods[6].name == firsts[2] and rune.mods[11].name == firsts[3],

@@ -191,9 +191,12 @@ namespace
         SPELL_RUNE_WANDERING_MIST       = 90810,
         SPELL_WANDERING_MIST            = 90811,
         SPELL_LESSER_ENVELOPING_MIST    = 90812,
-        SPELL_LINGERING_MIST            = 90813,
+        SPELL_ROLLING_MIST              = 90813,
         SPELL_JADE_SHELTER              = 90814,
-        SPELL_MIST_MODIFIER_FIRST       = 90820,    // + slot * 3 + choice
+        SPELL_MIST_MODIFIER_FIRST       = 93125,    // + slot * 5 + choice (90820-90828 retired)
+        SPELL_TIDAL_MIST                = 93140,
+        SPELL_HOLY_THREAD               = 93141,
+        SPELL_EARTHEN_COCOON            = 93142,
 
         SPELL_RUNE_THREEFOLD_GRAVE      = 90830,
         SPELL_SHARED_BURIAL             = 90831,    // on an enemy in two Graves or more
@@ -269,7 +272,11 @@ namespace
         SPELL_GHOSTFANG_TICK            = 91134,
         SPELL_PARTING_HOWL              = 91135,    // on the Hero's pet
         SPELL_FINAL_POUNCE              = 91136,
-        SPELL_HUNT_MODIFIER_FIRST       = 91150,    // + slot * 3 + choice
+        SPELL_HUNT_MODIFIER_FIRST       = 93150,    // + slot * 5 + choice (91150-91158 retired)
+        SPELL_FROSTFANG                 = 93165,
+        SPELL_STORM_HUNT                = 93166,
+        SPELL_HEALING_COMPANION         = 93167,
+        SPELL_MEND_PET                  = 136,      // first rank
 
         SPELL_RUNE_ARCANE_MIND          = 91200,
         SPELL_ARCANE_INSIGHT            = 91201,
@@ -749,20 +756,36 @@ namespace
     constexpr int32 UNDERTOW_TICKS = 4;
     constexpr uint32 JUMP_DELAY_MS = 100;                       // after Chain Heal's first hit: its chain done
 
-    // The Wandering Mist's modifiers: slot (0 Mistflow, 1 Technique, 2 Approach) x 3 + choice.
+    // The Wandering Mist's modifiers: slot (0 Mistflow, 1 Technique, 2 Approach) x 5 + choice (its Extended Options:
+    // Jade Shelter moved to the third slot, Lingering Mist and Deep Breath gone).
     enum MistModifier : uint8
     {
-        MOD_FLOWING_CURRENTS, MOD_DRIFTING_MIST, MOD_JADE_SHELTER,
-        MOD_COMFORTING_VEIL, MOD_VIVACIOUS_FLOW, MOD_PEACEFUL_FOCUS,
-        MOD_EFFORTLESS_BREATHING, MOD_LINGERING_MIST, MOD_DEEP_BREATH,
+        MOD_FLOWING_CURRENTS, MOD_DRIFTING_MIST, MOD_GATHERING_MISTS, MOD_RENEWING_MIST, MOD_TIDAL_MIST,
+        MOD_COMFORTING_VEIL, MOD_VIVACIOUS_FLOW, MOD_PEACEFUL_FOCUS, MOD_HOLY_THREAD, MOD_CHAIN_OF_JADE,
+        MOD_EFFORTLESS_BREATHING, MOD_ROLLING_MIST, MOD_JADE_SHELTER, MOD_RENEWING_BREATH, MOD_EARTHEN_COCOON,
     };
 
     // The Wandering Mist's tuning: each Soothing Mist tick also heals the most injured ally within 20 yards of its
     // target for 25% of it.
     constexpr float WANDER_SHARE = 0.25f, DRIFTING_SHARE = 0.15f, WANDER_RANGE = 20.0f, FLOWING_RANGE = 30.0f;
-    constexpr float JADE_SHELTER_SHARE = 0.1f, VEIL_SHARE = 0.3f, VIVACIOUS_SHARE = 0.3f, SECONDARY_RANGE = 20.0f;
-    constexpr float PEACEFUL_PCT = 15.0f, EFFORTLESS_SHARE = 0.25f, DEEP_BREATH_PCT = 0.3f;
-    constexpr int32 SOOTHING_MIST_TICKS = 8, LINGERING_TICKS = 2;
+    constexpr float JADE_SHELTER_SHARE = 0.3f, VEIL_SHARE = 0.3f, VIVACIOUS_SHARE = 0.3f, SECONDARY_RANGE = 20.0f;
+    constexpr float PEACEFUL_PCT = 15.0f, EFFORTLESS_SHARE = 0.25f;
+    constexpr int32 SOOTHING_MIST_TICKS = 8, ROLLING_TICKS = 2;
+    // Its interaction and Extended Options: a Mist on the Hero's Renew target 15% more; Gathering Mists (below half
+    // health: 25% more), Renewing Mist (their Renew 2 sec longer, 6 sec an application, 6 sec apart), Tidal Mist
+    // (their Riptide target: 40% of its healing to another injured ally within 8 yards, 6 sec apart); Holy Thread
+    // (Holy Shock's heal on the channel target: 25% to the Mist's ally, 8 sec apart), Chain of Jade (Chain Heal's
+    // first: a Mist of 30% of it, 8 sec apart); Rolling Mist (a switch leaves two ticks over 4 sec on the last
+    // target, 12 sec apart), Jade Shelter (30% of a Mist as a 4 sec absorb, 8 sec apart), Renewing Breath (the
+    // channel's third tick: their Renew there 2 sec longer), Earthen Cocoon (their Earth Shield's bearer: 25% as an
+    // absorb, 8 sec apart).
+    constexpr float MIST_RENEW = 1.15f, GATHERING_MISTS = 1.25f, GATHERING_BELOW_PCT = 50.0f, TIDAL_MIST_SHARE = 0.4f;
+    constexpr float TIDAL_MIST_RANGE = 8.0f, HOLY_THREAD_SHARE = 0.25f, CHAIN_OF_JADE_SHARE = 0.3f;
+    constexpr float EARTHEN_COCOON_SHARE = 0.25f;
+    constexpr int32 MIST_RENEW_MS = 2000, MIST_RENEW_MOST_MS = 6000, MIST_WATCH_MS = 4000, ROLLING_SWITCH_MS = 1000;
+    constexpr uint32 RENEWING_MIST_EVERY_MS = 6000, TIDAL_MIST_EVERY_MS = 6000, HOLY_THREAD_EVERY_MS = 8000;
+    constexpr uint32 CHAIN_OF_JADE_EVERY_MS = 8000, ROLLING_EVERY_MS = 12000, JADE_SHELTER_EVERY_MS = 8000;
+    constexpr uint32 EARTHEN_COCOON_EVERY_MS = 8000, RENEWING_BREATH_TICK = 3;
 
     // The Threefold Grave's modifiers: slot (0 Burial Grounds, 1 Gravekeeper, 2 Shared Burial) x 3 + choice.
     enum GraveModifier : uint8
@@ -928,16 +951,15 @@ namespace
     // The Wild Hunt's modifiers: slot (0 Spectral Beast, 1 Hunting Behavior, 2 Final Attack) x 3 + choice.
     enum HuntModifier : uint8
     {
-        MOD_ALPHA_PREDATOR, MOD_PACK_RAVAGER, MOD_GHOSTFANG,
-        MOD_UNENDING_WRATH, MOD_HUNTERS_COMMAND, MOD_BLOOD_SCENT,
-        MOD_FINAL_POUNCE, MOD_FRENZIED_FAREWELL, MOD_PARTING_HOWL,
+        MOD_ALPHA_PREDATOR, MOD_PACK_RAVAGER, MOD_GHOSTFANG, MOD_MARKED_ALPHA, MOD_FROSTFANG,
+        MOD_FIXED_PREY, MOD_HUNTERS_COMMAND, MOD_BLOOD_SCENT, MOD_ARCANE_HUNT, MOD_STORM_HUNT,
+        MOD_FINAL_POUNCE, MOD_FRENZIED_FAREWELL, MOD_PARTING_HOWL, MOD_MARKED_FINALE, MOD_HEALING_COMPANION,
     };
 
     // The Wild Hunt's tuning: a Spectral Beast bites every 1.5 sec for 60% of the Hero's pet's swing, for 10 sec (a
     // Kill Command's) or 4 sec (Bestial Wrath's: one a second for 10 sec); 8 out at most. In Bestial Wrath, Kill
-    // Command comes back in 5 sec; Unending Wrath: each one there adds 2 sec to it, 10 sec more at most.
+    // Command comes back in 5 sec.
     constexpr uint32 BEAST_MS = 10000, WRATH_BEAST_MS = 4000, WRATH_CALL_MS = 1000, WRATH_KILL_COMMAND_MS = 5000;
-    constexpr int32 UNENDING_MS = 2000, UNENDING_MOST_MS = 10000;
     constexpr std::size_t MAX_BEASTS = 8;
     constexpr uint32 BITE_MS = 1500, FAREWELL_SPACING_MS = 150;
     constexpr uint32 FAREWELL_BITES = 4;
@@ -945,6 +967,17 @@ namespace
     constexpr float POUNCE = 2.0f, FAREWELL_SHARE = 0.6f, BEAST_RANGE = 40.0f, RAVAGER_RADIUS = 5.0f;
     constexpr int32 GHOSTFANG_MS = 4000;
     constexpr std::size_t RAVAGER_TARGETS = 2;
+    // Its interactions and Extended Options (Unending Wrath gone): the beasts 15% more on the Hero's marked target;
+    // Arcane Shot on a beast's target, its next bite 20% more (Arcane Hunt 40%; one charge, 6 sec). Marked Alpha
+    // (there, one more enemy nearby for 50%), Frostfang (their Frost Fever target: 10% of ranged attack power as
+    // Frost); Fixed Prey (20% more), Storm Hunt (Lightning Bolt: the beasts on its target, the next bite 20% of spell
+    // power as Nature, 6 sec apart); Marked Finale (the end: 35% of ranged attack power on the marked target, 40% of
+    // it to 2 nearby), Healing Companion (the end, their Mend Pet on the pet: 5% of its health, 25% of ranged attack
+    // power to the prey).
+    constexpr float HUNT_MARK = 1.15f, ARCANE_CHARGE = 1.2f, ARCANE_HUNT = 1.4f, MARKED_ALPHA_SHARE = 0.5f;
+    constexpr float FROSTFANG_RAP = 0.1f, FIXED_PREY = 1.2f, STORM_HUNT_SP = 0.2f, MARKED_FINALE_RAP = 0.35f;
+    constexpr float MARKED_FINALE_SHARE = 0.4f, COMPANION_HEAL_PCT = 5.0f, COMPANION_RAP = 0.25f;
+    constexpr uint32 HUNT_CHARGE_MS = 6000, STORM_HUNT_EVERY_MS = 6000;
 
     // Arcane Mind's modifiers (its Extended Options): slot (0 Invocation, 1 Manifestation, 2 Adaptation) x 5 +
     // choice; each slot's first three are the ones it had.
@@ -1454,7 +1487,8 @@ namespace
               { { SPELL_CHAIN_HEAL } }, SPELL_RUNE_WELLSPRING,
               SPELL_WELLSPRING_MODIFIER_FIRST },
             { RUNE_WANDERING_MIST, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
-              { { SPELL_SOOTHING_MIST } }, SPELL_RUNE_WANDERING_MIST, SPELL_MIST_MODIFIER_FIRST },
+              { { SPELL_SOOTHING_MIST } }, SPELL_RUNE_WANDERING_MIST, SPELL_MIST_MODIFIER_FIRST,
+              MAX_CHOICES },
             // DPS or Tank: Blood Strike's blood circle and one of the other two scars.
             { RUNE_THREEFOLD_GRAVE,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_TANK)),
@@ -1484,7 +1518,8 @@ namespace
             // DPS: Kill Command or Bestial Wrath (a pet's) unleashes the beasts.
             { RUNE_WILD_HUNT,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_KILL_COMMAND, SPELL_BESTIAL_WRATH } }, SPELL_RUNE_WILD_HUNT, SPELL_HUNT_MODIFIER_FIRST },
+              { { SPELL_KILL_COMMAND, SPELL_BESTIAL_WRATH } }, SPELL_RUNE_WILD_HUNT, SPELL_HUNT_MODIFIER_FIRST,
+              MAX_CHOICES },
             // Ranged DPS: Arcane Blast builds the Insight, Arcane Missiles spends it.
             { RUNE_ARCANE_MIND, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_ARCANE_BLAST }, { SPELL_ARCANE_MISSILES } }, SPELL_RUNE_ARCANE_MIND,
@@ -1540,7 +1575,7 @@ namespace
               TankRunes::SPELL_RUNE_PRIMAL_WORLDWARDEN, TankRunes::SPELL_WORLDWARDEN_MODIFIER_FIRST, MAX_CHOICES },
             { RUNE_BLACK_COVENANT, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_SUMMON_VOIDWALKER }, { TankRunes::SPELL_SEARING_PAIN } },
-              TankRunes::SPELL_RUNE_BLACK_COVENANT, TankRunes::SPELL_COVENANT_MODIFIER_FIRST },
+              TankRunes::SPELL_RUNE_BLACK_COVENANT, TankRunes::SPELL_COVENANT_MODIFIER_FIRST, MAX_CHOICES },
         };
         return runes;
     }
@@ -1577,18 +1612,34 @@ namespace
         if (rune == RUNE_WELLSPRING
             && (modifier == MOD_FLOWING_WATERS || modifier == MOD_BEDROCK || modifier == MOD_RENEWED_SHIELD))
             return { { SPELL_EARTH_SHIELD } };
-        if (rune == RUNE_WANDERING_MIST && (modifier == MOD_COMFORTING_VEIL || modifier == MOD_PEACEFUL_FOCUS))
-            return { { SPELL_ENVELOPING_MIST } };
-        if (rune == RUNE_WANDERING_MIST && modifier == MOD_VIVACIOUS_FLOW)
-            return { { SPELL_VIVIFY } };
+        if (rune == RUNE_WANDERING_MIST)
+            switch (modifier)
+            {
+                case MOD_COMFORTING_VEIL: case MOD_PEACEFUL_FOCUS: return { { SPELL_ENVELOPING_MIST } };
+                case MOD_VIVACIOUS_FLOW: return { { SPELL_VIVIFY } };
+                case MOD_RENEWING_MIST: case MOD_RENEWING_BREATH: return { { SPELL_RENEW } };
+                case MOD_TIDAL_MIST: return { { SPELL_RIPTIDE } };
+                case MOD_HOLY_THREAD: return { { SPELL_HOLY_SHOCK } };
+                case MOD_CHAIN_OF_JADE: return { { SPELL_CHAIN_HEAL } };
+                case MOD_EARTHEN_COCOON: return { { SPELL_EARTH_SHIELD } };
+                default: break;
+            }
         if (rune == RUNE_DAWNBOUND_CRUSADER && modifier == MOD_STEADFAST)
             return { { SPELL_HOLY_SHOCK } };
         if (rune == RUNE_DAWNBOUND_CRUSADER && modifier == MOD_JUDGMENTS_ECHO)
             return { { SPELL_JUDGEMENT_OF_LIGHT, SPELL_JUDGEMENT_OF_WISDOM, SPELL_JUDGEMENT_OF_JUSTICE } };
         if (rune == RUNE_HOLLOW_CONGREGATION && modifier == MOD_DISSONANCE)
             return { { SPELL_SHADOW_WORD_PAIN } };
-        if (rune == RUNE_WILD_HUNT && modifier == MOD_UNENDING_WRATH)
-            return { { SPELL_KILL_COMMAND }, { SPELL_BESTIAL_WRATH } };
+        if (rune == RUNE_WILD_HUNT)
+            switch (modifier)
+            {
+                case MOD_MARKED_ALPHA: case MOD_MARKED_FINALE: return { { SPELL_HUNTERS_MARK } };
+                case MOD_FROSTFANG: return { { SPELL_ICY_TOUCH } };
+                case MOD_ARCANE_HUNT: return { { SPELL_ARCANE_SHOT } };
+                case MOD_STORM_HUNT: return { { SPELL_LIGHTNING_BOLT } };
+                case MOD_HEALING_COMPANION: return { { SPELL_MEND_PET } };
+                default: break;
+            }
         if (rune == RUNE_ARCANE_MIND && modifier == MOD_EXPANDING_INTELLECT)
             return { { SPELL_ARCANE_EXPLOSION } };
         if (rune == RUNE_GUIDING_LIGHT && modifier == MOD_GUARDIAN_STAR)
@@ -1637,6 +1688,18 @@ namespace
                 case 9: return { { SPELL_EARTH_SHIELD } };                 // Earthbound Blood
                 case 13: return { { SPELL_DEATH_COIL_DK, SPELL_DEATH_COIL_WARLOCK } };    // Death's Recall
                 case 14: return { { SPELL_HOLY_SHOCK } };                  // Holy Communion
+                default: return {};
+            }
+        if (rune == RUNE_BLACK_COVENANT)
+            switch (modifier)
+            {
+                case 3: return { { SPELL_BLOOD_STRIKE } };                 // Blood Pact
+                case 4: return { { SPELL_EARTH_SHIELD } };                 // Earthen Pact
+                case 5: case 6: case 7: return { { TankRunes::SPELL_DRAIN_LIFE } };     // the Siphon's
+                case 8: return { { TankRunes::SPELL_DRAIN_LIFE }, { SPELL_CORRUPTION } };     // Corrupted Drain
+                case 9: return { { TankRunes::SPELL_DRAIN_LIFE }, { SPELL_ICY_TOUCH } };      // Frostbound Siphon
+                case 13: return { { SPELL_JUDGEMENT_OF_LIGHT, SPELL_JUDGEMENT_OF_WISDOM, SPELL_JUDGEMENT_OF_JUSTICE } };
+                case 14: return { { TankRunes::SPELL_BLOOD_BOIL } };       // Blood Intercession
                 default: return {};
             }
         if (rune == RUNE_PRIMAL_WORLDWARDEN)
@@ -1871,8 +1934,12 @@ namespace
 
 
         // The Wandering Mist.
-        int32 MistTickAmount = 0;                   // Soothing Mist's last tick (Lingering Mist)
+        int32 MistTickAmount = 0;                   // Soothing Mist's last tick (Rolling Mist)
         ObjectGuid LesserTarget;                    // the lesser Enveloping Mist's (Comforting Veil)
+        ObjectGuid MistLast, MistWatched;           // the last channel's target; Holy Shock's or Chain Heal's
+        uint32 MistGoneAt = 0, MistWatchedAt = 0;   // game ms
+        uint32 RenewingMistAt = 0, TidalMistAt = 0, HolyThreadAt = 0, ChainOfJadeAt = 0, RollingAt = 0;
+        uint32 JadeShelterAt = 0, EarthenCocoonAt = 0;
 
         // The Threefold Grave: each Grave a circle at From (Until 0: none).
         struct GraveAt
@@ -1917,7 +1984,8 @@ namespace
         // The Wild Hunt: its Spectral Beasts (oldest first), and Bestial Wrath's calling.
         std::vector<ObjectGuid> SpectralBeasts;
         uint32 WrathTimer = 0;
-        int32 WrathAdded = 0;                       // Unending Wrath's, this Bestial Wrath
+        ObjectGuid HuntChargePrey;                  // Arcane Shot's charge: its target, until (game ms)
+        uint32 HuntChargeUntil = 0, StormHuntAt = 0, StormChargeUntil = 0;
 
         bool Debug = false;                         // .runedebug: the newest runes' steps told in chat
 
@@ -2344,6 +2412,7 @@ namespace
     void AddDot(Player* player, Unit* target, uint32 spellId, float fresh, int32 ms);
     void Mend(Player* player, Unit* ally, uint32 spellId, float amount);
     void Ward(Player* player, Unit* unit, uint32 spellId, float amount);
+    void ExtendAura(Aura* aura, int32 ms, int32 most);
 
     // ---- The Sanctified Paragon -------------------------------------------------------------------------------
 
@@ -2886,7 +2955,8 @@ namespace
             return;
         ally->RemoveAurasDueToSpell(spellId, player->GetGUID());
         player->CastCustomSpell(ally, spellId, &amount, nullptr, nullptr, true);
-        bool shield = spellId == SPELL_TIDAL_SHELTER || spellId == SPELL_JADE_SHELTER;
+        bool shield = spellId == SPELL_TIDAL_SHELTER || spellId == SPELL_JADE_SHELTER
+            || spellId == SPELL_EARTHEN_COCOON;
         Report(player, spellId, shield ? 'A' : 'H', amount);
     }
 
@@ -2947,9 +3017,50 @@ namespace
         return allies.empty() ? nullptr : allies.front();
     }
 
+    // One Wandering Mist's heal on the ally, and what follows it: Renewing Mist, Tidal Mist, Jade Shelter, Earthen
+    // Cocoon.
+    void MistHeal(Player* player, Unit* ally, float raw)
+    {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        int32 amount = std::max<int32>(1, int32(raw));
+        int32 effective = Effective(ally, amount);
+        player->CastCustomSpell(ally, SPELL_WANDERING_MIST, &amount, nullptr, nullptr, true);
+        if (HasMistMarker(player, MOD_RENEWING_MIST) && Ready(state.RenewingMistAt, RENEWING_MIST_EVERY_MS))
+            if (Aura* renew = ally->GetAuraOfRankedSpell(SPELL_RENEW, me))
+            {
+                state.RenewingMistAt = Now();
+                ExtendAura(renew, MIST_RENEW_MS, MIST_RENEW_MOST_MS);
+            }
+        if (effective <= 0)
+            return;
+        if (HasMistMarker(player, MOD_TIDAL_MIST) && ally->GetAuraOfRankedSpell(SPELL_RIPTIDE, me)
+            && Ready(state.TidalMistAt, TIDAL_MIST_EVERY_MS))
+        {
+            std::vector<Unit*> others = InjuredAllies(player, ally, TIDAL_MIST_RANGE, ally);
+            if (!others.empty())
+            {
+                state.TidalMistAt = Now();
+                int32 heal = std::max<int32>(1, int32(effective * TIDAL_MIST_SHARE));
+                player->CastCustomSpell(others.front(), SPELL_TIDAL_MIST, &heal, nullptr, nullptr, true);
+            }
+        }
+        if (HasMistMarker(player, MOD_JADE_SHELTER) && Ready(state.JadeShelterAt, JADE_SHELTER_EVERY_MS))
+        {
+            state.JadeShelterAt = Now();
+            Refresh(player, ally, SPELL_JADE_SHELTER, std::max<int32>(1, int32(effective * JADE_SHELTER_SHARE)));
+        }
+        if (HasMistMarker(player, MOD_EARTHEN_COCOON) && HasEarthShield(player, ally)
+            && Ready(state.EarthenCocoonAt, EARTHEN_COCOON_EVERY_MS))
+        {
+            state.EarthenCocoonAt = Now();
+            Refresh(player, ally, SPELL_EARTHEN_COCOON, std::max<int32>(1, int32(effective * EARTHEN_COCOON_SHARE)));
+        }
+    }
+
     // A Wandering Mist: to the most injured ally within 20 yards of the channel target (30 with Flowing Currents), or
-    // to two at 15% each (Drifting Mist). Jade Shelter: an absorb of 10% of it too; Deep Breath: 0.3% of the Hero's
-    // mana back.
+    // to two at 15% each (Drifting Mist); 15% more on the Hero's Renew target, 25% more below half health (Gathering
+    // Mists).
     void Wander(Player* player, Unit* channelTarget, float tick)
     {
         float range = HasMistMarker(player, MOD_FLOWING_CURRENTS) ? FLOWING_RANGE : WANDER_RANGE;
@@ -2959,13 +3070,50 @@ namespace
             allies.resize(drifting ? 2 : 1);
         for (Unit* ally : allies)
         {
-            int32 amount = std::max<int32>(1, int32(tick * (drifting ? DRIFTING_SHARE : WANDER_SHARE)));
-            int32 effective = Effective(ally, amount);
-            player->CastCustomSpell(ally, SPELL_WANDERING_MIST, &amount, nullptr, nullptr, true);
-            if (HasMistMarker(player, MOD_JADE_SHELTER) && effective > 0)
-                Refresh(player, ally, SPELL_JADE_SHELTER, std::max<int32>(1, int32(amount * JADE_SHELTER_SHARE)));
-            if (HasMistMarker(player, MOD_DEEP_BREATH))
-                player->ModifyPower(POWER_MANA, int32(player->GetMaxPower(POWER_MANA) * DEEP_BREATH_PCT / 100.0f));
+            float amount = tick * (drifting ? DRIFTING_SHARE : WANDER_SHARE);
+            if (ally->GetAuraOfRankedSpell(SPELL_RENEW, player->GetGUID()))
+                amount *= MIST_RENEW;
+            if (HasMistMarker(player, MOD_GATHERING_MISTS) && ally->GetHealthPct() < GATHERING_BELOW_PCT)
+                amount *= GATHERING_MISTS;
+            MistHeal(player, ally, amount);
+        }
+    }
+
+    // Holy Shock or Chain Heal begun on the Soothing Mist target (the channel then ends): their heal there still
+    // counts as on the channel target (Holy Thread, Chain of Jade).
+    void MistWatch(Player* player)
+    {
+        if (Unit* target = MistChannelTarget(player))
+        {
+            State& state = StateOf(player);
+            state.MistWatched = target->GetGUID();
+            state.MistWatchedAt = Now();
+        }
+    }
+
+    // Holy Shock's heal or Chain Heal's first on the channel target: Holy Thread, Chain of Jade.
+    void MistTechnique(Player* player, Unit* target, uint32 firstRank, float heal)
+    {
+        State& state = StateOf(player);
+        bool watched = target == MistChannelTarget(player)
+            || (target->GetGUID() == state.MistWatched && Now() - state.MistWatchedAt <= uint32(MIST_WATCH_MS));
+        if (!watched || heal <= 0.0f)
+            return;
+        Unit* ally = SecondaryAlly(player, target);
+        if (!ally)
+            return;
+        if (firstRank == SPELL_HOLY_SHOCK_HEAL && HasMistMarker(player, MOD_HOLY_THREAD)
+            && Ready(state.HolyThreadAt, HOLY_THREAD_EVERY_MS))
+        {
+            state.HolyThreadAt = Now();
+            int32 amount = std::max<int32>(1, int32(heal * HOLY_THREAD_SHARE));
+            player->CastCustomSpell(ally, SPELL_HOLY_THREAD, &amount, nullptr, nullptr, true);
+        }
+        else if (firstRank == SPELL_CHAIN_HEAL && HasMistMarker(player, MOD_CHAIN_OF_JADE)
+            && Ready(state.ChainOfJadeAt, CHAIN_OF_JADE_EVERY_MS))
+        {
+            state.ChainOfJadeAt = Now();
+            MistHeal(player, ally, heal * CHAIN_OF_JADE_SHARE);
         }
     }
 
@@ -4284,7 +4432,7 @@ namespace
         }
     }
 
-    // Kill Command: a beast for 10 sec. In Bestial Wrath it comes back in 5 sec; Unending Wrath adds 2 sec to it.
+    // Kill Command: a beast for 10 sec. In Bestial Wrath it comes back in 5 sec.
     void KillCommand(Player* player)
     {
         Unleash(player, BEAST_MS);
@@ -4293,21 +4441,62 @@ namespace
         if (player->GetSpellCooldownDelay(SPELL_KILL_COMMAND) > WRATH_KILL_COMMAND_MS)
             player->ModifySpellCooldown(SPELL_KILL_COMMAND,
                 int32(WRATH_KILL_COMMAND_MS) - int32(player->GetSpellCooldownDelay(SPELL_KILL_COMMAND)));
-        State& state = StateOf(player);
-        if (HasHuntMarker(player, MOD_UNENDING_WRATH) && state.WrathAdded < UNENDING_MOST_MS)
-            if (Aura* wrath = player->GetPet()->GetAura(SPELL_BESTIAL_WRATH, player->GetGUID()))
+    }
+
+    // Arcane Shot on a beast's target: its next bite there 20% more (Arcane Hunt 40%; one charge, 6 sec).
+    void HuntArcane(Player* player, Unit* target)
+    {
+        for (Creature* beast : LiveBeasts(player))
+            if (beast->GetTarget() == target->GetGUID())
             {
-                state.WrathAdded += UNENDING_MS;
-                wrath->SetMaxDuration(wrath->GetMaxDuration() + UNENDING_MS);
-                wrath->SetDuration(wrath->GetDuration() + UNENDING_MS);
+                State& state = StateOf(player);
+                state.HuntChargePrey = target->GetGUID();
+                state.HuntChargeUntil = Now() + HUNT_CHARGE_MS;
+                return;
             }
+    }
+
+    // Storm Hunt: Lightning Bolt sends the beasts to its target, their next bite 20% of spell power as Nature (6 sec
+    // apart).
+    void HuntStorm(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        if (!HasHuntMarker(player, MOD_STORM_HUNT) || !Ready(state.StormHuntAt, STORM_HUNT_EVERY_MS))
+            return;
+        std::vector<Creature*> beasts = LiveBeasts(player);
+        if (beasts.empty())
+            return;
+        state.StormHuntAt = Now();
+        state.StormChargeUntil = Now() + STORM_HUNT_EVERY_MS;
+        for (Creature* beast : beasts)
+            if (beast->IsAIEnabled)
+                beast->AI()->SetGUID(target->GetGUID(), 0);
+    }
+
+    // The bite's share more for Arcane Shot's charge on the prey (spent).
+    float HuntCharge(Player* player, Unit* prey)
+    {
+        State& state = StateOf(player);
+        if (state.HuntChargePrey != prey->GetGUID() || Now() >= state.HuntChargeUntil)
+            return 1.0f;
+        state.HuntChargePrey.Clear();
+        return HasHuntMarker(player, MOD_ARCANE_HUNT) ? ARCANE_HUNT : ARCANE_CHARGE;
+    }
+
+    // Storm Hunt's Nature for the next bite (spent), else 0.
+    float HuntStormCharge(Player* player)
+    {
+        State& state = StateOf(player);
+        if (!state.StormChargeUntil || Now() >= state.StormChargeUntil)
+            return 0.0f;
+        state.StormChargeUntil = 0;
+        return RunePower(player, SPELL_SCHOOL_MASK_NATURE, 0) * STORM_HUNT_SP;
     }
 
     // Bestial Wrath: Kill Command at most 5 sec away; then a beast a second while it lasts (WrathTick).
     void BestialWrath(Player* player)
     {
         State& state = StateOf(player);
-        state.WrathAdded = 0;
         state.WrathTimer = WRATH_CALL_MS;
         if (player->GetSpellCooldownDelay(SPELL_KILL_COMMAND) > WRATH_KILL_COMMAND_MS)
             player->ModifySpellCooldown(SPELL_KILL_COMMAND,
@@ -8772,7 +8961,9 @@ class spell_titan_rune_soothing_mist_cast : public SpellScript
 };
 
 // Soothing Mist's ticks with the Wandering Mist: a Wandering Mist each tick, 25% of it; Effortless Breathing: 25%
-// of a tick's mana back. Lingering Mist: the channel's end leaves two ticks over 4 sec on its target.
+// of a tick's mana back; Renewing Breath: the third tick, the Hero's Renew on the target 2 sec longer. Rolling Mist:
+// a channel begun on another ally within a second of the last one's end leaves two ticks over 4 sec on the last
+// target (12 sec apart).
 class spell_titan_rune_soothing_mist : public AuraScript
 {
     PrepareAuraScript(spell_titan_rune_soothing_mist);
@@ -8791,26 +8982,47 @@ class spell_titan_rune_soothing_mist : public AuraScript
             if (int32 back = int32(cost * EFFORTLESS_SHARE / SOOTHING_MIST_TICKS); back > 0)
                 player->ModifyPower(POWER_MANA, back);
         }
+        if (HasMistMarker(player, MOD_RENEWING_BREATH) && aurEff->GetTickNumber() == RENEWING_BREATH_TICK)
+            if (Aura* renew = target->GetAuraOfRankedSpell(SPELL_RENEW, player->GetGUID()))
+                ExtendAura(renew, MIST_RENEW_MS, MIST_RENEW_MOST_MS);
         Wander(player, target, float(aurEff->GetAmount()));
+    }
+
+    void Begun(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        Unit* caster = GetCaster();
+        Player* player = caster ? caster->ToPlayer() : nullptr;
+        if (!player || !player->HasAura(SPELL_RUNE_WANDERING_MIST) || !HasMistMarker(player, MOD_ROLLING_MIST))
+            return;
+        State& state = StateOf(player);
+        if (!state.MistLast || state.MistLast == GetTarget()->GetGUID()
+            || Now() - state.MistGoneAt > uint32(ROLLING_SWITCH_MS) || !Ready(state.RollingAt, ROLLING_EVERY_MS)
+            || state.MistTickAmount <= 0)
+            return;
+        Unit* last = ObjectAccessor::GetUnit(*player, state.MistLast);
+        if (!last || !last->IsAlive() || !last->IsInMap(player))
+            return;
+        state.RollingAt = Now();
+        Refresh(player, last, SPELL_ROLLING_MIST, std::max<int32>(1, state.MistTickAmount * ROLLING_TICKS / 4));
     }
 
     void Gone(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         Unit* caster = GetCaster();
         Player* player = caster ? caster->ToPlayer() : nullptr;
-        Unit* target = GetTarget();
-        if (!player || !target->IsAlive() || !player->HasAura(SPELL_RUNE_WANDERING_MIST)
-            || !HasMistMarker(player, MOD_LINGERING_MIST))
+        if (!player || !player->HasAura(SPELL_RUNE_WANDERING_MIST))
             return;
-        int32 tick = StateOf(player).MistTickAmount;
-        if (tick > 0)
-            Refresh(player, target, SPELL_LINGERING_MIST, std::max<int32>(1, tick * LINGERING_TICKS / 2));
+        State& state = StateOf(player);
+        state.MistLast = GetTarget()->GetGUID();
+        state.MistGoneAt = Now();
     }
 
     void Register() override
     {
         OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_rune_soothing_mist::Tick, EFFECT_0,
             SPELL_AURA_PERIODIC_HEAL);
+        AfterEffectApply += AuraEffectApplyFn(spell_titan_rune_soothing_mist::Begun, EFFECT_0,
+            SPELL_AURA_PERIODIC_HEAL, AURA_EFFECT_HANDLE_REAL);
         AfterEffectRemove += AuraEffectRemoveFn(spell_titan_rune_soothing_mist::Gone, EFFECT_0,
             SPELL_AURA_PERIODIC_HEAL, AURA_EFFECT_HANDLE_REAL);
     }
@@ -10026,6 +10238,9 @@ class spell_titan_rune_extended_hit : public SpellScript
             if (GetHitDamage() > 0 && first == SPELL_SHIELD_OF_RIGHTEOUSNESS)
                 ParagonRighteous(player, target);
         }
+        if ((first == SPELL_HOLY_SHOCK_HEAL || (first == SPELL_CHAIN_HEAL && target == GetExplTargetUnit()))
+            && player->HasAura(SPELL_RUNE_WANDERING_MIST))
+            MistTechnique(player, target, first, float(GetHitHeal()));
         if (player->HasAura(SPELL_RUNE_STORMREAVER) && player->IsValidAttackTarget(target)
             && (first == TankRunes::SPELL_EARTH_SHOCK || first == SPELL_FROST_SHOCK || first == SPELL_SHIELD_SLAM
                 || first == SPELL_LIGHTNING_BOLT || first == SPELL_THUNDER_CLAP))
@@ -10044,6 +10259,8 @@ class spell_titan_rune_extended_hit : public SpellScript
         switch (first)
         {
             case SPELL_LIGHTNING_BOLT:
+                if (player->HasAura(SPELL_RUNE_WILD_HUNT))
+                    HuntStorm(player, target);
                 if (convergence)
                     ConvergenceBolt(player, target);
                 if (mind)
@@ -10096,6 +10313,8 @@ class spell_titan_rune_extended_hit : public SpellScript
                     PhoenixStrike(player, target, first);
                 break;
             case SPELL_ARCANE_SHOT:
+                if (player->HasAura(SPELL_RUNE_WILD_HUNT))
+                    HuntArcane(player, target);
                 if (horizon)
                     HorizonStrike(player, target, first);
                 if (player->HasAura(SPELL_RUNE_DUELIST))
@@ -10125,8 +10344,19 @@ class spell_titan_rune_extended_hit : public SpellScript
         SetHitDamage(int32(damage));
     }
 
+    // Holy Shock or Chain Heal begun on the Wandering Mist's channel target (it ends the channel).
+    SpellCastResult Watch()
+    {
+        uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        if (Player* player = GetCaster()->ToPlayer(); player && (first == SPELL_HOLY_SHOCK || first == SPELL_CHAIN_HEAL)
+            && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_WANDERING_MIST))
+            MistWatch(player);
+        return SPELL_CAST_OK;
+    }
+
     void Register() override
     {
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_extended_hit::Watch);
         OnHit += SpellHitFn(spell_titan_rune_extended_hit::Damage);
         AfterHit += SpellHitFn(spell_titan_rune_extended_hit::Hit);
     }
@@ -10751,13 +10981,33 @@ private:
         return next;
     }
 
+    // A strike of the beast's own (its amount set).
+    void Smite(Unit* prey, uint32 spellId, float amount)
+    {
+        int32 damage = std::max<int32>(1, int32(amount));
+        me->CastCustomSpell(prey, spellId, &damage, nullptr, nullptr, true);
+    }
+
     void Bite(Player* hero, Unit* prey, float share, uint32 spellId = SPELL_SPECTRAL_BITE)
     {
-        float amount = _bite * share * (HasHuntMarker(hero, MOD_ALPHA_PREDATOR) ? ALPHA_PREDATOR : 1.0f);
-        int32 damage = std::max<int32>(1, int32(amount));
+        bool marked = prey->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, hero->GetGUID()) != nullptr;
+        float amount = _bite * share * (HasHuntMarker(hero, MOD_ALPHA_PREDATOR) ? ALPHA_PREDATOR : 1.0f)
+            * (HasHuntMarker(hero, MOD_FIXED_PREY) ? FIXED_PREY : 1.0f) * (marked ? HUNT_MARK : 1.0f)
+            * HuntCharge(hero, prey);
         me->SetFacingToObject(prey);
         me->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
-        me->CastCustomSpell(prey, spellId, &damage, nullptr, nullptr, true);
+        Smite(prey, spellId, amount);
+        if (float nature = HuntStormCharge(hero); nature > 0.0f)
+            Smite(prey, SPELL_STORM_HUNT, nature);
+        if (HasHuntMarker(hero, MOD_FROSTFANG) && prey->HasAura(SPELL_FROST_FEVER, hero->GetGUID()))
+            Smite(prey, SPELL_FROSTFANG, hero->GetTotalAttackPowerValue(RANGED_ATTACK) * FROSTFANG_RAP);
+        if (marked && HasHuntMarker(hero, MOD_MARKED_ALPHA))
+            for (Unit* enemy : EnemiesAround(hero, prey, RAVAGER_RADIUS))
+                if (enemy != prey)
+                {
+                    Smite(enemy, SPELL_SPECTRAL_BITE, amount * MARKED_ALPHA_SHARE);
+                    break;
+                }
         if (HasHuntMarker(hero, MOD_PACK_RAVAGER))
         {
             int32 cleave = std::max<int32>(1, int32(amount * RAVAGER_SHARE));
@@ -10807,6 +11057,33 @@ private:
             return;
         }
         Unit* prey = Prey(hero);
+        if (HasHuntMarker(hero, MOD_MARKED_FINALE))
+        {
+            Unit* marked = prey && prey->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, hero->GetGUID()) ? prey
+                : hero->GetSelectedUnit();
+            if (!Valid(hero, marked) || !marked->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, hero->GetGUID())
+                || !me->IsWithinDistInMap(marked, BEAST_RANGE))
+                return;
+            float pounce = hero->GetTotalAttackPowerValue(RANGED_ATTACK) * MARKED_FINALE_RAP;
+            me->SetFacingToObject(marked);
+            Smite(marked, SPELL_FINAL_POUNCE, pounce);
+            std::size_t count = 0;
+            for (Unit* enemy : EnemiesAround(hero, marked, RAVAGER_RADIUS))
+                if (enemy != marked && count++ < RAVAGER_TARGETS)
+                    Smite(enemy, SPELL_SPECTRAL_BITE, pounce * MARKED_FINALE_SHARE);
+            return;
+        }
+        if (HasHuntMarker(hero, MOD_HEALING_COMPANION))
+        {
+            Pet* pet = hero->GetPet();
+            if (!pet || !pet->IsAlive() || !pet->GetAuraOfRankedSpell(SPELL_MEND_PET, hero->GetGUID()))
+                return;
+            int32 heal = std::max<int32>(1, int32(pet->CountPctFromMaxHealth(int32(COMPANION_HEAL_PCT))));
+            hero->CastCustomSpell(pet, SPELL_HEALING_COMPANION, &heal, nullptr, nullptr, true);
+            if (prey)
+                Smite(prey, SPELL_SPECTRAL_BITE, hero->GetTotalAttackPowerValue(RANGED_ATTACK) * COMPANION_RAP);
+            return;
+        }
         if (!prey)
             return;
         if (HasHuntMarker(hero, MOD_FINAL_POUNCE))

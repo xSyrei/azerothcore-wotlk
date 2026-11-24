@@ -285,14 +285,14 @@ EmberforgeRunesCatalog = {
       role = "Healer (Soothing Mist)",
       roles = { "HEALER" },
       icon = "Ability_Rune_WanderingMist",
-      keywords = "monk mistweaver mist nature heal soothing",
+      keywords = "monk mistweaver mist nature heal soothing renew riptide holy shock chain heal earth shield",
       slots = { "Mistflow", "Technique", "Approach" },
       builtFrom = "Soothing Mist's ticks",
       spentWith = "Wandering Mist, Enveloping Mist and Vivify",
       resource = "None",
       core = "Each Soothing Mist tick also sends a Wandering Mist to your most injured ally within 20 yards of its " ..
           "target, healing for 25% of the tick. Enveloping Mist and Vivify on your Soothing Mist target are cast at " ..
-          "once and keep the channel.",
+          "once and keep the channel. Renew: a Wandering Mist on your Renew target heals 15% more.",
       loop = "Channel Soothing Mist on the one who needs it most; the mist finds the next.",
       mods = {
         { name = "Flowing Currents",
@@ -301,8 +301,14 @@ EmberforgeRunesCatalog = {
         { name = "Drifting Mist",
           text = "Each Soothing Mist tick sends Wandering Mist to 2 allies, healing 15% of the tick's " ..
               "healing each, instead of 25% to one." },
-        { name = "Jade Shelter",
-          text = "Wandering Mist also shields its ally for 10% of its heal." },
+        { name = "Gathering Mists",
+          text = "Wandering Mist heals allies below half health for 25% more." },
+        { name = "Renewing Mist",
+          text = "Wandering Mist on your Renew target makes it last 2 sec longer (up to 6 sec for each cast), once " ..
+              "every 6 sec." },
+        { name = "Tidal Mist",
+          text = "Wandering Mist on your Riptide target also heals another injured ally within 8 yards for 40% of " ..
+              "it, once every 6 sec." },
         { name = "Comforting Veil",
           text = "Enveloping Mist also wraps your most injured nearby ally in a Lesser Enveloping Mist " ..
               "that heals 30% as much." },
@@ -310,18 +316,30 @@ EmberforgeRunesCatalog = {
           text = "Vivify also heals your most injured nearby ally for 30% of its heal." },
         { name = "Peaceful Focus",
           text = "Soothing Mist heals 15% more on a target with your Enveloping Mist." },
+        { name = "Holy Thread",
+          text = "Holy Shock healing your Soothing Mist target also heals your most injured nearby ally for 25% of " ..
+              "it, once every 8 sec." },
+        { name = "Chain of Jade",
+          text = "Chain Heal on your Soothing Mist target also sends a Wandering Mist to your most injured nearby " ..
+              "ally for 30% of its first heal, once every 8 sec." },
         { name = "Effortless Breathing",
           text = "Soothing Mist costs 25% less mana." },
-        { name = "Lingering Mist",
-          text = "When your Soothing Mist ends, its target is healed for 2 more ticks over 4 sec." },
-        { name = "Deep Breath",
-          text = "Each Wandering Mist restores 0.3% of your maximum mana." },
+        { name = "Rolling Mist",
+          text = "Moving your Soothing Mist to another ally leaves 2 more ticks over 4 sec on the last one, once " ..
+              "every 12 sec." },
+        { name = "Jade Shelter",
+          text = "Wandering Mist also shields its ally for 30% of its healing for 4 sec, once every 8 sec." },
+        { name = "Renewing Breath",
+          text = "The third tick of each Soothing Mist makes your Renew on its target last 2 sec longer." },
+        { name = "Earthen Cocoon",
+          text = "Wandering Mist on your Earth Shield's bearer also shields them for 25% of its healing for 4 sec, " ..
+              "once every 8 sec." },
       },
       builds = {
-        { name = "The Mistwalker", mods = { "Flowing Currents", "Vivacious Flow", "Deep Breath" },
-          text = "Heal everyone, never run dry." },
-        { name = "The Jade Wall", mods = { "Jade Shelter", "Peaceful Focus", "Lingering Mist" },
-          text = "Keep one ally standing no matter what." },
+        { name = "The Mistwalker", mods = { "Flowing Currents", "Vivacious Flow", "Rolling Mist" },
+          text = "Heal everyone, leave nobody behind." },
+        { name = "The Jade Wall", mods = { "Gathering Mists", "Peaceful Focus", "Jade Shelter" },
+          text = "Keep the ones in danger standing." },
         { name = "The Gentle Rain", mods = { "Drifting Mist", "Comforting Veil", "Effortless Breathing" },
           text = "Spread the mist thin and wide." },
       },
@@ -652,15 +670,17 @@ EmberforgeRunesCatalog = {
       role = "DPS (Hunter, with a pet)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_WildHunt",
-      keywords = "hunter pet beast spectral wolf companion summon kill command bleed physical",
-      slots = { "Spectral Beast", "The Wrath", "Final Attack" },
+      keywords = "hunter pet beast spectral wolf companion summon kill command bleed physical hunter's mark arcane " ..
+          "shot icy touch frost fever lightning bolt mend pet",
+      slots = { "Spectral Beast", "The Hunt", "Final Attack" },
       builtFrom = "Your pet",
       spentWith = "Kill Command, Bestial Wrath",
       resource = "Spectral Beasts, up to 8",
       core = "Kill Command unleashes a Spectral Beast in your pet's likeness on its target for 10 sec, as well as " ..
           "empowering your pet. Each beast bites every 1.5 sec for 60% of your pet's attack and goes when its prey " ..
           "dies; up to 8 hunt at once. During Bestial Wrath, Kill Command recovers in 5 sec and a beast joins the " ..
-          "hunt every second for 4 sec. Needs a living pet and an enemy.",
+          "hunt every second for 4 sec. Needs a living pet and an enemy. Hunter's Mark: beasts deal 15% more to " ..
+          "your marked target. Arcane Shot on a beast's target makes the next bite there deal 20% more (6 sec).",
       loop = "Kill Command whenever it is ready; Bestial Wrath to unleash the whole pack, Kill Command every 5 sec.",
       mods = {
         { name = "Alpha Predator",
@@ -671,23 +691,37 @@ EmberforgeRunesCatalog = {
         { name = "Ghostfang",
           text = "Each bite makes its target bleed for 15% of your pet's attack every second for 4 sec. " ..
               "Refreshed, never stacked." },
-        { name = "Unending Wrath",
-          text = "Each Kill Command during Bestial Wrath makes Bestial Wrath last 2 sec longer, up to 10 " ..
-              "sec longer." },
+        { name = "Marked Alpha",
+          text = "A bite on your marked target also bites one other enemy within 5 yards for 50% as much." },
+        { name = "Frostfang",
+          text = "Bites on your Frost Fever target also deal 10% of your ranged attack power as Frost damage." },
+        { name = "Fixed Prey",
+          text = "Spectral Beasts hold to their first prey and bite it for 20% more." },
         { name = "Hunter's Command",
           text = "Your Spectral Beasts switch to whatever enemy you target." },
         { name = "Blood Scent",
           text = "When its prey dies, a Spectral Beast hunts on: your target, else the nearest enemy." },
+        { name = "Arcane Hunt",
+          text = "Arcane Shot's empowered bite deals 40% more instead of 20%." },
+        { name = "Storm Hunt",
+          text = "Lightning Bolt sends your Spectral Beasts to its target, their next bite adding 20% of your spell " ..
+              "power as Nature damage, once every 6 sec." },
         { name = "Final Pounce",
           text = "As a Spectral Beast fades, it pounces for 120% of your pet's attack." },
         { name = "Frenzied Farewell",
           text = "As a Spectral Beast fades, it bites 4 times in a flurry, 36% of your pet's attack each." },
         { name = "Parting Howl",
           text = "As a Spectral Beast fades, your pet deals 30% more damage for 6 sec." },
+        { name = "Marked Finale",
+          text = "As a Spectral Beast fades, it pounces your marked target for 35% of your ranged attack power, and " ..
+              "up to 2 enemies within 5 yards for 40% of that." },
+        { name = "Healing Companion",
+          text = "As a Spectral Beast fades with your Mend Pet on your pet, it heals your pet for 5% of its health " ..
+              "and bites for 25% of your ranged attack power." },
       },
       builds = {
-        { name = "The Alpha", mods = { "Alpha Predator", "Unending Wrath", "Final Pounce" },
-          text = "A longer wrath, a bigger pack." },
+        { name = "The Alpha", mods = { "Alpha Predator", "Fixed Prey", "Final Pounce" },
+          text = "One prey, torn apart." },
         { name = "The Pack", mods = { "Pack Ravager", "Blood Scent", "Frenzied Farewell" },
           text = "Tear through every enemy near." },
         { name = "The Huntmaster", mods = { "Ghostfang", "Hunter's Command", "Parting Howl" },
@@ -1707,8 +1741,9 @@ EmberforgeRunesCatalog = {
       role = "Tank (Warlock; Death Knight, Blood)",
       roles = { "TANK" },
       icon = "Ability_Rune_BlackCovenant",
-      keywords = "warlock voidwalker searing pain drain life covenant armor bind voidwalker shadowflame soul " ..
-          "siphon intercession curse of weakness curse of tongues demon tank",
+      keywords = "warlock voidwalker searing pain drain life covenant armor bind voidwalker shadowflame soul siphon " ..
+          "intercession curse of weakness curse of tongues demon tank blood strike earth shield corruption icy " ..
+          "touch frost fever judgment blood boil",
       slots = { "Covenant Armor", "Siphon", "Intercession" },
       builtFrom = "Bind: Voidwalker (in Summon Voidwalker's place)",
       spentWith = "Covenant Lash, Soul Siphon and Dark Intercession",
@@ -1741,26 +1776,45 @@ EmberforgeRunesCatalog = {
           text = "While bound, magic damage taken is reduced by a further 8%." },
         { name = "Hungry Covenant",
           text = "Covenant Lash gives back 1% of your base mana, once every 2 sec." },
+        { name = "Blood Pact",
+          text = "While bound, Blood Strike shields you for 2% of your maximum health for 4 sec, once every 8 sec." },
+        { name = "Earthen Pact",
+          text = "While bound, your own Earth Shield healing you also shields you for 1% of your maximum health for " ..
+              "4 sec, once every 8 sec." },
         { name = "Deep Extraction",
           text = "Soul Siphon heals 2.5% of your maximum health a tick." },
-        { name = "Ravenous Siphon",
-          text = "Soul Siphon deals 40% of your spell power a tick." },
-        { name = "Lashing Rhythm",
-          text = "Each Covenant Lash takes 1 sec off Soul Siphon's cooldown." },
+        { name = "Siphoning Ward",
+          text = "Each Soul Siphon tick also shields you for 1% of your maximum health for 3 sec, adding to what is " ..
+              "left, up to 3%." },
+        { name = "Unfettered Drain",
+          text = "Soul Siphon no longer slows you, reaches 30 yards instead of 20, and deals 30% of your spell " ..
+              "power a tick." },
+        { name = "Corrupted Drain",
+          text = "Soul Siphon on your Corruption target deals 15% more and makes it last 1 sec longer a tick (up to " ..
+              "6 sec for each cast)." },
+        { name = "Frostbound Siphon",
+          text = "Soul Siphon on your Frost Fever target also deals 10% of your spell power as Frost damage and " ..
+              "heals 0.25% more a tick." },
         { name = "Guardian Manifest",
           text = "Dark Intercession reduces damage taken by 22%." },
         { name = "Legion's Rebuke",
           text = "During Intercession, Covenant Lash hits up to 7 more enemies for 75% of its damage." },
         { name = "Frequent Petition",
           text = "Dark Intercession's cooldown is 24 sec, and it heals you for 2% of your maximum health." },
+        { name = "Judgment of the Void",
+          text = "Judgment during Dark Intercession lashes its target for 25% of your spell power as Shadowflame " ..
+              "damage, once every 6 sec." },
+        { name = "Blood Intercession",
+          text = "While bound, Blood Boil brings Dark Intercession back 2 sec sooner and shields you for 1% of your " ..
+              "maximum health for 4 sec, once every 8 sec." },
       },
       builds = {
         { name = "Physical Pact", mods = { "Voidforged Plate", "Deep Extraction", "Guardian Manifest" },
           text = "Armor, deep drains, a stronger defensive." },
-        { name = "Magic Endurance", mods = { "Nether Insulation", "Ravenous Siphon", "Frequent Petition" },
-          text = "Magic mitigation, hungrier drains, frequent recovery." },
-        { name = "Lashing Pack Tank", mods = { "Hungry Covenant", "Lashing Rhythm", "Legion's Rebuke" },
-          text = "Lash after lash, Siphon kept ready, a wide Intercession cleave." },
+        { name = "Magic Endurance", mods = { "Nether Insulation", "Siphoning Ward", "Frequent Petition" },
+          text = "Magic mitigation, warding drains, frequent recovery." },
+        { name = "Lashing Pack Tank", mods = { "Hungry Covenant", "Unfettered Drain", "Legion's Rebuke" },
+          text = "Lash after lash, a Siphon on the move, a wide Intercession cleave." },
       },
     },
 

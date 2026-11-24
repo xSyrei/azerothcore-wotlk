@@ -4,6 +4,30 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Extended Options: Black Covenant, Wandering Mist, Wild Hunt
+
+- Three more Legendary Runes get their **Extended Options** (from the updated compendium): five choices in each slot.
+  A few old choices left or moved; **those picks are cleared**: choose again (listed below). Other picks keep their
+  meaning.
+- **Black Covenant**
+  - New choices: **Blood Pact** (Blood Strike), **Earthen Pact** (Earth Shield), **Siphoning Ward**, **Unfettered
+    Drain**, **Corrupted Drain** (Corruption), **Frostbound Siphon** (Icy Touch), **Judgment of the Void**
+    (Judgment), **Blood Intercession** (Blood Boil).
+  - Ravenous Siphon and Lashing Rhythm are gone (Siphon picks 2 and 3 cleared).
+- **Wandering Mist**
+  - A Wandering Mist on your **Renew** target heals 15% more.
+  - New choices: **Gathering Mists**, **Renewing Mist** (Renew), **Tidal Mist** (Riptide), **Holy Thread** (Holy
+    Shock), **Chain of Jade** (Chain Heal), **Rolling Mist**, **Renewing Breath** (Renew), **Earthen Cocoon** (Earth
+    Shield). **Jade Shelter** moved to the Approach slot (30% of a Mist as a shield, once every 8 sec).
+  - Lingering Mist and Deep Breath are gone (Mistflow pick 3 and Approach picks 2 and 3 cleared).
+- **Wild Hunt**
+  - Spectral Beasts deal 15% more to your **Hunter's Mark** target; **Arcane Shot** on a beast's target makes its
+    next bite there deal 20% more.
+  - The second slot is now **The Hunt**. New choices: **Marked Alpha** (Hunter's Mark), **Frostfang** (Icy Touch),
+    **Fixed Prey**, **Arcane Hunt** (Arcane Shot), **Storm Hunt** (Lightning Bolt), **Marked Finale** (Hunter's
+    Mark), **Healing Companion** (Mend Pet).
+  - Unending Wrath is gone (its pick cleared).
+
 ### Extended Options: Sanctified Paragon, Stormreaver, Red Communion, Primal Worldwarden
 
 - Four more Legendary Runes get their **Extended Options** (from the updated compendium): five choices in each slot.

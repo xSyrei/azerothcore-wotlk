@@ -310,28 +310,48 @@ EmberforgeRunesArt = {
             abilities = {
                 "30 yards",
                 "2 allies",
-                "Shield",
+                "Below half",
+                "Renew",
+                "Riptide",
                 "Enveloping Mist",
                 "Vivify",
                 "Enveloping Mist",
+                "Holy Shock",
+                "Chain Heal",
                 "Mana",
-                "Lingering",
-                "Mana",
+                "Rolling",
+                "Shield",
+                "Renew",
+                "Earth Shield",
             },
             texts = {
                 "Wandering Mist reaches allies up to 30 yards from your Soothing Mist " ..
                         "target instead of 20.",
                 "Each Soothing Mist tick sends Wandering Mist to 2 allies, healing 15% " ..
                         "of the tick's healing each, instead of 25% to one.",
-                "Wandering Mist also shields its ally for 10% of its heal.",
+                "Wandering Mist heals allies below half health for 25% more.",
+                "Wandering Mist on your Renew target makes it last 2 sec longer (up to " ..
+                        "6 sec for each cast), once every 6 sec.",
+                "Wandering Mist on your Riptide target also heals another injured ally " ..
+                        "within 8 yards for 40% of it, once every 6 sec.",
                 "Enveloping Mist also wraps your most injured nearby ally in a Lesser " ..
                         "Enveloping Mist that heals 30% as much.",
                 "Vivify also heals your most injured nearby ally for 30% of its heal.",
                 "Soothing Mist heals 15% more on a target with your Enveloping Mist.",
+                "Holy Shock healing your Soothing Mist target also heals your most " ..
+                        "injured nearby ally for 25% of it, once every 8 sec.",
+                "Chain Heal on your Soothing Mist target also sends a Wandering Mist to " ..
+                        "your most injured nearby ally for 30% of its first heal, once every 8 " ..
+                        "sec.",
                 "Soothing Mist costs 25% less mana.",
-                "When your Soothing Mist ends, its target is healed for 2 more ticks " ..
-                        "over 4 sec.",
-                "Each Wandering Mist restores 0.3% of your maximum mana.",
+                "Moving your Soothing Mist to another ally leaves 2 more ticks over 4 " ..
+                        "sec on the last one, once every 12 sec.",
+                "Wandering Mist also shields its ally for 30% of its healing for 4 sec, " ..
+                        "once every 8 sec.",
+                "The third tick of each Soothing Mist makes your Renew on its target " ..
+                        "last 2 sec longer.",
+                "Wandering Mist on your Earth Shield's bearer also shields them for 25% " ..
+                        "of its healing for 4 sec, once every 8 sec.",
             },
             slots = {
                 "Mistflow",
@@ -689,12 +709,18 @@ EmberforgeRunesArt = {
                 "Alpha",
                 "Ravage",
                 "Bleed",
-                "Wrath",
+                "Hunter's Mark",
+                "Icy Touch",
+                "Fixed",
                 "Command",
                 "Scent",
+                "Arcane Shot",
+                "Lightning Bolt",
                 "Pounce",
                 "Flurry",
                 "Howl",
+                "Hunter's Mark",
+                "Mend Pet",
             },
             texts = {
                 "Spectral Beasts bite for 78% of your pet's attack instead of 60%.",
@@ -702,19 +728,32 @@ EmberforgeRunesArt = {
                         "yards for 30% of your pet's attack.",
                 "Each bite makes its target bleed for 15% of your pet's attack every " ..
                         "second for 4 sec. Refreshed, never stacked.",
-                "Each Kill Command during Bestial Wrath makes Bestial Wrath last 2 sec " ..
-                        "longer, up to 10 sec longer.",
+                "A bite on your marked target also bites one other enemy within 5 yards " ..
+                        "for 50% as much.",
+                "Bites on your Frost Fever target also deal 10% of your ranged attack " ..
+                        "power as Frost damage.",
+                "Spectral Beasts hold to their first prey and bite it for 20% more.",
                 "Your Spectral Beasts switch to whatever enemy you target.",
                 "When its prey dies, a Spectral Beast hunts on: your target, else the " ..
                         "nearest enemy.",
+                "Arcane Shot's empowered bite deals 40% more instead of 20%.",
+                "Lightning Bolt sends your Spectral Beasts to its target, their next " ..
+                        "bite adding 20% of your spell power as Nature damage, once every 6 " ..
+                        "sec.",
                 "As a Spectral Beast fades, it pounces for 120% of your pet's attack.",
                 "As a Spectral Beast fades, it bites 4 times in a flurry, 36% of your " ..
                         "pet's attack each.",
                 "As a Spectral Beast fades, your pet deals 30% more damage for 6 sec.",
+                "As a Spectral Beast fades, it pounces your marked target for 35% of " ..
+                        "your ranged attack power, and up to 2 enemies within 5 yards for 40% " ..
+                        "of that.",
+                "As a Spectral Beast fades with your Mend Pet on your pet, it heals " ..
+                        "your pet for 5% of its health and bites for 25% of your ranged attack " ..
+                        "power.",
             },
             slots = {
                 "Spectral Beast",
-                "The Wrath",
+                "The Hunt",
                 "Final Attack",
             },
         },
@@ -1719,26 +1758,46 @@ EmberforgeRunesArt = {
                 "Plate",
                 "Nether",
                 "Hunger",
+                "Blood Strike",
+                "Earth Shield",
                 "Deep",
-                "Ravenous",
-                "Rhythm",
+                "Ward",
+                "Unfettered",
+                "Corruption",
+                "Icy Touch",
                 "Manifest",
                 "Legion",
                 "Petition",
+                "Judgment",
+                "Blood Boil",
             },
             texts = {
                 "Covenant Armor also gives 2,500 armor at level 60 (a share of it at " ..
                         "lower levels).",
                 "While bound, magic damage taken is reduced by a further 8%.",
                 "Covenant Lash gives back 1% of your base mana, once every 2 sec.",
+                "While bound, Blood Strike shields you for 2% of your maximum health " ..
+                        "for 4 sec, once every 8 sec.",
+                "While bound, your own Earth Shield healing you also shields you for 1% " ..
+                        "of your maximum health for 4 sec, once every 8 sec.",
                 "Soul Siphon heals 2.5% of your maximum health a tick.",
-                "Soul Siphon deals 40% of your spell power a tick.",
-                "Each Covenant Lash takes 1 sec off Soul Siphon's cooldown.",
+                "Each Soul Siphon tick also shields you for 1% of your maximum health " ..
+                        "for 3 sec, adding to what is left, up to 3%.",
+                "Soul Siphon no longer slows you, reaches 30 yards instead of 20, and " ..
+                        "deals 30% of your spell power a tick.",
+                "Soul Siphon on your Corruption target deals 15% more and makes it last " ..
+                        "1 sec longer a tick (up to 6 sec for each cast).",
+                "Soul Siphon on your Frost Fever target also deals 10% of your spell " ..
+                        "power as Frost damage and heals 0.25% more a tick.",
                 "Dark Intercession reduces damage taken by 22%.",
                 "During Intercession, Covenant Lash hits up to 7 more enemies for 75% " ..
                         "of its damage.",
                 "Dark Intercession's cooldown is 24 sec, and it heals you for 2% of " ..
                         "your maximum health.",
+                "Judgment during Dark Intercession lashes its target for 25% of your " ..
+                        "spell power as Shadowflame damage, once every 6 sec.",
+                "While bound, Blood Boil brings Dark Intercession back 2 sec sooner and " ..
+                        "shields you for 1% of your maximum health for 4 sec, once every 8 sec.",
             },
             slots = {
                 "Covenant Armor",

@@ -399,7 +399,8 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 91641, 91660, 91661, 91662, 91663,
     91688, 91689, 91710, 91711, 91736, 91737, 91738, 91740, 91741, 91761, 91762, 91786, 91787, 91788, 91837, 91838,
     91840, 91842, 91860, 91861, 91862, 91863, 91864, 91885, 91886, 91889, 91912, 91914, 91916, 91917, 91919, 93015,
-    93016, 93017, 93040, 93041, 93042, 93065, 93066, 93067, 93068, 93092, 93093, 93094);
+    93016, 93017, 93040, 93041, 93042, 93065, 93066, 93067, 93068, 93092, 93093, 93094, 93115, 93116, 93117, 93118,
+    93140, 93141, 93142, 93165, 93166, 93167);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91636, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Burn tick'),
 (91637, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Eruption'),
@@ -453,7 +454,17 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (93068, 0, 0, 0, 0, 'Sanctified Paragon - Righteous Ward'),
 (93092, 0, 0, 0, 0, 'Stormreaver - Frozen Front tick'),
 (93093, 0, 0, 0, 0, 'Stormreaver - Stormhammer'),
-(93094, 0, 0, 0, 0, 'Stormreaver - Warstorm');
+(93094, 0, 0, 0, 0, 'Stormreaver - Warstorm'),
+(93115, 0, 0, 0, 0, 'Black Covenant - Blood Pact'),
+(93116, 0, 0, 0, 0, 'Black Covenant - Earthen Pact'),
+(93117, 0, 0, 0, 0, 'Black Covenant - Frostbound Siphon'),
+(93118, 0, 0, 0, 0, 'Black Covenant - Blood Intercession'),
+(93140, 0, 0, 0, 0, 'Wandering Mist - Tidal Mist'),
+(93141, 0, 0, 0, 0, 'Wandering Mist - Holy Thread'),
+(93142, 0, 0, 0, 0, 'Wandering Mist - Earthen Cocoon'),
+(93165, 0, 0, 0, 0, 'Wild Hunt - Frostfang'),
+(93166, 0, 0, 0, 0, 'Wild Hunt - Storm Hunt'),
+(93167, 0, 0, 0, 0, 'Wild Hunt - Healing Companion');
 
 -- Their damage over time: Lunar Wound, Astral Rupture.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';

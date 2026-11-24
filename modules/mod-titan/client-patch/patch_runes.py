@@ -71,9 +71,9 @@ The Rune of the Wandering Mist (the "Rune of the Wandering Mist" concept doc), 9
 - 90810 the rune; 90811 Wandering Mist: a ribbon of jade mist's heal (its amount set by the script), Vivify's
   splash look;
 - 90812 lesser Enveloping Mist (Comforting Veil): healing every sec for 6 sec, Enveloping Mist's look;
-- 90813 Lingering Mist: healing every sec for 4 sec;
+- 90813 Rolling Mist: healing every sec for 4 sec;
 - 90814 Jade Shelter: an absorb, 4 sec;
-- 90820-90828 its nine modifiers' markers (Mistflow, Technique, Approach: 3 each), hidden.
+- 90820-90828 its first nine markers, retired (its Extended Options' block: 93125-93139, hidden).
 
 The five after them (their own concept docs), each with its markers 20 on from its first:
 
@@ -95,7 +95,7 @@ The five after them (their own concept docs), each with its markers 20 on from i
   strikes 91171-91177, heal 91178, Grasping Mind 91179, Phoenix 91180, Quick Recovery 91181, Alpha 91182, Hunter's
   Leap 91183, Earthen Grip 91184;
 - the Wild Hunt, 91130: the Spectral Beast's look 91131, Spectral Bite 91132, Ghostfang 91133 and its tick 91134,
-  Parting Howl (on the Hero's pet) 91135, Final Pounce 91136; modifiers' markers 91150-91158;
+  Parting Howl (on the Hero's pet) 91135, Final Pounce 91136; markers 91150-91158 retired (now 93150-93164);
 - five from their own dossiers, each one's markers 10 on from its first: Arcane Mind 91200 (Insight 91201, Insight
   Missile 91202, Arcane Echo 91203-91204, Mind Unbound 91205, Mental Reserves 91206, Unbound Mind's missile 91207),
   the Splintered Crown 91220 (Icicle 91221, the crown 91222, Splinter Volley 91223, Frost Wound 91224-91225, Winter's
@@ -604,7 +604,7 @@ SPELLS += [
     },
     periodic_heal(90812, 'Enveloping Mist', 'Spell_Monk_EnvelopingMist', 'A lesser Enveloping Mist.', DURATION_6S,
                   'EnvelopingMist'),
-    periodic_heal(90813, 'Lingering Mist', 'Ability_Monk_SoothingMists', 'A lingering mist.', DURATION_4S),
+    periodic_heal(90813, 'Rolling Mist', 'Ability_Monk_SoothingMists', 'A rolling mist.', DURATION_4S),
     absorb(90814, 'Jade Shelter', 'Ability_Monk_SoothingMists', DURATION_4S),
 ]
 WELLSPRING_MODIFIERS = [
@@ -612,15 +612,10 @@ WELLSPRING_MODIFIERS = [
     ('Flowing Waters', 'Bedrock', 'Renewed Shield'),
     ('Tidal Shelter', 'Renewing Current', 'Long Reach'),
 ]
-MIST_MODIFIERS = [
-    ('Flowing Currents', 'Drifting Mist', 'Jade Shelter'),
-    ('Comforting Veil', 'Vivacious Flow', 'Peaceful Focus'),
-    ('Effortless Breathing', 'Lingering Mist', 'Deep Breath'),
-]
+# The Wandering Mist's markers: the Extended Options' block (93125, below); 90820-90828 retired.
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
-           for first, icon, modifiers in ((90800, WELLSPRING_ICON, WELLSPRING_MODIFIERS),
-                                          (90820, MIST_ICON, MIST_MODIFIERS))
+           for first, icon, modifiers in ((90800, WELLSPRING_ICON, WELLSPRING_MODIFIERS),)
            for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
 
 # ---- The five runes after them (runes.cpp's sections of theirs): 90830 the Threefold Grave, 90860 Unbroken
@@ -904,9 +899,6 @@ LEGEND_MODIFIERS = [
     (90970, SUN_ICON, [('Wildfire', 'Spreading Sun', 'Heavy Sun'),
                        ('Wide Burst', 'Scalding Ground', 'Chain Reaction'),
                        ('Implosion', 'Second Sunrise', 'Frozen Core')]),
-    (91150, HUNT_ICON, [('Alpha Predator', 'Pack Ravager', 'Ghostfang'),
-                        ('Unending Wrath', "Hunter's Command", 'Blood Scent'),
-                        ('Final Pounce', 'Frenzied Farewell', 'Parting Howl')]),
 ]
 next(spell for spell in SPELLS if spell['id'] == 90923)['set']['Speed'] = 20.0
 next(spell for spell in SPELLS if spell['id'] == 90951)['set']['StackAmount'] = 8
@@ -1893,7 +1885,7 @@ SPELLS += [
     {'id': 91525, 'copy': DRAIN_LIFE, 'name': 'Soul Siphon', 'icon': SIPHON_ICON,
      'description': 'Channels for 3 sec, moving at 70% speed: each second 25% of your spell power as Shadow damage '
                     'and a heal of 1.5% of your maximum health.', 'tooltip': '',
-     'set': {**NO_FAMILY, 'DurationIndex': DURATION_3S, 'RangeIndex': RANGE_20, 'RecoveryTime': 15000,
+     'set': {**NO_FAMILY, 'DurationIndex': DURATION_3S, 'RangeIndex': RANGE_30, 'RecoveryTime': 15000,
              'ManaCost': 0, 'ManaCostPercentage': 6, 'ChannelInterruptFlags': 0,
              'AttributesEx5': SPELL_ATTR5_ALLOW_ACTION_DURING_CHANNEL, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 0},
      'unset': {'Attributes': 0x10000},
@@ -1938,13 +1930,7 @@ for _spell in SPELLS:
         _spell['set'] = {**_spell['set'], 'PowerType': 0, 'ManaCostPercentage': 8}
     if _spell['id'] == 91521:       # bound: Shadowform's look in the Voidwalker's purple
         _spell['visual'] = 'CovenantBound'
-SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
-                hidden=True)
-           for first, icon, modifiers in (
-               (91531, COVENANT_ICON, [('Voidforged Plate', 'Nether Insulation', 'Hungry Covenant'),
-                                       ('Deep Extraction', 'Ravenous Siphon', 'Lashing Rhythm'),
-                                       ('Guardian Manifest', "Legion's Rebuke", 'Frequent Petition')]),)
-           for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
+# The Black Covenant's markers: the Extended Options' block (93100, below); 91531-91539 retired.
 for _spell in SPELLS:
     if _spell['id'] in (91490, 91510, 91530):
         _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}
@@ -2038,6 +2024,18 @@ EXTENDED_MODIFIERS = [
                             'Healing Light'),
                            ('Bastion of Faith', 'Weight of the Unworthy', 'Measured Devotion', 'Dawnward',
                             "Paragon's Aegis")]),
+    (93100, COVENANT_ICON, [('Voidforged Plate', 'Nether Insulation', 'Hungry Covenant', 'Blood Pact', 'Earthen Pact'),
+                            ('Deep Extraction', 'Siphoning Ward', 'Unfettered Drain', 'Corrupted Drain',
+                             'Frostbound Siphon'),
+                            ('Guardian Manifest', "Legion's Rebuke", 'Frequent Petition', 'Judgment of the Void',
+                             'Blood Intercession')]),
+    (93125, MIST_ICON, [('Flowing Currents', 'Drifting Mist', 'Gathering Mists', 'Renewing Mist', 'Tidal Mist'),
+                        ('Comforting Veil', 'Vivacious Flow', 'Peaceful Focus', 'Holy Thread', 'Chain of Jade'),
+                        ('Effortless Breathing', 'Rolling Mist', 'Jade Shelter', 'Renewing Breath',
+                         'Earthen Cocoon')]),
+    (93150, HUNT_ICON, [('Alpha Predator', 'Pack Ravager', 'Ghostfang', 'Marked Alpha', 'Frostfang'),
+                        ('Fixed Prey', "Hunter's Command", 'Blood Scent', 'Arcane Hunt', 'Storm Hunt'),
+                        ('Final Pounce', 'Frenzied Farewell', 'Parting Howl', 'Marked Finale', 'Healing Companion')]),
     (93075, STORMREAVER_ICON, [('Eye of the Tempest', 'Forked Cataclysm', 'Rolling Thunder', 'Stormhunter',
                                 'Frozen Front'),
                                ('Thunderhead', 'Chainbreaker', 'White-Hot Conductor', 'Stormhammer',
@@ -2197,9 +2195,22 @@ SPELLS += [
     strike(93094, 'Warstorm', 'Spell_Nature_ThunderClap', NATURE, VISUAL_THUNDER_HIT),
     buff(93095, 'Static Strike', 'Spell_Nature_LightningShield', 'Your next discharge strikes twice.', DURATION_6S,
          {1: aura(AURA_DUMMY, 1, 0)}),
+    # The Black Covenant.
+    absorb(93115, 'Blood Pact', 'Spell_Deathknight_BloodPresence', DURATION_4S),
+    absorb(93116, 'Earthen Pact', 'Spell_Nature_SkinofEarth', DURATION_4S),
+    strike(93117, 'Frostbound Siphon', 'Spell_DeathKnight_IceTouch', FROST, VISUAL_ICE_LANCE),
+    absorb(93118, 'Blood Intercession', 'Spell_Shadow_AntiShadow', DURATION_4S),
+    # The Wandering Mist.
+    heal(93140, 'Tidal Mist', 'Spell_Nature_HealingWaveGreater', 'The tide carries the mist.'),
+    heal(93141, 'Holy Thread', 'Spell_Holy_HolyBolt', 'A thread of holy light.'),
+    absorb(93142, 'Earthen Cocoon', 'Spell_Nature_SkinofEarth', DURATION_4S),
+    # The Wild Hunt.
+    strike(93165, 'Frostfang', 'Spell_DeathKnight_IceTouch', FROST, VISUAL_ICE_LANCE),
+    strike(93166, 'Storm Hunt', 'Spell_Nature_Lightning', NATURE, VISUAL_LIGHTNING_BOLT),
+    heal(93167, 'Healing Companion', HUNT_ICON, 'The spectral beast mends your pet.'),
 ]
 for _spell in SPELLS:
-    if _spell['id'] in (93015, 93065, 93092, 93093, 93094):
+    if _spell['id'] in (93015, 93065, 93092, 93093, 93094, 93117, 93165, 93166):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
 for _spell in SPELLS:
     if _spell['id'] in (91885, 91886, 91912, 91914, 91919):

@@ -713,6 +713,15 @@ utility or a tradeoff) take one pick each, from three.
     runes.cpp's ModifierNeeds by number. The Paragon's interactions and options: `ParagonJudgment`,
     `ParagonHolyShock`, `ParagonRighteous`, `ParagonAbility`; Bastion of Faith and Weight of the Unworthy need a
     damaging Manifestation (Condemnation or Radiant Judgment). The Stormreaver's: `StormAbility`.
+  - **Extended Options, Black Covenant, Wandering Mist, Wild Hunt**: markers 93100 (Covenant; 91531-91539 retired),
+    93125 (Mist; 90820-90828 retired), 93150 (Hunt; 91150-91158 retired). Picks whose options left or moved are
+    cleared once by `titan_runes_zz_extended_reset4.sql`. Black Covenant: Blood Pact and Earthen Pact through
+    `TankAbility`, the Siphon's options in `SiphonTick` (Soul Siphon's own range is 30 yards; without Unfettered
+    Drain the channel ends beyond 25), Blood Intercession through the Blood Boil script. Wandering Mist: `MistHeal`
+    (each Mist's follow-ups), Holy Thread and Chain of Jade through the extended hit script (`MistWatch` remembers
+    the channel's target when they begin, as they end the channel); Rolling Mist (90813, once Lingering Mist) on a
+    channel begun on another ally within a second. Wild Hunt: Arcane Shot's and Storm Hunt's charges
+    (`HuntArcane`, `HuntStorm`) spent by the beast's next bite.
   - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
     30% of maximum health, 6 sec; Barkskin's cooldown 30 sec shorter, each Maul in Bear Form 3 sec more); Maul
     releases it (91342, a 10-yard cone): 75% AP plus all it absorbed (that part at most 250% AP).

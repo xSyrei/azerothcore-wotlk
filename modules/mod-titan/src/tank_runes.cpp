@@ -73,10 +73,10 @@
 //   enemies within 6 yards of its victim for 50%. The Hero's
 //   Curse of Weakness has its victim deal 6% less Physical damage to them, Curse of Tongues 6% less magic damage.
 //   Modifiers: Voidforged Plate (2500 more armor at level 60, a level's share below), Nether Insulation (8% less
-//   magic damage taken), Hungry Covenant (Lash: 1% of base mana back, once every 2 sec); Deep Extraction (Siphon
-//   heals 2.5%), Ravenous Siphon (40% of spell power a tick), Lashing Rhythm (each Covenant Lash 1 sec off Soul
-//   Siphon's cooldown); Guardian Manifest (22%), Legion's Rebuke (7 more, 75%), Frequent Petition (24 sec, and a 2%
-//   heal).
+//   magic damage taken), Hungry Covenant (Lash: 1% of base mana back, once every 2 sec), Blood Pact, Earthen Pact;
+//   Deep Extraction (Siphon heals 2.5%), Siphoning Ward, Unfettered Drain, Corrupted Drain, Frostbound Siphon;
+//   Guardian Manifest (22%), Legion's Rebuke (7 more, 75%), Frequent Petition (24 sec, and a 2% heal), Judgment of
+//   the Void, Blood Intercession (the Extended Options: their numbers below).
 // - The foundation, while any of them is bound: NPC attacks never critically strike the Hero; Red Communion and the
 //   Primal Worldwarden also teach Challenge (a free 30-yard taunt off the global cooldown, 8 sec). The Black
 //   Covenant's Hero gets their taunt from Wildcard.
@@ -91,7 +91,6 @@ namespace
         SPELL_FROST_SHOCK           = 8056,
         SPELL_STORMSTRIKE           = 17364,
         SPELL_LAVA_LASH             = 60103,
-        SPELL_DRAIN_LIFE            = 689,
         SPELL_SUMMON_VOIDWALKER     = 697,
         SPELL_CURSE_OF_WEAKNESS     = 702,
         SPELL_CURSE_OF_TONGUES      = 1714,
@@ -151,6 +150,12 @@ namespace
         SPELL_BLOODSTONE_COMMAND    = 93040,
         SPELL_CONSECRATED_HEART     = 93041,
         SPELL_RUNIC_RENEWAL         = 93042,
+        SPELL_SIPHONING_WARD        = 91528,
+        SPELL_FROST_FEVER           = 55095,
+        SPELL_BLOOD_PACT            = 93115,
+        SPELL_EARTHEN_PACT          = 93116,
+        SPELL_FROSTBOUND_SIPHON     = 93117,
+        SPELL_BLOOD_INTERCESSION    = 93118,
     };
 
     // The modifiers: slot x 3 + choice (Red Communion's and the Primal Worldwarden's Extended Options: x 5, their
@@ -171,9 +176,10 @@ namespace
 
     enum CovenantModifier : uint8
     {
-        MOD_VOIDFORGED_PLATE, MOD_NETHER_INSULATION, MOD_HUNGRY_COVENANT,
-        MOD_DEEP_EXTRACTION, MOD_RAVENOUS_SIPHON, MOD_LASHING_RHYTHM,
-        MOD_GUARDIAN_MANIFEST, MOD_LEGIONS_REBUKE, MOD_FREQUENT_PETITION,
+        MOD_VOIDFORGED_PLATE, MOD_NETHER_INSULATION, MOD_HUNGRY_COVENANT, MOD_BLOOD_PACT, MOD_EARTHEN_PACT,
+        MOD_DEEP_EXTRACTION, MOD_SIPHONING_WARD, MOD_UNFETTERED_DRAIN, MOD_CORRUPTED_DRAIN, MOD_FROSTBOUND_SIPHON,
+        MOD_GUARDIAN_MANIFEST, MOD_LEGIONS_REBUKE, MOD_FREQUENT_PETITION, MOD_JUDGMENT_OF_THE_VOID,
+        MOD_BLOOD_INTERCESSION,
     };
 
     // Red Communion's numbers. Blood Boil: Rage and a cooldown instead of its rune.
@@ -241,13 +247,25 @@ namespace
     constexpr uint32 LASH_CLEAVE_TARGETS = 4, REBUKE_TARGETS = 7;
     constexpr float HUNGRY_MANA_PCT = 1.0f;
     constexpr uint32 HUNGRY_EVERY_MS = 2000;
-    constexpr float SIPHON_SP = 0.25f, RAVENOUS_SP = 0.4f, SIPHON_HEAL = 1.5f, DEEP_HEAL = 2.5f;
-    constexpr int32 RHYTHM_MS = 1000;           // Lashing Rhythm: off Soul Siphon's cooldown a Lash
+    constexpr float SIPHON_SP = 0.25f, SIPHON_HEAL = 1.5f, DEEP_HEAL = 2.5f;
     constexpr uint32 VOIDFORGED_LEVEL = 60;     // Voidforged Plate's full armor at this level
     constexpr int32 INTERCESSION_PCT = 15, MANIFEST_PCT = 22, INTERCESSION_MS = 6000;
     constexpr int32 PETITION_CUT_MS = 6000;     // 30 to 24 sec
     constexpr float PETITION_HEAL = 2.0f;
     constexpr float CURSE_SHARE = 0.94f;
+    // Its Extended Options: Blood Pact (bound, Blood Strike: 2% absorb) and Earthen Pact (bound, their own Earth
+    // Shield's heal: 1%), 4 sec, 8 sec apart; Siphoning Ward (a Siphon tick: 1% absorb for 3 sec, what is left added,
+    // at most 3%), Unfettered Drain (full speed, 30 yards, 30% a tick), Corrupted Drain (their Corruption there: 15%
+    // more, 1 sec longer a tick, 6 sec an application), Frostbound Siphon (their Frost Fever there: 10% of spell
+    // power as Frost and 0.25% more healed a tick); Judgment of the Void (Judgment in Intercession: a 25% Lash, 6 sec
+    // apart), Blood Intercession (bound, Blood Boil: Intercession 2 sec sooner and a 1% absorb for 4 sec, 8 sec apart).
+    constexpr float BLOOD_PACT_PCT = 2.0f, EARTHEN_PACT_PCT = 1.0f, SIPHON_WARD_PCT = 1.0f, SIPHON_WARD_CAP = 3.0f;
+    constexpr int32 PACT_MS = 4000, SIPHON_WARD_MS = 3000;
+    constexpr uint32 PACT_EVERY_MS = 8000, VOID_JUDGMENT_EVERY_MS = 6000, BLOOD_INTERCESSION_EVERY_MS = 8000;
+    constexpr float UNFETTERED_SP = 0.3f, SIPHON_RANGE = 20.0f, SIPHON_LEEWAY = 5.0f;
+    constexpr float CORRUPTED_DRAIN = 1.15f, FROSTBOUND_SP = 0.1f, FROSTBOUND_HEAL = 0.25f;
+    constexpr int32 CORRUPTED_EXTEND_MS = 1000, CORRUPTED_MOST_MS = 6000, BLOOD_INTERCESSION_MS = 2000;
+    constexpr float VOID_JUDGMENT_SP = 0.25f, BLOOD_INTERCESSION_PCT = 1.0f;
 
     struct Link
     {
@@ -282,6 +300,7 @@ namespace
         uint32 CorruptionAt = 0, CorruptCommunionAt = 0, EarthboundAt = 0, DeathsRecallAt = 0, HolyCommunionAt = 0;
         uint32 EarthCommandAt = 0, ElementsAt = 0, ConsecratedAt = 0, CommunionAt = 0, CommunionUntil = 0;
         uint32 RenewalAt = 0;                   // game ms
+        uint32 PactAt = 0, VoidJudgmentAt = 0, BloodIntercessionAt = 0;
         bool BloodstoneSpent = false;           // Bloodstone Command: once an Earth command
         bool Bound = false;             // Covenant Armor on (its own aura is the truth; this ends it once)
     };
@@ -849,6 +868,7 @@ namespace
 
     // Every update: the totem's leash and anchor, Worldguard by the shield, the magma line's ticks.
     void ConsecratedHeart(Player* player);
+    bool Bound(Player* player);
 
     void WorldwardenTick(Player* player, uint32 diff)
     {
@@ -942,6 +962,30 @@ namespace
         {
             state.CommunionAt = Now();
             state.CommunionUntil = Now() + COMMUNION_WINDOW_MS;
+        }
+        if (player->HasAura(SPELL_RUNE_BLACK_COVENANT) && Bound(player))
+        {
+            bool pact = (firstRank == SPELL_BLOOD_STRIKE && Covenant(player, MOD_BLOOD_PACT))
+                || (firstRank == SPELL_EARTH_SHIELD_HEAL && target == player && Covenant(player, MOD_EARTHEN_PACT)
+                    && HasRankAura(player, SPELL_EARTH_SHIELD, player->GetGUID()));
+            if (pact && Ready(state.PactAt, PACT_EVERY_MS))
+            {
+                state.PactAt = Now();
+                bool blood = firstRank == SPELL_BLOOD_STRIKE;
+                Shield(player, blood ? SPELL_BLOOD_PACT : SPELL_EARTHEN_PACT,
+                    PctOfHealth(player, blood ? BLOOD_PACT_PCT : EARTHEN_PACT_PCT), PACT_MS, false);
+            }
+            if (judgment && target != player && Covenant(player, MOD_JUDGMENT_OF_THE_VOID)
+                && player->HasAura(SPELL_INTERCESSION) && target->IsAlive()
+                && Ready(state.VoidJudgmentAt, VOID_JUDGMENT_EVERY_MS))
+            {
+                state.VoidJudgmentAt = Now();
+                float damage = SpellPower(player, SpellSchoolMask(SPELL_SCHOOL_MASK_SHADOW | SPELL_SCHOOL_MASK_FIRE))
+                    * VOID_JUDGMENT_SP;
+                Strike(player, target, SPELL_LASH_STRIKE, damage);
+                if (target->IsAlive() && target->CanHaveThreatList())
+                    target->GetThreatMgr().AddThreat(player, damage);
+            }
         }
         if (!communion)
             return;
@@ -1154,8 +1198,6 @@ namespace
             for (Unit* enemy : enemies)
                 hit(enemy, damage * (rebuke ? REBUKE_CLEAVE : LASH_CLEAVE));
         }
-        if (Covenant(player, MOD_LASHING_RHYTHM))
-            player->ModifySpellCooldown(SPELL_SOUL_SIPHON, -RHYTHM_MS);
         TankState& state = StateOf(player);
         if (Covenant(player, MOD_HUNGRY_COVENANT) && Now() - state.LastHungry >= HUNGRY_EVERY_MS)
         {
@@ -1164,15 +1206,49 @@ namespace
         }
     }
 
-    // A Soul Siphon tick on its victim: damage, and (it dealt damage) the heal.
+    // A Soul Siphon tick on its victim: damage, and (it dealt damage) the heal; its Extended Options. Beyond 20
+    // yards (and some leeway) without Unfettered Drain, the channel ends (the spell's own range is 30 for it).
     void SiphonTick(Player* player, Unit* victim)
     {
+        if (!Covenant(player, MOD_UNFETTERED_DRAIN) && !player->IsWithinDistInMap(victim, SIPHON_RANGE + SIPHON_LEEWAY))
+        {
+            player->InterruptNonMeleeSpells(false);
+            return;
+        }
         if (!victim->IsAlive() || victim->IsImmunedToDamage(SPELL_SCHOOL_MASK_SHADOW))
             return;
-        Strike(player, victim, SPELL_SIPHON_STRIKE, SpellPower(player, SPELL_SCHOOL_MASK_SHADOW)
-            * (Covenant(player, MOD_RAVENOUS_SIPHON) ? RAVENOUS_SP : SIPHON_SP));
-        int32 heal = PctOfHealth(player, Covenant(player, MOD_DEEP_EXTRACTION) ? DEEP_HEAL : SIPHON_HEAL);
+        float damage = SpellPower(player, SPELL_SCHOOL_MASK_SHADOW)
+            * (Covenant(player, MOD_UNFETTERED_DRAIN) ? UNFETTERED_SP : SIPHON_SP);
+        if (Covenant(player, MOD_CORRUPTED_DRAIN))
+            if (Aura* corruption = RankAura(victim, SPELL_CORRUPTION, player->GetGUID()))
+            {
+                damage *= CORRUPTED_DRAIN;
+                int32 more = std::min(CORRUPTED_EXTEND_MS,
+                    CORRUPTED_MOST_MS - (corruption->GetMaxDuration() - corruption->CalcMaxDuration()));
+                if (more > 0)
+                {
+                    corruption->SetMaxDuration(corruption->GetMaxDuration() + more);
+                    corruption->SetDuration(corruption->GetDuration() + more);
+                }
+            }
+        Strike(player, victim, SPELL_SIPHON_STRIKE, damage);
+        float healPct = Covenant(player, MOD_DEEP_EXTRACTION) ? DEEP_HEAL : SIPHON_HEAL;
+        if (Covenant(player, MOD_FROSTBOUND_SIPHON) && victim->HasAura(SPELL_FROST_FEVER, player->GetGUID()))
+        {
+            Strike(player, victim, SPELL_FROSTBOUND_SIPHON,
+                SpellPower(player, SPELL_SCHOOL_MASK_FROST) * FROSTBOUND_SP);
+            healPct += FROSTBOUND_HEAL;
+        }
+        int32 heal = PctOfHealth(player, healPct);
         player->CastCustomSpell(player, SPELL_SIPHON_HEAL, &heal, nullptr, nullptr, true);
+        if (Covenant(player, MOD_SIPHONING_WARD))
+        {
+            int32 ward = PctOfHealth(player, SIPHON_WARD_PCT);
+            if (AuraEffect* left = player->GetAuraEffect(SPELL_SIPHONING_WARD, EFFECT_0, player->GetGUID()))
+                ward += left->GetAmount();
+            Shield(player, SPELL_SIPHONING_WARD, std::min(ward, PctOfHealth(player, SIPHON_WARD_CAP)), SIPHON_WARD_MS,
+                false);
+        }
     }
 
     void Intercession(Player* player)
@@ -1184,6 +1260,19 @@ namespace
             player->ModifySpellCooldown(SPELL_DARK_INTERCESSION, -PETITION_CUT_MS);
             HealPct(player, PETITION_HEAL);
         }
+    }
+
+    // Blood Intercession: an original Blood Boil while bound, Intercession 2 sec sooner and a 1% absorb (8 sec
+    // apart).
+    void BloodIntercession(Player* player)
+    {
+        TankState& state = StateOf(player);
+        if (!player->HasAura(SPELL_RUNE_BLACK_COVENANT) || !Bound(player) || !Covenant(player, MOD_BLOOD_INTERCESSION)
+            || !Ready(state.BloodIntercessionAt, BLOOD_INTERCESSION_EVERY_MS))
+            return;
+        state.BloodIntercessionAt = Now();
+        player->ModifySpellCooldown(SPELL_DARK_INTERCESSION, -BLOOD_INTERCESSION_MS);
+        Shield(player, SPELL_BLOOD_INTERCESSION, PctOfHealth(player, BLOOD_INTERCESSION_PCT), PACT_MS, false);
     }
 
     // ---- Damage the Hero takes ----------------------------------------------------------------------------------
@@ -1285,10 +1374,10 @@ namespace TankRunes
     }
 }
 
-// Blood Boil (every rank) with Red Communion: the enemies it hits are linked. Cast through Red Communion's own Blood
-// Boil (SPELL_COMMUNION_BOIL, which pays its Rage and cooldown); cast directly (a macro), it costs BLOOD_BOIL_RAGE
-// Rage and has a BLOOD_BOIL_COOLDOWN_MS cooldown instead of its Blood rune (the core waives the rune:
-// Spell::RunesWaived).
+// Blood Boil (every rank) with Red Communion: the enemies it hits are linked; an original one with Black Covenant
+// bound: Blood Intercession. Cast through Red Communion's own Blood Boil (SPELL_COMMUNION_BOIL, which pays its Rage
+// and cooldown); cast directly (a macro), it costs BLOOD_BOIL_RAGE Rage and has a BLOOD_BOIL_COOLDOWN_MS cooldown
+// instead of its Blood rune (the core waives the rune: Spell::RunesWaived).
 class spell_titan_tank_blood_boil : public SpellScript
 {
     PrepareSpellScript(spell_titan_tank_blood_boil);
@@ -1305,7 +1394,10 @@ class spell_titan_tank_blood_boil : public SpellScript
     void Paid()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (!player || GetSpell()->IsTriggered() || !player->HasAura(SPELL_RUNE_RED_COMMUNION))
+        if (!player || GetSpell()->IsTriggered())
+            return;
+        BloodIntercession(player);
+        if (!player->HasAura(SPELL_RUNE_RED_COMMUNION))
             return;
         player->ModifyPower(POWER_RAGE, -BLOOD_BOIL_RAGE * 10);
         player->AddSpellCooldown(GetSpellInfo()->Id, 0, BLOOD_BOIL_COOLDOWN_MS, true);
@@ -1483,7 +1575,7 @@ class spell_titan_tank_action : public SpellScript
     }
 };
 
-// Soul Siphon's channel: its ticks, and the Hero slowed to 70% while it lasts.
+// Soul Siphon's channel: its ticks, and the Hero slowed to 70% while it lasts (not with Unfettered Drain).
 class spell_titan_tank_siphon : public AuraScript
 {
     PrepareAuraScript(spell_titan_tank_siphon);
@@ -1497,7 +1589,8 @@ class spell_titan_tank_siphon : public AuraScript
 
     void Apply(AuraEffect const* /*effect*/, AuraEffectHandleModes /*mode*/)
     {
-        if (Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr)
+        if (Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr;
+            player && !Covenant(player, MOD_UNFETTERED_DRAIN))
             player->CastSpell(player, SPELL_SIPHON_SLOW, true);
     }
 
@@ -1517,7 +1610,7 @@ class spell_titan_tank_siphon : public AuraScript
     }
 };
 
-// Soul Siphon only while bound.
+// Soul Siphon only while bound; 20 yards (its spell's 30 is Unfettered Drain's).
 class spell_titan_tank_siphon_cast : public SpellScript
 {
     PrepareSpellScript(spell_titan_tank_siphon_cast);
@@ -1527,6 +1620,9 @@ class spell_titan_tank_siphon_cast : public SpellScript
         Player* player = GetCaster()->ToPlayer();
         if (!player || !Bound(player))
             return SPELL_FAILED_NOT_READY;
+        if (Unit* target = GetExplTargetUnit(); target && !Covenant(player, MOD_UNFETTERED_DRAIN)
+            && !player->IsWithinDistInMap(target, SIPHON_RANGE))
+            return SPELL_FAILED_OUT_OF_RANGE;
         return SPELL_CAST_OK;
     }
 

@@ -31,12 +31,13 @@ namespace TankRunes
         SPELL_BLOOD_BOIL                    = 48721,    // first ranks
         SPELL_EARTH_SHOCK                   = 8042,
         SPELL_SEARING_PAIN                  = 5676,
+        SPELL_DRAIN_LIFE                    = 689,
         SPELL_RUNE_RED_COMMUNION            = 91490,
         SPELL_COMMUNION_MODIFIER_FIRST      = 93000,    // + slot * 5 + choice (91491-91499 retired)
         SPELL_RUNE_PRIMAL_WORLDWARDEN       = 91510,
         SPELL_WORLDWARDEN_MODIFIER_FIRST    = 93025,    // + slot * 5 + choice (91511-91519 retired)
         SPELL_RUNE_BLACK_COVENANT           = 91530,
-        SPELL_COVENANT_MODIFIER_FIRST       = 91531,
+        SPELL_COVENANT_MODIFIER_FIRST       = 93100,    // + slot * 5 + choice (91531-91539 retired)
     };
 
     // The bound runes' own abilities taught or taken away, the collection's foundation (Challenge, no critical
