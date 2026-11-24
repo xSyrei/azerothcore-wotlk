@@ -418,8 +418,8 @@ EFFECTS = {
 }
 # The Rune of the Stormbound Conduit (90750 on; runes.cpp's Stormbound Conduit section).
 STORM_RUNE = buff(90750, 'Rune of the Stormbound Conduit', STORM_ICON,
-                  'Lightning Bolt arcs to 2 enemies within 10 yards of its target for 30% of its damage. Your '
-                  'Lightning Shield\'s retaliations arc to 1 nearby enemy for 50% of theirs.',
+                  'Lightning Bolt leaves Conductive on its target. Chain Lightning on a Conductive enemy arcs 30% of '
+                  'that bolt to another.',
                   DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)})
 # Its procs: Lightning Bolt and Chain Lightning land as harmful spells; the script picks them out.
 STORM_RUNE['set'] = {**STORM_RUNE['set'], 'ProcFlags': PROC_DONE_MAGIC_SPELL_NEGATIVE, 'ProcChance': 101}
@@ -465,22 +465,15 @@ SPELLS += [
         'clear': [2, 3],
     },
 ]
-STORM_MODIFIERS = [
-    ('Forked Tempest', 'Closed Circuit', 'Faraday Field'),
-    ('Live Wire', 'Storm Within', 'Distant Conductor'),
-    ('Chain Surge', 'Static Ward', 'Overcharge'),
-]
-SPELLS += [buff(90760 + slot * 3 + choice, name, STORM_ICON, '', DURATION_INFINITE,
-                {1: aura(AURA_DUMMY, 1, 0)}, hidden=True)
-           for slot, names in enumerate(STORM_MODIFIERS) for choice, name in enumerate(names)]
+# The Stormbound Conduit's markers: the Extended Options' block (93225, below); 90760-90768 retired.
 
 # The Rune of Echoing Thunder (90770 on; runes.cpp's Echoing Thunder section).
 THUNDER = 'WAR_EchoingThunder'
 STORM_BLUE, PALE_BLUE = (0.45, 0.7, 1.0), (0.75, 0.88, 1.0)
 SPELLS += [
     buff(90770, 'Rune of Echoing Thunder', THUNDER_ICON,
-         'Thunder Clap charges you with thunder. Your next Shield Slam releases a Thunder Echo: 42% of its damage '
-         'to up to 5 enemies within 6 yards of its target.',
+         'Thunder Clap lays a Thunderfield. Standing in it, Shield Slam releases a Thunder Echo: 42% of its damage '
+         'to up to 5 enemies in a cone toward its target.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {
         **buff(90772, 'Thunder Charge', 'Spell_Nature_ThunderClap',
@@ -526,14 +519,7 @@ SPELLS += [
         'clear': [2, 3],
     },
 ]
-THUNDER_MODIFIERS = [
-    ('Double Charge', 'Lingering Charge', 'Commanding Thunder'),
-    ('Focused Peal', 'Distant Rumble', 'Deafening Impact'),
-    ('Sheltering Reverberation', 'Battle Rhythm', 'Rolling Thunder'),
-]
-SPELLS += [buff(90780 + slot * 3 + choice, name, THUNDER_ICON, '', DURATION_INFINITE,
-                {1: aura(AURA_DUMMY, 1, 0)}, hidden=True)
-           for slot, names in enumerate(THUNDER_MODIFIERS) for choice, name in enumerate(names)]
+# Echoing Thunder's markers: the Extended Options' block (93200, below); 90780-90788 retired.
 
 # The Rune of the Wellspring (90790 on) and of the Wandering Mist (90810 on; runes.cpp's sections of theirs).
 HEAL_SET = {**FREE, 'SpellFamilyName': 0, 'SpellFamilyFlags0': 0, 'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0,
@@ -565,8 +551,8 @@ def absorb(spell_id, name, icon, duration):
 
 SPELLS += [
     buff(90790, 'Rune of the Wellspring', WELLSPRING_ICON,
-         'Chain Heal jumps once more from its last target, to the most injured ally nearby, for 40% of its first '
-         'heal. It heals the wearer of your Earth Shield for 20% more.',
+         'Chain Heal on your Earth Shield bearer lays a Wellspring on them; your next Chain Heal there releases 40% '
+         'of it to another ally.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {
         'id': 90792, 'copy': LESSER_HEAL, 'name': 'Wellspring', 'icon': 'Spell_Nature_HealingWaveGreater',
@@ -607,16 +593,8 @@ SPELLS += [
     periodic_heal(90813, 'Rolling Mist', 'Ability_Monk_SoothingMists', 'A rolling mist.', DURATION_4S),
     absorb(90814, 'Jade Shelter', 'Ability_Monk_SoothingMists', DURATION_4S),
 ]
-WELLSPRING_MODIFIERS = [
-    ('Split Tributary', 'Deep Current', 'Concentrated Current'),
-    ('Flowing Waters', 'Bedrock', 'Renewed Shield'),
-    ('Tidal Shelter', 'Renewing Current', 'Long Reach'),
-]
-# The Wandering Mist's markers: the Extended Options' block (93125, below); 90820-90828 retired.
-SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
-                hidden=True)
-           for first, icon, modifiers in ((90800, WELLSPRING_ICON, WELLSPRING_MODIFIERS),)
-           for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
+# The Wellspring's and the Wandering Mist's markers: the Extended Options' blocks (93175, 93125, below); 90800-90808
+# and 90820-90828 retired.
 
 # ---- The five runes after them (runes.cpp's sections of theirs): 90830 the Threefold Grave, 90860 Unbroken
 # Onslaught, 90890 the Dawnbound Crusader, 90920 the Hollow Congregation, 90950 the Shattered Sun; each one's
@@ -776,11 +754,10 @@ SPELLS += [
      'clear': [3]},
 
     buff(90890, 'Rune of the Dawnbound Crusader', DAWN_ICON,
-         'Crusader Strike and Holy Shock send a Dawn Echo a moment later: half of their damage again, or half of '
-         'Holy Shock\'s healing on your most injured ally nearby.',
+         'Crusader Strike on your Judgment target, or Holy Shock, sends a Dawn Echo from your vowed ally.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     action(90891, 'Dawn Vow', 'Ability_Paladin_BeaconofLight',
-           'Swear your Dawn Vow to an ally, or yourself: your Dawn Echoes rise from them.', 10000,
+           'Swear your Dawn Vow to an ally, or yourself: your Dawn Echoes rise from them.', 6000,
            target=TARGET_UNIT_TARGET_ALLY, range_index=RANGE_40, visual=VISUAL_BEACON),
     shown(90892, 'Dawn Vow', 'Ability_Paladin_BeaconofLight', 'A Dawnbound Crusader\'s echoes rise from you.',
           DURATION_INFINITE, key='DawnVow'),
@@ -825,10 +802,10 @@ SPELLS += [
      'set': {**HEAL_SET, 'SchoolMask': SHADOW, 'AttributesEx2': 0, 'SpellVisual': 0}},
 
     buff(90950, 'Rune of the Shattered Sun', SUN_ICON,
-         'Your fire spells embed burning Sunshards in their target, up to 5. A frost spell shatters every shard in its '
-         'target: a burst of 25% of its damage per shard to each enemy within 8 yards.',
+         'Fireball embeds a Sunshard; Frostbolt fractures it and breaks its host\'s core; your next Fireball there '
+         'collapses it.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
-    {**harmful(90951, 'Sunshard', 'Ability_Mage_LivingBomb', 'Burning Sunshards: a frost spell shatters them.',
+    {**harmful(90951, 'Sunshard', 'Ability_Mage_LivingBomb', 'A Sunshard: Frostbolt fractures it.',
                DURATION_15S, aura(AURA_DUMMY, 1, 0), FIRE, key='Sunshard')},
     harmful(90952, 'Frozen Core', 'Ability_Mage_FrostFireBolt', 'Movement speed reduced by 40%.',
             DURATION_6S, aura(AURA_MOD_DECREASE_SPEED, -40, 0), FROSTFIRE, key='BrokenCore'),
@@ -893,12 +870,8 @@ LEGEND_MODIFIERS = [
     (90880, ONSLAUGHT_ICON, [("Executioner's Cut", 'Whirling Steel', 'Raking Passage'),
                              ('Overpowering Echo', 'Bloodletting', 'Aftershock'),
                              ('Relentless', 'Battlefield Claim', 'Second Wind')]),
-    (90910, DAWN_ICON, [('Sunburst', 'Focused Dawn', 'Communion'),
-                        ('Sacred Ground', 'Steadfast', "Judgment's Echo"),
-                        ("Dawn's Mercy", 'Swift Dawn', 'Radiant Ward')]),
-    (90970, SUN_ICON, [('Wildfire', 'Spreading Sun', 'Heavy Sun'),
-                       ('Wide Burst', 'Scalding Ground', 'Chain Reaction'),
-                       ('Implosion', 'Second Sunrise', 'Frozen Core')]),
+    # The Dawnbound Crusader's and the Shattered Sun's: the Extended Options' blocks (93275, 93250); 90910-90918 and
+    # 90970-90978 retired.
 ]
 next(spell for spell in SPELLS if spell['id'] == 90923)['set']['Speed'] = 20.0
 next(spell for spell in SPELLS if spell['id'] == 90951)['set']['StackAmount'] = 8
@@ -1207,7 +1180,7 @@ PHOENIX_ICON, HORIZON_ICON, GUIDING_ICON = 'Ability_Rune_PhoenixWake', 'Ability_
 AURA_ADD_PCT_MODIFIER, SPELLMOD_CASTING_TIME, SPELLMOD_COST = 108, 10, 14
 SPELLMOD_DAMAGE = 0
 MAGE_FAMILY = 3
-ARCANE_BLAST_FLAG, FROSTBOLT_FLAG, PYROBLAST_FLAG = 0x20000000, 0x20, 0x400000
+ARCANE_BLAST_FLAG, FROSTBOLT_FLAG, PYROBLAST_FLAG, FIREBALL_FLAG = 0x20000000, 0x20, 0x400000, 0x1
 DURATION_5S, DURATION_8S, DURATION_12S, DURATION_15S = 28, 31, 29, 8
 VISUAL_ARCANE_MISSILE, VISUAL_ICE_LANCE, VISUAL_FIRE_BLAST = 268, 7906, 143
 VISUAL_ARCANE_BARRAGE, VISUAL_ARCANE_HIT, VISUAL_PRAYER_JUMP = 9947, 13635, 9425
@@ -1874,7 +1847,8 @@ SPELLS += [
                 'and Drain Life Soul Siphon.', 10000, cast=CAST_2S),
     {**buff(91521, 'Covenant Armor', COVENANT_ICON,
             'Armor, maximum health and threat increased; damage taken reduced.', DURATION_INFINITE,
-            {1: aura(AURA_MOD_RESISTANCE, 0, 1),          # 50% of the Hero's armor, flat (the script's amount) 2: aura(AURA_MOD_INCREASE_HEALTH_PERCENT, 15, 0),
+            # 1: 50% of the Hero's armor, flat (the script's amount).
+            {1: aura(AURA_MOD_RESISTANCE, 0, 1), 2: aura(AURA_MOD_INCREASE_HEALTH_PERCENT, 15, 0),
              3: aura(AURA_MOD_DAMAGE_PERCENT_TAKEN, -6, ALL_SCHOOLS)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_INFINITE}},
     buff(91522, 'Covenant Pact', COVENANT_ICON, '', DURATION_INFINITE,
@@ -2040,6 +2014,27 @@ EXTENDED_MODIFIERS = [
     (93150, HUNT_ICON, [('Alpha Predator', 'Pack Ravager', 'Ghostfang', 'Marked Alpha', 'Frostfang'),
                         ('Fixed Prey', "Hunter's Command", 'Blood Scent', 'Arcane Hunt', 'Storm Hunt'),
                         ('Final Pounce', 'Frenzied Farewell', 'Parting Howl', 'Marked Finale', 'Healing Companion')]),
+    (93175, WELLSPRING_ICON, [('Flowing Waters', 'Lasting Spring', 'Widening Waters', 'Riptide Spring',
+                                'Renewing Spring'),
+                               ('Deep Current', 'Split Tributary', 'Concentrated Current', 'Tidal Surge',
+                                'Guided Current'),
+                               ('Tidal Shelter', 'Long Reach', 'Renewing Current', 'Jade Current',
+                                'Shielded Spring')]),
+    (93200, THUNDER_ICON, [('Lingering Thunder', 'March of the Storm', 'Rolling Front', 'Stormheart',
+                            'Consecrated Storm'),
+                           ('Reverberating Impact', 'Focused Peal', 'Distant Rumble', 'Flame Echo', 'Frost Echo'),
+                           ('Commanding Thunder', 'Sheltering Reverberation', 'Deafening Impact',
+                            'Revenge of the Storm', 'Tidal Shield')]),
+    (93225, STORM_ICON, [('Persistent Current', 'Branching Current', 'Live Wire', 'Icy Conductor',
+                          'Flame Conductor'),
+                         ('Forked Tempest', 'Closed Circuit', 'Faraday Field', 'Storm Lash', 'Starbound Circuit'),
+                         ('Storm Within', 'Violent Reprisal', 'Distant Conductor', "Storm's Eye", 'Shocking Surge')]),
+    (93250, SUN_ICON, [('Twin Suns', 'Orbiting Sun', 'Solar Anchor', 'Lunar Shard', 'Storm Shard'),
+                       ('Splinterstorm', 'Solar Lance', 'Scalding Ground', 'Frozen Flash', 'Flame Burst'),
+                       ('Implosion', 'Chain Reaction', 'Second Sunrise', 'Shattering Lance', 'Icy Shelter')]),
+    (93275, DAWN_ICON, [('Mercy', 'Retribution', 'Communion', 'Earthen Oath', "Crusader's Flame"),
+                        ('Dawnwave', 'Sunburst', 'Sacred Ground', 'Frostfire Dawn', 'Chain of Grace'),
+                        ('Steadfast', 'Passing the Torch', 'Shared Pilgrimage', 'Renewed Oath', 'Searing Vow')]),
     (93075, STORMREAVER_ICON, [('Eye of the Tempest', 'Forked Cataclysm', 'Rolling Thunder', 'Stormhunter',
                                 'Frozen Front'),
                                ('Thunderhead', 'Chainbreaker', 'White-Hot Conductor', 'Stormhammer',
@@ -2212,9 +2207,50 @@ SPELLS += [
     strike(93165, 'Frostfang', 'Spell_DeathKnight_IceTouch', FROST, VISUAL_ICE_LANCE),
     strike(93166, 'Storm Hunt', 'Spell_Nature_Lightning', NATURE, VISUAL_LIGHTNING_BOLT),
     heal(93167, 'Healing Companion', HUNT_ICON, 'The spectral beast mends your pet.'),
+    # The Wellspring.
+    {**shown(93190, 'Wellspring', 'Spell_Nature_HealingWaveGreater', 'Your Chain Heal here releases a Wellspring.',
+             DURATION_12S), 'set': {**SHOWN, 'DurationIndex': DURATION_12S}},
+    heal(93191, 'Flowing Waters', 'Spell_Nature_HealingWaveGreater', 'The waters flow on.'),
+    periodic_heal(93192, 'Widening Waters', 'Spell_Nature_Rejuvenation', 'Healing every second.', DURATION_6S),
+    heal(93193, 'Riptide Spring', 'Spell_Nature_HealingWaveGreater', 'The spring rises.'),
+    heal(93194, 'Jade Current', 'Ability_Monk_SoothingMists', 'The mist joins the current.'),
+    absorb(93195, 'Shielded Spring', 'Spell_Holy_PowerWordShield', DURATION_4S),
+    # Echoing Thunder.
+    ground(93215, 'Thunderfield', 'Spell_Nature_ThunderClap', 'Thunderfield', DURATION_10S),
+    strike(93216, 'Thunder Burst', 'Spell_Nature_EarthShock', NATURE, VISUAL_THUNDER_HIT),
+    strike(93217, 'Stormheart', 'Spell_Nature_LightningShield', NATURE, VISUAL_LIGHTNING_BOLT),
+    dot(93218, 'Flame Echo', 'Spell_Fire_FlameShock', FIRE, DURATION_6S, 'Fire damage every second.'),
+    strike(93219, 'Flame Echo', 'Spell_Fire_FlameShock', FIRE),
+    strike(93220, 'Frost Echo', 'Spell_DeathKnight_IceTouch', FROST, VISUAL_ICE_LANCE),
+    harmful(93221, 'Frost Echo', 'Spell_DeathKnight_IceTouch', 'Movement speed reduced by 25%.', DURATION_3S,
+            aura(AURA_MOD_DECREASE_SPEED, -25, 0), FROST),
+    absorb(93222, 'Tidal Shield', 'Spell_Nature_SkinofEarth', DURATION_4S),
+    # The Stormbound Conduit.
+    harmful(93240, 'Conductive', 'Spell_Nature_Lightning', 'Chain Lightning on you arcs on.', DURATION_12S,
+            aura(AURA_DUMMY, 1, 0), NATURE),
+    strike(93241, 'Starbound Circuit', 'Spell_Arcane_StarFire', ARCANE, VISUAL_ARCANE_HIT),
+    strike(93242, 'Shocking Surge', 'Spell_Nature_ThunderClap', NATURE, VISUAL_THUNDER_HIT),
+    # The Shattered Sun.
+    harmful(93265, 'Broken Core', 'Ability_Mage_FrostFireBolt', 'Your next Fireball here collapses it.',
+            DURATION_8S, aura(AURA_DUMMY, 1, 0), FROSTFIRE),
+    strike(93266, 'Lunar Shard', 'Spell_Nature_StarFall', ARCANE, VISUAL_ARCANE_HIT),
+    strike(93267, 'Storm Shard', 'Spell_Nature_Lightning', NATURE, VISUAL_LIGHTNING_BOLT),
+    strike(93268, 'Broken Core', 'Spell_Frost_FrostBolt02', FROST, VISUAL_ICE_LANCE),
+    quickening(93269, 'Shattering Lance', 'Spell_Frost_FrostBolt02', 'Your next Fireball casts 15% faster.',
+               DURATION_6S, FIREBALL_FLAG, 15, charges=1),
+    absorb(93270, 'Icy Shelter', 'Spell_Frost_FrostNova', DURATION_6S),
+    ground(93271, 'Solar Anchor', 'Ability_Mage_LivingBomb', 'ScaldingGround', DURATION_10S),
+    # The Dawnbound Crusader.
+    harmful(93290, 'Dawn Mark', 'Spell_Holy_SearingLight', 'Marked by the dawn.', DURATION_10S,
+            aura(AURA_DUMMY, 1, 0), HOLY),
+    strike(93291, "Crusader's Flame", 'Spell_Fire_FlameShock', FIRE, VISUAL_FIRE_BLAST),
+    strike(93292, 'Frostfire Dawn', 'Spell_Frost_FrostBolt02', FROST, VISUAL_ICE_LANCE),
+    {**shown(93293, 'Dawn Afterimage', 'Spell_Holy_SearingLight', 'Your next Dawn Echo strikes again.',
+             DURATION_6S), 'set': {**SHOWN, 'DurationIndex': DURATION_6S}},
 ]
 for _spell in SPELLS:
-    if _spell['id'] in (93015, 93065, 93092, 93093, 93094, 93117, 93165, 93166):
+    if _spell['id'] in (93015, 93065, 93092, 93093, 93094, 93117, 93165, 93166, 93216, 93217, 93219, 93220, 93241,
+                        93242, 93266, 93267, 93268, 93291, 93292):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
 for _spell in SPELLS:
     if _spell['id'] in (91885, 91886, 91912, 91914, 91919):

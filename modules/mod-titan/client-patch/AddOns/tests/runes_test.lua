@@ -222,11 +222,11 @@ for _, id in ipairs({ 25, 26 }) do
         and ById(id).roles[1] == "HEALER", "a healer's rune with its words: rune " .. id)
 end
 local thunder = EmberforgeRunesArt.runes[24]
-check(thunder.built and thunder.slots[3] == "Resonance" and #thunder.texts == 9
+check(thunder.built and thunder.slots[3] == "Resonance" and #thunder.texts == 15
     and ById(24).roles[1] == "TANK", "Art.lua has Echoing Thunder's slots and words; a tank's rune")
 local storm = EmberforgeRunesArt.runes[23]
-check(storm.built and storm.slots[2] == "Lightning Shield" and #storm.texts == 9 and #ById(23).mods == 9,
-    "Art.lua has the Stormbound Conduit's slots (Arcs, Lightning Shield, Surge) and its words")
+check(storm.built and storm.slots[2] == "Circuit" and #storm.texts == 15 and #ById(23).mods == 15,
+    "Art.lua has the Stormbound Conduit's slots (Conductor, Circuit, Shield) and its words")
 -- Astral Convergence, the first rune with its Extended Options: 15 options (5 a slot), the old three first in each.
 local convergence, convergenceArt = ById(40), EmberforgeRunesArt.runes[40]
 check(#convergence.mods == 15 and #convergenceArt.texts == 15 and #convergenceArt.abilities == 15
@@ -253,6 +253,11 @@ for id, firsts in pairs({ [34] = { "Accelerated Thought", "Focused Intention", "
     [46] = { "Sovereign Bond", "Crimson Feast", "Coagulated Throne" },
     [47] = { "Earthen Command", "Deepstone Heart", "Resonant Strikes" },
     [48] = { "Voidforged Plate", "Deep Extraction", "Guardian Manifest" },
+    [23] = { "Persistent Current", "Forked Tempest", "Storm Within" },
+    [24] = { "Lingering Thunder", "Reverberating Impact", "Commanding Thunder" },
+    [25] = { "Flowing Waters", "Deep Current", "Tidal Shelter" },
+    [29] = { "Mercy", "Dawnwave", "Steadfast" },
+    [31] = { "Twin Suns", "Splinterstorm", "Implosion" },
     [26] = { "Flowing Currents", "Comforting Veil", "Effortless Breathing" },
     [33] = { "Alpha Predator", "Fixed Prey", "Final Pounce" } }) do
     local rune, entry = ById(id), EmberforgeRunesArt.runes[id]
@@ -330,7 +335,7 @@ check(browse.offset == 1 and rows[1].rune == browse.list[2], "the mouse wheel sc
 debug.browser.scripts.OnMouseWheel(debug.browser, -30)
 check(browse.offset == 24, "it stops at the end")
 local search = debug.search
-for query, expected in pairs({ ["warlock glaive"] = "21", ["soothing heal"] = "26", ["rogue"] = "32,42",
+for query, expected in pairs({ ["warlock glaive"] = "21", ["soothing heal"] = "25,26", ["rogue"] = "32,42",
     ["kill command"] = "33", ["prayer of mending"] = "38", ["icicle"] = "35" }) do
     search.text = query
     search.scripts.OnTextChanged(search)
@@ -454,7 +459,7 @@ frame:Hide()
 server("R,23,-")
 server("S,10,10,3,23,0,0,0,23,0")
 EmberforgeRunes_Open()
-check(build.nodes[2].label.text == "L I G H T N I N G  S H I E L D" and options[1].name.text == "Forked Tempest",
+check(build.nodes[2].label.text == "C I R C U I T" and options[1].name.text == "Persistent Current",
     "the Stormbound Conduit's slots and modifiers")
 frame:Hide()
 

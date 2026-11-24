@@ -713,6 +713,16 @@ utility or a tradeoff) take one pick each, from three.
     runes.cpp's ModifierNeeds by number. The Paragon's interactions and options: `ParagonJudgment`,
     `ParagonHolyShock`, `ParagonRighteous`, `ParagonAbility`; Bastion of Faith and Weight of the Unworthy need a
     damaging Manifestation (Condemnation or Radiant Judgment). The Stormreaver's: `StormAbility`.
+  - **Extended Options, the redesigns (Wellspring, Echoing Thunder, Stormbound Conduit, Shattered Sun, Dawnbound
+    Crusader)**: markers 93175, 93200, 93225, 93250, 93275 (their 3-choice blocks retired); every pick cleared once by
+    `titan_runes_zz_extended_reset5.sql`. The Wellspring: its mark 93190 on the Earth Shield bearer (`LayWell`,
+    `ReleaseWell`, `WellTouch`, `WellShield`). Echoing Thunder: the Thunderfield ground 93215 (or the small storm
+    about the Hero, 90772, when it follows them; `ChargeThunder`, `InThunderfield`, `ThunderEcho`,
+    `ThunderAbility`). The Stormbound Conduit: Conductive 93240 holds the bolt's hit (`ConduitHit`, `ChainArc`,
+    `ShieldArc`); its aura no longer procs. The Shattered Sun: shards kept in the Hero's state (`Embed`, `Fracture`,
+    `Collapse`, `SunSpell`), Broken Core 93265, Solar Anchor's ground 93271. The Dawnbound Crusader: Dawn Vow 90891
+    taught in Beacon of Light's place (`TeachDawn`), the vow 90892, Judgment's mark 93290 (`DawnAbility`,
+    `DawnEcho`). Extended hit now also on Riptide, Renew, Revenge, Chain Lightning, Lava Lash and Starfire.
   - **Taught abilities replace the Hero's own** (`LegendaryRunes::ReplaceAbility`, runes.h): each is taught only
     while the Hero knows its base (any rank), whose buttons become it; unbound or the base forgotten, it goes and the
     buttons are the base's again. Learning or forgetting a base (`IsReplacedBase`) teaches again

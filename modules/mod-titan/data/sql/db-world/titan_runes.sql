@@ -375,6 +375,12 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-53600, 'spell_titan_rune_extended_hit'),
 (-8056, 'spell_titan_rune_extended_hit'),
 (-23922, 'spell_titan_rune_extended_hit'),
+(-61295, 'spell_titan_rune_extended_hit'),
+(-139, 'spell_titan_rune_extended_hit'),
+(-6572, 'spell_titan_rune_extended_hit'),
+(-421, 'spell_titan_rune_extended_hit'),
+(-60103, 'spell_titan_rune_extended_hit'),
+(-2912, 'spell_titan_rune_extended_hit'),
 (12051, 'spell_titan_rune_evocation');
 
 -- Blizzard's damage (every rank's) with the Splintered Crown: Hailstorm's victims.
@@ -393,14 +399,16 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (91635, 'spell_titan_rune_dot'),
 (91911, 'spell_titan_rune_dot'),
 (91735, 'spell_titan_rune_dot'),
-(91739, 'spell_titan_rune_dot');
+(91739, 'spell_titan_rune_dot'),
+(93218, 'spell_titan_rune_dot');
 
 -- The Extended Options' strikes, heals and shields: shares of the Hero's power and hits, no bonuses of their own.
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 91641, 91660, 91661, 91662, 91663,
     91688, 91689, 91710, 91711, 91736, 91737, 91738, 91740, 91741, 91761, 91762, 91786, 91787, 91788, 91837, 91838,
     91840, 91842, 91860, 91861, 91862, 91863, 91864, 91885, 91886, 91889, 91912, 91914, 91916, 91917, 91919, 93015,
     93016, 93017, 93040, 93041, 93042, 93065, 93066, 93067, 93068, 93092, 93093, 93094, 93115, 93116, 93117, 93118,
-    93140, 93141, 93142, 93165, 93166, 93167);
+    93140, 93141, 93142, 93165, 93166, 93167, 93191, 93192, 93193, 93194, 93195, 93216, 93217, 93219, 93220, 93222,
+    93241, 93242, 93266, 93267, 93268, 93270, 93291, 93292);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91636, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Burn tick'),
 (91637, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Eruption'),
@@ -464,7 +472,25 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (93142, 0, 0, 0, 0, 'Wandering Mist - Earthen Cocoon'),
 (93165, 0, 0, 0, 0, 'Wild Hunt - Frostfang'),
 (93166, 0, 0, 0, 0, 'Wild Hunt - Storm Hunt'),
-(93167, 0, 0, 0, 0, 'Wild Hunt - Healing Companion');
+(93167, 0, 0, 0, 0, 'Wild Hunt - Healing Companion'),
+(93191, 0, 0, 0, 0, 'Wellspring - Flowing Waters'),
+(93192, 0, 0, 0, 0, 'Wellspring - Widening Waters'),
+(93193, 0, 0, 0, 0, 'Wellspring - Riptide Spring'),
+(93194, 0, 0, 0, 0, 'Wellspring - Jade Current'),
+(93195, 0, 0, 0, 0, 'Wellspring - Shielded Spring'),
+(93216, 0, 0, 0, 0, 'Echoing Thunder - Thunder Burst'),
+(93217, 0, 0, 0, 0, 'Echoing Thunder - Stormheart'),
+(93219, 0, 0, 0, 0, 'Echoing Thunder - Flame Echo tick'),
+(93220, 0, 0, 0, 0, 'Echoing Thunder - Frost Echo'),
+(93222, 0, 0, 0, 0, 'Echoing Thunder - Tidal Shield'),
+(93241, 0, 0, 0, 0, 'Stormbound Conduit - Starbound Circuit'),
+(93242, 0, 0, 0, 0, 'Stormbound Conduit - Shocking Surge'),
+(93266, 0, 0, 0, 0, 'Shattered Sun - Lunar Shard'),
+(93267, 0, 0, 0, 0, 'Shattered Sun - Storm Shard'),
+(93268, 0, 0, 0, 0, 'Shattered Sun - Broken Core (Ice Lance)'),
+(93270, 0, 0, 0, 0, 'Shattered Sun - Icy Shelter'),
+(93291, 0, 0, 0, 0, 'Dawnbound Crusader - Crusader''s Flame'),
+(93292, 0, 0, 0, 0, 'Dawnbound Crusader - Frostfire Dawn');
 
 -- Their damage over time: Lunar Wound, Astral Rupture.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';

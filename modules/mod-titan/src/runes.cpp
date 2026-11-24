@@ -172,7 +172,10 @@ namespace
         SPELL_STORMBOUND_ARC            = 90752,    // a secondary arc's damage
         SPELL_STORMBOUND_ARC_VISUAL     = 90753,    // its bolt, cast by the enemy it leaves
         SPELL_STORMBOUND_RETALIATION    = 90754,    // a Lightning Shield retaliation the rune makes
-        SPELL_STORM_MODIFIER_FIRST      = 90760,    // + slot * 3 + choice
+        SPELL_STORM_MODIFIER_FIRST      = 93225,    // + slot * 5 + choice (90760-90768 retired)
+        SPELL_CONDUCTIVE                = 93240,    // on an enemy: the Lightning Bolt hit's damage its amount
+        SPELL_STARBOUND_CIRCUIT         = 93241,
+        SPELL_SHOCKING_SURGE            = 93242,
 
         SPELL_RUNE_ECHOING_THUNDER      = 90770,
         SPELL_THUNDERFIELD_MARCH        = 90772,    // the charge: a small storm about the Hero
@@ -180,14 +183,28 @@ namespace
         SPELL_THUNDER_ECHO_BURST        = 90775,    // a burst about the Shield Slam target, its look
         SPELL_SHELTERING_REVERBERATION  = 90776,
         SPELL_DEAFENING_IMPACT          = 90777,
-        SPELL_THUNDER_MODIFIER_FIRST    = 90780,    // + slot * 3 + choice
+        SPELL_THUNDER_MODIFIER_FIRST    = 93200,    // + slot * 5 + choice (90780-90788 retired)
+        SPELL_THUNDERFIELD              = 93215,    // the field laid on the ground (its look)
+        SPELL_THUNDER_BURST             = 93216,    // Earth Shock in the field
+        SPELL_STORMHEART                = 93217,
+        SPELL_FLAME_ECHO                = 93218,    // its tick 93219
+        SPELL_FLAME_ECHO_TICK           = 93219,
+        SPELL_FROST_ECHO                = 93220,
+        SPELL_FROST_ECHO_SLOW           = 93221,
+        SPELL_TIDAL_SHIELD              = 93222,
 
         SPELL_RUNE_WELLSPRING           = 90790,
         SPELL_WELLSPRING_HEAL           = 90792,    // the additional jump
         SPELL_TIDAL_SHELTER             = 90793,
         SPELL_RENEWING_CURRENT          = 90794,
         SPELL_WELLSPRING_JUMP           = 90795,    // the jump's bolt, its look
-        SPELL_WELLSPRING_MODIFIER_FIRST = 90800,    // + slot * 3 + choice
+        SPELL_WELLSPRING_MODIFIER_FIRST = 93175,    // + slot * 5 + choice (90800-90808 retired)
+        SPELL_WELLSPRING_MARK           = 93190,    // the Wellspring on the Hero's Earth Shield bearer
+        SPELL_FLOWING_WATERS            = 93191,
+        SPELL_WIDENING_WATERS           = 93192,
+        SPELL_RIPTIDE_SPRING            = 93193,
+        SPELL_JADE_CURRENT              = 93194,
+        SPELL_SHIELDED_SPRING           = 93195,
         SPELL_RUNE_WANDERING_MIST       = 90810,
         SPELL_WANDERING_MIST            = 90811,
         SPELL_LESSER_ENVELOPING_MIST    = 90812,
@@ -224,8 +241,8 @@ namespace
         SPELL_ONSLAUGHT_MODIFIER_FIRST  = 90880,    // + slot * 3 + choice
 
         SPELL_RUNE_DAWNBOUND_CRUSADER   = 90890,
-        SPELL_DAWN_VOW                  = 90891,    // the first draft's action and vow: unlearned, removed
-        SPELL_DAWN_VOWED                = 90892,
+        SPELL_DAWN_VOW                  = 90891,    // the vow (taught in Beacon of Light's place)
+        SPELL_DAWN_VOWED                = 90892,    // on the vowed ally
         SPELL_DAWN_ECHO_HEAL            = 90894,
         SPELL_DAWN_ECHO_DAMAGE          = 90895,
         SPELL_DAWN_BOLT                 = 90896,    // its look: Holy Shock's, harmful
@@ -233,7 +250,12 @@ namespace
         SPELL_SUNBURST                  = 90898,    // Sunburst's look
         SPELL_SACRED_GROUND             = 90899,
         SPELL_RADIANT_WARD              = 90900,
-        SPELL_DAWN_MODIFIER_FIRST       = 90910,    // + slot * 3 + choice
+        SPELL_DAWN_MODIFIER_FIRST       = 93275,    // + slot * 5 + choice (90910-90918 retired)
+        SPELL_DAWN_MARK                 = 93290,    // Judgment's mark
+        SPELL_CRUSADERS_FLAME           = 93291,
+        SPELL_FROSTFIRE_DAWN            = 93292,
+        SPELL_DAWN_AFTERIMAGE           = 93293,    // Steadfast, on the vowed ally
+        SPELL_BEACON_OF_LIGHT           = 53563,
 
         SPELL_RUNE_HOLLOW_CONGREGATION  = 90920,
         SPELL_HOLLOW_ECHO               = 90921,    // on the echo: its look, no threat
@@ -252,7 +274,15 @@ namespace
         SPELL_COLLAPSE                  = 90955,
         SPELL_COLLAPSE_LOOK             = 90956,
         SPELL_SCALDING_GROUND           = 90957,
-        SPELL_SUN_MODIFIER_FIRST        = 90970,    // + slot * 3 + choice
+        SPELL_SUN_MODIFIER_FIRST        = 93250,    // + slot * 5 + choice (90970-90978 retired)
+        SPELL_BROKEN_CORE               = 93265,
+        SPELL_LUNAR_SHARD               = 93266,
+        SPELL_STORM_SHARD               = 93267,
+        SPELL_CORE_LANCE                = 93268,    // Ice Lance on a Broken Core
+        SPELL_SHATTERING_LANCE          = 93269,    // the next Fireball's cast 15% quicker
+        SPELL_ICY_SHELTER               = 93270,
+        SPELL_SOLAR_ANCHOR              = 93271,    // the anchored shards' ground
+        SPELL_ICE_BARRIER               = 11426,    // first rank
 
         SPELL_RUNE_SPECTRAL_BLADE       = 90980,
         SPELL_PHANTOM_STRIKE            = 90981,    // cannot crit
@@ -642,6 +672,7 @@ namespace
         SPELL_ENVELOPING_MIST       = 90303,
         SPELL_THUNDER_CLAP          = 6343,         // first ranks
         SPELL_SHIELD_SLAM           = 23922,
+        SPELL_REVENGE               = 6572,
         SPELL_LIGHTNING_BOLT        = 403,          // first ranks
         SPELL_CHAIN_LIGHTNING       = 421,
         SPELL_LIGHTNING_SHIELD      = 324,
@@ -700,62 +731,115 @@ namespace
     // The Stormbound Conduit's modifiers: slot (0 Arcs, 1 Lightning Shield, 2 Surge) x 3 + choice.
     enum StormModifier : uint8
     {
-        MOD_FORKED_TEMPEST, MOD_CLOSED_CIRCUIT, MOD_FARADAY_FIELD,
-        MOD_LIVE_WIRE, MOD_STORM_WITHIN, MOD_DISTANT_CONDUCTOR,
-        MOD_CHAIN_SURGE, MOD_STATIC_WARD, MOD_OVERCHARGE,
+        MOD_PERSISTENT_CURRENT, MOD_BRANCHING_CURRENT, MOD_LIVE_WIRE, MOD_ICY_CONDUCTOR, MOD_STORM_FLAME_CONDUCTOR,
+        MOD_FORKED_TEMPEST, MOD_CLOSED_CIRCUIT, MOD_FARADAY_FIELD, MOD_STORM_LASH, MOD_STARBOUND_CIRCUIT,
+        MOD_STORM_WITHIN, MOD_VIOLENT_REPRISAL, MOD_DISTANT_CONDUCTOR, MOD_STORMS_EYE, MOD_SHOCKING_SURGE,
     };
 
-    // The Stormbound Conduit's tuning: Lightning Bolt arcs to 2 enemies within 10 yards of its target for 30% of its
-    // damage each; a Lightning Shield retaliation to 1 for 50%. An arc never arcs again.
-    constexpr float ARC_RANGE = 10.0f, FARADAY_RANGE = 15.0f, FARADAY_ARCS = 1.1f;
-    constexpr float BOLT_ARC_SHARE = 0.3f, SHIELD_ARC_SHARE = 0.5f, CHAIN_ARC_SHARE = 0.2f;
-    constexpr std::size_t BOLT_ARCS = 2, FORKED_ARCS = 3, SHIELD_ARCS = 1, LIVE_WIRE_ARCS = 2;
-    constexpr float CLOSED_CIRCUIT_SHARE = 0.6f, OVERCHARGE = 1.5f;
-    constexpr uint32 STORM_WITHIN_MS = 3000;
-    constexpr float STORM_WITHIN_RANGE = 8.0f;
-    constexpr float STATIC_WARD_PCT = 1.0f, STATIC_WARD_CAP_PCT = 10.0f;     // of maximum health
-    constexpr int32 STATIC_WARD_MS = 8000;
+    // The Stormbound Conduit's tuning (its Extended Options, a redesign): Lightning Bolt (the Hero's own) leaves
+    // Conductive on its target for 6 sec, remembering the hit. Chain Lightning hitting a Conductive enemy sends one
+    // arc (once a cast) to another enemy within 10 yards for 30% of that Lightning Bolt hit; none: back into it for
+    // half. A Lightning Shield retaliation arcs to another Conductive enemy within 10 yards for 50% of it (3 sec
+    // apart); Earth Shock on a Conductive enemy arcs 20% of spell power to another (half into it alone; 8 sec apart).
+    // An arc never arcs again.
+    constexpr float ARC_RANGE = 10.0f, FARADAY_RANGE = 15.0f, CHAIN_ARC_SHARE = 0.3f, ALONE_SHARE = 0.5f;
+    constexpr float SHIELD_ARC_SHARE = 0.5f, EARTH_ARC_POWER = 0.2f;
+    constexpr int32 CONDUCTIVE_MS = 6000, PERSISTENT_MS = 12000;
+    constexpr uint32 CHAIN_ARC_EVERY_MS = 1000, SHIELD_ARC_EVERY_MS = 3000, EARTH_ARC_EVERY_MS = 8000;
+    // Its options: Persistent Current (12 sec, an application's first arc 15% more), Branching Current (the bolt
+    // also on one enemy within 10 yards), Live Wire (retaliations 15% more, Conductive on the attacker; not with
+    // Storm Within), Icy Conductor (Frostbolt leaves it too, 15% more on a Conductive enemy), Flame Conductor
+    // (Lightning Bolt on their Flame Shock target: one more enemy, Flame Shock 2 sec longer, 6 sec an application);
+    // Forked Tempest (2 enemies, 65% each), Closed Circuit (back into it, whole), Faraday Field (15 yards, the first
+    // arc each 8 sec 20% more), Storm Lash (Lava Lash: 25% of attack power, 6 sec apart), Starbound Circuit
+    // (Starfire: 25% of spell power as Arcane, 8 sec apart); Storm Within (a retaliation at the nearest Conductive
+    // enemy within 8 yards every 3 sec in combat, a charge each), Violent Reprisal (the shield's arcs 40% more),
+    // Distant Conductor (Lightning Bolt: a retaliation at its target, a charge, 3 sec apart), Storm's Eye (Chain Heal:
+    // the next Lightning Bolt within 6 sec 15% more), Shocking Surge (Thunder Clap on a Conductive enemy: 20% of
+    // spell power to up to 5 within 8 yards, 8 sec apart).
+    constexpr float PERSISTENT_FIRST = 1.15f, LIVE_WIRE_MORE = 1.15f, ICY_CONDUCTOR = 1.15f, FORKED_SHARE = 0.65f;
+    constexpr float FARADAY_MORE = 1.2f, STORM_LASH_AP = 0.25f, STARBOUND_POWER = 0.25f, VIOLENT_REPRISAL = 1.4f;
+    constexpr float STORMS_EYE = 1.15f, SHOCKING_POWER = 0.2f, SHOCKING_RADIUS = 8.0f, STORM_WITHIN_RANGE = 8.0f;
+    constexpr int32 FLAME_CONDUCTOR_MS = 2000, FLAME_CONDUCTOR_MOST_MS = 6000, STORMS_EYE_MS = 6000;
+    constexpr std::size_t FORKED_ARCS = 2, SHOCKING_TARGETS = 5;
+    constexpr uint32 FARADAY_EVERY_MS = 8000, STORM_LASH_EVERY_MS = 6000, STARBOUND_EVERY_MS = 8000;
+    constexpr uint32 STORM_WITHIN_MS = 3000, DISTANT_EVERY_MS = 3000, SHOCKING_EVERY_MS = 8000;
     constexpr uint32 LIGHTNING_SHIELD_FAMILY_FLAG = 0x400;      // SpellFamilyFlags0
 
-    // Echoing Thunder's modifiers: slot (0 Charge, 1 Echo, 2 Resonance) x 3 + choice.
+    // Echoing Thunder's modifiers (its Extended Options, a redesign): slot (0 Field, 1 Echo, 2 Resonance) x 5 +
+    // choice.
     enum ThunderModifier : uint8
     {
-        MOD_DOUBLE_CHARGE, MOD_LINGERING_CHARGE, MOD_COMMANDING_THUNDER,
-        MOD_FOCUSED_PEAL, MOD_DISTANT_RUMBLE, MOD_DEAFENING_IMPACT,
-        MOD_SHELTERING_REVERBERATION, MOD_BATTLE_RHYTHM, MOD_ROLLING_THUNDER,
+        MOD_LINGERING_THUNDER, MOD_MARCH_OF_THE_STORM, MOD_ROLLING_FRONT, MOD_STORMHEART, MOD_CONSECRATED_STORM,
+        MOD_REVERBERATING_IMPACT, MOD_FOCUSED_PEAL, MOD_DISTANT_RUMBLE, MOD_FLAME_ECHO, MOD_FROST_ECHO,
+        MOD_COMMANDING_THUNDER, MOD_SHELTERING_REVERBERATION, MOD_DEAFENING_IMPACT, MOD_REVENGE_OF_THE_STORM,
+        MOD_TIDAL_SHIELD,
     };
 
-    // Echoing Thunder's tuning: Thunder Clap charges the Hero for 8 sec (20 with Lingering Charge); the next Shield
-    // Slam releases the echo: 42% of its damage before mitigation to each enemy within 6 yards of its target (up to
-    // 5).
-    constexpr int32 CHARGE_MS = 8000, LINGERING_CHARGE_MS = 20000;
-    constexpr uint8 DOUBLE_CHARGES = 2;
-    constexpr float ECHO_SHARE = 0.42f, ECHO_RADIUS = 6.0f, DISTANT_RADIUS = 10.0f, FOCUSED_ECHO = 1.6f;
-    constexpr std::size_t ECHO_TARGETS = 5;
-    constexpr float COMMANDING_THREAT = 1.0f;                           // twice the threat
-    constexpr float SHELTERING_PCT = 3.0f, SHELTERING_CAP_PCT = 15.0f;  // of maximum health, an enemy hit
-    constexpr int32 SHELTERING_MS = 6000, DEAFENING_MS = 3000;
-    constexpr int32 RHYTHM_RAGE = 20;                                   // 2 rage an enemy hit
-    constexpr int32 ROLLING_MS = 1000;                                  // off Thunder Clap's cooldown, an enemy hit
+    // Echoing Thunder's tuning: Thunder Clap lays a Thunderfield where the Hero stands for 6 sec (8 yards about).
+    // Standing in it, Shield Slam releases a Thunder Echo in a 90 degree cone 10 yards toward its target: 42% of the
+    // slam's damage before mitigation, Nature, to up to 5 enemies; 2 sec apart. Revenge in the field: the next echo
+    // 20% more (6 sec); Earth Shock on an enemy in it: 20% of attack power as Nature to up to 4 within 6 yards of
+    // it, 8 sec apart.
+    constexpr int32 THUNDERFIELD_MS = 6000, LINGERING_FIELD_MS = 9000, REVENGE_CHARGE_MS = 6000;
+    constexpr float THUNDERFIELD_RADIUS = 8.0f, ECHO_SHARE = 0.42f, ECHO_CONE = 10.0f, ECHO_HALF_ARC = float(M_PI) / 4;
+    constexpr std::size_t ECHO_TARGETS = 5, THUNDER_BURST_TARGETS = 4;
+    constexpr uint32 ECHO_EVERY_MS = 2000, THUNDER_BURST_EVERY_MS = 8000;
+    constexpr float REVENGE_ECHO = 1.2f, THUNDER_BURST_AP = 0.2f, THUNDER_BURST_RADIUS = 6.0f;
+    // Its options: Lingering Thunder (9 sec, the field's first echo 15% more), March of the Storm (the field goes
+    // with the Hero, 10% more), Rolling Front (laid under their enemy within 10 yards, 20% more), Stormheart (goes
+    // with them; with Lightning Shield, 20% of spell power as Nature to the slam's target), Consecrated Storm (in
+    // their Consecration too: 20% more, 30% more threat); Reverberating Impact (a 6 yard burst about the target),
+    // Focused Peal (the target alone, 60% more), Distant Rumble (15 yards, 30% more beyond 10), Flame Echo (their
+    // Flame Shock target: 30% of it over 6 sec), Frost Echo (their Frost Fever target: 20% of attack power as Frost,
+    // 25% slower for 3 sec); Commanding Thunder (twice the threat, the target 10% more), Sheltering Reverberation (3%
+    // of maximum health an enemy hit, 15% at most, 6 sec), Deafening Impact (30% slower for 3 sec; their Thunder
+    // Clap's victims 20% more), Revenge of the Storm (Revenge's echo 40% more, and 10 Rage, 8 sec apart), Tidal
+    // Shield (their Earth Shield on them: 30% of its last heal as a 4 sec absorb, 8 sec apart).
+    constexpr float LINGERING_ECHO = 1.15f, MARCH_ECHO = 1.1f, ROLLING_FRONT_ECHO = 1.2f, ROLLING_FRONT_RANGE = 10.0f;
+    constexpr float STORMHEART_POWER = 0.2f, CONSECRATED_ECHO = 1.2f, CONSECRATED_THREAT = 0.3f;
+    constexpr float REVERBERATING_RADIUS = 6.0f, FOCUSED_ECHO = 1.6f, DISTANT_CONE = 15.0f, DISTANT_MORE = 1.3f;
+    constexpr float FLAME_ECHO_SHARE = 0.3f, FROST_ECHO_AP = 0.2f, COMMANDING_THREAT = 1.0f, COMMANDING_MORE = 1.1f;
+    constexpr float SHELTERING_PCT = 3.0f, SHELTERING_CAP_PCT = 15.0f, DEAFENED_MORE = 1.2f;
+    constexpr float STORM_REVENGE_ECHO = 1.4f, TIDAL_SHIELD_SHARE = 0.3f;
+    constexpr int32 SHELTERING_MS = 6000, DEAFENING_MS = 3000, FLAME_ECHO_MS = 6000, FROST_ECHO_MS = 3000;
+    constexpr int32 STORM_REVENGE_RAGE = 100, TIDAL_SHIELD_MS = 4000;      // Rage in tenths
+    constexpr uint32 STORM_REVENGE_EVERY_MS = 8000, TIDAL_SHIELD_EVERY_MS = 8000;
 
-    // The Wellspring's modifiers: slot (0 Spring, 1 Earth, 2 Undertow) x 3 + choice.
+    // The Wellspring's modifiers (its Extended Options, a redesign): slot (0 Spring, 1 Current, 2 Undertow) x 5 +
+    // choice.
     enum WellspringModifier : uint8
     {
-        MOD_SPLIT_TRIBUTARY, MOD_DEEP_CURRENT, MOD_CONCENTRATED_CURRENT,
-        MOD_FLOWING_WATERS, MOD_BEDROCK, MOD_RENEWED_SHIELD,
-        MOD_TIDAL_SHELTER, MOD_RENEWING_CURRENT, MOD_LONG_REACH,
+        MOD_FLOWING_WATERS, MOD_LASTING_SPRING, MOD_WIDENING_WATERS, MOD_RIPTIDE_SPRING, MOD_RENEWING_SPRING,
+        MOD_DEEP_CURRENT, MOD_SPLIT_TRIBUTARY, MOD_CONCENTRATED_CURRENT, MOD_TIDAL_SURGE, MOD_GUIDED_CURRENT,
+        MOD_TIDAL_SHELTER, MOD_LONG_REACH, MOD_RENEWING_CURRENT, MOD_JADE_CURRENT, MOD_SHIELDED_SPRING,
     };
 
-    // The Wellspring's tuning: Chain Heal jumps once more from its last target, 40% of its first heal, to the most
-    // injured ally within 12.5 yards; it heals the Hero's Earth Shield wearer 20% more.
-    constexpr float WELLSPRING_SHARE = 0.4f, SPLIT_SHARE = 0.25f;
-    constexpr float CHAIN_HEAL_JUMP = 12.5f, LONG_REACH = 20.0f;
-    constexpr float DEEP_CURRENT = 1.4f, DEEP_CURRENT_BELOW_PCT = 50.0f, CONCENTRATED_CURRENT = 1.2f;
-    constexpr float WEARER_BONUS = 1.2f, BEDROCK_BONUS = 1.4f, FLOWING_SHARE = 0.5f;
+    // The Wellspring's tuning: Chain Heal (the Hero's own cast) healing their Earth Shield bearer lays a Wellspring
+    // on them for 8 sec; a later Chain Heal reaching it releases one more heal, 40% of what the bearer was healed
+    // (before overhealing), to the most injured other ally within 12.5 yards (none: 20% to the bearer); once a cast,
+    // never the Wellspring it just laid. Chain Heal heals the bearer 20% more. Earth Shield's heal on the bearer
+    // renews the Wellspring; a Riptide heal on them makes the next release 20% stronger (8 sec).
+    constexpr float WELLSPRING_SHARE = 0.4f, BEARER_SHARE = 0.2f, WEARER_BONUS = 1.2f, WELL_RIPTIDE = 1.2f;
+    constexpr float WELL_RANGE = 12.5f, WIDENING_RANGE = 18.0f, LONG_REACH = 20.0f;
+    constexpr int32 WELL_MS = 8000, LASTING_WELL_MS = 12000, WELL_CHARGE_MS = 8000;
+    // Its options: Flowing Waters (the shield's renewal: 20% of healing power to the most injured within 8 yards, 6
+    // sec apart), Lasting Spring (12 sec, 10% more), Widening Waters (18 yards, and 10% of healing power over 6 sec),
+    // Riptide Spring (Riptide on the bearer renews it and heals another within 10 yards for 25%, 8 sec apart),
+    // Renewing Spring (Renew on the bearer renews it, the next release 20% more); Deep Current (40% more below half
+    // health, else 10%), Split Tributary (2 allies, 65% each), Concentrated Current (one, 30% more), Tidal Surge (on
+    // their Riptide: 30% more, Riptide 2 sec longer, 6 sec an application), Guided Current (Holy Shock's heal on the
+    // bearer: the next release within 8 sec one more ally for 40%); Tidal Shelter (25% as a 4 sec absorb), Long Reach
+    // (20 yards, 10% more), Renewing Current (25% over 4 sec), Jade Current (their Soothing Mist there: 25% of a
+    // tick), Shielded Spring (their Power Word: Shield there: 15% as a 4 sec absorb).
+    constexpr float FLOWING_POWER = 0.2f, FLOWING_RANGE_WELL = 8.0f, LASTING_SPRING = 1.1f, WIDENING_POWER = 0.1f;
+    constexpr float RIPTIDE_SPRING_POWER = 0.25f, RIPTIDE_SPRING_RANGE = 10.0f, RENEWING_SPRING = 1.2f;
+    constexpr float DEEP_CURRENT = 1.4f, DEEP_CURRENT_ABOVE = 1.1f, DEEP_CURRENT_BELOW_PCT = 50.0f;
+    constexpr float SPLIT_SHARE = 0.65f, CONCENTRATED_CURRENT = 1.3f, TIDAL_SURGE = 1.3f, GUIDED_SHARE = 0.4f;
+    constexpr float UNDERTOW_SHARE = 0.25f, LONG_REACH_MORE = 1.1f, JADE_CURRENT_SHARE = 0.25f, SHIELDED_SHARE = 0.15f;
     constexpr std::size_t SPLIT_ALLIES = 2;
-    constexpr float UNDERTOW_SHARE = 0.2f;                      // of the jump's effective healing
-    constexpr int32 UNDERTOW_TICKS = 4;
-    constexpr uint32 JUMP_DELAY_MS = 100;                       // after Chain Heal's first hit: its chain done
+    constexpr int32 UNDERTOW_TICKS = 4, WIDENING_TICKS = 6, TIDAL_SURGE_MS = 2000, TIDAL_SURGE_MOST_MS = 6000;
+    constexpr uint32 FLOWING_EVERY_MS = 6000, RIPTIDE_SPRING_EVERY_MS = 8000, GUIDED_MS = 8000;
 
     // The Wandering Mist's modifiers: slot (0 Mistflow, 1 Technique, 2 Approach) x 5 + choice (its Extended Options:
     // Jade Shelter moved to the third slot, Lingering Mist and Deep Breath gone).
@@ -843,20 +927,39 @@ namespace
     // The Dawnbound Crusader's modifiers: slot (0 Echo, 1 Light, 2 Grace) x 3 + choice.
     enum DawnModifier : uint8
     {
-        MOD_SUNBURST, MOD_FOCUSED_DAWN, MOD_COMMUNION,
-        MOD_SACRED_GROUND, MOD_STEADFAST, MOD_JUDGMENTS_ECHO,
-        MOD_DAWNS_MERCY, MOD_SWIFT_DAWN, MOD_RADIANT_WARD,
+        MOD_MERCY, MOD_RETRIBUTION, MOD_COMMUNION, MOD_EARTHEN_OATH, MOD_CRUSADERS_FLAME,
+        MOD_DAWNWAVE, MOD_SUNBURST, MOD_SACRED_GROUND, MOD_FROSTFIRE_DAWN, MOD_CHAIN_OF_GRACE,
+        MOD_STEADFAST, MOD_PASSING_THE_TORCH, MOD_SHARED_PILGRIMAGE, MOD_RENEWED_OATH, MOD_SEARING_VOW,
     };
 
-    // The Dawnbound Crusader's tuning: an echo is half of what set it off, 0.75 sec later.
-    constexpr float DAWN_SHARE = 0.5f, FOCUSED_DAWN = 1.4f, COMMUNION_SHARE = 0.7f;   // Communion: 35% each way
-    constexpr uint32 DAWN_DELAY_MS = 750;
-    constexpr float DAWN_REACH = 15.0f, SUNBURST_RADIUS = 8.0f, SUNBURST_SHARE = 0.4f;
-    constexpr float SACRED_RADIUS = 8.0f, SACRED_SHARE = 0.25f;     // Consecration's ground
-    constexpr uint32 SACRED_MS = 4000;
-    constexpr float STEADFAST_SHARE = 0.5f, MERCY_SHARE = 0.2f, RADIANT_SHARE = 0.25f, JUDGMENT_LEVEL = 5.0f;
-    constexpr int32 SWIFT_DAWN_MS = 500, RADIANT_MS = 8000;
-    constexpr std::size_t DAWN_TARGETS = 5;
+    // The Dawnbound Crusader's tuning (its Extended Options, a redesign): Dawn Vow (in Beacon of Light's place; 6
+    // sec) vows the Hero or an ally within 40 yards (none: the Hero). Judgment marks its enemy for 10 sec. Crusader
+    // Strike on the marked enemy, or Holy Shock, sends a Dawn Echo from the vowed ally (3 sec apart): it heals the
+    // most injured ally within 10 yards of them for 35% of the Hero's power (the higher of their Holy spell power
+    // and half their attack power), unless a Doctrine (the first slot) says otherwise. An echo never echoes.
+    constexpr float DAWN_POWER = 0.35f, DAWN_REACH = 10.0f, DAWN_STRIKE_REACH = 20.0f;
+    constexpr int32 DAWN_MARK_MS = 10000;
+    constexpr uint32 DAWN_EVERY_MS = 3000;
+    // Its options: Mercy (heals 50%), Retribution (strikes the marked enemy within 20 yards of the vow for 45%),
+    // Communion (by turns a 35% heal and a 30% strike), Earthen Oath (their Earth Shield on the vow: heals 40% and
+    // shields the vow for 10%, 4 sec), Crusader's Flame (strikes the marked enemy for 35%; their Flame Shock on it,
+    // 15% as Fire too); Dawnwave (from the vow toward the marked enemy: up to 3 on the way, half each), Sunburst (2
+    // more within 8 yards of the vow, 40%), Sacred Ground (4 yards at the vow, 4 sec: one injured ally healed for 10%
+    // a second), Frostfire Dawn (Frostbolt on the marked enemy: the next strike 20% as Frost, 6 sec), Chain of Grace
+    // (Chain Heal on the vow: the next heal one more ally for 40%, 6 sec); Steadfast (Holy Shock: the vow's
+    // afterimage, 6 sec: their next echo again at 30%), Passing the Torch (a new vow healed for 30%), Shared
+    // Pilgrimage (the Hero or the vow 8 yards on: the next echo one more for 40%), Renewed Oath (an echo with their
+    // Renew on the vow: 2 sec longer, 6 sec an application, 6 sec apart), Searing Vow (Lava Lash on the marked enemy
+    // sends an echo).
+    constexpr float MERCY_POWER = 0.5f, RETRIBUTION_POWER = 0.45f, COMMUNION_HEAL = 0.35f, COMMUNION_STRIKE = 0.3f;
+    constexpr float EARTHEN_OATH_POWER = 0.4f, EARTHEN_OATH_WARD = 0.1f, CRUSADERS_FLAME_POWER = 0.35f;
+    constexpr float CRUSADERS_FIRE_POWER = 0.15f, DAWNWAVE_SHARE = 0.5f, DAWNWAVE_HALF_WIDTH = 3.0f;
+    constexpr float SUNBURST_RADIUS = 8.0f, SUNBURST_SHARE = 0.4f, SACRED_RADIUS = 4.0f, SACRED_POWER = 0.1f;
+    constexpr float FROSTFIRE_DAWN_POWER = 0.2f, DAWN_GRACE_SHARE = 0.4f, STEADFAST_SHARE = 0.3f, TORCH_POWER = 0.3f;
+    constexpr float PILGRIMAGE_SHARE = 0.4f, PILGRIMAGE_DISTANCE = 8.0f;
+    constexpr std::size_t DAWNWAVE_TARGETS = 3, SUNBURST_TARGETS = 2;
+    constexpr int32 EARTHEN_OATH_MS = 4000, AFTERIMAGE_MS = 6000, OATH_MS = 2000, OATH_MOST_MS = 6000;
+    constexpr uint32 SACRED_MS = 4000, DAWN_CHARGE_MS = 6000, OATH_EVERY_MS = 6000;
 
     // The Hollow Congregation's modifiers (its Extended Options, a redesign): slot (0 Congregation, 1 Sermon, 2
     // Command) x 5 + choice. The Sermon's first three are the ones it had; the other two slots are new (their picks
@@ -898,21 +1001,43 @@ namespace
     // The Shattered Sun's modifiers: slot (0 Formation, 1 Fracture, 2 Collapse) x 3 + choice.
     enum SunModifier : uint8
     {
-        MOD_WILDFIRE, MOD_SPREADING_SUN, MOD_HEAVY_SUN,
-        MOD_WIDE_BURST, MOD_SCALDING_GROUND, MOD_CHAIN_REACTION,
-        MOD_IMPLOSION, MOD_SECOND_SUNRISE, MOD_FROZEN_CORE,
+        MOD_TWIN_SUNS, MOD_ORBITING_SUN, MOD_SOLAR_ANCHOR, MOD_LUNAR_SHARD, MOD_STORM_SHARD,
+        MOD_SPLINTERSTORM, MOD_SOLAR_LANCE, MOD_SCALDING_GROUND, MOD_FROZEN_FLASH, MOD_FLAME_BURST,
+        MOD_IMPLOSION, MOD_CHAIN_REACTION, MOD_SECOND_SUNRISE, MOD_SHATTERING_LANCE, MOD_ICY_SHELTER,
     };
 
-    // The Shattered Sun's tuning: a fire spell embeds a Sunshard in its target, stacking to 5 (8 with Heavy Sun); a
-    // frost spell on it shatters them all, 25% of its damage per shard (the Hero's floor at least: level x 4 and 40%
-    // of their spell power) to each enemy within 8 yards.
-    constexpr uint8 MAX_SHARDS = 5, HEAVY_SHARDS = 8;
-    constexpr std::size_t SPREAD = 2, FRACTURE_TARGETS = 10;
-    constexpr float SPREAD_RANGE = 8.0f, SUN_LEVEL = 4.0f, SUN_POWER = 0.4f, SHARD_SHARE = 0.25f;
-    constexpr int32 SUNSHARD_MS = 15000, FROZEN_CORE_MS = 3000;
-    constexpr float FRACTURE_RADIUS = 8.0f, WIDE_RADIUS = 12.0f, CHAIN_RADIUS = 10.0f, CHAIN_SHARE = 0.5f;
-    constexpr float IMPLOSION = 1.4f, SCALDING_RADIUS = 6.0f, SCALDING_SHARE = 0.15f, SUNRISE_SHARE = 0.4f;
-    constexpr uint32 SCALDING_MS = 4000, SUNRISE_DELAY_MS = 2000;
+    // The Shattered Sun's tuning (its Extended Options, a redesign): Fireball (the Hero's own) embeds a Sunshard in
+    // its target for 10 sec, in 2 enemies at most (a new one replaces the oldest). Frostbolt on a shard fractures it:
+    // 45% of the Hero's Frostfire power to the host, 25% to up to 4 enemies within 6 yards of it, and the host's
+    // Broken Core (8 sec): their next Fireball there collapses it for 40%. Ice Lance on a Broken Core: 20% as Frost,
+    // once a Core; a fracture on their Flame Shock target makes it 2 sec longer (6 sec an application).
+    constexpr std::size_t SHARD_HOSTS = 2, TWIN_HOSTS = 3, FRACTURE_TARGETS = 4, SUN_TARGETS = 5;
+    constexpr int32 SUNSHARD_MS = 10000, BROKEN_CORE_MS = 8000, SUN_FLAME_MS = 2000, SUN_FLAME_MOST_MS = 6000;
+    constexpr float FRACTURE_HOST = 0.45f, FRACTURE_SPLASH = 0.25f, FRACTURE_RADIUS = 6.0f, COLLAPSE_POWER = 0.4f;
+    constexpr float CORE_LANCE_POWER = 0.2f;
+    // Its options: Twin Suns (3 hosts, the host 15% more), Orbiting Sun (their enemy within 15 yards 40% of the
+    // host's), Solar Anchor (the shard stays where its host stood, 10 sec: Frostbolt on any enemy within 6 yards of
+    // it fractures it, the host 20% more), Lunar Shard (Fireball on their Moonfire target: 25% as Arcane to the
+    // host), Storm Shard (Lightning Bolt embeds one too, 8 sec apart: 20% as Nature to the host); Splinterstorm (a
+    // 12 yard cone away from the Hero, up to 5, the others half the host's), Solar Lance (up to 3 behind the host
+    // within 15 yards, 60% of the host's), Scalding Ground (6 yards, 4 sec, 10% a second to up to 5), Frozen Flash
+    // (Ice Lance fractures too, 8 sec apart), Flame Burst (their Flame Shock spread to one enemy within 8 yards, 8 sec
+    // apart); Implosion (the collapse 50% more), Chain Reaction (the collapse fractures one shard within 8 yards at
+    // half), Second Sunrise (1 sec later half the collapse again on the host and 2 within 6 yards), Shattering Lance
+    // (Ice Lance's Core hit 35%, the next Fireball 15% quicker for 6 sec), Icy Shelter (a collapse with Ice Barrier
+    // up: 40% as a 6 sec absorb, 12 sec apart).
+    constexpr float TWIN_SUNS = 1.15f, ORBITING_SHARE = 0.4f, ORBITING_RANGE = 15.0f, SOLAR_ANCHOR = 1.2f;
+    constexpr float ANCHOR_REACH = 6.0f, LUNAR_POWER = 0.25f, STORM_SHARD_POWER = 0.2f, SPLINTER_RANGE = 12.0f;
+    constexpr float SPLINTER_SHARE = 0.5f, SPLINTER_HALF_ARC = float(M_PI) / 4, SOLAR_LANCE_RANGE = 15.0f;
+    constexpr float SOLAR_LANCE_SHARE = 0.6f, SOLAR_LANCE_HALF_WIDTH = 2.0f;
+    constexpr float SCALDING_RADIUS = 6.0f, SCALDING_POWER = 0.1f;
+    constexpr float FLAME_BURST_RANGE = 8.0f, IMPLOSION = 1.5f, CHAIN_RADIUS = 8.0f, CHAIN_SHARE = 0.5f;
+    constexpr float SUNRISE_SHARE = 0.5f, SUNRISE_RADIUS = 6.0f, SHATTERING_LANCE_POWER = 0.35f;
+    constexpr float ICY_SHELTER_POWER = 0.4f;
+    constexpr std::size_t SOLAR_LANCE_TARGETS = 3, SUNRISE_TARGETS = 2;
+    constexpr uint32 SCALDING_MS = 4000, SUNRISE_DELAY_MS = 1000, STORM_SHARD_EVERY_MS = 8000;
+    constexpr uint32 FROZEN_FLASH_EVERY_MS = 8000, FLAME_BURST_EVERY_MS = 8000, ICY_SHELTER_EVERY_MS = 12000;
+    constexpr int32 ICY_SHELTER_MS = 6000;
 
     // The Spectral Blade's modifiers (its Extended Options): slot (0 Execution Style, 1 Timing, 2 Aftermath) x 5 +
     // choice; each slot's first three are the ones it had (Quick Death is Fatal Opening now, Patient Killer Perfect
@@ -1477,16 +1602,16 @@ namespace
             // if known) arc through them.
             { RUNE_STORMBOUND_CONDUIT,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_LIGHTNING_BOLT } }, SPELL_RUNE_STORMBOUND_CONDUIT,
-              SPELL_STORM_MODIFIER_FIRST },
+              { { SPELL_LIGHTNING_BOLT }, { SPELL_CHAIN_LIGHTNING } }, SPELL_RUNE_STORMBOUND_CONDUIT,
+              SPELL_STORM_MODIFIER_FIRST, MAX_CHOICES },
             // Tanks: Thunder Clap places the storm, Shield Slam echoes it (and needs the shield the rune asks for).
             { RUNE_ECHOING_THUNDER, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_THUNDER_CLAP }, { SPELL_SHIELD_SLAM } }, SPELL_RUNE_ECHOING_THUNDER,
-              SPELL_THUNDER_MODIFIER_FIRST },
-            // Healers: Chain Heal through the Earth Shield wearer; Soothing Mist's channel.
+              SPELL_THUNDER_MODIFIER_FIRST, MAX_CHOICES },
+            // Healers: Chain Heal through the Earth Shield bearer's Wellspring; Soothing Mist's channel.
             { RUNE_WELLSPRING, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
-              { { SPELL_CHAIN_HEAL } }, SPELL_RUNE_WELLSPRING,
-              SPELL_WELLSPRING_MODIFIER_FIRST },
+              { { SPELL_CHAIN_HEAL }, { SPELL_EARTH_SHIELD } }, SPELL_RUNE_WELLSPRING,
+              SPELL_WELLSPRING_MODIFIER_FIRST, MAX_CHOICES },
             { RUNE_WANDERING_MIST, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
               { { SPELL_SOOTHING_MIST } }, SPELL_RUNE_WANDERING_MIST, SPELL_MIST_MODIFIER_FIRST,
               MAX_CHOICES },
@@ -1502,17 +1627,17 @@ namespace
             // Healer or melee DPS: Crusader Strike (on the Judgment target) or Holy Shock makes the echoes.
             { RUNE_DAWNBOUND_CRUSADER,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER) | Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
-              { { SPELL_CRUSADER_STRIKE, SPELL_HOLY_SHOCK } }, SPELL_RUNE_DAWNBOUND_CRUSADER,
-              SPELL_DAWN_MODIFIER_FIRST },
+              { { SPELL_CRUSADER_STRIKE, SPELL_HOLY_SHOCK },
+                { SPELL_JUDGEMENT_OF_LIGHT, SPELL_JUDGEMENT_OF_WISDOM, SPELL_JUDGEMENT_OF_JUSTICE } },
+              SPELL_RUNE_DAWNBOUND_CRUSADER, SPELL_DAWN_MODIFIER_FIRST, MAX_CHOICES },
             // Ranged DPS: Mind Flay leaves the echoes, Mind Blast commands them.
             { RUNE_HOLLOW_CONGREGATION, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_MIND_FLAY }, { SPELL_MIND_BLAST } }, SPELL_RUNE_HOLLOW_CONGREGATION,
               SPELL_HOLLOW_MODIFIER_FIRST, MAX_CHOICES },
             // Ranged DPS: a fire spell embeds and collapses, a frost spell fractures.
             { RUNE_SHATTERED_SUN, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_FIREBALL, SPELL_PYROBLAST, SPELL_FIRE_BLAST, SPELL_SCORCH },
-                { SPELL_FROSTBOLT, SPELL_ICE_LANCE, SPELL_FROST_NOVA, SPELL_CONE_OF_COLD } }, SPELL_RUNE_SHATTERED_SUN,
-              SPELL_SUN_MODIFIER_FIRST },
+              { { SPELL_FIREBALL }, { SPELL_FROSTBOLT } }, SPELL_RUNE_SHATTERED_SUN,
+              SPELL_SUN_MODIFIER_FIRST, MAX_CHOICES },
             // Melee DPS: Eviscerate's phantom.
             { RUNE_SPECTRAL_BLADE, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_EVISCERATE } }, SPELL_RUNE_SPECTRAL_BLADE, SPELL_BLADE_MODIFIER_FIRST, MAX_CHOICES },
@@ -1606,14 +1731,50 @@ namespace
     {
         RuneDef const* def = FindRune(rune);
         uint8 modifier = slot * (def ? def->Choices : CHOICES) + choice;
-        if (rune == RUNE_STORMBOUND_CONDUIT && modifier == MOD_CHAIN_SURGE)
-            return { { SPELL_CHAIN_LIGHTNING } };
-        if (rune == RUNE_STORMBOUND_CONDUIT
-            && (modifier == MOD_LIVE_WIRE || modifier == MOD_STORM_WITHIN || modifier == MOD_DISTANT_CONDUCTOR))
-            return { { SPELL_LIGHTNING_SHIELD } };
-        if (rune == RUNE_WELLSPRING
-            && (modifier == MOD_FLOWING_WATERS || modifier == MOD_BEDROCK || modifier == MOD_RENEWED_SHIELD))
-            return { { SPELL_EARTH_SHIELD } };
+        if (rune == RUNE_SHATTERED_SUN)
+            switch (modifier)
+            {
+                case MOD_LUNAR_SHARD: return { { SPELL_MOONFIRE } };
+                case MOD_STORM_SHARD: return { { SPELL_LIGHTNING_BOLT } };
+                case MOD_FROZEN_FLASH: case MOD_SHATTERING_LANCE: return { { SPELL_ICE_LANCE } };
+                case MOD_FLAME_BURST: return { { SPELL_FLAME_SHOCK } };
+                case MOD_ICY_SHELTER: return { { SPELL_ICE_BARRIER } };
+                default: break;
+            }
+        if (rune == RUNE_STORMBOUND_CONDUIT)
+            switch (modifier)
+            {
+                case MOD_LIVE_WIRE: case MOD_STORM_WITHIN: case MOD_VIOLENT_REPRISAL: case MOD_DISTANT_CONDUCTOR:
+                    return { { SPELL_LIGHTNING_SHIELD } };
+                case MOD_ICY_CONDUCTOR: return { { SPELL_FROSTBOLT } };
+                case MOD_STORM_FLAME_CONDUCTOR: return { { SPELL_FLAME_SHOCK } };
+                case MOD_STORM_LASH: return { { SPELL_LAVA_LASH } };
+                case MOD_STARBOUND_CIRCUIT: return { { SPELL_STARFIRE } };
+                case MOD_STORMS_EYE: return { { SPELL_CHAIN_HEAL } };
+                case MOD_SHOCKING_SURGE: return { { SPELL_THUNDER_CLAP } };
+                default: break;
+            }
+        if (rune == RUNE_ECHOING_THUNDER)
+            switch (modifier)
+            {
+                case MOD_STORMHEART: return { { SPELL_LIGHTNING_SHIELD } };
+                case MOD_CONSECRATED_STORM: return { { SPELL_CONSECRATION } };
+                case MOD_FLAME_ECHO: return { { SPELL_FLAME_SHOCK } };
+                case MOD_FROST_ECHO: return { { SPELL_ICY_TOUCH } };
+                case MOD_REVENGE_OF_THE_STORM: return { { SPELL_REVENGE } };
+                case MOD_TIDAL_SHIELD: return { { SPELL_EARTH_SHIELD } };
+                default: break;
+            }
+        if (rune == RUNE_WELLSPRING)
+            switch (modifier)
+            {
+                case MOD_RIPTIDE_SPRING: case MOD_TIDAL_SURGE: return { { SPELL_RIPTIDE } };
+                case MOD_RENEWING_SPRING: return { { SPELL_RENEW } };
+                case MOD_GUIDED_CURRENT: return { { SPELL_HOLY_SHOCK } };
+                case MOD_JADE_CURRENT: return { { SPELL_SOOTHING_MIST } };
+                case MOD_SHIELDED_SPRING: return { { SPELL_POWER_WORD_SHIELD } };
+                default: break;
+            }
         if (rune == RUNE_WANDERING_MIST)
             switch (modifier)
             {
@@ -1626,10 +1787,18 @@ namespace
                 case MOD_EARTHEN_COCOON: return { { SPELL_EARTH_SHIELD } };
                 default: break;
             }
-        if (rune == RUNE_DAWNBOUND_CRUSADER && modifier == MOD_STEADFAST)
-            return { { SPELL_HOLY_SHOCK } };
-        if (rune == RUNE_DAWNBOUND_CRUSADER && modifier == MOD_JUDGMENTS_ECHO)
-            return { { SPELL_JUDGEMENT_OF_LIGHT, SPELL_JUDGEMENT_OF_WISDOM, SPELL_JUDGEMENT_OF_JUSTICE } };
+        if (rune == RUNE_DAWNBOUND_CRUSADER)
+            switch (modifier)
+            {
+                case MOD_EARTHEN_OATH: return { { SPELL_EARTH_SHIELD } };
+                case MOD_CRUSADERS_FLAME: return { { SPELL_FLAME_SHOCK } };
+                case MOD_FROSTFIRE_DAWN: return { { SPELL_FROSTBOLT } };
+                case MOD_CHAIN_OF_GRACE: return { { SPELL_CHAIN_HEAL } };
+                case MOD_STEADFAST: return { { SPELL_HOLY_SHOCK } };
+                case MOD_RENEWED_OATH: return { { SPELL_RENEW } };
+                case MOD_SEARING_VOW: return { { SPELL_LAVA_LASH } };
+                default: break;
+            }
         if (rune == RUNE_HOLLOW_CONGREGATION && modifier == MOD_DISSONANCE)
             return { { SPELL_SHADOW_WORD_PAIN } };
         if (rune == RUNE_WILD_HUNT)
@@ -1930,14 +2099,24 @@ namespace
 
         // The Stormbound Conduit.
         uint32 StormTimer = 0;                      // ms since Storm Within's last pulse
+        uint32 ChainArcAt = 0, FaradayAt = 0, ShieldArcAt = 0, EarthArcAt = 0, StormLashAt = 0, StarboundAt = 0;
+        uint32 DistantAt = 0, ShockingAt = 0, StormsEyeUntil = 0;     // game ms
+        std::set<ObjectGuid> ConductiveFresh;       // Persistent Current: applications whose first arc is unspent
 
-        // Echoing Thunder.
-        uint8 ThunderCharges = 0;                   // echoes left in the charge
+        // Echoing Thunder: the field laid (where, until), its first echo, the echo and options' times (game ms).
+        Position FieldAt;
+        uint32 FieldMap = 0, FieldUntil = 0, EchoAt = 0, RevengeUntil = 0, ThunderBurstAt = 0, StormRageAt = 0;
+        uint32 TidalShieldAt = 0;
+        int32 EarthShieldHeal = 0;                  // the last of their Earth Shield's heals on them
+        bool FieldFirst = false;
 
 
         // The Wandering Mist.
         int32 MistTickAmount = 0;                   // Soothing Mist's last tick (Rolling Mist)
         ObjectGuid LesserTarget;                    // the lesser Enveloping Mist's (Comforting Veil)
+        // The Wellspring: Riptide's charge (until), Renewing Spring's, Guided Current's (until); game ms.
+        uint32 WellRiptideUntil = 0, GuidedUntil = 0, FlowingAt = 0, RiptideSpringAt = 0;
+        bool WellRenewCharge = false;
         ObjectGuid MistLast, MistWatched;           // the last channel's target; Holy Shock's or Chain Heal's
         uint32 MistGoneAt = 0, MistWatchedAt = 0;   // game ms
         uint32 RenewingMistAt = 0, TidalMistAt = 0, HolyThreadAt = 0, ChainOfJadeAt = 0, RollingAt = 0;
@@ -1966,6 +2145,12 @@ namespace
         Position WakeOffset;                        // Relentless: from its target, as cut
 
         // The Dawnbound Crusader.
+        // The Dawnbound Crusader: the vow, the mark, the echo's time and charges (game ms), Communion's turn,
+        // Shared Pilgrimage's places.
+        ObjectGuid Vow, DawnMark;
+        uint32 DawnEchoAt = 0, FrostDawnUntil = 0, GraceUntil = 0, OathAt = 0;
+        bool CommunionStrike = false, PilgrimCharge = false;
+        Position PilgrimHero, PilgrimVow;
         Position SacredAt;                          // Sacred Ground's patch (SacredUntil 0: none)
         uint32 SacredMap = 0, SacredUntil = 0, SacredTimer = 0;
         float SacredTick = 0.0f;
@@ -1978,7 +2163,16 @@ namespace
         uint32 WatchTimer = 0;                      // the bound rune's aura checked (OnPlayerUpdate)
 
         // The Shattered Sun: the enemies holding shards.
-        std::vector<ObjectGuid> Shards;
+        struct Sunshard
+        {
+            ObjectGuid Host;
+            Position At;                            // where its host stood (Solar Anchor)
+            uint32 Map = 0, Until = 0;              // game ms
+            bool Lunar = false, Storm = false;
+        };
+        std::vector<Sunshard> Shards;               // oldest first
+        std::set<ObjectGuid> CoreLanced;            // Broken Cores Ice Lance has struck
+        uint32 StormShardAt = 0, FrozenFlashAt = 0, FlameBurstAt = 0, IcyShelterAt = 0;
         Position ScaldAt;                           // Scalding Ground (ScaldUntil 0: none)
         uint32 ScaldMap = 0, ScaldUntil = 0, ScaldTimer = 0;
         float ScaldTick = 0.0f;
@@ -2747,59 +2941,93 @@ namespace
             0, player->GetGUID());
     }
 
-    // Static Ward: each arc adds 1% of maximum health to one absorb, up to 10%, renewed to 8 sec.
-    void StaticWard(Player* player)
+    void Lasting(Player* player, Unit* unit, uint32 spellId, int32 ms, int32 const* amount);
+
+    // The Hero's Conductive on the enemy: the hit it remembers (0 none).
+    float ConductiveOn(Player* player, Unit* enemy)
     {
-        int32 step = std::max<int32>(1, int32(player->GetMaxHealth() * STATIC_WARD_PCT / 100.0f));
-        int32 cap = std::max<int32>(1, int32(player->GetMaxHealth() * STATIC_WARD_CAP_PCT / 100.0f));
-        if (AuraEffect* ward = player->GetAuraEffect(SPELL_STATIC_WARD, EFFECT_0, player->GetGUID()))
-        {
-            ward->ChangeAmount(std::min(cap, ward->GetAmount() + step));
-            ward->GetBase()->SetDuration(STATIC_WARD_MS);
-            Report(player, SPELL_STATIC_WARD, 'A', ward->GetAmount());
-            return;
-        }
-        player->CastCustomSpell(player, SPELL_STATIC_WARD, &step, nullptr, nullptr, true);
-        Report(player, SPELL_STATIC_WARD, 'A', step);
-        if (Aura* aura = player->GetAura(SPELL_STATIC_WARD, player->GetGUID()))
-        {
-            aura->SetMaxDuration(STATIC_WARD_MS);
-            aura->SetDuration(STATIC_WARD_MS);
-        }
+        AuraEffect const* effect = enemy
+            ? enemy->GetAuraEffect(SPELL_CONDUCTIVE, EFFECT_0, player->GetGUID()) : nullptr;
+        return effect ? float(effect->GetAmount()) : 0.0f;
     }
 
-    // Arcs leaving source for share of damage each: to count enemies near it (10 yards, 15 with Faraday Field, 10%
-    // more), or (Closed Circuit, a Lightning Bolt's) back into source once for 60%. An arc never arcs again (its
-    // damage is a spell of its own).
-    void Arc(Player* player, Unit* source, float damage, float share, std::size_t count, bool bolt)
+    // Conductive on the enemy for 6 sec (12 with Persistent Current), remembering hit.
+    void Conduct(Player* player, Unit* enemy, float hit)
     {
-        bool faraday = HasStormMarker(player, MOD_FARADAY_FIELD);
-        std::vector<Unit*> targets;
-        if (bolt && HasStormMarker(player, MOD_CLOSED_CIRCUIT))
-        {
-            if (source->IsAlive())
-                targets.push_back(source);
-            share = CLOSED_CIRCUIT_SHARE;
-        }
-        else
-            for (Unit* enemy : EnemiesAround(player, source, faraday ? FARADAY_RANGE : ARC_RANGE))
-                if (enemy != source && targets.size() < count)
-                    targets.push_back(enemy);
-        int32 each = int32(damage * share * (faraday ? FARADAY_ARCS : 1.0f));
-        if (targets.empty() || each < 1)
+        if (!enemy || !enemy->IsAlive() || hit < 1.0f)
             return;
-        for (Unit* target : targets)
+        int32 amount = int32(hit);
+        Lasting(player, enemy, SPELL_CONDUCTIVE,
+            HasStormMarker(player, MOD_PERSISTENT_CURRENT) ? PERSISTENT_MS : CONDUCTIVE_MS, &amount);
+        StateOf(player).ConductiveFresh.insert(enemy->GetGUID());
+    }
+
+    // Another enemy within arc range of the host (10 yards; Faraday Field 15), but except, else nullptr.
+    Unit* ArcTarget(Player* player, Unit* host, Unit* except = nullptr, bool conductive = false)
+    {
+        float range = HasStormMarker(player, MOD_FARADAY_FIELD) ? FARADAY_RANGE : ARC_RANGE;
+        for (Unit* enemy : EnemiesAround(player, host, range))
+            if (enemy != host && enemy != except && (!conductive || ConductiveOn(player, enemy) > 0.0f))
+                return enemy;
+        return nullptr;
+    }
+
+    // One arc from the host to the enemy (back into the host: no bolt).
+    void ArcTo(Player* player, Unit* host, Unit* enemy, uint32 spellId, float damage)
+    {
+        if (damage < 1.0f || !enemy->IsAlive())
+            return;
+        if (enemy != host)
+            host->CastSpell(enemy, SPELL_STORMBOUND_ARC_VISUAL, true);
+        Strike(player, enemy, spellId, damage);
+    }
+
+    // An arc from the host to another enemy, else back into it for half.
+    void ArcOrBack(Player* player, Unit* host, uint32 spellId, float damage)
+    {
+        if (Unit* other = ArcTarget(player, host))
+            ArcTo(player, host, other, spellId, damage);
+        else
+            ArcTo(player, host, host, spellId, damage * ALONE_SHARE);
+    }
+
+    // Chain Lightning on a Conductive enemy: its arc (once a cast), 30% of the remembered hit; the options.
+    void ChainArc(Player* player, Unit* host)
+    {
+        State& state = StateOf(player);
+        float hit = ConductiveOn(player, host);
+        if (hit <= 0.0f || !Ready(state.ChainArcAt, CHAIN_ARC_EVERY_MS))
+            return;
+        state.ChainArcAt = Now();
+        float damage = hit * CHAIN_ARC_SHARE;
+        if (HasStormMarker(player, MOD_PERSISTENT_CURRENT) && state.ConductiveFresh.erase(host->GetGUID()))
+            damage *= PERSISTENT_FIRST;
+        if (HasStormMarker(player, MOD_FARADAY_FIELD) && Ready(state.FaradayAt, FARADAY_EVERY_MS))
         {
-            if (target != source)
-                source->CastSpell(target, SPELL_STORMBOUND_ARC_VISUAL, true);
-            player->CastCustomSpell(target, SPELL_STORMBOUND_ARC, &each, nullptr, nullptr, true);
-            if (HasStormMarker(player, MOD_STATIC_WARD))
-                StaticWard(player);
+            state.FaradayAt = Now();
+            damage *= FARADAY_MORE;
         }
+        if (HasStormMarker(player, MOD_CLOSED_CIRCUIT))
+        {
+            ArcTo(player, host, host, SPELL_STORMBOUND_ARC, damage);
+            return;
+        }
+        if (HasStormMarker(player, MOD_FORKED_TEMPEST))
+        {
+            Unit* first = ArcTarget(player, host);
+            Unit* second = first ? ArcTarget(player, host, first) : nullptr;
+            if (first && second)
+            {
+                ArcTo(player, host, first, SPELL_STORMBOUND_ARC, damage * FORKED_SHARE);
+                ArcTo(player, host, second, SPELL_STORMBOUND_ARC, damage * FORKED_SHARE);
+                return;
+            }
+        }
+        ArcOrBack(player, host, SPELL_STORMBOUND_ARC, damage);
     }
 
     // A Lightning Shield retaliation the rune makes (Distant Conductor, Storm Within): the shield's rank's damage at
-    // the target; no charge used.
+    // the target, a charge spent.
     void Retaliate(Player* player, Unit* target, AuraEffect* shield)
     {
         uint32 damageSpell = sSpellMgr->GetSpellWithRank(SPELL_LIGHTNING_SHIELD_DAMAGE,
@@ -2809,9 +3037,10 @@ namespace
             return;
         int32 damage = std::max<int32>(1, info->Effects[EFFECT_0].CalcValue(player));
         player->CastCustomSpell(target, SPELL_STORMBOUND_RETALIATION, &damage, nullptr, nullptr, true);
+        shield->GetBase()->DropCharge();
     }
 
-    // Storm Within: every 3 sec in combat, a retaliation at the nearest enemy within 8 yards.
+    // Storm Within: every 3 sec in combat, a retaliation at the nearest Conductive enemy within 8 yards.
     void StormPulse(Player* player, uint32 diff)
     {
         if (!HasStormMarker(player, MOD_STORM_WITHIN))
@@ -2823,11 +3052,132 @@ namespace
         AuraEffect* shield = Shield(player);
         if (!shield || !player->IsInCombat())
             return;
-        std::vector<Unit*> enemies = EnemiesAround(player, player, STORM_WITHIN_RANGE);
-        if (enemies.empty())
+        for (Unit* enemy : EnemiesAround(player, player, STORM_WITHIN_RANGE))
+            if (ConductiveOn(player, enemy) > 0.0f)
+            {
+                state.StormTimer = 0;
+                Retaliate(player, enemy, shield);
+                return;
+            }
+    }
+
+    // A retaliation hitting the attacker (the shield's own, or the rune's): Live Wire (Conductive on it), and its
+    // arc to another Conductive enemy (3 sec apart; Violent Reprisal 40% more).
+    void ShieldArc(Player* player, Unit* attacker, float damage)
+    {
+        if (HasStormMarker(player, MOD_LIVE_WIRE))
+            Conduct(player, attacker, damage);
+        State& state = StateOf(player);
+        if (!Ready(state.ShieldArcAt, SHIELD_ARC_EVERY_MS))
             return;
-        state.StormTimer = 0;
-        Retaliate(player, enemies.front(), shield);
+        if (Unit* other = ArcTarget(player, attacker, nullptr, true))
+        {
+            state.ShieldArcAt = Now();
+            ArcTo(player, attacker, other, SPELL_STORMBOUND_ARC, damage * SHIELD_ARC_SHARE
+                * (HasStormMarker(player, MOD_VIOLENT_REPRISAL) ? VIOLENT_REPRISAL : 1.0f));
+        }
+    }
+
+    // The Hero's own hits with the rune: Lightning Bolt (Conductive; Branching Current, Flame Conductor, Distant
+    // Conductor), Frostbolt (Icy Conductor), Chain Lightning (its arc), Earth Shock, Lava Lash and Starfire on a
+    // Conductive enemy, Thunder Clap (Shocking Surge), Chain Heal (Storm's Eye).
+    void ConduitHit(Player* player, Unit* target, uint32 firstRank, float damage)
+    {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        if (firstRank == SPELL_CHAIN_HEAL)
+        {
+            if (HasStormMarker(player, MOD_STORMS_EYE))
+                state.StormsEyeUntil = Now() + STORMS_EYE_MS;
+            return;
+        }
+        if (damage <= 0.0f || !player->IsValidAttackTarget(target))
+            return;
+        switch (firstRank)
+        {
+            case SPELL_LIGHTNING_BOLT:
+            {
+                Conduct(player, target, damage);
+                bool flame = HasStormMarker(player, MOD_STORM_FLAME_CONDUCTOR);
+                Aura* flameShock = flame ? target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me) : nullptr;
+                if (flameShock)
+                    ExtendAura(flameShock, FLAME_CONDUCTOR_MS, FLAME_CONDUCTOR_MOST_MS);
+                if (HasStormMarker(player, MOD_BRANCHING_CURRENT) || flameShock)
+                    if (Unit* other = ArcTarget(player, target))
+                        Conduct(player, other, damage);
+                if (HasStormMarker(player, MOD_DISTANT_CONDUCTOR) && target->IsAlive()
+                    && Ready(state.DistantAt, DISTANT_EVERY_MS))
+                    if (AuraEffect* shield = Shield(player))
+                    {
+                        state.DistantAt = Now();
+                        Retaliate(player, target, shield);
+                    }
+                break;
+            }
+            case SPELL_FROSTBOLT:
+                if (HasStormMarker(player, MOD_ICY_CONDUCTOR))
+                    Conduct(player, target, damage);
+                break;
+            case SPELL_CHAIN_LIGHTNING:
+                ChainArc(player, target);
+                break;
+            case TankRunes::SPELL_EARTH_SHOCK:
+                if (ConductiveOn(player, target) > 0.0f && Ready(state.EarthArcAt, EARTH_ARC_EVERY_MS))
+                {
+                    state.EarthArcAt = Now();
+                    ArcOrBack(player, target, SPELL_STORMBOUND_ARC,
+                        RunePower(player, SPELL_SCHOOL_MASK_NATURE, 0) * EARTH_ARC_POWER);
+                }
+                break;
+            case SPELL_LAVA_LASH:
+                if (HasStormMarker(player, MOD_STORM_LASH) && ConductiveOn(player, target) > 0.0f
+                    && Ready(state.StormLashAt, STORM_LASH_EVERY_MS))
+                {
+                    state.StormLashAt = Now();
+                    ArcOrBack(player, target, SPELL_STORMBOUND_ARC,
+                        player->GetTotalAttackPowerValue(BASE_ATTACK) * STORM_LASH_AP);
+                }
+                break;
+            case SPELL_STARFIRE:
+                if (HasStormMarker(player, MOD_STARBOUND_CIRCUIT) && ConductiveOn(player, target) > 0.0f
+                    && Ready(state.StarboundAt, STARBOUND_EVERY_MS))
+                {
+                    state.StarboundAt = Now();
+                    ArcOrBack(player, target, SPELL_STARBOUND_CIRCUIT,
+                        RunePower(player, SPELL_SCHOOL_MASK_ARCANE, 0) * STARBOUND_POWER);
+                }
+                break;
+            case SPELL_THUNDER_CLAP:
+                if (HasStormMarker(player, MOD_SHOCKING_SURGE) && ConductiveOn(player, target) > 0.0f
+                    && Ready(state.ShockingAt, SHOCKING_EVERY_MS))
+                {
+                    state.ShockingAt = Now();
+                    float surge = RunePower(player, SPELL_SCHOOL_MASK_NATURE, 0) * SHOCKING_POWER;
+                    std::size_t count = 0;
+                    for (Unit* enemy : EnemiesAround(player, target, SHOCKING_RADIUS))
+                        if (count++ < SHOCKING_TARGETS)
+                            Strike(player, enemy, SPELL_SHOCKING_SURGE, surge);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Lightning Bolt's or Frostbolt's damage with the rune: Storm's Eye (the next bolt), Icy Conductor.
+    float ConduitDamage(Player* player, Unit* target, uint32 firstRank, float damage)
+    {
+        State& state = StateOf(player);
+        if (firstRank == SPELL_LIGHTNING_BOLT && state.StormsEyeUntil)
+        {
+            if (Now() < state.StormsEyeUntil)
+                damage *= STORMS_EYE;
+            state.StormsEyeUntil = 0;
+        }
+        if (firstRank == SPELL_FROSTBOLT && HasStormMarker(player, MOD_ICY_CONDUCTOR)
+            && ConductiveOn(player, target) > 0.0f)
+            damage *= ICY_CONDUCTOR;
+        return damage;
     }
 
     // ---- Echoing Thunder ---------------------------------------------------------------------------------------
@@ -2837,53 +3187,190 @@ namespace
         return unit && unit->HasAura(SPELL_THUNDER_MODIFIER_FIRST + modifier);
     }
 
-    // Thunder Clap: the Hero is charged (the small storm about them), one echo (two with Double Charge).
+    bool InArc(Position const& center, float facing, Position const& p, float halfArc);
+    bool Valid(Player* player, Unit* enemy);
+    void PlaceDecals(Player* player, uint32 spellId, std::vector<Position> const& points);
+
+    // The field goes with the Hero (March of the Storm, Stormheart: the small storm about them).
+    bool FieldFollows(Player* player)
+    {
+        return HasThunderMarker(player, MOD_MARCH_OF_THE_STORM) || HasThunderMarker(player, MOD_STORMHEART);
+    }
+
+    // The unit stands in the Hero's Thunderfield.
+    bool InThunderfield(Player* player, Unit* unit)
+    {
+        State& state = StateOf(player);
+        if (FieldFollows(player))
+            return player->HasAura(SPELL_THUNDERFIELD_MARCH) && unit->IsWithinDist2d(player, THUNDERFIELD_RADIUS);
+        return state.FieldUntil && Now() < state.FieldUntil && state.FieldMap == player->GetMapId()
+            && unit->GetExactDist2d(&state.FieldAt) <= THUNDERFIELD_RADIUS;
+    }
+
+    // Thunder Clap: the Thunderfield, where the Hero stands (Rolling Front: under their enemy within 10 yards), or
+    // about them.
     void ChargeThunder(Player* player)
     {
-        int32 ms = HasThunderMarker(player, MOD_LINGERING_CHARGE) ? LINGERING_CHARGE_MS : CHARGE_MS;
-        StateOf(player).ThunderCharges = HasThunderMarker(player, MOD_DOUBLE_CHARGE) ? DOUBLE_CHARGES : 1;
+        State& state = StateOf(player);
+        int32 ms = HasThunderMarker(player, MOD_LINGERING_THUNDER) ? LINGERING_FIELD_MS : THUNDERFIELD_MS;
+        uint32 until = Now() + ms;
+        state.FieldUntil = until;
+        state.FieldFirst = true;
+        state.FieldMap = player->GetMapId();
         player->RemoveAurasDueToSpell(SPELL_THUNDERFIELD_MARCH);
-        if (Aura* aura = player->AddAura(SPELL_THUNDERFIELD_MARCH, player))
+        if (FieldFollows(player))
         {
-            aura->SetMaxDuration(ms);
-            aura->SetDuration(ms);
+            player->RemoveDynObject(SPELL_THUNDERFIELD);
+            if (Aura* aura = player->AddAura(SPELL_THUNDERFIELD_MARCH, player))
+            {
+                aura->SetMaxDuration(ms);
+                aura->SetDuration(ms);
+            }
+            return;
+        }
+        state.FieldAt = player->GetPosition();
+        if (HasThunderMarker(player, MOD_ROLLING_FRONT))
+            if (Unit* enemy = player->GetSelectedUnit(); Valid(player, enemy)
+                && player->IsWithinDistInMap(enemy, ROLLING_FRONT_RANGE))
+                state.FieldAt = enemy->GetPosition();
+        PlaceDecals(player, SPELL_THUNDERFIELD, { state.FieldAt });
+        player->m_Events.AddEventAtOffset([player, until]()
+        {
+            if (player->IsInWorld() && StateOf(player).FieldUntil == until)
+                player->RemoveDynObject(SPELL_THUNDERFIELD);
+        }, Milliseconds(ms));
+    }
+
+    // Revenge in the field: the next echo 20% more (6 sec). Earth Shock on an enemy in it: 20% of attack power as
+    // Nature to up to 4 within 6 yards of it (8 sec apart). Earth Shield's heal on the Hero: remembered (Tidal
+    // Shield).
+    void ThunderAbility(Player* player, Unit* target, uint32 firstRank, int32 heal)
+    {
+        State& state = StateOf(player);
+        if (firstRank == SPELL_EARTH_SHIELD_HEAL)
+        {
+            if (target == player && heal > 0)
+                state.EarthShieldHeal = heal;
+            return;
+        }
+        if (firstRank == SPELL_REVENGE && InThunderfield(player, player))
+            state.RevengeUntil = Now() + REVENGE_CHARGE_MS;
+        if (firstRank == TankRunes::SPELL_EARTH_SHOCK && InThunderfield(player, target)
+            && Ready(state.ThunderBurstAt, THUNDER_BURST_EVERY_MS))
+        {
+            state.ThunderBurstAt = Now();
+            float burst = player->GetTotalAttackPowerValue(BASE_ATTACK) * THUNDER_BURST_AP;
+            std::size_t count = 0;
+            for (Unit* enemy : EnemiesAround(player, target, THUNDER_BURST_RADIUS))
+                if (count++ < THUNDER_BURST_TARGETS)
+                    Strike(player, enemy, SPELL_THUNDER_BURST, burst);
         }
     }
 
-    // Shield Slam while charged: the echo bursts about its target, 42% of the slam's damage before mitigation to
-    // each enemy within 6 yards (10 with Distant Rumble; the target alone, 60% more, with Focused Peal), up to 5.
+    // Shield Slam standing in the field: the echo, 42% of the slam's damage before mitigation in a 90 degree cone 10
+    // yards toward its target, up to 5 (2 sec apart); the options.
     void ThunderEcho(Player* player, Unit* target, int32 slamDamage)
     {
         State& state = StateOf(player);
-        if (!player->HasAura(SPELL_THUNDERFIELD_MARCH) || !state.ThunderCharges || slamDamage <= 0)
+        if (slamDamage <= 0 || !InThunderfield(player, player) || !Ready(state.EchoAt, ECHO_EVERY_MS))
             return;
-        if (!--state.ThunderCharges)
-            player->RemoveAurasDueToSpell(SPELL_THUNDERFIELD_MARCH);
+        state.EchoAt = Now();
+        ObjectGuid me = player->GetGUID();
+        float damage = slamDamage * ECHO_SHARE;
+        float threat = 0.0f;
+        if (state.FieldFirst && HasThunderMarker(player, MOD_LINGERING_THUNDER))
+            damage *= LINGERING_ECHO;
+        state.FieldFirst = false;
+        if (HasThunderMarker(player, MOD_MARCH_OF_THE_STORM))
+            damage *= MARCH_ECHO;
+        if (HasThunderMarker(player, MOD_ROLLING_FRONT))
+            damage *= ROLLING_FRONT_ECHO;
+        if (HasThunderMarker(player, MOD_CONSECRATED_STORM) && ConsecrationRank(player))
+            for (uint32 id = SPELL_CONSECRATION; id; id = sSpellMgr->GetNextSpellInChain(id))
+                if (DynamicObject* ground = player->GetDynObject(id);
+                    ground && player->GetExactDist2d(ground) <= ground->GetRadius())
+                {
+                    damage *= CONSECRATED_ECHO;
+                    threat += CONSECRATED_THREAT;
+                    break;
+                }
+        if (state.RevengeUntil && Now() < state.RevengeUntil)
+        {
+            bool storm = HasThunderMarker(player, MOD_REVENGE_OF_THE_STORM);
+            damage *= storm ? STORM_REVENGE_ECHO : REVENGE_ECHO;
+            if (storm && Ready(state.StormRageAt, STORM_REVENGE_EVERY_MS))
+            {
+                state.StormRageAt = Now();
+                player->ModifyPower(POWER_RAGE, STORM_REVENGE_RAGE);
+            }
+        }
+        state.RevengeUntil = 0;
+        if (HasThunderMarker(player, MOD_COMMANDING_THUNDER))
+            threat += COMMANDING_THREAT;
 
-        bool focused = HasThunderMarker(player, MOD_FOCUSED_PEAL);
-        float damage = slamDamage * ECHO_SHARE * (focused ? FOCUSED_ECHO : 1.0f);
         std::vector<Unit*> targets;
         if (target->IsAlive())
             targets.push_back(target);
-        if (!focused)
-            for (Unit* enemy : EnemiesAround(player, target,
-                HasThunderMarker(player, MOD_DISTANT_RUMBLE) ? DISTANT_RADIUS : ECHO_RADIUS))
+        bool focused = HasThunderMarker(player, MOD_FOCUSED_PEAL);
+        if (focused)
+            damage *= FOCUSED_ECHO;
+        else if (HasThunderMarker(player, MOD_REVERBERATING_IMPACT))
+        {
+            for (Unit* enemy : EnemiesAround(player, target, REVERBERATING_RADIUS))
                 if (enemy != target && targets.size() < ECHO_TARGETS)
                     targets.push_back(enemy);
-        target->CastSpell(target, SPELL_THUNDER_ECHO_BURST, true);
+            target->CastSpell(target, SPELL_THUNDER_ECHO_BURST, true);
+        }
+        else
+        {
+            bool distant = HasThunderMarker(player, MOD_DISTANT_RUMBLE);
+            float facing = player->GetAngle(target);
+            for (Unit* enemy : EnemiesAround(player, player, distant ? DISTANT_CONE : ECHO_CONE))
+                if (enemy != target && targets.size() < ECHO_TARGETS
+                    && InArc(player->GetPosition(), facing, enemy->GetPosition(), ECHO_HALF_ARC))
+                    targets.push_back(enemy);
+            player->CastSpell(player, SPELL_THUNDER_ECHO_BURST, true);
+        }
 
-        int32 each = std::max<int32>(1, int32(damage));
         for (Unit* enemy : targets)
         {
-            player->CastCustomSpell(enemy, SPELL_THUNDER_ECHO, &each, nullptr, nullptr, true);
+            float each = damage;
+            if (enemy == target && HasThunderMarker(player, MOD_COMMANDING_THUNDER))
+                each *= COMMANDING_MORE;
+            if (HasThunderMarker(player, MOD_DISTANT_RUMBLE) && !player->IsWithinDist2d(enemy, ECHO_CONE))
+                each *= DISTANT_MORE;
+            if (HasThunderMarker(player, MOD_DEAFENING_IMPACT) && enemy->GetAuraOfRankedSpell(SPELL_THUNDER_CLAP, me))
+                each *= DEAFENED_MORE;
+            int32 points = std::max<int32>(1, int32(each));
+            player->CastCustomSpell(enemy, SPELL_THUNDER_ECHO, &points, nullptr, nullptr, true);
             if (!enemy->IsAlive())
                 continue;
-            if (HasThunderMarker(player, MOD_COMMANDING_THUNDER) && enemy->CanHaveThreatList())
-                enemy->AddThreat(player, float(each) * COMMANDING_THREAT, SPELL_SCHOOL_MASK_NATURE);
+            if (threat > 0.0f && enemy->CanHaveThreatList())
+                enemy->AddThreat(player, float(points) * threat, SPELL_SCHOOL_MASK_NATURE);
+            if (enemy == target)
+            {
+                if (HasThunderMarker(player, MOD_STORMHEART)
+                    && player->GetAuraOfRankedSpell(SPELL_LIGHTNING_SHIELD, me))
+                    Strike(player, enemy, SPELL_STORMHEART,
+                        RunePower(player, SPELL_SCHOOL_MASK_NATURE, 0) * STORMHEART_POWER);
+                if (HasThunderMarker(player, MOD_FLAME_ECHO) && enemy->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
+                    AddDot(player, enemy, SPELL_FLAME_ECHO, float(points) * FLAME_ECHO_SHARE, FLAME_ECHO_MS);
+                if (HasThunderMarker(player, MOD_FROST_ECHO) && enemy->HasAura(SPELL_FROST_FEVER, me))
+                {
+                    Strike(player, enemy, SPELL_FROST_ECHO,
+                        player->GetTotalAttackPowerValue(BASE_ATTACK) * FROST_ECHO_AP);
+                    player->CastSpell(enemy, SPELL_FROST_ECHO_SLOW, true);
+                    if (Aura* slow = enemy->GetAura(SPELL_FROST_ECHO_SLOW, me))
+                    {
+                        slow->SetMaxDuration(FROST_ECHO_MS);
+                        slow->SetDuration(FROST_ECHO_MS);
+                    }
+                }
+            }
             if (!HasThunderMarker(player, MOD_DEAFENING_IMPACT))
                 continue;
             player->CastSpell(enemy, SPELL_DEAFENING_IMPACT, true);
-            if (Aura* slow = enemy->GetAura(SPELL_DEAFENING_IMPACT, player->GetGUID()))
+            if (Aura* slow = enemy->GetAura(SPELL_DEAFENING_IMPACT, me))
             {
                 slow->SetMaxDuration(DEAFENING_MS);
                 slow->SetDuration(DEAFENING_MS);
@@ -2904,12 +3391,18 @@ namespace
                 aura->SetDuration(SHELTERING_MS);
             }
         }
-        if (HasThunderMarker(player, MOD_BATTLE_RHYTHM))
-            player->ModifyPower(POWER_RAGE, RHYTHM_RAGE * int32(targets.size()));
-        if (HasThunderMarker(player, MOD_ROLLING_THUNDER))
-            for (uint32 id = SPELL_THUNDER_CLAP; id; id = sSpellMgr->GetNextSpellInChain(id))
-                if (player->HasSpell(id))
-                    player->ModifySpellCooldown(id, -ROLLING_MS * int32(targets.size()));
+        if (HasThunderMarker(player, MOD_TIDAL_SHIELD) && state.EarthShieldHeal > 0
+            && player->GetAuraOfRankedSpell(SPELL_EARTH_SHIELD, me)
+            && Ready(state.TidalShieldAt, TIDAL_SHIELD_EVERY_MS))
+        {
+            state.TidalShieldAt = Now();
+            Ward(player, player, SPELL_TIDAL_SHIELD, float(state.EarthShieldHeal) * TIDAL_SHIELD_SHARE);
+            if (Aura* aura = player->GetAura(SPELL_TIDAL_SHIELD, me))
+            {
+                aura->SetMaxDuration(TIDAL_SHIELD_MS);
+                aura->SetDuration(TIDAL_SHIELD_MS);
+            }
+        }
     }
 
     // ---- Healing runes: the Wellspring, the Wandering Mist ------------------------------------------------------
@@ -2970,37 +3463,144 @@ namespace
         return false;
     }
 
-    // Chain Heal's extra jump from its last target: 40% of its first heal to the most injured ally within 12.5 yards
-    // (20 with Long Reach) it did not heal; Split Tributary: two, 25% each; Concentrated Current 20% more, Deep
-    // Current 40% more below half health; Tidal Shelter and Renewing Current follow up for 20% of each one's effective
-    // healing. It never jumps again.
-    void WellspringJump(Player* player, Unit* from, int32 first, std::set<ObjectGuid> const& healed)
+    float WellPower(Player* player)
     {
-        float range = HasWellMarker(player, MOD_LONG_REACH) ? LONG_REACH : CHAIN_HEAL_JUMP;
-        std::vector<Unit*> allies;
-        bool split = HasWellMarker(player, MOD_SPLIT_TRIBUTARY);
-        for (Unit* ally : InjuredAllies(player, from, range, nullptr))
-            if (!healed.count(ally->GetGUID()) && allies.size() < (split ? SPLIT_ALLIES : 1))
-                allies.push_back(ally);
-        if (allies.empty() || first <= 0)
-            return;
-        float base = first * (split ? SPLIT_SHARE : WELLSPRING_SHARE);
-        if (HasWellMarker(player, MOD_CONCENTRATED_CURRENT))
-            base *= CONCENTRATED_CURRENT;
-        for (Unit* ally : allies)
+        return float(player->SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_NATURE));
+    }
+
+    // The Wellspring on the ally (the Hero's), else nullptr.
+    Aura* WellOn(Player* player, Unit* ally)
+    {
+        return ally ? ally->GetAura(SPELL_WELLSPRING_MARK, player->GetGUID()) : nullptr;
+    }
+
+    // A Wellspring laid on the bearer, or renewed (8 sec; Lasting Spring 12).
+    void LayWell(Player* player, Unit* bearer)
+    {
+        int32 ms = HasWellMarker(player, MOD_LASTING_SPRING) ? LASTING_WELL_MS : WELL_MS;
+        Aura* well = WellOn(player, bearer);
+        if (!well)
+            well = player->AddAura(SPELL_WELLSPRING_MARK, bearer);
+        if (well)
         {
-            float amount = base;
-            if (HasWellMarker(player, MOD_DEEP_CURRENT) && ally->GetHealthPct() < DEEP_CURRENT_BELOW_PCT)
-                amount *= DEEP_CURRENT;
-            int32 heal = std::max<int32>(1, int32(amount));
-            int32 effective = Effective(ally, heal);
-            from->CastSpell(ally, SPELL_WELLSPRING_JUMP, true);
-            player->CastCustomSpell(ally, SPELL_WELLSPRING_HEAL, &heal, nullptr, nullptr, true);
-            if (HasWellMarker(player, MOD_TIDAL_SHELTER))
-                Refresh(player, ally, SPELL_TIDAL_SHELTER, int32(effective * UNDERTOW_SHARE));
-            if (HasWellMarker(player, MOD_RENEWING_CURRENT))
-                Refresh(player, ally, SPELL_RENEWING_CURRENT, int32(effective * UNDERTOW_SHARE / UNDERTOW_TICKS));
+            well->SetMaxDuration(ms);
+            well->SetDuration(ms);
         }
+    }
+
+    // A Riptide or Renew of the Hero's on the bearer with their Wellspring (direct): Riptide's charge (the
+    // interaction), Riptide Spring, Renewing Spring.
+    void WellTouch(Player* player, Unit* bearer, uint32 firstRank)
+    {
+        if (!WellOn(player, bearer))
+            return;
+        State& state = StateOf(player);
+        if (firstRank == SPELL_RIPTIDE)
+        {
+            state.WellRiptideUntil = Now() + WELL_CHARGE_MS;
+            if (HasWellMarker(player, MOD_RIPTIDE_SPRING))
+            {
+                LayWell(player, bearer);
+                std::vector<Unit*> others = InjuredAllies(player, bearer, RIPTIDE_SPRING_RANGE, bearer);
+                if (!others.empty() && Ready(state.RiptideSpringAt, RIPTIDE_SPRING_EVERY_MS))
+                {
+                    state.RiptideSpringAt = Now();
+                    Mend(player, others.front(), SPELL_RIPTIDE_SPRING, WellPower(player) * RIPTIDE_SPRING_POWER);
+                }
+            }
+        }
+        else if (firstRank == SPELL_RENEW && HasWellMarker(player, MOD_RENEWING_SPRING))
+        {
+            LayWell(player, bearer);
+            state.WellRenewCharge = true;
+        }
+        else if (firstRank == SPELL_HOLY_SHOCK_HEAL && HasWellMarker(player, MOD_GUIDED_CURRENT))
+            state.GuidedUntil = Now() + GUIDED_MS;
+    }
+
+    // Earth Shield's heal on the bearer: their Wellspring renewed; Flowing Waters.
+    void WellShield(Player* player, Unit* bearer)
+    {
+        if (!WellOn(player, bearer))
+            return;
+        LayWell(player, bearer);
+        State& state = StateOf(player);
+        if (!HasWellMarker(player, MOD_FLOWING_WATERS) || !Ready(state.FlowingAt, FLOWING_EVERY_MS))
+            return;
+        std::vector<Unit*> allies = InjuredAllies(player, bearer, FLOWING_RANGE_WELL, bearer);
+        if (allies.empty())
+            return;
+        state.FlowingAt = Now();
+        Mend(player, allies.front(), SPELL_FLOWING_WATERS, WellPower(player) * FLOWING_POWER);
+    }
+
+    // One release's heal on an ally and its Undertow (Tidal Shelter, Renewing Current, Jade Current, Shielded
+    // Spring) and Widening Waters.
+    void WellHeal(Player* player, Unit* from, Unit* ally, float amount)
+    {
+        ObjectGuid me = player->GetGUID();
+        if (HasWellMarker(player, MOD_DEEP_CURRENT))
+            amount *= ally->GetHealthPct() < DEEP_CURRENT_BELOW_PCT ? DEEP_CURRENT : DEEP_CURRENT_ABOVE;
+        if (HasWellMarker(player, MOD_TIDAL_SURGE))
+            if (Aura* riptide = ally->GetAuraOfRankedSpell(SPELL_RIPTIDE, me))
+            {
+                amount *= TIDAL_SURGE;
+                ExtendAura(riptide, TIDAL_SURGE_MS, TIDAL_SURGE_MOST_MS);
+            }
+        int32 heal = std::max<int32>(1, int32(amount));
+        int32 effective = Effective(ally, heal);
+        if (from != ally)
+            from->CastSpell(ally, SPELL_WELLSPRING_JUMP, true);
+        player->CastCustomSpell(ally, SPELL_WELLSPRING_HEAL, &heal, nullptr, nullptr, true);
+        if (HasWellMarker(player, MOD_WIDENING_WATERS))
+            Refresh(player, ally, SPELL_WIDENING_WATERS,
+                std::max<int32>(1, int32(WellPower(player) * WIDENING_POWER / WIDENING_TICKS)));
+        if (HasWellMarker(player, MOD_JADE_CURRENT))
+            if (AuraEffect const* mist = ally->GetAuraEffect(SPELL_SOOTHING_MIST, EFFECT_0, me))
+                Mend(player, ally, SPELL_JADE_CURRENT, mist->GetAmount() * JADE_CURRENT_SHARE);
+        if (effective <= 0)
+            return;
+        if (HasWellMarker(player, MOD_TIDAL_SHELTER))
+            Refresh(player, ally, SPELL_TIDAL_SHELTER, int32(effective * UNDERTOW_SHARE));
+        if (HasWellMarker(player, MOD_RENEWING_CURRENT))
+            Refresh(player, ally, SPELL_RENEWING_CURRENT, int32(effective * UNDERTOW_SHARE / UNDERTOW_TICKS));
+        if (HasWellMarker(player, MOD_SHIELDED_SPRING) && ally->GetAuraOfRankedSpell(SPELL_POWER_WORD_SHIELD, me))
+            Refresh(player, ally, SPELL_SHIELDED_SPRING, int32(effective * SHIELDED_SHARE));
+    }
+
+    // The bearer's Wellspring released by a Chain Heal that healed them for received (before overhealing).
+    void ReleaseWell(Player* player, Unit* bearer, float received)
+    {
+        State& state = StateOf(player);
+        float range = HasWellMarker(player, MOD_LONG_REACH) ? LONG_REACH
+            : HasWellMarker(player, MOD_WIDENING_WATERS) ? WIDENING_RANGE : WELL_RANGE;
+        float amount = received * WELLSPRING_SHARE;
+        if (HasWellMarker(player, MOD_LASTING_SPRING))
+            amount *= LASTING_SPRING;
+        if (HasWellMarker(player, MOD_LONG_REACH))
+            amount *= LONG_REACH_MORE;
+        if (HasWellMarker(player, MOD_CONCENTRATED_CURRENT))
+            amount *= CONCENTRATED_CURRENT;
+        if (state.WellRiptideUntil && Now() < state.WellRiptideUntil)
+            amount *= WELL_RIPTIDE;
+        state.WellRiptideUntil = 0;
+        if (state.WellRenewCharge)
+            amount *= RENEWING_SPRING;
+        state.WellRenewCharge = false;
+        std::vector<Unit*> allies = InjuredAllies(player, bearer, range, bearer);
+        if (allies.empty())
+        {
+            WellHeal(player, bearer, bearer, received * BEARER_SHARE);
+            return;
+        }
+        bool split = HasWellMarker(player, MOD_SPLIT_TRIBUTARY) && allies.size() >= SPLIT_ALLIES;
+        bool guided = state.GuidedUntil && Now() < state.GuidedUntil;
+        state.GuidedUntil = 0;
+        std::size_t count = split ? SPLIT_ALLIES : 1;
+        for (std::size_t i = 0; i < count; ++i)
+            WellHeal(player, bearer, allies[i], amount * (split ? SPLIT_SHARE : 1.0f));
+        if (guided && allies.size() > count)
+            WellHeal(player, bearer, allies[count], amount * GUIDED_SHARE);
     }
 
     // Soothing Mist's channel target, while the Hero channels it.
@@ -3254,6 +3854,7 @@ namespace
             case SPELL_LUNAR_WOUND: return SPELL_LUNAR_WOUND_TICK;
             case SPELL_ASTRAL_RUPTURE: return SPELL_ASTRAL_RUPTURE_TICK;
             case SPELL_PHOENIX_BURN: return SPELL_PHOENIX_BURN_TICK;
+            case SPELL_FLAME_ECHO: return SPELL_FLAME_ECHO_TICK;
             case SPELL_PHANTOM_WOUND: return SPELL_PHANTOM_WOUND_TICK;
             case SPELL_RENDING_MAUL: return SPELL_RENDING_MAUL_TICK;
             case SPELL_CORRUPTED_BLADE: return SPELL_CORRUPTED_BLADE_TICK;
@@ -3629,113 +4230,246 @@ namespace
         return Marked(unit, SPELL_DAWN_MODIFIER_FIRST, modifier);
     }
 
-    void EchoOn(Player* player, Unit* unit, float amount, bool heal)
+    float DawnPower(Player* player)
     {
-        int32 points = std::max<int32>(1, int32(amount));
-        player->CastSpell(unit, heal ? SPELL_DAWN_BOLT_HEAL : SPELL_DAWN_BOLT, true);
-        player->CastCustomSpell(unit, heal ? SPELL_DAWN_ECHO_HEAL : SPELL_DAWN_ECHO_DAMAGE, &points, nullptr,
-            nullptr, true);
-        if (heal && HasDawnMarker(player, MOD_RADIANT_WARD))
-        {
-            int32 ward = std::max<int32>(1, int32(amount * RADIANT_SHARE));
-            unit->RemoveAurasDueToSpell(SPELL_RADIANT_WARD, player->GetGUID());
-            player->CastCustomSpell(unit, SPELL_RADIANT_WARD, &ward, nullptr, nullptr, true);
-            Report(player, SPELL_RADIANT_WARD, 'A', ward);
-            if (Aura* aura = unit->GetAura(SPELL_RADIANT_WARD, player->GetGUID()))
-            {
-                aura->SetMaxDuration(RADIANT_MS);
-                aura->SetDuration(RADIANT_MS);
-            }
-        }
-        if (!heal && HasDawnMarker(player, MOD_DAWNS_MERCY))
-        {
-            int32 mercy = std::max<int32>(1, int32(amount * MERCY_SHARE));
-            player->CastCustomSpell(player, SPELL_DAWN_ECHO_HEAL, &mercy, nullptr, nullptr, true);
-        }
+        return std::max(float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY)),
+            player->GetTotalAttackPowerValue(BASE_ATTACK) / 2.0f);
     }
 
-    // One echo landing: a strike on the enemy (the nearest one within 15 yards if it is gone) or a heal on the most
-    // injured ally within 15 yards of the Hero; Sunburst splashes it about there, Sacred Ground leaves a patch.
-    void Echo(Player* player, ObjectGuid enemyGuid, float amount, bool heal)
+    // The vowed ally (in reach of the Hero's world), else the Hero.
+    Unit* VowOf(Player* player)
     {
-        Unit* unit = nullptr;
+        State& state = StateOf(player);
+        Unit* vow = state.Vow ? ObjectAccessor::GetUnit(*player, state.Vow) : nullptr;
+        if (!vow || !vow->IsAlive() || !vow->IsInMap(player) || !vow->GetAura(SPELL_DAWN_VOWED, player->GetGUID()))
+            return player;
+        return vow;
+    }
+
+    // Dawn Vow on the ally (or the Hero): the last vow let go; Passing the Torch.
+    void SwearVow(Player* player, Unit* ally)
+    {
+        State& state = StateOf(player);
+        if (Unit* old = state.Vow ? ObjectAccessor::GetUnit(*player, state.Vow) : nullptr)
+            old->RemoveAurasDueToSpell(SPELL_DAWN_VOWED, player->GetGUID());
+        bool moved = state.Vow != ally->GetGUID();
+        state.Vow = ally->GetGUID();
+        player->AddAura(SPELL_DAWN_VOWED, ally);
+        if (moved && HasDawnMarker(player, MOD_PASSING_THE_TORCH))
+            Mend(player, ally, SPELL_DAWN_ECHO_HEAL, DawnPower(player) * TORCH_POWER);
+        state.PilgrimVow = ally->GetPosition();
+    }
+
+    void ClearVow(Player* player)
+    {
+        State& state = StateOf(player);
+        if (Unit* old = state.Vow ? ObjectAccessor::GetUnit(*player, state.Vow) : nullptr)
+            old->RemoveAurasDueToSpell(SPELL_DAWN_VOWED, player->GetGUID());
+        state.Vow.Clear();
+    }
+
+    // The marked enemy (alive, the Hero's), else nullptr.
+    Unit* DawnMarked(Player* player)
+    {
+        State& state = StateOf(player);
+        Unit* mark = state.DawnMark ? ObjectAccessor::GetUnit(*player, state.DawnMark) : nullptr;
+        return Valid(player, mark) && mark->GetAura(SPELL_DAWN_MARK, player->GetGUID()) ? mark : nullptr;
+    }
+
+    // One echo's effect on a unit from the vow: a heal (Chain of Grace) or a strike (Frostfire Dawn, Crusader's
+    // Flame).
+    void DawnTouch(Player* player, Unit* from, Unit* unit, float amount, bool heal)
+    {
+        ObjectGuid me = player->GetGUID();
+        from->CastSpell(unit, heal ? SPELL_DAWN_BOLT_HEAL : SPELL_DAWN_BOLT, true);
         if (heal)
         {
-            std::vector<Unit*> allies = InjuredAllies(player, player, DAWN_REACH, nullptr);
-            unit = allies.empty() ? player : allies.front();
+            Mend(player, unit, SPELL_DAWN_ECHO_HEAL, amount);
+            return;
         }
-        else
+        Strike(player, unit, SPELL_DAWN_ECHO_DAMAGE, amount);
+        if (HasDawnMarker(player, MOD_CRUSADERS_FLAME) && unit->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
+            Strike(player, unit, SPELL_CRUSADERS_FLAME, DawnPower(player) * CRUSADERS_FIRE_POWER);
+    }
+
+    // A Dawn Echo from the vow (scale: Steadfast's again); the Doctrine, its shape and what follows.
+    void DawnEcho(Player* player, float scale)
+    {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        Unit* vow = VowOf(player);
+        float power = DawnPower(player) * scale;
+        // The Doctrine: a heal (and how much) or a strike.
+        bool heal = true;
+        float amount = power * DAWN_POWER;
+        if (HasDawnMarker(player, MOD_MERCY))
+            amount = power * MERCY_POWER;
+        else if (HasDawnMarker(player, MOD_RETRIBUTION))
+            heal = false, amount = power * RETRIBUTION_POWER;
+        else if (HasDawnMarker(player, MOD_COMMUNION))
         {
-            unit = ObjectAccessor::GetUnit(*player, enemyGuid);
-            if (!Valid(player, unit) || !unit->IsWithinDistInMap(player, DAWN_REACH * 2.0f))
+            heal = !state.CommunionStrike;
+            state.CommunionStrike = !state.CommunionStrike;
+            amount = power * (heal ? COMMUNION_HEAL : COMMUNION_STRIKE);
+        }
+        else if (HasDawnMarker(player, MOD_EARTHEN_OATH) && vow->GetAuraOfRankedSpell(SPELL_EARTH_SHIELD, me))
+        {
+            amount = power * EARTHEN_OATH_POWER;
+            Ward(player, vow, SPELL_RADIANT_WARD, power * EARTHEN_OATH_WARD);
+            if (Aura* ward = vow->GetAura(SPELL_RADIANT_WARD, me))
             {
-                std::vector<Unit*> enemies = EnemiesAround(player, player, DAWN_REACH);
-                unit = enemies.empty() ? nullptr : enemies.front();
+                ward->SetMaxDuration(EARTHEN_OATH_MS);
+                ward->SetDuration(EARTHEN_OATH_MS);
             }
         }
-        if (!unit)
+        else if (HasDawnMarker(player, MOD_CRUSADERS_FLAME))
+            heal = false, amount = power * CRUSADERS_FLAME_POWER;
+        // The targets: the most injured allies within 10 yards of the vow, or the marked enemy within 20.
+        std::vector<Unit*> targets;
+        Unit* mark = DawnMarked(player);
+        if (heal)
+            targets = InjuredAllies(player, vow, DAWN_REACH, nullptr);
+        else if (mark && mark->IsWithinDistInMap(vow, DAWN_STRIKE_REACH))
+        {
+            targets.push_back(mark);
+            for (Unit* enemy : EnemiesAround(player, mark, SUNBURST_RADIUS))
+                if (enemy != mark)
+                    targets.push_back(enemy);
+        }
+        if (targets.empty())
             return;
-        EchoOn(player, unit, amount, heal);
+        if (!heal && state.FrostDawnUntil && Now() < state.FrostDawnUntil)
+        {
+            state.FrostDawnUntil = 0;
+            Strike(player, targets.front(), SPELL_FROSTFIRE_DAWN, power * FROSTFIRE_DAWN_POWER);
+        }
+        std::size_t count = 1;
+        float share = 1.0f;
+        if (HasDawnMarker(player, MOD_DAWNWAVE) && mark)
+        {
+            // From the vow toward the marked enemy: up to 3 on the way, half each.
+            std::vector<Unit*> path;
+            std::vector<Unit*> pool = heal ? InjuredAllies(player, vow, vow->GetExactDist2d(mark) + DAWN_REACH, nullptr)
+                : EnemiesAround(player, vow, vow->GetExactDist2d(mark) + DAWN_REACH);
+            for (Unit* unit : pool)
+                if (path.size() < DAWNWAVE_TARGETS
+                    && SegmentDist(unit->GetPosition(), vow->GetPosition(), mark->GetPosition()) <= DAWNWAVE_HALF_WIDTH)
+                    path.push_back(unit);
+            if (!path.empty())
+            {
+                targets = path;
+                count = path.size();
+                share = DAWNWAVE_SHARE;
+            }
+        }
+        else if (HasDawnMarker(player, MOD_DAWNWAVE))
+            count = std::min<std::size_t>(DAWNWAVE_TARGETS, targets.size()), share = DAWNWAVE_SHARE;
+        count = std::min(count, targets.size());
+        for (std::size_t i = 0; i < count; ++i)
+            DawnTouch(player, vow, targets[i], amount * share, heal);
+        std::size_t next = count;
+        auto more = [&](float part)
+        {
+            if (next < targets.size())
+                DawnTouch(player, vow, targets[next++], amount * part, heal);
+        };
         if (HasDawnMarker(player, MOD_SUNBURST))
         {
-            unit->CastSpell(unit, SPELL_SUNBURST, true);
-            std::vector<Unit*> touched = heal ? InjuredAllies(player, unit, SUNBURST_RADIUS, unit)
-                : EnemiesAround(player, unit, SUNBURST_RADIUS);
-            std::size_t count = 0;
-            for (Unit* other : touched)
-                if (other != unit && count++ < DAWN_TARGETS)
-                    EchoOn(player, other, amount * SUNBURST_SHARE, heal);
+            vow->CastSpell(vow, SPELL_SUNBURST, true);
+            for (std::size_t i = 0; i < SUNBURST_TARGETS; ++i)
+                if (next < targets.size() && targets[next]->IsWithinDist2d(vow, SUNBURST_RADIUS + DAWN_REACH))
+                    more(SUNBURST_SHARE);
         }
+        if (heal && state.GraceUntil && Now() < state.GraceUntil)
+        {
+            state.GraceUntil = 0;
+            more(DAWN_GRACE_SHARE);
+        }
+        if (state.PilgrimCharge)
+        {
+            state.PilgrimCharge = false;
+            more(PILGRIMAGE_SHARE);
+        }
+        state.PilgrimHero = player->GetPosition();
+        state.PilgrimVow = vow->GetPosition();
         if (HasDawnMarker(player, MOD_SACRED_GROUND))
         {
-            State& state = StateOf(player);
-            state.SacredAt = unit->GetPosition();
+            state.SacredAt = vow->GetPosition();
             state.SacredMap = player->GetMapId();
             state.SacredUntil = Now() + SACRED_MS;
-            state.SacredTick = amount * SACRED_SHARE;
-            state.SacredHeal = heal;
+            state.SacredTick = DawnPower(player) * SACRED_POWER;
+            state.SacredHeal = true;
             state.SacredTimer = 0;
             PlaceDecals(player, SPELL_SACRED_GROUND, { state.SacredAt });
         }
-    }
-
-    // A Dawn Echo of what was dealt or healed: half of it 0.75 sec later (40% more with Focused Dawn). A damage echo
-    // heals instead for a Healer; Communion makes every echo both, at 35% each. Swift Dawn: Crusader Strike and Holy
-    // Shock come back 0.5 sec sooner.
-    void QueueEcho(Player* player, Unit* target, float amount, bool heal, float share = DAWN_SHARE)
-    {
-        if (amount <= 0.0f)
-            return;
-        amount *= share * (HasDawnMarker(player, MOD_FOCUSED_DAWN) ? FOCUSED_DAWN : 1.0f);
-        bool communion = HasDawnMarker(player, MOD_COMMUNION);
-        if (!heal && Wildcard::GetRole(player) == Wildcard::ROLE_HEALER)
-            heal = true;
-        ObjectGuid enemy = target && !heal ? target->GetGUID() : ObjectGuid::Empty;
-        if (communion && target && player->IsValidAttackTarget(target))
-            enemy = target->GetGUID();
-        player->m_Events.AddEventAtOffset([player, enemy, amount, heal, communion]()
-        {
-            if (!player->IsInWorld() || !player->IsAlive())
-                return;
-            if (communion)
+        if (HasDawnMarker(player, MOD_RENEWED_OATH) && Ready(state.OathAt, OATH_EVERY_MS))
+            if (Aura* renew = vow->GetAuraOfRankedSpell(SPELL_RENEW, me))
             {
-                Echo(player, enemy, amount * COMMUNION_SHARE, false);
-                Echo(player, enemy, amount * COMMUNION_SHARE, true);
+                state.OathAt = Now();
+                ExtendAura(renew, OATH_MS, OATH_MOST_MS);
             }
-            else
-                Echo(player, enemy, amount, heal);
-        }, Milliseconds(DAWN_DELAY_MS));
-        if (HasDawnMarker(player, MOD_SWIFT_DAWN))
-            for (uint32 first : { SPELL_CRUSADER_STRIKE, SPELL_HOLY_SHOCK })
-                for (uint32 id = first; id; id = sSpellMgr->GetNextSpellInChain(id))
-                    if (player->HasSpell(id))
-                        player->ModifySpellCooldown(id, -SWIFT_DAWN_MS);
+        if (scale >= 1.0f && vow->GetAura(SPELL_DAWN_AFTERIMAGE, me))
+        {
+            vow->RemoveAurasDueToSpell(SPELL_DAWN_AFTERIMAGE, me);
+            DawnEcho(player, STEADFAST_SHARE);
+        }
     }
 
-    // Sacred Ground's ticks.
+    // Crusader Strike on the marked enemy, Holy Shock, Searing Vow's Lava Lash: an echo (3 sec apart).
+    void SendEcho(Player* player)
+    {
+        State& state = StateOf(player);
+        if (!Ready(state.DawnEchoAt, DAWN_EVERY_MS))
+            return;
+        state.DawnEchoAt = Now();
+        DawnEcho(player, 1.0f);
+    }
+
+    // The Dawnbound Crusader's other abilities (the Hero's own): Judgment marks; Crusader Strike on the mark, Holy
+    // Shock (Steadfast's afterimage first) and Lava Lash on it (Searing Vow) echo; Frostbolt on it (Frostfire Dawn),
+    // Chain Heal on the vow (Chain of Grace).
+    void DawnAbility(Player* player, Unit* target, uint32 firstRank)
+    {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        bool judgment = firstRank == SPELL_JUDGEMENT_OF_LIGHT || firstRank == SPELL_JUDGEMENT_OF_WISDOM
+            || firstRank == SPELL_JUDGEMENT_OF_JUSTICE;
+        if (judgment && Valid(player, target))
+        {
+            if (Unit* old = DawnMarked(player); old && old != target)
+                old->RemoveAurasDueToSpell(SPELL_DAWN_MARK, me);
+            state.DawnMark = target->GetGUID();
+            Lasting(player, target, SPELL_DAWN_MARK, DAWN_MARK_MS);
+            return;
+        }
+        Unit* mark = DawnMarked(player);
+        if (firstRank == SPELL_CRUSADER_STRIKE && target == mark)
+            SendEcho(player);
+        else if (firstRank == SPELL_HOLY_SHOCK)
+        {
+            if (HasDawnMarker(player, MOD_STEADFAST))
+                Lasting(player, VowOf(player), SPELL_DAWN_AFTERIMAGE, AFTERIMAGE_MS);
+            SendEcho(player);
+        }
+        else if (firstRank == SPELL_LAVA_LASH && target == mark && HasDawnMarker(player, MOD_SEARING_VOW))
+            SendEcho(player);
+        else if (firstRank == SPELL_FROSTBOLT && target == mark && HasDawnMarker(player, MOD_FROSTFIRE_DAWN))
+            state.FrostDawnUntil = Now() + DAWN_CHARGE_MS;
+        else if (firstRank == SPELL_CHAIN_HEAL && target == VowOf(player) && HasDawnMarker(player, MOD_CHAIN_OF_GRACE))
+            state.GraceUntil = Now() + DAWN_CHARGE_MS;
+    }
+
+    // Sacred Ground's ticks (one injured ally in it a second); Shared Pilgrimage's 8 yards.
     void DawnTick(Player* player, uint32 diff)
     {
         State& state = StateOf(player);
+        if (HasDawnMarker(player, MOD_SHARED_PILGRIMAGE) && !state.PilgrimCharge)
+        {
+            Unit* vow = VowOf(player);
+            if (player->GetExactDist2d(&state.PilgrimHero) >= PILGRIMAGE_DISTANCE
+                || vow->GetExactDist2d(&state.PilgrimVow) >= PILGRIMAGE_DISTANCE)
+                state.PilgrimCharge = true;
+        }
         if (!state.SacredUntil)
             return;
         if (Now() >= state.SacredUntil || state.SacredMap != player->GetMapId())
@@ -3749,20 +4483,12 @@ namespace
             return;
         state.SacredTimer = 0;
         Shape patch = Circle(state.SacredAt, SACRED_RADIUS);
-        int32 tick = std::max<int32>(1, int32(state.SacredTick));
-        if (state.SacredHeal)
-        {
-            std::size_t healed = 0;
-            for (Unit* ally : InjuredAllies(player, player, 60.0f, nullptr))
-                if (healed < DAWN_TARGETS && patch.Holds(ally))
-                {
-                    ++healed;
-                    player->CastCustomSpell(ally, SPELL_DAWN_ECHO_HEAL, &tick, nullptr, nullptr, true);
-                }
-        }
-        else
-            for (Unit* enemy : EnemiesIn(player, patch, DAWN_TARGETS))
-                player->CastCustomSpell(enemy, SPELL_DAWN_ECHO_DAMAGE, &tick, nullptr, nullptr, true);
+        for (Unit* ally : InjuredAllies(player, player, 60.0f, nullptr))
+            if (patch.Holds(ally))
+            {
+                Mend(player, ally, SPELL_DAWN_ECHO_HEAL, state.SacredTick);
+                return;
+            }
     }
 
     // ---- The Hollow Congregation -------------------------------------------------------------------------------
@@ -4030,107 +4756,292 @@ namespace
         return Marked(unit, SPELL_SUN_MODIFIER_FIRST, modifier);
     }
 
-    uint8 Shards(Player* player, Unit* unit)
-    {
-        Aura* aura = unit->GetAura(SPELL_SUNSHARD, player->GetGUID());
-        return aura ? aura->GetStackAmount() : 0;
-    }
-
-    // count Sunshards in the target (up to 5, 8 with Heavy Sun), all renewed to 15 sec.
-    void Embed(Player* player, Unit* target, uint8 count)
-    {
-        uint8 most = HasSunMarker(player, MOD_HEAVY_SUN) ? HEAVY_SHARDS : MAX_SHARDS;
-        uint8 shards = std::min<uint8>(most, Shards(player, target) + count);
-        Lasting(player, target, SPELL_SUNSHARD, SUNSHARD_MS);
-        if (Aura* aura = target->GetAura(SPELL_SUNSHARD, player->GetGUID()))
-            aura->SetStackAmount(shards);
-        State& state = StateOf(player);
-        if (std::find(state.Shards.begin(), state.Shards.end(), target->GetGUID()) == state.Shards.end())
-            state.Shards.push_back(target->GetGUID());
-    }
-
-    // The Hero's floor for a shatter's base: level x 4 and 40% of their spell power (Fire or Frost, the higher), with
-    // their Frostfire damage bonuses; a weak frost spell (Frost Nova, Ice Lance) still shatters well.
     float SunPower(Player* player)
     {
-        float power = float(std::max(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE),
-            player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FROST)));
-        return (SUN_LEVEL * player->GetLevel() + power * SUN_POWER) * player->GetTotalAuraMultiplierByMiscMask(
-            SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, SPELL_SCHOOL_MASK_FIRE | SPELL_SCHOOL_MASK_FROST);
+        return RunePower(player, SpellSchoolMask(SPELL_SCHOOL_MASK_FIRE | SPELL_SCHOOL_MASK_FROST), SPELL_FIREBALL);
     }
 
-    // The shards' burst about their host: each enemy within 8 yards (12 with Wide Burst) takes the burst, the host
-    // 40% more with Implosion; Frozen Core slows them, Scalding Ground leaves burning ground, Second Sunrise pulses
-    // again.
-    void Burst(Player* player, Unit* host, float burst)
+    // Solar Anchor's shards on the ground (their look).
+    void DrawAnchors(Player* player)
     {
-        Position at = host->GetPosition();
-        float radius = HasSunMarker(player, MOD_WIDE_BURST) ? WIDE_RADIUS : FRACTURE_RADIUS;
-        if (host->IsAlive())
-            host->CastSpell(host, SPELL_FRACTURE_LOOK, true);
-        else                                        // a host the frost spell killed: the burst shows on its body
-            player->CastSpell(host, SPELL_FRACTURE_LOOK, true);
-        for (Unit* enemy : EnemiesIn(player, Circle(at, radius), FRACTURE_TARGETS))
+        if (!HasSunMarker(player, MOD_SOLAR_ANCHOR))
+            return;
+        std::vector<Position> points;
+        for (State::Sunshard const& shard : StateOf(player).Shards)
+            if (shard.Map == player->GetMapId())
+                points.push_back(shard.At);
+        PlaceDecals(player, SPELL_SOLAR_ANCHOR, points);
+    }
+
+    // A Sunshard in the target for 10 sec (2 hosts at most, 3 with Twin Suns: a new one replaces the oldest).
+    void Embed(Player* player, Unit* target, bool storm)
+    {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        auto old = std::find_if(state.Shards.begin(), state.Shards.end(),
+            [target](State::Sunshard const& shard) { return shard.Host == target->GetGUID(); });
+        if (old != state.Shards.end())
+            state.Shards.erase(old);
+        std::size_t most = HasSunMarker(player, MOD_TWIN_SUNS) ? TWIN_HOSTS : SHARD_HOSTS;
+        while (state.Shards.size() >= most)
         {
-            float share = enemy == host && HasSunMarker(player, MOD_IMPLOSION) ? IMPLOSION : 1.0f;
-            int32 damage = std::max<int32>(1, int32(burst * share));
-            player->CastCustomSpell(enemy, SPELL_FRACTURE, &damage, nullptr, nullptr, true);
-            if (HasSunMarker(player, MOD_FROZEN_CORE) && enemy->IsAlive())
-                Lasting(player, enemy, SPELL_FROZEN_CORE, FROZEN_CORE_MS);
+            if (Unit* host = ObjectAccessor::GetUnit(*player, state.Shards.front().Host))
+                host->RemoveAurasDueToSpell(SPELL_SUNSHARD, me);
+            state.Shards.erase(state.Shards.begin());
+        }
+        State::Sunshard shard;
+        shard.Host = target->GetGUID();
+        shard.At = target->GetPosition();
+        shard.Map = player->GetMapId();
+        shard.Until = Now() + SUNSHARD_MS;
+        shard.Lunar = HasSunMarker(player, MOD_LUNAR_SHARD) && target->GetAuraOfRankedSpell(SPELL_MOONFIRE, me);
+        shard.Storm = storm;
+        state.Shards.push_back(shard);
+        Lasting(player, target, SPELL_SUNSHARD, SUNSHARD_MS);
+        DrawAnchors(player);
+    }
+
+    // The shard a frost spell on the target fractures: its own, or (Solar Anchor) one lying within 6 yards of it.
+    std::vector<State::Sunshard>::iterator ShardFor(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        bool anchor = HasSunMarker(player, MOD_SOLAR_ANCHOR);
+        return std::find_if(state.Shards.begin(), state.Shards.end(), [&](State::Sunshard const& shard)
+        {
+            if (shard.Host == target->GetGUID())
+                return true;
+            return anchor && shard.Map == player->GetMapId() && target->GetExactDist2d(&shard.At) <= ANCHOR_REACH;
+        });
+    }
+
+    // A fracture on the host (scale: Chain Reaction's half): Frostfire to it and about it (the options' shapes), its
+    // Broken Core, Flame Shock longer (Flame Burst), Scalding Ground.
+    void Fracture(Player* player, Unit* host, State::Sunshard shard, float scale)
+    {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        if (Unit* old = ObjectAccessor::GetUnit(*player, shard.Host))
+            old->RemoveAurasDueToSpell(SPELL_SUNSHARD, me);
+        float power = SunPower(player);
+        float main = power * FRACTURE_HOST * scale;
+        if (HasSunMarker(player, MOD_TWIN_SUNS))
+            main *= TWIN_SUNS;
+        if (HasSunMarker(player, MOD_SOLAR_ANCHOR))
+            main *= SOLAR_ANCHOR;
+        float splash = power * FRACTURE_SPLASH * scale;
+        Position at = host->GetPosition();
+        host->CastSpell(host, SPELL_FRACTURE_LOOK, true);
+        Strike(player, host, SPELL_FRACTURE, main);
+        if (shard.Lunar)
+            Strike(player, host, SPELL_LUNAR_SHARD, RunePower(player, SPELL_SCHOOL_MASK_ARCANE, 0) * LUNAR_POWER);
+        if (shard.Storm)
+            Strike(player, host, SPELL_STORM_SHARD,
+                RunePower(player, SPELL_SCHOOL_MASK_NATURE, 0) * STORM_SHARD_POWER);
+        if (HasSunMarker(player, MOD_SPLINTERSTORM))
+        {
+            float facing = player->GetAngle(host);
+            std::size_t count = 1;
+            for (Unit* enemy : EnemiesAround(player, host, SPLINTER_RANGE))
+                if (enemy != host && count < SUN_TARGETS
+                    && InArc(at, facing, enemy->GetPosition(), SPLINTER_HALF_ARC))
+                {
+                    ++count;
+                    Strike(player, enemy, SPELL_FRACTURE, main * SPLINTER_SHARE);
+                }
+        }
+        else
+        {
+            std::size_t count = 0;
+            for (Unit* enemy : EnemiesAround(player, host, FRACTURE_RADIUS))
+                if (enemy != host && count++ < FRACTURE_TARGETS)
+                    Strike(player, enemy, SPELL_FRACTURE, splash);
+        }
+        if (HasSunMarker(player, MOD_SOLAR_LANCE))
+        {
+            Position end = Toward(at, player->GetAngle(host), SOLAR_LANCE_RANGE);
+            std::size_t count = 0;
+            for (Unit* enemy : EnemiesAround(player, host, SOLAR_LANCE_RANGE))
+                if (enemy != host && count < SOLAR_LANCE_TARGETS
+                    && SegmentDist(enemy->GetPosition(), at, end) <= SOLAR_LANCE_HALF_WIDTH
+                    && player->GetExactDist2d(enemy) > player->GetExactDist2d(host))
+                {
+                    ++count;
+                    Strike(player, enemy, SPELL_FRACTURE, main * SOLAR_LANCE_SHARE);
+                }
+        }
+        if (HasSunMarker(player, MOD_ORBITING_SUN))
+            if (Unit* chosen = player->GetSelectedUnit(); chosen != host && Valid(player, chosen)
+                && player->IsWithinDistInMap(chosen, ORBITING_RANGE))
+                Strike(player, chosen, SPELL_FRACTURE, main * ORBITING_SHARE);
+        if (Aura* flame = host->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
+        {
+            ExtendAura(flame, SUN_FLAME_MS, SUN_FLAME_MOST_MS);
+            if (HasSunMarker(player, MOD_FLAME_BURST) && Ready(state.FlameBurstAt, FLAME_BURST_EVERY_MS))
+                for (Unit* enemy : EnemiesAround(player, host, FLAME_BURST_RANGE))
+                    if (enemy != host && !enemy->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
+                    {
+                        state.FlameBurstAt = Now();
+                        if (Aura* copy = player->AddAura(flame->GetId(), enemy))
+                        {
+                            copy->SetMaxDuration(flame->GetDuration());
+                            copy->SetDuration(flame->GetDuration());
+                        }
+                        break;
+                    }
+        }
+        if (host->IsAlive())
+        {
+            Lasting(player, host, SPELL_BROKEN_CORE, BROKEN_CORE_MS);
+            state.CoreLanced.erase(host->GetGUID());
         }
         if (HasSunMarker(player, MOD_SCALDING_GROUND))
         {
-            State& state = StateOf(player);
             state.ScaldAt = at;
             state.ScaldMap = player->GetMapId();
             state.ScaldUntil = Now() + SCALDING_MS;
-            state.ScaldTick = burst * SCALDING_SHARE;
+            state.ScaldTick = power * SCALDING_POWER;
             state.ScaldTimer = 0;
             PlaceDecals(player, SPELL_SCALDING_GROUND, { at });
         }
+    }
+
+    // A frost spell (Frostbolt; Ice Lance with Frozen Flash) on the target: the shard it reaches fractures.
+    void SunFrost(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        auto shard = ShardFor(player, target);
+        if (shard == state.Shards.end())
+            return;
+        State::Sunshard taken = *shard;
+        state.Shards.erase(shard);
+        DrawAnchors(player);
+        Fracture(player, target, taken, 1.0f);
+    }
+
+    // Fireball on a Broken Core: the collapse, 40% (Implosion 50% more); Chain Reaction, Second Sunrise, Icy Shelter.
+    void Collapse(Player* player, Unit* host)
+    {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        if (!host->GetAura(SPELL_BROKEN_CORE, me))
+            return;
+        host->RemoveAurasDueToSpell(SPELL_BROKEN_CORE, me);
+        state.CoreLanced.erase(host->GetGUID());
+        float collapse = SunPower(player) * COLLAPSE_POWER * (HasSunMarker(player, MOD_IMPLOSION) ? IMPLOSION : 1.0f);
+        host->CastSpell(host, SPELL_COLLAPSE_LOOK, true);
+        Strike(player, host, SPELL_COLLAPSE, collapse);
+        if (HasSunMarker(player, MOD_CHAIN_REACTION))
+            for (Unit* other : EnemiesAround(player, host, CHAIN_RADIUS))
+            {
+                auto shard = std::find_if(state.Shards.begin(), state.Shards.end(),
+                    [other](State::Sunshard const& each) { return each.Host == other->GetGUID(); });
+                if (other == host || shard == state.Shards.end())
+                    continue;
+                State::Sunshard taken = *shard;
+                state.Shards.erase(shard);
+                DrawAnchors(player);
+                Fracture(player, other, taken, CHAIN_SHARE);
+                break;
+            }
         if (HasSunMarker(player, MOD_SECOND_SUNRISE))
-            player->m_Events.AddEventAtOffset([player, at, radius, burst]()
+        {
+            ObjectGuid hostGuid = host->GetGUID();
+            float again = collapse * SUNRISE_SHARE;
+            player->m_Events.AddEventAtOffset([player, hostGuid, again]()
             {
                 if (!player->IsInWorld() || !player->IsAlive())
                     return;
-                std::vector<Unit*> enemies = EnemiesIn(player, Circle(at, radius), FRACTURE_TARGETS);
-                if (enemies.empty())
+                Unit* target = ObjectAccessor::GetUnit(*player, hostGuid);
+                if (!target || !target->IsAlive())
                     return;
-                enemies.front()->CastSpell(enemies.front(), SPELL_COLLAPSE_LOOK, true);
-                int32 pulse = std::max<int32>(1, int32(burst * SUNRISE_SHARE));
-                for (Unit* enemy : enemies)
-                    player->CastCustomSpell(enemy, SPELL_COLLAPSE, &pulse, nullptr, nullptr, true);
+                target->CastSpell(target, SPELL_COLLAPSE_LOOK, true);
+                Strike(player, target, SPELL_COLLAPSE, again);
+                std::size_t count = 0;
+                for (Unit* enemy : EnemiesAround(player, target, SUNRISE_RADIUS))
+                    if (enemy != target && count++ < SUNRISE_TARGETS)
+                        Strike(player, enemy, SPELL_COLLAPSE, again);
             }, Milliseconds(SUNRISE_DELAY_MS));
+        }
+        if (HasSunMarker(player, MOD_ICY_SHELTER) && player->GetAuraOfRankedSpell(SPELL_ICE_BARRIER, me)
+            && Ready(state.IcyShelterAt, ICY_SHELTER_EVERY_MS))
+        {
+            state.IcyShelterAt = Now();
+            Ward(player, player, SPELL_ICY_SHELTER, SunPower(player) * ICY_SHELTER_POWER);
+            if (Aura* aura = player->GetAura(SPELL_ICY_SHELTER, me))
+            {
+                aura->SetMaxDuration(ICY_SHELTER_MS);
+                aura->SetDuration(ICY_SHELTER_MS);
+            }
+        }
     }
 
-    // A frost spell on a host: every shard in it shatters, 25% of the spell's damage each (the Hero's floor at
-    // least). Chain Reaction: shards in other enemies within 10 yards shatter too, at half (once, no further chain).
-    // held: the shards the host held as the spell struck (a killing blow takes them with its auras before the spell's
-    // after-hit: they still shatter).
-    void Shatter(Player* player, Unit* host, float frost, bool chained = false, uint8 held = 0)
+    // The Shattered Sun's spells (the Hero's own): Fireball (collapse, then a shard), Frostbolt (a fracture), Ice
+    // Lance (its Core hit; Frozen Flash), Lightning Bolt (Storm Shard).
+    void SunSpell(Player* player, Unit* target, uint32 firstRank)
     {
-        uint8 shards = std::max(Shards(player, host), held);
-        if (!shards)
-            return;
-        host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
-        float base = std::max(frost, SunPower(player));
-        Burst(player, host, base * SHARD_SHARE * shards * (chained ? CHAIN_SHARE : 1.0f));
-        if (chained || !HasSunMarker(player, MOD_CHAIN_REACTION))
-            return;
-        for (Unit* other : EnemiesAround(player, host, CHAIN_RADIUS))
-            if (other != host && Shards(player, other))
-                Shatter(player, other, frost, true);
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        switch (firstRank)
+        {
+            case SPELL_FIREBALL:
+                Collapse(player, target);
+                if (target->IsAlive())
+                    Embed(player, target, false);
+                break;
+            case SPELL_LIGHTNING_BOLT:
+                if (HasSunMarker(player, MOD_STORM_SHARD) && target->IsAlive()
+                    && Ready(state.StormShardAt, STORM_SHARD_EVERY_MS))
+                {
+                    state.StormShardAt = Now();
+                    Embed(player, target, true);
+                }
+                break;
+            case SPELL_FROSTBOLT:
+                SunFrost(player, target);
+                break;
+            case SPELL_ICE_LANCE:
+                if (target->GetAura(SPELL_BROKEN_CORE, me) && state.CoreLanced.insert(target->GetGUID()).second)
+                {
+                    bool shattering = HasSunMarker(player, MOD_SHATTERING_LANCE);
+                    Strike(player, target, SPELL_CORE_LANCE, RunePower(player, SPELL_SCHOOL_MASK_FROST, 0)
+                        * (shattering ? SHATTERING_LANCE_POWER : CORE_LANCE_POWER));
+                    if (shattering)
+                    {
+                        player->RemoveAurasDueToSpell(SPELL_SHATTERING_LANCE);
+                        player->CastSpell(player, SPELL_SHATTERING_LANCE, true);
+                    }
+                }
+                if (HasSunMarker(player, MOD_FROZEN_FLASH) && Ready(state.FrozenFlashAt, FROZEN_FLASH_EVERY_MS)
+                    && ShardFor(player, target) != state.Shards.end())
+                {
+                    state.FrozenFlashAt = Now();
+                    SunFrost(player, target);
+                }
+                break;
+            default:
+                break;
+        }
     }
 
-    // Scalding Ground's ticks; the shards' hosts kept for clearing.
+    // Scalding Ground's ticks; the shards' times.
     void SunTick(Player* player, uint32 diff)
     {
         State& state = StateOf(player);
-        state.Shards.erase(std::remove_if(state.Shards.begin(), state.Shards.end(), [player](ObjectGuid guid)
+        std::size_t before = state.Shards.size();
+        auto gone = [player](State::Sunshard const& shard)
         {
-            Unit* host = ObjectAccessor::GetUnit(*player, guid);
-            return !host || !Shards(player, host);
-        }), state.Shards.end());
+            Unit* host = ObjectAccessor::GetUnit(*player, shard.Host);
+            bool anchored = HasSunMarker(player, MOD_SOLAR_ANCHOR);
+            return Now() >= shard.Until || (!anchored && (!host || !host->IsAlive()));
+        };
+        state.Shards.erase(std::remove_if(state.Shards.begin(), state.Shards.end(), gone), state.Shards.end());
+        if (state.Shards.size() != before)
+        {
+            if (state.Shards.empty())
+                player->RemoveDynObject(SPELL_SOLAR_ANCHOR);
+            else
+                DrawAnchors(player);
+        }
         if (!state.ScaldUntil)
             return;
         if (Now() >= state.ScaldUntil || state.ScaldMap != player->GetMapId())
@@ -4144,7 +5055,7 @@ namespace
             return;
         state.ScaldTimer = 0;
         int32 damage = std::max<int32>(1, int32(state.ScaldTick));
-        for (Unit* enemy : EnemiesIn(player, Circle(state.ScaldAt, SCALDING_RADIUS), FRACTURE_TARGETS))
+        for (Unit* enemy : EnemiesIn(player, Circle(state.ScaldAt, SCALDING_RADIUS), SUN_TARGETS))
             player->CastCustomSpell(enemy, SPELL_FRACTURE, &damage, nullptr, nullptr, true);
     }
 
@@ -4165,10 +5076,12 @@ namespace
         player->RemoveDynObject(SPELL_HOLLOW_PATCH);
         for (uint32 spell : { SPELL_PHANTOM_OPENING, SPELL_FATAL_OPENING, SPELL_BLEEDING_FOLLOW })
             player->RemoveAurasDueToSpell(spell);
-        for (ObjectGuid guid : state.Shards)
-            if (Unit* host = ObjectAccessor::GetUnit(*player, guid))
+        for (State::Sunshard const& shard : state.Shards)
+            if (Unit* host = ObjectAccessor::GetUnit(*player, shard.Host))
                 host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
         state.Shards.clear();
+        state.CoreLanced.clear();
+        player->RemoveDynObject(SPELL_SOLAR_ANCHOR);
         state.ScaldUntil = 0;
         player->RemoveDynObject(SPELL_SCALDING_GROUND);
         DismissBeast(player);
@@ -4190,9 +5103,6 @@ namespace
         for (uint32 old = 90835; old <= 90837; ++old)
             player->RemoveAurasDueToSpell(old);
         player->RemoveAurasDueToSpell(SPELL_CRIMSON_MARCH);
-        // The Dawnbound Crusader's first draft taught Dawn Vow and vowed the Hero: gone with it.
-        unlearn(SPELL_DAWN_VOW);
-        player->RemoveAurasDueToSpell(SPELL_DAWN_VOWED);
     }
 
     // ---- The Spectral Blade ------------------------------------------------------------------------------------
@@ -7237,6 +8147,14 @@ namespace
     // The Duelist teaches Sabre Slash, Pistol Shot and Broadside while it is bound, each in place of an ability the
     // Hero knows (Sinister Strike, Arcane Shot, Rapid Fire: their buttons become the rune's); unbound, they go and
     // the buttons are the Hero's own again.
+    // The Dawnbound Crusader teaches Dawn Vow in Beacon of Light's place; unbound, the vow is let go.
+    void TeachDawn(Player* player, bool bound)
+    {
+        LegendaryRunes::ReplaceAbility(player, SPELL_DAWN_VOW, { SPELL_BEACON_OF_LIGHT }, bound);
+        if (!bound)
+            ClearVow(player);
+    }
+
     void TeachDuelist(Player* player, bool bound)
     {
         LegendaryRunes::ReplaceAbility(player, SPELL_SABRE_SLASH, { SPELL_SINISTER_STRIKE }, bound);
@@ -8007,7 +8925,7 @@ namespace
     {
         for (uint32 spell : RuneAuras())
             player->RemoveAurasDueToSpell(spell);
-        bool any = false, paragon = false, duelist = false;
+        bool any = false, paragon = false, duelist = false, dawn = false;
         for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
         {
             Choice const& choice = ActiveChoice(player, runeSlot);
@@ -8017,6 +8935,7 @@ namespace
             any = true;
             paragon |= rune->Id == RUNE_SANCTIFIED_PARAGON;
             duelist |= rune->Id == RUNE_DUELIST;
+            dawn |= rune->Id == RUNE_DAWNBOUND_CRUSADER;
             player->AddAura(rune->Aura, player);
             for (uint8 slot = 0; slot < SLOTS; ++slot)
                 if (uint8 pick = choice.Mods[slot]; pick && pick <= rune->Choices)
@@ -8027,6 +8946,7 @@ namespace
         if (!paragon)
             player->RemoveAurasDueToSpell(SPELL_SANCTIFIED_PARAGON);
         TeachDuelist(player, duelist);
+        TeachDawn(player, dawn);
         TankRunes::Apply(player);
         RetireCatCopy(player, SPELL_CAT_FIRE_BLAST, SPELL_FIRE_BLAST);
         RetireCatCopy(player, SPELL_CAT_ICY_TOUCH, SPELL_ICY_TOUCH);
@@ -8449,6 +9369,13 @@ namespace
                     "a damaging Manifestation: choose it again.");
             }
         }
+        // The Stormbound Conduit: Live Wire and Storm Within never together.
+        if (choice.Rune == RUNE_STORMBOUND_CONDUIT
+            && ((slot == 1 && pick == MOD_LIVE_WIRE % MAX_CHOICES + 1
+                    && choice.Mods[2] == MOD_STORM_WITHIN % MAX_CHOICES + 1)
+                || (slot == 3 && pick == MOD_STORM_WITHIN % MAX_CHOICES + 1
+                    && choice.Mods[0] == MOD_LIVE_WIRE % MAX_CHOICES + 1)))
+            return Refuse(player, "Live Wire and Storm Within cannot be chosen together.");
         if (choice.Mods[slot - 1] == pick)
             return SendState(player);
         choice.Mods[slot - 1] = pick;
@@ -8550,6 +9477,7 @@ namespace LegendaryRunes
     bool IsReplacedBase(uint32 firstRank)
     {
         return firstRank == SPELL_SINISTER_STRIKE || firstRank == SPELL_ARCANE_SHOT || firstRank == SPELL_RAPID_FIRE
+            || firstRank == SPELL_BEACON_OF_LIGHT
             || TankRunes::IsReplacedBase(firstRank);
     }
 
@@ -8764,36 +9692,14 @@ class spell_titan_rune_sanctified_paragon : public AuraScript
     }
 };
 
-// The Stormbound Conduit's aura (90750): a Lightning Bolt hit arcs (Overcharge: 50% more on a critical strike;
-// Distant Conductor: a Lightning Shield retaliation at its target); Chain Surge: each Chain Lightning hit arcs once.
+// The Stormbound Conduit's aura (90750): nothing to proc now (its redesign works through ConduitHit).
 class spell_titan_rune_stormbound_conduit : public AuraScript
 {
     PrepareAuraScript(spell_titan_rune_stormbound_conduit);
 
-    bool CheckProc(ProcEventInfo& eventInfo)
+    bool CheckProc(ProcEventInfo& /*eventInfo*/)
     {
-        SpellInfo const* spell = eventInfo.GetSpellInfo();
-        Player* player = GetTarget()->ToPlayer();
-        Unit* target = eventInfo.GetActionTarget();
-        DamageInfo* damageInfo = eventInfo.GetDamageInfo();
-        if (!spell || !player || !target || target == player || !damageInfo
-            || !(eventInfo.GetHitMask() & (PROC_HIT_NORMAL | PROC_HIT_CRITICAL | PROC_HIT_ABSORB)))
-            return false;
-        float damage = float(damageInfo->GetDamage() + damageInfo->GetAbsorb());
-        if ((eventInfo.GetHitMask() & PROC_HIT_CRITICAL) && HasStormMarker(player, MOD_OVERCHARGE))
-            damage *= OVERCHARGE;
-        uint32 first = spell->GetFirstRankSpell()->Id;
-        if (first == SPELL_LIGHTNING_BOLT)
-        {
-            Arc(player, target, damage, BOLT_ARC_SHARE,
-                HasStormMarker(player, MOD_FORKED_TEMPEST) ? FORKED_ARCS : BOLT_ARCS, true);
-            if (HasStormMarker(player, MOD_DISTANT_CONDUCTOR) && target->IsAlive())
-                if (AuraEffect* shield = Shield(player))
-                    Retaliate(player, target, shield);
-        }
-        else if (first == SPELL_CHAIN_LIGHTNING && HasStormMarker(player, MOD_CHAIN_SURGE))
-            Arc(player, target, damage, CHAIN_ARC_SHARE, 1, false);
-        return false;                               // the rune's work is done here; nothing else to proc
+        return false;                               // the rune's work is in the extended hit script (ConduitHit)
     }
 
     void Register() override
@@ -8823,7 +9729,7 @@ class spell_titan_rune_lightning_shield : public AuraScript
 };
 
 // A Lightning Shield retaliation (its damage, every rank, and the rune's own 90754) with the Stormbound Conduit:
-// it arcs to an enemy near the target for 50% of its damage (two with Live Wire).
+// Live Wire's 15% more and Conductive; its arc to another Conductive enemy (ShieldArc).
 class spell_titan_rune_lightning_shield_damage : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_lightning_shield_damage);
@@ -8834,8 +9740,9 @@ class spell_titan_rune_lightning_shield_damage : public SpellScript
         Unit* target = GetHitUnit();
         if (!player || !target || !player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
             return;
-        Arc(player, target, float(GetHitDamage()), SHIELD_ARC_SHARE,
-            HasStormMarker(player, MOD_LIVE_WIRE) ? LIVE_WIRE_ARCS : SHIELD_ARCS, false);
+        if (HasStormMarker(player, MOD_LIVE_WIRE))
+            SetHitDamage(int32(GetHitDamage() * LIVE_WIRE_MORE));
+        ShieldArc(player, target, float(GetHitDamage()));
     }
 
     void Register() override
@@ -8882,49 +9789,26 @@ class spell_titan_rune_shield_slam : public SpellScript
     }
 };
 
-// Chain Heal (every rank) with the Wellspring: 20% more on the Hero's Earth Shield wearer (40% with Bedrock;
-// Renewed Shield: a charge back); a moment after its first hit, its extra jump from its last target.
+// Chain Heal (every rank) with the Wellspring, the Hero's own cast: 20% more on their Earth Shield bearer; there it
+// releases the bearer's Wellspring (once a cast, not one it laid) and then lays or renews it.
 class spell_titan_rune_chain_heal : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_chain_heal);
-
-    struct Chain
-    {
-        int32 First = 0;
-        ObjectGuid Last;
-        std::set<ObjectGuid> Healed;
-    };
 
     void Flow()
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (!player || !target || !player->HasAura(SPELL_RUNE_WELLSPRING))
+        if (!player || !target || GetSpell()->IsTriggered() || !player->HasAura(SPELL_RUNE_WELLSPRING)
+            || !HasEarthShield(player, target))
             return;
-        if (HasEarthShield(player, target))
+        SetHitHeal(int32(GetHitHeal() * WEARER_BONUS));
+        if (!_released && WellOn(player, target))
         {
-            SetHitHeal(int32(GetHitHeal() * (HasWellMarker(player, MOD_BEDROCK) ? BEDROCK_BONUS : WEARER_BONUS)));
-            if (HasWellMarker(player, MOD_RENEWED_SHIELD))
-                for (uint32 id = SPELL_EARTH_SHIELD; id; id = sSpellMgr->GetNextSpellInChain(id))
-                    if (Aura* shield = target->GetAura(id, player->GetGUID()))
-                        if (shield->GetCharges() < shield->CalcMaxCharges())
-                            shield->ModCharges(1);
+            _released = true;
+            ReleaseWell(player, target, float(GetHitHeal()));
         }
-        if (!_chain)
-        {
-            _chain = std::make_shared<Chain>();
-            _chain->First = GetHitHeal();
-            std::shared_ptr<Chain> chain = _chain;
-            player->m_Events.AddEventAtOffset([player, chain]()
-            {
-                if (!player->IsInWorld() || !player->IsAlive())
-                    return;
-                if (Unit* last = ObjectAccessor::GetUnit(*player, chain->Last))
-                    WellspringJump(player, last, chain->First, chain->Healed);
-            }, Milliseconds(JUMP_DELAY_MS));
-        }
-        _chain->Last = target->GetGUID();
-        _chain->Healed.insert(target->GetGUID());
+        LayWell(player, target);
     }
 
     void Register() override
@@ -8932,11 +9816,10 @@ class spell_titan_rune_chain_heal : public SpellScript
         OnHit += SpellHitFn(spell_titan_rune_chain_heal::Flow);
     }
 
-    std::shared_ptr<Chain> _chain;
+    bool _released = false;
 };
 
-// Earth Shield's heal (every rank) with Flowing Waters: half of it again on the most injured ally within 12.5 yards
-// of the wearer.
+// Earth Shield's heal (every rank) with the Wellspring: on its bearer, their Wellspring renewed (Flowing Waters).
 class spell_titan_rune_earth_shield_heal : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_earth_shield_heal);
@@ -8946,14 +9829,8 @@ class spell_titan_rune_earth_shield_heal : public SpellScript
         Unit* origin = GetOriginalCaster() ? GetOriginalCaster() : GetCaster();
         Player* player = origin ? origin->ToPlayer() : nullptr;
         Unit* target = GetHitUnit();
-        if (!player || !target || !player->HasAura(SPELL_RUNE_WELLSPRING) || !HasWellMarker(player, MOD_FLOWING_WATERS))
-            return;
-        std::vector<Unit*> allies = InjuredAllies(player, target, CHAIN_HEAL_JUMP, target);
-        if (allies.empty())
-            return;
-        int32 heal = std::max<int32>(1, int32(GetHitHeal() * FLOWING_SHARE));
-        target->CastSpell(allies.front(), SPELL_WELLSPRING_JUMP, true);
-        player->CastCustomSpell(allies.front(), SPELL_WELLSPRING_HEAL, &heal, nullptr, nullptr, true);
+        if (player && target && player->HasAura(SPELL_RUNE_WELLSPRING))
+            WellShield(player, target);
     }
 
     void Register() override
@@ -9174,15 +10051,26 @@ class spell_titan_rune_unbroken_onslaught : public AuraScript
     }
 };
 
-// Dawn Vow: the first draft's action (unlearned); nothing.
+// Dawn Vow (the Dawnbound Crusader's, in Beacon of Light's place): the vow on its target.
 class spell_titan_rune_dawn_vow : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_dawn_vow);
 
-    void Register() override { }
+    void Swear(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
+            SwearVow(player, target);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_dawn_vow::Swear, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
 };
 
-// A Judgement with the Dawnbound Crusader and Judgment's Echo: a Dawn Echo of its damage.
+// A Judgement with the Dawnbound Crusader: the mark.
 class spell_titan_rune_judgement : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_judgement);
@@ -9191,14 +10079,8 @@ class spell_titan_rune_judgement : public SpellScript
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (!player || !target || !player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER)
-            || !HasDawnMarker(player, MOD_JUDGMENTS_ECHO))
-            return;
-        // A Judgement's own cast deals nothing (its seal's spell does): the echo is the Hero's level x 5 and the
-        // higher of their Holy spell power or half their attack power.
-        float power = std::max(float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_HOLY)),
-            player->GetTotalAttackPowerValue(BASE_ATTACK) / 2.0f);
-        QueueEcho(player, target, JUDGMENT_LEVEL * player->GetLevel() + power, false);
+        if (player && target && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
+            DawnAbility(player, target, GetSpellInfo()->GetFirstRankSpell()->Id);
     }
 
     void Register() override
@@ -9207,8 +10089,7 @@ class spell_titan_rune_judgement : public SpellScript
     }
 };
 
-// Crusader Strike and Holy Shock's damage or heal (every rank): a Dawn Echo of it; Steadfast: Holy Shock's twice,
-// the second at half.
+// Crusader Strike and Holy Shock's damage or heal (every rank) with the Dawnbound Crusader: an echo (DawnAbility).
 class spell_titan_rune_dawn_echo : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_dawn_echo);
@@ -9219,11 +10100,8 @@ class spell_titan_rune_dawn_echo : public SpellScript
         Unit* target = GetHitUnit();
         if (!player || !target || !player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
             return;
-        bool heal = GetHitHeal() > 0;
-        float amount = float(heal ? GetHitHeal() : GetHitDamage());
-        QueueEcho(player, target, amount, heal);
-        if (GetSpellInfo()->GetFirstRankSpell()->Id != SPELL_CRUSADER_STRIKE && HasDawnMarker(player, MOD_STEADFAST))
-            QueueEcho(player, target, amount, heal, DAWN_SHARE * STEADFAST_SHARE);
+        uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        DawnAbility(player, target, first == SPELL_CRUSADER_STRIKE ? first : uint32(SPELL_HOLY_SHOCK));
     }
 
     void Register() override
@@ -9269,59 +10147,27 @@ class spell_titan_rune_mind_blast : public SpellScript
     }
 };
 
-// The Shattered Sun's fire spells (Fireball, Pyroblast, Fire Blast, Scorch; every rank) collapse a Broken Core or
-// embed a shard (Fireball and Pyroblast spread it); its frost spells (Frostbolt, Ice Lance, Frost Nova, Cone of Cold)
-// fracture a shard.
+// The Shattered Sun's spells (the Hero's own, every rank): Fireball (a collapse, a shard), Frostbolt (a fracture),
+// Ice Lance (SunSpell); the others it was once registered on do nothing now.
 class spell_titan_rune_shattered_sun : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_shattered_sun);
 
-    // The target's shards as the spell strikes, before its damage (a killing blow removes them with its auras).
-    void Count(SpellMissInfo /*missInfo*/)
-    {
-        Player* player = GetCaster()->ToPlayer();
-        Unit* target = GetHitUnit();
-        _held = player && target ? Shards(player, target) : 0;
-    }
-
-    // A frost spell shatters the target's shards (those it held as it struck too, if the spell killed it); a fire
-    // spell embeds one (Wildfire: Fireball and Pyroblast two; Spreading Sun: they also embed one in 2 more enemies
-    // within 8 yards).
     void Strike()
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (!player || !target || !player->HasAura(SPELL_RUNE_SHATTERED_SUN))
+        if (!player || !target || GetSpell()->IsTriggered() || !player->HasAura(SPELL_RUNE_SHATTERED_SUN))
             return;
         uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
-        if (first == SPELL_FROSTBOLT || first == SPELL_ICE_LANCE || first == SPELL_FROST_NOVA
-            || first == SPELL_CONE_OF_COLD)
-        {
-            Shatter(player, target, float(std::max(0, GetHitDamage())), false, _held);
-            return;
-        }
-        bool big = first == SPELL_FIREBALL || first == SPELL_PYROBLAST;
-        if (target->IsAlive())                      // a killing blow embeds nothing in the body, but still spreads
-            Embed(player, target, big && HasSunMarker(player, MOD_WILDFIRE) ? 2 : 1);
-        if (!big || !HasSunMarker(player, MOD_SPREADING_SUN))
-            return;
-        std::size_t count = SPREAD;
-        for (Unit* enemy : EnemiesAround(player, target, SPREAD_RANGE))
-            if (enemy != target && count)
-            {
-                Embed(player, enemy, 1);
-                --count;
-            }
+        if (first == SPELL_FIREBALL || first == SPELL_FROSTBOLT || first == SPELL_ICE_LANCE)
+            SunSpell(player, target, first);
     }
 
     void Register() override
     {
-        BeforeHit += BeforeSpellHitFn(spell_titan_rune_shattered_sun::Count);
         AfterHit += SpellHitFn(spell_titan_rune_shattered_sun::Strike);
     }
-
-private:
-    uint8 _held = 0;
 };
 
 // The runes' damage over time (Grave Pestilence, Bloodletting, Hollow Flay): each second its kept tick, dealt as
@@ -9656,6 +10502,7 @@ public:
         if (!info || !LegendaryRunes::IsReplacedBase(info->GetFirstRankSpell()->Id) || !player->IsInWorld())
             return;
         TeachDuelist(player, player->HasAura(SPELL_RUNE_DUELIST));
+        TeachDawn(player, player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER));
         TankRunes::Apply(player);
     }
 
@@ -10270,6 +11117,13 @@ class spell_titan_rune_extended_hit : public SpellScript
             if (GetHitDamage() > 0 && first == SPELL_SHIELD_OF_RIGHTEOUSNESS)
                 ParagonRighteous(player, target);
         }
+        if ((first == SPELL_REVENGE || first == TankRunes::SPELL_EARTH_SHOCK || first == SPELL_EARTH_SHIELD_HEAL)
+            && (first == SPELL_EARTH_SHIELD_HEAL || !GetSpell()->IsTriggered())
+            && player->HasAura(SPELL_RUNE_ECHOING_THUNDER))
+            ThunderAbility(player, target, first, GetHitHeal());
+        if ((first == SPELL_RIPTIDE || first == SPELL_RENEW || first == SPELL_HOLY_SHOCK_HEAL)
+            && (first == SPELL_HOLY_SHOCK_HEAL || !GetSpell()->IsTriggered()) && player->HasAura(SPELL_RUNE_WELLSPRING))
+            WellTouch(player, target, first);
         if ((first == SPELL_HOLY_SHOCK_HEAL || (first == SPELL_CHAIN_HEAL && target == GetExplTargetUnit()))
             && player->HasAura(SPELL_RUNE_WANDERING_MIST))
             MistTechnique(player, target, first, float(GetHitHeal()));
@@ -10277,6 +11131,11 @@ class spell_titan_rune_extended_hit : public SpellScript
             && (first == TankRunes::SPELL_EARTH_SHOCK || first == SPELL_FROST_SHOCK || first == SPELL_SHIELD_SLAM
                 || first == SPELL_LIGHTNING_BOLT || first == SPELL_THUNDER_CLAP))
             StormAbility(player, target, first);
+        if (player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT) && !GetSpell()->IsTriggered())
+            ConduitHit(player, target, first, float(GetHitDamage()));
+        if ((first == SPELL_FROSTBOLT || first == SPELL_CHAIN_HEAL || first == SPELL_LAVA_LASH)
+            && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
+            DawnAbility(player, target, first);
         if (first == SPELL_CHAIN_HEAL || first == SPELL_HOLY_SHOCK)
         {
             if (target != player && player->IsFriendlyTo(target) && player->HasAura(SPELL_RUNE_GUIDING_LIGHT))
@@ -10291,6 +11150,8 @@ class spell_titan_rune_extended_hit : public SpellScript
         switch (first)
         {
             case SPELL_LIGHTNING_BOLT:
+                if (player->HasAura(SPELL_RUNE_SHATTERED_SUN) && !GetSpell()->IsTriggered())
+                    SunSpell(player, target, first);
                 if (player->HasAura(SPELL_RUNE_WILD_HUNT))
                     HuntStorm(player, target);
                 if (convergence)
@@ -10373,6 +11234,9 @@ class spell_titan_rune_extended_hit : public SpellScript
             damage = OwlFrostboltDamage(player, target, damage);
         if ((first == SPELL_FROSTBOLT || first == SPELL_ICE_LANCE) && player->HasAura(SPELL_RUNE_SPLINTERED_CROWN))
             damage = CrownBoltDamage(player, target, first, damage);
+        if ((first == SPELL_FROSTBOLT || first == SPELL_LIGHTNING_BOLT) && !GetSpell()->IsTriggered()
+            && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
+            damage = ConduitDamage(player, target, first, damage);
         SetHitDamage(int32(damage));
     }
 

@@ -193,7 +193,7 @@ EmberforgeRunes_State.rune, EmberforgeRunes_State.mods = 31, { 1, 0, 2 }
 debug.frame:Show()
 view.sel = { kind = "legend" }
 EmberforgeHalo_Refresh()
-check(debug.build.head.text == "YOUR BUILD  ·  2 / 3 CHOSEN" and debug.build[1].slot.text == "FORMATION"
+check(debug.build.head.text == "YOUR BUILD  ·  2 / 3 CHOSEN" and debug.build[1].slot.text == "SUNSHARD"
     and debug.build[2].name.text == "Not chosen yet" and debug.build[3].text.text ~= "",
     "the Legendary's build is broken down under it")
 view.sel = { kind = "epic", index = 1 }

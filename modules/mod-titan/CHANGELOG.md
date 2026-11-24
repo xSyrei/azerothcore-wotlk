@@ -4,12 +4,51 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Extended Options: Wellspring, Echoing Thunder, Stormbound Conduit, Shattered Sun, Dawnbound Crusader
+
+- The last five Legendary Runes are **redesigned** with their Extended Options: five choices in each slot. **Your
+  picks for these five runes are cleared**: choose again.
+- **Wellspring** (now needs Earth Shield too)
+  - Chain Heal on your Earth Shield bearer lays a **Wellspring** on them (8 sec); your next Chain Heal reaching it
+    releases 40% of that heal to another ally within 12.5 yards. Earth Shield's heal renews it; Riptide on the bearer
+    makes the next release 20% stronger.
+  - Choices: Flowing Waters, Lasting Spring, Widening Waters, Riptide Spring, Renewing Spring; Deep Current, Split
+    Tributary, Concentrated Current, Tidal Surge, Guided Current; Tidal Shelter, Long Reach, Renewing Current, Jade
+    Current, Shielded Spring.
+- **Echoing Thunder**
+  - Thunder Clap lays a **Thunderfield** (6 sec). Standing in it, Shield Slam releases a **Thunder Echo** in a cone
+    toward its target: 42% of its damage to up to 5 enemies, once every 2 sec. **Revenge** in the field strengthens
+    the next echo; **Earth Shock** on an enemy in it bursts.
+  - Choices: Lingering Thunder, March of the Storm, Rolling Front, Stormheart, Consecrated Storm; Reverberating
+    Impact, Focused Peal, Distant Rumble, Flame Echo, Frost Echo; Commanding Thunder, Sheltering Reverberation,
+    Deafening Impact, Revenge of the Storm, Tidal Shield.
+- **Stormbound Conduit** (now needs Chain Lightning too)
+  - Lightning Bolt leaves **Conductive**; **Chain Lightning** on a Conductive enemy arcs 30% of that bolt to another.
+    Lightning Shield retaliations and **Earth Shock** arc from Conductive enemies too. Lightning Bolt no longer arcs
+    on its own.
+  - Choices: Persistent Current, Branching Current, Live Wire, Icy Conductor, Flame Conductor; Forked Tempest, Closed
+    Circuit, Faraday Field, Storm Lash, Starbound Circuit; Storm Within, Violent Reprisal, Distant Conductor, Storm's
+    Eye, Shocking Surge. Live Wire and Storm Within can't be chosen together.
+- **Shattered Sun** (now Fireball and Frostbolt)
+  - **Fireball** embeds a Sunshard (up to 2 enemies); **Frostbolt** fractures it (45% of your spell power as
+    Frostfire to the host, 25% around it) and breaks its core; your next Fireball on a **Broken Core** collapses it.
+    **Ice Lance** on a Broken Core adds Frost damage; a fracture extends your **Flame Shock**.
+  - Choices: Twin Suns, Orbiting Sun, Solar Anchor, Lunar Shard, Storm Shard; Splinterstorm, Solar Lance, Scalding
+    Ground, Frozen Flash, Flame Burst; Implosion, Chain Reaction, Second Sunrise, Shattering Lance, Icy Shelter.
+- **Dawnbound Crusader** (now needs Judgment too)
+  - **Beacon of Light** becomes **Dawn Vow**: vow yourself or an ally. **Judgment** marks an enemy; Crusader Strike on
+    it, or Holy Shock, sends a **Dawn Echo** from your vow (once every 3 sec) that heals the most injured ally near
+    them. Your Doctrine changes what it does.
+  - Choices: Mercy, Retribution, Communion, Earthen Oath, Crusader's Flame; Dawnwave, Sunburst, Sacred Ground,
+    Frostfire Dawn, Chain of Grace; Steadfast, Passing the Torch, Shared Pilgrimage, Renewed Oath, Searing Vow.
+
 ### Black Covenant
 
 - **Bind: Voidwalker** needs **Summon Voidwalker**: only a Hero who knows it gets Bind: Voidwalker (in its place on
   your bars), and forgetting it unbinds you.
 - **Covenant Armor** now gives **50% more armor** (was 400% more armor from items). It is added on top of your other
   armor bonuses, never multiplying them, and follows your armor as it changes.
+- Covenant Armor's **15% more maximum health** is back (the armor change had dropped it).
 
 ### Fixes
 

@@ -151,47 +151,69 @@ EmberforgeRunesArt = {
             hue = { 0.494, 0.824, 1 },
             inner = { 0.886, 0.941, 1 },
             built = true,
-            core = "**Lightning Bolt** arcs to 2 nearby enemies for 30% of its damage. " ..
-                    "Your **Lightning Shield**'s retaliations arc too.",
+            core = "**Lightning Bolt** leaves **Conductive**; **Chain Lightning** on a " ..
+                    "Conductive enemy arcs 30% of that bolt to another.",
             asks = {
-                "Where your arcs go",
-                "What your Lightning Shield does",
-                "What the storm adds",
+                "What carries the charge",
+                "How the current arcs",
+                "What the shield adds",
             },
             abilities = {
-                "3 arcs",
-                "Single target",
-                "15 yards",
+                "12 sec",
+                "2 enemies",
+                "Lightning Shield",
+                "Frostbolt",
+                "Flame Shock",
                 "2 arcs",
-                "Pulse",
-                "Retaliation",
-                "Chain Lightning",
-                "Shield",
-                "Critical",
+                "Back in",
+                "15 yards",
+                "Lava Lash",
+                "Starfire",
+                "Lightning Shield",
+                "Lightning Shield",
+                "Lightning Shield",
+                "Chain Heal",
+                "Thunder Clap",
             },
             texts = {
-                "Lightning Bolt arcs to 3 enemies instead of 2, for 30% of its damage " ..
-                        "each.",
-                "Lightning Bolt no longer arcs: it strikes its own target again for 60% " ..
-                        "of its damage.",
-                "Arcs reach enemies 15 yards away instead of 10, and deal 10% more " ..
+                "Conductive lasts 12 sec, and the first Chain Lightning arc on each one " ..
+                        "deals 15% more damage.",
+                "Lightning Bolt also leaves Conductive on one enemy within 10 yards of " ..
+                        "its target.",
+                "Lightning Shield retaliations deal 15% more damage and leave " ..
+                        "Conductive on the attacker. Not with Storm Within.",
+                "Frostbolt leaves Conductive too, and deals 15% more to a Conductive " ..
+                        "enemy.",
+                "Lightning Bolt on your Flame Shock target also leaves Conductive on " ..
+                        "one enemy within 10 yards and makes Flame Shock last 2 sec longer (up " ..
+                        "to 6 sec for each cast).",
+                "Chain Lightning's arc strikes 2 other enemies for 65% each.",
+                "Chain Lightning's arc returns into the Conductive enemy for its whole " ..
                         "damage.",
-                "Lightning Shield's retaliations arc to 2 enemies instead of 1, for 50% " ..
-                        "of the retaliation each.",
-                "In combat, Lightning Shield strikes the nearest enemy within 8 yards " ..
-                        "every 3 sec on its own.",
-                "Lightning Bolt also fires a Lightning Shield retaliation at its " ..
-                        "target, which arcs as usual.",
-                "Each Chain Lightning hit arcs to 1 more enemy for 20% of that hit.",
-                "Each arc shields you for 1% of your maximum health for 8 sec, stacking " ..
-                        "up to 10% of your maximum health.",
-                "Arcs from a critical Lightning Bolt or retaliation deal 50% more " ..
+                "Arcs reach 15 yards, and the first Chain Lightning arc every 8 sec " ..
+                        "deals 20% more damage.",
+                "Lava Lash on a Conductive enemy arcs 25% of your attack power as " ..
+                        "Nature damage to another enemy (half back into it if alone), once " ..
+                        "every 6 sec.",
+                "Starfire on a Conductive enemy arcs 25% of your spell power as Arcane " ..
+                        "damage to another enemy (half back into it if alone), once every 8 " ..
+                        "sec.",
+                "Every 3 sec in combat, your Lightning Shield strikes the nearest " ..
+                        "Conductive enemy within 8 yards, spending a charge. Not with Live " ..
+                        "Wire.",
+                "Your Lightning Shield's arcs deal 40% more damage.",
+                "Lightning Bolt also strikes its target with your Lightning Shield, " ..
+                        "spending a charge, once every 3 sec.",
+                "Chain Heal makes your next Lightning Bolt within 6 sec deal 15% more " ..
                         "damage.",
+                "Thunder Clap on a Conductive enemy deals 20% of your spell power as " ..
+                        "Nature damage to up to 5 enemies within 8 yards of it, once every 8 " ..
+                        "sec.",
             },
             slots = {
-                "Arcs",
-                "Lightning Shield",
-                "Surge",
+                "Conductor",
+                "Circuit",
+                "Shield",
             },
         },
         [24] = {
@@ -202,42 +224,63 @@ EmberforgeRunesArt = {
             hue = { 0.604, 0.78, 1 },
             inner = { 0.906, 0.933, 1 },
             built = true,
-            core = "**Thunder Clap** charges you with thunder. Your next **Shield Slam** " ..
-                    "releases a **Thunder Echo** around its target.",
+            core = "**Thunder Clap** lays a **Thunderfield**; standing in it, **Shield " ..
+                    "Slam** releases a **Thunder Echo** in a cone toward its target.",
             asks = {
-                "How you hold the charge",
+                "Where the field stands",
                 "How the echo strikes",
-                "What the echo gives you",
+                "What the thunder leaves",
             },
             abilities = {
-                "2 echoes",
-                "20 sec",
+                "9 sec",
+                "Follows you",
+                "Under the enemy",
+                "Lightning Shield",
+                "Consecration",
+                "Burst",
+                "One target",
+                "15 yards",
+                "Flame Shock",
+                "Icy Touch",
                 "Threat",
-                "Focus",
-                "10 yards",
-                "Slow",
                 "Shield",
-                "Rage",
-                "Cooldown",
+                "Slow",
+                "Revenge",
+                "Earth Shield",
             },
             texts = {
-                "Thunder Clap's charge holds 2 Thunder Echoes: your next 2 Shield Slams " ..
-                        "each release one.",
-                "Thunder Clap's charge lasts 20 sec instead of 8.",
-                "Thunder Echo generates twice the threat of its damage.",
-                "Thunder Echo hits only Shield Slam's target, for 67% of Shield Slam's " ..
-                        "damage instead of 42%.",
-                "Thunder Echo hits enemies within 10 yards of Shield Slam's target " ..
-                        "instead of 6.",
-                "Enemies hit by Thunder Echo have their movement speed reduced by 30% " ..
-                        "for 3 sec.",
-                "Thunder Echo shields you for 3% of your maximum health per enemy hit, " ..
-                        "up to 15% of your maximum health, for 6 sec.",
-                "Thunder Echo grants you 2 Rage for each enemy it hits.",
-                "Each enemy Thunder Echo hits takes 1 sec off Thunder Clap's cooldown.",
+                "Your Thunderfield lasts 9 sec, and its first echo deals 15% more " ..
+                        "damage.",
+                "Your Thunderfield goes with you, and the echo deals 10% more damage.",
+                "Thunder Clap lays the field under your enemy within 10 yards instead, " ..
+                        "and the echo deals 20% more damage.",
+                "Your Thunderfield goes with you; with Lightning Shield up, the echo " ..
+                        "also deals 20% of your spell power as Nature damage to the slam's " ..
+                        "target.",
+                "Standing in your Consecration too, the echo deals 20% more damage and " ..
+                        "30% more threat.",
+                "The echo bursts about the slam's target instead: up to 5 enemies " ..
+                        "within 6 yards of it.",
+                "The echo strikes only the slam's target, for 60% more damage.",
+                "The echo's cone reaches 15 yards, and enemies beyond 10 yards take 30% " ..
+                        "more.",
+                "The echo on your Flame Shock target burns it for 30% of the echo's " ..
+                        "damage over 6 sec.",
+                "The echo on your Frost Fever target also deals 20% of your attack " ..
+                        "power as Frost damage and slows it by 25% for 3 sec.",
+                "The echo causes twice the threat, and deals 10% more to the slam's " ..
+                        "target.",
+                "The echo shields you for 3% of your maximum health for each enemy it " ..
+                        "hits (15% at most) for 6 sec.",
+                "The echo slows its enemies by 30% for 3 sec, and deals 20% more to " ..
+                        "enemies slowed by your Thunder Clap.",
+                "Revenge's echo deals 40% more instead of 20%, and gives you 10 Rage, " ..
+                        "once every 8 sec.",
+                "An echo while your Earth Shield is on you shields you for 30% of its " ..
+                        "last heal for 4 sec, once every 8 sec.",
             },
             slots = {
-                "Charge",
+                "Field",
                 "Echo",
                 "Resonance",
             },
@@ -250,45 +293,61 @@ EmberforgeRunesArt = {
             hue = { 0.384, 1, 1 },
             inner = { 0.871, 0.973, 0.969 },
             built = true,
-            core = "**Chain Heal** jumps once more, for 40% of its first heal, and heals " ..
-                    "your **Earth Shield** wearer for 20% more.",
+            core = "**Chain Heal** on your **Earth Shield** bearer lays a **Wellspring**; " ..
+                    "your next Chain Heal there releases 40% of it to another ally.",
             asks = {
-                "Where the extra jump goes",
-                "What your Earth Shield adds",
-                "What the jump leaves behind",
+                "How the spring holds",
+                "Where the current runs",
+                "What the undertow leaves",
             },
             abilities = {
-                "2 allies",
-                "Low health",
-                "Power",
                 "Earth Shield",
-                "Wearer",
-                "Charges",
+                "12 sec",
+                "18 yards",
+                "Riptide",
+                "Renew",
+                "Low health",
+                "2 allies",
+                "One ally",
+                "Riptide",
+                "Holy Shock",
                 "Shield",
-                "Over time",
                 "20 yards",
+                "Over time",
+                "Soothing Mist",
+                "Power Word: Shield",
             },
             texts = {
-                "The extra jump heals 2 allies instead of 1, for 25% of Chain Heal's " ..
-                        "first heal each (instead of 40%).",
-                "The extra jump heals 40% more on an ally below half health: 56% of " ..
-                        "Chain Heal's first heal instead of 40%.",
-                "The extra jump heals for 48% of Chain Heal's first heal instead of " ..
-                        "40%.",
-                "Each Earth Shield heal also heals the most injured ally near its " ..
-                        "wearer for half as much.",
-                "Chain Heal heals your Earth Shield wearer for 40% more healing instead " ..
-                        "of 20% more.",
-                "Chain Heal on your Earth Shield wearer restores 1 Earth Shield charge.",
-                "The extra jump also shields its ally for 20% of the jump's heal for 4 " ..
-                        "sec.",
-                "The extra jump also heals its ally for 20% of the jump's heal over 4 " ..
-                        "sec.",
-                "The extra jump can reach an ally 20 yards away instead of 12.5.",
+                "When Earth Shield renews the Wellspring, it also heals the most " ..
+                        "injured ally within 8 yards of the bearer for 20% of your healing " ..
+                        "power, once every 6 sec.",
+                "The Wellspring lasts 12 sec and its release heals 10% more.",
+                "The release reaches 18 yards, and its ally also heals for 10% of your " ..
+                        "healing power over 6 sec.",
+                "Riptide on the bearer renews the Wellspring and heals another injured " ..
+                        "ally within 10 yards for 25% of your healing power, once every 8 sec.",
+                "Renew on the bearer renews the Wellspring and makes its next release " ..
+                        "heal 20% more.",
+                "The release heals 40% more on an ally below half health, 10% more " ..
+                        "otherwise.",
+                "The release heals 2 injured allies for 65% each (one alone gets it " ..
+                        "all).",
+                "The release heals one ally for 30% more.",
+                "The release heals an ally with your Riptide 30% more and makes it last " ..
+                        "2 sec longer (up to 6 sec for each cast).",
+                "Holy Shock healing the bearer makes the next release within 8 sec also " ..
+                        "heal one more ally for 40% as much.",
+                "The release also shields its ally for 25% of its healing for 4 sec.",
+                "The release reaches 20 yards and heals 10% more.",
+                "The release also heals its ally for 25% of its healing over 4 sec.",
+                "If your Soothing Mist is on the release's ally, it also heals them for " ..
+                        "25% of a Soothing Mist tick.",
+                "If your Power Word: Shield is on the release's ally, it also shields " ..
+                        "them for 15% of its healing for 4 sec.",
             },
             slots = {
                 "Spring",
-                "Earth",
+                "Current",
                 "Undertow",
             },
         },
@@ -462,46 +521,65 @@ EmberforgeRunesArt = {
             hue = { 1, 0.957, 0.475 },
             inner = { 1, 0.961, 0.882 },
             built = true,
-            core = "**Crusader Strike** and **Holy Shock** send a **Dawn Echo** a moment " ..
-                    "later: half of their damage or healing again.",
+            core = "**Dawn Vow** takes Beacon of Light's place; **Crusader Strike** on " ..
+                    "your **Judgment** target, or **Holy Shock**, sends a **Dawn Echo** " ..
+                    "from your vowed ally.",
             asks = {
-                "What your echoes become",
-                "What light they leave",
-                "What grace they give",
+                "What the echo does",
+                "How the dawn spreads",
+                "What the vow carries",
             },
             abilities = {
-                "Splash",
-                "Power",
+                "Heal",
+                "Strike",
                 "Both",
+                "Earth Shield",
+                "Flame Shock",
+                "Path",
+                "2 more",
                 "Ground",
+                "Frostbolt",
+                "Chain Heal",
                 "Holy Shock",
-                "Judgement",
-                "Self-heal",
-                "Cooldowns",
-                "Shield",
+                "Vow",
+                "8 yards",
+                "Renew",
+                "Lava Lash",
             },
             texts = {
-                "Each Dawn Echo also strikes (or heals) up to 5 others within 8 yards " ..
-                        "for 40% of the echo's damage or healing.",
-                "Dawn Echoes deal 40% more damage and healing: 70% of the strike's " ..
-                        "damage or the heal instead of 50%.",
-                "Every Dawn Echo both strikes the enemy and heals your most injured " ..
-                        "ally, each for 35% of the original's damage or healing.",
-                "Each Dawn Echo consecrates the ground for 4 sec, dealing 25% of the " ..
-                        "echo's damage every second to enemies within 8 yards.",
-                "Holy Shock sends 2 Dawn Echoes; the second deals half the damage or " ..
-                        "healing.",
-                "Judgement sends a Dawn Echo too.",
-                "Your damaging Dawn Echoes heal you for 20% of their damage.",
-                "Each Dawn Echo takes 0.5 sec off Crusader Strike's and Holy Shock's " ..
-                        "cooldowns.",
-                "Your healing Dawn Echoes also shield their target for 25% of the heal " ..
-                        "for 8 sec.",
+                "The echo heals the most injured ally within 10 yards of your vow for " ..
+                        "50% of your power.",
+                "The echo strikes your marked enemy within 20 yards of your vow for 45% " ..
+                        "of your power as Holy damage.",
+                "Echoes take turns: a heal for 35% of your power, then a strike for " ..
+                        "30%.",
+                "While your Earth Shield is on your vow, the echo heals for 40% of your " ..
+                        "power and shields your vow for 10% for 4 sec.",
+                "The echo strikes your marked enemy for 35% of your power as Holy " ..
+                        "damage, and 15% as Fire if your Flame Shock is on it.",
+                "The echo travels from your vow toward your marked enemy, touching up " ..
+                        "to 3 on the way for half each.",
+                "The echo also touches up to 2 more nearby for 40% each.",
+                "The echo leaves holy ground 4 yards wide at your vow for 4 sec: each " ..
+                        "second it heals one injured ally in it for 10% of your power.",
+                "Frostbolt on your marked enemy makes your next striking echo within 6 " ..
+                        "sec also deal 20% of your power as Frost damage.",
+                "Chain Heal on your vow makes your next healing echo within 6 sec also " ..
+                        "heal one more ally for 40%.",
+                "Holy Shock leaves an afterimage on your vow for 6 sec: its next echo " ..
+                        "strikes again at 30%.",
+                "Moving your Dawn Vow to another ally heals them for 30% of your power.",
+                "Once you or your vow move 8 yards, the next echo touches one more for " ..
+                        "40%.",
+                "An echo while your Renew is on your vow makes it last 2 sec longer (up " ..
+                        "to 6 sec for each cast), once every 6 sec.",
+                "Lava Lash on your marked enemy sends an echo too (still once every 3 " ..
+                        "sec).",
             },
             slots = {
-                "Echo",
-                "Light",
-                "Grace",
+                "Doctrine",
+                "Dawn",
+                "Pilgrimage",
             },
         },
         [30] = {
@@ -581,43 +659,64 @@ EmberforgeRunesArt = {
             hue = { 0.604, 0.957, 1 },
             inner = { 0.906, 0.961, 0.988 },
             built = true,
-            core = "Your fire spells embed **Sunshards** in their target, up to 5. Your " ..
-                    "next **frost spell** on it shatters them all in a burst around it.",
+            core = "**Fireball** embeds a **Sunshard**; **Frostbolt** fractures it and " ..
+                    "breaks its host's core; your next Fireball there collapses it.",
             asks = {
-                "How you embed shards",
-                "How the burst spreads",
-                "What the burst adds",
+                "Where the shards lodge",
+                "How the fracture breaks",
+                "What the collapse brings",
             },
             abilities = {
-                "Wildfire",
-                "Spread",
-                "8 shards",
-                "12 yards",
+                "3 shards",
+                "Your target",
                 "Ground",
+                "Moonfire",
+                "Lightning Bolt",
+                "Cone",
+                "Pierce",
+                "Burning ground",
+                "Ice Lance",
+                "Flame Shock",
+                "Host",
                 "Chain",
-                "Implosion",
-                "Pulse",
-                "Slow",
+                "Again",
+                "Ice Lance",
+                "Ice Barrier",
             },
             texts = {
-                "Fireball and Pyroblast embed 2 Sunshards instead of 1.",
-                "Fireball and Pyroblast also embed a Sunshard in up to 2 enemies within " ..
-                        "8 yards of their target.",
-                "An enemy can hold up to 8 Sunshards instead of 5.",
-                "The burst hits enemies within 12 yards instead of 8.",
-                "The burst leaves burning ground for 4 sec, dealing 15% of the burst's " ..
-                        "damage every second to enemies within 6 yards.",
-                "The burst also shatters the Sunshards in other enemies within 10 " ..
-                        "yards, for half the damage.",
-                "The burst deals 40% more damage to the frost spell's target.",
-                "2 sec after the burst, it flares again for 40% of its damage.",
-                "Enemies hit by the burst have their movement speed reduced by 40% for " ..
-                        "3 sec.",
+                "Up to 3 enemies hold a Sunshard, and fractures deal 15% more to their " ..
+                        "host.",
+                "A fracture also strikes your selected enemy within 15 yards for 40% of " ..
+                        "the host's damage.",
+                "A Sunshard stays where its host stood for 10 sec: Frostbolt on any " ..
+                        "enemy within 6 yards of it fractures it, for 20% more to the host.",
+                "Fireball on your Moonfire target embeds a shard whose fracture also " ..
+                        "deals 25% of your spell power as Arcane damage to its host.",
+                "Lightning Bolt embeds a Sunshard too, once every 8 sec; its fracture " ..
+                        "also deals 20% of your spell power as Nature damage to its host.",
+                "A fracture bursts in a 12-yard cone away from you instead: up to 5 " ..
+                        "enemies, the others taking half the host's damage.",
+                "A fracture also pierces up to 3 enemies behind its host within 15 " ..
+                        "yards for 60% of the host's damage.",
+                "A fracture leaves scalding ground 6 yards wide for 4 sec: 10% of your " ..
+                        "spell power as Frostfire damage each second to up to 5 enemies.",
+                "Ice Lance fractures a Sunshard too, once every 8 sec.",
+                "A fracture on your Flame Shock target spreads it to one enemy within 8 " ..
+                        "yards, once every 8 sec.",
+                "The collapse deals 50% more damage.",
+                "The collapse fractures one other Sunshard within 8 yards, at half " ..
+                        "damage.",
+                "1 sec after the collapse, it strikes again for half: its host and up " ..
+                        "to 2 enemies within 6 yards.",
+                "Ice Lance on a Broken Core deals 35% of your spell power, and your " ..
+                        "next Fireball within 6 sec casts 15% faster.",
+                "A collapse while your Ice Barrier is up shields you for 40% of your " ..
+                        "spell power for 6 sec, once every 12 sec.",
             },
             slots = {
-                "Formation",
-                "Shatter",
-                "Sunfall",
+                "Sunshard",
+                "Fracture",
+                "Collapse",
             },
         },
         [32] = {
