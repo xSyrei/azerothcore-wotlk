@@ -1270,8 +1270,8 @@ SPELLS += [
                DURATION_5S, FROSTBOLT_FLAG, 10, charges=1),
     dot(91224, 'Frost Wound', 'Spell_Frost_IceStorm', FROST, DURATION_6S, 'Frost damage every second.'),
     strike(91225, 'Frost Wound', 'Spell_Frost_IceStorm', FROST),
-    harmful(91226, "Winter's Grasp", 'Spell_Frost_FrostShock', 'Movement speed reduced by 25%.', DURATION_3S,
-            aura(AURA_MOD_DECREASE_SPEED, -25, 0), FROST),
+    harmful(91226, 'Permafrost', 'Spell_Frost_FrostShock', 'Movement speed reduced by 20%.', DURATION_3S,
+            aura(AURA_MOD_DECREASE_SPEED, -20, 0), FROST),
     quickening(91227, 'Cold Front', 'Spell_Frost_ColdHearted', 'Your next Frostbolt is instant.', DURATION_5S,
                FROSTBOLT_FLAG, 100, charges=1),
     missile(91228, 'Ice Splinter', 'Spell_Frost_IceShard', FROST, VISUAL_ICE_LANCE, 36.0),
@@ -1344,9 +1344,6 @@ next(spell for spell in SPELLS if spell['id'] == 91207)['set']['AttributesEx2'] 
 next(spell for spell in SPELLS if spell['id'] == 91206)['set']['SpellFamilyName'] = MAGE_FAMILY
 
 NEW_MODIFIERS = [
-    (91230, CROWN_ICON, [('Glacial Spear', 'Splinter Volley', 'Shatterglass'),
-                         ('Impaling Ice', 'Seeking Splinters', 'Frozen Focus'),
-                         ('Frost Wound', "Winter's Grasp", 'Cold Front')]),
 ]
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
@@ -1567,9 +1564,9 @@ RANGE_20, GCD_CATEGORY = 3, 133
 PISTOL_ICON = 'Ability_Rogue_PistolShot'
 PISTOL_SHOT = action(91382, 'Pistol Shot', PISTOL_ICON,
                    'Fire a conjured pistol at an enemy within 20 yards: 60% of your attack power as Physical damage '
-                   'and 1 combo point. Needs Opening Shot (every second Sabre Slash).', 6000,
+                   'and 1 combo point. Needs Opening Shot (every third Sabre Slash).', 6000,
                    target=TARGET_UNIT_TARGET_ENEMY, range_index=RANGE_20)
-PISTOL_SHOT['set'] = {**PISTOL_SHOT['set'], 'PowerType': POWER_ENERGY, 'ManaCost': 20,
+PISTOL_SHOT['set'] = {**PISTOL_SHOT['set'], 'PowerType': POWER_ENERGY, 'ManaCost': 10,
                     'StartRecoveryCategory': GCD_CATEGORY, 'StartRecoveryTime': 1000, 'CasterAuraSpell': 91381}
 PISTOL_SHOT['tooltip'] = PISTOL_SHOT['description']
 PISTOL_SHOT['unset'] = {'Attributes': 0x10000}      # Evasion's "not while shapeshifted": usable in stealth or a form
@@ -1593,7 +1590,7 @@ SPELLS += [
     # The Duelist: Sabre Slash (Sinister Strike's first rank, its own look; the server adds the known rank's bonus),
     # Broadside and its blasts.
     {'id': 91370, 'copy': SINISTER_STRIKE, 'name': 'Sabre Slash', 'icon': 'Ability_Rogue_SabreSlash',
-     'description': 'A sabre slash: your Sinister Strike\'s damage and 1 combo point. Every second hit readies '
+     'description': 'A sabre slash: your Sinister Strike\'s damage and 1 combo point. Every third hit readies '
                     'Opening Shot.',
      'tooltip': '', 'visual': 'SabreSlashHit', 'set': {'SpellFamilyName': ROGUE_FAMILY}},
     BROADSIDE,
@@ -1648,12 +1645,9 @@ for _spell in SPELLS:
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
            for first, icon, modifiers in (
-               (91390, DUELIST_ICON, [('Deep Cut', 'Sweeping Steel', 'Serrated Edge'),
-                                      ('Heavy Ball', 'Scattershot', 'Rapid Shots'),
-                                      ('Heavy Cannonade', 'Full Broadside', 'Quick Reload')]),
                (91410, STORMREAVER_ICON, [('Eye of the Tempest', 'Forked Cataclysm', 'Rolling Thunder'),
                                           ('Thunderhead', 'Chainbreaker', 'White-Hot Conductor'),
-                                          ('Overcharged Core', 'Ride the Lightning', 'Violent Grounding')]))
+                                          ('Overcharged Core', 'Ride the Lightning', 'Violent Grounding')]),)
            for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
 ICONS += ['Ability_Rogue_SabreSlash', PISTOL_ICON, DUELIST_ICON, STORMREAVER_ICON, 'INV_Weapon_Rifle_01',
           'Ability_Rogue_Rupture',
@@ -1675,9 +1669,10 @@ SPELLS += [
     strike(91424, 'Wild Embers', 'Spell_Fire_Fireball', FIRE, VISUAL_FIRE_BLAST),
     strike(91425, 'Blazing Rake', 'Ability_Druid_Disembowel', FIRE, VISUAL_SCORCH),
     strike(91426, 'Molten Bite', 'Ability_Druid_FerociousBite', FIRE, VISUAL_SCORCH),
-    {**buff(91427, 'Flamebound', 'Spell_Fire_BurningSpeed', 'Movement speed increased by 30%.', DURATION_3S, _SPEED),
+    {**buff(91427, 'Ember Rush', 'Spell_Fire_BurningSpeed', 'Movement speed increased by 20%.', DURATION_3S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 20, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
-    {**buff(91428, 'Flamebound', 'Spell_Fire_BurningSpeed', 'Your next Rake or Mangle gives 10 Energy back.',
+    {**buff(91428, 'Ember Rush', 'Spell_Fire_BurningSpeed', 'Your next Shred gives 10 Energy back.',
             DURATION_5S, {1: aura(AURA_DUMMY, 1, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_5S}},
     buff(91430, "Rune of Ember's Wrath", EMBERS_ICON,
@@ -1794,12 +1789,9 @@ for _spell in SPELLS:
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
            for first, icon, modifiers in (
-               (91431, EMBERS_ICON, [('Searing Wound', 'Wild Embers', 'Smoldering Flesh'),
-                                     ('Blazing Rake', 'Molten Bite', 'Cinder Swipe'),
-                                     ('Flamebound', 'Patient Predator', 'Ashen Pursuit')]),
                (91451, WHITEFANG_ICON, [('Whitefang', 'Icefang Spray', 'Winter Wound'),
                                         ('Long Winter', 'Pursuing Chill', 'Pack Frost'),
-                                        ('Cold Blood', 'Snowblind', 'Frozen Trail')]))
+                                        ('Cold Blood', 'Snowblind', 'Frozen Trail')]),)
            for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
 ICONS += [EMBERS_ICON, WHITEFANG_ICON, 'Spell_Fire_Fireball', 'Spell_Fire_Incinerate', 'Ability_Druid_Disembowel',
           'Ability_Druid_FerociousBite', 'Spell_Fire_BurningSpeed', 'Spell_DeathKnight_IceTouch',
@@ -2040,6 +2032,15 @@ EXTENDED_MODIFIERS = [
     (91745, ELUNE_ICON, [('Moonpiercer', 'Silver Wings', 'Lunar Flock', 'Sentinel of the Hunt', 'Frostfeather'),
                          ('Swift Judgment', 'Patient Vigil', 'Lunar Guidance', 'Command the Hunt', 'Sun and Moon'),
                          ('Lunar Wound', 'Guiding Wings', 'Twilight Hunt', "Hunter's Pursuit", "Winter's Blessing")]),
+    (91795, CROWN_ICON, [('Glacial Spear', 'Twin Fangs', 'Frozen Volley', 'Hailstorm Crown', 'Splintering Ice'),
+                         ('Cold Snap', 'Brittle Impact', 'Gathering Blizzard', 'Frostfire Fracture', 'Runic Rime'),
+                         ('Deep Freeze', 'Glacial Wound', 'Permafrost', 'Whiteout', 'Cold Front')]),
+    (91820, DUELIST_ICON, [('Heavy Caliber', 'Gunslinger', 'Scattershot', 'Flame Pistol', 'Storm Pistol'),
+                           ('Powder and Steel', 'Between the Eyes', 'Loaded Powder', 'Marked Shot', 'Frozen Powder'),
+                           ('Quick Draw', 'Cut and Run', 'Efficient Duelist', 'Healing Powder', 'Arcane Powder')]),
+    (91845, EMBERS_ICON, [('Cinderclaw', 'Wildfire Claws', 'Living Flame', 'Flame Shock Claws', 'Frozen Embers'),
+                          ('Ember Rush', 'Smoldering Bite', 'Firestorm Pounce', 'Phoenix Claws', 'Wildfire Swipe'),
+                          ('Ashen Renewal', 'Flame-Tipped Claws', 'Phoenix Scar', 'Healing Flame', 'Burning Rake')]),
     (91770, HOLLOW_ICON, [('Following Shadows', 'Haunted Ground', 'Possession', 'Plague Sermon',
                            'Moonlit Congregation'),
                           ('Unison', 'Dissonance', 'Accusation', 'Devouring Command', 'Frostbound Sermon'),
@@ -2112,10 +2113,43 @@ SPELLS += [
     strike(91786, 'Hollow Patch', 'Spell_Shadow_ShadowWordPain', SHADOW),
     strike(91787, 'Moonlit Congregation', 'Spell_Nature_StarFall', ARCANE, VISUAL_ARCANE_HIT),
     strike(91788, 'Devouring Command', 'Spell_Shadow_ShadowBolt', SHADOW, VISUAL_SHADOW_BOLT),
+    # The Splintered Crown.
+    harmful(91810, 'Frostbite', 'Spell_Frost_FrostArmor', 'Your Frostbolt and Ice Lance deal 8% more to this target.',
+            DURATION_6S, aura(AURA_DUMMY, 1, 0), FROST),
+    quickening(91811, 'Cold Snap', 'Spell_Frost_IceShard', 'Your next Frostbolt casts 15% faster.', DURATION_6S,
+               FROSTBOLT_FLAG, 15, charges=1),
+    buff(91812, 'Gathering Blizzard', 'Spell_Frost_IceStorm', 'Your next Ice Lance deals 5% more damage a stack.',
+         DURATION_8S, {1: aura(AURA_DUMMY, 1, 0)}, stacks=4),
+    # The Duelist.
+    buff(91835, 'Loaded Steel', 'Ability_Rogue_SabreSlash',
+         'Your next Sabre Slash deals 15% more and strikes one more enemy.', DURATION_6S, {1: aura(AURA_DUMMY, 1, 0)}),
+    buff(91836, 'Loaded Powder', 'Spell_Fire_Fireball', 'Your next Pistol Shot explodes.', DURATION_8S,
+         {1: aura(AURA_DUMMY, 1, 0)}),
+    strike(91837, 'Powder Blast', 'Spell_Fire_Fireball', FIRE, VISUAL_FIRE_BLAST),
+    strike(91838, 'Storm Pistol', 'Spell_Nature_LightningShield', NATURE, VISUAL_LIGHTNING_BOLT),
+    buff(91839, 'Marked Shot', 'Ability_Hunter_SniperShot', 'Your next Sabre Slash deals 25% more damage.',
+         DURATION_6S, {1: aura(AURA_DUMMY, 1, 0)}),
+    strike(91840, 'Frozen Powder', 'Spell_Frost_FrostShock', FROST, VISUAL_ICE_LANCE),
+    {**buff(91841, 'Cut and Run', 'Ability_Rogue_Sprint', 'Movement speed increased by 25%.', DURATION_4S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 25, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_4S}},
+    heal(91842, 'Healing Powder', 'Spell_Holy_Renew', 'Your powder mends you.'),
+    buff(91843, 'Arcane Powder', 'Spell_Arcane_StarFire', 'Your next Pistol Shot deals 25% more damage.',
+         DURATION_8S, {1: aura(AURA_DUMMY, 1, 0)}),
+    buff(91844, 'Dead Aim', PISTOL_ICON, 'Your next Pistol Shot deals 5% more damage a stack.', DURATION_8S,
+         {1: aura(AURA_DUMMY, 1, 0)}, stacks=15),
+    # Ember's Wrath.
+    strike(91860, 'Searing Shred', 'Spell_Fire_Incinerate', FIRE, VISUAL_SCORCH),
+    strike(91861, 'Frozen Embers', 'Spell_Frost_FrostShock', FROST, VISUAL_ICE_LANCE),
+    strike(91862, 'Phoenix Claws', 'Spell_Fire_Burnout', FIRE, VISUAL_FIRE_BLAST),
+    strike(91863, 'Phoenix Scar', 'Spell_Fire_SelfDestruct', FIRE, VISUAL_SCORCH),
+    heal(91864, 'Healing Flame', 'Spell_Nature_Rejuvenation', 'The flame mends you.'),
+    buff(91865, 'Burning Rake', 'Ability_Druid_Disembowel', 'Your next Blazing Strike deals 30% more damage.',
+         DURATION_6S, {1: aura(AURA_DUMMY, 1, 0)}),
 ]
 for _spell in SPELLS:
     if _spell['id'] in (91615, 91636, 91637, 91638, 91639, 91660, 91661, 91662, 91688, 91689, 91736, 91737, 91738,
-                        91740, 91761, 91762, 91786, 91787, 91788):
+                        91740, 91761, 91762, 91786, 91787, 91788, 91837, 91838, 91840, 91860, 91861, 91862, 91863):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
     if _spell['id'] == 91687:
         _spell['set'] = {**_spell['set'], 'SpellFamilyName': MAGE_FAMILY, 'ProcCharges': 1}
@@ -2127,4 +2161,8 @@ ICONS += ['Spell_Nature_InsectSwarm', 'Spell_Fire_SoulBurn', 'Spell_Fire_FireArm
           'Spell_Shadow_AbominationExplosion', 'Spell_Frost_ChillingBlast', 'Ability_Hunter_SniperShot',
           'Ability_Gouge', 'Spell_Shadow_ShadowWordPain', 'Spell_Shadow_ShadowBolt', 'Spell_Nature_StarFall',
           'Spell_DeathKnight_IceTouch', 'Spell_Fire_FlameShock', 'Spell_Holy_Renew', 'Ability_Rogue_FindWeakness',
-          'Spell_Nature_Moonglow', 'Ability_Hunter_Pet_Owl', 'Spell_Frost_FrostBolt02']
+          'Spell_Nature_Moonglow', 'Ability_Hunter_Pet_Owl', 'Spell_Frost_FrostBolt02', 'Spell_Frost_FrostArmor',
+          'Spell_Frost_IceShard', 'Spell_Frost_IceStorm', 'Ability_Rogue_SabreSlash', 'Spell_Fire_Fireball',
+          'Spell_Frost_FrostShock', 'Ability_Rogue_Sprint', 'Spell_Arcane_StarFire', 'Spell_Fire_Incinerate',
+          'Spell_Fire_Burnout', 'Spell_Fire_SelfDestruct', 'Spell_Nature_Rejuvenation', 'Ability_Druid_Disembowel',
+          PISTOL_ICON]

@@ -750,47 +750,66 @@ EmberforgeRunesCatalog = {
       role = "Ranged DPS (Mage, Frost)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_SplinteredCrown",
-      keywords = "mage frost frostbolt icicle ice shard pierce slow instant crown",
-      slots = { "Formation", "Flight", "Aftermath" },
+      keywords = "mage frost frostbolt icicle ice shard pierce slow instant crown ice lance cone of cold blizzard " ..
+          "hailstorm frostbite fire blast icy touch",
+      slots = { "Formation", "Winter", "Aftermath" },
       builtFrom = "Frostbolt",
       spentWith = "The Icicles fire on their own",
       resource = "Icicles, up to 5 waiting",
       core = "A Frostbolt that hits forms an Icicle in the crown above you: 1 sec later it flies at the same enemy " ..
-          "for 30% of that Frostbolt's damage. Up to 5 wait at once; an Icicle whose target dies melts.",
-      loop = "Frostbolt; the Icicles strike on their own while you keep casting or move.",
+          "for 30% of that Frostbolt's damage. Up to 5 wait at once; an Icicle whose target dies melts. Ice Lance: " ..
+          "a hit looses 2 Icicles at its target, 20% of your spell power each. Cone of Cold: an Icicle at each " ..
+          "enemy it hits (up to 5), 15% of your spell power. Blizzard: every 2 sec of its channel, an Icicle at the " ..
+          "enemy it damaged with the most health, 20% of your spell power. Every Icicle leaves Frostbite for 6 sec: " ..
+          "your Frostbolt and Ice Lance deal 8% more to that enemy.",
+      loop = "Frostbolt, Ice Lance, Cone of Cold or Blizzard; the Icicles strike on their own.",
       mods = {
         { name = "Glacial Spear",
-          text = "Icicles deal 40% more damage: 42% of the Frostbolt's damage." },
-        { name = "Splinter Volley",
-          text = "Each Icicle breaks into 3 shards, 0.2 sec apart, each 40% of an Icicle's damage (120% in all). " ..
-              "The last one makes your next Frostbolt cast 10% faster." },
-        { name = "Shatterglass",
-          text = "Each Icicle also hits up to 4 other enemies within 6 yards of its target for half its damage." },
-        { name = "Impaling Ice",
-          text = "Icicles and their shards pierce up to 3 enemies within 15 yards behind their target, for 40% of " ..
-              "their damage." },
-        { name = "Seeking Splinters",
-          text = "As an Icicle lands, a splinter flies on to another enemy within 10 yards for 30% of its damage; " ..
-              "with none near, it strikes the same enemy for 15%." },
-        { name = "Frozen Focus",
-          text = "Every third Frostbolt that hits makes an Icicle that deals 60% more damage (its shards too)." },
-        { name = "Frost Wound",
-          text = "Every third Icicle attack wounds its target: 80% of an Icicle's damage over 6 sec. A shattered " ..
-              "Icicle counts once." },
-        { name = "Winter's Grasp",
-          text = "Icicles slow their targets by 25% for 3 sec, and deal 15% more damage to an enemy they slowed " ..
-              "already." },
+          text = "Frostbolt's Icicles deal 40% more damage: 42% of the Frostbolt's damage." },
+        { name = "Twin Fangs",
+          text = "Ice Lance's two Icicles deal 25% of your spell power each instead of 20%. The second also leaves " ..
+              "a Frost wound of 10% of your spell power over 4 sec." },
+        { name = "Frozen Volley",
+          text = "Cone of Cold looses 2 Icicles at each enemy it hits (up to 5), 10% of your spell power each." },
+        { name = "Hailstorm Crown",
+          text = "Blizzard looses an Icicle every second instead of every 2, each 15% of your spell power instead " ..
+              "of 20%." },
+        { name = "Splintering Ice",
+          text = "Frostbolt's Icicles also hit up to 2 other enemies within 8 yards for half their damage." },
+        { name = "Cold Snap",
+          text = "When both of Ice Lance's Icicles hit, your next Frostbolt within 6 sec casts 15% faster." },
+        { name = "Brittle Impact",
+          text = "Cone of Cold's Icicle deals 30% more damage to an enemy already in your Frostbite." },
+        { name = "Gathering Blizzard",
+          text = "Each Icicle Blizzard looses makes your next Ice Lance deal 5% more damage, up to 20%, for 8 sec." },
+        { name = "Frostfire Fracture",
+          text = "Fire Blast on an enemy in your Frostbite erupts in an Icicle: 25% of your spell power to it and " ..
+              "up to 2 other enemies within 6 yards, once every 8 sec." },
+        { name = "Runic Rime",
+          text = "After your Icy Touch hits an enemy, your next Frostbolt on it within 6 sec forms one more Icicle " ..
+              "at half damage." },
+        { name = "Deep Freeze",
+          text = "Your Icicles deal 20% more damage to enemies already in your Frostbite." },
+        { name = "Glacial Wound",
+          text = "Ice Lance's second Icicle leaves Glacial Wound: 20% of your spell power over 6 sec. A new wound " ..
+              "keeps what is left of the last." },
+        { name = "Permafrost",
+          text = "Cone of Cold's Icicles slow their enemies by 20% for 3 sec; your next Frostbolt Icicle on each in " ..
+              "that time deals 25% more damage." },
+        { name = "Whiteout",
+          text = "Blizzard's Icicles also hit up to 2 other enemies within 6 yards for 40% of their damage; with " ..
+              "none near, the Icicle deals 20% more." },
         { name = "Cold Front",
-          text = "Every third Icicle attack makes your next Frostbolt within 5 sec instant. A shattered Icicle " ..
-              "counts once." },
+          text = "Every third Icicle strike makes your next Frostbolt within 5 sec instant. Ice Lance's two Icicles " ..
+              "count as two." },
       },
       builds = {
-        { name = "The Spear", mods = { "Glacial Spear", "Impaling Ice", "Frost Wound" },
-          text = "Heavy Icicles through a line." },
-        { name = "The Storm", mods = { "Splinter Volley", "Seeking Splinters", "Winter's Grasp" },
-          text = "Shards everywhere, everyone slowed." },
-        { name = "The Glass", mods = { "Shatterglass", "Frozen Focus", "Cold Front" },
-          text = "Big bursts, Frostbolts on the move." },
+        { name = "The Lancer", mods = { "Twin Fangs", "Cold Snap", "Glacial Wound" },
+          text = "Ice Lance after Ice Lance." },
+        { name = "The Storm", mods = { "Hailstorm Crown", "Gathering Blizzard", "Whiteout" },
+          text = "Blizzard on the pack, then the lance." },
+        { name = "The Frostfire", mods = { "Splintering Ice", "Frostfire Fracture", "Deep Freeze" },
+          text = "Frostbolt, Fire Blast, and the crown breaks." },
       },
     },
     { id = 36,
@@ -1198,48 +1217,66 @@ EmberforgeRunesCatalog = {
       role = "Melee DPS (Rogue, Combat)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_Duelist",
-      keywords = "rogue combat sinister strike sabre slash pistol shot broadside gun explosion combo point energy",
-      slots = { "Sabre", "Pistol", "Cannon-Fire" },
+      keywords = "rogue combat sinister strike sabre slash pistol shot broadside gun explosion combo point energy " ..
+          "eviscerate fire blast lightning shield hunters mark icy touch renew arcane shot powder",
+      slots = { "Pistol", "Powder", "Footwork" },
       builtFrom = "Sabre Slash (Sinister Strike)",
       spentWith = "Pistol Shot and Broadside (the rune teaches them)",
       resource = "Opening Shot, one held",
-      core = "Sinister Strike becomes Sabre Slash: its damage and combo point, a sabre's look. Every second Sabre " ..
-          "Slash that hits readies Opening Shot for 8 sec (one held), for Pistol Shot: 20 Energy, 6 sec cooldown, " ..
-          "an enemy within 20 yards, 60% of your attack power as Physical damage and 1 combo point. Broadside, a " ..
-          "finishing move (35 Energy, 20 sec cooldown): three pistol blasts, each 30% of your attack power plus 5% " ..
-          "per combo point (55% at five) to its target and up to 7 enemies within 8 yards. The rune teaches all " ..
-          "three; the pistol is conjured.",
-      loop = "Sabre Slash twice, Pistol Shot; Broadside at five combo points.",
+      core = "Sinister Strike becomes Sabre Slash: its damage and combo point, a sabre's look. Every third Sabre " ..
+          "Slash that hits readies Opening Shot for 8 sec (one held), for Pistol Shot: 10 Energy, 6 sec cooldown, " ..
+          "an enemy within 20 yards, 60% of your attack power as Physical damage and 1 combo point. After a Pistol " ..
+          "Shot, your next Sabre Slash within 6 sec deals 15% more and also strikes one enemy nearby for 40%. " ..
+          "Eviscerate while Opening Shot is ready makes your next Pistol Shot deal 10% more for each combo point " ..
+          "(50% at most). Fire Blast: a hit makes your next Pistol Shot within 8 sec explode for 20% of your attack " ..
+          "power plus 20% of your spell power as Fire on up to 3 enemies. Broadside, a finishing move (35 Energy, " ..
+          "20 sec cooldown): three pistol blasts, each 30% of your attack power plus 5% per combo point, to its " ..
+          "target and up to 7 enemies within 8 yards. The rune teaches all three; the pistol is conjured.",
+      loop = "Sabre Slash three times, Pistol Shot; Eviscerate first for a bigger shot.",
       mods = {
-        { name = "Deep Cut",
-          text = "Sabre Slash deals 25% more damage." },
-        { name = "Sweeping Steel",
-          text = "Sabre Slash also hits up to 3 other enemies within 5 yards of its target for half its damage." },
-        { name = "Serrated Edge",
-          text = "Sabre Slash makes its target bleed for 40% more of its damage over 6 sec. A new bleed keeps what " ..
-              "is left of the last." },
-        { name = "Heavy Ball",
-          text = "Pistol Shot deals 60% more damage: 96% of your attack power." },
+        { name = "Heavy Caliber",
+          text = "Pistol Shot deals 40% more damage." },
+        { name = "Gunslinger",
+          text = "Pistol Shot fires twice, 65% of its damage each; only the first grants a combo point." },
         { name = "Scattershot",
-          text = "Pistol Shot spreads in a cone: up to 4 other enemies in front of you, as far as 10 yards past its " ..
-              "target, take 75% of its damage." },
-        { name = "Rapid Shots",
-          text = "Each combo point your finishing moves spend has a 10% chance to reset Pistol Shot's cooldown and " ..
-              "ready Opening Shot; your next Pistol Shot within 10 sec then grants 50 Energy instead of costing it." },
-        { name = "Heavy Cannonade",
-          text = "Broadside's blasts deal 40% more damage." },
-        { name = "Full Broadside",
-          text = "Broadside fires a fourth blast." },
-        { name = "Quick Reload",
-          text = "Each combo point your finishing moves spend takes 1 sec off Broadside's cooldown." },
+          text = "Pistol Shot spreads in a cone: up to 3 other enemies in front of you, as far as 10 yards past its " ..
+              "target, take half its damage." },
+        { name = "Flame Pistol",
+          text = "Fire Blast's powder explosion deals 35% more damage and hits up to 5 enemies." },
+        { name = "Storm Pistol",
+          text = "Pistol Shot while your Lightning Shield is up also deals 25% of your spell power as Nature damage " ..
+              "to its target." },
+        { name = "Powder and Steel",
+          text = "The Sabre Slash after a Pistol Shot deals 30% more instead of 15%." },
+        { name = "Between the Eyes",
+          text = "Eviscerate while Opening Shot is ready makes your next Pistol Shot deal 15% more for each combo " ..
+              "point instead of 10% (75% at most)." },
+        { name = "Loaded Powder",
+          text = "Fire Blast's powder explosion deals 25% more damage and hits up to 5 enemies." },
+        { name = "Marked Shot",
+          text = "Pistol Shot on your Hunter's Mark target makes your next Sabre Slash within 6 sec deal 25% more " ..
+              "damage." },
+        { name = "Frozen Powder",
+          text = "Pistol Shot on your Frost Fever target bursts for 20% of your attack power as Frost damage on up " ..
+              "to 3 enemies within 6 yards, once every 8 sec." },
+        { name = "Quick Draw",
+          text = "Every second Sabre Slash readies Opening Shot instead of every third." },
+        { name = "Cut and Run",
+          text = "Pistol Shot makes you move 25% faster for 4 sec." },
+        { name = "Efficient Duelist",
+          text = "Pistol Shot gives its 10 Energy back when it hits, once every 6 sec." },
+        { name = "Healing Powder",
+          text = "Pistol Shot while your Renew is on you heals you for 30% of your spell power, once every 10 sec." },
+        { name = "Arcane Powder",
+          text = "Your Arcane Shot makes your next Pistol Shot within 8 sec deal 25% more damage." },
       },
       builds = {
-        { name = "The Gunslinger", mods = { "Deep Cut", "Heavy Ball", "Heavy Cannonade" },
-          text = "One enemy, hard and fast." },
-        { name = "The Buccaneer", mods = { "Sweeping Steel", "Scattershot", "Full Broadside" },
-          text = "Steel and shot for packs." },
-        { name = "The Quickdraw", mods = { "Serrated Edge", "Rapid Shots", "Quick Reload" },
-          text = "Finish, fire, finish again." },
+        { name = "The Gunslinger", mods = { "Gunslinger", "Powder and Steel", "Quick Draw" },
+          text = "Shot, slash, shot again." },
+        { name = "The Executioner", mods = { "Heavy Caliber", "Between the Eyes", "Efficient Duelist" },
+          text = "Eviscerate, then one big shot." },
+        { name = "The Scatterer", mods = { "Scattershot", "Loaded Powder", "Cut and Run" },
+          text = "Powder and lead over the pack." },
       },
     },
     { id = 43,
@@ -1295,22 +1332,24 @@ EmberforgeRunesCatalog = {
       role = "Melee DPS (Druid, Feral)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_EmbersWrath",
-      keywords = "druid feral cat form fire blast rake rip ferocious bite swipe mangle cinder wound burn bleed " ..
-          "fire mage energy flame shock claw blazing strike fiery explosion shaman",
+      keywords = "druid feral cat form fire blast rake rip ferocious bite swipe mangle cinder wound burn bleed fire " ..
+          "mage energy flame shock claw blazing strike fiery explosion shaman shred ferocious bite flame shock icy " ..
+          "touch pyroblast swipe rejuvenation rake spread",
       slots = { "Ignition", "Claws", "Instinct" },
       builtFrom = "Rake or Rip",
       spentWith = "Fire Blast, in Cat Form too",
       resource = "Cinder Wound, 6 sec",
-      core = "Your Fire Blast works in Cat Form, at its own mana cost and cooldown. On an enemy bleeding from " ..
-          "your own Rake or Rip it ignites Cinder Wound: 150% of your attack power plus 100% of your spell power " ..
-          "as Fire damage over 6 sec, a tick every 2 sec. The bleed stays; a new wound keeps what is left of the " ..
-          "last, up to twice a fresh one. Flame Shock (in Cat Form too) kindles your next Claw or Swipe within 10 " ..
-          "sec: Claw becomes Blazing Strike, its hit again on a second enemy within 5 yards and both bleeding for " ..
-          "100% of your attack power over 6 sec (Fire Blast ignites that bleed too); Swipe becomes Fiery Explosion, " ..
-          "75% of your attack power as Fire damage to up to 8 enemies within 8 yards, each left with half a Cinder " ..
-          "Wound.",
-      loop = "Rake or Rip, Fire Blast to ignite; Flame Shock, then Claw or Swipe.",
-      -- What the rune adds to each spell it reaches into: a line on that spell's tooltip while it is bound.
+      core = "Your Fire Blast works in Cat Form, at its own mana cost and cooldown. On an enemy bleeding from your " ..
+          "own Rake or Rip it ignites Cinder Wound: 150% of your attack power plus 100% of your spell power as Fire " ..
+          "damage over 6 sec, a tick every 2 sec. The bleed stays; a new wound keeps what is left of the last, up " ..
+          "to twice a fresh one. Shred on your Cinder Wound adds 10% of your attack power as Fire, once every 3 sec " ..
+          "for each enemy. Ferocious Bite on it makes it last 1 sec longer for each combo point (5 sec for each " ..
+          "wound). Flame Shock: Fire Blast on your Flame Shock target with your Cinder Wound spreads the wound to " ..
+          "one more enemy within 8 yards, once every 8 sec. Flame Shock (in Cat Form too) kindles your next Claw or " ..
+          "Swipe within 10 sec: Claw becomes Blazing Strike, its hit again on a second enemy within 5 yards and " ..
+          "both bleeding for 100% of your attack power over 6 sec; Swipe becomes Fiery Explosion, 75% of your " ..
+          "attack power as Fire damage to up to 8 enemies within 8 yards, each left with half a Cinder Wound.",
+      loop = "Rake or Rip, Fire Blast to ignite, Shred and Bite to feed it; Flame Shock, then Claw or Swipe.",
       spells = {
         ["Fire Blast"] = "Usable in Cat Form. On an enemy bleeding from your own Rake or Rip, ignites Cinder " ..
             "Wound: 150% of your attack power plus 100% of your spell power as Fire damage over 6 sec.",
@@ -1324,39 +1363,51 @@ EmberforgeRunesCatalog = {
         ["Rip"] = "Your bleed lets Fire Blast ignite Cinder Wound on this enemy.",
       },
       mods = {
-        { name = "Searing Wound",
-          text = "Cinder Wound deals 35% more damage." },
-        { name = "Wild Embers",
-          text = "Each ignition also burns up to 4 other enemies within 6 yards of its victim for 40% of " ..
-              "your attack power plus 30% of your spell power as Fire damage." },
-        { name = "Smoldering Flesh",
-          text = "Cinder Wound lasts 10 sec and deals 30% more damage over that time." },
-        { name = "Blazing Rake",
-          text = "Rake on your Cinder Wound victim also deals 60% of your attack power as Fire damage, " ..
-              "once every 3 sec." },
-        { name = "Molten Bite",
-          text = "Ferocious Bite on your Cinder Wound victim also deals 25% of your attack power per combo " ..
-              "point spent as Fire damage." },
-        { name = "Cinder Swipe",
-          text = "Swipe spreads Cinder Wound, at half its damage, to up to 3 bleeding enemies within its " ..
-              "reach. Spread wounds don't spread again." },
-        { name = "Flamebound",
-          text = "Fire Blast makes you move 30% faster for 3 sec, and your next Rake or Mangle within 5 " ..
-              "sec gives 10 Energy back." },
-        { name = "Patient Predator",
-          text = "Cinder Wound's last tick deals twice its damage. A new wound keeps its tick timer " ..
-              "running." },
-        { name = "Ashen Pursuit",
-          text = "Your first Fire Blast on each new enemy deals 20% more damage, once every 6 sec; that " ..
-              "enemy dying resets the wait." },
+        { name = "Cinderclaw",
+          text = "Cinder Wound deals 40% more damage." },
+        { name = "Wildfire Claws",
+          text = "Blazing Strike hits up to 2 other enemies within 5 yards for half its damage; with none near, its " ..
+              "target takes 25% more." },
+        { name = "Living Flame",
+          text = "Cinder Wound deals 15% more damage." },
+        { name = "Flame Shock Claws",
+          text = "Blazing Strike on your Flame Shock target deals 25% more as Fire damage." },
+        { name = "Frozen Embers",
+          text = "Fire Blast on your Frost Fever target also deals 25% of your attack power as Frost damage, once " ..
+              "every 6 sec." },
+        { name = "Ember Rush",
+          text = "Fire Blast makes you move 20% faster for 4 sec, and your next Shred within 6 sec gives 10 Energy " ..
+              "back." },
+        { name = "Smoldering Bite",
+          text = "Ferocious Bite on your Cinder Wound deals its next tick at once, without adding a tick." },
+        { name = "Firestorm Pounce",
+          text = "Flame Shock's spread reaches 3 enemies instead of 1." },
+        { name = "Phoenix Claws",
+          text = "Pyroblast on your Cinder Wound target bursts for 40% of your spell power as Fire damage, once " ..
+              "every 8 sec." },
+        { name = "Wildfire Swipe",
+          text = "Swipe spreads half of what is left of a Cinder Wound in its reach to one more enemy within 8 " ..
+              "yards, once every 8 sec." },
+        { name = "Ashen Renewal",
+          text = "Igniting a Cinder Wound gives you 10 Energy, once every 8 sec." },
+        { name = "Flame-Tipped Claws",
+          text = "Blazing Strike deals 40% more damage to its target, as Fire." },
+        { name = "Phoenix Scar",
+          text = "When a Cinder Wound runs out, it deals 25% of your attack power as Fire damage to its target." },
+        { name = "Healing Flame",
+          text = "Fire Blast on a bleeding enemy while your Rejuvenation is on you heals you for 2% of your maximum " ..
+              "health, once every 10 sec." },
+        { name = "Burning Rake",
+          text = "Rake on your Cinder Wound target makes your next Blazing Strike within 6 sec deal 30% more " ..
+              "damage." },
       },
       builds = {
-        { name = "The Searing Claw", mods = { "Searing Wound", "Blazing Rake", "Flamebound" },
-          text = "A focused burn." },
-        { name = "The Wildfire", mods = { "Wild Embers", "Molten Bite", "Patient Predator" },
-          text = "Ignite, leap and bite." },
-        { name = "The Smoulder", mods = { "Smoldering Flesh", "Cinder Swipe", "Ashen Pursuit" },
-          text = "Fire through the pack." },
+        { name = "The Pyre", mods = { "Cinderclaw", "Smoldering Bite", "Phoenix Scar" },
+          text = "One deep wound, fed and burst." },
+        { name = "The Wildfire", mods = { "Wildfire Claws", "Firestorm Pounce", "Flame-Tipped Claws" },
+          text = "Flame Shock and claws through the pack." },
+        { name = "The Ember", mods = { "Living Flame", "Ember Rush", "Ashen Renewal" },
+          text = "Fast and fed with Energy." },
       },
     },
     { id = 45,

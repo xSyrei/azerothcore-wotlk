@@ -284,13 +284,13 @@ namespace
         SPELL_RUNE_SPLINTERED_CROWN     = 91220,
         SPELL_ICICLE                    = 91221,
         SPELL_FROST_CROWN               = 91222,    // on the Hero: a stack an Icicle waiting
-        SPELL_SPLINTER_QUICKENING       = 91223,
+        // 91223: Splinter Volley's quickening, retired
         SPELL_FROST_WOUND               = 91224,
         SPELL_FROST_WOUND_TICK          = 91225,
-        SPELL_WINTERS_GRASP             = 91226,
+        SPELL_PERMAFROST                = 91226,    // Permafrost's slow (Winter's Grasp's, retired)
         SPELL_COLD_FRONT                = 91227,
         SPELL_ICE_SPLINTER              = 91228,    // a fragment, a pierce, a seeking shard
-        SPELL_CROWN_MODIFIER_FIRST      = 91230,    // + slot * 3 + choice
+        // 91230-91238: its first 9 markers, retired (the Extended Options' block, below)
 
         SPELL_RUNE_PHOENIX_WAKE         = 91240,
         SPELL_PHOENIX_EMBER             = 91241,
@@ -411,6 +411,28 @@ namespace
         SPELL_MOONFROST                 = 91763,
         SPELL_EXPOSED_PREY              = 91764,
         SPELL_HOLLOW_MODIFIER_FIRST     = 91770,
+        SPELL_CROWN_MODIFIER_FIRST      = 91795,
+        SPELL_CROWN_FROSTBITE           = 91810,
+        SPELL_COLD_SNAP                 = 91811,    // the next Frostbolt 15% faster
+        SPELL_GATHERING_BLIZZARD        = 91812,    // the next Ice Lance 5% more a stack
+        SPELL_DUELIST_MODIFIER_FIRST    = 91820,
+        SPELL_LOADED_STEEL              = 91835,    // the next Sabre Slash 15% more and a second enemy
+        SPELL_LOADED_POWDER             = 91836,    // the next Pistol Shot explodes
+        SPELL_POWDER_BLAST              = 91837,
+        SPELL_STORM_PISTOL              = 91838,
+        SPELL_MARKED_SHOT               = 91839,    // the next Sabre Slash 25% more
+        SPELL_FROZEN_POWDER             = 91840,
+        SPELL_CUT_AND_RUN               = 91841,
+        SPELL_HEALING_POWDER            = 91842,
+        SPELL_ARCANE_POWDER             = 91843,    // the next Pistol Shot 25% more
+        SPELL_DEAD_AIM                  = 91844,    // Eviscerate's: the next Pistol Shot more (a stack a 5%)
+        SPELL_EMBERS_MODIFIER_FIRST     = 91845,
+        SPELL_SEARING_SHRED             = 91860,
+        SPELL_FROZEN_EMBERS             = 91861,
+        SPELL_PHOENIX_CLAWS             = 91862,
+        SPELL_PHOENIX_SCAR              = 91863,
+        SPELL_HEALING_FLAME             = 91864,
+        SPELL_BURNING_RAKE              = 91865,    // the next Burning Claws 30% more
         SPELL_HOLLOW_PATCH              = 91785,    // its tick 91786
         SPELL_HOLLOW_PATCH_TICK         = 91786,
         SPELL_MOONLIT_CONGREGATION      = 91787,
@@ -428,8 +450,8 @@ namespace
         SPELL_PISTOL_DAMAGE          = 91383,
         SPELL_SERRATED_EDGE             = 91384,    // its bleed; 91385 the tick
         SPELL_SERRATED_EDGE_TICK        = 91385,
-        SPELL_RAPID_SHOTS               = 91386,    // the next Pistol Shot grants Energy (91387-91389 retired)
-        SPELL_DUELIST_MODIFIER_FIRST    = 91390,    // + slot * 3 + choice
+        // 91386: Rapid Shots, retired (91387-91389 too)
+        // 91390-91398: its first 9 markers, retired (the Extended Options' block, below)
         SPELL_SABRE_STRIKE              = 91399,    // Sweeping Steel's and Press the Advantage's hits
         SPELL_RUNE_STORMREAVER          = 91400,
         SPELL_STORMFRONT                = 91401,
@@ -457,7 +479,7 @@ namespace
         SPELL_FLAMEBOUND                = 91427,    // speed
         SPELL_FLAMEBOUND_DISCOUNT       = 91428,    // the next Rake or Mangle 10 Energy back
         SPELL_RUNE_EMBERS_WRATH         = 91430,
-        SPELL_EMBERS_MODIFIER_FIRST     = 91431,    // + slot * 3 + choice
+        // 91431-91439: its first 9 markers, retired (the Extended Options' block, below)
         SPELL_CAT_ICY_TOUCH             = 91440,
         SPELL_FROZEN_PREY               = 91441,    // the primary mark
         SPELL_FROZEN_PREY_PACK          = 91442,    // Pack Frost's: 60% and never spread again
@@ -535,6 +557,7 @@ namespace
         SPELL_AIMED_SHOT            = 19434,
         SPELL_STEADY_SHOT           = 56641,
         SPELL_DRAIN_SOUL            = 1120,
+        SPELL_BLIZZARD              = 10,
         SPELL_MAUL                  = 6807,
         SPELL_BEAR_FORM             = 5487,
         SPELL_DIRE_BEAR_FORM        = 9634,
@@ -902,24 +925,31 @@ namespace
     constexpr std::size_t SHARDS_TARGETS = 2, ARCANE_CHARGE_TARGETS = 5;
 
     // The Splintered Crown's modifiers: slot (0 Formation, 1 Flight, 2 Aftermath) x 3 + choice.
+    // (Its Extended Options, a redesign: slot x 5 + choice; its picks reset, titan_runes_zz_extended_reset2.sql.)
     enum CrownModifier : uint8
     {
-        MOD_GLACIAL_SPEAR, MOD_SPLINTER_VOLLEY, MOD_SHATTERGLASS,
-        MOD_IMPALING_ICE, MOD_SEEKING_SPLINTERS, MOD_FROZEN_FOCUS,
-        MOD_FROST_WOUND, MOD_WINTERS_GRASP, MOD_COLD_FRONT,
+        MOD_GLACIAL_SPEAR, MOD_TWIN_FANGS, MOD_FROZEN_VOLLEY, MOD_HAILSTORM_CROWN, MOD_SPLINTERING_ICE,
+        MOD_COLD_SNAP, MOD_BRITTLE_IMPACT, MOD_GATHERING_BLIZZARD, MOD_FROSTFIRE_FRACTURE, MOD_RUNIC_RIME,
+        MOD_DEEP_FREEZE, MOD_GLACIAL_WOUND, MOD_PERMAFROST, MOD_WHITEOUT, MOD_COLD_FRONT,
     };
 
     // The Splintered Crown's tuning: a direct Frostbolt hit forms an Icicle (5 waiting at most), loosed 1 sec later
     // at the same victim for 30% of the Frostbolt's damage. Its options keep the dossier's ratios to an Icicle.
-    constexpr uint8 MAX_ICICLES = 5, FROZEN_FOCUS_EVERY = 3, AFTERMATH_EVERY = 3;
-    constexpr uint32 ICICLE_DELAY_MS = 1000, SPLINTERS = 3, SPLINTER_SPACING_MS = 200;
-    constexpr float ICICLE_SHARE = 0.3f, GLACIAL_SPEAR = 1.4f, SPLINTER_SHARE = 0.4f, SHATTERGLASS_SHARE = 0.5f;
-    constexpr float FROZEN_FOCUS = 1.6f, IMPALE_SHARE = 0.4f, SEEKING_SHARE = 0.3f, SEEKING_SELF_SHARE = 0.15f;
-    constexpr float FROST_WOUND_SHARE = 0.8f, WINTERS_GRASP = 1.15f;
-    constexpr float ICICLE_RANGE = 45.0f, ICICLE_SPEED = 30.0f, SHATTERGLASS_RADIUS = 6.0f, SEEKING_RANGE = 10.0f;
-    constexpr float IMPALE_REACH = 15.0f, IMPALE_HALF_WIDTH = 2.0f;
-    constexpr int32 FROST_WOUND_MS = 6000, WINTERS_GRASP_MS = 3000;
-    constexpr std::size_t SHATTERGLASS_TARGETS = 4, IMPALE_TARGETS = 3;
+    constexpr uint8 MAX_ICICLES = 5, AFTERMATH_EVERY = 3, GATHERING_STACKS = 4;
+    constexpr uint32 ICICLE_DELAY_MS = 1000, TWIN_SPACING_MS = 200, RIME_MS = 6000, FRACTURE_EVERY_MS = 8000;
+    constexpr uint32 HAILSTORM_MS = 2000, HAILSTORM_CROWN_MS = 1000;
+    constexpr float ICICLE_SHARE = 0.3f, GLACIAL_SPEAR = 1.4f, ICICLE_RANGE = 45.0f;
+    // The Extended Options: Ice Lance looses 2 Icicles (20% of spell power each), Cone of Cold one at each enemy it
+    // hits (5, 15%), Blizzard one each 2 sec of its channel (20%); every Icicle leaves Frostbite (6 sec): the Hero's
+    // Frostbolt and Ice Lance 8% more there. Its options as the dossier has them.
+    constexpr int32 FROSTBITE_MS = 6000, TWIN_WOUND_MS = 4000, GLACIAL_WOUND_MS = 6000, PERMAFROST_MS = 3000;
+    constexpr float TWIN_POWER = 0.2f, TWIN_FANGS_POWER = 0.25f, TWIN_WOUND_POWER = 0.1f, GLACIAL_WOUND_POWER = 0.2f;
+    constexpr float FRONT_POWER = 0.15f, VOLLEY_POWER = 0.1f, BRITTLE_IMPACT = 1.3f, PERMAFROST = 1.25f;
+    constexpr float HAILSTORM_POWER = 0.2f, HAILSTORM_CROWN_POWER = 0.15f, WHITEOUT_SHARE = 0.4f, WHITEOUT_ALONE = 1.2f;
+    constexpr float FROSTBITE_BONUS = 1.08f, GATHERING_STEP = 0.05f, DEEP_FREEZE = 1.2f, RIME_SHARE = 0.5f;
+    constexpr float FRACTURE_POWER = 0.25f, FROSTFIRE_RADIUS = 6.0f, SPLINTERING_SHARE = 0.5f;
+    constexpr float WHITEOUT_RADIUS = 6.0f, SPLINTERING_RADIUS = 8.0f;
+    constexpr std::size_t SPLINTERING_TARGETS = 2, FROSTFIRE_TARGETS = 2, WHITEOUT_TARGETS = 2, CONE_ICICLES = 5;
 
     // Phoenix Wake's modifiers (its Extended Options): slot (0 Phoenix, 1 Flight, 2 Wake) x 5 + choice; each
     // slot's first three are the ones it had.
@@ -1124,30 +1154,35 @@ namespace
     constexpr uint8 UNBROKEN_BLOWS = 3;
     constexpr std::size_t URSOC_TARGETS = 5, ROAR_TARGETS = 10;
 
-    // The Duelist's modifiers: slot (0 Sabre, 1 Pistol, 2 Cannon-Fire) x 3 + choice.
+    // The Duelist's modifiers (its Extended Options, a redesign): slot (0 Pistol, 1 Powder, 2 Footwork) x 5 + choice;
+    // its picks reset (titan_runes_zz_extended_reset2.sql).
     enum DuelistModifier : uint8
     {
-        MOD_DEEP_CUT, MOD_SWEEPING_STEEL, MOD_SERRATED_EDGE,
-        MOD_HEAVY_BALL, MOD_SCATTERSHOT, MOD_RAPID_SHOTS,
-        MOD_HEAVY_CANNONADE, MOD_FULL_BROADSIDE, MOD_QUICK_RELOAD,
+        MOD_HEAVY_CALIBER, MOD_GUNSLINGER, MOD_SCATTERSHOT, MOD_FLAME_PISTOL, MOD_STORM_PISTOL,
+        MOD_POWDER_AND_STEEL, MOD_BETWEEN_THE_EYES, MOD_LOADED_POWDER, MOD_MARKED_SHOT, MOD_FROZEN_POWDER,
+        MOD_QUICK_DRAW, MOD_CUT_AND_RUN, MOD_EFFICIENT_DUELIST, MOD_HEALING_POWDER, MOD_ARCANE_POWDER,
     };
 
-    // The Duelist's tuning: every second direct Sabre Slash hit readies Opening Shot (8 sec, one held); Pistol Shot
-    // spends it (20 Energy, 6 sec cooldown, 20 yards): 60% of attack power and a combo point (the dossier's every
-    // third and 35%, made worth holding a button for).
-    constexpr uint8 OPENING_EVERY = 2;
-    constexpr int32 OPENING_MS = 8000, SERRATED_MS = 6000;
-    constexpr float PISTOL_AP = 0.6f, HEAVY_BALL = 1.6f, SCATTER_SHARE = 0.75f;
-    constexpr float DEEP_CUT = 1.25f, SWEEPING_SHARE = 0.5f, SERRATED_SHARE = 0.4f;
+    // The Duelist's tuning: every third direct Sabre Slash hit readies Opening Shot (8 sec, one held; Quick Draw:
+    // every second); Pistol Shot spends it (10 Energy, 6 sec cooldown, 20 yards): 60% of attack power and a combo
+    // point (the Extended Options' cadence and cost; our 60% kept over its 45%). Its interactions: after a Pistol
+    // Shot, the next Sabre Slash within 6 sec 15% more and one more enemy within 5 yards for 40% (Loaded Steel);
+    // Eviscerate with Opening Shot ready, the next Pistol Shot 10% more a combo point (50% at most); a Fire Blast
+    // hit, the next Pistol Shot within 8 sec explodes for 20% of attack power plus 20% of spell power as Fire on up
+    // to 3 enemies within 8 yards.
+    constexpr uint8 OPENING_EVERY = 3, QUICK_DRAW_EVERY = 2;
+    constexpr int32 OPENING_MS = 8000, PISTOL_COST = 10;
+    constexpr uint32 FROZEN_POWDER_EVERY_MS = 8000, EFFICIENT_EVERY_MS = 6000, HEALING_POWDER_EVERY_MS = 10000;
+    constexpr float PISTOL_AP = 0.6f, HEAVY_CALIBER = 1.4f, GUNSLINGER_SHARE = 0.65f, SCATTER_SHARE = 0.5f;
+    constexpr float LOADED_STEEL = 1.15f, POWDER_AND_STEEL = 1.3f, LOADED_STEEL_SPLASH = 0.4f, MARKED_SHOT = 1.25f;
+    constexpr float EVISCERATE_STEP = 0.1f, EVISCERATE_MOST = 0.5f, EYES_STEP = 0.15f, EYES_MOST = 0.75f;
+    constexpr float POWDER_AP = 0.2f, POWDER_SP = 0.2f, FLAME_PISTOL = 1.35f, LOADED_POWDER = 1.25f;
+    constexpr float STORM_PISTOL_POWER = 0.25f, FROZEN_POWDER_AP = 0.2f, HEALING_POWDER_POWER = 0.3f;
+    constexpr float ARCANE_POWDER = 1.25f;
     constexpr float SWEEPING_RADIUS = 5.0f, SCATTER_REACH = 10.0f, SCATTER_ARC = float(M_PI) / 4.0f;
-    constexpr std::size_t SWEEPING_TARGETS = 3, SCATTER_TARGETS = 4;
-    // Rapid Shots: each combo point a finishing move spends, a 10% chance to reset Pistol Shot (Opening Shot ready);
-    // the next Pistol Shot within 10 sec grants 50 Energy instead of its 20. Cannon-Fire: Heavy Cannonade 40% more a
-    // blast, Full Broadside a fourth blast, Quick Reload 1 sec off Broadside's cooldown a combo point spent.
-    constexpr int32 RAPID_CHANCE_PER_POINT = 10, RAPID_MS = 10000, PISTOL_COST = 20, RAPID_ENERGY = 50;
-    constexpr float HEAVY_CANNONADE = 1.4f;
-    constexpr uint32 FULL_BROADSIDE_BLASTS = 4;
-    constexpr int32 RELOAD_MS_PER_POINT = 1000;
+    constexpr float POWDER_RADIUS = 8.0f, FROZEN_POWDER_RADIUS = 6.0f;
+    constexpr std::size_t SCATTER_TARGETS = 3, POWDER_TARGETS = 3, LOADED_POWDER_TARGETS = 5;
+    constexpr std::size_t FROZEN_POWDER_TARGETS = 3;
     // Broadside (35 Energy, 20 sec, a finishing move): 3 pistol blasts 0.25 sec apart, each 30% of attack power
     // plus 5% a combo point to its target and up to 7 more within 8 yards (its tooltip shows each point's).
     constexpr uint32 BROADSIDE_BLASTS = 3, BROADSIDE_SPACING_MS = 250;
@@ -1177,26 +1212,34 @@ namespace
     constexpr std::size_t STORM_TARGETS = 5, FORKED_TARGETS = 8, THUNDERLASH_ARCS = 2, CHAINBREAKER_ARCS = 4;
     constexpr std::size_t GROUNDING_TARGETS = 3;
 
-    // Ember's Wrath's modifiers: slot (0 Ignition, 1 Claws, 2 Instinct) x 3 + choice.
+    // Ember's Wrath's modifiers (its Extended Options, a redesign): slot (0 Ignition, 1 Claws, 2 Instinct) x 5 +
+    // choice; its picks reset (titan_runes_zz_extended_reset2.sql). Burning Claws: the Kindled Claw, Blazing Strike.
     enum EmbersModifier : uint8
     {
-        MOD_SEARING_WOUND, MOD_WILD_EMBERS, MOD_SMOLDERING_FLESH,
-        MOD_BLAZING_RAKE, MOD_MOLTEN_BITE, MOD_CINDER_SWIPE,
-        MOD_FLAMEBOUND, MOD_PATIENT_PREDATOR, MOD_ASHEN_PURSUIT,
+        MOD_CINDERCLAW, MOD_WILDFIRE_CLAWS, MOD_LIVING_FLAME, MOD_FLAME_SHOCK_CLAWS, MOD_FROZEN_EMBERS,
+        MOD_EMBER_RUSH, MOD_SMOLDERING_BITE, MOD_FIRESTORM_POUNCE, MOD_PHOENIX_CLAWS, MOD_WILDFIRE_SWIPE,
+        MOD_ASHEN_RENEWAL, MOD_FLAME_TIPPED_CLAWS, MOD_PHOENIX_SCAR, MOD_HEALING_FLAME, MOD_BURNING_RAKE,
     };
 
     // Ember's Wrath's tuning: the Hero's own Fire Blast (its mana and cooldown), usable in Cat Form, ignites their
     // Rake or Rip victim: Cinder Wound, 150% of attack power plus 100% of spell power over 6 sec, a tick every 2 sec
     // (a new one keeps what is left of the last, up to twice a fresh one). The dossier's 30% and 30% (and its other
     // shares, five times or so over) made the rune 2-5% of a feral's damage.
-    constexpr int32 CINDER_MS = 6000, SMOLDERING_MS = 10000, FLAMEBOUND_MS = 3000, FLAMEBOUND_DISCOUNT_MS = 5000;
-    constexpr uint32 ASHEN_MS = 6000, BLAZING_RAKE_MS = 3000;
-    constexpr int32 FLAMEBOUND_REFUND = 10;
-    constexpr float CINDER_AP = 1.5f, CINDER_SP = 1.0f, SEARING_WOUND = 1.35f, SMOLDERING_FLESH = 1.3f;
-    constexpr float WILD_EMBERS_AP = 0.4f, WILD_EMBERS_SP = 0.3f, BLAZING_RAKE_AP = 0.6f, MOLTEN_BITE_AP = 0.25f;
-    constexpr float CINDER_SWIPE_SHARE = 0.5f, ASHEN_PURSUIT = 1.2f, PATIENT_PREDATOR = 2.0f;
-    constexpr float WILD_EMBERS_RADIUS = 6.0f, CINDER_SWIPE_RADIUS = 8.0f;
-    constexpr std::size_t WILD_EMBERS_TARGETS = 4, CINDER_SWIPE_TARGETS = 3;
+    constexpr int32 CINDER_MS = 6000, EMBER_RUSH_MS = 4000, EMBER_RUSH_DISCOUNT_MS = 6000, BITE_EXTEND_MS = 1000;
+    constexpr int32 BITE_EXTEND_MOST_MS = 5000, EMBER_REFUND = 10, ASHEN_ENERGY = 10, BURNING_RAKE_MS = 6000;
+    constexpr uint32 SHRED_EMBER_EVERY_MS = 3000, FLAME_SPREAD_EVERY_MS = 8000, FROZEN_EMBERS_EVERY_MS = 6000;
+    constexpr uint32 PHOENIX_CLAWS_EVERY_MS = 8000, WILDFIRE_SWIPE_EVERY_MS = 8000, ASHEN_EVERY_MS = 8000;
+    constexpr uint32 HEALING_FLAME_EVERY_MS = 10000;
+    constexpr float CINDER_AP = 1.5f, CINDER_SP = 1.0f, CINDERCLAW = 1.4f, LIVING_FLAME = 1.15f;
+    // Its interactions: Shred on a Cinder Wound, 10% of attack power as Fire (3 sec a target); Ferocious Bite, the
+    // wound 1 sec longer a combo point (5 sec an application); Fire Blast on the Hero's Flame Shock and Cinder Wound
+    // target spreads the wound, what is left of it, to one more within 8 yards (8 sec apart). The options as the
+    // dossier has them (our wound's 150% and 100% kept over its 40% and 40%).
+    constexpr float SHRED_EMBER_AP = 0.1f, WILDFIRE_CLAWS_SHARE = 0.5f, WILDFIRE_ALONE = 0.25f, FS_CLAWS = 0.25f;
+    constexpr float FROZEN_EMBERS_AP = 0.25f, PHOENIX_CLAWS_POWER = 0.4f, WILDFIRE_SWIPE_SHARE = 0.5f;
+    constexpr float FLAME_TIPPED = 0.4f, PHOENIX_SCAR_AP = 0.25f, HEALING_FLAME_PCT = 2.0f, BURNING_RAKE = 0.3f;
+    constexpr float EMBER_SPREAD_RANGE = 8.0f;
+    constexpr std::size_t WILDFIRE_CLAWS_TARGETS = 2, FIRESTORM_TARGETS = 3;
 
     // Whitefang's modifiers: slot (0 Shatter, 1 Hunt, 2 Instinct) x 3 + choice.
     enum WhitefangModifier : uint8
@@ -1366,7 +1409,7 @@ namespace
               SPELL_MIND_MODIFIER_FIRST, MAX_CHOICES },
             // Ranged DPS: Frostbolt's Icicles.
             { RUNE_SPLINTERED_CROWN, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_FROSTBOLT } }, SPELL_RUNE_SPLINTERED_CROWN, SPELL_CROWN_MODIFIER_FIRST },
+              { { SPELL_FROSTBOLT } }, SPELL_RUNE_SPLINTERED_CROWN, SPELL_CROWN_MODIFIER_FIRST, MAX_CHOICES },
             // Ranged DPS: Pyroblast leaves the Ember, Fire Blast wakes the phoenix.
             { RUNE_PHOENIX_WAKE, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_PYROBLAST }, { SPELL_FIRE_BLAST } }, SPELL_RUNE_PHOENIX_WAKE,
@@ -1392,7 +1435,7 @@ namespace
               SPELL_RUNE_URSOCS_CHAMPION, SPELL_URSOC_MODIFIER_FIRST },
             // Melee DPS: Sinister Strike readies the pistol (the rune teaches Pistol Shot).
             { RUNE_DUELIST, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
-              { { SPELL_SINISTER_STRIKE } }, SPELL_RUNE_DUELIST, SPELL_DUELIST_MODIFIER_FIRST },
+              { { SPELL_SINISTER_STRIKE } }, SPELL_RUNE_DUELIST, SPELL_DUELIST_MODIFIER_FIRST, MAX_CHOICES },
             // Melee DPS: Stormstrike raises the storm, Lava Lash and Lightning Shield strike through it.
             { RUNE_STORMREAVER, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_STORMSTRIKE }, { SPELL_LAVA_LASH }, { SPELL_LIGHTNING_SHIELD } }, SPELL_RUNE_STORMREAVER,
@@ -1400,7 +1443,7 @@ namespace
             // Melee DPS: Fire Blast in Cat Form ignites the Hero's Rake or Rip (the rune teaches it).
             { RUNE_EMBERS_WRATH, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_CAT_FORM }, { SPELL_FIRE_BLAST }, { SPELL_RAKE, SPELL_RIP } }, SPELL_RUNE_EMBERS_WRATH,
-              SPELL_EMBERS_MODIFIER_FIRST },
+              SPELL_EMBERS_MODIFIER_FIRST, MAX_CHOICES },
             // Melee DPS: Icy Touch in Cat Form marks the prey, Shred or Mangle shatters it (the rune teaches it).
             { RUNE_WHITEFANG, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_CAT_FORM }, { SPELL_ICY_TOUCH }, { SPELL_SHRED, SPELL_MANGLE_CAT } }, SPELL_RUNE_WHITEFANG,
@@ -1500,6 +1543,43 @@ namespace
                 case MOD_DISTANT_SPARK: return { { SPELL_ARCANE_SHOT } };
                 case MOD_EVOKED_REMNANT: return { { SPELL_EVOCATION } };
                 case MOD_ASTRAL_SHELTER: return { { SPELL_POWER_WORD_SHIELD } };
+                default: return {};
+            }
+        if (rune == RUNE_EMBERS_WRATH)
+            switch (modifier)
+            {
+                case MOD_FLAME_SHOCK_CLAWS: case MOD_FIRESTORM_POUNCE: return { { SPELL_FLAME_SHOCK } };
+                case MOD_FROZEN_EMBERS: return { { SPELL_ICY_TOUCH } };
+                case MOD_EMBER_RUSH: return { { SPELL_SHRED } };
+                case MOD_SMOLDERING_BITE: return { { SPELL_FEROCIOUS_BITE } };
+                case MOD_PHOENIX_CLAWS: return { { SPELL_PYROBLAST } };
+                case MOD_WILDFIRE_SWIPE: return { { SPELL_SWIPE_CAT } };
+                case MOD_HEALING_FLAME: return { { SPELL_REJUVENATION } };
+                case MOD_BURNING_RAKE: return { { SPELL_RAKE } };
+                default: return {};
+            }
+        if (rune == RUNE_DUELIST)
+            switch (modifier)
+            {
+                case MOD_FLAME_PISTOL: case MOD_LOADED_POWDER: return { { SPELL_FIRE_BLAST } };
+                case MOD_STORM_PISTOL: return { { SPELL_LIGHTNING_SHIELD } };
+                case MOD_BETWEEN_THE_EYES: return { { SPELL_EVISCERATE } };
+                case MOD_MARKED_SHOT: return { { SPELL_HUNTERS_MARK } };
+                case MOD_FROZEN_POWDER: return { { SPELL_ICY_TOUCH } };
+                case MOD_HEALING_POWDER: return { { SPELL_RENEW } };
+                case MOD_ARCANE_POWDER: return { { SPELL_ARCANE_SHOT } };
+                default: return {};
+            }
+        if (rune == RUNE_SPLINTERED_CROWN)
+            switch (modifier)
+            {
+                case MOD_TWIN_FANGS: case MOD_COLD_SNAP: case MOD_GLACIAL_WOUND: return { { SPELL_ICE_LANCE } };
+                case MOD_FROZEN_VOLLEY: case MOD_BRITTLE_IMPACT: case MOD_PERMAFROST:
+                    return { { SPELL_CONE_OF_COLD } };
+                case MOD_HAILSTORM_CROWN: case MOD_WHITEOUT: return { { SPELL_BLIZZARD } };
+                case MOD_GATHERING_BLIZZARD: return { { SPELL_BLIZZARD }, { SPELL_ICE_LANCE } };
+                case MOD_FROSTFIRE_FRACTURE: return { { SPELL_FIRE_BLAST } };
+                case MOD_RUNIC_RIME: return { { SPELL_ICY_TOUCH } };
                 default: return {};
             }
         if (rune == RUNE_SPECTRAL_BLADE)
@@ -1675,6 +1755,13 @@ namespace
         // The Spectral Blade, the Hollow Congregation's Extended Options.
         uint32 RestoringAt = 0, DevouringAt = 0, WitnessAt = 0;     // game ms
         std::set<ObjectGuid> Frostbound;            // Frostbound Sermon: echoes whose next barrage splits
+        std::map<ObjectGuid, uint32> RimeOn, BlizzardHit;   // Runic Rime's Icy Touch; Blizzard's victims (game ms)
+        bool SabreSteel = false;                    // the Sabre Slash landing spent Loaded Steel
+        uint32 FrozenPowderAt = 0, EfficientAt = 0, HealingPowderAt = 0;    // game ms
+        std::map<ObjectGuid, uint32> ShredEmberAt;  // Ember's Wrath (game ms)
+        uint32 FrozenEmbersAt = 0, FlameSpreadAt = 0, PhoenixClawsAt = 0, WildfireSwipeAt = 0, AshenRenewalAt = 0;
+        uint32 HealingFlameAt = 0;
+        uint32 FractureAt = 0, HailTimer = 0;
         Position PatchAt;                           // the Shadow Word: Pain patch (PatchUntil 0: none)
         uint32 PatchMap = 0, PatchUntil = 0, PatchTimer = 0;
         float PatchTick = 0.0f;
@@ -1687,7 +1774,7 @@ namespace
         uint32 BoltInsightAt = 0, StarfallAt = 0, ShardsAt = 0, EmpoweredAt = 0, EvocativeAt = 0;   // game ms
 
         // The Splintered Crown.
-        uint8 Icicles = 0, FrostboltHits = 0, IcicleAttacks = 0;
+        uint8 Icicles = 0, IcicleAttacks = 0;
 
         // Phoenix Wake.
         ObjectGuid EmberHost;
@@ -4003,6 +4090,12 @@ namespace
             ? power * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, school) : power;
     }
 
+    // The Hero's damage done bonuses of a school (the rune's strikes ignore their modifiers).
+    float SchoolBonus(Player* player, SpellSchoolMask school)
+    {
+        return player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, school);
+    }
+
     // An aura ms longer, at most `most` over its application's own duration (a new cast starts again).
     void ExtendAura(Aura* aura, int32 ms, int32 most)
     {
@@ -4403,81 +4496,47 @@ namespace
             aura->SetStackAmount(waiting);
     }
 
-    // One Icicle attack made (a fragmented volley counts once): every third, Frost Wound's wound on its victim (80%
-    // of an Icicle over 6 sec) or Cold Front's instant Frostbolt.
-    void IcicleAttacked(Player* player, Unit* victim, float icicle)
+    // The Hero's Frost spell power for the crown's other Icicles (never less than their Frostbolt's own damage).
+    float CrownPower(Player* player)
+    {
+        return RunePower(player, SPELL_SCHOOL_MASK_FROST, SPELL_FROSTBOLT);
+    }
+
+    bool Frostbitten(Player* player, Unit* enemy)
+    {
+        return enemy->HasAura(SPELL_CROWN_FROSTBITE, player->GetGUID());
+    }
+
+    // An Icicle strikes (any of the crown's): Deep Freeze 20% more on the Hero's Frostbite (checked first); a
+    // Frostbolt's on their Permafrost, 25% more (spent). Then Frostbite (6 sec); every third strike, Cold Front's
+    // instant Frostbolt.
+    void IcicleStrike(Player* player, Unit* victim, float amount, bool frostbolt)
     {
         State& state = StateOf(player);
-        if (++state.IcicleAttacks < AFTERMATH_EVERY)
-            return;
-        state.IcicleAttacks = 0;
-        if (HasCrownMarker(player, MOD_FROST_WOUND) && Valid(player, victim))
-            AddDot(player, victim, SPELL_FROST_WOUND, icicle * FROST_WOUND_SHARE, FROST_WOUND_MS);
-        if (HasCrownMarker(player, MOD_COLD_FRONT))
+        ObjectGuid me = player->GetGUID();
+        if (HasCrownMarker(player, MOD_DEEP_FREEZE) && Frostbitten(player, victim))
+            amount *= DEEP_FREEZE;
+        if (frostbolt && victim->HasAura(SPELL_PERMAFROST, me))
         {
-            player->RemoveAurasDueToSpell(SPELL_COLD_FRONT);
-            player->AddAura(SPELL_COLD_FRONT, player);
+            victim->RemoveAurasDueToSpell(SPELL_PERMAFROST, me);
+            amount *= PERMAFROST;
+        }
+        Strike(player, victim, SPELL_ICICLE, amount);
+        if (victim->IsAlive())
+            Lasting(player, victim, SPELL_CROWN_FROSTBITE, FROSTBITE_MS);
+        if (HasCrownMarker(player, MOD_COLD_FRONT) && ++state.IcicleAttacks >= AFTERMATH_EVERY)
+        {
+            state.IcicleAttacks = 0;
+            Renew(player, SPELL_COLD_FRONT);
         }
     }
 
-    // An Icicle's (or a fragment's) hit: Winter's Grasp 15% more on an enemy it slowed already, and slows; Impaling
-    // Ice pierces up to 3 enemies within 15 yards behind the victim (40%); Seeking Splinters sends a shard on as it
-    // lands (30% to another enemy within 10 yards, else 15% to the victim).
-    void IcicleHit(Player* player, Unit* victim, float amount, uint32 spellId)
-    {
-        bool grasp = HasCrownMarker(player, MOD_WINTERS_GRASP);
-        auto graspOf = [player, grasp](Unit* enemy)
-        {
-            return grasp && enemy->HasAura(SPELL_WINTERS_GRASP, player->GetGUID()) ? WINTERS_GRASP : 1.0f;
-        };
-        Strike(player, victim, spellId, amount * graspOf(victim));
-        std::vector<Unit*> struck = { victim };
-        if (HasCrownMarker(player, MOD_IMPALING_ICE))
-        {
-            Shape line;
-            line.From = victim->GetPosition();
-            line.To = Toward(line.From, player->GetAngle(victim), IMPALE_REACH);
-            line.HalfWidth = IMPALE_HALF_WIDTH;
-            std::size_t count = IMPALE_TARGETS;
-            for (Unit* enemy : EnemiesIn(player, line, IMPALE_TARGETS + 1))
-                if (enemy != victim && count)
-                {
-                    Strike(player, enemy, SPELL_ICE_SPLINTER, amount * IMPALE_SHARE * graspOf(enemy));
-                    struck.push_back(enemy);
-                    --count;
-                }
-        }
-        if (grasp)
-            for (Unit* enemy : struck)
-                if (enemy->IsAlive())
-                    Lasting(player, enemy, SPELL_WINTERS_GRASP, WINTERS_GRASP_MS);
-        if (!HasCrownMarker(player, MOD_SEEKING_SPLINTERS))
-            return;
-        uint32 flight = uint32(player->GetExactDist(victim) / ICICLE_SPEED * 1000.0f);
-        ObjectGuid guid = victim->GetGUID();
-        player->m_Events.AddEventAtOffset([player, guid, amount]()
-        {
-            Unit* from = ObjectAccessor::GetUnit(*player, guid);
-            if (!player->IsInWorld() || !player->IsAlive() || !from || !from->IsInMap(player))
-                return;
-            for (Unit* enemy : EnemiesAround(player, from, SEEKING_RANGE))
-                if (enemy != from)
-                {
-                    Strike(player, enemy, SPELL_ICE_SPLINTER, amount * SEEKING_SHARE);
-                    return;
-                }
-            if (Valid(player, from))
-                Strike(player, from, SPELL_ICE_SPLINTER, amount * SEEKING_SELF_SHARE);
-        }, Milliseconds(flight));
-    }
-
-    // An Icicle loosed at its victim (gone or out of reach: it melts). Splinter Volley: 3 fragments 0.2 sec apart,
-    // 40% of an Icicle each, the last making the next Frostbolt 10% faster. Shatterglass: half of it to up to 4
-    // others within 6 yards.
-    void LoosenIcicle(Player* player, ObjectGuid victimGuid, float icicle)
+    // A Frostbolt's Icicle loosed at its victim (gone or out of reach: it melts). Splintering Ice: half of it to up
+    // to 2 others within 8 yards. crowned: it waited in the crown (Runic Rime's extra one did not).
+    void LoosenIcicle(Player* player, ObjectGuid victimGuid, float icicle, bool crowned = true)
     {
         State& state = StateOf(player);
-        if (state.Icicles)
+        if (crowned && state.Icicles)
             --state.Icicles;
         ShowCrown(player);
         Unit* victim = ObjectAccessor::GetUnit(*player, victimGuid);
@@ -4487,66 +4546,184 @@ namespace
             return;
         }
         Trace(player, Acore::StringFormat("Icicle loosed at {} for {}", victim->GetName(), icicle));
-        if (HasCrownMarker(player, MOD_SPLINTER_VOLLEY))
+        if (HasCrownMarker(player, MOD_SPLINTERING_ICE))
         {
-            for (uint32 i = 0; i < SPLINTERS; ++i)
-                player->m_Events.AddEventAtOffset([player, victimGuid, icicle, i]()
-                {
-                    Unit* target = ObjectAccessor::GetUnit(*player, victimGuid);
-                    if (!player->IsInWorld() || !player->IsAlive() || !Valid(player, target))
-                        return;
-                    IcicleHit(player, target, icicle * SPLINTER_SHARE, SPELL_ICE_SPLINTER);
-                    if (i + 1 < SPLINTERS)
-                        return;
-                    player->RemoveAurasDueToSpell(SPELL_SPLINTER_QUICKENING);
-                    player->AddAura(SPELL_SPLINTER_QUICKENING, player);
-                }, Milliseconds(i * SPLINTER_SPACING_MS));
-            IcicleAttacked(player, victim, icicle);
-            return;
-        }
-        IcicleHit(player, victim, icicle, SPELL_ICICLE);
-        if (HasCrownMarker(player, MOD_SHATTERGLASS))
-        {
-            std::size_t count = SHATTERGLASS_TARGETS;
-            for (Unit* enemy : EnemiesAround(player, victim, SHATTERGLASS_RADIUS))
+            std::size_t count = SPLINTERING_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, victim, SPLINTERING_RADIUS))
                 if (enemy != victim && count)
                 {
-                    Strike(player, enemy, SPELL_ICE_SPLINTER, icicle * SHATTERGLASS_SHARE);
+                    Strike(player, enemy, SPELL_ICE_SPLINTER, icicle * SPLINTERING_SHARE);
                     --count;
                 }
         }
-        IcicleAttacked(player, victim, icicle);
+        IcicleStrike(player, victim, icicle, true);
     }
 
     // A direct Frostbolt hit forms an Icicle (5 waiting at most): 30% of the Frostbolt's damage (Glacial Spear 40%
-    // more; Frozen Focus: every third Frostbolt's, 60% more), loosed 1 sec later at the same victim.
+    // more), loosed 1 sec later at the same victim. Runic Rime: after the Hero's Icy Touch on it (6 sec), one more
+    // at half, beside the crown.
     void FormIcicle(Player* player, Unit* victim, float frostbolt)
     {
         State& state = StateOf(player);
-        bool focused = false;
-        if (HasCrownMarker(player, MOD_FROZEN_FOCUS) && ++state.FrostboltHits >= FROZEN_FOCUS_EVERY)
+        if (frostbolt <= 0.0f)
+            return;
+        float icicle = frostbolt * ICICLE_SHARE * (HasCrownMarker(player, MOD_GLACIAL_SPEAR) ? GLACIAL_SPEAR : 1.0f);
+        ObjectGuid guid = victim->GetGUID();
+        auto rime = state.RimeOn.find(guid);
+        if (rime != state.RimeOn.end())
         {
-            state.FrostboltHits = 0;
-            focused = true;
+            if (Now() - rime->second <= RIME_MS)
+                player->m_Events.AddEventAtOffset([player, guid, icicle]()
+                {
+                    if (player->IsInWorld())
+                        LoosenIcicle(player, guid, icicle * RIME_SHARE, false);
+                }, Milliseconds(ICICLE_DELAY_MS + 200));
+            state.RimeOn.erase(rime);
         }
-        if (state.Icicles >= MAX_ICICLES || frostbolt <= 0.0f)
+        if (state.Icicles >= MAX_ICICLES)
         {
             Trace(player, Acore::StringFormat("Frostbolt hit for {}: no Icicle ({} waiting)", frostbolt,
                 state.Icicles));
             return;
         }
         ++state.Icicles;
-        Trace(player, Acore::StringFormat("Frostbolt hit for {}: Icicle formed ({} waiting)", frostbolt,
-            state.Icicles));
         ShowCrown(player);
-        float icicle = frostbolt * ICICLE_SHARE * (HasCrownMarker(player, MOD_GLACIAL_SPEAR) ? GLACIAL_SPEAR : 1.0f)
-            * (focused ? FROZEN_FOCUS : 1.0f);
-        ObjectGuid guid = victim->GetGUID();
         player->m_Events.AddEventAtOffset([player, guid, icicle]()
         {
             if (player->IsInWorld())
                 LoosenIcicle(player, guid, icicle);
         }, Milliseconds(ICICLE_DELAY_MS));
+    }
+
+    // Twin Icicles: a direct Ice Lance hit looses 2 at its target, 20% of spell power each (Twin Fangs 25%). The
+    // second: Twin Fangs' wound (10% over 4 sec), Glacial Wound (20% over 6 sec), Cold Snap (the next Frostbolt 15%
+    // faster).
+    void CrownIceLance(Player* player, Unit* victim)
+    {
+        float icicle = CrownPower(player) * (HasCrownMarker(player, MOD_TWIN_FANGS) ? TWIN_FANGS_POWER : TWIN_POWER);
+        IcicleStrike(player, victim, icicle, false);
+        ObjectGuid guid = victim->GetGUID();
+        player->m_Events.AddEventAtOffset([player, guid, icicle]()
+        {
+            Unit* target = ObjectAccessor::GetUnit(*player, guid);
+            if (!player->IsInWorld() || !player->IsAlive() || !Valid(player, target))
+                return;
+            IcicleStrike(player, target, icicle, false);
+            float power = CrownPower(player);
+            if (HasCrownMarker(player, MOD_TWIN_FANGS) && target->IsAlive())
+                AddDot(player, target, SPELL_FROST_WOUND, power * TWIN_WOUND_POWER, TWIN_WOUND_MS);
+            if (HasCrownMarker(player, MOD_GLACIAL_WOUND) && target->IsAlive())
+                AddDot(player, target, SPELL_FROST_WOUND, power * GLACIAL_WOUND_POWER, GLACIAL_WOUND_MS);
+            if (HasCrownMarker(player, MOD_COLD_SNAP))
+                Renew(player, SPELL_COLD_SNAP);
+        }, Milliseconds(TWIN_SPACING_MS));
+    }
+
+    // Shattered Front: Cone of Cold's Icicle at an enemy it hit (5 a cast), 15% of spell power (Frozen Volley: 2 of
+    // 10%); Brittle Impact 30% more on the Hero's Frostbite; Permafrost: 20% slower for 3 sec, and their next
+    // Frostbolt Icicle there 25% more.
+    void CrownCone(Player* player, Unit* victim)
+    {
+        bool volley = HasCrownMarker(player, MOD_FROZEN_VOLLEY);
+        float icicle = CrownPower(player) * (volley ? VOLLEY_POWER : FRONT_POWER)
+            * (HasCrownMarker(player, MOD_BRITTLE_IMPACT) && Frostbitten(player, victim) ? BRITTLE_IMPACT : 1.0f);
+        IcicleStrike(player, victim, icicle, false);
+        if (volley && victim->IsAlive())
+            IcicleStrike(player, victim, icicle, false);
+        if (HasCrownMarker(player, MOD_PERMAFROST) && victim->IsAlive())
+            Lasting(player, victim, SPELL_PERMAFROST, PERMAFROST_MS);
+    }
+
+    // Frostfire Fracture: a direct Fire Blast on the Hero's Frostbite erupts in an Icicle, 25% of spell power to it
+    // and up to 2 others within 6 yards (8 sec apart). Runic Rime: Icy Touch readies the extra Icicle (6 sec).
+    void CrownStrike(Player* player, Unit* victim, uint32 firstRank)
+    {
+        State& state = StateOf(player);
+        if (firstRank == SPELL_ICY_TOUCH && HasCrownMarker(player, MOD_RUNIC_RIME))
+            state.RimeOn[victim->GetGUID()] = Now();
+        if (firstRank == SPELL_FIRE_BLAST && HasCrownMarker(player, MOD_FROSTFIRE_FRACTURE)
+            && Frostbitten(player, victim) && Ready(state.FractureAt, FRACTURE_EVERY_MS))
+        {
+            state.FractureAt = Now();
+            float icicle = CrownPower(player) * FRACTURE_POWER;
+            IcicleStrike(player, victim, icicle, false);
+            std::size_t count = FROSTFIRE_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, victim, FROSTFIRE_RADIUS))
+                if (enemy != victim && count)
+                {
+                    IcicleStrike(player, enemy, icicle, false);
+                    --count;
+                }
+        }
+    }
+
+    // Hailstorm: each 2 sec of Blizzard's channel (Hailstorm Crown: each second), an Icicle at the enemy it damaged
+    // in that time with the most health (by share), 20% of spell power (Hailstorm Crown 15%). Whiteout: also up to 2
+    // within 6 yards for 40%, else 20% more. Gathering Blizzard: each, the next Ice Lance 5% more (20% at most).
+    void HailTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        Spell* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
+        if (!channel || channel->m_spellInfo->GetFirstRankSpell()->Id != SPELL_BLIZZARD)
+        {
+            state.HailTimer = 0;
+            state.BlizzardHit.clear();
+            return;
+        }
+        bool crown = HasCrownMarker(player, MOD_HAILSTORM_CROWN);
+        uint32 every = crown ? HAILSTORM_CROWN_MS : HAILSTORM_MS;
+        state.HailTimer += diff;
+        if (state.HailTimer < every)
+            return;
+        state.HailTimer -= every;
+        Unit* best = nullptr;
+        for (auto const& [guid, at] : state.BlizzardHit)
+            if (Now() - at <= every)
+                if (Unit* enemy = ObjectAccessor::GetUnit(*player, guid);
+                    Valid(player, enemy) && (!best || enemy->GetHealthPct() > best->GetHealthPct()))
+                    best = enemy;
+        state.BlizzardHit.clear();
+        if (!best)
+            return;
+        float icicle = CrownPower(player) * (crown ? HAILSTORM_CROWN_POWER : HAILSTORM_POWER);
+        if (HasCrownMarker(player, MOD_WHITEOUT))
+        {
+            std::size_t count = WHITEOUT_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, best, WHITEOUT_RADIUS))
+                if (enemy != best && count)
+                {
+                    Strike(player, enemy, SPELL_ICE_SPLINTER, icicle * WHITEOUT_SHARE);
+                    --count;
+                }
+            if (count == WHITEOUT_TARGETS)
+                icicle *= WHITEOUT_ALONE;
+        }
+        IcicleStrike(player, best, icicle, false);
+        if (HasCrownMarker(player, MOD_GATHERING_BLIZZARD))
+        {
+            Aura* gathering = player->GetAura(SPELL_GATHERING_BLIZZARD);
+            if (!gathering)
+                gathering = player->AddAura(SPELL_GATHERING_BLIZZARD, player);
+            else if (gathering->GetStackAmount() < GATHERING_STACKS)
+                gathering->ModStackAmount(1);
+            if (gathering)
+                gathering->RefreshDuration();
+        }
+    }
+
+    // A direct Frostbolt or Ice Lance hit's damage: 8% more on the Hero's Frostbite; an Ice Lance spends Gathering
+    // Blizzard (5% more a stack).
+    float CrownBoltDamage(Player* player, Unit* victim, uint32 firstRank, float damage)
+    {
+        if (Frostbitten(player, victim))
+            damage *= FROSTBITE_BONUS;
+        if (firstRank == SPELL_ICE_LANCE)
+            if (Aura* gathering = player->GetAura(SPELL_GATHERING_BLIZZARD))
+            {
+                damage *= 1.0f + GATHERING_STEP * float(gathering->GetStackAmount());
+                player->RemoveAurasDueToSpell(SPELL_GATHERING_BLIZZARD);
+            }
+        return damage;
     }
 
     // ---- Phoenix Wake ------------------------------------------------------------------------------------------
@@ -6330,50 +6507,93 @@ namespace
         }
     }
 
-    // A Sinister Strike's hit on its target, before it lands: Deep Cut 25% more.
+    // A Sabre Slash's hit on its target, before it lands: Loaded Steel's 15% more (Powder and Steel 30%), Marked
+    // Shot's 25% (both spent; Loaded Steel's second enemy after it lands).
     float SabreBonus(Player* player, Unit* /*target*/)
     {
-        return HasDuelistMarker(player, MOD_DEEP_CUT) ? DEEP_CUT : 1.0f;
+        float bonus = 1.0f;
+        State& state = StateOf(player);
+        state.SabreSteel = player->HasAura(SPELL_LOADED_STEEL);
+        if (state.SabreSteel)
+        {
+            player->RemoveAurasDueToSpell(SPELL_LOADED_STEEL);
+            bonus *= HasDuelistMarker(player, MOD_POWDER_AND_STEEL) ? POWDER_AND_STEEL : LOADED_STEEL;
+        }
+        if (player->HasAura(SPELL_MARKED_SHOT))
+        {
+            player->RemoveAurasDueToSpell(SPELL_MARKED_SHOT);
+            bonus *= MARKED_SHOT;
+        }
+        return bonus;
     }
 
-    // A Sinister Strike that hit (damage, its target's): every second readies Opening Shot; Sweeping Steel: half to
-    // up to 3 more within 5 yards; Serrated Edge: 40% more over 6 sec.
+    // A Sabre Slash that hit (damage, its target's): every third (Quick Draw: second) readies Opening Shot; Loaded
+    // Steel's, one more enemy within 5 yards for 40%.
     void SabreSlash(Player* player, Unit* target, float damage)
     {
         State& state = StateOf(player);
-        if (++state.SabreHits >= OPENING_EVERY)
+        if (++state.SabreHits >= (HasDuelistMarker(player, MOD_QUICK_DRAW) ? QUICK_DRAW_EVERY : OPENING_EVERY))
         {
             state.SabreHits = 0;
             RenewFor(player, SPELL_OPENING_SHOT, OPENING_MS);
             Trace(player, "Opening Shot ready");
         }
-        if (HasDuelistMarker(player, MOD_SWEEPING_STEEL))
+        if (state.SabreSteel)
         {
-            std::size_t count = SWEEPING_TARGETS;
+            state.SabreSteel = false;
             for (Unit* enemy : EnemiesAround(player, target, SWEEPING_RADIUS))
-                if (enemy != target && count)
+                if (enemy != target)
                 {
-                    Strike(player, enemy, SPELL_SABRE_STRIKE, damage * SWEEPING_SHARE);
-                    --count;
+                    Strike(player, enemy, SPELL_SABRE_STRIKE, damage * LOADED_STEEL_SPLASH);
+                    break;
                 }
         }
-        if (HasDuelistMarker(player, MOD_SERRATED_EDGE) && target->IsAlive())
-            AddDot(player, target, SPELL_SERRATED_EDGE, damage * SERRATED_SHARE, SERRATED_MS);
     }
 
-    // Pistol Shot on its target: 60% of attack power (Heavy Ball 60% more) and a combo point; Scattershot: a
-    // 10-yard cone, up to 4 more for 75%. Rapid Shots' shot gives its cost back and 50 Energy more.
+    // A Fire Blast hit: Loaded Powder, the next Pistol Shot within 8 sec explodes. An Arcane Shot hit: Arcane
+    // Powder's 25% more.
+    void DuelistStrike(Player* player, uint32 firstRank)
+    {
+        if (firstRank == SPELL_FIRE_BLAST)
+            Renew(player, SPELL_LOADED_POWDER);
+        if (firstRank == SPELL_ARCANE_SHOT && HasDuelistMarker(player, MOD_ARCANE_POWDER))
+            Renew(player, SPELL_ARCANE_POWDER);
+    }
+
+    // Pistol Shot on its target: 60% of attack power (Heavy Caliber 40% more; Dead Aim, Arcane Powder) and a combo
+    // point; Gunslinger, twice at 65%; Scattershot, a 10-yard cone, up to 3 more for half. Then Loaded Steel, the
+    // powder's explosion, Storm Pistol, Marked Shot, Frozen Powder, Cut and Run, Efficient Duelist, Healing Powder.
     void FirePistol(Player* player, Unit* target)
     {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
         player->RemoveAurasDueToSpell(SPELL_OPENING_SHOT);
-        if (player->HasAura(SPELL_RAPID_SHOTS))
+        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
+        float shot = ap * PISTOL_AP * (HasDuelistMarker(player, MOD_HEAVY_CALIBER) ? HEAVY_CALIBER : 1.0f);
+        if (Aura* aim = player->GetAura(SPELL_DEAD_AIM))
         {
-            player->RemoveAurasDueToSpell(SPELL_RAPID_SHOTS);
-            player->ModifyPower(POWER_ENERGY, PISTOL_COST + RAPID_ENERGY);
+            shot *= 1.0f + 0.05f * float(aim->GetStackAmount());
+            player->RemoveAurasDueToSpell(SPELL_DEAD_AIM);
         }
-        float shot = player->GetTotalAttackPowerValue(BASE_ATTACK) * PISTOL_AP
-            * (HasDuelistMarker(player, MOD_HEAVY_BALL) ? HEAVY_BALL : 1.0f);
-        Strike(player, target, SPELL_PISTOL_DAMAGE, shot);
+        if (player->HasAura(SPELL_ARCANE_POWDER))
+        {
+            player->RemoveAurasDueToSpell(SPELL_ARCANE_POWDER);
+            shot *= ARCANE_POWDER;
+        }
+        if (HasDuelistMarker(player, MOD_GUNSLINGER))
+        {
+            Strike(player, target, SPELL_PISTOL_DAMAGE, shot * GUNSLINGER_SHARE);
+            ObjectGuid guid = target->GetGUID();
+            float second = shot * GUNSLINGER_SHARE;
+            player->m_Events.AddEventAtOffset([player, guid, second]()
+            {
+                Unit* at = ObjectAccessor::GetUnit(*player, guid);
+                if (player->IsInWorld() && Valid(player, at))
+                    Strike(player, at, SPELL_PISTOL_DAMAGE, second);
+            }, 250ms);
+        }
+        else
+            Strike(player, target, SPELL_PISTOL_DAMAGE, shot);
         Trace(player, Acore::StringFormat("Pistol Shot for {}", int32(shot)));
         if (HasDuelistMarker(player, MOD_SCATTERSHOT))
         {
@@ -6391,27 +6611,65 @@ namespace
                     --count;
                 }
         }
+        if (Knows(player, SPELL_SINISTER_STRIKE) || player->HasSpell(SPELL_SABRE_SLASH))
+            Renew(player, SPELL_LOADED_STEEL);
+        if (player->HasAura(SPELL_LOADED_POWDER))
+        {
+            player->RemoveAurasDueToSpell(SPELL_LOADED_POWDER);
+            bool flame = HasDuelistMarker(player, MOD_FLAME_PISTOL);
+            bool loaded = HasDuelistMarker(player, MOD_LOADED_POWDER);
+            float blast = (ap * POWDER_AP + float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE)) * POWDER_SP)
+                * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, SPELL_SCHOOL_MASK_FIRE)
+                * (flame ? FLAME_PISTOL : loaded ? LOADED_POWDER : 1.0f);
+            for (Unit* enemy : EnemiesIn(player, Circle(target->GetPosition(), POWDER_RADIUS),
+                flame || loaded ? LOADED_POWDER_TARGETS : POWDER_TARGETS))
+                Strike(player, enemy, SPELL_POWDER_BLAST, blast);
+        }
+        if (HasDuelistMarker(player, MOD_STORM_PISTOL) && player->GetAuraOfRankedSpell(SPELL_LIGHTNING_SHIELD, me))
+            Strike(player, target, SPELL_STORM_PISTOL,
+                RunePower(player, SPELL_SCHOOL_MASK_NATURE, SPELL_SINISTER_STRIKE) * STORM_PISTOL_POWER);
+        if (HasDuelistMarker(player, MOD_MARKED_SHOT) && target->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, me))
+            Renew(player, SPELL_MARKED_SHOT);
+        if (HasDuelistMarker(player, MOD_FROZEN_POWDER) && target->HasAura(SPELL_FROST_FEVER, me)
+            && Ready(state.FrozenPowderAt, FROZEN_POWDER_EVERY_MS))
+        {
+            state.FrozenPowderAt = Now();
+            float frost = ap * FROZEN_POWDER_AP
+                * player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, SPELL_SCHOOL_MASK_FROST);
+            for (Unit* enemy : EnemiesIn(player, Circle(target->GetPosition(), FROZEN_POWDER_RADIUS),
+                FROZEN_POWDER_TARGETS))
+                Strike(player, enemy, SPELL_FROZEN_POWDER, frost);
+        }
+        if (HasDuelistMarker(player, MOD_CUT_AND_RUN))
+            Renew(player, SPELL_CUT_AND_RUN);
+        if (HasDuelistMarker(player, MOD_EFFICIENT_DUELIST) && Ready(state.EfficientAt, EFFICIENT_EVERY_MS))
+        {
+            state.EfficientAt = Now();
+            player->ModifyPower(POWER_ENERGY, PISTOL_COST);
+        }
+        if (HasDuelistMarker(player, MOD_HEALING_POWDER) && Ready(state.HealingPowderAt, HEALING_POWDER_EVERY_MS)
+            && player->GetAuraOfRankedSpell(SPELL_RENEW, me))
+        {
+            state.HealingPowderAt = Now();
+            int32 heal = std::max<int32>(1, int32(RunePower(player, SPELL_SCHOOL_MASK_HOLY, SPELL_SINISTER_STRIKE,
+                false) * HEALING_POWDER_POWER));
+            Report(player, SPELL_HEALING_POWDER, 'H', heal);
+            player->CastCustomSpell(player, SPELL_HEALING_POWDER, &heal, nullptr, nullptr, true);
+        }
         if (target->IsAlive())
             player->AddComboPoints(target, 1);
     }
 
-    // A finishing move spent combo points (the Duelist's): Rapid Shots, each point a 10% chance to reset Pistol Shot
-    // and ready Opening Shot, its shot then granting Energy; Quick Reload, a second off Broadside's cooldown a point.
-    void DuelistFinisher(Player* player, uint8 points)
+    // Eviscerate with Opening Shot ready (as it is cast): the next Pistol Shot 10% more a combo point spent, 50% at
+    // most (Between the Eyes 15%, 75%); Opening Shot stays.
+    void DuelistEviscerate(Player* player, uint8 points)
     {
-        if (HasDuelistMarker(player, MOD_QUICK_RELOAD))
-            player->ModifySpellCooldown(SPELL_BROADSIDE, -RELOAD_MS_PER_POINT * int32(points));
-        if (!HasDuelistMarker(player, MOD_RAPID_SHOTS))
-            return;
-        for (uint8 i = 0; i < points; ++i)
-            if (roll_chance_i(RAPID_CHANCE_PER_POINT))
-            {
-                player->RemoveSpellCooldown(SPELL_PISTOL_SHOT, true);
-                RenewFor(player, SPELL_OPENING_SHOT, OPENING_MS);
-                RenewFor(player, SPELL_RAPID_SHOTS, RAPID_MS);
-                Trace(player, "Rapid Shots: Pistol Shot reset");
-                return;
-            }
+        bool eyes = HasDuelistMarker(player, MOD_BETWEEN_THE_EYES);
+        float bonus = std::min(eyes ? EYES_MOST : EVISCERATE_MOST,
+            (eyes ? EYES_STEP : EVISCERATE_STEP) * float(points));
+        RenewFor(player, SPELL_DEAD_AIM, OPENING_MS);
+        if (Aura* aim = player->GetAura(SPELL_DEAD_AIM))
+            aim->SetStackAmount(uint8(std::max(1, int32(bonus * 20.0f + 0.5f))));
     }
 
     // The highest rank of Sinister Strike the Hero knows: Sabre Slash's (rank 1's copy) bonus on top of its own.
@@ -6432,9 +6690,8 @@ namespace
     // the last a great explosion.
     void FireBroadside(Player* player, Unit* target, uint8 points)
     {
-        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * (BROADSIDE_AP + BROADSIDE_AP_PER_POINT * points)
-            * (HasDuelistMarker(player, MOD_HEAVY_CANNONADE) ? HEAVY_CANNONADE : 1.0f);
-        uint32 blasts = HasDuelistMarker(player, MOD_FULL_BROADSIDE) ? FULL_BROADSIDE_BLASTS : BROADSIDE_BLASTS;
+        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * (BROADSIDE_AP + BROADSIDE_AP_PER_POINT * points);
+        uint32 blasts = BROADSIDE_BLASTS;
         Trace(player, Acore::StringFormat("Broadside: {} combo points, {} a blast", points, int32(blast)));
         ObjectGuid guid = target->GetGUID();
         for (uint32 i = 0; i < blasts; ++i)
@@ -6645,96 +6902,170 @@ namespace
             || target->HasAura(SPELL_CINDER_WOUND_SPREAD, player->GetGUID());
     }
 
-    // A fresh Cinder Wound's whole damage: 30% of attack power plus 30% of spell power (Searing Wound 35% more,
-    // Smoldering Flesh 30% more over 10 sec).
+    // A fresh Cinder Wound's whole damage: 150% of attack power plus 100% of spell power (Cinderclaw 40% more;
+    // Living Flame 15% more).
     float CinderFresh(Player* player)
     {
         float fresh = player->GetTotalAttackPowerValue(BASE_ATTACK) * CINDER_AP
             + float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE)) * CINDER_SP;
-        if (HasEmbersMarker(player, MOD_SEARING_WOUND))
-            fresh *= SEARING_WOUND;
-        else if (HasEmbersMarker(player, MOD_SMOLDERING_FLESH))
-            fresh *= SMOLDERING_FLESH;
+        if (HasEmbersMarker(player, MOD_CINDERCLAW))
+            fresh *= CINDERCLAW;
+        else if (HasEmbersMarker(player, MOD_LIVING_FLAME))
+            fresh *= LIVING_FLAME;
         return fresh;
     }
 
-    int32 CinderMs(Player* player)
+    int32 CinderMs(Player* /*player*/)
     {
-        return HasEmbersMarker(player, MOD_SMOLDERING_FLESH) ? SMOLDERING_MS : CINDER_MS;
+        return CINDER_MS;
     }
 
-    // Ashen Pursuit: the first Fire Blast on a new victim, once every 6 sec (its last victim's death resets that).
-    float AshenBonus(Player* player, Unit* target)
+    // The Hero's Cinder Wound on the unit (the first's, else a spread one; nullptr none).
+    Aura* CinderAura(Player* player, Unit* target)
     {
-        if (!HasEmbersMarker(player, MOD_ASHEN_PURSUIT))
-            return 1.0f;
-        State& state = StateOf(player);
-        if (state.AshenLast)
-        {
-            Unit* last = ObjectAccessor::GetUnit(*player, state.AshenLast);
-            if (!last || !last->IsAlive())
-                state.AshenReadyAt = 0;
-        }
-        ObjectGuid guid = target->GetGUID();
-        if (std::find(state.AshenSeen.begin(), state.AshenSeen.end(), guid) != state.AshenSeen.end()
-            || Now() < state.AshenReadyAt)
-            return 1.0f;
-        state.AshenSeen.push_back(guid);
-        if (state.AshenSeen.size() > 64)
-            state.AshenSeen.erase(state.AshenSeen.begin());
-        state.AshenLast = guid;
-        state.AshenReadyAt = Now() + ASHEN_MS;
-        Trace(player, "Ashen Pursuit: a new victim");
-        return ASHEN_PURSUIT;
+        if (Aura* wound = target->GetAura(SPELL_CINDER_WOUND, player->GetGUID()))
+            return wound;
+        return target->GetAura(SPELL_CINDER_WOUND_SPREAD, player->GetGUID());
     }
 
-    // Fire Blast landed: it ignites the Hero's Rake or Rip victim (Wild Embers: the flames leap to up to
-    // 4 more within 6 yards); Flamebound: speed, and the next Rake or Mangle 10 Energy back.
+    // What is left of the Hero's Cinder Wound there spreads to up to count enemies within 8 yards without one, for
+    // its remaining time (share of it).
+    void SpreadCinder(Player* player, Unit* from, std::size_t count, float share)
+    {
+        Aura* wound = CinderAura(player, from);
+        if (!wound)
+            return;
+        float left = DotLeft(player, from, wound->GetId()) * share;
+        int32 ms = wound->GetDuration();
+        if (left <= 0.0f || ms <= 0)
+            return;
+        for (Unit* enemy : EnemiesAround(player, from, EMBER_SPREAD_RANGE))
+            if (enemy != from && count && !HasCinderWound(player, enemy))
+            {
+                AddDot(player, enemy, SPELL_CINDER_WOUND_SPREAD, left, ms);
+                --count;
+            }
+    }
+
+    // Fire Blast landed: it ignites the Hero's Rake or Rip victim (Ashen Renewal: 10 Energy, 8 sec apart); on their
+    // Flame Shock target with the wound, it spreads (Firestorm Pounce: to 3). Ember Rush: speed, and the next Shred
+    // 10 Energy back; Frozen Embers on their Frost Fever target; Healing Flame on a bleeding one in their
+    // Rejuvenation.
     void CatFireBlast(Player* player, Unit* target)
     {
-        if (HasEmbersMarker(player, MOD_FLAMEBOUND))
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        if (HasEmbersMarker(player, MOD_EMBER_RUSH))
         {
-            RenewFor(player, SPELL_FLAMEBOUND, FLAMEBOUND_MS);
-            RenewFor(player, SPELL_FLAMEBOUND_DISCOUNT, FLAMEBOUND_DISCOUNT_MS);
+            RenewFor(player, SPELL_FLAMEBOUND, EMBER_RUSH_MS);
+            RenewFor(player, SPELL_FLAMEBOUND_DISCOUNT, EMBER_RUSH_DISCOUNT_MS);
+        }
+        if (HasEmbersMarker(player, MOD_FROZEN_EMBERS) && target->HasAura(SPELL_FROST_FEVER, me)
+            && Ready(state.FrozenEmbersAt, FROZEN_EMBERS_EVERY_MS))
+        {
+            state.FrozenEmbersAt = Now();
+            Strike(player, target, SPELL_FROZEN_EMBERS, player->GetTotalAttackPowerValue(BASE_ATTACK)
+                * FROZEN_EMBERS_AP
+                * SchoolBonus(player, SPELL_SCHOOL_MASK_FROST));
+        }
+        bool bleeding = target->HasAuraWithMechanic(1ULL << MECHANIC_BLEED);
+        if (HasEmbersMarker(player, MOD_HEALING_FLAME) && bleeding
+            && Ready(state.HealingFlameAt, HEALING_FLAME_EVERY_MS)
+            && player->GetAuraOfRankedSpell(SPELL_REJUVENATION, me))
+        {
+            state.HealingFlameAt = Now();
+            int32 heal = std::max<int32>(1, int32(player->CountPctFromMaxHealth(int32(HEALING_FLAME_PCT))));
+            Report(player, SPELL_HEALING_FLAME, 'H', heal);
+            player->CastCustomSpell(player, SPELL_HEALING_FLAME, &heal, nullptr, nullptr, true);
+        }
+        if (target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me) && HasCinderWound(player, target)
+            && Ready(state.FlameSpreadAt, FLAME_SPREAD_EVERY_MS))
+        {
+            state.FlameSpreadAt = Now();
+            SpreadCinder(player, target, HasEmbersMarker(player, MOD_FIRESTORM_POUNCE) ? FIRESTORM_TARGETS : 1, 1.0f);
         }
         if (!target->IsAlive() || !HasOwnRakeOrRip(player, target))
             return;
         float fresh = CinderFresh(player);
         AddDot(player, target, SPELL_CINDER_WOUND, fresh, CinderMs(player));
         Trace(player, Acore::StringFormat("Cinder Wound: {} over {} sec", int32(fresh), CinderMs(player) / 1000));
-        if (HasEmbersMarker(player, MOD_WILD_EMBERS))
+        if (HasEmbersMarker(player, MOD_ASHEN_RENEWAL) && Ready(state.AshenRenewalAt, ASHEN_EVERY_MS))
         {
-            float leap = player->GetTotalAttackPowerValue(BASE_ATTACK) * WILD_EMBERS_AP
-                + float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE)) * WILD_EMBERS_SP;
-            std::size_t count = WILD_EMBERS_TARGETS;
-            for (Unit* enemy : EnemiesAround(player, target, WILD_EMBERS_RADIUS))
-                if (enemy != target && count)
-                {
-                    Strike(player, enemy, SPELL_WILD_EMBERS, leap);
-                    --count;
-                }
+            state.AshenRenewalAt = Now();
+            player->ModifyPower(POWER_ENERGY, ASHEN_ENERGY);
         }
     }
 
-    // Swipe in Cat Form with Cinder Swipe: a Cinder Wound in its reach spreads, half as strong, to up to 3 bleeding
-    // enemies there (spread wounds never spread again).
+    // Wildfire Swipe: Swipe with a Cinder Wound in its reach spreads half of what is left of it to one more enemy
+    // within 8 yards (8 sec apart).
     void CinderSwipe(Player* player)
     {
-        std::vector<Unit*> around = EnemiesAround(player, player, CINDER_SWIPE_RADIUS);
-        if (std::none_of(around.begin(), around.end(), [player](Unit* enemy)
-            {
-                return enemy->HasAura(SPELL_CINDER_WOUND, player->GetGUID());
-            }))
+        State& state = StateOf(player);
+        if (!Ready(state.WildfireSwipeAt, WILDFIRE_SWIPE_EVERY_MS))
             return;
-        float fresh = CinderFresh(player) * CINDER_SWIPE_SHARE;
-        std::size_t count = CINDER_SWIPE_TARGETS;
-        for (Unit* enemy : around)
-            if (count && !enemy->HasAura(SPELL_CINDER_WOUND, player->GetGUID())
-                && enemy->HasAuraWithMechanic(1ULL << MECHANIC_BLEED))
+        for (Unit* enemy : EnemiesAround(player, player, EMBER_SPREAD_RANGE))
+            if (HasCinderWound(player, enemy))
             {
-                AddDot(player, enemy, SPELL_CINDER_WOUND_SPREAD, fresh, CinderMs(player));
-                --count;
+                state.WildfireSwipeAt = Now();
+                SpreadCinder(player, enemy, 1, WILDFIRE_SWIPE_SHARE);
+                return;
             }
+    }
+
+    // A direct Shred on the Hero's Cinder Wound: 10% of attack power as Fire (3 sec a target). A Rake on it: Burning
+    // Rake, the next Burning Claws 30% more.
+    void EmberClawHit(Player* player, Unit* target, uint32 firstRank)
+    {
+        State& state = StateOf(player);
+        if (!HasCinderWound(player, target))
+            return;
+        if (firstRank == SPELL_SHRED)
+        {
+            auto& at = state.ShredEmberAt[target->GetGUID()];
+            if (Ready(at, SHRED_EMBER_EVERY_MS))
+            {
+                at = Now();
+                Strike(player, target, SPELL_SEARING_SHRED, player->GetTotalAttackPowerValue(BASE_ATTACK)
+                    * SHRED_EMBER_AP
+                    * SchoolBonus(player, SPELL_SCHOOL_MASK_FIRE));
+            }
+        }
+        if (firstRank == SPELL_RAKE && HasEmbersMarker(player, MOD_BURNING_RAKE))
+            Renew(player, SPELL_BURNING_RAKE);
+    }
+
+    // Ferocious Bite on the Hero's Cinder Wound: 1 sec longer a combo point (5 sec an application); Smoldering Bite,
+    // its next tick at once.
+    void EmberBite(Player* player, Unit* target, uint8 points)
+    {
+        Aura* wound = CinderAura(player, target);
+        if (!wound)
+            return;
+        ExtendAura(wound, BITE_EXTEND_MS * int32(points), BITE_EXTEND_MOST_MS);
+        if (!HasEmbersMarker(player, MOD_SMOLDERING_BITE))
+            return;
+        auto tick = dotTicks.find({ target->GetGUID(), wound->GetId(), player->GetGUID() });
+        if (tick == dotTicks.end())
+            return;
+        int32 damage = std::max(1, tick->second);
+        int32 period = DotPeriod(wound->GetId());
+        player->CastCustomSpell(target, DotDamageSpell(wound->GetId()), &damage, nullptr, nullptr, true);
+        if (wound->GetDuration() <= period)
+            target->RemoveAurasDueToSpell(wound->GetId(), player->GetGUID());
+        else
+            wound->SetDuration(wound->GetDuration() - period);
+    }
+
+    // Phoenix Claws: a direct Pyroblast on the Hero's Cinder Wound, a burst of 40% of spell power (8 sec apart).
+    void EmberPyroblast(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        if (!HasEmbersMarker(player, MOD_PHOENIX_CLAWS) || !HasCinderWound(player, target)
+            || !Ready(state.PhoenixClawsAt, PHOENIX_CLAWS_EVERY_MS))
+            return;
+        state.PhoenixClawsAt = Now();
+        Strike(player, target, SPELL_PHOENIX_CLAWS,
+            RunePower(player, SPELL_SCHOOL_MASK_FIRE, SPELL_FIRE_BLAST) * PHOENIX_CLAWS_POWER);
     }
 
     // Icy Touch landed: Frozen Prey on its victim (one primary mark: an earlier one goes); Pursuing
@@ -6865,13 +7196,34 @@ namespace
     {
         player->RemoveAurasDueToSpell(fire ? SPELL_KINDLED : SPELL_FROSTBITTEN);
         std::vector<Unit*> struck { target };
-        for (Unit* enemy : EnemiesAround(player, target, CLAW_SECOND_RADIUS))
-            if (enemy != target)
+        bool wildfire = fire && HasEmbersMarker(player, MOD_WILDFIRE_CLAWS);
+        if (fire)
+        {
+            // Burning Claws: Burning Rake 30% more (spent), Flame-Tipped 40% more, Flame Shock Claws 25% more on the
+            // Hero's Flame Shock target: as Fire on its target, after its own hit.
+            float more = HasEmbersMarker(player, MOD_FLAME_TIPPED_CLAWS) ? FLAME_TIPPED : 0.0f;
+            if (player->HasAura(SPELL_BURNING_RAKE))
             {
-                Strike(player, enemy, fire ? SPELL_BLAZING_STRIKE : SPELL_FROSTFANG_STRIKE, damage * CLAW_SECOND_SHARE);
-                struck.push_back(enemy);
-                break;
+                player->RemoveAurasDueToSpell(SPELL_BURNING_RAKE);
+                more += BURNING_RAKE;
             }
+            if (HasEmbersMarker(player, MOD_FLAME_SHOCK_CLAWS)
+                && target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
+                more += FS_CLAWS;
+            if (more > 0.0f)
+                Strike(player, target, SPELL_BLAZING_STRIKE, damage * more);
+        }
+        std::size_t seconds = wildfire ? WILDFIRE_CLAWS_TARGETS : 1;
+        for (Unit* enemy : EnemiesAround(player, target, CLAW_SECOND_RADIUS))
+            if (enemy != target && seconds)
+            {
+                Strike(player, enemy, fire ? SPELL_BLAZING_STRIKE : SPELL_FROSTFANG_STRIKE,
+                    damage * (wildfire ? WILDFIRE_CLAWS_SHARE : CLAW_SECOND_SHARE));
+                struck.push_back(enemy);
+                --seconds;
+            }
+        if (wildfire && struck.size() == 1)
+            Strike(player, target, SPELL_BLAZING_STRIKE, damage * WILDFIRE_ALONE);
         float dot = player->GetTotalAttackPowerValue(BASE_ATTACK) * CLAW_DOT_AP;
         for (Unit* enemy : struck)
         {
@@ -6989,8 +7341,11 @@ namespace
         state.PursuitDiscount = false;
         player->RemoveAurasDueToSpell(SPELL_KINDLED);
         player->RemoveAurasDueToSpell(SPELL_FROSTBITTEN);
-        for (uint32 spell : { SPELL_OPENING_SHOT, SPELL_RAPID_SHOTS, SPELL_STORMFRONT, SPELL_RIDE_THE_LIGHTNING,
-                              SPELL_FLAMEBOUND, SPELL_FLAMEBOUND_DISCOUNT, SPELL_PURSUING_CHILL, SPELL_SNOWBLIND,
+        for (uint32 spell : { SPELL_OPENING_SHOT, SPELL_LOADED_STEEL, SPELL_LOADED_POWDER, SPELL_MARKED_SHOT,
+                              SPELL_ARCANE_POWDER, SPELL_DEAD_AIM, SPELL_CUT_AND_RUN, SPELL_STORMFRONT,
+                              SPELL_RIDE_THE_LIGHTNING,
+                              SPELL_FLAMEBOUND, SPELL_FLAMEBOUND_DISCOUNT, SPELL_BURNING_RAKE,
+                              SPELL_PURSUING_CHILL, SPELL_SNOWBLIND,
                               SPELL_FANG_COLD_BLOOD })
             player->RemoveAurasDueToSpell(spell);
         player->RemoveDynObject(SPELL_FROZEN_TRAIL);
@@ -7001,12 +7356,14 @@ namespace
     {
         State& state = StateOf(player);
         for (uint32 spell : { SPELL_ARCANE_INSIGHT, SPELL_MIND_UNBOUND, SPELL_MENTAL_RESERVES, SPELL_FROST_CROWN,
-                              SPELL_SPLINTER_QUICKENING, SPELL_COLD_FRONT, SPELL_ASHEN_FLOCK, SPELL_MIND_FLOW,
+                              SPELL_COLD_SNAP, SPELL_COLD_FRONT, SPELL_ASHEN_FLOCK, SPELL_MIND_FLOW,
+                              SPELL_GATHERING_BLIZZARD,
                               SPELL_STORM_CONDUIT_CHARGE, SPELL_STARFALL_EQUATION, SPELL_HOT_PURSUIT })
             player->RemoveAurasDueToSpell(spell);
         state.Icicles = 0;
         state.IcicleAttacks = 0;
-        state.FrostboltHits = 0;
+        state.RimeOn.clear();
+        state.BlizzardHit.clear();
         state.BlastCount = 0;
         state.MindChannel = false;
         DismissPhoenixes(player);
@@ -8311,10 +8668,6 @@ class spell_titan_rune_dot : public AuraScript
         // The tick the script keeps; else the one the aura was cast with (never nothing).
         auto tick = dotTicks.find({ target->GetGUID(), GetId(), caster->GetGUID() });
         int32 damage = std::max(1, tick != dotTicks.end() ? tick->second : aurEff->GetAmount());
-        // Patient Predator: a Cinder Wound's last tick, twice its damage.
-        if ((GetId() == SPELL_CINDER_WOUND || GetId() == SPELL_CINDER_WOUND_SPREAD)
-            && HasEmbersMarker(caster, MOD_PATIENT_PREDATOR) && GetAura()->GetDuration() < aurEff->GetAmplitude())
-            damage = int32(damage * PATIENT_PREDATOR);
         if (Player* player = caster->ToPlayer())
             Trace(player, Acore::StringFormat("{} ticks for {}", GetSpellInfo()->SpellName[0], damage));
         caster->CastCustomSpell(target, DotDamageSpell(GetId()), &damage, nullptr, nullptr, true);
@@ -8322,6 +8675,14 @@ class spell_titan_rune_dot : public AuraScript
 
     void Gone(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
+        // Phoenix Scar: a Cinder Wound running out, 25% of attack power as Fire on its target.
+        if ((GetId() == SPELL_CINDER_WOUND || GetId() == SPELL_CINDER_WOUND_SPREAD)
+            && GetTargetApplication()->GetRemoveMode() == AURA_REMOVE_BY_EXPIRE)
+            if (Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr;
+                player && HasEmbersMarker(player, MOD_PHOENIX_SCAR) && GetTarget()->IsAlive())
+                Strike(player, GetTarget(), SPELL_PHOENIX_SCAR, player->GetTotalAttackPowerValue(BASE_ATTACK)
+                    * PHOENIX_SCAR_AP
+                    * SchoolBonus(player, SPELL_SCHOOL_MASK_FIRE));
         if (GetCasterGUID() && !GetTarget()->HasAura(GetId(), GetCasterGUID()))
             dotTicks.erase({ GetTarget()->GetGUID(), GetId(), GetCasterGUID() });
     }
@@ -8719,6 +9080,8 @@ public:
             EventideTick(player, diff);
         if (StateOf(player).PatchUntil)
             HollowPatchTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_SPLINTERED_CROWN))
+            HailTick(player, diff);
         if (StateOf(player).GuardShield)
             GuardTick(player);
         if (player->HasAura(SPELL_RUNE_STORMREAVER) || StateOf(player).StormfrontTimer)
@@ -8971,6 +9334,8 @@ class spell_titan_rune_pyroblast_ember : public SpellScript
         Unit* target = GetHitUnit();
         if (player && target && target->IsAlive() && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_PHOENIX_WAKE))
             PlaceEmber(player, target, float(GetHitDamage()));
+        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_EMBERS_WRATH))
+            EmberPyroblast(player, target);
     }
 
     void Spent()
@@ -9217,6 +9582,24 @@ class spell_titan_rune_extended_hit : public SpellScript
                 if (horizon)
                     HorizonStrike(player, target, first);
                 break;
+            case SPELL_ICE_LANCE:
+                if (player->HasAura(SPELL_RUNE_SPLINTERED_CROWN))
+                    CrownIceLance(player, target);
+                break;
+            case SPELL_CONE_OF_COLD:
+                if (player->HasAura(SPELL_RUNE_SPLINTERED_CROWN) && _cones < CONE_ICICLES)
+                {
+                    ++_cones;
+                    CrownCone(player, target);
+                }
+                break;
+            case SPELL_ICY_TOUCH:
+            case SPELL_FIRE_BLAST:
+                if (player->HasAura(SPELL_RUNE_SPLINTERED_CROWN))
+                    CrownStrike(player, target, first);
+                if (first == SPELL_FIRE_BLAST && player->HasAura(SPELL_RUNE_DUELIST))
+                    DuelistStrike(player, first);
+                break;
             case SPELL_FROSTBOLT:
                 if (convergence)
                     ConvergenceFrostbolt(player, target);
@@ -9244,6 +9627,8 @@ class spell_titan_rune_extended_hit : public SpellScript
             case SPELL_ARCANE_SHOT:
                 if (horizon)
                     HorizonStrike(player, target, first);
+                if (player->HasAura(SPELL_RUNE_DUELIST))
+                    DuelistStrike(player, first);
                 if (player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN))
                     OwlShot(player, target, first);
                 break;
@@ -9252,20 +9637,47 @@ class spell_titan_rune_extended_hit : public SpellScript
         }
     }
 
-    // Winter's Blessing: a Frostbolt on Moonfrost, 20% more.
+    // Winter's Blessing: a Frostbolt on Moonfrost, 20% more. The Splintered Crown's Frostbite: a Frostbolt or Ice
+    // Lance 8% more (and Gathering Blizzard's Ice Lance).
     void Damage()
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN)
-            && GetSpellInfo()->GetFirstRankSpell()->Id == SPELL_FROSTBOLT)
-            SetHitDamage(int32(OwlFrostboltDamage(player, target, float(GetHitDamage()))));
+        if (!player || !target || GetHitDamage() <= 0)
+            return;
+        uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        float damage = float(GetHitDamage());
+        if (first == SPELL_FROSTBOLT && player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN))
+            damage = OwlFrostboltDamage(player, target, damage);
+        if ((first == SPELL_FROSTBOLT || first == SPELL_ICE_LANCE) && player->HasAura(SPELL_RUNE_SPLINTERED_CROWN))
+            damage = CrownBoltDamage(player, target, first, damage);
+        SetHitDamage(int32(damage));
     }
 
     void Register() override
     {
         OnHit += SpellHitFn(spell_titan_rune_extended_hit::Damage);
         AfterHit += SpellHitFn(spell_titan_rune_extended_hit::Hit);
+    }
+
+    uint8 _cones = 0;
+};
+
+// Blizzard's damage (every rank's) with the Splintered Crown: the enemies it hit, for Hailstorm's Icicles.
+class spell_titan_rune_blizzard_hit : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_blizzard_hit);
+
+    void Hit()
+    {
+        Player* player = GetCaster() ? GetCaster()->ToPlayer() : nullptr;
+        if (player && GetHitUnit() && player->HasAura(SPELL_RUNE_SPLINTERED_CROWN))
+            StateOf(player).BlizzardHit[GetHitUnit()->GetGUID()] = Now();
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_blizzard_hit::Hit);
     }
 };
 
@@ -9429,7 +9841,7 @@ class spell_titan_rune_broadside : public SpellScript
 
 // Fire Blast (every rank) and Ember's Wrath: in Cat Form with the rune (its own mana and cooldown; anyone else, in a
 // form, refused as the client used to: the rule is gone from both copies of the spell so the client lets it be
-// tried), Ashen Pursuit, then the ignition.
+// tried), then the ignition.
 class spell_titan_rune_embers_fire_blast : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_embers_fire_blast);
@@ -9437,14 +9849,6 @@ class spell_titan_rune_embers_fire_blast : public SpellScript
     SpellCastResult Check()
     {
         return CatFormGate(GetCaster(), SPELL_RUNE_EMBERS_WRATH);
-    }
-
-    void Damage()
-    {
-        Player* player = GetCaster()->ToPlayer();
-        Unit* target = GetHitUnit();
-        if (player && target && GetHitDamage() > 0 && player->HasAura(SPELL_RUNE_EMBERS_WRATH))
-            SetHitDamage(std::max(1, int32(GetHitDamage() * AshenBonus(player, target))));
     }
 
     void Ignite()
@@ -9457,7 +9861,6 @@ class spell_titan_rune_embers_fire_blast : public SpellScript
     void Register() override
     {
         OnCheckCast += SpellCheckCastFn(spell_titan_rune_embers_fire_blast::Check);
-        OnHit += SpellHitFn(spell_titan_rune_embers_fire_blast::Damage);
         AfterHit += SpellHitFn(spell_titan_rune_embers_fire_blast::Ignite);
     }
 };
@@ -9531,9 +9934,8 @@ class spell_titan_rune_whitefang_icy_touch : public SpellScript
 // Fire Blast's, Flame Shock's and Frost Shock's ranks (the player's): no "not while shapeshifted" rule at load (the
 // runes' scripts keep it for everyone but a Cat with the rune: CatFormGate), as the client patch does
 // (patch_spells.py, RUNE_FREED).
-// The Duelist's finishing moves (any spending combo points, as the game's Eviscerate or the rune's Broadside): their
-// points are counted as the cast starts, the effects (a cooldown reset or shortened) a moment after it, past the
-// cooldown the cast itself starts.
+// The Duelist's Eviscerate with Opening Shot ready: its combo points counted as the cast starts, for the next
+// Pistol Shot (DuelistEviscerate).
 class titan_runes_duelist_finisher : public PlayerScript
 {
 public:
@@ -9541,16 +9943,11 @@ public:
 
     void OnPlayerSpellCast(Player* player, Spell* spell, bool /*skipCheck*/) override
     {
-        if (spell->IsTriggered() || !spell->GetSpellInfo()->NeedsComboPoints() || !player->HasAura(SPELL_RUNE_DUELIST))
+        if (spell->IsTriggered() || spell->GetSpellInfo()->GetFirstRankSpell()->Id != SPELL_EVISCERATE
+            || !player->HasAura(SPELL_RUNE_DUELIST) || !player->HasAura(SPELL_OPENING_SHOT))
             return;
-        uint8 points = player->GetComboPoints();
-        if (!points)
-            return;
-        player->m_Events.AddEventAtOffset([player, points]()
-        {
-            if (player->IsInWorld() && player->HasAura(SPELL_RUNE_DUELIST))
-                DuelistFinisher(player, points);
-        }, 1ms);
+        if (uint8 points = player->GetComboPoints())
+            DuelistEviscerate(player, points);
     }
 };
 
@@ -9580,10 +9977,10 @@ class spell_titan_rune_cat_strike : public SpellScript
     {
         Player* player = GetCaster()->ToPlayer();
         uint32 first = FirstRank(GetSpellInfo());
-        if (player && (first == SPELL_RAKE || first == SPELL_MANGLE_CAT) && player->HasAura(SPELL_FLAMEBOUND_DISCOUNT))
+        if (player && first == SPELL_SHRED && player->HasAura(SPELL_FLAMEBOUND_DISCOUNT))
         {
             player->RemoveAurasDueToSpell(SPELL_FLAMEBOUND_DISCOUNT);
-            player->ModifyPower(POWER_ENERGY, FLAMEBOUND_REFUND);
+            player->ModifyPower(POWER_ENERGY, EMBER_REFUND);
         }
     }
 
@@ -9603,13 +10000,8 @@ class spell_titan_rune_cat_strike : public SpellScript
         }
         if ((first == SPELL_SHRED || first == SPELL_MANGLE_CAT) && player->HasAura(SPELL_RUNE_WHITEFANG))
             Shatter(player, target);
-        if (first == SPELL_RAKE && player->HasAura(SPELL_RUNE_EMBERS_WRATH)
-            && HasEmbersMarker(player, MOD_BLAZING_RAKE) && HasCinderWound(player, target)
-            && Now() >= StateOf(player).BlazingRakeAt)
-        {
-            StateOf(player).BlazingRakeAt = Now() + BLAZING_RAKE_MS;
-            Strike(player, target, SPELL_BLAZING_RAKE, player->GetTotalAttackPowerValue(BASE_ATTACK) * BLAZING_RAKE_AP);
-        }
+        if ((first == SPELL_SHRED || first == SPELL_RAKE) && player->HasAura(SPELL_RUNE_EMBERS_WRATH))
+            EmberClawHit(player, target, first);
     }
 
     void Register() override
@@ -9632,11 +10024,9 @@ class spell_titan_rune_ferocious_bite : public SpellScript
             return;
         if (player->HasAura(SPELL_RUNE_WHITEFANG))
             SetHitDamage(int32(GetHitDamage() * BiteBonus(player, target)));
-        if (player->HasAura(SPELL_RUNE_EMBERS_WRATH) && HasEmbersMarker(player, MOD_MOLTEN_BITE)
-            && HasCinderWound(player, target))
+        if (player->HasAura(SPELL_RUNE_EMBERS_WRATH))
             if (uint8 points = player->GetComboPoints(target))
-                Strike(player, target, SPELL_MOLTEN_BITE,
-                    player->GetTotalAttackPowerValue(BASE_ATTACK) * MOLTEN_BITE_AP * float(points));
+                EmberBite(player, target, points);
     }
 
     void Register() override
@@ -9659,7 +10049,7 @@ class spell_titan_rune_cat_swipe : public SpellScript
             EmpoweredSwipe(player, true);
         else if (player->HasAura(SPELL_FROSTBITTEN))
             EmpoweredSwipe(player, false);
-        if (player->HasAura(SPELL_RUNE_EMBERS_WRATH) && HasEmbersMarker(player, MOD_CINDER_SWIPE))
+        if (player->HasAura(SPELL_RUNE_EMBERS_WRATH) && HasEmbersMarker(player, MOD_WILDFIRE_SWIPE))
             CinderSwipe(player);
     }
 
@@ -10010,6 +10400,7 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_starfire);
     RegisterSpellScript(spell_titan_rune_wrath);
     RegisterSpellScript(spell_titan_rune_extended_hit);
+    RegisterSpellScript(spell_titan_rune_blizzard_hit);
     RegisterSpellScript(spell_titan_rune_evocation);
     RegisterSpellScript(spell_titan_rune_barkskin);
     RegisterSpellScript(spell_titan_rune_maul);

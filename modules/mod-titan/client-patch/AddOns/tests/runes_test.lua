@@ -241,7 +241,10 @@ for id, firsts in pairs({ [34] = { "Accelerated Thought", "Focused Intention", "
     [40] = { "Perfect Alignment", "Long Twilight", "Solar Return" },
     [30] = { "Following Shadows", "Unison", "Last Word" },
     [32] = { "Executioner", "Fatal Opening", "Death Follows" },
-    [39] = { "Moonpiercer", "Swift Judgment", "Lunar Wound" } }) do
+    [39] = { "Moonpiercer", "Swift Judgment", "Lunar Wound" },
+    [35] = { "Glacial Spear", "Cold Snap", "Deep Freeze" },
+    [42] = { "Heavy Caliber", "Powder and Steel", "Quick Draw" },
+    [44] = { "Cinderclaw", "Ember Rush", "Ashen Renewal" } }) do
     local rune, entry = ById(id), EmberforgeRunesArt.runes[id]
     check(#rune.mods == 15 and #entry.texts == 15 and #entry.abilities == 15 and rune.mods[1].name == firsts[1]
         and rune.mods[6].name == firsts[2] and rune.mods[11].name == firsts[3],
@@ -445,15 +448,15 @@ check(build.nodes[2].label.text == "L I G H T N I N G  S H I E L D" and options[
     "the Stormbound Conduit's slots and modifiers")
 frame:Hide()
 
--- Long words are never cut off: the Duelist's Rapid Shots (its longest) makes every column taller, down to above the
--- buttons, its words smaller only if they must; a long loop takes two lines in Browse.
-server("R,42,-")
-server("S,10,10,1,0,0,0,0,42,0")
+-- Long words are never cut off: the Stormreaver's White-Hot Conductor (its longest) makes every column taller, down to
+-- above the buttons, its words smaller only if they must; a long loop takes two lines in Browse.
+server("R,43,-")
+server("S,10,10,1,0,0,0,0,43,0")
 EmberforgeRunes_Open()
 debug.offers.cards[1].preview:Click()
 options[1]:Click()
 debug.build.right:Click()
-check(view.active == 2 and #options[3].text.text > 190, "the Pistol slot: Rapid Shots' long words")
+check(view.active == 2 and #options[3].text.text > 150, "the Thunderlash slot: White-Hot Conductor's long words")
 local heights = {}
 for index, option in ipairs(options) do
     heights[index] = option.height

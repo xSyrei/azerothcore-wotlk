@@ -815,34 +815,49 @@ BUILT = {
         ],
     },
     35: {
-        'core': 'Each **Frostbolt** that hits forms an **Icicle** above you: 1 sec later it strikes the same enemy '
-            "for **30%** of the Frostbolt's damage.",
-        'slots': ['Formation', 'Flight', 'Aftermath'],
-        'asks': ['What the Icicle is', 'Where it flies', 'What it leaves behind'],
+        'core': 'Each **Frostbolt** that hits forms an **Icicle**: **30%** of its damage, 1 sec later. **Ice Lance**, '
+            '**Cone of Cold** and **Blizzard** loose Icicles too; each leaves **Frostbite**.',
+        'slots': ['Formation', 'Winter', 'Aftermath'],
+        'asks': ['What the Icicles are', "Winter's interaction", 'What they leave behind'],
         'texts': [
-            "Icicles deal 40% more damage: 42% of the Frostbolt's damage.",
-            "Each Icicle breaks into 3 shards, 0.2 sec apart, each 40% of an Icicle's damage (120% in all). The last "
-            'one makes your next Frostbolt cast 10% faster.',
-            'Each Icicle also hits up to 4 other enemies within 6 yards of its target for half its damage.',
-            'Icicles and their shards pierce up to 3 enemies within 15 yards behind their target, for 40% of their '
+            "Frostbolt's Icicles deal 40% more damage: 42% of the Frostbolt's damage.",
+            "Ice Lance's two Icicles deal 25% of your spell power each instead of 20%. The second also leaves a Frost "
+            "wound of 10% of your spell power over 4 sec.",
+            'Cone of Cold looses 2 Icicles at each enemy it hits (up to 5), 10% of your spell power each.',
+            'Blizzard looses an Icicle every second instead of every 2, each 15% of your spell power instead of 20%.',
+            "Frostbolt's Icicles also hit up to 2 other enemies within 8 yards for half their damage.",
+            "When both of Ice Lance's Icicles hit, your next Frostbolt within 6 sec casts 15% faster.",
+            "Cone of Cold's Icicle deals 30% more damage to an enemy already in your Frostbite.",
+            'Each Icicle Blizzard looses makes your next Ice Lance deal 5% more damage, up to 20%, for 8 sec.',
+            'Fire Blast on an enemy in your Frostbite erupts in an Icicle: 25% of your spell power to it and up to 2 '
+            'other enemies within 6 yards, once every 8 sec.',
+            'After your Icy Touch hits an enemy, your next Frostbolt on it within 6 sec forms one more Icicle at half '
             'damage.',
-            'As an Icicle lands, a splinter flies on to another enemy within 10 yards for 30% of its damage; with '
-            'none near, it strikes the same enemy for 15%.',
-            'Every third Frostbolt that hits makes an Icicle that deals 60% more damage (its shards too).',
-            "Every third Icicle attack wounds its target: 80% of an Icicle's damage over 6 sec. A shattered Icicle "
-            'counts once.',
-            'Icicles slow their targets by 25% for 3 sec, and deal 15% more damage to an enemy they slowed already.',
-            'Every third Icicle attack makes your next Frostbolt within 5 sec instant. A shattered Icicle counts once.',
+            'Your Icicles deal 20% more damage to enemies already in your Frostbite.',
+            "Ice Lance's second Icicle leaves Glacial Wound: 20% of your spell power over 6 sec. A new wound keeps "
+            "what is left of the last.",
+            "Cone of Cold's Icicles slow their enemies by 20% for 3 sec; your next Frostbolt Icicle on each in that "
+            "time deals 25% more damage.",
+            "Blizzard's Icicles also hit up to 2 other enemies within 6 yards for 40% of their damage; with none near, "
+            "the Icicle deals 20% more.",
+            "Every third Icicle strike makes your next Frostbolt within 5 sec instant. Ice Lance's two Icicles count "
+            "as two.",
         ],
         'abilities': [
             'Spear',
+            'Ice Lance',
+            'Cone of Cold',
+            'Blizzard',
             'Splinter',
-            'Shatter',
-            'Impale',
-            'Seek',
-            'Focus',
-            'Wound',
-            'Grasp',
+            'Ice Lance',
+            'Cone of Cold',
+            'Blizzard',
+            'Fire Blast',
+            'Icy Touch',
+            'Freeze',
+            'Ice Lance',
+            'Cone of Cold',
+            'Blizzard',
             'Front',
         ],
         'icons': [
@@ -855,6 +870,12 @@ BUILT = {
             'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
             'M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4',
             'M3 17c3-3 6-3 9 0s6 3 9 0M3 11c3-3 6-3 9 0s6 3 9 0',
+            'M4 20 20 4M14 4h6v6',
+            'M6 18 18 6M4 12l4-4M12 20l4-4',
+            'M12 2v20M2 12h20M5 5l14 14M19 5 5 19',
+            'M2 12h20M16 7l5 5-5 5',
+            'M4 18c4-10 12-10 16-12M16 4l4 2-2 4',
+            'M12 12m-8 0a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
         ],
     },
     36: {
@@ -1228,34 +1249,47 @@ BUILT = {
         ],
     },
     42: {
-        'core': '**Sabre Slash** readies **Opening Shot**: **Pistol Shot** for **60%** of your attack power; '
-            '**Broadside** spends combo points in pistol blasts.',
-        'slots': ['Sabre', 'Pistol', 'Cannon-Fire'],
-        'asks': ['How the blade cuts', 'How the shot flies', 'How the cannons fire'],
+        'core': '**Sinister Strike** becomes **Sabre Slash**; every third readies **Opening Shot** for **Pistol Shot** '
+            '(60% of your attack power), and the shot loads your next Slash.',
+        'slots': ['Pistol', 'Powder', 'Footwork'],
+        'asks': ['How the pistol fires', 'What the powder adds', 'How you move'],
         'texts': [
-            'Sabre Slash deals 25% more damage.',
-            'Sabre Slash also hits up to 3 other enemies within 5 yards of its target for half its damage.',
-            'Sabre Slash makes its target bleed for 40% more of its damage over 6 sec. A new bleed keeps what is left '
-            'of the last.',
-            'Pistol Shot deals 60% more damage: 96% of your attack power.',
-            'Pistol Shot spreads in a cone: up to 4 other enemies in front of you, as far as 10 yards past its '
-            'target, take 75% of its damage.',
-            'Each combo point your finishing moves spend has a 10% chance to reset Pistol Shot\'s cooldown and ready '
-            'Opening Shot; your next Pistol Shot within 10 sec then grants 50 Energy instead of costing it.',
-            'Broadside\'s blasts deal 40% more damage.',
-            'Broadside fires a fourth blast.',
-            'Each combo point your finishing moves spend takes 1 sec off Broadside\'s cooldown.',
+            'Pistol Shot deals 40% more damage.',
+            'Pistol Shot fires twice, 65% of its damage each; only the first grants a combo point.',
+            'Pistol Shot spreads in a cone: up to 3 other enemies in front of you, as far as 10 yards past its target, '
+            'take half its damage.',
+            "Fire Blast's powder explosion deals 35% more damage and hits up to 5 enemies.",
+            'Pistol Shot while your Lightning Shield is up also deals 25% of your spell power as Nature damage to its '
+            'target.',
+            'The Sabre Slash after a Pistol Shot deals 30% more instead of 15%.',
+            'Eviscerate while Opening Shot is ready makes your next Pistol Shot deal 15% more for each combo point '
+            'instead of 10% (75% at most).',
+            "Fire Blast's powder explosion deals 25% more damage and hits up to 5 enemies.",
+            "Pistol Shot on your Hunter's Mark target makes your next Sabre Slash within 6 sec deal 25% more damage.",
+            'Pistol Shot on your Frost Fever target bursts for 20% of your attack power as Frost damage on up to 3 '
+            'enemies within 6 yards, once every 8 sec.',
+            'Every second Sabre Slash readies Opening Shot instead of every third.',
+            'Pistol Shot makes you move 25% faster for 4 sec.',
+            'Pistol Shot gives its 10 Energy back when it hits, once every 6 sec.',
+            'Pistol Shot while your Renew is on you heals you for 30% of your spell power, once every 10 sec.',
+            'Your Arcane Shot makes your next Pistol Shot within 8 sec deal 25% more damage.',
         ],
         'abilities': [
-            'Cut',
-            'Sweep',
-            'Serrate',
-            'Ball',
+            'Caliber',
+            'Gunslinger',
             'Scatter',
-            'Rapid',
-            'Cannonade',
-            'Full',
-            'Reload',
+            'Fire Blast',
+            'Lightning Shield',
+            'Steel',
+            'Eviscerate',
+            'Fire Blast',
+            "Hunter's Mark",
+            'Icy Touch',
+            'Draw',
+            'Run',
+            'Efficient',
+            'Renew',
+            'Arcane Shot',
         ],
         'icons': [
             'M4 20 20 4M14 4h6v6',
@@ -1267,6 +1301,12 @@ BUILT = {
             'M7 9h10a4 4 0 0 1 0 8H7a4 4 0 0 1 0-8ZM17 13h4M5 17l-2 4M11 17l-2 4',
             'M4 6h4M10 6h4M16 6h4M4 12h4M10 12h4M16 12h4',
             'M20 12a8 8 0 1 1-3-6.2M20 4v5h-5',
+            'M4 20 20 4M14 4h6v6',
+            'M2 12c5-6 15-6 20 0M2 12c5 6 15 6 20 0',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0',
+            'M4 12 20 4M4 12l16 0M4 12l16 8',
+            'M3 12h6M3 7h9M3 17h9M15 12l6 0M18 9l3 3-3 3',
         ],
     },
     43: {
@@ -1316,31 +1356,43 @@ BUILT = {
         'slots': ['Ignition', 'Claws', 'Instinct'],
         'asks': ['How the wound burns', 'What your claws add', 'What the hunt gives'],
         'texts': [
-            'Cinder Wound deals 35% more damage.',
-            'Each ignition also burns up to 4 other enemies within 6 yards of its victim for 40% of your attack power '
-            'plus 30% of your spell power as Fire damage.',
-            'Cinder Wound lasts 10 sec and deals 30% more damage over that time.',
-            'Rake on your Cinder Wound victim also deals 60% of your attack power as Fire damage, once every 3 sec.',
-            'Ferocious Bite on your Cinder Wound victim also deals 25% of your attack power per combo point spent as '
-            'Fire damage.',
-            'Swipe spreads Cinder Wound, at half its damage, to up to 3 bleeding enemies within its reach. Spread '
-            "wounds don't spread again.",
-            'Fire Blast makes you move 30% faster for 3 sec, and your next Rake or Mangle within 5 sec gives 10 '
-            'Energy back.',
-            "Cinder Wound's last tick deals twice its damage. A new wound keeps its tick timer running.",
-            'Your first Fire Blast on each new enemy deals 20% more damage, once every 6 sec; that enemy dying resets '
-            'the wait.',
+            'Cinder Wound deals 40% more damage.',
+            'Blazing Strike hits up to 2 other enemies within 5 yards for half its damage; with none near, its target '
+            'takes 25% more.',
+            'Cinder Wound deals 15% more damage.',
+            'Blazing Strike on your Flame Shock target deals 25% more as Fire damage.',
+            'Fire Blast on your Frost Fever target also deals 25% of your attack power as Frost damage, once every 6 '
+            'sec.',
+            'Fire Blast makes you move 20% faster for 4 sec, and your next Shred within 6 sec gives 10 Energy back.',
+            'Ferocious Bite on your Cinder Wound deals its next tick at once, without adding a tick.',
+            "Flame Shock's spread reaches 3 enemies instead of 1.",
+            'Pyroblast on your Cinder Wound target bursts for 40% of your spell power as Fire damage, once every 8 '
+            'sec.',
+            'Swipe spreads half of what is left of a Cinder Wound in its reach to one more enemy within 8 yards, once '
+            'every 8 sec.',
+            'Igniting a Cinder Wound gives you 10 Energy, once every 8 sec.',
+            'Blazing Strike deals 40% more damage to its target, as Fire.',
+            'When a Cinder Wound runs out, it deals 25% of your attack power as Fire damage to its target.',
+            'Fire Blast on a bleeding enemy while your Rejuvenation is on you heals you for 2% of your maximum health, '
+            'once every 10 sec.',
+            'Rake on your Cinder Wound target makes your next Blazing Strike within 6 sec deal 30% more damage.',
         ],
         'abilities': [
-            'Sear',
-            'Embers',
-            'Smolder',
-            'Rake',
+            'Cinder',
+            'Flame Shock',
+            'Living',
+            'Flame Shock',
+            'Icy Touch',
+            'Shred',
             'Bite',
+            'Flame Shock',
+            'Pyroblast',
             'Swipe',
-            'Bound',
-            'Patience',
-            'Pursuit',
+            'Renewal',
+            'Claws',
+            'Scar',
+            'Rejuvenation',
+            'Rake',
         ],
         'icons': [
             'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
@@ -1352,6 +1404,12 @@ BUILT = {
             'M4 12h14M14 7l5 5-5 5',
             'M12 3v9l5 5M12 21a9 9 0 1 0 0-18',
             'M2 12h20M16 7l5 5-5 5',
+            'M12 3c2 4 6 6 6 11a6 6 0 0 1-12 0c0-5 4-7 6-11Z',
+            'M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0-10 0M4 4l3 3M20 4l-3 3M4 20l3-3M20 20l-3-3',
+            'M12 7v5l3 3M12 3a9 9 0 1 0 0 18',
+            'M5 19 9 15M9 19l4-4M13 19l4-4',
+            'M4 14c4-6 12-6 16 0M8 14v3M12 14v4M16 14v3',
+            'M2 12c5-6 15-6 20 0M2 12c5 6 15 6 20 0',
         ],
     },
     45: {

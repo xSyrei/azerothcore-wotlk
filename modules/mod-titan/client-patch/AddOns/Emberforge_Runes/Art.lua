@@ -779,48 +779,68 @@ EmberforgeRunesArt = {
             hue = { 0.651, 0.98, 1 },
             inner = { 0.91, 0.965, 1 },
             built = true,
-            core = "Each **Frostbolt** that hits forms an **Icicle** above you: 1 sec " ..
-                    "later it strikes the same enemy for **30%** of the Frostbolt's damage.",
+            core = "Each **Frostbolt** that hits forms an **Icicle**: **30%** of its " ..
+                    "damage, 1 sec later. **Ice Lance**, **Cone of Cold** and **Blizzard** " ..
+                    "loose Icicles too; each leaves **Frostbite**.",
             asks = {
-                "What the Icicle is",
-                "Where it flies",
-                "What it leaves behind",
+                "What the Icicles are",
+                "Winter's interaction",
+                "What they leave behind",
             },
             abilities = {
                 "Spear",
+                "Ice Lance",
+                "Cone of Cold",
+                "Blizzard",
                 "Splinter",
-                "Shatter",
-                "Impale",
-                "Seek",
-                "Focus",
-                "Wound",
-                "Grasp",
+                "Ice Lance",
+                "Cone of Cold",
+                "Blizzard",
+                "Fire Blast",
+                "Icy Touch",
+                "Freeze",
+                "Ice Lance",
+                "Cone of Cold",
+                "Blizzard",
                 "Front",
             },
             texts = {
-                "Icicles deal 40% more damage: 42% of the Frostbolt's damage.",
-                "Each Icicle breaks into 3 shards, 0.2 sec apart, each 40% of an " ..
-                        "Icicle's damage (120% in all). The last one makes your next Frostbolt " ..
-                        "cast 10% faster.",
-                "Each Icicle also hits up to 4 other enemies within 6 yards of its " ..
-                        "target for half its damage.",
-                "Icicles and their shards pierce up to 3 enemies within 15 yards behind " ..
-                        "their target, for 40% of their damage.",
-                "As an Icicle lands, a splinter flies on to another enemy within 10 " ..
-                        "yards for 30% of its damage; with none near, it strikes the same enemy " ..
-                        "for 15%.",
-                "Every third Frostbolt that hits makes an Icicle that deals 60% more " ..
-                        "damage (its shards too).",
-                "Every third Icicle attack wounds its target: 80% of an Icicle's damage " ..
-                        "over 6 sec. A shattered Icicle counts once.",
-                "Icicles slow their targets by 25% for 3 sec, and deal 15% more damage " ..
-                        "to an enemy they slowed already.",
-                "Every third Icicle attack makes your next Frostbolt within 5 sec " ..
-                        "instant. A shattered Icicle counts once.",
+                "Frostbolt's Icicles deal 40% more damage: 42% of the Frostbolt's " ..
+                        "damage.",
+                "Ice Lance's two Icicles deal 25% of your spell power each instead of " ..
+                        "20%. The second also leaves a Frost wound of 10% of your spell power " ..
+                        "over 4 sec.",
+                "Cone of Cold looses 2 Icicles at each enemy it hits (up to 5), 10% of " ..
+                        "your spell power each.",
+                "Blizzard looses an Icicle every second instead of every 2, each 15% of " ..
+                        "your spell power instead of 20%.",
+                "Frostbolt's Icicles also hit up to 2 other enemies within 8 yards for " ..
+                        "half their damage.",
+                "When both of Ice Lance's Icicles hit, your next Frostbolt within 6 sec " ..
+                        "casts 15% faster.",
+                "Cone of Cold's Icicle deals 30% more damage to an enemy already in " ..
+                        "your Frostbite.",
+                "Each Icicle Blizzard looses makes your next Ice Lance deal 5% more " ..
+                        "damage, up to 20%, for 8 sec.",
+                "Fire Blast on an enemy in your Frostbite erupts in an Icicle: 25% of " ..
+                        "your spell power to it and up to 2 other enemies within 6 yards, once " ..
+                        "every 8 sec.",
+                "After your Icy Touch hits an enemy, your next Frostbolt on it within 6 " ..
+                        "sec forms one more Icicle at half damage.",
+                "Your Icicles deal 20% more damage to enemies already in your " ..
+                        "Frostbite.",
+                "Ice Lance's second Icicle leaves Glacial Wound: 20% of your spell " ..
+                        "power over 6 sec. A new wound keeps what is left of the last.",
+                "Cone of Cold's Icicles slow their enemies by 20% for 3 sec; your next " ..
+                        "Frostbolt Icicle on each in that time deals 25% more damage.",
+                "Blizzard's Icicles also hit up to 2 other enemies within 6 yards for " ..
+                        "40% of their damage; with none near, the Icicle deals 20% more.",
+                "Every third Icicle strike makes your next Frostbolt within 5 sec " ..
+                        "instant. Ice Lance's two Icicles count as two.",
             },
             slots = {
                 "Formation",
-                "Flight",
+                "Winter",
                 "Aftermath",
             },
         },
@@ -1249,46 +1269,63 @@ EmberforgeRunesArt = {
             hue = { 1, 0.89, 0.494 },
             inner = { 0.98, 0.949, 0.886 },
             built = true,
-            core = "**Sabre Slash** readies **Opening Shot**: **Pistol Shot** for **60%** " ..
-                    "of your attack power; **Broadside** spends combo points in pistol " ..
-                    "blasts.",
+            core = "**Sinister Strike** becomes **Sabre Slash**; every third readies " ..
+                    "**Opening Shot** for **Pistol Shot** (60% of your attack power), and " ..
+                    "the shot loads your next Slash.",
             asks = {
-                "How the blade cuts",
-                "How the shot flies",
-                "How the cannons fire",
+                "How the pistol fires",
+                "What the powder adds",
+                "How you move",
             },
             abilities = {
-                "Cut",
-                "Sweep",
-                "Serrate",
-                "Ball",
+                "Caliber",
+                "Gunslinger",
                 "Scatter",
-                "Rapid",
-                "Cannonade",
-                "Full",
-                "Reload",
+                "Fire Blast",
+                "Lightning Shield",
+                "Steel",
+                "Eviscerate",
+                "Fire Blast",
+                "Hunter's Mark",
+                "Icy Touch",
+                "Draw",
+                "Run",
+                "Efficient",
+                "Renew",
+                "Arcane Shot",
             },
             texts = {
-                "Sabre Slash deals 25% more damage.",
-                "Sabre Slash also hits up to 3 other enemies within 5 yards of its " ..
-                        "target for half its damage.",
-                "Sabre Slash makes its target bleed for 40% more of its damage over 6 " ..
-                        "sec. A new bleed keeps what is left of the last.",
-                "Pistol Shot deals 60% more damage: 96% of your attack power.",
-                "Pistol Shot spreads in a cone: up to 4 other enemies in front of you, " ..
-                        "as far as 10 yards past its target, take 75% of its damage.",
-                "Each combo point your finishing moves spend has a 10% chance to reset " ..
-                        "Pistol Shot's cooldown and ready Opening Shot; your next Pistol Shot " ..
-                        "within 10 sec then grants 50 Energy instead of costing it.",
-                "Broadside's blasts deal 40% more damage.",
-                "Broadside fires a fourth blast.",
-                "Each combo point your finishing moves spend takes 1 sec off " ..
-                        "Broadside's cooldown.",
+                "Pistol Shot deals 40% more damage.",
+                "Pistol Shot fires twice, 65% of its damage each; only the first grants " ..
+                        "a combo point.",
+                "Pistol Shot spreads in a cone: up to 3 other enemies in front of you, " ..
+                        "as far as 10 yards past its target, take half its damage.",
+                "Fire Blast's powder explosion deals 35% more damage and hits up to 5 " ..
+                        "enemies.",
+                "Pistol Shot while your Lightning Shield is up also deals 25% of your " ..
+                        "spell power as Nature damage to its target.",
+                "The Sabre Slash after a Pistol Shot deals 30% more instead of 15%.",
+                "Eviscerate while Opening Shot is ready makes your next Pistol Shot " ..
+                        "deal 15% more for each combo point instead of 10% (75% at most).",
+                "Fire Blast's powder explosion deals 25% more damage and hits up to 5 " ..
+                        "enemies.",
+                "Pistol Shot on your Hunter's Mark target makes your next Sabre Slash " ..
+                        "within 6 sec deal 25% more damage.",
+                "Pistol Shot on your Frost Fever target bursts for 20% of your attack " ..
+                        "power as Frost damage on up to 3 enemies within 6 yards, once every 8 " ..
+                        "sec.",
+                "Every second Sabre Slash readies Opening Shot instead of every third.",
+                "Pistol Shot makes you move 25% faster for 4 sec.",
+                "Pistol Shot gives its 10 Energy back when it hits, once every 6 sec.",
+                "Pistol Shot while your Renew is on you heals you for 30% of your spell " ..
+                        "power, once every 10 sec.",
+                "Your Arcane Shot makes your next Pistol Shot within 8 sec deal 25% " ..
+                        "more damage.",
             },
             slots = {
-                "Sabre",
                 "Pistol",
-                "Cannon-Fire",
+                "Powder",
+                "Footwork",
             },
         },
         [43] = {
@@ -1359,34 +1396,48 @@ EmberforgeRunesArt = {
                 "What the hunt gives",
             },
             abilities = {
-                "Sear",
-                "Embers",
-                "Smolder",
-                "Rake",
+                "Cinder",
+                "Flame Shock",
+                "Living",
+                "Flame Shock",
+                "Icy Touch",
+                "Shred",
                 "Bite",
+                "Flame Shock",
+                "Pyroblast",
                 "Swipe",
-                "Bound",
-                "Patience",
-                "Pursuit",
+                "Renewal",
+                "Claws",
+                "Scar",
+                "Rejuvenation",
+                "Rake",
             },
             texts = {
-                "Cinder Wound deals 35% more damage.",
-                "Each ignition also burns up to 4 other enemies within 6 yards of its " ..
-                        "victim for 40% of your attack power plus 30% of your spell power as " ..
-                        "Fire damage.",
-                "Cinder Wound lasts 10 sec and deals 30% more damage over that time.",
-                "Rake on your Cinder Wound victim also deals 60% of your attack power " ..
-                        "as Fire damage, once every 3 sec.",
-                "Ferocious Bite on your Cinder Wound victim also deals 25% of your " ..
-                        "attack power per combo point spent as Fire damage.",
-                "Swipe spreads Cinder Wound, at half its damage, to up to 3 bleeding " ..
-                        "enemies within its reach. Spread wounds don't spread again.",
-                "Fire Blast makes you move 30% faster for 3 sec, and your next Rake or " ..
-                        "Mangle within 5 sec gives 10 Energy back.",
-                "Cinder Wound's last tick deals twice its damage. A new wound keeps its " ..
-                        "tick timer running.",
-                "Your first Fire Blast on each new enemy deals 20% more damage, once " ..
-                        "every 6 sec; that enemy dying resets the wait.",
+                "Cinder Wound deals 40% more damage.",
+                "Blazing Strike hits up to 2 other enemies within 5 yards for half its " ..
+                        "damage; with none near, its target takes 25% more.",
+                "Cinder Wound deals 15% more damage.",
+                "Blazing Strike on your Flame Shock target deals 25% more as Fire " ..
+                        "damage.",
+                "Fire Blast on your Frost Fever target also deals 25% of your attack " ..
+                        "power as Frost damage, once every 6 sec.",
+                "Fire Blast makes you move 20% faster for 4 sec, and your next Shred " ..
+                        "within 6 sec gives 10 Energy back.",
+                "Ferocious Bite on your Cinder Wound deals its next tick at once, " ..
+                        "without adding a tick.",
+                "Flame Shock's spread reaches 3 enemies instead of 1.",
+                "Pyroblast on your Cinder Wound target bursts for 40% of your spell " ..
+                        "power as Fire damage, once every 8 sec.",
+                "Swipe spreads half of what is left of a Cinder Wound in its reach to " ..
+                        "one more enemy within 8 yards, once every 8 sec.",
+                "Igniting a Cinder Wound gives you 10 Energy, once every 8 sec.",
+                "Blazing Strike deals 40% more damage to its target, as Fire.",
+                "When a Cinder Wound runs out, it deals 25% of your attack power as " ..
+                        "Fire damage to its target.",
+                "Fire Blast on a bleeding enemy while your Rejuvenation is on you heals " ..
+                        "you for 2% of your maximum health, once every 10 sec.",
+                "Rake on your Cinder Wound target makes your next Blazing Strike within " ..
+                        "6 sec deal 30% more damage.",
             },
             slots = {
                 "Ignition",

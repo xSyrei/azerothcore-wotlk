@@ -680,6 +680,20 @@ utility or a tradeoff) take one pick each, from three.
       the first bolt (`HollowBolt`). Gathering, Lasting Echoes, Fervor, Shadow Mend and Swift Command are gone; Last
       Word moved to Command. Haunted Ground stays put (50 yards), Possession follows its target (one an enemy: the
       echo AI's GetGUID); Devouring Command and Frostbound Sermon (`HollowStrike`).
+  - **Extended Options, Splintered Crown, Duelist, Ember's Wrath** (redesigns; their picks cleared once by
+    `titan_runes_zz_extended_reset2.sql`): markers 91795 (Crown), 91820 (Duelist), 91845 (Ember's), new spells after
+    each. Our cores' numbers stay where above the document's (the Icicle's 30% of the Frostbolt, Pistol Shot's 60%,
+    Cinder Wound's 150% AP + 100% SP); the Duelist takes its cadence (every third Slash) and 10 Energy.
+    - Crown: Ice Lance (`CrownIceLance`), Cone of Cold (`CrownCone`, 5 a cast: the extended hit script's counter),
+      Blizzard (`spell_titan_rune_blizzard_hit` on its damage spells, `HailTick`); every Icicle through
+      `IcicleStrike` (Frostbite 91810, Deep Freeze, Permafrost 91226, Cold Front). Cold Snap 91811, Gathering
+      Blizzard 91812.
+    - Duelist: Loaded Steel 91835 after a Pistol Shot (`SabreBonus` spends it), Dead Aim 91844 (Eviscerate with
+      Opening Shot, `titan_runes_duelist_finisher`), Loaded Powder 91836 (Fire Blast) and its Powder Blast 91837.
+      Broadside stays, without options.
+    - Ember's: Searing Shred 91860 (`EmberClawHit`), Bite's extension and Smoldering Bite (`EmberBite`), the Flame
+      Shock spread (`SpreadCinder`); Burning Claws is Blazing Strike (`EmpoweredClaw`). Phoenix Scar in the dot
+      script's removal.
   - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
     30% of maximum health, 6 sec; Barkskin's cooldown 30 sec shorter, each Maul in Bear Form 3 sec more); Maul
     releases it (91342, a 10-yard cone): 75% AP plus all it absorbed (that part at most 250% AP).

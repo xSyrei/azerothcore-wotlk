@@ -4,6 +4,31 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Extended Options: Splintered Crown, Duelist, Ember's Wrath
+
+- Three more Legendary Runes get their **Extended Options**, each **redesigned** around the document: five new
+  choices in each slot. **Your picks for these three runes are cleared**: choose again.
+- **Splintered Crown**
+  - **Ice Lance** looses 2 Icicles at its target, **Cone of Cold** one at each enemy it hits (up to 5), and
+    **Blizzard** one every 2 sec of its channel. Every Icicle leaves **Frostbite** (6 sec): your Frostbolt and Ice
+    Lance deal 8% more there.
+  - Choices: Glacial Spear, Twin Fangs, Frozen Volley, Hailstorm Crown, Splintering Ice; Cold Snap, Brittle Impact,
+    Gathering Blizzard, Frostfire Fracture, Runic Rime; Deep Freeze, Glacial Wound, Permafrost, Whiteout, Cold Front.
+- **Duelist**
+  - Opening Shot now comes every **third** Sabre Slash, and **Pistol Shot costs 10 Energy** (was 20; still 60% of
+    your attack power). After a Pistol Shot, your next Sabre Slash deals 15% more and strikes a second enemy.
+    **Eviscerate** with Opening Shot ready loads your next Pistol Shot; **Fire Blast** makes it explode. Broadside
+    stays.
+  - Choices: Heavy Caliber, Gunslinger, Scattershot, Flame Pistol, Storm Pistol; Powder and Steel, Between the Eyes,
+    Loaded Powder, Marked Shot, Frozen Powder; Quick Draw, Cut and Run, Efficient Duelist, Healing Powder, Arcane
+    Powder. Rapid Shots and the Cannon-Fire choices are gone.
+- **Ember's Wrath**
+  - **Shred** on your Cinder Wound adds Fire damage; **Ferocious Bite** makes it last longer; **Fire Blast** on your
+    Flame Shock target spreads it.
+  - Choices: Cinderclaw, Wildfire Claws, Living Flame, Flame Shock Claws, Frozen Embers; Ember Rush, Smoldering Bite,
+    Firestorm Pounce, Phoenix Claws, Wildfire Swipe; Ashen Renewal, Flame-Tipped Claws, Phoenix Scar, Healing Flame,
+    Burning Rake.
+
 ### Extended Options: Spectral Blade, Elune's Guardian, Hollow Congregation
 
 - Three more Legendary Runes get their **Extended Options**: five choices in each slot.

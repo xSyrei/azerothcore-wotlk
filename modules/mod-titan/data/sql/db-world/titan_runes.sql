@@ -356,7 +356,20 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-686, 'spell_titan_rune_extended_hit'),
 (-19434, 'spell_titan_rune_extended_hit'),
 (-56641, 'spell_titan_rune_extended_hit'),
+(-30455, 'spell_titan_rune_extended_hit'),
+(-120, 'spell_titan_rune_extended_hit'),
+(-45477, 'spell_titan_rune_extended_hit'),
+(-2136, 'spell_titan_rune_extended_hit'),
 (12051, 'spell_titan_rune_evocation');
+
+-- Blizzard's damage (every rank's) with the Splintered Crown: Hailstorm's victims.
+DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_titan_rune_blizzard_hit';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(42208, 'spell_titan_rune_blizzard_hit'), (42209, 'spell_titan_rune_blizzard_hit'),
+(42210, 'spell_titan_rune_blizzard_hit'), (42211, 'spell_titan_rune_blizzard_hit'),
+(42212, 'spell_titan_rune_blizzard_hit'), (42213, 'spell_titan_rune_blizzard_hit'),
+(42198, 'spell_titan_rune_blizzard_hit'), (42937, 'spell_titan_rune_blizzard_hit'),
+(42938, 'spell_titan_rune_blizzard_hit');
 
 -- The Extended Options' damage over time: Phoenix Burn, Phantom Wound, Corrupted Blade.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91635, 91735, 91739) AND `ScriptName` = 'spell_titan_rune_dot';
@@ -367,7 +380,8 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 
 -- The Extended Options' strikes, heals and shields: shares of the Hero's power and hits, no bonuses of their own.
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 91641, 91660, 91661, 91662, 91663,
-    91688, 91689, 91710, 91711, 91736, 91737, 91738, 91740, 91741, 91761, 91762, 91786, 91787, 91788);
+    91688, 91689, 91710, 91711, 91736, 91737, 91738, 91740, 91741, 91761, 91762, 91786, 91787, 91788, 91837, 91838,
+    91840, 91842, 91860, 91861, 91862, 91863, 91864);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91636, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Burn tick'),
 (91637, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Eruption'),
@@ -391,7 +405,16 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91762, 0, 0, 0, 0, 'Elune''s Guardian - Frostfeather'),
 (91786, 0, 0, 0, 0, 'Hollow Congregation - Hollow Patch tick'),
 (91787, 0, 0, 0, 0, 'Hollow Congregation - Moonlit Congregation'),
-(91788, 0, 0, 0, 0, 'Hollow Congregation - Devouring Command');
+(91788, 0, 0, 0, 0, 'Hollow Congregation - Devouring Command'),
+(91837, 0, 0, 0, 0, 'Duelist - Powder Blast'),
+(91838, 0, 0, 0, 0, 'Duelist - Storm Pistol'),
+(91840, 0, 0, 0, 0, 'Duelist - Frozen Powder'),
+(91842, 0, 0, 0, 0, 'Duelist - Healing Powder'),
+(91860, 0, 0, 0, 0, 'Ember''s Wrath - Searing Shred'),
+(91861, 0, 0, 0, 0, 'Ember''s Wrath - Frozen Embers'),
+(91862, 0, 0, 0, 0, 'Ember''s Wrath - Phoenix Claws'),
+(91863, 0, 0, 0, 0, 'Ember''s Wrath - Phoenix Scar'),
+(91864, 0, 0, 0, 0, 'Ember''s Wrath - Healing Flame');
 
 -- Their damage over time: Lunar Wound, Astral Rupture.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';
