@@ -184,7 +184,7 @@ local function ById(id)
         end
     end
 end
-check(#EmberforgeRunesCatalog == 28 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
+check(#EmberforgeRunesCatalog == 31 and EmberforgeRunesCatalog[1].id == 21 and not ById(1) and not ById(20)
     and ById(22).name == "Rune of the Sanctified Paragon" and ById(23).name == "Rune of the Stormbound Conduit"
     and ById(24).name == "Rune of Echoing Thunder" and ById(25).name == "Rune of the Wellspring"
     and ById(26).name == "Rune of the Wandering Mist" and ById(34).name == "Rune of Arcane Mind"
@@ -258,6 +258,9 @@ for id, firsts in pairs({ [34] = { "Accelerated Thought", "Focused Intention", "
     [25] = { "Flowing Waters", "Deep Current", "Tidal Shelter" },
     [29] = { "Mercy", "Dawnwave", "Steadfast" },
     [31] = { "Twin Suns", "Splinterstorm", "Implosion" },
+    [49] = { "Devouring Maw", "Haunting Rift", "Lingering Torment" },
+    [50] = { "Glacial Edge", "Sharpened Wind", "Northern Endurance" },
+    [51] = { "Perfect Shot", "Marked Weakness", "Quick Recovery" },
     [26] = { "Flowing Currents", "Comforting Veil", "Effortless Breathing" },
     [33] = { "Alpha Predator", "Fixed Prey", "Final Pounce" } }) do
     local rune, entry = ById(id), EmberforgeRunesArt.runes[id]
@@ -324,8 +327,8 @@ local function listed()
     end
     return table.concat(ids, ",")
 end
-check(view.mode == "browse" and debug.browser.target == 1 and #browse.list == 28 and rows[1].shown and rows[4].shown
-    and debug.browser.count.text == "28 runes", "Browse lists every rune, four rows at a time")
+check(view.mode == "browse" and debug.browser.target == 1 and #browse.list == 31 and rows[1].shown and rows[4].shown
+    and debug.browser.count.text == "31 runes", "Browse lists every rune, four rows at a time")
 check(rows[1].rune.id == 21 and rows[1].status.text == "Usable now" and rows[2].status.text == "Coming soon",
     "the usable rune comes first; each row says where it stands")
 check(rows[1].choose.label.text == "Choose" and rows[1].choose.look == "primary" and rows[2].choose.look ~= "primary",
@@ -333,7 +336,7 @@ check(rows[1].choose.label.text == "Choose" and rows[1].choose.look == "primary"
 debug.browser.scripts.OnMouseWheel(debug.browser, -1)
 check(browse.offset == 1 and rows[1].rune == browse.list[2], "the mouse wheel scrolls the list")
 debug.browser.scripts.OnMouseWheel(debug.browser, -30)
-check(browse.offset == 24, "it stops at the end")
+check(browse.offset == 27, "it stops at the end")
 local search = debug.search
 for query, expected in pairs({ ["warlock glaive"] = "21", ["soothing heal"] = "25,26", ["rogue"] = "32,42",
     ["kill command"] = "33", ["prayer of mending"] = "38", ["icicle"] = "35" }) do
@@ -350,7 +353,7 @@ check(#browse.list == 0 and not rows[1].shown and debug.browser.empty.text:find(
     "nothing found says so")
 search.text = ""
 search.scripts.OnTextChanged(search)
-check(search.hint.shown and #browse.list == 28, "an empty search lists every rune again")
+check(search.hint.shown and #browse.list == 31, "an empty search lists every rune again")
 local chips = debug.chips
 chips[3]:Click()
 local healers = true
@@ -363,7 +366,7 @@ for _, rune in ipairs(browse.list) do
 end
 check(healers and #browse.list >= 3 and chips[3].on and not chips[1].on, "the Healing filter")
 chips[1]:Click()
-check(chips[1].on and #browse.list == 28, "All clears it")
+check(chips[1].on and #browse.list == 31, "All clears it")
 debug.toggle:Click()
 check(listed() == "21" and browse.usable, "Usable now: only the runes nothing is missing for")
 debug.toggle:Click()
@@ -678,7 +681,7 @@ for _, rune in ipairs(debug.browse.list) do
         hidden = false
     end
 end
-check(#retired == 3 and hidden and #debug.browse.list == 25 and debug.browser.count.text == "25 runes",
+check(#retired == 3 and hidden and #debug.browse.list == 28 and debug.browser.count.text == "28 runes",
     "retired runes are not listed, nor counted")
 frame:Hide()
 

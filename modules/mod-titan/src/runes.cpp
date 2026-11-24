@@ -139,6 +139,9 @@ namespace
     constexpr uint8 RUNE_RED_COMMUNION = 46;        // the Tank Collection's (src/tank_runes.cpp)
     constexpr uint8 RUNE_PRIMAL_WORLDWARDEN = 47;
     constexpr uint8 RUNE_BLACK_COVENANT = 48;
+    constexpr uint8 RUNE_HUNGERING_RIFT = 49;       // the updated compendium's (no earlier draft)
+    constexpr uint8 RUNE_HOWLING_NORTH = 50;
+    constexpr uint8 RUNE_TRUESHOT = 51;
 
     enum Spells : uint32
     {
@@ -559,6 +562,54 @@ namespace
         SPELL_SNOWBLIND                 = 91448,    // dodge
         SPELL_FROZEN_TRAIL              = 91449,    // the patch's look
         SPELL_RUNE_WHITEFANG            = 91450,
+
+        // The Hungering Rift (93300 on: the rune, its 15 markers, its spells).
+        SPELL_RUNE_HUNGERING_RIFT       = 93300,
+        SPELL_RIFT_MODIFIER_FIRST       = 93301,    // + slot * 5 + choice
+        SPELL_HUNGERING_RIFT            = 93316,    // on its host
+        SPELL_RIFT_LASH                 = 93317,
+        SPELL_LINGERING_TORMENT         = 93318,    // its tick 93319
+        SPELL_LINGERING_TORMENT_TICK    = 93319,
+        SPELL_LAST_GASP                 = 93320,
+        SPELL_PLAGUE_MAW                = 93321,
+        SPELL_DOOM_ECHO                 = 93322,
+        SPELL_SIPHON_CONDUIT            = 93323,
+        // Howling North (93325 on).
+        SPELL_RUNE_HOWLING_NORTH        = 93325,
+        SPELL_NORTH_MODIFIER_FIRST      = 93326,
+        SPELL_NORTHWIND                 = 93341,    // the mark
+        SPELL_FROST_BLADE               = 93342,
+        SPELL_NORTH_FOLLOW_UP           = 93343,    // Frost Strike's added Frost
+        SPELL_NORTH_FIELD               = 93344,    // the field's ground
+        SPELL_NORTH_FIELD_TICK          = 93345,
+        SPELL_FROZEN_GROUND             = 93346,    // its slow
+        SPELL_FLAME_OF_WINTER           = 93347,
+        SPELL_STORMBLADE                = 93348,
+        SPELL_RENDING_ICE               = 93349,    // its tick 93350
+        SPELL_RENDING_ICE_TICK          = 93350,
+        SPELL_ICY_WOUND                 = 93351,    // its tick 93352
+        SPELL_ICY_WOUND_TICK            = 93352,
+        SPELL_NORTHERN_ENDURANCE        = 93353,
+        SPELL_WINTERS_RENEWAL           = 93354,
+        // Trueshot (93360 on).
+        SPELL_RUNE_TRUESHOT             = 93360,
+        SPELL_TRUESHOT_MODIFIER_FIRST   = 93361,
+        SPELL_TRUESHOT                  = 93376,    // in Aimed Shot's place, 2 sec
+        SPELL_TRUESHOT_STEADY           = 93377,    // Steady Aim's, 2.5 sec
+        SPELL_EXPOSED_TARGET            = 93378,
+        SPELL_TRUESHOT_PIERCE           = 93379,
+        SPELL_ARCANE_PAYLOAD            = 93380,
+        SPELL_FLAME_ARROW               = 93381,
+        SPELL_FROSTPIERCER              = 93382,
+        SPELL_HUNTERS_MOBILITY          = 93383,
+        SPELL_STEADY_RECOVERY           = 93384,
+        SPELL_RENEWED_AIM               = 93385,
+        SPELL_CURSE_OF_AGONY            = 980,
+        SPELL_HOWLING_BLAST             = 49184,
+        SPELL_OBLITERATE                = 49020,
+        SPELL_FROST_STRIKE              = 49143,
+        SPELL_MULTI_SHOT                = 2643,
+        SPELL_CHIMERA_SHOT              = 53209,
         // 91451-91459: its first 9 markers, retired (the Extended Options' block, below)
         SPELL_FROZEN_TRAIL_TICK         = 91460,
         SPELL_FROZEN_TRAIL_SLOW         = 91461,
@@ -960,6 +1011,120 @@ namespace
     constexpr std::size_t DAWNWAVE_TARGETS = 3, SUNBURST_TARGETS = 2;
     constexpr int32 EARTHEN_OATH_MS = 4000, AFTERIMAGE_MS = 6000, OATH_MS = 2000, OATH_MOST_MS = 6000;
     constexpr uint32 SACRED_MS = 4000, DAWN_CHARGE_MS = 6000, OATH_EVERY_MS = 6000;
+
+    // The Hungering Rift's modifiers: slot (0 Maw, 1 Anchor, 2 Appetite) x 5 + choice.
+    enum RiftModifier : uint8
+    {
+        MOD_DEVOURING_MAW, MOD_MANY_TONGUES, MOD_BLACK_BREATH, MOD_PLAGUE_MAW, MOD_MOON_EATER,
+        MOD_HAUNTING_RIFT, MOD_RIFT_OPEN_WOUND, MOD_AT_YOUR_BACK, MOD_PAINFUL_ANCHORING, MOD_SIPHON_CONDUIT,
+        MOD_LINGERING_TORMENT, MOD_LAST_GASP, MOD_ENDLESS_APPETITE, MOD_DOOM_ECHO, MOD_NECROTIC_APPETITE,
+    };
+
+    // The Hungering Rift's tuning: Shadow Bolt (the Hero's own) on their Corruption target opens a Rift on it for 6
+    // sec: a lash every 2 sec (1.5 while they channel Drain Soul there) for 25% of their Shadow spell power, 5% more
+    // for each of their damage over time effects on the host (5 at most). Shadow Bolt on the host: the next lash
+    // also strikes another Corruption target within 8 yards for half. Death Coil on a Corruption target opens or
+    // renews it.
+    constexpr int32 RIFT_MS = 6000;
+    constexpr uint32 LASH_MS = 2000, DRAIN_LASH_MS = 1500;
+    constexpr float LASH_POWER = 0.25f, LASH_PER_DOT = 0.05f, RIFT_REACH = 8.0f, RIFT_PENDING_SHARE = 0.5f;
+    constexpr uint32 LASH_MOST_DOTS = 5;
+    // Its options: Devouring Maw (35% more), Many Tongues (2 more Corruption targets within 8 yards, 60%; Shadow
+    // Bolt's pending lash 20% more instead), Black Breath (a 12 yard cone beyond the host, 4 more at half), Plague
+    // Maw (their Frost Fever host: 15% of attack power as Frost), Moon-Eater (their Moonfire host: 20% more, Moonfire
+    // 1 sec longer, 4 sec an application); Haunting Rift (the host 5 yards on: 25% more, 3 sec apart), Open Wound
+    // (the Rift stays where it opened, reaching 20 yards; 10% more a lash in a row, 30% at most), At Your Back (it
+    // follows the Hero onto their Corruption target within 30 yards; a new target, a 50% lash, 4 sec apart), Painful
+    // Anchoring (their Shadow Word: Pain host: one more Pain target within 8 yards, half), Siphon Conduit (their
+    // Drain Life on the host: 25% of a lash back, 1% of health a second at most); Lingering Torment (25% of a lash
+    // over 6 sec), Last Gasp (every third lash 30% about the host; its death a pending one at half), Endless Appetite
+    // (Corruption 1 sec longer a lash, 4 sec an application; the host's death moves the Rift to a corrupted enemy
+    // within 15 yards), Doom Echo (every third lash on their Curse of Agony host: 25%), Necrotic Appetite (Death Coil
+    // on the host: 2 sec longer, once a Rift).
+    constexpr float DEVOURING_MAW = 1.35f, MANY_TONGUES_SHARE = 0.6f, MANY_TONGUES_PENDING = 1.2f;
+    constexpr float BLACK_BREATH_RANGE = 12.0f, BLACK_BREATH_SHARE = 0.5f, BLACK_BREATH_HALF_ARC = float(M_PI) / 4;
+    constexpr float PLAGUE_MAW_AP = 0.15f, MOON_EATER = 1.2f, HAUNTING_DISTANCE = 5.0f, HAUNTING_RIFT = 1.25f;
+    constexpr float OPEN_WOUND_REACH = 20.0f, OPEN_WOUND_STEP = 0.1f, OPEN_WOUND_MOST = 0.3f;
+    constexpr float AT_YOUR_BACK_RANGE = 30.0f, AT_YOUR_BACK_SHARE = 0.5f, PAINFUL_SHARE = 0.5f;
+    constexpr float SIPHON_CONDUIT_SHARE = 0.25f, SIPHON_CONDUIT_CAP_PCT = 1.0f, TORMENT_SHARE = 0.25f;
+    constexpr float LAST_GASP_POWER = 0.3f, LAST_GASP_DEATH = 0.5f, LAST_GASP_RADIUS = 8.0f, DOOM_ECHO_POWER = 0.25f;
+    constexpr float APPETITE_REACH = 15.0f;
+    constexpr std::size_t MANY_TONGUES_TARGETS = 2, BLACK_BREATH_TARGETS = 4, LAST_GASP_TARGETS = 5;
+    constexpr int32 MOON_EATER_MS = 1000, MOON_EATER_MOST_MS = 4000, APPETITE_MS = 1000, APPETITE_MOST_MS = 4000;
+    constexpr int32 TORMENT_MS = 6000, NECROTIC_MS = 2000;
+    constexpr uint32 HAUNTING_EVERY_MS = 3000, AT_YOUR_BACK_EVERY_MS = 4000;
+
+    // Howling North's modifiers: slot (0 Blade, 1 Wind, 2 Winter) x 5 + choice.
+    enum NorthModifier : uint8
+    {
+        MOD_GLACIAL_EDGE, MOD_RIMEBLADE, MOD_WINTERS_REACH, MOD_FLAME_OF_WINTER, MOD_MARKED_NORTH,
+        MOD_SHARPENED_WIND, MOD_FROZEN_GROUND, MOD_WINTERS_RETURN, MOD_STORMBLADE, MOD_RENDING_ICE,
+        MOD_NORTHERN_ENDURANCE, MOD_ICY_WOUND, MOD_COLD_RECOVERY, MOD_WINTERS_RENEWAL, MOD_GLACIAL_FLOW,
+    };
+
+    // Howling North's tuning: Howling Blast marks up to 5 enemies it hits with Northwind for 6 sec and readies one
+    // blade; Obliterate on a marked enemy looses it (3 sec apart): 45% of attack power as Frost. Icy Touch on a marked
+    // enemy: the next blade 20% more, piercing one more enemy for half. Frost Strike on the blade's target within 6
+    // sec: 15% of attack power as Frost too. Frostbolt on a marked enemy: the next blade leaves a 4 sec field, 10%
+    // of spell power a second to up to 3 enemies.
+    constexpr int32 NORTHWIND_MS = 6000, NORTH_FIELD_MS = 4000, NORTH_FOLLOW_MS = 6000, NORTH_DOT_MS = 6000;
+    constexpr uint32 BLADE_EVERY_MS = 3000, NORTHWIND_WINDOW_MS = 500, RIMEBLADE_SPACING_MS = 300;
+    constexpr float BLADE_AP = 0.45f, NORTH_ICY = 1.2f, NORTH_PIERCE_SHARE = 0.5f, NORTH_LINE = 20.0f;
+    constexpr float NORTH_HALF_WIDTH = 2.0f, NORTH_FOLLOW_AP = 0.15f, NORTH_FIELD_POWER = 0.1f;
+    constexpr float NORTH_FIELD_RADIUS = 6.0f;
+    constexpr std::size_t NORTHWIND_TARGETS = 5, NORTH_FIELD_TARGETS = 3;
+    // Its options: Glacial Edge (40% more), Rimeblade (3 blades, 40% each; Frost Strike waits for the last),
+    // Winter's Reach (pierces up to 4 for half), Flame of Winter (their Flame Shock target: 20% of spell power as
+    // Fire), Marked North (their Hunter's Mark target: one more nearby for half); Sharpened Wind (Icy Touch's 35%),
+    // Frozen Ground (the field 50% more, 25% slower), Winter's Return (Frost Strike's 25%), Stormblade (Lightning Bolt
+    // on a marked enemy: the next blade 25% of spell power as Nature), Rending Ice (their Rend target: 30% over 6 sec
+    // as a bleed); Northern Endurance (10% faster for 5 sec, the next Frost Strike 10% more), Icy Wound (30% over 6
+    // sec as Frost), Cold Recovery (Howling Blast 1 sec sooner, 8 sec apart), Winter's Renewal (their Renew on them:
+    // 30% of spell power healed, 10 sec apart), Glacial Flow (their Frostbolt's slow on the target: the next Frost
+    // Strike within 6 sec 20% more).
+    constexpr float GLACIAL_EDGE = 1.4f, RIMEBLADE_SHARE = 0.4f, FLAME_OF_WINTER_POWER = 0.2f;
+    constexpr float MARKED_NORTH_SHARE = 0.5f;
+    constexpr float SHARPENED_WIND = 1.35f, FROZEN_GROUND_MORE = 1.5f, WINTERS_RETURN_AP = 0.25f;
+    constexpr float STORMBLADE_POWER = 0.25f, RENDING_ICE_SHARE = 0.3f, ENDURANCE_STRIKE = 1.1f, ICY_WOUND_SHARE = 0.3f;
+    constexpr float WINTERS_RENEWAL_POWER = 0.3f, GLACIAL_FLOW = 1.2f, MARKED_NORTH_RANGE = 8.0f;
+    constexpr std::size_t RIMEBLADES = 3, WINTERS_REACH_TARGETS = 4;
+    constexpr int32 COLD_RECOVERY_MS = 1000;
+    constexpr uint32 COLD_RECOVERY_EVERY_MS = 8000, WINTERS_RENEWAL_EVERY_MS = 10000;
+
+    // Trueshot's modifiers: slot (0 Shot, 1 Mark, 2 Recovery) x 5 + choice.
+    enum TrueshotModifier : uint8
+    {
+        MOD_PERFECT_SHOT, MOD_PIERCING_SHOT, MOD_STEADY_AIM, MOD_FLAME_ARROW, MOD_FROSTPIERCER,
+        MOD_MARKED_WEAKNESS, MOD_WIDE_TRAJECTORY, MOD_ARCANE_ARROW, MOD_ARCANE_CALIBRATION, MOD_MARKED_RICOCHET,
+        MOD_QUICK_RECOVERY, MOD_HUNTERS_MOBILITY, MOD_FOLLOW_UP_SHOT, MOD_STEADY_RECOVERY, MOD_RENEWED_AIM,
+    };
+
+    // Trueshot's tuning: Aimed Shot becomes Trueshot (a 2 sec stationary windup, its cooldown and cost): the Hero's
+    // Aimed Shot for 45% more, piercing up to 4 enemies behind its target (15 yards) for 40% of its hit. Its hit on
+    // their Hunter's Mark target leaves Exposed Target (6 sec): their next Arcane Shot or Chimera Shot 20% more.
+    // Multi-Shot: the next Trueshot within 8 sec a wider line and 20% more to the others. Arcane Blast: the next
+    // within 8 sec 30% of spell power as Arcane to its target.
+    constexpr float TRUESHOT_MORE = 1.45f, TRUESHOT_PIERCE_SHARE = 0.4f, TRUESHOT_LINE = 15.0f;
+    constexpr float TRUESHOT_HALF_WIDTH = 1.5f, WIDE_HALF_WIDTH = 3.0f, MULTI_PIERCE_MORE = 1.2f, EXPOSED_MORE = 1.2f;
+    constexpr float ARCANE_PAYLOAD_POWER = 0.3f;
+    constexpr std::size_t TRUESHOT_PIERCES = 4;
+    constexpr int32 TRUESHOT_EXPOSED_MS = 6000;
+    constexpr uint32 TRUESHOT_CHARGE_MS = 8000, TRUESHOT_PENDING_MS = 3000;
+    // Its options: Perfect Shot (30% more), Piercing Shot (the others 65%), Steady Aim (2.5 sec; 30% more, the others
+    // 20% more), Flame Arrow (their Flame Shock target: 30% of spell power as Fire), Frostpiercer (their Frostbolt's
+    // slow on it: 25% of ranged attack power as Frost); Marked Weakness (Exposed Target 35%), Wide Trajectory
+    // (Multi-Shot's line 2 more), Arcane Arrow (the payload 50%), Arcane Calibration (the payload 40% on up to 2
+    // pierced), Marked Ricochet (their marked target: one more within 8 yards, 25%); Quick Recovery (Arcane Shot 2 sec
+    // sooner), Hunter's Mobility (25% faster for 4 sec), Follow-Up Shot (the next Arcane Shot within 6 sec 20% more),
+    // Steady Recovery (the next Steady Shot 20% quicker), Renewed Aim (their Renew on them: 30% of spell power
+    // healed, 10 sec apart).
+    constexpr float PERFECT_SHOT = 1.3f, PIERCING_SHARE = 0.65f, STEADY_AIM_MORE = 1.3f, STEADY_AIM_PIERCE = 1.2f;
+    constexpr float FLAME_ARROW_POWER = 0.3f, FROSTPIERCER_RAP = 0.25f, MARKED_WEAKNESS = 1.35f;
+    constexpr float ARCANE_ARROW_POWER = 0.5f, CALIBRATION_SHARE = 0.4f, RICOCHET_SHARE = 0.25f, RICOCHET_RANGE = 8.0f;
+    constexpr float FOLLOW_UP_MORE = 1.2f, RENEWED_AIM_POWER = 0.3f;
+    constexpr std::size_t WIDE_MORE_PIERCES = 2, CALIBRATION_TARGETS = 2;
+    constexpr int32 QUICK_RECOVERY_MS = 2000, FOLLOW_UP_MS = 6000;
+    constexpr uint32 RENEWED_AIM_EVERY_MS = 10000;
 
     // The Hollow Congregation's modifiers (its Extended Options, a redesign): slot (0 Congregation, 1 Sermon, 2
     // Command) x 5 + choice. The Sermon's first three are the ones it had; the other two slots are new (their picks
@@ -1703,6 +1868,17 @@ namespace
             { RUNE_BLACK_COVENANT, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_SUMMON_VOIDWALKER }, { TankRunes::SPELL_SEARING_PAIN } },
               TankRunes::SPELL_RUNE_BLACK_COVENANT, TankRunes::SPELL_COVENANT_MODIFIER_FIRST, MAX_CHOICES },
+            // Ranged DPS: Shadow Bolt on the Hero's Corruption opens the Rift.
+            { RUNE_HUNGERING_RIFT, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_SHADOW_BOLT }, { SPELL_CORRUPTION } }, SPELL_RUNE_HUNGERING_RIFT, SPELL_RIFT_MODIFIER_FIRST,
+              MAX_CHOICES },
+            // Melee DPS: Howling Blast marks, Obliterate looses the blade.
+            { RUNE_HOWLING_NORTH, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
+              { { SPELL_HOWLING_BLAST }, { SPELL_OBLITERATE } }, SPELL_RUNE_HOWLING_NORTH, SPELL_NORTH_MODIFIER_FIRST,
+              MAX_CHOICES },
+            // Ranged DPS: Aimed Shot becomes Trueshot.
+            { RUNE_TRUESHOT, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
+              { { SPELL_AIMED_SHOT } }, SPELL_RUNE_TRUESHOT, SPELL_TRUESHOT_MODIFIER_FIRST, MAX_CHOICES },
         };
         return runes;
     }
@@ -1731,6 +1907,44 @@ namespace
     {
         RuneDef const* def = FindRune(rune);
         uint8 modifier = slot * (def ? def->Choices : CHOICES) + choice;
+        if (rune == RUNE_HUNGERING_RIFT)
+            switch (modifier)
+            {
+                case MOD_PLAGUE_MAW: return { { SPELL_ICY_TOUCH } };
+                case MOD_MOON_EATER: return { { SPELL_MOONFIRE } };
+                case MOD_PAINFUL_ANCHORING: return { { SPELL_SHADOW_WORD_PAIN } };
+                case MOD_SIPHON_CONDUIT: return { { TankRunes::SPELL_DRAIN_LIFE } };
+                case MOD_DOOM_ECHO: return { { SPELL_CURSE_OF_AGONY } };
+                case MOD_NECROTIC_APPETITE: return { { SPELL_DEATH_COIL_DK, SPELL_DEATH_COIL_WARLOCK } };
+                default: break;
+            }
+        if (rune == RUNE_HOWLING_NORTH)
+            switch (modifier)
+            {
+                case MOD_RIMEBLADE: case MOD_WINTERS_RETURN: case MOD_NORTHERN_ENDURANCE: case MOD_GLACIAL_FLOW:
+                    return { { SPELL_FROST_STRIKE } };
+                case MOD_FLAME_OF_WINTER: return { { SPELL_FLAME_SHOCK } };
+                case MOD_MARKED_NORTH: return { { SPELL_HUNTERS_MARK } };
+                case MOD_SHARPENED_WIND: return { { SPELL_ICY_TOUCH } };
+                case MOD_FROZEN_GROUND: return { { SPELL_FROSTBOLT } };
+                case MOD_STORMBLADE: return { { SPELL_LIGHTNING_BOLT } };
+                case MOD_RENDING_ICE: return { { SPELL_REND } };
+                case MOD_WINTERS_RENEWAL: return { { SPELL_RENEW } };
+                default: break;
+            }
+        if (rune == RUNE_TRUESHOT)
+            switch (modifier)
+            {
+                case MOD_FLAME_ARROW: return { { SPELL_FLAME_SHOCK } };
+                case MOD_FROSTPIERCER: return { { SPELL_FROSTBOLT } };
+                case MOD_WIDE_TRAJECTORY: return { { SPELL_MULTI_SHOT } };
+                case MOD_ARCANE_ARROW: case MOD_ARCANE_CALIBRATION: return { { SPELL_ARCANE_BLAST } };
+                case MOD_MARKED_RICOCHET: return { { SPELL_HUNTERS_MARK } };
+                case MOD_QUICK_RECOVERY: case MOD_FOLLOW_UP_SHOT: return { { SPELL_ARCANE_SHOT } };
+                case MOD_STEADY_RECOVERY: return { { SPELL_STEADY_SHOT } };
+                case MOD_RENEWED_AIM: return { { SPELL_RENEW } };
+                default: break;
+            }
         if (rune == RUNE_SHATTERED_SUN)
             switch (modifier)
             {
@@ -2145,6 +2359,28 @@ namespace
         Position WakeOffset;                        // Relentless: from its target, as cut
 
         // The Dawnbound Crusader.
+        // The Hungering Rift: its host and times (game ms), where it opened (Open Wound), its lashes.
+        struct RiftState
+        {
+            ObjectGuid Host, Target;                // Target: At Your Back's last
+            Position At, HostAt;                    // where it opened; the host at the last lash (Haunting Rift)
+            uint32 Map = 0, Until = 0, Timer = 0, Lashes = 0, HauntAt = 0, BackAt = 0;
+            uint32 InRow = 0;                       // Open Wound's lashes in a row
+            bool Pending = false, Extended = false;
+        } Rift;
+        // Howling North: the blade readied, its charges, the field (game ms).
+        bool NorthReady = false, NorthIcy = false, NorthFrost = false, NorthStorm = false;
+        uint32 NorthwindAt = 0, BladeAt = 0, NorthMarks = 0, ColdRecoveryAt = 0, WintersRenewalAt = 0;
+        ObjectGuid FollowTarget;
+        uint32 FollowUntil = 0, FollowStrikeUntil = 0;     // Frost Strike's Frost; its 10%/20% more (Endurance, Flow)
+        float FollowStrikeMore = 1.0f;
+        Position NorthFieldAt;
+        uint32 NorthFieldMap = 0, NorthFieldUntil = 0, NorthFieldTimer = 0;
+        // Trueshot: its pending Aimed Shot, the charges (game ms).
+        ObjectGuid ExposedTarget;
+        uint32 TrueshotPendingUntil = 0, MultiChargeUntil = 0, ArcaneChargeUntil = 0, FollowUpUntil = 0;
+        uint32 RenewedAimAt = 0;
+
         // The Dawnbound Crusader: the vow, the mark, the echo's time and charges (game ms), Communion's turn,
         // Shared Pilgrimage's places.
         ObjectGuid Vow, DawnMark;
@@ -3855,6 +4091,9 @@ namespace
             case SPELL_ASTRAL_RUPTURE: return SPELL_ASTRAL_RUPTURE_TICK;
             case SPELL_PHOENIX_BURN: return SPELL_PHOENIX_BURN_TICK;
             case SPELL_FLAME_ECHO: return SPELL_FLAME_ECHO_TICK;
+            case SPELL_LINGERING_TORMENT: return SPELL_LINGERING_TORMENT_TICK;
+            case SPELL_RENDING_ICE: return SPELL_RENDING_ICE_TICK;
+            case SPELL_ICY_WOUND: return SPELL_ICY_WOUND_TICK;
             case SPELL_PHANTOM_WOUND: return SPELL_PHANTOM_WOUND_TICK;
             case SPELL_RENDING_MAUL: return SPELL_RENDING_MAUL_TICK;
             case SPELL_CORRUPTED_BLADE: return SPELL_CORRUPTED_BLADE_TICK;
@@ -5059,6 +5298,630 @@ namespace
             player->CastCustomSpell(enemy, SPELL_FRACTURE, &damage, nullptr, nullptr, true);
     }
 
+    // ---- The Hungering Rift ------------------------------------------------------------------------------------
+
+    uint32 KnownRank(Player* player, uint32 firstRank);
+
+    bool HasRiftMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_RIFT_MODIFIER_FIRST, modifier);
+    }
+
+    // The Hero's distinct damage over time effects on the unit (5 at most).
+    uint32 OwnDots(Player* player, Unit* unit)
+    {
+        std::set<uint32> dots;
+        for (auto const& [id, application] : unit->GetAppliedAuras())
+        {
+            Aura const* aura = application->GetBase();
+            if (aura->GetCasterGUID() != player->GetGUID())
+                continue;
+            for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+                if (AuraEffect const* effect = aura->GetEffect(i); effect
+                    && (effect->GetAuraType() == SPELL_AURA_PERIODIC_DAMAGE
+                        || effect->GetAuraType() == SPELL_AURA_PERIODIC_LEECH
+                        || effect->GetAuraType() == SPELL_AURA_PERIODIC_DAMAGE_PERCENT
+                        || (effect->GetAuraType() == SPELL_AURA_PERIODIC_DUMMY && DotDamageSpell(aura->GetId()))))
+                    dots.insert(aura->GetSpellInfo()->GetFirstRankSpell()->Id);
+        }
+        return std::min<uint32>(LASH_MOST_DOTS, uint32(dots.size()));
+    }
+
+    bool OwnCorruption(Player* player, Unit* unit)
+    {
+        return unit && unit->GetAuraOfRankedSpell(SPELL_CORRUPTION, player->GetGUID());
+    }
+
+    // Another enemy within range of the center with the Hero's aura (the chain's first rank), but except, else
+    // nullptr.
+    Unit* OtherAfflicted(Player* player, Unit* center, float range, uint32 firstRank, Unit* except)
+    {
+        for (Unit* enemy : EnemiesAround(player, center, range))
+            if (enemy != center && enemy != except && enemy->GetAuraOfRankedSpell(firstRank, player->GetGUID()))
+                return enemy;
+        return nullptr;
+    }
+
+    // A Rift opened (or renewed) on the host.
+    void OpenRift(Player* player, Unit* host)
+    {
+        State::RiftState& rift = StateOf(player).Rift;
+        bool renew = rift.Until && Now() < rift.Until && rift.Host == host->GetGUID();
+        if (!renew)
+        {
+            if (Unit* old = rift.Host ? ObjectAccessor::GetUnit(*player, rift.Host) : nullptr)
+                old->RemoveAurasDueToSpell(SPELL_HUNGERING_RIFT, player->GetGUID());
+            rift = State::RiftState();
+            rift.Host = host->GetGUID();
+            rift.Target = host->GetGUID();
+            rift.At = host->GetPosition();
+            rift.HostAt = host->GetPosition();
+            rift.Map = player->GetMapId();
+        }
+        rift.Until = Now() + RIFT_MS;
+        Lasting(player, host, SPELL_HUNGERING_RIFT, RIFT_MS);
+    }
+
+    void CloseRift(Player* player)
+    {
+        State::RiftState& rift = StateOf(player).Rift;
+        if (Unit* host = rift.Host ? ObjectAccessor::GetUnit(*player, rift.Host) : nullptr)
+            host->RemoveAurasDueToSpell(SPELL_HUNGERING_RIFT, player->GetGUID());
+        rift = State::RiftState();
+    }
+
+    // Last Gasp's eruption about the unit.
+    void RiftEruption(Player* player, Unit* at, float share)
+    {
+        float burst = RunePower(player, SPELL_SCHOOL_MASK_SHADOW, SPELL_SHADOW_BOLT) * LAST_GASP_POWER * share;
+        std::size_t count = 0;
+        for (Unit* enemy : EnemiesAround(player, at, LAST_GASP_RADIUS))
+            if (count++ < LAST_GASP_TARGETS)
+                Strike(player, enemy, SPELL_LAST_GASP, burst);
+    }
+
+    // One lash (share: At Your Back's extra one) on the host, and what follows it.
+    void Lash(Player* player, Unit* host, float share)
+    {
+        State& state = StateOf(player);
+        State::RiftState& rift = state.Rift;
+        ObjectGuid me = player->GetGUID();
+        float power = RunePower(player, SPELL_SCHOOL_MASK_SHADOW, SPELL_SHADOW_BOLT);
+        float lash = power * LASH_POWER * (1.0f + LASH_PER_DOT * OwnDots(player, host)) * share;
+        if (HasRiftMarker(player, MOD_DEVOURING_MAW))
+            lash *= DEVOURING_MAW;
+        if (HasRiftMarker(player, MOD_RIFT_OPEN_WOUND))
+            lash *= 1.0f + std::min(OPEN_WOUND_MOST, OPEN_WOUND_STEP * float(rift.InRow++));
+        if (HasRiftMarker(player, MOD_HAUNTING_RIFT) && host->GetExactDist2d(&rift.HostAt) >= HAUNTING_DISTANCE
+            && Ready(rift.HauntAt, HAUNTING_EVERY_MS))
+        {
+            rift.HauntAt = Now();
+            lash *= HAUNTING_RIFT;
+        }
+        rift.HostAt = host->GetPosition();
+        Aura* moonfire = HasRiftMarker(player, MOD_MOON_EATER)
+            ? host->GetAuraOfRankedSpell(SPELL_MOONFIRE, me) : nullptr;
+        if (moonfire)
+        {
+            lash *= MOON_EATER;
+            ExtendAura(moonfire, MOON_EATER_MS, MOON_EATER_MOST_MS);
+        }
+        bool pending = rift.Pending;
+        rift.Pending = false;
+        bool tongues = HasRiftMarker(player, MOD_MANY_TONGUES);
+        if (pending && tongues)
+            lash *= MANY_TONGUES_PENDING;
+        Strike(player, host, SPELL_RIFT_LASH, lash);
+        ++rift.Lashes;
+        // Others: Shadow Bolt's pending one, Many Tongues, Black Breath, Painful Anchoring.
+        std::set<Unit*> struck = { host };
+        auto also = [&](Unit* enemy, float part)
+        {
+            if (enemy && struck.insert(enemy).second)
+                Strike(player, enemy, SPELL_RIFT_LASH, lash * part);
+        };
+        if (pending && !tongues)
+            also(OtherAfflicted(player, host, RIFT_REACH, SPELL_CORRUPTION, nullptr), RIFT_PENDING_SHARE);
+        if (tongues)
+        {
+            std::size_t count = 0;
+            for (Unit* enemy : EnemiesAround(player, host, RIFT_REACH))
+                if (enemy != host && count < MANY_TONGUES_TARGETS && OwnCorruption(player, enemy))
+                {
+                    ++count;
+                    also(enemy, MANY_TONGUES_SHARE);
+                }
+        }
+        if (HasRiftMarker(player, MOD_BLACK_BREATH))
+        {
+            float facing = player->GetAngle(host);
+            std::size_t count = 0;
+            for (Unit* enemy : EnemiesAround(player, host, BLACK_BREATH_RANGE))
+                if (enemy != host && count < BLACK_BREATH_TARGETS
+                    && InArc(host->GetPosition(), facing, enemy->GetPosition(), BLACK_BREATH_HALF_ARC))
+                {
+                    ++count;
+                    also(enemy, BLACK_BREATH_SHARE);
+                }
+        }
+        if (HasRiftMarker(player, MOD_PAINFUL_ANCHORING) && host->GetAuraOfRankedSpell(SPELL_SHADOW_WORD_PAIN, me))
+            also(OtherAfflicted(player, host, RIFT_REACH, SPELL_SHADOW_WORD_PAIN, nullptr), PAINFUL_SHARE);
+        // The host's: Plague Maw, Siphon Conduit, Lingering Torment, Endless Appetite, every third lash.
+        if (HasRiftMarker(player, MOD_PLAGUE_MAW) && host->HasAura(SPELL_FROST_FEVER, me))
+            Strike(player, host, SPELL_PLAGUE_MAW, player->GetTotalAttackPowerValue(BASE_ATTACK) * PLAGUE_MAW_AP);
+        if (HasRiftMarker(player, MOD_SIPHON_CONDUIT))
+            if (Spell* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL); channel
+                && channel->m_spellInfo->GetFirstRankSpell()->Id == TankRunes::SPELL_DRAIN_LIFE
+                && player->GetGuidValue(UNIT_FIELD_CHANNEL_OBJECT) == host->GetGUID())
+            {
+                float cap = float(player->GetMaxHealth()) * SIPHON_CONDUIT_CAP_PCT / 100.0f * LASH_MS / 1000.0f;
+                Mend(player, player, SPELL_SIPHON_CONDUIT, std::min(lash * SIPHON_CONDUIT_SHARE, cap));
+            }
+        if (HasRiftMarker(player, MOD_LINGERING_TORMENT))
+            AddDot(player, host, SPELL_LINGERING_TORMENT, lash * TORMENT_SHARE, TORMENT_MS);
+        if (HasRiftMarker(player, MOD_ENDLESS_APPETITE))
+            if (Aura* corruption = host->GetAuraOfRankedSpell(SPELL_CORRUPTION, me))
+                ExtendAura(corruption, APPETITE_MS, APPETITE_MOST_MS);
+        if (rift.Lashes % 3 == 0)
+        {
+            if (HasRiftMarker(player, MOD_LAST_GASP))
+                RiftEruption(player, host, 1.0f);
+            if (HasRiftMarker(player, MOD_DOOM_ECHO) && host->GetAuraOfRankedSpell(SPELL_CURSE_OF_AGONY, me))
+                Strike(player, host, SPELL_DOOM_ECHO, power * DOOM_ECHO_POWER);
+        }
+    }
+
+    // The Rift's lash timer; its host's death (Last Gasp, Endless Appetite); At Your Back's following.
+    void RiftTick(Player* player, uint32 diff)
+    {
+        State::RiftState& rift = StateOf(player).Rift;
+        if (!rift.Until)
+            return;
+        if (Now() >= rift.Until || rift.Map != player->GetMapId())
+        {
+            CloseRift(player);
+            return;
+        }
+        Unit* host = ObjectAccessor::GetUnit(*player, rift.Host);
+        if (HasRiftMarker(player, MOD_AT_YOUR_BACK))
+        {
+            Unit* chosen = player->GetSelectedUnit();
+            if (Valid(player, chosen) && OwnCorruption(player, chosen)
+                && player->IsWithinDistInMap(chosen, AT_YOUR_BACK_RANGE) && chosen != host)
+            {
+                if (host)
+                    host->RemoveAurasDueToSpell(SPELL_HUNGERING_RIFT, player->GetGUID());
+                host = chosen;
+                rift.Host = chosen->GetGUID();
+                Lasting(player, chosen, SPELL_HUNGERING_RIFT, int32(rift.Until - Now()));
+                if (Ready(rift.BackAt, AT_YOUR_BACK_EVERY_MS))
+                {
+                    rift.BackAt = Now();
+                    Lash(player, chosen, AT_YOUR_BACK_SHARE);
+                }
+            }
+        }
+        if (!host || !host->IsAlive())
+        {
+            if (HasRiftMarker(player, MOD_LAST_GASP) && host && rift.Lashes % 3)
+                RiftEruption(player, host, LAST_GASP_DEATH);
+            Unit* next = HasRiftMarker(player, MOD_ENDLESS_APPETITE) && host
+                ? OtherAfflicted(player, host, APPETITE_REACH, SPELL_CORRUPTION, host) : nullptr;
+            if (!next)
+            {
+                CloseRift(player);
+                return;
+            }
+            rift.Host = next->GetGUID();
+            rift.HostAt = next->GetPosition();
+            Lasting(player, next, SPELL_HUNGERING_RIFT, int32(rift.Until - Now()));
+            return;
+        }
+        bool reach = !HasRiftMarker(player, MOD_RIFT_OPEN_WOUND) || host->GetExactDist2d(&rift.At) <= OPEN_WOUND_REACH;
+        Spell* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
+        bool draining = channel && channel->m_spellInfo->GetFirstRankSpell()->Id == SPELL_DRAIN_SOUL
+            && player->GetGuidValue(UNIT_FIELD_CHANNEL_OBJECT) == host->GetGUID();
+        rift.Timer += diff;
+        if (rift.Timer < (draining ? DRAIN_LASH_MS : LASH_MS))
+            return;
+        rift.Timer = 0;
+        if (reach)
+            Lash(player, host, 1.0f);
+        else
+            rift.InRow = 0;
+    }
+
+    // Shadow Bolt and Death Coil (the Hero's own) with the Hungering Rift.
+    void RiftHit(Player* player, Unit* target, uint32 firstRank)
+    {
+        State::RiftState& rift = StateOf(player).Rift;
+        bool deathCoil = firstRank == SPELL_DEATH_COIL_DK || firstRank == SPELL_DEATH_COIL_WARLOCK;
+        bool onHost = rift.Until && Now() < rift.Until && rift.Host == target->GetGUID();
+        if (firstRank == SPELL_SHADOW_BOLT)
+        {
+            if (onHost)
+                rift.Pending = true;
+            else if (OwnCorruption(player, target))
+                OpenRift(player, target);
+            return;
+        }
+        if (!deathCoil)
+            return;
+        if (onHost && HasRiftMarker(player, MOD_NECROTIC_APPETITE) && !rift.Extended)
+        {
+            rift.Extended = true;
+            rift.Until += NECROTIC_MS;
+            if (Aura* aura = target->GetAura(SPELL_HUNGERING_RIFT, player->GetGUID()))
+            {
+                aura->SetMaxDuration(aura->GetMaxDuration() + NECROTIC_MS);
+                aura->SetDuration(aura->GetDuration() + NECROTIC_MS);
+            }
+            return;
+        }
+        if (OwnCorruption(player, target))
+            OpenRift(player, target);
+    }
+
+    // ---- Howling North -----------------------------------------------------------------------------------------
+
+    bool HasNorthMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_NORTH_MODIFIER_FIRST, modifier);
+    }
+
+    bool Northwind(Player* player, Unit* unit)
+    {
+        return unit && unit->GetAura(SPELL_NORTHWIND, player->GetGUID());
+    }
+
+    // One blade from the Hero through the target (share: Rimeblade's); its pierce and what it leaves.
+    void FrostBlade(Player* player, Unit* target, float share, bool last)
+    {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        if (!target->IsAlive())
+            return;
+        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
+        float spell = RunePower(player, SPELL_SCHOOL_MASK_FROST, 0);
+        float blade = ap * BLADE_AP * share;
+        if (HasNorthMarker(player, MOD_GLACIAL_EDGE))
+            blade *= GLACIAL_EDGE;
+        bool icy = state.NorthIcy;
+        if (icy)
+            blade *= HasNorthMarker(player, MOD_SHARPENED_WIND) ? SHARPENED_WIND : NORTH_ICY;
+        Strike(player, target, SPELL_FROST_BLADE, blade);
+        // The pierce: Icy Touch's one, Winter's Reach's four, half each, on the line beyond the target.
+        std::size_t pierces = HasNorthMarker(player, MOD_WINTERS_REACH) ? WINTERS_REACH_TARGETS : icy ? 1 : 0;
+        if (pierces)
+        {
+            Position from = player->GetPosition();
+            Position end = Toward(from, player->GetAngle(target), NORTH_LINE);
+            std::size_t count = 0;
+            for (Unit* enemy : EnemiesAround(player, player, NORTH_LINE))
+                if (enemy != target && count < pierces
+                    && SegmentDist(enemy->GetPosition(), from, end) <= NORTH_HALF_WIDTH
+                    && player->GetExactDist2d(enemy) > player->GetExactDist2d(target))
+                {
+                    ++count;
+                    Strike(player, enemy, SPELL_FROST_BLADE, blade * NORTH_PIERCE_SHARE);
+                }
+        }
+        if (HasNorthMarker(player, MOD_FLAME_OF_WINTER) && target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
+            Strike(player, target, SPELL_FLAME_OF_WINTER,
+                RunePower(player, SPELL_SCHOOL_MASK_FIRE, 0) * FLAME_OF_WINTER_POWER);
+        if (HasNorthMarker(player, MOD_MARKED_NORTH) && target->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, me))
+            for (Unit* enemy : EnemiesAround(player, target, MARKED_NORTH_RANGE))
+                if (enemy != target)
+                {
+                    Strike(player, enemy, SPELL_FROST_BLADE, blade * MARKED_NORTH_SHARE);
+                    break;
+                }
+        if (state.NorthStorm)
+            Strike(player, target, SPELL_STORMBLADE, RunePower(player, SPELL_SCHOOL_MASK_NATURE, 0) * STORMBLADE_POWER);
+        if (HasNorthMarker(player, MOD_RENDING_ICE) && target->GetAuraOfRankedSpell(SPELL_REND, me))
+            AddDot(player, target, SPELL_RENDING_ICE, blade * RENDING_ICE_SHARE, NORTH_DOT_MS);
+        if (HasNorthMarker(player, MOD_ICY_WOUND))
+            AddDot(player, target, SPELL_ICY_WOUND, blade * ICY_WOUND_SHARE, NORTH_DOT_MS);
+        if (!last)
+            return;
+        state.NorthIcy = false;
+        state.NorthStorm = false;
+        if (state.NorthFrost)
+        {
+            state.NorthFrost = false;
+            state.NorthFieldAt = target->GetPosition();
+            state.NorthFieldMap = player->GetMapId();
+            state.NorthFieldUntil = Now() + NORTH_FIELD_MS;
+            state.NorthFieldTimer = 0;
+            PlaceDecals(player, SPELL_NORTH_FIELD, { state.NorthFieldAt });
+        }
+        // Frost Strike's follow-up on this target; the options' next Frost Strike.
+        state.FollowTarget = target->GetGUID();
+        state.FollowUntil = Now() + NORTH_FOLLOW_MS;
+        state.FollowStrikeMore = 1.0f;
+        if (HasNorthMarker(player, MOD_NORTHERN_ENDURANCE))
+        {
+            state.FollowStrikeMore *= ENDURANCE_STRIKE;
+            Lasting(player, player, SPELL_NORTHERN_ENDURANCE, 5000);
+        }
+        if (HasNorthMarker(player, MOD_GLACIAL_FLOW) && target->GetAuraOfRankedSpell(SPELL_FROSTBOLT, me))
+            state.FollowStrikeMore *= GLACIAL_FLOW;
+        state.FollowStrikeUntil = state.FollowStrikeMore > 1.0f ? Now() + NORTH_FOLLOW_MS : 0;
+        if (HasNorthMarker(player, MOD_COLD_RECOVERY) && Ready(state.ColdRecoveryAt, COLD_RECOVERY_EVERY_MS))
+        {
+            state.ColdRecoveryAt = Now();
+            for (uint32 id = SPELL_HOWLING_BLAST; id; id = sSpellMgr->GetNextSpellInChain(id))
+                if (player->HasSpell(id))
+                    player->ModifySpellCooldown(id, -COLD_RECOVERY_MS);
+        }
+        if (HasNorthMarker(player, MOD_WINTERS_RENEWAL) && player->GetAuraOfRankedSpell(SPELL_RENEW, me)
+            && Ready(state.WintersRenewalAt, WINTERS_RENEWAL_EVERY_MS))
+        {
+            state.WintersRenewalAt = Now();
+            Mend(player, player, SPELL_WINTERS_RENEWAL,
+                float(player->SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_FROST)) * WINTERS_RENEWAL_POWER);
+        }
+    }
+
+    // Howling North's abilities (the Hero's own): Howling Blast marks; Obliterate looses the blade; Icy Touch,
+    // Frostbolt and Lightning Bolt on a mark charge it; Frost Strike follows up.
+    void NorthHit(Player* player, Unit* target, uint32 firstRank)
+    {
+        State& state = StateOf(player);
+        if (firstRank == SPELL_HOWLING_BLAST)
+        {
+            if (!Ready(state.NorthwindAt, NORTHWIND_WINDOW_MS) && state.NorthMarks >= NORTHWIND_TARGETS)
+                return;
+            if (Ready(state.NorthwindAt, NORTHWIND_WINDOW_MS))
+            {
+                state.NorthwindAt = Now();
+                state.NorthMarks = 0;
+                state.NorthReady = true;
+            }
+            ++state.NorthMarks;
+            Lasting(player, target, SPELL_NORTHWIND, NORTHWIND_MS);
+            return;
+        }
+        bool marked = Northwind(player, target);
+        switch (firstRank)
+        {
+            case SPELL_OBLITERATE:
+                if (!marked || !state.NorthReady || !Ready(state.BladeAt, BLADE_EVERY_MS))
+                    break;
+                state.NorthReady = false;
+                state.BladeAt = Now();
+                if (HasNorthMarker(player, MOD_RIMEBLADE))
+                {
+                    ObjectGuid guid = target->GetGUID();
+                    for (std::size_t i = 0; i < RIMEBLADES; ++i)
+                        player->m_Events.AddEventAtOffset([player, guid, i]()
+                        {
+                            if (!player->IsInWorld() || !player->IsAlive())
+                                return;
+                            if (Unit* unit = ObjectAccessor::GetUnit(*player, guid))
+                                FrostBlade(player, unit, RIMEBLADE_SHARE, i + 1 == RIMEBLADES);
+                        }, Milliseconds(i * RIMEBLADE_SPACING_MS));
+                }
+                else
+                    FrostBlade(player, target, 1.0f, true);
+                break;
+            case SPELL_ICY_TOUCH:
+                if (marked)
+                    state.NorthIcy = true;
+                break;
+            case SPELL_FROSTBOLT:
+                if (marked)
+                    state.NorthFrost = true;
+                break;
+            case SPELL_LIGHTNING_BOLT:
+                if (marked && HasNorthMarker(player, MOD_STORMBLADE))
+                    state.NorthStorm = true;
+                break;
+            case SPELL_FROST_STRIKE:
+                if (state.FollowUntil && Now() < state.FollowUntil && state.FollowTarget == target->GetGUID())
+                {
+                    state.FollowUntil = 0;
+                    Strike(player, target, SPELL_NORTH_FOLLOW_UP, player->GetTotalAttackPowerValue(BASE_ATTACK)
+                        * (HasNorthMarker(player, MOD_WINTERS_RETURN) ? WINTERS_RETURN_AP : NORTH_FOLLOW_AP));
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Frost Strike's damage: Northern Endurance's and Glacial Flow's 10%/20% more (spent).
+    float NorthStrikeDamage(Player* player, float damage)
+    {
+        State& state = StateOf(player);
+        if (!state.FollowStrikeUntil)
+            return damage;
+        if (Now() < state.FollowStrikeUntil)
+            damage *= state.FollowStrikeMore;
+        state.FollowStrikeUntil = 0;
+        return damage;
+    }
+
+    // The Frostbolt field's ticks (Frozen Ground: 50% more, and its slow).
+    void NorthTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        if (!state.NorthFieldUntil)
+            return;
+        if (Now() >= state.NorthFieldUntil || state.NorthFieldMap != player->GetMapId())
+        {
+            state.NorthFieldUntil = 0;
+            player->RemoveDynObject(SPELL_NORTH_FIELD);
+            return;
+        }
+        state.NorthFieldTimer += diff;
+        if (state.NorthFieldTimer < 1000)
+            return;
+        state.NorthFieldTimer = 0;
+        bool frozen = HasNorthMarker(player, MOD_FROZEN_GROUND);
+        float tick = RunePower(player, SPELL_SCHOOL_MASK_FROST, 0) * NORTH_FIELD_POWER
+            * (frozen ? FROZEN_GROUND_MORE : 1.0f);
+        for (Unit* enemy : EnemiesIn(player, Circle(state.NorthFieldAt, NORTH_FIELD_RADIUS), NORTH_FIELD_TARGETS))
+        {
+            Strike(player, enemy, SPELL_NORTH_FIELD_TICK, tick);
+            if (frozen && enemy->IsAlive())
+                Lasting(player, enemy, SPELL_FROZEN_GROUND, 2000);
+        }
+    }
+
+    // ---- Trueshot ----------------------------------------------------------------------------------------------
+
+    bool HasTrueshotMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_TRUESHOT_MODIFIER_FIRST, modifier);
+    }
+
+    // Trueshot released: the Hero's Aimed Shot (its own known rank, free of cost and cooldown: Trueshot paid them),
+    // made 45% stronger when it lands (TrueshotDamage).
+    void ReleaseTrueshot(Player* player, Unit* target)
+    {
+        uint32 aimed = KnownRank(player, SPELL_AIMED_SHOT);
+        if (!aimed || !target)
+            return;
+        StateOf(player).TrueshotPendingUntil = Now() + TRUESHOT_PENDING_MS;
+        player->CastSpell(target, aimed, TRIGGERED_FULL_MASK);
+    }
+
+    // Aimed Shot's damage, Trueshot's (spent), and Arcane Shot's or Chimera Shot's (Exposed Target, Follow-Up Shot).
+    float TrueshotDamage(Player* player, Unit* target, uint32 firstRank, float damage, bool triggered)
+    {
+        State& state = StateOf(player);
+        if (firstRank == SPELL_AIMED_SHOT && triggered && state.TrueshotPendingUntil
+            && Now() < state.TrueshotPendingUntil)
+        {
+            damage *= TRUESHOT_MORE;
+            if (HasTrueshotMarker(player, MOD_PERFECT_SHOT))
+                damage *= PERFECT_SHOT;
+            if (HasTrueshotMarker(player, MOD_STEADY_AIM))
+                damage *= STEADY_AIM_MORE;
+            return damage;
+        }
+        if ((firstRank == SPELL_ARCANE_SHOT || firstRank == SPELL_CHIMERA_SHOT) && !triggered)
+        {
+            if (state.ExposedTarget == target->GetGUID() && target->GetAura(SPELL_EXPOSED_TARGET, player->GetGUID()))
+            {
+                damage *= HasTrueshotMarker(player, MOD_MARKED_WEAKNESS) ? MARKED_WEAKNESS : EXPOSED_MORE;
+                target->RemoveAurasDueToSpell(SPELL_EXPOSED_TARGET, player->GetGUID());
+                state.ExposedTarget.Clear();
+            }
+            if (firstRank == SPELL_ARCANE_SHOT && state.FollowUpUntil)
+            {
+                if (Now() < state.FollowUpUntil)
+                    damage *= FOLLOW_UP_MORE;
+                state.FollowUpUntil = 0;
+            }
+        }
+        return damage;
+    }
+
+    bool TrueshotPending(Player* player)
+    {
+        State& state = StateOf(player);
+        return state.TrueshotPendingUntil && Now() < state.TrueshotPendingUntil;
+    }
+
+    // Trueshot's Aimed Shot landing (its damage dealt): the pierce, the mark, the charges, the recovery.
+    void TrueshotLanded(Player* player, Unit* target, float hit)
+    {
+        State& state = StateOf(player);
+        ObjectGuid me = player->GetGUID();
+        state.TrueshotPendingUntil = 0;
+        bool multi = state.MultiChargeUntil && Now() < state.MultiChargeUntil;
+        state.MultiChargeUntil = 0;
+        bool arcane = state.ArcaneChargeUntil && Now() < state.ArcaneChargeUntil;
+        state.ArcaneChargeUntil = 0;
+        // The pierce behind the target.
+        float share = HasTrueshotMarker(player, MOD_PIERCING_SHOT) ? PIERCING_SHARE : TRUESHOT_PIERCE_SHARE;
+        if (HasTrueshotMarker(player, MOD_STEADY_AIM))
+            share *= STEADY_AIM_PIERCE;
+        if (multi)
+            share *= MULTI_PIERCE_MORE;
+        std::size_t most = TRUESHOT_PIERCES
+            + (multi && HasTrueshotMarker(player, MOD_WIDE_TRAJECTORY) ? WIDE_MORE_PIERCES : 0);
+        float width = multi ? WIDE_HALF_WIDTH : TRUESHOT_HALF_WIDTH;
+        Position from = target->GetPosition();
+        Position end = Toward(from, player->GetAngle(target), TRUESHOT_LINE);
+        std::vector<Unit*> pierced;
+        for (Unit* enemy : EnemiesAround(player, target, TRUESHOT_LINE))
+            if (enemy != target && pierced.size() < most && SegmentDist(enemy->GetPosition(), from, end) <= width
+                && player->GetExactDist2d(enemy) > player->GetExactDist2d(target))
+                pierced.push_back(enemy);
+        for (Unit* enemy : pierced)
+            Strike(player, enemy, SPELL_TRUESHOT_PIERCE, hit * share);
+        bool marked = target->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, me);
+        if (marked)
+        {
+            state.ExposedTarget = target->GetGUID();
+            Lasting(player, target, SPELL_EXPOSED_TARGET, TRUESHOT_EXPOSED_MS);
+            if (HasTrueshotMarker(player, MOD_MARKED_RICOCHET))
+                for (Unit* enemy : EnemiesAround(player, target, RICOCHET_RANGE))
+                    if (enemy != target)
+                    {
+                        Strike(player, enemy, SPELL_TRUESHOT_PIERCE, hit * RICOCHET_SHARE);
+                        break;
+                    }
+        }
+        if (arcane)
+        {
+            float payload = RunePower(player, SPELL_SCHOOL_MASK_ARCANE, 0)
+                * (HasTrueshotMarker(player, MOD_ARCANE_ARROW) ? ARCANE_ARROW_POWER : ARCANE_PAYLOAD_POWER);
+            Strike(player, target, SPELL_ARCANE_PAYLOAD, payload);
+            if (HasTrueshotMarker(player, MOD_ARCANE_CALIBRATION))
+                for (std::size_t i = 0; i < pierced.size() && i < CALIBRATION_TARGETS; ++i)
+                    Strike(player, pierced[i], SPELL_ARCANE_PAYLOAD, payload * CALIBRATION_SHARE);
+        }
+        float rap = player->GetTotalAttackPowerValue(RANGED_ATTACK);
+        if (HasTrueshotMarker(player, MOD_FLAME_ARROW) && target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
+            Strike(player, target, SPELL_FLAME_ARROW, RunePower(player, SPELL_SCHOOL_MASK_FIRE, 0) * FLAME_ARROW_POWER);
+        if (HasTrueshotMarker(player, MOD_FROSTPIERCER) && target->GetAuraOfRankedSpell(SPELL_FROSTBOLT, me))
+            Strike(player, target, SPELL_FROSTPIERCER, rap * FROSTPIERCER_RAP);
+        if (HasTrueshotMarker(player, MOD_QUICK_RECOVERY))
+            for (uint32 id = SPELL_ARCANE_SHOT; id; id = sSpellMgr->GetNextSpellInChain(id))
+                if (player->HasSpell(id))
+                    player->ModifySpellCooldown(id, -QUICK_RECOVERY_MS);
+        if (HasTrueshotMarker(player, MOD_HUNTERS_MOBILITY))
+            Lasting(player, player, SPELL_HUNTERS_MOBILITY, 4000);
+        if (HasTrueshotMarker(player, MOD_FOLLOW_UP_SHOT))
+            state.FollowUpUntil = Now() + FOLLOW_UP_MS;
+        if (HasTrueshotMarker(player, MOD_STEADY_RECOVERY))
+        {
+            player->RemoveAurasDueToSpell(SPELL_STEADY_RECOVERY);
+            player->CastSpell(player, SPELL_STEADY_RECOVERY, true);
+        }
+        if (HasTrueshotMarker(player, MOD_RENEWED_AIM) && player->GetAuraOfRankedSpell(SPELL_RENEW, me)
+            && Ready(state.RenewedAimAt, RENEWED_AIM_EVERY_MS))
+        {
+            state.RenewedAimAt = Now();
+            Mend(player, player, SPELL_RENEWED_AIM,
+                float(player->SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_ARCANE)) * RENEWED_AIM_POWER);
+        }
+    }
+
+    // Trueshot's charges: Multi-Shot (a wider line), Arcane Blast (the payload).
+    void TrueshotCharge(Player* player, uint32 firstRank)
+    {
+        State& state = StateOf(player);
+        if (firstRank == SPELL_MULTI_SHOT)
+            state.MultiChargeUntil = Now() + TRUESHOT_CHARGE_MS;
+        else if (firstRank == SPELL_ARCANE_BLAST)
+            state.ArcaneChargeUntil = Now() + TRUESHOT_CHARGE_MS;
+    }
+
+    // Trueshot (2 sec; Steady Aim's 2.5) in Aimed Shot's place while the rune is bound.
+    void TeachTrueshot(Player* player, bool bound)
+    {
+        bool steady = bound && HasTrueshotMarker(player, MOD_STEADY_AIM);
+        LegendaryRunes::ReplaceAbility(player, steady ? SPELL_TRUESHOT : SPELL_TRUESHOT_STEADY, { SPELL_AIMED_SHOT },
+            false);
+        LegendaryRunes::ReplaceAbility(player, steady ? SPELL_TRUESHOT_STEADY : SPELL_TRUESHOT, { SPELL_AIMED_SHOT },
+            bound);
+    }
+
     // What the five leave behind (death, logout, a spec or modifier change): the Graves and their shield, the wake,
     // Sacred Ground, the echoes, the shards.
     void ClearLegends(Player* player)
@@ -5081,6 +5944,9 @@ namespace
                 host->RemoveAurasDueToSpell(SPELL_SUNSHARD, player->GetGUID());
         state.Shards.clear();
         state.CoreLanced.clear();
+        CloseRift(player);
+        state.NorthFieldUntil = 0;
+        player->RemoveDynObject(SPELL_NORTH_FIELD);
         player->RemoveDynObject(SPELL_SOLAR_ANCHOR);
         state.ScaldUntil = 0;
         player->RemoveDynObject(SPELL_SCALDING_GROUND);
@@ -8925,7 +9791,7 @@ namespace
     {
         for (uint32 spell : RuneAuras())
             player->RemoveAurasDueToSpell(spell);
-        bool any = false, paragon = false, duelist = false, dawn = false;
+        bool any = false, paragon = false, duelist = false, dawn = false, trueshot = false;
         for (uint8 runeSlot = 0; runeSlot < RUNE_SLOTS; ++runeSlot)
         {
             Choice const& choice = ActiveChoice(player, runeSlot);
@@ -8936,6 +9802,7 @@ namespace
             paragon |= rune->Id == RUNE_SANCTIFIED_PARAGON;
             duelist |= rune->Id == RUNE_DUELIST;
             dawn |= rune->Id == RUNE_DAWNBOUND_CRUSADER;
+            trueshot |= rune->Id == RUNE_TRUESHOT;
             player->AddAura(rune->Aura, player);
             for (uint8 slot = 0; slot < SLOTS; ++slot)
                 if (uint8 pick = choice.Mods[slot]; pick && pick <= rune->Choices)
@@ -8947,6 +9814,7 @@ namespace
             player->RemoveAurasDueToSpell(SPELL_SANCTIFIED_PARAGON);
         TeachDuelist(player, duelist);
         TeachDawn(player, dawn);
+        TeachTrueshot(player, trueshot);
         TankRunes::Apply(player);
         RetireCatCopy(player, SPELL_CAT_FIRE_BLAST, SPELL_FIRE_BLAST);
         RetireCatCopy(player, SPELL_CAT_ICY_TOUCH, SPELL_ICY_TOUCH);
@@ -9477,7 +10345,7 @@ namespace LegendaryRunes
     bool IsReplacedBase(uint32 firstRank)
     {
         return firstRank == SPELL_SINISTER_STRIKE || firstRank == SPELL_ARCANE_SHOT || firstRank == SPELL_RAPID_FIRE
-            || firstRank == SPELL_BEACON_OF_LIGHT
+            || firstRank == SPELL_BEACON_OF_LIGHT || firstRank == SPELL_AIMED_SHOT
             || TankRunes::IsReplacedBase(firstRank);
     }
 
@@ -10170,6 +11038,24 @@ class spell_titan_rune_shattered_sun : public SpellScript
     }
 };
 
+// Trueshot (both windups): released, the Hero's Aimed Shot at its target (ReleaseTrueshot).
+class spell_titan_rune_trueshot : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_trueshot);
+
+    void Release(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (player && player->HasAura(SPELL_RUNE_TRUESHOT))
+            ReleaseTrueshot(player, GetHitUnit());
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_trueshot::Release, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
 // The runes' damage over time (Grave Pestilence, Bloodletting, Hollow Flay): each second its kept tick, dealt as
 // its own damage spell by whoever put it there.
 class spell_titan_rune_dot : public AuraScript
@@ -10503,6 +11389,7 @@ public:
             return;
         TeachDuelist(player, player->HasAura(SPELL_RUNE_DUELIST));
         TeachDawn(player, player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER));
+        TeachTrueshot(player, player->HasAura(SPELL_RUNE_TRUESHOT));
         TankRunes::Apply(player);
     }
 
@@ -10608,6 +11495,10 @@ public:
             DawnTick(player, diff);
         if (player->HasAura(SPELL_RUNE_SHATTERED_SUN))
             SunTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_HUNGERING_RIFT) || StateOf(player).Rift.Until)
+            RiftTick(player, diff);
+        if (player->HasAura(SPELL_RUNE_HOWLING_NORTH) || StateOf(player).NorthFieldUntil)
+            NorthTick(player, diff);
         if (player->HasAura(SPELL_RUNE_WILD_HUNT))
             WrathTick(player, diff);
         if (player->HasAura(SPELL_RUNE_PHOENIX_WAKE) || !StateOf(player).Flights.empty())
@@ -11136,6 +12027,18 @@ class spell_titan_rune_extended_hit : public SpellScript
         if ((first == SPELL_FROSTBOLT || first == SPELL_CHAIN_HEAL || first == SPELL_LAVA_LASH)
             && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
             DawnAbility(player, target, first);
+        bool hostile = player->IsValidAttackTarget(target);
+        if (hostile && GetHitDamage() > 0 && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_HUNGERING_RIFT))
+            RiftHit(player, target, first);
+        if (hostile && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_HOWLING_NORTH))
+            NorthHit(player, target, first);
+        if (hostile && player->HasAura(SPELL_RUNE_TRUESHOT))
+        {
+            if (first == SPELL_AIMED_SHOT && GetSpell()->IsTriggered() && TrueshotPending(player))
+                TrueshotLanded(player, target, float(GetHitDamage()));
+            else if ((first == SPELL_MULTI_SHOT || first == SPELL_ARCANE_BLAST) && !GetSpell()->IsTriggered())
+                TrueshotCharge(player, first);
+        }
         if (first == SPELL_CHAIN_HEAL || first == SPELL_HOLY_SHOCK)
         {
             if (target != player && player->IsFriendlyTo(target) && player->HasAura(SPELL_RUNE_GUIDING_LIGHT))
@@ -11237,6 +12140,11 @@ class spell_titan_rune_extended_hit : public SpellScript
         if ((first == SPELL_FROSTBOLT || first == SPELL_LIGHTNING_BOLT) && !GetSpell()->IsTriggered()
             && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
             damage = ConduitDamage(player, target, first, damage);
+        if (first == SPELL_FROST_STRIKE && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_HOWLING_NORTH))
+            damage = NorthStrikeDamage(player, damage);
+        if ((first == SPELL_AIMED_SHOT || first == SPELL_ARCANE_SHOT || first == SPELL_CHIMERA_SHOT)
+            && player->HasAura(SPELL_RUNE_TRUESHOT))
+            damage = TrueshotDamage(player, target, first, damage, GetSpell()->IsTriggered());
         SetHitDamage(int32(damage));
     }
 
@@ -12024,6 +12932,7 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_mind_flay);
     RegisterSpellScript(spell_titan_rune_mind_blast);
     RegisterSpellScript(spell_titan_rune_shattered_sun);
+    RegisterSpellScript(spell_titan_rune_trueshot);
     RegisterCreatureAI(npc_titan_rune_hollow_echo);
     RegisterCreatureAI(npc_titan_rune_phantom_assassin);
     RegisterCreatureAI(npc_titan_rune_felguard);

@@ -713,6 +713,14 @@ utility or a tradeoff) take one pick each, from three.
     runes.cpp's ModifierNeeds by number. The Paragon's interactions and options: `ParagonJudgment`,
     `ParagonHolyShock`, `ParagonRighteous`, `ParagonAbility`; Bastion of Faith and Weight of the Unworthy need a
     damaging Manifestation (Condemnation or Radiant Judgment). The Stormreaver's: `StormAbility`.
+  - **Hungering Rift** (49; Ranged; Shadow Bolt, Corruption), **Howling North** (50; Melee; Howling Blast,
+    Obliterate), **Trueshot** (51; Ranged; Aimed Shot): the updated compendium's, blocks 93300, 93325 and 93360 (the
+    rune, its 15 markers, its spells), Blizzard icons for now (Spell_Shadow_Twilight, Spell_Frost_ArcticWinds,
+    Ability_TrueShot; a painted icons/spells/Ability_Rune_*.png can replace them). The Rift (`OpenRift`, `RiftTick`,
+    `Lash`, `RiftHit`) lives in the Hero's state with its aura 93316 on the host; Howling North (`NorthHit`,
+    `FrostBlade`, `NorthTick`) marks with Northwind 93341; Trueshot (93376, 93377 with Steady Aim; Steady Shot's
+    copy) is taught in Aimed Shot's place (`TeachTrueshot`) and its script fires the Hero's own Aimed Shot
+    (`ReleaseTrueshot`, made stronger in `TrueshotDamage`, its pierce in `TrueshotLanded`).
   - **Borrowed visuals** (`patch_runes.BORROWED_VISUALS`): the runes' spells that had no SpellVisual take an
     existing Blizzard spell's, by kind and school (hits, damage and healing over time, slows, marks, buffs); damage
     over time ticks and the ground's ticks stay without one (their aura or ground shows).

@@ -378,6 +378,14 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-61295, 'spell_titan_rune_extended_hit'),
 (-139, 'spell_titan_rune_extended_hit'),
 (-6572, 'spell_titan_rune_extended_hit'),
+(-6789, 'spell_titan_rune_extended_hit'),
+(-47541, 'spell_titan_rune_extended_hit'),
+(-49184, 'spell_titan_rune_extended_hit'),
+(-49020, 'spell_titan_rune_extended_hit'),
+(-49143, 'spell_titan_rune_extended_hit'),
+(-2643, 'spell_titan_rune_extended_hit'),
+(-53209, 'spell_titan_rune_extended_hit'),
+(-30451, 'spell_titan_rune_extended_hit'),
 (-421, 'spell_titan_rune_extended_hit'),
 (-60103, 'spell_titan_rune_extended_hit'),
 (-2912, 'spell_titan_rune_extended_hit'),
@@ -400,7 +408,16 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (91911, 'spell_titan_rune_dot'),
 (91735, 'spell_titan_rune_dot'),
 (91739, 'spell_titan_rune_dot'),
-(93218, 'spell_titan_rune_dot');
+(93218, 'spell_titan_rune_dot'),
+(93318, 'spell_titan_rune_dot'),
+(93349, 'spell_titan_rune_dot'),
+(93351, 'spell_titan_rune_dot');
+
+-- Trueshot (both windups): released, the Hero's Aimed Shot.
+DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_titan_rune_trueshot';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(93376, 'spell_titan_rune_trueshot'),
+(93377, 'spell_titan_rune_trueshot');
 
 -- The Extended Options' strikes, heals and shields: shares of the Hero's power and hits, no bonuses of their own.
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 91641, 91660, 91661, 91662, 91663,
@@ -408,7 +425,8 @@ DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 916
     91840, 91842, 91860, 91861, 91862, 91863, 91864, 91885, 91886, 91889, 91912, 91914, 91916, 91917, 91919, 93015,
     93016, 93017, 93040, 93041, 93042, 93065, 93066, 93067, 93068, 93092, 93093, 93094, 93115, 93116, 93117, 93118,
     93140, 93141, 93142, 93165, 93166, 93167, 93191, 93192, 93193, 93194, 93195, 93216, 93217, 93219, 93220, 93222,
-    93241, 93242, 93266, 93267, 93268, 93270, 93291, 93292);
+    93241, 93242, 93266, 93267, 93268, 93270, 93291, 93292, 93317, 93319, 93320, 93321, 93322, 93323, 93342, 93343,
+    93345, 93347, 93348, 93350, 93352, 93354, 93379, 93380, 93381, 93382, 93385);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91636, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Burn tick'),
 (91637, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Eruption'),
@@ -490,7 +508,26 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (93268, 0, 0, 0, 0, 'Shattered Sun - Broken Core (Ice Lance)'),
 (93270, 0, 0, 0, 0, 'Shattered Sun - Icy Shelter'),
 (93291, 0, 0, 0, 0, 'Dawnbound Crusader - Crusader''s Flame'),
-(93292, 0, 0, 0, 0, 'Dawnbound Crusader - Frostfire Dawn');
+(93292, 0, 0, 0, 0, 'Dawnbound Crusader - Frostfire Dawn'),
+(93317, 0, 0, 0, 0, 'Hungering Rift - Rift Lash'),
+(93319, 0, 0, 0, 0, 'Hungering Rift - Lingering Torment tick'),
+(93320, 0, 0, 0, 0, 'Hungering Rift - Last Gasp'),
+(93321, 0, 0, 0, 0, 'Hungering Rift - Plague Maw'),
+(93322, 0, 0, 0, 0, 'Hungering Rift - Doom Echo'),
+(93323, 0, 0, 0, 0, 'Hungering Rift - Siphon Conduit'),
+(93342, 0, 0, 0, 0, 'Howling North - Frost Blade'),
+(93343, 0, 0, 0, 0, 'Howling North - Frost Strike follow-up'),
+(93345, 0, 0, 0, 0, 'Howling North - the field'),
+(93347, 0, 0, 0, 0, 'Howling North - Flame of Winter'),
+(93348, 0, 0, 0, 0, 'Howling North - Stormblade'),
+(93350, 0, 0, 0, 0, 'Howling North - Rending Ice tick'),
+(93352, 0, 0, 0, 0, 'Howling North - Icy Wound tick'),
+(93354, 0, 0, 0, 0, 'Howling North - Winter''s Renewal'),
+(93379, 0, 0, 0, 0, 'Trueshot - pierce'),
+(93380, 0, 0, 0, 0, 'Trueshot - Arcane payload'),
+(93381, 0, 0, 0, 0, 'Trueshot - Flame Arrow'),
+(93382, 0, 0, 0, 0, 'Trueshot - Frostpiercer'),
+(93385, 0, 0, 0, 0, 'Trueshot - Renewed Aim');
 
 -- Their damage over time: Lunar Wound, Astral Rupture.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';

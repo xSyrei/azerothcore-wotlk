@@ -1922,4 +1922,193 @@ EmberforgeRunesCatalog = {
       },
     },
 
+    { id = 49,
+      name = "Rune of the Hungering Rift",
+      role = "Ranged DPS (Warlock, Affliction)",
+      roles = { "DAMAGER" },
+      icon = "Spell_Shadow_Twilight",
+      keywords = "warlock affliction shadow bolt corruption rift lash damage over time drain soul death coil " ..
+          "moonfire frost fever shadow word pain drain life curse of agony",
+      slots = { "Maw", "Anchor", "Appetite" },
+      builtFrom = "Shadow Bolt on your Corruption target",
+      spentWith = "The Rift's lashes (automatic)",
+      resource = "The Rift, 6 sec",
+      core = "Shadow Bolt on your Corruption target opens a Hungering Rift on it for 6 sec. Every 2 sec it lashes " ..
+          "the target for 25% of your spell power as Shadow damage, 5% more for each of your damage over time " ..
+          "effects on it (up to 5). Channeling Drain Soul on the target makes it lash every 1.5 sec. Shadow Bolt on " ..
+          "the Rift's target makes the next lash also strike another Corruption target within 8 yards for half. " ..
+          "Death Coil on a Corruption target opens or renews the Rift.",
+      loop = "Corruption and your other damage over time effects, then Shadow Bolt to open the Rift; keep them all " ..
+          "up.",
+      mods = {
+        { name = "Devouring Maw",
+          text = "The Rift's lashes deal 35% more damage to its target." },
+        { name = "Many Tongues",
+          text = "Each lash also strikes up to 2 other Corruption targets within 8 yards for 60%. Shadow Bolt on " ..
+              "the target makes the next lash 20% stronger instead." },
+        { name = "Black Breath",
+          text = "Each lash also strikes up to 4 enemies in a 12-yard cone beyond the target for half." },
+        { name = "Plague Maw",
+          text = "Lashes on your Frost Fever target also deal 15% of your attack power as Frost damage." },
+        { name = "Moon-Eater",
+          text = "Lashes on your Moonfire target deal 20% more and make Moonfire last 1 sec longer (up to 4 sec for " ..
+              "each cast)." },
+        { name = "Haunting Rift",
+          text = "Once its target has moved 5 yards, the next lash deals 25% more, once every 3 sec." },
+        { name = "Open Wound",
+          text = "The Rift stays where it opened, reaching its target within 20 yards; each lash in a row deals 10% " ..
+              "more (30% at most)." },
+        { name = "At Your Back",
+          text = "The Rift follows you onto your selected Corruption target within 30 yards; switching targets " ..
+              "lashes once for half, once every 4 sec." },
+        { name = "Painful Anchoring",
+          text = "Lashes on your Shadow Word: Pain target also strike one other Shadow Word: Pain target within 8 " ..
+              "yards for half." },
+        { name = "Siphon Conduit",
+          text = "While you channel Drain Life on the Rift's target, each lash heals you for 25% of its damage (1% " ..
+              "of your maximum health a second at most)." },
+        { name = "Lingering Torment",
+          text = "Each lash leaves 25% of its damage again as Shadow damage over 6 sec." },
+        { name = "Last Gasp",
+          text = "Every third lash erupts for 30% of your spell power on up to 5 enemies near the target; if the " ..
+              "target dies first, it erupts for half." },
+        { name = "Endless Appetite",
+          text = "Lashes make your Corruption last 1 sec longer (up to 4 sec for each cast); when the target dies, " ..
+              "the Rift moves to a Corruption target within 15 yards." },
+        { name = "Doom Echo",
+          text = "Every third lash on your Curse of Agony target also deals 25% of your spell power as Shadow " ..
+              "damage." },
+        { name = "Necrotic Appetite",
+          text = "Death Coil on the Rift's target makes the Rift last 2 sec longer, once for each Rift." },
+      },
+      builds = {
+        { name = "The Glutton", mods = { "Devouring Maw", "Haunting Rift", "Lingering Torment" },
+          text = "One target, eaten alive." },
+        { name = "The Many-Mouthed", mods = { "Many Tongues", "At Your Back", "Endless Appetite" },
+          text = "Corruption on the pack; the Rift on all of it." },
+        { name = "The Black Breath", mods = { "Black Breath", "Open Wound", "Last Gasp" },
+          text = "A rift that breathes across the crowd." },
+      },
+    },
+    { id = 50,
+      name = "Rune of Howling North",
+      role = "Melee DPS (Death Knight, Frost)",
+      roles = { "DAMAGER" },
+      icon = "Spell_Frost_ArcticWinds",
+      keywords = "death knight frost howling blast obliterate northwind blade icy touch frost strike frostbolt " ..
+          "flame shock hunters mark lightning bolt rend renew",
+      slots = { "Blade", "Wind", "Winter" },
+      builtFrom = "Howling Blast (Northwind)",
+      spentWith = "Obliterate",
+      resource = "Northwind on up to 5 enemies, 6 sec",
+      core = "Howling Blast marks up to 5 enemies it hits with Northwind for 6 sec. Your next Obliterate on a " ..
+          "marked enemy looses a Frost blade: 45% of your attack power as Frost damage, once every 3 sec. Icy Touch " ..
+          "on a marked enemy makes the next blade deal 20% more and pierce one more enemy for half. After a blade, " ..
+          "Frost Strike on its target within 6 sec also deals 15% of your attack power as Frost damage. Frostbolt " ..
+          "on a marked enemy makes the next blade leave a frozen field for 4 sec: 10% of your spell power each " ..
+          "second to up to 3 enemies.",
+      loop = "Howling Blast to mark the pack, Obliterate to loose the blade, Frost Strike to follow it up.",
+      mods = {
+        { name = "Glacial Edge",
+          text = "Your Frost blade deals 40% more damage." },
+        { name = "Rimeblade",
+          text = "Obliterate looses 3 blades for 40% each; Frost Strike's follow-up waits for the last." },
+        { name = "Winter's Reach",
+          text = "The blade pierces up to 4 enemies behind its target for half." },
+        { name = "Flame of Winter",
+          text = "The blade on your Flame Shock target also deals 20% of your spell power as Fire damage." },
+        { name = "Marked North",
+          text = "The blade on your Hunter's Mark target also strikes one enemy within 8 yards for half." },
+        { name = "Sharpened Wind",
+          text = "Icy Touch makes the next blade deal 35% more instead of 20%." },
+        { name = "Frozen Ground",
+          text = "The frozen field deals 50% more damage and slows its enemies by 25%." },
+        { name = "Winter's Return",
+          text = "Frost Strike's follow-up deals 25% of your attack power instead of 15%." },
+        { name = "Stormblade",
+          text = "Lightning Bolt on a marked enemy makes the next blade also deal 25% of your spell power as Nature " ..
+              "damage." },
+        { name = "Rending Ice",
+          text = "The blade on your Rend target leaves a bleed of 30% of its damage over 6 sec." },
+        { name = "Northern Endurance",
+          text = "A blade makes you 10% faster for 5 sec, and your next Frost Strike deals 10% more." },
+        { name = "Icy Wound",
+          text = "The blade leaves 30% of its damage again as Frost damage over 6 sec." },
+        { name = "Cold Recovery",
+          text = "A blade brings Howling Blast back 1 sec sooner, once every 8 sec." },
+        { name = "Winter's Renewal",
+          text = "A blade while your Renew is on you heals you for 30% of your spell power, once every 10 sec." },
+        { name = "Glacial Flow",
+          text = "A blade on your Frostbolt-slowed target makes your next Frost Strike within 6 sec deal 20% more." },
+      },
+      builds = {
+        { name = "The Glacier", mods = { "Glacial Edge", "Sharpened Wind", "Icy Wound" },
+          text = "One blade, and it hurts." },
+        { name = "The Blizzard", mods = { "Winter's Reach", "Frozen Ground", "Cold Recovery" },
+          text = "Through the pack and into the ground." },
+        { name = "The Frost Striker", mods = { "Rimeblade", "Winter's Return", "Northern Endurance" },
+          text = "Three blades, then Frost Strike." },
+      },
+    },
+    { id = 51,
+      name = "Rune of Trueshot",
+      role = "Ranged DPS (Hunter, Marksmanship)",
+      roles = { "DAMAGER" },
+      icon = "Ability_TrueShot",
+      keywords = "hunter marksmanship aimed shot trueshot pierce hunters mark arcane shot chimera shot multi shot " ..
+          "arcane blast flame shock frostbolt steady shot renew",
+      slots = { "Shot", "Mark", "Recovery" },
+      builtFrom = "Trueshot (in Aimed Shot's place)",
+      spentWith = "Trueshot",
+      resource = "None",
+      core = "Aimed Shot becomes Trueshot: a 2 sec windup standing still (moving cancels it, at no cost), then your " ..
+          "Aimed Shot for 45% more, piercing up to 4 enemies behind its target for 40% of its hit. Its cost and " ..
+          "cooldown are Aimed Shot's. On your Hunter's Mark target it leaves Exposed Target for 6 sec: your next " ..
+          "Arcane Shot or Chimera Shot there deals 20% more. Multi-Shot makes your next Trueshot within 8 sec " ..
+          "pierce wider and 20% harder; Arcane Blast makes it also deal 30% of your spell power as Arcane damage to " ..
+          "its target.",
+      loop = "Hunter's Mark, then Trueshot from a standstill; Arcane Shot or Chimera Shot to spend Exposed Target.",
+      mods = {
+        { name = "Perfect Shot",
+          text = "Trueshot deals 30% more damage to its target." },
+        { name = "Piercing Shot",
+          text = "Trueshot's pierce deals 65% of its hit instead of 40%." },
+        { name = "Steady Aim",
+          text = "Trueshot winds up for 2.5 sec instead, and deals 30% more to its target and 20% more to the " ..
+              "pierced." },
+        { name = "Flame Arrow",
+          text = "Trueshot on your Flame Shock target also deals 30% of your spell power as Fire damage." },
+        { name = "Frostpiercer",
+          text = "Trueshot on your Frostbolt-slowed target also deals 25% of your ranged attack power as Frost " ..
+              "damage." },
+        { name = "Marked Weakness",
+          text = "Exposed Target makes your next Arcane Shot or Chimera Shot deal 35% more instead of 20%." },
+        { name = "Wide Trajectory",
+          text = "After Multi-Shot, Trueshot pierces up to 2 more enemies." },
+        { name = "Arcane Arrow",
+          text = "Arcane Blast's payload deals 50% of your spell power instead of 30%." },
+        { name = "Arcane Calibration",
+          text = "Arcane Blast's payload also strikes up to 2 pierced enemies for 40% of it." },
+        { name = "Marked Ricochet",
+          text = "Trueshot on your marked target also strikes one enemy within 8 yards for 25% of its hit." },
+        { name = "Quick Recovery",
+          text = "Trueshot brings Arcane Shot back 2 sec sooner." },
+        { name = "Hunter's Mobility",
+          text = "After Trueshot you move 25% faster for 4 sec." },
+        { name = "Follow-Up Shot",
+          text = "After Trueshot, your next Arcane Shot within 6 sec deals 20% more." },
+        { name = "Steady Recovery",
+          text = "After Trueshot, your next Steady Shot within 6 sec casts 20% faster." },
+        { name = "Renewed Aim",
+          text = "Trueshot while your Renew is on you heals you for 30% of your spell power, once every 10 sec." },
+      },
+      builds = {
+        { name = "The Sniper", mods = { "Perfect Shot", "Marked Weakness", "Follow-Up Shot" },
+          text = "Mark, wind up, and finish it." },
+        { name = "The Line Breaker", mods = { "Piercing Shot", "Wide Trajectory", "Hunter's Mobility" },
+          text = "Everything in the line goes down." },
+        { name = "The Arcane Marksman", mods = { "Steady Aim", "Arcane Arrow", "Quick Recovery" },
+          text = "Arcane Blast loads the shot." },
+      },
+    },
 }

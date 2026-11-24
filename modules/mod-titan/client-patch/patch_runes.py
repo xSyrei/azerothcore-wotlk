@@ -1943,6 +1943,9 @@ def family_mod(spell_id, name, icon, text, duration, family, flag, aura_type, op
 
 # ---- The Extended Options (5 choices a slot): 20 ids a rune from 91600, its 15 markers (+ slot * 5 + choice) and
 # then its new spells.
+# The updated compendium's new runes take Blizzard's own icons (no painted art for them yet).
+RIFT_ICON, NORTH_ICON, TRUESHOT_ICON = 'Spell_Shadow_Twilight', 'Spell_Frost_ArcticWinds', 'Ability_TrueShot'
+STEADY_SHOT, HUNTER_FAMILY = 56641, 9
 EXTENDED_MODIFIERS = [
     (91600, CONVERGENCE_ICON, [('Perfect Alignment', 'Converging Skies', 'Astral Rupture', 'Flame Eclipse',
                                 'Frozen Eclipse'),
@@ -2032,6 +2035,17 @@ EXTENDED_MODIFIERS = [
     (93250, SUN_ICON, [('Twin Suns', 'Orbiting Sun', 'Solar Anchor', 'Lunar Shard', 'Storm Shard'),
                        ('Splinterstorm', 'Solar Lance', 'Scalding Ground', 'Frozen Flash', 'Flame Burst'),
                        ('Implosion', 'Chain Reaction', 'Second Sunrise', 'Shattering Lance', 'Icy Shelter')]),
+    (93301, RIFT_ICON, [('Devouring Maw', 'Many Tongues', 'Black Breath', 'Plague Maw', 'Moon-Eater'),
+                        ('Haunting Rift', 'Open Wound', 'At Your Back', 'Painful Anchoring', 'Siphon Conduit'),
+                        ('Lingering Torment', 'Last Gasp', 'Endless Appetite', 'Doom Echo', 'Necrotic Appetite')]),
+    (93326, NORTH_ICON, [('Glacial Edge', 'Rimeblade', "Winter's Reach", 'Flame of Winter', 'Marked North'),
+                         ('Sharpened Wind', 'Frozen Ground', "Winter's Return", 'Stormblade', 'Rending Ice'),
+                         ('Northern Endurance', 'Icy Wound', 'Cold Recovery', "Winter's Renewal", 'Glacial Flow')]),
+    (93361, TRUESHOT_ICON, [('Perfect Shot', 'Piercing Shot', 'Steady Aim', 'Flame Arrow', 'Frostpiercer'),
+                            ('Marked Weakness', 'Wide Trajectory', 'Arcane Arrow', 'Arcane Calibration',
+                             'Marked Ricochet'),
+                            ('Quick Recovery', "Hunter's Mobility", 'Follow-Up Shot', 'Steady Recovery',
+                             'Renewed Aim')]),
     (93275, DAWN_ICON, [('Mercy', 'Retribution', 'Communion', 'Earthen Oath', "Crusader's Flame"),
                         ('Dawnwave', 'Sunburst', 'Sacred Ground', 'Frostfire Dawn', 'Chain of Grace'),
                         ('Steadfast', 'Passing the Torch', 'Shared Pilgrimage', 'Renewed Oath', 'Searing Vow')]),
@@ -2247,7 +2261,73 @@ SPELLS += [
     strike(93292, 'Frostfire Dawn', 'Spell_Frost_FrostBolt02', FROST, VISUAL_ICE_LANCE),
     {**shown(93293, 'Dawn Afterimage', 'Spell_Holy_SearingLight', 'Your next Dawn Echo strikes again.',
              DURATION_6S), 'set': {**SHOWN, 'DurationIndex': DURATION_6S}},
+    # The Hungering Rift.
+    buff(93300, 'Rune of the Hungering Rift', RIFT_ICON,
+         'Shadow Bolt on your Corruption target opens a Hungering Rift that lashes it every 2 sec.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    harmful(93316, 'Hungering Rift', RIFT_ICON, 'A rift hungers here.', DURATION_12S, aura(AURA_DUMMY, 1, 0),
+            SHADOW),
+    strike(93317, 'Rift Lash', RIFT_ICON, SHADOW),
+    dot(93318, 'Lingering Torment', 'Spell_Shadow_ShadowWordPain', SHADOW, DURATION_6S, 'Shadow damage every second.'),
+    strike(93319, 'Lingering Torment', 'Spell_Shadow_ShadowWordPain', SHADOW),
+    strike(93320, 'Last Gasp', 'Spell_Shadow_AbominationExplosion', SHADOW),
+    strike(93321, 'Plague Maw', 'Spell_DeathKnight_IceTouch', FROST),
+    strike(93322, 'Doom Echo', 'Spell_Shadow_ShadowWordPain', SHADOW),
+    heal(93323, 'Siphon Conduit', 'Spell_Shadow_LifeDrain02', 'The rift feeds you.'),
+    # Howling North.
+    buff(93325, 'Rune of Howling North', NORTH_ICON,
+         'Howling Blast marks its enemies with Northwind; your next Obliterate on one looses a Frost blade.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    harmful(93341, 'Northwind', NORTH_ICON, 'Your next Obliterate here looses a Frost blade.', DURATION_8S,
+            aura(AURA_DUMMY, 1, 0), FROST),
+    strike(93342, 'Frost Blade', 'Spell_Frost_FrostBolt02', FROST),
+    strike(93343, 'Howling North', 'Spell_DeathKnight_EmpowerRuneBlade2', FROST),
+    {**{key: value for key, value in ground(93344, 'Northern Field', NORTH_ICON, None, DURATION_6S).items()
+        if key != 'visual'}},
+    strike(93345, 'Northern Field', NORTH_ICON, FROST),
+    harmful(93346, 'Frozen Ground', 'Spell_Frost_ChillingBlast', 'Movement speed reduced by 25%.', DURATION_3S,
+            aura(AURA_MOD_DECREASE_SPEED, -25, 0), FROST),
+    strike(93347, 'Flame of Winter', 'Spell_Fire_FlameShock', FIRE),
+    strike(93348, 'Stormblade', 'Spell_Nature_Lightning', NATURE),
+    dot(93349, 'Rending Ice', 'Ability_Gouge', PHYSICAL, DURATION_6S, 'Bleeding every second.'),
+    strike(93350, 'Rending Ice', 'Ability_Gouge', PHYSICAL),
+    dot(93351, 'Icy Wound', 'Spell_Frost_FrostArmor', FROST, DURATION_6S, 'Frost damage every second.'),
+    strike(93352, 'Icy Wound', 'Spell_Frost_FrostArmor', FROST),
+    {**buff(93353, 'Northern Endurance', 'Spell_Frost_ArcticWinds', 'Movement speed increased by 10%.', DURATION_6S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 10, 0)}), 'set': {**SHOWN, 'DurationIndex': DURATION_6S}},
+    heal(93354, "Winter's Renewal", 'Spell_Holy_Renew', 'Winter renews you.'),
+    # Trueshot.
+    buff(93360, 'Rune of Trueshot', TRUESHOT_ICON,
+         'Aimed Shot becomes Trueshot: a 2 sec windup for 45% more, piercing up to 4 enemies behind its target.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    harmful(93378, 'Exposed Target', 'Ability_Hunter_SniperShot',
+            'Your next Arcane Shot or Chimera Shot here deals more damage.', DURATION_6S, aura(AURA_DUMMY, 1, 0),
+            PHYSICAL),
+    strike(93379, 'Trueshot', TRUESHOT_ICON, PHYSICAL),
+    strike(93380, 'Arcane Payload', 'Spell_Arcane_Blast', ARCANE),
+    strike(93381, 'Flame Arrow', 'Spell_Fire_FlameShock', FIRE),
+    strike(93382, 'Frostpiercer', 'Spell_Frost_FrostBolt02', FROST),
+    {**buff(93383, "Hunter's Mobility", 'Ability_Rogue_Sprint', 'Movement speed increased by 25%.', DURATION_6S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 25, 0)}), 'set': {**SHOWN, 'DurationIndex': DURATION_6S}},
+    family_mod(93384, 'Steady Recovery', 'Ability_Hunter_SteadyShot', 'Your next Steady Shot casts 20% faster.',
+               DURATION_6S, HUNTER_FAMILY, (0, 0x1, 0), AURA_ADD_PCT_MODIFIER, SPELLMOD_CASTING_TIME, -20),
+    heal(93385, 'Renewed Aim', 'Spell_Holy_Renew', 'Your aim renews you.'),
 ]
+# Trueshot in Aimed Shot's place: Steady Shot's windup (2 sec; 2.5 with Steady Aim), Aimed Shot's cooldown and cost;
+# released, the script fires the Hero's own Aimed Shot.
+for _id, _cast, _text in ((93376, CAST_2S, '2 sec'), (93377, 19, '2.5 sec')):
+    SPELLS.append({'id': _id, 'copy': STEADY_SHOT, 'name': 'Trueshot', 'icon': TRUESHOT_ICON,
+                   'description': 'Wind up for ' + _text + ', standing still, and loose your Aimed Shot for 45% more '
+                                  'damage, piercing up to 4 enemies behind its target.', 'tooltip': '',
+                   'set': {**NO_FAMILY, 'CastingTimeIndex': _cast, 'RecoveryTime': 10000, 'ManaCost': 0,
+                           'ManaCostPercentage': 8, 'SpellVisual': 0, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 0},
+                   'effects': {1: {'Effect': EFFECT_DUMMY, 'Aura': 0, 'BasePoints': 0, 'DieSides': 1,
+                                   'RealPointsPerLevel': 0.0, 'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0}},
+                   'clear': [2, 3]})
+SPELL_CLASSES.update({93376: 'HUNTER', 93377: 'HUNTER'})
+for _spell in SPELLS:
+    if _spell['id'] in (93300, 93325, 93360):         # the new runes' own auras: hidden as every rune's
+        _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}
 for _spell in SPELLS:
     if _spell['id'] in (93015, 93065, 93092, 93093, 93094, 93117, 93165, 93166, 93216, 93217, 93219, 93220, 93241,
                         93242, 93266, 93267, 93268, 93291, 93292):
@@ -2299,10 +2379,23 @@ BORROWED_VISUALS = {
     12994: (93190,),  # Riptide: the Wellspring
     13635: (91172,),  # Arcane hits
 }
+# The updated compendium's new runes: Haunt for the Rift, Frost Strike for the blade, Frost Trap for the field.
+BORROWED_VISUALS.update({
+    10731: (93316,),  # Haunt: the Hungering Rift on its host
+    11612: (93342,),  # Frost Strike: the Frost blade
+    3759: (93344,),  # Frost Trap: the Northern Field
+})
+for _visual, _ids in ((3057, (93317, 93320, 93322)), (7906, (93321, 93343, 93382)), (8629, (93318,)),
+                      (12328, (93341, 93346, 93351)), (143, (93347, 93381)), (3444, (93348,)), (250, (93349,)),
+                      (6, (93353, 93383)), (3239, (93378,)), (5119, (93379,)), (13635, (93380,)), (2736, (93384,))):
+    BORROWED_VISUALS[_visual] = tuple(BORROWED_VISUALS.get(_visual, ())) + _ids
 for _spell in SPELLS:
     for _visual, _ids in BORROWED_VISUALS.items():
         if _spell['id'] in _ids:
             _spell['set'] = {**_spell['set'], 'SpellVisual': _visual}
+ICONS += ['Spell_Shadow_Twilight', 'Ability_TrueShot', 'Spell_DeathKnight_EmpowerRuneBlade2', 'Spell_Arcane_Blast',
+          'Ability_Hunter_SteadyShot', 'Spell_Frost_ArcticWinds', 'Ability_Hunter_SniperShot',
+          'Spell_Frost_ChillingBlast', 'Spell_Shadow_LifeDrain02']
 ICONS += ['Spell_Nature_InsectSwarm', 'Spell_Fire_SoulBurn', 'Spell_Fire_FireArmor', 'Spell_Arcane_Arcane04',
           'Spell_Nature_WispSplode', 'Spell_Nature_Lightning', 'Spell_Nature_LightningShield',
           'Spell_Shadow_AbominationExplosion', 'Spell_Frost_ChillingBlast', 'Ability_Hunter_SniperShot',

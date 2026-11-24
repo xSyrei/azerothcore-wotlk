@@ -4,6 +4,24 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### New Legendary Runes: Hungering Rift, Howling North, Trueshot
+
+- **Rune of the Hungering Rift** (Ranged DPS; Shadow Bolt, Corruption): Shadow Bolt on your Corruption target opens
+  a Rift that lashes it every 2 sec for 25% of your spell power, 5% more for each of your damage over time effects on
+  it. Drain Soul speeds it up; Shadow Bolt and Death Coil feed it. Choices: Devouring Maw, Many Tongues, Black Breath,
+  Plague Maw, Moon-Eater; Haunting Rift, Open Wound, At Your Back, Painful Anchoring, Siphon Conduit; Lingering
+  Torment, Last Gasp, Endless Appetite, Doom Echo, Necrotic Appetite.
+- **Rune of Howling North** (Melee DPS; Howling Blast, Obliterate): Howling Blast marks up to 5 enemies with
+  Northwind; your next Obliterate on one looses a Frost blade (45% of your attack power). Icy Touch, Frost Strike and
+  Frostbolt add to it. Choices: Glacial Edge, Rimeblade, Winter's Reach, Flame of Winter, Marked North; Sharpened
+  Wind, Frozen Ground, Winter's Return, Stormblade, Rending Ice; Northern Endurance, Icy Wound, Cold Recovery,
+  Winter's Renewal, Glacial Flow.
+- **Rune of Trueshot** (Ranged DPS; Aimed Shot): Aimed Shot becomes Trueshot, a 2 sec windup standing still for 45%
+  more damage, piercing up to 4 enemies behind its target. Hunter's Mark, Multi-Shot and Arcane Blast add to it.
+  Choices: Perfect Shot, Piercing Shot, Steady Aim, Flame Arrow, Frostpiercer; Marked Weakness, Wide Trajectory,
+  Arcane Arrow, Arcane Calibration, Marked Ricochet; Quick Recovery, Hunter's Mobility, Follow-Up Shot, Steady
+  Recovery, Renewed Aim.
+
 ### Legendary Runes: visual effects
 
 - About 140 of the runes' hits, damage and healing over time, slows, marks and buffs that showed nothing now have a

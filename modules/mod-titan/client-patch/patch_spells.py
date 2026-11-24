@@ -1173,8 +1173,9 @@ def build_spells(spells, icon_id):
             row[FIELDS[name]] &= ~bits
         for n, changes in spell.get('effects', {}).items():
             for name, value in changes.items():
-                if name == 'Mask':          # the spells a modifier affects: family flags (first word)
-                    row[CLASS_MASK + (n - 1) * 3:CLASS_MASK + n * 3] = [value, 0, 0]
+                if name == 'Mask':          # the spells a modifier affects: family flags (first word, or all three)
+                    words = list(value) if isinstance(value, tuple) else [value, 0, 0]
+                    row[CLASS_MASK + (n - 1) * 3:CLASS_MASK + n * 3] = words
                     continue
                 first, is_float = EFFECT_FIELDS[name]
                 row[first + n - 1] = raw(float(value) if is_float else value)
