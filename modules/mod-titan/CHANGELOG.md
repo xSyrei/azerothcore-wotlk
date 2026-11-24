@@ -4,6 +4,14 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Legendary Runes: visual effects
+
+- About 140 of the runes' hits, damage and healing over time, slows, marks and buffs that showed nothing now have a
+  look, borrowed from Blizzard's own spells: Flame Shock, Corruption, Rupture, Moonfire and Chains of Ice for damage
+  over time; Renew and Rejuvenation for healing over time; Fire Blast, Ice Lance, Mind Blast, Earth Shock, Holy
+  Shock and Hemorrhage for hits; Hunter's Mark, Living Bomb and Stormstrike for marks; Sprint, Clearcasting and
+  Sacred Shield for buffs.
+
 ### Extended Options: Wellspring, Echoing Thunder, Stormbound Conduit, Shattered Sun, Dawnbound Crusader
 
 - The last five Legendary Runes are **redesigned** with their Extended Options: five choices in each slot. **Your

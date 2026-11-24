@@ -2264,6 +2264,45 @@ for _spell in SPELLS:
     if _spell['id'] == 91710:
         _spell['effects'][1]['Amplitude'] = 2000
         _spell['tooltip'] = 'Healing every 2 sec.'
+# Blizzard's own looks for the runes' spells that had none (SpellVisual ids of existing spells; no new art):
+# hits by school, damage and healing over time, slows, marks on enemies and buffs on the Hero.
+BORROWED_VISUALS = {
+    6: (91183, 91307, 91345, 91408, 91427, 91446, 91508, 91841),  # Sprint: speed
+    32: (90794, 90813, 93192),  # Rejuvenation: Nature heals over time
+    280: (91287, 91710),  # Renew: Holy heals over time
+    68: (90736, 90777, 91184),  # Earthbind: slows
+    128: (90895, 91176),  # Holy Shock: Holy hits
+    143: (91173, 91248),  # Fire Blast: Fire hits
+    250: (90862, 90983, 91133, 91384, 91911),  # Rupture: bleeds
+    556: (90866,),  # Hamstring: a physical slow
+    785: (90831, 90986, 91179, 91480, 91486, 91487),  # Curse of the Elements: shadowy marks
+    1263: (91203, 91302, 91325),  # Moonfire: Arcane damage over time
+    # Clearcasting: empowerments
+    2736: (90701, 90707, 90987, 91180, 91201, 91206, 91223, 91227, 91249, 91304, 91305, 91306, 91327, 91328, 91381,
+           91386, 91428, 91448, 91462, 91463, 91468, 91616, 91617, 91640, 91685, 91686, 91687, 91742, 91743, 91744,
+           91811, 91812, 91835, 91836, 91839, 91843, 91844, 91865, 91887, 91888, 91913, 91915, 93090, 93095, 93269,
+           93293),
+    3057: (91175,),  # Mind Blast: Shadow hits
+    3077: (90844, 90865, 90926, 91178),  # Flash Heal: heals
+    3239: (90733, 91308, 91322, 91347, 91760, 91764, 91910, 91918, 93290),  # Hunter's Mark: marks
+    3444: (91919,),  # Earth Shock: Nature hits
+    3445: (91246, 91405, 91421, 91423, 91635, 93218),  # Flame Shock: Fire damage over time
+    4599: (90705, 91182),  # Death Wish: damage done
+    5119: (90709, 91132, 91171, 91177, 93015),  # Hemorrhage: physical hits
+    7660: (91321, 93240),  # Stormstrike: Nature marks
+    7906: (91174,),  # Ice Lance: Frost hits
+    8629: (90841, 91735, 91739),  # Corruption: Shadow damage over time
+    10692: (93265,),  # Living Bomb: a Fire mark
+    11956: (90706, 90735, 91344, 91502, 91540),  # Sacred Shield: defences
+    # Chains of Ice: Frost marks, slows and damage over time
+    12328: (90839, 91224, 91226, 91441, 91442, 91444, 91447, 91461, 91470, 91472, 91474, 91505, 91763, 91810, 93221),
+    12994: (93190,),  # Riptide: the Wellspring
+    13635: (91172,),  # Arcane hits
+}
+for _spell in SPELLS:
+    for _visual, _ids in BORROWED_VISUALS.items():
+        if _spell['id'] in _ids:
+            _spell['set'] = {**_spell['set'], 'SpellVisual': _visual}
 ICONS += ['Spell_Nature_InsectSwarm', 'Spell_Fire_SoulBurn', 'Spell_Fire_FireArmor', 'Spell_Arcane_Arcane04',
           'Spell_Nature_WispSplode', 'Spell_Nature_Lightning', 'Spell_Nature_LightningShield',
           'Spell_Shadow_AbominationExplosion', 'Spell_Frost_ChillingBlast', 'Ability_Hunter_SniperShot',

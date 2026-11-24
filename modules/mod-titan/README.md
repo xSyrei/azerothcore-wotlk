@@ -713,6 +713,9 @@ utility or a tradeoff) take one pick each, from three.
     runes.cpp's ModifierNeeds by number. The Paragon's interactions and options: `ParagonJudgment`,
     `ParagonHolyShock`, `ParagonRighteous`, `ParagonAbility`; Bastion of Faith and Weight of the Unworthy need a
     damaging Manifestation (Condemnation or Radiant Judgment). The Stormreaver's: `StormAbility`.
+  - **Borrowed visuals** (`patch_runes.BORROWED_VISUALS`): the runes' spells that had no SpellVisual take an
+    existing Blizzard spell's, by kind and school (hits, damage and healing over time, slows, marks, buffs); damage
+    over time ticks and the ground's ticks stay without one (their aura or ground shows).
   - **Extended Options, the redesigns (Wellspring, Echoing Thunder, Stormbound Conduit, Shattered Sun, Dawnbound
     Crusader)**: markers 93175, 93200, 93225, 93250, 93275 (their 3-choice blocks retired); every pick cleared once by
     `titan_runes_zz_extended_reset5.sql`. The Wellspring: its mark 93190 on the Earth Shield bearer (`LayWell`,
