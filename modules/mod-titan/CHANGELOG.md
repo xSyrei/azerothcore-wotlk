@@ -4,6 +4,24 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Extended Options: Whitefang, Ursoc's Champion
+
+- Two more Legendary Runes are **redesigned** with their Extended Options: five choices in each slot. **Your picks
+  for these two runes are cleared**: choose again.
+- **Whitefang**
+  - With your **Rake** on the enemy, the shatter also leaves **Frozen Wound** (25% of your attack power over 6 sec);
+    **Ferocious Bite** on Frozen Wound deals its next tick at once. A **Frostbolt** hit on Frozen Prey makes its
+    shatter deal 25% more and the mark last 2 sec longer.
+  - Choices: Predator's Fang, Pack of Winter, Glacial Claws, Stormfang, Flamefang; Frozen Wound, Cold Blood,
+    Predator's Chill, Marked Prey, Moonfrost; Swift Hunt, Winter's Recovery, Lingering Frost, Mending Fang, Clawing
+    Cold.
+- **Ursoc's Champion**
+  - **Mangle** in the guard marks its target: the impact there also strikes up to 4 enemies near it. **Swipe** in the
+    guard makes it last 1 sec longer. **Earth Shock** makes your next impact 15% stronger, half of it Nature.
+  - Choices: Crushing Champion, Packbreaker, Unbroken Champion, Stoneguard, Thunderbear; Long Guard, Earthen Hide,
+    Ursoc's Challenge, Rending Maul, Earthshock Roar; Defiant Roar, Restoring Force, Bear's Momentum, Lifebloom Hide,
+    Shielding Roots. The slots are now Impact, Guard and Resolve.
+
 ### Extended Options: Splintered Crown, Duelist, Ember's Wrath
 
 - Three more Legendary Runes get their **Extended Options**, each **redesigned** around the document: five new

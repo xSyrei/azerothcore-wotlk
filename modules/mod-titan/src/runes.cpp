@@ -360,7 +360,7 @@ namespace
         SPELL_MOVING_MOUNTAIN           = 91345,
         SPELL_ENDURING_CHAMPION         = 91346,
         SPELL_CHALLENGERS_ROAR          = 91347,
-        SPELL_URSOC_MODIFIER_FIRST      = 91350,    // + slot * 3 + choice
+        // 91350-91358: its first 9 markers, retired (the Extended Options' block, below)
         SPELL_URSOC_ROAR_LOOK           = 91359,
         SPELL_COLLISION_LOOK            = 91360,    // Astral Rupture: the collision's look, its damage over time
 
@@ -432,6 +432,23 @@ namespace
         SPELL_PHOENIX_CLAWS             = 91862,
         SPELL_PHOENIX_SCAR              = 91863,
         SPELL_HEALING_FLAME             = 91864,
+        SPELL_WHITEFANG_MODIFIER_FIRST  = 91870,
+        SPELL_STORMFANG                 = 91885,
+        SPELL_FLAMEFANG                 = 91886,
+        SPELL_LINGERING_FROST           = 91887,    // the next Shred 15% more
+        SPELL_CLAWING_COLD              = 91888,    // the next Shred 10 Energy cheaper
+        SPELL_MENDING_FANG              = 91889,
+        SPELL_URSOC_MODIFIER_FIRST      = 91895,
+        SPELL_URSOCS_MARK               = 91910,
+        SPELL_RENDING_MAUL              = 91911,    // its tick 91912
+        SPELL_RENDING_MAUL_TICK         = 91912,
+        SPELL_EARTHEN_FURY              = 91913,    // Earth Shock's: the next impact
+        SPELL_THUNDERBEAR               = 91914,
+        SPELL_BEARS_MOMENTUM            = 91915,    // the next Maul 20% more
+        SPELL_URSOC_MEND                = 91916,
+        SPELL_SHIELDING_ROOTS           = 91917,
+        SPELL_URSOCS_CHALLENGE          = 91918,
+        SPELL_URSOC_NATURE              = 91919,    // the impact's Nature half
         SPELL_BURNING_RAKE              = 91865,    // the next Burning Claws 30% more
         SPELL_HOLLOW_PATCH              = 91785,    // its tick 91786
         SPELL_HOLLOW_PATCH_TICK         = 91786,
@@ -491,7 +508,7 @@ namespace
         SPELL_SNOWBLIND                 = 91448,    // dodge
         SPELL_FROZEN_TRAIL              = 91449,    // the patch's look
         SPELL_RUNE_WHITEFANG            = 91450,
-        SPELL_WHITEFANG_MODIFIER_FIRST  = 91451,    // + slot * 3 + choice
+        // 91451-91459: its first 9 markers, retired (the Extended Options' block, below)
         SPELL_FROZEN_TRAIL_TICK         = 91460,
         SPELL_FROZEN_TRAIL_SLOW         = 91461,
         SPELL_FANG_COLD_BLOOD           = 91462,    // the next Ferocious Bite on the victim 20% more
@@ -557,6 +574,9 @@ namespace
         SPELL_AIMED_SHOT            = 19434,
         SPELL_STEADY_SHOT           = 56641,
         SPELL_DRAIN_SOUL            = 1120,
+        SPELL_MANGLE_BEAR           = 33878,
+        SPELL_SWIPE_BEAR            = 779,
+        SPELL_LIFEBLOOM             = 33763,
         SPELL_BLIZZARD              = 10,
         SPELL_MAUL                  = 6807,
         SPELL_BEAR_FORM             = 5487,
@@ -1133,26 +1153,31 @@ namespace
     constexpr std::size_t MAX_MARKED = 5, CONVERGING_TARGETS = 4, CROSSED_TARGETS = 3, EVENTIDE_TARGETS = 5;
 
     // Ursoc's Champion's modifiers: slot (0 Guard, 1 Answer, 2 Resolve) x 3 + choice.
+    // Ursoc's Champion's modifiers (its Extended Options, a redesign): slot (0 Impact, 1 Guard, 2 Resolve) x 5 +
+    // choice; its picks reset (titan_runes_zz_extended_reset3.sql).
     enum UrsocModifier : uint8
     {
-        MOD_ANCIENT_HIDE, MOD_LASTING_STAND, MOD_MOVING_MOUNTAIN,
-        MOD_URSOCS_BITE, MOD_MOUNTAINS_ROAR, MOD_EARTHBREAKER,
-        MOD_ENDURING_CHAMPION, MOD_CHALLENGERS_ROAR, MOD_UNBROKEN,
+        MOD_CRUSHING_CHAMPION, MOD_PACKBREAKER, MOD_UNBROKEN_CHAMPION, MOD_STONEGUARD, MOD_THUNDERBEAR,
+        MOD_LONG_GUARD, MOD_EARTHEN_HIDE, MOD_URSOCS_CHALLENGE, MOD_RENDING_MAUL, MOD_EARTHSHOCK_ROAR,
+        MOD_DEFIANT_ROAR, MOD_RESTORING_FORCE, MOD_BEARS_MOMENTUM, MOD_LIFEBLOOM_HIDE, MOD_SHIELDING_ROOTS,
     };
 
     // Ursoc's Champion's tuning: Barkskin in Bear Form adds Ursoc's Guard (6 sec, an absorb of 30% of maximum
     // health) and comes back 30 sec sooner; each Maul in Bear Form takes 3 sec more off it. Maul in the guard
-    // releases a blow of 75% of attack power plus all the guard absorbed (that part at most 250% of attack power)
-    // in a 10-yard cone in front (up to 5).
-    constexpr int32 GUARD_MS = 6000, LASTING_STAND_MS = 10000, ENDURING_MS = 8000, CHALLENGERS_MS = 6000;
+    // releases the impact: 75% of attack power plus all the guard absorbed (that part at most 250% of attack power)
+    // in a 10-yard cone in front (up to 5); ours kept over the Extended Options' 15% guard and 25% blow. Its
+    // interactions: Mangle in the guard marks its target (the impact there: 20% of attack power to up to 4 near it,
+    // and threat); Swipe in it, 1 sec longer (once); Earth Shock, the next impact 15% more, half of it Nature.
+    constexpr int32 GUARD_MS = 6000, LONG_GUARD_MS = 2000, SWIPE_GUARD_MS = 1000, URSOCS_MARK_MS = 6000;
+    constexpr int32 CHALLENGE_MS = 3000, RENDING_MS = 6000, GUARD_END_MS = 150;
     constexpr int32 BARKSKIN_SOONER_MS = 30000, MAUL_SOONER_MS = 3000;
-    constexpr float GUARD_PCT = 30.0f, ANCIENT_HIDE_PCT = 45.0f, MOUNTAIN_PCT = 10.0f, MOUNTAIN_TRAVEL = 5.0f;
-    constexpr float URSOC_AP = 0.75f, ABSORBED_SHARE = 1.0f, ABSORBED_MOST_AP = 2.5f, URSOCS_BITE = 2.0f;
-    constexpr float URSOC_REACH = 10.0f, URSOC_ARC = float(M_PI) / 3.0f, ROAR_ARC = float(M_PI) / 2.0f;
-    constexpr float EARTHBREAKER_REACH = 25.0f, EARTHBREAKER_HALF_WIDTH = 2.5f, EARTHBREAKER_FAR = 1.5f;
-    constexpr float ENDURING_SHARE = 1.0f, CHALLENGERS_THREAT = 1.0f;
-    constexpr uint8 UNBROKEN_BLOWS = 3;
-    constexpr std::size_t URSOC_TARGETS = 5, ROAR_TARGETS = 10;
+    constexpr float GUARD_PCT = 30.0f, EARTHEN_HIDE = 1.2f, ROOTS_PCT = 3.0f, RESTORING_CAP_PCT = 3.0f;
+    constexpr float URSOC_AP = 0.75f, ABSORBED_SHARE = 1.0f, ABSORBED_MOST_AP = 2.5f, CRUSHING_CHAMPION = 1.3f;
+    constexpr float UNBROKEN_CHAMPION = 1.25f, STONEGUARD = 1.2f, EARTHEN_FURY = 1.15f, THUNDERBEAR_AP = 0.2f;
+    constexpr float MARK_AP = 0.2f, MARK_RADIUS = 8.0f, DEFIANT_THREAT = 0.5f, RENDING_SHARE = 0.3f;
+    constexpr float RESTORING_SHARE = 0.2f, LIFEBLOOM_POWER = 0.4f;
+    constexpr float URSOC_REACH = 10.0f, URSOC_ARC = float(M_PI) / 3.0f;
+    constexpr std::size_t URSOC_TARGETS = 5, PACKBREAKER_TARGETS = 8, MARK_TARGETS = 4;
 
     // The Duelist's modifiers (its Extended Options, a redesign): slot (0 Pistol, 1 Powder, 2 Footwork) x 5 + choice;
     // its picks reset (titan_runes_zz_extended_reset2.sql).
@@ -1241,26 +1266,28 @@ namespace
     constexpr float EMBER_SPREAD_RANGE = 8.0f;
     constexpr std::size_t WILDFIRE_CLAWS_TARGETS = 2, FIRESTORM_TARGETS = 3;
 
-    // Whitefang's modifiers: slot (0 Shatter, 1 Hunt, 2 Instinct) x 3 + choice.
+    // Whitefang's modifiers (its Extended Options, a redesign): slot (0 Shatter, 1 Hunt, 2 Instinct) x 5 + choice;
+    // its picks reset (titan_runes_zz_extended_reset3.sql).
     enum WhitefangModifier : uint8
     {
-        MOD_WHITEFANG, MOD_ICEFANG_SPRAY, MOD_WINTER_WOUND,
-        MOD_LONG_WINTER, MOD_PURSUING_CHILL, MOD_PACK_FROST,
-        MOD_FANG_COLD_BLOOD, MOD_SNOWBLIND, MOD_FROZEN_TRAIL,
+        MOD_PREDATORS_FANG, MOD_PACK_OF_WINTER, MOD_GLACIAL_CLAWS, MOD_STORMFANG, MOD_FLAMEFANG,
+        MOD_FROZEN_WOUND, MOD_FANG_COLD_BLOOD, MOD_PREDATORS_CHILL, MOD_MARKED_PREY, MOD_MOONFROST_FANG,
+        MOD_SWIFT_HUNT, MOD_WINTERS_RECOVERY, MOD_LINGERING_FROST, MOD_MENDING_FANG, MOD_CLAWING_COLD,
     };
 
     // Whitefang's tuning: the Hero's own Icy Touch (its Frost rune), in Cat Form or not, lays Frozen Prey for 6 sec;
-    // the next Shred or Mangle on the victim shatters it for 150% of attack power as Frost damage (the dossier's
-    // 30%, and Frozen Trail's 5% a second, made the rune 2-5% of a feral's damage).
-    constexpr int32 PREY_MS = 6000, LONG_WINTER_MS = 10000, WINTER_WOUND_MS = 6000, PURSUING_MS = 3000;
-    constexpr int32 PACK_FROST_MS = 6000, FANG_COLD_BLOOD_MS = 5000, SNOWBLIND_MS = 3000, TRAIL_SLOW_MS = 1500;
-    constexpr uint32 LONG_WINTER_AFTER_MS = 3000, FROZEN_TRAIL_TICKS = 4, FROZEN_TRAIL_TICK_MS = 1000;
-    constexpr int32 PURSUING_REFUND = 10;
-    constexpr float SHATTER_AP = 1.5f, WHITEFANG_BONUS = 1.4f, ICEFANG_SHARE = 0.5f, WINTER_WOUND_SHARE = 1.5f;
-    constexpr float LONG_WINTER_BONUS = 1.2f, PACK_FROST_SHARE = 0.6f, FANG_COLD_BLOOD = 1.2f, FROZEN_TRAIL_AP = 0.2f;
-    constexpr float ICEFANG_REACH = 8.0f, ICEFANG_ARC = float(M_PI) / 4.0f, PACK_FROST_RADIUS = 8.0f;
-    constexpr float SNOWBLIND_RADIUS = 6.0f, FROZEN_TRAIL_RADIUS = 6.0f;
-    constexpr std::size_t ICEFANG_TARGETS = 4, PACK_FROST_TARGETS = 2, FROZEN_TRAIL_TARGETS = 5;
+    // the next Shred or Mangle on the victim shatters it for 150% of attack power as Frost damage (kept over the
+    // Extended Options' 45%). Its interactions: with the Hero's Rake on it, the shatter leaves Frozen Wound (25% of
+    // attack power over 6 sec); Ferocious Bite on Frozen Wound deals its next tick at once; a Frostbolt on Frozen
+    // Prey, the shatter 25% more and the mark 2 sec longer (once a mark).
+    constexpr int32 PREY_MS = 6000, WINTER_WOUND_MS = 6000, PACK_FROST_MS = 6000, FROSTBOLT_PREY_MS = 2000;
+    constexpr int32 SWIFT_HUNT_MS = 4000, LINGERING_MS = 3000, FANG_REFUND = 10, FANG_MOONFIRE_MS = 2000;
+    constexpr int32 FANG_MOONFIRE_MOST_MS = 6000;
+    constexpr uint32 RECOVERY_EVERY_MS = 6000, MENDING_EVERY_MS = 10000;
+    constexpr float SHATTER_AP = 1.5f, WHITEFANG_BONUS = 1.4f, ICEFANG_SHARE = 0.5f, PACK_FROST_SHARE = 0.5f;
+    constexpr float FROSTBOLT_CHILL = 1.25f, PREDATORS_CHILL = 1.4f, FROZEN_WOUND_AP = 0.25f, FROZEN_WOUND_MORE = 1.5f;
+    constexpr float FANG_COLD_BLOOD_AP = 0.1f, FANG_SPELL_POWER = 0.2f, MENDING_PCT = 2.0f, PACK_FROST_RADIUS = 8.0f;
+    constexpr std::size_t GLACIAL_CLAWS_TARGETS = 3;
 
     // The shocks' empowered strikes (both runes): Flame Shock or Frost Shock (in Cat Form too) empowers the next Claw
     // or Swipe within 10 sec. Claw: a second enemy within 5 yards takes its hit again (Fire or Frost), and both
@@ -1432,7 +1459,7 @@ namespace
             // Tanks: Barkskin in Bear Form raises the guard, Maul releases it.
             { RUNE_URSOCS_CHAMPION, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_BEAR_FORM, SPELL_DIRE_BEAR_FORM }, { SPELL_BARKSKIN }, { SPELL_MAUL } },
-              SPELL_RUNE_URSOCS_CHAMPION, SPELL_URSOC_MODIFIER_FIRST },
+              SPELL_RUNE_URSOCS_CHAMPION, SPELL_URSOC_MODIFIER_FIRST, MAX_CHOICES },
             // Melee DPS: Sinister Strike readies the pistol (the rune teaches Pistol Shot).
             { RUNE_DUELIST, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_SINISTER_STRIKE } }, SPELL_RUNE_DUELIST, SPELL_DUELIST_MODIFIER_FIRST, MAX_CHOICES },
@@ -1447,7 +1474,7 @@ namespace
             // Melee DPS: Icy Touch in Cat Form marks the prey, Shred or Mangle shatters it (the rune teaches it).
             { RUNE_WHITEFANG, uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE)),
               { { SPELL_CAT_FORM }, { SPELL_ICY_TOUCH }, { SPELL_SHRED, SPELL_MANGLE_CAT } }, SPELL_RUNE_WHITEFANG,
-              SPELL_WHITEFANG_MODIFIER_FIRST },
+              SPELL_WHITEFANG_MODIFIER_FIRST, MAX_CHOICES },
             // The Tank Collection (src/tank_runes.cpp): Blood Boil links the pack; a Shock commands the totem; the
             // Voidwalker and Searing Pain make the covenant.
             { RUNE_RED_COMMUNION, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
@@ -1543,6 +1570,34 @@ namespace
                 case MOD_DISTANT_SPARK: return { { SPELL_ARCANE_SHOT } };
                 case MOD_EVOKED_REMNANT: return { { SPELL_EVOCATION } };
                 case MOD_ASTRAL_SHELTER: return { { SPELL_POWER_WORD_SHIELD } };
+                default: return {};
+            }
+        if (rune == RUNE_URSOCS_CHAMPION)
+            switch (modifier)
+            {
+                case MOD_UNBROKEN_CHAMPION: case MOD_BEARS_MOMENTUM: return { { SPELL_MAUL } };
+                case MOD_STONEGUARD: return { { SPELL_EARTH_SHIELD } };
+                case MOD_THUNDERBEAR: return { { SPELL_THUNDER_CLAP } };
+                case MOD_LONG_GUARD: return { { SPELL_SWIPE_BEAR } };
+                case MOD_URSOCS_CHALLENGE: return { { SPELL_MANGLE_BEAR } };
+                case MOD_RENDING_MAUL: return { { SPELL_RAKE } };
+                case MOD_EARTHSHOCK_ROAR: return { { TankRunes::SPELL_EARTH_SHOCK } };
+                case MOD_LIFEBLOOM_HIDE: return { { SPELL_LIFEBLOOM } };
+                case MOD_SHIELDING_ROOTS: return { { SPELL_REJUVENATION } };
+                default: return {};
+            }
+        if (rune == RUNE_WHITEFANG)
+            switch (modifier)
+            {
+                case MOD_STORMFANG: return { { SPELL_LIGHTNING_SHIELD } };
+                case MOD_FLAMEFANG: return { { SPELL_FLAME_SHOCK } };
+                case MOD_FROZEN_WOUND: return { { SPELL_RAKE } };
+                case MOD_FANG_COLD_BLOOD: return { { SPELL_RAKE }, { SPELL_FEROCIOUS_BITE } };
+                case MOD_PREDATORS_CHILL: case MOD_CLAWING_COLD: return { { SPELL_FROSTBOLT } };
+                case MOD_MARKED_PREY: return { { SPELL_HUNTERS_MARK } };
+                case MOD_MOONFROST_FANG: return { { SPELL_MOONFIRE } };
+                case MOD_LINGERING_FROST: return { { SPELL_SHRED } };
+                case MOD_MENDING_FANG: return { { SPELL_REJUVENATION } };
                 default: return {};
             }
         if (rune == RUNE_EMBERS_WRATH)
@@ -1827,8 +1882,7 @@ namespace
         // Ursoc's Champion.
         int32 GuardShield = 0;                      // the guard's absorb as raised (0: none up)
         uint8 GuardBlows = 0;                       // Unbroken's blows from this guard
-        bool GuardTravelled = false;
-        Position GuardFrom;
+        bool GuardSwiped = false, GuardStone = false, GuardThunder = false, GuardShocked = false;
 
         // The Duelist: direct Sinister Strike hits toward Opening Shot.
         uint8 SabreHits = 0;
@@ -1843,8 +1897,9 @@ namespace
 
         // Whitefang: the primary mark (on whom, since when); Pursuing Chill's discount waiting; Cold Blood's victim.
         ObjectGuid PreyOn, ColdBloodOn;
-        uint32 PreyAt = 0;
+        uint32 PreyAt = 0, RecoveryAt = 0, MendingAt = 0;
         bool PursuitDiscount = false;
+        bool PreyChilled = false, PreyChillUsed = false;    // a Frostbolt's empowering of the mark (once a mark)
 
     };
 
@@ -2821,6 +2876,7 @@ namespace
             case SPELL_ASTRAL_RUPTURE: return SPELL_ASTRAL_RUPTURE_TICK;
             case SPELL_PHOENIX_BURN: return SPELL_PHOENIX_BURN_TICK;
             case SPELL_PHANTOM_WOUND: return SPELL_PHANTOM_WOUND_TICK;
+            case SPELL_RENDING_MAUL: return SPELL_RENDING_MAUL_TICK;
             case SPELL_CORRUPTED_BLADE: return SPELL_CORRUPTED_BLADE_TICK;
             case SPELL_CINDER_WOUND: return SPELL_CINDER_WOUND_TICK;
             case SPELL_CINDER_WOUND_SPREAD: return SPELL_CINDER_WOUND_TICK;
@@ -6325,19 +6381,29 @@ namespace
         State& state = StateOf(player);
         state.GuardShield = 0;
         state.GuardBlows = 0;
-        for (uint32 spell : { SPELL_URSOCS_GUARD, SPELL_LASTING_STAND, SPELL_MOVING_MOUNTAIN })
-            player->RemoveAurasDueToSpell(spell);
+        state.GuardSwiped = state.GuardStone = state.GuardThunder = state.GuardShocked = false;
+        player->RemoveAurasDueToSpell(SPELL_URSOCS_GUARD);
     }
 
-    // Barkskin in Bear Form: Ursoc's Guard, an absorb of 30% of maximum health (Ancient Hide 45%) for 6 sec (Lasting
-    // Stand 10, healing taken 25% more meanwhile; Moving Mountain 40% speed meanwhile); Barkskin back 30 sec sooner.
+    // The guard ms longer (Swipe's second, Earthshock Roar's).
+    void LengthenGuard(Player* player, int32 ms)
+    {
+        if (Aura* guard = player->GetAura(SPELL_URSOCS_GUARD, player->GetGUID()))
+        {
+            guard->SetMaxDuration(guard->GetMaxDuration() + ms);
+            guard->SetDuration(guard->GetDuration() + ms);
+        }
+    }
+
+    // Barkskin in Bear Form: Ursoc's Guard, an absorb of 30% of maximum health (Earthen Hide 20% more) for 6 sec
+    // (Long Guard 8); Barkskin back 30 sec sooner. Shielding Roots, in the Hero's Rejuvenation: 3% more for 4 sec.
     void RaiseGuard(Player* player)
     {
         State& state = StateOf(player);
         EndGuard(player);
-        int32 shield = std::max<int32>(1, int32(player->GetMaxHealth()
-            * (HasUrsocMarker(player, MOD_ANCIENT_HIDE) ? ANCIENT_HIDE_PCT : GUARD_PCT) / 100.0f));
-        int32 ms = HasUrsocMarker(player, MOD_LASTING_STAND) ? LASTING_STAND_MS : GUARD_MS;
+        int32 shield = std::max<int32>(1, int32(player->GetMaxHealth() * GUARD_PCT / 100.0f
+            * (HasUrsocMarker(player, MOD_EARTHEN_HIDE) ? EARTHEN_HIDE : 1.0f)));
+        int32 ms = GUARD_MS + (HasUrsocMarker(player, MOD_LONG_GUARD) ? LONG_GUARD_MS : 0);
         Report(player, SPELL_URSOCS_GUARD, 'A', shield);
         player->CastCustomSpell(player, SPELL_URSOCS_GUARD, &shield, nullptr, nullptr, true);
         if (Aura* guard = player->GetAura(SPELL_URSOCS_GUARD, player->GetGUID()))
@@ -6347,118 +6413,159 @@ namespace
         }
         state.GuardShield = shield;
         state.GuardBlows = 0;
-        state.GuardFrom = player->GetPosition();
-        state.GuardTravelled = false;
-        uint32 extra = HasUrsocMarker(player, MOD_LASTING_STAND) ? SPELL_LASTING_STAND
-            : HasUrsocMarker(player, MOD_MOVING_MOUNTAIN) ? SPELL_MOVING_MOUNTAIN : 0;
-        if (extra)
-            if (Aura* aura = player->AddAura(extra, player))
-            {
-                aura->SetMaxDuration(ms);
-                aura->SetDuration(ms);
-            }
+        if (HasUrsocMarker(player, MOD_SHIELDING_ROOTS)
+            && player->GetAuraOfRankedSpell(SPELL_REJUVENATION, player->GetGUID()))
+        {
+            int32 roots = std::max<int32>(1, int32(player->CountPctFromMaxHealth(int32(ROOTS_PCT))));
+            player->RemoveAurasDueToSpell(SPELL_SHIELDING_ROOTS);
+            Report(player, SPELL_SHIELDING_ROOTS, 'A', roots);
+            player->CastCustomSpell(player, SPELL_SHIELDING_ROOTS, &roots, nullptr, nullptr, true);
+        }
     }
 
-    // Maul in the guard: the blow (75% of attack power and all the guard absorbed, that part at most 250% of attack
-    // power; Unbroken: the 75% only, the guard kept, 3 blows a guard) in a 10-yard cone in front (up to 5; Ursoc's
-    // Bite: Maul's victim only, double; Mountain's Roar: 180 degrees, up to 10; Earthbreaker: a 25-yard line, 50%
-    // more past 10). Enduring Champion: all the guard left over stays as a shield 8 sec. Challenger's Roar: the
-    // struck deal 20% less for 6 sec, and the blow's threat is doubled.
-    void Release(Player* player, Unit* victim)
+    // The impact (Maul in the guard; Unbroken Champion: the guard running out, 125%): 75% of attack power and all
+    // the guard absorbed (that part at most 250% of attack power; Crushing Champion 30% more, Stoneguard 20% more)
+    // in a 10-yard cone in front (up to 5; Packbreaker 8). Earth Shock's empowering: 15% more, half of it Nature.
+    // On the Hero's Mangle mark: 20% of attack power to up to 4 near it, and threat. Thunderbear's burst; Rending
+    // Maul's bleed on their Rake target; Defiant Roar's threat; Restoring Force, Lifebloom Hide; Bear's Momentum.
+    void Release(Player* player, int32 left, float scale)
     {
         State& state = StateOf(player);
-        AuraEffect* guard = GuardEffect(player);
-        if (!guard || state.GuardBlows >= UNBROKEN_BLOWS)
-            return;
+        ObjectGuid me = player->GetGUID();
         float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
-        int32 left = std::max(0, guard->GetAmount());
-        float absorbed = float(std::max(0, state.GuardShield - left));
-        bool unbroken = HasUrsocMarker(player, MOD_UNBROKEN);
-        float blow = ap * URSOC_AP + (unbroken ? 0.0f : std::min(absorbed * ABSORBED_SHARE, ap * ABSORBED_MOST_AP));
-        std::vector<Unit*> struck;
-        if (HasUrsocMarker(player, MOD_URSOCS_BITE))
+        float absorbed = float(std::max(0, state.GuardShield - std::max(0, left)));
+        float blow = (ap * URSOC_AP + std::min(absorbed * ABSORBED_SHARE, ap * ABSORBED_MOST_AP)) * scale;
+        if (HasUrsocMarker(player, MOD_CRUSHING_CHAMPION))
+            blow *= CRUSHING_CHAMPION;
+        if (state.GuardStone)
+            blow *= STONEGUARD;
+        bool shocked = player->HasAura(SPELL_EARTHEN_FURY);
+        if (shocked)
         {
-            if (Valid(player, victim))
-                struck.push_back(victim);
-            blow *= URSOCS_BITE;
+            player->RemoveAurasDueToSpell(SPELL_EARTHEN_FURY);
+            blow *= EARTHEN_FURY;
         }
-        else if (HasUrsocMarker(player, MOD_EARTHBREAKER))
-        {
-            Shape line;
-            line.From = player->GetPosition();
-            line.To = Toward(line.From, player->GetOrientation(), EARTHBREAKER_REACH);
-            line.HalfWidth = EARTHBREAKER_HALF_WIDTH;
-            struck = EnemiesIn(player, line, URSOC_TARGETS);
-        }
-        else
-        {
-            bool roar = HasUrsocMarker(player, MOD_MOUNTAINS_ROAR);
-            Shape cone;
-            cone.Cone = true;
-            cone.From = player->GetPosition();
-            cone.Facing = player->GetOrientation();
-            cone.Radius = URSOC_REACH;
-            cone.Arc = roar ? ROAR_ARC : URSOC_ARC;
-            struck = EnemiesIn(player, cone, roar ? ROAR_TARGETS : URSOC_TARGETS);
-        }
-        player->CastSpell(player, HasUrsocMarker(player, MOD_MOUNTAINS_ROAR) ? SPELL_URSOC_ROAR_LOOK
-            : SPELL_URSOC_BLOW_LOOK, true);
-        bool challenge = HasUrsocMarker(player, MOD_CHALLENGERS_ROAR);
+        Shape cone;
+        cone.Cone = true;
+        cone.From = player->GetPosition();
+        cone.Facing = player->GetOrientation();
+        cone.Radius = URSOC_REACH;
+        cone.Arc = URSOC_ARC;
+        std::vector<Unit*> struck = EnemiesIn(player, cone,
+            HasUrsocMarker(player, MOD_PACKBREAKER) ? PACKBREAKER_TARGETS : URSOC_TARGETS);
+        player->CastSpell(player, SPELL_URSOC_BLOW_LOOK, true);
+        float dealt = 0.0f;
         for (Unit* enemy : struck)
         {
-            float amount = blow;
-            if (HasUrsocMarker(player, MOD_EARTHBREAKER) && player->GetExactDist2d(enemy) > URSOC_REACH)
-                amount *= EARTHBREAKER_FAR;
-            Strike(player, enemy, SPELL_URSOC_BLOW, amount);
+            if (shocked)
+            {
+                Strike(player, enemy, SPELL_URSOC_BLOW, blow / 2.0f);
+                Strike(player, enemy, SPELL_URSOC_NATURE, blow / 2.0f);
+            }
+            else
+                Strike(player, enemy, SPELL_URSOC_BLOW, blow);
+            dealt += blow;
+            if (state.GuardThunder)
+                Strike(player, enemy, SPELL_THUNDERBEAR,
+                    ap * THUNDERBEAR_AP * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE));
             if (!enemy->IsAlive())
                 continue;
-            if (challenge)
+            if (HasUrsocMarker(player, MOD_DEFIANT_ROAR))
+                enemy->GetThreatMgr().AddThreat(player, blow * DEFIANT_THREAT);
+            if (HasUrsocMarker(player, MOD_RENDING_MAUL) && enemy->GetAuraOfRankedSpell(SPELL_RAKE, me))
+                AddDot(player, enemy, SPELL_RENDING_MAUL, blow * RENDING_SHARE, RENDING_MS);
+            if (enemy->HasAura(SPELL_URSOCS_MARK, me))
             {
-                Lasting(player, enemy, SPELL_CHALLENGERS_ROAR, CHALLENGERS_MS);
-                enemy->GetThreatMgr().AddThreat(player, amount * CHALLENGERS_THREAT);
+                enemy->RemoveAurasDueToSpell(SPELL_URSOCS_MARK, me);
+                std::size_t count = MARK_TARGETS;
+                for (Unit* other : EnemiesAround(player, enemy, MARK_RADIUS))
+                    if (other != enemy && count)
+                    {
+                        Strike(player, other, SPELL_URSOC_BLOW, ap * MARK_AP);
+                        other->GetThreatMgr().AddThreat(player, ap * MARK_AP);
+                        --count;
+                    }
             }
         }
-        if (unbroken)
+        float cap = float(player->CountPctFromMaxHealth(int32(RESTORING_CAP_PCT)));
+        float heal = 0.0f;
+        if (HasUrsocMarker(player, MOD_RESTORING_FORCE))
+            heal += std::min(dealt * RESTORING_SHARE, cap);
+        if (HasUrsocMarker(player, MOD_LIFEBLOOM_HIDE) && player->GetAuraOfRankedSpell(SPELL_LIFEBLOOM, me))
+            heal += std::min(RunePower(player, SPELL_SCHOOL_MASK_NATURE, SPELL_MAUL, false) * LIFEBLOOM_POWER, cap);
+        if (heal >= 1.0f)
         {
-            ++state.GuardBlows;                     // the guard stays; 3 blows a guard
-            return;
+            int32 points = int32(heal);
+            Report(player, SPELL_URSOC_MEND, 'H', points);
+            player->CastCustomSpell(player, SPELL_URSOC_MEND, &points, nullptr, nullptr, true);
         }
-        if (HasUrsocMarker(player, MOD_ENDURING_CHAMPION) && left > 0)
-        {
-            int32 kept = std::max<int32>(1, int32(float(left) * ENDURING_SHARE));
-            player->RemoveAurasDueToSpell(SPELL_ENDURING_CHAMPION);
-            Report(player, SPELL_ENDURING_CHAMPION, 'A', kept);
-            player->CastCustomSpell(player, SPELL_ENDURING_CHAMPION, &kept, nullptr, nullptr, true);
-            if (Aura* shield = player->GetAura(SPELL_ENDURING_CHAMPION, player->GetGUID()))
-            {
-                shield->SetMaxDuration(ENDURING_MS);
-                shield->SetDuration(ENDURING_MS);
-            }
-        }
+        if (HasUrsocMarker(player, MOD_BEARS_MOMENTUM))
+            Renew(player, SPELL_BEARS_MOMENTUM);
         EndGuard(player);
     }
 
-    // The guard out: it ends with Bear Form; Moving Mountain's 5 yards travelled add 10% of maximum health to it,
-    // once.
+    // Maul in the guard: the impact (Unbroken Champion: no, it waits for the guard's end).
+    void MaulRelease(Player* player)
+    {
+        AuraEffect* guard = GuardEffect(player);
+        if (!guard || HasUrsocMarker(player, MOD_UNBROKEN_CHAMPION))
+            return;
+        Release(player, guard->GetAmount(), 1.0f);
+    }
+
+    // Abilities in the guard: Mangle marks its target (6 sec; Ursoc's Challenge: it deals 15% less for 3 sec);
+    // Swipe lengthens the guard 1 sec (once; not with Long Guard); Earth Shock empowers the impact (Earthshock Roar:
+    // the guard 1 sec longer, once); Thunder Clap, Thunderbear's burst. Earth Shield healing the Hero: Stoneguard.
+    void UrsocAbility(Player* player, Unit* target, uint32 firstRank)
+    {
+        State& state = StateOf(player);
+        if (!GuardEffect(player))
+            return;
+        if (firstRank == SPELL_MANGLE_BEAR && target)
+        {
+            Lasting(player, target, SPELL_URSOCS_MARK, URSOCS_MARK_MS);
+            if (HasUrsocMarker(player, MOD_URSOCS_CHALLENGE))
+                Lasting(player, target, SPELL_URSOCS_CHALLENGE, CHALLENGE_MS);
+        }
+        if (firstRank == SPELL_SWIPE_BEAR && !state.GuardSwiped && !HasUrsocMarker(player, MOD_LONG_GUARD))
+        {
+            state.GuardSwiped = true;
+            LengthenGuard(player, SWIPE_GUARD_MS);
+        }
+        if (firstRank == TankRunes::SPELL_EARTH_SHOCK)
+        {
+            Renew(player, SPELL_EARTHEN_FURY);
+            if (HasUrsocMarker(player, MOD_EARTHSHOCK_ROAR) && !state.GuardShocked)
+            {
+                state.GuardShocked = true;
+                LengthenGuard(player, SWIPE_GUARD_MS);
+            }
+        }
+        if (firstRank == SPELL_THUNDER_CLAP && HasUrsocMarker(player, MOD_THUNDERBEAR))
+            state.GuardThunder = true;
+        if (firstRank == SPELL_EARTH_SHIELD_HEAL && HasUrsocMarker(player, MOD_STONEGUARD))
+            state.GuardStone = true;
+    }
+
+    // The guard out: it ends with Bear Form. Unbroken Champion: its end releases the impact, 125%.
     void GuardTick(Player* player)
     {
         State& state = StateOf(player);
         if (!state.GuardShield)
             return;
         AuraEffect* guard = GuardEffect(player);
-        if (!guard || !InBearForm(player))
+        if (!InBearForm(player))
         {
             EndGuard(player);
             return;
         }
-        if (HasUrsocMarker(player, MOD_MOVING_MOUNTAIN) && !state.GuardTravelled
-            && player->GetExactDist2d(&state.GuardFrom) >= MOUNTAIN_TRAVEL)
-        {
-            state.GuardTravelled = true;
-            int32 more = int32(player->GetMaxHealth() * MOUNTAIN_PCT / 100.0f);
-            guard->ChangeAmount(guard->GetAmount() + more);
-            state.GuardShield += more;
-        }
+        bool ending = !guard || guard->GetBase()->GetDuration() <= GUARD_END_MS;
+        if (!ending)
+            return;
+        if (HasUrsocMarker(player, MOD_UNBROKEN_CHAMPION))
+            Release(player, guard ? guard->GetAmount() : 0, UNBROKEN_CHAMPION);
+        else if (!guard)
+            EndGuard(player);
     }
 
     void ClearDruids(Player* player)
@@ -6471,7 +6578,8 @@ namespace
         state.Feathers.clear();
         for (uint32 spell : { SPELL_SWIFT_JUDGMENT, SPELL_WATCHFUL_FLIGHT, SPELL_GUIDING_WINGS,
                               SPELL_GUIDING_WINGS_SPEED, SPELL_STEADY_ORBIT, SPELL_LUNAR_DOMINANCE,
-                              SPELL_ENDURING_CHAMPION, SPELL_FROZEN_ECLIPSE, SPELL_INSECT_RENEWAL,
+                              SPELL_EARTHEN_FURY, SPELL_BEARS_MOMENTUM, SPELL_SHIELDING_ROOTS,
+                              SPELL_FROZEN_ECLIPSE, SPELL_INSECT_RENEWAL,
                               SPELL_ASTRAL_WARD })
             player->RemoveAurasDueToSpell(spell);
         for (ObjectGuid guid : state.Marked)
@@ -7068,126 +7176,148 @@ namespace
             RunePower(player, SPELL_SCHOOL_MASK_FIRE, SPELL_FIRE_BLAST) * PHOENIX_CLAWS_POWER);
     }
 
-    // Icy Touch landed: Frozen Prey on its victim (one primary mark: an earlier one goes); Pursuing
-    // Chill: speed, and the shattering Shred or Mangle in its time 10 Energy back.
+    // Icy Touch landed: Frozen Prey on its victim (one primary mark: an earlier one goes; a fresh mark can be
+    // empowered by a Frostbolt again).
     void CatIcyTouch(Player* player, Unit* target)
     {
         State& state = StateOf(player);
         if (state.PreyOn && state.PreyOn != target->GetGUID())
             if (Unit* earlier = ObjectAccessor::GetUnit(*player, state.PreyOn))
                 earlier->RemoveAurasDueToSpell(SPELL_FROZEN_PREY, player->GetGUID());
-        int32 ms = HasWhitefangMarker(player, MOD_LONG_WINTER) ? LONG_WINTER_MS : PREY_MS;
-        Lasting(player, target, SPELL_FROZEN_PREY, ms);
+        Lasting(player, target, SPELL_FROZEN_PREY, PREY_MS);
         state.PreyOn = target->GetGUID();
         state.PreyAt = Now();
+        state.PreyChilled = false;
+        state.PreyChillUsed = false;
         Trace(player, "Frozen Prey laid");
-        if (HasWhitefangMarker(player, MOD_PURSUING_CHILL))
-        {
-            RenewFor(player, SPELL_PURSUING_CHILL, PURSUING_MS);
-            state.PursuitDiscount = true;
-        }
     }
 
-    // Frozen Trail: a 6-yard patch of frost where the prey shattered, for 4 sec: each second up to 5 enemies in it
-    // take 20% of attack power as Frost damage and move 30% slower.
-    void LayFrozenTrail(Player* player, Unit* target)
+    // A direct Frostbolt hit on the Hero's Frozen Prey: the next shatter 25% more (Predator's Chill 40%), the mark 2
+    // sec longer (once a mark).
+    void FangFrostbolt(Player* player, Unit* target)
     {
-        Position at = target->GetPosition();
-        PlaceDecals(player, SPELL_FROZEN_TRAIL, { at });
-        float tick = player->GetTotalAttackPowerValue(BASE_ATTACK) * FROZEN_TRAIL_AP;
-        for (uint32 i = 1; i <= FROZEN_TRAIL_TICKS; ++i)
-            player->m_Events.AddEventAtOffset([player, at, tick]()
-            {
-                if (!player->IsInWorld() || !player->IsAlive())
-                    return;
-                for (Unit* enemy : EnemiesIn(player, Circle(at, FROZEN_TRAIL_RADIUS), FROZEN_TRAIL_TARGETS))
-                {
-                    Strike(player, enemy, SPELL_FROZEN_TRAIL_TICK, tick);
-                    Lasting(player, enemy, SPELL_FROZEN_TRAIL_SLOW, TRAIL_SLOW_MS);
-                }
-            }, Milliseconds(i * FROZEN_TRAIL_TICK_MS));
+        State& state = StateOf(player);
+        Aura* prey = target->GetAura(SPELL_FROZEN_PREY, player->GetGUID());
+        if (!prey || state.PreyChillUsed)
+            return;
+        state.PreyChillUsed = true;
+        state.PreyChilled = true;
+        prey->SetMaxDuration(prey->GetMaxDuration() + FROSTBOLT_PREY_MS);
+        prey->SetDuration(prey->GetDuration() + FROSTBOLT_PREY_MS);
     }
 
-    // A direct Shred or Mangle on a marked victim shatters the mark: 150% of attack power as Frost damage (Whitefang
-    // 40% more; Long Winter 20% more for a mark at least 3 sec old; a Pack Frost mark 60%), or Winter Wound's 150%
-    // over 6 sec; Icefang Spray: half to up to 4 in an 8-yard cone. Then the primary's Pack Frost marks and the
-    // instincts: Cold Blood, Snowblind, Frozen Trail.
+    // A direct Shred or Mangle on a marked victim shatters the mark: 150% of attack power as Frost damage (Predator's
+    // Fang 40% more; the Frostbolt's 25% or 40%; a Pack of Winter mark half); Glacial Claws, half to up to 3 within 8
+    // yards; Marked Prey, half to one more. With the Hero's Rake on it, Frozen Wound: 25% of attack power over 6 sec
+    // (Frozen Wound 50% more). Stormfang, Flamefang, Moonfrost; Pack of Winter's mark; Swift Hunt, Winter's
+    // Recovery, Lingering Frost, Mending Fang, Clawing Cold.
     void Shatter(Player* player, Unit* target)
     {
         State& state = StateOf(player);
-        bool primary = target->HasAura(SPELL_FROZEN_PREY, player->GetGUID());
-        bool pack = !primary && target->HasAura(SPELL_FROZEN_PREY_PACK, player->GetGUID());
+        ObjectGuid me = player->GetGUID();
+        bool primary = target->HasAura(SPELL_FROZEN_PREY, me);
+        bool pack = !primary && target->HasAura(SPELL_FROZEN_PREY_PACK, me);
         if (!primary && !pack)
             return;
-        target->RemoveAurasDueToSpell(primary ? SPELL_FROZEN_PREY : SPELL_FROZEN_PREY_PACK, player->GetGUID());
-        if (state.PursuitDiscount && player->HasAura(SPELL_PURSUING_CHILL))
-            player->ModifyPower(POWER_ENERGY, PURSUING_REFUND);
-        state.PursuitDiscount = false;
-        float damage = player->GetTotalAttackPowerValue(BASE_ATTACK) * SHATTER_AP;
-        if (HasWhitefangMarker(player, MOD_WHITEFANG))
+        target->RemoveAurasDueToSpell(primary ? SPELL_FROZEN_PREY : SPELL_FROZEN_PREY_PACK, me);
+        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
+        float damage = ap * SHATTER_AP;
+        if (HasWhitefangMarker(player, MOD_PREDATORS_FANG))
             damage *= WHITEFANG_BONUS;
-        if (primary && HasWhitefangMarker(player, MOD_LONG_WINTER) && Now() - state.PreyAt >= LONG_WINTER_AFTER_MS)
-            damage *= LONG_WINTER_BONUS;
+        bool chilled = primary && state.PreyChilled;
+        if (chilled)
+            damage *= HasWhitefangMarker(player, MOD_PREDATORS_CHILL) ? PREDATORS_CHILL : FROSTBOLT_CHILL;
         if (pack)
             damage *= PACK_FROST_SHARE;
         if (primary)
-            state.PreyOn.Clear();
-        Trace(player, Acore::StringFormat("Shatter for {}", int32(damage)));
-        if (HasWhitefangMarker(player, MOD_WINTER_WOUND))
-            AddDot(player, target, SPELL_WINTER_WOUND, damage * WINTER_WOUND_SHARE, WINTER_WOUND_MS);
-        else
-            Strike(player, target, SPELL_FANG_SHATTER, damage);
-        if (HasWhitefangMarker(player, MOD_ICEFANG_SPRAY))
         {
-            Shape cone;
-            cone.Cone = true;
-            cone.From = player->GetPosition();
-            cone.Facing = player->GetAbsoluteAngle(target);
-            cone.Radius = ICEFANG_REACH + player->GetExactDist2d(target);
-            cone.Arc = ICEFANG_ARC;
-            std::size_t count = ICEFANG_TARGETS;
-            for (Unit* enemy : EnemiesIn(player, cone, ICEFANG_TARGETS + 1))
+            state.PreyOn.Clear();
+            state.PreyChilled = false;
+        }
+        Trace(player, Acore::StringFormat("Shatter for {}", int32(damage)));
+        Strike(player, target, SPELL_FANG_SHATTER, damage);
+        if (HasWhitefangMarker(player, MOD_GLACIAL_CLAWS))
+        {
+            std::size_t count = GLACIAL_CLAWS_TARGETS;
+            for (Unit* enemy : EnemiesAround(player, target, PACK_FROST_RADIUS))
                 if (enemy != target && count)
                 {
                     Strike(player, enemy, SPELL_FANG_SHATTER, damage * ICEFANG_SHARE);
                     --count;
                 }
         }
-        if (primary && HasWhitefangMarker(player, MOD_PACK_FROST))
-        {
-            std::size_t count = PACK_FROST_TARGETS;
+        if (HasWhitefangMarker(player, MOD_MARKED_PREY) && target->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, me))
             for (Unit* enemy : EnemiesAround(player, target, PACK_FROST_RADIUS))
-                if (enemy != target && count)
+                if (enemy != target)
+                {
+                    Strike(player, enemy, SPELL_FANG_SHATTER, damage * ICEFANG_SHARE);
+                    break;
+                }
+        if (HasWhitefangMarker(player, MOD_STORMFANG) && player->GetAuraOfRankedSpell(SPELL_LIGHTNING_SHIELD, me))
+            Strike(player, target, SPELL_STORMFANG, RunePower(player, SPELL_SCHOOL_MASK_NATURE, SPELL_ICY_TOUCH)
+                * FANG_SPELL_POWER);
+        if (HasWhitefangMarker(player, MOD_FLAMEFANG) && target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
+            Strike(player, target, SPELL_FLAMEFANG, RunePower(player, SPELL_SCHOOL_MASK_FIRE, SPELL_ICY_TOUCH)
+                * FANG_SPELL_POWER);
+        if (HasWhitefangMarker(player, MOD_MOONFROST_FANG))
+            if (Aura* moonfire = target->GetAuraOfRankedSpell(SPELL_MOONFIRE, me))
+                ExtendAura(moonfire, FANG_MOONFIRE_MS, FANG_MOONFIRE_MOST_MS);
+        if (target->IsAlive() && target->GetAuraOfRankedSpell(SPELL_RAKE, me))
+            AddDot(player, target, SPELL_WINTER_WOUND, ap * FROZEN_WOUND_AP
+                * SchoolBonus(player, SPELL_SCHOOL_MASK_FROST)
+                * (HasWhitefangMarker(player, MOD_FROZEN_WOUND) ? FROZEN_WOUND_MORE : 1.0f), WINTER_WOUND_MS);
+        if (primary && HasWhitefangMarker(player, MOD_PACK_OF_WINTER))
+            for (Unit* enemy : EnemiesAround(player, target, PACK_FROST_RADIUS))
+                if (enemy != target)
                 {
                     Lasting(player, enemy, SPELL_FROZEN_PREY_PACK, PACK_FROST_MS);
-                    --count;
+                    break;
                 }
-        }
-        if (HasWhitefangMarker(player, MOD_FANG_COLD_BLOOD))
+        if (HasWhitefangMarker(player, MOD_SWIFT_HUNT))
+            RenewFor(player, SPELL_PURSUING_CHILL, SWIFT_HUNT_MS);
+        if (HasWhitefangMarker(player, MOD_WINTERS_RECOVERY) && Ready(state.RecoveryAt, RECOVERY_EVERY_MS))
         {
-            RenewFor(player, SPELL_FANG_COLD_BLOOD, FANG_COLD_BLOOD_MS);
-            state.ColdBloodOn = target->GetGUID();
+            state.RecoveryAt = Now();
+            player->ModifyPower(POWER_ENERGY, FANG_REFUND);
         }
-        else if (HasWhitefangMarker(player, MOD_SNOWBLIND))
+        if (HasWhitefangMarker(player, MOD_LINGERING_FROST))
         {
-            for (Unit* enemy : EnemiesAround(player, target, SNOWBLIND_RADIUS))
-                Lasting(player, enemy, SPELL_SNOWBLIND_SLOW, SNOWBLIND_MS);
-            RenewFor(player, SPELL_SNOWBLIND, SNOWBLIND_MS);
+            if (target->IsAlive())
+                Lasting(player, target, SPELL_SNOWBLIND_SLOW, LINGERING_MS);
+            Renew(player, SPELL_LINGERING_FROST);
         }
-        else if (HasWhitefangMarker(player, MOD_FROZEN_TRAIL))
-            LayFrozenTrail(player, target);
+        if (HasWhitefangMarker(player, MOD_MENDING_FANG) && Ready(state.MendingAt, MENDING_EVERY_MS)
+            && player->GetAuraOfRankedSpell(SPELL_REJUVENATION, me))
+        {
+            state.MendingAt = Now();
+            int32 heal = std::max<int32>(1, int32(player->CountPctFromMaxHealth(int32(MENDING_PCT))));
+            Report(player, SPELL_MENDING_FANG, 'H', heal);
+            player->CastCustomSpell(player, SPELL_MENDING_FANG, &heal, nullptr, nullptr, true);
+        }
+        if (chilled && HasWhitefangMarker(player, MOD_CLAWING_COLD))
+            Renew(player, SPELL_CLAWING_COLD);
     }
 
-    // Ferocious Bite on the Hero's own victim: Cold Blood's 20% (it is spent); Molten Bite on a Cinder Wound victim:
-    // 25% of attack power per combo point as Fire damage more.
-    float BiteBonus(Player* player, Unit* target)
+    // Ferocious Bite on the Hero's Frozen Wound: its next tick at once (no tick added); Cold Blood, 10% of attack
+    // power a combo point as Frost.
+    void FangBite(Player* player, Unit* target, uint8 points)
     {
-        State& state = StateOf(player);
-        if (!player->HasAura(SPELL_FANG_COLD_BLOOD) || state.ColdBloodOn != target->GetGUID())
-            return 1.0f;
-        player->RemoveAurasDueToSpell(SPELL_FANG_COLD_BLOOD);
-        state.ColdBloodOn.Clear();
-        return FANG_COLD_BLOOD;
+        Aura* wound = target->GetAura(SPELL_WINTER_WOUND, player->GetGUID());
+        if (!wound)
+            return;
+        if (HasWhitefangMarker(player, MOD_FANG_COLD_BLOOD) && points)
+            Strike(player, target, SPELL_FANG_SHATTER, player->GetTotalAttackPowerValue(BASE_ATTACK)
+                * FANG_COLD_BLOOD_AP * float(points) * SchoolBonus(player, SPELL_SCHOOL_MASK_FROST));
+        auto tick = dotTicks.find({ target->GetGUID(), SPELL_WINTER_WOUND, player->GetGUID() });
+        if (tick == dotTicks.end())
+            return;
+        int32 damage = std::max(1, tick->second);
+        int32 period = DotPeriod(SPELL_WINTER_WOUND);
+        player->CastCustomSpell(target, SPELL_WINTER_WOUND_TICK, &damage, nullptr, nullptr, true);
+        if (wound->GetDuration() <= period)
+            target->RemoveAurasDueToSpell(SPELL_WINTER_WOUND, player->GetGUID());
+        else
+            wound->SetDuration(wound->GetDuration() - period);
     }
 
     // Kindled or Frostbitten Claw (its hit, damage): a second enemy within 5 yards takes it again as Fire or Frost,
@@ -7346,7 +7476,7 @@ namespace
                               SPELL_RIDE_THE_LIGHTNING,
                               SPELL_FLAMEBOUND, SPELL_FLAMEBOUND_DISCOUNT, SPELL_BURNING_RAKE,
                               SPELL_PURSUING_CHILL, SPELL_SNOWBLIND,
-                              SPELL_FANG_COLD_BLOOD })
+                              SPELL_LINGERING_FROST, SPELL_CLAWING_COLD })
             player->RemoveAurasDueToSpell(spell);
         player->RemoveDynObject(SPELL_FROZEN_TRAIL);
     }
@@ -9561,6 +9691,10 @@ class spell_titan_rune_extended_hit : public SpellScript
         if (!player || !target)
             return;
         uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        if (player->HasAura(SPELL_RUNE_URSOCS_CHAMPION)
+            && (first == SPELL_MANGLE_BEAR || first == SPELL_SWIPE_BEAR || first == TankRunes::SPELL_EARTH_SHOCK
+                || first == SPELL_THUNDER_CLAP || (first == SPELL_EARTH_SHIELD_HEAL && target == player)))
+            UrsocAbility(player, target, first);
         if (first == SPELL_CHAIN_HEAL || first == SPELL_HOLY_SHOCK)
         {
             if (target != player && player->IsFriendlyTo(target) && player->HasAura(SPELL_RUNE_GUIDING_LIGHT))
@@ -9609,6 +9743,8 @@ class spell_titan_rune_extended_hit : public SpellScript
                     OwlFrostbolt(player, target);
                 if (player->HasAura(SPELL_RUNE_HOLLOW_CONGREGATION))
                     HollowStrike(player, target, first);
+                if (player->HasAura(SPELL_RUNE_WHITEFANG))
+                    FangFrostbolt(player, target);
                 break;
             case SPELL_SHADOW_BOLT:
                 if (player->HasAura(SPELL_RUNE_HOLLOW_CONGREGATION))
@@ -9739,7 +9875,7 @@ class spell_titan_rune_maul : public SpellScript
         Player* player = GetCaster()->ToPlayer();
         if (!player || !player->HasAura(SPELL_RUNE_URSOCS_CHAMPION))
             return;
-        Release(player, GetHitUnit());
+        MaulRelease(player);
         if (InBearForm(player))
             player->ModifySpellCooldown(SPELL_BARKSKIN, -MAUL_SOONER_MS);
     }
@@ -10023,7 +10159,8 @@ class spell_titan_rune_ferocious_bite : public SpellScript
         if (!player || !target || GetHitDamage() <= 0)
             return;
         if (player->HasAura(SPELL_RUNE_WHITEFANG))
-            SetHitDamage(int32(GetHitDamage() * BiteBonus(player, target)));
+            if (uint8 points = player->GetComboPoints(target))
+                FangBite(player, target, points);
         if (player->HasAura(SPELL_RUNE_EMBERS_WRATH))
             if (uint8 points = player->GetComboPoints(target))
                 EmberBite(player, target, points);

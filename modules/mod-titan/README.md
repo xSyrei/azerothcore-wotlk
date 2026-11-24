@@ -694,12 +694,23 @@ utility or a tradeoff) take one pick each, from three.
     - Ember's: Searing Shred 91860 (`EmberClawHit`), Bite's extension and Smoldering Bite (`EmberBite`), the Flame
       Shock spread (`SpreadCinder`); Burning Claws is Blazing Strike (`EmpoweredClaw`). Phoenix Scar in the dot
       script's removal.
+  - **Extended Options, Whitefang, Ursoc's Champion** (redesigns; their picks cleared once by
+    `titan_runes_zz_extended_reset3.sql`): markers 91870 (Whitefang), 91895 (Ursoc's), new spells after each; our
+    cores' numbers kept (the shatter's 150% of attack power; the guard's 30% and 6 sec, the impact's 75% plus all
+    absorbed).
+    - Whitefang: Frozen Wound is Winter Wound's dot (91444) laid on a Rake target (`Shatter`), Bite's tick
+      (`FangBite`); the Frostbolt's empowering (`FangFrostbolt`, `PreyChilled`). Lingering Frost 91887 and Clawing
+      Cold 91888 are Shred spell modifiers (druid family, 0x8000).
+    - Ursoc's: the impact is `Release(player, left, scale)` (Maul through `MaulRelease`; Unbroken Champion from
+      `GuardTick` at the guard's end); Mangle's mark 91910, Swipe, Earth Shock's Earthen Fury 91913, Thunder Clap and
+      Earth Shield's heal through `UrsocAbility` (the extended hit script). Ancient Hide, Lasting Stand, Moving
+      Mountain, Ursoc's Bite, Mountain's Roar, Earthbreaker, Enduring Champion, Challenger's Roar and Unbroken are gone.
   - **Ursoc's Champion** (41; Tank; Bear Form, Barkskin, Maul): Barkskin in Bear Form raises Ursoc's Guard (91341,
     30% of maximum health, 6 sec; Barkskin's cooldown 30 sec shorter, each Maul in Bear Form 3 sec more); Maul
     releases it (91342, a 10-yard cone): 75% AP plus all it absorbed (that part at most 250% AP).
   - **Duelist** (42; Melee; Sinister Strike): the rune teaches Sabre Slash (91370, Sinister Strike rank 1's copy;
     the server adds the known rank's bonus; Sinister Strike's buttons become it, and back when unbound), Pistol Shot
-    (91382; it needs Opening Shot, 91381, every second Sabre Slash hit): 60% AP (91383) and a combo point; and
+    (91382; it needs Opening Shot, 91381, every third Sabre Slash hit): 60% AP (91383) and a combo point; and
     Broadside (91371, a finishing move): 3 blasts (91372) of 30% AP per combo point. All three in the Rogue tab
     (patch_runes.SPELL_CLASSES).
     Its slots: Sabre, Pistol, Cannon-Fire. Rapid Shots (Pistol) and Quick Reload (Cannon-Fire) act on every finishing

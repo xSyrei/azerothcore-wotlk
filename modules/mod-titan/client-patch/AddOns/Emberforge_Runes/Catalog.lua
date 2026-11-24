@@ -1171,45 +1171,63 @@ EmberforgeRunesCatalog = {
       role = "Tank (Druid, Guardian)",
       roles = { "TANK" },
       icon = "Ability_Rune_UrsocsChampion",
-      keywords = "druid guardian bear tank barkskin maul shield absorb ursoc",
-      slots = { "Guard", "Answer", "Resolve" },
+      keywords = "druid guardian bear tank barkskin maul shield absorb ursoc mangle swipe earth shock earth shield " ..
+          "thunder clap rake lifebloom rejuvenation impact",
+      slots = { "Impact", "Guard", "Resolve" },
       builtFrom = "Barkskin, in Bear Form",
       spentWith = "Maul",
       resource = "Ursoc's Guard, 4 sec",
       core = "Barkskin in Bear Form also raises Ursoc's Guard for 6 sec, an absorb of 30% of your maximum health, " ..
-          "and comes back 30 sec sooner. Maul in it releases a blow in a 10-yard cone in front of you (up to 5 " ..
+          "and comes back 30 sec sooner. Maul in it releases the impact in a 10-yard cone in front of you (up to 5 " ..
           "enemies): 75% of your attack power plus all the guard absorbed (that part at most 250% of your attack " ..
-          "power). Each Maul in Bear Form brings Barkskin back 3 sec sooner. Leaving Bear Form ends the guard.",
-      loop = "Barkskin before the hits come, Maul once the guard has taken them.",
+          "power). Each Maul in Bear Form brings Barkskin back 3 sec sooner. Leaving Bear Form ends the guard. " ..
+          "Mangle in the guard marks its target: the impact there also deals 20% of your attack power to up to 4 " ..
+          "enemies near it, with threat. Swipe in the guard makes it last 1 sec longer, once. Earth Shock: your " ..
+          "next impact deals 15% more, half of it as Nature damage.",
+      loop = "Barkskin in Bear Form, Mangle and Swipe, then Maul for the impact.",
       mods = {
-        { name = "Ancient Hide",
-          text = "The guard absorbs 45% of your maximum health instead of 30%." },
-        { name = "Lasting Stand",
-          text = "The guard lasts 10 sec instead of 6, and you receive 25% more healing meanwhile." },
-        { name = "Moving Mountain",
-          text = "You move 40% faster while the guard holds. Once you have moved 5 yards, it absorbs 10% of your " ..
-              "maximum health more (once a guard)." },
-        { name = "Ursoc's Bite",
-          text = "The blow strikes only Maul's target, for double damage." },
-        { name = "Mountain's Roar",
-          text = "The blow strikes in a half circle in front of you, up to 10 enemies." },
-        { name = "Earthbreaker",
-          text = "The blow runs 25 yards ahead of you in a line (up to 5 enemies); those past 10 yards take 50% " ..
-              "more." },
-        { name = "Enduring Champion",
-          text = "All the guard had left stays with you as a shield for 8 sec after the blow." },
-        { name = "Challenger's Roar",
-          text = "Enemies struck deal 20% less damage for 6 sec, and the blow causes double threat." },
-        { name = "Unbroken",
-          text = "Maul releases 75% of your attack power and the guard stays up: up to 3 blows a guard." },
+        { name = "Crushing Champion",
+          text = "The impact deals 30% more damage." },
+        { name = "Packbreaker",
+          text = "The impact strikes up to 8 enemies instead of 5." },
+        { name = "Unbroken Champion",
+          text = "The impact comes when the guard ends instead of with Maul, for 125% of its damage." },
+        { name = "Stoneguard",
+          text = "Your Earth Shield healing you during the guard makes the impact deal 20% more. No extra charge is " ..
+              "used." },
+        { name = "Thunderbear",
+          text = "Thunder Clap during the guard makes the impact also deal 20% of your attack power as Nature " ..
+              "damage to each enemy it hits." },
+        { name = "Long Guard",
+          text = "The guard lasts 2 sec longer; Swipe no longer lengthens it." },
+        { name = "Earthen Hide",
+          text = "The guard absorbs 20% more." },
+        { name = "Ursoc's Challenge",
+          text = "Mangle's mark also makes its target deal 15% less damage for 3 sec." },
+        { name = "Rending Maul",
+          text = "The impact on your Rake target makes it bleed for 30% of the impact's damage over 6 sec." },
+        { name = "Earthshock Roar",
+          text = "Earth Shock's empowering also makes the guard last 1 sec longer, once for each guard." },
+        { name = "Defiant Roar",
+          text = "The impact generates 50% more threat." },
+        { name = "Restoring Force",
+          text = "The impact heals you for 20% of its damage, up to 3% of your maximum health." },
+        { name = "Bear's Momentum",
+          text = "After the impact, your next Maul within 6 sec deals 20% more damage." },
+        { name = "Lifebloom Hide",
+          text = "The impact while your Lifebloom is on you heals you for 40% of your spell power, up to 3% of your " ..
+              "maximum health." },
+        { name = "Shielding Roots",
+          text = "Barkskin while your Rejuvenation is on you also shields you for 3% of your maximum health for 4 " ..
+              "sec." },
       },
       builds = {
-        { name = "The Bulwark", mods = { "Ancient Hide", "Ursoc's Bite", "Enduring Champion" },
-          text = "A deep guard, a hard bite." },
-        { name = "The Warden", mods = { "Lasting Stand", "Mountain's Roar", "Challenger's Roar" },
-          text = "Hold the pack, weaken it." },
-        { name = "The Avalanche", mods = { "Moving Mountain", "Earthbreaker", "Unbroken" },
-          text = "Charge in, break the line." },
+        { name = "The Bulwark", mods = { "Packbreaker", "Earthen Hide", "Defiant Roar" },
+          text = "Hold the pack and hold the line." },
+        { name = "The Breaker", mods = { "Crushing Champion", "Long Guard", "Bear's Momentum" },
+          text = "Soak, then crush." },
+        { name = "The Stoneheart", mods = { "Unbroken Champion", "Ursoc's Challenge", "Restoring Force" },
+          text = "Let the guard break on its own." },
       },
     },
     { id = 42,
@@ -1415,20 +1433,24 @@ EmberforgeRunesCatalog = {
       role = "Melee DPS (Druid, Feral)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_Whitefang",
-      keywords = "druid feral cat form icy touch shred mangle ferocious bite frost frozen prey shatter death " ..
-          "knight energy frost shock claw frostfang glacial burst shaman",
+      keywords = "druid feral cat form icy touch shred mangle ferocious bite frost frozen prey shatter death knight " ..
+          "energy frost shock claw frostfang glacial burst shaman rake ferocious bite frostbolt lightning shield " ..
+          "flame shock hunters mark moonfire rejuvenation",
       slots = { "Shatter", "Hunt", "Instinct" },
       builtFrom = "Icy Touch, in Cat Form too",
       spentWith = "Shred or Mangle",
       resource = "Frozen Prey, 6 sec",
-      core = "Your Icy Touch, in Cat Form or not (its Frost rune, damage and Frost Fever as ever), lays Frozen " ..
-          "Prey on the enemy for 6 sec; your next Shred or Mangle on it shatters it for 150% of your attack power " ..
-          "as Frost damage. One mark at a time, one shatter a strike. Frost Shock (in Cat Form too) chills your " ..
-          "next Claw or Swipe within 10 sec: Claw becomes Frostfang Strike, its hit again on a second enemy within " ..
-          "5 yards and both frostbitten for 100% of your attack power over 6 sec and 30% slower; Swipe becomes " ..
-          "Glacial Burst, 75% of your attack power as Frost damage to up to 8 enemies within 8 yards, each slowed " ..
-          "50% for 4 sec and its Frozen Prey shattered.",
-      loop = "Icy Touch, then Shred or Mangle to shatter; Frost Shock, then Claw or Swipe.",
+      core = "Your Icy Touch, in Cat Form or not (its Frost rune, damage and Frost Fever as ever), lays Frozen Prey " ..
+          "on the enemy for 6 sec; your next Shred or Mangle on it shatters it for 150% of your attack power as " ..
+          "Frost damage. One mark at a time, one shatter a strike. With your Rake on it, the shatter also leaves " ..
+          "Frozen Wound: 25% of your attack power as Frost damage over 6 sec; Ferocious Bite on Frozen Wound deals " ..
+          "its next tick at once. Frostbolt: a hit on Frozen Prey makes its shatter deal 25% more and the mark last " ..
+          "2 sec longer, once for each mark. Frost Shock (in Cat Form too) chills your next Claw or Swipe within 10 " ..
+          "sec: Claw becomes Frostfang Strike, its hit again on a second enemy within 5 yards and both frostbitten " ..
+          "for 100% of your attack power over 6 sec and 30% slower; Swipe becomes Glacial Burst, 75% of your attack " ..
+          "power as Frost damage to up to 8 enemies within 8 yards, each slowed 50% for 4 sec and its Frozen Prey " ..
+          "shattered.",
+      loop = "Icy Touch, Rake, then Shred or Mangle to shatter; Bite the wound.",
       spells = {
         ["Icy Touch"] = "Usable in Cat Form. Lays Frozen Prey on the enemy for 6 sec; your next Shred or Mangle " ..
             "on it shatters it for 150% of your attack power as Frost damage.",
@@ -1443,39 +1465,50 @@ EmberforgeRunesCatalog = {
         ["Mangle (Cat)"] = "Shatters your Frozen Prey on this enemy for 150% of your attack power as Frost damage.",
       },
       mods = {
-        { name = "Whitefang",
+        { name = "Predator's Fang",
           text = "The shatter deals 40% more damage." },
-        { name = "Icefang Spray",
-          text = "The shatter also hits up to 4 enemies in an 8-yard cone in front of you for half its " ..
+        { name = "Pack of Winter",
+          text = "Shattering lays a half-strength Frozen Prey on one other enemy within 8 yards for 6 sec. It " ..
+              "doesn't spread again." },
+        { name = "Glacial Claws",
+          text = "The shatter also hits up to 3 other enemies within 8 yards for half its damage." },
+        { name = "Stormfang",
+          text = "The shatter while your Lightning Shield is up also deals 20% of your spell power as Nature " ..
               "damage." },
-        { name = "Winter Wound",
-          text = "Instead of its hit, the shatter leaves 150% of its damage as Frost damage over 6 sec. A " ..
-              "new wound keeps what is left of the last." },
-        { name = "Long Winter",
-          text = "Frozen Prey lasts 10 sec; shattered after at least 3 sec, it deals 20% more damage." },
-        { name = "Pursuing Chill",
-          text = "Laying Frozen Prey makes you move 30% faster for 3 sec; the Shred or Mangle that " ..
-              "shatters it in that time gives 10 Energy back." },
-        { name = "Pack Frost",
-          text = "Shattering lays a 60%-strength Frozen Prey on up to 2 other enemies within 8 yards for " ..
-              "6 sec. Those marks don't spread again." },
+        { name = "Flamefang",
+          text = "The shatter on your Flame Shock target also deals 20% of your spell power as Fire damage." },
+        { name = "Frozen Wound",
+          text = "Frozen Wound deals 50% more damage." },
         { name = "Cold Blood",
-          text = "Shattering makes your next Ferocious Bite on that enemy within 5 sec deal 20% more " ..
+          text = "Ferocious Bite on your Frozen Wound also deals 10% of your attack power as Frost damage for each " ..
+              "combo point." },
+        { name = "Predator's Chill",
+          text = "Frostbolt's empowering makes the shatter deal 40% more instead of 25%." },
+        { name = "Marked Prey",
+          text = "The shatter on your Hunter's Mark target also hits one other enemy within 8 yards for half its " ..
               "damage." },
-        { name = "Snowblind",
-          text = "Shattering slows enemies within 6 yards by 30% for 3 sec and raises your dodge chance " ..
-              "by 15% for 3 sec." },
-        { name = "Frozen Trail",
-          text = "Shattering leaves a 6-yard patch of frost for 4 sec: up to 5 enemies in it move 30% " ..
-              "slower and take 20% of your attack power as Frost damage every second." },
+        { name = "Moonfrost",
+          text = "The shatter on your Moonfire target extends that Moonfire by 2 sec, up to 6 sec for each cast." },
+        { name = "Swift Hunt",
+          text = "Shattering makes you move 20% faster for 4 sec." },
+        { name = "Winter's Recovery",
+          text = "Shattering gives you 10 Energy, once every 6 sec." },
+        { name = "Lingering Frost",
+          text = "Shattering slows the enemy by 30% for 3 sec, and your next Shred deals 15% more damage." },
+        { name = "Mending Fang",
+          text = "Shattering while your Rejuvenation is on you heals you for 2% of your maximum health, once every " ..
+              "10 sec." },
+        { name = "Clawing Cold",
+          text = "Shattering a mark your Frostbolt empowered makes your next Shred within 6 sec cost 10 less " ..
+              "Energy." },
       },
       builds = {
-        { name = "The Whitefang", mods = { "Whitefang", "Long Winter", "Cold Blood" },
-          text = "One deep bite." },
-        { name = "The Icefang", mods = { "Icefang Spray", "Pursuing Chill", "Snowblind" },
-          text = "Chase and spray." },
-        { name = "The Winter Pack", mods = { "Winter Wound", "Pack Frost", "Frozen Trail" },
-          text = "Frost on the pack." },
+        { name = "The Fang", mods = { "Predator's Fang", "Frozen Wound", "Winter's Recovery" },
+          text = "One deep bite and a wound." },
+        { name = "The Pack", mods = { "Glacial Claws", "Cold Blood", "Swift Hunt" },
+          text = "Shatter through a pack." },
+        { name = "The Frostcaller", mods = { "Stormfang", "Predator's Chill", "Clawing Cold" },
+          text = "Frostbolt the prey, then shatter it." },
       },
     },
     { id = 46,

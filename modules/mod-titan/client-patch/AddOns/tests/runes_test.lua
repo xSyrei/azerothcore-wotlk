@@ -244,7 +244,9 @@ for id, firsts in pairs({ [34] = { "Accelerated Thought", "Focused Intention", "
     [39] = { "Moonpiercer", "Swift Judgment", "Lunar Wound" },
     [35] = { "Glacial Spear", "Cold Snap", "Deep Freeze" },
     [42] = { "Heavy Caliber", "Powder and Steel", "Quick Draw" },
-    [44] = { "Cinderclaw", "Ember Rush", "Ashen Renewal" } }) do
+    [44] = { "Cinderclaw", "Ember Rush", "Ashen Renewal" },
+    [41] = { "Crushing Champion", "Long Guard", "Defiant Roar" },
+    [45] = { "Predator's Fang", "Frozen Wound", "Swift Hunt" } }) do
     local rune, entry = ById(id), EmberforgeRunesArt.runes[id]
     check(#rune.mods == 15 and #entry.texts == 15 and #entry.abilities == 15 and rune.mods[1].name == firsts[1]
         and rune.mods[6].name == firsts[2] and rune.mods[11].name == firsts[3],

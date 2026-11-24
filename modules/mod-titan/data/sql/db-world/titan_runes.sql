@@ -360,6 +360,11 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-120, 'spell_titan_rune_extended_hit'),
 (-45477, 'spell_titan_rune_extended_hit'),
 (-2136, 'spell_titan_rune_extended_hit'),
+(-33878, 'spell_titan_rune_extended_hit'),
+(-779, 'spell_titan_rune_extended_hit'),
+(-8042, 'spell_titan_rune_extended_hit'),
+(-6343, 'spell_titan_rune_extended_hit'),
+(379, 'spell_titan_rune_extended_hit'),
 (12051, 'spell_titan_rune_evocation');
 
 -- Blizzard's damage (every rank's) with the Splintered Crown: Hailstorm's victims.
@@ -372,16 +377,18 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (42938, 'spell_titan_rune_blizzard_hit');
 
 -- The Extended Options' damage over time: Phoenix Burn, Phantom Wound, Corrupted Blade.
-DELETE FROM `spell_script_names` WHERE `spell_id` IN (91635, 91735, 91739) AND `ScriptName` = 'spell_titan_rune_dot';
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (91635, 91735, 91739, 91911)
+    AND `ScriptName` = 'spell_titan_rune_dot';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (91635, 'spell_titan_rune_dot'),
+(91911, 'spell_titan_rune_dot'),
 (91735, 'spell_titan_rune_dot'),
 (91739, 'spell_titan_rune_dot');
 
 -- The Extended Options' strikes, heals and shields: shares of the Hero's power and hits, no bonuses of their own.
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 91641, 91660, 91661, 91662, 91663,
     91688, 91689, 91710, 91711, 91736, 91737, 91738, 91740, 91741, 91761, 91762, 91786, 91787, 91788, 91837, 91838,
-    91840, 91842, 91860, 91861, 91862, 91863, 91864);
+    91840, 91842, 91860, 91861, 91862, 91863, 91864, 91885, 91886, 91889, 91912, 91914, 91916, 91917, 91919);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91636, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Burn tick'),
 (91637, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Eruption'),
@@ -414,7 +421,15 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91861, 0, 0, 0, 0, 'Ember''s Wrath - Frozen Embers'),
 (91862, 0, 0, 0, 0, 'Ember''s Wrath - Phoenix Claws'),
 (91863, 0, 0, 0, 0, 'Ember''s Wrath - Phoenix Scar'),
-(91864, 0, 0, 0, 0, 'Ember''s Wrath - Healing Flame');
+(91864, 0, 0, 0, 0, 'Ember''s Wrath - Healing Flame'),
+(91885, 0, 0, 0, 0, 'Whitefang - Stormfang'),
+(91886, 0, 0, 0, 0, 'Whitefang - Flamefang'),
+(91889, 0, 0, 0, 0, 'Whitefang - Mending Fang'),
+(91912, 0, 0, 0, 0, 'Ursoc''s Champion - Rending Maul tick'),
+(91914, 0, 0, 0, 0, 'Ursoc''s Champion - Thunderbear'),
+(91916, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Mend'),
+(91917, 0, 0, 0, 0, 'Ursoc''s Champion - Shielding Roots'),
+(91919, 0, 0, 0, 0, 'Ursoc''s Champion - Ursoc''s Impact (Nature)');
 
 -- Their damage over time: Lunar Wound, Astral Rupture.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';

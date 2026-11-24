@@ -1511,9 +1511,6 @@ for _spell in SPELLS:
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
 
 DRUID_MODIFIERS = [
-    (91350, URSOC_ICON, [('Ancient Hide', 'Lasting Stand', 'Moving Mountain'),
-                         ("Ursoc's Bite", "Mountain's Roar", 'Earthbreaker'),
-                         ('Enduring Champion', "Challenger's Roar", 'Unbroken')]),
 ]
 SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
                 hidden=True)
@@ -1686,9 +1683,8 @@ SPELLS += [
     strike(91443, 'Shatter', 'Spell_Frost_FrostBlast', FROST, VISUAL_ICE_LANCE),
     dot(91444, 'Winter Wound', 'Spell_Frost_ChainsOfIce', FROST, DURATION_6S, 'Frost damage every second.'),
     strike(91445, 'Winter Wound', 'Spell_Frost_ChainsOfIce', FROST),
-    {**buff(91446, 'Pursuing Chill', 'Spell_Frost_ArcticWinds',
-            'Movement speed increased by 30%. Your shattering Shred or Mangle gives 10 Energy back.', DURATION_3S,
-            _SPEED),
+    {**buff(91446, 'Swift Hunt', 'Spell_Frost_ArcticWinds', 'Movement speed increased by 20%.', DURATION_3S,
+            {1: aura(AURA_MOD_INCREASE_SPEED, 20, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
     harmful(91447, 'Snowblind', 'Spell_Frost_FrostNova', 'Movement slowed by 30%.', DURATION_3S,
             aura(AURA_MOD_DECREASE_SPEED, -30, 0), FROST),
@@ -1786,13 +1782,6 @@ for _spell in SPELLS:
         _spell['effects'][1]['Amplitude'] = 2000
     if _spell['id'] in (91422, 91424, 91425, 91426, 91443, 91445, 91460):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
-SPELLS += [buff(first + slot * 3 + choice, name, icon, '', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)},
-                hidden=True)
-           for first, icon, modifiers in (
-               (91451, WHITEFANG_ICON, [('Whitefang', 'Icefang Spray', 'Winter Wound'),
-                                        ('Long Winter', 'Pursuing Chill', 'Pack Frost'),
-                                        ('Cold Blood', 'Snowblind', 'Frozen Trail')]),)
-           for slot, names in enumerate(modifiers) for choice, name in enumerate(names)]
 ICONS += [EMBERS_ICON, WHITEFANG_ICON, 'Spell_Fire_Fireball', 'Spell_Fire_Incinerate', 'Ability_Druid_Disembowel',
           'Ability_Druid_FerociousBite', 'Spell_Fire_BurningSpeed', 'Spell_DeathKnight_IceTouch',
           'Spell_Frost_FrostShock', 'Spell_Frost_FrostBlast', 'Spell_Frost_ChainsOfIce', 'Spell_Frost_ArcticWinds',
@@ -1990,6 +1979,7 @@ VISUALS['CovenantBound'] = {'copy': 3619, 'id': 16808, 'kits': {
     'state': (15747, {KIT_TINT: COVENANT_TINT, KIT_CHEST: FX_SHADOW_DANCE})}}
 
 AURA_ADD_FLAT_MODIFIER = 107
+SHRED_FLAG, MAUL_FLAG = 0x8000, 0x800
 SINISTER_STRIKE_FLAG = 0x2
 BUILDER_FLAGS = 0x2 | 0x4 | 0x2000000 | 0x4000000    # Sinister Strike, Backstab, Hemorrhage, Ghostly Strike
 
@@ -2038,6 +2028,12 @@ EXTENDED_MODIFIERS = [
     (91820, DUELIST_ICON, [('Heavy Caliber', 'Gunslinger', 'Scattershot', 'Flame Pistol', 'Storm Pistol'),
                            ('Powder and Steel', 'Between the Eyes', 'Loaded Powder', 'Marked Shot', 'Frozen Powder'),
                            ('Quick Draw', 'Cut and Run', 'Efficient Duelist', 'Healing Powder', 'Arcane Powder')]),
+    (91870, WHITEFANG_ICON, [('Predator\'s Fang', 'Pack of Winter', 'Glacial Claws', 'Stormfang', 'Flamefang'),
+                             ('Frozen Wound', 'Cold Blood', "Predator's Chill", 'Marked Prey', 'Moonfrost'),
+                             ('Swift Hunt', "Winter's Recovery", 'Lingering Frost', 'Mending Fang', 'Clawing Cold')]),
+    (91895, URSOC_ICON, [('Crushing Champion', 'Packbreaker', 'Unbroken Champion', 'Stoneguard', 'Thunderbear'),
+                         ('Long Guard', 'Earthen Hide', "Ursoc's Challenge", 'Rending Maul', 'Earthshock Roar'),
+                         ('Defiant Roar', 'Restoring Force', "Bear's Momentum", 'Lifebloom Hide', 'Shielding Roots')]),
     (91845, EMBERS_ICON, [('Cinderclaw', 'Wildfire Claws', 'Living Flame', 'Flame Shock Claws', 'Frozen Embers'),
                           ('Ember Rush', 'Smoldering Bite', 'Firestorm Pounce', 'Phoenix Claws', 'Wildfire Swipe'),
                           ('Ashen Renewal', 'Flame-Tipped Claws', 'Phoenix Scar', 'Healing Flame', 'Burning Rake')]),
@@ -2146,7 +2142,33 @@ SPELLS += [
     heal(91864, 'Healing Flame', 'Spell_Nature_Rejuvenation', 'The flame mends you.'),
     buff(91865, 'Burning Rake', 'Ability_Druid_Disembowel', 'Your next Blazing Strike deals 30% more damage.',
          DURATION_6S, {1: aura(AURA_DUMMY, 1, 0)}),
+    # Whitefang.
+    strike(91885, 'Stormfang', 'Spell_Nature_LightningShield', NATURE, VISUAL_LIGHTNING_BOLT),
+    strike(91886, 'Flamefang', 'Spell_Fire_FlameShock', FIRE, VISUAL_FIRE_BLAST),
+    family_mod(91887, 'Lingering Frost', 'Spell_Frost_ArcticWinds', 'Your next Shred deals 15% more damage.',
+               DURATION_10S, DRUID_FAMILY, SHRED_FLAG, AURA_ADD_PCT_MODIFIER, SPELLMOD_DAMAGE, 15),
+    family_mod(91888, 'Clawing Cold', 'Spell_Frost_ChillingBlast', 'Your next Shred costs 10 less Energy.',
+               DURATION_6S, DRUID_FAMILY, SHRED_FLAG, AURA_ADD_FLAT_MODIFIER, SPELLMOD_COST, -10),
+    heal(91889, 'Mending Fang', 'Spell_Nature_Rejuvenation', 'The hunt mends you.'),
+    # Ursoc's Champion.
+    harmful(91910, "Ursoc's Mark", 'Ability_Druid_Mangle2', 'Ursoc\'s impact here strikes those near it too.',
+            DURATION_6S, aura(AURA_DUMMY, 1, 0), PHYSICAL),
+    dot(91911, 'Rending Maul', 'Ability_Druid_Maul', PHYSICAL, DURATION_6S, 'Bleeding every second.'),
+    strike(91912, 'Rending Maul', 'Ability_Druid_Maul', PHYSICAL),
+    buff(91913, 'Earthen Fury', 'Spell_Nature_EarthShock', "Your next impact deals 15% more, half of it Nature.",
+         DURATION_10S, {1: aura(AURA_DUMMY, 1, 0)}),
+    strike(91914, 'Thunderbear', 'Spell_Nature_ThunderClap', NATURE, VISUAL_THUNDER_HIT),
+    family_mod(91915, "Bear's Momentum", URSOC_ICON, 'Your next Maul deals 20% more damage.', DURATION_6S,
+               DRUID_FAMILY, MAUL_FLAG, AURA_ADD_PCT_MODIFIER, SPELLMOD_DAMAGE, 20),
+    heal(91916, "Ursoc's Mend", URSOC_ICON, 'The impact mends you.'),
+    absorb(91917, 'Shielding Roots', 'Spell_Nature_StoneClawTotem', DURATION_4S),
+    harmful(91918, "Ursoc's Challenge", 'Ability_Druid_ChallangingRoar', 'Damage done reduced by 15%.', DURATION_3S,
+            aura(AURA_MOD_DAMAGE_PERCENT_DONE, -15, ALL_SCHOOLS), PHYSICAL),
+    strike(91919, "Ursoc's Impact", URSOC_ICON, NATURE),
 ]
+for _spell in SPELLS:
+    if _spell['id'] in (91885, 91886, 91912, 91914, 91919):
+        _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
 for _spell in SPELLS:
     if _spell['id'] in (91615, 91636, 91637, 91638, 91639, 91660, 91661, 91662, 91688, 91689, 91736, 91737, 91738,
                         91740, 91761, 91762, 91786, 91787, 91788, 91837, 91838, 91840, 91860, 91861, 91862, 91863):
@@ -2165,4 +2187,5 @@ ICONS += ['Spell_Nature_InsectSwarm', 'Spell_Fire_SoulBurn', 'Spell_Fire_FireArm
           'Spell_Frost_IceShard', 'Spell_Frost_IceStorm', 'Ability_Rogue_SabreSlash', 'Spell_Fire_Fireball',
           'Spell_Frost_FrostShock', 'Ability_Rogue_Sprint', 'Spell_Arcane_StarFire', 'Spell_Fire_Incinerate',
           'Spell_Fire_Burnout', 'Spell_Fire_SelfDestruct', 'Spell_Nature_Rejuvenation', 'Ability_Druid_Disembowel',
-          PISTOL_ICON]
+          PISTOL_ICON, 'Ability_Druid_Mangle2', 'Ability_Druid_Maul', 'Spell_Nature_EarthShock',
+          'Spell_Nature_ThunderClap', 'Ability_Druid_ChallangingRoar', 'Spell_Frost_ArcticWinds']
