@@ -4,6 +4,18 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Legendary Runes: taught abilities replace yours
+
+- Every ability a Legendary Rune teaches now **needs an ability you know and takes its place** on your bars, as
+  Sabre Slash does with Sinister Strike. Without that ability, the rune's ability is not taught; learn it and it is.
+  - **Duelist**: Arcane Shot becomes **Pistol Shot**, Rapid Fire becomes **Broadside**.
+  - **Red Communion**: Death Strike becomes **Sanguine Recall**.
+  - **Primal Worldwarden**: Stoneskin Totem becomes the **Worldheart Totem** (the rune now needs Stoneskin Totem),
+    Totemic Recall becomes **Place Worldheart**.
+  - **Black Covenant**: Shadow Ward becomes **Dark Intercession**.
+  - **Challenge** (Red Communion, Primal Worldwarden) takes the place of your taunt: Taunt, Growl, Dark Command or
+    Righteous Defense.
+
 ### Extended Options: Black Covenant, Wandering Mist, Wild Hunt
 
 - Three more Legendary Runes get their **Extended Options** (from the updated compendium): five choices in each slot.

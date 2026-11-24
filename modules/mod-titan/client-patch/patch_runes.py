@@ -1586,8 +1586,9 @@ SPELLS += [
     look(91373, 'Broadside', 'INV_Weapon_Rifle_01', VISUAL_SAPPER_CHARGE),
     # The Duelist.
     buff(91380, 'Rune of the Duelist', DUELIST_ICON,
-         'Sinister Strike becomes Sabre Slash. Every second Sabre Slash that hits readies Opening Shot: your Pistol '
-         'Shot, 60% of your attack power and a combo point. Broadside spends combo points in pistol blasts.',
+         'Sinister Strike becomes Sabre Slash, Arcane Shot Pistol Shot and Rapid Fire Broadside. Every third Sabre '
+         'Slash that hits readies Opening Shot: your Pistol Shot, 60% of your attack power and a combo point. '
+         'Broadside spends combo points in pistol blasts.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {**buff(91381, 'Opening Shot', PISTOL_ICON, 'Pistol Shot is ready.', DURATION_8S,
             {1: aura(AURA_DUMMY, 1, 0)}),
@@ -1837,7 +1838,8 @@ SPELLS += [
                 'Boils the blood of all enemies within 10 yards (your Blood Boil), linking up to 5 of them to you. '
                 'Costs Rage instead of a Blood rune.', 6000, gcd=True),
     buff(91490, 'Rune of Red Communion', COMMUNION_ICON,
-         'Blood Boil links up to 5 enemies to you; Blood Strike on a linked enemy heals you and pulses to the rest.',
+         'Blood Boil links up to 5 enemies to you; Blood Strike on a linked enemy heals you and pulses to the rest. '
+         'Death Strike becomes Sanguine Recall.',
          DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     # Primal Worldwarden: the totem and its anchor, Worldguard, the three commands, Magma Lash, Striding Heart and
     # Stoneblood Lash.
@@ -1861,8 +1863,9 @@ SPELLS += [
      'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
     heal(91509, 'Stoneblood Lash', 'Ability_Shaman_LavaLash', ''),
     buff(91510, 'Rune of the Primal Worldwarden', WORLDWARDEN_ICON,
-         'The Worldheart Totem follows you; your Shocks command it, Stormstrike echoes the last command and Lava Lash '
-         'draws a magma line to it.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'Stoneskin Totem becomes the Worldheart Totem, which follows you; your Shocks command it, Stormstrike '
+         'echoes the last command and Lava Lash draws a magma line to it. Totemic Recall becomes Place Worldheart.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     # Black Covenant: Bind Guardian, Covenant Armor and its pact, Covenant Lash, Soul Siphon, its ward and slow,
     # Dark Intercession.
     tank_action(91520, 'Bind: Voidwalker', 'Spell_Shadow_SummonVoidWalker',
@@ -1900,7 +1903,8 @@ SPELLS += [
                 'victim for 50% of its damage.', 30000),
     buff(91530, 'Rune of the Black Covenant', COVENANT_ICON,
          'Bind Guardian merges your Voidwalker into Covenant Armor; Covenant Lash and Soul Siphon replace Searing '
-         'Pain and Drain Life while bound.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'Pain and Drain Life while bound; Shadow Ward becomes Dark Intercession.', DURATION_INFINITE,
+         {1: aura(AURA_DUMMY, 1, 0)}),
     {**buff(91540, 'Dark Intercession', 'Spell_Shadow_AntiShadow', 'Damage taken reduced.', DURATION_6S,
             {1: aura(AURA_MOD_DAMAGE_PERCENT_TAKEN, -15, ALL_SCHOOLS)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_6S}},

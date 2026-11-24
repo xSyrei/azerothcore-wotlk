@@ -1345,8 +1345,8 @@ BUILT = {
         ],
     },
     42: {
-        'core': '**Sinister Strike** becomes **Sabre Slash**; every third readies **Opening Shot** for **Pistol Shot** '
-            '(60% of your attack power), and the shot loads your next Slash.',
+        'core': '**Sinister Strike** becomes **Sabre Slash**, **Arcane Shot** becomes **Pistol Shot** and **Rapid '
+            'Fire** becomes **Broadside**; every third Slash readies **Opening Shot** for the pistol.',
         'slots': ['Pistol', 'Powder', 'Footwork'],
         'asks': ['How the pistol fires', 'What the powder adds', 'How you move'],
         'texts': [
@@ -1596,7 +1596,7 @@ BUILT = {
 BUILT.update({
     46: {
         'core': '**Blood Boil** links up to 5 enemies to you; **Blood Strike** on a link heals you and pulses to '
-            'the rest; **Sanguine Recall** strikes every link and shields you.',
+            'the rest; **Death Strike** becomes **Sanguine Recall**: it strikes every link and shields you.',
         'slots': ['Communion', 'Reclamation', 'Recall'],
         'asks': ['How the links hold', 'What Blood Strike takes back', 'What the Recall gives'],
         'texts': [
@@ -1638,8 +1638,8 @@ BUILT.update({
         'icons': [],
     },
     47: {
-        'core': 'The **Worldheart Totem** follows you; your **Shocks** command it, **Stormstrike** echoes the last '
-            'command and **Lava Lash** draws a magma line to it.',
+        'core': '**Stoneskin Totem** becomes the **Worldheart Totem**, which follows you; your **Shocks** command it, '
+            '**Stormstrike** echoes the last command and **Lava Lash** draws a magma line to it.',
         'slots': ['Shockcraft', 'Worldheart', 'Enhancement'],
         'asks': ['Which command grows', 'What the totem gives', 'What your strikes add'],
         'texts': [
@@ -1684,7 +1684,7 @@ BUILT.update({
     },
     48: {
         'core': '**Bind: Voidwalker** binds a Voidwalker to you as Covenant Armor; **Covenant Lash** and **Soul '
-            'Siphon** replace Searing Pain and Drain Life; **Dark Intercession** guards you.',
+            'Siphon** replace Searing Pain and Drain Life; **Shadow Ward** becomes **Dark Intercession**.',
         'slots': ['Covenant Armor', 'Siphon', 'Intercession'],
         'asks': ['What the armor holds', 'What the siphon draws', 'How the guardian intercedes'],
         'texts': [

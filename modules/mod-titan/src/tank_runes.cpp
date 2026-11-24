@@ -16,6 +16,7 @@
  */
 
 #include "tank_runes.h"
+#include "runes.h"
 #include "wildcard.h"
 #include "CellImpl.h"
 #include "Chat.h"
@@ -131,6 +132,16 @@ namespace
         NPC_WORLDHEART_TOTEM        = 910127,
 
         // The Extended Options (runes.cpp: the markers' blocks, 25 ids a rune).
+        // The abilities the collection's taught ones stand in for (first ranks): Challenge for a taunt, Sanguine
+        // Recall for Death Strike, Place Worldheart for Totemic Recall, Dark Intercession for Shadow Ward.
+        SPELL_TAUNT                 = 355,
+        SPELL_GROWL                 = 6795,
+        SPELL_DARK_COMMAND          = 56222,
+        SPELL_RIGHTEOUS_DEFENSE     = 31789,
+        SPELL_DEATH_STRIKE          = 49998,
+        SPELL_TOTEMIC_RECALL        = 36936,
+        SPELL_SHADOW_WARD           = 6229,
+
         SPELL_CORRUPTION            = 172,
         SPELL_MANGLE_BEAR           = 33878,
         SPELL_REND                  = 772,
@@ -1325,6 +1336,9 @@ namespace
 
     // ---- Binding ------------------------------------------------------------------------------------------------
 
+    // The taunts Challenge stands in for.
+    std::vector<uint32> const TAUNTS = { SPELL_TAUNT, SPELL_GROWL, SPELL_DARK_COMMAND, SPELL_RIGHTEOUS_DEFENSE };
+
     void Teach(Player* player, uint32 spellId, bool on)
     {
         if (on && !player->HasSpell(spellId))
@@ -1336,18 +1350,25 @@ namespace
 
 namespace TankRunes
 {
+    bool IsReplacedBase(uint32 firstRank)
+    {
+        return std::find(TAUNTS.begin(), TAUNTS.end(), firstRank) != TAUNTS.end()
+            || firstRank == SPELL_DEATH_STRIKE || firstRank == SPELL_STONESKIN_TOTEM
+            || firstRank == SPELL_TOTEMIC_RECALL || firstRank == SPELL_SHADOW_WARD;
+    }
+
     void Apply(Player* player)
     {
         bool communion = player->HasAura(SPELL_RUNE_RED_COMMUNION);
         bool worldwarden = player->HasAura(SPELL_RUNE_PRIMAL_WORLDWARDEN);
         bool covenant = player->HasAura(SPELL_RUNE_BLACK_COVENANT);
         bool any = communion || worldwarden || covenant;
-        Teach(player, SPELL_CHALLENGE, communion || worldwarden);
+        LegendaryRunes::ReplaceAbility(player, SPELL_CHALLENGE, TAUNTS, communion || worldwarden);
         if (any && !player->HasAura(SPELL_TANK_FOUNDATION))
             player->AddAura(SPELL_TANK_FOUNDATION, player);
         else if (!any)
             player->RemoveAurasDueToSpell(SPELL_TANK_FOUNDATION);
-        Teach(player, SPELL_SANGUINE_RECALL, communion);
+        LegendaryRunes::ReplaceAbility(player, SPELL_SANGUINE_RECALL, { SPELL_DEATH_STRIKE }, communion);
         bool boil = communion && KnownRank(player, SPELL_BLOOD_BOIL);
         if (!boil)
             SwapBoil(player, false);
@@ -1357,14 +1378,14 @@ namespace TankRunes
         if (!communion)
             for (Unit* link : LiveLinks(player))
                 link->RemoveAurasDueToSpell(SPELL_CRIMSON_LINK, player->GetGUID());
-        Teach(player, SPELL_WORLDHEART_TOTEM, worldwarden);
-        Teach(player, SPELL_PLACE_WORLDHEART, worldwarden);
-        if (!worldwarden)
+        LegendaryRunes::ReplaceAbility(player, SPELL_WORLDHEART_TOTEM, { SPELL_STONESKIN_TOTEM }, worldwarden);
+        LegendaryRunes::ReplaceAbility(player, SPELL_PLACE_WORLDHEART, { SPELL_TOTEMIC_RECALL }, worldwarden);
+        if (!worldwarden || !player->HasSpell(SPELL_WORLDHEART_TOTEM))
             DismissTotem(player);
         if (!covenant)
             SwapSummon(player, false);
         Teach(player, SPELL_BIND_GUARDIAN, covenant);
-        Teach(player, SPELL_DARK_INTERCESSION, covenant);
+        LegendaryRunes::ReplaceAbility(player, SPELL_DARK_INTERCESSION, { SPELL_SHADOW_WARD }, covenant);
         if (covenant)
             SwapSummon(player, true);
         if (!covenant && (Bound(player) || player->HasSpell(SPELL_COVENANT_LASH)))

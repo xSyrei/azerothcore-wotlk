@@ -19,6 +19,7 @@
 #define MOD_TITAN_RUNES_H
 
 #include "Define.h"
+#include <vector>
 
 class Player;
 class Unit;
@@ -39,6 +40,12 @@ namespace LegendaryRunes
     bool ToggleDebug(Player* player);
     // Fel Rift (Fel Commandment): the enemy Fel Rush carries the Hero to, for 3 sec after a volley; else nullptr.
     Unit* FelRiftTarget(Player* player);
+    // A rune's taught ability in place of one the Hero knows (bases: first ranks, any one of them): taught while on
+    // and a base is known (any rank), the base's buttons becoming it; else forgotten, its buttons the base's highest
+    // known rank again.
+    void ReplaceAbility(Player* player, uint32 taught, std::vector<uint32> const& bases, bool on);
+    // Every first rank a rune's taught ability stands in for (learning or forgetting one teaches again).
+    bool IsReplacedBase(uint32 firstRank);
 }
 
 #endif

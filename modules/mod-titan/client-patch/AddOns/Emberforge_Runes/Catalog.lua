@@ -1293,7 +1293,7 @@ EmberforgeRunesCatalog = {
           "eviscerate fire blast lightning shield hunters mark icy touch renew arcane shot powder",
       slots = { "Pistol", "Powder", "Footwork" },
       builtFrom = "Sabre Slash (Sinister Strike)",
-      spentWith = "Pistol Shot and Broadside (the rune teaches them)",
+      spentWith = "Pistol Shot (Arcane Shot) and Broadside (Rapid Fire)",
       resource = "Opening Shot, one held",
       core = "Sinister Strike becomes Sabre Slash: its damage and combo point, a sabre's look. Every third Sabre " ..
           "Slash that hits readies Opening Shot for 8 sec (one held), for Pistol Shot: 10 Energy, 6 sec cooldown, " ..
@@ -1303,7 +1303,8 @@ EmberforgeRunesCatalog = {
           "(50% at most). Fire Blast: a hit makes your next Pistol Shot within 8 sec explode for 20% of your attack " ..
           "power plus 20% of your spell power as Fire on up to 3 enemies. Broadside, a finishing move (35 Energy, " ..
           "20 sec cooldown): three pistol blasts, each 30% of your attack power plus 5% per combo point, to its " ..
-          "target and up to 7 enemies within 8 yards. The rune teaches all three; the pistol is conjured.",
+          "target and up to 7 enemies within 8 yards. Arcane Shot becomes Pistol Shot and Rapid Fire becomes " ..
+          "Broadside: each is yours only while you know the ability it replaces. The pistol is conjured.",
       loop = "Sabre Slash three times, Pistol Shot; Eviscerate first for a bigger shot.",
       mods = {
         { name = "Heavy Caliber",
@@ -1595,19 +1596,21 @@ EmberforgeRunesCatalog = {
           "warlock affliction tank heal corruption mangle rend earth shield death coil holy shock",
       slots = { "Communion", "Reclamation", "Recall" },
       builtFrom = "Blood Boil (Crimson Communion)",
-      spentWith = "Blood Strike and Sanguine Recall (the rune teaches it)",
+      spentWith = "Blood Strike and Sanguine Recall (Death Strike)",
       resource = "Crimson Links, 5 at once",
       core = "Blood Boil becomes Crimson Communion (20 Rage, 6 sec cooldown, no rune): as ever, and it links up to " ..
           "5 enemies it hits to you for 10 sec (your selected enemy first, then the nearest). Your Blood Strike on " ..
           "a linked enemy heals you for 1.5% of your maximum health plus 0.15% for each other link within 20 yards " ..
           "(2.1% at most) and pulses 20% of your attack power as Shadow damage to each other link, once every 2 " ..
-          "sec. Sanguine Recall (18 sec, free, off the global cooldown): each link within 20 yards takes 30% of " ..
-          "your attack power as Shadow damage, and you gain an absorb of 3% of your maximum health plus 0.5% for " ..
-          "each further link (5% at most) for 5 sec. As every Tank Collection rune: NPC attacks never critically " ..
-          "strike you, and you learn Challenge (a free 30-yard taunt, 8 sec). Corruption: Blood Strike on a linked " ..
-          "enemy with your Corruption makes it last 1 sec longer (up to 4 sec for each cast), once every 2 sec.",
+          "sec. Death Strike becomes Sanguine Recall (18 sec, free, off the global cooldown): each link within 20 " ..
+          "yards takes 30% of your attack power as Shadow damage, and you gain an absorb of 3% of your maximum " ..
+          "health plus 0.5% for each further link (5% at most) for 5 sec. As every Tank Collection rune: NPC " ..
+          "attacks never critically strike you, and your taunt (Taunt, Growl, Dark Command or Righteous Defense) " ..
+          "becomes Challenge (free, 30 yards, 8 sec). Corruption: Blood Strike on a linked enemy with your " ..
+          "Corruption makes it last 1 sec longer (up to 4 sec for each cast), once every 2 sec.",
       loop = "Blood Boil to link the pull; Blood Strike a linked enemy; Sanguine Recall before a big hit.",
       spells = {
+        ["Death Strike"] = "Becomes Sanguine Recall.",
         ["Blood Boil"] = "Crimson Communion: links up to 5 enemies it hits to you for 10 sec. Costs 20 Rage and " ..
             "has a 6 sec cooldown instead of its Blood rune.",
         ["Blood Strike"] = "On a linked enemy: heals you for 1.5% of your maximum health (more for each other link) " ..
@@ -1672,17 +1675,19 @@ EmberforgeRunesCatalog = {
       builtFrom = "Earth, Flame or Frost Shock",
       spentWith = "Stormstrike and Lava Lash (Magma Lash)",
       resource = "The Worldheart Totem's last command, 10 sec",
-      core = "Worldheart Totem (the rune teaches it; 6 sec): a totem follows 4 yards behind you for 30 min. With " ..
-          "a shield on, it gives you Worldguard: 8% less damage taken and 200% more threat. Your Shocks command " ..
-          "it: Earth Shock an absorb of 3% of your maximum health for 4 sec; Flame Shock 25% of your attack power " ..
-          "as Fire damage to up to 5 enemies within 8 yards of it; Frost Shock slows up to 5 there by 35% and has " ..
-          "them deal 6% less damage to you for 4 sec. Stormstrike repeats your last command at 60%, once every 6 " ..
-          "sec. Lava Lash becomes Magma Lash: a magma line from you to the totem for 4 sec, 10% of your attack " ..
-          "power as Fire damage each second to up to 5 enemies on it. Place Worldheart (8 sec) anchors the totem " ..
-          "at your target within 20 yards for 6 sec. NPC attacks never critically strike you, and you learn " ..
-          "Challenge.",
+      core = "Stoneskin Totem becomes Worldheart Totem (6 sec): a totem follows 4 yards behind you for 30 min. With " ..
+          "a shield on, it gives you Worldguard: 8% less damage taken and 200% more threat. Your Shocks command it: " ..
+          "Earth Shock an absorb of 3% of your maximum health for 4 sec; Flame Shock 25% of your attack power as " ..
+          "Fire damage to up to 5 enemies within 8 yards of it; Frost Shock slows up to 5 there by 35% and has them " ..
+          "deal 6% less damage to you for 4 sec. Stormstrike repeats your last command at 60%, once every 6 sec. " ..
+          "Lava Lash becomes Magma Lash: a magma line from you to the totem for 4 sec, 10% of your attack power as " ..
+          "Fire damage each second to up to 5 enemies on it. Totemic Recall becomes Place Worldheart (8 sec), which " ..
+          "anchors the totem at your target within 20 yards for 6 sec. NPC attacks never critically strike you, and " ..
+          "your taunt becomes Challenge (free, 30 yards, 8 sec).",
       loop = "Worldheart Totem and a shield; a Shock for the command you need; Stormstrike to repeat it.",
       spells = {
+        ["Stoneskin Totem"] = "Becomes Worldheart Totem.",
+        ["Totemic Recall"] = "Becomes Place Worldheart.",
         ["Earth Shock"] = "Commands the Worldheart: an absorb of 3% of your maximum health for 4 sec.",
         ["Flame Shock"] = "Commands the Worldheart: 25% of your attack power as Fire damage to up to 5 enemies " ..
             "within 8 yards of it.",
@@ -1749,18 +1754,19 @@ EmberforgeRunesCatalog = {
       spentWith = "Covenant Lash, Soul Siphon and Dark Intercession",
       resource = "Covenant Armor, until unbound",
       core = "Summon Voidwalker becomes Bind: Voidwalker (2 sec cast, 10 sec): a Voidwalker binds to you as " ..
-          "Covenant Armor until you cast it again: armor from items 400% higher, 15% more maximum health, 200% " ..
-          "more threat, 6% less damage taken, and a Voidwalker's purple shadow about you. While bound, Searing " ..
-          "Pain becomes Covenant Lash (instant, 10 yards, 8% of base mana: 100% of your spell power as " ..
-          "Shadowflame damage, 100% more threat) and, if you know Drain Life, Drain Life becomes Soul Siphon (a 3 " ..
-          "sec channel at 70% speed, 6% of base mana, 15 sec cooldown: each second 25% of your spell power as " ..
-          "Shadow damage and 1.5% of your maximum health back). Dark Intercession (the rune teaches it; 30 sec): " ..
-          "15% less damage taken for 6 sec, Covenant Lash meanwhile also hitting up to 4 enemies within 6 yards " ..
-          "for 50%. Your Curse of Weakness has its victim deal 6% less Physical damage to you, Curse of Tongues 6% " ..
-          "less magic damage. NPC attacks never critically strike you.",
+          "Covenant Armor until you cast it again: armor from items 400% higher, 15% more maximum health, 200% more " ..
+          "threat, 6% less damage taken, and a Voidwalker's purple shadow about you. While bound, Searing Pain " ..
+          "becomes Covenant Lash (instant, 10 yards, 8% of base mana: 100% of your spell power as Shadowflame " ..
+          "damage, 100% more threat) and, if you know Drain Life, Drain Life becomes Soul Siphon (a 3 sec channel " ..
+          "at 70% speed, 6% of base mana, 15 sec cooldown: each second 25% of your spell power as Shadow damage and " ..
+          "1.5% of your maximum health back). Shadow Ward becomes Dark Intercession (30 sec): 15% less damage taken " ..
+          "for 6 sec, Covenant Lash meanwhile also hitting up to 4 enemies within 6 yards for 50%. Your Curse of " ..
+          "Weakness has its victim deal 6% less Physical damage to you, Curse of Tongues 6% less magic damage. NPC " ..
+          "attacks never critically strike you.",
       loop = "Bind your Voidwalker; Covenant Lash for threat, Soul Siphon to recover; Intercession before a " ..
           "big hit.",
       spells = {
+        ["Shadow Ward"] = "Becomes Dark Intercession.",
         ["Summon Voidwalker"] = "Becomes Bind: Voidwalker: a Voidwalker binds to you as Covenant Armor.",
         ["Searing Pain"] = "While bound: Covenant Lash, an instant 10-yard lash for 100% of your spell power as " ..
             "Shadowflame damage with 100% more threat.",

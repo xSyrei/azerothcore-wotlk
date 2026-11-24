@@ -585,6 +585,7 @@ namespace
         SPELL_FLAMESTRIKE           = 2120,
         SPELL_LAVA_BURST            = 51505,
         SPELL_ARCANE_SHOT           = 3044,
+        SPELL_RAPID_FIRE            = 3045,
         SPELL_POWER_WORD_SHIELD     = 17,
         SPELL_RENEW                 = 139,
         SPELL_RIPTIDE               = 61295,
@@ -1571,7 +1572,8 @@ namespace
               { { TankRunes::SPELL_BLOOD_BOIL } }, TankRunes::SPELL_RUNE_RED_COMMUNION,
               TankRunes::SPELL_COMMUNION_MODIFIER_FIRST, MAX_CHOICES },
             { RUNE_PRIMAL_WORLDWARDEN, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
-              { { TankRunes::SPELL_EARTH_SHOCK, SPELL_FLAME_SHOCK, SPELL_FROST_SHOCK } },
+              { { TankRunes::SPELL_EARTH_SHOCK, SPELL_FLAME_SHOCK, SPELL_FROST_SHOCK },
+                { TankRunes::SPELL_STONESKIN_TOTEM } },
               TankRunes::SPELL_RUNE_PRIMAL_WORLDWARDEN, TankRunes::SPELL_WORLDWARDEN_MODIFIER_FIRST, MAX_CHOICES },
             { RUNE_BLACK_COVENANT, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_SUMMON_VOIDWALKER }, { TankRunes::SPELL_SEARING_PAIN } },
@@ -7232,43 +7234,14 @@ namespace
             }, Milliseconds(i * BROADSIDE_SPACING_MS));
     }
 
-    // The Duelist teaches Sabre Slash, Pistol Shot and Broadside while it is bound (Sinister Strike's buttons become
-    // Sabre Slash's); unbound, they go and Sabre Slash's buttons are Sinister Strike's again.
+    // The Duelist teaches Sabre Slash, Pistol Shot and Broadside while it is bound, each in place of an ability the
+    // Hero knows (Sinister Strike, Arcane Shot, Rapid Fire: their buttons become the rune's); unbound, they go and
+    // the buttons are the Hero's own again.
     void TeachDuelist(Player* player, bool bound)
     {
-        for (uint32 spellId : { SPELL_SABRE_SLASH, SPELL_PISTOL_SHOT, SPELL_BROADSIDE })
-            if (bound && !player->HasSpell(spellId))
-                player->learnSpell(spellId);
-        uint32 sinister = 0;
-        if (SpellInfo const* first = sSpellMgr->GetSpellInfo(SPELL_SINISTER_STRIKE))
-            for (SpellInfo const* rank = first->GetLastRankSpell(); rank && !sinister; rank = rank->GetPrevRankSpell())
-                if (player->HasSpell(rank->Id))
-                    sinister = rank->Id;
-        bool swapped = false;
-        for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
-        {
-            ActionButton const* action = player->GetActionButton(button);
-            if (!action || action->GetType() != ACTION_BUTTON_SPELL)
-                continue;
-            uint32 spellId = action->GetAction();
-            SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId);
-            if (bound && info && info->GetFirstRankSpell()->Id == SPELL_SINISTER_STRIKE)
-            {
-                player->addActionButton(button, SPELL_SABRE_SLASH, ACTION_BUTTON_SPELL);
-                swapped = true;
-            }
-            else if (!bound && spellId == SPELL_SABRE_SLASH && sinister)
-            {
-                player->addActionButton(button, sinister, ACTION_BUTTON_SPELL);
-                swapped = true;
-            }
-        }
-        if (!bound)
-            for (uint32 spellId : { SPELL_SABRE_SLASH, SPELL_PISTOL_SHOT, SPELL_BROADSIDE })
-                if (player->HasSpell(spellId))
-                    player->removeSpell(spellId, SPEC_MASK_ALL, false);
-        if (swapped)
-            player->SendActionButtons(1);
+        LegendaryRunes::ReplaceAbility(player, SPELL_SABRE_SLASH, { SPELL_SINISTER_STRIKE }, bound);
+        LegendaryRunes::ReplaceAbility(player, SPELL_PISTOL_SHOT, { SPELL_ARCANE_SHOT }, bound);
+        LegendaryRunes::ReplaceAbility(player, SPELL_BROADSIDE, { SPELL_RAPID_FIRE }, bound);
     }
 
     // ---- The Stormreaver --------------------------------------------------------------------------------------
@@ -8543,6 +8516,43 @@ namespace
 
 namespace LegendaryRunes
 {
+    void ReplaceAbility(Player* player, uint32 taught, std::vector<uint32> const& bases, bool on)
+    {
+        uint32 known = 0;
+        for (uint32 base : bases)
+            if (!known)
+                known = KnownRank(player, base);
+        on = on && known;
+        if (on && !player->HasSpell(taught))
+            player->learnSpell(taught);
+        bool swapped = false;
+        for (uint8 button = 0; button < MAX_ACTION_BUTTONS; ++button)
+        {
+            ActionButton const* action = player->GetActionButton(button);
+            if (!action || action->GetType() != ACTION_BUTTON_SPELL)
+                continue;
+            uint32 spellId = action->GetAction();
+            SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId);
+            if (on && info && std::find(bases.begin(), bases.end(), info->GetFirstRankSpell()->Id) != bases.end())
+                player->addActionButton(button, taught, ACTION_BUTTON_SPELL);
+            else if (!on && spellId == taught && known)
+                player->addActionButton(button, known, ACTION_BUTTON_SPELL);
+            else
+                continue;
+            swapped = true;
+        }
+        if (!on && player->HasSpell(taught))
+            player->removeSpell(taught, SPEC_MASK_ALL, false);
+        if (swapped)
+            player->SendActionButtons(1);
+    }
+
+    bool IsReplacedBase(uint32 firstRank)
+    {
+        return firstRank == SPELL_SINISTER_STRIKE || firstRank == SPELL_ARCANE_SHOT || firstRank == SPELL_RAPID_FIRE
+            || TankRunes::IsReplacedBase(firstRank);
+    }
+
     void OnSpecChanged(Player* player)
     {
         ClearCombat(player);
@@ -9624,8 +9634,30 @@ public:
         PLAYERHOOK_ON_PLAYER_JUST_DIED,
         PLAYERHOOK_ON_UPDATE,
         PLAYERHOOK_ON_DELETE,
-        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT
+        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT,
+        PLAYERHOOK_ON_LEARN_SPELL,
+        PLAYERHOOK_ON_FORGOT_SPELL
     }) { }
+
+    // An ability a rune's taught one stands in for, learned or forgotten: taught again (or not).
+    void OnPlayerLearnSpell(Player* player, uint32 spellId) override
+    {
+        Retaught(player, spellId);
+    }
+
+    void OnPlayerForgotSpell(Player* player, uint32 spellId) override
+    {
+        Retaught(player, spellId);
+    }
+
+    static void Retaught(Player* player, uint32 spellId)
+    {
+        SpellInfo const* info = sSpellMgr->GetSpellInfo(spellId);
+        if (!info || !LegendaryRunes::IsReplacedBase(info->GetFirstRankSpell()->Id) || !player->IsInWorld())
+            return;
+        TeachDuelist(player, player->HasAura(SPELL_RUNE_DUELIST));
+        TankRunes::Apply(player);
+    }
 
     bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg,
         Player* receiver) override

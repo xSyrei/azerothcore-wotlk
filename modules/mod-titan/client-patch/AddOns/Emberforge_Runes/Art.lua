@@ -1342,9 +1342,9 @@ EmberforgeRunesArt = {
             hue = { 1, 0.89, 0.494 },
             inner = { 0.98, 0.949, 0.886 },
             built = true,
-            core = "**Sinister Strike** becomes **Sabre Slash**; every third readies " ..
-                    "**Opening Shot** for **Pistol Shot** (60% of your attack power), and " ..
-                    "the shot loads your next Slash.",
+            core = "**Sinister Strike** becomes **Sabre Slash**, **Arcane Shot** becomes " ..
+                    "**Pistol Shot** and **Rapid Fire** becomes **Broadside**; every third " ..
+                    "Slash readies **Opening Shot** for the pistol.",
             asks = {
                 "How the pistol fires",
                 "What the powder adds",
@@ -1613,8 +1613,8 @@ EmberforgeRunesArt = {
             inner = { 0.98, 0.863, 0.871 },
             built = true,
             core = "**Blood Boil** links up to 5 enemies to you; **Blood Strike** on a " ..
-                    "link heals you and pulses to the rest; **Sanguine Recall** strikes " ..
-                    "every link and shields you.",
+                    "link heals you and pulses to the rest; **Death Strike** becomes " ..
+                    "**Sanguine Recall**: it strikes every link and shields you.",
             asks = {
                 "How the links hold",
                 "What Blood Strike takes back",
@@ -1679,9 +1679,9 @@ EmberforgeRunesArt = {
             hue = { 1, 0.804, 0.408 },
             inner = { 0.973, 0.937, 0.875 },
             built = true,
-            core = "The **Worldheart Totem** follows you; your **Shocks** command it, " ..
-                    "**Stormstrike** echoes the last command and **Lava Lash** draws a " ..
-                    "magma line to it.",
+            core = "**Stoneskin Totem** becomes the **Worldheart Totem**, which follows " ..
+                    "you; your **Shocks** command it, **Stormstrike** echoes the last " ..
+                    "command and **Lava Lash** draws a magma line to it.",
             asks = {
                 "Which command grows",
                 "What the totem gives",
@@ -1748,7 +1748,7 @@ EmberforgeRunesArt = {
             built = true,
             core = "**Bind: Voidwalker** binds a Voidwalker to you as Covenant Armor; " ..
                     "**Covenant Lash** and **Soul Siphon** replace Searing Pain and Drain " ..
-                    "Life; **Dark Intercession** guards you.",
+                    "Life; **Shadow Ward** becomes **Dark Intercession**.",
             asks = {
                 "What the armor holds",
                 "What the siphon draws",
