@@ -4,6 +4,11 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Fixes
+
+- The rune build's description no longer runs under the rune's medallion: it stays on one line (a little smaller
+  when it is long).
+
 ### Legendary Runes: taught abilities replace yours
 
 - Every ability a Legendary Rune teaches now **needs an ability you know and takes its place** on your bars, as

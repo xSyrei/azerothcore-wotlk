@@ -493,6 +493,24 @@ if three then
     frame:Hide()
 end
 
+-- The rune's words over the build: one line (they would run under the medallion), the longest at 16 at least.
+do
+    local longest, words = nil, 0
+    for _, rune in ipairs(EmberforgeRunesCatalog) do
+        local core = (EmberforgeRunesArt.runes[rune.id] or {}).core or ""
+        if #core > words then
+            longest, words = rune.id, #core
+        end
+    end
+    server("R," .. longest .. ",-")
+    server("S,10,10,1,0,0,0,0," .. longest .. ",0")
+    EmberforgeRunes_Open()
+    debug.offers.cards[1].preview:Click()
+    local subtitle = debug.build.subtitle
+    check(subtitle.fontSize >= 16 and subtitle.fontSize <= 21, "the rune's words keep a readable size")
+    frame:Hide()
+end
+
 -- A rune with its Extended Options (15 modifiers: 5 a slot): five choices in two rows (3, then 2), numbered by fives.
 local extended = ById(34)
 local nine = extended.mods

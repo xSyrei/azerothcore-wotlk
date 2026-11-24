@@ -1151,11 +1151,26 @@ local BUILD_LAYOUTS = {
         columns = { { 340, 800, 1260 }, { 570, 1030 } } },
 }
 local OPTIONS_BOTTOM = 830                          -- the modifiers end above the buttons
+local SUBTITLE_WIDTH = 1440                         -- the rune's words, across the stage
 build.eyebrow = Eyebrow(build, 52, "Legendary Rune")
 build.title = Text(build, SERIF, 46, CREAM)
 At(build.title, W / 2, 104)
-build.subtitle = Text(build, SANS, 21, MUTED, "CENTER", 1150)
+build.subtitle = Text(build, SANS, 21, MUTED, "CENTER", SUBTITLE_WIDTH)
 At(build.subtitle, W / 2, 158)
+-- The rune's words on one line where they can be (a smaller size, down to 16): a second line would run under the
+-- medallion (the Extended Options' smaller one sits higher). Still two, they rise to clear it.
+local function FitSubtitle()
+    local size = 21
+    local function TwoLines()
+        return (build.subtitle:GetStringHeight() or 0) > size * 1.5
+    end
+    build.subtitle:SetFont(SANS, size)
+    while size > 16 and TwoLines() do
+        size = size - 1
+        build.subtitle:SetFont(SANS, size)
+    end
+    At(build.subtitle, W / 2, TwoLines() and 146 or 158)
+end
 build.medal = Medal(build, 188)
 -- The lines from each slot to the medallion, one set a layout: dots along the way (the client draws no lines).
 build.lines = {}
@@ -1503,6 +1518,7 @@ ShowBuild = function()
     end
     build.title:SetText(ShortName(rune))
     build.subtitle:SetText(Plain((art.runes[runeId] or {}).core or rune.loop or ""))
+    FitSubtitle()
     PlaceBuild(PerSlot(rune))
     build.medal:SetRune(rune)
     DrawNodes(runeId)
