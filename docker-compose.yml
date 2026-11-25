@@ -98,6 +98,8 @@ services:
       AC_GM_ALLOW_FRIEND: "1"
       AC_ALLOW_TWO_SIDE_INTERACTION_GROUP: "1"
       AC_ALLOW_TWO_SIDE_INTERACTION_CHAT: "1"
+      # Guilds take both factions: invites, charters, and guild chat both sides read.
+      AC_ALLOW_TWO_SIDE_INTERACTION_GUILD: "1"
       # The World channel (Emberforge_Resources joins it) talks across factions.
       AC_ALLOW_TWO_SIDE_INTERACTION_CHANNEL: "1"
       # Ammo is never spent (a Hero needs none: hero_equipment.cpp).

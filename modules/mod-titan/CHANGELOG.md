@@ -4,6 +4,11 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Cross-faction guilds
+
+- Guilds take **both factions**: invite anyone, sign any guild charter, and guild chat reaches every member in a
+  language they read.
+
 ### Class buffs last 30 minutes
 
 - Every class buff now lasts **30 minutes**: Battle Shout, Commanding Shout, Horn of Winter, the Blessings, Earth
