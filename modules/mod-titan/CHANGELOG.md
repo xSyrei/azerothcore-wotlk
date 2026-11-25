@@ -4,6 +4,13 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Wildcard window: drag and link
+
+- **Drag** a known ability from the Wildcard window (the ability grid, the Spells list, or a talent that teaches an
+  ability) straight onto your action bars.
+- **Shift-click** any ability or talent there to link it in chat: abilities at the rank you know, talents as talent
+  links with your rank. Talents in the Talents list and under Your Talents link too.
+
 ### New Legendary Runes: Scarlet Benediction, the Evergrove, Iron Reckoning
 
 - **Rune of Scarlet Benediction** (Healer; Renew, Flash Heal or Greater Heal): Renew plants a dormant Scarlet Bloom.

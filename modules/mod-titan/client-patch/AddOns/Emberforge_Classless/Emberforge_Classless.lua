@@ -853,6 +853,65 @@ end
 
 -- Ability grid ------------------------------------------------------------------------------------
 
+-- Dragging and linking. A known ability or talent spell drags from its spellbook entry (the highest rank known,
+-- by name) onto the action bars; a passive one has nothing to place. Shift-click links the rank known (else the
+-- first) to chat, or a talent as a talent link (its rank owned, Blizzard's: -1 for none).
+local function SpellbookSlot(id)
+    local name = id and GetSpellInfo(id)
+    if not name then
+        return nil
+    end
+    local found
+    for slot = 1, 1024 do
+        local entry = GetSpellName(slot, BOOKTYPE_SPELL)
+        if not entry then
+            break
+        end
+        if entry == name then
+            found = slot
+        end
+    end
+    if found and not IsPassiveSpell(found, BOOKTYPE_SPELL) then
+        return found
+    end
+end
+
+local function DragSpell(id)
+    local slot = SpellbookSlot(id)
+    if slot then
+        PickupSpell(slot, BOOKTYPE_SPELL)
+    end
+    return slot ~= nil
+end
+
+local function SpellChatLink(id)
+    return (Knows(id) and GetSpellLink(SpellName(id))) or GetSpellLink(id)
+end
+
+local function TalentChatLink(talent)
+    local name = GetSpellInfo(talent.ranks[1])
+    if not name then
+        return nil
+    end
+    local rank = math.min(data.talentRanks[talent.id] or 0, #talent.ranks)
+    return string.format("|cff4e96f7|Htalent:%d:%d|h[%s]|h|r", talent.id, rank - 1, name)
+end
+
+local function InsertLink(link)
+    if link then
+        ChatEdit_InsertLink(link)
+    end
+end
+
+-- The hint under a tooltip: drag (when it would place something) and link.
+local function DragHint(id)
+    if SpellbookSlot(id) then
+        GameTooltip:AddLine("Drag to your action bars. Shift-click to link.", 0.6, 0.6, 0.6, true)
+    else
+        GameTooltip:AddLine("Shift-click to link.", 0.6, 0.6, 0.6, true)
+    end
+end
+
 local grid = Panel(frame, GRID_X, GRID_WIDTH)
 local cells = {}
 local function OnCellEnter(self)
@@ -892,7 +951,14 @@ local function OnCellEnter(self)
     if CanPick(self.ability) then
         GameTooltip:AddLine("Click to choose this ability.", 0.3, 1, 0.3)
     end
+    DragHint(self.ability.id)
     GameTooltip:Show()
+end
+
+local function OnCellDrag(self)
+    if self.ability then
+        DragSpell(self.ability.id)
+    end
 end
 
 local function OnCellClick(self)
@@ -901,7 +967,7 @@ local function OnCellClick(self)
         return
     end
     if IsModifiedClick("CHATLINK") then
-        ChatEdit_InsertLink(GetSpellLink(ability.id))
+        InsertLink(SpellChatLink(ability.id))
     elseif CanPick(ability) then
         StaticPopup_Show("EMBERFORGE_CLASSLESS_PICK", SpellName(ability.id), nil, ability.id)
     end
@@ -934,6 +1000,8 @@ for index = 1, COLUMNS * ROWS do
     cell:SetScript("OnEnter", OnCellEnter)
     cell:SetScript("OnLeave", function() GameTooltip:Hide() end)
     cell:SetScript("OnClick", OnCellClick)
+    cell:RegisterForDrag("LeftButton")
+    cell:SetScript("OnDragStart", OnCellDrag)
     cells[index] = cell
 end
 local gridBar = Scrollbar(grid, -14, ROWS * CELL_STEP_Y - 8, "gridOffset")
@@ -1008,7 +1076,21 @@ local function OnTalentEnter(self)
             GameTooltip:AddLine("Wildcard grants talents at random from level 10.", 0.6, 0.6, 0.6)
         end
     end
+    DragHint(rank > 0 and talent.ranks[1] or nil)
     GameTooltip:Show()
+end
+
+local function OnTalentClick(self)
+    if self.talent and IsModifiedClick("CHATLINK") then
+        InsertLink(TalentChatLink(self.talent))
+    end
+end
+
+-- A talent owned drags its spell (an active one: one learned as an ability, or a talent that teaches a spell).
+local function OnTalentDrag(self)
+    if self.talent and (data.talentRanks[self.talent.id] or 0) > 0 then
+        DragSpell(self.talent.ranks[1])
+    end
 end
 
 for row = 1, TALENT_ROWS do
@@ -1034,11 +1116,9 @@ for row = 1, TALENT_ROWS do
         hover:SetPoint("CENTER")
         button:SetScript("OnEnter", OnTalentEnter)
         button:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        button:SetScript("OnClick", function(self)
-            if self.talent and IsModifiedClick("CHATLINK") then
-                ChatEdit_InsertLink(GetSpellLink(self.talent.ranks[1]))
-            end
-        end)
+        button:SetScript("OnClick", OnTalentClick)
+        button:RegisterForDrag("LeftButton")
+        button:SetScript("OnDragStart", OnTalentDrag)
         talentButtons[(row - 1) * TALENT_COLUMNS + column] = button
     end
 end
@@ -1125,6 +1205,9 @@ for index = 1, 13 do
     row.name:SetJustifyH("LEFT")
     row:SetScript("OnEnter", OnTalentEnter)
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row:SetScript("OnClick", OnTalentClick)
+    row:RegisterForDrag("LeftButton")
+    row:SetScript("OnDragStart", OnTalentDrag)
     talentRows[index] = row
 end
 
@@ -1180,8 +1263,20 @@ local function OnListClick(self, button)
         view.class, view.spec, view.tree = self.spec.class, self.spec.order, self.spec.order
         ResetScrolls()
         Refresh()
+    elseif self.talent then
+        OnTalentClick(self)
     else
         OnCellClick(self)
+    end
+end
+
+local function OnListDrag(self)
+    if self.mySpec or self.spec then
+        return
+    elseif self.talent then
+        OnTalentDrag(self)
+    else
+        OnCellDrag(self)
     end
 end
 
@@ -1203,6 +1298,8 @@ for index = 1, LIST_ROWS do
     row:SetScript("OnLeave", function() GameTooltip:Hide() end)
     row:SetScript("OnClick", OnListClick)
     row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    row:RegisterForDrag("LeftButton")
+    row:SetScript("OnDragStart", OnListDrag)
     -- Locked: a padlock at the right end.
     row.lock = row:CreateTexture(nil, "OVERLAY")
     row.lock:SetTexture(LOCK_ICON)

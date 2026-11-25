@@ -111,9 +111,17 @@ function IsSpellKnown(id)
     end
     return false
 end
-function GetSpellLink(id) return "[" .. (SPELLS[id] or "?") .. "]" end
-function IsModifiedClick() return false end
-function ChatEdit_InsertLink() end
+-- As the client's: by id, or by name (the rank known).
+function GetSpellLink(id) return "[" .. (SPELLS[id] or (type(id) == "string" and id) or "?") .. "]" end
+local modified, inserted, picked = false, {}, {}
+function IsModifiedClick() return modified end
+function ChatEdit_InsertLink(link) inserted[#inserted + 1] = link end
+-- The spellbook: Fireball and a passive Improved Fireball (a talent the client lists there as passive).
+BOOKTYPE_SPELL = "spell"
+local SPELLBOOK = { "Fireball", "Improved Fireball" }
+function GetSpellName(slot) return SPELLBOOK[slot] end
+function IsPassiveSpell(slot) return SPELLBOOK[slot] == "Improved Fireball" end
+function PickupSpell(slot, book) picked[#picked + 1] = { slot, book } end
 function StaticPopup_Show(which, text, _, data) popup = { which = which, text = text, data = data } end
 local offsets = {}
 function FauxScrollFrame_SetOffset(frame, offset) offsets[frame] = offset end
@@ -438,6 +446,21 @@ yourButton:Click()
 check(shownCells(grid.cells) == "Fireball" and grid.cells[1].sub.text == "Mage", "Abilities lists known abilities")
 check(tree.treeTitle.text == "Your Talents  |cffffffff1|r" and tree.talentRows[1].shown
     and tree.talentRows[1].name.text == "Improved Fireball  1/2", "Abilities lists owned talents with ranks")
+
+-- Dragging and linking: a known ability drags from its spellbook slot; a passive talent places nothing.
+grid.cells[1].scripts.OnDragStart(grid.cells[1])
+check(#picked == 1 and picked[1][1] == 1 and picked[1][2] == "spell", "dragging Fireball picks up its spellbook slot")
+tree.talentRows[1].scripts.OnDragStart(tree.talentRows[1])
+check(#picked == 1, "a passive talent has nothing to drag")
+grid.cells[1].scripts.OnEnter(grid.cells[1])
+check(GameTooltip.lines[#GameTooltip.lines].text == "Drag to your action bars. Shift-click to link.",
+    "the tooltip says Fireball can be dragged and linked")
+modified = true
+grid.cells[1]:Click()
+check(inserted[1] == "[Fireball]", "shift-click links an ability")
+tree.talentRows[1]:Click()
+check(inserted[2] == "|cff4e96f7|Htalent:34:0|h[Improved Fireball]|h|r", "shift-click links a talent at its rank")
+modified = false
 
 -- Wildcard roll: the die bursts, the reel lands on the prize, the die re-forms and everything fades.
 local reveal = EmberforgeClasslessReveal
