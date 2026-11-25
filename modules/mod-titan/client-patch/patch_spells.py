@@ -1564,6 +1564,48 @@ def hero_tuning(spells):
         spells.rows[spell_id] = tuple(row)
 
 
+# Class buffs last 30 min (buff_durations): SpellDuration.dbc's 30 min, the shortest and longest they may last
+# before, the longest cooldown, the effects (an aura, on the caster or a party or raid) and targets (the caster or
+# friends) that make one, and the spells that would pass but are no buffs (Feign Death, Lesser Invisibility, a QA
+# spell).
+BUFF_DURATION_INDEX = 30
+BUFF_SHORTEST_MS, BUFF_LONGEST_MS, BUFF_MOST_COOLDOWN_MS = 2 * 60 * 1000, 60 * 60 * 1000, 30 * 1000
+BUFF_EFFECTS = {6, 35, 65, 119, 128}
+BUFF_TARGETS = {1, 20, 21, 25, 30, 31, 33, 37, 45, 56, 57, 61}
+NOT_BUFFS = {5384, 7870, 45659}
+SKILL_CATEGORY_CLASS = 7
+
+
+def buff_durations(spells, source):
+    """Class buffs last 30 min: a spell of a class's skill line, not passive, lasting 2 min to an hour, at most a
+    30 sec cooldown, every effect an aura on the caster or friends (Battle Shout, Horn of Winter, Mage Armor, Power
+    Word: Fortitude, the Blessings, Gift of the Wild...). The server does the same (hero_resources.cpp,
+    IsClassBuff)."""
+    durations = {key: row[1] for key, row in Dbc(source / 'SpellDuration.dbc', 4).rows.items()}
+    lines = {key: row[1] for key, row in Dbc(source / 'SkillLine.dbc', 56).rows.items()}
+    class_spells = {row[2] for row in Dbc(source / 'SkillLineAbility.dbc', 14).rows.values()
+                    if lines.get(row[1]) == SKILL_CATEGORY_CLASS}
+    effect_column, target_column = EFFECT_FIELDS['Effect'][0], EFFECT_FIELDS['TargetA'][0]
+    changed = 0
+    for key in sorted(class_spells - NOT_BUFFS):
+        row = spells.rows.get(key)
+        if not row or row[FIELDS['Attributes']] & SPELL_ATTR0_PASSIVE:
+            continue
+        duration = durations.get(row[FIELDS['DurationIndex']], 0)
+        if not BUFF_SHORTEST_MS <= duration <= BUFF_LONGEST_MS \
+                or max(row[FIELDS['RecoveryTime']], row[FIELDS['CategoryRecoveryTime']]) > BUFF_MOST_COOLDOWN_MS:
+            continue
+        effects = [n for n in range(3) if row[effect_column + n]]
+        if not effects or any(row[effect_column + n] not in BUFF_EFFECTS
+                              or row[target_column + n] not in BUFF_TARGETS for n in effects):
+            continue
+        row = list(row)
+        row[FIELDS['DurationIndex']] = BUFF_DURATION_INDEX
+        spells.rows[key] = tuple(row)
+        changed += 1
+    return changed
+
+
 def unholy_presence_gcd(spells):
     """Unholy Presence takes 0.5 sec off the Death Knight's global cooldown with a spell modifier, which the client
     applies only to its own class's spells (ChrClasses' SpellClassSet: a Hero is a Paladin), so it kept a Hero's
@@ -1727,6 +1769,7 @@ def main():
     forms = physical_forms(spells)
     rune_usability(spells)
     hero_tuning(spells)
+    buffs = buff_durations(spells, source)
     overpower_reactive(spells)
     bake_talent_glyphs(spells)
     # unholy_presence_gcd is no longer run: the Emberforge engine applies every class's spell modifiers on the
@@ -1740,7 +1783,7 @@ def main():
     print(f'Wrote {out / "Spell.dbc"} ({len(SPELLS)} spells, Runic Power turned into Rage in {renamed} spells, '
           f'rune costs left to the server in {len(runes)}, '
           f'reagents dropped from {reagents}, stances freed in {stances}, usable in Cat or Bear Form {forms}, '
-          f'mana costs cut in {mana}) '
+          f'mana costs cut in {mana}, {buffs} buffs at 30 min) '
           f'and {out / "SpellIcon.dbc"}')
     if sql:
         print(f'Wrote {sql}')

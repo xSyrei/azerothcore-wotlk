@@ -4,6 +4,14 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Class buffs last 30 minutes
+
+- Every class buff now lasts **30 minutes**: Battle Shout, Commanding Shout, Horn of Winter, the Blessings, Earth
+  and Lightning Shield, Water Shield, Thorns, Amplify and Dampen Magic, Shadow Protection, Unending Breath and the
+  like (from 2 or 10 min). Buffs that already lasted 30 min (the Armors, Inner Fire, Fortitude, Arcane Intellect,
+  Mark of the Wild, the Seals) are unchanged; the hour-long group buffs (Prayer of Fortitude, Gift of the Wild,
+  Arcane Brilliance, Prayer of Spirit) are 30 min too, like the rest.
+
 ### Wildcard window: drag and link
 
 - **Drag** a known ability from the Wildcard window (the ability grid, the Spells list, or a talent that teaches an

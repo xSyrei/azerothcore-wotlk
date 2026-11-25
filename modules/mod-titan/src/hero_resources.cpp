@@ -27,6 +27,7 @@
 #include <algorithm>
 #include <array>
 #include <unordered_map>
+#include <unordered_set>
 
 // Classless Hero: every class resource at once.
 //
@@ -240,6 +241,64 @@ static uint32 ManaShare(uint32 cost)
     return (cost * 35 + 50) / 100;
 }
 
+// Class buffs last 30 min: a spell of a class's skill line, not passive, lasting 2 min to an hour, at most a 30 sec
+// cooldown, every effect an aura on the caster or friends (Battle Shout, Horn of Winter, Mage Armor, Power Word:
+// Fortitude, the Blessings, Gift of the Wild...). Not Feign Death, Lesser Invisibility nor the QA spell. The client
+// patch does the same (patch_spells.py, buff_durations).
+constexpr uint32 BUFF_DURATION_INDEX = 30;          // SpellDuration.dbc: 30 min
+constexpr int32 BUFF_SHORTEST_MS = 2 * MINUTE * IN_MILLISECONDS, BUFF_LONGEST_MS = HOUR * IN_MILLISECONDS;
+constexpr uint32 BUFF_MOST_COOLDOWN_MS = 30 * IN_MILLISECONDS;
+constexpr std::array<uint32, 3> NOT_BUFFS = { 5384, 7870, 45659 };
+
+static bool IsClassBuff(SpellInfo const* spellInfo)
+{
+    static std::unordered_set<uint32> const classSpells = []
+    {
+        std::unordered_set<uint32> spells;
+        for (uint32 i = 0; i < sSkillLineAbilityStore.GetNumRows(); ++i)
+            if (SkillLineAbilityEntry const* ability = sSkillLineAbilityStore.LookupEntry(i))
+                if (SkillLineEntry const* line = sSkillLineStore.LookupEntry(ability->SkillLine);
+                    line && line->categoryId == SKILL_CATEGORY_CLASS)
+                    spells.insert(ability->Spell);
+        return spells;
+    }();
+    if (!classSpells.count(spellInfo->Id) || spellInfo->IsPassive() || !spellInfo->DurationEntry
+        || std::find(NOT_BUFFS.begin(), NOT_BUFFS.end(), spellInfo->Id) != NOT_BUFFS.end())
+        return false;
+    int32 duration = spellInfo->DurationEntry->Duration[0];
+    if (duration < BUFF_SHORTEST_MS || duration > BUFF_LONGEST_MS
+        || std::max(spellInfo->RecoveryTime, spellInfo->CategoryRecoveryTime) > BUFF_MOST_COOLDOWN_MS)
+        return false;
+    bool any = false;
+    for (SpellEffectInfo const& effect : spellInfo->Effects)
+    {
+        if (!effect.Effect)
+            continue;
+        switch (effect.Effect)
+        {
+            case SPELL_EFFECT_APPLY_AURA: case SPELL_EFFECT_APPLY_AREA_AURA_PARTY:
+            case SPELL_EFFECT_APPLY_AREA_AURA_RAID: case SPELL_EFFECT_APPLY_AREA_AURA_PET:
+            case SPELL_EFFECT_APPLY_AREA_AURA_FRIEND:
+                break;
+            default:
+                return false;
+        }
+        switch (effect.TargetA.GetTarget())
+        {
+            case TARGET_UNIT_CASTER: case TARGET_UNIT_CASTER_AREA_PARTY: case TARGET_UNIT_TARGET_ALLY:
+            case TARGET_UNIT_TARGET_ANY: case TARGET_UNIT_SRC_AREA_ALLY: case TARGET_UNIT_DEST_AREA_ALLY:
+            case TARGET_UNIT_SRC_AREA_PARTY: case TARGET_UNIT_LASTTARGET_AREA_PARTY:
+            case TARGET_UNIT_TARGET_CHAINHEAL_ALLY:
+            case TARGET_UNIT_CASTER_AREA_RAID: case TARGET_UNIT_TARGET_RAID: case TARGET_UNIT_TARGET_AREA_RAID_CLASS:
+                break;
+            default:
+                return false;
+        }
+        any = true;
+    }
+    return any;
+}
+
 class titan_runic_power_to_rage : public GlobalScript
 {
 public:
@@ -341,6 +400,10 @@ public:
             spellInfo->PowerType = POWER_RAGE;
 
         PhysicalForms(spellInfo);
+
+        if (IsClassBuff(spellInfo))
+            if (SpellDurationEntry const* thirtyMinutes = sSpellDurationStore.LookupEntry(BUFF_DURATION_INDEX))
+                spellInfo->DurationEntry = thirtyMinutes;
 
         // Thunder Clap (every rank) costs 10 Rage, not 20; Sinister Strike 30 Energy, not 45; the Hearthstone cools
         // down in 5 minutes, not 30. The client patch does the same (patch_spells.py, hero_tuning).
