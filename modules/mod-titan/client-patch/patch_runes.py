@@ -1947,7 +1947,24 @@ def family_mod(spell_id, name, icon, text, duration, family, flag, aura_type, op
 RIFT_ICON, NORTH_ICON, TRUESHOT_ICON = ('Ability_Rune_HungeringRift', 'Ability_Rune_HowlingNorth',
                                        'Ability_Rune_Trueshot')
 STEADY_SHOT, HUNTER_FAMILY = 56641, 9
+# The healer and tank runes after them: Blizzard's icons until their own are painted.
+SCARLET_ICON, GROVE_ICON, IRON_ICON = ('Spell_Holy_BlessedRecovery', 'Ability_Druid_EmpoweredRejuvination',
+                                       'Ability_Warrior_ShieldMastery')
 EXTENDED_MODIFIERS = [
+    (93401, SCARLET_ICON, [('Deep Bloom', 'Scarlet Garden', 'Bloodrose', 'Circling Bloom', 'Shielded Bloom'),
+                           ('Patient Cultivation', 'Swift Blossom', 'Guided Petals', 'Choral Bloom',
+                            'Mending Petals'),
+                           ('Second Bloom', 'Sheltering Petals', 'Renewing Flower', 'Guardian Bloom',
+                            'Binding Petals')]),
+    (93426, GROVE_ICON, [('Deep Roots', 'Fourfold Grove', "Regrowth's Root", 'Nourishing Grove', 'Thorned Grove'),
+                         ('Wild Seeding', 'Gentle Seeking', 'Lifebound', 'Tranquil Grove', 'Swift Grove'),
+                         ('Verdant Swiftmend', 'Overgrowth', 'Grove Shelter', 'Rooted Touch', 'Innervating Grove')]),
+    (93451, IRON_ICON, [('Crushing Reprisal', 'Wide Reckoning', 'Immovable', 'Shockwave Reckoning',
+                         'Concussive Reckoning'),
+                        ('Retaliation', 'Shaking Ground', 'Sundering Force', 'Vengeful Devastation',
+                         'Rending Impact'),
+                        ('Fortified Bulwark', 'Shielded Advance', 'Commanding Force', 'Last Bastion',
+                         'Wall of Iron')]),
     (91600, CONVERGENCE_ICON, [('Perfect Alignment', 'Converging Skies', 'Astral Rupture', 'Flame Eclipse',
                                 'Frozen Eclipse'),
                                ('Long Twilight', 'Crossed Horizons', 'Steady Orbit', 'Tidal Flare', 'Twin Moons'),
@@ -2328,8 +2345,44 @@ for _id, _cast, _text in ((93376, CAST_2S, '2 sec'), (93377, 19, '2.5 sec')):
                                    'RealPointsPerLevel': 0.0, 'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0}},
                    'clear': [2, 3]})
 SPELL_CLASSES.update({93376: 'HUNTER', 93377: 'HUNTER'})
+SPELLS += [
+    # Scarlet Benediction.
+    buff(93400, 'Rune of Scarlet Benediction', SCARLET_ICON,
+         'Renew plants a Scarlet Bloom; your Flash Heal or Greater Heal there opens it, healing the most injured '
+         'ally nearby.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {**shown(93416, 'Scarlet Bloom', SCARLET_ICON, 'Your Flash Heal or Greater Heal here opens the Bloom.',
+             DURATION_15S), 'set': {**SHOWN, 'DurationIndex': DURATION_15S}},
+    heal(93417, 'Scarlet Benediction', SCARLET_ICON, 'The Bloom opens.'),
+    absorb(93418, 'Scarlet Petals', 'Spell_Holy_PowerWordShield', DURATION_6S),
+    periodic_heal(93419, 'Bloodrose', 'Spell_Holy_Renew', 'Healing every second.', DURATION_6S),
+    # The Evergrove: Rejuvenation's extra stacks, each its own heal over time.
+    buff(93425, 'Rune of the Evergrove', GROVE_ICON,
+         'Rejuvenation stacks up to 3 times on one ally; on an ally at full health or a full stack, it seeks the '
+         'most injured ally instead.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    *[{**periodic_heal(93441 + extra, name + ' Rejuvenation', 'Spell_Nature_Rejuvenation',
+                       'Heals every 3 sec.', DURATION_15S)}
+      for extra, name in enumerate(('Second', 'Third', 'Fourth'))],
+    absorb(93444, 'Grove Shelter', 'Spell_Nature_ProtectionformNature', DURATION_6S),
+    heal(93445, 'Overgrowth', 'Ability_Druid_Flourish', 'The grove overflows.'),
+    # Iron Reckoning.
+    buff(93450, 'Rune of Iron Reckoning', IRON_ICON,
+         'Shield Block raises an Iron Bulwark before you; Shield Slam releases what it held as an Iron impact.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    absorb(93466, 'Iron Bulwark', IRON_ICON, DURATION_4S),
+    strike(93467, 'Iron Reckoning', IRON_ICON, PHYSICAL),
+    dot(93468, 'Rending Impact', 'Ability_Gouge', PHYSICAL, DURATION_6S, 'Bleeding every second.'),
+    strike(93469, 'Rending Impact', 'Ability_Gouge', PHYSICAL),
+    {**buff(93470, 'Shielded Advance', 'Ability_Warrior_ShieldWall', 'Movement speed increased by 20%.',
+            DURATION_4S, {1: aura(AURA_MOD_INCREASE_SPEED, 20, 0)}), 'set': {**SHOWN, 'DurationIndex': DURATION_4S}},
+    absorb(93471, 'Shielded Advance', 'Ability_Warrior_ShieldWall', DURATION_4S),
+    heal(93472, 'Wall of Iron', 'Ability_Warrior_ShieldWall', 'The bulwark mends you.'),
+]
 for _spell in SPELLS:
-    if _spell['id'] in (93300, 93325, 93360):         # the new runes' own auras: hidden as every rune's
+    if 93441 <= _spell['id'] <= 93443:              # as Rejuvenation: every 3 sec
+        _spell['effects'][1]['Amplitude'] = 3000
+        _spell['tooltip'] = 'Heals every 3 sec.'
+for _spell in SPELLS:
+    if _spell['id'] in (93300, 93325, 93360, 93400, 93425, 93450):  # the new runes' own auras: hidden as every rune's
         _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}
 for _spell in SPELLS:
     if _spell['id'] in (93015, 93065, 93092, 93093, 93094, 93117, 93165, 93166, 93216, 93217, 93219, 93220, 93241,
@@ -2390,12 +2443,16 @@ BORROWED_VISUALS.update({
 })
 for _visual, _ids in ((3057, (93317, 93320, 93322)), (7906, (93343, 93347, 93348)), (8629, (93318, 93349)),
                       (12328, (93341, 93346, 93351)), (143, (93321,)), (3179, (93381,)), (5119, (93382,)),
-                      (6, (93353, 93383)), (3239, (93378,)), (5119, (93379,)), (13635, (93380,)), (2736, (93384,))):
+                      (6, (93353, 93383)), (3239, (93378,)), (5119, (93379,)), (13635, (93380,)), (2736, (93384,)),
+                      (3077, (93417, 93445, 93472)), (11956, (93418, 93444, 93466, 93471)), (280, (93416, 93419)),
+                      (32, (93441, 93442, 93443)), (5119, (93467,)), (250, (93468,)), (6, (93470,))):
     BORROWED_VISUALS[_visual] = tuple(BORROWED_VISUALS.get(_visual, ())) + _ids
 for _spell in SPELLS:
     for _visual, _ids in BORROWED_VISUALS.items():
         if _spell['id'] in _ids:
             _spell['set'] = {**_spell['set'], 'SpellVisual': _visual}
+ICONS += [SCARLET_ICON, GROVE_ICON, IRON_ICON, 'Spell_Nature_ProtectionformNature', 'Ability_Druid_Flourish',
+          'Ability_Warrior_ShieldWall', 'Spell_Nature_Rejuvenation', 'Spell_Holy_PowerWordShield']
 ICONS += [RIFT_ICON, NORTH_ICON, TRUESHOT_ICON, 'Spell_Shadow_Twilight', 'Ability_TrueShot',
           'Spell_DeathKnight_EmpowerRuneBlade2', 'Spell_Arcane_Blast',
           'Ability_Hunter_SteadyShot', 'Spell_Frost_ArcticWinds', 'Ability_Hunter_SniperShot',

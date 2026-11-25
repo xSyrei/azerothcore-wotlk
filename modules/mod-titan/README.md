@@ -721,6 +721,15 @@ utility or a tradeoff) take one pick each, from three.
     `FrostBlade`, `NorthTick`) marks with Northwind 93341; Trueshot (93376, 93377 with Steady Aim; Steady Shot's
     copy) is taught in Aimed Shot's place (`TeachTrueshot`) and its script fires the Hero's own Aimed Shot
     (`ReleaseTrueshot`, made stronger in `TrueshotDamage`, its pierce in `TrueshotLanded`).
+  - **Scarlet Benediction** (52; Healer; Renew, Flash Heal or Greater Heal), **the Evergrove** (53; Healer;
+    Rejuvenation; Emberforge's own design), **Iron Reckoning** (54; Tank; Shield Block, Shield Slam): blocks 93400,
+    93425 and 93450, Blizzard icons until their own are painted. The Bloom (93416, `PlantBloom`, `OpenBloom`,
+    `ScarletHeal`) keeps each ally's openings and rearm time in the Hero's state. The Evergrove's extra Rejuvenations
+    are their own heals over time (93441-93443, every 3 sec, as much as the Hero's Rejuvenation ticks); `GrowStack`,
+    `GroveRejuvenation` (its stacks and health taken in the extended hit's BeforeHit), `GroveSeek`; Lifebloom's bloom
+    has its own script (its druid the original caster). Iron Reckoning's bulwark (93466) has an aura script
+    (`spell_titan_rune_iron_bulwark`: only from the front, its absorbed total, Immovable's release as it ends); the
+    impact in `IronImpact`, the interactions in `IronAbility`.
   - **School bonuses**: a rune strike ignores the Hero's damage modifiers (the share of a hit it repeats already
     carries them), so a strike from raw attack power or spell power is multiplied by `SchoolBonus` of its school at
     its source (tank_runes: `AttackPower` and `SpellPower` take the school); `RunePower` includes it already.

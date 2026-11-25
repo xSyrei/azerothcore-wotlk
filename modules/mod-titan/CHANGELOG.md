@@ -4,6 +4,28 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### New Legendary Runes: Scarlet Benediction, the Evergrove, Iron Reckoning
+
+- **Rune of Scarlet Benediction** (Healer; Renew, Flash Heal or Greater Heal): Renew plants a dormant Scarlet Bloom.
+  Your Flash Heal or Greater Heal on that ally opens it: the most injured other ally within 10 yards is healed for
+  80% of your spell power, or the Bloom's ally is shielded for 40% if no one is hurt. A Renew that has ticked 3 times
+  makes it 30% stronger. Prayer of Healing opens up to 3 Blooms, Binding Heal one. Choices: Deep Bloom, Scarlet
+  Garden, Bloodrose, Circling Bloom, Shielded Bloom; Patient Cultivation, Swift Blossom, Guided Petals, Choral Bloom,
+  Mending Petals; Second Bloom, Sheltering Petals, Renewing Flower, Guardian Bloom, Binding Petals.
+- **Rune of the Evergrove** (Healer; Rejuvenation): Rejuvenation stacks. Cast it again on the same ally for a Second,
+  then a Third Rejuvenation, each healing as much as yours every 3 sec. It seeks: on an ally at full health, or one
+  already at three, it grows on the most injured ally within 30 yards instead. Swiftmend heals 20% more for each
+  extra Rejuvenation and leaves them; Wild Growth adds a stack to up to 2 allies. Choices: Deep Roots, Fourfold
+  Grove, Regrowth's Root, Nourishing Grove, Thorned Grove; Wild Seeding, Gentle Seeking, Lifebound, Tranquil Grove,
+  Swift Grove; Verdant Swiftmend, Overgrowth, Grove Shelter, Rooted Touch, Innervating Grove.
+- **Rune of Iron Reckoning** (Tank; Shield Block, Shield Slam): Shield Block raises an Iron Bulwark in front of you
+  for 4 sec, absorbing up to 15% of your maximum health. Shield Slam in that time releases an Iron impact: 20% of its
+  hit plus half of what the bulwark absorbed (that part at most half your attack power), to up to 5 enemies in a
+  cone. Revenge (20%), Thunder Clap (a full circle) and Devastate (15%) make it stronger. Choices: Crushing Reprisal,
+  Wide Reckoning, Immovable, Shockwave Reckoning, Concussive Reckoning; Retaliation, Shaking Ground, Sundering Force,
+  Vengeful Devastation, Rending Impact; Fortified Bulwark, Shielded Advance, Commanding Force, Last Bastion, Wall of
+  Iron.
+
 ### The new runes: their own classes' abilities, and Howling North sped up
 
 - **Howling North** is faster: Howling Blast now readies **2 blades** (Northwind lasts 8 sec), and **Obliterate or

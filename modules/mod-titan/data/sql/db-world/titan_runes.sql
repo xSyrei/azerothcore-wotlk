@@ -392,6 +392,23 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-421, 'spell_titan_rune_extended_hit'),
 (-60103, 'spell_titan_rune_extended_hit'),
 (-2912, 'spell_titan_rune_extended_hit'),
+(-2060, 'spell_titan_rune_extended_hit'),
+(-596, 'spell_titan_rune_extended_hit'),
+(-32546, 'spell_titan_rune_extended_hit'),
+(-34861, 'spell_titan_rune_extended_hit'),
+(-17, 'spell_titan_rune_extended_hit'),
+(-774, 'spell_titan_rune_extended_hit'),
+(-8936, 'spell_titan_rune_extended_hit'),
+(18562, 'spell_titan_rune_extended_hit'),
+(-48438, 'spell_titan_rune_extended_hit'),
+(50464, 'spell_titan_rune_extended_hit'),
+(-5185, 'spell_titan_rune_extended_hit'),
+(-44203, 'spell_titan_rune_extended_hit'),
+(29166, 'spell_titan_rune_extended_hit'),
+(2565, 'spell_titan_rune_extended_hit'),
+(-20243, 'spell_titan_rune_extended_hit'),
+(46968, 'spell_titan_rune_extended_hit'),
+(12809, 'spell_titan_rune_extended_hit'),
 (12051, 'spell_titan_rune_evocation');
 
 -- Blizzard's damage (every rank's) with the Splintered Crown: Hailstorm's victims.
@@ -414,13 +431,21 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (93218, 'spell_titan_rune_dot'),
 (93318, 'spell_titan_rune_dot'),
 (93349, 'spell_titan_rune_dot'),
-(93351, 'spell_titan_rune_dot');
+(93351, 'spell_titan_rune_dot'),
+(93468, 'spell_titan_rune_dot');
 
 -- Trueshot (both windups): released, the Hero's Aimed Shot.
 DELETE FROM `spell_script_names` WHERE `ScriptName` = 'spell_titan_rune_trueshot';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (93376, 'spell_titan_rune_trueshot'),
 (93377, 'spell_titan_rune_trueshot');
+
+-- The Evergrove's Lifebound (Lifebloom's bloom, its druid the original caster); Iron Reckoning's bulwark.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_lifebloom_bloom',
+    'spell_titan_rune_iron_bulwark');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(33778, 'spell_titan_rune_lifebloom_bloom'),
+(93466, 'spell_titan_rune_iron_bulwark');
 
 -- The Extended Options' strikes, heals and shields: shares of the Hero's power and hits, no bonuses of their own.
 DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 91641, 91660, 91661, 91662, 91663,
@@ -429,7 +454,8 @@ DELETE FROM `spell_bonus_data` WHERE `entry` IN (91636, 91637, 91638, 91639, 916
     93016, 93017, 93040, 93041, 93042, 93065, 93066, 93067, 93068, 93092, 93093, 93094, 93115, 93116, 93117, 93118,
     93140, 93141, 93142, 93165, 93166, 93167, 93191, 93192, 93193, 93194, 93195, 93216, 93217, 93219, 93220, 93222,
     93241, 93242, 93266, 93267, 93268, 93270, 93291, 93292, 93317, 93319, 93320, 93321, 93322, 93323, 93342, 93343,
-    93345, 93347, 93348, 93350, 93352, 93354, 93379, 93380, 93381, 93382, 93385);
+    93345, 93347, 93348, 93350, 93352, 93354, 93379, 93380, 93381, 93382, 93385, 93417, 93418, 93419, 93441,
+    93442, 93443, 93444, 93445, 93466, 93467, 93469, 93471, 93472);
 INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
 (91636, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Burn tick'),
 (91637, 0, 0, 0, 0, 'Phoenix Wake - Phoenix Eruption'),
@@ -530,7 +556,20 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (93380, 0, 0, 0, 0, 'Trueshot - Arcane payload'),
 (93381, 0, 0, 0, 0, 'Trueshot - Flame Arrow'),
 (93382, 0, 0, 0, 0, 'Trueshot - Frostpiercer'),
-(93385, 0, 0, 0, 0, 'Trueshot - Renewed Aim');
+(93385, 0, 0, 0, 0, 'Trueshot - Renewed Aim'),
+(93417, 0, 0, 0, 0, 'Scarlet Benediction - opening'),
+(93418, 0, 0, 0, 0, 'Scarlet Benediction - Scarlet Petals'),
+(93419, 0, 0, 0, 0, 'Scarlet Benediction - Bloodrose'),
+(93441, 0, 0, 0, 0, 'Evergrove - Second Rejuvenation'),
+(93442, 0, 0, 0, 0, 'Evergrove - Third Rejuvenation'),
+(93443, 0, 0, 0, 0, 'Evergrove - Fourth Rejuvenation'),
+(93444, 0, 0, 0, 0, 'Evergrove - Grove Shelter'),
+(93445, 0, 0, 0, 0, 'Evergrove - Overgrowth'),
+(93466, 0, 0, 0, 0, 'Iron Reckoning - Iron Bulwark'),
+(93467, 0, 0, 0, 0, 'Iron Reckoning - impact'),
+(93469, 0, 0, 0, 0, 'Iron Reckoning - Rending Impact tick'),
+(93471, 0, 0, 0, 0, 'Iron Reckoning - Shielded Advance'),
+(93472, 0, 0, 0, 0, 'Iron Reckoning - Wall of Iron');
 
 -- Their damage over time: Lunar Wound, Astral Rupture.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91302, 91325) AND `ScriptName` = 'spell_titan_rune_dot';

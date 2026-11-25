@@ -2100,6 +2100,189 @@ EmberforgeRunesArt = {
                 "Recovery",
             },
         },
+        [52] = {
+            rgb = { 0.882, 0.275, 0.314 },
+            hot = { 0.957, 0.745, 0.761 },
+            ink = { 0.988, 0.925, 0.933 },
+            muted = { 0.859, 0.604, 0.643 },
+            hue = { 1, 0.384, 0.431 },
+            inner = { 0.98, 0.871, 0.878 },
+            built = true,
+            core = "**Renew** plants a **Scarlet Bloom**; your **Flash Heal** or **Greater " ..
+                    "Heal** there opens it onto the most injured ally nearby.",
+            asks = {
+                "How the Bloom opens",
+                "How you tend it",
+                "What it leaves behind",
+            },
+            abilities = {
+                "Stronger",
+                "Two allies",
+                "Heal over time",
+                "Circle of Healing",
+                "Power Word: Shield",
+                "Ripeness",
+                "4 sec",
+                "20 yards",
+                "Prayer of Healing",
+                "Prayer of Mending",
+                "Twice",
+                "Shield",
+                "Renew",
+                "Guardian Spirit",
+                "Binding Heal",
+            },
+            texts = {
+                "The opening heals for 110% of your spell power instead of 80%.",
+                "The opening heals the 2 most injured allies nearby for 60% each.",
+                "Allies the opening heals also heal for 30% of your spell power over 6 " ..
+                        "sec.",
+                "Circle of Healing opens the Blooms of up to 2 allies it heals.",
+                "Power Word: Shield on a Bloom's ally opens it.",
+                "A Renew that has ticked 3 times makes the opening 60% stronger instead " ..
+                        "of 30%.",
+                "An ally can take a new Bloom 4 sec after one opens instead of 8.",
+                "The opening reaches the most injured ally within 20 yards instead of " ..
+                        "10.",
+                "Prayer of Healing opens up to 5 Blooms, each 15% stronger.",
+                "A Bloom opened on an ally carrying your Prayer of Mending heals 30% " ..
+                        "more.",
+                "Each Bloom opens twice before it is spent.",
+                "When the Bloom opens onto another ally, its own ally is also shielded " ..
+                        "for 40% of your spell power.",
+                "Opening a Bloom starts its ally's Renew over again.",
+                "A Bloom opened on your Guardian Spirit target heals 50% more.",
+                "Binding Heal also opens your own Bloom.",
+            },
+            slots = {
+                "Bloom",
+                "Tending",
+                "Aftermath",
+            },
+        },
+        [53] = {
+            rgb = { 0.431, 0.863, 0.471 },
+            hot = { 0.8, 0.953, 0.816 },
+            ink = { 0.941, 0.988, 0.949 },
+            muted = { 0.678, 0.839, 0.706 },
+            hue = { 0.561, 1, 0.604 },
+            inner = { 0.898, 0.976, 0.906 },
+            built = true,
+            core = "**Rejuvenation** stacks up to 3 times on one ally, and on a healthy or " ..
+                    "full ally it **seeks** the most injured instead.",
+            asks = {
+                "How deep the grove grows",
+                "How it seeks the injured",
+                "What the full grove does",
+            },
+            abilities = {
+                "Stronger",
+                "Four",
+                "Regrowth",
+                "Nourish",
+                "Thorns",
+                "Wild Growth",
+                "90% health",
+                "Lifebloom",
+                "Tranquility",
+                "Nature's Swiftness",
+                "Swiftmend",
+                "Swiftmend",
+                "Shield",
+                "Healing Touch",
+                "Innervate",
+            },
+            texts = {
+                "Your extra Rejuvenations heal 20% more.",
+                "Rejuvenation stacks up to 4 times.",
+                "Regrowth on an ally with your Rejuvenation grows a stack.",
+                "Nourish heals 8% more for each of your Rejuvenations on its target.",
+                "Your extra Rejuvenations on an ally with your Thorns heal 25% more.",
+                "Wild Growth grows a stack on up to 4 allies instead of 2.",
+                "Rejuvenation seeks from allies above 90% health, not only full ones.",
+                "Lifebloom's bloom grows a stack on its ally, or plants your " ..
+                        "Rejuvenation there.",
+                "Tranquility grows a stack on each ally it heals that carries your " ..
+                        "Rejuvenation, once every 8 sec.",
+                "Rejuvenation while Nature's Swiftness is on you grows the full stack " ..
+                        "at once, spending it.",
+                "Swiftmend heals 40% more for each extra Rejuvenation instead of 20%.",
+                "Swiftmend on a full stack also heals up to 3 injured allies within 10 " ..
+                        "yards for 30% of its heal.",
+                "An ally reaching the full stack is shielded for 40% of your spell " ..
+                        "power for 6 sec.",
+                "Healing Touch on an ally with your Rejuvenation renews its extra " ..
+                        "Rejuvenations.",
+                "Innervate on an ally with your Rejuvenation grows it to the full " ..
+                        "stack.",
+            },
+            slots = {
+                "Grove",
+                "Seeking",
+                "Bloom",
+            },
+        },
+        [54] = {
+            rgb = { 0.667, 0.706, 0.784 },
+            hot = { 0.882, 0.898, 0.925 },
+            ink = { 0.965, 0.973, 0.98 },
+            muted = { 0.773, 0.776, 0.831 },
+            hue = { 0.824, 0.871, 0.957 },
+            inner = { 0.941, 0.949, 0.961 },
+            built = true,
+            core = "**Shield Block** raises an **Iron Bulwark**; **Shield Slam** releases " ..
+                    "what it held as an **Iron impact**.",
+            asks = {
+                "How the impact lands",
+                "What makes it stronger",
+                "What the bulwark gives you",
+            },
+            abilities = {
+                "Stronger",
+                "Eight",
+                "Shield Slam",
+                "Shockwave",
+                "Concussion Blow",
+                "Revenge",
+                "Thunder Clap",
+                "Devastate",
+                "Devastate",
+                "Rend",
+                "Stronger",
+                "Shield Slam",
+                "Threat",
+                "Last Stand",
+                "Shield Wall",
+            },
+            texts = {
+                "The Iron impact deals 30% more damage.",
+                "The Iron impact hits up to 8 enemies.",
+                "The impact is released when the bulwark ends instead of on Shield " ..
+                        "Slam, for 125%; Shield Slam in the bulwark still adds its share.",
+                "Shockwave in the bulwark releases the impact once more, for 60%.",
+                "Concussion Blow in the bulwark makes the impact also deal 25% of your " ..
+                        "attack power to its first target.",
+                "Revenge makes the impact 40% stronger instead of 20%.",
+                "After Thunder Clap, the impact's circle reaches 12 yards.",
+                "Devastate makes the impact 30% stronger instead of 15%.",
+                "Devastate in the bulwark also makes your next Revenge deal 20% more.",
+                "The impact on your Rend target also makes it bleed for 30% of the " ..
+                        "impact over 6 sec.",
+                "The bulwark absorbs 20% more.",
+                "Shield Slam makes you 20% faster and absorbs 3% of your maximum " ..
+                        "health, for 4 sec.",
+                "The impact causes 60% more threat.",
+                "Shield Block under Last Stand makes the bulwark absorb 5% more of your " ..
+                        "maximum health.",
+                "The impact heals you for 2% of your maximum health, 5% under Shield " ..
+                        "Wall, once every 10 sec.",
+            },
+            slots = {
+                "Impact",
+                "Empowerment",
+                "Hold",
+            },
+        },
     },
     arcane = {
         rgb = { 0.725, 0.549, 1 },

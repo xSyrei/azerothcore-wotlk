@@ -142,6 +142,9 @@ namespace
     constexpr uint8 RUNE_HUNGERING_RIFT = 49;       // the updated compendium's (no earlier draft)
     constexpr uint8 RUNE_HOWLING_NORTH = 50;
     constexpr uint8 RUNE_TRUESHOT = 51;
+    constexpr uint8 RUNE_SCARLET_BENEDICTION = 52;  // the updated compendium's
+    constexpr uint8 RUNE_EVERGROVE = 53;            // Emberforge's own (Restoration)
+    constexpr uint8 RUNE_IRON_RECKONING = 54;       // the updated compendium's
 
     enum Spells : uint32
     {
@@ -604,6 +607,52 @@ namespace
         SPELL_HUNTERS_MOBILITY          = 93383,
         SPELL_STEADY_RECOVERY           = 93384,
         SPELL_MENDING_AIM               = 93385,    // the pet's heal
+        // Scarlet Benediction (93400 on).
+        SPELL_RUNE_SCARLET_BENEDICTION  = 93400,
+        SPELL_SCARLET_MODIFIER_FIRST    = 93401,
+        SPELL_SCARLET_BLOOM             = 93416,    // dormant on Renew's target
+        SPELL_SCARLET_OPENING           = 93417,    // the heal
+        SPELL_SCARLET_PETALS            = 93418,    // the absorb
+        SPELL_BLOODROSE                 = 93419,    // heal over time
+        // The Evergrove (93425 on).
+        SPELL_RUNE_EVERGROVE            = 93425,
+        SPELL_GROVE_MODIFIER_FIRST      = 93426,
+        SPELL_SECOND_REJUVENATION       = 93441,    // then Third, Fourth
+        SPELL_GROVE_SHELTER             = 93444,
+        SPELL_OVERGROWTH                = 93445,
+        // Iron Reckoning (93450 on).
+        SPELL_RUNE_IRON_RECKONING       = 93450,
+        SPELL_IRON_MODIFIER_FIRST       = 93451,
+        SPELL_IRON_BULWARK              = 93466,
+        SPELL_IRON_IMPACT               = 93467,
+        SPELL_RENDING_IMPACT            = 93468,    // its tick 93469
+        SPELL_RENDING_IMPACT_TICK       = 93469,
+        SPELL_SHIELDED_ADVANCE          = 93470,
+        SPELL_SHIELDED_ADVANCE_WARD     = 93471,
+        SPELL_IRON_MENDING              = 93472,
+        SPELL_PRAYER_OF_HEALING         = 596,
+        SPELL_BINDING_HEAL              = 32546,
+        SPELL_PRAYER_OF_MENDING_BUFF    = 41635,    // its ranks 48110, 48111
+        SPELL_HEALING_TOUCH             = 5185,
+        SPELL_NOURISH                   = 50464,
+        SPELL_TRANQUILITY               = 740,
+        SPELL_TRANQUILITY_HEAL          = 44203,
+        SPELL_NATURES_SWIFTNESS_DRUID   = 17116,
+        SPELL_THORNS                    = 467,
+        SPELL_INNERVATE                 = 29166,
+        SPELL_LIFEBLOOM_BLOOM           = 33778,
+        SPELL_SHIELD_BLOCK              = 2565,
+        SPELL_DEVASTATE                 = 20243,
+        SPELL_CONCUSSION_BLOW           = 12809,
+        SPELL_LAST_STAND                = 12975,
+        SPELL_LAST_STAND_AURA           = 12976,
+        SPELL_SHIELD_WALL               = 871,
+        SPELL_SHOCKWAVE                 = 46968,
+        SPELL_CIRCLE_OF_HEALING         = 34861,
+        SPELL_GUARDIAN_SPIRIT           = 47788,
+        SPELL_REGROWTH                  = 8936,
+        SPELL_SWIFTMEND                 = 18562,
+        SPELL_WILD_GROWTH               = 48438,
         SPELL_IMMOLATE                  = 348,
         SPELL_HAUNT                     = 48181,
         SPELL_CHAINS_OF_ICE             = 45524,
@@ -1141,6 +1190,107 @@ namespace
     constexpr std::size_t WIDE_MORE_PIERCES = 2, CALIBRATION_TARGETS = 2;
     constexpr int32 QUICK_RECOVERY_MS = 2000, FOLLOW_UP_MS = 6000;
     constexpr uint32 MENDING_AIM_EVERY_MS = 10000;
+
+    // Scarlet Benediction's modifiers: slot (0 Bloom, 1 Tending, 2 Aftermath) x 5 + choice.
+    enum ScarletModifier : uint8
+    {
+        MOD_SCARLET_DEEP_BLOOM, MOD_SCARLET_GARDEN, MOD_SCARLET_BLOODROSE, MOD_SCARLET_CIRCLING_BLOOM,
+        MOD_SCARLET_SHIELDED_BLOOM,
+        MOD_SCARLET_PATIENT_CULTIVATION, MOD_SCARLET_SWIFT_BLOSSOM, MOD_SCARLET_GUIDED_PETALS, MOD_SCARLET_CHORAL_BLOOM,
+        MOD_SCARLET_MENDING_PETALS,
+        MOD_SCARLET_SECOND_BLOOM, MOD_SCARLET_SHELTERING_PETALS, MOD_SCARLET_RENEWING_FLOWER,
+        MOD_SCARLET_GUARDIAN_BLOOM, MOD_SCARLET_BINDING_PETALS,
+    };
+
+    // Scarlet Benediction's tuning: Renew plants a dormant Scarlet Bloom on its target (as long as the Renew). The
+    // Hero's direct Flash Heal or Greater Heal on it opens it: the most injured other ally within 10 yards healed for
+    // 80% of their spell power; none, the target shielded for 40% for 6 sec. Once a Bloom; that ally takes no new
+    // Bloom for 8 sec after. A Renew that ticked 3 times (9 sec on): 30% more. Prayer of Healing opens up to 3 of the
+    // Blooms it heals, Binding Heal its target's.
+    constexpr float SCARLET_OPENING = 0.8f, SCARLET_PETALS = 0.4f, SCARLET_RANGE = 10.0f, SCARLET_RIPE = 1.3f;
+    constexpr int32 SCARLET_RIPE_MS = 9000, SCARLET_PETALS_MS = 6000;
+    constexpr uint32 SCARLET_REARM_MS = 8000;
+    constexpr std::size_t SCARLET_PRAYER_OPENS = 3;
+    // Its options: Deep Bloom (110%), Scarlet Garden (two allies, 60% each), Bloodrose (the healed ally 30% more over
+    // 6 sec), Circling Bloom (Circle of Healing opens up to 2), Shielded Bloom (Power Word: Shield opens it); Patient
+    // Cultivation (ripe 60% more), Swift Blossom (4 sec apart), Guided Petals (20 yards), Choral Bloom (Prayer of
+    // Healing opens up to 5, 15% more), Mending Petals (their Prayer of Mending on the Bloom's ally: 30% more); Second
+    // Bloom (opens twice), Sheltering Petals (its ally shielded as well), Renewing Flower (its Renew begins again),
+    // Guardian Bloom (their Guardian Spirit on it: 50% more), Binding Petals (Binding Heal opens the Hero's own too).
+    constexpr float DEEP_BLOOM = 1.1f, SCARLET_GARDEN_SHARE = 0.6f, BLOODROSE_SHARE = 0.3f, PATIENT_RIPE = 1.6f;
+    constexpr float GUIDED_PETALS_RANGE = 20.0f, CHORAL_MORE = 1.15f, MENDING_PETALS = 1.3f, GUARDIAN_BLOOM = 1.5f;
+    constexpr int32 BLOODROSE_MS = 6000;
+    constexpr uint32 SWIFT_BLOSSOM_MS = 4000;
+    constexpr std::size_t SCARLET_GARDEN_ALLIES = 2, CIRCLING_OPENS = 2, CHORAL_OPENS = 5;
+
+    // The Evergrove's modifiers: slot (0 Grove, 1 Seeking, 2 Bloom) x 5 + choice.
+    enum GroveModifier : uint8
+    {
+        MOD_GROVE_DEEP_ROOTS, MOD_GROVE_FOURFOLD, MOD_GROVE_REGROWTHS_ROOT, MOD_GROVE_NOURISHING, MOD_GROVE_THORNED,
+        MOD_GROVE_WILD_SEEDING, MOD_GROVE_GENTLE_SEEKING, MOD_GROVE_LIFEBOUND, MOD_GROVE_TRANQUIL, MOD_GROVE_SWIFT,
+        MOD_GROVE_VERDANT_SWIFTMEND, MOD_GROVE_OVERGROWTH, MOD_GROVE_SHELTER, MOD_GROVE_ROOTED_TOUCH,
+        MOD_GROVE_INNERVATING,
+    };
+
+    // The Evergrove's tuning: Rejuvenation stacks. Cast on the Hero's own Rejuvenation it grows a Second, then a Third
+    // Rejuvenation (each its own heal over time, as much as their Rejuvenation's every 3 sec for 15 sec); cast on a
+    // full stack, it renews them all. Smart: on an ally at full health or a full stack, it seeks the most injured ally
+    // within 30 yards without a full stack instead and grows there. Swiftmend 20% more for each extra Rejuvenation on
+    // its target (they stay). Wild Growth grows a stack on up to 2 of the allies it heals with their Rejuvenation.
+    constexpr uint8 GROVE_STACK = 3;
+    constexpr float GROVE_SEEK_RANGE = 30.0f, GROVE_SWIFTMEND = 0.2f;
+    constexpr int32 GROVE_ECHO_MS = 15000;
+    constexpr std::size_t GROVE_WILD_GROWTHS = 2;
+    // Its options: Deep Roots (the extra ones 20% more), Fourfold Grove (up to 4), Regrowth's Root (Regrowth on their
+    // Rejuvenation grows it), Nourishing Grove (Nourish 8% more a Rejuvenation), Thorned Grove (their Thorns on the
+    // ally: the extra ones 25% more); Wild Seeding (Wild Growth up to 4), Gentle Seeking (seeks from 90% health on),
+    // Lifebound (Lifebloom's bloom grows it), Tranquil Grove (Tranquility grows it, once an ally every 8 sec), Swift
+    // Grove (Nature's Swiftness: the full stack at once, spent); Verdant Swiftmend (40% a stack), Overgrowth
+    // (Swiftmend on a full stack: 30% of it to up to 3 within 10 yards), Grove Shelter (a full stack shields the ally
+    // for 40% of spell power, 6 sec), Rooted Touch (Healing Touch on it renews them), Innervating Grove (Innervate on
+    // an ally grows their Rejuvenation there to the full stack).
+    constexpr float DEEP_ROOTS = 1.2f, NOURISHING_GROVE = 0.08f, THORNED_GROVE = 1.25f, GENTLE_SEEKING_PCT = 90.0f;
+    constexpr float VERDANT_SWIFTMEND = 0.4f, OVERGROWTH_SHARE = 0.3f, OVERGROWTH_RANGE = 10.0f, GROVE_SHELTER = 0.4f;
+    constexpr int32 GROVE_SHELTER_MS = 6000;
+    constexpr uint32 TRANQUIL_GROVE_MS = 8000;
+    constexpr std::size_t WILD_SEEDING_GROWTHS = 4, OVERGROWTH_ALLIES = 3;
+
+    // Iron Reckoning's modifiers: slot (0 Impact, 1 Empowerment, 2 Hold) x 5 + choice.
+    enum IronModifier : uint8
+    {
+        MOD_IRON_CRUSHING_REPRISAL, MOD_IRON_WIDE_RECKONING, MOD_IRON_IMMOVABLE, MOD_IRON_SHOCKWAVE,
+        MOD_IRON_CONCUSSIVE,
+        MOD_IRON_RETALIATION, MOD_IRON_SHAKING_GROUND, MOD_IRON_SUNDERING_FORCE, MOD_IRON_VENGEFUL_DEVASTATION,
+        MOD_IRON_RENDING_IMPACT,
+        MOD_IRON_FORTIFIED_BULWARK, MOD_IRON_SHIELDED_ADVANCE, MOD_IRON_COMMANDING_FORCE, MOD_IRON_LAST_BASTION,
+        MOD_IRON_WALL_OF_IRON,
+    };
+
+    // Iron Reckoning's tuning: Shield Block raises a 4 sec Iron Bulwark in front of the Hero, absorbing up to 15% of
+    // their maximum health. Shield Slam in it releases an Iron impact once: 20% of Shield Slam's hit plus half of what
+    // the bulwark absorbed (that part at most half their attack power), to up to 5 enemies in a cone before them (8
+    // yards); the bulwark stays. In the bulwark: Revenge makes the impact 20% stronger, Thunder Clap a full circle,
+    // Devastate 15% stronger (each once).
+    constexpr float IRON_BULWARK_PCT = 15.0f, IRON_SLAM_SHARE = 0.2f, IRON_ABSORBED_SHARE = 0.5f, IRON_AP_CAP = 0.5f;
+    constexpr float IRON_RANGE = 8.0f, IRON_REVENGE = 1.2f, IRON_DEVASTATE = 1.15f;
+    constexpr uint32 IRON_BULWARK_MS = 4000;
+    constexpr std::size_t IRON_TARGETS = 5;
+    // Its options: Crushing Reprisal (30% more), Wide Reckoning (up to 8), Immovable (released as the bulwark ends
+    // instead, 125%), Shockwave Reckoning (Shockwave in it releases it once more, 60%), Concussive Reckoning
+    // (Concussion Blow in it: its first target 25% of attack power more); Retaliation (Revenge 40%), Shaking Ground
+    // (Thunder Clap's circle 12 yards), Sundering Force (Devastate 30%), Vengeful Devastation (Devastate in it: the
+    // next Revenge 20% more), Rending Impact (their Rend target: 30% of it over 6 sec); Fortified Bulwark (20% more),
+    // Shielded Advance (Shield Slam: 20% faster and 3% of maximum health absorbed, 4 sec), Commanding Force (60% more
+    // threat), Last Bastion (Last Stand on them: 5% more of maximum health), Wall of Iron (the impact heals them 2% of
+    // maximum health, 5% under Shield Wall, 10 sec apart).
+    constexpr float CRUSHING_REPRISAL = 1.3f, IMMOVABLE_MORE = 1.25f, SHOCKWAVE_RECKONING = 0.6f, CONCUSSIVE_AP = 0.25f;
+    constexpr float RETALIATION = 1.4f, SHAKING_GROUND_RANGE = 12.0f, SUNDERING_FORCE = 1.3f, VENGEFUL_REVENGE = 1.2f;
+    constexpr float RENDING_IMPACT_SHARE = 0.3f, FORTIFIED_BULWARK = 1.2f, SHIELDED_ADVANCE_PCT = 3.0f;
+    constexpr float IRON_COMMANDING_THREAT = 0.6f, LAST_BASTION_PCT = 5.0f;
+    constexpr float WALL_OF_IRON_PCT = 2.0f, WALL_OF_IRON_WALL = 5.0f;
+    constexpr int32 RENDING_IMPACT_MS = 6000, SHIELDED_ADVANCE_MS = 4000;
+    constexpr uint32 WALL_OF_IRON_EVERY_MS = 10000;
+    constexpr std::size_t WIDE_RECKONING_TARGETS = 8;
 
     // The Hollow Congregation's modifiers (its Extended Options, a redesign): slot (0 Congregation, 1 Sermon, 2
     // Command) x 5 + choice. The Sermon's first three are the ones it had; the other two slots are new (their picks
@@ -1895,6 +2045,17 @@ namespace
             // Ranged DPS: Aimed Shot becomes Trueshot.
             { RUNE_TRUESHOT, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_AIMED_SHOT } }, SPELL_RUNE_TRUESHOT, SPELL_TRUESHOT_MODIFIER_FIRST, MAX_CHOICES },
+            // Healer: Renew plants the Bloom, Flash Heal or Greater Heal opens it.
+            { RUNE_SCARLET_BENEDICTION, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
+              { { SPELL_RENEW }, { SPELL_FLASH_HEAL, SPELL_GREATER_HEAL } }, SPELL_RUNE_SCARLET_BENEDICTION,
+              SPELL_SCARLET_MODIFIER_FIRST, MAX_CHOICES },
+            // Healer: Rejuvenation stacks, and seeks the injured.
+            { RUNE_EVERGROVE, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
+              { { SPELL_REJUVENATION } }, SPELL_RUNE_EVERGROVE, SPELL_GROVE_MODIFIER_FIRST, MAX_CHOICES },
+            // Tank: Shield Block raises the bulwark, Shield Slam releases it.
+            { RUNE_IRON_RECKONING, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
+              { { SPELL_SHIELD_BLOCK }, { SPELL_SHIELD_SLAM } }, SPELL_RUNE_IRON_RECKONING, SPELL_IRON_MODIFIER_FIRST,
+              MAX_CHOICES },
         };
         return runes;
     }
@@ -1946,6 +2107,46 @@ namespace
                 case MOD_HORN_OF_THE_NORTH: return { { SPELL_HORN_OF_WINTER } };
                 case MOD_DECAYING_ICE: return { { SPELL_DEATH_AND_DECAY } };
                 case MOD_WINTERS_MENDING: return { { SPELL_DEATH_STRIKE } };
+                default: break;
+            }
+        if (rune == RUNE_SCARLET_BENEDICTION)
+            switch (modifier)
+            {
+                case MOD_SCARLET_CIRCLING_BLOOM: return { { SPELL_CIRCLE_OF_HEALING } };
+                case MOD_SCARLET_SHIELDED_BLOOM: return { { SPELL_POWER_WORD_SHIELD } };
+                case MOD_SCARLET_CHORAL_BLOOM: return { { SPELL_PRAYER_OF_HEALING } };
+                case MOD_SCARLET_MENDING_PETALS: return { { SPELL_PRAYER_OF_MENDING } };
+                case MOD_SCARLET_GUARDIAN_BLOOM: return { { SPELL_GUARDIAN_SPIRIT } };
+                case MOD_SCARLET_BINDING_PETALS: return { { SPELL_BINDING_HEAL } };
+                default: break;
+            }
+        if (rune == RUNE_EVERGROVE)
+            switch (modifier)
+            {
+                case MOD_GROVE_REGROWTHS_ROOT: return { { SPELL_REGROWTH } };
+                case MOD_GROVE_NOURISHING: return { { SPELL_NOURISH } };
+                case MOD_GROVE_THORNED: return { { SPELL_THORNS } };
+                case MOD_GROVE_WILD_SEEDING: return { { SPELL_WILD_GROWTH } };
+                case MOD_GROVE_LIFEBOUND: return { { SPELL_LIFEBLOOM } };
+                case MOD_GROVE_TRANQUIL: return { { SPELL_TRANQUILITY } };
+                case MOD_GROVE_SWIFT: return { { SPELL_NATURES_SWIFTNESS_DRUID } };
+                case MOD_GROVE_VERDANT_SWIFTMEND: case MOD_GROVE_OVERGROWTH: return { { SPELL_SWIFTMEND } };
+                case MOD_GROVE_ROOTED_TOUCH: return { { SPELL_HEALING_TOUCH } };
+                case MOD_GROVE_INNERVATING: return { { SPELL_INNERVATE } };
+                default: break;
+            }
+        if (rune == RUNE_IRON_RECKONING)
+            switch (modifier)
+            {
+                case MOD_IRON_SHOCKWAVE: return { { SPELL_SHOCKWAVE } };
+                case MOD_IRON_CONCUSSIVE: return { { SPELL_CONCUSSION_BLOW } };
+                case MOD_IRON_RETALIATION: return { { SPELL_REVENGE } };
+                case MOD_IRON_SHAKING_GROUND: return { { SPELL_THUNDER_CLAP } };
+                case MOD_IRON_SUNDERING_FORCE: return { { SPELL_DEVASTATE } };
+                case MOD_IRON_VENGEFUL_DEVASTATION: return { { SPELL_DEVASTATE }, { SPELL_REVENGE } };
+                case MOD_IRON_RENDING_IMPACT: return { { SPELL_REND } };
+                case MOD_IRON_LAST_BASTION: return { { SPELL_LAST_STAND } };
+                case MOD_IRON_WALL_OF_IRON: return { { SPELL_SHIELD_WALL } };
                 default: break;
             }
         if (rune == RUNE_TRUESHOT)
@@ -2397,6 +2598,21 @@ namespace
         ObjectGuid ExposedTarget;
         uint32 TrueshotPendingUntil = 0, MultiChargeUntil = 0, ArcaneChargeUntil = 0, FollowUpUntil = 0;
         uint32 RenewedAimAt = 0;
+        // Scarlet Benediction: each ally's Bloom (its openings, and when a new one may be planted; game ms).
+        struct Bloom
+        {
+            uint8 Opens = 0;
+            uint32 RearmAt = 0;
+        };
+        std::map<ObjectGuid, Bloom> Blooms;
+        // The Evergrove: Tranquil Grove's last growth on each ally (game ms).
+        std::map<ObjectGuid, uint32> TranquilAt;
+        // Iron Reckoning: the bulwark's window and what it holds (game ms).
+        uint32 IronUntil = 0, IronMendAt = 0;
+        float IronAbsorbed = 0.0f, IronSlamHit = 0.0f;
+        ObjectGuid IronSlamTarget;
+        bool IronReleased = false, IronShockwave = false, IronRevenge = false, IronCircle = false;
+        bool IronDevastate = false, IronConcussive = false, IronVengeful = false;
 
         // The Dawnbound Crusader: the vow, the mark, the echo's time and charges (game ms), Communion's turn,
         // Shared Pilgrimage's places.
@@ -4115,6 +4331,7 @@ namespace
             case SPELL_LINGERING_TORMENT: return SPELL_LINGERING_TORMENT_TICK;
             case SPELL_DECAYING_ICE: return SPELL_DECAYING_ICE_TICK;
             case SPELL_ICY_WOUND: return SPELL_ICY_WOUND_TICK;
+            case SPELL_RENDING_IMPACT: return SPELL_RENDING_IMPACT_TICK;
             case SPELL_PHANTOM_WOUND: return SPELL_PHANTOM_WOUND_TICK;
             case SPELL_RENDING_MAUL: return SPELL_RENDING_MAUL_TICK;
             case SPELL_CORRUPTED_BLADE: return SPELL_CORRUPTED_BLADE_TICK;
@@ -5969,6 +6186,504 @@ namespace
             false);
         LegendaryRunes::ReplaceAbility(player, steady ? SPELL_TRUESHOT_STEADY : SPELL_TRUESHOT, { SPELL_AIMED_SHOT },
             bound);
+    }
+
+    // ---- Scarlet Benediction -----------------------------------------------------------------------------------
+
+    bool HasScarletMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_SCARLET_MODIFIER_FIRST, modifier);
+    }
+
+    // The Hero's healing power of a school with their healing done bonuses (the rune's heals ignore their modifiers).
+    float RuneHealing(Player* player, SpellSchoolMask school)
+    {
+        return float(player->SpellBaseHealingBonusDone(school))
+            * player->GetTotalAuraMultiplier(SPELL_AURA_MOD_HEALING_DONE_PERCENT);
+    }
+
+    bool HasPrayerOfMending(Player* player, Unit* ally)
+    {
+        for (uint32 id : { uint32(SPELL_PRAYER_OF_MENDING_BUFF), 48110u, 48111u })
+            if (ally->HasAura(id, player->GetGUID()))
+                return true;
+        return false;
+    }
+
+    // Renew on an ally plants a dormant Scarlet Bloom there, as long as the Renew (one already there lasts as long
+    // again, its openings kept), unless one opened there too lately.
+    void PlantBloom(Player* player, Unit* ally)
+    {
+        ObjectGuid me = player->GetGUID();
+        State::Bloom& bloom = StateOf(player).Blooms[ally->GetGUID()];
+        if (Now() < bloom.RearmAt)
+            return;
+        Aura* renew = ally->GetAuraOfRankedSpell(SPELL_RENEW, me);
+        int32 ms = renew ? renew->GetDuration() : 15000;
+        Aura* planted = ally->GetAura(SPELL_SCARLET_BLOOM, me);
+        if (!planted)
+        {
+            bloom.Opens = 0;
+            planted = player->AddAura(SPELL_SCARLET_BLOOM, ally);
+        }
+        if (planted)
+        {
+            planted->SetMaxDuration(ms);
+            planted->SetDuration(ms);
+        }
+    }
+
+    // The Bloom on the ally opened (more: the opener's own share): its heal to the most injured other ally near it
+    // (two with Scarlet Garden), else the ally shielded. False if there was none.
+    bool OpenBloom(Player* player, Unit* ally, float more = 1.0f)
+    {
+        ObjectGuid me = player->GetGUID();
+        if (!ally->HasAura(SPELL_SCARLET_BLOOM, me))
+            return false;
+        State::Bloom& bloom = StateOf(player).Blooms[ally->GetGUID()];
+        float power = RuneHealing(player, SPELL_SCHOOL_MASK_HOLY) * more;
+        Aura* renew = ally->GetAuraOfRankedSpell(SPELL_RENEW, me);
+        if (renew && renew->GetMaxDuration() - renew->GetDuration() >= SCARLET_RIPE_MS)
+            power *= HasScarletMarker(player, MOD_SCARLET_PATIENT_CULTIVATION) ? PATIENT_RIPE : SCARLET_RIPE;
+        if (HasScarletMarker(player, MOD_SCARLET_MENDING_PETALS) && HasPrayerOfMending(player, ally))
+            power *= MENDING_PETALS;
+        if (HasScarletMarker(player, MOD_SCARLET_GUARDIAN_BLOOM) && ally->HasAura(SPELL_GUARDIAN_SPIRIT, me))
+            power *= GUARDIAN_BLOOM;
+        bool garden = HasScarletMarker(player, MOD_SCARLET_GARDEN);
+        float share = garden ? SCARLET_GARDEN_SHARE
+            : HasScarletMarker(player, MOD_SCARLET_DEEP_BLOOM) ? DEEP_BLOOM : SCARLET_OPENING;
+        float range = HasScarletMarker(player, MOD_SCARLET_GUIDED_PETALS) ? GUIDED_PETALS_RANGE : SCARLET_RANGE;
+        std::vector<Unit*> allies = InjuredAllies(player, ally, range, ally);
+        if (allies.size() > (garden ? SCARLET_GARDEN_ALLIES : 1))
+            allies.resize(garden ? SCARLET_GARDEN_ALLIES : 1);
+        for (Unit* other : allies)
+        {
+            Mend(player, other, SPELL_SCARLET_OPENING, power * share);
+            if (HasScarletMarker(player, MOD_SCARLET_BLOODROSE))
+            {
+                int32 tick = std::max<int32>(1, int32(power * BLOODROSE_SHARE / float(BLOODROSE_MS / IN_MILLISECONDS)));
+                Lasting(player, other, SPELL_BLOODROSE, BLOODROSE_MS, &tick);
+            }
+        }
+        if (allies.empty() || HasScarletMarker(player, MOD_SCARLET_SHELTERING_PETALS))
+            Ward(player, ally, SPELL_SCARLET_PETALS, power * SCARLET_PETALS);
+        if (renew && HasScarletMarker(player, MOD_SCARLET_RENEWING_FLOWER))
+            renew->RefreshDuration();
+        uint8 most = HasScarletMarker(player, MOD_SCARLET_SECOND_BLOOM) ? 2 : 1;
+        if (++bloom.Opens >= most)
+        {
+            ally->RemoveAurasDueToSpell(SPELL_SCARLET_BLOOM, me);
+            bloom.Opens = 0;
+            bloom.RearmAt = Now()
+                + (HasScarletMarker(player, MOD_SCARLET_SWIFT_BLOSSOM) ? SWIFT_BLOSSOM_MS : SCARLET_REARM_MS);
+        }
+        return true;
+    }
+
+    // The Hero's heals with Scarlet Benediction: Renew plants; Flash Heal, Greater Heal, Binding Heal, Prayer of
+    // Healing (up to 3 a cast; opened counts them) and the options' Circle of Healing and Power Word: Shield open.
+    void ScarletHeal(Player* player, Unit* target, uint32 firstRank, uint8& opened)
+    {
+        if (!player->IsFriendlyTo(target))
+            return;
+        switch (firstRank)
+        {
+            case SPELL_RENEW:
+                PlantBloom(player, target);
+                break;
+            case SPELL_FLASH_HEAL:
+            case SPELL_GREATER_HEAL:
+                OpenBloom(player, target);
+                break;
+            case SPELL_BINDING_HEAL:
+                if (target != player || HasScarletMarker(player, MOD_SCARLET_BINDING_PETALS))
+                    OpenBloom(player, target);
+                break;
+            case SPELL_PRAYER_OF_HEALING:
+            {
+                bool choral = HasScarletMarker(player, MOD_SCARLET_CHORAL_BLOOM);
+                if (opened < (choral ? CHORAL_OPENS : SCARLET_PRAYER_OPENS)
+                    && OpenBloom(player, target, choral ? CHORAL_MORE : 1.0f))
+                    ++opened;
+                break;
+            }
+            case SPELL_CIRCLE_OF_HEALING:
+                if (HasScarletMarker(player, MOD_SCARLET_CIRCLING_BLOOM) && opened < CIRCLING_OPENS
+                    && OpenBloom(player, target))
+                    ++opened;
+                break;
+            case SPELL_POWER_WORD_SHIELD:
+                if (HasScarletMarker(player, MOD_SCARLET_SHIELDED_BLOOM))
+                    OpenBloom(player, target);
+                break;
+            default:
+                break;
+        }
+    }
+
+    // ---- The Evergrove -----------------------------------------------------------------------------------------
+
+    bool HasGroveMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_GROVE_MODIFIER_FIRST, modifier);
+    }
+
+    uint8 GroveMost(Player* player)
+    {
+        return HasGroveMarker(player, MOD_GROVE_FOURFOLD) ? GROVE_STACK + 1 : GROVE_STACK;
+    }
+
+    // The Hero's Rejuvenations on the ally: their own and the extra ones (0 without their own).
+    uint8 GroveStacks(Player* player, Unit* ally)
+    {
+        ObjectGuid me = player->GetGUID();
+        if (!ally->GetAuraOfRankedSpell(SPELL_REJUVENATION, me))
+            return 0;
+        uint8 stacks = 1;
+        for (uint32 extra = 0; extra < GROVE_STACK; ++extra)
+            if (ally->HasAura(SPELL_SECOND_REJUVENATION + extra, me))
+                ++stacks;
+        return stacks;
+    }
+
+    // The extra Rejuvenations on the ally (Swiftmend's bonus counts them).
+    uint8 GroveExtras(Player* player, Unit* ally)
+    {
+        uint8 extras = 0;
+        for (uint32 extra = 0; extra < GROVE_STACK; ++extra)
+            if (ally->HasAura(SPELL_SECOND_REJUVENATION + extra, player->GetGUID()))
+                ++extras;
+        return extras;
+    }
+
+    // An extra Rejuvenation (15 sec): each 3 sec as much as the Hero's own Rejuvenation on the ally heals.
+    void GrowExtra(Player* player, Unit* ally, uint32 spellId)
+    {
+        Aura* own = ally->GetAuraOfRankedSpell(SPELL_REJUVENATION, player->GetGUID());
+        AuraEffect const* effect = own ? own->GetEffect(EFFECT_0) : nullptr;
+        if (!effect)
+            return;
+        float tick = float(effect->GetAmount());
+        if (HasGroveMarker(player, MOD_GROVE_DEEP_ROOTS))
+            tick *= DEEP_ROOTS;
+        if (HasGroveMarker(player, MOD_GROVE_THORNED) && ally->GetAuraOfRankedSpell(SPELL_THORNS, player->GetGUID()))
+            tick *= THORNED_GROVE;
+        int32 points = std::max<int32>(1, int32(tick));
+        Lasting(player, ally, spellId, GROVE_ECHO_MS, &points);
+    }
+
+    // One more Rejuvenation on the ally: their own if it had none (the Hero's known rank, free), else the next
+    // extra one; at the full stack, every extra one renewed. Grove Shelter: reaching the full stack shields it.
+    void GrowStack(Player* player, Unit* ally)
+    {
+        ObjectGuid me = player->GetGUID();
+        uint8 stacks = GroveStacks(player, ally);
+        if (!stacks)
+        {
+            if (uint32 rank = KnownRank(player, SPELL_REJUVENATION))
+                player->CastSpell(ally, rank, true);
+            return;
+        }
+        uint8 most = GroveMost(player);
+        if (stacks >= most)
+        {
+            for (uint32 extra = 0; extra + 1 < most; ++extra)
+                GrowExtra(player, ally, SPELL_SECOND_REJUVENATION + extra);
+            return;
+        }
+        for (uint32 extra = 0; extra + 1 < most; ++extra)
+            if (!ally->HasAura(SPELL_SECOND_REJUVENATION + extra, me))
+            {
+                GrowExtra(player, ally, SPELL_SECOND_REJUVENATION + extra);
+                break;
+            }
+        if (stacks + 1 >= most && HasGroveMarker(player, MOD_GROVE_SHELTER))
+            Ward(player, ally, SPELL_GROVE_SHELTER, RuneHealing(player, SPELL_SCHOOL_MASK_NATURE) * GROVE_SHELTER);
+    }
+
+    // The ally grown to the full stack (Swift Grove, Innervating Grove).
+    void GrowFull(Player* player, Unit* ally)
+    {
+        for (uint8 grown = 0; grown < GROVE_STACK + 1 && GroveStacks(player, ally) < GroveMost(player); ++grown)
+            GrowStack(player, ally);
+    }
+
+    // The most injured ally within 30 yards of the target without a full stack (not the target), else nullptr.
+    Unit* GroveSeek(Player* player, Unit* target)
+    {
+        for (Unit* ally : InjuredAllies(player, target, GROVE_SEEK_RANGE, target))
+            if (GroveStacks(player, ally) < GroveMost(player))
+                return ally;
+        return nullptr;
+    }
+
+    // The Hero's own Rejuvenation landed on the target (before: the stacks it had then; full: it was at full health
+    // then). On their Rejuvenation it grows a stack; at full health or on a full stack it seeks the most injured ally
+    // instead (taken back off the target if it had none). Nature's Swiftness (Swift Grove): the full stack, spent.
+    void GroveRejuvenation(Player* player, Unit* target, uint8 before, bool full)
+    {
+        uint8 most = GroveMost(player);
+        Unit* grows = target;
+        if (full || before >= most)
+            if (Unit* seeker = GroveSeek(player, target))
+            {
+                if (!before)
+                {
+                    if (Aura* own = target->GetAuraOfRankedSpell(SPELL_REJUVENATION, player->GetGUID()))
+                        own->Remove();
+                }
+                else if (before >= most)
+                    GrowStack(player, target);              // a full stack there: renewed all the same
+                grows = seeker;
+            }
+        bool swift = HasGroveMarker(player, MOD_GROVE_SWIFT) && player->HasAura(SPELL_NATURES_SWIFTNESS_DRUID);
+        if (swift)
+        {
+            player->RemoveAurasDueToSpell(SPELL_NATURES_SWIFTNESS_DRUID);
+            GrowFull(player, grows);
+            return;
+        }
+        if (grows != target || before)
+            GrowStack(player, grows);
+    }
+
+    // The Evergrove's other heals: Wild Growth (grown counts its allies a cast), Regrowth's Root, Lifebound's bloom,
+    // Tranquil Grove, Rooted Touch, Innervating Grove.
+    void GroveHeal(Player* player, Unit* target, uint32 firstRank, uint8& grown)
+    {
+        if (!player->IsFriendlyTo(target))
+            return;
+        bool has = GroveStacks(player, target) > 0;
+        switch (firstRank)
+        {
+            case SPELL_WILD_GROWTH:
+                if (has && grown < (HasGroveMarker(player, MOD_GROVE_WILD_SEEDING) ? WILD_SEEDING_GROWTHS
+                    : GROVE_WILD_GROWTHS))
+                {
+                    ++grown;
+                    GrowStack(player, target);
+                }
+                break;
+            case SPELL_REGROWTH:
+                if (has && HasGroveMarker(player, MOD_GROVE_REGROWTHS_ROOT))
+                    GrowStack(player, target);
+                break;
+            case SPELL_LIFEBLOOM_BLOOM:
+                if (HasGroveMarker(player, MOD_GROVE_LIFEBOUND))
+                    GrowStack(player, target);
+                break;
+            case SPELL_TRANQUILITY_HEAL:
+                if (has && HasGroveMarker(player, MOD_GROVE_TRANQUIL))
+                    if (uint32& at = StateOf(player).TranquilAt[target->GetGUID()]; Ready(at, TRANQUIL_GROVE_MS))
+                    {
+                        at = Now();
+                        GrowStack(player, target);
+                    }
+                break;
+            case SPELL_HEALING_TOUCH:
+                if (has && HasGroveMarker(player, MOD_GROVE_ROOTED_TOUCH))
+                    for (uint32 extra = 0; extra < GROVE_STACK; ++extra)
+                        if (target->HasAura(SPELL_SECOND_REJUVENATION + extra, player->GetGUID()))
+                            GrowExtra(player, target, SPELL_SECOND_REJUVENATION + extra);
+                break;
+            case SPELL_INNERVATE:
+                if (has && HasGroveMarker(player, MOD_GROVE_INNERVATING))
+                    GrowFull(player, target);
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Swiftmend (20% more an extra Rejuvenation on its target; 40% Verdant Swiftmend) and Nourish (Nourishing
+    // Grove: 8% more a Rejuvenation).
+    float GroveHealing(Player* player, Unit* target, uint32 firstRank, float heal)
+    {
+        if (firstRank == SPELL_SWIFTMEND)
+            return heal * (1.0f + float(GroveExtras(player, target))
+                * (HasGroveMarker(player, MOD_GROVE_VERDANT_SWIFTMEND) ? VERDANT_SWIFTMEND : GROVE_SWIFTMEND));
+        if (firstRank == SPELL_NOURISH && HasGroveMarker(player, MOD_GROVE_NOURISHING))
+            return heal * (1.0f + float(GroveStacks(player, target)) * NOURISHING_GROVE);
+        return heal;
+    }
+
+    // Overgrowth: Swiftmend on a full stack, 30% of its heal to up to 3 injured allies within 10 yards.
+    void GroveOvergrowth(Player* player, Unit* target, float heal)
+    {
+        if (!HasGroveMarker(player, MOD_GROVE_OVERGROWTH) || GroveExtras(player, target) + 1 < GroveMost(player))
+            return;
+        std::vector<Unit*> allies = InjuredAllies(player, target, OVERGROWTH_RANGE, target);
+        if (allies.size() > OVERGROWTH_ALLIES)
+            allies.resize(OVERGROWTH_ALLIES);
+        for (Unit* ally : allies)
+            Mend(player, ally, SPELL_OVERGROWTH, heal * OVERGROWTH_SHARE);
+    }
+
+    // ---- Iron Reckoning ----------------------------------------------------------------------------------------
+
+    bool HasIronMarker(Unit* unit, uint8 modifier)
+    {
+        return Marked(unit, SPELL_IRON_MODIFIER_FIRST, modifier);
+    }
+
+    bool InBulwark(Player* player)
+    {
+        uint32 until = StateOf(player).IronUntil;
+        return until && Now() < until;
+    }
+
+    // Shield Block: the Iron Bulwark (4 sec, 15% of maximum health; Fortified 20% more, Last Bastion 5% more under
+    // Last Stand), its window begun again.
+    void RaiseBulwark(Player* player)
+    {
+        player->RemoveAurasDueToSpell(SPELL_IRON_BULWARK, player->GetGUID());   // the last one ends first
+        State& state = StateOf(player);
+        state.IronUntil = Now() + IRON_BULWARK_MS;
+        state.IronAbsorbed = 0.0f;
+        state.IronSlamHit = 0.0f;
+        state.IronSlamTarget.Clear();
+        state.IronReleased = state.IronShockwave = state.IronRevenge = state.IronCircle = false;
+        state.IronDevastate = state.IronConcussive = false;
+        float pct = IRON_BULWARK_PCT;
+        if (HasIronMarker(player, MOD_IRON_LAST_BASTION)
+            && (player->HasAura(SPELL_LAST_STAND) || player->HasAura(SPELL_LAST_STAND_AURA)))
+            pct += LAST_BASTION_PCT;
+        float amount = float(player->GetMaxHealth()) * pct / 100.0f;
+        if (HasIronMarker(player, MOD_IRON_FORTIFIED_BULWARK))
+            amount *= FORTIFIED_BULWARK;
+        Ward(player, player, SPELL_IRON_BULWARK, amount);
+    }
+
+    // The Iron impact: 20% of Shield Slam's hit (slamHit) plus half of what the bulwark absorbed (at most half their
+    // attack power), to up to 5 enemies in a cone before the Hero (8 yards), or all around after Thunder Clap.
+    void IronImpact(Player* player, Unit* primary, float slamHit, float more)
+    {
+        State& state = StateOf(player);
+        float absorbed = std::min(state.IronAbsorbed * IRON_ABSORBED_SHARE,
+            player->GetTotalAttackPowerValue(BASE_ATTACK) * IRON_AP_CAP)
+            * SchoolBonus(player, SPELL_SCHOOL_MASK_NORMAL);
+        float damage = (slamHit * IRON_SLAM_SHARE + absorbed) * more;
+        if (HasIronMarker(player, MOD_IRON_CRUSHING_REPRISAL))
+            damage *= CRUSHING_REPRISAL;
+        if (state.IronRevenge)
+            damage *= HasIronMarker(player, MOD_IRON_RETALIATION) ? RETALIATION : IRON_REVENGE;
+        if (state.IronDevastate)
+            damage *= HasIronMarker(player, MOD_IRON_SUNDERING_FORCE) ? SUNDERING_FORCE : IRON_DEVASTATE;
+        if (damage < 1.0f)
+            return;
+        float range = state.IronCircle && HasIronMarker(player, MOD_IRON_SHAKING_GROUND) ? SHAKING_GROUND_RANGE
+            : IRON_RANGE;
+        std::size_t most = HasIronMarker(player, MOD_IRON_WIDE_RECKONING) ? WIDE_RECKONING_TARGETS : IRON_TARGETS;
+        std::vector<Unit*> enemies;
+        if (primary && primary->IsAlive() && player->IsValidAttackTarget(primary))
+            enemies.push_back(primary);
+        for (Unit* enemy : EnemiesAround(player, player, range))
+            if (enemies.size() < most && enemy != primary
+                && (state.IronCircle || player->HasInArc(float(M_PI) * 2.0f / 3.0f, enemy)))
+                enemies.push_back(enemy);
+        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
+        for (Unit* enemy : enemies)
+        {
+            float hit = damage;
+            if (enemy == enemies.front() && state.IronConcussive)
+                hit += ap * CONCUSSIVE_AP * SchoolBonus(player, SPELL_SCHOOL_MASK_NORMAL);
+            Strike(player, enemy, SPELL_IRON_IMPACT, hit);
+            if (HasIronMarker(player, MOD_IRON_RENDING_IMPACT) && enemy->GetAuraOfRankedSpell(SPELL_REND,
+                player->GetGUID()))
+                AddDot(player, enemy, SPELL_RENDING_IMPACT, hit * RENDING_IMPACT_SHARE, RENDING_IMPACT_MS);
+            if (HasIronMarker(player, MOD_IRON_COMMANDING_FORCE))
+                enemy->AddThreat(player, hit * IRON_COMMANDING_THREAT, SPELL_SCHOOL_MASK_NORMAL);
+        }
+        if (!enemies.empty() && HasIronMarker(player, MOD_IRON_WALL_OF_IRON) && Ready(state.IronMendAt,
+            WALL_OF_IRON_EVERY_MS))
+        {
+            state.IronMendAt = Now();
+            float pct = player->HasAura(SPELL_SHIELD_WALL) ? WALL_OF_IRON_WALL : WALL_OF_IRON_PCT;
+            Mend(player, player, SPELL_IRON_MENDING, float(player->GetMaxHealth()) * pct / 100.0f);
+        }
+    }
+
+    // The Hero's warrior abilities with Iron Reckoning (direct, not triggered).
+    void IronAbility(Player* player, Unit* target, uint32 firstRank, float hit)
+    {
+        State& state = StateOf(player);
+        if (firstRank == SPELL_SHIELD_BLOCK)
+        {
+            RaiseBulwark(player);
+            return;
+        }
+        if (target == player || !player->IsValidAttackTarget(target))
+            return;
+        if (firstRank == SPELL_SHIELD_SLAM && HasIronMarker(player, MOD_IRON_SHIELDED_ADVANCE))
+        {
+            player->CastSpell(player, SPELL_SHIELDED_ADVANCE, true);
+            Ward(player, player, SPELL_SHIELDED_ADVANCE_WARD,
+                float(player->GetMaxHealth()) * SHIELDED_ADVANCE_PCT / 100.0f);
+        }
+        if (!InBulwark(player))
+            return;
+        switch (firstRank)
+        {
+            case SPELL_SHIELD_SLAM:
+                if (HasIronMarker(player, MOD_IRON_IMMOVABLE))
+                {
+                    state.IronSlamHit = hit;
+                    state.IronSlamTarget = target->GetGUID();
+                }
+                else if (!state.IronReleased)
+                {
+                    state.IronReleased = true;
+                    IronImpact(player, target, hit, 1.0f);
+                }
+                break;
+            case SPELL_SHOCKWAVE:
+                if (HasIronMarker(player, MOD_IRON_SHOCKWAVE) && !state.IronShockwave)
+                {
+                    state.IronShockwave = true;
+                    IronImpact(player, target, state.IronSlamHit, SHOCKWAVE_RECKONING);
+                }
+                break;
+            case SPELL_REVENGE:
+                state.IronRevenge = true;
+                break;
+            case SPELL_THUNDER_CLAP:
+                state.IronCircle = true;
+                break;
+            case SPELL_DEVASTATE:
+                state.IronDevastate = true;
+                if (HasIronMarker(player, MOD_IRON_VENGEFUL_DEVASTATION))
+                    state.IronVengeful = true;
+                break;
+            case SPELL_CONCUSSION_BLOW:
+                if (HasIronMarker(player, MOD_IRON_CONCUSSIVE))
+                    state.IronConcussive = true;
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Vengeful Devastation: the Revenge after Devastate in the bulwark, 20% more.
+    float IronDamage(Player* player, uint32 firstRank, float damage)
+    {
+        State& state = StateOf(player);
+        if (firstRank == SPELL_REVENGE && state.IronVengeful)
+        {
+            state.IronVengeful = false;
+            return damage * VENGEFUL_REVENGE;
+        }
+        return damage;
+    }
+
+    // The bulwark gone: Immovable's impact (125%) at the Shield Slam target held, else the nearest before them.
+    void BulwarkEnded(Player* player)
+    {
+        State& state = StateOf(player);
+        if (!HasIronMarker(player, MOD_IRON_IMMOVABLE) || state.IronReleased || !state.IronUntil)
+            return;
+        state.IronReleased = true;
+        Unit* primary = state.IronSlamTarget ? ObjectAccessor::GetUnit(*player, state.IronSlamTarget) : nullptr;
+        IronImpact(player, primary, state.IronSlamHit, IMMOVABLE_MORE);
     }
 
     // What the five leave behind (death, logout, a spec or modifier change): the Graves and their shield, the wake,
@@ -12096,6 +12811,22 @@ class spell_titan_rune_extended_hit : public SpellScript
             else if ((first == SPELL_MULTI_SHOT || first == SPELL_SILENCING_SHOT) && !GetSpell()->IsTriggered())
                 TrueshotCharge(player, first);
         }
+        if (!GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_SCARLET_BENEDICTION))
+            ScarletHeal(player, target, first, _opened);
+        if (player->HasAura(SPELL_RUNE_EVERGROVE) && player->IsFriendlyTo(target))
+        {
+            if (first == SPELL_REJUVENATION)
+            {
+                if (!GetSpell()->IsTriggered())
+                    GroveRejuvenation(player, target, _groveBefore, _groveFull);
+            }
+            else if (first == SPELL_SWIFTMEND)
+                GroveOvergrowth(player, target, float(GetHitHeal()));
+            else
+                GroveHeal(player, target, first, _opened);
+        }
+        if (!GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_IRON_RECKONING))
+            IronAbility(player, target, first, float(GetHitDamage()));
         if (first == SPELL_CHAIN_HEAL || first == SPELL_HOLY_SHOCK)
         {
             if (target != player && player->IsFriendlyTo(target) && player->HasAura(SPELL_RUNE_GUIDING_LIGHT))
@@ -12189,9 +12920,14 @@ class spell_titan_rune_extended_hit : public SpellScript
         if (player && target == player && GetHitHeal() > 0 && GetSpellInfo()->Id == SPELL_DEATH_STRIKE_HEAL
             && player->HasAura(SPELL_RUNE_HOWLING_NORTH))
             SetHitHeal(int32(NorthMending(player, float(GetHitHeal()))));
+        if (player && target && GetHitHeal() > 0 && player->HasAura(SPELL_RUNE_EVERGROVE))
+            SetHitHeal(int32(GroveHealing(player, target, GetSpellInfo()->GetFirstRankSpell()->Id,
+                float(GetHitHeal()))));
         if (!player || !target || GetHitDamage() <= 0)
             return;
         uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        if (first == SPELL_REVENGE && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_IRON_RECKONING))
+            SetHitDamage(int32(IronDamage(player, first, float(GetHitDamage()))));
         float damage = float(GetHitDamage());
         if (first == SPELL_FROSTBOLT && player->HasAura(SPELL_RUNE_ELUNES_GUARDIAN))
             damage = OwlFrostboltDamage(player, target, damage);
@@ -12218,14 +12954,85 @@ class spell_titan_rune_extended_hit : public SpellScript
         return SPELL_CAST_OK;
     }
 
+    // The Evergrove: the Hero's own Rejuvenation about to land (its stacks there before, and whether the ally was
+    // at full health: 90% with Gentle Seeking).
+    void Before(SpellMissInfo /*missInfo*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || GetSpell()->IsTriggered() || !player->HasAura(SPELL_RUNE_EVERGROVE)
+            || GetSpellInfo()->GetFirstRankSpell()->Id != SPELL_REJUVENATION)
+            return;
+        _groveBefore = GroveStacks(player, target);
+        _groveFull = HasGroveMarker(player, MOD_GROVE_GENTLE_SEEKING)
+            ? target->GetHealthPct() >= GENTLE_SEEKING_PCT : target->IsFullHealth();
+    }
+
     void Register() override
     {
         OnCheckCast += SpellCheckCastFn(spell_titan_rune_extended_hit::Watch);
+        BeforeHit += BeforeSpellHitFn(spell_titan_rune_extended_hit::Before);
         OnHit += SpellHitFn(spell_titan_rune_extended_hit::Damage);
         AfterHit += SpellHitFn(spell_titan_rune_extended_hit::Hit);
     }
 
     uint8 _cones = 0;
+    uint8 _opened = 0;                              // Blooms opened, allies grown, by this cast
+    uint8 _groveBefore = 0;
+    bool _groveFull = false;
+};
+
+// Lifebloom's bloom (cast by its ally on itself, the druid its original caster): Lifebound grows a Rejuvenation.
+class spell_titan_rune_lifebloom_bloom : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_lifebloom_bloom);
+
+    void Hit()
+    {
+        Player* player = GetOriginalCaster() ? GetOriginalCaster()->ToPlayer() : nullptr;
+        uint8 grown = 0;
+        if (player && GetHitUnit() && player->HasAura(SPELL_RUNE_EVERGROVE))
+            GroveHeal(player, GetHitUnit(), SPELL_LIFEBLOOM_BLOOM, grown);
+    }
+
+    void Register() override
+    {
+        AfterHit += SpellHitFn(spell_titan_rune_lifebloom_bloom::Hit);
+    }
+};
+
+// Iron Reckoning's bulwark: only what strikes from before the Hero (an attacker behind them goes through); what it
+// absorbs feeds the impact; Immovable's impact as it ends.
+class spell_titan_rune_iron_bulwark : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_iron_bulwark);
+
+    void Absorb(AuraEffect* /*aurEff*/, DamageInfo& dmgInfo, uint32& absorbAmount)
+    {
+        Unit* attacker = dmgInfo.GetAttacker();
+        if (attacker && attacker != GetTarget() && !GetTarget()->HasInArc(float(M_PI), attacker))
+            absorbAmount = 0;
+    }
+
+    void Absorbed(AuraEffect* /*aurEff*/, DamageInfo& /*dmgInfo*/, uint32& absorbAmount)
+    {
+        if (Player* player = GetTarget()->ToPlayer())
+            StateOf(player).IronAbsorbed += float(absorbAmount);
+    }
+
+    void Gone(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    {
+        if (Player* player = GetTarget()->ToPlayer(); player && player->HasAura(SPELL_RUNE_IRON_RECKONING))
+            BulwarkEnded(player);
+    }
+
+    void Register() override
+    {
+        OnEffectAbsorb += AuraEffectAbsorbFn(spell_titan_rune_iron_bulwark::Absorb, EFFECT_0);
+        AfterEffectAbsorb += AuraEffectAbsorbFn(spell_titan_rune_iron_bulwark::Absorbed, EFFECT_0);
+        AfterEffectRemove += AuraEffectRemoveFn(spell_titan_rune_iron_bulwark::Gone, EFFECT_0,
+            SPELL_AURA_SCHOOL_ABSORB, AURA_EFFECT_HANDLE_REAL);
+    }
 };
 
 // Blizzard's damage (every rank's) with the Splintered Crown: the enemies it hit, for Hailstorm's Icicles.
@@ -12996,6 +13803,8 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_mind_blast);
     RegisterSpellScript(spell_titan_rune_shattered_sun);
     RegisterSpellScript(spell_titan_rune_trueshot);
+    RegisterSpellScript(spell_titan_rune_lifebloom_bloom);
+    RegisterSpellScript(spell_titan_rune_iron_bulwark);
     RegisterCreatureAI(npc_titan_rune_hollow_echo);
     RegisterCreatureAI(npc_titan_rune_phantom_assassin);
     RegisterCreatureAI(npc_titan_rune_felguard);
