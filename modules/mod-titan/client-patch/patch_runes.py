@@ -1943,8 +1943,9 @@ def family_mod(spell_id, name, icon, text, duration, family, flag, aura_type, op
 
 # ---- The Extended Options (5 choices a slot): 20 ids a rune from 91600, its 15 markers (+ slot * 5 + choice) and
 # then its new spells.
-# The updated compendium's new runes take Blizzard's own icons (no painted art for them yet).
-RIFT_ICON, NORTH_ICON, TRUESHOT_ICON = 'Spell_Shadow_Twilight', 'Spell_Frost_ArcticWinds', 'Ability_TrueShot'
+# The updated compendium's new runes: their own icons (icons/spells/).
+RIFT_ICON, NORTH_ICON, TRUESHOT_ICON = ('Ability_Rune_HungeringRift', 'Ability_Rune_HowlingNorth',
+                                       'Ability_Rune_Trueshot')
 STEADY_SHOT, HUNTER_FAMILY = 56641, 9
 EXTENDED_MODIFIERS = [
     (91600, CONVERGENCE_ICON, [('Perfect Alignment', 'Converging Skies', 'Astral Rupture', 'Flame Eclipse',
@@ -2393,7 +2394,8 @@ for _spell in SPELLS:
     for _visual, _ids in BORROWED_VISUALS.items():
         if _spell['id'] in _ids:
             _spell['set'] = {**_spell['set'], 'SpellVisual': _visual}
-ICONS += ['Spell_Shadow_Twilight', 'Ability_TrueShot', 'Spell_DeathKnight_EmpowerRuneBlade2', 'Spell_Arcane_Blast',
+ICONS += [RIFT_ICON, NORTH_ICON, TRUESHOT_ICON, 'Spell_Shadow_Twilight', 'Ability_TrueShot',
+          'Spell_DeathKnight_EmpowerRuneBlade2', 'Spell_Arcane_Blast',
           'Ability_Hunter_SteadyShot', 'Spell_Frost_ArcticWinds', 'Ability_Hunter_SniperShot',
           'Spell_Frost_ChillingBlast', 'Spell_Shadow_LifeDrain02']
 ICONS += ['Spell_Nature_InsectSwarm', 'Spell_Fire_SoulBurn', 'Spell_Fire_FireArmor', 'Spell_Arcane_Arcane04',

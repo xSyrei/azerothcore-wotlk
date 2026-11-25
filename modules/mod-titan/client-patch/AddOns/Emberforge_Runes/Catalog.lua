@@ -1926,7 +1926,7 @@ EmberforgeRunesCatalog = {
       name = "Rune of the Hungering Rift",
       role = "Ranged DPS (Warlock, Affliction)",
       roles = { "DAMAGER" },
-      icon = "Spell_Shadow_Twilight",
+      icon = "Ability_Rune_HungeringRift",
       keywords = "warlock affliction shadow bolt corruption rift lash damage over time drain soul death coil " ..
           "moonfire frost fever shadow word pain drain life curse of agony",
       slots = { "Maw", "Anchor", "Appetite" },
@@ -1994,7 +1994,7 @@ EmberforgeRunesCatalog = {
       name = "Rune of Howling North",
       role = "Melee DPS (Death Knight, Frost)",
       roles = { "DAMAGER" },
-      icon = "Spell_Frost_ArcticWinds",
+      icon = "Ability_Rune_HowlingNorth",
       keywords = "death knight frost howling blast obliterate northwind blade icy touch frost strike frostbolt " ..
           "flame shock hunters mark lightning bolt rend renew",
       slots = { "Blade", "Wind", "Winter" },
@@ -2054,7 +2054,7 @@ EmberforgeRunesCatalog = {
       name = "Rune of Trueshot",
       role = "Ranged DPS (Hunter, Marksmanship)",
       roles = { "DAMAGER" },
-      icon = "Ability_TrueShot",
+      icon = "Ability_Rune_Trueshot",
       keywords = "hunter marksmanship aimed shot trueshot pierce hunters mark arcane shot chimera shot multi shot " ..
           "arcane blast flame shock frostbolt steady shot renew",
       slots = { "Shot", "Mark", "Recovery" },
