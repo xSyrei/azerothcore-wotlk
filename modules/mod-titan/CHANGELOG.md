@@ -4,6 +4,20 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### The Firepit
+
+- **A new endless wave arena** in a private Ring of Law. Talk to the **Firepit Keeper** beside Silas Darkmoon in
+  Stormwind or Orgrimmar to go in alone, or lead your group (up to 10).
+- Waves come every **60 seconds** whether you are ready or not, and the ones you don't kill stay. Wave 1 is easy;
+  every wave is **10% stronger** than the last, and every extra player makes them tougher and more numerous. Every
+  5th wave brings a **boss**: the Ring of Law's champions, then Blackrock Depths' own.
+- You fight until everyone falls. A groupmate's battle resurrection can bring you back.
+- Then everyone stands again, and each Hero gets **their own chest**: a piece of gear at your level for every 15 waves
+  you lived through (epic from wave 45).
+- **The results screen** shows each Hero's peak wave, the enemies they faced, damage, healing, damage taken, kills,
+  biggest hits, falls and more. `/firepit` shows it again.
+- **Leaderboard**: the Keeper keeps your best wave, solo and in groups.
+
 ### Fix: rune damage behind you
 
 - **Sanctified Paragon**'s aura now damages enemies all around you, not only those in front. The same fix reaches

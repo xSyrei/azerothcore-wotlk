@@ -15,6 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "firepit.h"
 #include "Chat.h"
 #include "CommandScript.h"
 #include "Creature.h"
@@ -110,10 +111,11 @@ namespace
         return (EASE_HEALTH + (1.0f - EASE_HEALTH) * Progress(level)) * HEALTH_PASS;
     }
 
-    // A creature's health factor for a player at that level (bosses alike: no health of their own on top).
-    float HealthFactorOf(Creature const* /*creature*/, uint8 level)
+    // A creature's health factor for a player at that level (bosses alike: no health of their own on top), and a
+    // Firepit wave's on it.
+    float HealthFactorOf(Creature const* creature, uint8 level)
     {
-        return HealthFactor(level);
+        return HealthFactor(level) * Firepit::HealthMultiplier(creature);
     }
 
     // A dungeon boss: flagged so (an encounter of the dungeon's, instance_encounters), a boss by rank, or one by its
@@ -368,7 +370,7 @@ namespace
                 float own = Damage(enemy->GetLevel(), info->unit_class, info->expansion);
                 float there = Damage(at, info->unit_class, info->expansion);
                 float scale = own > 0.0f ? there / own : 1.0f;
-                return scale * DamageFactor(player->GetLevel());
+                return scale * DamageFactor(player->GetLevel()) * Firepit::DamageMultiplier(enemy);
             }
 
         return 1.0f;

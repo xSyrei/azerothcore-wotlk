@@ -959,10 +959,21 @@ InstanceSave* InstanceSaveMgr::PlayerGetInstanceSave(ObjectGuid guid, uint32 map
     return (pBind ? pBind->save : nullptr);
 }
 
+namespace InstanceOverride
+{
+    DestinationFn Destination = nullptr;
+    MaxPlayersFn MaxPlayers = nullptr;
+}
+
 uint32 InstanceSaveMgr::PlayerGetDestinationInstanceId(Player* player, uint32 mapid, Difficulty difficulty)
 {
     // returning 0 means a new instance will be created
     // non-zero implicates that InstanceSave exists
+
+    // Project Emberforge: a module's own instance for this player (the Firepit's run), if it has one.
+    if (InstanceOverride::Destination)
+        if (uint32 instanceId = InstanceOverride::Destination(player, mapid); instanceId && GetInstanceSave(instanceId))
+            return instanceId;
 
     InstancePlayerBind* ipb = PlayerGetBoundInstance(player->GetGUID(), mapid, difficulty);
     if (ipb && ipb->perm) // 1. self perm

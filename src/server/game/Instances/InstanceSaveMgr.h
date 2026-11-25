@@ -232,4 +232,15 @@ private:
 
 #define sInstanceSaveMgr InstanceSaveMgr::instance()
 
+// Project Emberforge (mod-titan, the Firepit): a module may send a player entering an instanced map to an instance of
+// its own instead of their bind's (Destination: its id, whose InstanceSave the module made; 0 for the usual), and let
+// an instance hold more players than its map does (MaxPlayers: the most, 0 for the map's own).
+namespace InstanceOverride
+{
+    using DestinationFn = uint32 (*)(Player* player, uint32 mapId);
+    using MaxPlayersFn = uint32 (*)(uint32 instanceId);
+    extern DestinationFn Destination;
+    extern MaxPlayersFn MaxPlayers;
+}
+
 #endif

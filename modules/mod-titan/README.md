@@ -1067,6 +1067,39 @@ replaced mod-autobalance):
   shields keep their native amounts), and the level
   difference in hit, dodge and crit chances (the higher players fight creatures below them: a small edge).
 
+## The Firepit
+
+An endless wave arena in a private Ring of Law (Blackrock Depths, map 230), solo or for a group of up to 10, and the
+rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emberforge_Firepit` addon).
+- **The Firepit Keeper** (910140, Grimstone's look) stands beside Silas Darkmoon in Stormwind and Orgrimmar. The
+  Hero, or their group's leader, steps in: everyone (the group's members within 40 yards, alive, out of combat and of
+  instances, 10 at most) goes to a fresh instance of map 230. `InstanceOverride` (core) sends them there and lets 10
+  in; the instance's script is the Firepit's own (`FirepitInstance`; the Depths' never runs), which sends the native
+  creatures away as they load.
+- **Waves** every 60 sec (or 5 sec after the last enemy dies), from both gates of the ring: wave n brings 3 + n/2
+  enemies, 20% more for each player past the first, from the Depths' roster (`ROSTER`: the ring's beasts, the Dark
+  Iron, their fire, golems, the Twilight's Hammer; a new kind every wave or two, the newest six in a wave). Every 5th
+  wave adds a boss (`BOSSES`: the Ring of Law's six, then the Depths' own; two from wave 60, three from 120), with 4
+  times the health and 1.5 times the damage. Survivors stay and pile up; past 150 alive, new spawns are skipped and
+  every enemy left grows 3% instead. Enemies that stray out of the ring are put back in.
+- **Difficulty**: the creatures are at the group's lowest level, as any dungeon's (`dungeon_scaling.cpp`); on top,
+  `Firepit::HealthMultiplier` and `DamageMultiplier` (read there): 35% at wave 1, 10% more each wave (compounding:
+  wave 20 x2.1, wave 50 x37), health 40% more for each player past the first.
+- **The fallen** stay where they fell (no release: `OnPlayerCanRepopAtGraveyard`); a battle resurrection brings them
+  back. The last fall ends the run: everyone is resurrected at full, each Hero who lived through a 15th wave gets a
+  chest of their own (910140, Arena Spoils' look; only they can open it) with a piece of gear at their level for every
+  15 waves (`DungeonLoot::RandomPiece`: a dungeon's own piece, rare; epic from wave 45; the mailbox when the bags are
+  full), the results go to the addon and the Keeper appears to lead them out (back where they came from).
+- **Records**: each character's best wave (`titan_firepit_best`, characters DB); the Keeper's leaderboard shows the
+  top 10 solo and in groups.
+- **The addon** (`Emberforge_Firepit`, prefix EFFP): a wave bar (wave, time left, enemies alive, Heroes standing) and
+  the results window: the run's wave, time, kills and group health factor, and per Hero their peak wave, enemies at
+  their peak and the most at once, damage, healing, damage taken, kills, boss kills, biggest hit dealt and taken, falls
+  (and the wave of the last), resurrections, spoils and what felled them; sortable, with a Share button. `/firepit`
+  opens the last results.
+- **GM**: `.firepit start [wave]` (the GM's group wherever they are, from that wave), `.firepit next` (the next wave
+  now), `.firepit stop` (the run ends). GMs in GM mode do not count as standing: test with `.gm off`.
+
 ## Core changes this module relies on
 - `LFGMgr::LoadLFGDungeons`, `DungeonFinder.MinLevel` and `DungeonFinder.OneRandom` (`docker-compose.yml`): every
   normal dungeon can be queued for from level 10 to the cap and every heroic at 60, in one Random Dungeon and one
@@ -1086,6 +1119,9 @@ replaced mod-autobalance):
   same file). A teleport in refused for the player's state (in combat as the group formed, dead, falling) is tried
   again every 2 sec for 2 min; back in a dungeon finder group after a relog or a restart, the client is told again
   (its eye offers the teleport in: `LFGScripts.cpp`), and such a group may walk into any dungeon (`MapMgr.cpp`).
+- `InstanceOverride` (`InstanceSaveMgr.h`): a module may name the instance a player entering an instanced map goes to
+  (`InstanceSaveMgr::PlayerGetDestinationInstanceId`) and raise an instance's player cap (`InstanceMap::GetMaxPlayers`):
+  the Firepit's runs, 10 in Blackrock Depths.
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
 - `Spell::TakeRunePower`: runes give Rage instead of Runic Power (Emberforge has none; see Demon Hunter).

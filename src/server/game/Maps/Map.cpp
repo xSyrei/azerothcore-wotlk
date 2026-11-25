@@ -25,6 +25,7 @@
 #include "Geometry.h"
 #include "GridNotifiers.h"
 #include "Group.h"
+#include "InstanceSaveMgr.h"
 #include "InstanceScript.h"
 #include "IVMapMgr.h"
 #include "LFGMgr.h"
@@ -2334,6 +2335,11 @@ MapDifficulty const* Map::GetMapDifficulty() const
 
 uint32 InstanceMap::GetMaxPlayers() const
 {
+    // Project Emberforge: a module's instance may hold more (the Firepit's run: 10 in a 5-player dungeon).
+    if (InstanceOverride::MaxPlayers)
+        if (uint32 most = InstanceOverride::MaxPlayers(GetInstanceId()))
+            return most;
+
     MapDifficulty const* mapDiff = GetMapDifficulty();
     if (mapDiff && mapDiff->maxPlayers)
         return mapDiff->maxPlayers;

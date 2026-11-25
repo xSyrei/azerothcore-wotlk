@@ -1,0 +1,6 @@
+## Interface: 30300
+## Title: Emberforge Firepit
+## Notes: The Firepit: the wave bar during a run, and the full results after it.
+## Author: Project Emberforge
+## SavedVariablesPerCharacter: EmberforgeFirepitLast
+Emberforge_Firepit.lua

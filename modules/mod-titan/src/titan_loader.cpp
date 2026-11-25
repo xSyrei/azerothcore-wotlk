@@ -42,6 +42,7 @@ void AddSC_rune_effects();
 void AddSC_talent_glyphs();
 void AddSC_tank_runes();
 void AddSC_cross_faction();
+void AddSC_firepit();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
 void Addmod_titanScripts()
@@ -73,4 +74,5 @@ void Addmod_titanScripts()
     AddSC_talent_glyphs();
     AddSC_tank_runes();
     AddSC_cross_faction();
+    AddSC_firepit();
 }

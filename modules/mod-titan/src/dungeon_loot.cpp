@@ -16,6 +16,7 @@
  */
 
 #include "dungeon_gear.h"
+#include "firepit.h"
 #include "scaled_gear.h"
 #include "DBCStores.h"
 #include "Item.h"
@@ -315,6 +316,30 @@ public:
             std::size(DungeonGear::ITEMS) - missing, copies.size(), missing);
     }
 };
+
+// A random dungeon piece of the quality (a rare's if there is none) as its copy at the level: its item entry, 0 if
+// none (the Firepit's spoils).
+uint32 DungeonLoot::RandomPiece(uint8 level, uint32 quality)
+{
+    static std::unordered_map<uint32, std::vector<uint32>> const byQuality = []
+    {
+        std::unordered_map<uint32, std::vector<uint32>> pieces;
+        for (uint32 i = 0; i < std::size(DungeonGear::ITEMS); ++i)
+            if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(DungeonGear::ITEMS[i]))
+                if (IsGear(proto->ItemId))
+                    pieces[proto->Quality].push_back(i);
+        return pieces;
+    }();
+    auto pieces = byQuality.find(quality);
+    if (pieces == byQuality.end() || pieces->second.empty())
+        pieces = byQuality.find(ITEM_QUALITY_RARE);
+    if (pieces == byQuality.end() || pieces->second.empty())
+        return 0;
+    uint32 index = pieces->second[urand(0, uint32(pieces->second.size()) - 1)];
+    uint32 entry = DungeonGear::FIRST + index * DungeonGear::LEVELS
+        + std::clamp<uint32>(level, 1, DungeonGear::LEVELS) - 1;
+    return sObjectMgr->GetItemTemplate(entry) ? entry : 0;
+}
 
 void AddSC_dungeon_loot()
 {
