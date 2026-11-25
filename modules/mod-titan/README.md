@@ -723,7 +723,8 @@ utility or a tradeoff) take one pick each, from three.
     (`ReleaseTrueshot`, made stronger in `TrueshotDamage`, its pierce in `TrueshotLanded`).
   - **Scarlet Benediction** (52; Healer; Renew, Flash Heal or Greater Heal), **the Evergrove** (53; Healer;
     Rejuvenation; Emberforge's own design), **Iron Reckoning** (54; Tank; Shield Block, Shield Slam): blocks 93400,
-    93425 and 93450, Blizzard icons until their own are painted. The Bloom (93416, `PlantBloom`, `OpenBloom`,
+    93425 and 93450, their own icons (icons/spells/Ability_Rune_ScarletBenediction, _Evergrove,
+    _IronReckoning, and large/). The Bloom (93416, `PlantBloom`, `OpenBloom`,
     `ScarletHeal`) keeps each ally's openings and rearm time in the Hero's state. The Evergrove's extra Rejuvenations
     are their own heals over time (93441-93443, every 3 sec, as much as the Hero's Rejuvenation ticks); `GrowStack`,
     `GroveRejuvenation` (its stacks and health taken in the extended hit's BeforeHit), `GroveSeek`; Lifebloom's bloom

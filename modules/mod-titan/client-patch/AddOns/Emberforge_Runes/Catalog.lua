@@ -2115,7 +2115,7 @@ EmberforgeRunesCatalog = {
       name = "Rune of Scarlet Benediction",
       role = "Healer (Priest, Holy)",
       roles = { "HEALER" },
-      icon = "Spell_Holy_BlessedRecovery",
+      icon = "Ability_Rune_ScarletBenediction",
       keywords = "priest holy healer renew flash heal greater heal prayer of healing binding heal circle of healing " ..
           "power word shield prayer of mending guardian spirit bloom scarlet",
       slots = { "Bloom", "Tending", "Aftermath" },
@@ -2175,7 +2175,7 @@ EmberforgeRunesCatalog = {
       name = "Rune of the Evergrove",
       role = "Healer (Druid, Restoration)",
       roles = { "HEALER" },
-      icon = "Ability_Druid_EmpoweredRejuvination",
+      icon = "Ability_Rune_Evergrove",
       keywords = "druid restoration healer rejuvenation stack stacking smart heal over time hot regrowth swiftmend " ..
           "wild growth lifebloom nourish healing touch tranquility natures swiftness innervate thorns grove",
       slots = { "Grove", "Seeking", "Bloom" },
@@ -2234,7 +2234,7 @@ EmberforgeRunesCatalog = {
       name = "Rune of Iron Reckoning",
       role = "Tank (Warrior, Protection)",
       roles = { "TANK" },
-      icon = "Ability_Warrior_ShieldMastery",
+      icon = "Ability_Rune_IronReckoning",
       keywords = "warrior protection tank shield block shield slam bulwark absorb revenge thunder clap devastate " ..
           "rend shockwave concussion blow last stand shield wall iron reckoning",
       slots = { "Impact", "Empowerment", "Hold" },

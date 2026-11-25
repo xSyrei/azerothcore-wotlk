@@ -1947,9 +1947,9 @@ def family_mod(spell_id, name, icon, text, duration, family, flag, aura_type, op
 RIFT_ICON, NORTH_ICON, TRUESHOT_ICON = ('Ability_Rune_HungeringRift', 'Ability_Rune_HowlingNorth',
                                        'Ability_Rune_Trueshot')
 STEADY_SHOT, HUNTER_FAMILY = 56641, 9
-# The healer and tank runes after them: Blizzard's icons until their own are painted.
-SCARLET_ICON, GROVE_ICON, IRON_ICON = ('Spell_Holy_BlessedRecovery', 'Ability_Druid_EmpoweredRejuvination',
-                                       'Ability_Warrior_ShieldMastery')
+# The healer and tank runes after them: their own icons too.
+SCARLET_ICON, GROVE_ICON, IRON_ICON = ('Ability_Rune_ScarletBenediction', 'Ability_Rune_Evergrove',
+                                       'Ability_Rune_IronReckoning')
 EXTENDED_MODIFIERS = [
     (93401, SCARLET_ICON, [('Deep Bloom', 'Scarlet Garden', 'Bloodrose', 'Circling Bloom', 'Shielded Bloom'),
                            ('Patient Cultivation', 'Swift Blossom', 'Guided Petals', 'Choral Bloom',
