@@ -571,7 +571,7 @@ namespace
         SPELL_LINGERING_TORMENT         = 93318,    // its tick 93319
         SPELL_LINGERING_TORMENT_TICK    = 93319,
         SPELL_LAST_GASP                 = 93320,
-        SPELL_PLAGUE_MAW                = 93321,
+        SPELL_HELLMAW                   = 93321,
         SPELL_DOOM_ECHO                 = 93322,
         SPELL_SIPHON_CONDUIT            = 93323,
         // Howling North (93325 on).
@@ -583,14 +583,14 @@ namespace
         SPELL_NORTH_FIELD               = 93344,    // the field's ground
         SPELL_NORTH_FIELD_TICK          = 93345,
         SPELL_FROZEN_GROUND             = 93346,    // its slow
-        SPELL_FLAME_OF_WINTER           = 93347,
-        SPELL_STORMBLADE                = 93348,
-        SPELL_RENDING_ICE               = 93349,    // its tick 93350
-        SPELL_RENDING_ICE_TICK          = 93350,
+        SPELL_SHATTERING_COLD           = 93347,
+        SPELL_HORN_OF_THE_NORTH         = 93348,
+        SPELL_DECAYING_ICE              = 93349,    // its tick 93350
+        SPELL_DECAYING_ICE_TICK         = 93350,
         SPELL_ICY_WOUND                 = 93351,    // its tick 93352
         SPELL_ICY_WOUND_TICK            = 93352,
         SPELL_NORTHERN_ENDURANCE        = 93353,
-        SPELL_WINTERS_RENEWAL           = 93354,
+        SPELL_WINTERS_MENDING           = 93354,    // unused: Death Strike's own heal grows
         // Trueshot (93360 on).
         SPELL_RUNE_TRUESHOT             = 93360,
         SPELL_TRUESHOT_MODIFIER_FIRST   = 93361,
@@ -599,11 +599,24 @@ namespace
         SPELL_EXPOSED_TARGET            = 93378,
         SPELL_TRUESHOT_PIERCE           = 93379,
         SPELL_ARCANE_PAYLOAD            = 93380,
-        SPELL_FLAME_ARROW               = 93381,
-        SPELL_FROSTPIERCER              = 93382,
+        SPELL_VENOM_ARROW               = 93381,
+        SPELL_CONCUSSIVE_PIERCE         = 93382,
         SPELL_HUNTERS_MOBILITY          = 93383,
         SPELL_STEADY_RECOVERY           = 93384,
-        SPELL_RENEWED_AIM               = 93385,
+        SPELL_MENDING_AIM               = 93385,    // the pet's heal
+        SPELL_IMMOLATE                  = 348,
+        SPELL_HAUNT                     = 48181,
+        SPELL_CHAINS_OF_ICE             = 45524,
+        SPELL_HUNGERING_COLD            = 49203,
+        SPELL_HUNGERING_COLD_FREEZE     = 51209,
+        SPELL_BLOOD_PLAGUE              = 55078,
+        SPELL_HORN_OF_WINTER            = 57330,
+        SPELL_DEATH_AND_DECAY           = 43265,
+        SPELL_DEATH_STRIKE              = 49998,
+        SPELL_DEATH_STRIKE_HEAL         = 45470,
+        SPELL_SERPENT_STING             = 1978,
+        SPELL_CONCUSSIVE_SHOT           = 5116,
+        SPELL_SILENCING_SHOT            = 34490,
         SPELL_CURSE_OF_AGONY            = 980,
         SPELL_HOWLING_BLAST             = 49184,
         SPELL_OBLITERATE                = 49020,
@@ -1015,7 +1028,7 @@ namespace
     // The Hungering Rift's modifiers: slot (0 Maw, 1 Anchor, 2 Appetite) x 5 + choice.
     enum RiftModifier : uint8
     {
-        MOD_DEVOURING_MAW, MOD_MANY_TONGUES, MOD_BLACK_BREATH, MOD_PLAGUE_MAW, MOD_MOON_EATER,
+        MOD_DEVOURING_MAW, MOD_MANY_TONGUES, MOD_BLACK_BREATH, MOD_HELLMAW, MOD_HAUNTED_MAW,
         MOD_HAUNTING_RIFT, MOD_RIFT_OPEN_WOUND, MOD_AT_YOUR_BACK, MOD_PAINFUL_ANCHORING, MOD_SIPHON_CONDUIT,
         MOD_LINGERING_TORMENT, MOD_LAST_GASP, MOD_ENDLESS_APPETITE, MOD_DOOM_ECHO, MOD_NECROTIC_APPETITE,
     };
@@ -1030,9 +1043,9 @@ namespace
     constexpr float LASH_POWER = 0.25f, LASH_PER_DOT = 0.05f, RIFT_REACH = 8.0f, RIFT_PENDING_SHARE = 0.5f;
     constexpr uint32 LASH_MOST_DOTS = 5;
     // Its options: Devouring Maw (35% more), Many Tongues (2 more Corruption targets within 8 yards, 60%; Shadow
-    // Bolt's pending lash 20% more instead), Black Breath (a 12 yard cone beyond the host, 4 more at half), Plague
-    // Maw (their Frost Fever host: 15% of attack power as Frost), Moon-Eater (their Moonfire host: 20% more, Moonfire
-    // 1 sec longer, 4 sec an application); Haunting Rift (the host 5 yards on: 25% more, 3 sec apart), Open Wound
+    // Bolt's pending lash 20% more instead), Black Breath (a 12 yard cone beyond the host, 4 more at half), Hellmaw
+    // (their Immolate host: 15% of spell power as Fire), Haunted Maw (their Haunt host: 20% more, Haunt 1 sec
+    // longer, 4 sec an application); Haunting Rift (the host 5 yards on: 25% more, 3 sec apart), Open Wound
     // (the Rift stays where it opened, reaching 20 yards; 10% more a lash in a row, 30% at most), At Your Back (it
     // follows the Hero onto their Corruption target within 30 yards; a new target, a 50% lash, 4 sec apart), Painful
     // Anchoring (their Shadow Word: Pain host: one more Pain target within 8 yards, half), Siphon Conduit (their
@@ -1043,67 +1056,70 @@ namespace
     // on the host: 2 sec longer, once a Rift).
     constexpr float DEVOURING_MAW = 1.35f, MANY_TONGUES_SHARE = 0.6f, MANY_TONGUES_PENDING = 1.2f;
     constexpr float BLACK_BREATH_RANGE = 12.0f, BLACK_BREATH_SHARE = 0.5f, BLACK_BREATH_HALF_ARC = float(M_PI) / 4;
-    constexpr float PLAGUE_MAW_AP = 0.15f, MOON_EATER = 1.2f, HAUNTING_DISTANCE = 5.0f, HAUNTING_RIFT = 1.25f;
+    constexpr float HELLMAW_POWER = 0.15f, HAUNTED_MAW = 1.2f, HAUNTING_DISTANCE = 5.0f, HAUNTING_RIFT = 1.25f;
     constexpr float OPEN_WOUND_REACH = 20.0f, OPEN_WOUND_STEP = 0.1f, OPEN_WOUND_MOST = 0.3f;
     constexpr float AT_YOUR_BACK_RANGE = 30.0f, AT_YOUR_BACK_SHARE = 0.5f, PAINFUL_SHARE = 0.5f;
     constexpr float SIPHON_CONDUIT_SHARE = 0.25f, SIPHON_CONDUIT_CAP_PCT = 1.0f, TORMENT_SHARE = 0.25f;
     constexpr float LAST_GASP_POWER = 0.3f, LAST_GASP_DEATH = 0.5f, LAST_GASP_RADIUS = 8.0f, DOOM_ECHO_POWER = 0.25f;
     constexpr float APPETITE_REACH = 15.0f;
     constexpr std::size_t MANY_TONGUES_TARGETS = 2, BLACK_BREATH_TARGETS = 4, LAST_GASP_TARGETS = 5;
-    constexpr int32 MOON_EATER_MS = 1000, MOON_EATER_MOST_MS = 4000, APPETITE_MS = 1000, APPETITE_MOST_MS = 4000;
+    constexpr int32 HAUNTED_MAW_MS = 1000, HAUNTED_MAW_MOST_MS = 4000, APPETITE_MS = 1000, APPETITE_MOST_MS = 4000;
     constexpr int32 TORMENT_MS = 6000, NECROTIC_MS = 2000;
     constexpr uint32 HAUNTING_EVERY_MS = 3000, AT_YOUR_BACK_EVERY_MS = 4000;
 
     // Howling North's modifiers: slot (0 Blade, 1 Wind, 2 Winter) x 5 + choice.
     enum NorthModifier : uint8
     {
-        MOD_GLACIAL_EDGE, MOD_RIMEBLADE, MOD_WINTERS_REACH, MOD_FLAME_OF_WINTER, MOD_MARKED_NORTH,
-        MOD_SHARPENED_WIND, MOD_FROZEN_GROUND, MOD_WINTERS_RETURN, MOD_STORMBLADE, MOD_RENDING_ICE,
-        MOD_NORTHERN_ENDURANCE, MOD_ICY_WOUND, MOD_COLD_RECOVERY, MOD_WINTERS_RENEWAL, MOD_GLACIAL_FLOW,
+        MOD_GLACIAL_EDGE, MOD_RIMEBLADE, MOD_WINTERS_REACH, MOD_SHATTERING_COLD, MOD_PLAGUEWIND,
+        MOD_SHARPENED_WIND, MOD_FROZEN_GROUND, MOD_WINTERS_RETURN, MOD_HORN_OF_THE_NORTH, MOD_DECAYING_ICE,
+        MOD_NORTHERN_ENDURANCE, MOD_ICY_WOUND, MOD_COLD_RECOVERY, MOD_WINTERS_MENDING, MOD_GLACIAL_FLOW,
     };
 
-    // Howling North's tuning: Howling Blast marks up to 5 enemies it hits with Northwind for 6 sec and readies one
-    // blade; Obliterate on a marked enemy looses it (3 sec apart): 45% of attack power as Frost. Icy Touch on a marked
-    // enemy: the next blade 20% more, piercing one more enemy for half. Frost Strike on the blade's target within 6
-    // sec: 15% of attack power as Frost too. Frostbolt on a marked enemy: the next blade leaves a 4 sec field, 10%
-    // of spell power a second to up to 3 enemies.
-    constexpr int32 NORTHWIND_MS = 6000, NORTH_FIELD_MS = 4000, NORTH_FOLLOW_MS = 6000, NORTH_DOT_MS = 6000;
-    constexpr uint32 BLADE_EVERY_MS = 3000, NORTHWIND_WINDOW_MS = 500, RIMEBLADE_SPACING_MS = 300;
-    constexpr float BLADE_AP = 0.45f, NORTH_ICY = 1.2f, NORTH_PIERCE_SHARE = 0.5f, NORTH_LINE = 20.0f;
+    // Howling North's tuning: Howling Blast marks up to 5 enemies it hits with Northwind for 8 sec and readies 2
+    // blades. Obliterate on a marked enemy looses one (60% of attack power as Frost; it costs a Frost and an Unholy
+    // rune), Frost Strike on one too (35%); 1.5 sec apart. Icy Touch on a marked enemy: the next blade 20% more,
+    // piercing one more enemy for half. After a blade, Frost Strike on its target within 6 sec: 15% of attack power
+    // as Frost too. Chains of Ice on a marked enemy: the next blade leaves a 4 sec field, 10% of spell power a second
+    // to up to 3 enemies.
+    constexpr int32 NORTHWIND_MS = 8000, NORTH_FIELD_MS = 4000, NORTH_FOLLOW_MS = 6000, NORTH_DOT_MS = 6000;
+    constexpr uint32 BLADE_EVERY_MS = 1500, NORTHWIND_WINDOW_MS = 500, RIMEBLADE_SPACING_MS = 300;
+    constexpr uint8 NORTH_BLADES = 2;
+    constexpr float OBLITERATE_BLADE_AP = 0.6f, FROST_STRIKE_BLADE_AP = 0.35f, NORTH_ICY = 1.2f;
+    constexpr float NORTH_PIERCE_SHARE = 0.5f, NORTH_LINE = 20.0f;
     constexpr float NORTH_HALF_WIDTH = 2.0f, NORTH_FOLLOW_AP = 0.15f, NORTH_FIELD_POWER = 0.1f;
     constexpr float NORTH_FIELD_RADIUS = 6.0f;
     constexpr std::size_t NORTHWIND_TARGETS = 5, NORTH_FIELD_TARGETS = 3;
     // Its options: Glacial Edge (40% more), Rimeblade (3 blades, 40% each; Frost Strike waits for the last),
-    // Winter's Reach (pierces up to 4 for half), Flame of Winter (their Flame Shock target: 20% of spell power as
-    // Fire), Marked North (their Hunter's Mark target: one more nearby for half); Sharpened Wind (Icy Touch's 35%),
-    // Frozen Ground (the field 50% more, 25% slower), Winter's Return (Frost Strike's 25%), Stormblade (Lightning Bolt
-    // on a marked enemy: the next blade 25% of spell power as Nature), Rending Ice (their Rend target: 30% over 6 sec
-    // as a bleed); Northern Endurance (10% faster for 5 sec, the next Frost Strike 10% more), Icy Wound (30% over 6
-    // sec as Frost), Cold Recovery (Howling Blast 1 sec sooner, 8 sec apart), Winter's Renewal (their Renew on them:
-    // 30% of spell power healed, 10 sec apart), Glacial Flow (their Frostbolt's slow on the target: the next Frost
+    // Winter's Reach (pierces up to 4 for half), Shattering Cold (on an enemy frozen by their Hungering Cold: 50%
+    // more), Plaguewind (their Blood Plague target: one more nearby for half); Sharpened Wind (Icy Touch's 35%),
+    // Frozen Ground (the field 50% more, 25% slower), Winter's Return (Frost Strike's 25%), Horn of the North (Horn
+    // of Winter: the next blade 25% of attack power as Frost too), Decaying Ice (an enemy in their Death and Decay:
+    // 30% over 6 sec as Shadowfrost); Northern Endurance (10% faster for 5 sec, the next Frost Strike 10% more), Icy
+    // Wound (30% over 6 sec as Frost), Cold Recovery (Howling Blast 1 sec sooner, 8 sec apart), Winter's Mending (the
+    // next Death Strike within 6 sec heals 30% more), Glacial Flow (their Frost Fever on the target: the next Frost
     // Strike within 6 sec 20% more).
-    constexpr float GLACIAL_EDGE = 1.4f, RIMEBLADE_SHARE = 0.4f, FLAME_OF_WINTER_POWER = 0.2f;
-    constexpr float MARKED_NORTH_SHARE = 0.5f;
+    constexpr float GLACIAL_EDGE = 1.4f, RIMEBLADE_SHARE = 0.4f, SHATTERING_COLD = 1.5f;
+    constexpr float PLAGUEWIND_SHARE = 0.5f, PLAGUEWIND_RANGE = 8.0f;
     constexpr float SHARPENED_WIND = 1.35f, FROZEN_GROUND_MORE = 1.5f, WINTERS_RETURN_AP = 0.25f;
-    constexpr float STORMBLADE_POWER = 0.25f, RENDING_ICE_SHARE = 0.3f, ENDURANCE_STRIKE = 1.1f, ICY_WOUND_SHARE = 0.3f;
-    constexpr float WINTERS_RENEWAL_POWER = 0.3f, GLACIAL_FLOW = 1.2f, MARKED_NORTH_RANGE = 8.0f;
+    constexpr float HORN_OF_THE_NORTH_AP = 0.25f, DECAYING_ICE_SHARE = 0.3f, ENDURANCE_STRIKE = 1.1f;
+    constexpr float ICY_WOUND_SHARE = 0.3f, WINTERS_MENDING = 1.3f, GLACIAL_FLOW = 1.2f;
     constexpr std::size_t RIMEBLADES = 3, WINTERS_REACH_TARGETS = 4;
-    constexpr int32 COLD_RECOVERY_MS = 1000;
-    constexpr uint32 COLD_RECOVERY_EVERY_MS = 8000, WINTERS_RENEWAL_EVERY_MS = 10000;
+    constexpr int32 COLD_RECOVERY_MS = 1000, WINTERS_MENDING_MS = 6000;
+    constexpr uint32 COLD_RECOVERY_EVERY_MS = 8000;
 
     // Trueshot's modifiers: slot (0 Shot, 1 Mark, 2 Recovery) x 5 + choice.
     enum TrueshotModifier : uint8
     {
-        MOD_PERFECT_SHOT, MOD_PIERCING_SHOT, MOD_STEADY_AIM, MOD_FLAME_ARROW, MOD_FROSTPIERCER,
+        MOD_PERFECT_SHOT, MOD_PIERCING_SHOT, MOD_STEADY_AIM, MOD_VENOM_ARROW, MOD_CONCUSSIVE_PIERCE,
         MOD_MARKED_WEAKNESS, MOD_WIDE_TRAJECTORY, MOD_ARCANE_ARROW, MOD_ARCANE_CALIBRATION, MOD_MARKED_RICOCHET,
-        MOD_QUICK_RECOVERY, MOD_HUNTERS_MOBILITY, MOD_FOLLOW_UP_SHOT, MOD_STEADY_RECOVERY, MOD_RENEWED_AIM,
+        MOD_QUICK_RECOVERY, MOD_HUNTERS_MOBILITY, MOD_FOLLOW_UP_SHOT, MOD_STEADY_RECOVERY, MOD_MENDING_AIM,
     };
 
     // Trueshot's tuning: Aimed Shot becomes Trueshot (a 2 sec stationary windup, its cooldown and cost): the Hero's
     // Aimed Shot for 45% more, piercing up to 4 enemies behind its target (15 yards) for 40% of its hit. Its hit on
     // their Hunter's Mark target leaves Exposed Target (6 sec): their next Arcane Shot or Chimera Shot 20% more.
-    // Multi-Shot: the next Trueshot within 8 sec a wider line and 20% more to the others. Arcane Blast: the next
-    // within 8 sec 30% of spell power as Arcane to its target.
+    // Multi-Shot: the next Trueshot within 8 sec a wider line and 20% more to the others. Silencing Shot: the
+    // next within 8 sec 30% of ranged attack power as Arcane to its target.
     constexpr float TRUESHOT_MORE = 1.45f, TRUESHOT_PIERCE_SHARE = 0.4f, TRUESHOT_LINE = 15.0f;
     constexpr float TRUESHOT_HALF_WIDTH = 1.5f, WIDE_HALF_WIDTH = 3.0f, MULTI_PIERCE_MORE = 1.2f, EXPOSED_MORE = 1.2f;
     constexpr float ARCANE_PAYLOAD_POWER = 0.3f;
@@ -1111,20 +1127,20 @@ namespace
     constexpr int32 TRUESHOT_EXPOSED_MS = 6000;
     constexpr uint32 TRUESHOT_CHARGE_MS = 8000, TRUESHOT_PENDING_MS = 3000;
     // Its options: Perfect Shot (30% more), Piercing Shot (the others 65%), Steady Aim (2.5 sec; 30% more, the others
-    // 20% more), Flame Arrow (their Flame Shock target: 30% of spell power as Fire), Frostpiercer (their Frostbolt's
-    // slow on it: 25% of ranged attack power as Frost); Marked Weakness (Exposed Target 35%), Wide Trajectory
-    // (Multi-Shot's line 2 more), Arcane Arrow (the payload 50%), Arcane Calibration (the payload 40% on up to 2
-    // pierced), Marked Ricochet (their marked target: one more within 8 yards, 25%); Quick Recovery (Arcane Shot 2 sec
-    // sooner), Hunter's Mobility (25% faster for 4 sec), Follow-Up Shot (the next Arcane Shot within 6 sec 20% more),
-    // Steady Recovery (the next Steady Shot 20% quicker), Renewed Aim (their Renew on them: 30% of spell power
-    // healed, 10 sec apart).
+    // 20% more), Venom Arrow (their Serpent Sting target: 25% of ranged attack power as Nature), Concussive Pierce
+    // (their Concussive Shot's slow on it: 25% of ranged attack power); Marked Weakness (Exposed Target 35%), Wide
+    // Trajectory (Multi-Shot's line 2 more), Arcane Arrow (the payload 50%), Arcane Calibration (the payload 40% on
+    // up to 2 pierced), Marked Ricochet (their marked target: one more within 8 yards, 25%); Quick Recovery (Arcane
+    // Shot 2 sec sooner), Hunter's Mobility (25% faster for 4 sec), Follow-Up Shot (the next Arcane Shot within 6 sec
+    // 20% more), Steady Recovery (the next Steady Shot 20% quicker), Mending Aim (their Mend Pet on their pet: 5% of
+    // its health, 10 sec apart).
     constexpr float PERFECT_SHOT = 1.3f, PIERCING_SHARE = 0.65f, STEADY_AIM_MORE = 1.3f, STEADY_AIM_PIERCE = 1.2f;
-    constexpr float FLAME_ARROW_POWER = 0.3f, FROSTPIERCER_RAP = 0.25f, MARKED_WEAKNESS = 1.35f;
+    constexpr float VENOM_ARROW_RAP = 0.25f, CONCUSSIVE_RAP = 0.25f, MARKED_WEAKNESS = 1.35f;
     constexpr float ARCANE_ARROW_POWER = 0.5f, CALIBRATION_SHARE = 0.4f, RICOCHET_SHARE = 0.25f, RICOCHET_RANGE = 8.0f;
-    constexpr float FOLLOW_UP_MORE = 1.2f, RENEWED_AIM_POWER = 0.3f;
+    constexpr float FOLLOW_UP_MORE = 1.2f, MENDING_AIM_PCT = 5.0f;
     constexpr std::size_t WIDE_MORE_PIERCES = 2, CALIBRATION_TARGETS = 2;
     constexpr int32 QUICK_RECOVERY_MS = 2000, FOLLOW_UP_MS = 6000;
-    constexpr uint32 RENEWED_AIM_EVERY_MS = 10000;
+    constexpr uint32 MENDING_AIM_EVERY_MS = 10000;
 
     // The Hollow Congregation's modifiers (its Extended Options, a redesign): slot (0 Congregation, 1 Sermon, 2
     // Command) x 5 + choice. The Sermon's first three are the ones it had; the other two slots are new (their picks
@@ -1910,8 +1926,8 @@ namespace
         if (rune == RUNE_HUNGERING_RIFT)
             switch (modifier)
             {
-                case MOD_PLAGUE_MAW: return { { SPELL_ICY_TOUCH } };
-                case MOD_MOON_EATER: return { { SPELL_MOONFIRE } };
+                case MOD_HELLMAW: return { { SPELL_IMMOLATE } };
+                case MOD_HAUNTED_MAW: return { { SPELL_HAUNT } };
                 case MOD_PAINFUL_ANCHORING: return { { SPELL_SHADOW_WORD_PAIN } };
                 case MOD_SIPHON_CONDUIT: return { { TankRunes::SPELL_DRAIN_LIFE } };
                 case MOD_DOOM_ECHO: return { { SPELL_CURSE_OF_AGONY } };
@@ -1923,26 +1939,26 @@ namespace
             {
                 case MOD_RIMEBLADE: case MOD_WINTERS_RETURN: case MOD_NORTHERN_ENDURANCE: case MOD_GLACIAL_FLOW:
                     return { { SPELL_FROST_STRIKE } };
-                case MOD_FLAME_OF_WINTER: return { { SPELL_FLAME_SHOCK } };
-                case MOD_MARKED_NORTH: return { { SPELL_HUNTERS_MARK } };
+                case MOD_SHATTERING_COLD: return { { SPELL_HUNGERING_COLD } };
+                case MOD_PLAGUEWIND: return { { SPELL_PLAGUE_STRIKE } };
                 case MOD_SHARPENED_WIND: return { { SPELL_ICY_TOUCH } };
-                case MOD_FROZEN_GROUND: return { { SPELL_FROSTBOLT } };
-                case MOD_STORMBLADE: return { { SPELL_LIGHTNING_BOLT } };
-                case MOD_RENDING_ICE: return { { SPELL_REND } };
-                case MOD_WINTERS_RENEWAL: return { { SPELL_RENEW } };
+                case MOD_FROZEN_GROUND: return { { SPELL_CHAINS_OF_ICE } };
+                case MOD_HORN_OF_THE_NORTH: return { { SPELL_HORN_OF_WINTER } };
+                case MOD_DECAYING_ICE: return { { SPELL_DEATH_AND_DECAY } };
+                case MOD_WINTERS_MENDING: return { { SPELL_DEATH_STRIKE } };
                 default: break;
             }
         if (rune == RUNE_TRUESHOT)
             switch (modifier)
             {
-                case MOD_FLAME_ARROW: return { { SPELL_FLAME_SHOCK } };
-                case MOD_FROSTPIERCER: return { { SPELL_FROSTBOLT } };
+                case MOD_VENOM_ARROW: return { { SPELL_SERPENT_STING } };
+                case MOD_CONCUSSIVE_PIERCE: return { { SPELL_CONCUSSIVE_SHOT } };
                 case MOD_WIDE_TRAJECTORY: return { { SPELL_MULTI_SHOT } };
-                case MOD_ARCANE_ARROW: case MOD_ARCANE_CALIBRATION: return { { SPELL_ARCANE_BLAST } };
+                case MOD_ARCANE_ARROW: case MOD_ARCANE_CALIBRATION: return { { SPELL_SILENCING_SHOT } };
                 case MOD_MARKED_RICOCHET: return { { SPELL_HUNTERS_MARK } };
                 case MOD_QUICK_RECOVERY: case MOD_FOLLOW_UP_SHOT: return { { SPELL_ARCANE_SHOT } };
                 case MOD_STEADY_RECOVERY: return { { SPELL_STEADY_SHOT } };
-                case MOD_RENEWED_AIM: return { { SPELL_RENEW } };
+                case MOD_MENDING_AIM: return { { SPELL_MEND_PET } };
                 default: break;
             }
         if (rune == RUNE_SHATTERED_SUN)
@@ -2369,8 +2385,9 @@ namespace
             bool Pending = false, Extended = false;
         } Rift;
         // Howling North: the blade readied, its charges, the field (game ms).
-        bool NorthReady = false, NorthIcy = false, NorthFrost = false, NorthStorm = false;
-        uint32 NorthwindAt = 0, BladeAt = 0, NorthMarks = 0, ColdRecoveryAt = 0, WintersRenewalAt = 0;
+        uint8 NorthBlades = 0;                      // blades Howling Blast readied
+        bool NorthIcy = false, NorthField = false, NorthHorn = false;
+        uint32 NorthwindAt = 0, BladeAt = 0, NorthMarks = 0, ColdRecoveryAt = 0, MendingUntil = 0;
         ObjectGuid FollowTarget;
         uint32 FollowUntil = 0, FollowStrikeUntil = 0;     // Frost Strike's Frost; its 10%/20% more (Endurance, Flow)
         float FollowStrikeMore = 1.0f;
@@ -2845,6 +2862,7 @@ namespace
     void Mend(Player* player, Unit* ally, uint32 spellId, float amount);
     void Ward(Player* player, Unit* unit, uint32 spellId, float amount);
     void ExtendAura(Aura* aura, int32 ms, int32 most);
+    float SchoolBonus(Player* player, SpellSchoolMask school);
 
     // ---- The Sanctified Paragon -------------------------------------------------------------------------------
 
@@ -3371,7 +3389,8 @@ namespace
                 {
                     state.StormLashAt = Now();
                     ArcOrBack(player, target, SPELL_STORMBOUND_ARC,
-                        player->GetTotalAttackPowerValue(BASE_ATTACK) * STORM_LASH_AP);
+                        player->GetTotalAttackPowerValue(BASE_ATTACK) * STORM_LASH_AP
+                            * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE));
                 }
                 break;
             case SPELL_STARFIRE:
@@ -3495,7 +3514,8 @@ namespace
             && Ready(state.ThunderBurstAt, THUNDER_BURST_EVERY_MS))
         {
             state.ThunderBurstAt = Now();
-            float burst = player->GetTotalAttackPowerValue(BASE_ATTACK) * THUNDER_BURST_AP;
+            float burst = player->GetTotalAttackPowerValue(BASE_ATTACK) * THUNDER_BURST_AP
+                * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
             std::size_t count = 0;
             for (Unit* enemy : EnemiesAround(player, target, THUNDER_BURST_RADIUS))
                 if (count++ < THUNDER_BURST_TARGETS)
@@ -3594,7 +3614,8 @@ namespace
                 if (HasThunderMarker(player, MOD_FROST_ECHO) && enemy->HasAura(SPELL_FROST_FEVER, me))
                 {
                     Strike(player, enemy, SPELL_FROST_ECHO,
-                        player->GetTotalAttackPowerValue(BASE_ATTACK) * FROST_ECHO_AP);
+                        player->GetTotalAttackPowerValue(BASE_ATTACK) * FROST_ECHO_AP
+                            * SchoolBonus(player, SPELL_SCHOOL_MASK_FROST));
                     player->CastSpell(enemy, SPELL_FROST_ECHO_SLOW, true);
                     if (Aura* slow = enemy->GetAura(SPELL_FROST_ECHO_SLOW, me))
                     {
@@ -4092,7 +4113,7 @@ namespace
             case SPELL_PHOENIX_BURN: return SPELL_PHOENIX_BURN_TICK;
             case SPELL_FLAME_ECHO: return SPELL_FLAME_ECHO_TICK;
             case SPELL_LINGERING_TORMENT: return SPELL_LINGERING_TORMENT_TICK;
-            case SPELL_RENDING_ICE: return SPELL_RENDING_ICE_TICK;
+            case SPELL_DECAYING_ICE: return SPELL_DECAYING_ICE_TICK;
             case SPELL_ICY_WOUND: return SPELL_ICY_WOUND_TICK;
             case SPELL_PHANTOM_WOUND: return SPELL_PHANTOM_WOUND_TICK;
             case SPELL_RENDING_MAUL: return SPELL_RENDING_MAUL_TICK;
@@ -4526,9 +4547,10 @@ namespace
             Mend(player, unit, SPELL_DAWN_ECHO_HEAL, amount);
             return;
         }
-        Strike(player, unit, SPELL_DAWN_ECHO_DAMAGE, amount);
+        Strike(player, unit, SPELL_DAWN_ECHO_DAMAGE, amount * SchoolBonus(player, SPELL_SCHOOL_MASK_HOLY));
         if (HasDawnMarker(player, MOD_CRUSADERS_FLAME) && unit->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
-            Strike(player, unit, SPELL_CRUSADERS_FLAME, DawnPower(player) * CRUSADERS_FIRE_POWER);
+            Strike(player, unit, SPELL_CRUSADERS_FLAME, DawnPower(player) * CRUSADERS_FIRE_POWER
+                * SchoolBonus(player, SPELL_SCHOOL_MASK_FIRE));
     }
 
     // A Dawn Echo from the vow (scale: Steadfast's again); the Doctrine, its shape and what follows.
@@ -5399,12 +5421,11 @@ namespace
             lash *= HAUNTING_RIFT;
         }
         rift.HostAt = host->GetPosition();
-        Aura* moonfire = HasRiftMarker(player, MOD_MOON_EATER)
-            ? host->GetAuraOfRankedSpell(SPELL_MOONFIRE, me) : nullptr;
-        if (moonfire)
+        Aura* haunt = HasRiftMarker(player, MOD_HAUNTED_MAW) ? host->GetAuraOfRankedSpell(SPELL_HAUNT, me) : nullptr;
+        if (haunt)
         {
-            lash *= MOON_EATER;
-            ExtendAura(moonfire, MOON_EATER_MS, MOON_EATER_MOST_MS);
+            lash *= HAUNTED_MAW;
+            ExtendAura(haunt, HAUNTED_MAW_MS, HAUNTED_MAW_MOST_MS);
         }
         bool pending = rift.Pending;
         rift.Pending = false;
@@ -5446,9 +5467,9 @@ namespace
         }
         if (HasRiftMarker(player, MOD_PAINFUL_ANCHORING) && host->GetAuraOfRankedSpell(SPELL_SHADOW_WORD_PAIN, me))
             also(OtherAfflicted(player, host, RIFT_REACH, SPELL_SHADOW_WORD_PAIN, nullptr), PAINFUL_SHARE);
-        // The host's: Plague Maw, Siphon Conduit, Lingering Torment, Endless Appetite, every third lash.
-        if (HasRiftMarker(player, MOD_PLAGUE_MAW) && host->HasAura(SPELL_FROST_FEVER, me))
-            Strike(player, host, SPELL_PLAGUE_MAW, player->GetTotalAttackPowerValue(BASE_ATTACK) * PLAGUE_MAW_AP);
+        // The host's: Hellmaw, Siphon Conduit, Lingering Torment, Endless Appetite, every third lash.
+        if (HasRiftMarker(player, MOD_HELLMAW) && host->GetAuraOfRankedSpell(SPELL_IMMOLATE, me))
+            Strike(player, host, SPELL_HELLMAW, RunePower(player, SPELL_SCHOOL_MASK_FIRE, 0) * HELLMAW_POWER);
         if (HasRiftMarker(player, MOD_SIPHON_CONDUIT))
             if (Spell* channel = player->GetCurrentSpell(CURRENT_CHANNELED_SPELL); channel
                 && channel->m_spellInfo->GetFirstRankSpell()->Id == TankRunes::SPELL_DRAIN_LIFE
@@ -5574,21 +5595,23 @@ namespace
         return unit && unit->GetAura(SPELL_NORTHWIND, player->GetGUID());
     }
 
-    // One blade from the Hero through the target (share: Rimeblade's); its pierce and what it leaves.
-    void FrostBlade(Player* player, Unit* target, float share, bool last)
+    // One blade from the Hero through the target (power: its share of attack power, Rimeblade's part in it); its
+    // pierce and what it leaves.
+    void FrostBlade(Player* player, Unit* target, float power, bool last)
     {
         State& state = StateOf(player);
         ObjectGuid me = player->GetGUID();
         if (!target->IsAlive())
             return;
-        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
-        float spell = RunePower(player, SPELL_SCHOOL_MASK_FROST, 0);
-        float blade = ap * BLADE_AP * share;
+        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK) * SchoolBonus(player, SPELL_SCHOOL_MASK_FROST);
+        float blade = ap * power;
         if (HasNorthMarker(player, MOD_GLACIAL_EDGE))
             blade *= GLACIAL_EDGE;
         bool icy = state.NorthIcy;
         if (icy)
             blade *= HasNorthMarker(player, MOD_SHARPENED_WIND) ? SHARPENED_WIND : NORTH_ICY;
+        if (HasNorthMarker(player, MOD_SHATTERING_COLD) && target->GetAura(SPELL_HUNGERING_COLD_FREEZE, me))
+            blade *= SHATTERING_COLD;
         Strike(player, target, SPELL_FROST_BLADE, blade);
         // The pierce: Icy Touch's one, Winter's Reach's four, half each, on the line beyond the target.
         std::size_t pierces = HasNorthMarker(player, MOD_WINTERS_REACH) ? WINTERS_REACH_TARGETS : icy ? 1 : 0;
@@ -5606,29 +5629,32 @@ namespace
                     Strike(player, enemy, SPELL_FROST_BLADE, blade * NORTH_PIERCE_SHARE);
                 }
         }
-        if (HasNorthMarker(player, MOD_FLAME_OF_WINTER) && target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
-            Strike(player, target, SPELL_FLAME_OF_WINTER,
-                RunePower(player, SPELL_SCHOOL_MASK_FIRE, 0) * FLAME_OF_WINTER_POWER);
-        if (HasNorthMarker(player, MOD_MARKED_NORTH) && target->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, me))
-            for (Unit* enemy : EnemiesAround(player, target, MARKED_NORTH_RANGE))
+        if (HasNorthMarker(player, MOD_PLAGUEWIND) && target->GetAura(SPELL_BLOOD_PLAGUE, me))
+            for (Unit* enemy : EnemiesAround(player, target, PLAGUEWIND_RANGE))
                 if (enemy != target)
                 {
-                    Strike(player, enemy, SPELL_FROST_BLADE, blade * MARKED_NORTH_SHARE);
+                    Strike(player, enemy, SPELL_FROST_BLADE, blade * PLAGUEWIND_SHARE);
                     break;
                 }
-        if (state.NorthStorm)
-            Strike(player, target, SPELL_STORMBLADE, RunePower(player, SPELL_SCHOOL_MASK_NATURE, 0) * STORMBLADE_POWER);
-        if (HasNorthMarker(player, MOD_RENDING_ICE) && target->GetAuraOfRankedSpell(SPELL_REND, me))
-            AddDot(player, target, SPELL_RENDING_ICE, blade * RENDING_ICE_SHARE, NORTH_DOT_MS);
+        if (state.NorthHorn)
+            Strike(player, target, SPELL_HORN_OF_THE_NORTH, ap * HORN_OF_THE_NORTH_AP);
+        if (HasNorthMarker(player, MOD_DECAYING_ICE))
+            for (uint32 id = SPELL_DEATH_AND_DECAY; id; id = sSpellMgr->GetNextSpellInChain(id))
+                if (DynamicObject* ground = player->GetDynObject(id);
+                    ground && target->GetExactDist2d(ground) <= ground->GetRadius())
+                {
+                    AddDot(player, target, SPELL_DECAYING_ICE, blade * DECAYING_ICE_SHARE, NORTH_DOT_MS);
+                    break;
+                }
         if (HasNorthMarker(player, MOD_ICY_WOUND))
             AddDot(player, target, SPELL_ICY_WOUND, blade * ICY_WOUND_SHARE, NORTH_DOT_MS);
         if (!last)
             return;
         state.NorthIcy = false;
-        state.NorthStorm = false;
-        if (state.NorthFrost)
+        state.NorthHorn = false;
+        if (state.NorthField)
         {
-            state.NorthFrost = false;
+            state.NorthField = false;
             state.NorthFieldAt = target->GetPosition();
             state.NorthFieldMap = player->GetMapId();
             state.NorthFieldUntil = Now() + NORTH_FIELD_MS;
@@ -5644,7 +5670,7 @@ namespace
             state.FollowStrikeMore *= ENDURANCE_STRIKE;
             Lasting(player, player, SPELL_NORTHERN_ENDURANCE, 5000);
         }
-        if (HasNorthMarker(player, MOD_GLACIAL_FLOW) && target->GetAuraOfRankedSpell(SPELL_FROSTBOLT, me))
+        if (HasNorthMarker(player, MOD_GLACIAL_FLOW) && target->HasAura(SPELL_FROST_FEVER, me))
             state.FollowStrikeMore *= GLACIAL_FLOW;
         state.FollowStrikeUntil = state.FollowStrikeMore > 1.0f ? Now() + NORTH_FOLLOW_MS : 0;
         if (HasNorthMarker(player, MOD_COLD_RECOVERY) && Ready(state.ColdRecoveryAt, COLD_RECOVERY_EVERY_MS))
@@ -5654,17 +5680,37 @@ namespace
                 if (player->HasSpell(id))
                     player->ModifySpellCooldown(id, -COLD_RECOVERY_MS);
         }
-        if (HasNorthMarker(player, MOD_WINTERS_RENEWAL) && player->GetAuraOfRankedSpell(SPELL_RENEW, me)
-            && Ready(state.WintersRenewalAt, WINTERS_RENEWAL_EVERY_MS))
-        {
-            state.WintersRenewalAt = Now();
-            Mend(player, player, SPELL_WINTERS_RENEWAL,
-                float(player->SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_FROST)) * WINTERS_RENEWAL_POWER);
-        }
+        if (HasNorthMarker(player, MOD_WINTERS_MENDING))
+            state.MendingUntil = Now() + WINTERS_MENDING_MS;
     }
 
-    // Howling North's abilities (the Hero's own): Howling Blast marks; Obliterate looses the blade; Icy Touch,
-    // Frostbolt and Lightning Bolt on a mark charge it; Frost Strike follows up.
+    // A readied blade loosed at the target (Obliterate's 60%, Frost Strike's 35%; Rimeblade's three).
+    void LooseBlade(Player* player, Unit* target, float power)
+    {
+        State& state = StateOf(player);
+        if (!state.NorthBlades || !Northwind(player, target) || !Ready(state.BladeAt, BLADE_EVERY_MS))
+            return;
+        --state.NorthBlades;
+        state.BladeAt = Now();
+        if (!HasNorthMarker(player, MOD_RIMEBLADE))
+        {
+            FrostBlade(player, target, power, true);
+            return;
+        }
+        ObjectGuid guid = target->GetGUID();
+        for (std::size_t i = 0; i < RIMEBLADES; ++i)
+            player->m_Events.AddEventAtOffset([player, guid, power, i]()
+            {
+                if (!player->IsInWorld() || !player->IsAlive())
+                    return;
+                if (Unit* unit = ObjectAccessor::GetUnit(*player, guid))
+                    FrostBlade(player, unit, power * RIMEBLADE_SHARE, i + 1 == RIMEBLADES);
+            }, Milliseconds(i * RIMEBLADE_SPACING_MS));
+    }
+
+    // Howling North's abilities (the Hero's own): Howling Blast marks and readies 2 blades; Obliterate and Frost
+    // Strike loose them; Icy Touch and Chains of Ice on a mark charge the next; Frost Strike follows a blade up; Horn
+    // of Winter (Horn of the North).
     void NorthHit(Player* player, Unit* target, uint32 firstRank)
     {
         State& state = StateOf(player);
@@ -5676,7 +5722,7 @@ namespace
             {
                 state.NorthwindAt = Now();
                 state.NorthMarks = 0;
-                state.NorthReady = true;
+                state.NorthBlades = NORTH_BLADES;
             }
             ++state.NorthMarks;
             Lasting(player, target, SPELL_NORTHWIND, NORTHWIND_MS);
@@ -5686,48 +5732,49 @@ namespace
         switch (firstRank)
         {
             case SPELL_OBLITERATE:
-                if (!marked || !state.NorthReady || !Ready(state.BladeAt, BLADE_EVERY_MS))
-                    break;
-                state.NorthReady = false;
-                state.BladeAt = Now();
-                if (HasNorthMarker(player, MOD_RIMEBLADE))
+                LooseBlade(player, target, OBLITERATE_BLADE_AP);
+                break;
+            case SPELL_FROST_STRIKE:
+                // The follow-up of an earlier blade first; then this one may loose its own.
+                if (state.FollowUntil && Now() < state.FollowUntil && state.FollowTarget == target->GetGUID())
                 {
-                    ObjectGuid guid = target->GetGUID();
-                    for (std::size_t i = 0; i < RIMEBLADES; ++i)
-                        player->m_Events.AddEventAtOffset([player, guid, i]()
-                        {
-                            if (!player->IsInWorld() || !player->IsAlive())
-                                return;
-                            if (Unit* unit = ObjectAccessor::GetUnit(*player, guid))
-                                FrostBlade(player, unit, RIMEBLADE_SHARE, i + 1 == RIMEBLADES);
-                        }, Milliseconds(i * RIMEBLADE_SPACING_MS));
+                    state.FollowUntil = 0;
+                    Strike(player, target, SPELL_NORTH_FOLLOW_UP, player->GetTotalAttackPowerValue(BASE_ATTACK)
+                        * SchoolBonus(player, SPELL_SCHOOL_MASK_FROST)
+                        * (HasNorthMarker(player, MOD_WINTERS_RETURN) ? WINTERS_RETURN_AP : NORTH_FOLLOW_AP));
                 }
-                else
-                    FrostBlade(player, target, 1.0f, true);
+                LooseBlade(player, target, FROST_STRIKE_BLADE_AP);
                 break;
             case SPELL_ICY_TOUCH:
                 if (marked)
                     state.NorthIcy = true;
                 break;
-            case SPELL_FROSTBOLT:
+            case SPELL_CHAINS_OF_ICE:
                 if (marked)
-                    state.NorthFrost = true;
-                break;
-            case SPELL_LIGHTNING_BOLT:
-                if (marked && HasNorthMarker(player, MOD_STORMBLADE))
-                    state.NorthStorm = true;
-                break;
-            case SPELL_FROST_STRIKE:
-                if (state.FollowUntil && Now() < state.FollowUntil && state.FollowTarget == target->GetGUID())
-                {
-                    state.FollowUntil = 0;
-                    Strike(player, target, SPELL_NORTH_FOLLOW_UP, player->GetTotalAttackPowerValue(BASE_ATTACK)
-                        * (HasNorthMarker(player, MOD_WINTERS_RETURN) ? WINTERS_RETURN_AP : NORTH_FOLLOW_AP));
-                }
+                    state.NorthField = true;
                 break;
             default:
                 break;
         }
+    }
+
+    // Horn of Winter with Horn of the North: the next blade adds Frost.
+    void NorthHorn(Player* player)
+    {
+        if (HasNorthMarker(player, MOD_HORN_OF_THE_NORTH))
+            StateOf(player).NorthHorn = true;
+    }
+
+    // Death Strike's heal after a blade (Winter's Mending: 30% more; spent).
+    float NorthMending(Player* player, float heal)
+    {
+        State& state = StateOf(player);
+        if (!state.MendingUntil)
+            return heal;
+        if (Now() < state.MendingUntil)
+            heal *= WINTERS_MENDING;
+        state.MendingUntil = 0;
+        return heal;
     }
 
     // Frost Strike's damage: Northern Endurance's and Glacial Flow's 10%/20% more (spent).
@@ -5868,7 +5915,8 @@ namespace
         }
         if (arcane)
         {
-            float payload = RunePower(player, SPELL_SCHOOL_MASK_ARCANE, 0)
+            float payload = player->GetTotalAttackPowerValue(RANGED_ATTACK)
+                * SchoolBonus(player, SPELL_SCHOOL_MASK_ARCANE)
                 * (HasTrueshotMarker(player, MOD_ARCANE_ARROW) ? ARCANE_ARROW_POWER : ARCANE_PAYLOAD_POWER);
             Strike(player, target, SPELL_ARCANE_PAYLOAD, payload);
             if (HasTrueshotMarker(player, MOD_ARCANE_CALIBRATION))
@@ -5876,10 +5924,12 @@ namespace
                     Strike(player, pierced[i], SPELL_ARCANE_PAYLOAD, payload * CALIBRATION_SHARE);
         }
         float rap = player->GetTotalAttackPowerValue(RANGED_ATTACK);
-        if (HasTrueshotMarker(player, MOD_FLAME_ARROW) && target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me))
-            Strike(player, target, SPELL_FLAME_ARROW, RunePower(player, SPELL_SCHOOL_MASK_FIRE, 0) * FLAME_ARROW_POWER);
-        if (HasTrueshotMarker(player, MOD_FROSTPIERCER) && target->GetAuraOfRankedSpell(SPELL_FROSTBOLT, me))
-            Strike(player, target, SPELL_FROSTPIERCER, rap * FROSTPIERCER_RAP);
+        if (HasTrueshotMarker(player, MOD_VENOM_ARROW) && target->GetAuraOfRankedSpell(SPELL_SERPENT_STING, me))
+            Strike(player, target, SPELL_VENOM_ARROW,
+                rap * VENOM_ARROW_RAP * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE));
+        if (HasTrueshotMarker(player, MOD_CONCUSSIVE_PIERCE) && target->GetAura(SPELL_CONCUSSIVE_SHOT, me))
+            Strike(player, target, SPELL_CONCUSSIVE_PIERCE,
+                rap * CONCUSSIVE_RAP * SchoolBonus(player, SPELL_SCHOOL_MASK_NORMAL));
         if (HasTrueshotMarker(player, MOD_QUICK_RECOVERY))
             for (uint32 id = SPELL_ARCANE_SHOT; id; id = sSpellMgr->GetNextSpellInChain(id))
                 if (player->HasSpell(id))
@@ -5893,22 +5943,21 @@ namespace
             player->RemoveAurasDueToSpell(SPELL_STEADY_RECOVERY);
             player->CastSpell(player, SPELL_STEADY_RECOVERY, true);
         }
-        if (HasTrueshotMarker(player, MOD_RENEWED_AIM) && player->GetAuraOfRankedSpell(SPELL_RENEW, me)
-            && Ready(state.RenewedAimAt, RENEWED_AIM_EVERY_MS))
-        {
-            state.RenewedAimAt = Now();
-            Mend(player, player, SPELL_RENEWED_AIM,
-                float(player->SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_ARCANE)) * RENEWED_AIM_POWER);
-        }
+        if (HasTrueshotMarker(player, MOD_MENDING_AIM) && Ready(state.RenewedAimAt, MENDING_AIM_EVERY_MS))
+            if (Pet* pet = player->GetPet(); pet && pet->IsAlive() && pet->GetAuraOfRankedSpell(SPELL_MEND_PET, me))
+            {
+                state.RenewedAimAt = Now();
+                Mend(player, pet, SPELL_MENDING_AIM, float(pet->GetMaxHealth()) * MENDING_AIM_PCT / 100.0f);
+            }
     }
 
-    // Trueshot's charges: Multi-Shot (a wider line), Arcane Blast (the payload).
+    // Trueshot's charges: Multi-Shot (a wider line), Silencing Shot (the payload).
     void TrueshotCharge(Player* player, uint32 firstRank)
     {
         State& state = StateOf(player);
         if (firstRank == SPELL_MULTI_SHOT)
             state.MultiChargeUntil = Now() + TRUESHOT_CHARGE_MS;
-        else if (firstRank == SPELL_ARCANE_BLAST)
+        else if (firstRank == SPELL_SILENCING_SHOT)
             state.ArcaneChargeUntil = Now() + TRUESHOT_CHARGE_MS;
     }
 
@@ -8987,7 +9036,8 @@ namespace
     // the last a great explosion.
     void FireBroadside(Player* player, Unit* target, uint8 points)
     {
-        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * (BROADSIDE_AP + BROADSIDE_AP_PER_POINT * points);
+        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * (BROADSIDE_AP + BROADSIDE_AP_PER_POINT * points)
+            * SchoolBonus(player, SPELL_SCHOOL_MASK_FIRE);
         uint32 blasts = BROADSIDE_BLASTS;
         Trace(player, Acore::StringFormat("Broadside: {} combo points, {} a blast", points, int32(blast)));
         ObjectGuid guid = target->GetGUID();
@@ -9067,7 +9117,8 @@ namespace
         bool forked = HasStormreaverMarker(player, MOD_FORKED_CATACLYSM);
         std::vector<Unit*> struck = EnemiesIn(player, Circle(player->GetPosition(),
             forked ? FORKED_RADIUS : STORM_RADIUS), forked ? FORKED_TARGETS : STORM_TARGETS);
-        float pulse = player->GetTotalAttackPowerValue(BASE_ATTACK) * STORM_PULSE_AP * (rolling ? ROLLING_SHARE : 1.0f);
+        float pulse = player->GetTotalAttackPowerValue(BASE_ATTACK) * STORM_PULSE_AP * (rolling ? ROLLING_SHARE : 1.0f)
+            * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
         if (struck.size() == 1 && HasStormreaverMarker(player, MOD_EYE_OF_THE_TEMPEST))
             pulse *= EYE_OF_THE_TEMPEST;
         if (player->HasAura(SPELL_STORM_SURGE))
@@ -9101,7 +9152,7 @@ namespace
     // White-Hot Conductor a burn of 100% over 6 sec instead), arcs of 30% to 2 more within 8 yards (Chainbreaker 4).
     void Thunderlash(Player* player, Unit* target)
     {
-        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
+        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK) * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
         // On the Hero's Flame Shock target: 2 sec longer (6 sec an application); Flame Conductor spreads it.
         if (Aura* shock = target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
         {
@@ -9154,6 +9205,7 @@ namespace
         float discharge = float(info ? info->Effects[EFFECT_0].CalcValue(player) : 0)
             + float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_NATURE)) * DISCHARGE_SP
             + player->GetTotalAttackPowerValue(BASE_ATTACK) * DISCHARGE_AP;
+        discharge *= SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
         if (HasStormreaverMarker(player, MOD_OVERCHARGED_CORE))
             discharge *= OVERCHARGED;
         Strike(player, target, SPELL_STORM_DISCHARGE, discharge);
@@ -9275,6 +9327,7 @@ namespace
     {
         float fresh = player->GetTotalAttackPowerValue(BASE_ATTACK) * CINDER_AP
             + float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE)) * CINDER_SP;
+        fresh *= SchoolBonus(player, SPELL_SCHOOL_MASK_FIRE);
         if (HasEmbersMarker(player, MOD_CINDERCLAW))
             fresh *= CINDERCLAW;
         else if (HasEmbersMarker(player, MOD_LIVING_FLAME))
@@ -9613,7 +9666,8 @@ namespace
             }
         if (wildfire && struck.size() == 1)
             Strike(player, target, SPELL_BLAZING_STRIKE, damage * WILDFIRE_ALONE);
-        float dot = player->GetTotalAttackPowerValue(BASE_ATTACK) * CLAW_DOT_AP;
+        float dot = player->GetTotalAttackPowerValue(BASE_ATTACK) * CLAW_DOT_AP
+            * SchoolBonus(player, fire ? SPELL_SCHOOL_MASK_FIRE : SPELL_SCHOOL_MASK_FROST);
         for (Unit* enemy : struck)
         {
             if (!enemy->IsAlive())
@@ -9631,7 +9685,8 @@ namespace
     {
         player->RemoveAurasDueToSpell(fire ? SPELL_KINDLED : SPELL_FROSTBITTEN);
         player->CastSpell(player, fire ? SPELL_FIERY_EXPLOSION_LOOK : SPELL_GLACIAL_BURST_LOOK, true);
-        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * NOVA_AP;
+        float blast = player->GetTotalAttackPowerValue(BASE_ATTACK) * NOVA_AP
+            * SchoolBonus(player, fire ? SPELL_SCHOOL_MASK_FIRE : SPELL_SCHOOL_MASK_FROST);
         float wound = CinderFresh(player) * FIERY_WOUND_SHARE;
         for (Unit* enemy : EnemiesIn(player, Circle(player->GetPosition(), NOVA_RADIUS), NOVA_TARGETS))
         {
@@ -12028,6 +12083,8 @@ class spell_titan_rune_extended_hit : public SpellScript
             && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
             DawnAbility(player, target, first);
         bool hostile = player->IsValidAttackTarget(target);
+        if (first == SPELL_HORN_OF_WINTER && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_HOWLING_NORTH))
+            NorthHorn(player);
         if (hostile && GetHitDamage() > 0 && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_HUNGERING_RIFT))
             RiftHit(player, target, first);
         if (hostile && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_HOWLING_NORTH))
@@ -12036,7 +12093,7 @@ class spell_titan_rune_extended_hit : public SpellScript
         {
             if (first == SPELL_AIMED_SHOT && GetSpell()->IsTriggered() && TrueshotPending(player))
                 TrueshotLanded(player, target, float(GetHitDamage()));
-            else if ((first == SPELL_MULTI_SHOT || first == SPELL_ARCANE_BLAST) && !GetSpell()->IsTriggered())
+            else if ((first == SPELL_MULTI_SHOT || first == SPELL_SILENCING_SHOT) && !GetSpell()->IsTriggered())
                 TrueshotCharge(player, first);
         }
         if (first == SPELL_CHAIN_HEAL || first == SPELL_HOLY_SHOCK)
@@ -12129,6 +12186,9 @@ class spell_titan_rune_extended_hit : public SpellScript
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
+        if (player && target == player && GetHitHeal() > 0 && GetSpellInfo()->Id == SPELL_DEATH_STRIKE_HEAL
+            && player->HasAura(SPELL_RUNE_HOWLING_NORTH))
+            SetHitHeal(int32(NorthMending(player, float(GetHitHeal()))));
         if (!player || !target || GetHitDamage() <= 0)
             return;
         uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
@@ -12804,7 +12864,8 @@ private:
         if (float nature = HuntStormCharge(hero); nature > 0.0f)
             Smite(prey, SPELL_STORM_HUNT, nature);
         if (HasHuntMarker(hero, MOD_FROSTFANG) && prey->HasAura(SPELL_FROST_FEVER, hero->GetGUID()))
-            Smite(prey, SPELL_FROSTFANG, hero->GetTotalAttackPowerValue(RANGED_ATTACK) * FROSTFANG_RAP);
+            Smite(prey, SPELL_FROSTFANG, hero->GetTotalAttackPowerValue(RANGED_ATTACK) * FROSTFANG_RAP
+                * SchoolBonus(hero, SPELL_SCHOOL_MASK_FROST));
         if (marked && HasHuntMarker(hero, MOD_MARKED_ALPHA))
             for (Unit* enemy : EnemiesAround(hero, prey, RAVAGER_RADIUS))
                 if (enemy != prey)
@@ -12868,7 +12929,8 @@ private:
             if (!Valid(hero, marked) || !marked->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, hero->GetGUID())
                 || !me->IsWithinDistInMap(marked, BEAST_RANGE))
                 return;
-            float pounce = hero->GetTotalAttackPowerValue(RANGED_ATTACK) * MARKED_FINALE_RAP;
+            float pounce = hero->GetTotalAttackPowerValue(RANGED_ATTACK) * MARKED_FINALE_RAP
+                * SchoolBonus(hero, SPELL_SCHOOL_MASK_NORMAL);
             me->SetFacingToObject(marked);
             Smite(marked, SPELL_FINAL_POUNCE, pounce);
             std::size_t count = 0;
@@ -12885,7 +12947,8 @@ private:
             int32 heal = std::max<int32>(1, int32(pet->CountPctFromMaxHealth(int32(COMPANION_HEAL_PCT))));
             hero->CastCustomSpell(pet, SPELL_HEALING_COMPANION, &heal, nullptr, nullptr, true);
             if (prey)
-                Smite(prey, SPELL_SPECTRAL_BITE, hero->GetTotalAttackPowerValue(RANGED_ATTACK) * COMPANION_RAP);
+                Smite(prey, SPELL_SPECTRAL_BITE, hero->GetTotalAttackPowerValue(RANGED_ATTACK) * COMPANION_RAP
+                    * SchoolBonus(hero, SPELL_SCHOOL_MASK_NORMAL));
             return;
         }
         if (!prey)

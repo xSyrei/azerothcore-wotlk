@@ -434,14 +434,22 @@ namespace
         }
     }
 
-    float AttackPower(Player* player)
+    // The Hero's damage done bonuses of the school (their strikes ignore their modifiers: these carry them).
+    float SchoolMore(Player* player, SpellSchoolMask school)
     {
-        return player->GetTotalAttackPowerValue(BASE_ATTACK);
+        return player->GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_DAMAGE_PERCENT_DONE, school);
     }
 
+    // Attack power for a strike of the school, with the school's damage done bonuses.
+    float AttackPower(Player* player, SpellSchoolMask school)
+    {
+        return player->GetTotalAttackPowerValue(BASE_ATTACK) * SchoolMore(player, school);
+    }
+
+    // Spell power of the school, with its damage done bonuses.
     float SpellPower(Player* player, SpellSchoolMask school)
     {
-        return float(player->SpellBaseDamageBonusDone(school));
+        return float(player->SpellBaseDamageBonusDone(school)) * SchoolMore(player, school);
     }
 
     // Since a moment (game ms; 0 never): at least ms ago.
@@ -568,7 +576,7 @@ namespace
     // fresh one in all).
     void ArterialEcho(Player* player, Unit* victim)
     {
-        float fresh = AttackPower(player) * ARTERIAL_AP;
+        float fresh = AttackPower(player, SPELL_SCHOOL_MASK_SHADOW) * ARTERIAL_AP;
         float unpaid = 0.0f;
         if (AuraEffect* dot = victim->GetAuraEffect(SPELL_ARTERIAL_ECHO, EFFECT_0, player->GetGUID()))
         {
@@ -588,7 +596,7 @@ namespace
             return;
         state.LastReclaim = Now();
         if (Communion(player, MOD_RENDING_COMMUNION) && HasRankAura(victim, SPELL_REND, player->GetGUID()))
-            Strike(player, victim, SPELL_RENDING_COMMUNION, AttackPower(player) * RENDING_AP);
+            Strike(player, victim, SPELL_RENDING_COMMUNION, AttackPower(player, SPELL_SCHOOL_MASK_NORMAL) * RENDING_AP);
         if (Communion(player, MOD_EARTHBOUND_BLOOD) && Ready(state.EarthboundAt, EARTHBOUND_EVERY_MS)
             && HasRankAura(player, SPELL_EARTH_SHIELD, player->GetGUID()))
         {
@@ -600,7 +608,7 @@ namespace
         float pct = std::min((feast ? FEAST_PCT : RECLAIM_PCT) + RECLAIM_PER_LINK * float(others.size()),
             feast ? FEAST_CAP : RECLAIM_CAP);
         HealPct(player, pct);
-        float pulse = AttackPower(player) * PULSE_AP;
+        float pulse = AttackPower(player, SPELL_SCHOOL_MASK_SHADOW) * PULSE_AP;
         for (Unit* other : others)
         {
             Strike(player, other, SPELL_COMMUNION_PULSE, pulse);
@@ -640,7 +648,7 @@ namespace
         if (links.empty())
             return;
         bool blood = Communion(player, MOD_BLOOD_FOR_BLOOD);
-        float damage = AttackPower(player) * (blood ? BLOOD_FOR_BLOOD_AP : RECALL_AP);
+        float damage = AttackPower(player, SPELL_SCHOOL_MASK_SHADOW) * (blood ? BLOOD_FOR_BLOOD_AP : RECALL_AP);
         for (Unit* link : links)
             Strike(player, link, SPELL_RECALL_STRIKE, damage);
         bool throne = Communion(player, MOD_COAGULATED_THRONE);
@@ -766,7 +774,8 @@ namespace
             }
             case 2:
             {
-                float damage = AttackPower(player) * (Worldwarden(player, MOD_FLAME_DOMINION) ? DOMINION_AP : FLAME_AP)
+                float damage = AttackPower(player, SPELL_SCHOOL_MASK_FIRE)
+                    * (Worldwarden(player, MOD_FLAME_DOMINION) ? DOMINION_AP : FLAME_AP)
                     * share;
                 std::vector<Unit*> enemies = EnemiesNear(player, totem, radius);
                 if (enemies.size() > cap)
@@ -868,7 +877,7 @@ namespace
         TankState& state = StateOf(player);
         --state.MagmaTicks;
         float reach = state.MagmaFrom.GetExactDist2d(state.MagmaTo) / 2.0f + state.MagmaHalfWidth;
-        float damage = AttackPower(player) * state.MagmaShare;
+        float damage = AttackPower(player, SPELL_SCHOOL_MASK_FIRE) * state.MagmaShare;
         uint32 hit = 0;
         for (Unit* enemy : EnemiesNear(player, player, reach + player->GetExactDist2d(state.MagmaFrom)
             + state.MagmaFrom.GetExactDist2d(state.MagmaTo)))

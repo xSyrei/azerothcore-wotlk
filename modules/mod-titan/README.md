@@ -721,6 +721,12 @@ utility or a tradeoff) take one pick each, from three.
     `FrostBlade`, `NorthTick`) marks with Northwind 93341; Trueshot (93376, 93377 with Steady Aim; Steady Shot's
     copy) is taught in Aimed Shot's place (`TeachTrueshot`) and its script fires the Hero's own Aimed Shot
     (`ReleaseTrueshot`, made stronger in `TrueshotDamage`, its pierce in `TrueshotLanded`).
+  - **School bonuses**: a rune strike ignores the Hero's damage modifiers (the share of a hit it repeats already
+    carries them), so a strike from raw attack power or spell power is multiplied by `SchoolBonus` of its school at
+    its source (tank_runes: `AttackPower` and `SpellPower` take the school); `RunePower` includes it already.
+  - **Howling North** after its first playtest: 2 blades a Howling Blast, loosed by Obliterate (60% AP) or Frost
+    Strike (35%), 1.5 sec apart; the three new runes' options use their own classes' abilities (picks cleared once by
+    `titan_runes_zz_extended_reset6.sql`).
   - **Borrowed visuals** (`patch_runes.BORROWED_VISUALS`): the runes' spells that had no SpellVisual take an
     existing Blizzard spell's, by kind and school (hits, damage and healing over time, slows, marks, buffs); damage
     over time ticks and the ground's ticks stay without one (their aura or ground shows).

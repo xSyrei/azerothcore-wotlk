@@ -1921,14 +1921,13 @@ EmberforgeRunesCatalog = {
           text = "Lash after lash, a Siphon on the move, a wide Intercession cleave." },
       },
     },
-
     { id = 49,
       name = "Rune of the Hungering Rift",
       role = "Ranged DPS (Warlock, Affliction)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_HungeringRift",
       keywords = "warlock affliction shadow bolt corruption rift lash damage over time drain soul death coil " ..
-          "moonfire frost fever shadow word pain drain life curse of agony",
+          "immolate haunt shadow word pain drain life curse of agony",
       slots = { "Maw", "Anchor", "Appetite" },
       builtFrom = "Shadow Bolt on your Corruption target",
       spentWith = "The Rift's lashes (automatic)",
@@ -1948,11 +1947,11 @@ EmberforgeRunesCatalog = {
               "the target makes the next lash 20% stronger instead." },
         { name = "Black Breath",
           text = "Each lash also strikes up to 4 enemies in a 12-yard cone beyond the target for half." },
-        { name = "Plague Maw",
-          text = "Lashes on your Frost Fever target also deal 15% of your attack power as Frost damage." },
-        { name = "Moon-Eater",
-          text = "Lashes on your Moonfire target deal 20% more and make Moonfire last 1 sec longer (up to 4 sec for " ..
-              "each cast)." },
+        { name = "Hellmaw",
+          text = "Lashes on your Immolate target also deal 15% of your spell power as Fire damage." },
+        { name = "Haunted Maw",
+          text = "Lashes on your Haunt target deal 20% more and make Haunt last 1 sec longer (up to 4 sec for each " ..
+              "cast)." },
         { name = "Haunting Rift",
           text = "Once its target has moved 5 yards, the next lash deals 25% more, once every 3 sec." },
         { name = "Open Wound",
@@ -1995,55 +1994,56 @@ EmberforgeRunesCatalog = {
       role = "Melee DPS (Death Knight, Frost)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_HowlingNorth",
-      keywords = "death knight frost howling blast obliterate northwind blade icy touch frost strike frostbolt " ..
-          "flame shock hunters mark lightning bolt rend renew",
+      keywords = "death knight frost howling blast obliterate frost strike northwind blade icy touch chains of ice " ..
+          "hungering cold blood plague horn of winter death and decay death strike frost fever",
       slots = { "Blade", "Wind", "Winter" },
       builtFrom = "Howling Blast (Northwind)",
-      spentWith = "Obliterate",
-      resource = "Northwind on up to 5 enemies, 6 sec",
-      core = "Howling Blast marks up to 5 enemies it hits with Northwind for 6 sec. Your next Obliterate on a " ..
-          "marked enemy looses a Frost blade: 45% of your attack power as Frost damage, once every 3 sec. Icy Touch " ..
-          "on a marked enemy makes the next blade deal 20% more and pierce one more enemy for half. After a blade, " ..
-          "Frost Strike on its target within 6 sec also deals 15% of your attack power as Frost damage. Frostbolt " ..
-          "on a marked enemy makes the next blade leave a frozen field for 4 sec: 10% of your spell power each " ..
-          "second to up to 3 enemies.",
-      loop = "Howling Blast to mark the pack, Obliterate to loose the blade, Frost Strike to follow it up.",
+      spentWith = "Obliterate or Frost Strike",
+      resource = "2 blades, Northwind on up to 5 enemies for 8 sec",
+      core = "Howling Blast marks up to 5 enemies it hits with Northwind for 8 sec and readies 2 Frost blades. " ..
+          "Obliterate on a marked enemy looses one for 60% of your attack power as Frost damage; Frost Strike " ..
+          "looses one for 35%. Blades come 1.5 sec apart and grow with your Frost damage bonuses. Icy Touch on a " ..
+          "marked enemy makes the next blade deal 20% more and pierce one more enemy for half. After a blade, Frost " ..
+          "Strike on its target within 6 sec also deals 15% of your attack power as Frost damage. Chains of Ice on " ..
+          "a marked enemy makes the next blade leave a frozen field for 4 sec: 10% of your spell power each second " ..
+          "to up to 3 enemies.",
+      loop = "Howling Blast to mark the pack, then Obliterate and Frost Strike to loose both blades.",
       mods = {
         { name = "Glacial Edge",
-          text = "Your Frost blade deals 40% more damage." },
+          text = "Your Frost blades deal 40% more damage." },
         { name = "Rimeblade",
-          text = "Obliterate looses 3 blades for 40% each; Frost Strike's follow-up waits for the last." },
+          text = "Each loosed blade becomes 3 blades for 40% each; Frost Strike's follow-up waits for the last." },
         { name = "Winter's Reach",
-          text = "The blade pierces up to 4 enemies behind its target for half." },
-        { name = "Flame of Winter",
-          text = "The blade on your Flame Shock target also deals 20% of your spell power as Fire damage." },
-        { name = "Marked North",
-          text = "The blade on your Hunter's Mark target also strikes one enemy within 8 yards for half." },
+          text = "Blades pierce up to 4 enemies behind their target for half." },
+        { name = "Shattering Cold",
+          text = "Blades deal 50% more to enemies frozen by your Hungering Cold." },
+        { name = "Plaguewind",
+          text = "A blade on your Blood Plague target also strikes one enemy within 8 yards for half." },
         { name = "Sharpened Wind",
           text = "Icy Touch makes the next blade deal 35% more instead of 20%." },
         { name = "Frozen Ground",
           text = "The frozen field deals 50% more damage and slows its enemies by 25%." },
         { name = "Winter's Return",
           text = "Frost Strike's follow-up deals 25% of your attack power instead of 15%." },
-        { name = "Stormblade",
-          text = "Lightning Bolt on a marked enemy makes the next blade also deal 25% of your spell power as Nature " ..
-              "damage." },
-        { name = "Rending Ice",
-          text = "The blade on your Rend target leaves a bleed of 30% of its damage over 6 sec." },
+        { name = "Horn of the North",
+          text = "Horn of Winter makes your next blade also deal 25% of your attack power as Frost damage." },
+        { name = "Decaying Ice",
+          text = "A blade on an enemy in your Death and Decay leaves 30% of its damage again as Shadowfrost damage " ..
+              "over 6 sec." },
         { name = "Northern Endurance",
           text = "A blade makes you 10% faster for 5 sec, and your next Frost Strike deals 10% more." },
         { name = "Icy Wound",
-          text = "The blade leaves 30% of its damage again as Frost damage over 6 sec." },
+          text = "Blades leave 30% of their damage again as Frost damage over 6 sec." },
         { name = "Cold Recovery",
           text = "A blade brings Howling Blast back 1 sec sooner, once every 8 sec." },
-        { name = "Winter's Renewal",
-          text = "A blade while your Renew is on you heals you for 30% of your spell power, once every 10 sec." },
+        { name = "Winter's Mending",
+          text = "After a blade, your next Death Strike within 6 sec heals 30% more." },
         { name = "Glacial Flow",
-          text = "A blade on your Frostbolt-slowed target makes your next Frost Strike within 6 sec deal 20% more." },
+          text = "A blade on your Frost Fever target makes your next Frost Strike within 6 sec deal 20% more." },
       },
       builds = {
         { name = "The Glacier", mods = { "Glacial Edge", "Sharpened Wind", "Icy Wound" },
-          text = "One blade, and it hurts." },
+          text = "Fewer blades, and they hurt." },
         { name = "The Blizzard", mods = { "Winter's Reach", "Frozen Ground", "Cold Recovery" },
           text = "Through the pack and into the ground." },
         { name = "The Frost Striker", mods = { "Rimeblade", "Winter's Return", "Northern Endurance" },
@@ -2056,7 +2056,7 @@ EmberforgeRunesCatalog = {
       roles = { "DAMAGER" },
       icon = "Ability_Rune_Trueshot",
       keywords = "hunter marksmanship aimed shot trueshot pierce hunters mark arcane shot chimera shot multi shot " ..
-          "arcane blast flame shock frostbolt steady shot renew",
+          "silencing shot serpent sting concussive shot steady shot mend pet",
       slots = { "Shot", "Mark", "Recovery" },
       builtFrom = "Trueshot (in Aimed Shot's place)",
       spentWith = "Trueshot",
@@ -2065,8 +2065,8 @@ EmberforgeRunesCatalog = {
           "Aimed Shot for 45% more, piercing up to 4 enemies behind its target for 40% of its hit. Its cost and " ..
           "cooldown are Aimed Shot's. On your Hunter's Mark target it leaves Exposed Target for 6 sec: your next " ..
           "Arcane Shot or Chimera Shot there deals 20% more. Multi-Shot makes your next Trueshot within 8 sec " ..
-          "pierce wider and 20% harder; Arcane Blast makes it also deal 30% of your spell power as Arcane damage to " ..
-          "its target.",
+          "pierce wider and 20% harder; Silencing Shot makes it also deal 30% of your ranged attack power as Arcane " ..
+          "damage to its target.",
       loop = "Hunter's Mark, then Trueshot from a standstill; Arcane Shot or Chimera Shot to spend Exposed Target.",
       mods = {
         { name = "Perfect Shot",
@@ -2076,19 +2076,19 @@ EmberforgeRunesCatalog = {
         { name = "Steady Aim",
           text = "Trueshot winds up for 2.5 sec instead, and deals 30% more to its target and 20% more to the " ..
               "pierced." },
-        { name = "Flame Arrow",
-          text = "Trueshot on your Flame Shock target also deals 30% of your spell power as Fire damage." },
-        { name = "Frostpiercer",
-          text = "Trueshot on your Frostbolt-slowed target also deals 25% of your ranged attack power as Frost " ..
+        { name = "Venom Arrow",
+          text = "Trueshot on your Serpent Sting target also deals 25% of your ranged attack power as Nature " ..
               "damage." },
+        { name = "Concussive Pierce",
+          text = "Trueshot on your Concussive Shot target also deals 25% of your ranged attack power." },
         { name = "Marked Weakness",
           text = "Exposed Target makes your next Arcane Shot or Chimera Shot deal 35% more instead of 20%." },
         { name = "Wide Trajectory",
           text = "After Multi-Shot, Trueshot pierces up to 2 more enemies." },
         { name = "Arcane Arrow",
-          text = "Arcane Blast's payload deals 50% of your spell power instead of 30%." },
+          text = "Silencing Shot's payload deals 50% of your ranged attack power instead of 30%." },
         { name = "Arcane Calibration",
-          text = "Arcane Blast's payload also strikes up to 2 pierced enemies for 40% of it." },
+          text = "Silencing Shot's payload also strikes up to 2 pierced enemies for 40% of it." },
         { name = "Marked Ricochet",
           text = "Trueshot on your marked target also strikes one enemy within 8 yards for 25% of its hit." },
         { name = "Quick Recovery",
@@ -2099,8 +2099,8 @@ EmberforgeRunesCatalog = {
           text = "After Trueshot, your next Arcane Shot within 6 sec deals 20% more." },
         { name = "Steady Recovery",
           text = "After Trueshot, your next Steady Shot within 6 sec casts 20% faster." },
-        { name = "Renewed Aim",
-          text = "Trueshot while your Renew is on you heals you for 30% of your spell power, once every 10 sec." },
+        { name = "Mending Aim",
+          text = "Trueshot while your Mend Pet is on your pet heals it for 5% of its health, once every 10 sec." },
       },
       builds = {
         { name = "The Sniper", mods = { "Perfect Shot", "Marked Weakness", "Follow-Up Shot" },
@@ -2108,7 +2108,7 @@ EmberforgeRunesCatalog = {
         { name = "The Line Breaker", mods = { "Piercing Shot", "Wide Trajectory", "Hunter's Mobility" },
           text = "Everything in the line goes down." },
         { name = "The Arcane Marksman", mods = { "Steady Aim", "Arcane Arrow", "Quick Recovery" },
-          text = "Arcane Blast loads the shot." },
+          text = "Silencing Shot loads the shot." },
       },
     },
 }

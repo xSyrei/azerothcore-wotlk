@@ -1924,8 +1924,8 @@ EmberforgeRunesArt = {
                 "Bite",
                 "Corruption",
                 "Cone",
-                "Icy Touch",
-                "Moonfire",
+                "Immolate",
+                "Haunt",
                 "Moving prey",
                 "Stays put",
                 "Your target",
@@ -1944,10 +1944,10 @@ EmberforgeRunesArt = {
                         "instead.",
                 "Each lash also strikes up to 4 enemies in a 12-yard cone beyond the " ..
                         "target for half.",
-                "Lashes on your Frost Fever target also deal 15% of your attack power " ..
-                        "as Frost damage.",
-                "Lashes on your Moonfire target deal 20% more and make Moonfire last 1 " ..
-                        "sec longer (up to 4 sec for each cast).",
+                "Lashes on your Immolate target also deal 15% of your spell power as " ..
+                        "Fire damage.",
+                "Lashes on your Haunt target deal 20% more and make Haunt last 1 sec " ..
+                        "longer (up to 4 sec for each cast).",
                 "Once its target has moved 5 yards, the next lash deals 25% more, once " ..
                         "every 3 sec.",
                 "The Rift stays where it opened, reaching its target within 20 yards; " ..
@@ -1983,8 +1983,8 @@ EmberforgeRunesArt = {
             hue = { 0.651, 0.957, 1 },
             inner = { 0.91, 0.961, 1 },
             built = true,
-            core = "**Howling Blast** marks its enemies with **Northwind**; your next " ..
-                    "**Obliterate** on one looses a **Frost blade**.",
+            core = "**Howling Blast** marks the pack and readies 2 **Frost blades**; " ..
+                    "**Obliterate** or **Frost Strike** on a marked enemy looses one.",
             asks = {
                 "How the blade cuts",
                 "What the wind carries",
@@ -1994,44 +1994,42 @@ EmberforgeRunesArt = {
                 "Sharper",
                 "Three blades",
                 "Pierce",
-                "Flame Shock",
-                "Hunter's Mark",
+                "Hungering Cold",
+                "Plague Strike",
                 "Icy Touch",
-                "Frostbolt",
+                "Chains of Ice",
                 "Frost Strike",
-                "Lightning Bolt",
-                "Rend",
+                "Horn of Winter",
+                "Death and Decay",
                 "Frost Strike",
                 "Over time",
                 "Howling Blast",
-                "Renew",
-                "Frostbolt",
+                "Death Strike",
+                "Frost Strike",
             },
             texts = {
-                "Your Frost blade deals 40% more damage.",
-                "Obliterate looses 3 blades for 40% each; Frost Strike's follow-up " ..
-                        "waits for the last.",
-                "The blade pierces up to 4 enemies behind its target for half.",
-                "The blade on your Flame Shock target also deals 20% of your spell " ..
-                        "power as Fire damage.",
-                "The blade on your Hunter's Mark target also strikes one enemy within 8 " ..
+                "Your Frost blades deal 40% more damage.",
+                "Each loosed blade becomes 3 blades for 40% each; Frost Strike's " ..
+                        "follow-up waits for the last.",
+                "Blades pierce up to 4 enemies behind their target for half.",
+                "Blades deal 50% more to enemies frozen by your Hungering Cold.",
+                "A blade on your Blood Plague target also strikes one enemy within 8 " ..
                         "yards for half.",
                 "Icy Touch makes the next blade deal 35% more instead of 20%.",
                 "The frozen field deals 50% more damage and slows its enemies by 25%.",
                 "Frost Strike's follow-up deals 25% of your attack power instead of " ..
                         "15%.",
-                "Lightning Bolt on a marked enemy makes the next blade also deal 25% of " ..
-                        "your spell power as Nature damage.",
-                "The blade on your Rend target leaves a bleed of 30% of its damage over " ..
-                        "6 sec.",
+                "Horn of Winter makes your next blade also deal 25% of your attack " ..
+                        "power as Frost damage.",
+                "A blade on an enemy in your Death and Decay leaves 30% of its damage " ..
+                        "again as Shadowfrost damage over 6 sec.",
                 "A blade makes you 10% faster for 5 sec, and your next Frost Strike " ..
                         "deals 10% more.",
-                "The blade leaves 30% of its damage again as Frost damage over 6 sec.",
+                "Blades leave 30% of their damage again as Frost damage over 6 sec.",
                 "A blade brings Howling Blast back 1 sec sooner, once every 8 sec.",
-                "A blade while your Renew is on you heals you for 30% of your spell " ..
-                        "power, once every 10 sec.",
-                "A blade on your Frostbolt-slowed target makes your next Frost Strike " ..
-                        "within 6 sec deal 20% more.",
+                "After a blade, your next Death Strike within 6 sec heals 30% more.",
+                "A blade on your Frost Fever target makes your next Frost Strike within " ..
+                        "6 sec deal 20% more.",
             },
             slots = {
                 "Blade",
@@ -2058,42 +2056,43 @@ EmberforgeRunesArt = {
                 "Harder",
                 "Pierce",
                 "2.5 sec",
-                "Flame Shock",
-                "Frostbolt",
+                "Serpent Sting",
+                "Concussive Shot",
                 "Hunter's Mark",
                 "Multi-Shot",
-                "Arcane Blast",
-                "Arcane Blast",
+                "Silencing Shot",
+                "Silencing Shot",
                 "Hunter's Mark",
                 "Arcane Shot",
                 "Speed",
                 "Arcane Shot",
                 "Steady Shot",
-                "Renew",
+                "Mend Pet",
             },
             texts = {
                 "Trueshot deals 30% more damage to its target.",
                 "Trueshot's pierce deals 65% of its hit instead of 40%.",
                 "Trueshot winds up for 2.5 sec instead, and deals 30% more to its " ..
                         "target and 20% more to the pierced.",
-                "Trueshot on your Flame Shock target also deals 30% of your spell power " ..
-                        "as Fire damage.",
-                "Trueshot on your Frostbolt-slowed target also deals 25% of your ranged " ..
-                        "attack power as Frost damage.",
+                "Trueshot on your Serpent Sting target also deals 25% of your ranged " ..
+                        "attack power as Nature damage.",
+                "Trueshot on your Concussive Shot target also deals 25% of your ranged " ..
+                        "attack power.",
                 "Exposed Target makes your next Arcane Shot or Chimera Shot deal 35% " ..
                         "more instead of 20%.",
                 "After Multi-Shot, Trueshot pierces up to 2 more enemies.",
-                "Arcane Blast's payload deals 50% of your spell power instead of 30%.",
-                "Arcane Blast's payload also strikes up to 2 pierced enemies for 40% of " ..
-                        "it.",
+                "Silencing Shot's payload deals 50% of your ranged attack power instead " ..
+                        "of 30%.",
+                "Silencing Shot's payload also strikes up to 2 pierced enemies for 40% " ..
+                        "of it.",
                 "Trueshot on your marked target also strikes one enemy within 8 yards " ..
                         "for 25% of its hit.",
                 "Trueshot brings Arcane Shot back 2 sec sooner.",
                 "After Trueshot you move 25% faster for 4 sec.",
                 "After Trueshot, your next Arcane Shot within 6 sec deals 20% more.",
                 "After Trueshot, your next Steady Shot within 6 sec casts 20% faster.",
-                "Trueshot while your Renew is on you heals you for 30% of your spell " ..
-                        "power, once every 10 sec.",
+                "Trueshot while your Mend Pet is on your pet heals it for 5% of its " ..
+                        "health, once every 10 sec.",
             },
             slots = {
                 "Shot",

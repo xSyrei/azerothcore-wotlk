@@ -4,6 +4,22 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### The new runes: their own classes' abilities, and Howling North sped up
+
+- **Howling North** is faster: Howling Blast now readies **2 blades** (Northwind lasts 8 sec), and **Obliterate or
+  Frost Strike** on a marked enemy looses one: Obliterate's for **60%** of your attack power (was 45%), Frost
+  Strike's for 35%. Blades come 1.5 sec apart (was 3).
+- Their options use their own class's abilities now, and **their picks are cleared**: choose again.
+  - **Howling North**: Chains of Ice (the frozen field, Frozen Ground), **Shattering Cold** (Hungering Cold),
+    **Plaguewind** (Blood Plague), **Horn of the North** (Horn of Winter), **Decaying Ice** (Death and Decay),
+    **Winter's Mending** (Death Strike); Glacial Flow works on your Frost Fever target.
+  - **Trueshot**: **Venom Arrow** (Serpent Sting), **Concussive Pierce** (Concussive Shot), Silencing Shot powers the
+    payload (Arcane Arrow, Arcane Calibration), **Mending Aim** (Mend Pet).
+  - **Hungering Rift**: **Hellmaw** (Immolate), **Haunted Maw** (Haunt).
+- **Damage bonuses**: rune hits that come from your attack power (or raw spell power) now grow with your damage
+  bonuses of their school, as your spells do: the Frost blade with your Frost bonuses, Broadside with your Fire,
+  the Stormfront with your Nature, and the same across the runes.
+
 ### New Legendary Runes: Hungering Rift, Howling North, Trueshot
 
 - **Rune of the Hungering Rift** (Ranged DPS; Shadow Bolt, Corruption): Shadow Bolt on your Corruption target opens
