@@ -2381,6 +2381,12 @@ for _spell in SPELLS:
     if 93441 <= _spell['id'] <= 93443:              # as Rejuvenation: every 3 sec
         _spell['effects'][1]['Amplitude'] = 3000
         _spell['tooltip'] = 'Heals every 3 sec.'
+# The runes' own spells the scripts cast land wherever their target stands: no facing it (the copies of Exorcism,
+# Lightning Bolt... needed their caster to face the target, so the Paragon's aura hurt only what stood before the
+# Hero, and every other rune's strikes behind them failed). Those a Hero casts (SPELL_CLASSES) keep it.
+for _spell in SPELLS:
+    if _spell['id'] not in SPELL_CLASSES:
+        _spell['set'] = {**_spell.get('set', {}), 'FacingCasterFlags': 0}
 for _spell in SPELLS:
     if _spell['id'] in (93300, 93325, 93360, 93400, 93425, 93450):  # the new runes' own auras: hidden as every rune's
         _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}

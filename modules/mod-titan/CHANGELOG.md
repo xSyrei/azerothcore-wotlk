@@ -4,6 +4,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Fix: rune damage behind you
+
+- **Sanctified Paragon**'s aura now damages enemies all around you, not only those in front. The same fix reaches
+  every rune's own strikes (splashes, pierces, pulses, impacts, damage over time): they no longer fail on enemies
+  behind you.
+
 ### Cross-faction guilds
 
 - Guilds take **both factions**: invite anyone, sign any guild charter, and guild chat reaches every member in a
