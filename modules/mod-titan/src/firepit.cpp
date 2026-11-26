@@ -47,12 +47,12 @@
 #include <unordered_set>
 #include <vector>
 
-// The Firepit: an endless wave arena in a private instance of Blackrock Depths' Ring of Law, solo or for a group of
-// up to 10 (src/firepit.cpp, docs in README.md).
+// The Firepit: an endless wave arena in a private instance of its own map (760: Trial of the Champion's arena, its
+// terrain copied, under a molten sky: titan_firepit.sql, the client patch), solo or for a group of up to 10
+// (src/firepit.cpp, docs in README.md).
 // - The Firepit Keeper (beside Silas Darkmoon in Stormwind and Orgrimmar) sends the Hero, or the leader's group, into
-//   a fresh instance of map 230 (InstanceOverride: the core sends them there, and lets 10 in). Its instance script is
-//   the Firepit's own (the Depths' never runs): the native creatures are sent away as they load, and it runs the
-//   waves.
+//   a fresh instance of map 760 (InstanceOverride: the core sends them there, and lets 10 in). Its instance script is
+//   the Firepit's own: the map has no creatures of its own (any that load are sent away), and it runs the waves.
 // - Waves every 60 sec, or 5 sec after the last enemy dies. Wave n has 3 + n/2 enemies (20% more for each player
 //   past the first), from the Depths' roster (a new kind every wave or two); every 5th wave brings a boss (two from
 //   wave 60, three from 120). Survivors stay: they pile up. Past 150 alive, new ones are not spawned; every enemy
@@ -65,24 +65,25 @@
 //   addon, and the best wave is recorded for its group size: solo, duo, trio, group (titan_firepit_records).
 namespace
 {
-    constexpr uint32 MAP_RING_OF_LAW = 230;            // Blackrock Depths
+    constexpr uint32 MAP_FIREPIT = 760;                 // Trial of the Champion's arena under its own sky
+                                                        // (titan_firepit.sql, the client patch's Map.dbc)
     constexpr uint32 MOST_PLAYERS = 10;
     constexpr uint32 NPC_KEEPER = 910140;
     constexpr uint32 GO_SPOILS = 910140;
     constexpr uint32 ENEMY_FACTION = 14;                // hostile to everyone
     constexpr char const* PREFIX = "EFFP";
 
-    Position const CENTER = { 596.48f, -187.91f, -54.14f, 4.9f };
+    Position const CENTER = { 746.5f, 618.5f, 411.2f, 4.71f };
     Position const GATES[] = {
-        { 608.96f, -235.32f, -53.91f, 1.857f },        // the beasts' gate
-        { 644.30f, -175.99f, -53.74f, 3.418f },        // the champions' gate
+        { 746.67f, 684.08f, 412.5f, 4.65f },           // the champions' gate (north)
+        { 805.23f, 618.04f, 412.39f, 3.146f },         // the main gate (east)
     };
-    constexpr float ARENA_RADIUS = 56.0f;               // an enemy farther from the center is put back in (the gates
-                                                        // are 49 yards out)
+    constexpr float ARENA_RADIUS = 70.0f;               // an enemy farther from the center is put back in (the floor
+                                                        // is 54 yards out, the gates 59 and 66)
     constexpr float ARRIVAL_RADIUS = 9.0f;              // the Heroes come in around the pit, not in it
 
-    // The ring dressed for the Firepit (titan_firepit.sql: game objects of the client's own fire): the pit and its
-    // flames in the middle, bonfires around it, braziers along the wall, embers rising, lava pillars at the gates.
+    // The arena dressed for the Firepit (titan_firepit.sql: game objects of the client's own fire): the pit in the
+    // middle, braziers along the wall, embers rising, lava pillars at the gates.
     enum Decor : uint32
     {
         GO_DARK_IRON_BRAZIER = 910141,
@@ -104,8 +105,8 @@ namespace
     // the pit low in the middle, the rest along the wall.
     Ring const DECOR_RINGS[] = {
         { GO_FIRE_PIT, 0.0f, 1, 0.0f },
-        { GO_EMBERS, 46.0f, 4, 0.785f },
-        { GO_DARK_IRON_BRAZIER, 44.0f, 12, 0.26f },
+        { GO_EMBERS, 50.0f, 4, 0.785f },
+        { GO_DARK_IRON_BRAZIER, 51.0f, 16, 0.2f },
     };
     constexpr float GATE_PILLAR_SPREAD = 7.0f;          // a lava pillar each side of a gate, this far from it
 
@@ -209,7 +210,7 @@ namespace
 
     uint32 Destination(Player* player, uint32 mapId)
     {
-        if (mapId != MAP_RING_OF_LAW)
+        if (mapId != MAP_FIREPIT)
             return 0;
         std::lock_guard guard(registryLock);
         auto destination = destinations.find(player->GetGUID());
@@ -852,7 +853,7 @@ private:
 
     FirepitInstance* RunOf(Map* map)
     {
-        if (!map || map->GetId() != MAP_RING_OF_LAW || !map->IsDungeon())
+        if (!map || map->GetId() != MAP_FIREPIT || !map->IsDungeon())
             return nullptr;
         InstanceMap* instanceMap = map->ToInstanceMap();
         return instanceMap ? dynamic_cast<FirepitInstance*>(instanceMap->GetInstanceScript()) : nullptr;
@@ -909,7 +910,7 @@ private:
         if (!Gather(leader, anywhere, members, why))
             return false;
         uint32 instanceId = sMapMgr->GenerateInstanceId();
-        if (!sInstanceSaveMgr->AddInstanceSave(MAP_RING_OF_LAW, instanceId, DUNGEON_DIFFICULTY_NORMAL))
+        if (!sInstanceSaveMgr->AddInstanceSave(MAP_FIREPIT, instanceId, DUNGEON_DIFFICULTY_NORMAL))
         {
             why = "The Firepit could not be lit.";
             return false;
@@ -929,7 +930,7 @@ private:
         for (std::size_t i = 0; i < members.size(); ++i)
         {
             float angle = 2.0f * float(M_PI) * float(i) / float(members.size());
-            members[i]->TeleportTo(MAP_RING_OF_LAW, CENTER.GetPositionX() + ARRIVAL_RADIUS * std::cos(angle),
+            members[i]->TeleportTo(MAP_FIREPIT, CENTER.GetPositionX() + ARRIVAL_RADIUS * std::cos(angle),
                 CENTER.GetPositionY() + ARRIVAL_RADIUS * std::sin(angle), CENTER.GetPositionZ(),
                 angle + float(M_PI));
         }
@@ -1194,7 +1195,7 @@ public:
     void OnBeforeCreateInstanceScript(InstanceMap* map, InstanceScript** script, bool /*load*/,
         std::string /*data*/, uint32 /*completedEncounterMask*/) override
     {
-        if (map->GetId() != MAP_RING_OF_LAW)
+        if (map->GetId() != MAP_FIREPIT)
             return;
         std::lock_guard guard(registryLock);
         if (firepits.count(map->GetInstanceId()))
@@ -1244,17 +1245,17 @@ public:
         for (auto const& [guid, instanceId] : pending)
         {
             Player* player = ObjectAccessor::FindConnectedPlayer(guid);
-            if (player && player->GetMapId() == MAP_RING_OF_LAW && player->GetInstanceId() == instanceId)
+            if (player && player->GetMapId() == MAP_FIREPIT && player->GetInstanceId() == instanceId)
                 continue;                               // back in it
             if (player && player->IsBeingTeleported())
             {
                 later.emplace_back(guid, instanceId);   // still on the way out
                 continue;
             }
-            InstancePlayerBind* bind = sInstanceSaveMgr->PlayerGetBoundInstance(guid, MAP_RING_OF_LAW,
+            InstancePlayerBind* bind = sInstanceSaveMgr->PlayerGetBoundInstance(guid, MAP_FIREPIT,
                 DUNGEON_DIFFICULTY_NORMAL);
             if (bind && bind->save && bind->save->GetInstanceId() == instanceId)
-                sInstanceSaveMgr->PlayerUnbindInstance(guid, MAP_RING_OF_LAW, DUNGEON_DIFFICULTY_NORMAL, true, player);
+                sInstanceSaveMgr->PlayerUnbindInstance(guid, MAP_FIREPIT, DUNGEON_DIFFICULTY_NORMAL, true, player);
         }
         if (!later.empty())
         {

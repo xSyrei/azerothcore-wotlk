@@ -1,4 +1,4 @@
--- The Firepit (src/firepit.cpp): an endless wave arena in a private Ring of Law. The Firepit Keeper (Grimstone's look)
+-- The Firepit (src/firepit.cpp): an endless wave arena on a map of its own. The Firepit Keeper (Grimstone's look)
 -- stands beside Silas Darkmoon in Stormwind and Orgrimmar, and is summoned in the ring when a run ends to lead the
 -- Heroes out. Each Hero's spoils chest (Arena Spoils' look) opens for its owner alone.
 SET @KEEPER := 910140;
@@ -52,3 +52,23 @@ DELETE FROM `gameobject_template_addon` WHERE `entry` BETWEEN 910141 AND 910147;
 INSERT INTO `gameobject_template_addon` (`entry`, `faction`, `flags`, `mingold`, `maxgold`) VALUES
 (910141, 0, 16, 0, 0), (910142, 0, 16, 0, 0), (910143, 0, 16, 0, 0), (910144, 0, 16, 0, 0),
 (910145, 0, 16, 0, 0), (910146, 0, 16, 0, 0), (910147, 0, 16, 0, 0);
+
+-- The Firepit's map (760): Trial of the Champion's arena (map 650's Directory, so its terrain) under its own name and
+-- sky (the client patch's Map.dbc row, client-patch/hd/make_atmosphere.py). Its terrain files are map 650's, copied by
+-- the ac-firepit-map service (tools/firepit-map.sh). A dungeon, 5 Heroes by the DBC (the Firepit's own core hook lets
+-- 10 in), entered only by the Firepit's teleport; a dead Hero's corpse goes to Northrend, as at Trial of the Champion.
+SET @MAP := 760;
+DELETE FROM `map_dbc` WHERE `ID` = @MAP;
+INSERT INTO `map_dbc` (`ID`, `Directory`, `InstanceType`, `Flags`, `PVP`, `MapName_Lang_enUS`, `MapName_Lang_Mask`,
+    `AreaTableID`, `LoadingScreenID`, `MinimapIconScale`, `CorpseMapID`, `CorpseX`, `CorpseY`, `TimeOfDayOverride`,
+    `ExpansionID`, `RaidOffset`, `MaxPlayers`) VALUES
+(@MAP, 'ArgentTournamentDungeon', 1, 29, 0, 'The Firepit', 16712190, 0, 255, 1, 571, 8571.43, 792.22, -1, 2, 0, 0);
+
+DELETE FROM `mapdifficulty_dbc` WHERE `MapID` = @MAP;
+INSERT INTO `mapdifficulty_dbc` (`ID`, `MapID`, `Difficulty`, `RaidDuration`, `MaxPlayers`, `Difficultystring`) VALUES
+(754, @MAP, 0, 0, 5, 'DUNGEON_DIFFICULTY_5PLAYER'),
+(755, @MAP, 1, 86400, 5, 'DUNGEON_DIFFICULTY_5PLAYER_HEROIC');
+
+DELETE FROM `instance_template` WHERE `map` = @MAP;
+INSERT INTO `instance_template` (`map`, `parent`, `script`, `allowMount`) VALUES
+(@MAP, 0, '', 0);

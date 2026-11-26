@@ -124,6 +124,8 @@ services:
         condition: service_completed_successfully
       ac-client-data-init:
         condition: service_completed_successfully
+      ac-firepit-map:
+        condition: service_completed_successfully
 
   ac-authserver:
     container_name: ac-authserver
@@ -171,6 +173,18 @@ services:
         DOCKER_USER: ${DOCKER_USER:-acore}
     volumes:
       - ${DOCKER_VOL_DATA:-ac-client-data}:/azerothcore/env/dist/data
+
+  # Emberforge: the Firepit's map (760) is map 650's terrain, collision and navigation, copied into the data volume.
+  ac-firepit-map:
+    container_name: ac-firepit-map
+    image: acore/ac-wotlk-client-data:${DOCKER_IMAGE_TAG:-master}
+    entrypoint: ["bash", "/titan/firepit-map.sh"]
+    volumes:
+      - ${DOCKER_VOL_DATA:-ac-client-data}:/azerothcore/env/dist/data
+      - ./modules/mod-titan/tools:/titan:ro
+    depends_on:
+      ac-client-data-init:
+        condition: service_completed_successfully
 
   # used for extracting maps from files shipped with game client
   # Most of the time this shouldn't be needed

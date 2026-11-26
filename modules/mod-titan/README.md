@@ -1069,7 +1069,7 @@ replaced mod-autobalance):
 
 ## The Firepit
 
-An endless wave arena in a private Ring of Law (Blackrock Depths, map 230), solo or for a group of up to 10, and the
+An endless wave arena on a map of its own (760, Trial of the Champion's arena: see **The map** below), solo or for a group of up to 10, and the
 rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emberforge_Firepit` addon).
 - **The queue** is a tab of the group finder (The Firepit, beside Dungeons and Player vs. Player:
   `Emberforge_Journal/MicroMenu.lua`; it opens in the screen's middle at 1.5 times a panel's size, draggable, Escape
@@ -1085,14 +1085,21 @@ rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emb
   member; alive, out of combat and out of any instance, 10 at most. The requests (STATE, QUEUE, ACCEPT, DECLINE,
   LEAVE) are answered on the world's thread (members on other maps are teleported from there). The **Firepit Keeper**
   (910140, Grimstone's look) beside Silas Darkmoon in Stormwind and Orgrimmar opens the tab, and shows the leaderboard
-  in chat. Everyone goes to a fresh instance of map 230. `InstanceOverride` (core) sends them there and lets 10
-  in; the instance's script is the Firepit's own (`FirepitInstance`; the Depths' never runs), which sends the native
-  creatures away as they load.
-- **The ring dressed**: each run places the client's own fire (`DECOR_RINGS`, game objects 910141-910147): a low
-  fire pit in the middle, twelve Dark Iron braziers along the wall, embers and smoke rising by it, lava pillars at both
+  in chat. Everyone goes to a fresh instance of map 760. `InstanceOverride` (core) sends them there and lets 10
+  in; the instance's script is the Firepit's own (`FirepitInstance`), which sends away any creature the map loads.
+- **The map** (760, "The Firepit"): Trial of the Champion's (650) under its own name, sky and loading screen. The
+  client patch (`client-patch/hd/make_atmosphere.py`, patch-enUS-8) adds its Map.dbc row (map 650's Directory, so
+  the same terrain), its MapDifficulty rows, a LoadingScreens row (the Firepit's painting) and a Light for the whole
+  map. The server: `titan_firepit.sql` (`map_dbc`, `mapdifficulty_dbc`, `instance_template`) and the
+  `ac-firepit-map` service in docker-compose.yml, which copies map 650's terrain, collision and navigation files as
+  map 760's in the data volume before the worldserver starts (`tools/firepit-map.sh`; by hand outside Docker:
+  `tools/firepit-map.sh <DataDir>`). The arena: centre (746.5, 618.5), floor 54 yards out; the enemies come in by the
+  champions' gate (north) and the main gate (east). The zone name the client shows is still the terrain's own.
+- **The arena dressed**: each run places the client's own fire (`DECOR_RINGS`, game objects 910141-910147): a low
+  fire pit in the middle, sixteen Dark Iron braziers along the wall, embers and smoke rising by it, lava pillars at both
   gates (nothing tall or bright where the fighting is). The Heroes arrive around the pit, and
-  the addon shows the Firepit's own title as they do. The client's lighting patch gives the ring a warm ember light
-  (`client-patch/hd/make_atmosphere.py`).
+  the addon shows the Firepit's own title as they do. The client's lighting patch gives the map a warm ember light
+  under a red sky (`client-patch/hd/make_atmosphere.py`).
 - **Waves** every 60 sec (or 5 sec after the last enemy dies), from both gates of the ring: wave n brings 3 + n/2
   enemies, 20% more for each player past the first, from the Depths' roster (`ROSTER`: the ring's beasts, the Dark
   Iron, their fire, golems, the Twilight's Hammer; a new kind every wave or two, the newest six in a wave). Every 5th
@@ -1140,7 +1147,7 @@ rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emb
   (its eye offers the teleport in: `LFGScripts.cpp`), and such a group may walk into any dungeon (`MapMgr.cpp`).
 - `InstanceOverride` (`InstanceSaveMgr.h`): a module may name the instance a player entering an instanced map goes to
   (`InstanceSaveMgr::PlayerGetDestinationInstanceId`) and raise an instance's player cap (`InstanceMap::GetMaxPlayers`):
-  the Firepit's runs, 10 in Blackrock Depths.
+  the Firepit's runs, 10 on its map.
 - `Player::SetRestBonus(float, bool allowAboveCap)`: lets items grant rested experience above
   the cap, and keeps natural resting from trimming it back down.
 - `Spell::TakeRunePower`: runes give Rage instead of Runic Power (Emberforge has none; see Demon Hunter).

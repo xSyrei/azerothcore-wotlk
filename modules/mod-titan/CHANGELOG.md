@@ -6,7 +6,7 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ### The Firepit
 
-- **A new endless wave arena** in a private Ring of Law, from level 10. Queue from the **group finder**: its new
+- **A new endless wave arena** with a map of its own, from level 10. Queue from the **group finder**: its new
   **The Firepit** tab (beside Dungeons and Player vs. Player) shows the rules and rewards, your group, your best wave
   solo, as a duo, a trio and a group (hover one for its leaderboard), how much tougher your group size makes it, and
   where to start: wave 1, or any 5th wave everyone in your group has reached. Alone you go straight in; a group's leader queues and everyone
@@ -18,9 +18,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - You fight until everyone falls. A groupmate's battle resurrection can bring you back.
 - Then everyone stands again, and each Hero gets **their own chest**: a piece of gear at your level for every 15 waves
   you lived through (epic from wave 45).
-- **The ring burns**: the Firepit has its own warm, ember-lit light, and each run fills the arena with fire: a great
-  fire pit in the middle, bonfires around it, braziers along the walls, embers rising and lava at the gates. Arriving
-  shows the Firepit's own title.
+- **The Firepit is its own place**: the great arena of the Argent Tournament's coliseum, open to a burning red sky,
+  lit warm and ember-orange with a smoky haze, its own loading screen and name. Each run lights it up: a fire pit in
+  the middle, braziers along the walls, embers rising and lava at the gates. Arriving shows the Firepit's own title.
 - **The wave tracker** sits on the right under the minimap: the wave, its time running out on a bar, enemies alive,
   Heroes standing, and the run's news (a boss coming in red, with a warning sound).
 - **The recap** shows the run in big numbers (wave, time, kills, Heroes, enemy health), who stood out, and each

@@ -13,9 +13,12 @@
 Bands are per LightParams: LightIntBand id = params * 18 - 17 + band, LightFloatBand id = params * 6 - 5 + band; each
 holds up to 16 (time of day, value) keys.
 
-- The Firepit's own light (Blackrock Depths' Ring of Law, map 230: the dungeon has none of its own, so the global
-  default's dim grey filled it): a Light there (FIREPIT_AT, FIREPIT_REACH) with its own LightParams and bands, all day
-  the same: warm ambient and diffuse light, an ember fog that starts near and thickens to orange, a red cavern sky.
+- The Firepit's own map (FIREPIT_MAP, "The Firepit"): Trial of the Champion's arena (its Directory, so its very
+  geometry; map 650's MapDifficulty rows) under its own sky. A Light for the whole map with its own LightParams (no
+  skybox: the sky is its colours) and bands, all day the same: warm ambient and diffuse light, an ember fog that starts
+  near and thickens to orange, a red sky. Its loading screen is the Firepit's painting
+  (icons/ui/FirepitBackground.png). The server's own copy: titan_firepit.sql (map_dbc, mapdifficulty_dbc) and the
+  ac-firepit-map service (docker-compose.yml: map 650's terrain data as the map's).
 
 Usage: python3 make_atmosphere.py <dir with original DBCs (Light, LightParams, LightIntBand, LightFloatBand)>
 """
@@ -27,6 +30,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 import make_mpq  # noqa: E402
+sys.path.insert(0, str(HERE.parent / 'models'))
+import blp  # noqa: E402
+from PIL import Image  # noqa: E402
 
 OUT = HERE.parent / 'dist' / 'patch-enUS-8.MPQ'
 
@@ -43,9 +49,12 @@ TEAL_SHARE = 0.25      # (0.45 was bright: the reflections show on darker water)
 
 BAND_SKY_LOW, BAND_HORIZON = 5, 6
 
-# The Firepit's light: the ring's centre (world x, y, z), where it is whole and where it is gone (yards).
-FIREPIT_MAP, FIREPIT_AT, FIREPIT_REACH = 230, (596.48, -187.91, -54.14), (60.0, 95.0)
-FIREPIT_TEMPLATE_PARAMS = 12            # the global default's clear-weather params: the rest of its bands kept
+# The Firepit's map: a copy of Trial of the Champion's (map 650), all its own light (a map-wide Light: no position).
+FIREPIT_MAP, FIREPIT_SOURCE_MAP, FIREPIT_NAME = 760, 650, 'The Firepit'
+FIREPIT_AT, FIREPIT_REACH = (0.0, 0.0, 0.0), (0.0, 0.0)
+FIREPIT_TEMPLATE_PARAMS = 836           # Trial of the Champion's clear-weather params: the rest of its bands kept
+FIREPIT_LOADING = 'Interface\\Glues\\LoadingScreens\\LoadScreenFirepit'
+FIREPIT_PAINTING = HERE.parent / 'icons' / 'ui' / 'FirepitBackground.png'
 FIREPIT_COLOURS = {                     # LightIntBand band: colour (all day)
     0: (138, 72, 46),                   # ambient: warm, so faces and armour read
     1: (255, 156, 92),                  # diffuse
@@ -181,6 +190,7 @@ def firepit_light(source, params_data, int_data, float_data):
     template = next(o for o in params.rows() if struct.unpack_from('<I', params.data, o)[0] == FIREPIT_TEMPLATE_PARAMS)
     params_row = bytearray(params.data[template:template + params.size])
     struct.pack_into('<I', params_row, 0, new_params)
+    struct.pack_into('<I', params_row, 8, 0)            # no skybox (Icecrown's): the sky is the bands' colours
 
     old_ints, old_floats = bands(ints, 'I'), bands(floats, 'f')
     int_rows, float_rows = [], []
@@ -209,11 +219,83 @@ def firepit_light(source, params_data, int_data, float_data):
     wx, wy, wz = FIREPIT_AT
     default = light.data[light.rows()[0] + 28:light.rows()[0] + 60]
     underwater, _, storm_underwater, death = struct.unpack_from('<4I', default, 4)
-    light_row = struct.pack('<2I5f8I', max(light_ids) + 1, FIREPIT_MAP, (17066.666 - wy) * 36, wz * 36,
-                            (17066.666 - wx) * 36, FIREPIT_REACH[0] * 36, FIREPIT_REACH[1] * 36, new_params,
+    position = (0.0, 0.0, 0.0) if FIREPIT_AT == (0.0, 0.0, 0.0) else ((17066.666 - wy) * 36, wz * 36,
+                                                                     (17066.666 - wx) * 36)
+    light_row = struct.pack('<2I5f8I', max(light_ids) + 1, FIREPIT_MAP, *position,
+                            FIREPIT_REACH[0] * 36, FIREPIT_REACH[1] * 36, new_params,
                             underwater, new_params, storm_underwater, death, 0, 0, 0)
     return (appended(bytes(light.data), [light_row]), appended(bytes(params.data), [bytes(params_row)]),
             appended(bytes(ints.data), int_rows), appended(bytes(floats.data), float_rows), new_params)
+
+
+def with_strings(data, rows, strings):
+    """A DBC with rows added and strings put at the end of its string block (the rows' placeholders {name} are the
+    strings' offsets)."""
+    data = bytearray(data)
+    count, fields, size, string_size = struct.unpack_from('<4I', data, 4)
+    block = bytearray(data[20 + count * size:])
+    offsets = {}
+    for name, text in strings.items():
+        offsets[name] = len(block)
+        block += text.encode() + b'\0'
+    body = data[20:20 + count * size]
+    for row in rows:
+        values = [offsets[v] if isinstance(v, str) else v for v in row]
+        packed = b''.join(struct.pack('<f' if isinstance(v, float) else '<I', v) for v in values)
+        assert len(packed) == size, (len(packed), size)
+        body += packed
+    header = struct.pack('<4s4I', b'WDBC', count + len(rows), fields, size, len(block))
+    return bytes(header + body + block)
+
+
+def rows_of(data):
+    count, fields, size, _ = struct.unpack_from('<4I', data, 4)
+    return [list(struct.unpack_from(f'<{fields}I', data, 20 + i * size)) for i in range(count)]
+
+
+def firepit_map(source):
+    """Map.dbc, MapDifficulty.dbc and LoadingScreens.dbc with the Firepit's map, and its loading screens."""
+    screens = Path(source, 'LoadingScreens.dbc').read_bytes()
+    screen_id = max(r[0] for r in rows_of(screens)) + 1
+    screens = with_strings(screens, [[screen_id, 'name', 'file', 1]],
+                           {'name': 'Firepit', 'file': FIREPIT_LOADING + '.blp'})
+
+    maps = Path(source, 'Map.dbc').read_bytes()
+    original = next(r for r in rows_of(maps) if r[0] == FIREPIT_SOURCE_MAP)
+    assert all(r[0] != FIREPIT_MAP for r in rows_of(maps))
+    row = list(original)
+    row[0] = FIREPIT_MAP
+    row[5] = 'name'                     # MapName_Lang enUS
+    row[22] = 0                         # no area of its own
+    for i in range(23, 57):             # no description
+        row[i] = 0 if i not in (39, 56) else original[i]
+    row[57] = screen_id
+    raw = struct.unpack_from('<66f', Path(source, 'Map.dbc').read_bytes(),
+                             20 + rows_of(maps).index(original) * struct.unpack_from('<I', maps, 12)[0])
+    row[58] = raw[58]                   # MinimapIconScale, CorpseX, CorpseY: floats as they were
+    row[60], row[61] = raw[60], raw[61]
+    maps = with_strings(maps, [row], {'name': FIREPIT_NAME})
+
+    difficulties = Path(source, 'MapDifficulty.dbc').read_bytes()
+    next_id = max(r[0] for r in rows_of(difficulties)) + 1
+    copies = []
+    for r in rows_of(difficulties):
+        if r[1] == FIREPIT_SOURCE_MAP:
+            copy = list(r)
+            copy[0], copy[1] = next_id, FIREPIT_MAP
+            copies.append(copy)
+            next_id += 1
+    difficulties = with_strings(difficulties, copies, {})
+
+    with Image.open(FIREPIT_PAINTING) as painting:
+        painting = painting.convert('RGBA')
+    w, h = painting.size
+    four_three = painting.crop(((w - h * 4 // 3) // 2, 0, (w + h * 4 // 3) // 2, h))
+    files = [
+        (FIREPIT_LOADING + '.blp', blp.encode_dxt(four_three.resize((1024, 1024), Image.LANCZOS))),
+        (FIREPIT_LOADING + 'Wide.blp', blp.encode_dxt(painting.resize((1024, 1024), Image.LANCZOS))),
+    ]
+    return maps, difficulties, screens, screen_id, files
 
 
 def main():
@@ -222,13 +304,18 @@ def main():
     source = sys.argv[1]
     floats, fogs = float_bands(source)
     light, params, ints, floats, firepit = firepit_light(source, light_params(source), int_bands(source), floats)
+    maps, difficulties, screens, screen_id, files = firepit_map(source)
     entries = [
+        ('DBFilesClient\\Map.dbc', maps),
+        ('DBFilesClient\\MapDifficulty.dbc', difficulties),
+        ('DBFilesClient\\LoadingScreens.dbc', screens),
+        *files,
         ('DBFilesClient\\Light.dbc', light),
         ('DBFilesClient\\LightParams.dbc', params),
         ('DBFilesClient\\LightFloatBand.dbc', floats),
         ('DBFilesClient\\LightIntBand.dbc', ints),
     ]
-    print(f'The Firepit\'s light: LightParams {firepit}')
+    print(f'The Firepit: map {FIREPIT_MAP}, LightParams {firepit}, loading screen {screen_id}')
     OUT.write_bytes(make_mpq.build(entries))
     print(f'Wrote {OUT} (fog pulled in for {fogs} outdoor lights, {OUT.stat().st_size / 2 ** 20:.1f} MB)')
 
