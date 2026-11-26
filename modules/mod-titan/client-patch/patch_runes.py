@@ -971,16 +971,18 @@ def looping(model, effect, layers):
 
 
 def thunderfield(model, effect, across):
+    """Echoing Thunder's field: faint (it lies where the fighting is: the first one's near-opaque bolts and
+    shockwave hid everything in it), the cracks and the ring of lightning a hint, the bolts thin flickers."""
     k = across / 16.0
     return looping(model, effect, (
         ('Circle_Cracks_02', {'flat': True, 'spots': ((0.0, 0.0, 0.08, across, 0.0),), 'tint': STORM_BLUE,
-                              'alpha': 0.9, 'turn': 60.0, 'pulse': 0}),
+                              'alpha': 0.3, 'turn': 60.0, 'pulse': 0}),
         ('Lightning_Circular_01', {'flat': True, 'spots': ((0.0, 0.0, 0.12, across * 0.94, 0.0),), 'tint': PALE_BLUE,
-                                   'alpha': 0.85, 'turn': -18.0, 'pulse': 0.7}),
+                                   'alpha': 0.25, 'turn': -18.0, 'pulse': 0.7}),
         ('lightning_bolt_4x4', {'spots': ring(5.2 * k, 4, 1.7 * k, 3.4 * k), 'sheet': (4, 4), 'flip': 0.8,
-                                'max_size': 1024, 'tint': (0.82, 0.92, 1.0), 'alpha': 0.95, 'pulse': 0}),
+                                'max_size': 1024, 'tint': (0.82, 0.92, 1.0), 'alpha': 0.3, 'pulse': 0}),
         ('Cast_Shockwave_01', {'flat': True, 'spots': ((0.0, 0.0, 0.1, across * 0.3, 0.0),), 'tint': PALE_BLUE,
-                               'alpha': 0.55, 'scale': [(0.0, 0.3), (1.0, 3.2)], 'scale_beat': 1.6, 'pulse': 1.6}),
+                               'alpha': 0.12, 'scale': [(0.0, 0.3), (1.0, 3.2)], 'scale_beat': 1.6, 'pulse': 1.6}),
     ))
 
 
@@ -1009,7 +1011,6 @@ KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_WORLD = 3, 4, 5, 14
 KIT_LEFT_HAND, KIT_RIGHT_HAND = 6, 7
 # Blizzard effect models (SpellVisualEffectName ids, the ones their own spells use) for the runes' looks: Echoing
 # Thunder's, the Shattered Sun's and the Spectral Blade's are the game's own, not our sheets.
-FX_LIGHTNING_CLOUD_LOW = 3792       # Spells\\LightningStorm_CloudLow_State: a small storm cloud overhead
 FX_LIGHTNING_HAND = 88              # Spells\\Lightning_PreCast_Low_Hand: lightning crackling in the hands
 FX_LIGHTNING_BOLT_IMPACT = 281      # Spells\\LightningBolt_Impact_Chest
 FX_LIGHTNING_SHIELD_IMPACT = 173    # Spells\\LightningShield_Impact_Base: sparks at the feet
@@ -1042,9 +1043,9 @@ VISUALS = {
         'persistent': (15710, {KIT_WORLD: 'HallowedFootsteps', 'procs': False})}},
     'Thunderfield': {'copy': 9735, 'id': 16763, 'clear': ('precast', 'state', 'area'), 'kits': {
         'persistent': (15712, {KIT_WORLD: 'Thunderfield', 'procs': False})}},
-    # Thunder Clap's charge: a small storm cloud over the Hero, lightning in their hands.
+    # Thunder Clap's charge: lightning in the Hero's hands (no storm cloud over them: it hid the fight).
     'ThunderfieldMarch': {'copy': 32, 'id': 16764, 'clear': ('precast', 'cast', 'impact'), 'kits': {
-        'state': (15713, {KIT_HEAD: FX_LIGHTNING_CLOUD_LOW, KIT_LEFT_HAND: FX_LIGHTNING_HAND,
+        'state': (15713, {KIT_HEAD: 0, KIT_LEFT_HAND: FX_LIGHTNING_HAND,
                           KIT_RIGHT_HAND: FX_LIGHTNING_HAND, KIT_BASE: 0, KIT_CHEST: 0, 'sound': None,
                           'procs': False})}},
 }

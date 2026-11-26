@@ -26,6 +26,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   before you); Thunder Clap in the bulwark makes it reach 10 yards (Shaking Ground 12). **Wide Reckoning** now makes it
   deal 30% more to every enemy past its first. A Shield Slam that kills its target still releases the impact.
 
+### Echoing Thunder: a field you can see through
+
+- The **Thunderfield** is now faint: its cracks, ring of lightning and bolts are about a third as opaque, its pulse
+  barely there. The storm cloud over your head (March of the Storm, Stormheart) is gone; the lightning in your hands
+  stays.
+
 ### Enemies have no resistances or immunities
 
 - **Nothing resists you any more**: no partial resists, no "Resist" on your spells, and no enemy is immune to stuns,
