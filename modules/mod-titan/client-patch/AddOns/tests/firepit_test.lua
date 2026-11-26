@@ -120,7 +120,8 @@ check(debug.members[1].member.name == "Tester" and debug.members[3].member.name 
     and not debug.members[4].member, "a slot for you and each party member, the rest open")
 check(debug.members[3].why == "Needs level 10." and not debug.queueButton.enabled,
     "a member under level 10 keeps the group out")
-check(debug.records[1].value.text == "23" and debug.records[2].value.text == "31" and debug.records[4].value.text == "12",
+check(debug.records[1].value.text == "23" and debug.records[2].value.text == "31"
+    and debug.records[4].value.text == "12",
     "the records: solo, duo, trio, group")
 GameTooltip.lines = {}
 function GameTooltip:AddLine(text) self.lines[#self.lines + 1] = text end
@@ -168,6 +169,8 @@ server("QG")
 check(not debug.finder.shown and popups.hidden == "EMBERFORGE_FIREPIT_PROPOSAL", "going in closes the queue")
 leader = true
 
+server("INTRO")
+check(debug.intro.shown and debug.intro.title.text == "THE FIREPIT", "arriving shows the Firepit's title")
 server("H,0,0,0,0,3,3,8")
 check(debug.hud.shown and debug.hud.timer.text == "0:08" and debug.hud.wave.text == "Get ready",
     "the countdown shows on the wave tracker")

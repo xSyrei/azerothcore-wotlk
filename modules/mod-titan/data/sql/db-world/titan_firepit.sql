@@ -33,3 +33,22 @@ DELETE FROM `gameobject_template` WHERE `entry` = @SPOILS;
 INSERT INTO `gameobject_template` (`entry`, `type`, `displayId`, `name`, `IconName`, `castBarCaption`, `unk1`,
     `size`, `ScriptName`, `VerifiedBuild`) VALUES
 (@SPOILS, 3, 10, 'Spoils of the Firepit', '', '', '', 1.2, 'go_titan_firepit_spoils', 0);
+
+-- The ring dressed for each run (src/firepit.cpp, DECOR_RINGS): the client's own fire models as plain, unselectable
+-- objects (type 5): Blackrock's Dark Iron brazier, a midsummer bonfire, a large fire pit, a lava pillar, a ring of
+-- flame, rising embers and smoke, a fire rift.
+DELETE FROM `gameobject_template` WHERE `entry` BETWEEN 910141 AND 910147;
+INSERT INTO `gameobject_template` (`entry`, `type`, `displayId`, `name`, `IconName`, `castBarCaption`, `unk1`,
+    `size`, `ScriptName`, `VerifiedBuild`) VALUES
+(910141, 5, 3411, 'Dark Iron Brazier', '', '', '', 1.3, '', 0),
+(910142, 5, 6754, 'Firepit Bonfire', '', '', '', 1.0, '', 0),
+(910143, 5, 307, 'The Firepit', '', '', '', 1.6, '', 0),
+(910144, 5, 205, 'Lava Pillar', '', '', '', 0.7, '', 0),
+(910145, 5, 410, 'Ring of Flame', '', '', '', 2.2, '', 0),
+(910146, 5, 4452, 'Rising Embers', '', '', '', 1.6, '', 0),
+(910147, 5, 6333, 'Fire Rift', '', '', '', 0.9, '', 0);
+
+DELETE FROM `gameobject_template_addon` WHERE `entry` BETWEEN 910141 AND 910147;
+INSERT INTO `gameobject_template_addon` (`entry`, `faction`, `flags`, `mingold`, `maxgold`) VALUES
+(910141, 0, 16, 0, 0), (910142, 0, 16, 0, 0), (910143, 0, 16, 0, 0), (910144, 0, 16, 0, 0),
+(910145, 0, 16, 0, 0), (910146, 0, 16, 0, 0), (910147, 0, 16, 0, 0);

@@ -77,7 +77,38 @@ namespace
         { 608.96f, -235.32f, -53.91f, 1.857f },        // the beasts' gate
         { 644.30f, -175.99f, -53.74f, 3.418f },        // the champions' gate
     };
-    constexpr float ARENA_RADIUS = 40.0f;               // an enemy farther from the center is put back in
+    constexpr float ARENA_RADIUS = 56.0f;               // an enemy farther from the center is put back in (the gates
+                                                        // are 49 yards out)
+    constexpr float ARRIVAL_RADIUS = 9.0f;              // the Heroes come in around the pit, not in it
+
+    // The ring dressed for the Firepit (titan_firepit.sql: game objects of the client's own fire): the pit and its
+    // flames in the middle, bonfires around it, braziers along the wall, embers rising, lava pillars at the gates.
+    enum Decor : uint32
+    {
+        GO_DARK_IRON_BRAZIER = 910141,
+        GO_BONFIRE = 910142,
+        GO_FIRE_PIT = 910143,
+        GO_LAVA_PILLAR = 910144,
+        GO_FLAME_CIRCLE = 910145,
+        GO_EMBERS = 910146,
+        GO_FIRE_RIFT = 910147,
+    };
+    struct Ring
+    {
+        uint32 entry;
+        float radius;
+        uint32 count;
+        float turn;                                     // the first one's angle (radians)
+    };
+    Ring const DECOR_RINGS[] = {
+        { GO_FIRE_PIT, 0.0f, 1, 0.0f },
+        { GO_FLAME_CIRCLE, 0.0f, 1, 0.0f },
+        { GO_FIRE_RIFT, 0.0f, 1, 0.0f },
+        { GO_BONFIRE, 24.0f, 4, 0.785f },
+        { GO_EMBERS, 16.0f, 6, 0.0f },
+        { GO_DARK_IRON_BRAZIER, 44.0f, 12, 0.26f },
+    };
+    constexpr float GATE_PILLAR_SPREAD = 7.0f;          // a lava pillar each side of a gate, this far from it
 
     constexpr uint32 COUNTDOWN_MS = 10000, WAVE_MS = 60000, BREATHER_MS = 5000, SPAWN_SPREAD_MS = 4000;
     constexpr uint32 TICK_MS = 1000, END_DELAY_MS = 4000, CORPSE_MS = 3000;
@@ -278,10 +309,12 @@ public:
         record.left = false;
         if (_phase == Phase::WAITING)
         {
+            Decorate();
             _phase = Phase::COUNTDOWN;
             _timer = COUNTDOWN_MS;
             Announce("The Firepit roars to life. The first wave comes in 10 seconds.");
         }
+        SendAddon(player, "INTRO");
         SendHud(player);
     }
 
@@ -451,6 +484,37 @@ public:
 
 private:
     // The run's news, on each Hero's wave tracker (Emberforge_Firepit): urgent, in red with a raid warning's sound.
+    // The ring dressed (once a run): each piece on the floor where it stands.
+    void Decorate()
+    {
+        auto place = [this](uint32 entry, float x, float y, float facing)
+        {
+            float z = instance->GetHeight(x, y, CENTER.GetPositionZ() + 5.0f);
+            if (z < CENTER.GetPositionZ() - 10.0f || z > CENTER.GetPositionZ() + 10.0f)
+                z = CENTER.GetPositionZ();
+            instance->SummonGameObject(entry, x, y, z, facing, 0.0f, 0.0f, std::sin(facing / 2.0f),
+                std::cos(facing / 2.0f), 0);
+        };
+        for (Ring const& ring : DECOR_RINGS)
+            for (uint32 i = 0; i < ring.count; ++i)
+            {
+                float angle = ring.turn + 2.0f * float(M_PI) * float(i) / float(ring.count);
+                place(ring.entry, CENTER.GetPositionX() + ring.radius * std::cos(angle),
+                    CENTER.GetPositionY() + ring.radius * std::sin(angle), angle + float(M_PI));
+            }
+        for (Position const& gate : GATES)
+        {
+            float toward = std::atan2(CENTER.GetPositionY() - gate.GetPositionY(),
+                CENTER.GetPositionX() - gate.GetPositionX());
+            for (float side : { -1.0f, 1.0f })
+            {
+                float across = toward + side * float(M_PI) / 2.0f;
+                place(GO_LAVA_PILLAR, gate.GetPositionX() + GATE_PILLAR_SPREAD * std::cos(across),
+                    gate.GetPositionY() + GATE_PILLAR_SPREAD * std::sin(across), toward);
+            }
+        }
+    }
+
     void Announce(std::string const& text, bool urgent = false)
     {
         for (auto const& ref : instance->GetPlayers())
@@ -625,8 +689,8 @@ private:
                 continue;
             }
             if (enemy->GetExactDist2d(CENTER.GetPositionX(), CENTER.GetPositionY()) > ARENA_RADIUS)
-                enemy->NearTeleportTo(CENTER.GetPositionX(), CENTER.GetPositionY(), CENTER.GetPositionZ(),
-                    enemy->GetOrientation());
+                enemy->NearTeleportTo(CENTER.GetPositionX() + ARRIVAL_RADIUS, CENTER.GetPositionY(),
+                    CENTER.GetPositionZ(), enemy->GetOrientation());
             if (!enemy->GetVictim() || !enemy->GetVictim()->IsAlive())
                 Engage(enemy);
             alive.push_back(guid);
@@ -708,8 +772,8 @@ private:
             if (!record || !record->loot)
                 continue;
             float angle = float(index++) * 2.0f * float(M_PI) / float(std::max<std::size_t>(present.size(), 1));
-            float x = CENTER.GetPositionX() + 4.0f * std::cos(angle);
-            float y = CENTER.GetPositionY() + 4.0f * std::sin(angle);
+            float x = CENTER.GetPositionX() + ARRIVAL_RADIUS * std::cos(angle);
+            float y = CENTER.GetPositionY() + ARRIVAL_RADIUS * std::sin(angle);
             GameObject* chest = player->SummonGameObject(GO_SPOILS, x, y, CENTER.GetPositionZ(), angle + float(M_PI),
                 0.0f, 0.0f, 0.0f, 0.0f, SPOILS_SECONDS);
             if (!chest)
@@ -728,7 +792,7 @@ private:
         SaveRecords();
         for (Player* player : present)
             SendResults(player);
-        if (TempSummon* keeper = instance->SummonCreature(NPC_KEEPER, Position(CENTER.GetPositionX() - 6.0f,
+        if (TempSummon* keeper = instance->SummonCreature(NPC_KEEPER, Position(CENTER.GetPositionX() - 14.0f,
             CENTER.GetPositionY(), CENTER.GetPositionZ(), 0.0f)))
             keeper->SetFaction(35);
         Announce("The fires die down. Claim your spoils, and speak to the Keeper to leave.");
@@ -863,9 +927,13 @@ private:
             }
             firepits.insert(instanceId);
         }
-        for (Player* member : members)
-            member->TeleportTo(MAP_RING_OF_LAW, CENTER.GetPositionX() + frand(-2.0f, 2.0f),
-                CENTER.GetPositionY() + frand(-2.0f, 2.0f), CENTER.GetPositionZ(), CENTER.GetOrientation());
+        for (std::size_t i = 0; i < members.size(); ++i)
+        {
+            float angle = 2.0f * float(M_PI) * float(i) / float(members.size());
+            members[i]->TeleportTo(MAP_RING_OF_LAW, CENTER.GetPositionX() + ARRIVAL_RADIUS * std::cos(angle),
+                CENTER.GetPositionY() + ARRIVAL_RADIUS * std::sin(angle), CENTER.GetPositionZ(),
+                angle + float(M_PI));
+        }
         return true;
     }
 

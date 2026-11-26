@@ -10,7 +10,7 @@
 --   P,<name>,<level>,<peak wave>,<enemies at peak>,<most enemies>,<damage>,<healing>,<taken>,<kills>,<boss kills>,
 --     <biggest hit>,<biggest hit taken>,<deaths>,<wave fallen on>,<times resurrected>,<spoils>,<killer>
 --   END   the results are complete: show them
---   A,<text>,<urgent 0|1>   the run's news, on the wave tracker
+--   A,<text>,<urgent 0|1>   the run's news, on the wave tracker    INTRO   you arrived: the Firepit's title
 --   OPEN  open the queue (the Firepit Keeper sent you)
 --   S,<best solo>,<duo>,<trio>,<group>,<in a proposal 0|1>,<level it opens at>,<latest start wave>   then each
 --     bracket's leaderboard: L,<bracket 1-4>,<rank>,<name>,<wave>,<group size> ... LE
@@ -234,6 +234,55 @@ hud:SetScript("OnUpdate", function(self)
         hudState.eventAt = 0
     end
 end)
+
+-- The way in: the Firepit's own title as you arrive (fades in, holds, fades out), over the middle of the screen.
+local intro = CreateFrame("Frame", "EmberforgeFirepitIntro", UIParent)
+intro:SetWidth(600)
+intro:SetHeight(90)
+intro:SetPoint("CENTER", UIParent, "CENTER", 0, 120)
+intro:SetFrameStrata("HIGH")
+intro:Hide()
+intro.title = Label(intro, 36, CREAM)
+intro.title:SetPoint("TOP", 0, 0)
+intro.title:SetText("THE FIREPIT")
+intro.line = intro:CreateTexture(nil, "ARTWORK")
+intro.line:SetTexture(1, 1, 1, 1)
+intro.line:SetPoint("TOP", 0, -46)
+intro.line:SetWidth(300)
+intro.line:SetHeight(2)
+if intro.line.SetGradientAlpha then
+    intro.line:SetGradientAlpha("HORIZONTAL", 1, 0.5, 0.16, 0, 1, 0.5, 0.16, 1)
+end
+intro.glow = intro:CreateTexture(nil, "ARTWORK")
+intro.glow:SetTexture(1, 1, 1, 1)
+intro.glow:SetPoint("LEFT", intro.line, "RIGHT")
+intro.glow:SetWidth(300)
+intro.glow:SetHeight(2)
+if intro.glow.SetGradientAlpha then
+    intro.glow:SetGradientAlpha("HORIZONTAL", 1, 0.5, 0.16, 1, 1, 0.5, 0.16, 0)
+end
+intro.line:ClearAllPoints()
+intro.line:SetPoint("TOPRIGHT", intro, "TOP", 0, -46)
+intro.subtitle = Label(intro, 13, PALE)
+intro.subtitle:SetPoint("TOP", 0, -56)
+intro.subtitle:SetText("The Ring of Law burns. Hold as long as you can.")
+local INTRO_IN, INTRO_HOLD, INTRO_OUT = 0.6, 3.6, 1.2
+intro:SetScript("OnUpdate", function(self)
+    local t = GetTime() - (self.started or 0)
+    local alpha = t < INTRO_IN and t / INTRO_IN or t < INTRO_IN + INTRO_HOLD and 1
+        or 1 - (t - INTRO_IN - INTRO_HOLD) / INTRO_OUT
+    if alpha <= 0 then
+        self:Hide()
+    else
+        self:SetAlpha(alpha)
+    end
+end)
+
+local function ShowIntro()
+    intro.started = GetTime()
+    intro:SetAlpha(0)
+    intro:Show()
+end
 
 -- The recap ------------------------------------------------------------------------------------------------------
 -- When the run ends: the run in big numbers along the top, who stood out, then a row a Hero (sortable by any
@@ -1012,6 +1061,8 @@ local function OnMessage(message)
         ShowHud(fields)
     elseif kind == "A" then
         HudNews(fields[2] or "", fields[3] == "1")
+    elseif kind == "INTRO" then
+        ShowIntro()
     elseif kind == "RUN" then
         pending = { reached = tonumber(fields[2]) or 0, seconds = tonumber(fields[3]) or 0,
             size = tonumber(fields[4]) or 1, kills = tonumber(fields[5]) or 0, health = tonumber(fields[6]) or 100,
@@ -1059,6 +1110,7 @@ SlashCmdList.EMBERFORGEFIREPIT = function()
 end
 
 -- For the tests.
-EmberforgeFirepitDebug = { hud = hud, results = results, rows = rows, headers = headers, OnMessage = OnMessage,
+EmberforgeFirepitDebug = { intro = intro, hud = hud, results = results, rows = rows, headers = headers,
+    OnMessage = OnMessage,
     Run = function() return run end, finder = finder, members = members, records = records,
     queueButton = queueButton, start = start, startPrev = startPrev, startNext = startNext }

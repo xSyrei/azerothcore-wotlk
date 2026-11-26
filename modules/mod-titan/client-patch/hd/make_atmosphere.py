@@ -13,7 +13,11 @@
 Bands are per LightParams: LightIntBand id = params * 18 - 17 + band, LightFloatBand id = params * 6 - 5 + band; each
 holds up to 16 (time of day, value) keys.
 
-Usage: python3 make_atmosphere.py <dir with original DBCs (LightParams, LightIntBand, LightFloatBand)>
+- The Firepit's own light (Blackrock Depths' Ring of Law, map 230: the dungeon has none of its own, so the global
+  default's dim grey filled it): a Light there (FIREPIT_AT, FIREPIT_REACH) with its own LightParams and bands, all day
+  the same: warm ambient and diffuse light, an ember fog that starts near and thickens to orange, a red cavern sky.
+
+Usage: python3 make_atmosphere.py <dir with original DBCs (Light, LightParams, LightIntBand, LightFloatBand)>
 """
 
 import struct
@@ -38,6 +42,18 @@ TEAL_SHALLOW, TEAL_DEEP = (70, 136, 124), (20, 72, 74)
 TEAL_SHARE = 0.25      # (0.45 was bright: the reflections show on darker water)
 
 BAND_SKY_LOW, BAND_HORIZON = 5, 6
+
+# The Firepit's light: the ring's centre (world x, y, z), where it is whole and where it is gone (yards).
+FIREPIT_MAP, FIREPIT_AT, FIREPIT_REACH = 230, (596.48, -187.91, -54.14), (60.0, 95.0)
+FIREPIT_TEMPLATE_PARAMS = 12            # the global default's clear-weather params: the rest of its bands kept
+FIREPIT_COLOURS = {                     # LightIntBand band: colour (all day)
+    0: (138, 72, 46),                   # ambient: warm, so faces and armour read
+    1: (255, 156, 92),                  # diffuse
+    2: (46, 12, 6), 3: (72, 20, 8), 4: (104, 30, 10), 5: (140, 44, 14), 6: (176, 62, 18),   # the sky, red to ember
+    7: (150, 52, 18),                   # fog: ember
+    9: (255, 178, 104), 10: (255, 120, 50),     # sun and its halo (where the sky shows)
+}
+FIREPIT_FOG_END, FIREPIT_FOG_START = 160.0 * 36, 0.2    # the fog's end (yards x 36) and where it starts (its share)
 WATER_BANDS = {14: BAND_HORIZON, 15: BAND_SKY_LOW, 16: BAND_HORIZON, 17: BAND_SKY_LOW}
 
 
@@ -141,16 +157,78 @@ def int_bands(source):
     return bytes(dbc.data)
 
 
+def appended(data, rows):
+    """A DBC with rows added at its end (before its strings): the count raised."""
+    data = bytearray(data)
+    count, fields, size, strings = struct.unpack_from('<4I', data, 4)
+    body = data[20:20 + count * size]
+    for row in rows:
+        assert len(row) == size
+        body += row
+    struct.pack_into('<I', data, 4, count + len(rows))
+    return bytes(data[:20] + body + data[20 + count * size:])
+
+
+def firepit_light(source, params_data, int_data, float_data):
+    """The Firepit's Light, its LightParams (a copy of the default's, a new id past every band's) and their bands."""
+    light = Dbc(Path(source, 'Light.dbc'))
+    params, ints, floats = Dbc.__new__(Dbc), Dbc.__new__(Dbc), Dbc.__new__(Dbc)
+    for dbc, data in ((params, params_data), (ints, int_data), (floats, float_data)):
+        dbc.data = bytearray(data)
+        dbc.count, dbc.fields, dbc.size, _ = struct.unpack_from('<4I', dbc.data, 4)
+    ids = lambda dbc: [struct.unpack_from('<I', dbc.data, o)[0] for o in dbc.rows()]
+    new_params = max(max(ids(params)), -(-max(ids(ints)) // 18), -(-max(ids(floats)) // 6)) + 1
+    template = next(o for o in params.rows() if struct.unpack_from('<I', params.data, o)[0] == FIREPIT_TEMPLATE_PARAMS)
+    params_row = bytearray(params.data[template:template + params.size])
+    struct.pack_into('<I', params_row, 0, new_params)
+
+    old_ints, old_floats = bands(ints, 'I'), bands(floats, 'f')
+    int_rows, float_rows = [], []
+    for band in range(18):
+        source_band = old_ints[FIREPIT_TEMPLATE_PARAMS * 18 - 17 + band]
+        row = bytearray(ints.data[source_band[0]:source_band[0] + ints.size])
+        struct.pack_into('<I', row, 0, new_params * 18 - 17 + band)
+        if band in FIREPIT_COLOURS:
+            struct.pack_into('<I', row, 4, 1)
+            struct.pack_into('<16I', row, 8, *([0] * 16))
+            struct.pack_into('<16I', row, 72, *([pack(FIREPIT_COLOURS[band])] * 16))
+        int_rows.append(bytes(row))
+    for band in range(6):
+        source_band = old_floats[FIREPIT_TEMPLATE_PARAMS * 6 - 5 + band]
+        row = bytearray(floats.data[source_band[0]:source_band[0] + floats.size])
+        struct.pack_into('<I', row, 0, new_params * 6 - 5 + band)
+        if band in (0, 1):
+            struct.pack_into('<I', row, 4, 1)
+            struct.pack_into('<16I', row, 8, *([0] * 16))
+            struct.pack_into('<16f', row, 72, *([FIREPIT_FOG_END if band == 0 else FIREPIT_FOG_START] * 16))
+        float_rows.append(bytes(row))
+
+    # Light: id, map, position (x = 17066.666 - world y, y = world z, z = 17066.666 - world x; all x 36), falloff
+    # start and end (x 36), then its params: clear, clear underwater, storm, storm underwater, death, unused.
+    light_ids = [struct.unpack_from('<I', light.data, o)[0] for o in light.rows()]
+    wx, wy, wz = FIREPIT_AT
+    default = light.data[light.rows()[0] + 28:light.rows()[0] + 60]
+    underwater, _, storm_underwater, death = struct.unpack_from('<4I', default, 4)
+    light_row = struct.pack('<2I5f8I', max(light_ids) + 1, FIREPIT_MAP, (17066.666 - wy) * 36, wz * 36,
+                            (17066.666 - wx) * 36, FIREPIT_REACH[0] * 36, FIREPIT_REACH[1] * 36, new_params,
+                            underwater, new_params, storm_underwater, death, 0, 0, 0)
+    return (appended(bytes(light.data), [light_row]), appended(bytes(params.data), [bytes(params_row)]),
+            appended(bytes(ints.data), int_rows), appended(bytes(floats.data), float_rows), new_params)
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     source = sys.argv[1]
     floats, fogs = float_bands(source)
+    light, params, ints, floats, firepit = firepit_light(source, light_params(source), int_bands(source), floats)
     entries = [
-        ('DBFilesClient\\LightParams.dbc', light_params(source)),
+        ('DBFilesClient\\Light.dbc', light),
+        ('DBFilesClient\\LightParams.dbc', params),
         ('DBFilesClient\\LightFloatBand.dbc', floats),
-        ('DBFilesClient\\LightIntBand.dbc', int_bands(source)),
+        ('DBFilesClient\\LightIntBand.dbc', ints),
     ]
+    print(f'The Firepit\'s light: LightParams {firepit}')
     OUT.write_bytes(make_mpq.build(entries))
     print(f'Wrote {OUT} (fog pulled in for {fogs} outdoor lights, {OUT.stat().st_size / 2 ** 20:.1f} MB)')
 
