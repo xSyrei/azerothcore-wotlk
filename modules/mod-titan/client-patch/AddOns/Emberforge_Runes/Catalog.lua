@@ -2243,15 +2243,15 @@ EmberforgeRunesCatalog = {
       resource = "What the bulwark absorbed, for 14 sec",
       core = "Shield Block raises an Iron Bulwark before you for 14 sec, absorbing up to 15% of your maximum health " ..
           "from attacks in front of you. Shield Slam in that time releases an Iron impact once: 20% of Shield " ..
-          "Slam's hit plus half of what the bulwark absorbed (that part at most half your attack power), to up to 5 " ..
-          "enemies in a cone before you; the bulwark stays. In the bulwark, Revenge makes the impact 20% stronger, " ..
-          "Thunder Clap makes it a full circle, and Devastate makes it 15% stronger.",
+          "Slam's hit plus half of what the bulwark absorbed (that part at most half your attack power), to every " ..
+          "enemy within 8 yards of you, no limit; the bulwark stays. In the bulwark, Revenge makes the impact 20% " ..
+          "stronger, Thunder Clap makes it reach 10 yards, and Devastate makes it 15% stronger.",
       loop = "Shield Block into the hits, Revenge and Thunder Clap while it holds, then Shield Slam to release it.",
       mods = {
         { name = "Crushing Reprisal",
           text = "The Iron impact deals 30% more damage." },
         { name = "Wide Reckoning",
-          text = "The Iron impact hits up to 8 enemies." },
+          text = "The Iron impact deals 30% more damage to every enemy past its first." },
         { name = "Immovable",
           text = "The impact is released when the bulwark ends instead of on Shield Slam, for 125%; Shield Slam in " ..
               "the bulwark still adds its share." },
@@ -2263,7 +2263,7 @@ EmberforgeRunesCatalog = {
         { name = "Retaliation",
           text = "Revenge makes the impact 40% stronger instead of 20%." },
         { name = "Shaking Ground",
-          text = "After Thunder Clap, the impact's circle reaches 12 yards." },
+          text = "After Thunder Clap, the impact reaches 12 yards." },
         { name = "Sundering Force",
           text = "Devastate makes the impact 30% stronger instead of 15%." },
         { name = "Vengeful Devastation",

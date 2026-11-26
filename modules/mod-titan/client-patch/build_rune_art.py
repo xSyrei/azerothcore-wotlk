@@ -2084,13 +2084,13 @@ BUILT.update({
         'asks': ['How the impact lands', 'What makes it stronger', 'What the bulwark gives you'],
         'texts': [
             'The Iron impact deals 30% more damage.',
-            'The Iron impact hits up to 8 enemies.',
+            'The Iron impact deals 30% more to every enemy past its first.',
             'The impact is released when the bulwark ends instead of on Shield Slam, for 125%; Shield Slam in the '
             'bulwark still adds its share.',
             'Shockwave in the bulwark releases the impact once more, for 60%.',
             'Concussion Blow in the bulwark makes the impact also deal 25% of your attack power to its first target.',
             'Revenge makes the impact 40% stronger instead of 20%.',
-            "After Thunder Clap, the impact's circle reaches 12 yards.",
+            "After Thunder Clap, the impact reaches 12 yards.",
             'Devastate makes the impact 30% stronger instead of 15%.',
             'Devastate in the bulwark also makes your next Revenge deal 20% more.',
             'The impact on your Rend target also makes it bleed for 30% of the impact over 6 sec.',

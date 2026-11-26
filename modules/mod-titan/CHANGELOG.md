@@ -22,7 +22,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - The windows you build up in last **10 seconds longer**: the Iron Bulwark (14 sec), Ursoc's Guard (16), the
   Thunderfield (16, 19 with Lingering Thunder), the Wellspring (18, 22 with Lasting Spring), Northwind (18), Sunlight
   and Moonlight (18, 22 with Long Twilight), Frozen Prey (16) and the Stormfront (16).
-- **Iron Reckoning**: a Shield Slam that kills its target now still releases the Iron impact.
+- **Iron Reckoning**: the Iron impact now hits **every enemy within 8 yards**, no target limit (it was 5 in a cone
+  before you); Thunder Clap in the bulwark makes it reach 10 yards (Shaking Ground 12). **Wide Reckoning** now makes it
+  deal 30% more to every enemy past its first. A Shield Slam that kills its target still releases the impact.
 
 ### Enemies have no resistances or immunities
 

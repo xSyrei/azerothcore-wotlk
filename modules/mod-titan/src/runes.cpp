@@ -1268,21 +1268,20 @@ namespace
 
     // Iron Reckoning's tuning: Shield Block raises a 14 sec Iron Bulwark in front of the Hero, absorbing up to 15% of
     // their maximum health. Shield Slam in it releases an Iron impact once: 20% of Shield Slam's hit plus half of what
-    // the bulwark absorbed (that part at most half their attack power), to up to 5 enemies in a cone before them (8
-    // yards); the bulwark stays. In the bulwark: Revenge makes the impact 20% stronger, Thunder Clap a full circle,
-    // Devastate 15% stronger (each once).
+    // the bulwark absorbed (that part at most half their attack power), to every enemy within 8 yards (no limit); the
+    // bulwark stays. In the bulwark: Revenge makes the impact 20% stronger, Thunder Clap reach 10 yards, Devastate
+    // 15% stronger (each once).
     constexpr float IRON_BULWARK_PCT = 15.0f, IRON_SLAM_SHARE = 0.2f, IRON_ABSORBED_SHARE = 0.5f, IRON_AP_CAP = 0.5f;
-    constexpr float IRON_RANGE = 8.0f, IRON_REVENGE = 1.2f, IRON_DEVASTATE = 1.15f;
+    constexpr float IRON_RANGE = 8.0f, IRON_CLAP_RANGE = 10.0f, IRON_REVENGE = 1.2f, IRON_DEVASTATE = 1.15f;
     constexpr uint32 IRON_BULWARK_MS = 14000;
-    constexpr std::size_t IRON_TARGETS = 5;
-    // Its options: Crushing Reprisal (30% more), Wide Reckoning (up to 8), Immovable (released as the bulwark ends
-    // instead, 125%), Shockwave Reckoning (Shockwave in it releases it once more, 60%), Concussive Reckoning
-    // (Concussion Blow in it: its first target 25% of attack power more); Retaliation (Revenge 40%), Shaking Ground
-    // (Thunder Clap's circle 12 yards), Sundering Force (Devastate 30%), Vengeful Devastation (Devastate in it: the
-    // next Revenge 20% more), Rending Impact (their Rend target: 30% of it over 6 sec); Fortified Bulwark (20% more),
-    // Shielded Advance (Shield Slam: 20% faster and 3% of maximum health absorbed, 4 sec), Commanding Force (60% more
-    // threat), Last Bastion (Last Stand on them: 5% more of maximum health), Wall of Iron (the impact heals them 2% of
-    // maximum health, 5% under Shield Wall, 10 sec apart).
+    // Its options: Crushing Reprisal (30% more), Wide Reckoning (30% more to every enemy past the first), Immovable
+    // (released as the bulwark ends instead, 125%), Shockwave Reckoning (Shockwave in it releases it once more, 60%),
+    // Concussive Reckoning (Concussion Blow in it: its first target 25% of attack power more); Retaliation (Revenge
+    // 40%), Shaking Ground (after Thunder Clap, 12 yards), Sundering Force (Devastate 30%), Vengeful Devastation
+    // (Devastate in it: the next Revenge 20% more), Rending Impact (their Rend target: 30% of it over 6 sec); Fortified
+    // Bulwark (20% more), Shielded Advance (Shield Slam: 20% faster and 3% of maximum health absorbed, 4 sec),
+    // Commanding Force (60% more threat), Last Bastion (Last Stand on them: 5% more of maximum health), Wall of Iron
+    // (the impact heals them 2% of maximum health, 5% under Shield Wall, 10 sec apart).
     constexpr float CRUSHING_REPRISAL = 1.3f, IMMOVABLE_MORE = 1.25f, SHOCKWAVE_RECKONING = 0.6f, CONCUSSIVE_AP = 0.25f;
     constexpr float RETALIATION = 1.4f, SHAKING_GROUND_RANGE = 12.0f, SUNDERING_FORCE = 1.3f, VENGEFUL_REVENGE = 1.2f;
     constexpr float RENDING_IMPACT_SHARE = 0.3f, FORTIFIED_BULWARK = 1.2f, SHIELDED_ADVANCE_PCT = 3.0f;
@@ -1290,7 +1289,7 @@ namespace
     constexpr float WALL_OF_IRON_PCT = 2.0f, WALL_OF_IRON_WALL = 5.0f;
     constexpr int32 RENDING_IMPACT_MS = 6000, SHIELDED_ADVANCE_MS = 4000;
     constexpr uint32 WALL_OF_IRON_EVERY_MS = 10000;
-    constexpr std::size_t WIDE_RECKONING_TARGETS = 8;
+    constexpr float WIDE_RECKONING = 1.3f;
 
     // The Hollow Congregation's modifiers (its Extended Options, a redesign): slot (0 Congregation, 1 Sermon, 2
     // Command) x 5 + choice. The Sermon's first three are the ones it had; the other two slots are new (their picks
@@ -6562,7 +6561,7 @@ namespace
     }
 
     // The Iron impact: 20% of Shield Slam's hit (slamHit) plus half of what the bulwark absorbed (at most half their
-    // attack power), to up to 5 enemies in a cone before the Hero (8 yards), or all around after Thunder Clap.
+    // attack power), to every enemy around the Hero (8 yards; 10 after Thunder Clap, 12 with Shaking Ground).
     void IronImpact(Player* player, Unit* primary, float slamHit, float more)
     {
         State& state = StateOf(player);
@@ -6578,20 +6577,21 @@ namespace
             damage *= HasIronMarker(player, MOD_IRON_SUNDERING_FORCE) ? SUNDERING_FORCE : IRON_DEVASTATE;
         if (damage < 1.0f)
             return;
-        float range = state.IronCircle && HasIronMarker(player, MOD_IRON_SHAKING_GROUND) ? SHAKING_GROUND_RANGE
-            : IRON_RANGE;
-        std::size_t most = HasIronMarker(player, MOD_IRON_WIDE_RECKONING) ? WIDE_RECKONING_TARGETS : IRON_TARGETS;
+        float range = !state.IronCircle ? IRON_RANGE
+            : HasIronMarker(player, MOD_IRON_SHAKING_GROUND) ? SHAKING_GROUND_RANGE : IRON_CLAP_RANGE;
+        bool wide = HasIronMarker(player, MOD_IRON_WIDE_RECKONING);
         std::vector<Unit*> enemies;
         if (primary && primary->IsAlive() && player->IsValidAttackTarget(primary))
             enemies.push_back(primary);
         for (Unit* enemy : EnemiesAround(player, player, range))
-            if (enemies.size() < most && enemy != primary
-                && (state.IronCircle || player->HasInArc(float(M_PI) * 2.0f / 3.0f, enemy)))
+            if (enemy != primary)
                 enemies.push_back(enemy);
         float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
         for (Unit* enemy : enemies)
         {
             float hit = damage;
+            if (wide && enemy != enemies.front())
+                hit *= WIDE_RECKONING;
             if (enemy == enemies.front() && state.IronConcussive)
                 hit += ap * CONCUSSIVE_AP * SchoolBonus(player, SPELL_SCHOOL_MASK_NORMAL);
             Strike(player, enemy, SPELL_IRON_IMPACT, hit);
