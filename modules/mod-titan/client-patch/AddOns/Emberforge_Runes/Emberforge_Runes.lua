@@ -1662,6 +1662,10 @@ end
 function Enter()
     HideViews()
     Fade(chrome, true)
+    -- Below Rune II's level, Rune I (after a prestige the panel may still have been on Rune II).
+    if view.slot == 2 and state.level < state.second then
+        UseSlot(1)
+    end
     local both = state.level >= state.second or state.slots[2].rune ~= 0
     for n, tab in ipairs(chrome.runeTabs) do
         tab:SetOn(view.slot == n)
@@ -2001,6 +2005,11 @@ local function OnMessage(message)
         local key = state.spec .. ":" .. (open or 0)
         if state.prompt and open and not view.prompted[key] and not frame:IsShown() then
             view.slot = open
+        end
+        -- Below Rune II's level (a prestige brought them back to 1) the panel is on Rune I: Rune II's tab is hidden
+        -- there, and left on it they could choose nothing until level 30.
+        if view.slot == 2 and state.level < state.second then
+            view.slot = 1
         end
         UseSlot(view.slot)
         state.loaded = true

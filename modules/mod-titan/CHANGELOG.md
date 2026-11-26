@@ -42,6 +42,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - **Monster casters** no longer hit far harder than their swings: a non-boss monster's spell on you deals at most 3
   of its own swings (a tick at most 1). At level 15 in the Firepit they were hitting for 1,200-1,500 against 100.
 - **Horn of Winter** now lasts 30 minutes, as its tooltip says.
+- **After a prestige** the rune window opens on Rune I: left on Rune II, it showed a locked slot you could not leave
+  until level 30.
 - **Tundra Stalker** gives its own 3-15%: Magic Suppression's absorb bonus was being added to it.
 - **Call of the Elements** (and Ancestors, Spirits) works without a totem bar: each empty slot drops your best totem
   of its element (Strength of Earth, Searing, Healing Stream, Windfury, or their alternatives).
