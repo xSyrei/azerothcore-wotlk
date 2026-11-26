@@ -1269,10 +1269,10 @@ namespace
     // Iron Reckoning's tuning: Shield Block raises a 14 sec Iron Bulwark about the Hero, absorbing up to 15% of their
     // maximum health from every side (rune_power.cpp makes it 45%). Shield Slam takes 4 sec off Shield Block's
     // cooldown, Revenge 2, Devastate 1 (IRON_*_SOONER_MS), so it comes round. Each enemy the impact hits mends the Hero
-    // for 2% of their maximum health, 10% at most (IRON_MEND_*: 6% and 30% with rune_power.cpp's healing). Shield Slam in it releases an Iron impact once: 20% of Shield Slam's hit plus half of what
-    // the bulwark absorbed (that part at most half their attack power), to every enemy within 8 yards (no limit); the
-    // bulwark stays. In the bulwark: Revenge makes the impact 20% stronger, Thunder Clap reach 10 yards, Devastate
-    // 15% stronger (each once).
+    // for 2% of their maximum health, 10% at most (IRON_MEND_*: 6% and 30% with rune_power.cpp's healing). Shield Slam
+    // in it releases an Iron impact once: 20% of Shield Slam's hit plus half of what the bulwark absorbed (that part at
+    // most half their attack power), to every enemy within 8 yards (no limit); the bulwark stays. In the bulwark:
+    // Revenge makes the impact 20% stronger, Thunder Clap reach 10 yards, Devastate 15% stronger (each once).
     constexpr float IRON_BULWARK_PCT = 15.0f, IRON_SLAM_SHARE = 0.2f, IRON_ABSORBED_SHARE = 0.5f, IRON_AP_CAP = 0.5f;
     constexpr float IRON_RANGE = 8.0f, IRON_CLAP_RANGE = 10.0f, IRON_REVENGE = 1.2f, IRON_DEVASTATE = 1.15f;
     constexpr uint32 IRON_BULWARK_MS = 14000;
