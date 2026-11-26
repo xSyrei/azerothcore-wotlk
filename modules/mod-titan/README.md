@@ -1035,8 +1035,8 @@ replaced mod-autobalance):
   for 5 players, whoever comes. It follows the lowest level as players level up too (creatures out of combat).
 - **Each player sees the creatures at their own level**: their level, health and maximum health are patched per
   receiver (`OnPatchValuesUpdate`): the level the player meets them at, and the health their damage takes to empty
-  (a level 60 with a level 25 sees level 60 creatures with a level 60's health). Sent again when someone levels.
-  Combat text still shows the damage actually dealt (smaller than the health bar's drop for the higher player).
+  (a level 60 with a level 25 sees level 60 creatures with a level 60's health). Sent again when someone levels. In
+  a group of one level, the health they see is the creature's own.
 - **Boss mechanics players deal each other** (a spell they don't know: Krystallus' Shatter, cast by each stoned
   player on those around) scale from the dungeon's level (its Dungeon Finder target level) to the one hit's, with the
   ease. Triggers and creatures more than 10 levels from the dungeon's level (invisible stalkers, often level 1 or 80)
@@ -1045,15 +1045,20 @@ replaced mod-autobalance):
   and spells alike: each expansion tuned its own `DamageModifier` (dungeon elites: Classic's about 4.6, Wrath's 7.5 to
   15), so a level 20 pack of Wrath trash hit for hundreds.
 - **Every player meets the creatures at their own level**: a creature counts as at the player's level, with its offset
-  from the group's lowest. The damage a player (and their pets) deals is scaled by the creature's health at its level
-  over its health at that one, the damage they take by its damage there over its own (`creature_classlevelstats`, its
+  from the group's lowest. The damage a player above the group's lowest (and their pets) deals is scaled by the
+  creature's health at its level over its health at theirs, and the group's level's health factors over theirs, the damage they take by its damage there over its own (`creature_classlevelstats`, its
   class): a level 45 with a level 12 deals about 16% and takes about 4 times as much, as against level 45 creatures.
   Heals between players of different levels go by their health the same way.
-- **Easier the lower the Hero**: at level 10 (and below) creatures have half their health (the Hero's damage doubled)
-  and deal 75% of their damage, evenly up to the intended difficulty at level 60. Heroics are level 60: as intended.
+- **Easier the lower the group**: at level 10 (and below) creatures have half their health and deal 75% of their
+  damage, evenly up to the intended difficulty at level 60. Heroics are level 60: as intended.
 - **Twice the health** throughout (`HEALTH_PASS` 2): on top of the above, every scaled creature has double its
-  health (the damage Heroes deal halved, the health they see doubled): level 10 creatures have their whole health,
-  level 60 ones twice it.
+  health: level 10 creatures have their whole health, level 60 ones twice it.
+- **Health is health, never less damage**: every health factor (the ease, `HEALTH_PASS`, a Firepit wave's and group
+  size's) is put on the creature's real health (`DungeonScaling::ApplyHealth`, at the group's lowest level, after the
+  core sets its level's stats; the Firepit again once it sets a creature's wave). A Hero's damage is never lowered
+  to make a creature harder: in a group of one level they deal and see their real numbers (it was once their damage
+  divided instead, which showed them a fraction of it). Only a Hero above the group's lowest level has theirs matched
+  to the level they meet the creature at.
 - **65% more damage** throughout (`DAMAGE_PASS` 1.65): every scaled creature's damage to Heroes, and boss
   mechanics between players.
 - **Bosses: 4.5 times the health again** (`BOSS_HEALTH_PASS`, +350%): a level 60 boss has 9 times its health.

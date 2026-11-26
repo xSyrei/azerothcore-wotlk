@@ -34,6 +34,13 @@ namespace Firepit
     bool IsBoss(Creature const* creature);
 }
 
+namespace DungeonScaling
+{
+    // A scaled dungeon creature's health: its level's times the dungeon's factors (dungeon_scaling.cpp). The Firepit
+    // calls it again once a creature's wave multiplier is set.
+    void ApplyHealth(Creature* creature);
+}
+
 namespace DungeonLoot
 {
     // A random dungeon piece of the quality (a rare's if none) as its copy at the level: its item entry, 0 if none.

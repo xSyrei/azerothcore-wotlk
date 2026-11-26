@@ -1034,6 +1034,7 @@ private:
         enemy->SetFaction(ENEMY_FACTION);
         enemy->SetReactState(REACT_AGGRESSIVE);
         enemy->SetHomePosition(CENTER);
+        DungeonScaling::ApplyHealth(enemy);         // its health with its wave's multiplier, now it has one
         enemy->SetFullHealth();
         for (uint16 index : { UNIT_FIELD_HEALTH, UNIT_FIELD_MAXHEALTH })
             enemy->ForceValuesUpdateAtIndex(index);

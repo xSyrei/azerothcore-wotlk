@@ -40,14 +40,18 @@
 // (damage, healing, their own buffs' damage: Lightning Shield) carry their native level's amounts, so are scaled by
 // the class damage (healing: health) at the level they are at over the native one. Then, for every player in a
 // 5-player dungeon:
-// - the creature is as if at the player's own level (the same offset from the group's lowest level): the damage the
-//   player and their pets deal is scaled by the creature's health at its level over its health at that one, and the
-//   damage they take by the creature's damage there over its own (creature_classlevelstats, its class), so a level
-//   45 Hero with a level 12 meets the level 12's creatures as level 45 ones;
+// - the creature is as if at the player's own level (the same offset from the group's lowest level): in a group of
+//   one level that is the level it is at, and nothing changes; a Hero above the group's lowest sees it at theirs, the
+//   damage they and their pets deal matched to it (the creature's health at its level over its health at theirs,
+//   and their level's factors over the group's) and the damage they take by the creature's damage there over its own
+//   (creature_classlevelstats, its class), so a level 45 Hero with a level 12 meets the level 12's creatures as level
+//   45 ones;
 // - healing between players of different levels by their health the same way (a level 45's heal on a level 12);
-// - easier the lower the Hero: at level 10 creatures have half their health (the Hero's damage doubled) and deal
+// - easier the lower the group: at level 10 creatures have half their health and deal
 //   75% of their damage, evenly up to the intended difficulty at the level cap (heroics: always);
-// - and twice the health throughout (HEALTH_PASS): the damage the Hero deals halved, the health they see doubled;
+// - and twice the health throughout (HEALTH_PASS). Every health factor (the ease, HEALTH_PASS, a Firepit wave's) is the
+//   creature's own, real health (ApplyHealth, at the group's lowest level): players' damage is never lowered to make
+//   a creature harder, so what they see dealt is what they deal;
 //   their damage 65% more (DAMAGE_PASS); a boss's (and what it summons') damage 125% more on a tank, 15% less on
 //   anyone else (BOSS_DAMAGE_TANK, BOSS_DAMAGE_OTHERS: a boss mechanic a player deals to those around them, a
 //   tank's included, the latter);
@@ -119,6 +123,9 @@ namespace
     {
         return HealthFactor(level) * Firepit::HealthMultiplier(creature);
     }
+
+    uint8 TargetLevel(Map* map);
+    bool IsDungeonCreature(Creature const* creature);
 
     // A dungeon boss: flagged so (an encounter of the dungeon's, instance_encounters), a boss by rank, or one by its
     // script (boss_*: the optional bosses no encounter names, Rhahk'Zor's kin).
@@ -361,7 +368,11 @@ namespace
                 float own = Health(enemy->GetLevel(), info->unit_class, info->expansion);
                 float there = Health(at, info->unit_class, info->expansion);
                 float scale = there > 0.0f ? own / there : 1.0f;
-                return scale / HealthFactorOf(enemy, player->GetLevel());
+                // The creature's own health carries the dungeon's factors (ApplyHealth, at the group's level): the
+                // Hero's damage is never lowered for them, only matched to their level against the group's (1 in a
+                // group of one level).
+                uint8 target = TargetLevel(enemy->GetMap());
+                return scale * (target ? HealthFactor(target) / HealthFactor(player->GetLevel()) : 1.0f);
             }
 
         if (Creature* enemy = EnemyOf(attacker))
@@ -406,7 +417,9 @@ namespace
         uint8 at = LevelFor(creature, viewer->GetLevel(), TargetLevel(creature->GetMap()));
         float own = Health(creature->GetLevel(), info->unit_class, info->expansion);
         float there = Health(at, info->unit_class, info->expansion);
-        float factor = own > 0.0f ? there / own * HealthFactorOf(creature, viewer->GetLevel()) : 1.0f;
+        uint8 target = TargetLevel(creature->GetMap());
+        float factor = own > 0.0f ? there / own * (target ? HealthFactor(viewer->GetLevel()) / HealthFactor(target)
+            : 1.0f) : 1.0f;
         return { at, factor };
     }
 
@@ -598,11 +611,38 @@ public:
     }
 };
 
-// A dungeon creature's level as it spawns or respawns (the core then gives it that level's stats).
+// A scaled dungeon's creature's health: its level's (the core's, SelectLevel: its create health) times the dungeon's
+// factors at the group's level (HealthFactorOf: the ease, HEALTH_PASS, a Firepit wave's). The health is the
+// creature's own, so players see their real damage on it (it was once their damage lowered instead).
+void DungeonScaling::ApplyHealth(Creature* creature)
+{
+    Map* map = creature ? creature->GetMap() : nullptr;
+    if (!IsScaled(map) || !IsDungeonCreature(creature))
+        return;
+    uint8 target = TargetLevel(map);
+    if (!target)
+        return;
+    bool full = creature->IsFullHealth();
+    float pct = creature->GetHealthPct();
+    float health = float(creature->GetCreateHealth()) * HealthFactorOf(creature, target);
+    creature->SetStatFlatModifier(UNIT_MOD_HEALTH, BASE_VALUE, std::max(1.0f, health));
+    creature->UpdateMaxHealth();
+    if (full)
+        creature->SetFullHealth();
+    else
+        creature->SetHealth(std::max<uint32>(1, uint32(creature->GetMaxHealth() * pct / 100.0f)));
+}
+
+// A dungeon creature's level as it spawns or respawns (the core then gives it that level's stats), then its health.
 class titan_dungeon_scaling_creature : public AllCreatureScript
 {
 public:
     titan_dungeon_scaling_creature() : AllCreatureScript("titan_dungeon_scaling_creature") { }
+
+    void OnCreatureSelectLevel(CreatureTemplate const* /*cinfo*/, Creature* creature) override
+    {
+        DungeonScaling::ApplyHealth(creature);
+    }
 
     void OnBeforeCreatureSelectLevel(CreatureTemplate const* /*cinfo*/, Creature* creature, uint8& level) override
     {

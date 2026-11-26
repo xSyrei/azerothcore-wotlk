@@ -28,6 +28,11 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ### Damage fixes
 
+- **Your damage numbers are real now**: dungeons and the Firepit made monsters tougher by *dividing your damage*
+  (so a 400 Stormstrike showed as 100 and damage meters lied). Monsters now get the extra health themselves: you deal
+  and see your full damage, and their health bars are bigger to match. How fast things die is unchanged. (A Hero
+  above the group's lowest level is still matched down to it, as level sync does.)
+
 - **Molten Armor and other damage shields** were scaled as a monster's blow on you instead of your damage on them:
   in dungeons and the Firepit they hit far harder than everything you cast and topped your meter. They now scale
   like the rest of your damage.
