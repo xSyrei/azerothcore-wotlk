@@ -3509,6 +3509,9 @@ enum DiminishingGroup
     DIMINISHING_TAUNT               = 18,
     DIMINISHING_LIMITONLY           = 19,
     DIMINISHING_DRAGONS_BREATH      = 20,
+    // Project Emberforge: every loss of control a creature lands on a player (stuns, fears, sleeps, silences,
+    // polymorphs, horrors ...) shares this one (Spell::DoSpellHitOnUnit), so a pack cannot chain them.
+    DIMINISHING_CREATURE_CONTROL    = 21,
 };
 
 enum SummonCategory

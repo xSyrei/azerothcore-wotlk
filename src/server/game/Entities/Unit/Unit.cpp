@@ -11439,6 +11439,11 @@ float Unit::ApplyDiminishingToDuration(DiminishingGroup group, int32& duration, 
     if (duration == -1 || group == DIMINISHING_NONE)
         return 1.0f;
 
+    // Project Emberforge: a creature's loss of control on a player lasts 6 sec at most.
+    static constexpr int32 CREATURE_CONTROL_MOST_MS = 6000;
+    if (group == DIMINISHING_CREATURE_CONTROL && duration > CREATURE_CONTROL_MOST_MS)
+        duration = CREATURE_CONTROL_MOST_MS;
+
     // test pet/charm masters instead pets/charmeds
     Unit const* targetOwner = GetOwner();
     Unit const* casterOwner = caster->GetOwner();
@@ -11510,6 +11515,16 @@ float Unit::ApplyDiminishingToDuration(DiminishingGroup group, int32& duration, 
 
     duration = int32(duration * mod);
     return mod;
+}
+
+bool Unit::HasCreatureControlResolve() const
+{
+    static constexpr uint32 CREATURE_CONTROL_RESOLVE_MS = 3000;
+    for (DiminishingReturn const& dr : m_Diminishing)
+        if (dr.DRGroup == DIMINISHING_CREATURE_CONTROL)
+            return !dr.stack && dr.hitTime
+                && getMSTimeDiff(dr.hitTime, GameTime::GetGameTimeMS().count()) < CREATURE_CONTROL_RESOLVE_MS;
+    return false;
 }
 
 void Unit::ApplyDiminishingAura(DiminishingGroup group, bool apply)

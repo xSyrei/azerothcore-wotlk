@@ -1176,6 +1176,11 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   same file). A teleport in refused for the player's state (in combat as the group formed, dead, falling) is tried
   again every 2 sec for 2 min; back in a dungeon finder group after a relog or a restart, the client is told again
   (its eye offers the teleport in: `LFGScripts.cpp`), and such a group may walk into any dungeon (`MapMgr.cpp`).
+- `DIMINISHING_CREATURE_CONTROL` (`SharedDefines.h`, `Spell::DoSpellHitOnUnit`): control a creature lands on a
+  player (or their pet) diminishes, which the game's did not: every loss of control (stun, fear, sleep, silence,
+  disorient, horror, charm, banish, cyclone ...) shares this group (100%, 50%, 25%, then immune until 15 sec after the
+  last ends), roots and disarms their own groups; 6 sec at most (`ApplyDiminishingToDuration`); and for 3 sec after
+  one ends, Resolve (`Unit::HasCreatureControlResolve`): no other lands. A world boss's are left as they were.
 - `Unit::HasNeutralizedDefenses` (`Unit.h`): a creature no player controls has no resistances and no immunities. It
   resists nothing (`GetEffectiveResistChance` 0: no partial or binary resists; no mechanic or debuff resist chance in
   `MagicSpellHitResult`), keeps no immunity it is given (`ApplySpellImmune`: its template's `creature_immunities`,

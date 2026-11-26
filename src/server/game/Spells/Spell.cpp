@@ -3200,7 +3200,42 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool scaleA
     // xinef: do not increase diminish level for bosses (eg. Void Reaver silence is never diminished)
     if (((m_spellFlags & SPELL_FLAG_REFLECTED) && !(unit->HasReflectSpellsAura())) || (aura_effmask && m_diminishGroup && unit != m_caster && (!unitCaster || !unitCaster->IsCreature() || !unitCaster->ToCreature()->isWorldBoss())))
     {
+        // Project Emberforge: control a creature lands on a player diminishes too (the game's only counted a
+        // player's): every loss of control shares one group (DIMINISHING_CREATURE_CONTROL: 100%, 50%, 25%, then
+        // immune until 15 sec after the last ends; 6 sec at most), roots and disarms their own; and for a moment
+        // after one ends (Resolve) no other lands.
+        Unit* controlSource = m_originalCaster ? m_originalCaster : unitCaster;
+        bool const creatureOnPlayer = controlSource && !controlSource->IsCharmedOwnedByPlayerOrPlayer()
+            && unit->IsCharmedOwnedByPlayerOrPlayer();
+        if (creatureOnPlayer)
+        {
+            switch (m_diminishGroup)
+            {
+                case DIMINISHING_BANISH:
+                case DIMINISHING_CHARGE:
+                case DIMINISHING_OPENING_STUN:
+                case DIMINISHING_CONTROLLED_STUN:
+                case DIMINISHING_CYCLONE:
+                case DIMINISHING_DISORIENT:
+                case DIMINISHING_FEAR:
+                case DIMINISHING_HORROR:
+                case DIMINISHING_MIND_CONTROL:
+                case DIMINISHING_STUN:
+                case DIMINISHING_SCATTER_SHOT:
+                case DIMINISHING_SILENCE:
+                case DIMINISHING_SLEEP:
+                case DIMINISHING_DRAGONS_BREATH:
+                    m_diminishGroup = DIMINISHING_CREATURE_CONTROL;
+                    break;
+                default:
+                    break;
+            }
+        }
         m_diminishLevel = unit->GetDiminishing(m_diminishGroup);
+        bool const resolve = creatureOnPlayer && m_diminishGroup == DIMINISHING_CREATURE_CONTROL
+            && unit->HasCreatureControlResolve();
+        if (resolve)
+            m_diminishLevel = DIMINISHING_LEVEL_IMMUNE;
         DiminishingReturnsType type = GetDiminishingReturnsGroupType(m_diminishGroup);
 
         uint32 flagsExtra = unit->IsCreature() ? unit->ToCreature()->GetCreatureTemplate()->flags_extra : 0;
@@ -3212,7 +3247,7 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool scaleA
             // Do not apply diminish return if caster is NPC
             // resolve through the original caster - the direct caster can be a gameobject (e.g. hunter traps)
             Unit* diminishSource = m_originalCaster ? m_originalCaster : unitCaster;
-            if (diminishSource && diminishSource->IsCharmedOwnedByPlayerOrPlayer())
+            if (diminishSource && (diminishSource->IsCharmedOwnedByPlayerOrPlayer() || creatureOnPlayer) && !resolve)
             {
                 unit->IncrDiminishing(m_diminishGroup);
             }

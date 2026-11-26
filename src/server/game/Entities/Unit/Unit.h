@@ -1874,6 +1874,9 @@ public:
     void IncrDiminishing(DiminishingGroup group);
     float ApplyDiminishingToDuration(DiminishingGroup group, int32& duration, Unit* caster, DiminishingLevels Level, int32 limitduration);
     void ApplyDiminishingAura(DiminishingGroup group, bool apply);
+    // Project Emberforge: a creature's loss of control on this player ended moments ago (CREATURE_CONTROL_RESOLVE_MS):
+    // no other may land yet.
+    [[nodiscard]] bool HasCreatureControlResolve() const;
     void ClearDiminishings() { m_Diminishing.clear(); }
 
     // Group methods

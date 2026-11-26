@@ -26,6 +26,14 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   before you); Thunder Clap in the bulwark makes it reach 10 yards (Shaking Ground 12). **Wide Reckoning** now makes it
   deal 30% more to every enemy past its first. A Shield Slam that kills its target still releases the impact.
 
+### No more chain crowd control from monsters
+
+- **Diminishing returns now apply to monsters' crowd control on you.** Every stun, fear, sleep, silence, polymorph,
+  horror and the like a monster lands shares one diminishing returns: full length, then half, then a quarter, then
+  you are immune until 15 sec after the last one ended. Roots and disarms diminish on their own.
+- **Resolve**: for 3 sec after a monster's crowd control on you ends, no other can land.
+- A monster's crowd control lasts **6 sec at most**. Raid bosses' are unchanged.
+
 ### Echoing Thunder: a field you can see through
 
 - The **Thunderfield** is now faint: its cracks, ring of lightning and bolts are about a third as opaque, its pulse
