@@ -62,8 +62,7 @@
 //   the Firepit's own: the map has no creatures of its own (any that load are sent away), and it runs the waves.
 // - Waves every 60 sec, or 5 sec after the last enemy dies. Wave n has 3 + n/2 enemies (20% more for each player
 //   past the first), from the Depths' roster (a new kind every wave or two); every 5th wave brings a boss (two from
-//   wave 60, three from 120). Survivors stay: they pile up. Past 150 alive, new ones are not spawned; every enemy
-//   left grows 3% instead.
+//   wave 60, three from 120). Survivors stay: they pile up. Past 150 alive, new ones are not spawned.
 // - Creatures are at the group's level (dungeon_scaling.cpp), then their health and damage are 35% of a dungeon's at
 //   wave 1, 10% more each wave (compounding), health 40% more for each player past the first.
 // - The dead stay down (no release: they stay where they fell); a battle resurrection brings them back. The last
@@ -139,7 +138,6 @@ namespace
     constexpr uint32 TICK_MS = 1000, END_DELAY_MS = 4000, CORPSE_MS = 3000;
     constexpr float FIRST_WAVE = 0.35f, WAVE_GROWTH = 1.1f, GROUP_HEALTH = 0.4f, GROUP_COUNT = 0.2f;
     constexpr uint32 BOSS_EVERY = 5, LOOT_EVERY = 15, MOST_ALIVE = 150;
-    constexpr float OVERFLOW_GROWTH = 1.03f;
     // A wave's boss: 4 times the health and 1.5 times the damage of the wave's others (unless the dungeon scaling
     // already counts it a boss: a boss_ script or a boss's rank, with its own health).
     constexpr float BOSS_HEALTH = 4.0f, BOSS_DAMAGE = 1.5f;
@@ -307,11 +305,12 @@ namespace
 
 // Fireforged gear (firepit_gear.h, tools/scaling/firepit_gear.py): each spoil made for the Hero who earned it. The
 // slot: one of their weakest (the lowest item levels worn, an empty slot lowest), among the slots their role uses. The
-// piece: the same kind as what is worn there (its armor type, its weapon kind), else their role's. Its item level:
-// what is worn there (at least a dungeon piece of their level's; an heirloom counts as one) plus FIREFORGED_MARGIN,
-// or FIREFORGED_SHARE of it if more, rounded up to a tier, but never past the cap their level and the run's depth
-// set (FIREFORGED_CAP_*): the spoils follow the Hero's level, not an endless climb on their own. Its stats: one of their role's stat mixes (a caster never strength, a fighter never
-// intellect). One spoil in TITANFORGED_IN is Titanforged: every stat doubled.
+// piece: the same kind as what is worn there (its armor type, its weapon kind), else their role's. Its item level: what
+// is worn there (at least a dungeon piece of their level's; an heirloom counts as one) plus FIREFORGED_MARGIN, or
+// FIREFORGED_SHARE of it if more, rounded up to a tier, but never past the cap their level and the run's depth set
+// (FIREFORGED_CAP_*): the spoils follow the Hero's level, not an endless climb on their own. Its stats: one of their
+// role's stat mixes (a caster never strength, a fighter never intellect). One spoil in TITANFORGED_IN is Titanforged:
+// every stat doubled.
 namespace
 {
     constexpr uint32 FIREFORGED_MARGIN = 9;             // item levels (three tiers)
@@ -1001,19 +1000,10 @@ private:
 
     void SpawnOne(Spawn const& spawn)
     {
+        // Too many alive: this one stays away (the field is full enough). They once grew 3% for each kept away,
+        // without end: a group behind was buried under ever stronger enemies.
         if (_enemies.size() >= MOST_ALIVE)
-        {
-            // Too many alive: the ones there grow instead.
-            _overflow *= OVERFLOW_GROWTH;
-            for (ObjectGuid const& guid : _enemies)
-                if (Creature* enemy = instance->GetCreature(guid))
-                    if (Enemy* own = enemy->CustomData.Get<Enemy>("titan_firepit"))
-                    {
-                        own->health *= OVERFLOW_GROWTH;
-                        own->damage *= OVERFLOW_GROWTH;
-                    }
             return;
-        }
         float angle = frand(0.0f, 2.0f * float(M_PI));
         float radius = frand(SPAWN_RADIUS_MIN, SPAWN_RADIUS_MAX);
         float x = CENTER.GetPositionX() + radius * std::cos(angle);
@@ -1023,7 +1013,7 @@ private:
         if (!enemy)
             return;
         Enemy* own = enemy->CustomData.GetDefault<Enemy>("titan_firepit");
-        float factor = WaveFactor(_wave) * _overflow;
+        float factor = WaveFactor(_wave);
         own->health = factor * (1.0f + GROUP_HEALTH * float(_groupSize - 1));
         own->damage = factor;
         own->wave = _wave;
@@ -1426,7 +1416,6 @@ private:
     Phase _phase = Phase::WAITING;
     uint32 _timer = 0, _wave = 0, _waveMs = 0, _tickMs = 0, _runMs = 0, _kills = 0;
     bool _breather = false;
-    float _overflow = 1.0f;
     std::unordered_map<ObjectGuid, BossState> _bosses;
     std::vector<Blast> _blasts;
     std::vector<ObjectGuid> _natives, _enemies;

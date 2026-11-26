@@ -1110,8 +1110,9 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   nothing unattackable), one a wave, the newest six in a wave; its first wave's news names it. Healers (by name: a
   Medic, a Priest ...) come one a wave at most, two alive at once at most (`IsHealer`). Every 5th wave is the bosses
   alone (`BOSSES`: the Ring of Law's six, then the Depths' own; two from wave 60, three from 120), with 4 times the
-  health and 1.5 times the damage. Survivors stay and pile up; past 150 alive, new spawns are skipped and every enemy
-  left grows 3% instead. Enemies that stray off the floor (past 52 yards, or up in the stands) are put back on its edge.
+  health and 1.5 times the damage. Survivors stay and pile up; past 150 alive, new spawns are skipped (the enemies left
+  no longer grow for each: that spiral buried a group behind). Enemies that stray off the floor (past 52 yards, or up in
+  the stands) are put back on its edge.
 - **Boss mechanics** from wave 15 (`MECHANICS_FROM`), each a share of the Hero's own health (it is about moving, not
   gear): **Molten Eruption** (15+, every 14 sec): a ring of flame under up to 3 Heroes, erupting 3 sec later, 30% to
   anyone within 6 yd (its source the invisible Molten Eruption, 910141). **Searing Nova** (30+, every 22 sec): the
@@ -1193,6 +1194,9 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   no longer adding to it.
 - `InstanceOverride::KeepsDurability` (`InstanceSaveMgr.h`, `Player::DurabilityPointsLoss`): a module's instance may
   spare gear wear: none in the Firepit (deaths and hits alike).
+- `Unit::DealDamageShieldDamage`: a damage shield's damage goes through the spell damage hook with the one hit as its
+  target and the shield's bearer as its attacker (it was the other way round: level scaling treated a Hero's Molten
+  Armor as a creature's blow on them).
 - `DIMINISHING_CREATURE_CONTROL` (`SharedDefines.h`, `Spell::DoSpellHitOnUnit`): control a creature lands on a
   player (or their pet) diminishes, which the game's did not: every loss of control (stun, fear, sleep, silence,
   disorient, horror, charm, banish, cyclone ...) shares this group (100%, 50%, 25%, then immune until 15 sec after the

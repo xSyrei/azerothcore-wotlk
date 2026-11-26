@@ -2172,8 +2172,11 @@ void Unit::DealDamageShieldDamage(Unit* victim)
         }
 
         // Scripts scale this damage as any other spell's (CalculateSpellDamageTaken's hook): level scaling modules.
+        // Project Emberforge: the hook's target is the one hit (victim, the attacker who struck the shield) and its
+        // attacker the shield's bearer (this): passed the other way round, a Hero's Molten Armor was scaled as a
+        // creature's blow on them (raised) instead of their own damage (lowered), and topped their damage.
         int32 shieldDamage = int32(damage);
-        sScriptMgr->ModifySpellDamageTaken(this, victim, shieldDamage, i_spellProto);
+        sScriptMgr->ModifySpellDamageTaken(victim, this, shieldDamage, i_spellProto);
         damage = uint32(std::max(0, shieldDamage));
 
         uint32 absorb = 0;

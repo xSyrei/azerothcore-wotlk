@@ -26,6 +26,14 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   before you); Thunder Clap in the bulwark makes it reach 10 yards (Shaking Ground 12). **Wide Reckoning** now makes it
   deal 30% more to every enemy past its first. A Shield Slam that kills its target still releases the impact.
 
+### Damage fixes
+
+- **Molten Armor and other damage shields** were scaled as a monster's blow on you instead of your damage on them:
+  in dungeons and the Firepit they hit far harder than everything you cast and topped your meter. They now scale
+  like the rest of your damage.
+- **The Firepit no longer buries you**: past 150 enemies alive, every enemy that could not spawn made all the others
+  3% stronger, without end. A group that fell behind met enemies with ten times the health. Now they simply wait.
+
 ### Firepit spoils, fairer
 
 - **One great chest**: at the end of a run a single, big chest stands by the pit; every Hero opens it for their own
