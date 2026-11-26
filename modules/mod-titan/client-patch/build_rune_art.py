@@ -317,32 +317,31 @@ BUILT = {
         ],
     },
     23: {
-        'core': '**Lightning Bolt** leaves **Conductive**; **Chain Lightning** on a Conductive enemy arcs 30% of that '
-                'bolt to another.',
+        'core': '**Chain Lightning**, **Earth Shock** and your **Lightning Shield** arc to other enemies, no mark '
+                'needed.',
         'slots': ['Conductor', 'Circuit', 'Shield'],
         'asks': ['What carries the charge', 'How the current arcs', 'What the shield adds'],
         'texts': [
-            'Conductive lasts 12 sec, and the first Chain Lightning arc on each one deals 15% more damage.',
-            'Lightning Bolt also leaves Conductive on one enemy within 10 yards of its target.',
-            'Lightning Shield retaliations deal 15% more damage and leave Conductive on the attacker. Not with Storm '
-            'Within.',
-            'Frostbolt leaves Conductive too, and deals 15% more to a Conductive enemy.',
-            'Lightning Bolt on your Flame Shock target also leaves Conductive on one enemy within 10 yards and makes '
+            'Your arcs deal 15% more damage.',
+            'Lightning Bolt arcs 30% of its damage to one enemy within 10 yards of its target.',
+            'Lightning Shield retaliations deal 15% more damage. Not with Storm Within.',
+            'Frostbolt deals 15% more damage.',
+            'Lightning Bolt on your Flame Shock target arcs 30% of its damage to one enemy within 10 yards and makes '
             'Flame Shock last 2 sec longer (up to 6 sec for each cast).',
             "Chain Lightning's arc strikes 2 other enemies for 65% each.",
-            "Chain Lightning's arc returns into the Conductive enemy for its whole damage.",
+            "Chain Lightning's arc returns into its target for its whole damage.",
             'Arcs reach 15 yards, and the first Chain Lightning arc every 8 sec deals 20% more damage.',
-            'Lava Lash on a Conductive enemy arcs 25% of your attack power as Nature damage to another enemy (half '
-            'back into it if alone), once every 6 sec.',
-            'Starfire on a Conductive enemy arcs 25% of your spell power as Arcane damage to another enemy (half back '
-            'into it if alone), once every 8 sec.',
-            'Every 3 sec in combat, your Lightning Shield strikes the nearest Conductive enemy within 8 yards, '
-            'spending a charge. Not with Live Wire.',
+            'Lava Lash arcs 25% of your attack power as Nature damage to another enemy (half back into it if alone), '
+            'once every 6 sec.',
+            'Starfire arcs 25% of your spell power as Arcane damage to another enemy (half back into it if alone), '
+            'once every 8 sec.',
+            'Every 3 sec in combat, your Lightning Shield strikes the nearest enemy within 8 yards, spending a '
+            'charge. Not with Live Wire.',
             "Your Lightning Shield's arcs deal 40% more damage.",
             'Lightning Bolt also strikes its target with your Lightning Shield, spending a charge, once every 3 sec.',
             'Chain Heal makes your next Lightning Bolt within 6 sec deal 15% more damage.',
-            'Thunder Clap on a Conductive enemy deals 20% of your spell power as Nature damage to up to 5 enemies '
-            'within 8 yards of it, once every 8 sec.',
+            'Thunder Clap deals 20% of your spell power as Nature damage to up to 5 enemies within 8 yards of its '
+            'target, once every 8 sec.',
         ],
         'abilities': [
             '12 sec',

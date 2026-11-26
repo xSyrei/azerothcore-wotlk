@@ -22,7 +22,7 @@
 
 class Creature;
 
-// The Firepit (firepit.cpp): an endless wave arena in an instanced Ring of Law. Its creatures are scaled by
+// The Firepit (firepit.cpp): an endless wave arena on a map of its own. Its creatures are scaled by
 // dungeon_scaling.cpp like any dungeon's, then by their wave's multipliers.
 namespace Firepit
 {
@@ -30,6 +30,8 @@ namespace Firepit
     // any other creature.
     float HealthMultiplier(Creature const* creature);
     float DamageMultiplier(Creature const* creature);
+    // A Firepit boss (its spells are mechanics: dungeon_scaling.cpp leaves them uncapped).
+    bool IsBoss(Creature const* creature);
 }
 
 namespace DungeonLoot

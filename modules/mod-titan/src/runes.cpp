@@ -179,7 +179,7 @@ namespace
         SPELL_STORMBOUND_ARC_VISUAL     = 90753,    // its bolt, cast by the enemy it leaves
         SPELL_STORMBOUND_RETALIATION    = 90754,    // a Lightning Shield retaliation the rune makes
         SPELL_STORM_MODIFIER_FIRST      = 93225,    // + slot * 5 + choice (90760-90768 retired)
-        SPELL_CONDUCTIVE                = 93240,    // on an enemy: the Lightning Bolt hit's damage its amount
+        SPELL_CONDUCTIVE                = 93240,    // no longer laid (the Conduit needs no mark since)
         SPELL_STARBOUND_CIRCUIT         = 93241,
         SPELL_SHOCKING_SURGE            = 93242,
 
@@ -849,27 +849,25 @@ namespace
         MOD_STORM_WITHIN, MOD_VIOLENT_REPRISAL, MOD_DISTANT_CONDUCTOR, MOD_STORMS_EYE, MOD_SHOCKING_SURGE,
     };
 
-    // The Stormbound Conduit's tuning (its Extended Options, a redesign): Lightning Bolt (the Hero's own) leaves
-    // Conductive on its target for 6 sec, remembering the hit. Chain Lightning hitting a Conductive enemy sends one
-    // arc (once a cast) to another enemy within 10 yards for 30% of that Lightning Bolt hit; none: back into it for
-    // half. A Lightning Shield retaliation arcs to another Conductive enemy within 10 yards for 50% of it (3 sec
-    // apart); Earth Shock on a Conductive enemy arcs 20% of spell power to another (half into it alone; 8 sec apart).
-    // An arc never arcs again.
+    // The Stormbound Conduit's tuning (its Extended Options, a redesign; no Conductive mark to keep up since: every
+    // arc goes on any enemy). Chain Lightning sends one arc (once a cast) to another enemy within 10 yards for 30% of
+    // its hit; none: back into it for half. A Lightning Shield retaliation arcs to another enemy within 10 yards for
+    // 50% of it (3 sec apart); Earth Shock arcs 20% of spell power to another (half into it alone; 8 sec apart). An
+    // arc never arcs again.
     constexpr float ARC_RANGE = 10.0f, FARADAY_RANGE = 15.0f, CHAIN_ARC_SHARE = 0.3f, ALONE_SHARE = 0.5f;
     constexpr float SHIELD_ARC_SHARE = 0.5f, EARTH_ARC_POWER = 0.2f;
-    constexpr int32 CONDUCTIVE_MS = 6000, PERSISTENT_MS = 12000;
+    constexpr float BRANCH_SHARE = 0.3f;
     constexpr uint32 CHAIN_ARC_EVERY_MS = 1000, SHIELD_ARC_EVERY_MS = 3000, EARTH_ARC_EVERY_MS = 8000;
-    // Its options: Persistent Current (12 sec, an application's first arc 15% more), Branching Current (the bolt
-    // also on one enemy within 10 yards), Live Wire (retaliations 15% more, Conductive on the attacker; not with
-    // Storm Within), Icy Conductor (Frostbolt leaves it too, 15% more on a Conductive enemy), Flame Conductor
-    // (Lightning Bolt on their Flame Shock target: one more enemy, Flame Shock 2 sec longer, 6 sec an application);
-    // Forked Tempest (2 enemies, 65% each), Closed Circuit (back into it, whole), Faraday Field (15 yards, the first
-    // arc each 8 sec 20% more), Storm Lash (Lava Lash: 25% of attack power, 6 sec apart), Starbound Circuit
-    // (Starfire: 25% of spell power as Arcane, 8 sec apart); Storm Within (a retaliation at the nearest Conductive
-    // enemy within 8 yards every 3 sec in combat, a charge each), Violent Reprisal (the shield's arcs 40% more),
-    // Distant Conductor (Lightning Bolt: a retaliation at its target, a charge, 3 sec apart), Storm's Eye (Chain Heal:
-    // the next Lightning Bolt within 6 sec 15% more), Shocking Surge (Thunder Clap on a Conductive enemy: 20% of
-    // spell power to up to 5 within 8 yards, 8 sec apart).
+    // Its options: Persistent Current (arcs 15% more), Branching Current (Lightning Bolt arcs 30% of its hit to one
+    // enemy within 10 yards), Live Wire (retaliations 15% more), Icy Conductor (Frostbolt 15% more), Flame Conductor
+    // (Lightning Bolt on their Flame Shock target: Flame Shock 2 sec longer, 6 sec an application, and its arc as
+    // Branching Current's); Forked Tempest (2 enemies, 65% each), Closed Circuit (back into it, whole), Faraday
+    // Field (15 yards, the first arc each 8 sec 20% more), Storm Lash (Lava Lash: 25% of attack power, 6 sec apart),
+    // Starbound Circuit (Starfire: 25% of spell power as Arcane, 8 sec apart); Storm Within (a retaliation at the
+    // nearest enemy within 8 yards every 3 sec in combat, a charge each), Violent Reprisal (the shield's arcs 40%
+    // more), Distant Conductor (Lightning Bolt: a retaliation at its target, a charge, 3 sec apart), Storm's Eye
+    // (Chain Heal: the next Lightning Bolt within 6 sec 15% more), Shocking Surge (Thunder Clap: 20% of spell power
+    // to up to 5 within 8 yards, 8 sec apart).
     constexpr float PERSISTENT_FIRST = 1.15f, LIVE_WIRE_MORE = 1.15f, ICY_CONDUCTOR = 1.15f, FORKED_SHARE = 0.65f;
     constexpr float FARADAY_MORE = 1.2f, STORM_LASH_AP = 0.25f, STARBOUND_POWER = 0.25f, VIOLENT_REPRISAL = 1.4f;
     constexpr float STORMS_EYE = 1.15f, SHOCKING_POWER = 0.2f, SHOCKING_RADIUS = 8.0f, STORM_WITHIN_RANGE = 8.0f;
@@ -2535,7 +2533,6 @@ namespace
         uint32 StormTimer = 0;                      // ms since Storm Within's last pulse
         uint32 ChainArcAt = 0, FaradayAt = 0, ShieldArcAt = 0, EarthArcAt = 0, StormLashAt = 0, StarboundAt = 0;
         uint32 DistantAt = 0, ShockingAt = 0, StormsEyeUntil = 0;     // game ms
-        std::set<ObjectGuid> ConductiveFresh;       // Persistent Current: applications whose first arc is unspent
 
         // Echoing Thunder: the field laid (where, until), its first echo, the echo and options' times (game ms).
         Position FieldAt;
@@ -3416,38 +3413,21 @@ namespace
 
     void Lasting(Player* player, Unit* unit, uint32 spellId, int32 ms, int32 const* amount);
 
-    // The Hero's Conductive on the enemy: the hit it remembers (0 none).
-    float ConductiveOn(Player* player, Unit* enemy)
-    {
-        AuraEffect const* effect = enemy
-            ? enemy->GetAuraEffect(SPELL_CONDUCTIVE, EFFECT_0, player->GetGUID()) : nullptr;
-        return effect ? float(effect->GetAmount()) : 0.0f;
-    }
-
-    // Conductive on the enemy for 6 sec (12 with Persistent Current), remembering hit.
-    void Conduct(Player* player, Unit* enemy, float hit)
-    {
-        if (!enemy || !enemy->IsAlive() || hit < 1.0f)
-            return;
-        int32 amount = int32(hit);
-        Lasting(player, enemy, SPELL_CONDUCTIVE,
-            HasStormMarker(player, MOD_PERSISTENT_CURRENT) ? PERSISTENT_MS : CONDUCTIVE_MS, &amount);
-        StateOf(player).ConductiveFresh.insert(enemy->GetGUID());
-    }
-
     // Another enemy within arc range of the host (10 yards; Faraday Field 15), but except, else nullptr.
-    Unit* ArcTarget(Player* player, Unit* host, Unit* except = nullptr, bool conductive = false)
+    Unit* ArcTarget(Player* player, Unit* host, Unit* except = nullptr)
     {
         float range = HasStormMarker(player, MOD_FARADAY_FIELD) ? FARADAY_RANGE : ARC_RANGE;
         for (Unit* enemy : EnemiesAround(player, host, range))
-            if (enemy != host && enemy != except && (!conductive || ConductiveOn(player, enemy) > 0.0f))
+            if (enemy != host && enemy != except)
                 return enemy;
         return nullptr;
     }
 
-    // One arc from the host to the enemy (back into the host: no bolt).
+    // One arc from the host to the enemy (back into the host: no bolt); Persistent Current's 15% more.
     void ArcTo(Player* player, Unit* host, Unit* enemy, uint32 spellId, float damage)
     {
+        if (HasStormMarker(player, MOD_PERSISTENT_CURRENT))
+            damage *= PERSISTENT_FIRST;
         if (damage < 1.0f || !enemy->IsAlive())
             return;
         if (enemy != host)
@@ -3464,17 +3444,14 @@ namespace
             ArcTo(player, host, host, spellId, damage * ALONE_SHARE);
     }
 
-    // Chain Lightning on a Conductive enemy: its arc (once a cast), 30% of the remembered hit; the options.
-    void ChainArc(Player* player, Unit* host)
+    // Chain Lightning: its arc (once a cast), 30% of its hit; the options.
+    void ChainArc(Player* player, Unit* host, float hit)
     {
         State& state = StateOf(player);
-        float hit = ConductiveOn(player, host);
         if (hit <= 0.0f || !Ready(state.ChainArcAt, CHAIN_ARC_EVERY_MS))
             return;
         state.ChainArcAt = Now();
         float damage = hit * CHAIN_ARC_SHARE;
-        if (HasStormMarker(player, MOD_PERSISTENT_CURRENT) && state.ConductiveFresh.erase(host->GetGUID()))
-            damage *= PERSISTENT_FIRST;
         if (HasStormMarker(player, MOD_FARADAY_FIELD) && Ready(state.FaradayAt, FARADAY_EVERY_MS))
         {
             state.FaradayAt = Now();
@@ -3513,7 +3490,7 @@ namespace
         shield->GetBase()->DropCharge();
     }
 
-    // Storm Within: every 3 sec in combat, a retaliation at the nearest Conductive enemy within 8 yards.
+    // Storm Within: every 3 sec in combat, a retaliation at the nearest enemy within 8 yards.
     void StormPulse(Player* player, uint32 diff)
     {
         if (!HasStormMarker(player, MOD_STORM_WITHIN))
@@ -3526,24 +3503,21 @@ namespace
         if (!shield || !player->IsInCombat())
             return;
         for (Unit* enemy : EnemiesAround(player, player, STORM_WITHIN_RANGE))
-            if (ConductiveOn(player, enemy) > 0.0f)
-            {
-                state.StormTimer = 0;
-                Retaliate(player, enemy, shield);
-                return;
-            }
+        {
+            state.StormTimer = 0;
+            Retaliate(player, enemy, shield);
+            return;
+        }
     }
 
-    // A retaliation hitting the attacker (the shield's own, or the rune's): Live Wire (Conductive on it), and its
-    // arc to another Conductive enemy (3 sec apart; Violent Reprisal 40% more).
+    // A retaliation hitting the attacker (the shield's own, or the rune's): its arc to another enemy (3 sec apart;
+    // Violent Reprisal 40% more).
     void ShieldArc(Player* player, Unit* attacker, float damage)
     {
-        if (HasStormMarker(player, MOD_LIVE_WIRE))
-            Conduct(player, attacker, damage);
         State& state = StateOf(player);
         if (!Ready(state.ShieldArcAt, SHIELD_ARC_EVERY_MS))
             return;
-        if (Unit* other = ArcTarget(player, attacker, nullptr, true))
+        if (Unit* other = ArcTarget(player, attacker))
         {
             state.ShieldArcAt = Now();
             ArcTo(player, attacker, other, SPELL_STORMBOUND_ARC, damage * SHIELD_ARC_SHARE
@@ -3551,9 +3525,9 @@ namespace
         }
     }
 
-    // The Hero's own hits with the rune: Lightning Bolt (Conductive; Branching Current, Flame Conductor, Distant
-    // Conductor), Frostbolt (Icy Conductor), Chain Lightning (its arc), Earth Shock, Lava Lash and Starfire on a
-    // Conductive enemy, Thunder Clap (Shocking Surge), Chain Heal (Storm's Eye).
+    // The Hero's own hits with the rune: Lightning Bolt (Branching Current, Flame Conductor, Distant Conductor),
+    // Chain Lightning (its arc), Earth Shock, Lava Lash, Starfire, Thunder Clap (Shocking Surge), Chain Heal (Storm's
+    // Eye).
     void ConduitHit(Player* player, Unit* target, uint32 firstRank, float damage)
     {
         State& state = StateOf(player);
@@ -3570,14 +3544,13 @@ namespace
         {
             case SPELL_LIGHTNING_BOLT:
             {
-                Conduct(player, target, damage);
                 bool flame = HasStormMarker(player, MOD_STORM_FLAME_CONDUCTOR);
                 Aura* flameShock = flame ? target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me) : nullptr;
                 if (flameShock)
                     ExtendAura(flameShock, FLAME_CONDUCTOR_MS, FLAME_CONDUCTOR_MOST_MS);
                 if (HasStormMarker(player, MOD_BRANCHING_CURRENT) || flameShock)
                     if (Unit* other = ArcTarget(player, target))
-                        Conduct(player, other, damage);
+                        ArcTo(player, target, other, SPELL_STORMBOUND_ARC, damage * BRANCH_SHARE);
                 if (HasStormMarker(player, MOD_DISTANT_CONDUCTOR) && target->IsAlive()
                     && Ready(state.DistantAt, DISTANT_EVERY_MS))
                     if (AuraEffect* shield = Shield(player))
@@ -3587,15 +3560,11 @@ namespace
                     }
                 break;
             }
-            case SPELL_FROSTBOLT:
-                if (HasStormMarker(player, MOD_ICY_CONDUCTOR))
-                    Conduct(player, target, damage);
-                break;
             case SPELL_CHAIN_LIGHTNING:
-                ChainArc(player, target);
+                ChainArc(player, target, damage);
                 break;
             case TankRunes::SPELL_EARTH_SHOCK:
-                if (ConductiveOn(player, target) > 0.0f && Ready(state.EarthArcAt, EARTH_ARC_EVERY_MS))
+                if (Ready(state.EarthArcAt, EARTH_ARC_EVERY_MS))
                 {
                     state.EarthArcAt = Now();
                     ArcOrBack(player, target, SPELL_STORMBOUND_ARC,
@@ -3603,8 +3572,7 @@ namespace
                 }
                 break;
             case SPELL_LAVA_LASH:
-                if (HasStormMarker(player, MOD_STORM_LASH) && ConductiveOn(player, target) > 0.0f
-                    && Ready(state.StormLashAt, STORM_LASH_EVERY_MS))
+                if (HasStormMarker(player, MOD_STORM_LASH) && Ready(state.StormLashAt, STORM_LASH_EVERY_MS))
                 {
                     state.StormLashAt = Now();
                     ArcOrBack(player, target, SPELL_STORMBOUND_ARC,
@@ -3613,8 +3581,7 @@ namespace
                 }
                 break;
             case SPELL_STARFIRE:
-                if (HasStormMarker(player, MOD_STARBOUND_CIRCUIT) && ConductiveOn(player, target) > 0.0f
-                    && Ready(state.StarboundAt, STARBOUND_EVERY_MS))
+                if (HasStormMarker(player, MOD_STARBOUND_CIRCUIT) && Ready(state.StarboundAt, STARBOUND_EVERY_MS))
                 {
                     state.StarboundAt = Now();
                     ArcOrBack(player, target, SPELL_STARBOUND_CIRCUIT,
@@ -3622,8 +3589,7 @@ namespace
                 }
                 break;
             case SPELL_THUNDER_CLAP:
-                if (HasStormMarker(player, MOD_SHOCKING_SURGE) && ConductiveOn(player, target) > 0.0f
-                    && Ready(state.ShockingAt, SHOCKING_EVERY_MS))
+                if (HasStormMarker(player, MOD_SHOCKING_SURGE) && Ready(state.ShockingAt, SHOCKING_EVERY_MS))
                 {
                     state.ShockingAt = Now();
                     float surge = RunePower(player, SPELL_SCHOOL_MASK_NATURE, 0) * SHOCKING_POWER;
@@ -3648,8 +3614,7 @@ namespace
                 damage *= STORMS_EYE;
             state.StormsEyeUntil = 0;
         }
-        if (firstRank == SPELL_FROSTBOLT && HasStormMarker(player, MOD_ICY_CONDUCTOR)
-            && ConductiveOn(player, target) > 0.0f)
+        if (firstRank == SPELL_FROSTBOLT && HasStormMarker(player, MOD_ICY_CONDUCTOR))
             damage *= ICY_CONDUCTOR;
         return damage;
     }
@@ -11387,7 +11352,7 @@ class spell_titan_rune_lightning_shield : public AuraScript
 };
 
 // A Lightning Shield retaliation (its damage, every rank, and the rune's own 90754) with the Stormbound Conduit:
-// Live Wire's 15% more and Conductive; its arc to another Conductive enemy (ShieldArc).
+// Live Wire's 15% more; its arc to another enemy (ShieldArc).
 class spell_titan_rune_lightning_shield_damage : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_lightning_shield_damage);
@@ -12325,7 +12290,6 @@ public:
     }
 };
 
-// Live Wire (the Stormbound Conduit): melee attackers become Conductive.
 // The Hero's demon: a hit grants Fel Command, once every 4 sec (2 with Infernal Pact); with Metamorphic Bond, in
 // Metamorphosis, it strikes 2 more enemies within 5 yards for half. Entering Metamorphosis with Demonic Ascension:
 // 5 Fel Command.

@@ -144,6 +144,7 @@ namespace
     // already counts it a boss: a boss_ script or a boss's rank, with its own health).
     constexpr float BOSS_HEALTH = 4.0f, BOSS_DAMAGE = 1.5f;
     constexpr uint32 SPOILS_SECONDS = 900;
+    constexpr float SPOILS_OFFSET = 6.0f;               // the run's chest, this far east of the pit
     constexpr uint8 FIREPIT_LEVEL = 10;                 // the group finder's tab opens there too
     constexpr uint32 PROPOSAL_MS = 40000;               // a group's members this long to accept
     constexpr uint32 LEADERBOARD_ROWS = 5;              // a bracket's, in the group finder's tab
@@ -261,6 +262,7 @@ namespace
         uint8 level = 1;
         uint32 peakWave = 0, peakAlive = 0, mostAlive = 0;
         uint32 kills = 0, bossKills = 0, deaths = 0, deathWave = 0, resurrections = 0, loot = 0;
+        std::vector<uint32> lootWaves;              // the waves each piece was earned at
         uint64 damage = 0, healing = 0, taken = 0;
         uint32 biggestHit = 0, biggestTaken = 0;
         std::string killer;
@@ -306,14 +308,17 @@ namespace
 // Fireforged gear (firepit_gear.h, tools/scaling/firepit_gear.py): each spoil made for the Hero who earned it. The
 // slot: one of their weakest (the lowest item levels worn, an empty slot lowest), among the slots their role uses. The
 // piece: the same kind as what is worn there (its armor type, its weapon kind), else their role's. Its item level:
-// what is worn there (at least a dungeon piece of their level's) plus FIREFORGED_MARGIN, or FIREFORGED_SHARE of it if
-// more, rounded up to a tier. Its stats: one of their role's stat mixes (a caster never strength, a fighter never
+// what is worn there (at least a dungeon piece of their level's; an heirloom counts as one) plus FIREFORGED_MARGIN,
+// or FIREFORGED_SHARE of it if more, rounded up to a tier, but never past the cap their level and the run's depth
+// set (FIREFORGED_CAP_*): the spoils follow the Hero's level, not an endless climb on their own. Its stats: one of their role's stat mixes (a caster never strength, a fighter never
 // intellect). One spoil in TITANFORGED_IN is Titanforged: every stat doubled.
 namespace
 {
     constexpr uint32 FIREFORGED_MARGIN = 9;             // item levels (three tiers)
     constexpr float FIREFORGED_SHARE = 0.12f;
     constexpr uint32 DUNGEON_OVER_LEVEL = 20;           // a dungeon piece's item level over its level (dungeon_loot)
+    // The most a spoil may be: the Hero's level + 30 (a 15th wave's), 3 more for each 15 waves past it.
+    constexpr uint32 FIREFORGED_CAP_OVER_LEVEL = 30, FIREFORGED_CAP_A_LOOT_WAVE = 3;
     constexpr uint32 WEAKEST_SLOTS = 3;                 // the spoil's slot is one of the Hero's this many weakest
     constexpr uint32 TITANFORGED_IN = 200;
     // Modifiers (firepit_gear.h MODIFIERS): a spoil's first from wave MODIFIER_FROM (certain MODIFIER_RAMP waves
@@ -561,9 +566,10 @@ namespace
         return rolled;
     }
 
-    // A Hero's spoils: count pieces, each in another of their weakest slots (the k-th earned at wave k x 15).
-    std::vector<Spoil> Fireforged(Player* player, uint32 count, uint32 every)
+    // A Hero's spoils: a piece for each wave earned at, each in another of their weakest slots.
+    std::vector<Spoil> Fireforged(Player* player, std::vector<uint32> const& waves)
     {
+        std::size_t const count = waves.size();
         Profile const profile = ProfileOf(player);
         std::vector<Mix> const mixes = MixesOf(profile);
         struct Candidate
@@ -580,29 +586,44 @@ namespace
             int32 piece = PieceFor(player, slot, profile);
             if (piece < 0)
                 continue;
+            // An heirloom (it grows with its wearer) counts as a dungeon piece of their level.
             Item* worn = player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
-            candidates.push_back({ slot, piece, worn ? worn->GetTemplate()->ItemLevel : 0u });
+            uint32 level = !worn ? 0u : worn->GetTemplate()->Quality == ITEM_QUALITY_HEIRLOOM
+                ? uint32(player->GetLevel() + DUNGEON_OVER_LEVEL) : worn->GetTemplate()->ItemLevel;
+            candidates.push_back({ slot, piece, level });
         }
         std::vector<Spoil> spoils;
-        uint32 baseline = player->GetLevel() + DUNGEON_OVER_LEVEL;
+        uint32 const baseline = player->GetLevel() + DUNGEON_OVER_LEVEL;
         while (spoils.size() < count && !candidates.empty())
         {
+            uint32 const wave = waves[spoils.size()];
+            uint32 const cap = player->GetLevel() + FIREFORGED_CAP_OVER_LEVEL
+                + FIREFORGED_CAP_A_LOOT_WAVE * (wave / LOOT_EVERY > 1 ? wave / LOOT_EVERY - 1 : 0);
+            // The weakest slots first, and among them those still under the cap (the rest cannot get better).
             Acore::Containers::RandomShuffle(candidates);
-            std::stable_sort(candidates.begin(), candidates.end(),
-                [](Candidate const& a, Candidate const& b) { return a.worn < b.worn; });
+            std::stable_sort(candidates.begin(), candidates.end(), [cap](Candidate const& a, Candidate const& b)
+            {
+                bool aRoom = a.worn < cap, bRoom = b.worn < cap;
+                return aRoom != bRoom ? aRoom : a.worn < b.worn;
+            });
             std::size_t pick = urand(0, uint32(std::min<std::size_t>(WEAKEST_SLOTS, candidates.size())) - 1);
             Candidate const chosen = candidates[pick];
             candidates.erase(candidates.begin() + pick);
 
+            // Above what is worn there, by the Hero's level: at least a dungeon piece of theirs and the margin, at
+            // most the cap (FIREFORGED_CAP_*: deeper runs raise it).
             uint32 from = std::max(chosen.worn, baseline);
             uint32 target = from + std::max<uint32>(FIREFORGED_MARGIN, uint32(std::lround(from * FIREFORGED_SHARE)));
+            target = std::min(target, cap);
             bool titan = urand(1, TITANFORGED_IN) == 1;
             Mix mix = mixes[urand(0, uint32(mixes.size()) - 1)];
-            uint32 entry = PIECES[chosen.piece].First + TierAtLeast(target) + (titan ? TITAN_OFFSET : 0);
+            uint32 tier = TierAtLeast(target);
+            if (tier && FIRST_ITEM_LEVEL + tier * ITEM_LEVEL_STEP > cap)
+                --tier;                                 // the tier at or under the cap
+            uint32 entry = PIECES[chosen.piece].First + tier + (titan ? TITAN_OFFSET : 0);
             if (!sObjectMgr->GetItemTemplate(entry))
                 continue;
             bool weapon = PIECES[chosen.piece].Class == ITEM_CLASS_WEAPON;
-            uint32 wave = uint32(spoils.size() + 1) * every;
             spoils.push_back({ entry, -int32(titan ? TITAN_SUFFIX[mix] : SUFFIX[mix]), titan,
                 RollModifiers(player, profile, weapon, wave) });
         }
@@ -819,14 +840,19 @@ public:
     uint32 Wave() const { return _wave; }
     uint32 Alive() const { return uint32(_enemies.size()); }
 
-    // A spoils chest of the Hero's: what is in it (empty: not theirs, or already taken).
-    std::vector<Spoil> TakeSpoils(GameObject* chest, Player* player)
+    // The run's chest: the Hero's own spoils from it (empty: none, or already taken); the chest goes once all
+    // are taken (gone: true).
+    std::vector<Spoil> TakeSpoils(GameObject* chest, Player* player, bool& gone)
     {
-        auto spoils = _spoils.find(chest->GetGUID());
-        if (spoils == _spoils.end() || spoils->second.first != player->GetGUID())
+        gone = false;
+        if (chest->GetGUID() != _chest)
             return {};
-        std::vector<Spoil> items = std::move(spoils->second.second);
+        auto spoils = _spoils.find(player->GetGUID());
+        if (spoils == _spoils.end())
+            return {};
+        std::vector<Spoil> items = std::move(spoils->second);
         _spoils.erase(spoils);
+        gone = _spoils.empty();
         return items;
     }
 
@@ -907,12 +933,6 @@ private:
 
     void StartWave(uint32 wave)
     {
-        // The wave just ended: who lived through it, and a piece of spoils every 15th.
-        if (_wave)
-            for (Player* player : Living())
-                if (Record* record = RecordOf(player); record && _wave % LOOT_EVERY == 0)
-                    ++record->loot;
-
         _wave = wave;
         _waveMs = WAVE_MS;
         _breather = false;
@@ -1024,7 +1044,31 @@ private:
         for (uint16 index : { UNIT_FIELD_HEALTH, UNIT_FIELD_MAXHEALTH })
             enemy->ForceValuesUpdateAtIndex(index);
         _enemies.push_back(enemy->GetGUID());
+        // A 15th wave's boss: its fall earns the run a piece of spoils (not the wave the run started at).
+        if (spawn.boss && _wave % LOOT_EVERY == 0 && _wave > _setup.startWave)
+        {
+            _lootBosses.push_back(enemy->GetGUID());
+            _lootWave = _wave;
+        }
         Engage(enemy);
+    }
+
+    // A loot wave's bosses all fallen: every Hero still in the run (standing or not) earns a piece of spoils.
+    void CheckLoot()
+    {
+        if (_lootBosses.empty())
+            return;
+        for (ObjectGuid const& guid : _lootBosses)
+            if (Creature* boss = instance->GetCreature(guid); boss && boss->IsAlive())
+                return;
+        _lootBosses.clear();
+        for (auto& [guid, record] : _records)
+            if (!record.left)
+            {
+                ++record.loot;
+                record.lootWaves.push_back(_lootWave);
+            }
+        Announce("Wave " + std::to_string(_lootWave) + "'s boss falls: spoils for every Hero!", true);
     }
 
     // The bosses' mechanics (MECHANICS_FROM): each boss's timers, and the blasts on their way.
@@ -1205,6 +1249,7 @@ private:
         }
 
         Mechanics(diff);
+        CheckLoot();
 
         _waveMs = _waveMs > diff ? _waveMs - diff : 0;
         _tickMs += diff;
@@ -1294,7 +1339,6 @@ private:
         _queue.clear();
 
         // Everyone back on their feet, the spoils out, the records kept, the results shown.
-        uint32 index = 0;
         std::vector<Player*> present;
         for (auto const& ref : instance->GetPlayers())
             if (Player* player = ref.GetSource())
@@ -1311,21 +1355,21 @@ private:
             player->SetPower(player->getPowerType(), player->GetMaxPower(player->getPowerType()));
 
             Record* record = RecordOf(player);
-            if (!record || !record->loot)
+            if (!record || record->lootWaves.empty())
                 continue;
-            float angle = float(index++) * 2.0f * float(M_PI) / float(std::max<std::size_t>(present.size(), 1));
-            float x = CENTER.GetPositionX() + ARRIVAL_RADIUS * std::cos(angle);
-            float y = CENTER.GetPositionY() + ARRIVAL_RADIUS * std::sin(angle);
-            GameObject* chest = player->SummonGameObject(GO_SPOILS, x, y, CENTER.GetPositionZ(), angle + float(M_PI),
-                0.0f, 0.0f, 0.0f, 0.0f, SPOILS_SECONDS);
-            if (!chest)
-                continue;
-            std::vector<Spoil> items = Fireforged(player, record->loot, LOOT_EVERY);
+            std::vector<Spoil> items = Fireforged(player, record->lootWaves);
             for (Spoil const& spoil : items)
                 if (spoil.titanforged)
                     Announce(player->GetName() + " forged a Titanforged piece!", true);
-            _spoils[chest->GetGUID()] = { player->GetGUID(), items };
+            if (!items.empty())
+                _spoils[player->GetGUID()] = items;
         }
+        // One great chest for the run, before the Keeper: each Hero takes their own from it.
+        if (!_spoils.empty())
+            if (GameObject* chest = instance->SummonGameObject(GO_SPOILS, CENTER.GetPositionX() + SPOILS_OFFSET,
+                CENTER.GetPositionY(), FloorAt(CENTER.GetPositionX() + SPOILS_OFFSET, CENTER.GetPositionY()),
+                float(M_PI), 0.0f, 0.0f, 1.0f, 0.0f, SPOILS_SECONDS))
+                _chest = chest->GetGUID();
 
         SaveRecords();
         for (Player* player : present)
@@ -1388,7 +1432,10 @@ private:
     std::vector<ObjectGuid> _natives, _enemies;
     std::vector<Spawn> _queue;
     std::map<ObjectGuid, Record> _records;
-    std::unordered_map<ObjectGuid, std::pair<ObjectGuid, std::vector<Spoil>>> _spoils;
+    std::unordered_map<ObjectGuid, std::vector<Spoil>> _spoils;     // each Hero's, in the one chest
+    ObjectGuid _chest;
+    std::vector<ObjectGuid> _lootBosses;            // the loot wave's bosses still to fall
+    uint32 _lootWave = 0;
 };
 
     FirepitInstance* RunOf(Map* map)
@@ -1733,6 +1780,12 @@ float Firepit::DamageMultiplier(Creature const* creature)
     return own ? own->damage : 1.0f;
 }
 
+bool Firepit::IsBoss(Creature const* creature)
+{
+    Enemy const* own = creature ? creature->CustomData.Get<Enemy>("titan_firepit") : nullptr;
+    return own && own->boss;
+}
+
 // A Firepit instance's script is its own (the Depths' never runs there).
 class titan_firepit_map : public AllMapScript
 {
@@ -1964,10 +2017,12 @@ public:
     bool OnGossipHello(Player* player, GameObject* chest) override
     {
         FirepitInstance* run = RunOf(chest->GetMap());
-        std::vector<Spoil> items = run ? run->TakeSpoils(chest, player) : std::vector<Spoil>();
+        bool gone = false;
+        std::vector<Spoil> items = run ? run->TakeSpoils(chest, player, gone) : std::vector<Spoil>();
         if (items.empty())
         {
-            ChatHandler(player->GetSession()).SendSysMessage("These spoils are someone else's.");
+            ChatHandler(player->GetSession()).SendSysMessage("Nothing in the chest is yours: no boss of a 15th wave "
+                "fell for you this run, or you took your spoils already.");
             return true;
         }
         CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
@@ -2008,8 +2063,11 @@ public:
         if (mailed)
             ChatHandler(player->GetSession()).SendSysMessage("Your bags were full: the rest of your spoils are in "
                 "your mailbox.");
-        chest->SetRespawnTime(0);
-        chest->Delete();
+        if (gone)
+        {
+            chest->SetRespawnTime(0);
+            chest->Delete();
+        }
         return true;
     }
 };

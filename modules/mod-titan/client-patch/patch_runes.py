@@ -418,8 +418,8 @@ EFFECTS = {
 }
 # The Rune of the Stormbound Conduit (90750 on; runes.cpp's Stormbound Conduit section).
 STORM_RUNE = buff(90750, 'Rune of the Stormbound Conduit', STORM_ICON,
-                  'Lightning Bolt leaves Conductive on its target. Chain Lightning on a Conductive enemy arcs 30% of '
-                  'that bolt to another.',
+                  'Chain Lightning arcs 30% of its damage to another enemy; your Lightning Shield and Earth Shock arc '
+                  'too.',
                   DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)})
 # Its procs: Lightning Bolt and Chain Lightning land as harmful spells; the script picks them out.
 STORM_RUNE['set'] = {**STORM_RUNE['set'], 'ProcFlags': PROC_DONE_MAGIC_SPELL_NEGATIVE, 'ProcChance': 101}

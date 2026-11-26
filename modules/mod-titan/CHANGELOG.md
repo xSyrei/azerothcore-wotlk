@@ -26,6 +26,30 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   before you); Thunder Clap in the bulwark makes it reach 10 yards (Shaking Ground 12). **Wide Reckoning** now makes it
   deal 30% more to every enemy past its first. A Shield Slam that kills its target still releases the impact.
 
+### Firepit spoils, fairer
+
+- **One great chest**: at the end of a run a single, big chest stands by the pit; every Hero opens it for their own
+  spoils.
+- **Spoils are earned by killing a 15th wave's boss**, and everyone still in the run gets a piece, standing or fallen
+  (a duo partner who fell no longer goes without). Surviving into the next wave no longer counts.
+- **Starting a run at a 15th wave** (a checkpoint) gives no spoils for that wave.
+- **Fireforged item level follows your level**: at most your level + 30 for a 15th wave (3 more for each 15 waves
+  deeper), so it no longer climbs on its own run after run; heirlooms count as gear of your level. Slots still below
+  that are picked first (necks included).
+
+### Fixes
+
+- **Monster casters** no longer hit far harder than their swings: a non-boss monster's spell on you deals at most 3
+  of its own swings (a tick at most 1). At level 15 in the Firepit they were hitting for 1,200-1,500 against 100.
+- **Horn of Winter** now lasts 30 minutes, as its tooltip says.
+- **Tundra Stalker** gives its own 3-15%: Magic Suppression's absorb bonus was being added to it.
+- **Call of the Elements** (and Ancestors, Spirits) works without a totem bar: each empty slot drops your best totem
+  of its element (Strength of Earth, Searing, Healing Stream, Windfury, or their alternatives).
+- **The Stormbound Conduit has no Conductive mark any more**: Chain Lightning arcs 30% of its own hit, and your
+  Lightning Shield, Earth Shock, Lava Lash, Starfire and Thunder Clap arc on any enemy, so it no longer fights the
+  Stormreaver. Its options that laid Conductive now arc themselves (Branching Current, Flame Conductor) or simply
+  deal more (Persistent Current: arcs 15% more; Icy Conductor: Frostbolt 15% more).
+
 ### Your damage up, runes rebalanced, sturdier gear
 
 - **All your damage against monsters is 30% higher**: your abilities, your swings and your pet's.

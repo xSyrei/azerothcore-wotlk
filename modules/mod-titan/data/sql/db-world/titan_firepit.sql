@@ -1,6 +1,6 @@
 -- The Firepit (src/firepit.cpp): an endless wave arena on a map of its own. The Firepit Keeper (Grimstone's look)
 -- stands beside Silas Darkmoon in Stormwind and Orgrimmar, and is summoned in the ring when a run ends to lead the
--- Heroes out. Each Hero's spoils chest (Arena Spoils' look) opens for its owner alone.
+-- Heroes out. The run's spoils chest (Arena Spoils' look, three times its size) gives each Hero their own.
 SET @KEEPER := 910140;
 SET @GUID := 9101400;
 SET @SPOILS := 910140;
@@ -52,7 +52,7 @@ INSERT INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `position
 DELETE FROM `gameobject_template` WHERE `entry` = @SPOILS;
 INSERT INTO `gameobject_template` (`entry`, `type`, `displayId`, `name`, `IconName`, `castBarCaption`, `unk1`,
     `size`, `ScriptName`, `VerifiedBuild`) VALUES
-(@SPOILS, 3, 10, 'Spoils of the Firepit', '', '', '', 1.2, 'go_titan_firepit_spoils', 0);
+(@SPOILS, 3, 10, 'Spoils of the Firepit', '', '', '', 3.0, 'go_titan_firepit_spoils', 0);
 
 -- The ring dressed for each run (src/firepit.cpp, DECOR_RINGS): the client's own fire models as plain, unselectable
 -- objects (type 5): Blackrock's Dark Iron brazier, a midsummer bonfire, a large fire pit, a lava pillar, a ring of

@@ -8339,9 +8339,11 @@ float Unit::SpellPctDamageModsDone(Unit* victim, SpellInfo const* spellProto, Da
                     // Tundra Stalker
                     else
                     {
-                        // Frost Fever (target debuff)
+                        // Frost Fever (target debuff). Project Emberforge: the talent's own rank (3-15%): another
+                        // class's modifier (a Hero's Magic Suppression, for Anti-Magic Shell) no longer adds to it.
                         if (victim->HasAura(55095))
-                            AddPct(DoneTotalMod, (*i)->GetAmount());
+                            AddPct(DoneTotalMod, std::min<int32>((*i)->GetAmount(),
+                                (*i)->GetSpellInfo()->Effects[(*i)->GetEffIndex()].CalcValue()));
                         break;
                     }
                     break;
@@ -10055,9 +10057,10 @@ uint32 Unit::MeleeDamageBonusDone(Unit* victim, uint32 pdamage, WeaponAttackType
                     // Tundra Stalker
                     else
                     {
-                        // Frost Fever (target debuff)
+                        // Frost Fever (target debuff). Project Emberforge: the talent's own rank (3-15%), as above.
                         if (victim->HasAura(55095))
-                            AddPct(DoneTotalMod, (*i)->GetAmount());
+                            AddPct(DoneTotalMod, std::min<int32>((*i)->GetAmount(),
+                                (*i)->GetSpellInfo()->Effects[(*i)->GetEffIndex()].CalcValue()));
                     }
                     break;
                 }

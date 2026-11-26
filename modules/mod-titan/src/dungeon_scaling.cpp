@@ -58,6 +58,8 @@ namespace
     constexpr uint8 EASE_LEVEL = 10;            // the level the ease is greatest at (and below)
     constexpr float EASE_HEALTH = 0.5f;         // creatures' health there
     constexpr float EASE_DAMAGE = 0.75f;        // creatures' damage there
+    constexpr float SPELL_HIT_SWINGS = 3.0f;    // a creature's spell hit on a player: at most 3 of its swings
+    constexpr float SPELL_TICK_SWINGS = 1.0f;   // a tick of its: at most 1
     // Every scaled creature's health on top of all that (Heroes melted them at the intended difficulty).
     constexpr float HEALTH_PASS = 2.0f;
     // And their damage on top of all that.
@@ -376,6 +378,20 @@ namespace
         return 1.0f;
     }
 
+    // A dungeon creature's spell on a player, at most so many of its own swings at them (SPELL_HIT_SWINGS a hit,
+    // SPELL_TICK_SWINGS a tick): a caster's spells carried far more than its blows (1,200-1,500 a cast against
+    // swings of 100 in the Firepit at level 15). A boss's are its mechanics: not capped. 0: no cap.
+    float SpellCap(Unit* target, Unit* attacker, float swings)
+    {
+        Creature* enemy = EnemyOf(attacker);
+        if (!enemy || !PlayerOf(target) || !IsScaled(enemy->GetMap()) || enemy->IsDungeonBoss()
+            || enemy->isWorldBoss() || Firepit::IsBoss(enemy))
+            return 0.0f;
+        float swing = (enemy->GetFloatValue(UNIT_FIELD_MINDAMAGE) + enemy->GetFloatValue(UNIT_FIELD_MAXDAMAGE)) / 2.0f;
+        swing *= DamageScale(target, attacker) * ModifierCap(attacker);
+        return swing > 0.0f ? swing * swings : 0.0f;
+    }
+
     // How a dungeon creature looks to a player: at their level, its health as much as their damage takes to empty it
     // (DamageScale's own over there, and the ease), so a level 60 sees a level 60 creature with a level 60's health.
     struct View
@@ -540,6 +556,8 @@ public:
     {
         Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false) * ModifierCap(attacker)
             * MechanicScale(target, attacker, spellInfo) * BossRoleScale(target, attacker));
+        if (float most = SpellCap(target, attacker, SPELL_HIT_SWINGS); most > 0.0f && float(damage) > most)
+            damage = int32(most);
     }
 
     void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage,
@@ -547,6 +565,8 @@ public:
     {
         Scale(damage, DamageScale(target, attacker) * SpellScale(attacker, spellInfo, false) * ModifierCap(attacker)
             * MechanicScale(target, attacker, spellInfo) * BossRoleScale(target, attacker));
+        if (float most = SpellCap(target, attacker, SPELL_TICK_SWINGS); most > 0.0f && float(damage) > most)
+            damage = uint32(most);
     }
 
     // A heal between players of different levels: by their health at each level.

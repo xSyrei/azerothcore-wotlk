@@ -6564,15 +6564,40 @@ void Spell::EffectCastButtons(SpellEffIndex effIndex)
     uint32 button_id = m_spellInfo->Effects[effIndex].MiscValue + 132;
     uint32 n_buttons = m_spellInfo->Effects[effIndex].MiscValueB;
 
-    for (; n_buttons; --n_buttons, ++button_id)
+    // Project Emberforge: a Hero has no totem bar to fill these buttons (the client shows it to Shamans only), so an
+    // empty one casts their best known totem of its element (the bar's order: Earth, Fire, Water, Air): the highest
+    // rank they know of the first of its defaults they have.
+    static std::array<std::array<uint32, 3>, 4> const defaultTotems = { {
+        { 8075, 8071, 0 },          // Strength of Earth, Stoneskin
+        { 3599, 8227, 8190 },       // Searing, Flametongue, Magma
+        { 5394, 5675, 0 },          // Healing Stream, Mana Spring
+        { 8512, 3738, 0 },          // Windfury, Wrath of Air
+    } };
+    auto defaultTotem = [p_caster](uint32 element) -> uint32
+    {
+        if (element >= defaultTotems.size())
+            return 0;
+        for (uint32 first : defaultTotems[element])
+        {
+            uint32 best = 0;
+            for (uint32 rank = first; rank; rank = sSpellMgr->GetNextSpellInChain(rank))
+                if (p_caster->HasSpell(rank))
+                    best = rank;
+            if (best)
+                return best;
+        }
+        return 0;
+    };
+
+    for (uint32 element = 0; n_buttons; --n_buttons, ++button_id, ++element)
     {
         ActionButton const* ab = p_caster->GetActionButton(button_id);
-        if (!ab || ab->GetType() != ACTION_BUTTON_SPELL)
-            continue;
+        uint32 spell_id = ab && ab->GetType() == ACTION_BUTTON_SPELL ? ab->GetAction() : 0;
+        if (!spell_id)
+            spell_id = defaultTotem(element);
 
         //! Action button data is unverified when it's set so it can be "hacked"
         //! to contain invalid spells, so filter here.
-        uint32 spell_id = ab->GetAction();
         if (!spell_id)
             continue;
 

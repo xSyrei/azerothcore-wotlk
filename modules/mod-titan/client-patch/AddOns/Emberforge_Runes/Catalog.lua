@@ -149,47 +149,45 @@ EmberforgeRunesCatalog = {
       role = "DPS (Lightning Bolt, Chain Lightning)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_StormboundConduit",
-      keywords = "shaman lightning nature electric arc chain enhancement elemental chain lightning conductive arc " ..
+      keywords = "shaman lightning nature electric arc chain enhancement elemental chain lightning arc " ..
           "earth shock frostbolt flame shock lava lash starfire chain heal thunder clap",
       slots = { "Conductor", "Circuit", "Shield" },
-      builtFrom = "Lightning Bolt",
-      spentWith = "Chain Lightning",
-      resource = "Conductive on your enemies, 6 sec",
-      core = "Lightning Bolt leaves Conductive on its target for 6 sec. Chain Lightning hitting a Conductive enemy " ..
-          "sends one arc to another enemy within 10 yards for 30% of that Lightning Bolt's damage, once a cast; " ..
-          "with no other enemy near, it arcs back into the first for half. A Lightning Shield retaliation arcs to " ..
-          "another Conductive enemy within 10 yards for 50% of its damage, once every 3 sec. Earth Shock on a " ..
-          "Conductive enemy arcs 20% of your spell power to another (half back into it if alone), once every 8 sec. " ..
-          "Arcs never arc again.",
-      loop = "Lightning Bolt to make them Conductive; Chain Lightning to arc it.",
+      builtFrom = "Chain Lightning, Lightning Shield, Earth Shock",
+      spentWith = "Their arcs",
+      resource = "Arcs: Chain Lightning, your Lightning Shield, Earth Shock",
+      core = "Chain Lightning sends one arc to another enemy within 10 yards for 30% of its damage, once a cast; " ..
+          "with no other enemy near, it arcs back into the first for half. A Lightning Shield retaliation arcs " ..
+          "to another enemy within 10 yards for 50% of its damage, once every 3 sec. Earth Shock arcs 20% of " ..
+          "your spell power to another enemy (half back into it if alone), once every 8 sec. Arcs never arc " ..
+          "again.",
+      loop = "Chain Lightning into packs, Earth Shock and your Lightning Shield arcing on.",
       mods = {
         { name = "Persistent Current",
-          text = "Conductive lasts 12 sec, and the first Chain Lightning arc on each one deals 15% more damage." },
+          text = "Your arcs deal 15% more damage." },
         { name = "Branching Current",
-          text = "Lightning Bolt also leaves Conductive on one enemy within 10 yards of its target." },
+          text = "Lightning Bolt arcs 30% of its damage to one enemy within 10 yards of its target." },
         { name = "Live Wire",
-          text = "Lightning Shield retaliations deal 15% more damage and leave Conductive on the attacker. Not with " ..
-              "Storm Within." },
+          text = "Lightning Shield retaliations deal 15% more damage. Not with Storm Within." },
         { name = "Icy Conductor",
-          text = "Frostbolt leaves Conductive too, and deals 15% more to a Conductive enemy." },
+          text = "Frostbolt deals 15% more damage." },
         { name = "Flame Conductor",
-          text = "Lightning Bolt on your Flame Shock target also leaves Conductive on one enemy within 10 yards and " ..
-              "makes Flame Shock last 2 sec longer (up to 6 sec for each cast)." },
+          text = "Lightning Bolt on your Flame Shock target arcs 30% of its damage to one enemy within 10 yards " ..
+              "and makes Flame Shock last 2 sec longer (up to 6 sec for each cast)." },
         { name = "Forked Tempest",
           text = "Chain Lightning's arc strikes 2 other enemies for 65% each." },
         { name = "Closed Circuit",
-          text = "Chain Lightning's arc returns into the Conductive enemy for its whole damage." },
+          text = "Chain Lightning's arc returns into its target for its whole damage." },
         { name = "Faraday Field",
           text = "Arcs reach 15 yards, and the first Chain Lightning arc every 8 sec deals 20% more damage." },
         { name = "Storm Lash",
-          text = "Lava Lash on a Conductive enemy arcs 25% of your attack power as Nature damage to another enemy " ..
-              "(half back into it if alone), once every 6 sec." },
+          text = "Lava Lash arcs 25% of your attack power as Nature damage to another enemy (half back into it if " ..
+              "alone), once every 6 sec." },
         { name = "Starbound Circuit",
-          text = "Starfire on a Conductive enemy arcs 25% of your spell power as Arcane damage to another enemy " ..
-              "(half back into it if alone), once every 8 sec." },
+          text = "Starfire arcs 25% of your spell power as Arcane damage to another enemy (half back into it if " ..
+              "alone), once every 8 sec." },
         { name = "Storm Within",
-          text = "Every 3 sec in combat, your Lightning Shield strikes the nearest Conductive enemy within 8 yards, " ..
-              "spending a charge. Not with Live Wire." },
+          text = "Every 3 sec in combat, your Lightning Shield strikes the nearest enemy within 8 yards, spending " ..
+              "a charge. Not with Live Wire." },
         { name = "Violent Reprisal",
           text = "Your Lightning Shield's arcs deal 40% more damage." },
         { name = "Distant Conductor",
@@ -198,8 +196,8 @@ EmberforgeRunesCatalog = {
         { name = "Storm's Eye",
           text = "Chain Heal makes your next Lightning Bolt within 6 sec deal 15% more damage." },
         { name = "Shocking Surge",
-          text = "Thunder Clap on a Conductive enemy deals 20% of your spell power as Nature damage to up to 5 " ..
-              "enemies within 8 yards of it, once every 8 sec." },
+          text = "Thunder Clap deals 20% of your spell power as Nature damage to up to 5 enemies within 8 yards of " ..
+              "its target, once every 8 sec." },
       },
       builds = {
         { name = "The Tempest", mods = { "Persistent Current", "Forked Tempest", "Violent Reprisal" },

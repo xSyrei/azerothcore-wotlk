@@ -285,6 +285,9 @@ static bool IsClassBuff(SpellInfo const* spellInfo)
         }
         switch (effect.TargetA.GetTarget())
         {
+            // No target: an area aura's own (Horn of Winter's second, cleared by the core's stacking fix,
+            // SpellInfoCorrections; the client patch reads the game's and made it 30 min there).
+            case Targets(0):
             case TARGET_UNIT_CASTER: case TARGET_UNIT_CASTER_AREA_PARTY: case TARGET_UNIT_TARGET_ALLY:
             case TARGET_UNIT_TARGET_ANY: case TARGET_UNIT_SRC_AREA_ALLY: case TARGET_UNIT_DEST_AREA_ALLY:
             case TARGET_UNIT_SRC_AREA_PARTY: case TARGET_UNIT_LASTTARGET_AREA_PARTY:
