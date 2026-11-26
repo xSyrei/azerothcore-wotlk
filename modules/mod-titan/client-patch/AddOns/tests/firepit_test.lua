@@ -37,6 +37,7 @@ function Widget:GetText() return self.text end
 function Widget:SetTextColor(r, g, b) self.color = { r, g, b } end
 function Widget:Click() self.scripts.OnClick(self, "LeftButton") end
 function Widget:Enable() self.enabled = true end
+function Widget:SetBackdropBorderColor(...) self.border = { ... } end
 function Widget:SetTexture(texture) self.texture = texture end
 function Widget:Disable() self.enabled = false end
 
@@ -96,41 +97,55 @@ server("OPEN")
 check(debug.finder.shown and sent[#sent] == "STATE", "OPEN shows the queue, which asks for its state")
 check(UIPanelWindows.EmberforgeFirepitFinder and UIPanelWindows.EmberforgeFirepitFinder.area == "left",
     "the queue is a left-hand panel, as the dungeon finder")
-server("S,23,1,0,10")
-server("L,0,1,Solo Star,57,1")
-server("L,1,1,Tester,41,4")
+server("S,23,31,0,12,0,10,30")
+server("L,1,1,Solo Star,57,1")
+server("L,4,1,Tester,41,4")
 server("LE")
-check(debug.members[1].name.text:find("Tester", 1, true) and debug.members[3].name.text:find("Lowbie", 1, true)
-    and not debug.members[4].shown, "the roster lists you and your party")
-check(debug.members[3].note.text:find("Needs level 10", 1, true) and not debug.queueButton.enabled,
+check(debug.members[1].member.name == "Tester" and debug.members[3].member.name == "Lowbie"
+    and not debug.members[4].member, "a slot for you and each party member, the rest open")
+check(debug.members[3].why == "Needs level 10." and not debug.queueButton.enabled,
     "a member under level 10 keeps the group out")
-check(debug.finder.best.text:find("wave 23", 1, true) and debug.boardRows[1].text:find("Solo Star", 1, true),
-    "your best and the solo leaderboard")
-debug.sideButtons[1]:Click()
-check(debug.boardRows[1].text:find("Tester", 1, true) and debug.boardRows[1].text:find("(4)", 1, true),
-    "the Groups side")
+check(debug.records[1].value.text == "23" and debug.records[2].value.text == "31" and debug.records[4].value.text == "12",
+    "the records: solo, duo, trio, group")
+GameTooltip.lines = {}
+function GameTooltip:AddLine(text) self.lines[#self.lines + 1] = text end
+function GameTooltip:AddDoubleLine(left, right) self.lines[#self.lines + 1] = left .. " " .. right end
+debug.records[4].scripts.OnEnter(debug.records[4])
+check(table.concat(GameTooltip.lines, "|"):find("Tester", 1, true)
+    and table.concat(GameTooltip.lines, "|"):find("wave 41", 1, true), "hovering a record shows its leaderboard")
 check(debug.finder.difficulty.text:find("x1.8", 1, true) and debug.finder.difficulty.text:find("x1.4", 1, true),
-    "the difficulty for a group of 3")
+    "the bottom bar: the difficulty for a group of 3")
+check(debug.start.text.text:find("Wave 1", 1, true) and not debug.startPrev.enabled and debug.startNext.enabled,
+    "the run starts at wave 1, later checkpoints offered")
+debug.startNext:Click()
+debug.startNext:Click()
+check(debug.start.text.text:find("Wave 10", 1, true), "the next checkpoints: 5, 10")
+for _ = 1, 10 do debug.startNext:Click() end
+check(debug.start.text.text:find("Wave 30", 1, true) and not debug.startNext.enabled,
+    "no further than the latest checkpoint reached")
+for _ = 1, 10 do debug.startPrev:Click() end
+check(debug.start.text.text:find("Wave 1", 1, true), "back to wave 1")
+debug.startNext:Click()
 
 party[2][2] = 12
 debug.finder.scripts.OnEvent(debug.finder, "PARTY_MEMBERS_CHANGED")
-check(debug.queueButton.enabled and debug.queueButton.text == "Queue my group", "the leader can queue the group")
+check(debug.queueButton.enabled and debug.queueButton.text == "Queue Group (3)", "the leader can queue the group")
 debug.queueButton:Click()
-check(sent[#sent] == "QUEUE", "Queue my group asks the server")
-server("QP,Tester,3,40")
+check(sent[#sent] == "QUEUE,5", "queuing asks the server, from the wave chosen")
+server("QP,Tester,3,40,5")
 server("QA,Tester,1")
 server("QA,Healer,0")
 check(#popups == 0, "the leader is not asked to accept their own queue")
 check(debug.members[1].status.texture:find("Ready", 1, true)
     and debug.members[2].status.texture:find("Waiting", 1, true)
-    and debug.finder.status.text:find("1 of 3", 1, true), "each member's answer shows")
+    and debug.finder.status.text:find("1 of 3", 1, true), "each member's answer shows on their slot")
 check(debug.queueButton.text == "Leave Queue", "the leader can leave the queue")
 server("QC,Healer declined.")
-check(debug.finder.status.text:find("Healer declined", 1, true) and debug.queueButton.text == "Queue my group",
+check(debug.finder.status.text:find("Healer declined", 1, true) and debug.queueButton.text == "Queue Group (3)",
     "a decline ends the queue, and says why")
 
 leader = false
-server("QP,Healer,3,40")
+server("QP,Healer,3,40,1")
 check(popups[1] and popups[1][1] == "EMBERFORGE_FIREPIT_PROPOSAL" and popups[1][2] == "Healer",
     "a member is asked to accept")
 StaticPopupDialogs.EMBERFORGE_FIREPIT_PROPOSAL.OnAccept()

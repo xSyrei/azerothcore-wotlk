@@ -1072,9 +1072,12 @@ replaced mod-autobalance):
 An endless wave arena in a private Ring of Law (Blackrock Depths, map 230), solo or for a group of up to 10, and the
 rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emberforge_Firepit` addon).
 - **The queue** is a tab of the group finder (The Firepit, beside Dungeons and Player vs. Player:
-  `Emberforge_Journal/MicroMenu.lua`), the Firepit addon's panel: the rules, the group (each member's level and
-  answer), the monsters' health and numbers for its size, the Hero's best wave and the leaderboard (top 5, solo and
-  groups), and the button. Alone, the Hero goes straight in; a group's leader queues and every member is asked to
+  `Emberforge_Journal/MicroMenu.lua`), the Firepit addon's panel over a painting of the ring (`Art\Background`,
+  from `client-patch/icons/ui/FirepitBackground.png` by `build_firepit_art.py`; a placeholder until it is there): on
+  the left the rules, the potential rewards and the group (a slot a member: portrait, level, answer); on the right the
+  Hero's records by bracket (solo, duo, trio, a group of 4-10: `titan_firepit_records`, each one's top 5 on hover),
+  where the run starts (wave 1, or any 5th wave every member has reached), and the button; along the bottom, the
+  monsters' health and numbers for the group's size. Alone, the Hero goes straight in; a group's leader queues and every member is asked to
   accept (40 sec, a ready-check popup); once all have, everyone goes from wherever they are. From level 10, every
   member; alive, out of combat and out of any instance, 10 at most. The requests (STATE, QUEUE, ACCEPT, DECLINE,
   LEAVE) are answered on the world's thread (members on other maps are teleported from there). The **Firepit Keeper**

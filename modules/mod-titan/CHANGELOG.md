@@ -7,8 +7,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 ### The Firepit
 
 - **A new endless wave arena** in a private Ring of Law, from level 10. Queue from the **group finder**: its new
-  **The Firepit** tab (beside Dungeons and Player vs. Player) shows the rules, your group, how much tougher your group
-  size makes it, your best wave and the leaderboard. Alone you go straight in; a group's leader queues and everyone
+  **The Firepit** tab (beside Dungeons and Player vs. Player) shows the rules and rewards, your group, your best wave
+  solo, as a duo, a trio and a group (hover one for its leaderboard), how much tougher your group size makes it, and
+  where to start: wave 1, or any 5th wave everyone in your group has reached. Alone you go straight in; a group's leader queues and everyone
   gets an Accept prompt, then the whole group goes in from wherever they are (up to 10). The **Firepit Keeper**
   beside Silas Darkmoon in Stormwind and Orgrimmar opens it too.
 - Waves come every **60 seconds** whether you are ready or not, and the ones you don't kill stay. Wave 1 is easy;

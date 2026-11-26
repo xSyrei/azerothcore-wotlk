@@ -62,7 +62,7 @@
 // - The dead stay down (no release: they stay where they fell); a battle resurrection brings them back. The last
 //   death ends the run: everyone is brought back at full, each Hero who survived a 15th wave gets a chest of their
 //   own (a piece of gear at their level a 15 waves; epic from wave 45), the results go to the Emberforge_Firepit
-//   addon, and the best wave is recorded (titan_firepit_best; the Keeper's leaderboard).
+//   addon, and the best wave is recorded for its group size: solo, duo, trio, group (titan_firepit_records).
 namespace
 {
     constexpr uint32 MAP_RING_OF_LAW = 230;            // Blackrock Depths
@@ -90,7 +90,14 @@ namespace
     constexpr uint32 SPOILS_SECONDS = 900;
     constexpr uint8 FIREPIT_LEVEL = 10;                 // the group finder's tab opens there too
     constexpr uint32 PROPOSAL_MS = 40000;               // a group's members this long to accept
-    constexpr uint32 LEADERBOARD_ROWS = 5;              // a side, in the group finder's tab
+    constexpr uint32 LEADERBOARD_ROWS = 5;              // a bracket's, in the group finder's tab
+    constexpr uint32 CHECKPOINT_EVERY = 5;              // a run may start at any 5th wave its Heroes have all reached
+    constexpr uint8 BRACKETS = 4;                       // records: 1 solo, 2 duo, 3 trio, 4 a group of 4 to 10
+
+    uint8 Bracket(uint32 groupSize)
+    {
+        return uint8(std::clamp<uint32>(groupSize, 1, BRACKETS));
+    }
 
     // The roster: the wave each kind joins at. The Ring of Law's beasts first, then the Depths' Dark Iron, their
     // fire, their golems and the Twilight's Hammer.
@@ -733,13 +740,13 @@ private:
         {
             if (!record.peakWave)
                 continue;
-            trans->Append("INSERT INTO `titan_firepit_best` (`guid`, `best_wave`, `group_size`, `kills`, `run_date`) "
-                "VALUES ({}, {}, {}, {}, UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE "
+            trans->Append("INSERT INTO `titan_firepit_records` (`guid`, `bracket`, `best_wave`, `group_size`, "
+                "`kills`, `run_date`) VALUES ({}, {}, {}, {}, {}, UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE "
                 "`group_size` = IF(VALUES(`best_wave`) > `best_wave`, VALUES(`group_size`), `group_size`), "
                 "`kills` = IF(VALUES(`best_wave`) > `best_wave`, VALUES(`kills`), `kills`), "
                 "`run_date` = IF(VALUES(`best_wave`) > `best_wave`, VALUES(`run_date`), `run_date`), "
                 "`best_wave` = GREATEST(`best_wave`, VALUES(`best_wave`))",
-                guid.GetCounter(), record.peakWave, _groupSize, record.kills);
+                guid.GetCounter(), Bracket(_groupSize), record.peakWave, _groupSize, record.kills);
         }
         CharacterDatabase.CommitTransaction(trans);
     }
@@ -875,13 +882,13 @@ private:
     void ShowLeaderboard(Player* player)
     {
         ChatHandler handler(player->GetSession());
-        for (auto const& [title, where] : { std::pair<char const*, char const*>("Solo", "`group_size` = 1"),
-                 std::pair<char const*, char const*>("Groups", "`group_size` > 1") })
+        char const* const titles[] = { "Solo", "Duo", "Trio", "Group" };
+        for (uint8 bracket = 1; bracket <= BRACKETS; ++bracket)
         {
-            handler.PSendSysMessage("|cffff7f2aThe Firepit - {}:|r", title);
+            handler.PSendSysMessage("|cffff7f2aThe Firepit - {}:|r", titles[bracket - 1]);
             QueryResult result = CharacterDatabase.Query("SELECT c.`name`, b.`best_wave`, b.`group_size` FROM "
-                "`titan_firepit_best` b JOIN `characters` c ON c.`guid` = b.`guid` WHERE b.{} "
-                "ORDER BY b.`best_wave` DESC, b.`run_date` ASC LIMIT 10", where);
+                "`titan_firepit_records` b JOIN `characters` c ON c.`guid` = b.`guid` WHERE b.`bracket` = {} "
+                "ORDER BY b.`best_wave` DESC, b.`run_date` ASC LIMIT {}", bracket, LEADERBOARD_ROWS);
             if (!result)
             {
                 handler.PSendSysMessage("  No one yet.");
@@ -892,14 +899,23 @@ private:
             {
                 Field* fields = result->Fetch();
                 handler.PSendSysMessage("  {}. {}: wave {}{}", ++rank, fields[0].Get<std::string>(),
-                    fields[1].Get<uint32>(), fields[2].Get<uint32>() > 1
+                    fields[1].Get<uint32>(), bracket == BRACKETS
                         ? " (group of " + std::to_string(fields[2].Get<uint32>()) + ")" : std::string());
             } while (result->NextRow());
         }
-        if (QueryResult own = CharacterDatabase.Query("SELECT `best_wave`, `group_size` FROM `titan_firepit_best` "
-            "WHERE `guid` = {}", player->GetGUID().GetCounter()))
-            handler.PSendSysMessage("Your best: wave {} ({}).", own->Fetch()[0].Get<uint32>(),
-                own->Fetch()[1].Get<uint32>() > 1 ? "in a group" : "solo");
+    }
+
+    // The Hero's best wave in any bracket (0 none), and the latest checkpoint they may start from.
+    uint32 BestWave(ObjectGuid const& guid)
+    {
+        QueryResult result = CharacterDatabase.Query("SELECT MAX(`best_wave`) FROM `titan_firepit_records` "
+            "WHERE `guid` = {}", guid.GetCounter());
+        return result && !result->Fetch()[0].IsNull() ? result->Fetch()[0].Get<uint32>() : 0;
+    }
+
+    uint32 Checkpoint(uint32 best)
+    {
+        return best >= CHECKPOINT_EVERY ? best / CHECKPOINT_EVERY * CHECKPOINT_EVERY : 1;
     }
 }
 
@@ -910,6 +926,7 @@ namespace
 {
     struct Proposal
     {
+        uint32 startWave = 1;
         std::vector<ObjectGuid> members;
         std::unordered_map<ObjectGuid, uint8> answers;      // 0 waiting, 1 accepted, 2 declined
         uint32 expiresAt = 0;
@@ -931,30 +948,35 @@ namespace
                 SendAddon(member, payload);
     }
 
-    // S,<best wave>,<its group size>,<in a proposal 0|1>,<the level it opens at>, then the leaderboard: L,<solo 0|
-    // group 1>,<rank>,<name>,<wave>,<group size> and LE.
+    // S,<best solo>,<duo>,<trio>,<group>,<in a proposal 0|1>,<the level it opens at>,<latest checkpoint>, then each
+    // bracket's leaderboard: L,<bracket 1-4>,<rank>,<name>,<wave>,<group size> and LE.
     void SendFinderState(Player* player)
     {
-        uint32 best = 0, size = 0;
-        if (QueryResult own = CharacterDatabase.Query("SELECT `best_wave`, `group_size` FROM `titan_firepit_best` "
+        uint32 best[BRACKETS + 1] = {};
+        if (QueryResult own = CharacterDatabase.Query("SELECT `bracket`, `best_wave` FROM `titan_firepit_records` "
             "WHERE `guid` = {}", player->GetGUID().GetCounter()))
-        {
-            best = own->Fetch()[0].Get<uint32>();
-            size = own->Fetch()[1].Get<uint32>();
-        }
-        SendAddon(player, "S," + std::to_string(best) + ',' + std::to_string(size) + ','
-            + std::to_string(ProposalOf(player->GetGUID()) ? 1 : 0) + ',' + std::to_string(FIREPIT_LEVEL));
-        for (uint32 side = 0; side < 2; ++side)
+            do
+            {
+                uint8 bracket = own->Fetch()[0].Get<uint8>();
+                if (bracket >= 1 && bracket <= BRACKETS)
+                    best[bracket] = own->Fetch()[1].Get<uint32>();
+            } while (own->NextRow());
+        uint32 highest = *std::max_element(std::begin(best), std::end(best));
+        SendAddon(player, "S," + std::to_string(best[1]) + ',' + std::to_string(best[2]) + ','
+            + std::to_string(best[3]) + ',' + std::to_string(best[4]) + ','
+            + std::to_string(ProposalOf(player->GetGUID()) ? 1 : 0) + ',' + std::to_string(FIREPIT_LEVEL) + ','
+            + std::to_string(Checkpoint(highest)));
+        for (uint8 bracket = 1; bracket <= BRACKETS; ++bracket)
         {
             QueryResult result = CharacterDatabase.Query("SELECT c.`name`, b.`best_wave`, b.`group_size` FROM "
-                "`titan_firepit_best` b JOIN `characters` c ON c.`guid` = b.`guid` WHERE b.`group_size` {} "
-                "ORDER BY b.`best_wave` DESC, b.`run_date` ASC LIMIT {}", side ? "> 1" : "= 1", LEADERBOARD_ROWS);
+                "`titan_firepit_records` b JOIN `characters` c ON c.`guid` = b.`guid` WHERE b.`bracket` = {} "
+                "ORDER BY b.`best_wave` DESC, b.`run_date` ASC LIMIT {}", bracket, LEADERBOARD_ROWS);
             uint32 rank = 0;
             if (result)
                 do
                 {
                     Field* fields = result->Fetch();
-                    SendAddon(player, "L," + std::to_string(side) + ',' + std::to_string(++rank) + ','
+                    SendAddon(player, "L," + std::to_string(bracket) + ',' + std::to_string(++rank) + ','
                         + Clean(fields[0].Get<std::string>()) + ',' + std::to_string(fields[1].Get<uint32>()) + ','
                         + std::to_string(fields[2].Get<uint32>()));
                 } while (result->NextRow());
@@ -971,7 +993,8 @@ namespace
         proposals.erase(found);
     }
 
-    void Queue(Player* player)
+    // A run from wave 1, or from a checkpoint (every 5th) all its Heroes have reached.
+    void Queue(Player* player, uint32 startWave)
     {
         std::vector<Player*> members;
         std::string why;
@@ -982,15 +1005,28 @@ namespace
             SendAddon(player, "QC," + Clean(why));
             return;
         }
+        if (startWave != 1)
+        {
+            if (!startWave || startWave % CHECKPOINT_EVERY)
+                return;
+            for (Player* member : members)
+                if (Checkpoint(BestWave(member->GetGUID())) < startWave)
+                {
+                    SendAddon(player, "QC," + Clean(member->GetName() + " has not reached wave "
+                        + std::to_string(startWave) + "."));
+                    return;
+                }
+        }
         if (members.size() == 1)
         {
-            if (!StartRun(player, 1, true, why))
+            if (!StartRun(player, startWave, true, why))
                 SendAddon(player, "QC," + Clean(why));
             else
                 SendAddon(player, "QG");
             return;
         }
         Proposal& proposal = proposals[player->GetGUID()];
+        proposal.startWave = startWave;
         proposal.expiresAt = GameTime::GetGameTimeMS().count() + PROPOSAL_MS;
         for (Player* member : members)
         {
@@ -998,7 +1034,7 @@ namespace
             proposal.answers[member->GetGUID()] = member == player ? 1 : 0;
         }
         ToMembers(proposal, "QP," + Clean(player->GetName()) + ',' + std::to_string(members.size()) + ','
-            + std::to_string(PROPOSAL_MS / 1000));
+            + std::to_string(PROPOSAL_MS / 1000) + ',' + std::to_string(startWave));
         for (Player* member : members)
             ToMembers(proposal, "QA," + Clean(member->GetName()) + ',' + std::to_string(proposal.answers[
                 member->GetGUID()]));
@@ -1024,7 +1060,7 @@ namespace
         // Everyone in: the group as it is now goes.
         Player* lead = ObjectAccessor::FindConnectedPlayer(leader);
         std::string why = "The group's leader is gone.";
-        if (lead && StartRun(lead, 1, true, why))
+        if (lead && StartRun(lead, proposal.startWave, true, why))
         {
             ToMembers(proposal, "QG");
             proposals.erase(leader);
@@ -1038,7 +1074,13 @@ namespace
         if (request == "STATE")
             SendFinderState(player);
         else if (request == "QUEUE")
-            Queue(player);
+            Queue(player, 1);
+        else if (request.rfind("QUEUE,", 0) == 0)
+        {
+            Optional<uint32> wave = Acore::StringTo<uint32>(std::string_view(request).substr(6));
+            if (wave)
+                Queue(player, *wave);
+        }
         else if (request == "ACCEPT")
             Answer(player, true);
         else if (request == "DECLINE")
