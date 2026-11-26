@@ -2,7 +2,8 @@
 -- Emberforge_Journal/MicroMenu.lua), the wave tracker on the right during a run (wave, its time on a bar, enemies
 -- alive, Heroes standing, the run's news), and the recap when the run ends: the run in big numbers, who stood out,
 -- and a row for each Hero, sortable by any column, with a button that shares the result in group chat. /firepit
--- opens the last recap again.
+-- opens the last recap again. Inside the Firepit, the minimap's dungeon finder eye shows, as in any dungeon: its menu
+-- takes you out.
 --
 -- The server (mod-titan, src/firepit.cpp) talks in addon whispers to the player, prefix EFFP:
 --   H,<wave>,<sec left>,<enemies alive>,<boss wave 0|1>,<Heroes standing>,<Heroes in the run>,<countdown sec>
@@ -17,7 +18,7 @@
 --   QP,<leader>,<Heroes>,<sec>,<start wave>   your group's leader queued: accept or decline
 --   QA,<name>,<0 waiting|1 accepted|2 declined>    QC,<why>   the queue ended    QG   everyone accepted: going in
 -- To the server: STATE, QUEUE[,<start wave>] (alone: straight in; a leader: the group is asked), ACCEPT, DECLINE,
--- LEAVE.
+-- LEAVE, EXIT (the eye's Teleport out: home, where you came in from).
 
 local PREFIX = "EFFP"
 local GOLD = { 1, 0.82, 0 }
@@ -1047,6 +1048,104 @@ local function OnQueueMessage(kind, fields)
     return true
 end
 
+-- The eye -----------------------------------------------------------------------------------------------------------
+-- The dungeon finder's eye on the minimap (MiniMapLFGFrame) shows only for the dungeon finder's own groups: in the
+-- Firepit it shows too, its menu offering the way out. The dungeon finder's own uses of it are left as they were.
+
+local FIREPIT_MAP_NAME = "The Firepit"     -- the client patch's Map.dbc (client-patch/hd/make_atmosphere.py)
+local inside = false
+local eye = MiniMapLFGFrame
+local eyeMenu = CreateFrame("Frame", "EmberforgeFirepitEyeMenu", UIParent, "UIDropDownMenuTemplate")
+
+StaticPopupDialogs["EMBERFORGE_FIREPIT_EXIT"] = {
+    text = "Leave the Firepit?\n\nIf the run is still going, you fall where you stand.",
+    button1 = YES or "Yes",
+    button2 = NO or "No",
+    OnAccept = function() Send("EXIT") end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+
+local function Firepit()
+    return inside and not (GetLFGMode and GetLFGMode())
+end
+
+local function UpdateEye()
+    if not eye then
+        return
+    end
+    if Firepit() then
+        eye:Show()
+        if EyeTemplate_StopAnimating and eye.eye then
+            EyeTemplate_StopAnimating(eye.eye)
+        end
+    elseif not (GetLFGMode and GetLFGMode()) then
+        eye:Hide()
+    end
+end
+
+local function SetInside(now)
+    if inside ~= now then
+        inside = now
+        UpdateEye()
+    end
+end
+
+local function CheckInside()
+    local name, kind = nil, nil
+    if GetInstanceInfo then
+        name, kind = GetInstanceInfo()
+    end
+    SetInside(name == FIREPIT_MAP_NAME and kind ~= "none")
+end
+
+local function EyeMenu()
+    return {
+        { text = FIREPIT_MAP_NAME, isTitle = true, notCheckable = true },
+        { text = TELEPORT_OUT_OF_DUNGEON or "Teleport out of Dungeon", notCheckable = true,
+          func = function() StaticPopup_Show("EMBERFORGE_FIREPIT_EXIT") end },
+        { text = "Show last results", notCheckable = true,
+          func = function() SlashCmdList.EMBERFORGEFIREPIT() end },
+    }
+end
+
+if eye then
+    local onEvent, onClick = eye:GetScript("OnEvent"), eye:GetScript("OnClick")
+    local onEnter, onLeave = eye:GetScript("OnEnter"), eye:GetScript("OnLeave")
+    eye:SetScript("OnEvent", function(...)
+        if onEvent then
+            onEvent(...)
+        end
+        UpdateEye()
+    end)
+    eye:SetScript("OnClick", function(self, button)
+        if not Firepit() then
+            return onClick and onClick(self, button)
+        end
+        PlaySound("igMainMenuOpen")
+        EasyMenu(EyeMenu(), eyeMenu, self, 0, -5, "MENU")
+    end)
+    eye:SetScript("OnEnter", function(self)
+        if not Firepit() then
+            return onEnter and onEnter(self)
+        end
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:SetText(FIREPIT_MAP_NAME)
+        GameTooltip:AddLine("You are in the Firepit. Click to leave.", 1, 0.82, 0, 1)
+        GameTooltip:Show()
+    end)
+    eye:SetScript("OnLeave", function(self)
+        if onLeave then
+            onLeave(self)
+        end
+        GameTooltip:Hide()
+    end)
+    if hooksecurefunc and MiniMapLFG_UpdateIsShown then
+        hooksecurefunc("MiniMapLFG_UpdateIsShown", UpdateEye)    -- the dungeon finder's own calls
+    end
+end
+
 -- Messages ----------------------------------------------------------------------------------------------------------
 
 local pending
@@ -1058,10 +1157,12 @@ local function OnMessage(message)
         return
     end
     if kind == "H" then
+        SetInside(true)
         ShowHud(fields)
     elseif kind == "A" then
         HudNews(fields[2] or "", fields[3] == "1")
     elseif kind == "INTRO" then
+        SetInside(true)
         ShowIntro()
     elseif kind == "RUN" then
         pending = { reached = tonumber(fields[2]) or 0, seconds = tonumber(fields[3]) or 0,
@@ -1088,8 +1189,12 @@ end
 local events = CreateFrame("Frame")
 events:RegisterEvent("CHAT_MSG_ADDON")
 events:RegisterEvent("ADDON_LOADED")
+events:RegisterEvent("PLAYER_ENTERING_WORLD")
+events:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 events:SetScript("OnEvent", function(_, event, prefix, message)
-    if event == "ADDON_LOADED" then
+    if event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
+        CheckInside()
+    elseif event == "ADDON_LOADED" then
         if prefix == "Emberforge_Firepit" and EmberforgeFirepitLast then
             run = EmberforgeFirepitLast
         end
@@ -1113,4 +1218,5 @@ end
 EmberforgeFirepitDebug = { intro = intro, hud = hud, results = results, rows = rows, headers = headers,
     OnMessage = OnMessage,
     Run = function() return run end, finder = finder, members = members, records = records,
-    queueButton = queueButton, start = start, startPrev = startPrev, startNext = startNext }
+    queueButton = queueButton, start = start, startPrev = startPrev, startNext = startNext,
+    Inside = function() return inside end }

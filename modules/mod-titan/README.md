@@ -1093,19 +1093,19 @@ rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emb
   map. The server: `titan_firepit.sql` (`map_dbc`, `mapdifficulty_dbc`, `instance_template`) and the
   `ac-firepit-map` service in docker-compose.yml, which copies map 650's terrain, collision and navigation files as
   map 760's in the data volume before the worldserver starts (`tools/firepit-map.sh`; by hand outside Docker:
-  `tools/firepit-map.sh <DataDir>`). The arena: centre (746.5, 618.5), floor 54 yards out; the enemies come in by the
-  champions' gate (north) and the main gate (east). The zone name the client shows is still the terrain's own.
+  `tools/firepit-map.sh <DataDir>`). The arena: centre (746.5, 618.5), floor 54 yards out; the enemies come in on the
+  floor around its edge (38-46 yards out: the gates' tunnels are not all walkable). The zone name the client shows is still the terrain's own.
 - **The arena dressed**: each run places the client's own fire (`DECOR_RINGS`, game objects 910141-910147): a low
   fire pit in the middle, sixteen Dark Iron braziers along the wall, embers and smoke rising by it, lava pillars at both
   gates (nothing tall or bright where the fighting is). The Heroes arrive around the pit, and
   the addon shows the Firepit's own title as they do. The client's lighting patch gives the map a warm ember light
   under a red sky (`client-patch/hd/make_atmosphere.py`).
-- **Waves** every 60 sec (or 5 sec after the last enemy dies), from both gates of the ring: wave n brings 3 + n/2
+- **Waves** every 60 sec (or 5 sec after the last enemy dies), around the arena's edge: wave n brings 3 + n/2
   enemies, 20% more for each player past the first, from the Depths' roster (`ROSTER`: the ring's beasts, the Dark
   Iron, their fire, golems, the Twilight's Hammer; a new kind every wave or two, the newest six in a wave). Every 5th
   wave adds a boss (`BOSSES`: the Ring of Law's six, then the Depths' own; two from wave 60, three from 120), with 4
   times the health and 1.5 times the damage. Survivors stay and pile up; past 150 alive, new spawns are skipped and
-  every enemy left grows 3% instead. Enemies that stray out of the ring are put back in.
+  every enemy left grows 3% instead. Enemies that stray off the floor (past 52 yards, or up in the stands) are put back on its edge.
 - **Difficulty**: the creatures are at the group's lowest level, as any dungeon's (`dungeon_scaling.cpp`); on top,
   `Firepit::HealthMultiplier` and `DamageMultiplier` (read there): 35% at wave 1, 10% more each wave (compounding:
   wave 20 x2.1, wave 50 x37), health 40% more for each player past the first.
@@ -1116,6 +1116,10 @@ rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emb
   full), the results go to the addon and the Keeper appears to lead them out (back where they came from).
 - **Records**: each character's best wave (`titan_firepit_best`, characters DB); the Keeper's leaderboard shows the
   top 10 solo and in groups.
+- **The way out**: inside the Firepit (its map name, or the server's INTRO and H), the addon shows the minimap's dungeon
+  finder eye (`MiniMapLFGFrame`, its own scripts kept for the dungeon finder's groups); its menu's Teleport out asks,
+  then sends EXIT: a Hero still up falls (the run goes on without them), a fallen one is brought back, and they go
+  home to where they came in from. The Firepit Keeper's "Take me out" does the same after a run.
 - **The addon** (`Emberforge_Firepit`, prefix EFFP): a wave tracker on the right under the minimap (the wave, its time
   on a bar, enemies alive, Heroes standing, and the run's news: the server's announcements come to it, A, a boss's in
   red with the raid warning's sound) and the recap: the run in big numbers (wave, time, kills, Heroes, enemy health),

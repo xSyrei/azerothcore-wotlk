@@ -74,12 +74,15 @@ namespace
     constexpr char const* PREFIX = "EFFP";
 
     Position const CENTER = { 746.5f, 618.5f, 411.2f, 4.71f };
-    Position const GATES[] = {
-        { 746.67f, 684.08f, 412.5f, 4.65f },           // the champions' gate (north)
-        { 805.23f, 618.04f, 412.39f, 3.146f },         // the main gate (east)
+    Position const GATES[] = {                          // dressed with lava pillars (no enemy comes through them:
+        { 746.67f, 684.08f, 412.5f, 4.65f },           // the tunnels behind are not all walkable)
+        { 805.23f, 618.04f, 412.39f, 3.146f },
     };
-    constexpr float ARENA_RADIUS = 70.0f;               // an enemy farther from the center is put back in (the floor
-                                                        // is 54 yards out, the gates 59 and 66)
+    // The enemies come in on the arena's floor, around its edge (the floor is 54 yards out all round; the stands above
+    // it). An enemy off the floor (farther out, or up in the stands) is put back in.
+    constexpr float SPAWN_RADIUS_MIN = 38.0f, SPAWN_RADIUS_MAX = 46.0f;
+    constexpr float ARENA_RADIUS = 52.0f;
+    constexpr float ARENA_HEIGHT = 8.0f;                // above the centre's floor: off it
     constexpr float ARRIVAL_RADIUS = 9.0f;              // the Heroes come in around the pit, not in it
 
     // The arena dressed for the Firepit (titan_firepit.sql: game objects of the client's own fire): the pit in the
@@ -431,10 +434,28 @@ public:
             record->killer = Clean(killer->GetName());
     }
 
+    // A Hero leaving by the eye (Teleport out): fallen if the run goes on, and brought back to walk out (their
+    // stand-up not counted as a resurrection).
+    void Leaving(Player* player)
+    {
+        if (Record* record = RecordOf(player))
+        {
+            if (Running() && !record->down)
+                FellNow(*record, "left the Firepit");
+            record->left = true;
+        }
+        if (!player->IsAlive())
+        {
+            player->ResurrectPlayer(1.0f);
+            player->SpawnCorpseBones();
+        }
+        player->CombatStop(true);
+    }
+
     void Resurrected(Player* player)
     {
         if (Record* record = Running() ? RecordOf(player) : nullptr)
-            if (record->down)
+            if (record->down && !record->left)
             {
                 record->down = false;
                 ++record->resurrections;
@@ -485,14 +506,20 @@ public:
 private:
     // The run's news, on each Hero's wave tracker (Emberforge_Firepit): urgent, in red with a raid warning's sound.
     // The ring dressed (once a run): each piece on the floor where it stands.
+    // The arena's floor under (x, y), not the stands above it.
+    float FloorAt(float x, float y) const
+    {
+        float z = instance->GetHeight(x, y, CENTER.GetPositionZ() + 5.0f);
+        if (z < CENTER.GetPositionZ() - 10.0f || z > CENTER.GetPositionZ() + 5.0f)
+            z = CENTER.GetPositionZ() + 1.0f;
+        return z;
+    }
+
     void Decorate()
     {
         auto place = [this](uint32 entry, float x, float y, float facing)
         {
-            float z = instance->GetHeight(x, y, CENTER.GetPositionZ() + 5.0f);
-            if (z < CENTER.GetPositionZ() - 10.0f || z > CENTER.GetPositionZ() + 10.0f)
-                z = CENTER.GetPositionZ();
-            instance->SummonGameObject(entry, x, y, z, facing, 0.0f, 0.0f, std::sin(facing / 2.0f),
+            instance->SummonGameObject(entry, x, y, FloorAt(x, y), facing, 0.0f, 0.0f, std::sin(facing / 2.0f),
                 std::cos(facing / 2.0f), 0);
         };
         for (Ring const& ring : DECOR_RINGS)
@@ -608,9 +635,11 @@ private:
                     }
             return;
         }
-        Position const& gate = GATES[urand(0, uint32(std::size(GATES)) - 1)];
-        Position at(gate.GetPositionX() + frand(-3.0f, 3.0f), gate.GetPositionY() + frand(-3.0f, 3.0f),
-            gate.GetPositionZ(), gate.GetOrientation());
+        float angle = frand(0.0f, 2.0f * float(M_PI));
+        float radius = frand(SPAWN_RADIUS_MIN, SPAWN_RADIUS_MAX);
+        float x = CENTER.GetPositionX() + radius * std::cos(angle);
+        float y = CENTER.GetPositionY() + radius * std::sin(angle);
+        Position at(x, y, FloorAt(x, y), angle + float(M_PI));
         TempSummon* enemy = instance->SummonCreature(spawn.entry, at);
         if (!enemy)
             return;
@@ -688,9 +717,14 @@ private:
                 enemy->DespawnOrUnsummon(Milliseconds(CORPSE_MS));
                 continue;
             }
-            if (enemy->GetExactDist2d(CENTER.GetPositionX(), CENTER.GetPositionY()) > ARENA_RADIUS)
-                enemy->NearTeleportTo(CENTER.GetPositionX() + ARRIVAL_RADIUS, CENTER.GetPositionY(),
-                    CENTER.GetPositionZ(), enemy->GetOrientation());
+            if (enemy->GetExactDist2d(CENTER.GetPositionX(), CENTER.GetPositionY()) > ARENA_RADIUS
+                || enemy->GetPositionZ() > CENTER.GetPositionZ() + ARENA_HEIGHT)
+            {
+                float angle = enemy->GetAngle(CENTER.GetPositionX(), CENTER.GetPositionY()) + float(M_PI);
+                float x = CENTER.GetPositionX() + SPAWN_RADIUS_MIN * std::cos(angle);
+                float y = CENTER.GetPositionY() + SPAWN_RADIUS_MIN * std::sin(angle);
+                enemy->NearTeleportTo(x, y, FloorAt(x, y), angle + float(M_PI));
+            }
             if (!enemy->GetVictim() || !enemy->GetVictim()->IsAlive())
                 Engage(enemy);
             alive.push_back(guid);
@@ -1154,6 +1188,14 @@ namespace
             Answer(player, true);
         else if (request == "DECLINE")
             Answer(player, false);
+        else if (request == "EXIT")
+        {
+            if (FirepitInstance* run = RunOf(player->GetMap()))
+            {
+                run->Leaving(player);   // the minimap eye's Teleport out (Emberforge_Firepit)
+                SendHome(player);
+            }
+        }
         else if (request == "LEAVE")
         {
             if (auto* entry = ProposalOf(player->GetGUID()))
@@ -1307,7 +1349,8 @@ public:
         PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT
     }) { }
 
-    // The group finder tab's requests (STATE, QUEUE, ACCEPT, DECLINE, LEAVE): to the world's thread.
+    // The group finder tab's requests (STATE, QUEUE, ACCEPT, DECLINE, LEAVE) and the eye's EXIT: to the world's
+    // thread.
     bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg,
         Player* receiver) override
     {

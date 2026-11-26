@@ -49,6 +49,7 @@ function Widget:SetTexture(texture) self.texture = texture end
 function Widget:SetScale(scale) self.scale = scale end
 function Widget:SetPoint(point) self.point = self.point or point end
 function Widget:Disable() self.enabled = false end
+function Widget:GetScript(event) return self.scripts[event] end
 
 UIParent = NewWidget("UIParent")
 local frames = {}
@@ -92,6 +93,15 @@ function GetNumRaidMembers() return 0 end
 local partySize = 2
 function GetNumPartyMembers() return partySize end
 DEFAULT_CHAT_FRAME = { AddMessage = function() end }
+local instanceName, instanceKind = "Stormwind City", "none"
+function GetInstanceInfo() return instanceName, instanceKind end
+function GetLFGMode() return nil end
+local menus = {}
+function EasyMenu(menu) menus[#menus + 1] = menu end
+MiniMapLFGFrame = NewWidget("MiniMapLFGFrame")
+MiniMapLFGFrame.shown = false
+local dungeonFinderClicked = false
+MiniMapLFGFrame.scripts.OnClick = function() dungeonFinderClicked = true end
 
 dofile(DIR .. "Emberforge_Firepit.lua")
 local debug = EmberforgeFirepitDebug
@@ -169,8 +179,23 @@ server("QG")
 check(not debug.finder.shown and popups.hidden == "EMBERFORGE_FIREPIT_PROPOSAL", "going in closes the queue")
 leader = true
 
+MiniMapLFGFrame.scripts.OnClick(MiniMapLFGFrame, "LeftButton")
+check(dungeonFinderClicked and #menus == 0, "outside the Firepit, the eye is the dungeon finder's own")
 server("INTRO")
 check(debug.intro.shown and debug.intro.title.text == "THE FIREPIT", "arriving shows the Firepit's title")
+check(MiniMapLFGFrame.shown and debug.Inside(), "inside the Firepit, the minimap's eye shows")
+MiniMapLFGFrame.scripts.OnClick(MiniMapLFGFrame, "LeftButton")
+local menu = menus[1]
+check(menu and menu[2].text:find("Teleport out", 1, true), "the eye's menu offers the way out")
+menu[2].func()
+check(popups[#popups][1] == "EMBERFORGE_FIREPIT_EXIT", "leaving asks first")
+StaticPopupDialogs.EMBERFORGE_FIREPIT_EXIT.OnAccept()
+check(sent[#sent] == "EXIT", "and then asks the server to send you out")
+events.scripts.OnEvent(events, "PLAYER_ENTERING_WORLD")
+check(not MiniMapLFGFrame.shown and not debug.Inside(), "out of the Firepit, the eye goes")
+instanceName, instanceKind = "The Firepit", "party"
+events.scripts.OnEvent(events, "PLAYER_ENTERING_WORLD")
+check(MiniMapLFGFrame.shown, "a Hero who logs in inside sees the eye")
 server("H,0,0,0,0,3,3,8")
 check(debug.hud.shown and debug.hud.timer.text == "0:08" and debug.hud.wave.text == "Get ready",
     "the countdown shows on the wave tracker")

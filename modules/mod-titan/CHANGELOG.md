@@ -21,6 +21,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - **The Firepit is its own place**: the great arena of the Argent Tournament's coliseum, open to a burning red sky,
   lit warm and ember-orange with a smoky haze, its own loading screen and name. Each run lights it up: a fire pit in
   the middle, braziers along the walls, embers rising and lava at the gates. Arriving shows the Firepit's own title.
+- **The Firepit is a dungeon like any other**: the dungeon finder's **eye** shows on your minimap while you're
+  inside, and its menu's **Teleport out** takes you back to where you came in from (mid-run, you fall and the
+  others fight on). Enemies now come in all around the arena floor's edge, never stuck behind its gates.
 - **The wave tracker** sits on the right under the minimap: the wave, its time running out on a bar, enemies alive,
   Heroes standing, and the run's news (a boss coming in red, with a warning sound).
 - **The recap** shows the run in big numbers (wave, time, kills, Heroes, enemy health), who stood out, and each
