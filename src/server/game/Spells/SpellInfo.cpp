@@ -1695,7 +1695,7 @@ SpellCastResult SpellInfo::CheckTarget(WorldObject const* caster, WorldObject co
             return SPELL_FAILED_TARGET_AFFECTING_COMBAT;
 
         if (HasAttribute(SPELL_ATTR3_NOT_ON_AOE_IMMUNE))
-            if (auto creature = unitTarget->ToCreature())
+            if (auto creature = unitTarget->ToCreature(); creature && !creature->HasNeutralizedDefenses())  // Emberforge
                 if (CreatureImmunities const* immunities = sSpellMgr->GetCreatureImmunities(creature->GetCreatureTemplate()->CreatureImmunitiesId))
                     if (immunities->ImmuneAoE)
                         return SPELL_FAILED_BAD_TARGETS;

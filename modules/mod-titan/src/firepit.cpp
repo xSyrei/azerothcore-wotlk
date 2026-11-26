@@ -185,6 +185,13 @@ namespace
         { 29, 8903 },   // Anvilrage Captain
     };
     constexpr std::size_t NEWEST_KINDS = 6;             // a wave's enemies come from the newest few kinds
+    // The healers (they keep everything that piles up alive): one a wave at most, two alive at once at most.
+    uint32 const HEALERS[] = { 8894 };                  // Anvilrage Medic
+    constexpr uint32 HEALERS_A_WAVE = 1, MOST_HEALERS_ALIVE = 2;
+    bool IsHealer(uint32 entry)
+    {
+        return std::find(std::begin(HEALERS), std::end(HEALERS), entry) != std::end(HEALERS);
+    }
 
     // The bosses, one every 5th wave in turn: the Ring of Law's six, then the Depths' own; then around again.
     uint32 const BOSSES[] = {
@@ -638,9 +645,26 @@ private:
         if (kinds.size() > NEWEST_KINDS)
             kinds.erase(kinds.begin(), kinds.end() - NEWEST_KINDS);
 
+        std::vector<uint32> fighters;
+        for (uint32 entry : kinds)
+            if (!IsHealer(entry))
+                fighters.push_back(entry);
+        uint32 healers = 0;
+        for (ObjectGuid const& guid : _enemies)
+            if (Creature* enemy = instance->GetCreature(guid); enemy && enemy->IsAlive() && IsHealer(enemy->GetEntry()))
+                ++healers;
+        uint32 healersNow = 0;
         for (uint32 i = 0; i < count && !kinds.empty(); ++i)
         {
             uint32 entry = i == 0 ? kinds.back() : kinds[urand(0, uint32(kinds.size()) - 1)];
+            if (IsHealer(entry) && (healersNow >= HEALERS_A_WAVE || healers + healersNow >= MOST_HEALERS_ALIVE))
+            {
+                if (fighters.empty())
+                    continue;
+                entry = fighters[urand(0, uint32(fighters.size()) - 1)];
+            }
+            if (IsHealer(entry))
+                ++healersNow;
             _queue.push_back({ entry, false, SPAWN_SPREAD_MS * i / std::max<uint32>(1, count) });
         }
 

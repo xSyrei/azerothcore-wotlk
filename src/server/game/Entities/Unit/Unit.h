@@ -1316,6 +1316,9 @@ public:
     [[nodiscard]] Unit* GetFirstControlled() const;
 
     [[nodiscard]] bool IsControlledByPlayer() const { return m_ControlledByPlayer; }
+    // Project Emberforge: a creature no player controls has no resistances and no immunities (only a full
+    // invulnerability, as an encounter's phases use, and an immunity to one particular spell are kept).
+    [[nodiscard]] bool HasNeutralizedDefenses() const { return IsCreature() && !IsControlledByPlayer(); }
     [[nodiscard]] bool IsCreatedByPlayer() const { return m_CreatedByPlayer; }
     [[nodiscard]] bool IsCharmedOwnedByPlayerOrPlayer() const { return GetCharmerOrOwnerOrOwnGUID().IsPlayer(); }
     [[nodiscard]] bool IsCharmed() const { return GetCharmerGUID(); }

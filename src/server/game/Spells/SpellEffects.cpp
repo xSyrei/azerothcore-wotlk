@@ -5252,7 +5252,8 @@ void Spell::EffectKnockBack(SpellEffIndex effIndex)
             return;
 
         if (Creature* creatureTarget = unitTarget->ToCreature())
-            if (creatureTarget->isWorldBoss() || creatureTarget->IsDungeonBoss() || creatureTarget->IsImmuneToKnockback() || unitTarget->ToCreature()->GetCreatureType() == CREATURE_TYPE_GIANT)
+            if (!creatureTarget->HasNeutralizedDefenses()   // Project Emberforge: HasNeutralizedDefenses
+                && (creatureTarget->isWorldBoss() || creatureTarget->IsDungeonBoss() || creatureTarget->IsImmuneToKnockback() || unitTarget->ToCreature()->GetCreatureType() == CREATURE_TYPE_GIANT))
                 return;
     }
 

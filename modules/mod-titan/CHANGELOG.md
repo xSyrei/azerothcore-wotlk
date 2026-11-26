@@ -4,6 +4,13 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Enemies have no resistances or immunities
+
+- **Nothing resists you any more**: no partial resists, no "Resist" on your spells, and no enemy is immune to stuns,
+  fears, roots, slows, silences, interrupts, taunts, knockbacks, disarms, bleeds or a school of magic, bosses
+  included. Only an encounter's full invulnerability (a boss's untouchable phase) and immunities to one particular
+  spell remain. A plain miss from a level gap still happens.
+
 ### The Firepit
 
 - **A new endless wave arena** with a map of its own, from level 10. Queue from the **group finder**: its new
@@ -18,6 +25,7 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - **From wave 15 the bosses fight back**: **Molten Eruption** puts rings of flame under you that erupt 3 seconds
   later (step out!); from wave 30 a boss roots itself and gathers a **Searing Nova** (run away from it); from wave
   45 a boss **enrages** under 30% health. Every warning shows on the wave tracker.
+- **Fewer Medics**: at most one Anvilrage Medic joins a wave, and never more than two are alive at once.
 - **Starting from a later wave works**, and so does the group scaling: both were lost on the way in.
 - **The Firepit has its own music**: *Pressure Point* plays while you're inside.
 - You fight until everyone falls. A groupmate's battle resurrection can bring you back.

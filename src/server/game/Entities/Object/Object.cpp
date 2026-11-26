@@ -3629,7 +3629,9 @@ SpellMissInfo WorldObject::MagicSpellHitResult(Unit* victim, SpellInfo const* sp
         return SPELL_MISS_MISS;
 
     // Chance resist mechanic (select max value from every mechanic spell effect)
-    int32 resist_chance = victim->GetMechanicResistChance(spellInfo) * 100;
+    // Project Emberforge: a creature no player controls resists nothing (HasNeutralizedDefenses).
+    bool const neutralized = victim->HasNeutralizedDefenses();
+    int32 resist_chance = neutralized ? 0 : victim->GetMechanicResistChance(spellInfo) * 100;
     tmp += resist_chance;
 
     // Chance resist debuff
@@ -3646,7 +3648,7 @@ SpellMissInfo WorldObject::MagicSpellHitResult(Unit* victim, SpellInfo const* sp
             }
         }
 
-        if (bNegativeAura)
+        if (bNegativeAura && !neutralized)
         {
             tmp += victim->GetMaxPositiveAuraModifierByMiscValue(SPELL_AURA_MOD_DEBUFF_RESISTANCE, int32(spellInfo->Dispel)) * 100;
             tmp += victim->GetMaxNegativeAuraModifierByMiscValue(SPELL_AURA_MOD_DEBUFF_RESISTANCE, int32(spellInfo->Dispel)) * 100;

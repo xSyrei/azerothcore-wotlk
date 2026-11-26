@@ -2256,7 +2256,8 @@ void Creature::InitializeReactState()
 
 bool Creature::HasMechanicTemplateImmunity(uint64 mask) const
 {
-    if (GetOwnerGUID().IsPlayer())
+    // Project Emberforge: no creature keeps its template's immunities (HasNeutralizedDefenses).
+    if (GetOwnerGUID().IsPlayer() || HasNeutralizedDefenses())
         return false;
 
     if (CreatureImmunities const* immunities = sSpellMgr->GetCreatureImmunities(_creatureImmunitiesId))
@@ -3364,7 +3365,7 @@ bool Creature::IsDungeonBoss() const
 
 bool Creature::IsImmuneToKnockback() const
 {
-    if (GetOwnerGUID().IsPlayer())
+    if (GetOwnerGUID().IsPlayer() || HasNeutralizedDefenses())     // Project Emberforge: HasNeutralizedDefenses
         return false;
 
     CreatureTemplate const* cinfo = sObjectMgr->GetCreatureTemplate(GetEntry());

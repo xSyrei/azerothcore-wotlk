@@ -2306,6 +2306,10 @@ uint32 Unit::CalcArmorReducedDamage(Unit const* attacker, Unit const* victim, co
 
 float Unit::GetEffectiveResistChance(Unit const* owner, SpellSchoolMask schoolMask, Unit const* victim, SpellInfo const* spellInfo /*= nullptr*/, uint8 casterLevel /*= 0*/)
 {
+    // Project Emberforge: a creature no player controls resists nothing (HasNeutralizedDefenses).
+    if (victim->HasNeutralizedDefenses())
+        return 0.0f;
+
     float victimResistance = static_cast<float>(victim->GetResistance(schoolMask));
     if (owner)
     {
@@ -10218,6 +10222,12 @@ void Unit::ApplySpellImmune(uint32 spellId, uint32 op, uint32 type, bool apply, 
 {
     if (apply)
     {
+        // Project Emberforge: a creature no player controls keeps no immunity (HasNeutralizedDefenses), but a full
+        // invulnerability (every school) and an immunity to one particular spell.
+        if (HasNeutralizedDefenses() && op != IMMUNITY_ID && op != IMMUNITY_ALLOW_ID
+            && !((op == IMMUNITY_SCHOOL || op == IMMUNITY_DAMAGE) && type == SPELL_SCHOOL_MASK_ALL))
+            return;
+
         // Immunities with spellId 0 are applied by scripts and are meant to exist only once per type.
         if (!spellId)
         {

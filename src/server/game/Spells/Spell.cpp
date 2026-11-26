@@ -9528,7 +9528,10 @@ namespace Acore
         {
             if (c->IsAvoidingAOE()) // pussywizard
                 return false;
-            if (CreatureImmunities const* immunities = sSpellMgr->GetCreatureImmunities(c->GetCreatureTemplate()->CreatureImmunitiesId))
+            // Project Emberforge: no creature avoids area or chained spells by its template (HasNeutralizedDefenses).
+            CreatureImmunities const* immunities = c->HasNeutralizedDefenses() ? nullptr
+                : sSpellMgr->GetCreatureImmunities(c->GetCreatureTemplate()->CreatureImmunitiesId);
+            if (immunities)
             {
                 switch (_searchReason)
                 {

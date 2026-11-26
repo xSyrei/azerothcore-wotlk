@@ -1102,13 +1102,13 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   gates (nothing tall or bright where the fighting is). The Heroes arrive around the pit, and
   the addon shows the Firepit's own title as they do. The client's lighting patch gives the map a warm ember light
   under a red sky (`client-patch/hd/make_atmosphere.py`).
-- **Waves** every 60 sec (or 5 sec after the last enemy dies), around the arena's edge: wave n brings 3 + n/2
-  enemies, 20% more for each player past the first, from the Depths' roster (`ROSTER`: the ring's beasts, the Dark
-  Iron, their fire, golems, the Twilight's Hammer; a new kind every wave or two, the newest six in a wave). Every 5th
-  wave is the bosses alone (`BOSSES`: the Ring of Law's six, then the Depths' own; two from wave 60, three from 120),
-  with 4 times the health and 1.5 times the damage. Survivors stay and pile up; past 150 alive, new spawns are
-  skipped and every enemy left grows 3% instead. Enemies that stray off the floor (past 52 yards, or up in the
-  stands) are put back on its edge.
+- **Waves** every 60 sec (or 5 sec after the last enemy dies), around the arena's edge: wave n brings 3 + n/2 enemies,
+  20% more for each player past the first, from the Depths' roster (`ROSTER`: the ring's beasts, the Dark Iron, their
+  fire, golems, the Twilight's Hammer; a new kind every wave or two, the newest six in a wave; a healer, the Anvilrage
+  Medic, one a wave at most and two alive at once at most: `HEALERS`). Every 5th wave is the bosses alone (`BOSSES`: the
+  Ring of Law's six, then the Depths' own; two from wave 60, three from 120), with 4 times the health and 1.5 times the
+  damage. Survivors stay and pile up; past 150 alive, new spawns are skipped and every enemy left grows 3% instead.
+  Enemies that stray off the floor (past 52 yards, or up in the stands) are put back on its edge.
 - **Boss mechanics** from wave 15 (`MECHANICS_FROM`), each a share of the Hero's own health (it is about moving, not
   gear): **Molten Eruption** (15+, every 14 sec): a ring of flame under up to 3 Heroes, erupting 3 sec later, 30% to
   anyone within 6 yd (its source the invisible Molten Eruption, 910141). **Searing Nova** (30+, every 22 sec): the
@@ -1159,6 +1159,14 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   same file). A teleport in refused for the player's state (in combat as the group formed, dead, falling) is tried
   again every 2 sec for 2 min; back in a dungeon finder group after a relog or a restart, the client is told again
   (its eye offers the teleport in: `LFGScripts.cpp`), and such a group may walk into any dungeon (`MapMgr.cpp`).
+- `Unit::HasNeutralizedDefenses` (`Unit.h`): a creature no player controls has no resistances and no immunities. It
+  resists nothing (`GetEffectiveResistChance` 0: no partial or binary resists; no mechanic or debuff resist chance in
+  `MagicSpellHitResult`), keeps no immunity it is given (`ApplySpellImmune`: its template's `creature_immunities`,
+  `CREATURE_FLAG_EXTRA_NO_TAUNT`, a script's or an aura's), none from its template (mechanics, area and chained
+  spells: `HasMechanicTemplateImmunity`, the area/chain target checks) and can be knocked back (a boss, a giant, a
+  knockback-immune flag). Kept: a full invulnerability (every school, as scripted encounter phases use) and an
+  immunity to one particular spell (`IMMUNITY_ID`). Player pets and charmed creatures keep theirs. Spell hit (a miss
+  from the level gap) is unchanged.
 - `InstanceOverride` (`InstanceSaveMgr.h`): a module may name the instance a player entering an instanced map goes to
   (`InstanceSaveMgr::PlayerGetDestinationInstanceId`) and raise an instance's player cap (`InstanceMap::GetMaxPlayers`):
   the Firepit's runs, 10 on its map.
