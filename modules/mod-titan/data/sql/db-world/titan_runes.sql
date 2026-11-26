@@ -254,7 +254,8 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 -- and Arcane Orb (their auras' looks, client-patch/patch_runes.py); they fly where the rune sends them, out of reach.
 SET @RUNE_PHOENIX := 910125;
 SET @RUNE_ARCANE_ORB := 910126;
-DELETE FROM `creature_template` WHERE `entry` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB);
+SET @RUNE_BALL_LIGHTNING := 910128;     -- the Stormbound Conduit's: wearing the Spark of Ionar's crackle (52667)
+DELETE FROM `creature_template` WHERE `entry` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB, @RUNE_BALL_LIGHTNING);
 INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
     `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
     `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
@@ -268,13 +269,17 @@ INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entr
     'npc_titan_rune_flier', 0),
 (@RUNE_ARCANE_ORB, 0, 0, 0, 0, 0, 'Arcane Orb', 'Astral Horizon', NULL, 0, 1, 80, 0, 35, 0, 1, 1.14286, 1, 1, 20,
     0, 6, 1, 2000, 2000, 1, 1, 8, 33554434, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 1, 0,
-    0, 'npc_titan_rune_flier', 0);
+    0, 'npc_titan_rune_flier', 0),
+(@RUNE_BALL_LIGHTNING, 0, 0, 0, 0, 0, 'Ball Lightning', 'Stormbound Conduit', NULL, 0, 1, 80, 0, 35, 0, 1, 1.14286,
+    1, 1, 20, 0, 3, 1, 2000, 2000, 1, 1, 8, 33554434, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0,
+    0, 1, 0, 0, 'npc_titan_rune_flier', 0);
 
-DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB);
+DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB, @RUNE_BALL_LIGHTNING);
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES
 (@RUNE_PHOENIX, 0, 11686, 1, 1, 0),
-(@RUNE_ARCANE_ORB, 0, 11686, 1, 1, 0);
+(@RUNE_ARCANE_ORB, 0, 11686, 1, 1, 0),
+(@RUNE_BALL_LIGHTNING, 0, 11686, 1, 1, 0);
 
 -- Arcane Blast and Arcane Explosion grant Insight, Arcane Missiles spends it (its channel's end: Mental Reserves);
 -- Frostbolt forms the Icicles; Pyroblast leaves the Ember, Fire Blast wakes the phoenix; Arcane Barrage sets the
@@ -595,17 +600,26 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (91346, 0, 0, 0, 0, 'Ursoc''s Champion - Enduring Champion');
 
 -- The Duelist (Sinister Strike readies Opening Shot; the rune teaches Pistol Shot) and the Stormreaver
--- (Stormstrike raises the Stormfront; Lava Lash in it is Thunderlash; its aura's procs discharge Lightning Shield).
+-- (Stormstrike Stormstrikes its target, its hits counted; Lava Lash erupts; its aura's procs discharge Lightning
+-- Shield; Thunderbomb and Magma Breaker, the abilities it teaches). The Stormbound Conduit's: Ball Lightning and
+-- Storm Lance.
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_sinister_strike',
     'spell_titan_rune_flintlock_shot', 'spell_titan_rune_pistol_shot', 'spell_titan_rune_stormstrike',
-    'spell_titan_rune_lava_lash',
-    'spell_titan_rune_stormreaver');
+    'spell_titan_rune_lava_lash', 'spell_titan_rune_stormreaver', 'spell_titan_rune_stormstrike_hit',
+    'spell_titan_rune_thunderbomb', 'spell_titan_rune_magma_breaker', 'spell_titan_rune_ball_lightning',
+    'spell_titan_rune_storm_lance');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (-1752, 'spell_titan_rune_sinister_strike'),
 (91382, 'spell_titan_rune_pistol_shot'),
 (17364, 'spell_titan_rune_stormstrike'),
+(32175, 'spell_titan_rune_stormstrike_hit'),
+(32176, 'spell_titan_rune_stormstrike_hit'),
 (60103, 'spell_titan_rune_lava_lash'),
-(91400, 'spell_titan_rune_stormreaver');
+(91400, 'spell_titan_rune_stormreaver'),
+(93091, 'spell_titan_rune_thunderbomb'),
+(93093, 'spell_titan_rune_magma_breaker'),
+(93241, 'spell_titan_rune_ball_lightning'),
+(93244, 'spell_titan_rune_storm_lance');
 
 -- Their damage over time: Serrated Edge, White-Hot Conductor.
 DELETE FROM `spell_script_names` WHERE `spell_id` IN (91384, 91405) AND `ScriptName` = 'spell_titan_rune_dot';

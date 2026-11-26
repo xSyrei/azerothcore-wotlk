@@ -146,66 +146,64 @@ EmberforgeRunesCatalog = {
     },
     { id = 23,
       name = "Rune of the Stormbound Conduit",
-      role = "DPS (Lightning Bolt, Chain Lightning)",
+      role = "DPS (Lightning Bolt, Earth Shock)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_StormboundConduit",
-      keywords = "shaman lightning nature electric arc chain enhancement elemental chain lightning arc " ..
-          "earth shock frostbolt flame shock lava lash starfire chain heal thunder clap",
-      slots = { "Conductor", "Circuit", "Shield" },
-      builtFrom = "Chain Lightning, Lightning Shield, Earth Shock",
-      spentWith = "Their arcs",
-      resource = "Arcs: Chain Lightning, your Lightning Shield, Earth Shock",
-      core = "Chain Lightning sends one arc to another enemy within 10 yards for 30% of its damage, once a cast; " ..
-          "with no other enemy near, it arcs back into the first for half. A Lightning Shield retaliation arcs " ..
-          "to another enemy within 10 yards for 50% of its damage, once every 3 sec. Earth Shock arcs 20% of " ..
-          "your spell power to another enemy (half back into it if alone), once every 8 sec. Arcs never arc " ..
-          "again.",
-      loop = "Chain Lightning into packs, Earth Shock and your Lightning Shield arcing on.",
+      keywords = "shaman lightning nature electric elemental enhancement lightning bolt chain lightning earth shock " ..
+          "lightning shield maelstrom weapon fulmination charges caster hybrid ball lightning storm lance",
+      slots = { "Bolt", "Shield", "Release" },
+      builtFrom = "Lightning Bolt, Chain Lightning",
+      spentWith = "Earth Shock",
+      resource = "Lightning Shield charges, up to 9",
+      core = "Charging: Lightning Bolt adds a charge to your Lightning Shield, 2 when cast instantly (5 stacks of " ..
+          "Maelstrom Weapon); Chain Lightning adds one for each enemy it hits. The shield holds up to 9. " ..
+          "Fulmination: Earth Shock releases every charge above 3, each 25% of your power (the higher of your spell " ..
+          "power and attack power) as Nature damage. Conduit: Lightning Bolt arcs 30% of its damage to another " ..
+          "enemy within 10 yards. Full Charge: at 9 charges your next Earth Shock is free.",
+      loop = "Bolt (or Maelstrom Weapon instant bolts) to fill the shield, Earth Shock to release it.",
       mods = {
-        { name = "Persistent Current",
-          text = "Your arcs deal 15% more damage." },
-        { name = "Branching Current",
-          text = "Lightning Bolt arcs 30% of its damage to one enemy within 10 yards of its target." },
-        { name = "Live Wire",
-          text = "Lightning Shield retaliations deal 15% more damage. Not with Storm Within." },
-        { name = "Icy Conductor",
-          text = "Frostbolt deals 15% more damage." },
-        { name = "Flame Conductor",
-          text = "Lightning Bolt on your Flame Shock target arcs 30% of its damage to one enemy within 10 yards " ..
-              "and makes Flame Shock last 2 sec longer (up to 6 sec for each cast)." },
-        { name = "Forked Tempest",
-          text = "Chain Lightning's arc strikes 2 other enemies for 65% each." },
-        { name = "Closed Circuit",
-          text = "Chain Lightning's arc returns into its target for its whole damage." },
-        { name = "Faraday Field",
-          text = "Arcs reach 15 yards, and the first Chain Lightning arc every 8 sec deals 20% more damage." },
-        { name = "Storm Lash",
-          text = "Lava Lash arcs 25% of your attack power as Nature damage to another enemy (half back into it if " ..
-              "alone), once every 6 sec." },
-        { name = "Starbound Circuit",
-          text = "Starfire arcs 25% of your spell power as Arcane damage to another enemy (half back into it if " ..
-              "alone), once every 8 sec." },
-        { name = "Storm Within",
-          text = "Every 3 sec in combat, your Lightning Shield strikes the nearest enemy within 8 yards, spending " ..
-              "a charge. Not with Live Wire." },
-        { name = "Violent Reprisal",
-          text = "Your Lightning Shield's arcs deal 40% more damage." },
-        { name = "Distant Conductor",
-          text = "Lightning Bolt also strikes its target with your Lightning Shield, spending a charge, once every " ..
-              "3 sec." },
-        { name = "Storm's Eye",
-          text = "Chain Heal makes your next Lightning Bolt within 6 sec deal 15% more damage." },
-        { name = "Shocking Surge",
-          text = "Thunder Clap deals 20% of your spell power as Nature damage to up to 5 enemies within 8 yards of " ..
-              "its target, once every 8 sec." },
+        { name = "Ball Lightning",
+          text = "Lightning Bolt becomes Ball Lightning: a slow orb that zaps the nearest enemy within 8 yards " ..
+              "every 0.5 sec on its way, then bursts on every enemy within 8 yards of its target. It adds 2 " ..
+              "charges." },
+        { name = "Overload",
+          text = "Lightning Bolt has a 25% chance to strike its target again for half its damage, adding a charge." },
+        { name = "Forked Conduit",
+          text = "Lightning Bolt's arc strikes 2 enemies for 40% of its damage each." },
+        { name = "Supercharge",
+          text = "Chain Lightning adds 2 charges for each enemy it hits." },
+        { name = "Maelstrom Conduit",
+          text = "Each stack of Maelstrom Weapon a Lightning Bolt spends adds a charge." },
+        { name = "Static Field",
+          text = "At 6 charges or more, your Lightning Shield zaps an enemy within 10 yards every 2 sec in combat " ..
+              "for 30% of your power, spending nothing." },
+        { name = "Reflux",
+          text = "Struck while your shield is full, you release a Fulmination at every enemy within 8 yards." },
+        { name = "Shared Current",
+          text = "The Stormreaver's Static Strikes spend none of your charges." },
+        { name = "Galvanize",
+          text = "Each charge above 3 gives you 2% more Nature damage." },
+        { name = "Charged Blades",
+          text = "Your melee swings have a 10% chance to add a charge." },
+        { name = "Storm Lance",
+          text = "Earth Shock becomes Storm Lance: a lance 30 yards through every enemy in its line for 60% of your " ..
+              "power, 20% more for each charge you hold. It releases your charges above 3." },
+        { name = "Chain Fulmination",
+          text = "Fulmination arcs to 2 more enemies within 10 yards for half its damage." },
+        { name = "Thunderstorm Release",
+          text = "Fulmination knocks back every enemy within 10 yards of you and slows them by 40% for 4 sec." },
+        { name = "Overflow",
+          text = "Your Lightning Shield holds up to 12 charges." },
+        { name = "Static Surge",
+          text = "Releasing 5 charges or more makes your next Lightning Bolt instant." },
       },
       builds = {
-        { name = "The Tempest", mods = { "Persistent Current", "Forked Tempest", "Violent Reprisal" },
-          text = "Arcs through the whole pack." },
-        { name = "The Closed Loop", mods = { "Branching Current", "Closed Circuit", "Distant Conductor" },
-          text = "Every bolt comes back for more." },
-        { name = "The Wide Storm", mods = { "Live Wire", "Faraday Field", "Shocking Surge" },
-          text = "A storm that reaches far." },
+        { name = "The Storm Caller", mods = { "Ball Lightning", "Static Field", "Storm Lance" },
+          text = "Lightning everywhere at once." },
+        { name = "The Battery", mods = { "Overload", "Galvanize", "Static Surge" },
+          text = "Charge, release, charge again." },
+        { name = "The Stormblade", mods = { "Maelstrom Conduit", "Charged Blades", "Chain Fulmination" },
+          text = "A hybrid, charged by the blade." },
       },
     },
     { id = 24,
@@ -1453,68 +1451,69 @@ EmberforgeRunesCatalog = {
       role = "Melee DPS (Shaman, Enhancement)",
       roles = { "DAMAGER" },
       icon = "Ability_Rune_Stormreaver",
-      keywords = "shaman enhancement stormstrike lava lash lightning shield storm thunder nature melee earth shock " ..
-          "flame shock hunters mark frost shock shield slam lightning bolt thunder clap",
-      slots = { "Storm", "Thunderlash", "Shield" },
-      builtFrom = "Stormstrike",
-      spentWith = "Lava Lash and your melee abilities",
-      resource = "Stormfront, 16 sec",
-      core = "Stormstrike raises the Stormfront around you for 16 sec (Stormstrike again refreshes it): every 2 sec " ..
-          "it strikes up to 5 enemies within 8 yards for 25% of your attack power as Nature damage. In it, Lava " ..
-          "Lash becomes Thunderlash: 60% of your attack power more to its target, and arcs of 30% to 2 more enemies " ..
-          "within 8 yards. Your melee abilities discharge Lightning Shield at their target, once a second: its own " ..
-          "damage, a third of your spell power and 20% of your attack power, and the shield keeps its charges. " ..
-          "Earth Shock in the Stormfront makes its next pulse deal 20% more. Thunderlash on your Flame Shock target " ..
-          "makes the Flame Shock last 2 sec longer (up to 6 sec for each cast).",
-      loop = "Stormstrike to keep the storm up, Lava Lash in it, and strike to discharge the shield.",
+      keywords = "shaman enhancement stormstrike lava lash lightning shield storm thunder nature melee flame shock " ..
+          "windfury maelstrom weapon thunderbomb magma breaker reset",
+      slots = { "Stormstrike", "Lava Lash", "Storm" },
+      builtFrom = "Stormstrike (and your swings)",
+      spentWith = "Lava Lash",
+      resource = "Molten Charge, 8 sec; resets",
+      core = "Stormbringer: your melee swings (Windfury's too) have a 20% chance to reset Stormstrike and make your " ..
+          "next one free. Molten Charge: Stormstrike makes your next Lava Lash within 8 sec deal 40% more, and each " ..
+          "tick of your Flame Shock has a 25% chance to reset Lava Lash (at most once every 1.5 sec). Eruption: " ..
+          "Lava Lash on an enemy you Stormstruck in the last 8 sec deals 50% of your attack power as Nature damage " ..
+          "to every enemy within 8 yards of it. Your melee abilities discharge Lightning Shield at their target, " ..
+          "once a second: its own damage, a third of your spell power and 20% of your attack power, and the shield " ..
+          "keeps its charges.",
+      loop = "Stormstrike, then Lava Lash on the same enemy; swing and let Flame Shock tick to reset them.",
       mods = {
+        { name = "Thunderbomb",
+          text = "Stormstrike becomes Thunderbomb: a bomb thrown at an enemy up to 20 yards away that bursts after " ..
+              "1 sec for 140% of your weapon damage as Nature damage to every enemy within 8 yards. Stormbringer " ..
+              "resets it." },
+        { name = "Static Strikes",
+          text = "Stormstrike spends up to 3 of your Lightning Shield charges (never the last), each a discharge at " ..
+              "its target." },
         { name = "Eye of the Tempest",
-          text = "The Stormfront deals 120% more damage while only one enemy is in it." },
-        { name = "Forked Cataclysm",
-          text = "The Stormfront strikes up to 8 enemies within 12 yards." },
-        { name = "Rolling Thunder",
-          text = "The Stormfront strikes every second instead of every 2, each strike 70% of its damage." },
-        { name = "Stormhunter",
-          text = "Stormfront pulses deal 35% more to your Hunter's Mark target and also strike one other enemy " ..
-              "within 8 yards for 40%." },
-        { name = "Frozen Front",
-          text = "Frost Shock in the Stormfront leaves a frost trail under its target for 4 sec: 10% of your attack " ..
-              "power as Frost damage each second to up to 3 enemies, once every 8 sec." },
-        { name = "Thunderhead",
-          text = "Thunderlash doesn't arc: 120% of your attack power to its target instead." },
-        { name = "Chainbreaker",
-          text = "Thunderlash arcs to 4 enemies instead of 2, each for 30% of your attack power." },
-        { name = "White-Hot Conductor",
-          text = "Thunderlash burns its target for 100% of your attack power over 6 sec instead of its Nature hit; " ..
-              "its arcs stay. A new burn keeps what is left of the last." },
-        { name = "Stormhammer",
-          text = "Shield Slam in the Stormfront sends an arc of 30% of your attack power as Nature damage to its " ..
-              "target and one other enemy within 8 yards, once every 6 sec." },
-        { name = "Flame Conductor",
-          text = "Thunderlash on your Flame Shock target spreads it to one other enemy within 8 yards for what is " ..
-              "left of it, once every 10 sec." },
-        { name = "Overcharged Core",
-          text = "The rune's Lightning Shield discharges deal 50% more damage." },
+          text = "Stormstrike deals 60% more damage when no other enemy is within 8 yards of its target." },
+        { name = "Echoing Strike",
+          text = "Stormstrike strikes its target twice more over 2 sec, each for 30% of its damage as Nature " ..
+              "damage." },
+        { name = "Overcharge",
+          text = "Stormbringer's chance is 35% instead of 20%." },
+        { name = "Magma Breaker",
+          text = "Lava Lash becomes Magma Breaker: 120% of your weapon damage as Fire damage to up to 8 enemies in " ..
+              "a 10 yard cone before you, spreading your Flame Shock to every one of them." },
+        { name = "Molten Spread",
+          text = "Lava Lash spreads your Flame Shock from its target to up to 4 enemies within 8 yards." },
+        { name = "White-Hot",
+          text = "Lava Lash burns its target for 100% of your attack power as Fire damage over 6 sec. A new burn " ..
+              "keeps what is left of the last." },
+        { name = "Hot Hand",
+          text = "Flame Shock resets Lava Lash 50% of the time instead of 25%, and a reset Lava Lash deals 25% " ..
+              "more." },
+        { name = "Cinder Echo",
+          text = "Lava Lash deals 50% of your last Stormstrike's damage again as Fire damage." },
+        { name = "Stormfront",
+          text = "Stormstrike and Lava Lash raise the Stormfront around you for 16 sec: every 2 sec, 15% of your " ..
+              "attack power as Nature damage to up to 5 enemies within 8 yards." },
+        { name = "Tempo",
+          text = "Alternating Stormstrike and Lava Lash gives you a stack of Tempo: 5% more damage each, up to 5, " ..
+              "for 10 sec." },
         { name = "Ride the Lightning",
-          text = "Each of the rune's discharges makes you move 30% faster for 3 sec and brings Lava Lash back 1 sec " ..
-              "sooner." },
+          text = "Each reset of Stormstrike or Lava Lash gives you 20% melee haste for 4 sec." },
+        { name = "Maelstrom",
+          text = "Each reset of Stormstrike or Lava Lash gives you 2 stacks of Maelstrom Weapon." },
         { name = "Violent Grounding",
           text = "Each of the rune's discharges also strikes up to 3 other enemies within 8 yards of its target for " ..
               "half its damage." },
-        { name = "Static Strike",
-          text = "Lightning Bolt in the Stormfront makes your next discharge within 6 sec strike again for 40% of " ..
-              "its damage." },
-        { name = "Warstorm",
-          text = "Thunder Clap in the Stormfront also deals 25% of your attack power as Nature damage to up to 5 " ..
-              "enemies within 8 yards, once every 8 sec." },
       },
       builds = {
-        { name = "The Tempest", mods = { "Eye of the Tempest", "Thunderhead", "Overcharged Core" },
-          text = "Focused pressure." },
-        { name = "The Cataclysm", mods = { "Forked Cataclysm", "Chainbreaker", "Violent Grounding" },
-          text = "Lightning on the pack." },
-        { name = "The Rider", mods = { "Rolling Thunder", "White-Hot Conductor", "Ride the Lightning" },
-          text = "Mobile pressure." },
+        { name = "The Bombardier", mods = { "Thunderbomb", "Magma Breaker", "Stormfront" },
+          text = "Bombs and cones on the pack." },
+        { name = "The Duelist", mods = { "Eye of the Tempest", "Cinder Echo", "Tempo" },
+          text = "One enemy, both hands." },
+        { name = "The Maelstrom", mods = { "Overcharge", "Hot Hand", "Maelstrom" },
+          text = "Resets feeding your spells." },
       },
     },
     { id = 44,

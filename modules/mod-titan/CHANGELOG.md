@@ -4,6 +4,27 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Stormreaver and the Stormbound Conduit, rebuilt
+
+Both runes now play through their own kits, all the time. **Your picks for these two runes are cleared: choose
+them again.**
+
+- **Stormreaver**: your swings (Windfury's too) have a 20% chance to **reset Stormstrike** and make it free.
+  Stormstrike makes your next Lava Lash within 8 sec deal **40% more**, and your **Flame Shock ticks can reset Lava
+  Lash**. Lava Lash on an enemy you just Stormstruck **erupts** for 50% of your attack power on every enemy within 8
+  yards. Your melee abilities always discharge Lightning Shield now; the Stormfront is an option.
+- **New Stormreaver options**: **Thunderbomb** (Stormstrike becomes a thrown lightning bomb), **Magma Breaker** (Lava
+  Lash becomes a fiery cone that spreads Flame Shock), Static Strikes, Echoing Strike, Overcharge, Molten Spread, Hot
+  Hand, Cinder Echo, Tempo, Ride the Lightning (now 20% melee haste) and Maelstrom (resets give Maelstrom Weapon).
+- **Stormbound Conduit** is a caster's rune, and a hybrid's through Maelstrom Weapon: Lightning Bolt and Chain
+  Lightning **charge your Lightning Shield** (up to 9; an instant bolt adds 2), and **Earth Shock releases** every
+  charge above 3 as **Fulmination**, scaling with your spell power or attack power, whichever is higher. Lightning
+  Bolt arcs to a second enemy, and a full shield makes your next Earth Shock free.
+- **New Conduit options**: **Ball Lightning** (Lightning Bolt becomes a slow orb that zaps enemies on its way, then
+  bursts), **Storm Lance** (Earth Shock becomes a lance through every enemy in its line), Overload, Forked Conduit,
+  Supercharge, Maelstrom Conduit, Static Field, Reflux, Shared Current (with Stormreaver), Galvanize, Charged Blades,
+  Chain Fulmination, Thunderstorm Release, Overflow and Static Surge.
+
 ### Fireforged gear and a Firepit that marches through every dungeon
 
 - **The Firepit's spoils are Fireforged gear, made for you**: each piece goes to one of your weakest slots and is

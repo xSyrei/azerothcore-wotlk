@@ -525,13 +525,16 @@ utility or a tradeoff) take one pick each, from three.
   wall at the aura's edge with the middle clear, gold and see-through, no floor; flakes of light tumbling up through
   the aura (retail's flipping snowflake), embers and sparks, a crown of light above the head, a golden shockwave and
   flash as it turns on (90749); Seat's sigil and the footsteps' glyphs are ours (`client-patch/build_paragon_art.py`).
-- **The Rune of the Stormbound Conduit** (rune 23; DPS; needs Lightning Bolt). Lightning Bolt arcs to 2 enemies
-  within 10 yards of its target for 30% of its damage each; while Lightning Shield is up its retaliations arc to 1
-  nearby enemy for 50%. Arcs (90752, their bolt 90753) never arc again. Forked Tempest (3 arcs), Closed Circuit (one
-  arc back into the target for 60%), Faraday Field (15 yards, 10% more); Live Wire (retaliations arc to 2), Storm
-  Within (a retaliation at the nearest enemy every 3 sec in combat), Distant Conductor (Lightning Bolt also fires one;
-  the three need Lightning Shield, none spends a charge; 90754); Chain Surge (each Chain Lightning hit arcs once,
-  20%), Static Ward (each arc adds 1% health to an absorb, up to 10%, 90751), Overcharge (a crit's arcs 50% more).
+- **The Rune of the Stormbound Conduit** (rune 23; DPS; needs Lightning Bolt, Lightning Shield and Earth Shock; its
+  second redesign). A caster's rune, a hybrid's through Maelstrom Weapon. Lightning Bolt adds a Lightning Shield charge
+  (2 cast instantly), Chain Lightning one an enemy it hits; the shield holds 9 (Overflow 12). Earth Shock releases every
+  charge above 3 as Fulmination (93240): 25% of the higher of Nature spell power and attack power each. Lightning Bolt
+  arcs 30% of its hit to another enemy (90752, its bolt 90753); a full shield makes the next Earth Shock free (Full
+  Charge 93246). Its options: Ball Lightning (Lightning Bolt's place, 93241: an orb, creature 910128, zapping 93242 on
+  its way and bursting 93243), Overload, Forked Conduit, Supercharge, Maelstrom Conduit; Static Field, Reflux, Shared
+  Current, Galvanize (93248, a stack a charge over 3), Charged Blades; Storm Lance (Earth Shock's place, 93244, its hits
+  93245), Chain Fulmination, Thunderstorm Release (slow 93249), Overflow, Static Surge (93247, the next Lightning Bolt
+  instant).
 - **The Rune of Echoing Thunder** (rune 24; Tanks; Thunder Clap and Shield Slam, and a shield). Thunder Clap
   charges the Hero (90772, 8 sec, a small storm about them); the next Shield Slam releases a **Thunder Echo** (90774):
   30% of its damage before mitigation as Nature damage to up to 5 enemies within 6 yards of its target (Thunder
@@ -780,10 +783,16 @@ utility or a tradeoff) take one pick each, from three.
     to reset Pistol Shot, ready Opening Shot and grant Rapid Shots (91386, 10 sec: the next shot gives its 20 Energy
     back and 50 more); 1 sec off Broadside's cooldown a point. Heavy Cannonade: blasts 40% more; Full Broadside: a
     fourth blast. Footwork's Advance, Disengaging Shot and Press the Advantage (91387-91389) are retired.
-  - **Stormreaver** (43; Melee; Stormstrike, Lava Lash, Lightning Shield): Stormstrike's Stormfront (91401, 6 sec,
-    a pulse 91402 every 2 sec, 25% AP); Lava Lash in it adds Thunderlash (91403, 60% AP; arcs 91404); the rune's
-    aura procs on melee abilities (spell_proc) and discharges Lightning Shield (91407) once a second, the shield
-    keeping its charges (its aura script's OnProc).
+  - **Stormreaver** (43; Melee; Stormstrike, Lava Lash, Lightning Shield; redesigned): Stormbringer (a melee swing's 20%
+    chance, `ModifyMeleeDamage`, to reset Stormstrike, the next free: 93095); Molten Charge (Stormstrike makes the next
+    Lava Lash 40% more, 93090; a Flame Shock tick's 25% chance, `ModifyPeriodicDamageAurasTick`, resets Lava Lash, 1.5
+    sec apart); Eruption (Lava Lash on an enemy Stormstruck in the last 8 sec: 50% AP to all within 8 yards, 91403).
+    Stormstrike's hits (32175, 32176) are counted for Echoing Strike (91404) and Cinder Echo (93097). The aura still
+    procs on melee abilities and discharges Lightning Shield (91407) once a second, the shield keeping its charges, now
+    with no Stormfront needed. The abilities it teaches (`TeachStormreaver`): Thunderbomb (Stormstrike's place, 93091,
+    its fuse 93098 and burst 93092) and Magma Breaker (Lava Lash's place, 93093, its hits 93094). The Stormfront (91401,
+    pulse 91402, 15% AP) is an option now; Tempo 93096; Ride the Lightning 91408 (20% melee haste). Its picks and the
+    Conduit's are cleared once by `titan_runes_zz_extended_reset7.sql`.
   - **Ember's Wrath** (44; Melee; Cat Form, Fire Blast, Rake or Rip): the Hero's own Fire Blast (every rank, its
     mana and cooldown) works in Cat Form: its "not while shapeshifted" rule is gone from both copies of the spell
     (patch_spells.RUNE_FREED, runes.cpp titan_runes_load) and `spell_titan_rune_embers_fire_blast` keeps it for

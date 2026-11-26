@@ -418,8 +418,9 @@ EFFECTS = {
 }
 # The Rune of the Stormbound Conduit (90750 on; runes.cpp's Stormbound Conduit section).
 STORM_RUNE = buff(90750, 'Rune of the Stormbound Conduit', STORM_ICON,
-                  'Chain Lightning arcs 30% of its damage to another enemy; your Lightning Shield and Earth Shock arc '
-                  'too.',
+                  'Lightning Bolt and Chain Lightning charge your Lightning Shield, up to 9 charges; Earth Shock '
+                  'releases every charge above 3 as Fulmination. Lightning Bolt arcs 30% of its damage to another '
+                  'enemy.',
                   DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)})
 # Its procs: Lightning Bolt and Chain Lightning land as harmful spells; the script picks them out.
 STORM_RUNE['set'] = {**STORM_RUNE['set'], 'ProcFlags': PROC_DONE_MAGIC_SPELL_NEGATIVE, 'ProcChance': 101}
@@ -1487,6 +1488,7 @@ ICONS += [ELUNE_ICON, CONVERGENCE_ICON, URSOC_ICON, 'Ability_Hunter_Pet_Owl', 'S
 
 # ---- The Duelist 91380 and the Stormreaver 91400 (their own dossiers); each one's markers 10 on from its first.
 DUELIST_ICON, STORMREAVER_ICON = 'Ability_Rune_Duelist', 'Ability_Rune_Stormreaver'
+SHAMAN_FAMILY = 11
 ROGUE_FAMILY = 8
 SPELL_ATTR1_FINISHING_MOVE_DAMAGE = 0x00100000      # a finishing move: needs combo points and spends them
 # The spellbook tab of the abilities a rune teaches (build_patch.py: our spells are the Demon Hunter's otherwise).
@@ -1578,22 +1580,21 @@ SPELLS += [
     {**strike(91399, 'Sabre Slash', 'Ability_Rogue_SabreSlash', PHYSICAL), 'visual': 'SabreSlashHit'},
     # The Stormreaver.
     buff(91400, 'Rune of the Stormreaver', STORMREAVER_ICON,
-         'Stormstrike raises the Stormfront for 16 sec: every 2 sec, 25% of your attack power as Nature damage to up '
-         'to 5 enemies within 8 yards. In it, Lava Lash becomes Thunderlash and your melee abilities discharge '
-         'Lightning Shield.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+         'Your swings can reset Stormstrike; Stormstrike empowers your next Lava Lash; Flame Shock can reset Lava '
+         'Lash, and Lava Lash erupts on a Stormstruck enemy. Your melee abilities discharge Lightning Shield.',
+         DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {**buff(91401, 'Stormfront', 'Spell_Shaman_ThunderStorm',
-            'A storm strikes the enemies around you. Lava Lash is Thunderlash; your melee abilities discharge '
-            'Lightning Shield, which keeps its charges.', DURATION_6S, {1: aura(AURA_DUMMY, 1, 0)}),
+            'A storm strikes the enemies around you.', DURATION_6S, {1: aura(AURA_DUMMY, 1, 0)}),
      'set': {**SHOWN, 'DurationIndex': DURATION_6S, 'SpellVisual': VISUAL_THUNDERSTORM}},
     strike(91402, 'Stormfront', 'Spell_Shaman_ThunderStorm', NATURE, VISUAL_LIGHTNING_BOLT),
-    strike(91403, 'Thunderlash', 'Ability_Shaman_LavaLash', NATURE, VISUAL_THUNDER_HIT),
-    strike(91404, 'Thunderlash', 'Spell_Nature_ChainLightning', NATURE, VISUAL_THUNDER_HIT),
-    dot(91405, 'White-Hot Conductor', 'Spell_Fire_Immolation', FIRE, DURATION_6S, 'Fire damage every second.'),
-    strike(91406, 'White-Hot Conductor', 'Spell_Fire_Immolation', FIRE),
+    strike(91403, 'Eruption', 'Ability_Shaman_LavaLash', NATURE, VISUAL_THUNDER_HIT),
+    strike(91404, 'Echoing Strike', 'Ability_Shaman_Stormstrike', NATURE, VISUAL_THUNDER_HIT),
+    dot(91405, 'White-Hot', 'Spell_Fire_Immolation', FIRE, DURATION_6S, 'Fire damage every second.'),
+    strike(91406, 'White-Hot', 'Spell_Fire_Immolation', FIRE),
     strike(91407, 'Lightning Shield', 'Spell_Nature_LightningShield', NATURE, VISUAL_THUNDER_HIT),
-    {**buff(91408, 'Ride the Lightning', 'Spell_Nature_Lightning', 'Movement speed increased by 30%.', DURATION_3S,
-            {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}),
-     'set': {**SHOWN, 'DurationIndex': DURATION_3S}},
+    {**buff(91408, 'Ride the Lightning', 'Spell_Nature_Lightning', 'Melee attack speed increased by 20%.',
+            DURATION_4S, {1: aura(AURA_MOD_MELEE_HASTE, 20, 0)}),
+     'set': {**SHOWN, 'DurationIndex': DURATION_4S}},
 ]
 for _spell in SPELLS:
     if _spell['id'] == 91383:
@@ -2047,10 +2048,9 @@ EXTENDED_MODIFIERS = [
                            ('Reverberating Impact', 'Focused Peal', 'Distant Rumble', 'Flame Echo', 'Frost Echo'),
                            ('Commanding Thunder', 'Sheltering Reverberation', 'Deafening Impact',
                             'Revenge of the Storm', 'Tidal Shield')]),
-    (93225, STORM_ICON, [('Persistent Current', 'Branching Current', 'Live Wire', 'Icy Conductor',
-                          'Flame Conductor'),
-                         ('Forked Tempest', 'Closed Circuit', 'Faraday Field', 'Storm Lash', 'Starbound Circuit'),
-                         ('Storm Within', 'Violent Reprisal', 'Distant Conductor', "Storm's Eye", 'Shocking Surge')]),
+    (93225, STORM_ICON, [('Ball Lightning', 'Overload', 'Forked Conduit', 'Supercharge', 'Maelstrom Conduit'),
+                         ('Static Field', 'Reflux', 'Shared Current', 'Galvanize', 'Charged Blades'),
+                         ('Storm Lance', 'Chain Fulmination', 'Thunderstorm Release', 'Overflow', 'Static Surge')]),
     (93250, SUN_ICON, [('Twin Suns', 'Orbiting Sun', 'Solar Anchor', 'Lunar Shard', 'Storm Shard'),
                        ('Splinterstorm', 'Solar Lance', 'Scalding Ground', 'Frozen Flash', 'Flame Burst'),
                        ('Implosion', 'Chain Reaction', 'Second Sunrise', 'Shattering Lance', 'Icy Shelter')]),
@@ -2068,12 +2068,10 @@ EXTENDED_MODIFIERS = [
     (93275, DAWN_ICON, [('Mercy', 'Retribution', 'Communion', 'Earthen Oath', "Crusader's Flame"),
                         ('Dawnwave', 'Sunburst', 'Sacred Ground', 'Frostfire Dawn', 'Chain of Grace'),
                         ('Steadfast', 'Passing the Torch', 'Shared Pilgrimage', 'Renewed Oath', 'Searing Vow')]),
-    (93075, STORMREAVER_ICON, [('Eye of the Tempest', 'Forked Cataclysm', 'Rolling Thunder', 'Stormhunter',
-                                'Frozen Front'),
-                               ('Thunderhead', 'Chainbreaker', 'White-Hot Conductor', 'Stormhammer',
-                                'Flame Conductor'),
-                               ('Overcharged Core', 'Ride the Lightning', 'Violent Grounding', 'Static Strike',
-                                'Warstorm')]),
+    (93075, STORMREAVER_ICON, [('Thunderbomb', 'Static Strikes', 'Eye of the Tempest', 'Echoing Strike',
+                                'Overcharge'),
+                               ('Magma Breaker', 'Molten Spread', 'White-Hot', 'Hot Hand', 'Cinder Echo'),
+                               ('Stormfront', 'Tempo', 'Ride the Lightning', 'Maelstrom', 'Violent Grounding')]),
     (91845, EMBERS_ICON, [('Cinderclaw', 'Wildfire Claws', 'Living Flame', 'Flame Shock Claws', 'Frozen Embers'),
                           ('Ember Rush', 'Smoldering Bite', 'Firestorm Pounce', 'Phoenix Claws', 'Wildfire Swipe'),
                           ('Ashen Renewal', 'Flame-Tipped Claws', 'Phoenix Scar', 'Healing Flame', 'Burning Rake')]),
@@ -2218,15 +2216,17 @@ SPELLS += [
     heal(93066, "Paragon's Mend", 'Spell_Holy_SearingLight', 'The aura mends you.'),
     absorb(93067, 'Dawnward', 'Spell_Holy_PowerWordShield', DURATION_4S),
     absorb(93068, 'Righteous Ward', 'Ability_Paladin_ShieldofVengeance', DURATION_4S),
-    # The Stormreaver.
-    buff(93090, 'Storm Surge', 'Spell_Nature_EarthShock', 'Your next Stormfront pulse deals 20% more damage.',
-         DURATION_6S, {1: aura(AURA_DUMMY, 1, 0)}),
-    ground(93091, 'Frozen Front', 'Spell_Frost_FrostShock', 'GraveFrozenLine', DURATION_4S),
-    strike(93092, 'Frozen Front', 'Spell_Frost_FrostShock', FROST),
-    strike(93093, 'Stormhammer', 'Spell_Nature_Lightning', NATURE, VISUAL_LIGHTNING_BOLT),
-    strike(93094, 'Warstorm', 'Spell_Nature_ThunderClap', NATURE, VISUAL_THUNDER_HIT),
-    buff(93095, 'Static Strike', 'Spell_Nature_LightningShield', 'Your next discharge strikes twice.', DURATION_6S,
-         {1: aura(AURA_DUMMY, 1, 0)}),
+    # The Stormreaver (its redesign: 93091 and 93093, the abilities it teaches, below).
+    buff(93090, 'Molten Charge', 'Ability_Warlock_MoltenCore', 'Your next Lava Lash deals 40% more damage.',
+         DURATION_8S, {1: aura(AURA_DUMMY, 1, 0)}),
+    strike(93092, 'Thunderbomb', 'INV_Misc_Bomb_05', NATURE, VISUAL_THUNDER_BURST),
+    strike(93094, 'Magma Breaker', 'Spell_Shaman_LavaFlow', FIRE, VISUAL_FIRE_BLAST),
+    family_mod(93095, 'Stormbringer', 'Ability_Shaman_Stormstrike', 'Stormstrike is ready, and your next one is free.',
+               DURATION_10S, SHAMAN_FAMILY, (0, 0x10, 0), AURA_ADD_PCT_MODIFIER, SPELLMOD_COST, -100),
+    buff(93096, 'Tempo', 'Spell_Nature_UnleashedRage', 'Damage done increased by 5% a stack.', DURATION_10S,
+         {1: aura(AURA_MOD_DAMAGE_PERCENT_DONE, 5, 127)}, stacks=5),
+    strike(93097, 'Cinder Echo', 'Spell_Fire_MoltenBlood', FIRE, VISUAL_FIRE_BLAST),
+    look(93098, 'Thunderbomb', 'INV_Misc_Bomb_05', VISUAL_EXPLOSIVE_SHOT, TARGET_UNIT_TARGET_ANY),
     # The Black Covenant.
     absorb(93115, 'Blood Pact', 'Spell_Deathknight_BloodPresence', DURATION_4S),
     absorb(93116, 'Earthen Pact', 'Spell_Nature_SkinofEarth', DURATION_4S),
@@ -2258,11 +2258,19 @@ SPELLS += [
     harmful(93221, 'Frost Echo', 'Spell_DeathKnight_IceTouch', 'Movement speed reduced by 25%.', DURATION_3S,
             aura(AURA_MOD_DECREASE_SPEED, -25, 0), FROST),
     absorb(93222, 'Tidal Shield', 'Spell_Nature_SkinofEarth', DURATION_4S),
-    # The Stormbound Conduit.
-    harmful(93240, 'Conductive', 'Spell_Nature_Lightning', 'Chain Lightning on you arcs on.', DURATION_12S,
-            aura(AURA_DUMMY, 1, 0), NATURE),
-    strike(93241, 'Starbound Circuit', 'Spell_Arcane_StarFire', ARCANE, VISUAL_ARCANE_HIT),
-    strike(93242, 'Shocking Surge', 'Spell_Nature_ThunderClap', NATURE, VISUAL_THUNDER_HIT),
+    # The Stormbound Conduit (its second redesign: 93241 and 93244, the abilities it teaches, below).
+    strike(93240, 'Fulmination', 'Spell_Nature_EarthShock', NATURE, VISUAL_SKY_STRIKE),
+    strike(93242, 'Ball Lightning', 'Spell_Nature_StormReach', NATURE, VISUAL_THUNDER_HIT),
+    strike(93243, 'Ball Lightning', 'Spell_Nature_StormReach', NATURE, VISUAL_THUNDER_BURST),
+    strike(93245, 'Storm Lance', 'Ability_ThunderBolt', NATURE, VISUAL_SKY_STRIKE),
+    family_mod(93246, 'Full Charge', 'Spell_Nature_LightningShield', 'Your next Earth Shock is free.',
+               DURATION_30S, SHAMAN_FAMILY, (0x100000, 0, 0), AURA_ADD_PCT_MODIFIER, SPELLMOD_COST, -100),
+    family_mod(93247, 'Static Surge', 'Spell_Shaman_StaticShock', 'Your next Lightning Bolt is instant.',
+               DURATION_10S, SHAMAN_FAMILY, (0x1, 0, 0), AURA_ADD_PCT_MODIFIER, SPELLMOD_CASTING_TIME, -100),
+    buff(93248, 'Galvanize', 'Spell_Nature_LightningOverload', 'Nature damage done increased by 2% a stack.',
+         DURATION_INFINITE, {1: aura(AURA_MOD_DAMAGE_PERCENT_DONE, 2, NATURE)}, stacks=12),
+    harmful(93249, 'Thunderstorm Release', 'Spell_Shaman_ThunderStorm', 'Movement speed reduced by 40%.',
+            DURATION_4S, aura(AURA_MOD_DECREASE_SPEED, -40, 0), NATURE),
     # The Shattered Sun.
     harmful(93265, 'Broken Core', 'Ability_Mage_FrostFireBolt', 'Your next Fireball here collapses it.',
             DURATION_8S, aura(AURA_DUMMY, 1, 0), FROSTFIRE),
@@ -2346,6 +2354,39 @@ for _id, _cast, _text in ((93376, CAST_2S, '2 sec'), (93377, 19, '2.5 sec')):
                                    'RealPointsPerLevel': 0.0, 'TargetA': TARGET_UNIT_TARGET_ENEMY, 'TargetB': 0}},
                    'clear': [2, 3]})
 SPELL_CLASSES.update({93376: 'HUNTER', 93377: 'HUNTER'})
+# The Stormreaver's and the Stormbound Conduit's abilities in their bases' places (Thunderbomb, Magma Breaker; Ball
+# Lightning, Storm Lance): each its base's copy, cost, cooldown and Shaman family (so the Hero's talents and the
+# runes' own modifiers, Stormbringer, Full Charge, Static Surge, touch it), its effect a dummy the script does.
+STORMSTRIKE_SPELL, LAVA_LASH_SPELL, EARTH_SHOCK_SPELL = 17364, 60103, 8042
+for _id, _copy, _name, _icon, _text, _flags, _set, _target in (
+        (93091, STORMSTRIKE_SPELL, 'Thunderbomb', 'INV_Misc_Bomb_05',
+         'Hurl a bomb of lightning at an enemy up to 20 yards away. After 1 sec it bursts for 140% of your weapon '
+         'damage as Nature damage to every enemy within 8 yards. Stormbringer resets it.', (0, 0x10, 0),
+         {'RangeIndex': RANGE_20, 'SpellVisual': 0}, TARGET_UNIT_TARGET_ENEMY),
+        (93093, LAVA_LASH_SPELL, 'Magma Breaker', 'Spell_Shaman_LavaFlow',
+         'Break the ground before you: 120% of your weapon damage as Fire damage to up to 8 enemies in a 10 yard '
+         'cone, spreading your Flame Shock to every one of them.', (0, 0, 0x4),
+         {'RangeIndex': 1, 'FacingCasterFlags': 0}, TARGET_UNIT_CASTER),
+        (93241, LIGHTNING_BOLT, 'Ball Lightning', 'Spell_Nature_StormReach',
+         'Loose a slow orb of lightning at an enemy. On its way it zaps the nearest enemy every 0.5 sec; reaching '
+         'its target, it bursts on every enemy within 8 yards. Adds 2 charges to your Lightning Shield.', (0x1, 0, 0),
+         {'CastingTimeIndex': 19, 'Speed': 0.0, 'ManaCost': 0, 'ManaCostPercentage': 10}, TARGET_UNIT_TARGET_ENEMY),
+        (93244, EARTH_SHOCK_SPELL, 'Storm Lance', 'Ability_ThunderBolt',
+         'Hurl a lance of lightning 30 yards through every enemy in its line, 20% stronger for each Lightning Shield '
+         'charge you hold, releasing every charge above 3.', (0x100000, 0, 0),
+         {'ManaCost': 0, 'ManaCostPercentage': 18}, TARGET_UNIT_TARGET_ENEMY)):
+    SPELLS.append({'id': _id, 'copy': _copy, 'name': _name, 'icon': _icon, 'description': _text, 'tooltip': '',
+                   'set': {'SpellFamilyName': SHAMAN_FAMILY, 'SpellFamilyFlags0': _flags[0],
+                           'SpellFamilyFlags1': _flags[1], 'SpellFamilyFlags2': _flags[2], 'BaseLevel': 1,
+                           'SpellLevel': 1, 'MaxLevel': 0, **_set},
+                   'effects': {1: {'Effect': EFFECT_DUMMY, 'Aura': 0, 'BasePoints': 0, 'DieSides': 1,
+                                   'RealPointsPerLevel': 0.0, 'TargetA': _target, 'TargetB': 0}},
+                   'clear': [2, 3]})
+    SPELL_CLASSES[_id] = 'SHAMAN'
+ICONS += ['INV_Misc_Bomb_05', 'Spell_Shaman_LavaFlow', 'Spell_Nature_StormReach', 'Ability_ThunderBolt',
+          'Ability_Warlock_MoltenCore', 'Ability_Shaman_Stormstrike', 'Spell_Nature_UnleashedRage',
+          'Spell_Fire_MoltenBlood', 'Spell_Shaman_StaticShock', 'Spell_Nature_LightningOverload',
+          'Spell_Shaman_ThunderStorm', 'Spell_Nature_EarthShock', 'Spell_Nature_LightningShield']
 SPELLS += [
     # Scarlet Benediction.
     buff(93400, 'Rune of Scarlet Benediction', SCARLET_ICON,
@@ -2392,8 +2433,8 @@ for _spell in SPELLS:
     if _spell['id'] in (93300, 93325, 93360, 93400, 93425, 93450):  # the new runes' own auras: hidden as every rune's
         _spell['set'] = {**_spell['set'], 'Attributes': HIDDEN['Attributes']}
 for _spell in SPELLS:
-    if _spell['id'] in (93015, 93065, 93092, 93093, 93094, 93117, 93165, 93166, 93216, 93217, 93219, 93220, 93241,
-                        93242, 93266, 93267, 93268, 93291, 93292):
+    if _spell['id'] in (93015, 93065, 93117, 93165, 93166, 93216, 93217, 93219, 93220, 93266, 93267, 93268, 93291,
+                        93292):
         _spell['set'] = {**_spell['set'], 'AttributesEx2': SPELL_ATTR2_CANT_CRIT}
 for _spell in SPELLS:
     if _spell['id'] in (91885, 91886, 91912, 91914, 91919):
@@ -2432,7 +2473,7 @@ BORROWED_VISUALS = {
     3445: (91246, 91405, 91421, 91423, 91635, 93218),  # Flame Shock: Fire damage over time
     4599: (90705, 91182),  # Death Wish: damage done
     5119: (90709, 91132, 91171, 91177, 93015),  # Hemorrhage: physical hits
-    7660: (91321, 93240),  # Stormstrike: Nature marks
+    7660: (91321,),  # Stormstrike: Nature marks
     7906: (91174,),  # Ice Lance: Frost hits
     8629: (90841, 91735, 91739),  # Corruption: Shadow damage over time
     10692: (93265,),  # Living Bomb: a Fire mark

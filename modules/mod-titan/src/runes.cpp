@@ -179,9 +179,18 @@ namespace
         SPELL_STORMBOUND_ARC_VISUAL     = 90753,    // its bolt, cast by the enemy it leaves
         SPELL_STORMBOUND_RETALIATION    = 90754,    // a Lightning Shield retaliation the rune makes
         SPELL_STORM_MODIFIER_FIRST      = 93225,    // + slot * 5 + choice (90760-90768 retired)
-        SPELL_CONDUCTIVE                = 93240,    // no longer laid (the Conduit needs no mark since)
-        SPELL_STARBOUND_CIRCUIT         = 93241,
-        SPELL_SHOCKING_SURGE            = 93242,
+        // Its second redesign (93240 on; Conductive, Starbound Circuit and Shocking Surge, retired, had 93240-93242).
+        SPELL_FULMINATION               = 93240,    // Earth Shock releasing the shield's charges
+        SPELL_BALL_LIGHTNING            = 93241,    // Lightning Bolt's place with Ball Lightning
+        SPELL_BALL_LIGHTNING_ZAP        = 93242,
+        SPELL_BALL_LIGHTNING_BURST      = 93243,
+        SPELL_STORM_LANCE               = 93244,    // Earth Shock's place with Storm Lance
+        SPELL_STORM_LANCE_HIT           = 93245,
+        SPELL_FULL_CHARGE               = 93246,    // the next Earth Shock free
+        SPELL_STATIC_SURGE              = 93247,    // the next Lightning Bolt instant
+        SPELL_GALVANIZE                 = 93248,    // a stack a charge over 3: 2% more Nature damage each
+        SPELL_THUNDERSTORM_SLOW         = 93249,
+        SPELL_MAELSTROM_WEAPON          = 53817,
 
         SPELL_RUNE_ECHOING_THUNDER      = 90770,
         SPELL_THUNDERFIELD_MARCH        = 90772,    // the charge: a small storm about the Hero
@@ -500,12 +509,17 @@ namespace
         SPELL_DAWNWARD                  = 93067,
         SPELL_RIGHTEOUS_WARD            = 93068,    // Shield of Righteousness in the aura: the absorb
         SPELL_STORMREAVER_MODIFIER_FIRST = 93075,
-        SPELL_STORM_SURGE               = 93090,    // Earth Shock's: the next pulse 20% more
-        SPELL_FROZEN_FRONT              = 93091,    // its look; its tick 93092
-        SPELL_FROZEN_FRONT_TICK         = 93092,
-        SPELL_STORMHAMMER               = 93093,
-        SPELL_WARSTORM                  = 93094,
-        SPELL_STATIC_STRIKE             = 93095,    // the next discharge strikes twice
+        // Its redesign (93090 on; Storm Surge, Frozen Front, Stormhammer, Warstorm and Static Strike, retired, had
+        // 93090-93095).
+        SPELL_MOLTEN_CHARGE             = 93090,    // the next Lava Lash 40% more
+        SPELL_THUNDERBOMB               = 93091,    // Stormstrike's place with Thunderbomb
+        SPELL_THUNDERBOMB_BLAST         = 93092,
+        SPELL_MAGMA_BREAKER             = 93093,    // Lava Lash's place with Magma Breaker
+        SPELL_MAGMA_BREAKER_HIT         = 93094,
+        SPELL_STORMBRINGER              = 93095,    // Stormstrike reset: the next one free
+        SPELL_TEMPO                     = 93096,
+        SPELL_CINDER_ECHO               = 93097,
+        SPELL_THUNDERBOMB_FUSE          = 93098,    // its look on the target as it is thrown
         SPELL_BURNING_RAKE              = 91865,    // the next Burning Claws 30% more
         SPELL_HOLLOW_PATCH              = 91785,    // its tick 91786
         SPELL_HOLLOW_PATCH_TICK         = 91786,
@@ -530,14 +544,16 @@ namespace
         SPELL_RUNE_STORMREAVER          = 91400,
         SPELL_STORMFRONT                = 91401,
         SPELL_STORMFRONT_PULSE          = 91402,
-        SPELL_THUNDERLASH               = 91403,
-        SPELL_THUNDERLASH_ARC           = 91404,
+        SPELL_ERUPTION                  = 91403,    // 91403 and 91404 were Thunderlash's
+        SPELL_ECHOING_STRIKE            = 91404,
         SPELL_WHITE_HOT_BURN            = 91405,    // its tick 91406
         SPELL_WHITE_HOT_TICK            = 91406,
         SPELL_STORM_DISCHARGE           = 91407,
-        SPELL_RIDE_THE_LIGHTNING        = 91408,
+        SPELL_RIDE_THE_LIGHTNING        = 91408,    // 20% melee haste
         // 91410-91418: its first 9 markers, retired (the Extended Options' block, 93075)
         SPELL_STORMSTRIKE               = 17364,
+        SPELL_STORMSTRIKE_MAIN_HAND     = 32175,    // its hits
+        SPELL_STORMSTRIKE_OFF_HAND      = 32176,
         SPELL_LAVA_LASH                 = 60103,
 
         // Ember's Wrath (91420 on) and Whitefang (91440 on); their markers 11 on from each first. 91420 and 91440,
@@ -841,40 +857,46 @@ namespace
     constexpr float PARAGON_SHOCK_RANGE = 8.0f, RIGHTEOUS_PCT = 3.0f, AEGIS_PCT = 4.0f, CHARGE_RADIUS = 4.0f;
     constexpr float CHARGE_TICK = 1.15f, HEALING_LIGHT_SHARE = 0.75f, LIGHT_FLASH = 0.3f, DAWNWARD_SHARE = 0.2f;
 
-    // The Stormbound Conduit's modifiers: slot (0 Arcs, 1 Lightning Shield, 2 Surge) x 3 + choice.
+    // The Stormbound Conduit's modifiers (its second redesign): slot (0 the Bolt, 1 the Shield, 2 the Release) x 5 +
+    // choice; its picks reset (titan_runes_zz_extended_reset7.sql).
     enum StormModifier : uint8
     {
-        MOD_PERSISTENT_CURRENT, MOD_BRANCHING_CURRENT, MOD_LIVE_WIRE, MOD_ICY_CONDUCTOR, MOD_STORM_FLAME_CONDUCTOR,
-        MOD_FORKED_TEMPEST, MOD_CLOSED_CIRCUIT, MOD_FARADAY_FIELD, MOD_STORM_LASH, MOD_STARBOUND_CIRCUIT,
-        MOD_STORM_WITHIN, MOD_VIOLENT_REPRISAL, MOD_DISTANT_CONDUCTOR, MOD_STORMS_EYE, MOD_SHOCKING_SURGE,
+        MOD_BALL_LIGHTNING, MOD_OVERLOAD, MOD_FORKED_CONDUIT, MOD_SUPERCHARGE, MOD_MAELSTROM_CONDUIT,
+        MOD_STATIC_FIELD, MOD_REFLUX, MOD_SHARED_CURRENT, MOD_GALVANIZE, MOD_CHARGED_BLADES,
+        MOD_STORM_LANCE, MOD_CHAIN_FULMINATION, MOD_THUNDERSTORM_RELEASE, MOD_OVERFLOW, MOD_STATIC_SURGE,
     };
 
-    // The Stormbound Conduit's tuning (its Extended Options, a redesign; no Conductive mark to keep up since: every
-    // arc goes on any enemy). Chain Lightning sends one arc (once a cast) to another enemy within 10 yards for 30% of
-    // its hit; none: back into it for half. A Lightning Shield retaliation arcs to another enemy within 10 yards for
-    // 50% of it (3 sec apart); Earth Shock arcs 20% of spell power to another (half into it alone; 8 sec apart). An
-    // arc never arcs again.
-    constexpr float ARC_RANGE = 10.0f, FARADAY_RANGE = 15.0f, CHAIN_ARC_SHARE = 0.3f, ALONE_SHARE = 0.5f;
-    constexpr float SHIELD_ARC_SHARE = 0.5f, EARTH_ARC_POWER = 0.2f;
-    constexpr float BRANCH_SHARE = 0.3f;
-    constexpr uint32 CHAIN_ARC_EVERY_MS = 1000, SHIELD_ARC_EVERY_MS = 3000, EARTH_ARC_EVERY_MS = 8000;
-    // Its options: Persistent Current (arcs 15% more), Branching Current (Lightning Bolt arcs 30% of its hit to one
-    // enemy within 10 yards), Live Wire (retaliations 15% more), Icy Conductor (Frostbolt 15% more), Flame Conductor
-    // (Lightning Bolt on their Flame Shock target: Flame Shock 2 sec longer, 6 sec an application, and its arc as
-    // Branching Current's); Forked Tempest (2 enemies, 65% each), Closed Circuit (back into it, whole), Faraday
-    // Field (15 yards, the first arc each 8 sec 20% more), Storm Lash (Lava Lash: 25% of attack power, 6 sec apart),
-    // Starbound Circuit (Starfire: 25% of spell power as Arcane, 8 sec apart); Storm Within (a retaliation at the
-    // nearest enemy within 8 yards every 3 sec in combat, a charge each), Violent Reprisal (the shield's arcs 40%
-    // more), Distant Conductor (Lightning Bolt: a retaliation at its target, a charge, 3 sec apart), Storm's Eye
-    // (Chain Heal: the next Lightning Bolt within 6 sec 15% more), Shocking Surge (Thunder Clap: 20% of spell power
-    // to up to 5 within 8 yards, 8 sec apart).
-    constexpr float PERSISTENT_FIRST = 1.15f, LIVE_WIRE_MORE = 1.15f, ICY_CONDUCTOR = 1.15f, FORKED_SHARE = 0.65f;
-    constexpr float FARADAY_MORE = 1.2f, STORM_LASH_AP = 0.25f, STARBOUND_POWER = 0.25f, VIOLENT_REPRISAL = 1.4f;
-    constexpr float STORMS_EYE = 1.15f, SHOCKING_POWER = 0.2f, SHOCKING_RADIUS = 8.0f, STORM_WITHIN_RANGE = 8.0f;
-    constexpr int32 FLAME_CONDUCTOR_MS = 2000, FLAME_CONDUCTOR_MOST_MS = 6000, STORMS_EYE_MS = 6000;
-    constexpr std::size_t FORKED_ARCS = 2, SHOCKING_TARGETS = 5;
-    constexpr uint32 FARADAY_EVERY_MS = 8000, STORM_LASH_EVERY_MS = 6000, STARBOUND_EVERY_MS = 8000;
-    constexpr uint32 STORM_WITHIN_MS = 3000, DISTANT_EVERY_MS = 3000, SHOCKING_EVERY_MS = 8000;
+    // The Stormbound Conduit's tuning: a caster's rune, a hybrid's through Maelstrom Weapon. Charging: Lightning Bolt
+    // adds a Lightning Shield charge (one cast instantly, as 5 Maelstrom Weapon stacks make it, 2), Chain Lightning
+    // one an enemy it hits; the shield holds up to 9. Fulmination: Earth Shock releases every charge above 3, each
+    // 25% of the Hero's power (the higher of their Nature spell power and attack power) as Nature damage. Conduit:
+    // Lightning Bolt arcs 30% of its hit to another enemy within 10 yards. Full charge: at 9, the next Earth Shock is
+    // free.
+    constexpr uint8 CONDUIT_KEPT = 3, CONDUIT_MOST = 9, OVERFLOW_MOST = 12;
+    constexpr float FULMINATION_POWER = 0.25f, ARC_RANGE = 10.0f, CONDUIT_ARC = 0.3f;
+    // Its options. The Bolt: Ball Lightning (Lightning Bolt's place: a slow orb, zapping the nearest enemy within 8
+    // yards for 10% of power every 0.5 sec on its way, then bursting for 60% within 8 yards; 2 charges), Overload
+    // (25%: the bolt again at half, a charge more), Forked Conduit (2 arcs, 40% each), Supercharge (Chain Lightning 2
+    // charges an enemy), Maelstrom Conduit (a charge for each Maelstrom Weapon stack a bolt spends). The Shield:
+    // Static Field (6 charges or more: a zap at an enemy within 10 yards every 2 sec in combat, 30% of power, nothing
+    // spent), Reflux (struck at a full shield: a Fulmination at every enemy within 8 yards), Shared Current (the
+    // Stormreaver's Static Strikes spend nothing), Galvanize (2% more Nature damage a charge over 3), Charged Blades
+    // (a melee swing's 10% chance of a charge). The Release: Storm Lance (Earth Shock's place: a lance 30 yards
+    // through every enemy in its line, 60% of power and 20% more a charge held, the Fulmination in it), Chain
+    // Fulmination (half again to 2 more within 10 yards), Thunderstorm Release (a Fulmination knocks back and slows
+    // the enemies within 10 yards by 40% for 4 sec), Overflow (12 charges), Static Surge (5 charges or more released:
+    // the next Lightning Bolt instant).
+    constexpr float BALL_ZAP = 0.1f, BALL_BURST = 0.6f, BALL_RADIUS = 8.0f, BALL_SPEED = 7.0f, BALL_HEIGHT = 1.5f;
+    constexpr float BALL_REACHED = 2.0f, OVERLOAD_CHANCE = 25.0f, OVERLOAD_SHARE = 0.5f, FORKED_ARC = 0.4f;
+    constexpr float STATIC_FIELD_POWER = 0.3f, STATIC_FIELD_RANGE = 10.0f, REFLUX_RADIUS = 8.0f;
+    constexpr float GALVANIZE_PCT = 2.0f, CHARGED_BLADES_CHANCE = 10.0f, LANCE_POWER = 0.6f, LANCE_A_CHARGE = 0.2f;
+    constexpr float LANCE_LENGTH = 30.0f, STORM_LANCE_HALF_WIDTH = 2.0f, CHAIN_FULMINATION_SHARE = 0.5f;
+    constexpr float RELEASE_RADIUS = 10.0f, RELEASE_SPEED_XY = 12.0f, RELEASE_SPEED_Z = 6.0f;
+    constexpr uint32 BALL_ZAP_MS = 500, BALL_MOST_MS = 5000, STATIC_FIELD_MS = 2000;
+    constexpr uint8 BALL_CHARGES = 2, SUPERCHARGE_CHARGES = 2, STATIC_FIELD_CHARGES = 6, STATIC_SURGE_CHARGES = 5;
+    constexpr std::size_t BALL_TARGETS = 8, STORM_LANCE_TARGETS = 10, REFLUX_TARGETS = 5, CHAIN_FULMINATION_ARCS = 2;
+    constexpr uint32 NPC_BALL_LIGHTNING = 910128;
+    constexpr uint32 SPELL_SPARK_VISUAL = 52667;               // the Spark of Ionar's crackle: the orb's look
     constexpr uint32 LIGHTNING_SHIELD_FAMILY_FLAG = 0x400;      // SpellFamilyFlags0
 
     // Echoing Thunder's modifiers (its Extended Options, a redesign): slot (0 Field, 1 Echo, 2 Resonance) x 5 +
@@ -1743,45 +1765,49 @@ namespace
     constexpr float BROADSIDE_AP = 0.3f, BROADSIDE_AP_PER_POINT = 0.05f, BROADSIDE_RADIUS = 8.0f;
     constexpr std::size_t BROADSIDE_TARGETS = 8;
 
-    // The Stormreaver's modifiers: slot (0 Storm, 1 Thunderlash, 2 Lightning Shield) x 3 + choice.
-    // (Its Extended Options: slot x 5 + choice, the first three of each the ones it had.)
+    // The Stormreaver's modifiers (its redesign): slot (0 Stormstrike, 1 Lava Lash, 2 the Storm) x 5 + choice; its
+    // picks reset (titan_runes_zz_extended_reset7.sql).
     enum StormreaverModifier : uint8
     {
-        MOD_EYE_OF_THE_TEMPEST, MOD_FORKED_CATACLYSM, MOD_STORM_ROLLING, MOD_STORMHUNTER, MOD_FROZEN_FRONT,
-        MOD_THUNDERHEAD, MOD_CHAINBREAKER, MOD_WHITE_HOT_CONDUCTOR, MOD_STORMHAMMER, MOD_FLAME_CONDUCTOR,
-        MOD_OVERCHARGED_CORE, MOD_RIDE_THE_LIGHTNING, MOD_VIOLENT_GROUNDING, MOD_STATIC_STRIKE, MOD_WARSTORM,
+        MOD_THUNDERBOMB, MOD_STATIC_STRIKES, MOD_EYE_OF_THE_TEMPEST, MOD_ECHOING_STRIKE, MOD_OVERCHARGE,
+        MOD_MAGMA_BREAKER, MOD_MOLTEN_SPREAD, MOD_WHITE_HOT, MOD_HOT_HAND, MOD_CINDER_ECHO,
+        MOD_STORMFRONT, MOD_TEMPO, MOD_RIDE_THE_LIGHTNING, MOD_MAELSTROM, MOD_VIOLENT_GROUNDING,
     };
 
-    // The Stormreaver's Extended Options. Its interactions: Earth Shock in the Stormfront, the next pulse 20% more (6
-    // sec); Thunderlash on the Hero's Flame Shock target, the Flame Shock 2 sec longer (6 sec an application). New
-    // options: Stormhunter (their Hunter's Mark target: 35% more and one more within 8 yards for 40%), Frozen Front
-    // (Frost Shock in it: a frost trail, 10% of attack power a second to up to 3 for 4 sec, 8 sec apart),
-    // Stormhammer (Shield Slam in it: 30% of attack power as Nature to its target and one more, 6 sec apart), Flame
-    // Conductor (Thunderlash spreads their Flame Shock to one more within 8 yards, 10 sec apart), Static Strike
-    // (Lightning Bolt in it: the next discharge in 6 sec strikes again for 40%), Warstorm (Thunder Clap in it: 25%
-    // of attack power as Nature to up to 5 within 8 yards, 8 sec apart).
-    constexpr int32 STORM_FS_EXTEND_MS = 2000, STORM_FS_MOST_MS = 6000;
-    constexpr uint32 FROZEN_FRONT_EVERY_MS = 8000, FROZEN_FRONT_TICKS = 4, STORMHAMMER_EVERY_MS = 6000;
-    constexpr uint32 FLAME_CONDUCTOR_EVERY_MS = 10000, WARSTORM_EVERY_MS = 8000;
-    constexpr float STORM_SURGE = 1.2f, STORMHUNTER = 1.35f, STORMHUNTER_SHARE = 0.4f, FROZEN_FRONT_AP = 0.1f;
-    constexpr float FROZEN_FRONT_RADIUS = 4.0f, STORMHAMMER_AP = 0.3f, STATIC_SHARE = 0.4f, WARSTORM_AP = 0.25f;
-    constexpr float STORM_ECHO_RANGE = 8.0f;
-    constexpr std::size_t FROZEN_FRONT_TARGETS = 3, WARSTORM_TARGETS = 5;
-
-    // The Stormreaver's tuning: Stormstrike raises the Stormfront (16 sec, refreshed): a pulse every 2 sec, 25% of
-    // attack power as Nature to up to 5 enemies within 8 yards. Lava Lash in it is Thunderlash (60% to its target,
-    // arcs of 30% to 2 more within 8); melee abilities discharge Lightning Shield at their target once a second (the
-    // shield keeps its charges meanwhile): its rank's damage, a third of spell power and 20% of attack power. The
-    // dossier's 15%, 40% and 20%, raised.
-    constexpr int32 STORMFRONT_MS = 16000, WHITE_HOT_MS = 6000, RIDE_MS = 3000;
-    constexpr uint32 STORM_PULSE_MS = 2000, ROLLING_PULSE_MS = 1000, DISCHARGE_EVERY_MS = 1000;
-    constexpr int32 RIDE_COOLDOWN_MS = 1000;
-    constexpr float STORM_PULSE_AP = 0.25f, EYE_OF_THE_TEMPEST = 2.2f, ROLLING_SHARE = 0.7f;
-    constexpr float THUNDERLASH_AP = 0.6f, THUNDERHEAD_AP = 1.2f, ARC_AP = 0.3f, WHITE_HOT_AP = 1.0f;
-    constexpr float DISCHARGE_SP = 0.33f, DISCHARGE_AP = 0.2f, OVERCHARGED = 1.5f, GROUNDING_SHARE = 0.5f;
-    constexpr float STORM_RADIUS = 8.0f, FORKED_RADIUS = 12.0f, THUNDERLASH_RANGE = 8.0f, GROUNDING_RADIUS = 8.0f;
-    constexpr std::size_t STORM_TARGETS = 5, FORKED_TARGETS = 8, THUNDERLASH_ARCS = 2, CHAINBREAKER_ARCS = 4;
-    constexpr std::size_t GROUNDING_TARGETS = 3;
+    // The Stormreaver's tuning, its kit always turning over. Stormbringer: a melee swing (Windfury's too) has a 20%
+    // chance to reset Stormstrike and make the next one free. Molten Charge: Stormstrike makes the next Lava Lash
+    // within 8 sec deal 40% more; a Flame Shock tick has a 25% chance to reset Lava Lash. Eruption: Lava Lash on an
+    // enemy Stormstruck in the last 8 sec deals 50% of attack power as Nature damage to every enemy within 8 yards
+    // of it. Melee abilities discharge Lightning Shield at their target once a second (its rank's damage, a third of
+    // spell power and 20% of attack power; the shield keeps its charges). A Lava Lash reset at most every 1.5 sec.
+    constexpr float STORMBRINGER_CHANCE = 20.0f, MOLTEN_CHARGE = 1.4f, LAVA_RESET_CHANCE = 25.0f;
+    constexpr float ERUPTION_AP = 0.5f, STORM_ERUPTION_RADIUS = 8.0f;
+    constexpr float DISCHARGE_SP = 0.33f, DISCHARGE_AP = 0.2f;
+    constexpr uint32 STORMSTRUCK_MS = 8000, DISCHARGE_EVERY_MS = 1000;
+    // Its options. Stormstrike: Thunderbomb (Stormstrike's place: a bomb thrown up to 20 yards, bursting after 1 sec
+    // for 140% of weapon damage as Nature to every enemy within 8 yards; Stormbringer resets it), Static Strikes
+    // (Stormstrike spends up to 3 shield charges, never the last, each a discharge), Eye of the Tempest (60% more
+    // with no other enemy within 8 yards), Echoing Strike (it strikes twice more over 2 sec, 30% each, as Nature),
+    // Overcharge (Stormbringer's chance 35%). Lava Lash: Magma Breaker (Lava Lash's place: a 10 yard cone, 120% of
+    // weapon damage as Fire to up to 8, spreading Flame Shock to all it hits), Molten Spread (Lava Lash spreads their
+    // Flame Shock to up to 4 within 8 yards), White-Hot (a burn of 100% of attack power over 6 sec), Hot Hand (the
+    // reset's chance 50%, a reset Lava Lash 25% more), Cinder Echo (50% of the last Stormstrike again as Fire). The
+    // Storm: Stormfront (Stormstrike and Lava Lash raise it for 16 sec: every 2 sec, 15% of attack power as Nature
+    // to up to 5 within 8 yards), Tempo (alternating the two: a stack, 5% more damage each, up to 5), Ride the
+    // Lightning (a reset: 20% melee haste for 4 sec), Maelstrom (a reset: 2 Maelstrom Weapon stacks), Violent
+    // Grounding (a discharge hits 3 more within 8 yards for half).
+    constexpr float THUNDERBOMB_WEAPON = 1.4f, THUNDERBOMB_RADIUS = 8.0f, EYE_OF_THE_TEMPEST = 1.6f;
+    constexpr float EYE_RADIUS = 8.0f, ECHOING_SHARE = 0.3f, OVERCHARGE_CHANCE = 35.0f;
+    constexpr float MAGMA_WEAPON = 1.2f, MAGMA_RANGE = 10.0f, MAGMA_HALF_ARC = float(M_PI) / 4.0f;
+    constexpr float SPREAD_RANGE = 8.0f, WHITE_HOT_AP = 1.0f, HOT_HAND_CHANCE = 50.0f, HOT_HAND = 1.25f;
+    constexpr float CINDER_SHARE = 0.5f, STORM_PULSE_AP = 0.15f, STORM_RADIUS = 8.0f, GROUNDING_SHARE = 0.5f;
+    constexpr float GROUNDING_RADIUS = 8.0f;
+    constexpr int32 STORMFRONT_MS = 16000, WHITE_HOT_MS = 6000, RIDE_MS = 4000, MOLTEN_CHARGE_MS = 8000;
+    constexpr uint32 THUNDERBOMB_FUSE_MS = 1000, ECHOING_EVERY_MS = 1000, ECHOING_STRIKES = 2, STORM_PULSE_MS = 2000;
+    constexpr uint32 LAVA_RESET_EVERY_MS = 1500;
+    constexpr uint8 STATIC_STRIKES = 3, TEMPO_MOST = 5, MAELSTROM_STACKS = 2;
+    constexpr std::size_t THUNDERBOMB_TARGETS = 10, MAGMA_TARGETS = 8, SPREAD_TARGETS = 4, STORM_TARGETS = 5;
+    constexpr std::size_t GROUNDING_TARGETS = 3, STORM_ERUPTION_TARGETS = 10;
 
     // Ember's Wrath's modifiers (its Extended Options, a redesign): slot (0 Ignition, 1 Claws, 2 Instinct) x 5 +
     // choice; its picks reset (titan_runes_zz_extended_reset2.sql). Burning Claws: the Kindled Claw, Blazing Strike.
@@ -1930,11 +1956,11 @@ namespace
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)
                   | Wildcard::RoleMask(Wildcard::ROLE_HEALER) | Wildcard::RoleMask(Wildcard::ROLE_TANK)),
               { { SPELL_CONSECRATION } }, SPELL_RUNE_SANCTIFIED_PARAGON, SPELL_PARAGON_MODIFIER_FIRST, MAX_CHOICES },
-            // DPS only: Lightning Bolt makes the connections, Lightning Shield's retaliations (and Chain Lightning,
-            // if known) arc through them.
+            // DPS only: Lightning Bolt charges Lightning Shield, Earth Shock releases it.
             { RUNE_STORMBOUND_CONDUIT,
               uint8(Wildcard::RoleMask(Wildcard::ROLE_MELEE) | Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
-              { { SPELL_LIGHTNING_BOLT }, { SPELL_CHAIN_LIGHTNING } }, SPELL_RUNE_STORMBOUND_CONDUIT,
+              { { SPELL_LIGHTNING_BOLT }, { SPELL_LIGHTNING_SHIELD }, { TankRunes::SPELL_EARTH_SHOCK } },
+              SPELL_RUNE_STORMBOUND_CONDUIT,
               SPELL_STORM_MODIFIER_FIRST, MAX_CHOICES },
             // Tanks: Thunder Clap places the storm, Shield Slam echoes it (and needs the shield the rune asks for).
             { RUNE_ECHOING_THUNDER, uint8(Wildcard::RoleMask(Wildcard::ROLE_TANK)),
@@ -2176,14 +2202,8 @@ namespace
         if (rune == RUNE_STORMBOUND_CONDUIT)
             switch (modifier)
             {
-                case MOD_LIVE_WIRE: case MOD_STORM_WITHIN: case MOD_VIOLENT_REPRISAL: case MOD_DISTANT_CONDUCTOR:
-                    return { { SPELL_LIGHTNING_SHIELD } };
-                case MOD_ICY_CONDUCTOR: return { { SPELL_FROSTBOLT } };
-                case MOD_STORM_FLAME_CONDUCTOR: return { { SPELL_FLAME_SHOCK } };
-                case MOD_STORM_LASH: return { { SPELL_LAVA_LASH } };
-                case MOD_STARBOUND_CIRCUIT: return { { SPELL_STARFIRE } };
-                case MOD_STORMS_EYE: return { { SPELL_CHAIN_HEAL } };
-                case MOD_SHOCKING_SURGE: return { { SPELL_THUNDER_CLAP } };
+                case MOD_SUPERCHARGE: return { { SPELL_CHAIN_LIGHTNING } };
+                case MOD_SHARED_CURRENT: return { { SPELL_STORMSTRIKE } };
                 default: break;
             }
         if (rune == RUNE_ECHOING_THUNDER)
@@ -2336,14 +2356,8 @@ namespace
         if (rune == RUNE_STORMREAVER)
             switch (modifier)
             {
-                case MOD_STORMHUNTER: return { { SPELL_HUNTERS_MARK } };
-                case MOD_FROZEN_FRONT: return { { SPELL_FROST_SHOCK } };
-                case MOD_STORMHAMMER: return { { SPELL_SHIELD_SLAM } };
-                case MOD_FLAME_CONDUCTOR: return { { SPELL_FLAME_SHOCK } };
-                case MOD_OVERCHARGED_CORE: case MOD_RIDE_THE_LIGHTNING: case MOD_VIOLENT_GROUNDING:
-                    return { { SPELL_LIGHTNING_SHIELD } };
-                case MOD_STATIC_STRIKE: return { { SPELL_LIGHTNING_BOLT } };
-                case MOD_WARSTORM: return { { SPELL_THUNDER_CLAP } };
+                case MOD_MOLTEN_SPREAD: case MOD_HOT_HAND: return { { SPELL_FLAME_SHOCK } };
+                case MOD_STATIC_STRIKES: case MOD_VIOLENT_GROUNDING: return { { SPELL_LIGHTNING_SHIELD } };
                 default: return {};
             }
         if (rune == RUNE_URSOCS_CHAMPION)
@@ -2529,10 +2543,16 @@ namespace
         std::vector<std::pair<Position, uint32>> Trail;             // footsteps: where, when
         std::unordered_map<ObjectGuid, uint8> Weighed;              // enemy -> damaging ticks in a row
 
-        // The Stormbound Conduit.
-        uint32 StormTimer = 0;                      // ms since Storm Within's last pulse
-        uint32 ChainArcAt = 0, FaradayAt = 0, ShieldArcAt = 0, EarthArcAt = 0, StormLashAt = 0, StarboundAt = 0;
-        uint32 DistantAt = 0, ShockingAt = 0, StormsEyeUntil = 0;     // game ms
+        // The Stormbound Conduit: Static Field's timer; the Maelstrom Weapon stacks a bolt began with; its orbs.
+        uint32 StaticFieldTimer = 0;
+        uint8 MaelstromBefore = 0;
+        struct Ball
+        {
+            ObjectGuid Orb, Victim;
+            uint32 Until = 0, Timer = 0;
+            float Power = 0.0f;
+        };
+        std::vector<Ball> Balls;
 
         // Echoing Thunder: the field laid (where, until), its first echo, the echo and options' times (game ms).
         Position FieldAt;
@@ -2734,9 +2754,14 @@ namespace
         // The Duelist: direct Sinister Strike hits toward Opening Shot.
         uint8 SabreHits = 0;
 
-        // The Stormreaver: the Stormfront's pulse timer; the last discharge.
+        // The Stormreaver: the Stormfront's pulse timer; the last discharge; each enemy's last Stormstrike (game ms);
+        // the last Stormstrike's damage; Tempo's last ability (1 Stormstrike, 2 Lava Lash); Hot Hand's reset.
         uint32 StormfrontTimer = 0, LastDischarge = 0;
-        uint32 FlameConductorAt = 0, FrozenFrontAt = 0, StormhammerAt = 0, WarstormAt = 0;     // game ms
+        std::map<ObjectGuid, uint32> Stormstruck;
+        float LastStormstrike = 0.0f;
+        uint8 TempoLast = 0;
+        bool HotHandReset = false;
+        uint32 LavaResetAt = 0;                     // game ms
 
         // Ember's Wrath: Blazing Rake's next extra hit; Ashen Pursuit's next bonus, its last victim and every one.
         uint32 BlazingRakeAt = 0, AshenReadyAt = 0;
@@ -3413,211 +3438,8 @@ namespace
 
     void Lasting(Player* player, Unit* unit, uint32 spellId, int32 ms, int32 const* amount);
 
-    // Another enemy within arc range of the host (10 yards; Faraday Field 15), but except, else nullptr.
-    Unit* ArcTarget(Player* player, Unit* host, Unit* except = nullptr)
-    {
-        float range = HasStormMarker(player, MOD_FARADAY_FIELD) ? FARADAY_RANGE : ARC_RANGE;
-        for (Unit* enemy : EnemiesAround(player, host, range))
-            if (enemy != host && enemy != except)
-                return enemy;
-        return nullptr;
-    }
-
-    // One arc from the host to the enemy (back into the host: no bolt); Persistent Current's 15% more.
-    void ArcTo(Player* player, Unit* host, Unit* enemy, uint32 spellId, float damage)
-    {
-        if (HasStormMarker(player, MOD_PERSISTENT_CURRENT))
-            damage *= PERSISTENT_FIRST;
-        if (damage < 1.0f || !enemy->IsAlive())
-            return;
-        if (enemy != host)
-            host->CastSpell(enemy, SPELL_STORMBOUND_ARC_VISUAL, true);
-        Strike(player, enemy, spellId, damage);
-    }
-
-    // An arc from the host to another enemy, else back into it for half.
-    void ArcOrBack(Player* player, Unit* host, uint32 spellId, float damage)
-    {
-        if (Unit* other = ArcTarget(player, host))
-            ArcTo(player, host, other, spellId, damage);
-        else
-            ArcTo(player, host, host, spellId, damage * ALONE_SHARE);
-    }
-
-    // Chain Lightning: its arc (once a cast), 30% of its hit; the options.
-    void ChainArc(Player* player, Unit* host, float hit)
-    {
-        State& state = StateOf(player);
-        if (hit <= 0.0f || !Ready(state.ChainArcAt, CHAIN_ARC_EVERY_MS))
-            return;
-        state.ChainArcAt = Now();
-        float damage = hit * CHAIN_ARC_SHARE;
-        if (HasStormMarker(player, MOD_FARADAY_FIELD) && Ready(state.FaradayAt, FARADAY_EVERY_MS))
-        {
-            state.FaradayAt = Now();
-            damage *= FARADAY_MORE;
-        }
-        if (HasStormMarker(player, MOD_CLOSED_CIRCUIT))
-        {
-            ArcTo(player, host, host, SPELL_STORMBOUND_ARC, damage);
-            return;
-        }
-        if (HasStormMarker(player, MOD_FORKED_TEMPEST))
-        {
-            Unit* first = ArcTarget(player, host);
-            Unit* second = first ? ArcTarget(player, host, first) : nullptr;
-            if (first && second)
-            {
-                ArcTo(player, host, first, SPELL_STORMBOUND_ARC, damage * FORKED_SHARE);
-                ArcTo(player, host, second, SPELL_STORMBOUND_ARC, damage * FORKED_SHARE);
-                return;
-            }
-        }
-        ArcOrBack(player, host, SPELL_STORMBOUND_ARC, damage);
-    }
-
-    // A Lightning Shield retaliation the rune makes (Distant Conductor, Storm Within): the shield's rank's damage at
-    // the target, a charge spent.
-    void Retaliate(Player* player, Unit* target, AuraEffect* shield)
-    {
-        uint32 damageSpell = sSpellMgr->GetSpellWithRank(SPELL_LIGHTNING_SHIELD_DAMAGE,
-            shield->GetSpellInfo()->GetRank());
-        SpellInfo const* info = sSpellMgr->GetSpellInfo(damageSpell);
-        if (!info)
-            return;
-        int32 damage = std::max<int32>(1, info->Effects[EFFECT_0].CalcValue(player));
-        player->CastCustomSpell(target, SPELL_STORMBOUND_RETALIATION, &damage, nullptr, nullptr, true);
-        shield->GetBase()->DropCharge();
-    }
-
-    // Storm Within: every 3 sec in combat, a retaliation at the nearest enemy within 8 yards.
-    void StormPulse(Player* player, uint32 diff)
-    {
-        if (!HasStormMarker(player, MOD_STORM_WITHIN))
-            return;
-        State& state = StateOf(player);
-        state.StormTimer += diff;
-        if (state.StormTimer < STORM_WITHIN_MS)
-            return;
-        AuraEffect* shield = Shield(player);
-        if (!shield || !player->IsInCombat())
-            return;
-        for (Unit* enemy : EnemiesAround(player, player, STORM_WITHIN_RANGE))
-        {
-            state.StormTimer = 0;
-            Retaliate(player, enemy, shield);
-            return;
-        }
-    }
-
-    // A retaliation hitting the attacker (the shield's own, or the rune's): its arc to another enemy (3 sec apart;
-    // Violent Reprisal 40% more).
-    void ShieldArc(Player* player, Unit* attacker, float damage)
-    {
-        State& state = StateOf(player);
-        if (!Ready(state.ShieldArcAt, SHIELD_ARC_EVERY_MS))
-            return;
-        if (Unit* other = ArcTarget(player, attacker))
-        {
-            state.ShieldArcAt = Now();
-            ArcTo(player, attacker, other, SPELL_STORMBOUND_ARC, damage * SHIELD_ARC_SHARE
-                * (HasStormMarker(player, MOD_VIOLENT_REPRISAL) ? VIOLENT_REPRISAL : 1.0f));
-        }
-    }
-
-    // The Hero's own hits with the rune: Lightning Bolt (Branching Current, Flame Conductor, Distant Conductor),
-    // Chain Lightning (its arc), Earth Shock, Lava Lash, Starfire, Thunder Clap (Shocking Surge), Chain Heal (Storm's
-    // Eye).
-    void ConduitHit(Player* player, Unit* target, uint32 firstRank, float damage)
-    {
-        State& state = StateOf(player);
-        ObjectGuid me = player->GetGUID();
-        if (firstRank == SPELL_CHAIN_HEAL)
-        {
-            if (HasStormMarker(player, MOD_STORMS_EYE))
-                state.StormsEyeUntil = Now() + STORMS_EYE_MS;
-            return;
-        }
-        if (damage <= 0.0f || !player->IsValidAttackTarget(target))
-            return;
-        switch (firstRank)
-        {
-            case SPELL_LIGHTNING_BOLT:
-            {
-                bool flame = HasStormMarker(player, MOD_STORM_FLAME_CONDUCTOR);
-                Aura* flameShock = flame ? target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, me) : nullptr;
-                if (flameShock)
-                    ExtendAura(flameShock, FLAME_CONDUCTOR_MS, FLAME_CONDUCTOR_MOST_MS);
-                if (HasStormMarker(player, MOD_BRANCHING_CURRENT) || flameShock)
-                    if (Unit* other = ArcTarget(player, target))
-                        ArcTo(player, target, other, SPELL_STORMBOUND_ARC, damage * BRANCH_SHARE);
-                if (HasStormMarker(player, MOD_DISTANT_CONDUCTOR) && target->IsAlive()
-                    && Ready(state.DistantAt, DISTANT_EVERY_MS))
-                    if (AuraEffect* shield = Shield(player))
-                    {
-                        state.DistantAt = Now();
-                        Retaliate(player, target, shield);
-                    }
-                break;
-            }
-            case SPELL_CHAIN_LIGHTNING:
-                ChainArc(player, target, damage);
-                break;
-            case TankRunes::SPELL_EARTH_SHOCK:
-                if (Ready(state.EarthArcAt, EARTH_ARC_EVERY_MS))
-                {
-                    state.EarthArcAt = Now();
-                    ArcOrBack(player, target, SPELL_STORMBOUND_ARC,
-                        RunePower(player, SPELL_SCHOOL_MASK_NATURE, 0) * EARTH_ARC_POWER);
-                }
-                break;
-            case SPELL_LAVA_LASH:
-                if (HasStormMarker(player, MOD_STORM_LASH) && Ready(state.StormLashAt, STORM_LASH_EVERY_MS))
-                {
-                    state.StormLashAt = Now();
-                    ArcOrBack(player, target, SPELL_STORMBOUND_ARC,
-                        player->GetTotalAttackPowerValue(BASE_ATTACK) * STORM_LASH_AP
-                            * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE));
-                }
-                break;
-            case SPELL_STARFIRE:
-                if (HasStormMarker(player, MOD_STARBOUND_CIRCUIT) && Ready(state.StarboundAt, STARBOUND_EVERY_MS))
-                {
-                    state.StarboundAt = Now();
-                    ArcOrBack(player, target, SPELL_STARBOUND_CIRCUIT,
-                        RunePower(player, SPELL_SCHOOL_MASK_ARCANE, 0) * STARBOUND_POWER);
-                }
-                break;
-            case SPELL_THUNDER_CLAP:
-                if (HasStormMarker(player, MOD_SHOCKING_SURGE) && Ready(state.ShockingAt, SHOCKING_EVERY_MS))
-                {
-                    state.ShockingAt = Now();
-                    float surge = RunePower(player, SPELL_SCHOOL_MASK_NATURE, 0) * SHOCKING_POWER;
-                    std::size_t count = 0;
-                    for (Unit* enemy : EnemiesAround(player, target, SHOCKING_RADIUS))
-                        if (count++ < SHOCKING_TARGETS)
-                            Strike(player, enemy, SPELL_SHOCKING_SURGE, surge);
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
-    // Lightning Bolt's or Frostbolt's damage with the rune: Storm's Eye (the next bolt), Icy Conductor.
-    float ConduitDamage(Player* player, Unit* target, uint32 firstRank, float damage)
-    {
-        State& state = StateOf(player);
-        if (firstRank == SPELL_LIGHTNING_BOLT && state.StormsEyeUntil)
-        {
-            if (Now() < state.StormsEyeUntil)
-                damage *= STORMS_EYE;
-            state.StormsEyeUntil = 0;
-        }
-        if (firstRank == SPELL_FROSTBOLT && HasStormMarker(player, MOD_ICY_CONDUCTOR))
-            damage *= ICY_CONDUCTOR;
-        return damage;
-    }
+    // (The rest of the Conduit, its charge and release, follows the Duelist's section: it needs the shapes and
+    // summons defined on the way there.)
 
     // ---- Echoing Thunder ---------------------------------------------------------------------------------------
 
@@ -9778,6 +9600,285 @@ namespace
         LegendaryRunes::ReplaceAbility(player, SPELL_BROADSIDE, { SPELL_RAPID_FIRE }, bound);
     }
 
+    // ---- The Stormbound Conduit: its charge and release --------------------------------------------------------
+
+    // The Hero's power for the Conduit: the higher of their Nature spell power and attack power, with their Nature
+    // damage bonuses (a hybrid's attack power counts).
+    float ConduitPower(Player* player)
+    {
+        return std::max(float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_NATURE)),
+            player->GetTotalAttackPowerValue(BASE_ATTACK)) * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
+    }
+
+    uint8 ConduitMost(Player* player)
+    {
+        return HasStormMarker(player, MOD_OVERFLOW) ? OVERFLOW_MOST : CONDUIT_MOST;
+    }
+
+    uint8 Charges(Player* player)
+    {
+        AuraEffect* shield = Shield(player);
+        return shield ? shield->GetBase()->GetCharges() : 0;
+    }
+
+    // Galvanize: a stack for each charge over 3 (none, or the option not chosen: gone).
+    void Galvanize(Player* player)
+    {
+        uint8 charges = Charges(player);
+        uint8 over = charges > CONDUIT_KEPT && HasStormMarker(player, MOD_GALVANIZE)
+            && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT) ? charges - CONDUIT_KEPT : 0;
+        Aura* aura = player->GetAura(SPELL_GALVANIZE);
+        if (!over)
+        {
+            if (aura)
+                player->RemoveAurasDueToSpell(SPELL_GALVANIZE);
+            return;
+        }
+        if (!aura)
+            aura = player->AddAura(SPELL_GALVANIZE, player);
+        if (aura && aura->GetStackAmount() != over)
+            aura->SetStackAmount(over);
+    }
+
+    // Charges onto the Hero's Lightning Shield, up to 9 (Overflow 12); full, the next Earth Shock is free.
+    void AddCharges(Player* player, uint8 count)
+    {
+        AuraEffect* shield = Shield(player);
+        if (!shield || !count)
+            return;
+        Aura* aura = shield->GetBase();
+        uint8 most = ConduitMost(player);
+        uint8 charges = uint8(std::min<uint32>(most, uint32(aura->GetCharges()) + count));
+        if (charges > aura->GetCharges())
+        {
+            aura->SetCharges(charges);
+            if (charges >= most)
+                Renew(player, SPELL_FULL_CHARGE);
+        }
+        Galvanize(player);
+    }
+
+    // One arc from the host to the enemy (back into the host: no bolt).
+    void ArcTo(Player* player, Unit* host, Unit* enemy, uint32 spellId, float damage)
+    {
+        if (damage < 1.0f || !enemy->IsAlive())
+            return;
+        if (enemy != host)
+            host->CastSpell(enemy, SPELL_STORMBOUND_ARC_VISUAL, true);
+        Strike(player, enemy, spellId, damage);
+    }
+
+    // Lightning Bolt's (or Ball Lightning's) start: the Maelstrom Weapon stacks it begins with.
+    void ConduitWatch(Player* player)
+    {
+        Aura* maelstrom = player->GetAura(SPELL_MAELSTROM_WEAPON);
+        StateOf(player).MaelstromBefore = maelstrom ? maelstrom->GetStackAmount() : 0;
+    }
+
+    // Lightning Bolt cast (or Ball Lightning): its charges, twice as many cast instantly; Maelstrom Conduit, one for
+    // each Maelstrom Weapon stack it spent.
+    void ConduitCast(Player* player, Spell const* spell, uint8 charges)
+    {
+        State& state = StateOf(player);
+        if (!spell->GetCastTime())
+            charges *= 2;
+        if (HasStormMarker(player, MOD_MAELSTROM_CONDUIT))
+        {
+            Aura* maelstrom = player->GetAura(SPELL_MAELSTROM_WEAPON);
+            uint8 left = maelstrom ? maelstrom->GetStackAmount() : 0;
+            if (left < state.MaelstromBefore)
+                charges += state.MaelstromBefore - left;
+        }
+        state.MaelstromBefore = 0;
+        AddCharges(player, charges);
+    }
+
+    // Lightning Bolt's hit: the Conduit's arc to another enemy within 10 yards (Forked Conduit: 2), Overload.
+    void ConduitBolt(Player* player, Unit* target, float hit)
+    {
+        bool forked = HasStormMarker(player, MOD_FORKED_CONDUIT);
+        std::size_t count = forked ? 2 : 1;
+        for (Unit* enemy : EnemiesAround(player, target, ARC_RANGE))
+            if (enemy != target && count)
+            {
+                ArcTo(player, target, enemy, SPELL_STORMBOUND_ARC, hit * (forked ? FORKED_ARC : CONDUIT_ARC));
+                --count;
+            }
+        if (HasStormMarker(player, MOD_OVERLOAD) && target->IsAlive() && roll_chance_f(OVERLOAD_CHANCE))
+        {
+            ArcTo(player, player, target, SPELL_STORMBOUND_ARC, hit * OVERLOAD_SHARE);
+            AddCharges(player, 1);
+        }
+    }
+
+    // Fulmination: Earth Shock (target) releases every charge over 3 at it; Storm Lance (lance) is a lance through
+    // every enemy in its line, stronger for every charge held, the release in it; Reflux (no target) at every enemy
+    // around the Hero. A release: Chain Fulmination, Thunderstorm Release, Static Surge.
+    void Fulminate(Player* player, Unit* target, bool lance)
+    {
+        AuraEffect* shield = Shield(player);
+        uint8 held = shield ? shield->GetBase()->GetCharges() : 0;
+        uint8 released = held > CONDUIT_KEPT ? held - CONDUIT_KEPT : 0;
+        float power = ConduitPower(player);
+        float hit = power * FULMINATION_POWER * released;
+        std::vector<Unit*> struck;
+        if (lance && target)
+        {
+            hit = power * LANCE_POWER * (1.0f + LANCE_A_CHARGE * held);
+            Shape line;
+            line.From = player->GetPosition();
+            line.To = Toward(line.From, player->GetAngle(target), LANCE_LENGTH);
+            line.HalfWidth = STORM_LANCE_HALF_WIDTH;
+            struck = EnemiesIn(player, line, STORM_LANCE_TARGETS);
+            struck.erase(std::remove(struck.begin(), struck.end(), target), struck.end());
+            struck.insert(struck.begin(), target);
+            for (Unit* enemy : struck)
+                Strike(player, enemy, SPELL_STORM_LANCE_HIT, hit);
+        }
+        if (!released)
+            return;
+        if (!lance)
+        {
+            if (target)
+                struck = { target };
+            else
+                struck = EnemiesIn(player, Circle(player->GetPosition(), REFLUX_RADIUS), REFLUX_TARGETS);
+            for (Unit* enemy : struck)
+                Strike(player, enemy, SPELL_FULMINATION, hit);
+        }
+        shield->GetBase()->SetCharges(CONDUIT_KEPT);
+        Galvanize(player);
+        Trace(player, Acore::StringFormat("Fulmination releases {} charges for {}", released, int32(hit)));
+        if (HasStormMarker(player, MOD_CHAIN_FULMINATION) && !struck.empty())
+        {
+            Unit* host = struck.front();
+            std::size_t count = CHAIN_FULMINATION_ARCS;
+            for (Unit* enemy : EnemiesAround(player, host, ARC_RANGE))
+                if (count && std::find(struck.begin(), struck.end(), enemy) == struck.end())
+                {
+                    ArcTo(player, host, enemy, SPELL_FULMINATION, hit * CHAIN_FULMINATION_SHARE);
+                    --count;
+                }
+        }
+        if (HasStormMarker(player, MOD_THUNDERSTORM_RELEASE))
+            for (Unit* enemy : EnemiesIn(player, Circle(player->GetPosition(), RELEASE_RADIUS), STORM_LANCE_TARGETS))
+            {
+                player->CastSpell(enemy, SPELL_THUNDERSTORM_SLOW, true);
+                Creature* creature = enemy->ToCreature();
+                if (!creature || (!creature->isWorldBoss() && !creature->IsDungeonBoss()))
+                    enemy->KnockbackFrom(player->GetPositionX(), player->GetPositionY(), RELEASE_SPEED_XY,
+                        RELEASE_SPEED_Z);
+            }
+        if (HasStormMarker(player, MOD_STATIC_SURGE) && released >= STATIC_SURGE_CHARGES)
+            Renew(player, SPELL_STATIC_SURGE);
+    }
+
+    // Ball Lightning: a slow orb toward the bolt's target, re-aimed as it zaps.
+    void BallFly(Player* player, Creature* orb, Position to)
+    {
+        float z = to.GetPositionZ();
+        player->UpdateGroundPositionZ(to.GetPositionX(), to.GetPositionY(), z);
+        to.m_positionZ = z + BALL_HEIGHT;
+        orb->GetMotionMaster()->MovePoint(0, to, FORCED_MOVEMENT_NONE, BALL_SPEED, false);
+    }
+
+    void LoosenBall(Player* player, Unit* victim)
+    {
+        float angle = player->GetAngle(victim);
+        Position at = Toward(player->GetPosition(), angle, 1.5f);
+        at.m_positionZ = player->GetPositionZ() + BALL_HEIGHT;
+        TempSummon* orb = SummonFlier(player, NPC_BALL_LIGHTNING, at, BALL_MOST_MS + 1000, SPELL_SPARK_VISUAL);
+        if (!orb)
+            return;
+        State::Ball ball;
+        ball.Orb = orb->GetGUID();
+        ball.Victim = victim->GetGUID();
+        ball.Until = Now() + BALL_MOST_MS;
+        ball.Power = std::max(ConduitPower(player), RunePower(player, SPELL_SCHOOL_MASK_NATURE, SPELL_LIGHTNING_BOLT));
+        StateOf(player).Balls.push_back(ball);
+        BallFly(player, orb, victim->GetPosition());
+    }
+
+    // Each orb: a zap every 0.5 sec at the nearest enemy within 8 yards of it; reaching its victim (or its time up,
+    // or the victim gone), it bursts on every enemy within 8 yards.
+    void BallTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        for (auto itr = state.Balls.begin(); itr != state.Balls.end();)
+        {
+            Creature* orb = ObjectAccessor::GetCreature(*player, itr->Orb);
+            if (!orb || !player->IsAlive() || !player->IsInWorld() || orb->GetMap() != player->GetMap())
+            {
+                Dismiss(player, itr->Orb);
+                itr = state.Balls.erase(itr);
+                continue;
+            }
+            Unit* victim = ObjectAccessor::GetUnit(*player, itr->Victim);
+            bool lost = !victim || !victim->IsAlive() || !player->IsValidAttackTarget(victim);
+            if (lost || Now() >= itr->Until
+                || orb->GetExactDist2d(victim) <= BALL_REACHED + victim->GetCombatReach())
+            {
+                for (Unit* enemy : EnemiesIn(player, Circle(orb->GetPosition(), BALL_RADIUS), BALL_TARGETS))
+                    Strike(player, enemy, SPELL_BALL_LIGHTNING_BURST, itr->Power * BALL_BURST);
+                Dismiss(player, itr->Orb);
+                itr = state.Balls.erase(itr);
+                continue;
+            }
+            itr->Timer += diff;
+            if (itr->Timer >= BALL_ZAP_MS)
+            {
+                itr->Timer -= BALL_ZAP_MS;
+                std::vector<Unit*> near = EnemiesAround(player, orb, BALL_RADIUS);
+                if (!near.empty())
+                    ArcTo(player, orb, near.front(), SPELL_BALL_LIGHTNING_ZAP, itr->Power * BALL_ZAP);
+                BallFly(player, orb, victim->GetPosition());
+            }
+            ++itr;
+        }
+    }
+
+    // Every update with the rune: Galvanize kept to the charges; Static Field's zap.
+    void ConduitTick(Player* player, uint32 diff)
+    {
+        Galvanize(player);
+        if (!HasStormMarker(player, MOD_STATIC_FIELD))
+            return;
+        State& state = StateOf(player);
+        state.StaticFieldTimer += diff;
+        if (state.StaticFieldTimer < STATIC_FIELD_MS || Charges(player) < STATIC_FIELD_CHARGES
+            || !player->IsInCombat())
+            return;
+        for (Unit* enemy : EnemiesAround(player, player, STATIC_FIELD_RANGE))
+        {
+            state.StaticFieldTimer = 0;
+            ArcTo(player, player, enemy, SPELL_STORMBOUND_ARC, ConduitPower(player) * STATIC_FIELD_POWER);
+            return;
+        }
+    }
+
+    // The Hero's own hits with the rune: Lightning Bolt (the Conduit's arc), Chain Lightning (its charges), Earth
+    // Shock (Fulmination).
+    void ConduitHit(Player* player, Unit* target, uint32 firstRank, float damage)
+    {
+        if (!player->IsValidAttackTarget(target))
+            return;
+        if (firstRank == SPELL_LIGHTNING_BOLT && damage > 0.0f)
+            ConduitBolt(player, target, damage);
+        else if (firstRank == SPELL_CHAIN_LIGHTNING)
+            AddCharges(player, HasStormMarker(player, MOD_SUPERCHARGE) ? SUPERCHARGE_CHARGES : 1);
+        else if (firstRank == TankRunes::SPELL_EARTH_SHOCK)
+            Fulminate(player, target, false);
+    }
+
+    // Ball Lightning and Storm Lance in Lightning Bolt's and Earth Shock's places while the rune is bound with them.
+    void TeachConduit(Player* player, bool bound)
+    {
+        LegendaryRunes::ReplaceAbility(player, SPELL_BALL_LIGHTNING, { SPELL_LIGHTNING_BOLT },
+            bound && HasStormMarker(player, MOD_BALL_LIGHTNING));
+        LegendaryRunes::ReplaceAbility(player, SPELL_STORM_LANCE, { TankRunes::SPELL_EARTH_SHOCK },
+            bound && HasStormMarker(player, MOD_STORM_LANCE));
+    }
+
     // ---- The Stormreaver --------------------------------------------------------------------------------------
 
     bool HasStormreaverMarker(Unit* unit, uint8 modifier)
@@ -9785,7 +9886,16 @@ namespace
         return Marked(unit, SPELL_STORMREAVER_MODIFIER_FIRST, modifier);
     }
 
-    // Stormstrike: the Stormfront for 6 sec (a refresh keeps its pulse timer).
+    // Thunderbomb and Magma Breaker in Stormstrike's and Lava Lash's places while the rune is bound with them.
+    void TeachStormreaver(Player* player, bool bound)
+    {
+        LegendaryRunes::ReplaceAbility(player, SPELL_THUNDERBOMB, { SPELL_STORMSTRIKE },
+            bound && HasStormreaverMarker(player, MOD_THUNDERBOMB));
+        LegendaryRunes::ReplaceAbility(player, SPELL_MAGMA_BREAKER, { SPELL_LAVA_LASH },
+            bound && HasStormreaverMarker(player, MOD_MAGMA_BREAKER));
+    }
+
+    // The Stormfront option: Stormstrike or Lava Lash raises it for 16 sec (a refresh keeps its pulse timer).
     void RaiseStormfront(Player* player)
     {
         if (Aura* storm = player->GetAura(SPELL_STORMFRONT, player->GetGUID()))
@@ -9798,8 +9908,7 @@ namespace
         RenewFor(player, SPELL_STORMFRONT, STORMFRONT_MS);
     }
 
-    // A pulse: 25% of attack power to up to 5 enemies within 8 yards (Forked Cataclysm 8 within 12; Rolling Thunder
-    // 70% each, every second; Eye of the Tempest: 120% more on a lone enemy).
+    // A pulse every 2 sec: 15% of attack power as Nature damage to up to 5 enemies within 8 yards.
     void StormfrontTick(Player* player, uint32 diff)
     {
         State& state = StateOf(player);
@@ -9808,37 +9917,14 @@ namespace
             state.StormfrontTimer = 0;
             return;
         }
-        bool rolling = HasStormreaverMarker(player, MOD_STORM_ROLLING);
-        uint32 every = rolling ? ROLLING_PULSE_MS : STORM_PULSE_MS;
         state.StormfrontTimer += diff;
-        if (state.StormfrontTimer < every)
+        if (state.StormfrontTimer < STORM_PULSE_MS)
             return;
-        state.StormfrontTimer -= every;
-        bool forked = HasStormreaverMarker(player, MOD_FORKED_CATACLYSM);
-        std::vector<Unit*> struck = EnemiesIn(player, Circle(player->GetPosition(),
-            forked ? FORKED_RADIUS : STORM_RADIUS), forked ? FORKED_TARGETS : STORM_TARGETS);
-        float pulse = player->GetTotalAttackPowerValue(BASE_ATTACK) * STORM_PULSE_AP * (rolling ? ROLLING_SHARE : 1.0f)
+        state.StormfrontTimer -= STORM_PULSE_MS;
+        float pulse = player->GetTotalAttackPowerValue(BASE_ATTACK) * STORM_PULSE_AP
             * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
-        if (struck.size() == 1 && HasStormreaverMarker(player, MOD_EYE_OF_THE_TEMPEST))
-            pulse *= EYE_OF_THE_TEMPEST;
-        if (player->HasAura(SPELL_STORM_SURGE))
-        {
-            player->RemoveAurasDueToSpell(SPELL_STORM_SURGE);
-            pulse *= STORM_SURGE;
-        }
-        bool hunter = HasStormreaverMarker(player, MOD_STORMHUNTER);
-        for (Unit* enemy : struck)
-        {
-            bool marked = hunter && enemy->GetAuraOfRankedSpell(SPELL_HUNTERS_MARK, player->GetGUID());
-            Strike(player, enemy, SPELL_STORMFRONT_PULSE, pulse * (marked ? STORMHUNTER : 1.0f));
-            if (marked)
-                for (Unit* other : EnemiesAround(player, enemy, STORM_ECHO_RANGE))
-                    if (other != enemy)
-                    {
-                        Strike(player, other, SPELL_STORMFRONT_PULSE, pulse * STORMHUNTER_SHARE);
-                        break;
-                    }
-        }
+        for (Unit* enemy : EnemiesIn(player, Circle(player->GetPosition(), STORM_RADIUS), STORM_TARGETS))
+            Strike(player, enemy, SPELL_STORMFRONT_PULSE, pulse);
     }
 
     // An arc of the rune's lightning from one enemy to another (Chain Lightning's bolt between them).
@@ -9848,139 +9934,286 @@ namespace
         Strike(player, to, spellId, amount);
     }
 
-    // Lava Lash in the Stormfront: Thunderlash. 60% of attack power to its target (Thunderhead 120%, no arcs;
-    // White-Hot Conductor a burn of 100% over 6 sec instead), arcs of 30% to 2 more within 8 yards (Chainbreaker 4).
-    void Thunderlash(Player* player, Unit* target)
+    // A discharge of Lightning Shield at the target: the shield's rank's damage, a third of spell power and 20% of
+    // attack power (Violent Grounding: half again to up to 3 more within 8 yards).
+    void Discharge(Player* player, Unit* target, AuraEffect* shield)
     {
-        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK) * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
-        // On the Hero's Flame Shock target: 2 sec longer (6 sec an application); Flame Conductor spreads it.
-        if (Aura* shock = target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
-        {
-            ExtendAura(shock, STORM_FS_EXTEND_MS, STORM_FS_MOST_MS);
-            State& state = StateOf(player);
-            if (HasStormreaverMarker(player, MOD_FLAME_CONDUCTOR)
-                && Ready(state.FlameConductorAt, FLAME_CONDUCTOR_EVERY_MS))
-                for (Unit* other : EnemiesAround(player, target, STORM_ECHO_RANGE))
-                    if (other != target && !other->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
-                    {
-                        if (Aura* spread = player->AddAura(shock->GetId(), other))
-                        {
-                            state.FlameConductorAt = Now();
-                            spread->SetMaxDuration(shock->GetDuration());
-                            spread->SetDuration(shock->GetDuration());
-                        }
-                        break;
-                    }
-        }
-        bool thunderhead = HasStormreaverMarker(player, MOD_THUNDERHEAD);
-        if (HasStormreaverMarker(player, MOD_WHITE_HOT_CONDUCTOR))
-            AddDot(player, target, SPELL_WHITE_HOT_BURN, ap * WHITE_HOT_AP, WHITE_HOT_MS);
-        else
-            Strike(player, target, SPELL_THUNDERLASH, ap * (thunderhead ? THUNDERHEAD_AP : THUNDERLASH_AP));
-        if (thunderhead)
-            return;
-        std::size_t count = HasStormreaverMarker(player, MOD_CHAINBREAKER) ? CHAINBREAKER_ARCS : THUNDERLASH_ARCS;
-        for (Unit* enemy : EnemiesAround(player, target, THUNDERLASH_RANGE))
-            if (enemy != target && count)
-            {
-                StormArc(player, target, enemy, SPELL_THUNDERLASH_ARC, ap * ARC_AP);
-                --count;
-            }
-    }
-
-    // A melee ability's hit in the Stormfront, with Lightning Shield up: a discharge at its target, once a second
-    // (no charge): the shield's rank's damage, a third of spell power and 20% of attack power (Overcharged Core 50%
-    // more; Violent Grounding: half to up to 3 more within 8 yards; Ride the Lightning: 30% speed for 3 sec and Lava
-    // Lash 1 sec sooner).
-    void StormDischarge(Player* player, Unit* target)
-    {
-        State& state = StateOf(player);
-        AuraEffect* shield = Shield(player);
-        if (!shield || !player->HasAura(SPELL_STORMFRONT, player->GetGUID()) || Now() - state.LastDischarge
-            < DISCHARGE_EVERY_MS)
-            return;
-        state.LastDischarge = Now();
         SpellInfo const* info = sSpellMgr->GetSpellInfo(sSpellMgr->GetSpellWithRank(SPELL_LIGHTNING_SHIELD_DAMAGE,
             shield->GetSpellInfo()->GetRank()));
         float discharge = float(info ? info->Effects[EFFECT_0].CalcValue(player) : 0)
             + float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_NATURE)) * DISCHARGE_SP
             + player->GetTotalAttackPowerValue(BASE_ATTACK) * DISCHARGE_AP;
         discharge *= SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
-        if (HasStormreaverMarker(player, MOD_OVERCHARGED_CORE))
-            discharge *= OVERCHARGED;
         Strike(player, target, SPELL_STORM_DISCHARGE, discharge);
         Trace(player, Acore::StringFormat("Lightning Shield discharges for {}", int32(discharge)));
-        if (player->HasAura(SPELL_STATIC_STRIKE))
+        if (!HasStormreaverMarker(player, MOD_VIOLENT_GROUNDING))
+            return;
+        std::size_t count = GROUNDING_TARGETS;
+        for (Unit* enemy : EnemiesAround(player, target, GROUNDING_RADIUS))
+            if (enemy != target && count)
+            {
+                StormArc(player, target, enemy, SPELL_STORM_DISCHARGE, discharge * GROUNDING_SHARE);
+                --count;
+            }
+    }
+
+    // A melee ability's hit, with Lightning Shield up: a discharge at its target, once a second (no charge spent).
+    void StormDischarge(Player* player, Unit* target)
+    {
+        State& state = StateOf(player);
+        AuraEffect* shield = Shield(player);
+        if (!shield || !Ready(state.LastDischarge, DISCHARGE_EVERY_MS))
+            return;
+        state.LastDischarge = Now();
+        Discharge(player, target, shield);
+    }
+
+    // Static Strikes: up to 3 of the shield's charges, never its last, each a discharge (the Conduit's Shared
+    // Current: none spent).
+    void StaticStrikes(Player* player, Unit* target)
+    {
+        AuraEffect* shield = Shield(player);
+        if (!shield)
+            return;
+        bool shared = HasStormMarker(player, MOD_SHARED_CURRENT) && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT);
+        uint8 charges = shield->GetBase()->GetCharges();
+        uint8 count = shared ? STATIC_STRIKES : std::min<uint8>(STATIC_STRIKES, charges > 1 ? charges - 1 : 0);
+        for (uint8 i = 0; i < count && target->IsAlive(); ++i)
+            Discharge(player, target, shield);
+        if (!shared && count)
         {
-            player->RemoveAurasDueToSpell(SPELL_STATIC_STRIKE);
-            Strike(player, target, SPELL_STORM_DISCHARGE, discharge * STATIC_SHARE);
-        }
-        if (HasStormreaverMarker(player, MOD_VIOLENT_GROUNDING))
-        {
-            std::size_t count = GROUNDING_TARGETS;
-            for (Unit* enemy : EnemiesAround(player, target, GROUNDING_RADIUS))
-                if (enemy != target && count)
-                {
-                    StormArc(player, target, enemy, SPELL_STORM_DISCHARGE, discharge * GROUNDING_SHARE);
-                    --count;
-                }
-        }
-        else if (HasStormreaverMarker(player, MOD_RIDE_THE_LIGHTNING))
-        {
-            RenewFor(player, SPELL_RIDE_THE_LIGHTNING, RIDE_MS);
-            player->ModifySpellCooldown(SPELL_LAVA_LASH, -RIDE_COOLDOWN_MS);
+            shield->GetBase()->SetCharges(charges - count);
+            Galvanize(player);
         }
     }
 
-    // The Stormreaver's other abilities in the Stormfront: Earth Shock (the next pulse 20% more), Frozen Front (Frost
-    // Shock), Stormhammer (Shield Slam), Static Strike (Lightning Bolt), Warstorm (Thunder Clap).
-    void StormAbility(Player* player, Unit* target, uint32 firstRank)
+    // A reset (Stormbringer's, or a Flame Shock tick's): Ride the Lightning, Maelstrom.
+    void StormReset(Player* player)
     {
-        if (!player->HasAura(SPELL_STORMFRONT, player->GetGUID()))
+        if (HasStormreaverMarker(player, MOD_RIDE_THE_LIGHTNING))
+            RenewFor(player, SPELL_RIDE_THE_LIGHTNING, RIDE_MS);
+        if (!HasStormreaverMarker(player, MOD_MAELSTROM))
+            return;
+        if (Aura* maelstrom = player->GetAura(SPELL_MAELSTROM_WEAPON))
+            maelstrom->ModStackAmount(MAELSTROM_STACKS);
+        else if (Aura* fresh = player->AddAura(SPELL_MAELSTROM_WEAPON, player))
+            fresh->ModStackAmount(MAELSTROM_STACKS - 1);
+    }
+
+    // The cooldown of the Hero's rank of a spell and of the rune's replacement for it, gone: whether one was cooling.
+    bool ResetCooldown(Player* player, uint32 firstRank, uint32 replacement)
+    {
+        bool cooling = false;
+        for (uint32 id : { KnownRank(player, firstRank), replacement })
+            if (id && player->HasSpellCooldown(id))
+            {
+                player->RemoveSpellCooldown(id, true);
+                cooling = true;
+            }
+        return cooling;
+    }
+
+    // Stormbringer: a melee swing's 20% chance (Overcharge 35%) to reset Stormstrike, the next one free.
+    void Stormbringer(Player* player)
+    {
+        float chance = HasStormreaverMarker(player, MOD_OVERCHARGE) ? OVERCHARGE_CHANCE : STORMBRINGER_CHANCE;
+        if (!roll_chance_f(chance) || !ResetCooldown(player, SPELL_STORMSTRIKE, SPELL_THUNDERBOMB))
+            return;
+        Renew(player, SPELL_STORMBRINGER);
+        StormReset(player);
+    }
+
+    // A tick of the Hero's Flame Shock: a 25% chance (Hot Hand 50%) to reset Lava Lash, 1.5 sec apart.
+    void LavaReset(Player* player)
+    {
+        State& state = StateOf(player);
+        bool hot = HasStormreaverMarker(player, MOD_HOT_HAND);
+        if (!Ready(state.LavaResetAt, LAVA_RESET_EVERY_MS) || !roll_chance_f(hot ? HOT_HAND_CHANCE : LAVA_RESET_CHANCE)
+            || !ResetCooldown(player, SPELL_LAVA_LASH, SPELL_MAGMA_BREAKER))
+            return;
+        state.LavaResetAt = Now();
+        state.HotHandReset = hot;
+        StormReset(player);
+    }
+
+    // Tempo: alternating Stormstrike (1) and Lava Lash (2), a stack each time (up to 5).
+    void Tempo(Player* player, uint8 which)
+    {
+        if (!HasStormreaverMarker(player, MOD_TEMPO))
             return;
         State& state = StateOf(player);
-        float ap = player->GetTotalAttackPowerValue(BASE_ATTACK);
-        if (firstRank == TankRunes::SPELL_EARTH_SHOCK)
-            Renew(player, SPELL_STORM_SURGE);
-        if (firstRank == SPELL_FROST_SHOCK && target && HasStormreaverMarker(player, MOD_FROZEN_FRONT)
-            && Ready(state.FrozenFrontAt, FROZEN_FRONT_EVERY_MS))
+        bool alternated = state.TempoLast && state.TempoLast != which;
+        state.TempoLast = which;
+        if (!alternated)
+            return;
+        if (Aura* tempo = player->GetAura(SPELL_TEMPO))
+            tempo->ModStackAmount(1);
+        else
+            player->AddAura(SPELL_TEMPO, player);
+    }
+
+    // No other enemy within 8 yards of the target (Eye of the Tempest).
+    bool Lone(Player* player, Unit* target)
+    {
+        for (Unit* enemy : EnemiesAround(player, target, EYE_RADIUS))
+            if (enemy != target)
+                return false;
+        return true;
+    }
+
+    // Stormstrike (or Thunderbomb's burst) has struck these, its target first: each Stormstruck, Molten Charge,
+    // Tempo, the Stormfront; Static Strikes and Echoing Strike at its target.
+    void Stormstruck(Player* player, std::vector<Unit*> const& struck)
+    {
+        State& state = StateOf(player);
+        uint32 now = Now();
+        for (auto itr = state.Stormstruck.begin(); itr != state.Stormstruck.end();)
+            itr = now - itr->second >= STORMSTRUCK_MS ? state.Stormstruck.erase(itr) : std::next(itr);
+        for (Unit* enemy : struck)
+            state.Stormstruck[enemy->GetGUID()] = now;
+        RenewFor(player, SPELL_MOLTEN_CHARGE, MOLTEN_CHARGE_MS);
+        Tempo(player, 1);
+        if (HasStormreaverMarker(player, MOD_STORMFRONT))
+            RaiseStormfront(player);
+        if (struck.empty())
+            return;
+        Unit* target = struck.front();
+        if (HasStormreaverMarker(player, MOD_STATIC_STRIKES))
+            StaticStrikes(player, target);
+        if (!HasStormreaverMarker(player, MOD_ECHOING_STRIKE) || state.LastStormstrike <= 0.0f)
+            return;
+        float echo = state.LastStormstrike * ECHOING_SHARE;
+        ObjectGuid guid = target->GetGUID();
+        for (uint32 i = 1; i <= ECHOING_STRIKES; ++i)
+            player->m_Events.AddEventAtOffset([player, guid, echo]()
+            {
+                Unit* enemy = player->IsInWorld() && player->IsAlive() ? ObjectAccessor::GetUnit(*player, guid)
+                    : nullptr;
+                if (enemy && enemy->IsAlive() && player->IsValidAttackTarget(enemy))
+                    Strike(player, enemy, SPELL_ECHOING_STRIKE, echo);
+            }, Milliseconds(i * ECHOING_EVERY_MS));
+    }
+
+    // Thunderbomb thrown at the target: after its fuse, a burst of 140% of weapon damage as Nature on every enemy
+    // within 8 yards of where it landed.
+    void ThrowThunderbomb(Player* player, Unit* target)
+    {
+        player->CastSpell(target, SPELL_THUNDERBOMB_FUSE, true);
+        Position at = target->GetPosition();
+        ObjectGuid primary = target->GetGUID();
+        float blast = float(player->CalculateDamage(BASE_ATTACK, true, true)) * THUNDERBOMB_WEAPON
+            * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
+        player->m_Events.AddEventAtOffset([player, at, primary, blast]()
         {
-            state.FrozenFrontAt = Now();
-            Position at = target->GetPosition();
-            PlaceDecals(player, SPELL_FROZEN_FRONT, { at });
-            float tick = ap * FROZEN_FRONT_AP * SchoolBonus(player, SPELL_SCHOOL_MASK_FROST);
-            for (uint32 i = 1; i <= FROZEN_FRONT_TICKS; ++i)
-                player->m_Events.AddEventAtOffset([player, at, tick]()
-                {
-                    if (!player->IsInWorld() || !player->IsAlive())
-                        return;
-                    for (Unit* enemy : EnemiesIn(player, Circle(at, FROZEN_FRONT_RADIUS), FROZEN_FRONT_TARGETS))
-                        Strike(player, enemy, SPELL_FROZEN_FRONT_TICK, tick);
-                }, Milliseconds(i * 1000));
+            if (!player->IsInWorld() || !player->IsAlive())
+                return;
+            std::vector<Unit*> struck = EnemiesIn(player, Circle(at, THUNDERBOMB_RADIUS), THUNDERBOMB_TARGETS);
+            Unit* first = ObjectAccessor::GetUnit(*player, primary);
+            auto itr = std::find(struck.begin(), struck.end(), first);
+            if (itr != struck.end())
+                std::rotate(struck.begin(), itr, itr + 1);
+            for (Unit* enemy : struck)
+                Strike(player, enemy, SPELL_THUNDERBOMB_BLAST, blast);
+            StateOf(player).LastStormstrike = blast;
+            Stormstruck(player, struck);
+        }, Milliseconds(THUNDERBOMB_FUSE_MS));
+    }
+
+    // Lava Lash's (or Magma Breaker's) damage: Molten Charge's 40% more, Hot Hand's 25% (each spent).
+    float LavaLashMultiplier(Player* player)
+    {
+        State& state = StateOf(player);
+        float more = 1.0f;
+        if (player->HasAura(SPELL_MOLTEN_CHARGE))
+        {
+            player->RemoveAurasDueToSpell(SPELL_MOLTEN_CHARGE);
+            more *= MOLTEN_CHARGE;
         }
-        if (firstRank == SPELL_SHIELD_SLAM && target && HasStormreaverMarker(player, MOD_STORMHAMMER)
-            && Ready(state.StormhammerAt, STORMHAMMER_EVERY_MS))
+        if (state.HotHandReset)
         {
-            state.StormhammerAt = Now();
-            float arc = ap * STORMHAMMER_AP * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
-            Strike(player, target, SPELL_STORMHAMMER, arc);
-            for (Unit* other : EnemiesAround(player, target, STORM_ECHO_RANGE))
-                if (other != target)
+            state.HotHandReset = false;
+            more *= HOT_HAND;
+        }
+        return more;
+    }
+
+    // The Hero's Flame Shock onto each of these that has none of theirs, for the time it has left.
+    void SpreadFlameShock(Player* player, Aura* shock, std::vector<Unit*> const& onto)
+    {
+        int32 left = shock->GetDuration();
+        for (Unit* other : onto)
+            if (!other->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
+                if (Aura* spread = player->AddAura(shock->GetId(), other))
                 {
-                    StormArc(player, target, other, SPELL_STORMHAMMER, arc);
-                    break;
+                    spread->SetMaxDuration(left);
+                    spread->SetDuration(left);
                 }
-        }
-        if (firstRank == SPELL_LIGHTNING_BOLT && HasStormreaverMarker(player, MOD_STATIC_STRIKE))
-            Renew(player, SPELL_STATIC_STRIKE);
-        if (firstRank == SPELL_THUNDER_CLAP && HasStormreaverMarker(player, MOD_WARSTORM)
-            && Ready(state.WarstormAt, WARSTORM_EVERY_MS))
+    }
+
+    // Lava Lash (target) or Magma Breaker (no target) has struck these: Tempo, the Stormfront, Eruption at the first
+    // Stormstruck of them; at Lava Lash's target, Molten Spread, White-Hot, Cinder Echo.
+    void LavaLashed(Player* player, std::vector<Unit*> const& struck, Unit* target)
+    {
+        State& state = StateOf(player);
+        Tempo(player, 2);
+        if (HasStormreaverMarker(player, MOD_STORMFRONT))
+            RaiseStormfront(player);
+        for (Unit* enemy : struck)
         {
-            state.WarstormAt = Now();
-            float hit = ap * WARSTORM_AP * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
-            for (Unit* enemy : EnemiesIn(player, Circle(player->GetPosition(), STORM_ECHO_RANGE), WARSTORM_TARGETS))
-                Strike(player, enemy, SPELL_WARSTORM, hit);
+            auto itr = state.Stormstruck.find(enemy->GetGUID());
+            if (itr == state.Stormstruck.end() || Now() - itr->second >= STORMSTRUCK_MS)
+                continue;
+            float eruption = player->GetTotalAttackPowerValue(BASE_ATTACK) * ERUPTION_AP
+                * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
+            Shape around = Circle(enemy->GetPosition(), STORM_ERUPTION_RADIUS);
+            for (Unit* other : EnemiesIn(player, around, STORM_ERUPTION_TARGETS))
+                Strike(player, other, SPELL_ERUPTION, eruption);
+            break;
         }
+        if (!target || !target->IsAlive())
+            return;
+        if (HasStormreaverMarker(player, MOD_MOLTEN_SPREAD))
+            if (Aura* shock = target->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID()))
+            {
+                std::vector<Unit*> near = EnemiesAround(player, target, SPREAD_RANGE);
+                near.erase(std::remove(near.begin(), near.end(), target), near.end());
+                if (near.size() > SPREAD_TARGETS)
+                    near.resize(SPREAD_TARGETS);
+                SpreadFlameShock(player, shock, near);
+            }
+        if (HasStormreaverMarker(player, MOD_WHITE_HOT))
+            AddDot(player, target, SPELL_WHITE_HOT_BURN, player->GetTotalAttackPowerValue(BASE_ATTACK) * WHITE_HOT_AP
+                * SchoolBonus(player, SPELL_SCHOOL_MASK_FIRE), WHITE_HOT_MS);
+        if (HasStormreaverMarker(player, MOD_CINDER_ECHO) && state.LastStormstrike > 0.0f)
+            Strike(player, target, SPELL_CINDER_ECHO, state.LastStormstrike * CINDER_SHARE);
+    }
+
+    // Magma Breaker: a 10 yard cone before the Hero, 120% of weapon damage as Fire to up to 8 (their target first),
+    // the Hero's Flame Shock on any of them spread to all.
+    void MagmaBreaker(Player* player)
+    {
+        Shape cone;
+        cone.Cone = true;
+        cone.From = player->GetPosition();
+        cone.Facing = player->GetOrientation();
+        cone.Radius = MAGMA_RANGE;
+        cone.Arc = MAGMA_HALF_ARC;
+        std::vector<Unit*> struck = EnemiesIn(player, cone, MAGMA_TARGETS);
+        auto itr = std::find(struck.begin(), struck.end(), player->GetSelectedUnit());
+        if (itr != struck.end())
+            std::rotate(struck.begin(), itr, itr + 1);
+        float hit = float(player->CalculateDamage(BASE_ATTACK, true, true)) * MAGMA_WEAPON
+            * SchoolBonus(player, SPELL_SCHOOL_MASK_FIRE) * LavaLashMultiplier(player);
+        Aura* shock = nullptr;
+        for (Unit* enemy : struck)
+        {
+            Strike(player, enemy, SPELL_MAGMA_BREAKER_HIT, hit);
+            if (!shock)
+                shock = enemy->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID());
+        }
+        if (shock)
+            SpreadFlameShock(player, shock, struck);
+        LavaLashed(player, struck, nullptr);
     }
 
     // ---- Ember's Wrath and Whitefang ---------------------------------------------------------------------
@@ -10477,6 +10710,10 @@ namespace
         State& state = StateOf(player);
         state.SabreHits = 0;
         state.StormfrontTimer = 0;
+        state.Stormstruck.clear();
+        state.LastStormstrike = 0.0f;
+        state.TempoLast = 0;
+        state.HotHandReset = false;
         state.BlazingRakeAt = state.AshenReadyAt = state.PreyAt = 0;
         state.AshenLast.Clear();
         state.AshenSeen.clear();
@@ -10487,7 +10724,7 @@ namespace
         player->RemoveAurasDueToSpell(SPELL_FROSTBITTEN);
         for (uint32 spell : { SPELL_OPENING_SHOT, SPELL_LOADED_STEEL, SPELL_LOADED_POWDER, SPELL_MARKED_SHOT,
                               SPELL_ARCANE_POWDER, SPELL_DEAD_AIM, SPELL_CUT_AND_RUN, SPELL_STORMFRONT,
-                              SPELL_STORM_SURGE, SPELL_STATIC_STRIKE,
+                              SPELL_MOLTEN_CHARGE, SPELL_STORMBRINGER, SPELL_TEMPO,
                               SPELL_RIDE_THE_LIGHTNING,
                               SPELL_FLAMEBOUND, SPELL_FLAMEBOUND_DISCOUNT, SPELL_BURNING_RAKE,
                               SPELL_PURSUING_CHILL, SPELL_SNOWBLIND,
@@ -10570,6 +10807,8 @@ namespace
         TeachDuelist(player, duelist);
         TeachDawn(player, dawn);
         TeachTrueshot(player, trueshot);
+        TeachStormreaver(player, player->HasAura(SPELL_RUNE_STORMREAVER));
+        TeachConduit(player, player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT));
         TankRunes::Apply(player);
         RetireCatCopy(player, SPELL_CAT_FIRE_BLAST, SPELL_FIRE_BLAST);
         RetireCatCopy(player, SPELL_CAT_ICY_TOUCH, SPELL_ICY_TOUCH);
@@ -10992,13 +11231,6 @@ namespace
                     "a damaging Manifestation: choose it again.");
             }
         }
-        // The Stormbound Conduit: Live Wire and Storm Within never together.
-        if (choice.Rune == RUNE_STORMBOUND_CONDUIT
-            && ((slot == 1 && pick == MOD_LIVE_WIRE % MAX_CHOICES + 1
-                    && choice.Mods[2] == MOD_STORM_WITHIN % MAX_CHOICES + 1)
-                || (slot == 3 && pick == MOD_STORM_WITHIN % MAX_CHOICES + 1
-                    && choice.Mods[0] == MOD_LIVE_WIRE % MAX_CHOICES + 1)))
-            return Refuse(player, "Live Wire and Storm Within cannot be chosen together.");
         if (choice.Mods[slot - 1] == pick)
             return SendState(player);
         choice.Mods[slot - 1] = pick;
@@ -11101,7 +11333,8 @@ namespace LegendaryRunes
     {
         return firstRank == SPELL_SINISTER_STRIKE || firstRank == SPELL_ARCANE_SHOT || firstRank == SPELL_RAPID_FIRE
             || firstRank == SPELL_BEACON_OF_LIGHT || firstRank == SPELL_AIMED_SHOT
-            || TankRunes::IsReplacedBase(firstRank);
+            || firstRank == SPELL_STORMSTRIKE || firstRank == SPELL_LAVA_LASH || firstRank == SPELL_LIGHTNING_BOLT
+            || firstRank == TankRunes::SPELL_EARTH_SHOCK || TankRunes::IsReplacedBase(firstRank);
     }
 
     void OnSpecChanged(Player* player)
@@ -11336,12 +11569,11 @@ class spell_titan_rune_lightning_shield : public AuraScript
 {
     PrepareAuraScript(spell_titan_rune_lightning_shield);
 
-    // The Stormreaver's Stormfront: the shield keeps the charge its proc took.
+    // The Stormreaver: the shield keeps the charge its proc took.
     void Keep(ProcEventInfo& /*eventInfo*/)
     {
         Unit* caster = GetCaster();
-        if (caster && caster == GetTarget() && caster->HasAura(SPELL_RUNE_STORMREAVER)
-            && caster->HasAura(SPELL_STORMFRONT, caster->GetGUID()))
+        if (caster && caster == GetTarget() && caster->HasAura(SPELL_RUNE_STORMREAVER))
             GetAura()->ModCharges(1);
     }
 
@@ -11351,8 +11583,8 @@ class spell_titan_rune_lightning_shield : public AuraScript
     }
 };
 
-// A Lightning Shield retaliation (its damage, every rank, and the rune's own 90754) with the Stormbound Conduit:
-// Live Wire's 15% more; its arc to another enemy (ShieldArc).
+// A Lightning Shield retaliation (its damage, every rank) with the Stormbound Conduit: Reflux, struck at a full
+// shield (the charge this one took counted), a Fulmination at every enemy around the Hero.
 class spell_titan_rune_lightning_shield_damage : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_lightning_shield_damage);
@@ -11360,12 +11592,9 @@ class spell_titan_rune_lightning_shield_damage : public SpellScript
     void Strike()
     {
         Player* player = GetCaster()->ToPlayer();
-        Unit* target = GetHitUnit();
-        if (!player || !target || !player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
-            return;
-        if (HasStormMarker(player, MOD_LIVE_WIRE))
-            SetHitDamage(int32(GetHitDamage() * LIVE_WIRE_MORE));
-        ShieldArc(player, target, float(GetHitDamage()));
+        if (player && GetHitUnit() && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT)
+            && HasStormMarker(player, MOD_REFLUX) && Charges(player) + 1 >= ConduitMost(player))
+            Fulminate(player, nullptr, false);
     }
 
     void Register() override
@@ -12145,6 +12374,8 @@ public:
         TeachDuelist(player, player->HasAura(SPELL_RUNE_DUELIST));
         TeachDawn(player, player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER));
         TeachTrueshot(player, player->HasAura(SPELL_RUNE_TRUESHOT));
+        TeachStormreaver(player, player->HasAura(SPELL_RUNE_STORMREAVER));
+        TeachConduit(player, player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT));
         TankRunes::Apply(player);
     }
 
@@ -12241,7 +12472,11 @@ public:
                     }
         }
         if (player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
-            StormPulse(player, diff);
+            ConduitTick(player, diff);
+        else if (player->HasAura(SPELL_GALVANIZE))
+            player->RemoveAurasDueToSpell(SPELL_GALVANIZE);
+        if (!StateOf(player).Balls.empty())
+            BallTick(player, diff);
         if (player->HasAura(SPELL_RUNE_THREEFOLD_GRAVE))
             GraveTick(player, diff);
         if (player->HasAura(SPELL_RUNE_UNBROKEN_ONSLAUGHT))
@@ -12297,7 +12532,30 @@ class titan_runes_unit : public UnitScript
 {
 public:
     titan_runes_unit() : UnitScript("titan_runes_unit", true, { UNITHOOK_ON_DAMAGE, UNITHOOK_ON_AURA_APPLY,
-        UNITHOOK_MODIFY_HEAL_RECEIVED }) { }
+        UNITHOOK_MODIFY_HEAL_RECEIVED, UNITHOOK_MODIFY_MELEE_DAMAGE, UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK }) { }
+
+    // A melee swing (Windfury's too): the Stormreaver's Stormbringer; the Conduit's Charged Blades.
+    void ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage) override
+    {
+        Player* player = attacker ? attacker->ToPlayer() : nullptr;
+        if (!player || !target || !damage || !player->IsValidAttackTarget(target))
+            return;
+        if (player->HasAura(SPELL_RUNE_STORMREAVER))
+            Stormbringer(player);
+        if (player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT) && HasStormMarker(player, MOD_CHARGED_BLADES)
+            && roll_chance_f(CHARGED_BLADES_CHANCE))
+            AddCharges(player, 1);
+    }
+
+    // A tick of the Hero's Flame Shock with the Stormreaver: Lava Lash's reset.
+    void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage, SpellInfo const* spellInfo)
+        override
+    {
+        Player* player = attacker ? attacker->ToPlayer() : nullptr;
+        if (player && target && damage && spellInfo && spellInfo->GetFirstRankSpell()->Id == SPELL_FLAME_SHOCK
+            && player->HasAura(SPELL_RUNE_STORMREAVER))
+            LavaReset(player);
+    }
 
     // Peaceful Focus (the Wandering Mist): Soothing Mist 10% stronger on a target wearing the Hero's Enveloping Mist.
     void ModifyHealReceived(Unit* target, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
@@ -12772,10 +13030,6 @@ class spell_titan_rune_extended_hit : public SpellScript
         if ((first == SPELL_HOLY_SHOCK_HEAL || (first == SPELL_CHAIN_HEAL && target == GetExplTargetUnit()))
             && player->HasAura(SPELL_RUNE_WANDERING_MIST))
             MistTechnique(player, target, first, float(GetHitHeal()));
-        if (player->HasAura(SPELL_RUNE_STORMREAVER) && player->IsValidAttackTarget(target)
-            && (first == TankRunes::SPELL_EARTH_SHOCK || first == SPELL_FROST_SHOCK || first == SPELL_SHIELD_SLAM
-                || first == SPELL_LIGHTNING_BOLT || first == SPELL_THUNDER_CLAP))
-            StormAbility(player, target, first);
         if (player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT) && !GetSpell()->IsTriggered())
             ConduitHit(player, target, first, float(GetHitDamage()));
         if ((first == SPELL_FROSTBOLT || first == SPELL_CHAIN_HEAL || first == SPELL_LAVA_LASH)
@@ -12917,9 +13171,8 @@ class spell_titan_rune_extended_hit : public SpellScript
             damage = OwlFrostboltDamage(player, target, damage);
         if ((first == SPELL_FROSTBOLT || first == SPELL_ICE_LANCE) && player->HasAura(SPELL_RUNE_SPLINTERED_CROWN))
             damage = CrownBoltDamage(player, target, first, damage);
-        if ((first == SPELL_FROSTBOLT || first == SPELL_LIGHTNING_BOLT) && !GetSpell()->IsTriggered()
-            && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
-            damage = ConduitDamage(player, target, first, damage);
+        if (first == SPELL_LAVA_LASH && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_STORMREAVER))
+            damage *= LavaLashMultiplier(player);
         if (first == SPELL_FROST_STRIKE && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_HOWLING_NORTH))
             damage = NorthStrikeDamage(player, damage);
         if ((first == SPELL_AIMED_SHOT || first == SPELL_ARCANE_SHOT || first == SPELL_CHIMERA_SHOT)
@@ -12935,7 +13188,19 @@ class spell_titan_rune_extended_hit : public SpellScript
         if (Player* player = GetCaster()->ToPlayer(); player && (first == SPELL_HOLY_SHOCK || first == SPELL_CHAIN_HEAL)
             && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_WANDERING_MIST))
             MistWatch(player);
+        if (Player* player = GetCaster()->ToPlayer(); player && first == SPELL_LIGHTNING_BOLT
+            && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
+            ConduitWatch(player);
         return SPELL_CAST_OK;
+    }
+
+    // Lightning Bolt cast with the Stormbound Conduit: its charge (ConduitCast).
+    void Cast()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        if (player && !GetSpell()->IsTriggered() && GetSpellInfo()->GetFirstRankSpell()->Id == SPELL_LIGHTNING_BOLT
+            && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
+            ConduitCast(player, GetSpell(), 1);
     }
 
     // The Evergrove: the Hero's own Rejuvenation about to land (its stacks there before, and whether the ally was
@@ -12955,6 +13220,7 @@ class spell_titan_rune_extended_hit : public SpellScript
     void Register() override
     {
         OnCheckCast += SpellCheckCastFn(spell_titan_rune_extended_hit::Watch);
+        AfterCast += SpellCastFn(spell_titan_rune_extended_hit::Cast);
         BeforeHit += BeforeSpellHitFn(spell_titan_rune_extended_hit::Before);
         OnHit += SpellHitFn(spell_titan_rune_extended_hit::Damage);
         AfterHit += SpellHitFn(spell_titan_rune_extended_hit::Hit);
@@ -13407,24 +13673,61 @@ class spell_titan_rune_cat_swipe : public SpellScript
     }
 };
 
-// Stormstrike with the Stormreaver: the Stormfront.
+// Stormstrike with the Stormreaver: its target Stormstruck (Stormstruck), its hits counted from nothing.
 class spell_titan_rune_stormstrike : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_stormstrike);
 
-    void Storm()
+    void Begin()
     {
         if (Player* player = GetCaster()->ToPlayer(); player && player->HasAura(SPELL_RUNE_STORMREAVER))
-            RaiseStormfront(player);
+            StateOf(player).LastStormstrike = 0.0f;
+    }
+
+    void Storm()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetExplTargetUnit();
+        if (player && player->HasAura(SPELL_RUNE_STORMREAVER))
+            Stormstruck(player, target && player->IsValidAttackTarget(target) ? std::vector<Unit*>{ target }
+                : std::vector<Unit*>{});
     }
 
     void Register() override
     {
+        BeforeCast += SpellCastFn(spell_titan_rune_stormstrike::Begin);
         AfterCast += SpellCastFn(spell_titan_rune_stormstrike::Storm);
     }
 };
 
-// Lava Lash in the Stormreaver's Stormfront: Thunderlash.
+// Stormstrike's hits (main hand and off hand) with the Stormreaver: Eye of the Tempest's 60% more on a lone enemy;
+// the Stormstrike's damage, for Echoing Strike and Cinder Echo.
+class spell_titan_rune_stormstrike_hit : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_stormstrike_hit);
+
+    void Hit()
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || GetHitDamage() <= 0 || !player->HasAura(SPELL_RUNE_STORMREAVER))
+            return;
+        float damage = float(GetHitDamage());
+        if (HasStormreaverMarker(player, MOD_EYE_OF_THE_TEMPEST) && Lone(player, target))
+        {
+            damage *= EYE_OF_THE_TEMPEST;
+            SetHitDamage(int32(damage));
+        }
+        StateOf(player).LastStormstrike += damage;
+    }
+
+    void Register() override
+    {
+        OnHit += SpellHitFn(spell_titan_rune_stormstrike_hit::Hit);
+    }
+};
+
+// Lava Lash with the Stormreaver: Eruption, its options (LavaLashed).
 class spell_titan_rune_lava_lash : public SpellScript
 {
     PrepareSpellScript(spell_titan_rune_lava_lash);
@@ -13433,14 +13736,102 @@ class spell_titan_rune_lava_lash : public SpellScript
     {
         Player* player = GetCaster()->ToPlayer();
         Unit* target = GetHitUnit();
-        if (player && target && player->HasAura(SPELL_RUNE_STORMREAVER)
-            && player->HasAura(SPELL_STORMFRONT, player->GetGUID()))
-            Thunderlash(player, target);
+        if (player && target && player->HasAura(SPELL_RUNE_STORMREAVER) && player->IsValidAttackTarget(target))
+            LavaLashed(player, { target }, target);
     }
 
     void Register() override
     {
         AfterHit += SpellHitFn(spell_titan_rune_lava_lash::Hit);
+    }
+};
+
+// Thunderbomb (Stormstrike's place): thrown at its target (ThrowThunderbomb).
+class spell_titan_rune_thunderbomb : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_thunderbomb);
+
+    void Throw(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && player->HasAura(SPELL_RUNE_STORMREAVER))
+            ThrowThunderbomb(player, target);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_thunderbomb::Throw, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// Magma Breaker (Lava Lash's place): the cone before the Hero (MagmaBreaker).
+class spell_titan_rune_magma_breaker : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_magma_breaker);
+
+    void Break(SpellEffIndex /*effIndex*/)
+    {
+        if (Player* player = GetCaster()->ToPlayer(); player && player->HasAura(SPELL_RUNE_STORMREAVER))
+            MagmaBreaker(player);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_magma_breaker::Break, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// Ball Lightning (Lightning Bolt's place): its charges as it is cast, its orb loosed (LoosenBall).
+class spell_titan_rune_ball_lightning : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_ball_lightning);
+
+    SpellCastResult Watch()
+    {
+        if (Player* player = GetCaster()->ToPlayer(); player && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
+            ConduitWatch(player);
+        return SPELL_CAST_OK;
+    }
+
+    void Loose(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
+            LoosenBall(player, target);
+    }
+
+    void Charge()
+    {
+        if (Player* player = GetCaster()->ToPlayer(); player && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
+            ConduitCast(player, GetSpell(), BALL_CHARGES);
+    }
+
+    void Register() override
+    {
+        OnCheckCast += SpellCheckCastFn(spell_titan_rune_ball_lightning::Watch);
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_ball_lightning::Loose, EFFECT_0, SPELL_EFFECT_DUMMY);
+        AfterCast += SpellCastFn(spell_titan_rune_ball_lightning::Charge);
+    }
+};
+
+// Storm Lance (Earth Shock's place): the lance and the release in it (Fulminate).
+class spell_titan_rune_storm_lance : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_storm_lance);
+
+    void Lance(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (player && target && player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT))
+            Fulminate(player, target, true);
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_storm_lance::Lance, EFFECT_0, SPELL_EFFECT_DUMMY);
     }
 };
 
@@ -13778,6 +14169,11 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_mind_blast);
     RegisterSpellScript(spell_titan_rune_shattered_sun);
     RegisterSpellScript(spell_titan_rune_trueshot);
+    RegisterSpellScript(spell_titan_rune_stormstrike_hit);
+    RegisterSpellScript(spell_titan_rune_thunderbomb);
+    RegisterSpellScript(spell_titan_rune_magma_breaker);
+    RegisterSpellScript(spell_titan_rune_ball_lightning);
+    RegisterSpellScript(spell_titan_rune_storm_lance);
     RegisterSpellScript(spell_titan_rune_lifebloom_bloom);
     RegisterSpellScript(spell_titan_rune_iron_bulwark);
     RegisterCreatureAI(npc_titan_rune_hollow_echo);

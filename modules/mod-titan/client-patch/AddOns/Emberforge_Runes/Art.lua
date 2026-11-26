@@ -151,62 +151,61 @@ EmberforgeRunesArt = {
             hue = { 0.494, 0.824, 1 },
             inner = { 0.886, 0.941, 1 },
             built = true,
-            core = "**Chain Lightning**, **Earth Shock** and your **Lightning Shield** arc to " ..
-                    "other enemies, no mark needed.",
+            core = "**Lightning Bolt** and **Chain Lightning** charge your **Lightning " ..
+                    "Shield** (up to 9); **Earth Shock** releases every charge above 3 as " ..
+                    "**Fulmination**. Lightning Bolt arcs to a second enemy.",
             asks = {
-                "What carries the charge",
-                "How the current arcs",
-                "What the shield adds",
+                "How the bolt charges",
+                "What the shield holds",
+                "How it is released",
             },
             abilities = {
-                "15% more",
-                "2 enemies",
-                "Lightning Shield",
-                "Frostbolt",
-                "Flame Shock",
+                "Replaces",
+                "25%",
                 "2 arcs",
-                "Back in",
-                "15 yards",
-                "Lava Lash",
-                "Starfire",
-                "Lightning Shield",
-                "Lightning Shield",
-                "Lightning Shield",
-                "Chain Heal",
-                "Thunder Clap",
+                "Chain Lightning",
+                "Maelstrom",
+                "6 charges",
+                "Full",
+                "Stormreaver",
+                "Nature",
+                "Melee",
+                "Replaces",
+                "2 more",
+                "Knockback",
+                "12 charges",
+                "Instant",
             },
             texts = {
-                "Your arcs deal 15% more damage.",
-                "Lightning Bolt arcs 30% of its damage to one enemy within 10 yards of " ..
-                        "its target.",
-                "Lightning Shield retaliations deal 15% more damage. Not with Storm " ..
-                        "Within.",
-                "Frostbolt deals 15% more damage.",
-                "Lightning Bolt on your Flame Shock target arcs 30% of its damage to one " ..
-                        "enemy within 10 yards and makes Flame Shock last 2 sec longer (up to 6 " ..
-                        "sec for each cast).",
-                "Chain Lightning's arc strikes 2 other enemies for 65% each.",
-                "Chain Lightning's arc returns into its target for its whole damage.",
-                "Arcs reach 15 yards, and the first Chain Lightning arc every 8 sec deals " ..
-                        "20% more damage.",
-                "Lava Lash arcs 25% of your attack power as Nature damage to another " ..
-                        "enemy (half back into it if alone), once every 6 sec.",
-                "Starfire arcs 25% of your spell power as Arcane damage to another enemy " ..
-                        "(half back into it if alone), once every 8 sec.",
-                "Every 3 sec in combat, your Lightning Shield strikes the nearest enemy " ..
-                        "within 8 yards, spending a charge. Not with Live Wire.",
-                "Your Lightning Shield's arcs deal 40% more damage.",
-                "Lightning Bolt also strikes its target with your Lightning Shield, " ..
-                        "spending a charge, once every 3 sec.",
-                "Chain Heal makes your next Lightning Bolt within 6 sec deal 15% more " ..
+                "Lightning Bolt becomes Ball Lightning: a slow orb that zaps the " ..
+                        "nearest enemy within 8 yards every 0.5 sec on its way, then bursts on " ..
+                        "every enemy within 8 yards of its target. It adds 2 charges.",
+                "Lightning Bolt has a 25% chance to strike its target again for half " ..
+                        "its damage, adding a charge.",
+                "Lightning Bolt's arc strikes 2 enemies for 40% of its damage each.",
+                "Chain Lightning adds 2 charges for each enemy it hits.",
+                "Each stack of Maelstrom Weapon a Lightning Bolt spends adds a charge.",
+                "At 6 charges or more, your Lightning Shield zaps an enemy within 10 " ..
+                        "yards every 2 sec in combat for 30% of your power, spending nothing.",
+                "Struck while your shield is full, you release a Fulmination at every " ..
+                        "enemy within 8 yards.",
+                "The Stormreaver's Static Strikes spend none of your charges.",
+                "Each charge above 3 gives you 2% more Nature damage.",
+                "Your melee swings have a 10% chance to add a charge.",
+                "Earth Shock becomes Storm Lance: a lance 30 yards through every enemy " ..
+                        "in its line for 60% of your power, 20% more for each charge you hold. " ..
+                        "It releases your charges above 3.",
+                "Fulmination arcs to 2 more enemies within 10 yards for half its " ..
                         "damage.",
-                "Thunder Clap deals 20% of your spell power as Nature damage to up to 5 " ..
-                        "enemies within 8 yards of its target, once every 8 sec.",
+                "Fulmination knocks back every enemy within 10 yards of you and slows " ..
+                        "them by 40% for 4 sec.",
+                "Your Lightning Shield holds up to 12 charges.",
+                "Releasing 5 charges or more makes your next Lightning Bolt instant.",
             },
             slots = {
-                "Conductor",
-                "Circuit",
+                "Bolt",
                 "Shield",
+                "Release",
             },
         },
         [24] = {
@@ -1501,67 +1500,70 @@ EmberforgeRunesArt = {
             hue = { 0.475, 0.957, 1 },
             inner = { 0.882, 0.961, 1 },
             built = true,
-            core = "**Stormstrike** raises the **Stormfront** (25% of your attack power " ..
-                    "every 2 sec); **Lava Lash** becomes **Thunderlash**; your strikes " ..
-                    "discharge **Lightning Shield**.",
+            core = "**Stormbringer**: your swings can reset **Stormstrike**. **Molten " ..
+                    "Charge**: Stormstrike empowers your next **Lava Lash**, and **Flame " ..
+                    "Shock** can reset it. **Eruption**: Lava Lash on a Stormstruck enemy " ..
+                    "erupts around it.",
             asks = {
-                "How the storm strikes",
-                "How Thunderlash lands",
-                "How the shield fights",
+                "How Stormstrike lands",
+                "How Lava Lash lands",
+                "What the storm gives",
             },
             abilities = {
-                "Eye",
-                "Forked",
-                "Rolling",
-                "Hunter's Mark",
-                "Frost Shock",
-                "Head",
-                "Chain",
-                "White-Hot",
-                "Shield Slam",
+                "Replaces",
+                "Shield",
+                "Lone",
+                "Echo",
+                "35%",
+                "Replaces",
                 "Flame Shock",
-                "Overcharge",
-                "Ride",
+                "Burn",
+                "Flame Shock",
+                "Echo",
+                "Storm",
+                "Stacks",
+                "Haste",
+                "Maelstrom",
                 "Ground",
-                "Lightning Bolt",
-                "Thunder Clap",
             },
             texts = {
-                "The Stormfront deals 120% more damage while only one enemy is in it.",
-                "The Stormfront strikes up to 8 enemies within 12 yards.",
-                "The Stormfront strikes every second instead of every 2, each strike " ..
-                        "70% of its damage.",
-                "Stormfront pulses deal 35% more to your Hunter's Mark target and also " ..
-                        "strike one other enemy within 8 yards for 40%.",
-                "Frost Shock in the Stormfront leaves a frost trail under its target " ..
-                        "for 4 sec: 10% of your attack power as Frost damage each second to up " ..
-                        "to 3 enemies, once every 8 sec.",
-                "Thunderlash doesn't arc: 120% of your attack power to its target " ..
-                        "instead.",
-                "Thunderlash arcs to 4 enemies instead of 2, each for 30% of your " ..
-                        "attack power.",
-                "Thunderlash burns its target for 100% of your attack power over 6 sec " ..
-                        "instead of its Nature hit; its arcs stay. A new burn keeps what is " ..
-                        "left of the last.",
-                "Shield Slam in the Stormfront sends an arc of 30% of your attack power " ..
-                        "as Nature damage to its target and one other enemy within 8 yards, " ..
-                        "once every 6 sec.",
-                "Thunderlash on your Flame Shock target spreads it to one other enemy " ..
-                        "within 8 yards for what is left of it, once every 10 sec.",
-                "The rune's Lightning Shield discharges deal 50% more damage.",
-                "Each of the rune's discharges makes you move 30% faster for 3 sec and " ..
-                        "brings Lava Lash back 1 sec sooner.",
+                "Stormstrike becomes Thunderbomb: a bomb thrown at an enemy up to 20 " ..
+                        "yards away that bursts after 1 sec for 140% of your weapon damage as " ..
+                        "Nature damage to every enemy within 8 yards. Stormbringer resets it.",
+                "Stormstrike spends up to 3 of your Lightning Shield charges (never the " ..
+                        "last), each a discharge at its target.",
+                "Stormstrike deals 60% more damage when no other enemy is within 8 " ..
+                        "yards of its target.",
+                "Stormstrike strikes its target twice more over 2 sec, each for 30% of " ..
+                        "its damage as Nature damage.",
+                "Stormbringer's chance is 35% instead of 20%.",
+                "Lava Lash becomes Magma Breaker: 120% of your weapon damage as Fire " ..
+                        "damage to up to 8 enemies in a 10 yard cone before you, spreading your " ..
+                        "Flame Shock to every one of them.",
+                "Lava Lash spreads your Flame Shock from its target to up to 4 enemies " ..
+                        "within 8 yards.",
+                "Lava Lash burns its target for 100% of your attack power as Fire " ..
+                        "damage over 6 sec. A new burn keeps what is left of the last.",
+                "Flame Shock resets Lava Lash 50% of the time instead of 25%, and a " ..
+                        "reset Lava Lash deals 25% more.",
+                "Lava Lash deals 50% of your last Stormstrike's damage again as Fire " ..
+                        "damage.",
+                "Stormstrike and Lava Lash raise the Stormfront around you for 16 sec: " ..
+                        "every 2 sec, 15% of your attack power as Nature damage to up to 5 " ..
+                        "enemies within 8 yards.",
+                "Alternating Stormstrike and Lava Lash gives you a stack of Tempo: 5% " ..
+                        "more damage each, up to 5, for 10 sec.",
+                "Each reset of Stormstrike or Lava Lash gives you 20% melee haste for 4 " ..
+                        "sec.",
+                "Each reset of Stormstrike or Lava Lash gives you 2 stacks of Maelstrom " ..
+                        "Weapon.",
                 "Each of the rune's discharges also strikes up to 3 other enemies " ..
                         "within 8 yards of its target for half its damage.",
-                "Lightning Bolt in the Stormfront makes your next discharge within 6 " ..
-                        "sec strike again for 40% of its damage.",
-                "Thunder Clap in the Stormfront also deals 25% of your attack power as " ..
-                        "Nature damage to up to 5 enemies within 8 yards, once every 8 sec.",
             },
             slots = {
+                "Stormstrike",
+                "Lava Lash",
                 "Storm",
-                "Thunderlash",
-                "Shield",
             },
         },
         [44] = {

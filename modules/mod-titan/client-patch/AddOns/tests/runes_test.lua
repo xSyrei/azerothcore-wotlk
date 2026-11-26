@@ -225,8 +225,8 @@ local thunder = EmberforgeRunesArt.runes[24]
 check(thunder.built and thunder.slots[3] == "Resonance" and #thunder.texts == 15
     and ById(24).roles[1] == "TANK", "Art.lua has Echoing Thunder's slots and words; a tank's rune")
 local storm = EmberforgeRunesArt.runes[23]
-check(storm.built and storm.slots[2] == "Circuit" and #storm.texts == 15 and #ById(23).mods == 15,
-    "Art.lua has the Stormbound Conduit's slots (Conductor, Circuit, Shield) and its words")
+check(storm.built and storm.slots[2] == "Shield" and #storm.texts == 15 and #ById(23).mods == 15,
+    "Art.lua has the Stormbound Conduit's slots (Bolt, Shield, Release) and its words")
 -- Astral Convergence, the first rune with its Extended Options: 15 options (5 a slot), the old three first in each.
 local convergence, convergenceArt = ById(40), EmberforgeRunesArt.runes[40]
 check(#convergence.mods == 15 and #convergenceArt.texts == 15 and #convergenceArt.abilities == 15
@@ -249,11 +249,11 @@ for id, firsts in pairs({ [34] = { "Accelerated Thought", "Focused Intention", "
     [41] = { "Crushing Champion", "Long Guard", "Defiant Roar" },
     [45] = { "Predator's Fang", "Frozen Wound", "Swift Hunt" },
     [22] = { "Boundless Sanctity", "Sanctified Condemnation", "Bastion of Faith" },
-    [43] = { "Eye of the Tempest", "Thunderhead", "Overcharged Core" },
+    [43] = { "Thunderbomb", "Magma Breaker", "Stormfront" },
     [46] = { "Sovereign Bond", "Crimson Feast", "Coagulated Throne" },
     [47] = { "Earthen Command", "Deepstone Heart", "Resonant Strikes" },
     [48] = { "Voidforged Plate", "Deep Extraction", "Guardian Manifest" },
-    [23] = { "Persistent Current", "Forked Tempest", "Storm Within" },
+    [23] = { "Ball Lightning", "Static Field", "Storm Lance" },
     [24] = { "Lingering Thunder", "Reverberating Impact", "Commanding Thunder" },
     [25] = { "Flowing Waters", "Deep Current", "Tidal Shelter" },
     [29] = { "Mercy", "Dawnwave", "Steadfast" },
@@ -465,7 +465,7 @@ frame:Hide()
 server("R,23,-")
 server("S,10,10,3,23,0,0,0,23,0")
 EmberforgeRunes_Open()
-check(build.nodes[2].label.text == "C I R C U I T" and options[1].name.text == "Persistent Current",
+check(build.nodes[2].label.text == "S H I E L D" and options[1].name.text == "Ball Lightning",
     "the Stormbound Conduit's slots and modifiers")
 frame:Hide()
 
