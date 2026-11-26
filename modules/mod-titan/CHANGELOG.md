@@ -26,6 +26,18 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   before you); Thunder Clap in the bulwark makes it reach 10 yards (Shaking Ground 12). **Wide Reckoning** now makes it
   deal 30% more to every enemy past its first. A Shield Slam that kills its target still releases the impact.
 
+### Legendary Runes, far stronger
+
+- **Every Legendary Rune's own damage is 3.5 times what it was, its healing and shields 3 times**: echoes, impacts,
+  strikes, orbs, beasts, bolts, heals, wards, all of it. (What a rune adds to your own abilities is unchanged.)
+- **Iron Reckoning, rebuilt for survival**: the Iron Bulwark absorbs **45% of your maximum health from every side**
+  (it was 15%, from the front only); each enemy the impact hits **mends you for 6%** of your maximum health (30% at
+  most); and **Shield Block comes round far sooner**: Shield Slam takes 4 sec off its cooldown, Revenge 2, Devastate 1.
+
+### The Firepit spares your gear
+
+- **No durability loss in the Firepit**: dying or getting hit there never wears your gear.
+
 ### No more chain crowd control from monsters
 
 - **Diminishing returns now apply to monsters' crowd control on you.** Every stun, fear, sleep, silence, polymorph,

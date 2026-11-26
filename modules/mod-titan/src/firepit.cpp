@@ -221,6 +221,12 @@ namespace
         return destination != destinations.end() ? destination->second : 0;
     }
 
+    // No gear wear in the Firepit (deaths and hits alike): the core's hook (InstanceOverride::KeepsDurability).
+    bool KeepsDurability(Player* player)
+    {
+        return player->GetMapId() == MAP_FIREPIT;
+    }
+
     uint32 MaxPlayers(uint32 instanceId)
     {
         std::lock_guard guard(registryLock);
@@ -1769,6 +1775,7 @@ public:
     {
         InstanceOverride::Destination = &Destination;
         InstanceOverride::MaxPlayers = &MaxPlayers;
+        InstanceOverride::KeepsDurability = &KeepsDurability;
     }
 
     void OnUpdate(uint32 /*diff*/) override

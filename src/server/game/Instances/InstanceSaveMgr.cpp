@@ -963,6 +963,7 @@ namespace InstanceOverride
 {
     DestinationFn Destination = nullptr;
     MaxPlayersFn MaxPlayers = nullptr;
+    KeepsDurabilityFn KeepsDurability = nullptr;
 }
 
 uint32 InstanceSaveMgr::PlayerGetDestinationInstanceId(Player* player, uint32 mapid, Difficulty difficulty)

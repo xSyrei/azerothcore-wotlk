@@ -2079,7 +2079,7 @@ BUILT.update({
     },
     54: {
         'core': '**Shield Block** raises an **Iron Bulwark**; **Shield Slam** releases what it held as an **Iron '
-            'impact**.',
+            'impact** that mends you.',
         'slots': ['Impact', 'Empowerment', 'Hold'],
         'asks': ['How the impact lands', 'What makes it stronger', 'What the bulwark gives you'],
         'texts': [

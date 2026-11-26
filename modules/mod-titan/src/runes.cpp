@@ -1266,14 +1266,18 @@ namespace
         MOD_IRON_WALL_OF_IRON,
     };
 
-    // Iron Reckoning's tuning: Shield Block raises a 14 sec Iron Bulwark in front of the Hero, absorbing up to 15% of
-    // their maximum health. Shield Slam in it releases an Iron impact once: 20% of Shield Slam's hit plus half of what
+    // Iron Reckoning's tuning: Shield Block raises a 14 sec Iron Bulwark about the Hero, absorbing up to 15% of their
+    // maximum health from every side (rune_power.cpp makes it 45%). Shield Slam takes 4 sec off Shield Block's
+    // cooldown, Revenge 2, Devastate 1 (IRON_*_SOONER_MS), so it comes round. Each enemy the impact hits mends the Hero
+    // for 2% of their maximum health, 10% at most (IRON_MEND_*: 6% and 30% with rune_power.cpp's healing). Shield Slam in it releases an Iron impact once: 20% of Shield Slam's hit plus half of what
     // the bulwark absorbed (that part at most half their attack power), to every enemy within 8 yards (no limit); the
     // bulwark stays. In the bulwark: Revenge makes the impact 20% stronger, Thunder Clap reach 10 yards, Devastate
     // 15% stronger (each once).
     constexpr float IRON_BULWARK_PCT = 15.0f, IRON_SLAM_SHARE = 0.2f, IRON_ABSORBED_SHARE = 0.5f, IRON_AP_CAP = 0.5f;
     constexpr float IRON_RANGE = 8.0f, IRON_CLAP_RANGE = 10.0f, IRON_REVENGE = 1.2f, IRON_DEVASTATE = 1.15f;
     constexpr uint32 IRON_BULWARK_MS = 14000;
+    constexpr int32 IRON_SLAM_SOONER_MS = 4000, IRON_REVENGE_SOONER_MS = 2000, IRON_DEVASTATE_SOONER_MS = 1000;
+    constexpr float IRON_MEND_PCT = 2.0f, IRON_MEND_MOST_PCT = 10.0f;
     // Its options: Crushing Reprisal (30% more), Wide Reckoning (30% more to every enemy past the first), Immovable
     // (released as the bulwark ends instead, 125%), Shockwave Reckoning (Shockwave in it releases it once more, 60%),
     // Concussive Reckoning (Concussion Blow in it: its first target 25% of attack power more); Retaliation (Revenge
@@ -6601,6 +6605,9 @@ namespace
             if (HasIronMarker(player, MOD_IRON_COMMANDING_FORCE))
                 enemy->AddThreat(player, hit * IRON_COMMANDING_THREAT, SPELL_SCHOOL_MASK_NORMAL);
         }
+        if (!enemies.empty())                       // the impact mends the Hero: 2% of their health an enemy hit
+            Mend(player, player, SPELL_IRON_MENDING, float(player->GetMaxHealth())
+                * std::min(IRON_MEND_PCT * float(enemies.size()), IRON_MEND_MOST_PCT) / 100.0f);
         if (!enemies.empty() && HasIronMarker(player, MOD_IRON_WALL_OF_IRON) && Ready(state.IronMendAt,
             WALL_OF_IRON_EVERY_MS))
         {
@@ -6623,6 +6630,10 @@ namespace
         if (target == player || (!player->IsValidAttackTarget(target) && (target->IsAlive()
             || !player->IsHostileTo(target))))
             return;
+        // Shield Block comes round sooner: Shield Slam 4 sec, Revenge 2, Devastate 1.
+        if (int32 sooner = firstRank == SPELL_SHIELD_SLAM ? IRON_SLAM_SOONER_MS : firstRank == SPELL_REVENGE
+            ? IRON_REVENGE_SOONER_MS : firstRank == SPELL_DEVASTATE ? IRON_DEVASTATE_SOONER_MS : 0)
+            player->ModifySpellCooldown(SPELL_SHIELD_BLOCK, -sooner);
         if (firstRank == SPELL_SHIELD_SLAM && HasIronMarker(player, MOD_IRON_SHIELDED_ADVANCE))
         {
             player->CastSpell(player, SPELL_SHIELDED_ADVANCE, true);
@@ -13010,18 +13021,10 @@ class spell_titan_rune_lifebloom_bloom : public SpellScript
     }
 };
 
-// Iron Reckoning's bulwark: only what strikes from before the Hero (an attacker behind them goes through); what it
-// absorbs feeds the impact; Immovable's impact as it ends.
+// Iron Reckoning's bulwark: what it absorbs (from every side) feeds the impact; Immovable's impact as it ends.
 class spell_titan_rune_iron_bulwark : public AuraScript
 {
     PrepareAuraScript(spell_titan_rune_iron_bulwark);
-
-    void Absorb(AuraEffect* /*aurEff*/, DamageInfo& dmgInfo, uint32& absorbAmount)
-    {
-        Unit* attacker = dmgInfo.GetAttacker();
-        if (attacker && attacker != GetTarget() && !GetTarget()->HasInArc(float(M_PI), attacker))
-            absorbAmount = 0;
-    }
 
     void Absorbed(AuraEffect* /*aurEff*/, DamageInfo& /*dmgInfo*/, uint32& absorbAmount)
     {
@@ -13037,7 +13040,6 @@ class spell_titan_rune_iron_bulwark : public AuraScript
 
     void Register() override
     {
-        OnEffectAbsorb += AuraEffectAbsorbFn(spell_titan_rune_iron_bulwark::Absorb, EFFECT_0);
         AfterEffectAbsorb += AuraEffectAbsorbFn(spell_titan_rune_iron_bulwark::Absorbed, EFFECT_0);
         AfterEffectRemove += AuraEffectRemoveFn(spell_titan_rune_iron_bulwark::Gone, EFFECT_0,
             SPELL_AURA_SCHOOL_ABSORB, AURA_EFFECT_HANDLE_REAL);

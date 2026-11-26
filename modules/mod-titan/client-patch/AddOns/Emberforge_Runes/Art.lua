@@ -2231,7 +2231,7 @@ EmberforgeRunesArt = {
             inner = { 0.941, 0.949, 0.961 },
             built = true,
             core = "**Shield Block** raises an **Iron Bulwark**; **Shield Slam** releases " ..
-                    "what it held as an **Iron impact**.",
+                    "what it held as an **Iron impact** that mends you.",
             asks = {
                 "How the impact lands",
                 "What makes it stronger",

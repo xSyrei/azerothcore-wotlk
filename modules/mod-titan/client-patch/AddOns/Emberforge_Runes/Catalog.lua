@@ -2241,8 +2241,9 @@ EmberforgeRunesCatalog = {
       builtFrom = "Shield Block (the Iron Bulwark)",
       spentWith = "Shield Slam (the Iron impact)",
       resource = "What the bulwark absorbed, for 14 sec",
-      core = "Shield Block raises an Iron Bulwark before you for 14 sec, absorbing up to 15% of your maximum health " ..
-          "from attacks in front of you. Shield Slam in that time releases an Iron impact once: 20% of Shield " ..
+      core = "Shield Block raises an Iron Bulwark about you for 14 sec, absorbing up to 45% of your maximum health " ..
+          "from every side. Shield Slam takes 4 sec off Shield Block's cooldown, Revenge 2 and Devastate 1. Each " ..
+          "enemy the impact hits mends you for 6% of your maximum health, 30% at most. Shield Slam in that time releases an Iron impact once: 20% of Shield " ..
           "Slam's hit plus half of what the bulwark absorbed (that part at most half your attack power), to every " ..
           "enemy within 8 yards of you, no limit; the bulwark stays. In the bulwark, Revenge makes the impact 20% " ..
           "stronger, Thunder Clap makes it reach 10 yards, and Devastate makes it 15% stronger.",

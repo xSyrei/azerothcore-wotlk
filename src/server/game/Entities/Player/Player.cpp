@@ -4887,6 +4887,10 @@ void Player::DurabilityPointsLoss(Item* item, int32 points)
     if (HasPreventDurabilityLossAura())
         return;
 
+    // Project Emberforge: a module's instance may spare gear wear (the Firepit).
+    if (points > 0 && InstanceOverride::KeepsDurability && InstanceOverride::KeepsDurability(this))
+        return;
+
     int32 pMaxDurability = item->GetUInt32Value(ITEM_FIELD_MAXDURABILITY);
     int32 pOldDurability = item->GetUInt32Value(ITEM_FIELD_DURABILITY);
     int32 pNewDurability = pOldDurability - points;
