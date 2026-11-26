@@ -18,6 +18,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - You fight until everyone falls. A groupmate's battle resurrection can bring you back.
 - Then everyone stands again, and each Hero gets **their own chest**: a piece of gear at your level for every 15 waves
   you lived through (epic from wave 45).
+- **The ring burns**: the Firepit has its own warm, ember-lit light, and each run fills the arena with fire: a great
+  fire pit in the middle, bonfires around it, braziers along the walls, embers rising and lava at the gates. Arriving
+  shows the Firepit's own title.
 - **The wave tracker** sits on the right under the minimap: the wave, its time running out on a bar, enemies alive,
   Heroes standing, and the run's news (a boss coming in red, with a warning sound).
 - **The recap** shows the run in big numbers (wave, time, kills, Heroes, enemy health), who stood out, and each

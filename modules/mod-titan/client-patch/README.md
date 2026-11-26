@@ -419,6 +419,9 @@ read as anything but water), and their second coordinates cross the first (float
 ## Atmosphere and water light (patch-enUS-8.MPQ)
 
 `hd/make_atmosphere.py` rewrites the client's lighting tables (every zone, every hour):
+- the Firepit's own light: Blackrock Depths has no Light of its own (the global default's dim grey filled the Ring
+  of Law), so a Light there (60 yards whole, gone by 95) with its own LightParams: warm ambient and diffuse light,
+  an ember fog from near, a red sky. It lights the Ring of Law in any Depths instance.
 - **Atmosphere**: outdoor fog (LightFloatBand band 0, longer than 83 yards) ends at 72% of its distance and starts
   0.15 sooner (band 1), so the distance hazes into each zone's fog and sky colour. Indoors keep theirs.
 - **Water opacity**: LightParams' shallow water opacity times 0.95 (lakes and oceans; at 0.7 a pale canal floor shone
