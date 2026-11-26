@@ -129,19 +129,18 @@ debug.startNext:Click()
 
 party[2][2] = 12
 debug.finder.scripts.OnEvent(debug.finder, "PARTY_MEMBERS_CHANGED")
-check(debug.queueButton.enabled and debug.queueButton.text == "Queue Group (3)", "the leader can queue the group")
+check(debug.queueButton.enabled and debug.queueButton.text == "Queue group (3)", "the leader can queue the group")
 debug.queueButton:Click()
 check(sent[#sent] == "QUEUE,5", "queuing asks the server, from the wave chosen")
 server("QP,Tester,3,40,5")
 server("QA,Tester,1")
 server("QA,Healer,0")
 check(#popups == 0, "the leader is not asked to accept their own queue")
-check(debug.members[1].status.texture:find("Ready", 1, true)
-    and debug.members[2].status.texture:find("Waiting", 1, true)
+check(debug.members[1].label.text == "Ready" and debug.members[2].label.text == "Pending"
     and debug.finder.status.text:find("1 of 3", 1, true), "each member's answer shows on their slot")
-check(debug.queueButton.text == "Leave Queue", "the leader can leave the queue")
+check(debug.queueButton.text == "Leave queue", "the leader can leave the queue")
 server("QC,Healer declined.")
-check(debug.finder.status.text:find("Healer declined", 1, true) and debug.queueButton.text == "Queue Group (3)",
+check(debug.finder.status.text:find("Healer declined", 1, true) and debug.queueButton.text == "Queue group (3)",
     "a decline ends the queue, and says why")
 
 leader = false

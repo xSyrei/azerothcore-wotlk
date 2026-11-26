@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """Build the Emberforge_Firepit addon's art: AddOns/Emberforge_Firepit/Art/.
 
-- Background.blp: the painting of the ring (icons/ui/FirepitBackground.png, 16:9), squeezed into 1024x512; the addon
-  draws it at the panel's own shape again.
-- Chrome.blp: everything of the queue panel that does not move, drawn here over a transparent 560x344 panel (1024
-  wide, the top 629 rows of a 1024x1024 texture): the iron frame with its ember edge and corners, the title plate,
-  the column rail, the dark wash under the left column's words, the section dividers, the reward and portrait frames,
-  the record plaques, the start picker's slot, the bottom strip. The layout is the addon's (Emberforge_Firepit.lua:
-  the same numbers, in the panel's units).
+- Background.blp: the painting of the ring (icons/ui/FirepitBackground.png, 16:9), squeezed into 1024x512; the
+  panel is 16:9 too, so the addon shows all of it.
+- Chrome.blp: what of the queue panel does not move, drawn over a transparent 560x315 panel (1024 wide, the top 576
+  rows of a 1024x1024 texture): a dark veil over the painting (cut away over the icons and portraits), the thin bronze
+  frame, the header line with ember under the title, the sections' underlines, the column and record lines, the
+  icons' and places' outlines, the start picker's outline, the bottom line. The layout is the addon's
+  (Emberforge_Firepit.lua: the same numbers, in the panel's units).
 - Button*.tga (the big button: normal, pushed, highlight, disabled), Arrow*.tga (the picker's, pointing left; the
-  addon flips it), Slot.tga (an empty portrait).
+  addon flips it), Close.tga, Ring.tga (a filled place's ring), Slot.tga (an open place).
 
 Usage: python3 build_firepit_art.py [--preview DIR]   (DIR: the same art as PNGs, for a look outside the game)
 """
 
-import math
-import random
 import sys
 from pathlib import Path
 
@@ -29,30 +27,28 @@ import blp  # noqa: E402
 SOURCE = HERE / 'icons' / 'ui' / 'FirepitBackground.png'
 OUT = HERE / 'AddOns' / 'Emberforge_Firepit' / 'Art'
 
-# The panel and its layout, in its own units (Emberforge_Firepit.lua).
-PANEL_W, PANEL_H = 560, 344
-FRAME = 11                                  # the iron frame's width
-COLUMN_X = 334                              # the rail between the columns
-TITLE_BOTTOM = 58
-REWARDS_DIVIDER, GROUP_DIVIDER = 168, 238
-REWARD_Y, REWARD_X, REWARD_SIZE, REWARD_STEP = 176, 24, 38, 48
-SLOT_Y, SLOT_X, SLOT_SIZE, SLOT_STEP = 246, 24, 26, 30
-PLAQUES = [(344, 22), (446, 22), (344, 84), (446, 84)]
-PLAQUE_W, PLAQUE_H = 94, 54
-PICKER = (344, 196, 196, 26)
-STRIP_TOP = 304
+# The panel and its layout, in its own units (Emberforge_Firepit.lua: the same numbers). 16:9, as the painting.
+PANEL_W, PANEL_H = 560, 315
+BORDER = (7, 5, 553, 310)                   # the thin frame's rectangle
+HEADER_LINE = 33
+TITLE_BAR_X = 162
+UNDERLINES = [(26, 335, 57.6), (26, 241, 156), (26, 326, 216), (358, 537, 57.6), (358, 537, 176.5)]
+COLUMN = (343, 43, 271)                     # the column line: x, from y, to y
+GRID = (446, 67, 134, 100, 372, 524)        # records: the line down at x (y0-y1), across at y (x0-x1)
+REWARD_X, REWARD_Y, REWARD_SIZE, REWARD_STEP = 35, 164, 29, 41.6
+SLOT_CX, SLOT_CY, SLOT_R, SLOT_STEP = 40, 236.5, 12.5, 30.6
+PICKER = (360, 186, 177, 23)
+BOTTOM_LINE = 282
 
 SS = 2                                      # drawn this many times larger, then shrunk (smooth edges)
 SCALE = 1024 / PANEL_W
 UNIT = SCALE * SS
 
-IRON = (38, 29, 26)
-IRON_LIGHT = (104, 80, 64)
-IRON_DARK = (12, 8, 7)
-GOLD = (214, 160, 82)
-EMBER = (255, 118, 28)
-EMBER_HOT = (255, 196, 96)
-random.seed(1170)
+VEIL = (10, 6, 5)
+BRONZE = (140, 104, 76)
+GOLD = (214, 170, 110)
+CREAM = (236, 214, 180)
+EMBER = (255, 128, 40)
 
 
 def u(value):
@@ -63,237 +59,97 @@ def box(x, y, w, h):
     return (u(x), u(y), u(x + w), u(y + h))
 
 
-_IRON = {}
-
-
-def iron_texture(size):
-    """Dark iron: a base, mottled, with fine scratches (one for the whole panel, reused)."""
-    if size in _IRON:
-        return _IRON[size]
-    w, h = size
-    image = Image.new('RGBA', size, IRON + (255,))
-    noise = Image.new('L', (max(1, w // 6), max(1, h // 6)))
-    noise.putdata([random.randint(0, 255) for _ in range(noise.width * noise.height)])
-    noise = noise.resize(size, Image.BICUBIC).filter(ImageFilter.GaussianBlur(3))
-    light = Image.new('RGBA', size, (70, 54, 46, 255))
-    image = Image.composite(light, image, noise.point(lambda v: int(v * 0.45)))
-    draw = ImageDraw.Draw(image)
-    for _ in range(w * h // 900):
-        x, y = random.randrange(w), random.randrange(h)
-        length = random.randint(4, 18)
-        angle = random.uniform(-0.4, 0.4)
-        draw.line((x, y, x + length * math.cos(angle), y + length * math.sin(angle)),
-                  fill=(90, 72, 62, 90), width=1)
-    _IRON[size] = image
-    return image
-
-
-def glow_line(layer, points, width, color, blur):
-    glow = Image.new('RGBA', layer.size, (0, 0, 0, 0))
-    ImageDraw.Draw(glow).line(points, fill=color, width=width)
-    return Image.alpha_composite(layer, glow.filter(ImageFilter.GaussianBlur(blur)))
-
-
-def rivet(draw, cx, cy, r):
-    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=IRON_DARK + (255,))
-    draw.ellipse((cx - r + 2, cy - r + 2, cx + r - 2, cy + r - 2), fill=(96, 76, 62, 255))
-    draw.ellipse((cx - r * 0.35 - 1, cy - r * 0.55, cx + r * 0.1, cy - r * 0.1), fill=(190, 160, 130, 255))
-
-
-def bevel_rect(draw, rect, width, light, dark):
-    x0, y0, x1, y1 = rect
-    for i in range(width):
-        draw.line((x0 + i, y1 - i, x0 + i, y0 + i, x1 - i, y0 + i), fill=light)
-        draw.line((x1 - i, y0 + i, x1 - i, y1 - i, x0 + i, y1 - i), fill=dark)
-
-
-def masked(texture, mask):
-    out = Image.new('RGBA', texture.size, (0, 0, 0, 0))
-    out.paste(texture, (0, 0), mask)
-    return out
-
-
-def frame_mask(size, rect, inner):
-    mask = Image.new('L', size, 0)
-    draw = ImageDraw.Draw(mask)
-    draw.rectangle(rect, fill=255)
-    draw.rectangle(inner, fill=0)
-    return mask
-
-
-def recolor(image, color):
-    solid = Image.new('RGBA', image.size, color + (255,))
-    solid.putalpha(image.getchannel('A'))
-    return solid
-
-
-def divider(layer, x0, x1, y):
-    """A gold line with an ember glow and a diamond at its start, fading toward its end."""
-    line = Image.new('RGBA', layer.size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(line)
-    steps = 64
-    for i in range(steps):
-        t = i / steps
-        xa = u(x0) + (u(x1) - u(x0)) * t
-        xb = u(x0) + (u(x1) - u(x0)) * (i + 1) / steps
-        draw.line((xa, u(y), xb, u(y)), fill=GOLD + (int(255 * (1 - t) ** 1.4),), width=max(2, u(0.9)))
-    layer = Image.alpha_composite(layer, recolor(line.filter(ImageFilter.GaussianBlur(u(1.6))), EMBER))
-    layer = Image.alpha_composite(layer, line)
+def faded_line(layer, x0, y0, x1, y1, color, alpha, width, fade=(0.0, 0.25)):
+    """A line whose ends fade: fade[0] of its length at the start, fade[1] at the end."""
     draw = ImageDraw.Draw(layer)
-    cx, cy, r = u(x0), u(y), u(3.2)
-    draw.polygon([(cx - r, cy), (cx, cy - r), (cx + r, cy), (cx, cy + r)], fill=EMBER_HOT + (255,),
-                 outline=IRON_DARK + (255,))
-    return layer
+    steps = 80
+    for i in range(steps):
+        t0, t1 = i / steps, (i + 1) / steps
+        t = (t0 + t1) / 2
+        a = 1.0
+        if fade[0] and t < fade[0]:
+            a = t / fade[0]
+        if fade[1] and t > 1 - fade[1]:
+            a = min(a, (1 - t) / fade[1])
+        draw.line((u(x0 + (x1 - x0) * t0), u(y0 + (y1 - y0) * t0), u(x0 + (x1 - x0) * t1), u(y0 + (y1 - y0) * t1)),
+                  fill=color + (int(alpha * a),), width=width)
+
+
+def underline(layer, x0, x1, y):
+    """A section's underline: ember at its start, cooling to bronze, gone by its end; a soft glow under it."""
+    glow = Image.new('RGBA', layer.size, (0, 0, 0, 0))
+    faded_line(glow, x0, y, x0 + (x1 - x0) * 0.6, y, EMBER, 255, u(2.4), (0.0, 0.75))
+    layer.alpha_composite(glow.filter(ImageFilter.GaussianBlur(u(1.7))))
+    faded_line(layer, x0, y, x1, y, BRONZE, 230, max(2, u(0.55)), (0.0, 0.5))
+    faded_line(layer, x0, y, x0 + (x1 - x0) * 0.6, y, (255, 160, 80), 255, max(2, u(0.75)), (0.0, 0.85))
 
 
 def chrome():
     size = (u(PANEL_W), u(PANEL_H))
-    layer = Image.new('RGBA', size, (0, 0, 0, 0))
+    layer = Image.new('RGBA', size, VEIL + (168,))
 
-    # The dark wash under the left column, and a vignette all round: the painting shows on the right.
-    wash = Image.new('RGBA', size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(wash)
-    reach = u(COLUMN_X + 30)
-    for i in range(reach):
-        t = i / reach
-        draw.line((i, 0, i, size[1]), fill=(9, 5, 4, int(195 * (1 - t ** 3))))
-    layer = Image.alpha_composite(layer, wash)
+    # Darker toward the edges, and outside the frame's rounded corners.
     vignette = Image.new('L', size, 0)
-    ImageDraw.Draw(vignette).rectangle((u(40), u(40), size[0] - u(40), size[1] - u(40)), fill=255)
-    vignette = vignette.filter(ImageFilter.GaussianBlur(u(30)))
-    dark = Image.new('RGBA', size, (6, 3, 2, 200))
-    dark.putalpha(vignette.point(lambda v: int((255 - v) * 0.6)))
-    layer = Image.alpha_composite(layer, dark)
-    # Holes where the icons and portraits show through: nothing over them.
+    ImageDraw.Draw(vignette).rectangle((u(50), u(40), size[0] - u(50), size[1] - u(40)), fill=255)
+    vignette = vignette.filter(ImageFilter.GaussianBlur(u(34)))
+    edge = Image.new('RGBA', size, VEIL + (255,))
+    edge.putalpha(vignette.point(lambda v: int((255 - v) * 0.42)))
+    layer.alpha_composite(edge)
+    outside = Image.new('L', size, 255)
+    ImageDraw.Draw(outside).rounded_rectangle(tuple(u(v) for v in BORDER), u(8), fill=0)
+    shade = Image.new('RGBA', size, (6, 4, 3, 240))
+    shade.putalpha(outside.point(lambda v: int(v * 0.94)))
+    layer.alpha_composite(shade)
+
+    # Holes where the icons and portraits show through.
     holes = Image.new('L', size, 255)
     draw = ImageDraw.Draw(holes)
     for i in range(4):
         draw.rectangle(box(REWARD_X + i * REWARD_STEP, REWARD_Y, REWARD_SIZE, REWARD_SIZE), fill=0)
     for i in range(10):
-        cx, cy, r = u(SLOT_X + i * SLOT_STEP + SLOT_SIZE / 2), u(SLOT_Y + SLOT_SIZE / 2), u(SLOT_SIZE / 2)
+        cx, cy, r = u(SLOT_CX + i * SLOT_STEP), u(SLOT_CY), u(SLOT_R - 0.6)
         draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=0)
-    alpha = layer.getchannel('A')
-    layer.putalpha(Image.composite(alpha, holes, holes))
+    layer.putalpha(Image.composite(layer.getchannel('A'), holes, holes))
 
-    # The title plate: a darker band with an ember underline.
-    plate = Image.new('RGBA', size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(plate)
-    for y in range(u(FRAME), u(TITLE_BOTTOM)):
-        t = (y - u(FRAME)) / (u(TITLE_BOTTOM) - u(FRAME))
-        draw.line((u(FRAME), y, u(COLUMN_X), y), fill=(20, 9, 6, int(150 + 70 * t)))
-    layer = Image.alpha_composite(layer, plate)
-    layer = divider(layer, FRAME + 6, COLUMN_X - 8, TITLE_BOTTOM)
-    layer = divider(layer, 16, COLUMN_X - 12, REWARDS_DIVIDER)
-    layer = divider(layer, 16, COLUMN_X - 12, GROUP_DIVIDER)
-
-    # The rail between the columns.
-    rail_rect = box(COLUMN_X - 2, FRAME, 4, STRIP_TOP - FRAME)
-    rail_mask = Image.new('L', size, 0)
-    ImageDraw.Draw(rail_mask).rectangle(rail_rect, fill=255)
-    layer = glow_line(layer, [(u(COLUMN_X), u(FRAME)), (u(COLUMN_X), u(STRIP_TOP))], u(3), EMBER + (170,), u(3))
-    layer = Image.alpha_composite(layer, masked(iron_texture(size), rail_mask))
+    # The frame: one thin bronze line, a darker one just inside.
     draw = ImageDraw.Draw(layer)
-    bevel_rect(draw, rail_rect, max(1, u(0.6)), IRON_LIGHT + (255,), IRON_DARK + (255,))
+    draw.rounded_rectangle(tuple(u(v) for v in BORDER), u(8), outline=BRONZE + (235,), width=max(2, u(0.6)))
+    inner = (BORDER[0] + 1.2, BORDER[1] + 1.2, BORDER[2] - 1.2, BORDER[3] - 1.2)
+    draw.rounded_rectangle(tuple(u(v) for v in inner), u(7), outline=(0, 0, 0, 150), width=max(1, u(0.5)))
 
-    # The reward frames.
+    # The header: its line, ember under the title, the bar between the title and its subtitle.
+    faded_line(layer, 20, HEADER_LINE, 546, HEADER_LINE, BRONZE, 170, max(2, u(0.5)), (0.03, 0.03))
+    glow = Image.new('RGBA', size, (0, 0, 0, 0))
+    faded_line(glow, 22, HEADER_LINE, 158, HEADER_LINE, EMBER, 255, u(2.6), (0.08, 0.3))
+    layer.alpha_composite(glow.filter(ImageFilter.GaussianBlur(u(1.9))))
+    faded_line(layer, 22, HEADER_LINE, 158, HEADER_LINE, (255, 176, 96), 255, max(2, u(0.8)), (0.08, 0.3))
+    faded_line(layer, TITLE_BAR_X, 15, TITLE_BAR_X, 28, BRONZE, 220, max(2, u(0.6)), (0.0, 0.0))
+
+    for x0, x1, y in UNDERLINES:
+        underline(layer, x0, x1, y)
+
+    x, y0, y1 = COLUMN
+    faded_line(layer, x, y0, x, y1, BRONZE, 190, max(2, u(0.5)), (0.12, 0.12))
+    gx, gy0, gy1, gy, gx0, gx1 = GRID
+    faded_line(layer, gx, gy0, gx, gy1, BRONZE, 170, max(2, u(0.5)), (0.18, 0.18))
+    faded_line(layer, gx0, gy, gx1, gy, BRONZE, 170, max(2, u(0.5)), (0.12, 0.12))
+
+    draw = ImageDraw.Draw(layer)
     for i in range(4):
-        x, y = REWARD_X + i * REWARD_STEP, REWARD_Y
-        outer = box(x - 4, y - 4, REWARD_SIZE + 8, REWARD_SIZE + 8)
-        inner = box(x, y, REWARD_SIZE, REWARD_SIZE)
-        layer = Image.alpha_composite(layer, masked(iron_texture(size), frame_mask(size, outer, inner)))
-        draw = ImageDraw.Draw(layer)
-        bevel_rect(draw, outer, max(1, u(0.8)), GOLD + (255,), (90, 58, 30, 255))
-        bevel_rect(draw, (inner[0] - 2, inner[1] - 2, inner[2] + 2, inner[3] + 2), 2, IRON_DARK + (255,),
-                   (140, 100, 60, 255))
-
-    # The portrait rings.
+        rect = box(REWARD_X + i * REWARD_STEP - 0.8, REWARD_Y - 0.8, REWARD_SIZE + 1.6, REWARD_SIZE + 1.6)
+        draw.rounded_rectangle(rect, u(1.2), outline=BRONZE + (230,), width=max(2, u(0.55)))
     for i in range(10):
-        cx = u(SLOT_X + i * SLOT_STEP + SLOT_SIZE / 2)
-        cy = u(SLOT_Y + SLOT_SIZE / 2)
-        r_out, r_in = u(SLOT_SIZE / 2 + 2.6), u(SLOT_SIZE / 2 - 0.4)
-        ring = Image.new('L', size, 0)
-        ImageDraw.Draw(ring).ellipse((cx - r_out, cy - r_out, cx + r_out, cy + r_out), fill=255)
-        ImageDraw.Draw(ring).ellipse((cx - r_in, cy - r_in, cx + r_in, cy + r_in), fill=0)
-        layer = Image.alpha_composite(layer, masked(iron_texture(size), ring))
-        draw = ImageDraw.Draw(layer)
-        width = max(1, u(0.7))
-        draw.arc((cx - r_out, cy - r_out, cx + r_out, cy + r_out), 140, 320, fill=GOLD + (255,), width=width)
-        draw.arc((cx - r_out, cy - r_out, cx + r_out, cy + r_out), 320, 140, fill=(70, 46, 26, 255), width=width)
-        draw.ellipse((cx - r_in, cy - r_in, cx + r_in, cy + r_in), outline=IRON_DARK + (255,), width=2)
+        cx, cy, r = u(SLOT_CX + i * SLOT_STEP), u(SLOT_CY), u(SLOT_R)
+        draw.ellipse((cx - r, cy - r, cx + r, cy + r), outline=BRONZE + (200,), width=max(2, u(0.55)))
 
-    # The record plaques: iron edged, dark glass, an ember band along the top.
-    for x, y in PLAQUES:
-        outer = box(x, y, PLAQUE_W, PLAQUE_H)
-        inner = box(x + 3, y + 3, PLAQUE_W - 6, PLAQUE_H - 6)
-        glass = Image.new('RGBA', size, (0, 0, 0, 0))
-        ImageDraw.Draw(glass).rectangle(inner, fill=(10, 5, 4, 190))
-        layer = Image.alpha_composite(layer, glass)
-        band = Image.new('RGBA', size, (0, 0, 0, 0))
-        draw = ImageDraw.Draw(band)
-        for yy in range(inner[1], inner[1] + u(15)):
-            t = (yy - inner[1]) / u(15)
-            draw.line((inner[0], yy, inner[2], yy), fill=(120, 34, 10, int(200 * (1 - t))))
-        layer = Image.alpha_composite(layer, band)
-        layer = Image.alpha_composite(layer, masked(iron_texture(size), frame_mask(size, outer, inner)))
-        draw = ImageDraw.Draw(layer)
-        bevel_rect(draw, outer, max(1, u(0.7)), GOLD + (255,), (80, 52, 28, 255))
-        for rx, ry in ((outer[0], outer[1]), (outer[2], outer[1]), (outer[0], outer[3]), (outer[2], outer[3])):
-            rivet(draw, rx, ry, u(2.6))
-
-    # The start picker's recessed slot.
     x, y, w, h = PICKER
-    outer = box(x, y, w, h)
-    inner = box(x + 3, y + 3, w - 6, h - 6)
-    sunk = Image.new('RGBA', size, (0, 0, 0, 0))
-    ImageDraw.Draw(sunk).rectangle(inner, fill=(6, 3, 2, 225))
-    layer = Image.alpha_composite(layer, sunk)
-    layer = Image.alpha_composite(layer, masked(iron_texture(size), frame_mask(size, outer, inner)))
+    fill = Image.new('RGBA', size, (0, 0, 0, 0))
+    ImageDraw.Draw(fill).rounded_rectangle(box(x, y, w, h), u(5), fill=(4, 2, 2, 120))
+    layer.alpha_composite(fill)
     draw = ImageDraw.Draw(layer)
-    bevel_rect(draw, outer, max(1, u(0.7)), (70, 52, 42, 255), GOLD + (255,))
+    draw.rounded_rectangle(box(x, y, w, h), u(5), outline=GOLD + (210,), width=max(2, u(0.6)))
 
-    # The bottom strip.
-    strip = box(FRAME, STRIP_TOP, PANEL_W - 2 * FRAME, PANEL_H - FRAME - STRIP_TOP)
-    strip_mask = Image.new('L', size, 0)
-    ImageDraw.Draw(strip_mask).rectangle(strip, fill=255)
-    dim = Image.new('RGBA', size, (0, 0, 0, 0))
-    ImageDraw.Draw(dim).rectangle(strip, fill=(8, 4, 3, 120))
-    layer = Image.alpha_composite(layer, masked(iron_texture(size), strip_mask))
-    layer = Image.alpha_composite(layer, dim)
-    layer = glow_line(layer, [(strip[0], strip[1]), (strip[2], strip[1])], u(2), EMBER + (230,), u(2.2))
-    draw = ImageDraw.Draw(layer)
-    draw.line((strip[0], strip[1], strip[2], strip[1]), fill=EMBER_HOT + (255,), width=max(1, u(0.6)))
-
-    # The frame: iron all round, an ember edge inside, riveted corner plates.
-    outer = (0, 0, size[0] - 1, size[1] - 1)
-    inner = box(FRAME, FRAME, PANEL_W - 2 * FRAME, PANEL_H - 2 * FRAME)
-    layer = glow_line(layer, [(inner[0], inner[1]), (inner[2], inner[1]), (inner[2], inner[3]), (inner[0], inner[3]),
-                              (inner[0], inner[1])], u(2.5), EMBER + (255,), u(3.5))
-    layer = Image.alpha_composite(layer, masked(iron_texture(size), frame_mask(size, outer, inner)))
-    draw = ImageDraw.Draw(layer)
-    bevel_rect(draw, outer, max(2, u(1.2)), IRON_LIGHT + (255,), IRON_DARK + (255,))
-    bevel_rect(draw, (inner[0] - u(1.5), inner[1] - u(1.5), inner[2] + u(1.5), inner[3] + u(1.5)), max(1, u(0.8)),
-               IRON_DARK + (255,), (130, 96, 70, 255))
-    draw.rectangle(inner, outline=EMBER_HOT + (255,), width=max(1, u(0.5)))
-    corner = 30
-    for cx, cy in ((0, 0), (PANEL_W - corner, 0), (0, PANEL_H - corner), (PANEL_W - corner, PANEL_H - corner)):
-        plate = box(cx, cy, corner, corner)
-        plate_mask = Image.new('L', size, 0)
-        ImageDraw.Draw(plate_mask).rectangle(plate, fill=255)
-        layer = Image.alpha_composite(layer, masked(iron_texture(size), plate_mask))
-        draw = ImageDraw.Draw(layer)
-        bevel_rect(draw, plate, max(2, u(1.1)), (128, 98, 78, 255), IRON_DARK + (255,))
-        mx, my = (plate[0] + plate[2]) / 2, (plate[1] + plate[3]) / 2
-        r = u(8)
-        draw.polygon([(mx - r, my), (mx, my - r), (mx + r, my), (mx, my + r)], fill=(26, 18, 15, 255),
-                     outline=GOLD + (255,))
-        r2 = u(3.4)
-        draw.polygon([(mx - r2, my), (mx, my - r2), (mx + r2, my), (mx, my + r2)], fill=EMBER + (255,))
-        for rx, ry in ((plate[0] + u(5), plate[1] + u(5)), (plate[2] - u(5), plate[1] + u(5)),
-                       (plate[0] + u(5), plate[3] - u(5)), (plate[2] - u(5), plate[3] - u(5))):
-            rivet(draw, rx, ry, u(2.4))
-    for x in range(60, PANEL_W - 50, 64):
-        for y in (FRAME / 2, PANEL_H - FRAME / 2):
-            rivet(draw, u(x), u(y), u(2.2))
+    faded_line(layer, 20, BOTTOM_LINE, 539, BOTTOM_LINE, BRONZE, 190, max(2, u(0.5)), (0.03, 0.03))
 
     panel = layer.resize((1024, round(PANEL_H * SCALE)), Image.LANCZOS)
     canvas = Image.new('RGBA', (1024, 1024), (0, 0, 0, 0))
@@ -302,66 +158,70 @@ def chrome():
 
 
 def button(state):
-    """The big button, 256x64: a crimson plate in a gold-edged iron rim."""
+    """The big button, 256x64: a deep red rounded plate with a fine lighter edge."""
     s = 4
     w, h = 256 * s, 64 * s
-    radius = 10 * s
+    radius = 9 * s
     if state == 'highlight':
         glow = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-        ImageDraw.Draw(glow).rounded_rectangle((6 * s, 6 * s, w - 6 * s, h - 6 * s), radius, fill=(255, 150, 50, 150))
-        return glow.filter(ImageFilter.GaussianBlur(5 * s)).resize((256, 64), Image.LANCZOS)
-    image = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(image)
-    rim = (150, 150, 150) if state == 'disabled' else GOLD
-    draw.rounded_rectangle((2 * s, 2 * s, w - 2 * s, h - 2 * s), radius, fill=IRON_DARK + (255,))
-    draw.rounded_rectangle((4 * s, 4 * s, w - 4 * s, h - 4 * s), radius - s, fill=rim + (255,))
-    draw.rounded_rectangle((7 * s, 7 * s, w - 7 * s, h - 7 * s), radius - 2 * s, fill=(40, 22, 14, 255))
-    top, bottom = {
-        'normal': ((168, 34, 16), (74, 10, 5)),
-        'pushed': ((96, 16, 8), (60, 8, 4)),
-        'disabled': ((70, 62, 58), (40, 36, 34)),
+        ImageDraw.Draw(glow).rounded_rectangle((3 * s, 3 * s, w - 3 * s, h - 3 * s), radius, fill=(255, 120, 70, 70))
+        return glow.filter(ImageFilter.GaussianBlur(4 * s)).resize((256, 64), Image.LANCZOS)
+    top, bottom, edge = {
+        'normal': ((156, 32, 26), (112, 20, 16), (196, 84, 62)),
+        'pushed': ((104, 18, 14), (88, 14, 11), (160, 64, 48)),
+        'disabled': ((68, 52, 48), (52, 40, 37), (110, 92, 84)),
     }[state]
     face = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     fd = ImageDraw.Draw(face)
-    for y in range(10 * s, h - 10 * s):
-        t = (y - 10 * s) / (h - 20 * s)
-        fd.line((10 * s, y, w - 10 * s, y), fill=tuple(int(a + (b - a) * t) for a, b in zip(top, bottom)) + (255,))
+    for y in range(h):
+        t = y / (h - 1)
+        fd.line((0, y, w, y), fill=tuple(int(a + (b - a) * t) for a, b in zip(top, bottom)) + (255,))
     mask = Image.new('L', (w, h), 0)
-    ImageDraw.Draw(mask).rounded_rectangle((10 * s, 10 * s, w - 10 * s, h - 10 * s), radius - 3 * s, fill=255)
+    ImageDraw.Draw(mask).rounded_rectangle((2 * s, 2 * s, w - 2 * s, h - 2 * s), radius, fill=255)
+    image = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     image.paste(face, (0, 0), mask)
     draw = ImageDraw.Draw(image)
+    draw.rounded_rectangle((2 * s, 2 * s, w - 2 * s, h - 2 * s), radius, outline=edge + (255,), width=s + 1)
     if state == 'normal':
-        draw.line((18 * s, 12 * s, w - 18 * s, 12 * s), fill=(255, 190, 120, 160), width=2 * s)
-        ember = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-        ImageDraw.Draw(ember).ellipse((w * 0.2, h * 0.55, w * 0.8, h * 1.15), fill=(255, 110, 30, 110))
-        image = Image.alpha_composite(image, masked(ember.filter(ImageFilter.GaussianBlur(10 * s)), mask))
-    elif state == 'pushed':
-        shade = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-        ImageDraw.Draw(shade).rounded_rectangle((10 * s, 10 * s, w - 10 * s, 22 * s), radius, fill=(0, 0, 0, 120))
-        image = Image.alpha_composite(image, masked(shade.filter(ImageFilter.GaussianBlur(3 * s)), mask))
+        draw.line((radius, 4 * s, w - radius, 4 * s), fill=(255, 170, 140, 90), width=s)
     return image.resize((256, 64), Image.LANCZOS)
 
 
-def arrow(disabled=False):
+def chevron(color, flip=False):
+    s = 4
+    w = 32 * s
+    image = Image.new('RGBA', (w, w), (0, 0, 0, 0))
+    points = [(20 * s, 7 * s), (11 * s, 16 * s), (20 * s, 25 * s)]
+    ImageDraw.Draw(image).line(points, fill=color + (255,), width=3 * s, joint='curve')
+    image = image.resize((32, 32), Image.LANCZOS)
+    return image.transpose(Image.FLIP_LEFT_RIGHT) if flip else image
+
+
+def cross(color):
     s = 4
     w = 32 * s
     image = Image.new('RGBA', (w, w), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    color = (110, 100, 94) if disabled else EMBER_HOT
-    points = [(21 * s, 6 * s), (9 * s, 16 * s), (21 * s, 26 * s)]
-    draw.line(points, fill=IRON_DARK + (255,), width=8 * s, joint='curve')
-    draw.line(points, fill=color + (255,), width=4 * s, joint='curve')
+    draw.line((7 * s, 7 * s, 25 * s, 25 * s), fill=color + (255,), width=3 * s)
+    draw.line((25 * s, 7 * s, 7 * s, 25 * s), fill=color + (255,), width=3 * s)
     return image.resize((32, 32), Image.LANCZOS)
 
 
-def slot():
+def ring():
+    """A filled place's ring: gold, over the bronze one."""
     s = 4
     w = 64 * s
     image = Image.new('RGBA', (w, w), (0, 0, 0, 0))
-    ImageDraw.Draw(image).ellipse((0, 0, w - 1, w - 1), fill=(10, 6, 5, 235))
-    inner = Image.new('RGBA', (w, w), (0, 0, 0, 0))
-    ImageDraw.Draw(inner).ellipse((w * 0.2, w * 0.2, w * 0.8, w * 0.8), fill=(120, 40, 12, 90))
-    image = Image.alpha_composite(image, inner.filter(ImageFilter.GaussianBlur(8 * s)))
+    ImageDraw.Draw(image).ellipse((3 * s, 3 * s, w - 3 * s, w - 3 * s), outline=GOLD + (255,), width=3 * s)
+    return image.resize((64, 64), Image.LANCZOS)
+
+
+def slot():
+    """An open place: dark inside its ring."""
+    s = 4
+    w = 64 * s
+    image = Image.new('RGBA', (w, w), (0, 0, 0, 0))
+    ImageDraw.Draw(image).ellipse((0, 0, w - 1, w - 1), fill=(14, 9, 7, 200))
     return image.resize((64, 64), Image.LANCZOS)
 
 
@@ -373,19 +233,21 @@ def main():
     pieces = {}
     with Image.open(SOURCE) as source:
         pieces['Background'] = source.convert('RGBA').resize((1024, 512), Image.LANCZOS)
+    pieces['Background'].putalpha(255)
     (OUT / 'Background.blp').write_bytes(blp.encode_dxt(pieces['Background']))
     canvas, pieces['Chrome'] = chrome()
     (OUT / 'Chrome.blp').write_bytes(blp.encode_dxt(canvas))
     for state, name in (('normal', 'Button'), ('pushed', 'ButtonPushed'), ('highlight', 'ButtonHighlight'),
                         ('disabled', 'ButtonDisabled')):
         pieces[name] = button(state)
-        pieces[name].save(OUT / f'{name}.tga')
-    pieces['Arrow'] = arrow()
-    pieces['Arrow'].save(OUT / 'Arrow.tga')
-    pieces['ArrowDisabled'] = arrow(True)
-    pieces['ArrowDisabled'].save(OUT / 'ArrowDisabled.tga')
+    pieces['Arrow'] = chevron(CREAM)
+    pieces['ArrowDisabled'] = chevron((96, 84, 74))
+    pieces['Close'] = cross(CREAM)
+    pieces['Ring'] = ring()
     pieces['Slot'] = slot()
-    pieces['Slot'].save(OUT / 'Slot.tga')
+    for name in ('Button', 'ButtonPushed', 'ButtonHighlight', 'ButtonDisabled', 'Arrow', 'ArrowDisabled', 'Close',
+                 'Ring', 'Slot'):
+        pieces[name].save(OUT / f'{name}.tga')
     for path in sorted(OUT.iterdir()):
         print(f'  {path.name} {path.stat().st_size // 1024} KB')
     if preview:
