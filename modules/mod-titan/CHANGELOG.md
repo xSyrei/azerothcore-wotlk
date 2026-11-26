@@ -32,7 +32,10 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   in dungeons and the Firepit they hit far harder than everything you cast and topped your meter. They now scale
   like the rest of your damage.
 - **The Firepit no longer buries you**: past 150 enemies alive, every enemy that could not spawn made all the others
-  3% stronger, without end. A group that fell behind met enemies with ten times the health. Now they simply wait.
+  3% stronger, without end. A group that fell behind met enemies with ten times the health.
+- **Overwhelmed**: the Firepit now holds at most 30 enemies plus 10 for each Hero (50 for a duo). Reach it and you are
+  **Overwhelmed**: a warning, and a red 60 sec countdown on the wave tracker. Get back under the cap in time and it
+  ends; if not, the Firepit kills the whole team.
 
 ### Firepit spoils, fairer
 

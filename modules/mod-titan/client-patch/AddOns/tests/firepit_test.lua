@@ -207,6 +207,12 @@ server("H,10,42,37,1,2,3,0")
 check(debug.hud.wave.text == "Wave 10" and debug.hud.boss.text == "BOSS WAVE", "a boss wave says so")
 check(debug.hud.timer.text == "0:42" and debug.hud.bar.value == 42 and debug.hud.enemies.text:find("37", 1, true)
     and debug.hud.standing.text:find("2|r / 3", 1, true), "time left on the bar, enemies and Heroes standing")
+server("H,12,30,48,0,2,2,0,42,50")
+check(debug.hud.boss.text:find("OVERWHELMED", 1, true) and debug.hud.boss.text:find("0:42", 1, true)
+    and debug.hud.enemies.text:find("48", 1, true) and debug.hud.enemies.text:find("/ 50", 1, true),
+    "overwhelmed: its countdown, and the enemies against the cap")
+server("H,12,30,20,0,2,2,0,0,50")
+check(debug.hud.boss.text == "" and not debug.hud.enemies.text:find("/", 1, true), "back under: no warning")
 server("A,Wave 10: Grizzle enters the Ring!,1")
 check(debug.hud.event.text:find("Grizzle", 1, true) and sounds[#sounds] == "RaidWarning",
     "a boss's news on the tracker, with the raid warning's sound")

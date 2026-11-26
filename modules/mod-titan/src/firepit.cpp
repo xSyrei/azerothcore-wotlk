@@ -62,7 +62,8 @@
 //   the Firepit's own: the map has no creatures of its own (any that load are sent away), and it runs the waves.
 // - Waves every 60 sec, or 5 sec after the last enemy dies. Wave n has 3 + n/2 enemies (20% more for each player
 //   past the first), from the Depths' roster (a new kind every wave or two); every 5th wave brings a boss (two from
-//   wave 60, three from 120). Survivors stay: they pile up. Past 150 alive, new ones are not spawned.
+//   wave 60, three from 120). Survivors stay: they pile up. At the cap (30 alive, 10 more a Hero) no more come, and
+//   the Heroes are Overwhelmed: 60 sec to get back under it, or the Firepit kills them all.
 // - Creatures are at the group's level (dungeon_scaling.cpp), then their health and damage are 35% of a dungeon's at
 //   wave 1, 10% more each wave (compounding), health 40% more for each player past the first.
 // - The dead stay down (no release: they stay where they fell); a battle resurrection brings them back. The last
@@ -137,7 +138,10 @@ namespace
     constexpr uint32 COUNTDOWN_MS = 10000, WAVE_MS = 60000, BREATHER_MS = 5000, SPAWN_SPREAD_MS = 4000;
     constexpr uint32 TICK_MS = 1000, END_DELAY_MS = 4000, CORPSE_MS = 3000;
     constexpr float FIRST_WAVE = 0.35f, WAVE_GROWTH = 1.1f, GROUP_HEALTH = 0.4f, GROUP_COUNT = 0.2f;
-    constexpr uint32 BOSS_EVERY = 5, LOOT_EVERY = 15, MOST_ALIVE = 150;
+    constexpr uint32 BOSS_EVERY = 5, LOOT_EVERY = 15;
+    // The field's cap: 30 enemies alive and 10 more for each Hero (a duo's 50). At it no more come, and the Heroes
+    // are Overwhelmed: OVERWHELM_MS to get back under it, or the Firepit takes them all.
+    constexpr uint32 MOST_ALIVE_BASE = 30, MOST_ALIVE_A_HERO = 10, OVERWHELM_MS = 60000;
     // A wave's boss: 4 times the health and 1.5 times the damage of the wave's others (unless the dungeon scaling
     // already counts it a boss: a boss_ script or a boss's rank, with its own health).
     constexpr float BOSS_HEALTH = 4.0f, BOSS_DAMAGE = 1.5f;
@@ -1002,7 +1006,7 @@ private:
     {
         // Too many alive: this one stays away (the field is full enough). They once grew 3% for each kept away,
         // without end: a group behind was buried under ever stronger enemies.
-        if (_enemies.size() >= MOST_ALIVE)
+        if (_enemies.size() >= MostAlive())
             return;
         float angle = frand(0.0f, 2.0f * float(M_PI));
         float radius = frand(SPAWN_RADIUS_MIN, SPAWN_RADIUS_MAX);
@@ -1273,6 +1277,33 @@ private:
         }
         _enemies = std::move(alive);
 
+        // Overwhelmed: at the cap, a minute to get back under it, or the Firepit takes everyone.
+        if (_enemies.size() >= MostAlive())
+        {
+            if (!_overwhelmUntil)
+            {
+                _overwhelmUntil = _runMs + OVERWHELM_MS;
+                Announce("OVERWHELMED! Get under " + std::to_string(MostAlive()) + " enemies within 60 sec, or the "
+                    "Firepit takes you all!", true);
+            }
+            else if (_runMs >= _overwhelmUntil)
+            {
+                _overwhelmUntil = 0;
+                Announce("Overwhelmed: the Firepit takes its challengers.", true);
+                for (Player* player : Living())
+                {
+                    if (Record* record = RecordOf(player))
+                        record->killer = "Overwhelmed";
+                    Unit::Kill(player, player, false);
+                }
+            }
+        }
+        else if (_overwhelmUntil)
+        {
+            _overwhelmUntil = 0;
+            Announce("Back under the cap: the Firepit relents.");
+        }
+
         std::vector<Player*> living = Living();
         for (Player* player : living)
             if (Record* record = RecordOf(player))
@@ -1310,13 +1341,21 @@ private:
                 SendHud(player);
     }
 
+    // The field's cap (MOST_ALIVE_*).
+    uint32 MostAlive() const
+    {
+        return MOST_ALIVE_BASE + MOST_ALIVE_A_HERO * _groupSize;
+    }
+
     void SendHud(Player* player)
     {
         uint32 living = uint32(Living().size());
+        uint32 overwhelm = _overwhelmUntil > _runMs ? (_overwhelmUntil - _runMs + 999) / 1000 : 0;
         SendAddon(player, "H," + std::to_string(_wave) + ',' + std::to_string((_waveMs + 999) / 1000) + ','
             + std::to_string(_enemies.size()) + ',' + std::to_string(_wave && _wave % BOSS_EVERY == 0 ? 1 : 0) + ','
             + std::to_string(living) + ',' + std::to_string(_records.size()) + ','
-            + std::to_string(_phase == Phase::COUNTDOWN ? (_timer + 999) / 1000 : 0));
+            + std::to_string(_phase == Phase::COUNTDOWN ? (_timer + 999) / 1000 : 0) + ','
+            + std::to_string(overwhelm) + ',' + std::to_string(MostAlive()));
     }
 
     void Finish()
@@ -1415,6 +1454,7 @@ private:
     uint32 _groupSize = 1;
     Phase _phase = Phase::WAITING;
     uint32 _timer = 0, _wave = 0, _waveMs = 0, _tickMs = 0, _runMs = 0, _kills = 0;
+    uint32 _overwhelmUntil = 0;                     // run ms the Heroes must be under the cap by (0: not overwhelmed)
     bool _breather = false;
     std::unordered_map<ObjectGuid, BossState> _bosses;
     std::vector<Blast> _blasts;

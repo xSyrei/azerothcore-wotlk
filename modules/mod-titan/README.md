@@ -1110,9 +1110,11 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   nothing unattackable), one a wave, the newest six in a wave; its first wave's news names it. Healers (by name: a
   Medic, a Priest ...) come one a wave at most, two alive at once at most (`IsHealer`). Every 5th wave is the bosses
   alone (`BOSSES`: the Ring of Law's six, then the Depths' own; two from wave 60, three from 120), with 4 times the
-  health and 1.5 times the damage. Survivors stay and pile up; past 150 alive, new spawns are skipped (the enemies left
-  no longer grow for each: that spiral buried a group behind). Enemies that stray off the floor (past 52 yards, or up in
-  the stands) are put back on its edge.
+  health and 1.5 times the damage. Survivors stay and pile up; at the field's cap (30 alive and 10 more a Hero:
+  `MostAlive`) new spawns are skipped, and the Heroes are **Overwhelmed**: the warning on the tracker, a 60 sec
+  countdown there (the H message's last two fields), back under the cap ends it, else every Hero standing is killed and
+  the run ends (the enemies left no longer grow for each skipped spawn: that spiral buried a group behind). Enemies that
+  stray off the floor (past 52 yards, or up in the stands) are put back on its edge.
 - **Boss mechanics** from wave 15 (`MECHANICS_FROM`), each a share of the Hero's own health (it is about moving, not
   gear): **Molten Eruption** (15+, every 14 sec): a ring of flame under up to 3 Heroes, erupting 3 sec later, 30% to
   anyone within 6 yd (its source the invisible Molten Eruption, 910141). **Searing Nova** (30+, every 22 sec): the
