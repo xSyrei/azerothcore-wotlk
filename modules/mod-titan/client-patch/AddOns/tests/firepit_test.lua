@@ -43,6 +43,7 @@ function Widget:GetText() return self.text end
 function Widget:SetTextColor(r, g, b) self.color = { r, g, b } end
 function Widget:Click() self.scripts.OnClick(self, "LeftButton") end
 function Widget:Enable() self.enabled = true end
+function Widget:SetValue(value) self.value = value end
 function Widget:SetBackdropBorderColor(...) self.border = { ... } end
 function Widget:SetTexture(texture) self.texture = texture end
 function Widget:SetScale(scale) self.scale = scale end
@@ -61,6 +62,8 @@ tinsert = table.insert
 GameTooltip = NewWidget("GameTooltip")
 local now = 100
 function GetTime() return now end
+sounds = {}
+function PlaySound(name) sounds[#sounds + 1] = name end
 local party = { { "Healer", 40, true }, { "Lowbie", 8, true } }
 local leader = true
 function UnitName(unit)
@@ -166,31 +169,37 @@ check(not debug.finder.shown and popups.hidden == "EMBERFORGE_FIREPIT_PROPOSAL",
 leader = true
 
 server("H,0,0,0,0,3,3,8")
-check(debug.hud.shown and debug.hud.timer.text == "0:08", "the countdown shows on the wave bar")
+check(debug.hud.shown and debug.hud.timer.text == "0:08" and debug.hud.wave.text == "Get ready",
+    "the countdown shows on the wave tracker")
 server("H,10,42,37,1,2,3,0")
-check(debug.hud.title.text:find("BOSS", 1, true) and debug.hud.title.text:find("Wave 10", 1, true),
-    "a boss wave says so")
-check(debug.hud.timer.text == "0:42" and debug.hud.line.text:find("37", 1, true)
-    and debug.hud.line.text:find("2|r/3", 1, true), "the bar shows time left, enemies and Heroes standing")
+check(debug.hud.wave.text == "Wave 10" and debug.hud.boss.text == "BOSS WAVE", "a boss wave says so")
+check(debug.hud.timer.text == "0:42" and debug.hud.bar.value == 42 and debug.hud.enemies.text:find("37", 1, true)
+    and debug.hud.standing.text:find("2|r / 3", 1, true), "time left on the bar, enemies and Heroes standing")
+server("A,Wave 10: Grizzle enters the Ring!,1")
+check(debug.hud.event.text:find("Grizzle", 1, true) and sounds[#sounds] == "RaidWarning",
+    "a boss's news on the tracker, with the raid warning's sound")
 now = now + 10
 debug.hud.scripts.OnUpdate(debug.hud)
-check(not debug.hud.shown, "the bar goes when the news stops")
+check(not debug.hud.shown, "the tracker goes when the news stops")
 
 server("RUN,31,1520,3,412,180,1")
 server("P,Tester,42,31,58,74,1234567,0,456789,140,3,9876,4321,1,31,0,2,Grizzle")
 server("P,Healer,40,29,40,61,98000,2500000,300000,12,0,1500,6000,2,29,1,1,Anvilrage Marshal")
-check(not debug.results.shown, "the results wait for END")
+check(not debug.results.shown, "the recap waits for END")
 server("END")
-check(debug.results.shown, "END shows the results")
-check(debug.results.summary.text:find("31", 1, true) and debug.results.summary.text:find("25:20", 1, true)
-    and debug.results.summary.text:find("412", 1, true), "the summary has the wave, the time and the kills")
-check(debug.results.detail.text:find("x1.8", 1, true), "the detail has the group's monster health")
+check(debug.results.shown, "END shows the recap")
+local stats = debug.results.stats
+check(stats[1].value.text == "31" and stats[2].value.text == "25:20" and stats[3].value.text == "412"
+    and stats[4].value.text == "3" and stats[5].value.text == "x1.8", "the run in big numbers")
+check(debug.results.highlights.text:find("Top healing", 1, true)
+    and debug.results.highlights.text:find("Healer", 1, true), "who stood out")
 local first = debug.rows[1].cells
 check(first[1].text:find("Tester", 1, true) and first[2].text == "31" and first[5].text == "1.23M",
     "sorted by peak wave: Tester first, damage shortened")
 check(first[12].text == "1 (w31)" and first[14].text == "2" and first[15].text == "Grizzle",
     "falls, spoils and killer")
-check(first[1].color and first[1].color[1] == 1 and first[1].color[3] < 1, "your own row stands out")
+check(first[1].color and first[1].color[1] == 1 and first[1].color[3] < 0.6, "your own row stands out")
+check(first[5].color[2] < 0.7 and debug.rows[2].cells[6].color[2] < 0.7, "the best in a column is lit")
 check(not debug.rows[3].shown, "rows past the run's Heroes are hidden")
 
 debug.headers[6]:Click()

@@ -18,8 +18,11 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - You fight until everyone falls. A groupmate's battle resurrection can bring you back.
 - Then everyone stands again, and each Hero gets **their own chest**: a piece of gear at your level for every 15 waves
   you lived through (epic from wave 45).
-- **The results screen** shows each Hero's peak wave, the enemies they faced, damage, healing, damage taken, kills,
-  biggest hits, falls and more. `/firepit` shows it again.
+- **The wave tracker** sits on the right under the minimap: the wave, its time running out on a bar, enemies alive,
+  Heroes standing, and the run's news (a boss coming in red, with a warning sound).
+- **The recap** shows the run in big numbers (wave, time, kills, Heroes, enemy health), who stood out, and each
+  Hero's peak wave, the enemies they faced, damage, healing, damage taken, kills, biggest hits, falls and more; the
+  best in each column lit. `/firepit` shows it again.
 - **Leaderboard**: the Keeper keeps your best wave, solo and in groups.
 
 ### Fix: rune damage behind you

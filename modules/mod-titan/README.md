@@ -1104,8 +1104,10 @@ rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emb
   full), the results go to the addon and the Keeper appears to lead them out (back where they came from).
 - **Records**: each character's best wave (`titan_firepit_best`, characters DB); the Keeper's leaderboard shows the
   top 10 solo and in groups.
-- **The addon** (`Emberforge_Firepit`, prefix EFFP): a wave bar (wave, time left, enemies alive, Heroes standing) and
-  the results window: the run's wave, time, kills and group health factor, and per Hero their peak wave, enemies at
+- **The addon** (`Emberforge_Firepit`, prefix EFFP): a wave tracker on the right under the minimap (the wave, its time
+  on a bar, enemies alive, Heroes standing, and the run's news: the server's announcements come to it, A, a boss's in
+  red with the raid warning's sound) and the recap: the run in big numbers (wave, time, kills, Heroes, enemy health),
+  who stood out (top damage, healing, kills, last standing), and per Hero their peak wave, enemies at
   their peak and the most at once, damage, healing, damage taken, kills, boss kills, biggest hit dealt and taken, falls
   (and the wave of the last), resurrections, spoils and what felled them; sortable, with a Share button. `/firepit`
   opens the last results.

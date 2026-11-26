@@ -450,11 +450,12 @@ public:
     }
 
 private:
-    void Announce(std::string const& text)
+    // The run's news, on each Hero's wave tracker (Emberforge_Firepit): urgent, in red with a raid warning's sound.
+    void Announce(std::string const& text, bool urgent = false)
     {
         for (auto const& ref : instance->GetPlayers())
             if (Player* player = ref.GetSource())
-                player->GetSession()->SendAreaTriggerMessage(text);
+                SendAddon(player, "A," + Clean(text) + ',' + (urgent ? "1" : "0"));
     }
 
     std::vector<Player*> Living() const
@@ -525,7 +526,7 @@ private:
             }
             text += bosses > 1 ? " enter the Ring!" : " enters the Ring!";
         }
-        Announce(text);
+        Announce(text, bossWave);
     }
 
     void SpawnOne(Spawn const& spawn)
@@ -648,7 +649,7 @@ private:
 
         if (living.empty())
         {
-            Announce("The Firepit claims its last challenger.");
+            Announce("The Firepit claims its last challenger.", true);
             _phase = Phase::ENDING;
             _timer = END_DELAY_MS;
             return;

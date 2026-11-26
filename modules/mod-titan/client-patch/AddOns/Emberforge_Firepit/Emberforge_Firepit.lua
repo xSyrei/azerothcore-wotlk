@@ -1,7 +1,8 @@
 -- Emberforge Firepit: the Firepit's queue (a tab of the group finder, beside Dungeons and Player vs. Player: see
--- Emberforge_Journal/MicroMenu.lua), the wave bar during a run (wave, time left, enemies alive, Heroes standing), and
--- the results window when the run ends: the run's totals and a row for each Hero, sortable by any column, with a
--- button that shares the result in group chat. /firepit opens the last results again.
+-- Emberforge_Journal/MicroMenu.lua), the wave tracker on the right during a run (wave, its time on a bar, enemies
+-- alive, Heroes standing, the run's news), and the recap when the run ends: the run in big numbers, who stood out,
+-- and a row for each Hero, sortable by any column, with a button that shares the result in group chat. /firepit
+-- opens the last recap again.
 --
 -- The server (mod-titan, src/firepit.cpp) talks in addon whispers to the player, prefix EFFP:
 --   H,<wave>,<sec left>,<enemies alive>,<boss wave 0|1>,<Heroes standing>,<Heroes in the run>,<countdown sec>
@@ -9,6 +10,7 @@
 --   P,<name>,<level>,<peak wave>,<enemies at peak>,<most enemies>,<damage>,<healing>,<taken>,<kills>,<boss kills>,
 --     <biggest hit>,<biggest hit taken>,<deaths>,<wave fallen on>,<times resurrected>,<spoils>,<killer>
 --   END   the results are complete: show them
+--   A,<text>,<urgent 0|1>   the run's news, on the wave tracker
 --   OPEN  open the queue (the Firepit Keeper sent you)
 --   S,<best solo>,<duo>,<trio>,<group>,<in a proposal 0|1>,<level it opens at>,<latest start wave>   then each
 --     bracket's leaderboard: L,<bracket 1-4>,<rank>,<name>,<wave>,<group size> ... LE
@@ -69,124 +71,266 @@ local function Split(text)
     return fields
 end
 
-local function Backdrop(frame, alpha)
-    frame:SetBackdrop({
-        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 16, edgeSize = 14,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 },
-    })
-    frame:SetBackdropColor(0.06, 0.03, 0.02, alpha or 0.92)
-    frame:SetBackdropBorderColor(EMBER[1], EMBER[2], EMBER[3], 0.9)
+-- The look the three windows share: the painting of the ring, a dark veil, thin bronze lines, cream capitals, ember.
+local ART = "Interface\\AddOns\\Emberforge_Firepit\\Art\\"
+local FONT = "Fonts\\FRIZQT__.TTF"
+local CREAM, PALE, BODY = { 0.98, 0.88, 0.72 }, { 0.84, 0.76, 0.66 }, { 0.98, 0.95, 0.9 }
+local BRONZE, EMBER_LINE = { 0.55, 0.41, 0.3 }, { 1, 0.5, 0.16 }
+
+local function Label(parent, size, color, layer)
+    local text = parent:CreateFontString(nil, layer or "OVERLAY", "GameFontNormal")
+    text:SetFont(FONT, size)
+    text:SetTextColor(color[1], color[2], color[3])
+    text:SetShadowOffset(1, -1)
+    text:SetShadowColor(0, 0, 0, 0.9)
+    return text
 end
 
--- The wave bar --------------------------------------------------------------------------------------------------
+-- A thin line: bronze, or ember fading out to the right.
+local function Line(parent, x, y, width, height, ember)
+    local line = parent:CreateTexture(nil, "ARTWORK")
+    line:SetPoint("TOPLEFT", x, -y)
+    line:SetWidth(width)
+    line:SetHeight(height or 1)
+    line:SetTexture(1, 1, 1, 1)
+    local color = ember and EMBER_LINE or BRONZE
+    if line.SetGradientAlpha then
+        line:SetGradientAlpha("HORIZONTAL", color[1], color[2], color[3], ember and 1 or 0.75, color[1], color[2],
+            color[3], ember and 0 or 0.75)
+    end
+    return line
+end
 
+-- The painting under its veil, a bronze edge all round.
+local function Dress(frame, veil)
+    frame.art = frame:CreateTexture(nil, "BACKGROUND")
+    frame.art:SetAllPoints()
+    frame.art:SetTexture(ART .. "Background")
+    frame.veil = frame:CreateTexture(nil, "BORDER")
+    frame.veil:SetAllPoints()
+    frame.veil:SetTexture(0.04, 0.02, 0.015, veil)
+    for _, edge in ipairs({ { "TOPLEFT", "TOPRIGHT", true }, { "BOTTOMLEFT", "BOTTOMRIGHT", true },
+        { "TOPLEFT", "BOTTOMLEFT", false }, { "TOPRIGHT", "BOTTOMRIGHT", false } }) do
+        local line = frame:CreateTexture(nil, "ARTWORK")
+        line:SetTexture(BRONZE[1], BRONZE[2], BRONZE[3], 0.9)
+        line:SetPoint(edge[1])
+        line:SetPoint(edge[2])
+        if edge[3] then
+            line:SetHeight(1)
+        else
+            line:SetWidth(1)
+        end
+    end
+end
+
+local function Movable(frame)
+    frame:EnableMouse(true)
+    frame:SetMovable(true)
+    frame:SetClampedToScreen(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+end
+
+-- The wave tracker ------------------------------------------------------------------------------------------------
+-- On the right, under the minimap (as a dungeon's objectives): the wave, its time running out on a bar, the enemies
+-- alive, the Heroes standing, and the run's news (a boss coming, the last one falling). Drag it anywhere.
+
+local HUD_W, HUD_H = 236, 150
 local hud = CreateFrame("Frame", "EmberforgeFirepitHud", UIParent)
-hud:SetWidth(300)
-hud:SetHeight(58)
-hud:SetPoint("TOP", UIParent, "TOP", 0, -110)
-Backdrop(hud, 0.8)
+hud:SetWidth(HUD_W)
+hud:SetHeight(HUD_H)
+hud:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -24, -250)
+hud:SetFrameStrata("MEDIUM")
+Movable(hud)
 hud:Hide()
+hud.shade = hud:CreateTexture(nil, "BACKGROUND")
+hud.shade:SetAllPoints()
+hud.shade:SetTexture(1, 1, 1, 1)
+if hud.shade.SetGradientAlpha then
+    hud.shade:SetGradientAlpha("HORIZONTAL", 0.04, 0.02, 0.015, 0, 0.04, 0.02, 0.015, 0.85)
+end
 
-hud.title = hud:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-hud.title:SetPoint("TOP", 0, -8)
-hud.timer = hud:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
-hud.timer:SetPoint("TOPRIGHT", -12, -9)
-hud.line = hud:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-hud.line:SetPoint("BOTTOM", 0, 9)
+hud.title = Label(hud, 11, CREAM)
+hud.title:SetPoint("TOPLEFT", 12, -8)
+hud.title:SetText("THE FIREPIT")
+hud.boss = Label(hud, 10, { 1, 0.3, 0.22 })
+hud.boss:SetPoint("TOPRIGHT", -12, -9)
+Line(hud, 12, 24, HUD_W - 24, 1, true)
 
-local hudState = { seen = 0, left = 0 }
+hud.wave = Label(hud, 20, BODY)
+hud.wave:SetPoint("TOPLEFT", 12, -31)
+hud.timer = Label(hud, 13, CREAM)
+hud.timer:SetPoint("TOPRIGHT", -12, -36)
+
+hud.bar = CreateFrame("StatusBar", nil, hud)
+hud.bar:SetPoint("TOPLEFT", 12, -58)
+hud.bar:SetWidth(HUD_W - 24)
+hud.bar:SetHeight(8)
+hud.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+hud.bar:SetStatusBarColor(1, 0.45, 0.12)
+hud.bar:SetMinMaxValues(0, 60)
+hud.bar.back = hud.bar:CreateTexture(nil, "BACKGROUND")
+hud.bar.back:SetAllPoints()
+hud.bar.back:SetTexture(0, 0, 0, 0.6)
+
+local function Row(y, name)
+    local label = Label(hud, 11, PALE)
+    label:SetPoint("TOPLEFT", 12, -y)
+    label:SetText(name)
+    local value = Label(hud, 12, BODY)
+    value:SetPoint("TOPRIGHT", -12, -y)
+    return value
+end
+hud.enemies = Row(76, "Enemies")
+hud.standing = Row(94, "Standing")
+Line(hud, 12, 114, HUD_W - 24, 1)
+hud.event = Label(hud, 10, { 1, 0.62, 0.3 })
+hud.event:SetPoint("TOPLEFT", 12, -120)
+hud.event:SetWidth(HUD_W - 24)
+hud.event:SetJustifyH("LEFT")
+
+local hudState = { seen = 0, left = 0, eventAt = 0 }
 
 local function ShowHud(fields)
     local wave, left, alive, boss = tonumber(fields[2]) or 0, tonumber(fields[3]) or 0, tonumber(fields[4]) or 0,
         fields[5] == "1"
     local standing, total, countdown = tonumber(fields[6]) or 0, tonumber(fields[7]) or 0, tonumber(fields[8]) or 0
     if countdown > 0 or wave == 0 then
-        hud.title:SetText("|cffff7f2aThe Firepit|r")
+        hud.wave:SetText("Get ready")
         hud.timer:SetText(Clock(countdown))
-        hud.line:SetText("The first wave is coming...")
+        hud.bar:SetMinMaxValues(0, 10)
+        hud.bar:SetValue(countdown)
+        hud.boss:SetText("")
     else
-        hud.title:SetText((boss and "|cffff3020BOSS|r  " or "") .. "|cffff7f2aWave " .. wave .. "|r")
+        hud.wave:SetText("Wave " .. wave)
         hud.timer:SetText(Clock(left))
-        hud.line:SetText(string.format("Enemies |cffff6040%d|r    Standing |cff60ff60%d|r/%d", alive, standing,
-            total))
+        hud.bar:SetMinMaxValues(0, 60)
+        hud.bar:SetValue(left)
+        hud.boss:SetText(boss and "BOSS WAVE" or "")
     end
+    hud.enemies:SetText(alive > 0 and ("|cffff6a4a" .. alive .. "|r") or "0")
+    hud.standing:SetText(string.format("|cff7ee07a%d|r / %d", standing, total))
     hudState.seen = GetTime()
     hudState.left = left
     hud:Show()
 end
 
+-- The run's news (A,<text>,<urgent 0|1>): on the tracker, a boss's in red with the raid warning's sound.
+local function HudNews(text, urgent)
+    hud.event:SetText(text)
+    hud.event:SetTextColor(urgent and 1 or 1, urgent and 0.32 or 0.62, urgent and 0.24 or 0.3)
+    hudState.eventAt = GetTime()
+    if urgent and PlaySound then
+        PlaySound("RaidWarning")
+    end
+end
+
 hud:SetScript("OnUpdate", function(self)
     if GetTime() - hudState.seen > HUD_TIMEOUT then
         self:Hide()
+    elseif hudState.eventAt > 0 and GetTime() - hudState.eventAt > 10 then
+        self.event:SetText("")
+        hudState.eventAt = 0
     end
 end)
 
--- The results window ----------------------------------------------------------------------------------------------
+-- The recap ------------------------------------------------------------------------------------------------------
+-- When the run ends: the run in big numbers along the top, who stood out, then a row a Hero (sortable by any
+-- column; the best in each lit in ember, your own row in gold), and Share.
 
--- The columns: header, the record's field, a formatter, width, the tooltip that explains it.
+-- The columns: header, the record's field, a formatter, width, the tooltip that explains it, best is the most.
 local COLUMNS = {
-    { "Hero", "name", nil, 104, "The Hero and their level." },
-    { "Peak", "peak", nil, 40, "The last wave they stood in." },
-    { "Foes", "peakAlive", nil, 40, "The most enemies alive during their peak wave." },
-    { "Most", "mostAlive", nil, 40, "The most enemies alive at once while they stood." },
-    { "Damage", "damage", Short, 62, "Damage done (pets included)." },
-    { "Healing", "healing", Short, 62, "Healing done." },
-    { "Taken", "taken", Short, 62, "Damage taken." },
-    { "Kills", "kills", nil, 40, "Killing blows (pets included)." },
-    { "Boss", "bossKills", nil, 34, "Killing blows on bosses." },
-    { "Hit", "hit", Short, 54, "Their biggest hit." },
-    { "Hit taken", "hitTaken", Short, 62, "The biggest hit they took." },
-    { "Fell", "fell", nil, 52, "Times they fell, and the wave of the last." },
-    { "Rez", "rezzes", nil, 32, "Times they were brought back during the run." },
-    { "Spoils", "loot", nil, 44, "Pieces of gear won (one every 15 waves survived)." },
-    { "Felled by", "killer", nil, 120, "What dealt the last blow." },
+    { "HERO", "name", nil, 110, "The Hero and their level." },
+    { "PEAK", "peak", nil, 40, "The last wave they stood in.", true },
+    { "FOES", "peakAlive", nil, 40, "The most enemies alive during their peak wave.", true },
+    { "MOST", "mostAlive", nil, 40, "The most enemies alive at once while they stood.", true },
+    { "DAMAGE", "damage", Short, 60, "Damage done (pets included).", true },
+    { "HEALING", "healing", Short, 60, "Healing done.", true },
+    { "TAKEN", "taken", Short, 60, "Damage taken." },
+    { "KILLS", "kills", nil, 38, "Killing blows (pets included).", true },
+    { "BOSS", "bossKills", nil, 34, "Killing blows on bosses.", true },
+    { "BIG HIT", "hit", Short, 52, "Their biggest hit.", true },
+    { "HIT TAKEN", "hitTaken", Short, 58, "The biggest hit they took." },
+    { "FELL", "fell", nil, 50, "Times they fell, and the wave of the last." },
+    { "REZ", "rezzes", nil, 30, "Times they were brought back during the run." },
+    { "SPOILS", "loot", nil, 42, "Pieces of gear won (one every 15 waves survived).", true },
+    { "FELLED BY", "killer", nil, 100, "What dealt the last blow." },
 }
-local ROW_HEIGHT, MAX_ROWS = 20, 10
+local RESULTS_W, RESULTS_H = 860, 470
+local ROW_HEIGHT, MAX_ROWS, TABLE_X, TABLE_Y = 22, 10, 26, 186
 
 local results = CreateFrame("Frame", "EmberforgeFirepitResults", UIParent)
-local width = 32
-for _, column in ipairs(COLUMNS) do
-    width = width + column[4]
-end
-results:SetWidth(width)
-results:SetHeight(150 + ROW_HEIGHT * MAX_ROWS)
-results:SetPoint("CENTER", 0, 40)
+results:SetWidth(RESULTS_W)
+results:SetHeight(RESULTS_H)
+results:SetPoint("CENTER", 0, 30)
 results:SetFrameStrata("DIALOG")
-results:EnableMouse(true)
-results:SetMovable(true)
-results:RegisterForDrag("LeftButton")
-results:SetScript("OnDragStart", results.StartMoving)
-results:SetScript("OnDragStop", results.StopMovingOrSizing)
-Backdrop(results)
+results:SetToplevel(true)
+Movable(results)
+Dress(results, 0.82)
 results:Hide()
 tinsert(UISpecialFrames, "EmberforgeFirepitResults")
 
-results.title = results:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
-results.title:SetPoint("TOP", 0, -14)
-results.title:SetText("|cffff7f2aThe Firepit|r")
-results.summary = results:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-results.summary:SetPoint("TOP", results.title, "BOTTOM", 0, -8)
-results.detail = results:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-results.detail:SetPoint("TOP", results.summary, "BOTTOM", 0, -4)
+results.title = Label(results, 20, CREAM)
+results.title:SetPoint("TOPLEFT", 26, -16)
+results.title:SetText("THE FIREPIT")
+local bar = results:CreateTexture(nil, "ARTWORK")
+bar:SetTexture(BRONZE[1], BRONZE[2], BRONZE[3], 0.9)
+bar:SetPoint("TOPLEFT", 168, -18)
+bar:SetWidth(1)
+bar:SetHeight(16)
+results.subtitle = Label(results, 9, PALE)
+results.subtitle:SetPoint("TOPLEFT", 180, -22)
+results.subtitle:SetText("R U N   C O M P L E T E")
+Line(results, 20, 44, RESULTS_W - 40, 1)
+Line(results, 20, 44, 150, 2, true)
+local close = CreateFrame("Button", nil, results)
+close:SetWidth(18)
+close:SetHeight(18)
+close:SetPoint("TOPRIGHT", -14, -14)
+close:SetNormalTexture(ART .. "Close")
+close:SetHighlightTexture(ART .. "Close", "ADD")
+close:SetScript("OnClick", function() results:Hide() end)
 
-local close = CreateFrame("Button", nil, results, "UIPanelCloseButton")
-close:SetPoint("TOPRIGHT", -2, -2)
+-- The run in big numbers.
+local STATS = { "WAVE REACHED", "TIME SURVIVED", "ENEMIES SLAIN", "HEROES", "ENEMY HEALTH" }
+local STAT_W = (RESULTS_W - 40) / #STATS
+results.stats = {}
+for index, name in ipairs(STATS) do
+    local x = 20 + (index - 1) * STAT_W
+    local label = Label(results, 9, PALE)
+    label:SetPoint("TOP", results, "TOPLEFT", x + STAT_W / 2, -60)
+    label:SetText(name)
+    local value = Label(results, index == 1 and 30 or 24, index == 1 and { 1, 0.6, 0.23 } or CREAM)
+    value:SetPoint("TOP", results, "TOPLEFT", x + STAT_W / 2, -76)
+    results.stats[index] = { label = label, value = value }
+    if index > 1 then
+        local divider = results:CreateTexture(nil, "ARTWORK")
+        divider:SetTexture(BRONZE[1], BRONZE[2], BRONZE[3], 0.6)
+        divider:SetPoint("TOPLEFT", x, -58)
+        divider:SetWidth(1)
+        divider:SetHeight(56)
+    end
+end
+results.start = Label(results, 9, PALE)
+results.start:SetPoint("TOP", results, "TOPLEFT", 20 + STAT_W / 2, -110)
+results.highlights = Label(results, 11, BODY)
+results.highlights:SetPoint("TOP", results, "TOP", 0, -134)
+Line(results, 20, 156, RESULTS_W - 40, 1)
 
 local run = { players = {} }
 local sortKey, sortDown = "peak", true
 
 local headers, rows = {}, {}
-local x = 16
+local x = TABLE_X
 for index, column in ipairs(COLUMNS) do
     local header = CreateFrame("Button", nil, results)
     header:SetWidth(column[4])
-    header:SetHeight(18)
-    header:SetPoint("TOPLEFT", x, -84)
-    header.text = header:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    header:SetHeight(16)
+    header:SetPoint("TOPLEFT", x, -164)
+    header.text = Label(header, 9, CREAM)
     header.text:SetAllPoints()
-    header.text:SetJustifyH(index == 1 and "LEFT" or "RIGHT")
+    header.text:SetJustifyH(index == 1 and "LEFT" or index == #COLUMNS and "RIGHT" or "CENTER")
     header.column = column
     header:SetScript("OnClick", function(self)
         if sortKey == self.column[2] then
@@ -207,28 +351,39 @@ for index, column in ipairs(COLUMNS) do
     headers[index] = header
     x = x + column[4]
 end
+local TABLE_W = x - TABLE_X
+Line(results, TABLE_X - 6, 182, TABLE_W + 12, 1)
 
 for index = 1, MAX_ROWS do
     local row = CreateFrame("Frame", nil, results)
-    row:SetWidth(width - 32)
+    row:SetWidth(TABLE_W + 12)
     row:SetHeight(ROW_HEIGHT)
-    row:SetPoint("TOPLEFT", 16, -104 - (index - 1) * ROW_HEIGHT)
+    row:SetPoint("TOPLEFT", TABLE_X - 6, -TABLE_Y - (index - 1) * ROW_HEIGHT)
     row.shade = row:CreateTexture(nil, "BACKGROUND")
     row.shade:SetAllPoints()
-    row.shade:SetTexture(1, 0.5, 0.15, index % 2 == 0 and 0.06 or 0)
+    row.shade:SetTexture(1, 0.62, 0.3, index % 2 == 0 and 0.05 or 0)
     row.cells = {}
-    local cellX = 0
+    local cellX = 6
     for column = 1, #COLUMNS do
-        local cell = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        local cell = Label(row, column == 1 and 11 or 10, BODY)
         cell:SetWidth(COLUMNS[column][4])
         cell:SetHeight(ROW_HEIGHT)
         cell:SetPoint("LEFT", cellX, 0)
-        cell:SetJustifyH(column == 1 and "LEFT" or "RIGHT")
+        cell:SetJustifyH(column == 1 and "LEFT" or column == #COLUMNS and "RIGHT" or "CENTER")
         row.cells[column] = cell
         cellX = cellX + COLUMNS[column][4]
     end
     rows[index] = row
 end
+
+results.footer = results:CreateTexture(nil, "ARTWORK")
+results.footer:SetTexture(BRONZE[1], BRONZE[2], BRONZE[3], 0.75)
+results.footer:SetPoint("BOTTOMLEFT", 20, 44)
+results.footer:SetWidth(RESULTS_W - 40)
+results.footer:SetHeight(1)
+local hint = Label(results, 9, PALE)
+hint:SetPoint("BOTTOMLEFT", 26, 18)
+hint:SetText("Claim your spoils chest, then speak to the Keeper to leave.  /firepit shows this again.")
 
 local function Sorted()
     local list = {}
@@ -251,14 +406,51 @@ local function Sorted()
     return list
 end
 
+-- The Hero who did the most of a field (nil when no one did any).
+local function Best(field)
+    local best
+    for _, player in ipairs(run.players) do
+        if (player[field] or 0) > 0 and (not best or player[field] > best[field]) then
+            best = player
+        end
+    end
+    return best
+end
+
 function results:Refresh()
-    self.summary:SetText(string.format("Wave |cffff7f2a%d|r reached in %s  -  %d %s  -  %s kills", run.reached or 0,
-        Clock(run.seconds), run.size or 1, (run.size or 1) == 1 and "Hero" or "Heroes", Thousands(run.kills)))
-    self.detail:SetText(string.format("Monster health x%.1f for the group%s", (run.health or 100) / 100,
-        (run.start or 1) > 1 and ("  -  started at wave " .. run.start) or ""))
+    -- As tall as its Heroes need (three rows at least).
+    self:SetHeight(TABLE_Y + math.max(3, math.min(#run.players, MAX_ROWS)) * ROW_HEIGHT + 60)
+    local stats = self.stats
+    stats[1].value:SetText(tostring(run.reached or 0))
+    stats[2].value:SetText(Clock(run.seconds))
+    stats[3].value:SetText(Thousands(run.kills))
+    stats[4].value:SetText(tostring(run.size or 1))
+    stats[5].value:SetText(string.format("x%.1f", (run.health or 100) / 100))
+    self.start:SetText((run.start or 1) > 1 and ("started at wave " .. run.start) or "")
+
+    local parts = {}
+    for _, pick in ipairs({ { "Top damage", "damage" }, { "Top healing", "healing" }, { "Most kills", "kills" } }) do
+        local best = Best(pick[2])
+        if best then
+            parts[#parts + 1] = string.format("|cffbfae99%s|r  %s |cffff9a3a%s|r", pick[1], best.name,
+                Short(best[pick[2]]))
+        end
+    end
+    local last = Best("peak")
+    if last and #run.players > 1 then
+        parts[#parts + 1] = "|cffbfae99Last standing|r  " .. last.name
+    end
+    self.highlights:SetText(table.concat(parts, "      "))
+
     for index, header in ipairs(headers) do
         local column = COLUMNS[index]
         header.text:SetText(column[1] .. (sortKey == column[2] and (sortDown and " v" or " ^") or ""))
+    end
+    local tops = {}
+    for _, column in ipairs(COLUMNS) do
+        if column[6] and #run.players > 1 then
+            tops[column[2]] = Best(column[2])
+        end
     end
     local list = Sorted()
     local me = UnitName("player")
@@ -269,17 +461,19 @@ function results:Refresh()
                 local spec = COLUMNS[column]
                 local value = player[spec[2]]
                 if spec[2] == "name" then
-                    value = player.name .. " |cff999999" .. player.level .. "|r"
+                    value = player.name .. " |cff998877" .. player.level .. "|r"
                 elseif spec[2] == "fell" then
                     value = player.deaths > 0 and (player.deaths .. " (w" .. player.deathWave .. ")") or "-"
                 elseif spec[3] then
                     value = spec[3](value)
                 end
                 cell:SetText(value == "" and "-" or tostring(value))
-                if player.name == me then
-                    cell:SetTextColor(1, 0.82, 0.3)
+                if tops[spec[2]] == player then
+                    cell:SetTextColor(1, 0.6, 0.23)
+                elseif player.name == me then
+                    cell:SetTextColor(1, 0.84, 0.5)
                 else
-                    cell:SetTextColor(1, 1, 1)
+                    cell:SetTextColor(BODY[1], BODY[2], BODY[3])
                 end
             end
             row:Show()
@@ -290,18 +484,19 @@ function results:Refresh()
 end
 
 -- Share: the result in group chat (or to yourself, alone).
-local share = CreateFrame("Button", nil, results, "UIPanelButtonTemplate")
-share:SetWidth(130)
-share:SetHeight(24)
-share:SetPoint("BOTTOMRIGHT", -16, 14)
+local share = CreateFrame("Button", nil, results)
+share:SetWidth(150)
+share:SetHeight(26)
+share:SetPoint("BOTTOMRIGHT", -24, 12)
+share:SetNormalTexture(ART .. "Button")
+share:SetPushedTexture(ART .. "ButtonPushed")
+share:SetHighlightTexture(ART .. "ButtonHighlight", "ADD")
+share.label = Label(share, 12, BODY)
+share.label:SetPoint("CENTER")
+share:SetFontString(share.label)
 share:SetText("Share in chat")
 share:SetScript("OnClick", function()
-    local best
-    for _, player in ipairs(run.players) do
-        if not best or player.damage > best.damage then
-            best = player
-        end
-    end
+    local best = Best("damage")
     local text = string.format("The Firepit: wave %d reached by %d in %s, %s kills.", run.reached or 0,
         run.size or 1, Clock(run.seconds), Thousands(run.kills))
     if best then
@@ -315,18 +510,12 @@ share:SetScript("OnClick", function()
     end
 end)
 
-local hint = results:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-hint:SetPoint("BOTTOMLEFT", 18, 20)
-hint:SetText("Claim your spoils chest, then speak to the Keeper to leave.  /firepit shows this again.")
-
 -- The queue: the group finder's Firepit tab ------------------------------------------------------------------------
 -- A painting of the ring under a dark veil, thin bronze lines, two columns: how it works, the rewards and your group
 -- (a portrait a Hero, their answer under it) on the left; your records by group size (each one's leaderboard on
 -- hover), the starting wave and the button on the right; the group's difficulty along the bottom. The art:
 -- build_firepit_art.py, drawn at this layout.
 
-local ART = "Interface\\AddOns\\Emberforge_Firepit\\Art\\"
-local FONT = "Fonts\\FRIZQT__.TTF"
 local BRACKETS = { "Solo", "Duo", "Trio", "Group" }
 local CHECKPOINT_EVERY = 5
 local REWARDS = {
@@ -346,7 +535,6 @@ local SLOT_CX, SLOT_CY, SLOT_SIZE, SLOT_STEP = 40, 236.5, 25, 30.6
 local CELLS = { { 403, 64 }, { 488, 64 }, { 403, 105 }, { 488, 105 } }    -- a record's label (its centre, top)
 local PICKER_X, PICKER_Y, PICKER_W, PICKER_H = 360, 186, 177, 23
 local BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H = 360, 223, 177, 26
-local CREAM, PALE, BODY = { 0.98, 0.88, 0.72 }, { 0.84, 0.76, 0.66 }, { 0.98, 0.95, 0.9 }
 local FINDER_SCALE = 1.5                        -- a window of its own, in the screen's middle: larger than a panel
 
 local finder = CreateFrame("Frame", "EmberforgeFirepitFinder", UIParent)
@@ -822,6 +1010,8 @@ local function OnMessage(message)
     end
     if kind == "H" then
         ShowHud(fields)
+    elseif kind == "A" then
+        HudNews(fields[2] or "", fields[3] == "1")
     elseif kind == "RUN" then
         pending = { reached = tonumber(fields[2]) or 0, seconds = tonumber(fields[3]) or 0,
             size = tonumber(fields[4]) or 1, kills = tonumber(fields[5]) or 0, health = tonumber(fields[6]) or 100,
