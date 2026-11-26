@@ -16,9 +16,13 @@
  */
 
 #include "firepit.h"
+#include "firepit_gear.h"
+#include "firepit_roster.h"
+#include "wildcard.h"
 #include "Chat.h"
 #include "CommandScript.h"
 #include "Creature.h"
+#include "DBCStores.h"
 #include "DatabaseEnv.h"
 #include "GameObject.h"
 #include "GameObjectScript.h"
@@ -134,7 +138,7 @@ namespace
     constexpr uint32 COUNTDOWN_MS = 10000, WAVE_MS = 60000, BREATHER_MS = 5000, SPAWN_SPREAD_MS = 4000;
     constexpr uint32 TICK_MS = 1000, END_DELAY_MS = 4000, CORPSE_MS = 3000;
     constexpr float FIRST_WAVE = 0.35f, WAVE_GROWTH = 1.1f, GROUP_HEALTH = 0.4f, GROUP_COUNT = 0.2f;
-    constexpr uint32 BOSS_EVERY = 5, LOOT_EVERY = 15, EPIC_FROM = 45, MOST_ALIVE = 150;
+    constexpr uint32 BOSS_EVERY = 5, LOOT_EVERY = 15, MOST_ALIVE = 150;
     constexpr float OVERFLOW_GROWTH = 1.03f;
     // A wave's boss: 4 times the health and 1.5 times the damage of the wave's others (unless the dungeon scaling
     // already counts it a boss: a boss_ script or a boss's rank, with its own health).
@@ -151,46 +155,18 @@ namespace
         return uint8(std::clamp<uint32>(groupSize, 1, BRACKETS));
     }
 
-    // The roster: the wave each kind joins at. The Ring of Law's beasts first, then the Depths' Dark Iron, their
-    // fire, their golems and the Twilight's Hammer.
-    struct Kind
-    {
-        uint32 wave;
-        uint32 entry;
-    };
-    Kind const ROSTER[] = {
-        { 1, 8932 },    // Borer Beetle
-        { 2, 8925 },    // Dredge Worm
-        { 3, 8933 },    // Cave Creeper
-        { 4, 8926 },    // Deep Stinger
-        { 6, 8927 },    // Dark Screecher
-        { 7, 8928 },    // Thundersnout
-        { 8, 8921 },    // Bloodhound
-        { 9, 8892 },    // Anvilrage Footman
-        { 11, 8894 },   // Anvilrage Medic
-        { 12, 8909 },   // Fireguard
-        { 13, 8912 },   // Twilight's Hammer Torturer
-        { 14, 8893 },   // Anvilrage Soldier
-        { 16, 8900 },   // Doomforge Arcanasmith
-        { 17, 8910 },   // Blazing Fireguard
-        { 18, 8922 },   // Bloodhound Mastiff
-        { 19, 8913 },   // Twilight Emissary
-        { 21, 8911 },   // Fireguard Destroyer
-        { 22, 8898 },   // Anvilrage Marshal
-        { 23, 8905 },   // Warbringer Construct
-        { 24, 8906 },   // Ragereaver Golem
-        { 26, 8899 },   // Doomforge Dragoon
-        { 27, 8908 },   // Molten War Golem
-        { 28, 8914 },   // Twilight Bodyguard
-        { 29, 8903 },   // Anvilrage Captain
-    };
+    // The roster (firepit_roster.h, tools/firepit/firepit_roster.py): a chapter of CHAPTER_WAVES waves per dungeon,
+    // in leveling order, each bringing its own enemies.
+    using FirepitRoster::CHAPTER_WAVES;
     constexpr std::size_t NEWEST_KINDS = 6;             // a wave's enemies come from the newest few kinds
     // The healers (they keep everything that piles up alive): one a wave at most, two alive at once at most.
-    uint32 const HEALERS[] = { 8894 };                  // Anvilrage Medic
     constexpr uint32 HEALERS_A_WAVE = 1, MOST_HEALERS_ALIVE = 2;
     bool IsHealer(uint32 entry)
     {
-        return std::find(std::begin(HEALERS), std::end(HEALERS), entry) != std::end(HEALERS);
+        for (FirepitRoster::Kind const& kind : FirepitRoster::KINDS)
+            if (kind.Entry == entry)
+                return kind.Healer;
+        return false;
     }
 
     // The bosses, one every 5th wave in turn: the Ring of Law's six, then the Depths' own; then around again.
@@ -319,6 +295,313 @@ namespace
         ENDING,         // the last one fell
         DONE,
     };
+}
+
+// Fireforged gear (firepit_gear.h, tools/scaling/firepit_gear.py): each spoil made for the Hero who earned it. The
+// slot: one of their weakest (the lowest item levels worn, an empty slot lowest), among the slots their role uses. The
+// piece: the same kind as what is worn there (its armor type, its weapon kind), else their role's. Its item level:
+// what is worn there (at least a dungeon piece of their level's) plus FIREFORGED_MARGIN, or FIREFORGED_SHARE of it if
+// more, rounded up to a tier. Its stats: one of their role's stat mixes (a caster never strength, a fighter never
+// intellect). One spoil in TITANFORGED_IN is Titanforged: every stat doubled.
+namespace
+{
+    constexpr uint32 FIREFORGED_MARGIN = 9;             // item levels (three tiers)
+    constexpr float FIREFORGED_SHARE = 0.12f;
+    constexpr uint32 DUNGEON_OVER_LEVEL = 20;           // a dungeon piece's item level over its level (dungeon_loot)
+    constexpr uint32 WEAKEST_SLOTS = 3;                 // the spoil's slot is one of the Hero's this many weakest
+    constexpr uint32 TITANFORGED_IN = 200;
+    // Modifiers (firepit_gear.h MODIFIERS): a spoil's first from wave MODIFIER_FROM (certain MODIFIER_RAMP waves
+    // later), its second from SECOND_MODIFIER_FROM, in the random-property slots the suffix leaves free.
+    constexpr uint32 MODIFIER_FROM = 30, SECOND_MODIFIER_FROM = 75, MODIFIER_RAMP = 60;
+    constexpr EnchantmentSlot MODIFIER_SLOTS[] = { EnchantmentSlot(PROP_ENCHANTMENT_SLOT_0 + 3),
+        EnchantmentSlot(PROP_ENCHANTMENT_SLOT_0 + 4) };
+
+    using namespace FirepitGear;
+
+    struct Spoil
+    {
+        uint32 entry;
+        int32 randomPropertyId;                         // the suffix (negative: a random suffix)
+        bool titanforged;
+        std::vector<uint32> modifiers;                  // enchantments, MODIFIER_SLOTS in order
+    };
+
+    enum Primary : uint8 { PRIMARY_STRENGTH, PRIMARY_AGILITY, PRIMARY_INTELLECT };
+
+    Primary PrimaryOf(Player* player)
+    {
+        float strength = player->GetStat(STAT_STRENGTH), agility = player->GetStat(STAT_AGILITY);
+        float intellect = player->GetStat(STAT_INTELLECT);
+        if (intellect >= strength && intellect >= agility)
+            return PRIMARY_INTELLECT;
+        return agility > strength ? PRIMARY_AGILITY : PRIMARY_STRENGTH;
+    }
+
+    // The Hero's kind of fighter: their role (the Classless window's), and for the roles both sides play, their
+    // strongest stat (an agility tank, a strength or agility fighter, a caster or a hunter at range).
+    struct Profile
+    {
+        Wildcard::Role role;
+        Primary primary;
+    };
+
+    Profile ProfileOf(Player* player)
+    {
+        Profile profile{ Wildcard::GetRole(player), PrimaryOf(player) };
+        if (profile.role == Wildcard::ROLE_HEALER)
+            profile.primary = PRIMARY_INTELLECT;
+        else if ((profile.role == Wildcard::ROLE_MELEE || profile.role == Wildcard::ROLE_TANK)
+            && profile.primary == PRIMARY_INTELLECT)
+            profile.primary = PRIMARY_STRENGTH;
+        return profile;
+    }
+
+    std::vector<Mix> MixesOf(Profile const& profile)
+    {
+        switch (profile.role)
+        {
+            case Wildcard::ROLE_TANK:
+                return profile.primary == PRIMARY_AGILITY ? std::vector<Mix>{ MIX_MONKEY }
+                    : std::vector<Mix>{ MIX_CHAMPION, MIX_BEAR };
+            case Wildcard::ROLE_MELEE:
+                return profile.primary == PRIMARY_AGILITY ? std::vector<Mix>{ MIX_MONKEY, MIX_TIGER }
+                    : std::vector<Mix>{ MIX_BEAR, MIX_TIGER };
+            case Wildcard::ROLE_RANGED:
+                return profile.primary == PRIMARY_INTELLECT ? std::vector<Mix>{ MIX_SORCERER }
+                    : std::vector<Mix>{ MIX_HUNT };
+            case Wildcard::ROLE_HEALER:
+                return { MIX_SORCERER, MIX_ELDER };
+            default:
+                break;
+        }
+        switch (profile.primary)
+        {
+            case PRIMARY_AGILITY: return { MIX_MONKEY };
+            case PRIMARY_INTELLECT: return { MIX_SORCERER };
+            default: return { MIX_BEAR };
+        }
+    }
+
+    uint8 ArmorTypeOf(Profile const& profile)
+    {
+        switch (profile.role)
+        {
+            case Wildcard::ROLE_HEALER:
+                return ITEM_SUBCLASS_ARMOR_CLOTH;
+            case Wildcard::ROLE_RANGED:
+                return profile.primary == PRIMARY_INTELLECT ? ITEM_SUBCLASS_ARMOR_CLOTH : ITEM_SUBCLASS_ARMOR_MAIL;
+            default:
+                break;
+        }
+        switch (profile.primary)
+        {
+            case PRIMARY_AGILITY: return ITEM_SUBCLASS_ARMOR_LEATHER;
+            case PRIMARY_INTELLECT: return ITEM_SUBCLASS_ARMOR_CLOTH;
+            default: return ITEM_SUBCLASS_ARMOR_PLATE;
+        }
+    }
+
+    int32 FindPiece(uint8 itemClass, uint8 subClass, std::initializer_list<uint8> inventoryTypes, uint8 armorType = 0)
+    {
+        for (uint32 i = 0; i < std::size(PIECES); ++i)
+        {
+            Piece const& piece = PIECES[i];
+            if (piece.Class != itemClass || (itemClass == ITEM_CLASS_ARMOR && piece.ArmorType != armorType)
+                || (itemClass == ITEM_CLASS_WEAPON && piece.SubClass != subClass))
+                continue;
+            if (itemClass == ITEM_CLASS_ARMOR && !armorType && piece.SubClass != subClass)
+                continue;
+            for (uint8 type : inventoryTypes)
+                if (piece.InventoryType == type)
+                    return int32(i);
+        }
+        return -1;
+    }
+
+    int32 WeaponPiece(uint8 subClass, bool offHand)
+    {
+        if (subClass == ITEM_SUBCLASS_WEAPON_CROSSBOW)
+            subClass = ITEM_SUBCLASS_WEAPON_BOW;
+        if (offHand)
+            return FindPiece(ITEM_CLASS_WEAPON, subClass, { INVTYPE_WEAPON, INVTYPE_WEAPONOFFHAND });
+        return FindPiece(ITEM_CLASS_WEAPON, subClass, { INVTYPE_WEAPON, INVTYPE_WEAPONMAINHAND, INVTYPE_2HWEAPON,
+            INVTYPE_RANGED, INVTYPE_RANGEDRIGHT });
+    }
+
+    // The piece for an equipment slot, matching what is worn there, else the Hero's kind's; -1 if the slot is not
+    // theirs (an off hand behind a two-hander, a ranged slot a fighter leaves empty).
+    int32 PieceFor(Player* player, uint8 slot, Profile const& profile)
+    {
+        Item* worn = player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+        ItemTemplate const* proto = worn ? worn->GetTemplate() : nullptr;
+        bool intellect = profile.primary == PRIMARY_INTELLECT;
+        switch (slot)
+        {
+            case EQUIPMENT_SLOT_NECK: return FindPiece(ITEM_CLASS_ARMOR, 0, { INVTYPE_NECK });
+            case EQUIPMENT_SLOT_FINGER1:
+            case EQUIPMENT_SLOT_FINGER2: return FindPiece(ITEM_CLASS_ARMOR, 0, { INVTYPE_FINGER });
+            case EQUIPMENT_SLOT_TRINKET1:
+            case EQUIPMENT_SLOT_TRINKET2: return FindPiece(ITEM_CLASS_ARMOR, 0, { INVTYPE_TRINKET });
+            case EQUIPMENT_SLOT_BACK: return FindPiece(ITEM_CLASS_ARMOR, ITEM_SUBCLASS_ARMOR_CLOTH, { INVTYPE_CLOAK });
+            case EQUIPMENT_SLOT_MAINHAND:
+            {
+                if (proto && proto->Class == ITEM_CLASS_WEAPON)
+                    if (int32 piece = WeaponPiece(uint8(proto->SubClass), false); piece >= 0)
+                        return piece;
+                switch (profile.role)
+                {
+                    case Wildcard::ROLE_TANK: return WeaponPiece(ITEM_SUBCLASS_WEAPON_SWORD, false);
+                    case Wildcard::ROLE_HEALER: return WeaponPiece(ITEM_SUBCLASS_WEAPON_MACE, false);
+                    case Wildcard::ROLE_RANGED:
+                        return WeaponPiece(intellect ? ITEM_SUBCLASS_WEAPON_STAFF : ITEM_SUBCLASS_WEAPON_POLEARM,
+                            false);
+                    default:
+                        break;
+                }
+                if (intellect)
+                    return WeaponPiece(ITEM_SUBCLASS_WEAPON_STAFF, false);
+                return WeaponPiece(profile.primary == PRIMARY_AGILITY ? ITEM_SUBCLASS_WEAPON_DAGGER
+                    : ITEM_SUBCLASS_WEAPON_SWORD2, false);
+            }
+            case EQUIPMENT_SLOT_OFFHAND:
+            {
+                Item* main = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND);
+                if (main && main->GetTemplate()->InventoryType == INVTYPE_2HWEAPON)
+                    return -1;
+                if (proto && proto->InventoryType == INVTYPE_SHIELD)
+                    return FindPiece(ITEM_CLASS_ARMOR, ITEM_SUBCLASS_ARMOR_SHIELD, { INVTYPE_SHIELD });
+                if (proto && proto->InventoryType == INVTYPE_HOLDABLE)
+                    return FindPiece(ITEM_CLASS_ARMOR, ITEM_SUBCLASS_ARMOR_MISC, { INVTYPE_HOLDABLE });
+                if (proto && proto->Class == ITEM_CLASS_WEAPON)
+                {
+                    int32 piece = WeaponPiece(uint8(proto->SubClass), true);
+                    return piece >= 0 ? piece : WeaponPiece(ITEM_SUBCLASS_WEAPON_DAGGER, true);
+                }
+                if (profile.role == Wildcard::ROLE_TANK)
+                    return FindPiece(ITEM_CLASS_ARMOR, ITEM_SUBCLASS_ARMOR_SHIELD, { INVTYPE_SHIELD });
+                if (intellect)
+                    return FindPiece(ITEM_CLASS_ARMOR, ITEM_SUBCLASS_ARMOR_MISC, { INVTYPE_HOLDABLE });
+                return -1;
+            }
+            case EQUIPMENT_SLOT_RANGED:
+            {
+                if (proto && proto->Class == ITEM_CLASS_WEAPON)
+                    if (int32 piece = WeaponPiece(uint8(proto->SubClass), false); piece >= 0)
+                        return piece;
+                if (profile.role == Wildcard::ROLE_RANGED && !intellect)
+                    return WeaponPiece(ITEM_SUBCLASS_WEAPON_BOW, false);
+                if (intellect)
+                    return WeaponPiece(ITEM_SUBCLASS_WEAPON_WAND, false);
+                return -1;
+            }
+            default:
+                break;
+        }
+        uint8 inventoryType = 0;
+        switch (slot)
+        {
+            case EQUIPMENT_SLOT_HEAD: inventoryType = INVTYPE_HEAD; break;
+            case EQUIPMENT_SLOT_SHOULDERS: inventoryType = INVTYPE_SHOULDERS; break;
+            case EQUIPMENT_SLOT_CHEST: inventoryType = INVTYPE_CHEST; break;
+            case EQUIPMENT_SLOT_WAIST: inventoryType = INVTYPE_WAIST; break;
+            case EQUIPMENT_SLOT_LEGS: inventoryType = INVTYPE_LEGS; break;
+            case EQUIPMENT_SLOT_FEET: inventoryType = INVTYPE_FEET; break;
+            case EQUIPMENT_SLOT_WRISTS: inventoryType = INVTYPE_WRISTS; break;
+            case EQUIPMENT_SLOT_HANDS: inventoryType = INVTYPE_HANDS; break;
+            default: return -1;
+        }
+        uint8 armorType = proto && proto->Class == ITEM_CLASS_ARMOR && proto->SubClass >= ITEM_SUBCLASS_ARMOR_CLOTH
+            && proto->SubClass <= ITEM_SUBCLASS_ARMOR_PLATE ? uint8(proto->SubClass) : ArmorTypeOf(profile);
+        if (inventoryType == INVTYPE_CHEST)
+            return FindPiece(ITEM_CLASS_ARMOR, armorType, { INVTYPE_CHEST, INVTYPE_ROBE }, armorType);
+        return FindPiece(ITEM_CLASS_ARMOR, armorType, { inventoryType }, armorType);
+    }
+
+    // A Hero's modifier roles (firepit_gear.h ModifierRole).
+    uint8 ModifierRolesOf(Profile const& profile)
+    {
+        switch (profile.role)
+        {
+            case Wildcard::ROLE_TANK: return ROLE_TANK | ROLE_PHYSICAL;
+            case Wildcard::ROLE_HEALER: return ROLE_HEALER;
+            default: break;
+        }
+        return profile.primary == PRIMARY_INTELLECT ? ROLE_CASTER : ROLE_PHYSICAL;
+    }
+
+    // The chance (percent) of a spoil earned at a wave having a modifier: 0 at from, certain MODIFIER_RAMP later.
+    uint32 ModifierChance(uint32 wave, uint32 from)
+    {
+        return wave <= from ? 0 : std::min<uint32>(100, (wave - from) * 100 / MODIFIER_RAMP);
+    }
+
+    std::vector<uint32> RollModifiers(Player* player, Profile const& profile, bool weapon, uint32 wave)
+    {
+        std::vector<uint32> pool;
+        uint8 roles = ModifierRolesOf(profile);
+        for (Modifier const& modifier : MODIFIERS)
+            if ((modifier.Roles & roles) && (weapon || !modifier.WeaponOnly)
+                && player->GetLevel() >= ERA_LEVEL[modifier.Era])
+                pool.push_back(modifier.Enchantment);
+        std::vector<uint32> rolled;
+        for (uint32 from : { MODIFIER_FROM, SECOND_MODIFIER_FROM })
+        {
+            if (pool.empty() || !roll_chance_i(int32(ModifierChance(wave, from))))
+                break;
+            std::size_t pick = urand(0, uint32(pool.size()) - 1);
+            rolled.push_back(pool[pick]);
+            pool.erase(pool.begin() + pick);
+        }
+        return rolled;
+    }
+
+    // A Hero's spoils: count pieces, each in another of their weakest slots (the k-th earned at wave k x 15).
+    std::vector<Spoil> Fireforged(Player* player, uint32 count, uint32 every)
+    {
+        Profile const profile = ProfileOf(player);
+        std::vector<Mix> const mixes = MixesOf(profile);
+        struct Candidate
+        {
+            uint8 slot;
+            int32 piece;
+            uint32 worn;                                // the item level worn there (0: nothing)
+        };
+        std::vector<Candidate> candidates;
+        for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_TABARD; ++slot)
+        {
+            if (slot == EQUIPMENT_SLOT_BODY)
+                continue;
+            int32 piece = PieceFor(player, slot, profile);
+            if (piece < 0)
+                continue;
+            Item* worn = player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
+            candidates.push_back({ slot, piece, worn ? worn->GetTemplate()->ItemLevel : 0u });
+        }
+        std::vector<Spoil> spoils;
+        uint32 baseline = player->GetLevel() + DUNGEON_OVER_LEVEL;
+        while (spoils.size() < count && !candidates.empty())
+        {
+            Acore::Containers::RandomShuffle(candidates);
+            std::stable_sort(candidates.begin(), candidates.end(),
+                [](Candidate const& a, Candidate const& b) { return a.worn < b.worn; });
+            std::size_t pick = urand(0, uint32(std::min<std::size_t>(WEAKEST_SLOTS, candidates.size())) - 1);
+            Candidate const chosen = candidates[pick];
+            candidates.erase(candidates.begin() + pick);
+
+            uint32 from = std::max(chosen.worn, baseline);
+            uint32 target = from + std::max<uint32>(FIREFORGED_MARGIN, uint32(std::lround(from * FIREFORGED_SHARE)));
+            bool titan = urand(1, TITANFORGED_IN) == 1;
+            Mix mix = mixes[urand(0, uint32(mixes.size()) - 1)];
+            uint32 entry = PIECES[chosen.piece].First + TierAtLeast(target) + (titan ? TITAN_OFFSET : 0);
+            if (!sObjectMgr->GetItemTemplate(entry))
+                continue;
+            bool weapon = PIECES[chosen.piece].Class == ITEM_CLASS_WEAPON;
+            uint32 wave = uint32(spoils.size() + 1) * every;
+            spoils.push_back({ entry, -int32(titan ? TITAN_SUFFIX[mix] : SUFFIX[mix]), titan,
+                RollModifiers(player, profile, weapon, wave) });
+        }
+        return spoils;
+    }
 }
 
 namespace
@@ -531,12 +814,12 @@ public:
     uint32 Alive() const { return uint32(_enemies.size()); }
 
     // A spoils chest of the Hero's: what is in it (empty: not theirs, or already taken).
-    std::vector<uint32> TakeSpoils(GameObject* chest, Player* player)
+    std::vector<Spoil> TakeSpoils(GameObject* chest, Player* player)
     {
         auto spoils = _spoils.find(chest->GetGUID());
         if (spoils == _spoils.end() || spoils->second.first != player->GetGUID())
             return {};
-        std::vector<uint32> items = std::move(spoils->second.second);
+        std::vector<Spoil> items = std::move(spoils->second.second);
         _spoils.erase(spoils);
         return items;
     }
@@ -639,9 +922,9 @@ private:
         uint32 count = bossWave ? 0 : uint32(std::lround(float(3 + _wave / 2) * groupCount));   // a boss comes alone
 
         std::vector<uint32> kinds;
-        for (Kind const& kind : ROSTER)
-            if (kind.wave <= _wave)
-                kinds.push_back(kind.entry);
+        for (FirepitRoster::Kind const& kind : FirepitRoster::KINDS)
+            if (kind.Wave <= _wave)
+                kinds.push_back(kind.Entry);
         if (kinds.size() > NEWEST_KINDS)
             kinds.erase(kinds.begin(), kinds.end() - NEWEST_KINDS);
 
@@ -651,8 +934,9 @@ private:
                 fighters.push_back(entry);
         uint32 healers = 0;
         for (ObjectGuid const& guid : _enemies)
-            if (Creature* enemy = instance->GetCreature(guid); enemy && enemy->IsAlive() && IsHealer(enemy->GetEntry()))
-                ++healers;
+            if (Creature* enemy = instance->GetCreature(guid))
+                if (enemy->IsAlive() && IsHealer(enemy->GetEntry()))
+                    ++healers;
         uint32 healersNow = 0;
         for (uint32 i = 0; i < count && !kinds.empty(); ++i)
         {
@@ -669,6 +953,10 @@ private:
         }
 
         std::string text = "Wave " + std::to_string(_wave);
+        // A new chapter (its first wave, never a boss's): its dungeon's enemies pour in.
+        uint32 chapter = (_wave - 1) / CHAPTER_WAVES;
+        if ((_wave - 1) % CHAPTER_WAVES == 0 && chapter < std::size(FirepitRoster::CHAPTERS))
+            text += ": the foes of " + std::string(FirepitRoster::CHAPTERS[chapter]) + " pour in!";
         if (bossWave)
         {
             uint32 bosses = 1 + (_wave >= 60 ? 1 : 0) + (_wave >= 120 ? 1 : 0);
@@ -1026,14 +1314,10 @@ private:
                 0.0f, 0.0f, 0.0f, 0.0f, SPOILS_SECONDS);
             if (!chest)
                 continue;
-            std::vector<uint32> items;
-            for (uint32 piece = 0; piece < record->loot; ++piece)
-            {
-                uint32 wave = (piece + 1) * LOOT_EVERY;
-                if (uint32 entry = DungeonLoot::RandomPiece(player->GetLevel(),
-                    wave >= EPIC_FROM ? ITEM_QUALITY_EPIC : ITEM_QUALITY_RARE))
-                    items.push_back(entry);
-            }
+            std::vector<Spoil> items = Fireforged(player, record->loot, LOOT_EVERY);
+            for (Spoil const& spoil : items)
+                if (spoil.titanforged)
+                    Announce(player->GetName() + " forged a Titanforged piece!", true);
             _spoils[chest->GetGUID()] = { player->GetGUID(), items };
         }
 
@@ -1098,7 +1382,7 @@ private:
     std::vector<ObjectGuid> _natives, _enemies;
     std::vector<Spawn> _queue;
     std::map<ObjectGuid, Record> _records;
-    std::unordered_map<ObjectGuid, std::pair<ObjectGuid, std::vector<uint32>>> _spoils;
+    std::unordered_map<ObjectGuid, std::pair<ObjectGuid, std::vector<Spoil>>> _spoils;
 };
 
     FirepitInstance* RunOf(Map* map)
@@ -1673,7 +1957,7 @@ public:
     bool OnGossipHello(Player* player, GameObject* chest) override
     {
         FirepitInstance* run = RunOf(chest->GetMap());
-        std::vector<uint32> items = run ? run->TakeSpoils(chest, player) : std::vector<uint32>();
+        std::vector<Spoil> items = run ? run->TakeSpoils(chest, player) : std::vector<Spoil>();
         if (items.empty())
         {
             ChatHandler(player->GetSession()).SendSysMessage("These spoils are someone else's.");
@@ -1681,12 +1965,31 @@ public:
         }
         CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         bool mailed = false;
-        for (uint32 entry : items)
+        ChatHandler chat(player->GetSession());
+        for (Spoil const& spoil : items)
         {
-            if (player->AddItem(entry, 1))
-                continue;
-            if (Item* item = Item::CreateItem(entry, 1, player))
+            if (ItemTemplate const* proto = sObjectMgr->GetItemTemplate(spoil.entry))
+                chat.PSendSysMessage("|cffff7f2aThe Firepit:|r {}{} (item level {}).",
+                    spoil.titanforged ? "|cffffcc33Titanforged|r " : "", proto->Name1, proto->ItemLevel);
+            auto modify = [&spoil](Item* item)
             {
+                for (std::size_t i = 0; i < spoil.modifiers.size() && i < std::size(MODIFIER_SLOTS); ++i)
+                    item->SetEnchantment(MODIFIER_SLOTS[i], spoil.modifiers[i], 0, 0);
+            };
+            for (uint32 modifier : spoil.modifiers)
+                if (SpellItemEnchantmentEntry const* enchant = sSpellItemEnchantmentStore.LookupEntry(modifier))
+                    chat.PSendSysMessage("|cffff7f2a  +|r {}", enchant->description[0]);
+            ItemPosCountVec dest;
+            if (player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, spoil.entry, 1) == EQUIP_ERR_OK)
+                if (Item* item = player->StoreNewItem(dest, spoil.entry, true, spoil.randomPropertyId))
+                {
+                    modify(item);
+                    player->SendNewItem(item, 1, true, false);
+                    continue;
+                }
+            if (Item* item = Item::CreateItem(spoil.entry, 1, player, false, uint32(spoil.randomPropertyId)))
+            {
+                modify(item);
                 item->SaveToDB(trans);
                 MailDraft("Spoils of the Firepit", "Your bags were full; the Firepit's spoils came here.")
                     .AddItem(item)

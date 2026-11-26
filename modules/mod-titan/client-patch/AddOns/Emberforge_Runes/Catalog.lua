@@ -220,8 +220,8 @@ EmberforgeRunesCatalog = {
       slots = { "Field", "Echo", "Resonance" },
       builtFrom = "Thunder Clap (the Thunderfield)",
       spentWith = "Shield Slam",
-      resource = "The Thunderfield, 6 sec",
-      core = "Thunder Clap lays a Thunderfield where you stand for 6 sec (8 yards about it). Standing in it, Shield " ..
+      resource = "The Thunderfield, 16 sec",
+      core = "Thunder Clap lays a Thunderfield where you stand for 16 sec (8 yards about it). Standing in it, Shield " ..
           "Slam releases a Thunder Echo in a cone 10 yards toward its target: 42% of the slam's damage before armor " ..
           "as Nature damage to up to 5 enemies, once every 2 sec. Revenge in the field makes the next echo deal 20% " ..
           "more (6 sec). Earth Shock on an enemy in the field also deals 20% of your attack power as Nature damage " ..
@@ -229,7 +229,7 @@ EmberforgeRunesCatalog = {
       loop = "Thunder Clap where you hold the pack; Shield Slam from inside the field.",
       mods = {
         { name = "Lingering Thunder",
-          text = "Your Thunderfield lasts 9 sec, and its first echo deals 15% more damage." },
+          text = "Your Thunderfield lasts 19 sec, and its first echo deals 15% more damage." },
         { name = "March of the Storm",
           text = "Your Thunderfield goes with you, and the echo deals 10% more damage." },
         { name = "Rolling Front",
@@ -284,8 +284,8 @@ EmberforgeRunesCatalog = {
       slots = { "Spring", "Current", "Undertow" },
       builtFrom = "Chain Heal on your Earth Shield bearer",
       spentWith = "Your next Chain Heal there",
-      resource = "The Wellspring, 8 sec",
-      core = "Chain Heal healing your Earth Shield bearer lays a Wellspring on them for 8 sec, and heals them 20% " ..
+      resource = "The Wellspring, 18 sec",
+      core = "Chain Heal healing your Earth Shield bearer lays a Wellspring on them for 18 sec, and heals them 20% " ..
           "more. A later Chain Heal reaching the Wellspring releases one more heal: 40% of what it healed the " ..
           "bearer for, to the most injured other ally within 12.5 yards (if there is none, 20% to the bearer), once " ..
           "a cast. Earth Shield healing the bearer renews the Wellspring; Riptide healing them makes the next " ..
@@ -296,7 +296,7 @@ EmberforgeRunesCatalog = {
           text = "When Earth Shield renews the Wellspring, it also heals the most injured ally within 8 yards of " ..
               "the bearer for 20% of your healing power, once every 6 sec." },
         { name = "Lasting Spring",
-          text = "The Wellspring lasts 12 sec and its release heals 10% more." },
+          text = "The Wellspring lasts 22 sec and its release heals 10% more." },
         { name = "Widening Waters",
           text = "The release reaches 18 yards, and its ally also heals for 10% of your healing power over 6 sec." },
         { name = "Riptide Spring",
@@ -1260,8 +1260,8 @@ EmberforgeRunesCatalog = {
       builtFrom = "Wrath",
       spentWith = "Starfire, then Wrath",
       resource = "Sunlight and Moonlight, 5 enemies",
-      core = "Wrath leaves Sunlight on its target for 8 sec. Starfire on it collides with it for 80% of your " ..
-          "Arcane spell power, and leaves Moonlight for 8 sec. Your next Wrath on it flares for 40% of your Nature " ..
+      core = "Wrath leaves Sunlight on its target for 18 sec. Starfire on it collides with it for 80% of your " ..
+          "Arcane spell power, and leaves Moonlight for 18 sec. Your next Wrath on it flares for 40% of your Nature " ..
           "spell power and leaves fresh Sunlight. Up to 5 enemies carry your marks. Moonfire: a collision on your " ..
           "Moonfire target also hits one other enemy within 8 yards for 40% of it. Insect Swarm: each flare on its " ..
           "target extends it by 2 sec, up to 6 sec per cast. Lightning Bolt: on Moonlight, it flares for 75% " ..
@@ -1282,7 +1282,7 @@ EmberforgeRunesCatalog = {
           text = "A Frostbolt hit on your Sunlight target makes your next collision deal 25% more damage, once " ..
               "per Sunlight." },
         { name = "Long Twilight",
-          text = "Your marks last 12 sec instead of 8. Each 2 sec Sunlight was on its target adds 5% to the " ..
+          text = "Your marks last 22 sec instead of 18. Each 2 sec Sunlight was on its target adds 5% to the " ..
               "collision, up to 20%." },
         { name = "Crossed Horizons",
           text = "A collision also strikes up to 3 other enemies within 12 yards that carry your Moonlight, for 35% " ..
@@ -1328,8 +1328,8 @@ EmberforgeRunesCatalog = {
       slots = { "Impact", "Guard", "Resolve" },
       builtFrom = "Barkskin, in Bear Form",
       spentWith = "Maul",
-      resource = "Ursoc's Guard, 4 sec",
-      core = "Barkskin in Bear Form also raises Ursoc's Guard for 6 sec, an absorb of 30% of your maximum health, " ..
+      resource = "Ursoc's Guard, 16 sec",
+      core = "Barkskin in Bear Form also raises Ursoc's Guard for 16 sec, an absorb of 30% of your maximum health, " ..
           "and comes back 30 sec sooner. Maul in it releases the impact in a 10-yard cone in front of you (up to 5 " ..
           "enemies): 75% of your attack power plus all the guard absorbed (that part at most 250% of your attack " ..
           "power). Each Maul in Bear Form brings Barkskin back 3 sec sooner. Leaving Bear Form ends the guard. " ..
@@ -1460,8 +1460,8 @@ EmberforgeRunesCatalog = {
       slots = { "Storm", "Thunderlash", "Shield" },
       builtFrom = "Stormstrike",
       spentWith = "Lava Lash and your melee abilities",
-      resource = "Stormfront, 6 sec",
-      core = "Stormstrike raises the Stormfront around you for 6 sec (Stormstrike again refreshes it): every 2 sec " ..
+      resource = "Stormfront, 16 sec",
+      core = "Stormstrike raises the Stormfront around you for 16 sec (Stormstrike again refreshes it): every 2 sec " ..
           "it strikes up to 5 enemies within 8 yards for 25% of your attack power as Nature damage. In it, Lava " ..
           "Lash becomes Thunderlash: 60% of your attack power more to its target, and arcs of 30% to 2 more enemies " ..
           "within 8 yards. Your melee abilities discharge Lightning Shield at their target, once a second: its own " ..
@@ -1613,7 +1613,7 @@ EmberforgeRunesCatalog = {
       slots = { "Shatter", "Hunt", "Instinct" },
       builtFrom = "Icy Touch, in Cat Form too",
       spentWith = "Shred or Mangle",
-      resource = "Frozen Prey, 6 sec",
+      resource = "Frozen Prey, 16 sec",
       core = "Your Icy Touch, in Cat Form or not (its Frost rune, damage and Frost Fever as ever), lays Frozen Prey " ..
           "on the enemy for 6 sec; your next Shred or Mangle on it shatters it for 150% of your attack power as " ..
           "Frost damage. One mark at a time, one shatter a strike. With your Rake on it, the shatter also leaves " ..
@@ -1626,7 +1626,7 @@ EmberforgeRunesCatalog = {
           "shattered.",
       loop = "Icy Touch, Rake, then Shred or Mangle to shatter; Bite the wound.",
       spells = {
-        ["Icy Touch"] = "Usable in Cat Form. Lays Frozen Prey on the enemy for 6 sec; your next Shred or Mangle " ..
+        ["Icy Touch"] = "Usable in Cat Form. Lays Frozen Prey on the enemy for 16 sec; your next Shred or Mangle " ..
             "on it shatters it for 150% of your attack power as Frost damage.",
         ["Frost Shock"] = "Usable in Cat Form. Chills your next Claw or Swipe within 10 sec: Claw becomes " ..
             "Frostfang Strike, Swipe becomes Glacial Burst.",
@@ -1999,8 +1999,8 @@ EmberforgeRunesCatalog = {
       slots = { "Blade", "Wind", "Winter" },
       builtFrom = "Howling Blast (Northwind)",
       spentWith = "Obliterate or Frost Strike",
-      resource = "2 blades, Northwind on up to 5 enemies for 8 sec",
-      core = "Howling Blast marks up to 5 enemies it hits with Northwind for 8 sec and readies 2 Frost blades. " ..
+      resource = "2 blades, Northwind on up to 5 enemies for 18 sec",
+      core = "Howling Blast marks up to 5 enemies it hits with Northwind for 18 sec and readies 2 Frost blades. " ..
           "Obliterate on a marked enemy looses one for 60% of your attack power as Frost damage; Frost Strike " ..
           "looses one for 35%. Blades come 1.5 sec apart and grow with your Frost damage bonuses. Icy Touch on a " ..
           "marked enemy makes the next blade deal 20% more and pierce one more enemy for half. After a blade, Frost " ..
@@ -2240,8 +2240,8 @@ EmberforgeRunesCatalog = {
       slots = { "Impact", "Empowerment", "Hold" },
       builtFrom = "Shield Block (the Iron Bulwark)",
       spentWith = "Shield Slam (the Iron impact)",
-      resource = "What the bulwark absorbed, for 4 sec",
-      core = "Shield Block raises an Iron Bulwark before you for 4 sec, absorbing up to 15% of your maximum health " ..
+      resource = "What the bulwark absorbed, for 14 sec",
+      core = "Shield Block raises an Iron Bulwark before you for 14 sec, absorbing up to 15% of your maximum health " ..
           "from attacks in front of you. Shield Slam in that time releases an Iron impact once: 20% of Shield " ..
           "Slam's hit plus half of what the bulwark absorbed (that part at most half your attack power), to up to 5 " ..
           "enemies in a cone before you; the bulwark stays. In the bulwark, Revenge makes the impact 20% stronger, " ..

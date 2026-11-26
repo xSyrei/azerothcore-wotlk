@@ -4,6 +4,26 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-23: Card slots
 
+### Fireforged gear and a Firepit that marches through every dungeon
+
+- **The Firepit's spoils are Fireforged gear, made for you**: each piece goes to one of your weakest slots and is
+  always well above what you wear there (9 item levels or more), epic, with stats for your role: a caster never gets
+  strength, a fighter never intellect, a tank gets tank stats.
+- **Titanforged Fireforged**: a very rare roll doubles every stat on the piece. The whole run hears about it.
+- **Deep runs drop crazy gear**: from wave 30 a piece may carry a famous proc or equip effect (Hand of Justice,
+  Dragonspine Trophy, Thunderfury, Darkmoon Cards, Crusader, Berserking and more, chosen for your role); from wave 90
+  it can carry two. Every spoil is certain to have one by wave 90 and two by wave 135.
+- **The roster marches through every dungeon**: every 5 waves the enemies of a new dungeon pour in, from Ragefire
+  Chasm through the Deadmines, Scholomance, Outland and Northrend to the Halls of Reflection (49 dungeons, 189 kinds of
+  enemies). Healers stay capped: one a wave, two alive at most.
+
+### Longer windows for Legendary Runes
+
+- The windows you build up in last **10 seconds longer**: the Iron Bulwark (14 sec), Ursoc's Guard (16), the
+  Thunderfield (16, 19 with Lingering Thunder), the Wellspring (18, 22 with Lasting Spring), Northwind (18), Sunlight
+  and Moonlight (18, 22 with Long Twilight), Frozen Prey (16) and the Stormfront (16).
+- **Iron Reckoning**: a Shield Slam that kills its target now still releases the Iron impact.
+
 ### Enemies have no resistances or immunities
 
 - **Nothing resists you any more**: no partial resists, no "Resist" on your spells, and no enemy is immune to stuns,

@@ -889,12 +889,12 @@ namespace
         MOD_TIDAL_SHIELD,
     };
 
-    // Echoing Thunder's tuning: Thunder Clap lays a Thunderfield where the Hero stands for 6 sec (8 yards about).
+    // Echoing Thunder's tuning: Thunder Clap lays a Thunderfield where the Hero stands for 16 sec (8 yards about).
     // Standing in it, Shield Slam releases a Thunder Echo in a 90 degree cone 10 yards toward its target: 42% of the
     // slam's damage before mitigation, Nature, to up to 5 enemies; 2 sec apart. Revenge in the field: the next echo
     // 20% more (6 sec); Earth Shock on an enemy in it: 20% of attack power as Nature to up to 4 within 6 yards of
     // it, 8 sec apart.
-    constexpr int32 THUNDERFIELD_MS = 6000, LINGERING_FIELD_MS = 9000, REVENGE_CHARGE_MS = 6000;
+    constexpr int32 THUNDERFIELD_MS = 16000, LINGERING_FIELD_MS = 19000, REVENGE_CHARGE_MS = 6000;
     constexpr float THUNDERFIELD_RADIUS = 8.0f, ECHO_SHARE = 0.42f, ECHO_CONE = 10.0f, ECHO_HALF_ARC = float(M_PI) / 4;
     constexpr std::size_t ECHO_TARGETS = 5, THUNDER_BURST_TARGETS = 4;
     constexpr uint32 ECHO_EVERY_MS = 2000, THUNDER_BURST_EVERY_MS = 8000;
@@ -929,13 +929,13 @@ namespace
     };
 
     // The Wellspring's tuning: Chain Heal (the Hero's own cast) healing their Earth Shield bearer lays a Wellspring
-    // on them for 8 sec; a later Chain Heal reaching it releases one more heal, 40% of what the bearer was healed
+    // on them for 18 sec; a later Chain Heal reaching it releases one more heal, 40% of what the bearer was healed
     // (before overhealing), to the most injured other ally within 12.5 yards (none: 20% to the bearer); once a cast,
     // never the Wellspring it just laid. Chain Heal heals the bearer 20% more. Earth Shield's heal on the bearer
     // renews the Wellspring; a Riptide heal on them makes the next release 20% stronger (8 sec).
     constexpr float WELLSPRING_SHARE = 0.4f, BEARER_SHARE = 0.2f, WEARER_BONUS = 1.2f, WELL_RIPTIDE = 1.2f;
     constexpr float WELL_RANGE = 12.5f, WIDENING_RANGE = 18.0f, LONG_REACH = 20.0f;
-    constexpr int32 WELL_MS = 8000, LASTING_WELL_MS = 12000, WELL_CHARGE_MS = 8000;
+    constexpr int32 WELL_MS = 18000, LASTING_WELL_MS = 22000, WELL_CHARGE_MS = 8000;
     // Its options: Flowing Waters (the shield's renewal: 20% of healing power to the most injured within 8 yards, 6
     // sec apart), Lasting Spring (12 sec, 10% more), Widening Waters (18 yards, and 10% of healing power over 6 sec),
     // Riptide Spring (Riptide on the bearer renews it and heals another within 10 yards for 25%, 8 sec apart),
@@ -1124,13 +1124,13 @@ namespace
         MOD_NORTHERN_ENDURANCE, MOD_ICY_WOUND, MOD_COLD_RECOVERY, MOD_WINTERS_MENDING, MOD_GLACIAL_FLOW,
     };
 
-    // Howling North's tuning: Howling Blast marks up to 5 enemies it hits with Northwind for 8 sec and readies 2
+    // Howling North's tuning: Howling Blast marks up to 5 enemies it hits with Northwind for 18 sec and readies 2
     // blades. Obliterate on a marked enemy looses one (60% of attack power as Frost; it costs a Frost and an Unholy
     // rune), Frost Strike on one too (35%); 1.5 sec apart. Icy Touch on a marked enemy: the next blade 20% more,
     // piercing one more enemy for half. After a blade, Frost Strike on its target within 6 sec: 15% of attack power
     // as Frost too. Chains of Ice on a marked enemy: the next blade leaves a 4 sec field, 10% of spell power a second
     // to up to 3 enemies.
-    constexpr int32 NORTHWIND_MS = 8000, NORTH_FIELD_MS = 4000, NORTH_FOLLOW_MS = 6000, NORTH_DOT_MS = 6000;
+    constexpr int32 NORTHWIND_MS = 18000, NORTH_FIELD_MS = 4000, NORTH_FOLLOW_MS = 6000, NORTH_DOT_MS = 6000;
     constexpr uint32 BLADE_EVERY_MS = 1500, NORTHWIND_WINDOW_MS = 500, RIMEBLADE_SPACING_MS = 300;
     constexpr uint8 NORTH_BLADES = 2;
     constexpr float OBLITERATE_BLADE_AP = 0.6f, FROST_STRIKE_BLADE_AP = 0.35f, NORTH_ICY = 1.2f;
@@ -1266,14 +1266,14 @@ namespace
         MOD_IRON_WALL_OF_IRON,
     };
 
-    // Iron Reckoning's tuning: Shield Block raises a 4 sec Iron Bulwark in front of the Hero, absorbing up to 15% of
+    // Iron Reckoning's tuning: Shield Block raises a 14 sec Iron Bulwark in front of the Hero, absorbing up to 15% of
     // their maximum health. Shield Slam in it releases an Iron impact once: 20% of Shield Slam's hit plus half of what
     // the bulwark absorbed (that part at most half their attack power), to up to 5 enemies in a cone before them (8
     // yards); the bulwark stays. In the bulwark: Revenge makes the impact 20% stronger, Thunder Clap a full circle,
     // Devastate 15% stronger (each once).
     constexpr float IRON_BULWARK_PCT = 15.0f, IRON_SLAM_SHARE = 0.2f, IRON_ABSORBED_SHARE = 0.5f, IRON_AP_CAP = 0.5f;
     constexpr float IRON_RANGE = 8.0f, IRON_REVENGE = 1.2f, IRON_DEVASTATE = 1.15f;
-    constexpr uint32 IRON_BULWARK_MS = 4000;
+    constexpr uint32 IRON_BULWARK_MS = 14000;
     constexpr std::size_t IRON_TARGETS = 5;
     // Its options: Crushing Reprisal (30% more), Wide Reckoning (up to 8), Immovable (released as the bulwark ends
     // instead, 125%), Shockwave Reckoning (Shockwave in it releases it once more, 60%), Concussive Reckoning
@@ -1664,12 +1664,12 @@ namespace
         MOD_SOLAR_RETURN, MOD_LUNAR_DOMINANCE, MOD_EVENTIDE, MOD_INSECT_RENEWAL, MOD_ASTRAL_WARD,
     };
 
-    // Astral Convergence's tuning: Wrath leaves Sunlight (8 sec); Starfire on it collides for 80% of the Hero's
-    // Arcane spell power and leaves Moonlight (8 sec); Wrath on Moonlight flares for 40% of their Nature spell power
+    // Astral Convergence's tuning: Wrath leaves Sunlight (18 sec); Starfire on it collides for 80% of the Hero's
+    // Arcane spell power and leaves Moonlight (18 sec); Wrath on Moonlight flares for 40% of their Nature spell power
     // and leaves fresh Sunlight. 5 enemies marked at most. Its interactions: a collision on the Hero's Moonfire
     // target hits one more within 8 yards for 40% of it; a flare extends their Insect Swarm 2 sec (6 sec at most an
     // application); a Lightning Bolt spends Moonlight for a flare of 75%, no Sunlight after (6 sec a target).
-    constexpr int32 MARK_MS = 8000, LONG_TWILIGHT_MS = 12000, RUPTURE_MS = 6000;
+    constexpr int32 MARK_MS = 18000, LONG_TWILIGHT_MS = 22000, RUPTURE_MS = 6000;
     constexpr int32 SWARM_EXTEND_MS = 2000, SWARM_EXTEND_MOST_MS = 6000;
     constexpr uint32 EVENTIDE_MS = 4000, EVENTIDE_TICK_MS = 1000, TWILIGHT_STEP_MS = 2000, BOLT_FLARE_EVERY_MS = 6000;
     constexpr uint32 TWIN_MOONS_EVERY_MS = 8000, ASTRAL_WARD_EVERY_MS = 12000;
@@ -1690,13 +1690,13 @@ namespace
         MOD_DEFIANT_ROAR, MOD_RESTORING_FORCE, MOD_BEARS_MOMENTUM, MOD_LIFEBLOOM_HIDE, MOD_SHIELDING_ROOTS,
     };
 
-    // Ursoc's Champion's tuning: Barkskin in Bear Form adds Ursoc's Guard (6 sec, an absorb of 30% of maximum
+    // Ursoc's Champion's tuning: Barkskin in Bear Form adds Ursoc's Guard (16 sec, an absorb of 30% of maximum
     // health) and comes back 30 sec sooner; each Maul in Bear Form takes 3 sec more off it. Maul in the guard
     // releases the impact: 75% of attack power plus all the guard absorbed (that part at most 250% of attack power)
     // in a 10-yard cone in front (up to 5); ours kept over the Extended Options' 15% guard and 25% blow. Its
     // interactions: Mangle in the guard marks its target (the impact there: 20% of attack power to up to 4 near it,
     // and threat); Swipe in it, 1 sec longer (once); Earth Shock, the next impact 15% more, half of it Nature.
-    constexpr int32 GUARD_MS = 6000, LONG_GUARD_MS = 2000, SWIPE_GUARD_MS = 1000, URSOCS_MARK_MS = 6000;
+    constexpr int32 GUARD_MS = 16000, LONG_GUARD_MS = 2000, SWIPE_GUARD_MS = 1000, URSOCS_MARK_MS = 6000;
     constexpr int32 CHALLENGE_MS = 3000, RENDING_MS = 6000, GUARD_END_MS = 150;
     constexpr int32 BARKSKIN_SOONER_MS = 30000, MAUL_SOONER_MS = 3000;
     constexpr float GUARD_PCT = 30.0f, EARTHEN_HIDE = 1.2f, ROOTS_PCT = 3.0f, RESTORING_CAP_PCT = 3.0f;
@@ -1767,12 +1767,12 @@ namespace
     constexpr float STORM_ECHO_RANGE = 8.0f;
     constexpr std::size_t FROZEN_FRONT_TARGETS = 3, WARSTORM_TARGETS = 5;
 
-    // The Stormreaver's tuning: Stormstrike raises the Stormfront (6 sec, refreshed): a pulse every 2 sec, 25% of
+    // The Stormreaver's tuning: Stormstrike raises the Stormfront (16 sec, refreshed): a pulse every 2 sec, 25% of
     // attack power as Nature to up to 5 enemies within 8 yards. Lava Lash in it is Thunderlash (60% to its target,
     // arcs of 30% to 2 more within 8); melee abilities discharge Lightning Shield at their target once a second (the
     // shield keeps its charges meanwhile): its rank's damage, a third of spell power and 20% of attack power. The
     // dossier's 15%, 40% and 20%, raised.
-    constexpr int32 STORMFRONT_MS = 6000, WHITE_HOT_MS = 6000, RIDE_MS = 3000;
+    constexpr int32 STORMFRONT_MS = 16000, WHITE_HOT_MS = 6000, RIDE_MS = 3000;
     constexpr uint32 STORM_PULSE_MS = 2000, ROLLING_PULSE_MS = 1000, DISCHARGE_EVERY_MS = 1000;
     constexpr int32 RIDE_COOLDOWN_MS = 1000;
     constexpr float STORM_PULSE_AP = 0.25f, EYE_OF_THE_TEMPEST = 2.2f, ROLLING_SHARE = 0.7f;
@@ -1820,12 +1820,12 @@ namespace
         MOD_SWIFT_HUNT, MOD_WINTERS_RECOVERY, MOD_LINGERING_FROST, MOD_MENDING_FANG, MOD_CLAWING_COLD,
     };
 
-    // Whitefang's tuning: the Hero's own Icy Touch (its Frost rune), in Cat Form or not, lays Frozen Prey for 6 sec;
+    // Whitefang's tuning: the Hero's own Icy Touch (its Frost rune), in Cat Form or not, lays Frozen Prey for 16 sec;
     // the next Shred or Mangle on the victim shatters it for 150% of attack power as Frost damage (kept over the
     // Extended Options' 45%). Its interactions: with the Hero's Rake on it, the shatter leaves Frozen Wound (25% of
     // attack power over 6 sec); Ferocious Bite on Frozen Wound deals its next tick at once; a Frostbolt on Frozen
     // Prey, the shatter 25% more and the mark 2 sec longer (once a mark).
-    constexpr int32 PREY_MS = 6000, WINTER_WOUND_MS = 6000, PACK_FROST_MS = 6000, FROSTBOLT_PREY_MS = 2000;
+    constexpr int32 PREY_MS = 16000, WINTER_WOUND_MS = 6000, PACK_FROST_MS = 6000, FROSTBOLT_PREY_MS = 2000;
     constexpr int32 SWIFT_HUNT_MS = 4000, LINGERING_MS = 3000, FANG_REFUND = 10, FANG_MOONFIRE_MS = 2000;
     constexpr int32 FANG_MOONFIRE_MOST_MS = 6000;
     constexpr uint32 RECOVERY_EVERY_MS = 6000, MENDING_EVERY_MS = 10000;
@@ -3705,6 +3705,8 @@ namespace
                 && player->IsWithinDistInMap(enemy, ROLLING_FRONT_RANGE))
                 state.FieldAt = enemy->GetPosition();
         PlaceDecals(player, SPELL_THUNDERFIELD, { state.FieldAt });
+        if (DynamicObject* field = player->GetDynObject(SPELL_THUNDERFIELD))
+            field->SetDuration(ms);                 // the field's look lasts as long as it does
         player->m_Events.AddEventAtOffset([player, until]()
         {
             if (player->IsInWorld() && StateOf(player).FieldUntil == until)
@@ -6532,7 +6534,7 @@ namespace
         return until && Now() < until;
     }
 
-    // Shield Block: the Iron Bulwark (4 sec, 15% of maximum health; Fortified 20% more, Last Bastion 5% more under
+    // Shield Block: the Iron Bulwark (14 sec, 15% of maximum health; Fortified 20% more, Last Bastion 5% more under
     // Last Stand), its window begun again.
     void RaiseBulwark(Player* player)
     {
@@ -6552,6 +6554,11 @@ namespace
         if (HasIronMarker(player, MOD_IRON_FORTIFIED_BULWARK))
             amount *= FORTIFIED_BULWARK;
         Ward(player, player, SPELL_IRON_BULWARK, amount);
+        if (Aura* bulwark = player->GetAura(SPELL_IRON_BULWARK, player->GetGUID()))
+        {
+            bulwark->SetMaxDuration(int32(IRON_BULWARK_MS));    // the spell's own is 4 sec
+            bulwark->SetDuration(int32(IRON_BULWARK_MS));
+        }
     }
 
     // The Iron impact: 20% of Shield Slam's hit (slamHit) plus half of what the bulwark absorbed (at most half their
@@ -6612,7 +6619,9 @@ namespace
             RaiseBulwark(player);
             return;
         }
-        if (target == player || !player->IsValidAttackTarget(target))
+        // A slam that kills its target still releases (the target is dead by now: not a valid attack target).
+        if (target == player || (!player->IsValidAttackTarget(target) && (target->IsAlive()
+            || !player->IsHostileTo(target))))
             return;
         if (firstRank == SPELL_SHIELD_SLAM && HasIronMarker(player, MOD_IRON_SHIELDED_ADVANCE))
         {

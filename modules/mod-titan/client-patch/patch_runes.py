@@ -1577,7 +1577,7 @@ SPELLS += [
     {**strike(91399, 'Sabre Slash', 'Ability_Rogue_SabreSlash', PHYSICAL), 'visual': 'SabreSlashHit'},
     # The Stormreaver.
     buff(91400, 'Rune of the Stormreaver', STORMREAVER_ICON,
-         'Stormstrike raises the Stormfront for 6 sec: every 2 sec, 25% of your attack power as Nature damage to up '
+         'Stormstrike raises the Stormfront for 16 sec: every 2 sec, 25% of your attack power as Nature damage to up '
          'to 5 enemies within 8 yards. In it, Lava Lash becomes Thunderlash and your melee abilities discharge '
          'Lightning Shield.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
     {**buff(91401, 'Stormfront', 'Spell_Shaman_ThunderStorm',

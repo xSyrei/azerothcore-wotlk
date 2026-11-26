@@ -30,19 +30,26 @@ end
 -- Item level on gear tooltips (for everyone), as from Cataclysm on: "Item Level 63" in gold under the item's name.
 -- 3.3.5 has no line to insert, so it goes at the top of the second line's text (its own line once shown). Leveling
 -- Scaled gear (the Smoldering Adventurer's Cache's, items 912000-915059: tools/scaling/scaled_gear.py) gets its tag
--- above it, in the green of "Heroic", as later expansions tag a tier piece.
+-- above it, in the green of "Heroic", as later expansions tag a tier piece; the Firepit's Fireforged gear
+-- (916000-919773: tools/scaling/firepit_gear.py) its own, in ember, and a Titanforged piece's in gold.
 do
     local ITEM_LEVEL_COLOR = "|cffffd100"
     local TAG_COLOR = "|cff1eff00"
+    -- A Fireforged piece's Titanforged template: its own + FIREFORGED_TITAN (src/firepit_gear.h TITAN_OFFSET).
+    local FIREFORGED_FIRST, FIREFORGED_TITAN, FIREFORGED_LAST = 916000, 1887, 919773
     local TAGS = {
-        { first = 912000, last = 915059, text = "Leveling Scaled" },
+        { first = 912000, last = 915059, text = "Leveling Scaled", color = TAG_COLOR },
     }
     local function Tag(link)
         local id = tonumber(link:match("item:(%d+)"))
         for _, tag in ipairs(TAGS) do
             if id and id >= tag.first and id <= tag.last then
-                return TAG_COLOR .. tag.text .. "|r\n"
+                return tag.color .. tag.text .. "|r\n"
             end
+        end
+        if id and id >= FIREFORGED_FIRST and id <= FIREFORGED_LAST then
+            local titan = id >= FIREFORGED_FIRST + FIREFORGED_TITAN
+            return titan and "|cffffcc33Titanforged Fireforged|r\n" or "|cffff7f2aFireforged|r\n"
         end
         return ""
     end

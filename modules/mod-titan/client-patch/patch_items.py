@@ -90,6 +90,8 @@ def main():
     for _, index, *look in dungeon['items']:
         for level in range(1, dungeon['levels'] + 1):
             scaled.append((dungeon['first'] + index * dungeon['levels'] + level - 1, *look))
+    # Fireforged gear, the Firepit's spoils (tools/scaling/firepit_gear.py): its templates, Titanforged's too.
+    scaled += [tuple(row) for row in json.loads((HERE / 'firepit_gear.json').read_text())['items']]
     items = Dbc(source / 'Item.dbc', ITEM_FIELDS)
     for row in ITEMS + scaled:
         items.rows[row[0]] = tuple(v & 0xFFFFFFFF for v in row)

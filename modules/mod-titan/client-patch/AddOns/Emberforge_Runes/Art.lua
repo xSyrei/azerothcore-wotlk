@@ -249,7 +249,7 @@ EmberforgeRunesArt = {
                 "Earth Shield",
             },
             texts = {
-                "Your Thunderfield lasts 9 sec, and its first echo deals 15% more " ..
+                "Your Thunderfield lasts 19 sec, and its first echo deals 15% more " ..
                         "damage.",
                 "Your Thunderfield goes with you, and the echo deals 10% more damage.",
                 "Thunder Clap lays the field under your enemy within 10 yards instead, " ..
@@ -321,7 +321,7 @@ EmberforgeRunesArt = {
                 "When Earth Shield renews the Wellspring, it also heals the most " ..
                         "injured ally within 8 yards of the bearer for 20% of your healing " ..
                         "power, once every 6 sec.",
-                "The Wellspring lasts 12 sec and its release heals 10% more.",
+                "The Wellspring lasts 22 sec and its release heals 10% more.",
                 "The release reaches 18 yards, and its ally also heals for 10% of your " ..
                         "healing power over 6 sec.",
                 "Riptide on the bearer renews the Wellspring and heals another injured " ..
@@ -1344,7 +1344,7 @@ EmberforgeRunesArt = {
                         "spell power as Fire damage.",
                 "A Frostbolt hit on your Sunlight target makes your next collision deal " ..
                         "25% more damage, once per Sunlight.",
-                "Your marks last 12 sec instead of 8. Each 2 sec Sunlight was on its " ..
+                "Your marks last 22 sec instead of 18. Each 2 sec Sunlight was on its " ..
                         "target adds 5% to the collision, up to 20%.",
                 "A collision also strikes up to 3 other enemies within 12 yards that " ..
                         "carry your Moonlight, for 35% of its damage. Their marks stay.",
