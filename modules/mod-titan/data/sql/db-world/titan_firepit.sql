@@ -42,7 +42,7 @@ INSERT INTO `gameobject_template` (`entry`, `type`, `displayId`, `name`, `IconNa
     `size`, `ScriptName`, `VerifiedBuild`) VALUES
 (910141, 5, 3411, 'Dark Iron Brazier', '', '', '', 1.3, '', 0),
 (910142, 5, 6754, 'Firepit Bonfire', '', '', '', 1.0, '', 0),
-(910143, 5, 307, 'The Firepit', '', '', '', 1.6, '', 0),
+(910143, 5, 307, 'The Firepit', '', '', '', 1.0, '', 0),
 (910144, 5, 205, 'Lava Pillar', '', '', '', 0.7, '', 0),
 (910145, 5, 410, 'Ring of Flame', '', '', '', 2.2, '', 0),
 (910146, 5, 4452, 'Rising Embers', '', '', '', 1.6, '', 0),

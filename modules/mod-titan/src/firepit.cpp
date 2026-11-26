@@ -86,12 +86,12 @@ namespace
     enum Decor : uint32
     {
         GO_DARK_IRON_BRAZIER = 910141,
-        GO_BONFIRE = 910142,
+        GO_BONFIRE = 910142,                            // unused (too big: a wall of fire)
         GO_FIRE_PIT = 910143,
         GO_LAVA_PILLAR = 910144,
-        GO_FLAME_CIRCLE = 910145,
+        GO_FLAME_CIRCLE = 910145,                       // unused (glare over the middle)
         GO_EMBERS = 910146,
-        GO_FIRE_RIFT = 910147,
+        GO_FIRE_RIFT = 910147,                          // unused
     };
     struct Ring
     {
@@ -100,12 +100,11 @@ namespace
         uint32 count;
         float turn;                                     // the first one's angle (radians)
     };
+    // Nothing tall or bright in the fighting space (the bonfires, the ring of flame and the rift walled the view off):
+    // the pit low in the middle, the rest along the wall.
     Ring const DECOR_RINGS[] = {
         { GO_FIRE_PIT, 0.0f, 1, 0.0f },
-        { GO_FLAME_CIRCLE, 0.0f, 1, 0.0f },
-        { GO_FIRE_RIFT, 0.0f, 1, 0.0f },
-        { GO_BONFIRE, 24.0f, 4, 0.785f },
-        { GO_EMBERS, 16.0f, 6, 0.0f },
+        { GO_EMBERS, 46.0f, 4, 0.785f },
         { GO_DARK_IRON_BRAZIER, 44.0f, 12, 0.26f },
     };
     constexpr float GATE_PILLAR_SPREAD = 7.0f;          // a lava pillar each side of a gate, this far from it

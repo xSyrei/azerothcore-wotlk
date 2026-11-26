@@ -1088,9 +1088,9 @@ rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emb
   in chat. Everyone goes to a fresh instance of map 230. `InstanceOverride` (core) sends them there and lets 10
   in; the instance's script is the Firepit's own (`FirepitInstance`; the Depths' never runs), which sends the native
   creatures away as they load.
-- **The ring dressed**: each run places the client's own fire (`DECOR_RINGS`, game objects 910141-910147): a large
-  fire pit with a ring of flame and a fire rift in the middle, four midsummer bonfires around it, twelve Dark Iron
-  braziers along the wall, embers and smoke rising, lava pillars at both gates. The Heroes arrive around the pit, and
+- **The ring dressed**: each run places the client's own fire (`DECOR_RINGS`, game objects 910141-910147): a low
+  fire pit in the middle, twelve Dark Iron braziers along the wall, embers and smoke rising by it, lava pillars at both
+  gates (nothing tall or bright where the fighting is). The Heroes arrive around the pit, and
   the addon shows the Firepit's own title as they do. The client's lighting patch gives the ring a warm ember light
   (`client-patch/hd/make_atmosphere.py`).
 - **Waves** every 60 sec (or 5 sec after the last enemy dies), from both gates of the ring: wave n brings 3 + n/2
