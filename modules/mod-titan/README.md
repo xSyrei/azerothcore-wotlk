@@ -1079,8 +1079,9 @@ rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emb
   the left the rules, the potential rewards and the group (a slot a member: portrait, level, answer); on the right the
   Hero's records by bracket (solo, duo, trio, a group of 4-10: `titan_firepit_records`, each one's top 5 on hover),
   where the run starts (wave 1, or any 5th wave every member has reached), and the button; along the bottom, the
-  monsters' health and numbers for the group's size. Alone, the Hero goes straight in; a group's leader queues and every member is asked to
-  accept (40 sec, a ready-check popup); once all have, everyone goes from wherever they are. From level 10, every
+  monsters' health and numbers for the group's size. Alone, the Hero goes straight in; a group's leader queues and
+  every member is asked to accept (40 sec, a ready-check popup); once all have, everyone goes from wherever they are.
+  From level 10, every
   member; alive, out of combat and out of any instance, 10 at most. The requests (STATE, QUEUE, ACCEPT, DECLINE,
   LEAVE) are answered on the world's thread (members on other maps are teleported from there). The **Firepit Keeper**
   (910140, Grimstone's look) beside Silas Darkmoon in Stormwind and Orgrimmar opens the tab, and shows the leaderboard
