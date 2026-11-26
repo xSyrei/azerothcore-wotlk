@@ -24,6 +24,13 @@ them again.**
   bursts), **Storm Lance** (Earth Shock becomes a lance through every enemy in its line), Overload, Forked Conduit,
   Supercharge, Maelstrom Conduit, Static Field, Reflux, Shared Current (with Stormreaver), Galvanize, Charged Blades,
   Chain Fulmination, Thunderstorm Release, Overflow and Static Surge.
+- **The replacements count as what they replace**: Thunderbomb, Magma Breaker, Ball Lightning and Storm Lance now get
+  every talent, glyph and bonus that raises Stormstrike, Lava Lash, Lightning Bolt or Earth Shock (damage, critical
+  strikes, Lightning Overload), and on their main target they trigger everything that reacts to those abilities (other
+  runes and the runes' wildcard effects). Thunderbomb puts Stormstrike's Nature mark on everything it hits, and Magma
+  Breaker gets Lava Lash's Flametongue bonus. Fulmination gets Earth Shock's bonuses too.
+- **Thunderbomb has its own look**: a new icon, a lightning bomb you can see flying to its target, and a blue burst
+  where it lands.
 
 ### Fireforged gear and a Firepit that marches through every dungeon
 

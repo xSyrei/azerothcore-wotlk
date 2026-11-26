@@ -1505,9 +1505,9 @@ class spell_titan_tank_shock : public SpellScript
     void Hit()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (!player || GetSpell()->IsTriggered() || !player->HasAura(SPELL_RUNE_PRIMAL_WORLDWARDEN))
+        if (!player || !LegendaryRunes::IsOriginal(GetSpell()) || !player->HasAura(SPELL_RUNE_PRIMAL_WORLDWARDEN))
             return;
-        uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        uint32 first = LegendaryRunes::CountsAs(GetSpellInfo());    // Storm Lance's main hit: Earth Shock
         uint8 command = first == SPELL_EARTH_SHOCK ? 1 : first == SPELL_FLAME_SHOCK ? 2 : 3;
         Command(player, command, 1.0f, false);
     }
@@ -1526,7 +1526,7 @@ class spell_titan_tank_stormstrike : public SpellScript
     void Hit()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (player && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_PRIMAL_WORLDWARDEN))
+        if (player && LegendaryRunes::IsOriginal(GetSpell()) && player->HasAura(SPELL_RUNE_PRIMAL_WORLDWARDEN))
             Echo(player);
     }
 
@@ -1544,7 +1544,7 @@ class spell_titan_tank_lava_lash : public SpellScript
     void Hit()
     {
         Player* player = GetCaster()->ToPlayer();
-        if (player && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_PRIMAL_WORLDWARDEN))
+        if (player && LegendaryRunes::IsOriginal(GetSpell()) && player->HasAura(SPELL_RUNE_PRIMAL_WORLDWARDEN))
             LavaLash(player);
     }
 

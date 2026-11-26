@@ -1489,6 +1489,8 @@ ICONS += [ELUNE_ICON, CONVERGENCE_ICON, URSOC_ICON, 'Ability_Hunter_Pet_Owl', 'S
 # ---- The Duelist 91380 and the Stormreaver 91400 (their own dossiers); each one's markers 10 on from its first.
 DUELIST_ICON, STORMREAVER_ICON = 'Ability_Rune_Duelist', 'Ability_Rune_Stormreaver'
 SHAMAN_FAMILY = 11
+THUNDERBOMB_ICON = 'Ability_Shaman_Thunderbomb'     # icons/spells/: ours
+THUNDERBOMB_SPEED = 20.0                           # yards a second: the bomb's flight
 ROGUE_FAMILY = 8
 SPELL_ATTR1_FINISHING_MOVE_DAMAGE = 0x00100000      # a finishing move: needs combo points and spends them
 # The spellbook tab of the abilities a rune teaches (build_patch.py: our spells are the Demon Hunter's otherwise).
@@ -2219,14 +2221,14 @@ SPELLS += [
     # The Stormreaver (its redesign: 93091 and 93093, the abilities it teaches, below).
     buff(93090, 'Molten Charge', 'Ability_Warlock_MoltenCore', 'Your next Lava Lash deals 40% more damage.',
          DURATION_8S, {1: aura(AURA_DUMMY, 1, 0)}),
-    strike(93092, 'Thunderbomb', 'INV_Misc_Bomb_05', NATURE, VISUAL_THUNDER_BURST),
-    strike(93094, 'Magma Breaker', 'Spell_Shaman_LavaFlow', FIRE, VISUAL_FIRE_BLAST),
+    strike(93092, 'Thunderbomb', THUNDERBOMB_ICON, NATURE, VISUAL_THUNDER_BURST, modifiers=True),
+    strike(93094, 'Magma Breaker', 'Spell_Shaman_LavaFlow', FIRE, VISUAL_FIRE_BLAST, modifiers=True),
     family_mod(93095, 'Stormbringer', 'Ability_Shaman_Stormstrike', 'Stormstrike is ready, and your next one is free.',
                DURATION_10S, SHAMAN_FAMILY, (0, 0x10, 0), AURA_ADD_PCT_MODIFIER, SPELLMOD_COST, -100),
     buff(93096, 'Tempo', 'Spell_Nature_UnleashedRage', 'Damage done increased by 5% a stack.', DURATION_10S,
          {1: aura(AURA_MOD_DAMAGE_PERCENT_DONE, 5, 127)}, stacks=5),
     strike(93097, 'Cinder Echo', 'Spell_Fire_MoltenBlood', FIRE, VISUAL_FIRE_BLAST),
-    look(93098, 'Thunderbomb', 'INV_Misc_Bomb_05', VISUAL_EXPLOSIVE_SHOT, TARGET_UNIT_TARGET_ANY),
+    {**look(93098, 'Thunderbomb', THUNDERBOMB_ICON, 0, TARGET_UNIT_TARGET_ANY), 'visual': 'ThunderbombBurst'},
     # The Black Covenant.
     absorb(93115, 'Blood Pact', 'Spell_Deathknight_BloodPresence', DURATION_4S),
     absorb(93116, 'Earthen Pact', 'Spell_Nature_SkinofEarth', DURATION_4S),
@@ -2259,10 +2261,10 @@ SPELLS += [
             aura(AURA_MOD_DECREASE_SPEED, -25, 0), FROST),
     absorb(93222, 'Tidal Shield', 'Spell_Nature_SkinofEarth', DURATION_4S),
     # The Stormbound Conduit (its second redesign: 93241 and 93244, the abilities it teaches, below).
-    strike(93240, 'Fulmination', 'Spell_Nature_EarthShock', NATURE, VISUAL_SKY_STRIKE),
-    strike(93242, 'Ball Lightning', 'Spell_Nature_StormReach', NATURE, VISUAL_THUNDER_HIT),
-    strike(93243, 'Ball Lightning', 'Spell_Nature_StormReach', NATURE, VISUAL_THUNDER_BURST),
-    strike(93245, 'Storm Lance', 'Ability_ThunderBolt', NATURE, VISUAL_SKY_STRIKE),
+    strike(93240, 'Fulmination', 'Spell_Nature_EarthShock', NATURE, VISUAL_SKY_STRIKE, modifiers=True),
+    strike(93242, 'Ball Lightning', 'Spell_Nature_StormReach', NATURE, VISUAL_THUNDER_HIT, modifiers=True),
+    strike(93243, 'Ball Lightning', 'Spell_Nature_StormReach', NATURE, VISUAL_THUNDER_BURST, modifiers=True),
+    strike(93245, 'Storm Lance', 'Ability_ThunderBolt', NATURE, VISUAL_SKY_STRIKE, modifiers=True),
     family_mod(93246, 'Full Charge', 'Spell_Nature_LightningShield', 'Your next Earth Shock is free.',
                DURATION_30S, SHAMAN_FAMILY, (0x100000, 0, 0), AURA_ADD_PCT_MODIFIER, SPELLMOD_COST, -100),
     family_mod(93247, 'Static Surge', 'Spell_Shaman_StaticShock', 'Your next Lightning Bolt is instant.',
@@ -2359,10 +2361,10 @@ SPELL_CLASSES.update({93376: 'HUNTER', 93377: 'HUNTER'})
 # runes' own modifiers, Stormbringer, Full Charge, Static Surge, touch it), its effect a dummy the script does.
 STORMSTRIKE_SPELL, LAVA_LASH_SPELL, EARTH_SHOCK_SPELL = 17364, 60103, 8042
 for _id, _copy, _name, _icon, _text, _flags, _set, _target in (
-        (93091, STORMSTRIKE_SPELL, 'Thunderbomb', 'INV_Misc_Bomb_05',
+        (93091, STORMSTRIKE_SPELL, 'Thunderbomb', THUNDERBOMB_ICON,
          'Hurl a bomb of lightning at an enemy up to 20 yards away. After 1 sec it bursts for 140% of your weapon '
          'damage as Nature damage to every enemy within 8 yards. Stormbringer resets it.', (0, 0x10, 0),
-         {'RangeIndex': RANGE_20, 'SpellVisual': 0}, TARGET_UNIT_TARGET_ENEMY),
+         {'RangeIndex': RANGE_20, 'Speed': THUNDERBOMB_SPEED}, TARGET_UNIT_TARGET_ENEMY),
         (93093, LAVA_LASH_SPELL, 'Magma Breaker', 'Spell_Shaman_LavaFlow',
          'Break the ground before you: 120% of your weapon damage as Fire damage to up to 8 enemies in a 10 yard '
          'cone, spreading your Flame Shock to every one of them.', (0, 0, 0x4),
@@ -2383,10 +2385,44 @@ for _id, _copy, _name, _icon, _text, _flags, _set, _target in (
                                    'RealPointsPerLevel': 0.0, 'TargetA': _target, 'TargetB': 0}},
                    'clear': [2, 3]})
     SPELL_CLASSES[_id] = 'SHAMAN'
-ICONS += ['INV_Misc_Bomb_05', 'Spell_Shaman_LavaFlow', 'Spell_Nature_StormReach', 'Ability_ThunderBolt',
+ICONS += [THUNDERBOMB_ICON, 'Spell_Shaman_LavaFlow', 'Spell_Nature_StormReach', 'Ability_ThunderBolt',
           'Ability_Warlock_MoltenCore', 'Ability_Shaman_Stormstrike', 'Spell_Nature_UnleashedRage',
           'Spell_Fire_MoltenBlood', 'Spell_Shaman_StaticShock', 'Spell_Nature_LightningOverload',
           'Spell_Shaman_ThunderStorm', 'Spell_Nature_EarthShock', 'Spell_Nature_LightningShield']
+# The replacements' hits (and Fulmination) as their bases' Shaman family, the Hero's modifiers on them: whatever
+# raises Stormstrike's hits, Lava Lash, Lightning Bolt or Earth Shock (talents, glyphs, the runes' own) raises them;
+# no spell power of their own (spell_bonus_data, titan_runes.sql).
+for _spell in SPELLS:
+    _flags = {93092: (0, 0x10, 0x1400), 93094: (0, 0, 0x4), 93242: (0x1, 0, 0), 93243: (0x1, 0, 0),
+              93240: (0x100000, 0, 0), 93245: (0x100000, 0, 0)}.get(_spell['id'])
+    if _flags:
+        _spell['set'] = {**_spell['set'], 'SpellFamilyName': SHAMAN_FAMILY, 'SpellFamilyFlags0': _flags[0],
+                         'SpellFamilyFlags1': _flags[1], 'SpellFamilyFlags2': _flags[2]}
+# Thunderbomb's look (retail's Shrapnel Bomb, spells/SHA_Thunderbomb*): the bomb itself flying to its target (its
+# mesh and its glow, a missile: exported_model), and its burst (retail's impact shockwave in lightning blue, with
+# Thunderstorm's ring and a Lightning Bolt hit), the burst's look cast on the bomb's first victim.
+EFFECTS.update({
+    'ThunderbombMissile': {'model': 'SHA_ThunderbombMissile', 'effect': 7178, 'shape': 'missile', 'textures': (),
+                           'options': {'export': 'SHA_ThunderbombObj', 'base': 'thunderbomb', 'size': 0.9,
+                                       'center': True, 'turn': 0.6, 'two_sided': True}},
+    'ThunderbombImpact': {'model': 'SHA_ThunderbombImpact', 'effect': 7179, 'shape': 'retail', 'textures': (),
+                          'options': {'export': 'SHA_Thunderbomb/cfx_hunter_wildfireinfusion_shrapnelbomb_impact.gltf',
+                                      'tint': (90, 170, 255), 'scale': 1.6}},
+})
+VISUALS.update({
+    'ThunderbombThrow': {'copy': FROZEN_ORB_BOLT, 'id': 16809,
+                         'clear': ('precast', 'cast', 'impact', 'state', 'statedone', 'area'),
+                         'set': {VISUAL_MISSILE_MODEL: 'ThunderbombMissile', VISUAL_MISSILE_SOUND: 0,
+                                 VISUAL_MISSILE_MOTION: 0, VISUAL_MISSILE_CAST_OFFSET: 0.0,
+                                 VISUAL_MISSILE_CAST_OFFSET + 1: 0.0, VISUAL_MISSILE_CAST_OFFSET + 2: 1.5}, 'kits': {
+                             'impact': (15748, {KIT_CHEST: FX_LIGHTNING_SHIELD_IMPACT, 'sound': None})}},
+    'ThunderbombBurst': {'copy': 963, 'id': 16810, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15749, {KIT_BASE: 'ThunderbombImpact', KIT_WORLD: FX_THUNDERSTORM,
+                           KIT_CHEST: FX_LIGHTNING_BOLT_IMPACT})}},
+})
+for _spell in SPELLS:
+    if _spell['id'] == 93091:
+        _spell['visual'] = 'ThunderbombThrow'
 SPELLS += [
     # Scarlet Benediction.
     buff(93400, 'Rune of Scarlet Benediction', SCARLET_ICON,

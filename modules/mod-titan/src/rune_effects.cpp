@@ -16,6 +16,7 @@
  */
 
 #include "rune_tiers.h"
+#include "runes.h"
 #include "CellImpl.h"
 #include "DynamicObject.h"
 #include "GridNotifiers.h"
@@ -503,7 +504,7 @@ class spell_titan_rune_tier_hit : public SpellScript
         auto has = [player](uint32 rune) { return RuneTiers::Has(player, rune); };
         _hit.insert(target->GetGUID());
         _heal = std::max(_heal, heal);
-        switch (First(GetSpellInfo()->Id))
+        switch (LegendaryRunes::CountsAs(GetSpellInfo()))     // a replacement's main hit: its base
         {
             case SPELL_OVERPOWER:
                 if (has(RUNE_OPEN_GUARD))

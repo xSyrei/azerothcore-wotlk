@@ -1,0 +1,135 @@
+{
+ "textures": [
+  {
+   "fileNameExternal": "go_bomb_fx3.png",
+   "flags": 0
+  },
+  {
+   "fileNameExternal": "thunderbomb_glow.png",
+   "flags": 0
+  }
+ ],
+ "materials": [
+  {
+   "flags": 0,
+   "blendingMode": 2
+  },
+  {
+   "flags": 5,
+   "blendingMode": 7
+  }
+ ],
+ "textureCombos": [
+  0,
+  1
+ ],
+ "colors": [
+  {
+   "color": {
+    "globalSeq": 65535,
+    "interpolation": 0,
+    "timestamps": [
+     [
+      0
+     ]
+    ],
+    "values": [
+     [
+      [
+       1,
+       1,
+       1
+      ]
+     ]
+    ],
+    "timestampOffsets": null,
+    "valueOffsets": null
+   },
+   "alpha": {
+    "globalSeq": 65535,
+    "interpolation": 0,
+    "timestamps": [
+     [
+      0
+     ]
+    ],
+    "values": [
+     [
+      32767
+     ]
+    ],
+    "timestampOffsets": null,
+    "valueOffsets": null
+   }
+  }
+ ],
+ "textureWeights": [
+  {
+   "globalSeq": 65535,
+   "interpolation": 0,
+   "timestamps": [
+    [
+     0
+    ]
+   ],
+   "values": [
+    [
+     32767
+    ]
+   ],
+   "timestampOffsets": null,
+   "valueOffsets": null
+  }
+ ],
+ "transparencyLookup": [
+  0
+ ],
+ "textureTransforms": [],
+ "textureTransformsLookup": [
+  65535
+ ],
+ "skin": {
+  "subMeshes": [
+   {
+    "vertexStart": 0,
+    "vertexCount": 117,
+    "centerPosition": [
+     0.0399167669745974,
+     0.02917828406834115,
+     -0.0007280321981067348
+    ],
+    "sortRadius": 0.6724803008538323
+   },
+   {
+    "vertexStart": 117,
+    "vertexCount": 117,
+    "centerPosition": [
+     0.0399167669745974,
+     0.02917828406834115,
+     -0.0007280321981067348
+    ],
+    "sortRadius": 0.6724803008538323
+   }
+  ],
+  "textureUnits": [
+   {
+    "priority": 0,
+    "skinSectionIndex": 0,
+    "colorIndex": 0,
+    "materialIndex": 0,
+    "textureComboIndex": 0,
+    "textureWeightComboIndex": 0,
+    "textureTransformComboIndex": 0
+   },
+   {
+    "priority": 0,
+    "skinSectionIndex": 1,
+    "colorIndex": 0,
+    "materialIndex": 1,
+    "textureComboIndex": 1,
+    "textureWeightComboIndex": 0,
+    "textureTransformComboIndex": 0
+   }
+  ]
+ }
+}

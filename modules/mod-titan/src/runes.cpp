@@ -519,7 +519,7 @@ namespace
         SPELL_STORMBRINGER              = 93095,    // Stormstrike reset: the next one free
         SPELL_TEMPO                     = 93096,
         SPELL_CINDER_ECHO               = 93097,
-        SPELL_THUNDERBOMB_FUSE          = 93098,    // its look on the target as it is thrown
+        SPELL_THUNDERBOMB_BURST_LOOK    = 93098,    // its burst's look (retail's bomb impact, Thunderstorm's ring)
         SPELL_BURNING_RAKE              = 91865,    // the next Burning Claws 30% more
         SPELL_HOLLOW_PATCH              = 91785,    // its tick 91786
         SPELL_HOLLOW_PATCH_TICK         = 91786,
@@ -1805,6 +1805,7 @@ namespace
     constexpr int32 STORMFRONT_MS = 16000, WHITE_HOT_MS = 6000, RIDE_MS = 4000, MOLTEN_CHARGE_MS = 8000;
     constexpr uint32 THUNDERBOMB_FUSE_MS = 1000, ECHOING_EVERY_MS = 1000, ECHOING_STRIKES = 2, STORM_PULSE_MS = 2000;
     constexpr uint32 LAVA_RESET_EVERY_MS = 1500;
+    constexpr uint32 FLAMETONGUE_FAMILY_FLAG = 0x200000;       // SpellFamilyFlags0: Flametongue Weapon's aura
     constexpr uint8 STATIC_STRIKES = 3, TEMPO_MOST = 5, MAELSTROM_STACKS = 2;
     constexpr std::size_t THUNDERBOMB_TARGETS = 10, MAGMA_TARGETS = 8, SPREAD_TARGETS = 4, STORM_TARGETS = 5;
     constexpr std::size_t GROUNDING_TARGETS = 3, STORM_ERUPTION_TARGETS = 10;
@@ -6976,6 +6977,15 @@ namespace
         player->CastCustomSpell(target, spellId, &points, nullptr, nullptr, true);
     }
 
+    // A replacement ability's hit on its main target, counting as the base it replaces while it lands
+    // (LegendaryRunes::CountHitAs).
+    void StrikeAs(Player* player, Unit* target, uint32 spellId, float amount, uint32 base)
+    {
+        LegendaryRunes::CountHitAs(spellId, base);
+        Strike(player, target, spellId, amount);
+        LegendaryRunes::CountHitAs(0, 0);
+    }
+
     // A summon of the rune's that only flies where it is told: the Hero's side, passive, out of reach.
     TempSummon* SummonFlier(Player* player, uint32 entry, Position const& at, uint32 ms, uint32 form)
     {
@@ -9602,12 +9612,14 @@ namespace
 
     // ---- The Stormbound Conduit: its charge and release --------------------------------------------------------
 
-    // The Hero's power for the Conduit: the higher of their Nature spell power and attack power, with their Nature
-    // damage bonuses (a hybrid's attack power counts).
-    float ConduitPower(Player* player)
+    // The Hero's power for the Conduit: the higher of their Nature spell power and attack power (a hybrid's attack
+    // power counts), with their Nature damage bonuses (bonuses false: without, for the hits the core raises itself:
+    // Lightning Bolt's and Earth Shock's own, their talents and glyphs on them too).
+    float ConduitPower(Player* player, bool bonuses = true)
     {
         return std::max(float(player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_NATURE)),
-            player->GetTotalAttackPowerValue(BASE_ATTACK)) * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
+            player->GetTotalAttackPowerValue(BASE_ATTACK)) * (bonuses ? SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE)
+            : 1.0f);
     }
 
     uint8 ConduitMost(Player* player)
@@ -9719,7 +9731,7 @@ namespace
         AuraEffect* shield = Shield(player);
         uint8 held = shield ? shield->GetBase()->GetCharges() : 0;
         uint8 released = held > CONDUIT_KEPT ? held - CONDUIT_KEPT : 0;
-        float power = ConduitPower(player);
+        float power = ConduitPower(player, false);
         float hit = power * FULMINATION_POWER * released;
         std::vector<Unit*> struck;
         if (lance && target)
@@ -9733,7 +9745,10 @@ namespace
             struck.erase(std::remove(struck.begin(), struck.end(), target), struck.end());
             struck.insert(struck.begin(), target);
             for (Unit* enemy : struck)
-                Strike(player, enemy, SPELL_STORM_LANCE_HIT, hit);
+                if (enemy == target)
+                    StrikeAs(player, enemy, SPELL_STORM_LANCE_HIT, hit, TankRunes::SPELL_EARTH_SHOCK);
+                else
+                    Strike(player, enemy, SPELL_STORM_LANCE_HIT, hit);
         }
         if (!released)
             return;
@@ -9794,7 +9809,8 @@ namespace
         ball.Orb = orb->GetGUID();
         ball.Victim = victim->GetGUID();
         ball.Until = Now() + BALL_MOST_MS;
-        ball.Power = std::max(ConduitPower(player), RunePower(player, SPELL_SCHOOL_MASK_NATURE, SPELL_LIGHTNING_BOLT));
+        ball.Power = std::max(ConduitPower(player, false),
+            RunePower(player, SPELL_SCHOOL_MASK_NATURE, SPELL_LIGHTNING_BOLT, false));
         StateOf(player).Balls.push_back(ball);
         BallFly(player, orb, victim->GetPosition());
     }
@@ -9818,8 +9834,16 @@ namespace
             if (lost || Now() >= itr->Until
                 || orb->GetExactDist2d(victim) <= BALL_REACHED + victim->GetCombatReach())
             {
-                for (Unit* enemy : EnemiesIn(player, Circle(orb->GetPosition(), BALL_RADIUS), BALL_TARGETS))
-                    Strike(player, enemy, SPELL_BALL_LIGHTNING_BURST, itr->Power * BALL_BURST);
+                // Its main hit (on its victim, else the first it bursts on) counts as Lightning Bolt.
+                std::vector<Unit*> struck = EnemiesIn(player, Circle(orb->GetPosition(), BALL_RADIUS), BALL_TARGETS);
+                Unit* main = std::find(struck.begin(), struck.end(), victim) != struck.end() ? victim
+                    : struck.empty() ? nullptr : struck.front();
+                for (Unit* enemy : struck)
+                    if (enemy == main)
+                        StrikeAs(player, enemy, SPELL_BALL_LIGHTNING_BURST, itr->Power * BALL_BURST,
+                            SPELL_LIGHTNING_BOLT);
+                    else
+                        Strike(player, enemy, SPELL_BALL_LIGHTNING_BURST, itr->Power * BALL_BURST);
                 Dismiss(player, itr->Orb);
                 itr = state.Balls.erase(itr);
                 continue;
@@ -10094,15 +10118,14 @@ namespace
             }, Milliseconds(i * ECHOING_EVERY_MS));
     }
 
-    // Thunderbomb thrown at the target: after its fuse, a burst of 140% of weapon damage as Nature on every enemy
-    // within 8 yards of where it landed.
+    // Thunderbomb landed on the target: after its fuse, a burst of 140% of weapon damage as Nature on every enemy
+    // within 8 yards of where it landed (the core raising it as it does Stormstrike's hits: their talents and glyphs
+    // too), each wearing Stormstrike's mark if the Hero knows it; the hit on its target counts as Stormstrike's.
     void ThrowThunderbomb(Player* player, Unit* target)
     {
-        player->CastSpell(target, SPELL_THUNDERBOMB_FUSE, true);
         Position at = target->GetPosition();
         ObjectGuid primary = target->GetGUID();
-        float blast = float(player->CalculateDamage(BASE_ATTACK, true, true)) * THUNDERBOMB_WEAPON
-            * SchoolBonus(player, SPELL_SCHOOL_MASK_NATURE);
+        float blast = float(player->CalculateDamage(BASE_ATTACK, true, true)) * THUNDERBOMB_WEAPON;
         player->m_Events.AddEventAtOffset([player, at, primary, blast]()
         {
             if (!player->IsInWorld() || !player->IsAlive())
@@ -10112,8 +10135,18 @@ namespace
             auto itr = std::find(struck.begin(), struck.end(), first);
             if (itr != struck.end())
                 std::rotate(struck.begin(), itr, itr + 1);
+            if (!struck.empty())
+                player->CastSpell(struck.front(), SPELL_THUNDERBOMB_BURST_LOOK, true);
+            uint32 mark = KnownRank(player, SPELL_STORMSTRIKE);
             for (Unit* enemy : struck)
-                Strike(player, enemy, SPELL_THUNDERBOMB_BLAST, blast);
+            {
+                if (mark)
+                    player->AddAura(mark, enemy);
+                if (enemy == struck.front())
+                    StrikeAs(player, enemy, SPELL_THUNDERBOMB_BLAST, blast, SPELL_STORMSTRIKE_MAIN_HAND);
+                else
+                    Strike(player, enemy, SPELL_THUNDERBOMB_BLAST, blast);
+            }
             StateOf(player).LastStormstrike = blast;
             Stormstruck(player, struck);
         }, Milliseconds(THUNDERBOMB_FUSE_MS));
@@ -10188,8 +10221,9 @@ namespace
             Strike(player, target, SPELL_CINDER_ECHO, state.LastStormstrike * CINDER_SHARE);
     }
 
-    // Magma Breaker: a 10 yard cone before the Hero, 120% of weapon damage as Fire to up to 8 (their target first),
-    // the Hero's Flame Shock on any of them spread to all.
+    // Magma Breaker: a 10 yard cone before the Hero, 120% of weapon damage as Fire to up to 8 (their target first;
+    // the core raising it as it does Lava Lash: its talents and glyphs too; the hit on it counts as Lava Lash's), the
+    // Hero's Flame Shock on any of them spread to all.
     void MagmaBreaker(Player* player)
     {
         Shape cone;
@@ -10202,12 +10236,23 @@ namespace
         auto itr = std::find(struck.begin(), struck.end(), player->GetSelectedUnit());
         if (itr != struck.end())
             std::rotate(struck.begin(), itr, itr + 1);
-        float hit = float(player->CalculateDamage(BASE_ATTACK, true, true)) * MAGMA_WEAPON
-            * SchoolBonus(player, SPELL_SCHOOL_MASK_FIRE) * LavaLashMultiplier(player);
+        float hit = float(player->CalculateDamage(BASE_ATTACK, true, true)) * MAGMA_WEAPON * LavaLashMultiplier(player);
+        // Lava Lash's Flametongue bonus (its off-hand weapon so enchanted: 25%, its glyph's more).
+        if (player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND)
+            && player->GetAuraEffect(SPELL_AURA_DUMMY, SPELLFAMILY_SHAMAN, FLAMETONGUE_FAMILY_FLAG, 0, 0))
+            if (SpellInfo const* lash = sSpellMgr->GetSpellInfo(SPELL_LAVA_LASH))
+            {
+                int32 more = lash->Effects[EFFECT_1].CalcValue(player);
+                player->ApplySpellMod(SPELL_LAVA_LASH, SPELLMOD_EFFECT2, more);
+                AddPct(hit, more);
+            }
         Aura* shock = nullptr;
         for (Unit* enemy : struck)
         {
-            Strike(player, enemy, SPELL_MAGMA_BREAKER_HIT, hit);
+            if (enemy == struck.front())
+                StrikeAs(player, enemy, SPELL_MAGMA_BREAKER_HIT, hit, SPELL_LAVA_LASH);
+            else
+                Strike(player, enemy, SPELL_MAGMA_BREAKER_HIT, hit);
             if (!shock)
                 shock = enemy->GetAuraOfRankedSpell(SPELL_FLAME_SHOCK, player->GetGUID());
         }
@@ -11298,6 +11343,29 @@ namespace
 
 namespace LegendaryRunes
 {
+    namespace
+    {
+        uint32 countingSpell = 0, countingAs = 0;
+    }
+
+    void CountHitAs(uint32 spellId, uint32 base)
+    {
+        countingSpell = spellId;
+        countingAs = base;
+    }
+
+    uint32 CountsAs(SpellInfo const* spellInfo)
+    {
+        if (!spellInfo)
+            return 0;
+        return countingSpell && spellInfo->Id == countingSpell ? countingAs : spellInfo->GetFirstRankSpell()->Id;
+    }
+
+    bool IsOriginal(Spell const* spell)
+    {
+        return spell && (!spell->IsTriggered() || (countingSpell && spell->GetSpellInfo()->Id == countingSpell));
+    }
+
     void ReplaceAbility(Player* player, uint32 taught, std::vector<uint32> const& bases, bool on)
     {
         uint32 known = 0;
@@ -13003,7 +13071,7 @@ class spell_titan_rune_extended_hit : public SpellScript
         Unit* target = GetHitUnit();
         if (!player || !target)
             return;
-        uint32 first = GetSpellInfo()->GetFirstRankSpell()->Id;
+        uint32 first = LegendaryRunes::CountsAs(GetSpellInfo());     // a replacement's main hit: its base
         if (player->HasAura(SPELL_RUNE_URSOCS_CHAMPION)
             && (first == SPELL_MANGLE_BEAR || first == SPELL_SWIPE_BEAR || first == TankRunes::SPELL_EARTH_SHOCK
                 || first == SPELL_THUNDER_CLAP || (first == SPELL_EARTH_SHIELD_HEAL && target == player)))
@@ -13021,7 +13089,7 @@ class spell_titan_rune_extended_hit : public SpellScript
                 ParagonRighteous(player, target);
         }
         if ((first == SPELL_REVENGE || first == TankRunes::SPELL_EARTH_SHOCK || first == SPELL_EARTH_SHIELD_HEAL)
-            && (first == SPELL_EARTH_SHIELD_HEAL || !GetSpell()->IsTriggered())
+            && (first == SPELL_EARTH_SHIELD_HEAL || LegendaryRunes::IsOriginal(GetSpell()))
             && player->HasAura(SPELL_RUNE_ECHOING_THUNDER))
             ThunderAbility(player, target, first, GetHitHeal());
         if ((first == SPELL_RIPTIDE || first == SPELL_RENEW || first == SPELL_HOLY_SHOCK_HEAL)
@@ -13033,7 +13101,7 @@ class spell_titan_rune_extended_hit : public SpellScript
         if (player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT) && !GetSpell()->IsTriggered())
             ConduitHit(player, target, first, float(GetHitDamage()));
         if ((first == SPELL_FROSTBOLT || first == SPELL_CHAIN_HEAL || first == SPELL_LAVA_LASH)
-            && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
+            && LegendaryRunes::IsOriginal(GetSpell()) && player->HasAura(SPELL_RUNE_DAWNBOUND_CRUSADER))
             DawnAbility(player, target, first);
         bool hostile = player->IsValidAttackTarget(target);
         if (first == SPELL_HORN_OF_WINTER && !GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_HOWLING_NORTH))
@@ -13079,7 +13147,7 @@ class spell_titan_rune_extended_hit : public SpellScript
         switch (first)
         {
             case SPELL_LIGHTNING_BOLT:
-                if (player->HasAura(SPELL_RUNE_SHATTERED_SUN) && !GetSpell()->IsTriggered())
+                if (player->HasAura(SPELL_RUNE_SHATTERED_SUN) && LegendaryRunes::IsOriginal(GetSpell()))
                     SunSpell(player, target, first);
                 if (player->HasAura(SPELL_RUNE_WILD_HUNT))
                     HuntStorm(player, target);

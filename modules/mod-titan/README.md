@@ -793,6 +793,13 @@ utility or a tradeoff) take one pick each, from three.
     its fuse 93098 and burst 93092) and Magma Breaker (Lava Lash's place, 93093, its hits 93094). The Stormfront (91401,
     pulse 91402, 15% AP) is an option now; Tempo 93096; Ride the Lightning 91408 (20% melee haste). Its picks and the
     Conduit's are cleared once by `titan_runes_zz_extended_reset7.sql`.
+    The four replacements count as their bases: their hits (93092, 93094, 93242/93243, 93245; Fulmination 93240 too)
+    carry their bases' Shaman family and take the Hero's modifiers (no spell power of their own: spell_bonus_data), and
+    the hit on the main target counts as the base while it lands (`StrikeAs`, `LegendaryRunes::CountHitAs`, `CountsAs`,
+    `IsOriginal`), the base's scripts bound to those hits (extended_hit, tier_hit, the Primal Worldwarden's).
+    Thunderbomb: Stormstrike's mark (17364's aura) on what it hits; its missile and burst (`ThunderbombThrow`,
+    `ThunderbombBurst`: retail's Shrapnel Bomb in `client-patch/spells/SHA_Thunderbomb*`), its icon
+    `icons/spells/Ability_Shaman_Thunderbomb.png`.
   - **Ember's Wrath** (44; Melee; Cat Form, Fire Blast, Rake or Rip): the Hero's own Fire Blast (every rank, its
     mana and cooldown) works in Cat Form: its "not while shapeshifted" rule is gone from both copies of the spell
     (patch_spells.RUNE_FREED, runes.cpp titan_runes_load) and `spell_titan_rune_embers_fire_blast` keeps it for

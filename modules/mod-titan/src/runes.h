@@ -22,6 +22,8 @@
 #include <vector>
 
 class Player;
+class Spell;
+class SpellInfo;
 class Unit;
 
 // Legendary Runes (runes.cpp): two runes per specialization (the first from level 5, the second from level 30),
@@ -46,6 +48,15 @@ namespace LegendaryRunes
     void ReplaceAbility(Player* player, uint32 taught, std::vector<uint32> const& bases, bool on);
     // Every first rank a rune's taught ability stands in for (learning or forgetting one teaches again).
     bool IsReplacedBase(uint32 firstRank);
+    // A rune's replacement ability counts as the one it replaces on its main target: while the hit spellId lands
+    // there, it is base (Thunderbomb Stormstrike's main-hand hit, Magma Breaker Lava Lash, Ball Lightning Lightning
+    // Bolt, Storm Lance Earth Shock), so whatever reacts to the base (other runes, the runes' wildcard effects)
+    // reacts to it. CountHitAs(0, 0) ends it.
+    void CountHitAs(uint32 spellId, uint32 base);
+    // The first rank a spell's hit stands for: the base while it counts as one, else its own first rank.
+    uint32 CountsAs(SpellInfo const* spellInfo);
+    // An original cast (not triggered), or a replacement's hit counting as its base.
+    bool IsOriginal(Spell const* spell);
 }
 
 #endif

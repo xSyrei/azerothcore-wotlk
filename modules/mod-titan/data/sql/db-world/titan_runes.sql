@@ -766,3 +766,26 @@ INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
 (53408, 'spell_titan_tank_extended'),
 (53407, 'spell_titan_tank_extended'),
 (-6343, 'spell_titan_tank_extended');
+
+-- The Stormreaver's and the Stormbound Conduit's replacements (Thunderbomb, Magma Breaker, Ball Lightning, Storm
+-- Lance): their hits run the scripts the abilities they replace run (their main target's hit counting as that
+-- ability: runes.cpp CountHitAs; their tier_hit rows in titan_rune_effects.sql). Their hits and Fulmination take the
+-- Hero's modifiers (as their bases' Shaman family: talents and glyphs raise them), no spell power of their own.
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (93092, 93094, 93243, 93245) AND `ScriptName` IN
+    ('spell_titan_rune_extended_hit', 'spell_titan_tank_stormstrike', 'spell_titan_tank_lava_lash',
+    'spell_titan_tank_shock');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(93092, 'spell_titan_tank_stormstrike'),
+(93094, 'spell_titan_rune_extended_hit'),
+(93094, 'spell_titan_tank_lava_lash'),
+(93243, 'spell_titan_rune_extended_hit'),
+(93245, 'spell_titan_rune_extended_hit'),
+(93245, 'spell_titan_tank_shock');
+DELETE FROM `spell_bonus_data` WHERE `entry` IN (93092, 93094, 93240, 93242, 93243, 93245);
+INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`, `ap_dot_bonus`, `comments`) VALUES
+(93092, 0, 0, 0, 0, 'Thunderbomb - burst'),
+(93094, 0, 0, 0, 0, 'Magma Breaker - hit'),
+(93240, 0, 0, 0, 0, 'Fulmination'),
+(93242, 0, 0, 0, 0, 'Ball Lightning - zap'),
+(93243, 0, 0, 0, 0, 'Ball Lightning - burst'),
+(93245, 0, 0, 0, 0, 'Storm Lance - hit');
