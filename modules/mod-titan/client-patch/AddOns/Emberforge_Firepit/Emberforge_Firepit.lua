@@ -320,12 +320,15 @@ hint:SetPoint("BOTTOMLEFT", 18, 20)
 hint:SetText("Claim your spoils chest, then speak to the Keeper to leave.  /firepit shows this again.")
 
 -- The queue: the group finder's Firepit tab ------------------------------------------------------------------------
--- Two columns: on the left what the Firepit is, its rewards and your group (a slot a Hero, their answer on it); on
--- the right your records by group size over the fire (each one's leaderboard on hover), where to start from, and the
--- button. Along the bottom, how much tougher your group's size makes it.
+-- Two columns in an iron frame over a painting of the ring (Art: build_firepit_art.py): on the left what the Firepit
+-- is, its rewards and your group (a ring a Hero, their answer at its foot); on the right your records by group size
+-- on plaques (each one's leaderboard on hover), where to start from, and the button. Along the bottom, how much
+-- tougher your group's size makes it.
 
 local ART = "Interface\\AddOns\\Emberforge_Firepit\\Art\\"
-local BRACKETS = { "Best Solo", "Best Duo", "Best Trio", "Best Group" }
+local TITLE_FONT, TEXT_FONT = "Fonts\\MORPHEUS.TTF", "Fonts\\FRIZQT__.TTF"
+local BRACKETS = { "SOLO", "DUO", "TRIO", "GROUP" }
+local BRACKET_NAMES = { "Solo", "Duo", "Trio", "Group" }
 local CHECKPOINT_EVERY = 5
 local REWARDS = {
     { "Interface\\Icons\\INV_Box_01", "Spoils of the Firepit",
@@ -336,66 +339,81 @@ local REWARDS = {
     { "Interface\\Icons\\INV_Misc_Head_Dragon_Red", "Records",
         "Your best wave, solo, as a duo, a trio and a group, on the leaderboard." },
 }
+-- The layout, in the panel's units: build_firepit_art.py draws the frame, plaques and rings at the same places.
+local PANEL_W, PANEL_H = 560, 344
+local CHROME_ROWS = 629 / 1024                  -- the panel's share of Chrome's texture
+local REWARD_X, REWARD_Y, REWARD_SIZE, REWARD_STEP = 24, 176, 38, 48
+local SLOT_X, SLOT_Y, SLOT_SIZE, SLOT_STEP = 24, 246, 26, 30
+local PLAQUES = { { 344, 22 }, { 446, 22 }, { 344, 84 }, { 446, 84 } }
+local PLAQUE_W, PLAQUE_H = 94, 54
+local PICKER_X, PICKER_Y, PICKER_W, PICKER_H = 344, 196, 196, 26
+local BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H = 344, 232, 196, 40
+local STRIP_TOP = 304
+local EMBER_TEXT, GOLD_TEXT, PALE_TEXT = { 1, 0.6, 0.23 }, { 1, 0.82, 0.42 }, { 0.86, 0.76, 0.64 }
 
 local finder = CreateFrame("Frame", "EmberforgeFirepitFinder", UIParent)
-finder:SetWidth(560)
-finder:SetHeight(344)
+finder:SetWidth(PANEL_W)
+finder:SetHeight(PANEL_H)
 finder:SetPoint("TOPLEFT", 16, -116)
 finder:EnableMouse(true)
 finder:SetToplevel(true)
-Backdrop(finder, 0.97)
 finder:Hide()
 UIPanelWindows = UIPanelWindows or {}
 UIPanelWindows["EmberforgeFirepitFinder"] = { area = "left", pushable = 0, whileDead = 1 }
 
--- The background: the Ring of Law burning (Art\Background: a 16:9 painting squeezed into 1024x512, unsqueezed
--- here to the panel's shape), darker under the left column's words.
+-- The painting of the ring behind everything (a 16:9 painting squeezed into 1024x512: unsqueezed here), the iron
+-- frame and its fittings over it.
 finder.art = finder:CreateTexture(nil, "BACKGROUND")
-finder.art:SetPoint("TOPLEFT", 4, -4)
-finder.art:SetPoint("BOTTOMRIGHT", -4, 4)
+finder.art:SetAllPoints()
 finder.art:SetTexture(ART .. "Background")
 finder.art:SetTexCoord(0.042, 0.958, 0, 1)
-finder.shade = finder:CreateTexture(nil, "BORDER")
-finder.shade:SetPoint("TOPLEFT", 4, -4)
-finder.shade:SetPoint("BOTTOMLEFT", 4, 4)
-finder.shade:SetWidth(360)
-finder.shade:SetTexture(1, 1, 1, 1)
-if finder.shade.SetGradientAlpha then
-    finder.shade:SetGradientAlpha("HORIZONTAL", 0.03, 0.015, 0.01, 0.88, 0.03, 0.015, 0.01, 0)
-end
+finder.chrome = finder:CreateTexture(nil, "ARTWORK")
+finder.chrome:SetAllPoints()
+finder.chrome:SetTexture(ART .. "Chrome")
+finder.chrome:SetTexCoord(0, 1, 0, CHROME_ROWS)
 
 local finderClose = CreateFrame("Button", nil, finder, "UIPanelCloseButton")
 finderClose:SetPoint("TOPRIGHT", -2, -2)
 finderClose:SetScript("OnClick", function() HideUIPanel(finder) end)
 
-local function Text(font, x, y, text)
-    local line = finder:CreateFontString(nil, "OVERLAY", font)
-    line:SetPoint("TOPLEFT", x, y)
+local function Text(x, y, font, size, color, flags)
+    local line = finder:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    line:SetFont(font, size, flags)
+    line:SetPoint("TOPLEFT", x, -y)
     line:SetJustifyH("LEFT")
-    if text then
-        line:SetText(text)
-    end
+    line:SetTextColor(color[1], color[2], color[3])
+    line:SetShadowOffset(1, -1)
+    line:SetShadowColor(0, 0, 0, 1)
     return line
 end
 
-finder.title = Text("GameFontNormalHuge", 16, -14, "|cffff9a3aThe Firepit|r")
-finder.rules = Text("GameFontHighlightSmall", 16, -44)
-finder.rules:SetWidth(314)
-finder.rules:SetText("An endless wave arena in a private Ring of Law. Enter solo, or with a group of up to 10. A wave "
-    .. "comes every |cffff9a3a60 sec|r, ready or not, and what you don't kill stays. Each wave is |cffff9a3a10%|r "
-    .. "stronger than the last; every 5th brings a boss. You fight until you all fall.\n\nMonsters and spoils are "
-    .. "scaled to your level.")
+finder.title = Text(22, 15, TITLE_FONT, 30, EMBER_TEXT)
+finder.title:SetText("The Firepit")
+finder.subtitle = finder:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+finder.subtitle:SetFont(TEXT_FONT, 9)
+finder.subtitle:SetPoint("BOTTOMLEFT", finder.title, "BOTTOMRIGHT", 12, 5)
+finder.subtitle:SetTextColor(PALE_TEXT[1], PALE_TEXT[2], PALE_TEXT[3])
+finder.subtitle:SetText("ENDLESS WAVES")
+finder.rules = Text(22, 70, TEXT_FONT, 10, { 0.94, 0.9, 0.85 })
+finder.rules:SetWidth(300)
+finder.rules:SetSpacing(2)
+finder.rules:SetText("A new wave every |cffff9a3a60 seconds|r, ready or not, and what you don't kill stays. Each "
+    .. "wave is |cffff9a3a10% stronger|r than the last; every 5th brings a boss. You fight until you all fall.\n"
+    .. "|cffbfae99Monsters and spoils match your level.|r")
 
-finder.rewardsLabel = Text("GameFontNormalLarge", 16, -140, "|cffff9a3aPotential Rewards|r")
+finder.rewardsLabel = Text(22, 153, TEXT_FONT, 11, GOLD_TEXT, "OUTLINE")
+finder.rewardsLabel:SetText("POTENTIAL REWARDS")
 local rewardButtons = {}
 for index, reward in ipairs(REWARDS) do
     local button = CreateFrame("Button", nil, finder)
-    button:SetWidth(36)
-    button:SetHeight(36)
-    button:SetPoint("TOPLEFT", 16 + (index - 1) * 42, -164)
-    button.icon = button:CreateTexture(nil, "ARTWORK")
+    button:SetWidth(REWARD_SIZE)
+    button:SetHeight(REWARD_SIZE)
+    button:SetPoint("TOPLEFT", REWARD_X + (index - 1) * REWARD_STEP, -REWARD_Y)
+    button.icon = button:CreateTexture(nil, "BACKGROUND")
     button.icon:SetAllPoints()
     button.icon:SetTexture(reward[1])
+    button.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square", "ADD")
     button.reward = reward
     button:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -407,31 +425,32 @@ for index, reward in ipairs(REWARDS) do
     rewardButtons[index] = button
 end
 
-finder.groupLabel = Text("GameFontNormalLarge", 16, -214, "|cffff9a3aYour Group|r")
-finder.groupNote = Text("GameFontHighlightSmall", 16, -236, "Up to 10 Heroes. Everyone must accept the queue.")
+finder.groupLabel = Text(22, 223, TEXT_FONT, 11, GOLD_TEXT, "OUTLINE")
+finder.groupLabel:SetText("YOUR GROUP")
+finder.groupNote = Text(118, 225, TEXT_FONT, 9, PALE_TEXT)
+finder.groupNote:SetText("Up to 10. Everyone must accept.")
 
--- A slot a Hero: their portrait, their answer in the corner, red when they cannot come.
-local SLOT, SLOT_STEP = 26, 30
+-- A ring a Hero (build_firepit_art.py draws the rings): their portrait in it, their answer at its foot.
 local members = {}
 for index = 1, MOST_HEROES do
     local slot = CreateFrame("Button", nil, finder)
-    slot:SetWidth(SLOT)
-    slot:SetHeight(SLOT)
-    slot:SetPoint("TOPLEFT", 16 + (index - 1) * SLOT_STEP, -254)
-    slot:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 8,
-        insets = { left = 2, right = 2, top = 2, bottom = 2 } })
-    slot:SetBackdropColor(0, 0, 0, 0.8)
-    slot.portrait = slot:CreateTexture(nil, "ARTWORK")
-    slot.portrait:SetPoint("TOPLEFT", 3, -3)
-    slot.portrait:SetPoint("BOTTOMRIGHT", -3, 3)
-    slot.empty = slot:CreateFontString(nil, "OVERLAY", "GameFontDisableLarge")
+    slot:SetWidth(SLOT_SIZE)
+    slot:SetHeight(SLOT_SIZE)
+    slot:SetPoint("TOPLEFT", SLOT_X + (index - 1) * SLOT_STEP, -SLOT_Y)
+    slot.portrait = slot:CreateTexture(nil, "BACKGROUND")
+    slot.portrait:SetAllPoints()
+    slot.vacant = slot:CreateTexture(nil, "BACKGROUND")
+    slot.vacant:SetAllPoints()
+    slot.vacant:SetTexture(ART .. "Slot")
+    slot.empty = slot:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    slot.empty:SetFont(TEXT_FONT, 13)
     slot.empty:SetPoint("CENTER", 0, 1)
+    slot.empty:SetTextColor(0.45, 0.38, 0.32)
     slot.empty:SetText("+")
     slot.status = slot:CreateTexture(nil, "OVERLAY")
-    slot.status:SetWidth(13)
-    slot.status:SetHeight(13)
-    slot.status:SetPoint("BOTTOMRIGHT", 4, -4)
+    slot.status:SetWidth(11)
+    slot.status:SetHeight(11)
+    slot.status:SetPoint("BOTTOMRIGHT", 2, -2)
     slot:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
         if self.member then
@@ -444,7 +463,7 @@ for index = 1, MOST_HEROES do
                 GameTooltip:AddLine("Deciding...", 1, 0.82, 0)
             end
         else
-            GameTooltip:AddLine("An open slot", 0.7, 0.7, 0.7)
+            GameTooltip:AddLine("An open place", 0.7, 0.7, 0.7)
             GameTooltip:AddLine("Invite a Hero to bring them along.", 1, 1, 1, true)
         end
         GameTooltip:Show()
@@ -452,28 +471,33 @@ for index = 1, MOST_HEROES do
     slot:SetScript("OnLeave", function() GameTooltip:Hide() end)
     members[index] = slot
 end
-finder.status = Text("GameFontNormalSmall", 16, -296)
-finder.status:SetWidth(314)
+finder.status = Text(22, 283, TEXT_FONT, 10, GOLD_TEXT)
+finder.status:SetWidth(300)
 
--- Records over the fire, each with its leaderboard on hover.
+-- The record plaques (drawn by build_firepit_art.py): the bracket, the best wave, its leaderboard on hover.
 local board = { [1] = {}, [2] = {}, [3] = {}, [4] = {} }
 local records = {}
-for index, title in ipairs(BRACKETS) do
+for index, plaque in ipairs(PLAQUES) do
     local record = CreateFrame("Frame", nil, finder)
-    record:SetWidth(180)
-    record:SetHeight(46)
-    record:SetPoint("TOPRIGHT", -18, -14 - (index - 1) * 52)
+    record:SetWidth(PLAQUE_W)
+    record:SetHeight(PLAQUE_H)
+    record:SetPoint("TOPLEFT", plaque[1], -plaque[2])
     record:EnableMouse(true)
     record.label = record:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    record.label:SetPoint("TOPRIGHT", 0, 0)
-    record.label:SetText("|cffffd100" .. title .. "|r")
-    record.value = record:CreateFontString(nil, "OVERLAY", "GameFontHighlightHuge")
-    record.value:SetPoint("TOPRIGHT", record.label, "BOTTOMRIGHT", 0, -3)
+    record.label:SetFont(TEXT_FONT, 9, "OUTLINE")
+    record.label:SetPoint("TOP", 0, -6)
+    record.label:SetTextColor(GOLD_TEXT[1], GOLD_TEXT[2], GOLD_TEXT[3])
+    record.label:SetText("BEST " .. BRACKETS[index])
+    record.value = record:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    record.value:SetFont(TITLE_FONT, 24)
+    record.value:SetPoint("TOP", 0, -20)
+    record.value:SetTextColor(1, 1, 1)
+    record.value:SetShadowOffset(1, -1)
     record.value:SetText("0")
     record.bracket = index
     record:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine(BRACKETS[self.bracket]:gsub("Best ", "") .. " leaderboard", 1, 0.6, 0.2)
+        GameTooltip:AddLine(BRACKET_NAMES[self.bracket] .. " leaderboard", 1, 0.6, 0.2)
         local entries = board[self.bracket]
         if #entries == 0 then
             GameTooltip:AddLine("No one yet.", 0.7, 0.7, 0.7)
@@ -487,50 +511,71 @@ for index, title in ipairs(BRACKETS) do
     record:SetScript("OnLeave", function() GameTooltip:Hide() end)
     records[index] = record
 end
+finder.boardHint = finder:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+finder.boardHint:SetFont(TEXT_FONT, 9)
+finder.boardHint:SetPoint("TOP", finder, "TOPLEFT", PICKER_X + PICKER_W / 2, -146)
+finder.boardHint:SetTextColor(PALE_TEXT[1], PALE_TEXT[2], PALE_TEXT[3])
+finder.boardHint:SetText("Hover a record for its leaderboard")
 
--- Where the run starts: wave 1, or any 5th wave everyone in the group has reached.
+-- Where the run starts: wave 1, or any 5th wave everyone in the group has reached (in the picker's slot).
 local start = CreateFrame("Frame", nil, finder)
-start:SetWidth(200)
-start:SetHeight(24)
-start:SetPoint("BOTTOMRIGHT", -18, 74)
-start:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
-    insets = { left = 2, right = 2, top = 2, bottom = 2 } })
-start:SetBackdropColor(0, 0, 0, 0.85)
-start:SetBackdropBorderColor(0.6, 0.45, 0.25, 1)
-start.text = start:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-start.text:SetPoint("CENTER")
+start:SetWidth(PICKER_W)
+start:SetHeight(PICKER_H)
+start:SetPoint("TOPLEFT", PICKER_X, -PICKER_Y)
+start.label = finder:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+start.label:SetFont(TEXT_FONT, 9, "OUTLINE")
+start.label:SetPoint("BOTTOM", start, "TOP", 0, 4)
+start.label:SetTextColor(GOLD_TEXT[1], GOLD_TEXT[2], GOLD_TEXT[3])
+start.label:SetText("START AT")
+start.text = start:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+start.text:SetFont(TEXT_FONT, 12)
+start.text:SetPoint("CENTER", 0, 0)
+start.text:SetTextColor(EMBER_TEXT[1], EMBER_TEXT[2], EMBER_TEXT[3])
 local startPrev = CreateFrame("Button", nil, start)
 local startNext = CreateFrame("Button", nil, start)
-for _, pair in ipairs({ { startPrev, "Prev", "LEFT", 2 }, { startNext, "Next", "RIGHT", -2 } }) do
-    local button = pair[1]
+for _, pair in ipairs({ { startPrev, "LEFT", 4, false }, { startNext, "RIGHT", -4, true } }) do
+    local button, flip = pair[1], pair[4]
     button:SetWidth(20)
     button:SetHeight(20)
-    button:SetPoint(pair[3], pair[4], 0)
-    button:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-" .. pair[2] .. "Page-Up")
-    button:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-" .. pair[2] .. "Page-Down")
-    button:SetDisabledTexture("Interface\\Buttons\\UI-SpellbookIcon-" .. pair[2] .. "Page-Disabled")
+    button:SetPoint(pair[2], pair[3], 0)
+    for _, state in ipairs({ { "SetNormalTexture", "Arrow" }, { "SetDisabledTexture", "ArrowDisabled" } }) do
+        button[state[1]](button, ART .. state[2])
+        local texture = state[1] == "SetNormalTexture" and button:GetNormalTexture() or button:GetDisabledTexture()
+        if texture and flip then
+            texture:SetTexCoord(1, 0, 0, 1)
+        end
+    end
+    button:SetHighlightTexture(ART .. "Arrow", "ADD")
+    local glow = button:GetHighlightTexture()
+    if glow and flip then
+        glow:SetTexCoord(1, 0, 0, 1)
+    end
 end
 
-local queueButton = CreateFrame("Button", nil, finder, "UIPanelButtonTemplate")
-queueButton:SetWidth(200)
-queueButton:SetHeight(28)
-queueButton:SetPoint("BOTTOMRIGHT", -18, 40)
+-- The big button (our own art: normal, pushed, a glow on hover, disabled).
+local queueButton = CreateFrame("Button", nil, finder)
+queueButton:SetWidth(BUTTON_W)
+queueButton:SetHeight(BUTTON_H)
+queueButton:SetPoint("TOPLEFT", BUTTON_X, -BUTTON_Y)
+queueButton:SetNormalTexture(ART .. "Button")
+queueButton:SetPushedTexture(ART .. "ButtonPushed")
+queueButton:SetDisabledTexture(ART .. "ButtonDisabled")
+queueButton:SetHighlightTexture(ART .. "ButtonHighlight", "ADD")
+queueButton.label = queueButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+queueButton.label:SetFont(TEXT_FONT, 13, "OUTLINE")
+queueButton.label:SetPoint("CENTER", 0, 1)
+queueButton:SetFontString(queueButton.label)
+queueButton:SetPushedTextOffset(1, -1)
 
--- The bottom bar: the group's difficulty and the level it opens at.
-finder.bar = CreateFrame("Frame", nil, finder)
-finder.bar:SetPoint("BOTTOMLEFT", 6, 6)
-finder.bar:SetPoint("BOTTOMRIGHT", -6, 6)
-finder.bar:SetHeight(24)
-finder.bar:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 10,
-    insets = { left = 2, right = 2, top = 2, bottom = 2 } })
-finder.bar:SetBackdropColor(0, 0, 0, 0.8)
-finder.bar:SetBackdropBorderColor(0.6, 0.45, 0.25, 1)
-finder.difficulty = finder.bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-finder.difficulty:SetPoint("LEFT", 10, 0)
-finder.requirement = finder.bar:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-finder.requirement:SetPoint("RIGHT", -10, 0)
+-- The bottom strip: the group's difficulty, and the level it opens at.
+finder.difficulty = finder:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+finder.difficulty:SetFont(TEXT_FONT, 10)
+finder.difficulty:SetPoint("LEFT", finder, "TOPLEFT", 40, -(STRIP_TOP + (PANEL_H - 11 - STRIP_TOP) / 2))
+finder.difficulty:SetTextColor(0.94, 0.9, 0.85)
+finder.requirement = finder:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+finder.requirement:SetFont(TEXT_FONT, 10)
+finder.requirement:SetPoint("RIGHT", finder, "TOPRIGHT", -40, -(STRIP_TOP + (PANEL_H - 11 - STRIP_TOP) / 2))
+finder.requirement:SetTextColor(PALE_TEXT[1], PALE_TEXT[2], PALE_TEXT[3])
 
 local queue = { state = nil, best = { 0, 0, 0, 0 }, level = 10, checkpoint = 1, start = 1, answers = {},
     leader = nil, why = nil }
@@ -575,6 +620,7 @@ function finder:Refresh()
         slot.member, slot.why, slot.answer = member, nil, nil
         if member then
             slot.empty:Hide()
+            slot.vacant:Hide()
             if SetPortraitTexture then
                 SetPortraitTexture(slot.portrait, member.unit)
             end
@@ -589,27 +635,27 @@ function finder:Refresh()
             slot.answer = queue.state == "proposal" and (answer or 0) or nil
             slot.status:SetTexture(slot.why and NOT_READY or answer == 1 and READY or answer == 2 and NOT_READY
                 or (queue.state == "proposal" and WAITING) or nil)
-            slot:SetBackdropBorderColor(slot.why and 1 or 0.86, slot.why and 0.2 or 0.64, slot.why and 0.2 or 0.32, 1)
+            slot.portrait:SetVertexColor(1, slot.why and 0.45 or 1, slot.why and 0.45 or 1)
         else
             slot.empty:Show()
+            slot.vacant:Show()
             slot.portrait:Hide()
             slot.status:SetTexture(nil)
-            slot:SetBackdropBorderColor(0.35, 0.3, 0.25, 1)
         end
     end
     local size = math.max(1, math.min(#list, MOST_HEROES))
     if #list > MOST_HEROES then
         problem = "The Firepit takes at most 10."
     end
-    self.difficulty:SetText(string.format("Monsters for %d: health |cffff9a3ax%.1f|r, numbers |cffff9a3ax%.1f|r",
+    self.difficulty:SetText(string.format("Monsters for %d:  health |cffff9a3ax%.1f|r   numbers |cffff9a3ax%.1f|r",
         size, 1 + GROUP_HEALTH * (size - 1), 1 + GROUP_COUNT * (size - 1)))
-    self.requirement:SetText("Level " .. queue.level .. "+  -  a wave every 60 sec")
+    self.requirement:SetText("Level " .. queue.level .. "+   -   a wave every 60 sec")
     for index, record in ipairs(records) do
         record.value:SetText(tostring(queue.best[index] or 0))
     end
 
     queue.start = math.min(queue.start, queue.checkpoint)
-    start.text:SetText("Start at |cffff9a3aWave " .. queue.start .. "|r")
+    start.text:SetText("Wave " .. queue.start)
     if queue.start > 1 then
         startPrev:Enable()
     else
@@ -622,6 +668,7 @@ function finder:Refresh()
     end
 
     local leading = Leading(list)
+    local enabled
     if queue.state == "proposal" then
         local accepted = 0
         for _, member in ipairs(list) do
@@ -631,19 +678,22 @@ function finder:Refresh()
         end
         self.status:SetText(string.format("Waiting for the group: %d of %d ready.", accepted, #list))
         queueButton:SetText(leading and "Leave Queue" or "Decline")
-        queueButton:Enable()
+        enabled = true
     else
         self.status:SetText(queue.why and ("|cffff4040" .. queue.why .. "|r") or (problem and ("|cffff4040"
             .. problem .. "|r") or ""))
         queueButton:SetText(#list > 1 and ("Queue Group (" .. #list .. ")") or "Enter the Firepit")
-        if leading and not problem and UnitLevel("player") >= queue.level then
-            queueButton:Enable()
-        else
-            queueButton:Disable()
-            if not leading then
-                self.status:SetText("Only your group's leader can queue.")
-            end
+        enabled = leading and not problem and UnitLevel("player") >= queue.level
+        if not leading then
+            self.status:SetText("Only your group's leader can queue.")
         end
+    end
+    if enabled then
+        queueButton:Enable()
+        queueButton.label:SetTextColor(1, 0.86, 0.45)
+    else
+        queueButton:Disable()
+        queueButton.label:SetTextColor(0.6, 0.58, 0.55)
     end
 end
 
