@@ -33,9 +33,12 @@
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Player.h"
+#include "Containers.h"
 #include "Random.h"
 #include "ScriptMgr.h"
 #include "ScriptedGossip.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
 #include "TemporarySummon.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
@@ -93,9 +96,9 @@ namespace
         GO_BONFIRE = 910142,                            // unused (too big: a wall of fire)
         GO_FIRE_PIT = 910143,
         GO_LAVA_PILLAR = 910144,
-        GO_FLAME_CIRCLE = 910145,                       // unused (glare over the middle)
+        GO_FLAME_CIRCLE = 910145,                       // a Molten Eruption's warning (too bright to stand)
         GO_EMBERS = 910146,
-        GO_FIRE_RIFT = 910147,                          // unused
+        GO_FIRE_RIFT = 910147,                          // a Searing Nova's warning, under the boss
     };
     struct Ring
     {
@@ -112,6 +115,21 @@ namespace
         { GO_DARK_IRON_BRAZIER, 51.0f, 16, 0.2f },
     };
     constexpr float GATE_PILLAR_SPREAD = 7.0f;          // a lava pillar each side of a gate, this far from it
+
+    // The bosses' mechanics, from wave 15 (the third boss): more of them as the waves climb. Their damage is a share
+    // of each Hero's own health (wave and level aside: it is about moving, not gear).
+    // - Molten Eruption (15+): flame rings under up to 3 Heroes; 3 sec later each erupts, 30% to anyone within 6 yd.
+    // - Searing Nova (30+): the boss roots itself and gathers flame; 4 sec later, 50% to anyone within 12 yd of it.
+    // - Enrage (45+): under 30% health, the boss's damage x1.5.
+    constexpr uint32 MECHANICS_FROM = 15, NOVA_FROM = 30, ENRAGE_FROM = 45;
+    constexpr uint32 ERUPTION_EVERY_MS = 14000, ERUPTION_DELAY_MS = 3000, ERUPTION_TARGETS = 3;
+    constexpr float ERUPTION_RADIUS = 6.0f, ERUPTION_DAMAGE = 0.3f;
+    constexpr uint32 NOVA_EVERY_MS = 22000, NOVA_DELAY_MS = 4000;
+    constexpr float NOVA_RADIUS = 12.0f, NOVA_DAMAGE = 0.5f;
+    constexpr float ENRAGE_BELOW = 30.0f, ENRAGE_DAMAGE = 1.5f;
+    constexpr uint32 NPC_ERUPTION = 910141;             // titan_firepit.sql: invisible, the eruptions' source
+    constexpr uint32 SPELL_FIRE_NOVA = 16079;           // its look only: cast by a friendly source, it hits no one
+    constexpr uint32 SPELL_ERUPTION_LOG = 11307;        // the combat log's name for an eruption's hit (Fire Nova)
 
     constexpr uint32 COUNTDOWN_MS = 10000, WAVE_MS = 60000, BREATHER_MS = 5000, SPAWN_SPREAD_MS = 4000;
     constexpr uint32 TICK_MS = 1000, END_DELAY_MS = 4000, CORPSE_MS = 3000;
@@ -268,6 +286,24 @@ namespace
         uint32 dueMs;
     };
 
+    // A boss's mechanics' timers, and a blast on its way (a warning on the floor, then the hit).
+    struct BossState
+    {
+        uint32 eruptMs;
+        uint32 novaMs;
+        bool enraged;
+    };
+    struct Blast
+    {
+        ObjectGuid source;                              // the boss
+        ObjectGuid marker;                              // the warning on the floor
+        Position at;
+        float radius = 0.0f;
+        float share = 0.0f;                             // of each Hero's max health
+        uint32 ms = 0;
+        bool nova = false;                              // at the boss as it goes off
+    };
+
     enum class Phase : uint8
     {
         WAITING,        // for the first Hero
@@ -283,9 +319,13 @@ namespace
 class FirepitInstance : public InstanceScript
 {
 public:
-    explicit FirepitInstance(InstanceMap* map) : InstanceScript(map) { }
+    // The run's setup is taken as the script is made: the Firepit's instance has a save (StartRun makes it), so the
+    // core loads it rather than calling Initialize (InstanceMap::CreateInstanceScript, for a module's script).
+    explicit FirepitInstance(InstanceMap* map) : InstanceScript(map) { TakeSetup(); }
 
-    void Initialize() override
+    void Initialize() override { TakeSetup(); }
+
+    void TakeSetup()
     {
         std::lock_guard guard(registryLock);
         auto setup = setups.find(instance->GetInstanceId());
@@ -475,6 +515,7 @@ public:
         if (_phase == Phase::RUNNING || _phase == Phase::COUNTDOWN)
         {
             _phase = Phase::ENDING;
+            ClearMechanics();
             _timer = 0;
         }
     }
@@ -588,7 +629,7 @@ private:
 
         bool bossWave = _wave % BOSS_EVERY == 0;
         float groupCount = 1.0f + GROUP_COUNT * float(_groupSize - 1);
-        uint32 count = uint32(std::lround(float(3 + _wave / 2) * groupCount * (bossWave ? 0.5f : 1.0f)));
+        uint32 count = bossWave ? 0 : uint32(std::lround(float(3 + _wave / 2) * groupCount));   // a boss comes alone
 
         std::vector<uint32> kinds;
         for (Kind const& kind : ROSTER)
@@ -655,6 +696,9 @@ private:
             own->health *= BOSS_HEALTH;
             own->damage *= BOSS_DAMAGE;
         }
+        if (spawn.boss && _wave >= MECHANICS_FROM)
+            _bosses[enemy->GetGUID()] = { urand(5000, ERUPTION_EVERY_MS), urand(NOVA_EVERY_MS / 2, NOVA_EVERY_MS),
+                false };
         enemy->SetFaction(ENEMY_FACTION);
         enemy->SetReactState(REACT_AGGRESSIVE);
         enemy->SetHomePosition(CENTER);
@@ -663,6 +707,149 @@ private:
             enemy->ForceValuesUpdateAtIndex(index);
         _enemies.push_back(enemy->GetGUID());
         Engage(enemy);
+    }
+
+    // The bosses' mechanics (MECHANICS_FROM): each boss's timers, and the blasts on their way.
+    static bool Due(uint32& ms, uint32 diff, uint32 every)
+    {
+        if (ms > diff)
+        {
+            ms -= diff;
+            return false;
+        }
+        ms = every;
+        return true;
+    }
+
+    void Mechanics(uint32 diff)
+    {
+        for (auto it = _bosses.begin(); it != _bosses.end();)
+        {
+            Creature* boss = instance->GetCreature(it->first);
+            Enemy* own = boss ? boss->CustomData.Get<Enemy>("titan_firepit") : nullptr;
+            if (!boss || !boss->IsAlive() || !own)
+            {
+                it = _bosses.erase(it);
+                continue;
+            }
+            BossState& state = it->second;
+            if (Due(state.eruptMs, diff, ERUPTION_EVERY_MS))
+                Erupt(boss);
+            if (own->wave >= NOVA_FROM && Due(state.novaMs, diff, NOVA_EVERY_MS))
+                Nova(boss);
+            if (own->wave >= ENRAGE_FROM && !state.enraged && boss->HealthBelowPct(int32(ENRAGE_BELOW)))
+            {
+                state.enraged = true;
+                own->damage *= ENRAGE_DAMAGE;
+                Announce(boss->GetName() + " is enraged!", true);
+            }
+            ++it;
+        }
+        for (std::size_t i = 0; i < _blasts.size();)
+        {
+            Blast& blast = _blasts[i];
+            if (blast.ms > diff)
+            {
+                blast.ms -= diff;
+                ++i;
+                continue;
+            }
+            Blast due = blast;
+            _blasts.erase(_blasts.begin() + i);
+            Detonate(due);
+        }
+    }
+
+    GameObject* Marker(uint32 entry, Position const& at)
+    {
+        return instance->SummonGameObject(entry, at.GetPositionX(), at.GetPositionY(), at.GetPositionZ(), 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f, 0);
+    }
+
+    void Erupt(Creature* boss)
+    {
+        std::vector<Player*> heroes = Living();
+        Acore::Containers::RandomShuffle(heroes);
+        if (heroes.size() > ERUPTION_TARGETS)
+            heroes.resize(ERUPTION_TARGETS);
+        for (Player* hero : heroes)
+        {
+            Blast blast;
+            blast.source = boss->GetGUID();
+            blast.at = hero->GetPosition();
+            blast.radius = ERUPTION_RADIUS;
+            blast.share = ERUPTION_DAMAGE;
+            blast.ms = ERUPTION_DELAY_MS;
+            if (GameObject* marker = Marker(GO_FLAME_CIRCLE, blast.at))
+                blast.marker = marker->GetGUID();
+            _blasts.push_back(blast);
+        }
+        if (!heroes.empty())
+            Announce(boss->GetName() + " calls up the magma: move out of the flames!");
+    }
+
+    void Nova(Creature* boss)
+    {
+        Blast blast;
+        blast.source = boss->GetGUID();
+        blast.at = boss->GetPosition();
+        blast.radius = NOVA_RADIUS;
+        blast.share = NOVA_DAMAGE;
+        blast.ms = NOVA_DELAY_MS;
+        blast.nova = true;
+        if (GameObject* marker = Marker(GO_FIRE_RIFT, blast.at))
+            blast.marker = marker->GetGUID();
+        boss->SetControlled(true, UNIT_STATE_ROOT);
+        _blasts.push_back(blast);
+        Announce(boss->GetName() + " gathers a Searing Nova: get away from it!", true);
+    }
+
+    void Detonate(Blast const& blast)
+    {
+        if (GameObject* marker = instance->GetGameObject(blast.marker))
+            marker->Delete();
+        Creature* boss = instance->GetCreature(blast.source);
+        if (blast.nova && boss)
+            boss->SetControlled(false, UNIT_STATE_ROOT);
+        if (blast.nova && (!boss || !boss->IsAlive()))
+            return;                                     // a nova dies with its boss
+        Position at = blast.nova ? boss->GetPosition() : blast.at;
+        TempSummon* source = instance->SummonCreature(NPC_ERUPTION, at, nullptr, 2000);
+        if (source)
+        {
+            source->SetFaction(35);                     // friendly: its Fire Nova is the look, and hits no one
+            source->CastSpell(source, SPELL_FIRE_NOVA, true);
+        }
+        Unit* attacker = blast.nova ? static_cast<Unit*>(boss) : static_cast<Unit*>(source);
+        if (!attacker)
+            return;
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(blast.nova ? SPELL_FIRE_NOVA : SPELL_ERUPTION_LOG);
+        for (Player* hero : Living())
+        {
+            if (hero->GetExactDist2d(at.GetPositionX(), at.GetPositionY()) > blast.radius
+                || std::abs(hero->GetPositionZ() - at.GetPositionZ()) > 6.0f)
+                continue;
+            DamageInfo damage(attacker, hero, uint32(float(hero->GetMaxHealth()) * blast.share), spell,
+                SPELL_SCHOOL_MASK_FIRE, SPELL_DIRECT_DAMAGE);
+            Unit::CalcAbsorbResist(damage);
+            attacker->SendSpellNonMeleeDamageLog(hero, spell, damage.GetDamage(), SPELL_SCHOOL_MASK_FIRE,
+                damage.GetAbsorb(), damage.GetResist(), false, 0);
+            Unit::DealDamage(attacker, hero, damage.GetDamage(), nullptr, SPELL_DIRECT_DAMAGE, SPELL_SCHOOL_MASK_FIRE,
+                spell, false);
+        }
+    }
+
+    void ClearMechanics()
+    {
+        for (Blast const& blast : _blasts)
+        {
+            if (GameObject* marker = instance->GetGameObject(blast.marker))
+                marker->Delete();
+            if (Creature* boss = instance->GetCreature(blast.source))
+                boss->SetControlled(false, UNIT_STATE_ROOT);
+        }
+        _blasts.clear();
+        _bosses.clear();
     }
 
     // At the nearest living Hero.
@@ -698,6 +885,8 @@ private:
             else
                 ++i;
         }
+
+        Mechanics(diff);
 
         _waveMs = _waveMs > diff ? _waveMs - diff : 0;
         _tickMs += diff;
@@ -749,6 +938,7 @@ private:
         {
             Announce("The Firepit claims its last challenger.", true);
             _phase = Phase::ENDING;
+            ClearMechanics();
             _timer = END_DELAY_MS;
             return;
         }
@@ -879,6 +1069,8 @@ private:
     uint32 _timer = 0, _wave = 0, _waveMs = 0, _tickMs = 0, _runMs = 0, _kills = 0;
     bool _breather = false;
     float _overflow = 1.0f;
+    std::unordered_map<ObjectGuid, BossState> _bosses;
+    std::vector<Blast> _blasts;
     std::vector<ObjectGuid> _natives, _enemies;
     std::vector<Spawn> _queue;
     std::map<ObjectGuid, Record> _records;

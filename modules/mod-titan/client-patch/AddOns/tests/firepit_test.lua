@@ -96,6 +96,9 @@ DEFAULT_CHAT_FRAME = { AddMessage = function() end }
 local instanceName, instanceKind = "Stormwind City", "none"
 function GetInstanceInfo() return instanceName, instanceKind end
 function GetLFGMode() return nil end
+local music
+function PlayMusic(file) music = file end
+function StopMusic() music = nil end
 local menus = {}
 function EasyMenu(menu) menus[#menus + 1] = menu end
 MiniMapLFGFrame = NewWidget("MiniMapLFGFrame")
@@ -184,6 +187,7 @@ check(dungeonFinderClicked and #menus == 0, "outside the Firepit, the eye is the
 server("INTRO")
 check(debug.intro.shown and debug.intro.title.text == "THE FIREPIT", "arriving shows the Firepit's title")
 check(MiniMapLFGFrame.shown and debug.Inside(), "inside the Firepit, the minimap's eye shows")
+check(music and music:find("PressurePoint.mp3", 1, true), "and the Firepit's music plays")
 MiniMapLFGFrame.scripts.OnClick(MiniMapLFGFrame, "LeftButton")
 local menu = menus[1]
 check(menu and menu[2].text:find("Teleport out", 1, true), "the eye's menu offers the way out")
@@ -192,7 +196,7 @@ check(popups[#popups][1] == "EMBERFORGE_FIREPIT_EXIT", "leaving asks first")
 StaticPopupDialogs.EMBERFORGE_FIREPIT_EXIT.OnAccept()
 check(sent[#sent] == "EXIT", "and then asks the server to send you out")
 events.scripts.OnEvent(events, "PLAYER_ENTERING_WORLD")
-check(not MiniMapLFGFrame.shown and not debug.Inside(), "out of the Firepit, the eye goes")
+check(not MiniMapLFGFrame.shown and not debug.Inside() and not music, "out of the Firepit, the eye and music go")
 instanceName, instanceKind = "The Firepit", "party"
 events.scripts.OnEvent(events, "PLAYER_ENTERING_WORLD")
 check(MiniMapLFGFrame.shown, "a Hero who logs in inside sees the eye")

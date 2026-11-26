@@ -3,7 +3,7 @@
 -- alive, Heroes standing, the run's news), and the recap when the run ends: the run in big numbers, who stood out,
 -- and a row for each Hero, sortable by any column, with a button that shares the result in group chat. /firepit
 -- opens the last recap again. Inside the Firepit, the minimap's dungeon finder eye shows, as in any dungeon: its menu
--- takes you out.
+-- takes you out; and the Firepit's music plays (PressurePoint.mp3, over the zone's).
 --
 -- The server (mod-titan, src/firepit.cpp) talks in addon whispers to the player, prefix EFFP:
 --   H,<wave>,<sec left>,<enemies alive>,<boss wave 0|1>,<Heroes standing>,<Heroes in the run>,<countdown sec>
@@ -1053,6 +1053,7 @@ end
 -- Firepit it shows too, its menu offering the way out. The dungeon finder's own uses of it are left as they were.
 
 local FIREPIT_MAP_NAME = "The Firepit"     -- the client patch's Map.dbc (client-patch/hd/make_atmosphere.py)
+local MUSIC = "Interface\\AddOns\\Emberforge_Firepit\\PressurePoint.mp3"  -- the Firepit's own, on a loop inside
 local inside = false
 local eye = MiniMapLFGFrame
 local eyeMenu = CreateFrame("Frame", "EmberforgeFirepitEyeMenu", UIParent, "UIDropDownMenuTemplate")
@@ -1089,6 +1090,11 @@ local function SetInside(now)
     if inside ~= now then
         inside = now
         UpdateEye()
+        if now and PlayMusic then
+            PlayMusic(MUSIC)
+        elseif not now and StopMusic then
+            StopMusic()
+        end
     end
 end
 

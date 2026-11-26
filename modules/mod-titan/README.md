@@ -1069,8 +1069,9 @@ replaced mod-autobalance):
 
 ## The Firepit
 
-An endless wave arena on a map of its own (760, Trial of the Champion's arena: see **The map** below), solo or for a group of up to 10, and the
-rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emberforge_Firepit` addon).
+An endless wave arena on a map of its own (760, Trial of the Champion's arena: see **The map** below), solo or for a
+group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the
+`Emberforge_Firepit` addon).
 - **The queue** is a tab of the group finder (The Firepit, beside Dungeons and Player vs. Player:
   `Emberforge_Journal/MicroMenu.lua`; it opens in the screen's middle at 1.5 times a panel's size, draggable, Escape
   closes it), the Firepit addon's 16:9 window over a painting of the ring under a dark veil,
@@ -1094,7 +1095,8 @@ rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emb
   `ac-firepit-map` service in docker-compose.yml, which copies map 650's terrain, collision and navigation files as
   map 760's in the data volume before the worldserver starts (`tools/firepit-map.sh`; by hand outside Docker:
   `tools/firepit-map.sh <DataDir>`). The arena: centre (746.5, 618.5), floor 54 yards out; the enemies come in on the
-  floor around its edge (38-46 yards out: the gates' tunnels are not all walkable). The zone name the client shows is still the terrain's own.
+  floor around its edge (38-46 yards out: the gates' tunnels are not all walkable). The zone name the client shows
+  is still the terrain's own.
 - **The arena dressed**: each run places the client's own fire (`DECOR_RINGS`, game objects 910141-910147): a low
   fire pit in the middle, sixteen Dark Iron braziers along the wall, embers and smoke rising by it, lava pillars at both
   gates (nothing tall or bright where the fighting is). The Heroes arrive around the pit, and
@@ -1103,9 +1105,17 @@ rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emb
 - **Waves** every 60 sec (or 5 sec after the last enemy dies), around the arena's edge: wave n brings 3 + n/2
   enemies, 20% more for each player past the first, from the Depths' roster (`ROSTER`: the ring's beasts, the Dark
   Iron, their fire, golems, the Twilight's Hammer; a new kind every wave or two, the newest six in a wave). Every 5th
-  wave adds a boss (`BOSSES`: the Ring of Law's six, then the Depths' own; two from wave 60, three from 120), with 4
-  times the health and 1.5 times the damage. Survivors stay and pile up; past 150 alive, new spawns are skipped and
-  every enemy left grows 3% instead. Enemies that stray off the floor (past 52 yards, or up in the stands) are put back on its edge.
+  wave is the bosses alone (`BOSSES`: the Ring of Law's six, then the Depths' own; two from wave 60, three from 120),
+  with 4 times the health and 1.5 times the damage. Survivors stay and pile up; past 150 alive, new spawns are
+  skipped and every enemy left grows 3% instead. Enemies that stray off the floor (past 52 yards, or up in the
+  stands) are put back on its edge.
+- **Boss mechanics** from wave 15 (`MECHANICS_FROM`), each a share of the Hero's own health (it is about moving, not
+  gear): **Molten Eruption** (15+, every 14 sec): a ring of flame under up to 3 Heroes, erupting 3 sec later, 30% to
+  anyone within 6 yd (its source the invisible Molten Eruption, 910141). **Searing Nova** (30+, every 22 sec): the
+  boss roots itself over a fire rift and, 4 sec later, hits everyone within 12 yd for 50%. **Enrage** (45+): under
+  30% health, the boss's damage x1.5. Each warning is on the wave tracker, the nova's in red.
+- **Starting later**: a run's setup (its Heroes, start wave, homes) is taken as its instance script is made (the
+  instance has a save, so the core loads it and never calls `Initialize` for a module's script).
 - **Difficulty**: the creatures are at the group's lowest level, as any dungeon's (`dungeon_scaling.cpp`); on top,
   `Firepit::HealthMultiplier` and `DamageMultiplier` (read there): 35% at wave 1, 10% more each wave (compounding:
   wave 20 x2.1, wave 50 x37), health 40% more for each player past the first.
