@@ -86,14 +86,14 @@ def underline(layer, x0, x1, y):
 
 def chrome():
     size = (u(PANEL_W), u(PANEL_H))
-    layer = Image.new('RGBA', size, VEIL + (168,))
+    layer = Image.new('RGBA', size, VEIL + (112,))
 
     # Darker toward the edges, and outside the frame's rounded corners.
     vignette = Image.new('L', size, 0)
     ImageDraw.Draw(vignette).rectangle((u(50), u(40), size[0] - u(50), size[1] - u(40)), fill=255)
     vignette = vignette.filter(ImageFilter.GaussianBlur(u(34)))
     edge = Image.new('RGBA', size, VEIL + (255,))
-    edge.putalpha(vignette.point(lambda v: int((255 - v) * 0.42)))
+    edge.putalpha(vignette.point(lambda v: int((255 - v) * 0.3)))
     layer.alpha_composite(edge)
     outside = Image.new('L', size, 255)
     ImageDraw.Draw(outside).rounded_rectangle(tuple(u(v) for v in BORDER), u(8), fill=0)

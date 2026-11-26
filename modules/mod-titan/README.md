@@ -1072,7 +1072,8 @@ replaced mod-autobalance):
 An endless wave arena in a private Ring of Law (Blackrock Depths, map 230), solo or for a group of up to 10, and the
 rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emberforge_Firepit` addon).
 - **The queue** is a tab of the group finder (The Firepit, beside Dungeons and Player vs. Player:
-  `Emberforge_Journal/MicroMenu.lua`), the Firepit addon's 16:9 panel over a painting of the ring under a dark veil,
+  `Emberforge_Journal/MicroMenu.lua`; it opens in the screen's middle at 1.5 times a panel's size, draggable, Escape
+  closes it), the Firepit addon's 16:9 window over a painting of the ring under a dark veil,
   thin bronze lines and ember-lit headers (its art from `client-patch/build_firepit_art.py`: `Background.blp` from
   `icons/ui/FirepitBackground.png`, `Chrome.blp` the veil and lines drawn at the addon's layout, the button): on
   the left the rules, the potential rewards and the group (a slot a member: portrait, level, answer); on the right the

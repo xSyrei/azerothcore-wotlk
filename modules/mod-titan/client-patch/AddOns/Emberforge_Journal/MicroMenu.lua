@@ -304,20 +304,27 @@ for index, window in ipairs(WINDOWS) do
     end)
     tab:SetScript("OnLeave", function() GameTooltip:Hide() end)
     tab:SetScript("OnClick", function(self)
-        -- Both are left-hand panels: showing one puts it in the other's place.
+        -- One at a time: the others close, the one chosen opens in their place (the dungeon finder and Player vs.
+        -- Player are left-hand panels; the Firepit is a window of its own, in the screen's middle).
         local target = Window(index)
         self:SetChecked(true)
-        if target and not target:IsShown() then
-            ShowUIPanel(target)
-            if not target:IsShown() then
-                for other = 1, #WINDOWS do
-                    local frame = Window(other)
-                    if frame and frame ~= target and frame:IsShown() then
-                        HideUIPanel(frame)
-                    end
+        if not target or target:IsShown() then
+            return
+        end
+        for other = 1, #WINDOWS do
+            local frame = Window(other)
+            if frame and frame ~= target and frame:IsShown() then
+                if UIPanelWindows and UIPanelWindows[frame:GetName()] then
+                    HideUIPanel(frame)
+                else
+                    frame:Hide()
                 end
-                ShowUIPanel(target)
             end
+        end
+        if UIPanelWindows and UIPanelWindows[target:GetName()] then
+            ShowUIPanel(target)
+        else
+            target:Show()
         end
     end)
     tab:Hide()

@@ -346,17 +346,24 @@ local SLOT_CX, SLOT_CY, SLOT_SIZE, SLOT_STEP = 40, 236.5, 25, 30.6
 local CELLS = { { 403, 64 }, { 488, 64 }, { 403, 105 }, { 488, 105 } }    -- a record's label (its centre, top)
 local PICKER_X, PICKER_Y, PICKER_W, PICKER_H = 360, 186, 177, 23
 local BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H = 360, 223, 177, 26
-local CREAM, PALE, BODY = { 0.93, 0.84, 0.71 }, { 0.72, 0.64, 0.55 }, { 0.92, 0.88, 0.82 }
+local CREAM, PALE, BODY = { 0.98, 0.88, 0.72 }, { 0.84, 0.76, 0.66 }, { 0.98, 0.95, 0.9 }
+local FINDER_SCALE = 1.5                        -- a window of its own, in the screen's middle: larger than a panel
 
 local finder = CreateFrame("Frame", "EmberforgeFirepitFinder", UIParent)
 finder:SetWidth(PANEL_W)
 finder:SetHeight(PANEL_H)
-finder:SetPoint("TOPLEFT", 16, -116)
+finder:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
+finder:SetScale(FINDER_SCALE)
+finder:SetFrameStrata("HIGH")
+finder:SetClampedToScreen(true)
 finder:EnableMouse(true)
+finder:SetMovable(true)
+finder:RegisterForDrag("LeftButton")
+finder:SetScript("OnDragStart", finder.StartMoving)
+finder:SetScript("OnDragStop", finder.StopMovingOrSizing)
 finder:SetToplevel(true)
 finder:Hide()
-UIPanelWindows = UIPanelWindows or {}
-UIPanelWindows["EmberforgeFirepitFinder"] = { area = "left", pushable = 0, whileDead = 1 }
+tinsert(UISpecialFrames, "EmberforgeFirepitFinder")   -- Escape closes it
 
 -- The painting of the ring (16:9, squeezed into 1024x512: the panel's own shape again here), and over it the veil,
 -- the frame and the lines (Chrome).
@@ -385,7 +392,7 @@ finderClose:SetHeight(18)
 finderClose:SetPoint("TOPRIGHT", -13, -10)
 finderClose:SetNormalTexture(ART .. "Close")
 finderClose:SetHighlightTexture(ART .. "Close", "ADD")
-finderClose:SetScript("OnClick", function() HideUIPanel(finder) end)
+finderClose:SetScript("OnClick", function() finder:Hide() end)
 
 finder.title = Text(24, 11, 19, CREAM)
 finder.title:SetText("THE FIREPIT")
@@ -746,12 +753,15 @@ StaticPopupDialogs["EMBERFORGE_FIREPIT_PROPOSAL"] = {
     hideOnEscape = 0,
 }
 
+-- In the group finder's place (it and Player vs. Player close; their tabs follow this window).
 local function OpenFinder()
-    if ShowUIPanel then
-        ShowUIPanel(finder)
-    else
-        finder:Show()
+    for _, name in ipairs({ "LFDParentFrame", "PVPParentFrame" }) do
+        local frame = _G[name]
+        if frame and frame:IsShown() then
+            HideUIPanel(frame)
+        end
     end
+    finder:Show()
 end
 
 local function OnQueueMessage(kind, fields)
@@ -790,11 +800,7 @@ local function OnQueueMessage(kind, fields)
     elseif kind == "QG" then
         queue.state, queue.answers, queue.why = nil, {}, nil
         StaticPopup_Hide("EMBERFORGE_FIREPIT_PROPOSAL")
-        if HideUIPanel then
-            HideUIPanel(finder)
-        else
-            finder:Hide()
-        end
+        finder:Hide()
     else
         return false
     end

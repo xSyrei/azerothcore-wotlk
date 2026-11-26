@@ -29,7 +29,13 @@ end
 function Widget:CreateTexture() return NewWidget() end
 function Widget:CreateFontString() return NewWidget() end
 function Widget:SetScript(event, handler) self.scripts[event] = handler end
-function Widget:Show() self.shown = true end
+function Widget:Show()
+    local was = self.shown
+    self.shown = true
+    if not was and self.scripts.OnShow then
+        self.scripts.OnShow(self)
+    end
+end
 function Widget:Hide() self.shown = false end
 function Widget:IsShown() return self.shown end
 function Widget:SetText(text) self.text = text end
@@ -39,6 +45,8 @@ function Widget:Click() self.scripts.OnClick(self, "LeftButton") end
 function Widget:Enable() self.enabled = true end
 function Widget:SetBackdropBorderColor(...) self.border = { ... } end
 function Widget:SetTexture(texture) self.texture = texture end
+function Widget:SetScale(scale) self.scale = scale end
+function Widget:SetPoint(point) self.point = self.point or point end
 function Widget:Disable() self.enabled = false end
 
 UIParent = NewWidget("UIParent")
@@ -95,8 +103,12 @@ check(not debug.hud.shown and not debug.results.shown, "nothing shows before a r
 -- The queue: the group finder's Firepit tab.
 server("OPEN")
 check(debug.finder.shown and sent[#sent] == "STATE", "OPEN shows the queue, which asks for its state")
-check(UIPanelWindows.EmberforgeFirepitFinder and UIPanelWindows.EmberforgeFirepitFinder.area == "left",
-    "the queue is a left-hand panel, as the dungeon finder")
+local escapes = false
+for _, name in ipairs(UISpecialFrames) do
+    escapes = escapes or name == "EmberforgeFirepitFinder"
+end
+check(debug.finder.scale == 1.5 and debug.finder.point == "CENTER" and escapes,
+    "the queue is a window of its own: larger, in the screen's middle, closed by Escape")
 server("S,23,31,0,12,0,10,30")
 server("L,1,1,Solo Star,57,1")
 server("L,4,1,Tester,41,4")
