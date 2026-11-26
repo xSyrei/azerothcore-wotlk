@@ -3786,15 +3786,15 @@ DELETE FROM `itemrandomsuffix_dbc` WHERE `ID` BETWEEN 22000 AND 22099;
 INSERT INTO `itemrandomsuffix_dbc` (`ID`, `Name_Lang_enUS`, `Name_Lang_Mask`, `InternalName`,
     `Enchantment_1`, `Enchantment_2`, `Enchantment_3`, `Enchantment_4`, `Enchantment_5`, `AllocationPct_1`,
     `AllocationPct_2`, `AllocationPct_3`, `AllocationPct_4`, `AllocationPct_5`) VALUES
-(22000, '', 16712190, 'titanforged_Bear', 2805, 2803, 0, 0, 0, 13332, 13332, 0, 0, 0),
-(22001, '', 16712190, 'titanforged_Monkey', 2802, 2803, 0, 0, 0, 13332, 13332, 0, 0, 0),
-(22002, '', 16712190, 'titanforged_Eagle', 2803, 2804, 0, 0, 0, 13332, 13332, 0, 0, 0),
-(22003, '', 16712190, 'titanforged_Owl', 2804, 2806, 0, 0, 0, 13332, 13332, 0, 0, 0),
-(22004, '', 16712190, 'titanforged_Tiger', 2802, 2805, 0, 0, 0, 13332, 13332, 0, 0, 0),
-(22005, '', 16712190, 'titanforged_Sorcerer', 2803, 2804, 2824, 0, 0, 10518, 10518, 12306, 0, 0),
-(22006, '', 16712190, 'titanforged_Elder', 2803, 2804, 2816, 0, 0, 10518, 10518, 4208, 0, 0),
-(22007, '', 16712190, 'titanforged_Champion', 2805, 2803, 2813, 0, 0, 10518, 10518, 10518, 0, 0),
-(22008, '', 16712190, 'titanforged_Hunt', 2825, 2802, 2804, 0, 0, 29064, 8212, 6386, 0, 0);
+(22000, '', 16712190, 'titanforged_Bear', 2805, 2803, 0, 0, 0, 15332, 21464, 0, 0, 0),
+(22001, '', 16712190, 'titanforged_Monkey', 2802, 2803, 0, 0, 0, 15332, 15332, 0, 0, 0),
+(22002, '', 16712190, 'titanforged_Eagle', 2803, 2804, 0, 0, 0, 15332, 15332, 0, 0, 0),
+(22003, '', 16712190, 'titanforged_Owl', 2804, 2806, 2803, 0, 0, 15332, 15332, 11500, 0, 0),
+(22004, '', 16712190, 'titanforged_Tiger', 2802, 2805, 2803, 0, 0, 15332, 15332, 11500, 0, 0),
+(22005, '', 16712190, 'titanforged_Sorcerer', 2803, 2804, 2824, 0, 0, 12096, 12096, 14152, 0, 0),
+(22006, '', 16712190, 'titanforged_Elder', 2803, 2804, 2816, 0, 0, 12096, 12096, 4840, 0, 0),
+(22007, '', 16712190, 'titanforged_Champion', 2805, 2803, 2813, 0, 0, 12096, 16934, 12096, 0, 0),
+(22008, '', 16712190, 'titanforged_Hunt', 2825, 2802, 2803, 0, 0, 33424, 9444, 11500, 0, 0);
 
 -- The modifiers: famous procs as enchantments (their name is the item's; the client shows it on the piece).
 DELETE FROM `spellitemenchantment_dbc` WHERE `ID` BETWEEN 40000 AND 40999;

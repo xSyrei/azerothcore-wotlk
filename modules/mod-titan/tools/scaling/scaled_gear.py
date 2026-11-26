@@ -46,18 +46,25 @@ def item_level(level):
 AGI, STA, INT, STR, SPI, SP, AP, DEF, MP5 = 2802, 2803, 2804, 2805, 2806, 2824, 2825, 2813, 2816
 
 # Stat mixes: Wrath's suffixes' allocations (ItemRandomSuffix.dbc 68 Bear, 78 Monkey, 69 Eagle, 9 Owl, 14 Tiger,
-# 85 Sorcerer, 73 Elder, 75 Champion, 50 Hunt).
-MIXES = {
-    'Bear': [(STR, 6666), (STA, 6666)],
+# 85 Sorcerer, 73 Elder, 75 Champion, 50 Hunt), then Emberforge's: every mix carries stamina (Owl, Tiger and Hunt
+# gain ADDED_STAMINA; Hunt gives up its intellect for it: a suffix keeps to 3 stats, Fireforged modifiers take the
+# other two slots), the tanks' (Bear, Champion) TANK_STAMINA times as much, and every stat GEAR_BOOST more.
+GEAR_BOOST = 1.15
+ADDED_STAMINA = 5000
+TANK_STAMINA = 1.4
+BASE_MIXES = {
+    'Bear': [(STR, 6666), (STA, round(6666 * TANK_STAMINA))],
     'Monkey': [(AGI, 6666), (STA, 6666)],
     'Eagle': [(STA, 6666), (INT, 6666)],
-    'Owl': [(INT, 6666), (SPI, 6666)],
-    'Tiger': [(AGI, 6666), (STR, 6666)],
+    'Owl': [(INT, 6666), (SPI, 6666), (STA, ADDED_STAMINA)],
+    'Tiger': [(AGI, 6666), (STR, 6666), (STA, ADDED_STAMINA)],
     'Sorcerer': [(STA, 5259), (INT, 5259), (SP, 6153)],
     'Elder': [(STA, 5259), (INT, 5259), (MP5, 2104)],
-    'Champion': [(STR, 5259), (STA, 5259), (DEF, 5259)],
-    'Hunt': [(AP, 14532), (AGI, 4106), (INT, 3193)],
+    'Champion': [(STR, 5259), (STA, round(5259 * TANK_STAMINA)), (DEF, 5259)],
+    'Hunt': [(AP, 14532), (AGI, 4106), (STA, ADDED_STAMINA)],
 }
+MIXES = {mix: [(stat, round(alloc * GEAR_BOOST)) for stat, alloc in stats] for mix, stats in BASE_MIXES.items()}
+assert all(len(stats) <= 3 for stats in MIXES.values())
 ALL_MIXES = list(MIXES)
 
 # Armor per item level, a green's chest (median over Blizzard's greens), and each slot's share of the chest's.

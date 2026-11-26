@@ -23,14 +23,16 @@
 #include "SpellInfo.h"
 #include <unordered_set>
 
-// The Legendary Runes' own output, raised across the board (they were too weak to build around): their damage
-// RUNE_DAMAGE_POWER times, their healing RUNE_HEALING_POWER times, their shields RUNE_SHIELD_POWER times. Theirs:
-// the spells of client-patch/patch_runes.py (rune_power.h, tools/runes/rune_power.py), from a player or what is
-// theirs (an echo, an orb, a beast). What the runes add to the Hero's own abilities (a share more on a spell of
-// theirs) is not raised: only what the runes deal, heal and shield by themselves.
+// The Heroes' power. The Legendary Runes' own output, raised across the board (they were too weak to build around):
+// their damage RUNE_DAMAGE_POWER times, their healing RUNE_HEALING_POWER times, their shields RUNE_SHIELD_POWER
+// times. Theirs: the spells of client-patch/patch_runes.py (rune_power.h, tools/runes/rune_power.py), from a player
+// or what is theirs (an echo, an orb, a beast). What the runes add to the Hero's own abilities is not raised by it.
+// Everything else a player (or what is theirs) deals to a creature, PLAYER_DAMAGE_POWER times: their own abilities,
+// swings and pets (the runes' damage leaned on too much against it). Players and their pets take nothing more.
 namespace
 {
-    constexpr float RUNE_DAMAGE_POWER = 3.5f, RUNE_HEALING_POWER = 3.0f, RUNE_SHIELD_POWER = 3.0f;
+    constexpr float RUNE_DAMAGE_POWER = 2.0f, RUNE_HEALING_POWER = 3.0f, RUNE_SHIELD_POWER = 3.0f;
+    constexpr float PLAYER_DAMAGE_POWER = 1.3f;
 
     std::unordered_set<uint32> const DAMAGE(std::begin(RunePower::DAMAGE), std::end(RunePower::DAMAGE));
     std::unordered_set<uint32> const HEALING(std::begin(RunePower::HEALING), std::end(RunePower::HEALING));
@@ -39,6 +41,22 @@ namespace
     bool PlayersOwn(Unit* unit)
     {
         return unit && unit->GetCharmerOrOwnerPlayerOrPlayerItself();
+    }
+
+    // A player's (or their pet's) blow on a creature no player controls.
+    bool OnCreature(Unit* target, Unit* attacker)
+    {
+        return target && PlayersOwn(attacker) && !target->IsCharmedOwnedByPlayerOrPlayer();
+    }
+
+    // The power of a damage spell (none: a swing) of a player's on a creature: the rune's, else a player's.
+    float DamagePower(Unit* target, Unit* attacker, SpellInfo const* spellInfo)
+    {
+        if (spellInfo && DAMAGE.count(spellInfo->Id))
+            return PlayersOwn(attacker) ? RUNE_DAMAGE_POWER : 1.0f;
+        if (spellInfo && spellInfo->IsPositive())
+            return 1.0f;
+        return OnCreature(target, attacker) ? PLAYER_DAMAGE_POWER : 1.0f;
     }
 
     template <typename T>
@@ -52,19 +70,28 @@ class titan_rune_power : public UnitScript
 {
 public:
     titan_rune_power() : UnitScript("titan_rune_power", true, { UNITHOOK_MODIFY_SPELL_DAMAGE_TAKEN,
-        UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK, UNITHOOK_MODIFY_HEAL_RECEIVED, UNITHOOK_ON_AURA_APPLY }) { }
+        UNITHOOK_MODIFY_PERIODIC_DAMAGE_AURAS_TICK, UNITHOOK_MODIFY_MELEE_DAMAGE, UNITHOOK_MODIFY_HEAL_RECEIVED,
+        UNITHOOK_ON_AURA_APPLY }) { }
 
-    void ModifySpellDamageTaken(Unit* /*target*/, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
+    void ModifySpellDamageTaken(Unit* target, Unit* attacker, int32& damage, SpellInfo const* spellInfo) override
     {
-        if (damage > 0 && spellInfo && DAMAGE.count(spellInfo->Id) && PlayersOwn(attacker))
-            Raise(damage, RUNE_DAMAGE_POWER);
+        if (damage > 0)
+            if (float power = DamagePower(target, attacker, spellInfo); power != 1.0f)
+                Raise(damage, power);
     }
 
-    void ModifyPeriodicDamageAurasTick(Unit* /*target*/, Unit* attacker, uint32& damage,
+    void ModifyPeriodicDamageAurasTick(Unit* target, Unit* attacker, uint32& damage,
         SpellInfo const* spellInfo) override
     {
-        if (damage && spellInfo && DAMAGE.count(spellInfo->Id) && PlayersOwn(attacker))
-            Raise(damage, RUNE_DAMAGE_POWER);
+        if (damage)
+            if (float power = DamagePower(target, attacker, spellInfo); power != 1.0f)
+                Raise(damage, power);
+    }
+
+    void ModifyMeleeDamage(Unit* target, Unit* attacker, uint32& damage) override
+    {
+        if (damage && OnCreature(target, attacker))
+            Raise(damage, PLAYER_DAMAGE_POWER);
     }
 
     void ModifyHealReceived(Unit* /*target*/, Unit* healer, uint32& heal, SpellInfo const* spellInfo) override
