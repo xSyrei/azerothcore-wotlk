@@ -3,8 +3,9 @@
 -- - The micro menu: the Dungeon Journal's button takes the Player vs. Player button's place (the game's blank micro
 --   button, the character button's, with the Journal's own icon on it). Player vs. Player is opened from the
 --   dungeon finder's tabs (or its key, H).
--- - The dungeon finder and Player vs. Player windows are one: both carry the same two tabs on their right edge
---   (as the spellbook's), Dungeons and Player vs. Player, each opening the other in its place.
+-- - The dungeon finder, Player vs. Player and the Firepit's queue (Emberforge_Firepit) are one window: each carries
+--   the same three tabs on its right edge (as the spellbook's), Dungeons, Player vs. Player and The Firepit, each
+--   opening the others in its place.
 -- - The dungeon finder opens from level 10 (its micro button, its key I), as the server queues from there, and lists
 --   what the server lets the Hero queue for, whatever the client's own level ranges.
 -- - Its key: Shift-J, set once if nothing else uses it (Key Bindings: Emberforge).
@@ -261,6 +262,8 @@ local WINDOWS = {
         top = -40 },
     { frame = "PVPParentFrame", name = "Player vs. Player", icon = "Interface\\Icons\\" .. faction, edge = -32,
         top = -65 },
+    { frame = "EmberforgeFirepitFinder", name = "The Firepit", icon = "Interface\\Icons\\Spell_Fire_Burnout",
+        edge = 0, top = -40 },
 }
 local tabs = {}
 local function Window(index)

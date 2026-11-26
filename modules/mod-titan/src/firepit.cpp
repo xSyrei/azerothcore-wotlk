@@ -88,6 +88,9 @@ namespace
     // already counts it a boss: a boss_ script or a boss's rank, with its own health).
     constexpr float BOSS_HEALTH = 4.0f, BOSS_DAMAGE = 1.5f;
     constexpr uint32 SPOILS_SECONDS = 900;
+    constexpr uint8 FIREPIT_LEVEL = 10;                 // the group finder's tab opens there too
+    constexpr uint32 PROPOSAL_MS = 40000;               // a group's members this long to accept
+    constexpr uint32 LEADERBOARD_ROWS = 5;              // a side, in the group finder's tab
 
     // The roster: the wave each kind joins at. The Ring of Law's beasts first, then the Depths' Dark Iron, their
     // fire, their golems and the Twilight's Hammer.
@@ -164,6 +167,8 @@ namespace
     std::unordered_map<ObjectGuid, uint32> destinations;
     std::unordered_set<uint32> firepits;
     std::vector<std::pair<ObjectGuid, uint32>> unbinds;    // players who left a run: their bind to it to drop
+    // The group finder tab's requests (from any map's thread), answered on the world's (titan_firepit_world).
+    std::vector<std::pair<ObjectGuid, std::string>> requests;
 
     uint32 Destination(Player* player, uint32 mapId)
     {
@@ -796,7 +801,7 @@ private:
             members.push_back(leader);
         else
             for (GroupReference* ref = group->GetFirstMember(); ref; ref = ref->next())
-                if (Player* member = ref->GetSource(); member && member->IsInWorld())
+                if (Player* member = ref->GetSource(); member && member->IsInWorld() && member->GetSession())
                 {
                     if (!anywhere && (member->GetMap() != leader->GetMap() || !member->IsWithinDist(leader, 40.0f)))
                     {
@@ -811,11 +816,18 @@ private:
             return false;
         }
         for (Player* member : members)
+        {
+            if (member->GetLevel() < FIREPIT_LEVEL)
+            {
+                why = member->GetName() + " must be level " + std::to_string(FIREPIT_LEVEL) + ".";
+                return false;
+            }
             if (!member->IsAlive() || member->IsInCombat() || member->GetMap()->Instanceable())
             {
                 why = member->GetName() + " must be alive, out of combat and out of any instance.";
                 return false;
             }
+        }
         return true;
     }
 
@@ -891,6 +903,165 @@ private:
     }
 }
 
+// The group finder's Firepit tab (Emberforge_Firepit): the state, the leaderboard, and the queue. A Hero alone goes in
+// at once; a group's leader proposes, every member accepts (40 sec), then all go in together. On the world's thread
+// only (members on other maps are teleported from there).
+namespace
+{
+    struct Proposal
+    {
+        std::vector<ObjectGuid> members;
+        std::unordered_map<ObjectGuid, uint8> answers;      // 0 waiting, 1 accepted, 2 declined
+        uint32 expiresAt = 0;
+    };
+    std::unordered_map<ObjectGuid, Proposal> proposals;      // by leader
+
+    std::pair<ObjectGuid const, Proposal>* ProposalOf(ObjectGuid const& guid)
+    {
+        for (auto& entry : proposals)
+            if (std::find(entry.second.members.begin(), entry.second.members.end(), guid) != entry.second.members.end())
+                return &entry;
+        return nullptr;
+    }
+
+    void ToMembers(Proposal const& proposal, std::string const& payload)
+    {
+        for (ObjectGuid const& guid : proposal.members)
+            if (Player* member = ObjectAccessor::FindConnectedPlayer(guid))
+                SendAddon(member, payload);
+    }
+
+    // S,<best wave>,<its group size>,<in a proposal 0|1>,<the level it opens at>, then the leaderboard: L,<solo 0|
+    // group 1>,<rank>,<name>,<wave>,<group size> and LE.
+    void SendFinderState(Player* player)
+    {
+        uint32 best = 0, size = 0;
+        if (QueryResult own = CharacterDatabase.Query("SELECT `best_wave`, `group_size` FROM `titan_firepit_best` "
+            "WHERE `guid` = {}", player->GetGUID().GetCounter()))
+        {
+            best = own->Fetch()[0].Get<uint32>();
+            size = own->Fetch()[1].Get<uint32>();
+        }
+        SendAddon(player, "S," + std::to_string(best) + ',' + std::to_string(size) + ','
+            + std::to_string(ProposalOf(player->GetGUID()) ? 1 : 0) + ',' + std::to_string(FIREPIT_LEVEL));
+        for (uint32 side = 0; side < 2; ++side)
+        {
+            QueryResult result = CharacterDatabase.Query("SELECT c.`name`, b.`best_wave`, b.`group_size` FROM "
+                "`titan_firepit_best` b JOIN `characters` c ON c.`guid` = b.`guid` WHERE b.`group_size` {} "
+                "ORDER BY b.`best_wave` DESC, b.`run_date` ASC LIMIT {}", side ? "> 1" : "= 1", LEADERBOARD_ROWS);
+            uint32 rank = 0;
+            if (result)
+                do
+                {
+                    Field* fields = result->Fetch();
+                    SendAddon(player, "L," + std::to_string(side) + ',' + std::to_string(++rank) + ','
+                        + Clean(fields[0].Get<std::string>()) + ',' + std::to_string(fields[1].Get<uint32>()) + ','
+                        + std::to_string(fields[2].Get<uint32>()));
+                } while (result->NextRow());
+        }
+        SendAddon(player, "LE");
+    }
+
+    void CancelProposal(ObjectGuid const& leader, std::string const& why)
+    {
+        auto found = proposals.find(leader);
+        if (found == proposals.end())
+            return;
+        ToMembers(found->second, "QC," + Clean(why));
+        proposals.erase(found);
+    }
+
+    void Queue(Player* player)
+    {
+        std::vector<Player*> members;
+        std::string why;
+        if (ProposalOf(player->GetGUID()))
+            return;
+        if (!Gather(player, true, members, why))
+        {
+            SendAddon(player, "QC," + Clean(why));
+            return;
+        }
+        if (members.size() == 1)
+        {
+            if (!StartRun(player, 1, true, why))
+                SendAddon(player, "QC," + Clean(why));
+            else
+                SendAddon(player, "QG");
+            return;
+        }
+        Proposal& proposal = proposals[player->GetGUID()];
+        proposal.expiresAt = GameTime::GetGameTimeMS().count() + PROPOSAL_MS;
+        for (Player* member : members)
+        {
+            proposal.members.push_back(member->GetGUID());
+            proposal.answers[member->GetGUID()] = member == player ? 1 : 0;
+        }
+        ToMembers(proposal, "QP," + Clean(player->GetName()) + ',' + std::to_string(members.size()) + ','
+            + std::to_string(PROPOSAL_MS / 1000));
+        for (Player* member : members)
+            ToMembers(proposal, "QA," + Clean(member->GetName()) + ',' + std::to_string(proposal.answers[
+                member->GetGUID()]));
+    }
+
+    void Answer(Player* player, bool accept)
+    {
+        auto* entry = ProposalOf(player->GetGUID());
+        if (!entry)
+            return;
+        ObjectGuid leader = entry->first;
+        Proposal& proposal = entry->second;
+        if (!accept)
+        {
+            CancelProposal(leader, player->GetName() + " declined.");
+            return;
+        }
+        proposal.answers[player->GetGUID()] = 1;
+        ToMembers(proposal, "QA," + Clean(player->GetName()) + ",1");
+        for (auto const& [guid, answer] : proposal.answers)
+            if (answer != 1)
+                return;
+        // Everyone in: the group as it is now goes.
+        Player* lead = ObjectAccessor::FindConnectedPlayer(leader);
+        std::string why = "The group's leader is gone.";
+        if (lead && StartRun(lead, 1, true, why))
+        {
+            ToMembers(proposal, "QG");
+            proposals.erase(leader);
+        }
+        else
+            CancelProposal(leader, why);
+    }
+
+    void HandleRequest(Player* player, std::string const& request)
+    {
+        if (request == "STATE")
+            SendFinderState(player);
+        else if (request == "QUEUE")
+            Queue(player);
+        else if (request == "ACCEPT")
+            Answer(player, true);
+        else if (request == "DECLINE")
+            Answer(player, false);
+        else if (request == "LEAVE")
+        {
+            if (auto* entry = ProposalOf(player->GetGUID()))
+                CancelProposal(entry->first, player->GetName() + " left the queue.");
+        }
+    }
+
+    void ExpireProposals()
+    {
+        uint32 now = GameTime::GetGameTimeMS().count();
+        std::vector<ObjectGuid> expired;
+        for (auto const& [leader, proposal] : proposals)
+            if (now >= proposal.expiresAt)
+                expired.push_back(leader);
+        for (ObjectGuid const& leader : expired)
+            CancelProposal(leader, "Not everyone accepted in time.");
+    }
+}
+
 float Firepit::HealthMultiplier(Creature const* creature)
 {
     Enemy const* own = creature ? creature->CustomData.Get<Enemy>("titan_firepit") : nullptr;
@@ -945,13 +1116,20 @@ public:
 
     void OnUpdate(uint32 /*diff*/) override
     {
+        std::vector<std::pair<ObjectGuid, std::string>> asked;
         std::vector<std::pair<ObjectGuid, uint32>> pending;
         {
             std::lock_guard guard(registryLock);
-            if (unbinds.empty())
-                return;
+            asked.swap(requests);
             pending.swap(unbinds);
         }
+        for (auto const& [guid, request] : asked)
+            if (Player* player = ObjectAccessor::FindConnectedPlayer(guid))
+                HandleRequest(player, request);
+        if (!proposals.empty())
+            ExpireProposals();
+        if (pending.empty())
+            return;
         std::vector<std::pair<ObjectGuid, uint32>> later;
         for (auto const& [guid, instanceId] : pending)
         {
@@ -1014,8 +1192,21 @@ public:
         PLAYERHOOK_ON_CREATURE_KILLED_BY_PET,
         PLAYERHOOK_ON_PLAYER_KILLED_BY_CREATURE,
         PLAYERHOOK_ON_PLAYER_RESURRECT,
-        PLAYERHOOK_CAN_REPOP_AT_GRAVEYARD
+        PLAYERHOOK_CAN_REPOP_AT_GRAVEYARD,
+        PLAYERHOOK_CAN_PLAYER_USE_PRIVATE_CHAT
     }) { }
+
+    // The group finder tab's requests (STATE, QUEUE, ACCEPT, DECLINE, LEAVE): to the world's thread.
+    bool OnPlayerCanUseChat(Player* player, uint32 /*type*/, uint32 language, std::string& msg,
+        Player* receiver) override
+    {
+        std::string const prefix = std::string(PREFIX) + '\t';
+        if (language != LANG_ADDON || receiver != player || msg.compare(0, prefix.size(), prefix) != 0)
+            return true;
+        std::lock_guard guard(registryLock);
+        requests.emplace_back(player->GetGUID(), msg.substr(prefix.size()));
+        return false;
+    }
 
     void OnPlayerCreatureKill(Player* killer, Creature* killed) override
     {
@@ -1069,9 +1260,8 @@ public:
             AddGossipItemFor(player, GOSSIP_ICON_TAXI, "Take me out of the Firepit.", GOSSIP_SENDER_MAIN, ACTION_LEAVE);
         else
         {
-            AddGossipItemFor(player, GOSSIP_ICON_BATTLE, player->GetGroup()
-                ? "Lead my group into the Firepit (up to 10)." : "Enter the Firepit.", GOSSIP_SENDER_MAIN,
-                ACTION_ENTER, "Waves come every 60 seconds and never stop. You fight until you all fall.", 0, false);
+            AddGossipItemFor(player, GOSSIP_ICON_BATTLE, "Open the Firepit (the group finder).", GOSSIP_SENDER_MAIN,
+                ACTION_ENTER);
             AddGossipItemFor(player, GOSSIP_ICON_CHAT, "Show me the leaderboard.", GOSSIP_SENDER_MAIN,
                 ACTION_LEADERBOARD);
         }
@@ -1085,12 +1275,8 @@ public:
         switch (action)
         {
             case ACTION_ENTER:
-            {
-                std::string why;
-                if (!StartRun(player, 1, false, why))
-                    ChatHandler(player->GetSession()).SendSysMessage(why);
+                SendAddon(player, "OPEN");      // the group finder's Firepit tab: the queue
                 break;
-            }
             case ACTION_LEADERBOARD:
                 ShowLeaderboard(player);
                 break;

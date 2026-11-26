@@ -36,6 +36,9 @@ function Widget:SetText(text) self.text = text end
 function Widget:GetText() return self.text end
 function Widget:SetTextColor(r, g, b) self.color = { r, g, b } end
 function Widget:Click() self.scripts.OnClick(self, "LeftButton") end
+function Widget:Enable() self.enabled = true end
+function Widget:SetTexture(texture) self.texture = texture end
+function Widget:Disable() self.enabled = false end
 
 UIParent = NewWidget("UIParent")
 local frames = {}
@@ -49,19 +52,92 @@ tinsert = table.insert
 GameTooltip = NewWidget("GameTooltip")
 local now = 100
 function GetTime() return now end
-function UnitName() return "Tester" end
+local party = { { "Healer", 40, true }, { "Lowbie", 8, true } }
+local leader = true
+function UnitName(unit)
+    local index = unit and tonumber(unit:match("^party(%d)$"))
+    return index and party[index] and party[index][1] or "Tester"
+end
+function UnitLevel(unit)
+    local index = unit and tonumber(unit:match("^party(%d)$"))
+    return index and party[index] and party[index][2] or 42
+end
+function UnitIsConnected(unit)
+    local index = unit and tonumber(unit:match("^party(%d)$"))
+    return not index or party[index][3]
+end
+function IsPartyLeader() return leader end
+local sent, popups = {}, {}
+function SendAddonMessage(prefix, message) sent[#sent + 1] = message end
+StaticPopupDialogs = {}
+function StaticPopup_Show(which, text) popups[#popups + 1] = { which, text } end
+function StaticPopup_Hide(which) popups.hidden = which end
+function ShowUIPanel(frame) frame:Show(); if frame.scripts.OnShow then frame.scripts.OnShow(frame) end end
+function HideUIPanel(frame) frame:Hide() end
 local chat = {}
 function SendChatMessage(text, channel) chat[#chat + 1] = { text, channel } end
 function GetNumRaidMembers() return 0 end
-function GetNumPartyMembers() return 2 end
+local partySize = 2
+function GetNumPartyMembers() return partySize end
 DEFAULT_CHAT_FRAME = { AddMessage = function() end }
 
 dofile(DIR .. "Emberforge_Firepit.lua")
 local debug = EmberforgeFirepitDebug
 local events = frames[#frames]
-local function server(message) events.scripts.OnEvent(events, "CHAT_MSG_ADDON", "EFFP", message, "WHISPER", "Tester") end
+local function server(message)
+    events.scripts.OnEvent(events, "CHAT_MSG_ADDON", "EFFP", message, "WHISPER", "Tester")
+end
 
+debug.finder:Hide()
 check(not debug.hud.shown and not debug.results.shown, "nothing shows before a run")
+
+-- The queue: the group finder's Firepit tab.
+server("OPEN")
+check(debug.finder.shown and sent[#sent] == "STATE", "OPEN shows the queue, which asks for its state")
+check(UIPanelWindows.EmberforgeFirepitFinder and UIPanelWindows.EmberforgeFirepitFinder.area == "left",
+    "the queue is a left-hand panel, as the dungeon finder")
+server("S,23,1,0,10")
+server("L,0,1,Solo Star,57,1")
+server("L,1,1,Tester,41,4")
+server("LE")
+check(debug.members[1].name.text:find("Tester", 1, true) and debug.members[3].name.text:find("Lowbie", 1, true)
+    and not debug.members[4].shown, "the roster lists you and your party")
+check(debug.members[3].note.text:find("Needs level 10", 1, true) and not debug.queueButton.enabled,
+    "a member under level 10 keeps the group out")
+check(debug.finder.best.text:find("wave 23", 1, true) and debug.boardRows[1].text:find("Solo Star", 1, true),
+    "your best and the solo leaderboard")
+debug.sideButtons[1]:Click()
+check(debug.boardRows[1].text:find("Tester", 1, true) and debug.boardRows[1].text:find("(4)", 1, true),
+    "the Groups side")
+check(debug.finder.difficulty.text:find("x1.8", 1, true) and debug.finder.difficulty.text:find("x1.4", 1, true),
+    "the difficulty for a group of 3")
+
+party[2][2] = 12
+debug.finder.scripts.OnEvent(debug.finder, "PARTY_MEMBERS_CHANGED")
+check(debug.queueButton.enabled and debug.queueButton.text == "Queue my group", "the leader can queue the group")
+debug.queueButton:Click()
+check(sent[#sent] == "QUEUE", "Queue my group asks the server")
+server("QP,Tester,3,40")
+server("QA,Tester,1")
+server("QA,Healer,0")
+check(#popups == 0, "the leader is not asked to accept their own queue")
+check(debug.members[1].status.texture:find("Ready", 1, true)
+    and debug.members[2].status.texture:find("Waiting", 1, true)
+    and debug.finder.status.text:find("1 of 3", 1, true), "each member's answer shows")
+check(debug.queueButton.text == "Leave Queue", "the leader can leave the queue")
+server("QC,Healer declined.")
+check(debug.finder.status.text:find("Healer declined", 1, true) and debug.queueButton.text == "Queue my group",
+    "a decline ends the queue, and says why")
+
+leader = false
+server("QP,Healer,3,40")
+check(popups[1] and popups[1][1] == "EMBERFORGE_FIREPIT_PROPOSAL" and popups[1][2] == "Healer",
+    "a member is asked to accept")
+StaticPopupDialogs.EMBERFORGE_FIREPIT_PROPOSAL.OnAccept()
+check(sent[#sent] == "ACCEPT", "accepting tells the server")
+server("QG")
+check(not debug.finder.shown and popups.hidden == "EMBERFORGE_FIREPIT_PROPOSAL", "going in closes the queue")
+leader = true
 
 server("H,0,0,0,0,3,3,8")
 check(debug.hud.shown and debug.hud.timer.text == "0:08", "the countdown shows on the wave bar")

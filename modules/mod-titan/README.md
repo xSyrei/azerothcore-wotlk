@@ -1071,9 +1071,15 @@ replaced mod-autobalance):
 
 An endless wave arena in a private Ring of Law (Blackrock Depths, map 230), solo or for a group of up to 10, and the
 rune testbed (`src/firepit.cpp`, `data/sql/db-world/titan_firepit.sql`, the `Emberforge_Firepit` addon).
-- **The Firepit Keeper** (910140, Grimstone's look) stands beside Silas Darkmoon in Stormwind and Orgrimmar. The
-  Hero, or their group's leader, steps in: everyone (the group's members within 40 yards, alive, out of combat and of
-  instances, 10 at most) goes to a fresh instance of map 230. `InstanceOverride` (core) sends them there and lets 10
+- **The queue** is a tab of the group finder (The Firepit, beside Dungeons and Player vs. Player:
+  `Emberforge_Journal/MicroMenu.lua`), the Firepit addon's panel: the rules, the group (each member's level and
+  answer), the monsters' health and numbers for its size, the Hero's best wave and the leaderboard (top 5, solo and
+  groups), and the button. Alone, the Hero goes straight in; a group's leader queues and every member is asked to
+  accept (40 sec, a ready-check popup); once all have, everyone goes from wherever they are. From level 10, every
+  member; alive, out of combat and out of any instance, 10 at most. The requests (STATE, QUEUE, ACCEPT, DECLINE,
+  LEAVE) are answered on the world's thread (members on other maps are teleported from there). The **Firepit Keeper**
+  (910140, Grimstone's look) beside Silas Darkmoon in Stormwind and Orgrimmar opens the tab, and shows the leaderboard
+  in chat. Everyone goes to a fresh instance of map 230. `InstanceOverride` (core) sends them there and lets 10
   in; the instance's script is the Firepit's own (`FirepitInstance`; the Depths' never runs), which sends the native
   creatures away as they load.
 - **Waves** every 60 sec (or 5 sec after the last enemy dies), from both gates of the ring: wave n brings 3 + n/2

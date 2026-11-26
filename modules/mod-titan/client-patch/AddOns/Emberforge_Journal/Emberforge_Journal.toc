@@ -2,6 +2,7 @@
 ## Title: Emberforge Journal
 ## Notes: The Dungeon Journal: every dungeon and raid, its bosses, abilities and loot (Shift-J, its micro button, /journal).
 ## Author: Project Emberforge
+## OptionalDeps: Emberforge_Firepit
 ## SavedVariablesPerCharacter: EmberforgeJournalDB
 Data.lua
 Headshots.lua
