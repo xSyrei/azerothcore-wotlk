@@ -1431,9 +1431,13 @@ public:
     {
         if (map->GetId() != MAP_FIREPIT)
             return;
-        std::lock_guard guard(registryLock);
-        if (firepits.count(map->GetInstanceId()))
-            *script = new FirepitInstance(map);
+        bool ours;
+        {
+            std::lock_guard guard(registryLock);
+            ours = firepits.count(map->GetInstanceId()) != 0;
+        }
+        if (ours)
+            *script = new FirepitInstance(map);         // outside the lock: it takes the lock for its setup
     }
 
     void OnDestroyInstance(MapInstanced* /*mapInstanced*/, Map* map) override
