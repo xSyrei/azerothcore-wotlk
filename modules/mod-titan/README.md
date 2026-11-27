@@ -1137,7 +1137,9 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   after it falls. Survivors stay. At the field's cap (8 alive and 4 more a Hero: `MostAlive`) the rest wait as
   **reinforcements**, one entering 3 sec after room opens; and **Pressure** builds: the cap full 30 sec running, enemies
   deal 5% more, 5% more every 30 sec after (20% at most), cleared by 10 sec under the cap (`Enemy::pressure`). No one is
-  killed by it. The H message's last three fields: Pressure's stacks, the cap, the reinforcements waiting. Enemies that
+  killed by it. **Tank priority** (`Tank`, `Prioritize`): at a wave's start and as each enemy enters, it turns
+  to the run's first living tank, its threat there raised to the most of its own, 500, or 150% of anyone else's.
+  The H message's last three fields: Pressure's stacks, the cap, the reinforcements waiting. Enemies that
   stray off the floor (past 52 yards, or up in the stands) are put back on its edge.
 - **Boss mechanics** from wave 15 (`MECHANICS_FROM`), each a share of the Hero's own health (it is about moving, not
   gear): **Molten Eruption** (15+, every 14 sec): a ring of flame under up to 3 Heroes, erupting 3 sec later, 30% to
