@@ -2398,16 +2398,13 @@ for _spell in SPELLS:
     if _flags:
         _spell['set'] = {**_spell['set'], 'SpellFamilyName': SHAMAN_FAMILY, 'SpellFamilyFlags0': _flags[0],
                          'SpellFamilyFlags1': _flags[1], 'SpellFamilyFlags2': _flags[2]}
-# Thunderbomb's look (retail's Shrapnel Bomb, spells/SHA_Thunderbomb*): the bomb itself flying to its target (its
-# mesh and its glow, a missile: exported_model), and its burst (retail's impact shockwave in lightning blue, with
-# Thunderstorm's ring and a Lightning Bolt hit), the burst's look cast on the bomb's first victim.
+# Thunderbomb's look (retail's Shrapnel Bomb, spells/SHA_ThunderbombObj): the bomb itself flying to its target (its
+# mesh and its glow, a missile: exported_model), and its burst: Thunderstorm's ring and a Lightning Bolt hit, cast on
+# the bomb's first victim. (Retail's impact export was only a flat white card without its particles: a white square.)
 EFFECTS.update({
     'ThunderbombMissile': {'model': 'SHA_ThunderbombMissile', 'effect': 7178, 'shape': 'missile', 'textures': (),
                            'options': {'export': 'SHA_ThunderbombObj', 'base': 'thunderbomb', 'size': 0.9,
                                        'center': True, 'turn': 0.6, 'two_sided': True}},
-    'ThunderbombImpact': {'model': 'SHA_ThunderbombImpact', 'effect': 7179, 'shape': 'retail', 'textures': (),
-                          'options': {'export': 'SHA_Thunderbomb/cfx_hunter_wildfireinfusion_shrapnelbomb_impact.gltf',
-                                      'tint': (90, 170, 255), 'scale': 1.6}},
 })
 VISUALS.update({
     'ThunderbombThrow': {'copy': FROZEN_ORB_BOLT, 'id': 16809,
@@ -2417,7 +2414,7 @@ VISUALS.update({
                                  VISUAL_MISSILE_CAST_OFFSET + 1: 0.0, VISUAL_MISSILE_CAST_OFFSET + 2: 1.5}, 'kits': {
                              'impact': (15748, {KIT_CHEST: FX_LIGHTNING_SHIELD_IMPACT, 'sound': None})}},
     'ThunderbombBurst': {'copy': 963, 'id': 16810, 'clear': ('precast', 'cast', 'state'), 'kits': {
-        'impact': (15749, {KIT_BASE: 'ThunderbombImpact', KIT_WORLD: FX_THUNDERSTORM,
+        'impact': (15749, {KIT_BASE: 0, KIT_WORLD: FX_THUNDERSTORM,
                            KIT_CHEST: FX_LIGHTNING_BOLT_IMPACT})}},
 })
 for _spell in SPELLS:

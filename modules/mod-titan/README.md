@@ -798,7 +798,7 @@ utility or a tradeoff) take one pick each, from three.
     the hit on the main target counts as the base while it lands (`StrikeAs`, `LegendaryRunes::CountHitAs`, `CountsAs`,
     `IsOriginal`), the base's scripts bound to those hits (extended_hit, tier_hit, the Primal Worldwarden's).
     Thunderbomb: Stormstrike's mark (17364's aura) on what it hits; its missile and burst (`ThunderbombThrow`,
-    `ThunderbombBurst`: retail's Shrapnel Bomb in `client-patch/spells/SHA_Thunderbomb*`), its icon
+    `ThunderbombBurst`: retail's Shrapnel Bomb in `client-patch/spells/SHA_ThunderbombObj`), its icon
     `icons/spells/Ability_Shaman_Thunderbomb.png`.
   - **Ember's Wrath** (44; Melee; Cat Form, Fire Blast, Rake or Rip): the Hero's own Fire Blast (every rank, its
     mana and cooldown) works in Cat Form: its "not while shapeshifted" rule is gone from both copies of the spell

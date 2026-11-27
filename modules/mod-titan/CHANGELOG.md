@@ -4,6 +4,7 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-27: The Firepit Ignites
 
+- **Thunderbomb's burst no longer leaves a big white square on the ground.**
 - **A smoother difficulty curve**: enemy health now grows gently and steadily with each wave (wave 15 about 1.6x a
   dungeon enemy's, wave 45 about 4.5x, wave 90 about 11.5x) instead of compounding 10% a wave, and waves no longer raise
   enemy damage. Each extra player adds 55% health.
