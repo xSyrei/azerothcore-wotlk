@@ -4,6 +4,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-27: The Firepit Ignites
 
+- **Tank priority**: when a wave starts, every enemy turns to the party's tank with a 50% threat lead (taunts
+  and normal threat still work). With no tank, enemies go for the nearest player.
 - **Thunderbomb's burst no longer leaves a big white square on the ground.**
 - **A smoother difficulty curve**: enemy health now grows gently and steadily with each wave (wave 15 about 1.6x a
   dungeon enemy's, wave 45 about 4.5x, wave 90 about 11.5x) instead of compounding 10% a wave, and waves no longer raise

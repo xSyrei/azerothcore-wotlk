@@ -147,6 +147,7 @@ namespace
     constexpr float WAVE_HEALTH_BASE = 0.70f, WAVE_HEALTH_LINEAR = 0.05f, WAVE_HEALTH_SQUARE = 0.0008f;
     constexpr float GROUP_HEALTH = 0.55f;
     constexpr uint32 BOSS_EVERY = 5, LOOT_EVERY = 15;
+    constexpr float TANK_THREAT = 500.0f, TANK_LEAD = 1.5f;        // tank priority (Prioritize)
     // The field's cap: 8 enemies alive and 4 more for each Hero (the run's own size). Those past it wait in the
     // reinforcements' queue, entering 3 sec after room opens. Pressure: the cap full 30 sec running, the enemies deal
     // 5% more, 5% more every 30 sec after, 20% at most; 10 sec under it clears it all. No one dies of it.
@@ -959,6 +960,14 @@ private:
     void StartWave(uint32 wave)
     {
         _wave = wave;
+        // A new wave: every enemy already on the field turns to the tank (tank priority).
+        if (Player* tank = Tank())
+            for (ObjectGuid const& guid : _enemies)
+                if (Creature* enemy = instance->GetCreature(guid); enemy && enemy->IsAlive() && enemy->AI())
+                {
+                    Prioritize(enemy, tank);
+                    enemy->AI()->AttackStart(tank);
+                }
         _waveMs = WAVE_MS;
         _breather = false;
         for (Player* player : Living())
@@ -1235,16 +1244,45 @@ private:
     }
 
     // At the nearest living Hero.
+    // The run's tank: its first living Hero in the tank role, else none.
+    Player* Tank()
+    {
+        for (Player* player : Living())
+            if (Wildcard::GetRole(player) == Wildcard::ROLE_TANK)
+                return player;
+        return nullptr;
+    }
+
+    // Tank priority: the tank's threat on the enemy raised to the greatest of its own, 500, or 150% of the highest
+    // anyone else has (a 50% lead, not a lock: taunts and threat work on as ever).
+    void Prioritize(Creature* enemy, Player* tank)
+    {
+        float highest = 0.0f;
+        for (ThreatReference const* ref : enemy->GetThreatMgr().GetUnsortedThreatList())
+            if (ref->GetVictim() != tank)
+                highest = std::max(highest, ref->GetThreat());
+        float now = enemy->GetThreatMgr().GetThreat(tank);
+        float wanted = std::max({ now, TANK_THREAT, highest * TANK_LEAD });
+        if (wanted > now)
+            enemy->GetThreatMgr().AddThreat(tank, wanted - now, nullptr, true, true);
+    }
+
+    // An enemy into the fight: at the tank (Prioritize), else the nearest Hero.
     void Engage(Creature* enemy)
     {
-        Player* nearest = nullptr;
-        for (Player* player : Living())
-            if (!nearest || enemy->GetExactDist(player) < enemy->GetExactDist(nearest))
-                nearest = player;
-        if (!nearest || !enemy->AI())
+        if (!enemy->AI())
+            return;
+        Player* target = Tank();
+        if (!target)
+            for (Player* player : Living())
+                if (!target || enemy->GetExactDist(player) < enemy->GetExactDist(target))
+                    target = player;
+        if (!target)
             return;
         enemy->SetInCombatWithZone();
-        enemy->AI()->AttackStart(nearest);
+        if (Wildcard::GetRole(target) == Wildcard::ROLE_TANK)
+            Prioritize(enemy, target);
+        enemy->AI()->AttackStart(target);
     }
 
     void Run(uint32 diff)
