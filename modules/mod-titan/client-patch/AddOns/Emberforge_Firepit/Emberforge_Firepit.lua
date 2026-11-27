@@ -7,7 +7,7 @@
 --
 -- The server (mod-titan, src/firepit.cpp) talks in addon whispers to the player, prefix EFFP:
 --   H,<wave>,<sec left>,<enemies alive>,<boss wave 0|1>,<Heroes standing>,<Heroes in the run>,<countdown sec>,
---     <overwhelmed: sec left to get under the cap, 0 not>,<the field's cap>
+--     <Pressure stacks (5% more enemy damage each)>,<the field's cap>,<reinforcements waiting>
 --   RUN,<wave reached>,<sec survived>,<group size>,<kills>,<monster health %>,<start wave>
 --   P,<name>,<level>,<peak wave>,<enemies at peak>,<most enemies>,<damage>,<healing>,<taken>,<kills>,<boss kills>,
 --     <biggest hit>,<biggest hit taken>,<deaths>,<wave fallen on>,<times resurrected>,<spoils>,<killer>
@@ -198,7 +198,7 @@ local function ShowHud(fields)
     local wave, left, alive, boss = tonumber(fields[2]) or 0, tonumber(fields[3]) or 0, tonumber(fields[4]) or 0,
         fields[5] == "1"
     local standing, total, countdown = tonumber(fields[6]) or 0, tonumber(fields[7]) or 0, tonumber(fields[8]) or 0
-    local overwhelm, cap = tonumber(fields[9]) or 0, tonumber(fields[10]) or 0
+    local pressure, cap, waiting = tonumber(fields[9]) or 0, tonumber(fields[10]) or 0, tonumber(fields[11]) or 0
     if countdown > 0 or wave == 0 then
         hud.wave:SetText("Get ready")
         hud.timer:SetText(Clock(countdown))
@@ -208,16 +208,17 @@ local function ShowHud(fields)
     else
         hud.wave:SetText("Wave " .. wave)
         hud.timer:SetText(Clock(left))
-        hud.bar:SetMinMaxValues(0, 60)
+        hud.bar:SetMinMaxValues(0, 75)
         hud.bar:SetValue(left)
         hud.boss:SetText(boss and "BOSS WAVE" or "")
     end
-    -- Overwhelmed (at the field's cap): its own countdown in red over the boss line; near the cap, the count shows it.
-    if overwhelm > 0 then
-        hud.boss:SetText("OVERWHELMED " .. Clock(overwhelm))
+    -- Pressure (the field full too long): its stacks in red over the boss line; at the cap, the count shows it and
+    -- the reinforcements waiting.
+    if pressure > 0 then
+        hud.boss:SetText("|cffff3b30PRESSURE +" .. (pressure * 5) .. "%|r")
     end
     if cap > 0 and alive >= cap * 0.75 then
-        hud.enemies:SetText("|cffff3b30" .. alive .. "|r / " .. cap)
+        hud.enemies:SetText("|cffff3b30" .. alive .. "|r / " .. cap .. (waiting > 0 and (" +" .. waiting) or ""))
     else
         hud.enemies:SetText(alive > 0 and ("|cffff6a4a" .. alive .. "|r") or "0")
     end

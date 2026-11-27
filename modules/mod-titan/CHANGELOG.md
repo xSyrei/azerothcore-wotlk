@@ -2,6 +2,20 @@
 
 Player-facing changes to Emberforge, newest first. Each entry is also posted as a patch note on the website.
 
+## 2026-11-27: The Firepit Ignites
+
+- **A smoother difficulty curve**: enemy health now grows gently and steadily with each wave (wave 15 about 1.6x a
+  dungeon enemy's, wave 45 about 4.5x, wave 90 about 11.5x) instead of compounding 10% a wave, and waves no longer raise
+  enemy damage. Each extra player adds 55% health.
+- **Calmer pacing**: a wave every 75 seconds, or 10 seconds after you clear the field. Waves bring 3 to 12 enemies as
+  they climb, plus one for every two extra players (20 at most).
+- **Boss waves are a duel**: every 5th wave is one boss alone, and no new wave comes while it lives; you get 20 seconds
+  after it falls. Bosses have 2x health and 1.1x damage early, rising to 2.5x and 1.2x from wave 45.
+- **No more instant wipes from the cap**: the field holds 8 enemies plus 4 per player. Extra enemies wait as
+  reinforcements and enter as room opens. If the field stays full for 30 seconds, **Pressure** builds: enemies deal 5%
+  more damage, up to 20%. Get under the cap for 10 seconds and it's gone. The tracker shows Pressure and how many
+  reinforcements are waiting.
+
 ## 2026-11-23: Card slots
 
 ### Stormreaver and the Stormbound Conduit, rebuilt

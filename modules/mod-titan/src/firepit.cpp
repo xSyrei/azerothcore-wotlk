@@ -60,12 +60,13 @@
 // - The Firepit Keeper (beside Silas Darkmoon in Stormwind and Orgrimmar) sends the Hero, or the leader's group, into
 //   a fresh instance of map 760 (InstanceOverride: the core sends them there, and lets 10 in). Its instance script is
 //   the Firepit's own: the map has no creatures of its own (any that load are sent away), and it runs the waves.
-// - Waves every 60 sec, or 5 sec after the last enemy dies. Wave n has 3 + n/2 enemies (20% more for each player
-//   past the first), from the Depths' roster (a new kind every wave or two); every 5th wave brings a boss (two from
-//   wave 60, three from 120). Survivors stay: they pile up. At the cap (30 alive, 10 more a Hero) no more come, and
-//   the Heroes are Overwhelmed: 60 sec to get back under it, or the Firepit kills them all.
-// - Creatures are at the group's level (dungeon_scaling.cpp), then their health and damage are 35% of a dungeon's at
-//   wave 1, 10% more each wave (compounding), health 40% more for each player past the first.
+// - Waves every 75 sec, or 10 sec after the last enemy dies. Wave n has min(12, 3 + n/5) enemies, plus one for every
+//   two Heroes past the first (20 at most), from the Depths' roster (a new kind every wave or two); every 5th wave is
+//   one boss alone, the waves waiting while it lives (20 sec after it falls). Survivors stay. At the cap (8 alive, 4
+//   more a Hero) the rest wait as reinforcements, and Pressure builds: 5% more enemy damage every 30 sec full, 20% at
+//   most, cleared by 10 sec under it.
+// - Creatures are at the group's level (dungeon_scaling.cpp); their health H(n) = 0.70 + 0.05 (n-1) + 0.0008 (n-1)^2
+//   of a dungeon's, 55% more for each player past the first; the waves leave their damage as it is.
 // - The dead stay down (no release: they stay where they fell); a battle resurrection brings them back. The last
 //   death ends the run: everyone is brought back at full, each Hero who survived a 15th wave gets a chest of their
 //   own (a piece of gear at their level a 15 waves; epic from wave 45), the results go to the Emberforge_Firepit
@@ -135,16 +136,35 @@ namespace
     constexpr uint32 SPELL_FIRE_NOVA = 16079;           // its look only: cast by a friendly source, it hits no one
     constexpr uint32 SPELL_ERUPTION_LOG = 11307;        // the combat log's name for an eruption's hit (Fire Nova)
 
-    constexpr uint32 COUNTDOWN_MS = 10000, WAVE_MS = 60000, BREATHER_MS = 5000, SPAWN_SPREAD_MS = 4000;
-    constexpr uint32 TICK_MS = 1000, END_DELAY_MS = 4000, CORPSE_MS = 3000;
-    constexpr float FIRST_WAVE = 0.35f, WAVE_GROWTH = 1.1f, GROUP_HEALTH = 0.4f, GROUP_COUNT = 0.2f;
+    // The Firepit Ignites (its design doc): a wave every 75 sec, or 10 sec after the last enemy dies; 20 sec after a
+    // boss falls. A wave's enemies: min(12, 3 + wave / 5) + ceil((Heroes - 1) / 2), 20 at most; every 5th wave one
+    // boss alone, the waves' timer stopped while it lives.
+    constexpr uint32 COUNTDOWN_MS = 10000, WAVE_MS = 75000, BREATHER_MS = 10000, BOSS_BREATHER_MS = 20000;
+    constexpr uint32 SPAWN_SPREAD_MS = 4000, TICK_MS = 1000, END_DELAY_MS = 4000, CORPSE_MS = 3000;
+    constexpr uint32 WAVE_BASE = 3, WAVE_MOST = 12, WAVE_MOST_ALL = 20;
+    // Health: H(n) = 0.70 + 0.05 (n - 1) + 0.0008 (n - 1)^2 of a level-scaled dungeon enemy's (wave 15 1.56, 45 4.45,
+    // 90 11.48), 55% more for each Hero past the first; the waves never raise their damage (bosses and Pressure do).
+    constexpr float WAVE_HEALTH_BASE = 0.70f, WAVE_HEALTH_LINEAR = 0.05f, WAVE_HEALTH_SQUARE = 0.0008f;
+    constexpr float GROUP_HEALTH = 0.55f;
     constexpr uint32 BOSS_EVERY = 5, LOOT_EVERY = 15;
-    // The field's cap: 30 enemies alive and 10 more for each Hero (a duo's 50). At it no more come, and the Heroes
-    // are Overwhelmed: OVERWHELM_MS to get back under it, or the Firepit takes them all.
-    constexpr uint32 MOST_ALIVE_BASE = 30, MOST_ALIVE_A_HERO = 10, OVERWHELM_MS = 60000;
-    // A wave's boss: 4 times the health and 1.5 times the damage of the wave's others (unless the dungeon scaling
-    // already counts it a boss: a boss_ script or a boss's rank, with its own health).
-    constexpr float BOSS_HEALTH = 4.0f, BOSS_DAMAGE = 1.5f;
+    // The field's cap: 8 enemies alive and 4 more for each Hero (the run's own size). Those past it wait in the
+    // reinforcements' queue, entering 3 sec after room opens. Pressure: the cap full 30 sec running, the enemies deal
+    // 5% more, 5% more every 30 sec after, 20% at most; 10 sec under it clears it all. No one dies of it.
+    constexpr uint32 MOST_ALIVE_BASE = 8, MOST_ALIVE_A_HERO = 4, REINFORCE_MS = 3000;
+    constexpr uint32 PRESSURE_EVERY_MS = 30000, PRESSURE_RELIEF_MS = 10000, PRESSURE_MOST = 4;
+    constexpr float PRESSURE_DAMAGE = 0.05f;
+    // A boss (unless the dungeon scaling already counts it one: a boss_ script or a boss's rank, with its own
+    // health): waves 5-25 2.0 times the health and 1.1 times the damage of the wave's enemies, 30-40 2.2 and 1.15,
+    // 45 on 2.5 and 1.2.
+    float BossHealth(uint32 wave)
+    {
+        return wave >= 45 ? 2.5f : wave >= 30 ? 2.2f : 2.0f;
+    }
+
+    float BossDamage(uint32 wave)
+    {
+        return wave >= 45 ? 1.2f : wave >= 30 ? 1.15f : 1.1f;
+    }
     constexpr uint32 SPOILS_SECONDS = 900;
     constexpr float SPOILS_OFFSET = 6.0f;               // the run's chest, this far east of the pit
     constexpr uint8 FIREPIT_LEVEL = 10;                 // the group finder's tab opens there too
@@ -194,6 +214,7 @@ namespace
     {
         float health = 1.0f;
         float damage = 1.0f;
+        float pressure = 1.0f;                      // Pressure's 5% a stack
         uint32 wave = 0;
         bool boss = false;
     };
@@ -254,7 +275,8 @@ namespace
 
     float WaveFactor(uint32 wave)
     {
-        return FIRST_WAVE * std::pow(WAVE_GROWTH, float(std::max<uint32>(wave, 1) - 1));
+        float n = float(std::max<uint32>(wave, 1) - 1);
+        return WAVE_HEALTH_BASE + WAVE_HEALTH_LINEAR * n + WAVE_HEALTH_SQUARE * n * n;
     }
 
     // One Hero's run.
@@ -947,8 +969,8 @@ private:
             }
 
         bool bossWave = _wave % BOSS_EVERY == 0;
-        float groupCount = 1.0f + GROUP_COUNT * float(_groupSize - 1);
-        uint32 count = bossWave ? 0 : uint32(std::lround(float(3 + _wave / 2) * groupCount));   // a boss comes alone
+        uint32 count = bossWave ? 0 : std::min(WAVE_MOST_ALL, std::min(WAVE_MOST, WAVE_BASE + _wave / 5)
+            + _groupSize / 2);                      // ceil((Heroes - 1) / 2); a boss comes alone
 
         std::vector<uint32> kinds;
         for (FirepitRoster::Kind const& kind : FirepitRoster::KINDS)
@@ -988,7 +1010,7 @@ private:
             text += ": the foes of " + std::string(FirepitRoster::CHAPTERS[chapter]) + " pour in!";
         if (bossWave)
         {
-            uint32 bosses = 1 + (_wave >= 60 ? 1 : 0) + (_wave >= 120 ? 1 : 0);
+            uint32 bosses = 1;
             uint32 first = (_wave / BOSS_EVERY - 1) % std::size(BOSSES);
             for (uint32 i = 0; i < bosses; ++i)
             {
@@ -1004,10 +1026,12 @@ private:
 
     void SpawnOne(Spawn const& spawn)
     {
-        // Too many alive: this one stays away (the field is full enough). They once grew 3% for each kept away,
-        // without end: a group behind was buried under ever stronger enemies.
+        // Too many alive: this one waits with the reinforcements, coming 3 sec after room opens.
         if (_enemies.size() >= MostAlive())
+        {
+            _reinforcements.push_back(spawn);
             return;
+        }
         float angle = frand(0.0f, 2.0f * float(M_PI));
         float radius = frand(SPAWN_RADIUS_MIN, SPAWN_RADIUS_MAX);
         float x = CENTER.GetPositionX() + radius * std::cos(angle);
@@ -1019,14 +1043,15 @@ private:
         Enemy* own = enemy->CustomData.GetDefault<Enemy>("titan_firepit");
         float factor = WaveFactor(_wave);
         own->health = factor * (1.0f + GROUP_HEALTH * float(_groupSize - 1));
-        own->damage = factor;
+        own->damage = 1.0f;
+        own->pressure = 1.0f + PRESSURE_DAMAGE * float(_pressure);
         own->wave = _wave;
         own->boss = spawn.boss;
         if (spawn.boss && enemy->GetScriptName().rfind("boss_", 0) != 0
             && enemy->GetCreatureTemplate()->rank != CREATURE_ELITE_WORLDBOSS)
         {
-            own->health *= BOSS_HEALTH;
-            own->damage *= BOSS_DAMAGE;
+            own->health *= BossHealth(_wave);
+            own->damage *= BossDamage(_wave);
         }
         if (spawn.boss && _wave >= MECHANICS_FROM)
             _bosses[enemy->GetGUID()] = { urand(5000, ERUPTION_EVERY_MS), urand(NOVA_EVERY_MS / 2, NOVA_EVERY_MS),
@@ -1278,31 +1303,49 @@ private:
         }
         _enemies = std::move(alive);
 
-        // Overwhelmed: at the cap, a minute to get back under it, or the Firepit takes everyone.
-        if (_enemies.size() >= MostAlive())
+        // Reinforcements: one enters 3 sec after room opens.
+        if (!_reinforcements.empty() && _enemies.size() < MostAlive())
         {
-            if (!_overwhelmUntil)
+            _reinforceMs = _reinforceMs > TICK_MS ? _reinforceMs - TICK_MS : 0;
+            if (!_reinforceMs)
             {
-                _overwhelmUntil = _runMs + OVERWHELM_MS;
-                Announce("OVERWHELMED! Get under " + std::to_string(MostAlive()) + " enemies within 60 sec, or the "
-                    "Firepit takes you all!", true);
-            }
-            else if (_runMs >= _overwhelmUntil)
-            {
-                _overwhelmUntil = 0;
-                Announce("Overwhelmed: the Firepit takes its challengers.", true);
-                for (Player* player : Living())
-                {
-                    if (Record* record = RecordOf(player))
-                        record->killer = "Overwhelmed";
-                    Unit::Kill(player, player, false);
-                }
+                Spawn next = _reinforcements.front();
+                _reinforcements.erase(_reinforcements.begin());
+                SpawnOne(next);
+                _reinforceMs = REINFORCE_MS;
             }
         }
-        else if (_overwhelmUntil)
+        else
+            _reinforceMs = REINFORCE_MS;
+
+        // Pressure: the cap full 30 sec running, 5% more damage a stack (4 at most); 10 sec under it clears it.
+        uint8 pressure = _pressure;
+        if (_enemies.size() >= MostAlive())
         {
-            _overwhelmUntil = 0;
-            Announce("Back under the cap: the Firepit relents.");
+            _reliefMs = 0;
+            _fullMs += TICK_MS;
+            if (_fullMs >= PRESSURE_EVERY_MS)
+            {
+                _fullMs = 0;
+                if (_pressure < PRESSURE_MOST)
+                    ++_pressure;
+            }
+        }
+        else
+        {
+            _fullMs = 0;
+            _reliefMs += TICK_MS;
+            if (_reliefMs >= PRESSURE_RELIEF_MS)
+                _pressure = 0;
+        }
+        if (_pressure != pressure)
+        {
+            for (ObjectGuid const& guid : _enemies)
+                if (Creature* enemy = instance->GetCreature(guid))
+                    if (Enemy* own = enemy->CustomData.Get<Enemy>("titan_firepit"))
+                        own->pressure = 1.0f + PRESSURE_DAMAGE * float(_pressure);
+            Announce(_pressure > pressure ? "Pressure mounts: the enemies deal " + std::to_string(_pressure * 5)
+                + "% more damage. Thin them out!" : std::string("The pressure eases."), _pressure > pressure);
         }
 
         std::vector<Player*> living = Living();
@@ -1328,11 +1371,18 @@ private:
             return;
         }
 
-        // A cleared wave: the next in 5 sec.
-        if (_enemies.empty() && _queue.empty() && !_breather)
+        // A boss alive: the waves wait for it. A cleared wave: the next in 10 sec (a boss's, 20).
+        bool bossAlive = false;
+        for (ObjectGuid const& guid : _enemies)
+            if (Creature* enemy = instance->GetCreature(guid))
+                if (Enemy const* own = enemy->CustomData.Get<Enemy>("titan_firepit"); own && own->boss)
+                    bossAlive = true;
+        if (bossAlive || (_wave % BOSS_EVERY == 0 && !_queue.empty()))
+            _waveMs = std::max<uint32>(_waveMs, BOSS_BREATHER_MS);
+        if (_enemies.empty() && _queue.empty() && _reinforcements.empty() && !_breather)
         {
             _breather = true;
-            _waveMs = std::min(_waveMs, BREATHER_MS);
+            _waveMs = std::min(_waveMs, _wave % BOSS_EVERY == 0 ? BOSS_BREATHER_MS : BREATHER_MS);
         }
         if (!_waveMs)
             StartWave(_wave + 1);
@@ -1351,12 +1401,13 @@ private:
     void SendHud(Player* player)
     {
         uint32 living = uint32(Living().size());
-        uint32 overwhelm = _overwhelmUntil > _runMs ? (_overwhelmUntil - _runMs + 999) / 1000 : 0;
+        uint32 overwhelm = _pressure;               // the HUD's Pressure (stacks), and the queue's size below
         SendAddon(player, "H," + std::to_string(_wave) + ',' + std::to_string((_waveMs + 999) / 1000) + ','
             + std::to_string(_enemies.size()) + ',' + std::to_string(_wave && _wave % BOSS_EVERY == 0 ? 1 : 0) + ','
             + std::to_string(living) + ',' + std::to_string(_records.size()) + ','
             + std::to_string(_phase == Phase::COUNTDOWN ? (_timer + 999) / 1000 : 0) + ','
-            + std::to_string(overwhelm) + ',' + std::to_string(MostAlive()));
+            + std::to_string(overwhelm) + ',' + std::to_string(MostAlive()) + ','
+            + std::to_string(_reinforcements.size()));
     }
 
     void Finish()
@@ -1367,6 +1418,9 @@ private:
                 enemy->DespawnOrUnsummon();
         _enemies.clear();
         _queue.clear();
+        _reinforcements.clear();
+        _pressure = 0;
+        _fullMs = _reliefMs = 0;
 
         // Everyone back on their feet, the spoils out, the records kept, the results shown.
         std::vector<Player*> present;
@@ -1455,7 +1509,9 @@ private:
     uint32 _groupSize = 1;
     Phase _phase = Phase::WAITING;
     uint32 _timer = 0, _wave = 0, _waveMs = 0, _tickMs = 0, _runMs = 0, _kills = 0;
-    uint32 _overwhelmUntil = 0;                     // run ms the Heroes must be under the cap by (0: not overwhelmed)
+    std::vector<Spawn> _reinforcements;             // past the cap: they enter as room opens
+    uint32 _reinforceMs = REINFORCE_MS, _fullMs = 0, _reliefMs = 0;
+    uint8 _pressure = 0;                            // Pressure's stacks
     bool _breather = false;
     std::unordered_map<ObjectGuid, BossState> _bosses;
     std::vector<Blast> _blasts;
@@ -1807,7 +1863,7 @@ float Firepit::HealthMultiplier(Creature const* creature)
 float Firepit::DamageMultiplier(Creature const* creature)
 {
     Enemy const* own = creature ? creature->CustomData.Get<Enemy>("titan_firepit") : nullptr;
-    return own ? own->damage : 1.0f;
+    return own ? own->damage * own->pressure : 1.0f;
 }
 
 bool Firepit::IsBoss(Creature const* creature)
