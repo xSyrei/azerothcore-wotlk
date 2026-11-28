@@ -2110,62 +2110,71 @@ EmberforgeRunesCatalog = {
     },
     { id = 52,
       name = "Rune of Scarlet Benediction",
-      role = "Healer (Priest, Holy)",
+      role = "Healer (Paladin or Priest, Holy)",
       roles = { "HEALER" },
       icon = "Ability_Rune_ScarletBenediction",
-      keywords = "priest holy healer renew flash heal greater heal prayer of healing binding heal circle of healing " ..
-          "power word shield prayer of mending guardian spirit bloom scarlet",
-      slots = { "Bloom", "Tending", "Aftermath" },
-      builtFrom = "Renew (a dormant Scarlet Bloom)",
-      spentWith = "Flash Heal, Greater Heal, Binding Heal or Prayer of Healing",
-      resource = "One Bloom on each ally you Renew",
-      core = "Renew plants a dormant Scarlet Bloom on its target for as long as the Renew. Your Flash Heal or " ..
-          "Greater Heal on that ally opens it: the most injured other ally within 10 yards is healed for 80% of " ..
-          "your spell power; if there is none, the Bloom's ally gets a shield for 40% of your spell power for 6 " ..
-          "sec. A Bloom opens once, and that ally takes no new Bloom for 8 sec. A Renew that has ticked 3 times " ..
-          "makes the opening 30% stronger. Prayer of Healing opens up to 3 Blooms among those it heals; Binding " ..
-          "Heal opens its target's.",
-      loop = "Renew the group, then Flash Heal or Greater Heal a Bloom to heal whoever is lowest beside it.",
+      keywords = "priest paladin holy healer evoker preservation echo renew power word shield holy shock flash " ..
+          "heal greater heal holy light flash of light beacon of light prayer of mending circle of healing " ..
+          "prayer of healing verdant embrace reversion dream breath spiritbloom temporal anomaly stasis scarlet",
+      slots = { "Echo", "Bloom", "Benediction" },
+      builtFrom = "Holy Shock, Power Word: Shield or Renew (an Echo)",
+      spentWith = "Holy Light, Flash of Light, Flash Heal or Greater Heal",
+      resource = "Up to 4 Echoes; Benediction, up to 5",
+      core = "Holy Shock, Power Word: Shield and Renew place a Scarlet Echo on their target for 15 sec (4 of " ..
+          "yours at most). Your next Holy Light, Flash of Light, Flash Heal or Greater Heal on an Echoed ally " ..
+          "spends the Echo and heals them again for 50%. Each Echo spent grants a Benediction, up to 5. At 5, " ..
+          "your next of those heals releases a Crimson Burst: up to 5 injured allies within 15 yards of its " ..
+          "target are healed for 60% of it. Judging an enemy Echoes your Beacon of Light's ally.",
+      loop = "Echo your allies with Holy Shock, Power Word: Shield or Renew, then heal them to hear it twice; " ..
+          "every fifth repeat, burst.",
       mods = {
-        { name = "Deep Bloom",
-          text = "The opening heals for 110% of your spell power instead of 80%." },
-        { name = "Scarlet Garden",
-          text = "The opening heals the 2 most injured allies nearby for 60% each." },
-        { name = "Bloodrose",
-          text = "Allies the opening heals also heal for 30% of your spell power over 6 sec." },
-        { name = "Circling Bloom",
-          text = "Circle of Healing opens the Blooms of up to 2 allies it heals." },
-        { name = "Shielded Bloom",
-          text = "Power Word: Shield on a Bloom's ally opens it." },
-        { name = "Patient Cultivation",
-          text = "A Renew that has ticked 3 times makes the opening 60% stronger instead of 30%." },
-        { name = "Swift Blossom",
-          text = "An ally can take a new Bloom 4 sec after one opens instead of 8." },
-        { name = "Guided Petals",
-          text = "The opening reaches the most injured ally within 20 yards instead of 10." },
-        { name = "Choral Bloom",
-          text = "Prayer of Healing opens up to 5 Blooms, each 15% stronger." },
-        { name = "Mending Petals",
-          text = "A Bloom opened on an ally carrying your Prayer of Mending heals 30% more." },
-        { name = "Second Bloom",
-          text = "Each Bloom opens twice before it is spent." },
-        { name = "Sheltering Petals",
-          text = "When the Bloom opens onto another ally, its own ally is also shielded for 40% of your spell " ..
-              "power." },
-        { name = "Renewing Flower",
-          text = "Opening a Bloom starts its ally's Renew over again." },
-        { name = "Guardian Bloom",
-          text = "A Bloom opened on your Guardian Spirit target heals 50% more." },
-        { name = "Binding Petals",
-          text = "Binding Heal also opens your own Bloom." },
+        { name = "Verdant Embrace",
+          text = "Binding Heal or Divine Favor becomes Verdant Embrace: leap to an ally and heal them for 120% " ..
+              "of your spell power, Echoing them. 12 sec cooldown." },
+        { name = "Resonant Echo",
+          text = "Echoes heal again for 70% instead of 50%." },
+        { name = "Echo Chamber",
+          text = "A spent Echo jumps to the most injured ally within 15 yards who has none." },
+        { name = "Holy Resonance",
+          text = "Holy Shock Echoes its target and your Beacon of Light's ally." },
+        { name = "Prayerful Echo",
+          text = "Each ally your Prayer of Mending lands on is Echoed." },
+        { name = "Reversion",
+          text = "Renew becomes Reversion: heals for 15% of your spell power every 2 sec for 12 sec, twice as " ..
+              "often while its ally is below half health. It Echoes like Renew." },
+        { name = "Scarlet Bloom",
+          text = "Renew or Reversion also plants a Bloom; your next direct heal there opens it, healing the most " ..
+              "injured other ally within 10 yards for 60% of your spell power." },
+        { name = "Lifebinder's Vow",
+          text = "Echoes on your Beacon of Light's ally heal again in full." },
+        { name = "Lingering Light",
+          text = "An Echo's repeat also heals 20% more of itself over 4 sec." },
+        { name = "Circle of Petals",
+          text = "Circle of Healing Echoes up to 2 of the allies it heals." },
+        { name = "Dream Breath",
+          text = "Prayer of Healing becomes Dream Breath: a 2 sec cast healing up to 5 allies in a 15 yard cone " ..
+              "before you for 80% of your spell power and 30% more over 6 sec. With 5 Benediction it spends " ..
+              "them: 50% more, and everyone it heals is Echoed." },
+        { name = "Spiritbloom",
+          text = "Greater Heal or Holy Light becomes Spiritbloom: a 2.5 sec cast healing an ally for 150% of " ..
+              "your spell power and the 3 most injured allies within 15 yards for half of it. It counts as the " ..
+              "heal it replaces. With 5 Benediction it spends them: the others healed in full." },
+        { name = "Temporal Anomaly",
+          text = "Your 5th Benediction sends a bubble drifting 20 yards ahead of you over 6 sec, shielding each " ..
+              "ally it touches for 40% of your spell power and Echoing them." },
+        { name = "Stasis",
+          text = "Your 5th Benediction makes your next 3 Holy Light, Flash of Light, Flash Heal or Greater Heal " ..
+              "within 10 sec instant." },
+        { name = "Crimson Absolution",
+          text = "The Crimson Burst also removes a harmful magic effect or disease from each ally it heals." },
       },
       builds = {
-        { name = "The Gardener", mods = { "Scarlet Garden", "Patient Cultivation", "Second Bloom" },
-          text = "Renew early, open late, twice." },
-        { name = "The Choir", mods = { "Bloodrose", "Choral Bloom", "Sheltering Petals" },
-          text = "Prayer of Healing blooms the whole party." },
-        { name = "The Guardian", mods = { "Deep Bloom", "Guided Petals", "Guardian Bloom" },
-          text = "One big Bloom where it is needed most." },
+        { name = "Holy Paladin", mods = { "Holy Resonance", "Lifebinder's Vow", "Spiritbloom" },
+          text = "Holy Shock and Judgement keep the Beacon Echoed; Holy Light lands twice." },
+        { name = "Holy Priest", mods = { "Prayerful Echo", "Reversion", "Dream Breath" },
+          text = "Prayer of Mending spreads Echoes; Dream Breath cashes them in." },
+        { name = "Preservation", mods = { "Verdant Embrace", "Scarlet Bloom", "Temporal Anomaly" },
+          text = "Leap, bloom and drift a bubble through the group." },
       },
     },
     { id = 53,

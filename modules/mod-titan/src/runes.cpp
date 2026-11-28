@@ -44,6 +44,7 @@
 #include "WorldSession.h"
 #include <algorithm>
 #include <array>
+#include <deque>
 #include <map>
 #include <tuple>
 #include <memory>
@@ -623,13 +624,34 @@ namespace
         SPELL_HUNTERS_MOBILITY          = 93383,
         SPELL_STEADY_RECOVERY           = 93384,
         SPELL_MENDING_AIM               = 93385,    // the pet's heal
-        // Scarlet Benediction (93400 on).
+        // Scarlet Benediction (93400 on; its redesign's 93386-93399 and 93420-93423).
         SPELL_RUNE_SCARLET_BENEDICTION  = 93400,
         SPELL_SCARLET_MODIFIER_FIRST    = 93401,
-        SPELL_SCARLET_BLOOM             = 93416,    // dormant on Renew's target
-        SPELL_SCARLET_OPENING           = 93417,    // the heal
-        SPELL_SCARLET_PETALS            = 93418,    // the absorb
-        SPELL_BLOODROSE                 = 93419,    // heal over time
+        SPELL_SCARLET_BLOOM             = 93416,    // Scarlet Bloom's, on Renew's (or Reversion's) target
+        SPELL_SCARLET_ECHO_HEAL         = 93417,    // an Echo's repeat
+        SPELL_ANOMALY_SHIELD            = 93418,    // Temporal Anomaly's absorb
+        SPELL_LINGERING_LIGHT           = 93419,    // heal over time
+        SPELL_SCARLET_ECHO              = 93386,    // on the ally
+        SPELL_BENEDICTION               = 93387,    // the Hero's stacks
+        SPELL_CRIMSON_BURST             = 93388,
+        SPELL_VERDANT_EMBRACE           = 93389,    // Binding Heal's or Divine Favor's place
+        SPELL_VERDANT_EMBRACE_HEAL      = 93390,
+        SPELL_REVERSION                 = 93391,    // Renew's place
+        SPELL_REVERSION_HOT             = 93392,
+        SPELL_DREAM_BREATH              = 93393,    // Prayer of Healing's place
+        SPELL_DREAM_BREATH_HEAL         = 93394,
+        SPELL_DREAM_BREATH_HOT          = 93395,
+        SPELL_SPIRITBLOOM               = 93396,    // Greater Heal's or Holy Light's place
+        SPELL_SPIRITBLOOM_PRIEST        = 93397,    // its heal as Greater Heal (the Priest's talents)
+        SPELL_STASIS_PRIEST             = 93398,    // Flash Heal and Greater Heal instant
+        SPELL_SCARLET_BLOOM_HEAL        = 93399,
+        SPELL_ANOMALY_LOOK              = 93420,    // the bubble's
+        SPELL_STASIS_PALADIN            = 93421,    // Holy Light and Flash of Light instant
+        SPELL_SPIRITBLOOM_PALADIN       = 93422,    // its heal as Holy Light (the Paladin's talents)
+        SPELL_REVERSION_SURGE           = 93423,    // Reversion's second tick below half health
+        SPELL_HOLY_LIGHT                = 635,
+        SPELL_FLASH_OF_LIGHT            = 19750,
+        SPELL_DIVINE_FAVOR              = 20216,
         // The Evergrove (93425 on).
         SPELL_RUNE_EVERGROVE            = 93425,
         SPELL_GROVE_MODIFIER_FIRST      = 93426,
@@ -1211,37 +1233,56 @@ namespace
     constexpr int32 QUICK_RECOVERY_MS = 2000, FOLLOW_UP_MS = 6000;
     constexpr uint32 MENDING_AIM_EVERY_MS = 10000;
 
-    // Scarlet Benediction's modifiers: slot (0 Bloom, 1 Tending, 2 Aftermath) x 5 + choice.
+    // Scarlet Benediction's modifiers: slot (0 Echo, 1 Bloom, 2 Benediction) x 5 + choice.
     enum ScarletModifier : uint8
     {
-        MOD_SCARLET_DEEP_BLOOM, MOD_SCARLET_GARDEN, MOD_SCARLET_BLOODROSE, MOD_SCARLET_CIRCLING_BLOOM,
-        MOD_SCARLET_SHIELDED_BLOOM,
-        MOD_SCARLET_PATIENT_CULTIVATION, MOD_SCARLET_SWIFT_BLOSSOM, MOD_SCARLET_GUIDED_PETALS, MOD_SCARLET_CHORAL_BLOOM,
-        MOD_SCARLET_MENDING_PETALS,
-        MOD_SCARLET_SECOND_BLOOM, MOD_SCARLET_SHELTERING_PETALS, MOD_SCARLET_RENEWING_FLOWER,
-        MOD_SCARLET_GUARDIAN_BLOOM, MOD_SCARLET_BINDING_PETALS,
+        MOD_VERDANT_EMBRACE, MOD_RESONANT_ECHO, MOD_ECHO_CHAMBER, MOD_HOLY_RESONANCE, MOD_PRAYERFUL_ECHO,
+        MOD_REVERSION, MOD_SCARLET_BLOOM, MOD_LIFEBINDERS_VOW, MOD_LINGERING_LIGHT, MOD_CIRCLE_OF_PETALS,
+        MOD_DREAM_BREATH, MOD_SPIRITBLOOM, MOD_TEMPORAL_ANOMALY, MOD_STASIS, MOD_CRIMSON_ABSOLUTION,
     };
 
-    // Scarlet Benediction's tuning: Renew plants a dormant Scarlet Bloom on its target (as long as the Renew). The
-    // Hero's direct Flash Heal or Greater Heal on it opens it: the most injured other ally within 10 yards healed for
-    // 80% of their spell power; none, the target shielded for 40% for 6 sec. Once a Bloom; that ally takes no new
-    // Bloom for 8 sec after. A Renew that ticked 3 times (9 sec on): 30% more. Prayer of Healing opens up to 3 of the
-    // Blooms it heals, Binding Heal its target's.
-    constexpr float SCARLET_OPENING = 0.8f, SCARLET_PETALS = 0.4f, SCARLET_RANGE = 10.0f, SCARLET_RIPE = 1.3f;
-    constexpr int32 SCARLET_RIPE_MS = 9000, SCARLET_PETALS_MS = 6000;
-    constexpr uint32 SCARLET_REARM_MS = 8000;
-    constexpr std::size_t SCARLET_PRAYER_OPENS = 3;
-    // Its options: Deep Bloom (110%), Scarlet Garden (two allies, 60% each), Bloodrose (the healed ally 30% more over
-    // 6 sec), Circling Bloom (Circle of Healing opens up to 2), Shielded Bloom (Power Word: Shield opens it); Patient
-    // Cultivation (ripe 60% more), Swift Blossom (4 sec apart), Guided Petals (20 yards), Choral Bloom (Prayer of
-    // Healing opens up to 5, 15% more), Mending Petals (their Prayer of Mending on the Bloom's ally: 30% more); Second
-    // Bloom (opens twice), Sheltering Petals (its ally shielded as well), Renewing Flower (its Renew begins again),
-    // Guardian Bloom (their Guardian Spirit on it: 50% more), Binding Petals (Binding Heal opens the Hero's own too).
-    constexpr float DEEP_BLOOM = 1.1f, SCARLET_GARDEN_SHARE = 0.6f, BLOODROSE_SHARE = 0.3f, PATIENT_RIPE = 1.6f;
-    constexpr float GUIDED_PETALS_RANGE = 20.0f, CHORAL_MORE = 1.15f, MENDING_PETALS = 1.3f, GUARDIAN_BLOOM = 1.5f;
-    constexpr int32 BLOODROSE_MS = 6000;
-    constexpr uint32 SWIFT_BLOSSOM_MS = 4000;
-    constexpr std::size_t SCARLET_GARDEN_ALLIES = 2, CIRCLING_OPENS = 2, CHORAL_OPENS = 5;
+    // Scarlet Benediction's tuning (its redesign: the Preservation Evoker's Echo). Holy Shock, Power Word: Shield and
+    // Renew Echo their target for 15 sec (4 Echoes of the Hero's at most: a fifth takes the oldest's place). The
+    // Hero's next Holy Light, Flash of Light, Flash Heal or Greater Heal there spends it and heals again for 50%,
+    // gaining a Benediction (5 at most); at 5, their next of those releases a Crimson Burst on up to 5 injured allies
+    // within 15 yards of its target, 60% of it. Judgement Echoes their Beacon of Light's ally.
+    // Every share here is a third of what the game shows: the rune's healing and shields are raised 3 times
+    // (rune_power.cpp).
+    constexpr float RUNE_THIRD = 1.0f / 3.0f;
+    constexpr float SCARLET_ECHO_SHARE = 0.5f * RUNE_THIRD, CRIMSON_BURST_SHARE = 0.6f * RUNE_THIRD;
+    constexpr float CRIMSON_BURST_RANGE = 15.0f;
+    constexpr int32 SCARLET_ECHO_MS = 15000, BENEDICTION_MS = 30000;
+    constexpr uint8 SCARLET_ECHOES = 4, BENEDICTION_MOST = 5;
+    constexpr std::size_t CRIMSON_BURST_ALLIES = 5;
+    // Its options. The Echo: Verdant Embrace (leap to an ally, 120% of spell power, Echoing them; 12 sec), Resonant
+    // Echo (70%), Echo Chamber (a spent Echo jumps to the most injured un-Echoed ally within 15 yards), Holy Resonance
+    // (Holy Shock Echoes the Beacon's ally too), Prayerful Echo (Prayer of Mending Echoes where it lands). The Bloom:
+    // Reversion (Renew's place: 15% of spell power every 2 sec for 12 sec, twice below half health), Scarlet Bloom
+    // (Renew plants a Bloom; a direct heal there opens it on the most injured other ally within 10 yards, 60% of spell
+    // power), Lifebinder's Vow (Echoes on the Beacon's ally whole), Lingering Light (a repeat 20% more over 4 sec),
+    // Circle of Petals (Circle of Healing Echoes 2 it heals). The Benediction: Dream Breath (Prayer of Healing's
+    // place: a 15 yard cone, up to 5 allies, 80% of spell power and 30% of that over 6 sec; with 5 Benediction, spent:
+    // 50% more and all Echoed), Spiritbloom (Greater Heal's or Holy Light's place: 150% of spell power, half of it to
+    // each of the 3 most injured allies within 15 yards; with 5, spent: whole), Temporal Anomaly (the 5th Benediction
+    // sends a bubble 20 yards ahead over 6 sec: allies it touches shielded for 40% of spell power and Echoed), Stasis
+    // (the 5th makes the next 3 direct heals within 10 sec instant), Crimson Absolution (the Burst cleanses a magic
+    // effect or disease from each ally it heals).
+    constexpr float VERDANT_POWER = 1.2f * RUNE_THIRD, RESONANT_ECHO_SHARE = 0.7f * RUNE_THIRD;
+    constexpr float LIFEBINDER_SHARE = 1.0f * RUNE_THIRD, ECHO_CHAMBER_RANGE = 15.0f;
+    constexpr float VERDANT_LEAP_SPEED = 30.0f, VERDANT_LEAP_HEIGHT = 6.0f, VERDANT_LEAP_STOP = 2.0f;
+    constexpr float REVERSION_TICK = 0.15f * RUNE_THIRD, SCARLET_BLOOM_POWER = 0.6f * RUNE_THIRD;
+    constexpr float SCARLET_BLOOM_RANGE = 10.0f, LINGERING_SHARE = 0.2f, REVERSION_LOW_PCT = 50.0f;
+    constexpr float DREAM_BREATH_POWER = 0.8f * RUNE_THIRD, DREAM_BREATH_HOT = 0.3f, DREAM_BREATH_SPENT = 1.5f;
+    constexpr float DREAM_BREATH_RANGE = 15.0f, DREAM_BREATH_ARC = float(M_PI) / 2.0f;
+    constexpr float SPIRITBLOOM_POWER = 1.5f * RUNE_THIRD, SPIRITBLOOM_SPLIT = 0.5f, SPIRITBLOOM_RANGE = 15.0f;
+    constexpr float ANOMALY_SHIELD_POWER = 0.4f * RUNE_THIRD, ANOMALY_DISTANCE = 20.0f, ANOMALY_REACH = 4.0f;
+    constexpr float ANOMALY_HEIGHT = 1.0f;
+    constexpr int32 REVERSION_MS = 12000, LINGERING_LIGHT_MS = 4000;
+    constexpr int32 DREAM_BREATH_HOT_MS = 6000, STASIS_MS = 10000;
+    constexpr uint32 ANOMALY_MS = 6000, ANOMALY_TOUCH_MS = 500;
+    constexpr uint8 STASIS_CHARGES = 3;
+    constexpr std::size_t CIRCLE_PETALS = 2, DREAM_BREATH_ALLIES = 5, SPIRITBLOOM_ALLIES = 3;
+    constexpr uint32 NPC_TEMPORAL_ANOMALY = 910157;
 
     // The Evergrove's modifiers: slot (0 Grove, 1 Seeking, 2 Bloom) x 5 + choice.
     enum GroveModifier : uint8
@@ -2073,10 +2114,11 @@ namespace
             // Ranged DPS: Aimed Shot becomes Trueshot.
             { RUNE_TRUESHOT, uint8(Wildcard::RoleMask(Wildcard::ROLE_RANGED)),
               { { SPELL_AIMED_SHOT } }, SPELL_RUNE_TRUESHOT, SPELL_TRUESHOT_MODIFIER_FIRST, MAX_CHOICES },
-            // Healer: Renew plants the Bloom, Flash Heal or Greater Heal opens it.
+            // Healer: Holy Shock, Power Word: Shield or Renew Echoes; a direct heal there heals again.
             { RUNE_SCARLET_BENEDICTION, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
-              { { SPELL_RENEW }, { SPELL_FLASH_HEAL, SPELL_GREATER_HEAL } }, SPELL_RUNE_SCARLET_BENEDICTION,
-              SPELL_SCARLET_MODIFIER_FIRST, MAX_CHOICES },
+              { { SPELL_HOLY_SHOCK, SPELL_POWER_WORD_SHIELD, SPELL_RENEW },
+                { SPELL_HOLY_LIGHT, SPELL_FLASH_OF_LIGHT, SPELL_FLASH_HEAL, SPELL_GREATER_HEAL } },
+              SPELL_RUNE_SCARLET_BENEDICTION, SPELL_SCARLET_MODIFIER_FIRST, MAX_CHOICES },
             // Healer: Rejuvenation stacks, and seeks the injured.
             { RUNE_EVERGROVE, uint8(Wildcard::RoleMask(Wildcard::ROLE_HEALER)),
               { { SPELL_REJUVENATION } }, SPELL_RUNE_EVERGROVE, SPELL_GROVE_MODIFIER_FIRST, MAX_CHOICES },
@@ -2140,12 +2182,15 @@ namespace
         if (rune == RUNE_SCARLET_BENEDICTION)
             switch (modifier)
             {
-                case MOD_SCARLET_CIRCLING_BLOOM: return { { SPELL_CIRCLE_OF_HEALING } };
-                case MOD_SCARLET_SHIELDED_BLOOM: return { { SPELL_POWER_WORD_SHIELD } };
-                case MOD_SCARLET_CHORAL_BLOOM: return { { SPELL_PRAYER_OF_HEALING } };
-                case MOD_SCARLET_MENDING_PETALS: return { { SPELL_PRAYER_OF_MENDING } };
-                case MOD_SCARLET_GUARDIAN_BLOOM: return { { SPELL_GUARDIAN_SPIRIT } };
-                case MOD_SCARLET_BINDING_PETALS: return { { SPELL_BINDING_HEAL } };
+                case MOD_VERDANT_EMBRACE: return { { SPELL_BINDING_HEAL, SPELL_DIVINE_FAVOR } };
+                case MOD_HOLY_RESONANCE: return { { SPELL_HOLY_SHOCK }, { SPELL_BEACON_OF_LIGHT } };
+                case MOD_PRAYERFUL_ECHO: return { { SPELL_PRAYER_OF_MENDING } };
+                case MOD_REVERSION: return { { SPELL_RENEW } };
+                case MOD_SCARLET_BLOOM: return { { SPELL_RENEW } };
+                case MOD_LIFEBINDERS_VOW: return { { SPELL_BEACON_OF_LIGHT } };
+                case MOD_CIRCLE_OF_PETALS: return { { SPELL_CIRCLE_OF_HEALING } };
+                case MOD_DREAM_BREATH: return { { SPELL_PRAYER_OF_HEALING } };
+                case MOD_SPIRITBLOOM: return { { SPELL_GREATER_HEAL, SPELL_HOLY_LIGHT } };
                 default: break;
             }
         if (rune == RUNE_EVERGROVE)
@@ -2619,13 +2664,16 @@ namespace
         ObjectGuid ExposedTarget;
         uint32 TrueshotPendingUntil = 0, MultiChargeUntil = 0, ArcaneChargeUntil = 0, FollowUpUntil = 0;
         uint32 RenewedAimAt = 0;
-        // Scarlet Benediction: each ally's Bloom (its openings, and when a new one may be planted; game ms).
-        struct Bloom
+        // Scarlet Benediction: the allies the Hero's Echoes are on (oldest first); Temporal Anomaly's bubbles (each
+        // its end, its touch's timer and the allies it touched; game ms).
+        std::deque<ObjectGuid> Echoes;
+        struct Anomaly
         {
-            uint8 Opens = 0;
-            uint32 RearmAt = 0;
+            ObjectGuid Bubble;
+            uint32 Until = 0, Timer = 0;
+            std::set<ObjectGuid> Touched;
         };
-        std::map<ObjectGuid, Bloom> Blooms;
+        std::vector<Anomaly> Anomalies;
         // The Evergrove: Tranquil Grove's last growth on each ally (game ms).
         std::map<ObjectGuid, uint32> TranquilAt;
         // Iron Reckoning: the bulwark's window and what it holds (game ms).
@@ -5333,6 +5381,8 @@ namespace
     // ---- The Hungering Rift ------------------------------------------------------------------------------------
 
     uint32 KnownRank(Player* player, uint32 firstRank);
+    TempSummon* SummonFlier(Player* player, uint32 entry, Position const& at, uint32 ms, uint32 form);
+    void Dismiss(Player* player, ObjectGuid guid);
 
     bool HasRiftMarker(Unit* unit, uint8 modifier)
     {
@@ -5995,123 +6045,395 @@ namespace
             * player->GetTotalAuraMultiplier(SPELL_AURA_MOD_HEALING_DONE_PERCENT);
     }
 
-    bool HasPrayerOfMending(Player* player, Unit* ally)
+    // The Hero's Beacon of Light's ally, if any is near.
+    Unit* BeaconOf(Player* player)
     {
-        for (uint32 id : { uint32(SPELL_PRAYER_OF_MENDING_BUFF), 48110u, 48111u })
-            if (ally->HasAura(id, player->GetGUID()))
-                return true;
-        return false;
+        for (Unit* ally : AlliesAround(player, 100.0f))
+            if (ally->HasAura(SPELL_BEACON_OF_LIGHT, player->GetGUID()))
+                return ally;
+        return nullptr;
     }
 
-    // Renew on an ally plants a dormant Scarlet Bloom there, as long as the Renew (one already there lasts as long
-    // again, its openings kept), unless one opened there too lately.
-    void PlantBloom(Player* player, Unit* ally)
+    bool DirectHeal(uint32 firstRank)
     {
-        ObjectGuid me = player->GetGUID();
-        State::Bloom& bloom = StateOf(player).Blooms[ally->GetGUID()];
-        if (Now() < bloom.RearmAt)
+        return firstRank == SPELL_HOLY_LIGHT || firstRank == SPELL_FLASH_OF_LIGHT || firstRank == SPELL_FLASH_HEAL
+            || firstRank == SPELL_GREATER_HEAL;
+    }
+
+    bool Echoed(Player* player, Unit* ally)
+    {
+        return ally->HasAura(SPELL_SCARLET_ECHO, player->GetGUID());
+    }
+
+    // An Echo of the Hero's on the ally for 15 sec (one already there: renewed). A fifth takes the oldest's place.
+    void AddEcho(Player* player, Unit* ally)
+    {
+        if (!ally->IsAlive())
             return;
-        Aura* renew = ally->GetAuraOfRankedSpell(SPELL_RENEW, me);
-        int32 ms = renew ? renew->GetDuration() : 15000;
-        Aura* planted = ally->GetAura(SPELL_SCARLET_BLOOM, me);
-        if (!planted)
+        State& state = StateOf(player);
+        ObjectGuid guid = ally->GetGUID();
+        state.Echoes.erase(std::remove(state.Echoes.begin(), state.Echoes.end(), guid), state.Echoes.end());
+        if (Aura* echo = ally->GetAura(SPELL_SCARLET_ECHO, player->GetGUID()))
+            echo->RefreshDuration();
+        else if (!player->AddAura(SPELL_SCARLET_ECHO, ally))
+            return;
+        state.Echoes.push_back(guid);
+        while (state.Echoes.size() > SCARLET_ECHOES)
         {
-            bloom.Opens = 0;
-            planted = player->AddAura(SPELL_SCARLET_BLOOM, ally);
-        }
-        if (planted)
-        {
-            planted->SetMaxDuration(ms);
-            planted->SetDuration(ms);
+            if (Unit* oldest = ObjectAccessor::GetUnit(*player, state.Echoes.front()))
+                oldest->RemoveAurasDueToSpell(SPELL_SCARLET_ECHO, player->GetGUID());
+            state.Echoes.pop_front();
         }
     }
 
-    // The Bloom on the ally opened (more: the opener's own share): its heal to the most injured other ally near it
-    // (two with Scarlet Garden), else the ally shielded. False if there was none.
-    bool OpenBloom(Player* player, Unit* ally, float more = 1.0f)
+    // The Hero's Echo on the ally spent: true if there was one.
+    bool TakeEcho(Player* player, Unit* ally)
     {
-        ObjectGuid me = player->GetGUID();
-        if (!ally->HasAura(SPELL_SCARLET_BLOOM, me))
+        State& state = StateOf(player);
+        ObjectGuid guid = ally->GetGUID();
+        state.Echoes.erase(std::remove(state.Echoes.begin(), state.Echoes.end(), guid), state.Echoes.end());
+        if (!Echoed(player, ally))
             return false;
-        State::Bloom& bloom = StateOf(player).Blooms[ally->GetGUID()];
-        float power = RuneHealing(player, SPELL_SCHOOL_MASK_HOLY) * more;
-        Aura* renew = ally->GetAuraOfRankedSpell(SPELL_RENEW, me);
-        if (renew && renew->GetMaxDuration() - renew->GetDuration() >= SCARLET_RIPE_MS)
-            power *= HasScarletMarker(player, MOD_SCARLET_PATIENT_CULTIVATION) ? PATIENT_RIPE : SCARLET_RIPE;
-        if (HasScarletMarker(player, MOD_SCARLET_MENDING_PETALS) && HasPrayerOfMending(player, ally))
-            power *= MENDING_PETALS;
-        if (HasScarletMarker(player, MOD_SCARLET_GUARDIAN_BLOOM) && ally->HasAura(SPELL_GUARDIAN_SPIRIT, me))
-            power *= GUARDIAN_BLOOM;
-        bool garden = HasScarletMarker(player, MOD_SCARLET_GARDEN);
-        float share = garden ? SCARLET_GARDEN_SHARE
-            : HasScarletMarker(player, MOD_SCARLET_DEEP_BLOOM) ? DEEP_BLOOM : SCARLET_OPENING;
-        float range = HasScarletMarker(player, MOD_SCARLET_GUIDED_PETALS) ? GUIDED_PETALS_RANGE : SCARLET_RANGE;
-        std::vector<Unit*> allies = InjuredAllies(player, ally, range, ally);
-        if (allies.size() > (garden ? SCARLET_GARDEN_ALLIES : 1))
-            allies.resize(garden ? SCARLET_GARDEN_ALLIES : 1);
-        for (Unit* other : allies)
-        {
-            Mend(player, other, SPELL_SCARLET_OPENING, power * share);
-            if (HasScarletMarker(player, MOD_SCARLET_BLOODROSE))
-            {
-                int32 tick = std::max<int32>(1, int32(power * BLOODROSE_SHARE / float(BLOODROSE_MS / IN_MILLISECONDS)));
-                Lasting(player, other, SPELL_BLOODROSE, BLOODROSE_MS, &tick);
-            }
-        }
-        if (allies.empty() || HasScarletMarker(player, MOD_SCARLET_SHELTERING_PETALS))
-            Ward(player, ally, SPELL_SCARLET_PETALS, power * SCARLET_PETALS);
-        if (renew && HasScarletMarker(player, MOD_SCARLET_RENEWING_FLOWER))
-            renew->RefreshDuration();
-        uint8 most = HasScarletMarker(player, MOD_SCARLET_SECOND_BLOOM) ? 2 : 1;
-        if (++bloom.Opens >= most)
-        {
-            ally->RemoveAurasDueToSpell(SPELL_SCARLET_BLOOM, me);
-            bloom.Opens = 0;
-            bloom.RearmAt = Now()
-                + (HasScarletMarker(player, MOD_SCARLET_SWIFT_BLOSSOM) ? SWIFT_BLOSSOM_MS : SCARLET_REARM_MS);
-        }
+        ally->RemoveAurasDueToSpell(SPELL_SCARLET_ECHO, player->GetGUID());
         return true;
     }
 
-    // The Hero's heals with Scarlet Benediction: Renew plants; Flash Heal, Greater Heal, Binding Heal, Prayer of
-    // Healing (up to 3 a cast; opened counts them) and the options' Circle of Healing and Power Word: Shield open.
-    void ScarletHeal(Player* player, Unit* target, uint32 firstRank, uint8& opened)
+    uint8 Benediction(Player* player)
     {
+        Aura* aura = player->GetAura(SPELL_BENEDICTION);
+        return aura ? aura->GetStackAmount() : 0;
+    }
+
+    // At 5: the Benediction spent (true), else nothing.
+    bool SpendBenediction(Player* player)
+    {
+        if (Benediction(player) < BENEDICTION_MOST)
+            return false;
+        player->RemoveAurasDueToSpell(SPELL_BENEDICTION);
+        return true;
+    }
+
+    // Temporal Anomaly: a bubble drifting 20 yards ahead of the Hero over 6 sec.
+    void LaunchAnomaly(Player* player)
+    {
+        Position at = player->GetPosition();
+        at.m_positionZ += ANOMALY_HEIGHT;
+        Position to = Toward(player->GetPosition(), player->GetOrientation(), ANOMALY_DISTANCE);
+        float z = to.GetPositionZ();
+        player->UpdateGroundPositionZ(to.GetPositionX(), to.GetPositionY(), z);
+        to.m_positionZ = z + ANOMALY_HEIGHT;
+        TempSummon* bubble = SummonFlier(player, NPC_TEMPORAL_ANOMALY, at, ANOMALY_MS + 1000, SPELL_ANOMALY_LOOK);
+        if (!bubble)
+            return;
+        bubble->GetMotionMaster()->MovePoint(0, to, FORCED_MOVEMENT_NONE,
+            ANOMALY_DISTANCE / (float(ANOMALY_MS) / IN_MILLISECONDS), false);
+        State::Anomaly anomaly;
+        anomaly.Bubble = bubble->GetGUID();
+        anomaly.Until = Now() + ANOMALY_MS;
+        StateOf(player).Anomalies.push_back(anomaly);
+    }
+
+    // Each bubble: every 0.5 sec, the allies within 4 yards of it it has not touched yet shielded and Echoed.
+    void AnomalyTick(Player* player, uint32 diff)
+    {
+        State& state = StateOf(player);
+        for (auto itr = state.Anomalies.begin(); itr != state.Anomalies.end();)
+        {
+            Creature* bubble = ObjectAccessor::GetCreature(*player, itr->Bubble);
+            if (!bubble || !player->IsAlive() || !player->IsInWorld() || bubble->GetMap() != player->GetMap()
+                || Now() >= itr->Until)
+            {
+                Dismiss(player, itr->Bubble);
+                itr = state.Anomalies.erase(itr);
+                continue;
+            }
+            itr->Timer += diff;
+            if (itr->Timer >= ANOMALY_TOUCH_MS)
+            {
+                itr->Timer -= ANOMALY_TOUCH_MS;
+                for (Unit* ally : AlliesAround(player, 100.0f))
+                    if (ally->IsAlive() && bubble->IsWithinDist(ally, ANOMALY_REACH)
+                        && itr->Touched.insert(ally->GetGUID()).second)
+                    {
+                        Ward(player, ally, SPELL_ANOMALY_SHIELD,
+                            RuneHealing(player, SPELL_SCHOOL_MASK_HOLY) * ANOMALY_SHIELD_POWER);
+                        AddEcho(player, ally);
+                    }
+            }
+            ++itr;
+        }
+    }
+
+    // Stasis: Holy Light, Flash of Light, Flash Heal and Greater Heal instant, 3 casts in all (one aura for the
+    // Paladin's heals, one for the Priest's; each cast spends a charge of both).
+    void EnterStasis(Player* player)
+    {
+        for (uint32 spell : { SPELL_STASIS_PRIEST, SPELL_STASIS_PALADIN })
+        {
+            player->RemoveAurasDueToSpell(spell);
+            if (Aura* aura = player->AddAura(spell, player))
+            {
+                aura->SetCharges(STASIS_CHARGES);
+                aura->SetMaxDuration(STASIS_MS);
+                aura->SetDuration(STASIS_MS);
+            }
+        }
+    }
+
+    // A direct heal cast during Stasis: the other family's aura spends a charge too (the core spent its own).
+    void SpendStasis(Player* player, uint32 firstRank)
+    {
+        bool priest = firstRank == SPELL_FLASH_HEAL || firstRank == SPELL_GREATER_HEAL;
+        if (Aura* other = player->GetAura(priest ? SPELL_STASIS_PALADIN : SPELL_STASIS_PRIEST))
+            other->DropCharge();
+    }
+
+    // A Benediction more (5 at most); the 5th sends Temporal Anomaly's bubble or puts the Hero in Stasis.
+    void GainBenediction(Player* player)
+    {
+        Aura* aura = player->GetAura(SPELL_BENEDICTION);
+        uint8 before = aura ? aura->GetStackAmount() : 0;
+        if (before >= BENEDICTION_MOST)
+        {
+            aura->RefreshDuration();
+            return;
+        }
+        if (aura)
+        {
+            aura->ModStackAmount(1);
+            aura->RefreshDuration();
+        }
+        else if (!(aura = player->AddAura(SPELL_BENEDICTION, player)))
+            return;
+        if (aura->GetStackAmount() < BENEDICTION_MOST)
+            return;
+        if (HasScarletMarker(player, MOD_TEMPORAL_ANOMALY))
+            LaunchAnomaly(player);
+        if (HasScarletMarker(player, MOD_STASIS))
+            EnterStasis(player);
+    }
+
+    // One harmful magic effect or disease off the unit (Crimson Absolution).
+    void CleanseOne(Unit* unit)
+    {
+        for (auto const& [id, application] : unit->GetAppliedAuras())
+        {
+            SpellInfo const* info = application->GetBase()->GetSpellInfo();
+            if (!application->IsPositive() && (info->Dispel == DISPEL_MAGIC || info->Dispel == DISPEL_DISEASE))
+            {
+                unit->RemoveAura(application);
+                return;
+            }
+        }
+    }
+
+    // The Crimson Burst: up to 5 injured allies within 15 yards of the heal's target, 60% of it.
+    void CrimsonBurst(Player* player, Unit* target, float heal)
+    {
+        std::vector<Unit*> allies = InjuredAllies(player, target, CRIMSON_BURST_RANGE, nullptr);
+        if (allies.size() > CRIMSON_BURST_ALLIES)
+            allies.resize(CRIMSON_BURST_ALLIES);
+        bool absolve = HasScarletMarker(player, MOD_CRIMSON_ABSOLUTION);
+        for (Unit* ally : allies)
+        {
+            Mend(player, ally, SPELL_CRIMSON_BURST, heal * CRIMSON_BURST_SHARE);
+            if (absolve)
+                CleanseOne(ally);
+        }
+    }
+
+    // Renew (or Reversion) on an ally: Echoed; with Scarlet Bloom, a Bloom planted there for as long.
+    void ScarletRenew(Player* player, Unit* ally, int32 ms)
+    {
+        AddEcho(player, ally);
+        if (!HasScarletMarker(player, MOD_SCARLET_BLOOM))
+            return;
+        ally->RemoveAurasDueToSpell(SPELL_SCARLET_BLOOM, player->GetGUID());
+        if (Aura* bloom = player->AddAura(SPELL_SCARLET_BLOOM, ally))
+        {
+            bloom->SetMaxDuration(ms);
+            bloom->SetDuration(ms);
+        }
+    }
+
+    // A direct heal of the Hero's (Holy Light, Flash of Light, Flash Heal, Greater Heal, or what counts as one) on an
+    // ally: at 5 Benediction, the Crimson Burst; their Echo there spent for the repeat and a Benediction; their Bloom
+    // there opened.
+    void ScarletDirectHeal(Player* player, Unit* target, uint32 firstRank, float heal)
+    {
+        if (player->HasAura(SPELL_STASIS_PRIEST) || player->HasAura(SPELL_STASIS_PALADIN))
+            SpendStasis(player, firstRank);
+        if (SpendBenediction(player))
+            CrimsonBurst(player, target, heal);
+        if (TakeEcho(player, target))
+        {
+            Unit* beacon = HasScarletMarker(player, MOD_LIFEBINDERS_VOW) ? BeaconOf(player) : nullptr;
+            float share = beacon == target ? LIFEBINDER_SHARE
+                : HasScarletMarker(player, MOD_RESONANT_ECHO) ? RESONANT_ECHO_SHARE : SCARLET_ECHO_SHARE;
+            float repeat = heal * share;
+            Mend(player, target, SPELL_SCARLET_ECHO_HEAL, repeat);
+            if (HasScarletMarker(player, MOD_LINGERING_LIGHT))
+            {
+                int32 tick = std::max<int32>(1,
+                    int32(repeat * LINGERING_SHARE / float(LINGERING_LIGHT_MS / IN_MILLISECONDS)));
+                Lasting(player, target, SPELL_LINGERING_LIGHT, LINGERING_LIGHT_MS, &tick);
+            }
+            GainBenediction(player);
+            if (HasScarletMarker(player, MOD_ECHO_CHAMBER))
+                for (Unit* ally : InjuredAllies(player, target, ECHO_CHAMBER_RANGE, target))
+                    if (!Echoed(player, ally))
+                    {
+                        AddEcho(player, ally);
+                        break;
+                    }
+        }
+        if (target->HasAura(SPELL_SCARLET_BLOOM, player->GetGUID()))
+        {
+            target->RemoveAurasDueToSpell(SPELL_SCARLET_BLOOM, player->GetGUID());
+            std::vector<Unit*> allies = InjuredAllies(player, target, SCARLET_BLOOM_RANGE, target);
+            if (!allies.empty())
+                Mend(player, allies.front(), SPELL_SCARLET_BLOOM_HEAL,
+                    RuneHealing(player, SPELL_SCHOOL_MASK_HOLY) * SCARLET_BLOOM_POWER);
+        }
+    }
+
+    // The Hero's hits with Scarlet Benediction: Holy Shock's heal, Power Word: Shield and Renew Echo; a direct heal
+    // spends; Judgement Echoes the Beacon's ally; the options' Prayer of Mending and Circle of Healing (2 a cast;
+    // opened counts them) Echo.
+    void ScarletHit(Player* player, Unit* target, uint32 firstRank, Spell const* spell, float heal, uint8& opened)
+    {
+        bool original = LegendaryRunes::IsOriginal(spell);
+        uint32 id = spell->GetSpellInfo()->Id;
+        if (player->IsValidAttackTarget(target))
+        {
+            if (original && (firstRank == SPELL_JUDGEMENT_OF_LIGHT || firstRank == SPELL_JUDGEMENT_OF_WISDOM
+                || firstRank == SPELL_JUDGEMENT_OF_JUSTICE))
+                if (Unit* beacon = BeaconOf(player))
+                    AddEcho(player, beacon);
+            return;
+        }
         if (!player->IsFriendlyTo(target))
             return;
+        if (id == SPELL_PRAYER_OF_MENDING_BUFF || id == 48110 || id == 48111)
+        {
+            if (HasScarletMarker(player, MOD_PRAYERFUL_ECHO))
+                AddEcho(player, target);
+            return;
+        }
         switch (firstRank)
         {
-            case SPELL_RENEW:
-                PlantBloom(player, target);
-                break;
-            case SPELL_FLASH_HEAL:
-            case SPELL_GREATER_HEAL:
-                OpenBloom(player, target);
-                break;
-            case SPELL_BINDING_HEAL:
-                if (target != player || HasScarletMarker(player, MOD_SCARLET_BINDING_PETALS))
-                    OpenBloom(player, target);
-                break;
-            case SPELL_PRAYER_OF_HEALING:
-            {
-                bool choral = HasScarletMarker(player, MOD_SCARLET_CHORAL_BLOOM);
-                if (opened < (choral ? CHORAL_OPENS : SCARLET_PRAYER_OPENS)
-                    && OpenBloom(player, target, choral ? CHORAL_MORE : 1.0f))
-                    ++opened;
-                break;
-            }
-            case SPELL_CIRCLE_OF_HEALING:
-                if (HasScarletMarker(player, MOD_SCARLET_CIRCLING_BLOOM) && opened < CIRCLING_OPENS
-                    && OpenBloom(player, target))
-                    ++opened;
+            case SPELL_HOLY_SHOCK_HEAL:
+                AddEcho(player, target);
+                if (HasScarletMarker(player, MOD_HOLY_RESONANCE))
+                    if (Unit* beacon = BeaconOf(player); beacon && beacon != target)
+                        AddEcho(player, beacon);
                 break;
             case SPELL_POWER_WORD_SHIELD:
-                if (HasScarletMarker(player, MOD_SCARLET_SHIELDED_BLOOM))
-                    OpenBloom(player, target);
+                if (original)
+                    AddEcho(player, target);
+                break;
+            case SPELL_RENEW:
+                if (original)
+                {
+                    Aura* renew = target->GetAuraOfRankedSpell(SPELL_RENEW, player->GetGUID());
+                    ScarletRenew(player, target, renew ? renew->GetDuration() : SCARLET_ECHO_MS);
+                }
+                break;
+            case SPELL_CIRCLE_OF_HEALING:
+                if (HasScarletMarker(player, MOD_CIRCLE_OF_PETALS) && opened < CIRCLE_PETALS)
+                {
+                    AddEcho(player, target);
+                    ++opened;
+                }
                 break;
             default:
+                if (original && heal > 0.0f && DirectHeal(firstRank))
+                    ScarletDirectHeal(player, target, firstRank, heal);
                 break;
         }
+    }
+
+    // A replacement's heal on its main target, counting as the heal it replaces while it lands.
+    void MendAs(Player* player, Unit* ally, uint32 spellId, float amount, uint32 base)
+    {
+        LegendaryRunes::CountHitAs(spellId, base);
+        Mend(player, ally, spellId, amount);
+        LegendaryRunes::CountHitAs(0, 0);
+    }
+
+    // Verdant Embrace (Binding Heal's or Divine Favor's place): a leap to the ally, 120% of spell power, Echoed.
+    void VerdantEmbrace(Player* player, Unit* ally)
+    {
+        if (ally != player)
+        {
+            float angle = ally->GetAngle(player);
+            Position to = Toward(ally->GetPosition(), angle, VERDANT_LEAP_STOP);
+            player->GetMotionMaster()->MoveJump(to, VERDANT_LEAP_SPEED, VERDANT_LEAP_HEIGHT);
+        }
+        Mend(player, ally, SPELL_VERDANT_EMBRACE_HEAL, RuneHealing(player, SPELL_SCHOOL_MASK_HOLY) * VERDANT_POWER);
+        AddEcho(player, ally);
+    }
+
+    // Reversion (Renew's place): 15% of spell power every 2 sec for 12 sec; counts as Renew for the rune.
+    void Reversion(Player* player, Unit* ally)
+    {
+        int32 tick = std::max<int32>(1, int32(RuneHealing(player, SPELL_SCHOOL_MASK_HOLY) * REVERSION_TICK));
+        Lasting(player, ally, SPELL_REVERSION_HOT, REVERSION_MS, &tick);
+        ScarletRenew(player, ally, REVERSION_MS);
+    }
+
+    // Dream Breath (Prayer of Healing's place): up to 5 allies in a 15 yard cone before the Hero, most injured first,
+    // 80% of spell power and 30% of it over 6 sec; with 5 Benediction, spent: 50% more and every one Echoed.
+    void DreamBreath(Player* player)
+    {
+        bool spent = SpendBenediction(player);
+        float heal = RuneHealing(player, SPELL_SCHOOL_MASK_HOLY) * DREAM_BREATH_POWER
+            * (spent ? DREAM_BREATH_SPENT : 1.0f);
+        int32 tick = std::max<int32>(1,
+            int32(heal * DREAM_BREATH_HOT / float(DREAM_BREATH_HOT_MS / IN_MILLISECONDS)));
+        std::size_t healed = 0;
+        for (Unit* ally : MostInjured(player, DREAM_BREATH_RANGE))
+        {
+            if (ally == player || !player->isInFront(ally, DREAM_BREATH_ARC))
+                continue;
+            Mend(player, ally, SPELL_DREAM_BREATH_HEAL, heal);
+            Lasting(player, ally, SPELL_DREAM_BREATH_HOT, DREAM_BREATH_HOT_MS, &tick);
+            if (spent)
+                AddEcho(player, ally);
+            if (++healed >= DREAM_BREATH_ALLIES)
+                break;
+        }
+    }
+
+    // Spiritbloom (Greater Heal's or Holy Light's place): 150% of spell power on the ally, counting as the heal it
+    // replaces, and half of it on each of the 3 most injured other allies within 15 yards; with 5 Benediction,
+    // spent: whole. Its heals are the Priest's Greater Heal or the Paladin's Holy Light (their talents raise them).
+    void Spiritbloom(Player* player, Unit* ally)
+    {
+        bool spent = SpendBenediction(player);
+        bool priest = KnownRank(player, SPELL_GREATER_HEAL) != 0;
+        uint32 healSpell = priest ? SPELL_SPIRITBLOOM_PRIEST : SPELL_SPIRITBLOOM_PALADIN;
+        float heal = float(player->SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_HOLY)) * SPIRITBLOOM_POWER;
+        MendAs(player, ally, healSpell, heal, priest ? SPELL_GREATER_HEAL : SPELL_HOLY_LIGHT);
+        std::vector<Unit*> allies = InjuredAllies(player, ally, SPIRITBLOOM_RANGE, ally);
+        if (allies.size() > SPIRITBLOOM_ALLIES)
+            allies.resize(SPIRITBLOOM_ALLIES);
+        for (Unit* other : allies)
+            Mend(player, other, healSpell, heal * (spent ? 1.0f : SPIRITBLOOM_SPLIT));
+    }
+
+    // Verdant Embrace, Reversion, Dream Breath and Spiritbloom in their bases' places while the rune is bound with
+    // them.
+    void TeachScarlet(Player* player, bool bound)
+    {
+        LegendaryRunes::ReplaceAbility(player, SPELL_VERDANT_EMBRACE, { SPELL_BINDING_HEAL, SPELL_DIVINE_FAVOR },
+            bound && HasScarletMarker(player, MOD_VERDANT_EMBRACE));
+        LegendaryRunes::ReplaceAbility(player, SPELL_REVERSION, { SPELL_RENEW },
+            bound && HasScarletMarker(player, MOD_REVERSION));
+        LegendaryRunes::ReplaceAbility(player, SPELL_DREAM_BREATH, { SPELL_PRAYER_OF_HEALING },
+            bound && HasScarletMarker(player, MOD_DREAM_BREATH));
+        LegendaryRunes::ReplaceAbility(player, SPELL_SPIRITBLOOM, { SPELL_GREATER_HEAL, SPELL_HOLY_LIGHT },
+            bound && HasScarletMarker(player, MOD_SPIRITBLOOM));
     }
 
     // ---- The Evergrove -----------------------------------------------------------------------------------------
@@ -10854,6 +11176,7 @@ namespace
         TeachTrueshot(player, trueshot);
         TeachStormreaver(player, player->HasAura(SPELL_RUNE_STORMREAVER));
         TeachConduit(player, player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT));
+        TeachScarlet(player, player->HasAura(SPELL_RUNE_SCARLET_BENEDICTION));
         TankRunes::Apply(player);
         RetireCatCopy(player, SPELL_CAT_FIRE_BLAST, SPELL_FIRE_BLAST);
         RetireCatCopy(player, SPELL_CAT_ICY_TOUCH, SPELL_ICY_TOUCH);
@@ -11402,7 +11725,9 @@ namespace LegendaryRunes
         return firstRank == SPELL_SINISTER_STRIKE || firstRank == SPELL_ARCANE_SHOT || firstRank == SPELL_RAPID_FIRE
             || firstRank == SPELL_BEACON_OF_LIGHT || firstRank == SPELL_AIMED_SHOT
             || firstRank == SPELL_STORMSTRIKE || firstRank == SPELL_LAVA_LASH || firstRank == SPELL_LIGHTNING_BOLT
-            || firstRank == TankRunes::SPELL_EARTH_SHOCK || TankRunes::IsReplacedBase(firstRank);
+            || firstRank == TankRunes::SPELL_EARTH_SHOCK || firstRank == SPELL_BINDING_HEAL
+            || firstRank == SPELL_DIVINE_FAVOR || firstRank == SPELL_RENEW || firstRank == SPELL_PRAYER_OF_HEALING
+            || firstRank == SPELL_GREATER_HEAL || firstRank == SPELL_HOLY_LIGHT || TankRunes::IsReplacedBase(firstRank);
     }
 
     void OnSpecChanged(Player* player)
@@ -12444,6 +12769,7 @@ public:
         TeachTrueshot(player, player->HasAura(SPELL_RUNE_TRUESHOT));
         TeachStormreaver(player, player->HasAura(SPELL_RUNE_STORMREAVER));
         TeachConduit(player, player->HasAura(SPELL_RUNE_STORMBOUND_CONDUIT));
+        TeachScarlet(player, player->HasAura(SPELL_RUNE_SCARLET_BENEDICTION));
         TankRunes::Apply(player);
     }
 
@@ -12545,6 +12871,8 @@ public:
             player->RemoveAurasDueToSpell(SPELL_GALVANIZE);
         if (!StateOf(player).Balls.empty())
             BallTick(player, diff);
+        if (!StateOf(player).Anomalies.empty())
+            AnomalyTick(player, diff);
         if (player->HasAura(SPELL_RUNE_THREEFOLD_GRAVE))
             GraveTick(player, diff);
         if (player->HasAura(SPELL_RUNE_UNBROKEN_ONSLAUGHT))
@@ -13117,8 +13445,8 @@ class spell_titan_rune_extended_hit : public SpellScript
             else if ((first == SPELL_MULTI_SHOT || first == SPELL_SILENCING_SHOT) && !GetSpell()->IsTriggered())
                 TrueshotCharge(player, first);
         }
-        if (!GetSpell()->IsTriggered() && player->HasAura(SPELL_RUNE_SCARLET_BENEDICTION))
-            ScarletHeal(player, target, first, _opened);
+        if (player->HasAura(SPELL_RUNE_SCARLET_BENEDICTION))
+            ScarletHit(player, target, first, GetSpell(), float(GetHitHeal()), _opened);
         if (player->HasAura(SPELL_RUNE_EVERGROVE) && player->IsFriendlyTo(target))
         {
             if (first == SPELL_REJUVENATION)
@@ -13833,6 +14161,57 @@ class spell_titan_rune_thunderbomb : public SpellScript
     }
 };
 
+// Scarlet Benediction's replacements: Verdant Embrace (Binding Heal's or Divine Favor's place), Reversion (Renew's),
+// Dream Breath (Prayer of Healing's) and Spiritbloom (Greater Heal's or Holy Light's): their dummy effect, what the
+// rune does with them.
+class spell_titan_rune_scarlet_ability : public SpellScript
+{
+    PrepareSpellScript(spell_titan_rune_scarlet_ability);
+
+    void Cast(SpellEffIndex /*effIndex*/)
+    {
+        Player* player = GetCaster()->ToPlayer();
+        Unit* target = GetHitUnit();
+        if (!player || !target || !player->HasAura(SPELL_RUNE_SCARLET_BENEDICTION) || !player->IsFriendlyTo(target))
+            return;
+        switch (GetSpellInfo()->Id)
+        {
+            case SPELL_VERDANT_EMBRACE: VerdantEmbrace(player, target); break;
+            case SPELL_REVERSION: Reversion(player, target); break;
+            case SPELL_DREAM_BREATH: DreamBreath(player); break;
+            case SPELL_SPIRITBLOOM: Spiritbloom(player, target); break;
+            default: break;
+        }
+    }
+
+    void Register() override
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_titan_rune_scarlet_ability::Cast, EFFECT_0, SPELL_EFFECT_DUMMY);
+    }
+};
+
+// Reversion's heal over time: each tick on an ally below half health heals once more.
+class spell_titan_rune_reversion_hot : public AuraScript
+{
+    PrepareAuraScript(spell_titan_rune_reversion_hot);
+
+    void Tick(AuraEffect const* aurEff)
+    {
+        Unit* caster = GetCaster();
+        Unit* target = GetTarget();
+        if (!caster || !target || !target->HealthBelowPct(int32(REVERSION_LOW_PCT)))
+            return;
+        int32 amount = std::max<int32>(1, aurEff->GetAmount());
+        caster->CastCustomSpell(target, SPELL_REVERSION_SURGE, &amount, nullptr, nullptr, true);
+    }
+
+    void Register() override
+    {
+        OnEffectPeriodic += AuraEffectPeriodicFn(spell_titan_rune_reversion_hot::Tick, EFFECT_0,
+            SPELL_AURA_PERIODIC_HEAL);
+    }
+};
+
 // Magma Breaker (Lava Lash's place): the cone before the Hero (MagmaBreaker).
 class spell_titan_rune_magma_breaker : public SpellScript
 {
@@ -14239,6 +14618,8 @@ void AddSC_runes()
     RegisterSpellScript(spell_titan_rune_trueshot);
     RegisterSpellScript(spell_titan_rune_stormstrike_hit);
     RegisterSpellScript(spell_titan_rune_thunderbomb);
+    RegisterSpellScript(spell_titan_rune_scarlet_ability);
+    RegisterSpellScript(spell_titan_rune_reversion_hot);
     RegisterSpellScript(spell_titan_rune_magma_breaker);
     RegisterSpellScript(spell_titan_rune_ball_lightning);
     RegisterSpellScript(spell_titan_rune_storm_lance);

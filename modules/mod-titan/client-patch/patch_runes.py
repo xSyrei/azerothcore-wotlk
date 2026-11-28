@@ -1012,6 +1012,7 @@ EFFECTS.update({
 
 KIT_HEAD, KIT_CHEST, KIT_BASE, KIT_WORLD = 3, 4, 5, 14
 KIT_LEFT_HAND, KIT_RIGHT_HAND = 6, 7
+HANDS = (KIT_LEFT_HAND, KIT_RIGHT_HAND)
 # Blizzard effect models (SpellVisualEffectName ids, the ones their own spells use) for the runes' looks: Echoing
 # Thunder's, the Shattered Sun's and the Spectral Blade's are the game's own, not our sheets.
 FX_LIGHTNING_HAND = 88              # Spells\\Lightning_PreCast_Low_Hand: lightning crackling in the hands
@@ -1957,11 +1958,10 @@ STEADY_SHOT, HUNTER_FAMILY = 56641, 9
 SCARLET_ICON, GROVE_ICON, IRON_ICON = ('Ability_Rune_ScarletBenediction', 'Ability_Rune_Evergrove',
                                        'Ability_Rune_IronReckoning')
 EXTENDED_MODIFIERS = [
-    (93401, SCARLET_ICON, [('Deep Bloom', 'Scarlet Garden', 'Bloodrose', 'Circling Bloom', 'Shielded Bloom'),
-                           ('Patient Cultivation', 'Swift Blossom', 'Guided Petals', 'Choral Bloom',
-                            'Mending Petals'),
-                           ('Second Bloom', 'Sheltering Petals', 'Renewing Flower', 'Guardian Bloom',
-                            'Binding Petals')]),
+    (93401, SCARLET_ICON, [('Verdant Embrace', 'Resonant Echo', 'Echo Chamber', 'Holy Resonance',
+                            'Prayerful Echo'),
+                           ('Reversion', 'Scarlet Bloom', "Lifebinder's Vow", 'Lingering Light', 'Circle of Petals'),
+                           ('Dream Breath', 'Spiritbloom', 'Temporal Anomaly', 'Stasis', 'Crimson Absolution')]),
     (93426, GROVE_ICON, [('Deep Roots', 'Fourfold Grove', "Regrowth's Root", 'Nourishing Grove', 'Thorned Grove'),
                          ('Wild Seeding', 'Gentle Seeking', 'Lifebound', 'Tranquil Grove', 'Swift Grove'),
                          ('Verdant Swiftmend', 'Overgrowth', 'Grove Shelter', 'Rooted Touch', 'Innervating Grove')]),
@@ -2620,16 +2620,126 @@ EFFECTS.update({
                            {'texture': 2, 'sheet': (2, 2), 'flip': 0, 'tint': BRONZE, 'alpha': 0.7, 'turn': 4.0,
                             'pulse': 1.4, 'cards': puffs(4, 0.55, 0.5, 0.5, 0.25)})}},
 })
+# Scarlet Benediction's abilities in their bases' places (Verdant Embrace: Binding Heal or Divine Favor; Reversion:
+# Renew; Dream Breath: Prayer of Healing; Spiritbloom: Greater Heal or Holy Light), each its base's copy and cost, its
+# effect a dummy the script does (runes.cpp). Spiritbloom's heal twice over: as the Priest's Greater Heal and as the
+# Paladin's Holy Light (their family: the Hero's talents raise it), no spell power of its own (spell_bonus_data).
+PRIEST_FAMILY, PALADIN_FAMILY = 6, 10
+BINDING_HEAL_SPELL, RENEW_SPELL, PRAYER_OF_HEALING_SPELL, GREATER_HEAL_SPELL = 32546, 139, 596, 2060
+CAST_2S, CAST_2_5S = 5, 19
+for _id, _copy, _name, _icon, _text, _set, _target in (
+        (93389, BINDING_HEAL_SPELL, 'Verdant Embrace', 'Ability_Evoker_VerdantEmbrace',
+         'Leap to an ally and heal them for 120% of your spell power, Echoing them.',
+         {'CastingTimeIndex': 1, 'RecoveryTime': 12000, 'RangeIndex': RANGE_30}, TARGET_UNIT_TARGET_ALLY),
+        (93391, RENEW_SPELL, 'Reversion', 'Ability_Evoker_Reversion',
+         'Heal an ally for 15% of your spell power every 2 sec for 12 sec, twice as often while they are below half '
+         'health. Counts as Renew for Scarlet Benediction.', {'CastingTimeIndex': 1, 'DurationIndex': 0},
+         TARGET_UNIT_TARGET_ALLY),
+        (93393, PRAYER_OF_HEALING_SPELL, 'Dream Breath', 'Ability_Evoker_DreamBreath',
+         'Breathe a 15 yard cone of life before you: up to 5 allies healed for 80% of your spell power and 30% more '
+         'over 6 sec. With 5 Benediction, spends them: 50% more, and Echoes everyone it heals.',
+         {'CastingTimeIndex': CAST_2S, 'RangeIndex': 1}, TARGET_UNIT_CASTER),
+        (93396, GREATER_HEAL_SPELL, 'Spiritbloom', 'Ability_Evoker_Spiritbloom',
+         'Heal an ally for 150% of your spell power and each of the 3 most injured allies within 15 yards for half '
+         'of it. With 5 Benediction, spends them: the others healed in full.', {'CastingTimeIndex': CAST_2_5S},
+         TARGET_UNIT_TARGET_ALLY)):
+    SPELLS.append({'id': _id, 'copy': _copy, 'name': _name, 'icon': _icon, 'description': _text, 'tooltip': '',
+                   'set': {**NO_FAMILY, 'BaseLevel': 1, 'SpellLevel': 1, 'MaxLevel': 0, 'SpellVisual': 0, **_set},
+                   'effects': {1: {'Effect': EFFECT_DUMMY, 'Aura': 0, 'BasePoints': 0, 'DieSides': 1,
+                                   'RealPointsPerLevel': 0.0, 'TargetA': _target, 'TargetB': 0}},
+                   'clear': [2, 3]})
+    SPELL_CLASSES[_id] = 'PRIEST'
+for _id, _family, _flags in ((93397, PRIEST_FAMILY, 0x1000), (93422, PALADIN_FAMILY, 0x80000000)):
+    _bloom = heal(_id, 'Spiritbloom', 'Ability_Evoker_Spiritbloom', '')
+    _bloom['set'] = {**_bloom['set'], 'SpellFamilyName': _family, 'SpellFamilyFlags0': _flags,
+                     'SpellFamilyFlags1': 0, 'SpellFamilyFlags2': 0, 'AttributesEx3': 0}
+    SPELLS.append({**_bloom, 'visual': 'SpiritbloomHeal'})
+ICONS += ['Ability_Evoker_VerdantEmbrace', 'Ability_Evoker_Reversion', 'Ability_Evoker_DreamBreath',
+          'Ability_Evoker_Spiritbloom', 'Ability_Evoker_TemporalAnomaly', 'Spell_Holy_Restoration']
+# Their looks (the Evoker's, above): Verdant Embrace's green life on the hands and blooming on the embraced; Reversion's
+# clock-face burst and bronze glow; Dream Breath's breath gathering in the hands, its fan of tendrils before the Hero,
+# the burst and glow on the healed; Spiritbloom's charge while it casts, its flash and bloom; Temporal Anomaly's
+# bubble (the body it drifts as) and its shield landing; Stasis on the hands; an Echo the Dream Breath glow.
+VISUALS.update({
+    'VerdantEmbrace': {'copy': 32, 'id': 16811, 'clear': ('precast', 'impact', 'state'), 'kits': {
+        'cast': (15750, {HANDS: 'VerdantEmbraceCast', 'sound': None})}},
+    'VerdantEmbraceHeal': {'copy': 32, 'id': 16812, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15751, {KIT_BASE: 'VerdantEmbraceImpact', KIT_CHEST: 0})}},
+    'ReversionHot': {'copy': 32, 'id': 16813, 'clear': ('precast', 'cast'), 'kits': {
+        'impact': (15752, {KIT_BASE: 'ReversionImpact', KIT_CHEST: 0}),
+        'state': (15753, {KIT_BASE: 'ReversionState', KIT_CHEST: 0, 'sound': None, 'procs': False})}},
+    'DreamBreath': {'copy': 32, 'id': 16814, 'clear': ('impact', 'state'), 'kits': {
+        'precast': (15754, {HANDS: 'DreamBreathHands', 'sound': None}),
+        'cast': (15755, {KIT_BASE: 'DreamBreathCone', 'sound': None})}},
+    'DreamBreathHeal': {'copy': 32, 'id': 16815, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15756, {KIT_BASE: 'DreamBreathImpact', KIT_CHEST: 0})}},
+    'DreamBreathHot': {'copy': 32, 'id': 16816, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15757, {KIT_BASE: 'DreamBreathState', KIT_CHEST: 0, 'sound': None, 'procs': False})}},
+    'Spiritbloom': {'copy': 32, 'id': 16817, 'clear': ('impact', 'state'), 'kits': {
+        'precast': (15758, {KIT_CHEST: 'SpiritbloomChannel', 'sound': None}),
+        'cast': (15759, {HANDS: 'SpiritbloomCast', 'sound': None})}},
+    'SpiritbloomHeal': {'copy': 32, 'id': 16818, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15760, {KIT_BASE: 'SpiritbloomImpact', KIT_CHEST: 0})}},
+    'TemporalAnomalyForm': {'copy': 32, 'id': 16819, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15761, {KIT_BASE: 'TemporalAnomaly', KIT_CHEST: 0, 'sound': None, 'procs': False})}},
+    'TemporalAnomalyShield': {'copy': 32, 'id': 16820, 'clear': ('precast', 'cast', 'state'), 'kits': {
+        'impact': (15762, {KIT_BASE: 'TemporalAnomalyImpact', KIT_CHEST: 0})}},
+    'StasisState': {'copy': 32, 'id': 16821, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15763, {HANDS: 'TemporalAnomalyPrecast', KIT_CHEST: 0, 'sound': None, 'procs': False})}},
+    'ScarletEchoState': {'copy': 32, 'id': 16822, 'clear': ('precast', 'cast', 'impact'), 'kits': {
+        'state': (15764, {KIT_BASE: 'DreamBreathState', KIT_CHEST: 0, 'sound': None, 'procs': False})}},
+})
+for _spell in SPELLS:
+    _key = {93389: 'VerdantEmbrace', 93393: 'DreamBreath', 93396: 'Spiritbloom'}.get(_spell['id'])
+    if _key:
+        _spell['visual'] = _key
 SPELLS += [
-    # Scarlet Benediction.
+    # Scarlet Benediction (its redesign: the Preservation Evoker's Echo; the abilities it teaches below).
     buff(93400, 'Rune of Scarlet Benediction', SCARLET_ICON,
-         'Renew plants a Scarlet Bloom; your Flash Heal or Greater Heal there opens it, healing the most injured '
-         'ally nearby.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
-    {**shown(93416, 'Scarlet Bloom', SCARLET_ICON, 'Your Flash Heal or Greater Heal here opens the Bloom.',
-             DURATION_15S), 'set': {**SHOWN, 'DurationIndex': DURATION_15S}},
-    heal(93417, 'Scarlet Benediction', SCARLET_ICON, 'The Bloom opens.'),
-    absorb(93418, 'Scarlet Petals', 'Spell_Holy_PowerWordShield', DURATION_6S),
-    periodic_heal(93419, 'Bloodrose', 'Spell_Holy_Renew', 'Healing every second.', DURATION_6S),
+         'Holy Shock, Power Word: Shield and Renew Echo their target. Your next Holy Light, Flash of Light, Flash '
+         'Heal or Greater Heal there heals again for 50% and grants a Benediction; at 5, your next releases a '
+         'Crimson Burst.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}),
+    {**shown(93416, 'Scarlet Bloom', SCARLET_ICON,
+             'Your next direct heal here opens the Bloom, healing the most injured ally nearby.', DURATION_15S),
+     'set': {**SHOWN, 'DurationIndex': DURATION_15S}},
+    heal(93417, 'Scarlet Echo', SCARLET_ICON, 'The Echo heals again.'),
+    {**absorb(93418, 'Temporal Anomaly', 'Ability_Evoker_TemporalAnomaly', DURATION_8S),
+     'visual': 'TemporalAnomalyShield'},
+    periodic_heal(93419, 'Lingering Light', 'Spell_Holy_Renew', 'Healing every second.', DURATION_6S),
+    {**shown(93386, 'Scarlet Echo', SCARLET_ICON,
+             "Your caster's next Holy Light, Flash of Light, Flash Heal or Greater Heal here heals again.",
+             DURATION_15S), 'visual': 'ScarletEchoState'},
+    buff(93387, 'Benediction', 'Spell_Holy_Restoration',
+         'At 5, your next Holy Light, Flash of Light, Flash Heal or Greater Heal releases a Crimson Burst.',
+         DURATION_30S, {1: aura(AURA_DUMMY, 1, 0)}, stacks=5),
+    heal(93388, 'Crimson Burst', 'Spell_Holy_Restoration', 'The Benediction released.'),
+    {**heal(93390, 'Verdant Embrace', 'Ability_Evoker_VerdantEmbrace', ''), 'visual': 'VerdantEmbraceHeal'},
+    {**periodic_heal(93392, 'Reversion', 'Ability_Evoker_Reversion',
+                     'Healing every 2 sec, twice below half health.', DURATION_15S, 'ReversionHot'),
+     'effects': {1: {'Effect': 6, 'Aura': AURA_PERIODIC_HEAL, 'Amplitude': 2000, 'BasePoints': 0, 'DieSides': 1,
+                     'RealPointsPerLevel': 0.0, 'TargetA': TARGET_UNIT_TARGET_ALLY, 'TargetB': 0}}},
+    {**heal(93394, 'Dream Breath', 'Ability_Evoker_DreamBreath', ''), 'visual': 'DreamBreathHeal'},
+    periodic_heal(93395, 'Dream Breath', 'Ability_Evoker_DreamBreath', 'Healing every second.', DURATION_6S,
+                  'DreamBreathHot'),
+    heal(93399, 'Scarlet Bloom', SCARLET_ICON, 'The Bloom opens.'),
+    {**look(93420, 'Temporal Anomaly', 'Ability_Evoker_TemporalAnomaly', 0), 'visual': 'TemporalAnomalyForm',
+     'set': {**HIDDEN, 'DurationIndex': DURATION_INFINITE, 'RangeIndex': RANGE_VISION},
+     'effects': {1: aura(AURA_DUMMY, 1, 0)}},
+    heal(93423, 'Reversion', 'Ability_Evoker_Reversion', ''),
+    # Stasis: Holy Light, Flash of Light, Flash Heal and Greater Heal instant, 3 casts (the server keeps the two in
+    # step).
+    {**family_mod(93398, 'Stasis', 'Ability_Evoker_TemporalAnomaly',
+                  'Your next 3 Holy Light, Flash of Light, Flash Heal or Greater Heal are instant.', DURATION_10S,
+                  PRIEST_FAMILY, (0x1800, 0, 0), AURA_ADD_PCT_MODIFIER, SPELLMOD_CASTING_TIME, -100),
+     'visual': 'StasisState'},
+    family_mod(93421, 'Stasis', 'Ability_Evoker_TemporalAnomaly',
+               'Your next 3 Holy Light, Flash of Light, Flash Heal or Greater Heal are instant.', DURATION_10S,
+               PALADIN_FAMILY, (0xC0000000, 0, 0), AURA_ADD_PCT_MODIFIER, SPELLMOD_CASTING_TIME, -100),
+]
+for _spell in SPELLS:
+    if _spell['id'] in (93398, 93421):
+        _spell['set'] = {**_spell['set'], 'ProcCharges': 3}
+SPELLS += [
     # The Evergrove: Rejuvenation's extra stacks, each its own heal over time.
     buff(93425, 'Rune of the Evergrove', GROVE_ICON,
          'Rejuvenation stacks up to 3 times on one ally; on an ally at full health or a full stack, it seeks the '

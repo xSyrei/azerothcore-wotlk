@@ -78,6 +78,16 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - **Tank priority**: when a wave starts, every enemy turns to the party's tank with a 50% threat lead (taunts
   and normal threat still work). With no tank, enemies go for the nearest player.
 - **Thunderbomb's burst no longer leaves a big white square on the ground.**
+- **Rune of Scarlet Benediction, redesigned** (Holy Paladin, Holy Priest, and some Preservation Evoker): Holy Shock,
+  Power Word: Shield and Renew place a **Scarlet Echo** on their target (up to 4). Your next Holy Light, Flash of Light,
+  Flash Heal or Greater Heal there heals them again for 50% and grants a **Benediction**; at 5, your next of those heals
+  releases a **Crimson Burst** on up to 5 injured allies nearby (60% of it). Judgement Echoes your Beacon of Light's
+  ally. New options include four Evoker abilities, each taking a base ability's place: **Verdant Embrace** (Binding
+  Heal or Divine Favor: leap to an ally, heal and Echo them), **Reversion** (Renew: a heal over time that ticks twice
+  below half health), **Dream Breath** (Prayer of Healing: a cone of healing that spends 5 Benediction to Echo
+  everyone) and **Spiritbloom** (Greater Heal or Holy Light: a heal that splits to the 3 most injured nearby). Also
+  **Temporal Anomaly** (a drifting bubble that shields and Echoes), **Stasis** (3 instant heals) and more, with the
+  Evoker's own looks and icons. Scarlet Benediction's picks are cleared so you can choose again.
 - **A smoother difficulty curve**: enemy health now grows gently and steadily with each wave (wave 15 about 1.6x a
   dungeon enemy's, wave 45 about 4.5x, wave 90 about 11.5x) instead of compounding 10% a wave, and waves no longer raise
   enemy damage. Each extra player adds 55% health.

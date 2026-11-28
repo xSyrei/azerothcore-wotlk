@@ -255,7 +255,9 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 SET @RUNE_PHOENIX := 910125;
 SET @RUNE_ARCANE_ORB := 910126;
 SET @RUNE_BALL_LIGHTNING := 910128;     -- the Stormbound Conduit's: wearing the Spark of Ionar's crackle (52667)
-DELETE FROM `creature_template` WHERE `entry` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB, @RUNE_BALL_LIGHTNING);
+SET @RUNE_TEMPORAL_ANOMALY := 910157;   -- Scarlet Benediction's bubble: wearing its look (93420)
+DELETE FROM `creature_template` WHERE `entry` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB, @RUNE_BALL_LIGHTNING,
+    @RUNE_TEMPORAL_ANOMALY);
 INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
     `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
     `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
@@ -272,14 +274,19 @@ INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entr
     0, 'npc_titan_rune_flier', 0),
 (@RUNE_BALL_LIGHTNING, 0, 0, 0, 0, 0, 'Ball Lightning', 'Stormbound Conduit', NULL, 0, 1, 80, 0, 35, 0, 1, 1.14286,
     1, 1, 20, 0, 3, 1, 2000, 2000, 1, 1, 8, 33554434, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0,
-    0, 1, 0, 0, 'npc_titan_rune_flier', 0);
+    0, 1, 0, 0, 'npc_titan_rune_flier', 0),
+(@RUNE_TEMPORAL_ANOMALY, 0, 0, 0, 0, 0, 'Temporal Anomaly', 'Scarlet Benediction', NULL, 0, 1, 80, 0, 35, 0, 1,
+    1.14286, 1, 1, 20, 0, 1, 1, 2000, 2000, 1, 1, 8, 33554434, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1,
+    1, 0, 0, 0, 1, 0, 0, 'npc_titan_rune_flier', 0);
 
-DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB, @RUNE_BALL_LIGHTNING);
+DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@RUNE_PHOENIX, @RUNE_ARCANE_ORB, @RUNE_BALL_LIGHTNING,
+    @RUNE_TEMPORAL_ANOMALY);
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES
 (@RUNE_PHOENIX, 0, 11686, 1, 1, 0),
 (@RUNE_ARCANE_ORB, 0, 11686, 1, 1, 0),
-(@RUNE_BALL_LIGHTNING, 0, 11686, 1, 1, 0);
+(@RUNE_BALL_LIGHTNING, 0, 11686, 1, 1, 0),
+(@RUNE_TEMPORAL_ANOMALY, 0, 11686, 1, 1, 0);
 
 -- Arcane Blast and Arcane Explosion grant Insight, Arcane Missiles spends it (its channel's end: Mental Reserves);
 -- Frostbolt forms the Icicles; Pyroblast leaves the Ember, Fire Blast wakes the phoenix; Arcane Barrage sets the
@@ -562,9 +569,18 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (93381, 0, 0, 0, 0, 'Trueshot - Flame Arrow'),
 (93382, 0, 0, 0, 0, 'Trueshot - Frostpiercer'),
 (93385, 0, 0, 0, 0, 'Trueshot - Renewed Aim'),
-(93417, 0, 0, 0, 0, 'Scarlet Benediction - opening'),
-(93418, 0, 0, 0, 0, 'Scarlet Benediction - Scarlet Petals'),
-(93419, 0, 0, 0, 0, 'Scarlet Benediction - Bloodrose'),
+(93388, 0, 0, 0, 0, 'Scarlet Benediction - Crimson Burst'),
+(93390, 0, 0, 0, 0, 'Scarlet Benediction - Verdant Embrace'),
+(93392, 0, 0, 0, 0, 'Scarlet Benediction - Reversion'),
+(93394, 0, 0, 0, 0, 'Scarlet Benediction - Dream Breath'),
+(93395, 0, 0, 0, 0, 'Scarlet Benediction - Dream Breath over time'),
+(93397, 0, 0, 0, 0, 'Scarlet Benediction - Spiritbloom (as Greater Heal)'),
+(93399, 0, 0, 0, 0, 'Scarlet Benediction - Scarlet Bloom'),
+(93417, 0, 0, 0, 0, 'Scarlet Benediction - Echo'),
+(93418, 0, 0, 0, 0, 'Scarlet Benediction - Temporal Anomaly'),
+(93419, 0, 0, 0, 0, 'Scarlet Benediction - Lingering Light'),
+(93422, 0, 0, 0, 0, 'Scarlet Benediction - Spiritbloom (as Holy Light)'),
+(93423, 0, 0, 0, 0, 'Scarlet Benediction - Reversion surge'),
 (93441, 0, 0, 0, 0, 'Evergrove - Second Rejuvenation'),
 (93442, 0, 0, 0, 0, 'Evergrove - Third Rejuvenation'),
 (93443, 0, 0, 0, 0, 'Evergrove - Fourth Rejuvenation'),
@@ -789,3 +805,25 @@ INSERT INTO `spell_bonus_data` (`entry`, `direct_bonus`, `dot_bonus`, `ap_bonus`
 (93242, 0, 0, 0, 0, 'Ball Lightning - zap'),
 (93243, 0, 0, 0, 0, 'Ball Lightning - burst'),
 (93245, 0, 0, 0, 0, 'Storm Lance - hit');
+
+-- Scarlet Benediction's redesign: Verdant Embrace, Reversion, Dream Breath and Spiritbloom (the abilities it teaches in
+-- Binding Heal's or Divine Favor's, Renew's, Prayer of Healing's and Greater Heal's or Holy Light's places) and
+-- Reversion's heal over time (its second tick below half health). Holy Light, Flash of Light and Prayer of Mending's
+-- landing answer the rune too, as does Spiritbloom's heal (as Greater Heal or Holy Light: runes.cpp CountHitAs).
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_titan_rune_scarlet_ability',
+    'spell_titan_rune_reversion_hot');
+DELETE FROM `spell_script_names` WHERE `spell_id` IN (-635, -19750, 41635, 48110, 48111, 93397, 93422)
+    AND `ScriptName` = 'spell_titan_rune_extended_hit';
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
+(93389, 'spell_titan_rune_scarlet_ability'),
+(93391, 'spell_titan_rune_scarlet_ability'),
+(93393, 'spell_titan_rune_scarlet_ability'),
+(93396, 'spell_titan_rune_scarlet_ability'),
+(93392, 'spell_titan_rune_reversion_hot'),
+(-635, 'spell_titan_rune_extended_hit'),
+(-19750, 'spell_titan_rune_extended_hit'),
+(41635, 'spell_titan_rune_extended_hit'),
+(48110, 'spell_titan_rune_extended_hit'),
+(48111, 'spell_titan_rune_extended_hit'),
+(93397, 'spell_titan_rune_extended_hit'),
+(93422, 'spell_titan_rune_extended_hit');

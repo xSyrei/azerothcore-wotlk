@@ -2103,56 +2103,60 @@ EmberforgeRunesArt = {
             hue = { 1, 0.384, 0.431 },
             inner = { 0.98, 0.871, 0.878 },
             built = true,
-            core = "**Renew** plants a **Scarlet Bloom**; your **Flash Heal** or **Greater " ..
-                    "Heal** there opens it onto the most injured ally nearby.",
+            core = "**Holy Shock**, **Power Word: Shield** and **Renew** place an " ..
+                    "**Echo**; your next direct heal there heals again, and every 5 Echoes " ..
+                    "spent release a **Crimson Burst**.",
             asks = {
-                "How the Bloom opens",
-                "How you tend it",
-                "What it leaves behind",
+                "How your Echoes spread",
+                "What your heals leave behind",
+                "What the fifth Benediction does",
             },
             abilities = {
-                "Stronger",
-                "Two allies",
+                "Replaces",
+                "70%",
+                "Jump",
+                "Holy Shock",
+                "Prayer of Mending",
+                "Replaces",
+                "Bloom",
+                "Beacon",
                 "Heal over time",
                 "Circle of Healing",
-                "Power Word: Shield",
-                "Ripeness",
-                "4 sec",
-                "20 yards",
-                "Prayer of Healing",
-                "Prayer of Mending",
-                "Twice",
-                "Shield",
-                "Renew",
-                "Guardian Spirit",
-                "Binding Heal",
+                "Replaces",
+                "Replaces",
+                "Bubble",
+                "Instant",
+                "Cleanse",
             },
             texts = {
-                "The opening heals for 110% of your spell power instead of 80%.",
-                "The opening heals the 2 most injured allies nearby for 60% each.",
-                "Allies the opening heals also heal for 30% of your spell power over 6 " ..
-                        "sec.",
-                "Circle of Healing opens the Blooms of up to 2 allies it heals.",
-                "Power Word: Shield on a Bloom's ally opens it.",
-                "A Renew that has ticked 3 times makes the opening 60% stronger instead " ..
-                        "of 30%.",
-                "An ally can take a new Bloom 4 sec after one opens instead of 8.",
-                "The opening reaches the most injured ally within 20 yards instead of " ..
-                        "10.",
-                "Prayer of Healing opens up to 5 Blooms, each 15% stronger.",
-                "A Bloom opened on an ally carrying your Prayer of Mending heals 30% " ..
-                        "more.",
-                "Each Bloom opens twice before it is spent.",
-                "When the Bloom opens onto another ally, its own ally is also shielded " ..
-                        "for 40% of your spell power.",
-                "Opening a Bloom starts its ally's Renew over again.",
-                "A Bloom opened on your Guardian Spirit target heals 50% more.",
-                "Binding Heal also opens your own Bloom.",
+                "Binding Heal or Divine Favor becomes Verdant Embrace: leap to an ally, " ..
+                        "heal and Echo them.",
+                "Echoes heal again for 70% instead of 50%.",
+                "A spent Echo jumps to the most injured ally within 15 yards who has " ..
+                        "none.",
+                "Holy Shock Echoes its target and your Beacon of Light's ally.",
+                "Each ally your Prayer of Mending lands on is Echoed.",
+                "Renew becomes Reversion: a heal over time that ticks twice below half " ..
+                        "health.",
+                "Renew or Reversion plants a Bloom; your next direct heal there heals " ..
+                        "the most injured ally nearby.",
+                "Echoes on your Beacon of Light's ally heal again in full.",
+                "An Echo's repeat also heals 20% more of itself over 4 sec.",
+                "Circle of Healing Echoes up to 2 of the allies it heals.",
+                "Prayer of Healing becomes Dream Breath: a cone of healing that spends " ..
+                        "5 Benediction to Echo everyone.",
+                "Greater Heal or Holy Light becomes Spiritbloom: a heal that splits to " ..
+                        "the 3 most injured nearby.",
+                "Your 5th Benediction sends a bubble ahead of you, shielding and " ..
+                        "Echoing allies it touches.",
+                "Your 5th Benediction makes your next 3 direct heals instant.",
+                "The Crimson Burst also cleanses a magic effect or disease from each " ..
+                        "ally it heals.",
             },
             slots = {
+                "Echo",
                 "Bloom",
-                "Tending",
-                "Aftermath",
+                "Benediction",
             },
         },
         [53] = {
