@@ -2650,6 +2650,20 @@ for _c, (_colour, (_fill, _timer, _core, _glow)) in enumerate(build_firepit_deca
             'textures': (f'{_tex}_timer',),
             'options': {'layers': ({'texture': 0, 'size': DECAL_SQUARE, 'height': 0.0, 'over': True, 'blend': 2,
                                     'tint': _tint(_timer), 'blp': f'FP_Decal_{_shape}_timer'},)}}
+# Their textured overlays (build_firepit_decals.STYLES: runic, cracked, hazard, swirl), laid over a decal's fill in its
+# colour's glow (drawn additive): 48 a style (6 colours x 8 shapes), effects 7289 on, displays 9797 on. On a circle
+# or a ring, the runic sigil and the swirl turn slowly.
+DECAL_STYLES = build_firepit_decals.STYLES
+for _s, _style in enumerate(DECAL_STYLES):
+    for _c, (_colour, (_fill, _timer, _core, _glow)) in enumerate(build_firepit_decals.PALETTES.items()):
+        for _i, _shape in enumerate(FIREPIT_DECALS):
+            _turn = {'runic': 40.0, 'swirl': -18.0}.get(_style, 0) if _shape in ('circle', 'ring') else 0
+            EFFECTS[f'FirepitStyle_{_style}_{_colour}_{_shape}'] = {
+                'model': f'FP_Style_{_style}_{_colour}_{_shape}', 'effect': 7289 + _s * 48 + _c * 8 + _i,
+                'shape': 'zone', 'textures': (f'FP_Decals/{_shape}_{_style}',),
+                'options': {'layers': ({'texture': 0, 'size': DECAL_SQUARE, 'height': 0.0, 'over': True, 'blend': 4,
+                                        'tint': tuple(round(v / 255.0 * 0.75, 3) for v in _glow), 'turn': _turn,
+                                        'blp': f'FP_Decal_{_shape}_{_style}'},)}}
 # Scarlet Benediction's abilities in their bases' places (Verdant Embrace: Binding Heal or Divine Favor; Reversion:
 # Renew; Dream Breath: Prayer of Healing; Spiritbloom: Greater Heal or Holy Light), each its base's copy and cost, its
 # effect a dummy the script does (runes.cpp). Spiritbloom's heal twice over: as the Priest's Greater Heal and as the

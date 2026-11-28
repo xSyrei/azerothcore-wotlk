@@ -123,6 +123,14 @@ namespace
         DECAL_DANGER, DECAL_SAFE, DECAL_SOAK, DECAL_HEAL, DECAL_ARCANE, DECAL_FROST,
     };
     constexpr uint32 GO_DECAL_FIRST = 910160, DECALS_A_COLOUR = 16, DECAL_TIMERS = 8;
+    // Their textured overlays, laid over the fill in the colour's glow: runic (a sigil), cracked (molten cracks),
+    // hazard (warning stripes), swirl (a smoky spiral); 48 objects a style (8 a colour) from GO_STYLE_FIRST.
+    enum DecalStyle : int8
+    {
+        STYLE_AUTO = -1,                                // chosen from what the blast is (StyleOf)
+        STYLE_PLAIN, STYLE_RUNIC, STYLE_CRACKED, STYLE_HAZARD, STYLE_SWIRL,
+    };
+    constexpr uint32 GO_STYLE_FIRST = 910256, STYLE_OBJECTS = 48, DECAL_SHAPES = 8;
     constexpr float DECAL_LARGE = 15.0f;                // beyond: the large cuts' thinner rims
     constexpr float TIMER_LEAST = 0.08f;                // the timer's size as it starts, of the danger's
     constexpr float DECAL_LIFT = 0.15f;                 // yards above the floor (the models lie at their origin)
@@ -654,6 +662,8 @@ namespace
         std::vector<ObjectGuid> markers;                // its decals (deleted as it lands)
         std::vector<std::pair<ObjectGuid, float>> timers;   // its timers and their full size
         uint32 total = 0;                               // its warning's ms in all
+        uint8 colour = 0;                               // its decals' DecalColour
+        int8 style = -1;                                // its decals' DecalStyle (STYLE_AUTO: StyleOf)
         bool volatileEmber = false;                     // Volatile Remains' (three at most)
         int32 crack = -1;                               // Cracked Earth: its crack (index in _cracks)
         uint32 log = 0;                                 // the combat log's spell (0: the eruption's)
@@ -1820,18 +1830,21 @@ private:
     // A decal (and its timer) of the blast's on the floor: at `at`, facing `facing`, `scale` yards of radius, in
     // `colour` (DECAL_DANGER unless said).
     void Decal(Blast& blast, uint8 decal, Position const& at, float facing, float scale,
-        uint8 colour = DECAL_DANGER)
+        uint8 colour = DECAL_DANGER, int8 style = STYLE_PLAIN)
     {
         float z = FloorAt(at.GetPositionX(), at.GetPositionY()) + DECAL_LIFT;
         uint32 first = GO_DECAL_FIRST + colour * DECALS_A_COLOUR + decal;
-        for (uint32 entry : { first, first + DECAL_TIMERS })
+        std::vector<uint32> entries = { first, first + DECAL_TIMERS };
+        if (style > STYLE_PLAIN)
+            entries.push_back(GO_STYLE_FIRST + uint32(style - 1) * STYLE_OBJECTS + colour * DECAL_SHAPES + decal);
+        for (uint32 entry : entries)
         {
             GameObject* go = instance->SummonGameObject(entry, at.GetPositionX(), at.GetPositionY(), z,
                 facing, 0.0f, 0.0f, std::sin(facing / 2.0f), std::cos(facing / 2.0f), 0);
             if (!go)
                 continue;
             blast.markers.push_back(go->GetGUID());
-            if (entry != first)
+            if (entry == first + DECAL_TIMERS)
             {
                 go->SetObjectScale(scale * TIMER_LEAST);
                 blast.timers.emplace_back(go->GetGUID(), scale);
@@ -1851,27 +1864,47 @@ private:
         return radius > DECAL_LARGE ? DECAL_CONE180_LARGE : DECAL_CONE180;
     }
 
-    // The blast's warning on the floor: its shape's decal, its timer growing to the edge as it comes. A line is laid
-    // in pieces along its axis (as far as the arena reaches), capped at both ends.
+    // A blast's texture when it names none: the Searing Nova swirls, Molten Ground and Cracked Earth crack (and the
+    // arena's halves and thirds), a physical blow and a line are hazard-striped, a ring is a runic sigil.
+    static int8 StyleOf(Blast const& blast)
+    {
+        if (blast.style != STYLE_AUTO)
+            return blast.style;
+        if (blast.nova)
+            return STYLE_SWIRL;
+        if (blast.pool || blast.crack >= 0 || blast.shape == SHAPE_HALF || blast.shape == SHAPE_SECTOR)
+            return STYLE_CRACKED;
+        if (blast.physical || blast.shape == SHAPE_LINE)
+            return STYLE_HAZARD;
+        if (blast.shape == SHAPE_RING)
+            return STYLE_RUNIC;
+        return STYLE_PLAIN;
+    }
+
+    // The blast's warning on the floor: its shape's decal in its colour and texture, its timer growing to the edge as
+    // it comes. A line is laid in pieces along its axis (as far as the arena reaches), capped at both ends.
     void Telegraph(Blast& blast)
     {
         blast.total = std::max<uint32>(1, blast.ms);
+        uint8 colour = blast.colour;
+        int8 style = StyleOf(blast);
         switch (blast.shape)
         {
             case SHAPE_CIRCLE:
-                Decal(blast, DECAL_CIRCLE, blast.at, 0.0f, blast.radius);
+                Decal(blast, DECAL_CIRCLE, blast.at, 0.0f, blast.radius, colour, style);
                 break;
             case SHAPE_RING:                            // its middle marked safe
-                Decal(blast, DECAL_RING, blast.at, 0.0f, blast.radius);
+                Decal(blast, DECAL_RING, blast.at, 0.0f, blast.radius, colour, style);
                 if (blast.inner > 1.0f)
                     Decal(blast, DECAL_CIRCLE, blast.at, 0.0f, blast.inner * 0.9f, DECAL_SAFE);
                 break;
             case SHAPE_CONE:
             case SHAPE_SECTOR:
-                Decal(blast, ConeDecal(blast.halfArc, blast.radius), blast.at, blast.facing, blast.radius);
+                Decal(blast, ConeDecal(blast.halfArc, blast.radius), blast.at, blast.facing, blast.radius, colour,
+                    style);
                 break;
             case SHAPE_HALF:
-                Decal(blast, DECAL_CONE180_LARGE, blast.at, blast.facing, blast.radius);
+                Decal(blast, DECAL_CONE180_LARGE, blast.at, blast.facing, blast.radius, colour, style);
                 break;
             case SHAPE_LINE:
             {
@@ -1894,9 +1927,9 @@ private:
                     bool first = i == 0, last = i + 1 == pieces.size();
                     if (first || last)
                         Decal(blast, DECAL_LINE_CAP, pieces[i], first && !last ? blast.facing + float(M_PI)
-                            : blast.facing, width);
+                            : blast.facing, width, colour, style);
                     else
-                        Decal(blast, DECAL_LINE_MID, pieces[i], blast.facing, width);
+                        Decal(blast, DECAL_LINE_MID, pieces[i], blast.facing, width, colour, style);
                 }
                 break;
             }

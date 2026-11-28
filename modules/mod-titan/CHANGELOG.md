@@ -20,6 +20,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   and props so nothing hides them. They come in six colours for what an area means: red-orange to get out of, blue to
   stand in (the Ring of Embers' safe middle), gold to share, green for helpful areas, violet for special mechanics
   and icy blue for frozen ground.
+- **Textured warnings**: decals can carry a texture over their fill: a runic sigil (turning slowly on circles), molten
+  cracks, hazard stripes, or a smoky swirl. The Searing Nova swirls, Molten Ground and the arena's halves and thirds
+  crack, cleaves and lines are hazard-striped, and the Ring of Embers is a runic ring.
 - **Ladder bosses' attacks restored**: from wave 15, the ladder's bosses use their eruptions and novas again (adding
   their dialogue had switched them off).
 - **Enemy Forces tracker**: the tracker shows the living enemies by role (Melee, Ranged, Healers, Boss), the

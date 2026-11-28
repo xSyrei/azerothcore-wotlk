@@ -62,6 +62,14 @@ GAMEOBJECTS = [
       for c, colour in enumerate(('danger', 'safe', 'soak', 'heal', 'arcane', 'frost')) for timer in (0, 1)
       for i, shape in enumerate(('circle', 'ring', 'cone90', 'cone180', 'cone180L', 'cone120L', 'line_mid',
                                  'line_cap'))],
+    # Their textured overlays (patch_runes.DECAL_STYLES: runic, cracked, hazard, swirl), 48 a style from 9797 (8 a
+    # colour).
+    *[(9797 + 48 * st + 8 * c + i, f'Spells\\Emberforge\\FP_Style_{style}_{colour}_{shape}.mdx', 10,
+       (-1.1, -1.1, 0.0, 1.1, 1.1, 0.3))
+      for st, style in enumerate(('runic', 'cracked', 'hazard', 'swirl'))
+      for c, colour in enumerate(('danger', 'safe', 'soak', 'heal', 'arcane', 'frost'))
+      for i, shape in enumerate(('circle', 'ring', 'cone90', 'cone180', 'cone180L', 'cone120L', 'line_mid',
+                                 'line_cap'))],
 ]
 
 # (display id, a Blizzard display of the race and sex to copy (its model and sounds), bake_npc.NPCS's name, bounding
