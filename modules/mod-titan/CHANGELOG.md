@@ -4,6 +4,16 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-27: The Firepit Ignites
 
+- **Fireforged gear, reforged**: the spoils of waves 15 and 30 are **Rare**; from wave 45 they are **Epic**, each with
+  exactly **one bonus effect** chosen for your role and build (never one you can't use: no block bonus without a shield,
+  no mana bonus without mana).
+- **58 bonus effects** across Tank, Healer, Melee, Ranged and Hybrid pools: steady stats (spell power, attack power,
+  ratings, block value, armor, regeneration), small percentage boosts (direct heals, heals over time, melee abilities,
+  auto-attacks, direct spells, ranged abilities, spells over time) and procs (15% chance, 30 sec apart: bursts of power,
+  haste, crit, dodge or defense, absorb shields, mana, a Thundering Strike). Every number scales with the piece's item
+  level and shows on its tooltip.
+- **Titanforged** pieces now carry a **prismatic socket** instead of doubled stats. Old Fireforged pieces keep what they
+  have; the old famous-proc modifiers no longer roll.
 - **Marked for Carnage**: at waves 45, 60, 75, 90, 100, 105 and every 15 after, the boss must die within 5 minutes or
   the arena detonates. The tracker shows the clock, with warnings at 2:00, 1:00, 0:30 and a final countdown.
 - **Five new major bosses**, each with telegraphed attacks and health phases:

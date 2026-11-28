@@ -26,6 +26,8 @@ AURA_PERIODIC_DAMAGE, AURA_PERIODIC_HEAL, AURA_SCHOOL_ABSORB = 3, 8, 69
 def kinds():
     damage, healing, shields = set(), set(), set()
     for spell in patch_runes.SPELLS:
+        if 93500 <= spell['id'] < 93600:      # the Fireforged effects': the gear's, not a rune's
+            continue
         for effect in spell.get('effects', {}).values():
             kind, aura = effect.get('Effect'), effect.get('Aura')
             if kind == EFFECT_SCHOOL_DAMAGE or (kind == EFFECT_APPLY_AURA and aura == AURA_PERIODIC_DAMAGE):

@@ -17,6 +17,7 @@
 
 #include "firepit.h"
 #include "firepit_gear.h"
+#include "fireforged_effects.h"
 #include "firepit_roster.h"
 #include "wildcard.h"
 #include "Chat.h"
@@ -597,9 +598,7 @@ namespace
     constexpr uint32 FIREFORGED_CAP_OVER_LEVEL = 30, FIREFORGED_CAP_A_LOOT_WAVE = 3;
     constexpr uint32 WEAKEST_SLOTS = 3;                 // the spoil's slot is one of the Hero's this many weakest
     constexpr uint32 TITANFORGED_IN = 200;
-    // Modifiers (firepit_gear.h MODIFIERS): a spoil's first from wave MODIFIER_FROM (certain MODIFIER_RAMP waves
-    // later), its second from SECOND_MODIFIER_FROM, in the random-property slots the suffix leaves free.
-    constexpr uint32 MODIFIER_FROM = 30, SECOND_MODIFIER_FROM = 75, MODIFIER_RAMP = 60;
+    constexpr uint32 EPIC_FROM = 45;                    // Rare below (The Firepit Ignites)
     constexpr EnchantmentSlot MODIFIER_SLOTS[] = { EnchantmentSlot(PROP_ENCHANTMENT_SLOT_0 + 3),
         EnchantmentSlot(PROP_ENCHANTMENT_SLOT_0 + 4) };
 
@@ -804,42 +803,49 @@ namespace
         return FindPiece(ITEM_CLASS_ARMOR, armorType, { inventoryType }, armorType);
     }
 
-    // A Hero's modifier roles (firepit_gear.h ModifierRole).
-    uint8 ModifierRolesOf(Profile const& profile)
+    // An Epic piece's one bonus effect (The Firepit Ignites): from the Hero's loot pool (their role's) and the
+    // Hybrid pool, only those their build can use; its enchantment for the piece's tier (its words its numbers).
+    uint32 RollEffect(Player* player, Profile const& profile, uint32 tier)
     {
+        using namespace FireforgedEffects;
+        uint8 pool = POOL_HYBRID;
         switch (profile.role)
         {
-            case Wildcard::ROLE_TANK: return ROLE_TANK | ROLE_PHYSICAL;
-            case Wildcard::ROLE_HEALER: return ROLE_HEALER;
-            default: break;
+            case Wildcard::ROLE_TANK: pool |= POOL_TANK; break;
+            case Wildcard::ROLE_HEALER: pool |= POOL_HEALER; break;
+            case Wildcard::ROLE_RANGED: pool |= POOL_RANGED; break;
+            default: pool |= profile.primary == PRIMARY_INTELLECT ? POOL_RANGED : POOL_MELEE; break;
         }
-        return profile.primary == PRIMARY_INTELLECT ? ROLE_CASTER : ROLE_PHYSICAL;
-    }
-
-    // The chance (percent) of a spoil earned at a wave having a modifier: 0 at from, certain MODIFIER_RAMP later.
-    uint32 ModifierChance(uint32 wave, uint32 from)
-    {
-        return wave <= from ? 0 : std::min<uint32>(100, (wave - from) * 100 / MODIFIER_RAMP);
-    }
-
-    std::vector<uint32> RollModifiers(Player* player, Profile const& profile, bool weapon, uint32 wave)
-    {
-        std::vector<uint32> pool;
-        uint8 roles = ModifierRolesOf(profile);
-        for (Modifier const& modifier : MODIFIERS)
-            if ((modifier.Roles & roles) && (weapon || !modifier.WeaponOnly)
-                && player->GetLevel() >= ERA_LEVEL[modifier.Era])
-                pool.push_back(modifier.Enchantment);
-        std::vector<uint32> rolled;
-        for (uint32 from : { MODIFIER_FROM, SECOND_MODIFIER_FROM })
-        {
-            if (pool.empty() || !roll_chance_i(int32(ModifierChance(wave, from))))
-                break;
-            std::size_t pick = urand(0, uint32(pool.size()) - 1);
-            rolled.push_back(pool[pick]);
-            pool.erase(pool.begin() + pick);
-        }
-        return rolled;
+        bool caster = profile.primary == PRIMARY_INTELLECT || profile.role == Wildcard::ROLE_HEALER;
+        Item* ranged = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED);
+        uint16 has = 0;
+        if (player->CanBlock())
+            has |= NEED_BLOCK;
+        if (player->CanParry())
+            has |= NEED_PARRY;
+        if (player->GetShield())
+            has |= NEED_SHIELD;
+        if (player->GetMaxPower(POWER_MANA) > 0)
+            has |= NEED_MANA;
+        if (player->GetMaxPower(POWER_ENERGY) > 0)
+            has |= NEED_ENERGY;
+        if (profile.role == Wildcard::ROLE_HEALER)
+            has |= NEED_HEAL;
+        if (caster)
+            has |= NEED_SPELL | NEED_CASTER_PICK;
+        else
+            has |= NEED_PHYSICAL | NEED_PHYSICAL_PICK;
+        if (ranged && ranged->GetTemplate()->SubClass != ITEM_SUBCLASS_WEAPON_WAND)
+            has |= NEED_RANGED;
+        if (profile.role == Wildcard::ROLE_TANK)
+            has |= NEED_TANK;
+        std::vector<uint32> eligible;
+        for (uint32 i = 0; i < std::size(EFFECTS); ++i)
+            if ((EFFECTS[i].Pool & pool) && (EFFECTS[i].Needs & has) == EFFECTS[i].Needs)
+                eligible.push_back(i);
+        if (eligible.empty())
+            return 0;
+        return ENCHANT_FIRST + eligible[urand(0, uint32(eligible.size()) - 1)] * TIERS + tier;
     }
 
     // A Hero's spoils: a piece for each wave earned at, each in another of their weakest slots.
@@ -896,12 +902,17 @@ namespace
             uint32 tier = TierAtLeast(target);
             if (tier && FIRST_ITEM_LEVEL + tier * ITEM_LEVEL_STEP > cap)
                 --tier;                                 // the tier at or under the cap
-            uint32 entry = PIECES[chosen.piece].First + tier + (titan ? TITAN_OFFSET : 0);
+            // Rare at waves 15 and 30, Epic from 45 (with one bonus effect; Titanforged: a socket too).
+            bool epic = wave >= EPIC_FROM;
+            titan = titan && epic;
+            uint32 entry = PIECES[chosen.piece].First + tier + (titan ? TITAN_OFFSET : epic ? 0 : RARE_OFFSET);
             if (!sObjectMgr->GetItemTemplate(entry))
                 continue;
-            bool weapon = PIECES[chosen.piece].Class == ITEM_CLASS_WEAPON;
-            spoils.push_back({ entry, -int32(titan ? TITAN_SUFFIX[mix] : SUFFIX[mix]), titan,
-                RollModifiers(player, profile, weapon, wave) });
+            std::vector<uint32> effect;
+            if (epic)
+                if (uint32 enchant = RollEffect(player, profile, tier))
+                    effect.push_back(enchant);
+            spoils.push_back({ entry, -int32(SUFFIX[mix]), titan, effect });
         }
         return spoils;
     }

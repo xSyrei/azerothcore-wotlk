@@ -8,6 +8,7 @@ namespace FirepitGear
 {
     constexpr uint32 FIRST_ITEM = 916000;
     constexpr uint32 TITAN_OFFSET = 1887;     // a Titanforged piece: its Fireforged entry + this
+    constexpr uint32 RARE_OFFSET = 14000;     // a Rare piece: its Epic entry + this
     constexpr uint32 TIERS = 37;
     constexpr uint32 FIRST_ITEM_LEVEL = 12, ITEM_LEVEL_STEP = 3;
 

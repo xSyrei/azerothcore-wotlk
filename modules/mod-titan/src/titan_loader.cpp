@@ -43,6 +43,7 @@ void AddSC_talent_glyphs();
 void AddSC_tank_runes();
 void AddSC_cross_faction();
 void AddSC_firepit();
+void AddSC_fireforged();
 void AddSC_rune_power();
 
 // Loader name follows the module folder: mod-titan -> Addmod_titanScripts
@@ -76,5 +77,6 @@ void Addmod_titanScripts()
     AddSC_tank_runes();
     AddSC_cross_faction();
     AddSC_firepit();
+    AddSC_fireforged();
     AddSC_rune_power();
 }

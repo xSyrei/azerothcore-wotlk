@@ -108,6 +108,8 @@ The five after them (their own concept docs), each with its markers 20 on from i
 """
 
 import math
+import sys
+from pathlib import Path
 
 import patch_player
 from patch_player import aura, OWN, HIDDEN, SELF_TEMPLATE, SPELL_ATTR0_NO_AURA_CANCEL, SPELL_ATTR3_ALLOW_AURA_WHILE_DEAD
@@ -2440,6 +2442,27 @@ for _spell in SPELLS:
 ICONS += ['Ability_Warrior_BattleShout', 'Spell_Fire_SealOfFire', 'Spell_Shadow_DemonicEmpathy', 'Ability_Rogue_Sprint',
           'Spell_Fire_Incinerate', 'Spell_Fire_TotemOfWrath', 'Spell_Fire_FireArmor', 'Spell_Shadow_ShadowWordDominate',
           'Spell_Nature_Earthquake']
+# The Fireforged bonus effects (tools/scaling/firepit_effects.py: The Firepit Ignites): each one's equip spell (its
+# values at item level 90; the server sets each piece's own), its proc's buff (the server's values too), and Thundering
+# Strike's hit.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools' / 'scaling'))
+import firepit_effects  # noqa: E402
+_POOL_ICONS = {'T': 'Ability_Warrior_DefensiveStance', 'H': 'Spell_Holy_HolyBolt', 'M': 'Ability_MeleeDamage',
+               'R': 'Spell_Fire_FireBolt02', 'X': 'INV_Misc_Gem_Variety_01'}
+_BUFF_DURATIONS = {5: DURATION_5S, 6: DURATION_6S, 8: DURATION_8S}
+_buffs = firepit_effects.buff_index()
+for _i, _effect in enumerate(firepit_effects.EFFECTS):
+    _name, _pool, _, _, _equip, _trigger, _buff, _seconds, _, _ = _effect
+    _words = firepit_effects.text(_effect, 90)
+    _auras = {n + 1: aura(a, firepit_effects.value(v[0], v[1], 90), misc) for n, (a, misc, v) in enumerate(_equip)}
+    SPELLS.append(buff(firepit_effects.EQUIP_SPELL_FIRST + _i, _name, _POOL_ICONS[_pool], _words, DURATION_INFINITE,
+                       _auras or {1: aura(AURA_DUMMY, 1, 0)}, hidden=True))
+    if _i in _buffs:
+        SPELLS.append(buff(_buffs[_i], _name, _POOL_ICONS[_pool], _words, _BUFF_DURATIONS[_seconds],
+                           {n + 1: aura(a, firepit_effects.value(v[0], v[1], 90), misc)
+                            for n, (a, misc, v) in enumerate(_buff)}))
+SPELLS.append(strike(firepit_effects.STRIKE_SPELL, 'Thundering Strike', 'Ability_Warrior_Riposte', PHYSICAL))
+ICONS += list(_POOL_ICONS.values()) + ['Ability_Warrior_Riposte']
 # The replacements' hits (and Fulmination) as their bases' Shaman family, the Hero's modifiers on them: whatever
 # raises Stormstrike's hits, Lava Lash, Lightning Bolt or Earth Shock (talents, glyphs, the runes' own) raises them;
 # no spell power of their own (spell_bonus_data, titan_runes.sql).
