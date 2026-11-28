@@ -2439,6 +2439,13 @@ ICONS += ['Spell_Nature_Web']
 for _spell in SPELLS:
     if _spell['id'] == 93489:
         _spell['set'] = {**_spell['set'], 'SpellVisual': 12328}
+# The Ashfleet Captain's cannonball (src/firepit.cpp CannonShot): fired from a cannon on the rim at a point, the
+# Icecrown gunship's cannonball (SpellVisual 14685: its muzzle flash, the ball in flight, its blast where it lands),
+# 32 yards a second; a look only (its blow the server's, as it lands).
+TARGET_DEST_DEST = 87
+SPELLS.append({**look(93492, 'Ashfleet Cannonball', 'Spell_Fire_Fire', 14685, TARGET_DEST_DEST),
+               'set': {**HIDDEN, 'Attributes': SPELL_ATTR0_ALLOW_CAST_WHILE_DEAD, 'SpellVisual': 14685,
+                       'DurationIndex': 0, 'RangeIndex': RANGE_VISION, 'Speed': 32.0}})
 ICONS += ['Ability_Warrior_BattleShout', 'Spell_Fire_SealOfFire', 'Spell_Shadow_DemonicEmpathy', 'Ability_Rogue_Sprint',
           'Spell_Fire_Incinerate', 'Spell_Fire_TotemOfWrath', 'Spell_Fire_FireArmor', 'Spell_Shadow_ShadowWordDominate',
           'Spell_Nature_Earthquake']

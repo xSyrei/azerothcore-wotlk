@@ -14,6 +14,9 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - **The bosses speak**: every boss has its own words as it enters the Ring and its own last words as it falls (Grizzle,
   Lord Roccor, Bael'Gar, Emperor Thaurissan and the rest), and the five major bosses also call out their phases and
   their enrage.
+- **Attacks look like what they are**: lines explode along their whole length, cones burst across their width (dust
+  for a physical blow), rings blow in a ring, and the arena's halves and thirds erupt all over, with the ground
+  shaking under you as they land.
 - **Clear floor warnings**: every attack's area now shows on the arena floor as a glowing decal, a faint fill with a
   bright rim, with an inner fill that grows to the rim as the blow comes (it lands when it reaches the edge). Circles,
   rings, cones, lines and the arena's halves and thirds all have their own shape, and the decals draw over the floor
@@ -45,8 +48,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - **Marked for Carnage**: at waves 45, 60, 75, 90, 100, 105 and every 15 after, the boss must die within 5 minutes or
   the arena detonates. The tracker shows the clock, with warnings at 2:00, 1:00, 0:30 and a final countdown.
 - **Five new major bosses**, each with telegraphed attacks and health phases:
-  - **Wave 45, the Ashfleet Captain**: Powder Lines and Cutlass Sweeps; at 70% and 35% a Trial by Fire (cannon volleys
-    while it takes half damage); a Final Stand at 30%.
+  - **Wave 45, the Ashfleet Captain**: he runs out six cannons and powder kegs round the rim and fires a salute as he
+    enters. Powder Lines go up in a chain of explosions racing out from him, his Cutlass Sweep blasts dust across
+    the cone, and at 70% and 35% Trial by Fire brings real cannon fire: cannonballs fly from the rim to land under
+    every Hero and around the arena, exploding as their warnings fill, while he takes half damage. At 30% his Final
+    Stand blows the arena with a blast that shakes the ground, he grows, and his guns fire a Broadside at every Hero
+    every 9 seconds until he falls; his cannons blow with him.
   - **Wave 60, the Ironbound Colossus**: Ironbreaker cones and Molten Ruptures; Shatter the Core at 70% and 35% leaves
     its core exposed (20% more damage taken); its forge grows unstable at 25%.
   - **Wave 75, the Cinder Matron**: Scorching Spit, Rending Mandibles and Cinderweb lines held by Web Anchors you can

@@ -542,6 +542,18 @@ INSERT INTO `gameobject_template_addon` (`entry`, `faction`, `flags`, `mingold`,
 (910440, 0, 16, 0, 0), (910441, 0, 16, 0, 0), (910442, 0, 16, 0, 0), (910443, 0, 16, 0, 0),
 (910444, 0, 16, 0, 0), (910445, 0, 16, 0, 0), (910446, 0, 16, 0, 0), (910447, 0, 16, 0, 0);
 
+-- The Ashfleet Captain's dressing (src/firepit.cpp RunOutTheGuns): a pirate cannon and a fused powder keg, run out
+-- round the rim for his fight; unselectable.
+DELETE FROM `gameobject_template` WHERE `entry` IN (910448, 910449);
+INSERT INTO `gameobject_template` (`entry`, `type`, `displayId`, `name`, `IconName`, `castBarCaption`, `unk1`,
+    `size`, `ScriptName`, `VerifiedBuild`) VALUES
+(910448, 5, 245, 'Ashfleet Cannon', '', '', '', 1.6, '', 0),
+(910449, 5, 112, 'Ashfleet Powder Keg', '', '', '', 1.4, '', 0);
+
+DELETE FROM `gameobject_template_addon` WHERE `entry` IN (910448, 910449);
+INSERT INTO `gameobject_template_addon` (`entry`, `faction`, `flags`, `mingold`, `maxgold`) VALUES
+(910448, 0, 16, 0, 0), (910449, 0, 16, 0, 0);
+
 -- The Firepit's map (760): Trial of the Champion's arena (map 650's Directory, so its terrain) under its own name and
 -- sky (the client patch's Map.dbc row, client-patch/hd/make_atmosphere.py). Its terrain files are map 650's, copied by
 -- the ac-firepit-map service (tools/firepit-map.sh). A dungeon, 5 Heroes by the DBC (the Firepit's own core hook lets

@@ -404,6 +404,17 @@ namespace
     constexpr uint32 NPC_ERUPTION = 910141;             // titan_firepit.sql: invisible, the eruptions' source
     constexpr uint32 SPELL_FIRE_NOVA = 16079;           // its look only: cast by a friendly source, it hits no one
     constexpr uint32 SPELL_ERUPTION_LOG = 11307;        // the combat log's name for an eruption's hit (Fire Nova)
+    // The blows' looks (the client's own, every one a dummy: cast by a friendly source, they hit no one): explosions
+    // great and small, a dust blast, a cannon's muzzle flash, and the camera's shake for the Heroes near; the
+    // Ashfleet's cannonball (client-patch/patch_runes.py: the Icecrown gunship's cannonball, flying to a point).
+    constexpr uint32 SPELL_EXPLOSION_HUGE = 46225, SPELL_EXPLOSION = 60081, SPELL_EXPLOSION_SMALL = 46419;
+    constexpr uint32 SPELL_DUST_BLAST = 63360, SPELL_MUZZLE_FLASH = 42468;
+    constexpr uint32 SPELL_SHAKE_SMALL = 47533, SPELL_SHAKE_MEDIUM = 44762;
+    constexpr uint32 SPELL_CANNONBALL = 93492;
+    constexpr float CANNONBALL_SPEED = 32.0f;           // yards a second (the spell's own)
+    constexpr uint32 GO_ASHFLEET_CANNON = 910448, GO_POWDER_KEG = 910449;   // titan_firepit.sql
+    constexpr uint8 ASHFLEET_CANNONS = 6;
+    constexpr uint32 BROADSIDE_EVERY_MS = 9000;
 
     // The Firepit Ignites (its design doc): a wave every 75 sec, or 10 sec after the last enemy dies; 20 sec after a
     // boss falls. A wave's enemies: min(12, 3 + wave / 5) + ceil((Heroes - 1) / 2), 20 at most; every 5th wave one
@@ -664,6 +675,8 @@ namespace
         uint32 total = 0;                               // its warning's ms in all
         uint8 colour = 0;                               // its decals' DecalColour
         int8 style = -1;                                // its decals' DecalStyle (STYLE_AUTO: StyleOf)
+        uint8 cannon = 0;                               // the Ashfleet's cannon that fires it (its index + 1)
+        bool launched = false;                          // its cannonball on its way
         bool volatileEmber = false;                     // Volatile Remains' (three at most)
         int32 crack = -1;                               // Cracked Earth: its crack (index in _cracks)
         uint32 log = 0;                                 // the combat log's spell (0: the eruption's)
@@ -706,6 +719,15 @@ namespace
         bool enraged = false, enragePending = false, side = false;
         float taken = 1.0f;
         std::vector<ObjectGuid> edgeMarkers;
+        std::vector<ObjectGuid> props;                  // its dressing (the Ashfleet's cannons and kegs)
+        std::vector<Position> cannons;                  // the Ashfleet's muzzles
+    };
+
+    struct Fx                                           // a look to come (run ms), and the shake of those near
+    {
+        Position at;
+        uint32 spell = 0, due = 0, shake = 0;
+        float shakeRange = 0.0f;
     };
 
     struct Echo                                         // Ashen Echo's channel
@@ -1699,6 +1721,8 @@ private:
             Detonate(due);
         }
         GrowTimers(diff);
+        LaunchCannonballs();
+        FxTick();
     }
 
     GameObject* Marker(uint32 entry, Position const& at)
@@ -1760,10 +1784,8 @@ private:
         Position at = blast.nova ? boss->GetPosition() : blast.at;
         TempSummon* source = instance->SummonCreature(NPC_ERUPTION, at, nullptr, 2000);
         if (source)
-        {
-            source->SetFaction(35);                     // friendly: its Fire Nova is the look, and hits no one
-            source->CastSpell(source, SPELL_FIRE_NOVA, true);
-        }
+            source->SetFaction(35);                     // friendly: its looks hit no one
+        LandLook(blast, at, source);
         Unit* attacker = blast.nova ? static_cast<Unit*>(boss) : static_cast<Unit*>(source);
         if (!attacker)
             return;
@@ -1957,6 +1979,202 @@ private:
         }
     }
 
+    // ---- The blows' looks ------------------------------------------------------------------------------------
+
+    // A look at a point: a friendly, invisible source casting it on itself.
+    void Look(Position const& at, uint32 spell)
+    {
+        if (TempSummon* source = instance->SummonCreature(NPC_ERUPTION, at, nullptr, 3000))
+        {
+            source->SetFaction(35);
+            source->CastSpell(source, spell, true);
+        }
+    }
+
+    // The camera shaken for every Hero within range of the point (any range: everyone).
+    void Shake(Position const& at, float range, uint32 spell)
+    {
+        for (Player* hero : Living())
+            if (!range || hero->GetExactDist2d(&at) <= range)
+                hero->CastSpell(hero, spell, true);
+    }
+
+    void Queue(Position const& at, uint32 spell, uint32 delayMs, uint32 shake = 0, float shakeRange = 0.0f)
+    {
+        Fx fx;
+        fx.at = at;
+        fx.spell = spell;
+        fx.due = _runMs + delayMs;
+        fx.shake = shake;
+        fx.shakeRange = shakeRange;
+        _fx.push_back(fx);
+    }
+
+    void FxTick()
+    {
+        for (auto it = _fx.begin(); it != _fx.end();)
+        {
+            if (it->due > _runMs)
+            {
+                ++it;
+                continue;
+            }
+            Fx fx = *it;
+            it = _fx.erase(it);
+            if (fx.spell)
+                Look(fx.at, fx.spell);
+            if (fx.shake)
+                Shake(fx.at, fx.shakeRange, fx.shake);
+        }
+    }
+
+    // A point of the blast's area, `along` (0 to 1) of its reach out and `side` (-1 to 1) of its width.
+    Position PointIn(Blast const& blast, Position const& at, float along, float side) const
+    {
+        float angle = blast.facing, distance = blast.radius * along;
+        if (blast.shape == SHAPE_CONE || blast.shape == SHAPE_SECTOR || blast.shape == SHAPE_HALF)
+            angle += side * (blast.shape == SHAPE_HALF ? float(M_PI) / 2.0f : blast.halfArc) * 0.8f;
+        float x = at.GetPositionX() + distance * std::cos(angle), y = at.GetPositionY() + distance * std::sin(angle);
+        return Position(x, y, FloorAt(x, y));
+    }
+
+    // How a blast looks as it lands, by its shape: a circle's fire nova (a cannonball's explosion), a line's chain of
+    // explosions racing out from its source, a cone's dust (a physical blow) or fire across its width, a ring's ring
+    // of blasts, half or a third of the arena erupting all over; the ground shaking under those near.
+    void LandLook(Blast const& blast, Position const& at, TempSummon* source)
+    {
+        switch (blast.shape)
+        {
+            case SHAPE_LINE:
+            {
+                float step = 6.0f;
+                uint32 i = 0;
+                for (float along = 2.0f; along <= blast.length; along += step, ++i)
+                {
+                    float x = at.GetPositionX() + along * std::cos(blast.facing);
+                    float y = at.GetPositionY() + along * std::sin(blast.facing);
+                    if (std::hypot(x - CENTER.GetPositionX(), y - CENTER.GetPositionY()) > ARENA_RADIUS)
+                        break;
+                    Queue(Position(x, y, FloorAt(x, y)), i % 2 ? SPELL_EXPLOSION_SMALL : SPELL_EXPLOSION, i * 60,
+                        SPELL_SHAKE_SMALL, step);
+                }
+                return;
+            }
+            case SHAPE_CONE:
+            {
+                uint32 look = blast.physical ? SPELL_DUST_BLAST : SPELL_EXPLOSION_SMALL;
+                for (float side : { -0.8f, 0.0f, 0.8f })
+                    Queue(PointIn(blast, at, 0.75f, side), look, side == 0.0f ? 0 : 80);
+                Queue(PointIn(blast, at, 0.4f, 0.0f), look, 40, SPELL_SHAKE_SMALL, blast.radius + 4.0f);
+                if (Creature* boss = instance->GetCreature(blast.source))
+                    boss->HandleEmoteCommand(EMOTE_ONESHOT_ATTACK1H);
+                return;
+            }
+            case SHAPE_RING:
+                for (uint32 i = 0; i < 8; ++i)
+                {
+                    float a = float(i) * float(M_PI) / 4.0f, d = (blast.inner + blast.radius) / 2.0f;
+                    float x = at.GetPositionX() + d * std::cos(a), y = at.GetPositionY() + d * std::sin(a);
+                    Queue(Position(x, y, FloorAt(x, y)), SPELL_EXPLOSION_SMALL, i * 40);
+                }
+                Shake(at, blast.radius + 6.0f, SPELL_SHAKE_SMALL);
+                return;
+            case SHAPE_HALF:
+            case SHAPE_SECTOR:
+                for (uint32 i = 0; i < 14; ++i)
+                    Queue(PointIn(blast, at, frand(0.15f, 0.95f), frand(-1.0f, 1.0f)),
+                        i % 3 ? SPELL_EXPLOSION_SMALL : SPELL_EXPLOSION, urand(0, 700));
+                Shake(at, 0.0f, SPELL_SHAKE_SMALL);
+                return;
+            default:
+                break;
+        }
+        if (blast.cannon)
+        {
+            Look(at, SPELL_EXPLOSION);
+            Shake(at, blast.radius + 8.0f, SPELL_SHAKE_SMALL);
+        }
+        else if (source)
+            source->CastSpell(source, SPELL_FIRE_NOVA, true);
+        if (blast.nova)
+            Shake(at, blast.radius + 6.0f, SPELL_SHAKE_MEDIUM);
+    }
+
+    // ---- The Ashfleet Captain's guns ---------------------------------------------------------------------------
+
+    // Six cannons (and a powder keg by each) run out round the rim, facing the middle; a salute fired as he enters.
+    void RunOutTheGuns()
+    {
+        for (uint8 i = 0; i < ASHFLEET_CANNONS; ++i)
+        {
+            float a = float(i) * 2.0f * float(M_PI) / ASHFLEET_CANNONS + float(M_PI) / ASHFLEET_CANNONS;
+            float facing = Position::NormalizeOrientation(a + float(M_PI));
+            float x = CENTER.GetPositionX() + (ARENA_RADIUS - 3.0f) * std::cos(a);
+            float y = CENTER.GetPositionY() + (ARENA_RADIUS - 3.0f) * std::sin(a);
+            float z = FloorAt(x, y);
+            if (GameObject* cannon = instance->SummonGameObject(GO_ASHFLEET_CANNON, x, y, z, facing, 0.0f, 0.0f,
+                std::sin(facing / 2.0f), std::cos(facing / 2.0f), 0))
+                _major.props.push_back(cannon->GetGUID());
+            float kx = x + 2.5f * std::cos(a + float(M_PI) / 2.0f), ky = y + 2.5f * std::sin(a + float(M_PI) / 2.0f);
+            if (GameObject* keg = instance->SummonGameObject(GO_POWDER_KEG, kx, ky, FloorAt(kx, ky), facing, 0.0f,
+                0.0f, std::sin(facing / 2.0f), std::cos(facing / 2.0f), 0))
+                _major.props.push_back(keg->GetGUID());
+            Position muzzle(x + 1.5f * std::cos(facing), y + 1.5f * std::sin(facing), z + 1.2f);
+            _major.cannons.push_back(muzzle);
+            Queue(muzzle, SPELL_MUZZLE_FLASH, 800 + i * 300);
+            Queue(muzzle, SPELL_EXPLOSION_SMALL, 850 + i * 300, i + 1 == ASHFLEET_CANNONS ? SPELL_SHAKE_SMALL : 0);
+        }
+    }
+
+    // A cannonball at a point: its warning now, the nearest cannon firing as it comes in, an explosion as it lands.
+    void CannonShot(Creature* boss, Position const& at, float radius, uint32 ms)
+    {
+        if (_major.cannons.empty())
+            return;
+        Blast blast = Circle(at, radius, 0.2f);
+        uint8 best = 0;
+        for (uint8 i = 1; i < _major.cannons.size(); ++i)
+            if (_major.cannons[i].GetExactDist2d(&at) < _major.cannons[best].GetExactDist2d(&at))
+                best = i;
+        blast.cannon = uint8(best + 1);
+        Danger(boss, blast, ms);
+    }
+
+    // Each cannonball fired so it lands as its warning runs out: its flight timed from its cannon.
+    void LaunchCannonballs()
+    {
+        for (Blast& blast : _blasts)
+        {
+            if (!blast.cannon || blast.launched || blast.cannon > _major.cannons.size())
+                continue;
+            Position const& muzzle = _major.cannons[blast.cannon - 1];
+            uint32 flight = uint32(muzzle.GetExactDist(&blast.at) / CANNONBALL_SPEED * 1000.0f);
+            if (blast.ms > flight)
+                continue;
+            blast.launched = true;
+            if (TempSummon* gun = instance->SummonCreature(NPC_ERUPTION, muzzle, nullptr, flight + 2000))
+            {
+                gun->SetFaction(35);
+                gun->CastSpell(gun, SPELL_MUZZLE_FLASH, true);
+                gun->CastSpell(blast.at.GetPositionX(), blast.at.GetPositionY(), blast.at.GetPositionZ() + 0.5f,
+                    SPELL_CANNONBALL, true);
+            }
+        }
+    }
+
+    // A volley: a cannonball under each Hero and `extra` more about the arena.
+    void Volley(Creature* boss, uint8 extra, float radius, uint32 ms)
+    {
+        for (Player* hero : Living())
+            CannonShot(boss, hero->GetPosition(), radius, ms);
+        for (uint8 i = 0; i < extra; ++i)
+        {
+            float a = frand(0.0f, 2.0f * float(M_PI)), d = frand(ARRIVAL_RADIUS + 6.0f, ARENA_RADIUS - 8.0f);
+            float x = CENTER.GetPositionX() + d * std::cos(a), y = CENTER.GetPositionY() + d * std::sin(a);
+            CannonShot(boss, Position(x, y, FloorAt(x, y)), radius, ms);
+        }
+    }
+
     // ---- The major bosses and Marked for Carnage ------------------------------------------------------------
 
     // The boss a boss wave brings: a major at Carnage waves, else the ladder's.
@@ -2045,6 +2263,8 @@ private:
         _major.t2 = 14000;
         _major.t3 = 20000;
         _major.t4 = 12000;
+        if (kind == MAJOR_CAPTAIN)
+            RunOutTheGuns();
         _carnageMs = IsCarnage(_wave) ? CARNAGE_MS : 0;
         if (_carnageMs)
             Announce("MARKED FOR CARNAGE: defeat " + boss->GetName() + " within 5 minutes, or the arena detonates!",
@@ -2116,6 +2336,12 @@ private:
                     }
                 if (due(_major.t2, 24000))
                     Cone(boss, 8.0f, float(M_PI) / 4.0f, 0.25f, 3000, true, "a Cutlass Sweep");
+                // Final Stand: the guns fire on every Hero, 9 sec apart.
+                if (_major.enraged && due(_major.t3, BROADSIDE_EVERY_MS))
+                {
+                    Volley(boss, 2, 4.0f, 3000);
+                    Announce("BROADSIDE! The Ashfleet's guns are on you, keep moving!");
+                }
                 break;
             case MAJOR_COLOSSUS:
                 if (due(_major.t1, 22000))
@@ -2370,7 +2596,9 @@ private:
             _major.stepMs = 4000;
             ++_major.step;
             float angle = frand(0.0f, 2.0f * float(M_PI));
-            if (_major.kind == MAJOR_COLOSSUS)
+            if (_major.kind == MAJOR_CAPTAIN)           // Trial by Fire: a volley under every Hero, and more
+                Volley(boss, 3, 5.0f, 3500);
+            else if (_major.kind == MAJOR_COLOSSUS)
             {
                 float radius = frand(ARRIVAL_RADIUS + 6.0f, 40.0f);
                 float x = CENTER.GetPositionX() + radius * std::cos(angle);
@@ -2409,6 +2637,12 @@ private:
             case MAJOR_CAPTAIN:
                 if (own)
                     own->damage *= FINAL_STAND_DAMAGE;
+                // Final Stand: a blast that shakes the whole arena, and the Captain grows; his guns keep firing
+                // (Broadside).
+                Look(boss->GetPosition(), SPELL_EXPLOSION_HUGE);
+                Shake(boss->GetPosition(), 0.0f, SPELL_SHAKE_MEDIUM);
+                boss->SetObjectScale(boss->GetObjectScale() * 1.25f);
+                _major.t3 = 3000;
                 [[fallthrough]];
             case MAJOR_WARDEN:
                 if (Aura* aura = boss->AddAura(SPELL_ASHEN_EMPOWERMENT, boss))
@@ -2482,6 +2716,21 @@ private:
         for (ObjectGuid const& guid : _major.edgeMarkers)
             if (GameObject* marker = instance->GetGameObject(guid))
                 marker->Delete();
+        // The Captain's last: a huge blast, and his guns blow with him.
+        if (boss && !boss->IsAlive() && _major.kind == MAJOR_CAPTAIN)
+        {
+            Look(boss->GetPosition(), SPELL_EXPLOSION_HUGE);
+            Shake(boss->GetPosition(), 0.0f, SPELL_SHAKE_MEDIUM);
+            uint32 delay = 400;
+            for (Position const& muzzle : _major.cannons)
+            {
+                Queue(muzzle, SPELL_EXPLOSION, delay);
+                delay += 250;
+            }
+        }
+        for (ObjectGuid const& guid : _major.props)
+            if (GameObject* prop = instance->GetGameObject(guid))
+                prop->Delete();
         for (Web const& web : _webs)
         {
             for (ObjectGuid const& guid : web.markers)
@@ -3359,6 +3608,7 @@ private:
     {
         ClearAffixes();
         EndMajor(instance->GetCreature(_major.guid));
+        _fx.clear();
         _carnageMs = 0;
         for (Blast const& blast : _blasts)
         {
@@ -3745,6 +3995,7 @@ private:
     std::map<ObjectGuid, uint32> _protected;        // revived Heroes: run ms their protection ends
     std::unordered_map<ObjectGuid, BossState> _bosses;
     std::vector<Blast> _blasts;
+    std::vector<Fx> _fx;                            // looks to come (FxTick)
     uint32 _timerMs = 0;                            // GrowTimers'
     std::vector<uint8> _affixes;                    // the world affixes active now
     std::map<uint8, uint32> _affixMs;               // each one's next trigger (ms)
