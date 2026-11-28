@@ -4,6 +4,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-27: The Firepit Ignites
 
+- **The bosses speak**: every boss taunts you as it enters the Ring, and the five major bosses call out their
+  phases, their enrage and their last words as they fall.
 - **Enemy Forces tracker**: the tracker shows the living enemies by role (Melee, Ranged, Healers, Boss), the
   reinforcements waiting (INCOMING when the field is empty but more are coming) and a badge for Bolstered or Mending
   enemies.

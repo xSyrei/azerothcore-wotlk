@@ -223,6 +223,53 @@ namespace
     constexpr uint32 CARNAGE_MS = 300000, PHASE_MS = 12000, WEBSTORM_MS = 8000, WEAPON_LEAST_MS = 10000;
     constexpr float FINAL_STAND_DAMAGE = 1.2f, EXPOSED_TAKEN = 1.2f, TRIAL_TAKEN = 0.5f;
 
+    // The bosses' words (each one yelled across the arena): the majors' as they enter, at each phase (the Champion's
+    // weapons), at their enrage and as they fall; the ladder's own as they enter.
+    struct MajorLines
+    {
+        char const* Enter[2];
+        char const* Phase[3];
+        char const* Enrage;
+        char const* Fall;
+    };
+    MajorLines const MAJOR_LINES[] = {
+        {},
+        { { "Run out the guns! The Ashfleet has come to collect its due!",
+            "Ye picked the wrong ring to fight in, landlubbers. Powder's dry and so's my patience!" },
+          { "Trial by Fire! Every cannon, on my mark... FIRE!", "Reload and fire again! Sink 'em where they stand!",
+            "" },
+          "I've sailed through worse storms than you! Stand and fight, if ye dare!",
+          "The tide... turns... Remember the Ashfleet..." },
+        { { "THE FORGE AWAKENS. THE COLOSSUS ENDURES.",
+            "IRON DOES NOT YIELD. FLESH WILL." },
+          { "CORE TEMPERATURE CRITICAL. SHATTERING.", "SECOND RUPTURE. THE CORE WILL NOT HOLD YOU BACK.", "" },
+          "FORGE UNSTABLE. OVERPRESSURE IMMINENT.",
+          "SYSTEMS... FAILING... THE FORGE... GROWS COLD..." },
+        { { "Little flies... crawling into my web of cinders. How delicious.",
+            "My children are hungry, and you smell of ash and fear." },
+          { "Up, up into the dark! Let the webs burn around you!", "The storm of silk and fire returns!", "" },
+          "",
+          "My web... unravels..." },
+        { { "The furnace never sleeps, and neither shall you. Feed the flames!",
+            "I am the Warden of this forge. None leave it unburned." },
+          { "The cycle turns! Every vent, every fire, AWAKEN!", "Again the furnace roars! Burn, all of you!", "" },
+          "Meltdown! Let the whole furnace pour out!",
+          "The fires... go out..." },
+        { { "Champions of the Firepit! I have bled on this sand for a hundred waves. Show me you are worthy!",
+            "The crowd wants blood, and I always give the crowd what it wants!" },
+          { "Let's see you stand against the Ironbreaker!", "The Ashen Glaive sings for you!",
+            "Enough games. The Executioner's Blade ends this!" },
+          "THE FIREPIT ANSWERS! The whole arena burns with me!",
+          "You... are the champions now. The crowd... is yours..." },
+    };
+    char const* const LADDER_LINES[] = {
+        "You dare enter my ring? The crowd will cheer your fall!",
+        "Fresh meat for the Firepit! Come, die well!",
+        "I have waited long for a worthy fight. Do not disappoint me!",
+        "Another challenger? The last one barely lasted a minute.",
+        "Blood and fire! Let the crowd see you burn!",
+    };
+
     bool IsCarnage(uint32 wave)
     {
         return wave == 45 || wave == 60 || wave == 75 || wave == 90 || wave == 100 || wave == 105
@@ -587,7 +634,7 @@ namespace
         uint32 t1 = 0, t2 = 0, t3 = 0, t4 = 0;          // its abilities' timers
         std::vector<uint8> thresholds;                  // health % its phases (or weapons) come at
         std::vector<uint8> queued;                      // crossed, waiting for the running one to end
-        uint8 phase = 0, step = 0, enrageAt = 0, weapon = 0;
+        uint8 phase = 0, step = 0, enrageAt = 0, weapon = 0, phaseCount = 0;
         uint32 phaseMs = 0, stepMs = 0, exposedUntil = 0, edgeAt = 0;
         bool enraged = false, enragePending = false, side = false;
         float taken = 1.0f;
@@ -1481,7 +1528,12 @@ private:
             own->damage *= BossDamage(_wave);
         }
         if (spawn.boss && MajorAt(_wave))
+        {
             StartMajor(enemy, MajorAt(_wave));
+            enemy->Yell(MAJOR_LINES[MajorAt(_wave)].Enter[urand(0, 1)], LANG_UNIVERSAL);
+        }
+        else if (spawn.boss)
+            enemy->Yell(LADDER_LINES[urand(0, uint32(std::size(LADDER_LINES)) - 1)], LANG_UNIVERSAL);
         else if (spawn.boss && _wave >= MECHANICS_FROM)
             _bosses[enemy->GetGUID()] = { urand(5000, ERUPTION_EVERY_MS), urand(NOVA_EVERY_MS / 2, NOVA_EVERY_MS),
                 false };
@@ -2104,6 +2156,10 @@ private:
 
     void StartPhase(Creature* boss)
     {
+        uint8 index = _major.kind == MAJOR_CHAMPION ? _major.weapon : _major.phaseCount;
+        if (index < 3 && *MAJOR_LINES[_major.kind].Phase[index])
+            boss->Yell(MAJOR_LINES[_major.kind].Phase[index], LANG_UNIVERSAL);
+        ++_major.phaseCount;
         _major.phaseMs = _major.kind == MAJOR_MATRON ? WEBSTORM_MS : PHASE_MS;
         _major.step = 0;
         _major.stepMs = 0;
@@ -2206,6 +2262,8 @@ private:
     // the Firepit Answers (the Champion: the arena's edge ignites).
     void Enrage(Creature* boss)
     {
+        if (*MAJOR_LINES[_major.kind].Enrage)
+            boss->Yell(MAJOR_LINES[_major.kind].Enrage, LANG_UNIVERSAL);
         Enemy* own = EnemyOf(boss);
         switch (_major.kind)
         {
@@ -2275,6 +2333,8 @@ private:
 
     void EndMajor(Creature* boss)
     {
+        if (boss && !boss->IsAlive() && _major.kind)
+            boss->Yell(MAJOR_LINES[_major.kind].Fall, LANG_UNIVERSAL);
         if (boss)
         {
             boss->SetControlled(false, UNIT_STATE_ROOT);
