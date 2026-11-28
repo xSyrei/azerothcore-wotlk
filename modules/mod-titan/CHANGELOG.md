@@ -50,6 +50,10 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - **Fixed**: a client crash during the Ashfleet Captain's fight (an Ashfleet Deckhand's texture was too large).
 - Floor warnings no longer float over the arena's walls and fences, the powder keg's hazard stripes are thinner and
   softer, and exploding kegs and cannon lines no longer flood the screen in white.
+- **Floor warnings now count down properly**: the inner fill grows from the middle (a cone's tip, a line's centre)
+  to the edge and fills it exactly as the blow lands. Lines stay in one piece as they fill. Cannonball circles are
+  bigger (6 yards, 7 in the Captain's Final Stand), and the powder keg's warning is a plain circle that fills as its
+  fuse burns.
 - **Titanforged** pieces now carry a **prismatic socket** instead of doubled stats. Old Fireforged pieces keep what they
   have; the old famous-proc modifiers no longer roll.
 - **Marked for Carnage**: at waves 45, 60, 75, 90, 100, 105 and every 15 after, the boss must die within 5 minutes or

@@ -50,6 +50,7 @@
 #include <random>
 #include "WorldSession.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <map>
 #include <mutex>
@@ -109,10 +110,10 @@ namespace
         GO_FIRE_RIFT = 910147,                          // a Searing Nova's warning, under the boss
     };
     // The area decals (client-patch build_firepit_decals.py): each shape's outline (a faint fill, a bright rim)
-    // and its timer (the fill the server grows to the edge as the blow comes), a yard of radius (a line's piece: a
-    // yard either side of its axis, 2 yards long), scaled to the area; in six colours, 16 objects a colour (its 8
-    // outlines, then its 8 timers). Danger: get out. Safe: stand here. Soak: share it. Heal: a helpful area. Arcane:
-    // magic, something special. Frost: slowing, frozen ground.
+    // and its timer (GO_TIMER_FIRST: the fill that grows to the edge as the blow comes), a yard of radius (a line's
+    // piece: a yard either side of its axis, 2 yards long), scaled to the area; in six colours, 16 objects a colour
+    // (its 8 outlines, then 8 old timers no longer laid). Danger: get out. Safe: stand here. Soak: share it. Heal:
+    // a helpful area. Arcane: magic, something special. Frost: slowing, frozen ground.
     enum Decal : uint8
     {
         DECAL_CIRCLE, DECAL_RING, DECAL_CONE90, DECAL_CONE180, DECAL_CONE180_LARGE, DECAL_CONE120_LARGE,
@@ -122,7 +123,7 @@ namespace
     {
         DECAL_DANGER, DECAL_SAFE, DECAL_SOAK, DECAL_HEAL, DECAL_ARCANE, DECAL_FROST,
     };
-    constexpr uint32 GO_DECAL_FIRST = 910160, DECALS_A_COLOUR = 16, DECAL_TIMERS = 8;
+    constexpr uint32 GO_DECAL_FIRST = 910160, DECALS_A_COLOUR = 16;
     // Their textured overlays, laid over the fill in the colour's glow: runic (a sigil), cracked (molten cracks),
     // hazard (warning stripes), swirl (a smoky spiral); 48 objects a style (8 a colour) from GO_STYLE_FIRST.
     enum DecalStyle : int8
@@ -132,9 +133,14 @@ namespace
     };
     constexpr uint32 GO_STYLE_FIRST = 910256, STYLE_OBJECTS = 48, DECAL_SHAPES = 8;
     constexpr float DECAL_LARGE = 15.0f;                // beyond: the large cuts' thinner rims
-    constexpr float TIMER_LEAST = 0.08f;                // the timer's size as it starts, of the danger's
     constexpr float DECAL_LIFT = 0.15f;                 // yards above the floor (the models lie at their origin)
     constexpr uint32 TIMER_EVERY_MS = 100;
+    // The timers (the fill that grows to the edge as the blow comes): the client never redraws an object at a new
+    // size, so each grows in its own model, over one of these wind-ups (48 objects each, 8 a colour, from
+    // GO_TIMER_FIRST); a blast's is the longest that fits its warning, laid when that much of it is left.
+    constexpr uint32 GO_TIMER_FIRST = 910450, TIMER_OBJECTS = 48;
+    constexpr std::array<uint32, 11> TIMER_WIND_UPS_MS = { 1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000,
+        10000, 12000 };
     struct Ring
     {
         uint32 entry;
@@ -717,6 +723,13 @@ namespace
         uint32 novaMs;
         bool enraged;
     };
+    // A blast's timer waiting to be laid: its object (of TIMER_WIND_UPS_MS's first) and where.
+    struct TimerSpot
+    {
+        uint32 entry;
+        Position at;
+        float facing, scale;
+    };
     struct Blast
     {
         ObjectGuid source;                              // the boss
@@ -732,7 +745,8 @@ namespace
         bool physical = false;                          // a Physical blow, else Fire
         bool release = false;                           // its boss let go of its wind-up as it lands
         std::vector<ObjectGuid> markers;                // its decals (deleted as it lands)
-        std::vector<std::pair<ObjectGuid, float>> timers;   // its timers and their full size
+        std::vector<TimerSpot> timers;                  // its timers, laid as their wind-up's left reaches theirs
+        uint8 timerWindUp = 0;                          // its timers' TIMER_WIND_UPS_MS index
         uint32 total = 0;                               // its warning's ms in all
         uint8 colour = 0;                               // its decals' DecalColour
         int8 style = -1;                                // its decals' DecalStyle (STYLE_AUTO: StyleOf)
@@ -1941,25 +1955,18 @@ private:
         uint8 colour = DECAL_DANGER, int8 style = STYLE_PLAIN)
     {
         float z = FloorAt(at.GetPositionX(), at.GetPositionY()) + DECAL_LIFT;
-        uint32 first = GO_DECAL_FIRST + colour * DECALS_A_COLOUR + decal;
-        std::vector<uint32> entries = { first, first + DECAL_TIMERS };
+        std::vector<uint32> entries = { GO_DECAL_FIRST + colour * DECALS_A_COLOUR + decal };
         if (style > STYLE_PLAIN)
             entries.push_back(GO_STYLE_FIRST + uint32(style - 1) * STYLE_OBJECTS + colour * DECAL_SHAPES + decal);
         for (uint32 entry : entries)
-        {
-            GameObject* go = instance->SummonGameObject(entry, at.GetPositionX(), at.GetPositionY(), z,
-                facing, 0.0f, 0.0f, std::sin(facing / 2.0f), std::cos(facing / 2.0f), 0);
-            if (!go)
-                continue;
-            blast.markers.push_back(go->GetGUID());
-            if (entry == first + DECAL_TIMERS)
+            if (GameObject* go = instance->SummonGameObject(entry, at.GetPositionX(), at.GetPositionY(), z,
+                facing, 0.0f, 0.0f, std::sin(facing / 2.0f), std::cos(facing / 2.0f), 0))
             {
-                go->SetObjectScale(scale * TIMER_LEAST);
-                blast.timers.emplace_back(go->GetGUID(), scale);
-            }
-            else
                 go->SetObjectScale(scale);
-        }
+                blast.markers.push_back(go->GetGUID());
+            }
+        blast.timers.push_back({ colour * DECAL_SHAPES + uint32(decal), Position(at.GetPositionX(),
+            at.GetPositionY(), z), facing, scale });
     }
 
     // A lasting zone on the floor (a pool, a wall of fire, frozen ground): its decal and texture, no timer, until
@@ -2065,6 +2072,10 @@ private:
     void Telegraph(Blast& blast)
     {
         blast.total = std::max<uint32>(1, blast.ms);
+        blast.timerWindUp = 0;
+        while (blast.timerWindUp + 1u < TIMER_WIND_UPS_MS.size()
+            && TIMER_WIND_UPS_MS[blast.timerWindUp + 1] <= blast.ms)
+            ++blast.timerWindUp;
         uint8 colour = blast.colour;
         int8 style = StyleOf(blast);
         switch (blast.shape)
@@ -2115,25 +2126,35 @@ private:
             default:
                 break;
         }
+        LayTimers(blast);
     }
 
-    // The timers grown to their dangers' edges as the blows come.
+    // A blast's timers laid once its warning has no more left than their wind-up: each grows (in its model) from
+    // the middle (a cone's apex, a line's axis) to the edge just as the blow lands.
+    void LayTimers(Blast& blast)
+    {
+        if (blast.timers.empty() || blast.ms > TIMER_WIND_UPS_MS[blast.timerWindUp] + TIMER_EVERY_MS / 2)
+            return;
+        uint32 first = GO_TIMER_FIRST + uint32(blast.timerWindUp) * TIMER_OBJECTS;
+        for (TimerSpot const& spot : blast.timers)
+            if (GameObject* go = instance->SummonGameObject(first + spot.entry, spot.at.GetPositionX(),
+                spot.at.GetPositionY(), spot.at.GetPositionZ(), spot.facing, 0.0f, 0.0f, std::sin(spot.facing / 2.0f),
+                std::cos(spot.facing / 2.0f), 0))
+            {
+                go->SetObjectScale(spot.scale);
+                blast.markers.push_back(go->GetGUID());
+            }
+        blast.timers.clear();
+    }
+
     void GrowTimers(uint32 diff)
     {
         _timerMs += diff;
         if (_timerMs < TIMER_EVERY_MS)
             return;
         _timerMs = 0;
-        for (Blast const& blast : _blasts)
-        {
-            if (blast.timers.empty())
-                continue;
-            float done = 1.0f - float(blast.ms) / float(std::max<uint32>(1, blast.total));
-            float grown = TIMER_LEAST + (1.0f - TIMER_LEAST) * std::clamp(done, 0.0f, 1.0f);
-            for (auto const& [guid, full] : blast.timers)
-                if (GameObject* timer = instance->GetGameObject(guid))
-                    timer->SetObjectScale(full * grown);
-        }
+        for (Blast& blast : _blasts)
+            LayTimers(blast);
     }
 
     // ---- The blows' looks ------------------------------------------------------------------------------------
@@ -2371,7 +2392,7 @@ private:
         Blast fuse = Circle(at, KEG_RADIUS, KEG_SHARE);
         fuse.keg = keg->GetGUID();
         fuse.source = boss->GetGUID();
-        fuse.style = STYLE_HAZARD;
+        fuse.style = STYLE_PLAIN;
         Danger(boss, fuse, KEG_FUSE_MS);
         Announce("A lit Powder Keg rolls in: destroy it before it blows, or blow it next to the Captain!");
     }
@@ -2423,7 +2444,7 @@ private:
         {
             float a = frand(0.0f, 2.0f * float(M_PI)), d = frand(ARRIVAL_RADIUS + 6.0f, ARENA_RADIUS - 6.0f);
             float x = CENTER.GetPositionX() + d * std::cos(a), y = CENTER.GetPositionY() + d * std::sin(a);
-            CannonShot(boss, Position(x, y, FloorAt(x, y)), 4.0f, 2500);
+            CannonShot(boss, Position(x, y, FloorAt(x, y)), 6.0f, 2500);
         }
     }
 
@@ -2608,7 +2629,7 @@ private:
                 // Final Stand: the guns fire on every Hero, 9 sec apart.
                 if (_major.enraged && due(_major.t3, BROADSIDE_EVERY_MS))
                 {
-                    Volley(boss, 2, 4.0f, 3000);
+                    Volley(boss, 2, 6.0f, 3000);
                     Announce("BROADSIDE! The Ashfleet's guns are on you, keep moving!");
                 }
                 break;
@@ -2861,7 +2882,7 @@ private:
             ++_major.step;
             float angle = frand(0.0f, 2.0f * float(M_PI));
             if (_major.kind == MAJOR_CAPTAIN)           // Trial by Fire: a volley under every Hero, and more
-                Volley(boss, 3, 5.0f, 3500);
+                Volley(boss, 3, 7.0f, 3500);
             else if (_major.kind == MAJOR_COLOSSUS)
             {
                 float radius = frand(ARRIVAL_RADIUS + 6.0f, 40.0f);

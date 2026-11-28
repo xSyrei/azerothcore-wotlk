@@ -2658,6 +2658,20 @@ for _c, (_colour, (_fill, _timer, _core, _glow)) in enumerate(build_firepit_deca
             'textures': (f'{_tex}_timer',),
             'options': {'layers': ({'texture': 0, 'size': DECAL_SQUARE, 'height': 0.0, 'over': True, 'blend': 2,
                                     'tint': _tint(_timer), 'blp': f'FP_Decal_{_shape}_timer'},)}}
+# The timers the server lays (src/firepit.cpp TIMER_WIND_UPS_MS, LayTimers): the same fill, grown in the model over
+# each wind-up (the client never redraws an object at a new size), from the middle (a cone's apex; a line's axis,
+# across only, so its pieces stay joined) to the edge; 48 a wind-up (8 a colour), effects 7481 on, displays 9989 on.
+FIREPIT_WIND_UPS_MS = (1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000, 12000)
+for _w, _ms in enumerate(FIREPIT_WIND_UPS_MS):
+    for _c, (_colour, (_fill, _timer, _core, _glow)) in enumerate(build_firepit_decals.PALETTES.items()):
+        for _i, _shape in enumerate(FIREPIT_DECALS):
+            EFFECTS[f'FirepitTimer{_ms}_{_colour}_{_shape}'] = {
+                'model': f'FP_Timer{_ms}_{_colour}_{_shape}', 'effect': 7481 + _w * 48 + _c * 8 + _i,
+                'shape': 'zone', 'textures': (f'FP_Decals/{_shape}_timer',),
+                'options': {'layers': ({'texture': 0, 'size': DECAL_SQUARE, 'height': 0.0, 'over': True,
+                                        'blend': 2, 'tint': tuple(round(v / 255.0, 3) for v in _timer),
+                                        'grow': (_ms, _shape.startswith('line')),
+                                        'blp': f'FP_Decal_{_shape}_timer'},)}}
 # Their textured overlays (build_firepit_decals.STYLES: runic, cracked, hazard, swirl), laid over a decal's fill in its
 # colour's glow (drawn additive): 48 a style (6 colours x 8 shapes), effects 7289 on, displays 9797 on. On a circle
 # or a ring, the runic sigil and the swirl turn slowly.

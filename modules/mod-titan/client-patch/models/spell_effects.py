@@ -540,6 +540,9 @@ def _round_off(image, inner=0.55):
     return out
 
 
+GROW_LEAST, GROW_HOLD_MS = 0.06, 120000
+
+
 def ground_zone(*args, layers=()):
     """A zone lying on the ground for as long as the kit keeps it (a persistent area's world slot),
     after Legion's Darkness (cfx_demonhunter_darkness_state): flat squares just above the ground,
@@ -553,7 +556,10 @@ def ground_zone(*args, layers=()):
       props; the client sorts it among units by distance);
     - blp: the texture's own name in the client (shared by every model that names it: one file for all of them;
       the build keeps one copy), instead of <name>_<layer>;
-    - blend: BLEND_ALPHA (the default) or BLEND_ADD.
+    - blend: BLEND_ALPHA (the default) or BLEND_ADD;
+    - grow: (ms, across) grown from GROW_LEAST of its size to all of it over ms milliseconds once the model shows,
+      then held (the Stand lasts GROW_HOLD_MS more, longer than any use of it); across: only across (Y), as a line's
+      piece fills from its axis, its length kept (so its pieces stay joined).
 
     All unlit. Called as ground_zone(texture, ..., out_dir, name, client_dir,
     layers=...); one looping Stand. Writes <name>.m2, <name>00.skin and its BLPs into out_dir.
@@ -586,7 +592,8 @@ def ground_zone(*args, layers=()):
     reach = max(layer['size'] for layer in layers) / 2
     lo, hi = (-reach, -reach, 0.0), (reach, reach, 3.0)
     radius = math.dist(lo, hi) / 2
-    duration = 1000
+    growing = [layer['grow'][0] for layer in layers if layer.get('grow')]
+    duration = max(growing) + GROW_HOLD_MS if growing else 1000
 
     blob = Blob(0x130)
     name_ref = blob.add(name.encode() + b'\0', len(name) + 1)
@@ -605,8 +612,13 @@ def ground_zone(*args, layers=()):
                                         [tuple(comp_quat(c) for c in _turn_z(way * math.pi * i / 2))
                                          for i in range(5)])], '4h')
             rotation = rotation[:2] + struct.pack('<h', turning.index(layer)) + rotation[4:]
+        scale = empty_track()
+        if layer.get('grow'):
+            ms, across = layer['grow']
+            least = (1.0, GROW_LEAST, 1.0) if across else (GROW_LEAST, GROW_LEAST, 1.0)
+            scale = track(blob, 1, [([0, ms, duration], [least, (1.0, 1.0, 1.0), (1.0, 1.0, 1.0)])], '3f')
         bones += struct.pack('<iIhHHH', -1, BONE_TRANSFORMED, -1, 0, 0, 0)
-        bones += empty_track() + rotation + empty_track() + struct.pack('<3f', 0, 0, 0)
+        bones += empty_track() + rotation + scale + struct.pack('<3f', 0, 0, 0)
     bones_ref = blob.add(bones, len(layers))
     key_bones = blob.array('h', [-1])
     vertices_ref = blob.add(vertices, vertex_count)

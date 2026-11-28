@@ -75,6 +75,13 @@ GAMEOBJECTS = [
       for c, colour in enumerate(('danger', 'safe', 'soak', 'heal', 'arcane', 'frost'))
       for i, shape in enumerate(('circle', 'ring', 'cone90', 'cone180', 'cone180L', 'cone120L', 'line_mid',
                                  'line_cap'))],
+    # The timers that grow in their models (patch_runes.FIREPIT_WIND_UPS_MS), 48 a wind-up from 9989 (8 a colour).
+    *[(9989 + 48 * w + 8 * c + i, f'Spells\\Emberforge\\FP_Timer{ms}_{colour}_{shape}.mdx', 10,
+       (-1.1, -1.1, 0.0, 1.1, 1.1, 0.3))
+      for w, ms in enumerate((1000, 1500, 2000, 2500, 3000, 4000, 5000, 6000, 8000, 10000, 12000))
+      for c, colour in enumerate(('danger', 'safe', 'soak', 'heal', 'arcane', 'frost'))
+      for i, shape in enumerate(('circle', 'ring', 'cone90', 'cone180', 'cone180L', 'cone120L', 'line_mid',
+                                 'line_cap'))],
 ]
 
 # (display id, a Blizzard display of the race and sex to copy (its model and sounds), bake_npc.NPCS's name, bounding

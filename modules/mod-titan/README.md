@@ -1175,6 +1175,11 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
 - **Creature textures** (`creature_gltf_to_m2.MAX_TEXTURE`): a glTF creature's textures are shrunk to 1024 pixels a
   side at most; the 3.3.5 client crashes loading a larger (uncompressed, palettized) BLP. Decals sit on the arena's
   floor as `FloorAt` finds it, probed from just above the centre's height (never the stands or the rim's fences).
+- **Decal timers** (`LayTimers`, `TIMER_WIND_UPS_MS`; GO 910450 + 48 x wind-up + 8 x colour + shape, displays
+  9989 on): the client never redraws a game object at a new scale, so each timer grows in its own model (ground_zone
+  `grow`: a Stand of the wind-up plus a 2 minute hold, a bone scale from 6% to all; a line's piece across only).
+  A blast takes the longest wind-up (1 to 12 sec) that fits its warning, and its timers are laid when that much is
+  left.
 - **The Ashfleet Captain's fight** (wave 45; `RunOutTheGuns`, `CannonShot`, `LaunchCannonballs`, `Volley`): six
   cannons (910448) and kegs (910449) round the rim; cannonballs (93492) fired from the nearest so they land as their
   warnings fill. Lit Powder Kegs (creature 910159, display 26252; `RollKeg`): a 12 sec fuse as a danger decal, its
