@@ -4073,7 +4073,19 @@ public:
 class titan_firepit_unit : public UnitScript
 {
 public:
-    titan_firepit_unit() : UnitScript("titan_firepit_unit", true, { UNITHOOK_ON_DAMAGE, UNITHOOK_ON_HEAL }) { }
+    titan_firepit_unit() : UnitScript("titan_firepit_unit", true, { UNITHOOK_ON_DAMAGE, UNITHOOK_ON_HEAL,
+        UNITHOOK_ON_UNIT_DEATH }) { }
+
+    // Nothing in the Firepit drops anything (no items, no coin, no skinning): the end-of-run cache is its only loot.
+    void OnUnitDeath(Unit* unit, Unit* /*killer*/) override
+    {
+        Creature* creature = unit ? unit->ToCreature() : nullptr;
+        if (!creature || !RunOf(creature->GetMap()))
+            return;
+        creature->loot.clear();
+        creature->RemoveDynamicFlag(UNIT_DYNFLAG_LOOTABLE);
+        creature->RemoveUnitFlag(UNIT_FLAG_SKINNABLE);
+    }
 
     void OnDamage(Unit* attacker, Unit* victim, uint32& damage) override
     {
