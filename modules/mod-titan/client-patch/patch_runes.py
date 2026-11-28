@@ -2583,6 +2583,43 @@ EFFECTS.update({
                              {'texture': 2, 'tint': VERDANT_MOTE, 'alpha': 0.9, 'turn': 3.0, 'pulse': 0.8,
                               'cards': puffs(5, 0.6, 0.6, 0.14, 0.25)})}},
 })
+# Spiritbloom's and Temporal Anomaly's looks: retail's own meshes and animation (cfx_evoker_spiritbloom_* and
+# cfx_evoker_temporalanomaly*, spells/EVO_Spiritbloom and EVO_TemporalAnomaly). The Spiritbloom channel's two
+# Emerald Dream flower meshes are left out (their texture was not in the export). Temporal Anomaly's bubble is
+# retail's 2.6 yards across, grown to about 6.5. Reversion's heal over time has no glow of its own in retail: ours,
+# from its impact's textures, is a bronze light breathing at the chest, a ring turning about it and golden wisps.
+BLOOM, ANOMALY, REVERSION = 'EVO_Spiritbloom', 'EVO_TemporalAnomaly', 'EVO_Reversion'
+BRONZE, PALE_BRONZE = (1.0, 0.75, 0.35), (1.0, 0.88, 0.6)
+EFFECTS.update({
+    'SpiritbloomCast': {'model': 'EVO_SpiritbloomCast', 'effect': 7186, 'shape': 'retail', 'textures': (),
+                        'options': {'export': f'{BLOOM}/cfx_evoker_spiritbloom_cast.gltf'}},
+    'SpiritbloomChannel': {'model': 'EVO_SpiritbloomChannel', 'effect': 7187, 'shape': 'retail', 'textures': (),
+                           'options': {'export': f'{BLOOM}/cfx_evoker_spiritbloom_channel.gltf',
+                                       'meshes': (0, 1, 2, 5, 6, 7)}},
+    'SpiritbloomImpact': {'model': 'EVO_SpiritbloomImpact', 'effect': 7188, 'shape': 'retail', 'textures': (),
+                          'options': {'export': f'{BLOOM}/cfx_evoker_spiritbloom_impact.gltf', 'lift': 1.0}},
+    'TemporalAnomalyPrecast': {'model': 'EVO_TemporalAnomalyPrecast', 'effect': 7189, 'shape': 'retail',
+                               'textures': (),
+                               'options': {'export': f'{ANOMALY}/cfx_evoker_temporalanomaly_precast.gltf'}},
+    'TemporalAnomaly': {'model': 'EVO_TemporalAnomaly', 'effect': 7190, 'shape': 'retail', 'textures': (),
+                        'options': {'export': f'{ANOMALY}/cfx_evoker_temporalanomaly.gltf', 'scale': 2.5,
+                                    'center': True, 'lift': 1.5}},
+    'TemporalAnomalyImpact': {'model': 'EVO_TemporalAnomalyImpact', 'effect': 7191, 'shape': 'retail',
+                              'textures': (),
+                              'options': {'export': f'{ANOMALY}/cfx_evoker_temporalanomaly_impact.gltf',
+                                          'lift': 1.0}},
+    'ReversionState': {'model': 'EVO_ReversionState', 'effect': 7192, 'shape': 'mist',
+                       'textures': (f'{REVERSION}/7fx_alphamask_glow_yelloworange',
+                                    f'{REVERSION}/11fx_voidorbexplode01_3221733',
+                                    f'{REVERSION}/7fx_smoke_wispymask_yellow'),
+                       'options': {'layers': (
+                           {'texture': 0, 'tint': BRONZE, 'alpha': 0.35, 'pulse': 2.0,
+                            'cards': ((0.0, 1.0, 1.6),)},
+                           {'texture': 1, 'tint': PALE_BRONZE, 'alpha': 0.35, 'pulse': 2.0,
+                            'cards': ((0.0, 1.0, 1.4),)},
+                           {'texture': 2, 'sheet': (2, 2), 'flip': 0, 'tint': BRONZE, 'alpha': 0.7, 'turn': 4.0,
+                            'pulse': 1.4, 'cards': puffs(4, 0.55, 0.5, 0.5, 0.25)})}},
+})
 SPELLS += [
     # Scarlet Benediction.
     buff(93400, 'Rune of Scarlet Benediction', SCARLET_ICON,

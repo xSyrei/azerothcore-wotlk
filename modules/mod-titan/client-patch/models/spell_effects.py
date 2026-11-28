@@ -1216,9 +1216,10 @@ def retail_effect(out_dir, name, client_dir, export, tint=None, brightness=1.0, 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         (tmp / 'textures').mkdir()
-        for file in export.parent.glob(f'{export.stem}*'):
-            if file.suffix in ('.gltf', '.bin'):
-                (tmp / file.name).write_bytes(file.read_bytes())
+        # The export and the buffers it names only: another export beside it may share its name's start
+        # (cfx_evoker_temporalanomaly and cfx_evoker_temporalanomaly_precast), and the converter reads one glTF.
+        for file in [export] + [export.parent / buffer['uri'] for buffer in gltf['buffers']]:
+            (tmp / file.name).write_bytes(file.read_bytes())
         for texture in used:
             with Image.open(export.parent / f'{texture}.png') as image:
                 (recolor(image, tint, brightness) if tint else image.convert('RGBA')).save(

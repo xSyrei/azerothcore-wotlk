@@ -1,0 +1,1310 @@
+{
+	"asset": {
+		"version": "2.0",
+		"generator": "wow.export v0.2.21 win-x64 [01a1b2f4-1a35-7000-9849-075ee4fa5b50]"
+	},
+	"nodes": [
+		{
+			"name": "cfx_evoker_temporalanomaly_precast",
+			"children": [
+				1,
+				20,
+				21,
+				22
+			]
+		},
+		{
+			"name": "cfx_evoker_temporalanomaly_precast_skeleton",
+			"children": [
+				2,
+				4,
+				8,
+				10,
+				12,
+				14,
+				16,
+				18
+			]
+		},
+		{
+			"name": "bone_0_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				3
+			]
+		},
+		{
+			"name": "bone_0"
+		},
+		{
+			"name": "bone_1_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				5
+			]
+		},
+		{
+			"name": "bone_1",
+			"children": [
+				6
+			]
+		},
+		{
+			"name": "bone_2_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				7
+			]
+		},
+		{
+			"name": "bone_2"
+		},
+		{
+			"name": "bone_3_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				9
+			]
+		},
+		{
+			"name": "bone_3"
+		},
+		{
+			"name": "bone_4_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				11
+			]
+		},
+		{
+			"name": "bone_4"
+		},
+		{
+			"name": "bone_5_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				13
+			]
+		},
+		{
+			"name": "bone_5"
+		},
+		{
+			"name": "bone_6_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				15
+			]
+		},
+		{
+			"name": "bone_6"
+		},
+		{
+			"name": "bone_7_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				17
+			]
+		},
+		{
+			"name": "bone_7"
+		},
+		{
+			"name": "bone_8_p",
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"children": [
+				19
+			]
+		},
+		{
+			"name": "bone_8"
+		},
+		{
+			"name": "cfx_evoker_temporalanomaly_precast_Geoset0",
+			"mesh": 0,
+			"skin": 0
+		},
+		{
+			"name": "cfx_evoker_temporalanomaly_precast_Geoset1",
+			"mesh": 1,
+			"skin": 0
+		},
+		{
+			"name": "cfx_evoker_temporalanomaly_precast_Geoset2",
+			"mesh": 2,
+			"skin": 0
+		}
+	],
+	"scenes": [
+		{
+			"name": "cfx_evoker_temporalanomaly_precast_Scene",
+			"nodes": [
+				0
+			]
+		}
+	],
+	"buffers": [
+		{
+			"byteLength": 195444,
+			"uri": "cfx_evoker_temporalanomaly_precast.bin"
+		},
+		{
+			"uri": "cfx_evoker_temporalanomaly_precast_anim0-0.bin",
+			"byteLength": 18840
+		},
+		{
+			"uri": "cfx_evoker_temporalanomaly_precast_anim158-0.bin",
+			"byteLength": 944
+		},
+		{
+			"uri": "cfx_evoker_temporalanomaly_precast_anim159-0.bin",
+			"byteLength": 704
+		}
+	],
+	"bufferViews": [
+		{
+			"buffer": 0,
+			"byteLength": 45324,
+			"byteOffset": 0,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 45324,
+			"byteOffset": 45324,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 15108,
+			"byteOffset": 90648,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 15108,
+			"byteOffset": 105756,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 576,
+			"byteOffset": 120864
+		},
+		{
+			"buffer": 1,
+			"byteLength": 40,
+			"byteOffset": 0,
+			"name": "SCALE_TIMESTAMPS_0_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 120,
+			"byteOffset": 40,
+			"name": "SCALE_VALUES_0_0"
+		},
+		{
+			"buffer": 3,
+			"byteLength": 52,
+			"byteOffset": 0,
+			"name": "SCALE_TIMESTAMPS_0_2"
+		},
+		{
+			"buffer": 3,
+			"byteLength": 156,
+			"byteOffset": 52,
+			"name": "SCALE_VALUES_0_2"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 36,
+			"byteOffset": 160,
+			"name": "SCALE_TIMESTAMPS_1_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 108,
+			"byteOffset": 196,
+			"name": "SCALE_VALUES_1_0"
+		},
+		{
+			"buffer": 2,
+			"byteLength": 236,
+			"byteOffset": 0,
+			"name": "SCALE_TIMESTAMPS_1_1"
+		},
+		{
+			"buffer": 2,
+			"byteLength": 708,
+			"byteOffset": 236,
+			"name": "SCALE_VALUES_1_1"
+		},
+		{
+			"buffer": 3,
+			"byteLength": 124,
+			"byteOffset": 208,
+			"name": "SCALE_TIMESTAMPS_1_2"
+		},
+		{
+			"buffer": 3,
+			"byteLength": 372,
+			"byteOffset": 332,
+			"name": "SCALE_VALUES_1_2"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 3604,
+			"byteOffset": 304,
+			"name": "ROT_TIMESTAMPS_2_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 14416,
+			"byteOffset": 3908,
+			"name": "ROT_VALUES_2_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 124,
+			"byteOffset": 18324,
+			"name": "SCALE_TIMESTAMPS_2_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 372,
+			"byteOffset": 18448,
+			"name": "SCALE_VALUES_2_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 4,
+			"byteOffset": 18820,
+			"name": "ROT_TIMESTAMPS_5_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 16,
+			"byteOffset": 18824,
+			"name": "ROT_VALUES_5_0"
+		},
+		{
+			"buffer": 0,
+			"byteLength": 30216,
+			"byteOffset": 121440,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 30216,
+			"byteOffset": 151656,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 10200,
+			"byteOffset": 181872,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 3360,
+			"byteOffset": 192072,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 12,
+			"byteOffset": 195432,
+			"target": 34963
+		}
+	],
+	"accessors": [
+		{
+			"name": "POSITION",
+			"bufferView": 0,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 3777,
+			"type": "VEC3",
+			"min": [
+				-0.3106662929058075,
+				-0.5584810376167297,
+				-0.558474063873291
+			],
+			"max": [
+				0.2799922227859497,
+				0.5584810376167297,
+				0.558474063873291
+			]
+		},
+		{
+			"name": "NORMAL",
+			"bufferView": 1,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 3777,
+			"type": "VEC3",
+			"min": [
+				-0.9996190071105957,
+				-0.9997367858886719,
+				-0.9988678097724915
+			],
+			"max": [
+				0.9999878406524658,
+				0.999454915523529,
+				0.9997170567512512
+			]
+		},
+		{
+			"name": "JOINTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 3777,
+			"type": "VEC4",
+			"bufferView": 2,
+			"min": [
+				0,
+				0,
+				0,
+				0
+			],
+			"max": [
+				2,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "WEIGHTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 3777,
+			"normalized": true,
+			"type": "VEC4",
+			"bufferView": 3,
+			"min": [
+				255,
+				0,
+				0,
+				0
+			],
+			"max": [
+				255,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "INV_BIND_MATRICES",
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 9,
+			"type": "MAT4",
+			"bufferView": 4,
+			"min": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1
+			],
+			"max": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1
+			]
+		},
+		{
+			"name": "SCALE_TIMESTAMPS_0_0",
+			"bufferView": 5,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1
+			],
+			"count": 10
+		},
+		{
+			"name": "SCALE_VALUES_0_0",
+			"bufferView": 6,
+			"byteOffset": 0,
+			"type": "VEC3",
+			"componentType": 5126,
+			"min": [
+				0.010000002570450306,
+				0.009999998845160007,
+				0.010000000707805157
+			],
+			"max": [
+				1.1644753217697144,
+				1.1644748449325562,
+				1.1644750833511353
+			],
+			"count": 10
+		},
+		{
+			"name": "SCALE_TIMESTAMPS_0_2",
+			"bufferView": 7,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1
+			],
+			"count": 13
+		},
+		{
+			"name": "SCALE_VALUES_0_2",
+			"bufferView": 8,
+			"byteOffset": 0,
+			"type": "VEC3",
+			"componentType": 5126,
+			"min": [
+				0.010000002570450306,
+				0.009999998845160007,
+				0.010000000707805157
+			],
+			"max": [
+				1.1498056650161743,
+				1.1498051881790161,
+				1.1498054265975952
+			],
+			"count": 13
+		},
+		{
+			"name": "SCALE_TIMESTAMPS_1_0",
+			"bufferView": 9,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1
+			],
+			"count": 9
+		},
+		{
+			"name": "SCALE_VALUES_1_0",
+			"bufferView": 10,
+			"byteOffset": 0,
+			"type": "VEC3",
+			"componentType": 5126,
+			"min": [
+				0.11157569289207458,
+				0.11157569289207458,
+				0.11157569289207458
+			],
+			"max": [
+				1.1257747411727905,
+				1.1257747411727905,
+				1.1257747411727905
+			],
+			"count": 9
+		},
+		{
+			"name": "SCALE_TIMESTAMPS_1_1",
+			"bufferView": 11,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				2
+			],
+			"count": 59
+		},
+		{
+			"name": "SCALE_VALUES_1_1",
+			"bufferView": 12,
+			"byteOffset": 0,
+			"type": "VEC3",
+			"componentType": 5126,
+			"min": [
+				0.9236909747123718,
+				0.9236909747123718,
+				0.9236909747123718
+			],
+			"max": [
+				1.1879669427871704,
+				1.1879669427871704,
+				1.1879669427871704
+			],
+			"count": 59
+		},
+		{
+			"name": "SCALE_TIMESTAMPS_1_2",
+			"bufferView": 13,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1
+			],
+			"count": 31
+		},
+		{
+			"name": "SCALE_VALUES_1_2",
+			"bufferView": 14,
+			"byteOffset": 0,
+			"type": "VEC3",
+			"componentType": 5126,
+			"min": [
+				0.19818982481956482,
+				0.19818982481956482,
+				0.19818982481956482
+			],
+			"max": [
+				1.0484254360198975,
+				1.0484254360198975,
+				1.0484254360198975
+			],
+			"count": 31
+		},
+		{
+			"name": "ROT_TIMESTAMPS_2_0",
+			"bufferView": 15,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1
+			],
+			"count": 901
+		},
+		{
+			"name": "ROT_VALUES_2_0",
+			"bufferView": 16,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0,
+				-0.70709228515625,
+				-0.000030517578125,
+				-0.999969482421875
+			],
+			"max": [
+				0.70709228515625,
+				0.000030517578125,
+				0,
+				1
+			],
+			"count": 901
+		},
+		{
+			"name": "SCALE_TIMESTAMPS_2_0",
+			"bufferView": 17,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1
+			],
+			"count": 31
+		},
+		{
+			"name": "SCALE_VALUES_2_0",
+			"bufferView": 18,
+			"byteOffset": 0,
+			"type": "VEC3",
+			"componentType": 5126,
+			"min": [
+				0.9899998307228088,
+				0.9900000095367432,
+				0.9899997711181641
+			],
+			"max": [
+				1.0099998712539673,
+				1.0099998712539673,
+				1.0099998712539673
+			],
+			"count": 31
+		},
+		{
+			"name": "ROT_TIMESTAMPS_5_0",
+			"bufferView": 19,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				1
+			],
+			"count": 1
+		},
+		{
+			"name": "ROT_VALUES_5_0",
+			"bufferView": 20,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0.5,
+				-0.5,
+				-0.5,
+				0.5
+			],
+			"max": [
+				0.5,
+				-0.5,
+				-0.5,
+				0.5
+			],
+			"count": 1
+		},
+		{
+			"name": "TEXCOORD_0",
+			"bufferView": 21,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 3777,
+			"type": "VEC2",
+			"min": [
+				-2.1404856909157388e-7,
+				-0.40748119354248047
+			],
+			"max": [
+				1.0046920776367188,
+				1.4434657096862793
+			]
+		},
+		{
+			"name": "TEXCOORD_1",
+			"bufferView": 22,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 3777,
+			"type": "VEC2",
+			"min": [
+				-2.1404856909157388e-7,
+				-4.76837158203125e-7
+			],
+			"max": [
+				1.0000001192092896,
+				1.0000004768371582
+			]
+		},
+		{
+			"bufferView": 23,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 5100,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 24,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 1680,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 25,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 6,
+			"type": "SCALAR"
+		}
+	],
+	"meshes": [
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 21,
+						"TEXCOORD_1": 22
+					},
+					"indices": 23,
+					"mode": 4,
+					"material": 10
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 21,
+						"TEXCOORD_1": 22
+					},
+					"indices": 24,
+					"mode": 4,
+					"material": 12
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 21,
+						"TEXCOORD_1": 22
+					},
+					"indices": 25,
+					"mode": 4,
+					"material": 14
+				}
+			]
+		}
+	],
+	"scene": 0,
+	"skins": [
+		{
+			"name": "cfx_evoker_temporalanomaly_precast_Armature",
+			"joints": [
+				3,
+				5,
+				7,
+				9,
+				11,
+				13,
+				15,
+				17,
+				19
+			],
+			"inverseBindMatrices": 4,
+			"skeleton": 0
+		}
+	],
+	"animations": [
+		{
+			"samplers": [
+				{
+					"input": 5,
+					"interpolation": "LINEAR",
+					"output": 6
+				},
+				{
+					"input": 9,
+					"interpolation": "LINEAR",
+					"output": 10
+				},
+				{
+					"input": 15,
+					"interpolation": "LINEAR",
+					"output": 16
+				},
+				{
+					"input": 17,
+					"interpolation": "LINEAR",
+					"output": 18
+				},
+				{
+					"input": 19,
+					"interpolation": "STEP",
+					"output": 20
+				}
+			],
+			"channels": [
+				{
+					"sampler": 0,
+					"target": {
+						"node": 3,
+						"path": "scale"
+					}
+				},
+				{
+					"sampler": 1,
+					"target": {
+						"node": 5,
+						"path": "scale"
+					}
+				},
+				{
+					"sampler": 2,
+					"target": {
+						"node": 7,
+						"path": "rotation"
+					}
+				},
+				{
+					"sampler": 3,
+					"target": {
+						"node": 7,
+						"path": "scale"
+					}
+				},
+				{
+					"sampler": 4,
+					"target": {
+						"node": 13,
+						"path": "rotation"
+					}
+				}
+			],
+			"name": "Stand (ID 0 variation 0)"
+		},
+		{
+			"samplers": [
+				{
+					"input": 11,
+					"interpolation": "LINEAR",
+					"output": 12
+				}
+			],
+			"channels": [
+				{
+					"sampler": 0,
+					"target": {
+						"node": 5,
+						"path": "scale"
+					}
+				}
+			],
+			"name": "Hold (ID 158 variation 0)"
+		},
+		{
+			"samplers": [
+				{
+					"input": 7,
+					"interpolation": "LINEAR",
+					"output": 8
+				},
+				{
+					"input": 13,
+					"interpolation": "LINEAR",
+					"output": 14
+				}
+			],
+			"channels": [
+				{
+					"sampler": 0,
+					"target": {
+						"node": 3,
+						"path": "scale"
+					}
+				},
+				{
+					"sampler": 1,
+					"target": {
+						"node": 5,
+						"path": "scale"
+					}
+				}
+			],
+			"name": "Decay (ID 159 variation 0)"
+		}
+	],
+	"images": [
+		{
+			"uri": "8fx_headingvelocity_01.png"
+		},
+		{
+			"uri": "7fx_arcane_starfield_holy.png"
+		},
+		{
+			"uri": "sand_scroll.png"
+		},
+		{
+			"uri": "smoke_generic_paintymask02_blend.png"
+		},
+		{
+			"uri": "8fx_bloodblur_yellowa.png"
+		},
+		{
+			"uri": "9fx_sandscroll_a.png"
+		},
+		{
+			"uri": "cfx_evoker_wingbuffet_cast_4422420.png"
+		},
+		{
+			"uri": "10fx_energygeo_prism.png"
+		},
+		{
+			"uri": "fx_thornbloom_travele_4422419.png"
+		},
+		{
+			"uri": "9fx_wavescroll_a.png"
+		},
+		{
+			"uri": "11fx_greenimpact04_4236668.png"
+		},
+		{
+			"uri": "timewalkers_hearthstone_4078624.png"
+		},
+		{
+			"uri": "timewalkers_hearthstone_4078639.png"
+		},
+		{
+			"uri": "timewalkers_hearthstone_4078641.png"
+		},
+		{
+			"uri": "7fx_alphamask_glow_yelloworange.png"
+		},
+		{
+			"uri": "10fx_blackflare_00.png"
+		}
+	],
+	"textures": [
+		{
+			"source": 0
+		},
+		{
+			"source": 1
+		},
+		{
+			"source": 2
+		},
+		{
+			"source": 3
+		},
+		{
+			"source": 4
+		},
+		{
+			"source": 5
+		},
+		{
+			"source": 6
+		},
+		{
+			"source": 7
+		},
+		{
+			"source": 8
+		},
+		{
+			"source": 9
+		},
+		{
+			"source": 10
+		},
+		{
+			"source": 11
+		},
+		{
+			"source": 12
+		},
+		{
+			"source": 13
+		},
+		{
+			"source": 14
+		},
+		{
+			"source": 15
+		}
+	],
+	"materials": [
+		{
+			"name": "8fx_headingvelocity_01",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 0
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "7fx_arcane_starfield_holy",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 1
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "sand_scroll",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 2
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "smoke_generic_paintymask02_blend",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 3
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "8fx_bloodblur_yellowa",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 4
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "9fx_sandscroll_a",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 5
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "cfx_evoker_wingbuffet_cast_4422420",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 6
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "10fx_energygeo_prism",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 7
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "fx_thornbloom_travele_4422419",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 8
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "9fx_wavescroll_a",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 9
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "11fx_greenimpact04_4236668",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 10
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "timewalkers_hearthstone_4078624",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 11
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "timewalkers_hearthstone_4078639",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 12
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "timewalkers_hearthstone_4078641",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 13
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "7fx_alphamask_glow_yelloworange",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 14
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "10fx_blackflare_00",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 15
+				},
+				"metallicFactor": 0
+			}
+		}
+	]
+}
