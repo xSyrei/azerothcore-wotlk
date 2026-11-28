@@ -4,6 +4,7 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-27: The Firepit Ignites
 
+- **A new Firepit loading screen**: the arena's gate opening on a packed, burning ring.
 - **The cache is the only loot**: enemies and bosses in the Firepit no longer drop items, coin or skins; everything
   you earn waits in the end-of-run cache.
 - **A new end-of-run cache**: the Spoils of the Firepit now come in a grand challenge chest, which opens as you

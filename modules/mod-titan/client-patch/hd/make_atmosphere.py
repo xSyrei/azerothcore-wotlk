@@ -16,8 +16,8 @@ holds up to 16 (time of day, value) keys.
 - The Firepit's own map (FIREPIT_MAP, "The Firepit"): Trial of the Champion's arena (its Directory, so its very
   geometry; map 650's MapDifficulty rows) under its own sky. A Light for the whole map with its own LightParams (no
   skybox: the sky is its colours) and bands, all day the same: warm ambient and diffuse light, an ember fog that starts
-  near and thickens to orange, a red sky. Its loading screen is the Firepit's painting
-  (icons/ui/FirepitBackground.png). The server's own copy: titan_firepit.sql (map_dbc, mapdifficulty_dbc) and the
+  near and thickens to orange, a red sky. Its loading screen: the arena's gate opening on a crowded ring
+  (icons/ui/FirepitLoading.png; the 4:3 screen its middle). The server's own copy: titan_firepit.sql (map_dbc, mapdifficulty_dbc) and the
   ac-firepit-map service (docker-compose.yml: map 650's terrain data as the map's).
 
 Usage: python3 make_atmosphere.py <dir with original DBCs (Light, LightParams, LightIntBand, LightFloatBand)>
@@ -54,7 +54,7 @@ FIREPIT_MAP, FIREPIT_SOURCE_MAP, FIREPIT_NAME = 760, 650, 'The Firepit'
 FIREPIT_AT, FIREPIT_REACH = (0.0, 0.0, 0.0), (0.0, 0.0)
 FIREPIT_TEMPLATE_PARAMS = 836           # Trial of the Champion's clear-weather params: the rest of its bands kept
 FIREPIT_LOADING = 'Interface\\Glues\\LoadingScreens\\LoadScreenFirepit'
-FIREPIT_PAINTING = HERE.parent / 'icons' / 'ui' / 'FirepitBackground.png'
+FIREPIT_PAINTING = HERE.parent / 'icons' / 'ui' / 'FirepitLoading.png'      # its loading screen's own art
 FIREPIT_COLOURS = {                     # LightIntBand band: colour (all day)
     0: (138, 72, 46),                   # ambient: warm, so faces and armour read
     1: (255, 156, 92),                  # diffuse
