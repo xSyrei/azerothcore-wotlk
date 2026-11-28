@@ -2389,6 +2389,15 @@ ICONS += [THUNDERBOMB_ICON, 'Spell_Shaman_LavaFlow', 'Spell_Nature_StormReach', 
           'Ability_Warlock_MoltenCore', 'Ability_Shaman_Stormstrike', 'Spell_Nature_UnleashedRage',
           'Spell_Fire_MoltenBlood', 'Spell_Shaman_StaticShock', 'Spell_Nature_LightningOverload',
           'Spell_Shaman_ThunderStorm', 'Spell_Nature_EarthShock', 'Spell_Nature_LightningShield']
+# The Firepit's world affixes (src/firepit.cpp): Cinder Winds' slow, Searing Brand's mark (its burn the server's).
+SPELLS += [
+    harmful(93480, 'Cinder Winds', 'Spell_Fire_Fire', 'Movement speed reduced by 30%.', DURATION_3S,
+            aura(AURA_MOD_DECREASE_SPEED, -30, 0), FIRE),
+    harmful(93481, 'Searing Brand', 'Spell_Fire_Immolation',
+            'Burning for 2% of your maximum health every second. Stay 8 yards from everyone for 3 sec to put it out.',
+            DURATION_8S, aura(AURA_DUMMY, 1, 0), FIRE),
+]
+ICONS += ['Spell_Fire_Fire', 'Spell_Fire_Immolation']
 # The replacements' hits (and Fulmination) as their bases' Shaman family, the Hero's modifiers on them: whatever
 # raises Stormstrike's hits, Lava Lash, Lightning Bolt or Earth Shock (talents, glyphs, the runes' own) raises them;
 # no spell power of their own (spell_bonus_data, titan_runes.sql).

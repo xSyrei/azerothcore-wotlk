@@ -207,6 +207,8 @@ server("H,10,42,37,1,2,3,0")
 check(debug.hud.wave.text == "Wave 10" and debug.hud.boss.text == "BOSS WAVE", "a boss wave says so")
 check(debug.hud.timer.text == "0:42" and debug.hud.bar.value == 42 and debug.hud.enemies.text:find("37", 1, true)
     and debug.hud.standing.text:find("2|r / 3", 1, true), "time left on the bar, enemies and Heroes standing")
+server("X,Molten Ground,Emberfall")
+check(debug.hud.affixes.text == "Affixes: Molten Ground, Emberfall", "the active affixes on the tracker")
 server("H,12,30,16,0,2,2,0,2,16,5")
 check(debug.hud.boss.text:find("PRESSURE +10%", 1, true)
     and debug.hud.enemies.text:find("16", 1, true) and debug.hud.enemies.text:find("/ 16 +5", 1, true),

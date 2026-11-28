@@ -45,6 +45,7 @@
 #include "SpellMgr.h"
 #include "TemporarySummon.h"
 #include "WorldPacket.h"
+#include <random>
 #include "WorldSession.h"
 #include <algorithm>
 #include <cmath>
@@ -127,6 +128,62 @@ namespace
     // - Searing Nova (30+): the boss roots itself and gathers flame; 4 sec later, 50% to anyone within 12 yd of it.
     // - Enrage (45+): under 30% health, the boss's damage x1.5.
     constexpr uint32 MECHANICS_FROM = 15, NOVA_FROM = 30, ENRAGE_FROM = 45;
+
+    // World affixes (The Firepit Ignites): arena-wide rules, not buffs on enemies. A new one enters at waves 10, 20,
+    // 30 and 40; from 50, every 10 waves the oldest gives way to the next; four at most. The order is the week's own
+    // (a seed of the week: every group sees the same schedule; a checkpoint start the set of its wave). Each one's
+    // timer starts fresh as it enters. Their damage is a share of the Hero's maximum health; no two major dangers
+    // resolve within 3 sec of one another (the later waits).
+    enum Affix : uint8
+    {
+        AFFIX_NONE, AFFIX_MOLTEN_GROUND, AFFIX_CINDER_WINDS, AFFIX_SEARING_BRAND, AFFIX_EMBERFALL, AFFIX_END
+    };
+    char const* const AFFIX_NAMES[] = { "", "Molten Ground", "Cinder Winds", "Searing Brand", "Emberfall" };
+    char const* const AFFIX_TEXTS[] = { "",
+        "every 20 sec the ground erupts under up to 2 Heroes, leaving a burning pool",
+        "every 35 sec a burning wind sweeps a lane across the arena: step out of it",
+        "every 30 sec a Hero is branded: get 8 yards from everyone for 3 sec to put it out",
+        "every 40 sec embers fall on 3 spots: stay out of the circles" };
+    constexpr uint32 AFFIX_FIRST = 10, AFFIX_EVERY = 10, AFFIXES_MOST = 4, MAJOR_SPACING_MS = 3000;
+    constexpr uint32 WEEK_SECONDS = 7 * 24 * 3600;
+    // Molten Ground: up to 2 Heroes (others than last time first), 4 sec, 12% within 4 yd; a 4 yd pool for 8 sec,
+    // 3% a second.
+    constexpr uint32 MOLTEN_EVERY_MS = 20000, MOLTEN_DELAY_MS = 4000, MOLTEN_POOL_MS = 8000, MOLTEN_TARGETS = 2;
+    constexpr float MOLTEN_RADIUS = 4.0f, MOLTEN_SHARE = 0.12f, POOL_SHARE = 0.03f;
+    // Cinder Winds: a lane 12 yd wide (a third of the arena at most) across it, 5 sec warning, sweeping over 2 sec:
+    // 10% and 30% slower for 3 sec.
+    constexpr uint32 WINDS_EVERY_MS = 35000, WINDS_WARNING_MS = 5000, WINDS_SWEEP_MS = 2000;
+    constexpr float WINDS_HALF_WIDTH = 6.0f, WINDS_OFFSET = 20.0f, WINDS_SHARE = 0.10f, WINDS_MARK_EVERY = 8.0f;
+    // Searing Brand: one Hero for 8 sec, 2% a second; 8 yd from every other Hero (solo: from where it struck) for 3
+    // sec running puts it out.
+    constexpr uint32 BRAND_EVERY_MS = 30000, BRAND_MS = 8000, BRAND_CLEAR_MS = 3000;
+    constexpr float BRAND_SHARE = 0.02f, BRAND_APART = 8.0f;
+    // Emberfall: 3 spots apart on the floor, 5 sec, 15% within 4 yd.
+    constexpr uint32 EMBER_EVERY_MS = 40000, EMBER_DELAY_MS = 5000, EMBER_SPOTS = 3;
+    constexpr float EMBER_RADIUS = 4.0f, EMBER_SHARE = 0.15f, EMBER_APART = 10.0f, EMBER_REACH = 40.0f;
+    constexpr uint32 SPELL_CINDER_WINDS = 93480, SPELL_SEARING_BRAND = 93481;   // client-patch/patch_runes.py
+
+    // The week's order of every affix.
+    std::vector<uint8> AffixRotation()
+    {
+        std::vector<uint8> rotation;
+        for (uint8 affix = AFFIX_NONE + 1; affix < AFFIX_END; ++affix)
+            rotation.push_back(affix);
+        std::mt19937 week(uint32(GameTime::GetGameTime().count() / WEEK_SECONDS));
+        std::shuffle(rotation.begin(), rotation.end(), week);
+        return rotation;
+    }
+
+    // The affixes active at a wave: the last four of the week's order that have entered by it.
+    std::vector<uint8> AffixesAt(uint32 wave)
+    {
+        std::vector<uint8> rotation = AffixRotation();
+        uint32 entered = wave >= AFFIX_FIRST ? wave / AFFIX_EVERY : 0;
+        std::vector<uint8> active;
+        for (uint32 e = entered > AFFIXES_MOST ? entered - AFFIXES_MOST : 0; e < entered; ++e)
+            active.push_back(rotation[e % rotation.size()]);
+        return active;
+    }
     constexpr uint32 ERUPTION_EVERY_MS = 14000, ERUPTION_DELAY_MS = 3000, ERUPTION_TARGETS = 3;
     constexpr float ERUPTION_RADIUS = 6.0f, ERUPTION_DAMAGE = 0.3f;
     constexpr uint32 NOVA_EVERY_MS = 22000, NOVA_DELAY_MS = 4000;
@@ -323,6 +380,32 @@ namespace
         float share = 0.0f;                             // of each Hero's max health
         uint32 ms = 0;
         bool nova = false;                              // at the boss as it goes off
+        bool pool = false;                              // Molten Ground: a burning pool where it went off
+        uint32 log = 0;                                 // the combat log's spell (0: the eruption's)
+    };
+
+    struct Pool                                         // Molten Ground's burning ground
+    {
+        Position at;
+        ObjectGuid marker;
+        uint32 until = 0;                               // run ms
+    };
+
+    struct Wind                                         // Cinder Winds' lane
+    {
+        Position center;                                // where the lane's line crosses its middle
+        float angle = 0.0f;                             // the way it sweeps
+        uint32 ms = 0;                                  // to its sweep, then through it
+        bool sweeping = false;
+        std::set<ObjectGuid> hit;
+        std::vector<ObjectGuid> markers;
+    };
+
+    struct Brand                                        // Searing Brand on a Hero
+    {
+        ObjectGuid hero;
+        Position at;                                    // where it struck (solo: the place to leave)
+        uint32 left = 0, apartMs = 0;
     };
 
     enum class Phase : uint8
@@ -707,6 +790,7 @@ public:
         }
         SendAddon(player, "INTRO");
         SendHud(player);
+        SendAffixes(player);
     }
 
     void OnPlayerLeave(Player* player) override
@@ -1024,6 +1108,7 @@ private:
                 }
         _waveMs = WAVE_MS;
         _breather = false;
+        UpdateAffixes();
         for (Player* player : Living())
             if (Record* record = RecordOf(player))
             {
@@ -1268,7 +1353,17 @@ private:
         Unit* attacker = blast.nova ? static_cast<Unit*>(boss) : static_cast<Unit*>(source);
         if (!attacker)
             return;
-        SpellInfo const* spell = sSpellMgr->GetSpellInfo(blast.nova ? SPELL_FIRE_NOVA : SPELL_ERUPTION_LOG);
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(blast.nova ? SPELL_FIRE_NOVA
+            : blast.log ? blast.log : SPELL_ERUPTION_LOG);
+        if (blast.pool && at.GetExactDist2d(&CENTER) > ARRIVAL_RADIUS + MOLTEN_RADIUS)    // never on the revival ring
+        {
+            Pool pool;
+            pool.at = at;
+            pool.until = _runMs + MOLTEN_POOL_MS;
+            if (GameObject* marker = Marker(GO_EMBERS, at))
+                pool.marker = marker->GetGUID();
+            _pools.push_back(pool);
+        }
         for (Player* hero : Living())
         {
             if (hero->GetExactDist2d(at.GetPositionX(), at.GetPositionY()) > blast.radius
@@ -1284,8 +1379,375 @@ private:
         }
     }
 
+    // ---- World affixes --------------------------------------------------------------------------------------
+
+    // The set for the wave now: each new one announced (its timer fresh), each gone said so.
+    void UpdateAffixes()
+    {
+        std::vector<uint8> now = AffixesAt(_wave);
+        if (now == _affixes)
+            return;
+        for (uint8 affix : now)
+            if (std::find(_affixes.begin(), _affixes.end(), affix) == _affixes.end())
+            {
+                _affixMs[affix] = Spaced(AffixEvery(affix));
+                Announce(std::string("A new affix: ") + AFFIX_NAMES[affix] + ", " + AFFIX_TEXTS[affix] + ".", true);
+            }
+        for (uint8 affix : _affixes)
+            if (std::find(now.begin(), now.end(), affix) == now.end())
+            {
+                _affixMs.erase(affix);
+                Announce(std::string(AFFIX_NAMES[affix]) + " fades.");
+            }
+        _affixes = now;
+        for (auto const& ref : instance->GetPlayers())
+            if (Player* player = ref.GetSource())
+                SendAffixes(player);
+    }
+
+    // X,<affix name>,... : the active affixes, for the tracker.
+    void SendAffixes(Player* player)
+    {
+        std::string text = "X";
+        for (uint8 affix : _affixes)
+            text += std::string(",") + AFFIX_NAMES[affix];
+        SendAddon(player, text);
+    }
+
+    static uint32 AffixEvery(uint8 affix)
+    {
+        switch (affix)
+        {
+            case AFFIX_MOLTEN_GROUND: return MOLTEN_EVERY_MS;
+            case AFFIX_CINDER_WINDS: return WINDS_EVERY_MS;
+            case AFFIX_SEARING_BRAND: return BRAND_EVERY_MS;
+            case AFFIX_EMBERFALL: return EMBER_EVERY_MS;
+            default: return 30000;
+        }
+    }
+
+    // A major danger's resolution, ms from now, moved later until no other resolves within 3 sec of it.
+    uint32 Spaced(uint32 ms) const
+    {
+        for (bool moved = true; moved;)
+        {
+            moved = false;
+            for (Blast const& blast : _blasts)
+                if ((blast.ms > ms ? blast.ms - ms : ms - blast.ms) < MAJOR_SPACING_MS)
+                {
+                    ms = blast.ms + MAJOR_SPACING_MS;
+                    moved = true;
+                }
+            for (Wind const& wind : _winds)
+            {
+                uint32 at = wind.sweeping ? 0 : wind.ms;
+                if ((at > ms ? at - ms : ms - at) < MAJOR_SPACING_MS)
+                {
+                    ms = at + MAJOR_SPACING_MS;
+                    moved = true;
+                }
+            }
+        }
+        return ms;
+    }
+
+    // The Firepit's own hand: an invisible source the affixes burn the Heroes with.
+    Unit* AffixSource()
+    {
+        if (Creature* source = instance->GetCreature(_affixSource))
+            return source;
+        TempSummon* source = instance->SummonCreature(NPC_ERUPTION, CENTER);
+        if (!source)
+            return nullptr;
+        source->SetFaction(35);
+        _affixSource = source->GetGUID();
+        return source;
+    }
+
+    // A share of the Hero's maximum health as Fire damage, under the spell's name in the combat log.
+    void Burn(Unit* attacker, Player* hero, float share, uint32 logSpell)
+    {
+        if (!attacker || !hero->IsAlive() || IsProtected(hero))
+            return;
+        SpellInfo const* spell = sSpellMgr->GetSpellInfo(logSpell);
+        DamageInfo damage(attacker, hero, uint32(float(hero->GetMaxHealth()) * share), spell,
+            SPELL_SCHOOL_MASK_FIRE, SPELL_DIRECT_DAMAGE);
+        Unit::CalcAbsorbResist(damage);
+        attacker->SendSpellNonMeleeDamageLog(hero, spell, damage.GetDamage(), SPELL_SCHOOL_MASK_FIRE,
+            damage.GetAbsorb(), damage.GetResist(), false, 0);
+        Unit::DealDamage(attacker, hero, damage.GetDamage(), nullptr, SPELL_DIRECT_DAMAGE, SPELL_SCHOOL_MASK_FIRE,
+            spell, false);
+    }
+
+    void Affixes(uint32 diff)
+    {
+        if (_phase != Phase::RUNNING)
+            return;
+        for (uint8 affix : _affixes)
+        {
+            uint32& ms = _affixMs[affix];
+            if (ms > diff)
+            {
+                ms -= diff;
+                continue;
+            }
+            ms = AffixEvery(affix);
+            switch (affix)
+            {
+                case AFFIX_MOLTEN_GROUND: MoltenGround(); break;
+                case AFFIX_CINDER_WINDS: CinderWinds(); break;
+                case AFFIX_SEARING_BRAND: SearingBrand(); break;
+                case AFFIX_EMBERFALL: Emberfall(); break;
+                default: break;
+            }
+        }
+        WindsTick(diff);
+        _secondMs += diff;
+        if (_secondMs < 1000)
+            return;
+        _secondMs -= 1000;
+        PoolsTick();
+        BrandsTick();
+    }
+
+    void MoltenGround()
+    {
+        std::vector<Player*> heroes = Living();
+        Acore::Containers::RandomShuffle(heroes);
+        std::stable_sort(heroes.begin(), heroes.end(), [this](Player* a, Player* b)
+        {
+            return !_moltenLast.count(a->GetGUID()) && _moltenLast.count(b->GetGUID());
+        });
+        if (heroes.size() > MOLTEN_TARGETS)
+            heroes.resize(MOLTEN_TARGETS);
+        _moltenLast.clear();
+        uint32 ms = Spaced(MOLTEN_DELAY_MS);
+        for (Player* hero : heroes)
+        {
+            _moltenLast.insert(hero->GetGUID());
+            Blast blast;
+            blast.at = hero->GetPosition();
+            blast.radius = MOLTEN_RADIUS;
+            blast.share = MOLTEN_SHARE;
+            blast.ms = ms;
+            blast.pool = true;
+            if (GameObject* marker = Marker(GO_FLAME_CIRCLE, blast.at))
+                blast.marker = marker->GetGUID();
+            _blasts.push_back(blast);
+        }
+        if (!heroes.empty())
+            Announce("Molten Ground: the floor erupts under you, move!");
+    }
+
+    void PoolsTick()
+    {
+        Unit* source = _pools.empty() ? nullptr : AffixSource();
+        for (std::size_t i = 0; i < _pools.size();)
+        {
+            Pool const& pool = _pools[i];
+            if (_runMs >= pool.until)
+            {
+                if (GameObject* marker = instance->GetGameObject(pool.marker))
+                    marker->Delete();
+                _pools.erase(_pools.begin() + i);
+                continue;
+            }
+            for (Player* hero : Living())
+                if (hero->GetExactDist2d(pool.at.GetPositionX(), pool.at.GetPositionY()) <= MOLTEN_RADIUS
+                    && std::abs(hero->GetPositionZ() - pool.at.GetPositionZ()) <= 6.0f)
+                    Burn(source, hero, POOL_SHARE, SPELL_ERUPTION_LOG);
+            ++i;
+        }
+    }
+
+    void CinderWinds()
+    {
+        Wind wind;
+        wind.angle = frand(0.0f, 2.0f * float(M_PI));
+        float offset = frand(-WINDS_OFFSET, WINDS_OFFSET);
+        float across = wind.angle + float(M_PI) / 2.0f;
+        wind.center = Position(CENTER.GetPositionX() + offset * std::cos(across),
+            CENTER.GetPositionY() + offset * std::sin(across), CENTER.GetPositionZ());
+        wind.ms = Spaced(WINDS_WARNING_MS);
+        for (float along = -ARENA_RADIUS; along <= ARENA_RADIUS; along += WINDS_MARK_EVERY)
+        {
+            float x = wind.center.GetPositionX() + along * std::cos(wind.angle);
+            float y = wind.center.GetPositionY() + along * std::sin(wind.angle);
+            if (std::hypot(x - CENTER.GetPositionX(), y - CENTER.GetPositionY()) > ARENA_RADIUS)
+                continue;
+            if (GameObject* marker = Marker(GO_EMBERS, Position(x, y, FloorAt(x, y))))
+                wind.markers.push_back(marker->GetGUID());
+        }
+        _winds.push_back(wind);
+        Announce("Cinder Winds: a burning wind gathers, get out of its lane!", true);
+    }
+
+    void WindsTick(uint32 diff)
+    {
+        for (std::size_t i = 0; i < _winds.size();)
+        {
+            Wind& wind = _winds[i];
+            if (wind.ms > diff)
+                wind.ms -= diff;
+            else if (!wind.sweeping)
+            {
+                wind.sweeping = true;
+                wind.ms = WINDS_SWEEP_MS;
+            }
+            else
+                wind.ms = 0;
+            if (wind.sweeping)
+            {
+                // The front, from one end of the lane to the other over the sweep.
+                float front = -ARENA_RADIUS + 2.0f * ARENA_RADIUS * float(WINDS_SWEEP_MS - wind.ms)
+                    / float(WINDS_SWEEP_MS);
+                float c = std::cos(wind.angle), s = std::sin(wind.angle);
+                Unit* source = AffixSource();
+                for (Player* hero : Living())
+                {
+                    float dx = hero->GetPositionX() - wind.center.GetPositionX();
+                    float dy = hero->GetPositionY() - wind.center.GetPositionY();
+                    float along = dx * c + dy * s, side = -dx * s + dy * c;
+                    if (std::abs(side) > WINDS_HALF_WIDTH || along > front || !wind.hit.insert(hero->GetGUID()).second)
+                        continue;
+                    Burn(source, hero, WINDS_SHARE, SPELL_CINDER_WINDS);
+                    hero->AddAura(SPELL_CINDER_WINDS, hero);
+                }
+                if (!wind.ms)
+                {
+                    for (ObjectGuid const& guid : wind.markers)
+                        if (GameObject* marker = instance->GetGameObject(guid))
+                            marker->Delete();
+                    _winds.erase(_winds.begin() + i);
+                    continue;
+                }
+            }
+            ++i;
+        }
+    }
+
+    void SearingBrand()
+    {
+        std::vector<Player*> heroes;
+        for (Player* hero : Living())
+            if (std::none_of(_brands.begin(), _brands.end(),
+                [hero](Brand const& b) { return b.hero == hero->GetGUID(); }))
+                heroes.push_back(hero);
+        if (heroes.empty())
+            return;
+        Player* hero = heroes[urand(0, uint32(heroes.size()) - 1)];
+        Brand brand;
+        brand.hero = hero->GetGUID();
+        brand.at = hero->GetPosition();
+        brand.left = BRAND_MS;
+        _brands.push_back(brand);
+        if (Aura* aura = hero->AddAura(SPELL_SEARING_BRAND, hero))
+        {
+            aura->SetMaxDuration(int32(BRAND_MS));
+            aura->SetDuration(int32(BRAND_MS));
+        }
+        Announce("Searing Brand on " + hero->GetName() + ": get 8 yards away from everyone for 3 sec!", true);
+        ChatHandler(hero->GetSession()).SendSysMessage(Living().size() > 1
+            ? "|cffff7f27Searing Brand:|r stay 8 yards from every other Hero for 3 sec to put it out."
+            : "|cffff7f27Searing Brand:|r move 8 yards from where it struck and stay away 3 sec to put it out.");
+    }
+
+    void BrandsTick()
+    {
+        Unit* source = _brands.empty() ? nullptr : AffixSource();
+        std::vector<Player*> living = Living();
+        for (std::size_t i = 0; i < _brands.size();)
+        {
+            Brand& brand = _brands[i];
+            Player* hero = ObjectAccessor::GetPlayer(instance, brand.hero);
+            bool done = !hero || !hero->IsAlive();
+            if (!done)
+            {
+                bool apart = true;
+                if (living.size() > 1)
+                {
+                    for (Player* other : living)
+                        if (other != hero && hero->GetExactDist2d(other) < BRAND_APART)
+                            apart = false;
+                }
+                else
+                    apart = hero->GetExactDist2d(brand.at.GetPositionX(), brand.at.GetPositionY()) >= BRAND_APART;
+                brand.apartMs = apart ? brand.apartMs + 1000 : 0;
+                if (brand.apartMs >= BRAND_CLEAR_MS)
+                {
+                    done = true;
+                    ChatHandler(hero->GetSession()).SendSysMessage("|cffff7f27Searing Brand|r put out.");
+                }
+                else
+                {
+                    Burn(source, hero, BRAND_SHARE, SPELL_SEARING_BRAND);
+                    brand.left = brand.left > 1000 ? brand.left - 1000 : 0;
+                    done = !brand.left;
+                }
+            }
+            if (done)
+            {
+                if (hero)
+                    hero->RemoveAurasDueToSpell(SPELL_SEARING_BRAND);
+                _brands.erase(_brands.begin() + i);
+                continue;
+            }
+            ++i;
+        }
+    }
+
+    void Emberfall()
+    {
+        std::vector<Position> spots;
+        for (uint32 tries = 0; spots.size() < EMBER_SPOTS && tries < 40; ++tries)
+        {
+            float angle = frand(0.0f, 2.0f * float(M_PI)), radius = frand(ARRIVAL_RADIUS + EMBER_RADIUS, EMBER_REACH);
+            float x = CENTER.GetPositionX() + radius * std::cos(angle);
+            float y = CENTER.GetPositionY() + radius * std::sin(angle);
+            Position at(x, y, FloorAt(x, y));
+            if (std::all_of(spots.begin(), spots.end(), [&at](Position const& p) { return p.GetExactDist2d(&at)
+                >= EMBER_APART; }))
+                spots.push_back(at);
+        }
+        uint32 ms = Spaced(EMBER_DELAY_MS);
+        for (Position const& at : spots)
+        {
+            Blast blast;
+            blast.at = at;
+            blast.radius = EMBER_RADIUS;
+            blast.share = EMBER_SHARE;
+            blast.ms = ms;
+            if (GameObject* marker = Marker(GO_FLAME_CIRCLE, at))
+                blast.marker = marker->GetGUID();
+            _blasts.push_back(blast);
+        }
+        Announce("Emberfall: embers rain down, stay out of the circles!");
+    }
+
+    void ClearAffixes()
+    {
+        for (Pool const& pool : _pools)
+            if (GameObject* marker = instance->GetGameObject(pool.marker))
+                marker->Delete();
+        for (Wind const& wind : _winds)
+            for (ObjectGuid const& guid : wind.markers)
+                if (GameObject* marker = instance->GetGameObject(guid))
+                    marker->Delete();
+        for (Brand const& brand : _brands)
+            if (Player* hero = ObjectAccessor::GetPlayer(instance, brand.hero))
+                hero->RemoveAurasDueToSpell(SPELL_SEARING_BRAND);
+        _pools.clear();
+        _winds.clear();
+        _brands.clear();
+        _affixes.clear();
+        _affixMs.clear();
+        if (Creature* source = instance->GetCreature(_affixSource))
+            source->DespawnOrUnsummon();
+    }
+
     void ClearMechanics()
     {
+        ClearAffixes();
         for (Blast const& blast : _blasts)
         {
             if (GameObject* marker = instance->GetGameObject(blast.marker))
@@ -1361,6 +1823,7 @@ private:
         }
 
         Mechanics(diff);
+        Affixes(diff);
         CheckLoot();
 
         _waveMs = _waveMs > diff ? _waveMs - diff : 0;
@@ -1640,6 +2103,14 @@ private:
     std::map<ObjectGuid, uint32> _protected;        // revived Heroes: run ms their protection ends
     std::unordered_map<ObjectGuid, BossState> _bosses;
     std::vector<Blast> _blasts;
+    std::vector<uint8> _affixes;                    // the world affixes active now
+    std::map<uint8, uint32> _affixMs;               // each one's next trigger (ms)
+    std::set<ObjectGuid> _moltenLast;               // Molten Ground's last marked
+    std::vector<Pool> _pools;
+    std::vector<Wind> _winds;
+    std::vector<Brand> _brands;
+    uint32 _secondMs = 0;                           // the affixes' once-a-second work
+    ObjectGuid _affixSource;                        // the Firepit itself: what deals the affixes' burns
     std::vector<ObjectGuid> _natives, _enemies;
     std::vector<Spawn> _queue;
     std::map<ObjectGuid, Record> _records;

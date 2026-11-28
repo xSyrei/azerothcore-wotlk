@@ -1144,6 +1144,14 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   to the run's first living tank, its threat there raised to the most of its own, 500, or 150% of anyone else's.
   The H message's last three fields: Pressure's stacks, the cap, the reinforcements waiting. Enemies that
   stray off the floor (past 52 yards, or up in the stands) are put back on its edge.
+- **World affixes** (`Affix`, `AffixesAt`, `UpdateAffixes`, `Affixes`): a new one at waves 10, 20, 30, 40; from 50 every
+  10 waves the oldest replaced; four at most; the order a shuffle seeded by the week (`AffixRotation`), so every group
+  (and a checkpoint start) gets the same set for a wave; each one's timer fresh as it enters. Molten Ground (eruptions
+  under up to 2 Heroes, 12%, then a 4 yd pool 8 sec at 3%/sec, never on the revival ring), Cinder Winds (a 12 yd lane, 5
+  sec warning, a 2 sec sweep: 10% and the slow 93480), Searing Brand (93481: 2%/sec for 8 sec, put out by 3 sec 8 yd
+  from everyone, solo from where it struck), Emberfall (3 spots, 5 sec, 15% in 4 yd). Damage is a share of max health
+  from an invisible source (`AffixSource`, `Burn`); no two dangers resolve within 3 sec (`Spaced`). The tracker's X
+  message lists them.
 - **Boss mechanics** from wave 15 (`MECHANICS_FROM`), each a share of the Hero's own health (it is about moving, not
   gear): **Molten Eruption** (15+, every 14 sec): a ring of flame under up to 3 Heroes, erupting 3 sec later, 30% to
   anyone within 6 yd (its source the invisible Molten Eruption, 910141). **Searing Nova** (30+, every 22 sec): the

@@ -4,6 +4,17 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-27: The Firepit Ignites
 
+- **World affixes**: the arena itself changes as you climb. A new affix enters at waves 10, 20, 30 and 40; from wave 50,
+  every 10 waves the oldest gives way to a new one (four at most). The order is the same for everyone each week, and the
+  tracker lists the active ones.
+  - **Molten Ground**: every 20 sec the floor erupts under up to 2 Heroes (12% of max health within 4 yards) and leaves
+    a burning pool for 8 sec.
+  - **Cinder Winds**: every 35 sec a burning wind sweeps a lane across the arena after a 5 sec warning: 10% and slowed
+    by 30% for 3 sec. Step out of the lane.
+  - **Searing Brand**: every 30 sec a Hero burns for 2% a second for 8 sec. Get 8 yards away from everyone (solo: from
+    where it struck) for 3 sec to put it out.
+  - **Emberfall**: every 40 sec embers fall on 3 spots; 5 sec later each deals 15% within 4 yards.
+  - Two arena dangers never go off within 3 seconds of each other, and the revival spot stays safe.
 - **Boss waves give you room**: before a boss, the next wave waits until the field is clear, then you get 20 seconds to
   prepare (the boss is named in advance).
 - **The fallen rise after a boss**: clear a boss wave with anyone still standing and every fallen Hero comes back at the

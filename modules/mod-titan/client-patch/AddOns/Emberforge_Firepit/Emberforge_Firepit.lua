@@ -6,6 +6,7 @@
 -- takes you out; and the Firepit's music plays (PressurePoint.mp3, over the zone's).
 --
 -- The server (mod-titan, src/firepit.cpp) talks in addon whispers to the player, prefix EFFP:
+--   X,<affix name>,... the world affixes active now
 --   H,<wave>,<sec left>,<enemies alive>,<boss wave 0|1>,<Heroes standing>,<Heroes in the run>,<countdown sec>,
 --     <Pressure stacks (5% more enemy damage each)>,<the field's cap>,<reinforcements waiting>
 --   RUN,<wave reached>,<sec survived>,<group size>,<kills>,<monster health %>,<start wave>
@@ -138,7 +139,7 @@ end
 -- On the right, under the minimap (as a dungeon's objectives): the wave, its time running out on a bar, the enemies
 -- alive, the Heroes standing, and the run's news (a boss coming, the last one falling). Drag it anywhere.
 
-local HUD_W, HUD_H = 236, 150
+local HUD_W, HUD_H = 236, 172
 local hud = CreateFrame("Frame", "EmberforgeFirepitHud", UIParent)
 hud:SetWidth(HUD_W)
 hud:SetHeight(HUD_H)
@@ -191,6 +192,12 @@ hud.event = Label(hud, 10, { 1, 0.62, 0.3 })
 hud.event:SetPoint("TOPLEFT", 12, -120)
 hud.event:SetWidth(HUD_W - 24)
 hud.event:SetJustifyH("LEFT")
+-- The world affixes active now (X), at the bottom.
+hud.affixes = Label(hud, 10, { 1, 0.78, 0.45 })
+hud.affixes:SetPoint("BOTTOMLEFT", 12, 8)
+hud.affixes:SetWidth(HUD_W - 24)
+hud.affixes:SetJustifyH("LEFT")
+hud.affixes:SetText("")
 
 local hudState = { seen = 0, left = 0, eventAt = 0 }
 
@@ -1178,6 +1185,12 @@ local function OnMessage(message)
         ShowHud(fields)
     elseif kind == "A" then
         HudNews(fields[2] or "", fields[3] == "1")
+    elseif kind == "X" then
+        local names = {}
+        for i = 2, #fields do
+            names[#names + 1] = fields[i]
+        end
+        hud.affixes:SetText(#names > 0 and ("Affixes: " .. table.concat(names, ", ")) or "")
     elseif kind == "INTRO" then
         SetInside(true)
         ShowIntro()
