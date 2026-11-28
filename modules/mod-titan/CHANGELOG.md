@@ -11,8 +11,11 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   loot it.
 - **Potential Rewards, corrected**: the Firepit panel now shows the real rewards with fitting icons: the Spoils
   chest, Rare and Epic Fireforged gear, and Titanforged (the leaderboard isn't a reward, so it's gone from there).
-- **The bosses speak**: every boss taunts you as it enters the Ring, and the five major bosses call out their
-  phases, their enrage and their last words as they fall.
+- **The bosses speak**: every boss has its own words as it enters the Ring and its own last words as it falls (Grizzle,
+  Lord Roccor, Bael'Gar, Emperor Thaurissan and the rest), and the five major bosses also call out their phases and
+  their enrage.
+- **Ladder bosses' attacks restored**: from wave 15, the ladder's bosses use their eruptions and novas again (adding
+  their dialogue had switched them off).
 - **Enemy Forces tracker**: the tracker shows the living enemies by role (Melee, Ranged, Healers, Boss), the
   reinforcements waiting (INCOMING when the field is empty but more are coming) and a badge for Bolstered or Mending
   enemies.

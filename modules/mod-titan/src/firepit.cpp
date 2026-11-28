@@ -224,7 +224,7 @@ namespace
     constexpr float FINAL_STAND_DAMAGE = 1.2f, EXPOSED_TAKEN = 1.2f, TRIAL_TAKEN = 0.5f;
 
     // The bosses' words (each one yelled across the arena): the majors' as they enter, at each phase (the Champion's
-    // weapons), at their enrage and as they fall; the ladder's own as they enter.
+    // weapons), at their enrage and as they fall.
     struct MajorLines
     {
         char const* Enter[2];
@@ -262,13 +262,49 @@ namespace
           "THE FIREPIT ANSWERS! The whole arena burns with me!",
           "You... are the champions now. The crowd... is yours..." },
     };
-    char const* const LADDER_LINES[] = {
-        "You dare enter my ring? The crowd will cheer your fall!",
-        "Fresh meat for the Firepit! Come, die well!",
-        "I have waited long for a worthy fight. Do not disappoint me!",
-        "Another challenger? The last one barely lasted a minute.",
-        "Blood and fire! Let the crowd see you burn!",
+    // The ladder's bosses (BOSSES, below): each one's own words as it enters and as it falls.
+    struct LadderLines
+    {
+        uint32 Entry;
+        char const* Enter;
+        char const* Fall;
     };
+    LadderLines const LADDER_LINES[] = {
+        { 9027, "Gorosh spins for the crowd! Step close and be cut to ribbons!",
+          "The spinning... stops..." },
+        { 9028, "Grizzle's hide is stone! Your blows are pebbles!",
+          "Grizzle... crumbles..." },
+        { 9029, "The Eviscerator has carved a hundred fools. You make a hundred and one!",
+          "My blades... dulled... by you?" },
+        { 9030, "Ok'thor break you! Break bones, break shields, break EVERYTHING!",
+          "Ok'thor... is broken..." },
+        { 9031, "The shadows hunger, and Anub'shiah feeds them your souls.",
+          "The shadows... take me instead..." },
+        { 9032, "Hedrum creeps... Hedrum bites... Hedrum feasts.",
+          "Hedrum's web... is torn..." },
+        { 9025, "The mountain rises against you! Roccor will grind you to dust!",
+          "Return me... to the stone..." },
+        { 9319, "Sic 'em, boys! Fresh meat for the hounds!",
+          "Who's gonna feed... the dogs now...?" },
+        { 9016, "BAEL'GAR... RISES... BAEL'GAR... BURNS!",
+          "THE FIRE... RETURNS... TO THE DEEP..." },
+        { 9033, "Soldiers of the Dark Iron, form up! These intruders die in the Firepit today!",
+          "The Dark Iron legions... will avenge me..." },
+        { 8983, "My creations are perfected. You will be their final test!",
+          "My work... unfinished..." },
+        { 9938, "None pass these flames while Magmus stands!",
+          "The gate... is yours..." },
+        { 9019, "Kneel before the Emperor of the Dark Iron! Your deaths will warm my throne!",
+          "Ragnaros... has abandoned... me..." },
+    };
+
+    LadderLines const* LadderLinesOf(uint32 entry)
+    {
+        for (LadderLines const& lines : LADDER_LINES)
+            if (lines.Entry == entry)
+                return &lines;
+        return nullptr;
+    }
 
     bool IsCarnage(uint32 wave)
     {
@@ -1087,6 +1123,12 @@ public:
     {
         if (_phase != Phase::RUNNING)
             return;
+        // A ladder boss's last words (a major's are EndMajor's).
+        if (Creature* creature = unit->ToCreature())
+            if (Enemy const* own = creature->CustomData.Get<Enemy>("titan_firepit"); own && own->boss
+                && !MajorAt(own->wave))
+                if (LadderLines const* lines = LadderLinesOf(creature->GetEntry()))
+                    creature->Yell(lines->Fall, LANG_UNIVERSAL);
         if (Player* player = unit->ToPlayer())
         {
             auto record = _records.find(player->GetGUID());
@@ -1533,10 +1575,13 @@ private:
             enemy->Yell(MAJOR_LINES[MajorAt(_wave)].Enter[urand(0, 1)], LANG_UNIVERSAL);
         }
         else if (spawn.boss)
-            enemy->Yell(LADDER_LINES[urand(0, uint32(std::size(LADDER_LINES)) - 1)], LANG_UNIVERSAL);
-        else if (spawn.boss && _wave >= MECHANICS_FROM)
-            _bosses[enemy->GetGUID()] = { urand(5000, ERUPTION_EVERY_MS), urand(NOVA_EVERY_MS / 2, NOVA_EVERY_MS),
-                false };
+        {
+            if (LadderLines const* lines = LadderLinesOf(spawn.entry))
+                enemy->Yell(lines->Enter, LANG_UNIVERSAL);
+            if (_wave >= MECHANICS_FROM)
+                _bosses[enemy->GetGUID()] = { urand(5000, ERUPTION_EVERY_MS),
+                    urand(NOVA_EVERY_MS / 2, NOVA_EVERY_MS), false };
+        }
         enemy->SetFaction(ENEMY_FACTION);
         enemy->SetReactState(REACT_AGGRESSIVE);
         enemy->SetHomePosition(CENTER);
