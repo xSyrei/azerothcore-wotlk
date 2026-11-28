@@ -4,6 +4,8 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-27: The Firepit Ignites
 
+- **Potential Rewards, corrected**: the Firepit panel now shows the real rewards with fitting icons: the Spoils
+  chest, Rare and Epic Fireforged gear, and Titanforged (the leaderboard isn't a reward, so it's gone from there).
 - **The bosses speak**: every boss taunts you as it enters the Ring, and the five major bosses call out their
   phases, their enrage and their last words as they fall.
 - **Enemy Forces tracker**: the tracker shows the living enemies by role (Melee, Ranged, Healers, Boss), the

@@ -600,13 +600,15 @@ end)
 local BRACKETS = { "Solo", "Duo", "Trio", "Group" }
 local CHECKPOINT_EVERY = 5
 local REWARDS = {
-    { "Interface\\Icons\\INV_Box_01", "Spoils of the Firepit",
-        "Your own chest when the run ends: nobody rolls on your loot." },
-    { "Interface\\Icons\\INV_Sword_04", "Rare gear",
-        "A piece of gear at your level for every 15 waves you live through." },
-    { "Interface\\Icons\\INV_Shield_23", "Epic gear", "From wave 45, the pieces are epic." },
-    { "Interface\\Icons\\INV_Misc_Head_Dragon_Red", "Records",
-        "Your best wave, solo, as a duo, a trio and a group, on the leaderboard." },
+    { "Interface\\Icons\\INV_Box_04", "Spoils of the Firepit",
+        "Beat the boss of wave 15, 30, 45... and your share waits in the great chest when the run ends. The wave " ..
+        "you start on never pays out." },
+    { "Interface\\Icons\\INV_Chest_Plate16", "Rare Fireforged gear",
+        "Waves 15 and 30: a Rare piece for one of your weakest slots, above what you wear there." },
+    { "Interface\\Icons\\INV_Sword_62", "Epic Fireforged gear",
+        "From wave 45, every 15 waves: an Epic piece with one bonus effect chosen for your role and build." },
+    { "Interface\\Icons\\INV_Misc_Gem_Variety_02", "Titanforged",
+        "A rare roll on an Epic piece: it comes with a prismatic socket for a gem of your choice." },
 }
 -- The layout, in the panel's units (16:9, as the painting): build_firepit_art.py draws its lines at the same places.
 local PANEL_W, PANEL_H = 560, 315
