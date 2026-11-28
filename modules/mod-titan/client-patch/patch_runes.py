@@ -2494,6 +2494,49 @@ VISUALS.update({
 for _spell in SPELLS:
     if _spell['id'] == 93091:
         _spell['visual'] = 'ThunderbombThrow'
+# Verdant Embrace's look (Scarlet Benediction's redesign; retail's cfx_evoker_verdantembrace_cast01 and _impact,
+# spells/EVO_VerdantEmbrace): both exports are particles only (no mesh), so they are rebuilt from their own textures:
+# green smoke puffs (a 2x2 set), a mint glow, green motes and a flare. Hung on the spell once the redesign is built.
+VERDANT = 'EVO_VerdantEmbrace'
+VERDANT_GREEN, VERDANT_MINT, VERDANT_MOTE = (0.45, 1.0, 0.55), (0.6, 1.0, 0.8), (0.85, 1.0, 0.85)
+
+
+def puffs(count, out, up, across, step=0.0):
+    """count mist puffs out yards from the middle, up yards high (each step higher), across yards wide."""
+    return tuple((out, up + i * step, across) for i in range(count))
+
+
+EFFECTS.update({
+    # The cast, on the hands: green life gathering and let go, motes spiralling up, gone in 0.8 sec.
+    'VerdantEmbraceCast': {'model': 'EVO_VerdantEmbraceCast', 'effect': 7179, 'shape': 'mist',
+                           'textures': (f'{VERDANT}/glow_mint', f'{VERDANT}/smoke_puffs', f'{VERDANT}/green_mote',
+                                        f'{VERDANT}/flare'),
+                           'options': {'duration': 800, 'fade': (0, 450), 'layers': (
+                               {'texture': 0, 'tint': VERDANT_MINT, 'alpha': 0.7, 'pulse': 0,
+                                'cards': ((0.0, 0.0, 0.9),)},
+                               {'texture': 1, 'sheet': (2, 2), 'flip': 0, 'tint': VERDANT_GREEN, 'alpha': 0.7,
+                                'turn': 0.9, 'pulse': 0, 'rise': (0.5, 0.8), 'cards': puffs(3, 0.12, 0.0, 0.7)},
+                               {'texture': 2, 'tint': VERDANT_MOTE, 'alpha': 1.0, 'turn': 1.1, 'pulse': 0,
+                                'rise': (0.7, 0.8), 'cards': puffs(6, 0.25, 0.0, 0.12, 0.05)},
+                               {'texture': 3, 'tint': VERDANT_MINT, 'alpha': 0.8, 'pulse': 0,
+                                'cards': ((0.0, 0.05, 1.1),)})}},
+    # The impact, on the embraced: a flash, green smoke blooming up around the body, a soft light at the chest and
+    # motes of life rising past the head, gone in 1.5 sec.
+    'VerdantEmbraceImpact': {'model': 'EVO_VerdantEmbraceImpact', 'effect': 7180, 'shape': 'mist',
+                             'textures': (f'{VERDANT}/glow_mint', f'{VERDANT}/smoke_puffs',
+                                          f'{VERDANT}/green_mote', f'{VERDANT}/flare'),
+                             'options': {'duration': 1500, 'fade': (50, 600), 'layers': (
+                                 {'texture': 0, 'tint': VERDANT_MINT, 'alpha': 0.45, 'pulse': 0,
+                                  'cards': ((0.0, 1.0, 2.2),)},
+                                 {'texture': 3, 'tint': VERDANT_MINT, 'alpha': 0.9, 'pulse': 0,
+                                  'scale': [(0.0, 0.8), (0.25, 3.2), (1.0, 3.6)], 'cards': ((0.0, 1.0, 1.0),)},
+                                 {'texture': 1, 'sheet': (2, 2), 'flip': 0, 'tint': VERDANT_GREEN, 'alpha': 0.8,
+                                  'turn': 2.6, 'pulse': 0, 'rise': (1.3, 1.5), 'cards': puffs(5, 0.55, 0.2, 1.4, 0.2)},
+                                 {'texture': 1, 'sheet': (2, 2), 'flip': 0, 'tint': VERDANT_MINT, 'alpha': 0.5,
+                                  'turn': -2.0, 'pulse': 0, 'rise': (1.0, 1.5), 'cards': puffs(3, 0.35, 0.6, 1.1, 0.3)},
+                                 {'texture': 2, 'tint': VERDANT_MOTE, 'alpha': 1.0, 'turn': 2.2, 'pulse': 0.4,
+                                  'rise': (1.8, 1.5), 'cards': puffs(10, 0.75, 0.1, 0.16, 0.12)})}},
+})
 SPELLS += [
     # Scarlet Benediction.
     buff(93400, 'Rune of Scarlet Benediction', SCARLET_ICON,
