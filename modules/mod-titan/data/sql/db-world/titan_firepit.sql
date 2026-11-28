@@ -59,6 +59,52 @@ INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`,
     `VerifiedBuild`) VALUES
 (@ASHEN_ECHO, 0, 4607, 1, 1, 0);
 
+-- The major bosses (src/firepit.cpp, Marked for Carnage: waves 45, 60, 75, 90, 100, then every 15 from 105): elite,
+-- Gorosh the Dervish's strength; their encounters are the Firepit's own. The Matron's Web Anchors hold her webs.
+SET @ASHFLEET := 910150;
+SET @COLOSSUS := 910151;
+SET @MATRON := 910152;
+SET @WARDEN := 910153;
+SET @CHAMPION := 910154;
+SET @WEB_ANCHOR := 910155;
+DELETE FROM `creature_template` WHERE `entry` BETWEEN 910150 AND 910155;
+INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
+    `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
+    `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
+    `dmgschool`, `DamageModifier`, `BaseAttackTime`, `RangeAttackTime`, `BaseVariance`, `RangeVariance`,
+    `unit_class`, `unit_flags`, `unit_flags2`, `dynamicflags`, `family`, `type`, `type_flags`, `lootid`,
+    `pickpocketloot`, `skinloot`, `PetSpellDataId`, `VehicleId`, `mingold`, `maxgold`, `AIName`, `MovementType`,
+    `HoverHeight`, `HealthModifier`, `ManaModifier`, `ArmorModifier`, `ExperienceModifier`, `RacialLeader`,
+    `movementId`, `RegenHealth`, `CreatureImmunitiesId`, `flags_extra`, `ScriptName`, `VerifiedBuild`) VALUES
+(@ASHFLEET, 0, 0, 0, 0, 0, 'Ashfleet Captain', 'The Firepit', NULL, 0, 60, 60, 0, 14, 0, 1, 1.14286, 1, 1, 20,
+    1, 0, 7.5, 1800, 2000, 1, 1, 1, 0, 2048, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 6, 2, 1, 1, 0, 0, 1,
+    0, 0, '', 0),
+(@COLOSSUS, 0, 0, 0, 0, 0, 'Ironbound Colossus', 'The Firepit', NULL, 0, 60, 60, 0, 14, 0, 1, 1.14286, 1, 1, 20,
+    1, 0, 7.5, 1800, 2000, 1, 1, 1, 0, 2048, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 6, 2, 1, 1, 0, 0, 1,
+    0, 0, '', 0),
+(@MATRON, 0, 0, 0, 0, 0, 'Cinder Matron', 'The Firepit', NULL, 0, 60, 60, 0, 14, 0, 1, 1.14286, 1, 1, 20,
+    1, 0, 7.5, 1800, 2000, 1, 1, 1, 0, 2048, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 6, 2, 1, 1, 0, 0, 1,
+    0, 0, '', 0),
+(@WARDEN, 0, 0, 0, 0, 0, 'Furnace Warden', 'The Firepit', NULL, 0, 60, 60, 0, 14, 0, 1, 1.14286, 1, 1, 20,
+    1, 0, 7.5, 1800, 2000, 1, 1, 1, 0, 2048, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 6, 2, 1, 1, 0, 0, 1,
+    0, 0, '', 0),
+(@CHAMPION, 0, 0, 0, 0, 0, 'Firepit Champion', 'The Firepit', NULL, 0, 60, 60, 0, 14, 0, 1, 1.14286, 1, 1, 20,
+    1, 0, 7.5, 1800, 2000, 1, 1, 1, 0, 2048, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 6, 2, 1, 1, 0, 0, 1,
+    0, 0, '', 0),
+(@WEB_ANCHOR, 0, 0, 0, 0, 0, 'Web Anchor', 'The Firepit', NULL, 0, 60, 60, 0, 14, 0, 1, 1.14286, 1, 1, 20,
+    0, 0, 1, 2000, 2000, 1, 1, 1, 0, 0, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, '', 0);
+
+DELETE FROM `creature_template_model` WHERE `CreatureID` BETWEEN 910150 AND 910155;
+INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
+    `VerifiedBuild`) VALUES
+(@ASHFLEET, 0, 7113, 1.5, 1, 0),
+(@COLOSSUS, 0, 26154, 1.2, 1, 0),
+(@MATRON, 0, 15928, 0.6, 1, 0),
+(@WARDEN, 0, 29185, 0.45, 1, 0),
+(@CHAMPION, 0, 8760, 1.4, 1, 0),
+(@WEB_ANCHOR, 0, 16213, 1, 1, 0);
+
 DELETE FROM `creature_template_model` WHERE `CreatureID` = @KEEPER;
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES

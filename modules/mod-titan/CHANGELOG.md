@@ -4,6 +4,20 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-27: The Firepit Ignites
 
+- **Marked for Carnage**: at waves 45, 60, 75, 90, 100, 105 and every 15 after, the boss must die within 5 minutes or
+  the arena detonates. The tracker shows the clock, with warnings at 2:00, 1:00, 0:30 and a final countdown.
+- **Five new major bosses**, each with telegraphed attacks and health phases:
+  - **Wave 45, the Ashfleet Captain**: Powder Lines and Cutlass Sweeps; at 70% and 35% a Trial by Fire (cannon volleys
+    while it takes half damage); a Final Stand at 30%.
+  - **Wave 60, the Ironbound Colossus**: Ironbreaker cones and Molten Ruptures; Shatter the Core at 70% and 35% leaves
+    its core exposed (20% more damage taken); its forge grows unstable at 25%.
+  - **Wave 75, the Cinder Matron**: Scorching Spit, Rending Mandibles and Cinderweb lines held by Web Anchors you can
+    break; Webstorm at 65% and 30% takes her out of reach.
+  - **Wave 90, the Furnace Warden**: Warden's Crush, Furnace Vents and Divided Furnace (half the arena burns,
+    alternating sides); Furnace Cycle at 70% and 35%; Meltdown at 25%.
+  - **Wave 100, the Firepit Champion**: cleaves, Blazing Shots and Challenge the Crowd; changes weapons at 75%, 50% and
+    25% (Ironbreaker lines, the Ashen Glaive's ring, the Executioner's arc); at 10% the arena's edge ignites.
+- After wave 105 the five return in turn on every Carnage wave.
 - **World affixes**: the arena itself changes as you climb. A new affix enters at waves 10, 20, 30 and 40; from wave 50,
   every 10 waves the oldest gives way to a new one (four at most). The order is the same for everyone each week, and the
   tracker lists the active ones.

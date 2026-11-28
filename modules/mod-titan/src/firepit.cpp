@@ -210,6 +210,38 @@ namespace
     constexpr float VENGEFUL_RANGE = 15.0f, VENGEFUL_DAMAGE = 0.05f;
     // Flamebound: within 8 yd of each other, 15% more (solo 10%).
     constexpr float FLAMEBOUND_RANGE = 8.0f, FLAMEBOUND_DAMAGE = 1.15f, FLAMEBOUND_SOLO = 1.1f;
+    // ---- The major bosses (The Firepit Ignites): Marked for Carnage at waves 45, 60, 75, 90, 100, 105 and every 15
+    // after: one boss, a 5 min limit from its entry (warned at 2:00, 1:00, 0:30 and the last 10 sec), at zero the
+    // arena kills everyone standing. Waves 45-100 bring the five majors (and they come round again after 105),
+    // each a scripted encounter (`MajorTick`).
+    enum MajorKind : uint8 { MAJOR_NONE, MAJOR_CAPTAIN, MAJOR_COLOSSUS, MAJOR_MATRON, MAJOR_WARDEN, MAJOR_CHAMPION };
+    uint32 const MAJOR_ENTRIES[] = { 0, 910150, 910151, 910152, 910153, 910154 };   // titan_firepit.sql
+    constexpr uint32 NPC_WEB_ANCHOR = 910155;
+    constexpr uint32 SPELL_CINDERWEB = 93491;           // its slow (client-patch/patch_runes.py)
+    constexpr uint32 SPELL_PHYSICAL_LOG = 845;          // the combat log's name for a boss's blow (Cleave)
+    constexpr uint32 CARNAGE_MS = 300000, PHASE_MS = 12000, WEBSTORM_MS = 8000, WEAPON_LEAST_MS = 10000;
+    constexpr float FINAL_STAND_DAMAGE = 1.2f, EXPOSED_TAKEN = 1.2f, TRIAL_TAKEN = 0.5f;
+
+    bool IsCarnage(uint32 wave)
+    {
+        return wave == 45 || wave == 60 || wave == 75 || wave == 90 || wave == 100 || wave == 105
+            || (wave > 105 && (wave - 105) % 15 == 0);
+    }
+
+    uint8 MajorAt(uint32 wave)
+    {
+        switch (wave)
+        {
+            case 45: return MAJOR_CAPTAIN;
+            case 60: return MAJOR_COLOSSUS;
+            case 75: return MAJOR_MATRON;
+            case 90: return MAJOR_WARDEN;
+            case 100: return MAJOR_CHAMPION;
+            default: return wave >= 105 && IsCarnage(wave) ? uint8(MAJOR_CAPTAIN + ((wave - 105) / 15) % 5)
+                : MAJOR_NONE;
+        }
+    }
+
     // Two that never share the arena: a forced spread and a forced closeness.
     bool Incompatible(uint8 a, uint8 b)
     {
@@ -456,6 +488,11 @@ namespace
         uint32 ms = 0;
         bool nova = false;                              // at the boss as it goes off
         bool pool = false;                              // Molten Ground: a burning pool where it went off
+        uint8 shape = 0;                                // SHAPE_* (0: a circle of radius at `at`)
+        float facing = 0.0f, inner = 0.0f, length = 0.0f, halfArc = 0.0f;
+        bool physical = false;                          // a Physical blow, else Fire
+        bool release = false;                           // its boss let go of its wind-up as it lands
+        std::vector<ObjectGuid> markers;                // a large shape's outline
         bool volatileEmber = false;                     // Volatile Remains' (three at most)
         int32 crack = -1;                               // Cracked Earth: its crack (index in _cracks)
         uint32 log = 0;                                 // the combat log's spell (0: the eruption's)
@@ -477,11 +514,37 @@ namespace
         uint32 left = 0, togetherMs = 0, tickMs = 0;
     };
 
+    struct Web                                          // the Cinder Matron's web line
+    {
+        Position center;
+        float angle = 0.0f;
+        ObjectGuid anchor;
+        std::vector<ObjectGuid> markers;
+        uint32 activeAt = 0, until = 0;                 // run ms
+    };
+
+    struct Major                                        // a major boss's encounter
+    {
+        ObjectGuid guid;
+        uint8 kind = 0;
+        uint32 t1 = 0, t2 = 0, t3 = 0, t4 = 0;          // its abilities' timers
+        std::vector<uint8> thresholds;                  // health % its phases (or weapons) come at
+        std::vector<uint8> queued;                      // crossed, waiting for the running one to end
+        uint8 phase = 0, step = 0, enrageAt = 0, weapon = 0;
+        uint32 phaseMs = 0, stepMs = 0, exposedUntil = 0, edgeAt = 0;
+        bool enraged = false, enragePending = false, side = false;
+        float taken = 1.0f;
+        std::vector<ObjectGuid> edgeMarkers;
+    };
+
     struct Echo                                         // Ashen Echo's channel
     {
         ObjectGuid echo, target;
         uint32 left = 0;
     };
+
+    // A danger's shape: a circle, a cone before its source, a line, a ring, half the arena, or a third of it.
+    enum : uint8 { SHAPE_CIRCLE, SHAPE_CONE, SHAPE_LINE, SHAPE_RING, SHAPE_HALF, SHAPE_SECTOR };
 
     struct Pool                                         // Molten Ground's burning ground
     {
@@ -1260,16 +1323,11 @@ private:
             text += ": the foes of " + std::string(FirepitRoster::CHAPTERS[chapter]) + " pour in!";
         if (bossWave)
         {
-            uint32 bosses = 1;
-            uint32 first = (_wave / BOSS_EVERY - 1) % std::size(BOSSES);
-            for (uint32 i = 0; i < bosses; ++i)
-            {
-                uint32 entry = BOSSES[(first + i * 5) % std::size(BOSSES)];
-                _queue.push_back({ entry, true, 0 });
-                if (CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(entry))
-                    text += (i ? " and " : ": ") + info->Name;
-            }
-            text += bosses > 1 ? " enter the Ring!" : " enters the Ring!";
+            uint32 entry = BossAt(_wave);
+            _queue.push_back({ entry, true, 0 });
+            if (CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(entry))
+                text += ": " + info->Name;
+            text += " enters the Ring!";
         }
         Announce(text, bossWave);
     }
@@ -1303,7 +1361,9 @@ private:
             own->health *= BossHealth(_wave);
             own->damage *= BossDamage(_wave);
         }
-        if (spawn.boss && _wave >= MECHANICS_FROM)
+        if (spawn.boss && MajorAt(_wave))
+            StartMajor(enemy, MajorAt(_wave));
+        else if (spawn.boss && _wave >= MECHANICS_FROM)
             _bosses[enemy->GetGUID()] = { urand(5000, ERUPTION_EVERY_MS), urand(NOVA_EVERY_MS / 2, NOVA_EVERY_MS),
                 false };
         enemy->SetFaction(ENEMY_FACTION);
@@ -1441,7 +1501,12 @@ private:
     {
         if (GameObject* marker = instance->GetGameObject(blast.marker))
             marker->Delete();
+        for (ObjectGuid const& guid : blast.markers)
+            if (GameObject* marker = instance->GetGameObject(guid))
+                marker->Delete();
         Creature* boss = instance->GetCreature(blast.source);
+        if (blast.release && boss)
+            boss->SetControlled(false, UNIT_STATE_ROOT);
         if (blast.nova && boss)
             boss->SetControlled(false, UNIT_STATE_ROOT);
         if (blast.nova && (!boss || !boss->IsAlive()))
@@ -1471,20 +1536,660 @@ private:
                 pool.marker = marker->GetGUID();
             _pools.push_back(pool);
         }
+        if (blast.physical)
+            spell = sSpellMgr->GetSpellInfo(SPELL_PHYSICAL_LOG);
+        SpellSchoolMask school = blast.physical ? SPELL_SCHOOL_MASK_NORMAL : SPELL_SCHOOL_MASK_FIRE;
         for (Player* hero : Living())
         {
-            if (hero->GetExactDist2d(at.GetPositionX(), at.GetPositionY()) > blast.radius
-                || std::abs(hero->GetPositionZ() - at.GetPositionZ()) > 6.0f)
+            if (!InShape(blast, at, hero) || std::abs(hero->GetPositionZ() - at.GetPositionZ()) > 6.0f
+                || IsProtected(hero))
                 continue;
-            DamageInfo damage(attacker, hero, uint32(float(hero->GetMaxHealth()) * blast.share), spell,
-                SPELL_SCHOOL_MASK_FIRE, SPELL_DIRECT_DAMAGE);
+            DamageInfo damage(attacker, hero, uint32(float(hero->GetMaxHealth()) * blast.share), spell, school,
+                SPELL_DIRECT_DAMAGE);
             Unit::CalcAbsorbResist(damage);
-            attacker->SendSpellNonMeleeDamageLog(hero, spell, damage.GetDamage(), SPELL_SCHOOL_MASK_FIRE,
-                damage.GetAbsorb(), damage.GetResist(), false, 0);
-            Unit::DealDamage(attacker, hero, damage.GetDamage(), nullptr, SPELL_DIRECT_DAMAGE, SPELL_SCHOOL_MASK_FIRE,
-                spell, false);
+            attacker->SendSpellNonMeleeDamageLog(hero, spell, damage.GetDamage(), school, damage.GetAbsorb(),
+                damage.GetResist(), false, 0);
+            Unit::DealDamage(attacker, hero, damage.GetDamage(), nullptr, SPELL_DIRECT_DAMAGE, school, spell, false);
         }
     }
+
+    // Whether a Hero stands in a danger's shape (at: where it is centred as it goes off).
+    static bool InShape(Blast const& blast, Position const& at, Player* hero)
+    {
+        float dx = hero->GetPositionX() - at.GetPositionX(), dy = hero->GetPositionY() - at.GetPositionY();
+        float distance = std::hypot(dx, dy);
+        float c = std::cos(blast.facing), s = std::sin(blast.facing);
+        auto within = [&blast](float angle)
+        {
+            float diff = std::fabs(Position::NormalizeOrientation(angle - blast.facing));
+            return std::min(diff, 2.0f * float(M_PI) - diff) <= blast.halfArc;
+        };
+        switch (blast.shape)
+        {
+            case SHAPE_CONE: return distance <= blast.radius && within(std::atan2(dy, dx));
+            case SHAPE_LINE:
+            {
+                float along = dx * c + dy * s, side = -dx * s + dy * c;
+                return along >= 0.0f && along <= blast.length && std::fabs(side) <= blast.radius;
+            }
+            case SHAPE_RING: return distance >= blast.inner && distance <= blast.radius;
+            case SHAPE_HALF: return dx * c + dy * s >= 0.0f;
+            case SHAPE_SECTOR: return within(std::atan2(dy, dx));
+            default: return distance <= blast.radius;
+        }
+    }
+
+    // A danger's warning on the floor: a small circle its ring; any other shape, embers along its outline (and,
+    // for a half or a third of the arena, across it).
+    void Telegraph(Blast& blast)
+    {
+        std::vector<Position> points;
+        auto at = [&](float angle, float distance)
+        {
+            points.emplace_back(blast.at.GetPositionX() + distance * std::cos(angle),
+                blast.at.GetPositionY() + distance * std::sin(angle), 0.0f);
+        };
+        switch (blast.shape)
+        {
+            case SHAPE_CIRCLE:
+                if (blast.radius <= 6.0f)
+                {
+                    if (GameObject* marker = Marker(GO_FLAME_CIRCLE, blast.at))
+                        blast.marker = marker->GetGUID();
+                    return;
+                }
+                for (float a = 0.0f; a < 2.0f * float(M_PI); a += 5.0f / blast.radius)
+                    at(a, blast.radius);
+                break;
+            case SHAPE_CONE:
+                for (float d = 2.0f; d <= blast.radius; d += 2.5f)
+                {
+                    at(blast.facing - blast.halfArc, d);
+                    at(blast.facing + blast.halfArc, d);
+                }
+                for (float a = -blast.halfArc; a <= blast.halfArc; a += 3.0f / blast.radius)
+                    at(blast.facing + a, blast.radius);
+                break;
+            case SHAPE_LINE:
+                for (float d = 2.0f; d <= blast.length; d += 3.0f)
+                    at(blast.facing, d);
+                break;
+            case SHAPE_RING:
+                for (float a = 0.0f; a < 2.0f * float(M_PI); a += 4.0f / blast.radius)
+                {
+                    at(a, blast.inner);
+                    at(a, blast.radius);
+                }
+                break;
+            default:                                    // a half or a third of the arena, about its centre
+                for (float x = -ARENA_RADIUS; x <= ARENA_RADIUS; x += 9.0f)
+                    for (float y = -ARENA_RADIUS; y <= ARENA_RADIUS; y += 9.0f)
+                    {
+                        if (std::hypot(x, y) > ARENA_RADIUS - 2.0f)
+                            continue;
+                        float angle = std::atan2(y, x);
+                        float diff = std::fabs(Position::NormalizeOrientation(angle - blast.facing));
+                        bool in = blast.shape == SHAPE_HALF ? std::cos(diff) >= 0.0f
+                            : std::min(diff, 2.0f * float(M_PI) - diff) <= blast.halfArc;
+                        if (in)
+                            points.emplace_back(blast.at.GetPositionX() + x, blast.at.GetPositionY() + y, 0.0f);
+                    }
+                break;
+        }
+        for (Position& point : points)
+        {
+            if (std::hypot(point.GetPositionX() - CENTER.GetPositionX(), point.GetPositionY() - CENTER.GetPositionY())
+                > ARENA_RADIUS)
+                continue;
+            point.m_positionZ = FloorAt(point.GetPositionX(), point.GetPositionY());
+            if (GameObject* marker = Marker(GO_EMBERS, point))
+                blast.markers.push_back(marker->GetGUID());
+        }
+    }
+
+    // ---- The major bosses and Marked for Carnage ------------------------------------------------------------
+
+    // The boss a boss wave brings: a major at Carnage waves, else the ladder's.
+    static uint32 BossAt(uint32 wave)
+    {
+        if (uint8 major = MajorAt(wave))
+            return MAJOR_ENTRIES[major];
+        return BOSSES[(std::max<uint32>(wave, BOSS_EVERY) / BOSS_EVERY - 1) % std::size(BOSSES)];
+    }
+
+    // A danger of a major boss's, warned on the floor and set off ms later (its shape's fields set by the caller).
+    Blast& Danger(Creature* boss, Blast blast, uint32 ms)
+    {
+        blast.source = boss->GetGUID();
+        blast.ms = ms;
+        Telegraph(blast);
+        _blasts.push_back(blast);
+        return _blasts.back();
+    }
+
+    Blast Circle(Position const& at, float radius, float share)
+    {
+        Blast blast;
+        blast.at = at;
+        blast.radius = radius;
+        blast.share = share;
+        return blast;
+    }
+
+    // A frontal cone (the boss rooted, facing its victim, until it lands).
+    void Cone(Creature* boss, float radius, float halfArc, float share, uint32 ms, bool physical, char const* name)
+    {
+        if (Unit* victim = boss->GetVictim())
+            boss->SetFacingToObject(victim);
+        boss->SetControlled(true, UNIT_STATE_ROOT);
+        Blast blast = Circle(boss->GetPosition(), radius, share);
+        blast.shape = SHAPE_CONE;
+        blast.facing = boss->GetOrientation();
+        blast.halfArc = halfArc;
+        blast.physical = physical;
+        blast.release = true;
+        Danger(boss, blast, ms);
+        Announce(boss->GetName() + " winds up " + name + ": get behind it or away!");
+    }
+
+    // Circles under up to `most` Heroes' feet.
+    void UnderHeroes(Creature* boss, uint32 most, float radius, float share, uint32 ms, bool pool)
+    {
+        std::vector<Player*> heroes = Living();
+        Acore::Containers::RandomShuffle(heroes);
+        if (heroes.size() > most)
+            heroes.resize(most);
+        for (Player* hero : heroes)
+        {
+            Blast blast = Circle(hero->GetPosition(), radius, share);
+            blast.pool = pool;
+            Danger(boss, blast, ms);
+        }
+    }
+
+    // A third of the arena (about its centre), facing `angle`.
+    void Third(Creature* boss, float angle, float share, uint32 ms)
+    {
+        Blast blast = Circle(CENTER, ARENA_RADIUS, share);
+        blast.shape = SHAPE_SECTOR;
+        blast.facing = angle;
+        blast.halfArc = float(M_PI) / 3.0f;
+        Danger(boss, blast, ms);
+    }
+
+    void StartMajor(Creature* boss, uint8 kind)
+    {
+        _major = Major();
+        _major.guid = boss->GetGUID();
+        _major.kind = kind;
+        switch (kind)
+        {
+            case MAJOR_CAPTAIN: _major.thresholds = { 70, 35 }; _major.enrageAt = 30; break;
+            case MAJOR_COLOSSUS: _major.thresholds = { 70, 35 }; _major.enrageAt = 25; break;
+            case MAJOR_MATRON: _major.thresholds = { 65, 30 }; break;
+            case MAJOR_WARDEN: _major.thresholds = { 70, 35 }; _major.enrageAt = 25; break;
+            case MAJOR_CHAMPION: _major.thresholds = { 75, 50, 25 }; _major.enrageAt = 10; break;
+            default: break;
+        }
+        _major.t1 = 8000;
+        _major.t2 = 14000;
+        _major.t3 = 20000;
+        _major.t4 = 12000;
+        _carnageMs = IsCarnage(_wave) ? CARNAGE_MS : 0;
+        if (_carnageMs)
+            Announce("MARKED FOR CARNAGE: defeat " + boss->GetName() + " within 5 minutes, or the arena detonates!",
+                true);
+    }
+
+    // Each update with a major boss: its phases (queued, never two at once), its enrage, its abilities.
+    void MajorTick(uint32 diff)
+    {
+        if (!_major.guid)
+            return;
+        Creature* boss = instance->GetCreature(_major.guid);
+        if (!boss || !boss->IsAlive())
+        {
+            EndMajor(boss);
+            return;
+        }
+        uint8 health = uint8(boss->GetHealthPct());
+        while (!_major.thresholds.empty() && health <= _major.thresholds.front())
+        {
+            _major.queued.push_back(_major.thresholds.front());
+            _major.thresholds.erase(_major.thresholds.begin());
+        }
+        if (_major.enrageAt && !_major.enraged && health <= _major.enrageAt)
+        {
+            _major.enraged = true;
+            _major.enragePending = true;
+        }
+        if (_major.phase)
+        {
+            PhaseTick(boss, diff);
+            return;
+        }
+        if (_major.enragePending)
+        {
+            _major.enragePending = false;
+            Enrage(boss);
+        }
+        if (!_major.queued.empty())
+        {
+            _major.phase = _major.queued.front();
+            _major.queued.erase(_major.queued.begin());
+            StartPhase(boss);
+            return;
+        }
+        auto due = [diff](uint32& ms, uint32 every)
+        {
+            if (ms > diff)
+            {
+                ms -= diff;
+                return false;
+            }
+            ms = every;
+            return true;
+        };
+        bool solo = Living().size() <= 1;
+        switch (_major.kind)
+        {
+            case MAJOR_CAPTAIN:
+                if (due(_major.t1, 18000))
+                    if (Player* hero = RandomHero())
+                    {
+                        Blast line = Circle(boss->GetPosition(), 1.5f, 0.2f);
+                        line.shape = SHAPE_LINE;
+                        line.facing = boss->GetAngle(hero);
+                        line.length = ARENA_RADIUS * 2.0f;
+                        Danger(boss, line, 4000);
+                        Announce(boss->GetName() + " lays a Powder Line: step off it!");
+                    }
+                if (due(_major.t2, 24000))
+                    Cone(boss, 8.0f, float(M_PI) / 4.0f, 0.25f, 3000, true, "a Cutlass Sweep");
+                break;
+            case MAJOR_COLOSSUS:
+                if (due(_major.t1, 22000))
+                    Cone(boss, 8.0f, float(M_PI) / 4.0f, 0.25f, 4000, true, "Ironbreaker");
+                if (due(_major.t2, _major.enraged ? 22000 : 28000))
+                {
+                    UnderHeroes(boss, solo ? 1 : 2, 4.0f, 0.18f, 4000, false);
+                    Announce(boss->GetName() + "'s Molten Rupture: move!");
+                }
+                break;
+            case MAJOR_MATRON:
+                if (due(_major.t1, 24000))
+                {
+                    UnderHeroes(boss, 1, 4.0f, 0.18f, 4000, true);
+                    Announce(boss->GetName() + " spits fire: move away!");
+                }
+                if (due(_major.t2, 20000))
+                    Cone(boss, 7.0f, float(M_PI) / 4.0f, 0.23f, 3000, true, "its Rending Mandibles");
+                if (due(_major.t3, 35000))
+                    Cinderweb(boss);
+                break;
+            case MAJOR_WARDEN:
+                if (due(_major.t1, 22000))
+                    Cone(boss, 7.0f, float(M_PI) / 4.0f, 0.25f, 4000, true, "a Warden's Crush");
+                if (due(_major.t2, _major.enraged ? 22000 : 28000))
+                {
+                    for (uint32 i = 0; i < 2; ++i)
+                    {
+                        float angle = frand(0.0f, 2.0f * float(M_PI)), radius = frand(ARRIVAL_RADIUS, 40.0f);
+                        float x = CENTER.GetPositionX() + radius * std::cos(angle);
+                        float y = CENTER.GetPositionY() + radius * std::sin(angle);
+                        Danger(boss, Circle(Position(x, y, FloorAt(x, y)), 4.0f, 0.18f), 5000);
+                    }
+                    Announce("Furnace Vents glow: stay clear!");
+                }
+                if (due(_major.t3, 40000))
+                {
+                    _major.side = !_major.side;
+                    Blast half = Circle(CENTER, ARENA_RADIUS, 0.25f);
+                    half.shape = SHAPE_HALF;
+                    half.facing = _major.side ? 0.0f : float(M_PI);
+                    Danger(boss, half, 6000);
+                    Announce("Divided Furnace: half the arena glows, cross to the other side!", true);
+                }
+                break;
+            case MAJOR_CHAMPION:
+                if (due(_major.t1, 20000))
+                    Cone(boss, 8.0f, float(M_PI) / 4.0f, 0.25f, 3000, true, "a Champion Cleave");
+                if (due(_major.t2, 25000))
+                {
+                    UnderHeroes(boss, 1, 4.0f, 0.18f, 4000, false);
+                    Announce(boss->GetName() + " takes a Blazing Shot: move!");
+                }
+                if (due(_major.t3, 35000))
+                {
+                    Third(boss, frand(0.0f, 2.0f * float(M_PI)), 0.2f, 5000);
+                    Announce(boss->GetName() + " Challenges the Crowd: leave the marked third!", true);
+                }
+                if (_major.weapon && due(_major.t4, _major.weapon == 3 ? 20000 : 24000))
+                    WeaponStrike(boss);
+                break;
+            default:
+                break;
+        }
+    }
+
+    Player* RandomHero()
+    {
+        std::vector<Player*> heroes = Living();
+        return heroes.empty() ? nullptr : heroes[urand(0, uint32(heroes.size()) - 1)];
+    }
+
+    // The Matron's Cinderweb: three web lines across the arena for 15 sec after a 5 sec warning, each held by a
+    // Web Anchor (20% of an enemy's health) whose death takes its line; touching one slows by 30% for 3 sec.
+    void Cinderweb(Creature* boss)
+    {
+        for (uint32 i = 0; i < 3; ++i)
+        {
+            Web web;
+            web.angle = frand(0.0f, float(M_PI));
+            float offset = frand(-25.0f, 25.0f), across = web.angle + float(M_PI) / 2.0f;
+            web.center = Position(CENTER.GetPositionX() + offset * std::cos(across),
+                CENTER.GetPositionY() + offset * std::sin(across), CENTER.GetPositionZ());
+            web.activeAt = _runMs + 5000;
+            web.until = web.activeAt + 15000;
+            for (float d = -40.0f; d <= 40.0f; d += 4.0f)
+            {
+                float x = web.center.GetPositionX() + d * std::cos(web.angle);
+                float y = web.center.GetPositionY() + d * std::sin(web.angle);
+                if (std::hypot(x - CENTER.GetPositionX(), y - CENTER.GetPositionY()) > ARENA_RADIUS)
+                    continue;
+                if (GameObject* marker = Marker(GO_EMBERS, Position(x, y, FloorAt(x, y))))
+                    web.markers.push_back(marker->GetGUID());
+            }
+            if (TempSummon* anchor = instance->SummonCreature(NPC_WEB_ANCHOR, Position(web.center.GetPositionX(),
+                web.center.GetPositionY(), FloorAt(web.center.GetPositionX(), web.center.GetPositionY()))))
+            {
+                anchor->SetFaction(ENEMY_FACTION);
+                anchor->SetReactState(REACT_PASSIVE);
+                anchor->SetControlled(true, UNIT_STATE_ROOT);
+                Enemy* own = anchor->CustomData.GetDefault<Enemy>("titan_firepit");
+                own->health = WaveFactor(_wave) * (1.0f + GROUP_HEALTH * float(_groupSize - 1)) * 0.2f;
+                own->wave = _wave;
+                DungeonScaling::ApplyHealth(anchor);
+                anchor->SetFullHealth();
+                web.anchor = anchor->GetGUID();
+            }
+            _webs.push_back(web);
+        }
+        Announce(boss->GetName() + " spins a Cinderweb: avoid the lines, or break their anchors!", true);
+    }
+
+    void WebsTick()
+    {
+        for (std::size_t i = 0; i < _webs.size();)
+        {
+            Web& web = _webs[i];
+            Creature* anchor = instance->GetCreature(web.anchor);
+            if (_runMs >= web.until || !anchor || !anchor->IsAlive())
+            {
+                for (ObjectGuid const& guid : web.markers)
+                    if (GameObject* marker = instance->GetGameObject(guid))
+                        marker->Delete();
+                if (anchor)
+                    anchor->DespawnOrUnsummon(Milliseconds(anchor->IsAlive() ? 0 : CORPSE_MS));
+                _webs.erase(_webs.begin() + i);
+                continue;
+            }
+            if (_runMs >= web.activeAt)
+            {
+                float c = std::cos(web.angle), s = std::sin(web.angle);
+                for (Player* hero : Living())
+                {
+                    float dx = hero->GetPositionX() - web.center.GetPositionX();
+                    float dy = hero->GetPositionY() - web.center.GetPositionY();
+                    if (std::fabs(-dx * s + dy * c) <= 1.5f)
+                        hero->AddAura(SPELL_CINDERWEB, hero);
+                }
+            }
+            ++i;
+        }
+    }
+
+    // The Champion's weapon signature.
+    void WeaponStrike(Creature* boss)
+    {
+        switch (_major.weapon)
+        {
+            case 1:
+                if (Player* hero = RandomHero())
+                {
+                    Blast line = Circle(boss->GetPosition(), 2.0f, 0.22f);
+                    line.shape = SHAPE_LINE;
+                    line.facing = boss->GetAngle(hero);
+                    line.length = ARENA_RADIUS * 2.0f;
+                    line.physical = true;
+                    Danger(boss, line, 4000);
+                    Announce(boss->GetName() + "'s Crushing Line: step off it!");
+                }
+                break;
+            case 2:
+            {
+                Blast ring = Circle(boss->GetPosition(), 12.0f, 0.22f);
+                ring.shape = SHAPE_RING;
+                ring.inner = 6.0f;
+                Danger(boss, ring, 5000);
+                Announce(boss->GetName() + "'s Ring of Embers: get close or far!", true);
+                break;
+            }
+            case 3:
+                Cone(boss, 10.0f, float(M_PI) / 2.0f, 0.28f, 4000, true, "an Executioner's Arc");
+                break;
+            default:
+                break;
+        }
+    }
+
+    void StartPhase(Creature* boss)
+    {
+        _major.phaseMs = _major.kind == MAJOR_MATRON ? WEBSTORM_MS : PHASE_MS;
+        _major.step = 0;
+        _major.stepMs = 0;
+        switch (_major.kind)
+        {
+            case MAJOR_CAPTAIN:
+                boss->NearTeleportTo(CENTER.GetPositionX(), CENTER.GetPositionY(), CENTER.GetPositionZ(),
+                    boss->GetOrientation());
+                boss->SetControlled(true, UNIT_STATE_ROOT);
+                _major.taken = TRIAL_TAKEN;
+                Announce(boss->GetName() + ": TRIAL BY FIRE! Cannon volleys incoming, watch the floor!", true);
+                break;
+            case MAJOR_COLOSSUS:
+                boss->SetControlled(true, UNIT_STATE_ROOT);
+                Announce(boss->GetName() + " SHATTERS THE CORE: hammer strikes on the cracks!", true);
+                break;
+            case MAJOR_MATRON:
+                boss->AttackStop();
+                boss->SetControlled(true, UNIT_STATE_ROOT);
+                boss->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+                Announce(boss->GetName() + " climbs out of reach: WEBSTORM!", true);
+                break;
+            case MAJOR_WARDEN:
+                boss->SetControlled(true, UNIT_STATE_ROOT);
+                Announce(boss->GetName() + ": FURNACE CYCLE! The arena erupts in sections!", true);
+                break;
+            case MAJOR_CHAMPION:
+                // A weapon change: its signature, kept at least 10 sec.
+                _major.weapon = uint8(_major.weapon + 1);
+                _major.phaseMs = WEAPON_LEAST_MS;
+                _major.t4 = 3000;
+                if (_major.weapon == 3)
+                    if (Aura* aura = boss->AddAura(SPELL_ASHEN_EMPOWERMENT, boss))
+                    {
+                        aura->SetMaxDuration(int32(CARNAGE_MS));
+                        aura->SetDuration(int32(CARNAGE_MS));
+                    }
+                Announce(boss->GetName() + std::string(_major.weapon == 1 ? " takes up the Ironbreaker!"
+                    : _major.weapon == 2 ? " takes up the Ashen Glaive!" : " takes up the Executioner's Blade!"),
+                    true);
+                break;
+            default:
+                break;
+        }
+    }
+
+    void PhaseTick(Creature* boss, uint32 diff)
+    {
+        if (_major.kind == MAJOR_CHAMPION)
+        {
+            // Its weapons' least time: the Champion fights on meanwhile.
+            _major.phaseMs = _major.phaseMs > diff ? _major.phaseMs - diff : 0;
+            if (!_major.phaseMs)
+                _major.phase = 0;
+            if (_major.t4 > diff)
+                _major.t4 -= diff;
+            else
+            {
+                _major.t4 = _major.weapon == 3 ? 20000 : 24000;
+                WeaponStrike(boss);
+            }
+            return;
+        }
+        // Three dangers 4 sec apart (Webstorm: two), each with its own 4 sec warning.
+        uint8 steps = _major.kind == MAJOR_MATRON ? 2 : 3;
+        _major.stepMs = _major.stepMs > diff ? _major.stepMs - diff : 0;
+        if (!_major.stepMs && _major.step < steps)
+        {
+            _major.stepMs = 4000;
+            ++_major.step;
+            float angle = frand(0.0f, 2.0f * float(M_PI));
+            if (_major.kind == MAJOR_COLOSSUS)
+            {
+                float radius = frand(ARRIVAL_RADIUS + 6.0f, 40.0f);
+                float x = CENTER.GetPositionX() + radius * std::cos(angle);
+                float y = CENTER.GetPositionY() + radius * std::sin(angle);
+                Danger(boss, Circle(Position(x, y, FloorAt(x, y)), 8.0f, 0.2f), 4000);
+            }
+            else
+                Third(boss, angle, 0.2f, 4000);
+        }
+        _major.phaseMs = _major.phaseMs > diff ? _major.phaseMs - diff : 0;
+        if (_major.phaseMs)
+            return;
+        // The phase ends.
+        _major.phase = 0;
+        _major.taken = 1.0f;
+        boss->SetControlled(false, UNIT_STATE_ROOT);
+        if (_major.kind == MAJOR_MATRON)
+            boss->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+        if (_major.kind == MAJOR_COLOSSUS)
+        {
+            _major.exposedUntil = _runMs + PHASE_MS;
+            Announce("The Colossus's core is EXPOSED: it takes 20% more damage for 12 sec!", true);
+        }
+        Engage(boss);
+    }
+
+    // Final Stand (the Captain), Unstable Forge (the Colossus: Molten Rupture sooner), Meltdown (the Warden),
+    // the Firepit Answers (the Champion: the arena's edge ignites).
+    void Enrage(Creature* boss)
+    {
+        Enemy* own = EnemyOf(boss);
+        switch (_major.kind)
+        {
+            case MAJOR_CAPTAIN:
+                if (own)
+                    own->damage *= FINAL_STAND_DAMAGE;
+                [[fallthrough]];
+            case MAJOR_WARDEN:
+                if (Aura* aura = boss->AddAura(SPELL_ASHEN_EMPOWERMENT, boss))
+                {
+                    aura->SetMaxDuration(int32(CARNAGE_MS));
+                    aura->SetDuration(int32(CARNAGE_MS));
+                }
+                Announce(boss->GetName() + (_major.kind == MAJOR_CAPTAIN ? " makes a FINAL STAND!"
+                    : " melts down: its vents quicken!"), true);
+                break;
+            case MAJOR_COLOSSUS:
+                Announce(boss->GetName() + "'s forge grows unstable: Molten Rupture comes faster!", true);
+                break;
+            case MAJOR_CHAMPION:
+                _major.edgeAt = _runMs + 6000;
+                for (float a = 0.0f; a < 2.0f * float(M_PI); a += 0.12f)
+                {
+                    float x = CENTER.GetPositionX() + (ARENA_RADIUS - 2.0f) * std::cos(a);
+                    float y = CENTER.GetPositionY() + (ARENA_RADIUS - 2.0f) * std::sin(a);
+                    if (GameObject* marker = Marker(GO_EMBERS, Position(x, y, FloorAt(x, y))))
+                        _major.edgeMarkers.push_back(marker->GetGUID());
+                }
+                Announce("THE FIREPIT ANSWERS: the arena's edge ignites in 6 sec, get to the middle!", true);
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Each second: the burning edge (the Champion's last stand), the Carnage clock.
+    void MajorSecond()
+    {
+        WebsTick();
+        if (_major.edgeAt && _runMs >= _major.edgeAt)
+        {
+            Unit* source = AffixSource();
+            for (Player* hero : Living())
+                if (hero->GetExactDist2d(CENTER.GetPositionX(), CENTER.GetPositionY()) >= ARENA_RADIUS - 4.0f)
+                    Burn(source, hero, 0.03f, SPELL_ERUPTION_LOG);
+        }
+        if (!_carnageMs)
+            return;
+        _carnageMs = _carnageMs > 1000 ? _carnageMs - 1000 : 0;
+        uint32 left = _carnageMs / 1000;
+        if (left == 120 || left == 60 || left == 30)
+            Announce("Carnage: " + std::to_string(left) + " sec left!", true);
+        else if (left && left <= 10)
+            Announce(std::to_string(left) + "...", true);
+        if (_carnageMs)
+            return;
+        Announce("Time's up: the arena DETONATES!", true);
+        for (Player* player : Living())
+        {
+            if (Record* record = RecordOf(player))
+                record->killer = "Marked for Carnage";
+            Unit::Kill(player, player, false);
+        }
+    }
+
+    void EndMajor(Creature* boss)
+    {
+        if (boss)
+        {
+            boss->SetControlled(false, UNIT_STATE_ROOT);
+            boss->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+        }
+        for (ObjectGuid const& guid : _major.edgeMarkers)
+            if (GameObject* marker = instance->GetGameObject(guid))
+                marker->Delete();
+        for (Web const& web : _webs)
+        {
+            for (ObjectGuid const& guid : web.markers)
+                if (GameObject* marker = instance->GetGameObject(guid))
+                    marker->Delete();
+            if (Creature* anchor = instance->GetCreature(web.anchor))
+                anchor->DespawnOrUnsummon();
+        }
+        _webs.clear();
+        _major = Major();
+        if (_carnageMs)
+        {
+            _carnageMs = 0;
+            Announce("The Carnage is ended: the arena is spared.", true);
+        }
+    }
+
+public:
+    // A major boss's damage taken: half in Trial by Fire, 20% more with its core exposed.
+    void MajorTaken(Creature* victim, uint32& damage)
+    {
+        if (!_major.guid || victim->GetGUID() != _major.guid)
+            return;
+        float factor = _major.taken * (_runMs < _major.exposedUntil ? EXPOSED_TAKEN : 1.0f);
+        damage = uint32(float(damage) * factor);
+    }
+
+private:
 
     // ---- World affixes --------------------------------------------------------------------------------------
 
@@ -1627,6 +2332,7 @@ private:
             return;
         _secondMs -= 1000;
         PoolsTick();
+        MajorSecond();
         BrandsTick();
         MendingTick();
         ChainsTick();
@@ -2332,10 +3038,15 @@ private:
     void ClearMechanics()
     {
         ClearAffixes();
+        EndMajor(instance->GetCreature(_major.guid));
+        _carnageMs = 0;
         for (Blast const& blast : _blasts)
         {
             if (GameObject* marker = instance->GetGameObject(blast.marker))
                 marker->Delete();
+            for (ObjectGuid const& guid : blast.markers)
+                if (GameObject* marker = instance->GetGameObject(guid))
+                    marker->Delete();
             if (Creature* boss = instance->GetCreature(blast.source))
                 boss->SetControlled(false, UNIT_STATE_ROOT);
         }
@@ -2407,6 +3118,7 @@ private:
         }
 
         Mechanics(diff);
+        MajorTick(diff);
         Affixes(diff);
         CheckLoot();
 
@@ -2547,7 +3259,7 @@ private:
                 _holding = false;
                 _preparing = true;
                 _waveMs = BOSS_PREP_MS;
-                uint32 entry = BOSSES[((_wave + 1) / BOSS_EVERY - 1) % std::size(BOSSES)];
+                uint32 entry = BossAt(_wave + 1);
                 CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(entry);
                 Announce("Wave " + std::to_string(_wave + 1) + ": " + (info ? info->Name : std::string("a boss"))
                     + " enters the Ring in 20 sec. Prepare!", true);
@@ -2579,7 +3291,7 @@ private:
             + std::to_string(living) + ',' + std::to_string(_records.size()) + ','
             + std::to_string(_phase == Phase::COUNTDOWN ? (_timer + 999) / 1000 : 0) + ','
             + std::to_string(overwhelm) + ',' + std::to_string(MostAlive()) + ','
-            + std::to_string(_reinforcements.size()));
+            + std::to_string(_reinforcements.size()) + ',' + std::to_string((_carnageMs + 999) / 1000));
     }
 
     void Finish()
@@ -2705,6 +3417,9 @@ private:
     std::vector<Chain> _chains;
     std::map<ObjectGuid, uint32> _pursuers;         // Burning Pursuit: run ms each one's fixate ends
     std::vector<Crack> _cracks;
+    Major _major;
+    std::vector<Web> _webs;
+    uint32 _carnageMs = 0;                          // Marked for Carnage's time left (0: none)
     std::vector<ObjectGuid> _natives, _enemies;
     std::vector<Spawn> _queue;
     std::map<ObjectGuid, Record> _records;
@@ -3164,6 +3879,7 @@ public:
         {
             run->Unprotect(player);                 // a revived Hero's attack ends their protection
             run->Bolster(victim->ToCreature(), damage);
+            run->MajorTaken(victim->ToCreature(), damage);
             run->Damage(player, damage);
         }
         if (Player* player = victim->ToPlayer(); player && attacker->ToCreature()

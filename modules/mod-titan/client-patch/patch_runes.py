@@ -2429,7 +2429,11 @@ SPELLS += [
             aura(AURA_DUMMY, 1, 0), FIRE),
     harmful(93490, 'Cracked Earth', 'Spell_Nature_Earthquake', 'Movement speed reduced by 30%.', DURATION_2S,
             aura(AURA_MOD_DECREASE_SPEED, -30, 0), FIRE),
+    # The Cinder Matron's web lines (a major boss's, src/firepit.cpp).
+    harmful(93491, 'Cinderweb', 'Spell_Nature_Web', 'Movement speed reduced by 30%.', DURATION_3S,
+            aura(AURA_MOD_DECREASE_SPEED, -30, 0), FIRE),
 ]
+ICONS += ['Spell_Nature_Web']
 for _spell in SPELLS:
     if _spell['id'] == 93489:
         _spell['set'] = {**_spell['set'], 'SpellVisual': 12328}

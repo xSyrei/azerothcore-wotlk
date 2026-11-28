@@ -8,7 +8,8 @@
 -- The server (mod-titan, src/firepit.cpp) talks in addon whispers to the player, prefix EFFP:
 --   X,<affix name>,... the world affixes active now
 --   H,<wave>,<sec left>,<enemies alive>,<boss wave 0|1>,<Heroes standing>,<Heroes in the run>,<countdown sec>,
---     <Pressure stacks (5% more enemy damage each)>,<the field's cap>,<reinforcements waiting>
+--     <Pressure stacks (5% more enemy damage each)>,<the field's cap>,<reinforcements waiting>,
+--     <Marked for Carnage: sec left, 0 none>
 --   RUN,<wave reached>,<sec survived>,<group size>,<kills>,<monster health %>,<start wave>
 --   P,<name>,<level>,<peak wave>,<enemies at peak>,<most enemies>,<damage>,<healing>,<taken>,<kills>,<boss kills>,
 --     <biggest hit>,<biggest hit taken>,<deaths>,<wave fallen on>,<times resurrected>,<spoils>,<killer>
@@ -206,6 +207,7 @@ local function ShowHud(fields)
         fields[5] == "1"
     local standing, total, countdown = tonumber(fields[6]) or 0, tonumber(fields[7]) or 0, tonumber(fields[8]) or 0
     local pressure, cap, waiting = tonumber(fields[9]) or 0, tonumber(fields[10]) or 0, tonumber(fields[11]) or 0
+    local carnage = tonumber(fields[12]) or 0
     if countdown > 0 or wave == 0 then
         hud.wave:SetText("Get ready")
         hud.timer:SetText(Clock(countdown))
@@ -223,6 +225,10 @@ local function ShowHud(fields)
     -- the reinforcements waiting.
     if pressure > 0 then
         hud.boss:SetText("|cffff3b30PRESSURE +" .. (pressure * 5) .. "%|r")
+    end
+    -- Marked for Carnage: the boss's deadline, over everything else.
+    if carnage > 0 then
+        hud.boss:SetText("|cffff3b30CARNAGE " .. Clock(carnage) .. "|r")
     end
     if cap > 0 and alive >= cap * 0.75 then
         hud.enemies:SetText("|cffff3b30" .. alive .. "|r / " .. cap .. (waiting > 0 and (" +" .. waiting) or ""))

@@ -1156,6 +1156,15 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   (93486, a fixate), Cracked Earth (93490), Vengeful Flame (93487), Flamebound (93488); their damage bonuses kept in
   `Enemy::affix` (`EnemyAffixTick`); roles chosen at a wave's start (`AssignRoles`, `ApplyRole`), deaths handled in
   `EnemyFell`; Searing Brand and Shackling Chains never together (`Incompatible`).
+- **Marked for Carnage and the major bosses** (`IsCarnage`, `MajorAt`, `BossAt`, `StartMajor`, `MajorTick`,
+  `MajorSecond`): waves 45, 60, 75, 90, 100, 105 and every 15 after bring a major boss (910150-910154: the Ashfleet
+  Captain, the Ironbound Colossus, the Cinder Matron, the Furnace Warden, the Firepit Champion; in turn again from 105)
+  and a 5 min limit from its entry (the H message's 12th field), at zero every Hero standing dies. Each is scripted on
+  the Blast system, its dangers telegraphed by shape (`Telegraph`, `InShape`: circles, cones, lines, rings, halves and
+  thirds of the arena): timed abilities, health phases queued one at a time (Trial by Fire, Shatter the Core and its
+  Exposed Core, Webstorm, Furnace Cycle, the Champion's weapons), and an enrage (Final Stand, Unstable Forge, Meltdown,
+  the Firepit Answers' burning edge). The Matron's Cinderweb: three lines with Web Anchors (910155, 20% of an enemy's
+  health) and the slow 93491. Their damage taken is `MajorTaken`'s.
 - **Boss mechanics** from wave 15 (`MECHANICS_FROM`), each a share of the Hero's own health (it is about moving, not
   gear): **Molten Eruption** (15+, every 14 sec): a ring of flame under up to 3 Heroes, erupting 3 sec later, 30% to
   anyone within 6 yd (its source the invisible Molten Eruption, 910141). **Searing Nova** (30+, every 22 sec): the
