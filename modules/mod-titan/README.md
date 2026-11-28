@@ -1153,24 +1153,41 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   stray off the floor (past 52 yards, or up in the stands) are put back on its edge.
 - **World affixes** (`Affix`, `AffixesAt`, `UpdateAffixes`, `Affixes`): a new one at waves 10, 20, 30, 40; from 50 every
   10 waves the oldest replaced; four at most; the order a shuffle seeded by the week (`AffixRotation`), so every group
-  (and a checkpoint start) gets the same set for a wave; each one's timer fresh as it enters. Molten Ground (eruptions
-  under up to 2 Heroes, 12%, then a 4 yd pool 8 sec at 3%/sec, never on the revival ring), Cinder Winds (a 12 yd lane, 5
-  sec warning, a 2 sec sweep: 10% and the slow 93480), Searing Brand (93481: 2%/sec for 8 sec, put out by 3 sec 8 yd
-  from everyone, solo from where it struck), Emberfall (3 spots, 5 sec, 15% in 4 yd). Damage is a share of max health
-  from an invisible source (`AffixSource`, `Burn`); no two dangers resolve within 3 sec (`Spaced`). The tracker's X
-  message lists them. The expanded pool: Bolstering (93482), Mending Embers (93483), Cinder Shield (93484, its absorb
-  set to 20% of health), Ashen Echo (910129, 93485), Volatile Remains, Shackling Chains (93489), Burning Pursuit
-  (93486, a fixate), Cracked Earth (93490), Vengeful Flame (93487), Flamebound (93488); their damage bonuses kept in
-  `Enemy::affix` (`EnemyAffixTick`); roles chosen at a wave's start (`AssignRoles`, `ApplyRole`), deaths handled in
-  `EnemyFell`; Searing Brand and Shackling Chains never together (`Incompatible`).
+  (and a checkpoint start) gets the same set for a wave; each one's timer fresh as it enters. They are built to stay:
+  what they leave lies on the floor as a lasting decal (`Zone`, `ZoneLine`; no smoke) until it ends. Molten Ground
+  (every 14 sec under every Hero, 15%, then a pool 40 sec at 4%/sec; `LayPool`, 14 pools at most, never on the revival
+  ring), Cinder Winds (a 14 yd lane blasted as a line blast after 4 sec: 20% and the slow 93480, then a wall of fire 12
+  sec at 5%/sec, `WindsTick`), Searing Brand (93481: 3%/sec rising 1% a second to 8%, 12 sec, spreading within 8 yd,
+  `BrandHero`; put out by 3 sec 8 yd from everyone, solo from where it struck), Emberfall (under every Hero and 5 spots,
+  20% in 5 yd, each a pool). Damage is a share of max health from an invisible source (`AffixSource`, `Burn`); no two
+  dangers resolve within 3 sec (`Spaced`). The tracker's X message lists them. The expanded pool: Bolstering (93482:
+  every death stacks 12% damage and health on the enemies within 25 yd, 10 at most), Mending Embers (93483: every enemy
+  within 20 yd 5% every 2 sec), Cinder Shield (93484, 35% of health; broken, a burst), Ashen Echo (910129, 93485: 25%
+  more damage for 20 sec), Volatile Remains (each leaving a pool), Shackling Chains (93489: two pairs from 4 Heroes,
+  4%/sec apart), Burning Pursuit (93486, a fixate, 50% more damage, a fire trail), Cracked Earth (93490, frozen ground
+  25 sec at 50% slow), Vengeful Flame (93487, every enemy within 15 yd, 10 stacks), Flamebound (93488: 30% more and half
+  damage taken together, `FlameboundTaken`); their damage bonuses kept in `Enemy::affix` (`EnemyAffixTick`); roles
+  chosen at a wave's start (`AssignRoles`, `ApplyRole`), deaths handled in `EnemyFell`; Searing Brand and Shackling
+  Chains never together (`Incompatible`).
+- **The Ashfleet Captain's fight** (wave 45; `RunOutTheGuns`, `CannonShot`, `LaunchCannonballs`, `Volley`): six
+  cannons (910448) and kegs (910449) round the rim; cannonballs (93492) fired from the nearest so they land as their
+  warnings fill. Lit Powder Kegs (creature 910159, display 26252; `RollKeg`): a 12 sec fuse as a danger decal, its
+  blast `Blast::keg`; destroyed first, no blast (`Defused`), and within 8 yd of him it blasts and stuns him. Ashfleet
+  Deckhands (910158, display 90209: retail's Freehold Shipmate, client-patch models/freehold_shipmate, its animations
+  trimmed to a fighter's) board from the cannons (`Boarders`, spawned as wave enemies by `SpawnOne`'s place); stray
+  shots every 7 sec (`StrayFire`). Trial by Fire is `Volley`; Final Stand speeds the kegs and boarders and fires a
+  Broadside every 9 sec. Every blast lands by its shape (`LandLook`: a line's chain, a cone's dust, a ring, an arena
+  half's eruptions), with camera shakes (`Shake`) and timed looks (`Queue`, `FxTick`).
 - **The end-of-run cache**: the spoils' chest (gameobject 910140) is retail's challenge chest
   (`client-patch/models/firepit_cache`, converted by creature_gltf_to_m2.py with its Open, Opened and Close
   animations), display 9700 (patch_creatures.py GAMEOBJECTS: the client's GameObjectDisplayInfo.dbc and
   `gameobjectdisplayinfo_dbc`).
 - **Enemy Forces and the Spectators** (The Firepit Ignites): each enemy's role set at its spawn (`RoleOf`: Boss, Healer
-  by name, Ranged for a mage-class creature, else Melee; `Enemy::role`), sent each tick as the F message (role counts of
-  the living, the reinforcements and queue, Bolstered/Mending badges; the Ashen Echo, web anchors and spectators never
-  count). Across waves at most `MostHealers` healers (1, then 2 from wave 16) and `MostRanged` ranged (2, 3 from 16, 4
+  by name, Ranged for a mage-class creature, else Melee; `Enemy::role`, the waves' mix) and its look (`LookOf`: boss,
+  tank by an off-hand shield or 4x health, ranged by a bow, gun, crossbow or thrown weapon, caster by a mana class,
+  healer, else melee; `Enemy::look`), sent each tick as the F message (the looks' counts of the living, the
+  reinforcements and queue, Bolstered/Mending badges; the Ashen Echo, web anchors and spectators never count), shown
+  by the add-on as icons (Art/Role*.tga, cut by build_firepit_art.py from icons/ui/FirepitRoles.png). Across waves at most `MostHealers` healers (1, then 2 from wave 16) and `MostRanged` ranged (2, 3 from 16, 4
   from 31) alive, a pick past it a frontliner. The Spectators (910156, unselectable): one in each of Trial of the
   Champion's 63 stand seats (`SEATS`), dressed as roster enemies (`SeatCrowd`), cheering (`Cheer`) at waves, boss
   entries and kills, Carnage's last 30 sec, and a wipe.

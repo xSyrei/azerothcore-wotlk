@@ -1,0 +1,158 @@
+{
+ "comment": "Written by hand (the export came without wow.export's meta data): the Freehold Shipmate (retail's Kul Tiran sailor), the Ashfleet Captain's crew. Its sections in the glTF's mesh order: the body and its clothes on shipmate_1 (its baked skin and gear, opaque), the hair, beard and brows on shipmate_6 (alpha keyed, two-sided), the eyes on shipmate_19; the eye glow (section 16, its texture not in the export) left out. Its animations trimmed to the ones a fighter uses (the export had 424).",
+ "textures": [
+  {
+   "fileNameInternal": "creature/freeholdshipmate/shipmate_1.blp"
+  },
+  {
+   "fileNameInternal": "creature/freeholdshipmate/shipmate_6.blp"
+  },
+  {
+   "fileNameInternal": "creature/freeholdshipmate/shipmate_19.blp"
+  }
+ ],
+ "textureCombos": [
+  0,
+  1,
+  2
+ ],
+ "materials": [
+  {
+   "flags": 0,
+   "blendingMode": 0
+  },
+  {
+   "flags": 4,
+   "blendingMode": 1
+  }
+ ],
+ "skin": {
+  "textureUnits": [
+   {
+    "skinSectionIndex": 0,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 1,
+    "textureComboIndex": 1,
+    "textureCount": 1,
+    "materialIndex": 1,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 2,
+    "textureComboIndex": 1,
+    "textureCount": 1,
+    "materialIndex": 1,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 3,
+    "textureComboIndex": 1,
+    "textureCount": 1,
+    "materialIndex": 1,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 4,
+    "textureComboIndex": 1,
+    "textureCount": 1,
+    "materialIndex": 1,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 5,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 6,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 7,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 8,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 9,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 10,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 11,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 12,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 13,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 14,
+    "textureComboIndex": 2,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 15,
+    "textureComboIndex": 1,
+    "textureCount": 1,
+    "materialIndex": 1,
+    "priority": 0
+   }
+  ]
+ },
+ "collisionBox": {
+  "min": [
+   -0.6,
+   -0.6,
+   0.0
+  ],
+  "max": [
+   0.6,
+   0.6,
+   2.1
+  ]
+ },
+ "collisionSphereRadius": 1.2
+}

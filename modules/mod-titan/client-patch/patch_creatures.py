@@ -41,8 +41,13 @@ CREATURES = [
     # Elf Cat Form's sounds (model 1231, display 892), at 80%.
     (90207, 3507, 'Creature\\FlameCat\\FlameCat.mdx', 1231, 892, 0.8, 2, (-2.67, -1.03, -0.16, 1.33, 1.03, 1.72)),
     (90208, 3508, 'Creature\\FlameCat\\IceCat.mdx', 1231, 892, 0.8, 2, (-2.67, -1.03, -0.16, 1.33, 1.03, 1.72)),
+    # The Ashfleet Deckhand (the Ashfleet Captain's crew, creature 910158): retail's Freehold Shipmate, copying a
+    # human male's sounds (model 49, display 2347: the Defias Pirate's), full size, male.
+    (90209, 3509, 'Creature\\FreeholdShipmate\\FreeholdShipmate.mdx', 49, 2347, 1.0, 0,
+     (-0.6, -0.6, 0.0, 0.6, 0.6, 2.1)),
 ]
-OTHER_GENDER = {90201: 90202, 90202: 90201, 90203: 90204, 90204: 90203, 90205: 0, 90207: 0, 90208: 0}
+OTHER_GENDER = {90201: 90202, 90202: 90201, 90203: 90204, 90204: 90203, 90205: 0, 90207: 0, 90208: 0,
+                90209: 0}
 BOUNDING_RADIUS = 0.6
 COMBAT_REACH = 2.0
 EXTRA_FIELDS = 21

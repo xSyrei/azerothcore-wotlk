@@ -78,6 +78,9 @@ end
 
 -- The look the three windows share: the painting of the ring, a dark veil, thin bronze lines, cream capitals, ember.
 local ART = "Interface\\AddOns\\Emberforge_Firepit\\Art\\"
+-- The Enemy Forces tracker's icons, in the server's order (src/firepit.cpp LookOf): boss, tank, melee, ranged,
+-- caster, healer.
+local ROLE_ICONS = { "RoleBoss", "RoleTank", "RoleMelee", "RoleRanged", "RoleCaster", "RoleHealer" }
 local FONT = "Fonts\\FRIZQT__.TTF"
 local CREAM, PALE, BODY = { 0.98, 0.88, 0.72 }, { 0.84, 0.76, 0.66 }, { 0.98, 0.95, 0.9 }
 local BRONZE, EMBER_LINE = { 0.55, 0.41, 0.3 }, { 1, 0.5, 0.16 }
@@ -1201,22 +1204,24 @@ local function OnMessage(message)
     elseif kind == "A" then
         HudNews(fields[2] or "", fields[3] == "1")
     elseif kind == "F" then
+        -- F,<bosses>,<tanks>,<melee>,<ranged>,<casters>,<healers>,<queued>,<badges>: each kind its icon and count
+        -- (a skull, a shield, a sword, a bow, a wand, a cross; Art/Role*.tga), the ones there are.
         local n = function(i) return tonumber(fields[i]) or 0 end
-        local melee, ranged, healers, bosses, other, queued = n(2), n(3), n(4), n(5), n(6), n(7)
-        local total = melee + ranged + healers + bosses + other
-        local parts = {}
-        for _, part in ipairs({ { "Melee", melee }, { "Ranged", ranged }, { "Healers", healers },
-            { "Boss", bosses }, { "Other", other } }) do
-            if part[2] > 0 then
-                parts[#parts + 1] = part[1] .. " " .. part[2]
+        local total, parts = 0, {}
+        for i, icon in ipairs(ROLE_ICONS) do
+            local count = n(i + 1)
+            total = total + count
+            if count > 0 then
+                parts[#parts + 1] = "|T" .. ART .. icon .. ":14:14:0:-1|t" .. count
             end
         end
-        local text = "ENEMY FORCES " .. total .. (#parts > 0 and (": " .. table.concat(parts, ", ")) or "")
+        local queued = n(8)
+        local text = "ENEMY FORCES " .. total .. (#parts > 0 and ("  " .. table.concat(parts, "  ")) or "")
         if queued > 0 then
             text = text .. (total == 0 and " |cffffd060INCOMING " or " |cffffd060Queued ") .. queued .. "|r"
         end
-        if (fields[8] or "") ~= "" then
-            text = text .. " |cffff6a4a[" .. fields[8] .. "]|r"
+        if (fields[9] or "") ~= "" then
+            text = text .. " |cffff6a4a[" .. fields[9] .. "]|r"
         end
         hud.forces:SetText(text)
     elseif kind == "X" then

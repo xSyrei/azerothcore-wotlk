@@ -105,6 +105,38 @@ INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`,
 (@CHAMPION, 0, 8760, 1.4, 1, 0),
 (@WEB_ANCHOR, 0, 16213, 1, 1, 0);
 
+-- The Ashfleet Captain's crew and powder (src/firepit.cpp, his fight): Ashfleet Deckhands boarding from his cannons
+-- (retail's Freehold Shipmate, display 90209: client-patch models/freehold_shipmate; a cutlass, the Defias Pirate's),
+-- and the lit Powder Kegs he rolls in (the fused keg, display 26252: rooted, passive; kill one before its fuse runs
+-- out, or next to him to blast him).
+SET @DECKHAND := 910158;
+SET @POWDER_KEG := 910159;
+DELETE FROM `creature_template` WHERE `entry` IN (@DECKHAND, @POWDER_KEG);
+INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
+    `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
+    `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
+    `dmgschool`, `DamageModifier`, `BaseAttackTime`, `RangeAttackTime`, `BaseVariance`, `RangeVariance`,
+    `unit_class`, `unit_flags`, `unit_flags2`, `dynamicflags`, `family`, `type`, `type_flags`, `lootid`,
+    `pickpocketloot`, `skinloot`, `PetSpellDataId`, `VehicleId`, `mingold`, `maxgold`, `AIName`, `MovementType`,
+    `HoverHeight`, `HealthModifier`, `ManaModifier`, `ArmorModifier`, `ExperienceModifier`, `RacialLeader`,
+    `movementId`, `RegenHealth`, `CreatureImmunitiesId`, `flags_extra`, `ScriptName`, `VerifiedBuild`) VALUES
+(@DECKHAND, 0, 0, 0, 0, 0, 'Ashfleet Deckhand', 'The Ashfleet', NULL, 0, 60, 60, 0, 14, 0, 1, 1.14286, 1, 1, 20,
+    0, 0, 2, 2000, 2000, 1, 1, 1, 0, 2048, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1.5, 1, 1, 1, 0, 0, 1,
+    0, 0, '', 0),
+(@POWDER_KEG, 0, 0, 0, 0, 0, 'Lit Powder Keg', 'Destroy it!', NULL, 0, 60, 60, 0, 14, 0, 1, 1.14286, 1, 1, 20,
+    0, 0, 1, 2000, 2000, 1, 1, 1, 0, 2048, 0, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 1, 0, 0, 0,
+    0, 0, '', 0);
+
+DELETE FROM `creature_template_model` WHERE `CreatureID` IN (@DECKHAND, @POWDER_KEG);
+INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
+    `VerifiedBuild`) VALUES
+(@DECKHAND, 0, 90209, 1, 1, 0),
+(@POWDER_KEG, 0, 26252, 1.6, 1, 0);
+
+DELETE FROM `creature_equip_template` WHERE `CreatureID` = @DECKHAND;
+INSERT INTO `creature_equip_template` (`CreatureID`, `ID`, `ItemID1`, `ItemID2`, `ItemID3`, `VerifiedBuild`) VALUES
+(@DECKHAND, 1, 1897, 0, 0, 0);
+
 -- The Spectators (src/firepit.cpp): the stands' crowd, dressed as the roster's enemies as they are seated; never
 -- selectable, never fighting.
 SET @SPECTATOR := 910156;

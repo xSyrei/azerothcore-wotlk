@@ -80,6 +80,9 @@ CREATURES = [
     ('models/flamecat', 'FlameCat', 'Creature\\FlameCat', {'meta': 'flamecat.json', 'replace': CAT_ANIMATIONS}),
     ('models/flamecat', 'IceCat', 'Creature\\FlameCat',
      {'meta': 'flamecat.json', 'replace': CAT_ANIMATIONS, 'texture_dir': 'models/flamecat/ice'}),
+    # The Ashfleet Deckhand: retail's Freehold Shipmate (its animations trimmed to a fighter's), meta data by hand
+    ('models/freehold_shipmate', 'FreeholdShipmate', 'Creature\\FreeholdShipmate',
+     {'meta': 'freehold_shipmate.json'}),
 ]
 # (retail glTF folder, Blizzard's 3.3.5a model, client path): character models given the Demon Hunter's
 # animations (models/retarget_character.py)

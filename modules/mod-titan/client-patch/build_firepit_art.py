@@ -10,6 +10,9 @@
   (Emberforge_Firepit.lua: the same numbers, in the panel's units).
 - Button*.tga (the big button: normal, pushed, highlight, disabled), Arrow*.tga (the picker's, pointing left; the
   addon flips it), Close.tga, Ring.tga (a filled place's ring), Slot.tga (an open place).
+- Role*.tga: the Enemy Forces tracker's icons, cut from icons/ui/FirepitRoles.png (gold line art on black, three
+  across and two down: skull, sword, cross; shield, bow, wand), their black made transparent: RoleBoss, RoleMelee,
+  RoleHealer, RoleTank, RoleRanged, RoleCaster, 64 by 64.
 
 Usage: python3 build_firepit_art.py [--preview DIR]   (DIR: the same art as PNGs, for a look outside the game)
 """
@@ -225,6 +228,35 @@ def slot():
     return image.resize((64, 64), Image.LANCZOS)
 
 
+ROLES_SOURCE = HERE / 'icons' / 'ui' / 'FirepitRoles.png'
+ROLES = (('RoleBoss', 'RoleMelee', 'RoleHealer'), ('RoleTank', 'RoleRanged', 'RoleCaster'))
+
+
+def roles():
+    """The tracker's icons: each cell of the sheet (its grid lines trimmed), its brightness its opacity, gold."""
+    out = {}
+    with Image.open(ROLES_SOURCE) as sheet:
+        sheet = sheet.convert('RGB')
+        cw, ch = sheet.width // 3, sheet.height // 2
+        for row, names in enumerate(ROLES):
+            for col, name in enumerate(names):
+                margin = cw // 16
+                cell = sheet.crop((col * cw + margin, row * ch + margin, (col + 1) * cw - margin,
+                                   (row + 1) * ch - margin))
+                # the drawing's own box, square, a little room about it
+                grey = cell.convert('L').point(lambda v: 255 if v > 70 else 0)
+                left, top, right, bottom = grey.getbbox() or (0, 0, cell.width, cell.height)
+                side = max(right - left, bottom - top) * 1.12
+                cx, cy = (left + right) / 2, (top + bottom) / 2
+                cell = cell.crop((int(cx - side / 2), int(cy - side / 2), int(cx + side / 2), int(cy + side / 2)))
+                cell = cell.resize((64, 64), Image.LANCZOS)
+                alpha = cell.convert('L').point(lambda v: max(0, min(255, (v - 30) * 255 // 150)))
+                icon = Image.new('RGBA', (64, 64), (236, 190, 92, 0))
+                icon.putalpha(alpha)
+                out[name] = icon
+    return out
+
+
 def main():
     preview = Path(sys.argv[sys.argv.index('--preview') + 1]) if '--preview' in sys.argv else None
     OUT.mkdir(parents=True, exist_ok=True)
@@ -248,6 +280,9 @@ def main():
     for name in ('Button', 'ButtonPushed', 'ButtonHighlight', 'ButtonDisabled', 'Arrow', 'ArrowDisabled', 'Close',
                  'Ring', 'Slot'):
         pieces[name].save(OUT / f'{name}.tga')
+    for name, icon in roles().items():
+        pieces[name] = icon
+        icon.save(OUT / f'{name}.tga')
     for path in sorted(OUT.iterdir()):
         print(f'  {path.name} {path.stat().st_size // 1024} KB')
     if preview:

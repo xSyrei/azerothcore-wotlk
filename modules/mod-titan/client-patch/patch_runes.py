@@ -2393,11 +2393,12 @@ ICONS += [THUNDERBOMB_ICON, 'Spell_Shaman_LavaFlow', 'Spell_Nature_StormReach', 
           'Spell_Shaman_ThunderStorm', 'Spell_Nature_EarthShock', 'Spell_Nature_LightningShield']
 # The Firepit's world affixes (src/firepit.cpp): Cinder Winds' slow, Searing Brand's mark (its burn the server's).
 SPELLS += [
-    harmful(93480, 'Cinder Winds', 'Spell_Fire_Fire', 'Movement speed reduced by 30%.', DURATION_3S,
-            aura(AURA_MOD_DECREASE_SPEED, -30, 0), FIRE),
+    harmful(93480, 'Cinder Winds', 'Spell_Fire_Fire', 'Movement speed reduced by 50%.', DURATION_5S,
+            aura(AURA_MOD_DECREASE_SPEED, -50, 0), FIRE),
     harmful(93481, 'Searing Brand', 'Spell_Fire_Immolation',
-            'Burning for 2% of your maximum health every second. Stay 8 yards from everyone for 3 sec to put it out.',
-            DURATION_8S, aura(AURA_DUMMY, 1, 0), FIRE),
+            'Burning for 3% of your maximum health every second, 1% more each second, and spreading to anyone within '
+            '8 yards. Stay 8 yards from everyone for 3 sec to put it out.',
+            DURATION_12S, aura(AURA_DUMMY, 1, 0), FIRE),
 ]
 ICONS += ['Spell_Fire_Fire', 'Spell_Fire_Immolation']
 # The expanded pool's: marks on enemies (Blizzard's looks: Hunter's Mark, Rejuvenation, Sacred Shield, Death Wish,
@@ -2405,18 +2406,18 @@ ICONS += ['Spell_Fire_Fire', 'Spell_Fire_Immolation']
 # Burning Pursuit's speed (real), Shackling Chains' mark and Cracked Earth's slow on Heroes.
 AURA_MOD_CASTING_SPEED = 65
 _FIREPIT_MARKS = [
-    (93482, 'Bolstered', 'Ability_Warrior_BattleShout', 'While this enemy lives, the others take 25% less damage.',
-     DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}, 3239, 0),
-    (93483, 'Mending Embers', 'Spell_Fire_SealOfFire', 'Mending the most injured enemy nearby every 3 sec.',
+    (93482, 'Bolstered', 'Ability_Warrior_BattleShout', 'Bolstered by fallen allies: 12% more damage and health a '
+     'stack.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}, 3239, 10),
+    (93483, 'Mending Embers', 'Spell_Fire_SealOfFire', 'Mending every enemy within 20 yards for 5% every 2 sec.',
      DURATION_12S, {1: aura(AURA_DUMMY, 1, 0)}, 32, 0),
-    (93485, 'Ashen Empowerment', 'Spell_Shadow_DemonicEmpathy', 'Attack and casting speed increased by 15%.',
-     DURATION_12S, {1: aura(AURA_MOD_MELEE_HASTE, 15, 0), 2: aura(AURA_MOD_CASTING_SPEED, 15, 0)}, 4599, 0),
-    (93486, 'Burning Pursuit', 'Ability_Rogue_Sprint', 'Hunting a Hero, 30% faster.', DURATION_8S,
-     {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}, 4599, 0),
-    (93487, 'Vengeful Flame', 'Spell_Fire_Incinerate', 'Damage done increased by 5% a stack.', DURATION_10S,
-     {1: aura(AURA_DUMMY, 1, 0)}, 2736, 3),
-    (93488, 'Flamebound', 'Spell_Fire_TotemOfWrath', 'Bound to another: 15% more damage while within 8 yards.',
-     DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}, 785, 0),
+    (93485, 'Ashen Empowerment', 'Spell_Shadow_DemonicEmpathy', 'Attack and casting speed increased by 15%, damage '
+     'by 25%.', DURATION_20S, {1: aura(AURA_MOD_MELEE_HASTE, 15, 0), 2: aura(AURA_MOD_CASTING_SPEED, 15, 0)}, 4599, 0),
+    (93486, 'Burning Pursuit', 'Ability_Rogue_Sprint', 'Hunting a Hero: 30% faster, 50% more damage, leaving fire '
+     'behind.', DURATION_12S, {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}, 4599, 0),
+    (93487, 'Vengeful Flame', 'Spell_Fire_Incinerate', 'Damage done increased by 8% a stack.', DURATION_20S,
+     {1: aura(AURA_DUMMY, 1, 0)}, 2736, 10),
+    (93488, 'Flamebound', 'Spell_Fire_TotemOfWrath', 'Bound to another: 30% more damage and half the damage taken '
+     'while within 10 yards.', DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}, 785, 0),
 ]
 for _id, _name, _icon, _text, _duration, _effects, _visual, _stacks in _FIREPIT_MARKS:
     _spell = buff(_id, _name, _icon, _text, _duration, _effects, stacks=_stacks)
@@ -2424,13 +2425,13 @@ for _id, _name, _icon, _text, _duration, _effects, _visual, _stacks in _FIREPIT_
     SPELLS.append(_spell)
 SPELLS += [
     {**absorb(93484, 'Cinder Shield', 'Spell_Fire_FireArmor', DURATION_INFINITE),
-     'description': 'Absorbs damage; while it holds, 20% more damage done.',
-     'tooltip': 'Absorbs damage; while it holds, 20% more damage done.'},
+     'description': 'Absorbs damage; while it holds, 30% more damage done. It bursts when it breaks.',
+     'tooltip': 'Absorbs damage; while it holds, 30% more damage done. It bursts when it breaks.'},
     harmful(93489, 'Shackling Chains', 'Spell_Shadow_ShadowWordDominate',
-            'Chained: stay close to your partner (or your point) for 3 sec to break it.', DURATION_10S,
-            aura(AURA_DUMMY, 1, 0), FIRE),
-    harmful(93490, 'Cracked Earth', 'Spell_Nature_Earthquake', 'Movement speed reduced by 30%.', DURATION_2S,
-            aura(AURA_MOD_DECREASE_SPEED, -30, 0), FIRE),
+            'Chained: burning every second while apart. Stay close to your partner (or your point) for 3 sec to '
+            'break it.', DURATION_12S, aura(AURA_DUMMY, 1, 0), FIRE),
+    harmful(93490, 'Cracked Earth', 'Spell_Nature_Earthquake', 'Frozen ground: movement speed reduced by 50%.',
+            DURATION_2S, aura(AURA_MOD_DECREASE_SPEED, -50, 0), FIRE),
     # The Cinder Matron's web lines (a major boss's, src/firepit.cpp).
     harmful(93491, 'Cinderweb', 'Spell_Nature_Web', 'Movement speed reduced by 30%.', DURATION_3S,
             aura(AURA_MOD_DECREASE_SPEED, -30, 0), FIRE),

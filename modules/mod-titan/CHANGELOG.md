@@ -28,9 +28,10 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   crack, cleaves and lines are hazard-striped, and the Ring of Embers is a runic ring.
 - **Ladder bosses' attacks restored**: from wave 15, the ladder's bosses use their eruptions and novas again (adding
   their dialogue had switched them off).
-- **Enemy Forces tracker**: the tracker shows the living enemies by role (Melee, Ranged, Healers, Boss), the
-  reinforcements waiting (INCOMING when the field is empty but more are coming) and a badge for Bolstered or Mending
-  enemies.
+- **Enemy Forces tracker**: the tracker shows the living enemies with an icon and a count for each kind (a skull for
+  the boss, a shield for tanky enemies, a sword for melee, a bow for ranged, a wand for casters, a cross for healers),
+  the reinforcements waiting (INCOMING when the field is empty but more are coming) and a badge for Bolstered or
+  Mending enemies.
 - **Fewer specials at once**: across overlapping waves, at most 1 healer alive to wave 15 (2 after) and 2 ranged enemies
   to wave 15 (3 to wave 30, 4 after); extra picks become frontliners.
 - **The stands are full**: a crowd of the dungeons' creatures watches from the seats, cheering each wave, roaring as
@@ -49,11 +50,19 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   the arena detonates. The tracker shows the clock, with warnings at 2:00, 1:00, 0:30 and a final countdown.
 - **Five new major bosses**, each with telegraphed attacks and health phases:
   - **Wave 45, the Ashfleet Captain**: he runs out six cannons and powder kegs round the rim and fires a salute as he
-    enters. Powder Lines go up in a chain of explosions racing out from him, his Cutlass Sweep blasts dust across
-    the cone, and at 70% and 35% Trial by Fire brings real cannon fire: cannonballs fly from the rim to land under
-    every Hero and around the arena, exploding as their warnings fill, while he takes half damage. At 30% his Final
-    Stand blows the arena with a blast that shakes the ground, he grows, and his guns fire a Broadside at every Hero
-    every 9 seconds until he falls; his cannons blow with him.
+    enters, and the fight never lets up:
+    - **Lit Powder Kegs** roll in near you every 14 sec (two in groups of 3 or more). Each has a 12 sec fuse shown on
+      the floor; ignore it and it blows for 35% of your health within 10 yards. Destroy it in time, or destroy it
+      within 8 yards of the Captain to blast him (5% of his health) and stun him for 3 sec.
+    - **Ashfleet Deckhands** board from his cannons every 25 sec, two plus one for every two more Heroes.
+    - **Stray cannon fire** lands around the arena every 7 sec.
+    - Powder Lines go up in a chain of explosions racing out from him, and his Cutlass Sweep blasts dust across the
+      cone.
+    - At 70% and 35%, **Trial by Fire** brings real cannon fire: cannonballs fly from the rim to land under every Hero
+      and around the arena, exploding as their warnings fill, while he takes half damage.
+    - At 30% his **Final Stand** blows the arena with a blast that shakes the ground, he grows, kegs come every 10 sec
+      and deckhands every 15, and his guns fire a Broadside at every Hero every 9 seconds until he falls. His cannons
+      blow with him.
   - **Wave 60, the Ironbound Colossus**: Ironbreaker cones and Molten Ruptures; Shatter the Core at 70% and 35% leaves
     its core exposed (20% more damage taken); its forge grows unstable at 25%.
   - **Wave 75, the Cinder Matron**: Scorching Spit, Rending Mandibles and Cinderweb lines held by Web Anchors you can
@@ -66,28 +75,39 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - **World affixes**: the arena itself changes as you climb. A new affix enters at waves 10, 20, 30 and 40; from wave 50,
   every 10 waves the oldest gives way to a new one (four at most). The order is the same for everyone each week, and the
   tracker lists the active ones.
-  - **Molten Ground**: every 20 sec the floor erupts under up to 2 Heroes (12% of max health within 4 yards) and leaves
-    a burning pool for 8 sec.
-  - **Cinder Winds**: every 35 sec a burning wind sweeps a lane across the arena after a 5 sec warning: 10% and slowed
-    by 30% for 3 sec. Step out of the lane.
-  - **Searing Brand**: every 30 sec a Hero burns for 2% a second for 8 sec. Get 8 yards away from everyone (solo: from
-    where it struck) for 3 sec to put it out.
-  - **Emberfall**: every 40 sec embers fall on 3 spots; 5 sec later each deals 15% within 4 yards.
+  - Affixes stay with you instead of coming and going: most leave something on the floor (burning pools, walls of
+    fire, frozen ground, fire trails) or build up (Bolstering, Vengeful Flame, a spreading Brand). Everything they
+    leave shows as a clear decal on the floor instead of smoke.
+  - **Molten Ground**: every 14 sec the floor erupts under every Hero (15% of max health within 4.5 yards) and leaves
+    a burning pool for 40 sec (4% a second). Pools pile up, 14 at most: the floor fills.
+  - **Cinder Winds**: every 22 sec a burning wind blasts a lane 14 yards wide across the arena after a 4 sec warning:
+    20%, slowed 50%, and a wall of fire stays in the lane for 12 sec (5% a second).
+  - **Searing Brand**: every 20 sec a Hero (two in groups of 4 or more) burns for 3% a second, 1% more each second
+    (8% at most), for 12 sec, and the Brand spreads to anyone within 8 yards. Get 8 yards away from everyone (solo:
+    from where it struck) for 3 sec to put it out.
+  - **Emberfall**: every 18 sec embers fall under every Hero and on 5 more spots: 20% within 5 yards, each leaving a
+    burning pool.
   - Two arena dangers never go off within 3 seconds of each other, and the revival spot stays safe.
 - **Ten more affixes join the rotation**:
-  - **Bolstering**: a wave may bring a Bolstered enemy; while it lives, the others take 25% less damage.
-  - **Mending Embers**: every 30 sec an enemy heals its most injured neighbour for 12 sec. Kill it.
-  - **Cinder Shield**: each wave one enemy wears a shield of 20% of its health and hits 20% harder while it holds.
-  - **Ashen Echo**: every 40 sec an Echo at the edge channels into an enemy for 8 sec; if it finishes, that enemy
-    attacks and casts 15% faster. Kill it, or stun, silence or fear it.
-  - **Volatile Remains**: fallen enemies leave embers that explode 4 sec later (12% within 5 yards).
-  - **Shackling Chains**: every 35 sec two Heroes are chained; over 12 yards apart they burn. Stay together for 3 sec to
-    break it (solo: stay near your point). Never active with Searing Brand.
-  - **Burning Pursuit**: every 35 sec an enemy hunts a random Hero for 6 sec, 30% faster.
-  - **Cracked Earth**: every 35 sec a ring of ground cracks; 5 sec later it erupts (15%) and slows anyone on it for 10
-    sec.
-  - **Vengeful Flame**: when an enemy falls, its nearest ally deals 5% more for 10 sec (up to three times).
-  - **Flamebound**: each wave two enemies are bound; within 8 yards of each other they deal 15% more (10% solo).
+  - **Bolstering**: every enemy that falls bolsters the enemies within 25 yards: 12% more damage and health a stack,
+    up to 10. Kill them together.
+  - **Mending Embers**: every 20 sec an enemy mends every enemy within 20 yards for 5% every 2 sec, for 10 sec. Kill it.
+  - **Cinder Shield**: each wave one enemy wears a shield of 35% of its health and hits 30% harder while it holds; when
+    it breaks it bursts (15% within 7 yards after 2 sec).
+  - **Ashen Echo**: every 25 sec an Echo at the edge channels into an enemy for 8 sec; if it finishes, that enemy
+    attacks and casts 15% faster and deals 25% more for 20 sec. Kill it, or stun, silence or fear it.
+  - **Volatile Remains**: fallen enemies leave embers that explode 3 sec later (15% within 6 yards, six at a time) and
+    burn where they lay.
+  - **Shackling Chains**: every 25 sec two Heroes (two pairs in groups of 4 or more) are chained for 12 sec; over 12
+    yards apart they burn 4% a second. Get together for 3 sec to break it (solo: stay near your point). Never active
+    with Searing Brand.
+  - **Burning Pursuit**: every 20 sec an enemy hunts a random Hero for 10 sec, 30% faster and 50% harder, leaving a
+    trail of burning ground.
+  - **Cracked Earth**: every 20 sec a ring of ground cracks; 5 sec later it erupts (20%) and freezes over, slowing
+    anyone on it by 50% for 25 sec.
+  - **Vengeful Flame**: when an enemy falls, every enemy within 15 yards deals 8% more for 20 sec (up to 10 times).
+  - **Flamebound**: each wave two enemies are bound; within 10 yards of each other they deal 30% more and take half
+    damage (15% more solo). Pull them apart.
 - **Boss waves give you room**: before a boss, the next wave waits until the field is clear, then you get 20 seconds to
   prepare (the boss is named in advance).
 - **The fallen rise after a boss**: clear a boss wave with anyone still standing and every fallen Hero comes back at the
