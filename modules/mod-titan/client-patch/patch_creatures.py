@@ -47,6 +47,14 @@ BOUNDING_RADIUS = 0.6
 COMBAT_REACH = 2.0
 EXTRA_FIELDS = 21
 
+# Our gameobject models (GameObjectDisplayInfo.dbc): (display id, model file, a Blizzard display to copy (its sounds),
+# geo box). The Firepit's end-of-run cache (retail's challenge chest, models/firepit_cache), copying the chest
+# Chest01's (display 10: its open and close sounds).
+GAMEOBJECT_FIELDS = 19
+GAMEOBJECTS = [
+    (9700, 'World\\Emberforge\\FirepitCache.mdx', 10, (-1.29, -1.85, -0.03, 1.2, 1.86, 2.41)),
+]
+
 # (display id, a Blizzard display of the race and sex to copy (its model and sounds), bake_npc.NPCS's name, bounding
 # radius, combat reach): the extra row takes the display's id.
 HUMANOIDS = [
@@ -89,7 +97,16 @@ def patch(source, out):
         items = [npc['items'].get(slot, 0) for slot in range(11)]
         extras.rows[display_id] = (display_id, npc['race'], npc['sex'], npc['skin'], npc['face'], npc['hair_style'],
                                    npc['hair_color'], npc['facial'], *items, 0, extras.add_string(f'{name}.blp'))
+    objects = Dbc(source / 'GameObjectDisplayInfo.dbc', GAMEOBJECT_FIELDS)
+    for display_id, model_file, template, box in GAMEOBJECTS:
+        row = list(objects.rows[template])
+        row[0] = display_id
+        row[1] = objects.add_string(model_file)
+        row[12:18] = [as_bits(v) for v in box]              # GeoBoxMin / GeoBoxMax
+        objects.rows[display_id] = tuple(row)
     out.mkdir(parents=True, exist_ok=True)
+    objects.save(out / 'GameObjectDisplayInfo.dbc')
+    patch.objects = objects
     models.save(out / 'CreatureModelData.dbc')
     displays.save(out / 'CreatureDisplayInfo.dbc')
     extras.save(out / 'CreatureDisplayInfoExtra.dbc')
@@ -141,6 +158,17 @@ def write_sql(models, displays, path):
     lines.append(',\n'.join([f'({c[0]},{BOUNDING_RADIUS},{COMBAT_REACH},{c[6]},{OTHER_GENDER[c[0]]})'
                               for c in CREATURES] + [f'({h[0]},{h[3]},{h[4]},{bake_npc.NPCS[h[2]]["sex"]},0)'
                                                      for h in HUMANOIDS]) + ';')
+    objects = patch.objects
+    object_ids = ', '.join(str(g[0]) for g in GAMEOBJECTS)
+    lines += ['', f'DELETE FROM `gameobjectdisplayinfo_dbc` WHERE `ID` IN ({object_ids});',
+              'INSERT INTO `gameobjectdisplayinfo_dbc` VALUES']
+    rows = []
+    for g in GAMEOBJECTS:
+        row = objects.rows[g[0]]
+        values = [f"'{g[1].replace(chr(92), chr(92) * 2)}'" if i == 1 else sql_value(v, 12 <= i < 18)
+                  for i, v in enumerate(row)]
+        rows.append('(' + ','.join(values) + ')')
+    lines.append(',\n'.join(rows) + ';')
     Path(path).write_text('\n'.join(lines) + '\n')
 
 

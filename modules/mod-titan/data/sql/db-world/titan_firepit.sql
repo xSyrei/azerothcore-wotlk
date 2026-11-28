@@ -137,10 +137,11 @@ INSERT INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseMask`, `position
 (@GUID, @KEEPER, 0, 1, 1, -8823.5, 643.0, 94.45, 3.9, 300, 'Firepit Keeper, Stormwind'),
 (@GUID + 1, @KEEPER, 1, 1, 1, 1633.5, -4409.5, 16.4, 0.44, 300, 'Firepit Keeper, Orgrimmar');
 
+-- The spoils' great chest: retail's challenge chest (display 9700, client-patch/patch_creatures.py GAMEOBJECTS).
 DELETE FROM `gameobject_template` WHERE `entry` = @SPOILS;
 INSERT INTO `gameobject_template` (`entry`, `type`, `displayId`, `name`, `IconName`, `castBarCaption`, `unk1`,
     `size`, `ScriptName`, `VerifiedBuild`) VALUES
-(@SPOILS, 3, 10, 'Spoils of the Firepit', '', '', '', 3.0, 'go_titan_firepit_spoils', 0);
+(@SPOILS, 3, 9700, 'Spoils of the Firepit', '', '', '', 1.0, 'go_titan_firepit_spoils', 0);
 
 -- The ring dressed for each run (src/firepit.cpp, DECOR_RINGS): the client's own fire models as plain, unselectable
 -- objects (type 5): Blackrock's Dark Iron brazier, a midsummer bonfire, a large fire pit, a lava pillar, a ring of

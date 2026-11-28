@@ -35,3 +35,7 @@ INSERT INTO `creature_model_info` (`DisplayID`, `BoundingRadius`, `CombatReach`,
 (90207,0.6,2.0,2,0),
 (90208,0.6,2.0,2,0),
 (90206,0.347,1.5,0,0);
+
+DELETE FROM `gameobjectdisplayinfo_dbc` WHERE `ID` IN (9700);
+INSERT INTO `gameobjectdisplayinfo_dbc` VALUES
+(9700,'World\\Emberforge\\FirepitCache.mdx',1282,1277,1281,1278,0,0,0,0,0,0,-1.29,-1.85,-0.03,1.2,1.86,2.41,0);

@@ -1156,6 +1156,10 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   (93486, a fixate), Cracked Earth (93490), Vengeful Flame (93487), Flamebound (93488); their damage bonuses kept in
   `Enemy::affix` (`EnemyAffixTick`); roles chosen at a wave's start (`AssignRoles`, `ApplyRole`), deaths handled in
   `EnemyFell`; Searing Brand and Shackling Chains never together (`Incompatible`).
+- **The end-of-run cache**: the spoils' chest (gameobject 910140) is retail's challenge chest
+  (`client-patch/models/firepit_cache`, converted by creature_gltf_to_m2.py with its Open, Opened and Close
+  animations), display 9700 (patch_creatures.py GAMEOBJECTS: the client's GameObjectDisplayInfo.dbc and
+  `gameobjectdisplayinfo_dbc`).
 - **Enemy Forces and the Spectators** (The Firepit Ignites): each enemy's role set at its spawn (`RoleOf`: Boss, Healer
   by name, Ranged for a mage-class creature, else Melee; `Enemy::role`), sent each tick as the F message (role counts of
   the living, the reinforcements and queue, Bolstered/Mending badges; the Ashen Echo, web anchors and spectators never

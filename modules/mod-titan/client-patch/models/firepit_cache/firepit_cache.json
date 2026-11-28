@@ -1,0 +1,52 @@
+{
+ "comment": "The Firepit's end-of-run cache (retail's challenge chest, 7du_challengechestuber01): its two meshes, the chest and its gold, lit, alpha-keyed; written by hand for creature_gltf_to_m2.py.",
+ "textures": [
+  {
+   "fileNameInternal": "7xp_dungeon_challegeuber.blp"
+  },
+  {
+   "fileNameInternal": "goldpilebase01_hd.blp"
+  }
+ ],
+ "textureCombos": [
+  0,
+  1
+ ],
+ "materials": [
+  {
+   "flags": 0,
+   "blendingMode": 1
+  }
+ ],
+ "skin": {
+  "textureUnits": [
+   {
+    "skinSectionIndex": 0,
+    "textureComboIndex": 0,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   },
+   {
+    "skinSectionIndex": 1,
+    "textureComboIndex": 1,
+    "textureCount": 1,
+    "materialIndex": 0,
+    "priority": 0
+   }
+  ]
+ },
+ "collisionBox": {
+  "min": [
+   0,
+   0,
+   0
+  ],
+  "max": [
+   0,
+   0,
+   0
+  ]
+ },
+ "collisionSphereRadius": 0
+}

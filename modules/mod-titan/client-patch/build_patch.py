@@ -63,6 +63,10 @@ BLADE_DANCE = {'replace': creature_gltf_to_m2.BLADE_DANCE_EVERYWHERE,
 CAT_ANIMATIONS = {anim: [(anim, 0)] for anim in (9, 50, 55, 60, 61, 69, 96, 97, 98, 99, 100, 101, 118, 119, 120,
                                                  143, 170, 171, 172, 173, 174, 175, 187, 223, 225)}
 CREATURES = [
+    # The Firepit's end-of-run cache (retail's challenge chest, a gameobject: patch_creatures.GAMEOBJECTS), its open,
+    # opened and close animations; Closed is its Stand.
+    ('models/firepit_cache', 'FirepitCache', 'World\\Emberforge',
+     {'meta': 'firepit_cache.json', 'replace': {146: [(146, 0)], 147: [(0, 0)], 148: [(148, 0)], 149: [(149, 0)]}}),
     ('models/demonhunter_meta/male', 'DHMetaMale', 'Creature\\DemonHunterMeta', {}),
     ('models/demonhunter_meta/female', 'DHMetaFemale', 'Creature\\DemonHunterMeta', {}),
     ('models/demonhunter_meta/male', 'DHMetaMaleBladeDance', 'Creature\\DemonHunterMeta',
@@ -87,7 +91,7 @@ CHARACTERS = [
 ]
 DBCS = ['ChrClasses.dbc', 'CharBaseInfo.dbc', 'CharStartOutfit.dbc', 'Item.dbc', 'ItemDisplayInfo.dbc',
         'Spell.dbc', 'SpellIcon.dbc', 'SpellVisual.dbc', 'SpellVisualKit.dbc', 'SpellVisualEffectName.dbc',
-        'SoundEntries.dbc', 'CreatureModelData.dbc', 'CreatureDisplayInfo.dbc',
+        'SoundEntries.dbc', 'CreatureModelData.dbc', 'CreatureDisplayInfo.dbc', 'GameObjectDisplayInfo.dbc',
         'AnimationData.dbc', 'Talent.dbc', 'TalentTab.dbc', 'SpellChainEffects.dbc', 'CreatureDisplayInfoExtra.dbc',
         'ItemRandomSuffix.dbc', 'SpellItemEnchantment.dbc']
 
