@@ -38,6 +38,27 @@ INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`,
     `VerifiedBuild`) VALUES
 (@ERUPTION, 0, 11686, 1, 1, 0);
 
+-- The Ashen Echo (src/firepit.cpp, the Ashen Echo affix): a fire spirit at the arena's edge channelling into an
+-- enemy; attackable, it never fights back.
+SET @ASHEN_ECHO := 910129;
+DELETE FROM `creature_template` WHERE `entry` = @ASHEN_ECHO;
+INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`,
+    `KillCredit1`, `KillCredit2`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`,
+    `faction`, `npcflag`, `speed_walk`, `speed_run`, `speed_swim`, `speed_flight`, `detection_range`, `rank`,
+    `dmgschool`, `DamageModifier`, `BaseAttackTime`, `RangeAttackTime`, `BaseVariance`, `RangeVariance`,
+    `unit_class`, `unit_flags`, `unit_flags2`, `dynamicflags`, `family`, `type`, `type_flags`, `lootid`,
+    `pickpocketloot`, `skinloot`, `PetSpellDataId`, `VehicleId`, `mingold`, `maxgold`, `AIName`, `MovementType`,
+    `HoverHeight`, `HealthModifier`, `ManaModifier`, `ArmorModifier`, `ExperienceModifier`, `RacialLeader`,
+    `movementId`, `RegenHealth`, `CreatureImmunitiesId`, `flags_extra`, `ScriptName`, `VerifiedBuild`) VALUES
+(@ASHEN_ECHO, 0, 0, 0, 0, 0, 'Ashen Echo', 'The Firepit', NULL, 0, 60, 60, 0, 14, 0, 1, 1.14286, 1, 1, 20,
+    0, 2, 1, 2000, 2000, 1, 1, 8, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+    0, '', 0);
+
+DELETE FROM `creature_template_model` WHERE `CreatureID` = @ASHEN_ECHO;
+INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
+    `VerifiedBuild`) VALUES
+(@ASHEN_ECHO, 0, 4607, 1, 1, 0);
+
 DELETE FROM `creature_template_model` WHERE `CreatureID` = @KEEPER;
 INSERT INTO `creature_template_model` (`CreatureID`, `Idx`, `CreatureDisplayID`, `DisplayScale`, `Probability`,
     `VerifiedBuild`) VALUES

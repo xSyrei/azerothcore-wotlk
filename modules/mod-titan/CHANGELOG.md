@@ -15,6 +15,20 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
     where it struck) for 3 sec to put it out.
   - **Emberfall**: every 40 sec embers fall on 3 spots; 5 sec later each deals 15% within 4 yards.
   - Two arena dangers never go off within 3 seconds of each other, and the revival spot stays safe.
+- **Ten more affixes join the rotation**:
+  - **Bolstering**: a wave may bring a Bolstered enemy; while it lives, the others take 25% less damage.
+  - **Mending Embers**: every 30 sec an enemy heals its most injured neighbour for 12 sec. Kill it.
+  - **Cinder Shield**: each wave one enemy wears a shield of 20% of its health and hits 20% harder while it holds.
+  - **Ashen Echo**: every 40 sec an Echo at the edge channels into an enemy for 8 sec; if it finishes, that enemy
+    attacks and casts 15% faster. Kill it, or stun, silence or fear it.
+  - **Volatile Remains**: fallen enemies leave embers that explode 4 sec later (12% within 5 yards).
+  - **Shackling Chains**: every 35 sec two Heroes are chained; over 12 yards apart they burn. Stay together for 3 sec to
+    break it (solo: stay near your point). Never active with Searing Brand.
+  - **Burning Pursuit**: every 35 sec an enemy hunts a random Hero for 6 sec, 30% faster.
+  - **Cracked Earth**: every 35 sec a ring of ground cracks; 5 sec later it erupts (15%) and slows anyone on it for 10
+    sec.
+  - **Vengeful Flame**: when an enemy falls, its nearest ally deals 5% more for 10 sec (up to three times).
+  - **Flamebound**: each wave two enemies are bound; within 8 yards of each other they deal 15% more (10% solo).
 - **Boss waves give you room**: before a boss, the next wave waits until the field is clear, then you get 20 seconds to
   prepare (the boss is named in advance).
 - **The fallen rise after a boss**: clear a boss wave with anyone still standing and every fallen Hero comes back at the

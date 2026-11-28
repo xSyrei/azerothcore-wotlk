@@ -41,6 +41,7 @@
 #include "Random.h"
 #include "ScriptMgr.h"
 #include "ScriptedGossip.h"
+#include "SpellAuraEffects.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
 #include "TemporarySummon.h"
@@ -136,14 +137,30 @@ namespace
     // resolve within 3 sec of one another (the later waits).
     enum Affix : uint8
     {
-        AFFIX_NONE, AFFIX_MOLTEN_GROUND, AFFIX_CINDER_WINDS, AFFIX_SEARING_BRAND, AFFIX_EMBERFALL, AFFIX_END
+        AFFIX_NONE, AFFIX_MOLTEN_GROUND, AFFIX_CINDER_WINDS, AFFIX_SEARING_BRAND, AFFIX_EMBERFALL,
+        // The expanded pool: priority targets, movement, pressure.
+        AFFIX_BOLSTERING, AFFIX_MENDING_EMBERS, AFFIX_CINDER_SHIELD, AFFIX_ASHEN_ECHO, AFFIX_VOLATILE_REMAINS,
+        AFFIX_SHACKLING_CHAINS, AFFIX_BURNING_PURSUIT, AFFIX_CRACKED_EARTH, AFFIX_VENGEFUL_FLAME, AFFIX_FLAMEBOUND,
+        AFFIX_END
     };
-    char const* const AFFIX_NAMES[] = { "", "Molten Ground", "Cinder Winds", "Searing Brand", "Emberfall" };
+    char const* const AFFIX_NAMES[] = { "", "Molten Ground", "Cinder Winds", "Searing Brand", "Emberfall",
+        "Bolstering", "Mending Embers", "Cinder Shield", "Ashen Echo", "Volatile Remains", "Shackling Chains",
+        "Burning Pursuit", "Cracked Earth", "Vengeful Flame", "Flamebound" };
     char const* const AFFIX_TEXTS[] = { "",
         "every 20 sec the ground erupts under up to 2 Heroes, leaving a burning pool",
         "every 35 sec a burning wind sweeps a lane across the arena: step out of it",
         "every 30 sec a Hero is branded: get 8 yards from everyone for 3 sec to put it out",
-        "every 40 sec embers fall on 3 spots: stay out of the circles" };
+        "every 40 sec embers fall on 3 spots: stay out of the circles",
+        "a wave may bring a Bolstered enemy: while it lives the others take 25% less damage, kill it first",
+        "every 30 sec an enemy mends the others around it for 12 sec: kill it",
+        "each wave one enemy wears a Cinder Shield and deals 20% more while it holds: break it",
+        "every 40 sec an Ashen Echo channels power into an enemy: kill or stun it before it finishes",
+        "the fallen leave embers that explode 4 sec later: step away",
+        "every 35 sec two Heroes are chained: stay within 12 yards of each other for 3 sec to break it",
+        "every 35 sec an enemy hunts a Hero, faster, for 6 sec",
+        "every 35 sec the ground cracks: leave the marked area before it erupts and slows",
+        "a fallen enemy's nearest ally grows 5% stronger for 10 sec, up to three times",
+        "each wave two enemies are Flamebound: together they deal 15% more, keep them apart" };
     constexpr uint32 AFFIX_FIRST = 10, AFFIX_EVERY = 10, AFFIXES_MOST = 4, MAJOR_SPACING_MS = 3000;
     constexpr uint32 WEEK_SECONDS = 7 * 24 * 3600;
     // Molten Ground: up to 2 Heroes (others than last time first), 4 sec, 12% within 4 yd; a 4 yd pool for 8 sec,
@@ -162,6 +179,43 @@ namespace
     constexpr uint32 EMBER_EVERY_MS = 40000, EMBER_DELAY_MS = 5000, EMBER_SPOTS = 3;
     constexpr float EMBER_RADIUS = 4.0f, EMBER_SHARE = 0.15f, EMBER_APART = 10.0f, EMBER_REACH = 40.0f;
     constexpr uint32 SPELL_CINDER_WINDS = 93480, SPELL_SEARING_BRAND = 93481;   // client-patch/patch_runes.py
+    // The expanded pool's (their looks the client patch's; their effects the server's, but the speeds).
+    constexpr uint32 SPELL_BOLSTERED = 93482, SPELL_MENDING_EMBERS = 93483, SPELL_CINDER_SHIELD = 93484;
+    constexpr uint32 SPELL_ASHEN_EMPOWERMENT = 93485, SPELL_BURNING_PURSUIT = 93486, SPELL_VENGEFUL_FLAME = 93487;
+    constexpr uint32 SPELL_FLAMEBOUND = 93488, SPELL_SHACKLING_CHAINS = 93489, SPELL_CRACKED_EARTH = 93490;
+    constexpr uint32 SPELL_ECHO_CHANNEL = 689;          // its beam only (Drain Life's), set as its channel
+    constexpr uint32 NPC_ASHEN_ECHO = 910129;           // titan_firepit.sql
+    // Bolstering: half the normal waves, one enemy; the others 25% less damage taken while it lives.
+    constexpr float BOLSTER_CHANCE = 50.0f, BOLSTER_TAKEN = 0.75f;
+    // Mending Embers: 12 sec, every 3 sec the most injured other enemy within 15 yd mended 3%.
+    constexpr uint32 MENDING_EVERY_MS = 30000, MENDING_MS = 12000, MENDING_TICK_MS = 3000;
+    constexpr float MENDING_RANGE = 15.0f, MENDING_PCT = 3.0f;
+    // Cinder Shield: an absorb of 20% of its health, 20% more damage while it holds.
+    constexpr float CINDER_SHIELD_SHARE = 0.2f, CINDER_SHIELD_DAMAGE = 1.2f;
+    // Ashen Echo: every 40 sec at the edge, an 8 sec channel; done, 15% attack and cast speed for 12 sec.
+    constexpr uint32 ECHO_EVERY_MS = 40000, ECHO_CHANNEL_MS = 8000, ECHO_BUFF_MS = 12000;
+    // Volatile Remains: an ember 4 sec, 12% within 5 yd, three at most.
+    constexpr uint32 VOLATILE_DELAY_MS = 4000, VOLATILE_MOST = 3;
+    constexpr float VOLATILE_RADIUS = 5.0f, VOLATILE_SHARE = 0.12f;
+    // Shackling Chains: 10 sec; over 12 yd apart 3% every 2 sec each; 3 sec together breaks it (solo: a point, 6 yd).
+    constexpr uint32 CHAINS_EVERY_MS = 35000, CHAINS_MS = 10000, CHAINS_BREAK_MS = 3000;
+    constexpr float CHAINS_APART = 12.0f, CHAINS_SOLO = 6.0f, CHAINS_SHARE = 0.03f;
+    // Burning Pursuit: 6 sec fixed on a Hero, 30% faster.
+    constexpr uint32 PURSUIT_EVERY_MS = 35000, PURSUIT_MS = 6000;
+    // Cracked Earth: a 12 yd circle, 5 sec, 15%, then 30% slower on it for 10 sec.
+    constexpr uint32 CRACKED_EVERY_MS = 35000, CRACKED_DELAY_MS = 5000, CRACKED_MS = 10000;
+    constexpr float CRACKED_RADIUS = 12.0f, CRACKED_SHARE = 0.15f;
+    // Vengeful Flame: 5% a stack, 10 sec, three at most, the nearest within 15 yd.
+    constexpr uint32 VENGEFUL_MS = 10000, VENGEFUL_MOST = 3;
+    constexpr float VENGEFUL_RANGE = 15.0f, VENGEFUL_DAMAGE = 0.05f;
+    // Flamebound: within 8 yd of each other, 15% more (solo 10%).
+    constexpr float FLAMEBOUND_RANGE = 8.0f, FLAMEBOUND_DAMAGE = 1.15f, FLAMEBOUND_SOLO = 1.1f;
+    // Two that never share the arena: a forced spread and a forced closeness.
+    bool Incompatible(uint8 a, uint8 b)
+    {
+        return (a == AFFIX_SEARING_BRAND && b == AFFIX_SHACKLING_CHAINS)
+            || (a == AFFIX_SHACKLING_CHAINS && b == AFFIX_SEARING_BRAND);
+    }
 
     // The week's order of every affix.
     std::vector<uint8> AffixRotation()
@@ -174,14 +228,29 @@ namespace
         return rotation;
     }
 
-    // The affixes active at a wave: the last four of the week's order that have entered by it.
+    // The affixes active at a wave: each entry the week's next that is neither active nor at odds with one, the
+    // oldest leaving once four are.
     std::vector<uint8> AffixesAt(uint32 wave)
     {
         std::vector<uint8> rotation = AffixRotation();
         uint32 entered = wave >= AFFIX_FIRST ? wave / AFFIX_EVERY : 0;
         std::vector<uint8> active;
-        for (uint32 e = entered > AFFIXES_MOST ? entered - AFFIXES_MOST : 0; e < entered; ++e)
-            active.push_back(rotation[e % rotation.size()]);
+        std::size_t next = 0;
+        for (uint32 e = 0; e < entered; ++e)
+        {
+            if (active.size() >= AFFIXES_MOST)
+                active.erase(active.begin());
+            for (std::size_t tries = 0; tries < rotation.size(); ++tries)
+            {
+                uint8 affix = rotation[next++ % rotation.size()];
+                if (std::find(active.begin(), active.end(), affix) == active.end()
+                    && std::none_of(active.begin(), active.end(), [affix](uint8 a) { return Incompatible(a, affix); }))
+                {
+                    active.push_back(affix);
+                    break;
+                }
+            }
+        }
         return active;
     }
     constexpr uint32 ERUPTION_EVERY_MS = 14000, ERUPTION_DELAY_MS = 3000, ERUPTION_TARGETS = 3;
@@ -278,8 +347,12 @@ namespace
         float health = 1.0f;
         float damage = 1.0f;
         float pressure = 1.0f;                      // Pressure's 5% a stack
+        float affix = 1.0f;                         // the affixes' (Cinder Shield, Vengeful Flame, Flamebound)
         uint32 wave = 0;
         bool boss = false;
+        uint8 vengeful = 0;                         // Vengeful Flame's stacks
+        uint32 vengefulUntil = 0;                   // game ms
+        ObjectGuid partner;                         // Flamebound's other
     };
 
     // What the Keeper (or .firepit start) sets up for a run: who goes in, from which wave, and where each came from.
@@ -362,7 +435,9 @@ namespace
         uint32 entry;
         bool boss;
         uint32 dueMs;
+        uint8 role = 0;                             // an affix's chosen (SPAWN_*)
     };
+    enum : uint8 { SPAWN_BOLSTERED = 1, SPAWN_CINDER_SHIELD = 2, SPAWN_FLAMEBOUND = 4 };
 
     // A boss's mechanics' timers, and a blast on its way (a warning on the floor, then the hit).
     struct BossState
@@ -381,7 +456,31 @@ namespace
         uint32 ms = 0;
         bool nova = false;                              // at the boss as it goes off
         bool pool = false;                              // Molten Ground: a burning pool where it went off
+        bool volatileEmber = false;                     // Volatile Remains' (three at most)
+        int32 crack = -1;                               // Cracked Earth: its crack (index in _cracks)
         uint32 log = 0;                                 // the combat log's spell (0: the eruption's)
+    };
+
+    struct Crack                                        // Cracked Earth's marked ground, then slowing ground
+    {
+        Position at;
+        std::vector<ObjectGuid> markers;
+        uint32 until = 0;                               // run ms (0: not erupted yet)
+        bool done = false;
+    };
+
+    struct Chain                                        // Shackling Chains
+    {
+        ObjectGuid a, b;                                // b empty: solo, chained to its point
+        Position point;
+        ObjectGuid marker;
+        uint32 left = 0, togetherMs = 0, tickMs = 0;
+    };
+
+    struct Echo                                         // Ashen Echo's channel
+    {
+        ObjectGuid echo, target;
+        uint32 left = 0;
     };
 
     struct Pool                                         // Molten Ground's burning ground
@@ -1137,6 +1236,7 @@ private:
                 if (enemy->IsAlive() && IsHealer(enemy->GetEntry()))
                     ++healers;
         uint32 healersNow = 0;
+        std::size_t firstOfWave = _queue.size();
         for (uint32 i = 0; i < count && !kinds.empty(); ++i)
         {
             uint32 entry = i == 0 ? kinds.back() : kinds[urand(0, uint32(kinds.size()) - 1)];
@@ -1151,6 +1251,8 @@ private:
             _queue.push_back({ entry, false, SPAWN_SPREAD_MS * i / std::max<uint32>(1, count) });
         }
 
+        if (!bossWave)
+            AssignRoles(firstOfWave);
         std::string text = "Wave " + std::to_string(_wave);
         // A new chapter (its first wave, never a boss's): its dungeon's enemies pour in.
         uint32 chapter = (_wave - 1) / CHAPTER_WAVES;
@@ -1218,6 +1320,7 @@ private:
             _lootBosses.push_back(enemy->GetGUID());
             _lootWave = _wave;
         }
+        ApplyRole(enemy, spawn.role);
         Engage(enemy);
     }
 
@@ -1355,6 +1458,10 @@ private:
             return;
         SpellInfo const* spell = sSpellMgr->GetSpellInfo(blast.nova ? SPELL_FIRE_NOVA
             : blast.log ? blast.log : SPELL_ERUPTION_LOG);
+        if (blast.volatileEmber && _volatile)
+            --_volatile;
+        if (blast.crack >= 0 && std::size_t(blast.crack) < _cracks.size())
+            _cracks[blast.crack].until = _runMs + CRACKED_MS;
         if (blast.pool && at.GetExactDist2d(&CENTER) > ARRIVAL_RADIUS + MOLTEN_RADIUS)    // never on the revival ring
         {
             Pool pool;
@@ -1422,7 +1529,12 @@ private:
             case AFFIX_CINDER_WINDS: return WINDS_EVERY_MS;
             case AFFIX_SEARING_BRAND: return BRAND_EVERY_MS;
             case AFFIX_EMBERFALL: return EMBER_EVERY_MS;
-            default: return 30000;
+            case AFFIX_MENDING_EMBERS: return MENDING_EVERY_MS;
+            case AFFIX_ASHEN_ECHO: return ECHO_EVERY_MS;
+            case AFFIX_SHACKLING_CHAINS: return CHAINS_EVERY_MS;
+            case AFFIX_BURNING_PURSUIT: return PURSUIT_EVERY_MS;
+            case AFFIX_CRACKED_EARTH: return CRACKED_EVERY_MS;
+            default: return 0;                          // a wave's start or a death sets it off, not a timer
         }
     }
 
@@ -1485,6 +1597,8 @@ private:
             return;
         for (uint8 affix : _affixes)
         {
+            if (!AffixEvery(affix))
+                continue;
             uint32& ms = _affixMs[affix];
             if (ms > diff)
             {
@@ -1498,16 +1612,466 @@ private:
                 case AFFIX_CINDER_WINDS: CinderWinds(); break;
                 case AFFIX_SEARING_BRAND: SearingBrand(); break;
                 case AFFIX_EMBERFALL: Emberfall(); break;
+                case AFFIX_MENDING_EMBERS: MendingEmbers(); break;
+                case AFFIX_ASHEN_ECHO: AshenEcho(); break;
+                case AFFIX_SHACKLING_CHAINS: ShacklingChains(); break;
+                case AFFIX_BURNING_PURSUIT: BurningPursuit(); break;
+                case AFFIX_CRACKED_EARTH: CrackedEarth(); break;
                 default: break;
             }
         }
         WindsTick(diff);
+        EchoesTick(diff);
         _secondMs += diff;
         if (_secondMs < 1000)
             return;
         _secondMs -= 1000;
         PoolsTick();
         BrandsTick();
+        MendingTick();
+        ChainsTick();
+        PursuitTick();
+        CracksTick();
+        EnemyAffixTick();
+    }
+
+    bool Active(uint8 affix) const
+    {
+        return std::find(_affixes.begin(), _affixes.end(), affix) != _affixes.end();
+    }
+
+    Enemy* EnemyOf(Creature* creature) const
+    {
+        return creature ? creature->CustomData.Get<Enemy>("titan_firepit") : nullptr;
+    }
+
+    // The living non-boss enemies on the field.
+    std::vector<Creature*> Fighters() const
+    {
+        std::vector<Creature*> fighters;
+        for (ObjectGuid const& guid : _enemies)
+            if (Creature* enemy = instance->GetCreature(guid); enemy && enemy->IsAlive())
+                if (Enemy* own = EnemyOf(enemy); own && !own->boss)
+                    fighters.push_back(enemy);
+        return fighters;
+    }
+
+    // A normal wave's start: the affixes' chosen among its enemies (each takes effect as it enters).
+    void AssignRoles(std::size_t first)
+    {
+        std::vector<std::size_t> picks;
+        for (std::size_t i = first; i < _queue.size(); ++i)
+            if (!_queue[i].boss)
+                picks.push_back(i);
+        Acore::Containers::RandomShuffle(picks);
+        std::size_t used = 0;
+        auto take = [&](uint8 role)
+        {
+            if (used < picks.size())
+                _queue[picks[used++]].role |= role;
+        };
+        bool bolsteredAlive = instance->GetCreature(_bolstered) && instance->GetCreature(_bolstered)->IsAlive();
+        if (Active(AFFIX_BOLSTERING) && !bolsteredAlive && roll_chance_f(BOLSTER_CHANCE))
+            take(SPAWN_BOLSTERED);
+        if (Active(AFFIX_CINDER_SHIELD))
+            take(SPAWN_CINDER_SHIELD);
+        if (Active(AFFIX_FLAMEBOUND) && picks.size() - used >= 2)
+        {
+            _flameboundWaiting.clear();
+            take(SPAWN_FLAMEBOUND);
+            take(SPAWN_FLAMEBOUND);
+        }
+    }
+
+    // An enemy entering with an affix's role: Bolstered, Cinder Shield, Flamebound.
+    void ApplyRole(Creature* enemy, uint8 role)
+    {
+        if (role & SPAWN_BOLSTERED)
+        {
+            Creature* other = instance->GetCreature(_bolstered);
+            if (!other || !other->IsAlive())
+            {
+                _bolstered = enemy->GetGUID();
+                enemy->AddAura(SPELL_BOLSTERED, enemy);
+                Announce(enemy->GetName() + " is Bolstered: the others take less damage while it lives!");
+            }
+        }
+        if (role & SPAWN_CINDER_SHIELD)
+            if (Aura* aura = enemy->AddAura(SPELL_CINDER_SHIELD, enemy))
+                if (AuraEffect* effect = aura->GetEffect(EFFECT_0))
+                    effect->ChangeAmount(int32(float(enemy->GetMaxHealth()) * CINDER_SHIELD_SHARE));
+        if (role & SPAWN_FLAMEBOUND)
+        {
+            _flameboundWaiting.push_back(enemy->GetGUID());
+            if (_flameboundWaiting.size() == 2)
+            {
+                Creature* a = instance->GetCreature(_flameboundWaiting[0]);
+                Creature* b = instance->GetCreature(_flameboundWaiting[1]);
+                if (a && b)
+                {
+                    EnemyOf(a)->partner = b->GetGUID();
+                    EnemyOf(b)->partner = a->GetGUID();
+                    a->AddAura(SPELL_FLAMEBOUND, a);
+                    b->AddAura(SPELL_FLAMEBOUND, b);
+                    Announce(a->GetName() + " and " + b->GetName() + " are Flamebound: keep them apart!");
+                }
+                _flameboundWaiting.clear();
+            }
+        }
+    }
+
+    // An enemy fallen: Bolstering ends with it; Volatile Remains, Vengeful Flame.
+    void EnemyFell(Creature* enemy)
+    {
+        Enemy* own = EnemyOf(enemy);
+        if (!own || own->boss)
+            return;
+        if (enemy->GetGUID() == _bolstered)
+            _bolstered.Clear();
+        if (Active(AFFIX_VOLATILE_REMAINS) && _volatile < VOLATILE_MOST)
+        {
+            ++_volatile;
+            Blast blast;
+            blast.at = enemy->GetPosition();
+            blast.radius = VOLATILE_RADIUS;
+            blast.share = VOLATILE_SHARE;
+            blast.ms = VOLATILE_DELAY_MS;
+            blast.volatileEmber = true;
+            if (GameObject* marker = Marker(GO_FLAME_CIRCLE, blast.at))
+                blast.marker = marker->GetGUID();
+            _blasts.push_back(blast);
+        }
+        if (Active(AFFIX_VENGEFUL_FLAME))
+        {
+            Creature* nearest = nullptr;
+            for (Creature* other : Fighters())
+                if (other != enemy && enemy->GetExactDist2d(other) <= VENGEFUL_RANGE
+                    && (!nearest || enemy->GetExactDist2d(other) < enemy->GetExactDist2d(nearest)))
+                    nearest = other;
+            if (Enemy* near = EnemyOf(nearest))
+            {
+                near->vengeful = uint8(std::min<uint32>(VENGEFUL_MOST, near->vengeful + 1u));
+                near->vengefulUntil = _runMs + VENGEFUL_MS;
+                if (Aura* aura = nearest->GetAura(SPELL_VENGEFUL_FLAME))
+                {
+                    aura->SetStackAmount(near->vengeful);
+                    aura->RefreshDuration();
+                }
+                else if (Aura* fresh = nearest->AddAura(SPELL_VENGEFUL_FLAME, nearest))
+                    fresh->SetStackAmount(near->vengeful);
+            }
+        }
+    }
+
+    // Each second: each enemy's affix damage (Cinder Shield, Vengeful Flame, Flamebound).
+    void EnemyAffixTick()
+    {
+        bool solo = _groupSize == 1;
+        for (Creature* enemy : Fighters())
+        {
+            Enemy* own = EnemyOf(enemy);
+            float more = 1.0f;
+            if (enemy->HasAura(SPELL_CINDER_SHIELD))
+                more *= CINDER_SHIELD_DAMAGE;
+            if (own->vengeful && _runMs >= own->vengefulUntil)
+            {
+                own->vengeful = 0;
+                enemy->RemoveAurasDueToSpell(SPELL_VENGEFUL_FLAME);
+            }
+            more *= 1.0f + VENGEFUL_DAMAGE * float(own->vengeful);
+            if (own->partner)
+            {
+                Creature* partner = instance->GetCreature(own->partner);
+                if (!partner || !partner->IsAlive())
+                {
+                    own->partner.Clear();
+                    enemy->RemoveAurasDueToSpell(SPELL_FLAMEBOUND);
+                }
+                else if (enemy->GetExactDist2d(partner) <= FLAMEBOUND_RANGE)
+                    more *= solo ? FLAMEBOUND_SOLO : FLAMEBOUND_DAMAGE;
+            }
+            own->affix = more;
+        }
+    }
+
+public:
+    // Bolstering: while the Bolstered one lives, the other non-boss enemies take 25% less damage.
+    void Bolster(Creature* victim, uint32& damage)
+    {
+        if (!_bolstered || victim->GetGUID() == _bolstered)
+            return;
+        Enemy* own = EnemyOf(victim);
+        Creature* bolstered = instance->GetCreature(_bolstered);
+        if (own && !own->boss && bolstered && bolstered->IsAlive())
+            damage = uint32(float(damage) * BOLSTER_TAKEN);
+    }
+
+private:
+    void MendingEmbers()
+    {
+        std::vector<Creature*> fighters = Fighters();
+        if (fighters.empty())
+            return;
+        Creature* mender = fighters[urand(0, uint32(fighters.size()) - 1)];
+        _mender = mender->GetGUID();
+        _mendLeft = MENDING_MS;
+        _mendTick = 0;
+        if (Aura* aura = mender->AddAura(SPELL_MENDING_EMBERS, mender))
+        {
+            aura->SetMaxDuration(int32(MENDING_MS));
+            aura->SetDuration(int32(MENDING_MS));
+        }
+        Announce(mender->GetName() + " is Mending Embers: kill it before it heals the others!");
+    }
+
+    void MendingTick()
+    {
+        if (!_mender)
+            return;
+        Creature* mender = instance->GetCreature(_mender);
+        _mendLeft = _mendLeft > 1000 ? _mendLeft - 1000 : 0;
+        if (!mender || !mender->IsAlive() || !_mendLeft)
+        {
+            if (mender)
+                mender->RemoveAurasDueToSpell(SPELL_MENDING_EMBERS);
+            _mender.Clear();
+            return;
+        }
+        _mendTick += 1000;
+        if (_mendTick < MENDING_TICK_MS)
+            return;
+        _mendTick = 0;
+        Creature* hurt = nullptr;
+        for (ObjectGuid const& guid : _enemies)
+            if (Creature* other = instance->GetCreature(guid); other && other != mender && other->IsAlive()
+                && other->GetHealthPct() < 100.0f && mender->GetExactDist2d(other) <= MENDING_RANGE
+                && (!hurt || other->GetHealthPct() < hurt->GetHealthPct()))
+                hurt = other;
+        if (!hurt)
+            return;
+        uint32 amount = uint32(hurt->CountPctFromMaxHealth(int32(MENDING_PCT)));
+        int32 gain = Unit::DealHeal(mender, hurt, amount);
+        HealInfo heal(mender, hurt, amount, sSpellMgr->GetSpellInfo(SPELL_MENDING_EMBERS), SPELL_SCHOOL_MASK_FIRE);
+        (void)gain;
+        mender->SendHealSpellLog(heal);
+    }
+
+    void AshenEcho()
+    {
+        std::vector<ObjectGuid> living;
+        for (ObjectGuid const& guid : _enemies)
+            if (Creature* enemy = instance->GetCreature(guid); enemy && enemy->IsAlive())
+                living.push_back(guid);
+        if (living.empty())
+            return;
+        Creature* target = instance->GetCreature(living[urand(0, uint32(living.size()) - 1)]);
+        float angle = frand(0.0f, 2.0f * float(M_PI));
+        float x = CENTER.GetPositionX() + SPAWN_RADIUS_MIN * std::cos(angle);
+        float y = CENTER.GetPositionY() + SPAWN_RADIUS_MIN * std::sin(angle);
+        TempSummon* echo = instance->SummonCreature(NPC_ASHEN_ECHO, Position(x, y, FloorAt(x, y), angle + float(M_PI)));
+        if (!echo || !target)
+            return;
+        echo->SetFaction(ENEMY_FACTION);
+        echo->SetReactState(REACT_PASSIVE);
+        echo->SetControlled(true, UNIT_STATE_ROOT);
+        echo->SetFacingToObject(target);
+        echo->SetGuidValue(UNIT_FIELD_CHANNEL_OBJECT, target->GetGUID());
+        echo->SetUInt32Value(UNIT_CHANNEL_SPELL, SPELL_ECHO_CHANNEL);
+        _echoes.push_back({ echo->GetGUID(), target->GetGUID(), ECHO_CHANNEL_MS });
+        Announce("An Ashen Echo channels into " + target->GetName() + ": kill or stun it!", true);
+    }
+
+    // Each update: an Echo stunned, silenced, feared or slain is broken; its channel done, its target empowered.
+    void EchoesTick(uint32 diff)
+    {
+        for (std::size_t i = 0; i < _echoes.size();)
+        {
+            Echo& echo = _echoes[i];
+            Creature* source = instance->GetCreature(echo.echo);
+            Creature* target = instance->GetCreature(echo.target);
+            bool broken = !source || !source->IsAlive() || !target || !target->IsAlive()
+                || source->HasAuraType(SPELL_AURA_MOD_STUN) || source->HasAuraType(SPELL_AURA_MOD_SILENCE)
+                || source->HasAuraType(SPELL_AURA_MOD_FEAR) || source->HasAuraType(SPELL_AURA_MOD_CONFUSE);
+            echo.left = echo.left > diff ? echo.left - diff : 0;
+            if (!broken && !echo.left)
+                if (Aura* aura = target->AddAura(SPELL_ASHEN_EMPOWERMENT, target))
+                {
+                    aura->SetMaxDuration(int32(ECHO_BUFF_MS));
+                    aura->SetDuration(int32(ECHO_BUFF_MS));
+                    Announce(target->GetName() + " is empowered by the Ashen Echo!");
+                }
+            if (broken || !echo.left)
+            {
+                if (source)
+                    source->DespawnOrUnsummon(Milliseconds(broken && source->IsAlive() ? 0 : CORPSE_MS));
+                _echoes.erase(_echoes.begin() + i);
+                continue;
+            }
+            ++i;
+        }
+    }
+
+    void DismissEchoes()
+    {
+        for (Echo const& echo : _echoes)
+            if (Creature* source = instance->GetCreature(echo.echo))
+                source->DespawnOrUnsummon();
+        _echoes.clear();
+    }
+
+    void ShacklingChains()
+    {
+        std::vector<Player*> heroes = Living();
+        if (heroes.empty())
+            return;
+        Acore::Containers::RandomShuffle(heroes);
+        Chain chain;
+        chain.a = heroes[0]->GetGUID();
+        chain.left = CHAINS_MS;
+        heroes[0]->AddAura(SPELL_SHACKLING_CHAINS, heroes[0]);
+        if (heroes.size() > 1)
+        {
+            chain.b = heroes[1]->GetGUID();
+            heroes[1]->AddAura(SPELL_SHACKLING_CHAINS, heroes[1]);
+            Announce("Shackling Chains bind " + heroes[0]->GetName() + " and " + heroes[1]->GetName()
+                + ": stay within 12 yards of each other for 3 sec!", true);
+        }
+        else
+        {
+            chain.point = heroes[0]->GetPosition();
+            if (GameObject* marker = Marker(GO_EMBERS, chain.point))
+                chain.marker = marker->GetGUID();
+            Announce("Shackling Chains bind you to this spot: stay within 6 yards of it for 3 sec!", true);
+        }
+        _chains.push_back(chain);
+    }
+
+    void ChainsTick()
+    {
+        Unit* source = _chains.empty() ? nullptr : AffixSource();
+        for (std::size_t i = 0; i < _chains.size();)
+        {
+            Chain& chain = _chains[i];
+            Player* a = ObjectAccessor::GetPlayer(instance, chain.a);
+            Player* b = chain.b ? ObjectAccessor::GetPlayer(instance, chain.b) : nullptr;
+            chain.left = chain.left > 1000 ? chain.left - 1000 : 0;
+            bool done = !a || !a->IsAlive() || (chain.b && (!b || !b->IsAlive())) || !chain.left;
+            if (!done)
+            {
+                bool close = b ? a->GetExactDist2d(b) <= CHAINS_APART
+                    : a->GetExactDist2d(chain.point.GetPositionX(), chain.point.GetPositionY()) <= CHAINS_SOLO;
+                chain.togetherMs = close ? chain.togetherMs + 1000 : 0;
+                if (chain.togetherMs >= CHAINS_BREAK_MS)
+                    done = true;
+                else if (!close && (chain.tickMs += 1000) >= 2000)
+                {
+                    chain.tickMs = 0;
+                    Burn(source, a, CHAINS_SHARE, SPELL_SHACKLING_CHAINS);
+                    if (b)
+                        Burn(source, b, CHAINS_SHARE, SPELL_SHACKLING_CHAINS);
+                }
+            }
+            if (done)
+            {
+                for (Player* hero : { a, b })
+                    if (hero)
+                        hero->RemoveAurasDueToSpell(SPELL_SHACKLING_CHAINS);
+                if (GameObject* marker = instance->GetGameObject(chain.marker))
+                    marker->Delete();
+                _chains.erase(_chains.begin() + i);
+                continue;
+            }
+            ++i;
+        }
+    }
+
+    void BurningPursuit()
+    {
+        std::vector<Creature*> fighters = Fighters();
+        std::vector<Player*> heroes = Living();
+        if (fighters.empty() || heroes.empty())
+            return;
+        Creature* hunter = fighters[urand(0, uint32(fighters.size()) - 1)];
+        Player* prey = heroes[urand(0, uint32(heroes.size()) - 1)];
+        hunter->GetThreatMgr().FixateTarget(prey);
+        if (hunter->AI())
+            hunter->AI()->AttackStart(prey);
+        if (Aura* aura = hunter->AddAura(SPELL_BURNING_PURSUIT, hunter))
+        {
+            aura->SetMaxDuration(int32(PURSUIT_MS));
+            aura->SetDuration(int32(PURSUIT_MS));
+        }
+        _pursuers[hunter->GetGUID()] = _runMs + PURSUIT_MS;
+        Announce(hunter->GetName() + " hunts " + prey->GetName() + "!", true);
+    }
+
+    void PursuitTick()
+    {
+        for (auto itr = _pursuers.begin(); itr != _pursuers.end();)
+        {
+            Creature* hunter = instance->GetCreature(itr->first);
+            if (hunter && _runMs < itr->second && hunter->IsAlive())
+            {
+                ++itr;
+                continue;
+            }
+            if (hunter)
+            {
+                hunter->GetThreatMgr().ClearFixate();
+                hunter->RemoveAurasDueToSpell(SPELL_BURNING_PURSUIT);
+            }
+            itr = _pursuers.erase(itr);
+        }
+    }
+
+    void CrackedEarth()
+    {
+        float angle = frand(0.0f, 2.0f * float(M_PI));
+        float radius = frand(ARRIVAL_RADIUS + CRACKED_RADIUS, ARENA_RADIUS - CRACKED_RADIUS);
+        float x = CENTER.GetPositionX() + radius * std::cos(angle);
+        float y = CENTER.GetPositionY() + radius * std::sin(angle);
+        Crack crack;
+        crack.at = Position(x, y, FloorAt(x, y));
+        for (uint32 i = 0; i < 10; ++i)
+        {
+            float a = float(i) * float(M_PI) / 5.0f;
+            float mx = x + CRACKED_RADIUS * std::cos(a), my = y + CRACKED_RADIUS * std::sin(a);
+            if (GameObject* marker = Marker(GO_EMBERS, Position(mx, my, FloorAt(mx, my))))
+                crack.markers.push_back(marker->GetGUID());
+        }
+        _cracks.push_back(crack);
+        Blast blast;
+        blast.at = crack.at;
+        blast.radius = CRACKED_RADIUS;
+        blast.share = CRACKED_SHARE;
+        blast.ms = Spaced(CRACKED_DELAY_MS);
+        blast.crack = int32(_cracks.size() - 1);
+        _blasts.push_back(blast);
+        Announce("Cracked Earth: the ground splits, get out of the marked ring!", true);
+    }
+
+    // The cracked ground after it erupts: 30% slower on it for 10 sec; then gone.
+    void CracksTick()
+    {
+        for (Crack& crack : _cracks)
+        {
+            if (!crack.until || crack.done)
+                continue;
+            if (_runMs >= crack.until)
+            {
+                crack.done = true;
+                for (ObjectGuid const& guid : crack.markers)
+                    if (GameObject* marker = instance->GetGameObject(guid))
+                        marker->Delete();
+                continue;
+            }
+            for (Player* hero : Living())
+                if (hero->GetExactDist2d(crack.at.GetPositionX(), crack.at.GetPositionY()) <= CRACKED_RADIUS)
+                    hero->AddAura(SPELL_CRACKED_EARTH, hero);
+        }
+        if (std::all_of(_cracks.begin(), _cracks.end(), [](Crack const& c) { return c.done; })
+            && std::none_of(_blasts.begin(), _blasts.end(), [](Blast const& b) { return b.crack >= 0; }))
+            _cracks.clear();
     }
 
     void MoltenGround()
@@ -1736,6 +2300,26 @@ private:
         for (Brand const& brand : _brands)
             if (Player* hero = ObjectAccessor::GetPlayer(instance, brand.hero))
                 hero->RemoveAurasDueToSpell(SPELL_SEARING_BRAND);
+        for (Chain const& chain : _chains)
+        {
+            for (ObjectGuid const& guid : { chain.a, chain.b })
+                if (Player* hero = guid ? ObjectAccessor::GetPlayer(instance, guid) : nullptr)
+                    hero->RemoveAurasDueToSpell(SPELL_SHACKLING_CHAINS);
+            if (GameObject* marker = instance->GetGameObject(chain.marker))
+                marker->Delete();
+        }
+        for (Crack const& crack : _cracks)
+            for (ObjectGuid const& guid : crack.markers)
+                if (GameObject* marker = instance->GetGameObject(guid))
+                    marker->Delete();
+        DismissEchoes();
+        _chains.clear();
+        _cracks.clear();
+        _pursuers.clear();
+        _flameboundWaiting.clear();
+        _bolstered.Clear();
+        _mender.Clear();
+        _volatile = 0;
         _pools.clear();
         _winds.clear();
         _brands.clear();
@@ -1841,6 +2425,7 @@ private:
                 continue;
             if (!enemy->IsAlive())
             {
+                EnemyFell(enemy);
                 enemy->DespawnOrUnsummon(Milliseconds(CORPSE_MS));
                 continue;
             }
@@ -1937,6 +2522,8 @@ private:
         bool clear = _enemies.empty() && _queue.empty() && _reinforcements.empty();
         if (clear && _wave)
             _clearedWave = std::max(_clearedWave, _wave);
+        if (clear && !_echoes.empty())
+            DismissEchoes();                        // the Echoes go as the wave clears
         if (clear && !_breather)
         {
             _breather = true;
@@ -2111,6 +2698,13 @@ private:
     std::vector<Brand> _brands;
     uint32 _secondMs = 0;                           // the affixes' once-a-second work
     ObjectGuid _affixSource;                        // the Firepit itself: what deals the affixes' burns
+    ObjectGuid _bolstered, _mender;
+    uint32 _mendLeft = 0, _mendTick = 0, _volatile = 0;
+    std::vector<ObjectGuid> _flameboundWaiting;
+    std::vector<Echo> _echoes;
+    std::vector<Chain> _chains;
+    std::map<ObjectGuid, uint32> _pursuers;         // Burning Pursuit: run ms each one's fixate ends
+    std::vector<Crack> _cracks;
     std::vector<ObjectGuid> _natives, _enemies;
     std::vector<Spawn> _queue;
     std::map<ObjectGuid, Record> _records;
@@ -2459,7 +3053,7 @@ float Firepit::HealthMultiplier(Creature const* creature)
 float Firepit::DamageMultiplier(Creature const* creature)
 {
     Enemy const* own = creature ? creature->CustomData.Get<Enemy>("titan_firepit") : nullptr;
-    return own ? own->damage * own->pressure : 1.0f;
+    return own ? own->damage * own->pressure * own->affix : 1.0f;
 }
 
 bool Firepit::IsBoss(Creature const* creature)
@@ -2569,6 +3163,7 @@ public:
         if (Player* player = attacker->GetCharmerOrOwnerPlayerOrPlayerItself(); player && victim->ToCreature())
         {
             run->Unprotect(player);                 // a revived Hero's attack ends their protection
+            run->Bolster(victim->ToCreature(), damage);
             run->Damage(player, damage);
         }
         if (Player* player = victim->ToPlayer(); player && attacker->ToCreature()

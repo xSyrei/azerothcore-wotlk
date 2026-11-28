@@ -2398,6 +2398,44 @@ SPELLS += [
             DURATION_8S, aura(AURA_DUMMY, 1, 0), FIRE),
 ]
 ICONS += ['Spell_Fire_Fire', 'Spell_Fire_Immolation']
+# The expanded pool's: marks on enemies (Blizzard's looks: Hunter's Mark, Rejuvenation, Sacred Shield, Death Wish,
+# Clearcasting, Curse of the Elements), Cinder Shield's absorb (its amount the server's), Ashen Echo's empowerment and
+# Burning Pursuit's speed (real), Shackling Chains' mark and Cracked Earth's slow on Heroes.
+AURA_MOD_CASTING_SPEED = 65
+_FIREPIT_MARKS = [
+    (93482, 'Bolstered', 'Ability_Warrior_BattleShout', 'While this enemy lives, the others take 25% less damage.',
+     DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}, 3239, 0),
+    (93483, 'Mending Embers', 'Spell_Fire_SealOfFire', 'Mending the most injured enemy nearby every 3 sec.',
+     DURATION_12S, {1: aura(AURA_DUMMY, 1, 0)}, 32, 0),
+    (93485, 'Ashen Empowerment', 'Spell_Shadow_DemonicEmpathy', 'Attack and casting speed increased by 15%.',
+     DURATION_12S, {1: aura(AURA_MOD_MELEE_HASTE, 15, 0), 2: aura(AURA_MOD_CASTING_SPEED, 15, 0)}, 4599, 0),
+    (93486, 'Burning Pursuit', 'Ability_Rogue_Sprint', 'Hunting a Hero, 30% faster.', DURATION_8S,
+     {1: aura(AURA_MOD_INCREASE_SPEED, 30, 0)}, 4599, 0),
+    (93487, 'Vengeful Flame', 'Spell_Fire_Incinerate', 'Damage done increased by 5% a stack.', DURATION_10S,
+     {1: aura(AURA_DUMMY, 1, 0)}, 2736, 3),
+    (93488, 'Flamebound', 'Spell_Fire_TotemOfWrath', 'Bound to another: 15% more damage while within 8 yards.',
+     DURATION_INFINITE, {1: aura(AURA_DUMMY, 1, 0)}, 785, 0),
+]
+for _id, _name, _icon, _text, _duration, _effects, _visual, _stacks in _FIREPIT_MARKS:
+    _spell = buff(_id, _name, _icon, _text, _duration, _effects, stacks=_stacks)
+    _spell['set'] = {**_spell['set'], 'SpellVisual': _visual}
+    SPELLS.append(_spell)
+SPELLS += [
+    {**absorb(93484, 'Cinder Shield', 'Spell_Fire_FireArmor', DURATION_INFINITE),
+     'description': 'Absorbs damage; while it holds, 20% more damage done.',
+     'tooltip': 'Absorbs damage; while it holds, 20% more damage done.'},
+    harmful(93489, 'Shackling Chains', 'Spell_Shadow_ShadowWordDominate',
+            'Chained: stay close to your partner (or your point) for 3 sec to break it.', DURATION_10S,
+            aura(AURA_DUMMY, 1, 0), FIRE),
+    harmful(93490, 'Cracked Earth', 'Spell_Nature_Earthquake', 'Movement speed reduced by 30%.', DURATION_2S,
+            aura(AURA_MOD_DECREASE_SPEED, -30, 0), FIRE),
+]
+for _spell in SPELLS:
+    if _spell['id'] == 93489:
+        _spell['set'] = {**_spell['set'], 'SpellVisual': 12328}
+ICONS += ['Ability_Warrior_BattleShout', 'Spell_Fire_SealOfFire', 'Spell_Shadow_DemonicEmpathy', 'Ability_Rogue_Sprint',
+          'Spell_Fire_Incinerate', 'Spell_Fire_TotemOfWrath', 'Spell_Fire_FireArmor', 'Spell_Shadow_ShadowWordDominate',
+          'Spell_Nature_Earthquake']
 # The replacements' hits (and Fulmination) as their bases' Shaman family, the Hero's modifiers on them: whatever
 # raises Stormstrike's hits, Lava Lash, Lightning Bolt or Earth Shock (talents, glyphs, the runes' own) raises them;
 # no spell power of their own (spell_bonus_data, titan_runes.sql).

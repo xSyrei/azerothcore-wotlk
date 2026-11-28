@@ -1151,7 +1151,11 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   sec warning, a 2 sec sweep: 10% and the slow 93480), Searing Brand (93481: 2%/sec for 8 sec, put out by 3 sec 8 yd
   from everyone, solo from where it struck), Emberfall (3 spots, 5 sec, 15% in 4 yd). Damage is a share of max health
   from an invisible source (`AffixSource`, `Burn`); no two dangers resolve within 3 sec (`Spaced`). The tracker's X
-  message lists them.
+  message lists them. The expanded pool: Bolstering (93482), Mending Embers (93483), Cinder Shield (93484, its absorb
+  set to 20% of health), Ashen Echo (910129, 93485), Volatile Remains, Shackling Chains (93489), Burning Pursuit
+  (93486, a fixate), Cracked Earth (93490), Vengeful Flame (93487), Flamebound (93488); their damage bonuses kept in
+  `Enemy::affix` (`EnemyAffixTick`); roles chosen at a wave's start (`AssignRoles`, `ApplyRole`), deaths handled in
+  `EnemyFell`; Searing Brand and Shackling Chains never together (`Incompatible`).
 - **Boss mechanics** from wave 15 (`MECHANICS_FROM`), each a share of the Hero's own health (it is about moving, not
   gear): **Molten Eruption** (15+, every 14 sec): a ring of flame under up to 3 Heroes, erupting 3 sec later, 30% to
   anyone within 6 yd (its source the invisible Molten Eruption, 910141). **Searing Nova** (30+, every 22 sec): the
