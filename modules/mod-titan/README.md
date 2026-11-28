@@ -1179,7 +1179,8 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   thirds of the arena): timed abilities, health phases queued one at a time (Trial by Fire, Shatter the Core and its
   Exposed Core, Webstorm, Furnace Cycle, the Champion's weapons), and an enrage (Final Stand, Unstable Forge, Meltdown,
   the Firepit Answers' burning edge). The Matron's Cinderweb: three lines with Web Anchors (910155, 20% of an enemy's
-  health) and the slow 93491. Their damage taken is `MajorTaken`'s.
+  health) and the slow 93491. Their damage taken is `MajorTaken`'s. The bosses yell (`MAJOR_LINES`: entry, phases
+  or weapons, enrage, fall; `LADDER_LINES` for the ladder's on entry).
 - **Boss mechanics** from wave 15 (`MECHANICS_FROM`), each a share of the Hero's own health (it is about moving, not
   gear): **Molten Eruption** (15+, every 14 sec): a ring of flame under up to 3 Heroes, erupting 3 sec later, 30% to
   anyone within 6 yd (its source the invisible Molten Eruption, 910141). **Searing Nova** (30+, every 22 sec): the
