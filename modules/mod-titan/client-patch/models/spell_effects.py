@@ -36,6 +36,7 @@ from wowexport_to_m2 import Blob, SEQUENCE_IN_MODEL, empty_track, read_obj, trac
 UNLIT, TWO_SIDED, NO_DEPTH_WRITE = 0x1, 0x4, 0x10
 BLEND_ALPHA, BLEND_ADD = 2, 4
 UNFOGGED = 0x2
+NO_DEPTH_TEST = 0x8                    # drawn over whatever is in front of it (the ground, rocks, props)
 WRAP_U = 0x1
 BONE_TRANSFORMED = 0x200
 BONE_BILLBOARD = 0x8            # bone flag: turned to face the camera (spherical billboard)
@@ -548,6 +549,10 @@ def ground_zone(*args, layers=()):
     - tint: red, green, blue (0 to 1) the texture is multiplied by; alpha: its opacity (0 to 1);
     - turn: seconds per turn about the center (negative: the other way; 0: still);
     - round: fade the texture out toward a circle's edge (for tiling textures, square to the edge);
+    - over: drawn over whatever is in front of it (no depth test: never cut by the ground's bumps or hidden by
+      props; the client sorts it among units by distance);
+    - blp: the texture's own name in the client (shared by every model that names it: one file for all of them;
+      the build keeps one copy), instead of <name>_<layer>;
     - blend: BLEND_ALPHA (the default) or BLEND_ADD.
 
     All unlit. Called as ground_zone(texture, ..., out_dir, name, client_dir,
@@ -562,8 +567,9 @@ def ground_zone(*args, layers=()):
             image = image.convert('RGBA')
         if layer.get('round'):
             image = _round_off(image)
-        blp_name = f'{name}_{index}'
-        (out_dir / f'{blp_name}.blp').write_bytes(blp.encode(image))
+        blp_name = layer.get('blp') or f'{name}_{index}'
+        if blp_name not in images:
+            (out_dir / f'{blp_name}.blp').write_bytes(blp.encode(image))
         images.append(blp_name)
 
     vertices, triangles, sections = b'', [], []
@@ -618,7 +624,8 @@ def ground_zone(*args, layers=()):
     textures_ref = blob.add(textures_blob, len(images))
     weights = blob.add(track(blob, 0, [([0], [0x7FFF])], 'h'), 1)
     replaceable_lookup = blob.array('h', [-1])
-    materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE, layer.get('blend', BLEND_ALPHA))
+    materials_ref = blob.array('HH', [(UNLIT | TWO_SIDED | NO_DEPTH_WRITE | (NO_DEPTH_TEST if layer.get('over') else 0),
+                                       layer.get('blend', BLEND_ALPHA))
                                       for layer in layers])
     bone_lookup = blob.array('H', list(range(len(layers))))
     texture_lookup = blob.array('H', list(range(len(layers))))

@@ -53,6 +53,15 @@ EXTRA_FIELDS = 21
 GAMEOBJECT_FIELDS = 19
 GAMEOBJECTS = [
     (9700, 'World\\Emberforge\\FirepitCache.mdx', 10, (-1.29, -1.85, -0.03, 1.2, 1.86, 2.41)),
+    # The Firepit's area decals (patch_runes.FIREPIT_DECALS), 16 a colour (danger, safe, soak, heal, arcane, frost):
+    # its outlines (9701 + 16 x colour on) and its timers (8 on), flat on the floor, a yard of radius (the server
+    # scales each).
+    *[(9701 + 16 * c + 8 * timer + i,
+       f'Spells\\Emberforge\\FP_{"Timer" if timer else "Decal"}_{colour}_{shape}.mdx', 10,
+       (-1.1, -1.1, 0.0, 1.1, 1.1, 0.3))
+      for c, colour in enumerate(('danger', 'safe', 'soak', 'heal', 'arcane', 'frost')) for timer in (0, 1)
+      for i, shape in enumerate(('circle', 'ring', 'cone90', 'cone180', 'cone180L', 'cone120L', 'line_mid',
+                                 'line_cap'))],
 ]
 
 # (display id, a Blizzard display of the race and sex to copy (its model and sounds), bake_npc.NPCS's name, bounding

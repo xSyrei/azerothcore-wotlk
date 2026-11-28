@@ -108,6 +108,25 @@ namespace
         GO_EMBERS = 910146,
         GO_FIRE_RIFT = 910147,                          // a Searing Nova's warning, under the boss
     };
+    // The area decals (client-patch build_firepit_decals.py): each shape's outline (a faint fill, a bright rim)
+    // and its timer (the fill the server grows to the edge as the blow comes), a yard of radius (a line's piece: a
+    // yard either side of its axis, 2 yards long), scaled to the area; in six colours, 16 objects a colour (its 8
+    // outlines, then its 8 timers). Danger: get out. Safe: stand here. Soak: share it. Heal: a helpful area. Arcane:
+    // magic, something special. Frost: slowing, frozen ground.
+    enum Decal : uint8
+    {
+        DECAL_CIRCLE, DECAL_RING, DECAL_CONE90, DECAL_CONE180, DECAL_CONE180_LARGE, DECAL_CONE120_LARGE,
+        DECAL_LINE_MID, DECAL_LINE_CAP,
+    };
+    enum DecalColour : uint8
+    {
+        DECAL_DANGER, DECAL_SAFE, DECAL_SOAK, DECAL_HEAL, DECAL_ARCANE, DECAL_FROST,
+    };
+    constexpr uint32 GO_DECAL_FIRST = 910160, DECALS_A_COLOUR = 16, DECAL_TIMERS = 8;
+    constexpr float DECAL_LARGE = 15.0f;                // beyond: the large cuts' thinner rims
+    constexpr float TIMER_LEAST = 0.08f;                // the timer's size as it starts, of the danger's
+    constexpr float DECAL_LIFT = 0.15f;                 // yards above the floor (the models lie at their origin)
+    constexpr uint32 TIMER_EVERY_MS = 100;
     struct Ring
     {
         uint32 entry;
@@ -632,7 +651,9 @@ namespace
         float facing = 0.0f, inner = 0.0f, length = 0.0f, halfArc = 0.0f;
         bool physical = false;                          // a Physical blow, else Fire
         bool release = false;                           // its boss let go of its wind-up as it lands
-        std::vector<ObjectGuid> markers;                // a large shape's outline
+        std::vector<ObjectGuid> markers;                // its decals (deleted as it lands)
+        std::vector<std::pair<ObjectGuid, float>> timers;   // its timers and their full size
+        uint32 total = 0;                               // its warning's ms in all
         bool volatileEmber = false;                     // Volatile Remains' (three at most)
         int32 crack = -1;                               // Cracked Earth: its crack (index in _cracks)
         uint32 log = 0;                                 // the combat log's spell (0: the eruption's)
@@ -1667,6 +1688,7 @@ private:
             _blasts.erase(_blasts.begin() + i);
             Detonate(due);
         }
+        GrowTimers(diff);
     }
 
     GameObject* Marker(uint32 entry, Position const& at)
@@ -1689,8 +1711,7 @@ private:
             blast.radius = ERUPTION_RADIUS;
             blast.share = ERUPTION_DAMAGE;
             blast.ms = ERUPTION_DELAY_MS;
-            if (GameObject* marker = Marker(GO_FLAME_CIRCLE, blast.at))
-                blast.marker = marker->GetGUID();
+            Telegraph(blast);
             _blasts.push_back(blast);
         }
         if (!heroes.empty())
@@ -1706,8 +1727,7 @@ private:
         blast.share = NOVA_DAMAGE;
         blast.ms = NOVA_DELAY_MS;
         blast.nova = true;
-        if (GameObject* marker = Marker(GO_FIRE_RIFT, blast.at))
-            blast.marker = marker->GetGUID();
+        Telegraph(blast);
         boss->SetControlled(true, UNIT_STATE_ROOT);
         _blasts.push_back(blast);
         Announce(boss->GetName() + " gathers a Searing Nova: get away from it!", true);
@@ -1797,69 +1817,110 @@ private:
 
     // A danger's warning on the floor: a small circle its ring; any other shape, embers along its outline (and,
     // for a half or a third of the arena, across it).
+    // A decal (and its timer) of the blast's on the floor: at `at`, facing `facing`, `scale` yards of radius, in
+    // `colour` (DECAL_DANGER unless said).
+    void Decal(Blast& blast, uint8 decal, Position const& at, float facing, float scale,
+        uint8 colour = DECAL_DANGER)
+    {
+        float z = FloorAt(at.GetPositionX(), at.GetPositionY()) + DECAL_LIFT;
+        uint32 first = GO_DECAL_FIRST + colour * DECALS_A_COLOUR + decal;
+        for (uint32 entry : { first, first + DECAL_TIMERS })
+        {
+            GameObject* go = instance->SummonGameObject(entry, at.GetPositionX(), at.GetPositionY(), z,
+                facing, 0.0f, 0.0f, std::sin(facing / 2.0f), std::cos(facing / 2.0f), 0);
+            if (!go)
+                continue;
+            blast.markers.push_back(go->GetGUID());
+            if (entry != first)
+            {
+                go->SetObjectScale(scale * TIMER_LEAST);
+                blast.timers.emplace_back(go->GetGUID(), scale);
+            }
+            else
+                go->SetObjectScale(scale);
+        }
+    }
+
+    // A cone's or a sector's decal: the cut nearest its arc (a quarter, a third, a half), large past 15 yards.
+    static uint8 ConeDecal(float halfArc, float radius)
+    {
+        if (halfArc < float(M_PI) * 0.29f)
+            return DECAL_CONE90;
+        if (halfArc < float(M_PI) * 0.42f)
+            return DECAL_CONE120_LARGE;
+        return radius > DECAL_LARGE ? DECAL_CONE180_LARGE : DECAL_CONE180;
+    }
+
+    // The blast's warning on the floor: its shape's decal, its timer growing to the edge as it comes. A line is laid
+    // in pieces along its axis (as far as the arena reaches), capped at both ends.
     void Telegraph(Blast& blast)
     {
-        std::vector<Position> points;
-        auto at = [&](float angle, float distance)
-        {
-            points.emplace_back(blast.at.GetPositionX() + distance * std::cos(angle),
-                blast.at.GetPositionY() + distance * std::sin(angle), 0.0f);
-        };
+        blast.total = std::max<uint32>(1, blast.ms);
         switch (blast.shape)
         {
             case SHAPE_CIRCLE:
-                if (blast.radius <= 6.0f)
-                {
-                    if (GameObject* marker = Marker(GO_FLAME_CIRCLE, blast.at))
-                        blast.marker = marker->GetGUID();
-                    return;
-                }
-                for (float a = 0.0f; a < 2.0f * float(M_PI); a += 5.0f / blast.radius)
-                    at(a, blast.radius);
+                Decal(blast, DECAL_CIRCLE, blast.at, 0.0f, blast.radius);
+                break;
+            case SHAPE_RING:                            // its middle marked safe
+                Decal(blast, DECAL_RING, blast.at, 0.0f, blast.radius);
+                if (blast.inner > 1.0f)
+                    Decal(blast, DECAL_CIRCLE, blast.at, 0.0f, blast.inner * 0.9f, DECAL_SAFE);
                 break;
             case SHAPE_CONE:
-                for (float d = 2.0f; d <= blast.radius; d += 2.5f)
-                {
-                    at(blast.facing - blast.halfArc, d);
-                    at(blast.facing + blast.halfArc, d);
-                }
-                for (float a = -blast.halfArc; a <= blast.halfArc; a += 3.0f / blast.radius)
-                    at(blast.facing + a, blast.radius);
+            case SHAPE_SECTOR:
+                Decal(blast, ConeDecal(blast.halfArc, blast.radius), blast.at, blast.facing, blast.radius);
+                break;
+            case SHAPE_HALF:
+                Decal(blast, DECAL_CONE180_LARGE, blast.at, blast.facing, blast.radius);
                 break;
             case SHAPE_LINE:
-                for (float d = 2.0f; d <= blast.length; d += 3.0f)
-                    at(blast.facing, d);
-                break;
-            case SHAPE_RING:
-                for (float a = 0.0f; a < 2.0f * float(M_PI); a += 4.0f / blast.radius)
+            {
+                float width = std::max(0.5f, blast.radius), step = width * 2.0f;
+                std::vector<Position> pieces;
+                for (float along = width; along - width < blast.length; along += step)
                 {
-                    at(a, blast.inner);
-                    at(a, blast.radius);
+                    Position piece(blast.at.GetPositionX() + along * std::cos(blast.facing),
+                        blast.at.GetPositionY() + along * std::sin(blast.facing), blast.at.GetPositionZ());
+                    if (piece.GetExactDist2d(&CENTER) > ARENA_RADIUS)
+                    {
+                        if (!pieces.empty())
+                            break;
+                        continue;
+                    }
+                    pieces.push_back(piece);
+                }
+                for (std::size_t i = 0; i < pieces.size(); ++i)
+                {
+                    bool first = i == 0, last = i + 1 == pieces.size();
+                    if (first || last)
+                        Decal(blast, DECAL_LINE_CAP, pieces[i], first && !last ? blast.facing + float(M_PI)
+                            : blast.facing, width);
+                    else
+                        Decal(blast, DECAL_LINE_MID, pieces[i], blast.facing, width);
                 }
                 break;
-            default:                                    // a half or a third of the arena, about its centre
-                for (float x = -ARENA_RADIUS; x <= ARENA_RADIUS; x += 9.0f)
-                    for (float y = -ARENA_RADIUS; y <= ARENA_RADIUS; y += 9.0f)
-                    {
-                        if (std::hypot(x, y) > ARENA_RADIUS - 2.0f)
-                            continue;
-                        float angle = std::atan2(y, x);
-                        float diff = std::fabs(Position::NormalizeOrientation(angle - blast.facing));
-                        bool in = blast.shape == SHAPE_HALF ? std::cos(diff) >= 0.0f
-                            : std::min(diff, 2.0f * float(M_PI) - diff) <= blast.halfArc;
-                        if (in)
-                            points.emplace_back(blast.at.GetPositionX() + x, blast.at.GetPositionY() + y, 0.0f);
-                    }
+            }
+            default:
                 break;
         }
-        for (Position& point : points)
+    }
+
+    // The timers grown to their dangers' edges as the blows come.
+    void GrowTimers(uint32 diff)
+    {
+        _timerMs += diff;
+        if (_timerMs < TIMER_EVERY_MS)
+            return;
+        _timerMs = 0;
+        for (Blast const& blast : _blasts)
         {
-            if (std::hypot(point.GetPositionX() - CENTER.GetPositionX(), point.GetPositionY() - CENTER.GetPositionY())
-                > ARENA_RADIUS)
+            if (blast.timers.empty())
                 continue;
-            point.m_positionZ = FloorAt(point.GetPositionX(), point.GetPositionY());
-            if (GameObject* marker = Marker(GO_EMBERS, point))
-                blast.markers.push_back(marker->GetGUID());
+            float done = 1.0f - float(blast.ms) / float(std::max<uint32>(1, blast.total));
+            float grown = TIMER_LEAST + (1.0f - TIMER_LEAST) * std::clamp(done, 0.0f, 1.0f);
+            for (auto const& [guid, full] : blast.timers)
+                if (GameObject* timer = instance->GetGameObject(guid))
+                    timer->SetObjectScale(full * grown);
         }
     }
 
@@ -2671,8 +2732,7 @@ private:
             blast.share = VOLATILE_SHARE;
             blast.ms = VOLATILE_DELAY_MS;
             blast.volatileEmber = true;
-            if (GameObject* marker = Marker(GO_FLAME_CIRCLE, blast.at))
-                blast.marker = marker->GetGUID();
+            Telegraph(blast);
             _blasts.push_back(blast);
         }
         if (Active(AFFIX_VENGEFUL_FLAME))
@@ -2980,6 +3040,7 @@ private:
         blast.share = CRACKED_SHARE;
         blast.ms = Spaced(CRACKED_DELAY_MS);
         blast.crack = int32(_cracks.size() - 1);
+        Telegraph(blast);
         _blasts.push_back(blast);
         Announce("Cracked Earth: the ground splits, get out of the marked ring!", true);
     }
@@ -3029,8 +3090,7 @@ private:
             blast.share = MOLTEN_SHARE;
             blast.ms = ms;
             blast.pool = true;
-            if (GameObject* marker = Marker(GO_FLAME_CIRCLE, blast.at))
-                blast.marker = marker->GetGUID();
+            Telegraph(blast);
             _blasts.push_back(blast);
         }
         if (!heroes.empty())
@@ -3215,8 +3275,7 @@ private:
             blast.radius = EMBER_RADIUS;
             blast.share = EMBER_SHARE;
             blast.ms = ms;
-            if (GameObject* marker = Marker(GO_FLAME_CIRCLE, at))
-                blast.marker = marker->GetGUID();
+            Telegraph(blast);
             _blasts.push_back(blast);
         }
         Announce("Emberfall: embers rain down, stay out of the circles!");
@@ -3653,6 +3712,7 @@ private:
     std::map<ObjectGuid, uint32> _protected;        // revived Heroes: run ms their protection ends
     std::unordered_map<ObjectGuid, BossState> _bosses;
     std::vector<Blast> _blasts;
+    uint32 _timerMs = 0;                            // GrowTimers'
     std::vector<uint8> _affixes;                    // the world affixes active now
     std::map<uint8, uint32> _affixMs;               // each one's next trigger (ms)
     std::set<ObjectGuid> _moltenLast;               // Molten Ground's last marked

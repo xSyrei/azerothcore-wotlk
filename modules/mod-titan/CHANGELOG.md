@@ -14,6 +14,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 - **The bosses speak**: every boss has its own words as it enters the Ring and its own last words as it falls (Grizzle,
   Lord Roccor, Bael'Gar, Emperor Thaurissan and the rest), and the five major bosses also call out their phases and
   their enrage.
+- **Clear floor warnings**: every attack's area now shows on the arena floor as a glowing decal, a faint fill with a
+  bright rim, with an inner fill that grows to the rim as the blow comes (it lands when it reaches the edge). Circles,
+  rings, cones, lines and the arena's halves and thirds all have their own shape, and the decals draw over the floor
+  and props so nothing hides them. They come in six colours for what an area means: red-orange to get out of, blue to
+  stand in (the Ring of Embers' safe middle), gold to share, green for helpful areas, violet for special mechanics
+  and icy blue for frozen ground.
 - **Ladder bosses' attacks restored**: from wave 15, the ladder's bosses use their eruptions and novas again (adding
   their dialogue had switched them off).
 - **Enemy Forces tracker**: the tracker shows the living enemies by role (Melee, Ranged, Healers, Boss), the

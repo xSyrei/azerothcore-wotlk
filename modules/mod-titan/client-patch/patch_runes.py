@@ -2620,6 +2620,36 @@ EFFECTS.update({
                            {'texture': 2, 'sheet': (2, 2), 'flip': 0, 'tint': BRONZE, 'alpha': 0.7, 'turn': 4.0,
                             'pulse': 1.4, 'cards': puffs(4, 0.55, 0.5, 0.5, 0.25)})}},
 })
+# The Firepit's area decals (src/firepit.cpp Telegraph; build_firepit_decals.py), in six colours (danger, safe, soak,
+# heal, arcane, frost: build_firepit_decals.PALETTES): each shape's outline (its faint fill, and its rim's glow and
+# pale core, drawn additive) and its timer (the fill the server grows to the edge as the blow comes), flat on the
+# floor and drawn over it (never cut by its bumps or hidden by props; the server lifts each a touch, as their height
+# would grow with their size); a 1 yard radius at 92% of the square (a line's piece: 1 yard either side of its axis,
+# 2 yards long). Every colour tints the same white textures (one copy of each in the patch). The objects that wear
+# them: patch_creatures.GAMEOBJECTS (displays 9701 on: 16 a colour, its 8 outlines then its 8 timers).
+import build_firepit_decals  # noqa: E402
+FIREPIT_DECALS = ('circle', 'ring', 'cone90', 'cone180', 'cone180L', 'cone120L', 'line_mid', 'line_cap')
+DECAL_COLOURS = tuple(build_firepit_decals.PALETTES)
+DECAL_SQUARE = 2.0 / 0.92
+for _c, (_colour, (_fill, _timer, _core, _glow)) in enumerate(build_firepit_decals.PALETTES.items()):
+    _tint = lambda rgb: tuple(round(v / 255.0, 3) for v in rgb)  # noqa: E731
+    for _i, _shape in enumerate(FIREPIT_DECALS):
+        _tex = f'FP_Decals/{_shape}'
+        EFFECTS[f'FirepitDecal_{_colour}_{_shape}'] = {
+            'model': f'FP_Decal_{_colour}_{_shape}', 'effect': 7193 + _c * 16 + _i, 'shape': 'zone',
+            'textures': (f'{_tex}_fill', f'{_tex}_glow', f'{_tex}_core'),
+            'options': {'layers': (
+                {'texture': 0, 'size': DECAL_SQUARE, 'height': 0.0, 'over': True, 'blend': 2, 'tint': _tint(_fill),
+                 'blp': f'FP_Decal_{_shape}_fill'},
+                {'texture': 1, 'size': DECAL_SQUARE, 'height': 0.0, 'over': True, 'blend': 4, 'tint': _tint(_glow),
+                 'blp': f'FP_Decal_{_shape}_glow'},
+                {'texture': 2, 'size': DECAL_SQUARE, 'height': 0.0, 'over': True, 'blend': 4, 'tint': _tint(_core),
+                 'blp': f'FP_Decal_{_shape}_core'})}}
+        EFFECTS[f'FirepitTimer_{_colour}_{_shape}'] = {
+            'model': f'FP_Timer_{_colour}_{_shape}', 'effect': 7201 + _c * 16 + _i, 'shape': 'zone',
+            'textures': (f'{_tex}_timer',),
+            'options': {'layers': ({'texture': 0, 'size': DECAL_SQUARE, 'height': 0.0, 'over': True, 'blend': 2,
+                                    'tint': _tint(_timer), 'blp': f'FP_Decal_{_shape}_timer'},)}}
 # Scarlet Benediction's abilities in their bases' places (Verdant Embrace: Binding Heal or Divine Favor; Reversion:
 # Renew; Dream Breath: Prayer of Healing; Spiritbloom: Greater Heal or Holy Light), each its base's copy and cost, its
 # effect a dummy the script does (runes.cpp). Spiritbloom's heal twice over: as the Priest's Greater Heal and as the

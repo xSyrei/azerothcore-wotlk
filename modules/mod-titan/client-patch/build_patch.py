@@ -192,6 +192,8 @@ def main():
 
         out = HERE / 'dist' / 'patch-enUS-4.MPQ'
         out.parent.mkdir(exist_ok=True)
+        # A file several models share (the Firepit decals' textures) goes in once.
+        entries = list(dict(entries).items())
         out.write_bytes(make_mpq.build(entries))
         print(f'Wrote {out}:')
         for name, data in entries:
