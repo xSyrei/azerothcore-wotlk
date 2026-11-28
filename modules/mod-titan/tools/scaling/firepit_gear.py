@@ -170,6 +170,11 @@ def build():
     return pieces, templates, base_suffixes, titan, titan_offset
 
 
+# The server's spellitemenchantment_dbc and itemrandomsuffix_dbc hold a name of 100 characters at most (the client's
+# DBC, which players read, keeps the whole text): longer, and the import fails ("Data too long").
+DBC_NAME_MOST = 100
+
+
 def sql_text(text):
     return "'" + text.replace("'", "''") + "'"
 
@@ -211,7 +216,7 @@ def write_sql(templates, titan):
     for x in titan:
         e = x['enchants'] + [0] * (5 - len(x['enchants']))
         a = x['alloc'] + [0] * (5 - len(x['alloc']))
-        rows.append(f"({x['id']}, {sql_text(x['name'])}, 16712190, {sql_text(x['internal'])}, "
+        rows.append(f"({x['id']}, {sql_text(x['name'][:DBC_NAME_MOST])}, 16712190, {sql_text(x['internal'])}, "
                     + ', '.join(map(str, e)) + ', ' + ', '.join(map(str, a)) + ')')
     lines.append(',\n'.join(rows) + ';')
     ours = [m[4] for m in modifiers() if m[4]] + effect_enchants()
@@ -223,7 +228,8 @@ def write_sql(templates, titan):
         f'DELETE FROM `spellitemenchantment_dbc` WHERE `ID` BETWEEN {MODIFIER_FIRST} AND {MODIFIER_FIRST + 2999};',
         'INSERT INTO `spellitemenchantment_dbc` (`ID`, `Charges`, `Effect_1`, `EffectPointsMin_1`,',
         '    `EffectPointsMax_1`, `EffectArg_1`, `Name_Lang_enUS`, `Name_Lang_Mask`) VALUES',
-        ',\n'.join(f"({x['id']}, 0, {x['type']}, {x['amount']}, {x['amount']}, {x['spell']}, {sql_text(x['name'])}, "
+        ',\n'.join(f"({x['id']}, 0, {x['type']}, {x['amount']}, {x['amount']}, {x['spell']}, "
+                   f"{sql_text(x['name'][:DBC_NAME_MOST])}, "
                    "16712190)" for x in ours) + ';',
         '',
     ]
