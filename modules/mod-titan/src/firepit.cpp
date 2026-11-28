@@ -140,6 +140,11 @@ namespace
     // boss falls. A wave's enemies: min(12, 3 + wave / 5) + ceil((Heroes - 1) / 2), 20 at most; every 5th wave one
     // boss alone, the waves' timer stopped while it lives.
     constexpr uint32 COUNTDOWN_MS = 10000, WAVE_MS = 75000, BREATHER_MS = 10000, BOSS_BREATHER_MS = 20000;
+    // Before a boss wave: the field cleared, then BOSS_PREP_MS to prepare. A boss wave cleared with a Hero standing:
+    // the fallen rise at the pit's edge with half their health and mana, protected for PROTECT_MS (ended early by
+    // their own attack).
+    constexpr uint32 BOSS_PREP_MS = 20000, PROTECT_MS = 5000;
+    constexpr float REVIVE_SHARE = 0.5f;
     constexpr uint32 SPAWN_SPREAD_MS = 4000, TICK_MS = 1000, END_DELAY_MS = 4000, CORPSE_MS = 3000;
     constexpr uint32 WAVE_BASE = 3, WAVE_MOST = 12, WAVE_MOST_ALL = 20;
     // Health: H(n) = 0.70 + 0.05 (n - 1) + 0.0008 (n - 1)^2 of a level-scaled dungeon enemy's (wave 15 1.56, 45 4.45,
@@ -938,6 +943,55 @@ private:
                 SendAddon(player, "A," + Clean(text) + ',' + (urgent ? "1" : "0"));
     }
 
+    // A boss wave cleared with a Hero standing: every fallen Hero rises at the pit's edge, half their health and
+    // mana, protected for 5 sec.
+    void Recover()
+    {
+        if (Living().empty())
+            return;
+        uint32 n = 0;
+        for (auto const& ref : instance->GetPlayers())
+        {
+            Player* player = ref.GetSource();
+            if (!player || player->IsAlive() || player->IsGameMaster())
+                continue;
+            player->ResurrectPlayer(REVIVE_SHARE);
+            player->SpawnCorpseBones();
+            player->SetHealth(std::max<uint32>(1, uint32(player->GetMaxHealth() * REVIVE_SHARE)));
+            if (player->getPowerType() == POWER_MANA)
+                player->SetPower(POWER_MANA, uint32(player->GetMaxPower(POWER_MANA) * REVIVE_SHARE));
+            float angle = float(n++) * 0.7f;
+            player->NearTeleportTo(CENTER.GetPositionX() + ARRIVAL_RADIUS * std::cos(angle),
+                CENTER.GetPositionY() + ARRIVAL_RADIUS * std::sin(angle), CENTER.GetPositionZ(), angle + float(M_PI));
+            _protected[player->GetGUID()] = _runMs + PROTECT_MS;
+            if (Record* record = RecordOf(player))
+                record->down = false;
+            ChatHandler(player->GetSession()).SendSysMessage("|cffff7f27The Firepit:|r you rise again, protected "
+                "for 5 sec (attacking ends it).");
+        }
+        if (n)
+            Announce("The boss wave is cleared: the fallen rise again!", true);
+    }
+
+public:
+    // A revived Hero's protection: on (until its time, or their own attack).
+    bool IsProtected(Player* player)
+    {
+        auto itr = _protected.find(player->GetGUID());
+        if (itr == _protected.end())
+            return false;
+        if (_runMs < itr->second)
+            return true;
+        _protected.erase(itr);
+        return false;
+    }
+
+    void Unprotect(Player* player)
+    {
+        _protected.erase(player->GetGUID());
+    }
+
+private:
     std::vector<Player*> Living() const
     {
         std::vector<Player*> living;
@@ -1417,13 +1471,43 @@ private:
                     bossAlive = true;
         if (bossAlive || (_wave % BOSS_EVERY == 0 && !_queue.empty()))
             _waveMs = std::max<uint32>(_waveMs, BOSS_BREATHER_MS);
-        if (_enemies.empty() && _queue.empty() && _reinforcements.empty() && !_breather)
+        bool clear = _enemies.empty() && _queue.empty() && _reinforcements.empty();
+        if (clear && _wave)
+            _clearedWave = std::max(_clearedWave, _wave);
+        if (clear && !_breather)
         {
             _breather = true;
-            _waveMs = std::min(_waveMs, _wave % BOSS_EVERY == 0 ? BOSS_BREATHER_MS : BREATHER_MS);
+            bool bossWave = _wave % BOSS_EVERY == 0;
+            if (bossWave)
+                Recover();                          // a boss wave cleared: the fallen rise
+            _waveMs = std::min(_waveMs, bossWave ? BOSS_BREATHER_MS : BREATHER_MS);
         }
-        if (!_waveMs)
+        // Before a boss: the field cleared first (the timer held), then 20 sec to prepare.
+        if (!_waveMs && (_wave + 1) % BOSS_EVERY == 0 && !_preparing)
+        {
+            if (!clear)
+            {
+                if (!_holding)
+                    Announce("The next wave is a boss's: clear the field to face it.");
+                _holding = true;
+                _waveMs = TICK_MS;
+            }
+            else
+            {
+                _holding = false;
+                _preparing = true;
+                _waveMs = BOSS_PREP_MS;
+                uint32 entry = BOSSES[((_wave + 1) / BOSS_EVERY - 1) % std::size(BOSSES)];
+                CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(entry);
+                Announce("Wave " + std::to_string(_wave + 1) + ": " + (info ? info->Name : std::string("a boss"))
+                    + " enters the Ring in 20 sec. Prepare!", true);
+            }
+        }
+        else if (!_waveMs)
+        {
+            _preparing = false;
             StartWave(_wave + 1);
+        }
 
         for (auto const& ref : instance->GetPlayers())
             if (Player* player = ref.GetSource())
@@ -1507,7 +1591,7 @@ private:
         CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         for (auto const& [guid, record] : _records)
         {
-            if (!record.peakWave)
+            if (!_clearedWave)
                 continue;
             trans->Append("INSERT INTO `titan_firepit_records` (`guid`, `bracket`, `best_wave`, `group_size`, "
                 "`kills`, `run_date`) VALUES ({}, {}, {}, {}, {}, UNIX_TIMESTAMP()) ON DUPLICATE KEY UPDATE "
@@ -1515,7 +1599,7 @@ private:
                 "`kills` = IF(VALUES(`best_wave`) > `best_wave`, VALUES(`kills`), `kills`), "
                 "`run_date` = IF(VALUES(`best_wave`) > `best_wave`, VALUES(`run_date`), `run_date`), "
                 "`best_wave` = GREATEST(`best_wave`, VALUES(`best_wave`))",
-                guid.GetCounter(), Bracket(_groupSize), record.peakWave, _groupSize, record.kills);
+                guid.GetCounter(), Bracket(_groupSize), _clearedWave, _groupSize, record.kills);
         }
         CharacterDatabase.CommitTransaction(trans);
     }
@@ -1551,6 +1635,9 @@ private:
     uint32 _reinforceMs = REINFORCE_MS, _fullMs = 0, _reliefMs = 0;
     uint8 _pressure = 0;                            // Pressure's stacks
     bool _breather = false;
+    bool _holding = false, _preparing = false;      // before a boss: waiting for the field to clear, the prep
+    uint32 _clearedWave = 0;                        // the run's highest fully cleared wave (records, checkpoints)
+    std::map<ObjectGuid, uint32> _protected;        // revived Heroes: run ms their protection ends
     std::unordered_map<ObjectGuid, BossState> _bosses;
     std::vector<Blast> _blasts;
     std::vector<ObjectGuid> _natives, _enemies;
@@ -2009,10 +2096,20 @@ public:
         if (!run)
             return;
         if (Player* player = attacker->GetCharmerOrOwnerPlayerOrPlayerItself(); player && victim->ToCreature())
+        {
+            run->Unprotect(player);                 // a revived Hero's attack ends their protection
             run->Damage(player, damage);
+        }
         if (Player* player = victim->ToPlayer(); player && attacker->ToCreature()
             && !attacker->GetCharmerOrOwnerPlayerOrPlayerItself())
+        {
+            if (run->IsProtected(player))
+            {
+                damage = 0;
+                return;
+            }
             run->Taken(player, damage);
+        }
     }
 
     void OnHeal(Unit* healer, Unit* receiver, uint32& gain) override

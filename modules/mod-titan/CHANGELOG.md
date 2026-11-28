@@ -4,6 +4,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-27: The Firepit Ignites
 
+- **Boss waves give you room**: before a boss, the next wave waits until the field is clear, then you get 20 seconds to
+  prepare (the boss is named in advance).
+- **The fallen rise after a boss**: clear a boss wave with anyone still standing and every fallen Hero comes back at the
+  edge of the pit with half their health and mana, protected for 5 seconds (attacking ends it).
+- **Records and checkpoints count cleared waves**: your best is the highest wave your group fully cleared, and beating a
+  boss and clearing its wave unlocks that checkpoint for everyone in the run, fallen or not.
 - **Tank priority**: when a wave starts, every enemy turns to the party's tank with a 50% threat lead (taunts
   and normal threat still work). With no tank, enemies go for the nearest player.
 - **Thunderbomb's burst no longer leaves a big white square on the ground.**
