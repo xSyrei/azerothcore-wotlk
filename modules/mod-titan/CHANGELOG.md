@@ -4,6 +4,13 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
 
 ## 2026-11-27: The Firepit Ignites
 
+- **Enemy Forces tracker**: the tracker shows the living enemies by role (Melee, Ranged, Healers, Boss), the
+  reinforcements waiting (INCOMING when the field is empty but more are coming) and a badge for Bolstered or Mending
+  enemies.
+- **Fewer specials at once**: across overlapping waves, at most 1 healer alive to wave 15 (2 after) and 2 ranged enemies
+  to wave 15 (3 to wave 30, 4 after); extra picks become frontliners.
+- **The stands are full**: a crowd of the dungeons' creatures watches from the seats, cheering each wave, roaring as
+  bosses enter and fall, getting louder in Carnage's last 30 seconds, and laughing at a wipe. Purely cosmetic.
 - **Fireforged gear, reforged**: the spoils of waves 15 and 30 are **Rare**; from wave 45 they are **Epic**, each with
   exactly **one bonus effect** chosen for your role and build (never one you can't use: no block bonus without a shield,
   no mana bonus without mana).

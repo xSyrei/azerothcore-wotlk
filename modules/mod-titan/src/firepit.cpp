@@ -347,8 +347,63 @@ namespace
     // in leveling order, each bringing its own enemies.
     using FirepitRoster::CHAPTER_WAVES;
     constexpr std::size_t NEWEST_KINDS = 6;             // a wave's enemies come from the newest few kinds
-    // The healers (they keep everything that piles up alive): one a wave at most, two alive at once at most.
-    constexpr uint32 HEALERS_A_WAVE = 1, MOST_HEALERS_ALIVE = 2;
+    // The healers (they keep everything that piles up alive): one a wave at most; alive at once across the waves,
+    // one to wave 15, two after. Ranged enemies alive at once: 2 to wave 15, 3 to 30, 4 after (a pick past a cap
+    // becomes a fighter of the wave's).
+    constexpr uint32 HEALERS_A_WAVE = 1;
+    uint32 MostHealers(uint32 wave)
+    {
+        return wave <= 15 ? 1 : 2;
+    }
+
+    uint32 MostRanged(uint32 wave)
+    {
+        return wave <= 15 ? 2 : wave <= 30 ? 3 : 4;
+    }
+
+    // The Enemy Forces tracker's roles: one an enemy, given at its spawn.
+    enum ForceRole : uint8 { FORCE_MELEE, FORCE_RANGED, FORCE_HEALER, FORCE_BOSS, FORCE_OTHER, FORCE_ROLES };
+
+    bool IsHealer(uint32 entry);
+    uint8 RoleOf(uint32 entry, bool boss)
+    {
+        if (boss)
+            return FORCE_BOSS;
+        if (IsHealer(entry))
+            return FORCE_HEALER;
+        CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(entry);
+        if (!info)
+            return FORCE_OTHER;
+        return info->unit_class == CLASS_MAGE ? FORCE_RANGED : FORCE_MELEE;
+    }
+
+    // The Spectators: the stands' seats (Trial of the Champion's own spectators'), a cosmetic crowd dressed as the
+    // roster's enemies, cheering as the run goes; never fighting, never counted, never in the way.
+    constexpr uint32 NPC_SPECTATOR = 910156;            // titan_firepit.sql
+    Position const SEATS[] = {
+        { 733.8f, 545.2f, 442.1f, 1.41f }, { 731.0f, 552.7f, 438.8f, 1.34f }, { 734.4f, 560.2f, 435.5f, 1.38f },
+        { 726.4f, 557.2f, 437.0f, 1.26f }, { 709.6f, 570.1f, 435.5f, 0.94f }, { 712.9f, 563.2f, 437.0f, 1.03f },
+        { 714.3f, 553.7f, 440.2f, 1.12f }, { 700.3f, 559.2f, 442.1f, 0.93f }, { 718.9f, 564.1f, 435.5f, 1.12f },
+        { 722.0f, 548.2f, 442.1f, 1.24f }, { 718.4f, 555.9f, 438.8f, 1.15f }, { 725.7f, 560.8f, 435.5f, 1.24f },
+        { 697.2f, 583.9f, 435.5f, 0.63f }, { 689.6f, 582.8f, 438.8f, 0.56f }, { 696.3f, 577.5f, 437.0f, 0.70f },
+        { 682.9f, 586.2f, 440.2f, 0.47f }, { 688.0f, 573.9f, 442.1f, 0.66f }, { 699.0f, 654.9f, 435.5f, 5.53f },
+        { 693.6f, 654.9f, 437.0f, 5.60f }, { 690.5f, 661.7f, 440.2f, 5.55f }, { 684.1f, 656.7f, 442.1f, 5.69f },
+        { 686.9f, 650.8f, 438.8f, 5.76f }, { 677.2f, 640.7f, 442.1f, 6.00f }, { 689.4f, 639.3f, 435.5f, 5.95f },
+        { 680.0f, 648.9f, 440.2f, 5.86f }, { 686.4f, 643.4f, 437.0f, 5.88f }, { 692.4f, 644.9f, 435.5f, 5.83f },
+        { 770.0f, 547.9f, 442.1f, 1.80f }, { 761.2f, 549.1f, 440.2f, 1.59f }, { 764.1f, 553.4f, 438.8f, 1.87f },
+        { 675.3f, 590.0f, 442.1f, 0.38f }, { 675.1f, 597.7f, 442.1f, 0.28f }, { 692.9f, 590.6f, 435.5f, 0.47f },
+        { 689.6f, 598.0f, 435.5f, 0.33f }, { 685.0f, 591.0f, 438.8f, 0.42f }, { 780.0f, 550.7f, 442.1f, 2.06f },
+        { 773.5f, 555.5f, 438.8f, 1.95f }, { 688.0f, 629.6f, 435.5f, 6.20f }, { 688.7f, 604.7f, 435.5f, 0.21f },
+        { 678.0f, 634.1f, 440.2f, 5.78f }, { 680.6f, 604.0f, 438.8f, 0.19f }, { 685.1f, 600.4f, 437.0f, 0.28f },
+        { 685.1f, 634.4f, 437.0f, 6.09f }, { 806.5f, 574.6f, 442.1f, 2.50f }, { 799.2f, 575.2f, 438.8f, 2.37f },
+        { 790.6f, 559.3f, 442.1f, 2.41f }, { 813.5f, 644.9f, 440.3f, 3.49f }, { 818.5f, 640.6f, 442.1f, 3.39f },
+        { 813.3f, 650.7f, 442.1f, 3.49f }, { 813.6f, 587.6f, 442.1f, 2.71f }, { 814.3f, 597.8f, 440.3f, 2.90f },
+        { 808.9f, 586.0f, 440.3f, 2.64f }, { 818.2f, 607.1f, 440.2f, 2.95f }, { 818.1f, 627.0f, 440.2f, 3.28f },
+        { 810.6f, 659.8f, 442.1f, 3.68f }, { 800.2f, 660.7f, 438.8f, 3.82f }, { 805.5f, 648.7f, 436.9f, 3.51f },
+        { 696.4f, 653.6f, 435.5f, 5.53f }, { 697.1f, 583.1f, 435.5f, 0.63f }, { 689.2f, 597.0f, 435.5f, 0.35f },
+        { 687.8f, 617.6f, 435.5f, 1.59f }, { 687.2f, 618.1f, 435.5f, 0.00f }, { 690.6f, 642.0f, 435.5f, 5.88f },
+    };
+
     bool IsHealer(uint32 entry)
     {
         for (FirepitRoster::Kind const& kind : FirepitRoster::KINDS)
@@ -384,6 +439,7 @@ namespace
         uint32 wave = 0;
         bool boss = false;
         uint8 vengeful = 0;                         // Vengeful Flame's stacks
+        uint8 role = 0;                             // the Enemy Forces tracker's (FORCE_*)
         uint32 vengefulUntil = 0;                   // game ms
         ObjectGuid partner;                         // Flamebound's other
     };
@@ -1166,8 +1222,46 @@ private:
         return z;
     }
 
+    // The crowd in the stands: dressed as the roster's enemies (those of the run's dungeons so far and the next,
+    // some of any), a little varied in size.
+    void SeatCrowd()
+    {
+        if (!_crowd.empty())
+            return;
+        std::size_t known = 0;
+        for (FirepitRoster::Kind const& kind : FirepitRoster::KINDS)
+            if (kind.Wave <= std::max<uint32>(_setup.startWave, 1) + CHAPTER_WAVES * 2)
+                ++known;
+        known = std::max<std::size_t>(known, 4);
+        for (Position const& seat : SEATS)
+        {
+            uint32 entry = FirepitRoster::KINDS[roll_chance_i(75) ? urand(0, uint32(std::min(known,
+                std::size(FirepitRoster::KINDS))) - 1) : urand(0, uint32(std::size(FirepitRoster::KINDS)) - 1)].Entry;
+            CreatureTemplate const* info = sObjectMgr->GetCreatureTemplate(entry);
+            CreatureModel const* model = info ? ObjectMgr::ChooseDisplayId(info) : nullptr;
+            TempSummon* fan = instance->SummonCreature(NPC_SPECTATOR, seat);
+            if (!fan)
+                continue;
+            if (model)
+                fan->SetDisplayId(model->CreatureDisplayID);
+            fan->SetObjectScale(frand(0.9f, 1.15f));
+            fan->SetReactState(REACT_PASSIVE);
+            _crowd.push_back(fan->GetGUID());
+        }
+    }
+
+    // The crowd reacts (share: how many, of 100): a cheer, a roar or applause; the losing side's mock.
+    void Cheer(uint32 share, bool mock = false)
+    {
+        static Emote const CHEERS[] = { EMOTE_ONESHOT_CHEER, EMOTE_ONESHOT_ROAR, EMOTE_ONESHOT_APPLAUD };
+        for (ObjectGuid const& guid : _crowd)
+            if (Creature* fan = instance->GetCreature(guid); fan && roll_chance_i(int32(share)))
+                fan->HandleEmoteCommand(mock ? EMOTE_ONESHOT_LAUGH : CHEERS[urand(0, 2)]);
+    }
+
     void Decorate()
     {
+        SeatCrowd();
         auto place = [this](uint32 entry, float x, float y, float facing)
         {
             instance->SummonGameObject(entry, x, y, FloorAt(x, y), facing, 0.0f, 0.0f, std::sin(facing / 2.0f),
@@ -1302,26 +1396,38 @@ private:
 
         std::vector<uint32> fighters;
         for (uint32 entry : kinds)
-            if (!IsHealer(entry))
+            if (RoleOf(entry, false) == FORCE_MELEE)
                 fighters.push_back(entry);
-        uint32 healers = 0;
+        uint32 healers = 0, ranged = 0;
         for (ObjectGuid const& guid : _enemies)
-            if (Creature* enemy = instance->GetCreature(guid))
-                if (enemy->IsAlive() && IsHealer(enemy->GetEntry()))
-                    ++healers;
-        uint32 healersNow = 0;
+            if (Creature* enemy = instance->GetCreature(guid); enemy && enemy->IsAlive())
+                if (Enemy* own = EnemyOf(enemy))
+                {
+                    healers += own->role == FORCE_HEALER ? 1 : 0;
+                    ranged += own->role == FORCE_RANGED ? 1 : 0;
+                }
+        for (Spawn const& queued : _reinforcements)
+        {
+            uint8 role = RoleOf(queued.entry, queued.boss);
+            healers += role == FORCE_HEALER ? 1 : 0;
+            ranged += role == FORCE_RANGED ? 1 : 0;
+        }
+        uint32 healersNow = 0, rangedNow = 0;
         std::size_t firstOfWave = _queue.size();
         for (uint32 i = 0; i < count && !kinds.empty(); ++i)
         {
             uint32 entry = i == 0 ? kinds.back() : kinds[urand(0, uint32(kinds.size()) - 1)];
-            if (IsHealer(entry) && (healersNow >= HEALERS_A_WAVE || healers + healersNow >= MOST_HEALERS_ALIVE))
+            uint8 role = RoleOf(entry, false);
+            if ((role == FORCE_HEALER && (healersNow >= HEALERS_A_WAVE || healers + healersNow >= MostHealers(_wave)))
+                || (role == FORCE_RANGED && ranged + rangedNow >= MostRanged(_wave)))
             {
                 if (fighters.empty())
                     continue;
                 entry = fighters[urand(0, uint32(fighters.size()) - 1)];
+                role = FORCE_MELEE;
             }
-            if (IsHealer(entry))
-                ++healersNow;
+            healersNow += role == FORCE_HEALER ? 1 : 0;
+            rangedNow += role == FORCE_RANGED ? 1 : 0;
             _queue.push_back({ entry, false, SPAWN_SPREAD_MS * i / std::max<uint32>(1, count) });
         }
 
@@ -1341,6 +1447,7 @@ private:
             text += " enters the Ring!";
         }
         Announce(text, bossWave);
+        Cheer(bossWave ? 100 : 30);
     }
 
     void SpawnOne(Spawn const& spawn)
@@ -1366,6 +1473,7 @@ private:
         own->pressure = 1.0f + PRESSURE_DAMAGE * float(_pressure);
         own->wave = _wave;
         own->boss = spawn.boss;
+        own->role = RoleOf(spawn.entry, spawn.boss);
         if (spawn.boss && enemy->GetScriptName().rfind("boss_", 0) != 0
             && enemy->GetCreatureTemplate()->rank != CREATURE_ELITE_WORLDBOSS)
         {
@@ -2150,6 +2258,8 @@ private:
         uint32 left = _carnageMs / 1000;
         if (left == 120 || left == 60 || left == 30)
             Announce("Carnage: " + std::to_string(left) + " sec left!", true);
+        if (left && left <= 30 && left % 3 == 0)
+            Cheer(60);
         else if (left && left <= 10)
             Announce(std::to_string(left) + "...", true);
         if (_carnageMs)
@@ -2188,6 +2298,8 @@ private:
             _carnageMs = 0;
             Announce("The Carnage is ended: the arena is spared.", true);
         }
+        if (boss && !boss->IsAlive())
+            Cheer(100);                             // the boss beaten: the crowd roars
     }
 
 public:
@@ -3228,6 +3340,7 @@ private:
         if (living.empty())
         {
             Announce("The Firepit claims its last challenger.", true);
+            Cheer(100, true);
             _phase = Phase::ENDING;
             ClearMechanics();
             _timer = END_DELAY_MS;
@@ -3293,6 +3406,27 @@ private:
         return MOST_ALIVE_BASE + MOST_ALIVE_A_HERO * _groupSize;
     }
 
+    // F,<melee>,<ranged>,<healers>,<bosses>,<other>,<queued>,<badges>: the Enemy Forces tracker. Only the living,
+    // hostile enemies the wave's clear needs, each once in its role (the Ashen Echo, web anchors and spectators never);
+    // the reinforcements apart; badges for the Bolstered and Mending ones.
+    void SendForces(Player* player)
+    {
+        uint32 counts[FORCE_ROLES] = {};
+        for (ObjectGuid const& guid : _enemies)
+            if (Creature* enemy = instance->GetCreature(guid); enemy && enemy->IsAlive())
+                if (Enemy* own = EnemyOf(enemy))
+                    ++counts[std::min<uint8>(own->role, FORCE_OTHER)];
+        std::string badges;
+        if (Creature* bolstered = instance->GetCreature(_bolstered); bolstered && bolstered->IsAlive())
+            badges += "Bolstered";
+        if (Creature* mender = instance->GetCreature(_mender); mender && mender->IsAlive())
+            badges += badges.empty() ? "Mending" : " Mending";
+        std::string text = "F";
+        for (uint32 count : counts)
+            text += ',' + std::to_string(count);
+        SendAddon(player, text + ',' + std::to_string(_reinforcements.size() + _queue.size()) + ',' + badges);
+    }
+
     void SendHud(Player* player)
     {
         uint32 living = uint32(Living().size());
@@ -3303,6 +3437,7 @@ private:
             + std::to_string(_phase == Phase::COUNTDOWN ? (_timer + 999) / 1000 : 0) + ','
             + std::to_string(overwhelm) + ',' + std::to_string(MostAlive()) + ','
             + std::to_string(_reinforcements.size()) + ',' + std::to_string((_carnageMs + 999) / 1000));
+        SendForces(player);
     }
 
     void Finish()
@@ -3431,6 +3566,7 @@ private:
     Major _major;
     std::vector<Web> _webs;
     uint32 _carnageMs = 0;                          // Marked for Carnage's time left (0: none)
+    std::vector<ObjectGuid> _crowd;                 // the Spectators
     std::vector<ObjectGuid> _natives, _enemies;
     std::vector<Spawn> _queue;
     std::map<ObjectGuid, Record> _records;

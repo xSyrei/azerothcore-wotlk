@@ -1156,6 +1156,13 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   (93486, a fixate), Cracked Earth (93490), Vengeful Flame (93487), Flamebound (93488); their damage bonuses kept in
   `Enemy::affix` (`EnemyAffixTick`); roles chosen at a wave's start (`AssignRoles`, `ApplyRole`), deaths handled in
   `EnemyFell`; Searing Brand and Shackling Chains never together (`Incompatible`).
+- **Enemy Forces and the Spectators** (The Firepit Ignites): each enemy's role set at its spawn (`RoleOf`: Boss, Healer
+  by name, Ranged for a mage-class creature, else Melee; `Enemy::role`), sent each tick as the F message (role counts of
+  the living, the reinforcements and queue, Bolstered/Mending badges; the Ashen Echo, web anchors and spectators never
+  count). Across waves at most `MostHealers` healers (1, then 2 from wave 16) and `MostRanged` ranged (2, 3 from 16, 4
+  from 31) alive, a pick past it a frontliner. The Spectators (910156, unselectable): one in each of Trial of the
+  Champion's 63 stand seats (`SEATS`), dressed as roster enemies (`SeatCrowd`), cheering (`Cheer`) at waves, boss
+  entries and kills, Carnage's last 30 sec, and a wipe.
 - **Fireforged gear, reforged** (The Firepit Ignites): Rare templates (930000 on, `RARE_OFFSET`) for waves 15 and 30,
   Epic from 45 (`EPIC_FROM`) with one bonus effect (`RollEffect`: the role's pool and the Hybrid pool, filtered by the
   build's needs: block, parry, shield, mana, Energy, healing, spells, a ranged weapon); Titanforged is Epic with a

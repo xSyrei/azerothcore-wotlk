@@ -209,6 +209,13 @@ check(debug.hud.timer.text == "0:42" and debug.hud.bar.value == 42 and debug.hud
     and debug.hud.standing.text:find("2|r / 3", 1, true), "time left on the bar, enemies and Heroes standing")
 server("H,45,30,1,1,2,2,0,0,16,0,187")
 check(debug.hud.boss.text:find("CARNAGE 3:07", 1, true), "Marked for Carnage: its clock on the tracker")
+server("F,13,4,2,0,0,3,Bolstered")
+check(debug.hud.forces.text:find("ENEMY FORCES 19", 1, true) and debug.hud.forces.text:find("Melee 13, Ranged 4, Healers 2", 1, true)
+    and debug.hud.forces.text:find("Queued 3", 1, true) and debug.hud.forces.text:find("Bolstered", 1, true),
+    "the Enemy Forces: totals by role, the queue and the badges")
+server("F,0,0,0,0,0,4,")
+check(debug.hud.forces.text:find("ENEMY FORCES 0", 1, true) and debug.hud.forces.text:find("INCOMING 4", 1, true),
+    "no enemies but a queue: incoming")
 server("X,Molten Ground,Emberfall")
 check(debug.hud.affixes.text == "Affixes: Molten Ground, Emberfall", "the active affixes on the tracker")
 server("H,12,30,16,0,2,2,0,2,16,5")

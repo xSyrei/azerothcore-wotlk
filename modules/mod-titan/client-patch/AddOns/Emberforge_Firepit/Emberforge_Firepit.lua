@@ -7,6 +7,7 @@
 --
 -- The server (mod-titan, src/firepit.cpp) talks in addon whispers to the player, prefix EFFP:
 --   X,<affix name>,... the world affixes active now
+--   F,<melee>,<ranged>,<healers>,<bosses>,<other>,<queued>,<badges>: the Enemy Forces
 --   H,<wave>,<sec left>,<enemies alive>,<boss wave 0|1>,<Heroes standing>,<Heroes in the run>,<countdown sec>,
 --     <Pressure stacks (5% more enemy damage each)>,<the field's cap>,<reinforcements waiting>,
 --     <Marked for Carnage: sec left, 0 none>
@@ -140,7 +141,7 @@ end
 -- On the right, under the minimap (as a dungeon's objectives): the wave, its time running out on a bar, the enemies
 -- alive, the Heroes standing, and the run's news (a boss coming, the last one falling). Drag it anywhere.
 
-local HUD_W, HUD_H = 236, 172
+local HUD_W, HUD_H = 236, 196
 local hud = CreateFrame("Frame", "EmberforgeFirepitHud", UIParent)
 hud:SetWidth(HUD_W)
 hud:SetHeight(HUD_H)
@@ -193,6 +194,12 @@ hud.event = Label(hud, 10, { 1, 0.62, 0.3 })
 hud.event:SetPoint("TOPLEFT", 12, -120)
 hud.event:SetWidth(HUD_W - 24)
 hud.event:SetJustifyH("LEFT")
+-- The Enemy Forces (F): the living enemies by role, the reinforcements apart, the priority badges.
+hud.forces = Label(hud, 10, BODY)
+hud.forces:SetPoint("BOTTOMLEFT", 12, 26)
+hud.forces:SetWidth(HUD_W - 24)
+hud.forces:SetJustifyH("LEFT")
+hud.forces:SetText("")
 -- The world affixes active now (X), at the bottom.
 hud.affixes = Label(hud, 10, { 1, 0.78, 0.45 })
 hud.affixes:SetPoint("BOTTOMLEFT", 12, 8)
@@ -1191,6 +1198,25 @@ local function OnMessage(message)
         ShowHud(fields)
     elseif kind == "A" then
         HudNews(fields[2] or "", fields[3] == "1")
+    elseif kind == "F" then
+        local n = function(i) return tonumber(fields[i]) or 0 end
+        local melee, ranged, healers, bosses, other, queued = n(2), n(3), n(4), n(5), n(6), n(7)
+        local total = melee + ranged + healers + bosses + other
+        local parts = {}
+        for _, part in ipairs({ { "Melee", melee }, { "Ranged", ranged }, { "Healers", healers },
+            { "Boss", bosses }, { "Other", other } }) do
+            if part[2] > 0 then
+                parts[#parts + 1] = part[1] .. " " .. part[2]
+            end
+        end
+        local text = "ENEMY FORCES " .. total .. (#parts > 0 and (": " .. table.concat(parts, ", ")) or "")
+        if queued > 0 then
+            text = text .. (total == 0 and " |cffffd060INCOMING " or " |cffffd060Queued ") .. queued .. "|r"
+        end
+        if (fields[8] or "") ~= "" then
+            text = text .. " |cffff6a4a[" .. fields[8] .. "]|r"
+        end
+        hud.forces:SetText(text)
     elseif kind == "X" then
         local names = {}
         for i = 2, #fields do
