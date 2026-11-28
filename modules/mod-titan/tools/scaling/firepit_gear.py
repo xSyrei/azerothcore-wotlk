@@ -133,6 +133,22 @@ def name_of(name):
     return f'{PREFIXES[first]} {rest}'
 
 
+# The Firepit's own armor set, not the Leveling Scaled pool's (the Emberforge Cache's): the Blackwing Lair sets' looks,
+# fire and dragonfire, by armor and slot (inventory type: head, shoulders, chest/robe, wrists, hands, waist, legs,
+# feet): cloth Nemesis Raiment, leather Bloodfang Armor, mail Dragonstalker Armor, plate Battlegear of Wrath.
+FIREPIT_LOOKS = {
+    'cloth': {1: 34369, 3: 34022, 20: 34014, 9: 34012, 10: 34013, 6: 34011, 7: 29857, 8: 34015},
+    'leather': {1: 33743, 3: 33653, 5: 33650, 9: 31127, 10: 33651, 6: 31110, 7: 31115, 8: 31111},
+    'mail': {1: 34367, 3: 34091, 5: 33667, 9: 33666, 10: 33668, 6: 33665, 7: 33672, 8: 34269},
+    'plate': {1: 34215, 3: 34253, 5: 33983, 9: 33982, 10: 33984, 6: 33990, 7: 33986, 8: 33989},
+}
+
+
+def look_of(piece):
+    """A Fireforged piece's look: its armor set's (FIREPIT_LOOKS), else the Leveling Scaled piece's."""
+    return FIREPIT_LOOKS.get(piece['armor'], {}).get(piece['inventory'], piece['display'])
+
+
 def item_level(tier):
     return FIRST_ITEM_LEVEL + tier * ITEM_LEVEL_STEP
 
@@ -159,7 +175,8 @@ def build():
                     high = max(2, round(average * (1 + scaled.DAMAGE_SPREAD)))
                 for rare in ((False, True) if not titan else (False,)):
                     entry = (RARE_FIRST + index * TIERS + tier) if rare else first + tier
-                    templates.append({**piece, 'name': name_of(piece['name']), 'entry': entry, 'item_level': il,
+                    templates.append({**piece, 'display': look_of(piece), 'name': name_of(piece['name']),
+                                      'entry': entry, 'item_level': il,
                                       'armor_value': armor, 'damage': (low, high),
                                       'delay': scaled.SPEED[piece['weapon']] if piece['weapon'] else 0,
                                       'quality': QUALITY_RARE if rare else QUALITY_EPIC,

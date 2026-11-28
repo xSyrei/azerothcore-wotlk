@@ -1169,6 +1169,12 @@ group of up to 10, and the rune testbed (`src/firepit.cpp`, `data/sql/db-world/t
   damage taken together, `FlameboundTaken`); their damage bonuses kept in `Enemy::affix` (`EnemyAffixTick`); roles
   chosen at a wave's start (`AssignRoles`, `ApplyRole`), deaths handled in `EnemyFell`; Searing Brand and Shackling
   Chains never together (`Incompatible`).
+- **Fireforged looks** (tools/scaling/firepit_gear.py `FIREPIT_LOOKS`): the Firepit's armor is its own set, not the
+  Leveling Scaled pool's: by armor and slot, the Blackwing Lair sets' displays (cloth Nemesis, leather Bloodfang, mail
+  Dragonstalker, plate Wrath); weapons, cloaks and jewelry keep the pool's.
+- **Creature textures** (`creature_gltf_to_m2.MAX_TEXTURE`): a glTF creature's textures are shrunk to 1024 pixels a
+  side at most; the 3.3.5 client crashes loading a larger (uncompressed, palettized) BLP. Decals sit on the arena's
+  floor as `FloorAt` finds it, probed from just above the centre's height (never the stands or the rim's fences).
 - **The Ashfleet Captain's fight** (wave 45; `RunOutTheGuns`, `CannonShot`, `LaunchCannonballs`, `Volley`): six
   cannons (910448) and kegs (910449) round the rim; cannonballs (93492) fired from the nearest so they land as their
   warnings fill. Lit Powder Kegs (creature 910159, display 26252; `RollKeg`): a 12 sec fuse as a danger decal, its

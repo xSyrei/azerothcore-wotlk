@@ -44,6 +44,12 @@ Player-facing changes to Emberforge, newest first. Each entry is also posted as 
   auto-attacks, direct spells, ranged abilities, spells over time) and procs (15% chance, 30 sec apart: bursts of power,
   haste, crit, dodge or defense, absorb shields, mana, a Thundering Strike). Every number scales with the piece's item
   level and shows on its tooltip.
+- **Fireforged armor has its own look**: the Firepit's armor is a set of its own, no longer the Emberforge Cache's.
+  Cloth wears the crimson Nemesis look, leather Bloodfang, mail Dragonstalker and plate the black-and-red Battlegear
+  of Wrath (pieces you already have change too).
+- **Fixed**: a client crash during the Ashfleet Captain's fight (an Ashfleet Deckhand's texture was too large).
+- Floor warnings no longer float over the arena's walls and fences, the powder keg's hazard stripes are thinner and
+  softer, and exploding kegs and cannon lines no longer flood the screen in white.
 - **Titanforged** pieces now carry a **prismatic socket** instead of doubled stats. Old Fireforged pieces keep what they
   have; the old famous-proc modifiers no longer roll.
 - **Marked for Carnage**: at waves 45, 60, 75, 90, 100, 105 and every 15 after, the boss must die within 5 minutes or

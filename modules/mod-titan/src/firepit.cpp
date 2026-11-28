@@ -1420,12 +1420,13 @@ public:
 private:
     // The run's news, on each Hero's wave tracker (Emberforge_Firepit): urgent, in red with a raid warning's sound.
     // The ring dressed (once a run): each piece on the floor where it stands.
-    // The arena's floor under (x, y), not the stands above it.
+    // The arena's floor under (x, y), not the stands, walls or fences above it (the floor is flat: anything found
+    // much above or below the centre's is not it).
     float FloorAt(float x, float y) const
     {
-        float z = instance->GetHeight(x, y, CENTER.GetPositionZ() + 5.0f);
-        if (z < CENTER.GetPositionZ() - 10.0f || z > CENTER.GetPositionZ() + 5.0f)
-            z = CENTER.GetPositionZ() + 1.0f;
+        float z = instance->GetHeight(x, y, CENTER.GetPositionZ() + 1.5f);
+        if (z < CENTER.GetPositionZ() - 3.0f || z > CENTER.GetPositionZ() + 1.0f)
+            z = CENTER.GetPositionZ();
         return z;
     }
 
@@ -2203,7 +2204,7 @@ private:
         {
             case SHAPE_LINE:
             {
-                float step = 6.0f;
+                float step = 10.0f;
                 uint32 i = 0;
                 for (float along = 2.0f; along <= blast.length; along += step, ++i)
                 {
@@ -2211,8 +2212,7 @@ private:
                     float y = at.GetPositionY() + along * std::sin(blast.facing);
                     if (std::hypot(x - CENTER.GetPositionX(), y - CENTER.GetPositionY()) > ARENA_RADIUS)
                         break;
-                    Queue(Position(x, y, FloorAt(x, y)), i % 2 ? SPELL_EXPLOSION_SMALL : SPELL_EXPLOSION, i * 60,
-                        SPELL_SHAKE_SMALL, step);
+                    Queue(Position(x, y, FloorAt(x, y)), SPELL_EXPLOSION_SMALL, i * 60, SPELL_SHAKE_SMALL, step);
                 }
                 return;
             }
@@ -2247,7 +2247,7 @@ private:
         }
         if (blast.keg)
         {
-            Look(at, SPELL_EXPLOSION_HUGE);
+            Look(at, SPELL_EXPLOSION);
             Shake(at, blast.radius + 15.0f, SPELL_SHAKE_MEDIUM);
         }
         else if (blast.cannon)

@@ -2670,7 +2670,8 @@ for _s, _style in enumerate(DECAL_STYLES):
                 'model': f'FP_Style_{_style}_{_colour}_{_shape}', 'effect': 7289 + _s * 48 + _c * 8 + _i,
                 'shape': 'zone', 'textures': (f'FP_Decals/{_shape}_{_style}',),
                 'options': {'layers': ({'texture': 0, 'size': DECAL_SQUARE, 'height': 0.0, 'over': True, 'blend': 4,
-                                        'tint': tuple(round(v / 255.0 * 0.75, 3) for v in _glow), 'turn': _turn,
+                                        'tint': tuple(round(v / 255.0 * (0.4 if _style == 'hazard' else 0.75), 3)
+                                                     for v in _glow), 'turn': _turn,
                                         'blp': f'FP_Decal_{_shape}_{_style}'},)}}
 # Scarlet Benediction's abilities in their bases' places (Verdant Embrace: Binding Heal or Divine Favor; Reversion:
 # Renew; Dream Breath: Prayer of Healing; Spiritbloom: Greater Heal or Holy Light), each its base's copy and cost, its

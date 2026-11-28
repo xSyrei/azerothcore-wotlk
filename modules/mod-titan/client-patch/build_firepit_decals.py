@@ -139,7 +139,7 @@ def pattern(style, x, y, line=False):
         return np.clip(np.exp(-(edge / 0.012) ** 2) + 0.35 * np.exp(-(edge / 0.05) ** 2), 0, 1)
     if style == 'hazard':
         t = ((x + y) * 3.0) % 1.0               # a whole number of stripes a line's piece
-        return smooth((np.abs(t - 0.5) - 0.2) / 0.04) * 0.75
+        return smooth((np.abs(t - 0.5) - 0.32) / 0.04) * 0.4
     # swirl: arms of smoke spiralling in
     rng = np.random.default_rng(5)
     noise = sum(np.sin(x * f * a + y * f * b + p) / f for f, a, b, p in

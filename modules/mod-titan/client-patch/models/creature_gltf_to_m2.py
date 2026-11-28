@@ -155,6 +155,9 @@ SAME_SPEED = {11: 4, 12: 4}
 MESH_MARGIN = 2.5
 
 
+MAX_TEXTURE = 1024  # pixels a side, at most
+
+
 # glTF (Y up) -> M2 (Z up): wow.export wrote M2 (x, y, z) as (x, z, -y).
 def to_m2(v):
     v = np.asarray(v, np.float64)
@@ -413,6 +416,11 @@ def convert(export_dir, json_path, name, out_dir, client_dir, texture_name=None,
     if texture_name is None:
         for texture in used_textures:
             with Image.open(Path(texture_dir or Path(export_dir) / 'textures') / f'{texture}.png') as image:
+                # The 3.3.5 client crashes loading a texture over 1024 pixels a side (an uncompressed one, at least).
+                if max(image.size) > MAX_TEXTURE:
+                    shrink = MAX_TEXTURE / max(image.size)
+                    image = image.resize((max(1, int(image.width * shrink)), max(1, int(image.height * shrink))),
+                                         Image.LANCZOS)
                 (out_dir / f'{name}_{texture}.blp').write_bytes(blp.encode(image))
     texture_paths = [f'{client_dir}\\{texture_name or name}_{t}.blp' for t in used_textures]
 
