@@ -1,0 +1,998 @@
+{
+	"asset": {
+		"version": "2.0",
+		"generator": "wow.export v0.2.21 win-x64 [01a1b2f4-1a35-7000-9849-075ee4fa5b50]"
+	},
+	"nodes": [
+		{
+			"name": "cfx_evoker_dreambreath_cast",
+			"children": [
+				1,
+				16,
+				17
+			]
+		},
+		{
+			"name": "cfx_evoker_dreambreath_cast_skeleton",
+			"children": [
+				2,
+				4,
+				6,
+				8,
+				10,
+				12,
+				14
+			]
+		},
+		{
+			"name": "bone_0_p",
+			"translation": [
+				-0.003977143671363592,
+				1.4521797895431519,
+				-0.03549911081790924
+			],
+			"children": [
+				3
+			]
+		},
+		{
+			"name": "bone_0"
+		},
+		{
+			"name": "bone_1_p",
+			"translation": [
+				13.333333015441895,
+				0,
+				0
+			],
+			"children": [
+				5
+			]
+		},
+		{
+			"name": "bone_1"
+		},
+		{
+			"name": "bone_2_p",
+			"translation": [
+				4.059439659118652,
+				1.1455841064453125,
+				0
+			],
+			"children": [
+				7
+			]
+		},
+		{
+			"name": "bone_2"
+		},
+		{
+			"name": "bone_3_p",
+			"translation": [
+				0,
+				1.4521797895431519,
+				0
+			],
+			"children": [
+				9
+			]
+		},
+		{
+			"name": "bone_3"
+		},
+		{
+			"name": "bone_4_p",
+			"translation": [
+				0,
+				1.4521797895431519,
+				0
+			],
+			"children": [
+				11
+			]
+		},
+		{
+			"name": "bone_4"
+		},
+		{
+			"name": "bone_5_p",
+			"translation": [
+				0,
+				1.4521797895431519,
+				0
+			],
+			"children": [
+				13
+			]
+		},
+		{
+			"name": "bone_5"
+		},
+		{
+			"name": "bone_6_p",
+			"translation": [
+				0,
+				1.4521797895431519,
+				0
+			],
+			"children": [
+				15
+			]
+		},
+		{
+			"name": "bone_6"
+		},
+		{
+			"name": "cfx_evoker_dreambreath_cast_Geoset0",
+			"mesh": 0,
+			"skin": 0
+		},
+		{
+			"name": "cfx_evoker_dreambreath_cast_Geoset1",
+			"mesh": 1,
+			"skin": 0
+		}
+	],
+	"scenes": [
+		{
+			"name": "cfx_evoker_dreambreath_cast_Scene",
+			"nodes": [
+				0
+			]
+		}
+	],
+	"buffers": [
+		{
+			"byteLength": 555124,
+			"uri": "cfx_evoker_dreambreath_cast.bin"
+		},
+		{
+			"uri": "cfx_evoker_dreambreath_cast_anim0-0.bin",
+			"byteLength": 840
+		}
+	],
+	"bufferViews": [
+		{
+			"buffer": 0,
+			"byteLength": 131712,
+			"byteOffset": 0,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 131712,
+			"byteOffset": 131712,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 43904,
+			"byteOffset": 263424,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 43904,
+			"byteOffset": 307328,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 448,
+			"byteOffset": 351232
+		},
+		{
+			"buffer": 1,
+			"byteLength": 4,
+			"byteOffset": 0,
+			"name": "ROT_TIMESTAMPS_3_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 16,
+			"byteOffset": 4,
+			"name": "ROT_VALUES_3_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 4,
+			"byteOffset": 20,
+			"name": "ROT_TIMESTAMPS_4_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 16,
+			"byteOffset": 24,
+			"name": "ROT_VALUES_4_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 156,
+			"byteOffset": 40,
+			"name": "ROT_TIMESTAMPS_5_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 624,
+			"byteOffset": 196,
+			"name": "ROT_VALUES_5_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 4,
+			"byteOffset": 820,
+			"name": "ROT_TIMESTAMPS_6_0"
+		},
+		{
+			"buffer": 1,
+			"byteLength": 16,
+			"byteOffset": 824,
+			"name": "ROT_VALUES_6_0"
+		},
+		{
+			"buffer": 0,
+			"byteLength": 87808,
+			"byteOffset": 351680,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 87808,
+			"byteOffset": 439488,
+			"target": 34962
+		},
+		{
+			"buffer": 0,
+			"byteLength": 27816,
+			"byteOffset": 527296,
+			"target": 34963
+		},
+		{
+			"buffer": 0,
+			"byteLength": 12,
+			"byteOffset": 555112,
+			"target": 34963
+		}
+	],
+	"accessors": [
+		{
+			"name": "POSITION",
+			"bufferView": 0,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 10976,
+			"type": "VEC3",
+			"min": [
+				0.1388905793428421,
+				-0.5715118646621704,
+				-23.682273864746094
+			],
+			"max": [
+				27.2265625,
+				3.744957447052002,
+				23.682275772094727
+			]
+		},
+		{
+			"name": "NORMAL",
+			"bufferView": 1,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 10976,
+			"type": "VEC3",
+			"min": [
+				-0.9599683880805969,
+				-0.9986339807510376,
+				-0.9997263550758362
+			],
+			"max": [
+				0.999975323677063,
+				1,
+				0.9993386268615723
+			]
+		},
+		{
+			"name": "JOINTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 10976,
+			"type": "VEC4",
+			"bufferView": 2,
+			"min": [
+				0,
+				0,
+				0,
+				0
+			],
+			"max": [
+				1,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "WEIGHTS_0",
+			"byteOffset": 0,
+			"componentType": 5121,
+			"count": 10976,
+			"normalized": true,
+			"type": "VEC4",
+			"bufferView": 3,
+			"min": [
+				255,
+				0,
+				0,
+				0
+			],
+			"max": [
+				255,
+				0,
+				0,
+				0
+			]
+		},
+		{
+			"name": "INV_BIND_MATRICES",
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 7,
+			"type": "MAT4",
+			"bufferView": 4,
+			"min": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				-13.333333015441895,
+				-1.4521797895431519,
+				0,
+				1
+			],
+			"max": [
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0,
+				0,
+				0,
+				1,
+				0,
+				0.003977143671363592,
+				0,
+				0.03549911081790924,
+				1
+			]
+		},
+		{
+			"name": "ROT_TIMESTAMPS_3_0",
+			"bufferView": 5,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				2
+			],
+			"count": 1
+		},
+		{
+			"name": "ROT_VALUES_3_0",
+			"bufferView": 6,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0.70709228515625,
+				0,
+				-0.70709228515625,
+				0
+			],
+			"max": [
+				0.70709228515625,
+				0,
+				-0.70709228515625,
+				0
+			],
+			"count": 1
+		},
+		{
+			"name": "ROT_TIMESTAMPS_4_0",
+			"bufferView": 7,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				2
+			],
+			"count": 1
+		},
+		{
+			"name": "ROT_VALUES_4_0",
+			"bufferView": 8,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0.70709228515625,
+				0,
+				-0.70709228515625,
+				0
+			],
+			"max": [
+				0.70709228515625,
+				0,
+				-0.70709228515625,
+				0
+			],
+			"count": 1
+		},
+		{
+			"name": "ROT_TIMESTAMPS_5_0",
+			"bufferView": 9,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				2
+			],
+			"count": 39
+		},
+		{
+			"name": "ROT_VALUES_5_0",
+			"bufferView": 10,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				-0.679168701171875,
+				0,
+				-0.70709228515625,
+				-0.70635986328125
+			],
+			"max": [
+				0.70709228515625,
+				0.7064208984375,
+				0.679168701171875,
+				0
+			],
+			"count": 39
+		},
+		{
+			"name": "ROT_TIMESTAMPS_6_0",
+			"bufferView": 11,
+			"byteOffset": 0,
+			"type": "SCALAR",
+			"componentType": 5126,
+			"min": [
+				0
+			],
+			"max": [
+				2
+			],
+			"count": 1
+		},
+		{
+			"name": "ROT_VALUES_6_0",
+			"bufferView": 12,
+			"byteOffset": 0,
+			"type": "VEC4",
+			"componentType": 5126,
+			"min": [
+				0.70709228515625,
+				0,
+				-0.70709228515625,
+				0
+			],
+			"max": [
+				0.70709228515625,
+				0,
+				-0.70709228515625,
+				0
+			],
+			"count": 1
+		},
+		{
+			"name": "TEXCOORD_0",
+			"bufferView": 13,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 10976,
+			"type": "VEC2",
+			"min": [
+				-0.9286947250366211,
+				-0.00024127960205078125
+			],
+			"max": [
+				1.8753151893615723,
+				1
+			]
+		},
+		{
+			"name": "TEXCOORD_1",
+			"bufferView": 14,
+			"byteOffset": 0,
+			"componentType": 5126,
+			"count": 10976,
+			"type": "VEC2",
+			"min": [
+				-0.00004166364669799805,
+				-0.17068910598754883
+			],
+			"max": [
+				1.0000407695770264,
+				1.253312587738037
+			]
+		},
+		{
+			"bufferView": 15,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 13908,
+			"type": "SCALAR"
+		},
+		{
+			"bufferView": 16,
+			"byteOffset": 0,
+			"componentType": 5123,
+			"count": 6,
+			"type": "SCALAR"
+		}
+	],
+	"meshes": [
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 13,
+						"TEXCOORD_1": 14
+					},
+					"indices": 15,
+					"mode": 4,
+					"material": 11
+				}
+			]
+		},
+		{
+			"primitives": [
+				{
+					"attributes": {
+						"POSITION": 0,
+						"NORMAL": 1,
+						"JOINTS_0": 2,
+						"WEIGHTS_0": 3,
+						"TEXCOORD_0": 13,
+						"TEXCOORD_1": 14
+					},
+					"indices": 16,
+					"mode": 4,
+					"material": 13
+				}
+			]
+		}
+	],
+	"scene": 0,
+	"skins": [
+		{
+			"name": "cfx_evoker_dreambreath_cast_Armature",
+			"joints": [
+				3,
+				5,
+				7,
+				9,
+				11,
+				13,
+				15
+			],
+			"inverseBindMatrices": 4,
+			"skeleton": 0
+		}
+	],
+	"animations": [
+		{
+			"samplers": [
+				{
+					"input": 5,
+					"interpolation": "STEP",
+					"output": 6
+				},
+				{
+					"input": 7,
+					"interpolation": "STEP",
+					"output": 8
+				},
+				{
+					"input": 9,
+					"interpolation": "LINEAR",
+					"output": 10
+				},
+				{
+					"input": 11,
+					"interpolation": "STEP",
+					"output": 12
+				}
+			],
+			"channels": [
+				{
+					"sampler": 0,
+					"target": {
+						"node": 9,
+						"path": "rotation"
+					}
+				},
+				{
+					"sampler": 1,
+					"target": {
+						"node": 11,
+						"path": "rotation"
+					}
+				},
+				{
+					"sampler": 2,
+					"target": {
+						"node": 13,
+						"path": "rotation"
+					}
+				},
+				{
+					"sampler": 3,
+					"target": {
+						"node": 15,
+						"path": "rotation"
+					}
+				}
+			],
+			"name": "Stand (ID 0 variation 0)"
+		}
+	],
+	"images": [
+		{
+			"uri": "7fx_alphamask_glow_blue_blend.png"
+		},
+		{
+			"uri": "white8x8.png"
+		},
+		{
+			"uri": "7fx_energyscroll_desat4.png"
+		},
+		{
+			"uri": "smoke_generic_paintymask02_blendgreen.png"
+		},
+		{
+			"uri": "10fx_energytendril_b.png"
+		},
+		{
+			"uri": "10fx_dragonclouds_01.png"
+		},
+		{
+			"uri": "10fx_greenmote.png"
+		},
+		{
+			"uri": "10fx_energystars_bluelift.png"
+		},
+		{
+			"uri": "8fx_bloodblur_a.png"
+		},
+		{
+			"uri": "10fx_energystars_lift.png"
+		},
+		{
+			"uri": "10fx_dragonclouds_02.png"
+		},
+		{
+			"uri": "cfx_evoker_dreambreath_cast_4395091.png"
+		},
+		{
+			"uri": "cfx_evoker_dreambreath_cast_4397272.png"
+		},
+		{
+			"uri": "fx_bedrockslam_missile_3608289.png"
+		},
+		{
+			"uri": "10fx_wind_streams.png"
+		},
+		{
+			"uri": "..\\world\\expansion08\\doodads\\fx\\9fx_brokercity_piratedragon_precastcone_groundprojection_3939537.png"
+		}
+	],
+	"textures": [
+		{
+			"source": 0
+		},
+		{
+			"source": 1
+		},
+		{
+			"source": 2
+		},
+		{
+			"source": 3
+		},
+		{
+			"source": 4
+		},
+		{
+			"source": 5
+		},
+		{
+			"source": 6
+		},
+		{
+			"source": 7
+		},
+		{
+			"source": 8
+		},
+		{
+			"source": 9
+		},
+		{
+			"source": 10
+		},
+		{
+			"source": 11
+		},
+		{
+			"source": 12
+		},
+		{
+			"source": 13
+		},
+		{
+			"source": 14
+		},
+		{
+			"source": 15
+		}
+	],
+	"materials": [
+		{
+			"name": "7fx_alphamask_glow_blue_blend",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 0
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "white8x8",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 1
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "7fx_energyscroll_desat4",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 2
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "smoke_generic_paintymask02_blendgreen",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 3
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "10fx_energytendril_b",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 4
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "10fx_dragonclouds_01",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 5
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "10fx_greenmote",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 6
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "10fx_energystars_bluelift",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 7
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "8fx_bloodblur_a",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 8
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "10fx_energystars_lift",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 9
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "10fx_dragonclouds_02",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 10
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "cfx_evoker_dreambreath_cast_4395091",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 11
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "cfx_evoker_dreambreath_cast_4397272",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 12
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "fx_bedrockslam_missile_3608289",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 13
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "10fx_wind_streams",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 14
+				},
+				"metallicFactor": 0
+			}
+		},
+		{
+			"name": "9fx_brokercity_piratedragon_precastcone_groundprojection_3939537",
+			"emissiveFactor": [
+				0,
+				0,
+				0
+			],
+			"pbrMetallicRoughness": {
+				"baseColorTexture": {
+					"index": 15
+				},
+				"metallicFactor": 0
+			}
+		}
+	]
+}

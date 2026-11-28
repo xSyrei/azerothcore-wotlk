@@ -2537,6 +2537,52 @@ EFFECTS.update({
                                  {'texture': 2, 'tint': VERDANT_MOTE, 'alpha': 1.0, 'turn': 2.2, 'pulse': 0.4,
                                   'rise': (1.8, 1.5), 'cards': puffs(10, 0.75, 0.1, 0.16, 0.12)})}},
 })
+# Reversion's and Dream Breath's looks (retail's cfx_evoker_reversion_impact and cfx_evoker_dreambreath_*,
+# spells/EVO_Reversion and EVO_DreamBreath). Reversion's impact and Dream Breath's breath are retail's own meshes and
+# animation (the clock-face burst; the fan of tendrils, 27 yards long in retail, scaled to our 15 yard cone); the
+# rest are particles only in their exports, rebuilt from their textures.
+BREATH = 'EVO_DreamBreath'
+BREATH_GREEN, BREATH_TEAL = (0.4, 1.0, 0.6), (0.55, 1.0, 0.85)
+EFFECTS.update({
+    'ReversionImpact': {'model': 'EVO_ReversionImpact', 'effect': 7181, 'shape': 'retail', 'textures': (),
+                        'options': {'export': 'EVO_Reversion/cfx_evoker_reversion_impact.gltf', 'scale': 0.35,
+                                    'lift': 1.0}},
+    'DreamBreathCone': {'model': 'EVO_DreamBreathCone', 'effect': 7182, 'shape': 'retail', 'textures': (),
+                        'options': {'export': f'{BREATH}/cfx_evoker_dreambreath_cast.gltf', 'scale': 0.55,
+                                    'lift': 1.2}},
+    # The breath gathering in the hands: a blue-green glow, a prism flare and a ring of light flaring out, 0.9 sec.
+    'DreamBreathHands': {'model': 'EVO_DreamBreathHands', 'effect': 7183, 'shape': 'mist',
+                         'textures': (f'{BREATH}/glow_blue', f'{BREATH}/flare_prism', f'{BREATH}/flare_ring'),
+                         'options': {'duration': 900, 'fade': (0, 400), 'layers': (
+                             {'texture': 0, 'tint': BREATH_TEAL, 'alpha': 0.7, 'pulse': 0,
+                              'cards': ((0.0, 0.0, 0.9),)},
+                             {'texture': 1, 'tint': BREATH_TEAL, 'alpha': 1.0, 'turn': 1.5, 'pulse': 0,
+                              'cards': ((0.0, 0.0, 0.5),)},
+                             {'texture': 2, 'tint': BREATH_GREEN, 'alpha': 0.8, 'pulse': 0,
+                              'scale': [(0.0, 0.3), (0.5, 1.3), (1.0, 1.5)], 'cards': ((0.0, 0.0, 1.0),)})}},
+    # The breath landing on an ally: green smoke bursting up around the body, a blue-green light and motes.
+    'DreamBreathImpact': {'model': 'EVO_DreamBreathImpact', 'effect': 7184, 'shape': 'mist',
+                          'textures': (f'{BREATH}/glow_bluegreen', f'{BREATH}/smoke_puffs',
+                                       f'{VERDANT}/green_mote'),
+                          'options': {'duration': 1300, 'fade': (50, 550), 'layers': (
+                              {'texture': 0, 'tint': BREATH_TEAL, 'alpha': 0.5, 'pulse': 0,
+                               'cards': ((0.0, 1.0, 2.0),)},
+                              {'texture': 1, 'sheet': (2, 2), 'flip': 0, 'tint': BREATH_GREEN, 'alpha': 0.75,
+                               'turn': 2.2, 'pulse': 0, 'rise': (1.2, 1.3), 'cards': puffs(5, 0.5, 0.2, 1.3, 0.2)},
+                              {'texture': 2, 'tint': VERDANT_MOTE, 'alpha': 1.0, 'turn': -2.0, 'pulse': 0.4,
+                               'rise': (1.6, 1.3), 'cards': puffs(8, 0.7, 0.1, 0.16, 0.12)})}},
+    # Dream Breath's heal over time, while it lasts: a soft green-blue glow breathing at the chest, a glint across
+    # it and a few motes drifting round.
+    'DreamBreathState': {'model': 'EVO_DreamBreathState', 'effect': 7185, 'shape': 'mist',
+                         'textures': (f'{BREATH}/glow_blue', f'{BREATH}/flare_line', f'{VERDANT}/green_mote'),
+                         'options': {'layers': (
+                             {'texture': 0, 'tint': BREATH_TEAL, 'alpha': 0.3, 'pulse': 2.0,
+                              'cards': ((0.0, 1.0, 1.6),)},
+                             {'texture': 1, 'tint': BREATH_GREEN, 'alpha': 0.6, 'pulse': 1.5,
+                              'cards': ((0.0, 1.1, 1.2),)},
+                             {'texture': 2, 'tint': VERDANT_MOTE, 'alpha': 0.9, 'turn': 3.0, 'pulse': 0.8,
+                              'cards': puffs(5, 0.6, 0.6, 0.14, 0.25)})}},
+})
 SPELLS += [
     # Scarlet Benediction.
     buff(93400, 'Rune of Scarlet Benediction', SCARLET_ICON,
